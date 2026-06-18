@@ -2,7 +2,10 @@ var annotated_dup =
 [
     [ "llvm", "namespacellvm.html", [
       [ "cl", "namespacellvm_1_1cl.html", [
-        [ "parser< APInt >", "classllvm_1_1cl_1_1parser_3_01APInt_01_4.html", "classllvm_1_1cl_1_1parser_3_01APInt_01_4" ]
+        [ "NestedOptionsParserBase", "classllvm_1_1cl_1_1NestedOptionsParserBase.html", "classllvm_1_1cl_1_1NestedOptionsParserBase" ],
+        [ "parser< APInt >", "classllvm_1_1cl_1_1parser_3_01APInt_01_4.html", "classllvm_1_1cl_1_1parser_3_01APInt_01_4" ],
+        [ "parser< llzk::NestedPassOptions< CreatePass > >", "classllvm_1_1cl_1_1parser_3_01llzk_1_1NestedPassOptions_3_01CreatePass_01_4_01_4.html", "classllvm_1_1cl_1_1parser_3_01llzk_1_1NestedPassOptions_3_01CreatePass_01_4_01_4" ],
+        [ "parser< llzk::NestedPipelineOptions< PipelineOptionsT > >", "classllvm_1_1cl_1_1parser_3_01llzk_1_1NestedPipelineOptions_3_01PipelineOptionsT_01_4_01_4.html", "classllvm_1_1cl_1_1parser_3_01llzk_1_1NestedPipelineOptions_3_01PipelineOptionsT_01_4_01_4" ]
       ] ],
       [ "DenseMapInfo< llzk::ExpressionValue >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1ExpressionValue_01_4.html", null ],
       [ "DenseMapInfo< llzk::Side >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4.html", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4" ],
@@ -124,9 +127,13 @@ var annotated_dup =
           [ "StructDefOpGenericAdaptorBase", "classllzk_1_1component_1_1detail_1_1StructDefOpGenericAdaptorBase.html", "classllzk_1_1component_1_1detail_1_1StructDefOpGenericAdaptorBase" ],
           [ "StructTypeStorage", "structllzk_1_1component_1_1detail_1_1StructTypeStorage.html", "structllzk_1_1component_1_1detail_1_1StructTypeStorage" ]
         ] ],
+        [ "impl", "namespacellzk_1_1component_1_1impl.html", [
+          [ "InlineStructsPassBase", "classllzk_1_1component_1_1impl_1_1InlineStructsPassBase.html", "classllzk_1_1component_1_1impl_1_1InlineStructsPassBase" ]
+        ] ],
         [ "CreateStructOp", "classllzk_1_1component_1_1CreateStructOp.html", "classllzk_1_1component_1_1CreateStructOp" ],
         [ "CreateStructOpAdaptor", "classllzk_1_1component_1_1CreateStructOpAdaptor.html", "classllzk_1_1component_1_1CreateStructOpAdaptor" ],
         [ "CreateStructOpGenericAdaptor", "classllzk_1_1component_1_1CreateStructOpGenericAdaptor.html", "classllzk_1_1component_1_1CreateStructOpGenericAdaptor" ],
+        [ "InlineStructsPassOptions", "structllzk_1_1component_1_1InlineStructsPassOptions.html", "structllzk_1_1component_1_1InlineStructsPassOptions" ],
         [ "InStructFunctionNamed", "structllzk_1_1component_1_1InStructFunctionNamed.html", "structllzk_1_1component_1_1InStructFunctionNamed" ],
         [ "MemberDefOp", "classllzk_1_1component_1_1MemberDefOp.html", "classllzk_1_1component_1_1MemberDefOp" ],
         [ "MemberDefOpAdaptor", "classllzk_1_1component_1_1MemberDefOpAdaptor.html", "classllzk_1_1component_1_1MemberDefOpAdaptor" ],
@@ -170,6 +177,7 @@ var annotated_dup =
       [ "detail", "namespacellzk_1_1detail.html", [
         [ "DiscardableAllocationAccessorOpInterfaceInterfaceTraits", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits.html", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits" ],
         [ "DiscardableAllocationAccessorOpInterfaceTrait", "structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceTrait.html", null ],
+        [ "NestedTextualOptions", "structllzk_1_1detail_1_1NestedTextualOptions.html", "structllzk_1_1detail_1_1NestedTextualOptions" ],
         [ "NonDetOpGenericAdaptorBase", "classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html", "classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase" ],
         [ "RemoveDeadValuesWorkaroundPass", "classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass.html", "classllzk_1_1detail_1_1RemoveDeadValuesWorkaroundPass" ]
       ] ],
@@ -302,7 +310,6 @@ var annotated_dup =
         [ "ConstraintDependencyGraphPrinterPassBase", "classllzk_1_1impl_1_1ConstraintDependencyGraphPrinterPassBase.html", "classllzk_1_1impl_1_1ConstraintDependencyGraphPrinterPassBase" ],
         [ "EnforceNoMemberOverwritePassBase", "classllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase.html", "classllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase" ],
         [ "FuseProductLoopsPassBase", "classllzk_1_1impl_1_1FuseProductLoopsPassBase.html", "classllzk_1_1impl_1_1FuseProductLoopsPassBase" ],
-        [ "InlineStructsPassBase", "classllzk_1_1impl_1_1InlineStructsPassBase.html", "classllzk_1_1impl_1_1InlineStructsPassBase" ],
         [ "IntervalAnalysisPrinterPassBase", "classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html", "classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase" ],
         [ "MemberWriteValidatorPassBase", "classllzk_1_1impl_1_1MemberWriteValidatorPassBase.html", "classllzk_1_1impl_1_1MemberWriteValidatorPassBase" ],
         [ "PolyLoweringPassBase", "classllzk_1_1impl_1_1PolyLoweringPassBase.html", "classllzk_1_1impl_1_1PolyLoweringPassBase" ],
@@ -749,13 +756,15 @@ var annotated_dup =
       [ "Field", "classllzk_1_1Field.html", "classllzk_1_1Field" ],
       [ "FileLineColLocComparator", "structllzk_1_1FileLineColLocComparator.html", "structllzk_1_1FileLineColLocComparator" ],
       [ "filtered_raw_ostream", "classllzk_1_1filtered__raw__ostream.html", "classllzk_1_1filtered__raw__ostream" ],
+      [ "FullPolyLoweringConfig", "structllzk_1_1FullPolyLoweringConfig.html", "structllzk_1_1FullPolyLoweringConfig" ],
       [ "FullPolyLoweringOptions", "structllzk_1_1FullPolyLoweringOptions.html", "structllzk_1_1FullPolyLoweringOptions" ],
+      [ "FullStructInliningConfig", "structllzk_1_1FullStructInliningConfig.html", "structllzk_1_1FullStructInliningConfig" ],
+      [ "FullStructInliningOptions", "structllzk_1_1FullStructInliningOptions.html", "structllzk_1_1FullStructInliningOptions" ],
       [ "FunctionTypeConverter", "classllzk_1_1FunctionTypeConverter.html", "classllzk_1_1FunctionTypeConverter" ],
       [ "FuzzySet", "classllzk_1_1FuzzySet.html", "classllzk_1_1FuzzySet" ],
       [ "GlobalSourceMgr", "classllzk_1_1GlobalSourceMgr.html", "classllzk_1_1GlobalSourceMgr" ],
       [ "HasAncestor", "structllzk_1_1HasAncestor.html", "structllzk_1_1HasAncestor" ],
       [ "InFlightDiagnosticWrapper", "classllzk_1_1InFlightDiagnosticWrapper.html", "classllzk_1_1InFlightDiagnosticWrapper" ],
-      [ "InlineStructsPassOptions", "structllzk_1_1InlineStructsPassOptions.html", "structllzk_1_1InlineStructsPassOptions" ],
       [ "Interval", "classllzk_1_1Interval.html", "classllzk_1_1Interval" ],
       [ "IntervalAnalysisContext", "structllzk_1_1IntervalAnalysisContext.html", "structllzk_1_1IntervalAnalysisContext" ],
       [ "IntervalAnalysisLattice", "classllzk_1_1IntervalAnalysisLattice.html", "classllzk_1_1IntervalAnalysisLattice" ],
@@ -776,6 +785,8 @@ var annotated_dup =
       [ "ModuleIntervalAnalysis", "classllzk_1_1ModuleIntervalAnalysis.html", "classllzk_1_1ModuleIntervalAnalysis" ],
       [ "ModuleLikeBuilder", "classllzk_1_1ModuleLikeBuilder.html", "classllzk_1_1ModuleLikeBuilder" ],
       [ "NamedOpLocationLess", "structllzk_1_1NamedOpLocationLess.html", "structllzk_1_1NamedOpLocationLess" ],
+      [ "NestedPassOptions", "structllzk_1_1NestedPassOptions.html", "structllzk_1_1NestedPassOptions" ],
+      [ "NestedPipelineOptions", "structllzk_1_1NestedPipelineOptions.html", "structllzk_1_1NestedPipelineOptions" ],
       [ "NoContext", "structllzk_1_1NoContext.html", null ],
       [ "NonDetOp", "classllzk_1_1NonDetOp.html", "classllzk_1_1NonDetOp" ],
       [ "NonDetOpAdaptor", "classllzk_1_1NonDetOpAdaptor.html", "classllzk_1_1NonDetOpAdaptor" ],
@@ -800,6 +811,7 @@ var annotated_dup =
       [ "SplitAggregateInMemberRefOp", "classllzk_1_1SplitAggregateInMemberRefOp.html", "classllzk_1_1SplitAggregateInMemberRefOp" ],
       [ "SplitFunctionNameInfo", "structllzk_1_1SplitFunctionNameInfo.html", "structllzk_1_1SplitFunctionNameInfo" ],
       [ "StructAnalysis", "classllzk_1_1StructAnalysis.html", "classllzk_1_1StructAnalysis" ],
+      [ "StructInliningFlatteningOptions", "structllzk_1_1StructInliningFlatteningOptions.html", "structllzk_1_1StructInliningFlatteningOptions" ],
       [ "StructIntervalAnalysis", "classllzk_1_1StructIntervalAnalysis.html", "classllzk_1_1StructIntervalAnalysis" ],
       [ "StructIntervals", "classllzk_1_1StructIntervals.html", "classllzk_1_1StructIntervals" ],
       [ "SymbolDefTree", "classllzk_1_1SymbolDefTree.html", "classllzk_1_1SymbolDefTree" ],

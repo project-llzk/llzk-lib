@@ -41,7 +41,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">LLZK<span id="projectnumber">&#160;2.1.2</span>
+   <div id="projectname">LLZK<span id="projectnumber">&#160;3.0.0</span>
    </div>
    <div id="projectbrief">An open-source IR for Zero Knowledge (ZK) circuits</div>
   </td>
@@ -211,7 +211,7 @@ $(function(){initNavTree('tools.html','',''); });
                 <a href="#autotoc_md-llzk-fuse-product-loops"><span class="tt">-llzk-fuse-product-loops</span> </a>
               </li>
               <li class="level4">
-                <a href="#autotoc_md-llzk-inline-structs"><span class="tt">-llzk-inline-structs</span> </a>
+                <a href="#autotoc_md-llzk-poly-lowering-pass"><span class="tt">-llzk-poly-lowering-pass</span> </a>
                 <ul>
                   <li class="level5">
                     <a href="#options-8">Options </a>
@@ -219,7 +219,7 @@ $(function(){initNavTree('tools.html','',''); });
                 </ul>
               </li>
               <li class="level4">
-                <a href="#autotoc_md-llzk-poly-lowering-pass"><span class="tt">-llzk-poly-lowering-pass</span> </a>
+                <a href="#autotoc_md-llzk-remove-unused-discardable-allocations"><span class="tt">-llzk-remove-unused-discardable-allocations</span> </a>
                 <ul>
                   <li class="level5">
                     <a href="#options-9">Options </a>
@@ -227,18 +227,10 @@ $(function(){initNavTree('tools.html','',''); });
                 </ul>
               </li>
               <li class="level4">
-                <a href="#autotoc_md-llzk-remove-unused-discardable-allocations"><span class="tt">-llzk-remove-unused-discardable-allocations</span> </a>
-                <ul>
-                  <li class="level5">
-                    <a href="#options-10">Options </a>
-                  </li>
-                </ul>
-              </li>
-              <li class="level4">
                 <a href="#autotoc_md-llzk-unused-declaration-elim"><span class="tt">-llzk-unused-declaration-elim</span> </a>
                 <ul>
                   <li class="level5">
-                    <a href="#options-11">Options </a>
+                    <a href="#options-10">Options </a>
                   </li>
                 </ul>
               </li>
@@ -265,7 +257,7 @@ $(function(){initNavTree('tools.html','',''); });
                 <a href="#autotoc_md-llzk-flatten"><span class="tt">-llzk-flatten</span> </a>
                 <ul>
                   <li class="level5">
-                    <a href="#options-12">Options </a>
+                    <a href="#options-11">Options </a>
                   </li>
                 </ul>
               </li>
@@ -273,7 +265,7 @@ $(function(){initNavTree('tools.html','',''); });
                 <a href="#autotoc_md-llzk-specialize-wildcard-arrays"><span class="tt">-llzk-specialize-wildcard-arrays</span> </a>
                 <ul>
                   <li class="level5">
-                    <a href="#options-13">Options </a>
+                    <a href="#options-12">Options </a>
                   </li>
                 </ul>
               </li>
@@ -420,31 +412,21 @@ Options</h5>
 <span class="tt">-llzk-fuse-product-loops</span></h4>
 <p>_Fuse matching witness/constraint loops in a @product function_</p>
 <p>Fuse matching witness/constraint loops in a @product function </p>
-<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-inline-structs"></a>
-<span class="tt">-llzk-inline-structs</span></h4>
-<p><em>Inlines nested structs (i.e., subcomponents).</em></p>
-<p>This pass inlines nested structs (i.e., subcomponents) at struct-type members and at calls to the subcomponent compute/constrain functions. Inlining decisions are guided by the call graph of "constrain" functions.</p>
-<p>The <span class="tt">max-merge-complexity</span> parameter can be used to limit the complexity of the resulting structs such that a potential inlining will not take place if doing so would push the sum of constraint and multiplications in the combined struct over the limit. The default value <span class="tt">0</span> indicates no limits which means all structs will be inlined into the Main struct.</p>
-<p>This pass should be run after <span class="tt">llzk-flatten</span> to ensure structs do not have template parameters because structs with template parameters cannot (currently) be inlined. Inlining is also not (currently) supported for subcomponent structs stored in an array-type member.</p>
-<p>This pass also assumes that all subcomponents that are created by calling a struct "@compute" function are ultimately written to exactly one member within the current struct.</p>
-<h5 class="doxsection"><a class="anchor" id="options-8"></a>
-Options</h5>
-<div class="fragment"><div class="line">-max-merge-complexity : Maximum allowed constraint+multiplications in merged @constrain functions</div>
-</div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-poly-lowering-pass"></a>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-poly-lowering-pass"></a>
 <span class="tt">-llzk-poly-lowering-pass</span></h4>
 <p><em>Lower the degree of all polynomial equations to a specified maximum</em></p>
 <p>Rewrites constraint expressions into an (observationally) equivalent system where the degree of every polynomial is less than or equal to the specified maximum.</p>
 <p>High-degree subexpressions are factored into auxiliary struct members. The pass also recurses through degree-neutral roots such as <span class="tt">felt.add</span>, <span class="tt">felt.sub</span>, and <span class="tt">felt.neg</span>, so composite equality operands and struct constrain call arguments satisfy their degree bounds.</p>
 <p>The pass expects already-flattened, straight-line <span class="tt">constrain</span> bodies. Run <span class="tt">llzk-flatten</span> or another control-flow lowering pass before this pass; nested-region, successor-bearing, or multi-block constraints are rejected instead of being rewritten with component-lifetime auxiliary members.</p>
 <p>This pass is best used on already-flattened input as part of the <span class="tt">-llzk-full-poly-lowering</span> pipeline, which includes additional cleanup passes to ensure correctness and optimal performance.</p>
-<h5 class="doxsection"><a class="anchor" id="options-9"></a>
+<h5 class="doxsection"><a class="anchor" id="options-8"></a>
 Options</h5>
 <div class="fragment"><div class="line">-max-degree : Maximum degree of constraint polynomials (default 2, minimum 2)</div>
 </div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-remove-unused-discardable-allocations"></a>
 <span class="tt">-llzk-remove-unused-discardable-allocations</span></h4>
 <p><em>Remove unread discardable allocations and their dead stores</em></p>
 <p>Remove ops with the selected allocator operation name when they are marked with <span class="tt">MemAlloc&lt;DiscardableAllocationResource&gt;</span>, the allocation has no reads, and every direct user is a discardable allocation accessor that can be erased as a dead store.</p>
-<h5 class="doxsection"><a class="anchor" id="options-10"></a>
+<h5 class="doxsection"><a class="anchor" id="options-9"></a>
 Options</h5>
 <div class="fragment"><div class="line">-allocator-op : Operation name of the discardable allocator to remove</div>
 </div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-unused-declaration-elim"></a>
@@ -452,7 +434,7 @@ Options</h5>
 <p><em>Remove unused member and struct declarations</em></p>
 <p>Remove member and struct declarations that are unused within the current compilation unit. Note that this pass may cause linking issues with external modules that depend on any unused member and struct declarations from this compilation unit.</p>
 <p>Pass should be run after <span class="tt">llzk-duplicate-read-write-elim</span> and <span class="tt">llzk-duplicate-op-elim</span> for maximum effect.</p>
-<h5 class="doxsection"><a class="anchor" id="options-11"></a>
+<h5 class="doxsection"><a class="anchor" id="options-10"></a>
 Options</h5>
 <div class="fragment"><div class="line">-remove-structs : Whether to remove unused struct definitions as well. Requires module to declare a Main component, otherwise all components will appear unused.</div>
 </div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-while-to-for"></a>
@@ -482,7 +464,7 @@ Options</h5>
 <li>Replace parameterized structs with flattened (i.e., no parameter) versions of those structs based on requested return type at calls to <span class="tt">compute()</span> functions and unroll loops</li>
 <li>Unroll loops</li>
 </ul>
-<h5 class="doxsection"><a class="anchor" id="options-12"></a>
+<h5 class="doxsection"><a class="anchor" id="options-11"></a>
 Options</h5>
 <div class="fragment"><div class="line">-max-iter : Maximum number of times the pass will run if a fixpoint is not reached earlier. Unrolling loops can provide more opportunities for instantiating structs but the converse is true as well. Thus, the pass will run multiple times until no further changes can be made or the upper limit provided in this option is reached.</div>
 <div class="line">-cleanup  : Specifies the extent to which unused parameterized definitions (i.e. structs or free functions within a `poly.template`) are removed during the flattening pass.</div>
@@ -491,7 +473,7 @@ Options</h5>
 <p><em>Refine wildcard array casts and specialize concrete call targets</em></p>
 <p>Refines <span class="tt">poly.unifiable_cast</span> results when wildcard <span class="tt">array.type</span> dimensions can be replaced with concrete integer sizes from the input type. Then specializes free functions, extern declarations, and whole structs for calls whose wildcard array dimensions have become concrete.</p>
 <p>This pass is intended to run after <span class="tt">llzk-flatten</span>. It iterates to a fixpoint so newly-refined cast result types can enable further callable specialization in later iterations.</p>
-<h5 class="doxsection"><a class="anchor" id="options-13"></a>
+<h5 class="doxsection"><a class="anchor" id="options-12"></a>
 Options</h5>
 <div class="fragment"><div class="line">-max-iter : Maximum number of iterations before the pass gives up reaching a fixpoint.</div>
 </div><!-- fragment -->  <h3 class="doxsection"><a class="anchor" id="validation-passes"></a>

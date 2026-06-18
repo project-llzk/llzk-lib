@@ -41,7 +41,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">LLZK<span id="projectnumber">&#160;2.1.2</span>
+   <div id="projectname">LLZK<span id="projectnumber">&#160;3.0.0</span>
    </div>
    <div id="projectbrief">An open-source IR for Zero Knowledge (ZK) circuits</div>
   </td>
@@ -115,12 +115,14 @@ $(function(){initNavTree('namespacellzk_1_1component.html','',''); });
 <tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
 Namespaces</h2></td></tr>
 <tr class="memitem:detail" id="r_detail"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1component_1_1detail.html">detail</a></td></tr>
+<tr class="memitem:impl" id="r_impl"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1component_1_1impl.html">impl</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:CreateStructOp" id="r_CreateStructOp"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1component_1_1CreateStructOp.html">CreateStructOp</a></td></tr>
 <tr class="memitem:CreateStructOpAdaptor" id="r_CreateStructOpAdaptor"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1component_1_1CreateStructOpAdaptor.html">CreateStructOpAdaptor</a></td></tr>
 <tr class="memitem:CreateStructOpGenericAdaptor" id="r_CreateStructOpGenericAdaptor"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1component_1_1CreateStructOpGenericAdaptor.html">CreateStructOpGenericAdaptor</a></td></tr>
+<tr class="memitem:InlineStructsPassOptions" id="r_InlineStructsPassOptions"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1component_1_1InlineStructsPassOptions.html">InlineStructsPassOptions</a></td></tr>
 <tr class="memitem:InStructFunctionNamed" id="r_InStructFunctionNamed"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1component_1_1InStructFunctionNamed.html">InStructFunctionNamed</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">This class provides a verifier for ops that are expecting to have an ancestor <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> with the given name.  <a href="structllzk_1_1component_1_1InStructFunctionNamed.html#details">More...</a><br /></td></tr>
 <tr class="memitem:MemberDefOp" id="r_MemberDefOp"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1component_1_1MemberDefOp.html">MemberDefOp</a></td></tr>
@@ -151,6 +153,8 @@ Functions</h2></td></tr>
 <tr class="memitem:a7c0add78dbee2949bf32c4018ca6c019" id="r_a7c0add78dbee2949bf32c4018ca6c019"><td class="memItemLeft" align="right" valign="top">InFlightDiagnostic&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7c0add78dbee2949bf32c4018ca6c019">genCompareErr</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> expected, Operation *origin, const char *aspect)</td></tr>
 <tr class="memitem:a8c211e6cb7a97e4702d2f47c90b5021c" id="r_a8c211e6cb7a97e4702d2f47c90b5021c"><td class="memItemLeft" align="right" valign="top">LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8c211e6cb7a97e4702d2f47c90b5021c">checkSelfType</a> (SymbolTableCollection &amp;tables, <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> expectedStruct, Type actualType, Operation *origin, const char *aspect)</td></tr>
 <tr class="memdesc:a8c211e6cb7a97e4702d2f47c90b5021c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Verifies that the given <span class="tt">actualType</span> matches the <span class="tt"><a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a></span> given (i.e., for the "self" type parameter and return of the struct functions).  <br /></td></tr>
+<tr class="memitem:ab8f9c24c24400370b1481c20e26702a1" id="r_ab8f9c24c24400370b1481c20e26702a1"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab8f9c24c24400370b1481c20e26702a1">createInlineStructsPass</a> ()</td></tr>
+<tr class="memitem:a009a8e21a023cee8577ff5cec5cec264" id="r_a009a8e21a023cee8577ff5cec5cec264"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a009a8e21a023cee8577ff5cec5cec264">createInlineStructsPass</a> (<a class="el" href="structllzk_1_1component_1_1InlineStructsPassOptions.html">InlineStructsPassOptions</a> options)</td></tr>
 <tr class="memitem:a814f1e66493212b02ead85446adb172e" id="r_a814f1e66493212b02ead85446adb172e"><td class="memItemLeft" align="right" valign="top">mlir::InFlightDiagnostic&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a814f1e66493212b02ead85446adb172e">genCompareErr</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> expected, mlir::Operation *origin, const char *aspect)</td></tr>
 <tr class="memitem:a275b6e87c8fda84b470c5da478fc1203" id="r_a275b6e87c8fda84b470c5da478fc1203"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a275b6e87c8fda84b470c5da478fc1203">checkSelfType</a> (mlir::SymbolTableCollection &amp;symbolTable, <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> expectedStruct, mlir::Type actualType, mlir::Operation *origin, const char *aspect)</td></tr>
 <tr class="memitem:a66d1e367322861867313e5456b20aac0" id="r_a66d1e367322861867313e5456b20aac0"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a66d1e367322861867313e5456b20aac0">isInStruct</a> (mlir::Operation *op)</td></tr>
@@ -162,6 +166,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ac9dfdd995d5452e941a71128bbb97d89" id="r_ac9dfdd995d5452e941a71128bbb97d89"><td class="memTemplParams" colspan="2">template&lt;char const * FuncName, unsigned PrefixLen&gt; </td></tr>
 <tr class="memitem:ac9dfdd995d5452e941a71128bbb97d89 template"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac9dfdd995d5452e941a71128bbb97d89">verifyInStructFunctionNamed</a> (mlir::Operation *op, llvm::function_ref&lt; llvm::SmallString&lt; PrefixLen &gt;()&gt; prefix)</td></tr>
 <tr class="memdesc:ac9dfdd995d5452e941a71128bbb97d89"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if the given Operation is contained within a <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> with the given name that is itself contained within a <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a>, producing an error if not.  <br /></td></tr>
+<tr class="memitem:a5f901319771d25894d331aa098b7fab2" id="r_a5f901319771d25894d331aa098b7fab2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5f901319771d25894d331aa098b7fab2">registerInlineStructsPass</a> ()</td></tr>
+<tr class="memitem:a4ab0864d518c0db730004516b55b4372" id="r_a4ab0864d518c0db730004516b55b4372"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4ab0864d518c0db730004516b55b4372">registerInlineStructsPassPass</a> ()</td></tr>
+<tr class="memitem:a408210e204109af2a394a935195c4002" id="r_a408210e204109af2a394a935195c4002"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a408210e204109af2a394a935195c4002">registerTransformationPasses</a> ()</td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
 <a id="a275b6e87c8fda84b470c5da478fc1203" name="a275b6e87c8fda84b470c5da478fc1203"></a>
@@ -237,6 +244,44 @@ Functions</h2></td></tr>
 <p>Verifies that the given <span class="tt">actualType</span> matches the <span class="tt"><a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a></span> given (i.e., for the "self" type parameter and return of the struct functions). </p>
 
 <p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_source.html#l00121">121</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ab8f9c24c24400370b1481c20e26702a1" name="ab8f9c24c24400370b1481c20e26702a1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab8f9c24c24400370b1481c20e26702a1">&#9670;&#160;</a></span>createInlineStructsPass() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; llzk::component::createInlineStructsPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="InlineStructsPass_8cpp_source.html#l00107">107</a> of file <a class="el" href="InlineStructsPass_8cpp_source.html">InlineStructsPass.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a009a8e21a023cee8577ff5cec5cec264" name="a009a8e21a023cee8577ff5cec5cec264"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a009a8e21a023cee8577ff5cec5cec264">&#9670;&#160;</a></span>createInlineStructsPass() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; llzk::component::createInlineStructsPass </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structllzk_1_1component_1_1InlineStructsPassOptions.html">InlineStructsPassOptions</a></td>          <td class="paramname"><span class="paramname"><em>options</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="InlineStructsPass_8cpp_source.html#l00111">111</a> of file <a class="el" href="InlineStructsPass_8cpp_source.html">InlineStructsPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -375,6 +420,87 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_source.html#l00067">67</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a5f901319771d25894d331aa098b7fab2" name="a5f901319771d25894d331aa098b7fab2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5f901319771d25894d331aa098b7fab2">&#9670;&#160;</a></span>registerInlineStructsPass()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::component::registerInlineStructsPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Struct_2Transforms_2TransformationPasses_8h_source.html#l00122">122</a> of file <a class="el" href="Struct_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+
+</div>
+</div>
+<a id="a4ab0864d518c0db730004516b55b4372" name="a4ab0864d518c0db730004516b55b4372"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4ab0864d518c0db730004516b55b4372">&#9670;&#160;</a></span>registerInlineStructsPassPass()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::component::registerInlineStructsPassPass </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Struct_2Transforms_2TransformationPasses_8h_source.html#l00129">129</a> of file <a class="el" href="Struct_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+
+</div>
+</div>
+<a id="a408210e204109af2a394a935195c4002" name="a408210e204109af2a394a935195c4002"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a408210e204109af2a394a935195c4002">&#9670;&#160;</a></span>registerTransformationPasses()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::component::registerTransformationPasses </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Struct_2Transforms_2TransformationPasses_8h_source.html#l00139">139</a> of file <a class="el" href="Struct_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>

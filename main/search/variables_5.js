@@ -6,13 +6,14 @@ var searchData=
   ['fieldname_3',['fieldName',['../classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#ac6abb8914d042fb0b28f76d5b6b57ac7',1,'llzk::impl::IntervalAnalysisPrinterPassBase::fieldName'],['../structllzk_1_1felt_1_1detail_1_1FeltTypeStorage.html#a81568ddf32235a01d517c222e27a577d',1,'llzk::felt::detail::FeltTypeStorage::fieldName'],['../structllzk_1_1IntervalAnalysisPrinterPassOptions.html#a774a40f1f455a5bf682ad99ef85bbacf',1,'llzk::IntervalAnalysisPrinterPassOptions::fieldName']]],
   ['file_4',['file',['../LICENSE_8txt.html#a54c3aaa43358b77e4f57f4f72cbe56c6',1,'LICENSE.txt']]],
   ['filemgr_5',['fileMgr',['../structClangLexerContext_1_1Impl.html#a8929882c1f7a083ef1ee4172eccb4533',1,'ClangLexerContext::Impl']]],
-  ['form_6',['form',['../LICENSE_8txt.html#a6e0514323d9a0facf91cd3f62e135858',1,'LICENSE.txt']]],
-  ['free_7',['free',['../LICENSE_8txt.html#a7296b4cc5177445b437670e7a1559321',1,'LICENSE.txt']]],
-  ['freefuncmap_8',['freeFuncMap',['../classllzk_1_1ModuleLikeBuilder.html#ac5134bbd8c410df080a9b5d99fe90615',1,'llzk::ModuleLikeBuilder']]],
-  ['from_9',['from',['../LICENSE_8txt.html#aaf8226a059307a1b18aac1295b5cf3a2',1,'LICENSE.txt']]],
-  ['func_5fname_5fcompute_10',['FUNC_NAME_COMPUTE',['../namespacellzk.html#a078ca0039bbcd069858d9c9141c015d0',1,'llzk']]],
-  ['func_5fname_5fconstrain_11',['FUNC_NAME_CONSTRAIN',['../namespacellzk.html#a353b99dc283d18cdecb549edcb8d096f',1,'llzk']]],
-  ['func_5fname_5fproduct_12',['FUNC_NAME_PRODUCT',['../namespacellzk.html#a5da07f5e9e63bb1a19430087a83082a8',1,'llzk']]],
-  ['function_5ftype_13',['function_type',['../structllzk_1_1function_1_1detail_1_1FuncDefOpGenericAdaptorBase_1_1Properties.html#ae6b9721884b1836d14230f639c7b5f6c',1,'llzk::function::detail::FuncDefOpGenericAdaptorBase::Properties::function_type'],['../structllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase_1_1Properties.html#a4497321894e544cbc5246c25c4e2b721',1,'llzk::verif::detail::ContractOpGenericAdaptorBase::Properties::function_type']]],
-  ['functionprefix_14',['FunctionPrefix',['../CommonCAPIGen_8h.html#a792dfd7adc8b654aa7931bdd44af83da',1,'CommonCAPIGen.h']]]
+  ['flattening_6',['flattening',['../structllzk_1_1FullStructInliningConfig.html#a4302ae51eed6527943ad5771439cf2b3',1,'llzk::FullStructInliningConfig::flattening'],['../structllzk_1_1FullStructInliningOptions.html#a057cf827f2c281b2e24c923717859f6b',1,'llzk::FullStructInliningOptions::flattening']]],
+  ['form_7',['form',['../LICENSE_8txt.html#a6e0514323d9a0facf91cd3f62e135858',1,'LICENSE.txt']]],
+  ['free_8',['free',['../LICENSE_8txt.html#a7296b4cc5177445b437670e7a1559321',1,'LICENSE.txt']]],
+  ['freefuncmap_9',['freeFuncMap',['../classllzk_1_1ModuleLikeBuilder.html#ac5134bbd8c410df080a9b5d99fe90615',1,'llzk::ModuleLikeBuilder']]],
+  ['from_10',['from',['../LICENSE_8txt.html#aaf8226a059307a1b18aac1295b5cf3a2',1,'LICENSE.txt']]],
+  ['func_5fname_5fcompute_11',['FUNC_NAME_COMPUTE',['../namespacellzk.html#a078ca0039bbcd069858d9c9141c015d0',1,'llzk']]],
+  ['func_5fname_5fconstrain_12',['FUNC_NAME_CONSTRAIN',['../namespacellzk.html#a353b99dc283d18cdecb549edcb8d096f',1,'llzk']]],
+  ['func_5fname_5fproduct_13',['FUNC_NAME_PRODUCT',['../namespacellzk.html#a5da07f5e9e63bb1a19430087a83082a8',1,'llzk']]],
+  ['function_5ftype_14',['function_type',['../structllzk_1_1function_1_1detail_1_1FuncDefOpGenericAdaptorBase_1_1Properties.html#ae6b9721884b1836d14230f639c7b5f6c',1,'llzk::function::detail::FuncDefOpGenericAdaptorBase::Properties::function_type'],['../structllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase_1_1Properties.html#a4497321894e544cbc5246c25c4e2b721',1,'llzk::verif::detail::ContractOpGenericAdaptorBase::Properties::function_type']]],
+  ['functionprefix_15',['FunctionPrefix',['../CommonCAPIGen_8h.html#a792dfd7adc8b654aa7931bdd44af83da',1,'CommonCAPIGen.h']]]
 ];

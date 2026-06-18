@@ -41,7 +41,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">LLZK<span id="projectnumber">&#160;2.1.2</span>
+   <div id="projectname">LLZK<span id="projectnumber">&#160;3.0.0</span>
    </div>
    <div id="projectbrief">An open-source IR for Zero Knowledge (ZK) circuits</div>
   </td>
@@ -567,43 +567,53 @@ $(function(){initNavTree('LLZKRedundantReadAndWriteEliminationPass_8cpp_source.h
 <div class="line"><a id="l00505" name="l00505"></a><span class="lineno">  505</span>        <span class="keywordflow">return</span> it-&gt;second;</div>
 <div class="line"><a id="l00506" name="l00506"></a><span class="lineno">  506</span>      }</div>
 <div class="line"><a id="l00507" name="l00507"></a><span class="lineno">  507</span>      <span class="keywordflow">return</span> v;</div>
-<div class="line"><a id="l00508" name="l00508"></a><span class="lineno">  508</span>    };</div>
+<div class="foldopen" id="foldopen00508" data-start="{" data-end="};">
+<div class="line"><a id="l00508" name="l00508"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html">  508</a></span>    };</div>
 <div class="line"><a id="l00509" name="l00509"></a><span class="lineno">  509</span> </div>
-<div class="line"><a id="l00510" name="l00510"></a><span class="lineno">  510</span>    <span class="comment">// Lookup the value tree in the current state or return nullptr.</span></div>
+<div class="line"><a id="l00510" name="l00510"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a6cfd583eb6aa0a69c242d013547fdaaf">  510</a></span>    <span class="comment">// Lookup the value tree in the current state or return nullptr.</span></div>
 <div class="line"><a id="l00511" name="l00511"></a><span class="lineno">  511</span>    <span class="keyword">auto</span> tryGetValTree = [&amp;state](Value v) -&gt; std::shared_ptr&lt;ReferenceNode&gt; {</div>
-<div class="line"><a id="l00512" name="l00512"></a><span class="lineno">  512</span>      <span class="keywordflow">if</span> (<span class="keyword">auto</span> it = state.find(v); it != state.end()) {</div>
-<div class="line"><a id="l00513" name="l00513"></a><span class="lineno">  513</span>        <span class="keywordflow">return</span> it-&gt;second;</div>
-<div class="line"><a id="l00514" name="l00514"></a><span class="lineno">  514</span>      }</div>
-<div class="line"><a id="l00515" name="l00515"></a><span class="lineno">  515</span>      <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00516" name="l00516"></a><span class="lineno">  516</span>    };</div>
-<div class="line"><a id="l00517" name="l00517"></a><span class="lineno">  517</span> </div>
+<div class="line"><a id="l00512" name="l00512"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a3f636cd93dd538aa99029a5fdca0eb6d">  512</a></span>      <span class="keywordflow">if</span> (<span class="keyword">auto</span> it = state.find(v); it != state.end()) {</div>
+<div class="line"><a id="l00513" name="l00513"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a9183f3a7a29f033b5b61ec193df1eae4">  513</a></span>        <span class="keywordflow">return</span> it-&gt;second;</div>
+<div class="line"><a id="l00514" name="l00514"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#ab42be819b184ab75d7ec8280a9236017">  514</a></span>      }</div>
+<div class="line"><a id="l00515" name="l00515"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a5812a639ea5fa8034f49e56001a3a366">  515</a></span>      <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00516" name="l00516"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#ac897eab7794517d41579feec2bb9325c">  516</a></span>    };</div>
+<div class="line"><a id="l00517" name="l00517"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#afae66c7a90669e7252b56dc0825359c1">  517</a></span> </div>
 <div class="line"><a id="l00518" name="l00518"></a><span class="lineno">  518</span>    <span class="comment">// Read a value from an array. This works on both readarr operations (which</span></div>
 <div class="line"><a id="l00519" name="l00519"></a><span class="lineno">  519</span>    <span class="comment">// return a scalar value) and extractarr operations (which return a subarray).</span></div>
-<div class="line"><a id="l00520" name="l00520"></a><span class="lineno">  520</span>    <span class="keyword">auto</span> doArrayReadLike = [&amp;]&lt;HasInterface&lt;ArrayAccessOpInterface&gt; OpClass&gt;(OpClass readarr) {</div>
+<div class="foldopen" id="foldopen00520" data-start="{" data-end="}">
+<div class="line"><a id="l00520" name="l00520"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#af7888b2de6e01eb395822e1650f5dc05">  520</a></span>    <span class="keyword">auto</span> doArrayReadLike = [&amp;]&lt;<a class="code hl_concept" href="conceptHasInterface.html">HasInterface&lt;ArrayAccessOpInterface&gt;</a> OpClass&gt;(OpClass readarr) {</div>
 <div class="line"><a id="l00521" name="l00521"></a><span class="lineno">  521</span>      std::shared_ptr&lt;ReferenceNode&gt; currValTree = state.at(translate(readarr.getArrRef()));</div>
 <div class="line"><a id="l00522" name="l00522"></a><span class="lineno">  522</span> </div>
-<div class="line"><a id="l00523" name="l00523"></a><span class="lineno">  523</span>      <span class="keywordflow">for</span> (Value origIdx : readarr.getIndices()) {</div>
+</div>
+<div class="line"><a id="l00523" name="l00523"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a407060e30dfa9022915543bbe415adea">  523</a></span>      <span class="keywordflow">for</span> (Value origIdx : readarr.getIndices()) {</div>
 <div class="line"><a id="l00524" name="l00524"></a><span class="lineno">  524</span>        Value idxVal = translate(origIdx);</div>
-<div class="line"><a id="l00525" name="l00525"></a><span class="lineno">  525</span>        currValTree = currValTree-&gt;getOrCreateChild(idxVal);</div>
+<div class="line"><a id="l00525" name="l00525"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a0065cbd894233a9ea9587be816352f83">  525</a></span>        currValTree = currValTree-&gt;getOrCreateChild(idxVal);</div>
 <div class="line"><a id="l00526" name="l00526"></a><span class="lineno">  526</span>      }</div>
 <div class="line"><a id="l00527" name="l00527"></a><span class="lineno">  527</span> </div>
-<div class="line"><a id="l00528" name="l00528"></a><span class="lineno">  528</span>      Value resVal = readarr.getResult();</div>
+<div class="foldopen" id="foldopen00528" data-start="{" data-end="}">
+<div class="line"><a id="l00528" name="l00528"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a31c04e74d187fd85ac1366b823288950">  528</a></span>      Value resVal = readarr.getResult();</div>
 <div class="line"><a id="l00529" name="l00529"></a><span class="lineno">  529</span>      <span class="keywordflow">if</span> (!currValTree-&gt;hasStoredValue()) {</div>
 <div class="line"><a id="l00530" name="l00530"></a><span class="lineno">  530</span>        currValTree-&gt;setCurrentValue(resVal);</div>
-<div class="line"><a id="l00531" name="l00531"></a><span class="lineno">  531</span>      }</div>
+</div>
+<div class="line"><a id="l00531" name="l00531"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a6a8979cb9239ba8edf54d128987f2e48">  531</a></span>      }</div>
 <div class="line"><a id="l00532" name="l00532"></a><span class="lineno">  532</span> </div>
 <div class="line"><a id="l00533" name="l00533"></a><span class="lineno">  533</span>      <span class="keywordflow">if</span> (currValTree-&gt;getStoredValue() != resVal) {</div>
-<div class="line"><a id="l00534" name="l00534"></a><span class="lineno">  534</span>        LLVM_DEBUG(</div>
+<div class="foldopen" id="foldopen00534" data-start="{" data-end="}">
+<div class="line"><a id="l00534" name="l00534"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a9134dc85ee4da34068b0c76993a6b364">  534</a></span>        LLVM_DEBUG(</div>
 <div class="line"><a id="l00535" name="l00535"></a><span class="lineno">  535</span>            llvm::dbgs() &lt;&lt; readarr.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: replace &quot;</span> &lt;&lt; resVal &lt;&lt; <span class="stringliteral">&quot; with &quot;</span></div>
 <div class="line"><a id="l00536" name="l00536"></a><span class="lineno">  536</span>                         &lt;&lt; currValTree-&gt;getStoredValue() &lt;&lt; <span class="charliteral">&#39;\n&#39;</span></div>
+</div>
 <div class="line"><a id="l00537" name="l00537"></a><span class="lineno">  537</span>        );</div>
 <div class="line"><a id="l00538" name="l00538"></a><span class="lineno">  538</span>        replacementMap[resVal] = currValTree-&gt;getStoredValue();</div>
-<div class="line"><a id="l00539" name="l00539"></a><span class="lineno">  539</span>      } <span class="keywordflow">else</span> {</div>
+<div class="foldopen" id="foldopen00539" data-start="{" data-end="}">
+<div class="line"><a id="l00539" name="l00539"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a2249e8647e952b18909c5638c2aba484">  539</a></span>      } <span class="keywordflow">else</span> {</div>
 <div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span>        state[resVal] = currValTree;</div>
 <div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span>        LLVM_DEBUG(</div>
+</div>
 <div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span>            llvm::dbgs() &lt;&lt; readarr.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: &quot;</span> &lt;&lt; resVal &lt;&lt; <span class="stringliteral">&quot; =&gt; &quot;</span> &lt;&lt; *currValTree</div>
 <div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span>                         &lt;&lt; <span class="charliteral">&#39;\n&#39;</span></div>
-<div class="line"><a id="l00544" name="l00544"></a><span class="lineno">  544</span>        );</div>
+<div class="foldopen" id="foldopen00544" data-start="{" data-end="}">
+<div class="line"><a id="l00544" name="l00544"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a0eded59070e39c55a0b743478622ad7d">  544</a></span>        );</div>
 <div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>      }</div>
 <div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span> </div>
 <div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>      readVals.push_back(resVal);</div>
@@ -615,9 +625,10 @@ $(function(){initNavTree('LLZKRedundantReadAndWriteEliminationPass_8cpp_source.h
 <div class="line"><a id="l00553" name="l00553"></a><span class="lineno">  553</span>    <span class="comment">// invalidate ajoining parts of the subtree, since it is possible that</span></div>
 <div class="line"><a id="l00554" name="l00554"></a><span class="lineno">  554</span>    <span class="comment">// the variable index aliases one of the other elements and may or may not</span></div>
 <div class="line"><a id="l00555" name="l00555"></a><span class="lineno">  555</span>    <span class="comment">// override that value.</span></div>
-<div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span>    <span class="keyword">auto</span> doArrayWriteLike = [&amp;]&lt;HasInterface&lt;ArrayAccessOpInterface&gt; OpClass&gt;(OpClass writearr) {</div>
+<div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span>    <span class="keyword">auto</span> doArrayWriteLike = [&amp;]&lt;<a class="code hl_concept" href="conceptHasInterface.html">HasInterface&lt;ArrayAccessOpInterface&gt;</a> OpClass&gt;(OpClass writearr) {</div>
 <div class="line"><a id="l00557" name="l00557"></a><span class="lineno">  557</span>      std::shared_ptr&lt;ReferenceNode&gt; currValTree = state.at(translate(writearr.getArrRef()));</div>
 <div class="line"><a id="l00558" name="l00558"></a><span class="lineno">  558</span>      Value newVal = translate(writearr.getRvalue());</div>
+</div>
 <div class="line"><a id="l00559" name="l00559"></a><span class="lineno">  559</span>      std::shared_ptr&lt;ReferenceNode&gt; valTree = tryGetValTree(newVal);</div>
 <div class="line"><a id="l00560" name="l00560"></a><span class="lineno">  560</span> </div>
 <div class="line"><a id="l00561" name="l00561"></a><span class="lineno">  561</span>      <span class="keywordflow">for</span> (Value origIdx : writearr.getIndices()) {</div>
@@ -627,15 +638,20 @@ $(function(){initNavTree('LLZKRedundantReadAndWriteEliminationPass_8cpp_source.h
 <div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span>        <span class="keywordflow">if</span> (ReferenceID(idxVal).isValue()) {</div>
 <div class="line"><a id="l00566" name="l00566"></a><span class="lineno">  566</span>          LLVM_DEBUG(llvm::dbgs() &lt;&lt; writearr.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: invalidate alias\n&quot;</span>);</div>
 <div class="line"><a id="l00567" name="l00567"></a><span class="lineno">  567</span>          currValTree-&gt;invalidateChildren();</div>
-<div class="line"><a id="l00568" name="l00568"></a><span class="lineno">  568</span>        }</div>
+<div class="foldopen" id="foldopen00568" data-start="{" data-end="}">
+<div class="line"><a id="l00568" name="l00568"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#aa24244c5b2c7eee981cc7efcd51fbe6b">  568</a></span>        }</div>
 <div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span>        currValTree = currValTree-&gt;getOrCreateChild(idxVal);</div>
 <div class="line"><a id="l00570" name="l00570"></a><span class="lineno">  570</span>      }</div>
+</div>
 <div class="line"><a id="l00571" name="l00571"></a><span class="lineno">  571</span> </div>
+</div>
 <div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span>      <span class="keywordflow">if</span> (currValTree-&gt;getStoredValue() == newVal) {</div>
 <div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span>        LLVM_DEBUG(</div>
-<div class="line"><a id="l00574" name="l00574"></a><span class="lineno">  574</span>            llvm::dbgs() &lt;&lt; writearr.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: subsequent &quot;</span> &lt;&lt; writearr</div>
+<div class="foldopen" id="foldopen00574" data-start="{" data-end="}">
+<div class="line"><a id="l00574" name="l00574"></a><span class="lineno"><a class="line" href="namespacellzk.html#af73faea85b5225f29d750ce00d34cc76">  574</a></span>            llvm::dbgs() &lt;&lt; writearr.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: subsequent &quot;</span> &lt;&lt; writearr</div>
 <div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span>                         &lt;&lt; <span class="stringliteral">&quot; is redundant\n&quot;</span></div>
 <div class="line"><a id="l00576" name="l00576"></a><span class="lineno">  576</span>        );</div>
+</div>
 <div class="line"><a id="l00577" name="l00577"></a><span class="lineno">  577</span>        redundantWrites.push_back(writearr);</div>
 <div class="line"><a id="l00578" name="l00578"></a><span class="lineno">  578</span>      } <span class="keywordflow">else</span> {</div>
 <div class="line"><a id="l00579" name="l00579"></a><span class="lineno">  579</span>        <span class="keywordflow">if</span> (Operation *lastWrite = currValTree-&gt;updateLastWrite(writearr)) {</div>
@@ -675,53 +691,43 @@ $(function(){initNavTree('LLZKRedundantReadAndWriteEliminationPass_8cpp_source.h
 <div class="line"><a id="l00613" name="l00613"></a><span class="lineno">  613</span>        LLVM_DEBUG(llvm::dbgs() &lt;&lt; readm.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: &quot;</span> &lt;&lt; *state[readm] &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>);</div>
 <div class="line"><a id="l00614" name="l00614"></a><span class="lineno">  614</span>      }</div>
 <div class="line"><a id="l00615" name="l00615"></a><span class="lineno">  615</span>      <span class="comment">// specifically add the untranslated value back for removal checks</span></div>
-<div class="foldopen" id="foldopen00616" data-start="{" data-end="};">
-<div class="line"><a id="l00616" name="l00616"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html">  616</a></span>      readVals.push_back(readm.getVal());</div>
+<div class="line"><a id="l00616" name="l00616"></a><span class="lineno">  616</span>      readVals.push_back(readm.getVal());</div>
 <div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> writem = dyn_cast&lt;MemberWriteOp&gt;(op)) {</div>
-<div class="line"><a id="l00618" name="l00618"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a6cfd583eb6aa0a69c242d013547fdaaf">  618</a></span>      <span class="keyword">auto</span> structVal = state.at(translate(writem.getComponent()));</div>
+<div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span>      <span class="keyword">auto</span> structVal = state.at(translate(writem.getComponent()));</div>
 <div class="line"><a id="l00619" name="l00619"></a><span class="lineno">  619</span>      Value writeVal = translate(writem.getVal());</div>
-<div class="line"><a id="l00620" name="l00620"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a3f636cd93dd538aa99029a5fdca0eb6d">  620</a></span>      FlatSymbolRefAttr symbol = writem.getMemberNameAttr();</div>
-<div class="line"><a id="l00621" name="l00621"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a9183f3a7a29f033b5b61ec193df1eae4">  621</a></span>      <span class="keyword">auto</span> valTree = tryGetValTree(writeVal);</div>
-<div class="line"><a id="l00622" name="l00622"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#ab42be819b184ab75d7ec8280a9236017">  622</a></span> </div>
-<div class="line"><a id="l00623" name="l00623"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a5812a639ea5fa8034f49e56001a3a366">  623</a></span>      <span class="keyword">auto</span> child = structVal-&gt;getOrCreateChild(symbol);</div>
-<div class="line"><a id="l00624" name="l00624"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#ac897eab7794517d41579feec2bb9325c">  624</a></span>      <span class="keywordflow">if</span> (child-&gt;getStoredValue() == writeVal) {</div>
-<div class="line"><a id="l00625" name="l00625"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#afae66c7a90669e7252b56dc0825359c1">  625</a></span>        LLVM_DEBUG(</div>
+<div class="line"><a id="l00620" name="l00620"></a><span class="lineno">  620</span>      FlatSymbolRefAttr symbol = writem.getMemberNameAttr();</div>
+<div class="line"><a id="l00621" name="l00621"></a><span class="lineno">  621</span>      <span class="keyword">auto</span> valTree = tryGetValTree(writeVal);</div>
+<div class="line"><a id="l00622" name="l00622"></a><span class="lineno">  622</span> </div>
+<div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span>      <span class="keyword">auto</span> child = structVal-&gt;getOrCreateChild(symbol);</div>
+<div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>      <span class="keywordflow">if</span> (child-&gt;getStoredValue() == writeVal) {</div>
+<div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>        LLVM_DEBUG(</div>
 <div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span>            llvm::dbgs() &lt;&lt; writem.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: recording redundant write &quot;</span> &lt;&lt; writem</div>
 <div class="line"><a id="l00627" name="l00627"></a><span class="lineno">  627</span>                         &lt;&lt; <span class="charliteral">&#39;\n&#39;</span></div>
-<div class="foldopen" id="foldopen00628" data-start="{" data-end="}">
-<div class="line"><a id="l00628" name="l00628"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#af7888b2de6e01eb395822e1650f5dc05">  628</a></span>        );</div>
+<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>        );</div>
 <div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span>        redundantWrites.push_back(writem);</div>
 <div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span>      } <span class="keywordflow">else</span> {</div>
-</div>
-<div class="line"><a id="l00631" name="l00631"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a407060e30dfa9022915543bbe415adea">  631</a></span>        <span class="keywordflow">if</span> (<span class="keyword">auto</span> *lastWrite = child-&gt;updateLastWrite(writem)) {</div>
+<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span>        <span class="keywordflow">if</span> (<span class="keyword">auto</span> *lastWrite = child-&gt;updateLastWrite(writem)) {</div>
 <div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span>          LLVM_DEBUG(</div>
-<div class="line"><a id="l00633" name="l00633"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a0065cbd894233a9ea9587be816352f83">  633</a></span>              llvm::dbgs() &lt;&lt; writem.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: recording overwritten write &quot;</span></div>
+<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>              llvm::dbgs() &lt;&lt; writem.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: recording overwritten write &quot;</span></div>
 <div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>                           &lt;&lt; *lastWrite &lt;&lt; <span class="charliteral">&#39;\n&#39;</span></div>
 <div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>          );</div>
-<div class="foldopen" id="foldopen00636" data-start="{" data-end="}">
-<div class="line"><a id="l00636" name="l00636"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a31c04e74d187fd85ac1366b823288950">  636</a></span>          redundantWrites.push_back(lastWrite);</div>
+<div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span>          redundantWrites.push_back(lastWrite);</div>
 <div class="line"><a id="l00637" name="l00637"></a><span class="lineno">  637</span>        }</div>
 <div class="line"><a id="l00638" name="l00638"></a><span class="lineno">  638</span>        child-&gt;setCurrentValue(writeVal, valTree);</div>
-</div>
-<div class="line"><a id="l00639" name="l00639"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a6a8979cb9239ba8edf54d128987f2e48">  639</a></span>        LLVM_DEBUG(</div>
+<div class="line"><a id="l00639" name="l00639"></a><span class="lineno">  639</span>        LLVM_DEBUG(</div>
 <div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span>            llvm::dbgs() &lt;&lt; writem.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: &quot;</span> &lt;&lt; *child &lt;&lt; <span class="stringliteral">&quot; set to &quot;</span> &lt;&lt; writeVal</div>
 <div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span>                         &lt;&lt; <span class="charliteral">&#39;\n&#39;</span></div>
-<div class="foldopen" id="foldopen00642" data-start="{" data-end="}">
-<div class="line"><a id="l00642" name="l00642"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a9134dc85ee4da34068b0c76993a6b364">  642</a></span>        );</div>
+<div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span>        );</div>
 <div class="line"><a id="l00643" name="l00643"></a><span class="lineno">  643</span>      }</div>
 <div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span>    }</div>
-</div>
 <div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span>    <span class="comment">// array ops</span></div>
 <div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> newArray = dyn_cast&lt;CreateArrayOp&gt;(op)) {</div>
-<div class="foldopen" id="foldopen00647" data-start="{" data-end="}">
-<div class="line"><a id="l00647" name="l00647"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a2249e8647e952b18909c5638c2aba484">  647</a></span>      <span class="keyword">auto</span> arrayVal = ReferenceNode::create(newArray, newArray);</div>
+<div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span>      <span class="keyword">auto</span> arrayVal = ReferenceNode::create(newArray, newArray);</div>
 <div class="line"><a id="l00648" name="l00648"></a><span class="lineno">  648</span>      state[newArray] = arrayVal;</div>
 <div class="line"><a id="l00649" name="l00649"></a><span class="lineno">  649</span> </div>
-</div>
 <div class="line"><a id="l00650" name="l00650"></a><span class="lineno">  650</span>      <span class="comment">// If we&#39;re given a constructor, we can instantiate elements using</span></div>
 <div class="line"><a id="l00651" name="l00651"></a><span class="lineno">  651</span>      <span class="comment">// constant indices.</span></div>
-<div class="foldopen" id="foldopen00652" data-start="{" data-end="}">
-<div class="line"><a id="l00652" name="l00652"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a0eded59070e39c55a0b743478622ad7d">  652</a></span>      <span class="keywordtype">unsigned</span> idx = 0;</div>
+<div class="line"><a id="l00652" name="l00652"></a><span class="lineno">  652</span>      <span class="keywordtype">unsigned</span> idx = 0;</div>
 <div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> elem : newArray.getElements()) {</div>
 <div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span>        Value elemVal = translate(elem);</div>
 <div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span>        <span class="keyword">auto</span> valTree = tryGetValTree(elemVal);</div>
@@ -736,7 +742,6 @@ $(function(){initNavTree('LLZKRedundantReadAndWriteEliminationPass_8cpp_source.h
 <div class="line"><a id="l00664" name="l00664"></a><span class="lineno">  664</span>      readVals.push_back(newArray);</div>
 <div class="line"><a id="l00665" name="l00665"></a><span class="lineno">  665</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> readarr = dyn_cast&lt;ReadArrayOp&gt;(op)) {</div>
 <div class="line"><a id="l00666" name="l00666"></a><span class="lineno">  666</span>      doArrayReadLike(readarr);</div>
-</div>
 <div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> writearr = dyn_cast&lt;WriteArrayOp&gt;(op)) {</div>
 <div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span>      doArrayWriteLike(writearr);</div>
 <div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> extractarr = dyn_cast&lt;ExtractArrayOp&gt;(op)) {</div>
@@ -746,13 +751,10 @@ $(function(){initNavTree('LLZKRedundantReadAndWriteEliminationPass_8cpp_source.h
 <div class="line"><a id="l00673" name="l00673"></a><span class="lineno">  673</span>      <span class="comment">// Logic is essentially the same as writearr</span></div>
 <div class="line"><a id="l00674" name="l00674"></a><span class="lineno">  674</span>      doArrayWriteLike(insertarr);</div>
 <div class="line"><a id="l00675" name="l00675"></a><span class="lineno">  675</span>    }</div>
-<div class="foldopen" id="foldopen00676" data-start="{" data-end="}">
-<div class="line"><a id="l00676" name="l00676"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#aa24244c5b2c7eee981cc7efcd51fbe6b">  676</a></span>  }</div>
+<div class="line"><a id="l00676" name="l00676"></a><span class="lineno">  676</span>  }</div>
 <div class="line"><a id="l00677" name="l00677"></a><span class="lineno">  677</span>};</div>
 <div class="line"><a id="l00678" name="l00678"></a><span class="lineno">  678</span> </div>
-</div>
 <div class="line"><a id="l00679" name="l00679"></a><span class="lineno">  679</span>} <span class="comment">// namespace</span></div>
-</div>
 <div class="ttc" id="aArray_2IR_2Ops_8h_html"><div class="ttname"><a href="Array_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aConcepts_8h_html"><div class="ttname"><a href="Concepts_8h.html">Concepts.h</a></div></div>
 <div class="ttc" id="aFelt_2IR_2Ops_8h_html"><div class="ttname"><a href="Felt_2IR_2Ops_8h.html">Ops.h</a></div></div>
@@ -762,7 +764,8 @@ $(function(){initNavTree('LLZKRedundantReadAndWriteEliminationPass_8cpp_source.h
 <div class="ttc" id="aStreamHelper_8h_html"><div class="ttname"><a href="StreamHelper_8h.html">StreamHelper.h</a></div></div>
 <div class="ttc" id="aclassllzk_1_1Interval_html_a52bd7748f087dc64682eb89063510cd8"><div class="ttname"><a href="classllzk_1_1Interval.html#a52bd7748f087dc64682eb89063510cd8">llzk::Interval::print</a></div><div class="ttdeci">void print(llvm::raw_ostream &amp;os) const</div><div class="ttdef"><b>Definition</b> <a href="Intervals_8cpp_source.html#l00797">Intervals.cpp:797</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_adf116ecb31969911123cbd50b112cfcc"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#adf116ecb31969911123cbd50b112cfcc">llzk::function::FuncDefOp::getCallableRegion</a></div><div class="ttdeci">::mlir::Region * getCallableRegion()</div><div class="ttdoc">Required by FunctionOpInterface.</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00846">Ops.h.inc:846</a></div></div>
-<div class="ttc" id="aclassllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase_html"><div class="ttname"><a href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html">llzk::impl::RedundantReadAndWriteEliminationPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00616">LLZKRedundantReadAndWriteEliminationPass.cpp:616</a></div></div>
+<div class="ttc" id="aclassllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase_html"><div class="ttname"><a href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html">llzk::impl::RedundantReadAndWriteEliminationPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00508">LLZKRedundantReadAndWriteEliminationPass.cpp:508</a></div></div>
+<div class="ttc" id="aconceptHasInterface_html"><div class="ttname"><a href="conceptHasInterface.html">HasInterface</a></div><div class="ttdoc">Restricts a template parameter to Op classes that implement the given OpInterface.</div><div class="ttdef"><b>Definition</b> <a href="Concepts_8h_source.html#l00020">Concepts.h:20</a></div></div>
 <div class="ttc" id="anamespacellvm_html"><div class="ttname"><a href="namespacellvm.html">llvm</a></div><div class="ttdef"><b>Definition</b> <a href="SourceRefLattice_8cpp_source.html#l00271">SourceRefLattice.cpp:271</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1array_html"><div class="ttname"><a href="namespacellzk_1_1array.html">llzk::array</a></div><div class="ttdef"><b>Definition</b> <a href="Array_2IR_2Ops_8cpp_source.html#l00043">Ops.cpp:43</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1component_html"><div class="ttname"><a href="namespacellzk_1_1component.html">llzk::component</a></div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Dialect_8cpp_source.html#l00209">Dialect.cpp:209</a></div></div>

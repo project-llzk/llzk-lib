@@ -41,7 +41,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">LLZK<span id="projectnumber">&#160;2.1.2</span>
+   <div id="projectname">LLZK<span id="projectnumber">&#160;3.0.0</span>
    </div>
    <div id="projectbrief">An open-source IR for Zero Knowledge (ZK) circuits</div>
   </td>
@@ -111,23 +111,45 @@ $(function(){initNavTree('Parsers_8h.html','',''); });
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="Compare_8h_source.html">llzk/Util/Compare.h</a>&quot;</code><br />
+<code>#include &lt;mlir/Pass/Pass.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/APInt.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/StringExtras.h&gt;</code><br />
 <code>#include &lt;llvm/Support/CommandLine.h&gt;</code><br />
+<code>#include &lt;llvm/Support/ErrorHandling.h&gt;</code><br />
+<code>#include &lt;llvm/Support/raw_ostream.h&gt;</code><br />
+<code>#include &lt;string&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for Parsers.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Parsers_8h__incl.svg" width="887" height="207"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Parsers_8h__incl.svg" width="1582" height="207"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div><div class="textblock"><div class="dynheader">
+This graph shows which files directly or indirectly include this file:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Parsers_8h__dep__incl.svg" width="414" height="242"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="Parsers_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
+<tr class="memitem:llzk_3A_3Adetail_3A_3ANestedTextualOptions" id="r_llzk_3A_3Adetail_3A_3ANestedTextualOptions"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1detail_1_1NestedTextualOptions.html">llzk::detail::NestedTextualOptions</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shared storage and helpers for nested textual pass and pipeline options.  <a href="structllzk_1_1detail_1_1NestedTextualOptions.html#details">More...</a><br /></td></tr>
+<tr class="memitem:llzk_3A_3ANestedPassOptions_3C_20CreatePass_20_3E" id="r_llzk_3A_3ANestedPassOptions_3C_20CreatePass_20_3E"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1NestedPassOptions.html">llzk::NestedPassOptions&lt; CreatePass &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stores textual options for a constituent pass after validating them against that pass' native MLIR option parser.  <a href="structllzk_1_1NestedPassOptions.html#details">More...</a><br /></td></tr>
+<tr class="memitem:llzk_3A_3ANestedPipelineOptions_3C_20PipelineOptionsT_20_3E" id="r_llzk_3A_3ANestedPipelineOptions_3C_20PipelineOptionsT_20_3E"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1NestedPipelineOptions.html">llzk::NestedPipelineOptions&lt; PipelineOptionsT &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stores textual options for a constituent pipeline after validating them against that pipeline's native MLIR option parser.  <a href="structllzk_1_1NestedPipelineOptions.html#details">More...</a><br /></td></tr>
+<tr class="memitem:llvm_3A_3Acl_3A_3ANestedOptionsParserBase_3C_20OptionsT_20_3E" id="r_llvm_3A_3Acl_3A_3ANestedOptionsParserBase_3C_20OptionsT_20_3E"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllvm_1_1cl_1_1NestedOptionsParserBase.html">llvm::cl::NestedOptionsParserBase&lt; OptionsT &gt;</a></td></tr>
+<tr class="memitem:llvm_3A_3Acl_3A_3Aparser_3C_20llzk_3A_3ANestedPassOptions_3C_20CreatePass_20_3E_20_3E" id="r_llvm_3A_3Acl_3A_3Aparser_3C_20llzk_3A_3ANestedPassOptions_3C_20CreatePass_20_3E_20_3E"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllvm_1_1cl_1_1parser_3_01llzk_1_1NestedPassOptions_3_01CreatePass_01_4_01_4.html">llvm::cl::parser&lt; llzk::NestedPassOptions&lt; CreatePass &gt; &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parser for textual options that are validated by a constituent MLIR pass.  <a href="classllvm_1_1cl_1_1parser_3_01llzk_1_1NestedPassOptions_3_01CreatePass_01_4_01_4.html#details">More...</a><br /></td></tr>
+<tr class="memitem:llvm_3A_3Acl_3A_3Aparser_3C_20llzk_3A_3ANestedPipelineOptions_3C_20PipelineOptionsT_20_3E_20_3E" id="r_llvm_3A_3Acl_3A_3Aparser_3C_20llzk_3A_3ANestedPipelineOptions_3C_20PipelineOptionsT_20_3E_20_3E"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllvm_1_1cl_1_1parser_3_01llzk_1_1NestedPipelineOptions_3_01PipelineOptionsT_01_4_01_4.html">llvm::cl::parser&lt; llzk::NestedPipelineOptions&lt; PipelineOptionsT &gt; &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parser for textual options that are validated by a constituent MLIR pipeline.  <a href="classllvm_1_1cl_1_1parser_3_01llzk_1_1NestedPipelineOptions_3_01PipelineOptionsT_01_4_01_4.html#details">More...</a><br /></td></tr>
 <tr class="memitem:llvm_3A_3Acl_3A_3Aparser_3C_20APInt_20_3E" id="r_llvm_3A_3Acl_3A_3Aparser_3C_20APInt_20_3E"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllvm_1_1cl_1_1parser_3_01APInt_01_4.html">llvm::cl::parser&lt; APInt &gt;</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
 Namespaces</h2></td></tr>
+<tr class="memitem:llzk" id="r_llzk"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html">llzk</a></td></tr>
+<tr class="memitem:llzk_3A_3Adetail" id="r_llzk_3A_3Adetail"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1detail.html">llzk::detail</a></td></tr>
 <tr class="memitem:llvm" id="r_llvm"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellvm.html">llvm</a></td></tr>
 <tr class="memitem:llvm_3A_3Acl" id="r_llvm_3A_3Acl"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellvm_1_1cl.html">llvm::cl</a></td></tr>
 </table>

@@ -1,8 +1,5 @@
 var NAVTREEINDEX11 =
 {
-"Polymorphic_2IR_2Types_8h_8inc.html":[13,0,0,0,0,2,10,0,14],
-"Polymorphic_2IR_2Types_8h_8inc_source.html":[13,0,0,0,0,2,10,0,14],
-"Polymorphic_2IR_2Types_8h_source.html":[13,0,2,0,2,10,0,5],
 "Polymorphic_2IR_2Types_8td.html":[13,0,2,0,2,10,0,6],
 "Polymorphic_2IR_2Types_8td_source.html":[13,0,2,0,2,10,0,6],
 "Polymorphic_2Transforms_2TransformationPasses_8capi_8cpp_8inc.html":[13,0,0,0,0,2,10,1,2],
@@ -249,5 +246,8 @@ var NAVTREEINDEX11 =
 "String_2IR_2Ops_8h.html#a52c883a38e577b8b12282ff70c95a16d":[13,0,2,0,2,14,0,2,0],
 "String_2IR_2Ops_8h_8inc.html":[13,0,0,0,0,2,14,0,7],
 "String_2IR_2Ops_8h_8inc_source.html":[13,0,0,0,0,2,14,0,7],
-"String_2IR_2Ops_8h_source.html":[13,0,2,0,2,14,0,2]
+"String_2IR_2Ops_8h_source.html":[13,0,2,0,2,14,0,2],
+"String_2IR_2Ops_8td.html":[13,0,2,0,2,14,0,3],
+"String_2IR_2Ops_8td_source.html":[13,0,2,0,2,14,0,3],
+"String_2IR_2Types_8capi_8cpp_8inc.html":[13,0,0,0,0,2,14,0,8]
 };

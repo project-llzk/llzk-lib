@@ -117,6 +117,13 @@ var hierarchy =
       [ "llzk::ModuleLikeBuilder< Derived >", "classllzk_1_1ModuleLikeBuilder.html", null ]
     ] ],
     [ "basic_parser", null, [
+      [ "llvm::cl::NestedOptionsParserBase< llzk::NestedPassOptions< CreatePass > >", "classllvm_1_1cl_1_1NestedOptionsParserBase.html", [
+        [ "llvm::cl::parser< llzk::NestedPassOptions< CreatePass > >", "classllvm_1_1cl_1_1parser_3_01llzk_1_1NestedPassOptions_3_01CreatePass_01_4_01_4.html", null ]
+      ] ],
+      [ "llvm::cl::NestedOptionsParserBase< llzk::NestedPipelineOptions< PipelineOptionsT > >", "classllvm_1_1cl_1_1NestedOptionsParserBase.html", [
+        [ "llvm::cl::parser< llzk::NestedPipelineOptions< PipelineOptionsT > >", "classllvm_1_1cl_1_1parser_3_01llzk_1_1NestedPipelineOptions_3_01PipelineOptionsT_01_4_01_4.html", null ]
+      ] ],
+      [ "llvm::cl::NestedOptionsParserBase< OptionsT >", "classllvm_1_1cl_1_1NestedOptionsParserBase.html", null ],
       [ "llvm::cl::parser< APInt >", "classllvm_1_1cl_1_1parser_3_01APInt_01_4.html", null ]
     ] ],
     [ "llzk::smt::detail::BoolConstantOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1BoolConstantOpGenericAdaptorBase.html", [
@@ -658,6 +665,8 @@ var hierarchy =
     ] ],
     [ "llzk::verif::detail::ForbiddenInfluenceAnalyzer", "classllzk_1_1verif_1_1detail_1_1ForbiddenInfluenceAnalyzer.html", null ],
     [ "llzk::verif::ForbiddenPreconditionInfluenceInfo", "structllzk_1_1verif_1_1ForbiddenPreconditionInfluenceInfo.html", null ],
+    [ "llzk::FullPolyLoweringConfig", "structllzk_1_1FullPolyLoweringConfig.html", null ],
+    [ "llzk::FullStructInliningConfig", "structllzk_1_1FullStructInliningConfig.html", null ],
     [ "llzk::function::detail::FuncDefOpGenericAdaptorBase", "classllzk_1_1function_1_1detail_1_1FuncDefOpGenericAdaptorBase.html", [
       [ "llzk::function::FuncDefOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1function_1_1FuncDefOpGenericAdaptor.html", null ],
       [ "llzk::function::FuncDefOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1function_1_1FuncDefOpGenericAdaptor.html", [
@@ -751,7 +760,7 @@ var hierarchy =
       [ "llzk::verif::IncludeOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1IncludeOpGenericAdaptor.html", null ]
     ] ],
     [ "llzk::InFlightDiagnosticWrapper", "classllzk_1_1InFlightDiagnosticWrapper.html", null ],
-    [ "llzk::InlineStructsPassOptions", "structllzk_1_1InlineStructsPassOptions.html", null ],
+    [ "llzk::component::InlineStructsPassOptions", "structllzk_1_1component_1_1InlineStructsPassOptions.html", null ],
     [ "llzk::witgen::InputBinding", "structllzk_1_1witgen_1_1InputBinding.html", null ],
     [ "llzk::array::detail::InsertArrayOpGenericAdaptorBase", "classllzk_1_1array_1_1detail_1_1InsertArrayOpGenericAdaptorBase.html", [
       [ "llzk::array::InsertArrayOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1array_1_1InsertArrayOpGenericAdaptor.html", null ],
@@ -932,6 +941,14 @@ var hierarchy =
       ] ],
       [ "llzk::felt::NegFeltOpGenericAdaptor< RangeT >", "classllzk_1_1felt_1_1NegFeltOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::detail::NestedTextualOptions", "structllzk_1_1detail_1_1NestedTextualOptions.html", [
+      [ "llzk::NestedPassOptions< static_cast< std::unique_ptr< mlir::Pass >(*)()>(&llzk::component::createInlineStructsPass)>", "structllzk_1_1NestedPassOptions.html", null ],
+      [ "llzk::NestedPassOptions< static_cast< std::unique_ptr< mlir::Pass >(*)()>(&llzk::createPolyLoweringPass)>", "structllzk_1_1NestedPassOptions.html", null ],
+      [ "llzk::NestedPipelineOptions< StructInliningFlatteningOptions >", "structllzk_1_1NestedPipelineOptions.html", null ],
+      [ "llzk::NestedPipelineOptions< FullStructInliningOptions >", "structllzk_1_1NestedPipelineOptions.html", null ],
+      [ "llzk::NestedPassOptions< CreatePass >", "structllzk_1_1NestedPassOptions.html", null ],
+      [ "llzk::NestedPipelineOptions< PipelineOptionsT >", "structllzk_1_1NestedPipelineOptions.html", null ]
+    ] ],
     [ "llzk::pod::detail::NewPodOpGenericAdaptorBase", "classllzk_1_1pod_1_1detail_1_1NewPodOpGenericAdaptorBase.html", [
       [ "llzk::pod::NewPodOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1pod_1_1NewPodOpGenericAdaptor.html", null ],
       [ "llzk::pod::NewPodOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1pod_1_1NewPodOpGenericAdaptor.html", [
@@ -1097,13 +1114,13 @@ var hierarchy =
     ] ],
     [ "mlir::OperationPass", null, [
       [ "llzk::array::impl::ArrayToScalarPassBase< DerivedT >", "classllzk_1_1array_1_1impl_1_1ArrayToScalarPassBase.html", null ],
+      [ "llzk::component::impl::InlineStructsPassBase< DerivedT >", "classllzk_1_1component_1_1impl_1_1InlineStructsPassBase.html", null ],
       [ "llzk::impl::CallGraphPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1CallGraphPrinterPassBase.html", null ],
       [ "llzk::impl::CallGraphSCCsPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1CallGraphSCCsPrinterPassBase.html", null ],
       [ "llzk::impl::ComputeConstrainToProductPassBase< DerivedT >", "classllzk_1_1impl_1_1ComputeConstrainToProductPassBase.html", null ],
       [ "llzk::impl::ConstraintDependencyGraphPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1ConstraintDependencyGraphPrinterPassBase.html", null ],
       [ "llzk::impl::EnforceNoMemberOverwritePassBase< DerivedT >", "classllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase.html", null ],
       [ "llzk::impl::FuseProductLoopsPassBase< DerivedT >", "classllzk_1_1impl_1_1FuseProductLoopsPassBase.html", null ],
-      [ "llzk::impl::InlineStructsPassBase< DerivedT >", "classllzk_1_1impl_1_1InlineStructsPassBase.html", null ],
       [ "llzk::impl::IntervalAnalysisPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html", null ],
       [ "llzk::impl::MemberWriteValidatorPassBase< DerivedT >", "classllzk_1_1impl_1_1MemberWriteValidatorPassBase.html", null ],
       [ "llzk::impl::PolyLoweringPassBase< DerivedT >", "classllzk_1_1impl_1_1PolyLoweringPassBase.html", null ],
@@ -1164,8 +1181,10 @@ var hierarchy =
       [ "llzk::smt::OrOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1OrOpGenericAdaptor.html", null ]
     ] ],
     [ "llzk::witgen::OutputBinding", "structllzk_1_1witgen_1_1OutputBinding.html", null ],
-    [ "PassPipelineOptions", null, [
-      [ "llzk::FullPolyLoweringOptions", "structllzk_1_1FullPolyLoweringOptions.html", null ]
+    [ "mlir::PassPipelineOptions", null, [
+      [ "llzk::FullPolyLoweringOptions", "structllzk_1_1FullPolyLoweringOptions.html", null ],
+      [ "llzk::FullStructInliningOptions", "structllzk_1_1FullStructInliningOptions.html", null ],
+      [ "llzk::StructInliningFlatteningOptions", "structllzk_1_1StructInliningFlatteningOptions.html", null ]
     ] ],
     [ "mlir::PassWrapper", null, [
       [ "llzk::SpecializedMem2Reg< AllocOpTy >", "structllzk_1_1SpecializedMem2Reg.html", null ],

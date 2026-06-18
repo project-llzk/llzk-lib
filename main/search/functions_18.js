@@ -31,7 +31,7 @@ var searchData=
   ['_7eimplementationgenerator_28',['~ImplementationGenerator',['../structImplementationGenerator.html#ab2fea3bff2f81df154cb3680d9e15135',1,'ImplementationGenerator']]],
   ['_7eincludedialect_29',['~IncludeDialect',['../classllzk_1_1include_1_1IncludeDialect.html#a5ece1b2fff9e47c2307e44d430608e84',1,'llzk::include::IncludeDialect']]],
   ['_7einlineincludespassbase_30',['~InlineIncludesPassBase',['../classllzk_1_1include_1_1impl_1_1InlineIncludesPassBase.html#a56bb3cb39d4d1115a481458cca626eab',1,'llzk::include::impl::InlineIncludesPassBase']]],
-  ['_7einlinestructspassbase_31',['~InlineStructsPassBase',['../classllzk_1_1impl_1_1InlineStructsPassBase.html#abfcebf6cbf46e136916dac67f33c5e65',1,'llzk::impl::InlineStructsPassBase']]],
+  ['_7einlinestructspassbase_31',['~InlineStructsPassBase',['../classllzk_1_1component_1_1impl_1_1InlineStructsPassBase.html#a622fa36aec8413cefb5dba375f6ccb33',1,'llzk::component::impl::InlineStructsPassBase']]],
   ['_7eintervalanalysisprinterpassbase_32',['~IntervalAnalysisPrinterPassBase',['../classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#a48f465c9882342951d2c65759e0df844',1,'llzk::impl::IntervalAnalysisPrinterPassBase']]],
   ['_7elegalitycheckcallback_33',['~LegalityCheckCallback',['../classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html#aa078f0a5dfc6d0f5132655874c32411d',1,'llzk::polymorphic::detail::LegalityCheckCallback']]],
   ['_7ellzkdialect_34',['~LLZKDialect',['../classllzk_1_1LLZKDialect.html#aa62162d0404bccd431fa33fa45c2eeae',1,'llzk::LLZKDialect']]],

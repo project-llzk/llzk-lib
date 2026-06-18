@@ -41,7 +41,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">LLZK<span id="projectnumber">&#160;2.1.2</span>
+   <div id="projectname">LLZK<span id="projectnumber">&#160;3.0.0</span>
    </div>
    <div id="projectbrief">An open-source IR for Zero Knowledge (ZK) circuits</div>
   </td>
@@ -657,7 +657,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00201">201</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00205">205</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -686,7 +686,7 @@ template&lt;typename DerivedT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00205">205</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00209">209</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -712,9 +712,13 @@ template&lt;typename DerivedT&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
-<b>Initial value:</b><div class="fragment"><div class="line">{*<span class="keyword">this</span>, <span class="stringliteral">&quot;cleanup&quot;</span>, ::llvm::cl::desc(<span class="stringliteral">&quot;Specifies the extent to which unused parameterized definitions (i.e. structs or free functions within a `poly.template`) are removed during the flattening pass.&quot;</span>), ::llvm::cl::init(<a class="code hl_enumvalue" href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9ae0372cf62f1b5205fdaf2e6b0c1a9197">::llzk::polymorphic::FlatteningCleanupMode::Preimage</a>), ::llvm::cl::values(</div>
+<b>Initial value:</b><div class="fragment"><div class="line">{*<span class="keyword">this</span>, <span class="stringliteral">&quot;cleanup&quot;</span>, ::llvm::cl::desc(<span class="stringliteral">&quot;Specifies the extent to which unused parameterized definitions (i.e. structs or free functions within a `poly.template`) are removed during the flattening pass.&quot;</span>), ::llvm::cl::init(<a class="code hl_enumvalue" href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9a6fcdc090caeade09d0efd6253932b6f5">::llzk::polymorphic::FlatteningCleanupMode::Unspecified</a>), ::llvm::cl::values(</div>
+<div class="line">                clEnumValN(<a class="code hl_enumvalue" href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9a6fcdc090caeade09d0efd6253932b6f5">::llzk::polymorphic::FlatteningCleanupMode::Unspecified</a>,</div>
+<div class="line">                           <a class="code hl_function" href="namespacellzk_1_1polymorphic.html#a5b4315e39cbb845b0dbde2e2762cc79a">stringifyFlatteningCleanupMode</a>(<a class="code hl_enumvalue" href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9a6fcdc090caeade09d0efd6253932b6f5">::llzk::polymorphic::FlatteningCleanupMode::Unspecified</a>),</div>
+<div class="line">                           <span class="stringliteral">&quot;Use the cleanup mode specified by the calling pipeline (defaults to `preimage` if not specified).&quot;</span>),</div>
 <div class="line">                clEnumValN(<a class="code hl_enumvalue" href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9ab9f5c797ebbf55adccdd8539a65a0241">::llzk::polymorphic::FlatteningCleanupMode::Disabled</a>,</div>
-<div class="line">                           <a class="code hl_function" href="namespacellzk_1_1polymorphic.html#a5b4315e39cbb845b0dbde2e2762cc79a">stringifyFlatteningCleanupMode</a>(<a class="code hl_enumvalue" href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9ab9f5c797ebbf55adccdd8539a65a0241">::llzk::polymorphic::FlatteningCleanupMode::Disabled</a>), <span class="stringliteral">&quot;No definitions are deleted.&quot;</span>),</div>
+<div class="line">                           <a class="code hl_function" href="namespacellzk_1_1polymorphic.html#a5b4315e39cbb845b0dbde2e2762cc79a">stringifyFlatteningCleanupMode</a>(<a class="code hl_enumvalue" href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9ab9f5c797ebbf55adccdd8539a65a0241">::llzk::polymorphic::FlatteningCleanupMode::Disabled</a>),</div>
+<div class="line">                           <span class="stringliteral">&quot;No definitions are deleted.&quot;</span>),</div>
 <div class="line">                clEnumValN(<a class="code hl_enumvalue" href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9ae0372cf62f1b5205fdaf2e6b0c1a9197">::llzk::polymorphic::FlatteningCleanupMode::Preimage</a>,</div>
 <div class="line">                           <a class="code hl_function" href="namespacellzk_1_1polymorphic.html#a5b4315e39cbb845b0dbde2e2762cc79a">stringifyFlatteningCleanupMode</a>(<a class="code hl_enumvalue" href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9ae0372cf62f1b5205fdaf2e6b0c1a9197">::llzk::polymorphic::FlatteningCleanupMode::Preimage</a>),</div>
 <div class="line">                           <span class="stringliteral">&quot;Only definitions that were replaced with concrete instantiations are deleted.&quot;</span>),</div>
@@ -726,10 +730,11 @@ template&lt;typename DerivedT&gt; </div>
 <div class="line">                           <span class="stringliteral">&quot;All definitions that cannot be reached by a use-def chain from the \&quot;Main\&quot; struct are deleted.&quot;</span>)</div>
 <div class="line">          )}</div>
 <div class="ttc" id="anamespacellzk_1_1polymorphic_html_a5b4315e39cbb845b0dbde2e2762cc79a"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a5b4315e39cbb845b0dbde2e2762cc79a">llzk::polymorphic::stringifyFlatteningCleanupMode</a></div><div class="ttdeci">::llvm::StringRef stringifyFlatteningCleanupMode(FlatteningCleanupMode val)</div><div class="ttdef"><b>Definition</b> <a href="TransformationPassEnums_8cpp_8inc_source.html#l00012">TransformationPassEnums.cpp.inc:12</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1polymorphic_html_a60784cd30ddfef02461e8b7b80e910c9a09e5eb2355e906d0d4584109df120cbc"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9a09e5eb2355e906d0d4584109df120cbc">llzk::polymorphic::FlatteningCleanupMode::MainAsRoot</a></div><div class="ttdeci">@ MainAsRoot</div><div class="ttdef"><b>Definition</b> <a href="TransformationPassEnums_8h_8inc_source.html#l00017">TransformationPassEnums.h.inc:17</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1polymorphic_html_a60784cd30ddfef02461e8b7b80e910c9a525f1b5b0ec48149c716c2f42521e71e"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9a525f1b5b0ec48149c716c2f42521e71e">llzk::polymorphic::FlatteningCleanupMode::ConcreteAsRoot</a></div><div class="ttdeci">@ ConcreteAsRoot</div><div class="ttdef"><b>Definition</b> <a href="TransformationPassEnums_8h_8inc_source.html#l00016">TransformationPassEnums.h.inc:16</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1polymorphic_html_a60784cd30ddfef02461e8b7b80e910c9ab9f5c797ebbf55adccdd8539a65a0241"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9ab9f5c797ebbf55adccdd8539a65a0241">llzk::polymorphic::FlatteningCleanupMode::Disabled</a></div><div class="ttdeci">@ Disabled</div><div class="ttdef"><b>Definition</b> <a href="TransformationPassEnums_8h_8inc_source.html#l00014">TransformationPassEnums.h.inc:14</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1polymorphic_html_a60784cd30ddfef02461e8b7b80e910c9ae0372cf62f1b5205fdaf2e6b0c1a9197"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9ae0372cf62f1b5205fdaf2e6b0c1a9197">llzk::polymorphic::FlatteningCleanupMode::Preimage</a></div><div class="ttdeci">@ Preimage</div><div class="ttdef"><b>Definition</b> <a href="TransformationPassEnums_8h_8inc_source.html#l00015">TransformationPassEnums.h.inc:15</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1polymorphic_html_a60784cd30ddfef02461e8b7b80e910c9a09e5eb2355e906d0d4584109df120cbc"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9a09e5eb2355e906d0d4584109df120cbc">llzk::polymorphic::FlatteningCleanupMode::MainAsRoot</a></div><div class="ttdeci">@ MainAsRoot</div><div class="ttdef"><b>Definition</b> <a href="TransformationPassEnums_8h_8inc_source.html#l00018">TransformationPassEnums.h.inc:18</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1polymorphic_html_a60784cd30ddfef02461e8b7b80e910c9a525f1b5b0ec48149c716c2f42521e71e"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9a525f1b5b0ec48149c716c2f42521e71e">llzk::polymorphic::FlatteningCleanupMode::ConcreteAsRoot</a></div><div class="ttdeci">@ ConcreteAsRoot</div><div class="ttdef"><b>Definition</b> <a href="TransformationPassEnums_8h_8inc_source.html#l00017">TransformationPassEnums.h.inc:17</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1polymorphic_html_a60784cd30ddfef02461e8b7b80e910c9a6fcdc090caeade09d0efd6253932b6f5"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9a6fcdc090caeade09d0efd6253932b6f5">llzk::polymorphic::FlatteningCleanupMode::Unspecified</a></div><div class="ttdeci">@ Unspecified</div><div class="ttdef"><b>Definition</b> <a href="TransformationPassEnums_8h_8inc_source.html#l00014">TransformationPassEnums.h.inc:14</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1polymorphic_html_a60784cd30ddfef02461e8b7b80e910c9ab9f5c797ebbf55adccdd8539a65a0241"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9ab9f5c797ebbf55adccdd8539a65a0241">llzk::polymorphic::FlatteningCleanupMode::Disabled</a></div><div class="ttdeci">@ Disabled</div><div class="ttdef"><b>Definition</b> <a href="TransformationPassEnums_8h_8inc_source.html#l00015">TransformationPassEnums.h.inc:15</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1polymorphic_html_a60784cd30ddfef02461e8b7b80e910c9ae0372cf62f1b5205fdaf2e6b0c1a9197"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9ae0372cf62f1b5205fdaf2e6b0c1a9197">llzk::polymorphic::FlatteningCleanupMode::Preimage</a></div><div class="ttdeci">@ Preimage</div><div class="ttdef"><b>Definition</b> <a href="TransformationPassEnums_8h_8inc_source.html#l00016">TransformationPassEnums.h.inc:16</a></div></div>
 </div><!-- fragment -->
 <p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00186">186</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 

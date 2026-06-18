@@ -27,10 +27,9 @@ var searchData=
   ['struct_20new_20_3a_3allzk_3a_3acomponent_3a_3acreatestructop_24',['&lt;span class=&quot;tt&quot;&gt;struct.new&lt;/span&gt; (llzk::component::CreateStructOp)',['../dialects.html#structnew-llzkcomponentcreatestructop',1,'']]],
   ['struct_20readm_20_3a_3allzk_3a_3acomponent_3a_3amemberreadop_25',['&lt;span class=&quot;tt&quot;&gt;struct.readm&lt;/span&gt; (llzk::component::MemberReadOp)',['../dialects.html#structreadm-llzkcomponentmemberreadop',1,'']]],
   ['struct_20writem_20_3a_3allzk_3a_3acomponent_3a_3amemberwriteop_26',['&lt;span class=&quot;tt&quot;&gt;struct.writem&lt;/span&gt; (llzk::component::MemberWriteOp)',['../dialects.html#structwritem-llzkcomponentmemberwriteop',1,'']]],
-  ['structs_27',['&lt;span class=&quot;tt&quot;&gt;-llzk-inline-structs&lt;/span&gt;',['../tools.html#autotoc_md-llzk-inline-structs',1,'']]],
-  ['structtype_28',['StructType',['../dialects.html#structtype',1,'']]],
-  ['sub_20_3a_3allzk_3a_3afelt_3a_3asubfeltop_29',['&lt;span class=&quot;tt&quot;&gt;felt.sub&lt;/span&gt; (llzk::felt::SubFeltOp)',['../dialects.html#feltsub-llzkfeltsubfeltop',1,'']]],
-  ['symbol_20def_20tree_30',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-symbol-def-tree&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-symbol-def-tree',1,'']]],
-  ['symbol_20use_20graph_31',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-symbol-use-graph&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-symbol-use-graph',1,'']]],
-  ['syntax_32',['Syntax',['../syntax.html#syntax-1',1,'']]]
+  ['structtype_27',['StructType',['../dialects.html#structtype',1,'']]],
+  ['sub_20_3a_3allzk_3a_3afelt_3a_3asubfeltop_28',['&lt;span class=&quot;tt&quot;&gt;felt.sub&lt;/span&gt; (llzk::felt::SubFeltOp)',['../dialects.html#feltsub-llzkfeltsubfeltop',1,'']]],
+  ['symbol_20def_20tree_29',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-symbol-def-tree&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-symbol-def-tree',1,'']]],
+  ['symbol_20use_20graph_30',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-symbol-use-graph&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-symbol-use-graph',1,'']]],
+  ['syntax_31',['Syntax',['../syntax.html#syntax-1',1,'']]]
 ];

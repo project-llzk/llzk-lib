@@ -30,6 +30,7 @@ var namespacellzk_1_1polymorphic =
     [ "YieldOpGenericAdaptor", "classllzk_1_1polymorphic_1_1YieldOpGenericAdaptor.html", "classllzk_1_1polymorphic_1_1YieldOpGenericAdaptor" ],
     [ "TemplateSymbolBindingOp", "conceptllzk_1_1polymorphic_1_1TemplateSymbolBindingOp.html", null ],
     [ "FlatteningCleanupMode", "namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9", [
+      [ "Unspecified", "namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9a6fcdc090caeade09d0efd6253932b6f5", null ],
       [ "Disabled", "namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9ab9f5c797ebbf55adccdd8539a65a0241", null ],
       [ "Preimage", "namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9ae0372cf62f1b5205fdaf2e6b0c1a9197", null ],
       [ "ConcreteAsRoot", "namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9a525f1b5b0ec48149c716c2f42521e71e", null ],

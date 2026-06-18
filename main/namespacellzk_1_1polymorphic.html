@@ -41,7 +41,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">LLZK<span id="projectnumber">&#160;2.1.2</span>
+   <div id="projectname">LLZK<span id="projectnumber">&#160;3.0.0</span>
    </div>
    <div id="projectbrief">An open-source IR for Zero Knowledge (ZK) circuits</div>
   </td>
@@ -154,10 +154,14 @@ Concepts</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-enum-members" class="groupheader"><a id="enum-members" name="enum-members"></a>
 Enumerations</h2></td></tr>
-<tr class="memitem:a60784cd30ddfef02461e8b7b80e910c9" id="r_a60784cd30ddfef02461e8b7b80e910c9"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a60784cd30ddfef02461e8b7b80e910c9">FlatteningCleanupMode</a> : uint32_t { <a class="el" href="#a60784cd30ddfef02461e8b7b80e910c9ab9f5c797ebbf55adccdd8539a65a0241">Disabled</a> = 0
-, <a class="el" href="#a60784cd30ddfef02461e8b7b80e910c9ae0372cf62f1b5205fdaf2e6b0c1a9197">Preimage</a> = 1
-, <a class="el" href="#a60784cd30ddfef02461e8b7b80e910c9a525f1b5b0ec48149c716c2f42521e71e">ConcreteAsRoot</a> = 2
-, <a class="el" href="#a60784cd30ddfef02461e8b7b80e910c9a09e5eb2355e906d0d4584109df120cbc">MainAsRoot</a> = 3
+<tr class="memitem:a60784cd30ddfef02461e8b7b80e910c9" id="r_a60784cd30ddfef02461e8b7b80e910c9"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a60784cd30ddfef02461e8b7b80e910c9">FlatteningCleanupMode</a> : uint32_t { <br />
+&#160;&#160;<a class="el" href="#a60784cd30ddfef02461e8b7b80e910c9a6fcdc090caeade09d0efd6253932b6f5">Unspecified</a> = 0
+, <a class="el" href="#a60784cd30ddfef02461e8b7b80e910c9ab9f5c797ebbf55adccdd8539a65a0241">Disabled</a> = 1
+, <a class="el" href="#a60784cd30ddfef02461e8b7b80e910c9ae0372cf62f1b5205fdaf2e6b0c1a9197">Preimage</a> = 2
+, <a class="el" href="#a60784cd30ddfef02461e8b7b80e910c9a525f1b5b0ec48149c716c2f42521e71e">ConcreteAsRoot</a> = 3
+, <br />
+&#160;&#160;<a class="el" href="#a60784cd30ddfef02461e8b7b80e910c9a09e5eb2355e906d0d4584109df120cbc">MainAsRoot</a> = 4
+<br />
  }</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
@@ -211,7 +215,8 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 <table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a60784cd30ddfef02461e8b7b80e910c9ab9f5c797ebbf55adccdd8539a65a0241" name="a60784cd30ddfef02461e8b7b80e910c9ab9f5c797ebbf55adccdd8539a65a0241"></a>Disabled&#160;</td><td class="fielddoc"></td></tr>
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a60784cd30ddfef02461e8b7b80e910c9a6fcdc090caeade09d0efd6253932b6f5" name="a60784cd30ddfef02461e8b7b80e910c9a6fcdc090caeade09d0efd6253932b6f5"></a>Unspecified&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a60784cd30ddfef02461e8b7b80e910c9ab9f5c797ebbf55adccdd8539a65a0241" name="a60784cd30ddfef02461e8b7b80e910c9ab9f5c797ebbf55adccdd8539a65a0241"></a>Disabled&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="a60784cd30ddfef02461e8b7b80e910c9ae0372cf62f1b5205fdaf2e6b0c1a9197" name="a60784cd30ddfef02461e8b7b80e910c9ae0372cf62f1b5205fdaf2e6b0c1a9197"></a>Preimage&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="a60784cd30ddfef02461e8b7b80e910c9a525f1b5b0ec48149c716c2f42521e71e" name="a60784cd30ddfef02461e8b7b80e910c9a525f1b5b0ec48149c716c2f42521e71e"></a>ConcreteAsRoot&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="a60784cd30ddfef02461e8b7b80e910c9a09e5eb2355e906d0d4584109df120cbc" name="a60784cd30ddfef02461e8b7b80e910c9a09e5eb2355e906d0d4584109df120cbc"></a>MainAsRoot&#160;</td><td class="fielddoc"></td></tr>
@@ -257,7 +262,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00211">211</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00215">215</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -276,7 +281,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00215">215</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FlatteningPass_8cpp_source.html#l00219">219</a> of file <a class="el" href="FlatteningPass_8cpp_source.html">FlatteningPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -295,7 +300,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="WildcardArraySpecializationPass_8cpp_source.html#l00318">318</a> of file <a class="el" href="WildcardArraySpecializationPass_8cpp_source.html">WildcardArraySpecializationPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WildcardArraySpecializationPass_8cpp_source.html#l00322">322</a> of file <a class="el" href="WildcardArraySpecializationPass_8cpp_source.html">WildcardArraySpecializationPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -314,7 +319,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="WildcardArraySpecializationPass_8cpp_source.html#l00322">322</a> of file <a class="el" href="WildcardArraySpecializationPass_8cpp_source.html">WildcardArraySpecializationPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WildcardArraySpecializationPass_8cpp_source.html#l00326">326</a> of file <a class="el" href="WildcardArraySpecializationPass_8cpp_source.html">WildcardArraySpecializationPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -341,7 +346,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TransformationPassEnums_8h_8inc_source.html#l00023">23</a> of file <a class="el" href="TransformationPassEnums_8h_8inc_source.html">TransformationPassEnums.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TransformationPassEnums_8h_8inc_source.html#l00024">24</a> of file <a class="el" href="TransformationPassEnums_8h_8inc_source.html">TransformationPassEnums.h.inc</a>.</p>
 
 </div>
 </div>
@@ -406,7 +411,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00333">333</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00337">337</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -433,7 +438,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00340">340</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00344">344</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -460,7 +465,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00350">350</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00354">354</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -487,7 +492,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00357">357</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00361">361</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -514,7 +519,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00384">384</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00388">388</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -541,7 +546,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00367">367</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00371">371</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -568,7 +573,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00374">374</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html#l00378">378</a> of file <a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -587,7 +592,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TransformationPassEnums_8h_8inc_source.html#l00028">28</a> of file <a class="el" href="TransformationPassEnums_8h_8inc_source.html">TransformationPassEnums.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TransformationPassEnums_8h_8inc_source.html#l00029">29</a> of file <a class="el" href="TransformationPassEnums_8h_8inc_source.html">TransformationPassEnums.h.inc</a>.</p>
 
 </div>
 </div>
@@ -646,7 +651,7 @@ template&lt;&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TransformationPassEnums_8h_8inc_source.html#l00033">33</a> of file <a class="el" href="TransformationPassEnums_8h_8inc_source.html">TransformationPassEnums.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TransformationPassEnums_8h_8inc_source.html#l00034">34</a> of file <a class="el" href="TransformationPassEnums_8h_8inc_source.html">TransformationPassEnums.h.inc</a>.</p>
 
 </div>
 </div>
@@ -665,7 +670,7 @@ template&lt;&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TransformationPassEnums_8cpp_8inc_source.html#l00022">22</a> of file <a class="el" href="TransformationPassEnums_8cpp_8inc_source.html">TransformationPassEnums.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TransformationPassEnums_8cpp_8inc_source.html#l00023">23</a> of file <a class="el" href="TransformationPassEnums_8cpp_8inc_source.html">TransformationPassEnums.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -684,7 +689,7 @@ template&lt;&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="TransformationPassEnums_8cpp_8inc_source.html#l00030">30</a> of file <a class="el" href="TransformationPassEnums_8cpp_8inc_source.html">TransformationPassEnums.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TransformationPassEnums_8cpp_8inc_source.html#l00032">32</a> of file <a class="el" href="TransformationPassEnums_8cpp_8inc_source.html">TransformationPassEnums.cpp.inc</a>.</p>
 
 </div>
 </div>

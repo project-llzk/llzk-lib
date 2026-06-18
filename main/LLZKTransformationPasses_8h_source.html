@@ -41,7 +41,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">LLZK<span id="projectnumber">&#160;2.1.2</span>
+   <div id="projectname">LLZK<span id="projectnumber">&#160;3.0.0</span>
    </div>
    <div id="projectbrief">An open-source IR for Zero Knowledge (ZK) circuits</div>
   </td>
@@ -115,33 +115,27 @@ $(function(){initNavTree('LLZKTransformationPasses_8h_source.html','',''); });
 <div class="line"><a id="l00006" name="l00006"></a><span class="lineno"><a class="line" href="LLZKTransformationPasses_8h.html#a8c6d424217323cdc699ae6da8828ad84">    6</a></span><span class="comment">// SPDX-License-Identifier: Apache-2.0</span></div>
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno"><a class="line" href="LLZKTransformationPasses_8h.html#a22e72549240d92b5e854a4c150453ede">    7</a></span><span class="comment">//</span></div>
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno"><a class="line" href="LLZKTransformationPasses_8h.html#aaa5d6cf11dc5feefe061b41b045b9bcf">    8</a></span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
-<div class="line"><a id="l00009" name="l00009"></a><span class="lineno"><a class="line" href="LLZKTransformationPasses_8h.html#a4df1e81c57874a13f8e925b5f4ca404a">    9</a></span> </div>
-<div class="line"><a id="l00010" name="l00010"></a><span class="lineno"><a class="line" href="LLZKTransformationPasses_8h.html#ae4dcf346dca8d30b09d5b846f595fdc9">   10</a></span><span class="preprocessor">#pragma once</span></div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno"><a class="line" href="LLZKTransformationPasses_8h.html#a97542ad014c7b2b4d526c6cca7b83fa6">   11</a></span> </div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno"><a class="line" href="LLZKTransformationPasses_8h.html#a042114ff4c710d14b41a84e63892524d">   12</a></span><span class="preprocessor">#include &quot;<a class="code" href="Config_8h.html">llzk/Config/Config.h</a>&quot;</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno"><a class="line" href="LLZKTransformationPasses_8h.html#a5c427ebf072bf79236d5884b76116af8">   13</a></span><span class="preprocessor">#include &quot;<a class="code" href="PassBase_8h.html">llzk/Pass/PassBase.h</a>&quot;</span></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno"><a class="line" href="LLZKTransformationPasses_8h.html#af788021a4a8826b963059c70fb68f854">   14</a></span> </div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno"><a class="line" href="LLZKTransformationPasses_8h.html#ad06ba881f285036f901feb49c868005c">   15</a></span><span class="preprocessor">#include &lt;llvm/ADT/StringRef.h&gt;</span></div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno"><a class="line" href="LLZKTransformationPasses_8h.html#ae4dcf346dca8d30b09d5b846f595fdc9">    9</a></span> </div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno"><a class="line" href="LLZKTransformationPasses_8h.html#a97542ad014c7b2b4d526c6cca7b83fa6">   10</a></span><span class="preprocessor">#pragma once</span></div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno"><a class="line" href="LLZKTransformationPasses_8h.html#a042114ff4c710d14b41a84e63892524d">   11</a></span> </div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno"><a class="line" href="LLZKTransformationPasses_8h.html#a5c427ebf072bf79236d5884b76116af8">   12</a></span><span class="preprocessor">#include &quot;<a class="code" href="Config_8h.html">llzk/Config/Config.h</a>&quot;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno"><a class="line" href="LLZKTransformationPasses_8h.html#af788021a4a8826b963059c70fb68f854">   13</a></span><span class="preprocessor">#include &quot;<a class="code" href="PassBase_8h.html">llzk/Pass/PassBase.h</a>&quot;</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno"><a class="line" href="LLZKTransformationPasses_8h.html#ad06ba881f285036f901feb49c868005c">   14</a></span> </div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;llvm/ADT/StringRef.h&gt;</span></div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span> </div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno"><a class="line" href="namespacellzk.html#a2ddf3edf6f2b52c9021b51108f0eaff3">   19</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#aca3ad066c0bd6761788278c679c9c1aa">addRemoveUnnecessaryOpsAndDefsPipeline</a>(mlir::OpPassManager &amp;pm);</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno"><a class="line" href="namespacellzk.html#aa4b3be516aee4b51fc33f365da4cc179">   19</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#aff868f4126dfe56cae327fc5359725c8">registerInliningExtensions</a>(mlir::DialectRegistry &amp;registry);</div>
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span> </div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#a27132e28370fc61e82609260869dedfd">registerTransformationPassPipelines</a>();</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno"><a class="line" href="namespacellzk.html#aa4b3be516aee4b51fc33f365da4cc179">   23</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#aff868f4126dfe56cae327fc5359725c8">registerInliningExtensions</a>(mlir::DialectRegistry &amp;registry);</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno"><a class="line" href="structllzk_1_1ComputeConstrainToProductPassOptions.html#a514bc67ac227571d38b5e4cf1e5b8bca">   24</a></span> </div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno"><a class="line" href="LLZKTransformationPasses_8h.html#ab89199f50939908fa0581f7323f23e14">   25</a></span><span class="preprocessor">#define GEN_PASS_DECL</span></div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno"><a class="line" href="LLZKTransformationPasses_8h.html#a50fd6f4ec277edd1b62f2efe4a35eede">   26</a></span><span class="preprocessor">#define GEN_PASS_REGISTRATION</span></div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &quot;<a class="code" href="LLZKTransformationPasses_8h_8inc.html">llzk/Transforms/LLZKTransformationPasses.h.inc</a>&quot;</span></div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>}; <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno"><a class="line" href="LLZKTransformationPasses_8h.html#ab89199f50939908fa0581f7323f23e14">   21</a></span><span class="preprocessor">#define GEN_PASS_DECL</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno"><a class="line" href="LLZKTransformationPasses_8h.html#a50fd6f4ec277edd1b62f2efe4a35eede">   22</a></span><span class="preprocessor">#define GEN_PASS_REGISTRATION</span></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno"><a class="line" href="structllzk_1_1ComputeConstrainToProductPassOptions.html#a514bc67ac227571d38b5e4cf1e5b8bca">   23</a></span><span class="preprocessor">#include &quot;<a class="code" href="LLZKTransformationPasses_8h_8inc.html">llzk/Transforms/LLZKTransformationPasses.h.inc</a>&quot;</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>} <span class="comment">// namespace llzk</span></div>
 <div class="ttc" id="aConfig_8h_html"><div class="ttname"><a href="Config_8h.html">Config.h</a></div></div>
 <div class="ttc" id="aLLZKTransformationPasses_8h_8inc_html"><div class="ttname"><a href="LLZKTransformationPasses_8h_8inc.html">LLZKTransformationPasses.h.inc</a></div></div>
 <div class="ttc" id="aPassBase_8h_html"><div class="ttname"><a href="PassBase_8h.html">PassBase.h</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a27132e28370fc61e82609260869dedfd"><div class="ttname"><a href="namespacellzk.html#a27132e28370fc61e82609260869dedfd">llzk::registerTransformationPassPipelines</a></div><div class="ttdeci">void registerTransformationPassPipelines()</div><div class="ttdef"><b>Definition</b> <a href="LLZKTransformationPassPipelines_8cpp_source.html#l00038">LLZKTransformationPassPipelines.cpp:38</a></div></div>
-<div class="ttc" id="anamespacellzk_html_aca3ad066c0bd6761788278c679c9c1aa"><div class="ttname"><a href="namespacellzk.html#aca3ad066c0bd6761788278c679c9c1aa">llzk::addRemoveUnnecessaryOpsAndDefsPipeline</a></div><div class="ttdeci">void addRemoveUnnecessaryOpsAndDefsPipeline(OpPassManager &amp;pm)</div><div class="ttdef"><b>Definition</b> <a href="LLZKTransformationPassPipelines_8cpp_source.html#l00032">LLZKTransformationPassPipelines.cpp:32</a></div></div>
 <div class="ttc" id="anamespacellzk_html_aff868f4126dfe56cae327fc5359725c8"><div class="ttname"><a href="namespacellzk.html#aff868f4126dfe56cae327fc5359725c8">llzk::registerInliningExtensions</a></div><div class="ttdeci">void registerInliningExtensions(DialectRegistry &amp;registry)</div><div class="ttdef"><b>Definition</b> <a href="LLZKInliningExtensions_8cpp_source.html#l00100">LLZKInliningExtensions.cpp:100</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->

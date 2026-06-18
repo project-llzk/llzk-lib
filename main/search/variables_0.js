@@ -8,8 +8,9 @@ var searchData=
   ['arg_5fname_5fattr_5fname_5',['ARG_NAME_ATTR_NAME',['../namespacellzk_1_1function.html#a24bb122df980745567375500af3c2efb',1,'llzk::function']]],
   ['arginfluences_6',['argInfluences',['../structllzk_1_1verif_1_1detail_1_1CallableSummaryKey.html#a362bcb530bfdb0d2b3c76891f3bb818e',1,'llzk::verif::detail::CallableSummaryKey::argInfluences'],['../structllzk_1_1verif_1_1detail_1_1IncludedContractSummaryKey.html#a516a5c79ae782f92c927545771c1ee52',1,'llzk::verif::detail::IncludedContractSummaryKey::argInfluences']]],
   ['array_7',['array',['../structLlzkAffineMapOperandsBuilder.html#afbfd4188e7558cd34bc8e13b2d83ed95',1,'LlzkAffineMapOperandsBuilder']]],
-  ['attr_8',['attr',['../structLlzkAffineMapOperandsBuilder.html#aa20af17d678412a8e35c9fb94f735ea1',1,'LlzkAffineMapOperandsBuilder']]],
-  ['attrnamecapitalized_9',['attrNameCapitalized',['../structOpGeneratorData.html#a5a45f365e33738373d4dac57e1ea0f27',1,'OpGeneratorData']]],
-  ['authorship_10',['authorship',['../LICENSE_8txt.html#a01482e4c790aa80c326201cd7e068a30',1,'LICENSE.txt']]],
-  ['auxmembername_11',['auxMemberName',['../structllzk_1_1AuxAssignment.html#adae92182960900a1d91ded438aeedee0',1,'llzk::AuxAssignment']]]
+  ['arraytoscalar_8',['arrayToScalar',['../structllzk_1_1FullStructInliningConfig.html#adeb6a685d8acfa947c2dac99f77bb645',1,'llzk::FullStructInliningConfig::arrayToScalar'],['../structllzk_1_1FullStructInliningOptions.html#a7b16e082368060e4043e1973301fc1ca',1,'llzk::FullStructInliningOptions::arrayToScalar']]],
+  ['attr_9',['attr',['../structLlzkAffineMapOperandsBuilder.html#aa20af17d678412a8e35c9fb94f735ea1',1,'LlzkAffineMapOperandsBuilder']]],
+  ['attrnamecapitalized_10',['attrNameCapitalized',['../structOpGeneratorData.html#a5a45f365e33738373d4dac57e1ea0f27',1,'OpGeneratorData']]],
+  ['authorship_11',['authorship',['../LICENSE_8txt.html#a01482e4c790aa80c326201cd7e068a30',1,'LICENSE.txt']]],
+  ['auxmembername_12',['auxMemberName',['../structllzk_1_1AuxAssignment.html#adae92182960900a1d91ded438aeedee0',1,'llzk::AuxAssignment']]]
 ];

@@ -41,7 +41,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">LLZK<span id="projectnumber">&#160;2.1.2</span>
+   <div id="projectname">LLZK<span id="projectnumber">&#160;3.0.0</span>
    </div>
    <div id="projectbrief">An open-source IR for Zero Knowledge (ZK) circuits</div>
   </td>
@@ -306,39 +306,39 @@ $(function(){initNavTree('FlatteningPass_8cpp_source.html','',''); });
 <div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>        <span class="keywordflow">if</span> (<span class="keyword">auto</span> preImage = this-&gt;reverseInstantiations.lookup(newStructType)) {</div>
 <div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>          <span class="keywordflow">if</span> (<a class="code hl_function" href="namespacellzk.html#ac69242a61e4e25958e9c6e8fa0f8549e">isMoreConcreteUnification</a>(oTy, preImage, checkInstantiations)) {</div>
 <div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>            <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-</div>
 <div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>          }</div>
 <div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>        }</div>
-<div class="foldopen" id="foldopen00201" data-start="{" data-end="}">
-<div class="line"><a id="l00201" name="l00201"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a132cdf6ecc54ca6f881ea3a0a3ca4112">  201</a></span>      }</div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>      }</div>
 <div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>      <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>    };</div>
 </div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>    };</div>
 <div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span> </div>
 <div class="foldopen" id="foldopen00205" data-start="{" data-end="}">
-<div class="line"><a id="l00205" name="l00205"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a75b9d31d1ee603d2fc920c1b0129a84c">  205</a></span>    <span class="keywordflow">if</span> (<a class="code hl_function" href="namespacellzk.html#ac69242a61e4e25958e9c6e8fa0f8549e">isMoreConcreteUnification</a>(oldType, newType, checkInstantiations)) {</div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a132cdf6ecc54ca6f881ea3a0a3ca4112">  205</a></span>    <span class="keywordflow">if</span> (<a class="code hl_function" href="namespacellzk.html#ac69242a61e4e25958e9c6e8fa0f8549e">isMoreConcreteUnification</a>(oldType, newType, checkInstantiations)) {</div>
 <div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>      <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>    }</div>
 </div>
 <div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>    LLVM_DEBUG(</div>
-</div>
-<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[&quot;</span> &lt;&lt; patName &lt;&lt; <span class="stringliteral">&quot;] Cannot replace old type &quot;</span> &lt;&lt; oldType</div>
+<div class="foldopen" id="foldopen00209" data-start="{" data-end="}">
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#a75b9d31d1ee603d2fc920c1b0129a84c">  209</a></span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[&quot;</span> &lt;&lt; patName &lt;&lt; <span class="stringliteral">&quot;] Cannot replace old type &quot;</span> &lt;&lt; oldType</div>
 <div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>                     &lt;&lt; <span class="stringliteral">&quot; with new type &quot;</span> &lt;&lt; newType</div>
-<div class="foldopen" id="foldopen00211" data-start="{" data-end="}">
-<div class="line"><a id="l00211" name="l00211"></a><span class="lineno"><a class="line" href="namespacellzk_1_1polymorphic.html#ab875e94fd92641f81305cf2406f52c7b">  211</a></span>                     &lt;&lt; <span class="stringliteral">&quot; because it does not define a compatible and more concrete type.\n&quot;</span>;</div>
-<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>    );</div>
-<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>                     &lt;&lt; <span class="stringliteral">&quot; because it does not define a compatible and more concrete type.\n&quot;</span>;</div>
 </div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>    );</div>
+</div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>  }</div>
 <div class="foldopen" id="foldopen00215" data-start="{" data-end="}">
-<div class="line"><a id="l00215" name="l00215"></a><span class="lineno"><a class="line" href="namespacellzk_1_1polymorphic.html#ad393f359fc8e0f9993c776221b5d31fd">  215</a></span> </div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno"><a class="line" href="namespacellzk_1_1polymorphic.html#ab875e94fd92641f81305cf2406f52c7b">  215</a></span> </div>
 <div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>  <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> U&gt;</div>
 <div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>  <span class="keyword">inline</span> <span class="keywordtype">bool</span> areLegalConversions(T oldTypes, U newTypes, <span class="keyword">const</span> <span class="keywordtype">char</span> *patName)<span class="keyword"> const </span>{</div>
 </div>
 <div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>    <span class="keywordflow">return</span> llvm::all_of(</div>
-<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>        llvm::zip_equal(oldTypes, newTypes), [<span class="keyword">this</span>, &amp;patName](std::tuple&lt;Type, Type&gt; oldThenNew) {</div>
+<div class="foldopen" id="foldopen00219" data-start="{" data-end="}">
+<div class="line"><a id="l00219" name="l00219"></a><span class="lineno"><a class="line" href="namespacellzk_1_1polymorphic.html#ad393f359fc8e0f9993c776221b5d31fd">  219</a></span>        llvm::zip_equal(oldTypes, newTypes), [<span class="keyword">this</span>, &amp;patName](std::tuple&lt;Type, Type&gt; oldThenNew) {</div>
 <div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>      <span class="keywordflow">return</span> this-&gt;isLegalConversion(std::get&lt;0&gt;(oldThenNew), std::get&lt;1&gt;(oldThenNew), patName);</div>
 <div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>    }</div>
+</div>
 <div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>    );</div>
 <div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>  }</div>
 <div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>};</div>
@@ -2808,228 +2808,236 @@ $(function(){initNavTree('FlatteningPass_8cpp_source.html','',''); });
 <div class="line"><a id="l02763" name="l02763"></a><span class="lineno"> 2763</span><span class="keyword">class </span>PassImpl : <span class="keyword">public</span> <a class="code hl_class" href="classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html">llzk::polymorphic::impl::FlatteningPassBase</a>&lt;PassImpl&gt; {</div>
 <div class="line"><a id="l02764" name="l02764"></a><span class="lineno"> 2764</span>  <span class="keyword">using </span>Base = FlatteningPassBase&lt;PassImpl&gt;;</div>
 <div class="line"><a id="l02765" name="l02765"></a><span class="lineno"> 2765</span>  <span class="keyword">using </span>Base::Base;</div>
-<div class="line"><a id="l02766" name="l02766"></a><span class="lineno"> 2766</span> </div>
-<div class="line"><a id="l02767" name="l02767"></a><span class="lineno"> 2767</span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
-<div class="line"><a id="l02768" name="l02768"></a><span class="lineno"> 2768</span>    ModuleOp modOp = getOperation();</div>
-<div class="line"><a id="l02769" name="l02769"></a><span class="lineno"> 2769</span>    <span class="keywordflow">if</span> (failed(runOn(modOp))) {</div>
-<div class="line"><a id="l02770" name="l02770"></a><span class="lineno"> 2770</span>      LLVM_DEBUG({</div>
-<div class="line"><a id="l02771" name="l02771"></a><span class="lineno"> 2771</span>        <span class="comment">// If the pass failed, dump the current IR.</span></div>
-<div class="line"><a id="l02772" name="l02772"></a><span class="lineno"> 2772</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;=====================================================================\n&quot;</span>;</div>
-<div class="line"><a id="l02773" name="l02773"></a><span class="lineno"> 2773</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot; Dumping module after failure of pass &quot;</span> &lt;&lt; <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l02774" name="l02774"></a><span class="lineno"> 2774</span>        modOp.print(llvm::dbgs(), OpPrintingFlags().assumeVerified());</div>
-<div class="line"><a id="l02775" name="l02775"></a><span class="lineno"> 2775</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;=====================================================================\n&quot;</span>;</div>
-<div class="line"><a id="l02776" name="l02776"></a><span class="lineno"> 2776</span>      });</div>
-<div class="line"><a id="l02777" name="l02777"></a><span class="lineno"> 2777</span>      signalPassFailure();</div>
-<div class="line"><a id="l02778" name="l02778"></a><span class="lineno"> 2778</span>    }</div>
-<div class="line"><a id="l02779" name="l02779"></a><span class="lineno"> 2779</span>  }</div>
-<div class="line"><a id="l02780" name="l02780"></a><span class="lineno"> 2780</span> </div>
-<div class="line"><a id="l02781" name="l02781"></a><span class="lineno"> 2781</span>  <span class="keyword">inline</span> LogicalResult runOn(ModuleOp modOp) {</div>
-<div class="line"><a id="l02782" name="l02782"></a><span class="lineno"> 2782</span>    <span class="comment">// If the cleanup mode is set to remove anything not reachable from the main struct, do an</span></div>
-<div class="line"><a id="l02783" name="l02783"></a><span class="lineno"> 2783</span>    <span class="comment">// initial pass to remove things that are not reachable (as an optimization) because creating</span></div>
-<div class="line"><a id="l02784" name="l02784"></a><span class="lineno"> 2784</span>    <span class="comment">// an instantiated version of a struct will not cause something to become reachable that was</span></div>
-<div class="line"><a id="l02785" name="l02785"></a><span class="lineno"> 2785</span>    <span class="comment">// not already reachable in parameterized form.</span></div>
-<div class="line"><a id="l02786" name="l02786"></a><span class="lineno"> 2786</span>    <span class="keywordflow">if</span> (cleanupMode == FlatteningCleanupMode::MainAsRoot) {</div>
-<div class="line"><a id="l02787" name="l02787"></a><span class="lineno"> 2787</span>      <span class="keywordflow">if</span> (failed(eraseUnreachableFromMainStruct(modOp))) {</div>
-<div class="line"><a id="l02788" name="l02788"></a><span class="lineno"> 2788</span>        <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l02789" name="l02789"></a><span class="lineno"> 2789</span>      }</div>
-<div class="line"><a id="l02790" name="l02790"></a><span class="lineno"> 2790</span>    }</div>
-<div class="line"><a id="l02791" name="l02791"></a><span class="lineno"> 2791</span> </div>
-<div class="line"><a id="l02792" name="l02792"></a><span class="lineno"> 2792</span>    <span class="comment">// Pass Manager to run some standard cleanup passes that are always beneficial:</span></div>
-<div class="line"><a id="l02793" name="l02793"></a><span class="lineno"> 2793</span>    <span class="comment">// - Remove templates that contain no struct or function definitions</span></div>
-<div class="line"><a id="l02794" name="l02794"></a><span class="lineno"> 2794</span>    <span class="comment">// - Convert templates with no constant parameters or expressions into modules</span></div>
-<div class="line"><a id="l02795" name="l02795"></a><span class="lineno"> 2795</span>    OpPassManager universalCleanup(ModuleOp::getOperationName());</div>
-<div class="line"><a id="l02796" name="l02796"></a><span class="lineno"> 2796</span>    universalCleanup.addPass(<a class="code hl_function" href="namespacellzk_1_1polymorphic.html#a4167d219fba917ab844dcf3b9814c544">createEmptyTemplateRemovalPass</a>());</div>
-<div class="line"><a id="l02797" name="l02797"></a><span class="lineno"> 2797</span> </div>
-<div class="line"><a id="l02798" name="l02798"></a><span class="lineno"> 2798</span>    <span class="comment">// Run universal cleanup as a preliminary step to satisfy the</span></div>
-<div class="line"><a id="l02799" name="l02799"></a><span class="lineno"> 2799</span>    <span class="comment">// `assert(!isNullOrEmpty(paramNames))` precondition in `genClone()`.</span></div>
-<div class="line"><a id="l02800" name="l02800"></a><span class="lineno"> 2800</span>    <span class="keywordflow">if</span> (failed(runPipeline(universalCleanup, modOp))) {</div>
-<div class="line"><a id="l02801" name="l02801"></a><span class="lineno"> 2801</span>      <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l02802" name="l02802"></a><span class="lineno"> 2802</span>    }</div>
-<div class="line"><a id="l02803" name="l02803"></a><span class="lineno"> 2803</span> </div>
-<div class="line"><a id="l02804" name="l02804"></a><span class="lineno"> 2804</span>    ConversionTracker tracker;</div>
-<div class="line"><a id="l02805" name="l02805"></a><span class="lineno"> 2805</span>    <span class="keywordtype">unsigned</span> loopCount = 0;</div>
-<div class="line"><a id="l02806" name="l02806"></a><span class="lineno"> 2806</span>    <span class="keywordflow">do</span> {</div>
-<div class="line"><a id="l02807" name="l02807"></a><span class="lineno"> 2807</span>      ++loopCount;</div>
-<div class="line"><a id="l02808" name="l02808"></a><span class="lineno"> 2808</span>      <span class="keywordflow">if</span> (loopCount &gt; iterationLimit) {</div>
-<div class="line"><a id="l02809" name="l02809"></a><span class="lineno"> 2809</span>        llvm::errs() &lt;&lt; <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> &lt;&lt; <span class="stringliteral">&quot; exceeded the limit of &quot;</span> &lt;&lt; iterationLimit</div>
-<div class="line"><a id="l02810" name="l02810"></a><span class="lineno"> 2810</span>                     &lt;&lt; <span class="stringliteral">&quot; iterations!\n&quot;</span>;</div>
-<div class="line"><a id="l02811" name="l02811"></a><span class="lineno"> 2811</span>        <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l02812" name="l02812"></a><span class="lineno"> 2812</span>      }</div>
-<div class="line"><a id="l02813" name="l02813"></a><span class="lineno"> 2813</span>      tracker.resetModifiedFlag();</div>
-<div class="line"><a id="l02814" name="l02814"></a><span class="lineno"> 2814</span> </div>
-<div class="line"><a id="l02815" name="l02815"></a><span class="lineno"> 2815</span>      LLVM_DEBUG({</div>
-<div class="line"><a id="l02816" name="l02816"></a><span class="lineno"> 2816</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[FlatteningPass(count=&quot;</span> &lt;&lt; loopCount</div>
-<div class="line"><a id="l02817" name="l02817"></a><span class="lineno"> 2817</span>                     &lt;&lt; <span class="stringliteral">&quot;)] Running step 1: struct instantiation\n&quot;</span>;</div>
-<div class="line"><a id="l02818" name="l02818"></a><span class="lineno"> 2818</span>      });</div>
-<div class="line"><a id="l02819" name="l02819"></a><span class="lineno"> 2819</span>      <span class="comment">// Find calls to &quot;compute()&quot; that return a parameterized struct type and replace it to call an</span></div>
-<div class="line"><a id="l02820" name="l02820"></a><span class="lineno"> 2820</span>      <span class="comment">// instantiated version of the struct that has parameters replaced with the constant values.</span></div>
-<div class="line"><a id="l02821" name="l02821"></a><span class="lineno"> 2821</span>      <span class="comment">// Create the necessary instantiated/flattened struct in the same location as the original.</span></div>
-<div class="line"><a id="l02822" name="l02822"></a><span class="lineno"> 2822</span>      <span class="keywordflow">if</span> (failed(Step1A_InstantiateStructs::run(modOp, tracker))) {</div>
-<div class="line"><a id="l02823" name="l02823"></a><span class="lineno"> 2823</span>        llvm::errs() &lt;&lt; <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> &lt;&lt; <span class="stringliteral">&quot; failed while instantiating structs in templates\n&quot;</span>;</div>
-<div class="line"><a id="l02824" name="l02824"></a><span class="lineno"> 2824</span>        <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l02825" name="l02825"></a><span class="lineno"> 2825</span>      }</div>
-<div class="line"><a id="l02826" name="l02826"></a><span class="lineno"> 2826</span>      <span class="comment">// Instantiate calls to templated functions.</span></div>
-<div class="line"><a id="l02827" name="l02827"></a><span class="lineno"> 2827</span>      <span class="keywordflow">if</span> (failed(Step1B_InstantiateFunctions::run(modOp, tracker))) {</div>
-<div class="line"><a id="l02828" name="l02828"></a><span class="lineno"> 2828</span>        llvm::errs() &lt;&lt; <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> &lt;&lt; <span class="stringliteral">&quot; failed while instantiating functions in templates\n&quot;</span>;</div>
-<div class="line"><a id="l02829" name="l02829"></a><span class="lineno"> 2829</span>        <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l02830" name="l02830"></a><span class="lineno"> 2830</span>      }</div>
-<div class="line"><a id="l02831" name="l02831"></a><span class="lineno"> 2831</span> </div>
-<div class="line"><a id="l02832" name="l02832"></a><span class="lineno"> 2832</span>      LLVM_DEBUG({</div>
-<div class="line"><a id="l02833" name="l02833"></a><span class="lineno"> 2833</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[FlatteningPass(count=&quot;</span> &lt;&lt; loopCount</div>
-<div class="line"><a id="l02834" name="l02834"></a><span class="lineno"> 2834</span>                     &lt;&lt; <span class="stringliteral">&quot;)] Running step 2: loop unrolling\n&quot;</span>;</div>
-<div class="line"><a id="l02835" name="l02835"></a><span class="lineno"> 2835</span>      });</div>
-<div class="line"><a id="l02836" name="l02836"></a><span class="lineno"> 2836</span>      <span class="comment">// Unroll loops with known iterations.</span></div>
-<div class="line"><a id="l02837" name="l02837"></a><span class="lineno"> 2837</span>      <span class="keywordflow">if</span> (failed(Step2_Unroll::run(modOp, tracker))) {</div>
-<div class="line"><a id="l02838" name="l02838"></a><span class="lineno"> 2838</span>        llvm::errs() &lt;&lt; <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> &lt;&lt; <span class="stringliteral">&quot; failed while unrolling loops\n&quot;</span>;</div>
-<div class="line"><a id="l02839" name="l02839"></a><span class="lineno"> 2839</span>        <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l02840" name="l02840"></a><span class="lineno"> 2840</span>      }</div>
-<div class="line"><a id="l02841" name="l02841"></a><span class="lineno"> 2841</span> </div>
-<div class="line"><a id="l02842" name="l02842"></a><span class="lineno"> 2842</span>      LLVM_DEBUG({</div>
-<div class="line"><a id="l02843" name="l02843"></a><span class="lineno"> 2843</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[FlatteningPass(count=&quot;</span> &lt;&lt; loopCount</div>
-<div class="line"><a id="l02844" name="l02844"></a><span class="lineno"> 2844</span>                     &lt;&lt; <span class="stringliteral">&quot;)] Running step 3: affine maps instantiation\n&quot;</span>;</div>
-<div class="line"><a id="l02845" name="l02845"></a><span class="lineno"> 2845</span>      });</div>
-<div class="line"><a id="l02846" name="l02846"></a><span class="lineno"> 2846</span>      <span class="comment">// Instantiate affine_map parameters of StructType and ArrayType.</span></div>
-<div class="line"><a id="l02847" name="l02847"></a><span class="lineno"> 2847</span>      <span class="keywordflow">if</span> (failed(Step3_InstantiateAffineMaps::run(modOp, tracker))) {</div>
-<div class="line"><a id="l02848" name="l02848"></a><span class="lineno"> 2848</span>        llvm::errs() &lt;&lt; <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> &lt;&lt; <span class="stringliteral">&quot; failed while instantiating `affine_map` parameters\n&quot;</span>;</div>
-<div class="line"><a id="l02849" name="l02849"></a><span class="lineno"> 2849</span>        <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l02850" name="l02850"></a><span class="lineno"> 2850</span>      }</div>
-<div class="line"><a id="l02851" name="l02851"></a><span class="lineno"> 2851</span> </div>
-<div class="line"><a id="l02852" name="l02852"></a><span class="lineno"> 2852</span>      LLVM_DEBUG({</div>
-<div class="line"><a id="l02853" name="l02853"></a><span class="lineno"> 2853</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[FlatteningPass(count=&quot;</span> &lt;&lt; loopCount</div>
-<div class="line"><a id="l02854" name="l02854"></a><span class="lineno"> 2854</span>                     &lt;&lt; <span class="stringliteral">&quot;)] Running step 4: type propagation\n&quot;</span>;</div>
-<div class="line"><a id="l02855" name="l02855"></a><span class="lineno"> 2855</span>      });</div>
-<div class="line"><a id="l02856" name="l02856"></a><span class="lineno"> 2856</span>      <span class="comment">// Propagate updated types using the semantics of various ops.</span></div>
-<div class="line"><a id="l02857" name="l02857"></a><span class="lineno"> 2857</span>      <span class="keywordflow">if</span> (failed(Step4_PropagateTypes::run(modOp, tracker))) {</div>
-<div class="line"><a id="l02858" name="l02858"></a><span class="lineno"> 2858</span>        llvm::errs() &lt;&lt; <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> &lt;&lt; <span class="stringliteral">&quot; failed while propagating instantiated types\n&quot;</span>;</div>
-<div class="line"><a id="l02859" name="l02859"></a><span class="lineno"> 2859</span>        <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l02860" name="l02860"></a><span class="lineno"> 2860</span>      }</div>
-<div class="line"><a id="l02861" name="l02861"></a><span class="lineno"> 2861</span> </div>
-<div class="line"><a id="l02862" name="l02862"></a><span class="lineno"> 2862</span>      LLVM_DEBUG(<span class="keywordflow">if</span> (tracker.isModified()) {</div>
-<div class="line"><a id="l02863" name="l02863"></a><span class="lineno"> 2863</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;=====================================================================\n&quot;</span>;</div>
-<div class="line"><a id="l02864" name="l02864"></a><span class="lineno"> 2864</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot; Dumping module between iterations of &quot;</span> &lt;&lt; DEBUG_TYPE &lt;&lt; <span class="stringliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l02865" name="l02865"></a><span class="lineno"> 2865</span>        modOp.print(llvm::dbgs(), OpPrintingFlags().assumeVerified());</div>
-<div class="line"><a id="l02866" name="l02866"></a><span class="lineno"> 2866</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;=====================================================================\n&quot;</span>;</div>
-<div class="line"><a id="l02867" name="l02867"></a><span class="lineno"> 2867</span>      });</div>
-<div class="line"><a id="l02868" name="l02868"></a><span class="lineno"> 2868</span>    } <span class="keywordflow">while</span> (tracker.isModified());</div>
-<div class="line"><a id="l02869" name="l02869"></a><span class="lineno"> 2869</span> </div>
-<div class="line"><a id="l02870" name="l02870"></a><span class="lineno"> 2870</span>    <span class="comment">// Run user-selected cleanup first.</span></div>
-<div class="line"><a id="l02871" name="l02871"></a><span class="lineno"> 2871</span>    <span class="keywordflow">if</span> (failed(cleanupSwitch(modOp, tracker))) {</div>
-<div class="line"><a id="l02872" name="l02872"></a><span class="lineno"> 2872</span>      <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l02873" name="l02873"></a><span class="lineno"> 2873</span>    }</div>
-<div class="line"><a id="l02874" name="l02874"></a><span class="lineno"> 2874</span>    <span class="comment">// Run universal cleanup again since no-param or param-only structs may exist now.</span></div>
-<div class="line"><a id="l02875" name="l02875"></a><span class="lineno"> 2875</span>    <span class="keywordflow">if</span> (failed(runPipeline(universalCleanup, modOp))) {</div>
-<div class="line"><a id="l02876" name="l02876"></a><span class="lineno"> 2876</span>      <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l02877" name="l02877"></a><span class="lineno"> 2877</span>    }</div>
-<div class="line"><a id="l02878" name="l02878"></a><span class="lineno"> 2878</span> </div>
-<div class="line"><a id="l02879" name="l02879"></a><span class="lineno"> 2879</span>    OpPassManager allocationCleanup(ModuleOp::getOperationName());</div>
-<div class="line"><a id="l02880" name="l02880"></a><span class="lineno"> 2880</span>    allocationCleanup.addPass(<a class="code hl_function" href="namespacellzk.html#a24116a6e55835f2dd61b126be1842f3b">createRemoveUnusedDiscardableAllocationsPass</a>(</div>
-<div class="line"><a id="l02881" name="l02881"></a><span class="lineno"> 2881</span>        RemoveUnusedDiscardableAllocationsPassOptions {</div>
-<div class="line"><a id="l02882" name="l02882"></a><span class="lineno"> 2882</span>            .allocatorOpName = <a class="code hl_function" href="classllzk_1_1array_1_1CreateArrayOp.html#ac5d71ab4b9a38f80107c775af6a7c097">CreateArrayOp::getOperationName</a>().str()</div>
-<div class="line"><a id="l02883" name="l02883"></a><span class="lineno"> 2883</span>        }</div>
-<div class="line"><a id="l02884" name="l02884"></a><span class="lineno"> 2884</span>    ));</div>
-<div class="line"><a id="l02885" name="l02885"></a><span class="lineno"> 2885</span>    <span class="keywordflow">return</span> runPipeline(allocationCleanup, modOp);</div>
-<div class="line"><a id="l02886" name="l02886"></a><span class="lineno"> 2886</span>  }</div>
-<div class="line"><a id="l02887" name="l02887"></a><span class="lineno"> 2887</span> </div>
-<div class="line"><a id="l02888" name="l02888"></a><span class="lineno"> 2888</span>  <span class="comment">// Perform cleanup according to the &#39;cleanupMode&#39; option.</span></div>
-<div class="line"><a id="l02889" name="l02889"></a><span class="lineno"> 2889</span>  LogicalResult cleanupSwitch(ModuleOp modOp, <span class="keyword">const</span> ConversionTracker &amp;tracker) {</div>
-<div class="line"><a id="l02890" name="l02890"></a><span class="lineno"> 2890</span>    LLVM_DEBUG({ llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[FlatteningPass] Running step 5: cleanup &quot;</span>; });</div>
-<div class="line"><a id="l02891" name="l02891"></a><span class="lineno"> 2891</span>    <span class="keywordflow">switch</span> (cleanupMode) {</div>
-<div class="line"><a id="l02892" name="l02892"></a><span class="lineno"> 2892</span>    <span class="keywordflow">case</span> FlatteningCleanupMode::MainAsRoot:</div>
-<div class="line"><a id="l02893" name="l02893"></a><span class="lineno"> 2893</span>      LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;(main as root mode)\n&quot;</span>);</div>
-<div class="line"><a id="l02894" name="l02894"></a><span class="lineno"> 2894</span>      <span class="keywordflow">return</span> eraseUnreachableFromMainStruct(modOp, <span class="keyword">false</span>);</div>
-<div class="line"><a id="l02895" name="l02895"></a><span class="lineno"> 2895</span>    <span class="keywordflow">case</span> FlatteningCleanupMode::ConcreteAsRoot:</div>
-<div class="line"><a id="l02896" name="l02896"></a><span class="lineno"> 2896</span>      LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;(concrete definitions mode)\n&quot;</span>);</div>
-<div class="line"><a id="l02897" name="l02897"></a><span class="lineno"> 2897</span>      <span class="keywordflow">return</span> eraseUnreachableFromConcreteDefinitions(modOp);</div>
-<div class="line"><a id="l02898" name="l02898"></a><span class="lineno"> 2898</span>    <span class="keywordflow">case</span> FlatteningCleanupMode::Preimage:</div>
-<div class="line"><a id="l02899" name="l02899"></a><span class="lineno"> 2899</span>      LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;(preimage mode)\n&quot;</span>);</div>
-<div class="line"><a id="l02900" name="l02900"></a><span class="lineno"> 2900</span>      <span class="keywordflow">return</span> erasePreimageOfInstantiations(modOp, tracker);</div>
-<div class="line"><a id="l02901" name="l02901"></a><span class="lineno"> 2901</span>    <span class="keywordflow">default</span>:</div>
-<div class="line"><a id="l02902" name="l02902"></a><span class="lineno"> 2902</span>      LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;(disabled)\n&quot;</span>);</div>
-<div class="line"><a id="l02903" name="l02903"></a><span class="lineno"> 2903</span>      <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l02904" name="l02904"></a><span class="lineno"> 2904</span>    }</div>
-<div class="line"><a id="l02905" name="l02905"></a><span class="lineno"> 2905</span>  }</div>
-<div class="line"><a id="l02906" name="l02906"></a><span class="lineno"> 2906</span> </div>
-<div class="line"><a id="l02907" name="l02907"></a><span class="lineno"> 2907</span>  <span class="comment">// Erase parameterized definitions that were replaced with concrete instantiations.</span></div>
-<div class="line"><a id="l02908" name="l02908"></a><span class="lineno"> 2908</span>  LogicalResult erasePreimageOfInstantiations(ModuleOp rootMod, <span class="keyword">const</span> ConversionTracker &amp;tracker) {</div>
-<div class="line"><a id="l02909" name="l02909"></a><span class="lineno"> 2909</span>    <span class="comment">// TODO: The names from getInstantiatedDefinitionNames() are NOT guaranteed to be paths from the</span></div>
-<div class="line"><a id="l02910" name="l02910"></a><span class="lineno"> 2910</span>    <span class="comment">// &quot;top root&quot; and they also do not indicate a root module so there could be ambiguity. This is a</span></div>
-<div class="line"><a id="l02911" name="l02911"></a><span class="lineno"> 2911</span>    <span class="comment">// broader problem in the FlatteningPass itself so let&#39;s just assume, for now, that these are</span></div>
-<div class="line"><a id="l02912" name="l02912"></a><span class="lineno"> 2912</span>    <span class="comment">// paths from the &quot;top root&quot;. See [LLZK-286].</span></div>
-<div class="line"><a id="l02913" name="l02913"></a><span class="lineno"> 2913</span>    Step5_Cleanup::FromEraseSet cleaner(</div>
-<div class="line"><a id="l02914" name="l02914"></a><span class="lineno"> 2914</span>        rootMod, getAnalysis&lt;SymbolDefTree&gt;(), getAnalysis&lt;SymbolUseGraph&gt;(),</div>
-<div class="line"><a id="l02915" name="l02915"></a><span class="lineno"> 2915</span>        tracker.getInstantiatedDefinitionNames()</div>
-<div class="line"><a id="l02916" name="l02916"></a><span class="lineno"> 2916</span>    );</div>
-<div class="line"><a id="l02917" name="l02917"></a><span class="lineno"> 2917</span>    LogicalResult res = cleaner.eraseUnusedDefinitions();</div>
-<div class="line"><a id="l02918" name="l02918"></a><span class="lineno"> 2918</span>    <span class="keywordflow">if</span> (succeeded(res)) {</div>
-<div class="line"><a id="l02919" name="l02919"></a><span class="lineno"> 2919</span>      LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[Cleanup(preimage)] success\n&quot;</span>;);</div>
-<div class="line"><a id="l02920" name="l02920"></a><span class="lineno"> 2920</span>      <span class="comment">// Warn about any definitions that were instantiated but still have uses elsewhere.</span></div>
-<div class="line"><a id="l02921" name="l02921"></a><span class="lineno"> 2921</span>      <span class="keyword">const</span> SymbolUseGraph *useGraph = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l02922" name="l02922"></a><span class="lineno"> 2922</span>      rootMod-&gt;walk([<span class="keyword">this</span>, &amp;cleaner, &amp;useGraph](Operation *walkedOp) {</div>
-<div class="line"><a id="l02923" name="l02923"></a><span class="lineno"> 2923</span>        SymbolOpInterface op = llvm::dyn_cast&lt;SymbolOpInterface&gt;(walkedOp);</div>
-<div class="line"><a id="l02924" name="l02924"></a><span class="lineno"> 2924</span>        <span class="keywordflow">if</span> (!op || !cleaner.getTryToEraseSet().contains(op)) {</div>
-<div class="line"><a id="l02925" name="l02925"></a><span class="lineno"> 2925</span>          <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l02926" name="l02926"></a><span class="lineno"> 2926</span>        }</div>
-<div class="line"><a id="l02927" name="l02927"></a><span class="lineno"> 2927</span>        <span class="comment">// If needed, rebuild use graph to reflect deletions.</span></div>
-<div class="line"><a id="l02928" name="l02928"></a><span class="lineno"> 2928</span>        <span class="keywordflow">if</span> (!useGraph) {</div>
-<div class="line"><a id="l02929" name="l02929"></a><span class="lineno"> 2929</span>          useGraph = &amp;getAnalysis&lt;SymbolUseGraph&gt;();</div>
-<div class="line"><a id="l02930" name="l02930"></a><span class="lineno"> 2930</span>        }</div>
-<div class="line"><a id="l02931" name="l02931"></a><span class="lineno"> 2931</span>        <span class="comment">// If the op has any users, report the warning.</span></div>
-<div class="line"><a id="l02932" name="l02932"></a><span class="lineno"> 2932</span>        <span class="keywordflow">if</span> (useGraph-&gt;lookupNode(op)-&gt;hasPredecessor()) {</div>
-<div class="line"><a id="l02933" name="l02933"></a><span class="lineno"> 2933</span>          op.emitWarning(<span class="stringliteral">&quot;Parameterized definition still has uses!&quot;</span>).report();</div>
-<div class="line"><a id="l02934" name="l02934"></a><span class="lineno"> 2934</span>        }</div>
-<div class="line"><a id="l02935" name="l02935"></a><span class="lineno"> 2935</span>      });</div>
-<div class="line"><a id="l02936" name="l02936"></a><span class="lineno"> 2936</span>    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l02937" name="l02937"></a><span class="lineno"> 2937</span>      LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[Cleanup(preimage)] failed\n&quot;</span>;);</div>
-<div class="line"><a id="l02938" name="l02938"></a><span class="lineno"> 2938</span>    }</div>
-<div class="line"><a id="l02939" name="l02939"></a><span class="lineno"> 2939</span>    <span class="keywordflow">return</span> res;</div>
-<div class="line"><a id="l02940" name="l02940"></a><span class="lineno"> 2940</span>  }</div>
-<div class="line"><a id="l02941" name="l02941"></a><span class="lineno"> 2941</span> </div>
-<div class="line"><a id="l02942" name="l02942"></a><span class="lineno"> 2942</span>  LogicalResult eraseUnreachableFromConcreteDefinitions(ModuleOp rootMod) {</div>
-<div class="line"><a id="l02943" name="l02943"></a><span class="lineno"> 2943</span>    SmallVector&lt;SymbolOpInterface&gt; roots;</div>
-<div class="line"><a id="l02944" name="l02944"></a><span class="lineno"> 2944</span>    rootMod.walk([&amp;roots](Operation *op) {</div>
-<div class="line"><a id="l02945" name="l02945"></a><span class="lineno"> 2945</span>      <span class="keywordflow">if</span> (Step5_Cleanup::FromKeepSet::isErasableDefinition(op) &amp;&amp;</div>
-<div class="line"><a id="l02946" name="l02946"></a><span class="lineno"> 2946</span>          !Step5_Cleanup::FromKeepSet::hasTemplateSymbolBindings(op)) {</div>
-<div class="line"><a id="l02947" name="l02947"></a><span class="lineno"> 2947</span>        roots.push_back(llvm::cast&lt;SymbolOpInterface&gt;(op));</div>
-<div class="line"><a id="l02948" name="l02948"></a><span class="lineno"> 2948</span>      }</div>
-<div class="line"><a id="l02949" name="l02949"></a><span class="lineno"> 2949</span>    });</div>
+<div class="line"><a id="l02766" name="l02766"></a><span class="lineno"> 2766</span></div>
+<div class="line"><a id="l02768" name="l02768"></a><span class="lineno"> 2768</span>  <a class="code hl_enumeration" href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9">FlatteningCleanupMode</a> getEffectiveCleanupMode()<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l02769" name="l02769"></a><span class="lineno"> 2769</span>    <a class="code hl_enumeration" href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9">FlatteningCleanupMode</a> m = cleanupMode.getValue();</div>
+<div class="line"><a id="l02770" name="l02770"></a><span class="lineno"> 2770</span>    <span class="keywordflow">return</span> m == <a class="code hl_enumvalue" href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9a6fcdc090caeade09d0efd6253932b6f5">FlatteningCleanupMode::Unspecified</a> ? <a class="code hl_enumvalue" href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9ae0372cf62f1b5205fdaf2e6b0c1a9197">FlatteningCleanupMode::Preimage</a> : m;</div>
+<div class="line"><a id="l02771" name="l02771"></a><span class="lineno"> 2771</span>  }</div>
+<div class="line"><a id="l02772" name="l02772"></a><span class="lineno"> 2772</span> </div>
+<div class="line"><a id="l02773" name="l02773"></a><span class="lineno"> 2773</span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
+<div class="line"><a id="l02774" name="l02774"></a><span class="lineno"> 2774</span>    ModuleOp modOp = getOperation();</div>
+<div class="line"><a id="l02775" name="l02775"></a><span class="lineno"> 2775</span>    <span class="keywordflow">if</span> (failed(runOn(modOp))) {</div>
+<div class="line"><a id="l02776" name="l02776"></a><span class="lineno"> 2776</span>      LLVM_DEBUG({</div>
+<div class="line"><a id="l02777" name="l02777"></a><span class="lineno"> 2777</span>        <span class="comment">// If the pass failed, dump the current IR.</span></div>
+<div class="line"><a id="l02778" name="l02778"></a><span class="lineno"> 2778</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;=====================================================================\n&quot;</span>;</div>
+<div class="line"><a id="l02779" name="l02779"></a><span class="lineno"> 2779</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot; Dumping module after failure of pass &quot;</span> &lt;&lt; <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l02780" name="l02780"></a><span class="lineno"> 2780</span>        modOp.print(llvm::dbgs(), OpPrintingFlags().assumeVerified());</div>
+<div class="line"><a id="l02781" name="l02781"></a><span class="lineno"> 2781</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;=====================================================================\n&quot;</span>;</div>
+<div class="line"><a id="l02782" name="l02782"></a><span class="lineno"> 2782</span>      });</div>
+<div class="line"><a id="l02783" name="l02783"></a><span class="lineno"> 2783</span>      signalPassFailure();</div>
+<div class="line"><a id="l02784" name="l02784"></a><span class="lineno"> 2784</span>    }</div>
+<div class="line"><a id="l02785" name="l02785"></a><span class="lineno"> 2785</span>  }</div>
+<div class="line"><a id="l02786" name="l02786"></a><span class="lineno"> 2786</span> </div>
+<div class="line"><a id="l02787" name="l02787"></a><span class="lineno"> 2787</span>  <span class="keyword">inline</span> LogicalResult runOn(ModuleOp modOp) {</div>
+<div class="line"><a id="l02788" name="l02788"></a><span class="lineno"> 2788</span>    <a class="code hl_enumeration" href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9">FlatteningCleanupMode</a> effectiveCleanupMode = getEffectiveCleanupMode();</div>
+<div class="line"><a id="l02789" name="l02789"></a><span class="lineno"> 2789</span>    <span class="comment">// If the cleanup mode is set to remove anything not reachable from the main struct, do an</span></div>
+<div class="line"><a id="l02790" name="l02790"></a><span class="lineno"> 2790</span>    <span class="comment">// initial pass to remove things that are not reachable (as an optimization) because creating</span></div>
+<div class="line"><a id="l02791" name="l02791"></a><span class="lineno"> 2791</span>    <span class="comment">// an instantiated version of a struct will not cause something to become reachable that was</span></div>
+<div class="line"><a id="l02792" name="l02792"></a><span class="lineno"> 2792</span>    <span class="comment">// not already reachable in parameterized form.</span></div>
+<div class="line"><a id="l02793" name="l02793"></a><span class="lineno"> 2793</span>    <span class="keywordflow">if</span> (effectiveCleanupMode == FlatteningCleanupMode::MainAsRoot) {</div>
+<div class="line"><a id="l02794" name="l02794"></a><span class="lineno"> 2794</span>      <span class="keywordflow">if</span> (failed(eraseUnreachableFromMainStruct(modOp))) {</div>
+<div class="line"><a id="l02795" name="l02795"></a><span class="lineno"> 2795</span>        <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l02796" name="l02796"></a><span class="lineno"> 2796</span>      }</div>
+<div class="line"><a id="l02797" name="l02797"></a><span class="lineno"> 2797</span>    }</div>
+<div class="line"><a id="l02798" name="l02798"></a><span class="lineno"> 2798</span> </div>
+<div class="line"><a id="l02799" name="l02799"></a><span class="lineno"> 2799</span>    <span class="comment">// Pass Manager to run some standard cleanup passes that are always beneficial:</span></div>
+<div class="line"><a id="l02800" name="l02800"></a><span class="lineno"> 2800</span>    <span class="comment">// - Remove templates that contain no struct or function definitions</span></div>
+<div class="line"><a id="l02801" name="l02801"></a><span class="lineno"> 2801</span>    <span class="comment">// - Convert templates with no constant parameters or expressions into modules</span></div>
+<div class="line"><a id="l02802" name="l02802"></a><span class="lineno"> 2802</span>    OpPassManager universalCleanup(ModuleOp::getOperationName());</div>
+<div class="line"><a id="l02803" name="l02803"></a><span class="lineno"> 2803</span>    universalCleanup.addPass(<a class="code hl_function" href="namespacellzk_1_1polymorphic.html#a4167d219fba917ab844dcf3b9814c544">createEmptyTemplateRemovalPass</a>());</div>
+<div class="line"><a id="l02804" name="l02804"></a><span class="lineno"> 2804</span> </div>
+<div class="line"><a id="l02805" name="l02805"></a><span class="lineno"> 2805</span>    <span class="comment">// Run universal cleanup as a preliminary step to satisfy the</span></div>
+<div class="line"><a id="l02806" name="l02806"></a><span class="lineno"> 2806</span>    <span class="comment">// `assert(!isNullOrEmpty(paramNames))` precondition in `genClone()`.</span></div>
+<div class="line"><a id="l02807" name="l02807"></a><span class="lineno"> 2807</span>    <span class="keywordflow">if</span> (failed(runPipeline(universalCleanup, modOp))) {</div>
+<div class="line"><a id="l02808" name="l02808"></a><span class="lineno"> 2808</span>      <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l02809" name="l02809"></a><span class="lineno"> 2809</span>    }</div>
+<div class="line"><a id="l02810" name="l02810"></a><span class="lineno"> 2810</span> </div>
+<div class="line"><a id="l02811" name="l02811"></a><span class="lineno"> 2811</span>    ConversionTracker tracker;</div>
+<div class="line"><a id="l02812" name="l02812"></a><span class="lineno"> 2812</span>    <span class="keywordtype">unsigned</span> loopCount = 0;</div>
+<div class="line"><a id="l02813" name="l02813"></a><span class="lineno"> 2813</span>    <span class="keywordflow">do</span> {</div>
+<div class="line"><a id="l02814" name="l02814"></a><span class="lineno"> 2814</span>      ++loopCount;</div>
+<div class="line"><a id="l02815" name="l02815"></a><span class="lineno"> 2815</span>      <span class="keywordflow">if</span> (loopCount &gt; iterationLimit) {</div>
+<div class="line"><a id="l02816" name="l02816"></a><span class="lineno"> 2816</span>        llvm::errs() &lt;&lt; <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> &lt;&lt; <span class="stringliteral">&quot; exceeded the limit of &quot;</span> &lt;&lt; iterationLimit</div>
+<div class="line"><a id="l02817" name="l02817"></a><span class="lineno"> 2817</span>                     &lt;&lt; <span class="stringliteral">&quot; iterations!\n&quot;</span>;</div>
+<div class="line"><a id="l02818" name="l02818"></a><span class="lineno"> 2818</span>        <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l02819" name="l02819"></a><span class="lineno"> 2819</span>      }</div>
+<div class="line"><a id="l02820" name="l02820"></a><span class="lineno"> 2820</span>      tracker.resetModifiedFlag();</div>
+<div class="line"><a id="l02821" name="l02821"></a><span class="lineno"> 2821</span> </div>
+<div class="line"><a id="l02822" name="l02822"></a><span class="lineno"> 2822</span>      LLVM_DEBUG({</div>
+<div class="line"><a id="l02823" name="l02823"></a><span class="lineno"> 2823</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[FlatteningPass(count=&quot;</span> &lt;&lt; loopCount</div>
+<div class="line"><a id="l02824" name="l02824"></a><span class="lineno"> 2824</span>                     &lt;&lt; <span class="stringliteral">&quot;)] Running step 1: struct instantiation\n&quot;</span>;</div>
+<div class="line"><a id="l02825" name="l02825"></a><span class="lineno"> 2825</span>      });</div>
+<div class="line"><a id="l02826" name="l02826"></a><span class="lineno"> 2826</span>      <span class="comment">// Find calls to &quot;compute()&quot; that return a parameterized struct type and replace it to call an</span></div>
+<div class="line"><a id="l02827" name="l02827"></a><span class="lineno"> 2827</span>      <span class="comment">// instantiated version of the struct that has parameters replaced with the constant values.</span></div>
+<div class="line"><a id="l02828" name="l02828"></a><span class="lineno"> 2828</span>      <span class="comment">// Create the necessary instantiated/flattened struct in the same location as the original.</span></div>
+<div class="line"><a id="l02829" name="l02829"></a><span class="lineno"> 2829</span>      <span class="keywordflow">if</span> (failed(Step1A_InstantiateStructs::run(modOp, tracker))) {</div>
+<div class="line"><a id="l02830" name="l02830"></a><span class="lineno"> 2830</span>        llvm::errs() &lt;&lt; <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> &lt;&lt; <span class="stringliteral">&quot; failed while instantiating structs in templates\n&quot;</span>;</div>
+<div class="line"><a id="l02831" name="l02831"></a><span class="lineno"> 2831</span>        <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l02832" name="l02832"></a><span class="lineno"> 2832</span>      }</div>
+<div class="line"><a id="l02833" name="l02833"></a><span class="lineno"> 2833</span>      <span class="comment">// Instantiate calls to templated functions.</span></div>
+<div class="line"><a id="l02834" name="l02834"></a><span class="lineno"> 2834</span>      <span class="keywordflow">if</span> (failed(Step1B_InstantiateFunctions::run(modOp, tracker))) {</div>
+<div class="line"><a id="l02835" name="l02835"></a><span class="lineno"> 2835</span>        llvm::errs() &lt;&lt; <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> &lt;&lt; <span class="stringliteral">&quot; failed while instantiating functions in templates\n&quot;</span>;</div>
+<div class="line"><a id="l02836" name="l02836"></a><span class="lineno"> 2836</span>        <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l02837" name="l02837"></a><span class="lineno"> 2837</span>      }</div>
+<div class="line"><a id="l02838" name="l02838"></a><span class="lineno"> 2838</span> </div>
+<div class="line"><a id="l02839" name="l02839"></a><span class="lineno"> 2839</span>      LLVM_DEBUG({</div>
+<div class="line"><a id="l02840" name="l02840"></a><span class="lineno"> 2840</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[FlatteningPass(count=&quot;</span> &lt;&lt; loopCount</div>
+<div class="line"><a id="l02841" name="l02841"></a><span class="lineno"> 2841</span>                     &lt;&lt; <span class="stringliteral">&quot;)] Running step 2: loop unrolling\n&quot;</span>;</div>
+<div class="line"><a id="l02842" name="l02842"></a><span class="lineno"> 2842</span>      });</div>
+<div class="line"><a id="l02843" name="l02843"></a><span class="lineno"> 2843</span>      <span class="comment">// Unroll loops with known iterations.</span></div>
+<div class="line"><a id="l02844" name="l02844"></a><span class="lineno"> 2844</span>      <span class="keywordflow">if</span> (failed(Step2_Unroll::run(modOp, tracker))) {</div>
+<div class="line"><a id="l02845" name="l02845"></a><span class="lineno"> 2845</span>        llvm::errs() &lt;&lt; <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> &lt;&lt; <span class="stringliteral">&quot; failed while unrolling loops\n&quot;</span>;</div>
+<div class="line"><a id="l02846" name="l02846"></a><span class="lineno"> 2846</span>        <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l02847" name="l02847"></a><span class="lineno"> 2847</span>      }</div>
+<div class="line"><a id="l02848" name="l02848"></a><span class="lineno"> 2848</span> </div>
+<div class="line"><a id="l02849" name="l02849"></a><span class="lineno"> 2849</span>      LLVM_DEBUG({</div>
+<div class="line"><a id="l02850" name="l02850"></a><span class="lineno"> 2850</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[FlatteningPass(count=&quot;</span> &lt;&lt; loopCount</div>
+<div class="line"><a id="l02851" name="l02851"></a><span class="lineno"> 2851</span>                     &lt;&lt; <span class="stringliteral">&quot;)] Running step 3: affine maps instantiation\n&quot;</span>;</div>
+<div class="line"><a id="l02852" name="l02852"></a><span class="lineno"> 2852</span>      });</div>
+<div class="line"><a id="l02853" name="l02853"></a><span class="lineno"> 2853</span>      <span class="comment">// Instantiate affine_map parameters of StructType and ArrayType.</span></div>
+<div class="line"><a id="l02854" name="l02854"></a><span class="lineno"> 2854</span>      <span class="keywordflow">if</span> (failed(Step3_InstantiateAffineMaps::run(modOp, tracker))) {</div>
+<div class="line"><a id="l02855" name="l02855"></a><span class="lineno"> 2855</span>        llvm::errs() &lt;&lt; <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> &lt;&lt; <span class="stringliteral">&quot; failed while instantiating `affine_map` parameters\n&quot;</span>;</div>
+<div class="line"><a id="l02856" name="l02856"></a><span class="lineno"> 2856</span>        <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l02857" name="l02857"></a><span class="lineno"> 2857</span>      }</div>
+<div class="line"><a id="l02858" name="l02858"></a><span class="lineno"> 2858</span> </div>
+<div class="line"><a id="l02859" name="l02859"></a><span class="lineno"> 2859</span>      LLVM_DEBUG({</div>
+<div class="line"><a id="l02860" name="l02860"></a><span class="lineno"> 2860</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[FlatteningPass(count=&quot;</span> &lt;&lt; loopCount</div>
+<div class="line"><a id="l02861" name="l02861"></a><span class="lineno"> 2861</span>                     &lt;&lt; <span class="stringliteral">&quot;)] Running step 4: type propagation\n&quot;</span>;</div>
+<div class="line"><a id="l02862" name="l02862"></a><span class="lineno"> 2862</span>      });</div>
+<div class="line"><a id="l02863" name="l02863"></a><span class="lineno"> 2863</span>      <span class="comment">// Propagate updated types using the semantics of various ops.</span></div>
+<div class="line"><a id="l02864" name="l02864"></a><span class="lineno"> 2864</span>      <span class="keywordflow">if</span> (failed(Step4_PropagateTypes::run(modOp, tracker))) {</div>
+<div class="line"><a id="l02865" name="l02865"></a><span class="lineno"> 2865</span>        llvm::errs() &lt;&lt; <a class="code hl_define" href="ConstraintDependencyGraph_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d">DEBUG_TYPE</a> &lt;&lt; <span class="stringliteral">&quot; failed while propagating instantiated types\n&quot;</span>;</div>
+<div class="line"><a id="l02866" name="l02866"></a><span class="lineno"> 2866</span>        <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l02867" name="l02867"></a><span class="lineno"> 2867</span>      }</div>
+<div class="line"><a id="l02868" name="l02868"></a><span class="lineno"> 2868</span> </div>
+<div class="line"><a id="l02869" name="l02869"></a><span class="lineno"> 2869</span>      LLVM_DEBUG(<span class="keywordflow">if</span> (tracker.isModified()) {</div>
+<div class="line"><a id="l02870" name="l02870"></a><span class="lineno"> 2870</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;=====================================================================\n&quot;</span>;</div>
+<div class="line"><a id="l02871" name="l02871"></a><span class="lineno"> 2871</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot; Dumping module between iterations of &quot;</span> &lt;&lt; DEBUG_TYPE &lt;&lt; <span class="stringliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l02872" name="l02872"></a><span class="lineno"> 2872</span>        modOp.print(llvm::dbgs(), OpPrintingFlags().assumeVerified());</div>
+<div class="line"><a id="l02873" name="l02873"></a><span class="lineno"> 2873</span>        llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;=====================================================================\n&quot;</span>;</div>
+<div class="line"><a id="l02874" name="l02874"></a><span class="lineno"> 2874</span>      });</div>
+<div class="line"><a id="l02875" name="l02875"></a><span class="lineno"> 2875</span>    } <span class="keywordflow">while</span> (tracker.isModified());</div>
+<div class="line"><a id="l02876" name="l02876"></a><span class="lineno"> 2876</span> </div>
+<div class="line"><a id="l02877" name="l02877"></a><span class="lineno"> 2877</span>    <span class="comment">// Run user-selected cleanup first.</span></div>
+<div class="line"><a id="l02878" name="l02878"></a><span class="lineno"> 2878</span>    <span class="keywordflow">if</span> (failed(cleanupSwitch(modOp, tracker))) {</div>
+<div class="line"><a id="l02879" name="l02879"></a><span class="lineno"> 2879</span>      <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l02880" name="l02880"></a><span class="lineno"> 2880</span>    }</div>
+<div class="line"><a id="l02881" name="l02881"></a><span class="lineno"> 2881</span>    <span class="comment">// Run universal cleanup again since no-param or param-only structs may exist now.</span></div>
+<div class="line"><a id="l02882" name="l02882"></a><span class="lineno"> 2882</span>    <span class="keywordflow">if</span> (failed(runPipeline(universalCleanup, modOp))) {</div>
+<div class="line"><a id="l02883" name="l02883"></a><span class="lineno"> 2883</span>      <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l02884" name="l02884"></a><span class="lineno"> 2884</span>    }</div>
+<div class="line"><a id="l02885" name="l02885"></a><span class="lineno"> 2885</span> </div>
+<div class="line"><a id="l02886" name="l02886"></a><span class="lineno"> 2886</span>    OpPassManager allocationCleanup(ModuleOp::getOperationName());</div>
+<div class="line"><a id="l02887" name="l02887"></a><span class="lineno"> 2887</span>    allocationCleanup.addPass(<a class="code hl_function" href="namespacellzk.html#a24116a6e55835f2dd61b126be1842f3b">createRemoveUnusedDiscardableAllocationsPass</a>(</div>
+<div class="line"><a id="l02888" name="l02888"></a><span class="lineno"> 2888</span>        RemoveUnusedDiscardableAllocationsPassOptions {</div>
+<div class="line"><a id="l02889" name="l02889"></a><span class="lineno"> 2889</span>            .allocatorOpName = <a class="code hl_function" href="classllzk_1_1array_1_1CreateArrayOp.html#ac5d71ab4b9a38f80107c775af6a7c097">CreateArrayOp::getOperationName</a>().str()</div>
+<div class="line"><a id="l02890" name="l02890"></a><span class="lineno"> 2890</span>        }</div>
+<div class="line"><a id="l02891" name="l02891"></a><span class="lineno"> 2891</span>    ));</div>
+<div class="line"><a id="l02892" name="l02892"></a><span class="lineno"> 2892</span>    <span class="keywordflow">return</span> runPipeline(allocationCleanup, modOp);</div>
+<div class="line"><a id="l02893" name="l02893"></a><span class="lineno"> 2893</span>  }</div>
+<div class="line"><a id="l02894" name="l02894"></a><span class="lineno"> 2894</span> </div>
+<div class="line"><a id="l02895" name="l02895"></a><span class="lineno"> 2895</span>  <span class="comment">// Perform cleanup according to the &#39;cleanupMode&#39; option.</span></div>
+<div class="line"><a id="l02896" name="l02896"></a><span class="lineno"> 2896</span>  LogicalResult cleanupSwitch(ModuleOp modOp, <span class="keyword">const</span> ConversionTracker &amp;tracker) {</div>
+<div class="line"><a id="l02897" name="l02897"></a><span class="lineno"> 2897</span>    <a class="code hl_enumeration" href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9">FlatteningCleanupMode</a> effectiveCleanupMode = getEffectiveCleanupMode();</div>
+<div class="line"><a id="l02898" name="l02898"></a><span class="lineno"> 2898</span>    LLVM_DEBUG({ llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[FlatteningPass] Running step 5: cleanup &quot;</span>; });</div>
+<div class="line"><a id="l02899" name="l02899"></a><span class="lineno"> 2899</span>    <span class="keywordflow">switch</span> (effectiveCleanupMode) {</div>
+<div class="line"><a id="l02900" name="l02900"></a><span class="lineno"> 2900</span>    <span class="keywordflow">case</span> FlatteningCleanupMode::MainAsRoot:</div>
+<div class="line"><a id="l02901" name="l02901"></a><span class="lineno"> 2901</span>      LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;(main as root mode)\n&quot;</span>);</div>
+<div class="line"><a id="l02902" name="l02902"></a><span class="lineno"> 2902</span>      <span class="keywordflow">return</span> eraseUnreachableFromMainStruct(modOp, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l02903" name="l02903"></a><span class="lineno"> 2903</span>    <span class="keywordflow">case</span> FlatteningCleanupMode::ConcreteAsRoot:</div>
+<div class="line"><a id="l02904" name="l02904"></a><span class="lineno"> 2904</span>      LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;(concrete definitions mode)\n&quot;</span>);</div>
+<div class="line"><a id="l02905" name="l02905"></a><span class="lineno"> 2905</span>      <span class="keywordflow">return</span> eraseUnreachableFromConcreteDefinitions(modOp);</div>
+<div class="line"><a id="l02906" name="l02906"></a><span class="lineno"> 2906</span>    <span class="keywordflow">case</span> FlatteningCleanupMode::Preimage:</div>
+<div class="line"><a id="l02907" name="l02907"></a><span class="lineno"> 2907</span>      LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;(preimage mode)\n&quot;</span>);</div>
+<div class="line"><a id="l02908" name="l02908"></a><span class="lineno"> 2908</span>      <span class="keywordflow">return</span> erasePreimageOfInstantiations(modOp, tracker);</div>
+<div class="line"><a id="l02909" name="l02909"></a><span class="lineno"> 2909</span>    <span class="keywordflow">case</span> FlatteningCleanupMode::Unspecified:</div>
+<div class="line"><a id="l02910" name="l02910"></a><span class="lineno"> 2910</span>    <span class="keywordflow">default</span>:</div>
+<div class="line"><a id="l02911" name="l02911"></a><span class="lineno"> 2911</span>      LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;(disabled)\n&quot;</span>);</div>
+<div class="line"><a id="l02912" name="l02912"></a><span class="lineno"> 2912</span>      <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l02913" name="l02913"></a><span class="lineno"> 2913</span>    }</div>
+<div class="line"><a id="l02914" name="l02914"></a><span class="lineno"> 2914</span>  }</div>
+<div class="line"><a id="l02915" name="l02915"></a><span class="lineno"> 2915</span> </div>
+<div class="line"><a id="l02916" name="l02916"></a><span class="lineno"> 2916</span>  <span class="comment">// Erase parameterized definitions that were replaced with concrete instantiations.</span></div>
+<div class="line"><a id="l02917" name="l02917"></a><span class="lineno"> 2917</span>  LogicalResult erasePreimageOfInstantiations(ModuleOp rootMod, <span class="keyword">const</span> ConversionTracker &amp;tracker) {</div>
+<div class="line"><a id="l02918" name="l02918"></a><span class="lineno"> 2918</span>    <span class="comment">// TODO: The names from getInstantiatedDefinitionNames() are NOT guaranteed to be paths from the</span></div>
+<div class="line"><a id="l02919" name="l02919"></a><span class="lineno"> 2919</span>    <span class="comment">// &quot;top root&quot; and they also do not indicate a root module so there could be ambiguity. This is a</span></div>
+<div class="line"><a id="l02920" name="l02920"></a><span class="lineno"> 2920</span>    <span class="comment">// broader problem in the FlatteningPass itself so let&#39;s just assume, for now, that these are</span></div>
+<div class="line"><a id="l02921" name="l02921"></a><span class="lineno"> 2921</span>    <span class="comment">// paths from the &quot;top root&quot;. See [LLZK-286].</span></div>
+<div class="line"><a id="l02922" name="l02922"></a><span class="lineno"> 2922</span>    Step5_Cleanup::FromEraseSet cleaner(</div>
+<div class="line"><a id="l02923" name="l02923"></a><span class="lineno"> 2923</span>        rootMod, getAnalysis&lt;SymbolDefTree&gt;(), getAnalysis&lt;SymbolUseGraph&gt;(),</div>
+<div class="line"><a id="l02924" name="l02924"></a><span class="lineno"> 2924</span>        tracker.getInstantiatedDefinitionNames()</div>
+<div class="line"><a id="l02925" name="l02925"></a><span class="lineno"> 2925</span>    );</div>
+<div class="line"><a id="l02926" name="l02926"></a><span class="lineno"> 2926</span>    LogicalResult res = cleaner.eraseUnusedDefinitions();</div>
+<div class="line"><a id="l02927" name="l02927"></a><span class="lineno"> 2927</span>    <span class="keywordflow">if</span> (succeeded(res)) {</div>
+<div class="line"><a id="l02928" name="l02928"></a><span class="lineno"> 2928</span>      LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[Cleanup(preimage)] success\n&quot;</span>;);</div>
+<div class="line"><a id="l02929" name="l02929"></a><span class="lineno"> 2929</span>      <span class="comment">// Warn about any definitions that were instantiated but still have uses elsewhere.</span></div>
+<div class="line"><a id="l02930" name="l02930"></a><span class="lineno"> 2930</span>      <span class="keyword">const</span> SymbolUseGraph *useGraph = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l02931" name="l02931"></a><span class="lineno"> 2931</span>      rootMod-&gt;walk([<span class="keyword">this</span>, &amp;cleaner, &amp;useGraph](Operation *walkedOp) {</div>
+<div class="line"><a id="l02932" name="l02932"></a><span class="lineno"> 2932</span>        SymbolOpInterface op = llvm::dyn_cast&lt;SymbolOpInterface&gt;(walkedOp);</div>
+<div class="line"><a id="l02933" name="l02933"></a><span class="lineno"> 2933</span>        <span class="keywordflow">if</span> (!op || !cleaner.getTryToEraseSet().contains(op)) {</div>
+<div class="line"><a id="l02934" name="l02934"></a><span class="lineno"> 2934</span>          <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l02935" name="l02935"></a><span class="lineno"> 2935</span>        }</div>
+<div class="line"><a id="l02936" name="l02936"></a><span class="lineno"> 2936</span>        <span class="comment">// If needed, rebuild use graph to reflect deletions.</span></div>
+<div class="line"><a id="l02937" name="l02937"></a><span class="lineno"> 2937</span>        <span class="keywordflow">if</span> (!useGraph) {</div>
+<div class="line"><a id="l02938" name="l02938"></a><span class="lineno"> 2938</span>          useGraph = &amp;getAnalysis&lt;SymbolUseGraph&gt;();</div>
+<div class="line"><a id="l02939" name="l02939"></a><span class="lineno"> 2939</span>        }</div>
+<div class="line"><a id="l02940" name="l02940"></a><span class="lineno"> 2940</span>        <span class="comment">// If the op has any users, report the warning.</span></div>
+<div class="line"><a id="l02941" name="l02941"></a><span class="lineno"> 2941</span>        <span class="keywordflow">if</span> (useGraph-&gt;lookupNode(op)-&gt;hasPredecessor()) {</div>
+<div class="line"><a id="l02942" name="l02942"></a><span class="lineno"> 2942</span>          op.emitWarning(<span class="stringliteral">&quot;Parameterized definition still has uses!&quot;</span>).report();</div>
+<div class="line"><a id="l02943" name="l02943"></a><span class="lineno"> 2943</span>        }</div>
+<div class="line"><a id="l02944" name="l02944"></a><span class="lineno"> 2944</span>      });</div>
+<div class="line"><a id="l02945" name="l02945"></a><span class="lineno"> 2945</span>    } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l02946" name="l02946"></a><span class="lineno"> 2946</span>      LLVM_DEBUG(llvm::dbgs() &lt;&lt; <span class="stringliteral">&quot;[Cleanup(preimage)] failed\n&quot;</span>;);</div>
+<div class="line"><a id="l02947" name="l02947"></a><span class="lineno"> 2947</span>    }</div>
+<div class="line"><a id="l02948" name="l02948"></a><span class="lineno"> 2948</span>    <span class="keywordflow">return</span> res;</div>
+<div class="line"><a id="l02949" name="l02949"></a><span class="lineno"> 2949</span>  }</div>
 <div class="line"><a id="l02950" name="l02950"></a><span class="lineno"> 2950</span> </div>
-<div class="line"><a id="l02951" name="l02951"></a><span class="lineno"> 2951</span>    Step5_Cleanup::FromKeepSet cleaner(</div>
-<div class="line"><a id="l02952" name="l02952"></a><span class="lineno"> 2952</span>        rootMod, getAnalysis&lt;SymbolDefTree&gt;(), getAnalysis&lt;SymbolUseGraph&gt;()</div>
-<div class="line"><a id="l02953" name="l02953"></a><span class="lineno"> 2953</span>    );</div>
-<div class="line"><a id="l02954" name="l02954"></a><span class="lineno"> 2954</span>    <span class="keywordflow">return</span> cleaner.eraseUnreachableFrom(roots);</div>
-<div class="line"><a id="l02955" name="l02955"></a><span class="lineno"> 2955</span>  }</div>
-<div class="line"><a id="l02956" name="l02956"></a><span class="lineno"> 2956</span> </div>
-<div class="line"><a id="l02957" name="l02957"></a><span class="lineno"> 2957</span>  LogicalResult eraseUnreachableFromMainStruct(ModuleOp rootMod, <span class="keywordtype">bool</span> emitWarning = <span class="keyword">true</span>) {</div>
-<div class="line"><a id="l02958" name="l02958"></a><span class="lineno"> 2958</span>    Step5_Cleanup::FromKeepSet cleaner(</div>
-<div class="line"><a id="l02959" name="l02959"></a><span class="lineno"> 2959</span>        rootMod, getAnalysis&lt;SymbolDefTree&gt;(), getAnalysis&lt;SymbolUseGraph&gt;()</div>
-<div class="line"><a id="l02960" name="l02960"></a><span class="lineno"> 2960</span>    );</div>
-<div class="line"><a id="l02961" name="l02961"></a><span class="lineno"> 2961</span>    FailureOr&lt;SymbolLookupResult&lt;StructDefOp&gt;&gt; mainOpt =</div>
-<div class="line"><a id="l02962" name="l02962"></a><span class="lineno"> 2962</span>        <a class="code hl_function" href="namespacellzk.html#abea185ddb9923e1423c6f3562c60e38f">getMainInstanceDef</a>(cleaner.tables, rootMod.getOperation());</div>
-<div class="line"><a id="l02963" name="l02963"></a><span class="lineno"> 2963</span>    <span class="keywordflow">if</span> (failed(mainOpt)) {</div>
-<div class="line"><a id="l02964" name="l02964"></a><span class="lineno"> 2964</span>      <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l02965" name="l02965"></a><span class="lineno"> 2965</span>    }</div>
-<div class="line"><a id="l02966" name="l02966"></a><span class="lineno"> 2966</span>    SymbolLookupResult&lt;StructDefOp&gt; <a class="code hl_function" href="llzk-lsp-server_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">main</a> = mainOpt.value();</div>
-<div class="line"><a id="l02967" name="l02967"></a><span class="lineno"> 2967</span>    <span class="keywordflow">if</span> (emitWarning &amp;&amp; !<a class="code hl_function" href="llzk-lsp-server_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">main</a>) {</div>
-<div class="line"><a id="l02968" name="l02968"></a><span class="lineno"> 2968</span>      <span class="comment">// Emit warning if there is no main specified because all cleanup-candidate definitions not</span></div>
-<div class="line"><a id="l02969" name="l02969"></a><span class="lineno"> 2969</span>      <span class="comment">// reachable from global defs may be removed.</span></div>
-<div class="line"><a id="l02970" name="l02970"></a><span class="lineno"> 2970</span>      rootMod.emitWarning()</div>
-<div class="line"><a id="l02971" name="l02971"></a><span class="lineno"> 2971</span>          .append(</div>
-<div class="line"><a id="l02972" name="l02972"></a><span class="lineno"> 2972</span>              <span class="stringliteral">&quot;using option &#39;&quot;</span>, cleanupMode.getArgStr(), <span class="charliteral">&#39;=&#39;</span>,</div>
-<div class="line"><a id="l02973" name="l02973"></a><span class="lineno"> 2973</span>              <a class="code hl_function" href="namespacellzk_1_1polymorphic.html#a5b4315e39cbb845b0dbde2e2762cc79a">stringifyFlatteningCleanupMode</a>(FlatteningCleanupMode::MainAsRoot), <span class="stringliteral">&quot;&#39; with no \&quot;&quot;</span>,</div>
-<div class="line"><a id="l02974" name="l02974"></a><span class="lineno"> 2974</span>              <a class="code hl_variable" href="namespacellzk.html#af2be4b94300457930c6aac7b73294456">MAIN_ATTR_NAME</a>,</div>
-<div class="line"><a id="l02975" name="l02975"></a><span class="lineno"> 2975</span>              <span class="stringliteral">&quot;\&quot; attribute on the top-level module may remove all cleanup-candidate definitions!&quot;</span></div>
-<div class="line"><a id="l02976" name="l02976"></a><span class="lineno"> 2976</span>          )</div>
-<div class="line"><a id="l02977" name="l02977"></a><span class="lineno"> 2977</span>          .report();</div>
-<div class="line"><a id="l02978" name="l02978"></a><span class="lineno"> 2978</span>    }</div>
-<div class="line"><a id="l02979" name="l02979"></a><span class="lineno"> 2979</span>    SmallVector&lt;SymbolOpInterface&gt; roots;</div>
-<div class="line"><a id="l02980" name="l02980"></a><span class="lineno"> 2980</span>    <span class="keywordflow">if</span> (<a class="code hl_function" href="llzk-lsp-server_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">main</a>) {</div>
-<div class="line"><a id="l02981" name="l02981"></a><span class="lineno"> 2981</span>      roots.push_back(*<a class="code hl_function" href="llzk-lsp-server_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">main</a>);</div>
-<div class="line"><a id="l02982" name="l02982"></a><span class="lineno"> 2982</span>    }</div>
-<div class="line"><a id="l02983" name="l02983"></a><span class="lineno"> 2983</span>    <span class="keywordflow">return</span> cleaner.eraseUnreachableFrom(roots);</div>
-<div class="line"><a id="l02984" name="l02984"></a><span class="lineno"> 2984</span>  }</div>
-<div class="line"><a id="l02985" name="l02985"></a><span class="lineno"> 2985</span>};</div>
-<div class="line"><a id="l02986" name="l02986"></a><span class="lineno"> 2986</span> </div>
-<div class="line"><a id="l02987" name="l02987"></a><span class="lineno"> 2987</span>} <span class="comment">// namespace</span></div>
+<div class="line"><a id="l02951" name="l02951"></a><span class="lineno"> 2951</span>  LogicalResult eraseUnreachableFromConcreteDefinitions(ModuleOp rootMod) {</div>
+<div class="line"><a id="l02952" name="l02952"></a><span class="lineno"> 2952</span>    SmallVector&lt;SymbolOpInterface&gt; roots;</div>
+<div class="line"><a id="l02953" name="l02953"></a><span class="lineno"> 2953</span>    rootMod.walk([&amp;roots](Operation *op) {</div>
+<div class="line"><a id="l02954" name="l02954"></a><span class="lineno"> 2954</span>      <span class="keywordflow">if</span> (Step5_Cleanup::FromKeepSet::isErasableDefinition(op) &amp;&amp;</div>
+<div class="line"><a id="l02955" name="l02955"></a><span class="lineno"> 2955</span>          !Step5_Cleanup::FromKeepSet::hasTemplateSymbolBindings(op)) {</div>
+<div class="line"><a id="l02956" name="l02956"></a><span class="lineno"> 2956</span>        roots.push_back(llvm::cast&lt;SymbolOpInterface&gt;(op));</div>
+<div class="line"><a id="l02957" name="l02957"></a><span class="lineno"> 2957</span>      }</div>
+<div class="line"><a id="l02958" name="l02958"></a><span class="lineno"> 2958</span>    });</div>
+<div class="line"><a id="l02959" name="l02959"></a><span class="lineno"> 2959</span> </div>
+<div class="line"><a id="l02960" name="l02960"></a><span class="lineno"> 2960</span>    Step5_Cleanup::FromKeepSet cleaner(</div>
+<div class="line"><a id="l02961" name="l02961"></a><span class="lineno"> 2961</span>        rootMod, getAnalysis&lt;SymbolDefTree&gt;(), getAnalysis&lt;SymbolUseGraph&gt;()</div>
+<div class="line"><a id="l02962" name="l02962"></a><span class="lineno"> 2962</span>    );</div>
+<div class="line"><a id="l02963" name="l02963"></a><span class="lineno"> 2963</span>    <span class="keywordflow">return</span> cleaner.eraseUnreachableFrom(roots);</div>
+<div class="line"><a id="l02964" name="l02964"></a><span class="lineno"> 2964</span>  }</div>
+<div class="line"><a id="l02965" name="l02965"></a><span class="lineno"> 2965</span> </div>
+<div class="line"><a id="l02966" name="l02966"></a><span class="lineno"> 2966</span>  LogicalResult eraseUnreachableFromMainStruct(ModuleOp rootMod, <span class="keywordtype">bool</span> emitWarning = <span class="keyword">true</span>) {</div>
+<div class="line"><a id="l02967" name="l02967"></a><span class="lineno"> 2967</span>    Step5_Cleanup::FromKeepSet cleaner(</div>
+<div class="line"><a id="l02968" name="l02968"></a><span class="lineno"> 2968</span>        rootMod, getAnalysis&lt;SymbolDefTree&gt;(), getAnalysis&lt;SymbolUseGraph&gt;()</div>
+<div class="line"><a id="l02969" name="l02969"></a><span class="lineno"> 2969</span>    );</div>
+<div class="line"><a id="l02970" name="l02970"></a><span class="lineno"> 2970</span>    FailureOr&lt;SymbolLookupResult&lt;StructDefOp&gt;&gt; mainOpt =</div>
+<div class="line"><a id="l02971" name="l02971"></a><span class="lineno"> 2971</span>        <a class="code hl_function" href="namespacellzk.html#abea185ddb9923e1423c6f3562c60e38f">getMainInstanceDef</a>(cleaner.tables, rootMod.getOperation());</div>
+<div class="line"><a id="l02972" name="l02972"></a><span class="lineno"> 2972</span>    <span class="keywordflow">if</span> (failed(mainOpt)) {</div>
+<div class="line"><a id="l02973" name="l02973"></a><span class="lineno"> 2973</span>      <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l02974" name="l02974"></a><span class="lineno"> 2974</span>    }</div>
+<div class="line"><a id="l02975" name="l02975"></a><span class="lineno"> 2975</span>    SymbolLookupResult&lt;StructDefOp&gt; <a class="code hl_function" href="llzk-lsp-server_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">main</a> = mainOpt.value();</div>
+<div class="line"><a id="l02976" name="l02976"></a><span class="lineno"> 2976</span>    <span class="keywordflow">if</span> (emitWarning &amp;&amp; !<a class="code hl_function" href="llzk-lsp-server_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">main</a>) {</div>
+<div class="line"><a id="l02977" name="l02977"></a><span class="lineno"> 2977</span>      <span class="comment">// Emit warning if there is no main specified because all cleanup-candidate definitions not</span></div>
+<div class="line"><a id="l02978" name="l02978"></a><span class="lineno"> 2978</span>      <span class="comment">// reachable from global defs may be removed.</span></div>
+<div class="line"><a id="l02979" name="l02979"></a><span class="lineno"> 2979</span>      rootMod.emitWarning()</div>
+<div class="line"><a id="l02980" name="l02980"></a><span class="lineno"> 2980</span>          .append(</div>
+<div class="line"><a id="l02981" name="l02981"></a><span class="lineno"> 2981</span>              <span class="stringliteral">&quot;using option &#39;&quot;</span>, cleanupMode.getArgStr(), <span class="charliteral">&#39;=&#39;</span>,</div>
+<div class="line"><a id="l02982" name="l02982"></a><span class="lineno"> 2982</span>              <a class="code hl_function" href="namespacellzk_1_1polymorphic.html#a5b4315e39cbb845b0dbde2e2762cc79a">stringifyFlatteningCleanupMode</a>(FlatteningCleanupMode::MainAsRoot), <span class="stringliteral">&quot;&#39; with no \&quot;&quot;</span>,</div>
+<div class="line"><a id="l02983" name="l02983"></a><span class="lineno"> 2983</span>              <a class="code hl_variable" href="namespacellzk.html#af2be4b94300457930c6aac7b73294456">MAIN_ATTR_NAME</a>,</div>
+<div class="line"><a id="l02984" name="l02984"></a><span class="lineno"> 2984</span>              <span class="stringliteral">&quot;\&quot; attribute on the top-level module may remove all cleanup-candidate definitions!&quot;</span></div>
+<div class="line"><a id="l02985" name="l02985"></a><span class="lineno"> 2985</span>          )</div>
+<div class="line"><a id="l02986" name="l02986"></a><span class="lineno"> 2986</span>          .report();</div>
+<div class="line"><a id="l02987" name="l02987"></a><span class="lineno"> 2987</span>    }</div>
+<div class="line"><a id="l02988" name="l02988"></a><span class="lineno"> 2988</span>    SmallVector&lt;SymbolOpInterface&gt; roots;</div>
+<div class="line"><a id="l02989" name="l02989"></a><span class="lineno"> 2989</span>    <span class="keywordflow">if</span> (<a class="code hl_function" href="llzk-lsp-server_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">main</a>) {</div>
+<div class="line"><a id="l02990" name="l02990"></a><span class="lineno"> 2990</span>      roots.push_back(*<a class="code hl_function" href="llzk-lsp-server_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">main</a>);</div>
+<div class="line"><a id="l02991" name="l02991"></a><span class="lineno"> 2991</span>    }</div>
+<div class="line"><a id="l02992" name="l02992"></a><span class="lineno"> 2992</span>    <span class="keywordflow">return</span> cleaner.eraseUnreachableFrom(roots);</div>
+<div class="line"><a id="l02993" name="l02993"></a><span class="lineno"> 2993</span>  }</div>
+<div class="line"><a id="l02994" name="l02994"></a><span class="lineno"> 2994</span>};</div>
+<div class="line"><a id="l02995" name="l02995"></a><span class="lineno"> 2995</span> </div>
+<div class="line"><a id="l02996" name="l02996"></a><span class="lineno"> 2996</span>} <span class="comment">// namespace</span></div>
 <div class="ttc" id="aArray_2IR_2Ops_8h_html"><div class="ttname"><a href="Array_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aAttributeHelper_8h_html"><div class="ttname"><a href="AttributeHelper_8h.html">AttributeHelper.h</a></div></div>
 <div class="ttc" id="aCast_2IR_2Dialect_8h_html"><div class="ttname"><a href="Cast_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
@@ -3174,9 +3182,12 @@ $(function(){initNavTree('FlatteningPass_8cpp_source.html','',''); });
 <div class="ttc" id="anamespacellzk_1_1polymorphic_html"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html">llzk::polymorphic</a></div><div class="ttdef"><b>Definition</b> <a href="Polymorphic_2IR_2Ops_8cpp_source.html#l00032">Ops.cpp:32</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1polymorphic_html_a4167d219fba917ab844dcf3b9814c544"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a4167d219fba917ab844dcf3b9814c544">llzk::polymorphic::createEmptyTemplateRemovalPass</a></div><div class="ttdeci">std::unique_ptr&lt;::mlir::Pass &gt; createEmptyTemplateRemovalPass()</div><div class="ttdef"><b>Definition</b> <a href="EmptyTemplateRemovalPass_8cpp_source.html#l00093">EmptyTemplateRemovalPass.cpp:93</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1polymorphic_html_a5b4315e39cbb845b0dbde2e2762cc79a"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a5b4315e39cbb845b0dbde2e2762cc79a">llzk::polymorphic::stringifyFlatteningCleanupMode</a></div><div class="ttdeci">::llvm::StringRef stringifyFlatteningCleanupMode(FlatteningCleanupMode val)</div><div class="ttdef"><b>Definition</b> <a href="TransformationPassEnums_8cpp_8inc_source.html#l00012">TransformationPassEnums.cpp.inc:12</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1polymorphic_html_a60784cd30ddfef02461e8b7b80e910c9"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9">llzk::polymorphic::FlatteningCleanupMode</a></div><div class="ttdeci">FlatteningCleanupMode</div><div class="ttdef"><b>Definition</b> <a href="TransformationPassEnums_8h_8inc_source.html#l00013">TransformationPassEnums.h.inc:13</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1polymorphic_html_a60784cd30ddfef02461e8b7b80e910c9a6fcdc090caeade09d0efd6253932b6f5"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9a6fcdc090caeade09d0efd6253932b6f5">llzk::polymorphic::FlatteningCleanupMode::Unspecified</a></div><div class="ttdeci">@ Unspecified</div><div class="ttdef"><b>Definition</b> <a href="TransformationPassEnums_8h_8inc_source.html#l00014">TransformationPassEnums.h.inc:14</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1polymorphic_html_a60784cd30ddfef02461e8b7b80e910c9ae0372cf62f1b5205fdaf2e6b0c1a9197"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9ae0372cf62f1b5205fdaf2e6b0c1a9197">llzk::polymorphic::FlatteningCleanupMode::Preimage</a></div><div class="ttdeci">@ Preimage</div><div class="ttdef"><b>Definition</b> <a href="TransformationPassEnums_8h_8inc_source.html#l00016">TransformationPassEnums.h.inc:16</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a1427f2f608259bf0a8ccfac39383aa89"><div class="ttname"><a href="namespacellzk.html#a1427f2f608259bf0a8ccfac39383aa89">llzk::replaceOpWithNewOp</a></div><div class="ttdeci">OpClass replaceOpWithNewOp(Rewriter &amp;rewriter, mlir::Operation *op, Args &amp;&amp;...args)</div><div class="ttdoc">Wrapper for PatternRewriter::replaceOpWithNewOp() that automatically copies discardable attributes (i...</div><div class="ttdef"><b>Definition</b> <a href="TypeConversionPatterns_8h_source.html#l00072">TypeConversionPatterns.h:72</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a24116a6e55835f2dd61b126be1842f3b"><div class="ttname"><a href="namespacellzk.html#a24116a6e55835f2dd61b126be1842f3b">llzk::createRemoveUnusedDiscardableAllocationsPass</a></div><div class="ttdeci">std::unique_ptr&lt;::mlir::Pass &gt; createRemoveUnusedDiscardableAllocationsPass()</div><div class="ttdef"><b>Definition</b> <a href="LLZKRemoveUnusedDiscardableAllocationsPass_8cpp_source.html#l00785">LLZKRemoveUnusedDiscardableAllocationsPass.cpp:785</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a24116a6e55835f2dd61b126be1842f3b"><div class="ttname"><a href="namespacellzk.html#a24116a6e55835f2dd61b126be1842f3b">llzk::createRemoveUnusedDiscardableAllocationsPass</a></div><div class="ttdeci">std::unique_ptr&lt;::mlir::Pass &gt; createRemoveUnusedDiscardableAllocationsPass()</div><div class="ttdef"><b>Definition</b> <a href="LLZKRemoveUnusedDiscardableAllocationsPass_8cpp_source.html#l00677">LLZKRemoveUnusedDiscardableAllocationsPass.cpp:677</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a290cbd8f2848b2ab447a3b296adf6830"><div class="ttname"><a href="namespacellzk.html#a290cbd8f2848b2ab447a3b296adf6830">llzk::typeListsUnify</a></div><div class="ttdeci">bool typeListsUnify(Iter1 lhs, Iter2 rhs, mlir::ArrayRef&lt; llvm::StringRef &gt; rhsReversePrefix={}, UnificationMap *unifications=nullptr)</div><div class="ttdoc">Return true iff the two lists of Type instances are equivalent or could be equivalent after full inst...</div><div class="ttdef"><b>Definition</b> <a href="TypeHelper_8h_source.html#l00240">TypeHelper.h:240</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a2bbb039982f4d0a01e53f8901fdaa34d"><div class="ttname"><a href="namespacellzk.html#a2bbb039982f4d0a01e53f8901fdaa34d">llzk::isConcreteType</a></div><div class="ttdeci">bool isConcreteType(Type type, bool allowStructParams)</div><div class="ttdef"><b>Definition</b> <a href="TypeHelper_8cpp_source.html#l00552">TypeHelper.cpp:552</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a3073035b30825ce363ac236f14fe289a"><div class="ttname"><a href="namespacellzk.html#a3073035b30825ce363ac236f14fe289a">llzk::lookupTopLevelSymbol</a></div><div class="ttdeci">mlir::FailureOr&lt; SymbolLookupResultUntyped &gt; lookupTopLevelSymbol(mlir::SymbolTableCollection &amp;tables, mlir::SymbolRefAttr symbol, mlir::Operation *origin, bool reportMissing=true)</div><div class="ttdef"><b>Definition</b> <a href="SymbolLookup_8h_source.html#l00234">SymbolLookup.h:234</a></div></div>
