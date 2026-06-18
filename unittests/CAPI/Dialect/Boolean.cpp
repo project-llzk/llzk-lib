@@ -12,7 +12,9 @@
 #include "llzk-c/Dialect/Bool.h"
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Bool/IR/Attrs.h"
+#include "llzk/Dialect/Bool/IR/Ops.h"
 
 // Include necessary generated CAPI
 #include "llzk/Dialect/Bool/IR/Enums.capi.cpp.inc"
@@ -22,7 +24,6 @@
 #include "llzk/Dialect/Bool/IR/Dialect.capi.test.cpp.inc"
 #include "llzk/Dialect/Bool/IR/Enums.capi.test.cpp.inc"
 #include "llzk/Dialect/Bool/IR/Ops.capi.test.cpp.inc"
-#include "llzk/Dialect/Bool/IR/Ops.h"
 
 #include <llvm/ADT/Sequence.h>
 #include <llvm/ADT/SmallVectorExtras.h>
