@@ -61,6 +61,11 @@ void buildFullStructInliningPipelineImpl(
   // can link "@compute" calls to struct members.
   pm.addPass(mlir::createCanonicalizerPass());
   pm.addPass(std::move(inliningPass));
+
+  // Remove struct and member definitions that are no longer used after inlining.
+  pm.addPass(createUnusedDeclarationEliminationPass(
+      UnusedDeclarationEliminationPassOptions {.removeStructs = true}
+  ));
 }
 
 void buildFullPolyLoweringPipelineImpl(
@@ -74,7 +79,7 @@ void buildFullPolyLoweringPipelineImpl(
   // 2. Degree lowering
   pm.addPass(std::move(polyLoweringPass));
   // 3. Cleanup
-  buildRemoveUnnecessaryOpsAndDefsPipeline(pm);
+  buildRemoveUnnecessaryOpsPipeline(pm);
 }
 
 } // namespace
