@@ -79,7 +79,7 @@ void buildFullPolyLoweringPipelineImpl(
   // 2. Degree lowering
   pm.addPass(std::move(polyLoweringPass));
   // 3. Cleanup
-  buildRemoveUnnecessaryOpsPipeline(pm);
+  buildRemoveUnnecessaryOpsAndDefsPipeline(pm);
 }
 
 } // namespace
