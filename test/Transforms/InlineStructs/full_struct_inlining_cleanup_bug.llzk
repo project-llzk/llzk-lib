@@ -1,0 +1,87 @@
+// These pipelines default their flattening stage to `cleanup=main-as-root`, which
+// avoids leaving unreachable partially instantiated templates behind.
+
+// RUN: llzk-opt -llzk-full-struct-inlining %s | FileCheck %s
+// RUN: llzk-opt -llzk-full-poly-lowering %s | FileCheck %s
+
+// Explicitly overriding that cleanup back to `preimage` in the underlying flatten+inline
+// sequence reproduces the old error (checked by the `-verify-diagnostics` flag).
+
+// RUN: llzk-opt --pass-pipeline='builtin.module(llzk-flatten{cleanup=preimage},llzk-inline-structs)' -verify-diagnostics %s
+
+module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
+  // expected-error@+1 {{Cannot inline struct within a template. Run `llzk-flatten` to instantiate templated structs.}}
+  poly.template @TComponentY {
+    poly.param @A
+    poly.param @B
+
+    struct.def @ComponentY {
+      function.def @compute() -> !struct.type<@TComponentY::@ComponentY<[@A, @B]>> {
+        %self = struct.new : !struct.type<@TComponentY::@ComponentY<[@A, @B]>>
+        function.return %self : !struct.type<@TComponentY::@ComponentY<[@A, @B]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TComponentY::@ComponentY<[@A, @B]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @TComponentX {
+    poly.param @C
+
+    struct.def @ComponentX {
+      struct.member @f2 : !struct.type<@TComponentY::@ComponentY<[5, @C]>>
+
+      function.def @compute() -> !struct.type<@TComponentX::@ComponentX<[@C]>> {
+        %self = struct.new : !struct.type<@TComponentX::@ComponentX<[@C]>>
+        %x = function.call @TComponentY::@ComponentY::@compute()
+          : () -> !struct.type<@TComponentY::@ComponentY<[5, @C]>>
+        struct.writem %self[@f2] = %x
+          : !struct.type<@TComponentX::@ComponentX<[@C]>>,
+            !struct.type<@TComponentY::@ComponentY<[5, @C]>>
+        function.return %self : !struct.type<@TComponentX::@ComponentX<[@C]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TComponentX::@ComponentX<[@C]>>) {
+        %b = struct.readm %self[@f2]
+          : !struct.type<@TComponentX::@ComponentX<[@C]>>,
+            !struct.type<@TComponentY::@ComponentY<[5, @C]>>
+        function.call @TComponentY::@ComponentY::@constrain(%b)
+          : (!struct.type<@TComponentY::@ComponentY<[5, @C]>>) -> ()
+        function.return
+      }
+    }
+  }
+
+  struct.def @Main {
+    struct.member @f3 : !struct.type<@TComponentX::@ComponentX<[43]>>
+
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %x = function.call @TComponentX::@ComponentX::@compute()
+        : () -> !struct.type<@TComponentX::@ComponentX<[43]>>
+      struct.writem %self[@f3] = %x
+        : !struct.type<@Main>, !struct.type<@TComponentX::@ComponentX<[43]>>
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) {
+      %b = struct.readm %self[@f3]
+        : !struct.type<@Main>, !struct.type<@TComponentX::@ComponentX<[43]>>
+      function.call @TComponentX::@ComponentX::@constrain(%b)
+        : (!struct.type<@TComponentX::@ComponentX<[43]>>) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Main {
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@Main>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

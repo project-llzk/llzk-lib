@@ -19,6 +19,34 @@
 
 namespace llzk {
 
+/// Typed nested options for the flattening pass when used inside the full
+/// struct-inlining and full poly-lowering pipelines.
+struct StructInliningFlatteningOptions
+    : public mlir::PassPipelineOptions<StructInliningFlatteningOptions> {
+  // Implementation note: these options should be kept in sync with the `FlatteningPass` ODS.
+
+  Option<unsigned> iterationLimit {
+      *this, "max-iter", llvm::cl::desc("maximum number of flattening iterations before giving up"),
+      llvm::cl::init(1000)
+  };
+
+  Option<polymorphic::FlatteningCleanupMode> cleanupMode {
+      *this, "cleanup",
+      llvm::cl::desc(
+          "cleanup mode for flattening in this pipeline. When left as `unspecified`, these "
+          "pipelines use `main-as-root`. Overriding this is not recommended because the later "
+          "`llzk-inline-structs` pass may crash if parameterized templates survive flattening."
+      ),
+      llvm::cl::init(polymorphic::FlatteningCleanupMode::Unspecified)
+  };
+
+  polymorphic::FlatteningPassOptions createPassOptions() const {
+    return polymorphic::FlatteningPassOptions {
+        .iterationLimit = iterationLimit, .cleanupMode = cleanupMode
+    };
+  }
+};
+
 /// Pure C++ configuration for the full struct inlining pipeline.
 struct FullStructInliningConfig {
   polymorphic::FlatteningPassOptions flattening;
@@ -30,13 +58,17 @@ struct FullStructInliningConfig {
 /// CLI Option configuration for the full struct inlining pipeline.
 struct FullStructInliningOptions : public mlir::PassPipelineOptions<FullStructInliningOptions> {
 
-  using FlatteningOptions = NestedPassOptions<
-      static_cast<std::unique_ptr<mlir::Pass> (*)()>(&llzk::polymorphic::createFlatteningPass)>;
+  using FlatteningOptions = NestedPipelineOptions<StructInliningFlatteningOptions>;
+
   using InliningOptions = NestedPassOptions<
       static_cast<std::unique_ptr<mlir::Pass> (*)()>(&llzk::component::createInlineStructsPass)>;
 
   Option<FlatteningOptions> flattening {
-      *this, "flattening", llvm::cl::desc("options for the flattening pass used in this pipeline"),
+      *this, "flattening",
+      llvm::cl::desc(
+          "options for the flattening pass used in this pipeline; this pipeline defaults "
+          "flattening pass cleanup to `main-as-root`"
+      ),
       llvm::cl::init(FlatteningOptions {})
   };
   Option<bool> arrayToScalar {
@@ -71,7 +103,8 @@ struct FullPolyLoweringOptions : public mlir::PassPipelineOptions<FullPolyLoweri
   Option<StructInliningOptions> structInlining {
       *this, "flatten-inline",
       llvm::cl::desc(
-          "options for the struct flattening and inlining pipeline used before polynomial lowering"
+          "options for the struct flattening and inlining pipeline used before polynomial "
+          "lowering; this pipeline defaults flattening cleanup to `main-as-root`"
       ),
       llvm::cl::init(StructInliningOptions {})
   };

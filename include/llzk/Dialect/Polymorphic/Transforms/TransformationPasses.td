@@ -23,18 +23,21 @@ def FlatteningCleanupModeDescription {
 def FlatteningCleanupMode
     : I32EnumAttr<"FlatteningCleanupMode", FlatteningCleanupModeDescription.r,
                   [
+                      // Unspecified: Leave the cleanup choice to the caller
+                      // (defaults to `preimage` if not specified).
+                      I32EnumAttrCase<"Unspecified", 0, "unspecified">,
                       // Disabled: No definitions are deleted.
-                      I32EnumAttrCase<"Disabled", 0, "disabled">,
+                      I32EnumAttrCase<"Disabled", 1, "disabled">,
                       // Preimage: Only definitions that were replaced with
                       // concrete instantiations are deleted.
-                      I32EnumAttrCase<"Preimage", 1, "preimage">,
+                      I32EnumAttrCase<"Preimage", 2, "preimage">,
                       // ConcreteAsRoot: All definitions that cannot be reached
                       // by a use-def chain from some concrete definition are
                       // deleted.
-                      I32EnumAttrCase<"ConcreteAsRoot", 2, "concrete-as-root">,
+                      I32EnumAttrCase<"ConcreteAsRoot", 3, "concrete-as-root">,
                       // MainAsRoot: All definitions that cannot be reached by a
                       // use-def chain from the main struct are deleted.
-                      I32EnumAttrCase<"MainAsRoot", 3, "main-as-root">,
+                      I32EnumAttrCase<"MainAsRoot", 4, "main-as-root">,
 ]> {
   let cppNamespace = "::llzk::polymorphic";
   let genSpecializedAttr = 0;
@@ -60,6 +63,8 @@ def FlatteningPass : LLZKPass<"llzk-flatten"> {
       to `compute()` functions and unroll loops
     - Unroll loops
   }];
+  // Implementation note: These options should be kept in sync with
+  // `StructInliningFlatteningOptions` in `LLZKTransformationPassPipelines.h`.
   let options =
       [Option<"iterationLimit", "max-iter", "unsigned",
               /* default */ "1000",
@@ -72,10 +77,14 @@ def FlatteningPass : LLZKPass<"llzk-flatten"> {
        Option<"cleanupMode", "cleanup",
               "::llzk::polymorphic::FlatteningCleanupMode",
               /* default */
-              "::llzk::polymorphic::FlatteningCleanupMode::Preimage",
+              "::llzk::polymorphic::FlatteningCleanupMode::Unspecified",
               FlatteningCleanupModeDescription.r, [{::llvm::cl::values(
+                clEnumValN(::llzk::polymorphic::FlatteningCleanupMode::Unspecified,
+                           stringifyFlatteningCleanupMode(::llzk::polymorphic::FlatteningCleanupMode::Unspecified),
+                           "Use the cleanup mode specified by the calling pipeline (defaults to `preimage` if not specified)."),
                 clEnumValN(::llzk::polymorphic::FlatteningCleanupMode::Disabled,
-                           stringifyFlatteningCleanupMode(::llzk::polymorphic::FlatteningCleanupMode::Disabled), "No definitions are deleted."),
+                           stringifyFlatteningCleanupMode(::llzk::polymorphic::FlatteningCleanupMode::Disabled),
+                           "No definitions are deleted."),
                 clEnumValN(::llzk::polymorphic::FlatteningCleanupMode::Preimage,
                            stringifyFlatteningCleanupMode(::llzk::polymorphic::FlatteningCleanupMode::Preimage),
                            "Only definitions that were replaced with concrete instantiations are deleted."),

@@ -21,6 +21,8 @@
 #include <mlir/Pass/PassRegistry.h>
 #include <mlir/Transforms/Passes.h>
 
+#include <utility>
+
 using namespace mlir;
 
 namespace llzk {
@@ -37,10 +39,15 @@ inline std::unique_ptr<Pass> createConfiguredPass(const NestedPassOptionT &optio
 }
 
 void buildFullStructInliningPipelineImpl(
-    OpPassManager &pm, std::unique_ptr<Pass> flatteningPass, bool arrayToScalar, bool podToScalar,
-    std::unique_ptr<Pass> inliningPass
+    OpPassManager &pm, polymorphic::FlatteningPassOptions flattening, bool arrayToScalar,
+    bool podToScalar, std::unique_ptr<Pass> inliningPass
 ) {
-  pm.addPass(std::move(flatteningPass));
+  // default to `main-as-root` if unspecified to avoid leaving parameterized templates
+  // that cause the later struct inlining pass to crash
+  if (flattening.cleanupMode == polymorphic::FlatteningCleanupMode::Unspecified) {
+    flattening.cleanupMode = polymorphic::FlatteningCleanupMode::MainAsRoot;
+  }
+  pm.addPass(polymorphic::createFlatteningPass(flattening));
 
   // Run array-to-scalar first because it can split arrays within a pod
   // but pod-to-scalar cannot split pods within an array.
@@ -57,12 +64,12 @@ void buildFullStructInliningPipelineImpl(
 }
 
 void buildFullPolyLoweringPipelineImpl(
-    OpPassManager &pm, std::unique_ptr<Pass> flatteningPass, bool arrayToScalar, bool podToScalar,
-    std::unique_ptr<Pass> inliningPass, std::unique_ptr<Pass> polyLoweringPass
+    OpPassManager &pm, polymorphic::FlatteningPassOptions flattening, bool arrayToScalar,
+    bool podToScalar, std::unique_ptr<Pass> inliningPass, std::unique_ptr<Pass> polyLoweringPass
 ) {
   // 1. Struct flattening and inlining
   buildFullStructInliningPipelineImpl(
-      pm, std::move(flatteningPass), arrayToScalar, podToScalar, std::move(inliningPass)
+      pm, flattening, arrayToScalar, podToScalar, std::move(inliningPass)
   );
   // 2. Degree lowering
   pm.addPass(std::move(polyLoweringPass));
@@ -89,15 +96,15 @@ void buildProductProgramPipeline(OpPassManager &pm) {
 
 void buildFullStructInliningPipeline(OpPassManager &pm, const FullStructInliningConfig &cfg) {
   buildFullStructInliningPipelineImpl(
-      pm, polymorphic::createFlatteningPass(cfg.flattening), cfg.arrayToScalar, cfg.podToScalar,
+      pm, cfg.flattening, cfg.arrayToScalar, cfg.podToScalar,
       component::createInlineStructsPass(cfg.inlining)
   );
 }
 
 void buildFullPolyLoweringPipeline(OpPassManager &pm, const FullPolyLoweringConfig &cfg) {
   buildFullPolyLoweringPipelineImpl(
-      pm, polymorphic::createFlatteningPass(cfg.structInlining.flattening),
-      cfg.structInlining.arrayToScalar, cfg.structInlining.podToScalar,
+      pm, cfg.structInlining.flattening, cfg.structInlining.arrayToScalar,
+      cfg.structInlining.podToScalar,
       component::createInlineStructsPass(cfg.structInlining.inlining),
       createPolyLoweringPass(cfg.polyLowering)
   );
@@ -128,10 +135,14 @@ void registerTransformationPassPipelines() {
 
   PassPipelineRegistration<FullStructInliningOptions>(
       "llzk-full-struct-inlining",
-      "Run flattening and inlining of all struct definitions into the `main` struct.",
+      "Run flattening and inlining of all struct definitions into the `main` struct. This "
+      "pipeline uses the `main-as-root` cleanup mode in the flattening pass by default. It "
+      "is not recommended to override this cleanup mode because other cleanup modes may "
+      "leave behind parameterized templates that later cause `llzk-inline-structs` to crash.",
       [](OpPassManager &pm, const FullStructInliningOptions &opts) {
+    auto flattening = opts.flattening.getValue().createOptions();
     buildFullStructInliningPipelineImpl(
-        pm, createConfiguredPass(opts.flattening), opts.arrayToScalar, opts.podToScalar,
+        pm, flattening->createPassOptions(), opts.arrayToScalar, opts.podToScalar,
         createConfiguredPass(opts.inlining)
     );
   }
@@ -139,12 +150,16 @@ void registerTransformationPassPipelines() {
 
   PassPipelineRegistration<FullPolyLoweringOptions>(
       "llzk-full-poly-lowering",
-      "Lower polynomial constraints to a given max degree, then remove "
-      "unnecessary operations and definitions.",
+      "Run flattening and inlining of all struct definitions into the `main` struct, then lower "
+      "polynomial constraints to a given max degree, and finally remove unnecessary operations and "
+      "definitions. This pipeline uses the `main-as-root` cleanup mode in the flattening pass by "
+      "default. It is not recommended to override this cleanup mode because other cleanup modes "
+      "may leave behind parameterized templates that later cause `llzk-inline-structs` to crash.",
       [](OpPassManager &pm, const FullPolyLoweringOptions &opts) {
     auto structInlining = opts.structInlining.getValue().createOptions();
+    auto flattening = structInlining->flattening.getValue().createOptions();
     buildFullPolyLoweringPipelineImpl(
-        pm, createConfiguredPass(structInlining->flattening), structInlining->arrayToScalar,
+        pm, flattening->createPassOptions(), structInlining->arrayToScalar,
         structInlining->podToScalar, createConfiguredPass(structInlining->inlining),
         createConfiguredPass(opts.polyLowering)
     );

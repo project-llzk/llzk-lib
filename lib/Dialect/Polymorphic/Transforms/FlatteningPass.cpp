@@ -2412,6 +2412,12 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
   using Base = FlatteningPassBase<PassImpl>;
   using Base::Base;
 
+  /// If the cleanup mode is unspecified, default to `Preimage`.
+  FlatteningCleanupMode getEffectiveCleanupMode() const {
+    FlatteningCleanupMode m = cleanupMode.getValue();
+    return m == FlatteningCleanupMode::Unspecified ? FlatteningCleanupMode::Preimage : m;
+  }
+
   void runOnOperation() override {
     ModuleOp modOp = getOperation();
     if (failed(runOn(modOp))) {
@@ -2427,6 +2433,7 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
   }
 
   inline LogicalResult runOn(ModuleOp modOp) {
+    FlatteningCleanupMode cleanupMode = getEffectiveCleanupMode();
     // If the cleanup mode is set to remove anything not reachable from the main struct, do an
     // initial pass to remove things that are not reachable (as an optimization) because creating
     // an instantiated version of a struct will not cause something to become reachable that was
@@ -2535,6 +2542,7 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
 
   // Perform cleanup according to the 'cleanupMode' option.
   LogicalResult cleanupSwitch(ModuleOp modOp, const ConversionTracker &tracker) {
+    FlatteningCleanupMode cleanupMode = getEffectiveCleanupMode();
     LLVM_DEBUG({ llvm::dbgs() << "[FlatteningPass] Running step 5: cleanup "; });
     switch (cleanupMode) {
     case FlatteningCleanupMode::MainAsRoot:
@@ -2546,6 +2554,7 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
     case FlatteningCleanupMode::Preimage:
       LLVM_DEBUG(llvm::dbgs() << "(preimage mode)\n");
       return erasePreimageOfInstantiations(modOp, tracker);
+    case FlatteningCleanupMode::Unspecified:
     default:
       LLVM_DEBUG(llvm::dbgs() << "(disabled)\n");
       return success();
