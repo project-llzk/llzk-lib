@@ -239,11 +239,12 @@ def LLZK_ReadPodOp : ScalarPODAccessOp<"read", 1> {
   }];
 
   let arguments = (ins Arg<LLZK_PODType, "the pod to read from">:$pod_ref,
-      FlatSymbolRefAttr:$record_name);
+      StrAttr:$record_name);
   let results = (outs AnyLLZKType:$result);
   let assemblyFormat = [{
     $pod_ref `[` custom<RecordName>($record_name) `]` `:` type($pod_ref) `,` type($result) attr-dict
   }];
+  let useCustomPropertiesEncoding = 1;
   let hasVerifier = 1;
 }
 
@@ -264,11 +265,12 @@ def LLZK_WritePodOp : ScalarPODAccessOp<"write", 0> {
   }];
 
   let arguments = (ins Arg<LLZK_PODType, "the pod to write into">:$pod_ref,
-      FlatSymbolRefAttr:$record_name, AnyLLZKType:$value);
+      StrAttr:$record_name, AnyLLZKType:$value);
 
   let assemblyFormat = [{
     $pod_ref `[` custom<RecordName>($record_name) `]` `=` $value `:` type($pod_ref) `,` type($value) attr-dict
   }];
+  let useCustomPropertiesEncoding = 1;
   let hasVerifier = 1;
 }
 

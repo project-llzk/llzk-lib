@@ -552,7 +552,7 @@ LogicalResult CallOp::readProperties(DialectBytecodeReader &reader, OperationSta
   return success();
 }
 
-// Same as tablegen would generate to serialize version 2 IR.
+// Same as tablegen would generate to serialize current version IR.
 void CallOp::writeProperties(DialectBytecodeWriter &writer) {
   auto &prop = getProperties();
   writer.writeAttribute(prop.callee);

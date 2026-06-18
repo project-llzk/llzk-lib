@@ -11,6 +11,7 @@
 
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Versioning.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
 #include "llzk/Util/TypeHelper.h"
@@ -470,7 +471,7 @@ bool PodAccessOpInterface::canRewire(
     return false;
   }
 
-  StringAttr recordName = getRecordNameAsStringAttr();
+  StringAttr recordName = getRecordNameAttr();
   if (!slot.subelementTypes.contains(recordName)) {
     return false;
   }
@@ -487,7 +488,7 @@ DeletionKind PodAccessOpInterface::rewire(
   assert(slot.ptr == getPodRef());
   assert(slot.elemType == getPodRefType());
 
-  StringAttr recordName = getRecordNameAsStringAttr();
+  StringAttr recordName = getRecordNameAttr();
   const MemorySlot &memorySlot = subslots.at(recordName);
   getPodRefMutable().set(memorySlot.ptr);
 
@@ -497,6 +498,42 @@ DeletionKind PodAccessOpInterface::rewire(
 //===----------------------------------------------------------------------===//
 // ReadPodOp
 //===----------------------------------------------------------------------===//
+
+namespace {
+
+LogicalResult readRecordNameProperty(DialectBytecodeReader &reader, StringAttr &recordName) {
+  auto versionOpt = reader.getDialectVersion<PODDialect>();
+  if (succeeded(versionOpt)) {
+    const auto &ver = static_cast<const LLZKDialectVersion &>(**versionOpt);
+    if (ver.majorVersion < 3) {
+      // Prior to v3 it was serialized as a `FlatSymbolRefAttr` instead of a `StringAttr`.
+      FlatSymbolRefAttr attr;
+      if (failed(reader.readAttribute(attr))) {
+        return failure();
+      }
+      recordName = attr.getAttr();
+      return success();
+    }
+  }
+
+  // Same as tablegen would generate to deserialize current-version IR.
+  return reader.readAttribute(recordName);
+}
+
+void writeRecordNameProperty(DialectBytecodeWriter &writer, StringAttr recordName) {
+  writer.writeAttribute(recordName);
+}
+
+} // namespace
+
+LogicalResult ReadPodOp::readProperties(DialectBytecodeReader &reader, OperationState &state) {
+  auto &prop = state.getOrAddProperties<Properties>();
+  return readRecordNameProperty(reader, prop.record_name);
+}
+
+void ReadPodOp::writeProperties(DialectBytecodeWriter &writer) {
+  writeRecordNameProperty(writer, getProperties().record_name);
+}
 
 LogicalResult ReadPodOp::verify() {
   auto podTy = llvm::dyn_cast<PodType>(getPodRef().getType());
@@ -522,6 +559,15 @@ LogicalResult ReadPodOp::verify() {
 // WritePodOp
 //===----------------------------------------------------------------------===//
 
+LogicalResult WritePodOp::readProperties(DialectBytecodeReader &reader, OperationState &state) {
+  auto &prop = state.getOrAddProperties<Properties>();
+  return readRecordNameProperty(reader, prop.record_name);
+}
+
+void WritePodOp::writeProperties(DialectBytecodeWriter &writer) {
+  writeRecordNameProperty(writer, getProperties().record_name);
+}
+
 LogicalResult WritePodOp::verify() {
   auto podTy = llvm::dyn_cast<PodType>(getPodRef().getType());
   if (!podTy) {
@@ -546,11 +592,16 @@ LogicalResult WritePodOp::verify() {
 // Parsing/Printing helpers
 //===----------------------------------------------------------------------===//
 
-ParseResult parseRecordName(AsmParser &parser, FlatSymbolRefAttr &name) {
-  return parser.parseCustomAttributeWithFallback(name);
+ParseResult parseRecordName(AsmParser &parser, StringAttr &name) {
+  FlatSymbolRefAttr symRef;
+  auto result = parser.parseCustomAttributeWithFallback(symRef);
+  if (succeeded(result)) {
+    name = symRef.getAttr();
+  }
+  return result;
 }
 
-void printRecordName(AsmPrinter &printer, Operation *, FlatSymbolRefAttr name) {
+void printRecordName(AsmPrinter &printer, Operation *, StringAttr name) {
   printer.printSymbolName(name.getValue());
 }
 
