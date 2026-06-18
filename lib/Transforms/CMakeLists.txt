@@ -15,7 +15,7 @@ target_link_libraries(
     ${LLZK_DEP_DIALECT_LIBS}
     MLIRIR MLIRPass MLIRParser MLIRTransformUtils MLIRSCFTransforms
     LLVMHeaders MLIRHeaders
-    LLZKDialect
+    LLZKAllDialects
   PRIVATE
     LLZKAnalysis
 )
