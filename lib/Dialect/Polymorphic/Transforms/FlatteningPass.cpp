@@ -2433,12 +2433,12 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
   }
 
   inline LogicalResult runOn(ModuleOp modOp) {
-    FlatteningCleanupMode cleanupMode = getEffectiveCleanupMode();
+    FlatteningCleanupMode effectiveCleanupMode = getEffectiveCleanupMode();
     // If the cleanup mode is set to remove anything not reachable from the main struct, do an
     // initial pass to remove things that are not reachable (as an optimization) because creating
     // an instantiated version of a struct will not cause something to become reachable that was
     // not already reachable in parameterized form.
-    if (cleanupMode == FlatteningCleanupMode::MainAsRoot) {
+    if (effectiveCleanupMode == FlatteningCleanupMode::MainAsRoot) {
       if (failed(eraseUnreachableFromMainStruct(modOp))) {
         return failure();
       }
@@ -2542,9 +2542,9 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
 
   // Perform cleanup according to the 'cleanupMode' option.
   LogicalResult cleanupSwitch(ModuleOp modOp, const ConversionTracker &tracker) {
-    FlatteningCleanupMode cleanupMode = getEffectiveCleanupMode();
+    FlatteningCleanupMode effectiveCleanupMode = getEffectiveCleanupMode();
     LLVM_DEBUG({ llvm::dbgs() << "[FlatteningPass] Running step 5: cleanup "; });
-    switch (cleanupMode) {
+    switch (effectiveCleanupMode) {
     case FlatteningCleanupMode::MainAsRoot:
       LLVM_DEBUG(llvm::dbgs() << "(main as root mode)\n");
       return eraseUnreachableFromMainStruct(modOp, false);
