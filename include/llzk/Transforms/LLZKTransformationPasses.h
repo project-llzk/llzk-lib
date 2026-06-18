@@ -16,14 +16,10 @@
 
 namespace llzk {
 
-void addRemoveUnnecessaryOpsAndDefsPipeline(mlir::OpPassManager &pm);
-
-void registerTransformationPassPipelines();
-
 void registerInliningExtensions(mlir::DialectRegistry &registry);
 
 #define GEN_PASS_DECL
 #define GEN_PASS_REGISTRATION
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 
-}; // namespace llzk
+} // namespace llzk

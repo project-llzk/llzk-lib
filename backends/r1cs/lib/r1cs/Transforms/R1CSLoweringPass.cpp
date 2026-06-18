@@ -704,6 +704,9 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
       buildAndEmitR1CS(moduleOp, structDef, constrainFunc, degreeMemo);
       structDef.erase();
     });
+
+    // Remove `llzk.main` attribute because all structs were replaced with `r1cs.circuit` ops.
+    moduleOp->removeAttr(MAIN_ATTR_NAME);
   }
 };
 

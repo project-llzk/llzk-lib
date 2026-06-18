@@ -30,7 +30,7 @@ using namespace mlir;
 using namespace llzk;
 using namespace llzk::array;
 
-static void registerLLZKArrayTransformationPasses() { registerTransformationPasses(); }
+static inline void registerLLZKArrayTransformationPasses() { registerTransformationPasses(); }
 
 // Include the generated CAPI
 #include "llzk/Dialect/Array/IR/Ops.capi.cpp.inc"

@@ -1,0 +1,8 @@
+added:
+  - "`llzk-full-struct-inlining` pass pipeline definition"
+
+changed:
+  - "[header incompatibility] move `llzk-inline-structs` pass definition to `llzk/Dialect/Struct/Transforms/TransformationPasses.h`"
+  - "[CLI incompatibility] `llzk-full-poly-lowering` option `max-degree` is now `lowering={max-degree=3}`"
+  - "run `llzk-full-struct-inlining` at start of `llzk-full-poly-lowering` pass pipeline"
+  - "run `llzk-full-poly-lowering` with `max-degree=2` at start of `llzk-full-r1cs-lowering` pass pipeline"

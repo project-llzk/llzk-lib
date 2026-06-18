@@ -17,4 +17,4 @@ namespace llzk::pod {
 #define GEN_PASS_REGISTRATION
 #include "llzk/Dialect/POD/Transforms/TransformationPasses.h.inc"
 
-}; // namespace llzk::pod
+} // namespace llzk::pod
