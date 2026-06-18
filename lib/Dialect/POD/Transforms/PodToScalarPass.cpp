@@ -1414,7 +1414,7 @@ static bool hasValueUse(Operation &op, Value value) {
 /// whole-POD uses or record accesses that may observe mutation ordering.
 static WritePodOp findNearestForwardableWriteInBlock(ReadPodOp readOp) {
   Value podRef = readOp.getPodRef();
-  StringAttr recordName = getRecordNameAsStringAttr(readOp);
+  StringAttr recordName = readOp.getRecordNameAttr();
 
   for (Operation *op = readOp->getPrevNode(); op; op = op->getPrevNode()) {
     if (!hasValueUse(*op, podRef)) {
