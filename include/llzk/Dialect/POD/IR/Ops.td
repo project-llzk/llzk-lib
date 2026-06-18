@@ -244,6 +244,7 @@ def LLZK_ReadPodOp : ScalarPODAccessOp<"read", 1> {
   let assemblyFormat = [{
     $pod_ref `[` custom<RecordName>($record_name) `]` `:` type($pod_ref) `,` type($result) attr-dict
   }];
+  let useCustomPropertiesEncoding = 1;
   let hasVerifier = 1;
 }
 
@@ -269,6 +270,7 @@ def LLZK_WritePodOp : ScalarPODAccessOp<"write", 0> {
   let assemblyFormat = [{
     $pod_ref `[` custom<RecordName>($record_name) `]` `=` $value `:` type($pod_ref) `,` type($value) attr-dict
   }];
+  let useCustomPropertiesEncoding = 1;
   let hasVerifier = 1;
 }
 
