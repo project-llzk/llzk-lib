@@ -49,8 +49,8 @@ void buildFullStructInliningPipelineImpl(
   }
   pm.addPass(polymorphic::createFlatteningPass(flattening));
 
-  // Run array-to-scalar first because it can split arrays within a pod
-  // but pod-to-scalar cannot split pods within an array.
+  // Run array-to-scalar first because it can still scalarize plain array structure nested inside
+  // pods before pod-to-scalar rewrites arrays whose element type is a POD into parallel arrays.
   if (arrayToScalar) {
     pm.addPass(array::createArrayToScalarPass());
   }

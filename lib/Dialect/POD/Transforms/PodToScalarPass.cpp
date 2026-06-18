@@ -15,26 +15,27 @@
 /// 0. Scan to find `llzk.nondet` ops that allocate uninitialized pods and replace them with
 ///    an equivalent `pod.new`
 ///
-/// 1. Run a dialect conversion that replaces `PodType` struct members with one scalar member per
-///    record and remembers how each original member was split.
+/// 1. Run a dialect conversion that replaces direct `PodType` struct members with one scalar
+///    member per record, replaces arrays whose element type is a POD with one parallel array per
+///    scalar leaf record, and remembers how each original member was split.
 ///
 /// 2. Run a dialect conversion that does the following:
 ///
 ///    - Replace `MemberReadOp` and `MemberWriteOp` targeting the members that were split in step 1
-///      so they instead perform scalar reads and writes from the new members. The transformation is
-///      local to the current op. Therefore, when replacing the `MemberReadOp` a new pod is
-///      created locally and all uses of the `MemberReadOp` are replaced with the new pod Value,
-///      then each scalar member read is followed by scalar write into the new pod. Similarly,
-///      when replacing a `MemberWriteOp`, each element in the pod operand needs a scalar read
-///      from the pod followed by a scalar write to the new member. Making only local changes
-///      keeps this step simple and later steps will optimize.
+///      so they instead perform reads and writes on the new scalar or parallel-array members. The
+///      transformation is local to the current op. Therefore, when replacing the `MemberReadOp` a
+///      new pod is created locally and all uses of the `MemberReadOp` are replaced with the new
+///      pod Value, then each scalar member read is followed by scalar write into the new pod.
+///      Similarly, when replacing a `MemberWriteOp`, each element in the pod operand needs a
+///      scalar read from the pod followed by a scalar write to the new member. Making only local
+///      changes keeps this step simple and later steps will optimize.
 ///
 ///    - Remove optional initialization from `NewPodOp` and instead insert a list of `WritePodOp`
 ///      immediately following.
 ///
-///    - Split pods to scalars in `FuncDefOp`, `CallOp`, and `ReturnOp` and insert the necessary
-///      create/read/write ops so the changes are as local as possible (just as described for
-///      `MemberReadOp` and `MemberWriteOp`)
+///    - Split arrays whose element type is a POD into parallel arrays in `array.*`,
+///      `FuncDefOp`, `CallOp`, and `ReturnOp`, then split remaining direct POD values to scalars
+///      in `FuncDefOp`, `CallOp`, and `ReturnOp`.
 ///
 /// 3. Promote pod reads and writes out of `scf.if`, `scf.for`, and `scf.while` regions when the
 ///    access can be modeled as an SSA value flowing through the region boundary. This puts the
@@ -62,6 +63,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Dialect.h"
+#include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Bool/IR/Dialect.h"
 #include "llzk/Dialect/Cast/IR/Dialect.h"
 #include "llzk/Dialect/Constrain/IR/Dialect.h"
@@ -86,6 +89,7 @@
 #include "llzk/Util/Walk.h"
 
 #include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/Dialect/SCF/Transforms/Patterns.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Transforms/DialectConversion.h>
 #include <mlir/Transforms/GreedyPatternRewriteDriver.h>
@@ -103,6 +107,7 @@ namespace llzk::pod {
 
 using namespace mlir;
 using namespace llzk;
+using namespace llzk::array;
 using namespace llzk::pod;
 using namespace llzk::function;
 using namespace llzk::component;
@@ -216,6 +221,107 @@ splitPodType(TypeCollection types, SmallVector<size_t> *originalIdxToSize = null
   return collect;
 }
 
+/// Visit each non-POD leaf record in `podTy`, providing its record-name chain and leaf type.
+template <typename Fn>
+static void forEachPodLeaf(PodType podTy, SmallVectorImpl<StringAttr> &recordChain, Fn &&callback) {
+  for (RecordAttr record : podTy.getRecords()) {
+    recordChain.push_back(record.getName());
+    if (PodType nestedPodTy = dyn_cast<PodType>(record.getType())) {
+      forEachPodLeaf(nestedPodTy, recordChain, callback);
+    } else {
+      callback(RecordChain(recordChain), record.getType());
+    }
+    recordChain.pop_back();
+  }
+}
+
+/// If the given ArrayType has a POD element type, return it.
+inline static ArrayType splittablePodArray(ArrayType at) {
+  return isa<PodType>(at.getElementType()) ? at : nullptr;
+}
+
+/// If the given Type is an ArrayType with a POD element type, return it.
+inline static ArrayType splittablePodArray(Type t) {
+  if (ArrayType at = dyn_cast<ArrayType>(t)) {
+    return splittablePodArray(at);
+  }
+  return nullptr;
+}
+
+/// Return `true` iff any type in the range is an array whose element type is a POD.
+inline static bool containsSplittablePodArrayType(ArrayRef<Type> types) {
+  return llvm::any_of(types, [](Type t) { return splittablePodArray(t); });
+}
+
+/// Return `true` iff any type in the range is an array whose element type is a POD.
+template <typename T> static bool containsSplittablePodArrayType(ValueTypeRange<T> types) {
+  return llvm::any_of(types, [](Type t) { return splittablePodArray(t); });
+}
+
+/// If `t` is an array with POD element type, append one parallel array type for each POD leaf.
+static size_t splitPodArrayTypeTo(
+    Type t, SmallVectorImpl<Type> &collect, SmallVector<RecordChain> *splitIds = nullptr
+) {
+  if (ArrayType at = splittablePodArray(t)) {
+    auto podTy = llvm::cast<PodType>(at.getElementType());
+    SmallVector<StringAttr> recordChain;
+    size_t originalSize = collect.size();
+    forEachPodLeaf(podTy, recordChain, [&](RecordChain id, Type leafType) {
+      collect.push_back(at.cloneWith(leafType));
+      if (splitIds) {
+        splitIds->push_back(std::move(id));
+      }
+    });
+    return collect.size() - originalSize;
+  }
+
+  collect.push_back(t);
+  return 1;
+}
+
+/// For each Type in the given input collection, call `splitPodArrayTypeTo(Type,...)`.
+template <typename TypeCollection>
+inline void splitPodArrayTypeTo(
+    TypeCollection types, SmallVectorImpl<Type> &collect, SmallVector<size_t> *originalIdxToSize
+) {
+  for (Type t : types) {
+    size_t count = splitPodArrayTypeTo(t, collect);
+    if (originalIdxToSize) {
+      originalIdxToSize->push_back(count);
+    }
+  }
+}
+
+/// Return a list such that each non-array POD type is kept as-is, while each array-of-POD type is
+/// replaced by one parallel array type per non-POD leaf record in the element POD.
+template <typename TypeCollection>
+inline SmallVector<Type>
+splitPodArrayType(TypeCollection types, SmallVector<size_t> *originalIdxToSize = nullptr) {
+  SmallVector<Type> collect;
+  splitPodArrayTypeTo(types, collect, originalIdxToSize);
+  return collect;
+}
+
+/// Return the suffixes to append to a function arg/result name when splitting an array of PODs.
+static SmallVector<std::string> getSplitPodArrayRecordNameSuffixes(Type type) {
+  SmallVector<std::string> suffixes;
+  if (ArrayType at = splittablePodArray(type)) {
+    SmallVector<RecordChain> splitIds;
+    SmallVector<Type> ignoredTypes;
+    splitPodArrayTypeTo(at, ignoredTypes, &splitIds);
+    suffixes.reserve(splitIds.size());
+    for (const RecordChain &id : splitIds) {
+      std::string suffix;
+      llvm::raw_string_ostream os(suffix);
+      for (StringAttr recordName : id.nameList) {
+        os << '.' << recordName.getValue();
+      }
+      suffixes.push_back(std::move(suffix));
+    }
+  }
+  return suffixes;
+}
+
 /// Create a `pod.read` for one record of `podRef`.
 inline static ReadPodOp
 genRead(Location loc, Value podRef, StringAttr recordName, OpBuilder &rewriter) {
@@ -228,6 +334,54 @@ genRead(Location loc, Value podRef, StringAttr recordName, OpBuilder &rewriter) 
 inline static WritePodOp
 genWrite(Location loc, Value podRef, StringAttr recordName, Value value, OpBuilder &rewriter) {
   return rewriter.create<WritePodOp>(loc, podRef, recordName, value);
+}
+
+/// Return the single converted value from a 1:N adaptor range.
+inline static Value getSingleConvertedValue(ValueRange values) {
+  assert(values.size() == 1 && "expected a 1:1 converted value range");
+  return values.front();
+}
+
+/// Flatten a range of converted value ranges into a single list of values.
+template <typename RangeOfRanges>
+static SmallVector<Value> flattenConvertedValues(RangeOfRanges ranges) {
+  SmallVector<Value> values;
+  for (ValueRange range : ranges) {
+    llvm::append_range(values, range);
+  }
+  return values;
+}
+
+/// Read a nested POD leaf by following each record name in `recordChain`.
+static Value
+genReadAlongPath(Location loc, Value podRef, RecordChain recordChain, OpBuilder &rewriter) {
+  Value value = podRef;
+  for (StringAttr attr : recordChain.nameList) {
+    value = genRead(loc, value, attr, rewriter);
+  }
+  return value;
+}
+
+/// Reconstruct a POD record from the leaf values collected while splitting nested accesses.
+static Value rebuildFlattenedPodRecord(
+    Location loc, Type recordType, SmallVectorImpl<StringAttr> &recordChain,
+    const DenseMap<RecordChain, Value> &leafValues, ConversionPatternRewriter &rewriter
+) {
+  if (PodType nestedPodTy = dyn_cast<PodType>(recordType)) {
+    NewPodOp nestedPod = rewriter.create<NewPodOp>(loc, nestedPodTy);
+    for (RecordAttr record : nestedPodTy.getRecords()) {
+      recordChain.push_back(record.getName());
+      Value recordValue =
+          rebuildFlattenedPodRecord(loc, record.getType(), recordChain, leafValues, rewriter);
+      genWrite(loc, nestedPod, record.getName(), recordValue, rewriter);
+      recordChain.pop_back();
+    }
+    return nestedPod;
+  }
+
+  auto it = leafValues.find(RecordChain(recordChain));
+  assert(it != leafValues.end() && "missing flattened POD leaf value");
+  return it->second;
 }
 
 /// Return the suffixes to append to a function arg/result name when splitting the given type.
@@ -341,28 +495,16 @@ static void flattenPodMemberIntoLeaves(
     LocalMemberReplacementMap &localRepMapRef, SymbolTable &structSymbolTable,
     ConversionPatternRewriter &rewriter
 ) {
-  for (RecordAttr record : podTy.getRecords()) {
-    recordChain.push_back(record.getName());
-    if (PodType nestedPodTy = dyn_cast<PodType>(record.getType())) {
-      flattenPodMemberIntoLeaves(
-          originalMember, nestedPodTy, recordChain, localRepMapRef, structSymbolTable, rewriter
-      );
-      recordChain.pop_back();
-      continue;
-    }
-
+  forEachPodLeaf(podTy, recordChain, [&](RecordChain id, Type ty) {
     StringAttr name = getFlattenedMemberName(
-        originalMember.getContext(), originalMember.getSymNameAttr(), recordChain
+        originalMember.getContext(), originalMember.getSymNameAttr(), id.nameList
     );
-    Type ty = record.getType();
     MemberDefOp newMember = rewriter.create<MemberDefOp>(
         originalMember.getLoc(), name, ty, originalMember.getSignal(), originalMember.getColumn()
     );
     newMember.setPublicAttr(originalMember.hasPublicAttr());
-    localRepMapRef[RecordChain(recordChain)] =
-        std::make_pair(structSymbolTable.insert(newMember), ty);
-    recordChain.pop_back();
-  }
+    localRepMapRef[id] = std::make_pair(structSymbolTable.insert(newMember), ty);
+  });
 }
 
 /// Split a pod-typed struct member definition into one scalar member definition per POD record.
@@ -398,20 +540,527 @@ public:
   }
 };
 
-/// Replace `PodType` struct members with scalar members.
+/// Split an array-of-POD struct member definition into one parallel array member per POD leaf.
+class SplitPodArrayInMemberDefOp : public OpConversionPattern<MemberDefOp> {
+  SymbolTableCollection &tables;
+  MemberReplacementMap &repMapRef;
+
+public:
+  SplitPodArrayInMemberDefOp(
+      MLIRContext *ctx, SymbolTableCollection &symTables, MemberReplacementMap &memberRepMap
+  )
+      : OpConversionPattern<MemberDefOp>(ctx), tables(symTables), repMapRef(memberRepMap) {}
+
+  inline static bool legal(MemberDefOp op) { return !splittablePodArray(op.getType()); }
+
+  LogicalResult match(MemberDefOp op) const override { return failure(legal(op)); }
+
+  void
+  rewrite(MemberDefOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+    StructDefOp inStruct = op->getParentOfType<StructDefOp>();
+    assert(inStruct);
+    LocalMemberReplacementMap &localRepMapRef = repMapRef[inStruct][op.getSymNameAttr()];
+
+    ArrayType arrTy = llvm::cast<ArrayType>(adaptor.getType());
+    SmallVector<RecordChain> splitIds;
+    SmallVector<Type> splitTypes;
+    splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
+
+    SymbolTable &structSymbolTable = tables.getSymbolTable(inStruct);
+    for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
+      StringAttr name = getFlattenedMemberName(op.getContext(), op.getSymNameAttr(), id.nameList);
+      MemberDefOp newMember = rewriter.create<MemberDefOp>(
+          op.getLoc(), name, splitType, op.getSignal(), op.getColumn()
+      );
+      newMember.setPublicAttr(op.hasPublicAttr());
+      localRepMapRef[id] = std::make_pair(structSymbolTable.insert(newMember), splitType);
+    }
+    rewriter.eraseOp(op);
+  }
+};
+
+/// Replace direct `PodType` struct members with scalar members and arrays-of-POD with parallel
+/// array members named after the corresponding POD leaf.
 static LogicalResult
 step1(ModuleOp modOp, SymbolTableCollection &symTables, MemberReplacementMap &memberRepMap) {
   MLIRContext *ctx = modOp.getContext();
 
   RewritePatternSet patterns(ctx);
 
-  patterns.add<SplitPodInMemberDefOp>(ctx, symTables, memberRepMap);
+  patterns.add<SplitPodInMemberDefOp, SplitPodArrayInMemberDefOp>(ctx, symTables, memberRepMap);
 
   ConversionTarget target(*ctx);
   baseTargetSetup(target);
-  target.addDynamicallyLegalOp<MemberDefOp>(SplitPodInMemberDefOp::legal);
+  target.addDynamicallyLegalOp<MemberDefOp>([](MemberDefOp op) {
+    return SplitPodInMemberDefOp::legal(op) && SplitPodArrayInMemberDefOp::legal(op);
+  });
 
-  LLVM_DEBUG(llvm::dbgs() << "Begin step 1: split pod-type members\n";);
+  LLVM_DEBUG(llvm::dbgs() << "Begin step 1: split pod-type and array-of-pod members\n";);
+  return applyFullConversion(modOp, target, std::move(patterns));
+}
+
+/// Type converter that replaces each array-of-POD type with one parallel array type per POD leaf.
+class PodArrayTypeConverter : public TypeConverter {
+public:
+  PodArrayTypeConverter() {
+    addConversion([](Type type) { return type; });
+    addConversion(
+        [](ArrayType arrTy, SmallVectorImpl<Type> &results) -> std::optional<LogicalResult> {
+      if (!splittablePodArray(arrTy)) {
+        return std::nullopt;
+      }
+      splitPodArrayTypeTo(arrTy, results);
+      return success();
+    }
+    );
+  }
+};
+
+/// Split `llzk.nondet` of array-of-POD type into one `llzk.nondet` per parallel leaf array.
+class SplitPodArrayNonDetOp : public OpConversionPattern<NonDetOp> {
+public:
+  using OpConversionPattern<NonDetOp>::OpConversionPattern;
+
+  static bool legal(NonDetOp op) { return !splittablePodArray(op.getType()); }
+
+  LogicalResult match(NonDetOp op) const override { return failure(legal(op)); }
+
+  void rewrite(NonDetOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    SmallVector<Type> splitTypes;
+    splitPodArrayTypeTo(op.getType(), splitTypes);
+    SmallVector<Value> replacements;
+    replacements.reserve(splitTypes.size());
+    for (Type splitType : splitTypes) {
+      replacements.push_back(rewriter.create<NonDetOp>(op.getLoc(), splitType));
+    }
+    rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
+  }
+};
+
+/// Split `array.new` of array-of-POD type into one `array.new` per parallel leaf array.
+class SplitPodArrayCreateArrayOp : public OpConversionPattern<CreateArrayOp> {
+public:
+  using OpConversionPattern<CreateArrayOp>::OpConversionPattern;
+
+  static bool legal(CreateArrayOp op) { return !splittablePodArray(op.getType()); }
+
+  LogicalResult matchAndRewrite(
+      CreateArrayOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
+    ArrayType arrTy = llvm::cast<ArrayType>(op.getType());
+    SmallVector<RecordChain> splitIds;
+    SmallVector<Type> splitTypes;
+    splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
+
+    SmallVector<Value> replacements;
+    replacements.reserve(splitTypes.size());
+    DenseI32ArrayAttr numDimsPerMap = op.getNumDimsPerMapAttr();
+    if (isNullOrEmpty(numDimsPerMap)) {
+      for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
+        SmallVector<Value> splitElements;
+        splitElements.reserve(adaptor.getElements().size());
+        for (ValueRange elementRange : adaptor.getElements()) {
+          Value element = getSingleConvertedValue(elementRange);
+          splitElements.push_back(genReadAlongPath(op.getLoc(), element, id, rewriter));
+        }
+        replacements.push_back(rewriter.create<CreateArrayOp>(
+            op.getLoc(), llvm::cast<ArrayType>(splitType), splitElements
+        ));
+      }
+    } else {
+      SmallVector<SmallVector<Value>> mapOperandStorage;
+      SmallVector<ValueRange> mapOperands;
+      mapOperandStorage.reserve(adaptor.getMapOperands().size());
+      mapOperands.reserve(adaptor.getMapOperands().size());
+      for (ArrayRef<ValueRange> mapOperandGroup : adaptor.getMapOperands()) {
+        mapOperandStorage.push_back(flattenConvertedValues(mapOperandGroup));
+      }
+      for (const SmallVector<Value> &values : mapOperandStorage) {
+        mapOperands.push_back(values);
+      }
+      for (Type splitType : splitTypes) {
+        replacements.push_back(rewriter.create<CreateArrayOp>(
+            op.getLoc(), llvm::cast<ArrayType>(splitType), mapOperands, numDimsPerMap
+        ));
+      }
+    }
+
+    rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
+    return success();
+  }
+};
+
+/// Split `array.read` from an array-of-POD into scalar leaf reads plus local POD reconstruction.
+class SplitPodArrayReadArrayOp : public OpConversionPattern<ReadArrayOp> {
+public:
+  using OpConversionPattern<ReadArrayOp>::OpConversionPattern;
+
+  static bool legal(ReadArrayOp op) { return !splittablePodArray(op.getArrRefType()); }
+
+  LogicalResult matchAndRewrite(
+      ReadArrayOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
+    ArrayType arrTy = op.getArrRefType();
+    PodType podTy = llvm::cast<PodType>(arrTy.getElementType());
+    SmallVector<RecordChain> splitIds;
+    SmallVector<Type> splitTypes;
+    splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
+
+    SmallVector<Value> indices = flattenConvertedValues(adaptor.getIndices());
+    NewPodOp pod = rewriter.create<NewPodOp>(op.getLoc(), podTy);
+    DenseMap<RecordChain, Value> leafValues;
+    for (auto [id, splitArrRange, splitType] :
+         llvm::zip_equal(splitIds, adaptor.getArrRef(), splitTypes)) {
+      auto splitArrTy = llvm::cast<ArrayType>(splitType);
+      Value scalarRead = rewriter.create<ReadArrayOp>(
+          op.getLoc(), splitArrTy.getElementType(), getSingleConvertedValue(splitArrRange), indices
+      );
+      leafValues[id] = scalarRead;
+    }
+
+    SmallVector<StringAttr> recordChain;
+    for (RecordAttr record : podTy.getRecords()) {
+      recordChain.push_back(record.getName());
+      Value recordValue = rebuildFlattenedPodRecord(
+          op.getLoc(), record.getType(), recordChain, leafValues, rewriter
+      );
+      genWrite(op.getLoc(), pod, record.getName(), recordValue, rewriter);
+      recordChain.pop_back();
+    }
+    rewriter.replaceOp(op, pod);
+    return success();
+  }
+};
+
+/// Split `array.write` to an array-of-POD into one write per parallel leaf array.
+class SplitPodArrayWriteArrayOp : public OpConversionPattern<WriteArrayOp> {
+public:
+  using OpConversionPattern<WriteArrayOp>::OpConversionPattern;
+
+  static bool legal(WriteArrayOp op) { return !splittablePodArray(op.getArrRefType()); }
+
+  LogicalResult matchAndRewrite(
+      WriteArrayOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
+    ArrayType arrTy = op.getArrRefType();
+    SmallVector<RecordChain> splitIds;
+    SmallVector<Type> splitTypes;
+    splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
+
+    SmallVector<Value> indices = flattenConvertedValues(adaptor.getIndices());
+    Value podValue = getSingleConvertedValue(adaptor.getRvalue());
+    for (auto [id, splitArrRange, splitType] :
+         llvm::zip_equal(splitIds, adaptor.getArrRef(), splitTypes)) {
+      Value leafValue = genReadAlongPath(op.getLoc(), podValue, id, rewriter);
+      rewriter.create<WriteArrayOp>(
+          op.getLoc(), getSingleConvertedValue(splitArrRange), indices, leafValue
+      );
+    }
+    rewriter.eraseOp(op);
+    return success();
+  }
+};
+
+/// Rewrite array-of-POD function signatures to use one parallel array per POD leaf.
+class SplitPodArrayInFuncDefOp : public OpConversionPattern<FuncDefOp> {
+public:
+  using OpConversionPattern<FuncDefOp>::OpConversionPattern;
+
+  static bool legal(FuncDefOp op) {
+    return !containsSplittablePodArrayType(op.getArgumentTypes()) &&
+           !containsSplittablePodArrayType(op.getResultTypes());
+  }
+
+  LogicalResult match(FuncDefOp op) const override { return failure(legal(op)); }
+
+  LogicalResult
+  matchAndRewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    auto *typeConverter = getTypeConverter();
+    assert(typeConverter && "expected pod-array type converter");
+
+    FunctionType oldTy = op.getFunctionType();
+    TypeConverter::SignatureConversion inputConversion(oldTy.getNumInputs());
+    if (failed(typeConverter->convertSignatureArgs(oldTy.getInputs(), inputConversion))) {
+      return rewriter.notifyMatchFailure(op, "failed to convert array-of-pod inputs");
+    }
+
+    SmallVector<Type> newResults;
+    if (failed(typeConverter->convertTypes(oldTy.getResults(), newResults))) {
+      return rewriter.notifyMatchFailure(op, "failed to convert array-of-pod results");
+    }
+
+    if (!op.getBody().empty() &&
+        failed(rewriter.convertRegionTypes(&op.getBody(), *typeConverter, &inputConversion))) {
+      return rewriter.notifyMatchFailure(op, "failed to convert function body block arguments");
+    }
+
+    SmallVector<size_t> originalInputIdxToSize, originalResultIdxToSize;
+    SmallVector<Type> newInputs = splitPodArrayType(oldTy.getInputs(), &originalInputIdxToSize);
+    SplitFunctionNameInfo inputNameInfo =
+        collectSplitFunctionNameInfo(op.getArgumentTypes(), [&](unsigned i) {
+      return op.getArgNameAttr(i);
+    }, getSplitPodArrayRecordNameSuffixes);
+    ArrayAttr resultAttrs = op.getAllResultAttrs();
+    SplitFunctionNameInfo resultNameInfo =
+        collectSplitFunctionNameInfo(op.getResultTypes(), [resultAttrs](unsigned i) {
+      return getAttrAtIndexWithName(resultAttrs, i, RES_NAME_ATTR_NAME);
+    }, getSplitPodArrayRecordNameSuffixes);
+
+    rewriter.modifyOpInPlace(op, [&]() {
+      op.setFunctionType(FunctionType::get(op.getContext(), newInputs, newResults));
+      if (ArrayAttr newArgAttrs = replicateFunctionNameAttrsAsNeeded(
+              op.getArgAttrsAttr(), originalInputIdxToSize, newInputs, ARG_NAME_ATTR_NAME,
+              inputNameInfo.originalNames, inputNameInfo.existingNames,
+              inputNameInfo.splitNameSuffixes
+          )) {
+        op.setArgAttrsAttr(newArgAttrs);
+      }
+      if (ArrayAttr newResAttrs = replicateFunctionNameAttrsAsNeeded(
+              op.getResAttrsAttr(), originalResultIdxToSize, newResults, RES_NAME_ATTR_NAME,
+              resultNameInfo.originalNames, resultNameInfo.existingNames,
+              resultNameInfo.splitNameSuffixes
+          )) {
+        op.setResAttrsAttr(newResAttrs);
+      }
+    });
+    return success();
+  }
+};
+
+/// Rewrite `function.return` to flatten any array-of-POD operands into their parallel arrays.
+class SplitPodArrayInReturnOp : public OpConversionPattern<ReturnOp> {
+public:
+  using OpConversionPattern<ReturnOp>::OpConversionPattern;
+
+  static bool legal(ReturnOp op) {
+    return !containsSplittablePodArrayType(op.getOperands().getTypes());
+  }
+
+  LogicalResult matchAndRewrite(
+      ReturnOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
+    SmallVector<Value> newOperands = flattenConvertedValues(adaptor.getOperands());
+    rewriter.replaceOpWithNewOp<ReturnOp>(op, ValueRange(newOperands));
+    return success();
+  }
+};
+
+/// Rewrite calls whose arguments or results contain arrays-of-POD to use the split signature.
+class SplitPodArrayInCallOp : public OpConversionPattern<CallOp> {
+public:
+  using OpConversionPattern<CallOp>::OpConversionPattern;
+
+  static bool legal(CallOp op) {
+    return !containsSplittablePodArrayType(op.getArgOperands().getTypes()) &&
+           !containsSplittablePodArrayType(op.getResultTypes());
+  }
+
+  LogicalResult match(CallOp op) const override { return failure(legal(op)); }
+
+  LogicalResult matchAndRewrite(
+      CallOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    auto *typeConverter = getTypeConverter();
+    assert(typeConverter && "expected pod-array type converter");
+
+    SmallVector<Type> newResultTypes;
+    if (failed(typeConverter->convertTypes(op.getResultTypes(), newResultTypes))) {
+      return rewriter.notifyMatchFailure(op, "failed to convert array-of-pod call results");
+    }
+
+    SmallVector<SmallVector<Value>> mapOperandStorage;
+    SmallVector<ValueRange> mapOperands;
+    mapOperandStorage.reserve(adaptor.getMapOperands().size());
+    mapOperands.reserve(adaptor.getMapOperands().size());
+    for (ArrayRef<ValueRange> mapOperandGroup : adaptor.getMapOperands()) {
+      mapOperandStorage.push_back(flattenConvertedValues(mapOperandGroup));
+    }
+    for (const SmallVector<Value> &values : mapOperandStorage) {
+      mapOperands.push_back(values);
+    }
+
+    SmallVector<Value> newArgOperands = flattenConvertedValues(adaptor.getArgOperands());
+    CallOp newCall = createCallPreservingInstantiationOperands(
+        op.getLoc(), newResultTypes, op, mapOperands, newArgOperands, rewriter
+    );
+
+    SmallVector<SmallVector<Value>> replacementStorage;
+    replacementStorage.reserve(op.getNumResults());
+    auto newResultIt = newCall.getResults().begin();
+    for (Type oldResultType : op.getResultTypes()) {
+      SmallVector<Type> convertedTypes;
+      (void)splitPodArrayTypeTo(oldResultType, convertedTypes);
+      SmallVector<Value> replacementsForResult;
+      replacementsForResult.reserve(convertedTypes.size());
+      for (size_t i = 0; i < convertedTypes.size(); ++i) {
+        replacementsForResult.push_back(*newResultIt);
+        ++newResultIt;
+      }
+      replacementStorage.push_back(std::move(replacementsForResult));
+    }
+
+    SmallVector<ValueRange> replacements;
+    replacements.reserve(replacementStorage.size());
+    for (const SmallVector<Value> &values : replacementStorage) {
+      replacements.push_back(values);
+    }
+    rewriter.replaceOpWithMultiple(op, replacements);
+    return success();
+  }
+};
+
+/// Replace `array.length` on an array-of-POD with the equivalent length of any split leaf array.
+class SplitPodArrayLengthOp : public OpConversionPattern<ArrayLengthOp> {
+public:
+  using OpConversionPattern<ArrayLengthOp>::OpConversionPattern;
+
+  static bool legal(ArrayLengthOp op) { return !splittablePodArray(op.getArrRefType()); }
+
+  LogicalResult matchAndRewrite(
+      ArrayLengthOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
+    rewriter.replaceOpWithNewOp<ArrayLengthOp>(
+        op, getSingleConvertedValue(adaptor.getArrRef()), getSingleConvertedValue(adaptor.getDim())
+    );
+    return success();
+  }
+};
+
+/// Rewrite a write to a split array-of-POD struct member into writes to each parallel array member.
+class SplitPodArrayInMemberWriteOp : public OpConversionPattern<MemberWriteOp> {
+  SymbolTableCollection &tables;
+  const MemberReplacementMap &repMapRef;
+
+public:
+  SplitPodArrayInMemberWriteOp(
+      const TypeConverter &converter, MLIRContext *ctx, SymbolTableCollection &symTables,
+      const MemberReplacementMap &memberRepMap
+  )
+      : OpConversionPattern<MemberWriteOp>(converter, ctx), tables(symTables),
+        repMapRef(memberRepMap) {}
+
+  static bool legal(MemberWriteOp op) { return !splittablePodArray(op.getVal().getType()); }
+
+  LogicalResult matchAndRewrite(
+      MemberWriteOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
+    StructType tgtStructTy = llvm::cast<MemberRefOpInterface>(op.getOperation()).getStructType();
+    auto tgtStructDef = tgtStructTy.getDefinition(tables, op);
+    assert(succeeded(tgtStructDef));
+
+    const LocalMemberReplacementMap &idToMember =
+        repMapRef.at(tgtStructDef->get()).at(op.getMemberNameAttr().getAttr());
+    ArrayType arrTy = llvm::cast<ArrayType>(op.getVal().getType());
+    SmallVector<RecordChain> splitIds;
+    SmallVector<Type> splitTypes;
+    splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
+
+    for (auto [id, splitValRange] : llvm::zip_equal(splitIds, adaptor.getVal())) {
+      const MemberInfo &newMember = idToMember.at(id);
+      rewriter.create<MemberWriteOp>(
+          op.getLoc(), getSingleConvertedValue(adaptor.getComponent()),
+          FlatSymbolRefAttr::get(newMember.first), getSingleConvertedValue(splitValRange)
+      );
+    }
+    rewriter.eraseOp(op);
+    return success();
+  }
+};
+
+/// Rewrite a read from a split array-of-POD struct member into reads of each parallel array member.
+class SplitPodArrayInMemberReadOp : public OpConversionPattern<MemberReadOp> {
+  SymbolTableCollection &tables;
+  const MemberReplacementMap &repMapRef;
+
+public:
+  SplitPodArrayInMemberReadOp(
+      const TypeConverter &converter, MLIRContext *ctx, SymbolTableCollection &symTables,
+      const MemberReplacementMap &memberRepMap
+  )
+      : OpConversionPattern<MemberReadOp>(converter, ctx), tables(symTables),
+        repMapRef(memberRepMap) {}
+
+  static bool legal(MemberReadOp op) { return !splittablePodArray(op.getResult().getType()); }
+
+  LogicalResult matchAndRewrite(
+      MemberReadOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
+    StructType tgtStructTy = llvm::cast<MemberRefOpInterface>(op.getOperation()).getStructType();
+    auto tgtStructDef = tgtStructTy.getDefinition(tables, op);
+    assert(succeeded(tgtStructDef));
+
+    const LocalMemberReplacementMap &idToMember =
+        repMapRef.at(tgtStructDef->get()).at(op.getMemberNameAttr().getAttr());
+    ArrayType arrTy = llvm::cast<ArrayType>(op.getType());
+    SmallVector<RecordChain> splitIds;
+    SmallVector<Type> splitTypes;
+    splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
+
+    SmallVector<Value> replacements;
+    replacements.reserve(splitIds.size());
+    for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
+      const MemberInfo &newMember = idToMember.at(id);
+      replacements.push_back(rewriter.create<MemberReadOp>(
+          op.getLoc(), splitType, getSingleConvertedValue(adaptor.getComponent()), newMember.first
+      ));
+    }
+    rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
+    return success();
+  }
+};
+
+/// Split arrays-of-POD into parallel arrays before direct pod scalarization.
+static LogicalResult
+step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementMap &memberRepMap) {
+  MLIRContext *ctx = modOp.getContext();
+  PodArrayTypeConverter typeConverter;
+
+  RewritePatternSet patterns(ctx);
+  patterns.add<
+      SplitPodArrayNonDetOp, SplitPodArrayCreateArrayOp, SplitPodArrayReadArrayOp,
+      SplitPodArrayWriteArrayOp, SplitPodArrayInFuncDefOp, SplitPodArrayInReturnOp,
+      SplitPodArrayInCallOp, SplitPodArrayLengthOp>(typeConverter, ctx);
+  patterns.add<SplitPodArrayInMemberWriteOp, SplitPodArrayInMemberReadOp>(
+      typeConverter, ctx, symTables, memberRepMap
+  );
+
+  ConversionTarget target(*ctx);
+  baseTargetSetup(target);
+  target.addDynamicallyLegalOp<NonDetOp>(SplitPodArrayNonDetOp::legal);
+  target.addDynamicallyLegalOp<CreateArrayOp>(SplitPodArrayCreateArrayOp::legal);
+  target.addDynamicallyLegalOp<ReadArrayOp>(SplitPodArrayReadArrayOp::legal);
+  target.addDynamicallyLegalOp<WriteArrayOp>(SplitPodArrayWriteArrayOp::legal);
+  target.addDynamicallyLegalOp<FuncDefOp>(SplitPodArrayInFuncDefOp::legal);
+  target.addDynamicallyLegalOp<ReturnOp>(SplitPodArrayInReturnOp::legal);
+  target.addDynamicallyLegalOp<CallOp>(SplitPodArrayInCallOp::legal);
+  target.addDynamicallyLegalOp<ArrayLengthOp>(SplitPodArrayLengthOp::legal);
+  target.addDynamicallyLegalOp<MemberWriteOp>(SplitPodArrayInMemberWriteOp::legal);
+  target.addDynamicallyLegalOp<MemberReadOp>(SplitPodArrayInMemberReadOp::legal);
+
+  mlir::scf::populateSCFStructuralTypeConversionsAndLegality(typeConverter, patterns, target);
+
+  LLVM_DEBUG(llvm::dbgs() << "Begin step 2: split arrays with POD element type\n";);
   return applyFullConversion(modOp, target, std::move(patterns));
 }
 
@@ -617,43 +1266,11 @@ public:
   }
 };
 
-/// Read a nested POD leaf by following each record name in `recordChain`.
-static Value
-genReadAlongPath(Location loc, Value podRef, RecordChain recordChain, OpBuilder &rewriter) {
-  Value value = podRef;
-  for (StringAttr attr : recordChain.nameList) {
-    value = genRead(loc, value, attr, rewriter);
-  }
-  return value;
-}
-
 /// State used while rebuilding a POD from flattened struct-member leaves.
 struct RebuildPodReadState {
   NewPodOp pod;
   DenseMap<RecordChain, Value> leafValues;
 };
-
-/// Reconstruct a POD record from the leaf values collected while splitting `struct.readm`.
-static Value rebuildFlattenedPodRecord(
-    Location loc, Type recordType, SmallVectorImpl<StringAttr> &recordChain,
-    const DenseMap<RecordChain, Value> &leafValues, ConversionPatternRewriter &rewriter
-) {
-  if (PodType nestedPodTy = dyn_cast<PodType>(recordType)) {
-    NewPodOp nestedPod = rewriter.create<NewPodOp>(loc, nestedPodTy);
-    for (RecordAttr record : nestedPodTy.getRecords()) {
-      recordChain.push_back(record.getName());
-      Value recordValue =
-          rebuildFlattenedPodRecord(loc, record.getType(), recordChain, leafValues, rewriter);
-      genWrite(loc, nestedPod, record.getName(), recordValue, rewriter);
-      recordChain.pop_back();
-    }
-    return nestedPod;
-  }
-
-  auto it = leafValues.find(RecordChain(recordChain));
-  assert(it != leafValues.end() && "missing flattened POD leaf value");
-  return it->second;
-}
 
 /// Rewrite a write to a pod-typed struct member into writes to the corresponding scalar leaves.
 class SplitPodInMemberWriteOp : public SplitAggregateInMemberRefOp<
@@ -726,7 +1343,7 @@ public:
 /// Special handling to split pods in struct member refs and function signatures and desugar
 /// initializations on pod.new into pod writes.
 static LogicalResult
-step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementMap &memberRepMap) {
+step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementMap &memberRepMap) {
   MLIRContext *ctx = modOp.getContext();
 
   RewritePatternSet patterns(ctx);
@@ -798,6 +1415,26 @@ static bool hasValueUse(Operation &op, Value value) {
   return walkContainsMatch<Operation *>(op, [&value](Operation *nestedOp) {
     return llvm::is_contained(nestedOp->getOperands(), value);
   });
+}
+
+/// Return the nearest preceding same-record write that can be forwarded to `readOp`.
+///
+/// This fold is intentionally conservative: it only forwards through intervening operations that do
+/// not use the POD value at all. That keeps the rewrite local and avoids reasoning about other
+/// whole-POD uses or record accesses that may observe mutation ordering.
+static WritePodOp findNearestForwardableWriteInBlock(ReadPodOp readOp) {
+  Value podRef = readOp.getPodRef();
+  StringAttr recordName = getRecordNameAsStringAttr(readOp);
+
+  for (Operation *op = readOp->getPrevNode(); op; op = op->getPrevNode()) {
+    if (!hasValueUse(*op, podRef)) {
+      continue;
+    }
+
+    auto writeOp = dyn_cast<WritePodOp>(op);
+    return writeOp && isSamePodRecord(writeOp, podRef, recordName) ? writeOp : nullptr;
+  }
+  return nullptr;
 }
 
 /// Return whether the read is preceded by a write to the same pod record within its block.
@@ -875,6 +1512,20 @@ static WritePodOp findPrecedingWriteForIfRead(ReadPodOp readOp) {
 
   return replacement;
 }
+
+/// Replace a read with the value from the nearest preceding same-record write in the block.
+class FoldReadAfterWriteInBlockPattern final : public OpRewritePattern<ReadPodOp> {
+public:
+  using OpRewritePattern<ReadPodOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(ReadPodOp readOp, PatternRewriter &rewriter) const override {
+    if (WritePodOp writeOp = findNearestForwardableWriteInBlock(readOp)) {
+      rewriter.replaceOp(readOp, writeOp.getValue());
+      return success();
+    }
+    return failure();
+  }
+};
 
 /// Replace a branch-local read with a value available in the parent block.
 class ReplaceIfReadPattern final : public OpRewritePattern<ReadPodOp> {
@@ -1559,13 +2210,12 @@ applyGreedily(ModuleOp modOp, RewritePatternSet &&patterns, bool *changed = null
 
 /// Repeatedly lift pod accesses out of supported SCF regions so SROA + mem2reg can eliminate the
 /// remaining POD storage.
-static LogicalResult step3(ModuleOp modOp) {
+static LogicalResult step4(ModuleOp modOp) {
   RewritePatternSet patterns(modOp.getContext());
   patterns.add<
-      ReplaceIfReadPattern, LiftPodWritesFromIfBlocksPattern, LiftPodAccessesFromForLoopPattern,
-      LiftPodAccessesFromWhileLoopPattern, FoldIfCarriedPodReadAfterWritePattern>(
-      patterns.getContext()
-  );
+      FoldReadAfterWriteInBlockPattern, ReplaceIfReadPattern, LiftPodWritesFromIfBlocksPattern,
+      LiftPodAccessesFromForLoopPattern, LiftPodAccessesFromWhileLoopPattern,
+      FoldIfCarriedPodReadAfterWritePattern>(patterns.getContext());
 
   LLVM_DEBUG(llvm::dbgs() << "Begin step 3: refactor pod ops within SCF regions\n";);
   return applyGreedily(modOp, std::move(patterns));
@@ -1648,13 +2298,21 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
         llvm::dbgs() << "After step 2:\n";
         module.dump();
       });
+
+      if (failed(step3(module, symTables, memberRepMap))) {
+        return signalPassFailure();
+      }
+      LLVM_DEBUG({
+        llvm::dbgs() << "After step 3:\n";
+        module.dump();
+      });
     }
 
-    if (failed(step3(module))) {
+    if (failed(step4(module))) {
       return signalPassFailure();
     }
     LLVM_DEBUG({
-      llvm::dbgs() << "After step 3:\n";
+      llvm::dbgs() << "After step 4:\n";
       module.dump();
     });
 
