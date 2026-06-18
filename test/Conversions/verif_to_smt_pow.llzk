@@ -1,0 +1,50 @@
+// RUN: llzk-opt --llzk-verif-to-smt %s -split-input-file | sed -n '/func.func @smt_pow_exp_target(/,/^  }/p' | FileCheck --check-prefix=EXP %s
+// RUN: llzk-opt --llzk-verif-to-smt %s -split-input-file | sed -n '/func.func @smt_pow_base_target(/,/^  }/p' | FileCheck --check-prefix=BASE %s
+
+module attributes {llzk.lang} {
+  function.def @pow_exp_target(%x: !felt.type<"bn128">) -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops} {
+    %three = felt.const 3 : <"bn128">
+    %ret = felt.pow %x, %three : !felt.type<"bn128">, !felt.type<"bn128">
+    function.return %ret : !felt.type<"bn128">
+  }
+
+  verif.contract @CheckPowExp for @pow_exp_target (%x: !felt.type<"bn128">, %ret: !felt.type<"bn128">) {
+    %three = felt.const 3 : <"bn128">
+    %expected = felt.pow %x, %three : !felt.type<"bn128">, !felt.type<"bn128">
+    %ok = bool.cmp eq(%ret, %expected) : !felt.type<"bn128">, !felt.type<"bn128">
+    verif.ensure_compute %ok
+  }
+}
+
+// EXP-LABEL: func.func @smt_pow_exp_target(
+// EXP: %[[MUL0:[0-9A-Za-z_\.]+]] = smt.int.mul
+// EXP: %[[MOD0:[0-9A-Za-z_\.]+]] = smt.int.mod %[[MUL0]]
+// EXP: %[[MUL1:[0-9A-Za-z_\.]+]] = smt.int.mul %[[MOD0]]
+// EXP: %[[MOD1:[0-9A-Za-z_\.]+]] = smt.int.mod %[[MUL1]]
+// EXP-NOT: smt.int.div
+// EXP-NOT: smt.ite
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @pow_base_target(%exp: !felt.type<"bn128">) -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops} {
+    %two = felt.const 2 : <"bn128">
+    %ret = felt.pow %two, %exp : !felt.type<"bn128">, !felt.type<"bn128">
+    function.return %ret : !felt.type<"bn128">
+  }
+
+  verif.contract @CheckPowBase for @pow_base_target (%exp: !felt.type<"bn128">, %ret: !felt.type<"bn128">) {
+    %two = felt.const 2 : <"bn128">
+    %expected = felt.pow %two, %exp : !felt.type<"bn128">, !felt.type<"bn128">
+    %ok = bool.cmp eq(%ret, %expected) : !felt.type<"bn128">, !felt.type<"bn128">
+    verif.ensure_compute %ok
+  }
+}
+
+// BASE-LABEL: func.func @smt_pow_base_target(
+// BASE: smt.int.div
+// BASE: smt.int.mod
+// BASE: smt.ite
+// BASE: smt.int.constant 4
+// BASE: smt.int.constant 16
+// BASE: smt.int.constant 4294967296

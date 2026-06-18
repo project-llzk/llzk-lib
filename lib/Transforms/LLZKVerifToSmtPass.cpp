@@ -915,9 +915,12 @@ public:
       if (failed(lhs) || failed(rhs)) {
         return failure();
       }
-      Value lowered = emitPowValue(powOp.getLoc(), *lhs, *rhs, cast<FeltType>(powOp.getType()));
-      valueMap[value] = lowered;
-      return lowered;
+      auto lowered = emitPowValue(powOp, *lhs, *rhs, cast<FeltType>(powOp.getType()));
+      if (failed(lowered)) {
+        return failure();
+      }
+      valueMap[value] = *lowered;
+      return *lowered;
     }
 
     if (auto div = dyn_cast<DivFeltOp>(definingOp)) {
@@ -1055,6 +1058,13 @@ private:
     return createIntConstant(loc, field.prime());
   }
 
+  std::optional<llvm::DynamicAPInt> getKnownIntegerValue(Value value) {
+    if (auto intConst = value.getDefiningOp<smt::IntConstantOp>()) {
+      return toDynamicAPInt(intConst.getValue());
+    }
+    return std::nullopt;
+  }
+
   Value emitCanonical(Location loc, Value value, FeltType type) {
     return builder.create<smt::IntModOp>(loc, value, emitPrimeConstant(loc, type.getField()))
         .getResult();
@@ -1140,30 +1150,99 @@ private:
     return emitSignedDivOrRem(loc, lhs, rhs, type, /*isDiv=*/false);
   }
 
-  Value emitPowValue(Location loc, Value base, Value exponent, FeltType type) {
+  FailureOr<Value> emitPowValue(PowFeltOp powOp, Value base, Value exponent, FeltType type) {
+    Location loc = powOp.getLoc();
     const Field &field = type.getField();
     Value canonicalBase = emitCanonical(loc, base, type);
     Value canonicalExponent = emitCanonical(loc, exponent, type);
-    Value acc = createIntConstant(loc, llvm::DynamicAPInt(1));
-    Value curPow = canonicalBase;
-    for (unsigned bit = 0; bit < field.bitWidth(); ++bit) {
+
+    auto buildBitSet = [&](unsigned bit) -> Value {
       Value divisor = createIntConstant(loc, llvm::DynamicAPInt(1) << llvm::DynamicAPInt(bit));
       Value shifted = builder.create<smt::IntDivOp>(loc, canonicalExponent, divisor).getResult();
       Value lsb =
           builder.create<smt::IntModOp>(loc, shifted, createIntConstant(loc, llvm::DynamicAPInt(2)))
               .getResult();
-      Value bitSet =
-          builder.create<smt::EqOp>(loc, lsb, createIntConstant(loc, llvm::DynamicAPInt(1)))
-              .getResult();
-      Value multiplied = emitCanonical(
-          loc, builder.create<smt::IntMulOp>(loc, ValueRange {acc, curPow}).getResult(), type
-      );
-      acc = builder.create<smt::IteOp>(loc, bitSet, multiplied, acc).getResult();
-      curPow = emitCanonical(
-          loc, builder.create<smt::IntMulOp>(loc, ValueRange {curPow, curPow}).getResult(), type
-      );
+      return builder.create<smt::EqOp>(loc, lsb, createIntConstant(loc, llvm::DynamicAPInt(1)))
+          .getResult();
+    };
+
+    auto knownExponent = getKnownIntegerValue(exponent);
+    if (knownExponent) {
+      llvm::DynamicAPInt reducedExponent = field.reduce(*knownExponent);
+      Value acc = createIntConstant(loc, llvm::DynamicAPInt(1));
+      Value curPow = canonicalBase;
+      llvm::APInt exponentBits = toAPInt(reducedExponent, field.bitWidth());
+      for (unsigned bit = 0; bit < exponentBits.getActiveBits(); ++bit) {
+        if (!exponentBits[bit]) {
+          curPow = emitCanonical(
+              loc, builder.create<smt::IntMulOp>(loc, ValueRange {curPow, curPow}).getResult(), type
+          );
+          continue;
+        }
+        acc = emitCanonical(
+            loc, builder.create<smt::IntMulOp>(loc, ValueRange {acc, curPow}).getResult(), type
+        );
+        curPow = emitCanonical(
+            loc, builder.create<smt::IntMulOp>(loc, ValueRange {curPow, curPow}).getResult(), type
+        );
+      }
+      return acc;
     }
-    return acc;
+
+    auto knownBase = getKnownIntegerValue(base);
+    if (knownBase) {
+      llvm::DynamicAPInt reducedBase = field.reduce(*knownBase);
+      llvm::DynamicAPInt zero(0);
+      llvm::DynamicAPInt one(1);
+      llvm::DynamicAPInt minusOne = field.reduce(-llvm::DynamicAPInt(1));
+
+      if (reducedBase == zero) {
+        Value exponentIsZero =
+            builder.create<smt::EqOp>(loc, canonicalExponent, createIntConstant(loc, zero))
+                .getResult();
+        return builder
+            .create<smt::IteOp>(
+                loc, exponentIsZero, createIntConstant(loc, one), createIntConstant(loc, zero)
+            )
+            .getResult();
+      }
+      if (reducedBase == one) {
+        return createIntConstant(loc, one);
+      }
+      if (reducedBase == minusOne) {
+        Value parity = builder
+                           .create<smt::IntModOp>(
+                               loc, canonicalExponent, createIntConstant(loc, llvm::DynamicAPInt(2))
+                           )
+                           .getResult();
+        Value isOdd =
+            builder.create<smt::EqOp>(loc, parity, createIntConstant(loc, one)).getResult();
+        return builder
+            .create<smt::IteOp>(
+                loc, isOdd, createIntConstant(loc, minusOne), createIntConstant(loc, one)
+            )
+            .getResult();
+      }
+
+      Value acc = createIntConstant(loc, one);
+      llvm::DynamicAPInt curPow = reducedBase;
+      for (unsigned bit = 0; bit < field.bitWidth(); ++bit) {
+        Value bitSet = buildBitSet(bit);
+        Value curPowConst = createIntConstant(loc, curPow);
+        Value multiplied = emitCanonical(
+            loc, builder.create<smt::IntMulOp>(loc, ValueRange {acc, curPowConst}).getResult(), type
+        );
+        acc = builder.create<smt::IteOp>(loc, bitSet, multiplied, acc).getResult();
+        curPow = field.reduce(curPow * curPow);
+      }
+      return acc;
+    }
+
+    powOp.emitError(
+        "verif-to-smt does not support fully symbolic felt.pow; require a constant base or "
+        "constant exponent"
+    );
+    return failure();
   }
 
   Value emitDivisionValue(Location loc, Value lhs, Value rhs, FeltType type) {

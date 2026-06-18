@@ -23,4 +23,7 @@ module {
 // GENERIC-DAG: (declare-const main__arg0 Int)
 // GENERIC-DAG: (declare-const main__arg1 Bool)
 // GENERIC-DAG: (declare-fun result () Int)
-// GENERIC: (assert (= result (ite main__arg1 (+ main__arg0 5) (- main__arg0))))
+// GENERIC: (assert (= result (let (([[C5:[A-Za-z0-9_$.]+]] 5))
+// GENERIC: (let (([[SUM:[A-Za-z0-9_$.]+]] (+ main__arg0 [[C5]])))
+// GENERIC: (let (([[NEG:[A-Za-z0-9_$.]+]] (- main__arg0)))
+// GENERIC: (let (([[RES:[A-Za-z0-9_$.]+]] (ite main__arg1 [[SUM]] [[NEG]]))) [[RES]]))))

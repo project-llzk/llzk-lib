@@ -26,6 +26,7 @@
 #include <mlir/Support/FileUtilities.h>
 
 #include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/ScopeExit.h>
 #include <llvm/ADT/SmallString.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringExtras.h>
@@ -37,6 +38,7 @@
 
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace llzk::smt {
@@ -114,6 +116,8 @@ private:
   struct EvalContext {
     DenseMap<Value, std::string> values;
     std::optional<std::string> pendingStageLabel;
+    SmallVector<std::pair<std::string, std::string>> letBindings;
+    bool preserveSharing = false;
   };
 
   LogicalResult collectRoots(SmallVectorImpl<func::FuncOp> &roots) {
@@ -231,6 +235,12 @@ private:
     if (op->getNumResults() != 1) {
       op.emitError("smt-to-smtlib only supports single-result expression ops");
       return failure();
+    }
+    if (ctx.preserveSharing) {
+      std::string name = makeLetName();
+      ctx.letBindings.emplace_back(name, std::move(*expr));
+      ctx.values[op->getResult(0)] = std::move(name);
+      return success();
     }
     ctx.values[op->getResult(0)] = std::move(*expr);
     return success();
@@ -440,7 +450,14 @@ private:
       return failure();
     }
 
+    if (!activePureHelpers.insert(func.getOperation()).second) {
+      func.emitError("recursive pure helper calls are not supported by smt-to-smtlib");
+      return failure();
+    }
+    auto cleanup = llvm::make_scope_exit([&] { activePureHelpers.erase(func.getOperation()); });
+
     EvalContext ctx;
+    ctx.preserveSharing = true;
     if (func.getNumArguments() != argExprs.size()) {
       func.emitError("helper argument arity mismatch during SMTLIB export");
       return failure();
@@ -473,7 +490,7 @@ private:
       if (failed(expr)) {
         return failure();
       }
-      results.push_back(std::move(*expr));
+      results.push_back(wrapWithLets(*expr, ctx.letBindings));
     }
     return results;
   }
@@ -625,10 +642,21 @@ private:
     return expr;
   }
 
+  std::string makeLetName() { return "__let" + std::to_string(nextTempId++); }
+
+  static std::string
+  wrapWithLets(std::string expr, ArrayRef<std::pair<std::string, std::string>> letBindings) {
+    for (const auto &binding : llvm::reverse(letBindings)) {
+      expr = "(let ((" + binding.first + " " + binding.second + ")) " + expr + ")";
+    }
+    return expr;
+  }
+
   ModuleOp module;
   llvm::raw_ostream &os;
   const llzk::smt::SMTLIBExportOptions &options;
   unsigned nextTempId = 0;
+  DenseSet<Operation *> activePureHelpers;
 };
 
 class SMTDialectToSMTLIBPass

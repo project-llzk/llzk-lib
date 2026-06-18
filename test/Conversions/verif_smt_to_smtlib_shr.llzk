@@ -18,6 +18,6 @@ module attributes {llzk.lang} {
 // SHR: (set-logic ALL)
 // SHR-NEXT: ; root: smt_verif_CheckShift_entry
 // SHR: ; check-sat stage=target expect=unsat
-// SHR: (ubv_to_int
-// SHR: (bvlshr
 // SHR: ((_ int_to_bv 254)
+// SHR: (bvlshr
+// SHR: (ubv_to_int

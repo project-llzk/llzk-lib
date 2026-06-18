@@ -133,7 +133,8 @@ module attributes {llzk.lang} {
       %i = felt.bit_not %x : !felt.type<"bn128">
       %j = felt.shl %x, %shift : !felt.type<"bn128">, !felt.type<"bn128">
       %k = felt.shr %x, %shift : !felt.type<"bn128">, !felt.type<"bn128">
-      %l = felt.pow %x, %shift : !felt.type<"bn128">, !felt.type<"bn128">
+      %five = felt.const 5 : <"bn128">
+      %l = felt.pow %x, %five : !felt.type<"bn128">, !felt.type<"bn128">
       %m = felt.div %x, %shift : !felt.type<"bn128">, !felt.type<"bn128">
       %n = felt.inv %shift : !felt.type<"bn128">
       %o = felt.add %a, %b : !felt.type<"bn128">, !felt.type<"bn128">

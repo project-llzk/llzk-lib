@@ -1,0 +1,18 @@
+// RUN: not llzk-opt --llzk-verif-to-smt %s -o /dev/null 2>&1 | FileCheck --check-prefix=ERR %s
+
+module attributes {llzk.lang} {
+  function.def @pow_generic_target(%x: !felt.type<"bn128">, %y: !felt.type<"bn128">) -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops} {
+    %ret = felt.pow %x, %y : !felt.type<"bn128">, !felt.type<"bn128">
+    function.return %ret : !felt.type<"bn128">
+  }
+
+  verif.contract @CheckPowGeneric for @pow_generic_target (
+      %x: !felt.type<"bn128">, %y: !felt.type<"bn128">, %ret: !felt.type<"bn128">
+  ) {
+    %expected = felt.pow %x, %y : !felt.type<"bn128">, !felt.type<"bn128">
+    %ok = bool.cmp eq(%ret, %expected) : !felt.type<"bn128">, !felt.type<"bn128">
+    verif.ensure_compute %ok
+  }
+}
+
+// ERR: error: verif-to-smt does not support fully symbolic felt.pow; require a constant base or constant exponent

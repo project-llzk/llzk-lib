@@ -21,7 +21,7 @@ module attributes {llzk.lang} {
 // SIMPLE: ; check-sat stage=target expect=unsat
 // SIMPLE-NEXT: (check-sat)
 // SIMPLE-NEXT: (pop 1)
-// SIMPLE-NEXT: (assert true)
+// SIMPLE-NEXT: (assert (let ((__let0 true)) __let0))
 // SIMPLE: ; check-sat stage=post expect=unsat
 // SIMPLE-NEXT: (check-sat)
 // SIMPLE-NEXT: (pop 1)
