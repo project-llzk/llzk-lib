@@ -13,8 +13,8 @@
 
 include "llzk/Pass/PassBase.td"
 
-def PrettyPrintSMTLIBPass : Pass<"smt-pretty-print", "::mlir::ModuleOp"> {
-  let summary = "Pretty-print SMT dialect IR as SMTLIB";
+def SMTDialectToSMTLIBPass : Pass<"smt-to-smtlib", "::mlir::ModuleOp"> {
+  let summary = "Convert SMT dialect IR to SMTLIB";
   let description = [{
     Emits a textual SMTLIB script for entry-point SMT workflows. The pass
     supports the SMT subset currently produced by llzk's SMT lowering and

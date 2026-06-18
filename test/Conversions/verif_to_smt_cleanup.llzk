@@ -1,0 +1,24 @@
+// RUN: llzk-opt --llzk-scalar-verif-to-smt %s | FileCheck --check-prefix=DIRTY %s
+// RUN: llzk-opt --llzk-scalar-verif-to-smt='cleanup=true' %s | FileCheck --check-prefix=CLEAN %s
+// RUN: llzk-opt --llzk-verif-to-smt %s | FileCheck --check-prefix=CLEAN %s
+// RUN: llzk-opt --llzk-verif-to-smt='cleanup=false' %s | FileCheck --check-prefix=DIRTY %s
+
+module attributes {llzk.lang} {
+  function.def @gate_target(%gate: i1) {
+    function.return
+  }
+
+  verif.contract @CheckGate for @gate_target (%gate: i1) {
+    verif.require_compute %gate
+    verif.ensure_compute %gate
+  }
+}
+
+// CLEAN-NOT: function.def
+// CLEAN-NOT: verif.contract
+// CLEAN: func.func @smt_gate_target
+// CLEAN: func.func @smt_verif_CheckGate_entry
+
+// DIRTY: function.def @gate_target
+// DIRTY: func.func @smt_gate_target
+// DIRTY: func.func @smt_verif_CheckGate_entry

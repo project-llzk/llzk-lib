@@ -134,14 +134,14 @@ they can be fully resolved by the preprocessing pipeline before execution.
 
 `llzk-smt-check` runs an external SMT solver on an SMT-LIB 2 script and reports
 the result of each `check-sat` stage. It is intended to consume the staged
-SMT-LIB emitted by `llzk-opt --smt-pretty-print`, including comments such as
+SMT-LIB emitted by `llzk-opt --smt-to-smtlib`, including comments such as
 `; check-sat stage=pre expect=unsat`.
 
 #### Basic Usage
 
 ```sh
 llzk-smt-check input.smt2
-llzk-opt --llzk-verif-to-smt --smt-pretty-print='entry=smt_verif_Check_entry' \
+llzk-opt --llzk-verif-to-smtlib='entry=smt_verif_Check_entry' \
   -o /dev/null input.llzk | llzk-smt-check -
 ```
 

@@ -39,7 +39,7 @@
 #include <utility>
 
 namespace llzk::smt {
-#define GEN_PASS_DEF_PRETTYPRINTSMTLIBPASS
+#define GEN_PASS_DEF_SMTDIALECTTOSMTLIBPASS
 #include "smt/Transforms/SMTPasses.h.inc"
 } // namespace llzk::smt
 
@@ -68,12 +68,11 @@ static std::string sanitizeSymbol(StringRef name) {
 }
 
 static std::string sortForType(Type type) {
-  return TypeSwitch<Type, std::string>(type).Case<llzk::smt::IntType>([](auto) {
-    return "Int";
-  }).Case<llzk::smt::BoolType>([](auto) {
+  return TypeSwitch<Type, std::string>(type).Case<llzk::smt::IntType>([](auto) { return "Int"; }
+  ).Case<llzk::smt::BoolType>([](auto) {
     return "Bool";
   }).Default([&](Type) -> std::string {
-    llvm::report_fatal_error("unsupported SMTLIB sort in pretty printer");
+    llvm::report_fatal_error("unsupported SMTLIB sort in smt-to-smtlib");
   });
 }
 
@@ -118,7 +117,7 @@ private:
     if (options.entry) {
       auto root = module.lookupSymbol<func::FuncOp>(*options.entry);
       if (!root) {
-        module.emitError() << "smt-pretty-print could not find entry symbol @" << *options.entry;
+        module.emitError() << "smt-to-smtlib could not find entry symbol @" << *options.entry;
         return failure();
       }
       roots.push_back(root);
@@ -133,7 +132,7 @@ private:
 
     if (roots.empty()) {
       module.emitError(
-          "smt-pretty-print found no smt_verif_*_entry roots; pass --entry to export "
+          "smt-to-smtlib found no smt_verif_*_entry roots; pass --entry to export "
           "a different func.func"
       );
       return failure();
@@ -143,7 +142,7 @@ private:
 
   LogicalResult emitRoot(func::FuncOp root) {
     if (!root || root.empty()) {
-      root.emitError("smt-pretty-print requires non-empty root func.func");
+      root.emitError("smt-to-smtlib requires non-empty root func.func");
       return failure();
     }
 
@@ -207,7 +206,7 @@ private:
           "regions and should not appear on the linearized path"
       );
     }).Default([&](Operation *unknownOp) {
-      unknownOp->emitError("unsupported operation in smt-pretty-print");
+      unknownOp->emitError("unsupported operation in smt-to-smtlib");
       return failure();
     });
   }
@@ -218,7 +217,7 @@ private:
       return failure();
     }
     if (op->getNumResults() != 1) {
-      op.emitError("smt-pretty-print only supports single-result expression ops");
+      op.emitError("smt-to-smtlib only supports single-result expression ops");
       return failure();
     }
     ctx.values[op->getResult(0)] = std::move(*expr);
@@ -248,7 +247,7 @@ private:
 
   LogicalResult emitArithConstant(arith::ConstantOp constOp, EvalContext &ctx) {
     if (constOp->getNumResults() != 1) {
-      return constOp.emitOpError("smt-pretty-print only supports single-result arith.constant");
+      return constOp.emitOpError("smt-to-smtlib only supports single-result arith.constant");
     }
     if (auto boolAttr = dyn_cast<BoolAttr>(constOp.getValue())) {
       ctx.values[constOp.getResult()] = boolAttr.getValue() ? "true" : "false";
@@ -260,12 +259,12 @@ private:
       ctx.values[constOp.getResult()] = value.str().str();
       return success();
     }
-    return constOp.emitOpError("unsupported arith.constant for smt-pretty-print");
+    return constOp.emitOpError("unsupported arith.constant for smt-to-smtlib");
   }
 
   LogicalResult emitUnrealizedCast(UnrealizedConversionCastOp castOp, EvalContext &ctx) {
     if (castOp->getNumOperands() != 1 || castOp->getNumResults() != 1) {
-      return castOp.emitError("smt-pretty-print only supports one-to-one unrealized casts");
+      return castOp.emitError("smt-to-smtlib only supports one-to-one unrealized casts");
     }
     auto input = lookup(castOp.getOperand(0), ctx);
     if (failed(input)) {
@@ -278,7 +277,7 @@ private:
   LogicalResult emitCall(func::CallOp callOp, EvalContext &ctx) {
     auto callee = module.lookupSymbol<func::FuncOp>(callOp.getCallee());
     if (!callee) {
-      return callOp.emitOpError("smt-pretty-print could not resolve callee");
+      return callOp.emitOpError("smt-to-smtlib could not resolve callee");
     }
 
     SmallVector<std::string> argExprs;
@@ -297,7 +296,7 @@ private:
 
     auto results = evalHelper(callee, argExprs);
     if (failed(results)) {
-      callOp.emitError("smt-pretty-print requires an emit-compatible helper callee");
+      callOp.emitError("smt-to-smtlib requires an emit-compatible helper callee");
       return failure();
     }
 
@@ -319,7 +318,7 @@ private:
 
   LogicalResult emitScriptHelper(func::FuncOp func, ArrayRef<std::string> argExprs) {
     if (!func || func.empty()) {
-      func.emitError("smt-pretty-print requires non-empty helper funcs");
+      func.emitError("smt-to-smtlib requires non-empty helper funcs");
       return failure();
     }
     if (func.getFunctionType().getNumResults() != 0) {
@@ -363,7 +362,7 @@ private:
     for (auto [candidateOutcome, region] : regions) {
       if (isSuccessRegion(*region)) {
         if (successRegion != nullptr) {
-          checkOp.emitError("smt-pretty-print requires exactly one non-failing smt.check region");
+          checkOp.emitError("smt-to-smtlib requires exactly one non-failing smt.check region");
           return failure();
         }
         successRegion = region;
@@ -372,7 +371,7 @@ private:
     }
 
     if (successRegion == nullptr) {
-      checkOp.emitError("smt-pretty-print could not determine successful smt.check path");
+      checkOp.emitError("smt-to-smtlib could not determine successful smt.check path");
       return failure();
     }
     return CheckSuccessInfo {outcome, successRegion};
@@ -392,7 +391,7 @@ private:
 
   LogicalResult emitCheck(llzk::smt::CheckOp checkOp, EvalContext &ctx) {
     if (checkOp.getNumResults() != 0) {
-      return checkOp.emitOpError("smt-pretty-print does not support result-producing smt.check");
+      return checkOp.emitOpError("smt-to-smtlib does not support result-producing smt.check");
     }
     auto successInfo = identifySuccessRegion(checkOp);
     if (failed(successInfo)) {
@@ -425,7 +424,7 @@ private:
   FailureOr<SmallVector<std::string>>
   evalHelper(func::FuncOp func, ArrayRef<std::string> argExprs) {
     if (!func || func.empty()) {
-      func.emitError("smt-pretty-print requires non-empty helper funcs");
+      func.emitError("smt-to-smtlib requires non-empty helper funcs");
       return failure();
     }
 
@@ -477,9 +476,8 @@ private:
       constOp.getValue().toStringSigned(str);
       return str.str().str();
     })
-        .Case<llzk::smt::EqOp>([&](auto exprOp) {
-      return buildSExpr("=", exprOp.getInputs(), ctx);
-    })
+        .Case<llzk::smt::EqOp>([&](auto exprOp) { return buildSExpr("=", exprOp.getInputs(), ctx); }
+        )
         .Case<llzk::smt::NotOp>([&](auto exprOp) {
       return buildSExpr("not", ValueRange {exprOp.getInput()}, ctx);
     })
@@ -522,7 +520,7 @@ private:
     }).Case<arith::ConstantOp>([&](auto constOp) {
       return buildArithConstantExpr(constOp);
     }).Default([&](Operation *unknownOp) {
-      unknownOp->emitError("unsupported expression op in smt-pretty-print");
+      unknownOp->emitError("unsupported expression op in smt-to-smtlib");
       return failure();
     });
   }
@@ -578,9 +576,9 @@ private:
   unsigned nextTempId = 0;
 };
 
-class PrettyPrintSMTLIBPass
-    : public llzk::smt::impl::PrettyPrintSMTLIBPassBase<PrettyPrintSMTLIBPass> {
-  using Base = llzk::smt::impl::PrettyPrintSMTLIBPassBase<PrettyPrintSMTLIBPass>;
+class SMTDialectToSMTLIBPass
+    : public llzk::smt::impl::SMTDialectToSMTLIBPassBase<SMTDialectToSMTLIBPass> {
+  using Base = llzk::smt::impl::SMTDialectToSMTLIBPassBase<SMTDialectToSMTLIBPass>;
   using Base::Base;
 
   void runOnOperation() override {

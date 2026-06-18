@@ -1,4 +1,4 @@
-// RUN: not llzk-opt --smt-pretty-print='entry=main' -o /dev/null %s 2>&1 | FileCheck --check-prefix=UNSUPPORTED %s
+// RUN: not llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s 2>&1 | FileCheck --check-prefix=UNSUPPORTED %s
 
 module {
   func.func @main(%x: !smt.int) {
@@ -10,4 +10,4 @@ module {
   }
 }
 
-// UNSUPPORTED: unsupported{{.*}}smt-pretty-print
+// UNSUPPORTED: unsupported{{.*}}smt-to-smtlib

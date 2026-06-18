@@ -65,6 +65,7 @@
 
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseSet.h>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 
 #include <optional>
@@ -72,7 +73,6 @@
 #include <tuple>
 
 namespace llzk {
-#define GEN_PASS_DECL_VERIFTOSMTPASS
 #define GEN_PASS_DEF_VERIFTOSMTPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
@@ -82,6 +82,7 @@ using namespace llzk;
 using namespace llzk::component;
 using namespace llzk::felt;
 using namespace llzk::function;
+using namespace llzk::polymorphic;
 using namespace llzk::verif;
 
 namespace {
@@ -1814,6 +1815,9 @@ FailureOr<Operation *> LoweringContext::getDirectTargetDefinition(ContractOp con
 
 /// Module pass that lowers scalar-only `verif` contracts into SMT helper functions.
 struct VerifToSmtPass : public llzk::impl::VerifToSmtPassBase<VerifToSmtPass> {
+  using Base = llzk::impl::VerifToSmtPassBase<VerifToSmtPass>;
+  using Base::Base;
+
   /// Register the dialects required by the generated SMT helper IR.
   void getDependentDialects(DialectRegistry &registry) const override {
     registry
@@ -1880,6 +1884,34 @@ struct VerifToSmtPass : public llzk::impl::VerifToSmtPassBase<VerifToSmtPass> {
     }
     for (StructDefOp structDef : state.getLoweredStructDefs()) {
       structDef.erase();
+    }
+
+    if (!cleanup) {
+      return;
+    }
+
+    SmallVector<Operation *> toErase;
+    module.walk([&](Operation *op) {
+      if (auto structDef = dyn_cast<StructDefOp>(op)) {
+        toErase.push_back(structDef);
+        return;
+      }
+      if (auto funcDef = dyn_cast<FuncDefOp>(op); funcDef && !funcDef.isInStruct()) {
+        toErase.push_back(funcDef);
+      }
+    });
+    for (Operation *op : llvm::reverse(toErase)) {
+      op->erase();
+    }
+
+    SmallVector<TemplateOp> emptyTemplates;
+    module.walk([&](TemplateOp templateOp) {
+      if (templateOp.getBodyRegion().front().empty()) {
+        emptyTemplates.push_back(templateOp);
+      }
+    });
+    for (TemplateOp templateOp : llvm::reverse(emptyTemplates)) {
+      templateOp.erase();
     }
   }
 };

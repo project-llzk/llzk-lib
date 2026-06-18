@@ -1,5 +1,5 @@
-// RUN: not llzk-opt --smt-pretty-print='entry=missing' -o /dev/null %s 2>&1 | FileCheck --check-prefix=MISSING %s
-// RUN: not llzk-opt --smt-pretty-print -o /dev/null %s 2>&1 | FileCheck --check-prefix=NOROOT %s
+// RUN: not llzk-opt --smt-to-smtlib='entry=missing' -o /dev/null %s 2>&1 | FileCheck --check-prefix=MISSING %s
+// RUN: not llzk-opt --smt-to-smtlib -o /dev/null %s 2>&1 | FileCheck --check-prefix=NOROOT %s
 
 module {
   func.func @helper(%x: !smt.int) -> !smt.int {
@@ -7,5 +7,5 @@ module {
   }
 }
 
-// MISSING: error: smt-pretty-print could not find entry symbol @missing
-// NOROOT: error: smt-pretty-print found no smt_verif_*_entry roots; pass --entry to export a different func.func
+// MISSING: error: smt-to-smtlib could not find entry symbol @missing
+// NOROOT: error: smt-to-smtlib found no smt_verif_*_entry roots; pass --entry to export a different func.func

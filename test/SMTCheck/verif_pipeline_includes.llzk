@@ -1,4 +1,4 @@
-// RUN: llzk-opt --llzk-verif-to-smt --smt-pretty-print='entry=smt_verif_TopGate_entry' -o /dev/null %s | llzk-smt-check - | FileCheck %s
+// RUN: llzk-opt --llzk-verif-to-smtlib='entry=smt_verif_TopGate_entry' -o /dev/null %s | llzk-smt-check - | FileCheck %s
 
 module attributes {llzk.lang} {
   function.def @gate_target(%gate: i1) {

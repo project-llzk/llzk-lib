@@ -1,4 +1,4 @@
-// RUN: llzk-opt --llzk-verif-to-smt --smt-pretty-print='entry=smt_verif_TopGate_entry' -o /dev/null %s | FileCheck --check-prefix=INCLUDE %s
+// RUN: llzk-opt --llzk-verif-to-smtlib='entry=smt_verif_TopGate_entry' -o /dev/null %s | FileCheck --check-prefix=INCLUDE %s
 
 module attributes {llzk.lang} {
   function.def @leaf_target(%gate: i1) {

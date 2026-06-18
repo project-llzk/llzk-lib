@@ -1,4 +1,4 @@
-// RUN: llzk-opt --smt-pretty-print='entry=main' -o /dev/null %s | FileCheck --check-prefix=GENERIC %s
+// RUN: llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s | FileCheck --check-prefix=GENERIC %s
 
 module {
   func.func @helper(%x: !smt.int, %flag: !smt.bool) -> !smt.int {

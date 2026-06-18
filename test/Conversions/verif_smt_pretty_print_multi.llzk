@@ -1,4 +1,4 @@
-// RUN: llzk-opt --llzk-verif-to-smt --smt-pretty-print -o /dev/null %s | FileCheck --check-prefix=MULTI %s
+// RUN: llzk-opt --llzk-verif-to-smtlib -o /dev/null %s | FileCheck --check-prefix=MULTI %s
 
 module attributes {llzk.lang} {
   function.def @id_bool(%gate: i1) -> i1 {

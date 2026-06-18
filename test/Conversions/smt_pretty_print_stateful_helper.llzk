@@ -1,4 +1,4 @@
-// RUN: not llzk-opt --smt-pretty-print='entry=main' -o /dev/null %s 2>&1 | FileCheck --check-prefix=STATEFUL %s
+// RUN: not llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s 2>&1 | FileCheck --check-prefix=STATEFUL %s
 
 module {
   func.func @bad_helper(%x: !smt.int) -> !smt.int {
