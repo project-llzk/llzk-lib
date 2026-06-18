@@ -85,8 +85,6 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@SubCmp::@SubC
 }
 
 // CHECK-LABEL: module attributes {llzk.lang = "circom", llzk.main = !struct.type<@SubCmp::@SubCmp<[]>>} {
-// CHECK-NEXT:    module @Nop {
-// CHECK-NEXT:    }
 // CHECK-NEXT:    module @SubCmp {
 // CHECK-NEXT:      struct.def @SubCmp {
 // CHECK-NEXT:        struct.member @o : !felt.type<"bn128"> {llzk.pub}
