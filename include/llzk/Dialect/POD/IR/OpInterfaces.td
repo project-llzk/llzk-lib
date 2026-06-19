@@ -49,18 +49,13 @@ def PodAccessOpInterface
       // Requires implementors to have a '$record_name' attribute.
       InterfaceMethod<
           [{Gets the record name attribute from the pod access op.}],
-          "::mlir::FlatSymbolRefAttr", "getRecordNameAttr", (ins)>,
+          "::mlir::StringAttr", "getRecordNameAttr", (ins)>,
       InterfaceMethod<
           [{Return `true` if the op is a read, `false` if it's a write.}],
           "bool", "isRead", (ins)>,
   ];
 
   let extraClassDeclaration = [{
-    /// Gets the record name as an attribute suitable for destructuring indices.
-    inline ::mlir::StringAttr getRecordNameAsStringAttr() {
-      return getRecordNameAttr().getLeafReference();
-    }
-
     /// Required by companion interface DestructurableAccessorOpInterface / SROA pass
     bool canRewire(const ::mlir::DestructurableMemorySlot &slot,
             ::llvm::SmallPtrSetImpl<::mlir::Attribute> &usedIndices,

@@ -1,4 +1,4 @@
-// RUN: llzk-opt -I %S -split-input-file -llzk-full-poly-lowering="max-degree=3" -verify-diagnostics %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -I %S -split-input-file -llzk-poly-lowering-pass="max-degree=3" -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 module attributes {llzk.lang} {
   // lowers constraints to be at most degree 3 polynomials

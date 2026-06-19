@@ -39,7 +39,7 @@ using namespace mlir;
 using namespace llzk;
 using namespace llzk::pod;
 
-static void registerLLZKPodTransformationPasses() { registerTransformationPasses(); }
+static inline void registerLLZKPodTransformationPasses() { registerTransformationPasses(); }
 
 // Include the generated CAPI
 #include "llzk/Dialect/POD/IR/Attrs.capi.cpp.inc"
