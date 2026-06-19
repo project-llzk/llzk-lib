@@ -292,6 +292,12 @@ private:
   /// Lower the boundary signature of a callable to SMT-facing scalar types.
   FailureOr<LoweredSignature> lowerCallableSignature(FunctionType type, Operation *origin);
 
+  /// Seed lowered callable argument maps for ordinary args and flattened struct members.
+  FailureOr<unsigned> seedCallableArgumentMaps(
+      ValueRange originalArgs, Block *entry, Operation *origin, DenseMap<Value, Value> &valueMap,
+      SelfMemberMap &selfMemberMap
+  );
+
   /// Lower the contract boundary signature to SMT-facing scalar types.
   FailureOr<LoweredSignature> lowerContractSignature(ContractOp contract);
 
@@ -324,7 +330,7 @@ private:
 
   /// Lower one include operand list using the contract-local lowering environment.
   FailureOr<SmallVector<Value>> lowerIncludeHelperOperands(
-      ValueRange operands, OpBuilder &builder, DenseMap<Value, Value> &valueMap,
+      ValueRange operands, Operation *origin, OpBuilder &builder, DenseMap<Value, Value> &valueMap,
       SelfMemberMap &selfMemberMap, DenseMap<StringRef, Value> &constParamMap
   );
 
@@ -660,6 +666,30 @@ LoweringContext::lowerCallableSignature(FunctionType type, Operation *origin) {
     lowered.argTypes.push_back(smt::IntType::get(context));
   }
   return lowered;
+}
+
+/// Seed lowered argument maps for callables whose SMT helper signatures flatten struct arguments.
+FailureOr<unsigned> LoweringContext::seedCallableArgumentMaps(
+    ValueRange originalArgs, Block *entry, Operation *origin, DenseMap<Value, Value> &valueMap,
+    SelfMemberMap &selfMemberMap
+) {
+  unsigned nextArg = 0;
+  for (Value originalArg : originalArgs) {
+    if (auto structType = dyn_cast<StructType>(originalArg.getType())) {
+      auto members = getStructMembers(structType, origin);
+      if (failed(members)) {
+        return failure();
+      }
+      DenseMap<StringRef, Value> loweredMembers;
+      for (MemberDefOp member : *members) {
+        loweredMembers[member.getSymName()] = entry->getArgument(nextArg++);
+      }
+      selfMemberMap[originalArg] = std::move(loweredMembers);
+      continue;
+    }
+    valueMap[originalArg] = entry->getArgument(nextArg++);
+  }
+  return nextArg;
 }
 
 /// Build a left-associated conjunction of the given SMT boolean values.
@@ -1543,13 +1573,14 @@ LoweringContext::getOrCreateFunctionHelper(ModuleOp module, FuncDefOp func) {
   OpBuilder entryBuilder = OpBuilder::atBlockBegin(entry);
   DenseMap<Value, Value> valueMap;
   SelfMemberMap selfMemberMap;
-  unsigned numLoweredInputs = loweredSig->argTypes.size() - loweredSig->templateParams.size();
-  DenseMap<StringRef, Value> constParamMap = seedConstParamMap(
-      loweredSig->templateParams, ValueRange(entry->getArguments()).drop_front(numLoweredInputs)
-  );
-  for (auto [original, lowered] : llvm::zip(func.getArguments(), entry->getArguments())) {
-    valueMap[original] = lowered;
+  auto numLoweredInputs =
+      seedCallableArgumentMaps(func.getArguments(), entry, func, valueMap, selfMemberMap);
+  if (failed(numLoweredInputs)) {
+    return failure();
   }
+  DenseMap<StringRef, Value> constParamMap = seedConstParamMap(
+      loweredSig->templateParams, ValueRange(entry->getArguments()).drop_front(*numLoweredInputs)
+  );
 
   ExprLowerer lowerer(*this, entryBuilder, valueMap, selfMemberMap, constParamMap);
   auto returnOp = dyn_cast<ReturnOp>(func.getBody().front().getTerminator());
@@ -1618,13 +1649,15 @@ LoweringContext::getOrCreateStructHelpers(ModuleOp module, StructDefOp structDef
     OpBuilder entryBuilder = OpBuilder::atBlockBegin(entry);
     DenseMap<Value, Value> valueMap;
     SelfMemberMap selfMemberMap;
-    unsigned numLoweredInputs = computeSig->argTypes.size() - computeSig->templateParams.size();
-    DenseMap<StringRef, Value> constParamMap = seedConstParamMap(
-        computeSig->templateParams, ValueRange(entry->getArguments()).drop_front(numLoweredInputs)
+    auto numLoweredInputs = seedCallableArgumentMaps(
+        computeFunc.getArguments(), entry, computeFunc, valueMap, selfMemberMap
     );
-    for (auto [original, lowered] : llvm::zip(computeFunc.getArguments(), entry->getArguments())) {
-      valueMap[original] = lowered;
+    if (failed(numLoweredInputs)) {
+      return failure();
     }
+    DenseMap<StringRef, Value> constParamMap = seedConstParamMap(
+        computeSig->templateParams, ValueRange(entry->getArguments()).drop_front(*numLoweredInputs)
+    );
 
     ExprLowerer lowerer(*this, entryBuilder, valueMap, selfMemberMap, constParamMap);
     DenseMap<StringRef, Value> writtenMembers;
@@ -1762,7 +1795,7 @@ LoweringContext::getOrCreateStructHelpers(ModuleOp module, StructDefOp structDef
           return WalkResult::interrupt();
         }
         auto loweredOperands = lowerIncludeHelperOperands(
-            call.getArgOperands(), entryBuilder, valueMap, selfMemberMap, constParamMap
+            call.getArgOperands(), call, entryBuilder, valueMap, selfMemberMap, constParamMap
         );
         if (failed(loweredOperands)) {
           failedToLower = true;
@@ -1827,28 +1860,17 @@ FailureOr<std::tuple<DenseMap<Value, Value>, SelfMemberMap, DenseMap<StringRef, 
 LoweringContext::seedContractArgumentMaps(ContractOp contract, Block *entry) {
   DenseMap<Value, Value> valueMap;
   SelfMemberMap selfMemberMap;
-  unsigned nextArg = 0;
-  for (BlockArgument originalArg : contract.getArguments()) {
-    if (auto structType = dyn_cast<StructType>(originalArg.getType())) {
-      auto members = getStructMembers(structType, contract);
-      if (failed(members)) {
-        return failure();
-      }
-      DenseMap<StringRef, Value> loweredMembers;
-      for (MemberDefOp member : *members) {
-        loweredMembers[member.getSymName()] = entry->getArgument(nextArg++);
-      }
-      selfMemberMap[originalArg] = std::move(loweredMembers);
-      continue;
-    }
-    valueMap[originalArg] = entry->getArgument(nextArg++);
+  auto nextArg =
+      seedCallableArgumentMaps(contract.getArguments(), entry, contract, valueMap, selfMemberMap);
+  if (failed(nextArg)) {
+    return failure();
   }
   auto loweredSig = lowerContractSignature(contract);
   if (failed(loweredSig)) {
     return failure();
   }
   DenseMap<StringRef, Value> constParamMap = seedConstParamMap(
-      loweredSig->templateParams, ValueRange(entry->getArguments()).drop_front(nextArg)
+      loweredSig->templateParams, ValueRange(entry->getArguments()).drop_front(*nextArg)
   );
   return std::make_tuple(std::move(valueMap), std::move(selfMemberMap), std::move(constParamMap));
 }
@@ -2180,13 +2202,38 @@ LoweringContext::getOrCreateContractHelpers(ModuleOp module, ContractOp contract
 
 /// Lower one include operand list using the contract-local lowering environment.
 FailureOr<SmallVector<Value>> LoweringContext::lowerIncludeHelperOperands(
-    ValueRange operands, OpBuilder &builder, DenseMap<Value, Value> &valueMap,
+    ValueRange operands, Operation *origin, OpBuilder &builder, DenseMap<Value, Value> &valueMap,
     SelfMemberMap &selfMemberMap, DenseMap<StringRef, Value> &constParamMap
 ) {
   ExprLowerer lowerer(*this, builder, valueMap, selfMemberMap, constParamMap);
   SmallVector<Value> loweredOperands;
-  loweredOperands.reserve(operands.size());
   for (Value operand : operands) {
+    if (auto structType = dyn_cast<StructType>(operand.getType())) {
+      auto members = getStructMembers(structType, origin);
+      if (failed(members)) {
+        return failure();
+      }
+      auto loweredStructIt = selfMemberMap.find(operand);
+      if (loweredStructIt == selfMemberMap.end()) {
+        emitError(
+            operand.getLoc(), "missing flattened struct operand mapping while lowering helper call"
+        );
+        return failure();
+      }
+      for (MemberDefOp member : *members) {
+        auto loweredMemberIt = loweredStructIt->second.find(member.getSymName());
+        if (loweredMemberIt == loweredStructIt->second.end()) {
+          emitError(
+              operand.getLoc(), (Twine("missing lowered member @") + member.getSymName() +
+                                 " while flattening struct helper operand")
+                                    .str()
+          );
+          return failure();
+        }
+        loweredOperands.push_back(loweredMemberIt->second);
+      }
+      continue;
+    }
     auto lowered = lowerer.lower(operand);
     if (failed(lowered)) {
       return failure();
@@ -2325,7 +2372,7 @@ LogicalResult LoweringContext::createContractEntryHelper(
       return failure();
     }
     auto loweredOperands = lowerIncludeHelperOperands(
-        includeOp.getArgOperands(), entryBuilder, valueMap, selfMemberMap, constParamMap
+        includeOp.getArgOperands(), includeOp, entryBuilder, valueMap, selfMemberMap, constParamMap
     );
     if (failed(loweredOperands)) {
       return failure();
