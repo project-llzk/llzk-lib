@@ -164,6 +164,32 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @N : !felt.type
+
+    function.def @templated_token() -> !felt.type {
+      %n = poly.read_const @N : !felt.type
+      function.return %n : !felt.type
+    }
+  }
+
+  verif.contract @Outside for @T::@templated_token (%ret: !felt.type) {
+    %true = arith.constant true
+    verif.require_compute %true
+  }
+}
+
+// CHECK-LABEL: func.func @smt_T__templated_token(
+// CHECK-SAME: %[[N:[0-9A-Za-z_\.]+]]: !smt.int) -> !smt.int {
+// CHECK: return %[[N]] : !smt.int
+// CHECK-LABEL: func.func @smt_verif_Outside_target(
+// CHECK-SAME: %[[RET:[0-9A-Za-z_\.]+]]: !smt.int, %[[HIDDEN:[0-9A-Za-z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK: %[[CALL:[0-9A-Za-z_\.]+]] = call @smt_T__templated_token(%[[HIDDEN]]) : (!smt.int) -> !smt.int
+// CHECK: %[[EQ:[0-9A-Za-z_\.]+]] = smt.eq %[[CALL]], %[[RET]] : !smt.int
+
+// -----
+
+module attributes {llzk.lang} {
   function.def @check_guard(%gate: i1) {
     function.return
   }
