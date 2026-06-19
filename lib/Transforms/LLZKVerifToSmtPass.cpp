@@ -1730,9 +1730,9 @@ static LogicalResult checkStructConstrainBodyIsBooleanSummarizable(FuncDefOp con
       return WalkResult::advance();
     }
     if (op->getNumRegions() != 0 || op->getNumSuccessors() != 0) {
-      op->emitError(
-      ) << "verif-to-smt requires struct constrain bodies without loops or successor-based "
-           "control flow; run `llzk-flatten` or another control-flow lowering pass first";
+      op->emitError()
+          << "verif-to-smt requires struct constrain bodies without loops or successor-based "
+             "control flow; run `llzk-flatten` or another control-flow lowering pass first";
       failed = true;
       return WalkResult::interrupt();
     }

@@ -97,9 +97,8 @@ struct FullPolyLoweringOptions : public mlir::PassPipelineOptions<FullPolyLoweri
 
   using StructInliningOptions = NestedPipelineOptions<FullStructInliningOptions>;
 
-  using PolyLoweringOptions =
-      NestedPassOptions<static_cast<std::unique_ptr<mlir::Pass> (*)()>(&llzk::createPolyLoweringPass
-      )>;
+  using PolyLoweringOptions = NestedPassOptions<
+      static_cast<std::unique_ptr<mlir::Pass> (*)()>(&llzk::createPolyLoweringPass)>;
 
   Option<StructInliningOptions> structInlining {
       *this, "flatten-inline",
