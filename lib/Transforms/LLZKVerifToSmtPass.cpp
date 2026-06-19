@@ -1664,7 +1664,8 @@ LoweringContext::getOrCreateStructHelpers(ModuleOp module, StructDefOp structDef
 
   SmallVector<Type> memberTypes;
   for (MemberDefOp member : members) {
-    if (failed(appendLoweredBoundaryTypes(member.getType(), structDef.getOperation(), memberTypes)
+    if (failed(
+            appendLoweredBoundaryTypes(member.getType(), structDef.getOperation(), memberTypes)
         )) {
       return failure();
     }
