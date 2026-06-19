@@ -86,6 +86,8 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       const llvm::StringMap<unsigned> &auxNameToIndex, DenseSet<Value> &visitedValues,
       DenseSet<unsigned> &seenDeps, SmallVectorImpl<unsigned> &deps
   ) const {
+    // Aux dependencies can appear as generated aux SSA values or reads of generated
+    // aux members, so track both forms before ordering writes.
     if (!val || !visitedValues.insert(val).second) {
       return;
     }
@@ -127,6 +129,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     }
 
     visitState[idx] = 1;
+    // Emit prerequisite aux writes before the aux writes that read them.
     for (unsigned dep : deps[idx]) {
       if (failed(visitAuxAssignment(dep, deps, visitState, ordered, auxAssignments))) {
         return failure();
@@ -579,6 +582,8 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
             rebuiltExpr
         );
         if (assign.auxValue) {
+          // Reuse the expression just written so later aux producers do not need an
+          // immediate read from the generated aux member.
           rebuildMemo[assign.auxValue] = rebuiltExpr;
         }
       }
