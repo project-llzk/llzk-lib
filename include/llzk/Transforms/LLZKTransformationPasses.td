@@ -74,39 +74,19 @@ def PolyLoweringPass : LLZKPass<"llzk-poly-lowering-pass"> {
     through degree-neutral roots such as `felt.add`, `felt.sub`, and `felt.neg`, so composite
     equality operands and struct constrain call arguments satisfy their degree bounds.
 
-    This pass is best used as part of the `-llzk-full-poly-lowering` pipeline, which includes
-    additional cleanup passes to ensure correctness and optimal performance.
+    The pass expects already-flattened, straight-line `constrain` bodies. Run `llzk-flatten` or
+    another control-flow lowering pass before this pass; nested-region, successor-bearing, or
+    multi-block constraints are rejected instead of being rewritten with component-lifetime
+    auxiliary members.
+
+    This pass is best used on already-flattened input as part of the `-llzk-full-poly-lowering`
+    pipeline, which includes additional cleanup passes to ensure correctness and optimal
+    performance.
   }];
   let options = [Option<"maxDegree", "max-degree", "unsigned",
                         /* default */ "2",
                         "Maximum degree of constraint polynomials "
                         "(default 2, minimum 2)">,
-  ];
-}
-
-def InlineStructsPass : LLZKPass<"llzk-inline-structs"> {
-  let summary = "Inlines nested structs (i.e., subcomponents).";
-  let description = [{
-    This pass inlines nested structs (i.e., subcomponents) at struct-type members and at calls to the
-    subcomponent compute/constrain functions. Inlining decisions are guided by the call graph of
-    "constrain" functions.
-
-    The `max-merge-complexity` parameter can be used to limit the complexity of the resulting structs such
-    that a potential inlining will not take place if doing so would push the sum of constraint and
-    multiplications in the combined struct over the limit. The default value `0` indicates no limits
-    which means all structs will be inlined into the Main struct.
-
-    This pass should be run after `llzk-flatten` to ensure structs do not have template parameters
-    because structs with template parameters cannot (currently) be inlined. Inlining is also not
-    (currently) supported for subcomponent structs stored in an array-type member.
-
-    This pass also assumes that all subcomponents that are created by calling a struct "@compute"
-    function are ultimately written to exactly one member within the current struct.
-  }];
-  let options = [Option<"maxComplexity", "max-merge-complexity", "uint64_t",
-                        /* default */ "0",
-                        "Maximum allowed constraint+multiplications in merged "
-                        "@constrain functions">,
   ];
 }
 

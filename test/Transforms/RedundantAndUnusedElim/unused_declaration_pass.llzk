@@ -371,19 +371,15 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
   }
 }
 
-// STRICT-LABEL: module @nested {
-// STRICT-NEXT:  }
-
-// STRICT-LABEL: module @user {
-// STRICT-NEXT:  }
-
-// STRICT-LABEL: struct.def @Main {
-// STRICT-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// STRICT-NEXT:      %[[VAL_0:.*]] = struct.new : <@Main>
-// STRICT-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
-// STRICT-NEXT:    }
-// STRICT-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// STRICT-NEXT:      function.return
+// STRICT-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+// STRICT-NEXT:    struct.def @Main {
+// STRICT-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// STRICT-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// STRICT-NEXT:        function.return %[[VAL_0]] : !struct.type<@Main>
+// STRICT-NEXT:      }
+// STRICT-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// STRICT-NEXT:        function.return
+// STRICT-NEXT:      }
 // STRICT-NEXT:    }
 // STRICT-NEXT:  }
 
@@ -479,19 +475,15 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
   }
 }
 
-// STRICT-LABEL: module @nested {
-// STRICT-NEXT:  }
-
-// STRICT-LABEL: module @user {
-// STRICT-NEXT:  }
-
-// STRICT-LABEL: struct.def @Main {
-// STRICT-NEXT:    function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// STRICT-NEXT:      %[[VAL_0:.*]] = struct.new : <@Main>
-// STRICT-NEXT:      function.return %[[VAL_0]] : !struct.type<@Main>
-// STRICT-NEXT:    }
-// STRICT-NEXT:    function.def @constrain(%[[VAL_1:.*]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// STRICT-NEXT:      function.return
+// STRICT-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+// STRICT-NEXT:    struct.def @Main {
+// STRICT-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// STRICT-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// STRICT-NEXT:        function.return %[[VAL_0]] : !struct.type<@Main>
+// STRICT-NEXT:      }
+// STRICT-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// STRICT-NEXT:        function.return
+// STRICT-NEXT:      }
 // STRICT-NEXT:    }
 // STRICT-NEXT:  }
 

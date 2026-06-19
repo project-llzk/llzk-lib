@@ -46,7 +46,10 @@
 /// 5. Run MLIR "mem2reg" pass to convert all single-record pod allocations and accesses into SSA
 ///    values.
 ///
-/// ** Steps 4 and 5 are rerun while nested POD types are still being exposed, until a fixpoint.
+/// 6. Remove pod allocations that become unread after memory promotion, then remove SSA values
+///    made dead by that cleanup.
+///
+/// ** Steps 4-6 are rerun while nested POD types are still being exposed, until a fixpoint.
 ///
 /// Note: This transformation imposes a "last write wins" semantics on pod records. If
 /// different/configurable semantics are added in the future, some additional transformation would
@@ -77,6 +80,7 @@
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKConversionUtils.h"
+#include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Transforms/SpecializedMemoryPasses.h"
 #include "llzk/Util/Concepts.h"
 #include "llzk/Util/Walk.h"
@@ -755,24 +759,14 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   return applyFullConversion(modOp, target, std::move(patterns));
 }
 
-/// Normalize the record name representation used by POD access ops to a plain `StringAttr`.
-inline static StringAttr getRecordNameAsStringAttr(ReadPodOp readOp) {
-  return readOp.getRecordNameAttr().getLeafReference();
-}
-
-/// Normalize the record name representation used by POD access ops to a plain `StringAttr`.
-inline static StringAttr getRecordNameAsStringAttr(WritePodOp writeOp) {
-  return writeOp.getRecordNameAttr().getLeafReference();
-}
-
 /// Return whether the given read/write access targets the same POD record.
 inline static bool isSamePodRecord(ReadPodOp readOp, Value podRef, StringAttr recordName) {
-  return readOp.getPodRef() == podRef && getRecordNameAsStringAttr(readOp) == recordName;
+  return readOp.getPodRef() == podRef && readOp.getRecordNameAttr() == recordName;
 }
 
 /// Return whether the given read/write access targets the same POD record.
 inline static bool isSamePodRecord(WritePodOp writeOp, Value podRef, StringAttr recordName) {
-  return writeOp.getPodRef() == podRef && getRecordNameAsStringAttr(writeOp) == recordName;
+  return writeOp.getPodRef() == podRef && writeOp.getRecordNameAttr() == recordName;
 }
 
 /// Return whether `op` contains a nested write to `podRef.recordName`.
@@ -799,7 +793,7 @@ static bool hasValueUse(Operation &op, Value value) {
 /// Return whether the read is preceded by a write to the same pod record within its block.
 static bool hasEarlierWriteInBlock(ReadPodOp readOp) {
   Value podRef = readOp.getPodRef();
-  StringAttr recordName = getRecordNameAsStringAttr(readOp);
+  StringAttr recordName = readOp.getRecordNameAttr();
 
   for (Operation &op : *readOp->getBlock()) {
     if (&op == readOp.getOperation()) {
@@ -850,7 +844,7 @@ static WritePodOp findPrecedingWriteForIfRead(ReadPodOp readOp) {
   }
 
   Value podRef = readOp.getPodRef();
-  StringAttr recordName = getRecordNameAsStringAttr(readOp);
+  StringAttr recordName = readOp.getRecordNameAttr();
   WritePodOp replacement = nullptr;
   for (Operation &op : *ifBlock) {
     if (&op == ifOp.getOperation()) {
@@ -893,9 +887,8 @@ public:
 
     rewriter.setInsertionPoint(ifOp);
     rewriter.replaceOp(
-        readOp,
-        genRead(readOp.getLoc(), readOp.getPodRef(), getRecordNameAsStringAttr(readOp), rewriter)
-            .getResult()
+        readOp, genRead(readOp.getLoc(), readOp.getPodRef(), readOp.getRecordNameAttr(), rewriter)
+                    .getResult()
     );
     return success();
   }
@@ -930,7 +923,7 @@ public:
     }
 
     auto writeOp = dyn_cast_or_null<WritePodOp>(readOp->getPrevNode());
-    if (!writeOp || getRecordNameAsStringAttr(writeOp) != getRecordNameAsStringAttr(readOp)) {
+    if (!writeOp || writeOp.getRecordNameAttr() != readOp.getRecordNameAttr()) {
       return failure();
     }
 
@@ -1018,7 +1011,7 @@ collectDirectWrites(Block *block, bool isThenBlock, SmallVectorImpl<IfWriteSlot>
     }
 
     IfWriteSlot &slot = getOrCreateSlot(
-        slots, writeOp.getPodRef(), getRecordNameAsStringAttr(writeOp), writeOp.getValue().getType()
+        slots, writeOp.getPodRef(), writeOp.getRecordNameAttr(), writeOp.getValue().getType()
     );
     if (isThenBlock) {
       slot.thenWrite = writeOp;
@@ -1175,7 +1168,7 @@ collectDirectLoopPodSlots(Block &block, Operation *ancestor, SmallVectorImpl<Loo
     if (auto readOp = dyn_cast<ReadPodOp>(&op)) {
       if (!isValueDefinedInside(ancestor, readOp.getPodRef())) {
         getOrCreateLoopSlot(
-            slots, readOp.getPodRef(), getRecordNameAsStringAttr(readOp), readOp.getType()
+            slots, readOp.getPodRef(), readOp.getRecordNameAttr(), readOp.getType()
         );
       }
       continue;
@@ -1184,8 +1177,7 @@ collectDirectLoopPodSlots(Block &block, Operation *ancestor, SmallVectorImpl<Loo
     if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
       if (!isValueDefinedInside(ancestor, writeOp.getPodRef())) {
         getOrCreateLoopSlot(
-            slots, writeOp.getPodRef(), getRecordNameAsStringAttr(writeOp),
-            writeOp.getValue().getType()
+            slots, writeOp.getPodRef(), writeOp.getRecordNameAttr(), writeOp.getValue().getType()
         );
       }
     }
@@ -1210,14 +1202,14 @@ static bool hasNestedTrackedPodAccess(Operation &op, ArrayRef<LoopPodSlot> slots
     }
 
     if (auto readOp = dyn_cast<ReadPodOp>(nestedOp)) {
-      if (hasLoopSlot(slots, readOp.getPodRef(), getRecordNameAsStringAttr(readOp))) {
+      if (hasLoopSlot(slots, readOp.getPodRef(), readOp.getRecordNameAttr())) {
         return WalkResult::interrupt();
       }
       return WalkResult::advance();
     }
 
     if (auto writeOp = dyn_cast<WritePodOp>(nestedOp)) {
-      if (hasLoopSlot(slots, writeOp.getPodRef(), getRecordNameAsStringAttr(writeOp))) {
+      if (hasLoopSlot(slots, writeOp.getPodRef(), writeOp.getRecordNameAttr())) {
         return WalkResult::interrupt();
       }
     }
@@ -1371,7 +1363,7 @@ public:
 
       if (auto readOp = dyn_cast<ReadPodOp>(&op)) {
         if (std::optional<size_t> slotIdx =
-                findLoopSlotIndex(slots, readOp.getPodRef(), getRecordNameAsStringAttr(readOp))) {
+                findLoopSlotIndex(slots, readOp.getPodRef(), readOp.getRecordNameAttr())) {
           mapping.map(readOp.getResult(), slotValues[*slotIdx]);
           continue;
         }
@@ -1379,7 +1371,7 @@ public:
 
       if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
         if (std::optional<size_t> slotIdx =
-                findLoopSlotIndex(slots, writeOp.getPodRef(), getRecordNameAsStringAttr(writeOp))) {
+                findLoopSlotIndex(slots, writeOp.getPodRef(), writeOp.getRecordNameAttr())) {
           slotValues[*slotIdx] = mapping.lookupOrDefault(writeOp.getValue());
           continue;
         }
@@ -1468,7 +1460,7 @@ public:
 
       if (auto readOp = dyn_cast<ReadPodOp>(&op)) {
         if (std::optional<size_t> slotIdx =
-                findLoopSlotIndex(slots, readOp.getPodRef(), getRecordNameAsStringAttr(readOp))) {
+                findLoopSlotIndex(slots, readOp.getPodRef(), readOp.getRecordNameAttr())) {
           beforeMapping.map(readOp.getResult(), beforeSlotValues[*slotIdx]);
           continue;
         }
@@ -1476,7 +1468,7 @@ public:
 
       if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
         if (std::optional<size_t> slotIdx =
-                findLoopSlotIndex(slots, writeOp.getPodRef(), getRecordNameAsStringAttr(writeOp))) {
+                findLoopSlotIndex(slots, writeOp.getPodRef(), writeOp.getRecordNameAttr())) {
           beforeSlotValues[*slotIdx] = beforeMapping.lookupOrDefault(writeOp.getValue());
           continue;
         }
@@ -1514,7 +1506,7 @@ public:
 
       if (auto readOp = dyn_cast<ReadPodOp>(&op)) {
         if (std::optional<size_t> slotIdx =
-                findLoopSlotIndex(slots, readOp.getPodRef(), getRecordNameAsStringAttr(readOp))) {
+                findLoopSlotIndex(slots, readOp.getPodRef(), readOp.getRecordNameAttr())) {
           afterMapping.map(readOp.getResult(), afterSlotValues[*slotIdx]);
           continue;
         }
@@ -1522,7 +1514,7 @@ public:
 
       if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
         if (std::optional<size_t> slotIdx =
-                findLoopSlotIndex(slots, writeOp.getPodRef(), getRecordNameAsStringAttr(writeOp))) {
+                findLoopSlotIndex(slots, writeOp.getPodRef(), writeOp.getRecordNameAttr())) {
           afterSlotValues[*slotIdx] = afterMapping.lookupOrDefault(writeOp.getValue());
           continue;
         }
@@ -1662,9 +1654,14 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
     scalarizePM.addPass(createSpecializedSROAPass<NewPodOp>());
     scalarizePM.addPass(createSpecializedMem2RegPass<NewPodOp>());
 
-    // Cleanup SSA values made dead by the transformations
+    // Cleanup allocations made dead by memory promotion and other dead SSA values.
     OpPassManager cleanupPM(ModuleOp::getOperationName());
-    cleanupPM.addPass(createRemoveDeadValuesPass());
+    cleanupPM.addPass(createRemoveUnusedDiscardableAllocationsPass(
+        RemoveUnusedDiscardableAllocationsPassOptions {
+            .allocatorOpName = NewPodOp::getOperationName().str()
+        }
+    ));
+    cleanupPM.addPass(createRemoveDeadValuesWorkaroundPass());
 
     size_t podAllocWeight = podAllocScalarizationWeight(module);
     while (podAllocWeight != 0) {

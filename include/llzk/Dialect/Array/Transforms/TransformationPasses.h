@@ -17,4 +17,4 @@ namespace llzk::array {
 #define GEN_PASS_REGISTRATION
 #include "llzk/Dialect/Array/Transforms/TransformationPasses.h.inc"
 
-}; // namespace llzk::array
+} // namespace llzk::array

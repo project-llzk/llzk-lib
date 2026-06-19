@@ -18,4 +18,4 @@ namespace llzk::include {
 #define GEN_PASS_REGISTRATION
 #include "llzk/Dialect/Include/Transforms/InlineIncludesPass.h.inc"
 
-}; // namespace llzk::include
+} // namespace llzk::include

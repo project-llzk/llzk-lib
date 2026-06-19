@@ -78,6 +78,7 @@ class PassImpl : public llzk::impl::UnusedDeclarationEliminationPassBase<PassImp
     // Last, remove unused structs if configured
     if (removeStructs) {
       removeUnusedStructs(ctx);
+      removeEmptyModules();
     }
   }
 
@@ -90,12 +91,11 @@ class PassImpl : public llzk::impl::UnusedDeclarationEliminationPassBase<PassImp
     // Map fully-qualified member symbols -> member ops
     DenseMap<SymbolRefAttr, MemberDefOp> members;
     for (auto &[structDef, structSym] : ctx.structToSymbol) {
-      structDef.walk([&](MemberDefOp member) {
-        // We don't consider public members in the Main component for removal,
-        // as these are output values and removing them would result in modifying
-        // the overall circuit interface.
-        // NOLINTNEXTLINE(clang-analyzer-core.CallAndMessage)
-        if (!structDef.isMainComponent() || !member.hasPublicAttr()) {
+      bool notMain = !structDef.isMainComponent();
+      structDef.walk([notMain, &structSym, &members](MemberDefOp member) {
+        // We don't consider public members in the Main component for removal, as these are output
+        // values and removing them would result in modifying the overall circuit interface.
+        if (notMain || !member.hasPublicAttr()) {
           SymbolRefAttr memberSym =
               appendLeaf(structSym, FlatSymbolRefAttr::get(member.getSymNameAttr()));
           members[memberSym] = member;
@@ -104,14 +104,11 @@ class PassImpl : public llzk::impl::UnusedDeclarationEliminationPassBase<PassImp
     }
 
     // Remove all members that are read.
-    modOp.walk([&](MemberReadOp readm) {
-      SymbolRefAttr readMemberSym = getFullMemberSymbol(readm);
-      members.erase(readMemberSym);
-    });
+    modOp.walk([&members](MemberReadOp readm) { members.erase(getFullMemberSymbol(readm)); });
 
     // Remove all writes that reference the remaining members, as these writes
     // are now known to only update write-only members.
-    modOp.walk([&](MemberWriteOp writem) {
+    modOp.walk([&members](MemberWriteOp writem) {
       SymbolRefAttr writtenMember = getFullMemberSymbol(writem);
       if (members.contains(writtenMember)) {
         // We need not check the users of a writem, since it produces no results.
@@ -186,7 +183,9 @@ class PassImpl : public llzk::impl::UnusedDeclarationEliminationPassBase<PassImp
 
       // Check attributes
       for (const auto &namedAttr : op->getAttrs()) {
-        namedAttr.getValue().walk([&](TypeAttr typeAttr) { tryAddUse(typeAttr.getValue()); });
+        namedAttr.getValue().walk([&tryAddUse](TypeAttr typeAttr) {
+          tryAddUse(typeAttr.getValue());
+        });
       }
 
       return WalkResult::advance();
@@ -194,7 +193,7 @@ class PassImpl : public llzk::impl::UnusedDeclarationEliminationPassBase<PassImp
 
     SmallVector<StructDefOp> unusedStructs;
 
-    auto updateUnusedStructs = [&]() {
+    auto updateUnusedStructs = [&usedBy, &unusedStructs]() {
       for (auto &[structDef, users] : usedBy) {
         if (users.empty() && !structDef.isMainComponent()) {
           unusedStructs.push_back(structDef);
@@ -224,6 +223,27 @@ class PassImpl : public llzk::impl::UnusedDeclarationEliminationPassBase<PassImp
       if (unusedStructs.empty()) {
         updateUnusedStructs();
       }
+    }
+  }
+
+  /// @brief Remove nested `module` ops with empty body.
+  void removeEmptyModules() {
+    SmallVector<ModuleOp> emptyModules;
+
+    ModuleOp rootModOp = getOperation();
+    rootModOp.walk<WalkOrder::PostOrder>([&](ModuleOp modOp) {
+      if (modOp == rootModOp) {
+        return;
+      }
+      Region &region = modOp.getBodyRegion();
+      if (region.empty() || region.front().empty()) { // module has `SingleBlock` trait
+        emptyModules.push_back(modOp);
+      }
+    });
+
+    for (ModuleOp modOp : emptyModules) {
+      LLVM_DEBUG(llvm::dbgs() << "Removing empty module " << modOp.getName() << '\n');
+      modOp->erase();
     }
   }
 };
