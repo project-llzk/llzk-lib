@@ -1381,11 +1381,33 @@ private:
     return emitBVToCanonicalInt(loc, result, type);
   }
 
+  /// Return the absolute value of a signed SMT integer.
+  Value emitAbsValue(Location loc, Value value) {
+    Value zero = builder.create<smt::IntConstantOp>(loc, builder.getI64IntegerAttr(0)).getResult();
+    Value isNegative = builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::lt, value, zero)
+                           .getResult();
+    Value negated = builder.create<smt::IntNegOp>(loc, value).getResult();
+    return builder.create<smt::IteOp>(loc, isNegative, negated, value).getResult();
+  }
+
+  /// Lower signed division over SMT integers with truncation toward zero.
+  Value emitTruncatingSignedDivision(Location loc, Value lhs, Value rhs) {
+    Value zero = builder.create<smt::IntConstantOp>(loc, builder.getI64IntegerAttr(0)).getResult();
+    Value lhsNeg = builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::lt, lhs, zero).getResult();
+    Value rhsNeg = builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::lt, rhs, zero).getResult();
+    Value lhsAbs = emitAbsValue(loc, lhs);
+    Value rhsAbs = emitAbsValue(loc, rhs);
+    Value absQuotient = builder.create<smt::IntDivOp>(loc, lhsAbs, rhsAbs).getResult();
+    Value signsDiffer = builder.create<smt::XOrOp>(loc, ValueRange {lhsNeg, rhsNeg}).getResult();
+    Value negatedQuotient = builder.create<smt::IntNegOp>(loc, absQuotient).getResult();
+    return builder.create<smt::IteOp>(loc, signsDiffer, negatedQuotient, absQuotient).getResult();
+  }
+
   /// Lower signed division or remainder over field elements via signed representatives.
   Value emitSignedDivOrRem(Location loc, Value lhs, Value rhs, FeltType type, bool isDiv) {
     Value signedLhs = emitSignedRepresentative(loc, lhs, type);
     Value signedRhs = emitSignedRepresentative(loc, rhs, type);
-    Value quotient = builder.create<smt::IntDivOp>(loc, signedLhs, signedRhs).getResult();
+    Value quotient = emitTruncatingSignedDivision(loc, signedLhs, signedRhs);
     if (isDiv) {
       return emitCanonical(loc, quotient, type);
     }
