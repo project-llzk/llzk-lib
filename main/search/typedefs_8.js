@@ -10,5 +10,7 @@ var searchData=
   ['llzksymbollookupresult_7',['LlzkSymbolLookupResult',['../llzk-c_2Support_8h.html#a29c0dc24cbb3588550b4a6b51de56308',1,'Support.h']]],
   ['localmemberreplacementmap_8',['LocalMemberReplacementMap',['../classllzk_1_1SplitAggregateInMemberRefOp.html#ae4eedd61623ef572784cb2fa0f379425',1,'llzk::SplitAggregateInMemberRefOp']]],
   ['logicty_9',['logicTy',['../structllzk_1_1smt_1_1detail_1_1SetLogicOpGenericAdaptorBase_1_1Properties.html#a5895e80abe2db00a4413ede12d71d79f',1,'llzk::smt::detail::SetLogicOpGenericAdaptorBase::Properties']]],
-  ['lowbitty_10',['lowBitTy',['../structllzk_1_1smt_1_1detail_1_1ExtractOpGenericAdaptorBase_1_1Properties.html#ae862ef9b91eddf22de5a5f885585a747',1,'llzk::smt::detail::ExtractOpGenericAdaptorBase::Properties']]]
+  ['loop_5farg_5ftypesty_10',['loop_arg_typesTy',['../structllzk_1_1verif_1_1detail_1_1InvariantOpGenericAdaptorBase_1_1Properties.html#abf3fe66aa6e663a3ba3518f997588cc8',1,'llzk::verif::detail::InvariantOpGenericAdaptorBase::Properties']]],
+  ['loop_5fnamety_11',['loop_nameTy',['../structllzk_1_1verif_1_1detail_1_1InvariantOpGenericAdaptorBase_1_1Properties.html#aa4fdf6264efc30a2610a0f64e0b64739',1,'llzk::verif::detail::InvariantOpGenericAdaptorBase::Properties']]],
+  ['lowbitty_12',['lowBitTy',['../structllzk_1_1smt_1_1detail_1_1ExtractOpGenericAdaptorBase_1_1Properties.html#ae862ef9b91eddf22de5a5f885585a747',1,'llzk::smt::detail::ExtractOpGenericAdaptorBase::Properties']]]
 ];

@@ -163,6 +163,14 @@ Functions</h2></td></tr>
 <tr class="memdesc:a7c2295e46f8a539555b9d3a971f11018"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the argument at the given index has a <span class="tt">function.arg_name</span> attribute.  <br /></td></tr>
 <tr class="memitem:aeb762bc95b1779c52e6809c2a5fc08f8" id="r_aeb762bc95b1779c52e6809c2a5fc08f8"><td class="memItemLeft" align="right" valign="top">MlirAttribute&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aeb762bc95b1779c52e6809c2a5fc08f8">llzkVerif_ContractOpGetFullyQualifiedName</a> (MlirOperation inp, bool requireParent)</td></tr>
 <tr class="memdesc:aeb762bc95b1779c52e6809c2a5fc08f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the full name for this contract from the root module, including all surrounding symbol table names (i.e., modules and structs).  <br /></td></tr>
+<tr class="memitem:a939febd50b4747bd18712b853589ce75" id="r_a939febd50b4747bd18712b853589ce75"><td class="memItemLeft" align="right" valign="top">MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a939febd50b4747bd18712b853589ce75">llzkVerif_DecreasesOpBuild</a> (MlirOpBuilder builder, MlirLocation location, MlirValue value)</td></tr>
+<tr class="memdesc:a939febd50b4747bd18712b853589ce75"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <a class="el" href="classllzk_1_1verif_1_1DecreasesOp.html">llzk::verif::DecreasesOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:a591047ce7c8ee111704a4167399209ed" id="r_a591047ce7c8ee111704a4167399209ed"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a591047ce7c8ee111704a4167399209ed">llzkOperationIsA_Verif_DecreasesOp</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:a591047ce7c8ee111704a4167399209ed"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the Operation is a <a class="el" href="classllzk_1_1verif_1_1DecreasesOp.html">llzk::verif::DecreasesOp</a>.  <br /></td></tr>
+<tr class="memitem:af47fb5aa1958e3b7adeccbe7372b09f1" id="r_af47fb5aa1958e3b7adeccbe7372b09f1"><td class="memItemLeft" align="right" valign="top">MlirValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af47fb5aa1958e3b7adeccbe7372b09f1">llzkVerif_DecreasesOpGetValue</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:af47fb5aa1958e3b7adeccbe7372b09f1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get Value operand from <a class="el" href="classllzk_1_1verif_1_1DecreasesOp.html">llzk::verif::DecreasesOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:ac53f1d56af70625b5046b130b31cfbf8" id="r_ac53f1d56af70625b5046b130b31cfbf8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac53f1d56af70625b5046b130b31cfbf8">llzkVerif_DecreasesOpSetValue</a> (MlirOperation op, MlirValue value)</td></tr>
+<tr class="memdesc:ac53f1d56af70625b5046b130b31cfbf8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set Value operand of <a class="el" href="classllzk_1_1verif_1_1DecreasesOp.html">llzk::verif::DecreasesOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:ab246256aed81705b652ad96a6defe8d4" id="r_ab246256aed81705b652ad96a6defe8d4"><td class="memItemLeft" align="right" valign="top">MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab246256aed81705b652ad96a6defe8d4">llzkVerif_EnsureComputeOpBuild</a> (MlirOpBuilder builder, MlirLocation location, MlirValue condition)</td></tr>
 <tr class="memdesc:ab246256aed81705b652ad96a6defe8d4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <a class="el" href="classllzk_1_1verif_1_1EnsureComputeOp.html">llzk::verif::EnsureComputeOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:a8b742679f36c297ea49004ecf47b76f0" id="r_a8b742679f36c297ea49004ecf47b76f0"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8b742679f36c297ea49004ecf47b76f0">llzkOperationIsA_Verif_EnsureComputeOp</a> (MlirOperation inp)</td></tr>
@@ -217,6 +225,38 @@ Functions</h2></td></tr>
 <tr class="memdesc:acce0a1aad21fc29d30f4ada56489ff43"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the FunctionType inferred from the arg operands of this CallOp.  <br /></td></tr>
 <tr class="memitem:aff65a9d6a7b9785c6cc16f6678eda27b" id="r_aff65a9d6a7b9785c6cc16f6678eda27b"><td class="memItemLeft" align="right" valign="top">MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aff65a9d6a7b9785c6cc16f6678eda27b">llzkVerif_IncludeOpResolveCallable</a> (MlirOperation inp)</td></tr>
 <tr class="memdesc:aff65a9d6a7b9785c6cc16f6678eda27b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by CallOpInterface.  <br /></td></tr>
+<tr class="memitem:a757613937a2c5ec3503d6588d4201f00" id="r_a757613937a2c5ec3503d6588d4201f00"><td class="memItemLeft" align="right" valign="top">MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a757613937a2c5ec3503d6588d4201f00">llzkVerif_IncreasesOpBuild</a> (MlirOpBuilder builder, MlirLocation location, MlirValue value)</td></tr>
+<tr class="memdesc:a757613937a2c5ec3503d6588d4201f00"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <a class="el" href="classllzk_1_1verif_1_1IncreasesOp.html">llzk::verif::IncreasesOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:ac0afadbbf00c82f78eab5e05b0273774" id="r_ac0afadbbf00c82f78eab5e05b0273774"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac0afadbbf00c82f78eab5e05b0273774">llzkOperationIsA_Verif_IncreasesOp</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:ac0afadbbf00c82f78eab5e05b0273774"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the Operation is a <a class="el" href="classllzk_1_1verif_1_1IncreasesOp.html">llzk::verif::IncreasesOp</a>.  <br /></td></tr>
+<tr class="memitem:ac7da5255259f5848d772c96fa2b2ea00" id="r_ac7da5255259f5848d772c96fa2b2ea00"><td class="memItemLeft" align="right" valign="top">MlirValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac7da5255259f5848d772c96fa2b2ea00">llzkVerif_IncreasesOpGetValue</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:ac7da5255259f5848d772c96fa2b2ea00"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get Value operand from <a class="el" href="classllzk_1_1verif_1_1IncreasesOp.html">llzk::verif::IncreasesOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:a71051e9570789456e73be818136c3de2" id="r_a71051e9570789456e73be818136c3de2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a71051e9570789456e73be818136c3de2">llzkVerif_IncreasesOpSetValue</a> (MlirOperation op, MlirValue value)</td></tr>
+<tr class="memdesc:a71051e9570789456e73be818136c3de2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set Value operand of <a class="el" href="classllzk_1_1verif_1_1IncreasesOp.html">llzk::verif::IncreasesOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:a668f0efd934a749652c068cd99db524d" id="r_a668f0efd934a749652c068cd99db524d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a668f0efd934a749652c068cd99db524d">llzkOperationIsA_Verif_InvariantOp</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:a668f0efd934a749652c068cd99db524d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the Operation is a <a class="el" href="classllzk_1_1verif_1_1InvariantOp.html">llzk::verif::InvariantOp</a>.  <br /></td></tr>
+<tr class="memitem:a49f851d01144f24b5e511ba53709378f" id="r_a49f851d01144f24b5e511ba53709378f"><td class="memItemLeft" align="right" valign="top">MlirAttribute&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a49f851d01144f24b5e511ba53709378f">llzkVerif_InvariantOpGetLoopName</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:a49f851d01144f24b5e511ba53709378f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get LoopName attribute from <a class="el" href="classllzk_1_1verif_1_1InvariantOp.html">llzk::verif::InvariantOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:aafd0ebac7690ecd5e00809f27645156f" id="r_aafd0ebac7690ecd5e00809f27645156f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aafd0ebac7690ecd5e00809f27645156f">llzkVerif_InvariantOpSetLoopName</a> (MlirOperation op, MlirAttribute attr)</td></tr>
+<tr class="memdesc:aafd0ebac7690ecd5e00809f27645156f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set LoopName attribute of <a class="el" href="classllzk_1_1verif_1_1InvariantOp.html">llzk::verif::InvariantOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:a78e1b3143e3175ace874cd337ae6c00f" id="r_a78e1b3143e3175ace874cd337ae6c00f"><td class="memItemLeft" align="right" valign="top">MlirAttribute&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a78e1b3143e3175ace874cd337ae6c00f">llzkVerif_InvariantOpGetLoopArgTypes</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:a78e1b3143e3175ace874cd337ae6c00f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get LoopArgTypes attribute from <a class="el" href="classllzk_1_1verif_1_1InvariantOp.html">llzk::verif::InvariantOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:ab82732fc70a76fcbfc17212722186702" id="r_ab82732fc70a76fcbfc17212722186702"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab82732fc70a76fcbfc17212722186702">llzkVerif_InvariantOpSetLoopArgTypes</a> (MlirOperation op, MlirAttribute attr)</td></tr>
+<tr class="memdesc:ab82732fc70a76fcbfc17212722186702"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set LoopArgTypes attribute of <a class="el" href="classllzk_1_1verif_1_1InvariantOp.html">llzk::verif::InvariantOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:ac600043421fd5a4cfe5e78d9609fd5c8" id="r_ac600043421fd5a4cfe5e78d9609fd5c8"><td class="memItemLeft" align="right" valign="top">MlirRegion&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac600043421fd5a4cfe5e78d9609fd5c8">llzkVerif_InvariantOpGetRegion</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:ac600043421fd5a4cfe5e78d9609fd5c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get Region region from <a class="el" href="classllzk_1_1verif_1_1InvariantOp.html">llzk::verif::InvariantOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:aa3627e963120a60979216de8cd45705c" id="r_aa3627e963120a60979216de8cd45705c"><td class="memItemLeft" align="right" valign="top">MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa3627e963120a60979216de8cd45705c">llzkVerif_InvariantOpGetParentContract</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:aa3627e963120a60979216de8cd45705c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the contract operation that contains this invariant.  <br /></td></tr>
+<tr class="memitem:a7923677ad64d9efa7fbb1ce9c8ed278e" id="r_a7923677ad64d9efa7fbb1ce9c8ed278e"><td class="memItemLeft" align="right" valign="top">MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7923677ad64d9efa7fbb1ce9c8ed278e">llzkVerif_OldOpBuild</a> (MlirOpBuilder builder, MlirLocation location, MlirValue value)</td></tr>
+<tr class="memdesc:a7923677ad64d9efa7fbb1ce9c8ed278e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <a class="el" href="classllzk_1_1verif_1_1OldOp.html">llzk::verif::OldOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:afa5619eb0d90d6d579a4e092791efb8a" id="r_afa5619eb0d90d6d579a4e092791efb8a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afa5619eb0d90d6d579a4e092791efb8a">llzkOperationIsA_Verif_OldOp</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:afa5619eb0d90d6d579a4e092791efb8a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the Operation is a <a class="el" href="classllzk_1_1verif_1_1OldOp.html">llzk::verif::OldOp</a>.  <br /></td></tr>
+<tr class="memitem:a01016cdaec7d818b266ca587655560ba" id="r_a01016cdaec7d818b266ca587655560ba"><td class="memItemLeft" align="right" valign="top">MlirValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a01016cdaec7d818b266ca587655560ba">llzkVerif_OldOpGetValue</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:a01016cdaec7d818b266ca587655560ba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get Value operand from <a class="el" href="classllzk_1_1verif_1_1OldOp.html">llzk::verif::OldOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:acd0f1817cd19b33cf0717500fcadfe91" id="r_acd0f1817cd19b33cf0717500fcadfe91"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acd0f1817cd19b33cf0717500fcadfe91">llzkVerif_OldOpSetValue</a> (MlirOperation op, MlirValue value)</td></tr>
+<tr class="memdesc:acd0f1817cd19b33cf0717500fcadfe91"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set Value operand of <a class="el" href="classllzk_1_1verif_1_1OldOp.html">llzk::verif::OldOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:af32716b5179e8c9b48d7207a03ddeeb2" id="r_af32716b5179e8c9b48d7207a03ddeeb2"><td class="memItemLeft" align="right" valign="top">MlirValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af32716b5179e8c9b48d7207a03ddeeb2">llzkVerif_OldOpGetResult</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:af32716b5179e8c9b48d7207a03ddeeb2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get Result result from <a class="el" href="classllzk_1_1verif_1_1OldOp.html">llzk::verif::OldOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:a160ea904ec952eaa43267bdec8d07e3a" id="r_a160ea904ec952eaa43267bdec8d07e3a"><td class="memItemLeft" align="right" valign="top">MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a160ea904ec952eaa43267bdec8d07e3a">llzkVerif_RequireComputeOpBuild</a> (MlirOpBuilder builder, MlirLocation location, MlirValue condition)</td></tr>
 <tr class="memdesc:a160ea904ec952eaa43267bdec8d07e3a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <a class="el" href="classllzk_1_1verif_1_1RequireComputeOp.html">llzk::verif::RequireComputeOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:a7e1bcbbb3679549ac5b7a971e8cc1ffa" id="r_a7e1bcbbb3679549ac5b7a971e8cc1ffa"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7e1bcbbb3679549ac5b7a971e8cc1ffa">llzkOperationIsA_Verif_RequireComputeOp</a> (MlirOperation inp)</td></tr>
@@ -233,6 +273,20 @@ Functions</h2></td></tr>
 <tr class="memdesc:addacb9730af5e9e775301657095f9c3c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get Condition operand from <a class="el" href="classllzk_1_1verif_1_1RequireConstrainOp.html">llzk::verif::RequireConstrainOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:a2190032c3db115391c9ad0cbf00fb2a7" id="r_a2190032c3db115391c9ad0cbf00fb2a7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2190032c3db115391c9ad0cbf00fb2a7">llzkVerif_RequireConstrainOpSetCondition</a> (MlirOperation op, MlirValue value)</td></tr>
 <tr class="memdesc:a2190032c3db115391c9ad0cbf00fb2a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set Condition operand of <a class="el" href="classllzk_1_1verif_1_1RequireConstrainOp.html">llzk::verif::RequireConstrainOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:a29aa62fb42bfb5b682af175e12fd6cf2" id="r_a29aa62fb42bfb5b682af175e12fd6cf2"><td class="memItemLeft" align="right" valign="top">MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a29aa62fb42bfb5b682af175e12fd6cf2">llzkVerif_StepOpBuild</a> (MlirOpBuilder builder, MlirLocation location)</td></tr>
+<tr class="memdesc:a29aa62fb42bfb5b682af175e12fd6cf2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <a class="el" href="classllzk_1_1verif_1_1StepOp.html">llzk::verif::StepOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:ac438a20932cca455ae08cef33cc201bd" id="r_ac438a20932cca455ae08cef33cc201bd"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac438a20932cca455ae08cef33cc201bd">llzkOperationIsA_Verif_StepOp</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:ac438a20932cca455ae08cef33cc201bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the Operation is a <a class="el" href="classllzk_1_1verif_1_1StepOp.html">llzk::verif::StepOp</a>.  <br /></td></tr>
+<tr class="memitem:a56160a63cae4eed41fe5617fe6bb9c3b" id="r_a56160a63cae4eed41fe5617fe6bb9c3b"><td class="memItemLeft" align="right" valign="top">MlirRegion&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a56160a63cae4eed41fe5617fe6bb9c3b">llzkVerif_StepOpGetRegion</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:a56160a63cae4eed41fe5617fe6bb9c3b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get Region region from <a class="el" href="classllzk_1_1verif_1_1StepOp.html">llzk::verif::StepOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:aa3cef042c27536e89ac01798b93f89c4" id="r_aa3cef042c27536e89ac01798b93f89c4"><td class="memItemLeft" align="right" valign="top">MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa3cef042c27536e89ac01798b93f89c4">llzkVerif_StepYieldOpBuild</a> (MlirOpBuilder builder, MlirLocation location, MlirValue value)</td></tr>
+<tr class="memdesc:aa3cef042c27536e89ac01798b93f89c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">llzk::verif::StepYieldOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:a631558de8b4f860c88b07e58df081d0d" id="r_a631558de8b4f860c88b07e58df081d0d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a631558de8b4f860c88b07e58df081d0d">llzkOperationIsA_Verif_StepYieldOp</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:a631558de8b4f860c88b07e58df081d0d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the Operation is a <a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">llzk::verif::StepYieldOp</a>.  <br /></td></tr>
+<tr class="memitem:a4649eb6d851d6cbee1340acd21bb3a84" id="r_a4649eb6d851d6cbee1340acd21bb3a84"><td class="memItemLeft" align="right" valign="top">MlirValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4649eb6d851d6cbee1340acd21bb3a84">llzkVerif_StepYieldOpGetValue</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:a4649eb6d851d6cbee1340acd21bb3a84"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get Value operand from <a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">llzk::verif::StepYieldOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:a06d6f1aedcee252238c4b3e53d884358" id="r_a06d6f1aedcee252238c4b3e53d884358"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a06d6f1aedcee252238c4b3e53d884358">llzkVerif_StepYieldOpSetValue</a> (MlirOperation op, MlirValue value)</td></tr>
+<tr class="memdesc:a06d6f1aedcee252238c4b3e53d884358"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set Value operand of <a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">llzk::verif::StepYieldOp</a> Operation.  <br /></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
 <a id="a50248567f9f1154abcf1ba4148b0d505" name="a50248567f9f1154abcf1ba4148b0d505"></a>
@@ -277,6 +331,27 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a591047ce7c8ee111704a4167399209ed" name="a591047ce7c8ee111704a4167399209ed"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a591047ce7c8ee111704a4167399209ed">&#9670;&#160;</a></span>llzkOperationIsA_Verif_DecreasesOp()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzkOperationIsA_Verif_DecreasesOp </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns true if the Operation is a <a class="el" href="classllzk_1_1verif_1_1DecreasesOp.html">llzk::verif::DecreasesOp</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00101">101</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
 <a id="a8b742679f36c297ea49004ecf47b76f0" name="a8b742679f36c297ea49004ecf47b76f0"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8b742679f36c297ea49004ecf47b76f0">&#9670;&#160;</a></span>llzkOperationIsA_Verif_EnsureComputeOp()</h2>
 
@@ -294,7 +369,7 @@ Functions</h2></td></tr>
 
 <p>Returns true if the Operation is a <a class="el" href="classllzk_1_1verif_1_1EnsureComputeOp.html">llzk::verif::EnsureComputeOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00101">101</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00132">132</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -315,7 +390,7 @@ Functions</h2></td></tr>
 
 <p>Returns true if the Operation is a <a class="el" href="classllzk_1_1verif_1_1EnsureConstrainOp.html">llzk::verif::EnsureConstrainOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00132">132</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00163">163</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -336,7 +411,70 @@ Functions</h2></td></tr>
 
 <p>Returns true if the Operation is a <a class="el" href="classllzk_1_1verif_1_1IncludeOp.html">llzk::verif::IncludeOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00156">156</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00187">187</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ac0afadbbf00c82f78eab5e05b0273774" name="ac0afadbbf00c82f78eab5e05b0273774"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac0afadbbf00c82f78eab5e05b0273774">&#9670;&#160;</a></span>llzkOperationIsA_Verif_IncreasesOp()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzkOperationIsA_Verif_IncreasesOp </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns true if the Operation is a <a class="el" href="classllzk_1_1verif_1_1IncreasesOp.html">llzk::verif::IncreasesOp</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00319">319</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a668f0efd934a749652c068cd99db524d" name="a668f0efd934a749652c068cd99db524d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a668f0efd934a749652c068cd99db524d">&#9670;&#160;</a></span>llzkOperationIsA_Verif_InvariantOp()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzkOperationIsA_Verif_InvariantOp </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns true if the Operation is a <a class="el" href="classllzk_1_1verif_1_1InvariantOp.html">llzk::verif::InvariantOp</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00343">343</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="afa5619eb0d90d6d579a4e092791efb8a" name="afa5619eb0d90d6d579a4e092791efb8a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afa5619eb0d90d6d579a4e092791efb8a">&#9670;&#160;</a></span>llzkOperationIsA_Verif_OldOp()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzkOperationIsA_Verif_OldOp </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns true if the Operation is a <a class="el" href="classllzk_1_1verif_1_1OldOp.html">llzk::verif::OldOp</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00379">379</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -357,7 +495,7 @@ Functions</h2></td></tr>
 
 <p>Returns true if the Operation is a <a class="el" href="classllzk_1_1verif_1_1RequireComputeOp.html">llzk::verif::RequireComputeOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00288">288</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00414">414</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -378,7 +516,49 @@ Functions</h2></td></tr>
 
 <p>Returns true if the Operation is a <a class="el" href="classllzk_1_1verif_1_1RequireConstrainOp.html">llzk::verif::RequireConstrainOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00319">319</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00445">445</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ac438a20932cca455ae08cef33cc201bd" name="ac438a20932cca455ae08cef33cc201bd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac438a20932cca455ae08cef33cc201bd">&#9670;&#160;</a></span>llzkOperationIsA_Verif_StepOp()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzkOperationIsA_Verif_StepOp </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns true if the Operation is a <a class="el" href="classllzk_1_1verif_1_1StepOp.html">llzk::verif::StepOp</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00478">478</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a631558de8b4f860c88b07e58df081d0d" name="a631558de8b4f860c88b07e58df081d0d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a631558de8b4f860c88b07e58df081d0d">&#9670;&#160;</a></span>llzkOperationIsA_Verif_StepYieldOp()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzkOperationIsA_Verif_StepYieldOp </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns true if the Operation is a <a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">llzk::verif::StepYieldOp</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00493">493</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -772,6 +952,82 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a939febd50b4747bd18712b853589ce75" name="a939febd50b4747bd18712b853589ce75"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a939febd50b4747bd18712b853589ce75">&#9670;&#160;</a></span>llzkVerif_DecreasesOpBuild()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirOperation llzkVerif_DecreasesOpBuild </td>
+          <td>(</td>
+          <td class="paramtype">MlirOpBuilder</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirLocation</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirValue</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Build a <a class="el" href="classllzk_1_1verif_1_1DecreasesOp.html">llzk::verif::DecreasesOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00094">94</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="af47fb5aa1958e3b7adeccbe7372b09f1" name="af47fb5aa1958e3b7adeccbe7372b09f1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af47fb5aa1958e3b7adeccbe7372b09f1">&#9670;&#160;</a></span>llzkVerif_DecreasesOpGetValue()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirValue llzkVerif_DecreasesOpGetValue </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get Value operand from <a class="el" href="classllzk_1_1verif_1_1DecreasesOp.html">llzk::verif::DecreasesOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00105">105</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ac53f1d56af70625b5046b130b31cfbf8" name="ac53f1d56af70625b5046b130b31cfbf8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac53f1d56af70625b5046b130b31cfbf8">&#9670;&#160;</a></span>llzkVerif_DecreasesOpSetValue()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzkVerif_DecreasesOpSetValue </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirValue</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set Value operand of <a class="el" href="classllzk_1_1verif_1_1DecreasesOp.html">llzk::verif::DecreasesOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00115">115</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
 <a id="ab246256aed81705b652ad96a6defe8d4" name="ab246256aed81705b652ad96a6defe8d4"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab246256aed81705b652ad96a6defe8d4">&#9670;&#160;</a></span>llzkVerif_EnsureComputeOpBuild()</h2>
 
@@ -798,7 +1054,7 @@ Functions</h2></td></tr>
 
 <p>Build a <a class="el" href="classllzk_1_1verif_1_1EnsureComputeOp.html">llzk::verif::EnsureComputeOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00094">94</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00125">125</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -819,7 +1075,7 @@ Functions</h2></td></tr>
 
 <p>Get Condition operand from <a class="el" href="classllzk_1_1verif_1_1EnsureComputeOp.html">llzk::verif::EnsureComputeOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00105">105</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00136">136</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -844,7 +1100,7 @@ Functions</h2></td></tr>
 
 <p>Set Condition operand of <a class="el" href="classllzk_1_1verif_1_1EnsureComputeOp.html">llzk::verif::EnsureComputeOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00115">115</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00146">146</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -874,7 +1130,7 @@ Functions</h2></td></tr>
 
 <p>Build a <a class="el" href="classllzk_1_1verif_1_1EnsureConstrainOp.html">llzk::verif::EnsureConstrainOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00125">125</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00156">156</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -895,7 +1151,7 @@ Functions</h2></td></tr>
 
 <p>Get Condition operand from <a class="el" href="classllzk_1_1verif_1_1EnsureConstrainOp.html">llzk::verif::EnsureConstrainOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00136">136</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00167">167</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -920,7 +1176,7 @@ Functions</h2></td></tr>
 
 <p>Set Condition operand of <a class="el" href="classllzk_1_1verif_1_1EnsureConstrainOp.html">llzk::verif::EnsureConstrainOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00146">146</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00177">177</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -941,7 +1197,7 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff the contract targets a struct type. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00265">265</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00296">296</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -966,7 +1222,7 @@ Functions</h2></td></tr>
 
 <p>Get ArgOperands operand at index from <a class="el" href="classllzk_1_1verif_1_1IncludeOp.html">llzk::verif::IncludeOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00165">165</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00196">196</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -987,7 +1243,7 @@ Functions</h2></td></tr>
 
 <p>Get number of ArgOperands operands in <a class="el" href="classllzk_1_1verif_1_1IncludeOp.html">llzk::verif::IncludeOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00160">160</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00191">191</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1008,7 +1264,7 @@ Functions</h2></td></tr>
 
 <p>Get Callee attribute from <a class="el" href="classllzk_1_1verif_1_1IncludeOp.html">llzk::verif::IncludeOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00233">233</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00264">264</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1033,7 +1289,7 @@ Functions</h2></td></tr>
 
 <p>Get MapOperands operand at index from <a class="el" href="classllzk_1_1verif_1_1IncludeOp.html">llzk::verif::IncludeOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00190">190</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00221">221</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1054,7 +1310,7 @@ Functions</h2></td></tr>
 
 <p>Get number of MapOperands operands in <a class="el" href="classllzk_1_1verif_1_1IncludeOp.html">llzk::verif::IncludeOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00185">185</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00216">216</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1075,7 +1331,7 @@ Functions</h2></td></tr>
 
 <p>Get MapOpGroupSizes attribute from <a class="el" href="classllzk_1_1verif_1_1IncludeOp.html">llzk::verif::IncludeOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00257">257</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00288">288</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1096,7 +1352,7 @@ Functions</h2></td></tr>
 
 <p>Get NumDimsPerMap attribute from <a class="el" href="classllzk_1_1verif_1_1IncludeOp.html">llzk::verif::IncludeOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00249">249</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00280">280</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1118,7 +1374,7 @@ Functions</h2></td></tr>
 <p>Return the "self" value (i.e. </p>
 <p>the first parameter) from the callee contract, assuming the target of the contract is a struct target. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00269">269</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00300">300</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1139,7 +1395,7 @@ Functions</h2></td></tr>
 
 <p>Get TemplateParams attribute from <a class="el" href="classllzk_1_1verif_1_1IncludeOp.html">llzk::verif::IncludeOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00241">241</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00272">272</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1161,7 +1417,7 @@ Functions</h2></td></tr>
 <p>Return the FunctionType inferred from the arg operands of this CallOp. </p>
 <p>This is not necessarily the same as the callee's FunctionType but should unify with it or else IR verification will fail. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00273">273</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00304">304</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1182,7 +1438,7 @@ Functions</h2></td></tr>
 
 <p>Required by CallOpInterface. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00277">277</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00308">308</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1212,7 +1468,7 @@ Functions</h2></td></tr>
 
 <p>Set ArgOperands operands of <a class="el" href="classllzk_1_1verif_1_1IncludeOp.html">llzk::verif::IncludeOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00175">175</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00206">206</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1237,7 +1493,7 @@ Functions</h2></td></tr>
 
 <p>Set Callee attribute of <a class="el" href="classllzk_1_1verif_1_1IncludeOp.html">llzk::verif::IncludeOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00237">237</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00268">268</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1268,7 +1524,7 @@ Functions</h2></td></tr>
 <p>Set MapOperands operand groups of <a class="el" href="classllzk_1_1verif_1_1IncludeOp.html">llzk::verif::IncludeOp</a> Operation. </p>
 <p>Each element of <span class="tt">groups</span> represents one group; its <span class="tt">size</span> field drives the per-group segment-size attribute and <span class="tt">values</span> supplies the operands for that group. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00200">200</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00231">231</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1293,7 +1549,7 @@ Functions</h2></td></tr>
 
 <p>Set MapOpGroupSizes attribute of <a class="el" href="classllzk_1_1verif_1_1IncludeOp.html">llzk::verif::IncludeOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00261">261</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00292">292</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1318,7 +1574,7 @@ Functions</h2></td></tr>
 
 <p>Set NumDimsPerMap attribute of <a class="el" href="classllzk_1_1verif_1_1IncludeOp.html">llzk::verif::IncludeOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00253">253</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00284">284</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1343,7 +1599,314 @@ Functions</h2></td></tr>
 
 <p>Set TemplateParams attribute of <a class="el" href="classllzk_1_1verif_1_1IncludeOp.html">llzk::verif::IncludeOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00245">245</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00276">276</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a757613937a2c5ec3503d6588d4201f00" name="a757613937a2c5ec3503d6588d4201f00"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a757613937a2c5ec3503d6588d4201f00">&#9670;&#160;</a></span>llzkVerif_IncreasesOpBuild()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirOperation llzkVerif_IncreasesOpBuild </td>
+          <td>(</td>
+          <td class="paramtype">MlirOpBuilder</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirLocation</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirValue</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Build a <a class="el" href="classllzk_1_1verif_1_1IncreasesOp.html">llzk::verif::IncreasesOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00312">312</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ac7da5255259f5848d772c96fa2b2ea00" name="ac7da5255259f5848d772c96fa2b2ea00"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac7da5255259f5848d772c96fa2b2ea00">&#9670;&#160;</a></span>llzkVerif_IncreasesOpGetValue()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirValue llzkVerif_IncreasesOpGetValue </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get Value operand from <a class="el" href="classllzk_1_1verif_1_1IncreasesOp.html">llzk::verif::IncreasesOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00323">323</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a71051e9570789456e73be818136c3de2" name="a71051e9570789456e73be818136c3de2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a71051e9570789456e73be818136c3de2">&#9670;&#160;</a></span>llzkVerif_IncreasesOpSetValue()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzkVerif_IncreasesOpSetValue </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirValue</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set Value operand of <a class="el" href="classllzk_1_1verif_1_1IncreasesOp.html">llzk::verif::IncreasesOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00333">333</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a78e1b3143e3175ace874cd337ae6c00f" name="a78e1b3143e3175ace874cd337ae6c00f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a78e1b3143e3175ace874cd337ae6c00f">&#9670;&#160;</a></span>llzkVerif_InvariantOpGetLoopArgTypes()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirAttribute llzkVerif_InvariantOpGetLoopArgTypes </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get LoopArgTypes attribute from <a class="el" href="classllzk_1_1verif_1_1InvariantOp.html">llzk::verif::InvariantOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00355">355</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a49f851d01144f24b5e511ba53709378f" name="a49f851d01144f24b5e511ba53709378f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a49f851d01144f24b5e511ba53709378f">&#9670;&#160;</a></span>llzkVerif_InvariantOpGetLoopName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirAttribute llzkVerif_InvariantOpGetLoopName </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get LoopName attribute from <a class="el" href="classllzk_1_1verif_1_1InvariantOp.html">llzk::verif::InvariantOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00347">347</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="aa3627e963120a60979216de8cd45705c" name="aa3627e963120a60979216de8cd45705c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa3627e963120a60979216de8cd45705c">&#9670;&#160;</a></span>llzkVerif_InvariantOpGetParentContract()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirOperation llzkVerif_InvariantOpGetParentContract </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the contract operation that contains this invariant. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00367">367</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ac600043421fd5a4cfe5e78d9609fd5c8" name="ac600043421fd5a4cfe5e78d9609fd5c8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac600043421fd5a4cfe5e78d9609fd5c8">&#9670;&#160;</a></span>llzkVerif_InvariantOpGetRegion()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirRegion llzkVerif_InvariantOpGetRegion </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get Region region from <a class="el" href="classllzk_1_1verif_1_1InvariantOp.html">llzk::verif::InvariantOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00363">363</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ab82732fc70a76fcbfc17212722186702" name="ab82732fc70a76fcbfc17212722186702"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab82732fc70a76fcbfc17212722186702">&#9670;&#160;</a></span>llzkVerif_InvariantOpSetLoopArgTypes()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzkVerif_InvariantOpSetLoopArgTypes </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>attr</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set LoopArgTypes attribute of <a class="el" href="classllzk_1_1verif_1_1InvariantOp.html">llzk::verif::InvariantOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00359">359</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="aafd0ebac7690ecd5e00809f27645156f" name="aafd0ebac7690ecd5e00809f27645156f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aafd0ebac7690ecd5e00809f27645156f">&#9670;&#160;</a></span>llzkVerif_InvariantOpSetLoopName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzkVerif_InvariantOpSetLoopName </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>attr</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set LoopName attribute of <a class="el" href="classllzk_1_1verif_1_1InvariantOp.html">llzk::verif::InvariantOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00351">351</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a7923677ad64d9efa7fbb1ce9c8ed278e" name="a7923677ad64d9efa7fbb1ce9c8ed278e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7923677ad64d9efa7fbb1ce9c8ed278e">&#9670;&#160;</a></span>llzkVerif_OldOpBuild()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirOperation llzkVerif_OldOpBuild </td>
+          <td>(</td>
+          <td class="paramtype">MlirOpBuilder</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirLocation</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirValue</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Build a <a class="el" href="classllzk_1_1verif_1_1OldOp.html">llzk::verif::OldOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00371">371</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="af32716b5179e8c9b48d7207a03ddeeb2" name="af32716b5179e8c9b48d7207a03ddeeb2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af32716b5179e8c9b48d7207a03ddeeb2">&#9670;&#160;</a></span>llzkVerif_OldOpGetResult()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirValue llzkVerif_OldOpGetResult </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get Result result from <a class="el" href="classllzk_1_1verif_1_1OldOp.html">llzk::verif::OldOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00403">403</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a01016cdaec7d818b266ca587655560ba" name="a01016cdaec7d818b266ca587655560ba"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a01016cdaec7d818b266ca587655560ba">&#9670;&#160;</a></span>llzkVerif_OldOpGetValue()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirValue llzkVerif_OldOpGetValue </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get Value operand from <a class="el" href="classllzk_1_1verif_1_1OldOp.html">llzk::verif::OldOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00383">383</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="acd0f1817cd19b33cf0717500fcadfe91" name="acd0f1817cd19b33cf0717500fcadfe91"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acd0f1817cd19b33cf0717500fcadfe91">&#9670;&#160;</a></span>llzkVerif_OldOpSetValue()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzkVerif_OldOpSetValue </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirValue</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set Value operand of <a class="el" href="classllzk_1_1verif_1_1OldOp.html">llzk::verif::OldOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00393">393</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1373,7 +1936,7 @@ Functions</h2></td></tr>
 
 <p>Build a <a class="el" href="classllzk_1_1verif_1_1RequireComputeOp.html">llzk::verif::RequireComputeOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00281">281</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00407">407</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1394,7 +1957,7 @@ Functions</h2></td></tr>
 
 <p>Get Condition operand from <a class="el" href="classllzk_1_1verif_1_1RequireComputeOp.html">llzk::verif::RequireComputeOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00292">292</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00418">418</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1419,7 +1982,7 @@ Functions</h2></td></tr>
 
 <p>Set Condition operand of <a class="el" href="classllzk_1_1verif_1_1RequireComputeOp.html">llzk::verif::RequireComputeOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00302">302</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00428">428</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1449,7 +2012,7 @@ Functions</h2></td></tr>
 
 <p>Build a <a class="el" href="classllzk_1_1verif_1_1RequireConstrainOp.html">llzk::verif::RequireConstrainOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00312">312</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00438">438</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1470,7 +2033,7 @@ Functions</h2></td></tr>
 
 <p>Get Condition operand from <a class="el" href="classllzk_1_1verif_1_1RequireConstrainOp.html">llzk::verif::RequireConstrainOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00323">323</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00449">449</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1495,7 +2058,129 @@ Functions</h2></td></tr>
 
 <p>Set Condition operand of <a class="el" href="classllzk_1_1verif_1_1RequireConstrainOp.html">llzk::verif::RequireConstrainOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00333">333</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00459">459</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a29aa62fb42bfb5b682af175e12fd6cf2" name="a29aa62fb42bfb5b682af175e12fd6cf2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a29aa62fb42bfb5b682af175e12fd6cf2">&#9670;&#160;</a></span>llzkVerif_StepOpBuild()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirOperation llzkVerif_StepOpBuild </td>
+          <td>(</td>
+          <td class="paramtype">MlirOpBuilder</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirLocation</td>          <td class="paramname"><span class="paramname"><em>location</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Build a <a class="el" href="classllzk_1_1verif_1_1StepOp.html">llzk::verif::StepOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00469">469</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a56160a63cae4eed41fe5617fe6bb9c3b" name="a56160a63cae4eed41fe5617fe6bb9c3b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a56160a63cae4eed41fe5617fe6bb9c3b">&#9670;&#160;</a></span>llzkVerif_StepOpGetRegion()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirRegion llzkVerif_StepOpGetRegion </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get Region region from <a class="el" href="classllzk_1_1verif_1_1StepOp.html">llzk::verif::StepOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00482">482</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="aa3cef042c27536e89ac01798b93f89c4" name="aa3cef042c27536e89ac01798b93f89c4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa3cef042c27536e89ac01798b93f89c4">&#9670;&#160;</a></span>llzkVerif_StepYieldOpBuild()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirOperation llzkVerif_StepYieldOpBuild </td>
+          <td>(</td>
+          <td class="paramtype">MlirOpBuilder</td>          <td class="paramname"><span class="paramname"><em>builder</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirLocation</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirValue</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Build a <a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">llzk::verif::StepYieldOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00486">486</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a4649eb6d851d6cbee1340acd21bb3a84" name="a4649eb6d851d6cbee1340acd21bb3a84"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4649eb6d851d6cbee1340acd21bb3a84">&#9670;&#160;</a></span>llzkVerif_StepYieldOpGetValue()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirValue llzkVerif_StepYieldOpGetValue </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get Value operand from <a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">llzk::verif::StepYieldOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00497">497</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a06d6f1aedcee252238c4b3e53d884358" name="a06d6f1aedcee252238c4b3e53d884358"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a06d6f1aedcee252238c4b3e53d884358">&#9670;&#160;</a></span>llzkVerif_StepYieldOpSetValue()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzkVerif_StepYieldOpSetValue </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirValue</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set Value operand of <a class="el" href="classllzk_1_1verif_1_1StepYieldOp.html">llzk::verif::StepYieldOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html#l00507">507</a> of file <a class="el" href="Verif_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>

@@ -88,5 +88,6 @@ var searchData=
   ['assertvalidattrforparamoftype_85',['assertValidAttrForParamOfType',['../namespacellzk.html#a06f8a74431f12f0298cc7033691f84ec',1,'llzk::assertValidAttrForParamOfType(Attribute attr)'],['../namespacellzk.html#a3840dc2d50d9f0cda122fb59ebaf32ed',1,'llzk::assertValidAttrForParamOfType(mlir::Attribute attr)']]],
   ['asstruct_86',['asStruct',['../namespacellzk_1_1witgen.html#afca505e8f75fb87bfa41f861000ea3ec',1,'llzk::witgen']]],
   ['assymbolrefattr_87',['asSymbolRefAttr',['../namespacellzk.html#ab1ef6741a40f7e02fc0b94c979c8b3be',1,'llzk::asSymbolRefAttr(mlir::StringAttr root, mlir::SymbolRefAttr tail)'],['../namespacellzk.html#a1e9f41024dc1c528963ac365b72906b7',1,'llzk::asSymbolRefAttr(llvm::ArrayRef&lt; mlir::FlatSymbolRefAttr &gt; path)'],['../namespacellzk.html#a3ee0694034160dc5788e3042541e35f9',1,'llzk::asSymbolRefAttr(const std::vector&lt; mlir::FlatSymbolRefAttr &gt; &amp;path)']]],
-  ['attachnote_88',['attachNote',['../classllzk_1_1InFlightDiagnosticWrapper.html#a6bd126b705d4a62a4221fd9e3970599f',1,'llzk::InFlightDiagnosticWrapper']]]
+  ['attachinterfaces_88',['attachInterfaces',['../namespacellzk_1_1verif.html#ac30f8c00292b36d340135e892405ecae',1,'llzk::verif']]],
+  ['attachnote_89',['attachNote',['../classllzk_1_1InFlightDiagnosticWrapper.html#a6bd126b705d4a62a4221fd9e3970599f',1,'llzk::InFlightDiagnosticWrapper']]]
 ];

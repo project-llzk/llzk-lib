@@ -118,29 +118,24 @@ $(function(){initNavTree('Verif_2IR_2Ops_8h_source.html','',''); });
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#pragma once</span></div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="Function_2IR_2Ops_8h.html">llzk/Dialect/Function/IR/Ops.h</a>&quot;</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;<a class="code" href="Polymorphic_2IR_2Ops_8h.html">llzk/Dialect/Polymorphic/IR/Ops.h</a>&quot;</span></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &quot;<a class="code" href="OpHelpers_8h.html">llzk/Dialect/Shared/OpHelpers.h</a>&quot;</span></div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &quot;<a class="code" href="Verif_2IR_2Dialect_8h.html">llzk/Dialect/Verif/IR/Dialect.h</a>&quot;</span></div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &quot;<a class="code" href="TypeHelper_8h.html">llzk/Util/TypeHelper.h</a>&quot;</span></div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &lt;mlir/Interfaces/CallInterfaces.h&gt;</span></div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &lt;mlir/Interfaces/ControlFlowInterfaces.h&gt;</span></div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &lt;mlir/Interfaces/FunctionInterfaces.h&gt;</span></div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &lt;mlir/Interfaces/InferTypeOpInterface.h&gt;</span></div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="comment">// Include TableGen&#39;d declarations</span></div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &quot;<a class="code" href="Verif_2IR_2OpInterfaces_8h_8inc.html">llzk/Dialect/Verif/IR/OpInterfaces.h.inc</a>&quot;</span></div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="comment">// Include TableGen&#39;d declarations</span></div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno"><a class="line" href="Verif_2IR_2Ops_8h.html#a52c883a38e577b8b12282ff70c95a16d">   27</a></span><span class="preprocessor">#define GET_OP_CLASSES</span></div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#include &quot;<a class="code" href="Verif_2IR_2Ops_8h_8inc.html">llzk/Dialect/Verif/IR/Ops.h.inc</a>&quot;</span></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="Felt_2IR_2Types_8h.html">llzk/Dialect/Felt/IR/Types.h</a>&quot;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;<a class="code" href="Function_2IR_2Ops_8h.html">llzk/Dialect/Function/IR/Ops.h</a>&quot;</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &quot;<a class="code" href="Polymorphic_2IR_2Ops_8h.html">llzk/Dialect/Polymorphic/IR/Ops.h</a>&quot;</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &quot;<a class="code" href="OpHelpers_8h.html">llzk/Dialect/Shared/OpHelpers.h</a>&quot;</span></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &quot;<a class="code" href="Verif_2IR_2Dialect_8h.html">llzk/Dialect/Verif/IR/Dialect.h</a>&quot;</span></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &quot;<a class="code" href="Verif_2IR_2OpInterfaces_8h.html">llzk/Dialect/Verif/IR/OpInterfaces.h</a>&quot;</span></div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &quot;<a class="code" href="TypeHelper_8h.html">llzk/Util/TypeHelper.h</a>&quot;</span></div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span> </div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="comment">// Include TableGen&#39;d declarations</span></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno"><a class="line" href="Verif_2IR_2Ops_8h.html#a52c883a38e577b8b12282ff70c95a16d">   21</a></span><span class="preprocessor">#define GET_OP_CLASSES</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &quot;<a class="code" href="Verif_2IR_2Ops_8h_8inc.html">llzk/Dialect/Verif/IR/Ops.h.inc</a>&quot;</span></div>
+<div class="ttc" id="aFelt_2IR_2Types_8h_html"><div class="ttname"><a href="Felt_2IR_2Types_8h.html">Types.h</a></div></div>
 <div class="ttc" id="aFunction_2IR_2Ops_8h_html"><div class="ttname"><a href="Function_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aOpHelpers_8h_html"><div class="ttname"><a href="OpHelpers_8h.html">OpHelpers.h</a></div></div>
 <div class="ttc" id="aPolymorphic_2IR_2Ops_8h_html"><div class="ttname"><a href="Polymorphic_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aTypeHelper_8h_html"><div class="ttname"><a href="TypeHelper_8h.html">TypeHelper.h</a></div></div>
 <div class="ttc" id="aVerif_2IR_2Dialect_8h_html"><div class="ttname"><a href="Verif_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
-<div class="ttc" id="aVerif_2IR_2OpInterfaces_8h_8inc_html"><div class="ttname"><a href="Verif_2IR_2OpInterfaces_8h_8inc.html">OpInterfaces.h.inc</a></div></div>
+<div class="ttc" id="aVerif_2IR_2OpInterfaces_8h_html"><div class="ttname"><a href="Verif_2IR_2OpInterfaces_8h.html">OpInterfaces.h</a></div></div>
 <div class="ttc" id="aVerif_2IR_2Ops_8h_8inc_html"><div class="ttname"><a href="Verif_2IR_2Ops_8h_8inc.html">Ops.h.inc</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->

@@ -119,10 +119,20 @@ $(function(){initNavTree('Verif_2IR_2Dialect_8h_source.html','',''); });
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#pragma once</span></div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &lt;mlir/IR/BuiltinOps.h&gt;</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span> </div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="comment">// Include TableGen&#39;d declarations</span></div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &quot;<a class="code" href="Verif_2IR_2Dialect_8h_8inc.html">llzk/Dialect/Verif/IR/Dialect.h.inc</a>&quot;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;mlir/IR/MLIRContext.h&gt;</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="comment">// Include TableGen&#39;d declarations</span></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &quot;<a class="code" href="Verif_2IR_2Dialect_8h_8inc.html">llzk/Dialect/Verif/IR/Dialect.h.inc</a>&quot;</span></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1verif.html">llzk::verif</a> {</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno"><a class="line" href="namespacellzk_1_1verif.html#ac30f8c00292b36d340135e892405ecae">   22</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk_1_1verif.html#ac30f8c00292b36d340135e892405ecae">attachInterfaces</a>(mlir::MLIRContext &amp;context);</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk_1_1verif.html#a0497408c6f000900a125534dc2b9e849">registerExtensions</a>(mlir::DialectRegistry &amp;registry);</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>} <span class="comment">// namespace llzk::verif</span></div>
 <div class="ttc" id="aVerif_2IR_2Dialect_8h_8inc_html"><div class="ttname"><a href="Verif_2IR_2Dialect_8h_8inc.html">Dialect.h.inc</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1verif_html"><div class="ttname"><a href="namespacellzk_1_1verif.html">llzk::verif</a></div><div class="ttdef"><b>Definition</b> <a href="Verif_2IR_2Ops_8cpp_source.html#l00312">Ops.cpp:312</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1verif_html_a0497408c6f000900a125534dc2b9e849"><div class="ttname"><a href="namespacellzk_1_1verif.html#a0497408c6f000900a125534dc2b9e849">llzk::verif::registerExtensions</a></div><div class="ttdeci">void registerExtensions(mlir::DialectRegistry &amp;registry)</div><div class="ttdoc">Registers dialect extensions for the verif dialect.</div><div class="ttdef"><b>Definition</b> <a href="Verif_2IR_2Dialect_8cpp_source.html#l00107">Dialect.cpp:107</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1verif_html_ac30f8c00292b36d340135e892405ecae"><div class="ttname"><a href="namespacellzk_1_1verif.html#ac30f8c00292b36d340135e892405ecae">llzk::verif::attachInterfaces</a></div><div class="ttdeci">void attachInterfaces(mlir::MLIRContext &amp;context)</div><div class="ttdoc">Attaches the interfaces defined by the verif dialect to upstream IR elements.</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

@@ -15,5 +15,7 @@ var searchData=
   ['llzk_5fmain_5fattr_5fname_12',['LLZK_MAIN_ATTR_NAME',['../Constants_8cpp.html#af2631350c207c195d8d0ee910d4a3880',1,'LLZK_MAIN_ATTR_NAME:&#160;Constants.cpp'],['../llzk-c_2Constants_8h.html#af2631350c207c195d8d0ee910d4a3880',1,'LLZK_MAIN_ATTR_NAME:&#160;Constants.cpp']]],
   ['loadsfromdiscardableallocation_13',['loadsFromDiscardableAllocation',['../structllzk_1_1detail_1_1DiscardableAllocationAccessorOpInterfaceInterfaceTraits_1_1Concept.html#a5be0e9d874ed5b99939750a7060abaf5',1,'llzk::detail::DiscardableAllocationAccessorOpInterfaceInterfaceTraits::Concept']]],
   ['logic_14',['logic',['../structllzk_1_1smt_1_1detail_1_1SetLogicOpGenericAdaptorBase_1_1Properties.html#a3591358ba4b5874a644c69f4ac65c543',1,'llzk::smt::detail::SetLogicOpGenericAdaptorBase::Properties']]],
-  ['lowbit_15',['lowBit',['../structllzk_1_1smt_1_1detail_1_1ExtractOpGenericAdaptorBase_1_1Properties.html#a77daa3366509e2c33f460aaf61d1b667',1,'llzk::smt::detail::ExtractOpGenericAdaptorBase::Properties']]]
+  ['loop_5farg_5ftypes_15',['loop_arg_types',['../structllzk_1_1verif_1_1detail_1_1InvariantOpGenericAdaptorBase_1_1Properties.html#a013c45a62cc928ee0acf5813f3c1a205',1,'llzk::verif::detail::InvariantOpGenericAdaptorBase::Properties']]],
+  ['loop_5fname_16',['loop_name',['../structllzk_1_1verif_1_1detail_1_1InvariantOpGenericAdaptorBase_1_1Properties.html#a042f8d4cdca2e99b1736a93646fefd58',1,'llzk::verif::detail::InvariantOpGenericAdaptorBase::Properties']]],
+  ['lowbit_17',['lowBit',['../structllzk_1_1smt_1_1detail_1_1ExtractOpGenericAdaptorBase_1_1Properties.html#a77daa3366509e2c33f460aaf61d1b667',1,'llzk::smt::detail::ExtractOpGenericAdaptorBase::Properties']]]
 ];

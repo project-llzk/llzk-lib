@@ -157,7 +157,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a7a703014851a3d2d70a1a54395983b02 inherit pub_methods_classllzk_1_1ModuleLikeBuilder"><td class="mdescLeft">&#160;</td><td class="mdescRight">Only requirement for compute is the call itself.  <br /></td></tr>
 <tr class="memitem:a155b25e468cb0cacfac99abddba2dfac inherit pub_methods_classllzk_1_1ModuleLikeBuilder" id="r_a155b25e468cb0cacfac99abddba2dfac"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1TemplateBuilder.html">TemplateBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1ModuleLikeBuilder.html#a155b25e468cb0cacfac99abddba2dfac">insertConstrainCall</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> caller, <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> callee, mlir::Location callLoc, mlir::Location memberDefLoc)</td></tr>
 <tr class="memdesc:a155b25e468cb0cacfac99abddba2dfac inherit pub_methods_classllzk_1_1ModuleLikeBuilder"><td class="mdescLeft">&#160;</td><td class="mdescRight">To call a constraint function, you must:  <br /></td></tr>
-<tr class="memitem:ade0fbcafe3bafd6c9c46464512bb5eae inherit pub_methods_classllzk_1_1ModuleLikeBuilder" id="r_ade0fbcafe3bafd6c9c46464512bb5eae"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1TemplateBuilder.html">TemplateBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1ModuleLikeBuilder.html#ade0fbcafe3bafd6c9c46464512bb5eae">insertFreeFunc</a> (std::string_view funcName, ::mlir::FunctionType type, mlir::Location loc)</td></tr>
+<tr class="memitem:a8b848229bdd334404d64ffeca3c1370a inherit pub_methods_classllzk_1_1ModuleLikeBuilder" id="r_a8b848229bdd334404d64ffeca3c1370a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1TemplateBuilder.html">TemplateBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1ModuleLikeBuilder.html#a8b848229bdd334404d64ffeca3c1370a">insertFreeFunc</a> (std::string_view funcName, ::mlir::FunctionType type, mlir::Location loc, llvm::function_ref&lt; void(mlir::OpBuilder &amp;)&gt; fnBody=nullptr)</td></tr>
 <tr class="memitem:ab9e966a50584f3f402c680d80fc95420 inherit pub_methods_classllzk_1_1ModuleLikeBuilder" id="r_ab9e966a50584f3f402c680d80fc95420"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1TemplateBuilder.html">TemplateBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1ModuleLikeBuilder.html#ab9e966a50584f3f402c680d80fc95420">insertFreeCall</a> (<a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a> caller, std::string_view callee, mlir::Location callLoc)</td></tr>
 <tr class="inherit_header pub_methods_classllzk_1_1BaseBuilder"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pub_methods_classllzk_1_1BaseBuilder')"><span class="dynarrow"><span class="arrowhead closed"></span></span>Public Member Functions inherited from <a class="el" href="classllzk_1_1BaseBuilder.html">llzk::BaseBuilder</a></td></tr>
 <tr class="memitem:abf3ccf80941e19e5bee5c8f0a78906ee inherit pub_methods_classllzk_1_1BaseBuilder" id="r_abf3ccf80941e19e5bee5c8f0a78906ee"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1BaseBuilder.html#abf3ccf80941e19e5bee5c8f0a78906ee">BaseBuilder</a> (mlir::MLIRContext *ctx)</td></tr>
@@ -206,7 +206,7 @@ Additional Inherited Members</h2></td></tr>
 <div class="textblock"><p>Builds out a LLZK-compliant template and provides utilities for populating that template. </p>
 <p>This class is designed to be used by front-ends looking to generate LLZK IR programmatically and is also a useful unit testing facility. </p>
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00303">303</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00309">309</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a2bbc9a778d136a934002ff75dbb347e5" name="a2bbc9a778d136a934002ff75dbb347e5"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a2bbc9a778d136a934002ff75dbb347e5">&#9670;&#160;</a></span>TemplateBuilder()</h2>
@@ -231,7 +231,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00307">307</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00313">313</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -259,7 +259,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00311">311</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00317">317</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -286,7 +286,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00324">324</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00330">330</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -313,7 +313,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00316">316</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00322">322</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -342,7 +342,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Get the associated template of this builder. </p>
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00314">314</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00320">320</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -369,7 +369,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00379">379</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00385">385</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -400,7 +400,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00358">358</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00364">364</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -427,7 +427,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00354">354</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00360">360</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>
@@ -463,7 +463,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00333">333</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Builders_8h_source.html#l00339">339</a> of file <a class="el" href="Builders_8h_source.html">Builders.h</a>.</p>
 
 </div>
 </div>

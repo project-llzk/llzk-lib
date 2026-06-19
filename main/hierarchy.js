@@ -428,6 +428,20 @@ var hierarchy =
       [ "llzk::verif::detail::ConditionOpInterfaceInterfaceTraits::FallbackModel< ConcreteOp >", "classllzk_1_1verif_1_1detail_1_1ConditionOpInterfaceInterfaceTraits_1_1FallbackModel.html", null ],
       [ "llzk::verif::detail::ConditionOpInterfaceInterfaceTraits::Model< ConcreteOp >", "classllzk_1_1verif_1_1detail_1_1ConditionOpInterfaceInterfaceTraits_1_1Model.html", null ]
     ] ],
+    [ "llzk::verif::detail::ContractTargetOpInterfaceInterfaceTraits::Concept", "structllzk_1_1verif_1_1detail_1_1ContractTargetOpInterfaceInterfaceTraits_1_1Concept.html", [
+      [ "llzk::verif::detail::ContractTargetOpInterfaceInterfaceTraits::FallbackModel< ConcreteModel >", "classllzk_1_1verif_1_1detail_1_1ContractTargetOpInterfaceInterfaceTraits_1_1FallbackModel.html", [
+        [ "llzk::verif::detail::ContractTargetOpInterfaceInterfaceTraits::ExternalModel< ConcreteModel, ConcreteOp >", "classllzk_1_1verif_1_1detail_1_1ContractTargetOpInterfaceInterfaceTraits_1_1ExternalModel.html", null ]
+      ] ],
+      [ "llzk::verif::detail::ContractTargetOpInterfaceInterfaceTraits::FallbackModel< ConcreteOp >", "classllzk_1_1verif_1_1detail_1_1ContractTargetOpInterfaceInterfaceTraits_1_1FallbackModel.html", null ],
+      [ "llzk::verif::detail::ContractTargetOpInterfaceInterfaceTraits::Model< ConcreteOp >", "classllzk_1_1verif_1_1detail_1_1ContractTargetOpInterfaceInterfaceTraits_1_1Model.html", null ]
+    ] ],
+    [ "llzk::verif::detail::InvariantTargetOpInterfaceInterfaceTraits::Concept", "structllzk_1_1verif_1_1detail_1_1InvariantTargetOpInterfaceInterfaceTraits_1_1Concept.html", [
+      [ "llzk::verif::detail::InvariantTargetOpInterfaceInterfaceTraits::FallbackModel< ConcreteModel >", "classllzk_1_1verif_1_1detail_1_1InvariantTargetOpInterfaceInterfaceTraits_1_1FallbackModel.html", [
+        [ "llzk::verif::detail::InvariantTargetOpInterfaceInterfaceTraits::ExternalModel< ConcreteModel, ConcreteOp >", "classllzk_1_1verif_1_1detail_1_1InvariantTargetOpInterfaceInterfaceTraits_1_1ExternalModel.html", null ]
+      ] ],
+      [ "llzk::verif::detail::InvariantTargetOpInterfaceInterfaceTraits::FallbackModel< ConcreteOp >", "classllzk_1_1verif_1_1detail_1_1InvariantTargetOpInterfaceInterfaceTraits_1_1FallbackModel.html", null ],
+      [ "llzk::verif::detail::InvariantTargetOpInterfaceInterfaceTraits::Model< ConcreteOp >", "classllzk_1_1verif_1_1detail_1_1InvariantTargetOpInterfaceInterfaceTraits_1_1Model.html", null ]
+    ] ],
     [ "llzk::verif::detail::PostconditionOpInterfaceInterfaceTraits::Concept", "structllzk_1_1verif_1_1detail_1_1PostconditionOpInterfaceInterfaceTraits_1_1Concept.html", [
       [ "llzk::verif::detail::PostconditionOpInterfaceInterfaceTraits::FallbackModel< ConcreteModel >", "classllzk_1_1verif_1_1detail_1_1PostconditionOpInterfaceInterfaceTraits_1_1FallbackModel.html", [
         [ "llzk::verif::detail::PostconditionOpInterfaceInterfaceTraits::ExternalModel< ConcreteModel, ConcreteOp >", "classllzk_1_1verif_1_1detail_1_1PostconditionOpInterfaceInterfaceTraits_1_1ExternalModel.html", null ]
@@ -468,6 +482,7 @@ var hierarchy =
       ] ],
       [ "llzk::verif::ContractOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1ContractOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::verif::detail::ContractTargetOpInterfaceInterfaceTraits", "structllzk_1_1verif_1_1detail_1_1ContractTargetOpInterfaceInterfaceTraits.html", null ],
     [ "llzk::array::detail::CreateArrayOpGenericAdaptorBase", "classllzk_1_1array_1_1detail_1_1CreateArrayOpGenericAdaptorBase.html", [
       [ "llzk::array::CreateArrayOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1array_1_1CreateArrayOpGenericAdaptor.html", null ],
       [ "llzk::array::CreateArrayOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1array_1_1CreateArrayOpGenericAdaptor.html", [
@@ -500,6 +515,13 @@ var hierarchy =
         [ "llzk::smt::DeclareFunOpAdaptor", "classllzk_1_1smt_1_1DeclareFunOpAdaptor.html", null ]
       ] ],
       [ "llzk::smt::DeclareFunOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1DeclareFunOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::verif::detail::DecreasesOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1DecreasesOpGenericAdaptorBase.html", [
+      [ "llzk::verif::DecreasesOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1verif_1_1DecreasesOpGenericAdaptor.html", null ],
+      [ "llzk::verif::DecreasesOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1verif_1_1DecreasesOpGenericAdaptor.html", [
+        [ "llzk::verif::DecreasesOpAdaptor", "classllzk_1_1verif_1_1DecreasesOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::verif::DecreasesOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1DecreasesOpGenericAdaptor.html", null ]
     ] ],
     [ "DefaultDOTGraphTraits", null, [
       [ "llvm::DOTGraphTraits< const llzk::SymbolDefTreeNode * >", "structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html", [
@@ -759,6 +781,13 @@ var hierarchy =
       ] ],
       [ "llzk::verif::IncludeOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1IncludeOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::verif::detail::IncreasesOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1IncreasesOpGenericAdaptorBase.html", [
+      [ "llzk::verif::IncreasesOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1verif_1_1IncreasesOpGenericAdaptor.html", null ],
+      [ "llzk::verif::IncreasesOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1verif_1_1IncreasesOpGenericAdaptor.html", [
+        [ "llzk::verif::IncreasesOpAdaptor", "classllzk_1_1verif_1_1IncreasesOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::verif::IncreasesOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1IncreasesOpGenericAdaptor.html", null ]
+    ] ],
     [ "llzk::InFlightDiagnosticWrapper", "classllzk_1_1InFlightDiagnosticWrapper.html", null ],
     [ "llzk::component::InlineStructsPassOptions", "structllzk_1_1component_1_1InlineStructsPassOptions.html", null ],
     [ "llzk::witgen::InputBinding", "structllzk_1_1witgen_1_1InputBinding.html", null ],
@@ -855,6 +884,14 @@ var hierarchy =
       ] ],
       [ "llzk::cast::IntToFeltOpGenericAdaptor< RangeT >", "classllzk_1_1cast_1_1IntToFeltOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::verif::detail::InvariantOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1InvariantOpGenericAdaptorBase.html", [
+      [ "llzk::verif::InvariantOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1verif_1_1InvariantOpGenericAdaptor.html", null ],
+      [ "llzk::verif::InvariantOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1verif_1_1InvariantOpGenericAdaptor.html", [
+        [ "llzk::verif::InvariantOpAdaptor", "classllzk_1_1verif_1_1InvariantOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::verif::InvariantOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1InvariantOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::verif::detail::InvariantTargetOpInterfaceInterfaceTraits", "structllzk_1_1verif_1_1detail_1_1InvariantTargetOpInterfaceInterfaceTraits.html", null ],
     [ "llzk::felt::detail::InvFeltOpGenericAdaptorBase", "classllzk_1_1felt_1_1detail_1_1InvFeltOpGenericAdaptorBase.html", [
       [ "llzk::felt::InvFeltOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1felt_1_1InvFeltOpGenericAdaptor.html", null ],
       [ "llzk::felt::InvFeltOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1felt_1_1InvFeltOpGenericAdaptor.html", [
@@ -985,6 +1022,13 @@ var hierarchy =
       ] ],
       [ "llzk::smt::NotOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1NotOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::verif::detail::OldOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1OldOpGenericAdaptorBase.html", [
+      [ "llzk::verif::OldOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1verif_1_1OldOpGenericAdaptor.html", null ],
+      [ "llzk::verif::OldOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1verif_1_1OldOpGenericAdaptor.html", [
+        [ "llzk::verif::OldOpAdaptor", "classllzk_1_1verif_1_1OldOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::verif::OldOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1OldOpGenericAdaptor.html", null ]
+    ] ],
     [ "mlir::Op", null, [
       [ "llzk::NonDetOp", "classllzk_1_1NonDetOp.html", null ],
       [ "llzk::array::ArrayLengthOp", "classllzk_1_1array_1_1ArrayLengthOp.html", null ],
@@ -1103,11 +1147,17 @@ var hierarchy =
       [ "llzk::string::LitStringOp", "classllzk_1_1string_1_1LitStringOp.html", null ],
       [ "llzk::verif::ContractEndOp", "classllzk_1_1verif_1_1ContractEndOp.html", null ],
       [ "llzk::verif::ContractOp", "classllzk_1_1verif_1_1ContractOp.html", null ],
+      [ "llzk::verif::DecreasesOp", "classllzk_1_1verif_1_1DecreasesOp.html", null ],
       [ "llzk::verif::EnsureComputeOp", "classllzk_1_1verif_1_1EnsureComputeOp.html", null ],
       [ "llzk::verif::EnsureConstrainOp", "classllzk_1_1verif_1_1EnsureConstrainOp.html", null ],
       [ "llzk::verif::IncludeOp", "classllzk_1_1verif_1_1IncludeOp.html", null ],
+      [ "llzk::verif::IncreasesOp", "classllzk_1_1verif_1_1IncreasesOp.html", null ],
+      [ "llzk::verif::InvariantOp", "classllzk_1_1verif_1_1InvariantOp.html", null ],
+      [ "llzk::verif::OldOp", "classllzk_1_1verif_1_1OldOp.html", null ],
       [ "llzk::verif::RequireComputeOp", "classllzk_1_1verif_1_1RequireComputeOp.html", null ],
-      [ "llzk::verif::RequireConstrainOp", "classllzk_1_1verif_1_1RequireConstrainOp.html", null ]
+      [ "llzk::verif::RequireConstrainOp", "classllzk_1_1verif_1_1RequireConstrainOp.html", null ],
+      [ "llzk::verif::StepOp", "classllzk_1_1verif_1_1StepOp.html", null ],
+      [ "llzk::verif::StepYieldOp", "classllzk_1_1verif_1_1StepYieldOp.html", null ]
     ] ],
     [ "mlir::OpConversionPattern", null, [
       [ "llzk::SplitAggregateInMemberRefOp< ImplClass, MemberRefOpClass, GenHeaderType, IdType >", "classllzk_1_1SplitAggregateInMemberRefOp.html", null ]
@@ -1155,6 +1205,8 @@ var hierarchy =
       [ "llzk::pod::PodRefOpInterface", "classllzk_1_1pod_1_1PodRefOpInterface.html", null ],
       [ "llzk::polymorphic::TemplateSymbolBindingOpInterface", "classllzk_1_1polymorphic_1_1TemplateSymbolBindingOpInterface.html", null ],
       [ "llzk::verif::ConditionOpInterface", "classllzk_1_1verif_1_1ConditionOpInterface.html", null ],
+      [ "llzk::verif::ContractTargetOpInterface", "classllzk_1_1verif_1_1ContractTargetOpInterface.html", null ],
+      [ "llzk::verif::InvariantTargetOpInterface", "classllzk_1_1verif_1_1InvariantTargetOpInterface.html", null ],
       [ "llzk::verif::PostconditionOpInterface", "classllzk_1_1verif_1_1PostconditionOpInterface.html", null ],
       [ "llzk::verif::PreconditionOpInterface", "classllzk_1_1verif_1_1PreconditionOpInterface.html", null ]
     ] ],
@@ -1253,6 +1305,7 @@ var hierarchy =
     [ "llzk::string::detail::LitStringOpGenericAdaptorBase::Properties", "structllzk_1_1string_1_1detail_1_1LitStringOpGenericAdaptorBase_1_1Properties.html", null ],
     [ "llzk::verif::detail::ContractOpGenericAdaptorBase::Properties", "structllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase_1_1Properties.html", null ],
     [ "llzk::verif::detail::IncludeOpGenericAdaptorBase::Properties", "structllzk_1_1verif_1_1detail_1_1IncludeOpGenericAdaptorBase_1_1Properties.html", null ],
+    [ "llzk::verif::detail::InvariantOpGenericAdaptorBase::Properties", "structllzk_1_1verif_1_1detail_1_1InvariantOpGenericAdaptorBase_1_1Properties.html", null ],
     [ "llzk::smt::detail::PushOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1PushOpGenericAdaptorBase.html", [
       [ "llzk::smt::PushOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1PushOpGenericAdaptor.html", null ],
       [ "llzk::smt::PushOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1PushOpGenericAdaptor.html", [
@@ -1362,6 +1415,20 @@ var hierarchy =
     [ "llzk::SourceRef", "classllzk_1_1SourceRef.html", null ],
     [ "llzk::SourceRefIndex", "classllzk_1_1SourceRefIndex.html", null ],
     [ "llzk::SplitFunctionNameInfo", "structllzk_1_1SplitFunctionNameInfo.html", null ],
+    [ "llzk::verif::detail::StepOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1StepOpGenericAdaptorBase.html", [
+      [ "llzk::verif::StepOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1verif_1_1StepOpGenericAdaptor.html", null ],
+      [ "llzk::verif::StepOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1verif_1_1StepOpGenericAdaptor.html", [
+        [ "llzk::verif::StepOpAdaptor", "classllzk_1_1verif_1_1StepOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::verif::StepOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1StepOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::verif::detail::StepYieldOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1StepYieldOpGenericAdaptorBase.html", [
+      [ "llzk::verif::StepYieldOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1verif_1_1StepYieldOpGenericAdaptor.html", null ],
+      [ "llzk::verif::StepYieldOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1verif_1_1StepYieldOpGenericAdaptor.html", [
+        [ "llzk::verif::StepYieldOpAdaptor", "classllzk_1_1verif_1_1StepYieldOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::verif::StepYieldOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1StepYieldOpGenericAdaptor.html", null ]
+    ] ],
     [ "llzk::ram::detail::StoreOpGenericAdaptorBase", "classllzk_1_1ram_1_1detail_1_1StoreOpGenericAdaptorBase.html", [
       [ "llzk::ram::StoreOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1ram_1_1StoreOpGenericAdaptor.html", null ],
       [ "llzk::ram::StoreOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1ram_1_1StoreOpGenericAdaptor.html", [
@@ -1432,6 +1499,7 @@ var hierarchy =
       [ "ConstReadOpBuildFuncHelper", "structConstReadOpBuildFuncHelper.html", null ],
       [ "ContractEndOpBuildFuncHelper", "structContractEndOpBuildFuncHelper.html", null ],
       [ "CreateStructOpBuildFuncHelper", "structCreateStructOpBuildFuncHelper.html", null ],
+      [ "DecreasesOpBuildFuncHelper", "structDecreasesOpBuildFuncHelper.html", null ],
       [ "DivFeltOpBuildFuncHelper", "structDivFeltOpBuildFuncHelper.html", null ],
       [ "EmitContainmentOpBuildFuncHelper", "structEmitContainmentOpBuildFuncHelper.html", null ],
       [ "EmitEqualityOpBuildFuncHelper", "structEmitEqualityOpBuildFuncHelper.html", null ],
@@ -1445,6 +1513,7 @@ var hierarchy =
       [ "GlobalReadOpBuildFuncHelper", "structGlobalReadOpBuildFuncHelper.html", null ],
       [ "GlobalWriteOpBuildFuncHelper", "structGlobalWriteOpBuildFuncHelper.html", null ],
       [ "IncludeOpBuildFuncHelper", "structIncludeOpBuildFuncHelper.html", null ],
+      [ "IncreasesOpBuildFuncHelper", "structIncreasesOpBuildFuncHelper.html", null ],
       [ "InsertArrayOpBuildFuncHelper", "structInsertArrayOpBuildFuncHelper.html", null ],
       [ "IntToFeltOpBuildFuncHelper", "structIntToFeltOpBuildFuncHelper.html", null ],
       [ "InvFeltOpBuildFuncHelper", "structInvFeltOpBuildFuncHelper.html", null ],
@@ -1456,6 +1525,7 @@ var hierarchy =
       [ "NonDetOpBuildFuncHelper", "structNonDetOpBuildFuncHelper.html", null ],
       [ "NotBoolOpBuildFuncHelper", "structNotBoolOpBuildFuncHelper.html", null ],
       [ "NotFeltOpBuildFuncHelper", "structNotFeltOpBuildFuncHelper.html", null ],
+      [ "OldOpBuildFuncHelper", "structOldOpBuildFuncHelper.html", null ],
       [ "OrBoolOpBuildFuncHelper", "structOrBoolOpBuildFuncHelper.html", null ],
       [ "OrFeltOpBuildFuncHelper", "structOrFeltOpBuildFuncHelper.html", null ],
       [ "PowFeltOpBuildFuncHelper", "structPowFeltOpBuildFuncHelper.html", null ],
@@ -1468,6 +1538,8 @@ var hierarchy =
       [ "ShrFeltOpBuildFuncHelper", "structShrFeltOpBuildFuncHelper.html", null ],
       [ "SignedIntDivFeltOpBuildFuncHelper", "structSignedIntDivFeltOpBuildFuncHelper.html", null ],
       [ "SignedModFeltOpBuildFuncHelper", "structSignedModFeltOpBuildFuncHelper.html", null ],
+      [ "StepOpBuildFuncHelper", "structStepOpBuildFuncHelper.html", null ],
+      [ "StepYieldOpBuildFuncHelper", "structStepYieldOpBuildFuncHelper.html", null ],
       [ "StoreOpBuildFuncHelper", "structStoreOpBuildFuncHelper.html", null ],
       [ "StructDefOpBuildFuncHelper", "structStructDefOpBuildFuncHelper.html", null ],
       [ "SubFeltOpBuildFuncHelper", "structSubFeltOpBuildFuncHelper.html", null ],
@@ -1516,6 +1588,12 @@ var hierarchy =
       ] ],
       [ "llzk::verif::detail::ConditionOpInterfaceTrait< ConcreteOp >", "structllzk_1_1verif_1_1detail_1_1ConditionOpInterfaceTrait.html", [
         [ "llzk::verif::ConditionOpInterface::Trait< ConcreteOp >", "structllzk_1_1verif_1_1ConditionOpInterface_1_1Trait.html", null ]
+      ] ],
+      [ "llzk::verif::detail::ContractTargetOpInterfaceTrait< ConcreteOp >", "structllzk_1_1verif_1_1detail_1_1ContractTargetOpInterfaceTrait.html", [
+        [ "llzk::verif::ContractTargetOpInterface::Trait< ConcreteOp >", "structllzk_1_1verif_1_1ContractTargetOpInterface_1_1Trait.html", null ]
+      ] ],
+      [ "llzk::verif::detail::InvariantTargetOpInterfaceTrait< ConcreteOp >", "structllzk_1_1verif_1_1detail_1_1InvariantTargetOpInterfaceTrait.html", [
+        [ "llzk::verif::InvariantTargetOpInterface::Trait< ConcreteOp >", "structllzk_1_1verif_1_1InvariantTargetOpInterface_1_1Trait.html", null ]
       ] ],
       [ "llzk::verif::detail::PostconditionOpInterfaceTrait< ConcreteOp >", "structllzk_1_1verif_1_1detail_1_1PostconditionOpInterfaceTrait.html", [
         [ "llzk::verif::PostconditionOpInterface::Trait< ConcreteOp >", "structllzk_1_1verif_1_1PostconditionOpInterface_1_1Trait.html", null ]

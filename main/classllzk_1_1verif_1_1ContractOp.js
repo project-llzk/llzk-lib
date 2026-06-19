@@ -35,6 +35,8 @@ var classllzk_1_1verif_1_1ContractOp =
     [ "getTarget", "classllzk_1_1verif_1_1ContractOp.html#acdedb2e53de86ed956cd6aeadcd62461", null ],
     [ "getTargetAttr", "classllzk_1_1verif_1_1ContractOp.html#aacd77103bd13e95002cfda2301cd6de6", null ],
     [ "getTargetAttrName", "classllzk_1_1verif_1_1ContractOp.html#a525e7087ea0e7ae9f7b294b26e0aba61", null ],
+    [ "getTargetOp", "classllzk_1_1verif_1_1ContractOp.html#ab61166ca8d9828649d05d962e9485ec8", null ],
+    [ "getTargetOp", "classllzk_1_1verif_1_1ContractOp.html#a78dac97256d945a8479770773f72914a", null ],
     [ "hasArgName", "classllzk_1_1verif_1_1ContractOp.html#a3cfadd1f8619a5ed12c5620105c87cab", null ],
     [ "hasArgPublicAttr", "classllzk_1_1verif_1_1ContractOp.html#a46b0af9079af0f120441f18829ff6962", null ],
     [ "hasFuncTarget", "classllzk_1_1verif_1_1ContractOp.html#af01d751f353cf584d326e4691a4a0799", null ],
