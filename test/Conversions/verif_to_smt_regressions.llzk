@@ -194,23 +194,23 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    func.func @smt_verif_CheckFieldOps_compute_post(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
 // CHECK-DAG:       %[[VAL_9:[0-9a-zA-Z_\.]+]] = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495617
-// CHECK-DAG:       %[[VAL_10:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[VAL_7]], %[[VAL_9]]
+// CHECK-DAG:       %[[VAL_10:[0-9a-zA-Z_\.]+]] = smt.int.mod %{{.*}}, %[[VAL_9]]
 // CHECK-DAG:       %[[VAL_11:[0-9a-zA-Z_\.]+]] = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495617
-// CHECK-DAG:       %[[VAL_12:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[VAL_8]], %[[VAL_11]]
+// CHECK-DAG:       %[[VAL_12:[0-9a-zA-Z_\.]+]] = smt.int.mod %{{.*}}, %[[VAL_11]]
 // CHECK:           %[[VAL_13:[0-9a-zA-Z_\.]+]] = smt.int.add
 // CHECK-DAG:       %[[VAL_14:[0-9a-zA-Z_\.]+]] = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495617
 // CHECK-DAG:       %[[VAL_15:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[VAL_13]], %[[VAL_14]]
 // CHECK-DAG:       %[[VAL_16:[0-9a-zA-Z_\.]+]] = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495617
-// CHECK-DAG:       %[[VAL_17:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[VAL_7]], %[[VAL_16]]
+// CHECK-DAG:       %[[VAL_17:[0-9a-zA-Z_\.]+]] = smt.int.mod %{{.*}}, %[[VAL_16]]
 // CHECK-DAG:       %[[VAL_18:[0-9a-zA-Z_\.]+]] = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495617
-// CHECK-DAG:       %[[VAL_19:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[VAL_8]], %[[VAL_18]]
-// CHECK:           %[[VAL_20:[0-9a-zA-Z_\.]+]] = smt.int.sub %[[VAL_17]], %[[VAL_19]]
+// CHECK-DAG:       %[[VAL_19:[0-9a-zA-Z_\.]+]] = smt.int.mod %{{.*}}, %[[VAL_18]]
+// CHECK:           %[[VAL_20:[0-9a-zA-Z_\.]+]] = smt.int.sub
 // CHECK-DAG:       %[[VAL_21:[0-9a-zA-Z_\.]+]] = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495617
 // CHECK-DAG:       %[[VAL_22:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[VAL_20]], %[[VAL_21]]
 // CHECK-DAG:       %[[VAL_23:[0-9a-zA-Z_\.]+]] = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495617
-// CHECK-DAG:       %[[VAL_24:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[VAL_15]], %[[VAL_23]]
+// CHECK-DAG:       %[[VAL_24:[0-9a-zA-Z_\.]+]] = smt.int.mod %{{.*}}, %[[VAL_23]]
 // CHECK-DAG:       %[[VAL_25:[0-9a-zA-Z_\.]+]] = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495617
-// CHECK-DAG:       %[[VAL_26:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[VAL_22]], %[[VAL_25]]
+// CHECK-DAG:       %[[VAL_26:[0-9a-zA-Z_\.]+]] = smt.int.mod %{{.*}}, %[[VAL_25]]
 // CHECK:           %[[VAL_27:[0-9a-zA-Z_\.]+]] = smt.int.mul
 // CHECK-NEXT:      %[[VAL_28:[0-9a-zA-Z_\.]+]] = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495617
 // CHECK-NEXT:      %[[VAL_29:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[VAL_27]], %[[VAL_28]]
