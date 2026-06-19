@@ -21,14 +21,17 @@
 ///
 /// 1. `@smt_<Struct>_compute` and `@smt_<Struct>_constrain` helpers for struct targets.
 ///
-/// 2. `@smt_verif_<Contract>_pre`, `_target`, and `_post` helpers that lower the direct contract
-///    conditions into SMT booleans.
+/// 2. `@smt_verif_<Contract>_compute_{pre,target,post}` and
+///    `@smt_verif_<Contract>_constrain_{pre,target,post}` helpers that lower the direct contract
+///    conditions into SMT booleans for the two verification stages independently.
 ///
-/// 3. `@smt_verif_<Contract>_include_<N>` wrappers, one per `verif.include`, that call the
-///    callee contract entry helper transitively.
+/// 3. `@smt_verif_<Contract>_{compute,constrain}_include_<N>` wrappers, one per `verif.include`
+///    and verification stage, that call the corresponding callee contract entry helper
+///    transitively.
 ///
-/// 4. `@smt_verif_<Contract>_entry`, which proves each direct contract stage by checking that the
-///    negated condition is unsat before asserting the condition into the caller solver context.
+/// 4. `@smt_verif_<Contract>_{compute,constrain}_entry`, which prove each direct contract stage
+///    by checking that the negated condition is unsat before asserting the condition into the
+///    caller solver context.
 ///
 /// The pass runs as a sequential module transformation. For each contract in source order it
 /// validates the contract and its direct target, creates any missing target helpers, materializes
@@ -41,6 +44,7 @@
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Bool/IR/Enums.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
+#include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
@@ -67,6 +71,7 @@
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include <optional>
 #include <string>
@@ -87,6 +92,7 @@ using namespace llzk::verif;
 
 namespace {
 
+/// Verify that one `scf.if` branch region is a single block ending in `scf.yield`.
 static LogicalResult
 validateSingleBlockRegion(scf::IfOp ifOp, Region &region, StringRef branchName, StringRef context) {
   if (!llvm::hasSingleElement(region)) {
@@ -104,6 +110,7 @@ validateSingleBlockRegion(scf::IfOp ifOp, Region &region, StringRef branchName, 
   return success();
 }
 
+/// Verify that an `scf.if` has the structural shape required by this lowering.
 static LogicalResult validateIfShape(scf::IfOp ifOp, bool requireElseRegion, StringRef context) {
   if (failed(validateSingleBlockRegion(ifOp, ifOp.getThenRegion(), "then", context))) {
     return failure();
@@ -117,6 +124,7 @@ static LogicalResult validateIfShape(scf::IfOp ifOp, bool requireElseRegion, Str
   return success();
 }
 
+/// Return whether `descendant` is nested under the then-region of `ifOp`.
 static FailureOr<bool> isInThenRegion(scf::IfOp ifOp, Operation *descendant) {
   for (Operation *cursor = descendant; cursor != nullptr; cursor = cursor->getParentOp()) {
     Region *parentRegion = cursor->getParentRegion();
@@ -148,11 +156,11 @@ struct TargetHelperNames {
 };
 
 /// Stores the helper symbol names created for one contract.
-struct ContractHelperNames {
+struct ContractStageHelperNames {
   /// Symbol name of the direct precondition helper.
   std::string pre;
 
-  /// Symbol name of the target-equality helper.
+  /// Symbol name of the stage target helper.
   std::string target;
 
   /// Symbol name of the direct postcondition helper.
@@ -164,6 +172,35 @@ struct ContractHelperNames {
   /// Symbol names of the per-include wrapper helpers in source order.
   SmallVector<std::string> includeHelpers;
 };
+
+/// Stores the compute/constrain helper-name bundles created for one contract.
+struct ContractHelperNames {
+  ContractStageHelperNames compute;
+  ContractStageHelperNames constrain;
+  ContractStageHelperNames combined;
+};
+
+/// Distinguishes compute-side and constrain-side contract lowering.
+enum class VerificationStage { Compute, Constrain };
+
+/// Return the naming suffix used for stage-specific helpers.
+static StringRef stageSuffix(VerificationStage stage) {
+  switch (stage) {
+  case VerificationStage::Compute:
+    return "compute";
+  case VerificationStage::Constrain:
+    return "constrain";
+  }
+  llvm_unreachable("unknown verification stage");
+}
+
+/// Return a human-readable stage prefix for solver failure messages.
+static std::string stageMessagePrefix(VerificationStage stage) {
+  return (Twine(stageSuffix(stage)) + " ").str();
+}
+
+/// Lowered `%self` members keyed by source aggregate SSA value and member name.
+using SelfMemberMap = DenseMap<Value, DenseMap<StringRef, Value>>;
 
 /// Represents the lowered SMT-facing argument and result types for a callable.
 struct LoweredSignature {
@@ -180,7 +217,8 @@ struct LoweredSignature {
 /// Shared lowering state for one execution of the pass.
 class LoweringContext {
 public:
-  explicit LoweringContext(MLIRContext *ctx) : context(ctx) {}
+  explicit LoweringContext(MLIRContext *ctx, bool emitLegacyEntries)
+      : context(ctx), emitLegacyEntries(emitLegacyEntries) {}
   friend class ExprLowerer;
 
   /// Get the SMT-converted function for the given LLZK source function op.
@@ -222,11 +260,22 @@ public:
   FailureOr<ContractHelperNames> getOrCreateContractHelpers(ModuleOp module, ContractOp contract);
 
   /// Create a per-include helper that forwards to the callee contract entry helper.
+  FailureOr<func::FuncOp> createIncludeWrapperHelper(
+      ModuleOp module, IncludeOp includeOp, StringRef helperName, VerificationStage stage
+  );
+
+  /// Create a compatibility include helper that forwards to the legacy combined contract entry.
   FailureOr<func::FuncOp>
-  createIncludeWrapperHelper(ModuleOp module, IncludeOp includeOp, StringRef helperName);
+  createCombinedIncludeWrapperHelper(ModuleOp module, IncludeOp includeOp, StringRef helperName);
 
   /// Create the full `_entry` helper for one contract.
   LogicalResult createContractEntryHelper(
+      ModuleOp module, ContractOp contract, SmallVectorImpl<IncludeOp> &includes,
+      VerificationStage stage
+  );
+
+  /// Create the compatibility `_entry` helper consumed by `-smt-to-smtlib`.
+  LogicalResult createCombinedContractEntryHelper(
       ModuleOp module, ContractOp contract, SmallVectorImpl<IncludeOp> &includes
   );
 
@@ -247,8 +296,7 @@ private:
   FailureOr<LoweredSignature> lowerContractSignature(ContractOp contract);
 
   /// Seed lowered contract argument maps for ordinary args and flattened `%self` members.
-  FailureOr<
-      std::tuple<DenseMap<Value, Value>, DenseMap<StringRef, Value>, DenseMap<StringRef, Value>>>
+  FailureOr<std::tuple<DenseMap<Value, Value>, SelfMemberMap, DenseMap<StringRef, Value>>>
   seedContractArgumentMaps(ContractOp contract, Block *entry);
 
   /// Create a direct contract condition helper, such as `_pre` or `_post`.
@@ -257,16 +305,27 @@ private:
       llvm::function_ref<bool(Operation *)> predicate
   );
 
-  /// Create the `_target` helper for a free-function contract target.
+  /// Create the shared `_target` helper for a free-function contract target.
   FailureOr<func::FuncOp> createFreeFunctionTargetHelper(ModuleOp module, ContractOp contract);
 
   /// Create the `_target` helper for a struct contract target.
-  FailureOr<func::FuncOp> createStructTargetHelper(ModuleOp module, ContractOp contract);
+  FailureOr<func::FuncOp>
+  createStructTargetHelper(ModuleOp module, ContractOp contract, VerificationStage stage);
+
+  /// Create a helper that combines compute- and constrain-stage target checks.
+  FailureOr<func::FuncOp>
+  createCombinedTargetHelper(ModuleOp module, ContractOp contract, StringRef helperName);
+
+  /// Create a helper that conjoins the results of two boolean helpers.
+  FailureOr<func::FuncOp> createCombinedBoolHelper(
+      ModuleOp module, ContractOp contract, StringRef helperName, StringRef lhsHelperName,
+      StringRef rhsHelperName
+  );
 
   /// Lower one include operand list using the contract-local lowering environment.
   FailureOr<SmallVector<Value>> lowerIncludeHelperOperands(
       ValueRange operands, OpBuilder &builder, DenseMap<Value, Value> &valueMap,
-      DenseMap<StringRef, Value> &selfMemberMap, DenseMap<StringRef, Value> &constParamMap
+      SelfMemberMap &selfMemberMap, DenseMap<StringRef, Value> &constParamMap
   );
 
   /// Return enclosing value-like template params in declaration order.
@@ -285,6 +344,21 @@ private:
   /// Create a fresh SMT symbol base name.
   std::string getFreshName(StringRef prefix) {
     return (Twine(prefix) + "_" + Twine(nextFreshId++)).str();
+  }
+
+  /// Build a stable helper-name stem from a symbol's fully qualified path.
+  std::string getHelperStem(SymbolRefAttr path) {
+    std::string stem;
+    llvm::raw_string_ostream os(stem);
+    bool first = true;
+    for (StringRef piece : getNames(path)) {
+      if (!first) {
+        os << "__";
+      }
+      first = false;
+      os << piece;
+    }
+    return stem;
   }
 
   /// Lower one LLZK scalar type to the corresponding SMT-facing type.
@@ -348,6 +422,9 @@ private:
   /// Cached contract helper bundles keyed by the original `verif.contract`.
   DenseMap<Operation *, ContractHelperNames> contractHelpers {};
 
+  /// Whether to emit legacy combined helpers for SMTLIB export compatibility.
+  bool emitLegacyEntries = false;
+
   /// Monotonic suffix for fresh SMT witness names.
   unsigned nextFreshId = 0;
 };
@@ -371,6 +448,7 @@ LoweringContext::getStructMembers(StructType type, Operation *origin) {
   return members;
 }
 
+/// Return enclosing non-type template parameters that are materialized as SMT ints.
 SmallVector<polymorphic::TemplateParamOp>
 LoweringContext::getValueTemplateParams(Operation *origin) {
   SmallVector<polymorphic::TemplateParamOp> params;
@@ -390,6 +468,7 @@ LoweringContext::getValueTemplateParams(Operation *origin) {
   return params;
 }
 
+/// Bind lowered hidden template arguments to their source parameter names.
 DenseMap<StringRef, Value> LoweringContext::seedConstParamMap(
     ArrayRef<polymorphic::TemplateParamOp> params, ValueRange values
 ) {
@@ -407,6 +486,7 @@ DenseMap<StringRef, Value> LoweringContext::seedConstParamMap(
   return bindings;
 }
 
+/// Lower concrete or inherited template arguments for one call-like operation.
 FailureOr<SmallVector<Value>> LoweringContext::lowerTemplateParamOperands(
     Operation *origin, ArrayAttr templateParams, OpBuilder &builder,
     DenseMap<StringRef, Value> &constParamMap
@@ -498,8 +578,8 @@ LoweringContext::ensureScalarTypeSupported(Type type, Operation *origin, StringR
   if (!typeContainsUnsupportedAggregate(type, origin)) {
     return success();
   }
-  origin->emitError() << "llzk-scalar-verif-to-smt requires array/pod-free IR for " << description
-                      << "; run -llzk-verif-to-smt instead";
+  origin->emitError() << "'llzk-scalar-verif-to-smt' pass requires array/pod-free IR for "
+                      << description << "; run 'llzk-verif-to-smt' instead";
   return failure();
 }
 
@@ -616,6 +696,17 @@ static void populateVoidCheckRegion(
   builder.create<smt::YieldOp>(loc);
 }
 
+/// Return `true` if `op` is nested under an `scf.if` before reaching `scope`.
+static bool hasIfAncestor(Operation *op, Operation *scope) {
+  for (Operation *ancestor = op->getParentOp(); ancestor && ancestor != scope;
+       ancestor = ancestor->getParentOp()) {
+    if (isa<scf::IfOp>(ancestor)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /// Prove a condition by checking that its negation is unsat, then assert the condition on success.
 static void proveByUnsatAndAssert(
     OpBuilder &builder, Location loc, Value condition, StringRef contractName, StringRef stageName
@@ -656,7 +747,7 @@ class ExprLowerer {
 public:
   /// Construct an expression lowerer that reuses previously lowered values.
   ExprLowerer(
-      LoweringContext &l, OpBuilder &b, DenseMap<Value, Value> &v, DenseMap<StringRef, Value> &s,
+      LoweringContext &l, OpBuilder &b, DenseMap<Value, Value> &v, SelfMemberMap &s,
       DenseMap<StringRef, Value> &c
   )
       : state(l), builder(b), valueMap(v), selfMemberMap(s), constParamMap(c) {}
@@ -693,10 +784,13 @@ public:
     if (auto memberRead = dyn_cast<MemberReadOp>(definingOp)) {
       if (memberRead.getComponent() != nullptr &&
           memberRead.getComponent().getDefiningOp() == nullptr) {
-        auto it = selfMemberMap.find(memberRead.getMemberName());
-        if (it != selfMemberMap.end()) {
-          valueMap[value] = it->second;
-          return it->second;
+        auto membersIt = selfMemberMap.find(memberRead.getComponent());
+        if (membersIt != selfMemberMap.end()) {
+          auto it = membersIt->second.find(memberRead.getMemberName());
+          if (it != membersIt->second.end()) {
+            valueMap[value] = it->second;
+            return it->second;
+          }
         }
       }
     }
@@ -753,10 +847,13 @@ public:
     }
 
     if (auto add = dyn_cast<AddFeltOp>(definingOp)) {
-      auto lowered =
-          lowerBinaryIntExpr(add.getLoc(), add.getLhs(), add.getRhs(), [&](Value lhs, Value rhs) {
-        return builder.create<smt::IntAddOp>(add.getLoc(), ValueRange {lhs, rhs}).getResult();
-      });
+      auto lowered = lowerCanonicalBinaryExpr(
+          add.getLoc(), cast<FeltType>(add.getType()), add.getLhs(), add.getRhs(),
+          [&](Value lhs, Value rhs) {
+        Value sum = builder.create<smt::IntAddOp>(add.getLoc(), ValueRange {lhs, rhs}).getResult();
+        return emitCanonical(add.getLoc(), sum, cast<FeltType>(add.getType()));
+      }
+      );
       if (failed(lowered)) {
         return failure();
       }
@@ -765,10 +862,13 @@ public:
     }
 
     if (auto sub = dyn_cast<SubFeltOp>(definingOp)) {
-      auto lowered =
-          lowerBinaryIntExpr(sub.getLoc(), sub.getLhs(), sub.getRhs(), [&](Value lhs, Value rhs) {
-        return builder.create<smt::IntSubOp>(sub.getLoc(), lhs, rhs).getResult();
-      });
+      auto lowered = lowerCanonicalBinaryExpr(
+          sub.getLoc(), cast<FeltType>(sub.getType()), sub.getLhs(), sub.getRhs(),
+          [&](Value lhs, Value rhs) {
+        Value diff = builder.create<smt::IntSubOp>(sub.getLoc(), lhs, rhs).getResult();
+        return emitCanonical(sub.getLoc(), diff, cast<FeltType>(sub.getType()));
+      }
+      );
       if (failed(lowered)) {
         return failure();
       }
@@ -777,10 +877,14 @@ public:
     }
 
     if (auto mul = dyn_cast<MulFeltOp>(definingOp)) {
-      auto lowered =
-          lowerBinaryIntExpr(mul.getLoc(), mul.getLhs(), mul.getRhs(), [&](Value lhs, Value rhs) {
-        return builder.create<smt::IntMulOp>(mul.getLoc(), ValueRange {lhs, rhs}).getResult();
-      });
+      auto lowered = lowerCanonicalBinaryExpr(
+          mul.getLoc(), cast<FeltType>(mul.getType()), mul.getLhs(), mul.getRhs(),
+          [&](Value lhs, Value rhs) {
+        Value product =
+            builder.create<smt::IntMulOp>(mul.getLoc(), ValueRange {lhs, rhs}).getResult();
+        return emitCanonical(mul.getLoc(), product, cast<FeltType>(mul.getType()));
+      }
+      );
       if (failed(lowered)) {
         return failure();
       }
@@ -1009,8 +1113,8 @@ public:
       }
 
       SmallVector<Value> loweredOperands;
-      loweredOperands.reserve(call.getNumOperands());
-      for (Value operand : call.getOperands()) {
+      loweredOperands.reserve(call.getArgOperands().size());
+      for (Value operand : call.getArgOperands()) {
         auto loweredOperand = lower(operand);
         if (failed(loweredOperand)) {
           return failure();
@@ -1042,22 +1146,26 @@ public:
   }
 
 private:
+  /// Convert a felt constant attribute into the equivalent SMT integer literal.
   IntegerAttr toIntAttr(FeltConstantOp op) {
     return IntegerAttr::get(
         builder.getContext(), toAPSInt(toDynamicAPInt(op.getValue().getValue()))
     );
   }
 
+  /// Materialize an SMT integer constant from a field element-sized APInt value.
   Value createIntConstant(Location loc, const llvm::DynamicAPInt &value) {
     return builder
         .create<smt::IntConstantOp>(loc, IntegerAttr::get(builder.getContext(), toAPSInt(value)))
         .getResult();
   }
 
+  /// Materialize the prime modulus of `field` as an SMT integer constant.
   Value emitPrimeConstant(Location loc, const Field &field) {
     return createIntConstant(loc, field.prime());
   }
 
+  /// Return the constant integer value carried by an SMT integer literal, if known.
   std::optional<llvm::DynamicAPInt> getKnownIntegerValue(Value value) {
     if (auto intConst = value.getDefiningOp<smt::IntConstantOp>()) {
       return toDynamicAPInt(intConst.getValue());
@@ -1065,11 +1173,13 @@ private:
     return std::nullopt;
   }
 
+  /// Canonicalize an integer-valued felt expression into the field range.
   Value emitCanonical(Location loc, Value value, FeltType type) {
     return builder.create<smt::IntModOp>(loc, value, emitPrimeConstant(loc, type.getField()))
         .getResult();
   }
 
+  /// Convert a canonical field element into its signed representative.
   Value emitSignedRepresentative(Location loc, Value value, FeltType type) {
     const Field &field = type.getField();
     Value canonical = emitCanonical(loc, value, type);
@@ -1081,6 +1191,7 @@ private:
     return builder.create<smt::IteOp>(loc, isNonNegative, canonical, negative).getResult();
   }
 
+  /// Convert a canonicalized felt integer to a fixed-width SMT bitvector.
   Value emitCanonicalIntToBV(Location loc, Value value, FeltType type) {
     Value canonical = emitCanonical(loc, value, type);
     return builder
@@ -1091,11 +1202,13 @@ private:
         .getResult();
   }
 
+  /// Convert an SMT bitvector result back to a canonical felt integer.
   Value emitBVToCanonicalInt(Location loc, Value value, FeltType type) {
     Value intValue = builder.create<smt::BV2IntOp>(loc, value, UnitAttr()).getResult();
     return emitCanonical(loc, intValue, type);
   }
 
+  /// Lower both operands of an integer-valued binary expression and invoke `fn`.
   template <typename Fn>
   FailureOr<Value> lowerBinaryIntExpr(Location loc, Value lhsValue, Value rhsValue, Fn &&fn) {
     auto lhs = lower(lhsValue);
@@ -1106,6 +1219,7 @@ private:
     return fn(*lhs, *rhs);
   }
 
+  /// Lower and canonicalize both operands of a field arithmetic binary expression.
   template <typename Fn>
   FailureOr<Value>
   lowerCanonicalBinaryExpr(Location loc, FeltType type, Value lhsValue, Value rhsValue, Fn &&fn) {
@@ -1117,6 +1231,7 @@ private:
     return fn(emitCanonical(loc, *lhs, type), emitCanonical(loc, *rhs, type));
   }
 
+  /// Lower both operands through bitvector conversion and translate the result back.
   template <typename Fn>
   FailureOr<Value>
   lowerBitvectorBinaryExpr(Location loc, FeltType type, Value lhsValue, Value rhsValue, Fn &&fn) {
@@ -1129,6 +1244,7 @@ private:
     return emitBVToCanonicalInt(loc, result, type);
   }
 
+  /// Lower signed division or remainder over field elements via signed representatives.
   Value emitSignedDivOrRem(Location loc, Value lhs, Value rhs, FeltType type, bool isDiv) {
     Value signedLhs = emitSignedRepresentative(loc, lhs, type);
     Value signedRhs = emitSignedRepresentative(loc, rhs, type);
@@ -1142,14 +1258,17 @@ private:
     return emitCanonical(loc, remainder, type);
   }
 
+  /// Lower signed integer division over field elements.
   Value emitSignedIntDivValue(Location loc, Value lhs, Value rhs, FeltType type) {
     return emitSignedDivOrRem(loc, lhs, rhs, type, /*isDiv=*/true);
   }
 
+  /// Lower signed remainder over field elements.
   Value emitSignedModValue(Location loc, Value lhs, Value rhs, FeltType type) {
     return emitSignedDivOrRem(loc, lhs, rhs, type, /*isDiv=*/false);
   }
 
+  /// Lower exponentiation by repeated squaring over canonical field elements.
   FailureOr<Value> emitPowValue(PowFeltOp powOp, Value base, Value exponent, FeltType type) {
     Location loc = powOp.getLoc();
     const Field &field = type.getField();
@@ -1245,6 +1364,7 @@ private:
     return failure();
   }
 
+  /// Lower division by introducing a fresh witness constrained as the quotient.
   Value emitDivisionValue(Location loc, Value lhs, Value rhs, FeltType type) {
     Value numerator = emitCanonical(loc, lhs, type);
     Value denominator = emitCanonical(loc, rhs, type);
@@ -1267,6 +1387,7 @@ private:
     return fresh.getResult();
   }
 
+  /// Lower inversion by introducing a fresh witness constrained as the inverse.
   Value emitInverseValue(Location loc, Value operand, FeltType type) {
     Value canonicalOperand = emitCanonical(loc, operand, type);
     auto fresh = builder.create<smt::DeclareFunOp>(
@@ -1298,7 +1419,7 @@ private:
   DenseMap<Value, Value> &valueMap;
 
   /// Flattened `%self` member bindings keyed by member name.
-  DenseMap<StringRef, Value> &selfMemberMap;
+  SelfMemberMap &selfMemberMap;
 
   /// Hidden template-parameter bindings keyed by parameter name.
   DenseMap<StringRef, Value> &constParamMap;
@@ -1344,6 +1465,61 @@ lowerGuardedCondition(Operation *conditionOp, ExprLowerer &lowerer, OpBuilder &b
   return guarded;
 }
 
+/// Guard an already-lowered boolean with enclosing `scf.if` conditions.
+static FailureOr<Value> lowerGuardedBoolean(
+    Operation *op, Value condition, ExprLowerer &lowerer, OpBuilder &builder, StringRef context
+) {
+  Value guarded = condition;
+  for (Operation *ancestor = op->getParentOp(); ancestor; ancestor = ancestor->getParentOp()) {
+    auto ifOp = dyn_cast<scf::IfOp>(ancestor);
+    if (!ifOp) {
+      continue;
+    }
+    if (failed(validateIfShape(ifOp, /*requireElseRegion=*/false, context))) {
+      return failure();
+    }
+
+    auto loweredCond = lowerer.lower(ifOp.getCondition());
+    if (failed(loweredCond)) {
+      return failure();
+    }
+
+    auto inThen = isInThenRegion(ifOp, op);
+    if (failed(inThen)) {
+      return failure();
+    }
+    Value antecedent = *loweredCond;
+    if (!*inThen) {
+      antecedent = builder.create<smt::NotOp>(ifOp.getLoc(), antecedent).getResult();
+    }
+    guarded = builder.create<smt::ImpliesOp>(op->getLoc(), antecedent, guarded).getResult();
+  }
+  return guarded;
+}
+
+/// Reject struct constrain bodies that cannot be summarized as one boolean formula.
+static LogicalResult checkStructConstrainBodyIsBooleanSummarizable(FuncDefOp constrainFunc) {
+  bool failed = false;
+  constrainFunc.walk([&](Operation *op) {
+    if (op == constrainFunc.getOperation() || isa<ReturnOp, scf::YieldOp>(op) ||
+        isa<constrain::EmitEqualityOp>(op) || isa<CallOp>(op)) {
+      return WalkResult::advance();
+    }
+    if (isa<scf::IfOp>(op)) {
+      return WalkResult::advance();
+    }
+    if (op->getNumRegions() != 0 || op->getNumSuccessors() != 0) {
+      op->emitError(
+      ) << "verif-to-smt requires struct constrain bodies without loops or successor-based "
+           "control flow; run `llzk-flatten` or another control-flow lowering pass first";
+      failed = true;
+      return WalkResult::interrupt();
+    }
+    return WalkResult::advance();
+  });
+  return failure(failed);
+}
+
 /// Lower a free function target to an SMT helper, reusing an existing helper if present.
 FailureOr<func::FuncOp>
 LoweringContext::getOrCreateFunctionHelper(ModuleOp module, FuncDefOp func) {
@@ -1357,7 +1533,7 @@ LoweringContext::getOrCreateFunctionHelper(ModuleOp module, FuncDefOp func) {
   }
 
   OpBuilder moduleBuilder = createModuleBuilder(module);
-  std::string helperName = ("smt_" + func.getSymName()).str();
+  std::string helperName = "smt_" + getHelperStem(func.getFullyQualifiedName());
   auto helper = moduleBuilder.create<func::FuncOp>(
       func.getLoc(), helperName,
       FunctionType::get(context, loweredSig->argTypes, loweredSig->resultTypes)
@@ -1366,10 +1542,10 @@ LoweringContext::getOrCreateFunctionHelper(ModuleOp module, FuncDefOp func) {
   Block *entry = helper.addEntryBlock();
   OpBuilder entryBuilder = OpBuilder::atBlockBegin(entry);
   DenseMap<Value, Value> valueMap;
-  DenseMap<StringRef, Value> selfMemberMap;
+  SelfMemberMap selfMemberMap;
+  unsigned numLoweredInputs = loweredSig->argTypes.size() - loweredSig->templateParams.size();
   DenseMap<StringRef, Value> constParamMap = seedConstParamMap(
-      loweredSig->templateParams,
-      ValueRange(entry->getArguments()).drop_front(func.getNumArguments())
+      loweredSig->templateParams, ValueRange(entry->getArguments()).drop_front(numLoweredInputs)
   );
   for (auto [original, lowered] : llvm::zip(func.getArguments(), entry->getArguments())) {
     valueMap[original] = lowered;
@@ -1425,10 +1601,14 @@ LoweringContext::getOrCreateStructHelpers(ModuleOp module, StructDefOp structDef
   if (failed(computeSig)) {
     return failure();
   }
+  auto constrainSig = lowerCallableSignature(constrainFunc.getFunctionType(), constrainFunc);
+  if (failed(constrainSig)) {
+    return failure();
+  }
 
   OpBuilder moduleBuilder = createModuleBuilder(module);
 
-  std::string computeName = ("smt_" + structDef.getSymName() + "_compute").str();
+  std::string computeName = "smt_" + getHelperStem(structDef.getFullyQualifiedName()) + "_compute";
   auto computeHelper = moduleBuilder.create<func::FuncOp>(
       computeFunc.getLoc(), computeName,
       FunctionType::get(context, computeSig->argTypes, memberTypes)
@@ -1437,10 +1617,10 @@ LoweringContext::getOrCreateStructHelpers(ModuleOp module, StructDefOp structDef
     Block *entry = computeHelper.addEntryBlock();
     OpBuilder entryBuilder = OpBuilder::atBlockBegin(entry);
     DenseMap<Value, Value> valueMap;
-    DenseMap<StringRef, Value> selfMemberMap;
+    SelfMemberMap selfMemberMap;
+    unsigned numLoweredInputs = computeSig->argTypes.size() - computeSig->templateParams.size();
     DenseMap<StringRef, Value> constParamMap = seedConstParamMap(
-        computeSig->templateParams,
-        ValueRange(entry->getArguments()).drop_front(computeFunc.getNumArguments())
+        computeSig->templateParams, ValueRange(entry->getArguments()).drop_front(numLoweredInputs)
     );
     for (auto [original, lowered] : llvm::zip(computeFunc.getArguments(), entry->getArguments())) {
       valueMap[original] = lowered;
@@ -1448,13 +1628,31 @@ LoweringContext::getOrCreateStructHelpers(ModuleOp module, StructDefOp structDef
 
     ExprLowerer lowerer(*this, entryBuilder, valueMap, selfMemberMap, constParamMap);
     DenseMap<StringRef, Value> writtenMembers;
+    Value returnedSelf = computeFunc.getSelfValueFromCompute();
     bool failedToLower = false;
     computeFunc.walk([&](MemberWriteOp writeOp) {
       if (failedToLower) {
         return;
       }
+      if (writeOp.getComponent() != returnedSelf) {
+        return;
+      }
+      if (hasIfAncestor(writeOp.getOperation(), computeFunc.getOperation())) {
+        computeFunc.emitError(
+            "verif-to-smt requires compute writes to the returned component to be unguarded"
+        );
+        failedToLower = true;
+        return;
+      }
       auto loweredValue = lowerer.lower(writeOp.getVal());
       if (failed(loweredValue)) {
+        failedToLower = true;
+        return;
+      }
+      if (writtenMembers.contains(writeOp.getMemberName())) {
+        computeFunc.emitError().append(
+            "verif-to-smt requires a single write to returned member @", writeOp.getMemberName()
+        );
         failedToLower = true;
         return;
       }
@@ -1476,24 +1674,139 @@ LoweringContext::getOrCreateStructHelpers(ModuleOp module, StructDefOp structDef
     entryBuilder.create<func::ReturnOp>(computeFunc.getLoc(), results);
   }
 
-  std::string constrainName = ("smt_" + structDef.getSymName() + "_constrain").str();
-  SmallVector<Type> constrainArgs = memberTypes;
-  for (Type input : constrainFunc.getArgumentTypes().drop_front()) {
-    constrainArgs.push_back(lowerType(input));
+  if (failed(checkStructConstrainBodyIsBooleanSummarizable(constrainFunc))) {
+    return failure();
   }
-  constrainArgs.reserve(constrainArgs.size() + computeSig->templateParams.size());
-  for (polymorphic::TemplateParamOp _ : computeSig->templateParams) {
-    constrainArgs.push_back(smt::IntType::get(context));
-  }
+
+  std::string constrainName =
+      "smt_" + getHelperStem(structDef.getFullyQualifiedName()) + "_constrain";
   auto constrainHelper = moduleBuilder.create<func::FuncOp>(
-      constrainFunc.getLoc(), constrainName, FunctionType::get(context, constrainArgs, memberTypes)
+      constrainFunc.getLoc(), constrainName,
+      FunctionType::get(context, constrainSig->argTypes, TypeRange {smt::BoolType::get(context)})
   );
   {
     Block *entry = constrainHelper.addEntryBlock();
     OpBuilder entryBuilder = OpBuilder::atBlockBegin(entry);
-    entryBuilder.create<func::ReturnOp>(
-        constrainFunc.getLoc(), ValueRange(entry->getArguments()).take_front(memberTypes.size())
+    DenseMap<Value, Value> valueMap;
+    SelfMemberMap selfMemberMap;
+    unsigned nextArg = 0;
+    DenseMap<StringRef, Value> loweredMembers;
+    Value selfArg = constrainFunc.getArgument(0);
+    for (MemberDefOp member : members) {
+      loweredMembers[member.getSymName()] = entry->getArgument(nextArg++);
+    }
+    selfMemberMap[selfArg] = std::move(loweredMembers);
+    for (BlockArgument originalArg : constrainFunc.getArguments().drop_front()) {
+      valueMap[originalArg] = entry->getArgument(nextArg++);
+    }
+    DenseMap<StringRef, Value> constParamMap = seedConstParamMap(
+        constrainSig->templateParams, ValueRange(entry->getArguments()).drop_front(nextArg)
     );
+    ExprLowerer lowerer(*this, entryBuilder, valueMap, selfMemberMap, constParamMap);
+
+    SmallVector<Value> conditions;
+    bool failedToLower = false;
+    constrainFunc.walk([&](Operation *op) {
+      if (failedToLower) {
+        return WalkResult::interrupt();
+      }
+      if (isa<ReturnOp, scf::YieldOp, scf::IfOp>(op) || op == constrainFunc.getOperation()) {
+        return WalkResult::advance();
+      }
+      if (auto eqOp = dyn_cast<constrain::EmitEqualityOp>(op)) {
+        auto lhs = lowerer.lower(eqOp.getLhs());
+        auto rhs = lowerer.lower(eqOp.getRhs());
+        if (failed(lhs) || failed(rhs)) {
+          failedToLower = true;
+          return WalkResult::interrupt();
+        }
+        auto lowered = lowerGuardedBoolean(
+            op, entryBuilder.create<smt::EqOp>(eqOp.getLoc(), *lhs, *rhs).getResult(), lowerer,
+            entryBuilder, "struct constrain body"
+        );
+        if (failed(lowered)) {
+          failedToLower = true;
+          return WalkResult::interrupt();
+        }
+        conditions.push_back(*lowered);
+        return WalkResult::advance();
+      }
+      if (isa<constrain::EmitContainmentOp>(op)) {
+        op->emitError(
+            "verif-to-smt does not yet support 'constrain.in' in struct constrain bodies"
+        );
+        failedToLower = true;
+        return WalkResult::interrupt();
+      }
+      if (auto call = dyn_cast<CallOp>(op)) {
+        if (call.getNumResults() != 0) {
+          return WalkResult::advance();
+        }
+        auto calleeTarget = getCalleeTarget(call);
+        if (failed(calleeTarget)) {
+          failedToLower = true;
+          return WalkResult::interrupt();
+        }
+        if (!calleeTarget->get().isStructConstrain()) {
+          op->emitError(
+              "verif-to-smt only supports standalone calls to struct constrain functions inside "
+              "struct constrain bodies"
+          );
+          failedToLower = true;
+          return WalkResult::interrupt();
+        }
+        auto calleeStruct = calleeTarget->get()->getParentOfType<StructDefOp>();
+        auto calleeHelpers = getOrCreateStructHelpers(module, calleeStruct);
+        if (failed(calleeHelpers)) {
+          failedToLower = true;
+          return WalkResult::interrupt();
+        }
+        auto loweredOperands = lowerIncludeHelperOperands(
+            call.getArgOperands(), entryBuilder, valueMap, selfMemberMap, constParamMap
+        );
+        if (failed(loweredOperands)) {
+          failedToLower = true;
+          return WalkResult::interrupt();
+        }
+        auto loweredTemplateParams = lowerTemplateParamOperands(
+            calleeTarget->get().getOperation(), call.getTemplateParamsAttr(), entryBuilder,
+            constParamMap
+        );
+        if (failed(loweredTemplateParams)) {
+          failedToLower = true;
+          return WalkResult::interrupt();
+        }
+        llvm::append_range(*loweredOperands, *loweredTemplateParams);
+        Value callCondition = entryBuilder
+                                  .create<func::CallOp>(
+                                      call.getLoc(), calleeHelpers->constrain,
+                                      TypeRange {smt::BoolType::get(context)}, *loweredOperands
+                                  )
+                                  .getResult(0);
+        auto guarded =
+            lowerGuardedBoolean(op, callCondition, lowerer, entryBuilder, "struct constrain body");
+        if (failed(guarded)) {
+          failedToLower = true;
+          return WalkResult::interrupt();
+        }
+        conditions.push_back(*guarded);
+        return WalkResult::advance();
+      }
+      if (op->getNumResults() != 0) {
+        return WalkResult::advance();
+      }
+      op->emitError().append(
+          "unsupported op in struct constrain SMT lowering: ", op->getName().getStringRef()
+      );
+      failedToLower = true;
+      return WalkResult::interrupt();
+    });
+    if (failedToLower) {
+      return failure();
+    }
+
+    Value combined = buildConjunction(entryBuilder, constrainFunc.getLoc(), conditions);
+    entryBuilder.create<func::ReturnOp>(constrainFunc.getLoc(), combined);
   }
 
   TargetHelperNames helperNames {computeName, constrainName};
@@ -1510,11 +1823,10 @@ FailureOr<LoweredSignature> LoweringContext::lowerContractSignature(ContractOp c
 }
 
 /// Seed lowered contract argument maps for ordinary args and flattened `%self` members.
-FailureOr<
-    std::tuple<DenseMap<Value, Value>, DenseMap<StringRef, Value>, DenseMap<StringRef, Value>>>
+FailureOr<std::tuple<DenseMap<Value, Value>, SelfMemberMap, DenseMap<StringRef, Value>>>
 LoweringContext::seedContractArgumentMaps(ContractOp contract, Block *entry) {
   DenseMap<Value, Value> valueMap;
-  DenseMap<StringRef, Value> selfMemberMap;
+  SelfMemberMap selfMemberMap;
   unsigned nextArg = 0;
   for (BlockArgument originalArg : contract.getArguments()) {
     if (auto structType = dyn_cast<StructType>(originalArg.getType())) {
@@ -1522,9 +1834,11 @@ LoweringContext::seedContractArgumentMaps(ContractOp contract, Block *entry) {
       if (failed(members)) {
         return failure();
       }
+      DenseMap<StringRef, Value> loweredMembers;
       for (MemberDefOp member : *members) {
-        selfMemberMap[member.getSymName()] = entry->getArgument(nextArg++);
+        loweredMembers[member.getSymName()] = entry->getArgument(nextArg++);
       }
+      selfMemberMap[originalArg] = std::move(loweredMembers);
       continue;
     }
     valueMap[originalArg] = entry->getArgument(nextArg++);
@@ -1587,7 +1901,7 @@ FailureOr<func::FuncOp> LoweringContext::createContractConditionHelper(
   return helper;
 }
 
-/// Create the `_target` helper for a free-function contract target.
+/// Create the shared `_target` helper for a free-function contract target.
 FailureOr<func::FuncOp>
 LoweringContext::createFreeFunctionTargetHelper(ModuleOp module, ContractOp contract) {
   auto loweredSig = lowerContractSignature(contract);
@@ -1602,7 +1916,24 @@ LoweringContext::createFreeFunctionTargetHelper(ModuleOp module, ContractOp cont
   if (failed(targetFunc)) {
     return failure();
   }
+  if (targetFunc->get().hasAllowConstraintAttr()) {
+    targetFunc->get().emitOpError(
+        "verif-to-smt does not support free-function targets with "
+        "`function.allow_constraint`; only struct `@constrain` lowering is supported"
+    );
+    return failure();
+  }
 
+  std::string helperName =
+      "smt_verif_" + getHelperStem(contract.getFullyQualifiedName()) + "_target";
+  OpBuilder moduleBuilder = createModuleBuilder(module);
+  auto helper = moduleBuilder.create<func::FuncOp>(
+      contract.getLoc(), helperName,
+      FunctionType::get(context, loweredSig->argTypes, TypeRange {smt::BoolType::get(context)})
+  );
+
+  Block *entry = helper.addEntryBlock();
+  OpBuilder entryBuilder = OpBuilder::atBlockBegin(entry);
   auto rawTargetHelper = getOrCreateFunctionHelper(module, targetFunc->get());
   if (failed(rawTargetHelper)) {
     return failure();
@@ -1613,25 +1944,20 @@ LoweringContext::createFreeFunctionTargetHelper(ModuleOp module, ContractOp cont
   if (failed(targetLoweredSig)) {
     return failure();
   }
-  OpBuilder moduleBuilder = createModuleBuilder(module);
-  std::string helperName = ("smt_verif_" + contract.getSymName() + "_target").str();
-  auto helper = moduleBuilder.create<func::FuncOp>(
-      contract.getLoc(), helperName,
-      FunctionType::get(context, loweredSig->argTypes, TypeRange {smt::BoolType::get(context)})
-  );
-
-  Block *entry = helper.addEntryBlock();
-  OpBuilder entryBuilder = OpBuilder::atBlockBegin(entry);
 
   ValueRange args = entry->getArguments();
-  ValueRange targetInputs = args.take_front(targetLoweredSig->argTypes.size());
+  unsigned numHiddenTemplateArgs = targetLoweredSig->templateParams.size();
+  unsigned numLoweredTargetInputs = targetLoweredSig->argTypes.size() - numHiddenTemplateArgs;
+  ValueRange targetInputs = args.take_front(numLoweredTargetInputs);
+  SmallVector<Value> targetCallArgs(targetInputs.begin(), targetInputs.end());
+  llvm::append_range(targetCallArgs, args.take_back(numHiddenTemplateArgs));
   auto targetCall = entryBuilder.create<func::CallOp>(
       contract.getLoc(), rawTargetHelper->getSymName(),
-      rawTargetHelper->getFunctionType().getResults(), targetInputs
+      rawTargetHelper->getFunctionType().getResults(), targetCallArgs
   );
 
-  ValueRange expectedResults = args.drop_front(targetLoweredSig->argTypes.size())
-                                   .take_front(targetLoweredSig->resultTypes.size());
+  ValueRange expectedResults =
+      args.drop_front(numLoweredTargetInputs).take_front(targetLoweredSig->resultTypes.size());
   SmallVector<Value> conditions = buildEqualityConditions(
       entryBuilder, contract.getLoc(), targetCall.getResults(), expectedResults
   );
@@ -1641,8 +1967,9 @@ LoweringContext::createFreeFunctionTargetHelper(ModuleOp module, ContractOp cont
 }
 
 /// Create the `_target` helper for a struct contract target.
-FailureOr<func::FuncOp>
-LoweringContext::createStructTargetHelper(ModuleOp module, ContractOp contract) {
+FailureOr<func::FuncOp> LoweringContext::createStructTargetHelper(
+    ModuleOp module, ContractOp contract, VerificationStage stage
+) {
   auto loweredSig = lowerContractSignature(contract);
   if (failed(loweredSig)) {
     return failure();
@@ -1664,7 +1991,8 @@ LoweringContext::createStructTargetHelper(ModuleOp module, ContractOp contract) 
   unsigned numFlattenedSelfMembers = members->size();
 
   OpBuilder moduleBuilder = createModuleBuilder(module);
-  std::string helperName = ("smt_verif_" + contract.getSymName() + "_target").str();
+  std::string helperName = "smt_verif_" + getHelperStem(contract.getFullyQualifiedName()) + "_" +
+                           stageSuffix(stage).str() + "_target";
   auto helper = moduleBuilder.create<func::FuncOp>(
       contract.getLoc(), helperName,
       FunctionType::get(context, loweredSig->argTypes, TypeRange {smt::BoolType::get(context)})
@@ -1676,25 +2004,77 @@ LoweringContext::createStructTargetHelper(ModuleOp module, ContractOp contract) 
   ValueRange selfArgs = args.take_front(numFlattenedSelfMembers);
   ValueRange nonSelfArgs = args.drop_front(numFlattenedSelfMembers);
 
-  SmallVector<Value> conditions;
-  auto computeCall = entryBuilder.create<func::CallOp>(
-      contract.getLoc(), targetHelpers->compute, TypeRange(selfArgs.getTypes()), nonSelfArgs
-  );
-  SmallVector<Value> computeConditions =
-      buildEqualityConditions(entryBuilder, contract.getLoc(), computeCall.getResults(), selfArgs);
-  llvm::append_range(conditions, computeConditions);
+  if (stage == VerificationStage::Compute) {
+    auto computeCall = entryBuilder.create<func::CallOp>(
+        contract.getLoc(), targetHelpers->compute, TypeRange(selfArgs.getTypes()), nonSelfArgs
+    );
+    SmallVector<Value> computeConditions = buildEqualityConditions(
+        entryBuilder, contract.getLoc(), computeCall.getResults(), selfArgs
+    );
+    Value combined = buildConjunction(entryBuilder, contract.getLoc(), computeConditions);
+    entryBuilder.create<func::ReturnOp>(contract.getLoc(), combined);
+  } else {
+    auto constrainCall = entryBuilder.create<func::CallOp>(
+        contract.getLoc(), targetHelpers->constrain, TypeRange {smt::BoolType::get(context)}, args
+    );
+    entryBuilder.create<func::ReturnOp>(contract.getLoc(), constrainCall.getResult(0));
+  }
+  return helper;
+}
 
-  auto constrainCall = entryBuilder.create<func::CallOp>(
-      contract.getLoc(), targetHelpers->constrain, TypeRange(selfArgs.getTypes()), args
-  );
-  SmallVector<Value> constrainConditions = buildEqualityConditions(
-      entryBuilder, contract.getLoc(), constrainCall.getResults(), selfArgs
-  );
-  llvm::append_range(conditions, constrainConditions);
+FailureOr<func::FuncOp> LoweringContext::createCombinedBoolHelper(
+    ModuleOp module, ContractOp contract, StringRef helperName, StringRef lhsHelperName,
+    StringRef rhsHelperName
+) {
+  auto loweredSig = lowerContractSignature(contract);
+  if (failed(loweredSig)) {
+    return failure();
+  }
 
-  Value combined = buildConjunction(entryBuilder, contract.getLoc(), conditions);
+  OpBuilder moduleBuilder = createModuleBuilder(module);
+  auto helper = moduleBuilder.create<func::FuncOp>(
+      contract.getLoc(), helperName,
+      FunctionType::get(context, loweredSig->argTypes, TypeRange {smt::BoolType::get(context)})
+  );
+
+  Block *entry = helper.addEntryBlock();
+  OpBuilder entryBuilder = OpBuilder::atBlockBegin(entry);
+  auto lhsCall = entryBuilder.create<func::CallOp>(
+      contract.getLoc(), lhsHelperName, TypeRange {smt::BoolType::get(context)},
+      entry->getArguments()
+  );
+  auto rhsCall = entryBuilder.create<func::CallOp>(
+      contract.getLoc(), rhsHelperName, TypeRange {smt::BoolType::get(context)},
+      entry->getArguments()
+  );
+  Value combined =
+      entryBuilder.create<smt::AndOp>(contract.getLoc(), lhsCall.getResult(0), rhsCall.getResult(0))
+          .getResult();
   entryBuilder.create<func::ReturnOp>(contract.getLoc(), combined);
   return helper;
+}
+
+FailureOr<func::FuncOp> LoweringContext::createCombinedTargetHelper(
+    ModuleOp module, ContractOp contract, StringRef helperName
+) {
+  auto helperInfoIt = contractHelpers.find(contract.getOperation());
+  if (helperInfoIt == contractHelpers.end()) {
+    contract.emitError("missing contract helper names for combined target generation");
+    return failure();
+  }
+
+  const ContractHelperNames &helperInfo = helperInfoIt->second;
+  if (!contract.hasStructTarget()) {
+    if (auto helper = module.lookupSymbol<func::FuncOp>(helperInfo.compute.target)) {
+      return helper;
+    }
+    contract.emitError("missing shared target helper for combined target generation");
+    return failure();
+  }
+
+  return createCombinedBoolHelper(
+      module, contract, helperName, helperInfo.compute.target, helperInfo.constrain.target
+  );
 }
 
 /// Create or look up the direct helper symbols for one contract.
@@ -1704,43 +2084,95 @@ LoweringContext::getOrCreateContractHelpers(ModuleOp module, ContractOp contract
     return it->second;
   }
 
-  std::string prefix = ("smt_verif_" + contract.getSymName()).str();
-  std::string preName = prefix + "_pre";
-  std::string targetName = prefix + "_target";
-  std::string postName = prefix + "_post";
-  std::string entryName = prefix + "_entry";
+  std::string prefix = "smt_verif_" + getHelperStem(contract.getFullyQualifiedName());
 
   SmallVector<IncludeOp> includes;
   contract.walk([&](IncludeOp includeOp) { includes.push_back(includeOp); });
 
-  SmallVector<std::string> includeHelperNames;
-  includeHelperNames.reserve(includes.size());
-  for (auto [index, _] : llvm::enumerate(includes)) {
-    includeHelperNames.push_back(prefix + "_include_" + std::to_string(index));
-  }
+  auto makeStageNames = [&](VerificationStage stage) {
+    std::string stagePrefix = prefix + "_" + stageSuffix(stage).str();
+    SmallVector<std::string> includeHelperNames;
+    includeHelperNames.reserve(includes.size());
+    for (auto [index, _] : llvm::enumerate(includes)) {
+      includeHelperNames.push_back(stagePrefix + "_include_" + std::to_string(index));
+    }
+    return ContractStageHelperNames {
+        stagePrefix + "_pre", stagePrefix + "_target", stagePrefix + "_post",
+        stagePrefix + "_entry", includeHelperNames
+    };
+  };
 
-  ContractHelperNames names {preName, targetName, postName, entryName, includeHelperNames};
+  ContractHelperNames names {
+      makeStageNames(VerificationStage::Compute), makeStageNames(VerificationStage::Constrain),
+      ContractStageHelperNames {
+          prefix + "_pre", prefix + "_target", prefix + "_post", prefix + "_entry", {}
+      }
+  };
+  names.combined.includeHelpers.reserve(includes.size());
+  for (auto [index, _] : llvm::enumerate(includes)) {
+    names.combined.includeHelpers.push_back(prefix + "_include_" + std::to_string(index));
+  }
+  if (!contract.hasStructTarget()) {
+    std::string targetName = prefix + "_target";
+    names.compute.target = targetName;
+    names.constrain.target = targetName;
+    names.combined.target = targetName;
+  }
   contractHelpers[contract.getOperation()] = names;
 
-  auto preHelper = createContractConditionHelper(module, contract, preName, [](Operation *op) {
-    return isa<RequireComputeOp, RequireConstrainOp>(op);
-  });
-  if (failed(preHelper)) {
+  auto createStageHelpers = [&](VerificationStage stage,
+                                const ContractStageHelperNames &stageNames) -> LogicalResult {
+    auto preHelper =
+        createContractConditionHelper(module, contract, stageNames.pre, [stage](Operation *op) {
+      return stage == VerificationStage::Compute ? isa<RequireComputeOp>(op)
+                                                 : isa<RequireConstrainOp>(op);
+    });
+    if (failed(preHelper)) {
+      return failure();
+    }
+
+    auto postHelper =
+        createContractConditionHelper(module, contract, stageNames.post, [stage](Operation *op) {
+      return stage == VerificationStage::Compute ? isa<EnsureComputeOp>(op)
+                                                 : isa<EnsureConstrainOp>(op);
+    });
+    if (failed(postHelper)) {
+      return failure();
+    }
+
+    if (contract.hasStructTarget()) {
+      auto targetHelper = createStructTargetHelper(module, contract, stage);
+      return success(succeeded(targetHelper));
+    }
+    return success();
+  };
+  if (failed(createStageHelpers(VerificationStage::Compute, names.compute)) ||
+      failed(createStageHelpers(VerificationStage::Constrain, names.constrain))) {
     return failure();
   }
 
-  auto postHelper = createContractConditionHelper(module, contract, postName, [](Operation *op) {
-    return isa<EnsureComputeOp, EnsureConstrainOp>(op);
-  });
-  if (failed(postHelper)) {
-    return failure();
+  if (!contract.hasStructTarget()) {
+    auto targetHelper = createFreeFunctionTargetHelper(module, contract);
+    if (failed(targetHelper)) {
+      return failure();
+    }
   }
 
-  FailureOr<func::FuncOp> targetHelper = contract.hasStructTarget()
-                                             ? createStructTargetHelper(module, contract)
-                                             : createFreeFunctionTargetHelper(module, contract);
-  if (failed(targetHelper)) {
-    return failure();
+  if (emitLegacyEntries) {
+    if (failed(createCombinedBoolHelper(
+            module, contract, names.combined.pre, names.compute.pre, names.constrain.pre
+        )) ||
+        failed(createCombinedBoolHelper(
+            module, contract, names.combined.post, names.compute.post, names.constrain.post
+        ))) {
+      return failure();
+    }
+    if (contract.hasStructTarget()) {
+      auto targetHelper = createCombinedTargetHelper(module, contract, names.combined.target);
+      if (failed(targetHelper)) {
+        return failure();
+      }
+    }
   }
 
   return names;
@@ -1749,7 +2181,7 @@ LoweringContext::getOrCreateContractHelpers(ModuleOp module, ContractOp contract
 /// Lower one include operand list using the contract-local lowering environment.
 FailureOr<SmallVector<Value>> LoweringContext::lowerIncludeHelperOperands(
     ValueRange operands, OpBuilder &builder, DenseMap<Value, Value> &valueMap,
-    DenseMap<StringRef, Value> &selfMemberMap, DenseMap<StringRef, Value> &constParamMap
+    SelfMemberMap &selfMemberMap, DenseMap<StringRef, Value> &constParamMap
 ) {
   ExprLowerer lowerer(*this, builder, valueMap, selfMemberMap, constParamMap);
   SmallVector<Value> loweredOperands;
@@ -1766,6 +2198,41 @@ FailureOr<SmallVector<Value>> LoweringContext::lowerIncludeHelperOperands(
 
 /// Create a per-include helper that forwards to the callee contract entry helper.
 FailureOr<func::FuncOp> LoweringContext::createIncludeWrapperHelper(
+    ModuleOp module, IncludeOp includeOp, StringRef helperName, VerificationStage stage
+) {
+  auto calleeTarget = includeOp.getCalleeTarget(tables);
+  if (failed(calleeTarget)) {
+    return failure();
+  }
+  ContractOp callee = calleeTarget->get();
+  auto calleeHelpers = getOrCreateContractHelpers(module, callee);
+  if (failed(calleeHelpers)) {
+    return failure();
+  }
+
+  auto loweredSig = lowerContractSignature(callee);
+  if (failed(loweredSig)) {
+    return failure();
+  }
+
+  OpBuilder moduleBuilder = createModuleBuilder(module);
+  auto helper = moduleBuilder.create<func::FuncOp>(
+      includeOp.getLoc(), helperName, FunctionType::get(context, loweredSig->argTypes, TypeRange {})
+  );
+
+  Block *entry = helper.addEntryBlock();
+  OpBuilder entryBuilder = OpBuilder::atBlockBegin(entry);
+  entryBuilder.create<func::CallOp>(
+      includeOp.getLoc(),
+      stage == VerificationStage::Compute ? calleeHelpers->compute.entry
+                                          : calleeHelpers->constrain.entry,
+      TypeRange {}, entry->getArguments()
+  );
+  entryBuilder.create<func::ReturnOp>(includeOp.getLoc());
+  return helper;
+}
+
+FailureOr<func::FuncOp> LoweringContext::createCombinedIncludeWrapperHelper(
     ModuleOp module, IncludeOp includeOp, StringRef helperName
 ) {
   auto calleeTarget = includeOp.getCalleeTarget(tables);
@@ -1791,7 +2258,7 @@ FailureOr<func::FuncOp> LoweringContext::createIncludeWrapperHelper(
   Block *entry = helper.addEntryBlock();
   OpBuilder entryBuilder = OpBuilder::atBlockBegin(entry);
   entryBuilder.create<func::CallOp>(
-      includeOp.getLoc(), calleeHelpers->entry, TypeRange {}, entry->getArguments()
+      includeOp.getLoc(), calleeHelpers->combined.entry, TypeRange {}, entry->getArguments()
   );
   entryBuilder.create<func::ReturnOp>(includeOp.getLoc());
   return helper;
@@ -1799,7 +2266,8 @@ FailureOr<func::FuncOp> LoweringContext::createIncludeWrapperHelper(
 
 /// Create the full `_entry` helper for one contract.
 LogicalResult LoweringContext::createContractEntryHelper(
-    ModuleOp module, ContractOp contract, SmallVectorImpl<IncludeOp> &includes
+    ModuleOp module, ContractOp contract, SmallVectorImpl<IncludeOp> &includes,
+    VerificationStage stage
 ) {
   auto loweredSig = lowerContractSignature(contract);
   if (failed(loweredSig)) {
@@ -1811,7 +2279,97 @@ LogicalResult LoweringContext::createContractEntryHelper(
     contract.emitError("missing contract helper names for entry helper generation");
     return failure();
   }
-  const ContractHelperNames &helperInfo = helperInfoIt->second;
+  const ContractStageHelperNames &helperInfo = stage == VerificationStage::Compute
+                                                   ? helperInfoIt->second.compute
+                                                   : helperInfoIt->second.constrain;
+
+  OpBuilder moduleBuilder = createModuleBuilder(module);
+  auto helper = moduleBuilder.create<func::FuncOp>(
+      contract.getLoc(), helperInfo.entry,
+      FunctionType::get(context, loweredSig->argTypes, TypeRange {})
+  );
+
+  Block *entry = helper.addEntryBlock();
+  OpBuilder entryBuilder = OpBuilder::atBlockBegin(entry);
+  auto seededMaps = seedContractArgumentMaps(contract, entry);
+  if (failed(seededMaps)) {
+    return failure();
+  }
+  auto &[valueMap, selfMemberMap, constParamMap] = *seededMaps;
+
+  auto preCall = entryBuilder.create<func::CallOp>(
+      contract.getLoc(), helperInfo.pre, TypeRange {smt::BoolType::get(context)},
+      entry->getArguments()
+  );
+  proveByUnsatAndAssert(
+      entryBuilder, contract.getLoc(), preCall.getResult(0), contract.getSymName(),
+      stageMessagePrefix(stage) + "pre"
+  );
+
+  auto targetCall = entryBuilder.create<func::CallOp>(
+      contract.getLoc(), helperInfo.target, TypeRange {smt::BoolType::get(context)},
+      entry->getArguments()
+  );
+  proveByUnsatAndAssert(
+      entryBuilder, contract.getLoc(), targetCall.getResult(0), contract.getSymName(),
+      stageMessagePrefix(stage) + "target"
+  );
+
+  for (auto [index, includeOp] : llvm::enumerate(includes)) {
+    if (hasIfAncestor(includeOp.getOperation(), contract.getOperation())) {
+      includeOp.emitError("verif-to-smt does not yet support guarded verif.include operations");
+      return failure();
+    }
+    auto calleeTarget = includeOp.getCalleeTarget(tables);
+    if (failed(calleeTarget)) {
+      return failure();
+    }
+    auto loweredOperands = lowerIncludeHelperOperands(
+        includeOp.getArgOperands(), entryBuilder, valueMap, selfMemberMap, constParamMap
+    );
+    if (failed(loweredOperands)) {
+      return failure();
+    }
+    auto loweredTemplateParams = lowerTemplateParamOperands(
+        calleeTarget->get().getOperation(), includeOp.getTemplateParamsAttr(), entryBuilder,
+        constParamMap
+    );
+    if (failed(loweredTemplateParams)) {
+      return failure();
+    }
+    llvm::append_range(*loweredOperands, *loweredTemplateParams);
+    entryBuilder.create<func::CallOp>(
+        includeOp.getLoc(), helperInfo.includeHelpers[index], TypeRange {}, *loweredOperands
+    );
+  }
+
+  auto postCall = entryBuilder.create<func::CallOp>(
+      contract.getLoc(), helperInfo.post, TypeRange {smt::BoolType::get(context)},
+      entry->getArguments()
+  );
+  proveByUnsatAndAssert(
+      entryBuilder, contract.getLoc(), postCall.getResult(0), contract.getSymName(),
+      stageMessagePrefix(stage) + "post"
+  );
+
+  entryBuilder.create<func::ReturnOp>(contract.getLoc());
+  return success();
+}
+
+LogicalResult LoweringContext::createCombinedContractEntryHelper(
+    ModuleOp module, ContractOp contract, SmallVectorImpl<IncludeOp> &includes
+) {
+  auto loweredSig = lowerContractSignature(contract);
+  if (failed(loweredSig)) {
+    return failure();
+  }
+
+  auto helperInfoIt = contractHelpers.find(contract.getOperation());
+  if (helperInfoIt == contractHelpers.end()) {
+    contract.emitError("missing contract helper names for combined entry generation");
+    return failure();
+  }
+  const ContractStageHelperNames &helperInfo = helperInfoIt->second.combined;
 
   OpBuilder moduleBuilder = createModuleBuilder(module);
   auto helper = moduleBuilder.create<func::FuncOp>(
@@ -1844,6 +2402,10 @@ LogicalResult LoweringContext::createContractEntryHelper(
   );
 
   for (auto [index, includeOp] : llvm::enumerate(includes)) {
+    if (hasIfAncestor(includeOp.getOperation(), contract.getOperation())) {
+      includeOp.emitError("verif-to-smt does not yet support guarded verif.include operations");
+      return failure();
+    }
     auto calleeTarget = includeOp.getCalleeTarget(tables);
     if (failed(calleeTarget)) {
       return failure();
@@ -1912,7 +2474,7 @@ struct VerifToSmtPass : public llzk::impl::VerifToSmtPassBase<VerifToSmtPass> {
   /// Run the contract lowering sequentially over the module body.
   void runOnOperation() override {
     ModuleOp module = getOperation();
-    LoweringContext state {&getContext()};
+    LoweringContext state {&getContext(), cleanup};
 
     SmallVector<ContractOp> contracts;
     module.walk([&](ContractOp contract) { contracts.push_back(contract); });
@@ -1929,6 +2491,14 @@ struct VerifToSmtPass : public llzk::impl::VerifToSmtPassBase<VerifToSmtPass> {
         return;
       }
       if (auto func = dyn_cast<FuncDefOp>(*target)) {
+        if (func.hasAllowConstraintAttr()) {
+          func.emitOpError(
+              "verif-to-smt does not support free-function targets with "
+              "`function.allow_constraint`; only struct `@constrain` lowering is supported"
+          );
+          signalPassFailure();
+          return;
+        }
         if (failed(state.getOrCreateFunctionHelper(module, func))) {
           signalPassFailure();
           return;
@@ -1951,14 +2521,34 @@ struct VerifToSmtPass : public llzk::impl::VerifToSmtPassBase<VerifToSmtPass> {
       contract.walk([&](IncludeOp includeOp) { includes.push_back(includeOp); });
       for (auto [index, includeOp] : llvm::enumerate(includes)) {
         if (failed(state.createIncludeWrapperHelper(
-                module, includeOp, contractHelpers->includeHelpers[index]
+                module, includeOp, contractHelpers->compute.includeHelpers[index],
+                VerificationStage::Compute
+            )) ||
+            failed(state.createIncludeWrapperHelper(
+                module, includeOp, contractHelpers->constrain.includeHelpers[index],
+                VerificationStage::Constrain
             ))) {
+          signalPassFailure();
+          return;
+        }
+        if (cleanup && failed(state.createCombinedIncludeWrapperHelper(
+                           module, includeOp, contractHelpers->combined.includeHelpers[index]
+                       ))) {
           signalPassFailure();
           return;
         }
       }
 
-      if (failed(state.createContractEntryHelper(module, contract, includes))) {
+      if (failed(state.createContractEntryHelper(
+              module, contract, includes, VerificationStage::Compute
+          )) ||
+          failed(state.createContractEntryHelper(
+              module, contract, includes, VerificationStage::Constrain
+          ))) {
+        signalPassFailure();
+        return;
+      }
+      if (cleanup && failed(state.createCombinedContractEntryHelper(module, contract, includes))) {
         signalPassFailure();
         return;
       }

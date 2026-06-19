@@ -194,7 +194,7 @@ inline verif::IncludeOp createIncludePreservingInstantiationOperands(
     templateParams.append(templateParamsAttr.begin(), templateParamsAttr.end());
   }
 
-  if (oldInclude.getMapOperands().empty()) {
+  if (mapOperands.empty()) {
     return rewriter.create<verif::IncludeOp>(
         loc, oldInclude.getCalleeAttr(), argOperands, templateParams
     );

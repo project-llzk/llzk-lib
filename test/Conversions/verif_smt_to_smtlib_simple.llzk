@@ -17,12 +17,12 @@ module attributes {llzk.lang} {
 // SIMPLE: ; check-sat stage=pre expect=unsat
 // SIMPLE-NEXT: (check-sat)
 // SIMPLE-NEXT: (pop 1)
-// SIMPLE-NEXT: (assert smt_verif_CheckGate_entry__arg0)
+// SIMPLE-NEXT: (assert (let
 // SIMPLE: ; check-sat stage=target expect=unsat
 // SIMPLE-NEXT: (check-sat)
 // SIMPLE-NEXT: (pop 1)
-// SIMPLE-NEXT: (assert (let ((__let0 true)) __let0))
+// SIMPLE-NEXT: (assert (let
 // SIMPLE: ; check-sat stage=post expect=unsat
 // SIMPLE-NEXT: (check-sat)
 // SIMPLE-NEXT: (pop 1)
-// SIMPLE-NEXT: (assert smt_verif_CheckGate_entry__arg0)
+// SIMPLE-NEXT: (assert (let

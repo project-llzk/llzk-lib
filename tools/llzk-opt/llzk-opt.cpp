@@ -15,6 +15,7 @@
 
 #include "r1cs/Dialect/IR/Dialect.h"
 #include "r1cs/DialectRegistration.h"
+#include "r1cs/Transforms/TransformationPassPipelines.h"
 #include "r1cs/Transforms/TransformationPasses.h"
 #include "smt/Conversions/ConversionPasses.h"
 #include "smt/Transforms/SMTPasses.h"
@@ -31,6 +32,8 @@
 #include "llzk/Dialect/InitDialects.h"
 #include "llzk/Dialect/POD/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
+#include "llzk/Dialect/Struct/Transforms/TransformationPasses.h"
+#include "llzk/Transforms/LLZKTransformationPassPipelines.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Transforms/SpecializedMemoryPasses.h"
 #include "llzk/Validators/LLZKValidationPasses.h"
@@ -83,9 +86,7 @@ inline static void registerTransformsPasses() {
   mlir::registerMem2Reg();
   mlir::registerPrintIRPass();
   mlir::registerPrintOpStats();
-  mlir::registerPass([]() -> std::unique_ptr<mlir::Pass> {
-    return llzk::createRemoveDeadValuesWorkaroundPass();
-  });
+  mlir::registerPass(llzk::createRemoveDeadValuesWorkaroundPass);
   mlir::registerSCCP();
   mlir::registerSROA();
   mlir::registerStripDebugInfo();
@@ -123,6 +124,7 @@ int main(int argc, char **argv) {
   llzk::registerValidationPasses();
   llzk::registerAnalysisPasses();
   llzk::registerTransformationPasses();
+  llzk::component::registerTransformationPasses();
   llzk::array::registerTransformationPasses();
   llzk::include::registerTransformationPasses();
   llzk::polymorphic::registerTransformationPasses();
@@ -134,10 +136,10 @@ int main(int argc, char **argv) {
   pcl::registerTransformationPasses();
   pcl::conversion::registerPCLTransformationPasses();
 #endif // LLZK_WITH_PCL
+  llzk::smt::registerConversionPasses();
 
   llzk::registerTransformationPassPipelines();
   r1cs::registerTransformationPassPipelines();
-  llzk::smt::registerConversionPasses();
   llzk::smt::registerSMTPasses();
 
   // Register and parse command line options.

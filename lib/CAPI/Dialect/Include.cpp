@@ -22,7 +22,7 @@
 
 using namespace llzk::include;
 
-static void registerLLZKIncludeTransformationPasses() { registerTransformationPasses(); }
+static inline void registerLLZKIncludeTransformationPasses() { registerTransformationPasses(); }
 
 // Include the generated CAPI
 #include "llzk/Dialect/Include/IR/Ops.capi.cpp.inc"

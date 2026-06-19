@@ -20,8 +20,8 @@ module attributes {llzk.lang} {
 }
 
 // INCLUDE: ; root: smt_verif_TopGate_entry
+// INCLUDE-DAG: (declare-const smt_verif_TopGate_entry__arg0 Bool)
+// INCLUDE-DAG: (declare-const smt_verif_TopGate_entry__arg1 Bool)
 // INCLUDE: ; check-sat stage=pre expect=unsat
 // INCLUDE: ; check-sat stage=target expect=unsat
-// INCLUDE-DAG: (assert smt_verif_TopGate_entry__arg0)
-// INCLUDE-DAG: (assert smt_verif_TopGate_entry__arg1)
 // INCLUDE: ; check-sat stage=post expect=unsat

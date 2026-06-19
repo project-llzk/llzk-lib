@@ -380,12 +380,13 @@ protected:
 
 public:
   explicit SplitArrayInFunctionLikeOpImpl(FunctionLikeOp op) {
-    inputNameInfo = collectSplitFunctionNameInfo(op.getArgumentTypes(), [&](unsigned i) {
+    inputNameInfo = collectSplitFunctionNameInfo(op.getArgumentTypes(), [&op](unsigned i) {
       return op.getArgNameAttr(i);
     }, getSplitArrayIndexSuffixes);
     if constexpr (supportsResultAttrs()) {
       ArrayAttr resultAttrs = op.getAllResultAttrs();
-      resultNameInfo = collectSplitFunctionNameInfo(op.getResultTypes(), [&](unsigned i) {
+      resultNameInfo =
+          collectSplitFunctionNameInfo(op.getResultTypes(), [&resultAttrs](unsigned i) {
         return getAttrAtIndexWithName(resultAttrs, i, RES_NAME_ATTR_NAME);
       }, getSplitArrayIndexSuffixes);
     }

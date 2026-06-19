@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file -llzk-full-r1cs-lowering -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
-module attributes {llzk.lang} {
+module attributes {llzk.lang, llzk.main = !struct.type<@CmpConstraint>} {
   // lowers constraints to be at most degree 2 polynomials
   struct.def @CmpConstraint {
     struct.member @val: !felt.type {llzk.pub}
@@ -46,7 +46,7 @@ module attributes {llzk.lang} {
 // CHECK-DAG:         }
 // -----
 
-module attributes {llzk.lang} {
+module attributes {llzk.lang, llzk.main = !struct.type<@CmpConstraint>} {
   // lowers constraints to be at most degree 2 polynomials
   struct.def @CmpConstraint {
     struct.member @val: !felt.type {llzk.pub}

@@ -17,4 +17,4 @@ namespace llzk {
 #define GEN_PASS_REGISTRATION
 #include "llzk/Validators/LLZKValidationPasses.h.inc"
 
-}; // namespace llzk
+} // namespace llzk

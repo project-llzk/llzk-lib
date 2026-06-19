@@ -23,7 +23,7 @@ module attributes {llzk.lang} {
 // DIRTY-LABEL: module attributes {llzk.lang} {
 // DIRTY: function.def @gate_target
 // DIRTY: func.func @smt_gate_target
-// DIRTY: func.func @smt_verif_CheckGate_entry
+// DIRTY: func.func @smt_verif_CheckGate_compute_entry
 
 // -----
 
@@ -56,12 +56,13 @@ module attributes {llzk.lang = "circom"} {
 
 // CLEAN-LABEL: module attributes {llzk.lang = "circom"} {
 // CLEAN-NOT: poly.template
-// CLEAN: func.func @smt_Gate_compute
-// CLEAN: func.func @smt_verif_CheckGate_entry
+// CLEAN: func.func @smt_UnusedParamTemplate__Gate_compute
+// CLEAN: func.func @smt_verif_UnusedParamTemplate__CheckGate_entry
 
 // DIRTY-LABEL: module attributes {llzk.lang = "circom"} {
 // DIRTY: poly.template @UnusedParamTemplate {
 // DIRTY: poly.param @n
 // DIRTY-NOT: struct.def @Gate
 // DIRTY-NOT: verif.contract
-// DIRTY: func.func @smt_Gate_compute
+// DIRTY: func.func @smt_UnusedParamTemplate__Gate_compute
+// DIRTY: func.func @smt_verif_UnusedParamTemplate__CheckGate_compute_entry

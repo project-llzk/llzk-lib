@@ -51,7 +51,9 @@ using namespace mlir;
 namespace {
 
 static bool isEntryPoint(func::FuncOp func) {
-  return func.getSymName().starts_with("smt_verif_") && func.getSymName().ends_with("_entry");
+  StringRef name = func.getSymName();
+  return name.starts_with("smt_verif_") && name.ends_with("_entry") &&
+         !name.ends_with("_compute_entry") && !name.ends_with("_constrain_entry");
 }
 
 static std::string sanitizeSymbol(StringRef name) {
