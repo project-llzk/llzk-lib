@@ -1384,8 +1384,8 @@ private:
   /// Return the absolute value of a signed SMT integer.
   Value emitAbsValue(Location loc, Value value) {
     Value zero = builder.create<smt::IntConstantOp>(loc, builder.getI64IntegerAttr(0)).getResult();
-    Value isNegative = builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::lt, value, zero)
-                           .getResult();
+    Value isNegative =
+        builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::lt, value, zero).getResult();
     Value negated = builder.create<smt::IntNegOp>(loc, value).getResult();
     return builder.create<smt::IteOp>(loc, isNegative, negated, value).getResult();
   }
