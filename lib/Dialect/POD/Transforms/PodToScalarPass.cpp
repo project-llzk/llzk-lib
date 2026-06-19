@@ -359,7 +359,7 @@ protected:
 
 public:
   explicit SplitPodInFunctionLikeOpImpl(FunctionLikeOp op) {
-    inputNameInfo = collectSplitFunctionNameInfo(op.getArgumentTypes(), [&](unsigned i) {
+    inputNameInfo = collectSplitFunctionNameInfo(op.getArgumentTypes(), [&op](unsigned i) {
       return op.getArgNameAttr(i);
     }, getSplitRecordNameSuffixes);
     if constexpr (supportsResultAttrs()) {

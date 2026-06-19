@@ -34,7 +34,6 @@
 #include <llvm/ADT/SmallVector.h>
 
 namespace llzk {
-#define GEN_PASS_DECL_AGGREGATESCALARIZATIONPASS
 #define GEN_PASS_DEF_AGGREGATESCALARIZATIONPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
@@ -164,41 +163,32 @@ static FailureOr<AggregateProfile> collectAggregateProfile(ModuleOp module) {
       if (failed(collectAggregateProfileForTypes(memberTypes, structDef, tables, profile))) {
         return WalkResult::interrupt();
       }
-      return WalkResult::advance();
-    }
-    if (auto funcDef = dyn_cast<FuncDefOp>(op)) {
+    } else if (auto funcDef = dyn_cast<FuncDefOp>(op)) {
       llvm::SmallVector<Type> types;
       llvm::append_range(types, funcDef.getArgumentTypes());
       llvm::append_range(types, funcDef.getResultTypes());
       if (failed(collectAggregateProfileForTypes(types, funcDef, tables, profile))) {
         return WalkResult::interrupt();
       }
-      return WalkResult::advance();
-    }
-    if (auto contract = dyn_cast<ContractOp>(op)) {
+    } else if (auto contract = dyn_cast<ContractOp>(op)) {
       llvm::SmallVector<Type> types;
       llvm::append_range(types, contract.getArgumentTypes());
       llvm::append_range(types, contract.getResultTypes());
       if (failed(collectAggregateProfileForTypes(types, contract, tables, profile))) {
         return WalkResult::interrupt();
       }
-      return WalkResult::advance();
-    }
-    if (auto createArray = dyn_cast<CreateArrayOp>(op)) {
+    } else if (auto createArray = dyn_cast<CreateArrayOp>(op)) {
       if (failed(collectAggregateProfileForTypes(
               ArrayRef<Type> {createArray.getType()}, createArray, tables, profile
           ))) {
         return WalkResult::interrupt();
       }
-      return WalkResult::advance();
-    }
-    if (auto newPod = dyn_cast<NewPodOp>(op)) {
+    } else if (auto newPod = dyn_cast<NewPodOp>(op)) {
       if (failed(collectAggregateProfileForTypes(
               ArrayRef<Type> {newPod.getType()}, newPod, tables, profile
           ))) {
         return WalkResult::interrupt();
       }
-      return WalkResult::advance();
     }
     return WalkResult::advance();
   });

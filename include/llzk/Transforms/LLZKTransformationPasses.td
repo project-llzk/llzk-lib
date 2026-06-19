@@ -163,7 +163,6 @@ def AggregateScalarizationPass : LLZKPass<"llzk-aggregate-scalarization"> {
     intended as a reusable preprocessing step for pipelines that need
     array/pod-free IR.
   }];
-  let options = [];
 }
 
 def VerifToSmtPass : LLZKPass<"llzk-scalar-verif-to-smt"> {
@@ -175,7 +174,6 @@ def VerifToSmtPass : LLZKPass<"llzk-scalar-verif-to-smt"> {
     expects array/pod-free. Use the `-llzk-verif-to-smt` pipeline to preprocess
     aggregate types first.
   }];
-  let options = [];
 }
 
 #endif // LLZK_TRANSFORMATION_PASSES_TD
