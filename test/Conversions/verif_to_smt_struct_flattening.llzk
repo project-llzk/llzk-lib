@@ -1,0 +1,81 @@
+// RUN: llzk-opt --llzk-scalar-verif-to-smt %s -split-input-file | FileCheck %s
+
+module attributes {llzk.lang} {
+  struct.def @Pair {
+    struct.member @lhs : !felt.type {llzk.pub}
+    struct.member @rhs : !felt.type {llzk.pub}
+
+    function.def @compute(%lhs: !felt.type, %rhs: !felt.type) -> !struct.type<@Pair> {
+      %self = struct.new : !struct.type<@Pair>
+      struct.writem %self[@lhs] = %lhs : !struct.type<@Pair>, !felt.type
+      struct.writem %self[@rhs] = %rhs : !struct.type<@Pair>, !felt.type
+      function.return %self : !struct.type<@Pair>
+    }
+
+    function.def @constrain(%self: !struct.type<@Pair>, %lhs: !felt.type, %rhs: !felt.type) {
+      function.return
+    }
+  }
+
+  function.def @pick_second(%pair: !struct.type<@Pair>, %x: !felt.type) -> (!felt.type {function.res_name = "ret_value"}) {
+    %rhs = struct.readm %pair[@rhs] : !struct.type<@Pair>, !felt.type
+    function.return %rhs : !felt.type
+  }
+
+  verif.contract @CheckSecond for @pick_second (%pair: !struct.type<@Pair>, %x: !felt.type, %ret_value: !felt.type {function.res_name = "ret_value"}) {
+    %true = arith.constant true
+    verif.require_compute %true
+  }
+}
+
+// CHECK-LABEL: func.func @smt_pick_second(
+// CHECK-SAME: %[[LHS:[0-9A-Za-z_\.]+]]: !smt.int, %[[RHS:[0-9A-Za-z_\.]+]]: !smt.int, %[[X:[0-9A-Za-z_\.]+]]: !smt.int
+// CHECK: return %[[RHS]] : !smt.int
+// CHECK-LABEL: func.func @smt_verif_CheckSecond_target(
+// CHECK-SAME: %[[ARG0:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG2:[0-9A-Za-z_\.]+]]: !smt.int, %[[RET:[0-9A-Za-z_\.]+]]: !smt.int
+// CHECK: %[[CALL:[0-9A-Za-z_\.]+]] = call @smt_pick_second(%[[ARG0]], %[[ARG1]], %[[ARG2]]) : (!smt.int, !smt.int, !smt.int) -> !smt.int
+// CHECK: %[[EQ:[0-9A-Za-z_\.]+]] = smt.eq %[[CALL]], %[[RET]] : !smt.int
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Pair {
+    struct.member @lhs : i1 {llzk.pub}
+    struct.member @rhs : i1 {llzk.pub}
+
+    function.def @compute(%lhs: i1, %rhs: i1) -> !struct.type<@Pair> {
+      %self = struct.new : !struct.type<@Pair>
+      struct.writem %self[@lhs] = %lhs : !struct.type<@Pair>, i1
+      struct.writem %self[@rhs] = %rhs : !struct.type<@Pair>, i1
+      function.return %self : !struct.type<@Pair>
+    }
+
+    function.def @constrain(%self: !struct.type<@Pair>, %lhs: i1, %rhs: i1) {
+      function.return
+    }
+  }
+
+  function.def @leaf(%pair: !struct.type<@Pair>) {
+    function.return
+  }
+
+  function.def @wrapper(%pair: !struct.type<@Pair>) {
+    function.return
+  }
+
+  verif.contract @Leaf for @leaf (%pair: !struct.type<@Pair>) {
+    %true = arith.constant true
+    verif.require_compute %true
+  }
+
+  verif.contract @Wrapper for @wrapper (%pair: !struct.type<@Pair>) {
+    verif.include @Leaf(%pair) : (!struct.type<@Pair>) -> ()
+  }
+}
+
+// CHECK-LABEL: func.func @smt_verif_Wrapper_compute_include_0(
+// CHECK-SAME: %[[INC0:[0-9A-Za-z_\.]+]]: !smt.bool, %[[INC1:[0-9A-Za-z_\.]+]]: !smt.bool
+// CHECK: call @smt_verif_Leaf_compute_entry(%[[INC0]], %[[INC1]]) : (!smt.bool, !smt.bool) -> ()
+// CHECK-LABEL: func.func @smt_verif_Wrapper_compute_entry(
+// CHECK-SAME: %[[SELF0:[0-9A-Za-z_\.]+]]: !smt.bool, %[[SELF1:[0-9A-Za-z_\.]+]]: !smt.bool
+// CHECK: call @smt_verif_Wrapper_compute_include_0(%[[SELF0]], %[[SELF1]]) : (!smt.bool, !smt.bool) -> ()
