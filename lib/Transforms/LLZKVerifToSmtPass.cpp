@@ -70,6 +70,7 @@
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/StringMap.h>
 #include <llvm/Support/raw_ostream.h>
 
 #include <optional>
@@ -1291,6 +1292,13 @@ public:
   }
 
 private:
+  /// Build a stable cache key for an SMT integer literal.
+  static std::string getIntConstantKey(const llvm::DynamicAPInt &value) {
+    llvm::SmallString<64> repr;
+    llvm::raw_svector_ostream(repr) << value;
+    return std::string(repr);
+  }
+
   /// Convert a felt constant attribute into the equivalent SMT integer literal.
   IntegerAttr toIntAttr(FeltConstantOp op) {
     return IntegerAttr::get(
@@ -1300,9 +1308,18 @@ private:
 
   /// Materialize an SMT integer constant from a field element-sized APInt value.
   Value createIntConstant(Location loc, const llvm::DynamicAPInt &value) {
-    return builder
-        .create<smt::IntConstantOp>(loc, IntegerAttr::get(builder.getContext(), toAPSInt(value)))
-        .getResult();
+    std::string key = getIntConstantKey(value);
+    if (auto it = intConstantCache.find(key); it != intConstantCache.end()) {
+      return it->second;
+    }
+
+    Value constant = builder
+                         .create<smt::IntConstantOp>(
+                             loc, IntegerAttr::get(builder.getContext(), toAPSInt(value))
+                         )
+                         .getResult();
+    intConstantCache.try_emplace(std::move(key), constant);
+    return constant;
   }
 
   /// Materialize the prime modulus of `field` as an SMT integer constant.
@@ -1513,6 +1530,9 @@ private:
 
   /// Hidden template-parameter bindings keyed by parameter name.
   DenseMap<StringRef, Value> &constParamMap;
+
+  /// Per-helper cache of emitted SMT integer literals.
+  llvm::StringMap<Value> intConstantCache;
 };
 
 /// Guard a contract-local condition with enclosing `scf.if` control flow.
