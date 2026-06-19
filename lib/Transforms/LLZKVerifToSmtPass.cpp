@@ -219,8 +219,8 @@ struct LoweredSignature {
 /// Shared lowering state for one execution of the pass.
 class LoweringContext {
 public:
-  explicit LoweringContext(MLIRContext *ctx, bool emitLegacyEntries)
-      : context(ctx), emitLegacyEntries(emitLegacyEntries) {}
+  explicit LoweringContext(MLIRContext *ctx, bool emitLegacyEntries_)
+      : context(ctx), emitLegacyEntries(emitLegacyEntries_) {}
   friend class ExprLowerer;
 
   /// Get the SMT-converted function for the given LLZK source function op.
