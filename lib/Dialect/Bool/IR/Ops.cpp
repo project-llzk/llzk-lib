@@ -9,6 +9,7 @@
 
 #include "llzk/Dialect/Bool/IR/Ops.h"
 
+#include "llzk/Dialect/Bool/IR/Utils.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Util/TypeHelper.h"
@@ -161,18 +162,6 @@ OpFoldResult CmpOp::fold(FoldAdaptor adaptor) {
 //===------------------------------------------------------------------===//
 
 namespace {
-/// Extracts the type used for a quantifier op block argument.
-///
-/// If the array has only one dimension, returns the element type.
-/// Otherwise, returns an array type with the first dimension removed.
-static Type extractArgType(array::ArrayType arr) {
-  if (arr.getDimensionSizes().size() == 1) {
-    return arr.getElementType();
-  }
-
-  return array::ArrayType::get(arr.getElementType(), arr.getDimensionSizes().drop_front());
-}
-
 /// Verifies a quantifier operation.
 ///
 /// The region of the operation must have only 1 argument and its type must match
@@ -183,7 +172,7 @@ template <typename Op> LogicalResult verifyQuantOp(Op op) {
     return op->emitOpError() << "must have one block argument";
   }
   auto argType = block->getArgument(0).getType();
-  auto eltType = extractArgType(op.getSort().getType());
+  auto eltType = getQuantifierOpDomainIterType(op.getSort().getType());
   if (argType != eltType) {
     return op->emitOpError() << "expects element type " << argType << " but sort has element type "
                              << eltType;
@@ -231,7 +220,7 @@ ParseResult parseQuantOp(OpAsmParser &parser, OperationState &result) {
   }
 
   if (!arg.type) {
-    arg.type = extractArgType(sortType);
+    arg.type = getQuantifierOpDomainIterType(sortType);
     assert(arg.type && "argument type must be inferred from the array element type");
   }
 
@@ -294,3 +283,15 @@ ParseResult ExistsOp::parse(OpAsmParser &parser, OperationState &result) {
 void ExistsOp::print(OpAsmPrinter &p) { printQuantOp(p, *this); }
 
 } // namespace llzk::boolean
+
+/// Extracts the type used for a quantifier op block argument.
+///
+/// If the array has only one dimension, returns the element type.
+/// Otherwise, returns an array type with the first dimension removed.
+Type llzk::boolean::getQuantifierOpDomainIterType(array::ArrayType arr) {
+  if (arr.getDimensionSizes().size() == 1) {
+    return arr.getElementType();
+  }
+
+  return array::ArrayType::get(arr.getElementType(), arr.getDimensionSizes().drop_front());
+}

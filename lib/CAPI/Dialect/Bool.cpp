@@ -13,6 +13,8 @@
 #include "llzk/Dialect/Bool/IR/Attrs.h"
 #include "llzk/Dialect/Bool/IR/Dialect.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
+#include "llzk/Dialect/Bool/IR/Utils.h"
+#include "llzk/Util/TypeHelper.h"
 
 #include <mlir/CAPI/Registration.h>
 
@@ -25,3 +27,9 @@ using namespace llzk::boolean;
 #include "llzk/Dialect/Bool/IR/Ops.capi.cpp.inc"
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Bool, llzk__boolean, BoolDialect)
+
+MlirType llzkBool_QuantifierOpGetDomainIterType(MlirType type) {
+  return wrap(
+      llzk::boolean::getQuantifierOpDomainIterType(unwrap_cast<llzk::array::ArrayType>(type))
+  );
+}
