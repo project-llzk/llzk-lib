@@ -161,6 +161,18 @@ OpFoldResult CmpOp::fold(FoldAdaptor adaptor) {
 //===------------------------------------------------------------------===//
 
 namespace {
+/// Extracts the type used for a quantifier op block argument.
+///
+/// If the array has only one dimension, returns the element type.
+/// Otherwise, returns an array type with the first dimension removed.
+static Type extractArgType(array::ArrayType arr) {
+  if (arr.getDimensionSizes().size() == 1) {
+    return arr.getElementType();
+  }
+
+  return array::ArrayType::get(arr.getElementType(), arr.getDimensionSizes().drop_front());
+}
+
 /// Verifies a quantifier operation.
 ///
 /// The region of the operation must have only 1 argument and its type must match
@@ -171,7 +183,7 @@ template <typename Op> LogicalResult verifyQuantOp(Op op) {
     return op->emitOpError() << "must have one block argument";
   }
   auto argType = block->getArgument(0).getType();
-  auto eltType = op.getSort().getType().getElementType();
+  auto eltType = extractArgType(op.getSort().getType());
   if (argType != eltType) {
     return op->emitOpError() << "expects element type " << argType << " but sort has element type "
                              << eltType;
@@ -219,7 +231,7 @@ ParseResult parseQuantOp(OpAsmParser &parser, OperationState &result) {
   }
 
   if (!arg.type) {
-    arg.type = sortType.getElementType();
+    arg.type = extractArgType(sortType);
     assert(arg.type && "argument type must be inferred from the array element type");
   }
 

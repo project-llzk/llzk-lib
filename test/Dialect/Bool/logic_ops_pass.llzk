@@ -160,3 +160,87 @@ function.def @f_exists(%a: !array.type<5 x index>) -> i1 attributes {function.al
 //CHECK-NEXT:     }
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
+// -----
+
+function.def @f_forall(%a: !array.type<5,5 x index>) -> i1 attributes {function.allow_non_native_field_ops} {
+  %c = bool.forall %e in %a: !array.type<5,5 x index> {
+    %c0 = arith.constant 0 : index
+    %0 = array.read %e[%c0] : !array.type<5 x index>, index
+    %1 = arith.cmpi eq, %0, %c0 : index
+    bool.yield %1
+  }
+  function.return %c: i1
+}
+//CHECK-LABEL:  function.def @f_forall
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !array.type<5,5 x index>) -> i1 attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.forall %[[T2:[0-9a-zA-Z_\.]+]]: !array.type<5 x index> in %[[A0]] : !array.type<5,5 x index> {
+//CHECK-NEXT:       %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index 
+//CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = array.read %[[T2]][%[[T3]]] : <5 x index>, index
+//CHECK-NEXT:       %[[T5:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[T4]], %[[T3]] : index 
+//CHECK-NEXT:       bool.yield %[[T5]]
+//CHECK-NEXT:     }
+//CHECK-NEXT:     function.return %[[T1]] : i1
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_forall(%a: !array.type<5,5 x index>) -> i1 attributes {function.allow_non_native_field_ops} {
+  %c = bool.forall %e: !array.type<5 x index> in %a: !array.type<5,5 x index> {
+    %c0 = arith.constant 0 : index
+    %0 = array.read %e[%c0] : !array.type<5 x index>, index
+    %1 = arith.cmpi eq, %0, %c0 : index
+    bool.yield %1
+  }
+  function.return %c: i1
+}
+//CHECK-LABEL:  function.def @f_forall
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !array.type<5,5 x index>) -> i1 attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.forall %[[T2:[0-9a-zA-Z_\.]+]]: !array.type<5 x index> in %[[A0]] : !array.type<5,5 x index> {
+//CHECK-NEXT:       %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index 
+//CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = array.read %[[T2]][%[[T3]]] : <5 x index>, index
+//CHECK-NEXT:       %[[T5:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[T4]], %[[T3]] : index 
+//CHECK-NEXT:       bool.yield %[[T5]]
+//CHECK-NEXT:     }
+//CHECK-NEXT:     function.return %[[T1]] : i1
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_exists(%a: !array.type<5,5 x index>) -> i1 attributes {function.allow_non_native_field_ops} {
+  %c = bool.exists %e in %a: !array.type<5,5 x index> {
+    %c0 = arith.constant 0 : index
+    %0 = array.read %e[%c0] : !array.type<5 x index>, index
+    %1 = arith.cmpi eq, %0, %c0 : index
+    bool.yield %1
+  }
+  function.return %c: i1
+}
+//CHECK-LABEL:  function.def @f_exists
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !array.type<5,5 x index>) -> i1 attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.exists %[[T2:[0-9a-zA-Z_\.]+]]: !array.type<5 x index> in %[[A0]] : !array.type<5,5 x index> {
+//CHECK-NEXT:       %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index 
+//CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = array.read %[[T2]][%[[T3]]] : <5 x index>, index
+//CHECK-NEXT:       %[[T5:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[T4]], %[[T3]] : index 
+//CHECK-NEXT:       bool.yield %[[T5]]
+//CHECK-NEXT:     }
+//CHECK-NEXT:     function.return %[[T1]] : i1
+//CHECK-NEXT:   }
+// -----
+
+function.def @f_exists(%a: !array.type<5,5 x index>) -> i1 attributes {function.allow_non_native_field_ops} {
+  %c = bool.exists %e: !array.type<5 x index> in %a: !array.type<5,5 x index> {
+    %c0 = arith.constant 0 : index
+    %0 = array.read %e[%c0] : !array.type<5 x index>, index
+    %1 = arith.cmpi eq, %0, %c0 : index
+    bool.yield %1
+  }
+  function.return %c: i1
+}
+//CHECK-LABEL:  function.def @f_exists
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !array.type<5,5 x index>) -> i1 attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.exists %[[T2:[0-9a-zA-Z_\.]+]]: !array.type<5 x index> in %[[A0]] : !array.type<5,5 x index> {
+//CHECK-NEXT:       %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index 
+//CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = array.read %[[T2]][%[[T3]]] : <5 x index>, index
+//CHECK-NEXT:       %[[T5:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[T4]], %[[T3]] : index 
+//CHECK-NEXT:       bool.yield %[[T5]]
+//CHECK-NEXT:     }
+//CHECK-NEXT:     function.return %[[T1]] : i1
+//CHECK-NEXT:   }

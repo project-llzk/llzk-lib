@@ -21,6 +21,7 @@ include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/OpBase.td"
 include "mlir/IR/SymbolInterfaces.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
+include "mlir/Interfaces/ControlFlowInterfaces.td"
 
 //===------------------------------------------------------------------===//
 // Op Classes
@@ -201,7 +202,7 @@ def ForAllOp : QuantifierOp<"forall", "all elements"> {}
 
 def ExistsOp : QuantifierOp<"exists", "at least one element"> {}
 
-def YieldOp : BoolDialectOp<"yield", [NotFieldNative, Terminator,
+def YieldOp : BoolDialectOp<"yield", [NotFieldNative, Terminator, ReturnLike,
                                       ParentOneOf<["ForAllOp", "ExistsOp"]>]> {
   let summary = "boolean yield operation";
   let description = [{

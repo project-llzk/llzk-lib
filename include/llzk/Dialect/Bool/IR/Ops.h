@@ -16,6 +16,7 @@
 #include "llzk/Dialect/Function/IR/OpTraits.h"
 
 #include <mlir/Interfaces/InferTypeOpInterface.h>
+#include <mlir/Interfaces/ControlFlowInterfaces.h>
 
 // Include TableGen'd declarations
 #define GET_OP_CLASSES
