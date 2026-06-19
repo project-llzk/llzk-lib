@@ -2458,7 +2458,7 @@ LogicalResult LoweringContext::createCombinedContractEntryHelper(
       return failure();
     }
     auto loweredOperands = lowerIncludeHelperOperands(
-        includeOp.getArgOperands(), entryBuilder, valueMap, selfMemberMap, constParamMap
+        includeOp.getArgOperands(), includeOp, entryBuilder, valueMap, selfMemberMap, constParamMap
     );
     if (failed(loweredOperands)) {
       return failure();
