@@ -725,7 +725,8 @@ LogicalResult LoweringContext::ensureScalarContractSupported(ContractOp contract
       return failure();
     }
     for (MemberDefOp member : structTarget->get().getMemberDefs()) {
-      if (failed(ensureScalarTypeSupported(member.getType(), contract, "struct target member types")
+      if (failed(
+              ensureScalarTypeSupported(member.getType(), contract, "struct target member types")
           )) {
         return failure();
       }
@@ -1598,9 +1599,9 @@ static LogicalResult checkStructConstrainBodyIsBooleanSummarizable(FuncDefOp con
       return WalkResult::advance();
     }
     if (op->getNumRegions() != 0 || op->getNumSuccessors() != 0) {
-      op->emitError(
-      ) << "verif-to-smt requires struct constrain bodies without loops or successor-based "
-           "control flow; run `llzk-flatten` or another control-flow lowering pass first";
+      op->emitError()
+          << "verif-to-smt requires struct constrain bodies without loops or successor-based "
+             "control flow; run `llzk-flatten` or another control-flow lowering pass first";
       failed = true;
       return WalkResult::interrupt();
     }
@@ -1685,7 +1686,8 @@ LoweringContext::getOrCreateStructHelpers(ModuleOp module, StructDefOp structDef
 
   SmallVector<Type> memberTypes;
   for (MemberDefOp member : members) {
-    if (failed(appendLoweredBoundaryTypes(member.getType(), structDef.getOperation(), memberTypes)
+    if (failed(
+            appendLoweredBoundaryTypes(member.getType(), structDef.getOperation(), memberTypes)
         )) {
       return failure();
     }
@@ -2405,8 +2407,8 @@ FailureOr<Operation *> LoweringContext::getDirectTargetDefinition(ContractOp con
 struct VerifToSmtPass : public llzk::impl::VerifToSmtPassBase<VerifToSmtPass> {
   /// Register the dialects required by the generated SMT helper IR.
   void getDependentDialects(DialectRegistry &registry) const override {
-    registry.insert<arith::ArithDialect, func::FuncDialect, boolean::BoolDialect, smt::SMTDialect>(
-    );
+    registry
+        .insert<arith::ArithDialect, func::FuncDialect, boolean::BoolDialect, smt::SMTDialect>();
   }
 
   /// Run the contract lowering sequentially over the module body.
