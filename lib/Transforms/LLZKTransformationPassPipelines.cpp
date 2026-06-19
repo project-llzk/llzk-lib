@@ -19,6 +19,7 @@
 
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Pass/PassRegistry.h>
+#include <mlir/Transforms/Passes.h>
 
 #include <utility>
 

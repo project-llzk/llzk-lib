@@ -385,7 +385,8 @@ public:
     }, getSplitArrayIndexSuffixes);
     if constexpr (supportsResultAttrs()) {
       ArrayAttr resultAttrs = op.getAllResultAttrs();
-      resultNameInfo = collectSplitFunctionNameInfo(op.getResultTypes(), [&resultAttrs](unsigned i) {
+      resultNameInfo =
+          collectSplitFunctionNameInfo(op.getResultTypes(), [&resultAttrs](unsigned i) {
         return getAttrAtIndexWithName(resultAttrs, i, RES_NAME_ATTR_NAME);
       }, getSplitArrayIndexSuffixes);
     }
