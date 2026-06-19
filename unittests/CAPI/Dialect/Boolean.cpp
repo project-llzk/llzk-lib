@@ -12,7 +12,6 @@
 #include "llzk-c/Dialect/Bool.h"
 
 #include "llzk/Dialect/Array/IR/Ops.h"
-#include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Bool/IR/Attrs.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
 
