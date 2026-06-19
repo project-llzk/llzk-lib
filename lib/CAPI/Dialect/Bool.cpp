@@ -30,7 +30,9 @@ MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Bool, llzk__boolean, BoolDialect)
 
 MlirType llzkBool_QuantifierOpGetDomainIterType(MlirType type) {
   auto cppType = unwrap(type);
-  if (!mlir::isa<llzk::array::ArrayType>(cppType)) { return wrap(Type()); }
+  if (!mlir::isa<llzk::array::ArrayType>(cppType)) {
+    return wrap(Type());
+  }
 
   return wrap(
       llzk::boolean::getQuantifierOpDomainIterType(mlir::cast<llzk::array::ArrayType>(cppType))

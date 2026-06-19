@@ -9,10 +9,7 @@
 
 #pragma once
 
-
 #include <mlir/IR/BuiltinOps.h>
 
 // Include TableGen'd declarations
 #include "llzk/Dialect/Bool/IR/Dialect.h.inc"
-
-
