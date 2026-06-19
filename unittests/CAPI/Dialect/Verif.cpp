@@ -11,6 +11,8 @@
 
 #include "../CAPITestBase.h"
 
+#include "llzk/Dialect/Bool/IR/Ops.h"
+#include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Shared/Builders.h"
 #include "llzk/Dialect/Verif/IR/Ops.h"
@@ -20,9 +22,16 @@
 #include <mlir-c/IR.h>
 
 #include <mlir/CAPI/Wrap.h>
+#include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/IR/TypeRange.h>
+#include <mlir/IR/ValueRange.h>
 #include <mlir/Parser/Parser.h>
+#include <mlir/Support/LLVM.h>
 
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/Support/Debug.h>
+
+#include <cstdint>
 
 // Include the auto-generated tests
 #include "llzk/Dialect/Verif/IR/Dialect.capi.test.cpp.inc"
@@ -58,13 +67,14 @@ static MlirAttribute createEmptyFunctionTypeAttr(MlirContext ctx) {
 }
 
 static mlir::OwningOpRef<mlir::ModuleOp> createModuleWithTargetFunc(
-    const CAPITest &test, MlirOpBuilder builder, MlirLocation location, llvm::StringRef name
+    const CAPITest &test, MlirOpBuilder builder, MlirLocation location, llvm::StringRef name,
+    llvm::function_ref<void(mlir::OpBuilder &)> fnBody = nullptr
 ) {
   auto newModule = test.cppNewModuleAndSetInsertionPoint(builder, location);
   llzk::ModuleBuilder modBuilder(newModule.get());
   modBuilder.insertFreeFunc(
       name, mlir::FunctionType::get(unwrap(test.context), mlir::TypeRange {}, mlir::TypeRange {}),
-      unwrap(location)
+      unwrap(location), fnBody
   );
   unwrap(builder)->setInsertionPointToStart(newModule->getBody());
   return newModule;
@@ -388,6 +398,195 @@ std::unique_ptr<RequireConstrainOpBuildFuncHelper> RequireConstrainOpBuildFuncHe
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       MlirValue cond = prepareInsertionSite(testClass, builder, location);
       return llzkVerif_RequireConstrainOpBuild(builder, location, cond);
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+TEST_F(CAPITest, llzkVerifInvariantOpBuild) {
+  MlirOpBuilder builder = mlirOpBuilderCreate(context);
+  MlirLocation location = mlirLocationUnknownGet(context);
+  auto module = parseSourceString<mlir::ModuleOp>(
+      R"mlir(
+module attributes {llzk.lang} {
+ function.def @target() attributes {function.allow_witness} {
+    scf.while : () -> () {
+      %true = arith.constant  true 
+      scf.condition(%true)
+    } do {
+      scf.yield
+    } attributes {loop_label = "loopA"}
+    function.return
+  }
+}
+)mlir",
+      mlir::ParserConfig(unwrap(context))
+  );
+  ASSERT_TRUE(module);
+  unwrap(builder)->setInsertionPointToEnd(module->getBody());
+
+  auto contract = createCppContract(builder, location, "ContractUnderTest", "target");
+  unwrap(builder)->setInsertionPointToStart(&contract.getBody().front());
+
+  auto invariant = llzkVerif_InvariantOpBuild(
+      builder, location, mlirStringRefCreateFromCString("loopA"), 0, nullptr, nullptr
+  );
+  EXPECT_TRUE(mlirOperationVerify(invariant));
+
+  mlirOpBuilderDestroy(builder);
+}
+
+TEST_F(CAPITest, llzkVerifInvariantOpBuildWithArgs) {
+  MlirOpBuilder builder = mlirOpBuilderCreate(context);
+  MlirLocation location = mlirLocationUnknownGet(context);
+  auto module = parseSourceString<mlir::ModuleOp>(
+      R"mlir(
+module attributes {llzk.lang} {
+ function.def @target() attributes {function.allow_witness} {
+      %c0 = arith.constant 0 : index 
+      %c10 = arith.constant 10 : index 
+      %c1 = arith.constant 1  : index 
+      scf.for %iv = %c0 to %c10 step %c1 {
+        scf.yield
+      } {loop_label = "loopA"}
+    function.return
+  }
+}
+)mlir",
+      mlir::ParserConfig(unwrap(context))
+  );
+  ASSERT_TRUE(module);
+  unwrap(builder)->setInsertionPointToEnd(module->getBody());
+  size_t argCount = 4;
+  llvm::SmallVector<MlirType> argTypes(argCount, mlirIndexTypeGet(context));
+  llvm::SmallVector<MlirLocation> argLocs(argCount, location);
+
+  auto contract = createCppContract(builder, location, "ContractUnderTest", "target");
+  unwrap(builder)->setInsertionPointToStart(&contract.getBody().front());
+
+  auto invariant = llzkVerif_InvariantOpBuild(
+      builder, location, mlirStringRefCreateFromCString("loopA"), static_cast<intptr_t>(argCount),
+      argTypes.data(), argLocs.data()
+  );
+  EXPECT_TRUE(mlirOperationVerify(invariant));
+
+  mlirOpBuilderDestroy(builder);
+}
+
+namespace {
+struct VerifInvariantInnerOpBuildBase {
+  mlir::OwningOpRef<mlir::ModuleOp> parentModule;
+
+  mlir::ValueRange
+  prepareInsertionSite(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) {
+    this->parentModule = parseSourceString<mlir::ModuleOp>(
+        R"mlir(
+module attributes {llzk.lang} {
+ function.def @target() attributes {function.allow_witness} {
+      %c0 = arith.constant 0 : index 
+      %c10 = arith.constant 10 : index 
+      %c1 = arith.constant 1  : index 
+      scf.for %iv = %c0 to %c10 step %c1 {
+        scf.yield
+      } {loop_label = "loopA"}
+    function.return
+  }
+}
+)mlir",
+        mlir::ParserConfig(unwrap(testClass.context))
+    );
+    unwrap(builder)->setInsertionPointToEnd(parentModule->getBody());
+
+    size_t argCount = 4;
+    llvm::SmallVector<MlirType> argTypes(argCount, mlirIndexTypeGet(testClass.context));
+    llvm::SmallVector<MlirLocation> argLocs(argCount, location);
+
+    auto contract = createCppContract(builder, location, "ContractUnderTest", "target");
+    unwrap(builder)->setInsertionPointToStart(&contract.getBody().front());
+
+    auto invariant = llzkVerif_InvariantOpBuild(
+        builder, location, mlirStringRefCreateFromCString("loopA"), static_cast<intptr_t>(argCount),
+        argTypes.data(), argLocs.data()
+    );
+    auto *invariantBody = cast<llzk::verif::InvariantOp>(unwrap(invariant)).getBody();
+    unwrap(builder)->setInsertionPointToStart(invariantBody);
+    return invariantBody->getArguments();
+  }
+};
+} // namespace
+
+std::unique_ptr<IncreasesOpBuildFuncHelper> IncreasesOpBuildFuncHelper::get() {
+  struct Impl : public IncreasesOpBuildFuncHelper, VerifInvariantInnerOpBuildBase {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      auto args = prepareInsertionSite(testClass, builder, location);
+      auto step = unwrap(builder)->create<llzk::cast::IntToFeltOp>(unwrap(location), args[3]);
+      return llzkVerif_IncreasesOpBuild(builder, location, wrap(step->getResult(0)));
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+std::unique_ptr<DecreasesOpBuildFuncHelper> DecreasesOpBuildFuncHelper::get() {
+  struct Impl : public DecreasesOpBuildFuncHelper, VerifInvariantInnerOpBuildBase {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      auto args = prepareInsertionSite(testClass, builder, location);
+      auto step = unwrap(builder)->create<llzk::cast::IntToFeltOp>(unwrap(location), args[3]);
+      return llzkVerif_DecreasesOpBuild(builder, location, wrap(step->getResult(0)));
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+std::unique_ptr<StepOpBuildFuncHelper> StepOpBuildFuncHelper::get() {
+  struct Impl : public StepOpBuildFuncHelper, VerifInvariantInnerOpBuildBase {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      prepareInsertionSite(testClass, builder, location);
+      auto op = llzkVerif_StepOpBuild(builder, location);
+      auto *region = unwrap(llzkVerif_StepOpGetRegion(op));
+      unwrap(builder)->setInsertionPointToEnd(&region->emplaceBlock());
+      auto trueOp = unwrap(builder)->create<mlir::arith::ConstantIntOp>(
+          unwrap(location), 1, unwrap(builder)->getI1Type()
+      );
+      unwrap(builder)->create<llzk::verif::StepYieldOp>(unwrap(location), trueOp);
+      return op;
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+std::unique_ptr<StepYieldOpBuildFuncHelper> StepYieldOpBuildFuncHelper::get() {
+  struct Impl : public StepYieldOpBuildFuncHelper, VerifInvariantInnerOpBuildBase {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      prepareInsertionSite(testClass, builder, location);
+      auto stepOp = unwrap(builder)->create<llzk::verif::StepOp>(unwrap(location));
+      unwrap(builder)->setInsertionPointToEnd(&stepOp.getRegion().emplaceBlock());
+      auto trueOp = unwrap(builder)->create<mlir::arith::ConstantIntOp>(
+          unwrap(location), 1, unwrap(builder)->getI1Type()
+      );
+      return llzkVerif_StepYieldOpBuild(builder, location, wrap(trueOp.getResult()));
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+std::unique_ptr<OldOpBuildFuncHelper> OldOpBuildFuncHelper::get() {
+  struct Impl : public OldOpBuildFuncHelper, VerifInvariantInnerOpBuildBase {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      auto args = prepareInsertionSite(testClass, builder, location);
+      auto stepOp = unwrap(builder)->create<llzk::verif::StepOp>(unwrap(location));
+      unwrap(builder)->setInsertionPointToEnd(&stepOp.getRegion().emplaceBlock());
+      auto op = llzkVerif_OldOpBuild(builder, location, wrap(args[1]));
+
+      auto trueOp = unwrap(builder)->create<mlir::arith::ConstantIntOp>(
+          unwrap(location), 1, unwrap(builder)->getI1Type()
+      );
+      unwrap(builder)->create<llzk::verif::StepYieldOp>(unwrap(location), trueOp);
+      return op;
     }
   };
   return std::make_unique<Impl>();
