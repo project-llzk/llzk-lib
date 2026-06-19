@@ -364,7 +364,8 @@ public:
     }, getSplitRecordNameSuffixes);
     if constexpr (supportsResultAttrs()) {
       resultNameInfo = collectSplitFunctionNameInfo(
-          op.getResultTypes(), [resultAttrs = op.getAllResultAttrs()](unsigned i) {
+          op.getResultTypes(),
+          [resultAttrs = op.getAllResultAttrs()](unsigned i) {
         return getAttrAtIndexWithName(resultAttrs, i, RES_NAME_ATTR_NAME);
       }, getSplitRecordNameSuffixes
       );

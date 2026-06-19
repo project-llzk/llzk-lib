@@ -235,8 +235,8 @@ public:
         return;
       }
       if (!afterProfile->strictlyImprovesFrom(*beforeProfile)) {
-        module.emitError()
-            << "aggregate scalarization round did not make semantic progress toward scalar-only IR";
+        module.emitError(
+        ) << "aggregate scalarization round did not make semantic progress toward scalar-only IR";
         signalPassFailure();
         return;
       }

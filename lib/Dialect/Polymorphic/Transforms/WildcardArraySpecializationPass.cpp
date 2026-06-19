@@ -263,8 +263,7 @@ static LogicalResult collectWildcardArraySpecializations(
     }
     for (auto [oldResult, newResult] :
          llvm::zip_equal(oldFuncTy.getResults(), newFuncTy.getResults())) {
-      if (failed(
-              collectWildcardArraySpecializations(oldResult, newResult, out, ignoredStructType)
+      if (failed(collectWildcardArraySpecializations(oldResult, newResult, out, ignoredStructType)
           )) {
         return failure();
       }
@@ -804,8 +803,7 @@ static FailureOr<StructType> getOrCreateSpecializedStruct(
     newStruct.setSymName(newStructName);
     symTables.getSymbolTable(parentModule).insert(newStruct, Block::iterator(targetStruct));
     StructType newStructType = newStruct.getType();
-    if (failed(
-            applyWildcardSpecializationConversions(newStruct, oldStructType, newStructType, info)
+    if (failed(applyWildcardSpecializationConversions(newStruct, oldStructType, newStructType, info)
         )) {
       newStruct.erase();
       return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
