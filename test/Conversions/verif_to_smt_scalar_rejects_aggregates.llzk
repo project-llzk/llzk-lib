@@ -5,7 +5,7 @@ module attributes {llzk.lang} {
     function.return %arg : !array.type<2 x !felt.type>
   }
 
-  // expected-error@+1 {{llzk-scalar-verif-to-smt requires array/pod-free IR for contract signature; run -llzk-verif-to-smt instead}}
+  // expected-error@+1 {{'llzk-scalar-verif-to-smt' pass requires array/pod-free IR for contract signature; run 'llzk-verif-to-smt' instead}}
   verif.contract @CheckArray for @id_array (
       %arg: !array.type<2 x !felt.type>,
       %ret: !array.type<2 x !felt.type>
