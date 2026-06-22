@@ -1,0 +1,28 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+
+!Pair = !pod.type<[@lhs: index, @rhs: index]>
+!PairRow = !array.type<2 x !Pair>
+!PairMatrix = !array.type<2,2 x !Pair>
+module attributes {llzk.lang} {
+  function.def @extract_then_insert(%src: !PairMatrix) -> !PairMatrix {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %row = array.extract %src[%c0] : !PairMatrix
+    %dst = array.new : !PairMatrix
+    array.insert %dst[%c1] = %row : !PairMatrix, !PairRow
+    function.return %dst : !PairMatrix
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @extract_then_insert(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2,2 x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2,2 x index>) -> (!array.type<2,2 x index>, !array.type<2,2 x index>) {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_2]]] : <2,2 x index>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_1]]{{\[}}%[[VAL_2]]] : <2,2 x index>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.new : <2,2 x index>
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.new : <2,2 x index>
+// CHECK-NEXT:      array.insert %[[VAL_6]]{{\[}}%[[VAL_3]]] = %[[VAL_4]] : <2,2 x index>, <2 x index>
+// CHECK-NEXT:      array.insert %[[VAL_7]]{{\[}}%[[VAL_3]]] = %[[VAL_5]] : <2,2 x index>, <2 x index>
+// CHECK-NEXT:      function.return %[[VAL_6]], %[[VAL_7]] : !array.type<2,2 x index>, !array.type<2,2 x index>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

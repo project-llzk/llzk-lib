@@ -946,6 +946,67 @@ public:
   }
 };
 
+/// Rewrite `array.extract` of an array-of-POD subarray into one extract per parallel leaf array.
+class SplitPodArrayExtractArrayOp : public OpConversionPattern<ExtractArrayOp> {
+public:
+  using OpConversionPattern<ExtractArrayOp>::OpConversionPattern;
+
+  static bool legal(ExtractArrayOp op) { return !splittablePodArray(op.getResult().getType()); }
+
+  LogicalResult matchAndRewrite(
+      ExtractArrayOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
+
+    SmallVector<Type> splitResultTypes;
+    splitPodArrayTypeTo(op.getResult().getType(), splitResultTypes);
+
+    SmallVector<Value> indices = flattenConvertedValues(adaptor.getIndices());
+    SmallVector<Value> replacements;
+    replacements.reserve(splitResultTypes.size());
+    for (auto [splitArrRange, splitResultType] :
+         llvm::zip_equal(adaptor.getArrRef(), splitResultTypes)) {
+      replacements.push_back(rewriter.create<ExtractArrayOp>(
+          op.getLoc(), llvm::cast<ArrayType>(splitResultType),
+          getSingleConvertedValue(splitArrRange), indices
+      ));
+    }
+
+    rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
+    return success();
+  }
+};
+
+/// Rewrite `array.insert` of an array-of-POD subarray into one insert per parallel leaf array.
+class SplitPodArrayInsertArrayOp : public OpConversionPattern<InsertArrayOp> {
+public:
+  using OpConversionPattern<InsertArrayOp>::OpConversionPattern;
+
+  static bool legal(InsertArrayOp op) { return !splittablePodArray(op.getRvalue().getType()); }
+
+  LogicalResult matchAndRewrite(
+      InsertArrayOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
+
+    SmallVector<Value> indices = flattenConvertedValues(adaptor.getIndices());
+    for (auto [splitArrRange, splitRvalueRange] :
+         llvm::zip_equal(adaptor.getArrRef(), adaptor.getRvalue())) {
+      rewriter.create<InsertArrayOp>(
+          op.getLoc(), getSingleConvertedValue(splitArrRange), indices,
+          getSingleConvertedValue(splitRvalueRange)
+      );
+    }
+
+    rewriter.eraseOp(op);
+    return success();
+  }
+};
+
 /// Rewrite a write to a split array-of-POD struct member into writes to each parallel array member.
 class SplitPodArrayInMemberWriteOp : public OpConversionPattern<MemberWriteOp> {
   SymbolTableCollection &tables;
@@ -1044,8 +1105,9 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   RewritePatternSet patterns(ctx);
   patterns.add<
       SplitPodArrayNonDetOp, SplitPodArrayCreateArrayOp, SplitPodArrayReadArrayOp,
-      SplitPodArrayWriteArrayOp, SplitPodArrayInFuncDefOp, SplitPodArrayInReturnOp,
-      SplitPodArrayInCallOp, SplitPodArrayLengthOp>(typeConverter, ctx);
+      SplitPodArrayWriteArrayOp, SplitPodArrayExtractArrayOp, SplitPodArrayInsertArrayOp,
+      SplitPodArrayInFuncDefOp, SplitPodArrayInReturnOp, SplitPodArrayInCallOp,
+      SplitPodArrayLengthOp>(typeConverter, ctx);
   patterns.add<SplitPodArrayInMemberWriteOp, SplitPodArrayInMemberReadOp>(
       typeConverter, ctx, symTables, memberRepMap
   );
@@ -1056,6 +1118,8 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   target.addDynamicallyLegalOp<CreateArrayOp>(SplitPodArrayCreateArrayOp::legal);
   target.addDynamicallyLegalOp<ReadArrayOp>(SplitPodArrayReadArrayOp::legal);
   target.addDynamicallyLegalOp<WriteArrayOp>(SplitPodArrayWriteArrayOp::legal);
+  target.addDynamicallyLegalOp<ExtractArrayOp>(SplitPodArrayExtractArrayOp::legal);
+  target.addDynamicallyLegalOp<InsertArrayOp>(SplitPodArrayInsertArrayOp::legal);
   target.addDynamicallyLegalOp<FuncDefOp>(SplitPodArrayInFuncDefOp::legal);
   target.addDynamicallyLegalOp<ReturnOp>(SplitPodArrayInReturnOp::legal);
   target.addDynamicallyLegalOp<CallOp>(SplitPodArrayInCallOp::legal);
