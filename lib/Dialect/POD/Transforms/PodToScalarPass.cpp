@@ -12,45 +12,50 @@
 ///
 /// The steps of this transformation are as follows:
 ///
-/// 0. Scan to find `llzk.nondet` ops that allocate uninitialized pods and replace them with
-///    an equivalent `pod.new`
+/// 0. Rewrite pod-typed `llzk.nondet` allocations into `pod.new` so later stages only need to
+///    reason about POD storage through POD dialect operations.
 ///
-/// 1. Run a dialect conversion that replaces direct `PodType` struct members with one scalar
-///    member per record, replaces arrays whose element type is a POD with one parallel array per
-///    scalar leaf record, and remembers how each original member was split.
+/// 1. Run a dialect conversion that replaces pod-typed struct members with one scalar member per
+///    POD record, replaces array-typed struct members whose element type is a POD with one parallel
+///    array member per POD record, and remembers how each original member was split for the later
+///    rewriting steps.
 ///
-/// 2. Run a dialect conversion that does the following:
+/// 2. Run a dialect conversion that splits arrays whose element type is a POD into parallel arrays
+///    in `llzk.nondet`, `array.*`, `MemberReadOp`, `MemberWriteOp`, `FuncDefOp`, `CallOp`, and
+///    `ReturnOp`.
 ///
-///    - Replace `MemberReadOp` and `MemberWriteOp` targeting the members that were split in step 1
-///      so they instead perform reads and writes on the new scalar or parallel-array members. The
-///      transformation is local to the current op. Therefore, when replacing the `MemberReadOp` a
-///      new pod is created locally and all uses of the `MemberReadOp` are replaced with the new
-///      pod Value, then each scalar member read is followed by scalar write into the new pod.
-///      Similarly, when replacing a `MemberWriteOp`, each element in the pod operand needs a
-///      scalar read from the pod followed by a scalar write to the new member. Making only local
-///      changes keeps this step simple and later steps will optimize.
+/// 3. Run a dialect conversion that does the following:
+///
+///    - Replace `MemberReadOp` and `MemberWriteOp` targeting the pod-typed struct members split in
+///      step 1 so they instead perform reads and writes on the new scalar members. This
+///      transformation is local to the current op. Therefore, when replacing a `MemberReadOp`, a
+///      new pod is created locally and all uses of the `MemberReadOp` are replaced with that new
+///      POD value, then each scalar member read is followed by a scalar write into the new pod.
+///      Similarly, when replacing a `MemberWriteOp`, each element in the pod operand needs a scalar
+///      read from the pod followed by a scalar write to the new member. Making only local changes
+///      keeps this step simple and lets later steps optimize away the temporary POD storage.
 ///
 ///    - Remove optional initialization from `NewPodOp` and instead insert a list of `WritePodOp`
 ///      immediately following.
 ///
-///    - Split arrays whose element type is a POD into parallel arrays in `array.*`,
-///      `FuncDefOp`, `CallOp`, and `ReturnOp`, then split remaining direct POD values to scalars
-///      in `FuncDefOp`, `CallOp`, and `ReturnOp`.
+///    - Split remaining direct POD values to scalars in `FuncDefOp`, `CallOp`, and `ReturnOp`.
+///      When a rewritten op still needs a POD-typed value locally, rebuild it with `pod.new` plus
+///      `pod.write` so later cleanup can scalarize it away.
 ///
-/// 3. Promote pod reads and writes out of `scf.if`, `scf.for`, and `scf.while` regions when the
+/// 4. Promote pod reads and writes out of `scf.if`, `scf.for`, and `scf.while` regions when the
 ///    access can be modeled as an SSA value flowing through the region boundary. This puts the
 ///    pod accesses that mem2reg must eliminate into a parent block or loop-carried value.
 ///
-/// 4. Run MLIR "sroa" pass to split each pod with `N` records into `N` pods with 1 record each
+/// 5. Run MLIR "sroa" pass to split remaining POD allocations into single-record POD allocations
 ///    (to prepare for the "mem2reg" pass because its API cannot split memory by itself).
 ///
-/// 5. Run MLIR "mem2reg" pass to convert all single-record pod allocations and accesses into SSA
+/// 6. Run MLIR "mem2reg" pass to convert all single-record POD allocations and accesses into SSA
 ///    values.
 ///
-/// 6. Remove pod allocations that become unread after memory promotion, then remove SSA values
+/// 7. Remove POD allocations that become unread after memory promotion, then remove SSA values
 ///    made dead by that cleanup.
 ///
-/// ** Steps 4-6 are rerun while nested POD types are still being exposed, until a fixpoint.
+/// Steps 5-7 are rerun while nested POD types are still being exposed, until a fixpoint.
 ///
 /// Note: This transformation imposes a "last write wins" semantics on pod records. If
 /// different/configurable semantics are added in the future, some additional transformation would
@@ -235,12 +240,12 @@ static void forEachPodLeaf(PodType podTy, SmallVectorImpl<StringAttr> &recordCha
   }
 }
 
-/// If the given ArrayType has a POD element type, return it.
+/// If the input ArrayType has a POD element type, return the input, else nullptr.
 inline static ArrayType splittablePodArray(ArrayType at) {
   return isa<PodType>(at.getElementType()) ? at : nullptr;
 }
 
-/// If the given Type is an ArrayType with a POD element type, return it.
+/// If the input Type is an ArrayType with a POD element type, return the input, else nullptr.
 inline static ArrayType splittablePodArray(Type t) {
   if (ArrayType at = dyn_cast<ArrayType>(t)) {
     return splittablePodArray(at);
@@ -1372,7 +1377,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   target.addDynamicallyLegalOp<MemberWriteOp>(SplitPodInMemberWriteOp::legal);
   target.addDynamicallyLegalOp<MemberReadOp>(SplitPodInMemberReadOp::legal);
 
-  LLVM_DEBUG(llvm::dbgs() << "Begin step 2: update/split other pod ops\n";);
+  LLVM_DEBUG(llvm::dbgs() << "Begin step 3: update/split other pod ops\n";);
   return applyFullConversion(modOp, target, std::move(patterns));
 }
 
@@ -2205,7 +2210,7 @@ static LogicalResult step4(ModuleOp modOp) {
       LiftPodAccessesFromForLoopPattern, LiftPodAccessesFromWhileLoopPattern,
       FoldIfCarriedPodReadAfterWritePattern>(patterns.getContext());
 
-  LLVM_DEBUG(llvm::dbgs() << "Begin step 3: refactor pod ops within SCF regions\n";);
+  LLVM_DEBUG(llvm::dbgs() << "Begin step 4: refactor pod ops within SCF regions\n";);
   return applyGreedily(modOp, std::move(patterns));
 }
 
