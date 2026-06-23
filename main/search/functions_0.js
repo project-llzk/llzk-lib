@@ -1,7 +1,7 @@
 var searchData=
 [
   ['abandon_0',['abandon',['../classllzk_1_1InFlightDiagnosticWrapper.html#ab8d794e19e36df6ce5c0c83f502e6bdb',1,'llzk::InFlightDiagnosticWrapper']]],
-  ['abstractsparseforwarddataflowanalysis_1',['AbstractSparseForwardDataFlowAnalysis',['../classllzk_1_1dataflow_1_1AbstractSparseForwardDataFlowAnalysis.html#a81cd95b674c0a6d37078212896837bf8',1,'llzk::dataflow::AbstractSparseForwardDataFlowAnalysis']]],
+  ['abstractsparseforwarddataflowanalysis_1',['AbstractSparseForwardDataFlowAnalysis',['../classllzk_1_1dataflow_1_1AbstractSparseForwardDataFlowAnalysis.html#aa526d5db5fcc5fefab34f28d8f7ea16c',1,'llzk::dataflow::AbstractSparseForwardDataFlowAnalysis']]],
   ['add_2',['add',['../namespacellzk.html#a043252dc88df97886ee3b6f3f83c1cf4',1,'llzk']]],
   ['addabstractedge_3',['addAbstractEdge',['../classllzk_1_1CallGraphNode.html#a947372cf83eb386be6054bd829fba754',1,'llzk::CallGraphNode']]],
   ['addauxmember_4',['addAuxMember',['../namespacellzk.html#a5fe59d40fb1bc5ada1e38667de05c6f2',1,'llzk::addAuxMember(StructDefOp structDef, StringRef name, Type type)'],['../namespacellzk.html#ae8d599c44e8cbf2affce75a3fae1d1a0',1,'llzk::addAuxMember(component::StructDefOp structDef, llvm::StringRef name, mlir::Type type)']]],

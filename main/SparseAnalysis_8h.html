@@ -112,18 +112,26 @@ $(function(){initNavTree('SparseAnalysis_8h.html','',''); });
 </div><!--header-->
 <div class="contents">
 
-<p>This file implements sparse data-flow analysis using the data-flow analysis framework.  
+<p>This file provides LLZK's sparse forward data-flow analysis compatibility layer.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &lt;mlir/Analysis/DataFlow/SparseAnalysis.h&gt;</code><br />
+<div class="textblock"><code>#include &lt;mlir/Analysis/DataFlow/DeadCodeAnalysis.h&gt;</code><br />
+<code>#include &lt;mlir/Analysis/DataFlow/SparseAnalysis.h&gt;</code><br />
 <code>#include &lt;mlir/Analysis/DataFlowFramework.h&gt;</code><br />
+<code>#include &lt;mlir/IR/Block.h&gt;</code><br />
+<code>#include &lt;mlir/IR/Operation.h&gt;</code><br />
+<code>#include &lt;mlir/IR/Region.h&gt;</code><br />
 <code>#include &lt;mlir/IR/SymbolTable.h&gt;</code><br />
+<code>#include &lt;mlir/IR/Value.h&gt;</code><br />
 <code>#include &lt;mlir/Interfaces/CallInterfaces.h&gt;</code><br />
 <code>#include &lt;mlir/Interfaces/ControlFlowInterfaces.h&gt;</code><br />
-<code>#include &lt;llvm/ADT/SmallPtrSet.h&gt;</code><br />
+<code>#include &lt;mlir/Support/LLVM.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/SmallVector.h&gt;</code><br />
+<code>#include &lt;llvm/Support/Casting.h&gt;</code><br />
+<code>#include &lt;type_traits&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for SparseAnalysis.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="SparseAnalysis_8h__incl.svg" width="1319" height="148"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="SparseAnalysis_8h__incl.svg" width="2598" height="148"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
@@ -136,7 +144,7 @@ This graph shows which files directly or indirectly include this file:</div>
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:llzk_3A_3Adataflow_3A_3AAbstractSparseForwardDataFlowAnalysis" id="r_llzk_3A_3Adataflow_3A_3AAbstractSparseForwardDataFlowAnalysis"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1dataflow_1_1AbstractSparseForwardDataFlowAnalysis.html">llzk::dataflow::AbstractSparseForwardDataFlowAnalysis</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">LLZK: This class has been ported from the MLIR DenseAnalysis utilities to allow for the use of custom LLZK symbol lookup logic.  <a href="classllzk_1_1dataflow_1_1AbstractSparseForwardDataFlowAnalysis.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compatibility adapter over MLIR sparse forward data-flow analysis.  <a href="classllzk_1_1dataflow_1_1AbstractSparseForwardDataFlowAnalysis.html#details">More...</a><br /></td></tr>
 <tr class="memitem:llzk_3A_3Adataflow_3A_3ASparseForwardDataFlowAnalysis_3C_20StateT_20_3E" id="r_llzk_3A_3Adataflow_3A_3ASparseForwardDataFlowAnalysis_3C_20StateT_20_3E"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html">llzk::dataflow::SparseForwardDataFlowAnalysis&lt; StateT &gt;</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A sparse forward data-flow analysis for propagating SSA value lattices across the IR by implementing transfer functions for operations.  <a href="classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html#details">More...</a><br /></td></tr>
 </table><table class="memberdecls">
@@ -150,9 +158,8 @@ Typedefs</h2></td></tr>
 <tr class="memitem:af2cdcb3d15c44dab3ff6268ab8e7a03f" id="r_af2cdcb3d15c44dab3ff6268ab8e7a03f"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1dataflow.html#af2cdcb3d15c44dab3ff6268ab8e7a03f">llzk::dataflow::AbstractSparseLattice</a> = mlir::dataflow::AbstractSparseLattice</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>This file implements sparse data-flow analysis using the data-flow analysis framework. </p>
-<p>The analysis is forward and conditional and uses the results of dead code analysis to prune dead code during the analysis.</p>
-<p>This file has been ported from the MLIR analysis so that it may be tailored to work for LLZK modules, as LLZK modules have different symbol lookup mechanisms that are currently incompatible with the builtin MLIR dataflow analyses. This file is mostly left as original in MLIR, with notes added where changes have been made. </p>
+<div class="textblock"><p>This file provides LLZK's sparse forward data-flow analysis compatibility layer. </p>
+<p>Standard sparse analysis behavior is delegated to upstream MLIR; the adapter only restores LLZK's historical handling for live operations with no results. </p>
 
 <p class="definition">Definition in file <a class="el" href="SparseAnalysis_8h_source.html">SparseAnalysis.h</a>.</p>
 </div></div><!-- contents -->

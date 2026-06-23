@@ -11,6 +11,18 @@ var hierarchy =
     [ "llzk::dataflow::AbstractLatticeValue< SourceRefLatticeValue, SourceRefSet >", "classllzk_1_1dataflow_1_1AbstractLatticeValue.html", [
       [ "llzk::SourceRefLatticeValue", "classllzk_1_1SourceRefLatticeValue.html", null ]
     ] ],
+    [ "mlir::dataflow::AbstractSparseForwardDataFlowAnalysis", null, [
+      [ "llzk::dataflow::AbstractSparseForwardDataFlowAnalysis", "classllzk_1_1dataflow_1_1AbstractSparseForwardDataFlowAnalysis.html", [
+        [ "llzk::dataflow::SparseForwardDataFlowAnalysis< Lattice >", "classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html", null ],
+        [ "llzk::dataflow::SparseForwardDataFlowAnalysis< IntervalAnalysisLattice >", "classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html", [
+          [ "llzk::IntervalDataFlowAnalysis", "classllzk_1_1IntervalDataFlowAnalysis.html", null ]
+        ] ],
+        [ "llzk::dataflow::SparseForwardDataFlowAnalysis< SourceRefLattice >", "classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html", [
+          [ "llzk::SourceRefAnalysis", "classllzk_1_1SourceRefAnalysis.html", null ]
+        ] ],
+        [ "llzk::dataflow::SparseForwardDataFlowAnalysis< StateT >", "classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html", null ]
+      ] ]
+    ] ],
     [ "dataflow::AbstractSparseLattice", null, [
       [ "llzk::IntervalAnalysisLattice", "classllzk_1_1IntervalAnalysisLattice.html", null ],
       [ "llzk::SourceRefLattice", "classllzk_1_1SourceRefLattice.html", null ]
@@ -496,18 +508,6 @@ var hierarchy =
         [ "llzk::component::CreateStructOpAdaptor", "classllzk_1_1component_1_1CreateStructOpAdaptor.html", null ]
       ] ],
       [ "llzk::component::CreateStructOpGenericAdaptor< RangeT >", "classllzk_1_1component_1_1CreateStructOpGenericAdaptor.html", null ]
-    ] ],
-    [ "mlir::DataFlowAnalysis", null, [
-      [ "llzk::dataflow::AbstractSparseForwardDataFlowAnalysis", "classllzk_1_1dataflow_1_1AbstractSparseForwardDataFlowAnalysis.html", [
-        [ "llzk::dataflow::SparseForwardDataFlowAnalysis< Lattice >", "classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html", null ],
-        [ "llzk::dataflow::SparseForwardDataFlowAnalysis< IntervalAnalysisLattice >", "classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html", [
-          [ "llzk::IntervalDataFlowAnalysis", "classllzk_1_1IntervalDataFlowAnalysis.html", null ]
-        ] ],
-        [ "llzk::dataflow::SparseForwardDataFlowAnalysis< SourceRefLattice >", "classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html", [
-          [ "llzk::SourceRefAnalysis", "classllzk_1_1SourceRefAnalysis.html", null ]
-        ] ],
-        [ "llzk::dataflow::SparseForwardDataFlowAnalysis< StateT >", "classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html", null ]
-      ] ]
     ] ],
     [ "llzk::smt::detail::DeclareFunOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1DeclareFunOpGenericAdaptorBase.html", [
       [ "llzk::smt::DeclareFunOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1DeclareFunOpGenericAdaptor.html", null ],
