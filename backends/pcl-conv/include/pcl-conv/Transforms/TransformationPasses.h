@@ -15,9 +15,8 @@
 
 namespace pcl::conversion {
 
-std::unique_ptr<mlir::Pass> createPCLLoweringPass();
-
+#define GEN_PASS_DECL
 #define GEN_PASS_REGISTRATION
 #include "pcl-conv/Transforms/TransformationPasses.h.inc"
 
-}; // namespace pcl::conversion
+} // namespace pcl::conversion

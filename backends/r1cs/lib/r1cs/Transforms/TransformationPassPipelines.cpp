@@ -12,9 +12,11 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "r1cs/Transforms/TransformationPassPipelines.h"
+
 #include "r1cs/Transforms/TransformationPasses.h"
 
-#include "llzk/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Transforms/LLZKTransformationPassPipelines.h"
 
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Pass/PassRegistry.h>
@@ -24,21 +26,28 @@ using namespace mlir;
 
 namespace r1cs {
 
+void buildFullR1CSLoweringPipeline(OpPassManager &pm) {
+  // 1. Polynomial degree lowering and cleanup
+  llzk::FullPolyLoweringConfig config;
+  config.polyLowering = llzk::PolyLoweringPassOptions {.maxDegree = 2};
+  llzk::buildFullPolyLoweringPipeline(pm, config);
+
+  // 2. Convert to R1CS
+  pm.addPass(r1cs::createR1CSLoweringPass());
+
+  // 3. Run CSE to eliminate to_linear ops
+  pm.addPass(mlir::createCSEPass());
+
+  // Other passes that may be helpful to add in the future:
+  // - llzk::createRemoveDeadValuesWorkaroundPass()
+  // - mlir::createCanonicalizerPass()
+  //    (was run via poly-lowering -> struct-inlining but again may be useful)
+}
+
 void registerTransformationPassPipelines() {
   PassPipelineRegistration<>(
-      "llzk-full-r1cs-lowering", "Lower all polynomial constraints to r1cs", [](OpPassManager &pm) {
-    // 1. Degree lowering
-    pm.addPass(llzk::createPolyLoweringPass(2));
-
-    // 2. Cleanup
-    llzk::addRemoveUnnecessaryOpsAndDefsPipeline(pm);
-
-    // 3. Convert to R1CS
-    pm.addPass(r1cs::createR1CSLoweringPass());
-
-    // 4. Run CSE to eliminate to_linear ops
-    pm.addPass(mlir::createCSEPass());
-  }
+      "llzk-full-r1cs-lowering", "Lower polynomial constraints to r1cs",
+      buildFullR1CSLoweringPipeline
   );
 }
 

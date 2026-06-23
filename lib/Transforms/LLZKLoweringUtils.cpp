@@ -1,4 +1,4 @@
-//===-- LLZKLoweringUtils.cpp --------------------------------*- C++ -*----===//
+//===-- LLZKLoweringUtils.cpp -----------------------------------*- C++ -*-===//
 //
 // Shared utility function implementations for LLZK lowering passes.
 //
@@ -99,6 +99,36 @@ LogicalResult checkForAuxMemberConflicts(StructDefOp structDef, StringRef prefix
   return failure(conflictFound);
 }
 
+LogicalResult checkConstrainBodyIsStraightLine(FuncDefOp constrainFunc, StringRef passName) {
+  auto emitStraightLineError = [passName](Operation *op) {
+    op->emitError() << passName
+                    << " expects a straight-line constrain body; run `llzk-flatten` or another "
+                       "control-flow lowering pass first";
+  };
+
+  Region &body = constrainFunc.getBody();
+  if (!body.hasOneBlock()) {
+    emitStraightLineError(constrainFunc.getOperation());
+    return failure();
+  }
+
+  Operation *unsupportedControlFlowOp = nullptr;
+  body.walk([&](Operation *op) {
+    if (op->getNumRegions() != 0 || op->getNumSuccessors() != 0) {
+      unsupportedControlFlowOp = op;
+      return WalkResult::interrupt();
+    }
+    return WalkResult::advance();
+  });
+
+  if (!unsupportedControlFlowOp) {
+    return success();
+  }
+
+  emitStraightLineError(unsupportedControlFlowOp);
+  return failure();
+}
+
 void replaceSubsequentUsesWith(Value oldVal, Value newVal, Operation *afterOp) {
   assert(afterOp && "afterOp must be a valid Operation*");
 
@@ -118,12 +148,12 @@ void replaceSubsequentUsesWith(Value oldVal, Value newVal, Operation *afterOp) {
   }
 }
 
-MemberDefOp addAuxMember(StructDefOp structDef, StringRef name) {
+MemberDefOp addAuxMember(StructDefOp structDef, StringRef name, Type type) {
+  assert(type && "auxiliary member type must be non-null");
+
   OpBuilder builder(structDef);
   builder.setInsertionPointToEnd(structDef.getBody());
-  return builder.create<MemberDefOp>(
-      structDef.getLoc(), builder.getStringAttr(name), builder.getType<FeltType>()
-  );
+  return builder.create<MemberDefOp>(structDef.getLoc(), builder.getStringAttr(name), type);
 }
 
 unsigned getFeltDegree(Value val, DenseMap<Value, unsigned> &memo) {

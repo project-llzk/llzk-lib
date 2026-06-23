@@ -149,8 +149,9 @@ template <> struct DenseMapInfo<OperationComparator> {
 
 namespace {
 
-class RedundantOperationEliminationPass
-    : public llzk::impl::RedundantOperationEliminationPassBase<RedundantOperationEliminationPass> {
+class PassImpl : public llzk::impl::RedundantOperationEliminationPassBase<PassImpl> {
+  using Base = RedundantOperationEliminationPassBase<PassImpl>;
+  using Base::Base;
 
   void runOnOperation() override {
     SymbolTableCollection symbolTables;
@@ -284,7 +285,3 @@ class RedundantOperationEliminationPass
 };
 
 } // namespace
-
-std::unique_ptr<mlir::Pass> llzk::createRedundantOperationEliminationPass() {
-  return std::make_unique<RedundantOperationEliminationPass>();
-};

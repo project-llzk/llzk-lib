@@ -17,7 +17,6 @@ def ArrayToScalarPass : LLZKPass<"llzk-array-to-scalar"> {
   let description = [{
     Replace known-shape arrays with the proper number of scalar values
   }];
-  let constructor = "llzk::array::createArrayToScalarPass()";
 }
 
 #endif // LLZK_ARRAY_TRANSFORMATION_PASSES_TD

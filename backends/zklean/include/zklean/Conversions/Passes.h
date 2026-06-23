@@ -13,9 +13,7 @@
 
 namespace zklean {
 
-std::unique_ptr<mlir::Pass> createConvertLLZKToZKLeanPass();
-std::unique_ptr<mlir::Pass> createConvertZKLeanToLLZKPass();
-
+#define GEN_PASS_DECL
 #define GEN_PASS_REGISTRATION
 #include "zklean/Conversions/ConversionPasses.h.inc"
 

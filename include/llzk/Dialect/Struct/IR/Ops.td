@@ -21,6 +21,7 @@ include "llzk/Dialect/Struct/IR/Dialect.td"
 include "llzk/Dialect/Struct/IR/OpInterfaces.td"
 include "llzk/Dialect/Struct/IR/Types.td"
 include "llzk/Dialect/Shared/OpTraits.td"
+include "llzk/Dialect/Verif/IR/OpInterfaces.td"
 
 include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/RegionKindInterface.td"
@@ -40,11 +41,11 @@ def SetFuncAllowAttrs : NativeOpTrait<"SetFuncAllowAttrs">, StructuralOpTrait {
 //===------------------------------------------------------------------===//
 
 def LLZK_StructDefOp
-    : StructDialectOp<
-          "def", [ParentOneOf<["::mlir::ModuleOp",
-                               "::llzk::polymorphic::TemplateOp"]>,
-                  Symbol, LLZKSymbolTable, IsolatedFromAbove, SetFuncAllowAttrs,
-                  NoRegionArguments]#GraphRegionNoTerminator.traits> {
+    : StructDialectOp<"def", [ParentOneOf<["::mlir::ModuleOp",
+                                           "::llzk::polymorphic::TemplateOp"]>,
+                              Symbol, LLZKSymbolTable, IsolatedFromAbove,
+                              SetFuncAllowAttrs, NoRegionArguments,
+                              ContractTarget]#GraphRegionNoTerminator.traits> {
   let summary = "circuit component definition";
   let description = [{
       This operation describes a component in a circuit. It can contain any number

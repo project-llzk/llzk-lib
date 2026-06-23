@@ -1,4 +1,4 @@
-//===-- LLZKInlineStructsPass.cpp -------------------------------*- C++ -*-===//
+//===-- InlineStructsPass.cpp -----------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -18,7 +18,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Transforms/LLZKInlineStructsPass.h"
+#include "llzk/Dialect/Struct/Transforms/InlineStructsPass.h"
 
 #include "llzk/Analysis/SymbolUseGraph.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
@@ -26,8 +26,8 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Dialect/Struct/Transforms/TransformationPasses.h"
 #include "llzk/Transforms/LLZKConversionUtils.h"
-#include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
@@ -47,12 +47,10 @@
 #include <optional>
 
 // Include the generated base pass class definitions.
-namespace llzk {
-// the *DECL* macro is required when a pass has options to declare the option struct
-#define GEN_PASS_DECL_INLINESTRUCTSPASS
+namespace llzk::component {
 #define GEN_PASS_DEF_INLINESTRUCTSPASS
-#include "llzk/Transforms/LLZKTransformationPasses.h.inc"
-} // namespace llzk
+#include "llzk/Dialect/Struct/Transforms/TransformationPasses.h.inc"
+} // namespace llzk::component
 
 using namespace mlir;
 using namespace llzk;
@@ -597,6 +595,11 @@ public:
   }
 
 private:
+  /// Rewrite a call that still consumes `origin` after inlining so the callee takes each cloned
+  /// member as a separate argument and the call site materializes matching `struct.readm` values.
+  ///
+  /// This only supports calls to resolvable, non-external functions because the pass must update
+  /// both the call operation and the callee signature in lockstep.
   inline LogicalResult handleUseInCallOp(OpOperand &use, CallOp inCall, Operation *origin) const {
     LLVM_DEBUG(
         llvm::dbgs() << "[DanglingUseHandler::handleUseInCallOp]   use in call: " << inCall << '\n'
@@ -808,6 +811,9 @@ private:
   }
 };
 
+/// Apply the post-inlining cleanup for one caller struct by folding rewritten member-read
+/// chains, resolving dangling uses of soon-to-be-erased ops, and then erasing the obsolete
+/// cloned scaffolding in dependency order.
 static LogicalResult finalizeStruct(
     SymbolTableCollection &tables, StructDefOp caller, PendingErasure &&toDelete,
     DestToSrcToClonedSrcInDest &&destToSrcToClone
@@ -896,6 +902,8 @@ static LogicalResult finalizeStruct(
 
 } // namespace
 
+/// Execute the inlining plan one caller struct at a time, accumulating per-callee member
+/// replacement maps and then finalizing each caller after all requested callees have been inlined.
 LogicalResult performInlining(SymbolTableCollection &tables, InliningPlan &plan) {
   for (auto &[caller, callees] : plan) {
     // Cache operations that should be deleted but must wait until all callees are processed
@@ -928,7 +936,10 @@ LogicalResult performInlining(SymbolTableCollection &tables, InliningPlan &plan)
 
 namespace {
 
-class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructsPass> {
+class PassImpl : public llzk::component::impl::InlineStructsPassBase<PassImpl> {
+  using Base = InlineStructsPassBase<PassImpl>;
+  using Base::Base;
+
   static uint64_t complexity(FuncDefOp f) {
     uint64_t complexity = 0;
     f.getBody().walk([&complexity](Operation *op) {
@@ -1006,6 +1017,8 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
     return res.wasInterrupted();
   }
 
+  /// Reject symbol-use graphs that contain references to template `param` or `expr` ops. This pass
+  /// only supports concrete struct instances (run `llzk-flatten` to instantiate templates first).
   static LogicalResult
   verifyNoTemplateSymbolBindings(const SymbolUseGraph &useGraph, SymbolTableCollection &tables) {
     for (const SymbolUseGraphNode *node : useGraph.nodesIter()) {
@@ -1025,6 +1038,8 @@ class InlineStructsPass : public llzk::impl::InlineStructsPassBase<InlineStructs
     return success();
   }
 
+  /// Emit a diagnostic for a cycle discovered while traversing the symbol-use slice reachable
+  /// from struct "@constrain" functions, attaching notes for each symbol in the cycle.
   static LogicalResult emitConstrainReachableCycleError(
       ArrayRef<const SymbolUseGraphNode *> dfsStack, const SymbolUseGraphNode *cycleHead,
       SymbolTableCollection &tables
@@ -1237,7 +1252,3 @@ public:
 };
 
 } // namespace
-
-std::unique_ptr<mlir::Pass> llzk::createInlineStructsPass() {
-  return std::make_unique<InlineStructsPass>();
-};

@@ -14,6 +14,7 @@
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
+#include "llzk/Dialect/Verif/IR/OpInterfaces.h"
 
 namespace llzk {
 

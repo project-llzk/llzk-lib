@@ -15,11 +15,8 @@
 
 namespace r1cs {
 
-std::unique_ptr<mlir::Pass> createR1CSLoweringPass();
-
-void registerTransformationPassPipelines();
-
+#define GEN_PASS_DECL
 #define GEN_PASS_REGISTRATION
 #include "r1cs/Transforms/TransformationPasses.h.inc"
 
-}; // namespace r1cs
+} // namespace r1cs

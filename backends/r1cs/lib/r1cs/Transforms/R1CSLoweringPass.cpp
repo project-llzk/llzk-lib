@@ -216,8 +216,10 @@ struct R1CSConstraint {
   }
 };
 
-class R1CSLoweringPass : public r1cs::impl::R1CSLoweringPassBase<R1CSLoweringPass> {
-private:
+class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
+  using Base = R1CSLoweringPassBase<PassImpl>;
+  using Base::Base;
+
   unsigned auxCounter = 0;
 
   // Normalize a felt-valued expression into R1CS-compatible form.
@@ -338,7 +340,7 @@ private:
         if (degLhs == 2 && degRhs == 2) {
           builder.setInsertionPoint(op);
           std::string auxName = R1CS_AUXILIARY_MEMBER_PREFIX + std::to_string(auxCounter++);
-          MemberDefOp auxMember = addAuxMember(structDef, auxName);
+          MemberDefOp auxMember = addAuxMember(structDef, auxName, val.getType());
           Value aux = builder.create<MemberReadOp>(
               val.getLoc(), val.getType(), constrainFunc.getSelfValueFromConstrain(),
               auxMember.getNameAttr()
@@ -530,7 +532,7 @@ private:
       // Entire linear combination was zero
       result = builder.create<r1cs::ConstOp>(
           loc, r1cs::LinearType::get(builder.getContext()),
-          r1cs::FeltAttr::get(builder.getContext(), 0)
+          r1cs::FeltAttr::get(builder.getContext(), toAPSInt(lc.constant))
       );
     }
 
@@ -646,6 +648,11 @@ private:
         return;
       }
 
+      if (failed(checkConstrainBodyIsStraightLine(constrainFunc, "R1CS lowering"))) {
+        signalPassFailure();
+        return;
+      }
+
       DenseMap<Value, unsigned> degreeMemo;
       DenseMap<Value, Value> rewrites;
       SmallVector<AuxAssignment> auxAssignments;
@@ -666,7 +673,7 @@ private:
         if (degLhs == 2 && degRhs == 2) {
           builder.setInsertionPoint(eqOp);
           std::string auxName = R1CS_AUXILIARY_MEMBER_PREFIX + std::to_string(auxCounter++);
-          MemberDefOp auxMember = addAuxMember(structDef, auxName);
+          MemberDefOp auxMember = addAuxMember(structDef, auxName, lhs.getType());
           Value aux = builder.create<MemberReadOp>(
               eqOp.getLoc(), lhs.getType(), constrainFunc.getSelfValueFromConstrain(),
               auxMember.getNameAttr()
@@ -697,10 +704,10 @@ private:
       buildAndEmitR1CS(moduleOp, structDef, constrainFunc, degreeMemo);
       structDef.erase();
     });
+
+    // Remove `llzk.main` attribute because all structs were replaced with `r1cs.circuit` ops.
+    moduleOp->removeAttr(MAIN_ATTR_NAME);
   }
 };
-} // namespace
 
-std::unique_ptr<mlir::Pass> r1cs::createR1CSLoweringPass() {
-  return std::make_unique<R1CSLoweringPass>();
-}
+} // namespace

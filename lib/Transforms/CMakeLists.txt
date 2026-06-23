@@ -6,7 +6,6 @@ file(GLOB LLZKTransforms_SOURCES "*.cpp")
 target_sources(
   LLZKTransforms PRIVATE
     ${LLZKTransforms_SOURCES}
-    LLZKWhileToForPass.cpp
 )
 
 target_link_libraries(
@@ -16,8 +15,8 @@ target_link_libraries(
     ${LLZK_DEP_DIALECT_LIBS}
     MLIRIR MLIRPass MLIRParser MLIRTransformUtils MLIRSCFTransforms
     LLVMHeaders MLIRHeaders
+    LLZKAllDialects
   PRIVATE
-    LLZKDialect
     LLZKAnalysis
 )
 

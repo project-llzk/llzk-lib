@@ -16,6 +16,7 @@
 #define LLZK_FUNC_OPS
 
 include "llzk/Dialect/Function/IR/Dialect.td"
+include "llzk/Dialect/Verif/IR/OpInterfaces.td"
 include "llzk/Dialect/Shared/OpTraits.td"
 include "llzk/Dialect/Shared/Types.td"
 
@@ -36,11 +37,12 @@ class FunctionDialectOp<string mnemonic, list<Trait> traits = []>
 
 def FuncDefOp
     : FunctionDialectOp<
-          "def",
-          [ParentOneOf<["::mlir::ModuleOp", "::llzk::component::StructDefOp",
-                        "::llzk::polymorphic::TemplateOp"]>,
-           DeclareOpInterfaceMethods<SymbolUserOpInterface>, AffineScope,
-           AutomaticAllocationScope, FunctionOpInterface, IsolatedFromAbove]> {
+          "def", [ParentOneOf<["::mlir::ModuleOp",
+                               "::llzk::component::StructDefOp",
+                               "::llzk::polymorphic::TemplateOp"]>,
+                  DeclareOpInterfaceMethods<SymbolUserOpInterface>, AffineScope,
+                  AutomaticAllocationScope, FunctionOpInterface,
+                  IsolatedFromAbove, ContractTarget]> {
   // NOTE: Cannot have SymbolTable trait because that would cause global
   // functions without a body to produce "Operations with a 'SymbolTable' must
   // have exactly one block"

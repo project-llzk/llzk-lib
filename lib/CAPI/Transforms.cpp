@@ -14,7 +14,7 @@
 
 using namespace llzk;
 
-static void registerLLZKTransformationPasses() { registerTransformationPasses(); }
+static inline void registerLLZKTransformationPasses() { registerTransformationPasses(); }
 
 // Impl
 #include "llzk/Transforms/LLZKTransformationPasses.capi.cpp.inc"

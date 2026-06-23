@@ -1,4 +1,4 @@
-//===-- Types.td -----------------------------------------*--- tablegen -*-===//
+//===-- Types.td -------------------------------------------*- tablegen -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.

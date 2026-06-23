@@ -31,7 +31,7 @@ using namespace mlir;
 using namespace llzk;
 using namespace llzk::polymorphic;
 
-static void registerLLZKPolymorphicTransformationPasses() { registerTransformationPasses(); }
+static inline void registerLLZKPolymorphicTransformationPasses() { registerTransformationPasses(); }
 
 // Include the generated CAPI
 #include "llzk/Dialect/Polymorphic/IR/Ops.capi.cpp.inc"

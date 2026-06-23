@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file -llzk-full-r1cs-lowering -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
-module attributes {llzk.lang} {
+module attributes {llzk.lang, llzk.main = !struct.type<@MulOut>} {
   struct.def @MulOut {
     struct.member @lhs_out : !felt.type<"babybear"> {llzk.pub}
     struct.member @rhs_out : !felt.type<"babybear"> {llzk.pub}

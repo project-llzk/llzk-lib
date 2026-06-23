@@ -14,7 +14,6 @@ include "llzk/Pass/PassBase.td"
 
 def InlineIncludesPass : LLZKPass<"llzk-inline-includes"> {
   let summary = "Replace all IncludeOp with contents of the referenced file.";
-  let constructor = "llzk::include::createInlineIncludesPass()";
 }
 
 #endif // LLZK_INCLUDE_INLINE_PASS_TD
