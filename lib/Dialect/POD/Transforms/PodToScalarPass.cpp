@@ -1023,6 +1023,12 @@ public:
 
     SmallVector<size_t> originalInputIdxToSize, originalResultIdxToSize;
     SmallVector<Type> newInputs = splitPodArrayType(oldTy.getInputs(), &originalInputIdxToSize);
+    SmallVector<Type> newResultsWithSizeInfo =
+        splitPodArrayType(oldTy.getResults(), &originalResultIdxToSize);
+    assert(
+        newResultsWithSizeInfo == newResults &&
+        "expected array-of-pod type conversion to match function result attr replication"
+    );
     SplitFunctionNameInfo inputNameInfo =
         collectSplitFunctionNameInfo(op.getArgumentTypes(), [&](unsigned i) {
       return op.getArgNameAttr(i);
