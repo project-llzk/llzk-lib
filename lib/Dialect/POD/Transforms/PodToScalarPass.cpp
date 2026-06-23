@@ -380,6 +380,40 @@ inline static Value getSingleConvertedValue(ValueRange values) {
   return values.front();
 }
 
+/// Materialize a scalar array value that preserves the shape of `originalArrTy`.
+///
+/// This is used as a shape-only carrier for `array.len` when an array-of-POD splits to
+/// zero parallel leaf arrays (for example, `!array.type<... x !pod.type<[]>>`).
+static Value materializeArrayLengthCarrier(
+    Value originalArrRef, ArrayType originalArrTy, Location loc, ConversionPatternRewriter &rewriter
+) {
+  ArrayType carrierTy = originalArrTy.cloneWith(IndexType::get(rewriter.getContext()));
+
+  if (auto create = originalArrRef.getDefiningOp<CreateArrayOp>()) {
+    if (create.getMapOperands().empty()) {
+      return rewriter.create<CreateArrayOp>(loc, carrierTy);
+    }
+
+    SmallVector<ValueRange> mapOperands;
+    mapOperands.reserve(create.getMapOperands().size());
+    for (OperandRange mapOperandGroup : create.getMapOperands()) {
+      mapOperands.push_back(mapOperandGroup);
+    }
+    return rewriter.create<CreateArrayOp>(
+        loc, carrierTy, mapOperands, create.getNumDimsPerMapAttr()
+    );
+  }
+
+  bool hasAffineDims = llvm::any_of(originalArrTy.getDimensionSizes(), [](Attribute dimSize) {
+    return llvm::isa<AffineMapAttr>(dimSize);
+  });
+  if (!hasAffineDims) {
+    return rewriter.create<CreateArrayOp>(loc, carrierTy);
+  }
+
+  return rewriter.create<NonDetOp>(loc, carrierTy);
+}
+
 /// Flatten a range of converted value ranges into a single list of values.
 template <typename RangeOfRanges>
 static SmallVector<Value> flattenConvertedValues(RangeOfRanges ranges) {
@@ -1118,8 +1152,13 @@ public:
     if (legal(op)) {
       return failure();
     }
+    Value arrRef = adaptor.getArrRef().empty()
+                       ? materializeArrayLengthCarrier(
+                             op.getArrRef(), op.getArrRefType(), op.getLoc(), rewriter
+                         )
+                       : adaptor.getArrRef().front();
     rewriter.replaceOpWithNewOp<ArrayLengthOp>(
-        op, getSingleConvertedValue(adaptor.getArrRef()), getSingleConvertedValue(adaptor.getDim())
+        op, arrRef, getSingleConvertedValue(adaptor.getDim())
     );
     return success();
   }

@@ -1,0 +1,82 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @len_multi_leaf(%arr: !array.type<2 x !Pair>, %dim: index) -> index {
+    %len = array.len %arr, %dim : !array.type<2 x !Pair>
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @len_multi_leaf(%[[ARR_X:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>, %[[ARR_Y:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>, %[[DIM:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_X]], %[[DIM]] : <2 x index>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @len_empty_leaf_static_create(%dim: index) -> index {
+    %arr = array.new : !array.type<4 x !pod.type<[]>>
+    %len = array.len %arr, %dim : !array.type<4 x !pod.type<[]>>
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @len_empty_leaf_static_create(%[[DIM:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[ARR:[0-9a-zA-Z_\.]+]] = array.new  : <4 x index>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR]], %[[DIM]] : <4 x index>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+#map = affine_map<()[s0] -> (s0)>
+module attributes {llzk.lang} {
+  function.def @len_empty_leaf_array(%n: index, %dim: index) -> index {
+    %arr = array.new{()[%n]} : !array.type<#map x !pod.type<[]>>
+    %len = array.len %arr, %dim : !array.type<#map x !pod.type<[]>>
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @len_empty_leaf_array(%[[N:[0-9a-zA-Z_\.]+]]: index, %[[DIM:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[ARR:[0-9a-zA-Z_\.]+]] = array.new{()[%[[N]]]} : <#map x index>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR]], %[[DIM]] : <#map x index>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @len_empty_leaf_static_arg(%arr: !array.type<4 x !pod.type<[]>>, %dim: index) -> index {
+    %len = array.len %arr, %dim : !array.type<4 x !pod.type<[]>>
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @len_empty_leaf_static_arg(%[[DIM:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[ARR:[0-9a-zA-Z_\.]+]] = array.new  : <4 x index>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR]], %[[DIM]] : <4 x index>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+#map_arg = affine_map<()[s0] -> (s0)>
+module attributes {llzk.lang} {
+  function.def @len_empty_leaf_affine_arg(
+      %arr: !array.type<#map_arg x !pod.type<[]>>, %dim: index
+  ) -> index {
+    %len = array.len %arr, %dim : !array.type<#map_arg x !pod.type<[]>>
+    function.return %len : index
+  }
+}
+// CHECK:      #map = affine_map<()[s0] -> (s0)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @len_empty_leaf_affine_arg(%[[DIM:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[ARR:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<#map x index>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR]], %[[DIM]] : <#map x index>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
