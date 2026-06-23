@@ -89,6 +89,7 @@
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Transforms/SpecializedMemoryPasses.h"
 #include "llzk/Util/Concepts.h"
+#include "llzk/Util/TypeHelper.h"
 #include "llzk/Util/Walk.h"
 
 #include <mlir/Dialect/SCF/IR/SCF.h>
@@ -217,7 +218,9 @@ static Type getFlattenedTypeAlongPath(Type type, ArrayRef<StringAttr> recordChai
     auto elemPodTy = llvm::cast<PodType>(arrTy.getElementType());
     Type nextType = elemPodTy.getRecordMap().lookup(recordChain.front().getValue());
     assert(nextType && "record path must exist in the POD array element type");
-    return arrTy.cloneWith(getFlattenedTypeAlongPath(nextType, recordChain.drop_front()));
+    return flattenArrayElementType(
+        arrTy, getFlattenedTypeAlongPath(nextType, recordChain.drop_front())
+    );
   }
 
   llvm_unreachable("record path cannot continue through a non-POD leaf");
@@ -237,7 +240,7 @@ static void forEachPodLeaf(PodType podTy, SmallVectorImpl<StringAttr> &recordCha
       auto elemPodTy = llvm::cast<PodType>(arrTy.getElementType());
       for (RecordAttr record : elemPodTy.getRecords()) {
         recordChain.push_back(record.getName());
-        walk(arrTy.cloneWith(record.getType()));
+        walk(flattenArrayElementType(arrTy, record.getType()));
         recordChain.pop_back();
       }
     } else {
@@ -306,7 +309,7 @@ static size_t splitPodArrayTypeTo(
     SmallVector<StringAttr> recordChain;
     size_t originalSize = collect.size();
     forEachPodLeaf(podTy, recordChain, [&](RecordChain id, Type leafType) {
-      collect.push_back(at.cloneWith(leafType));
+      collect.push_back(flattenArrayElementType(at, leafType));
       if (splitIds) {
         splitIds->push_back(std::move(id));
       }
@@ -363,7 +366,7 @@ static SmallVector<std::string> getSplitPodArrayRecordNameSuffixes(Type type) {
 
 /// Create a `pod.read` for one record of `podRef`.
 inline static ReadPodOp
-genRead(Location loc, Value podRef, StringAttr recordName, OpBuilder &bldr) {
+genRead(OpBuilder &bldr, Location loc, Value podRef, StringAttr recordName) {
   Type resultType =
       llvm::cast<PodType>(podRef.getType()).getRecordMap().lookup(recordName.getValue());
   return bldr.create<ReadPodOp>(loc, resultType, podRef, recordName);
@@ -371,7 +374,7 @@ genRead(Location loc, Value podRef, StringAttr recordName, OpBuilder &bldr) {
 
 /// Create a `pod.write` for one record of `podRef`.
 inline static WritePodOp
-genWrite(Location loc, Value podRef, StringAttr recordName, Value value, OpBuilder &bldr) {
+genWrite(OpBuilder &bldr, Location loc, Value podRef, StringAttr recordName, Value value) {
   return bldr.create<WritePodOp>(loc, podRef, recordName, value);
 }
 
@@ -426,7 +429,7 @@ static SmallVector<Value> flattenConvertedValues(RangeOfRanges ranges) {
 }
 
 /// Generate `arith.constant` indices for one static array element position.
-static SmallVector<Value> genArrayIndexConstants(ArrayAttr index, Location loc, OpBuilder &bldr) {
+static SmallVector<Value> genArrayIndexConstants(OpBuilder &bldr, Location loc, ArrayAttr index) {
   SmallVector<Value> indices;
   for (Attribute attr : index) {
     assert(llvm::isa<IntegerAttr>(attr) && "array index must be an integer attribute");
@@ -435,34 +438,64 @@ static SmallVector<Value> genArrayIndexConstants(ArrayAttr index, Location loc, 
   return indices;
 }
 
-/// Create an `array.read` for one concrete element or subarray.
-inline static ReadArrayOp
-genArrayRead(Location loc, Value arrayRef, ArrayAttr index, OpBuilder &bldr) {
+/// Return the type produced by selecting `numIndices` leading dimensions from `arrTy`.
+static Type getArraySelectionType(ArrayType arrTy, size_t numIndices) {
+  assert(numIndices <= arrTy.getDimensionSizes().size() && "cannot select past the array rank");
+  if (numIndices == arrTy.getDimensionSizes().size()) {
+    return arrTy.getElementType();
+  }
+  return ArrayType::get(arrTy.getElementType(), arrTy.getDimensionSizes().drop_front(numIndices));
+}
+
+/// Create an `array.read` or `array.extract` for one concrete element or subarray.
+static Value genArrayRead(OpBuilder &bldr, Location loc, Value arrayRef, ArrayRef<Value> indices) {
   Type t = arrayRef.getType();
-  assert(llvm::isa<ArrayType>(t) && "array.read must target an array type");
-  return bldr.create<ReadArrayOp>(
-      loc, llvm::cast<ArrayType>(t).getElementType(), arrayRef,
-      genArrayIndexConstants(index, loc, bldr)
+  assert(llvm::isa<ArrayType>(t) && "array access must target an array type");
+  ArrayType arrTy = llvm::cast<ArrayType>(t);
+  if (indices.size() == arrTy.getDimensionSizes().size()) {
+    return bldr.create<ReadArrayOp>(loc, arrTy.getElementType(), arrayRef, indices);
+  }
+  return bldr.create<ExtractArrayOp>(
+      loc, llvm::cast<ArrayType>(getArraySelectionType(arrTy, indices.size())), arrayRef, indices
   );
 }
 
-/// Create an `array.write` for one concrete element or subarray.
-inline static WriteArrayOp
-genArrayWrite(Location loc, Value arrayRef, ArrayAttr index, Value value, OpBuilder &bldr) {
-  return bldr.create<WriteArrayOp>(loc, arrayRef, genArrayIndexConstants(index, loc, bldr), value);
+inline static Value genArrayRead(OpBuilder &bldr, Location loc, Value arrayRef, ArrayAttr index) {
+  SmallVector<Value> indices = genArrayIndexConstants(bldr, loc, index);
+  return genArrayRead(bldr, loc, arrayRef, indices);
+}
+
+/// Create an `array.write` or `array.insert` for one concrete element or subarray.
+static void
+genArrayWrite(OpBuilder &bldr, Location loc, Value arrayRef, ArrayRef<Value> indices, Value value) {
+  Type t = arrayRef.getType();
+  assert(llvm::isa<ArrayType>(t) && "array access must target an array type");
+  ArrayType arrTy = llvm::cast<ArrayType>(t);
+  if (indices.size() == arrTy.getDimensionSizes().size()) {
+    bldr.create<WriteArrayOp>(loc, arrayRef, indices, value);
+    return;
+  }
+  assert(llvm::isa<ArrayType>(value.getType()) && "subarray insertion requires an array value");
+  bldr.create<InsertArrayOp>(loc, arrayRef, indices, value);
+}
+
+inline static void
+genArrayWrite(OpBuilder &bldr, Location loc, Value arrayRef, ArrayAttr index, Value value) {
+  SmallVector<Value> indices = genArrayIndexConstants(bldr, loc, index);
+  genArrayWrite(bldr, loc, arrayRef, indices, value);
 }
 
 /// Read one flattened POD leaf, including leaves that live inside an array-of-POD record.
 static Value
-genReadAlongPath(Location loc, Value value, ArrayRef<StringAttr> recordChain, OpBuilder &bldr) {
+genReadAlongPath(OpBuilder &bldr, Location loc, Value value, ArrayRef<StringAttr> recordChain) {
   if (recordChain.empty()) {
     return value;
   }
 
   Type valueType = value.getType();
   if (llvm::isa<PodType>(valueType)) {
-    Value nextValue = genRead(loc, value, recordChain.front(), bldr);
-    return genReadAlongPath(loc, nextValue, recordChain.drop_front(), bldr);
+    Value nextValue = genRead(bldr, loc, value, recordChain.front());
+    return genReadAlongPath(bldr, loc, nextValue, recordChain.drop_front());
   }
 
   if (ArrayType arrTy = splittablePodArray(valueType)) {
@@ -473,9 +506,9 @@ genReadAlongPath(Location loc, Value value, ArrayRef<StringAttr> recordChain, Op
 
     Value splitArray = bldr.create<CreateArrayOp>(loc, splitArrTy);
     for (ArrayAttr index : *subIndices) {
-      Value element = genArrayRead(loc, value, index, bldr);
-      Value leafValue = genReadAlongPath(loc, element, recordChain, bldr);
-      genArrayWrite(loc, splitArray, index, leafValue, bldr);
+      Value element = genArrayRead(bldr, loc, value, index);
+      Value leafValue = genReadAlongPath(bldr, loc, element, recordChain);
+      genArrayWrite(bldr, loc, splitArray, index, leafValue);
     }
     return splitArray;
   }
@@ -485,22 +518,22 @@ genReadAlongPath(Location loc, Value value, ArrayRef<StringAttr> recordChain, Op
 
 /// Read a flattened POD leaf by following each record name in `recordChain`.
 inline static Value
-genReadAlongPath(Location loc, Value podRef, RecordChain recordChain, OpBuilder &bldr) {
-  return genReadAlongPath(loc, podRef, ArrayRef(recordChain.nameList), bldr);
+genReadAlongPath(OpBuilder &bldr, Location loc, Value podRef, RecordChain recordChain) {
+  return genReadAlongPath(bldr, loc, podRef, ArrayRef(recordChain.nameList));
 }
 
 /// Reconstruct a POD record from the leaf values collected while splitting nested accesses.
 static Value rebuildFlattenedPodRecord(
-    Location loc, Type recordType, SmallVectorImpl<StringAttr> &recordChain,
-    const DenseMap<RecordChain, Value> &leafValues, OpBuilder &bldr
+    OpBuilder &bldr, Location loc, Type recordType, SmallVectorImpl<StringAttr> &recordChain,
+    const DenseMap<RecordChain, Value> &leafValues
 ) {
   if (PodType nestedPodTy = dyn_cast<PodType>(recordType)) {
     NewPodOp nestedPod = bldr.create<NewPodOp>(loc, nestedPodTy);
     for (RecordAttr record : nestedPodTy.getRecords()) {
       recordChain.push_back(record.getName());
       Value recordValue =
-          rebuildFlattenedPodRecord(loc, record.getType(), recordChain, leafValues, bldr);
-      genWrite(loc, nestedPod, record.getName(), recordValue, bldr);
+          rebuildFlattenedPodRecord(bldr, loc, record.getType(), recordChain, leafValues);
+      genWrite(bldr, loc, nestedPod, record.getName(), recordValue);
       recordChain.pop_back();
     }
     return nestedPod;
@@ -521,7 +554,7 @@ static Value rebuildFlattenedPodRecord(
         llvm::append_range(fullChain, id.nameList);
         auto it = leafValues.find(RecordChain(fullChain));
         assert(it != leafValues.end() && "missing flattened POD array leaf value");
-        elementLeafValues[id] = genArrayRead(loc, it->second, index, bldr);
+        elementLeafValues[id] = genArrayRead(bldr, loc, it->second, index);
       });
 
       NewPodOp elementPod = bldr.create<NewPodOp>(loc, elemPodTy);
@@ -529,11 +562,11 @@ static Value rebuildFlattenedPodRecord(
       for (RecordAttr record : elemPodTy.getRecords()) {
         nestedChain.push_back(record.getName());
         Value recordValue =
-            rebuildFlattenedPodRecord(loc, record.getType(), nestedChain, elementLeafValues, bldr);
-        genWrite(loc, elementPod, record.getName(), recordValue, bldr);
+            rebuildFlattenedPodRecord(bldr, loc, record.getType(), nestedChain, elementLeafValues);
+        genWrite(bldr, loc, elementPod, record.getName(), recordValue);
         nestedChain.pop_back();
       }
-      genArrayWrite(loc, rebuiltArray, index, elementPod, bldr);
+      genArrayWrite(bldr, loc, rebuiltArray, index, elementPod);
     }
     return rebuiltArray;
   }
@@ -541,21 +574,6 @@ static Value rebuildFlattenedPodRecord(
   auto it = leafValues.find(RecordChain(recordChain));
   assert(it != leafValues.end() && "missing flattened POD leaf value");
   return it->second;
-}
-
-/// Populate a POD value from its flattened leaf values.
-static void populateFlattenedPodValue(
-    Location loc, Value podValue, PodType podTy, const DenseMap<RecordChain, Value> &leafValues,
-    OpBuilder &bldr
-) {
-  SmallVector<StringAttr> recordChain;
-  for (RecordAttr record : podTy.getRecords()) {
-    recordChain.push_back(record.getName());
-    Value recordValue =
-        rebuildFlattenedPodRecord(loc, record.getType(), recordChain, leafValues, bldr);
-    genWrite(loc, podValue, record.getName(), recordValue, bldr);
-    recordChain.pop_back();
-  }
 }
 
 using VirtualPodLeafMap = DenseMap<RecordChain, Value>;
@@ -583,8 +601,16 @@ orderedVirtualPodLeafValues(PodType podTy, const VirtualPodLeafMap &leafValues) 
 
 /// Materialize the tracked contents of a virtual POD into concrete `pod.write` operations.
 inline static void
-materializeVirtualPod(NewPodOp pod, const VirtualPodLeafMap &leafValues, OpBuilder &bldr) {
-  populateFlattenedPodValue(pod.getLoc(), pod, pod.getType(), leafValues, bldr);
+materializeVirtualPod(OpBuilder &bldr, NewPodOp pod, const VirtualPodLeafMap &leafValues) {
+  Location loc = pod.getLoc();
+  SmallVector<StringAttr> recordChain;
+  for (RecordAttr record : pod.getType().getRecords()) {
+    recordChain.push_back(record.getName());
+    Value recordValue =
+        rebuildFlattenedPodRecord(bldr, loc, record.getType(), recordChain, leafValues);
+    genWrite(bldr, loc, pod, record.getName(), recordValue);
+    recordChain.pop_back();
+  }
 }
 
 /// Return `true` iff a read from a virtual POD can be resolved without materializing it.
@@ -628,7 +654,7 @@ static void processInputOperand(
     }
     SmallVector<StringAttr> recordChain;
     forEachPodLeaf(pt, recordChain, [&](RecordChain id, Type) {
-      newOperands.push_back(genReadAlongPath(loc, operand, id, rewriter));
+      newOperands.push_back(genReadAlongPath(rewriter, loc, operand, id));
     });
   } else {
     newOperands.push_back(operand);
@@ -883,7 +909,7 @@ public:
         splitElements.reserve(adaptor.getElements().size());
         for (ValueRange elementRange : adaptor.getElements()) {
           Value element = getSingleConvertedValue(elementRange);
-          splitElements.push_back(genReadAlongPath(op.getLoc(), element, id, rewriter));
+          splitElements.push_back(genReadAlongPath(rewriter, op.getLoc(), element, id));
         }
         replacements.push_back(rewriter.create<CreateArrayOp>(
             op.getLoc(), llvm::cast<ArrayType>(splitType), splitElements
@@ -912,7 +938,7 @@ public:
   }
 };
 
-/// Split `array.read` from an array-of-POD into scalar leaf reads plus local POD reconstruction.
+/// Split `array.read` from an array-of-POD into leaf reads plus local POD reconstruction.
 class SplitPodArrayReadArrayOp : public OpConversionPattern<ReadArrayOp> {
 public:
   using OpConversionPattern<ReadArrayOp>::OpConversionPattern;
@@ -934,22 +960,18 @@ public:
     SmallVector<Value> indices = flattenConvertedValues(adaptor.getIndices());
     NewPodOp pod = rewriter.create<NewPodOp>(op.getLoc(), podTy);
     DenseMap<RecordChain, Value> leafValues;
-    for (auto [id, splitArrRange, splitType] :
-         llvm::zip_equal(splitIds, adaptor.getArrRef(), splitTypes)) {
-      auto splitArrTy = llvm::cast<ArrayType>(splitType);
-      Value scalarRead = rewriter.create<ReadArrayOp>(
-          op.getLoc(), splitArrTy.getElementType(), getSingleConvertedValue(splitArrRange), indices
-      );
-      leafValues[id] = scalarRead;
+    for (auto [id, splitArrRange] : llvm::zip_equal(splitIds, adaptor.getArrRef())) {
+      leafValues[id] =
+          genArrayRead(rewriter, op.getLoc(), getSingleConvertedValue(splitArrRange), indices);
     }
 
     SmallVector<StringAttr> recordChain;
     for (RecordAttr record : podTy.getRecords()) {
       recordChain.push_back(record.getName());
       Value recordValue = rebuildFlattenedPodRecord(
-          op.getLoc(), record.getType(), recordChain, leafValues, rewriter
+          rewriter, op.getLoc(), record.getType(), recordChain, leafValues
       );
-      genWrite(op.getLoc(), pod, record.getName(), recordValue, rewriter);
+      genWrite(rewriter, op.getLoc(), pod, record.getName(), recordValue);
       recordChain.pop_back();
     }
     rewriter.replaceOp(op, pod);
@@ -979,9 +1001,9 @@ public:
     Value podValue = getSingleConvertedValue(adaptor.getRvalue());
     for (auto [id, splitArrRange, splitType] :
          llvm::zip_equal(splitIds, adaptor.getArrRef(), splitTypes)) {
-      Value leafValue = genReadAlongPath(op.getLoc(), podValue, id, rewriter);
-      rewriter.create<WriteArrayOp>(
-          op.getLoc(), getSingleConvertedValue(splitArrRange), indices, leafValue
+      Value leafValue = genReadAlongPath(rewriter, op.getLoc(), podValue, id);
+      genArrayWrite(
+          rewriter, op.getLoc(), getSingleConvertedValue(splitArrRange), indices, leafValue
       );
     }
     rewriter.eraseOp(op);
@@ -1753,7 +1775,7 @@ public:
     for (auto [id, newMember] : idToMember) {
       Value scalarValue = virtualLeafValues
                               ? virtualLeafValues->at(id)
-                              : genReadAlongPath(op.getLoc(), adaptor.getVal(), id, rewriter);
+                              : genReadAlongPath(rewriter, op.getLoc(), adaptor.getVal(), id);
       rewriter.create<MemberWriteOp>(
           op.getLoc(), adaptor.getComponent(), FlatSymbolRefAttr::get(newMember.first), scalarValue
       );
@@ -1887,7 +1909,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
     }
     if (auto newPod = llvm::dyn_cast<NewPodOp>(podValue.getDefiningOp())) {
       builder.setInsertionPointAfter(newPod);
-      materializeVirtualPod(newPod, leafValues, builder);
+      materializeVirtualPod(builder, newPod, leafValues);
     }
   }
   return success();
@@ -2055,7 +2077,7 @@ public:
 
     rewriter.setInsertionPoint(ifOp);
     rewriter.replaceOp(
-        readOp, genRead(readOp.getLoc(), readOp.getPodRef(), readOp.getRecordNameAttr(), rewriter)
+        readOp, genRead(rewriter, readOp.getLoc(), readOp.getPodRef(), readOp.getRecordNameAttr())
                     .getResult()
     );
     return success();
@@ -2260,8 +2282,8 @@ moveBranchWithoutLiftedWrites(Block *srcBlock, Block &destBlock, ArrayRef<IfWrit
 /// Finish a lifted branch by yielding the original branch results followed by one lifted POD value
 /// per tracked record.
 static void appendYield(
-    Location loc, Block &block, ValueRange priorYieldValues, ArrayRef<IfWriteSlot> slots,
-    bool isThenBlock, OpBuilder &builder
+    OpBuilder &bldr, Location loc, Block &block, ValueRange priorYieldValues,
+    ArrayRef<IfWriteSlot> slots, bool isThenBlock
 ) {
   SmallVector<Value> yieldValues = llvm::to_vector(priorYieldValues);
   llvm::append_range(yieldValues, llvm::map_range(slots, [isThenBlock](const IfWriteSlot &slot) {
@@ -2269,8 +2291,8 @@ static void appendYield(
     return writeOp ? writeOp.getValue() : slot.incomingValue;
   }));
 
-  builder.setInsertionPointToEnd(&block);
-  builder.create<scf::YieldOp>(loc, yieldValues);
+  bldr.setInsertionPointToEnd(&block);
+  bldr.create<scf::YieldOp>(loc, yieldValues);
 }
 
 /// One POD record whose value is carried across an SCF loop boundary as an SSA scalar.
@@ -2431,7 +2453,7 @@ public:
       }
       rewriter.setInsertionPoint(ifOp);
       slot.incomingValue =
-          genRead(ifOp.getLoc(), slot.podRef, slot.recordName, rewriter).getResult();
+          genRead(rewriter, ifOp.getLoc(), slot.podRef, slot.recordName).getResult();
     }
 
     SmallVector<Type> resultTypes = llvm::to_vector(ifOp.getResultTypes());
@@ -2458,15 +2480,15 @@ public:
 
     moveBranchWithoutLiftedWrites(&thenBlock, newThenBlock, slots);
     moveBranchWithoutLiftedWrites(elseBlock, newElseBlock, slots);
-    appendYield(ifOp.getLoc(), newThenBlock, originalThenYields, slots, true, rewriter);
-    appendYield(ifOp.getLoc(), newElseBlock, originalElseYields, slots, false, rewriter);
+    appendYield(rewriter, ifOp.getLoc(), newThenBlock, originalThenYields, slots, true);
+    appendYield(rewriter, ifOp.getLoc(), newElseBlock, originalElseYields, slots, false);
 
     rewriter.setInsertionPointAfter(newIf);
     unsigned originalResultCount = ifOp.getNumResults();
     for (auto [idx, slot] : llvm::enumerate(slots)) {
       genWrite(
-          ifOp.getLoc(), slot.podRef, slot.recordName, newIf.getResult(originalResultCount + idx),
-          rewriter
+          rewriter, ifOp.getLoc(), slot.podRef, slot.recordName,
+          newIf.getResult(originalResultCount + idx)
       );
     }
 
@@ -2494,7 +2516,7 @@ public:
     SmallVector<Value> newInitArgs = llvm::to_vector(forOp.getInitArgs());
     rewriter.setInsertionPoint(forOp);
     for (const LoopPodSlot &slot : slots) {
-      newInitArgs.push_back(genRead(loc, slot.podRef, slot.recordName, rewriter).getResult());
+      newInitArgs.push_back(genRead(rewriter, loc, slot.podRef, slot.recordName).getResult());
     }
 
     auto newFor = rewriter.create<scf::ForOp>(
@@ -2551,7 +2573,7 @@ public:
     rewriter.setInsertionPointAfter(newFor);
     for (auto [idx, slot] : llvm::enumerate(slots)) {
       genWrite(
-          loc, slot.podRef, slot.recordName, newFor.getResult(forOp.getNumResults() + idx), rewriter
+          rewriter, loc, slot.podRef, slot.recordName, newFor.getResult(forOp.getNumResults() + idx)
       );
     }
 
@@ -2584,7 +2606,7 @@ public:
     SmallVector<Type> newResultTypes = llvm::to_vector(whileOp.getResultTypes());
     rewriter.setInsertionPoint(whileOp);
     for (const LoopPodSlot &slot : slots) {
-      newInits.push_back(genRead(loc, slot.podRef, slot.recordName, rewriter).getResult());
+      newInits.push_back(genRead(rewriter, loc, slot.podRef, slot.recordName).getResult());
       newResultTypes.push_back(slot.type);
     }
 
@@ -2694,8 +2716,8 @@ public:
     rewriter.setInsertionPointAfter(newWhile);
     for (auto [idx, slot] : llvm::enumerate(slots)) {
       genWrite(
-          loc, slot.podRef, slot.recordName, newWhile.getResult(whileOp.getNumResults() + idx),
-          rewriter
+          rewriter, loc, slot.podRef, slot.recordName,
+          newWhile.getResult(whileOp.getNumResults() + idx)
       );
     }
 

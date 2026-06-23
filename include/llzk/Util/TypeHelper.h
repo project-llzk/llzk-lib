@@ -171,6 +171,14 @@ namespace llzk {
 
 bool isDynamic(mlir::IntegerAttr intAttr);
 
+/// Flatten any array-valued element type into the dimensions of `outerArrTy`.
+///
+/// This is used when an LLZK array logically resolves to a higher-rank array even though array
+/// element types cannot themselves be arrays. The returned type keeps `outerArrTy`'s leading
+/// dimensions, appends any nested dimensions from `elementType`, and uses the innermost non-array
+/// element type as the final element type.
+array::ArrayType flattenArrayElementType(array::ArrayType outerArrTy, mlir::Type elementType);
+
 /// Compute the cardinality (i.e. number of scalar constraints) for an EmitEqualityOp type since the
 /// op can be used to constrain two same-size arrays.
 uint64_t computeEmitEqCardinality(mlir::Type type);

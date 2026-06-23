@@ -1,0 +1,44 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+
+!Elem = !pod.type<[@vals: !array.type<3 x index>, @tag: index]>
+!ElemArray = !array.type<2 x !Elem>
+module attributes {llzk.lang} {
+  function.def @pass_through(%arg: !ElemArray) -> !ElemArray {
+    function.return %arg : !ElemArray
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @pass_through(
+// CHECK-SAME:    %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2,3 x index>,
+// CHECK-SAME:    %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>
+// CHECK-SAME:    ) -> (!array.type<2,3 x index>, !array.type<2 x index>) {
+// CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_1]] : !array.type<2,3 x index>, !array.type<2 x index>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Elem = !pod.type<[@vals: !array.type<3 x index>, @tag: index]>
+!ElemArray = !array.type<2 x !Elem>
+module attributes {llzk.lang} {
+  function.def @update_first(%arr: !ElemArray, %newVals: !array.type<3 x index>) -> !ElemArray {
+    %c0 = arith.constant 0 : index
+    %elem = array.read %arr[%c0] : !ElemArray, !Elem
+    pod.write %elem[@vals] = %newVals : !Elem, !array.type<3 x index>
+    array.write %arr[%c0] = %elem : !ElemArray, !Elem
+    function.return %arr : !ElemArray
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @update_first(
+// CHECK-SAME:    %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2,3 x index>,
+// CHECK-SAME:    %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>,
+// CHECK-SAME:    %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<3 x index>
+// CHECK-SAME:    ) -> (!array.type<2,3 x index>, !array.type<2 x index>) {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_3]]] : <2,3 x index>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_1]]{{\[}}%[[VAL_3]]] : <2 x index>, index
+// CHECK-NEXT:      array.insert %[[VAL_0]]{{\[}}%[[VAL_3]]] = %[[VAL_2]] : <2,3 x index>, <3 x index>
+// CHECK-NEXT:      array.write %[[VAL_1]]{{\[}}%[[VAL_3]]] = %[[VAL_5]] : <2 x index>, index
+// CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_1]] : !array.type<2,3 x index>, !array.type<2 x index>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
