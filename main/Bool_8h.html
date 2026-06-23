@@ -130,8 +130,32 @@ This graph shows which files directly or indirectly include this file:</div>
 Functions</h2></td></tr>
 <tr class="memitem:a48e5dcab263075e4d9fd22e731dfae65" id="r_a48e5dcab263075e4d9fd22e731dfae65"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a48e5dcab263075e4d9fd22e731dfae65">MLIR_DECLARE_CAPI_DIALECT_REGISTRATION</a> (Bool, llzk__boolean)</td></tr>
 <tr class="memdesc:a48e5dcab263075e4d9fd22e731dfae65"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get reference to the LLZK <span class="tt">bool</span> dialect.  <br /></td></tr>
+<tr class="memitem:a3e8ed85a9698742747048653e7e52c1b" id="r_a3e8ed85a9698742747048653e7e52c1b"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3e8ed85a9698742747048653e7e52c1b">llzkBool_QuantifierOpGetDomainIterType</a> (MlirType type)</td></tr>
+<tr class="memdesc:a3e8ed85a9698742747048653e7e52c1b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the type used in a quantifier operation's block argument.  <br /></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+<a id="a3e8ed85a9698742747048653e7e52c1b" name="a3e8ed85a9698742747048653e7e52c1b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3e8ed85a9698742747048653e7e52c1b">&#9670;&#160;</a></span>llzkBool_QuantifierOpGetDomainIterType()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED MlirType llzkBool_QuantifierOpGetDomainIterType </td>
+          <td>(</td>
+          <td class="paramtype">MlirType</td>          <td class="paramname"><span class="paramname"><em>type</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the type used in a quantifier operation's block argument. </p>
+<p>The given type must be a valid sort type. If it isn't, this function returns a null type. </p>
+
+<p class="definition">Definition at line <a class="el" href="Bool_8cpp_source.html#l00031">31</a> of file <a class="el" href="Bool_8cpp_source.html">Bool.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a48e5dcab263075e4d9fd22e731dfae65" name="a48e5dcab263075e4d9fd22e731dfae65"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a48e5dcab263075e4d9fd22e731dfae65">&#9670;&#160;</a></span>MLIR_DECLARE_CAPI_DIALECT_REGISTRATION()</h2>
 

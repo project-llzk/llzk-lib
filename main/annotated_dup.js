@@ -79,9 +79,12 @@ var annotated_dup =
           [ "AndBoolOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1AndBoolOpGenericAdaptorBase.html", "classllzk_1_1boolean_1_1detail_1_1AndBoolOpGenericAdaptorBase" ],
           [ "AssertOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1AssertOpGenericAdaptorBase.html", "classllzk_1_1boolean_1_1detail_1_1AssertOpGenericAdaptorBase" ],
           [ "CmpOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1CmpOpGenericAdaptorBase.html", "classllzk_1_1boolean_1_1detail_1_1CmpOpGenericAdaptorBase" ],
+          [ "ExistsOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1ExistsOpGenericAdaptorBase.html", "classllzk_1_1boolean_1_1detail_1_1ExistsOpGenericAdaptorBase" ],
+          [ "ForAllOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1ForAllOpGenericAdaptorBase.html", "classllzk_1_1boolean_1_1detail_1_1ForAllOpGenericAdaptorBase" ],
           [ "NotBoolOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1NotBoolOpGenericAdaptorBase.html", "classllzk_1_1boolean_1_1detail_1_1NotBoolOpGenericAdaptorBase" ],
           [ "OrBoolOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1OrBoolOpGenericAdaptorBase.html", "classllzk_1_1boolean_1_1detail_1_1OrBoolOpGenericAdaptorBase" ],
-          [ "XorBoolOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1XorBoolOpGenericAdaptorBase.html", "classllzk_1_1boolean_1_1detail_1_1XorBoolOpGenericAdaptorBase" ]
+          [ "XorBoolOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1XorBoolOpGenericAdaptorBase.html", "classllzk_1_1boolean_1_1detail_1_1XorBoolOpGenericAdaptorBase" ],
+          [ "YieldOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html", "classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase" ]
         ] ],
         [ "AndBoolOp", "classllzk_1_1boolean_1_1AndBoolOp.html", "classllzk_1_1boolean_1_1AndBoolOp" ],
         [ "AndBoolOpAdaptor", "classllzk_1_1boolean_1_1AndBoolOpAdaptor.html", "classllzk_1_1boolean_1_1AndBoolOpAdaptor" ],
@@ -93,6 +96,12 @@ var annotated_dup =
         [ "CmpOp", "classllzk_1_1boolean_1_1CmpOp.html", "classllzk_1_1boolean_1_1CmpOp" ],
         [ "CmpOpAdaptor", "classllzk_1_1boolean_1_1CmpOpAdaptor.html", "classllzk_1_1boolean_1_1CmpOpAdaptor" ],
         [ "CmpOpGenericAdaptor", "classllzk_1_1boolean_1_1CmpOpGenericAdaptor.html", "classllzk_1_1boolean_1_1CmpOpGenericAdaptor" ],
+        [ "ExistsOp", "classllzk_1_1boolean_1_1ExistsOp.html", "classllzk_1_1boolean_1_1ExistsOp" ],
+        [ "ExistsOpAdaptor", "classllzk_1_1boolean_1_1ExistsOpAdaptor.html", "classllzk_1_1boolean_1_1ExistsOpAdaptor" ],
+        [ "ExistsOpGenericAdaptor", "classllzk_1_1boolean_1_1ExistsOpGenericAdaptor.html", "classllzk_1_1boolean_1_1ExistsOpGenericAdaptor" ],
+        [ "ForAllOp", "classllzk_1_1boolean_1_1ForAllOp.html", "classllzk_1_1boolean_1_1ForAllOp" ],
+        [ "ForAllOpAdaptor", "classllzk_1_1boolean_1_1ForAllOpAdaptor.html", "classllzk_1_1boolean_1_1ForAllOpAdaptor" ],
+        [ "ForAllOpGenericAdaptor", "classllzk_1_1boolean_1_1ForAllOpGenericAdaptor.html", "classllzk_1_1boolean_1_1ForAllOpGenericAdaptor" ],
         [ "NotBoolOp", "classllzk_1_1boolean_1_1NotBoolOp.html", "classllzk_1_1boolean_1_1NotBoolOp" ],
         [ "NotBoolOpAdaptor", "classllzk_1_1boolean_1_1NotBoolOpAdaptor.html", "classllzk_1_1boolean_1_1NotBoolOpAdaptor" ],
         [ "NotBoolOpGenericAdaptor", "classllzk_1_1boolean_1_1NotBoolOpGenericAdaptor.html", "classllzk_1_1boolean_1_1NotBoolOpGenericAdaptor" ],
@@ -101,7 +110,10 @@ var annotated_dup =
         [ "OrBoolOpGenericAdaptor", "classllzk_1_1boolean_1_1OrBoolOpGenericAdaptor.html", "classllzk_1_1boolean_1_1OrBoolOpGenericAdaptor" ],
         [ "XorBoolOp", "classllzk_1_1boolean_1_1XorBoolOp.html", "classllzk_1_1boolean_1_1XorBoolOp" ],
         [ "XorBoolOpAdaptor", "classllzk_1_1boolean_1_1XorBoolOpAdaptor.html", "classllzk_1_1boolean_1_1XorBoolOpAdaptor" ],
-        [ "XorBoolOpGenericAdaptor", "classllzk_1_1boolean_1_1XorBoolOpGenericAdaptor.html", "classllzk_1_1boolean_1_1XorBoolOpGenericAdaptor" ]
+        [ "XorBoolOpGenericAdaptor", "classllzk_1_1boolean_1_1XorBoolOpGenericAdaptor.html", "classllzk_1_1boolean_1_1XorBoolOpGenericAdaptor" ],
+        [ "YieldOp", "classllzk_1_1boolean_1_1YieldOp.html", "classllzk_1_1boolean_1_1YieldOp" ],
+        [ "YieldOpAdaptor", "classllzk_1_1boolean_1_1YieldOpAdaptor.html", "classllzk_1_1boolean_1_1YieldOpAdaptor" ],
+        [ "YieldOpGenericAdaptor", "classllzk_1_1boolean_1_1YieldOpGenericAdaptor.html", "classllzk_1_1boolean_1_1YieldOpGenericAdaptor" ]
       ] ],
       [ "cast", "namespacellzk_1_1cast.html", [
         [ "detail", "namespacellzk_1_1cast_1_1detail.html", [
@@ -911,6 +923,7 @@ var annotated_dup =
     [ "EmitEqualityOpBuildFuncHelper", "structEmitEqualityOpBuildFuncHelper.html", "structEmitEqualityOpBuildFuncHelper" ],
     [ "EnsureComputeOpBuildFuncHelper", "structEnsureComputeOpBuildFuncHelper.html", "structEnsureComputeOpBuildFuncHelper" ],
     [ "EnsureConstrainOpBuildFuncHelper", "structEnsureConstrainOpBuildFuncHelper.html", "structEnsureConstrainOpBuildFuncHelper" ],
+    [ "ExistsOpBuildFuncHelper", "structExistsOpBuildFuncHelper.html", "structExistsOpBuildFuncHelper" ],
     [ "ExtractArrayOpBuildFuncHelper", "structExtractArrayOpBuildFuncHelper.html", "structExtractArrayOpBuildFuncHelper" ],
     [ "ExtraMethod", "structExtraMethod.html", "structExtraMethod" ],
     [ "FeltAttributeLinkTests", "classFeltAttributeLinkTests.html", null ],
@@ -919,6 +932,7 @@ var annotated_dup =
     [ "FeltOperationLinkTests", "classFeltOperationLinkTests.html", null ],
     [ "FeltToIndexOpBuildFuncHelper", "structFeltToIndexOpBuildFuncHelper.html", "structFeltToIndexOpBuildFuncHelper" ],
     [ "FeltTypeLinkTests", "classFeltTypeLinkTests.html", null ],
+    [ "ForAllOpBuildFuncHelper", "structForAllOpBuildFuncHelper.html", "structForAllOpBuildFuncHelper" ],
     [ "FuncDefOpBuildFuncHelper", "structFuncDefOpBuildFuncHelper.html", "structFuncDefOpBuildFuncHelper" ],
     [ "FunctionAttributeLinkTests", "classFunctionAttributeLinkTests.html", null ],
     [ "FunctionDialectLinkTests", "classFunctionDialectLinkTests.html", null ],

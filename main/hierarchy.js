@@ -623,6 +623,13 @@ var hierarchy =
       ] ],
       [ "llzk::smt::EqOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1EqOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::boolean::detail::ExistsOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1ExistsOpGenericAdaptorBase.html", [
+      [ "llzk::boolean::ExistsOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1boolean_1_1ExistsOpGenericAdaptor.html", null ],
+      [ "llzk::boolean::ExistsOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1boolean_1_1ExistsOpGenericAdaptor.html", [
+        [ "llzk::boolean::ExistsOpAdaptor", "classllzk_1_1boolean_1_1ExistsOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::boolean::ExistsOpGenericAdaptor< RangeT >", "classllzk_1_1boolean_1_1ExistsOpGenericAdaptor.html", null ]
+    ] ],
     [ "llzk::smt::detail::ExistsOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1ExistsOpGenericAdaptorBase.html", [
       [ "llzk::smt::ExistsOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1ExistsOpGenericAdaptor.html", null ],
       [ "llzk::smt::ExistsOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1ExistsOpGenericAdaptor.html", [
@@ -678,6 +685,13 @@ var hierarchy =
     [ "mlir::FieldParser<::llzk::smt::IntPredicate, ::llzk::smt::IntPredicate >", "structmlir_1_1FieldParser_3_1_1llzk_1_1smt_1_1IntPredicate_00_01_1_1llzk_1_1smt_1_1IntPredicate_01_4.html", null ],
     [ "llzk::FileLineColLocComparator", "structllzk_1_1FileLineColLocComparator.html", null ],
     [ "llzk::polymorphic::FlatteningPassOptions", "structllzk_1_1polymorphic_1_1FlatteningPassOptions.html", null ],
+    [ "llzk::boolean::detail::ForAllOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1ForAllOpGenericAdaptorBase.html", [
+      [ "llzk::boolean::ForAllOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1boolean_1_1ForAllOpGenericAdaptor.html", null ],
+      [ "llzk::boolean::ForAllOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1boolean_1_1ForAllOpGenericAdaptor.html", [
+        [ "llzk::boolean::ForAllOpAdaptor", "classllzk_1_1boolean_1_1ForAllOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::boolean::ForAllOpGenericAdaptor< RangeT >", "classllzk_1_1boolean_1_1ForAllOpGenericAdaptor.html", null ]
+    ] ],
     [ "llzk::smt::detail::ForallOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1ForallOpGenericAdaptorBase.html", [
       [ "llzk::smt::ForallOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1ForallOpGenericAdaptor.html", null ],
       [ "llzk::smt::ForallOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1ForallOpGenericAdaptor.html", [
@@ -1040,9 +1054,12 @@ var hierarchy =
       [ "llzk::boolean::AndBoolOp", "classllzk_1_1boolean_1_1AndBoolOp.html", null ],
       [ "llzk::boolean::AssertOp", "classllzk_1_1boolean_1_1AssertOp.html", null ],
       [ "llzk::boolean::CmpOp", "classllzk_1_1boolean_1_1CmpOp.html", null ],
+      [ "llzk::boolean::ExistsOp", "classllzk_1_1boolean_1_1ExistsOp.html", null ],
+      [ "llzk::boolean::ForAllOp", "classllzk_1_1boolean_1_1ForAllOp.html", null ],
       [ "llzk::boolean::NotBoolOp", "classllzk_1_1boolean_1_1NotBoolOp.html", null ],
       [ "llzk::boolean::OrBoolOp", "classllzk_1_1boolean_1_1OrBoolOp.html", null ],
       [ "llzk::boolean::XorBoolOp", "classllzk_1_1boolean_1_1XorBoolOp.html", null ],
+      [ "llzk::boolean::YieldOp", "classllzk_1_1boolean_1_1YieldOp.html", null ],
       [ "llzk::cast::FeltToIndexOp", "classllzk_1_1cast_1_1FeltToIndexOp.html", null ],
       [ "llzk::cast::IntToFeltOp", "classllzk_1_1cast_1_1IntToFeltOp.html", null ],
       [ "llzk::component::CreateStructOp", "classllzk_1_1component_1_1CreateStructOp.html", null ],
@@ -1505,9 +1522,11 @@ var hierarchy =
       [ "EmitEqualityOpBuildFuncHelper", "structEmitEqualityOpBuildFuncHelper.html", null ],
       [ "EnsureComputeOpBuildFuncHelper", "structEnsureComputeOpBuildFuncHelper.html", null ],
       [ "EnsureConstrainOpBuildFuncHelper", "structEnsureConstrainOpBuildFuncHelper.html", null ],
+      [ "ExistsOpBuildFuncHelper", "structExistsOpBuildFuncHelper.html", null ],
       [ "ExtractArrayOpBuildFuncHelper", "structExtractArrayOpBuildFuncHelper.html", null ],
       [ "FeltConstantOpBuildFuncHelper", "structFeltConstantOpBuildFuncHelper.html", null ],
       [ "FeltToIndexOpBuildFuncHelper", "structFeltToIndexOpBuildFuncHelper.html", null ],
+      [ "ForAllOpBuildFuncHelper", "structForAllOpBuildFuncHelper.html", null ],
       [ "FuncDefOpBuildFuncHelper", "structFuncDefOpBuildFuncHelper.html", null ],
       [ "GlobalDefOpBuildFuncHelper", "structGlobalDefOpBuildFuncHelper.html", null ],
       [ "GlobalReadOpBuildFuncHelper", "structGlobalReadOpBuildFuncHelper.html", null ],
@@ -1553,6 +1572,7 @@ var hierarchy =
       [ "WritePodOpBuildFuncHelper", "structWritePodOpBuildFuncHelper.html", null ],
       [ "XorBoolOpBuildFuncHelper", "structXorBoolOpBuildFuncHelper.html", null ],
       [ "XorFeltOpBuildFuncHelper", "structXorFeltOpBuildFuncHelper.html", null ],
+      [ "YieldOpBuildFuncHelper", "structYieldOpBuildFuncHelper.html", null ],
       [ "YieldOpBuildFuncHelper", "structYieldOpBuildFuncHelper.html", null ]
     ] ],
     [ "mlir::OpInterface::Trait", null, [
@@ -1702,6 +1722,13 @@ var hierarchy =
         [ "llzk::smt::XOrOpAdaptor", "classllzk_1_1smt_1_1XOrOpAdaptor.html", null ]
       ] ],
       [ "llzk::smt::XOrOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1XOrOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::boolean::detail::YieldOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html", [
+      [ "llzk::boolean::YieldOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1boolean_1_1YieldOpGenericAdaptor.html", null ],
+      [ "llzk::boolean::YieldOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1boolean_1_1YieldOpGenericAdaptor.html", [
+        [ "llzk::boolean::YieldOpAdaptor", "classllzk_1_1boolean_1_1YieldOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::boolean::YieldOpGenericAdaptor< RangeT >", "classllzk_1_1boolean_1_1YieldOpGenericAdaptor.html", null ]
     ] ],
     [ "llzk::polymorphic::detail::YieldOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1YieldOpGenericAdaptorBase.html", [
       [ "llzk::polymorphic::YieldOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1polymorphic_1_1YieldOpGenericAdaptor.html", null ],

@@ -27,12 +27,13 @@ var searchData=
   ['fieldspecattr_24',['FieldSpecAttr',['../dialects.html#fieldspecattr',1,'']]],
   ['flatten_25',['&lt;span class=&quot;tt&quot;&gt;-llzk-flatten&lt;/span&gt;',['../tools.html#autotoc_md-llzk-flatten',1,'']]],
   ['for_26',['&lt;span class=&quot;tt&quot;&gt;-llzk-while-to-for&lt;/span&gt;',['../tools.html#autotoc_md-llzk-while-to-for',1,'']]],
-  ['format_27',['Format',['../tools.html#input-format',1,'Input Format'],['../tools.html#output-format',1,'Output Format']]],
-  ['from_20_3a_3allzk_3a_3ainclude_3a_3aincludeop_28',['&lt;span class=&quot;tt&quot;&gt;include.from&lt;/span&gt; (llzk::include::IncludeOp)',['../dialects.html#includefrom-llzkincludeincludeop',1,'']]],
-  ['frontends_29',['Frontends',['../overview.html#frontends',1,'']]],
-  ['function_20call_20_3a_3allzk_3a_3afunction_3a_3acallop_30',['&lt;span class=&quot;tt&quot;&gt;function.call&lt;/span&gt; (llzk::function::CallOp)',['../dialects.html#functioncall-llzkfunctioncallop',1,'']]],
-  ['function_20def_20_3a_3allzk_3a_3afunction_3a_3afuncdefop_31',['&lt;span class=&quot;tt&quot;&gt;function.def&lt;/span&gt; (llzk::function::FuncDefOp)',['../dialects.html#functiondef-llzkfunctionfuncdefop',1,'']]],
-  ['function_20dialect_32',['&apos;function&apos; Dialect',['../dialects.html#function-dialect',1,'']]],
-  ['function_20return_20_3a_3allzk_3a_3afunction_3a_3areturnop_33',['&lt;span class=&quot;tt&quot;&gt;function.return&lt;/span&gt; (llzk::function::ReturnOp)',['../dialects.html#functionreturn-llzkfunctionreturnop',1,'']]],
-  ['fuse_20product_20loops_34',['&lt;span class=&quot;tt&quot;&gt;-llzk-fuse-product-loops&lt;/span&gt;',['../tools.html#autotoc_md-llzk-fuse-product-loops',1,'']]]
+  ['forall_20_3a_3allzk_3a_3aboolean_3a_3aforallop_27',['&lt;span class=&quot;tt&quot;&gt;bool.forall&lt;/span&gt; (llzk::boolean::ForAllOp)',['../dialects.html#boolforall-llzkbooleanforallop',1,'']]],
+  ['format_28',['Format',['../tools.html#input-format',1,'Input Format'],['../tools.html#output-format',1,'Output Format']]],
+  ['from_20_3a_3allzk_3a_3ainclude_3a_3aincludeop_29',['&lt;span class=&quot;tt&quot;&gt;include.from&lt;/span&gt; (llzk::include::IncludeOp)',['../dialects.html#includefrom-llzkincludeincludeop',1,'']]],
+  ['frontends_30',['Frontends',['../overview.html#frontends',1,'']]],
+  ['function_20call_20_3a_3allzk_3a_3afunction_3a_3acallop_31',['&lt;span class=&quot;tt&quot;&gt;function.call&lt;/span&gt; (llzk::function::CallOp)',['../dialects.html#functioncall-llzkfunctioncallop',1,'']]],
+  ['function_20def_20_3a_3allzk_3a_3afunction_3a_3afuncdefop_32',['&lt;span class=&quot;tt&quot;&gt;function.def&lt;/span&gt; (llzk::function::FuncDefOp)',['../dialects.html#functiondef-llzkfunctionfuncdefop',1,'']]],
+  ['function_20dialect_33',['&apos;function&apos; Dialect',['../dialects.html#function-dialect',1,'']]],
+  ['function_20return_20_3a_3allzk_3a_3afunction_3a_3areturnop_34',['&lt;span class=&quot;tt&quot;&gt;function.return&lt;/span&gt; (llzk::function::ReturnOp)',['../dialects.html#functionreturn-llzkfunctionreturnop',1,'']]],
+  ['fuse_20product_20loops_35',['&lt;span class=&quot;tt&quot;&gt;-llzk-fuse-product-loops&lt;/span&gt;',['../tools.html#autotoc_md-llzk-fuse-product-loops',1,'']]]
 ];

@@ -13,8 +13,11 @@ var searchData=
   ['bool_20assert_20_3a_3allzk_3a_3aboolean_3a_3aassertop_10',['&lt;span class=&quot;tt&quot;&gt;bool.assert&lt;/span&gt; (llzk::boolean::AssertOp)',['../dialects.html#boolassert-llzkbooleanassertop',1,'']]],
   ['bool_20cmp_20_3a_3allzk_3a_3aboolean_3a_3acmpop_11',['&lt;span class=&quot;tt&quot;&gt;bool.cmp&lt;/span&gt; (llzk::boolean::CmpOp)',['../dialects.html#boolcmp-llzkbooleancmpop',1,'']]],
   ['bool_20dialect_12',['&apos;bool&apos; Dialect',['../dialects.html#bool-dialect',1,'']]],
-  ['bool_20not_20_3a_3allzk_3a_3aboolean_3a_3anotboolop_13',['&lt;span class=&quot;tt&quot;&gt;bool.not&lt;/span&gt; (llzk::boolean::NotBoolOp)',['../dialects.html#boolnot-llzkbooleannotboolop',1,'']]],
-  ['bool_20or_20_3a_3allzk_3a_3aboolean_3a_3aorboolop_14',['&lt;span class=&quot;tt&quot;&gt;bool.or&lt;/span&gt; (llzk::boolean::OrBoolOp)',['../dialects.html#boolor-llzkbooleanorboolop',1,'']]],
-  ['bool_20xor_20_3a_3allzk_3a_3aboolean_3a_3axorboolop_15',['&lt;span class=&quot;tt&quot;&gt;bool.xor&lt;/span&gt; (llzk::boolean::XorBoolOp)',['../dialects.html#boolxor-llzkbooleanxorboolop',1,'']]],
-  ['build_20setup_16',['Manual Build Setup',['../setup.html#manual-build-setup',1,'']]]
+  ['bool_20exists_20_3a_3allzk_3a_3aboolean_3a_3aexistsop_13',['&lt;span class=&quot;tt&quot;&gt;bool.exists&lt;/span&gt; (llzk::boolean::ExistsOp)',['../dialects.html#boolexists-llzkbooleanexistsop',1,'']]],
+  ['bool_20forall_20_3a_3allzk_3a_3aboolean_3a_3aforallop_14',['&lt;span class=&quot;tt&quot;&gt;bool.forall&lt;/span&gt; (llzk::boolean::ForAllOp)',['../dialects.html#boolforall-llzkbooleanforallop',1,'']]],
+  ['bool_20not_20_3a_3allzk_3a_3aboolean_3a_3anotboolop_15',['&lt;span class=&quot;tt&quot;&gt;bool.not&lt;/span&gt; (llzk::boolean::NotBoolOp)',['../dialects.html#boolnot-llzkbooleannotboolop',1,'']]],
+  ['bool_20or_20_3a_3allzk_3a_3aboolean_3a_3aorboolop_16',['&lt;span class=&quot;tt&quot;&gt;bool.or&lt;/span&gt; (llzk::boolean::OrBoolOp)',['../dialects.html#boolor-llzkbooleanorboolop',1,'']]],
+  ['bool_20xor_20_3a_3allzk_3a_3aboolean_3a_3axorboolop_17',['&lt;span class=&quot;tt&quot;&gt;bool.xor&lt;/span&gt; (llzk::boolean::XorBoolOp)',['../dialects.html#boolxor-llzkbooleanxorboolop',1,'']]],
+  ['bool_20yield_20_3a_3allzk_3a_3aboolean_3a_3ayieldop_18',['&lt;span class=&quot;tt&quot;&gt;bool.yield&lt;/span&gt; (llzk::boolean::YieldOp)',['../dialects.html#boolyield-llzkbooleanyieldop',1,'']]],
+  ['build_20setup_19',['Manual Build Setup',['../setup.html#manual-build-setup',1,'']]]
 ];

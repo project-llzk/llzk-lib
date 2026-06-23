@@ -1,5 +1,13 @@
 var Bool_2IR_2Ops_8h_8inc =
 [
+    [ "llzk::boolean::detail::ExistsOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1ExistsOpGenericAdaptorBase.html", "classllzk_1_1boolean_1_1detail_1_1ExistsOpGenericAdaptorBase" ],
+    [ "llzk::boolean::ExistsOpGenericAdaptor< RangeT >", "classllzk_1_1boolean_1_1ExistsOpGenericAdaptor.html", "classllzk_1_1boolean_1_1ExistsOpGenericAdaptor" ],
+    [ "llzk::boolean::ExistsOpAdaptor", "classllzk_1_1boolean_1_1ExistsOpAdaptor.html", "classllzk_1_1boolean_1_1ExistsOpAdaptor" ],
+    [ "llzk::boolean::ExistsOp", "classllzk_1_1boolean_1_1ExistsOp.html", "classllzk_1_1boolean_1_1ExistsOp" ],
+    [ "llzk::boolean::detail::ForAllOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1ForAllOpGenericAdaptorBase.html", "classllzk_1_1boolean_1_1detail_1_1ForAllOpGenericAdaptorBase" ],
+    [ "llzk::boolean::ForAllOpGenericAdaptor< RangeT >", "classllzk_1_1boolean_1_1ForAllOpGenericAdaptor.html", "classllzk_1_1boolean_1_1ForAllOpGenericAdaptor" ],
+    [ "llzk::boolean::ForAllOpAdaptor", "classllzk_1_1boolean_1_1ForAllOpAdaptor.html", "classllzk_1_1boolean_1_1ForAllOpAdaptor" ],
+    [ "llzk::boolean::ForAllOp", "classllzk_1_1boolean_1_1ForAllOp.html", "classllzk_1_1boolean_1_1ForAllOp" ],
     [ "llzk::boolean::detail::AndBoolOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1AndBoolOpGenericAdaptorBase.html", "classllzk_1_1boolean_1_1detail_1_1AndBoolOpGenericAdaptorBase" ],
     [ "llzk::boolean::AndBoolOpGenericAdaptor< RangeT >", "classllzk_1_1boolean_1_1AndBoolOpGenericAdaptor.html", "classllzk_1_1boolean_1_1AndBoolOpGenericAdaptor" ],
     [ "llzk::boolean::AndBoolOpAdaptor", "classllzk_1_1boolean_1_1AndBoolOpAdaptor.html", "classllzk_1_1boolean_1_1AndBoolOpAdaptor" ],
@@ -25,5 +33,9 @@ var Bool_2IR_2Ops_8h_8inc =
     [ "llzk::boolean::detail::XorBoolOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1XorBoolOpGenericAdaptorBase.html", "classllzk_1_1boolean_1_1detail_1_1XorBoolOpGenericAdaptorBase" ],
     [ "llzk::boolean::XorBoolOpGenericAdaptor< RangeT >", "classllzk_1_1boolean_1_1XorBoolOpGenericAdaptor.html", "classllzk_1_1boolean_1_1XorBoolOpGenericAdaptor" ],
     [ "llzk::boolean::XorBoolOpAdaptor", "classllzk_1_1boolean_1_1XorBoolOpAdaptor.html", "classllzk_1_1boolean_1_1XorBoolOpAdaptor" ],
-    [ "llzk::boolean::XorBoolOp", "classllzk_1_1boolean_1_1XorBoolOp.html", "classllzk_1_1boolean_1_1XorBoolOp" ]
+    [ "llzk::boolean::XorBoolOp", "classllzk_1_1boolean_1_1XorBoolOp.html", "classllzk_1_1boolean_1_1XorBoolOp" ],
+    [ "llzk::boolean::detail::YieldOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html", "classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase" ],
+    [ "llzk::boolean::YieldOpGenericAdaptor< RangeT >", "classllzk_1_1boolean_1_1YieldOpGenericAdaptor.html", "classllzk_1_1boolean_1_1YieldOpGenericAdaptor" ],
+    [ "llzk::boolean::YieldOpAdaptor", "classllzk_1_1boolean_1_1YieldOpAdaptor.html", "classllzk_1_1boolean_1_1YieldOpAdaptor" ],
+    [ "llzk::boolean::YieldOp", "classllzk_1_1boolean_1_1YieldOp.html", "classllzk_1_1boolean_1_1YieldOp" ]
 ];

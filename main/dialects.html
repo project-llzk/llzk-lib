@@ -238,7 +238,7 @@ $(function(){initNavTree('dialects.html','',''); });
             </ul>
           </li>
           <li class="level3">
-            <a href="#boolnot-llzkbooleannotboolop"><span class="tt">bool.not</span> (<a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">llzk::boolean::NotBoolOp</a>) </a>
+            <a href="#boolexists-llzkbooleanexistsop"><span class="tt">bool.exists</span> (<a class="el" href="classllzk_1_1boolean_1_1ExistsOp.html">llzk::boolean::ExistsOp</a>) </a>
             <ul>
               <li class="level4">
                 <a href="#operands-9">Operands: </a>
@@ -249,7 +249,7 @@ $(function(){initNavTree('dialects.html','',''); });
             </ul>
           </li>
           <li class="level3">
-            <a href="#boolor-llzkbooleanorboolop"><span class="tt">bool.or</span> (<a class="el" href="classllzk_1_1boolean_1_1OrBoolOp.html">llzk::boolean::OrBoolOp</a>) </a>
+            <a href="#boolforall-llzkbooleanforallop"><span class="tt">bool.forall</span> (<a class="el" href="classllzk_1_1boolean_1_1ForAllOp.html">llzk::boolean::ForAllOp</a>) </a>
             <ul>
               <li class="level4">
                 <a href="#operands-10">Operands: </a>
@@ -260,13 +260,43 @@ $(function(){initNavTree('dialects.html','',''); });
             </ul>
           </li>
           <li class="level3">
-            <a href="#boolxor-llzkbooleanxorboolop"><span class="tt">bool.xor</span> (<a class="el" href="classllzk_1_1boolean_1_1XorBoolOp.html">llzk::boolean::XorBoolOp</a>) </a>
+            <a href="#boolnot-llzkbooleannotboolop"><span class="tt">bool.not</span> (<a class="el" href="classllzk_1_1boolean_1_1NotBoolOp.html">llzk::boolean::NotBoolOp</a>) </a>
             <ul>
               <li class="level4">
                 <a href="#operands-11">Operands: </a>
               </li>
               <li class="level4">
                 <a href="#results-8">Results: </a>
+              </li>
+            </ul>
+          </li>
+          <li class="level3">
+            <a href="#boolor-llzkbooleanorboolop"><span class="tt">bool.or</span> (<a class="el" href="classllzk_1_1boolean_1_1OrBoolOp.html">llzk::boolean::OrBoolOp</a>) </a>
+            <ul>
+              <li class="level4">
+                <a href="#operands-12">Operands: </a>
+              </li>
+              <li class="level4">
+                <a href="#results-9">Results: </a>
+              </li>
+            </ul>
+          </li>
+          <li class="level3">
+            <a href="#boolxor-llzkbooleanxorboolop"><span class="tt">bool.xor</span> (<a class="el" href="classllzk_1_1boolean_1_1XorBoolOp.html">llzk::boolean::XorBoolOp</a>) </a>
+            <ul>
+              <li class="level4">
+                <a href="#operands-13">Operands: </a>
+              </li>
+              <li class="level4">
+                <a href="#results-10">Results: </a>
+              </li>
+            </ul>
+          </li>
+          <li class="level3">
+            <a href="#boolyield-llzkbooleanyieldop"><span class="tt">bool.yield</span> (<a class="el" href="classllzk_1_1boolean_1_1YieldOp.html">llzk::boolean::YieldOp</a>) </a>
+            <ul>
+              <li class="level4">
+                <a href="#operands-14">Operands: </a>
               </li>
             </ul>
           </li>
@@ -313,10 +343,10 @@ $(function(){initNavTree('dialects.html','',''); });
                 <a href="#attributes-4">Attributes: </a>
               </li>
               <li class="level4">
-                <a href="#operands-12">Operands: </a>
+                <a href="#operands-15">Operands: </a>
               </li>
               <li class="level4">
-                <a href="#results-9">Results: </a>
+                <a href="#results-11">Results: </a>
               </li>
             </ul>
           </li>
@@ -327,10 +357,10 @@ $(function(){initNavTree('dialects.html','',''); });
                 <a href="#attributes-5">Attributes: </a>
               </li>
               <li class="level4">
-                <a href="#operands-13">Operands: </a>
+                <a href="#operands-16">Operands: </a>
               </li>
               <li class="level4">
-                <a href="#results-10">Results: </a>
+                <a href="#results-12">Results: </a>
               </li>
             </ul>
           </li>
@@ -374,7 +404,7 @@ $(function(){initNavTree('dialects.html','',''); });
             <a href="#constraineq-llzkconstrainemitequalityop"><span class="tt">constrain.eq</span> (<a class="el" href="classllzk_1_1constrain_1_1EmitEqualityOp.html">llzk::constrain::EmitEqualityOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-14">Operands: </a>
+                <a href="#operands-17">Operands: </a>
               </li>
             </ul>
           </li>
@@ -382,7 +412,7 @@ $(function(){initNavTree('dialects.html','',''); });
             <a href="#constrainin-llzkconstrainemitcontainmentop"><span class="tt">constrain.in</span> (<a class="el" href="classllzk_1_1constrain_1_1EmitContainmentOp.html">llzk::constrain::EmitContainmentOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-15">Operands: </a>
+                <a href="#operands-18">Operands: </a>
               </li>
             </ul>
           </li>
@@ -400,29 +430,7 @@ $(function(){initNavTree('dialects.html','',''); });
             <a href="#feltadd-llzkfeltaddfeltop"><span class="tt">felt.add</span> (<a class="el" href="classllzk_1_1felt_1_1AddFeltOp.html">llzk::felt::AddFeltOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-16">Operands: </a>
-              </li>
-              <li class="level4">
-                <a href="#results-11">Results: </a>
-              </li>
-            </ul>
-          </li>
-          <li class="level3">
-            <a href="#feltbit_and-llzkfeltandfeltop"><span class="tt">felt.bit_and</span> (<a class="el" href="classllzk_1_1felt_1_1AndFeltOp.html">llzk::felt::AndFeltOp</a>) </a>
-            <ul>
-              <li class="level4">
-                <a href="#operands-17">Operands: </a>
-              </li>
-              <li class="level4">
-                <a href="#results-12">Results: </a>
-              </li>
-            </ul>
-          </li>
-          <li class="level3">
-            <a href="#feltbit_not-llzkfeltnotfeltop"><span class="tt">felt.bit_not</span> (<a class="el" href="classllzk_1_1felt_1_1NotFeltOp.html">llzk::felt::NotFeltOp</a>) </a>
-            <ul>
-              <li class="level4">
-                <a href="#operands-18">Operands: </a>
+                <a href="#operands-19">Operands: </a>
               </li>
               <li class="level4">
                 <a href="#results-13">Results: </a>
@@ -430,10 +438,10 @@ $(function(){initNavTree('dialects.html','',''); });
             </ul>
           </li>
           <li class="level3">
-            <a href="#feltbit_or-llzkfeltorfeltop"><span class="tt">felt.bit_or</span> (<a class="el" href="classllzk_1_1felt_1_1OrFeltOp.html">llzk::felt::OrFeltOp</a>) </a>
+            <a href="#feltbit_and-llzkfeltandfeltop"><span class="tt">felt.bit_and</span> (<a class="el" href="classllzk_1_1felt_1_1AndFeltOp.html">llzk::felt::AndFeltOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-19">Operands: </a>
+                <a href="#operands-20">Operands: </a>
               </li>
               <li class="level4">
                 <a href="#results-14">Results: </a>
@@ -441,13 +449,35 @@ $(function(){initNavTree('dialects.html','',''); });
             </ul>
           </li>
           <li class="level3">
-            <a href="#feltbit_xor-llzkfeltxorfeltop"><span class="tt">felt.bit_xor</span> (<a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">llzk::felt::XorFeltOp</a>) </a>
+            <a href="#feltbit_not-llzkfeltnotfeltop"><span class="tt">felt.bit_not</span> (<a class="el" href="classllzk_1_1felt_1_1NotFeltOp.html">llzk::felt::NotFeltOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-20">Operands: </a>
+                <a href="#operands-21">Operands: </a>
               </li>
               <li class="level4">
                 <a href="#results-15">Results: </a>
+              </li>
+            </ul>
+          </li>
+          <li class="level3">
+            <a href="#feltbit_or-llzkfeltorfeltop"><span class="tt">felt.bit_or</span> (<a class="el" href="classllzk_1_1felt_1_1OrFeltOp.html">llzk::felt::OrFeltOp</a>) </a>
+            <ul>
+              <li class="level4">
+                <a href="#operands-22">Operands: </a>
+              </li>
+              <li class="level4">
+                <a href="#results-16">Results: </a>
+              </li>
+            </ul>
+          </li>
+          <li class="level3">
+            <a href="#feltbit_xor-llzkfeltxorfeltop"><span class="tt">felt.bit_xor</span> (<a class="el" href="classllzk_1_1felt_1_1XorFeltOp.html">llzk::felt::XorFeltOp</a>) </a>
+            <ul>
+              <li class="level4">
+                <a href="#operands-23">Operands: </a>
+              </li>
+              <li class="level4">
+                <a href="#results-17">Results: </a>
               </li>
             </ul>
           </li>
@@ -458,7 +488,7 @@ $(function(){initNavTree('dialects.html','',''); });
                 <a href="#attributes-7">Attributes: </a>
               </li>
               <li class="level4">
-                <a href="#results-16">Results: </a>
+                <a href="#results-18">Results: </a>
               </li>
             </ul>
           </li>
@@ -466,29 +496,7 @@ $(function(){initNavTree('dialects.html','',''); });
             <a href="#feltdiv-llzkfeltdivfeltop"><span class="tt">felt.div</span> (<a class="el" href="classllzk_1_1felt_1_1DivFeltOp.html">llzk::felt::DivFeltOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-21">Operands: </a>
-              </li>
-              <li class="level4">
-                <a href="#results-17">Results: </a>
-              </li>
-            </ul>
-          </li>
-          <li class="level3">
-            <a href="#feltinv-llzkfeltinvfeltop"><span class="tt">felt.inv</span> (<a class="el" href="classllzk_1_1felt_1_1InvFeltOp.html">llzk::felt::InvFeltOp</a>) </a>
-            <ul>
-              <li class="level4">
-                <a href="#operands-22">Operands: </a>
-              </li>
-              <li class="level4">
-                <a href="#results-18">Results: </a>
-              </li>
-            </ul>
-          </li>
-          <li class="level3">
-            <a href="#feltmul-llzkfeltmulfeltop"><span class="tt">felt.mul</span> (<a class="el" href="classllzk_1_1felt_1_1MulFeltOp.html">llzk::felt::MulFeltOp</a>) </a>
-            <ul>
-              <li class="level4">
-                <a href="#operands-23">Operands: </a>
+                <a href="#operands-24">Operands: </a>
               </li>
               <li class="level4">
                 <a href="#results-19">Results: </a>
@@ -496,10 +504,10 @@ $(function(){initNavTree('dialects.html','',''); });
             </ul>
           </li>
           <li class="level3">
-            <a href="#feltneg-llzkfeltnegfeltop"><span class="tt">felt.neg</span> (<a class="el" href="classllzk_1_1felt_1_1NegFeltOp.html">llzk::felt::NegFeltOp</a>) </a>
+            <a href="#feltinv-llzkfeltinvfeltop"><span class="tt">felt.inv</span> (<a class="el" href="classllzk_1_1felt_1_1InvFeltOp.html">llzk::felt::InvFeltOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-24">Operands: </a>
+                <a href="#operands-25">Operands: </a>
               </li>
               <li class="level4">
                 <a href="#results-20">Results: </a>
@@ -507,10 +515,10 @@ $(function(){initNavTree('dialects.html','',''); });
             </ul>
           </li>
           <li class="level3">
-            <a href="#feltpow-llzkfeltpowfeltop"><span class="tt">felt.pow</span> (<a class="el" href="classllzk_1_1felt_1_1PowFeltOp.html">llzk::felt::PowFeltOp</a>) </a>
+            <a href="#feltmul-llzkfeltmulfeltop"><span class="tt">felt.mul</span> (<a class="el" href="classllzk_1_1felt_1_1MulFeltOp.html">llzk::felt::MulFeltOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-25">Operands: </a>
+                <a href="#operands-26">Operands: </a>
               </li>
               <li class="level4">
                 <a href="#results-21">Results: </a>
@@ -518,10 +526,10 @@ $(function(){initNavTree('dialects.html','',''); });
             </ul>
           </li>
           <li class="level3">
-            <a href="#feltshl-llzkfeltshlfeltop"><span class="tt">felt.shl</span> (<a class="el" href="classllzk_1_1felt_1_1ShlFeltOp.html">llzk::felt::ShlFeltOp</a>) </a>
+            <a href="#feltneg-llzkfeltnegfeltop"><span class="tt">felt.neg</span> (<a class="el" href="classllzk_1_1felt_1_1NegFeltOp.html">llzk::felt::NegFeltOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-26">Operands: </a>
+                <a href="#operands-27">Operands: </a>
               </li>
               <li class="level4">
                 <a href="#results-22">Results: </a>
@@ -529,10 +537,10 @@ $(function(){initNavTree('dialects.html','',''); });
             </ul>
           </li>
           <li class="level3">
-            <a href="#feltshr-llzkfeltshrfeltop"><span class="tt">felt.shr</span> (<a class="el" href="classllzk_1_1felt_1_1ShrFeltOp.html">llzk::felt::ShrFeltOp</a>) </a>
+            <a href="#feltpow-llzkfeltpowfeltop"><span class="tt">felt.pow</span> (<a class="el" href="classllzk_1_1felt_1_1PowFeltOp.html">llzk::felt::PowFeltOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-27">Operands: </a>
+                <a href="#operands-28">Operands: </a>
               </li>
               <li class="level4">
                 <a href="#results-23">Results: </a>
@@ -540,10 +548,10 @@ $(function(){initNavTree('dialects.html','',''); });
             </ul>
           </li>
           <li class="level3">
-            <a href="#feltsintdiv-llzkfeltsignedintdivfeltop"><span class="tt">felt.sintdiv</span> (<a class="el" href="classllzk_1_1felt_1_1SignedIntDivFeltOp.html">llzk::felt::SignedIntDivFeltOp</a>) </a>
+            <a href="#feltshl-llzkfeltshlfeltop"><span class="tt">felt.shl</span> (<a class="el" href="classllzk_1_1felt_1_1ShlFeltOp.html">llzk::felt::ShlFeltOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-28">Operands: </a>
+                <a href="#operands-29">Operands: </a>
               </li>
               <li class="level4">
                 <a href="#results-24">Results: </a>
@@ -551,10 +559,10 @@ $(function(){initNavTree('dialects.html','',''); });
             </ul>
           </li>
           <li class="level3">
-            <a href="#feltsmod-llzkfeltsignedmodfeltop"><span class="tt">felt.smod</span> (<a class="el" href="classllzk_1_1felt_1_1SignedModFeltOp.html">llzk::felt::SignedModFeltOp</a>) </a>
+            <a href="#feltshr-llzkfeltshrfeltop"><span class="tt">felt.shr</span> (<a class="el" href="classllzk_1_1felt_1_1ShrFeltOp.html">llzk::felt::ShrFeltOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-29">Operands: </a>
+                <a href="#operands-30">Operands: </a>
               </li>
               <li class="level4">
                 <a href="#results-25">Results: </a>
@@ -562,10 +570,10 @@ $(function(){initNavTree('dialects.html','',''); });
             </ul>
           </li>
           <li class="level3">
-            <a href="#feltsub-llzkfeltsubfeltop"><span class="tt">felt.sub</span> (<a class="el" href="classllzk_1_1felt_1_1SubFeltOp.html">llzk::felt::SubFeltOp</a>) </a>
+            <a href="#feltsintdiv-llzkfeltsignedintdivfeltop"><span class="tt">felt.sintdiv</span> (<a class="el" href="classllzk_1_1felt_1_1SignedIntDivFeltOp.html">llzk::felt::SignedIntDivFeltOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-30">Operands: </a>
+                <a href="#operands-31">Operands: </a>
               </li>
               <li class="level4">
                 <a href="#results-26">Results: </a>
@@ -573,10 +581,10 @@ $(function(){initNavTree('dialects.html','',''); });
             </ul>
           </li>
           <li class="level3">
-            <a href="#feltuintdiv-llzkfeltunsignedintdivfeltop"><span class="tt">felt.uintdiv</span> (<a class="el" href="classllzk_1_1felt_1_1UnsignedIntDivFeltOp.html">llzk::felt::UnsignedIntDivFeltOp</a>) </a>
+            <a href="#feltsmod-llzkfeltsignedmodfeltop"><span class="tt">felt.smod</span> (<a class="el" href="classllzk_1_1felt_1_1SignedModFeltOp.html">llzk::felt::SignedModFeltOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-31">Operands: </a>
+                <a href="#operands-32">Operands: </a>
               </li>
               <li class="level4">
                 <a href="#results-27">Results: </a>
@@ -584,13 +592,35 @@ $(function(){initNavTree('dialects.html','',''); });
             </ul>
           </li>
           <li class="level3">
-            <a href="#feltumod-llzkfeltunsignedmodfeltop"><span class="tt">felt.umod</span> (<a class="el" href="classllzk_1_1felt_1_1UnsignedModFeltOp.html">llzk::felt::UnsignedModFeltOp</a>) </a>
+            <a href="#feltsub-llzkfeltsubfeltop"><span class="tt">felt.sub</span> (<a class="el" href="classllzk_1_1felt_1_1SubFeltOp.html">llzk::felt::SubFeltOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-32">Operands: </a>
+                <a href="#operands-33">Operands: </a>
               </li>
               <li class="level4">
                 <a href="#results-28">Results: </a>
+              </li>
+            </ul>
+          </li>
+          <li class="level3">
+            <a href="#feltuintdiv-llzkfeltunsignedintdivfeltop"><span class="tt">felt.uintdiv</span> (<a class="el" href="classllzk_1_1felt_1_1UnsignedIntDivFeltOp.html">llzk::felt::UnsignedIntDivFeltOp</a>) </a>
+            <ul>
+              <li class="level4">
+                <a href="#operands-34">Operands: </a>
+              </li>
+              <li class="level4">
+                <a href="#results-29">Results: </a>
+              </li>
+            </ul>
+          </li>
+          <li class="level3">
+            <a href="#feltumod-llzkfeltunsignedmodfeltop"><span class="tt">felt.umod</span> (<a class="el" href="classllzk_1_1felt_1_1UnsignedModFeltOp.html">llzk::felt::UnsignedModFeltOp</a>) </a>
+            <ul>
+              <li class="level4">
+                <a href="#operands-35">Operands: </a>
+              </li>
+              <li class="level4">
+                <a href="#results-30">Results: </a>
               </li>
             </ul>
           </li>
@@ -645,10 +675,10 @@ $(function(){initNavTree('dialects.html','',''); });
                 <a href="#attributes-9">Attributes: </a>
               </li>
               <li class="level4">
-                <a href="#operands-33">Operands: </a>
+                <a href="#operands-36">Operands: </a>
               </li>
               <li class="level4">
-                <a href="#results-29">Results: </a>
+                <a href="#results-31">Results: </a>
               </li>
             </ul>
           </li>
@@ -664,7 +694,7 @@ $(function(){initNavTree('dialects.html','',''); });
             <a href="#functionreturn-llzkfunctionreturnop"><span class="tt">function.return</span> (<a class="el" href="classllzk_1_1function_1_1ReturnOp.html">llzk::function::ReturnOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-34">Operands: </a>
+                <a href="#operands-37">Operands: </a>
               </li>
             </ul>
           </li>
@@ -693,7 +723,7 @@ $(function(){initNavTree('dialects.html','',''); });
                 <a href="#attributes-12">Attributes: </a>
               </li>
               <li class="level4">
-                <a href="#results-30">Results: </a>
+                <a href="#results-32">Results: </a>
               </li>
             </ul>
           </li>
@@ -704,7 +734,7 @@ $(function(){initNavTree('dialects.html','',''); });
                 <a href="#attributes-13">Attributes: </a>
               </li>
               <li class="level4">
-                <a href="#operands-35">Operands: </a>
+                <a href="#operands-38">Operands: </a>
               </li>
             </ul>
           </li>
@@ -740,7 +770,7 @@ $(function(){initNavTree('dialects.html','',''); });
             <a href="#llzknondet-llzknondetop"><span class="tt">llzk.nondet</span> (<a class="el" href="classllzk_1_1NonDetOp.html">llzk::NonDetOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#results-31">Results: </a>
+                <a href="#results-33">Results: </a>
               </li>
             </ul>
           </li>
@@ -777,10 +807,10 @@ $(function(){initNavTree('dialects.html','',''); });
                 <a href="#attributes-16">Attributes: </a>
               </li>
               <li class="level4">
-                <a href="#operands-36">Operands: </a>
+                <a href="#operands-39">Operands: </a>
               </li>
               <li class="level4">
-                <a href="#results-32">Results: </a>
+                <a href="#results-34">Results: </a>
               </li>
             </ul>
           </li>
@@ -791,10 +821,10 @@ $(function(){initNavTree('dialects.html','',''); });
                 <a href="#attributes-17">Attributes: </a>
               </li>
               <li class="level4">
-                <a href="#operands-37">Operands: </a>
+                <a href="#operands-40">Operands: </a>
               </li>
               <li class="level4">
-                <a href="#results-33">Results: </a>
+                <a href="#results-35">Results: </a>
               </li>
             </ul>
           </li>
@@ -805,7 +835,7 @@ $(function(){initNavTree('dialects.html','',''); });
                 <a href="#attributes-18">Attributes: </a>
               </li>
               <li class="level4">
-                <a href="#operands-38">Operands: </a>
+                <a href="#operands-41">Operands: </a>
               </li>
             </ul>
           </li>
@@ -852,10 +882,10 @@ $(function(){initNavTree('dialects.html','',''); });
                 <a href="#attributes-20">Attributes: </a>
               </li>
               <li class="level4">
-                <a href="#operands-39">Operands: </a>
+                <a href="#operands-42">Operands: </a>
               </li>
               <li class="level4">
-                <a href="#results-34">Results: </a>
+                <a href="#results-36">Results: </a>
               </li>
             </ul>
           </li>
@@ -882,7 +912,7 @@ $(function(){initNavTree('dialects.html','',''); });
                 <a href="#attributes-23">Attributes: </a>
               </li>
               <li class="level4">
-                <a href="#results-35">Results: </a>
+                <a href="#results-37">Results: </a>
               </li>
             </ul>
           </li>
@@ -898,10 +928,10 @@ $(function(){initNavTree('dialects.html','',''); });
             <a href="#polyunifiable_cast-llzkpolymorphicunifiablecastop"><span class="tt">poly.unifiable_cast</span> (<a class="el" href="classllzk_1_1polymorphic_1_1UnifiableCastOp.html">llzk::polymorphic::UnifiableCastOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-40">Operands: </a>
+                <a href="#operands-43">Operands: </a>
               </li>
               <li class="level4">
-                <a href="#results-36">Results: </a>
+                <a href="#results-38">Results: </a>
               </li>
             </ul>
           </li>
@@ -909,7 +939,7 @@ $(function(){initNavTree('dialects.html','',''); });
             <a href="#polyyield-llzkpolymorphicyieldop"><span class="tt">poly.yield</span> (<a class="el" href="classllzk_1_1polymorphic_1_1YieldOp.html">llzk::polymorphic::YieldOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-41">Operands: </a>
+                <a href="#operands-44">Operands: </a>
               </li>
             </ul>
           </li>
@@ -943,7 +973,7 @@ $(function(){initNavTree('dialects.html','',''); });
                 <a href="#attributes-25">Attributes: </a>
               </li>
               <li class="level4">
-                <a href="#results-37">Results: </a>
+                <a href="#results-39">Results: </a>
               </li>
             </ul>
           </li>
@@ -985,7 +1015,7 @@ $(function(){initNavTree('dialects.html','',''); });
             <a href="#structnew-llzkcomponentcreatestructop"><span class="tt">struct.new</span> (<a class="el" href="classllzk_1_1component_1_1CreateStructOp.html">llzk::component::CreateStructOp</a>) </a>
             <ul>
               <li class="level4">
-                <a href="#results-38">Results: </a>
+                <a href="#results-40">Results: </a>
               </li>
             </ul>
           </li>
@@ -996,10 +1026,10 @@ $(function(){initNavTree('dialects.html','',''); });
                 <a href="#attributes-28">Attributes: </a>
               </li>
               <li class="level4">
-                <a href="#operands-42">Operands: </a>
+                <a href="#operands-45">Operands: </a>
               </li>
               <li class="level4">
-                <a href="#results-39">Results: </a>
+                <a href="#results-41">Results: </a>
               </li>
             </ul>
           </li>
@@ -1010,7 +1040,7 @@ $(function(){initNavTree('dialects.html','',''); });
                 <a href="#attributes-29">Attributes: </a>
               </li>
               <li class="level4">
-                <a href="#operands-43">Operands: </a>
+                <a href="#operands-46">Operands: </a>
               </li>
             </ul>
           </li>
@@ -1427,6 +1457,66 @@ Results:</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyCenter"><span class="tt">result</span>  </td><td class="markdownTableBodyNone">1-bit signless integer  </td></tr>
 </table>
+<h3 class="doxsection"><a class="anchor" id="boolexists-llzkbooleanexistsop"></a>
+<span class="tt">bool.exists</span> (::llzk::boolean::ExistsOp)</h3>
+<p><em>Exists quantifier operation</em></p>
+<p>This operation applies a predicate to each element of the given sort. Returns true iff the predicate is true for at least one element of the sort.</p>
+<p>Only LLZK arrays are supported as the sort type at the moment.</p>
+<p>Example: </p><div class="fragment"><div class="line">%c10 = felt.const  10</div>
+<div class="line">%0 = array.new %a, %b, %c : !array.type&lt;3 x !felt.type&gt;</div>
+<div class="line">%1 = bool.exists %e in %0 !array.type&lt;3 x !felt.type&gt; {</div>
+<div class="line">  %2 = bool.cmp lt(%e, %c10)</div>
+<div class="line">  bool.yield %2</div>
+<div class="line">}</div>
+</div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">NotFieldNative</span>, <span class="tt">SingleBlock</span></p>
+<p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
+<p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
+<h4 class="doxsection"><a class="anchor" id="operands-9"></a>
+Operands:</h4>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadCenter">Operand  </th><th class="markdownTableHeadNone">Description  </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyCenter"><span class="tt">sort</span>  </td><td class="markdownTableBodyNone">n-dimensional array  </td></tr>
+</table>
+<h4 class="doxsection"><a class="anchor" id="results-6"></a>
+Results:</h4>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadCenter">Result  </th><th class="markdownTableHeadNone">Description  </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyCenter"><span class="tt">result</span>  </td><td class="markdownTableBodyNone">1-bit signless integer  </td></tr>
+</table>
+<h3 class="doxsection"><a class="anchor" id="boolforall-llzkbooleanforallop"></a>
+<span class="tt">bool.forall</span> (::llzk::boolean::ForAllOp)</h3>
+<p><em>Forall quantifier operation</em></p>
+<p>This operation applies a predicate to each element of the given sort. Returns true iff the predicate is true for all elements of the sort.</p>
+<p>Only LLZK arrays are supported as the sort type at the moment.</p>
+<p>Example: </p><div class="fragment"><div class="line">%c10 = felt.const  10</div>
+<div class="line">%0 = array.new %a, %b, %c : !array.type&lt;3 x !felt.type&gt;</div>
+<div class="line">%1 = bool.forall %e in %0 !array.type&lt;3 x !felt.type&gt; {</div>
+<div class="line">  %2 = bool.cmp lt(%e, %c10)</div>
+<div class="line">  bool.yield %2</div>
+<div class="line">}</div>
+</div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">NotFieldNative</span>, <span class="tt">SingleBlock</span></p>
+<p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
+<p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
+<h4 class="doxsection"><a class="anchor" id="operands-10"></a>
+Operands:</h4>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadCenter">Operand  </th><th class="markdownTableHeadNone">Description  </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyCenter"><span class="tt">sort</span>  </td><td class="markdownTableBodyNone">n-dimensional array  </td></tr>
+</table>
+<h4 class="doxsection"><a class="anchor" id="results-7"></a>
+Results:</h4>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadCenter">Result  </th><th class="markdownTableHeadNone">Description  </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyCenter"><span class="tt">result</span>  </td><td class="markdownTableBodyNone">1-bit signless integer  </td></tr>
+</table>
 <h3 class="doxsection"><a class="anchor" id="boolnot-llzkbooleannotboolop"></a>
 <span class="tt">bool.not</span> (::llzk::boolean::NotBoolOp)</h3>
 <p><em>Logical NOT operator</em></p>
@@ -1439,7 +1529,7 @@ Results:</h4>
 <p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">NotFieldNative</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-9"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-11"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1447,7 +1537,7 @@ Operands:</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyCenter"><span class="tt">operand</span>  </td><td class="markdownTableBodyNone">1-bit signless integer or type variable  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-6"></a>
+<h4 class="doxsection"><a class="anchor" id="results-8"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1468,7 +1558,7 @@ Results:</h4>
 <p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">Commutative</span>, <span class="tt">NotFieldNative</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-10"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-12"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1478,7 +1568,7 @@ Operands:</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter"><span class="tt">rhs</span>  </td><td class="markdownTableBodyNone">1-bit signless integer or type variable  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-7"></a>
+<h4 class="doxsection"><a class="anchor" id="results-9"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1499,7 +1589,7 @@ Results:</h4>
 <p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">Commutative</span>, <span class="tt">NotFieldNative</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-11"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-13"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1509,13 +1599,29 @@ Operands:</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter"><span class="tt">rhs</span>  </td><td class="markdownTableBodyNone">1-bit signless integer or type variable  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-8"></a>
+<h4 class="doxsection"><a class="anchor" id="results-10"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
 <th class="markdownTableHeadCenter">Result  </th><th class="markdownTableHeadNone">Description  </th></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyCenter"><span class="tt">result</span>  </td><td class="markdownTableBodyNone">1-bit signless integer  </td></tr>
+</table>
+<h3 class="doxsection"><a class="anchor" id="boolyield-llzkbooleanyieldop"></a>
+<span class="tt">bool.yield</span> (::llzk::boolean::YieldOp)</h3>
+<p><em>Boolean yield operation</em></p>
+<p>Syntax:</p>
+<div class="fragment"><div class="line">operation ::= `bool.yield` $value attr-dict</div>
+</div><!-- fragment --><p>This terminator operation yields the boolean value of the predicate inside the body of <span class="tt">bool.forall</span> and <span class="tt">bool.exists</span> operations.</p>
+<p>Traits: <span class="tt">HasParent&lt;ForAllOp, ExistsOp&gt;</span>, <span class="tt">NotFieldNative</span>, <span class="tt">ReturnLike</span>, <span class="tt">Terminator</span></p>
+<p>Interfaces: <span class="tt">RegionBranchTerminatorOpInterface</span></p>
+<h4 class="doxsection"><a class="anchor" id="operands-14"></a>
+Operands:</h4>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadCenter">Operand  </th><th class="markdownTableHeadNone">Description  </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyCenter"><span class="tt">value</span>  </td><td class="markdownTableBodyNone">1-bit signless integer  </td></tr>
 </table>
 <h2 class="doxsection"><a class="anchor" id="attributes-3"></a>
 Attributes</h2>
@@ -1592,7 +1698,7 @@ Attributes:</h4>
 <tr>
 <td><code>overflow</code></td><td>::llzk::cast::OverflowSemanticsAttr</td><td>Cast overflow semantics</td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="operands-12"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-15"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1600,7 +1706,7 @@ Operands:</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyCenter"><span class="tt">value</span>  </td><td class="markdownTableBodyNone">1-bit signless integer or index  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-9"></a>
+<h4 class="doxsection"><a class="anchor" id="results-11"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1628,7 +1734,7 @@ Attributes:</h4>
 <tr>
 <td><code>overflow</code></td><td>::llzk::cast::OverflowSemanticsAttr</td><td>Cast overflow semantics</td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="operands-13"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-16"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1636,7 +1742,7 @@ Operands:</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyCenter"><span class="tt">value</span>  </td><td class="markdownTableBodyNone">finite field element  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-10"></a>
+<h4 class="doxsection"><a class="anchor" id="results-12"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1701,7 +1807,7 @@ Operations</h2>
 </div><!-- fragment --><p>Emits an equality constraint between lhs and rhs.</p>
 <p>Traits: <span class="tt">Commutative</span>, <span class="tt">ConstraintGen</span>, <span class="tt">Elementwise</span>, <span class="tt">Scalarizable</span>, <span class="tt">Tensorizable</span>, <span class="tt">Vectorizable</span></p>
 <p>Interfaces: <span class="tt">ConstraintOpInterface</span>, <span class="tt">SymbolUserOpInterface</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-14"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-17"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1719,7 +1825,7 @@ Operands:</h4>
 </div><!-- fragment --><p>Emits a containment constraint between lhs and rhs (rhs must be contained within lhs). If lhs is an N-dimensional array (N &gt;= 1), rhs must be an M-dimensional array, where N &gt;= M (M=0 means that rhs is a scalar element of type accepted by the <span class="tt">constrain.eq</span> operation).</p>
 <p>Traits: <span class="tt">ConstraintGen</span></p>
 <p>Interfaces: <span class="tt">ConstraintOpInterface</span>, <span class="tt">SymbolUserOpInterface</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-15"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-18"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1745,7 +1851,7 @@ Operations</h2>
 </div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">Commutative</span>, <span class="tt">InferTypeOpAdaptor</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">FeltBinaryOpInterface</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-16"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-19"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1755,7 +1861,7 @@ Operands:</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter"><span class="tt">rhs</span>  </td><td class="markdownTableBodyNone">finite field element or type variable  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-11"></a>
+<h4 class="doxsection"><a class="anchor" id="results-13"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1774,7 +1880,7 @@ Results:</h4>
 </div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">Commutative</span>, <span class="tt">InferTypeOpAdaptor</span>, <span class="tt">NotFieldNative</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">FeltBinaryOpInterface</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-17"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-20"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1784,7 +1890,7 @@ Operands:</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter"><span class="tt">rhs</span>  </td><td class="markdownTableBodyNone">finite field element or type variable  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-12"></a>
+<h4 class="doxsection"><a class="anchor" id="results-14"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1803,7 +1909,7 @@ Results:</h4>
 <p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">InferTypeOpAdaptor</span>, <span class="tt">NotFieldNative</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-18"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-21"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1811,7 +1917,7 @@ Operands:</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyCenter"><span class="tt">operand</span>  </td><td class="markdownTableBodyNone">finite field element or type variable  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-13"></a>
+<h4 class="doxsection"><a class="anchor" id="results-15"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1830,7 +1936,7 @@ Results:</h4>
 </div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">Commutative</span>, <span class="tt">InferTypeOpAdaptor</span>, <span class="tt">NotFieldNative</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">FeltBinaryOpInterface</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-19"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-22"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1840,7 +1946,7 @@ Operands:</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter"><span class="tt">rhs</span>  </td><td class="markdownTableBodyNone">finite field element or type variable  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-14"></a>
+<h4 class="doxsection"><a class="anchor" id="results-16"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1859,7 +1965,7 @@ Results:</h4>
 </div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">Commutative</span>, <span class="tt">InferTypeOpAdaptor</span>, <span class="tt">NotFieldNative</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">FeltBinaryOpInterface</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-20"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-23"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1869,7 +1975,7 @@ Operands:</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter"><span class="tt">rhs</span>  </td><td class="markdownTableBodyNone">finite field element or type variable  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-15"></a>
+<h4 class="doxsection"><a class="anchor" id="results-17"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1897,7 +2003,7 @@ Attributes:</h4>
 <tr>
 <td><code>value</code></td><td>::llzk::felt::FeltConstAttr</td><td>finite field element</td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-16"></a>
+<h4 class="doxsection"><a class="anchor" id="results-18"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1919,7 +2025,7 @@ Results:</h4>
 <p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">InferTypeOpAdaptor</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">FeltBinaryOpInterface</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-21"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-24"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1929,7 +2035,7 @@ Operands:</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter"><span class="tt">rhs</span>  </td><td class="markdownTableBodyNone">finite field element or type variable  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-17"></a>
+<h4 class="doxsection"><a class="anchor" id="results-19"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1947,7 +2053,7 @@ Results:</h4>
 </div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">InferTypeOpAdaptor</span>, <span class="tt">NotFieldNative</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-22"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-25"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1955,7 +2061,7 @@ Operands:</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyCenter"><span class="tt">operand</span>  </td><td class="markdownTableBodyNone">finite field element or type variable  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-18"></a>
+<h4 class="doxsection"><a class="anchor" id="results-20"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1974,7 +2080,7 @@ Results:</h4>
 </div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">Commutative</span>, <span class="tt">InferTypeOpAdaptor</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">FeltBinaryOpInterface</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-23"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-26"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -1984,7 +2090,7 @@ Operands:</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter"><span class="tt">rhs</span>  </td><td class="markdownTableBodyNone">finite field element or type variable  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-19"></a>
+<h4 class="doxsection"><a class="anchor" id="results-21"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2002,7 +2108,7 @@ Results:</h4>
 </div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">InferTypeOpAdaptor</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-24"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-27"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2010,7 +2116,7 @@ Operands:</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyCenter"><span class="tt">operand</span>  </td><td class="markdownTableBodyNone">finite field element or type variable  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-20"></a>
+<h4 class="doxsection"><a class="anchor" id="results-22"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2031,7 +2137,7 @@ Results:</h4>
 </div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">InferTypeOpAdaptor</span>, <span class="tt">NotFieldNative</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">FeltBinaryOpInterface</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-25"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-28"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2041,7 +2147,7 @@ Operands:</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter"><span class="tt">rhs</span>  </td><td class="markdownTableBodyNone">finite field element or type variable  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-21"></a>
+<h4 class="doxsection"><a class="anchor" id="results-23"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2061,7 +2167,7 @@ Results:</h4>
 <p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">InferTypeOpAdaptor</span>, <span class="tt">NotFieldNative</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">FeltBinaryOpInterface</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-26"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-29"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2071,7 +2177,7 @@ Operands:</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter"><span class="tt">rhs</span>  </td><td class="markdownTableBodyNone">finite field element or type variable  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-22"></a>
+<h4 class="doxsection"><a class="anchor" id="results-24"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2091,7 +2197,7 @@ Results:</h4>
 <p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">InferTypeOpAdaptor</span>, <span class="tt">NotFieldNative</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">FeltBinaryOpInterface</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-27"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-30"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2101,7 +2207,7 @@ Operands:</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter"><span class="tt">rhs</span>  </td><td class="markdownTableBodyNone">finite field element or type variable  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-23"></a>
+<h4 class="doxsection"><a class="anchor" id="results-25"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2124,7 +2230,7 @@ signed_int(f) = f-p  if p/2 + 1 &lt;= f &lt; p
 </pre><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">InferTypeOpAdaptor</span>, <span class="tt">NotFieldNative</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">FeltBinaryOpInterface</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-28"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-31"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2134,7 +2240,7 @@ Operands:</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter"><span class="tt">rhs</span>  </td><td class="markdownTableBodyNone">finite field element or type variable  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-24"></a>
+<h4 class="doxsection"><a class="anchor" id="results-26"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2154,7 +2260,7 @@ Results:</h4>
 <p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">InferTypeOpAdaptor</span>, <span class="tt">NotFieldNative</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">FeltBinaryOpInterface</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-29"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-32"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2164,7 +2270,7 @@ Operands:</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter"><span class="tt">rhs</span>  </td><td class="markdownTableBodyNone">finite field element or type variable  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-25"></a>
+<h4 class="doxsection"><a class="anchor" id="results-27"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2183,7 +2289,7 @@ Results:</h4>
 </div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">InferTypeOpAdaptor</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">FeltBinaryOpInterface</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-30"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-33"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2193,7 +2299,7 @@ Operands:</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter"><span class="tt">rhs</span>  </td><td class="markdownTableBodyNone">finite field element or type variable  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-26"></a>
+<h4 class="doxsection"><a class="anchor" id="results-28"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2213,7 +2319,7 @@ Results:</h4>
 <p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">InferTypeOpAdaptor</span>, <span class="tt">NotFieldNative</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">FeltBinaryOpInterface</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-31"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-34"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2223,7 +2329,7 @@ Operands:</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter"><span class="tt">rhs</span>  </td><td class="markdownTableBodyNone">finite field element or type variable  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-27"></a>
+<h4 class="doxsection"><a class="anchor" id="results-29"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2243,7 +2349,7 @@ Results:</h4>
 <p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">InferTypeOpAdaptor</span>, <span class="tt">NotFieldNative</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">FeltBinaryOpInterface</span>, <span class="tt">InferTypeOpInterface</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-32"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-35"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2253,7 +2359,7 @@ Operands:</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter"><span class="tt">rhs</span>  </td><td class="markdownTableBodyNone">finite field element or type variable  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-28"></a>
+<h4 class="doxsection"><a class="anchor" id="results-30"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2366,7 +2472,7 @@ Attributes:</h4>
 <tr>
 <td><code>mapOpGroupSizes</code></td><td>::mlir::DenseI32ArrayAttr</td><td>i32 dense array attribute</td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="operands-33"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-36"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2376,7 +2482,7 @@ Operands:</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter"><span class="tt">mapOperands</span>  </td><td class="markdownTableBodyNone">variadic of index  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-29"></a>
+<h4 class="doxsection"><a class="anchor" id="results-31"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2441,7 +2547,7 @@ Attributes:</h4>
 </div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">HasParent&lt;::<a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a>&gt;</span>, <span class="tt">MemRefsNormalizable</span>, <span class="tt">ReturnLike</span>, <span class="tt">Terminator</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span>, <span class="tt">RegionBranchTerminatorOpInterface</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-34"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-37"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2502,7 +2608,7 @@ Attributes:</h4>
 <tr>
 <td><code>name_ref</code></td><td>::mlir::SymbolRefAttr</td><td>symbol reference attribute</td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-30"></a>
+<h4 class="doxsection"><a class="anchor" id="results-32"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2526,7 +2632,7 @@ Attributes:</h4>
 <tr>
 <td><code>name_ref</code></td><td>::mlir::SymbolRefAttr</td><td>symbol reference attribute</td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="operands-35"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-38"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2592,7 +2698,7 @@ Operations</h2>
 </div><!-- fragment --><p>This transformation would constrain <span class="tt">m</span> to be exactly equal to 1, thus changing the semantics of the circuit.</p>
 <p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">OpAsmOpInterface</span></p>
-<h4 class="doxsection"><a class="anchor" id="results-31"></a>
+<h4 class="doxsection"><a class="anchor" id="results-33"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2694,7 +2800,7 @@ Attributes:</h4>
 <tr>
 <td><code>mapOpGroupSizes</code></td><td>::mlir::DenseI32ArrayAttr</td><td>i32 dense array attribute</td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="operands-36"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-39"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2704,7 +2810,7 @@ Operands:</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter"><span class="tt">mapOperands</span>  </td><td class="markdownTableBodyNone">variadic of index  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-32"></a>
+<h4 class="doxsection"><a class="anchor" id="results-34"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2729,7 +2835,7 @@ Attributes:</h4>
 <tr>
 <td><code>record_name</code></td><td>::mlir::StringAttr</td><td>string attribute</td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="operands-37"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-40"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2737,7 +2843,7 @@ Operands:</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyCenter"><span class="tt">pod_ref</span>  </td><td class="markdownTableBodyNone">plain-old-data struct  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-33"></a>
+<h4 class="doxsection"><a class="anchor" id="results-35"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2763,7 +2869,7 @@ Attributes:</h4>
 <tr>
 <td><code>record_name</code></td><td>::mlir::StringAttr</td><td>string attribute</td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="operands-38"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-41"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2846,7 +2952,7 @@ Attributes:</h4>
 <tr>
 <td><code>numDims</code></td><td>mlir::IntegerAttr</td><td>index attribute</td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="operands-39"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-42"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2854,7 +2960,7 @@ Operands:</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyCenter"><span class="tt">mapOperands</span>  </td><td class="markdownTableBodyNone">variadic of index  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-34"></a>
+<h4 class="doxsection"><a class="anchor" id="results-36"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2931,7 +3037,7 @@ Attributes:</h4>
 <tr>
 <td><code>const_name</code></td><td>::mlir::FlatSymbolRefAttr</td><td>flat symbol reference attribute</td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-35"></a>
+<h4 class="doxsection"><a class="anchor" id="results-37"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2985,7 +3091,7 @@ Attributes:</h4>
 </div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-40"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-43"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -2993,7 +3099,7 @@ Operands:</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyCenter"><span class="tt">input</span>  </td><td class="markdownTableBodyNone">a valid LLZK type  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-36"></a>
+<h4 class="doxsection"><a class="anchor" id="results-38"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -3009,7 +3115,7 @@ Results:</h4>
 </div><!-- fragment --><p>This operation yields an SSA value from a <span class="tt">poly.expr</span> initialization region and terminates the region.</p>
 <p>Traits: <span class="tt">HasParent&lt;::<a class="el" href="classllzk_1_1polymorphic_1_1TemplateExprOp.html">llzk::polymorphic::TemplateExprOp</a>&gt;</span>, <span class="tt">ReturnLike</span>, <span class="tt">Terminator</span></p>
 <p>Interfaces: <span class="tt">RegionBranchTerminatorOpInterface</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-41"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-44"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -3064,7 +3170,7 @@ Attributes:</h4>
 <tr>
 <td><code>value</code></td><td>::mlir::StringAttr</td><td>string attribute</td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-37"></a>
+<h4 class="doxsection"><a class="anchor" id="results-39"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -3184,7 +3290,7 @@ Attributes:</h4>
 <div class="fragment"><div class="line">%self = struct.new : !struct.type&lt;@Reg&gt;</div>
 </div><!-- fragment --><p>Traits: <span class="tt">WitnessGen</span></p>
 <p>Interfaces: <span class="tt">OpAsmOpInterface</span>, <span class="tt">SymbolUserOpInterface</span></p>
-<h4 class="doxsection"><a class="anchor" id="results-38"></a>
+<h4 class="doxsection"><a class="anchor" id="results-40"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -3219,7 +3325,7 @@ Attributes:</h4>
 <tr>
 <td><code>mapOpGroupSizes</code></td><td>::mlir::DenseI32ArrayAttr</td><td>i32 dense array attribute</td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="operands-42"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-45"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -3229,7 +3335,7 @@ Operands:</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter"><span class="tt">mapOperands</span>  </td><td class="markdownTableBodyNone">variadic of index  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-39"></a>
+<h4 class="doxsection"><a class="anchor" id="results-41"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -3254,7 +3360,7 @@ Attributes:</h4>
 <tr>
 <td><code>member_name</code></td><td>::mlir::FlatSymbolRefAttr</td><td>flat symbol reference attribute</td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="operands-43"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-46"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">

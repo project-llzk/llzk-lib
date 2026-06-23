@@ -8,6 +8,7 @@ var searchData=
   ['enforcement_20responsibilities_5',['Enforcement Responsibilities',['../code-of-conduct.html#enforcement-responsibilities',1,'']]],
   ['enums_6',['Enums',['../dialects.html#enums',1,'Enums'],['../dialects.html#enums-1',1,'Enums']]],
   ['eq_20_3a_3allzk_3a_3aconstrain_3a_3aemitequalityop_7',['&lt;span class=&quot;tt&quot;&gt;constrain.eq&lt;/span&gt; (llzk::constrain::EmitEqualityOp)',['../dialects.html#constraineq-llzkconstrainemitequalityop',1,'']]],
-  ['expr_20_3a_3allzk_3a_3apolymorphic_3a_3atemplateexprop_8',['&lt;span class=&quot;tt&quot;&gt;poly.expr&lt;/span&gt; (llzk::polymorphic::TemplateExprOp)',['../dialects.html#polyexpr-llzkpolymorphictemplateexprop',1,'']]],
-  ['extract_20_3a_3allzk_3a_3aarray_3a_3aextractarrayop_9',['&lt;span class=&quot;tt&quot;&gt;array.extract&lt;/span&gt; (llzk::array::ExtractArrayOp)',['../dialects.html#arrayextract-llzkarrayextractarrayop',1,'']]]
+  ['exists_20_3a_3allzk_3a_3aboolean_3a_3aexistsop_8',['&lt;span class=&quot;tt&quot;&gt;bool.exists&lt;/span&gt; (llzk::boolean::ExistsOp)',['../dialects.html#boolexists-llzkbooleanexistsop',1,'']]],
+  ['expr_20_3a_3allzk_3a_3apolymorphic_3a_3atemplateexprop_9',['&lt;span class=&quot;tt&quot;&gt;poly.expr&lt;/span&gt; (llzk::polymorphic::TemplateExprOp)',['../dialects.html#polyexpr-llzkpolymorphictemplateexprop',1,'']]],
+  ['extract_20_3a_3allzk_3a_3aarray_3a_3aextractarrayop_10',['&lt;span class=&quot;tt&quot;&gt;array.extract&lt;/span&gt; (llzk::array::ExtractArrayOp)',['../dialects.html#arrayextract-llzkarrayextractarrayop',1,'']]]
 ];

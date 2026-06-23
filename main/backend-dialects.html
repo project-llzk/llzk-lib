@@ -119,10 +119,10 @@ $(function(){initNavTree('backend-dialects.html','',''); });
             <a href="#r1csadd-r1csaddop"><span class="tt">r1cs.add</span> (::r1cs::AddOp) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-44">Operands: </a>
+                <a href="#operands-47">Operands: </a>
               </li>
               <li class="level4">
-                <a href="#results-40">Results: </a>
+                <a href="#results-42">Results: </a>
               </li>
             </ul>
           </li>
@@ -141,7 +141,7 @@ $(function(){initNavTree('backend-dialects.html','',''); });
                 <a href="#attributes-31">Attributes: </a>
               </li>
               <li class="level4">
-                <a href="#results-41">Results: </a>
+                <a href="#results-43">Results: </a>
               </li>
             </ul>
           </li>
@@ -149,7 +149,7 @@ $(function(){initNavTree('backend-dialects.html','',''); });
             <a href="#r1csconstrain-r1csconstrainop"><span class="tt">r1cs.constrain</span> (::r1cs::ConstrainOp) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-45">Operands: </a>
+                <a href="#operands-48">Operands: </a>
               </li>
             </ul>
           </li>
@@ -160,7 +160,7 @@ $(function(){initNavTree('backend-dialects.html','',''); });
                 <a href="#attributes-32">Attributes: </a>
               </li>
               <li class="level4">
-                <a href="#results-42">Results: </a>
+                <a href="#results-44">Results: </a>
               </li>
             </ul>
           </li>
@@ -171,10 +171,10 @@ $(function(){initNavTree('backend-dialects.html','',''); });
                 <a href="#attributes-33">Attributes: </a>
               </li>
               <li class="level4">
-                <a href="#operands-46">Operands: </a>
+                <a href="#operands-49">Operands: </a>
               </li>
               <li class="level4">
-                <a href="#results-43">Results: </a>
+                <a href="#results-45">Results: </a>
               </li>
             </ul>
           </li>
@@ -182,10 +182,10 @@ $(function(){initNavTree('backend-dialects.html','',''); });
             <a href="#r1csneg-r1csnegop"><span class="tt">r1cs.neg</span> (::r1cs::NegOp) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-47">Operands: </a>
+                <a href="#operands-50">Operands: </a>
               </li>
               <li class="level4">
-                <a href="#results-44">Results: </a>
+                <a href="#results-46">Results: </a>
               </li>
             </ul>
           </li>
@@ -193,10 +193,10 @@ $(function(){initNavTree('backend-dialects.html','',''); });
             <a href="#r1csto_linear-r1cstolinearop"><span class="tt">r1cs.to_linear</span> (::r1cs::ToLinearOp) </a>
             <ul>
               <li class="level4">
-                <a href="#operands-48">Operands: </a>
+                <a href="#operands-51">Operands: </a>
               </li>
               <li class="level4">
-                <a href="#results-45">Results: </a>
+                <a href="#results-47">Results: </a>
               </li>
             </ul>
           </li>
@@ -251,7 +251,7 @@ Operations</h2>
 </div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span>, <span class="tt">Commutative</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-44"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-47"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -261,7 +261,7 @@ Operands:</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter"><span class="tt">rhs</span>  </td><td class="markdownTableBodyNone">R1CS linear expression type  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-40"></a>
+<h4 class="doxsection"><a class="anchor" id="results-42"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -313,7 +313,7 @@ Attributes:</h4>
 <tr>
 <td><code>value</code></td><td>::r1cs::FeltAttr</td><td>Field element represented as an arbitrary precision integer</td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-41"></a>
+<h4 class="doxsection"><a class="anchor" id="results-43"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -326,7 +326,7 @@ Results:</h4>
 <p><em>Enforce a * b - c = 0 R1CS constraint</em></p>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">operation ::= `r1cs.constrain` $a `,` $b `,` $c attr-dict `:` type($a)</div>
-</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="operands-45"></a>
+</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="operands-48"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -360,7 +360,7 @@ Attributes:</h4>
 <tr>
 <td><code>pub</code></td><td>::r1cs::PublicAttr</td><td>An attribute to mark a type as public</td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-42"></a>
+<h4 class="doxsection"><a class="anchor" id="results-44"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -384,7 +384,7 @@ Attributes:</h4>
 <tr>
 <td><code>constValue</code></td><td>::r1cs::FeltAttr</td><td>Field element represented as an arbitrary precision integer</td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="operands-46"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-49"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -392,7 +392,7 @@ Operands:</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyCenter"><span class="tt">input</span>  </td><td class="markdownTableBodyNone">R1CS linear expression type  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-43"></a>
+<h4 class="doxsection"><a class="anchor" id="results-45"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -408,7 +408,7 @@ Results:</h4>
 </div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-47"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-50"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -416,7 +416,7 @@ Operands:</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyCenter"><span class="tt">input</span>  </td><td class="markdownTableBodyNone">R1CS linear expression type  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-44"></a>
+<h4 class="doxsection"><a class="anchor" id="results-46"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -432,7 +432,7 @@ Results:</h4>
 </div><!-- fragment --><p>Traits: <span class="tt">AlwaysSpeculatableImplTrait</span></p>
 <p>Interfaces: <span class="tt">ConditionallySpeculatable</span>, <span class="tt">NoMemoryEffect (MemoryEffectOpInterface)</span></p>
 <p>Effects: <span class="tt">MemoryEffects::Effect{}</span></p>
-<h4 class="doxsection"><a class="anchor" id="operands-48"></a>
+<h4 class="doxsection"><a class="anchor" id="operands-51"></a>
 Operands:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -440,7 +440,7 @@ Operands:</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyCenter"><span class="tt">input</span>  </td><td class="markdownTableBodyNone">R1CS signal wire type  </td></tr>
 </table>
-<h4 class="doxsection"><a class="anchor" id="results-45"></a>
+<h4 class="doxsection"><a class="anchor" id="results-47"></a>
 Results:</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
