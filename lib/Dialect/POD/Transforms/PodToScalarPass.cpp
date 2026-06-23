@@ -603,8 +603,9 @@ orderedVirtualPodLeafValues(PodType podTy, const VirtualPodLeafMap &leafValues) 
 inline static void
 materializeVirtualPod(OpBuilder &bldr, NewPodOp pod, const VirtualPodLeafMap &leafValues) {
   Location loc = pod.getLoc();
+  PodType podTy = pod.getType();
   SmallVector<StringAttr> recordChain;
-  for (RecordAttr record : pod.getType().getRecords()) {
+  for (RecordAttr record : podTy.getRecords()) {
     recordChain.push_back(record.getName());
     Value recordValue =
         rebuildFlattenedPodRecord(bldr, loc, record.getType(), recordChain, leafValues);
