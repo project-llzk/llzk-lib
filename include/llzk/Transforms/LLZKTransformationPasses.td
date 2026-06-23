@@ -154,7 +154,11 @@ def VerifToSmtPass : LLZKPass<"llzk-scalar-verif-to-smt"> {
                         /* default */ "false",
                         "Whether to remove original LLZK symbol definitions "
                         "after lowering so the output can be consumed "
-                        "directly by `-smt-to-smtlib`.">];
+                        "directly by `-smt-to-smtlib`.">,
+                 Option<"allowAggregates", "allow-aggregates", "bool",
+                        /* default */ "false",
+                        "Whether to allow aggregate-aware lowering for arrays "
+                        "and PODs at the function and contract boundaries.">];
 }
 
 #endif // LLZK_TRANSFORMATION_PASSES_TD

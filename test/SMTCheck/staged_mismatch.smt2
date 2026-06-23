@@ -2,9 +2,10 @@
 
 (set-logic ALL)
 
+; root: smt_verif_Sample_entry
 ; check-sat stage=pre expect=unsat
 (check-sat)
 
-; CHECK: pre: sat (expected unsat)
+; CHECK: smt_verif_Sample_entry/pre: sat (expected unsat)
 ; CHECK: llzk-smt-check: stage result mismatch:
-; CHECK-NEXT: pre: got sat, expected unsat
+; CHECK-NEXT: smt_verif_Sample_entry/pre: got sat, expected unsat

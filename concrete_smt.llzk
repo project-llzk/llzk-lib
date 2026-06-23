@@ -1,0 +1,1098 @@
+module attributes {llzk.lang = "circom"} {
+  func.func @smt_LessThanPower_0__LessThanPower_0_compute(%arg0: !smt.int) -> !smt.int {
+    %c0 = smt.int.constant 0
+    %c1 = smt.int.constant 1
+    %c2 = smt.int.constant 2
+    %c21888242871839275222246405745257275088548364400416034343698204186575808495617 = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %0 = smt.int.mod %arg0, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %1 = smt.int2bv %0 : !smt.bv<254>
+    %2 = smt.int.mod %c2, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %3 = smt.int2bv %2 : !smt.bv<254>
+    %4 = smt.bv.lshr %1, %3 : !smt.bv<254>
+    %5 = smt.bv2int %4 : !smt.bv<254>
+    %6 = smt.int.mod %5, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %7 = smt.int.cmp gt %6, %c0
+    %8 = smt.ite %7, %c0, %c1 : !smt.int
+    return %8 : !smt.int
+  }
+  func.func @smt_LessThanPower_0__LessThanPower_0_constrain(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %c1 = smt.int.constant 1
+    %c21888242871839275222246405745257275088548364400416034343698204186575808495617 = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %0 = smt.int.mod %arg0, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %1 = smt.int.mod %c1, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %2 = smt.int.sub %0, %1
+    %3 = smt.int.mod %2, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %4 = smt.int.mod %arg0, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %5 = smt.int.mod %3, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %6 = smt.int.mul %4, %5
+    %7 = smt.int.mod %6, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %c0 = smt.int.constant 0
+    %8 = smt.eq %7, %c0 : !smt.int
+    %true = smt.constant true
+    %true_0 = smt.constant true
+    return %8 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_compute_pre(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_compute_post(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %c4 = smt.int.constant 4
+    %0 = smt.int.cmp lt %arg1, %c4
+    %c1 = smt.int.constant 1
+    %c0 = smt.int.constant 0
+    %1 = smt.ite %0, %c1, %c0 : !smt.int
+    %2 = smt.eq %arg0, %1 : !smt.int
+    %true = smt.constant true
+    return %2 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_compute_post_part_0(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %c4 = smt.int.constant 4
+    %0 = smt.int.cmp lt %arg1, %c4
+    %c1 = smt.int.constant 1
+    %c0 = smt.int.constant 0
+    %1 = smt.ite %0, %c1, %c0 : !smt.int
+    %2 = smt.eq %arg0, %1 : !smt.int
+    return %2 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_compute_target(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %0 = call @smt_LessThanPower_0__LessThanPower_0_compute(%arg1) : (!smt.int) -> !smt.int
+    %1 = smt.eq %0, %arg0 : !smt.int
+    %true = smt.constant true
+    return %1 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_compute_target_part_0(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %0 = call @smt_LessThanPower_0__LessThanPower_0_compute(%arg1) : (!smt.int) -> !smt.int
+    %1 = smt.eq %0, %arg0 : !smt.int
+    return %1 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_constrain_pre(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_constrain_post(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %c4 = smt.int.constant 4
+    %0 = smt.int.cmp lt %arg1, %c4
+    %c1 = smt.int.constant 1
+    %c0 = smt.int.constant 0
+    %1 = smt.ite %0, %c1, %c0 : !smt.int
+    %2 = smt.eq %arg0, %1 : !smt.int
+    %true = smt.constant true
+    return %2 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_constrain_post_part_0(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %c4 = smt.int.constant 4
+    %0 = smt.int.cmp lt %arg1, %c4
+    %c1 = smt.int.constant 1
+    %c0 = smt.int.constant 0
+    %1 = smt.ite %0, %c1, %c0 : !smt.int
+    %2 = smt.eq %arg0, %1 : !smt.int
+    return %2 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_constrain_target(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %0 = call @smt_LessThanPower_0__LessThanPower_0_constrain(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    return %0 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_pre(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_post(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %0 = call @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_compute_post(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    %1 = call @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_constrain_post(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    %2 = smt.and %0, %1
+    return %2 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_target(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %0 = call @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_compute_target(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    %1 = call @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_constrain_target(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    %2 = smt.and %0, %1
+    return %2 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_compute_entry(%arg0: !smt.int, %arg1: !smt.int) {
+    %c0 = smt.int.constant 0
+    %0 = call @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_compute_pre(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %1 = smt.not %0
+    smt.assert %1
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 compute pre: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 compute pre: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %0
+    }
+    %2 = call @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_compute_target_part_0(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %3 = smt.not %2
+    smt.assert %3
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 compute target: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 compute target: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %2
+    }
+    %4 = call @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_compute_post_part_0(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %5 = smt.not %4
+    smt.assert %5
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 compute post: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 compute post: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %4
+    }
+    return
+  }
+  func.func @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_constrain_entry(%arg0: !smt.int, %arg1: !smt.int) {
+    %c0 = smt.int.constant 0
+    %0 = call @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_constrain_pre(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %1 = smt.not %0
+    smt.assert %1
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 constrain pre: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 constrain pre: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %0
+    }
+    %2 = call @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_constrain_target(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %3 = smt.not %2
+    smt.assert %3
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 constrain target: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 constrain target: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %2
+    }
+    %4 = call @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_constrain_post_part_0(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %5 = smt.not %4
+    smt.assert %5
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 constrain post: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 constrain post: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %4
+    }
+    return
+  }
+  func.func @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_internal_entry(%arg0: !smt.int, %arg1: !smt.int) {
+    %c0 = smt.int.constant 0
+    %0 = call @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_pre(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %1 = smt.not %0
+    smt.assert %1
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 pre: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 pre: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %0
+    }
+    %2 = call @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_compute_target_part_0(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %3 = smt.not %2
+    smt.assert %3
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 target[0]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 target[0]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %2
+    }
+    %4 = call @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_constrain_target(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %5 = smt.not %4
+    smt.assert %5
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 target[1]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 target[1]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %4
+    }
+    %6 = call @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_compute_post_part_0(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %7 = smt.not %6
+    smt.assert %7
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 post[0]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 post[0]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %6
+    }
+    %8 = call @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_constrain_post_part_0(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %9 = smt.not %8
+    smt.assert %9
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 post[1]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 post[1]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %8
+    }
+    return
+  }
+  func.func @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_entry(%arg0: !smt.int, %arg1: !smt.int) {
+    %c0 = smt.int.constant 0
+    %0 = call @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_pre(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.assert %0
+    %1 = call @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_compute_target_part_0(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %2 = smt.not %1
+    smt.assert %2
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 target[0]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 target[0]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %1
+    }
+    %3 = call @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_constrain_target(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %4 = smt.not %3
+    smt.assert %4
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 target[1]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 target[1]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %3
+    }
+    %5 = call @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_compute_post_part_0(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %6 = smt.not %5
+    smt.assert %6
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 post[0]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 post[0]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %5
+    }
+    %7 = call @smt_verif_LessThanPower_0__LessThanPower_0$LessThanPower_0$contract$0_constrain_post_part_0(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %8 = smt.not %7
+    smt.assert %8
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 post[1]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPower_0$LessThanPower_0$contract$0 post[1]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %7
+    }
+    return
+  }
+  func.func @smt_LessThanPowerFixed_2__LessThanPowerFixed_2_compute(%arg0: !smt.int) -> (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int) {
+    %c1 = smt.int.constant 1
+    %array_0 = smt.declare_fun "array_0" : !smt.array<[!smt.int -> !smt.int]>
+    %c2 = smt.int.constant 2
+    %0 = smt.array.select %array_0[%c2] : !smt.array<[!smt.int -> !smt.int]>
+    %c21888242871839275222246405745257275088548364400416034343698204186575808495617 = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %1 = smt.int.mod %c1, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %2 = smt.int.mod %0, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %3 = smt.int.sub %1, %2
+    %4 = smt.int.mod %3, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %5:3 = call @smt_Num2Bits_1__Num2Bits_1_compute(%arg0) : (!smt.int) -> (!smt.int, !smt.int, !smt.int)
+    return %4, %5#0, %5#1, %5#2, %arg0 : !smt.int, !smt.int, !smt.int, !smt.int, !smt.int
+  }
+  func.func @smt_Num2Bits_1__Num2Bits_1_compute(%arg0: !smt.int) -> (!smt.int, !smt.int, !smt.int) {
+    %c3 = smt.int.constant 3
+    %c0 = smt.int.constant 0
+    %c1 = smt.int.constant 1
+    %loop_array_1 = smt.declare_fun "loop_array_1" : !smt.array<[!smt.int -> !smt.int]>
+    %0 = smt.forall ["idx"] {
+    ^bb0(%arg1: !smt.int):
+      %c21888242871839275222246405745257275088548364400416034343698204186575808495617 = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495617
+      %4 = smt.int.mod %arg0, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+      %5 = smt.int2bv %4 : !smt.bv<254>
+      %6 = smt.int.mod %arg1, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+      %7 = smt.int2bv %6 : !smt.bv<254>
+      %8 = smt.bv.lshr %5, %7 : !smt.bv<254>
+      %9 = smt.bv2int %8 : !smt.bv<254>
+      %10 = smt.int.mod %9, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+      %c1_2 = smt.int.constant 1
+      %11 = smt.int.mod %10, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+      %12 = smt.int2bv %11 : !smt.bv<254>
+      %13 = smt.int.mod %c1_2, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+      %14 = smt.int2bv %13 : !smt.bv<254>
+      %15 = smt.bv.and %12, %14 : !smt.bv<254>
+      %16 = smt.bv2int %15 : !smt.bv<254>
+      %17 = smt.int.mod %16, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+      %18 = smt.array.select %loop_array_1[%arg1] : !smt.array<[!smt.int -> !smt.int]>
+      %19 = smt.eq %18, %17 : !smt.int
+      %20 = smt.int.cmp ge %arg1, %c0
+      %21 = smt.int.cmp lt %arg1, %c3
+      %22 = smt.and %20, %21
+      %23 = smt.implies %22, %19
+      smt.yield %23 : !smt.bool
+    }
+    smt.assert %0
+    %c0_0 = smt.int.constant 0
+    %1 = smt.array.select %loop_array_1[%c0_0] : !smt.array<[!smt.int -> !smt.int]>
+    %c1_1 = smt.int.constant 1
+    %2 = smt.array.select %loop_array_1[%c1_1] : !smt.array<[!smt.int -> !smt.int]>
+    %c2 = smt.int.constant 2
+    %3 = smt.array.select %loop_array_1[%c2] : !smt.array<[!smt.int -> !smt.int]>
+    return %1, %2, %3 : !smt.int, !smt.int, !smt.int
+  }
+  func.func @smt_Num2Bits_1__Num2Bits_1_constrain(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int) -> !smt.bool {
+    %c3 = smt.int.constant 3
+    %c0 = smt.int.constant 0
+    %c1 = smt.int.constant 1
+    %c21888242871839275222246405745257275088548364400416034343698204186575808495617 = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %0 = smt.int.mod %c3, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %c1_0 = smt.int.constant 1
+    %1 = smt.int2bv %c1_0 : !smt.bv<254>
+    %2 = smt.int2bv %0 : !smt.bv<254>
+    %3 = smt.bv.shl %1, %2 : !smt.bv<254>
+    %4 = smt.bv2int %3 : !smt.bv<254>
+    %5 = smt.int.mod %4, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %while_accum_2 = smt.declare_fun "while_accum_2" : !smt.array<[!smt.int -> !smt.int]>
+    %c0_1 = smt.int.constant 0
+    %6 = smt.array.select %while_accum_2[%c0] : !smt.array<[!smt.int -> !smt.int]>
+    %7 = smt.eq %6, %c0_1 : !smt.int
+    smt.assert %7
+    %8 = smt.array.select %while_accum_2[%c3] : !smt.array<[!smt.int -> !smt.int]>
+    %9 = smt.forall ["idx"] {
+    ^bb0(%arg4: !smt.int):
+      %15 = smt.int.add %arg4, %c1
+      %16 = smt.array.select %while_accum_2[%arg4] : !smt.array<[!smt.int -> !smt.int]>
+      %c21888242871839275222246405745257275088548364400416034343698204186575808495617_5 = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495617
+      %17 = smt.int.mod %arg4, %c21888242871839275222246405745257275088548364400416034343698204186575808495617_5
+      %c1_6 = smt.int.constant 1
+      %18 = smt.int2bv %c1_6 : !smt.bv<254>
+      %19 = smt.int2bv %17 : !smt.bv<254>
+      %20 = smt.bv.shl %18, %19 : !smt.bv<254>
+      %21 = smt.bv2int %20 : !smt.bv<254>
+      %22 = smt.int.mod %21, %c21888242871839275222246405745257275088548364400416034343698204186575808495617_5
+      %array_3 = smt.declare_fun "array_3" : !smt.array<[!smt.int -> !smt.int]>
+      %23 = smt.array.select %array_3[%arg4] : !smt.array<[!smt.int -> !smt.int]>
+      %c21888242871839275222246405745257275088548364400416034343698204186575808495617_7 = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495617
+      %24 = smt.int.mod %23, %c21888242871839275222246405745257275088548364400416034343698204186575808495617_7
+      %25 = smt.int.mod %22, %c21888242871839275222246405745257275088548364400416034343698204186575808495617_7
+      %26 = smt.int.mul %24, %25
+      %27 = smt.int.mod %26, %c21888242871839275222246405745257275088548364400416034343698204186575808495617_7
+      %28 = smt.int.mod %16, %c21888242871839275222246405745257275088548364400416034343698204186575808495617_7
+      %29 = smt.int.mod %27, %c21888242871839275222246405745257275088548364400416034343698204186575808495617_7
+      %30 = smt.int.add %28, %29
+      %31 = smt.int.mod %30, %c21888242871839275222246405745257275088548364400416034343698204186575808495617_7
+      %32 = smt.array.select %while_accum_2[%15] : !smt.array<[!smt.int -> !smt.int]>
+      %33 = smt.eq %32, %31 : !smt.int
+      %34 = smt.int.cmp ge %arg4, %c0
+      %35 = smt.int.cmp lt %arg4, %c3
+      %36 = smt.and %34, %35
+      %37 = smt.implies %36, %33
+      smt.yield %37 : !smt.bool
+    }
+    smt.assert %9
+    %10 = smt.forall ["idx"] {
+    ^bb0(%arg4: !smt.int):
+      %15 = smt.array.select %while_accum_2[%arg4] : !smt.array<[!smt.int -> !smt.int]>
+      %c21888242871839275222246405745257275088548364400416034343698204186575808495617_5 = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495617
+      %16 = smt.int.mod %arg4, %c21888242871839275222246405745257275088548364400416034343698204186575808495617_5
+      %c1_6 = smt.int.constant 1
+      %17 = smt.int2bv %c1_6 : !smt.bv<254>
+      %18 = smt.int2bv %16 : !smt.bv<254>
+      %19 = smt.bv.shl %17, %18 : !smt.bv<254>
+      %20 = smt.bv2int %19 : !smt.bv<254>
+      %21 = smt.int.mod %20, %c21888242871839275222246405745257275088548364400416034343698204186575808495617_5
+      %array_4 = smt.declare_fun "array_4" : !smt.array<[!smt.int -> !smt.int]>
+      %22 = smt.array.select %array_4[%arg4] : !smt.array<[!smt.int -> !smt.int]>
+      %23 = smt.array.select %array_4[%arg4] : !smt.array<[!smt.int -> !smt.int]>
+      %c1_7 = smt.int.constant 1
+      %c21888242871839275222246405745257275088548364400416034343698204186575808495617_8 = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495617
+      %24 = smt.int.mod %23, %c21888242871839275222246405745257275088548364400416034343698204186575808495617_8
+      %25 = smt.int.mod %c1_7, %c21888242871839275222246405745257275088548364400416034343698204186575808495617_8
+      %26 = smt.int.sub %24, %25
+      %27 = smt.int.mod %26, %c21888242871839275222246405745257275088548364400416034343698204186575808495617_8
+      %28 = smt.int.mod %22, %c21888242871839275222246405745257275088548364400416034343698204186575808495617_8
+      %29 = smt.int.mod %27, %c21888242871839275222246405745257275088548364400416034343698204186575808495617_8
+      %30 = smt.int.mul %28, %29
+      %31 = smt.int.mod %30, %c21888242871839275222246405745257275088548364400416034343698204186575808495617_8
+      %32 = smt.eq %31, %c0_1 : !smt.int
+      %33 = smt.int.cmp ge %arg4, %c0
+      %34 = smt.int.cmp lt %arg4, %c3
+      %35 = smt.and %33, %34
+      %36 = smt.implies %35, %32
+      smt.yield %36 : !smt.bool
+    }
+    smt.assert %10
+    %array_5 = smt.declare_fun "array_5" : !smt.array<[!smt.int -> !smt.int]>
+    %c1_2 = smt.int.constant 1
+    %11 = smt.array.store %array_5[%c1_2], %arg1 : !smt.array<[!smt.int -> !smt.int]>
+    %c0_3 = smt.int.constant 0
+    %12 = smt.array.store %11[%c0_3], %arg0 : !smt.array<[!smt.int -> !smt.int]>
+    %c2 = smt.int.constant 2
+    %13 = smt.array.store %12[%c2], %arg2 : !smt.array<[!smt.int -> !smt.int]>
+    %14 = smt.eq %8, %arg3 : !smt.int
+    %true = smt.constant true
+    %true_4 = smt.constant true
+    return %14 : !smt.bool
+  }
+  func.func @smt_LessThanPowerFixed_2__LessThanPowerFixed_2_constrain(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int, %arg4: !smt.int, %arg5: !smt.int) -> !smt.bool {
+    %0 = smt.eq %arg4, %arg5 : !smt.int
+    %true = smt.constant true
+    %array_6 = smt.declare_fun "array_6" : !smt.array<[!smt.int -> !smt.int]>
+    %c1 = smt.int.constant 1
+    %1 = smt.array.store %array_6[%c1], %arg2 : !smt.array<[!smt.int -> !smt.int]>
+    %c0 = smt.int.constant 0
+    %2 = smt.array.store %1[%c0], %arg1 : !smt.array<[!smt.int -> !smt.int]>
+    %c2 = smt.int.constant 2
+    %3 = smt.array.store %2[%c2], %arg3 : !smt.array<[!smt.int -> !smt.int]>
+    %c1_0 = smt.int.constant 1
+    %4 = smt.array.select %3[%c2] : !smt.array<[!smt.int -> !smt.int]>
+    %c21888242871839275222246405745257275088548364400416034343698204186575808495617 = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %5 = smt.int.mod %c1_0, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %6 = smt.int.mod %4, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %7 = smt.int.sub %5, %6
+    %8 = smt.int.mod %7, %c21888242871839275222246405745257275088548364400416034343698204186575808495617
+    %9 = smt.eq %arg0, %8 : !smt.int
+    %true_1 = smt.constant true
+    %10 = call @smt_Num2Bits_1__Num2Bits_1_constrain(%arg1, %arg2, %arg3, %arg4) : (!smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    %true_2 = smt.constant true
+    %11 = smt.and %0, %9
+    %12 = smt.and %11, %10
+    return %12 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_pre(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int, %arg4: !smt.int, %arg5: !smt.int) -> !smt.bool {
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_post(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int, %arg4: !smt.int, %arg5: !smt.int) -> !smt.bool {
+    %c4 = smt.int.constant 4
+    %0 = smt.int.cmp lt %arg5, %c4
+    %c1 = smt.int.constant 1
+    %c0 = smt.int.constant 0
+    %1 = smt.ite %0, %c1, %c0 : !smt.int
+    %2 = smt.eq %arg0, %1 : !smt.int
+    %true = smt.constant true
+    return %2 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_post_part_0(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int, %arg4: !smt.int, %arg5: !smt.int) -> !smt.bool {
+    %c4 = smt.int.constant 4
+    %0 = smt.int.cmp lt %arg5, %c4
+    %c1 = smt.int.constant 1
+    %c0 = smt.int.constant 0
+    %1 = smt.ite %0, %c1, %c0 : !smt.int
+    %2 = smt.eq %arg0, %1 : !smt.int
+    return %2 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int, %arg4: !smt.int, %arg5: !smt.int) -> !smt.bool {
+    %0:5 = call @smt_LessThanPowerFixed_2__LessThanPowerFixed_2_compute(%arg5) : (!smt.int) -> (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int)
+    %1 = smt.eq %0#0, %arg0 : !smt.int
+    %2 = smt.eq %0#1, %arg1 : !smt.int
+    %3 = smt.eq %0#2, %arg2 : !smt.int
+    %4 = smt.eq %0#3, %arg3 : !smt.int
+    %5 = smt.eq %0#4, %arg4 : !smt.int
+    %true = smt.constant true
+    %6 = smt.and %1, %2
+    %7 = smt.and %6, %3
+    %8 = smt.and %7, %4
+    %9 = smt.and %8, %5
+    return %9 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target_part_0(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int, %arg4: !smt.int, %arg5: !smt.int) -> !smt.bool {
+    %0:5 = call @smt_LessThanPowerFixed_2__LessThanPowerFixed_2_compute(%arg5) : (!smt.int) -> (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int)
+    %1 = smt.eq %0#0, %arg0 : !smt.int
+    return %1 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target_part_1(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int, %arg4: !smt.int, %arg5: !smt.int) -> !smt.bool {
+    %0:5 = call @smt_LessThanPowerFixed_2__LessThanPowerFixed_2_compute(%arg5) : (!smt.int) -> (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int)
+    %1 = smt.eq %0#1, %arg1 : !smt.int
+    return %1 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target_part_2(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int, %arg4: !smt.int, %arg5: !smt.int) -> !smt.bool {
+    %0:5 = call @smt_LessThanPowerFixed_2__LessThanPowerFixed_2_compute(%arg5) : (!smt.int) -> (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int)
+    %1 = smt.eq %0#2, %arg2 : !smt.int
+    return %1 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target_part_3(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int, %arg4: !smt.int, %arg5: !smt.int) -> !smt.bool {
+    %0:5 = call @smt_LessThanPowerFixed_2__LessThanPowerFixed_2_compute(%arg5) : (!smt.int) -> (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int)
+    %1 = smt.eq %0#3, %arg3 : !smt.int
+    return %1 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target_part_4(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int, %arg4: !smt.int, %arg5: !smt.int) -> !smt.bool {
+    %0:5 = call @smt_LessThanPowerFixed_2__LessThanPowerFixed_2_compute(%arg5) : (!smt.int) -> (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int)
+    %1 = smt.eq %0#4, %arg4 : !smt.int
+    return %1 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_constrain_pre(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int, %arg4: !smt.int, %arg5: !smt.int) -> !smt.bool {
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_constrain_post(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int, %arg4: !smt.int, %arg5: !smt.int) -> !smt.bool {
+    %c4 = smt.int.constant 4
+    %0 = smt.int.cmp lt %arg5, %c4
+    %c1 = smt.int.constant 1
+    %c0 = smt.int.constant 0
+    %1 = smt.ite %0, %c1, %c0 : !smt.int
+    %2 = smt.eq %arg0, %1 : !smt.int
+    %true = smt.constant true
+    return %2 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_constrain_post_part_0(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int, %arg4: !smt.int, %arg5: !smt.int) -> !smt.bool {
+    %c4 = smt.int.constant 4
+    %0 = smt.int.cmp lt %arg5, %c4
+    %c1 = smt.int.constant 1
+    %c0 = smt.int.constant 0
+    %1 = smt.ite %0, %c1, %c0 : !smt.int
+    %2 = smt.eq %arg0, %1 : !smt.int
+    return %2 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_constrain_target(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int, %arg4: !smt.int, %arg5: !smt.int) -> !smt.bool {
+    %0 = call @smt_LessThanPowerFixed_2__LessThanPowerFixed_2_constrain(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    return %0 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_pre(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int, %arg4: !smt.int, %arg5: !smt.int) -> !smt.bool {
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_post(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int, %arg4: !smt.int, %arg5: !smt.int) -> !smt.bool {
+    %0 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_post(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    %1 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_constrain_post(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    %2 = smt.and %0, %1
+    return %2 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_target(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int, %arg4: !smt.int, %arg5: !smt.int) -> !smt.bool {
+    %0 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    %1 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_constrain_target(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    %2 = smt.and %0, %1
+    return %2 : !smt.bool
+  }
+  func.func @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_entry(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int, %arg4: !smt.int, %arg5: !smt.int) {
+    %c0 = smt.int.constant 0
+    %0 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_pre(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %1 = smt.not %0
+    smt.assert %1
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 compute pre: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 compute pre: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %0
+    }
+    %2 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target_part_0(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %3 = smt.not %2
+    smt.assert %3
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 compute target[0]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 compute target[0]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %2
+    }
+    %4 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target_part_1(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %5 = smt.not %4
+    smt.assert %5
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 compute target[1]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 compute target[1]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %4
+    }
+    %6 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target_part_2(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %7 = smt.not %6
+    smt.assert %7
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 compute target[2]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 compute target[2]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %6
+    }
+    %8 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target_part_3(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %9 = smt.not %8
+    smt.assert %9
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 compute target[3]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 compute target[3]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %8
+    }
+    %10 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target_part_4(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %11 = smt.not %10
+    smt.assert %11
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 compute target[4]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 compute target[4]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %10
+    }
+    %12 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_post_part_0(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %13 = smt.not %12
+    smt.assert %13
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 compute post: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 compute post: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %12
+    }
+    return
+  }
+  func.func @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_constrain_entry(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int, %arg4: !smt.int, %arg5: !smt.int) {
+    %c0 = smt.int.constant 0
+    %0 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_constrain_pre(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %1 = smt.not %0
+    smt.assert %1
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 constrain pre: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 constrain pre: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %0
+    }
+    %2 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_constrain_target(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %3 = smt.not %2
+    smt.assert %3
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 constrain target: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 constrain target: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %2
+    }
+    %4 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_constrain_post_part_0(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %5 = smt.not %4
+    smt.assert %5
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 constrain post: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 constrain post: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %4
+    }
+    return
+  }
+  func.func @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_internal_entry(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int, %arg4: !smt.int, %arg5: !smt.int) {
+    %c0 = smt.int.constant 0
+    %0 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_pre(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %1 = smt.not %0
+    smt.assert %1
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 pre: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 pre: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %0
+    }
+    %2 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target_part_0(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %3 = smt.not %2
+    smt.assert %3
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[0]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[0]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %2
+    }
+    %4 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target_part_1(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %5 = smt.not %4
+    smt.assert %5
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[1]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[1]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %4
+    }
+    %6 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target_part_2(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %7 = smt.not %6
+    smt.assert %7
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[2]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[2]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %6
+    }
+    %8 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target_part_3(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %9 = smt.not %8
+    smt.assert %9
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[3]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[3]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %8
+    }
+    %10 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target_part_4(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %11 = smt.not %10
+    smt.assert %11
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[4]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[4]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %10
+    }
+    %12 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_constrain_target(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %13 = smt.not %12
+    smt.assert %13
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[5]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[5]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %12
+    }
+    %14 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_post_part_0(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %15 = smt.not %14
+    smt.assert %15
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 post[0]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 post[0]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %14
+    }
+    %16 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_constrain_post_part_0(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %17 = smt.not %16
+    smt.assert %17
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 post[1]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 post[1]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %16
+    }
+    return
+  }
+  func.func @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_entry(%arg0: !smt.int, %arg1: !smt.int, %arg2: !smt.int, %arg3: !smt.int, %arg4: !smt.int, %arg5: !smt.int) {
+    %c0 = smt.int.constant 0
+    %0 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_pre(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.assert %0
+    %1 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target_part_0(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %2 = smt.not %1
+    smt.assert %2
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[0]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[0]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %1
+    }
+    %3 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target_part_1(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %4 = smt.not %3
+    smt.assert %4
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[1]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[1]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %3
+    }
+    %5 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target_part_2(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %6 = smt.not %5
+    smt.assert %6
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[2]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[2]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %5
+    }
+    %7 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target_part_3(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %8 = smt.not %7
+    smt.assert %8
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[3]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[3]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %7
+    }
+    %9 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_target_part_4(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %10 = smt.not %9
+    smt.assert %10
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[4]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[4]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %9
+    }
+    %11 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_constrain_target(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %12 = smt.not %11
+    smt.assert %12
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[5]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 target[5]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %11
+    }
+    %13 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_compute_post_part_0(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %14 = smt.not %13
+    smt.assert %14
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 post[0]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 post[0]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %13
+    }
+    %15 = call @smt_verif_LessThanPowerFixed_2__LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1_constrain_post_part_0(%arg0, %arg1, %arg2, %arg3, %arg4, %arg5) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %16 = smt.not %15
+    smt.assert %16
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 post[1]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in LessThanPowerFixed_2$LessThanPowerFixed_2$contract$1 post[1]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %15
+    }
+    return
+  }
+}
+

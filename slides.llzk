@@ -1,0 +1,334 @@
+module attributes {llzk.lang} {
+  struct.def @Box {
+    struct.member @value : !felt.type
+
+    function.def @compute(%x: !felt.type) -> !struct.type<@Box> {
+      %self = struct.new : !struct.type<@Box>
+      struct.writem %self[@value] = %x : !struct.type<@Box>, !felt.type
+      function.return %self : !struct.type<@Box>
+    }
+
+    function.def @constrain(%self: !struct.type<@Box>, %x: !felt.type) {
+      %value = struct.readm %self[@value] : !struct.type<@Box>, !felt.type
+      constrain.eq %value, %x : !felt.type, !felt.type
+      function.return
+    }
+  }
+
+  verif.contract @CheckBox for @Box (%self: !struct.type<@Box>, %x: !felt.type) {
+    %value = struct.readm %self[@value] : <@Box>, !felt.type
+    %val_eq = bool.cmp eq(%value, %x) : !felt.type
+    verif.ensure_compute %val_eq
+    verif.ensure_constrain %val_eq
+  }
+}
+
+module attributes {llzk.lang} {
+  func.func @smt_Box_compute(%arg0: !smt.int) -> !smt.int {
+    return %arg0 : !smt.int
+  }
+  func.func @smt_Box_constrain(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %0 = smt.eq %arg0, %arg1 : !smt.int
+    return %0 : !smt.bool
+  }
+  func.func @smt_verif_CheckBox_compute_pre(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_CheckBox_compute_post(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %0 = smt.eq %arg0, %arg1 : !smt.int
+    return %0 : !smt.bool
+  }
+  func.func @smt_verif_CheckBox_compute_target(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %0 = call @smt_Box_compute(%arg1) : (!smt.int) -> !smt.int
+    %1 = smt.eq %0, %arg0 : !smt.int
+    return %1 : !smt.bool
+  }
+  func.func @smt_verif_CheckBox_constrain_pre(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_CheckBox_constrain_post(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %0 = smt.eq %arg0, %arg1 : !smt.int
+    return %0 : !smt.bool
+  }
+  func.func @smt_verif_CheckBox_constrain_target(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %0 = call @smt_Box_constrain(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    return %0 : !smt.bool
+  }
+  func.func @smt_verif_CheckBox_pre(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_CheckBox_post(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %0 = call @smt_verif_CheckBox_compute_post(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    %1 = call @smt_verif_CheckBox_constrain_post(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    %2 = smt.and %0, %1
+    return %2 : !smt.bool
+  }
+  func.func @smt_verif_CheckBox_target(%arg0: !smt.int, %arg1: !smt.int) -> !smt.bool {
+    %0 = call @smt_verif_CheckBox_compute_target(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    %1 = call @smt_verif_CheckBox_constrain_target(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    %2 = smt.and %0, %1
+    return %2 : !smt.bool
+  }
+  func.func @smt_verif_CheckBox_compute_entry(%arg0: !smt.int, %arg1: !smt.int) {
+    %c0 = smt.int.constant 0
+    %0 = call @smt_verif_CheckBox_compute_pre(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %1 = smt.not %0
+    smt.assert %1
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox compute pre: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox compute pre: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %0
+    }
+    %2 = call @smt_verif_CheckBox_compute_target(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %3 = smt.not %2
+    smt.assert %3
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox compute target: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox compute target: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %2
+    }
+    %4 = call @smt_verif_CheckBox_compute_post(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %5 = smt.not %4
+    smt.assert %5
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox compute post: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox compute post: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %4
+    }
+    return
+  }
+  func.func @smt_verif_CheckBox_constrain_entry(%arg0: !smt.int, %arg1: !smt.int) {
+    %c0 = smt.int.constant 0
+    %0 = call @smt_verif_CheckBox_constrain_pre(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %1 = smt.not %0
+    smt.assert %1
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox constrain pre: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox constrain pre: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %0
+    }
+    %2 = call @smt_verif_CheckBox_constrain_target(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %3 = smt.not %2
+    smt.assert %3
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox constrain target: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox constrain target: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %2
+    }
+    %4 = call @smt_verif_CheckBox_constrain_post(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %5 = smt.not %4
+    smt.assert %5
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox constrain post: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox constrain post: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %4
+    }
+    return
+  }
+  func.func @smt_verif_CheckBox_internal_entry(%arg0: !smt.int, %arg1: !smt.int) {
+    %c0 = smt.int.constant 0
+    %0 = call @smt_verif_CheckBox_pre(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %1 = smt.not %0
+    smt.assert %1
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox pre: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox pre: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %0
+    }
+    %2 = call @smt_verif_CheckBox_compute_target(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %3 = smt.not %2
+    smt.assert %3
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox target[0]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox target[0]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %2
+    }
+    %4 = call @smt_verif_CheckBox_constrain_target(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %5 = smt.not %4
+    smt.assert %5
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox target[1]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox target[1]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %4
+    }
+    %6 = call @smt_verif_CheckBox_compute_post_part_0(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %7 = smt.not %6
+    smt.assert %7
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox post[0]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox post[0]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %6
+    }
+    %8 = call @smt_verif_CheckBox_constrain_post(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %9 = smt.not %8
+    smt.assert %9
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox post[1]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox post[1]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %8
+    }
+    return
+  }
+  func.func @smt_verif_CheckBox_entry(%arg0: !smt.int, %arg1: !smt.int) {
+    %c0 = smt.int.constant 0
+    %0 = call @smt_verif_CheckBox_pre(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.assert %0
+    %1 = call @smt_verif_CheckBox_compute_target(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %2 = smt.not %1
+    smt.assert %2
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox target[0]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox target[0]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %1
+    }
+    %3 = call @smt_verif_CheckBox_constrain_target(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %4 = smt.not %3
+    smt.assert %4
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox target[1]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox target[1]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %3
+    }
+    %5 = call @smt_verif_CheckBox_compute_post_part_0(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %6 = smt.not %5
+    smt.assert %6
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox post[0]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox post[0]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %5
+    }
+    %7 = call @smt_verif_CheckBox_constrain_post(%arg0, %arg1) : (!smt.int, !smt.int) -> !smt.bool
+    smt.push 1
+    %8 = smt.not %7
+    smt.assert %8
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox post[1]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in CheckBox post[1]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %7
+    }
+    return
+  }
+}
+

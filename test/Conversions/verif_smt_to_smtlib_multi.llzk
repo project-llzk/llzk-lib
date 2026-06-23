@@ -24,11 +24,24 @@ module attributes {llzk.lang} {
 }
 
 // MULTI: ; root: smt_verif_BoolCheck_entry
+// MULTI-NOT: ; root: smt_verif_BoolCheck_internal_entry
 // MULTI: (declare-const smt_verif_BoolCheck_entry__arg0 Bool)
 // MULTI: (declare-const smt_verif_BoolCheck_entry__arg1 Bool)
+// MULTI: ; check-sat stage=target[0] expect=unsat
+// MULTI: (reset)
+// MULTI: ; root: smt_verif_BoolCheck_entry
+// MULTI: ; check-sat stage=post[0] expect=unsat
+// MULTI: ; check-sat stage=post[1] expect=unsat
 // MULTI: (reset)
 // MULTI: ; root: smt_verif_ArrayCheck_entry
+// MULTI-NOT: ; root: smt_verif_ArrayCheck_internal_entry
 // MULTI-DAG: (declare-const smt_verif_ArrayCheck_entry__arg0 Int)
 // MULTI-DAG: (declare-const smt_verif_ArrayCheck_entry__arg1 Int)
 // MULTI-DAG: (declare-const smt_verif_ArrayCheck_entry__arg2 Int)
 // MULTI-DAG: (declare-const smt_verif_ArrayCheck_entry__arg3 Int)
+// MULTI: ; check-sat stage=target[0] expect=unsat
+// MULTI: ; check-sat stage=target[1] expect=unsat
+// MULTI: (reset)
+// MULTI: ; root: smt_verif_ArrayCheck_entry
+// MULTI: ; check-sat stage=post[0] expect=unsat
+// MULTI: ; check-sat stage=post[1] expect=unsat

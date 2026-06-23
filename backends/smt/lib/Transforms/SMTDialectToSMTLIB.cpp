@@ -31,6 +31,7 @@
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/ADT/StringMap.h>
+#include <llvm/ADT/StringSet.h>
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/ToolOutputFile.h>
@@ -50,10 +51,17 @@ using namespace mlir;
 
 namespace {
 
+static bool isVerificationHelperRoot(func::FuncOp func) {
+  StringRef name = func.getSymName();
+  return name.starts_with("smt_verif_") &&
+         (name.ends_with("_internal_entry") || name.ends_with("_compute_entry") ||
+          name.ends_with("_constrain_entry"));
+}
+
 static bool isEntryPoint(func::FuncOp func) {
   StringRef name = func.getSymName();
   return name.starts_with("smt_verif_") && name.ends_with("_entry") &&
-         !name.ends_with("_compute_entry") && !name.ends_with("_constrain_entry");
+         !isVerificationHelperRoot(func);
 }
 
 static std::string sanitizeSymbol(StringRef name) {
@@ -78,6 +86,9 @@ static std::string sortForType(Type type) {
       .Case<llzk::smt::BoolType>([](auto) { return "Bool"; })
       .Case<llzk::smt::BitVectorType>([](auto type) {
     return "(_ BitVec " + std::to_string(type.getWidth()) + ")";
+  }).Case<llzk::smt::ArrayType>([](auto type) {
+    return "(Array " + sortForType(type.getDomainType()) + " " +
+           sortForType(type.getRangeType()) + ")";
   }).Default([&](Type) -> std::string {
     llvm::report_fatal_error("unsupported SMTLIB sort in smt-to-smtlib");
   });
@@ -101,20 +112,27 @@ public:
       return failure();
     }
 
+    bool needsReset = false;
     for (auto [index, root] : llvm::enumerate(roots)) {
-      if (index != 0) {
-        os << "\n(reset)\n";
+      (void)index;
+      if (isEntryPoint(root)) {
+        if (failed(emitIsolatedEntryRoot(root, needsReset))) {
+          return failure();
+        }
+        needsReset = true;
+        continue;
       }
-      os << "(set-logic " << options.logic << ")\n";
-      os << "; root: " << root.getSymName() << "\n";
-      if (failed(emitRoot(root))) {
+      if (failed(emitRoot(root, needsReset))) {
         return failure();
       }
+      needsReset = true;
     }
     return success();
   }
 
 private:
+  enum class EntryStageMode { target, post };
+
   struct EvalContext {
     DenseMap<Value, std::string> values;
     std::optional<std::string> pendingStageLabel;
@@ -149,21 +167,143 @@ private:
     return success();
   }
 
-  LogicalResult emitRoot(func::FuncOp root) {
+  LogicalResult emitRoot(func::FuncOp root, bool emitReset) {
+    if (failed(emitRootPreamble(root, emitReset))) {
+      return failure();
+    }
+
+    EvalContext ctx;
+    if (failed(initializeRootArgs(root, ctx))) {
+      return failure();
+    }
+    return emitBlock(root.getBody().front(), ctx);
+  }
+
+  LogicalResult emitIsolatedEntryRoot(func::FuncOp root, bool emitReset) {
+    if (failed(emitEntryStage(root, EntryStageMode::target, emitReset))) {
+      return failure();
+    }
+    return emitEntryStage(root, EntryStageMode::post, /*emitReset=*/true);
+  }
+
+  LogicalResult emitEntryStage(func::FuncOp root, EntryStageMode mode, bool emitReset) {
+    if (failed(emitRootPreamble(root, emitReset))) {
+      return failure();
+    }
+
     if (!root || root.empty()) {
       root.emitError("smt-to-smtlib requires non-empty root func.func");
       return failure();
     }
 
     EvalContext ctx;
+    if (failed(initializeRootArgs(root, ctx))) {
+      return failure();
+    }
+
+    auto getStageFamily = [](StringRef stage) -> StringRef {
+      if (stage == "pre") {
+        return "pre";
+      }
+      if (stage == "target" || stage.starts_with("target[")) {
+        return "target";
+      }
+      if (stage == "post" || stage.starts_with("post[")) {
+        return "post";
+      }
+      return "";
+    };
+
+    bool emittedRequestedStage = false;
+    bool skippingOuterTargetProof = false;
+    Block &block = root.getBody().front();
+    for (Operation &op : block.without_terminator()) {
+      if (auto checkOp = dyn_cast<llzk::smt::CheckOp>(op)) {
+        std::string stage = ctx.pendingStageLabel.value_or("");
+        StringRef family = getStageFamily(stage);
+        if (skippingOuterTargetProof) {
+          if (failed(emitSuccessEffects(checkOp, ctx))) {
+            return failure();
+          }
+          ctx.pendingStageLabel.reset();
+          skippingOuterTargetProof = false;
+          continue;
+        }
+
+        if (mode == EntryStageMode::target) {
+          if (family == "target") {
+            if (failed(emitCheck(checkOp, ctx))) {
+              return failure();
+            }
+            emittedRequestedStage = true;
+            continue;
+          }
+          if (emittedRequestedStage) {
+            return success();
+          }
+        } else {
+          if (!emittedRequestedStage && family == "target") {
+            if (failed(emitSuccessEffects(checkOp, ctx))) {
+              return failure();
+            }
+            ctx.pendingStageLabel.reset();
+            continue;
+          }
+          if (family == "pre" || family == "target" || family == "post") {
+            if (failed(emitCheck(checkOp, ctx))) {
+              return failure();
+            }
+            emittedRequestedStage = true;
+            continue;
+          }
+        }
+      }
+
+      if (skippingOuterTargetProof) {
+        continue;
+      }
+
+      if (failed(emitOperation(&op, ctx))) {
+        return failure();
+      }
+      if (mode == EntryStageMode::target && emittedRequestedStage && ctx.pendingStageLabel &&
+          getStageFamily(*ctx.pendingStageLabel) != "target") {
+        return success();
+      }
+      if (mode == EntryStageMode::post && isa<func::CallOp>(op) && ctx.pendingStageLabel &&
+          getStageFamily(*ctx.pendingStageLabel) == "target" && !emittedRequestedStage) {
+        skippingOuterTargetProof = true;
+      }
+    }
+
+    if (emittedRequestedStage) {
+      return success();
+    }
+    root.emitError("smt-to-smtlib could not find requested entry stage");
+    return failure();
+  }
+
+  LogicalResult emitRootPreamble(func::FuncOp root, bool emitReset) {
+    if (emitReset) {
+      os << "\n(reset)\n";
+    }
+    emittedSymbolCounts.clear();
+    emittedAssertions.clear();
+    nextTargetStageIndex = 0;
+    nextPostStageIndex = 0;
+    os << "(set-logic " << options.logic << ")\n";
+    os << "; root: " << root.getSymName() << "\n";
+    return success();
+  }
+
+  LogicalResult initializeRootArgs(func::FuncOp root, EvalContext &ctx) {
     std::string rootPrefix = sanitizeSymbol(root.getSymName());
     for (auto [index, arg] : llvm::enumerate(root.getArguments())) {
       std::string name = rootPrefix + "__arg" + std::to_string(index);
       ctx.values[arg] = name;
       os << "(declare-const " << name << " " << sortForType(arg.getType()) << ")\n";
     }
-
-    return emitBlock(root.getBody().front(), ctx);
+    return success();
   }
 
   LogicalResult emitBlock(Block &block, EvalContext &ctx) {
@@ -180,10 +320,12 @@ private:
         .Case<llzk::smt::DeclareFunOp>([&](auto declareOp) { return emitDeclare(declareOp, ctx); })
         .Case<llzk::smt::AssertOp>([&](auto assertOp) { return emitAssert(assertOp, ctx); })
         .Case<llzk::smt::PushOp>([&](auto pushOp) {
+      pushDepth += pushOp.getCount();
       os << "(push " << pushOp.getCount() << ")\n";
       return success();
     })
         .Case<llzk::smt::PopOp>([&](auto popOp) {
+      pushDepth -= popOp.getCount();
       os << "(pop " << popOp.getCount() << ")\n";
       return success();
     })
@@ -218,6 +360,11 @@ private:
         .Case<llzk::smt::BVNotOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
         .Case<llzk::smt::BVShlOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
         .Case<llzk::smt::BVLShrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<llzk::smt::ArraySelectOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<llzk::smt::ArrayStoreOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<llzk::smt::ArrayBroadcastOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<llzk::smt::ForallOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<llzk::smt::ExistsOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
         .Case<llzk::boolean::AssertOp>([&](auto assertOp) {
       return assertOp.emitError(
           "boolean.assert is only supported inside smt.check failure "
@@ -238,6 +385,10 @@ private:
       op.emitError("smt-to-smtlib only supports single-result expression ops");
       return failure();
     }
+    if (ctx.preserveSharing && !expr->starts_with("(")) {
+      ctx.values[op->getResult(0)] = std::move(*expr);
+      return success();
+    }
     if (ctx.preserveSharing) {
       std::string name = makeLetName();
       ctx.letBindings.emplace_back(name, std::move(*expr));
@@ -255,6 +406,9 @@ private:
     } else {
       symbol = "tmp" + std::to_string(nextTempId++);
     }
+    if (unsigned &count = emittedSymbolCounts[symbol]; count++ != 0) {
+      symbol += "_" + std::to_string(count);
+    }
     ctx.values[declareOp.getResult()] = symbol;
     os << "(declare-fun " << symbol << " () " << sortForType(declareOp.getType()) << ")\n";
     return success();
@@ -265,7 +419,12 @@ private:
     if (failed(expr)) {
       return assertOp.emitError("missing SMTLIB expression for assertion input");
     }
-    os << "(assert " << *expr << ")\n";
+    std::string rendered = wrapWithLets(*expr, ctx.letBindings);
+    ctx.letBindings.clear();
+    if (pushDepth == 0 && !emittedAssertions.insert(rendered).second) {
+      return success();
+    }
+    os << "(assert " << rendered << ")\n";
     return success();
   }
 
@@ -318,7 +477,8 @@ private:
       return emitScriptHelper(callee, argExprs);
     }
 
-    auto results = evalHelper(callee, argExprs);
+    bool allowStatefulGeneratedHelper = callee.getSymName().starts_with("smt_");
+    auto results = evalHelper(callee, argExprs, allowStatefulGeneratedHelper);
     if (failed(results)) {
       callOp.emitError("smt-to-smtlib requires an emit-compatible helper callee");
       return failure();
@@ -362,6 +522,26 @@ private:
   }
 
   std::optional<std::string> getStageLabel(StringRef callee) const {
+    auto makeIndexedLabel =
+        [&](StringRef stem) -> std::optional<std::string> {
+      std::string marker = (Twine("_") + stem + "_part_").str();
+      size_t markerPos = callee.rfind(marker);
+      if (markerPos == StringRef::npos) {
+        return std::nullopt;
+      }
+      StringRef suffix = callee.drop_front(markerPos + marker.size());
+      unsigned index = 0;
+      if (suffix.empty() || suffix.getAsInteger(10, index)) {
+        return std::nullopt;
+      }
+      return (Twine(stem) + "[" + Twine(index) + "]").str();
+    };
+    if (auto indexed = makeIndexedLabel("target")) {
+      return indexed;
+    }
+    if (auto indexed = makeIndexedLabel("post")) {
+      return indexed;
+    }
     if (callee.ends_with("_pre")) {
       return "pre";
     }
@@ -422,14 +602,40 @@ private:
       return failure();
     }
 
+    auto formatStageLabel = [&](StringRef rawLabel) -> std::string {
+      if (rawLabel == "target" || rawLabel.starts_with("target[")) {
+        return (Twine("target[") + Twine(nextTargetStageIndex++) + "]").str();
+      }
+      if (rawLabel == "post" || rawLabel.starts_with("post[")) {
+        return (Twine("post[") + Twine(nextPostStageIndex++) + "]").str();
+      }
+      return rawLabel.str();
+    };
+
     os << "; check-sat";
     if (ctx.pendingStageLabel) {
-      os << " stage=" << *ctx.pendingStageLabel;
+      os << " stage=" << formatStageLabel(*ctx.pendingStageLabel);
     }
     os << " expect=" << successInfo->expectedOutcome << "\n";
     os << "(check-sat)\n";
     ctx.pendingStageLabel.reset();
     return emitBlock(successInfo->successRegion->front(), ctx);
+  }
+
+  LogicalResult emitSuccessEffects(llzk::smt::CheckOp checkOp, EvalContext &ctx) {
+    auto successInfo = identifySuccessRegion(checkOp);
+    if (failed(successInfo)) {
+      return failure();
+    }
+    for (Operation &op : successInfo->successRegion->front().without_terminator()) {
+      if (isa<llzk::smt::PushOp, llzk::smt::PopOp>(op)) {
+        continue;
+      }
+      if (failed(emitOperation(&op, ctx))) {
+        return failure();
+      }
+    }
+    return success();
   }
 
   FailureOr<std::string> lookup(Value value, EvalContext &ctx) {
@@ -446,7 +652,7 @@ private:
   }
 
   FailureOr<SmallVector<std::string>>
-  evalHelper(func::FuncOp func, ArrayRef<std::string> argExprs) {
+  evalHelper(func::FuncOp func, ArrayRef<std::string> argExprs, bool allowStatefulOps) {
     if (!func || func.empty()) {
       func.emitError("smt-to-smtlib requires non-empty helper funcs");
       return failure();
@@ -459,7 +665,7 @@ private:
     auto cleanup = llvm::make_scope_exit([&] { activePureHelpers.erase(func.getOperation()); });
 
     EvalContext ctx;
-    ctx.preserveSharing = true;
+    ctx.preserveSharing = helperIsPurelyExpressionBased(func);
     if (func.getNumArguments() != argExprs.size()) {
       func.emitError("helper argument arity mismatch during SMTLIB export");
       return failure();
@@ -470,8 +676,12 @@ private:
 
     Block &block = func.getBody().front();
     for (Operation &op : block.without_terminator()) {
-      if (isa<llzk::smt::AssertOp, llzk::smt::PushOp, llzk::smt::PopOp, llzk::smt::CheckOp>(op)) {
+      if (!allowStatefulOps && isa<llzk::smt::AssertOp>(op)) {
         op.emitError("stateful SMT ops are not allowed in inlined helper functions");
+        return failure();
+      }
+      if (isa<llzk::smt::PushOp, llzk::smt::PopOp, llzk::smt::CheckOp>(op)) {
+        op.emitError("stack or solver SMT ops are not allowed in inlined helper functions");
         return failure();
       }
       if (failed(emitOperation(&op, ctx))) {
@@ -495,6 +705,19 @@ private:
       results.push_back(wrapWithLets(*expr, ctx.letBindings));
     }
     return results;
+  }
+
+  bool helperIsPurelyExpressionBased(func::FuncOp func) const {
+    for (Operation &op : func.getBody().front().without_terminator()) {
+      if (isa<llzk::smt::DeclareFunOp, llzk::smt::AssertOp, llzk::smt::PushOp,
+              llzk::smt::PopOp, llzk::smt::CheckOp>(op)) {
+        return false;
+      }
+      if (auto callOp = dyn_cast<func::CallOp>(op); callOp && callOp.getNumResults() == 0) {
+        return false;
+      }
+    }
+    return true;
   }
 
   FailureOr<std::string> buildExpr(Operation *op, EvalContext &ctx) {
@@ -571,6 +794,25 @@ private:
     })
         .Case<llzk::smt::BVLShrOp>([&](auto exprOp) {
       return buildSExpr("bvlshr", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
+    })
+        .Case<llzk::smt::ArraySelectOp>([&](auto exprOp) {
+      return buildSExpr("select", ValueRange {exprOp.getArray(), exprOp.getIndex()}, ctx);
+    })
+        .Case<llzk::smt::ArrayStoreOp>([&](auto exprOp) {
+      return buildSExpr(
+          "store", ValueRange {exprOp.getArray(), exprOp.getIndex(), exprOp.getValue()}, ctx
+      );
+    })
+        .Case<llzk::smt::ArrayBroadcastOp>([&](auto exprOp) -> FailureOr<std::string> {
+      auto valueExpr = lookup(exprOp.getValue(), ctx);
+      if (failed(valueExpr)) {
+        return failure();
+      }
+      return "((as const " + sortForType(exprOp.getType()) + ") " + *valueExpr + ")";
+    }).Case<llzk::smt::ForallOp>([&](auto exprOp) {
+      return buildQuantifierExpr("forall", exprOp, ctx);
+    }).Case<llzk::smt::ExistsOp>([&](auto exprOp) {
+      return buildQuantifierExpr("exists", exprOp, ctx);
     }).Case<arith::ConstantOp>([&](auto constOp) {
       return buildArithConstantExpr(constOp);
     }).Default([&](Operation *unknownOp) {
@@ -633,6 +875,36 @@ private:
   }
 
   FailureOr<std::string> buildSExpr(StringRef opName, ValueRange operands, EvalContext &ctx) {
+    if (opName == "and") {
+      SmallVector<std::string> renderedOperands;
+      renderedOperands.reserve(operands.size());
+      for (Value operand : operands) {
+        auto value = lookup(operand, ctx);
+        if (failed(value)) {
+          return failure();
+        }
+        if (*value == "false") {
+          return std::string("false");
+        }
+        if (*value == "true") {
+          continue;
+        }
+        renderedOperands.push_back(std::move(*value));
+      }
+      if (renderedOperands.empty()) {
+        return std::string("true");
+      }
+      if (renderedOperands.size() == 1) {
+        return renderedOperands.front();
+      }
+      std::string expr = "(and";
+      for (const std::string &operand : renderedOperands) {
+        expr += " " + operand;
+      }
+      expr += ")";
+      return expr;
+    }
+
     std::string expr = "(" + opName.str();
     for (Value operand : operands) {
       auto value = lookup(operand, ctx);
@@ -641,6 +913,55 @@ private:
       }
       expr += " " + *value;
     }
+    expr += ")";
+    return expr;
+  }
+
+  template <typename QuantifierOpTy>
+  FailureOr<std::string>
+  buildQuantifierExpr(StringRef quantifierName, QuantifierOpTy op, EvalContext &ctx) {
+    if (!op.getPatterns().empty()) {
+      op.emitError("smt-to-smtlib does not yet support quantified pattern emission");
+      return failure();
+    }
+    if (!llvm::hasSingleElement(op.getBody())) {
+      op.emitError("smt-to-smtlib requires quantifier bodies with a single block");
+      return failure();
+    }
+
+    EvalContext bodyCtx = ctx;
+    bodyCtx.letBindings.clear();
+    Block &body = op.getBody().front();
+    std::string expr = "(" + quantifierName.str() + " (";
+    auto namesAttr = op.getBoundVarNames();
+    for (auto [index, arg] : llvm::enumerate(body.getArguments())) {
+      std::string name = namesAttr && index < namesAttr->size()
+                             ? sanitizeSymbol(cast<StringAttr>((*namesAttr)[index]).getValue())
+                             : "q" + std::to_string(nextTempId++);
+      bodyCtx.values[arg] = name;
+      if (index != 0) {
+        expr += " ";
+      }
+      expr += "(" + name + " " + sortForType(arg.getType()) + ")";
+    }
+    expr += ") ";
+
+    for (Operation &nestedOp : body.without_terminator()) {
+      if (failed(emitOperation(&nestedOp, bodyCtx))) {
+        return failure();
+      }
+    }
+
+    auto yieldOp = dyn_cast<llzk::smt::YieldOp>(body.getTerminator());
+    if (!yieldOp || yieldOp.getNumOperands() != 1) {
+      op.emitError("smt-to-smtlib requires quantifier bodies to yield exactly one value");
+      return failure();
+    }
+    auto yielded = lookup(yieldOp.getOperand(0), bodyCtx);
+    if (failed(yielded)) {
+      return failure();
+    }
+    expr += wrapWithLets(*yielded, bodyCtx.letBindings);
     expr += ")";
     return expr;
   }
@@ -659,7 +980,12 @@ private:
   llvm::raw_ostream &os;
   const llzk::smt::SMTLIBExportOptions &options;
   unsigned nextTempId = 0;
+  unsigned nextTargetStageIndex = 0;
+  unsigned nextPostStageIndex = 0;
+  unsigned pushDepth = 0;
   DenseSet<Operation *> activePureHelpers;
+  llvm::StringMap<unsigned> emittedSymbolCounts;
+  llvm::StringSet<> emittedAssertions;
 };
 
 class SMTDialectToSMTLIBPass

@@ -1,0 +1,52 @@
+module attributes {llzk.lang = "circom"} {
+  poly.template @LessThanPower {
+    poly.param @base
+    struct.def @LessThanPower {
+      struct.member @out : !felt.type<"bn128"> {llzk.pub}
+      function.def @compute(%arg0: !felt.type<"bn128"> {function.arg_name = "in"}) -> !struct.type<@LessThanPower::@LessThanPower<[@base]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+        %self = struct.new : <@LessThanPower::@LessThanPower<[@base]>>
+        %0 = poly.read_const @base : !felt.type<"bn128">
+        %1 = felt.shr %arg0, %0 : !felt.type<"bn128">, !felt.type<"bn128">
+        %felt_const_0 = felt.const  0 : <"bn128">
+        %2 = bool.cmp gt(%1, %felt_const_0) : !felt.type<"bn128">, !felt.type<"bn128">
+        %3 = scf.if %2 -> (!felt.type<"bn128">) {
+          %felt_const_0_0 = felt.const  0 : <"bn128">
+          scf.yield %felt_const_0_0 : !felt.type<"bn128">
+        } else {
+          %felt_const_1 = felt.const  1 : <"bn128">
+          scf.yield %felt_const_1 : !felt.type<"bn128">
+        }
+        struct.writem %self[@out] = %3 : <@LessThanPower::@LessThanPower<[@base]>>, !felt.type<"bn128">
+        function.return %self : !struct.type<@LessThanPower::@LessThanPower<[@base]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@LessThanPower::@LessThanPower<[@base]>>, %arg1: !felt.type<"bn128"> {function.arg_name = "in"}) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+        %0 = poly.read_const @base : !felt.type<"bn128">
+        %1 = struct.readm %arg0[@out] : <@LessThanPower::@LessThanPower<[@base]>>, !felt.type<"bn128">
+        %felt_const_1 = felt.const  1 : <"bn128">
+        %2 = felt.sub %1, %felt_const_1 : !felt.type<"bn128">, !felt.type<"bn128">
+        %3 = felt.mul %1, %2 : !felt.type<"bn128">, !felt.type<"bn128">
+        %felt_const_0 = felt.const  0 : <"bn128">
+        constrain.eq %3, %felt_const_0 : !felt.type<"bn128">, !felt.type<"bn128">
+        function.return
+      }
+    }
+    verif.contract @LessThanPower$LessThanPower$contract$0 for @LessThanPower::@LessThanPower (%arg0: !struct.type<@LessThanPower::@LessThanPower<[@base]>>, %arg1: !felt.type<"bn128"> {function.arg_name = "in"}) {
+      %0 = poly.read_const @base : !felt.type<"bn128">
+      %1 = struct.readm %arg0[@out] : <@LessThanPower::@LessThanPower<[@base]>>, !felt.type<"bn128">
+      %felt_const_2 = felt.const  2 : <"bn128">
+      %2 = felt.pow %felt_const_2, %0 : !felt.type<"bn128">, !felt.type<"bn128">
+      %3 = bool.cmp lt(%arg1, %2) : !felt.type<"bn128">, !felt.type<"bn128">
+      %4 = scf.if %3 -> (!felt.type<"bn128">) {
+        %felt_const_1 = felt.const  1 : <"bn128">
+        scf.yield %felt_const_1 : !felt.type<"bn128">
+      } else {
+        %felt_const_0 = felt.const  0 : <"bn128">
+        scf.yield %felt_const_0 : !felt.type<"bn128">
+      }
+      %5 = bool.cmp eq(%1, %4) : !felt.type<"bn128">, !felt.type<"bn128">
+      verif.ensure_compute %5
+      verif.ensure_constrain %5
+    }
+  }
+}
+

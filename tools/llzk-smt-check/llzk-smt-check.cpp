@@ -38,6 +38,7 @@ namespace {
 enum class SatResult { Sat, Unsat, Unknown };
 
 struct StageExpectation {
+  std::string rootName;
   std::string stageName;
   SatResult expected;
 };
@@ -107,11 +108,21 @@ Expected<std::string> readInput(StringRef inputFilename) {
 
 Expected<ScriptMetadata> scanScript(StringRef script) {
   ScriptMetadata metadata;
+  std::optional<std::string> currentRoot;
 
   SmallVector<StringRef> lines;
   script.split(lines, '\n');
   for (StringRef line : lines) {
     StringRef trimmed = line.ltrim();
+    if (trimmed.starts_with("; root:")) {
+      StringRef rest = trimmed.drop_front(StringRef("; root:").size()).trim();
+      if (rest.empty()) {
+        return createStringError(inconvertibleErrorCode(), "invalid root annotation: '%s'",
+                                 trimmed.str().c_str());
+      }
+      currentRoot = rest.str();
+      continue;
+    }
     if (!trimmed.starts_with("; check-sat")) {
       continue;
     }
@@ -137,7 +148,7 @@ Expected<ScriptMetadata> scanScript(StringRef script) {
           inconvertibleErrorCode(), "invalid stage annotation: '%s'", trimmed.str().c_str()
       );
     }
-    metadata.stages.push_back(StageExpectation {*stageName, *expected});
+    metadata.stages.push_back(StageExpectation {currentRoot.value_or(""), *stageName, *expected});
   }
 
   size_t depth = 0;
@@ -178,6 +189,13 @@ Expected<ScriptMetadata> scanScript(StringRef script) {
   }
 
   return metadata;
+}
+
+std::string formatStageLabel(const StageExpectation &stage, size_t index) {
+  if (!stage.rootName.empty()) {
+    return (Twine(stage.rootName) + "/" + stage.stageName).str();
+  }
+  return (Twine(stage.stageName) + "[" + Twine(index) + "]").str();
 }
 
 Expected<std::string> readWholeFile(StringRef path) {
@@ -385,15 +403,21 @@ int main(int argc, char **argv) {
   }
 
   SmallVector<std::string> mismatches;
+  SmallVector<std::string> summaries;
   for (size_t i = 0; i < solverResults.size(); ++i) {
-    std::string label = metadata->stages.empty() ? ("check[" + std::to_string(i) + "]")
-                                                 : metadata->stages[i].stageName;
+    std::string label;
+    if (metadata->stages.empty()) {
+      label = "check[" + std::to_string(i) + "]";
+    } else {
+      label = formatStageLabel(metadata->stages[i], i);
+    }
     if (!Quiet) {
-      outs() << label << ": " << stringify(solverResults[i]);
+      std::string summary = (Twine(label) + ": " + stringify(solverResults[i])).str();
       if (!metadata->stages.empty()) {
-        outs() << " (expected " << stringify(metadata->stages[i].expected) << ')';
+        summary = (Twine(summary) + " (expected " + stringify(metadata->stages[i].expected) + ")")
+                      .str();
       }
-      outs() << '\n';
+      summaries.push_back(std::move(summary));
     }
     if (!metadata->stages.empty() && solverResults[i] != metadata->stages[i].expected) {
       mismatches.push_back((Twine(label) + ": got " + stringify(solverResults[i]) + ", expected " +
@@ -410,12 +434,18 @@ int main(int argc, char **argv) {
   }
 
   if (!mismatches.empty()) {
-    outs().flush();
+    for (const std::string &summary : summaries) {
+      errs() << summary << '\n';
+    }
     errs() << "llzk-smt-check: stage result mismatch:\n";
     for (const std::string &mismatch : mismatches) {
       errs() << mismatch << '\n';
     }
     return EXIT_FAILURE;
+  }
+
+  for (const std::string &summary : summaries) {
+    outs() << summary << '\n';
   }
 
   return EXIT_SUCCESS;

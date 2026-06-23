@@ -16,9 +16,14 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK: pre: unsat (expected unsat)
-// CHECK-NEXT: target: unsat (expected unsat)
-// CHECK-NEXT: pre: unsat (expected unsat)
-// CHECK-NEXT: target: unsat (expected unsat)
-// CHECK-NEXT: post: unsat (expected unsat)
-// CHECK-NEXT: post: unsat (expected unsat)
+// CHECK: smt_verif_TopGate_entry/target[0]: unsat (expected unsat)
+// CHECK-NEXT: smt_verif_TopGate_entry/pre: unsat (expected unsat)
+// CHECK-NEXT: smt_verif_TopGate_entry/target[1]: unsat (expected unsat)
+// CHECK-NEXT: smt_verif_TopGate_entry/post[0]: unsat (expected unsat)
+// CHECK-NEXT: smt_verif_TopGate_entry/post[1]: unsat (expected unsat)
+// CHECK-NEXT: smt_verif_TopGate_entry/pre: unsat (expected unsat)
+// CHECK-NEXT: smt_verif_TopGate_entry/target[0]: unsat (expected unsat)
+// CHECK-NEXT: smt_verif_TopGate_entry/post[0]: unsat (expected unsat)
+// CHECK-NEXT: smt_verif_TopGate_entry/post[1]: unsat (expected unsat)
+// CHECK-NEXT: smt_verif_TopGate_entry/post[2]: unsat (expected unsat)
+// CHECK-NEXT: smt_verif_TopGate_entry/post[3]: unsat (expected unsat)

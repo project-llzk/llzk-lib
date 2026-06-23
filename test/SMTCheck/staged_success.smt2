@@ -2,6 +2,7 @@
 
 (set-logic ALL)
 
+; root: smt_verif_Sample_entry
 ; check-sat stage=pre expect=unsat
 (push 1)
 (assert false)
@@ -20,6 +21,6 @@
 (check-sat)
 (pop 1)
 
-; CHECK: pre: unsat (expected unsat)
-; CHECK-NEXT: target: unsat (expected unsat)
-; CHECK-NEXT: post: unsat (expected unsat)
+; CHECK: smt_verif_Sample_entry/pre: unsat (expected unsat)
+; CHECK-NEXT: smt_verif_Sample_entry/target: unsat (expected unsat)
+; CHECK-NEXT: smt_verif_Sample_entry/post: unsat (expected unsat)

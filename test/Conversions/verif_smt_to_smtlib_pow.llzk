@@ -17,7 +17,7 @@ module attributes {llzk.lang} {
 
 // POW: (set-logic ALL)
 // POW-NEXT: ; root: smt_verif_CheckPow_entry
-// POW: ; check-sat stage=post expect=unsat
+// POW: ; check-sat stage=post[0] expect=unsat
 // POW: (let ((
 // POW: (div
 // POW: (ite

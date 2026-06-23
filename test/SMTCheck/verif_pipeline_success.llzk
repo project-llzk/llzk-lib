@@ -12,6 +12,6 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK: pre: unsat (expected unsat)
-// CHECK-NEXT: target: unsat (expected unsat)
-// CHECK-NEXT: post: unsat (expected unsat)
+// CHECK: smt_verif_CheckGate_entry/target[0]: unsat (expected unsat)
+// CHECK-NEXT: smt_verif_CheckGate_entry/post[0]: unsat (expected unsat)
+// CHECK-NEXT: smt_verif_CheckGate_entry/post[1]: unsat (expected unsat)

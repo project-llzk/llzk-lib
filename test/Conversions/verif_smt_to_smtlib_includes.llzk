@@ -22,6 +22,24 @@ module attributes {llzk.lang} {
 // INCLUDE: ; root: smt_verif_TopGate_entry
 // INCLUDE-DAG: (declare-const smt_verif_TopGate_entry__arg0 Bool)
 // INCLUDE-DAG: (declare-const smt_verif_TopGate_entry__arg1 Bool)
+// INCLUDE: ; check-sat stage=target[0] expect=unsat
 // INCLUDE: ; check-sat stage=pre expect=unsat
-// INCLUDE: ; check-sat stage=target expect=unsat
-// INCLUDE: ; check-sat stage=post expect=unsat
+// INCLUDE: ; check-sat stage=target[1] expect=unsat
+// INCLUDE: ; check-sat stage=post[0] expect=unsat
+// INCLUDE: ; check-sat stage=post[1] expect=unsat
+// INCLUDE: ; check-sat stage=pre expect=unsat
+// INCLUDE: ; check-sat stage=target[2] expect=unsat
+// INCLUDE: ; check-sat stage=post[2] expect=unsat
+// INCLUDE: ; check-sat stage=post[3] expect=unsat
+// INCLUDE: (reset)
+// INCLUDE: ; root: smt_verif_TopGate_entry
+// INCLUDE: ; check-sat stage=pre expect=unsat
+// INCLUDE: ; check-sat stage=target[0] expect=unsat
+// INCLUDE: ; check-sat stage=post[0] expect=unsat
+// INCLUDE: ; check-sat stage=post[1] expect=unsat
+// INCLUDE: ; check-sat stage=pre expect=unsat
+// INCLUDE: ; check-sat stage=target[1] expect=unsat
+// INCLUDE: ; check-sat stage=post[2] expect=unsat
+// INCLUDE: ; check-sat stage=post[3] expect=unsat
+// INCLUDE: ; check-sat stage=post[4] expect=unsat
+// INCLUDE: ; check-sat stage=post[5] expect=unsat

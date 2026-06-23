@@ -5,7 +5,7 @@
 // CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:    func.func @smt_id_array(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !smt.int) -> (!smt.int, !smt.int) {
-// CHECK-NEXT:      return %[[VAL_2]], %[[VAL_3]] : !smt.int, !smt.int
+// CHECK:           return %[[VAL_2]], %[[VAL_3]] : !smt.int, !smt.int
 // CHECK-NEXT:    }
 // CHECK-NEXT:    func.func @smt_verif_CheckArray_compute_pre(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
 // CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = smt.constant true
@@ -13,25 +13,25 @@
 // CHECK-NEXT:    }
 // CHECK-NEXT:    func.func @smt_verif_CheckArray_compute_post(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_10:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_11:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_12:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
 // CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = smt.constant true
-// CHECK-NEXT:      return %[[VAL_13]] : !smt.bool
+// CHECK:           return %[[VAL_13]] : !smt.bool
 // CHECK-NEXT:    }
-// CHECK-NEXT:    func.func @smt_verif_CheckArray_constrain_pre(%[[VAL_14:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_15:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_16:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_17:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:         func.func @smt_verif_CheckArray_constrain_pre(%[[VAL_14:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_15:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_16:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_17:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
 // CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.]+]] = smt.constant true
 // CHECK-NEXT:      return %[[VAL_18]] : !smt.bool
 // CHECK-NEXT:    }
 // CHECK-NEXT:    func.func @smt_verif_CheckArray_constrain_post(%[[VAL_19:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_20:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_21:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_22:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
 // CHECK-NEXT:      %[[VAL_23:[0-9a-zA-Z_\.]+]] = smt.constant true
-// CHECK-NEXT:      return %[[VAL_23]] : !smt.bool
+// CHECK:           return %[[VAL_23]] : !smt.bool
 // CHECK-NEXT:    }
-// CHECK-NEXT:    func.func @smt_verif_CheckArray_target(%[[VAL_24:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_25:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_26:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_27:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:         func.func @smt_verif_CheckArray_target(%[[VAL_24:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_25:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_26:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_27:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
 // CHECK-NEXT:      %[[VAL_28:[0-9a-zA-Z_\.]+]]:2 = call @smt_id_array(%[[VAL_24]], %[[VAL_25]]) : (!smt.int, !smt.int) -> (!smt.int, !smt.int)
 // CHECK-NEXT:      %[[VAL_29:[0-9a-zA-Z_\.]+]] = smt.eq %[[VAL_28]]#0, %[[VAL_26]] : !smt.int
 // CHECK-NEXT:      %[[VAL_30:[0-9a-zA-Z_\.]+]] = smt.eq %[[VAL_28]]#1, %[[VAL_27]] : !smt.int
-// CHECK-NEXT:      %[[VAL_31:[0-9a-zA-Z_\.]+]] = smt.and %[[VAL_29]], %[[VAL_30]]
+// CHECK:           %[[VAL_31:[0-9a-zA-Z_\.]+]] = smt.and %[[VAL_29]], %[[VAL_30]]
 // CHECK-NEXT:      return %[[VAL_31]] : !smt.bool
 // CHECK-NEXT:    }
 // CHECK-NEXT:    func.func @smt_verif_CheckArray_compute_entry(%[[VAL_32:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_33:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_34:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_35:[0-9a-zA-Z_\.]+]]: !smt.int) {
-// CHECK-NEXT:      %[[VAL_36:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArray_compute_pre(%[[VAL_32]], %[[VAL_33]], %[[VAL_34]], %[[VAL_35]]) : (!smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+// CHECK:           %[[VAL_36:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArray_compute_pre(%[[VAL_32]], %[[VAL_33]], %[[VAL_34]], %[[VAL_35]]) : (!smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
 // CHECK-NEXT:      smt.push 1
 // CHECK-NEXT:      %[[VAL_37:[0-9a-zA-Z_\.]+]] = smt.not %[[VAL_36]]
 // CHECK-NEXT:      smt.assert %[[VAL_37]]
@@ -47,23 +47,23 @@
 // CHECK-NEXT:        smt.pop 1
 // CHECK-NEXT:        smt.assert %[[VAL_36]]
 // CHECK-NEXT:      }
-// CHECK-NEXT:      %[[VAL_40:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArray_target(%[[VAL_32]], %[[VAL_33]], %[[VAL_34]], %[[VAL_35]]) : (!smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+// CHECK:           %[[VAL_40:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArray_target_part_0(%[[VAL_32]], %[[VAL_33]], %[[VAL_34]], %[[VAL_35]]) : (!smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
 // CHECK-NEXT:      smt.push 1
 // CHECK-NEXT:      %[[VAL_41:[0-9a-zA-Z_\.]+]] = smt.not %[[VAL_40]]
 // CHECK-NEXT:      smt.assert %[[VAL_41]]
 // CHECK-NEXT:      smt.check sat {
 // CHECK-NEXT:        smt.pop 1
 // CHECK-NEXT:        %[[VAL_42:[0-9a-zA-Z_\.]+]] = arith.constant false
-// CHECK-NEXT:        bool.assert %[[VAL_42]], "verification failed in CheckArray compute target: counterexample found"
+// CHECK:             bool.assert %[[VAL_42]], "verification failed in CheckArray compute target[0]: counterexample found"
 // CHECK-NEXT:      } unknown {
 // CHECK-NEXT:        smt.pop 1
 // CHECK-NEXT:        %[[VAL_43:[0-9a-zA-Z_\.]+]] = arith.constant false
-// CHECK-NEXT:        bool.assert %[[VAL_43]], "verification failed in CheckArray compute target: condition unprovable"
+// CHECK:             bool.assert %[[VAL_43]], "verification failed in CheckArray compute target[0]: condition unprovable"
 // CHECK-NEXT:      } unsat {
 // CHECK-NEXT:        smt.pop 1
 // CHECK-NEXT:        smt.assert %[[VAL_40]]
 // CHECK-NEXT:      }
-// CHECK-NEXT:      %[[VAL_44:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArray_compute_post(%[[VAL_32]], %[[VAL_33]], %[[VAL_34]], %[[VAL_35]]) : (!smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+// CHECK:           %[[VAL_44:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArray_compute_post_part_0(%[[VAL_32]], %[[VAL_33]], %[[VAL_34]], %[[VAL_35]]) : (!smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
 // CHECK-NEXT:      smt.push 1
 // CHECK-NEXT:      %[[VAL_45:[0-9a-zA-Z_\.]+]] = smt.not %[[VAL_44]]
 // CHECK-NEXT:      smt.assert %[[VAL_45]]
@@ -82,7 +82,7 @@
 // CHECK-NEXT:      return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    func.func @smt_verif_CheckArray_constrain_entry(%[[VAL_48:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_49:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_50:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_51:[0-9a-zA-Z_\.]+]]: !smt.int) {
-// CHECK-NEXT:      %[[VAL_52:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArray_constrain_pre(%[[VAL_48]], %[[VAL_49]], %[[VAL_50]], %[[VAL_51]]) : (!smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+// CHECK:           %[[VAL_52:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArray_constrain_pre(%[[VAL_48]], %[[VAL_49]], %[[VAL_50]], %[[VAL_51]]) : (!smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
 // CHECK-NEXT:      smt.push 1
 // CHECK-NEXT:      %[[VAL_53:[0-9a-zA-Z_\.]+]] = smt.not %[[VAL_52]]
 // CHECK-NEXT:      smt.assert %[[VAL_53]]
@@ -98,23 +98,23 @@
 // CHECK-NEXT:        smt.pop 1
 // CHECK-NEXT:        smt.assert %[[VAL_52]]
 // CHECK-NEXT:      }
-// CHECK-NEXT:      %[[VAL_56:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArray_target(%[[VAL_48]], %[[VAL_49]], %[[VAL_50]], %[[VAL_51]]) : (!smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+// CHECK:           %[[VAL_56:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArray_target_part_0(%[[VAL_48]], %[[VAL_49]], %[[VAL_50]], %[[VAL_51]]) : (!smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
 // CHECK-NEXT:      smt.push 1
 // CHECK-NEXT:      %[[VAL_57:[0-9a-zA-Z_\.]+]] = smt.not %[[VAL_56]]
 // CHECK-NEXT:      smt.assert %[[VAL_57]]
 // CHECK-NEXT:      smt.check sat {
 // CHECK-NEXT:        smt.pop 1
 // CHECK-NEXT:        %[[VAL_58:[0-9a-zA-Z_\.]+]] = arith.constant false
-// CHECK-NEXT:        bool.assert %[[VAL_58]], "verification failed in CheckArray constrain target: counterexample found"
+// CHECK:             bool.assert %[[VAL_58]], "verification failed in CheckArray constrain target[0]: counterexample found"
 // CHECK-NEXT:      } unknown {
 // CHECK-NEXT:        smt.pop 1
 // CHECK-NEXT:        %[[VAL_59:[0-9a-zA-Z_\.]+]] = arith.constant false
-// CHECK-NEXT:        bool.assert %[[VAL_59]], "verification failed in CheckArray constrain target: condition unprovable"
+// CHECK:             bool.assert %[[VAL_59]], "verification failed in CheckArray constrain target[0]: condition unprovable"
 // CHECK-NEXT:      } unsat {
 // CHECK-NEXT:        smt.pop 1
 // CHECK-NEXT:        smt.assert %[[VAL_56]]
 // CHECK-NEXT:      }
-// CHECK-NEXT:      %[[VAL_60:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArray_constrain_post(%[[VAL_48]], %[[VAL_49]], %[[VAL_50]], %[[VAL_51]]) : (!smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+// CHECK:           %[[VAL_60:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArray_constrain_post_part_0(%[[VAL_48]], %[[VAL_49]], %[[VAL_50]], %[[VAL_51]]) : (!smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
 // CHECK-NEXT:      smt.push 1
 // CHECK-NEXT:      %[[VAL_61:[0-9a-zA-Z_\.]+]] = smt.not %[[VAL_60]]
 // CHECK-NEXT:      smt.assert %[[VAL_61]]
@@ -155,7 +155,7 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    func.func @smt_ArrayBox_compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !smt.int) -> (!smt.int, !smt.int, !smt.int, !smt.int) {
-// CHECK-NEXT:      return %[[VAL_0]], %[[VAL_1]], %[[VAL_2]], %[[VAL_3]] : !smt.int, !smt.int, !smt.int, !smt.int
+// CHECK:           return %[[VAL_0]], %[[VAL_1]], %[[VAL_2]], %[[VAL_3]] : !smt.int, !smt.int, !smt.int, !smt.int
 // CHECK-NEXT:    }
 // CHECK-NEXT:    func.func @smt_ArrayBox_constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_9:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_10:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_11:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
 // CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = smt.constant true
@@ -163,7 +163,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    func.func @smt_verif_CheckArrayBox_compute_pre(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_14:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_15:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_16:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_17:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_18:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_19:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_20:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
 // CHECK-NEXT:      %[[VAL_21:[0-9a-zA-Z_\.]+]] = smt.constant true
-// CHECK-NEXT:      return %[[VAL_21]] : !smt.bool
+// CHECK:           return %[[VAL_21]] : !smt.bool
 // CHECK-NEXT:    }
 // CHECK-NEXT:    func.func @smt_verif_CheckArrayBox_compute_post(%[[VAL_22:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_23:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_24:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_25:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_26:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_27:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_28:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_29:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
 // CHECK-NEXT:      %[[VAL_30:[0-9a-zA-Z_\.]+]] = smt.constant true
@@ -175,25 +175,25 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %[[VAL_41:[0-9a-zA-Z_\.]+]] = smt.eq %[[VAL_39]]#1, %[[VAL_32]] : !smt.int
 // CHECK-NEXT:      %[[VAL_42:[0-9a-zA-Z_\.]+]] = smt.eq %[[VAL_39]]#2, %[[VAL_33]] : !smt.int
 // CHECK-NEXT:      %[[VAL_43:[0-9a-zA-Z_\.]+]] = smt.eq %[[VAL_39]]#3, %[[VAL_34]] : !smt.int
-// CHECK-NEXT:      %[[VAL_44:[0-9a-zA-Z_\.]+]] = smt.and %[[VAL_40]], %[[VAL_41]]
+// CHECK:           %[[VAL_44:[0-9a-zA-Z_\.]+]] = smt.and %[[VAL_40]], %[[VAL_41]]
 // CHECK-NEXT:      %[[VAL_45:[0-9a-zA-Z_\.]+]] = smt.and %[[VAL_44]], %[[VAL_42]]
 // CHECK-NEXT:      %[[VAL_46:[0-9a-zA-Z_\.]+]] = smt.and %[[VAL_45]], %[[VAL_43]]
 // CHECK-NEXT:      return %[[VAL_46]] : !smt.bool
 // CHECK-NEXT:    }
-// CHECK-NEXT:    func.func @smt_verif_CheckArrayBox_constrain_pre(%[[VAL_47:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_48:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_49:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_50:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_51:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_52:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_53:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_54:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:         func.func @smt_verif_CheckArrayBox_constrain_pre(%[[VAL_47:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_48:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_49:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_50:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_51:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_52:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_53:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_54:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
 // CHECK-NEXT:      %[[VAL_55:[0-9a-zA-Z_\.]+]] = smt.constant true
 // CHECK-NEXT:      return %[[VAL_55]] : !smt.bool
 // CHECK-NEXT:    }
 // CHECK-NEXT:    func.func @smt_verif_CheckArrayBox_constrain_post(%[[VAL_56:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_57:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_58:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_59:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_60:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_61:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_62:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_63:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
 // CHECK-NEXT:      %[[VAL_64:[0-9a-zA-Z_\.]+]] = smt.constant true
-// CHECK-NEXT:      return %[[VAL_64]] : !smt.bool
+// CHECK:           return %[[VAL_64]] : !smt.bool
 // CHECK-NEXT:    }
-// CHECK-NEXT:    func.func @smt_verif_CheckArrayBox_constrain_target(%[[VAL_65:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_66:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_67:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_68:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_69:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_70:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_71:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_72:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
+// CHECK:         func.func @smt_verif_CheckArrayBox_constrain_target(%[[VAL_65:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_66:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_67:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_68:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_69:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_70:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_71:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_72:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.bool {
 // CHECK-NEXT:      %[[VAL_73:[0-9a-zA-Z_\.]+]] = call @smt_ArrayBox_constrain(%[[VAL_65]], %[[VAL_66]], %[[VAL_67]], %[[VAL_68]], %[[VAL_69]], %[[VAL_70]], %[[VAL_71]], %[[VAL_72]]) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
 // CHECK-NEXT:      return %[[VAL_73]] : !smt.bool
 // CHECK-NEXT:    }
 // CHECK-NEXT:    func.func @smt_verif_CheckArrayBox_compute_entry(%[[VAL_74:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_75:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_76:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_77:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_78:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_79:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_80:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_81:[0-9a-zA-Z_\.]+]]: !smt.int) {
-// CHECK-NEXT:      %[[VAL_82:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArrayBox_compute_pre(%[[VAL_74]], %[[VAL_75]], %[[VAL_76]], %[[VAL_77]], %[[VAL_78]], %[[VAL_79]], %[[VAL_80]], %[[VAL_81]]) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+// CHECK:           %[[VAL_82:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArrayBox_compute_pre(%[[VAL_74]], %[[VAL_75]], %[[VAL_76]], %[[VAL_77]], %[[VAL_78]], %[[VAL_79]], %[[VAL_80]], %[[VAL_81]]) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
 // CHECK-NEXT:      smt.push 1
 // CHECK-NEXT:      %[[VAL_83:[0-9a-zA-Z_\.]+]] = smt.not %[[VAL_82]]
 // CHECK-NEXT:      smt.assert %[[VAL_83]]
@@ -209,23 +209,23 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        smt.pop 1
 // CHECK-NEXT:        smt.assert %[[VAL_82]]
 // CHECK-NEXT:      }
-// CHECK-NEXT:      %[[VAL_86:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArrayBox_compute_target(%[[VAL_74]], %[[VAL_75]], %[[VAL_76]], %[[VAL_77]], %[[VAL_78]], %[[VAL_79]], %[[VAL_80]], %[[VAL_81]]) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+// CHECK:           %[[VAL_86:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArrayBox_compute_target_part_0(%[[VAL_74]], %[[VAL_75]], %[[VAL_76]], %[[VAL_77]], %[[VAL_78]], %[[VAL_79]], %[[VAL_80]], %[[VAL_81]]) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
 // CHECK-NEXT:      smt.push 1
 // CHECK-NEXT:      %[[VAL_87:[0-9a-zA-Z_\.]+]] = smt.not %[[VAL_86]]
 // CHECK-NEXT:      smt.assert %[[VAL_87]]
 // CHECK-NEXT:      smt.check sat {
 // CHECK-NEXT:        smt.pop 1
 // CHECK-NEXT:        %[[VAL_88:[0-9a-zA-Z_\.]+]] = arith.constant false
-// CHECK-NEXT:        bool.assert %[[VAL_88]], "verification failed in CheckArrayBox compute target: counterexample found"
+// CHECK:             bool.assert %[[VAL_88]], "verification failed in CheckArrayBox compute target[0]: counterexample found"
 // CHECK-NEXT:      } unknown {
 // CHECK-NEXT:        smt.pop 1
 // CHECK-NEXT:        %[[VAL_89:[0-9a-zA-Z_\.]+]] = arith.constant false
-// CHECK-NEXT:        bool.assert %[[VAL_89]], "verification failed in CheckArrayBox compute target: condition unprovable"
+// CHECK:             bool.assert %[[VAL_89]], "verification failed in CheckArrayBox compute target[0]: condition unprovable"
 // CHECK-NEXT:      } unsat {
 // CHECK-NEXT:        smt.pop 1
 // CHECK-NEXT:        smt.assert %[[VAL_86]]
 // CHECK-NEXT:      }
-// CHECK-NEXT:      %[[VAL_90:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArrayBox_compute_post(%[[VAL_74]], %[[VAL_75]], %[[VAL_76]], %[[VAL_77]], %[[VAL_78]], %[[VAL_79]], %[[VAL_80]], %[[VAL_81]]) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+// CHECK:           %[[VAL_90:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArrayBox_compute_post(%[[VAL_74]], %[[VAL_75]], %[[VAL_76]], %[[VAL_77]], %[[VAL_78]], %[[VAL_79]], %[[VAL_80]], %[[VAL_81]]) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
 // CHECK-NEXT:      smt.push 1
 // CHECK-NEXT:      %[[VAL_91:[0-9a-zA-Z_\.]+]] = smt.not %[[VAL_90]]
 // CHECK-NEXT:      smt.assert %[[VAL_91]]
@@ -244,7 +244,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    func.func @smt_verif_CheckArrayBox_constrain_entry(%[[VAL_94:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_95:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_96:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_97:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_98:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_99:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_100:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_101:[0-9a-zA-Z_\.]+]]: !smt.int) {
-// CHECK-NEXT:      %[[VAL_102:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArrayBox_constrain_pre(%[[VAL_94]], %[[VAL_95]], %[[VAL_96]], %[[VAL_97]], %[[VAL_98]], %[[VAL_99]], %[[VAL_100]], %[[VAL_101]]) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+// CHECK:           %[[VAL_102:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArrayBox_constrain_pre(%[[VAL_94]], %[[VAL_95]], %[[VAL_96]], %[[VAL_97]], %[[VAL_98]], %[[VAL_99]], %[[VAL_100]], %[[VAL_101]]) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
 // CHECK-NEXT:      smt.push 1
 // CHECK-NEXT:      %[[VAL_103:[0-9a-zA-Z_\.]+]] = smt.not %[[VAL_102]]
 // CHECK-NEXT:      smt.assert %[[VAL_103]]
@@ -276,7 +276,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        smt.pop 1
 // CHECK-NEXT:        smt.assert %[[VAL_106]]
 // CHECK-NEXT:      }
-// CHECK-NEXT:      %[[VAL_110:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArrayBox_constrain_post(%[[VAL_94]], %[[VAL_95]], %[[VAL_96]], %[[VAL_97]], %[[VAL_98]], %[[VAL_99]], %[[VAL_100]], %[[VAL_101]]) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
+// CHECK:           %[[VAL_110:[0-9a-zA-Z_\.]+]] = call @smt_verif_CheckArrayBox_constrain_post_part_0(%[[VAL_94]], %[[VAL_95]], %[[VAL_96]], %[[VAL_97]], %[[VAL_98]], %[[VAL_99]], %[[VAL_100]], %[[VAL_101]]) : (!smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool
 // CHECK-NEXT:      smt.push 1
 // CHECK-NEXT:      %[[VAL_111:[0-9a-zA-Z_\.]+]] = smt.not %[[VAL_110]]
 // CHECK-NEXT:      smt.assert %[[VAL_111]]

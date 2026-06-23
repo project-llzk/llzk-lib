@@ -61,7 +61,9 @@ struct VerifToSmtlibPipelineOptions : public PassPipelineOptions<VerifToSmtlibPi
 
 static void addVerifToSmtPipeline(OpPassManager &pm, bool cleanup) {
   pm.addPass(llzk::createAggregateScalarizationPass());
-  pm.addPass(llzk::createVerifToSmtPass(VerifToSmtPassOptions {.cleanup = cleanup}));
+  pm.addPass(llzk::createVerifToSmtPass(
+      VerifToSmtPassOptions {.cleanup = cleanup, .allowAggregates = true}
+  ));
 }
 //===----------------------------------------------------------------------===//
 // Pipeline implementation.

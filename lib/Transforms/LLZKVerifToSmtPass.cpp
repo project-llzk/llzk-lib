@@ -41,9 +41,11 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Bool/IR/Enums.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
+#include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
@@ -75,6 +77,7 @@
 #include <llvm/Support/raw_ostream.h>
 
 #include <optional>
+#include <functional>
 #include <string>
 #include <tuple>
 
@@ -172,6 +175,12 @@ struct ContractStageHelperNames {
 
   /// Symbol names of the per-include wrapper helpers in source order.
   SmallVector<std::string> includeHelpers;
+
+  /// Symbol names of the ordered target proof helpers consumed by entry helpers.
+  SmallVector<std::string> targetProofHelpers;
+
+  /// Symbol names of the ordered post proof helpers consumed by entry helpers.
+  SmallVector<std::string> postProofHelpers;
 };
 
 /// Stores the compute/constrain helper-name bundles created for one contract.
@@ -179,6 +188,9 @@ struct ContractHelperNames {
   ContractStageHelperNames compute;
   ContractStageHelperNames constrain;
   ContractStageHelperNames combined;
+
+  /// Symbol name of the exported top-level combined entry helper.
+  std::string exportedCombinedEntry;
 };
 
 /// Distinguishes compute-side and constrain-side contract lowering.
@@ -200,8 +212,11 @@ static std::string stageMessagePrefix(VerificationStage stage) {
   return (Twine(stageSuffix(stage)) + " ").str();
 }
 
+using LoweredValues = SmallVector<Value>;
+using LoweredValueMap = DenseMap<Value, LoweredValues>;
+
 /// Lowered `%self` members keyed by source aggregate SSA value and member name.
-using FlattenedMemberValues = SmallVector<Value>;
+using FlattenedMemberValues = LoweredValues;
 using SelfMemberMap = DenseMap<Value, DenseMap<StringRef, FlattenedMemberValues>>;
 
 /// Represents the lowered SMT-facing argument and result types for a callable.
@@ -216,11 +231,24 @@ struct LoweredSignature {
   SmallVector<polymorphic::TemplateParamOp> templateParams;
 };
 
+/// Parsed shape information for one symbolic `scf.while` loop that this lowering can summarize.
+struct CanonicalWhileSummary {
+  scf::WhileOp whileOp;
+  unsigned inductionInitIndex = 0;
+  unsigned inductionBlockArgIndex = 0;
+  Value bound;
+  SmallVector<Value> initValues;
+  SmallVector<Value> yieldedValues;
+  array::WriteArrayOp writeOp;
+  Value summarizedArray;
+  SmallVector<constrain::EmitEqualityOp> equalityOps;
+};
+
 /// Shared lowering state for one execution of the pass.
 class LoweringContext {
 public:
-  explicit LoweringContext(MLIRContext *ctx, bool emitLegacyEntries_)
-      : context(ctx), emitLegacyEntries(emitLegacyEntries_) {}
+  explicit LoweringContext(MLIRContext *ctx, bool emitLegacyEntries_, bool allowAggregates_)
+      : context(ctx), emitLegacyEntries(emitLegacyEntries_), allowAggregates(allowAggregates_) {}
   friend class ExprLowerer;
 
   /// Get the SMT-converted function for the given LLZK source function op.
@@ -310,7 +338,7 @@ private:
 
   /// Lower one source SSA value to its recursively flattened SMT-facing values.
   FailureOr<SmallVector<Value>> lowerFlattenedValue(
-      Value value, Operation *origin, OpBuilder &builder, DenseMap<Value, Value> &valueMap,
+      Value value, Operation *origin, OpBuilder &builder, LoweredValueMap &valueMap,
       SelfMemberMap &selfMemberMap, DenseMap<StringRef, Value> &constParamMap
   );
 
@@ -319,7 +347,7 @@ private:
 
   /// Seed lowered callable argument maps for ordinary args and flattened struct members.
   FailureOr<unsigned> seedCallableArgumentMaps(
-      ValueRange originalArgs, Block *entry, Operation *origin, DenseMap<Value, Value> &valueMap,
+      ValueRange originalArgs, Block *entry, Operation *origin, LoweredValueMap &valueMap,
       SelfMemberMap &selfMemberMap
   );
 
@@ -327,7 +355,7 @@ private:
   FailureOr<LoweredSignature> lowerContractSignature(ContractOp contract);
 
   /// Seed lowered contract argument maps for ordinary args and flattened `%self` members.
-  FailureOr<std::tuple<DenseMap<Value, Value>, SelfMemberMap, DenseMap<StringRef, Value>>>
+  FailureOr<std::tuple<LoweredValueMap, SelfMemberMap, DenseMap<StringRef, Value>>>
   seedContractArgumentMaps(ContractOp contract, Block *entry);
 
   /// Create a direct contract condition helper, such as `_pre` or `_post`.
@@ -336,12 +364,27 @@ private:
       llvm::function_ref<bool(Operation *)> predicate
   );
 
+  /// Create direct contract condition helpers that lower each matching condition independently.
+  FailureOr<SmallVector<std::string>> createContractConditionProofHelpers(
+      ModuleOp module, ContractOp contract, StringRef helperStem,
+      llvm::function_ref<bool(Operation *)> predicate, StringRef stageKind
+  );
+
   /// Create the shared `_target` helper for a free-function contract target.
   FailureOr<func::FuncOp> createFreeFunctionTargetHelper(ModuleOp module, ContractOp contract);
+
+  /// Create per-equality proof helpers for a free-function contract target.
+  FailureOr<SmallVector<std::string>>
+  createFreeFunctionTargetProofHelpers(ModuleOp module, ContractOp contract);
 
   /// Create the `_target` helper for a struct contract target.
   FailureOr<func::FuncOp>
   createStructTargetHelper(ModuleOp module, ContractOp contract, VerificationStage stage);
+
+  /// Create per-obligation proof helpers for a struct contract target.
+  FailureOr<SmallVector<std::string>> createStructTargetProofHelpers(
+      ModuleOp module, ContractOp contract, VerificationStage stage
+  );
 
   /// Create a helper that combines compute- and constrain-stage target checks.
   FailureOr<func::FuncOp>
@@ -355,7 +398,7 @@ private:
 
   /// Lower one include operand list using the contract-local lowering environment.
   FailureOr<SmallVector<Value>> lowerIncludeHelperOperands(
-      ValueRange operands, Operation *origin, OpBuilder &builder, DenseMap<Value, Value> &valueMap,
+      ValueRange operands, Operation *origin, OpBuilder &builder, LoweredValueMap &valueMap,
       SelfMemberMap &selfMemberMap, DenseMap<StringRef, Value> &constParamMap
   );
 
@@ -371,6 +414,31 @@ private:
   /// Seed hidden const-parameter bindings from the signature suffix.
   DenseMap<StringRef, Value>
   seedConstParamMap(ArrayRef<polymorphic::TemplateParamOp> params, ValueRange values);
+
+  /// Materialize enclosing template expressions into SMT integer bindings when possible.
+  LogicalResult populateTemplateExprBindings(
+      Operation *origin, OpBuilder &builder, DenseMap<StringRef, Value> &constParamMap
+  );
+
+  /// Assert that template parameters and derived template expressions are non-negative.
+  LogicalResult emitTemplateParamNonNegativeAssumptions(
+      Location loc, OpBuilder &builder, DenseMap<StringRef, Value> &constParamMap
+  );
+
+  /// Lower one template expression region to an SMT integer SSA value.
+  FailureOr<Value> lowerTemplateExprOp(
+      polymorphic::TemplateExprOp exprOp, OpBuilder &builder,
+      DenseMap<StringRef, Value> &constParamMap
+  );
+
+  /// Parse one symbolic `scf.while` loop shape that can be summarized in SMT.
+  FailureOr<CanonicalWhileSummary> analyzeCanonicalWhile(scf::WhileOp whileOp);
+
+  /// Materialize SMT declarations and quantified assertions for canonical `scf.while` loops.
+  LogicalResult materializeCanonicalWhileSummaries(
+      FuncDefOp func, OpBuilder &builder, LoweredValueMap &valueMap, SelfMemberMap &selfMemberMap,
+      DenseMap<StringRef, Value> &constParamMap
+  );
 
   /// Create a fresh SMT symbol base name.
   std::string getFreshName(StringRef prefix) {
@@ -456,6 +524,9 @@ private:
   /// Whether to emit legacy combined helpers for SMTLIB export compatibility.
   bool emitLegacyEntries = false;
 
+  /// Whether aggregate-aware lowering is enabled for this pass instance.
+  bool allowAggregates = false;
+
   /// Monotonic suffix for fresh SMT witness names.
   unsigned nextFreshId = 0;
 };
@@ -499,9 +570,39 @@ LoweringContext::getValueTemplateParams(Operation *origin) {
   return params;
 }
 
+static Type wrapNestedSMTArrays(MLIRContext *context, Type leafType, unsigned rank) {
+  Type result = leafType;
+  for (unsigned i = 0; i < rank; ++i) {
+    result = smt::ArrayType::get(context, smt::IntType::get(context), result);
+  }
+  return result;
+}
+
 LogicalResult LoweringContext::appendLoweredBoundaryTypes(
     Type type, Operation *origin, SmallVectorImpl<Type> &loweredTypes
 ) {
+  if (auto arrayType = dyn_cast<array::ArrayType>(type)) {
+    SmallVector<Type> elementTypes;
+    if (failed(appendLoweredBoundaryTypes(arrayType.getElementType(), origin, elementTypes))) {
+      return failure();
+    }
+    for (Type elementType : elementTypes) {
+      loweredTypes.push_back(
+          wrapNestedSMTArrays(context, elementType, arrayType.getDimensionSizes().size())
+      );
+    }
+    return success();
+  }
+
+  if (auto podType = dyn_cast<pod::PodType>(type)) {
+    for (pod::RecordAttr record : podType.getRecords()) {
+      if (failed(appendLoweredBoundaryTypes(record.getType(), origin, loweredTypes))) {
+        return failure();
+      }
+    }
+    return success();
+  }
+
   if (auto structType = dyn_cast<StructType>(type)) {
     auto members = getStructMembers(structType, origin);
     if (failed(members)) {
@@ -629,6 +730,127 @@ DenseMap<StringRef, Value> LoweringContext::seedConstParamMap(
   return bindings;
 }
 
+FailureOr<Value> LoweringContext::lowerTemplateExprOp(
+    polymorphic::TemplateExprOp exprOp, OpBuilder &builder, DenseMap<StringRef, Value> &constParamMap
+) {
+  DenseMap<Value, Value> loweredExprValues;
+  std::function<FailureOr<Value>(Value)> lowerValue = [&](Value value) -> FailureOr<Value> {
+    if (auto it = loweredExprValues.find(value); it != loweredExprValues.end()) {
+      return it->second;
+    }
+    Operation *definingOp = value.getDefiningOp();
+    if (!definingOp) {
+      exprOp.emitError("template expr uses block argument unexpectedly");
+      return failure();
+    }
+    if (auto feltConst = dyn_cast<FeltConstantOp>(definingOp)) {
+      Value lowered = builder
+                          .create<smt::IntConstantOp>(
+                              feltConst.getLoc(),
+                              IntegerAttr::get(
+                                  builder.getContext(),
+                                  toAPSInt(toDynamicAPInt(feltConst.getValue().getValue()))
+                              )
+                          )
+                          .getResult();
+      loweredExprValues[value] = lowered;
+      return lowered;
+    }
+    if (auto constRead = dyn_cast<polymorphic::ConstReadOp>(definingOp)) {
+      auto it = constParamMap.find(constRead.getConstName());
+      if (it == constParamMap.end()) {
+        exprOp.emitError().append(
+            "missing template parameter binding for @", constRead.getConstName(),
+            " in verif-to-smt lowering"
+        );
+        return failure();
+      }
+      loweredExprValues[value] = it->second;
+      return it->second;
+    }
+    if (auto add = dyn_cast<AddFeltOp>(definingOp)) {
+      auto lhs = lowerValue(add.getLhs());
+      auto rhs = lowerValue(add.getRhs());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      Value lowered =
+          builder.create<smt::IntAddOp>(add.getLoc(), ValueRange {*lhs, *rhs}).getResult();
+      loweredExprValues[value] = lowered;
+      return lowered;
+    }
+    if (auto sub = dyn_cast<SubFeltOp>(definingOp)) {
+      auto lhs = lowerValue(sub.getLhs());
+      auto rhs = lowerValue(sub.getRhs());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      Value lowered = builder.create<smt::IntSubOp>(sub.getLoc(), *lhs, *rhs).getResult();
+      loweredExprValues[value] = lowered;
+      return lowered;
+    }
+    if (auto mul = dyn_cast<MulFeltOp>(definingOp)) {
+      auto lhs = lowerValue(mul.getLhs());
+      auto rhs = lowerValue(mul.getRhs());
+      if (failed(lhs) || failed(rhs)) {
+        return failure();
+      }
+      Value lowered =
+          builder.create<smt::IntMulOp>(mul.getLoc(), ValueRange {*lhs, *rhs}).getResult();
+      loweredExprValues[value] = lowered;
+      return lowered;
+    }
+    exprOp.emitError().append(
+        "unsupported operation in template expression SMT lowering: ",
+        definingOp->getName().getStringRef()
+    );
+    return failure();
+  };
+
+  auto yieldOp =
+      dyn_cast<polymorphic::YieldOp>(exprOp.getInitializerRegion().front().getTerminator());
+  if (!yieldOp) {
+    exprOp.emitError("expected poly.yield terminator in template expression");
+    return failure();
+  }
+  return lowerValue(yieldOp.getVal());
+}
+
+LogicalResult LoweringContext::populateTemplateExprBindings(
+    Operation *origin, OpBuilder &builder, DenseMap<StringRef, Value> &constParamMap
+) {
+  auto parentTemplate = origin->getParentOfType<polymorphic::TemplateOp>();
+  if (!parentTemplate) {
+    return success();
+  }
+
+  for (polymorphic::TemplateExprOp exprOp :
+       parentTemplate.getConstOps<polymorphic::TemplateExprOp>()) {
+    StringRef name = exprOp.getNameAttr().getValue();
+    if (constParamMap.contains(name)) {
+      continue;
+    }
+    auto lowered = lowerTemplateExprOp(exprOp, builder, constParamMap);
+    if (failed(lowered)) {
+      return failure();
+    }
+    constParamMap[name] = *lowered;
+  }
+  return success();
+}
+
+LogicalResult LoweringContext::emitTemplateParamNonNegativeAssumptions(
+    Location loc, OpBuilder &builder, DenseMap<StringRef, Value> &constParamMap
+) {
+  Value zero = builder.create<smt::IntConstantOp>(loc, builder.getI64IntegerAttr(0)).getResult();
+  for (const auto &[_, binding] : constParamMap) {
+    Value isNonNegative =
+        builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::ge, binding, zero).getResult();
+    builder.create<smt::AssertOp>(loc, isNonNegative);
+  }
+  return success();
+}
+
 /// Lower concrete or inherited template arguments for one call-like operation.
 FailureOr<SmallVector<Value>> LoweringContext::lowerTemplateParamOperands(
     Operation *origin, ArrayAttr templateParams, OpBuilder &builder,
@@ -692,15 +914,33 @@ FailureOr<SmallVector<Value>> LoweringContext::lowerTemplateParamOperands(
     }
     if (auto refAttr = dyn_cast<FlatSymbolRefAttr>(attr)) {
       auto it = constParamMap.find(refAttr.getRootReference().strref());
-      if (it == constParamMap.end()) {
-        origin->emitError().append(
-            "missing template parameter binding for @", refAttr.getRootReference(),
-            " in verif-to-smt lowering"
-        );
-        return failure();
+      if (it != constParamMap.end()) {
+        lowered.push_back(it->second);
+        continue;
       }
-      lowered.push_back(it->second);
-      continue;
+
+      auto enclosingTemplate = origin->getParentOfType<polymorphic::TemplateOp>();
+      if (enclosingTemplate) {
+        auto exprOp =
+            enclosingTemplate.getConstNamed<polymorphic::TemplateExprOp>(
+                refAttr.getRootReference()
+            );
+        if (exprOp) {
+          auto loweredExpr = lowerTemplateExprOp(exprOp, builder, constParamMap);
+          if (failed(loweredExpr)) {
+            return failure();
+          }
+          constParamMap[refAttr.getRootReference().strref()] = *loweredExpr;
+          lowered.push_back(*loweredExpr);
+          continue;
+        }
+      }
+
+      origin->emitError().append(
+          "missing template parameter binding for @", refAttr.getRootReference(),
+          " in verif-to-smt lowering"
+      );
+      return failure();
     }
 
     origin->emitError("unsupported non-type template parameter in verif-to-smt lowering");
@@ -801,7 +1041,7 @@ LoweringContext::lowerCallableSignature(FunctionType type, Operation *origin) {
 
 /// Seed lowered argument maps for callables whose SMT helper signatures flatten struct arguments.
 FailureOr<unsigned> LoweringContext::seedCallableArgumentMaps(
-    ValueRange originalArgs, Block *entry, Operation *origin, DenseMap<Value, Value> &valueMap,
+    ValueRange originalArgs, Block *entry, Operation *origin, LoweredValueMap &valueMap,
     SelfMemberMap &selfMemberMap
 ) {
   unsigned nextArg = 0;
@@ -821,22 +1061,30 @@ FailureOr<unsigned> LoweringContext::seedCallableArgumentMaps(
           ))) {
         return failure();
       }
+      valueMap[originalArg] = loweredValues;
       continue;
     }
-    valueMap[originalArg] = entry->getArgument(nextArg++);
+    auto numLoweredValues = getNumLoweredBoundaryValues(originalArg.getType(), origin);
+    if (failed(numLoweredValues)) {
+      return failure();
+    }
+    LoweredValues loweredValues;
+    loweredValues.reserve(*numLoweredValues);
+    for (unsigned index = 0; index < *numLoweredValues; ++index) {
+      loweredValues.push_back(entry->getArgument(nextArg++));
+    }
+    valueMap[originalArg] = std::move(loweredValues);
   }
   return nextArg;
 }
 
 /// Build a left-associated conjunction of the given SMT boolean values.
-static Value buildConjunction(OpBuilder &builder, Location loc, ArrayRef<Value> conditions) {
-  if (conditions.empty()) {
-    return builder.create<smt::BoolConstantOp>(loc, builder.getBoolAttr(true)).getResult();
-  }
+static Value buildAnd(OpBuilder &builder, Location loc, Value lhs, Value rhs);
 
-  Value current = conditions.front();
-  for (Value condition : conditions.drop_front()) {
-    current = builder.create<smt::AndOp>(loc, current, condition).getResult();
+static Value buildConjunction(OpBuilder &builder, Location loc, ArrayRef<Value> conditions) {
+  Value current = builder.create<smt::BoolConstantOp>(loc, builder.getBoolAttr(true)).getResult();
+  for (Value condition : conditions) {
+    current = buildAnd(builder, loc, current, condition);
   }
   return current;
 }
@@ -908,12 +1156,35 @@ static void proveByUnsatAndAssert(
   });
 }
 
+/// Prove an ordered list of helper-returned obligations one-by-one and assert each on success.
+static void proveHelperCallsByUnsatAndAssert(
+    OpBuilder &builder, Location loc, StringRef contractName, StringRef stageName,
+    ArrayRef<std::string> helperNames, ValueRange args
+) {
+  for (auto [index, helperName] : llvm::enumerate(helperNames)) {
+    auto helperCall = builder.create<func::CallOp>(
+        loc, helperName, TypeRange {smt::BoolType::get(builder.getContext())}, args
+    );
+    std::string indexedStageName = helperNames.size() == 1
+                                       ? stageName.str()
+                                       : (Twine(stageName) + "[" + Twine(index) + "]").str();
+    proveByUnsatAndAssert(
+        builder, loc, helperCall.getResult(0), contractName, indexedStageName
+    );
+  }
+}
+
+/// Assume a condition by asserting it directly without a proof obligation.
+static void assumeCondition(OpBuilder &builder, Location loc, Value condition) {
+  builder.create<smt::AssertOp>(loc, condition);
+}
+
 /// Lower contract-local expressions into SMT operations inside one helper body.
 class ExprLowerer {
 public:
   /// Construct an expression lowerer that reuses previously lowered values.
   ExprLowerer(
-      LoweringContext &l, OpBuilder &b, DenseMap<Value, Value> &v, SelfMemberMap &s,
+      LoweringContext &l, OpBuilder &b, LoweredValueMap &v, SelfMemberMap &s,
       DenseMap<StringRef, Value> &c
   )
       : state(l), builder(b), valueMap(v), selfMemberMap(s), constParamMap(c) {}
@@ -921,7 +1192,11 @@ public:
   /// Lower the given LLZK SSA value to an SMT-facing SSA value.
   FailureOr<Value> lower(Value value) {
     if (auto it = valueMap.find(value); it != valueMap.end()) {
-      return it->second;
+      if (it->second.size() != 1) {
+        emitError(value.getLoc(), "expected scalar lowered value but found aggregate bundle");
+        return failure();
+      }
+      return it->second.front();
     }
 
     Operation *definingOp = value.getDefiningOp();
@@ -932,22 +1207,39 @@ public:
 
     if (auto feltConst = dyn_cast<FeltConstantOp>(definingOp)) {
       auto lowered = builder.create<smt::IntConstantOp>(feltConst.getLoc(), toIntAttr(feltConst));
-      valueMap[value] = lowered.getResult();
+      valueMap[value] = {lowered.getResult()};
       return lowered.getResult();
     }
 
     if (auto constOp = dyn_cast<arith::ConstantOp>(definingOp)) {
       if (auto boolAttr = dyn_cast<BoolAttr>(constOp.getValue())) {
         auto lowered = builder.create<smt::BoolConstantOp>(constOp.getLoc(), boolAttr).getResult();
-        valueMap[value] = lowered;
+        valueMap[value] = {lowered};
+        return lowered;
+      }
+      if (constOp.getType().isIndex()) {
+        auto intAttr = dyn_cast<IntegerAttr>(constOp.getValue());
+        if (!intAttr) {
+          emitError(constOp.getLoc(), "unsupported non-integer index constant in SMT lowering");
+          return failure();
+        }
+        auto lowered = builder.create<smt::IntConstantOp>(constOp.getLoc(), intAttr).getResult();
+        valueMap[value] = {lowered};
         return lowered;
       }
       auto lowered = builder.create<arith::ConstantOp>(constOp.getLoc(), constOp.getValue());
-      valueMap[value] = lowered.getResult();
+      valueMap[value] = {lowered.getResult()};
       return lowered.getResult();
     }
 
     if (auto memberRead = dyn_cast<MemberReadOp>(definingOp)) {
+      if (memberRead.getComponent() != nullptr &&
+          !selfMemberMap.contains(memberRead.getComponent())) {
+        (void)state.lowerFlattenedValue(
+            memberRead.getComponent(), memberRead.getOperation(), builder, valueMap, selfMemberMap,
+            constParamMap
+        );
+      }
       if (memberRead.getComponent() != nullptr &&
           succeeded(state.ensureFlattenedStructMapping(
               memberRead.getComponent(), memberRead.getOperation(), selfMemberMap
@@ -956,10 +1248,11 @@ public:
         if (membersIt != selfMemberMap.end()) {
           auto it = membersIt->second.find(memberRead.getMemberName());
           if (it != membersIt->second.end()) {
+            valueMap[value] = it->second;
             if (it->second.size() != 1) {
               if (isa<StructType>(memberRead.getType())) {
                 (void)state.seedFlattenedStructValue(
-                    value, cast<StructType>(memberRead.getType()), it->second,
+                    value, mlir::cast<StructType>(memberRead.getType()), it->second,
                     memberRead.getOperation(), selfMemberMap
                 );
               }
@@ -968,11 +1261,20 @@ public:
               );
               return failure();
             }
-            valueMap[value] = it->second.front();
             return it->second.front();
           }
         }
       }
+    }
+
+    if (auto readArray = dyn_cast<array::ReadArrayOp>(definingOp)) {
+      auto loweredValues = state.lowerFlattenedValue(
+          value, readArray.getOperation(), builder, valueMap, selfMemberMap, constParamMap
+      );
+      if (failed(loweredValues) || loweredValues->size() != 1) {
+        return failure();
+      }
+      return loweredValues->front();
     }
 
     if (auto constRead = dyn_cast<polymorphic::ConstReadOp>(definingOp)) {
@@ -989,8 +1291,17 @@ public:
         );
         return failure();
       }
-      valueMap[value] = it->second;
+      valueMap[value] = {it->second};
       return it->second;
+    }
+
+    if (auto toIndex = dyn_cast<cast::FeltToIndexOp>(definingOp)) {
+      auto operand = lower(toIndex.getOperand());
+      if (failed(operand)) {
+        return failure();
+      }
+      valueMap[value] = {*operand};
+      return *operand;
     }
 
     if (auto unary = dyn_cast<NegFeltOp>(definingOp)) {
@@ -999,7 +1310,7 @@ public:
         return failure();
       }
       auto lowered = builder.create<smt::IntNegOp>(unary.getLoc(), *operand).getResult();
-      valueMap[value] = lowered;
+      valueMap[value] = {lowered};
       return lowered;
     }
 
@@ -1008,11 +1319,11 @@ public:
       if (failed(operand)) {
         return failure();
       }
-      FeltType type = cast<FeltType>(unary.getType());
+      FeltType type = mlir::cast<FeltType>(unary.getType());
       Value bv = emitCanonicalIntToBV(unary.getLoc(), *operand, type);
       Value notValue = builder.create<smt::BVNotOp>(unary.getLoc(), bv).getResult();
       Value lowered = emitBVToCanonicalInt(unary.getLoc(), notValue, type);
-      valueMap[value] = lowered;
+      valueMap[value] = {lowered};
       return lowered;
     }
 
@@ -1021,60 +1332,60 @@ public:
       if (failed(operand)) {
         return failure();
       }
-      Value lowered = emitInverseValue(inv.getLoc(), *operand, cast<FeltType>(inv.getType()));
-      valueMap[value] = lowered;
+      Value lowered = emitInverseValue(inv.getLoc(), *operand, mlir::cast<FeltType>(inv.getType()));
+      valueMap[value] = {lowered};
       return lowered;
     }
 
     if (auto add = dyn_cast<AddFeltOp>(definingOp)) {
       auto lowered = lowerCanonicalBinaryExpr(
-          add.getLoc(), cast<FeltType>(add.getType()), add.getLhs(), add.getRhs(),
+          add.getLoc(), mlir::cast<FeltType>(add.getType()), add.getLhs(), add.getRhs(),
           [&](Value lhs, Value rhs) {
         Value sum = builder.create<smt::IntAddOp>(add.getLoc(), ValueRange {lhs, rhs}).getResult();
-        return emitCanonical(add.getLoc(), sum, cast<FeltType>(add.getType()));
+        return emitCanonical(add.getLoc(), sum, mlir::cast<FeltType>(add.getType()));
       }
       );
       if (failed(lowered)) {
         return failure();
       }
-      valueMap[value] = *lowered;
+      valueMap[value] = {*lowered};
       return *lowered;
     }
 
     if (auto sub = dyn_cast<SubFeltOp>(definingOp)) {
       auto lowered = lowerCanonicalBinaryExpr(
-          sub.getLoc(), cast<FeltType>(sub.getType()), sub.getLhs(), sub.getRhs(),
+          sub.getLoc(), mlir::cast<FeltType>(sub.getType()), sub.getLhs(), sub.getRhs(),
           [&](Value lhs, Value rhs) {
         Value diff = builder.create<smt::IntSubOp>(sub.getLoc(), lhs, rhs).getResult();
-        return emitCanonical(sub.getLoc(), diff, cast<FeltType>(sub.getType()));
+        return emitCanonical(sub.getLoc(), diff, mlir::cast<FeltType>(sub.getType()));
       }
       );
       if (failed(lowered)) {
         return failure();
       }
-      valueMap[value] = *lowered;
+      valueMap[value] = {*lowered};
       return *lowered;
     }
 
     if (auto mul = dyn_cast<MulFeltOp>(definingOp)) {
       auto lowered = lowerCanonicalBinaryExpr(
-          mul.getLoc(), cast<FeltType>(mul.getType()), mul.getLhs(), mul.getRhs(),
+          mul.getLoc(), mlir::cast<FeltType>(mul.getType()), mul.getLhs(), mul.getRhs(),
           [&](Value lhs, Value rhs) {
         Value product =
             builder.create<smt::IntMulOp>(mul.getLoc(), ValueRange {lhs, rhs}).getResult();
-        return emitCanonical(mul.getLoc(), product, cast<FeltType>(mul.getType()));
+        return emitCanonical(mul.getLoc(), product, mlir::cast<FeltType>(mul.getType()));
       }
       );
       if (failed(lowered)) {
         return failure();
       }
-      valueMap[value] = *lowered;
+      valueMap[value] = {*lowered};
       return *lowered;
     }
 
     if (auto udiv = dyn_cast<UnsignedIntDivFeltOp>(definingOp)) {
       auto lowered = lowerCanonicalBinaryExpr(
-          udiv.getLoc(), cast<FeltType>(udiv.getType()), udiv.getLhs(), udiv.getRhs(),
+          udiv.getLoc(), mlir::cast<FeltType>(udiv.getType()), udiv.getLhs(), udiv.getRhs(),
           [&](Value lhs, Value rhs) {
         return builder.create<smt::IntDivOp>(udiv.getLoc(), lhs, rhs).getResult();
       }
@@ -1082,13 +1393,13 @@ public:
       if (failed(lowered)) {
         return failure();
       }
-      valueMap[value] = *lowered;
+      valueMap[value] = {*lowered};
       return *lowered;
     }
 
     if (auto umod = dyn_cast<UnsignedModFeltOp>(definingOp)) {
       auto lowered = lowerCanonicalBinaryExpr(
-          umod.getLoc(), cast<FeltType>(umod.getType()), umod.getLhs(), umod.getRhs(),
+          umod.getLoc(), mlir::cast<FeltType>(umod.getType()), umod.getLhs(), umod.getRhs(),
           [&](Value lhs, Value rhs) {
         return builder.create<smt::IntModOp>(umod.getLoc(), lhs, rhs).getResult();
       }
@@ -1096,7 +1407,7 @@ public:
       if (failed(lowered)) {
         return failure();
       }
-      valueMap[value] = *lowered;
+      valueMap[value] = {*lowered};
       return *lowered;
     }
 
@@ -1107,8 +1418,8 @@ public:
         return failure();
       }
       Value lowered =
-          emitSignedIntDivValue(sdiv.getLoc(), *lhs, *rhs, cast<FeltType>(sdiv.getType()));
-      valueMap[value] = lowered;
+          emitSignedIntDivValue(sdiv.getLoc(), *lhs, *rhs, mlir::cast<FeltType>(sdiv.getType()));
+      valueMap[value] = {lowered};
       return lowered;
     }
 
@@ -1118,14 +1429,14 @@ public:
       if (failed(lhs) || failed(rhs)) {
         return failure();
       }
-      Value lowered = emitSignedModValue(smod.getLoc(), *lhs, *rhs, cast<FeltType>(smod.getType()));
-      valueMap[value] = lowered;
+      Value lowered = emitSignedModValue(smod.getLoc(), *lhs, *rhs, mlir::cast<FeltType>(smod.getType()));
+      valueMap[value] = {lowered};
       return lowered;
     }
 
     if (auto shl = dyn_cast<ShlFeltOp>(definingOp)) {
       auto lowered = lowerBitvectorBinaryExpr(
-          shl.getLoc(), cast<FeltType>(shl.getType()), shl.getLhs(), shl.getRhs(),
+          shl.getLoc(), mlir::cast<FeltType>(shl.getType()), shl.getLhs(), shl.getRhs(),
           [&](Value lhs, Value rhs) {
         return builder.create<smt::BVShlOp>(shl.getLoc(), lhs, rhs).getResult();
       }
@@ -1133,13 +1444,13 @@ public:
       if (failed(lowered)) {
         return failure();
       }
-      valueMap[value] = *lowered;
+      valueMap[value] = {*lowered};
       return *lowered;
     }
 
     if (auto shr = dyn_cast<ShrFeltOp>(definingOp)) {
       auto lowered = lowerBitvectorBinaryExpr(
-          shr.getLoc(), cast<FeltType>(shr.getType()), shr.getLhs(), shr.getRhs(),
+          shr.getLoc(), mlir::cast<FeltType>(shr.getType()), shr.getLhs(), shr.getRhs(),
           [&](Value lhs, Value rhs) {
         return builder.create<smt::BVLShrOp>(shr.getLoc(), lhs, rhs).getResult();
       }
@@ -1147,13 +1458,13 @@ public:
       if (failed(lowered)) {
         return failure();
       }
-      valueMap[value] = *lowered;
+      valueMap[value] = {*lowered};
       return *lowered;
     }
 
     if (auto andOp = dyn_cast<AndFeltOp>(definingOp)) {
       auto lowered = lowerBitvectorBinaryExpr(
-          andOp.getLoc(), cast<FeltType>(andOp.getType()), andOp.getLhs(), andOp.getRhs(),
+          andOp.getLoc(), mlir::cast<FeltType>(andOp.getType()), andOp.getLhs(), andOp.getRhs(),
           [&](Value lhs, Value rhs) {
         return builder.create<smt::BVAndOp>(andOp.getLoc(), lhs, rhs).getResult();
       }
@@ -1161,13 +1472,13 @@ public:
       if (failed(lowered)) {
         return failure();
       }
-      valueMap[value] = *lowered;
+      valueMap[value] = {*lowered};
       return *lowered;
     }
 
     if (auto orOp = dyn_cast<OrFeltOp>(definingOp)) {
       auto lowered = lowerBitvectorBinaryExpr(
-          orOp.getLoc(), cast<FeltType>(orOp.getType()), orOp.getLhs(), orOp.getRhs(),
+          orOp.getLoc(), mlir::cast<FeltType>(orOp.getType()), orOp.getLhs(), orOp.getRhs(),
           [&](Value lhs, Value rhs) {
         return builder.create<smt::BVOrOp>(orOp.getLoc(), lhs, rhs).getResult();
       }
@@ -1175,13 +1486,13 @@ public:
       if (failed(lowered)) {
         return failure();
       }
-      valueMap[value] = *lowered;
+      valueMap[value] = {*lowered};
       return *lowered;
     }
 
     if (auto xorOp = dyn_cast<XorFeltOp>(definingOp)) {
       auto lowered = lowerBitvectorBinaryExpr(
-          xorOp.getLoc(), cast<FeltType>(xorOp.getType()), xorOp.getLhs(), xorOp.getRhs(),
+          xorOp.getLoc(), mlir::cast<FeltType>(xorOp.getType()), xorOp.getLhs(), xorOp.getRhs(),
           [&](Value lhs, Value rhs) {
         return builder.create<smt::BVXOrOp>(xorOp.getLoc(), lhs, rhs).getResult();
       }
@@ -1189,7 +1500,7 @@ public:
       if (failed(lowered)) {
         return failure();
       }
-      valueMap[value] = *lowered;
+      valueMap[value] = {*lowered};
       return *lowered;
     }
 
@@ -1199,11 +1510,11 @@ public:
       if (failed(lhs) || failed(rhs)) {
         return failure();
       }
-      auto lowered = emitPowValue(powOp, *lhs, *rhs, cast<FeltType>(powOp.getType()));
+      auto lowered = emitPowValue(powOp, *lhs, *rhs, mlir::cast<FeltType>(powOp.getType()));
       if (failed(lowered)) {
         return failure();
       }
-      valueMap[value] = *lowered;
+      valueMap[value] = {*lowered};
       return *lowered;
     }
 
@@ -1213,8 +1524,8 @@ public:
       if (failed(lhs) || failed(rhs)) {
         return failure();
       }
-      Value lowered = emitDivisionValue(div.getLoc(), *lhs, *rhs, cast<FeltType>(div.getType()));
-      valueMap[value] = lowered;
+      Value lowered = emitDivisionValue(div.getLoc(), *lhs, *rhs, mlir::cast<FeltType>(div.getType()));
+      valueMap[value] = {lowered};
       return lowered;
     }
 
@@ -1250,7 +1561,7 @@ public:
         llvm_unreachable("unknown bool.cmp predicate");
       }();
 
-      valueMap[value] = cmp;
+      valueMap[value] = {cmp};
       return cmp;
     }
 
@@ -1264,9 +1575,9 @@ public:
         return failure();
       }
 
-      auto resultNumber = cast<OpResult>(value).getResultNumber();
-      auto thenYield = cast<scf::YieldOp>(ifOp.getThenRegion().front().getTerminator());
-      auto elseYield = cast<scf::YieldOp>(ifOp.getElseRegion().front().getTerminator());
+      auto resultNumber = mlir::cast<OpResult>(value).getResultNumber();
+      auto thenYield = mlir::cast<scf::YieldOp>(ifOp.getThenRegion().front().getTerminator());
+      auto elseYield = mlir::cast<scf::YieldOp>(ifOp.getElseRegion().front().getTerminator());
 
       auto loweredThen = lower(thenYield.getOperand(resultNumber));
       auto loweredElse = lower(elseYield.getOperand(resultNumber));
@@ -1276,8 +1587,53 @@ public:
 
       auto ite = builder.create<smt::IteOp>(ifOp.getLoc(), *loweredCond, *loweredThen, *loweredElse)
                      .getResult();
-      valueMap[value] = ite;
+      valueMap[value] = {ite};
       return ite;
+    }
+
+    if (auto selectOp = dyn_cast<arith::SelectOp>(definingOp)) {
+      auto loweredCond = lower(selectOp.getCondition());
+      auto loweredTrue = lower(selectOp.getTrueValue());
+      auto loweredFalse = lower(selectOp.getFalseValue());
+      if (failed(loweredCond) || failed(loweredTrue) || failed(loweredFalse)) {
+        return failure();
+      }
+
+      auto ite = builder
+                     .create<smt::IteOp>(
+                         selectOp.getLoc(), *loweredCond, *loweredTrue, *loweredFalse
+                     )
+                     .getResult();
+      valueMap[value] = {ite};
+      return ite;
+    }
+
+    if (auto whileOp = dyn_cast<scf::WhileOp>(definingOp)) {
+      if (!state.allowAggregates) {
+        whileOp.emitError(
+            "verif-to-smt requires loop results to be lowered before scalar-only SMT conversion"
+        );
+        return failure();
+      }
+
+      for (OpResult result : whileOp.getResults()) {
+        if (valueMap.contains(result)) {
+          continue;
+        }
+        Type loweredType = state.lowerType(result.getType());
+        auto declared = builder.create<smt::DeclareFunOp>(
+            whileOp.getLoc(), loweredType,
+            StringAttr::get(builder.getContext(), state.getFreshName("while_result"))
+        );
+        valueMap[result] = {declared.getResult()};
+      }
+
+      auto it = valueMap.find(value);
+      if (it == valueMap.end() || it->second.size() != 1) {
+        whileOp.emitError("failed to materialize SMT value for scf.while result");
+        return failure();
+      }
+      return it->second.front();
     }
 
     if (auto call = dyn_cast<CallOp>(definingOp)) {
@@ -1287,6 +1643,14 @@ public:
       }
 
       auto funcHelperRes = state.getFuncHelper(calleeTarget->get());
+      if (failed(funcHelperRes) &&
+          (calleeTarget->get().isStructCompute() || calleeTarget->get().isStructConstrain())) {
+        auto calleeStruct = calleeTarget->get()->getParentOfType<StructDefOp>();
+        if (failed(state.getOrCreateStructHelpers(call->getParentOfType<ModuleOp>(), calleeStruct))) {
+          return failure();
+        }
+        funcHelperRes = state.getFuncHelper(calleeTarget->get());
+      }
       if (failed(funcHelperRes)) {
         call.emitError("verif-to-smt requires a lowered helper for called function");
         return failure();
@@ -1295,14 +1659,29 @@ public:
       SmallVector<Value> loweredOperands;
       loweredOperands.reserve(call.getArgOperands().size());
       for (Value operand : call.getArgOperands()) {
-        auto loweredOperand = lower(operand);
+        auto loweredOperand = state.lowerFlattenedValue(
+            operand, call.getOperation(), builder, valueMap, selfMemberMap, constParamMap
+        );
         if (failed(loweredOperand)) {
           return failure();
         }
-        loweredOperands.push_back(*loweredOperand);
+        llvm::append_range(loweredOperands, *loweredOperand);
+      }
+      ArrayAttr inferredTemplateParams = call.getTemplateParamsAttr();
+      if (!inferredTemplateParams && calleeTarget->get().isStructCompute() &&
+          call.getNumResults() != 0) {
+        if (auto structType = dyn_cast<StructType>(call.getResult(0).getType())) {
+          inferredTemplateParams = structType.getParams();
+        }
+      }
+      if (!inferredTemplateParams && calleeTarget->get().isStructConstrain() &&
+          !call.getArgOperands().empty()) {
+        if (auto structType = dyn_cast<StructType>(call.getArgOperands().front().getType())) {
+          inferredTemplateParams = structType.getParams();
+        }
       }
       auto loweredTemplateParams = state.lowerTemplateParamOperands(
-          calleeTarget->get().getOperation(), call.getTemplateParamsAttr(), builder, constParamMap
+          calleeTarget->get().getOperation(), inferredTemplateParams, builder, constParamMap
       );
       if (failed(loweredTemplateParams)) {
         return failure();
@@ -1314,9 +1693,9 @@ public:
           loweredOperands
       );
       for (auto [orig, lowered] : llvm::zip(call.getResults(), loweredCall.getResults())) {
-        valueMap[orig] = lowered;
+        valueMap[orig] = {lowered};
       }
-      return loweredCall.getResult(cast<OpResult>(value).getResultNumber());
+      return loweredCall.getResult(mlir::cast<OpResult>(value).getResultNumber());
     }
 
     definingOp->emitError().append(
@@ -1634,7 +2013,7 @@ private:
   OpBuilder &builder;
 
   /// Lowered SSA value cache for ordinary arguments and derived values.
-  DenseMap<Value, Value> &valueMap;
+  LoweredValueMap &valueMap;
 
   /// Flattened `%self` member bindings keyed by member name.
   SelfMemberMap &selfMemberMap;
@@ -1649,7 +2028,7 @@ private:
 /// Guard a contract-local condition with enclosing `scf.if` control flow.
 static FailureOr<Value>
 lowerGuardedCondition(Operation *conditionOp, ExprLowerer &lowerer, OpBuilder &builder) {
-  auto contractCond = cast<ConditionOpInterface>(conditionOp);
+  auto contractCond = mlir::cast<ConditionOpInterface>(conditionOp);
   auto lowered = lowerer.lower(contractCond.getCondition());
   if (failed(lowered)) {
     return failure();
@@ -1718,12 +2097,560 @@ static FailureOr<Value> lowerGuardedBoolean(
   return guarded;
 }
 
+static bool isFeltConstEqual(Value value, uint64_t expected) {
+  auto feltConst = dyn_cast_or_null<FeltConstantOp>(value.getDefiningOp());
+  return feltConst &&
+         toDynamicAPInt(feltConst.getValue().getValue()) == llvm::DynamicAPInt(expected);
+}
+
+static std::optional<bool> getStaticBoolValue(Value value) {
+  if (auto boolConst = dyn_cast_or_null<smt::BoolConstantOp>(value.getDefiningOp())) {
+    return boolConst.getValue();
+  }
+  if (auto arithConst = dyn_cast_or_null<arith::ConstantOp>(value.getDefiningOp())) {
+    if (auto boolAttr = dyn_cast<BoolAttr>(arithConst.getValue())) {
+      return boolAttr.getValue();
+    }
+  }
+  return std::nullopt;
+}
+
+static Value buildAnd(OpBuilder &builder, Location loc, Value lhs, Value rhs) {
+  if (auto lhsConst = getStaticBoolValue(lhs)) {
+    return *lhsConst ? rhs : lhs;
+  }
+  if (auto rhsConst = getStaticBoolValue(rhs)) {
+    return *rhsConst ? lhs : rhs;
+  }
+  return builder.create<smt::AndOp>(loc, lhs, rhs).getResult();
+}
+
+static bool isLoopIndexValue(Value value, Value inductionVar) {
+  if (value == inductionVar) {
+    return true;
+  }
+  auto toIndex = dyn_cast_or_null<cast::FeltToIndexOp>(value.getDefiningOp());
+  return toIndex && toIndex.getOperand() == inductionVar;
+}
+
+static bool valueDependsOnAnyImpl(
+    Value value, const llvm::DenseSet<Value> &needles, llvm::DenseSet<Value> &visited
+) {
+  if (!visited.insert(value).second) {
+    return false;
+  }
+  if (needles.contains(value)) {
+    return true;
+  }
+  Operation *definingOp = value.getDefiningOp();
+  if (!definingOp) {
+    return false;
+  }
+  for (Value operand : definingOp->getOperands()) {
+    if (valueDependsOnAnyImpl(operand, needles, visited)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool valueDependsOnAny(Value value, const llvm::DenseSet<Value> &needles) {
+  llvm::DenseSet<Value> visited;
+  return valueDependsOnAnyImpl(value, needles, visited);
+}
+
+static bool isCanonicalDoublingYield(Value yielded, Value stateArg) {
+  auto add = dyn_cast_or_null<AddFeltOp>(yielded.getDefiningOp());
+  return add && add.getLhs() == stateArg && add.getRhs() == stateArg;
+}
+
+FailureOr<CanonicalWhileSummary> LoweringContext::analyzeCanonicalWhile(scf::WhileOp whileOp) {
+  CanonicalWhileSummary summary;
+  summary.whileOp = whileOp;
+
+  if (!std::equal(
+          whileOp.getBeforeArguments().begin(), whileOp.getBeforeArguments().end(),
+          whileOp.getConditionOp().getArgs().begin()
+      )) {
+    whileOp.emitError(
+        "unsupported symbolic-loop SMT lowering: before-region block arguments must pass through "
+        "unchanged to scf.condition"
+    );
+    return failure();
+  }
+
+  auto cmp = dyn_cast_or_null<boolean::CmpOp>(whileOp.getConditionOp().getCondition().getDefiningOp());
+  if (!cmp || cmp.getPredicate() != boolean::FeltCmpPredicate::LT) {
+    whileOp.emitError(
+        "unsupported symbolic-loop SMT lowering: expected loop condition `iv < bound`"
+    );
+    return failure();
+  }
+  summary.bound = cmp.getRhs();
+
+  auto findBlockArgIndex = [](Value needle, ValueRange haystack) -> std::optional<unsigned> {
+    for (auto [index, arg] : llvm::enumerate(haystack)) {
+      if (needle == arg) {
+        return index;
+      }
+    }
+    return std::nullopt;
+  };
+
+  auto ivInitIndex = findBlockArgIndex(cmp.getLhs(), whileOp.getBeforeArguments());
+  if (!ivInitIndex) {
+    whileOp.emitError(
+        "unsupported symbolic-loop SMT lowering: could not identify a loop induction variable"
+    );
+    return failure();
+  }
+  unsigned ivBlockIndex = *ivInitIndex;
+  if (ivBlockIndex >= whileOp.getAfterArguments().size()) {
+    whileOp.emitError(
+        "unsupported symbolic-loop SMT lowering: loop region argument layout is inconsistent"
+    );
+    return failure();
+  }
+  summary.inductionInitIndex = *ivInitIndex;
+  summary.inductionBlockArgIndex = ivBlockIndex;
+  summary.initValues.assign(whileOp.getInits().begin(), whileOp.getInits().end());
+  summary.yieldedValues.assign(whileOp.getYieldedValues().begin(), whileOp.getYieldedValues().end());
+
+  if (!isFeltConstEqual(summary.initValues[summary.inductionInitIndex], 0)) {
+    whileOp.emitError(
+        "unsupported symbolic-loop SMT lowering: induction variable must start at felt constant 0"
+    );
+    return failure();
+  }
+
+  auto nextIv = summary.yieldedValues[summary.inductionInitIndex];
+  auto inc = dyn_cast_or_null<AddFeltOp>(nextIv.getDefiningOp());
+  if (!inc ||
+      !((inc.getLhs() == whileOp.getAfterArguments()[summary.inductionBlockArgIndex] &&
+         isFeltConstEqual(inc.getRhs(), 1)) ||
+        (inc.getRhs() == whileOp.getAfterArguments()[summary.inductionBlockArgIndex] &&
+         isFeltConstEqual(inc.getLhs(), 1)))) {
+    whileOp.emitError(
+        "unsupported symbolic-loop SMT lowering: induction variable must advance by one"
+    );
+    return failure();
+  }
+
+  bool failed = false;
+  whileOp.getAfter().walk([&](Operation *op) {
+    if (isa<scf::YieldOp>(op)) {
+      return WalkResult::advance();
+    }
+    if (isa<scf::WhileOp>(op) && op != whileOp.getOperation()) {
+      op->emitError(
+          "unsupported symbolic-loop SMT lowering: nested scf.while is not supported"
+      );
+      failed = true;
+      return WalkResult::interrupt();
+    }
+    if (auto writeOp = dyn_cast<array::WriteArrayOp>(op)) {
+      if (summary.writeOp) {
+        writeOp.emitError(
+            "unsupported symbolic-loop SMT lowering: multiple array.write ops in one loop body"
+        );
+        failed = true;
+        return WalkResult::interrupt();
+      }
+      if (writeOp.getIndices().size() != 1 ||
+          !isLoopIndexValue(writeOp.getIndices().front(),
+                            whileOp.getAfterArguments()[summary.inductionBlockArgIndex])) {
+        writeOp.emitError(
+            "unsupported symbolic-loop SMT lowering: array.write index must be the induction "
+            "variable"
+        );
+        failed = true;
+        return WalkResult::interrupt();
+      }
+      summary.writeOp = writeOp;
+      summary.summarizedArray = writeOp.getArrRef();
+      return WalkResult::advance();
+    }
+    if (auto eqOp = dyn_cast<constrain::EmitEqualityOp>(op)) {
+      summary.equalityOps.push_back(eqOp);
+      return WalkResult::advance();
+    }
+    if (auto readOp = dyn_cast<array::ReadArrayOp>(op)) {
+      if (readOp.getIndices().size() != 1 ||
+          !isLoopIndexValue(readOp.getIndices().front(),
+                            whileOp.getAfterArguments()[summary.inductionBlockArgIndex])) {
+        readOp.emitError(
+            "unsupported symbolic-loop SMT lowering: array.read index must be the induction "
+            "variable"
+        );
+        failed = true;
+        return WalkResult::interrupt();
+      }
+      return WalkResult::advance();
+    }
+    if (isa<scf::IfOp>(op)) {
+      return WalkResult::advance();
+    }
+    if (op->getNumRegions() != 0 || op->getNumSuccessors() != 0) {
+      op->emitError(
+          "unsupported symbolic-loop SMT lowering: loop body must not contain unsupported "
+          "control flow"
+      );
+      failed = true;
+      return WalkResult::interrupt();
+    }
+    return WalkResult::advance();
+  });
+  if (failed) {
+    return failure();
+  }
+  if (!summary.writeOp && summary.equalityOps.empty()) {
+    whileOp.emitError(
+        "unsupported symbolic-loop SMT lowering: expected an array.write or constrain.eq in the "
+        "canonical loop body"
+    );
+    return failure();
+  }
+  return summary;
+}
+
+LogicalResult LoweringContext::materializeCanonicalWhileSummaries(
+    FuncDefOp func, OpBuilder &builder, LoweredValueMap &valueMap, SelfMemberMap &selfMemberMap,
+    DenseMap<StringRef, Value> &constParamMap
+) {
+  SmallVector<scf::WhileOp> loops;
+  func.walk([&](scf::WhileOp whileOp) { loops.push_back(whileOp); });
+
+  for (scf::WhileOp whileOp : loops) {
+    auto summary = analyzeCanonicalWhile(whileOp);
+    if (failed(summary)) {
+      return failure();
+    }
+
+    Location loc = whileOp.getLoc();
+    ExprLowerer lowerer(*this, builder, valueMap, selfMemberMap, constParamMap);
+    auto loweredBound = lowerer.lower(summary->bound);
+    if (failed(loweredBound)) {
+      return failure();
+    }
+
+    Value zero = builder.create<smt::IntConstantOp>(loc, builder.getI64IntegerAttr(0)).getResult();
+    Value one = builder.create<smt::IntConstantOp>(loc, builder.getI64IntegerAttr(1)).getResult();
+    auto makeRangeGuard = [&](Value idx) {
+      Value geZero =
+          builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::ge, idx, zero).getResult();
+      Value ltBound =
+          builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::lt, idx, *loweredBound).getResult();
+      return builder.create<smt::AndOp>(loc, geZero, ltBound).getResult();
+    };
+
+    auto feltType = dyn_cast<FeltType>(summary->bound.getType());
+    if (!feltType) {
+      whileOp.emitError(
+          "unsupported symbolic-loop SMT lowering: loop bound must have felt type"
+      );
+      return failure();
+    }
+
+    auto emitPowerOfTwo = [&](OpBuilder &stateBuilder, Value exponent) -> Value {
+      const Field &field = feltType.getField();
+      auto primeAttr = IntegerAttr::get(stateBuilder.getContext(), toAPSInt(field.prime()));
+      Value prime = stateBuilder.create<smt::IntConstantOp>(loc, primeAttr).getResult();
+      Value canonicalExponent =
+          stateBuilder.create<smt::IntModOp>(loc, exponent, prime).getResult();
+      Value oneInt =
+          stateBuilder.create<smt::IntConstantOp>(loc, stateBuilder.getI64IntegerAttr(1)).getResult();
+      Value oneBV = stateBuilder
+                        .create<smt::Int2BVOp>(
+                            loc, smt::BitVectorType::get(context, field.bitWidth()), oneInt
+                        )
+                        .getResult();
+      Value exponentBV = stateBuilder
+                             .create<smt::Int2BVOp>(
+                                 loc, smt::BitVectorType::get(context, field.bitWidth()),
+                                 canonicalExponent
+                             )
+                             .getResult();
+      Value shifted = stateBuilder.create<smt::BVShlOp>(loc, oneBV, exponentBV).getResult();
+      Value shiftedInt = stateBuilder.create<smt::BV2IntOp>(loc, shifted, UnitAttr()).getResult();
+      return stateBuilder.create<smt::IntModOp>(loc, shiftedInt, prime).getResult();
+    };
+
+    llvm::DenseSet<unsigned> neededStateIndices;
+    llvm::DenseSet<Value> stateBlockArgs;
+    for (auto [index, arg] : llvm::enumerate(whileOp.getAfterArguments())) {
+      if (index == summary->inductionBlockArgIndex) {
+        continue;
+      }
+      stateBlockArgs.insert(arg);
+    }
+    for (auto [index, result] : llvm::enumerate(whileOp.getResults())) {
+      if (index != summary->inductionInitIndex && !result.use_empty()) {
+        neededStateIndices.insert(index);
+      }
+    }
+    if (summary->writeOp &&
+        valueDependsOnAny(summary->writeOp.getRvalue(), stateBlockArgs)) {
+      for (auto [index, arg] : llvm::enumerate(whileOp.getAfterArguments())) {
+        if (index != summary->inductionBlockArgIndex &&
+            valueDependsOnAny(summary->writeOp.getRvalue(), llvm::DenseSet<Value> {arg})) {
+          neededStateIndices.insert(index);
+        }
+      }
+    }
+    for (constrain::EmitEqualityOp eqOp : summary->equalityOps) {
+      for (auto [index, arg] : llvm::enumerate(whileOp.getAfterArguments())) {
+        if (index == summary->inductionBlockArgIndex) {
+          continue;
+        }
+        llvm::DenseSet<Value> argSet {arg};
+        if (valueDependsOnAny(eqOp.getLhs(), argSet) || valueDependsOnAny(eqOp.getRhs(), argSet)) {
+          neededStateIndices.insert(index);
+        }
+      }
+    }
+    bool changed = true;
+    while (changed) {
+      changed = false;
+      for (unsigned neededIndex : llvm::to_vector(neededStateIndices)) {
+        Value yielded = summary->yieldedValues[neededIndex];
+        for (auto [index, arg] : llvm::enumerate(whileOp.getAfterArguments())) {
+          if (index == summary->inductionBlockArgIndex || neededStateIndices.contains(index)) {
+            continue;
+          }
+          if (valueDependsOnAny(yielded, llvm::DenseSet<Value> {arg})) {
+            neededStateIndices.insert(index);
+            changed = true;
+          }
+        }
+      }
+    }
+
+    llvm::DenseSet<unsigned> closedFormPow2Indices;
+    DenseMap<unsigned, Value> carriedStateArrays;
+    for (auto [index, initValue] : llvm::enumerate(summary->initValues)) {
+      if (index == summary->inductionInitIndex) {
+        valueMap[whileOp.getResult(index)] = {*loweredBound};
+        continue;
+      }
+      if (!neededStateIndices.contains(index)) {
+        continue;
+      }
+      Value stateArg = whileOp.getAfterArguments()[index];
+      if (isFeltConstEqual(initValue, 1) &&
+          isCanonicalDoublingYield(summary->yieldedValues[index], stateArg)) {
+        closedFormPow2Indices.insert(index);
+        valueMap[whileOp.getResult(index)] = {emitPowerOfTwo(builder, *loweredBound)};
+        continue;
+      }
+
+      auto stateArray = builder.create<smt::DeclareFunOp>(
+          loc, smt::ArrayType::get(context, smt::IntType::get(context), smt::IntType::get(context)),
+          StringAttr::get(context, getFreshName("while_accum"))
+      );
+      carriedStateArrays[index] = stateArray.getResult();
+      auto loweredInit = lowerer.lower(initValue);
+      if (failed(loweredInit)) {
+        return failure();
+      }
+      Value baseCell =
+          builder.create<smt::ArraySelectOp>(loc, stateArray.getResult(), zero).getResult();
+      Value baseEq = builder.create<smt::EqOp>(loc, baseCell, *loweredInit).getResult();
+      builder.create<smt::AssertOp>(loc, baseEq);
+      Value finalValue =
+          builder.create<smt::ArraySelectOp>(loc, stateArray.getResult(), *loweredBound).getResult();
+      valueMap[whileOp.getResult(index)] = {finalValue};
+    }
+
+    Value summarizedArray = nullptr;
+    if (summary->summarizedArray) {
+      auto arrayType = dyn_cast<array::ArrayType>(summary->summarizedArray.getType());
+      if (!arrayType) {
+        whileOp.emitError(
+            "unsupported symbolic-loop SMT lowering: summarized array must have array.type"
+        );
+        return failure();
+      }
+      auto loweredTypes = SmallVector<Type> {};
+      if (failed(appendLoweredBoundaryTypes(arrayType, whileOp, loweredTypes)) ||
+          loweredTypes.size() != 1) {
+        whileOp.emitError(
+            "unsupported symbolic-loop SMT lowering: summarized arrays must lower to one SMT "
+            "array leaf"
+        );
+        return failure();
+      }
+      auto declared = builder.create<smt::DeclareFunOp>(
+          loc, loweredTypes.front(), StringAttr::get(context, getFreshName("loop_array"))
+      );
+      summarizedArray = declared.getResult();
+      valueMap[summary->summarizedArray] = {summarizedArray};
+    }
+
+    auto quantify = [&](llvm::function_ref<FailureOr<Value>(OpBuilder &, Value)> buildBody)
+        -> LogicalResult {
+      bool failedToBuild = false;
+      auto forall = builder.create<smt::ForallOp>(
+          loc, TypeRange {smt::IntType::get(context)},
+          [&](OpBuilder &nestedBuilder, Location nestedLoc, ValueRange vars) -> Value {
+            Value idx = vars.front();
+            auto body = buildBody(nestedBuilder, idx);
+            if (failed(body)) {
+              failedToBuild = true;
+              nestedBuilder.create<smt::YieldOp>(
+                  nestedLoc, nestedBuilder.create<smt::BoolConstantOp>(
+                                 nestedLoc, nestedBuilder.getBoolAttr(false)
+                             ).getResult()
+              );
+              return {};
+            }
+            Value guard = makeRangeGuard(idx);
+            return nestedBuilder.create<smt::ImpliesOp>(nestedLoc, guard, *body).getResult();
+          },
+          std::optional<ArrayRef<StringRef>>(ArrayRef<StringRef> {"idx"})
+      );
+      if (failedToBuild) {
+        return failure();
+      }
+      builder.create<smt::AssertOp>(loc, forall.getResult());
+      return success();
+    };
+
+    DenseMap<Value, SmallVector<array::ReadArrayOp>> currentIndexReads;
+    whileOp.getAfter().walk([&](array::ReadArrayOp readOp) {
+      currentIndexReads[readOp.getArrRef()].push_back(readOp);
+    });
+
+    if (summary->writeOp) {
+      auto elementExpr = quantify([&](OpBuilder &nestedBuilder, Value idx) -> FailureOr<Value> {
+        LoweredValueMap nestedMap = valueMap;
+        for (auto [index, stateArray] : carriedStateArrays) {
+          Value currentState =
+              nestedBuilder.create<smt::ArraySelectOp>(loc, stateArray, idx).getResult();
+          nestedMap[whileOp.getAfterArguments()[index]] = {currentState};
+        }
+        for (unsigned index : closedFormPow2Indices) {
+          nestedMap[whileOp.getAfterArguments()[index]] = {emitPowerOfTwo(nestedBuilder, idx)};
+        }
+        nestedMap[whileOp.getAfterArguments()[summary->inductionBlockArgIndex]] = {idx};
+        ExprLowerer nestedLowerer(*this, nestedBuilder, nestedMap, selfMemberMap, constParamMap);
+        auto loweredElement = nestedLowerer.lower(summary->writeOp.getRvalue());
+        if (failed(loweredElement)) {
+          return failure();
+        }
+        Value selected =
+            nestedBuilder.create<smt::ArraySelectOp>(loc, summarizedArray, idx).getResult();
+        return nestedBuilder.create<smt::EqOp>(loc, selected, *loweredElement).getResult();
+      });
+      if (failed(elementExpr)) {
+        return failure();
+      }
+    }
+
+    for (auto [index, yielded] : llvm::enumerate(summary->yieldedValues)) {
+      if (index == summary->inductionInitIndex || !carriedStateArrays.contains(index)) {
+        continue;
+      }
+      auto transition = quantify([&](OpBuilder &nestedBuilder, Value idx) -> FailureOr<Value> {
+        Value nextIdx =
+            nestedBuilder.create<smt::IntAddOp>(loc, ValueRange {idx, one}).getResult();
+        LoweredValueMap nestedMap = valueMap;
+        for (auto [stateIndex, stateArray] : carriedStateArrays) {
+          Value currentState =
+              nestedBuilder.create<smt::ArraySelectOp>(loc, stateArray, idx).getResult();
+          nestedMap[whileOp.getAfterArguments()[stateIndex]] = {currentState};
+        }
+        for (unsigned stateIndex : closedFormPow2Indices) {
+          nestedMap[whileOp.getAfterArguments()[stateIndex]] = {emitPowerOfTwo(nestedBuilder, idx)};
+        }
+        nestedMap[whileOp.getAfterArguments()[summary->inductionBlockArgIndex]] = {idx};
+        Value currentElementValue = nullptr;
+        if (summary->writeOp) {
+          ExprLowerer elementLowerer(*this, nestedBuilder, nestedMap, selfMemberMap, constParamMap);
+          auto loweredElement = elementLowerer.lower(summary->writeOp.getRvalue());
+          if (failed(loweredElement)) {
+            return failure();
+          }
+          currentElementValue = *loweredElement;
+          for (array::ReadArrayOp readOp : currentIndexReads[summary->writeOp.getArrRef()]) {
+            nestedMap[readOp.getResult()] = {currentElementValue};
+          }
+        }
+        ExprLowerer nestedLowerer(*this, nestedBuilder, nestedMap, selfMemberMap, constParamMap);
+        auto loweredYield = nestedLowerer.lower(yielded);
+        if (failed(loweredYield)) {
+          return failure();
+        }
+        Value nextState =
+            nestedBuilder.create<smt::ArraySelectOp>(loc, carriedStateArrays[index], nextIdx)
+                .getResult();
+        return nestedBuilder.create<smt::EqOp>(loc, nextState, *loweredYield).getResult();
+      });
+      if (failed(transition)) {
+        return failure();
+      }
+    }
+
+    for (constrain::EmitEqualityOp eqOp : summary->equalityOps) {
+      auto equality = quantify([&](OpBuilder &nestedBuilder, Value idx) -> FailureOr<Value> {
+        LoweredValueMap nestedMap = valueMap;
+        for (auto [stateIndex, stateArray] : carriedStateArrays) {
+          Value currentState =
+              nestedBuilder.create<smt::ArraySelectOp>(loc, stateArray, idx).getResult();
+          nestedMap[whileOp.getAfterArguments()[stateIndex]] = {currentState};
+        }
+        for (unsigned stateIndex : closedFormPow2Indices) {
+          nestedMap[whileOp.getAfterArguments()[stateIndex]] = {emitPowerOfTwo(nestedBuilder, idx)};
+        }
+        nestedMap[whileOp.getAfterArguments()[summary->inductionBlockArgIndex]] = {idx};
+        Value currentElementValue = nullptr;
+        if (summary->writeOp) {
+          ExprLowerer elementLowerer(*this, nestedBuilder, nestedMap, selfMemberMap, constParamMap);
+          auto loweredElement = elementLowerer.lower(summary->writeOp.getRvalue());
+          if (failed(loweredElement)) {
+            return failure();
+          }
+          currentElementValue = *loweredElement;
+          for (array::ReadArrayOp readOp : currentIndexReads[summary->writeOp.getArrRef()]) {
+            nestedMap[readOp.getResult()] = {currentElementValue};
+          }
+        }
+        ExprLowerer nestedLowerer(*this, nestedBuilder, nestedMap, selfMemberMap, constParamMap);
+        auto lhs = nestedLowerer.lower(eqOp.getLhs());
+        auto rhs = nestedLowerer.lower(eqOp.getRhs());
+        if (failed(lhs) || failed(rhs)) {
+          return failure();
+        }
+        Value eq = nestedBuilder.create<smt::EqOp>(loc, *lhs, *rhs).getResult();
+        auto guarded = lowerGuardedBoolean(
+            eqOp.getOperation(), eq, nestedLowerer, nestedBuilder, "symbolic loop summary"
+        );
+        if (failed(guarded)) {
+          return failure();
+        }
+        return *guarded;
+      });
+      if (failed(equality)) {
+        return failure();
+      }
+    }
+  }
+
+  return success();
+}
+
 /// Reject struct constrain bodies that cannot be summarized as one boolean formula.
-static LogicalResult checkStructConstrainBodyIsBooleanSummarizable(FuncDefOp constrainFunc) {
+static LogicalResult
+checkStructConstrainBodyIsBooleanSummarizable(FuncDefOp constrainFunc, bool allowAggregates) {
   bool failed = false;
   constrainFunc.walk([&](Operation *op) {
+    if (allowAggregates && op->getParentOfType<scf::WhileOp>()) {
+      return WalkResult::advance();
+    }
     if (op == constrainFunc.getOperation() || isa<ReturnOp, scf::YieldOp>(op) ||
         isa<constrain::EmitEqualityOp>(op) || isa<CallOp>(op)) {
+      return WalkResult::advance();
+    }
+    if (allowAggregates && isa<scf::WhileOp>(op)) {
       return WalkResult::advance();
     }
     if (isa<scf::IfOp>(op)) {
@@ -1762,7 +2689,7 @@ LoweringContext::getOrCreateFunctionHelper(ModuleOp module, FuncDefOp func) {
 
   Block *entry = helper.addEntryBlock();
   OpBuilder entryBuilder = OpBuilder::atBlockBegin(entry);
-  DenseMap<Value, Value> valueMap;
+  LoweredValueMap valueMap;
   SelfMemberMap selfMemberMap;
   auto numLoweredInputs =
       seedCallableArgumentMaps(func.getArguments(), entry, func, valueMap, selfMemberMap);
@@ -1772,6 +2699,9 @@ LoweringContext::getOrCreateFunctionHelper(ModuleOp module, FuncDefOp func) {
   DenseMap<StringRef, Value> constParamMap = seedConstParamMap(
       loweredSig->templateParams, ValueRange(entry->getArguments()).drop_front(*numLoweredInputs)
   );
+  if (failed(populateTemplateExprBindings(func, entryBuilder, constParamMap))) {
+    return failure();
+  }
 
   ExprLowerer lowerer(*this, entryBuilder, valueMap, selfMemberMap, constParamMap);
   auto returnOp = dyn_cast<ReturnOp>(func.getBody().front().getTerminator());
@@ -1843,7 +2773,7 @@ LoweringContext::getOrCreateStructHelpers(ModuleOp module, StructDefOp structDef
   {
     Block *entry = computeHelper.addEntryBlock();
     OpBuilder entryBuilder = OpBuilder::atBlockBegin(entry);
-    DenseMap<Value, Value> valueMap;
+    LoweredValueMap valueMap;
     SelfMemberMap selfMemberMap;
     auto numLoweredInputs = seedCallableArgumentMaps(
         computeFunc.getArguments(), entry, computeFunc, valueMap, selfMemberMap
@@ -1854,44 +2784,171 @@ LoweringContext::getOrCreateStructHelpers(ModuleOp module, StructDefOp structDef
     DenseMap<StringRef, Value> constParamMap = seedConstParamMap(
         computeSig->templateParams, ValueRange(entry->getArguments()).drop_front(*numLoweredInputs)
     );
+    if (failed(populateTemplateExprBindings(computeFunc, entryBuilder, constParamMap))) {
+      return failure();
+    }
+    if (allowAggregates &&
+        failed(materializeCanonicalWhileSummaries(
+            computeFunc, entryBuilder, valueMap, selfMemberMap, constParamMap
+        ))) {
+      return failure();
+    }
 
     ExprLowerer lowerer(*this, entryBuilder, valueMap, selfMemberMap, constParamMap);
     DenseMap<StringRef, SmallVector<Value>> writtenMembers;
     Value returnedSelf = computeFunc.getSelfValueFromCompute();
-    bool failedToLower = false;
-    computeFunc.walk([&](MemberWriteOp writeOp) {
+    if (!allowAggregates) {
+      bool failedToLower = false;
+      computeFunc.walk([&](MemberWriteOp writeOp) {
+        if (failedToLower) {
+          return;
+        }
+        if (writeOp.getComponent() != returnedSelf) {
+          return;
+        }
+        if (hasIfAncestor(writeOp.getOperation(), computeFunc.getOperation())) {
+          computeFunc.emitError(
+              "verif-to-smt requires compute writes to the returned component to be unguarded"
+          );
+          failedToLower = true;
+          return;
+        }
+        auto loweredValue = lowerFlattenedValue(
+            writeOp.getVal(), writeOp.getOperation(), entryBuilder, valueMap, selfMemberMap,
+            constParamMap
+        );
+        if (failed(loweredValue)) {
+          failedToLower = true;
+          return;
+        }
+        if (writtenMembers.contains(writeOp.getMemberName())) {
+          computeFunc.emitError().append(
+              "verif-to-smt requires a single write to returned member @", writeOp.getMemberName()
+          );
+          failedToLower = true;
+          return;
+        }
+        writtenMembers[writeOp.getMemberName()] = std::move(*loweredValue);
+      });
       if (failedToLower) {
-        return;
+        return failure();
       }
-      if (writeOp.getComponent() != returnedSelf) {
-        return;
+    } else {
+    auto buildConditionalBundle =
+        [&](Location loc, Value cond, const LoweredValues &thenVals,
+            const LoweredValues &elseVals) -> FailureOr<LoweredValues> {
+      if (thenVals.size() != elseVals.size()) {
+        emitError(loc, "mismatched flattened member bundle sizes in compute lowering");
+        return failure();
       }
-      if (hasIfAncestor(writeOp.getOperation(), computeFunc.getOperation())) {
-        computeFunc.emitError(
-            "verif-to-smt requires compute writes to the returned component to be unguarded"
+
+      LoweredValues merged;
+      merged.reserve(thenVals.size());
+      for (auto [thenVal, elseVal] : llvm::zip(thenVals, elseVals)) {
+        merged.push_back(
+            entryBuilder.create<smt::IteOp>(loc, cond, thenVal, elseVal).getResult()
         );
-        failedToLower = true;
-        return;
       }
-      auto loweredValue = lowerFlattenedValue(
-          writeOp.getVal(), writeOp.getOperation(), entryBuilder, valueMap, selfMemberMap,
-          constParamMap
-      );
-      if (failed(loweredValue)) {
-        failedToLower = true;
-        return;
+      return merged;
+    };
+
+    std::function<FailureOr<std::optional<LoweredValues>>(Block &, StringRef)>
+        lowerReturnedMemberInBlock;
+    std::function<FailureOr<std::optional<LoweredValues>>(scf::IfOp, StringRef)>
+        lowerReturnedMemberInIf;
+
+    lowerReturnedMemberInIf = [&](scf::IfOp ifOp, StringRef memberName)
+        -> FailureOr<std::optional<LoweredValues>> {
+      if (failed(validateIfShape(ifOp, /*requireElseRegion=*/true, "compute result"))) {
+        return failure();
       }
-      if (writtenMembers.contains(writeOp.getMemberName())) {
-        computeFunc.emitError().append(
-            "verif-to-smt requires a single write to returned member @", writeOp.getMemberName()
+
+      auto thenValues = lowerReturnedMemberInBlock(ifOp.getThenRegion().front(), memberName);
+      if (failed(thenValues)) {
+        return failure();
+      }
+      auto elseValues = lowerReturnedMemberInBlock(ifOp.getElseRegion().front(), memberName);
+      if (failed(elseValues)) {
+        return failure();
+      }
+      if (!*thenValues && !*elseValues) {
+        return std::optional<LoweredValues> {};
+      }
+      if (!*thenValues || !*elseValues) {
+        ifOp.emitOpError().append(
+            "requires conditional compute writes to returned member @", memberName,
+            " to cover both branches"
         );
-        failedToLower = true;
-        return;
+        return failure();
       }
-      writtenMembers[writeOp.getMemberName()] = std::move(*loweredValue);
-    });
-    if (failedToLower) {
-      return failure();
+
+      auto loweredCond = lowerer.lower(ifOp.getCondition());
+      if (failed(loweredCond)) {
+        return failure();
+      }
+      auto merged = buildConditionalBundle(ifOp.getLoc(), *loweredCond, **thenValues, **elseValues);
+      if (failed(merged)) {
+        return failure();
+      }
+      return std::optional<LoweredValues> {std::move(*merged)};
+    };
+
+    lowerReturnedMemberInBlock = [&](Block &block, StringRef memberName)
+        -> FailureOr<std::optional<LoweredValues>> {
+      std::optional<LoweredValues> current;
+      for (Operation &op : block.without_terminator()) {
+        if (auto writeOp = dyn_cast<MemberWriteOp>(&op)) {
+          if (writeOp.getComponent() != returnedSelf || writeOp.getMemberName() != memberName) {
+            continue;
+          }
+          auto loweredValue = lowerFlattenedValue(
+              writeOp.getVal(), writeOp.getOperation(), entryBuilder, valueMap, selfMemberMap,
+              constParamMap
+          );
+          if (failed(loweredValue)) {
+            return failure();
+          }
+          if (current) {
+            computeFunc.emitError().append(
+                "verif-to-smt requires a single write to returned member @", memberName
+            );
+            return failure();
+          }
+          current = std::move(*loweredValue);
+          continue;
+        }
+
+        if (auto ifOp = dyn_cast<scf::IfOp>(&op)) {
+          auto loweredIf = lowerReturnedMemberInIf(ifOp, memberName);
+          if (failed(loweredIf)) {
+            return failure();
+          }
+          if (!*loweredIf) {
+            continue;
+          }
+          if (current) {
+            computeFunc.emitError().append(
+                "verif-to-smt requires a single write to returned member @", memberName
+            );
+            return failure();
+          }
+          current = std::move(**loweredIf);
+        }
+      }
+      return current;
+    };
+
+    for (MemberDefOp member : members) {
+      auto loweredMember = lowerReturnedMemberInBlock(computeFunc.getBody().front(), member.getSymName());
+      if (failed(loweredMember)) {
+        return failure();
+      }
+      if (!*loweredMember) {
+        computeFunc.emitError().append("missing write for member @", member.getSymName());
+        return failure();
+      }
+      writtenMembers[member.getSymName()] = std::move(**loweredMember);
+    }
     }
 
     SmallVector<Value> results;
@@ -1906,7 +2963,7 @@ LoweringContext::getOrCreateStructHelpers(ModuleOp module, StructDefOp structDef
     entryBuilder.create<func::ReturnOp>(computeFunc.getLoc(), results);
   }
 
-  if (failed(checkStructConstrainBodyIsBooleanSummarizable(constrainFunc))) {
+  if (failed(checkStructConstrainBodyIsBooleanSummarizable(constrainFunc, allowAggregates))) {
     return failure();
   }
 
@@ -1919,7 +2976,7 @@ LoweringContext::getOrCreateStructHelpers(ModuleOp module, StructDefOp structDef
   {
     Block *entry = constrainHelper.addEntryBlock();
     OpBuilder entryBuilder = OpBuilder::atBlockBegin(entry);
-    DenseMap<Value, Value> valueMap;
+    LoweredValueMap valueMap;
     SelfMemberMap selfMemberMap;
     auto numLoweredInputs = seedCallableArgumentMaps(
         constrainFunc.getArguments(), entry, constrainFunc, valueMap, selfMemberMap
@@ -1931,7 +2988,70 @@ LoweringContext::getOrCreateStructHelpers(ModuleOp module, StructDefOp structDef
         constrainSig->templateParams,
         ValueRange(entry->getArguments()).drop_front(*numLoweredInputs)
     );
+    if (failed(populateTemplateExprBindings(constrainFunc, entryBuilder, constParamMap))) {
+      return failure();
+    }
+    if (allowAggregates &&
+        failed(materializeCanonicalWhileSummaries(
+            constrainFunc, entryBuilder, valueMap, selfMemberMap, constParamMap
+        ))) {
+      return failure();
+    }
     ExprLowerer lowerer(*this, entryBuilder, valueMap, selfMemberMap, constParamMap);
+    auto materializeArrayWrite = [&](array::WriteArrayOp writeOp) -> LogicalResult {
+      auto loweredBase = lowerFlattenedValue(
+          writeOp.getArrRef(), writeOp.getOperation(), entryBuilder, valueMap, selfMemberMap,
+          constParamMap
+      );
+      auto loweredValue = lowerFlattenedValue(
+          writeOp.getRvalue(), writeOp.getOperation(), entryBuilder, valueMap, selfMemberMap,
+          constParamMap
+      );
+      if (failed(loweredBase) || failed(loweredValue) ||
+          loweredBase->size() != loweredValue->size()) {
+        writeOp.emitError(
+            "failed to lower array.write operands while materializing struct constrain state"
+        );
+        return failure();
+      }
+
+      SmallVector<Value> loweredIndices;
+      loweredIndices.reserve(writeOp.getIndices().size());
+      for (Value idx : writeOp.getIndices()) {
+        auto loweredIdx = lowerer.lower(idx);
+        if (failed(loweredIdx)) {
+          return failure();
+        }
+        loweredIndices.push_back(*loweredIdx);
+      }
+
+      std::function<Value(Value, ArrayRef<Value>, Value)> emitNestedStore =
+          [&](Value arrayValue, ArrayRef<Value> indices, Value storedValue) -> Value {
+        assert(!indices.empty() && "array.write must have at least one index");
+        if (indices.size() == 1) {
+          return entryBuilder
+              .create<smt::ArrayStoreOp>(writeOp.getLoc(), arrayValue, indices.front(), storedValue)
+              .getResult();
+        }
+        Value nested =
+            entryBuilder.create<smt::ArraySelectOp>(writeOp.getLoc(), arrayValue, indices.front())
+                .getResult();
+        Value updatedNested = emitNestedStore(nested, indices.drop_front(), storedValue);
+        return entryBuilder
+            .create<smt::ArrayStoreOp>(
+                writeOp.getLoc(), arrayValue, indices.front(), updatedNested
+            )
+            .getResult();
+      };
+
+      LoweredValues updatedArrays;
+      updatedArrays.reserve(loweredBase->size());
+      for (auto [baseValue, storedValue] : llvm::zip(*loweredBase, *loweredValue)) {
+        updatedArrays.push_back(emitNestedStore(baseValue, loweredIndices, storedValue));
+      }
+      valueMap[writeOp.getArrRef()] = std::move(updatedArrays);
+      return success();
+    };
 
     SmallVector<Value> conditions;
     bool failedToLower = false;
@@ -1939,18 +3059,42 @@ LoweringContext::getOrCreateStructHelpers(ModuleOp module, StructDefOp structDef
       if (failedToLower) {
         return WalkResult::interrupt();
       }
+      if (allowAggregates && op->getParentOfType<scf::WhileOp>()) {
+        return WalkResult::advance();
+      }
       if (isa<ReturnOp, scf::YieldOp, scf::IfOp>(op) || op == constrainFunc.getOperation()) {
         return WalkResult::advance();
       }
+      if (allowAggregates && isa<scf::WhileOp>(op)) {
+        return WalkResult::advance();
+      }
+      if (allowAggregates) {
+        if (auto writeOp = dyn_cast<array::WriteArrayOp>(op)) {
+          if (failed(materializeArrayWrite(writeOp))) {
+            failedToLower = true;
+            return WalkResult::interrupt();
+          }
+          return WalkResult::advance();
+        }
+      }
       if (auto eqOp = dyn_cast<constrain::EmitEqualityOp>(op)) {
-        auto lhs = lowerer.lower(eqOp.getLhs());
-        auto rhs = lowerer.lower(eqOp.getRhs());
+        auto lhs = lowerFlattenedValue(
+            eqOp.getLhs(), eqOp.getOperation(), entryBuilder, valueMap, selfMemberMap,
+            constParamMap
+        );
+        auto rhs = lowerFlattenedValue(
+            eqOp.getRhs(), eqOp.getOperation(), entryBuilder, valueMap, selfMemberMap,
+            constParamMap
+        );
         if (failed(lhs) || failed(rhs)) {
           failedToLower = true;
           return WalkResult::interrupt();
         }
+        SmallVector<Value> equalityConditions = buildEqualityConditions(
+            entryBuilder, eqOp.getLoc(), *lhs, *rhs
+        );
         auto lowered = lowerGuardedBoolean(
-            op, entryBuilder.create<smt::EqOp>(eqOp.getLoc(), *lhs, *rhs).getResult(), lowerer,
+            op, buildConjunction(entryBuilder, eqOp.getLoc(), equalityConditions), lowerer,
             entryBuilder, "struct constrain body"
         );
         if (failed(lowered)) {
@@ -1997,9 +3141,15 @@ LoweringContext::getOrCreateStructHelpers(ModuleOp module, StructDefOp structDef
           failedToLower = true;
           return WalkResult::interrupt();
         }
+        ArrayAttr inferredTemplateParams = call.getTemplateParamsAttr();
+        if (!inferredTemplateParams && calleeTarget->get().isStructConstrain() &&
+            !call.getArgOperands().empty()) {
+          if (auto structType = dyn_cast<StructType>(call.getArgOperands().front().getType())) {
+            inferredTemplateParams = structType.getParams();
+          }
+        }
         auto loweredTemplateParams = lowerTemplateParamOperands(
-            calleeTarget->get().getOperation(), call.getTemplateParamsAttr(), entryBuilder,
-            constParamMap
+            calleeTarget->get().getOperation(), inferredTemplateParams, entryBuilder, constParamMap
         );
         if (failed(loweredTemplateParams)) {
           failedToLower = true;
@@ -2040,6 +3190,8 @@ LoweringContext::getOrCreateStructHelpers(ModuleOp module, StructDefOp structDef
 
   TargetHelperNames helperNames {computeName, constrainName};
   structHelpers[structDef.getOperation()] = helperNames;
+  functionHelpers[computeFunc.getOperation()] = computeHelper;
+  functionHelpers[constrainFunc.getOperation()] = constrainHelper;
   if (loweredStructDefSet.insert(structDef.getOperation()).second) {
     loweredStructDefs.push_back(structDef);
   }
@@ -2056,9 +3208,9 @@ FailureOr<LoweredSignature> LoweringContext::lowerContractSignature(ContractOp c
 }
 
 /// Seed lowered contract argument maps for ordinary args and flattened `%self` members.
-FailureOr<std::tuple<DenseMap<Value, Value>, SelfMemberMap, DenseMap<StringRef, Value>>>
+FailureOr<std::tuple<LoweredValueMap, SelfMemberMap, DenseMap<StringRef, Value>>>
 LoweringContext::seedContractArgumentMaps(ContractOp contract, Block *entry) {
-  DenseMap<Value, Value> valueMap;
+  LoweredValueMap valueMap;
   SelfMemberMap selfMemberMap;
   auto nextArg =
       seedCallableArgumentMaps(contract.getArguments(), entry, contract, valueMap, selfMemberMap);
@@ -2072,6 +3224,10 @@ LoweringContext::seedContractArgumentMaps(ContractOp contract, Block *entry) {
   DenseMap<StringRef, Value> constParamMap = seedConstParamMap(
       loweredSig->templateParams, ValueRange(entry->getArguments()).drop_front(*nextArg)
   );
+  OpBuilder entryBuilder = OpBuilder::atBlockBegin(entry);
+  if (failed(populateTemplateExprBindings(contract, entryBuilder, constParamMap))) {
+    return failure();
+  }
   return std::make_tuple(std::move(valueMap), std::move(selfMemberMap), std::move(constParamMap));
 }
 
@@ -2121,6 +3277,53 @@ FailureOr<func::FuncOp> LoweringContext::createContractConditionHelper(
   Value combined = buildConjunction(entryBuilder, contract.getLoc(), conditions);
   entryBuilder.create<func::ReturnOp>(contract.getLoc(), combined);
   return helper;
+}
+
+FailureOr<SmallVector<std::string>> LoweringContext::createContractConditionProofHelpers(
+    ModuleOp module, ContractOp contract, StringRef helperStem,
+    llvm::function_ref<bool(Operation *)> predicate, StringRef stageKind
+) {
+  auto loweredSig = lowerContractSignature(contract);
+  if (failed(loweredSig)) {
+    return failure();
+  }
+
+  SmallVector<Operation *> matchingOps;
+  contract.walk([&](Operation *op) {
+    if (predicate(op)) {
+      matchingOps.push_back(op);
+    }
+  });
+
+  SmallVector<std::string> helperNames;
+  helperNames.reserve(matchingOps.size());
+  OpBuilder moduleBuilder = createModuleBuilder(module);
+
+  for (auto [index, op] : llvm::enumerate(matchingOps)) {
+    std::string helperName = (Twine(helperStem) + "_" + stageKind + "_part_" + Twine(index)).str();
+    auto helper = moduleBuilder.create<func::FuncOp>(
+        contract.getLoc(), helperName,
+        FunctionType::get(context, loweredSig->argTypes, TypeRange {smt::BoolType::get(context)})
+    );
+
+    Block *entry = helper.addEntryBlock();
+    OpBuilder entryBuilder = OpBuilder::atBlockBegin(entry);
+    auto seededMaps = seedContractArgumentMaps(contract, entry);
+    if (failed(seededMaps)) {
+      return failure();
+    }
+    auto &[valueMap, selfMemberMap, constParamMap] = *seededMaps;
+    ExprLowerer lowerer(*this, entryBuilder, valueMap, selfMemberMap, constParamMap);
+
+    auto lowered = lowerGuardedCondition(op, lowerer, entryBuilder);
+    if (failed(lowered)) {
+      return failure();
+    }
+    entryBuilder.create<func::ReturnOp>(contract.getLoc(), *lowered);
+    helperNames.push_back(std::move(helperName));
+  }
+
+  return helperNames;
 }
 
 /// Create the shared `_target` helper for a free-function contract target.
@@ -2188,12 +3391,162 @@ LoweringContext::createFreeFunctionTargetHelper(ModuleOp module, ContractOp cont
   return helper;
 }
 
+FailureOr<SmallVector<std::string>>
+LoweringContext::createFreeFunctionTargetProofHelpers(ModuleOp module, ContractOp contract) {
+  auto loweredSig = lowerContractSignature(contract);
+  if (failed(loweredSig)) {
+    return failure();
+  }
+
+  auto targetFunc = lookupSymbolIn<FuncDefOp>(
+      tables, contract.getTarget(), Within(module.getOperation()), contract,
+      /*reportMissing=*/true
+  );
+  if (failed(targetFunc)) {
+    return failure();
+  }
+  auto rawTargetHelper = getOrCreateFunctionHelper(module, targetFunc->get());
+  if (failed(rawTargetHelper)) {
+    return failure();
+  }
+
+  auto targetLoweredSig =
+      lowerCallableSignature(targetFunc->get().getFunctionType(), targetFunc->get());
+  if (failed(targetLoweredSig)) {
+    return failure();
+  }
+
+  std::string helperStem =
+      "smt_verif_" + getHelperStem(contract.getFullyQualifiedName()) + "_target";
+  SmallVector<std::string> helperNames;
+  helperNames.reserve(targetLoweredSig->resultTypes.size());
+  OpBuilder moduleBuilder = createModuleBuilder(module);
+
+  for (unsigned index = 0; index < targetLoweredSig->resultTypes.size(); ++index) {
+    std::string helperName = (Twine(helperStem) + "_part_" + Twine(index)).str();
+    auto helper = moduleBuilder.create<func::FuncOp>(
+        contract.getLoc(), helperName,
+        FunctionType::get(context, loweredSig->argTypes, TypeRange {smt::BoolType::get(context)})
+    );
+
+    Block *entry = helper.addEntryBlock();
+    OpBuilder entryBuilder = OpBuilder::atBlockBegin(entry);
+    ValueRange args = entry->getArguments();
+    unsigned numHiddenTemplateArgs = targetLoweredSig->templateParams.size();
+    unsigned numLoweredTargetInputs = targetLoweredSig->argTypes.size() - numHiddenTemplateArgs;
+    ValueRange targetInputs = args.take_front(numLoweredTargetInputs);
+    SmallVector<Value> targetCallArgs(targetInputs.begin(), targetInputs.end());
+    llvm::append_range(targetCallArgs, args.take_back(numHiddenTemplateArgs));
+    auto targetCall = entryBuilder.create<func::CallOp>(
+        contract.getLoc(), rawTargetHelper->getSymName(),
+        rawTargetHelper->getFunctionType().getResults(), targetCallArgs
+    );
+
+    ValueRange expectedResults =
+        args.drop_front(numLoweredTargetInputs).take_front(targetLoweredSig->resultTypes.size());
+    Value eq =
+        entryBuilder.create<smt::EqOp>(contract.getLoc(), targetCall.getResult(index), expectedResults[index])
+            .getResult();
+    entryBuilder.create<func::ReturnOp>(contract.getLoc(), eq);
+    helperNames.push_back(std::move(helperName));
+  }
+
+  return helperNames;
+}
+
 FailureOr<SmallVector<Value>> LoweringContext::lowerFlattenedValue(
-    Value value, Operation *origin, OpBuilder &builder, DenseMap<Value, Value> &valueMap,
+    Value value, Operation *origin, OpBuilder &builder, LoweredValueMap &valueMap,
     SelfMemberMap &selfMemberMap, DenseMap<StringRef, Value> &constParamMap
 ) {
+  if (auto it = valueMap.find(value); it != valueMap.end()) {
+    return it->second;
+  }
+
   ExprLowerer lowerer(*this, builder, valueMap, selfMemberMap, constParamMap);
   SmallVector<Value> loweredValues;
+
+  if (auto call = dyn_cast_or_null<CallOp>(value.getDefiningOp())) {
+    auto calleeTarget = getCalleeTarget(call);
+    if (failed(calleeTarget)) {
+      return failure();
+    }
+
+    auto funcHelperRes = getFuncHelper(calleeTarget->get());
+    if (failed(funcHelperRes) &&
+        (calleeTarget->get().isStructCompute() || calleeTarget->get().isStructConstrain())) {
+      auto calleeStruct = calleeTarget->get()->getParentOfType<StructDefOp>();
+      if (failed(getOrCreateStructHelpers(call->getParentOfType<ModuleOp>(), calleeStruct))) {
+        return failure();
+      }
+      funcHelperRes = getFuncHelper(calleeTarget->get());
+    }
+    if (failed(funcHelperRes)) {
+      call.emitError("verif-to-smt requires a lowered helper for called function");
+      return failure();
+    }
+
+    SmallVector<Value> loweredOperands;
+    for (Value operand : call.getArgOperands()) {
+      auto loweredOperand = lowerFlattenedValue(
+          operand, call.getOperation(), builder, valueMap, selfMemberMap, constParamMap
+      );
+      if (failed(loweredOperand)) {
+        return failure();
+      }
+      llvm::append_range(loweredOperands, *loweredOperand);
+    }
+    ArrayAttr inferredTemplateParams = call.getTemplateParamsAttr();
+    if (!inferredTemplateParams && calleeTarget->get().isStructCompute() &&
+        call.getNumResults() != 0) {
+      if (auto structType = dyn_cast<StructType>(call.getResult(0).getType())) {
+        inferredTemplateParams = structType.getParams();
+      }
+    }
+    if (!inferredTemplateParams && calleeTarget->get().isStructConstrain() &&
+        !call.getArgOperands().empty()) {
+      if (auto structType = dyn_cast<StructType>(call.getArgOperands().front().getType())) {
+        inferredTemplateParams = structType.getParams();
+      }
+    }
+    auto loweredTemplateParams = lowerTemplateParamOperands(
+        calleeTarget->get().getOperation(), inferredTemplateParams, builder, constParamMap
+    );
+    if (failed(loweredTemplateParams)) {
+      return failure();
+    }
+    llvm::append_range(loweredOperands, *loweredTemplateParams);
+
+    auto loweredCall = builder.create<func::CallOp>(
+        call.getLoc(), funcHelperRes->getSymName(), funcHelperRes->getFunctionType().getResults(),
+        loweredOperands
+    );
+
+    auto loweredResultIt = loweredCall.getResults().begin();
+    for (Value originalResult : call.getResults()) {
+      auto numLoweredValues = getNumLoweredBoundaryValues(originalResult.getType(), origin);
+      if (failed(numLoweredValues)) {
+        return failure();
+      }
+      LoweredValues bundle;
+      bundle.reserve(*numLoweredValues);
+      for (unsigned i = 0; i < *numLoweredValues; ++i) {
+        bundle.push_back(*loweredResultIt++);
+      }
+      valueMap[originalResult] = bundle;
+      if (auto structType = dyn_cast<StructType>(originalResult.getType())) {
+        if (failed(seedFlattenedStructValue(
+                originalResult, structType, bundle, call.getOperation(), selfMemberMap
+            ))) {
+          return failure();
+        }
+      }
+    }
+
+    auto it = valueMap.find(value);
+    if (it != valueMap.end()) {
+      return it->second;
+    }
+  }
 
   if (auto structType = dyn_cast<StructType>(value.getType())) {
     if (failed(ensureFlattenedStructMapping(value, origin, selfMemberMap))) {
@@ -2223,11 +3576,92 @@ FailureOr<SmallVector<Value>> LoweringContext::lowerFlattenedValue(
     return loweredValues;
   }
 
+  if (auto readArray = dyn_cast_or_null<array::ReadArrayOp>(value.getDefiningOp())) {
+    auto baseValues = lowerFlattenedValue(
+        readArray.getArrRef(), readArray.getOperation(), builder, valueMap, selfMemberMap,
+        constParamMap
+    );
+    if (failed(baseValues)) {
+      return failure();
+    }
+    SmallVector<Value> loweredIndices;
+    loweredIndices.reserve(readArray.getIndices().size());
+    for (Value idx : readArray.getIndices()) {
+      auto loweredIdx = lowerer.lower(idx);
+      if (failed(loweredIdx)) {
+        return failure();
+      }
+      loweredIndices.push_back(*loweredIdx);
+    }
+    for (Value baseValue : *baseValues) {
+      Value current = baseValue;
+      for (Value idx : loweredIndices) {
+        current = builder.create<smt::ArraySelectOp>(readArray.getLoc(), current, idx).getResult();
+      }
+      loweredValues.push_back(current);
+    }
+    valueMap[value] = loweredValues;
+    return loweredValues;
+  }
+
+  if (auto arrayType = dyn_cast<array::ArrayType>(value.getType())) {
+    if (auto createArray = dyn_cast_or_null<array::CreateArrayOp>(value.getDefiningOp())) {
+      if (!createArray.getElements().empty()) {
+        createArray.emitError(
+            "verif-to-smt does not yet support initialized array.new lowering for aggregate arrays"
+        );
+        return failure();
+      }
+      auto loweredTypes = SmallVector<Type> {};
+      if (failed(appendLoweredBoundaryTypes(arrayType, createArray.getOperation(), loweredTypes))) {
+        return failure();
+      }
+      for (Type loweredType : loweredTypes) {
+        auto declared = builder.create<smt::DeclareFunOp>(
+            createArray.getLoc(), loweredType,
+            StringAttr::get(builder.getContext(), getFreshName("array"))
+        );
+        loweredValues.push_back(declared.getResult());
+      }
+      valueMap[value] = loweredValues;
+      return loweredValues;
+    }
+
+    if (auto memberRead = dyn_cast_or_null<MemberReadOp>(value.getDefiningOp())) {
+      if (!selfMemberMap.contains(memberRead.getComponent())) {
+        auto loweredComponent = lowerFlattenedValue(
+            memberRead.getComponent(), memberRead.getOperation(), builder, valueMap, selfMemberMap,
+            constParamMap
+        );
+        if (failed(loweredComponent)) {
+          return failure();
+        }
+      }
+      if (failed(ensureFlattenedStructMapping(memberRead.getComponent(), origin, selfMemberMap))) {
+        return failure();
+      }
+      auto membersIt = selfMemberMap.find(memberRead.getComponent());
+      if (membersIt == selfMemberMap.end()) {
+        emitError(value.getLoc(), "missing flattened parent struct mapping while lowering array");
+        return failure();
+      }
+      auto it = membersIt->second.find(memberRead.getMemberName());
+      if (it == membersIt->second.end()) {
+        emitError(value.getLoc(), "missing lowered array member while lowering aggregate value");
+        return failure();
+      }
+      valueMap[value] = it->second;
+      return it->second;
+    }
+
+  }
+
   auto loweredValue = lowerer.lower(value);
   if (failed(loweredValue)) {
     return failure();
   }
   loweredValues.push_back(*loweredValue);
+  valueMap[value] = loweredValues;
   return loweredValues;
 }
 
@@ -2294,6 +3728,71 @@ FailureOr<func::FuncOp> LoweringContext::createStructTargetHelper(
   return helper;
 }
 
+FailureOr<SmallVector<std::string>> LoweringContext::createStructTargetProofHelpers(
+    ModuleOp module, ContractOp contract, VerificationStage stage
+) {
+  auto loweredSig = lowerContractSignature(contract);
+  if (failed(loweredSig)) {
+    return failure();
+  }
+
+  auto structTarget = contract.getStructTarget(tables);
+  if (failed(structTarget)) {
+    return failure();
+  }
+  auto targetHelpers = getOrCreateStructHelpers(module, structTarget->get());
+  if (failed(targetHelpers)) {
+    return failure();
+  }
+
+  auto members = getStructMembers(structTarget->get().getType(), contract);
+  if (failed(members)) {
+    return failure();
+  }
+  unsigned numFlattenedSelfMembers = 0;
+  for (MemberDefOp member : *members) {
+    auto numLoweredValues = getNumLoweredBoundaryValues(member.getType(), contract);
+    if (failed(numLoweredValues)) {
+      return failure();
+    }
+    numFlattenedSelfMembers += *numLoweredValues;
+  }
+
+  std::string helperStem = "smt_verif_" + getHelperStem(contract.getFullyQualifiedName()) + "_" +
+                           stageSuffix(stage).str() + "_target";
+  SmallVector<std::string> helperNames;
+  OpBuilder moduleBuilder = createModuleBuilder(module);
+
+  if (stage == VerificationStage::Compute) {
+    helperNames.reserve(numFlattenedSelfMembers);
+    for (unsigned index = 0; index < numFlattenedSelfMembers; ++index) {
+      std::string helperName = (Twine(helperStem) + "_part_" + Twine(index)).str();
+      auto helper = moduleBuilder.create<func::FuncOp>(
+          contract.getLoc(), helperName,
+          FunctionType::get(context, loweredSig->argTypes, TypeRange {smt::BoolType::get(context)})
+      );
+
+      Block *entry = helper.addEntryBlock();
+      OpBuilder entryBuilder = OpBuilder::atBlockBegin(entry);
+      ValueRange args = entry->getArguments();
+      ValueRange selfArgs = args.take_front(numFlattenedSelfMembers);
+      ValueRange nonSelfArgs = args.drop_front(numFlattenedSelfMembers);
+      auto computeCall = entryBuilder.create<func::CallOp>(
+          contract.getLoc(), targetHelpers->compute, TypeRange(selfArgs.getTypes()), nonSelfArgs
+      );
+      Value eq =
+          entryBuilder.create<smt::EqOp>(contract.getLoc(), computeCall.getResult(index), selfArgs[index])
+              .getResult();
+      entryBuilder.create<func::ReturnOp>(contract.getLoc(), eq);
+      helperNames.push_back(std::move(helperName));
+    }
+    return helperNames;
+  }
+
+  helperNames.push_back(helperStem);
+  return helperNames;
+}
+
 FailureOr<func::FuncOp> LoweringContext::createCombinedBoolHelper(
     ModuleOp module, ContractOp contract, StringRef helperName, StringRef lhsHelperName,
     StringRef rhsHelperName
@@ -2311,6 +3810,43 @@ FailureOr<func::FuncOp> LoweringContext::createCombinedBoolHelper(
 
   Block *entry = helper.addEntryBlock();
   OpBuilder entryBuilder = OpBuilder::atBlockBegin(entry);
+  auto emitReturnConstant = [&](bool value) -> FailureOr<func::FuncOp> {
+    Value constant =
+        entryBuilder.create<smt::BoolConstantOp>(contract.getLoc(), entryBuilder.getBoolAttr(value))
+            .getResult();
+    entryBuilder.create<func::ReturnOp>(contract.getLoc(), constant);
+    return helper;
+  };
+
+  auto isTrivialTrueHelper = [&](StringRef calleeName) -> bool {
+    auto callee = module.lookupSymbol<func::FuncOp>(calleeName);
+    if (!callee || callee.empty()) {
+      return false;
+    }
+    auto returnOp = dyn_cast<func::ReturnOp>(callee.getBody().front().getTerminator());
+    if (!returnOp || returnOp.getNumOperands() != 1) {
+      return false;
+    }
+    auto boolConst =
+        dyn_cast_or_null<smt::BoolConstantOp>(returnOp.getOperand(0).getDefiningOp());
+    return boolConst && boolConst.getValue();
+  };
+
+  bool lhsIsTrue = isTrivialTrueHelper(lhsHelperName);
+  bool rhsIsTrue = isTrivialTrueHelper(rhsHelperName);
+  if (lhsIsTrue && rhsIsTrue) {
+    return emitReturnConstant(true);
+  }
+  if (lhsIsTrue || rhsIsTrue) {
+    StringRef passthroughHelper = lhsIsTrue ? rhsHelperName : lhsHelperName;
+    auto passthroughCall = entryBuilder.create<func::CallOp>(
+        contract.getLoc(), passthroughHelper, TypeRange {smt::BoolType::get(context)},
+        entry->getArguments()
+    );
+    entryBuilder.create<func::ReturnOp>(contract.getLoc(), passthroughCall.getResult(0));
+    return helper;
+  }
+
   auto lhsCall = entryBuilder.create<func::CallOp>(
       contract.getLoc(), lhsHelperName, TypeRange {smt::BoolType::get(context)},
       entry->getArguments()
@@ -2319,9 +3855,7 @@ FailureOr<func::FuncOp> LoweringContext::createCombinedBoolHelper(
       contract.getLoc(), rhsHelperName, TypeRange {smt::BoolType::get(context)},
       entry->getArguments()
   );
-  Value combined =
-      entryBuilder.create<smt::AndOp>(contract.getLoc(), lhsCall.getResult(0), rhsCall.getResult(0))
-          .getResult();
+  Value combined = buildAnd(entryBuilder, contract.getLoc(), lhsCall.getResult(0), rhsCall.getResult(0));
   entryBuilder.create<func::ReturnOp>(contract.getLoc(), combined);
   return helper;
 }
@@ -2370,16 +3904,19 @@ LoweringContext::getOrCreateContractHelpers(ModuleOp module, ContractOp contract
     }
     return ContractStageHelperNames {
         stagePrefix + "_pre", stagePrefix + "_target", stagePrefix + "_post",
-        stagePrefix + "_entry", includeHelperNames
+        stagePrefix + "_entry", includeHelperNames, {}, {}
     };
   };
 
   ContractHelperNames names {
       makeStageNames(VerificationStage::Compute), makeStageNames(VerificationStage::Constrain),
       ContractStageHelperNames {
-          prefix + "_pre", prefix + "_target", prefix + "_post", prefix + "_entry", {}
-      }
+          prefix + "_pre", prefix + "_target", prefix + "_post", prefix + "_internal_entry", {}, {},
+          {}
+      },
+      ""
   };
+  names.exportedCombinedEntry = prefix + "_entry";
   names.combined.includeHelpers.reserve(includes.size());
   for (auto [index, _] : llvm::enumerate(includes)) {
     names.combined.includeHelpers.push_back(prefix + "_include_" + std::to_string(index));
@@ -2412,9 +3949,53 @@ LoweringContext::getOrCreateContractHelpers(ModuleOp module, ContractOp contract
       return failure();
     }
 
+    auto postProofHelpers = createContractConditionProofHelpers(
+        module, contract, prefix + "_" + stageSuffix(stage).str(),
+        [stage](Operation *op) {
+          return stage == VerificationStage::Compute ? isa<EnsureComputeOp>(op)
+                                                     : isa<EnsureConstrainOp>(op);
+        },
+        "post"
+    );
+    if (failed(postProofHelpers)) {
+      return failure();
+    }
+    auto helperInfoIt = contractHelpers.find(contract.getOperation());
+    assert(helperInfoIt != contractHelpers.end() && "contract helper names missing");
+    ContractStageHelperNames &mutableStageNames = stage == VerificationStage::Compute
+                                                      ? helperInfoIt->second.compute
+                                                      : helperInfoIt->second.constrain;
+    mutableStageNames.postProofHelpers = *postProofHelpers;
+    if (mutableStageNames.postProofHelpers.empty()) {
+      mutableStageNames.postProofHelpers.push_back(mutableStageNames.post);
+    }
+
     if (contract.hasStructTarget()) {
       auto targetHelper = createStructTargetHelper(module, contract, stage);
-      return success(succeeded(targetHelper));
+      if (failed(targetHelper)) {
+        return failure();
+      }
+      auto targetProofHelpers = createStructTargetProofHelpers(module, contract, stage);
+      if (failed(targetProofHelpers)) {
+        return failure();
+      }
+      mutableStageNames.targetProofHelpers = *targetProofHelpers;
+      if (mutableStageNames.targetProofHelpers.empty()) {
+        mutableStageNames.targetProofHelpers.push_back(mutableStageNames.target);
+      }
+      return success();
+    }
+    if (!helperInfoIt->second.compute.targetProofHelpers.empty()) {
+      mutableStageNames.targetProofHelpers = helperInfoIt->second.compute.targetProofHelpers;
+      return success();
+    }
+    auto targetProofHelpers = createFreeFunctionTargetProofHelpers(module, contract);
+    if (failed(targetProofHelpers)) {
+      return failure();
+    }
+    mutableStageNames.targetProofHelpers = *targetProofHelpers;
+    if (mutableStageNames.targetProofHelpers.empty()) {
+      mutableStageNames.targetProofHelpers.push_back(mutableStageNames.target);
     }
     return success();
   };
@@ -2427,6 +4008,30 @@ LoweringContext::getOrCreateContractHelpers(ModuleOp module, ContractOp contract
     auto targetHelper = createFreeFunctionTargetHelper(module, contract);
     if (failed(targetHelper)) {
       return failure();
+    }
+  }
+
+  {
+    auto helperInfoIt = contractHelpers.find(contract.getOperation());
+    assert(helperInfoIt != contractHelpers.end() && "contract helper names missing");
+    helperInfoIt->second.combined.postProofHelpers = helperInfoIt->second.compute.postProofHelpers;
+    llvm::append_range(
+        helperInfoIt->second.combined.postProofHelpers,
+        helperInfoIt->second.constrain.postProofHelpers
+    );
+    helperInfoIt->second.combined.targetProofHelpers =
+        helperInfoIt->second.compute.targetProofHelpers;
+    if (contract.hasStructTarget()) {
+      llvm::append_range(
+          helperInfoIt->second.combined.targetProofHelpers,
+          helperInfoIt->second.constrain.targetProofHelpers
+      );
+    }
+    if (helperInfoIt->second.combined.postProofHelpers.empty()) {
+      helperInfoIt->second.combined.postProofHelpers.push_back(helperInfoIt->second.combined.post);
+    }
+    if (helperInfoIt->second.combined.targetProofHelpers.empty()) {
+      helperInfoIt->second.combined.targetProofHelpers.push_back(helperInfoIt->second.combined.target);
     }
   }
 
@@ -2452,7 +4057,7 @@ LoweringContext::getOrCreateContractHelpers(ModuleOp module, ContractOp contract
 
 /// Lower one include operand list using the contract-local lowering environment.
 FailureOr<SmallVector<Value>> LoweringContext::lowerIncludeHelperOperands(
-    ValueRange operands, Operation *origin, OpBuilder &builder, DenseMap<Value, Value> &valueMap,
+    ValueRange operands, Operation *origin, OpBuilder &builder, LoweredValueMap &valueMap,
     SelfMemberMap &selfMemberMap, DenseMap<StringRef, Value> &constParamMap
 ) {
   SmallVector<Value> loweredOperands;
@@ -2567,6 +4172,11 @@ LogicalResult LoweringContext::createContractEntryHelper(
     return failure();
   }
   auto &[valueMap, selfMemberMap, constParamMap] = *seededMaps;
+  if (failed(emitTemplateParamNonNegativeAssumptions(
+          contract.getLoc(), entryBuilder, constParamMap
+      ))) {
+    return failure();
+  }
 
   auto preCall = entryBuilder.create<func::CallOp>(
       contract.getLoc(), helperInfo.pre, TypeRange {smt::BoolType::get(context)},
@@ -2577,13 +4187,9 @@ LogicalResult LoweringContext::createContractEntryHelper(
       stageMessagePrefix(stage) + "pre"
   );
 
-  auto targetCall = entryBuilder.create<func::CallOp>(
-      contract.getLoc(), helperInfo.target, TypeRange {smt::BoolType::get(context)},
-      entry->getArguments()
-  );
-  proveByUnsatAndAssert(
-      entryBuilder, contract.getLoc(), targetCall.getResult(0), contract.getSymName(),
-      stageMessagePrefix(stage) + "target"
+  proveHelperCallsByUnsatAndAssert(
+      entryBuilder, contract.getLoc(), contract.getSymName(), stageMessagePrefix(stage) + "target",
+      helperInfo.targetProofHelpers, entry->getArguments()
   );
 
   for (auto [index, includeOp] : llvm::enumerate(includes)) {
@@ -2614,13 +4220,9 @@ LogicalResult LoweringContext::createContractEntryHelper(
     );
   }
 
-  auto postCall = entryBuilder.create<func::CallOp>(
-      contract.getLoc(), helperInfo.post, TypeRange {smt::BoolType::get(context)},
-      entry->getArguments()
-  );
-  proveByUnsatAndAssert(
-      entryBuilder, contract.getLoc(), postCall.getResult(0), contract.getSymName(),
-      stageMessagePrefix(stage) + "post"
+  proveHelperCallsByUnsatAndAssert(
+      entryBuilder, contract.getLoc(), contract.getSymName(), stageMessagePrefix(stage) + "post",
+      helperInfo.postProofHelpers, entry->getArguments()
   );
 
   entryBuilder.create<func::ReturnOp>(contract.getLoc());
@@ -2642,74 +4244,84 @@ LogicalResult LoweringContext::createCombinedContractEntryHelper(
   }
   const ContractStageHelperNames &helperInfo = helperInfoIt->second.combined;
 
-  OpBuilder moduleBuilder = createModuleBuilder(module);
-  auto helper = moduleBuilder.create<func::FuncOp>(
-      contract.getLoc(), helperInfo.entry,
-      FunctionType::get(context, loweredSig->argTypes, TypeRange {})
-  );
+  auto createEntry = [&](StringRef helperName, bool assumePreconditions) -> LogicalResult {
+    OpBuilder moduleBuilder = createModuleBuilder(module);
+    auto helper = moduleBuilder.create<func::FuncOp>(
+        contract.getLoc(), helperName, FunctionType::get(context, loweredSig->argTypes, TypeRange {})
+    );
 
-  Block *entry = helper.addEntryBlock();
-  OpBuilder entryBuilder = OpBuilder::atBlockBegin(entry);
-  auto seededMaps = seedContractArgumentMaps(contract, entry);
-  if (failed(seededMaps)) {
+    Block *entry = helper.addEntryBlock();
+    OpBuilder entryBuilder = OpBuilder::atBlockBegin(entry);
+    auto seededMaps = seedContractArgumentMaps(contract, entry);
+    if (failed(seededMaps)) {
+      return failure();
+    }
+    auto &[valueMap, selfMemberMap, constParamMap] = *seededMaps;
+    if (failed(emitTemplateParamNonNegativeAssumptions(
+            contract.getLoc(), entryBuilder, constParamMap
+        ))) {
+      return failure();
+    }
+
+    auto preCall = entryBuilder.create<func::CallOp>(
+        contract.getLoc(), helperInfo.pre, TypeRange {smt::BoolType::get(context)},
+        entry->getArguments()
+    );
+    if (assumePreconditions) {
+      assumeCondition(entryBuilder, contract.getLoc(), preCall.getResult(0));
+    } else {
+      proveByUnsatAndAssert(
+          entryBuilder, contract.getLoc(), preCall.getResult(0), contract.getSymName(), "pre"
+      );
+    }
+
+    proveHelperCallsByUnsatAndAssert(
+        entryBuilder, contract.getLoc(), contract.getSymName(), "target",
+        helperInfo.targetProofHelpers, entry->getArguments()
+    );
+
+    for (auto [index, includeOp] : llvm::enumerate(includes)) {
+      if (hasIfAncestor(includeOp.getOperation(), contract.getOperation())) {
+        includeOp.emitError("verif-to-smt does not yet support guarded verif.include operations");
+        return failure();
+      }
+      auto calleeTarget = includeOp.getCalleeTarget(tables);
+      if (failed(calleeTarget)) {
+        return failure();
+      }
+      auto loweredOperands = lowerIncludeHelperOperands(
+          includeOp.getArgOperands(), includeOp, entryBuilder, valueMap, selfMemberMap,
+          constParamMap
+      );
+      if (failed(loweredOperands)) {
+        return failure();
+      }
+      auto loweredTemplateParams = lowerTemplateParamOperands(
+          calleeTarget->get().getOperation(), includeOp.getTemplateParamsAttr(), entryBuilder,
+          constParamMap
+      );
+      if (failed(loweredTemplateParams)) {
+        return failure();
+      }
+      llvm::append_range(*loweredOperands, *loweredTemplateParams);
+      entryBuilder.create<func::CallOp>(
+          includeOp.getLoc(), helperInfo.includeHelpers[index], TypeRange {}, *loweredOperands
+      );
+    }
+
+    proveHelperCallsByUnsatAndAssert(
+        entryBuilder, contract.getLoc(), contract.getSymName(), "post",
+        helperInfo.postProofHelpers, entry->getArguments()
+    );
+
+    entryBuilder.create<func::ReturnOp>(contract.getLoc());
+    return success();
+  };
+
+  if (failed(createEntry(helperInfo.entry, /*assumePreconditions=*/false))) {
     return failure();
   }
-  auto &[valueMap, selfMemberMap, constParamMap] = *seededMaps;
-
-  auto preCall = entryBuilder.create<func::CallOp>(
-      contract.getLoc(), helperInfo.pre, TypeRange {smt::BoolType::get(context)},
-      entry->getArguments()
-  );
-  proveByUnsatAndAssert(
-      entryBuilder, contract.getLoc(), preCall.getResult(0), contract.getSymName(), "pre"
-  );
-
-  auto targetCall = entryBuilder.create<func::CallOp>(
-      contract.getLoc(), helperInfo.target, TypeRange {smt::BoolType::get(context)},
-      entry->getArguments()
-  );
-  proveByUnsatAndAssert(
-      entryBuilder, contract.getLoc(), targetCall.getResult(0), contract.getSymName(), "target"
-  );
-
-  for (auto [index, includeOp] : llvm::enumerate(includes)) {
-    if (hasIfAncestor(includeOp.getOperation(), contract.getOperation())) {
-      includeOp.emitError("verif-to-smt does not yet support guarded verif.include operations");
-      return failure();
-    }
-    auto calleeTarget = includeOp.getCalleeTarget(tables);
-    if (failed(calleeTarget)) {
-      return failure();
-    }
-    auto loweredOperands = lowerIncludeHelperOperands(
-        includeOp.getArgOperands(), includeOp, entryBuilder, valueMap, selfMemberMap, constParamMap
-    );
-    if (failed(loweredOperands)) {
-      return failure();
-    }
-    auto loweredTemplateParams = lowerTemplateParamOperands(
-        calleeTarget->get().getOperation(), includeOp.getTemplateParamsAttr(), entryBuilder,
-        constParamMap
-    );
-    if (failed(loweredTemplateParams)) {
-      return failure();
-    }
-    llvm::append_range(*loweredOperands, *loweredTemplateParams);
-    entryBuilder.create<func::CallOp>(
-        includeOp.getLoc(), helperInfo.includeHelpers[index], TypeRange {}, *loweredOperands
-    );
-  }
-
-  auto postCall = entryBuilder.create<func::CallOp>(
-      contract.getLoc(), helperInfo.post, TypeRange {smt::BoolType::get(context)},
-      entry->getArguments()
-  );
-  proveByUnsatAndAssert(
-      entryBuilder, contract.getLoc(), postCall.getResult(0), contract.getSymName(), "post"
-  );
-
-  entryBuilder.create<func::ReturnOp>(contract.getLoc());
-  return success();
+  return createEntry(helperInfoIt->second.exportedCombinedEntry, /*assumePreconditions=*/true);
 }
 
 /// Return the direct target definition for the given contract.
@@ -2745,13 +4357,13 @@ struct VerifToSmtPass : public llzk::impl::VerifToSmtPassBase<VerifToSmtPass> {
   /// Run the contract lowering sequentially over the module body.
   void runOnOperation() override {
     ModuleOp module = getOperation();
-    LoweringContext state {&getContext(), cleanup};
+    LoweringContext state {&getContext(), cleanup, allowAggregates};
 
     SmallVector<ContractOp> contracts;
     module.walk([&](ContractOp contract) { contracts.push_back(contract); });
 
     for (ContractOp contract : contracts) {
-      if (failed(state.ensureScalarContractSupported(contract))) {
+      if (!allowAggregates && failed(state.ensureScalarContractSupported(contract))) {
         signalPassFailure();
         return;
       }
@@ -2775,7 +4387,7 @@ struct VerifToSmtPass : public llzk::impl::VerifToSmtPassBase<VerifToSmtPass> {
           return;
         }
       } else {
-        auto structDef = cast<StructDefOp>(*target);
+        auto structDef = mlir::cast<StructDefOp>(*target);
         if (failed(state.getOrCreateStructHelpers(module, structDef))) {
           signalPassFailure();
           return;
