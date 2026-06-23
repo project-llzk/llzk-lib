@@ -11,6 +11,8 @@
 
 #include "../CAPITestBase.h"
 
+#include "llzk-c/Dialect/Function.h"
+
 #include "llzk/Util/Compare.h"
 
 #include <mlir-c/BuiltinAttributes.h>
@@ -245,6 +247,13 @@ TEST_F(StructDefTest, llzk_struct_def_op_get_constrain_func_op) {
   auto op = test_op();
   if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
     llzkStruct_StructDefOpGetConstrainFuncOp(op.op);
+  }
+}
+
+TEST_F(StructDefTest, llzk_struct_def_op_get_product_func_op) {
+  auto op = test_op();
+  if (llzkOperationIsA_Struct_StructDefOp(op.op)) {
+    llzkStruct_StructDefOpGetProductFuncOp(op.op);
   }
 }
 
@@ -492,4 +501,21 @@ std::unique_ptr<MemberWriteOpBuildFuncHelper> MemberWriteOpBuildFuncHelper::get(
     }
   };
   return std::make_unique<Impl>();
+}
+
+TEST_F(CAPITest, llzk_struct_def_op_get_product_func_op_positive) {
+  auto builder = mlirOpBuilderCreate(context);
+  auto location = mlirLocationUnknownGet(context);
+  auto parentModule = cppNewModuleAndSetInsertionPoint(builder, location);
+  llzk::ModuleBuilder cppBldr(parentModule.get());
+  auto productFn = cppBldr.insertProductStruct("TestStruct").getProductFn("TestStruct");
+
+  ASSERT_TRUE(mlir::succeeded(productFn));
+  auto structDef = productFn->getOperation()->getParentOfType<llzk::component::StructDefOp>();
+  ASSERT_TRUE(structDef);
+  MlirOperation product = llzkStruct_StructDefOpGetProductFuncOp(wrap(structDef));
+  EXPECT_FALSE(mlirOperationIsNull(product));
+  EXPECT_TRUE(llzkOperationIsA_Function_FuncDefOp(product));
+
+  mlirOpBuilderDestroy(builder);
 }
