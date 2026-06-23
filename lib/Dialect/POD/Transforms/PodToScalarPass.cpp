@@ -21,8 +21,8 @@
 ///    rewriting steps.
 ///
 /// 2. Run a dialect conversion that splits arrays whose element type is a POD into parallel arrays
-///    in `llzk.nondet`, `array.*`, `MemberReadOp`, `MemberWriteOp`, `FuncDefOp`, `CallOp`, and
-///    `ReturnOp`.
+///    in `llzk.nondet`, `array.*`, `constrain.eq`, `constrain.in`, `struct.readm`, `struct.writem`,
+///    `function.def`, `function.call`, and `function.return`.
 ///
 /// 3. Run a dialect conversion that does the following:
 ///
@@ -70,6 +70,7 @@
 #include "llzk/Dialect/Bool/IR/Dialect.h"
 #include "llzk/Dialect/Cast/IR/Dialect.h"
 #include "llzk/Dialect/Constrain/IR/Dialect.h"
+#include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
@@ -1145,6 +1146,147 @@ public:
   }
 };
 
+/// Rewrite `constrain.eq` over arrays-of-POD into one equality per parallel leaf array.
+class SplitPodArrayInEmitEqualityOp : public OpConversionPattern<constrain::EmitEqualityOp> {
+public:
+  using OpConversionPattern<constrain::EmitEqualityOp>::OpConversionPattern;
+
+  static bool legal(constrain::EmitEqualityOp op) {
+    return !containsSplittablePodArrayType(op->getOperandTypes());
+  }
+
+  LogicalResult matchAndRewrite(
+      constrain::EmitEqualityOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
+
+    if (adaptor.getLhs().size() != adaptor.getRhs().size()) {
+      return rewriter.notifyMatchFailure(
+          op, "expected array-of-pod equality operands to expand to the same number of leaves"
+      );
+    }
+
+    for (auto [lhs, rhs] : llvm::zip_equal(adaptor.getLhs(), adaptor.getRhs())) {
+      rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhs, rhs);
+    }
+    rewriter.eraseOp(op);
+    return success();
+  }
+};
+
+/// Rewrite `constrain.in` over arrays-of-POD into a shared-slice witness plus leaf equalities.
+///
+/// After step 2 converts an array-of-POD into parallel leaf arrays, `constrain.in` can no longer be
+/// left in place because it has no built-in 1:N operand rewrite. This pattern preserves the
+/// original containment semantics by:
+///
+/// 1. Expanding both operands into matching POD leaves.
+/// 2. Computing how many leading lhs dimensions must be selected to match the rhs rank.
+/// 3. Creating one nondeterministic index per selected dimension and constraining each index to be
+///    in bounds using `array.len` and `constrain.eq` on the comparison results.
+/// 4. Using that same index tuple for every leaf, reading a scalar leaf with `array.read` or
+///    extracting an array leaf with `array.extract`.
+/// 5. Emitting one `constrain.eq` per selected lhs leaf and rhs leaf, then erasing the original
+///    `constrain.in`.
+///
+/// Reusing the same nondeterministic indices across all leaves is essential: it guarantees that all
+/// field equalities refer to the same POD element or subarray, rather than allowing different
+/// leaves to match at different positions.
+class SplitPodArrayInEmitContainmentOp : public OpConversionPattern<constrain::EmitContainmentOp> {
+public:
+  using OpConversionPattern<constrain::EmitContainmentOp>::OpConversionPattern;
+
+  static bool legal(constrain::EmitContainmentOp op) {
+    return !containsSplittablePodArrayType(op->getOperandTypes());
+  }
+
+  /// Return the split scalar or leaf-array values representing one containment operand.
+  static SmallVector<Value> collectContainmentLeaves(
+      Location loc, Value originalOperand, ValueRange convertedValues,
+      ConversionPatternRewriter &rewriter
+  ) {
+    if (splittablePod(originalOperand.getType())) {
+      SmallVector<Value> podLeaves;
+      processInputOperand(loc, getSingleConvertedValue(convertedValues), podLeaves, rewriter);
+      return podLeaves;
+    }
+
+    return SmallVector<Value>(convertedValues.begin(), convertedValues.end());
+  }
+
+  LogicalResult matchAndRewrite(
+      constrain::EmitContainmentOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
+
+    Location loc = op.getLoc();
+    ArrayType lhsTy = op.getLhs().getType();
+    Type rhsTy = op.getRhs().getType();
+
+    size_t lhsRank = lhsTy.getDimensionSizes().size();
+    size_t rhsRank = 0;
+    if (auto rhsArrTy = llvm::dyn_cast<ArrayType>(rhsTy)) {
+      rhsRank = rhsArrTy.getDimensionSizes().size();
+    }
+    assert(lhsRank >= rhsRank && "constrain.in verifier should reject higher-rank rhs arrays");
+    size_t selectedDims = lhsRank - rhsRank;
+
+    SmallVector<Value> lhsLeaves(adaptor.getLhs().begin(), adaptor.getLhs().end());
+    SmallVector<Value> rhsLeaves =
+        collectContainmentLeaves(loc, op.getRhs(), adaptor.getRhs(), rewriter);
+    if (lhsLeaves.size() != rhsLeaves.size()) {
+      return rewriter.notifyMatchFailure(
+          op, "expected array-of-pod containment operands to expand to the same number of leaves"
+      );
+    }
+
+    Value shapeCarrier = adaptor.getLhs().empty()
+                             ? materializeArrayLengthCarrier(op.getLhs(), lhsTy, loc, rewriter)
+                             : adaptor.getLhs().front();
+    Value zero = rewriter.create<arith::ConstantOp>(loc, rewriter.getIndexAttr(0));
+    Value trueVal = rewriter.create<arith::ConstantOp>(
+        loc, IntegerAttr::get(IntegerType::get(rewriter.getContext(), 1), 1)
+    );
+
+    SmallVector<Value> selectedIndices;
+    selectedIndices.reserve(selectedDims);
+    for (size_t dim = 0; dim < selectedDims; ++dim) {
+      Value idx = rewriter.create<NonDetOp>(loc, IndexType::get(rewriter.getContext()));
+      Value dimVal = rewriter.create<arith::ConstantOp>(loc, rewriter.getIndexAttr(dim));
+      Value dimLen = rewriter.create<ArrayLengthOp>(loc, shapeCarrier, dimVal);
+
+      Value nonNegative = rewriter.create<arith::CmpIOp>(loc, arith::CmpIPredicate::sge, idx, zero);
+      rewriter.create<constrain::EmitEqualityOp>(loc, nonNegative, trueVal);
+
+      Value inRange = rewriter.create<arith::CmpIOp>(loc, arith::CmpIPredicate::slt, idx, dimLen);
+      rewriter.create<constrain::EmitEqualityOp>(loc, inRange, trueVal);
+
+      selectedIndices.push_back(idx);
+    }
+
+    for (auto [lhsLeaf, rhsLeaf] : llvm::zip_equal(lhsLeaves, rhsLeaves)) {
+      Value selectedLhs = lhsLeaf;
+      if (auto rhsLeafArrTy = llvm::dyn_cast<ArrayType>(rhsLeaf.getType())) {
+        if (!selectedIndices.empty()) {
+          selectedLhs =
+              rewriter.create<ExtractArrayOp>(loc, rhsLeafArrTy, lhsLeaf, selectedIndices);
+        }
+      } else {
+        selectedLhs =
+            rewriter.create<ReadArrayOp>(loc, rhsLeaf.getType(), lhsLeaf, selectedIndices);
+      }
+      rewriter.create<constrain::EmitEqualityOp>(loc, selectedLhs, rhsLeaf);
+    }
+
+    rewriter.eraseOp(op);
+    return success();
+  }
+};
+
 /// Replace `array.length` on an array-of-POD with the equivalent length of any split leaf array.
 class SplitPodArrayLengthOp : public OpConversionPattern<ArrayLengthOp> {
 public:
@@ -1331,7 +1473,9 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
       SplitPodArrayNonDetOp, SplitPodArrayCreateArrayOp, SplitPodArrayReadArrayOp,
       SplitPodArrayWriteArrayOp, SplitPodArrayExtractArrayOp, SplitPodArrayInsertArrayOp,
       SplitPodArrayInFuncDefOp, SplitPodArrayInReturnOp, SplitPodArrayInCallOp,
-      SplitPodArrayLengthOp>(typeConverter, ctx);
+      SplitPodArrayInEmitEqualityOp, SplitPodArrayInEmitContainmentOp, SplitPodArrayLengthOp>(
+      typeConverter, ctx
+  );
   patterns.add<SplitPodArrayInMemberWriteOp, SplitPodArrayInMemberReadOp>(
       typeConverter, ctx, symTables, memberRepMap
   );
@@ -1347,6 +1491,10 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   target.addDynamicallyLegalOp<FuncDefOp>(SplitPodArrayInFuncDefOp::legal);
   target.addDynamicallyLegalOp<ReturnOp>(SplitPodArrayInReturnOp::legal);
   target.addDynamicallyLegalOp<CallOp>(SplitPodArrayInCallOp::legal);
+  target.addDynamicallyLegalOp<constrain::EmitEqualityOp>(SplitPodArrayInEmitEqualityOp::legal);
+  target.addDynamicallyLegalOp<constrain::EmitContainmentOp>(
+      SplitPodArrayInEmitContainmentOp::legal
+  );
   target.addDynamicallyLegalOp<ArrayLengthOp>(SplitPodArrayLengthOp::legal);
   target.addDynamicallyLegalOp<MemberWriteOp>(SplitPodArrayInMemberWriteOp::legal);
   target.addDynamicallyLegalOp<MemberReadOp>(SplitPodArrayInMemberReadOp::legal);
