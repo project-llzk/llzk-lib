@@ -23,11 +23,10 @@ module attributes {llzk.lang} {
 // CHECK-LABEL:   struct.def @CmpConstraint {
 // CHECK:           function.def @compute(%[[VAL_0:.*]]: !felt.type, %[[VAL_1:.*]]: !felt.type) -> !struct.type<@CmpConstraint> attributes {function.allow_witness} {
 // CHECK:             %[[VAL_2:.*]] = struct.new : <@CmpConstraint>
-// CHECK:             %[[VAL_3:.*]] = struct.readm %[[VAL_2]][@__llzk_poly_lowering_pass_aux_member_1] : <@CmpConstraint>, !felt.type
+// CHECK:             %[[VAL_3:.*]] = felt.mul %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK:             struct.writem %[[VAL_2]][@__llzk_poly_lowering_pass_aux_member_1] = %[[VAL_3]] : <@CmpConstraint>, !felt.type
 // CHECK:             %[[VAL_4:.*]] = felt.mul %[[VAL_3]], %[[VAL_0]] : !felt.type, !felt.type
 // CHECK:             struct.writem %[[VAL_2]][@__llzk_poly_lowering_pass_aux_member_0] = %[[VAL_4]] : <@CmpConstraint>, !felt.type
-// CHECK:             %[[VAL_5:.*]] = felt.mul %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
-// CHECK:             struct.writem %[[VAL_2]][@__llzk_poly_lowering_pass_aux_member_1] = %[[VAL_5]] : <@CmpConstraint>, !felt.type
 // CHECK:             function.return %[[VAL_2]] : !struct.type<@CmpConstraint>
 // CHECK:           }
 // CHECK:           function.def @constrain(%[[VAL_6:.*]]: !struct.type<@CmpConstraint>, %[[VAL_7:.*]]: !felt.type, %[[VAL_8:.*]]: !felt.type) attributes {function.allow_constraint} {
