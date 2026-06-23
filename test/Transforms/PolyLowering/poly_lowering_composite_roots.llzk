@@ -167,8 +167,7 @@ module attributes {llzk.lang} {
 // CHECK:             %[[C_SELF:.*]] = struct.new : <@CompositeCallArg>
 // CHECK:             %[[C_AB:.*]] = felt.mul %[[C_A]], %[[C_B]] : !felt.type, !felt.type
 // CHECK:             struct.writem %[[C_SELF]][@__llzk_poly_lowering_pass_aux_member_0] = %[[C_AB]] : <@CompositeCallArg>, !felt.type
-// CHECK:             %[[C_AUX0:.*]] = struct.readm %[[C_SELF]][@__llzk_poly_lowering_pass_aux_member_0] : <@CompositeCallArg>, !felt.type
-// CHECK:             %[[C_ABC:.*]] = felt.mul %[[C_AUX0]], %[[C_C]] : !felt.type, !felt.type
+// CHECK:             %[[C_ABC:.*]] = felt.mul %[[C_AB]], %[[C_C]] : !felt.type, !felt.type
 // CHECK:             %[[C_ARG:.*]] = felt.add %[[C_ABC]], %[[C_D]] : !felt.type, !felt.type
 // CHECK:             struct.writem %[[C_SELF]][@__llzk_poly_lowering_pass_aux_member_1] = %[[C_ARG]] : <@CompositeCallArg>, !felt.type
 // CHECK:             function.return %[[C_SELF]] : !struct.type<@CompositeCallArg>
