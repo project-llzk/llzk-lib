@@ -257,7 +257,7 @@ size_t splitPodTypeTo(Type t, SmallVector<Type> &collect) {
   if (PodType pt = splittablePod(t)) {
     SmallVector<StringAttr> recordChain;
     size_t originalSize = collect.size();
-    forEachPodLeaf(pt, recordChain, [&collect](RecordChain, Type leafType) {
+    forEachPodLeaf(pt, recordChain, [&collect](const RecordChain &, Type leafType) {
       collect.push_back(leafType);
     });
     return collect.size() - originalSize;
@@ -518,7 +518,7 @@ genReadAlongPath(OpBuilder &bldr, Location loc, Value value, ArrayRef<StringAttr
 
 /// Read a flattened POD leaf by following each record name in `recordChain`.
 inline static Value
-genReadAlongPath(OpBuilder &bldr, Location loc, Value podRef, RecordChain recordChain) {
+genReadAlongPath(OpBuilder &bldr, Location loc, Value podRef, const RecordChain &recordChain) {
   return genReadAlongPath(bldr, loc, podRef, ArrayRef(recordChain.nameList));
 }
 
@@ -591,7 +591,7 @@ static SmallVector<Value>
 orderedVirtualPodLeafValues(PodType podTy, const VirtualPodLeafMap &leafValues) {
   SmallVector<Value> orderedValues;
   SmallVector<StringAttr> recordChain;
-  forEachPodLeaf(podTy, recordChain, [&leafValues, &orderedValues](RecordChain id, Type) {
+  forEachPodLeaf(podTy, recordChain, [&leafValues, &orderedValues](const RecordChain &id, Type) {
     auto it = leafValues.find(id);
     assert(it != leafValues.end() && "missing virtual POD leaf value");
     orderedValues.push_back(it->second);
@@ -628,7 +628,7 @@ static SmallVector<std::string> getSplitRecordNameSuffixes(Type type) {
   SmallVector<std::string> suffixes;
   if (PodType pt = splittablePod(type)) {
     SmallVector<StringAttr> recordChain;
-    forEachPodLeaf(pt, recordChain, [&suffixes](RecordChain id, Type) {
+    forEachPodLeaf(pt, recordChain, [&suffixes](const RecordChain &id, Type) {
       std::string suffix;
       llvm::raw_string_ostream os(suffix);
       for (StringAttr recordName : id.nameList) {
@@ -654,7 +654,7 @@ static void processInputOperand(
       }
     }
     SmallVector<StringAttr> recordChain;
-    forEachPodLeaf(pt, recordChain, [&](RecordChain id, Type) {
+    forEachPodLeaf(pt, recordChain, [&](const RecordChain &id, Type) {
       newOperands.push_back(genReadAlongPath(rewriter, loc, operand, id));
     });
   } else {
@@ -741,7 +741,7 @@ static void flattenPodMemberIntoLeaves(
     LocalMemberReplacementMap &localRepMapRef, SymbolTable &structSymbolTable,
     ConversionPatternRewriter &rewriter
 ) {
-  forEachPodLeaf(podTy, recordChain, [&](RecordChain id, Type ty) {
+  forEachPodLeaf(podTy, recordChain, [&](const RecordChain &id, Type ty) {
     StringAttr name = getFlattenedMemberName(
         originalMember.getContext(), originalMember.getSymNameAttr(), id.nameList
     );
@@ -1026,7 +1026,7 @@ public:
 
   LogicalResult
   matchAndRewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
-    auto *tyConv = getTypeConverter();
+    const auto *tyConv = getTypeConverter();
     assert(tyConv && "expected pod-array type converter");
 
     FunctionType oldTy = op.getFunctionType();
@@ -1120,7 +1120,7 @@ public:
   LogicalResult matchAndRewrite(
       CallOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    auto *tyConv = getTypeConverter();
+    const auto *tyConv = getTypeConverter();
     assert(tyConv && "expected pod-array type converter");
 
     SmallVector<Type> newResultTypes;
@@ -1279,7 +1279,9 @@ public:
     selectedIndices.reserve(selectedDims);
     for (size_t dim = 0; dim < selectedDims; ++dim) {
       Value idx = rewriter.create<NonDetOp>(loc, IndexType::get(rewriter.getContext()));
-      Value dimVal = rewriter.create<arith::ConstantOp>(loc, rewriter.getIndexAttr(dim));
+      Value dimVal = rewriter.create<arith::ConstantOp>(
+          loc, rewriter.getIndexAttr(llzk::checkedCast<int64_t>(dim))
+      );
       Value dimLen = rewriter.create<ArrayLengthOp>(loc, shapeCarrier, dimVal);
 
       Value nonNegative = rewriter.create<arith::CmpIOp>(loc, arith::CmpIPredicate::sge, idx, zero);
@@ -1624,7 +1626,7 @@ public:
 
             DenseMap<RecordChain, Value> leafValues;
             SmallVector<StringAttr> recordChain;
-            forEachPodLeaf(pt, recordChain, [&](RecordChain id, Type leafType) {
+            forEachPodLeaf(pt, recordChain, [&](const RecordChain &id, Type leafType) {
               BlockArgument newArg = entryBlock.insertArgument(i, leafType, loc);
               leafValues[id] = newArg;
               ++i;
@@ -1697,7 +1699,7 @@ static CallOp newCallOpWithSplitResults(
       Location loc = oldVal.getLoc();
       DenseMap<RecordChain, Value> leafValues;
       SmallVector<StringAttr> recordChain;
-      forEachPodLeaf(pt, recordChain, [&leafValues, &newResults](RecordChain id, Type) {
+      forEachPodLeaf(pt, recordChain, [&leafValues, &newResults](const RecordChain &id, Type) {
         leafValues[id] = *newResults;
         ++newResults;
       });
@@ -1773,7 +1775,7 @@ public:
     const VirtualPodLeafMap *virtualLeafValues =
         lookupVirtualPodLeafMap(adaptor.getVal(), virtualPods);
 
-    for (auto [id, newMember] : idToMember) {
+    for (const auto &[id, newMember] : idToMember) {
       Value scalarValue = virtualLeafValues
                               ? virtualLeafValues->at(id)
                               : genReadAlongPath(rewriter, op.getLoc(), adaptor.getVal(), id);
@@ -1815,7 +1817,7 @@ public:
         repMapRef.at(tgtStructDef->get()).at(op.getMemberNameAttr().getAttr());
 
     VirtualPodLeafMap leafValues;
-    for (auto [id, newMember] : idToMember) {
+    for (const auto &[id, newMember] : idToMember) {
       leafValues[id] = rewriter.create<MemberReadOp>(
           op.getLoc(), newMember.second, adaptor.getComponent(), newMember.first
       );
@@ -2315,7 +2317,7 @@ struct LoopPodSlot {
 /// Return the tracked loop slot for `podRef.recordName`, or null if not found.
 static LoopPodSlot *
 lookupLoopSlot(SmallVectorImpl<LoopPodSlot> &slots, Value podRef, StringAttr recordName) {
-  auto it = llvm::find_if(slots, [&podRef, &recordName](const LoopPodSlot &slot) {
+  auto *it = llvm::find_if(slots, [&podRef, &recordName](const LoopPodSlot &slot) {
     return slot.matches(podRef, recordName);
   });
   return it == slots.end() ? nullptr : &*it;
@@ -2323,7 +2325,7 @@ lookupLoopSlot(SmallVectorImpl<LoopPodSlot> &slots, Value podRef, StringAttr rec
 
 /// Return whether a loop slot is tracked for `podRef.recordName`.
 static bool hasLoopSlot(ArrayRef<LoopPodSlot> slots, Value podRef, StringAttr recordName) {
-  auto it = llvm::find_if(slots, [&podRef, &recordName](const LoopPodSlot &slot) {
+  const auto *it = llvm::find_if(slots, [&podRef, &recordName](const LoopPodSlot &slot) {
     return slot.matches(podRef, recordName);
   });
   return it != slots.end();
