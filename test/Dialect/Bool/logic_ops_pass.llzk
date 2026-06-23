@@ -244,3 +244,140 @@ function.def @f_exists(%a: !array.type<5,5 x index>) -> i1 attributes {function.
 //CHECK-NEXT:     }
 //CHECK-NEXT:     function.return %[[T1]] : i1
 //CHECK-NEXT:   }
+// -----
+
+module attributes {llzk.lang} { 
+  poly.template @f_forall {
+    poly.param @N: index
+    function.def @f_forall(%a: !array.type<@N x index>) -> i1 attributes {function.allow_non_native_field_ops} {
+      %c = bool.forall %e in %a: !array.type<@N x index> {
+        %c0 = arith.constant 0 : index
+        %0 = arith.cmpi eq, %e, %c0 : index
+        bool.yield %0
+      }
+      function.return %c: i1
+    }
+  }
+}
+//CHECK-LABEL:  function.def @f_forall
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !array.type<@N x index>) -> i1 attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.forall %[[T2:[0-9a-zA-Z_\.]+]]: index in %[[A0]] : !array.type<@N x index> {
+//CHECK-NEXT:       %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index 
+//CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[T2]], %[[T3]] : index 
+//CHECK-NEXT:       bool.yield %[[T4]]
+//CHECK-NEXT:     }
+//CHECK-NEXT:     function.return %[[T1]] : i1
+//CHECK-NEXT:   }
+
+// -----
+
+module attributes {llzk.lang} { 
+  poly.template @f_exists {
+    poly.param @N: index
+    function.def @f_exists(%a: !array.type<@N x index>) -> i1 attributes {function.allow_non_native_field_ops} {
+      %c = bool.exists %e in %a: !array.type<@N x index> {
+        %c0 = arith.constant 0 : index
+        %0 = arith.cmpi eq, %e, %c0 : index
+        bool.yield %0
+      }
+      function.return %c: i1
+    }
+  }
+}
+//CHECK-LABEL:  function.def @f_exists
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !array.type<@N x index>) -> i1 attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.exists %[[T2:[0-9a-zA-Z_\.]+]]: index in %[[A0]] : !array.type<@N x index> {
+//CHECK-NEXT:       %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index 
+//CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[T2]], %[[T3]] : index 
+//CHECK-NEXT:       bool.yield %[[T4]]
+//CHECK-NEXT:     }
+//CHECK-NEXT:     function.return %[[T1]] : i1
+//CHECK-NEXT:   }
+
+// -----
+
+#map = affine_map<(d0) -> (d0 * 2)>
+module attributes {llzk.lang} { 
+  poly.template @Foo {
+    poly.param @N: index 
+    struct.def @Foo {
+      struct.member @n: index {llzk.pub}
+      function.def @compute() -> !struct.type<@Foo::@Foo<[@N]>> {
+        %self = struct.new : <@Foo::@Foo<[@N]>>
+        %c = poly.read_const @N : index
+        struct.writem %self[@n] = %c : <@Foo::@Foo<[@N]>>, index
+        function.return %self : !struct.type<@Foo::@Foo<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Foo::@Foo<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @f_forall {
+    poly.param @N: index
+    function.def @f_forall(%a: !array.type<@N x !struct.type<@Foo::@Foo<[#map]>>>) -> i1 attributes {function.allow_non_native_field_ops} {
+      %c = bool.forall %foo in %a: !array.type<@N x !struct.type<@Foo::@Foo<[#map]>>> {
+        %c0 = arith.constant 0 : index
+        %e = struct.readm %foo[@n] : <@Foo::@Foo<[#map]>>, index
+        %0 = arith.cmpi eq, %e, %c0 : index
+        bool.yield %0
+      }
+      function.return %c: i1
+    }
+  }
+}
+//CHECK: #[[$ATTR_1:.+]] = affine_map<(d0) -> (d0 * 2)>
+//CHECK-LABEL:  function.def @f_forall
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !array.type<@N x !struct.type<@Foo::@Foo<[#[[$ATTR_1]]]>>>) -> i1 attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.forall %[[T2:[0-9a-zA-Z_\.]+]]: !struct.type<@Foo::@Foo<[#[[$ATTR_1]]]>> in %[[A0]] : !array.type<@N x !struct.type<@Foo::@Foo<[#[[$ATTR_1]]]>>> {
+//CHECK-NEXT:       %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index 
+//CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = struct.readm %[[T2]][@n] : <@Foo::@Foo<[#[[$ATTR_1]]]>>, index
+//CHECK-NEXT:       %[[T5:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[T4]], %[[T3]] : index 
+//CHECK-NEXT:       bool.yield %[[T5]]
+//CHECK-NEXT:     }
+//CHECK-NEXT:     function.return %[[T1]] : i1
+//CHECK-NEXT:   }
+
+// -----
+
+#map = affine_map<(d0) -> (d0 * 2)>
+module attributes {llzk.lang} { 
+  poly.template @Foo {
+    poly.param @N: index 
+    struct.def @Foo {
+      struct.member @n: index {llzk.pub}
+      function.def @compute() -> !struct.type<@Foo::@Foo<[@N]>> {
+        %self = struct.new : <@Foo::@Foo<[@N]>>
+        %c = poly.read_const @N : index
+        struct.writem %self[@n] = %c : <@Foo::@Foo<[@N]>>, index
+        function.return %self : !struct.type<@Foo::@Foo<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Foo::@Foo<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @f_exists {
+    poly.param @N: index
+    function.def @f_exists(%a: !array.type<@N x !struct.type<@Foo::@Foo<[#map]>>>) -> i1 attributes {function.allow_non_native_field_ops} {
+      %c = bool.exists %foo in %a: !array.type<@N x !struct.type<@Foo::@Foo<[#map]>>> {
+        %c0 = arith.constant 0 : index
+        %e = struct.readm %foo[@n] : <@Foo::@Foo<[#map]>>, index
+        %0 = arith.cmpi eq, %e, %c0 : index
+        bool.yield %0
+      }
+      function.return %c: i1
+    }
+  }
+}
+//CHECK: #[[$ATTR_1:.+]] = affine_map<(d0) -> (d0 * 2)>
+//CHECK-LABEL:  function.def @f_exists
+//CHECK-SAME:   (%[[A0:[0-9a-zA-Z_\.]+]]: !array.type<@N x !struct.type<@Foo::@Foo<[#[[$ATTR_1]]]>>>) -> i1 attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = bool.exists %[[T2:[0-9a-zA-Z_\.]+]]: !struct.type<@Foo::@Foo<[#[[$ATTR_1]]]>> in %[[A0]] : !array.type<@N x !struct.type<@Foo::@Foo<[#[[$ATTR_1]]]>>> {
+//CHECK-NEXT:       %[[T3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index 
+//CHECK-NEXT:       %[[T4:[0-9a-zA-Z_\.]+]] = struct.readm %[[T2]][@n] : <@Foo::@Foo<[#[[$ATTR_1]]]>>, index
+//CHECK-NEXT:       %[[T5:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[T4]], %[[T3]] : index 
+//CHECK-NEXT:       bool.yield %[[T5]]
+//CHECK-NEXT:     }
+//CHECK-NEXT:     function.return %[[T1]] : i1
+//CHECK-NEXT:   }
