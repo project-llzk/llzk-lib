@@ -25,6 +25,9 @@ extern const char *LLZK_FUNC_NAME_COMPUTE;
 /// Symbol name for the constraint generation function within a struct/component.
 extern const char *LLZK_FUNC_NAME_CONSTRAIN;
 
+/// Symbol name for the product program function within a struct/component.
+extern const char *LLZK_FUNC_NAME_PRODUCT;
+
 /// Name of the attribute on the top-level ModuleOp that identifies the ModuleOp as the
 /// root module and specifies the frontend language name that the IR was compiled from, if
 /// available.

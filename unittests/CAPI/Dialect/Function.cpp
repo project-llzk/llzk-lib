@@ -265,9 +265,11 @@ TEST_F(FuncDialectTest, llzk_func_def_op_get_fully_qualified_name) {
 
 false_pred_test(llzk_func_def_op_name_is_compute, llzkFunction_FuncDefOpNameIsCompute);
 false_pred_test(llzk_func_def_op_name_is_constrain, llzkFunction_FuncDefOpNameIsConstrain);
+false_pred_test(llzk_func_def_op_name_is_product, llzkFunction_FuncDefOpNameIsProduct);
 false_pred_test(llzk_func_def_op_is_in_struct, llzkFunction_FuncDefOpIsInStruct);
 false_pred_test(llzk_func_def_op_is_struct_compute, llzkFunction_FuncDefOpIsStructCompute);
 false_pred_test(llzk_func_def_op_is_struct_constrain, llzkFunction_FuncDefOpIsStructConstrain);
+false_pred_test(llzk_func_def_op_is_struct_product, llzkFunction_FuncDefOpIsStructProduct);
 
 struct CallOpBuildFuncHelper : public TestAnyBuildFuncHelper<FuncDialectTest> {
   bool callIsA(MlirOperation op) override { return llzkOperationIsA_Function_CallOp(op); }
@@ -470,12 +472,40 @@ TEST_F(FuncDialectTest, llzk_call_op_get_callee_type) {
 call_pred_test(test_llzk_operation_is_a_call_op_pass, llzkOperationIsA_Function_CallOp, true);
 call_pred_test(test_llzk_call_op_callee_is_compute, llzkFunction_CallOpCalleeIsCompute, false);
 call_pred_test(test_llzk_call_op_callee_is_constrain, llzkFunction_CallOpCalleeIsConstrain, false);
+call_pred_test(test_llzk_call_op_callee_is_product, llzkFunction_CallOpCalleeIsProduct, false);
 call_pred_test(
     test_llzk_call_op_callee_is_struct_compute, llzkFunction_CallOpCalleeIsStructCompute, false
 );
 call_pred_test(
     test_llzk_call_op_callee_is_struct_constrain, llzkFunction_CallOpCalleeIsStructConstrain, false
 );
+call_pred_test(
+    test_llzk_call_op_callee_is_struct_product, llzkFunction_CallOpCalleeIsStructProduct, false
+);
+
+TEST_F(FuncDialectTest, llzk_call_op_callee_is_product_positive) {
+  auto builder = mlirOpBuilderCreate(context);
+  auto location = mlirLocationUnknownGet(context);
+  auto parentModule = cppGenStructAndSetInsertionPoint(
+      builder, location, llzk::function::FunctionKind::StructProduct
+  );
+  (void)parentModule;
+  auto *parentOp = unwrap(builder)->getInsertionBlock()->getParentOp();
+  auto callee = llvm::cast<llzk::function::FuncDefOp>(parentOp);
+
+  MlirOperation call =
+      llzkFunction_CallOpBuildToCallee(builder, location, wrap(callee), 0, (const MlirValue *)NULL);
+
+  EXPECT_TRUE(llzkFunction_CallOpCalleeIsProduct(call));
+  EXPECT_TRUE(llzkFunction_CallOpCalleeIsStructProduct(call));
+  EXPECT_FALSE(llzkFunction_CallOpCalleeIsCompute(call));
+  EXPECT_FALSE(llzkFunction_CallOpCalleeIsConstrain(call));
+  EXPECT_FALSE(llzkFunction_CallOpCalleeIsStructCompute(call));
+  EXPECT_FALSE(llzkFunction_CallOpCalleeIsStructConstrain(call));
+
+  mlirOperationDestroy(call);
+  mlirOpBuilderDestroy(builder);
+}
 
 //===----------------------------------------------------------------------===//
 // CallOp operand getter tests (mixed argOperands + mapOperands)

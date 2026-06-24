@@ -11,6 +11,7 @@
 #include <mlir/IR/Block.h>
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/IRMapping.h>
 #include <mlir/IR/Operation.h>
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/Support/LogicalResult.h>
@@ -28,6 +29,31 @@ using namespace llzk::constrain;
 
 namespace llzk {
 
+namespace {
+
+Value mapBlockArgumentInCompute(BlockArgument barg, FuncDefOp computeFunc) {
+  // Constrain entry arguments map onto compute inputs: constrain(%self, args...)
+  // corresponds to compute(args...), plus the compute-side `%self`.
+  if (barg.getArgNumber() == 0) {
+    return computeFunc.getSelfValueFromCompute();
+  }
+  return computeFunc.getArgument(barg.getArgNumber() - 1);
+}
+
+Value mapValueIntoCompute(
+    Value val, FuncDefOp computeFunc, OpBuilder &builder, DenseMap<Value, Value> &memo
+) {
+  if (auto it = memo.find(val); it != memo.end()) {
+    return it->second;
+  }
+  if (auto barg = llvm::dyn_cast<BlockArgument>(val)) {
+    return memo[val] = mapBlockArgumentInCompute(barg, computeFunc);
+  }
+  return rebuildExprInCompute(val, computeFunc, builder, memo);
+}
+
+} // namespace
+
 Value rebuildExprInCompute(
     Value val, FuncDefOp computeFunc, OpBuilder &builder, DenseMap<Value, Value> &memo
 ) {
@@ -36,21 +62,38 @@ Value rebuildExprInCompute(
   }
 
   if (auto barg = llvm::dyn_cast<BlockArgument>(val)) {
-    unsigned index = barg.getArgNumber();
-    Value mapped =
-        index == 0 ? computeFunc.getSelfValueFromCompute() : computeFunc.getArgument(index - 1);
-    return memo[val] = mapped;
+    return memo[val] = mapBlockArgumentInCompute(barg, computeFunc);
   }
 
   if (auto readOp = val.getDefiningOp<MemberReadOp>()) {
-    Value component = rebuildExprInCompute(readOp.getComponent(), computeFunc, builder, memo);
-    if (!component) {
-      return nullptr;
+    IRMapping mapper;
+    for (Value operand : readOp->getOperands()) {
+      mapper.map(operand, mapValueIntoCompute(operand, computeFunc, builder, memo));
     }
-    Value rebuilt = builder.create<MemberReadOp>(
-        readOp.getLoc(), readOp.getType(), component, readOp.getMemberNameAttr().getAttr()
+
+    Operation *rebuiltOp = builder.clone(*readOp.getOperation(), mapper);
+    assert(rebuiltOp->getNumResults() == 1 && "member reads have exactly one result");
+    return memo[val] = rebuiltOp->getResult(0);
+  }
+
+  if (val.getType().isIndex()) {
+    // Preserve index producers used by member-read access operands so rebuilt reads
+    // keep the original access semantics.
+    Operation *defOp = val.getDefiningOp();
+    assert(defOp && "index block arguments should already be mapped");
+
+    IRMapping mapper;
+    for (Value operand : defOp->getOperands()) {
+      mapper.map(operand, mapValueIntoCompute(operand, computeFunc, builder, memo));
+    }
+
+    Operation *rebuiltOp = builder.clone(*defOp, mapper);
+    assert(
+        rebuiltOp->getNumResults() == defOp->getNumResults() &&
+        "cloned index op should preserve result count"
     );
-    return memo[val] = rebuilt;
+    unsigned resultNumber = llvm::cast<OpResult>(val).getResultNumber();
+    return memo[val] = rebuiltOp->getResult(resultNumber);
   }
 
   if (auto callOp = val.getDefiningOp<CallOp>()) {

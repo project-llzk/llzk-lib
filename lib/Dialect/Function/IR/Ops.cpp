@@ -1142,6 +1142,12 @@ bool CallOp::calleeIsStructCompute() {
   });
 }
 
+bool CallOp::calleeIsStructProduct() {
+  return calleeIsStructFunctionImpl(FUNC_NAME_PRODUCT, getCallee(), [this]() {
+    return this->getSingleResultTypeOfWitnessGen();
+  });
+}
+
 bool CallOp::calleeIsStructConstrain() {
   return calleeIsStructFunctionImpl(FUNC_NAME_CONSTRAIN, getCallee(), [this]() {
     return getAtIndex<StructType>(this->getArgOperands().getTypes(), 0);
