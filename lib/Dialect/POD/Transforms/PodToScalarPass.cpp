@@ -428,6 +428,18 @@ static SmallVector<Value> flattenConvertedValues(RangeOfRanges ranges) {
   return values;
 }
 
+/// Create an array value that callers can fully initialize via explicit writes or inserts.
+///
+/// Use `llzk.nondet` as the base when affine-map dimensions are present because `array.new`
+/// cannot carry both inline elements and affine-map instantiation operands.
+inline static Value createWritableArrayValue(OpBuilder &bldr, Location loc, ArrayType arrTy) {
+  if (hasAffineMapAttr(arrTy)) {
+    return bldr.create<NonDetOp>(loc, arrTy);
+  } else {
+    return bldr.create<CreateArrayOp>(loc, arrTy);
+  }
+}
+
 /// Generate `arith.constant` indices for one static array element position.
 static SmallVector<Value> genArrayIndexConstants(OpBuilder &bldr, Location loc, ArrayAttr index) {
   SmallVector<Value> indices;
@@ -905,16 +917,36 @@ public:
     replacements.reserve(splitTypes.size());
     DenseI32ArrayAttr numDimsPerMap = op.getNumDimsPerMapAttr();
     if (isNullOrEmpty(numDimsPerMap)) {
-      for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
-        SmallVector<Value> splitElements;
-        splitElements.reserve(adaptor.getElements().size());
-        for (ValueRange elementRange : adaptor.getElements()) {
-          Value element = getSingleConvertedValue(elementRange);
-          splitElements.push_back(genReadAlongPath(rewriter, op.getLoc(), element, id));
+      if (adaptor.getElements().empty()) {
+        for (Type splitType : splitTypes) {
+          replacements.push_back(
+              rewriter.create<CreateArrayOp>(op.getLoc(), llvm::cast<ArrayType>(splitType))
+          );
         }
-        replacements.push_back(rewriter.create<CreateArrayOp>(
-            op.getLoc(), llvm::cast<ArrayType>(splitType), splitElements
-        ));
+        rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
+        return success();
+      }
+
+      auto elementIndices = arrTy.getSubelementIndices();
+      assert(elementIndices && "array.new with explicit elements requires a static array shape");
+      assert(
+          elementIndices->size() == adaptor.getElements().size() &&
+          "array.new element count must match the outer array cardinality"
+      );
+
+      // Inline initializers are linearized only across the original outer array dimensions. When
+      // a flattened POD leaf is itself an array, populate the rewritten split array one outer
+      // element at a time so each leaf array becomes a subarray insert rather than a malformed
+      // inline operand to the flattened `array.new`.
+      for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
+        Value splitArray =
+            createWritableArrayValue(rewriter, op.getLoc(), llvm::cast<ArrayType>(splitType));
+        for (auto [index, elementRange] : llvm::zip_equal(*elementIndices, adaptor.getElements())) {
+          Value element = getSingleConvertedValue(elementRange);
+          Value leafValue = genReadAlongPath(rewriter, op.getLoc(), element, id);
+          genArrayWrite(rewriter, op.getLoc(), splitArray, index, leafValue);
+        }
+        replacements.push_back(splitArray);
       }
     } else {
       SmallVector<SmallVector<Value>> mapOperandStorage;
@@ -1556,6 +1588,85 @@ public:
   }
 };
 
+/// Rewrite `array.new` when explicit elements are PODs or flattened leaf arrays.
+///
+/// This occurs after the array-of-POD stage has already converted the result type away from
+/// `!array.type<... x !pod.type<...>>`, but before the POD operands themselves have been fully
+/// scalarized. Rebuild the destination array explicitly so leaf arrays become subarray inserts
+/// rather than invalid inline operands to the flattened `array.new`.
+class SplitPodElementCreateArrayOp : public OpConversionPattern<CreateArrayOp> {
+  const VirtualPodValueMap &virtualPods;
+
+public:
+  SplitPodElementCreateArrayOp(MLIRContext *ctx, const VirtualPodValueMap &virtualPodMap)
+      : OpConversionPattern<CreateArrayOp>(ctx), virtualPods(virtualPodMap) {}
+
+  static bool legal(CreateArrayOp op) {
+    return !llvm::any_of(op.getElements().getTypes(), [](Type type) {
+      return splittablePod(type) || llvm::isa<ArrayType>(type);
+    });
+  }
+
+  LogicalResult match(CreateArrayOp op) const override { return failure(legal(op)); }
+
+  void
+  rewrite(CreateArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+    SmallVector<Value> leafElements;
+    leafElements.reserve(adaptor.getElements().size());
+
+    Type leafType;
+    for (Value element : adaptor.getElements()) {
+      SmallVector<Value> flattenedValues;
+      if (splittablePod(element.getType())) {
+        processInputOperand(op.getLoc(), element, flattenedValues, rewriter, &virtualPods);
+      } else {
+        flattenedValues.push_back(element);
+      }
+
+      assert(
+          flattenedValues.size() == 1 &&
+          "array.new elements should already have been split to a single flattened leaf"
+      );
+      if (!leafType) {
+        leafType = flattenedValues.front().getType();
+      } else {
+        assert(
+            leafType == flattenedValues.front().getType() && "array.new elements must stay uniform"
+        );
+      }
+      leafElements.push_back(flattenedValues.front());
+    }
+
+    size_t leafRank = 0;
+    if (auto leafArrTy = llvm::dyn_cast_if_present<ArrayType>(leafType)) {
+      leafRank = leafArrTy.getDimensionSizes().size();
+    }
+    ArrayType arrTy = op.getType();
+    assert(
+        arrTy.getDimensionSizes().size() >= leafRank && "flattened leaf rank exceeds array rank"
+    );
+    size_t outerRank = arrTy.getDimensionSizes().size() - leafRank;
+    assert(outerRank > 0 && "array.new elements must populate at least one outer array dimension");
+
+    ArrayType outerIndexTy =
+        ArrayType::get(arrTy.getElementType(), arrTy.getDimensionSizes().take_front(outerRank));
+    auto elementIndices = outerIndexTy.getSubelementIndices();
+    assert(
+        elementIndices && "array.new with explicit POD elements requires static outer dimensions"
+    );
+    assert(
+        elementIndices->size() == leafElements.size() &&
+        "array.new element count must match the outer array cardinality"
+    );
+
+    Value rebuiltArray = createWritableArrayValue(rewriter, op.getLoc(), arrTy);
+    for (auto [index, leafValue] : llvm::zip_equal(*elementIndices, leafElements)) {
+      genArrayWrite(rewriter, op.getLoc(), rebuiltArray, index, leafValue);
+    }
+    rewriter.replaceOp(op, rebuiltArray);
+  }
+};
+
 /// Rewrite pod-typed function signatures to pass one scalar per POD record instead.
 ///
 /// Each pod argument is expanded into one scalar argument per record, and each pod result is
@@ -1882,6 +1993,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
 
   RewritePatternSet patterns(ctx);
   patterns.add<SplitInitFromNewPodOp>(ctx);
+  patterns.add<SplitPodElementCreateArrayOp>(ctx, virtualPods);
   patterns.add<SplitPodInFuncDefOp, SplitPodInReturnOp, SplitPodInCallOp>(ctx, virtualPods);
   patterns.add<SplitPodInMemberWriteOp, SplitPodInMemberReadOp>(
       ctx, symTables, memberRepMap, virtualPods
@@ -1891,6 +2003,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   ConversionTarget target(*ctx);
   baseTargetSetup(target);
   target.addDynamicallyLegalOp<NewPodOp>(SplitInitFromNewPodOp::legal);
+  target.addDynamicallyLegalOp<CreateArrayOp>(SplitPodElementCreateArrayOp::legal);
   target.addDynamicallyLegalOp<FuncDefOp>(SplitPodInFuncDefOp::legal);
   target.addDynamicallyLegalOp<ReturnOp>(SplitPodInReturnOp::legal);
   target.addDynamicallyLegalOp<CallOp>(SplitPodInCallOp::legal);
