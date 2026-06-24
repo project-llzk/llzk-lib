@@ -12,6 +12,7 @@
 
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/Types.h>
 #include <mlir/IR/Value.h>
 #include <mlir/Support/LogicalResult.h>
 
@@ -45,7 +46,8 @@ mlir::LogicalResult checkFuncBodyIsStraightLine(
 mlir::LogicalResult
 checkConstrainBodyIsStraightLine(function::FuncDefOp constrainFunc, llvm::StringRef passName);
 
-component::MemberDefOp addAuxMember(component::StructDefOp structDef, llvm::StringRef name);
+component::MemberDefOp
+addAuxMember(component::StructDefOp structDef, llvm::StringRef name, mlir::Type type);
 
 unsigned getFeltDegree(mlir::Value val, llvm::DenseMap<mlir::Value, unsigned> &memo);
 

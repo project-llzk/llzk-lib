@@ -1,0 +1,6 @@
+changed:
+  - >-
+    Replace the copied LLZK sparse forward data-flow implementation with a small adapter over
+    upstream MLIR sparse analysis while preserving LLZK visitation of live zero-result operations.
+removed:
+  - 'Copied `lib/Analysis/SparseAnalysis.cpp` implementation.'

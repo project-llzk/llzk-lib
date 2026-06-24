@@ -33,6 +33,12 @@ extern "C" {
 /// Get reference to the LLZK `bool` dialect.
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Bool, llzk__boolean);
 
+/// Returns the type used in a quantifier operation's block argument.
+///
+/// The given type must be a valid sort type. If it isn't, this function
+/// returns a null type.
+MLIR_CAPI_EXPORTED MlirType llzkBool_QuantifierOpGetDomainIterType(MlirType type);
+
 #ifdef __cplusplus
 }
 #endif

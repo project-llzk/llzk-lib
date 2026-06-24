@@ -513,7 +513,7 @@ LogicalResult StructDefOp::readProperties(DialectBytecodeReader &reader, Operati
   return reader.readAttribute(prop.sym_name);
 }
 
-// Same as tablegen would generate to serialize version 2 IR.
+// Same as tablegen would generate to serialize current version IR.
 void StructDefOp::writeProperties(DialectBytecodeWriter &writer) {
   auto &prop = getProperties();
   writer.writeAttribute(prop.sym_name);

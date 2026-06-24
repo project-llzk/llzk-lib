@@ -15,14 +15,17 @@
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
+#include "llzk/Dialect/Struct/Transforms/TransformationPasses.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/TypeHelper.h"
 
 #include <mlir-c/BuiltinAttributes.h>
+#include <mlir-c/Pass.h>
 #include <mlir-c/Support.h>
 
 #include <mlir/CAPI/AffineMap.h>
+#include <mlir/CAPI/Pass.h>
 #include <mlir/CAPI/Registration.h>
 #include <mlir/CAPI/Support.h>
 #include <mlir/CAPI/Wrap.h>
@@ -35,9 +38,12 @@ using namespace mlir;
 using namespace llzk;
 using namespace llzk::component;
 
+static inline void registerLLZKStructTransformationPasses() { registerTransformationPasses(); }
+
 // Include the generated CAPI
 #include "llzk/Dialect/Struct/IR/Ops.capi.cpp.inc"
 #include "llzk/Dialect/Struct/IR/Types.capi.cpp.inc"
+#include "llzk/Dialect/Struct/Transforms/TransformationPasses.capi.cpp.inc"
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Struct, llzk__component, StructDialect)
 

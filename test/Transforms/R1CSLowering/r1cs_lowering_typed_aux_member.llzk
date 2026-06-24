@@ -1,0 +1,38 @@
+// RUN: llzk-opt -split-input-file -llzk-full-r1cs-lowering --verify-each %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang, llzk.main = !struct.type<@TypedR1CSAux>} {
+  struct.def @TypedR1CSAux {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+
+    function.def @compute(
+      %a: !felt.type<"babybear">,
+      %b: !felt.type<"babybear">,
+      %c: !felt.type<"babybear">
+    ) -> !struct.type<@TypedR1CSAux> {
+      %self = struct.new : !struct.type<@TypedR1CSAux>
+      %ab = felt.mul %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
+      struct.writem %self[@out] = %ab : !struct.type<@TypedR1CSAux>, !felt.type<"babybear">
+      function.return %self : !struct.type<@TypedR1CSAux>
+    }
+
+    function.def @constrain(
+      %self: !struct.type<@TypedR1CSAux>,
+      %a: !felt.type<"babybear"> {llzk.pub},
+      %b: !felt.type<"babybear">,
+      %c: !felt.type<"babybear">
+    ) {
+      %ab = felt.mul %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
+      %bc = felt.mul %b, %c : !felt.type<"babybear">, !felt.type<"babybear">
+      constrain.eq %ab, %bc : !felt.type<"babybear">
+      %out = struct.readm %self[@out] : !struct.type<@TypedR1CSAux>, !felt.type<"babybear">
+      constrain.eq %out, %ab : !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: r1cs.circuit @TypedR1CSAux inputs
+// CHECK-SAME:  %{{[0-9a-zA-Z_\.]+}}: !r1cs.signal {#r1cs.pub}
+// CHECK-SAME:  %{{[0-9a-zA-Z_\.]+}}: !r1cs.signal
+// CHECK-SAME:  %{{[0-9a-zA-Z_\.]+}}: !r1cs.signal
+// CHECK:       r1cs.constrain

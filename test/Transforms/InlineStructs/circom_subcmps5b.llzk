@@ -1,9 +1,4 @@
-// RUN: llzk-opt -llzk-flatten -llzk-pod-to-scalar -canonicalize -llzk-inline-structs %s 2>&1 | FileCheck --enable-var-scope %s
-//
-// COM: the following passes should run before inlining structs:
-// COM: - llzk-flatten: to instantiate templated structs and unroll loops
-// COM: - llzk-pod-to-scalar: to convert aggregate pod types into scalar SSA values
-// COM: - canonicalize: to remove known condition `scf.if` regions so struct inlining can link "@compute" calls to struct members
+// RUN: llzk-opt -llzk-full-struct-inlining %s 2>&1 | FileCheck --enable-var-scope %s
 
 //////////////////////////////////////////////////////////////////////////////////
 // template Nop() {
@@ -90,21 +85,6 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@SubCmp::@SubC
 }
 
 // CHECK-LABEL: module attributes {llzk.lang = "circom", llzk.main = !struct.type<@SubCmp::@SubCmp<[]>>} {
-// CHECK-NEXT:    module @Nop {
-// CHECK-NEXT:      struct.def @Nop {
-// CHECK-NEXT:        struct.member @o : !felt.type<"bn128"> {llzk.pub}
-// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128"> {function.arg_name = "i"}) -> !struct.type<@Nop::@Nop> attributes {function.allow_non_native_field_ops, function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Nop::@Nop>
-// CHECK-NEXT:          struct.writem %[[VAL_1]][@o] = %[[VAL_0]] : <@Nop::@Nop>, !felt.type<"bn128">
-// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@Nop::@Nop>
-// CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Nop::@Nop>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128"> {function.arg_name = "i"}) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
-// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@o] : <@Nop::@Nop>, !felt.type<"bn128">
-// CHECK-NEXT:          constrain.eq %[[VAL_4]], %[[VAL_3]] : !felt.type<"bn128">, !felt.type<"bn128">
-// CHECK-NEXT:          function.return
-// CHECK-NEXT:        }
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
 // CHECK-NEXT:    module @SubCmp {
 // CHECK-NEXT:      struct.def @SubCmp {
 // CHECK-NEXT:        struct.member @o : !felt.type<"bn128"> {llzk.pub}

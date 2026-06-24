@@ -17,7 +17,7 @@
 #include "llzk/Analysis/LightweightSignalEquivalenceAnalysis.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
-#include "llzk/Transforms/LLZKInlineStructsPass.h"
+#include "llzk/Dialect/Struct/Transforms/InlineStructsPass.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/SymbolHelper.h"
