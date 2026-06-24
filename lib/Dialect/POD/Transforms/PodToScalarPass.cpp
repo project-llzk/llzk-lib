@@ -635,6 +635,12 @@ static bool canResolveVirtualPodRead(ReadPodOp op, const VirtualPodValueMap &vir
   return llvm::isa<PodType>(recType) || !splittablePodArray(recType);
 }
 
+/// Return `true` iff step 2 should defer splitting this array read until POD-aware rewriting.
+static bool shouldDeferPodArrayReadToStep3(ReadArrayOp op) {
+  return splittablePodArray(op.getArrRefType()) &&
+         llvm::isa_and_present<ReadPodOp>(op.getArrRef().getDefiningOp());
+}
+
 /// Return the suffixes to append to a function arg/result name when splitting the given type.
 static SmallVector<std::string> getSplitRecordNameSuffixes(Type type) {
   SmallVector<std::string> suffixes;
@@ -976,7 +982,9 @@ class SplitPodArrayReadArrayOp : public OpConversionPattern<ReadArrayOp> {
 public:
   using OpConversionPattern<ReadArrayOp>::OpConversionPattern;
 
-  static bool legal(ReadArrayOp op) { return !splittablePodArray(op.getArrRefType()); }
+  static bool legal(ReadArrayOp op) {
+    return !splittablePodArray(op.getArrRefType()) || shouldDeferPodArrayReadToStep3(op);
+  }
 
   LogicalResult matchAndRewrite(
       ReadArrayOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
@@ -1940,6 +1948,116 @@ public:
   }
 };
 
+static WritePodOp findNearestForwardableWriteInBlock(ReadPodOp readOp);
+
+/// Collect split leaf arrays from a value materialized back to an aggregate array-of-POD type.
+static bool tryCollectMaterializedSplitPodArrayLeafValues(
+    Value arrayValue, ArrayType arrTy, ArrayRef<Type> splitTypes, SmallVectorImpl<Value> &leafArrays
+) {
+  auto cast = arrayValue.getDefiningOp<UnrealizedConversionCastOp>();
+  if (!cast || cast->getNumResults() != 1 || cast.getResult(0).getType() != arrTy ||
+      cast->getNumOperands() != splitTypes.size()) {
+    return false;
+  }
+
+  for (auto [operand, splitType] : llvm::zip_equal(cast.getOperands(), splitTypes)) {
+    if (operand.getType() != splitType) {
+      return false;
+    }
+    leafArrays.push_back(operand);
+  }
+  return true;
+}
+
+/// Collect split leaf arrays for an array-of-POD value backed by a direct `pod.read`.
+static bool tryCollectReadPodSplitPodArrayLeafValues(
+    ReadPodOp readOp, ArrayType arrTy, ArrayRef<RecordChain> splitIds, ArrayRef<Type> splitTypes,
+    const VirtualPodValueMap &virtualPods, SmallVectorImpl<Value> &leafArrays
+) {
+  if (const VirtualPodLeafMap *podLeafValues =
+          lookupVirtualPodLeafMap(readOp.getPodRef(), virtualPods)) {
+    leafArrays.reserve(splitIds.size());
+    for (const RecordChain &id : splitIds) {
+      SmallVector<StringAttr> fullChain {readOp.getRecordNameAttr()};
+      llvm::append_range(fullChain, id.nameList);
+      auto it = podLeafValues->find(RecordChain(fullChain));
+      if (it == podLeafValues->end() ||
+          it->second.getType() != getFlattenedTypeAlongPath(arrTy, id.nameList)) {
+        return false;
+      }
+      leafArrays.push_back(it->second);
+    }
+    return true;
+  }
+
+  if (WritePodOp writeOp = findNearestForwardableWriteInBlock(readOp)) {
+    return tryCollectMaterializedSplitPodArrayLeafValues(
+        writeOp.getValue(), arrTy, splitTypes, leafArrays
+    );
+  }
+
+  return false;
+}
+
+/// Resolve deferred `array.read` from `pod.read`-produced array-of-POD values.
+class ResolvePodReadBackedArrayReadOp : public OpConversionPattern<ReadArrayOp> {
+  VirtualPodValueMap &virtualPods;
+
+public:
+  ResolvePodReadBackedArrayReadOp(MLIRContext *ctx, VirtualPodValueMap &virtualPodMap)
+      : OpConversionPattern<ReadArrayOp>(ctx), virtualPods(virtualPodMap) {}
+
+  static bool canResolve(ReadArrayOp op, const VirtualPodValueMap &virtualPods) {
+    if (!shouldDeferPodArrayReadToStep3(op)) {
+      return false;
+    }
+
+    ArrayType arrTy = op.getArrRefType();
+    SmallVector<RecordChain> splitIds;
+    SmallVector<Type> splitTypes;
+    splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
+
+    SmallVector<Value> ignoredLeafArrays;
+    return tryCollectReadPodSplitPodArrayLeafValues(
+        llvm::cast<ReadPodOp>(op.getArrRef().getDefiningOp()), arrTy, splitIds, splitTypes,
+        virtualPods, ignoredLeafArrays
+    );
+  }
+
+  LogicalResult matchAndRewrite(
+      ReadArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    auto fieldRead = op.getArrRef().getDefiningOp<ReadPodOp>();
+    if (!fieldRead) {
+      return failure();
+    }
+
+    ArrayType arrTy = op.getArrRefType();
+    PodType podTy = llvm::cast<PodType>(arrTy.getElementType());
+    SmallVector<RecordChain> splitIds;
+    SmallVector<Type> splitTypes;
+    splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
+
+    SmallVector<Value> splitLeafArrays;
+    if (!tryCollectReadPodSplitPodArrayLeafValues(
+            fieldRead, arrTy, splitIds, splitTypes, virtualPods, splitLeafArrays
+        )) {
+      return failure();
+    }
+
+    SmallVector<Value> indices(adaptor.getIndices().begin(), adaptor.getIndices().end());
+    DenseMap<RecordChain, Value> leafValues;
+    for (auto [id, leafArray] : llvm::zip_equal(splitIds, splitLeafArrays)) {
+      leafValues[id] = genArrayRead(rewriter, op.getLoc(), leafArray, indices);
+    }
+
+    NewPodOp pod = rewriter.create<NewPodOp>(op.getLoc(), podTy);
+    virtualPods[pod] = std::move(leafValues);
+    rewriter.replaceOp(op, pod);
+    return success();
+  }
+};
+
 /// Resolve reads from a virtual POD placeholder without materializing the whole aggregate.
 class ResolveVirtualPodReadOp : public OpConversionPattern<ReadPodOp> {
   VirtualPodValueMap &virtualPods;
@@ -1998,6 +2116,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   patterns.add<SplitPodInMemberWriteOp, SplitPodInMemberReadOp>(
       ctx, symTables, memberRepMap, virtualPods
   );
+  patterns.add<ResolvePodReadBackedArrayReadOp>(ctx, virtualPods);
   patterns.add<ResolveVirtualPodReadOp>(ctx, virtualPods);
 
   ConversionTarget target(*ctx);
@@ -2009,6 +2128,9 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   target.addDynamicallyLegalOp<CallOp>(SplitPodInCallOp::legal);
   target.addDynamicallyLegalOp<MemberWriteOp>(SplitPodInMemberWriteOp::legal);
   target.addDynamicallyLegalOp<MemberReadOp>(SplitPodInMemberReadOp::legal);
+  target.addDynamicallyLegalOp<ReadArrayOp>([&virtualPods](ReadArrayOp op) {
+    return !ResolvePodReadBackedArrayReadOp::canResolve(op, virtualPods);
+  });
   target.addDynamicallyLegalOp<ReadPodOp>([&virtualPods](ReadPodOp op) {
     return !canResolveVirtualPodRead(op, virtualPods);
   });
