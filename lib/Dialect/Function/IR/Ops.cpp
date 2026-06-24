@@ -1173,7 +1173,7 @@ FailureOr<SymbolLookupResult<FuncDefOp>> CallOp::getCalleeTarget(SymbolTableColl
 
 StructType CallOp::getSingleResultTypeOfCompute() {
   assert(calleeIsCompute() && "violated implementation pre-condition");
-  return getSingleResultTypeOfWitnessGen();
+  return getIfSingleton<StructType>(getResultTypes());
 }
 
 StructType CallOp::getSingleResultTypeOfWitnessGen() {
