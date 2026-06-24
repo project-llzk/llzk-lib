@@ -1,5 +1,12 @@
 var NAVTREEINDEX12 =
 {
+"SparseAnalysis_8cpp_source.html":[13,0,3,0,15],
+"SparseAnalysis_8h.html":[13,0,2,0,0,17],
+"SparseAnalysis_8h_source.html":[13,0,2,0,0,17],
+"SpecializedMemoryPasses_8h.html":[13,0,2,0,4,7],
+"SpecializedMemoryPasses_8h_source.html":[13,0,2,0,4,7],
+"StreamHelper_8cpp.html":[13,0,3,5,4],
+"StreamHelper_8cpp_source.html":[13,0,3,5,4],
 "StreamHelper_8h.html":[13,0,2,0,5,11],
 "StreamHelper_8h_source.html":[13,0,2,0,5,11],
 "String_2IR_2Dialect_8capi_8test_8cpp_8inc.html":[13,0,0,0,0,2,14,0,0],
@@ -242,12 +249,5 @@ var NAVTREEINDEX12 =
 "Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a78e4ab14141a2e7d28d7d1ead85ab0e8":[13,0,0,0,0,2,15,0,7,12],
 "Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a7aea84a85b5312ac147cc5702806a538":[13,0,0,0,0,2,15,0,7,14],
 "Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a7d367394c20930abd7ea4ef1550c077f":[13,0,0,0,0,2,15,0,7,13],
-"Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a80354f61aad26b6bad263a986199930d":[13,0,0,0,0,2,15,0,7,7],
-"Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a847b858d2291f9e5e0d25c29e6e11d32":[13,0,0,0,0,2,15,0,7,39],
-"Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a84d0c8797addfe081bba2c035f07d9e7":[13,0,0,0,0,2,15,0,7,50],
-"Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a9a2b23c01bc76b9fc71d43729b93234c":[13,0,0,0,0,2,15,0,7,34],
-"Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a9bae2c461b94659e3f831edd4723a0ff":[13,0,0,0,0,2,15,0,7,54],
-"Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a9d734ede686543b25c3084cd636d08e2":[13,0,0,0,0,2,15,0,7,36],
-"Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#aac7faa3c6e9791c29702226c111598ab":[13,0,0,0,0,2,15,0,7,24],
-"Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#ab2db4a71cfa2aba3d779e66cae6a68fd":[13,0,0,0,0,2,15,0,7,15]
+"Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a80354f61aad26b6bad263a986199930d":[13,0,0,0,0,2,15,0,7,7]
 };
