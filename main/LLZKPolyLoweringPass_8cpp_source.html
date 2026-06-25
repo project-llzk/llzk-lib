@@ -610,121 +610,126 @@ $(function(){initNavTree('LLZKPolyLoweringPass_8cpp_source.html','',''); });
 <div class="line"><a id="l00487" name="l00487"></a><span class="lineno">  487</span>        <span class="keywordflow">return</span>;</div>
 <div class="line"><a id="l00488" name="l00488"></a><span class="lineno">  488</span>      }</div>
 <div class="line"><a id="l00489" name="l00489"></a><span class="lineno">  489</span> </div>
-<div class="line"><a id="l00490" name="l00490"></a><span class="lineno">  490</span>      <span class="keywordflow">if</span> (failed(<a class="code hl_function" href="namespacellzk.html#a9c2edf42a0e3443db901cf9d6f57080b">checkConstrainBodyIsStraightLine</a>(constrainFunc, <span class="stringliteral">&quot;poly lowering&quot;</span>))) {</div>
+<div class="line"><a id="l00490" name="l00490"></a><span class="lineno">  490</span>      <span class="keywordflow">if</span> (failed(<a class="code hl_function" href="namespacellzk.html#aa916f2d231aaa798b6d3189254c5f11f">checkFuncBodyIsStraightLine</a>(constrainFunc, <span class="stringliteral">&quot;poly lowering&quot;</span>))) {</div>
 <div class="line"><a id="l00491" name="l00491"></a><span class="lineno">  491</span>        signalPassFailure();</div>
 <div class="line"><a id="l00492" name="l00492"></a><span class="lineno">  492</span>        <span class="keywordflow">return</span>;</div>
 <div class="line"><a id="l00493" name="l00493"></a><span class="lineno">  493</span>      }</div>
 <div class="line"><a id="l00494" name="l00494"></a><span class="lineno">  494</span> </div>
-<div class="line"><a id="l00495" name="l00495"></a><span class="lineno">  495</span>      DenseMap&lt;Value, unsigned&gt; degreeMemo;</div>
-<div class="line"><a id="l00496" name="l00496"></a><span class="lineno">  496</span>      DenseMap&lt;Value, Value&gt; rewrites;</div>
-<div class="line"><a id="l00497" name="l00497"></a><span class="lineno">  497</span>      SmallVector&lt;AuxAssignment&gt; auxAssignments;</div>
-<div class="line"><a id="l00498" name="l00498"></a><span class="lineno">  498</span> </div>
-<div class="line"><a id="l00499" name="l00499"></a><span class="lineno">  499</span>      <span class="comment">// Lower equality constraints</span></div>
-<div class="line"><a id="l00500" name="l00500"></a><span class="lineno">  500</span>      constrainFunc.walk([&amp;](EmitEqualityOp constraintOp) {</div>
-<div class="line"><a id="l00501" name="l00501"></a><span class="lineno">  501</span>        <span class="keyword">auto</span> &amp;lhsOperand = constraintOp.<a class="code hl_function" href="classllzk_1_1constrain_1_1EmitEqualityOp.html#abcf43199225b120f748accab68b9c649">getLhsMutable</a>();</div>
-<div class="line"><a id="l00502" name="l00502"></a><span class="lineno">  502</span>        <span class="keyword">auto</span> &amp;rhsOperand = constraintOp.<a class="code hl_function" href="classllzk_1_1constrain_1_1EmitEqualityOp.html#a5350d359891c42f8cd38799f5fa80360">getRhsMutable</a>();</div>
-<div class="line"><a id="l00503" name="l00503"></a><span class="lineno">  503</span>        <span class="keywordtype">unsigned</span> degreeLhs = getDegree(lhsOperand.get(), degreeMemo);</div>
-<div class="line"><a id="l00504" name="l00504"></a><span class="lineno">  504</span>        <span class="keywordtype">unsigned</span> degreeRhs = getDegree(rhsOperand.get(), degreeMemo);</div>
-<div class="line"><a id="l00505" name="l00505"></a><span class="lineno">  505</span> </div>
-<div class="line"><a id="l00506" name="l00506"></a><span class="lineno">  506</span>        <span class="keywordflow">if</span> (degreeLhs &gt; maxDegree) {</div>
-<div class="line"><a id="l00507" name="l00507"></a><span class="lineno">  507</span>          Value loweredExpr = lowerExpression(</div>
-<div class="line"><a id="l00508" name="l00508"></a><span class="lineno">  508</span>              lhsOperand.get(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments</div>
-<div class="line"><a id="l00509" name="l00509"></a><span class="lineno">  509</span>          );</div>
-<div class="line"><a id="l00510" name="l00510"></a><span class="lineno">  510</span>          lhsOperand.set(loweredExpr);</div>
-<div class="line"><a id="l00511" name="l00511"></a><span class="lineno">  511</span>        }</div>
-<div class="line"><a id="l00512" name="l00512"></a><span class="lineno">  512</span>        <span class="keywordflow">if</span> (degreeRhs &gt; maxDegree) {</div>
-<div class="line"><a id="l00513" name="l00513"></a><span class="lineno">  513</span>          Value loweredExpr = lowerExpression(</div>
-<div class="line"><a id="l00514" name="l00514"></a><span class="lineno">  514</span>              rhsOperand.get(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments</div>
-<div class="line"><a id="l00515" name="l00515"></a><span class="lineno">  515</span>          );</div>
-<div class="line"><a id="l00516" name="l00516"></a><span class="lineno">  516</span>          rhsOperand.set(loweredExpr);</div>
-<div class="line"><a id="l00517" name="l00517"></a><span class="lineno">  517</span>        }</div>
-<div class="line"><a id="l00518" name="l00518"></a><span class="lineno">  518</span>      });</div>
-<div class="line"><a id="l00519" name="l00519"></a><span class="lineno">  519</span> </div>
-<div class="line"><a id="l00520" name="l00520"></a><span class="lineno">  520</span>      <span class="comment">// The pass doesn&#39;t currently support EmitContainmentOp.</span></div>
-<div class="line"><a id="l00521" name="l00521"></a><span class="lineno">  521</span>      <span class="comment">// See https://github.com/project-llzk/llzk-lib/issues/261</span></div>
-<div class="line"><a id="l00522" name="l00522"></a><span class="lineno">  522</span>      constrainFunc.walk([<span class="keyword">this</span>, &amp;moduleOp](EmitContainmentOp <span class="comment">/*containOp*/</span>) {</div>
-<div class="line"><a id="l00523" name="l00523"></a><span class="lineno">  523</span>        <span class="keyword">auto</span> diag = moduleOp.emitError();</div>
-<div class="line"><a id="l00524" name="l00524"></a><span class="lineno">  524</span>        diag &lt;&lt; <span class="stringliteral">&quot;EmitContainmentOp is unsupported for now in the lowering pass&quot;</span>;</div>
-<div class="line"><a id="l00525" name="l00525"></a><span class="lineno">  525</span>        diag.report();</div>
-<div class="line"><a id="l00526" name="l00526"></a><span class="lineno">  526</span>        signalPassFailure();</div>
-<div class="line"><a id="l00527" name="l00527"></a><span class="lineno">  527</span>        <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l00528" name="l00528"></a><span class="lineno">  528</span>      });</div>
-<div class="line"><a id="l00529" name="l00529"></a><span class="lineno">  529</span> </div>
-<div class="line"><a id="l00530" name="l00530"></a><span class="lineno">  530</span>      <span class="comment">// Lower function call arguments</span></div>
-<div class="line"><a id="l00531" name="l00531"></a><span class="lineno">  531</span>      constrainFunc.walk([&amp;](CallOp callOp) {</div>
-<div class="line"><a id="l00532" name="l00532"></a><span class="lineno">  532</span>        <span class="keywordflow">if</span> (callOp.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a0ebb0aaf38174e75e358f4c30bbc3249">calleeIsStructConstrain</a>()) {</div>
-<div class="line"><a id="l00533" name="l00533"></a><span class="lineno">  533</span>          SmallVector&lt;Value&gt; newOperands = llvm::to_vector(callOp.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a8d81cd945d8f3898b56112f118ef74bd">getArgOperands</a>());</div>
-<div class="line"><a id="l00534" name="l00534"></a><span class="lineno">  534</span>          <span class="keywordtype">bool</span> modified = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00535" name="l00535"></a><span class="lineno">  535</span> </div>
-<div class="line"><a id="l00536" name="l00536"></a><span class="lineno">  536</span>          <span class="keywordflow">for</span> (Value &amp;arg : newOperands) {</div>
-<div class="line"><a id="l00537" name="l00537"></a><span class="lineno">  537</span>            <span class="keywordflow">if</span> (!llvm::isa&lt;FeltType&gt;(arg.getType())) {</div>
-<div class="line"><a id="l00538" name="l00538"></a><span class="lineno">  538</span>              <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00539" name="l00539"></a><span class="lineno">  539</span>            }</div>
+<div class="line"><a id="l00495" name="l00495"></a><span class="lineno">  495</span>      <span class="keywordflow">if</span> (failed(<a class="code hl_function" href="namespacellzk.html#aa916f2d231aaa798b6d3189254c5f11f">checkFuncBodyIsStraightLine</a>(computeFunc, <span class="stringliteral">&quot;poly lowering&quot;</span>))) {</div>
+<div class="line"><a id="l00496" name="l00496"></a><span class="lineno">  496</span>        signalPassFailure();</div>
+<div class="line"><a id="l00497" name="l00497"></a><span class="lineno">  497</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00498" name="l00498"></a><span class="lineno">  498</span>      }</div>
+<div class="line"><a id="l00499" name="l00499"></a><span class="lineno">  499</span> </div>
+<div class="line"><a id="l00500" name="l00500"></a><span class="lineno">  500</span>      DenseMap&lt;Value, unsigned&gt; degreeMemo;</div>
+<div class="line"><a id="l00501" name="l00501"></a><span class="lineno">  501</span>      DenseMap&lt;Value, Value&gt; rewrites;</div>
+<div class="line"><a id="l00502" name="l00502"></a><span class="lineno">  502</span>      SmallVector&lt;AuxAssignment&gt; auxAssignments;</div>
+<div class="line"><a id="l00503" name="l00503"></a><span class="lineno">  503</span> </div>
+<div class="line"><a id="l00504" name="l00504"></a><span class="lineno">  504</span>      <span class="comment">// Lower equality constraints</span></div>
+<div class="line"><a id="l00505" name="l00505"></a><span class="lineno">  505</span>      constrainFunc.walk([&amp;](EmitEqualityOp constraintOp) {</div>
+<div class="line"><a id="l00506" name="l00506"></a><span class="lineno">  506</span>        <span class="keyword">auto</span> &amp;lhsOperand = constraintOp.<a class="code hl_function" href="classllzk_1_1constrain_1_1EmitEqualityOp.html#abcf43199225b120f748accab68b9c649">getLhsMutable</a>();</div>
+<div class="line"><a id="l00507" name="l00507"></a><span class="lineno">  507</span>        <span class="keyword">auto</span> &amp;rhsOperand = constraintOp.<a class="code hl_function" href="classllzk_1_1constrain_1_1EmitEqualityOp.html#a5350d359891c42f8cd38799f5fa80360">getRhsMutable</a>();</div>
+<div class="line"><a id="l00508" name="l00508"></a><span class="lineno">  508</span>        <span class="keywordtype">unsigned</span> degreeLhs = getDegree(lhsOperand.get(), degreeMemo);</div>
+<div class="line"><a id="l00509" name="l00509"></a><span class="lineno">  509</span>        <span class="keywordtype">unsigned</span> degreeRhs = getDegree(rhsOperand.get(), degreeMemo);</div>
+<div class="line"><a id="l00510" name="l00510"></a><span class="lineno">  510</span> </div>
+<div class="line"><a id="l00511" name="l00511"></a><span class="lineno">  511</span>        <span class="keywordflow">if</span> (degreeLhs &gt; maxDegree) {</div>
+<div class="line"><a id="l00512" name="l00512"></a><span class="lineno">  512</span>          Value loweredExpr = lowerExpression(</div>
+<div class="line"><a id="l00513" name="l00513"></a><span class="lineno">  513</span>              lhsOperand.get(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments</div>
+<div class="line"><a id="l00514" name="l00514"></a><span class="lineno">  514</span>          );</div>
+<div class="line"><a id="l00515" name="l00515"></a><span class="lineno">  515</span>          lhsOperand.set(loweredExpr);</div>
+<div class="line"><a id="l00516" name="l00516"></a><span class="lineno">  516</span>        }</div>
+<div class="line"><a id="l00517" name="l00517"></a><span class="lineno">  517</span>        <span class="keywordflow">if</span> (degreeRhs &gt; maxDegree) {</div>
+<div class="line"><a id="l00518" name="l00518"></a><span class="lineno">  518</span>          Value loweredExpr = lowerExpression(</div>
+<div class="line"><a id="l00519" name="l00519"></a><span class="lineno">  519</span>              rhsOperand.get(), structDef, constrainFunc, degreeMemo, rewrites, auxAssignments</div>
+<div class="line"><a id="l00520" name="l00520"></a><span class="lineno">  520</span>          );</div>
+<div class="line"><a id="l00521" name="l00521"></a><span class="lineno">  521</span>          rhsOperand.set(loweredExpr);</div>
+<div class="line"><a id="l00522" name="l00522"></a><span class="lineno">  522</span>        }</div>
+<div class="line"><a id="l00523" name="l00523"></a><span class="lineno">  523</span>      });</div>
+<div class="line"><a id="l00524" name="l00524"></a><span class="lineno">  524</span> </div>
+<div class="line"><a id="l00525" name="l00525"></a><span class="lineno">  525</span>      <span class="comment">// The pass doesn&#39;t currently support EmitContainmentOp.</span></div>
+<div class="line"><a id="l00526" name="l00526"></a><span class="lineno">  526</span>      <span class="comment">// See https://github.com/project-llzk/llzk-lib/issues/261</span></div>
+<div class="line"><a id="l00527" name="l00527"></a><span class="lineno">  527</span>      constrainFunc.walk([<span class="keyword">this</span>, &amp;moduleOp](EmitContainmentOp <span class="comment">/*containOp*/</span>) {</div>
+<div class="line"><a id="l00528" name="l00528"></a><span class="lineno">  528</span>        <span class="keyword">auto</span> diag = moduleOp.emitError();</div>
+<div class="line"><a id="l00529" name="l00529"></a><span class="lineno">  529</span>        diag &lt;&lt; <span class="stringliteral">&quot;EmitContainmentOp is unsupported for now in the lowering pass&quot;</span>;</div>
+<div class="line"><a id="l00530" name="l00530"></a><span class="lineno">  530</span>        diag.report();</div>
+<div class="line"><a id="l00531" name="l00531"></a><span class="lineno">  531</span>        signalPassFailure();</div>
+<div class="line"><a id="l00532" name="l00532"></a><span class="lineno">  532</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00533" name="l00533"></a><span class="lineno">  533</span>      });</div>
+<div class="line"><a id="l00534" name="l00534"></a><span class="lineno">  534</span> </div>
+<div class="line"><a id="l00535" name="l00535"></a><span class="lineno">  535</span>      <span class="comment">// Lower function call arguments</span></div>
+<div class="line"><a id="l00536" name="l00536"></a><span class="lineno">  536</span>      constrainFunc.walk([&amp;](CallOp callOp) {</div>
+<div class="line"><a id="l00537" name="l00537"></a><span class="lineno">  537</span>        <span class="keywordflow">if</span> (callOp.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a0ebb0aaf38174e75e358f4c30bbc3249">calleeIsStructConstrain</a>()) {</div>
+<div class="line"><a id="l00538" name="l00538"></a><span class="lineno">  538</span>          SmallVector&lt;Value&gt; newOperands = llvm::to_vector(callOp.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a8d81cd945d8f3898b56112f118ef74bd">getArgOperands</a>());</div>
+<div class="line"><a id="l00539" name="l00539"></a><span class="lineno">  539</span>          <span class="keywordtype">bool</span> modified = <span class="keyword">false</span>;</div>
 <div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span> </div>
-<div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span>            DenseMap&lt;Value, unsigned&gt; callMemo;</div>
-<div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span>            <span class="keywordtype">unsigned</span> deg = getDegree(arg, callMemo);</div>
-<div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span> </div>
-<div class="line"><a id="l00544" name="l00544"></a><span class="lineno">  544</span>            <span class="keywordflow">if</span> (deg &gt; 1) {</div>
-<div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>              arg = materializeCallArgument(</div>
-<div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span>                  arg, structDef, constrainFunc, callOp, degreeMemo, rewrites, auxAssignments</div>
-<div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>              );</div>
-<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span>              modified = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00549" name="l00549"></a><span class="lineno">  549</span>            }</div>
-<div class="line"><a id="l00550" name="l00550"></a><span class="lineno">  550</span>          }</div>
-<div class="line"><a id="l00551" name="l00551"></a><span class="lineno">  551</span> </div>
-<div class="line"><a id="l00552" name="l00552"></a><span class="lineno">  552</span>          <span class="keywordflow">if</span> (modified) {</div>
-<div class="line"><a id="l00553" name="l00553"></a><span class="lineno">  553</span>            OpBuilder builder(callOp);</div>
-<div class="line"><a id="l00554" name="l00554"></a><span class="lineno">  554</span>            builder.create&lt;CallOp&gt;(</div>
-<div class="line"><a id="l00555" name="l00555"></a><span class="lineno">  555</span>                callOp.getLoc(), callOp.getResultTypes(), callOp.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a4fc4f9a38b124a0829e71e09f3f9c101">getCallee</a>(),</div>
-<div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span>                <a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#aa9d9db4d371032c209be73be6513c91c">CallOp::toVectorOfValueRange</a>(callOp.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#aa869f1fcc88268764557622db72c691b">getMapOperands</a>()), callOp.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a8c112f84b317353966d659d69947642a">getNumDimsPerMap</a>(),</div>
-<div class="line"><a id="l00557" name="l00557"></a><span class="lineno">  557</span>                newOperands</div>
-<div class="line"><a id="l00558" name="l00558"></a><span class="lineno">  558</span>            );</div>
-<div class="line"><a id="l00559" name="l00559"></a><span class="lineno">  559</span>            callOp-&gt;erase();</div>
-<div class="line"><a id="l00560" name="l00560"></a><span class="lineno">  560</span>          }</div>
-<div class="line"><a id="l00561" name="l00561"></a><span class="lineno">  561</span>        }</div>
-<div class="line"><a id="l00562" name="l00562"></a><span class="lineno">  562</span>      });</div>
-<div class="line"><a id="l00563" name="l00563"></a><span class="lineno">  563</span> </div>
-<div class="line"><a id="l00564" name="l00564"></a><span class="lineno">  564</span>      <span class="keywordflow">if</span> (failed(checkEqualityDegrees(constrainFunc))) {</div>
-<div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span>        signalPassFailure();</div>
-<div class="line"><a id="l00566" name="l00566"></a><span class="lineno">  566</span>        <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l00567" name="l00567"></a><span class="lineno">  567</span>      }</div>
+<div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span>          <span class="keywordflow">for</span> (Value &amp;arg : newOperands) {</div>
+<div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span>            <span class="keywordflow">if</span> (!llvm::isa&lt;FeltType&gt;(arg.getType())) {</div>
+<div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span>              <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00544" name="l00544"></a><span class="lineno">  544</span>            }</div>
+<div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span> </div>
+<div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span>            DenseMap&lt;Value, unsigned&gt; callMemo;</div>
+<div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>            <span class="keywordtype">unsigned</span> deg = getDegree(arg, callMemo);</div>
+<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span> </div>
+<div class="line"><a id="l00549" name="l00549"></a><span class="lineno">  549</span>            <span class="keywordflow">if</span> (deg &gt; 1) {</div>
+<div class="line"><a id="l00550" name="l00550"></a><span class="lineno">  550</span>              arg = materializeCallArgument(</div>
+<div class="line"><a id="l00551" name="l00551"></a><span class="lineno">  551</span>                  arg, structDef, constrainFunc, callOp, degreeMemo, rewrites, auxAssignments</div>
+<div class="line"><a id="l00552" name="l00552"></a><span class="lineno">  552</span>              );</div>
+<div class="line"><a id="l00553" name="l00553"></a><span class="lineno">  553</span>              modified = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00554" name="l00554"></a><span class="lineno">  554</span>            }</div>
+<div class="line"><a id="l00555" name="l00555"></a><span class="lineno">  555</span>          }</div>
+<div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span> </div>
+<div class="line"><a id="l00557" name="l00557"></a><span class="lineno">  557</span>          <span class="keywordflow">if</span> (modified) {</div>
+<div class="line"><a id="l00558" name="l00558"></a><span class="lineno">  558</span>            OpBuilder builder(callOp);</div>
+<div class="line"><a id="l00559" name="l00559"></a><span class="lineno">  559</span>            builder.create&lt;CallOp&gt;(</div>
+<div class="line"><a id="l00560" name="l00560"></a><span class="lineno">  560</span>                callOp.getLoc(), callOp.getResultTypes(), callOp.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a4fc4f9a38b124a0829e71e09f3f9c101">getCallee</a>(),</div>
+<div class="line"><a id="l00561" name="l00561"></a><span class="lineno">  561</span>                <a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#aa9d9db4d371032c209be73be6513c91c">CallOp::toVectorOfValueRange</a>(callOp.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#aa869f1fcc88268764557622db72c691b">getMapOperands</a>()), callOp.<a class="code hl_function" href="classllzk_1_1function_1_1CallOp.html#a8c112f84b317353966d659d69947642a">getNumDimsPerMap</a>(),</div>
+<div class="line"><a id="l00562" name="l00562"></a><span class="lineno">  562</span>                newOperands</div>
+<div class="line"><a id="l00563" name="l00563"></a><span class="lineno">  563</span>            );</div>
+<div class="line"><a id="l00564" name="l00564"></a><span class="lineno">  564</span>            callOp-&gt;erase();</div>
+<div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span>          }</div>
+<div class="line"><a id="l00566" name="l00566"></a><span class="lineno">  566</span>        }</div>
+<div class="line"><a id="l00567" name="l00567"></a><span class="lineno">  567</span>      });</div>
 <div class="line"><a id="l00568" name="l00568"></a><span class="lineno">  568</span> </div>
-<div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span>      <span class="keywordflow">if</span> (failed(checkStructConstrainCallArguments(constrainFunc))) {</div>
+<div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span>      <span class="keywordflow">if</span> (failed(checkEqualityDegrees(constrainFunc))) {</div>
 <div class="line"><a id="l00570" name="l00570"></a><span class="lineno">  570</span>        signalPassFailure();</div>
 <div class="line"><a id="l00571" name="l00571"></a><span class="lineno">  571</span>        <span class="keywordflow">return</span>;</div>
 <div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span>      }</div>
 <div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span> </div>
-<div class="line"><a id="l00574" name="l00574"></a><span class="lineno">  574</span>      DenseMap&lt;Value, Value&gt; rebuildMemo;</div>
-<div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span>      Block &amp;computeBlock = computeFunc.<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#ae71c6dc38ab6cf2859fc1bd6cbb380ac">getBody</a>().front();</div>
-<div class="line"><a id="l00576" name="l00576"></a><span class="lineno">  576</span>      OpBuilder builder(&amp;computeBlock, computeBlock.getTerminator()-&gt;getIterator());</div>
-<div class="line"><a id="l00577" name="l00577"></a><span class="lineno">  577</span>      Value selfVal = computeFunc.<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#a256c41aa6b834730cdafb6bc2b342283">getSelfValueFromCompute</a>();</div>
+<div class="line"><a id="l00574" name="l00574"></a><span class="lineno">  574</span>      <span class="keywordflow">if</span> (failed(checkStructConstrainCallArguments(constrainFunc))) {</div>
+<div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span>        signalPassFailure();</div>
+<div class="line"><a id="l00576" name="l00576"></a><span class="lineno">  576</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00577" name="l00577"></a><span class="lineno">  577</span>      }</div>
 <div class="line"><a id="l00578" name="l00578"></a><span class="lineno">  578</span> </div>
-<div class="line"><a id="l00579" name="l00579"></a><span class="lineno">  579</span>      SmallVector&lt;unsigned&gt; orderedAuxAssignments;</div>
-<div class="line"><a id="l00580" name="l00580"></a><span class="lineno">  580</span>      orderedAuxAssignments.reserve(auxAssignments.size());</div>
-<div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span>      <span class="keywordflow">if</span> (failed(orderAuxAssignments(auxAssignments, orderedAuxAssignments))) {</div>
-<div class="line"><a id="l00582" name="l00582"></a><span class="lineno">  582</span>        signalPassFailure();</div>
-<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span>        <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l00584" name="l00584"></a><span class="lineno">  584</span>      }</div>
-<div class="line"><a id="l00585" name="l00585"></a><span class="lineno">  585</span> </div>
-<div class="line"><a id="l00586" name="l00586"></a><span class="lineno">  586</span>      <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> assignIdx : orderedAuxAssignments) {</div>
-<div class="line"><a id="l00587" name="l00587"></a><span class="lineno">  587</span>        <span class="keyword">const</span> <span class="keyword">auto</span> &amp;assign = auxAssignments[assignIdx];</div>
-<div class="line"><a id="l00588" name="l00588"></a><span class="lineno">  588</span>        Value rebuiltExpr =</div>
-<div class="line"><a id="l00589" name="l00589"></a><span class="lineno">  589</span>            <a class="code hl_function" href="namespacellzk.html#a12a702f1e67b6a7dd0c787d2770dfb8c">rebuildExprInCompute</a>(assign.computedValue, computeFunc, builder, rebuildMemo);</div>
-<div class="line"><a id="l00590" name="l00590"></a><span class="lineno">  590</span>        builder.create&lt;MemberWriteOp&gt;(</div>
-<div class="line"><a id="l00591" name="l00591"></a><span class="lineno">  591</span>            assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxMemberName),</div>
-<div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span>            rebuiltExpr</div>
-<div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span>        );</div>
-<div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>        <span class="keywordflow">if</span> (assign.auxValue) {</div>
-<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span>          <span class="comment">// Reuse the expression just written so later aux producers do not need an</span></div>
-<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>          <span class="comment">// immediate read from the generated aux member.</span></div>
-<div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>          rebuildMemo[assign.auxValue] = rebuiltExpr;</div>
-<div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>        }</div>
-<div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>      }</div>
-<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>    });</div>
-<div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span>  }</div>
-<div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span>};</div>
-<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span> </div>
-<div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span>} <span class="comment">// namespace</span></div>
+<div class="line"><a id="l00579" name="l00579"></a><span class="lineno">  579</span>      DenseMap&lt;Value, Value&gt; rebuildMemo;</div>
+<div class="line"><a id="l00580" name="l00580"></a><span class="lineno">  580</span>      Block &amp;computeBlock = computeFunc.<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#ae71c6dc38ab6cf2859fc1bd6cbb380ac">getBody</a>().front();</div>
+<div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span>      OpBuilder builder(&amp;computeBlock, computeBlock.getTerminator()-&gt;getIterator());</div>
+<div class="line"><a id="l00582" name="l00582"></a><span class="lineno">  582</span>      Value selfVal = computeFunc.<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#a256c41aa6b834730cdafb6bc2b342283">getSelfValueFromCompute</a>();</div>
+<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span> </div>
+<div class="line"><a id="l00584" name="l00584"></a><span class="lineno">  584</span>      SmallVector&lt;unsigned&gt; orderedAuxAssignments;</div>
+<div class="line"><a id="l00585" name="l00585"></a><span class="lineno">  585</span>      orderedAuxAssignments.reserve(auxAssignments.size());</div>
+<div class="line"><a id="l00586" name="l00586"></a><span class="lineno">  586</span>      <span class="keywordflow">if</span> (failed(orderAuxAssignments(auxAssignments, orderedAuxAssignments))) {</div>
+<div class="line"><a id="l00587" name="l00587"></a><span class="lineno">  587</span>        signalPassFailure();</div>
+<div class="line"><a id="l00588" name="l00588"></a><span class="lineno">  588</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00589" name="l00589"></a><span class="lineno">  589</span>      }</div>
+<div class="line"><a id="l00590" name="l00590"></a><span class="lineno">  590</span> </div>
+<div class="line"><a id="l00591" name="l00591"></a><span class="lineno">  591</span>      <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> assignIdx : orderedAuxAssignments) {</div>
+<div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span>        <span class="keyword">const</span> <span class="keyword">auto</span> &amp;assign = auxAssignments[assignIdx];</div>
+<div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span>        Value rebuiltExpr =</div>
+<div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>            <a class="code hl_function" href="namespacellzk.html#a12a702f1e67b6a7dd0c787d2770dfb8c">rebuildExprInCompute</a>(assign.computedValue, computeFunc, builder, rebuildMemo);</div>
+<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span>        builder.create&lt;MemberWriteOp&gt;(</div>
+<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>            assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxMemberName),</div>
+<div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>            rebuiltExpr</div>
+<div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>        );</div>
+<div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>        <span class="keywordflow">if</span> (assign.auxValue) {</div>
+<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>          <span class="comment">// Reuse the expression just written so later aux producers do not need an</span></div>
+<div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span>          <span class="comment">// immediate read from the generated aux member.</span></div>
+<div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span>          rebuildMemo[assign.auxValue] = rebuiltExpr;</div>
+<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span>        }</div>
+<div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span>      }</div>
+<div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span>    });</div>
+<div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span>  }</div>
+<div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span>};</div>
+<div class="line"><a id="l00608" name="l00608"></a><span class="lineno">  608</span> </div>
+<div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span>} <span class="comment">// namespace</span></div>
 <div class="ttc" id="aArray_2IR_2Ops_8h_html"><div class="ttname"><a href="Array_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aConstrain_2IR_2Ops_8h_html"><div class="ttname"><a href="Constrain_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aFunction_2IR_2Ops_8h_html"><div class="ttname"><a href="Function_2IR_2Ops_8h.html">Ops.h</a></div></div>
@@ -770,10 +775,10 @@ $(function(){initNavTree('LLZKPolyLoweringPass_8cpp_source.html','',''); });
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a078ca0039bbcd069858d9c9141c015d0"><div class="ttname"><a href="namespacellzk.html#a078ca0039bbcd069858d9c9141c015d0">llzk::FUNC_NAME_COMPUTE</a></div><div class="ttdeci">constexpr char FUNC_NAME_COMPUTE[]</div><div class="ttdoc">Symbol name for the witness generation (and resp.</div><div class="ttdef"><b>Definition</b> <a href="llzk_2Util_2Constants_8h_source.html#l00016">Constants.h:16</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a12a702f1e67b6a7dd0c787d2770dfb8c"><div class="ttname"><a href="namespacellzk.html#a12a702f1e67b6a7dd0c787d2770dfb8c">llzk::rebuildExprInCompute</a></div><div class="ttdeci">Value rebuildExprInCompute(Value val, FuncDefOp computeFunc, OpBuilder &amp;builder, DenseMap&lt; Value, Value &gt; &amp;memo)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00055">LLZKLoweringUtils.cpp:55</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a1adebd123866cbb2b9e02bbd5b99c9ca"><div class="ttname"><a href="namespacellzk.html#a1adebd123866cbb2b9e02bbd5b99c9ca">llzk::replaceSubsequentUsesWith</a></div><div class="ttdeci">void replaceSubsequentUsesWith(Value oldVal, Value newVal, Operation *afterOp)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00179">LLZKLoweringUtils.cpp:179</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a1adebd123866cbb2b9e02bbd5b99c9ca"><div class="ttname"><a href="namespacellzk.html#a1adebd123866cbb2b9e02bbd5b99c9ca">llzk::replaceSubsequentUsesWith</a></div><div class="ttdeci">void replaceSubsequentUsesWith(Value oldVal, Value newVal, Operation *afterOp)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00185">LLZKLoweringUtils.cpp:185</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a353b99dc283d18cdecb549edcb8d096f"><div class="ttname"><a href="namespacellzk.html#a353b99dc283d18cdecb549edcb8d096f">llzk::FUNC_NAME_CONSTRAIN</a></div><div class="ttdeci">constexpr char FUNC_NAME_CONSTRAIN[]</div><div class="ttdef"><b>Definition</b> <a href="llzk_2Util_2Constants_8h_source.html#l00017">Constants.h:17</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a5fe59d40fb1bc5ada1e38667de05c6f2"><div class="ttname"><a href="namespacellzk.html#a5fe59d40fb1bc5ada1e38667de05c6f2">llzk::addAuxMember</a></div><div class="ttdeci">MemberDefOp addAuxMember(StructDefOp structDef, StringRef name, Type type)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00198">LLZKLoweringUtils.cpp:198</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a9c2edf42a0e3443db901cf9d6f57080b"><div class="ttname"><a href="namespacellzk.html#a9c2edf42a0e3443db901cf9d6f57080b">llzk::checkConstrainBodyIsStraightLine</a></div><div class="ttdeci">LogicalResult checkConstrainBodyIsStraightLine(FuncDefOp constrainFunc, StringRef passName)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00149">LLZKLoweringUtils.cpp:149</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a5fe59d40fb1bc5ada1e38667de05c6f2"><div class="ttname"><a href="namespacellzk.html#a5fe59d40fb1bc5ada1e38667de05c6f2">llzk::addAuxMember</a></div><div class="ttdeci">MemberDefOp addAuxMember(StructDefOp structDef, StringRef name, Type type)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00204">LLZKLoweringUtils.cpp:204</a></div></div>
+<div class="ttc" id="anamespacellzk_html_aa916f2d231aaa798b6d3189254c5f11f"><div class="ttname"><a href="namespacellzk.html#aa916f2d231aaa798b6d3189254c5f11f">llzk::checkFuncBodyIsStraightLine</a></div><div class="ttdeci">LogicalResult checkFuncBodyIsStraightLine(FuncDefOp func, StringRef passName)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00149">LLZKLoweringUtils.cpp:149</a></div></div>
 <div class="ttc" id="anamespacellzk_html_affe604776b9bbde83b6a6d31f9bc4c86"><div class="ttname"><a href="namespacellzk.html#affe604776b9bbde83b6a6d31f9bc4c86">llzk::checkForAuxMemberConflicts</a></div><div class="ttdeci">LogicalResult checkForAuxMemberConflicts(StructDefOp structDef, StringRef prefix)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00134">LLZKLoweringUtils.cpp:134</a></div></div>
 <div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="ValueModel_8h_source.html#l00030">ValueModel.h:30</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
