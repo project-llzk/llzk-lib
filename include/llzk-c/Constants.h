@@ -42,6 +42,12 @@ extern const char *LLZK_FIELD_ATTR_NAME;
 /// a `TypeAttr` specifying the `StructType` of the main struct.
 extern const char *LLZK_MAIN_ATTR_NAME;
 
+/// Name of the attribute on function arguments that stores source-level argument names.
+extern const char *LLZK_FUNCTION_ARG_NAME_ATTR_NAME;
+
+/// Name of the attribute on function results that stores source-level result names.
+extern const char *LLZK_FUNCTION_RES_NAME_ATTR_NAME;
+
 #ifdef __cplusplus
 }
 #endif
