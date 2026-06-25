@@ -1,5 +1,7 @@
 var NAVTREEINDEX6 =
 {
+"Felt_8cpp.html#a47845ad51aa441e63c523575f1e62566":[13,0,3,2,0,4,0],
+"Felt_8cpp.html#a4c8aecd54891277a8b1266f9454d9ade":[13,0,3,2,0,4,2],
 "Felt_8cpp.html#a55bb4d1b9e550d7b781ad3a604b521b4":[13,0,3,2,0,4,14],
 "Felt_8cpp.html#a610ef21234419a7dcf82a2bf6b687afc":[13,0,3,2,0,4,3],
 "Felt_8cpp.html#a7b5a459877dfa59cedb21a078fe2ec28":[13,0,3,2,0,4,6],
@@ -247,7 +249,5 @@ var NAVTREEINDEX6 =
 "Function_2IR_2Ops_8capi_8test_8cpp_8inc.html#a2849212fb3290bfe3a628a77ee4f525c":[13,0,0,0,0,2,5,0,10,27],
 "Function_2IR_2Ops_8capi_8test_8cpp_8inc.html#a2a4ddedc46abb09372046f0dcd900084":[13,0,0,0,0,2,5,0,10,25],
 "Function_2IR_2Ops_8capi_8test_8cpp_8inc.html#a34c7c17291b8f2f4881120b43e266403":[13,0,0,0,0,2,5,0,10,24],
-"Function_2IR_2Ops_8capi_8test_8cpp_8inc.html#a3c66e008dbd2a222f54f226ed0dee6e0":[13,0,0,0,0,2,5,0,10,57],
-"Function_2IR_2Ops_8capi_8test_8cpp_8inc.html#a3c9b38c4c7adbc2cca21d402a9b112ba":[13,0,0,0,0,2,5,0,10,34],
-"Function_2IR_2Ops_8capi_8test_8cpp_8inc.html#a3cfe8a2ce19e746647431d3559a78da0":[13,0,0,0,0,2,5,0,10,14]
+"Function_2IR_2Ops_8capi_8test_8cpp_8inc.html#a3c66e008dbd2a222f54f226ed0dee6e0":[13,0,0,0,0,2,5,0,10,57]
 };

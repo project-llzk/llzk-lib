@@ -111,10 +111,11 @@ $(function(){initNavTree('Constants_8cpp.html','',''); });
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="llzk_2Util_2Constants_8h_source.html">llzk/Util/Constants.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="llzk-c_2Constants_8h_source.html">llzk-c/Constants.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Function_2IR_2Ops_8h_source.html">llzk/Dialect/Function/IR/Ops.h</a>&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for Constants.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Constants_8cpp__incl.svg" width="326" height="115"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Constants_8cpp__incl.svg" width="3062" height="763"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="Constants_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -131,6 +132,10 @@ Variables</h2></td></tr>
 <tr class="memdesc:a4250b1677cc26b2753bb4d6db3ada3cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Name of the attribute on the top-level ModuleOp that identifies the ModuleOp as the root module and specifies the frontend language name that the IR was compiled from, if available.  <br /></td></tr>
 <tr class="memitem:af2631350c207c195d8d0ee910d4a3880" id="r_af2631350c207c195d8d0ee910d4a3880"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af2631350c207c195d8d0ee910d4a3880">LLZK_MAIN_ATTR_NAME</a> = <a class="el" href="namespacellzk.html#af2be4b94300457930c6aac7b73294456">llzk::MAIN_ATTR_NAME</a></td></tr>
 <tr class="memdesc:af2631350c207c195d8d0ee910d4a3880"><td class="mdescLeft">&#160;</td><td class="mdescRight">Name of the attribute on the top-level ModuleOp that specifies the type of the main struct.  <br /></td></tr>
+<tr class="memitem:a14c63c0be3fe92ac85d2819533712459" id="r_a14c63c0be3fe92ac85d2819533712459"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a14c63c0be3fe92ac85d2819533712459">LLZK_FUNCTION_ARG_NAME_ATTR_NAME</a> = <a class="el" href="namespacellzk_1_1function.html#a24bb122df980745567375500af3c2efb">llzk::function::ARG_NAME_ATTR_NAME</a></td></tr>
+<tr class="memdesc:a14c63c0be3fe92ac85d2819533712459"><td class="mdescLeft">&#160;</td><td class="mdescRight">Name of the attribute on function arguments that stores source-level argument names.  <br /></td></tr>
+<tr class="memitem:a41cba8cef39c0a0278815ad9dd9dfa8f" id="r_a41cba8cef39c0a0278815ad9dd9dfa8f"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a41cba8cef39c0a0278815ad9dd9dfa8f">LLZK_FUNCTION_RES_NAME_ATTR_NAME</a> = <a class="el" href="namespacellzk_1_1function.html#a89c16c5ad2ce9eaa543c98b5d56711ac">llzk::function::RES_NAME_ATTR_NAME</a></td></tr>
+<tr class="memdesc:a41cba8cef39c0a0278815ad9dd9dfa8f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Name of the attribute on function results that stores source-level result names.  <br /></td></tr>
 </table>
 <a name="doc-var-members" id="doc-var-members"></a><h2 id="header-doc-var-members" class="groupheader">Variable Documentation</h2>
 <a id="a713cc6bcc05cf729771f1082bd4efa72" name="a713cc6bcc05cf729771f1082bd4efa72"></a>
@@ -147,7 +152,7 @@ Variables</h2></td></tr>
 
 <p>Symbol name for the witness generation function within a struct/component. </p>
 
-<p class="definition">Definition at line <a class="el" href="Constants_8cpp_source.html#l00014">14</a> of file <a class="el" href="Constants_8cpp_source.html">Constants.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constants_8cpp_source.html#l00016">16</a> of file <a class="el" href="Constants_8cpp_source.html">Constants.cpp</a>.</p>
 
 </div>
 </div>
@@ -165,7 +170,7 @@ Variables</h2></td></tr>
 
 <p>Symbol name for the constraint generation function within a struct/component. </p>
 
-<p class="definition">Definition at line <a class="el" href="Constants_8cpp_source.html#l00015">15</a> of file <a class="el" href="Constants_8cpp_source.html">Constants.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constants_8cpp_source.html#l00017">17</a> of file <a class="el" href="Constants_8cpp_source.html">Constants.cpp</a>.</p>
 
 </div>
 </div>
@@ -183,7 +188,43 @@ Variables</h2></td></tr>
 
 <p>Symbol name for the product program function within a struct/component. </p>
 
-<p class="definition">Definition at line <a class="el" href="Constants_8cpp_source.html#l00016">16</a> of file <a class="el" href="Constants_8cpp_source.html">Constants.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constants_8cpp_source.html#l00018">18</a> of file <a class="el" href="Constants_8cpp_source.html">Constants.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a14c63c0be3fe92ac85d2819533712459" name="a14c63c0be3fe92ac85d2819533712459"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a14c63c0be3fe92ac85d2819533712459">&#9670;&#160;</a></span>LLZK_FUNCTION_ARG_NAME_ATTR_NAME</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const char* LLZK_FUNCTION_ARG_NAME_ATTR_NAME = <a class="el" href="namespacellzk_1_1function.html#a24bb122df980745567375500af3c2efb">llzk::function::ARG_NAME_ATTR_NAME</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Name of the attribute on function arguments that stores source-level argument names. </p>
+
+<p class="definition">Definition at line <a class="el" href="Constants_8cpp_source.html#l00021">21</a> of file <a class="el" href="Constants_8cpp_source.html">Constants.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a41cba8cef39c0a0278815ad9dd9dfa8f" name="a41cba8cef39c0a0278815ad9dd9dfa8f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a41cba8cef39c0a0278815ad9dd9dfa8f">&#9670;&#160;</a></span>LLZK_FUNCTION_RES_NAME_ATTR_NAME</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const char* LLZK_FUNCTION_RES_NAME_ATTR_NAME = <a class="el" href="namespacellzk_1_1function.html#a89c16c5ad2ce9eaa543c98b5d56711ac">llzk::function::RES_NAME_ATTR_NAME</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Name of the attribute on function results that stores source-level result names. </p>
+
+<p class="definition">Definition at line <a class="el" href="Constants_8cpp_source.html#l00022">22</a> of file <a class="el" href="Constants_8cpp_source.html">Constants.cpp</a>.</p>
 
 </div>
 </div>
@@ -201,7 +242,7 @@ Variables</h2></td></tr>
 
 <p>Name of the attribute on the top-level ModuleOp that identifies the ModuleOp as the root module and specifies the frontend language name that the IR was compiled from, if available. </p>
 
-<p class="definition">Definition at line <a class="el" href="Constants_8cpp_source.html#l00017">17</a> of file <a class="el" href="Constants_8cpp_source.html">Constants.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constants_8cpp_source.html#l00019">19</a> of file <a class="el" href="Constants_8cpp_source.html">Constants.cpp</a>.</p>
 
 </div>
 </div>
@@ -220,7 +261,7 @@ Variables</h2></td></tr>
 <p>Name of the attribute on the top-level ModuleOp that specifies the type of the main struct. </p>
 <p>This attribute can appear zero or one times on the top-level ModuleOp and is associated with a <span class="tt">TypeAttr</span> specifying the <span class="tt">StructType</span> of the main struct. </p>
 
-<p class="definition">Definition at line <a class="el" href="Constants_8cpp_source.html#l00018">18</a> of file <a class="el" href="Constants_8cpp_source.html">Constants.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Constants_8cpp_source.html#l00020">20</a> of file <a class="el" href="Constants_8cpp_source.html">Constants.cpp</a>.</p>
 
 </div>
 </div>

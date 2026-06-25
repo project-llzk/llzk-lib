@@ -1,5 +1,7 @@
 var NAVTREEINDEX12 =
 {
+"SourceRef_8h_source.html":[13,0,2,0,0,15],
+"SparseAnalysis_8cpp.html":[13,0,3,0,15],
 "SparseAnalysis_8cpp_source.html":[13,0,3,0,15],
 "SparseAnalysis_8h.html":[13,0,2,0,0,17],
 "SparseAnalysis_8h_source.html":[13,0,2,0,0,17],
@@ -247,7 +249,5 @@ var NAVTREEINDEX12 =
 "Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a63fbdd302109ffb617003b21bf76e3ee":[13,0,0,0,0,2,15,0,7,16],
 "Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a6e7b2047aa09fbedb25a8baf8a39ab39":[13,0,0,0,0,2,15,0,7,40],
 "Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a78e4ab14141a2e7d28d7d1ead85ab0e8":[13,0,0,0,0,2,15,0,7,12],
-"Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a7aea84a85b5312ac147cc5702806a538":[13,0,0,0,0,2,15,0,7,14],
-"Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a7d367394c20930abd7ea4ef1550c077f":[13,0,0,0,0,2,15,0,7,13],
-"Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a80354f61aad26b6bad263a986199930d":[13,0,0,0,0,2,15,0,7,7]
+"Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a7aea84a85b5312ac147cc5702806a538":[13,0,0,0,0,2,15,0,7,14]
 };
