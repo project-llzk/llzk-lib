@@ -12,6 +12,7 @@ target_link_libraries(
   LLZKTransforms
   PUBLIC
     LLZKDialectHeaders
+    SMTDialectHeaders
     ${LLZK_DEP_DIALECT_LIBS}
     MLIRIR MLIRPass MLIRParser MLIRTransformUtils MLIRSCFTransforms
     LLVMHeaders MLIRHeaders

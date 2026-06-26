@@ -152,7 +152,8 @@ module attributes {llzk.lang} {
     verif.contract @Foo for @T::@Top (%self: !struct.type<@T::@Top<[@N]>>, %a: !felt.type) {
       %m = struct.readm %self[@m] : !struct.type<@T::@Top<[@N]>>, !felt.type
       %eq = bool.cmp eq(%a, %m) : !felt.type, !felt.type
-
+      verif.ensure_constrain %eq
+      verif.ensure_compute %eq
     }
   }
 }
@@ -176,6 +177,8 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.contract @Foo for @T::@Top (%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@T::@Top<[@N]>>, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type) {
 // CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_5]][@m] : <@T::@Top<[@N]>>, !felt.type
 // CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = bool.cmp eq(%[[VAL_6]], %[[VAL_7]]) : !felt.type, !felt.type
+// CHECK-NEXT:        verif.ensure_constrain %[[VAL_8]]
+// CHECK-NEXT:        verif.ensure_compute %[[VAL_8]]
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -252,48 +255,50 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   poly.template @T {
-    poly.param @N : index
+    poly.param @N : !felt.type
 
     struct.def @Top {
       struct.member @m : !felt.type
-      function.def @compute(%a : !felt.type) -> !struct.type<@T::@Top<[@N]>> {
+      function.def @compute() -> !struct.type<@T::@Top<[@N]>> {
+        %n = poly.read_const @N : !felt.type
         %self = struct.new : !struct.type<@T::@Top<[@N]>>
-        struct.writem %self[@m] = %a : !struct.type<@T::@Top<[@N]>>, !felt.type
+        struct.writem %self[@m] = %n : !struct.type<@T::@Top<[@N]>>, !felt.type
         function.return %self : !struct.type<@T::@Top<[@N]>>
       }
-      function.def @constrain(%self: !struct.type<@T::@Top<[@N]>>, %a : !felt.type) {
+      function.def @constrain(%self: !struct.type<@T::@Top<[@N]>>) {
         function.return
       }
     }
   }
 
-  verif.contract @OutsideStruct for @T::@Top (%self: !struct.type<@T::@Top<[@N]>>, %a: !felt.type) {
-    %n = poly.read_const @N : index
+  verif.contract @OutsideStruct for @T::@Top (%self: !struct.type<@T::@Top<[@N]>>) {
+    %n = poly.read_const @N : !felt.type
     %m = struct.readm %self[@m] : !struct.type<@T::@Top<[@N]>>, !felt.type
-    %ok = arith.constant true
+    %ok = bool.cmp eq(%m, %n)
     verif.ensure_compute %ok
   }
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @T {
-// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      poly.param @N : !felt.type
 // CHECK-NEXT:      struct.def @Top {
 // CHECK-NEXT:        struct.member @m : !felt.type
-// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@T::@Top<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@T::@Top<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
 // CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@T::@Top<[@N]>>
 // CHECK-NEXT:          struct.writem %[[VAL_1]][@m] = %[[VAL_0]] : <@T::@Top<[@N]>>, !felt.type
 // CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@T::@Top<[@N]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@T::@Top<[@N]>>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@T::@Top<[@N]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:    verif.contract @OutsideStruct for @T::@Top (%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@T::@Top<[@N]>>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) {
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:    verif.contract @OutsideStruct for @T::@Top (%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@T::@Top<[@N]>>) {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
 // CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@m] : <@T::@Top<[@N]>>, !felt.type
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = bool.cmp eq(%[[VAL_7]], %[[VAL_6]])
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_8]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -861,5 +866,76 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    verif.contract @Wrapper for @wrapper_target (%[[VAL_4:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_5:[0-9a-zA-Z_\.]+]]: i1) {
 // CHECK-NEXT:      verif.include @Leaf(%[[VAL_5]]) : (i1) -> ()
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_5]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @LeafBox {
+    struct.member @gate : i1
+    function.def @compute(%gate: i1) -> !struct.type<@LeafBox> {
+      %self = struct.new : !struct.type<@LeafBox>
+      struct.writem %self[@gate] = %gate : !struct.type<@LeafBox>, i1
+      function.return %self : !struct.type<@LeafBox>
+    }
+    function.def @constrain(%self: !struct.type<@LeafBox>, %gate: i1) {
+      function.return
+    }
+  }
+
+  struct.def @OuterBox {
+    struct.member @inner : !struct.type<@LeafBox>
+    function.def @compute(%gate: i1) -> !struct.type<@OuterBox> {
+      %self = struct.new : !struct.type<@OuterBox>
+      %inner = function.call @LeafBox::@compute(%gate) : (i1) -> !struct.type<@LeafBox>
+      struct.writem %self[@inner] = %inner : !struct.type<@OuterBox>, !struct.type<@LeafBox>
+      function.return %self : !struct.type<@OuterBox>
+    }
+    function.def @constrain(%self: !struct.type<@OuterBox>, %gate: i1) {
+      function.return
+    }
+  }
+
+  verif.contract @InnerSpec for @LeafBox (%self: !struct.type<@LeafBox>, %gate: i1) {
+    verif.require_compute %gate
+  }
+
+  verif.contract @OuterSpec for @OuterBox (%self: !struct.type<@OuterBox>, %gate: i1) {
+    %inner = struct.readm %self[@inner] : !struct.type<@OuterBox>, !struct.type<@LeafBox>
+    verif.include @InnerSpec(%inner, %gate) : (!struct.type<@LeafBox>, i1) -> ()
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @LeafBox {
+// CHECK-NEXT:      struct.member @gate : i1
+// CHECK-NEXT:      function.def @compute(%[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@LeafBox> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@LeafBox>
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@gate] = %[[VAL_1]] : <@LeafBox>, i1
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@LeafBox>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@LeafBox>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @OuterBox {
+// CHECK-NEXT:      struct.member @inner : !struct.type<@LeafBox>
+// CHECK-NEXT:      function.def @compute(%[[VAL_5:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@OuterBox> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@OuterBox>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @LeafBox::@compute(%[[VAL_5]]) : (i1) -> !struct.type<@LeafBox>
+// CHECK-NEXT:        struct.writem %[[VAL_6]][@inner] = %[[VAL_7]] : <@OuterBox>, !struct.type<@LeafBox>
+// CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@OuterBox>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@OuterBox>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @InnerSpec for @LeafBox (%[[VAL_10:[0-9a-zA-Z_\.]+]]: !struct.type<@LeafBox>, %[[VAL_11:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      verif.require_compute %[[VAL_11]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @OuterSpec for @OuterBox (%[[VAL_12:[0-9a-zA-Z_\.]+]]: !struct.type<@OuterBox>, %[[VAL_13:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_12]][@inner] : <@OuterBox>, !struct.type<@LeafBox>
+// CHECK-NEXT:      verif.include @InnerSpec(%[[VAL_14]], %[[VAL_13]]) : (!struct.type<@LeafBox>, i1) -> ()
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

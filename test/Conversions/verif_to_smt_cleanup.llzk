@@ -1,0 +1,68 @@
+// RUN: llzk-opt --llzk-scalar-verif-to-smt %s -split-input-file | FileCheck --check-prefix=DIRTY %s
+// RUN: llzk-opt --llzk-scalar-verif-to-smt='cleanup=true' %s -split-input-file | FileCheck --check-prefix=CLEAN %s
+// RUN: llzk-opt --llzk-verif-to-smt %s -split-input-file | FileCheck --check-prefix=CLEAN %s
+// RUN: llzk-opt --llzk-verif-to-smt='cleanup=false' %s -split-input-file | FileCheck --check-prefix=DIRTY %s
+
+module attributes {llzk.lang} {
+  function.def @gate_target(%gate: i1) {
+    function.return
+  }
+
+  verif.contract @CheckGate for @gate_target (%gate: i1) {
+    verif.require_compute %gate
+    verif.ensure_compute %gate
+  }
+}
+
+// CLEAN-LABEL: module attributes {llzk.lang} {
+// CLEAN-NOT: function.def
+// CLEAN-NOT: verif.contract
+// CLEAN: func.func @smt_gate_target
+// CLEAN: func.func @smt_verif_CheckGate_entry
+
+// DIRTY-LABEL: module attributes {llzk.lang} {
+// DIRTY: function.def @gate_target
+// DIRTY: func.func @smt_gate_target
+// DIRTY: func.func @smt_verif_CheckGate_compute_entry
+
+// -----
+
+module attributes {llzk.lang = "circom"} {
+  poly.template @UnusedParamTemplate {
+    poly.param @n
+
+    struct.def @Gate {
+      struct.member @out : i1 {llzk.pub}
+
+      function.def @compute(%gate: i1) -> !struct.type<@UnusedParamTemplate::@Gate<[@n]>> {
+        %self = struct.new : !struct.type<@UnusedParamTemplate::@Gate<[@n]>>
+        struct.writem %self[@out] = %gate : !struct.type<@UnusedParamTemplate::@Gate<[@n]>>, i1
+        function.return %self : !struct.type<@UnusedParamTemplate::@Gate<[@n]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@UnusedParamTemplate::@Gate<[@n]>>, %gate: i1) {
+        function.return
+      }
+    }
+
+    verif.contract @CheckGate for @UnusedParamTemplate::@Gate (
+        %self: !struct.type<@UnusedParamTemplate::@Gate<[@n]>>, %gate: i1
+    ) {
+      verif.require_compute %gate
+      verif.ensure_compute %gate
+    }
+  }
+}
+
+// CLEAN-LABEL: module attributes {llzk.lang = "circom"} {
+// CLEAN-NOT: poly.template
+// CLEAN: func.func @smt_UnusedParamTemplate__Gate_compute
+// CLEAN: func.func @smt_verif_UnusedParamTemplate__CheckGate_entry
+
+// DIRTY-LABEL: module attributes {llzk.lang = "circom"} {
+// DIRTY: poly.template @UnusedParamTemplate {
+// DIRTY: poly.param @n
+// DIRTY-NOT: struct.def @Gate
+// DIRTY-NOT: verif.contract
+// DIRTY: func.func @smt_UnusedParamTemplate__Gate_compute
+// DIRTY: func.func @smt_verif_UnusedParamTemplate__CheckGate_compute_entry

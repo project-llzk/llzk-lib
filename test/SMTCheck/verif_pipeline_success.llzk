@@ -1,0 +1,17 @@
+// RUN: llzk-opt --llzk-verif-to-smtlib='entry=smt_verif_CheckGate_entry' -o /dev/null %s | llzk-smt-check - | FileCheck %s
+
+module attributes {llzk.lang} {
+  function.def @gate_target(%gate: i1) {
+    function.return
+  }
+
+  verif.contract @CheckGate for @gate_target (%gate: i1) {
+    %true = arith.constant true
+    verif.require_compute %true
+    verif.ensure_compute %true
+  }
+}
+
+// CHECK: smt_verif_CheckGate_entry/target[0]: unsat (expected unsat)
+// CHECK-NEXT: smt_verif_CheckGate_entry/post[0]: unsat (expected unsat)
+// CHECK-NEXT: smt_verif_CheckGate_entry/post[1]: unsat (expected unsat)

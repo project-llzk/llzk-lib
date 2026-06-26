@@ -1,0 +1,45 @@
+// RUN: llzk-opt --llzk-verif-to-smtlib='entry=smt_verif_TopGate_entry' -o /dev/null %s | FileCheck --check-prefix=INCLUDE %s
+
+module attributes {llzk.lang} {
+  function.def @leaf_target(%gate: i1) {
+    function.return
+  }
+
+  function.def @top_target(%lhs: i1, %rhs: i1) {
+    function.return
+  }
+
+  verif.contract @LeafGate for @leaf_target (%gate: i1) {
+    verif.require_compute %gate
+  }
+
+  verif.contract @TopGate for @top_target (%lhs: i1, %rhs: i1) {
+    verif.include @LeafGate(%lhs) : (i1) -> ()
+    verif.include @LeafGate(%rhs) : (i1) -> ()
+  }
+}
+
+// INCLUDE: ; root: smt_verif_TopGate_entry
+// INCLUDE-DAG: (declare-const smt_verif_TopGate_entry__arg0 Bool)
+// INCLUDE-DAG: (declare-const smt_verif_TopGate_entry__arg1 Bool)
+// INCLUDE: ; check-sat stage=target[0] expect=unsat
+// INCLUDE: ; check-sat stage=pre expect=unsat
+// INCLUDE: ; check-sat stage=target[1] expect=unsat
+// INCLUDE: ; check-sat stage=post[0] expect=unsat
+// INCLUDE: ; check-sat stage=post[1] expect=unsat
+// INCLUDE: ; check-sat stage=pre expect=unsat
+// INCLUDE: ; check-sat stage=target[2] expect=unsat
+// INCLUDE: ; check-sat stage=post[2] expect=unsat
+// INCLUDE: ; check-sat stage=post[3] expect=unsat
+// INCLUDE: (reset)
+// INCLUDE: ; root: smt_verif_TopGate_entry
+// INCLUDE: ; check-sat stage=pre expect=unsat
+// INCLUDE: ; check-sat stage=target[0] expect=unsat
+// INCLUDE: ; check-sat stage=post[0] expect=unsat
+// INCLUDE: ; check-sat stage=post[1] expect=unsat
+// INCLUDE: ; check-sat stage=pre expect=unsat
+// INCLUDE: ; check-sat stage=target[1] expect=unsat
+// INCLUDE: ; check-sat stage=post[2] expect=unsat
+// INCLUDE: ; check-sat stage=post[3] expect=unsat
+// INCLUDE: ; check-sat stage=post[4] expect=unsat
+// INCLUDE: ; check-sat stage=post[5] expect=unsat

@@ -1,0 +1,81 @@
+// RUN: llzk-opt --llzk-verif-to-smt -o /dev/null %s
+// RUN: llzk-opt --llzk-verif-to-smtlib='output-file=/dev/null' -o /dev/null %s
+
+module attributes {llzk.lang = "circom"} {
+  struct.def @Num2Bits3 {
+    struct.member @out : !array.type<3 x !felt.type<"bn128">> {llzk.pub}
+
+    function.def @compute(%arg0: !felt.type<"bn128"> {function.arg_name = "in"}) -> !struct.type<@Num2Bits3> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+      %c2 = arith.constant 2 : index
+      %c1 = arith.constant 1 : index
+      %c0 = arith.constant 0 : index
+      %felt_const_1 = felt.const 1 : <"bn128">
+      %felt_const_3 = felt.const 3 : <"bn128">
+      %felt_const_0 = felt.const 0 : <"bn128">
+      %self = struct.new : !struct.type<@Num2Bits3>
+      %arr = array.new : !array.type<3 x !felt.type<"bn128">>
+      %0 = scf.while (%arg1 = %felt_const_0) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+        %1 = bool.cmp lt(%arg1, %felt_const_3) : !felt.type<"bn128">, !felt.type<"bn128">
+        scf.condition(%1) %arg1 : !felt.type<"bn128">
+      } do {
+      ^bb0(%arg1: !felt.type<"bn128">):
+        %1 = felt.shr %arg0, %arg1 : !felt.type<"bn128">, !felt.type<"bn128">
+        %2 = felt.bit_and %1, %felt_const_1 : !felt.type<"bn128">, !felt.type<"bn128">
+        %3 = cast.toindex %arg1 : !felt.type<"bn128">
+        array.write %arr[%3] = %2 : <3 x !felt.type<"bn128">>, !felt.type<"bn128">
+        %4 = felt.add %arg1, %felt_const_1 : !felt.type<"bn128">, !felt.type<"bn128">
+        scf.yield %4 : !felt.type<"bn128">
+      }
+      struct.writem %self[@out] = %arr : !struct.type<@Num2Bits3>, !array.type<3 x !felt.type<"bn128">>
+      function.return %self : !struct.type<@Num2Bits3>
+    }
+
+    function.def @constrain(%arg0: !struct.type<@Num2Bits3>, %arg1: !felt.type<"bn128"> {function.arg_name = "in"}) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %felt_const_3 = felt.const 3 : <"bn128">
+      %felt_const_1 = felt.const 1 : <"bn128">
+      %felt_const_0 = felt.const 0 : <"bn128">
+      %c2 = arith.constant 2 : index
+      %c1 = arith.constant 1 : index
+      %c0 = arith.constant 0 : index
+      %arr = array.new : !array.type<3 x !felt.type<"bn128">>
+      %0 = struct.readm %arg0[@out] : !struct.type<@Num2Bits3>, !array.type<3 x !felt.type<"bn128">>
+      %1 = array.read %0[%c0] : <3 x !felt.type<"bn128">>, !felt.type<"bn128">
+      array.write %arr[%c0] = %1 : <3 x !felt.type<"bn128">>, !felt.type<"bn128">
+      %2 = array.read %0[%c1] : <3 x !felt.type<"bn128">>, !felt.type<"bn128">
+      array.write %arr[%c1] = %2 : <3 x !felt.type<"bn128">>, !felt.type<"bn128">
+      %3 = array.read %0[%c2] : <3 x !felt.type<"bn128">>, !felt.type<"bn128">
+      array.write %arr[%c2] = %3 : <3 x !felt.type<"bn128">>, !felt.type<"bn128">
+      %4:3 = scf.while (%arg2 = %felt_const_1, %arg3 = %felt_const_0, %arg4 = %felt_const_0) : (!felt.type<"bn128">, !felt.type<"bn128">, !felt.type<"bn128">) -> (!felt.type<"bn128">, !felt.type<"bn128">, !felt.type<"bn128">) {
+        %5 = bool.cmp lt(%arg3, %felt_const_3) : !felt.type<"bn128">, !felt.type<"bn128">
+        scf.condition(%5) %arg2, %arg3, %arg4 : !felt.type<"bn128">, !felt.type<"bn128">, !felt.type<"bn128">
+      } do {
+      ^bb0(%arg2: !felt.type<"bn128">, %arg3: !felt.type<"bn128">, %arg4: !felt.type<"bn128">):
+        %5 = cast.toindex %arg3 : !felt.type<"bn128">
+        %6 = array.read %arr[%5] : <3 x !felt.type<"bn128">>, !felt.type<"bn128">
+        %7 = cast.toindex %arg3 : !felt.type<"bn128">
+        %8 = array.read %arr[%7] : <3 x !felt.type<"bn128">>, !felt.type<"bn128">
+        %9 = felt.sub %8, %felt_const_1 : !felt.type<"bn128">, !felt.type<"bn128">
+        %10 = felt.mul %6, %9 : !felt.type<"bn128">, !felt.type<"bn128">
+        constrain.eq %10, %felt_const_0 : !felt.type<"bn128">, !felt.type<"bn128">
+        %11 = cast.toindex %arg3 : !felt.type<"bn128">
+        %12 = array.read %arr[%11] : <3 x !felt.type<"bn128">>, !felt.type<"bn128">
+        %13 = felt.mul %12, %arg2 : !felt.type<"bn128">, !felt.type<"bn128">
+        %14 = felt.add %arg4, %13 : !felt.type<"bn128">, !felt.type<"bn128">
+        %15 = felt.add %arg2, %arg2 : !felt.type<"bn128">, !felt.type<"bn128">
+        %16 = felt.add %arg3, %felt_const_1 : !felt.type<"bn128">, !felt.type<"bn128">
+        scf.yield %15, %16, %14 : !felt.type<"bn128">, !felt.type<"bn128">, !felt.type<"bn128">
+      }
+      constrain.eq %4#2, %arg1 : !felt.type<"bn128">, !felt.type<"bn128">
+      function.return
+    }
+  }
+
+  verif.contract @Num2Bits3$Num2Bits3$contract$0 for @Num2Bits3 (%arg0: !struct.type<@Num2Bits3>, %arg1: !felt.type<"bn128"> {function.arg_name = "in"}) {
+    %c0 = arith.constant 0 : index
+    %0 = struct.readm %arg0[@out] : !struct.type<@Num2Bits3>, !array.type<3 x !felt.type<"bn128">>
+    %1 = array.read %0[%c0] : <3 x !felt.type<"bn128">>, !felt.type<"bn128">
+    %2 = bool.cmp eq(%1, %1) : !felt.type<"bn128">, !felt.type<"bn128">
+    verif.ensure_compute %2
+    verif.ensure_constrain %2
+  }
+}

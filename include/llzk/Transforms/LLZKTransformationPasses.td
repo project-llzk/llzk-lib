@@ -146,8 +146,19 @@ def VerifToSmtPass : LLZKPass<"llzk-scalar-verif-to-smt"> {
     Lowers verif contracts into SMT helper functions for target computation,
     preconditions, postconditions, and include implications. This pass currently
     expects array/pod-free. Use the `-llzk-verif-to-smt` pipeline to preprocess
-    aggregate types first.
+    aggregate types first. When `cleanup` is enabled, the pass also removes the
+    original LLZK symbol definitions so the output can be consumed directly by
+    `-smt-to-smtlib`.
   }];
+  let options = [Option<"cleanup", "cleanup", "bool",
+                        /* default */ "false",
+                        "Whether to remove original LLZK symbol definitions "
+                        "after lowering so the output can be consumed "
+                        "directly by `-smt-to-smtlib`.">,
+                 Option<"allowAggregates", "allow-aggregates", "bool",
+                        /* default */ "false",
+                        "Whether to allow aggregate-aware lowering for arrays "
+                        "and PODs at the function and contract boundaries.">];
 }
 
 #endif // LLZK_TRANSFORMATION_PASSES_TD

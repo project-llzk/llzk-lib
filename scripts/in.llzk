@@ -1,0 +1,118 @@
+module attributes {llzk.lang} {
+  func.func @smt_Edwards2Montgomery(%arg0: !smt.int, %arg1: !smt.int) {
+    %c0 = smt.int.constant 0
+    %c2013265920 = smt.int.constant 2013265920
+    %0 = smt.int.cmp ge %arg0, %c0
+    %1 = smt.int.cmp le %arg0, %c2013265920
+    smt.assert %0
+    smt.assert %1
+    %c0_0 = smt.int.constant 0
+    %c2013265920_1 = smt.int.constant 2013265920
+    %2 = smt.int.cmp ge %arg1, %c0_0
+    %3 = smt.int.cmp le %arg1, %c2013265920_1
+    smt.assert %2
+    smt.assert %3
+    %out0_c = smt.declare_fun "out0_c" : !smt.int
+    %out0_w = smt.declare_fun "out0_w" : !smt.int
+    %c0_2 = smt.int.constant 0
+    %c2013265920_3 = smt.int.constant 2013265920
+    %4 = smt.int.cmp ge %out0_c, %c0_2
+    %5 = smt.int.cmp le %out0_c, %c2013265920_3
+    smt.assert %4
+    smt.assert %5
+    %c0_4 = smt.int.constant 0
+    %c2013265920_5 = smt.int.constant 2013265920
+    %6 = smt.int.cmp ge %out0_w, %c0_4
+    %7 = smt.int.cmp le %out0_w, %c2013265920_5
+    smt.assert %6
+    smt.assert %7
+    %out1_c = smt.declare_fun "out1_c" : !smt.int
+    %out1_w = smt.declare_fun "out1_w" : !smt.int
+    %c0_6 = smt.int.constant 0
+    %c2013265920_7 = smt.int.constant 2013265920
+    %8 = smt.int.cmp ge %out1_c, %c0_6
+    %9 = smt.int.cmp le %out1_c, %c2013265920_7
+    smt.assert %8
+    smt.assert %9
+    %c0_8 = smt.int.constant 0
+    %c2013265920_9 = smt.int.constant 2013265920
+    %10 = smt.int.cmp ge %out1_w, %c0_8
+    %11 = smt.int.cmp le %out1_w, %c2013265920_9
+    smt.assert %10
+    smt.assert %11
+    %c1 = smt.int.constant 1
+    %12 = smt.int.add %arg1, %c1
+    %13 = smt.int.sub %c1, %arg1
+    %inv = smt.declare_fun "inv" : !smt.int
+    %c0_10 = smt.int.constant 0
+    %c2013265920_11 = smt.int.constant 2013265920
+    %14 = smt.int.cmp ge %inv, %c0_10
+    %15 = smt.int.cmp le %inv, %c2013265920_11
+    smt.assert %14
+    smt.assert %15
+    %c0_12 = smt.int.constant 0
+    %c1_13 = smt.int.constant 1
+    %16 = smt.int.mul %13, %inv
+    %17 = smt.int.sub %16, %c1_13
+    %c0_14 = smt.int.constant 0
+    %c2013265921 = smt.int.constant 2013265921
+    %18 = smt.int.mod %17, %c2013265921
+    %19 = smt.eq %18, %c0_14 : !smt.int
+    %20 = smt.eq %13, %c0_12 : !smt.int
+    %21 = smt.eq %inv, %c0_12 : !smt.int
+    %22 = smt.ite %20, %21, %19 : !smt.bool
+    smt.assert %22
+    %23 = smt.int.mul %12, %inv
+    %24 = smt.int.sub %out0_w, %23
+    %c0_15 = smt.int.constant 0
+    %c2013265921_16 = smt.int.constant 2013265921
+    %25 = smt.int.mod %24, %c2013265921_16
+    %26 = smt.eq %25, %c0_15 : !smt.int
+    smt.assert %26
+    %inv_1 = smt.declare_fun "inv_1" : !smt.int
+    %c0_17 = smt.int.constant 0
+    %c2013265920_18 = smt.int.constant 2013265920
+    %27 = smt.int.cmp ge %inv_1, %c0_17
+    %28 = smt.int.cmp le %inv_1, %c2013265920_18
+    smt.assert %27
+    smt.assert %28
+    %c0_19 = smt.int.constant 0
+    %c1_20 = smt.int.constant 1
+    %29 = smt.int.mul %arg0, %inv_1
+    %30 = smt.int.sub %29, %c1_20
+    %c0_21 = smt.int.constant 0
+    %c2013265921_22 = smt.int.constant 2013265921
+    %31 = smt.int.mod %30, %c2013265921_22
+    %32 = smt.eq %31, %c0_21 : !smt.int
+    %33 = smt.eq %arg0, %c0_19 : !smt.int
+    %34 = smt.eq %inv_1, %c0_19 : !smt.int
+    %35 = smt.ite %33, %34, %32 : !smt.bool
+    smt.assert %35
+    %36 = smt.int.mul %23, %inv_1
+    %37 = smt.int.sub %out1_w, %36
+    %c0_23 = smt.int.constant 0
+    %c2013265921_24 = smt.int.constant 2013265921
+    %38 = smt.int.mod %37, %c2013265921_24
+    %39 = smt.eq %38, %c0_23 : !smt.int
+    smt.assert %39
+    %c1_25 = smt.int.constant 1
+    %40 = smt.int.add %arg1, %c1_25
+    %41 = smt.int.sub %c1_25, %arg1
+    %42 = smt.int.mul %out0_c, %41
+    %43 = smt.int.sub %42, %40
+    %c0_26 = smt.int.constant 0
+    %c2013265921_27 = smt.int.constant 2013265921
+    %44 = smt.int.mod %43, %c2013265921_27
+    %45 = smt.eq %44, %c0_26 : !smt.int
+    smt.assert %45
+    %46 = smt.int.mul %out1_c, %arg0
+    %47 = smt.int.sub %46, %out0_c
+    %c0_28 = smt.int.constant 0
+    %c2013265921_29 = smt.int.constant 2013265921
+    %48 = smt.int.mod %47, %c2013265921_29
+    %49 = smt.eq %48, %c0_28 : !smt.int
+    smt.assert %49
+    return
+  }
+}
+

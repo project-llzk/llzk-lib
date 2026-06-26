@@ -1,0 +1,38 @@
+// RUN: llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s | FileCheck --check-prefix=GENERIC %s
+
+module {
+  func.func @helper(%x: !smt.int, %flag: !smt.bool) -> !smt.int {
+    %c5 = smt.int.constant 5
+    %sum = smt.int.add %x, %c5
+    %neg = smt.int.neg %x
+    %result = smt.ite %flag, %sum, %neg : !smt.int
+    return %result : !smt.int
+  }
+
+  func.func @main(%x: !smt.int, %flag: !smt.bool) {
+    %value = call @helper(%x, %flag) : (!smt.int, !smt.bool) -> !smt.int
+    %symbol = smt.declare_fun "result" : !smt.int
+    %ok = smt.eq %symbol, %value : !smt.int
+    smt.assert %ok
+    return
+  }
+}
+
+// GENERIC: (set-logic ALL)
+// GENERIC-NEXT: ; root: main
+// GENERIC-DAG: (declare-const main__arg0 Int)
+// GENERIC-DAG: (declare-const main__arg1 Bool)
+// GENERIC-DAG: (declare-fun result () Int)
+// GENERIC: (assert (= result
+// GENERIC: (+ main__arg0 5)
+// GENERIC: (- main__arg0)
+// GENERIC: (ite main__arg1
+
+(set-logic ALL)
+; root: main
+(declare-const main__arg0 Int)
+(declare-const main__arg1 Bool)
+(declare-fun result () Int)
+(assert (= result
+  (let ((__let0 (+ main__arg0 5))) (let ((__let1 (- main__arg0)))
+    (let ((__let2 (ite main__arg1 __let0 __let1))) __let2)))))

@@ -177,19 +177,11 @@ static FailureOr<AggregateProfile> collectAggregateProfile(ModuleOp module) {
       if (failed(collectAggregateProfileForTypes(types, contract, tables, profile))) {
         return WalkResult::interrupt();
       }
-    } else if (auto createArray = dyn_cast<CreateArrayOp>(op)) {
-      if (failed(collectAggregateProfileForTypes(
-              ArrayRef<Type> {createArray.getType()}, createArray, tables, profile
-          ))) {
-        return WalkResult::interrupt();
-      }
-    } else if (auto newPod = dyn_cast<NewPodOp>(op)) {
-      if (failed(collectAggregateProfileForTypes(
-              ArrayRef<Type> {newPod.getType()}, newPod, tables, profile
-          ))) {
-        return WalkResult::interrupt();
-      }
     }
+    // Intentionally ignore op-local aggregate temporaries such as `array.new` and `pod.new`.
+    // The aggregate-aware verif-to-smt lowering can consume those directly, so the progress metric
+    // should only track boundary/member aggregates that this preprocessing round is expected to
+    // simplify.
     return WalkResult::advance();
   });
 

@@ -1,0 +1,24 @@
+// RUN: llzk-opt --llzk-verif-to-smtlib='entry=smt_verif_CheckPow_entry' -o /dev/null %s | FileCheck --check-prefix=POW %s
+
+module attributes {llzk.lang} {
+  function.def @pow_target(%exp: !felt.type<"bn128">) -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops} {
+    %two = felt.const 2 : <"bn128">
+    %ret = felt.pow %two, %exp : !felt.type<"bn128">, !felt.type<"bn128">
+    function.return %ret : !felt.type<"bn128">
+  }
+
+  verif.contract @CheckPow for @pow_target (%exp: !felt.type<"bn128">, %ret: !felt.type<"bn128">) {
+    %two = felt.const 2 : <"bn128">
+    %expected = felt.pow %two, %exp : !felt.type<"bn128">, !felt.type<"bn128">
+    %ok = bool.cmp eq(%ret, %expected) : !felt.type<"bn128">, !felt.type<"bn128">
+    verif.ensure_compute %ok
+  }
+}
+
+// POW: (set-logic ALL)
+// POW-NEXT: ; root: smt_verif_CheckPow_entry
+// POW: ; check-sat stage=post[0] expect=unsat
+// POW: (let ((
+// POW: (div
+// POW: (ite
+// POW: 4294967296

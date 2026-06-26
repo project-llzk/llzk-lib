@@ -1,0 +1,49 @@
+diff --git a/backends/smt/lib/Transforms/SMTDialectToSMTLIB.cpp b/backends/smt/lib/Transforms/SMTDialectToSMTLIB.cpp
+index 2db7c78..bc145a4 100644
+--- a/backends/smt/lib/Transforms/SMTDialectToSMTLIB.cpp
++++ b/backends/smt/lib/Transforms/SMTDialectToSMTLIB.cpp
+@@ -510,8 +510,9 @@ private:
+         .Case<llzk::smt::BVConstantOp>([](auto constOp) {
+       return constOp.getValue().getValueAsString();
+     })
+-        .Case<llzk::smt::EqOp>([&](auto exprOp) { return buildSExpr("=", exprOp.getInputs(), ctx); }
+-        )
++        .Case<llzk::smt::EqOp>([&](auto exprOp) {
++      return buildSExpr("=", exprOp.getInputs(), ctx);
++    })
+         .Case<llzk::smt::NotOp>([&](auto exprOp) {
+       return buildSExpr("not", ValueRange {exprOp.getInput()}, ctx);
+     })
+diff --git a/include/llzk/Transforms/LLZKTransformationPassPipelines.h b/include/llzk/Transforms/LLZKTransformationPassPipelines.h
+index a14667f..f90d3cf 100644
+--- a/include/llzk/Transforms/LLZKTransformationPassPipelines.h
++++ b/include/llzk/Transforms/LLZKTransformationPassPipelines.h
+@@ -97,9 +97,8 @@ struct FullPolyLoweringOptions : public mlir::PassPipelineOptions<FullPolyLoweri
+
+   using StructInliningOptions = NestedPipelineOptions<FullStructInliningOptions>;
+
+-  using PolyLoweringOptions =
+-      NestedPassOptions<static_cast<std::unique_ptr<mlir::Pass> (*)()>(&llzk::createPolyLoweringPass
+-      )>;
++  using PolyLoweringOptions = NestedPassOptions<
++      static_cast<std::unique_ptr<mlir::Pass> (*)()>(&llzk::createPolyLoweringPass)>;
+
+   Option<StructInliningOptions> structInlining {
+       *this, "flatten-inline",
+diff --git a/lib/Transforms/LLZKVerifToSmtPass.cpp b/lib/Transforms/LLZKVerifToSmtPass.cpp
+index 5e0613d..a9959ca 100644
+--- a/lib/Transforms/LLZKVerifToSmtPass.cpp
++++ b/lib/Transforms/LLZKVerifToSmtPass.cpp
+@@ -1730,9 +1730,9 @@ static LogicalResult checkStructConstrainBodyIsBooleanSummarizable(FuncDefOp con
+       return WalkResult::advance();
+     }
+     if (op->getNumRegions() != 0 || op->getNumSuccessors() != 0) {
+-      op->emitError(
+-      ) << "verif-to-smt requires struct constrain bodies without loops or successor-based "
+-           "control flow; run `llzk-flatten` or another control-flow lowering pass first";
++      op->emitError()
++          << "verif-to-smt requires struct constrain bodies without loops or successor-based "
++             "control flow; run `llzk-flatten` or another control-flow lowering pass first";
+       failed = true;
+       return WalkResult::interrupt();
+     }

@@ -1,0 +1,574 @@
+module attributes {llzk.lang} {
+  function.def @leaf(%gate: i1) {
+    function.return
+  }
+
+  function.def @wrapper(%gate: i1) {
+    function.return
+  }
+
+  verif.contract @Leaf for @leaf (%gate: i1) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+
+  verif.contract @Wrapper for @wrapper (%gate: i1) {
+    verif.include @Leaf(%gate) : (i1) -> ()
+  }
+}
+
+module attributes {llzk.lang} {
+  func.func @smt_leaf(%arg0: !smt.bool) {
+    return
+  }
+  func.func @smt_verif_Leaf_compute_pre(%arg0: !smt.bool) -> !smt.bool {
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_Leaf_compute_post(%arg0: !smt.bool) -> !smt.bool {
+    %true = smt.constant true
+    %true_0 = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_Leaf_compute_post_part_0(%arg0: !smt.bool) -> !smt.bool {
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_Leaf_constrain_pre(%arg0: !smt.bool) -> !smt.bool {
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_Leaf_constrain_post(%arg0: !smt.bool) -> !smt.bool {
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_Leaf_target(%arg0: !smt.bool) -> !smt.bool {
+    call @smt_leaf(%arg0) : (!smt.bool) -> ()
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_Leaf_pre(%arg0: !smt.bool) -> !smt.bool {
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_Leaf_post(%arg0: !smt.bool) -> !smt.bool {
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_Leaf_compute_entry(%arg0: !smt.bool) {
+    %c0 = smt.int.constant 0
+    %0 = call @smt_verif_Leaf_compute_pre(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %1 = smt.not %0
+    smt.assert %1
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf compute pre: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf compute pre: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %0
+    }
+    %2 = call @smt_verif_Leaf_target(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %3 = smt.not %2
+    smt.assert %3
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf compute target: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf compute target: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %2
+    }
+    %4 = call @smt_verif_Leaf_compute_post_part_0(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %5 = smt.not %4
+    smt.assert %5
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf compute post: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf compute post: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %4
+    }
+    return
+  }
+  func.func @smt_verif_Leaf_constrain_entry(%arg0: !smt.bool) {
+    %c0 = smt.int.constant 0
+    %0 = call @smt_verif_Leaf_constrain_pre(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %1 = smt.not %0
+    smt.assert %1
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf constrain pre: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf constrain pre: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %0
+    }
+    %2 = call @smt_verif_Leaf_target(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %3 = smt.not %2
+    smt.assert %3
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf constrain target: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf constrain target: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %2
+    }
+    %4 = call @smt_verif_Leaf_constrain_post(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %5 = smt.not %4
+    smt.assert %5
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf constrain post: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf constrain post: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %4
+    }
+    return
+  }
+  func.func @smt_verif_Leaf_internal_entry(%arg0: !smt.bool) {
+    %c0 = smt.int.constant 0
+    %0 = call @smt_verif_Leaf_pre(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %1 = smt.not %0
+    smt.assert %1
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf pre: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf pre: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %0
+    }
+    %2 = call @smt_verif_Leaf_target(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %3 = smt.not %2
+    smt.assert %3
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf target: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf target: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %2
+    }
+    %4 = call @smt_verif_Leaf_compute_post_part_0(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %5 = smt.not %4
+    smt.assert %5
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf post[0]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf post[0]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %4
+    }
+    %6 = call @smt_verif_Leaf_constrain_post(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %7 = smt.not %6
+    smt.assert %7
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf post[1]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf post[1]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %6
+    }
+    return
+  }
+  func.func @smt_verif_Leaf_entry(%arg0: !smt.bool) {
+    %c0 = smt.int.constant 0
+    %0 = call @smt_verif_Leaf_pre(%arg0) : (!smt.bool) -> !smt.bool
+    smt.assert %0
+    %1 = call @smt_verif_Leaf_target(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %2 = smt.not %1
+    smt.assert %2
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf target: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf target: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %1
+    }
+    %3 = call @smt_verif_Leaf_compute_post_part_0(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %4 = smt.not %3
+    smt.assert %4
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf post[0]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf post[0]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %3
+    }
+    %5 = call @smt_verif_Leaf_constrain_post(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %6 = smt.not %5
+    smt.assert %6
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf post[1]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Leaf post[1]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %5
+    }
+    return
+  }
+  func.func @smt_wrapper(%arg0: !smt.bool) {
+    return
+  }
+  func.func @smt_verif_Wrapper_compute_pre(%arg0: !smt.bool) -> !smt.bool {
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_Wrapper_compute_post(%arg0: !smt.bool) -> !smt.bool {
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_Wrapper_constrain_pre(%arg0: !smt.bool) -> !smt.bool {
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_Wrapper_constrain_post(%arg0: !smt.bool) -> !smt.bool {
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_Wrapper_target(%arg0: !smt.bool) -> !smt.bool {
+    call @smt_wrapper(%arg0) : (!smt.bool) -> ()
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_Wrapper_pre(%arg0: !smt.bool) -> !smt.bool {
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_Wrapper_post(%arg0: !smt.bool) -> !smt.bool {
+    %true = smt.constant true
+    return %true : !smt.bool
+  }
+  func.func @smt_verif_Wrapper_compute_include_0(%arg0: !smt.bool) {
+    call @smt_verif_Leaf_compute_entry(%arg0) : (!smt.bool) -> ()
+    return
+  }
+  func.func @smt_verif_Wrapper_constrain_include_0(%arg0: !smt.bool) {
+    call @smt_verif_Leaf_constrain_entry(%arg0) : (!smt.bool) -> ()
+    return
+  }
+  func.func @smt_verif_Wrapper_include_0(%arg0: !smt.bool) {
+    call @smt_verif_Leaf_internal_entry(%arg0) : (!smt.bool) -> ()
+    return
+  }
+  func.func @smt_verif_Wrapper_compute_entry(%arg0: !smt.bool) {
+    %c0 = smt.int.constant 0
+    %0 = call @smt_verif_Wrapper_compute_pre(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %1 = smt.not %0
+    smt.assert %1
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper compute pre: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper compute pre: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %0
+    }
+    %2 = call @smt_verif_Wrapper_target(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %3 = smt.not %2
+    smt.assert %3
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper compute target: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper compute target: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %2
+    }
+    call @smt_verif_Wrapper_compute_include_0(%arg0) : (!smt.bool) -> ()
+    %4 = call @smt_verif_Wrapper_compute_post(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %5 = smt.not %4
+    smt.assert %5
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper compute post: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper compute post: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %4
+    }
+    return
+  }
+  func.func @smt_verif_Wrapper_constrain_entry(%arg0: !smt.bool) {
+    %c0 = smt.int.constant 0
+    %0 = call @smt_verif_Wrapper_constrain_pre(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %1 = smt.not %0
+    smt.assert %1
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper constrain pre: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper constrain pre: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %0
+    }
+    %2 = call @smt_verif_Wrapper_target(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %3 = smt.not %2
+    smt.assert %3
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper constrain target: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper constrain target: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %2
+    }
+    call @smt_verif_Wrapper_constrain_include_0(%arg0) : (!smt.bool) -> ()
+    %4 = call @smt_verif_Wrapper_constrain_post(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %5 = smt.not %4
+    smt.assert %5
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper constrain post: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper constrain post: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %4
+    }
+    return
+  }
+  func.func @smt_verif_Wrapper_internal_entry(%arg0: !smt.bool) {
+    %c0 = smt.int.constant 0
+    %0 = call @smt_verif_Wrapper_pre(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %1 = smt.not %0
+    smt.assert %1
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper pre: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper pre: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %0
+    }
+    %2 = call @smt_verif_Wrapper_target(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %3 = smt.not %2
+    smt.assert %3
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper target: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper target: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %2
+    }
+    call @smt_verif_Wrapper_include_0(%arg0) : (!smt.bool) -> ()
+    %4 = call @smt_verif_Wrapper_compute_post(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %5 = smt.not %4
+    smt.assert %5
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper post[0]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper post[0]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %4
+    }
+    %6 = call @smt_verif_Wrapper_constrain_post(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %7 = smt.not %6
+    smt.assert %7
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper post[1]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper post[1]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %6
+    }
+    return
+  }
+  func.func @smt_verif_Wrapper_entry(%arg0: !smt.bool) {
+    %c0 = smt.int.constant 0
+    %0 = call @smt_verif_Wrapper_pre(%arg0) : (!smt.bool) -> !smt.bool
+    smt.assert %0
+    %1 = call @smt_verif_Wrapper_target(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %2 = smt.not %1
+    smt.assert %2
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper target: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper target: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %1
+    }
+    call @smt_verif_Wrapper_include_0(%arg0) : (!smt.bool) -> ()
+    %3 = call @smt_verif_Wrapper_compute_post(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %4 = smt.not %3
+    smt.assert %4
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper post[0]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper post[0]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %3
+    }
+    %5 = call @smt_verif_Wrapper_constrain_post(%arg0) : (!smt.bool) -> !smt.bool
+    smt.push 1
+    %6 = smt.not %5
+    smt.assert %6
+    smt.check sat {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper post[1]: counterexample found"
+    } unknown {
+      smt.pop 1
+      %false = arith.constant false
+      bool.assert %false, "verification failed in Wrapper post[1]: condition unprovable"
+    } unsat {
+      smt.pop 1
+      smt.assert %5
+    }
+    return
+  }
+}
+
+func.func @smt_verif_Wrapper_compute_include_0(%arg0: !smt.bool) {
+  call @smt_verif_Leaf_compute_entry(%arg0) : (!smt.bool) -> ()
+  return
+}
+
+func.func @smt_verif_Wrapper_compute_entry(%arg0: !smt.bool) {
+  %0 = call @smt_verif_Wrapper_compute_pre(%arg0) : (!smt.bool) -> !smt.bool
+  // ...
+  %2 = call @smt_verif_Wrapper_target(%arg0) : (!smt.bool) -> !smt.bool
+  // ...
+  call @smt_verif_Wrapper_compute_include_0(%arg0) : (!smt.bool) -> ()
+  %4 = call @smt_verif_Wrapper_compute_post(%arg0) : (!smt.bool) -> !smt.bool
+  // ..
+  return
+}

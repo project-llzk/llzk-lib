@@ -1,0 +1,26 @@
+// RUN: llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s | FileCheck --check-prefix=SHARE %s
+
+module {
+  func.func @square_chain(%x: !smt.int) -> !smt.int {
+    %sq0 = smt.int.mul %x, %x
+    %sq1 = smt.int.mul %sq0, %sq0
+    %sq2 = smt.int.mul %sq1, %sq1
+    return %sq2 : !smt.int
+  }
+
+  func.func @main(%x: !smt.int) {
+    %value = call @square_chain(%x) : (!smt.int) -> !smt.int
+    %symbol = smt.declare_fun "result" : !smt.int
+    %ok = smt.eq %symbol, %value : !smt.int
+    smt.assert %ok
+    return
+  }
+}
+
+// SHARE: (set-logic ALL)
+// SHARE-NEXT: ; root: main
+// SHARE-DAG: (declare-const main__arg0 Int)
+// SHARE-DAG: (declare-fun result () Int)
+// SHARE: (assert (= result (let (([[SQ0:[A-Za-z0-9_$.]+]] (* main__arg0 main__arg0)))
+// SHARE: (let (([[SQ1:[A-Za-z0-9_$.]+]] (* [[SQ0]] [[SQ0]])))
+// SHARE: (let (([[SQ2:[A-Za-z0-9_$.]+]] (* [[SQ1]] [[SQ1]]))) [[SQ2]])))

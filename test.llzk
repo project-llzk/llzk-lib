@@ -1,0 +1,26 @@
+module attributes {llzk.lang} {
+  struct.def @Pair {
+    struct.member @left : !felt.type
+    struct.member @right : !felt.type
+
+    function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@Pair> {
+      %self = struct.new : !struct.type<@Pair>
+      struct.writem %self[@left] = %x : !struct.type<@Pair>, !felt.type
+      struct.writem %self[@right] = %y : !struct.type<@Pair>, !felt.type
+      function.return %self : !struct.type<@Pair>
+    }
+
+    function.def @constrain(%self: !struct.type<@Pair>, %x: !felt.type, %y: !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckPair for @Pair (%self: !struct.type<@Pair>, %x: !felt.type, %y: !felt.type) {
+    %left = struct.readm %self[@left] : !struct.type<@Pair>, !felt.type
+    %right = struct.readm %self[@right] : !struct.type<@Pair>, !felt.type
+    %left_ok = bool.cmp eq(%left, %x) : !felt.type, !felt.type
+    %right_ok = bool.cmp eq(%right, %y) : !felt.type, !felt.type
+    verif.ensure_compute %left_ok
+    verif.ensure_compute %right_ok
+  }
+}

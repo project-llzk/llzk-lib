@@ -1,0 +1,32 @@
+// RUN: llzk-opt --llzk-verif-to-smtlib='entry=smt_verif_CheckGate_entry' -o /dev/null %s | FileCheck --check-prefix=SIMPLE %s
+// RUN: llzk-opt --llzk-verif-to-smtlib='entry=smt_verif_CheckGate_internal_entry' -o /dev/null %s | FileCheck --check-prefix=INTERNAL %s
+
+module attributes {llzk.lang} {
+  function.def @gate_target(%gate: i1) {
+    function.return
+  }
+
+  verif.contract @CheckGate for @gate_target (%gate: i1) {
+    verif.require_compute %gate
+    verif.ensure_compute %gate
+  }
+}
+
+// SIMPLE: (set-logic ALL)
+// SIMPLE-NEXT: ; root: smt_verif_CheckGate_entry
+// SIMPLE: (declare-const smt_verif_CheckGate_entry__arg0 Bool)
+// SIMPLE: ; check-sat stage=target[0] expect=unsat
+// SIMPLE: (reset)
+// SIMPLE-NEXT: (set-logic ALL)
+// SIMPLE-NEXT: ; root: smt_verif_CheckGate_entry
+// SIMPLE: (declare-const smt_verif_CheckGate_entry__arg0 Bool)
+// SIMPLE: ; check-sat stage=post[0] expect=unsat
+// SIMPLE: ; check-sat stage=post[1] expect=unsat
+
+// INTERNAL: (set-logic ALL)
+// INTERNAL-NEXT: ; root: smt_verif_CheckGate_internal_entry
+// INTERNAL: ; check-sat stage=pre expect=unsat
+// INTERNAL: ; check-sat stage=target[0] expect=unsat
+// INTERNAL: ; check-sat stage=post[0] expect=unsat
+// INTERNAL: ; check-sat stage=post[1] expect=unsat
+// INTERNAL-NOT: (reset)
