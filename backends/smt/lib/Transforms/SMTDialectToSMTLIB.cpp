@@ -280,7 +280,7 @@ private:
     nextTargetStageIndex = 0;
     nextPostStageIndex = 0;
     os << "(set-logic " << options.logic << ")\n";
-    os << "; root: " << root.getSymName() << "\n";
+    os << "(set-info :llzk-root \"" << root.getSymName() << "\")\n";
     return success();
   }
 
@@ -599,11 +599,10 @@ private:
       return rawLabel.str();
     };
 
-    os << "; check-sat";
     if (ctx.pendingStageLabel) {
-      os << " stage=" << formatStageLabel(*ctx.pendingStageLabel);
+      os << "(set-info :llzk-stage \"" << formatStageLabel(*ctx.pendingStageLabel) << "\")\n";
     }
-    os << " expect=" << successInfo->expectedOutcome << "\n";
+    os << "(set-info :status " << successInfo->expectedOutcome << ")\n";
     os << "(check-sat)\n";
     ctx.pendingStageLabel.reset();
     return emitBlock(successInfo->successRegion->front(), ctx);

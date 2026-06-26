@@ -19,7 +19,7 @@ module {
 }
 
 // GENERIC: (set-logic ALL)
-// GENERIC-NEXT: ; root: main
+// GENERIC-NEXT: (set-info :llzk-root "main")
 // GENERIC-DAG: (declare-const main__arg0 Int)
 // GENERIC-DAG: (declare-const main__arg1 Bool)
 // GENERIC-DAG: (declare-fun result () Int)

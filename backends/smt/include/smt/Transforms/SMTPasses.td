@@ -13,9 +13,9 @@
 include "llzk/Pass/PassBase.td"
 
 def SMTDialectToSMTLIBPass : Pass<"smt-to-smtlib", "::mlir::ModuleOp"> {
-  let summary = "Convert SMT dialect IR to SMTLIB2";
+  let summary = "Convert SMT dialect IR to SMT-LIB";
   let description = [{
-    Emits a textual SMTLIB2 script for an explicitly selected SMT root
+    Emits a textual SMT-LIB script for an explicitly selected SMT root
     function. The pass supports the SMT subset currently produced by llzk's
     lowering pipelines.
   }];
@@ -26,7 +26,7 @@ def SMTDialectToSMTLIBPass : Pass<"smt-to-smtlib", "::mlir::ModuleOp"> {
       [Option<
            "outputFilename", "output-file", "std::string",
            /*default=*/"\"-\"",
-           "File to write the SMTLIB script to. Use '-' to write to stdout.">,
+           "File to write the SMT-LIB script to. Use '-' to write to stdout.">,
        Option<"entry", "entry", "std::string",
               /*default=*/"\"\"",
               "Export the specified func.func root symbol. This option is "
@@ -34,7 +34,7 @@ def SMTDialectToSMTLIBPass : Pass<"smt-to-smtlib", "::mlir::ModuleOp"> {
        Option<
            "logic", "logic", "std::string",
            /*default=*/"\"ALL\"",
-           "SMTLIB logic name to emit at the start of each exported script.">];
+           "SMT-LIB logic name to emit at the start of each exported script.">];
 }
 
 #endif // SMT_PASSES_TD

@@ -18,7 +18,7 @@ module {
 }
 
 // SHARE: (set-logic ALL)
-// SHARE-NEXT: ; root: main
+// SHARE-NEXT: (set-info :llzk-root "main")
 // SHARE-DAG: (declare-const main__arg0 Int)
 // SHARE-DAG: (declare-fun result () Int)
 // SHARE: (assert (= result (let (([[SQ0:[A-Za-z0-9_$.]+]] (* main__arg0 main__arg0)))

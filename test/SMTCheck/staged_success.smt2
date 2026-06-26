@@ -2,20 +2,23 @@
 
 (set-logic ALL)
 
-; root: smt_verif_Sample_entry
-; check-sat stage=pre expect=unsat
+(set-info :llzk-root "smt_verif_Sample_entry")
+(set-info :llzk-stage "pre")
+(set-info :status unsat)
 (push 1)
 (assert false)
 (check-sat)
 (pop 1)
 
-; check-sat stage=target expect=unsat
+(set-info :llzk-stage "target")
+(set-info :status unsat)
 (push 1)
 (assert (= 0 1))
 (check-sat)
 (pop 1)
 
-; check-sat stage=post expect=unsat
+(set-info :llzk-stage "post")
+(set-info :status unsat)
 (push 1)
 (assert (and true false))
 (check-sat)

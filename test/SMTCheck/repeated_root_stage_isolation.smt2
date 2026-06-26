@@ -1,8 +1,9 @@
 ; RUN: llzk-smt-check %s | FileCheck %s
 
 (set-logic ALL)
-; root: smt_verif_CheckGate_entry
-; check-sat stage=target expect=unsat
+(set-info :llzk-root "smt_verif_CheckGate_entry")
+(set-info :llzk-stage "target")
+(set-info :status unsat)
 (push 1)
 (assert false)
 (check-sat)
@@ -10,8 +11,9 @@
 
 (reset)
 (set-logic ALL)
-; root: smt_verif_CheckGate_entry
-; check-sat stage=post expect=unsat
+(set-info :llzk-root "smt_verif_CheckGate_entry")
+(set-info :llzk-stage "post")
+(set-info :status unsat)
 (push 1)
 (assert (= 0 1))
 (check-sat)

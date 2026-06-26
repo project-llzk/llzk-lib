@@ -2,8 +2,9 @@
 
 (set-logic ALL)
 
-; check-sat stage=pre expect=sat
+(set-info :llzk-stage "pre")
+(set-info :status sat)
 (check-sat)
 (check-sat)
 
-; CHECK: llzk-smt-check: stage annotation count (1) does not match check-sat count (2)
+; CHECK: llzk-smt-check: check metadata count (1) does not match check-sat count (2)

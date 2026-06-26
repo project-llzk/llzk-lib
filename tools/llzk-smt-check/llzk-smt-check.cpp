@@ -41,6 +41,7 @@ struct StageExpectation {
   std::string rootName;
   std::string stageName;
   SatResult expected;
+  bool hasExpected = false;
 };
 
 struct ScriptMetadata {
@@ -109,6 +110,20 @@ Expected<std::string> readInput(StringRef inputFilename) {
 Expected<ScriptMetadata> scanScript(StringRef script) {
   ScriptMetadata metadata;
   std::optional<std::string> currentRoot;
+  std::optional<std::string> pendingCommentStage;
+  std::optional<SatResult> pendingCommentExpected;
+  std::optional<std::string> pendingInfoStage;
+  std::optional<SatResult> pendingInfoExpected;
+
+  auto parseQuotedString = [&](StringRef value, StringRef fullLine) -> Expected<std::string> {
+    StringRef trimmed = value.trim();
+    if (trimmed.size() < 2 || !trimmed.starts_with("\"") || !trimmed.ends_with("\"")) {
+      return createStringError(
+          inconvertibleErrorCode(), "invalid set-info annotation: '%s'", fullLine.str().c_str()
+      );
+    }
+    return trimmed.drop_front().drop_back().str();
+  };
 
   SmallVector<StringRef> lines;
   script.split(lines, '\n');
@@ -124,79 +139,149 @@ Expected<ScriptMetadata> scanScript(StringRef script) {
       currentRoot = rest.str();
       continue;
     }
-    if (!trimmed.starts_with("; check-sat")) {
+    if (trimmed.starts_with("; check-sat")) {
+      std::optional<std::string> stageName;
+      std::optional<SatResult> expected;
+      SmallVector<StringRef> tokens;
+      trimmed.split(tokens, ' ', -1, false);
+      for (StringRef token : ArrayRef<StringRef>(tokens).drop_front()) {
+        StringRef rest = token;
+        if (rest.consume_front("stage=")) {
+          stageName = rest.str();
+          continue;
+        }
+        rest = token;
+        if (rest.consume_front("expect=")) {
+          expected = parseSatResult(rest);
+        }
+      }
+
+      if (!stageName || !expected) {
+        return createStringError(
+            inconvertibleErrorCode(), "invalid stage annotation: '%s'", trimmed.str().c_str()
+        );
+      }
+      pendingCommentStage = *stageName;
+      pendingCommentExpected = *expected;
       continue;
     }
-
-    std::optional<std::string> stageName;
-    std::optional<SatResult> expected;
-    SmallVector<StringRef> tokens;
-    trimmed.split(tokens, ' ', -1, false);
-    for (StringRef token : ArrayRef<StringRef>(tokens).drop_front()) {
-      StringRef rest = token;
-      if (rest.consume_front("stage=")) {
-        stageName = rest.str();
-        continue;
+    if (trimmed.starts_with("(set-info")) {
+      StringRef body = trimmed.drop_front(StringRef("(set-info").size()).trim();
+      if (!body.ends_with(")")) {
+        return createStringError(
+            inconvertibleErrorCode(), "invalid set-info annotation: '%s'", trimmed.str().c_str()
+        );
       }
-      rest = token;
-      if (rest.consume_front("expect=")) {
-        expected = parseSatResult(rest);
+      body = body.drop_back().trim();
+      size_t splitPos = body.find_first_of(" \t");
+      if (splitPos == StringRef::npos) {
+        return createStringError(
+            inconvertibleErrorCode(), "invalid set-info annotation: '%s'", trimmed.str().c_str()
+        );
       }
-    }
-
-    if (!stageName || !expected) {
-      return createStringError(
-          inconvertibleErrorCode(), "invalid stage annotation: '%s'", trimmed.str().c_str()
-      );
-    }
-    metadata.stages.push_back(StageExpectation {currentRoot.value_or(""), *stageName, *expected});
-  }
-
-  size_t depth = 0;
-  bool inComment = false;
-  constexpr StringLiteral kCheckSat = "(check-sat)";
-  for (size_t i = 0; i < script.size(); ++i) {
-    char c = script[i];
-    if (inComment) {
-      if (c == '\n') {
-        inComment = false;
+      StringRef key = body.take_front(splitPos).trim();
+      StringRef value = body.drop_front(splitPos).trim();
+      if (key == ":status") {
+        pendingInfoExpected = parseSatResult(value);
+        if (!pendingInfoExpected) {
+          return createStringError(
+              inconvertibleErrorCode(), "invalid set-info annotation: '%s'", trimmed.str().c_str()
+          );
+        }
+      } else if (key == ":llzk-stage") {
+        auto parsed = parseQuotedString(value, trimmed);
+        if (!parsed) {
+          return parsed.takeError();
+        }
+        pendingInfoStage = std::move(*parsed);
+      } else if (key == ":llzk-root") {
+        auto parsed = parseQuotedString(value, trimmed);
+        if (!parsed) {
+          return parsed.takeError();
+        }
+        currentRoot = std::move(*parsed);
       }
       continue;
     }
-    if (c == ';') {
-      inComment = true;
-      continue;
-    }
+    if (trimmed == "(check-sat)") {
+      std::optional<std::string> stageName =
+          pendingInfoStage ? pendingInfoStage : pendingCommentStage;
+      std::optional<SatResult> expected =
+          pendingInfoExpected ? pendingInfoExpected : pendingCommentExpected;
 
-    if (depth == 0 && script.drop_front(i).starts_with(kCheckSat)) {
       ++metadata.checkSatCount;
-      i += kCheckSat.size() - 1;
-      continue;
-    }
 
-    if (c == '(') {
-      ++depth;
-    } else if (c == ')' && depth > 0) {
-      --depth;
+      if (stageName && !expected) {
+        return createStringError(
+            inconvertibleErrorCode(), "missing expected result before check-sat for stage '%s'",
+            stageName->c_str()
+        );
+      }
+
+      if (stageName || expected) {
+        metadata.stages.push_back(
+            StageExpectation {
+                currentRoot.value_or(""), stageName.value_or(""),
+                expected.value_or(SatResult::Unknown), expected.has_value()
+            }
+        );
+      }
+
+      pendingCommentStage.reset();
+      pendingCommentExpected.reset();
+      pendingInfoStage.reset();
+      pendingInfoExpected.reset();
+      continue;
     }
   }
 
   if (!metadata.stages.empty() && metadata.stages.size() != metadata.checkSatCount) {
     return createStringError(
-        inconvertibleErrorCode(),
-        "stage annotation count (%zu) does not match check-sat count (%zu)", metadata.stages.size(),
-        metadata.checkSatCount
+        inconvertibleErrorCode(), "check metadata count (%zu) does not match check-sat count (%zu)",
+        metadata.stages.size(), metadata.checkSatCount
     );
   }
 
   return metadata;
 }
 
+std::string stripMetadataForSolver(StringRef script) {
+  std::string sanitized;
+  raw_string_ostream os(sanitized);
+
+  SmallVector<StringRef> lines;
+  script.split(lines, '\n');
+  for (StringRef line : lines) {
+    StringRef trimmed = line.ltrim();
+    bool shouldStrip = false;
+    if (trimmed.starts_with("(set-info")) {
+      StringRef body = trimmed.drop_front(StringRef("(set-info").size()).trim();
+      if (body.ends_with(")")) {
+        body = body.drop_back().trim();
+        size_t splitPos = body.find_first_of(" \t");
+        if (splitPos != StringRef::npos) {
+          StringRef key = body.take_front(splitPos).trim();
+          shouldStrip = key == ":status" || key == ":llzk-stage" || key == ":llzk-root";
+        }
+      }
+    }
+
+    if (!shouldStrip) {
+      os << line << '\n';
+    }
+  }
+
+  return sanitized;
+}
+
 std::string formatStageLabel(const StageExpectation &stage, size_t index) {
-  if (!stage.rootName.empty()) {
+  if (!stage.stageName.empty() && !stage.rootName.empty()) {
     return (Twine(stage.rootName) + "/" + stage.stageName).str();
   }
-  return (Twine(stage.stageName) + "[" + Twine(index) + "]").str();
+  if (!stage.stageName.empty()) {
+    return stage.stageName;
+  }
+  return ("check[" + std::to_string(index) + "]");
 }
 
 Expected<std::string> readWholeFile(StringRef path) {
@@ -240,8 +325,7 @@ Expected<SmallString<128>> createTempFile(StringRef prefix, StringRef suffix, St
   return path;
 }
 
-Expected<SolverInvocationResult>
-runSolver(StringRef solverPath, StringRef script, bool useStdin, StringRef originalInputFilename) {
+Expected<SolverInvocationResult> runSolver(StringRef solverPath, StringRef script) {
   SolverInvocationResult result;
   TempFileCleanup cleanup;
 
@@ -256,7 +340,6 @@ runSolver(StringRef solverPath, StringRef script, bool useStdin, StringRef origi
   cleanup.paths.push_back(*stdoutFile);
   cleanup.paths.push_back(*stderrFile);
 
-  std::optional<SmallString<128>> stdinPath;
   std::array<std::optional<StringRef>, 3> redirects = {
       std::nullopt, StringRef(stdoutFile->data(), stdoutFile->size()),
       StringRef(stderrFile->data(), stderrFile->size())
@@ -264,20 +347,13 @@ runSolver(StringRef solverPath, StringRef script, bool useStdin, StringRef origi
 
   SmallVector<StringRef> args;
   args.push_back(solverPath);
-  if (useStdin) {
-    auto tempInput = createTempFile("llzk-smt-check-input", "smt2", script);
-    if (!tempInput) {
-      return tempInput.takeError();
-    }
-    stdinPath = *tempInput;
-    cleanup.paths.push_back(*stdinPath);
-    redirects[0] = StringRef(stdinPath->data(), stdinPath->size());
-    args.push_back("-in");
-    args.push_back("-smt2");
-  } else {
-    args.push_back("-smt2");
-    args.push_back(originalInputFilename);
+  auto tempInput = createTempFile("llzk-smt-check-input", "smt2", script);
+  if (!tempInput) {
+    return tempInput.takeError();
   }
+  cleanup.paths.push_back(*tempInput);
+  args.push_back("-smt2");
+  args.push_back(StringRef(tempInput->data(), tempInput->size()));
 
   std::string errorMessage;
   bool executionFailed = false;
@@ -371,7 +447,8 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-  auto invocation = runSolver(*solverPath, *input, InputFilename == "-", InputFilename);
+  std::string solverScript = stripMetadataForSolver(*input);
+  auto invocation = runSolver(*solverPath, solverScript);
   if (!invocation) {
     errs() << "llzk-smt-check: " << toString(invocation.takeError()) << '\n';
     return EXIT_FAILURE;
@@ -407,20 +484,21 @@ int main(int argc, char **argv) {
   SmallVector<std::string> summaries;
   for (size_t i = 0; i < solverResults.size(); ++i) {
     std::string label;
-    if (metadata->stages.empty()) {
+    if (metadata->stages.empty() || metadata->stages[i].stageName.empty()) {
       label = "check[" + std::to_string(i) + "]";
     } else {
       label = formatStageLabel(metadata->stages[i], i);
     }
     if (!Quiet) {
       std::string summary = (Twine(label) + ": " + stringify(solverResults[i])).str();
-      if (!metadata->stages.empty()) {
+      if (!metadata->stages.empty() && metadata->stages[i].hasExpected) {
         summary =
             (Twine(summary) + " (expected " + stringify(metadata->stages[i].expected) + ")").str();
       }
       summaries.push_back(std::move(summary));
     }
-    if (!metadata->stages.empty() && solverResults[i] != metadata->stages[i].expected) {
+    if (!metadata->stages.empty() && metadata->stages[i].hasExpected &&
+        solverResults[i] != metadata->stages[i].expected) {
       mismatches.push_back((Twine(label) + ": got " + stringify(solverResults[i]) + ", expected " +
                             stringify(metadata->stages[i].expected))
                                .str());

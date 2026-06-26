@@ -134,8 +134,8 @@ they can be fully resolved by the preprocessing pipeline before execution.
 
 `llzk-smt-check` runs an external SMT solver on an SMT-LIB 2 script and reports
 the result of each `check-sat` stage. It is intended to consume the staged
-SMT-LIB emitted by `llzk-opt --smt-to-smtlib`, including comments such as
-`; check-sat stage=pre expect=unsat`.
+SMT-LIB emitted by `llzk-opt --smt-to-smtlib`, including metadata such as
+`(set-info :llzk-stage "pre")` and `(set-info :status unsat)`.
 
 #### Basic Usage
 
@@ -156,10 +156,16 @@ llzk-opt --smt-to-smtlib='entry=main' \
 #### Behavior
 
 - The tool reads SMT-LIB from a file or stdin.
-- Full-line comments of the form `; check-sat stage=<name> expect=<result>`
-  are used to label and validate subsequent `check-sat` commands.
-- When stage annotations are present, every reported solver result must match
-  the expected `sat`, `unsat`, or `unknown` result for the tool to succeed.
+- `set-info :status <sat|unsat|unknown>` provides the expected result for the
+  subsequent `check-sat`.
+- `set-info :llzk-stage "<name>"` and `set-info :llzk-root "<name>"` provide
+  LLZK-specific stage and root labels for the subsequent summaries.
+- Legacy comment annotations such as `; root: ...` and
+  `; check-sat stage=<name> expect=<result>` are still accepted for backward
+  compatibility.
+- When expected-result annotations are present, every reported solver result
+  must match the expected `sat`, `unsat`, or `unknown` result for the tool to
+  succeed.
 - Without annotations, the tool still executes the script and labels checks as
   `check[0]`, `check[1]`, and so on.
 - Any solver launch failure, malformed output, result-count mismatch, or stage
