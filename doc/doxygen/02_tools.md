@@ -130,6 +130,41 @@ witness generation concrete and executable:
 Template parameters and affine instantiations are therefore supported only when
 they can be fully resolved by the preprocessing pipeline before execution.
 
+# llzk-smt-check {#llzk-smt-check}
+
+`llzk-smt-check` runs an external SMT solver on an SMT-LIB 2 script and reports
+the result of each `check-sat` stage. It is intended to consume the staged
+SMT-LIB emitted by `llzk-opt --smt-to-smtlib`, including comments such as
+`; check-sat stage=pre expect=unsat`.
+
+#### Basic Usage
+
+```sh
+llzk-smt-check input.smt2
+llzk-opt --smt-to-smtlib='entry=main' \
+  -o /dev/null input.llzk | llzk-smt-check -
+```
+
+#### LLZK-Specific Options
+
+```
+--solver-binary=<path>      SMT solver executable to run (default: z3)
+--quiet                     Suppress per-stage summaries and rely on exit status
+--dump-raw-output           Print raw solver stdout after the stage summaries
+```
+
+#### Behavior
+
+- The tool reads SMT-LIB from a file or stdin.
+- Full-line comments of the form `; check-sat stage=<name> expect=<result>`
+  are used to label and validate subsequent `check-sat` commands.
+- When stage annotations are present, every reported solver result must match
+  the expected `sat`, `unsat`, or `unknown` result for the tool to succeed.
+- Without annotations, the tool still executes the script and labels checks as
+  `check[0]`, `check[1]`, and so on.
+- Any solver launch failure, malformed output, result-count mismatch, or stage
+  mismatch causes a non-zero exit status.
+
 # llzk-lsp-server
 
 `cmake --build <build dir> --target llzk-lsp-server` will produce an LLZK-specific

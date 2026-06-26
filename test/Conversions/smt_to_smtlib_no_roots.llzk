@@ -1,0 +1,11 @@
+// RUN: not llzk-opt --smt-to-smtlib='entry=missing' -o /dev/null %s 2>&1 | FileCheck --check-prefix=MISSING %s
+// RUN: not llzk-opt --smt-to-smtlib -o /dev/null %s 2>&1 | FileCheck --check-prefix=NOROOT %s
+
+module {
+  func.func @helper(%x: !smt.int) -> !smt.int {
+    return %x : !smt.int
+  }
+}
+
+// MISSING: error: smt-to-smtlib could not find entry symbol @missing
+// NOROOT: error: smt-to-smtlib requires --entry to select a root func.func
