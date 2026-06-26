@@ -1,0 +1,3 @@
+fixed:
+  - Prevent duplicate operation elimination from reusing global and RAM reads
+    across writes, stores, or unknown state changes.

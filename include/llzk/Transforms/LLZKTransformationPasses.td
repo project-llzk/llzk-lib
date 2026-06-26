@@ -23,8 +23,11 @@ def RedundantReadAndWriteEliminationPass
 def RedundantOperationEliminationPass : LLZKPass<"llzk-duplicate-op-elim"> {
   let summary = "Remove redundant operations";
   let description = [{
-    Remove llzk and arith dialect operations that produce the same results
-    as previously executed operations.
+    Remove equivalent memory-effect-free operations and duplicate LLZK constraints.
+    Global reads are reused within one block when no operation can write the
+    same global or introduce an unknown/non-read state effect. RAM loads are
+    reused within one block when no operation can store to RAM or introduce
+    such an effect.
 
     Pass should be run after `llzk-duplicate-read-write-elim` for maximum effect.
   }];
