@@ -102,7 +102,8 @@ def ComputeConstrainToProductPass
 }
 
 def FuseProductLoopsPass : LLZKPass<"llzk-fuse-product-loops"> {
-  let summary = "Fuse matching witness/constraint control flow in a @product function";
+  let summary =
+      "Fuse matching witness/constraint control flow in a @product function";
   let description = [{
     Fuses unambiguous compute/constrain sibling `scf.for` loops with matching trip counts and
     sibling `scf.if` ops with the same SSA condition, same else structure, and a resultless
