@@ -110,8 +110,6 @@ Expected<std::string> readInput(StringRef inputFilename) {
 Expected<ScriptMetadata> scanScript(StringRef script) {
   ScriptMetadata metadata;
   std::optional<std::string> currentRoot;
-  std::optional<std::string> pendingCommentStage;
-  std::optional<SatResult> pendingCommentExpected;
   std::optional<std::string> pendingInfoStage;
   std::optional<SatResult> pendingInfoExpected;
 
@@ -129,42 +127,6 @@ Expected<ScriptMetadata> scanScript(StringRef script) {
   script.split(lines, '\n');
   for (StringRef line : lines) {
     StringRef trimmed = line.ltrim();
-    if (trimmed.starts_with("; root:")) {
-      StringRef rest = trimmed.drop_front(StringRef("; root:").size()).trim();
-      if (rest.empty()) {
-        return createStringError(
-            inconvertibleErrorCode(), "invalid root annotation: '%s'", trimmed.str().c_str()
-        );
-      }
-      currentRoot = rest.str();
-      continue;
-    }
-    if (trimmed.starts_with("; check-sat")) {
-      std::optional<std::string> stageName;
-      std::optional<SatResult> expected;
-      SmallVector<StringRef> tokens;
-      trimmed.split(tokens, ' ', -1, false);
-      for (StringRef token : ArrayRef<StringRef>(tokens).drop_front()) {
-        StringRef rest = token;
-        if (rest.consume_front("stage=")) {
-          stageName = rest.str();
-          continue;
-        }
-        rest = token;
-        if (rest.consume_front("expect=")) {
-          expected = parseSatResult(rest);
-        }
-      }
-
-      if (!stageName || !expected) {
-        return createStringError(
-            inconvertibleErrorCode(), "invalid stage annotation: '%s'", trimmed.str().c_str()
-        );
-      }
-      pendingCommentStage = *stageName;
-      pendingCommentExpected = *expected;
-      continue;
-    }
     if (trimmed.starts_with("(set-info")) {
       StringRef body = trimmed.drop_front(StringRef("(set-info").size()).trim();
       if (!body.ends_with(")")) {
@@ -204,10 +166,8 @@ Expected<ScriptMetadata> scanScript(StringRef script) {
       continue;
     }
     if (trimmed == "(check-sat)") {
-      std::optional<std::string> stageName =
-          pendingInfoStage ? pendingInfoStage : pendingCommentStage;
-      std::optional<SatResult> expected =
-          pendingInfoExpected ? pendingInfoExpected : pendingCommentExpected;
+      std::optional<std::string> stageName = pendingInfoStage;
+      std::optional<SatResult> expected = pendingInfoExpected;
 
       ++metadata.checkSatCount;
 
@@ -227,8 +187,6 @@ Expected<ScriptMetadata> scanScript(StringRef script) {
         );
       }
 
-      pendingCommentStage.reset();
-      pendingCommentExpected.reset();
       pendingInfoStage.reset();
       pendingInfoExpected.reset();
       continue;

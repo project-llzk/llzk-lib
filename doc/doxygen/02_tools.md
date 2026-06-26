@@ -160,9 +160,6 @@ llzk-opt --smt-to-smtlib='entry=main' \
   subsequent `check-sat`.
 - `set-info :llzk-stage "<name>"` and `set-info :llzk-root "<name>"` provide
   LLZK-specific stage and root labels for the subsequent summaries.
-- Legacy comment annotations such as `; root: ...` and
-  `; check-sat stage=<name> expect=<result>` are still accepted for backward
-  compatibility.
 - When expected-result annotations are present, every reported solver result
   must match the expected `sat`, `unsat`, or `unknown` result for the tool to
   succeed.
