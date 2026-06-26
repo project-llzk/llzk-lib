@@ -1,5 +1,4 @@
-//===-- SMTPasses.td ----------------------------------------*- tablegen
-//-*-===//
+//===-- SMTPasses.td ---------------------------------------*- tablegen -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -14,9 +13,9 @@
 include "llzk/Pass/PassBase.td"
 
 def SMTDialectToSMTLIBPass : Pass<"smt-to-smtlib", "::mlir::ModuleOp"> {
-  let summary = "Convert SMT dialect IR to SMTLIB";
+  let summary = "Convert SMT dialect IR to SMTLIB2";
   let description = [{
-    Emits a textual SMTLIB script for an explicitly selected SMT root
+    Emits a textual SMTLIB2 script for an explicitly selected SMT root
     function. The pass supports the SMT subset currently produced by llzk's
     lowering pipelines.
   }];
