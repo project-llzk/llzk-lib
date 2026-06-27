@@ -40,4 +40,5 @@ module attributes {llzk.lang = "llzk"} {
 // CHECK:         } else {
 // CHECK:           constrain.eq %[[RESULT]]
 // CHECK:         }
+// CHECK-NEXT:    }
 // CHECK-NEXT:    function.return %[[SELF]] : !struct.type<@A>
