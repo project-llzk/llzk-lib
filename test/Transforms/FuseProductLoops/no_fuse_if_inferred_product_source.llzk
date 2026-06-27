@@ -1,0 +1,43 @@
+// RUN: llzk-opt --llzk-fuse-product-loops %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @A {
+    struct.member @foo : !felt.type
+
+    function.def @product(%b: i1) -> !struct.type<@A> {
+      %self = struct.new : <@A>
+
+      %0 = scf.if %b -> !felt.type {
+        %zero = felt.const 0 {product_source = "compute"}
+        scf.yield %zero : !felt.type
+      } else {
+        %one = felt.const 1 {product_source = "compute"}
+        scf.yield %one : !felt.type
+      }
+
+      struct.writem %self[@foo] = %0 : <@A>, !felt.type
+
+      scf.if %b {
+        %expected = felt.const 0 {product_source = "constrain"}
+        constrain.eq %0, %expected : !felt.type {product_source = "constrain"}
+      } else {
+        %expected = felt.const 1 {product_source = "constrain"}
+        constrain.eq %0, %expected : !felt.type {product_source = "constrain"}
+      }
+
+      function.return %self : !struct.type<@A>
+    }
+  }
+}
+
+// CHECK-LABEL: function.def @product
+// CHECK-SAME:  (%[[B:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@A>
+// CHECK:         %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@A>
+// CHECK:         %[[RESULT:[0-9a-zA-Z_\.]+]] = scf.if %[[B]] -> (!felt.type)
+// CHECK:         struct.writem %[[SELF]][@foo] = %[[RESULT]] : <@A>, !felt.type
+// CHECK-NEXT:    scf.if %[[B]] {
+// CHECK:           constrain.eq %[[RESULT]]
+// CHECK:         } else {
+// CHECK:           constrain.eq %[[RESULT]]
+// CHECK:         }
+// CHECK-NEXT:    function.return %[[SELF]] : !struct.type<@A>

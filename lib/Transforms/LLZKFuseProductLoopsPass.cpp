@@ -132,40 +132,7 @@ static std::optional<llvm::StringRef> getProductSource(Operation *op) {
   if (StringAttr source = op->getAttrOfType<StringAttr>(PRODUCT_SOURCE)) {
     return source.getValue();
   }
-
-  // Loop fusion can preserve descendant provenance while dropping it from the control op.
-  std::optional<llvm::StringRef> inferredSource;
-  bool sourceConflict = false;
-  op->walk([&](Operation *nestedOp) {
-    if (nestedOp == op) {
-      return WalkResult::advance();
-    }
-
-    StringAttr nestedSource = nestedOp->getAttrOfType<StringAttr>(PRODUCT_SOURCE);
-    if (!nestedSource) {
-      return WalkResult::advance();
-    }
-
-    llvm::StringRef source = nestedSource.getValue();
-    if (source != FUNC_NAME_COMPUTE && source != FUNC_NAME_CONSTRAIN) {
-      sourceConflict = true;
-      return WalkResult::interrupt();
-    }
-    if (!inferredSource) {
-      inferredSource = source;
-      return WalkResult::advance();
-    }
-    if (*inferredSource != source) {
-      sourceConflict = true;
-      return WalkResult::interrupt();
-    }
-    return WalkResult::advance();
-  });
-
-  if (sourceConflict) {
-    return std::nullopt;
-  }
-  return inferredSource;
+  return std::nullopt;
 }
 
 static inline bool hasProductSource(Operation *op, llvm::StringRef source) {
