@@ -1,3 +1,4 @@
 fixed:
-  - Teach duplicate read/write elimination to reuse global and RAM reads when
-    the current analysis state proves the read observes the same value.
+  - Prevent duplicate operation elimination from reusing stateful global or RAM
+    reads across writes, while allowing duplicate read/write elimination to
+    reuse reads whose observed value is known.

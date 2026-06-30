@@ -1,0 +1,48 @@
+// RUN: llzk-opt -split-input-file -llzk-duplicate-op-elim %s 2>&1 | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  global.def @g : !felt.type = 1
+
+  function.def @global_write_barrier(%new: !felt.type) -> !felt.type
+      attributes {function.allow_witness} {
+    %before = global.read @g : !felt.type
+    global.write @g = %new : !felt.type
+    %after = global.read @g : !felt.type
+    %sum = felt.add %before, %after : !felt.type, !felt.type
+    function.return %sum : !felt.type
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  global.def @g : !felt.type = 1
+// CHECK-NEXT:  function.def @global_write_barrier(%[[NEW:.*]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:    %[[BEFORE:.*]] = global.read @g : !felt.type
+// CHECK-NEXT:    global.write @g = %[[NEW]] : !felt.type
+// CHECK-NEXT:    %[[AFTER:.*]] = global.read @g : !felt.type
+// CHECK-NEXT:    %[[SUM:.*]] = felt.add %[[BEFORE]], %[[AFTER]] : !felt.type, !felt.type
+// CHECK-NEXT:    function.return %[[SUM]] : !felt.type
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @ram_store_barrier(%addr: index, %new: !felt.type) -> !felt.type
+      attributes {function.allow_witness} {
+    %before = ram.load %addr : !felt.type
+    ram.store %addr, %new : !felt.type
+    %after = ram.load %addr : !felt.type
+    %sum = felt.add %before, %after : !felt.type, !felt.type
+    function.return %sum : !felt.type
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  function.def @ram_store_barrier(%[[ADDR:.*]]: index, %[[NEW:.*]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:    %[[BEFORE:.*]] = ram.load %[[ADDR]] : !felt.type
+// CHECK-NEXT:    ram.store %[[ADDR]], %[[NEW]] : !felt.type
+// CHECK-NEXT:    %[[AFTER:.*]] = ram.load %[[ADDR]] : !felt.type
+// CHECK-NEXT:    %[[SUM:.*]] = felt.add %[[BEFORE]], %[[AFTER]] : !felt.type, !felt.type
+// CHECK-NEXT:    function.return %[[SUM]] : !felt.type
+// CHECK-NEXT:  }
+// CHECK-NEXT:}

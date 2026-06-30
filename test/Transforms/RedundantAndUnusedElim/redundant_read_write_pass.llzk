@@ -451,7 +451,7 @@ module attributes {llzk.lang} {
   global.def @g : !felt.type = 1
   global.def @h : !felt.type = 2
 
-  function.def @different_global_write_keeps_read(%new: !felt.type) -> !felt.type
+  function.def @different_global_write_reuses_read(%new: !felt.type) -> !felt.type
       attributes {function.allow_witness} {
     %first = global.read @g : !felt.type
     global.write @h = %new : !felt.type
@@ -464,7 +464,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:  global.def @g : !felt.type = 1
 // CHECK-NEXT:  global.def @h : !felt.type = 2
-// CHECK-NEXT:  function.def @different_global_write_keeps_read(%[[NEW:.*]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:  function.def @different_global_write_reuses_read(%[[NEW:.*]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
 // CHECK-NEXT:    %[[READ:.*]] = global.read @g : !felt.type
 // CHECK-NEXT:    global.write @h = %[[NEW]] : !felt.type
 // CHECK-NEXT:    %[[SUM:.*]] = felt.add %[[READ]], %[[READ]] : !felt.type, !felt.type

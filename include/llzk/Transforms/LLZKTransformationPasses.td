@@ -19,6 +19,10 @@ def RedundantReadAndWriteEliminationPass
     Remove redundant or unnecessary reads and writes to struct members and
     arrays, and redundant reads from globals and RAM.
 
+    Struct-member accesses match only when the base, member, table offset,
+    affine map metadata, and translated affine operands match. Omitted
+    member-read offsets and member writes denote the current row.
+
     Stateful reads are reused when the current analysis state proves the read
     observes the same value. Writes and stores update that known state, while
     unknown or non-read state effects invalidate it.
