@@ -23,11 +23,25 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: struct.def @GlobalWriteBarrier {
-// CHECK: %[[BEFORE:[0-9a-zA-Z_\.]+]] = global.read @g : !felt.type
-// CHECK: global.write @g = %{{[0-9a-zA-Z_\.]+}} : !felt.type
-// CHECK: %[[AFTER:[0-9a-zA-Z_\.]+]] = global.read @g : !felt.type
-// CHECK: felt.add %[[BEFORE]], %[[AFTER]] : !felt.type, !felt.type
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  global.def @g : !felt.type = 1
+// CHECK-NEXT:  struct.def @GlobalWriteBarrier {
+// CHECK-NEXT:    struct.member @out : !felt.type
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@GlobalWriteBarrier> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[SELF:.*]] = struct.new : <@GlobalWriteBarrier>
+// CHECK-NEXT:      %[[NEW:.*]] = felt.const {{ *}}2
+// CHECK-NEXT:      %[[BEFORE:.*]] = global.read @g : !felt.type
+// CHECK-NEXT:      global.write @g = %[[NEW]] : !felt.type
+// CHECK-NEXT:      %[[AFTER:.*]] = global.read @g : !felt.type
+// CHECK-NEXT:      %[[SUM:.*]] = felt.add %[[BEFORE]], %[[AFTER]] : !felt.type, !felt.type
+// CHECK-NEXT:      struct.writem %[[SELF]][@out] = %[[SUM]] : <@GlobalWriteBarrier>, !felt.type
+// CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@GlobalWriteBarrier>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[SELF_ARG:.*]]: !struct.type<@GlobalWriteBarrier>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
 
 // -----
 
@@ -42,10 +56,14 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: function.def @global_read_reuse() -> !felt.type {
-// CHECK: %[[READ:[0-9a-zA-Z_\.]+]] = global.read @g : !felt.type
-// CHECK-NOT: global.read @g
-// CHECK: felt.add %[[READ]], %[[READ]] : !felt.type, !felt.type
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  global.def @g : !felt.type = 1
+// CHECK-NEXT:  function.def @global_read_reuse() -> !felt.type {
+// CHECK-NEXT:    %[[READ:.*]] = global.read @g : !felt.type
+// CHECK-NEXT:    %[[SUM:.*]] = felt.add %[[READ]], %[[READ]] : !felt.type, !felt.type
+// CHECK-NEXT:    function.return %[[SUM]] : !felt.type
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
 
 // -----
 
@@ -73,11 +91,25 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: struct.def @DifferentGlobalWrite {
-// CHECK: %[[READ:[0-9a-zA-Z_\.]+]] = global.read @g : !felt.type
-// CHECK: global.write @h = %{{[0-9a-zA-Z_\.]+}} : !felt.type
-// CHECK-NOT: global.read @g
-// CHECK: felt.add %[[READ]], %[[READ]] : !felt.type, !felt.type
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  global.def @g : !felt.type = 1
+// CHECK-NEXT:  global.def @h : !felt.type = 2
+// CHECK-NEXT:  struct.def @DifferentGlobalWrite {
+// CHECK-NEXT:    struct.member @out : !felt.type
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@DifferentGlobalWrite> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[SELF:.*]] = struct.new : <@DifferentGlobalWrite>
+// CHECK-NEXT:      %[[NEW:.*]] = felt.const {{ *}}3
+// CHECK-NEXT:      %[[READ:.*]] = global.read @g : !felt.type
+// CHECK-NEXT:      global.write @h = %[[NEW]] : !felt.type
+// CHECK-NEXT:      %[[SUM:.*]] = felt.add %[[READ]], %[[READ]] : !felt.type, !felt.type
+// CHECK-NEXT:      struct.writem %[[SELF]][@out] = %[[SUM]] : <@DifferentGlobalWrite>, !felt.type
+// CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@DifferentGlobalWrite>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[SELF_ARG:.*]]: !struct.type<@DifferentGlobalWrite>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
 
 // -----
 
@@ -100,11 +132,20 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: function.def @global_call_barrier(
-// CHECK: %[[BEFORE:[0-9a-zA-Z_\.]+]] = global.read @g : !felt.type
-// CHECK: function.call @mutate_global
-// CHECK: %[[AFTER:[0-9a-zA-Z_\.]+]] = global.read @g : !felt.type
-// CHECK: felt.add %[[BEFORE]], %[[AFTER]] : !felt.type, !felt.type
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  global.def @g : !felt.type = 1
+// CHECK-NEXT:  function.def @mutate_global(%[[NEW:.*]]: !felt.type) attributes {function.allow_witness} {
+// CHECK-NEXT:    global.write @g = %[[NEW]] : !felt.type
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
+// CHECK-NEXT:  function.def @global_call_barrier(%[[ARG:.*]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:    %[[BEFORE:.*]] = global.read @g : !felt.type
+// CHECK-NEXT:    function.call @mutate_global(%[[ARG]]) : (!felt.type) -> ()
+// CHECK-NEXT:    %[[AFTER:.*]] = global.read @g : !felt.type
+// CHECK-NEXT:    %[[SUM:.*]] = felt.add %[[BEFORE]], %[[AFTER]] : !felt.type, !felt.type
+// CHECK-NEXT:    function.return %[[SUM]] : !felt.type
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
 
 // -----
 
@@ -119,11 +160,15 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: function.def @ram_store_barrier(
-// CHECK: %[[BEFORE:[0-9a-zA-Z_\.]+]] = ram.load %[[ADDR:[0-9a-zA-Z_\.]+]] : !felt.type
-// CHECK: ram.store %[[ADDR]], %[[NEW:[0-9a-zA-Z_\.]+]] : !felt.type
-// CHECK: %[[AFTER:[0-9a-zA-Z_\.]+]] = ram.load %[[ADDR]] : !felt.type
-// CHECK: felt.add %[[BEFORE]], %[[AFTER]] : !felt.type, !felt.type
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  function.def @ram_store_barrier(%[[ADDR:.*]]: index, %[[NEW:.*]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:    %[[BEFORE:.*]] = ram.load %[[ADDR]] : !felt.type
+// CHECK-NEXT:    ram.store %[[ADDR]], %[[NEW]] : !felt.type
+// CHECK-NEXT:    %[[AFTER:.*]] = ram.load %[[ADDR]] : !felt.type
+// CHECK-NEXT:    %[[SUM:.*]] = felt.add %[[BEFORE]], %[[AFTER]] : !felt.type, !felt.type
+// CHECK-NEXT:    function.return %[[SUM]] : !felt.type
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
 
 // -----
 
@@ -144,12 +189,19 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: function.def @ram_call_barrier(
-// CHECK-SAME: %[[ADDR:[0-9a-zA-Z_\.]+]]: index
-// CHECK: %[[BEFORE:[0-9a-zA-Z_\.]+]] = ram.load %[[ADDR]] : !felt.type
-// CHECK: function.call @mutate_ram
-// CHECK: %[[AFTER:[0-9a-zA-Z_\.]+]] = ram.load %[[ADDR]] : !felt.type
-// CHECK: felt.add %[[BEFORE]], %[[AFTER]] : !felt.type, !felt.type
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  function.def @mutate_ram(%[[M_ADDR:.*]]: index, %[[M_NEW:.*]]: !felt.type) attributes {function.allow_witness} {
+// CHECK-NEXT:    ram.store %[[M_ADDR]], %[[M_NEW]] : !felt.type
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
+// CHECK-NEXT:  function.def @ram_call_barrier(%[[ADDR:.*]]: index, %[[NEW:.*]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:    %[[BEFORE:.*]] = ram.load %[[ADDR]] : !felt.type
+// CHECK-NEXT:    function.call @mutate_ram(%[[ADDR]], %[[NEW]]) : (index, !felt.type) -> ()
+// CHECK-NEXT:    %[[AFTER:.*]] = ram.load %[[ADDR]] : !felt.type
+// CHECK-NEXT:    %[[SUM:.*]] = felt.add %[[BEFORE]], %[[AFTER]] : !felt.type, !felt.type
+// CHECK-NEXT:    function.return %[[SUM]] : !felt.type
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
 
 // -----
 
@@ -164,11 +216,15 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: function.def @ram_unknown_alias(
-// CHECK: %[[BEFORE:[0-9a-zA-Z_\.]+]] = ram.load %[[LOAD_ADDR:[0-9a-zA-Z_\.]+]] : !felt.type
-// CHECK: ram.store %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !felt.type
-// CHECK: %[[AFTER:[0-9a-zA-Z_\.]+]] = ram.load %[[LOAD_ADDR]] : !felt.type
-// CHECK: felt.add %[[BEFORE]], %[[AFTER]] : !felt.type, !felt.type
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  function.def @ram_unknown_alias(%[[LOAD_ADDR:.*]]: index, %[[STORE_ADDR:.*]]: index, %[[NEW:.*]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:    %[[BEFORE:.*]] = ram.load %[[LOAD_ADDR]] : !felt.type
+// CHECK-NEXT:    ram.store %[[STORE_ADDR]], %[[NEW]] : !felt.type
+// CHECK-NEXT:    %[[AFTER:.*]] = ram.load %[[LOAD_ADDR]] : !felt.type
+// CHECK-NEXT:    %[[SUM:.*]] = felt.add %[[BEFORE]], %[[AFTER]] : !felt.type, !felt.type
+// CHECK-NEXT:    function.return %[[SUM]] : !felt.type
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
 
 // -----
 
@@ -182,11 +238,13 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: function.def @ram_load_reuse(
-// CHECK-SAME: %[[ADDR:[0-9a-zA-Z_\.]+]]: index) -> !felt.type
-// CHECK: %[[LOAD:[0-9a-zA-Z_\.]+]] = ram.load %[[ADDR]] : !felt.type
-// CHECK-NOT: ram.load %[[ADDR]]
-// CHECK: felt.add %[[LOAD]], %[[LOAD]] : !felt.type, !felt.type
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  function.def @ram_load_reuse(%[[ADDR:.*]]: index) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:    %[[LOAD:.*]] = ram.load %[[ADDR]] : !felt.type
+// CHECK-NEXT:    %[[SUM:.*]] = felt.add %[[LOAD]], %[[LOAD]] : !felt.type, !felt.type
+// CHECK-NEXT:    function.return %[[SUM]] : !felt.type
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
 
 // -----
 
@@ -203,11 +261,15 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: function.def @global_read_ignores_ram_store(
-// CHECK: %[[READ:[0-9a-zA-Z_\.]+]] = global.read @g : !felt.type
-// CHECK: ram.store
-// CHECK-NOT: global.read @g
-// CHECK: felt.add %[[READ]], %[[READ]] : !felt.type, !felt.type
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  global.def @g : !felt.type = 1
+// CHECK-NEXT:  function.def @global_read_ignores_ram_store(%[[ADDR:.*]]: index, %[[NEW:.*]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:    %[[READ:.*]] = global.read @g : !felt.type
+// CHECK-NEXT:    ram.store %[[ADDR]], %[[NEW]] : !felt.type
+// CHECK-NEXT:    %[[SUM:.*]] = felt.add %[[READ]], %[[READ]] : !felt.type, !felt.type
+// CHECK-NEXT:    function.return %[[SUM]] : !felt.type
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
 
 // -----
 
@@ -225,12 +287,15 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: function.def @ram_load_ignores_global_write(
-// CHECK-SAME: %[[ADDR:[0-9a-zA-Z_\.]+]]: index
-// CHECK: %[[LOAD:[0-9a-zA-Z_\.]+]] = ram.load %[[ADDR]] : !felt.type
-// CHECK: global.write @g
-// CHECK-NOT: ram.load %[[ADDR]]
-// CHECK: felt.add %[[LOAD]], %[[LOAD]] : !felt.type, !felt.type
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  global.def @g : !felt.type = 1
+// CHECK-NEXT:  function.def @ram_load_ignores_global_write(%[[ADDR:.*]]: index, %[[NEW:.*]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:    %[[LOAD:.*]] = ram.load %[[ADDR]] : !felt.type
+// CHECK-NEXT:    global.write @g = %[[NEW]] : !felt.type
+// CHECK-NEXT:    %[[SUM:.*]] = felt.add %[[LOAD]], %[[LOAD]] : !felt.type, !felt.type
+// CHECK-NEXT:    function.return %[[SUM]] : !felt.type
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
 
 // -----
 
@@ -250,11 +315,20 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: function.def @global_read_block_local(
-// CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = global.read @g : !felt.type
-// CHECK: scf.if
-// CHECK: %[[SECOND:[0-9a-zA-Z_\.]+]] = global.read @g : !felt.type
-// CHECK: felt.add %[[FIRST]], %[[SECOND]] : !felt.type, !felt.type
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  global.def @g : !felt.type = 1
+// CHECK-NEXT:  function.def @global_read_block_local(%[[COND:.*]]: i1) -> !felt.type {
+// CHECK-NEXT:    %[[FIRST:.*]] = global.read @g : !felt.type
+// CHECK-NEXT:    %[[SELECTED:.*]] = scf.if %[[COND]] -> (!felt.type) {
+// CHECK-NEXT:      %[[SECOND:.*]] = global.read @g : !felt.type
+// CHECK-NEXT:      %[[SUM:.*]] = felt.add %[[FIRST]], %[[SECOND]] : !felt.type, !felt.type
+// CHECK-NEXT:      scf.yield %[[SUM]] : !felt.type
+// CHECK-NEXT:    } else {
+// CHECK-NEXT:      scf.yield %[[FIRST]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.return %[[SELECTED]] : !felt.type
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
 
 // -----
 
@@ -273,12 +347,19 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: function.def @ram_load_block_local(
-// CHECK-SAME: %[[ADDR:[0-9a-zA-Z_\.]+]]: index
-// CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = ram.load %[[ADDR]] : !felt.type
-// CHECK: scf.if
-// CHECK: %[[SECOND:[0-9a-zA-Z_\.]+]] = ram.load %[[ADDR]] : !felt.type
-// CHECK: felt.add %[[FIRST]], %[[SECOND]] : !felt.type, !felt.type
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  function.def @ram_load_block_local(%[[ADDR:.*]]: index, %[[COND:.*]]: i1) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:    %[[FIRST:.*]] = ram.load %[[ADDR]] : !felt.type
+// CHECK-NEXT:    %[[SELECTED:.*]] = scf.if %[[COND]] -> (!felt.type) {
+// CHECK-NEXT:      %[[SECOND:.*]] = ram.load %[[ADDR]] : !felt.type
+// CHECK-NEXT:      %[[SUM:.*]] = felt.add %[[FIRST]], %[[SECOND]] : !felt.type, !felt.type
+// CHECK-NEXT:      scf.yield %[[SUM]] : !felt.type
+// CHECK-NEXT:    } else {
+// CHECK-NEXT:      scf.yield %[[FIRST]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.return %[[SELECTED]] : !felt.type
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
 
 // -----
 
@@ -294,10 +375,15 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: function.def @preserve_global_writes(
-// CHECK: global.write @g = %[[FIRST:[0-9a-zA-Z_\.]+]] : !felt.type
-// CHECK-NEXT: global.write @g = %{{[0-9a-zA-Z_\.]+}} : !felt.type
-// CHECK-NEXT: global.write @g = %[[FIRST]] : !felt.type
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  global.def @g : !felt.type = 1
+// CHECK-NEXT:  function.def @preserve_global_writes(%[[FIRST:.*]]: !felt.type, %[[SECOND:.*]]: !felt.type) attributes {function.allow_witness} {
+// CHECK-NEXT:    global.write @g = %[[FIRST]] : !felt.type
+// CHECK-NEXT:    global.write @g = %[[SECOND]] : !felt.type
+// CHECK-NEXT:    global.write @g = %[[FIRST]] : !felt.type
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
 
 // -----
 
@@ -312,10 +398,14 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: function.def @preserve_ram_stores(
-// CHECK: ram.store %[[ADDR:[0-9a-zA-Z_\.]+]], %[[FIRST:[0-9a-zA-Z_\.]+]] : !felt.type
-// CHECK-NEXT: ram.store %[[ADDR]], %{{[0-9a-zA-Z_\.]+}} : !felt.type
-// CHECK-NEXT: ram.store %[[ADDR]], %[[FIRST]] : !felt.type
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  function.def @preserve_ram_stores(%[[ADDR:.*]]: index, %[[FIRST:.*]]: !felt.type, %[[SECOND:.*]]: !felt.type) attributes {function.allow_witness} {
+// CHECK-NEXT:    ram.store %[[ADDR]], %[[FIRST]] : !felt.type
+// CHECK-NEXT:    ram.store %[[ADDR]], %[[SECOND]] : !felt.type
+// CHECK-NEXT:    ram.store %[[ADDR]], %[[FIRST]] : !felt.type
+// CHECK-NEXT:    function.return
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
 
 // -----
 
@@ -328,7 +418,148 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: function.def @pure_op_reuse(
-// CHECK: %[[ADD:[0-9a-zA-Z_\.]+]] = felt.add
-// CHECK-NOT: felt.add
-// CHECK: felt.mul %[[ADD]], %[[ADD]] : !felt.type, !felt.type
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  function.def @pure_op_reuse(%[[LHS:.*]]: !felt.type, %[[RHS:.*]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:    %[[ADD:.*]] = felt.add %[[LHS]], %[[RHS]] : !felt.type, !felt.type
+// CHECK-NEXT:    %[[PRODUCT:.*]] = felt.mul %[[ADD]], %[[ADD]] : !felt.type, !felt.type
+// CHECK-NEXT:    function.return %[[PRODUCT]] : !felt.type
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @MemberReadReuse {
+    struct.member @cell : !felt.type
+    struct.member @out : !felt.type
+
+    function.def @compute() -> !struct.type<@MemberReadReuse> {
+      %self = struct.new : !struct.type<@MemberReadReuse>
+      %first = struct.readm %self[@cell] : !struct.type<@MemberReadReuse>, !felt.type
+      %second = struct.readm %self[@cell] : !struct.type<@MemberReadReuse>, !felt.type
+      %sum = felt.add %first, %second : !felt.type, !felt.type
+      struct.writem %self[@out] = %sum : !struct.type<@MemberReadReuse>, !felt.type
+      function.return %self : !struct.type<@MemberReadReuse>
+    }
+
+    function.def @constrain(%self: !struct.type<@MemberReadReuse>) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  struct.def @MemberReadReuse {
+// CHECK-NEXT:    struct.member @cell : !felt.type
+// CHECK-NEXT:    struct.member @out : !felt.type
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@MemberReadReuse> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[SELF:.*]] = struct.new : <@MemberReadReuse>
+// CHECK-NEXT:      %[[CELL:.*]] = struct.readm %[[SELF]][@cell] : <@MemberReadReuse>, !felt.type
+// CHECK-NEXT:      %[[SUM:.*]] = felt.add %[[CELL]], %[[CELL]] : !felt.type, !felt.type
+// CHECK-NEXT:      struct.writem %[[SELF]][@out] = %[[SUM]] : <@MemberReadReuse>, !felt.type
+// CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@MemberReadReuse>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[SELF_ARG:.*]]: !struct.type<@MemberReadReuse>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @MemberWriteBarrier {
+    struct.member @cell : !felt.type
+    struct.member @out : !felt.type
+
+    function.def @compute(%new: !felt.type) -> !struct.type<@MemberWriteBarrier> {
+      %self = struct.new : !struct.type<@MemberWriteBarrier>
+      %before = struct.readm %self[@cell] : !struct.type<@MemberWriteBarrier>, !felt.type
+      struct.writem %self[@cell] = %new : !struct.type<@MemberWriteBarrier>, !felt.type
+      %after = struct.readm %self[@cell] : !struct.type<@MemberWriteBarrier>, !felt.type
+      %sum = felt.add %before, %after : !felt.type, !felt.type
+      struct.writem %self[@out] = %sum : !struct.type<@MemberWriteBarrier>, !felt.type
+      function.return %self : !struct.type<@MemberWriteBarrier>
+    }
+
+    function.def @constrain(%self: !struct.type<@MemberWriteBarrier>, %new: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  struct.def @MemberWriteBarrier {
+// CHECK-NEXT:    struct.member @cell : !felt.type
+// CHECK-NEXT:    struct.member @out : !felt.type
+// CHECK-NEXT:    function.def @compute(%[[NEW:.*]]: !felt.type) -> !struct.type<@MemberWriteBarrier> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[SELF:.*]] = struct.new : <@MemberWriteBarrier>
+// CHECK-NEXT:      %[[BEFORE:.*]] = struct.readm %[[SELF]][@cell] : <@MemberWriteBarrier>, !felt.type
+// CHECK-NEXT:      struct.writem %[[SELF]][@cell] = %[[NEW]] : <@MemberWriteBarrier>, !felt.type
+// CHECK-NEXT:      %[[AFTER:.*]] = struct.readm %[[SELF]][@cell] : <@MemberWriteBarrier>, !felt.type
+// CHECK-NEXT:      %[[SUM:.*]] = felt.add %[[BEFORE]], %[[AFTER]] : !felt.type, !felt.type
+// CHECK-NEXT:      struct.writem %[[SELF]][@out] = %[[SUM]] : <@MemberWriteBarrier>, !felt.type
+// CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@MemberWriteBarrier>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[SELF_ARG:.*]]: !struct.type<@MemberWriteBarrier>, %[[NEW_ARG:.*]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ReadOnlyCallee {
+    struct.member @cell : !felt.type
+
+    function.def @compute() -> !struct.type<@ReadOnlyCallee> {
+      %self = struct.new : !struct.type<@ReadOnlyCallee>
+      function.return %self : !struct.type<@ReadOnlyCallee>
+    }
+
+    function.def @constrain(%self: !struct.type<@ReadOnlyCallee>) {
+      %cell = struct.readm %self[@cell] : !struct.type<@ReadOnlyCallee>, !felt.type
+      function.return
+    }
+  }
+
+  struct.def @ReadOnlyCaller {
+    struct.member @child : !struct.type<@ReadOnlyCallee>
+
+    function.def @compute() -> !struct.type<@ReadOnlyCaller> {
+      %self = struct.new : !struct.type<@ReadOnlyCaller>
+      function.return %self : !struct.type<@ReadOnlyCaller>
+    }
+
+    function.def @constrain(%self: !struct.type<@ReadOnlyCaller>) {
+      %child = struct.readm %self[@child] : !struct.type<@ReadOnlyCaller>, !struct.type<@ReadOnlyCallee>
+      function.call @ReadOnlyCallee::@constrain(%child) : (!struct.type<@ReadOnlyCallee>) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  struct.def @ReadOnlyCallee {
+// CHECK-NEXT:    struct.member @cell : !felt.type
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@ReadOnlyCallee> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[CALLEE_SELF:.*]] = struct.new : <@ReadOnlyCallee>
+// CHECK-NEXT:      function.return %[[CALLEE_SELF]] : !struct.type<@ReadOnlyCallee>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[CALLEE_ARG:.*]]: !struct.type<@ReadOnlyCallee>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[CELL:.*]] = struct.readm %[[CALLEE_ARG]][@cell] : <@ReadOnlyCallee>, !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK-NEXT:  struct.def @ReadOnlyCaller {
+// CHECK-NEXT:    struct.member @child : !struct.type<@ReadOnlyCallee>
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@ReadOnlyCaller> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[CALLER_SELF:.*]] = struct.new : <@ReadOnlyCaller>
+// CHECK-NEXT:      function.return %[[CALLER_SELF]] : !struct.type<@ReadOnlyCaller>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[CALLER_ARG:.*]]: !struct.type<@ReadOnlyCaller>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK-NEXT:}

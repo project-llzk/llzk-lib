@@ -75,8 +75,10 @@ struct ReadStateKey {
 struct BlockReadState {
   // Unknown and generic non-read effects invalidate every modeled read.
   Operation *lastCommonBarrier = nullptr;
+  Operation *lastAnyWrite = nullptr;
   Operation *lastRamStore = nullptr;
   DenseMap<SymbolRefAttr, Operation *> lastGlobalWrite;
+  DenseMap<Value, DenseMap<FlatSymbolRefAttr, Operation *>> lastMemberWrite;
 };
 
 static bool hasUnknownOrNonReadEffect(Operation *op) {
@@ -86,19 +88,36 @@ static bool hasUnknownOrNonReadEffect(Operation *op) {
   });
 }
 
+static bool hasOnlyReadEffects(Operation *op) {
+  auto effects = getEffectsRecursively(op);
+  if (!effects || effects->empty()) {
+    return false;
+  }
+  return llvm::all_of(*effects, [](const MemoryEffects::EffectInstance &effect) {
+    return isa<MemoryEffects::Read>(effect.getEffect());
+  });
+}
+
+static Value translateValue(Value value, const TranslationMap &map) {
+  if (auto it = map.find(value); it != map.end()) {
+    return it->second;
+  }
+  return value;
+}
+
 static bool isDuplicateEliminationCandidate(Operation *op) {
   if (isa<NonDetOp>(op) || op->hasTrait<OpTrait::IsTerminator>() || op->getNumRegions() != 0 ||
       op->getNumSuccessors() != 0) {
     return false;
   }
 
-  // Constraint elimination is an intentional behavior of this pass. Global
-  // and RAM reads are handled using the state keys below.
-  return isa<ConstraintOpInterface, global::GlobalReadOp, ram::LoadOp>(op) ||
-         isMemoryEffectFree(op);
+  // Constraint elimination is an intentional behavior of this pass. Memory
+  // reads are handled using the state keys below.
+  return isa<ConstraintOpInterface>(op) || hasOnlyReadEffects(op) || isMemoryEffectFree(op);
 }
 
-static ReadStateKey getReadStateKey(Operation *op, const BlockReadState &state) {
+static ReadStateKey
+getReadStateKey(Operation *op, const BlockReadState &state, const TranslationMap &map) {
   if (auto read = dyn_cast<global::GlobalReadOp>(op)) {
     return {
         op->getBlock(), state.lastCommonBarrier, state.lastGlobalWrite.lookup(read.getNameRef())
@@ -107,27 +126,48 @@ static ReadStateKey getReadStateKey(Operation *op, const BlockReadState &state) 
   if (isa<ram::LoadOp>(op)) {
     return {op->getBlock(), state.lastCommonBarrier, state.lastRamStore};
   }
+  if (auto read = dyn_cast<MemberReadOp>(op)) {
+    Value component = translateValue(read.getComponent(), map);
+    Operation *lastMemberWrite = nullptr;
+    if (auto it = state.lastMemberWrite.find(component); it != state.lastMemberWrite.end()) {
+      lastMemberWrite = it->second.lookup(read.getMemberNameAttr());
+    }
+    return {op->getBlock(), state.lastCommonBarrier, lastMemberWrite};
+  }
+  if (hasOnlyReadEffects(op)) {
+    return {op->getBlock(), state.lastCommonBarrier, state.lastAnyWrite};
+  }
   return {};
 }
 
-static void updateReadState(Operation *op, BlockReadState &state) {
+static void updateReadState(Operation *op, BlockReadState &state, const TranslationMap &map) {
   if (auto write = dyn_cast<global::GlobalWriteOp>(op)) {
     state.lastGlobalWrite[write.getNameRef()] = op;
+    state.lastAnyWrite = op;
     return;
   }
 
   if (isa<ram::StoreOp>(op)) {
     // Without RAM alias analysis, every store may affect every load.
     state.lastRamStore = op;
+    state.lastAnyWrite = op;
     return;
   }
 
-  if (isa<ConstraintOpInterface, global::GlobalReadOp, ram::LoadOp>(op) || isMemoryEffectFree(op)) {
+  if (auto write = dyn_cast<MemberWriteOp>(op)) {
+    Value component = translateValue(write.getComponent(), map);
+    state.lastMemberWrite[component][write.getMemberNameAttr()] = op;
+    state.lastAnyWrite = op;
+    return;
+  }
+
+  if (isa<ConstraintOpInterface>(op) || hasOnlyReadEffects(op) || isMemoryEffectFree(op)) {
     return;
   }
 
   if (hasUnknownOrNonReadEffect(op)) {
     state.lastCommonBarrier = op;
+    state.lastAnyWrite = op;
   }
 }
 
@@ -351,7 +391,7 @@ class PassImpl : public llzk::impl::RedundantOperationEliminationPassBase<PassIm
       // the current operation B and A dominates B.
       bool isRedundant = false;
       if (isDuplicateEliminationCandidate(op)) {
-        OperationComparator comp(op, map, getReadStateKey(op, readState));
+        OperationComparator comp(op, map, getReadStateKey(op, readState, map));
         if (auto it = uniqueOps.find(comp);
             it != uniqueOps.end() && domInfo.dominates(it->getOp(), op)) {
           redundantOps.push_back(op);
@@ -365,7 +405,7 @@ class PassImpl : public llzk::impl::RedundantOperationEliminationPassBase<PassIm
       }
 
       if (!isRedundant) {
-        updateReadState(op, readState);
+        updateReadState(op, readState, map);
       }
       return WalkResult::advance();
     });
