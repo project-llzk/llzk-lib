@@ -1,4 +1,4 @@
-// RUN: llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s | FileCheck --check-prefix=SHARE %s
+// RUN: llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s | FileCheck %s
 
 module {
   func.func @square_chain(%x: !smt.int) -> !smt.int {
@@ -17,10 +17,9 @@ module {
   }
 }
 
-// SHARE: (set-logic ALL)
-// SHARE-NEXT: (set-info :llzk-root "main")
-// SHARE-DAG: (declare-const main__arg0 Int)
-// SHARE-DAG: (declare-fun result () Int)
-// SHARE: (assert (= result (let (([[SQ0:[A-Za-z0-9_$.]+]] (* main__arg0 main__arg0)))
-// SHARE: (let (([[SQ1:[A-Za-z0-9_$.]+]] (* [[SQ0]] [[SQ0]])))
-// SHARE: (let (([[SQ2:[A-Za-z0-9_$.]+]] (* [[SQ1]] [[SQ1]]))) [[SQ2]])))
+// CHECK:      (set-logic ALL)
+// CHECK-NEXT: (set-info :llzk-root "main")
+// CHECK-NEXT: (declare-const main__arg0 Int)
+// CHECK-NEXT: (define-fun square_chain ((square_chain__arg0 Int)) Int (let ((__let0 (* square_chain__arg0 square_chain__arg0))) (let ((__let1 (* __let0 __let0))) (let ((__let2 (* __let1 __let1))) __let2))))
+// CHECK-NEXT: (declare-fun result () Int)
+// CHECK-NEXT: (assert (= result (square_chain main__arg0)))

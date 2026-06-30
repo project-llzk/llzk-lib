@@ -1,4 +1,4 @@
-// RUN: llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s | FileCheck --check-prefix=GENERIC %s
+// RUN: llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s | FileCheck %s
 
 module {
   func.func @helper(%x: !smt.int, %flag: !smt.bool) -> !smt.int {
@@ -18,12 +18,10 @@ module {
   }
 }
 
-// GENERIC: (set-logic ALL)
-// GENERIC-NEXT: (set-info :llzk-root "main")
-// GENERIC-DAG: (declare-const main__arg0 Int)
-// GENERIC-DAG: (declare-const main__arg1 Bool)
-// GENERIC-DAG: (declare-fun result () Int)
-// GENERIC: (assert (= result
-// GENERIC: (+ main__arg0 5)
-// GENERIC: (- main__arg0)
-// GENERIC: (ite main__arg1
+// CHECK:      (set-logic ALL)
+// CHECK-NEXT: (set-info :llzk-root "main")
+// CHECK-NEXT: (declare-const main__arg0 Int)
+// CHECK-NEXT: (declare-const main__arg1 Bool)
+// CHECK-NEXT: (define-fun helper ((helper__arg0 Int) (helper__arg1 Bool)) Int (let ((__let0 (+ helper__arg0 5))) (let ((__let1 (- helper__arg0))) (let ((__let2 (ite helper__arg1 __let0 __let1))) __let2))))
+// CHECK-NEXT: (declare-fun result () Int)
+// CHECK-NEXT: (assert (= result (helper main__arg0 main__arg1)))

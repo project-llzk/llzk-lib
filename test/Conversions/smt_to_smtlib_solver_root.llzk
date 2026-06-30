@@ -1,0 +1,42 @@
+// RUN: llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s | FileCheck %s
+
+module {
+  func.func @helper(%x: !smt.int) -> !smt.int {
+    %one = smt.int.constant 1
+    %sum = smt.int.add %x, %one
+    return %sum : !smt.int
+  }
+
+  func.func @main() {
+    smt.solver () : () -> () {
+      smt.set_logic "ALL"
+      %x = smt.declare_fun "x" : !smt.int
+      %value0 = func.call @helper(%x) : (!smt.int) -> !smt.int
+      %result0 = smt.declare_fun "result" : !smt.int
+      %ok0 = smt.eq %result0, %value0 : !smt.int
+      smt.assert %ok0
+      smt.reset
+      smt.set_logic "ALL"
+      %y = smt.declare_fun "x" : !smt.int
+      %value1 = func.call @helper(%y) : (!smt.int) -> !smt.int
+      %result1 = smt.declare_fun "result" : !smt.int
+      %ok1 = smt.eq %result1, %value1 : !smt.int
+      smt.assert %ok1
+      smt.yield
+    }
+    return
+  }
+}
+
+// CHECK:      (set-info :llzk-root "main")
+// CHECK-NEXT: (set-logic ALL)
+// CHECK-NEXT: (declare-fun x () Int)
+// CHECK-NEXT: (define-fun helper ((helper__arg0 Int)) Int (let ((__let0 (+ helper__arg0 1))) __let0))
+// CHECK-NEXT: (declare-fun result () Int)
+// CHECK-NEXT: (assert (= result (helper x)))
+// CHECK-NEXT: (reset)
+// CHECK-NEXT: (set-logic ALL)
+// CHECK-NEXT: (declare-fun x () Int)
+// CHECK-NEXT: (define-fun helper ((helper__arg0 Int)) Int (let ((__let0 (+ helper__arg0 1))) __let0))
+// CHECK-NEXT: (declare-fun result () Int)
+// CHECK-NEXT: (assert (= result (helper x)))

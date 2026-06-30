@@ -1,0 +1,105 @@
+// RUN: llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s | FileCheck %s
+
+module {
+  func.func @main(%a: !smt.bv<4>, %b: !smt.bv<4>) {
+    %neg = smt.bv.neg %a : !smt.bv<4>
+    %add = smt.bv.add %a, %b : !smt.bv<4>
+    %mul = smt.bv.mul %a, %b : !smt.bv<4>
+    %udiv = smt.bv.udiv %a, %b : !smt.bv<4>
+    %sdiv = smt.bv.sdiv %a, %b : !smt.bv<4>
+    %urem = smt.bv.urem %a, %b : !smt.bv<4>
+    %srem = smt.bv.srem %a, %b : !smt.bv<4>
+    %smod = smt.bv.smod %a, %b : !smt.bv<4>
+    %ashr = smt.bv.ashr %a, %b : !smt.bv<4>
+    %cmp = smt.bv.cmp slt %a, %b : !smt.bv<4>
+    %concat = smt.bv.concat %a, %b : !smt.bv<4>, !smt.bv<4>
+    %extract = smt.bv.extract %concat from 1 : (!smt.bv<8>) -> !smt.bv<4>
+    %repeat = smt.bv.repeat 2 times %a : !smt.bv<4>
+    %u2i = smt.bv2int %a : !smt.bv<4>
+    %s2i = smt.bv2int %a signed : !smt.bv<4>
+
+    %neg_symbol = smt.declare_fun "neg" : !smt.bv<4>
+    %add_symbol = smt.declare_fun "add" : !smt.bv<4>
+    %mul_symbol = smt.declare_fun "mul" : !smt.bv<4>
+    %udiv_symbol = smt.declare_fun "udiv" : !smt.bv<4>
+    %sdiv_symbol = smt.declare_fun "sdiv" : !smt.bv<4>
+    %urem_symbol = smt.declare_fun "urem" : !smt.bv<4>
+    %srem_symbol = smt.declare_fun "srem" : !smt.bv<4>
+    %smod_symbol = smt.declare_fun "smod" : !smt.bv<4>
+    %ashr_symbol = smt.declare_fun "ashr" : !smt.bv<4>
+    %cmp_symbol = smt.declare_fun "cmp" : !smt.bool
+    %concat_symbol = smt.declare_fun "concat" : !smt.bv<8>
+    %extract_symbol = smt.declare_fun "extract" : !smt.bv<4>
+    %repeat_symbol = smt.declare_fun "repeat" : !smt.bv<8>
+    %u2i_symbol = smt.declare_fun "u2i" : !smt.int
+    %s2i_symbol = smt.declare_fun "s2i" : !smt.int
+
+    %neg_ok = smt.eq %neg_symbol, %neg : !smt.bv<4>
+    %add_ok = smt.eq %add_symbol, %add : !smt.bv<4>
+    %mul_ok = smt.eq %mul_symbol, %mul : !smt.bv<4>
+    %udiv_ok = smt.eq %udiv_symbol, %udiv : !smt.bv<4>
+    %sdiv_ok = smt.eq %sdiv_symbol, %sdiv : !smt.bv<4>
+    %urem_ok = smt.eq %urem_symbol, %urem : !smt.bv<4>
+    %srem_ok = smt.eq %srem_symbol, %srem : !smt.bv<4>
+    %smod_ok = smt.eq %smod_symbol, %smod : !smt.bv<4>
+    %ashr_ok = smt.eq %ashr_symbol, %ashr : !smt.bv<4>
+    %cmp_ok = smt.eq %cmp_symbol, %cmp : !smt.bool
+    %concat_ok = smt.eq %concat_symbol, %concat : !smt.bv<8>
+    %extract_ok = smt.eq %extract_symbol, %extract : !smt.bv<4>
+    %repeat_ok = smt.eq %repeat_symbol, %repeat : !smt.bv<8>
+    %u2i_ok = smt.eq %u2i_symbol, %u2i : !smt.int
+    %s2i_ok = smt.eq %s2i_symbol, %s2i : !smt.int
+
+    smt.assert %neg_ok
+    smt.assert %add_ok
+    smt.assert %mul_ok
+    smt.assert %udiv_ok
+    smt.assert %sdiv_ok
+    smt.assert %urem_ok
+    smt.assert %srem_ok
+    smt.assert %smod_ok
+    smt.assert %ashr_ok
+    smt.assert %cmp_ok
+    smt.assert %concat_ok
+    smt.assert %extract_ok
+    smt.assert %repeat_ok
+    smt.assert %u2i_ok
+    smt.assert %s2i_ok
+    return
+  }
+}
+
+// CHECK:      (set-logic ALL)
+// CHECK-NEXT: (set-info :llzk-root "main")
+// CHECK-NEXT: (declare-const main__arg0 (_ BitVec 4))
+// CHECK-NEXT: (declare-const main__arg1 (_ BitVec 4))
+// CHECK-NEXT: (declare-fun neg () (_ BitVec 4))
+// CHECK-NEXT: (declare-fun add () (_ BitVec 4))
+// CHECK-NEXT: (declare-fun mul () (_ BitVec 4))
+// CHECK-NEXT: (declare-fun udiv () (_ BitVec 4))
+// CHECK-NEXT: (declare-fun sdiv () (_ BitVec 4))
+// CHECK-NEXT: (declare-fun urem () (_ BitVec 4))
+// CHECK-NEXT: (declare-fun srem () (_ BitVec 4))
+// CHECK-NEXT: (declare-fun smod () (_ BitVec 4))
+// CHECK-NEXT: (declare-fun ashr () (_ BitVec 4))
+// CHECK-NEXT: (declare-fun cmp () Bool)
+// CHECK-NEXT: (declare-fun concat () (_ BitVec 8))
+// CHECK-NEXT: (declare-fun extract () (_ BitVec 4))
+// CHECK-NEXT: (declare-fun repeat () (_ BitVec 8))
+// CHECK-NEXT: (declare-fun u2i () Int)
+// CHECK-NEXT: (declare-fun s2i () Int)
+// CHECK-NEXT: (assert (= neg (bvneg main__arg0)))
+// CHECK-NEXT: (assert (= add (bvadd main__arg0 main__arg1)))
+// CHECK-NEXT: (assert (= mul (bvmul main__arg0 main__arg1)))
+// CHECK-NEXT: (assert (= udiv (bvudiv main__arg0 main__arg1)))
+// CHECK-NEXT: (assert (= sdiv (bvsdiv main__arg0 main__arg1)))
+// CHECK-NEXT: (assert (= urem (bvurem main__arg0 main__arg1)))
+// CHECK-NEXT: (assert (= srem (bvsrem main__arg0 main__arg1)))
+// CHECK-NEXT: (assert (= smod (bvsmod main__arg0 main__arg1)))
+// CHECK-NEXT: (assert (= ashr (bvashr main__arg0 main__arg1)))
+// CHECK-NEXT: (assert (= cmp (bvslt main__arg0 main__arg1)))
+// CHECK-NEXT: (assert (= concat (concat main__arg0 main__arg1)))
+// CHECK-NEXT: (assert (= extract ((_ extract 4 1) (concat main__arg0 main__arg1))))
+// CHECK-NEXT: (assert (= repeat ((_ repeat 2) main__arg0)))
+// CHECK-NEXT: (assert (= u2i (ubv_to_int main__arg0)))
+// CHECK-NEXT: (assert (= s2i (sbv_to_int main__arg0)))

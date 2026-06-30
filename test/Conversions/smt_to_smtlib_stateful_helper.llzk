@@ -1,4 +1,4 @@
-// RUN: not llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s 2>&1 | FileCheck --check-prefix=STATEFUL %s
+// RUN: llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s | FileCheck %s
 
 module {
   func.func @bad_helper(%x: !smt.int) -> !smt.int {
@@ -17,4 +17,7 @@ module {
   }
 }
 
-// STATEFUL: error: stateful SMT ops are not allowed in inlined helper functions
+// CHECK:      (set-logic ALL)
+// CHECK-NEXT: (set-info :llzk-root "main")
+// CHECK-NEXT: (declare-const main__arg0 Int)
+// CHECK-NEXT: (assert (= main__arg0 0))

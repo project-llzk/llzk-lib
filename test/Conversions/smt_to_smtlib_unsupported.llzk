@@ -1,13 +1,20 @@
-// RUN: not llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s 2>&1 | FileCheck --check-prefix=UNSUPPORTED %s
+// RUN: not llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s 2>&1 | FileCheck %s
 
 module {
-  func.func @main(%x: !smt.int) {
-    %abs = smt.int.abs %x
-    %zero = smt.int.constant 0
-    %ok = smt.eq %abs, %zero : !smt.int
-    smt.assert %ok
+  func.func @main() {
+    %result = smt.check sat {
+      %one = arith.constant 1 : i32
+      smt.yield %one : i32
+    } unknown {
+      %two = arith.constant 2 : i32
+      smt.yield %two : i32
+    } unsat {
+      %three = arith.constant 3 : i32
+      smt.yield %three : i32
+    } -> i32
+    %unused = arith.constant 0 : i32
     return
   }
 }
 
-// UNSUPPORTED: unsupported{{.*}}smt-to-smtlib
+// CHECK: does not support result-producing smt.check

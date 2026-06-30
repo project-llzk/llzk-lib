@@ -1,0 +1,19 @@
+// RUN: llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s | FileCheck %s
+
+module {
+  func.func @main(%x: !smt.int) {
+    %f = smt.declare_fun "f" : !smt.func<(!smt.int) !smt.int>
+    %value = smt.apply_func %f(%x) : !smt.func<(!smt.int) !smt.int>
+    %symbol = smt.declare_fun "result" : !smt.int
+    %ok = smt.eq %symbol, %value : !smt.int
+    smt.assert %ok
+    return
+  }
+}
+
+// CHECK:      (set-logic ALL)
+// CHECK-NEXT: (set-info :llzk-root "main")
+// CHECK-NEXT: (declare-const main__arg0 Int)
+// CHECK-NEXT: (declare-fun f (Int) Int)
+// CHECK-NEXT: (declare-fun result () Int)
+// CHECK-NEXT: (assert (= result (f main__arg0)))
