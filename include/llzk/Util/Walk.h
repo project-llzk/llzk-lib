@@ -33,6 +33,19 @@ template <typename MatchType, typename R> inline static bool walkContains(R &roo
   return root.walk([](MatchType t) { return mlir::WalkResult::interrupt(); }).wasInterrupted();
 }
 
+/// Returns whether the MLIR walk rooted at `root` contains any operation whose
+/// concrete type is one of `MatchTypes`.
+///
+/// Traversal stops at the first matching operation.
+template <typename MatchType, typename NextMatchType, typename... MatchTypes, typename R>
+inline static bool walkContains(R &root) {
+  return root
+      .walk([](mlir::Operation *op) {
+    return llvm::isa<MatchType, NextMatchType, MatchTypes...>(op) ? mlir::WalkResult::interrupt()
+                                                                  : mlir::WalkResult::advance();
+  }).wasInterrupted();
+}
+
 /// Collect all walked operations of type `MatchType` rooted at `root` into a
 /// small vector in walk order.
 template <typename MatchType, typename R>

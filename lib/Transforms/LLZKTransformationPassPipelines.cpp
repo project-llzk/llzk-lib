@@ -170,6 +170,15 @@ void registerTransformationPassPipelines() {
     );
   }
   );
+
+  PassPipelineRegistration<>(
+      "llzk-verif-to-smt",
+      "Normalize array/pod aggregates and lower verif contracts to SMT helpers",
+      [](OpPassManager &pm) {
+    pm.addPass(llzk::createAggregateScalarizationPass());
+    pm.addPass(llzk::createVerifToSmtPass());
+  }
+  );
 }
 
 } // namespace llzk
