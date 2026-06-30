@@ -125,119 +125,122 @@ $(function(){initNavTree('LLZKTransformationPasses_8td_source.html','',''); });
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>    : LLZKPass&lt;&quot;llzk-duplicate-read-write-elim&quot;&gt; {</div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>  let summary = &quot;Remove redundant reads and writes&quot;;</div>
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>  let description = [{</div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>    Remove read and write operations to struct members and arrays that are redundant or unnecessary.</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>  }];</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>}</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>def RedundantOperationEliminationPass : LLZKPass&lt;&quot;llzk-duplicate-op-elim&quot;&gt; {</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>  let summary = &quot;Remove redundant operations&quot;;</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>  let description = [{</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>    Remove llzk and arith dialect operations that produce the same results</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>    as previously executed operations.</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>    Pass should be run after `llzk-duplicate-read-write-elim` for maximum effect.</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>  }];</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>}</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span> </div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>def UnusedDeclarationEliminationPass</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    : LLZKPass&lt;&quot;llzk-unused-declaration-elim&quot;&gt; {</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  let summary = &quot;Remove unused member and struct declarations&quot;;</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  let description = [{</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>    Remove member and struct declarations that are unused within the current compilation</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>    unit. Note that this pass may cause linking issues with external modules that</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>    depend on any unused member and struct declarations from this compilation unit.</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>    Pass should be run after `llzk-duplicate-read-write-elim`</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    and `llzk-duplicate-op-elim` for maximum effect.</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  }];</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  let options = [Option&lt;&quot;removeStructs&quot;, &quot;remove-structs&quot;, &quot;bool&quot;,</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>                        /* default */ &quot;false&quot;,</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>                        &quot;Whether to remove unused struct definitions as well. &quot;</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>                        &quot;Requires module to declare a Main component, &quot;</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>                        &quot;otherwise all components will appear unused.&quot;&gt;,</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  ];</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>}</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>def RemoveUnusedDiscardableAllocationsPass</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    : LLZKPass&lt;&quot;llzk-remove-unused-discardable-allocations&quot;&gt; {</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  let summary = &quot;Remove unread discardable allocations and their dead stores&quot;;</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  let description = [{</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    Remove ops with the selected allocator operation name when they are marked with</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    `MemAlloc&lt;DiscardableAllocationResource&gt;`, the allocation has no reads, and every direct user is</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    a discardable allocation accessor that can be erased as a dead store.</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  }];</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  let options = [Option&lt;</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>      &quot;allocatorOpName&quot;, &quot;allocator-op&quot;, &quot;std::string&quot;,</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>      /* default */ &quot;\&quot;\&quot;&quot;,</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>      &quot;Operation name of the discardable allocator to remove&quot;&gt;];</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>}</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>def PolyLoweringPass : LLZKPass&lt;&quot;llzk-poly-lowering-pass&quot;&gt; {</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  let summary =</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>      &quot;Lower the degree of all polynomial equations to a specified maximum&quot;;</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  let description = [{</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    Rewrites constraint expressions into an (observationally) equivalent system where the degree of</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    every polynomial is less than or equal to the specified maximum.</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    High-degree subexpressions are factored into auxiliary struct members. The pass also recurses</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>    through degree-neutral roots such as `felt.add`, `felt.sub`, and `felt.neg`, so composite</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>    equality operands and struct constrain call arguments satisfy their degree bounds.</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span> </div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>    The pass expects already-flattened, straight-line `compute` and `constrain` bodies. Run</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>    `llzk-flatten` or another control-flow lowering pass before this pass; nested-region,</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>    successor-bearing, or multi-block functions are rejected instead of being rewritten with</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>    component-lifetime auxiliary members.</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span> </div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>    This pass is best used on already-flattened input as part of the `-llzk-full-poly-lowering`</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>    pipeline, which includes additional cleanup passes to ensure correctness and optimal</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    performance.</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  }];</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  let options = [Option&lt;&quot;maxDegree&quot;, &quot;max-degree&quot;, &quot;unsigned&quot;,</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>                        /* default */ &quot;2&quot;,</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>                        &quot;Maximum degree of constraint polynomials &quot;</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>                        &quot;(default 2, minimum 2)&quot;&gt;,</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  ];</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>}</div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>def ComputeConstrainToProductPass</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    : LLZKPass&lt;&quot;llzk-compute-constrain-to-product&quot;&gt; {</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  let summary = &quot;Replace separate @compute and @constrain functions in a &quot;</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>                &quot;struct with a single @product function&quot;;</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  let description = summary;</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  let options = [Option&lt;&quot;rootStruct&quot;, &quot;root-struct&quot;, &quot;std::string&quot;,</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>                        /* default */ &quot;\&quot;@Main\&quot;&quot;,</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>                        &quot;Root struct at which to start alignment &quot;</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>                        &quot;(default to `@Main`)&quot;&gt;];</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>}</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span> </div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>def FuseProductLoopsPass : LLZKPass&lt;&quot;llzk-fuse-product-loops&quot;&gt; {</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  let summary = &quot;Fuse matching witness/constraint loops in a @product function&quot;;</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  let description = summary;</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>}</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span> </div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>def EnforceNoMemberOverwritePass : LLZKPass&lt;&quot;llzk-enforce-no-overwrite&quot;&gt; {</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  let summary = &quot;Checks that every struct member is written exactly once&quot;;</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  let description = [{</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>      This pass currently reports an error if any struct member may not be written</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>      exactly once (i.e. overwritten or left uninitialized), and does not</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>      attempt to perform any repairs (e.g. SSA-ifying overwritten struct</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>      members, or default-initializing unwritten members). This pass</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>      overapproximates conditionals, and can result in false positives.</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  }];</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>}</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span> </div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>def WhileToForPass : LLZKPass&lt;&quot;llzk-while-to-for&quot;&gt; {</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  let summary =</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>      &quot;Converts scf.while loops to equivalent scf.for loops when possible&quot;;</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  let description =</div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>      &quot;This pass identifies scf.while loops that have an &quot;</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>      &quot;induction variable and a uniform step, and converts them &quot;</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>      &quot;to equivalent scf.for loops, which are preferred by some &quot;</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>      &quot;analyses. This pass may introduce some spurious felt/index casts which &quot;</div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>      &quot;should be cleaned up by --canonicalize.&quot;;</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>}</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span> </div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>#endif // LLZK_TRANSFORMATION_PASSES_TD</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>    Remove struct-member and array reads or writes that repeat the same access.</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>    Struct-member accesses match only when the base, member, table offset,</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>    affine map metadata, and translated affine operands match. Omitted</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>    member-read offsets and member writes denote the current row.</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>  }];</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>}</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>def RedundantOperationEliminationPass : LLZKPass&lt;&quot;llzk-duplicate-op-elim&quot;&gt; {</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>  let summary = &quot;Remove redundant operations&quot;;</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>  let description = [{</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>    Remove llzk and arith dialect operations that produce the same results</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>    as previously executed operations.</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>    Pass should be run after `llzk-duplicate-read-write-elim` for maximum effect.</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  }];</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>}</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>def UnusedDeclarationEliminationPass</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>    : LLZKPass&lt;&quot;llzk-unused-declaration-elim&quot;&gt; {</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  let summary = &quot;Remove unused member and struct declarations&quot;;</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  let description = [{</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    Remove member and struct declarations that are unused within the current compilation</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>    unit. Note that this pass may cause linking issues with external modules that</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    depend on any unused member and struct declarations from this compilation unit.</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    Pass should be run after `llzk-duplicate-read-write-elim`</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>    and `llzk-duplicate-op-elim` for maximum effect.</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  }];</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  let options = [Option&lt;&quot;removeStructs&quot;, &quot;remove-structs&quot;, &quot;bool&quot;,</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>                        /* default */ &quot;false&quot;,</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>                        &quot;Whether to remove unused struct definitions as well. &quot;</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>                        &quot;Requires module to declare a Main component, &quot;</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>                        &quot;otherwise all components will appear unused.&quot;&gt;,</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  ];</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>}</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>def RemoveUnusedDiscardableAllocationsPass</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    : LLZKPass&lt;&quot;llzk-remove-unused-discardable-allocations&quot;&gt; {</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  let summary = &quot;Remove unread discardable allocations and their dead stores&quot;;</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  let description = [{</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    Remove ops with the selected allocator operation name when they are marked with</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>    `MemAlloc&lt;DiscardableAllocationResource&gt;`, the allocation has no reads, and every direct user is</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    a discardable allocation accessor that can be erased as a dead store.</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  }];</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  let options = [Option&lt;</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>      &quot;allocatorOpName&quot;, &quot;allocator-op&quot;, &quot;std::string&quot;,</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>      /* default */ &quot;\&quot;\&quot;&quot;,</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>      &quot;Operation name of the discardable allocator to remove&quot;&gt;];</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>}</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>def PolyLoweringPass : LLZKPass&lt;&quot;llzk-poly-lowering-pass&quot;&gt; {</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  let summary =</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>      &quot;Lower the degree of all polynomial equations to a specified maximum&quot;;</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  let description = [{</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    Rewrites constraint expressions into an (observationally) equivalent system where the degree of</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>    every polynomial is less than or equal to the specified maximum.</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span> </div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>    High-degree subexpressions are factored into auxiliary struct members. The pass also recurses</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>    through degree-neutral roots such as `felt.add`, `felt.sub`, and `felt.neg`, so composite</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>    equality operands and struct constrain call arguments satisfy their degree bounds.</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span> </div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>    The pass expects already-flattened, straight-line `compute` and `constrain` bodies. Run</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>    `llzk-flatten` or another control-flow lowering pass before this pass; nested-region,</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>    successor-bearing, or multi-block functions are rejected instead of being rewritten with</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>    component-lifetime auxiliary members.</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span> </div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>    This pass is best used on already-flattened input as part of the `-llzk-full-poly-lowering`</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>    pipeline, which includes additional cleanup passes to ensure correctness and optimal</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>    performance.</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  }];</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  let options = [Option&lt;&quot;maxDegree&quot;, &quot;max-degree&quot;, &quot;unsigned&quot;,</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>                        /* default */ &quot;2&quot;,</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>                        &quot;Maximum degree of constraint polynomials &quot;</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>                        &quot;(default 2, minimum 2)&quot;&gt;,</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  ];</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>}</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span> </div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>def ComputeConstrainToProductPass</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    : LLZKPass&lt;&quot;llzk-compute-constrain-to-product&quot;&gt; {</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  let summary = &quot;Replace separate @compute and @constrain functions in a &quot;</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>                &quot;struct with a single @product function&quot;;</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  let description = summary;</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  let options = [Option&lt;&quot;rootStruct&quot;, &quot;root-struct&quot;, &quot;std::string&quot;,</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>                        /* default */ &quot;\&quot;@Main\&quot;&quot;,</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>                        &quot;Root struct at which to start alignment &quot;</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>                        &quot;(default to `@Main`)&quot;&gt;];</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>}</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>def FuseProductLoopsPass : LLZKPass&lt;&quot;llzk-fuse-product-loops&quot;&gt; {</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  let summary = &quot;Fuse matching witness/constraint loops in a @product function&quot;;</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  let description = summary;</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>}</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span> </div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>def EnforceNoMemberOverwritePass : LLZKPass&lt;&quot;llzk-enforce-no-overwrite&quot;&gt; {</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  let summary = &quot;Checks that every struct member is written exactly once&quot;;</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  let description = [{</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>      This pass currently reports an error if any struct member may not be written</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>      exactly once (i.e. overwritten or left uninitialized), and does not</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>      attempt to perform any repairs (e.g. SSA-ifying overwritten struct</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>      members, or default-initializing unwritten members). This pass</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>      overapproximates conditionals, and can result in false positives.</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  }];</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>}</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span> </div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>def WhileToForPass : LLZKPass&lt;&quot;llzk-while-to-for&quot;&gt; {</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  let summary =</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>      &quot;Converts scf.while loops to equivalent scf.for loops when possible&quot;;</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  let description =</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>      &quot;This pass identifies scf.while loops that have an &quot;</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>      &quot;induction variable and a uniform step, and converts them &quot;</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>      &quot;to equivalent scf.for loops, which are preferred by some &quot;</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>      &quot;analyses. This pass may introduce some spurious felt/index casts which &quot;</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>      &quot;should be cleaned up by --canonicalize.&quot;;</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>}</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span> </div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>#endif // LLZK_TRANSFORMATION_PASSES_TD</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

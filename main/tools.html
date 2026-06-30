@@ -403,7 +403,7 @@ Options</h5>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-duplicate-read-write-elim"></a>
 <span class="tt">-llzk-duplicate-read-write-elim</span></h4>
 <p><em>Remove redundant reads and writes</em></p>
-<p>Remove read and write operations to struct members and arrays that are redundant or unnecessary. </p>
+<p>Remove struct-member and array reads or writes that repeat the same access. Struct-member accesses match only when the base, member, table offset, affine map metadata, and translated affine operands match. Omitted member-read offsets and member writes denote the current row. </p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-enforce-no-overwrite"></a>
 <span class="tt">-llzk-enforce-no-overwrite</span></h4>
 <p><em>Checks that every struct member is written exactly once</em></p>
