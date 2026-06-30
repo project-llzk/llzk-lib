@@ -276,7 +276,7 @@ class MemberRefOpBase<string mnemonic, list<Trait> traits = []>
 
 def LLZK_MemberReadOp
     : MemberRefOpBase<"readm", [VerifySizesForMultiAffineOps<1>,
-                                 MemoryEffects<[MemRead]>]> {
+                                MemoryEffects<[MemRead]>]> {
   let summary = "read value of a struct member";
   let description = [{
     This operation reads the value of a named member in a struct/component.
