@@ -702,6 +702,45 @@ genArrayWrite(OpBuilder &bldr, Location loc, Value arrayRef, ArrayAttr index, Va
   genArrayWrite(bldr, loc, arrayRef, indices, value);
 }
 
+/// Collect split leaf arrays that are already available for an aggregate array-of-POD value.
+///
+/// This peels compatibility casts and forwards through a dominating same-record `pod.write` so
+/// nested POD scalarization can reuse the split-array representation already produced elsewhere in
+/// the pass instead of re-materializing dynamic arrays element-by-element.
+static bool tryCollectDirectSplitPodArrayLeafValues(
+    Value arrayValue, ArrayType arrTy, ArrayRef<Type> splitTypes, SmallVectorImpl<Value> &leafArrays
+) {
+  while (auto cast = arrayValue.getDefiningOp<UnifiableCastOp>()) {
+    arrayValue = cast.getInput();
+  }
+
+  if (auto cast = arrayValue.getDefiningOp<UnrealizedConversionCastOp>()) {
+    if (cast->getNumResults() != 1 || cast.getResult(0).getType() != arrTy ||
+        cast->getNumOperands() != splitTypes.size()) {
+      return false;
+    }
+
+    leafArrays.reserve(splitTypes.size());
+    for (auto [operand, splitType] : llvm::zip_equal(cast.getOperands(), splitTypes)) {
+      if (operand.getType() != splitType) {
+        return false;
+      }
+      leafArrays.push_back(operand);
+    }
+    return true;
+  }
+
+  if (ReadPodOp readOp = arrayValue.getDefiningOp<ReadPodOp>()) {
+    if (WritePodOp writeOp = findNearestForwardableWriteInBlock(readOp)) {
+      return tryCollectDirectSplitPodArrayLeafValues(
+          writeOp.getValue(), arrTy, splitTypes, leafArrays
+      );
+    }
+  }
+
+  return false;
+}
+
 /// Read one flattened POD leaf, including leaves that live inside an array-of-POD record.
 static Value
 genReadAlongPath(OpBuilder &bldr, Location loc, Value value, ArrayRef<StringAttr> recordChain) {
@@ -716,8 +755,33 @@ genReadAlongPath(OpBuilder &bldr, Location loc, Value value, ArrayRef<StringAttr
   }
 
   if (ArrayType arrTy = splittablePodArray(valueType)) {
-    assert(arrTy.hasStaticShape() && "nested array-of-POD scalarization requires a static shape");
     auto splitArrTy = llvm::cast<ArrayType>(getFlattenedTypeAlongPath(valueType, recordChain));
+
+    if (!arrTy.hasStaticShape()) {
+      SmallVector<RecordChain> splitIds;
+      SmallVector<Type> splitTypes;
+      splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
+
+      SmallVector<Value> leafArrays;
+      if (tryCollectDirectSplitPodArrayLeafValues(value, arrTy, splitTypes, leafArrays)) {
+        auto it = llvm::find(splitIds, RecordChain(recordChain));
+        assert(it != splitIds.end() && "record path must name a flattened POD array leaf");
+        return leafArrays[std::distance(splitIds.begin(), it)];
+      }
+
+      if (ReadPodOp readOp = value.getDefiningOp<ReadPodOp>()) {
+        if (llvm::isa<NewPodOp>(readOp.getPodRef().getDefiningOp()) &&
+            !findNearestForwardableWriteInBlock(readOp)) {
+          return createWritableArrayValue(bldr, loc, splitArrTy);
+        }
+      }
+
+      llvm_unreachable(
+          "non-static nested array-of-POD scalarization requires split-array backing or an "
+          "uninitialized pod field"
+      );
+    }
+
     auto subIndices = arrTy.getSubelementIndices();
     assert(subIndices && "static-shape arrays must provide subelement indices");
 
@@ -757,7 +821,25 @@ static Value rebuildFlattenedPodRecord(
   }
 
   if (ArrayType arrTy = splittablePodArray(recordType)) {
-    assert(arrTy.hasStaticShape() && "nested array-of-POD scalarization requires a static shape");
+    if (!arrTy.hasStaticShape()) {
+      SmallVector<RecordChain> splitIds;
+      SmallVector<Type> splitTypes;
+      splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
+
+      SmallVector<Value> leafArrays;
+      leafArrays.reserve(splitIds.size());
+      for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
+        SmallVector<StringAttr> fullChain(recordChain.begin(), recordChain.end());
+        llvm::append_range(fullChain, id.nameList);
+        auto it = leafValues.find(RecordChain(fullChain));
+        assert(it != leafValues.end() && "missing flattened POD array leaf value");
+        leafArrays.push_back(castValueToTypeIfNeeded(bldr, loc, it->second, splitType));
+      }
+
+      return bldr.create<UnrealizedConversionCastOp>(loc, TypeRange {arrTy}, leafArrays)
+          .getResult(0);
+    }
+
     auto elemPodTy = llvm::cast<PodType>(arrTy.getElementType());
     auto subIndices = arrTy.getSubelementIndices();
     assert(subIndices && "static-shape arrays must provide subelement indices");
