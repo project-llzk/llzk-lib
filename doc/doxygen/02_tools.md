@@ -141,9 +141,14 @@ SMT-LIB emitted by `llzk-opt --smt-to-smtlib`, including metadata such as
 
 ```sh
 llzk-smt-check input.smt2
-llzk-opt --smt-to-smtlib='entry=main' \
-  -o /dev/null input.llzk | llzk-smt-check -
+llzk-opt --smt-to-smtlib -o /dev/null input.llzk | llzk-smt-check -
 ```
+
+`--smt-to-smtlib` exports the unique top-level `smt.solver` directly contained
+in the root `builtin.module`. Module-scope `func.func` definitions are treated
+as helpers that may be called from within that solver body. Exported scripts
+preserve any `smt.set_logic` operation in that solver and otherwise begin with
+the conservative fallback `(set-logic ALL)`.
 
 #### LLZK-Specific Options
 

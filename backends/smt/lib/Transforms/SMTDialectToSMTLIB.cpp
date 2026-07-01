@@ -51,19 +51,6 @@ using namespace mlir;
 
 namespace {
 
-static bool isVerificationHelperRoot(func::FuncOp func) {
-  StringRef name = func.getSymName();
-  return name.starts_with("smt_verif_") &&
-         (name.ends_with("_internal_entry") || name.ends_with("_compute_entry") ||
-          name.ends_with("_constrain_entry"));
-}
-
-static bool isEntryPoint(func::FuncOp func) {
-  StringRef name = func.getSymName();
-  return name.starts_with("smt_verif_") && name.ends_with("_entry") &&
-         !isVerificationHelperRoot(func);
-}
-
 static std::string sanitizeSymbol(StringRef name) {
   std::string out;
   out.reserve(name.size());
@@ -115,38 +102,17 @@ enum class HelperMode {
 
 class SMTLIBEmitter {
 public:
-  SMTLIBEmitter(
-      ModuleOp module, llvm::raw_ostream &os, const llzk::smt::SMTLIBExportOptions &options
-  )
-      : module(module), os(os), options(options) {}
+  SMTLIBEmitter(ModuleOp module, llvm::raw_ostream &os) : module(module), os(os) {}
 
   LogicalResult emit() {
-    SmallVector<func::FuncOp> roots;
-    if (failed(collectRoots(roots))) {
+    auto root = collectRoot();
+    if (failed(root)) {
       return failure();
     }
-
-    bool needsReset = false;
-    for (auto [index, root] : llvm::enumerate(roots)) {
-      (void)index;
-      if (isEntryPoint(root)) {
-        if (failed(emitIsolatedEntryRoot(root, needsReset))) {
-          return failure();
-        }
-        needsReset = true;
-        continue;
-      }
-      if (failed(emitRoot(root, needsReset))) {
-        return failure();
-      }
-      needsReset = true;
-    }
-    return success();
+    return emitRoot(*root, /*emitReset=*/false);
   }
 
 private:
-  enum class EntryStageMode { target, post };
-
   struct EvalContext {
     DenseMap<Value, std::string> values;
     std::optional<std::string> pendingStageLabel;
@@ -154,171 +120,49 @@ private:
     bool preserveSharing = false;
   };
 
-  LogicalResult collectRoots(SmallVectorImpl<func::FuncOp> &roots) {
-    if (options.entry) {
-      auto root = module.lookupSymbol<func::FuncOp>(*options.entry);
-      if (!root) {
-        module.emitError() << "smt-to-smtlib could not find entry symbol @" << *options.entry;
-        return failure();
+  ModuleOp getEffectiveRootModule() {
+    ModuleOp nestedModule;
+    for (Operation &op : module.getBody()->getOperations()) {
+      auto childModule = dyn_cast<ModuleOp>(op);
+      if (!childModule) {
+        return module;
       }
-      roots.push_back(root);
-      return success();
+      if (nestedModule) {
+        return module;
+      }
+      nestedModule = childModule;
     }
-    module.emitError("smt-to-smtlib requires --entry to select a root func.func");
-    return failure();
+    return nestedModule ? nestedModule : module;
   }
 
-  LogicalResult emitRoot(func::FuncOp root, bool emitReset) {
-    auto solver = findTopLevelSolverRoot(root);
-    if (failed(solver)) {
-      return failure();
-    }
-    if (*solver) {
-      return emitSolverRoot(root, **solver, emitReset);
-    }
-
-    if (failed(emitRootPreamble(root, emitReset, /*emitDefaultLogic=*/true))) {
-      return failure();
-    }
-
-    EvalContext ctx;
-    if (failed(initializeRootArgs(root, ctx))) {
-      return failure();
-    }
-    return emitBlock(root.getBody().front(), ctx);
-  }
-
-  LogicalResult emitIsolatedEntryRoot(func::FuncOp root, bool emitReset) {
-    if (failed(emitEntryStage(root, EntryStageMode::target, emitReset))) {
-      return failure();
-    }
-    return emitEntryStage(root, EntryStageMode::post, /*emitReset=*/true);
-  }
-
-  LogicalResult emitEntryStage(func::FuncOp root, EntryStageMode mode, bool emitReset) {
-    if (failed(emitRootPreamble(root, emitReset, /*emitDefaultLogic=*/true))) {
-      return failure();
-    }
-
-    if (!root || root.empty()) {
-      root.emitError("smt-to-smtlib requires non-empty root func.func");
-      return failure();
-    }
-
-    EvalContext ctx;
-    if (failed(initializeRootArgs(root, ctx))) {
-      return failure();
-    }
-
-    auto getStageFamily = [](StringRef stage) -> StringRef {
-      if (stage == "pre") {
-        return "pre";
-      }
-      if (stage == "target" || stage.starts_with("target[")) {
-        return "target";
-      }
-      if (stage == "post" || stage.starts_with("post[")) {
-        return "post";
-      }
-      return "";
-    };
-
-    bool emittedRequestedStage = false;
-    bool skippingOuterTargetProof = false;
-    Block &block = root.getBody().front();
-    for (Operation &op : block.without_terminator()) {
-      if (auto checkOp = dyn_cast<llzk::smt::CheckOp>(op)) {
-        std::string stage = ctx.pendingStageLabel.value_or("");
-        StringRef family = getStageFamily(stage);
-        if (skippingOuterTargetProof) {
-          if (failed(emitSuccessEffects(checkOp, ctx))) {
-            return failure();
-          }
-          ctx.pendingStageLabel.reset();
-          skippingOuterTargetProof = false;
-          continue;
-        }
-
-        if (mode == EntryStageMode::target) {
-          if (family == "target") {
-            if (failed(emitCheck(checkOp, ctx))) {
-              return failure();
-            }
-            emittedRequestedStage = true;
-            continue;
-          }
-          if (emittedRequestedStage) {
-            return success();
-          }
-        } else {
-          if (!emittedRequestedStage && family == "target") {
-            if (failed(emitSuccessEffects(checkOp, ctx))) {
-              return failure();
-            }
-            ctx.pendingStageLabel.reset();
-            continue;
-          }
-          if (family == "pre" || family == "target" || family == "post") {
-            if (failed(emitCheck(checkOp, ctx))) {
-              return failure();
-            }
-            emittedRequestedStage = true;
-            continue;
-          }
-        }
-      }
-
-      if (skippingOuterTargetProof) {
-        continue;
-      }
-
-      if (failed(emitOperation(&op, ctx))) {
-        return failure();
-      }
-      if (mode == EntryStageMode::target && emittedRequestedStage && ctx.pendingStageLabel &&
-          getStageFamily(*ctx.pendingStageLabel) != "target") {
-        return success();
-      }
-      if (mode == EntryStageMode::post && isa<func::CallOp>(op) && ctx.pendingStageLabel &&
-          getStageFamily(*ctx.pendingStageLabel) == "target" && !emittedRequestedStage) {
-        skippingOuterTargetProof = true;
-      }
-    }
-
-    if (emittedRequestedStage) {
-      return success();
-    }
-    root.emitError("smt-to-smtlib could not find requested entry stage");
-    return failure();
-  }
-
-  FailureOr<std::optional<llzk::smt::SolverOp>> findTopLevelSolverRoot(func::FuncOp root) {
-    if (!root || root.empty()) {
-      root.emitError("smt-to-smtlib requires non-empty root func.func");
-      return failure();
-    }
-
-    std::optional<llzk::smt::SolverOp> solver;
-    for (Operation &op : root.getBody().front().without_terminator()) {
-      if (auto solverOp = dyn_cast<llzk::smt::SolverOp>(op)) {
-        if (solver) {
-          root.emitError(
-              "smt-to-smtlib requires at most one top-level smt.solver in the selected root"
-          );
-          return failure();
-        }
-        solver = solverOp;
+  FailureOr<llzk::smt::SolverOp> collectRoot() {
+    ModuleOp rootModule = getEffectiveRootModule();
+    llzk::smt::SolverOp solver;
+    for (Operation &op : rootModule.getBody()->getOperations()) {
+      auto solverOp = dyn_cast<llzk::smt::SolverOp>(op);
+      if (!solverOp) {
         continue;
       }
       if (solver) {
-        root.emitError(
-            "smt-to-smtlib requires the selected solver root to contain only a single top-level "
-            "smt.solver"
+        rootModule.emitError(
+            "smt-to-smtlib requires exactly one top-level smt.solver in the root module"
         );
         return failure();
       }
+      solver = solverOp;
+    }
+    if (!solver) {
+      rootModule.emitError(
+          "smt-to-smtlib could not find a top-level smt.solver in the root "
+          "module"
+      );
+      return failure();
     }
     return solver;
+  }
+
+  LogicalResult emitRoot(llzk::smt::SolverOp solver, bool emitReset) {
+    return emitSolverRoot(solver, emitReset);
   }
 
   static bool solverHasExplicitSetLogic(llzk::smt::SolverOp solver) {
@@ -338,48 +182,40 @@ private:
     emittedPureHelpers.clear();
   }
 
-  LogicalResult emitRootPreamble(func::FuncOp root, bool emitReset, bool emitDefaultLogic) {
+  LogicalResult emitRootPreamble(bool emitReset, bool emitDefaultLogic) {
     if (emitReset) {
       os << "\n(reset)\n";
     }
     resetScriptState();
     if (emitDefaultLogic) {
-      os << "(set-logic " << options.logic << ")\n";
+      os << "(set-logic ALL)\n";
     }
-    os << "(set-info :llzk-root \"" << root.getSymName() << "\")\n";
+    os << "(set-info :llzk-root \"module\")\n";
     return success();
   }
 
-  LogicalResult emitSolverRoot(func::FuncOp root, llzk::smt::SolverOp solver, bool emitReset) {
-    if (root.getNumArguments() != 0) {
-      return root.emitError(
-          "smt-to-smtlib does not support solver-wrapper entry funcs with arguments"
+  LogicalResult emitSolverRoot(llzk::smt::SolverOp solver, bool emitReset) {
+    if (solver.getNumOperands() != 0 || solver.getBodyRegion().front().getNumArguments() != 0) {
+      return solver.emitError(
+          "SMT-LIB scripts have no standard parameter channel; the selected top-level smt.solver "
+          "must be a closed script"
       );
     }
-    if (solver.getNumOperands() != 0 || solver.getBodyRegion().front().getNumArguments() != 0) {
-      return solver.emitError("smt-to-smtlib does not support solver roots with non-SMT inputs");
-    }
-    if (!llvm::all_of(solver.getResults(), [](Value result) { return result.use_empty(); })) {
-      return solver.emitError("smt-to-smtlib requires top-level smt.solver results to be unused");
+    if (solver.getNumResults() != 0 ||
+        !llvm::all_of(solver.getResults(), [](Value result) { return result.use_empty(); })) {
+      return solver.emitError(
+          "SMT-LIB scripts have no standard return channel; the selected top-level smt.solver "
+          "must not return results"
+      );
     }
 
     bool emitDefaultLogic = !solverHasExplicitSetLogic(solver);
-    if (failed(emitRootPreamble(root, emitReset, emitDefaultLogic))) {
+    if (failed(emitRootPreamble(emitReset, emitDefaultLogic))) {
       return failure();
     }
 
     EvalContext ctx;
     return emitBlock(solver.getBodyRegion().front(), ctx);
-  }
-
-  LogicalResult initializeRootArgs(func::FuncOp root, EvalContext &ctx) {
-    std::string rootPrefix = sanitizeSymbol(root.getSymName());
-    for (auto [index, arg] : llvm::enumerate(root.getArguments())) {
-      std::string name = rootPrefix + "__arg" + std::to_string(index);
-      ctx.values[arg] = name;
-      os << "(declare-const " << name << " " << sortForType(arg.getType()) << ")\n";
-    }
-    return success();
   }
 
   LogicalResult emitBlock(Block &block, EvalContext &ctx) {
@@ -417,7 +253,8 @@ private:
         .Case<llzk::smt::CheckOp>([&](auto checkOp) { return emitCheck(checkOp, ctx); })
         .Case<llzk::smt::SolverOp>([&](auto solverOp) {
       return solverOp.emitError(
-          "smt.solver is only supported as the single top-level op in the selected root func.func"
+          "nested smt.solver is not exportable to SMT-LIB; SMT-LIB has a single script context, "
+          "so use push/pop if same-solver nesting was intended"
       );
     })
         .Case<func::CallOp>([&](auto callOp) { return emitCall(callOp, ctx); })
@@ -649,8 +486,9 @@ private:
     auto cleanup = llvm::make_scope_exit([&] { helperModesInProgress.erase(func.getOperation()); });
 
     for (Operation &op : func.getBody().front().without_terminator()) {
-      if (isa<llzk::smt::DeclareFunOp, llzk::smt::AssertOp, llzk::smt::PushOp, llzk::smt::PopOp,
-              llzk::smt::CheckOp>(op)) {
+      if (isa<llzk::smt::SetLogicOp, llzk::smt::DeclareFunOp, llzk::smt::AssertOp,
+              llzk::smt::ResetOp, llzk::smt::PushOp, llzk::smt::PopOp, llzk::smt::CheckOp,
+              llzk::smt::SolverOp>(op)) {
         helperModes[func.getOperation()] = HelperMode::InlineScript;
         return HelperMode::InlineScript;
       }
@@ -1361,7 +1199,6 @@ private:
 
   ModuleOp module;
   llvm::raw_ostream &os;
-  const llzk::smt::SMTLIBExportOptions &options;
   unsigned nextTempId = 0;
   unsigned nextTargetStageIndex = 0;
   unsigned nextPostStageIndex = 0;
@@ -1392,14 +1229,7 @@ class SMTDialectToSMTLIBPass
       }
       stream = &outputFile->os();
     }
-
-    llzk::smt::SMTLIBExportOptions exportOptions;
-    exportOptions.logic = logic;
-    if (!entry.empty()) {
-      exportOptions.entry = entry;
-    }
-
-    if (failed(llzk::smt::emitSMTLIBModule(getOperation(), *stream, exportOptions))) {
+    if (failed(llzk::smt::emitSMTLIBModule(getOperation(), *stream))) {
       signalPassFailure();
       return;
     }
@@ -1412,8 +1242,6 @@ class SMTDialectToSMTLIBPass
 
 } // namespace
 
-LogicalResult llzk::smt::emitSMTLIBModule(
-    ModuleOp module, llvm::raw_ostream &os, const llzk::smt::SMTLIBExportOptions &options
-) {
-  return SMTLIBEmitter(module, os, options).emit();
+LogicalResult llzk::smt::emitSMTLIBModule(ModuleOp module, llvm::raw_ostream &os) {
+  return SMTLIBEmitter(module, os).emit();
 }

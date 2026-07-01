@@ -14,17 +14,8 @@
 
 #include <llvm/Support/raw_ostream.h>
 
-#include <optional>
-#include <string>
-
 namespace llzk::smt {
 
-struct SMTLIBExportOptions {
-  std::string logic = "ALL";
-  std::optional<std::string> entry;
-};
-
-mlir::LogicalResult
-emitSMTLIBModule(mlir::ModuleOp module, llvm::raw_ostream &os, const SMTLIBExportOptions &options);
+mlir::LogicalResult emitSMTLIBModule(mlir::ModuleOp module, llvm::raw_ostream &os);
 
 } // namespace llzk::smt

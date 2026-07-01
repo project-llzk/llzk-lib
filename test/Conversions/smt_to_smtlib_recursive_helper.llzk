@@ -1,18 +1,19 @@
-// RUN: not llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s 2>&1 | FileCheck --check-prefix=RECURSE %s
+// RUN: not llzk-opt --smt-to-smtlib -o /dev/null %s 2>&1 | FileCheck %s
 
 module {
   func.func @helper(%x: !smt.int) -> !smt.int {
-    %0 = call @helper(%x) : (!smt.int) -> !smt.int
+    %0 = func.call @helper(%x) : (!smt.int) -> !smt.int
     return %0 : !smt.int
   }
 
-  func.func @main(%x: !smt.int) {
-    %value = call @helper(%x) : (!smt.int) -> !smt.int
+  smt.solver () : () -> () {
+    %x = smt.declare_fun "x" : !smt.int
+    %value = func.call @helper(%x) : (!smt.int) -> !smt.int
     %symbol = smt.declare_fun "result" : !smt.int
     %ok = smt.eq %symbol, %value : !smt.int
     smt.assert %ok
-    return
+    smt.yield
   }
 }
 
-// RECURSE: error: recursive pure helper calls are not supported by smt-to-smtlib
+// CHECK: error: recursive pure helper calls are not supported by smt-to-smtlib

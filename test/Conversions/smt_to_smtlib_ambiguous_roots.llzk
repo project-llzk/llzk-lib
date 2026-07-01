@@ -1,0 +1,13 @@
+// RUN: not llzk-opt --smt-to-smtlib -o /dev/null %s 2>&1 | FileCheck %s
+
+module {
+  smt.solver () : () -> () {
+    smt.yield
+  }
+
+  smt.solver () : () -> () {
+    smt.yield
+  }
+}
+
+// CHECK: error: smt-to-smtlib requires exactly one top-level smt.solver in the root module

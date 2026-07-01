@@ -1,4 +1,4 @@
-// RUN: llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s | FileCheck %s
+// RUN: llzk-opt --smt-to-smtlib -o /dev/null %s | FileCheck %s
 
 module {
   func.func @pure_add(%x: !smt.int) -> !smt.int {
@@ -9,7 +9,7 @@ module {
 
   func.func @script_check(%x: !smt.int) {
     smt.push 1
-    %value = call @pure_add(%x) : (!smt.int) -> !smt.int
+    %value = func.call @pure_add(%x) : (!smt.int) -> !smt.int
     %zero = smt.int.constant 0
     %ok = smt.eq %value, %zero : !smt.int
     smt.assert %ok
@@ -28,18 +28,20 @@ module {
     return
   }
 
-  func.func @main(%x: !smt.int) {
-    call @script_check(%x) : (!smt.int) -> ()
-    return
+  smt.solver () : () -> () {
+    %x = smt.declare_fun "x" : !smt.int
+    func.call @script_check(%x) : (!smt.int) -> ()
+    smt.yield
   }
 }
 
 // CHECK:      (set-logic ALL)
-// CHECK-NEXT: (set-info :llzk-root "main")
-// CHECK-NEXT: (declare-const main__arg0 Int)
+// CHECK-NEXT: (set-info :llzk-root "module")
+// CHECK-NEXT: (declare-fun x () Int)
 // CHECK-NEXT: (push 1)
-// CHECK-NEXT: (define-fun pure_add ((pure_add__arg0 Int)) Int (let ((__let0 (+ pure_add__arg0 1))) __let0))
-// CHECK-NEXT: (assert (= (pure_add main__arg0) 0))
+// CHECK-NEXT: (define-fun pure_add ((pure_add__arg0 Int)) Int
+// CHECK-SAME: (let ((__let0 (+ pure_add__arg0 1))) __let0))
+// CHECK-NEXT: (assert (= (pure_add x) 0))
 // CHECK-NEXT: (set-info :status sat)
 // CHECK-NEXT: (check-sat)
 // CHECK-NEXT: (pop 1)

@@ -1,4 +1,4 @@
-// RUN: llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s | FileCheck %s
+// RUN: llzk-opt --smt-to-smtlib -o /dev/null %s | FileCheck %s
 
 module {
   func.func @square_chain(%x: !smt.int) -> !smt.int {
@@ -8,18 +8,21 @@ module {
     return %sq2 : !smt.int
   }
 
-  func.func @main(%x: !smt.int) {
-    %value = call @square_chain(%x) : (!smt.int) -> !smt.int
+  smt.solver () : () -> () {
+    %x = smt.declare_fun "x" : !smt.int
+    %value = func.call @square_chain(%x) : (!smt.int) -> !smt.int
     %symbol = smt.declare_fun "result" : !smt.int
     %ok = smt.eq %symbol, %value : !smt.int
     smt.assert %ok
-    return
+    smt.yield
   }
 }
 
 // CHECK:      (set-logic ALL)
-// CHECK-NEXT: (set-info :llzk-root "main")
-// CHECK-NEXT: (declare-const main__arg0 Int)
-// CHECK-NEXT: (define-fun square_chain ((square_chain__arg0 Int)) Int (let ((__let0 (* square_chain__arg0 square_chain__arg0))) (let ((__let1 (* __let0 __let0))) (let ((__let2 (* __let1 __let1))) __let2))))
+// CHECK-NEXT: (set-info :llzk-root "module")
+// CHECK-NEXT: (declare-fun x () Int)
+// CHECK-NEXT: (define-fun square_chain ((square_chain__arg0 Int)) Int
+// CHECK-SAME:   (let ((__let0 (* square_chain__arg0 square_chain__arg0)))
+// CHECK-SAME:   (let ((__let1 (* __let0 __let0))) (let ((__let2 (* __let1 __let1))) __let2))))
 // CHECK-NEXT: (declare-fun result () Int)
-// CHECK-NEXT: (assert (= result (square_chain main__arg0)))
+// CHECK-NEXT: (assert (= result (square_chain x)))

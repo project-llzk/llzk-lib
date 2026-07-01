@@ -1,7 +1,7 @@
-// RUN: not llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s 2>&1 | FileCheck %s
+// RUN: not llzk-opt --smt-to-smtlib -o /dev/null %s 2>&1 | FileCheck %s
 
 module {
-  func.func @main() {
+  smt.solver () : () -> () {
     %result = smt.check sat {
       %one = arith.constant 1 : i32
       smt.yield %one : i32
@@ -13,7 +13,7 @@ module {
       smt.yield %three : i32
     } -> i32
     %unused = arith.constant 0 : i32
-    return
+    smt.yield
   }
 }
 

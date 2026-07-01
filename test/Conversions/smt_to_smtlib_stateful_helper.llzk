@@ -1,4 +1,4 @@
-// RUN: llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s | FileCheck %s
+// RUN: llzk-opt --smt-to-smtlib -o /dev/null %s | FileCheck %s
 
 module {
   func.func @bad_helper(%x: !smt.int) -> !smt.int {
@@ -8,16 +8,17 @@ module {
     return %x : !smt.int
   }
 
-  func.func @main(%x: !smt.int) {
-    %value = call @bad_helper(%x) : (!smt.int) -> !smt.int
+  smt.solver () : () -> () {
+    %x = smt.declare_fun "x" : !smt.int
+    %value = func.call @bad_helper(%x) : (!smt.int) -> !smt.int
     %zero = smt.int.constant 0
     %ok = smt.eq %value, %zero : !smt.int
     smt.assert %ok
-    return
+    smt.yield
   }
 }
 
 // CHECK:      (set-logic ALL)
-// CHECK-NEXT: (set-info :llzk-root "main")
-// CHECK-NEXT: (declare-const main__arg0 Int)
-// CHECK-NEXT: (assert (= main__arg0 0))
+// CHECK-NEXT: (set-info :llzk-root "module")
+// CHECK-NEXT: (declare-fun x () Int)
+// CHECK-NEXT: (assert (= x 0))

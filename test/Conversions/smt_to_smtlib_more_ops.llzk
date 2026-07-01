@@ -1,7 +1,10 @@
-// RUN: llzk-opt --smt-to-smtlib='entry=main' -o /dev/null %s | FileCheck %s
+// RUN: llzk-opt --smt-to-smtlib -o /dev/null %s | FileCheck %s
 
 module {
-  func.func @main(%x: !smt.int, %y: !smt.int, %z: !smt.int) {
+  smt.solver () : () -> () {
+    %x = smt.declare_fun "x" : !smt.int
+    %y = smt.declare_fun "y" : !smt.int
+    %z = smt.declare_fun "z" : !smt.int
     %abs = smt.int.abs %x
     %distinct = smt.distinct %x, %y, %z : !smt.int
     %abs_symbol = smt.declare_fun "abs_result" : !smt.int
@@ -10,16 +13,16 @@ module {
     %distinct_ok = smt.eq %distinct_symbol, %distinct : !smt.bool
     smt.assert %abs_ok
     smt.assert %distinct_ok
-    return
+    smt.yield
   }
 }
 
 // CHECK:      (set-logic ALL)
-// CHECK-NEXT: (set-info :llzk-root "main")
-// CHECK-NEXT: (declare-const main__arg0 Int)
-// CHECK-NEXT: (declare-const main__arg1 Int)
-// CHECK-NEXT: (declare-const main__arg2 Int)
+// CHECK-NEXT: (set-info :llzk-root "module")
+// CHECK-NEXT: (declare-fun x () Int)
+// CHECK-NEXT: (declare-fun y () Int)
+// CHECK-NEXT: (declare-fun z () Int)
 // CHECK-NEXT: (declare-fun abs_result () Int)
 // CHECK-NEXT: (declare-fun all_distinct () Bool)
-// CHECK-NEXT: (assert (= abs_result (abs main__arg0)))
-// CHECK-NEXT: (assert (= all_distinct (distinct main__arg0 main__arg1 main__arg2)))
+// CHECK-NEXT: (assert (= abs_result (abs x)))
+// CHECK-NEXT: (assert (= all_distinct (distinct x y z)))
