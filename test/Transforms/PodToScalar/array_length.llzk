@@ -15,6 +15,24 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
+// Tests: preserve the `array.len` semantics so a dynamic dimension selection
+// cannot observe dimensions that did not exist before pod flattening.
+!Elem = !pod.type<[@vals: !array.type<3 x index>]>
+module attributes {llzk.lang} {
+  function.def @len_leaf_array_dynamic_dim(%arr: !array.type<2 x !Elem>, %dim: index) -> index {
+    %len = array.len %arr, %dim : !array.type<2 x !Elem>
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @len_leaf_array_dynamic_dim(%[[ARR:[0-9a-zA-Z_\.]+]]: !array.type<2,3 x index>, %[[DIM:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[SHAPE:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SHAPE]], %[[DIM]] : <2 x index>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
 module attributes {llzk.lang} {
   function.def @len_empty_leaf_static_create(%dim: index) -> index {
     %arr = array.new : !array.type<4 x !pod.type<[]>>

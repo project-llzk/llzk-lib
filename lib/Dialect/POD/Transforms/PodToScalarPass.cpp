@@ -1635,7 +1635,28 @@ public:
   }
 };
 
-/// Replace `array.length` on an array-of-POD with the equivalent length of any split leaf array.
+/// Return an array value whose visible rank still matches the original `array.len` source.
+///
+/// Split POD leaves always preserve the original outer dimensions, but array-valued leaves append
+/// their own inner dimensions. Dynamic dimension indices must not be able to observe those extra
+/// leaf-only dimensions, so when every converted leaf has higher rank this synthesizes a shape-only
+/// carrier with the original rank instead.
+static Value selectArrayLengthShapeSource(
+    ArrayLengthOp op, ValueRange convertedArrRefs, ConversionPatternRewriter &rewriter
+) {
+  size_t originalRank = op.getArrRefType().getDimensionSizes().size();
+  for (Value arrRef : convertedArrRefs) {
+    auto arrTy = llvm::dyn_cast<ArrayType>(arrRef.getType());
+    assert(arrTy && "converted array-of-POD operand must stay an array");
+    if (arrTy.getDimensionSizes().size() == originalRank) {
+      return arrRef;
+    }
+  }
+
+  return materializeArrayLengthCarrier(op.getArrRef(), op.getArrRefType(), op.getLoc(), rewriter);
+}
+
+/// Replace `array.length` on an array-of-POD with an equivalent rank-preserving array value.
 class SplitPodArrayLengthOp : public OpConversionPattern<ArrayLengthOp> {
 public:
   using OpConversionPattern<ArrayLengthOp>::OpConversionPattern;
@@ -1648,11 +1669,7 @@ public:
     if (legal(op)) {
       return failure();
     }
-    Value arrRef = adaptor.getArrRef().empty()
-                       ? materializeArrayLengthCarrier(
-                             op.getArrRef(), op.getArrRefType(), op.getLoc(), rewriter
-                         )
-                       : adaptor.getArrRef().front();
+    Value arrRef = selectArrayLengthShapeSource(op, adaptor.getArrRef(), rewriter);
     rewriter.replaceOpWithNewOp<ArrayLengthOp>(
         op, arrRef, getSingleConvertedValue(adaptor.getDim())
     );
