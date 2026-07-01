@@ -82,6 +82,7 @@
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/POD/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/RAM/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
@@ -104,6 +105,7 @@
 #include <llvm/Support/Debug.h>
 
 #include <functional>
+#include <optional>
 
 // Include the generated base pass class definitions.
 namespace llzk::pod {
@@ -117,6 +119,7 @@ using namespace llzk::array;
 using namespace llzk::pod;
 using namespace llzk::function;
 using namespace llzk::component;
+using namespace llzk::polymorphic;
 
 #define DEBUG_TYPE "llzk-pod-to-scalar"
 
@@ -154,6 +157,57 @@ template <> struct DenseMapInfo<RecordChain> {
 } // namespace llvm
 
 namespace {
+
+/// Return whether the given read/write access targets the same POD record.
+inline static bool isSamePodRecord(ReadPodOp readOp, Value podRef, StringAttr recordName) {
+  return readOp.getPodRef() == podRef && readOp.getRecordNameAttr() == recordName;
+}
+
+/// Return whether the given read/write access targets the same POD record.
+inline static bool isSamePodRecord(WritePodOp writeOp, Value podRef, StringAttr recordName) {
+  return writeOp.getPodRef() == podRef && writeOp.getRecordNameAttr() == recordName;
+}
+
+/// Return whether `op` contains a nested write to `podRef.recordName`.
+static bool hasNestedWriteToRecord(Operation &op, Value podRef, StringAttr recordName) {
+  return walkContainsMatch<WritePodOp>(op, [&](WritePodOp writeOp) {
+    return writeOp.getOperation() != &op && isSamePodRecord(writeOp, podRef, recordName);
+  });
+}
+
+/// Return whether `op` contains any read from `podRef.recordName`.
+static bool hasReadFromRecord(Operation &op, Value podRef, StringAttr recordName) {
+  return walkContainsMatch<ReadPodOp>(op, [&podRef, &recordName](ReadPodOp readOp) {
+    return isSamePodRecord(readOp, podRef, recordName);
+  });
+}
+
+/// Return whether `op` or any nested operation uses `value` as an operand.
+static bool hasValueUse(Operation &op, Value value) {
+  return walkContainsMatch<Operation *>(op, [&value](Operation *nestedOp) {
+    return llvm::is_contained(nestedOp->getOperands(), value);
+  });
+}
+
+/// Return the nearest preceding same-record write that can be forwarded to `readOp`.
+///
+/// This fold is intentionally conservative: it only forwards through intervening operations that do
+/// not use the POD value at all. That keeps the rewrite local and avoids reasoning about other
+/// whole-POD uses or record accesses that may observe mutation ordering.
+static WritePodOp findNearestForwardableWriteInBlock(ReadPodOp readOp) {
+  Value podRef = readOp.getPodRef();
+  StringAttr recordName = readOp.getRecordNameAttr();
+
+  for (Operation *op = readOp->getPrevNode(); op; op = op->getPrevNode()) {
+    if (!hasValueUse(*op, podRef)) {
+      continue;
+    }
+
+    auto writeOp = dyn_cast<WritePodOp>(op);
+    return writeOp && isSamePodRecord(writeOp, podRef, recordName) ? writeOp : nullptr;
+  }
+  return nullptr;
+}
 
 /// If the given PodType can be split into scalars (always true for PodType), return it.
 inline static PodType splittablePod(PodType pt) { return pt; }
@@ -364,6 +418,19 @@ static SmallVector<std::string> getSplitPodArrayRecordNameSuffixes(Type type) {
   return suffixes;
 }
 
+/// Insert a `poly.unifiable_cast` when a rewritten value must match a more specific type.
+///
+/// This is the common bridge between wildcard-backed storage values and the more precise types
+/// expected by surrounding rewritten IR. The cast is only emitted when the source and target
+/// types unify and differ syntactically.
+static Value castValueToTypeIfNeeded(OpBuilder &bldr, Location loc, Value value, Type targetType) {
+  if (value.getType() == targetType) {
+    return value;
+  }
+  assert(typesUnify(value.getType(), targetType) && "expected compatible rewritten types");
+  return bldr.create<UnifiableCastOp>(loc, targetType, value);
+}
+
 /// Create a `pod.read` for one record of `podRef`.
 inline static ReadPodOp
 genRead(OpBuilder &bldr, Location loc, Value podRef, StringAttr recordName) {
@@ -375,7 +442,11 @@ genRead(OpBuilder &bldr, Location loc, Value podRef, StringAttr recordName) {
 /// Create a `pod.write` for one record of `podRef`.
 inline static WritePodOp
 genWrite(OpBuilder &bldr, Location loc, Value podRef, StringAttr recordName, Value value) {
-  return bldr.create<WritePodOp>(loc, podRef, recordName, value);
+  Type recordType =
+      llvm::cast<PodType>(podRef.getType()).getRecordMap().lookup(recordName.getValue());
+  return bldr.create<WritePodOp>(
+      loc, podRef, recordName, castValueToTypeIfNeeded(bldr, loc, value, recordType)
+  );
 }
 
 /// Return the single converted value from a 1:N adaptor range.
@@ -428,6 +499,41 @@ static SmallVector<Value> flattenConvertedValues(RangeOfRanges ranges) {
   return values;
 }
 
+/// Replace any AffineMap-backed array dimensions nested within `type` with wildcard `?` dims.
+///
+/// This preserves the overall array nesting while erasing only the affine-map dimensions that
+/// cannot always be witnessed after flattening a POD leaf array into a split array value.
+static Type replaceAffineMapArrayDimsWithWildcards(Type type) {
+  auto arrTy = llvm::dyn_cast<ArrayType>(type);
+  if (!arrTy) {
+    return type;
+  }
+
+  Builder builder(arrTy.getContext());
+  SmallVector<Attribute> dims;
+  dims.reserve(arrTy.getDimensionSizes().size());
+  for (Attribute dimSize : arrTy.getDimensionSizes()) {
+    if (llvm::isa<AffineMapAttr>(dimSize)) {
+      dims.push_back(builder.getIndexAttr(ShapedType::kDynamic));
+    } else {
+      dims.push_back(dimSize);
+    }
+  }
+
+  return arrTy.cloneWith(replaceAffineMapArrayDimsWithWildcards(arrTy.getElementType()), dims);
+}
+
+/// Return the wildcard-backed storage split type for one flattened POD leaf.
+///
+/// The precise split type preserves the original affine maps in the flattened leaf array. The
+/// storage split type uses the same outer shape but replaces hidden leaf-array affine dims with
+/// `?` until a matching instantiation can be recovered from concrete leaf-array values.
+static ArrayType getSplitPodArrayStorageType(ArrayType arrTy, ArrayRef<StringAttr> recordChain) {
+  auto elemPodTy = llvm::cast<PodType>(arrTy.getElementType());
+  Type leafType = getFlattenedTypeAlongPath(elemPodTy, recordChain);
+  return flattenArrayElementType(arrTy, replaceAffineMapArrayDimsWithWildcards(leafType));
+}
+
 /// Create an array value that callers can fully initialize via explicit writes or inserts.
 ///
 /// Use `llzk.nondet` as the base when affine-map dimensions are present because `array.new`
@@ -438,6 +544,104 @@ inline static Value createWritableArrayValue(OpBuilder &bldr, Location loc, Arra
   } else {
     return bldr.create<CreateArrayOp>(loc, arrTy);
   }
+}
+
+/// Store the affine-map operand groups needed to rebuild one concrete array instantiation.
+///
+/// The layout mirrors `array.new`: `mapOperandStorage` keeps each instantiation group separately,
+/// and `numDimsPerMap` records how many values in each group are dimensional arguments.
+struct ArrayInstantiationInfo {
+  SmallVector<SmallVector<Value>> mapOperandStorage;
+  SmallVector<int32_t> numDimsPerMap;
+};
+
+/// Return `true` iff two recovered array instantiations can be rebuilt identically.
+static bool equivalentArrayInstantiationInfo(
+    const ArrayInstantiationInfo &lhs, const ArrayInstantiationInfo &rhs
+) {
+  if (lhs.numDimsPerMap != rhs.numDimsPerMap ||
+      lhs.mapOperandStorage.size() != rhs.mapOperandStorage.size()) {
+    return false;
+  }
+
+  for (auto [lhsGroup, rhsGroup] : llvm::zip_equal(lhs.mapOperandStorage, rhs.mapOperandStorage)) {
+    if (lhsGroup != rhsGroup) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/// Try to recover affine-map instantiation operands from a concrete array-producing value.
+///
+/// This peels compatibility casts, follows simple `pod.read` to dominating `pod.write`
+/// forwarding, and succeeds only when the value ultimately traces back to a concrete
+/// `array.new` carrying the instantiation groups.
+static std::optional<ArrayInstantiationInfo> tryGetArrayInstantiationInfo(Value value) {
+  while (auto cast = value.getDefiningOp<UnifiableCastOp>()) {
+    value = cast.getInput();
+  }
+
+  if (ReadPodOp read = value.getDefiningOp<ReadPodOp>()) {
+    if (WritePodOp write = findNearestForwardableWriteInBlock(read)) {
+      return tryGetArrayInstantiationInfo(write.getValue());
+    }
+    return std::nullopt;
+  }
+
+  auto create = value.getDefiningOp<CreateArrayOp>();
+  if (!create) {
+    return std::nullopt;
+  }
+
+  ArrayInstantiationInfo info;
+  info.mapOperandStorage.reserve(create.getMapOperands().size());
+  for (OperandRange group : create.getMapOperands()) {
+    info.mapOperandStorage.emplace_back(group.begin(), group.end());
+  }
+
+  if (DenseI32ArrayAttr numDimsPerMap = create.getNumDimsPerMapAttr()) {
+    llvm::append_range(info.numDimsPerMap, numDimsPerMap.asArrayRef());
+  }
+
+  return info;
+}
+
+/// Describe whether a set of leaf arrays shares one recoverable instantiation.
+enum class CommonArrayInstantiationStatus : std::uint8_t {
+  unavailable,
+  inferred,
+  conflict,
+};
+
+/// Recover a single shared affine-map instantiation from all of `values`, if one exists.
+///
+/// Returns `inferred` when every value resolves to the same concrete `array.new`
+/// instantiation, `unavailable` when any value has no recoverable witness, and `conflict`
+/// when the recovered instantiations disagree.
+static CommonArrayInstantiationStatus
+inferCommonArrayInstantiation(ArrayRef<Value> values, ArrayInstantiationInfo &result) {
+  bool initialized = false;
+  for (Value value : values) {
+    std::optional<ArrayInstantiationInfo> info = tryGetArrayInstantiationInfo(value);
+    if (!info) {
+      return CommonArrayInstantiationStatus::unavailable;
+    }
+
+    if (!initialized) {
+      result = std::move(*info);
+      initialized = true;
+      continue;
+    }
+
+    if (!equivalentArrayInstantiationInfo(result, *info)) {
+      return CommonArrayInstantiationStatus::conflict;
+    }
+  }
+
+  return initialized ? CommonArrayInstantiationStatus::inferred
+                     : CommonArrayInstantiationStatus::unavailable;
 }
 
 /// Generate `arith.constant` indices for one static array element position.
@@ -483,6 +687,7 @@ genArrayWrite(OpBuilder &bldr, Location loc, Value arrayRef, ArrayRef<Value> ind
   Type t = arrayRef.getType();
   assert(llvm::isa<ArrayType>(t) && "array access must target an array type");
   ArrayType arrTy = llvm::cast<ArrayType>(t);
+  value = castValueToTypeIfNeeded(bldr, loc, value, getArraySelectionType(arrTy, indices.size()));
   if (indices.size() == arrTy.getDimensionSizes().size()) {
     bldr.create<WriteArrayOp>(loc, arrayRef, indices, value);
     return;
@@ -599,15 +804,19 @@ lookupVirtualPodLeafMap(Value podValue, const VirtualPodValueMap &virtualPods) {
 }
 
 /// Collect flattened POD leaf values in canonical traversal order.
-static SmallVector<Value>
-orderedVirtualPodLeafValues(PodType podTy, const VirtualPodLeafMap &leafValues) {
+static SmallVector<Value> orderedVirtualPodLeafValues(
+    PodType podTy, Location loc, OpBuilder &bldr, const VirtualPodLeafMap &leafValues
+) {
   SmallVector<Value> orderedValues;
   SmallVector<StringAttr> recordChain;
-  forEachPodLeaf(podTy, recordChain, [&leafValues, &orderedValues](const RecordChain &id, Type) {
+  forEachPodLeaf(
+      podTy, recordChain,
+      [&leafValues, &orderedValues, &bldr, loc](const RecordChain &id, Type leafType) {
     auto it = leafValues.find(id);
     assert(it != leafValues.end() && "missing virtual POD leaf value");
-    orderedValues.push_back(it->second);
-  });
+    orderedValues.push_back(castValueToTypeIfNeeded(bldr, loc, it->second, leafType));
+  }
+  );
   return orderedValues;
 }
 
@@ -667,7 +876,9 @@ static void processInputOperand(
   if (PodType pt = splittablePod(operand.getType())) {
     if (virtualPods) {
       if (const VirtualPodLeafMap *leafValues = lookupVirtualPodLeafMap(operand, *virtualPods)) {
-        llvm::append_range(newOperands, orderedVirtualPodLeafValues(pt, *leafValues));
+        llvm::append_range(
+            newOperands, orderedVirtualPodLeafValues(pt, loc, rewriter, *leafValues)
+        );
         return;
       }
     }
@@ -864,6 +1075,10 @@ step1(ModuleOp modOp, SymbolTableCollection &symTables, MemberReplacementMap &me
 }
 
 /// Type converter that replaces each array-of-POD type with one parallel array type per POD leaf.
+///
+/// Besides splitting result types, this also materializes compatibility casts between precise
+/// split array types and wildcard-backed storage split types when target or block-argument
+/// conversion needs to cross that boundary.
 class PodArrayTypeConverter : public TypeConverter {
 public:
   PodArrayTypeConverter() {
@@ -877,6 +1092,16 @@ public:
       return success();
     }
     );
+
+    auto materializeCast = [](OpBuilder &bldr, Type targetType, ValueRange inputs,
+                              Location loc) -> Value {
+      if (inputs.size() != 1 || !typesUnify(inputs.front().getType(), targetType)) {
+        return {};
+      }
+      return castValueToTypeIfNeeded(bldr, loc, inputs.front(), targetType);
+    };
+    addTargetMaterialization(materializeCast);
+    addArgumentMaterialization(materializeCast);
   }
 };
 
@@ -902,6 +1127,15 @@ public:
 };
 
 /// Split `array.new` of array-of-POD type into one `array.new` per parallel leaf array.
+///
+/// For each leaf, the precise split type preserves the original affine maps in the flattened leaf
+/// array. When hidden leaf-array affine dims have no direct witness, the rewrite may first build a
+/// wildcard-backed storage split type with the same outer shape and cast back to the precise type.
+///
+/// Uninitialized `array.new` uses that storage fallback directly when needed. Explicit-element
+/// `array.new` tries to infer one shared affine-map instantiation from all leaf arrays so it can
+/// materialize the precise split type immediately. If different elements imply conflicting
+/// instantiations, the rewrite remains a hard failure.
 class SplitPodArrayCreateArrayOp : public OpConversionPattern<CreateArrayOp> {
 public:
   using OpConversionPattern<CreateArrayOp>::OpConversionPattern;
@@ -924,9 +1158,12 @@ public:
     DenseI32ArrayAttr numDimsPerMap = op.getNumDimsPerMapAttr();
     if (isNullOrEmpty(numDimsPerMap)) {
       if (adaptor.getElements().empty()) {
-        for (Type splitType : splitTypes) {
+        for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
+          ArrayType preciseSplitType = llvm::cast<ArrayType>(splitType);
+          ArrayType storageSplitType = getSplitPodArrayStorageType(arrTy, id.nameList);
+          Value splitArray = rewriter.create<CreateArrayOp>(op.getLoc(), storageSplitType);
           replacements.push_back(
-              rewriter.create<CreateArrayOp>(op.getLoc(), llvm::cast<ArrayType>(splitType))
+              castValueToTypeIfNeeded(rewriter, op.getLoc(), splitArray, preciseSplitType)
           );
         }
         rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
@@ -945,14 +1182,55 @@ public:
       // element at a time so each leaf array becomes a subarray insert rather than a malformed
       // inline operand to the flattened `array.new`.
       for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
-        Value splitArray =
-            createWritableArrayValue(rewriter, op.getLoc(), llvm::cast<ArrayType>(splitType));
-        for (auto [index, elementRange] : llvm::zip_equal(*elementIndices, adaptor.getElements())) {
+        ArrayType preciseSplitType = llvm::cast<ArrayType>(splitType);
+        ArrayType storageSplitType = getSplitPodArrayStorageType(arrTy, id.nameList);
+
+        SmallVector<Value> leafValues;
+        leafValues.reserve(adaptor.getElements().size());
+        for (ValueRange elementRange : adaptor.getElements()) {
           Value element = getSingleConvertedValue(elementRange);
-          Value leafValue = genReadAlongPath(rewriter, op.getLoc(), element, id);
+          leafValues.push_back(genReadAlongPath(rewriter, op.getLoc(), element, id));
+        }
+
+        ArrayType materializedType = storageSplitType;
+        Value splitArray;
+        if (storageSplitType != preciseSplitType) {
+          ArrayInstantiationInfo instantiationInfo;
+          switch (inferCommonArrayInstantiation(leafValues, instantiationInfo)) {
+          case CommonArrayInstantiationStatus::conflict:
+            // TODO: this POD could be promoted to a complete `struct.def` but that's not easy.
+            op.emitOpError(
+                "with POD elements having conflicting affine map instantiations cannot be promoted "
+                "to higher dimensional array"
+            );
+            return failure();
+          case CommonArrayInstantiationStatus::inferred: {
+            materializedType = preciseSplitType;
+            SmallVector<ValueRange> mapOperands;
+            mapOperands.reserve(instantiationInfo.mapOperandStorage.size());
+            for (const SmallVector<Value> &values : instantiationInfo.mapOperandStorage) {
+              mapOperands.push_back(values);
+            }
+            splitArray = rewriter.create<CreateArrayOp>(
+                op.getLoc(), materializedType, mapOperands, instantiationInfo.numDimsPerMap
+            );
+            break;
+          }
+          case CommonArrayInstantiationStatus::unavailable:
+            break;
+          }
+        }
+
+        if (!splitArray) {
+          splitArray = createWritableArrayValue(rewriter, op.getLoc(), materializedType);
+        }
+
+        for (auto [index, leafValue] : llvm::zip_equal(*elementIndices, leafValues)) {
           genArrayWrite(rewriter, op.getLoc(), splitArray, index, leafValue);
         }
-        replacements.push_back(splitArray);
+        replacements.push_back(
+            castValueToTypeIfNeeded(rewriter, op.getLoc(), splitArray, preciseSplitType)
+        );
       }
     } else {
       SmallVector<SmallVector<Value>> mapOperandStorage;
@@ -965,10 +1243,15 @@ public:
       for (const SmallVector<Value> &values : mapOperandStorage) {
         mapOperands.push_back(values);
       }
-      for (Type splitType : splitTypes) {
-        replacements.push_back(rewriter.create<CreateArrayOp>(
-            op.getLoc(), llvm::cast<ArrayType>(splitType), mapOperands, numDimsPerMap
-        ));
+      for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
+        ArrayType preciseSplitType = llvm::cast<ArrayType>(splitType);
+        ArrayType storageSplitType = getSplitPodArrayStorageType(arrTy, id.nameList);
+        Value splitArray = rewriter.create<CreateArrayOp>(
+            op.getLoc(), storageSplitType, mapOperands, numDimsPerMap
+        );
+        replacements.push_back(
+            castValueToTypeIfNeeded(rewriter, op.getLoc(), splitArray, preciseSplitType)
+        );
       }
     }
 
@@ -1948,9 +2231,10 @@ public:
   }
 };
 
-static WritePodOp findNearestForwardableWriteInBlock(ReadPodOp readOp);
-
-/// Collect split leaf arrays from a value materialized back to an aggregate array-of-POD type.
+/// Collect precise split leaf arrays from a value re-materialized as an aggregate array-of-POD.
+///
+/// This recognizes the temporary aggregate form produced by dialect conversion casts and unwraps
+/// it back into the parallel split arrays expected by the late pod-array read resolvers.
 static bool tryCollectMaterializedSplitPodArrayLeafValues(
     Value arrayValue, ArrayType arrTy, ArrayRef<Type> splitTypes, SmallVectorImpl<Value> &leafArrays
 ) {
@@ -1969,7 +2253,11 @@ static bool tryCollectMaterializedSplitPodArrayLeafValues(
   return true;
 }
 
-/// Collect split leaf arrays for an array-of-POD value backed by a direct `pod.read`.
+/// Collect precise split leaf arrays for an array-of-POD value backed by a direct `pod.read`.
+///
+/// This first consults virtual POD leaf storage and, if unavailable, falls back to forwarding
+/// through a dominating same-record `pod.write` whose value was previously materialized as split
+/// arrays.
 static bool tryCollectReadPodSplitPodArrayLeafValues(
     ReadPodOp readOp, ArrayType arrTy, ArrayRef<RecordChain> splitIds, ArrayRef<Type> splitTypes,
     const VirtualPodValueMap &virtualPods, SmallVectorImpl<Value> &leafArrays
@@ -1982,7 +2270,7 @@ static bool tryCollectReadPodSplitPodArrayLeafValues(
       llvm::append_range(fullChain, id.nameList);
       auto it = podLeafValues->find(RecordChain(fullChain));
       if (it == podLeafValues->end() ||
-          it->second.getType() != getFlattenedTypeAlongPath(arrTy, id.nameList)) {
+          !typesUnify(it->second.getType(), getFlattenedTypeAlongPath(arrTy, id.nameList))) {
         return false;
       }
       leafArrays.push_back(it->second);
@@ -2000,6 +2288,10 @@ static bool tryCollectReadPodSplitPodArrayLeafValues(
 }
 
 /// Resolve deferred `array.read` from `pod.read`-produced array-of-POD values.
+///
+/// When step 2 defers a read because the array-of-POD came from a POD record, this pattern
+/// reconstructs the per-leaf split arrays, performs the array read on each leaf array, and then
+/// rebuilds the element POD virtually instead of materializing the whole aggregate array first.
 class ResolvePodReadBackedArrayReadOp : public OpConversionPattern<ReadArrayOp> {
   VirtualPodValueMap &virtualPods;
 
@@ -2059,6 +2351,9 @@ public:
 };
 
 /// Resolve reads from a virtual POD placeholder without materializing the whole aggregate.
+///
+/// This pattern answers `pod.read` directly from virtual leaf storage, rebuilding nested POD
+/// subrecords on demand and casting scalar leaves back to the precise record type when needed.
 class ResolveVirtualPodReadOp : public OpConversionPattern<ReadPodOp> {
   VirtualPodValueMap &virtualPods;
 
@@ -2097,7 +2392,11 @@ public:
       return failure();
     }
 
-    rewriter.replaceOp(op, leafValues->at(RecordChain(prefix)));
+    rewriter.replaceOp(
+        op, castValueToTypeIfNeeded(
+                rewriter, op.getLoc(), leafValues->at(RecordChain(prefix)), recordType
+            )
+    );
     return success();
   }
 };
@@ -2151,57 +2450,6 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
     }
   }
   return success();
-}
-
-/// Return whether the given read/write access targets the same POD record.
-inline static bool isSamePodRecord(ReadPodOp readOp, Value podRef, StringAttr recordName) {
-  return readOp.getPodRef() == podRef && readOp.getRecordNameAttr() == recordName;
-}
-
-/// Return whether the given read/write access targets the same POD record.
-inline static bool isSamePodRecord(WritePodOp writeOp, Value podRef, StringAttr recordName) {
-  return writeOp.getPodRef() == podRef && writeOp.getRecordNameAttr() == recordName;
-}
-
-/// Return whether `op` contains a nested write to `podRef.recordName`.
-static bool hasNestedWriteToRecord(Operation &op, Value podRef, StringAttr recordName) {
-  return walkContainsMatch<WritePodOp>(op, [&](WritePodOp writeOp) {
-    return writeOp.getOperation() != &op && isSamePodRecord(writeOp, podRef, recordName);
-  });
-}
-
-/// Return whether `op` contains any read from `podRef.recordName`.
-static bool hasReadFromRecord(Operation &op, Value podRef, StringAttr recordName) {
-  return walkContainsMatch<ReadPodOp>(op, [&](ReadPodOp readOp) {
-    return isSamePodRecord(readOp, podRef, recordName);
-  });
-}
-
-/// Return whether `op` or any nested operation uses `value` as an operand.
-static bool hasValueUse(Operation &op, Value value) {
-  return walkContainsMatch<Operation *>(op, [&value](Operation *nestedOp) {
-    return llvm::is_contained(nestedOp->getOperands(), value);
-  });
-}
-
-/// Return the nearest preceding same-record write that can be forwarded to `readOp`.
-///
-/// This fold is intentionally conservative: it only forwards through intervening operations that do
-/// not use the POD value at all. That keeps the rewrite local and avoids reasoning about other
-/// whole-POD uses or record accesses that may observe mutation ordering.
-static WritePodOp findNearestForwardableWriteInBlock(ReadPodOp readOp) {
-  Value podRef = readOp.getPodRef();
-  StringAttr recordName = readOp.getRecordNameAttr();
-
-  for (Operation *op = readOp->getPrevNode(); op; op = op->getPrevNode()) {
-    if (!hasValueUse(*op, podRef)) {
-      continue;
-    }
-
-    auto writeOp = dyn_cast<WritePodOp>(op);
-    return writeOp && isSamePodRecord(writeOp, podRef, recordName) ? writeOp : nullptr;
-  }
-  return nullptr;
 }
 
 /// Return whether the read is preceded by a write to the same pod record within its block.
