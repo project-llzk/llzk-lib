@@ -1,0 +1,63 @@
+// RUN: llzk-opt --llzk-fuse-product-loops %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @A {
+    struct.member @left : !felt.type
+    struct.member @right : !felt.type
+
+    function.def @product(%b: i1) -> !struct.type<@A> {
+      %self = struct.new : <@A>
+
+      %first, %second = scf.if %b -> (!felt.type, !felt.type) {
+        %zero = felt.const 0
+        %one = felt.const 1
+        scf.yield %zero, %one : !felt.type, !felt.type
+      } else {
+        %two = felt.const 2
+        %three = felt.const 3
+        scf.yield %two, %three : !felt.type, !felt.type
+      } {product_source = "compute"}
+
+      struct.writem %self[@left] = %first : <@A>, !felt.type
+      struct.writem %self[@right] = %second : <@A>, !felt.type
+
+      scf.if %b {
+        %expectedSecond = felt.const 1
+        %expectedFirst = felt.const 0
+        constrain.eq %second, %expectedSecond : !felt.type
+        constrain.eq %first, %expectedFirst : !felt.type
+      } else {
+        %expectedSecond = felt.const 3
+        %expectedFirst = felt.const 2
+        constrain.eq %second, %expectedSecond : !felt.type
+        constrain.eq %first, %expectedFirst : !felt.type
+      } {product_source = "constrain"}
+
+      function.return %self : !struct.type<@A>
+    }
+  }
+}
+
+// CHECK-LABEL: function.def @product
+// CHECK-SAME:  (%[[B:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@A>
+// CHECK:         %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@A>
+// CHECK-NEXT:    %[[RESULT:[0-9a-zA-Z_\.]+]]:2 = scf.if %[[B]] -> (!felt.type, !felt.type) {
+// CHECK-NEXT:      %[[THEN_FIRST:[0-9a-zA-Z_\.]+]] = felt.const 0
+// CHECK-NEXT:      %[[THEN_SECOND:[0-9a-zA-Z_\.]+]] = felt.const 1
+// CHECK-NEXT:      %[[THEN_EXPECT_SECOND:[0-9a-zA-Z_\.]+]] = felt.const 1
+// CHECK-NEXT:      %[[THEN_EXPECT_FIRST:[0-9a-zA-Z_\.]+]] = felt.const 0
+// CHECK-NEXT:      constrain.eq %[[THEN_SECOND]], %[[THEN_EXPECT_SECOND]] : !felt.type, !felt.type
+// CHECK-NEXT:      constrain.eq %[[THEN_FIRST]], %[[THEN_EXPECT_FIRST]] : !felt.type, !felt.type
+// CHECK-NEXT:      scf.yield %[[THEN_FIRST]], %[[THEN_SECOND]] : !felt.type, !felt.type
+// CHECK-NEXT:    } else {
+// CHECK-NEXT:      %[[ELSE_FIRST:[0-9a-zA-Z_\.]+]] = felt.const 2
+// CHECK-NEXT:      %[[ELSE_SECOND:[0-9a-zA-Z_\.]+]] = felt.const 3
+// CHECK-NEXT:      %[[ELSE_EXPECT_SECOND:[0-9a-zA-Z_\.]+]] = felt.const 3
+// CHECK-NEXT:      %[[ELSE_EXPECT_FIRST:[0-9a-zA-Z_\.]+]] = felt.const 2
+// CHECK-NEXT:      constrain.eq %[[ELSE_SECOND]], %[[ELSE_EXPECT_SECOND]] : !felt.type, !felt.type
+// CHECK-NEXT:      constrain.eq %[[ELSE_FIRST]], %[[ELSE_EXPECT_FIRST]] : !felt.type, !felt.type
+// CHECK-NEXT:      scf.yield %[[ELSE_FIRST]], %[[ELSE_SECOND]] : !felt.type, !felt.type
+// CHECK-NEXT:    } {product_source = "fused"}
+// CHECK-NEXT:    struct.writem %[[SELF]][@left] = %[[RESULT]]#0 : <@A>, !felt.type
+// CHECK-NEXT:    struct.writem %[[SELF]][@right] = %[[RESULT]]#1 : <@A>, !felt.type
+// CHECK-NEXT:    function.return %[[SELF]] : !struct.type<@A>

@@ -1,3 +1,7 @@
+## Unreleased
+### Changed
+- `llzk-fuse-product-loops` can now fuse matching witness/constraint `scf.if` regions.
+
 ## v2.1.2 - 2026-06-18
 ### Added
 - `--llzk-remove-unused-discardable-allocations` for removing unread discardable allocations and their dead stores.

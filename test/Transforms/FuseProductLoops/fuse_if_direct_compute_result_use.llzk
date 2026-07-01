@@ -1,0 +1,48 @@
+// RUN: llzk-opt --llzk-fuse-product-loops %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @A {
+    struct.member @foo : !felt.type
+
+    function.def @product(%b: i1) -> !struct.type<@A> {
+      %self = struct.new : <@A>
+
+      %0 = scf.if %b -> !felt.type {
+        %zero = felt.const 0
+        scf.yield %zero : !felt.type
+      } else {
+        %one = felt.const 1
+        scf.yield %one : !felt.type
+      } {product_source = "compute"}
+
+      struct.writem %self[@foo] = %0 : <@A>, !felt.type
+
+      scf.if %b {
+        %expected = felt.const 0
+        constrain.eq %0, %expected : !felt.type
+      } else {
+        %expected = felt.const 1
+        constrain.eq %0, %expected : !felt.type
+      } {product_source = "constrain"}
+
+      function.return %self : !struct.type<@A>
+    }
+  }
+}
+
+// CHECK-LABEL: function.def @product
+// CHECK-SAME:  (%[[B:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@A>
+// CHECK:         %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@A>
+// CHECK-NEXT:    %[[RESULT:[0-9a-zA-Z_\.]+]] = scf.if %[[B]] -> (!felt.type) {
+// CHECK-NEXT:      %[[COMPUTE_ZERO:[0-9a-zA-Z_\.]+]] = felt.const 0
+// CHECK-NEXT:      %[[EXPECTED_ZERO:[0-9a-zA-Z_\.]+]] = felt.const 0
+// CHECK-NEXT:      constrain.eq %[[COMPUTE_ZERO]], %[[EXPECTED_ZERO]] : !felt.type, !felt.type
+// CHECK-NEXT:      scf.yield %[[COMPUTE_ZERO]] : !felt.type
+// CHECK-NEXT:    } else {
+// CHECK-NEXT:      %[[COMPUTE_ONE:[0-9a-zA-Z_\.]+]] = felt.const 1
+// CHECK-NEXT:      %[[EXPECTED_ONE:[0-9a-zA-Z_\.]+]] = felt.const 1
+// CHECK-NEXT:      constrain.eq %[[COMPUTE_ONE]], %[[EXPECTED_ONE]] : !felt.type, !felt.type
+// CHECK-NEXT:      scf.yield %[[COMPUTE_ONE]] : !felt.type
+// CHECK-NEXT:    } {product_source = "fused"}
+// CHECK-NEXT:    struct.writem %[[SELF]][@foo] = %[[RESULT]] : <@A>, !felt.type
+// CHECK-NEXT:    function.return %[[SELF]] : !struct.type<@A>

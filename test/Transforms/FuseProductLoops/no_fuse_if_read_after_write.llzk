@@ -1,0 +1,56 @@
+// RUN: llzk-opt --llzk-compute-constrain-to-product="root-struct=A" --llzk-fuse-product-loops %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @A {
+    struct.member @foo : !felt.type
+
+    function.def @compute(%b: i1) -> !struct.type<@A> {
+      %self = struct.new : <@A>
+
+      %0 = scf.if %b -> !felt.type {
+        %a = felt.const 0
+        scf.yield %a : !felt.type
+      } else {
+        %a = felt.const 1
+        scf.yield %a : !felt.type
+      }
+
+      struct.writem %self[@foo] = %0 : <@A>, !felt.type
+      function.return %self : !struct.type<@A>
+    }
+
+    function.def @constrain(%self: !struct.type<@A>, %b: i1) {
+      %foo = struct.readm %self[@foo] : <@A>, !felt.type
+      scf.if %b {
+        %val = felt.const 0
+        constrain.eq %foo, %val : !felt.type
+      } else {
+        %val = felt.const 1
+        constrain.eq %foo, %val : !felt.type
+      }
+
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: function.def @product
+// CHECK-SAME:  (%[[B:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@A>
+// CHECK:         %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@A>
+// CHECK-NEXT:    %[[RESULT:[0-9a-zA-Z_\.]+]] = scf.if %[[B]] -> (!felt.type) {
+// CHECK-NEXT:      %[[COMPUTE_ZERO:[0-9a-zA-Z_\.]+]] = felt.const 0
+// CHECK-NEXT:      scf.yield {{.*}}%[[COMPUTE_ZERO]] : !felt.type
+// CHECK-NEXT:    } else {
+// CHECK-NEXT:      %[[COMPUTE_ONE:[0-9a-zA-Z_\.]+]] = felt.const 1
+// CHECK-NEXT:      scf.yield {{.*}}%[[COMPUTE_ONE]] : !felt.type
+// CHECK-NEXT:    } {product_source = "compute"}
+// CHECK-NEXT:    struct.writem %[[SELF]][@foo] = %[[RESULT]] : <@A>, !felt.type
+// CHECK-NEXT:    %[[FOO:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@foo] : <@A>, !felt.type
+// CHECK-NEXT:    scf.if %[[B]] {
+// CHECK-NEXT:      %[[CONSTRAIN_ZERO:[0-9a-zA-Z_\.]+]] = felt.const 0
+// CHECK-NEXT:      constrain.eq %[[FOO]], %[[CONSTRAIN_ZERO]] : !felt.type, !felt.type
+// CHECK-NEXT:    } else {
+// CHECK-NEXT:      %[[CONSTRAIN_ONE:[0-9a-zA-Z_\.]+]] = felt.const 1
+// CHECK-NEXT:      constrain.eq %[[FOO]], %[[CONSTRAIN_ONE]] : !felt.type, !felt.type
+// CHECK-NEXT:    } {product_source = "constrain"}
+// CHECK-NEXT:    function.return %[[SELF]] : !struct.type<@A>

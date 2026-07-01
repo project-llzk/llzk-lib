@@ -1,0 +1,55 @@
+// RUN: llzk-opt --llzk-compute-constrain-to-product="root-struct=A" --llzk-fuse-product-loops %s | FileCheck --enable-var-scope %s
+module attributes {llzk.lang = "llzk"} {
+  struct.def @A {
+    struct.member @foo : !felt.type
+
+    function.def @compute(%b: i1) -> !struct.type<@A> {
+      %self = struct.new : <@A>
+      %c0 = arith.constant 0 : index
+      %c2 = arith.constant 2 : index
+      %c1 = arith.constant 1 : index
+
+      scf.for %i = %c0 to %c2 step %c1 {
+        %0 = scf.if %b -> !felt.type {
+          %a = felt.const 0
+          scf.yield %a : !felt.type
+        } else {
+          %a = felt.const 1
+          scf.yield %a : !felt.type
+        }
+
+        struct.writem %self[@foo] = %0 : <@A>, !felt.type
+      }
+
+      function.return %self : !struct.type<@A>
+    }
+
+    function.def @constrain(%self: !struct.type<@A>, %b: i1) {
+      %c0 = arith.constant 0 : index
+      %c2 = arith.constant 2 : index
+      %c1 = arith.constant 1 : index
+
+      scf.for %i = %c0 to %c2 step %c1 {
+        %foo = struct.readm %self[@foo] : <@A>, !felt.type
+        scf.if %b {
+          %val = felt.const 0
+          constrain.eq %foo, %val : !felt.type
+        } else {
+          %val = felt.const 1
+          constrain.eq %foo, %val : !felt.type
+        }
+      }
+
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: function.def @product
+// CHECK-SAME:  (%[[B:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@A>
+// CHECK:         scf.for
+// CHECK:           %[[RESULT:[0-9a-zA-Z_\.]+]] = scf.if %[[B]] -> (!felt.type) {
+// CHECK:           struct.writem %{{[0-9a-zA-Z_\.]+}}[@foo] = %[[RESULT]] : <@A>, !felt.type
+// CHECK:           %[[FOO:[0-9a-zA-Z_\.]+]] = struct.readm %{{[0-9a-zA-Z_\.]+}}[@foo] : <@A>, !felt.type
+// CHECK:           scf.if %[[B]] {
+// CHECK:             constrain.eq %[[FOO]]
