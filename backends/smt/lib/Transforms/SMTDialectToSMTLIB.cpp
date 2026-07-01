@@ -473,6 +473,16 @@ private:
     return success();
   }
 
+  /// Classify a helper as either a real SMT-LIB function or an inline script.
+  ///
+  /// `PureFunction` helpers are emitted once as `define-fun` and referenced from
+  /// callers using ordinary SMT-LIB application syntax. A helper stays pure only
+  /// if it returns exactly one value, contains no script-level SMT operations,
+  /// makes no zero-result calls, and only depends on other pure helpers.
+  ///
+  /// Everything else becomes `InlineScript`, meaning the callee body is expanded
+  /// at each call site so commands such as `assert`, `push`, `pop`, or `check`
+  /// remain in the surrounding linear SMT-LIB script.
   FailureOr<HelperMode> classifyHelperMode(func::FuncOp func) {
     if (!func || func.empty()) {
       func.emitError("smt-to-smtlib requires non-empty helper funcs");
@@ -612,6 +622,11 @@ private:
     return success();
   }
 
+  /// Expand a script-style helper directly into the caller's linearized script.
+  ///
+  /// This binds callee block arguments to already-rendered caller expressions,
+  /// emits the helper body in source order, and then returns the rendered
+  /// `func.return` operands back to the caller for subsequent substitution.
   FailureOr<SmallVector<std::string>> inlineHelper(
       func::FuncOp func, ArrayRef<std::string> argExprs,
       std::optional<std::string> initialStageLabel
