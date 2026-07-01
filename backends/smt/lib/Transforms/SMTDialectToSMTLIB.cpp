@@ -51,6 +51,7 @@ using namespace mlir;
 
 namespace {
 
+/// Sanitize a symbol or user-provided identifier into a bare SMT-LIB symbol.
 static std::string sanitizeSymbol(StringRef name) {
   std::string out;
   out.reserve(name.size());
@@ -67,6 +68,7 @@ static std::string sanitizeSymbol(StringRef name) {
   return out;
 }
 
+/// Convert an SMT dialect sort to its SMT-LIB textual form.
 static std::string sortForType(Type type) {
   return TypeSwitch<Type, std::string>(type)
       .Case<llzk::smt::IntType>([](auto) { return "Int"; })
@@ -75,8 +77,10 @@ static std::string sortForType(Type type) {
     std::string sort = "((";
     llvm::interleave(type.getDomainTypes(), [&](Type domainType) {
       sort += sortForType(domainType);
-    }, [&] { sort += " "; });
-    sort += ") " + sortForType(type.getRangeType()) + ")";
+    }, [&] { sort.push_back(' '); });
+    sort += ") ";
+    sort += sortForType(type.getRangeType());
+    sort.push_back(')');
     return sort;
   })
       .Case<llzk::smt::BitVectorType>([](auto type) {
@@ -100,6 +104,10 @@ enum class HelperMode {
   InlineScript,
 };
 
+/// Stateful SMT-LIB emitter for one module-level solver export.
+///
+/// The emitter linearizes the selected root `smt.solver`, emits reusable pure
+/// helpers as `define-fun`, and inlines script-style helpers at call sites.
 class SMTLIBEmitter {
 public:
   SMTLIBEmitter(ModuleOp module, llvm::raw_ostream &os) : module(module), os(os) {}
@@ -357,7 +365,7 @@ private:
       os << "(declare-fun " << symbol << " (";
       llvm::interleave(funcType.getDomainTypes(), [&](Type domainType) {
         os << sortForType(domainType);
-      }, [&] { os << " "; });
+      }, [&] { os << ' '; });
       os << ") " << sortForType(funcType.getRangeType()) << ")\n";
       return success();
     }
@@ -534,9 +542,10 @@ private:
   std::string buildHelperApplication(func::FuncOp func, ArrayRef<std::string> argExprs) {
     std::string expr = "(" + getHelperSymbol(func);
     for (const std::string &argExpr : argExprs) {
-      expr += " " + argExpr;
+      expr.push_back(' ');
+      expr += argExpr;
     }
-    expr += ")";
+    expr.push_back(')');
     return expr;
   }
 
@@ -585,7 +594,7 @@ private:
     os << "(define-fun " << funcName << " (";
     for (auto [index, arg] : llvm::enumerate(func.getArguments())) {
       if (index != 0) {
-        os << " ";
+        os << ' ';
       }
       std::string argName = funcName + "__arg" + std::to_string(index);
       argExprs.push_back(argName);
@@ -978,9 +987,10 @@ private:
         if (failed(argExpr)) {
           return failure();
         }
-        expr += " " + *argExpr;
+        expr.push_back(' ');
+        expr += *argExpr;
       }
-      expr += ")";
+      expr.push_back(')');
       return expr;
     })
         .Case<llzk::smt::ForallOp>([&](auto exprOp) {
@@ -1120,9 +1130,10 @@ private:
       }
       std::string expr = "(and";
       for (const std::string &operand : renderedOperands) {
-        expr += " " + operand;
+        expr.push_back(' ');
+        expr += operand;
       }
-      expr += ")";
+      expr.push_back(')');
       return expr;
     }
 
@@ -1132,9 +1143,10 @@ private:
       if (failed(value)) {
         return failure();
       }
-      expr += " " + *value;
+      expr.push_back(' ');
+      expr += *value;
     }
-    expr += ")";
+    expr.push_back(')');
     return expr;
   }
 
@@ -1161,7 +1173,7 @@ private:
                              : "q" + std::to_string(nextTempId++);
       bodyCtx.values[arg] = name;
       if (index != 0) {
-        expr += " ";
+        expr.push_back(' ');
       }
       expr += "(" + name + " " + sortForType(arg.getType()) + ")";
     }
@@ -1242,6 +1254,7 @@ class SMTDialectToSMTLIBPass
 
 } // namespace
 
+/// Export the selected SMT solver rooted in `module` to SMT-LIB text.
 LogicalResult llzk::smt::emitSMTLIBModule(ModuleOp module, llvm::raw_ostream &os) {
   return SMTLIBEmitter(module, os).emit();
 }
