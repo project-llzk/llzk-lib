@@ -377,10 +377,13 @@ struct FunctionConverter {
       state.builder.create<llzk::zkbuilder::ConstrainEqOp>(eq.getLoc(), stateType, lhs, rhs);
       return;
     }
-    if (op->getNumResults() != 0) {
-      op->emitError("unsupported op in ZKLean conversion").report();
-      state.hadError = true;
+    if (auto ret = dyn_cast<llzk::function::ReturnOp>(op)) {
+      if (ret.getOperands().empty()) {
+        return;
+      }
     }
+    op->emitError("unsupported op in ZKLean conversion").report();
+    state.hadError = true;
   }
 
   // Emit the final `mlir::func::ReturnOp` for the new function.
@@ -396,6 +399,11 @@ struct FunctionConverter {
 // Skips non-constrain functions and stops early on errors.
 static bool convertFunction(llzk::function::FuncDefOp func, LLZKToZKLeanState &state) {
   if (state.hadError || !shouldConvertFunc(func)) {
+    return false;
+  }
+  if (!func.getBody().hasOneBlock()) {
+    func.emitError("ZKLean conversion only supports single-block functions").report();
+    state.hadError = true;
     return false;
   }
 
@@ -416,8 +424,8 @@ static bool convertFunction(llzk::function::FuncDefOp func, LLZKToZKLeanState &s
 static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
   OpBuilder builder(dest.getContext());
   auto zkType = llzk::zkexpr::ZKExprType::get(dest.getContext());
-  bool createdAny = false;
   bool hadError = false;
+  bool createdAny = false;
 
   LLZKToZKLeanState state {dest, builder, zkType, hadError};
   emitZKLeanStructDefs(source, state);
@@ -428,7 +436,12 @@ static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
     }
   });
 
-  return success(!hadError && createdAny);
+  if (!hadError && !createdAny) {
+    source.emitError("did not produce any ops in ZKLean module").report();
+    hadError = true;
+  }
+
+  return failure(hadError);
 }
 
 // Pass wrapper that appends a converted ZKLean module to the source.
@@ -450,7 +463,6 @@ class PassImpl : public zklean::impl::ConvertLLZKToZKLeanPassBase<PassImpl> {
     }
 
     if (failed(convertModule(original, zkLeanModule))) {
-      original.emitError("failed to produce ZKLean module").report();
       signalPassFailure();
       return;
     }
