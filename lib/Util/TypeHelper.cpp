@@ -564,6 +564,15 @@ bool hasAffineMapAttr(Type type) {
 
 bool isDynamic(IntegerAttr intAttr) { return ShapedType::isDynamic(fromAPInt(intAttr.getValue())); }
 
+ArrayType flattenArrayElementType(ArrayType outerArrTy, Type elementType) {
+  SmallVector<Attribute> mergedDims(outerArrTy.getDimensionSizes());
+  while (ArrayType nestedArrTy = llvm::dyn_cast<ArrayType>(elementType)) {
+    llvm::append_range(mergedDims, nestedArrTy.getDimensionSizes());
+    elementType = nestedArrTy.getElementType();
+  }
+  return ArrayType::get(elementType, mergedDims);
+}
+
 uint64_t computeEmitEqCardinality(Type type) {
   struct Impl : LLZKTypeSwitch<Impl, uint64_t> {
     uint64_t caseBool(IntegerType) { return 1; }

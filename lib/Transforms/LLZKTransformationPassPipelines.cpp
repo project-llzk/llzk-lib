@@ -49,13 +49,13 @@ void buildFullStructInliningPipelineImpl(
   }
   pm.addPass(polymorphic::createFlatteningPass(flattening));
 
-  // Run array-to-scalar first because it can split arrays within a pod
-  // but pod-to-scalar cannot split pods within an array.
-  if (arrayToScalar) {
-    pm.addPass(array::createArrayToScalarPass());
-  }
+  // Run pod-to-scalar first because it is able to split `pod.type` used as array element type
+  // (into parallel arrays) so it should be able to fully remove all `pod.type` usages.
   if (podToScalar) {
     pm.addPass(pod::createPodToScalarPass());
+  }
+  if (arrayToScalar) {
+    pm.addPass(array::createArrayToScalarPass());
   }
   // Canonicalize to remove known-condition `scf.if` regions so struct inlining
   // can link "@compute" calls to struct members.

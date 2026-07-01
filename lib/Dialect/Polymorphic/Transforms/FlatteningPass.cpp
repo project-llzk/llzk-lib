@@ -969,18 +969,6 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
 namespace Step1B_InstantiateFunctions {
 
-/// Flatten nested array instantiations by appending any dimensions contributed by the converted
-/// element type onto the outer array. This allows wildcard element types to resolve to
-/// higher-rank arrays even though LLZK array element types cannot themselves be arrays.
-static ArrayType flattenInstantiatedArrayType(ArrayType inputTy, Type convertedElemTy) {
-  SmallVector<Attribute> mergedDims(inputTy.getDimensionSizes());
-  while (ArrayType nestedArrTy = llvm::dyn_cast<ArrayType>(convertedElemTy)) {
-    llvm::append_range(mergedDims, nestedArrTy.getDimensionSizes());
-    convertedElemTy = nestedArrTy.getElementType();
-  }
-  return ArrayType::get(convertedElemTy, mergedDims);
-}
-
 /// TypeConverter for function instantiation that replaces TypeVarType and symbolic
 /// ArrayType/StructType parameters with their concrete values determined by unification.
 class FuncInstTypeConverter : public TypeConverter {
@@ -1020,7 +1008,7 @@ public:
       if (!changed && newElemTy == inputTy.getElementType()) {
         return inputTy;
       }
-      return flattenInstantiatedArrayType(
+      return flattenArrayElementType(
           inputTy.cloneWith(inputTy.getElementType(), updated), newElemTy
       );
     });

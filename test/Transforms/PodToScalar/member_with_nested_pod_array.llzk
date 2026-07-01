@@ -1,0 +1,63 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @S {
+    struct.member @m : !pod.type<[@a: !array.type<2 x !pod.type<[@x: index, @y: !felt.type]>>, @b: index]>
+
+    function.def @compute(%p: !pod.type<[@a: !array.type<2 x !pod.type<[@x: index, @y: !felt.type]>>, @b: index]>)
+        -> !struct.type<@S> {
+      %self = struct.new : !struct.type<@S>
+      struct.writem %self[@m] = %p : !struct.type<@S>, !pod.type<[@a: !array.type<2 x !pod.type<[@x: index, @y: !felt.type]>>, @b: index]>
+      %loaded = struct.readm %self[@m] : !struct.type<@S>, !pod.type<[@a: !array.type<2 x !pod.type<[@x: index, @y: !felt.type]>>, @b: index]>
+      %b = pod.read %loaded[@b] : !pod.type<[@a: !array.type<2 x !pod.type<[@x: index, @y: !felt.type]>>, @b: index]>, index
+      function.return %self : !struct.type<@S>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@S>, %p: !pod.type<[@a: !array.type<2 x !pod.type<[@x: index, @y: !felt.type]>>, @b: index]>
+    ) {
+      %loaded = struct.readm %self[@m] : !struct.type<@S>, !pod.type<[@a: !array.type<2 x !pod.type<[@x: index, @y: !felt.type]>>, @b: index]>
+      %b = pod.read %loaded[@b] : !pod.type<[@a: !array.type<2 x !pod.type<[@x: index, @y: !felt.type]>>, @b: index]>, index
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @S {
+// CHECK-DAG:       struct.member @m_a_x : !array.type<2 x index>
+// CHECK-DAG:       struct.member @m_a_y : !array.type<2 x !felt.type>
+// CHECK-DAG:       struct.member @m_b : index
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@S> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@S>
+// CHECK-DAG:         struct.writem %[[VAL_3]][@m_a_y] = %[[VAL_1]] : <@S>, !array.type<2 x !felt.type>
+// CHECK-DAG:         struct.writem %[[VAL_3]][@m_b] = %[[VAL_2]] : <@S>, index
+// CHECK-DAG:         struct.writem %[[VAL_3]][@m_a_x] = %[[VAL_0]] : <@S>, !array.type<2 x index>
+// CHECK-DAG:         %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@m_a_y] : <@S>, !array.type<2 x !felt.type>
+// CHECK-DAG:         %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@m_b] : <@S>, index
+// CHECK-DAG:         %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@m_a_x] : <@S>, !array.type<2 x index>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_7]]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_9]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_11]]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_13]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@S>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_15:[0-9a-zA-Z_\.]+]]: !struct.type<@S>, %[[VAL_16:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>, %[[VAL_17:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>, %[[VAL_18:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-DAG:         %[[VAL_19:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_15]][@m_a_y] : <@S>, !array.type<2 x !felt.type>
+// CHECK-DAG:         %[[VAL_20:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_15]][@m_b] : <@S>, index
+// CHECK-DAG:         %[[VAL_21:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_15]][@m_a_x] : <@S>, !array.type<2 x index>
+// CHECK-NEXT:        %[[VAL_22:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_21]]{{\[}}%[[VAL_22]]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_25:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_19]]{{\[}}%[[VAL_24]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_21]]{{\[}}%[[VAL_26]]] : <2 x index>, index
+// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_19]]{{\[}}%[[VAL_28]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
