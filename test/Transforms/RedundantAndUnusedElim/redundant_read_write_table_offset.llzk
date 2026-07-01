@@ -1,0 +1,376 @@
+// RUN: llzk-opt -split-input-file -llzk-duplicate-read-write-elim %s 2>&1 | FileCheck %s
+
+module attributes {llzk.lang} {
+  struct.def @DifferentOffsets {
+    struct.member @cell : !felt.type {column}
+
+    function.def @compute() -> !struct.type<@DifferentOffsets> {
+      %self = struct.new : !struct.type<@DifferentOffsets>
+      function.return %self : !struct.type<@DifferentOffsets>
+    }
+
+    function.def @constrain(%self: !struct.type<@DifferentOffsets>) {
+      %prev = struct.readm %self[@cell] : !struct.type<@DifferentOffsets>, !felt.type {tableOffset = -1 : index}
+      %curr = struct.readm %self[@cell] : !struct.type<@DifferentOffsets>, !felt.type {tableOffset = 0 : index}
+      constrain.eq %prev, %curr : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @DifferentOffsets {
+// CHECK: function.def @constrain(%[[SELF:.*]]: !struct.type<@DifferentOffsets>)
+// CHECK-NEXT: %[[PREV:.*]] = struct.readm %[[SELF]][@cell] : <@DifferentOffsets>, !felt.type {tableOffset = -1 : index}
+// CHECK-NEXT: %[[CURR:.*]] = struct.readm %[[SELF]][@cell] : <@DifferentOffsets>, !felt.type {tableOffset = 0 : index}
+// CHECK-NEXT: constrain.eq %[[PREV]], %[[CURR]] : !felt.type, !felt.type
+// CHECK-NEXT: function.return
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @SameOffset {
+    struct.member @cell : !felt.type {column}
+
+    function.def @compute() -> !struct.type<@SameOffset> {
+      %self = struct.new : !struct.type<@SameOffset>
+      function.return %self : !struct.type<@SameOffset>
+    }
+
+    function.def @constrain(%self: !struct.type<@SameOffset>) {
+      %first = struct.readm %self[@cell] : !struct.type<@SameOffset>, !felt.type {tableOffset = -1 : index}
+      %second = struct.readm %self[@cell] : !struct.type<@SameOffset>, !felt.type {tableOffset = -1 : index}
+      constrain.eq %first, %second : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @SameOffset {
+// CHECK: function.def @constrain(%[[SELF:.*]]: !struct.type<@SameOffset>)
+// CHECK-NEXT: %[[READ:.*]] = struct.readm %[[SELF]][@cell] : <@SameOffset>, !felt.type {tableOffset = -1 : index}
+// CHECK-NEXT: constrain.eq %[[READ]], %[[READ]] : !felt.type, !felt.type
+// CHECK-NEXT: function.return
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @DefaultOffset {
+    struct.member @cell : !felt.type {column}
+
+    function.def @compute() -> !struct.type<@DefaultOffset> {
+      %self = struct.new : !struct.type<@DefaultOffset>
+      function.return %self : !struct.type<@DefaultOffset>
+    }
+
+    function.def @constrain(%self: !struct.type<@DefaultOffset>) {
+      %implicit = struct.readm %self[@cell] : !struct.type<@DefaultOffset>, !felt.type
+      %explicit = struct.readm %self[@cell] : !struct.type<@DefaultOffset>, !felt.type {tableOffset = 0 : index}
+      constrain.eq %implicit, %explicit : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @DefaultOffset {
+// CHECK: function.def @constrain(%[[SELF:.*]]: !struct.type<@DefaultOffset>)
+// CHECK-NEXT: %[[READ:.*]] = struct.readm %[[SELF]][@cell] : <@DefaultOffset>, !felt.type
+// CHECK-NEXT: constrain.eq %[[READ]], %[[READ]] : !felt.type, !felt.type
+// CHECK-NEXT: function.return
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @WriteOffsets {
+    struct.member @cell : !felt.type {column}
+    struct.member @first : !felt.type
+    struct.member @second : !felt.type
+    struct.member @current : !felt.type
+
+    function.def @compute(%value: !felt.type) -> !struct.type<@WriteOffsets> {
+      %self = struct.new : !struct.type<@WriteOffsets>
+      %before = struct.readm %self[@cell] : !struct.type<@WriteOffsets>, !felt.type {tableOffset = -1 : index}
+      struct.writem %self[@cell] = %value : !struct.type<@WriteOffsets>, !felt.type
+      %after = struct.readm %self[@cell] : !struct.type<@WriteOffsets>, !felt.type {tableOffset = -1 : index}
+      %at_current = struct.readm %self[@cell] : !struct.type<@WriteOffsets>, !felt.type
+      struct.writem %self[@first] = %before : !struct.type<@WriteOffsets>, !felt.type
+      struct.writem %self[@second] = %after : !struct.type<@WriteOffsets>, !felt.type
+      struct.writem %self[@current] = %at_current : !struct.type<@WriteOffsets>, !felt.type
+      function.return %self : !struct.type<@WriteOffsets>
+    }
+
+    function.def @constrain(%self: !struct.type<@WriteOffsets>, %value: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @WriteOffsets {
+// CHECK: function.def @compute(%[[VALUE:.*]]: !felt.type) -> !struct.type<@WriteOffsets>
+// CHECK-NEXT: %[[SELF:.*]] = struct.new : <@WriteOffsets>
+// CHECK-NEXT: %[[PREV:.*]] = struct.readm %[[SELF]][@cell] : <@WriteOffsets>, !felt.type {tableOffset = -1 : index}
+// CHECK-NEXT: struct.writem %[[SELF]][@cell] = %[[VALUE]] : <@WriteOffsets>, !felt.type
+// CHECK-NEXT: struct.writem %[[SELF]][@first] = %[[PREV]] : <@WriteOffsets>, !felt.type
+// CHECK-NEXT: struct.writem %[[SELF]][@second] = %[[PREV]] : <@WriteOffsets>, !felt.type
+// CHECK-NEXT: struct.writem %[[SELF]][@current] = %[[VALUE]] : <@WriteOffsets>, !felt.type
+// CHECK-NEXT: function.return %[[SELF]] : !struct.type<@WriteOffsets>
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @AffineWriteAlias {
+    struct.member @cell : !felt.type {column}
+    struct.member @before : !felt.type
+    struct.member @other : !felt.type
+    struct.member @reuse : !felt.type
+    struct.member @after : !felt.type
+
+    function.def @compute(%i: index, %j: index, %value: !felt.type) -> !struct.type<@AffineWriteAlias> {
+      %self = struct.new : !struct.type<@AffineWriteAlias>
+      %first_i = struct.readm %self[@cell] {()[%i]}
+          : !struct.type<@AffineWriteAlias>, !felt.type {tableOffset = affine_map<()[s0] -> (s0)>}
+      %first_j = struct.readm %self[@cell] {()[%j]}
+          : !struct.type<@AffineWriteAlias>, !felt.type {tableOffset = affine_map<()[s0] -> (s0)>}
+      %again_i = struct.readm %self[@cell] {()[%i]}
+          : !struct.type<@AffineWriteAlias>, !felt.type {tableOffset = affine_map<()[s0] -> (s0)>}
+      struct.writem %self[@cell] = %value : !struct.type<@AffineWriteAlias>, !felt.type
+      %second = struct.readm %self[@cell] {()[%i]}
+          : !struct.type<@AffineWriteAlias>, !felt.type {tableOffset = affine_map<()[s0] -> (s0)>}
+      struct.writem %self[@before] = %first_i : !struct.type<@AffineWriteAlias>, !felt.type
+      struct.writem %self[@other] = %first_j : !struct.type<@AffineWriteAlias>, !felt.type
+      struct.writem %self[@reuse] = %again_i : !struct.type<@AffineWriteAlias>, !felt.type
+      struct.writem %self[@after] = %second : !struct.type<@AffineWriteAlias>, !felt.type
+      function.return %self : !struct.type<@AffineWriteAlias>
+    }
+
+    function.def @constrain(%self: !struct.type<@AffineWriteAlias>, %i: index, %j: index, %value: !felt.type) {
+      function.return
+    }
+  }
+}
+
+// CHECK: #map = affine_map<()[s0] -> (s0)>
+// CHECK-LABEL: struct.def @AffineWriteAlias {
+// CHECK: function.def @compute(%[[I:.*]]: index, %[[J:.*]]: index, %[[VALUE:.*]]: !felt.type) -> !struct.type<@AffineWriteAlias>
+// CHECK-NEXT: %[[SELF:.*]] = struct.new : <@AffineWriteAlias>
+// CHECK-NEXT: %[[FIRST:.*]] = struct.readm %[[SELF]][@cell] {()[%[[I]]]} : <@AffineWriteAlias>, !felt.type {tableOffset = #map}
+// CHECK-NEXT: %[[OTHER:.*]] = struct.readm %[[SELF]][@cell] {()[%[[J]]]} : <@AffineWriteAlias>, !felt.type {tableOffset = #map}
+// CHECK-NEXT: struct.writem %[[SELF]][@cell] = %[[VALUE]] : <@AffineWriteAlias>, !felt.type
+// CHECK-NEXT: %[[SECOND:.*]] = struct.readm %[[SELF]][@cell] {()[%[[I]]]} : <@AffineWriteAlias>, !felt.type {tableOffset = #map}
+// CHECK-NEXT: struct.writem %[[SELF]][@before] = %[[FIRST]] : <@AffineWriteAlias>, !felt.type
+// CHECK-NEXT: struct.writem %[[SELF]][@other] = %[[OTHER]] : <@AffineWriteAlias>, !felt.type
+// CHECK-NEXT: struct.writem %[[SELF]][@reuse] = %[[FIRST]] : <@AffineWriteAlias>, !felt.type
+// CHECK-NEXT: struct.writem %[[SELF]][@after] = %[[SECOND]] : <@AffineWriteAlias>, !felt.type
+// CHECK-NEXT: function.return %[[SELF]] : !struct.type<@AffineWriteAlias>
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @DifferentAffineMaps {
+    struct.member @cell : !felt.type {column}
+
+    function.def @compute(%i: index) -> !struct.type<@DifferentAffineMaps> {
+      %self = struct.new : !struct.type<@DifferentAffineMaps>
+      function.return %self : !struct.type<@DifferentAffineMaps>
+    }
+
+    function.def @constrain(%self: !struct.type<@DifferentAffineMaps>, %i: index) {
+      %same = struct.readm %self[@cell] {()[%i]}
+          : !struct.type<@DifferentAffineMaps>, !felt.type {tableOffset = affine_map<()[s0] -> (s0)>}
+      %next = struct.readm %self[@cell] {()[%i]}
+          : !struct.type<@DifferentAffineMaps>, !felt.type {tableOffset = affine_map<()[s0] -> (s0 + 1)>}
+      constrain.eq %same, %next : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK: #map = affine_map<()[s0] -> (s0)>
+// CHECK: #map1 = affine_map<()[s0] -> (s0 + 1)>
+// CHECK-LABEL: struct.def @DifferentAffineMaps {
+// CHECK: function.def @constrain(%[[SELF:.*]]: !struct.type<@DifferentAffineMaps>, %[[I:.*]]: index)
+// CHECK-NEXT: %[[SAME:.*]] = struct.readm %[[SELF]][@cell] {()[%[[I]]]} : <@DifferentAffineMaps>, !felt.type {tableOffset = #map}
+// CHECK-NEXT: %[[NEXT:.*]] = struct.readm %[[SELF]][@cell] {()[%[[I]]]} : <@DifferentAffineMaps>, !felt.type {tableOffset = #map1}
+// CHECK-NEXT: constrain.eq %[[SAME]], %[[NEXT]] : !felt.type
+// CHECK-NEXT: function.return
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @AffineDimMetadata {
+    struct.member @cell : !felt.type {column}
+
+    function.def @compute(%i: index, %j: index) -> !struct.type<@AffineDimMetadata> {
+      %self = struct.new : !struct.type<@AffineDimMetadata>
+      function.return %self : !struct.type<@AffineDimMetadata>
+    }
+
+    function.def @constrain(%self: !struct.type<@AffineDimMetadata>, %i: index, %j: index) {
+      %dim_symbol = struct.readm %self[@cell] {(%i)[%j]}
+          : !struct.type<@AffineDimMetadata>, !felt.type {tableOffset = affine_map<(d0)[s0] -> (d0 + s0)>}
+      %symbols = struct.readm %self[@cell] {()[%i, %j]}
+          : !struct.type<@AffineDimMetadata>, !felt.type {tableOffset = affine_map<()[s0, s1] -> (s0 + s1)>}
+      constrain.eq %dim_symbol, %symbols : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK: #map = affine_map<(d0)[s0] -> (d0 + s0)>
+// CHECK: #map1 = affine_map<()[s0, s1] -> (s0 + s1)>
+// CHECK-LABEL: struct.def @AffineDimMetadata {
+// CHECK: function.def @constrain(%[[SELF:.*]]: !struct.type<@AffineDimMetadata>, %[[I:.*]]: index, %[[J:.*]]: index)
+// CHECK-NEXT: %[[DIM_SYMBOL:.*]] = struct.readm %[[SELF]][@cell] {(%[[I]])[%[[J]]]} : <@AffineDimMetadata>, !felt.type {tableOffset = #map}
+// CHECK-NEXT: %[[SYMBOLS:.*]] = struct.readm %[[SELF]][@cell] {()[%[[I]], %[[J]]]} : <@AffineDimMetadata>, !felt.type {tableOffset = #map1}
+// CHECK-NEXT: constrain.eq %[[DIM_SYMBOL]], %[[SYMBOLS]] : !felt.type
+// CHECK-NEXT: function.return
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @AffineReadBetweenWrites {
+    struct.member @cell : !felt.type {column}
+    struct.member @seen : !felt.type
+    struct.member @final : !felt.type
+
+    function.def @compute(
+        %i: index, %first: !felt.type, %second: !felt.type
+    ) -> !struct.type<@AffineReadBetweenWrites> {
+      %self = struct.new : !struct.type<@AffineReadBetweenWrites>
+      struct.writem %self[@cell] = %first
+          : !struct.type<@AffineReadBetweenWrites>, !felt.type
+      %maybe_current = struct.readm %self[@cell] {()[%i]}
+          : !struct.type<@AffineReadBetweenWrites>, !felt.type {tableOffset = affine_map<()[s0] -> (s0)>}
+      struct.writem %self[@cell] = %second
+          : !struct.type<@AffineReadBetweenWrites>, !felt.type
+      struct.writem %self[@seen] = %maybe_current
+          : !struct.type<@AffineReadBetweenWrites>, !felt.type
+      %current = struct.readm %self[@cell]
+          : !struct.type<@AffineReadBetweenWrites>, !felt.type
+      struct.writem %self[@final] = %current
+          : !struct.type<@AffineReadBetweenWrites>, !felt.type
+      function.return %self : !struct.type<@AffineReadBetweenWrites>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@AffineReadBetweenWrites>, %i: index, %first: !felt.type,
+        %second: !felt.type
+    ) {
+      function.return
+    }
+  }
+}
+
+// CHECK: #map = affine_map<()[s0] -> (s0)>
+// CHECK-LABEL: struct.def @AffineReadBetweenWrites {
+// CHECK: function.def @compute(%[[I:.*]]: index, %[[FIRST:.*]]: !felt.type, %[[SECOND:.*]]: !felt.type)
+// CHECK-NEXT: %[[SELF:.*]] = struct.new : <@AffineReadBetweenWrites>
+// CHECK-NEXT: struct.writem %[[SELF]][@cell] = %[[FIRST]] : <@AffineReadBetweenWrites>, !felt.type
+// CHECK-NEXT: %[[MAYBE:.*]] = struct.readm %[[SELF]][@cell] {()[%[[I]]]} : <@AffineReadBetweenWrites>, !felt.type {tableOffset = #map}
+// CHECK-NEXT: struct.writem %[[SELF]][@cell] = %[[SECOND]] : <@AffineReadBetweenWrites>, !felt.type
+// CHECK-NEXT: struct.writem %[[SELF]][@seen] = %[[MAYBE]] : <@AffineReadBetweenWrites>, !felt.type
+// CHECK-NEXT: struct.writem %[[SELF]][@final] = %[[SECOND]] : <@AffineReadBetweenWrites>, !felt.type
+// CHECK-NEXT: function.return %[[SELF]] : !struct.type<@AffineReadBetweenWrites>
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @AffineReadBetweenSameValueRewriteAndOverwrite {
+    struct.member @cell : !felt.type {column}
+    struct.member @seen : !felt.type
+    struct.member @final : !felt.type
+
+    function.def @compute(
+        %i: index, %first: !felt.type, %second: !felt.type
+    ) -> !struct.type<@AffineReadBetweenSameValueRewriteAndOverwrite> {
+      %self = struct.new : !struct.type<@AffineReadBetweenSameValueRewriteAndOverwrite>
+      struct.writem %self[@cell] = %first
+          : !struct.type<@AffineReadBetweenSameValueRewriteAndOverwrite>, !felt.type
+      %maybe_current = struct.readm %self[@cell] {()[%i]}
+          : !struct.type<@AffineReadBetweenSameValueRewriteAndOverwrite>, !felt.type {tableOffset = affine_map<()[s0] -> (s0)>}
+      struct.writem %self[@cell] = %first
+          : !struct.type<@AffineReadBetweenSameValueRewriteAndOverwrite>, !felt.type
+      struct.writem %self[@cell] = %second
+          : !struct.type<@AffineReadBetweenSameValueRewriteAndOverwrite>, !felt.type
+      struct.writem %self[@seen] = %maybe_current
+          : !struct.type<@AffineReadBetweenSameValueRewriteAndOverwrite>, !felt.type
+      %current = struct.readm %self[@cell]
+          : !struct.type<@AffineReadBetweenSameValueRewriteAndOverwrite>, !felt.type
+      struct.writem %self[@final] = %current
+          : !struct.type<@AffineReadBetweenSameValueRewriteAndOverwrite>, !felt.type
+      function.return %self : !struct.type<@AffineReadBetweenSameValueRewriteAndOverwrite>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@AffineReadBetweenSameValueRewriteAndOverwrite>, %i: index,
+        %first: !felt.type, %second: !felt.type
+    ) {
+      function.return
+    }
+  }
+}
+
+// CHECK: #map = affine_map<()[s0] -> (s0)>
+// CHECK-LABEL: struct.def @AffineReadBetweenSameValueRewriteAndOverwrite {
+// CHECK: function.def @compute(%[[I:.*]]: index, %[[FIRST:.*]]: !felt.type, %[[SECOND:.*]]: !felt.type)
+// CHECK-NEXT: %[[SELF:.*]] = struct.new : <@AffineReadBetweenSameValueRewriteAndOverwrite>
+// CHECK-NEXT: struct.writem %[[SELF]][@cell] = %[[FIRST]] : <@AffineReadBetweenSameValueRewriteAndOverwrite>, !felt.type
+// CHECK-NEXT: %[[MAYBE:.*]] = struct.readm %[[SELF]][@cell] {()[%[[I]]]} : <@AffineReadBetweenSameValueRewriteAndOverwrite>, !felt.type {tableOffset = #map}
+// CHECK-NEXT: struct.writem %[[SELF]][@cell] = %[[SECOND]] : <@AffineReadBetweenSameValueRewriteAndOverwrite>, !felt.type
+// CHECK-NEXT: struct.writem %[[SELF]][@seen] = %[[MAYBE]] : <@AffineReadBetweenSameValueRewriteAndOverwrite>, !felt.type
+// CHECK-NEXT: struct.writem %[[SELF]][@final] = %[[SECOND]] : <@AffineReadBetweenSameValueRewriteAndOverwrite>, !felt.type
+// CHECK-NEXT: function.return %[[SELF]] : !struct.type<@AffineReadBetweenSameValueRewriteAndOverwrite>
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @Offset : index
+
+    struct.def @SymbolicWriteAlias {
+      struct.member @cell : !felt.type {column}
+      struct.member @before : !felt.type
+      struct.member @after : !felt.type
+
+      function.def @compute(%value: !felt.type) -> !struct.type<@T::@SymbolicWriteAlias<[@Offset]>> {
+        %self = struct.new : !struct.type<@T::@SymbolicWriteAlias<[@Offset]>>
+        %before = struct.readm %self[@cell]
+            : !struct.type<@T::@SymbolicWriteAlias<[@Offset]>>, !felt.type {tableOffset = @Offset}
+        struct.writem %self[@cell] = %value
+            : !struct.type<@T::@SymbolicWriteAlias<[@Offset]>>, !felt.type
+        %after = struct.readm %self[@cell]
+            : !struct.type<@T::@SymbolicWriteAlias<[@Offset]>>, !felt.type {tableOffset = @Offset}
+        struct.writem %self[@before] = %before
+            : !struct.type<@T::@SymbolicWriteAlias<[@Offset]>>, !felt.type
+        struct.writem %self[@after] = %after
+            : !struct.type<@T::@SymbolicWriteAlias<[@Offset]>>, !felt.type
+        function.return %self : !struct.type<@T::@SymbolicWriteAlias<[@Offset]>>
+      }
+
+      function.def @constrain(
+          %self: !struct.type<@T::@SymbolicWriteAlias<[@Offset]>>, %value: !felt.type
+      ) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @SymbolicWriteAlias {
+// CHECK: function.def @compute(%[[VALUE:.*]]: !felt.type) -> !struct.type<@T::@SymbolicWriteAlias<[@Offset]>>
+// CHECK-NEXT: %[[SELF:.*]] = struct.new : <@T::@SymbolicWriteAlias<[@Offset]>>
+// CHECK-NEXT: %[[BEFORE:.*]] = struct.readm %[[SELF]][@cell] : <@T::@SymbolicWriteAlias<[@Offset]>>, !felt.type {tableOffset = @Offset}
+// CHECK-NEXT: struct.writem %[[SELF]][@cell] = %[[VALUE]] : <@T::@SymbolicWriteAlias<[@Offset]>>, !felt.type
+// CHECK-NEXT: %[[AFTER:.*]] = struct.readm %[[SELF]][@cell] : <@T::@SymbolicWriteAlias<[@Offset]>>, !felt.type {tableOffset = @Offset}
+// CHECK-NEXT: struct.writem %[[SELF]][@before] = %[[BEFORE]] : <@T::@SymbolicWriteAlias<[@Offset]>>, !felt.type
+// CHECK-NEXT: struct.writem %[[SELF]][@after] = %[[AFTER]] : <@T::@SymbolicWriteAlias<[@Offset]>>, !felt.type
+// CHECK-NEXT: function.return %[[SELF]] : !struct.type<@T::@SymbolicWriteAlias<[@Offset]>>
+// CHECK-NEXT: }

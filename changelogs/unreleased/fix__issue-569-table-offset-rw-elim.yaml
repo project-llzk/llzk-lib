@@ -1,0 +1,3 @@
+fixed:
+  - Prevent duplicate read/write elimination from conflating struct member
+    accesses with different table offsets or affine operands.

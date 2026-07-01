@@ -678,7 +678,7 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
         return;
       }
 
-      if (failed(checkConstrainBodyIsStraightLine(constrainFunc, "R1CS lowering"))) {
+      if (failed(checkFuncBodyIsStraightLine(constrainFunc, "R1CS lowering"))) {
         signalPassFailure();
         return;
       }

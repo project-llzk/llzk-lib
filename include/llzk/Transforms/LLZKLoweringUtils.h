@@ -38,12 +38,11 @@ mlir::Value rebuildExprInCompute(
 mlir::LogicalResult
 checkForAuxMemberConflicts(component::StructDefOp structDef, llvm::StringRef auxPrefix);
 
-/// Rejects control flow under `constrainFunc`; polynomial and R1CS auxiliary
-/// materialization assumes control flow has already been flattened or otherwise
-/// lowered away. The region check catches multi-block function bodies before
-/// the operation walk rejects nested regions or successor-bearing operations.
-mlir::LogicalResult
-checkConstrainBodyIsStraightLine(function::FuncDefOp constrainFunc, llvm::StringRef passName);
+/// Rejects control flow under `func`; auxiliary materialization assumes control
+/// flow has already been flattened or otherwise lowered away. The region check
+/// catches multi-block function bodies before the operation walk rejects nested
+/// regions or successor-bearing operations.
+mlir::LogicalResult checkFuncBodyIsStraightLine(function::FuncDefOp func, llvm::StringRef passName);
 
 component::MemberDefOp
 addAuxMember(component::StructDefOp structDef, llvm::StringRef name, mlir::Type type);
