@@ -77,12 +77,9 @@ static inline bool canLoopsBeFused(scf::ForOp a, scf::ForOp b) {
   // 1. They live in the same parent region,
   // 2. One comes from witgen and the other comes from constraint gen, and
   // 3. They have the same trip count
-  llvm::dbgs() << "Checking fusability of: " << a.getOperation() << ", " << b.getOperation()
-               << "\n";
 
   // Check 1.
   if (a->getParentRegion() != b->getParentRegion()) {
-    llvm::dbgs() << "Parent region mismatch\n";
     return false;
   }
 
@@ -91,12 +88,10 @@ static inline bool canLoopsBeFused(scf::ForOp a, scf::ForOp b) {
       !b->hasAttrOfType<StringAttr>(PRODUCT_SOURCE)) {
     // Ideally this should never happen, since the pass only runs on fused @product functions, but
     // check anyway just to be safe
-    llvm::dbgs() << "Source mismatch 1\n";
     return false;
   }
   if (a->getAttrOfType<StringAttr>(PRODUCT_SOURCE) ==
       b->getAttrOfType<StringAttr>(PRODUCT_SOURCE)) {
-    llvm::dbgs() << "Source mismatch 2\n";
     return false;
   }
 
@@ -108,14 +103,12 @@ static inline bool canLoopsBeFused(scf::ForOp a, scf::ForOp b) {
   auto tripCountA = constantTripCount(a.getLowerBound(), a.getUpperBound(), a.getStep());
   auto tripCountB = constantTripCount(b.getLowerBound(), b.getUpperBound(), b.getStep());
   if (tripCountA.has_value() && tripCountB.has_value() && *tripCountA == *tripCountB) {
-    llvm::dbgs() << "Trip counts match!\n";
     return true;
   }
 
   if (!isConstOrStructParam(a.getLowerBound()) || !isConstOrStructParam(a.getUpperBound()) ||
       !isConstOrStructParam(a.getStep()) || !isConstOrStructParam(b.getLowerBound()) ||
       !isConstOrStructParam(b.getUpperBound()) || !isConstOrStructParam(b.getStep())) {
-    llvm::dbgs() << "Trip counts unavailable\n";
     return false;
   }
 
@@ -141,9 +134,8 @@ static Operation *getTopLevelAncestorInBlock(Operation *op, Block *block) {
   return op;
 }
 
-static std::optional<llvm::SmallVector<Operation *>> getOpsBetween(
-    scf::ForOp firstLoop, scf::ForOp secondLoop
-) {
+static std::optional<llvm::SmallVector<Operation *>>
+getOpsBetween(scf::ForOp firstLoop, scf::ForOp secondLoop) {
   Block *block = firstLoop->getBlock();
   if (block != secondLoop->getBlock()) {
     return std::nullopt;
@@ -206,9 +198,8 @@ static bool canPrepareForFusion(
   return true;
 }
 
-static LogicalResult prepareForFusion(
-    scf::ForOp witnessLoop, scf::ForOp constraintLoop, IRRewriter &rewriter
-) {
+static LogicalResult
+prepareForFusion(scf::ForOp witnessLoop, scf::ForOp constraintLoop, IRRewriter &rewriter) {
   llvm::SmallVector<Operation *> computeOpsToSink;
   if (!canPrepareForFusion(witnessLoop, constraintLoop, computeOpsToSink)) {
     return failure();
