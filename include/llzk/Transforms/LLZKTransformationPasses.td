@@ -16,7 +16,10 @@ def RedundantReadAndWriteEliminationPass
     : LLZKPass<"llzk-duplicate-read-write-elim"> {
   let summary = "Remove redundant reads and writes";
   let description = [{
-    Remove read and write operations to struct members and arrays that are redundant or unnecessary.
+    Remove struct-member and array reads or writes that repeat the same access.
+    Struct-member accesses match only when the base, member, table offset,
+    affine map metadata, and translated affine operands match. Omitted
+    member-read offsets and member writes denote the current row.
   }];
 }
 
@@ -74,10 +77,10 @@ def PolyLoweringPass : LLZKPass<"llzk-poly-lowering-pass"> {
     through degree-neutral roots such as `felt.add`, `felt.sub`, and `felt.neg`, so composite
     equality operands and struct constrain call arguments satisfy their degree bounds.
 
-    The pass expects already-flattened, straight-line `constrain` bodies. Run `llzk-flatten` or
-    another control-flow lowering pass before this pass; nested-region, successor-bearing, or
-    multi-block constraints are rejected instead of being rewritten with component-lifetime
-    auxiliary members.
+    The pass expects already-flattened, straight-line `compute` and `constrain` bodies. Run
+    `llzk-flatten` or another control-flow lowering pass before this pass; nested-region,
+    successor-bearing, or multi-block functions are rejected instead of being rewritten with
+    component-lifetime auxiliary members.
 
     This pass is best used on already-flattened input as part of the `-llzk-full-poly-lowering`
     pipeline, which includes additional cleanup passes to ensure correctness and optimal

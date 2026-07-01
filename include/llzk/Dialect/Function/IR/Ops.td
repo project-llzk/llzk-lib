@@ -459,11 +459,16 @@ def CallOp : FunctionDialectOp<
       return FUNC_NAME_COMPUTE == getCallee().getLeafReference();
     }
 
+    /// Return `true` iff the callee function name is `FUNC_NAME_PRODUCT` (this
+    /// does not check if the callee function is located within a StructDefOp).
+    inline bool calleeIsProduct() {
+      return FUNC_NAME_PRODUCT == getCallee().getLeafReference();
+    }
+
     /// Return `true` iff the callee function can contain witness generation code
     /// (this does not check if the callee function is located within a StructDefOp)
     inline bool calleeContainsWitnessGen() {
-      return FUNC_NAME_COMPUTE == getCallee().getLeafReference() ||
-             FUNC_NAME_PRODUCT == getCallee().getLeafReference();
+      return calleeIsCompute() || calleeIsProduct();
     }
 
     /// Return `true` iff the callee function name is `FUNC_NAME_CONSTRAIN` (this
@@ -472,6 +477,9 @@ def CallOp : FunctionDialectOp<
 
     /// Return `true` iff the callee function name is `FUNC_NAME_COMPUTE` within a StructDefOp.
     bool calleeIsStructCompute();
+
+    /// Return `true` iff the callee function name is `FUNC_NAME_PRODUCT` within a StructDefOp.
+    bool calleeIsStructProduct();
 
     /// Return `true` iff the callee function name is `FUNC_NAME_CONSTRAIN` within a StructDefOp.
     bool calleeIsStructConstrain();

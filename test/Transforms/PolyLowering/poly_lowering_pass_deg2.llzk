@@ -154,7 +154,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Mod1>} {
   // tests that polynomials are lowered to degree 1 before being passed into constraint calls
   struct.def @Mod1 {
     struct.member @mod2: !struct.type<@Mod2>
-    struct.member @val: !felt.type
+    struct.member @val2: !felt.type
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@Mod1> {
       %self = struct.new : !struct.type<@Mod1>
       function.return %self : !struct.type<@Mod1>
@@ -170,7 +170,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Mod1>} {
       %4 = struct.readm %3[@val]: !struct.type<@Mod2>, !felt.type
       %5 = felt.mul %4, %4
       %6 = felt.mul %5, %5
-      %7 = struct.readm %self[@val] : !struct.type<@Mod1>, !felt.type
+      %7 = struct.readm %self[@val2] : !struct.type<@Mod1>, !felt.type
       constrain.eq %7, %6 : !felt.type
       function.return
     }
@@ -200,12 +200,13 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Mod1>} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @Mod1 {
 // CHECK-NEXT:      struct.member @mod2 : !struct.type<@Mod2>
-// CHECK-NEXT:      struct.member @val : !felt.type
+// CHECK-NEXT:      struct.member @val2 : !felt.type
 // CHECK-NEXT:      function.def @compute(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_12:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Mod1> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.new : <@Mod1>
-// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_13]][@val] : <@Mod1>, !felt.type
-// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_14]], %[[VAL_14]] : !felt.type, !felt.type
-// CHECK-NEXT:        struct.writem %[[VAL_13]][@__llzk_poly_lowering_pass_aux_member_1] = %[[VAL_15]] : <@Mod1>, !felt.type
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_13]][@mod2] : <@Mod1>, !struct.type<@Mod2>
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_14]][@val] : <@Mod2>, !felt.type
+// CHECK-NEXT:        %[[CHILD_SQ:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_15]], %[[VAL_15]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_13]][@__llzk_poly_lowering_pass_aux_member_1] = %[[CHILD_SQ]] : <@Mod1>, !felt.type
 // CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_11]], %[[VAL_12]] : !felt.type, !felt.type
 // CHECK-NEXT:        struct.writem %[[VAL_13]][@__llzk_poly_lowering_pass_aux_member_2] = %[[VAL_16]] : <@Mod1>, !felt.type
 // CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_16]], %[[VAL_16]] : !felt.type, !felt.type
@@ -231,7 +232,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Mod1>} {
 // CHECK-NEXT:        %[[VAL_31:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_19]][@__llzk_poly_lowering_pass_aux_member_1] : <@Mod1>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[VAL_31]], %[[VAL_30]] : !felt.type, !felt.type
 // CHECK-NEXT:        %[[VAL_32:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_31]], %[[VAL_31]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_33:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_19]][@val] : <@Mod1>, !felt.type
+// CHECK-NEXT:        %[[VAL_33:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_19]][@val2] : <@Mod1>, !felt.type
 // CHECK-NEXT:        constrain.eq %[[VAL_33]], %[[VAL_32]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }

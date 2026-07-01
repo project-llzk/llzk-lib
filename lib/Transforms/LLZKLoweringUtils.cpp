@@ -11,6 +11,7 @@
 #include <mlir/IR/Block.h>
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/IRMapping.h>
 #include <mlir/IR/Operation.h>
 #include <mlir/Support/LogicalResult.h>
 
@@ -26,6 +27,31 @@ using namespace llzk::constrain;
 
 namespace llzk {
 
+namespace {
+
+Value mapBlockArgumentInCompute(BlockArgument barg, FuncDefOp computeFunc) {
+  // Constrain entry arguments map onto compute inputs: constrain(%self, args...)
+  // corresponds to compute(args...), plus the compute-side `%self`.
+  if (barg.getArgNumber() == 0) {
+    return computeFunc.getSelfValueFromCompute();
+  }
+  return computeFunc.getArgument(barg.getArgNumber() - 1);
+}
+
+Value mapValueIntoCompute(
+    Value val, FuncDefOp computeFunc, OpBuilder &builder, DenseMap<Value, Value> &memo
+) {
+  if (auto it = memo.find(val); it != memo.end()) {
+    return it->second;
+  }
+  if (auto barg = llvm::dyn_cast<BlockArgument>(val)) {
+    return memo[val] = mapBlockArgumentInCompute(barg, computeFunc);
+  }
+  return rebuildExprInCompute(val, computeFunc, builder, memo);
+}
+
+} // namespace
+
 Value rebuildExprInCompute(
     Value val, FuncDefOp computeFunc, OpBuilder &builder, DenseMap<Value, Value> &memo
 ) {
@@ -34,17 +60,38 @@ Value rebuildExprInCompute(
   }
 
   if (auto barg = llvm::dyn_cast<BlockArgument>(val)) {
-    unsigned index = barg.getArgNumber();
-    Value mapped = computeFunc.getArgument(index - 1);
-    return memo[val] = mapped;
+    return memo[val] = mapBlockArgumentInCompute(barg, computeFunc);
   }
 
   if (auto readOp = val.getDefiningOp<MemberReadOp>()) {
-    Value self = computeFunc.getSelfValueFromCompute();
-    Value rebuilt = builder.create<MemberReadOp>(
-        readOp.getLoc(), readOp.getType(), self, readOp.getMemberNameAttr().getAttr()
+    IRMapping mapper;
+    for (Value operand : readOp->getOperands()) {
+      mapper.map(operand, mapValueIntoCompute(operand, computeFunc, builder, memo));
+    }
+
+    Operation *rebuiltOp = builder.clone(*readOp.getOperation(), mapper);
+    assert(rebuiltOp->getNumResults() == 1 && "member reads have exactly one result");
+    return memo[val] = rebuiltOp->getResult(0);
+  }
+
+  if (val.getType().isIndex()) {
+    // Preserve index producers used by member-read access operands so rebuilt reads
+    // keep the original access semantics.
+    Operation *defOp = val.getDefiningOp();
+    assert(defOp && "index block arguments should already be mapped");
+
+    IRMapping mapper;
+    for (Value operand : defOp->getOperands()) {
+      mapper.map(operand, mapValueIntoCompute(operand, computeFunc, builder, memo));
+    }
+
+    Operation *rebuiltOp = builder.clone(*defOp, mapper);
+    assert(
+        rebuiltOp->getNumResults() == defOp->getNumResults() &&
+        "cloned index op should preserve result count"
     );
-    return memo[val] = rebuilt;
+    unsigned resultNumber = llvm::cast<OpResult>(val).getResultNumber();
+    return memo[val] = rebuiltOp->getResult(resultNumber);
   }
 
   if (auto add = val.getDefiningOp<AddFeltOp>()) {
@@ -99,16 +146,22 @@ LogicalResult checkForAuxMemberConflicts(StructDefOp structDef, StringRef prefix
   return failure(conflictFound);
 }
 
-LogicalResult checkConstrainBodyIsStraightLine(FuncDefOp constrainFunc, StringRef passName) {
-  auto emitStraightLineError = [passName](Operation *op) {
-    op->emitError() << passName
-                    << " expects a straight-line constrain body; run `llzk-flatten` or another "
-                       "control-flow lowering pass first";
+LogicalResult checkFuncBodyIsStraightLine(FuncDefOp func, StringRef passName) {
+  StringRef funcName = "function";
+  if (func.isStructCompute()) {
+    funcName = "compute";
+  } else if (func.isStructConstrain()) {
+    funcName = "constrain";
+  }
+
+  auto emitStraightLineError = [passName, funcName](Operation *op) {
+    op->emitError() << passName << " expects a straight-line " << funcName
+                    << " body; run `llzk-flatten` or another control-flow lowering pass first";
   };
 
-  Region &body = constrainFunc.getBody();
+  Region &body = func.getBody();
   if (!body.hasOneBlock()) {
-    emitStraightLineError(constrainFunc.getOperation());
+    emitStraightLineError(func.getOperation());
     return failure();
   }
 
