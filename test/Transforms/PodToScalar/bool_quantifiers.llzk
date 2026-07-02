@@ -1,0 +1,79 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+
+!Pair = !pod.type<[@x: index, @y: index]>
+module attributes {llzk.lang} {
+  function.def @forall_arg(%arr: !array.type<2 x !Pair>, %limit: index) -> i1 attributes {function.allow_non_native_field_ops} {
+    %all = bool.forall %elt in %arr : !array.type<2 x !Pair> {
+      %x = pod.read %elt[@x] : !Pair, index
+      %ok = arith.cmpi slt, %x, %limit : index
+      bool.yield %ok
+    }
+    function.return %all : i1
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @forall_arg(
+// CHECK-SAME:    %[[ARR_X:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>,
+// CHECK-SAME:    %[[ARR_Y:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>, %[[LIMIT:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) -> i1 attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[LB:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[UB:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_X]], %[[LB]] : <2 x index>
+// CHECK-NEXT:      %[[STEP:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[INIT:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      %[[RES:[0-9a-zA-Z_\.]+]] = scf.for %[[IV:[0-9a-zA-Z_\.]+]] = %[[LB]] to %[[UB]] step %[[STEP]] iter_args(%[[ACC:[0-9a-zA-Z_\.]+]] = %[[INIT]]) -> (i1) {
+// CHECK-DAG:         %[[X:[0-9a-zA-Z_\.]+]] = array.read %[[ARR_X]][%[[IV]]] : <2 x index>, index
+// CHECK-DAG:         %[[Y:[0-9a-zA-Z_\.]+]] = array.read %[[ARR_Y]][%[[IV]]] : <2 x index>, index
+// CHECK-DAG:         %[[OK:[0-9a-zA-Z_\.]+]] = arith.cmpi slt, %[[X]], %[[LIMIT]] : index
+// CHECK-NEXT:        %[[COMBINED:[0-9a-zA-Z_\.]+]] = bool.and %[[ACC]], %[[OK]] : i1, i1
+// CHECK-NEXT:        scf.yield %[[COMBINED]] : i1
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[RES]] : i1
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: index]>
+module attributes {llzk.lang} {
+  function.def @exists_array_new(%x0: index, %y0: index, %x1: index, %y1: index) -> i1 attributes {function.allow_non_native_field_ops} {
+    %p0 = pod.new { @x = %x0, @y = %y0 } : !Pair
+    %p1 = pod.new { @x = %x1, @y = %y1 } : !Pair
+    %arr = array.new %p0, %p1 : !array.type<2 x !Pair>
+    %any = bool.exists %elt in %arr : !array.type<2 x !Pair> {
+      %y = pod.read %elt[@y] : !Pair, index
+      %ok = arith.cmpi eq, %y, %y1 : index
+      bool.yield %ok
+    }
+    function.return %any : i1
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @exists_array_new(
+// CHECK-SAME:    %[[X0:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:    %[[Y0:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:    %[[X1:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:    %[[Y1:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) -> i1 attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[ARR_X:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      %[[C0X:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[ARR_X]][%[[C0X]]] = %[[X0]] : <2 x index>, index
+// CHECK-NEXT:      %[[C1X:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[ARR_X]][%[[C1X]]] = %[[X1]] : <2 x index>, index
+// CHECK-NEXT:      %[[ARR_Y:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      %[[C0Y:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[ARR_Y]][%[[C0Y]]] = %[[Y0]] : <2 x index>, index
+// CHECK-NEXT:      %[[C1Y:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[ARR_Y]][%[[C1Y]]] = %[[Y1]] : <2 x index>, index
+// CHECK-NEXT:      %[[LB:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[UB:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_X]], %[[LB]] : <2 x index>
+// CHECK-NEXT:      %[[STEP:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[INIT:[0-9a-zA-Z_\.]+]] = arith.constant false
+// CHECK-NEXT:      %[[RES:[0-9a-zA-Z_\.]+]] = scf.for %[[IV:[0-9a-zA-Z_\.]+]] = %[[LB]] to %[[UB]] step %[[STEP]] iter_args(%[[ACC:[0-9a-zA-Z_\.]+]] = %[[INIT]]) -> (i1) {
+// CHECK-DAG:         %[[X:[0-9a-zA-Z_\.]+]] = array.read %[[ARR_X]][%[[IV]]] : <2 x index>, index
+// CHECK-DAG:         %[[Y:[0-9a-zA-Z_\.]+]] = array.read %[[ARR_Y]][%[[IV]]] : <2 x index>, index
+// CHECK-DAG:         %[[OK:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[Y]], %[[Y1]] : index
+// CHECK-NEXT:        %[[COMBINED:[0-9a-zA-Z_\.]+]] = bool.or %[[ACC]], %[[OK]] : i1, i1
+// CHECK-NEXT:        scf.yield %[[COMBINED]] : i1
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[RES]] : i1
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

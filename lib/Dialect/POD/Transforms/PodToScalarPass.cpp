@@ -22,7 +22,7 @@
 ///
 /// 2. Run a dialect conversion that splits arrays whose element type is a POD into parallel arrays
 ///    in `llzk.nondet`, `array.*`, `constrain.eq`, `constrain.in`, `struct.readm`, `struct.writem`,
-///    `function.def`, `function.call`, and `function.return`.
+///    `function.def`, `function.call`, `function.return`, and bool quantifiers.
 ///
 /// 3. Run a dialect conversion that does the following:
 ///
@@ -68,6 +68,7 @@
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Bool/IR/Dialect.h"
+#include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Dialect.h"
 #include "llzk/Dialect/Constrain/IR/Dialect.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
@@ -1883,6 +1884,116 @@ public:
   }
 };
 
+/// Rebuild the current quantifier iterand from one read or extract per split POD-array leaf.
+static Value rebuildSplitPodArrayQuantifierIterValue(
+    OpBuilder &bldr, Location loc, Type iterType, Value index, ArrayType sortType,
+    ValueRange convertedSort
+) {
+  SmallVector<RecordChain> splitIds;
+  SmallVector<Type> splitTypes;
+  splitPodArrayTypeTo(sortType, splitTypes, &splitIds);
+  assert(
+      convertedSort.size() == splitIds.size() &&
+      "converted quantifier sort must provide one value per POD-array leaf"
+  );
+
+  DenseMap<RecordChain, Value> leafValues;
+  for (auto [id, leafArray] : llvm::zip_equal(splitIds, convertedSort)) {
+    SmallVector<Value> indices {index};
+    leafValues[id] = genArrayRead(bldr, loc, leafArray, indices);
+  }
+
+  SmallVector<StringAttr> recordChain;
+  return rebuildFlattenedPodRecord(bldr, loc, iterType, recordChain, leafValues);
+}
+
+/// Lower a bool quantifier over an array-of-POD to an `scf.for` over the split leaf arrays.
+template <typename QuantifierOp, typename CombineOp>
+static LogicalResult rewriteSplitPodArrayQuantifier(
+    QuantifierOp op, ValueRange convertedSort, ConversionPatternRewriter &rewriter,
+    bool initialValue
+) {
+  ArrayType sortType = llvm::cast<ArrayType>(op.getSort().getType());
+  Location loc = op.getLoc();
+
+  Value shapeCarrier = convertedSort.empty()
+                           ? materializeArrayLengthCarrier(op.getSort(), sortType, loc, rewriter)
+                           : convertedSort.front();
+  Value lowerBound = rewriter.create<arith::ConstantOp>(loc, rewriter.getIndexAttr(0));
+  Value upperBound = rewriter.create<ArrayLengthOp>(loc, shapeCarrier, lowerBound);
+  Value step = rewriter.create<arith::ConstantOp>(loc, rewriter.getIndexAttr(1));
+  Value init = rewriter.create<arith::ConstantOp>(
+      loc, IntegerAttr::get(IntegerType::get(rewriter.getContext(), 1), initialValue ? 1 : 0)
+  );
+
+  auto loop = rewriter.create<scf::ForOp>(loc, lowerBound, upperBound, step, ValueRange {init});
+  loop->setDiscardableAttrs(op->getDiscardableAttrDictionary());
+
+  Block &loopBody = *loop.getBody();
+  if (!loopBody.empty()) {
+    rewriter.eraseOp(&loopBody.back());
+  }
+
+  rewriter.setInsertionPointToStart(&loopBody);
+  Value iterValue = rebuildSplitPodArrayQuantifierIterValue(
+      rewriter, loc, op.getBody()->getArgument(0).getType(), loop.getInductionVar(), sortType,
+      convertedSort
+  );
+
+  IRMapping mapping;
+  mapping.map(op.getBody()->getArgument(0), iterValue);
+
+  for (Operation &nestedOp : op.getBody()->without_terminator()) {
+    rewriter.clone(nestedOp, mapping);
+  }
+
+  auto yieldOp = llvm::cast<boolean::YieldOp>(op.getBody()->getTerminator());
+  Value predicate = mapping.lookupOrDefault(yieldOp.getValue());
+  Value combined = rewriter.create<CombineOp>(loc, loop.getRegionIterArg(0), predicate);
+  rewriter.create<scf::YieldOp>(loc, combined);
+
+  rewriter.replaceOp(op, loop.getResults());
+  return success();
+}
+
+/// Rewrite `bool.forall` over an array-of-POD to iterate over the split leaf arrays directly.
+class SplitPodArrayForAllOp : public OpConversionPattern<boolean::ForAllOp> {
+public:
+  using OpConversionPattern<boolean::ForAllOp>::OpConversionPattern;
+
+  static bool legal(boolean::ForAllOp op) { return !splittablePodArray(op.getSort().getType()); }
+
+  LogicalResult matchAndRewrite(
+      boolean::ForAllOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
+    return rewriteSplitPodArrayQuantifier<boolean::ForAllOp, boolean::AndBoolOp>(
+        op, adaptor.getSort(), rewriter, /*initialValue=*/true
+    );
+  }
+};
+
+/// Rewrite `bool.exists` over an array-of-POD to iterate over the split leaf arrays directly.
+class SplitPodArrayExistsOp : public OpConversionPattern<boolean::ExistsOp> {
+public:
+  using OpConversionPattern<boolean::ExistsOp>::OpConversionPattern;
+
+  static bool legal(boolean::ExistsOp op) { return !splittablePodArray(op.getSort().getType()); }
+
+  LogicalResult matchAndRewrite(
+      boolean::ExistsOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
+    return rewriteSplitPodArrayQuantifier<boolean::ExistsOp, boolean::OrBoolOp>(
+        op, adaptor.getSort(), rewriter, /*initialValue=*/false
+    );
+  }
+};
+
 /// Rewrite `array.extract` of an array-of-POD subarray into one extract per parallel leaf array.
 class SplitPodArrayExtractArrayOp : public OpConversionPattern<ExtractArrayOp> {
 public:
@@ -2044,9 +2155,8 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
       SplitPodArrayNonDetOp, SplitPodArrayCreateArrayOp, SplitPodArrayReadArrayOp,
       SplitPodArrayWriteArrayOp, SplitPodArrayExtractArrayOp, SplitPodArrayInsertArrayOp,
       SplitPodArrayInFuncDefOp, SplitPodArrayInReturnOp, SplitPodArrayInCallOp,
-      SplitPodArrayInEmitEqualityOp, SplitPodArrayInEmitContainmentOp, SplitPodArrayLengthOp>(
-      typeConverter, ctx
-  );
+      SplitPodArrayInEmitEqualityOp, SplitPodArrayInEmitContainmentOp, SplitPodArrayLengthOp,
+      SplitPodArrayForAllOp, SplitPodArrayExistsOp>(typeConverter, ctx);
   patterns.add<SplitPodArrayInMemberWriteOp, SplitPodArrayInMemberReadOp>(
       typeConverter, ctx, symTables, memberRepMap
   );
@@ -2068,6 +2178,8 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
       SplitPodArrayInEmitContainmentOp::legal
   );
   target.addDynamicallyLegalOp<ArrayLengthOp>(SplitPodArrayLengthOp::legal);
+  target.addDynamicallyLegalOp<boolean::ForAllOp>(SplitPodArrayForAllOp::legal);
+  target.addDynamicallyLegalOp<boolean::ExistsOp>(SplitPodArrayExistsOp::legal);
   target.addDynamicallyLegalOp<MemberWriteOp>(SplitPodArrayInMemberWriteOp::legal);
   target.addDynamicallyLegalOp<MemberReadOp>(SplitPodArrayInMemberReadOp::legal);
 
