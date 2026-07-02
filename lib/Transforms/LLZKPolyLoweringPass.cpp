@@ -468,10 +468,19 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     return failure(failedCheck);
   }
 
+  bool isFeltArray(Type type) const {
+    auto arrayType = llvm::dyn_cast<llzk::array::ArrayType>(type);
+    if (!arrayType) {
+      return false;
+    }
+    return llvm::isa<FeltType>(arrayType.getElementType());
+  }
+
   void lowerContainmentRhsValue(
       OpOperand &operand, StructDefOp structDef, FuncDefOp constrainFunc,
       DominanceInfo &dominanceInfo, DenseMap<Value, unsigned> &degreeMemo,
-      DenseMap<Value, Value> &rewrites, SmallVector<AuxAssignment> &auxAssignments
+      DenseMap<Value, Value> &rewrites, SmallVector<AuxAssignment> &auxAssignments,
+      EmitContainmentOp containOp, DenseSet<Value> &visitedArrays
   ) {
     Value value = operand.get();
 
@@ -486,11 +495,36 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       return;
     }
 
+    if (!isFeltArray(value.getType()) || !visitedArrays.insert(value).second) {
+      return;
+    }
+
     if (auto arrayOp = value.getDefiningOp<llzk::array::CreateArrayOp>()) {
       for (OpOperand &elementOperand : arrayOp.getElementsMutable()) {
         lowerContainmentRhsValue(
             elementOperand, structDef, constrainFunc, dominanceInfo, degreeMemo, rewrites,
-            auxAssignments
+            auxAssignments, containOp, visitedArrays
+        );
+      }
+    }
+
+    for (Operation *user : value.getUsers()) {
+      if (!dominanceInfo.properlyDominates(user, containOp.getOperation())) {
+        continue;
+      }
+      if (auto writeOp = llvm::dyn_cast<llzk::array::WriteArrayOp>(user);
+          writeOp && writeOp.getArrRef() == value) {
+        lowerContainmentRhsValue(
+            writeOp.getRvalueMutable(), structDef, constrainFunc, dominanceInfo, degreeMemo,
+            rewrites, auxAssignments, containOp, visitedArrays
+        );
+        continue;
+      }
+      if (auto insertOp = llvm::dyn_cast<llzk::array::InsertArrayOp>(user);
+          insertOp && insertOp.getArrRef() == value) {
+        lowerContainmentRhsValue(
+            insertOp.getRvalueMutable(), structDef, constrainFunc, dominanceInfo, degreeMemo,
+            rewrites, auxAssignments, containOp, visitedArrays
         );
       }
     }
@@ -498,7 +532,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
 
   void checkContainmentRhsValue(
       Value value, EmitContainmentOp containOp, DenseMap<Value, unsigned> &checkMemo,
-      bool &failedCheck
+      bool &failedCheck, DominanceInfo &dominanceInfo, DenseSet<Value> &visitedArrays
   ) {
     if (llvm::isa<FeltType>(value.getType())) {
       unsigned valueDegree = getDegree(value, checkMemo);
@@ -513,18 +547,46 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       return;
     }
 
+    if (!isFeltArray(value.getType()) || !visitedArrays.insert(value).second) {
+      return;
+    }
+
     if (auto arrayOp = value.getDefiningOp<llzk::array::CreateArrayOp>()) {
       for (Value element : arrayOp.getElements()) {
-        checkContainmentRhsValue(element, containOp, checkMemo, failedCheck);
+        checkContainmentRhsValue(
+            element, containOp, checkMemo, failedCheck, dominanceInfo, visitedArrays
+        );
+      }
+    }
+
+    for (Operation *user : value.getUsers()) {
+      if (!dominanceInfo.properlyDominates(user, containOp.getOperation())) {
+        continue;
+      }
+      if (auto writeOp = llvm::dyn_cast<llzk::array::WriteArrayOp>(user);
+          writeOp && writeOp.getArrRef() == value) {
+        checkContainmentRhsValue(
+            writeOp.getRvalue(), containOp, checkMemo, failedCheck, dominanceInfo, visitedArrays
+        );
+        continue;
+      }
+      if (auto insertOp = llvm::dyn_cast<llzk::array::InsertArrayOp>(user);
+          insertOp && insertOp.getArrRef() == value) {
+        checkContainmentRhsValue(
+            insertOp.getRvalue(), containOp, checkMemo, failedCheck, dominanceInfo, visitedArrays
+        );
       }
     }
   }
 
-  LogicalResult checkContainmentRhsDegrees(FuncDefOp constrainFunc) {
+  LogicalResult checkContainmentRhsDegrees(FuncDefOp constrainFunc, DominanceInfo &dominanceInfo) {
     bool failedCheck = false;
     constrainFunc.walk([&](EmitContainmentOp containOp) {
       DenseMap<Value, unsigned> checkMemo;
-      checkContainmentRhsValue(containOp.getRhs(), containOp, checkMemo, failedCheck);
+      DenseSet<Value> visitedArrays;
+      checkContainmentRhsValue(
+          containOp.getRhs(), containOp, checkMemo, failedCheck, dominanceInfo, visitedArrays
+      );
     });
     return failure(failedCheck);
   }
@@ -607,9 +669,10 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
 
       // Lower containment lookup rows.
       constrainFunc.walk([&](EmitContainmentOp containOp) {
+        DenseSet<Value> visitedArrays;
         lowerContainmentRhsValue(
             containOp.getRhsMutable(), structDef, constrainFunc, dominanceInfo, degreeMemo,
-            rewrites, auxAssignments
+            rewrites, auxAssignments, containOp, visitedArrays
         );
       });
 
@@ -653,7 +716,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
         return;
       }
 
-      if (failed(checkContainmentRhsDegrees(constrainFunc))) {
+      if (failed(checkContainmentRhsDegrees(constrainFunc, dominanceInfo))) {
         signalPassFailure();
         return;
       }
