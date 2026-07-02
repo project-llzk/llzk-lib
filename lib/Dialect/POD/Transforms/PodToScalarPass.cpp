@@ -624,6 +624,15 @@ static SmallVector<Value> flattenConvertedValues(RangeOfRanges ranges) {
   return values;
 }
 
+/// Return `true` iff the inputs are the same size and each value type in `values` unifies
+/// with the corresponding `types` entry.
+template <typename ValueRangeLike>
+inline static bool allValueTypesUnifyWithTypes(const ValueRangeLike &values, ArrayRef<Type> types) {
+  return llvm::all_of_zip(values, types, [](auto value, Type type) {
+    return typesUnify(value.getType(), type);
+  });
+}
+
 /// Replace any AffineMap-backed array dimensions nested within `type` with wildcard `?` dims.
 ///
 /// This preserves the overall array nesting while erasing only the affine-map dimensions that
@@ -1407,6 +1416,7 @@ public:
     };
     addTargetMaterialization(materializeCast);
     addArgumentMaterialization(materializeCast);
+    addSourceMaterialization(materializeCast);
   }
 };
 
@@ -1798,10 +1808,7 @@ static void collectSplitPodArrayOperandValues(
     });
   };
 
-  if (!isDirectAggregateToSplitCast() && convertedValues.size() == splitTypes.size() &&
-      llvm::all_of(llvm::zip_equal(convertedValues, splitTypes), [](auto pair) {
-    return typesUnify(std::get<0>(pair).getType(), std::get<1>(pair));
-  })) {
+  if (!isDirectAggregateToSplitCast() && allValueTypesUnifyWithTypes(convertedValues, splitTypes)) {
     llvm::append_range(newOperands, convertedValues);
     return;
   }
@@ -1817,7 +1824,9 @@ class SplitPodArrayInUnifiableCastOp : public OpConversionPattern<UnifiableCastO
 public:
   using OpConversionPattern<UnifiableCastOp>::OpConversionPattern;
 
-  static bool legal(UnifiableCastOp op) { return !splittablePodArray(op.getType()); }
+  static bool legal(UnifiableCastOp op) {
+    return !splittablePodArray(op.getType()) && !splittablePodArray(op.getInput().getType());
+  }
 
   LogicalResult matchAndRewrite(
       UnifiableCastOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
@@ -1827,6 +1836,47 @@ public:
     }
 
     ArrayType inputArrTy = splittablePodArray(op.getInput().getType());
+    ArrayType resultArrTy = splittablePodArray(op.getType());
+
+    // When only the input is split, rebuild the aggregate input and preserve the original
+    // scalar/tvar result cast.
+    if (inputArrTy && !resultArrTy) {
+      SmallVector<Type> inputSplitTypes;
+      splitPodArrayTypeTo(inputArrTy, inputSplitTypes);
+
+      SmallVector<Value> splitInputs;
+      collectSplitPodArrayOperandValues(
+          op.getLoc(), op.getInput(), adaptor.getInput(), splitInputs, rewriter
+      );
+      if (inputSplitTypes.empty()) {
+        if (splitInputs.size() != 1) {
+          return rewriter.notifyMatchFailure(
+              op, "expected one shape carrier for zero-leaf array-of-pod cast input"
+          );
+        }
+      } else if (splitInputs.size() != inputSplitTypes.size()) {
+        return rewriter.notifyMatchFailure(
+            op, "failed to collect one split input per array-of-pod cast leaf"
+        );
+      }
+
+      // `poly.unifiable_cast` to a non-array target cannot preserve all split leaf values in one
+      // SSA value without reintroducing aggregate array-of-POD materialization.
+      auto *it = llvm::find_if(splitInputs, [&op](Value v) {
+        return typesUnify(v.getType(), op.getType());
+      });
+      if (it == splitInputs.end()) {
+        return rewriter.notifyMatchFailure(
+            op, "failed to find split array leaf type compatible with cast target"
+        );
+      }
+
+      rewriter.replaceOpWithNewOp<UnifiableCastOp>(
+          op, op.getType(), castValueToTypeIfNeeded(rewriter, op.getLoc(), *it, op.getType())
+      );
+      return success();
+    }
+
     if (!inputArrTy) {
       return rewriter.notifyMatchFailure(
           op, "expected array-of-pod cast input when rewriting array-of-pod cast result"
@@ -1837,7 +1887,6 @@ public:
     SmallVector<Type> inputSplitTypes;
     splitPodArrayTypeTo(inputArrTy, inputSplitTypes, &inputSplitIds);
 
-    ArrayType resultArrTy = llvm::cast<ArrayType>(op.getType());
     SmallVector<RecordChain> resultSplitIds;
     SmallVector<Type> resultSplitTypes;
     splitPodArrayTypeTo(resultArrTy, resultSplitTypes, &resultSplitIds);
