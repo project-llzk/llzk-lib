@@ -816,7 +816,7 @@ genReadAlongPath(OpBuilder &bldr, Location loc, Value value, ArrayRef<StringAttr
 
       SmallVector<Value> leafArrays;
       if (tryCollectDirectSplitPodArrayLeafValues(value, arrTy, splitTypes, leafArrays)) {
-        auto it = llvm::find(splitIds, RecordChain(recordChain));
+        auto *it = llvm::find(splitIds, RecordChain(recordChain));
         assert(it != splitIds.end() && "record path must name a flattened POD array leaf");
         return leafArrays[std::distance(splitIds.begin(), it)];
       }
@@ -825,7 +825,7 @@ genReadAlongPath(OpBuilder &bldr, Location loc, Value value, ArrayRef<StringAttr
       if (strippedValue.getDefiningOp<ReadPodOp>()) {
         auto splitLeafReads =
             bldr.create<UnrealizedConversionCastOp>(loc, TypeRange(splitTypes), strippedValue);
-        auto it = llvm::find(splitIds, RecordChain(recordChain));
+        auto *it = llvm::find(splitIds, RecordChain(recordChain));
         assert(it != splitIds.end() && "record path must name a flattened POD array leaf");
         return splitLeafReads.getResult(std::distance(splitIds.begin(), it));
       }
