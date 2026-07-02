@@ -49,4 +49,12 @@ void NonDetOp::getCanonicalizationPatterns(RewritePatternSet &results, MLIRConte
   results.add<RemoveUnusedNonDetPattern>(context);
 }
 
+//===------------------------------------------------------------------===//
+// AuxOp
+//===------------------------------------------------------------------===//
+
+void AuxOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
+  setNameFn(getResult(), "aux");
+}
+
 } // namespace llzk

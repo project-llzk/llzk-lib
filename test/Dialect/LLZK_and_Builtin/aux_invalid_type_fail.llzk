@@ -1,0 +1,15 @@
+// RUN: llzk-opt -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  struct.def @A {
+    function.def @compute() -> !struct.type<@A> attributes {function.allow_witness} {
+      %self = struct.new : <@A>
+      function.return %self : !struct.type<@A>
+    }
+    function.def @constrain(%self: !struct.type<@A>) attributes {function.allow_constraint} {
+      // expected-error@+1 {{'llzk.aux' op result #0 must be finite field element}}
+      %0 = llzk.aux : index
+      function.return
+    }
+  }
+}

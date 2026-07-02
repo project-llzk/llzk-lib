@@ -12,6 +12,7 @@
 
 include "llzk/Dialect/LLZK/IR/Dialect.td"
 include "llzk/Dialect/LLZK/IR/Attrs.td" // must be included to generate docs
+include "llzk/Dialect/Felt/IR/Types.td"
 include "llzk/Dialect/Shared/Types.td"
 
 include "mlir/IR/OpAsmInterface.td"
@@ -84,6 +85,43 @@ def LLZK_NonDetOp
   let results = (outs AnyLLZKType:$res);
   let assemblyFormat = [{ `:` type($res) attr-dict }];
   let hasCanonicalizer = 1;
+}
+
+def LLZK_AuxOp
+    : LLZKDialectOp<"aux", [
+          DeclareOpInterfaceMethods<
+              OpAsmOpInterface, ["getAsmResultNames"]>]> {
+  let summary = "compiler-generated polynomial auxiliary";
+  let description = [{
+    This operation produces a compiler-generated existential SSA value for
+    polynomial lowering.
+
+    A polynomial auxiliary is placement-sensitive. Each dynamic execution
+    instance of this operation denotes a fresh witness value in the region
+    where the operation is placed. Lowering and materialization passes must not
+    freely merge, hoist, sink, or otherwise move this operation across dynamic
+    scope boundaries unless they have separately proved that the movement
+    preserves the auxiliary's required freshness domain.
+
+    This is intentionally distinct from `llzk.nondet`. User-level nondeterminism
+    can be speculated, while generated polynomial auxiliaries carry semantic
+    placement information that later materialization must respect. A later
+    materializer may replace this operation with component storage, backend
+    private signals, product-program values, or another representation only
+    after proving that the chosen representation is at least as fresh as the
+    dynamic domain required by the auxiliary's dependencies.
+
+    V1 is conservative and only supports field elements.
+
+    Example:
+
+    ```llzk
+    %aux = llzk.aux : !felt.type
+    ```
+  }];
+
+  let results = (outs LLZK_FeltType:$res);
+  let assemblyFormat = [{ `:` type($res) attr-dict }];
 }
 
 #endif // LLZK_OPS

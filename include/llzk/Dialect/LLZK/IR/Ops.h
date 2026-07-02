@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "llzk/Dialect/Felt/IR/Types.h"
+
 #include <mlir/IR/OpImplementation.h>
 #include <mlir/Interfaces/SideEffectInterfaces.h>
 
