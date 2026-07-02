@@ -1026,8 +1026,9 @@ private:
         .Case<llzk::smt::BVConstantOp>([](auto constOp) {
       return constOp.getValue().getValueAsString();
     })
-        .Case<llzk::smt::EqOp>([&](auto exprOp) { return buildSExpr("=", exprOp.getInputs(), ctx); }
-        )
+        .Case<llzk::smt::EqOp>([&](auto exprOp) {
+      return buildSExpr("=", exprOp.getInputs(), ctx);
+    })
         .Case<llzk::smt::DistinctOp>([&](auto exprOp) {
       return buildSExpr("distinct", exprOp.getInputs(), ctx);
     })
