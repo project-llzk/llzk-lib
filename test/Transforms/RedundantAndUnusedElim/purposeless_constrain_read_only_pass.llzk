@@ -1,0 +1,56 @@
+// RUN: llzk-opt -split-input-file -llzk-duplicate-op-elim %s 2>&1 | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @ReadOnlyCallee {
+    struct.member @cell : !felt.type
+
+    function.def @compute() -> !struct.type<@ReadOnlyCallee> {
+      %self = struct.new : !struct.type<@ReadOnlyCallee>
+      function.return %self : !struct.type<@ReadOnlyCallee>
+    }
+
+    function.def @constrain(%self: !struct.type<@ReadOnlyCallee>) {
+      %cell = struct.readm %self[@cell] : !struct.type<@ReadOnlyCallee>, !felt.type
+      function.return
+    }
+  }
+
+  struct.def @ReadOnlyCaller {
+    struct.member @child : !struct.type<@ReadOnlyCallee>
+
+    function.def @compute() -> !struct.type<@ReadOnlyCaller> {
+      %self = struct.new : !struct.type<@ReadOnlyCaller>
+      function.return %self : !struct.type<@ReadOnlyCaller>
+    }
+
+    function.def @constrain(%self: !struct.type<@ReadOnlyCaller>) {
+      %child = struct.readm %self[@child] : !struct.type<@ReadOnlyCaller>, !struct.type<@ReadOnlyCallee>
+      function.call @ReadOnlyCallee::@constrain(%child) : (!struct.type<@ReadOnlyCallee>) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  struct.def @ReadOnlyCallee {
+// CHECK-NEXT:    struct.member @cell : !felt.type
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@ReadOnlyCallee> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[CALLEE_SELF:.*]] = struct.new : <@ReadOnlyCallee>
+// CHECK-NEXT:      function.return %[[CALLEE_SELF]] : !struct.type<@ReadOnlyCallee>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[CALLEE_ARG:.*]]: !struct.type<@ReadOnlyCallee>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[CELL:.*]] = struct.readm %[[CALLEE_ARG]][@cell] : <@ReadOnlyCallee>, !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK-NEXT:  struct.def @ReadOnlyCaller {
+// CHECK-NEXT:    struct.member @child : !struct.type<@ReadOnlyCallee>
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@ReadOnlyCaller> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[CALLER_SELF:.*]] = struct.new : <@ReadOnlyCaller>
+// CHECK-NEXT:      function.return %[[CALLER_SELF]] : !struct.type<@ReadOnlyCaller>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[CALLER_ARG:.*]]: !struct.type<@ReadOnlyCaller>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK-NEXT:}

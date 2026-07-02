@@ -17,19 +17,23 @@
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
-#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Dominance.h>
+#include <mlir/IR/OperationSupport.h>
+#include <mlir/Interfaces/SideEffectInterfaces.h>
 
 #include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/DenseSet.h>
+#include <llvm/ADT/Hashing.h>
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/ADT/SmallVector.h>
 
-#include <deque>
+#include <utility>
 
 // Include the generated base pass class definitions.
 namespace llzk {
@@ -48,11 +52,39 @@ using namespace llzk::function;
 
 namespace {
 
-static auto EMPTY_OP_KEY = reinterpret_cast<Operation *>(1);
-static auto TOMBSTONE_OP_KEY = reinterpret_cast<Operation *>(2);
+static Operation *EMPTY_OP_KEY = llvm::DenseMapInfo<Operation *>::getEmptyKey();
+static Operation *TOMBSTONE_OP_KEY = llvm::DenseMapInfo<Operation *>::getTombstoneKey();
 
 // Maps original -> replacement value
 using TranslationMap = DenseMap<Value, Value>;
+
+static bool hasUnknownOrNonReadEffect(Operation *op) {
+  auto effects = getEffectsRecursively(op);
+  return !effects || llvm::any_of(*effects, [](const MemoryEffects::EffectInstance &effect) {
+    return !isa<MemoryEffects::Read>(effect.getEffect());
+  });
+}
+
+static bool isDuplicateEliminationCandidate(Operation *op) {
+  if (isa<NonDetOp>(op) || op->hasTrait<OpTrait::IsTerminator>() || op->getNumRegions() != 0 ||
+      op->getNumSuccessors() != 0) {
+    return false;
+  }
+
+  return isa<ConstraintOpInterface>(op) || isMemoryEffectFree(op);
+}
+
+static bool isDeadAfterElimination(Operation *op) {
+  if (isOpTriviallyDead(op)) {
+    return true;
+  }
+
+  // Member reads are observations with no mutation. Keep this local so the
+  // pass can clean up reads made unused by its rewrites without changing
+  // dialect-wide canonicalization behavior for unrelated pipelines.
+  return isa<MemberReadOp>(op) &&
+         llvm::all_of(op->getResults(), [](Value result) { return result.use_empty(); });
+}
 
 /// @brief A wrapper for an operation that provides comparators for operations
 /// to determine if their outputs will be equal. In general, this will compare
@@ -66,7 +98,7 @@ public:
   }
 
   OperationComparator(Operation *o, const TranslationMap &m) : op(o) {
-    for (auto operand : op->getOperands()) {
+    for (Value operand : op->getOperands()) {
       if (auto it = m.find(operand); it != m.end()) {
         operands.push_back(it->second);
       } else {
@@ -87,35 +119,20 @@ public:
       return lhs.op == rhs.op;
     }
 
-    if (lhs.op->getName() != rhs.op->getName()) {
+    if (!OperationEquivalence::isEquivalentTo(
+            lhs.op, rhs.op, OperationEquivalence::ignoreValueEquivalence,
+            /*markEquivalent=*/nullptr, OperationEquivalence::IgnoreLocations
+        )) {
       return false;
     }
 
-    // uninterested in operating over control-flow ops
-    auto dialectName = lhs.op->getDialect()->getNamespace();
-    if (dialectName == scf::SCFDialect::getDialectNamespace()) {
-      return false;
-    }
-
-    // This may be overly restrictive in some cases, but without knowing what
-    // potential future attributes we may have, it's safer to assume that
-    // unequal attributes => unequal operations.
-    // This covers constant operations too, as the constant is an attribute,
-    // not an operand.
-    if (lhs.op->getAttrs() != rhs.op->getAttrs()) {
-      return false;
-    }
-    // For commutative operations, just check if the operands contain the same set in any order
-    if (lhs.isCommutative()) {
-      ensure(
-          lhs.operands.size() == 2 && rhs.operands.size() == 2,
-          "No known commutative ops have more than two arguments"
-      );
+    // Preserve the pass's existing commutative matching for binary operations.
+    // For a future n-ary commutative op, exact operand order remains conservative.
+    if (lhs.isCommutative() && lhs.operands.size() == 2) {
       return (lhs.operands[0] == rhs.operands[0] && lhs.operands[1] == rhs.operands[1]) ||
              (lhs.operands[0] == rhs.operands[1] && lhs.operands[1] == rhs.operands[0]);
     }
 
-    // The default case requires an exact match per argument
     return lhs.operands == rhs.operands;
   }
 
@@ -137,8 +154,26 @@ template <> struct DenseMapInfo<OperationComparator> {
     if (oc.getOp() == EMPTY_OP_KEY || oc.getOp() == TOMBSTONE_OP_KEY) {
       return hash_value(oc.getOp());
     }
-    // Just hash on name to force more thorough equality checks by operation type.
-    return hash_value(oc.getOp()->getName());
+
+    hash_code opHash = mlir::OperationEquivalence::computeHash(
+        oc.getOp(), mlir::OperationEquivalence::ignoreHashValue,
+        mlir::OperationEquivalence::ignoreHashValue, mlir::OperationEquivalence::IgnoreLocations
+    );
+
+    ArrayRef<Value> operands = oc.getOperands();
+    hash_code operandHash;
+    if (oc.isCommutative() && operands.size() == 2) {
+      size_t lhsHash = hash_value(operands[0]);
+      size_t rhsHash = hash_value(operands[1]);
+      if (rhsHash < lhsHash) {
+        std::swap(lhsHash, rhsHash);
+      }
+      operandHash = hash_combine(lhsHash, rhsHash);
+    } else {
+      operandHash = hash_combine_range(operands.begin(), operands.end());
+    }
+
+    return hash_combine(opHash, operandHash);
   }
   static bool isEqual(const OperationComparator &lhs, const OperationComparator &rhs) {
     return lhs == rhs;
@@ -172,14 +207,35 @@ class PassImpl : public llzk::impl::RedundantOperationEliminationPassBase<PassIm
     if (!fn.isStructConstrain()) {
       return false;
     }
+    // Calls to a constrain function are only removable when the callee cannot
+    // contain witness-generation state mutations such as global.write or
+    // ram.store. The WitnessGen verifier enforces that boundary unless the
+    // callee is explicitly marked allow_witness.
+    if (fn.hasAllowWitnessAttr()) {
+      return false;
+    }
 
     bool res = true;
     fn.walk([&](Operation *op) {
+      if (op == fn.getOperation()) {
+        return WalkResult::advance();
+      }
       if (isa<EmitEqualityOp, EmitContainmentOp, AssertOp>(op)) {
         res = false;
         return WalkResult::interrupt();
-      } else if (auto callOp = dyn_cast<CallOp>(op);
-                 callOp && !callsPurposelessConstrainFunc(symbolTables, callOp)) {
+      } else if (auto callOp = dyn_cast<CallOp>(op)) {
+        if (!callsPurposelessConstrainFunc(symbolTables, callOp)) {
+          res = false;
+          return WalkResult::interrupt();
+        }
+        return WalkResult::advance();
+      } else if (isMemoryEffectFree(op)) {
+        return WalkResult::advance();
+      }
+
+      // Removing a call to a constrain function is only safe when the callee has
+      // no unknown or mutating effects.
+      if (hasUnknownOrNonReadEffect(op)) {
         res = false;
         return WalkResult::interrupt();
       }
@@ -215,6 +271,10 @@ class PassImpl : public llzk::impl::RedundantOperationEliminationPassBase<PassIm
     };
 
     fn.walk([&](Operation *op) {
+      if (op == fn.getOperation()) {
+        return WalkResult::advance();
+      }
+
       // Case 1: The operation itself is unnecessary.
       if (unnecessaryOpCheck(op)) {
         return WalkResult::advance();
@@ -222,7 +282,7 @@ class PassImpl : public llzk::impl::RedundantOperationEliminationPassBase<PassIm
 
       // Case 2: An equivalent operation A has already been performed before
       // the current operation B and A dominates B.
-      if (!isa<NonDetOp>(op)) {
+      if (isDuplicateEliminationCandidate(op)) {
         OperationComparator comp(op, map);
         if (auto it = uniqueOps.find(comp);
             it != uniqueOps.end() && domInfo.dominates(it->getOp(), op)) {
@@ -234,17 +294,29 @@ class PassImpl : public llzk::impl::RedundantOperationEliminationPassBase<PassIm
           uniqueOps.insert(comp);
         }
       }
-
       return WalkResult::advance();
     });
 
-    // Track the operands of removed ops.
-    std::deque<Value> operands;
+    DenseSet<Operation *> redundantOpSet;
+    for (Operation *op : redundantOps) {
+      redundantOpSet.insert(op);
+    }
 
-    for (auto *op : redundantOps) {
+    SmallVector<Operation *> deadOpCandidates;
+    DenseSet<Operation *> queuedDeadOps;
+    auto enqueueDeadOpCandidate = [&](Value value) {
+      Operation *definingOp = value.getDefiningOp();
+      if (!definingOp || redundantOpSet.count(definingOp) ||
+          !queuedDeadOps.insert(definingOp).second) {
+        return;
+      }
+      deadOpCandidates.push_back(definingOp);
+    };
+
+    for (Operation *op : redundantOps) {
       LLVM_DEBUG(llvm::dbgs() << "Removing op: " << *op << '\n');
-      for (auto result : op->getResults()) {
-        if (!result.getUsers().empty()) {
+      for (Value result : op->getResults()) {
+        if (!result.use_empty()) {
           auto it = map.find(result);
           ensure(
               it != map.end(), "failed to find a replacement value for redundant operation result"
@@ -253,32 +325,28 @@ class PassImpl : public llzk::impl::RedundantOperationEliminationPassBase<PassIm
           result.replaceAllUsesWith(it->second);
         }
       }
-      for (Value operand : op->getOperands()) {
-        operands.push_back(operand);
-      }
+
+      SmallVector<Value> operands(op->getOperands());
       op->erase();
+      for (Value operand : operands) {
+        enqueueDeadOpCandidate(operand);
+      }
     }
 
-    // Check if any of the operands are unused. If so, remove them, and check
-    // their operands until all operands have been checked.
+    // Removing a redundant op may make its producers dead. Check whole
+    // operations so effects and every result are considered before erasure.
+    while (!deadOpCandidates.empty()) {
+      Operation *op = deadOpCandidates.pop_back_val();
+      queuedDeadOps.erase(op);
+      if (!isDeadAfterElimination(op)) {
+        continue;
+      }
 
-    // Make sure operands aren't freed multiple times
-    DenseSet<Value> checkedOperands;
-    while (!operands.empty()) {
-      Value operand = operands.front();
-      operands.pop_front();
-      checkedOperands.insert(operand);
-
-      // We only want to remove operands that are defined by an operation and
-      // are not block arguments.
-      if (auto *op = operand.getDefiningOp(); op && operand.getUsers().empty()) {
-        for (auto parentOperand : op->getOperands()) {
-          if (checkedOperands.find(parentOperand) == checkedOperands.end()) {
-            operands.push_back(parentOperand);
-          }
-        }
-        LLVM_DEBUG(llvm::dbgs() << "Removing unused operand: " << operand << '\n');
-        op->erase();
+      SmallVector<Value> operands(op->getOperands());
+      LLVM_DEBUG(llvm::dbgs() << "Removing dead producer: " << *op << '\n');
+      op->erase();
+      for (Value operand : operands) {
+        enqueueDeadOpCandidate(operand);
       }
     }
   }

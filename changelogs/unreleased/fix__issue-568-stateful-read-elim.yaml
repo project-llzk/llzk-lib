@@ -1,0 +1,4 @@
+fixed:
+  - Prevent duplicate operation elimination from reusing stateful global or RAM
+    reads across writes, while allowing duplicate read/write elimination to
+    reuse reads whose observed value is known.
