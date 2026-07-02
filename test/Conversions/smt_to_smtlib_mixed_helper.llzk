@@ -13,15 +13,13 @@ module {
     %zero = smt.int.constant 0
     %ok = smt.eq %value, %zero : !smt.int
     smt.assert %ok
+    smt.set_info ":llzk-stage" "target"
+    smt.set_info ":status" sat
     smt.check sat {
       smt.yield
     } unknown {
-      %false = arith.constant false
-      bool.assert %false
       smt.yield
     } unsat {
-      %false = arith.constant false
-      bool.assert %false
       smt.yield
     }
     smt.pop 1
@@ -36,12 +34,12 @@ module {
 }
 
 // CHECK:      (set-logic ALL)
-// CHECK-NEXT: (set-info :llzk-root "module")
 // CHECK-NEXT: (declare-fun x () Int)
 // CHECK-NEXT: (push 1)
 // CHECK-NEXT: (define-fun pure_add ((pure_add__arg0 Int)) Int
 // CHECK-SAME: (let ((__let0 (+ pure_add__arg0 1))) __let0))
 // CHECK-NEXT: (assert (= (pure_add x) 0))
+// CHECK-NEXT: (set-info :llzk-stage "target")
 // CHECK-NEXT: (set-info :status sat)
 // CHECK-NEXT: (check-sat)
 // CHECK-NEXT: (pop 1)

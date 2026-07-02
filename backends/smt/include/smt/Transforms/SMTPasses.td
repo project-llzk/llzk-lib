@@ -15,7 +15,7 @@ include "llzk/Pass/PassBase.td"
 def SMTDialectToSMTLIBPass : Pass<"smt-to-smtlib", "::mlir::ModuleOp"> {
   let summary = "Convert SMT dialect IR to SMT-LIB";
   let description = [{
-    Emits a textual SMT-LIB script for the unique top-level smt.solver
+    Emits an SMT-LIB script for the unique top-level smt.solver
     directly contained in the root builtin.module. Module-scope func.func
     definitions remain legal as helper code that may be called from within
     the smt.solver body.
@@ -31,35 +31,42 @@ def SMTDialectToSMTLIBPass : Pass<"smt-to-smtlib", "::mlir::ModuleOp"> {
       }
 
       smt.solver () : () -> () {
+        smt.set_info ":status" unsat
         smt.set_logic "ALL"
         %x = smt.declare_fun "x" : !smt.int
         %y = func.call @helper(%x) : (!smt.int) -> !smt.bool
         smt.assert %y
+        smt.check sat { smt.yield } unknown { smt.yield } unsat { smt.yield }
         smt.yield
       }
     }
     ```
 
-    Logic handling is intentionally simple. If the selected solver body contains
-    an `smt.set_logic`, the exporter preserves it exactly where it appears. If
-    the IR does not specify a logic, the exporter emits the conservative SMT-LIB
-    fallback `(set-logic ALL)` at the start of the script instead of trying to
-    infer a narrower theory combination.
-
     Example output:
 
     ```smt2
+    (set-info :status unsat)
     (set-logic ALL)
-    (set-info :llzk-root "module")
     (declare-fun x () Int)
     (define-fun helper ((helper__arg0 Int)) Bool
       (> helper__arg0 0))
     (assert (helper x))
+    (check-sat)
     ```
 
-    The resulting script can be piped directly into `llzk-smt-check` for staged
-    result verification, or into a general SMT solver such as `z3` when only the
-    exported SMT-LIB script is needed.
+    The resulting script can then be piped into `llzk-smt-check` or another
+    SMT-LIB solver.
+
+    Some SMT dialect ops with special handling:
+    - If an `smt.set_logic` op is not present, the lowering emits a conservative
+      `(set-logic ALL)` at the start of the script.
+    - The `smt.check` operation in the SMT dialect supports conditional execution
+      based on the solver result, which a SMT-LIB script cannot generally support.
+      This pass therefore supports only bare checks with empty `sat`, `unknown`,
+      and `unsat` regions, which lower to `(check-sat)`.
+      If a lowering needs to branch on the solver result and emit different
+      follow-up commands, it must target a higher-level driver representation
+      outside SMT-LIB.
   }];
   let dependentDialects = ["mlir::func::FuncDialect", "llzk::smt::SMTDialect",
                            "llzk::boolean::BoolDialect",

@@ -14,10 +14,41 @@
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/DialectImplementation.h>
 
+#include <llvm/ADT/StringExtras.h>
 #include <llvm/ADT/TypeSwitch.h>
 
 using namespace mlir;
 using namespace llzk::smt;
+
+static bool isValidSMTLibAtomChar(char ch) {
+  return llvm::isAlnum(ch) || ch == '_' || ch == '.' || ch == '$' || ch == '-' || ch == '!';
+}
+
+static LogicalResult verifySMTLibSymbolText(
+    function_ref<InFlightDiagnostic()> emitError, StringRef text, bool requireLeadingColon
+) {
+  if (text.empty()) {
+    return emitError() << "symbol text must not be empty";
+  }
+  if (requireLeadingColon) {
+    if (!text.starts_with(':')) {
+      return emitError() << "keyword must start with ':'";
+    }
+    text = text.drop_front();
+    if (text.empty()) {
+      return emitError() << "keyword must contain at least one character after ':'";
+    }
+  } else if (text.starts_with(':')) {
+    return emitError() << "symbol must not start with ':'";
+  }
+
+  for (char ch : text) {
+    if (!isValidSMTLibAtomChar(ch)) {
+      return emitError() << "invalid SMT-LIB symbol character '" << ch << "'";
+    }
+  }
+  return success();
+}
 
 //===----------------------------------------------------------------------===//
 // BitVectorAttr
@@ -159,6 +190,41 @@ void BitVectorAttr::print(AsmPrinter &odsPrinter) const {
 Type BitVectorAttr::getType() const {
   return BitVectorType::get(getContext(), getValue().getBitWidth());
 }
+
+//===----------------------------------------------------------------------===//
+// KeywordAttr / SymbolAttr
+//===----------------------------------------------------------------------===//
+
+LogicalResult KeywordAttr::verify(function_ref<InFlightDiagnostic()> emitError, StringRef value) {
+  return verifySMTLibSymbolText(emitError, value, /*requireLeadingColon=*/true);
+}
+
+Attribute KeywordAttr::parse(AsmParser &parser, Type) {
+  SMLoc loc = parser.getCurrentLocation();
+  StringRef keyword;
+  if (parser.parseLess() || parser.parseColon() || parser.parseKeyword(&keyword) ||
+      parser.parseGreater()) {
+    return {};
+  }
+  return parser.getChecked<KeywordAttr>(loc, parser.getContext(), (":" + keyword).str());
+}
+
+void KeywordAttr::print(AsmPrinter &printer) const { printer << '<' << getValue() << '>'; }
+
+LogicalResult SymbolAttr::verify(function_ref<InFlightDiagnostic()> emitError, StringRef value) {
+  return verifySMTLibSymbolText(emitError, value, /*requireLeadingColon=*/false);
+}
+
+Attribute SymbolAttr::parse(AsmParser &parser, Type) {
+  SMLoc loc = parser.getCurrentLocation();
+  StringRef symbol;
+  if (parser.parseLess() || parser.parseKeyword(&symbol) || parser.parseGreater()) {
+    return {};
+  }
+  return parser.getChecked<SymbolAttr>(loc, parser.getContext(), symbol.str());
+}
+
+void SymbolAttr::print(AsmPrinter &printer) const { printer << '<' << getValue() << '>'; }
 
 //===----------------------------------------------------------------------===//
 // ODS Boilerplate

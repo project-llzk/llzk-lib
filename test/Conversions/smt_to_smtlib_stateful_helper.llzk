@@ -19,6 +19,5 @@ module {
 }
 
 // CHECK:      (set-logic ALL)
-// CHECK-NEXT: (set-info :llzk-root "module")
 // CHECK-NEXT: (declare-fun x () Int)
 // CHECK-NEXT: (assert (= x 0))

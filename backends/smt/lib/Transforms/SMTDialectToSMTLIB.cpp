@@ -94,10 +94,24 @@ static std::string sortForType(Type type) {
   });
 }
 
-struct CheckSuccessInfo {
-  StringRef expectedOutcome;
-  Region *successRegion;
-};
+static void printSetInfoValue(llvm::raw_ostream &os, Attribute value) {
+  TypeSwitch<Attribute>(value)
+      .Case<llzk::smt::KeywordAttr>([&](auto keywordAttr) { os << keywordAttr.getValue(); })
+      .Case<llzk::smt::SymbolAttr>([&](auto symbolAttr) { os << symbolAttr.getValue(); })
+      .Case<StringAttr>([&](auto strAttr) { strAttr.print(os); })
+      .Case<BoolAttr>([&](auto boolAttr) { os << (boolAttr.getValue() ? "true" : "false"); })
+      .Case<IntegerAttr>([&](auto intAttr) {
+    SmallString<32> valueText;
+    intAttr.getValue().toStringSigned(valueText);
+    os << valueText;
+  }).Case<ArrayAttr>([&](auto arrayAttr) {
+    os << '(';
+    llvm::interleave(arrayAttr, [&](Attribute element) { printSetInfoValue(os, element); }, [&] {
+      os << ' ';
+    });
+    os << ')';
+  });
+}
 
 enum class HelperMode {
   PureFunction,
@@ -123,7 +137,6 @@ public:
 private:
   struct EvalContext {
     DenseMap<Value, std::string> values;
-    std::optional<std::string> pendingStageLabel;
     SmallVector<std::pair<std::string, std::string>> letBindings;
     bool preserveSharing = false;
   };
@@ -181,8 +194,6 @@ private:
 
   void resetScriptState() {
     nextTempId = 0;
-    nextTargetStageIndex = 0;
-    nextPostStageIndex = 0;
     pushDepth = 0;
     emittedSymbolCounts.clear();
     emittedAssertions.clear();
@@ -198,7 +209,6 @@ private:
     if (emitDefaultLogic) {
       os << "(set-logic ALL)\n";
     }
-    os << "(set-info :llzk-root \"module\")\n";
     return success();
   }
 
@@ -239,6 +249,12 @@ private:
     return TypeSwitch<Operation *, LogicalResult>(op)
         .Case<llzk::smt::SetLogicOp>([&](auto setLogicOp) {
       os << "(set-logic " << setLogicOp.getLogic() << ")\n";
+      return success();
+    })
+        .Case<llzk::smt::SetInfoOp>([&](auto setInfoOp) {
+      os << "(set-info " << setInfoOp.getKey().getValue() << ' ';
+      printSetInfoValue(os, setInfoOp.getValueAttr());
+      os << ")\n";
       return success();
     })
         .Case<llzk::smt::DeclareFunOp>([&](auto declareOp) { return emitDeclare(declareOp, ctx); })
@@ -317,10 +333,7 @@ private:
         .Case<llzk::smt::ForallOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
         .Case<llzk::smt::ExistsOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
         .Case<llzk::boolean::AssertOp>([&](auto assertOp) {
-      return assertOp.emitError(
-          "boolean.assert is only supported inside smt.check failure "
-          "regions and should not appear on the linearized path"
-      );
+      return assertOp.emitError("boolean.assert is not serializable to SMT-LIB");
     }).Default([&](Operation *unknownOp) {
       unknownOp->emitError("unsupported operation in smt-to-smtlib");
       return failure();
@@ -432,7 +445,6 @@ private:
       argExprs.push_back(std::move(*arg));
     }
 
-    std::optional<std::string> label = getStageLabel(callOp.getCallee());
     auto helperMode = classifyHelperMode(callee);
     if (failed(helperMode)) {
       return failure();
@@ -448,13 +460,10 @@ private:
         return failure();
       }
       ctx.values[callOp.getResult(0)] = buildHelperApplication(callee, argExprs);
-      if (label) {
-        ctx.pendingStageLabel = *label;
-      }
       return success();
     }
 
-    auto results = inlineHelper(callee, argExprs, label);
+    auto results = inlineHelper(callee, argExprs);
     if (failed(results)) {
       callOp.emitError("smt-to-smtlib requires an emit-compatible helper callee");
       return failure();
@@ -465,10 +474,6 @@ private:
     }
     for (auto [result, expr] : llvm::zip(callOp.getResults(), *results)) {
       ctx.values[result] = expr;
-    }
-
-    if (label && callOp.getNumResults() == 1) {
-      ctx.pendingStageLabel = *label;
     }
     return success();
   }
@@ -504,9 +509,9 @@ private:
     auto cleanup = llvm::make_scope_exit([&] { helperModesInProgress.erase(func.getOperation()); });
 
     for (Operation &op : func.getBody().front().without_terminator()) {
-      if (isa<llzk::smt::SetLogicOp, llzk::smt::DeclareFunOp, llzk::smt::AssertOp,
-              llzk::smt::ResetOp, llzk::smt::PushOp, llzk::smt::PopOp, llzk::smt::CheckOp,
-              llzk::smt::SolverOp>(op)) {
+      if (isa<llzk::smt::SetLogicOp, llzk::smt::SetInfoOp, llzk::smt::DeclareFunOp,
+              llzk::smt::AssertOp, llzk::smt::ResetOp, llzk::smt::PushOp, llzk::smt::PopOp,
+              llzk::smt::CheckOp, llzk::smt::SolverOp>(op)) {
         helperModes[func.getOperation()] = HelperMode::InlineScript;
         return HelperMode::InlineScript;
       }
@@ -627,10 +632,8 @@ private:
   /// This binds callee block arguments to already-rendered caller expressions,
   /// emits the helper body in source order, and then returns the rendered
   /// `func.return` operands back to the caller for subsequent substitution.
-  FailureOr<SmallVector<std::string>> inlineHelper(
-      func::FuncOp func, ArrayRef<std::string> argExprs,
-      std::optional<std::string> initialStageLabel
-  ) {
+  FailureOr<SmallVector<std::string>>
+  inlineHelper(func::FuncOp func, ArrayRef<std::string> argExprs) {
     if (!func || func.empty()) {
       func.emitError("smt-to-smtlib requires non-empty helper funcs");
       return failure();
@@ -645,9 +648,6 @@ private:
     helperCtx.preserveSharing = helperIsPurelyExpressionBased(func);
     for (auto [arg, expr] : llvm::zip(func.getArguments(), argExprs)) {
       helperCtx.values[arg] = expr;
-    }
-    if (initialStageLabel) {
-      helperCtx.pendingStageLabel = *initialStageLabel;
     }
 
     if (failed(emitBlock(func.getBody().front(), helperCtx))) {
@@ -672,118 +672,32 @@ private:
     return results;
   }
 
-  std::optional<std::string> getStageLabel(StringRef callee) const {
-    auto makeIndexedLabel = [&](StringRef stem) -> std::optional<std::string> {
-      std::string marker = (Twine("_") + stem + "_part_").str();
-      size_t markerPos = callee.rfind(marker);
-      if (markerPos == StringRef::npos) {
-        return std::nullopt;
-      }
-      StringRef suffix = callee.drop_front(markerPos + marker.size());
-      unsigned index = 0;
-      if (suffix.empty() || suffix.getAsInteger(10, index)) {
-        return std::nullopt;
-      }
-      return (Twine(stem) + "[" + Twine(index) + "]").str();
-    };
-    if (auto indexed = makeIndexedLabel("target")) {
-      return indexed;
+  LogicalResult
+  verifyEmptyCheckRegion(llzk::smt::CheckOp checkOp, StringRef regionName, Region &region) {
+    if (!llvm::hasSingleElement(region) || !region.front().without_terminator().empty()) {
+      return checkOp.emitOpError()
+             << "cannot lower smt.check with non-empty result regions because "
+                "SMT-LIB scripts cannot branch on check-sat results; '"
+             << regionName << "' must be empty";
     }
-    if (auto indexed = makeIndexedLabel("post")) {
-      return indexed;
-    }
-    if (callee.ends_with("_pre")) {
-      return "pre";
-    }
-    if (callee.ends_with("_target")) {
-      return "target";
-    }
-    if (callee.ends_with("_post")) {
-      return "post";
-    }
-    return std::nullopt;
-  }
-
-  FailureOr<CheckSuccessInfo> identifySuccessRegion(llzk::smt::CheckOp checkOp) {
-    SmallVector<std::pair<StringRef, Region *>> regions = {
-        {"sat", &checkOp.getSatRegion()},
-        {"unknown", &checkOp.getUnknownRegion()},
-        {"unsat", &checkOp.getUnsatRegion()},
-    };
-
-    Region *successRegion = nullptr;
-    StringRef outcome;
-    for (auto [candidateOutcome, region] : regions) {
-      if (isSuccessRegion(*region)) {
-        if (successRegion != nullptr) {
-          checkOp.emitError("smt-to-smtlib requires exactly one non-failing smt.check region");
-          return failure();
-        }
-        successRegion = region;
-        outcome = candidateOutcome;
-      }
-    }
-
-    if (successRegion == nullptr) {
-      checkOp.emitError("smt-to-smtlib could not determine successful smt.check path");
-      return failure();
-    }
-    return CheckSuccessInfo {outcome, successRegion};
-  }
-
-  bool isSuccessRegion(Region &region) const {
-    if (!llvm::hasSingleElement(region)) {
-      return false;
-    }
-    for (Operation &op : region.front().without_terminator()) {
-      if (isa<llzk::boolean::AssertOp>(op)) {
-        return false;
-      }
-    }
-    return true;
+    return success();
   }
 
   LogicalResult emitCheck(llzk::smt::CheckOp checkOp, EvalContext &ctx) {
+    (void)ctx;
     if (checkOp.getNumResults() != 0) {
-      return checkOp.emitOpError("smt-to-smtlib does not support result-producing smt.check");
+      return checkOp.emitOpError(
+          "cannot lower result-producing smt.check because SMT-LIB has no "
+          "standard return channel from check-sat into later script terms"
+      );
     }
-    auto successInfo = identifySuccessRegion(checkOp);
-    if (failed(successInfo)) {
+    if (failed(verifyEmptyCheckRegion(checkOp, "sat", checkOp.getSatRegion())) ||
+        failed(verifyEmptyCheckRegion(checkOp, "unknown", checkOp.getUnknownRegion())) ||
+        failed(verifyEmptyCheckRegion(checkOp, "unsat", checkOp.getUnsatRegion()))) {
       return failure();
     }
 
-    auto formatStageLabel = [&](StringRef rawLabel) -> std::string {
-      if (rawLabel == "target" || rawLabel.starts_with("target[")) {
-        return (Twine("target[") + Twine(nextTargetStageIndex++) + "]").str();
-      }
-      if (rawLabel == "post" || rawLabel.starts_with("post[")) {
-        return (Twine("post[") + Twine(nextPostStageIndex++) + "]").str();
-      }
-      return rawLabel.str();
-    };
-
-    if (ctx.pendingStageLabel) {
-      os << "(set-info :llzk-stage \"" << formatStageLabel(*ctx.pendingStageLabel) << "\")\n";
-    }
-    os << "(set-info :status " << successInfo->expectedOutcome << ")\n";
     os << "(check-sat)\n";
-    ctx.pendingStageLabel.reset();
-    return emitBlock(successInfo->successRegion->front(), ctx);
-  }
-
-  LogicalResult emitSuccessEffects(llzk::smt::CheckOp checkOp, EvalContext &ctx) {
-    auto successInfo = identifySuccessRegion(checkOp);
-    if (failed(successInfo)) {
-      return failure();
-    }
-    for (Operation &op : successInfo->successRegion->front().without_terminator()) {
-      if (isa<llzk::smt::PushOp, llzk::smt::PopOp>(op)) {
-        continue;
-      }
-      if (failed(emitOperation(&op, ctx))) {
-        return failure();
-      }
-    }
     return success();
   }
 
@@ -819,8 +733,8 @@ private:
 
     Block &block = func.getBody().front();
     for (Operation &op : block.without_terminator()) {
-      if (isa<llzk::smt::DeclareFunOp, llzk::smt::AssertOp, llzk::smt::PushOp, llzk::smt::PopOp,
-              llzk::smt::CheckOp>(op)) {
+      if (isa<llzk::smt::SetInfoOp, llzk::smt::DeclareFunOp, llzk::smt::AssertOp, llzk::smt::PushOp,
+              llzk::smt::PopOp, llzk::smt::CheckOp>(op)) {
         op.emitError("script-style SMT ops cannot appear in pure helper definitions");
         return failure();
       }
@@ -849,8 +763,8 @@ private:
 
   bool helperIsPurelyExpressionBased(func::FuncOp func) const {
     for (Operation &op : func.getBody().front().without_terminator()) {
-      if (isa<llzk::smt::DeclareFunOp, llzk::smt::AssertOp, llzk::smt::PushOp, llzk::smt::PopOp,
-              llzk::smt::CheckOp>(op)) {
+      if (isa<llzk::smt::SetInfoOp, llzk::smt::DeclareFunOp, llzk::smt::AssertOp, llzk::smt::PushOp,
+              llzk::smt::PopOp, llzk::smt::CheckOp>(op)) {
         return false;
       }
       if (auto callOp = dyn_cast<func::CallOp>(op); callOp && callOp.getNumResults() == 0) {
@@ -1227,8 +1141,6 @@ private:
   ModuleOp module;
   llvm::raw_ostream &os;
   unsigned nextTempId = 0;
-  unsigned nextTargetStageIndex = 0;
-  unsigned nextPostStageIndex = 0;
   unsigned pushDepth = 0;
   DenseSet<Operation *> activePureHelpers;
   DenseSet<Operation *> activeInlineHelpers;

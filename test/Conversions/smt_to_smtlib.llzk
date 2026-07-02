@@ -21,7 +21,6 @@ module {
 }
 
 // CHECK:      (set-logic ALL)
-// CHECK-NEXT: (set-info :llzk-root "module")
 // CHECK-NEXT: (declare-fun x () Int)
 // CHECK-NEXT: (declare-fun flag () Bool)
 // CHECK-NEXT: (define-fun helper ((helper__arg0 Int) (helper__arg1 Bool)) Int

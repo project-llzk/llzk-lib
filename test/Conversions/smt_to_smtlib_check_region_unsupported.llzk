@@ -1,0 +1,77 @@
+// RUN: not llzk-opt --split-input-file --smt-to-smtlib -o /dev/null %s 2>&1 | FileCheck %s
+
+// CHECK: cannot lower smt.check with non-empty result regions because SMT-LIB
+// CHECK-SAME: scripts cannot branch on check-sat results; 'sat' must be empty
+module {
+  smt.solver () : () -> () {
+    smt.check sat {
+      smt.set_info ":llzk-stage" "sat"
+      smt.yield
+    } unknown {
+      smt.yield
+    } unsat {
+      smt.yield
+    }
+    smt.yield
+  }
+}
+
+// -----
+
+// CHECK: cannot lower smt.check with non-empty result regions because SMT-LIB
+// CHECK-SAME: scripts cannot branch on check-sat results; 'unknown' must be empty
+module {
+  smt.solver () : () -> () {
+    smt.check sat {
+      smt.yield
+    } unknown {
+      %false = arith.constant false
+      bool.assert %false
+      smt.yield
+    } unsat {
+      smt.yield
+    }
+    smt.yield
+  }
+}
+
+// -----
+
+// CHECK: cannot lower smt.check with non-empty result regions because SMT-LIB
+// CHECK-SAME: scripts cannot branch on check-sat results; 'unsat' must be empty
+module {
+  smt.solver () : () -> () {
+    smt.check sat {
+      smt.yield
+    } unknown {
+      smt.yield
+    } unsat {
+      %x = smt.declare_fun "x" : !smt.int
+      smt.yield
+    }
+    smt.yield
+  }
+}
+
+// -----
+
+// CHECK: cannot lower smt.check with non-empty result regions because SMT-LIB
+// CHECK-SAME: scripts cannot branch on check-sat results; 'sat' must be empty
+module {
+  func.func @helper() {
+    smt.check sat {
+      smt.push 1
+      smt.yield
+    } unknown {
+      smt.yield
+    } unsat {
+      smt.yield
+    }
+    return
+  }
+
+  smt.solver () : () -> () {
+    func.call @helper() : () -> ()
+    smt.yield
+  }
+}

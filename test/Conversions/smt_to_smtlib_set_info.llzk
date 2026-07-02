@@ -1,0 +1,25 @@
+// RUN: llzk-opt --smt-to-smtlib -o /dev/null %s | FileCheck %s
+
+module {
+  smt.solver () : () -> () {
+    smt.set_info ":llzk-root" "Demo"
+    smt.set_info ":notes" (:phase_one pass 7 true)
+    smt.set_info ":llzk-stage" "pre"
+    smt.set_info ":status" unsat
+    smt.check sat {
+      smt.yield
+    } unknown {
+      smt.yield
+    } unsat {
+      smt.yield
+    }
+    smt.yield
+  }
+}
+
+// CHECK:      (set-logic ALL)
+// CHECK-NEXT: (set-info :llzk-root "Demo")
+// CHECK-NEXT: (set-info :notes (:phase_one pass 7 true))
+// CHECK-NEXT: (set-info :llzk-stage "pre")
+// CHECK-NEXT: (set-info :status unsat)
+// CHECK-NEXT: (check-sat)

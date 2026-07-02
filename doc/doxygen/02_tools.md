@@ -134,8 +134,9 @@ they can be fully resolved by the preprocessing pipeline before execution.
 
 `llzk-smt-check` runs an external SMT solver on an SMT-LIB 2 script and reports
 the result of each `check-sat` stage. It is intended to consume the staged
-SMT-LIB emitted by `llzk-opt --smt-to-smtlib`, including metadata such as
-`(set-info :llzk-stage "pre")` and `(set-info :status unsat)`.
+SMT-LIB emitted by `llzk-opt --smt-to-smtlib`, including explicit metadata
+produced from `smt.set_info` ops such as `(set-info :llzk-stage "pre")` and
+`(set-info :status unsat)`.
 
 #### Basic Usage
 
@@ -148,7 +149,21 @@ llzk-opt --smt-to-smtlib -o /dev/null input.llzk | llzk-smt-check -
 in the root `builtin.module`. Module-scope `func.func` definitions are treated
 as helpers that may be called from within that solver body. Exported scripts
 preserve any `smt.set_logic` operation in that solver and otherwise begin with
-the conservative fallback `(set-logic ALL)`.
+the conservative fallback `(set-logic ALL)`. Any staged metadata consumed by
+`llzk-smt-check` must be introduced explicitly in the SMT dialect IR using
+`smt.set_info`, for example:
+
+```mlir
+smt.set_info ":llzk-root" "CheckGate"
+smt.set_info ":llzk-stage" "pre"
+smt.set_info ":status" unsat
+```
+
+`smt.check` lowers only to a bare `(check-sat)`. Because SMT-LIB scripts cannot
+branch on `check-sat` results internally, `--smt-to-smtlib` accepts only
+`smt.check` operations whose `sat`, `unknown`, and `unsat` regions are empty.
+Result-dependent script behavior would need a higher-level driver format outside
+SMT-LIB.
 
 #### LLZK-Specific Options
 

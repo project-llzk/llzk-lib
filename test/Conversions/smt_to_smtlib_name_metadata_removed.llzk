@@ -1,0 +1,28 @@
+// RUN: llzk-opt --smt-to-smtlib -o /dev/null %s | FileCheck %s
+
+module {
+  func.func @helper_target_part_7(%x: !smt.int) {
+    smt.push 1
+    smt.check sat {
+      smt.yield
+    } unknown {
+      smt.yield
+    } unsat {
+      smt.yield
+    }
+    smt.pop 1
+    return
+  }
+
+  smt.solver () : () -> () {
+    %x = smt.declare_fun "x" : !smt.int
+    func.call @helper_target_part_7(%x) : (!smt.int) -> ()
+    smt.yield
+  }
+}
+
+// CHECK:      (set-logic ALL)
+// CHECK-NEXT: (declare-fun x () Int)
+// CHECK-NEXT: (push 1)
+// CHECK-NEXT: (check-sat)
+// CHECK-NEXT: (pop 1)

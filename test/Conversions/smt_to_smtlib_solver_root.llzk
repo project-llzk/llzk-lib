@@ -8,6 +8,7 @@ module {
   }
 
   smt.solver () : () -> () {
+    smt.set_info ":llzk-root" "module"
     smt.set_logic "ALL"
     %x = smt.declare_fun "x" : !smt.int
     %value0 = func.call @helper(%x) : (!smt.int) -> !smt.int

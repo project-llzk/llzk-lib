@@ -19,7 +19,6 @@ module {
 }
 
 // CHECK:      (set-logic ALL)
-// CHECK-NEXT: (set-info :llzk-root "module")
 // CHECK-NEXT: (declare-fun x () Int)
 // CHECK-NEXT: (define-fun square_chain ((square_chain__arg0 Int)) Int
 // CHECK-SAME:   (let ((__let0 (* square_chain__arg0 square_chain__arg0)))

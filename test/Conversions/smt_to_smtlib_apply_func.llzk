@@ -13,7 +13,6 @@ module {
 }
 
 // CHECK:      (set-logic ALL)
-// CHECK-NEXT: (set-info :llzk-root "module")
 // CHECK-NEXT: (declare-fun x () Int)
 // CHECK-NEXT: (declare-fun f (Int) Int)
 // CHECK-NEXT: (declare-fun result () Int)

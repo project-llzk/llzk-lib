@@ -72,7 +72,6 @@ module {
 }
 
 // CHECK:      (set-logic ALL)
-// CHECK-NEXT: (set-info :llzk-root "module")
 // CHECK-NEXT: (declare-fun a () (_ BitVec 4))
 // CHECK-NEXT: (declare-fun b () (_ BitVec 4))
 // CHECK-NEXT: (declare-fun neg () (_ BitVec 4))

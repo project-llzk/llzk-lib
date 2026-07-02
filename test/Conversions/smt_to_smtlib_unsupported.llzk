@@ -17,4 +17,5 @@ module {
   }
 }
 
-// CHECK: does not support result-producing smt.check
+// CHECK: cannot lower result-producing smt.check because SMT-LIB has no standard
+// CHECK-SAME: return channel from check-sat into later script terms
