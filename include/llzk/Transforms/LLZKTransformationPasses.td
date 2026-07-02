@@ -18,6 +18,8 @@ def RedundantReadAndWriteEliminationPass
   let description = [{
     Remove redundant or unnecessary reads and writes to struct members and
     arrays, and redundant reads from globals and RAM.
+    Global writes and RAM stores update stateful-read facts, but redundant
+    global/RAM write removal is left to follow-up alias-aware overwrite handling.
 
     Struct-member accesses match only when the base, member, table offset,
     affine map metadata, and translated affine operands match. Omitted
