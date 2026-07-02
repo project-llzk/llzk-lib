@@ -55,4 +55,11 @@ void NonDetOp::getCanonicalizationPatterns(RewritePatternSet &results, MLIRConte
 
 void AuxOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) { setNameFn(getResult(), "aux"); }
 
+LogicalResult AuxOp::verify() {
+  if (!llvm::isa<felt::FeltType>(getResult().getType())) {
+    return emitOpError("result #0 must be finite field element");
+  }
+  return success();
+}
+
 } // namespace llzk
