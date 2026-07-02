@@ -30,7 +30,7 @@ inline static bool walkContainsMatch(R &root, llvm::function_ref<bool(MatchType)
 ///
 /// Traversal stops at the first instance of type `MatchType`.
 template <typename MatchType, typename R> inline static bool walkContains(R &root) {
-  return root.walk([](MatchType t) { return mlir::WalkResult::interrupt(); }).wasInterrupted();
+  return root.walk([](MatchType) { return mlir::WalkResult::interrupt(); }).wasInterrupted();
 }
 
 /// Collect all walked operations of type `MatchType` rooted at `root` into a

@@ -337,7 +337,7 @@ public:
     const LocalMemberReplacementMap &idToName =
         repMapRef.at(tgtStructDef->get()).at(op.getMemberNameAttr().getAttr());
     // Split the aggregate member into a series of scalar member ops.
-    for (auto [id, newMember] : idToName) {
+    for (const auto &[id, newMember] : idToName) {
       ImplClass::forId(op.getLoc(), prefixResult, id, newMember, adaptor, rewriter);
     }
     if constexpr (requires { ImplClass::finalize(op, prefixResult, adaptor, rewriter); }) {

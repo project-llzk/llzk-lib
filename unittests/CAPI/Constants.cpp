@@ -17,4 +17,6 @@ TEST(LLZKConstants, HaveCorrectValues) {
   EXPECT_EQ(strcmp(LLZK_FUNC_NAME_PRODUCT, "product"), 0);
   EXPECT_EQ(strcmp(LLZK_LANG_ATTR_NAME, "llzk.lang"), 0);
   EXPECT_EQ(strcmp(LLZK_MAIN_ATTR_NAME, "llzk.main"), 0);
+  EXPECT_EQ(strcmp(LLZK_FUNCTION_ARG_NAME_ATTR_NAME, "function.arg_name"), 0);
+  EXPECT_EQ(strcmp(LLZK_FUNCTION_RES_NAME_ATTR_NAME, "function.res_name"), 0);
 }

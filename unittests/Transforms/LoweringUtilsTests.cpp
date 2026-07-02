@@ -45,7 +45,7 @@ TEST_F(LoweringUtilsTests, RejectsSingleBlockSuccessorBearingConstrainBody) {
   builder.setInsertionPointToEnd(entryBlock);
   builder.create<function::ReturnOp>(loc);
 
-  EXPECT_TRUE(failed(checkConstrainBodyIsStraightLine(constrainFunc, "test pass")));
+  EXPECT_TRUE(failed(checkFuncBodyIsStraightLine(constrainFunc, "test pass")));
 }
 
 } // namespace

@@ -37,7 +37,7 @@ ForbiddenInfluenceAnalyzer::AnalysisFrame::AnalysisFrame(
     ForbiddenInfluenceAnalyzer &parentAnalyzer, CallableOpInterface callableOp,
     llvm::ArrayRef<InfluenceInfo> argInfluenceInfos, InfluenceInfo inheritedControl
 )
-    : analyzer(parentAnalyzer), inheritedControlInfluence(inheritedControl) {
+    : analyzer(parentAnalyzer), inheritedControlInfluence(std::move(inheritedControl)) {
   Region *region = callableOp.getCallableRegion();
   assert(region && !region->empty() && "callable must have a body");
   Block &entry = region->front();
@@ -369,7 +369,7 @@ InfluenceInfo ForbiddenInfluenceAnalyzer::analyzeCallableResult(
 
 IncludedContractSummary ForbiddenInfluenceAnalyzer::analyzeIncludedContract(
     ContractOp calleeContract, llvm::ArrayRef<InfluenceInfo> argInfluences,
-    InfluenceInfo inheritedControlInfluence
+    const InfluenceInfo &inheritedControlInfluence
 ) {
   IncludedContractSummaryKey key {
       .contract = calleeContract,
