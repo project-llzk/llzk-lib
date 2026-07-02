@@ -298,7 +298,7 @@ LogicalResult emitForbiddenIncludedPreconditions(
 
   for (const ForbiddenIncludedPrecondition &failure : failures) {
     if (failure.calleePreconditionLoc) {
-      diag.attachNote(*failure.calleePreconditionLoc) << "included precondition triggered here";
+      diag.attachNote(failure.calleePreconditionLoc) << "included precondition triggered here";
     }
     for (Location sourceLoc : failure.sourceLocs) {
       diag.attachNote(sourceLoc) << "forbidden struct member value originates here";

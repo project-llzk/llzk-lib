@@ -1899,7 +1899,7 @@ LogicalResult StructIntervals::computeIntervals(
           }
 
           std::optional<UnreducedInterval> childUnreduced = std::nullopt;
-          if (auto *childUnreducedIt = constrainUnreducedIntervals.find(childRef);
+          if (const auto *childUnreducedIt = constrainUnreducedIntervals.find(childRef);
               childUnreducedIt != constrainUnreducedIntervals.end()) {
             childUnreduced = childUnreducedIt->second;
           }
