@@ -904,32 +904,30 @@ genReadAlongPath(OpBuilder &bldr, Location loc, Value value, ArrayRef<StringAttr
 
   if (ArrayType arrTy = splittablePodArray(valueType)) {
     auto splitArrTy = llvm::cast<ArrayType>(getFlattenedTypeAlongPath(valueType, recordChain));
+    SmallVector<RecordChain> splitIds;
+    SmallVector<Type> splitTypes;
+    splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
+    auto *splitIt = llvm::find(splitIds, RecordChain(recordChain));
+    assert(splitIt != splitIds.end() && "record path must name a flattened POD array leaf");
+    size_t splitIdx = std::distance(splitIds.begin(), splitIt);
+
+    SmallVector<Value> leafArrays;
+    if (tryCollectDirectSplitPodArrayLeafValues(value, arrTy, splitTypes, leafArrays)) {
+      return leafArrays[splitIdx];
+    }
+
+    Value strippedValue = peelUnifiableCasts(value);
+    if (strippedValue.getDefiningOp<ReadPodOp>()) {
+      auto splitLeafReads =
+          bldr.create<UnrealizedConversionCastOp>(loc, TypeRange(splitTypes), strippedValue);
+      return splitLeafReads.getResult(splitIdx);
+    }
 
     if (isFreshUnwrittenPodArrayRead(value)) {
       return createWritableArrayValue(bldr, loc, splitArrTy);
     }
 
     if (!arrTy.hasStaticShape()) {
-      SmallVector<RecordChain> splitIds;
-      SmallVector<Type> splitTypes;
-      splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
-
-      SmallVector<Value> leafArrays;
-      if (tryCollectDirectSplitPodArrayLeafValues(value, arrTy, splitTypes, leafArrays)) {
-        auto *it = llvm::find(splitIds, RecordChain(recordChain));
-        assert(it != splitIds.end() && "record path must name a flattened POD array leaf");
-        return leafArrays[std::distance(splitIds.begin(), it)];
-      }
-
-      Value strippedValue = peelUnifiableCasts(value);
-      if (strippedValue.getDefiningOp<ReadPodOp>()) {
-        auto splitLeafReads =
-            bldr.create<UnrealizedConversionCastOp>(loc, TypeRange(splitTypes), strippedValue);
-        auto *it = llvm::find(splitIds, RecordChain(recordChain));
-        assert(it != splitIds.end() && "record path must name a flattened POD array leaf");
-        return splitLeafReads.getResult(std::distance(splitIds.begin(), it));
-      }
-
       llvm_unreachable(
           "non-static nested array-of-POD scalarization requires split-array backing or an "
           "uninitialized pod field"
@@ -939,7 +937,7 @@ genReadAlongPath(OpBuilder &bldr, Location loc, Value value, ArrayRef<StringAttr
     auto subIndices = arrTy.getSubelementIndices();
     assert(subIndices && "static-shape arrays must provide subelement indices");
 
-    Value splitArray = bldr.create<CreateArrayOp>(loc, splitArrTy);
+    Value splitArray = createWritableArrayValue(bldr, loc, splitArrTy);
     for (ArrayAttr index : *subIndices) {
       Value element = genArrayRead(bldr, loc, value, index);
       Value leafValue = genReadAlongPath(bldr, loc, element, recordChain);

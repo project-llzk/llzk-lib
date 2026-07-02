@@ -55,3 +55,31 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_3]] : !array.type<2,#[[$M]] x index>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+#inner = affine_map<()[s0] -> (s0 + 1)>
+!Leaf = !array.type<#inner x index>
+!Elem = !pod.type<[@vals: !Leaf]>
+!ElemArray = !array.type<2 x !Elem>
+!Outer = !pod.type<[@items: !ElemArray]>
+module attributes {llzk.lang} {
+  function.def @sink(%arr: !ElemArray) {
+    function.return
+  }
+
+  function.def @source(%p: !Outer) {
+    %items = pod.read %p[@items] : !Outer, !ElemArray
+    function.call @sink(%items) : (!ElemArray) -> ()
+    function.return
+  }
+}
+// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0 + 1)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @sink(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2,#[[$M]] x index>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @source(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2,#[[$M]] x index>) {
+// CHECK-NEXT:      function.call @sink(%[[VAL_1]]) : (!array.type<2,#[[$M]] x index>) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
