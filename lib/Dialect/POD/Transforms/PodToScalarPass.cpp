@@ -741,6 +741,50 @@ static bool tryCollectDirectSplitPodArrayLeafValues(
   return false;
 }
 
+/// Return whether the read is preceded by a write to the same pod record within its block.
+static bool hasEarlierWriteInBlock(ReadPodOp readOp) {
+  Value podRef = readOp.getPodRef();
+  StringAttr recordName = readOp.getRecordNameAttr();
+
+  for (Operation &op : *readOp->getBlock()) {
+    if (&op == readOp.getOperation()) {
+      return false;
+    }
+
+    if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
+      if (isSamePodRecord(writeOp, podRef, recordName)) {
+        return true;
+      }
+    } else if (hasNestedWriteToRecord(op, podRef, recordName)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/// Return `true` iff `readOp` names a fresh pod record that has not been initialized or written.
+static bool isFreshUnwrittenPodRead(ReadPodOp readOp) {
+  NewPodOp newPod = readOp.getPodRef().getDefiningOp<NewPodOp>();
+  if (!newPod) {
+    return false;
+  }
+  auto isReadOpRecordName = [&readOp](Attribute attr) {
+    return attr == readOp.getRecordNameAttr();
+  };
+  return llvm::none_of(newPod.getInitializedRecords(), isReadOpRecordName) &&
+         !hasEarlierWriteInBlock(readOp);
+}
+
+/// Return `true` iff `value` is an unwritten array-of-POD field read from a fresh `pod.new`.
+static bool isFreshUnwrittenPodArrayRead(Value value) {
+  while (auto cast = value.getDefiningOp<UnifiableCastOp>()) {
+    value = cast.getInput();
+  }
+
+  ReadPodOp readOp = value.getDefiningOp<ReadPodOp>();
+  return readOp && splittablePodArray(readOp.getType()) && isFreshUnwrittenPodRead(readOp);
+}
+
 /// Read one flattened POD leaf, including leaves that live inside an array-of-POD record.
 static Value
 genReadAlongPath(OpBuilder &bldr, Location loc, Value value, ArrayRef<StringAttr> recordChain) {
@@ -757,6 +801,10 @@ genReadAlongPath(OpBuilder &bldr, Location loc, Value value, ArrayRef<StringAttr
   if (ArrayType arrTy = splittablePodArray(valueType)) {
     auto splitArrTy = llvm::cast<ArrayType>(getFlattenedTypeAlongPath(valueType, recordChain));
 
+    if (isFreshUnwrittenPodArrayRead(value)) {
+      return createWritableArrayValue(bldr, loc, splitArrTy);
+    }
+
     if (!arrTy.hasStaticShape()) {
       SmallVector<RecordChain> splitIds;
       SmallVector<Type> splitTypes;
@@ -767,13 +815,6 @@ genReadAlongPath(OpBuilder &bldr, Location loc, Value value, ArrayRef<StringAttr
         auto it = llvm::find(splitIds, RecordChain(recordChain));
         assert(it != splitIds.end() && "record path must name a flattened POD array leaf");
         return leafArrays[std::distance(splitIds.begin(), it)];
-      }
-
-      if (ReadPodOp readOp = value.getDefiningOp<ReadPodOp>()) {
-        if (llvm::isa<NewPodOp>(readOp.getPodRef().getDefiningOp()) &&
-            !findNearestForwardableWriteInBlock(readOp)) {
-          return createWritableArrayValue(bldr, loc, splitArrTy);
-        }
       }
 
       llvm_unreachable(
@@ -925,40 +966,6 @@ static bool canResolveVirtualPodRead(ReadPodOp op, const VirtualPodValueMap &vir
   }
   Type recType = llvm::cast<PodType>(op.getPodRefType()).getRecordMap().lookup(op.getRecordName());
   return llvm::isa<PodType>(recType) || !splittablePodArray(recType);
-}
-
-/// Return whether the read is preceded by a write to the same pod record within its block.
-static bool hasEarlierWriteInBlock(ReadPodOp readOp) {
-  Value podRef = readOp.getPodRef();
-  StringAttr recordName = readOp.getRecordNameAttr();
-
-  for (Operation &op : *readOp->getBlock()) {
-    if (&op == readOp.getOperation()) {
-      return false;
-    }
-
-    if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
-      if (isSamePodRecord(writeOp, podRef, recordName)) {
-        return true;
-      }
-    } else if (hasNestedWriteToRecord(op, podRef, recordName)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-/// Return `true` iff `readOp` names a fresh pod record that has not been initialized or written.
-static bool isFreshUnwrittenPodRead(ReadPodOp readOp) {
-  NewPodOp newPod = readOp.getPodRef().getDefiningOp<NewPodOp>();
-  if (!newPod) {
-    return false;
-  }
-  auto isReadOpRecordName = [&readOp](Attribute attr) {
-    return attr == readOp.getRecordNameAttr();
-  };
-  return llvm::none_of(newPod.getInitializedRecords(), isReadOpRecordName) &&
-         !hasEarlierWriteInBlock(readOp);
 }
 
 /// Return `true` iff step 2 should defer splitting this array read until POD-aware rewriting.
