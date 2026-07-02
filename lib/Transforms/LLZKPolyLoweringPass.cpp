@@ -479,8 +479,8 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       unsigned degree = getDegree(value, degreeMemo);
       if (degree > maxDegree) {
         operand.set(lowerExpression(
-            value, structDef, constrainFunc, operand.getOwner(), dominanceInfo,
-            degreeMemo, rewrites, auxAssignments
+            value, structDef, constrainFunc, operand.getOwner(), dominanceInfo, degreeMemo,
+            rewrites, auxAssignments
         ));
       }
       return;
@@ -489,8 +489,8 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     if (auto arrayOp = value.getDefiningOp<llzk::array::CreateArrayOp>()) {
       for (OpOperand &elementOperand : arrayOp.getElementsMutable()) {
         lowerContainmentRhsValue(
-            elementOperand, structDef, constrainFunc, dominanceInfo, degreeMemo,
-            rewrites, auxAssignments
+            elementOperand, structDef, constrainFunc, dominanceInfo, degreeMemo, rewrites,
+            auxAssignments
         );
       }
     }
@@ -608,8 +608,8 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       // Lower containment lookup rows.
       constrainFunc.walk([&](EmitContainmentOp containOp) {
         lowerContainmentRhsValue(
-            containOp.getRhsMutable(), structDef, constrainFunc, dominanceInfo,
-            degreeMemo, rewrites, auxAssignments
+            containOp.getRhsMutable(), structDef, constrainFunc, dominanceInfo, degreeMemo,
+            rewrites, auxAssignments
         );
       });
 
