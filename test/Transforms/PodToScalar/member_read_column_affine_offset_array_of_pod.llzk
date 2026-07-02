@@ -1,0 +1,47 @@
+// RUN: llzk-opt -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+
+#map = affine_map<()[s0] -> (s0 - 1)>
+module attributes {llzk.lang} {
+  struct.def @S {
+    struct.member @m : !array.type<2 x !pod.type<[@x: !felt.type, @y: !felt.type]>> {column}
+
+    function.def @compute(%idx: index) -> !struct.type<@S> {
+      %self = struct.new : !struct.type<@S>
+      function.return %self : !struct.type<@S>
+    }
+
+    function.def @constrain(%self: !struct.type<@S>, %idx: index) {
+      %arr = struct.readm %self[@m] {()[%idx]} :
+          !struct.type<@S>, !array.type<2 x !pod.type<[@x: !felt.type, @y: !felt.type]>>
+          {tableOffset = #map}
+      %c0 = arith.constant 0 : index
+      %elt = array.read %arr[%c0] :
+          !array.type<2 x !pod.type<[@x: !felt.type, @y: !felt.type]>>,
+          !pod.type<[@x: !felt.type, @y: !felt.type]>
+      %x = pod.read %elt[@x] : !pod.type<[@x: !felt.type, @y: !felt.type]>, !felt.type
+      %y = pod.read %elt[@y] : !pod.type<[@x: !felt.type, @y: !felt.type]>, !felt.type
+      constrain.eq %x, %y : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0 - 1)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @S {
+// CHECK-NEXT:      struct.member @m_x : !array.type<2 x !felt.type> {column}
+// CHECK-NEXT:      struct.member @m_y : !array.type<2 x !felt.type> {column}
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@S> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@S>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@S>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@S>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@m_x] {(){{\[}}%[[VAL_3]]]} : <@S>, !array.type<2 x !felt.type> {tableOffset = #[[$M]]}
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@m_y] {(){{\[}}%[[VAL_3]]]} : <@S>, !array.type<2 x !felt.type> {tableOffset = #[[$M]]}
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_6]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_6]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_7]], %[[VAL_8]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

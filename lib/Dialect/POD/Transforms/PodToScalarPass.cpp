@@ -2276,12 +2276,32 @@ public:
     SmallVector<Type> splitTypes;
     splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
 
+    SmallVector<Value> mapOperands;
+    std::optional<int32_t> numDimsPerMap;
+    auto mapOperandsOld = adaptor.getMapOperands();
+    if (!mapOperandsOld.empty()) {
+      assert(
+          mapOperandsOld.size() == 1 &&
+          "member.readm should have at most one affine-map operand group"
+      );
+      mapOperands = flattenConvertedValues(mapOperandsOld.front());
+
+      ArrayRef<int32_t> numDimsPerMapOld = op.getNumDimsPerMap();
+      if (!numDimsPerMapOld.empty()) {
+        assert(
+            numDimsPerMapOld.size() == 1 &&
+            "member.readm should have one numDims entry per affine-map group"
+        );
+        numDimsPerMap = numDimsPerMapOld.front();
+      }
+    }
     SmallVector<Value> replacements;
     replacements.reserve(splitIds.size());
     for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
       const MemberInfo &newMember = idToMember.at(id);
       replacements.push_back(rewriter.create<MemberReadOp>(
-          op.getLoc(), splitType, getSingleConvertedValue(adaptor.getComponent()), newMember.first
+          op.getLoc(), splitType, getSingleConvertedValue(adaptor.getComponent()), newMember.first,
+          op.getTableOffset().value_or(nullptr), mapOperands, numDimsPerMap
       ));
     }
     rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
