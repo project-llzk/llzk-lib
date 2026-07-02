@@ -1,0 +1,82 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+
+!Single = !pod.type<[@x: index]>
+module attributes {llzk.lang} {
+  function.def @arg_case(%p: !Single, %new: index) -> index {
+    pod.write %p[@x] = %new : !Single, index
+    %x = pod.read %p[@x] : !Single, index
+    function.return %x : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @arg_case(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      function.return %[[VAL_1]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Single = !pod.type<[@x: index]>
+module attributes {llzk.lang} {
+  function.def @mk(%old: index) -> !Single {
+    %p = pod.new : !Single
+    pod.write %p[@x] = %old : !Single, index
+    function.return %p : !Single
+  }
+
+  function.def @call_case(%old: index, %new: index) -> index {
+    %p = function.call @mk(%old) : (index) -> !Single
+    pod.write %p[@x] = %new : !Single, index
+    %x = pod.read %p[@x] : !Single, index
+    function.return %x : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @mk(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_case(%[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @mk(%[[VAL_1]]) : (index) -> index
+// CHECK-NEXT:      function.return %[[VAL_2]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Single = !pod.type<[@x: index]>
+module attributes {llzk.lang} {
+  struct.def @Box {
+    struct.member @p : !Single
+    struct.member @out : index
+
+    function.def @compute(%old: index, %new: index) -> !struct.type<@Box> {
+      %self = struct.new : !struct.type<@Box>
+      %p = pod.new : !Single
+      pod.write %p[@x] = %old : !Single, index
+      struct.writem %self[@p] = %p : !struct.type<@Box>, !Single
+      %loaded = struct.readm %self[@p] : !struct.type<@Box>, !Single
+      pod.write %loaded[@x] = %new : !Single, index
+      %x = pod.read %loaded[@x] : !Single, index
+      struct.writem %self[@out] = %x : !struct.type<@Box>, index
+      function.return %self : !struct.type<@Box>
+    }
+
+    function.def @constrain(%self: !struct.type<@Box>, %old: index, %new: index) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Box {
+// CHECK-NEXT:      struct.member @p_x : index
+// CHECK-NEXT:      struct.member @out : index
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@Box> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Box>
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@p_x] = %[[VAL_0]] : <@Box>, index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@p_x] : <@Box>, index
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@out] = %[[VAL_1]] : <@Box>, index
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@Box>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Box>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: index, %[[VAL_6:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -176,6 +176,13 @@ static bool hasNestedWriteToRecord(Operation &op, Value podRef, StringAttr recor
   });
 }
 
+/// Return whether `op` contains a nested write to any record of `podRef`.
+static bool hasNestedWriteToPod(Operation &op, Value podRef) {
+  return walkContainsMatch<WritePodOp>(op, [&](WritePodOp writeOp) {
+    return writeOp.getOperation() != &op && writeOp.getPodRef() == podRef;
+  });
+}
+
 /// Return whether `op` contains any read from `podRef.recordName`.
 static bool hasReadFromRecord(Operation &op, Value podRef, StringAttr recordName) {
   return walkContainsMatch<ReadPodOp>(op, [&podRef, &recordName](ReadPodOp readOp) {
@@ -748,21 +755,41 @@ static bool tryCollectDirectSplitPodArrayLeafValues(
   return false;
 }
 
-/// Return whether the read is preceded by a write to the same pod record within its block.
-static bool hasEarlierWriteInBlock(ReadPodOp readOp) {
-  Value podRef = readOp.getPodRef();
-  StringAttr recordName = readOp.getRecordNameAttr();
-
-  for (Operation &op : *readOp->getBlock()) {
-    if (&op == readOp.getOperation()) {
+/// Return whether `op` is preceded in its block by a write to `podRef.recordName`.
+static bool hasEarlierWriteToRecordInBlock(Operation *op, Value podRef, StringAttr recordName) {
+  for (Operation &candidate : *op->getBlock()) {
+    if (&candidate == op) {
       return false;
     }
-
-    if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
+    if (auto writeOp = dyn_cast<WritePodOp>(&candidate)) {
       if (isSamePodRecord(writeOp, podRef, recordName)) {
         return true;
       }
-    } else if (hasNestedWriteToRecord(op, podRef, recordName)) {
+    } else if (hasNestedWriteToRecord(candidate, podRef, recordName)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/// Return whether the read is preceded by a write to the same pod record within its block.
+static bool hasEarlierWriteInBlock(ReadPodOp readOp) {
+  return hasEarlierWriteToRecordInBlock(
+      readOp.getOperation(), readOp.getPodRef(), readOp.getRecordNameAttr()
+  );
+}
+
+/// Return whether `op` is preceded in its block by any write to `podRef`.
+static bool hasEarlierWriteToPodInBlock(Operation *op, Value podRef) {
+  for (Operation &candidate : *op->getBlock()) {
+    if (&candidate == op) {
+      return false;
+    }
+    if (auto writeOp = dyn_cast<WritePodOp>(&candidate)) {
+      if (writeOp.getPodRef() == podRef) {
+        return true;
+      }
+    } else if (hasNestedWriteToPod(candidate, podRef)) {
       return true;
     }
   }
@@ -992,7 +1019,8 @@ materializeVirtualPod(OpBuilder &bldr, NewPodOp pod, const VirtualPodLeafMap &le
 
 /// Return `true` iff a read from a virtual POD can be resolved without materializing it.
 static bool canResolveVirtualPodRead(ReadPodOp op, const VirtualPodValueMap &virtualPods) {
-  if (!lookupVirtualPodLeafMap(op.getPodRef(), virtualPods)) {
+  if (!lookupVirtualPodLeafMap(op.getPodRef(), virtualPods) || hasEarlierWriteInBlock(op) ||
+      findNearestForwardableWriteInBlock(op)) {
     return false;
   }
   Type recType = llvm::cast<PodType>(op.getPodRefType()).getRecordMap().lookup(op.getRecordName());
@@ -1026,11 +1054,13 @@ static SmallVector<std::string> getSplitRecordNameSuffixes(Type type) {
 // add the original operand to the list.
 static void processInputOperand(
     Location loc, Value operand, SmallVector<Value> &newOperands,
-    ConversionPatternRewriter &rewriter, const VirtualPodValueMap *virtualPods = nullptr
+    ConversionPatternRewriter &rewriter, Operation *userOp = nullptr,
+    const VirtualPodValueMap *virtualPods = nullptr
 ) {
   if (PodType pt = splittablePod(operand.getType())) {
     if (virtualPods) {
-      if (const VirtualPodLeafMap *leafValues = lookupVirtualPodLeafMap(operand, *virtualPods)) {
+      if (const VirtualPodLeafMap *leafValues = lookupVirtualPodLeafMap(operand, *virtualPods);
+          leafValues && (!userOp || !hasEarlierWriteToPodInBlock(userOp, operand))) {
         llvm::append_range(
             newOperands, orderedVirtualPodLeafValues(pt, loc, rewriter, *leafValues)
         );
@@ -1054,11 +1084,54 @@ static void processInputOperands(
 ) {
   SmallVector<Value> newOperands;
   for (Value v : operands) {
-    processInputOperand(op->getLoc(), v, newOperands, rewriter, virtualPods);
+    processInputOperand(op->getLoc(), v, newOperands, rewriter, op, virtualPods);
   }
   rewriter.modifyOpInPlace(op, [&outputOpRef, &newOperands]() {
     outputOpRef.assign(ValueRange(newOperands));
   });
+}
+
+/// Update the tracked leaf values for one top-level POD record after a virtual `pod.write`.
+static void updateVirtualPodRecordLeafValues(
+    Location loc, StringAttr recordName, Type recordType, Value recordValue,
+    const VirtualPodValueMap &virtualPods, ConversionPatternRewriter &rewriter,
+    VirtualPodLeafMap &leafValues
+) {
+  SmallVector<StringAttr> prefix {recordName};
+
+  if (PodType nestedPodTy = llvm::dyn_cast<PodType>(recordType)) {
+    if (const VirtualPodLeafMap *nestedLeafValues =
+            lookupVirtualPodLeafMap(recordValue, virtualPods)) {
+      SmallVector<StringAttr> nestedRecordChain;
+      forEachPodLeaf(nestedPodTy, nestedRecordChain, [&](const RecordChain &id, Type) {
+        SmallVector<StringAttr> fullChain(prefix);
+        llvm::append_range(fullChain, id.nameList);
+        leafValues[RecordChain(fullChain)] = nestedLeafValues->at(id);
+      });
+      return;
+    }
+
+    SmallVector<StringAttr> nestedRecordChain;
+    forEachPodLeaf(nestedPodTy, nestedRecordChain, [&](const RecordChain &id, Type) {
+      SmallVector<StringAttr> fullChain(prefix);
+      llvm::append_range(fullChain, id.nameList);
+      leafValues[RecordChain(fullChain)] = genReadAlongPath(rewriter, loc, recordValue, id);
+    });
+    return;
+  }
+
+  if (ArrayType arrTy = splittablePodArray(recordType)) {
+    auto elemPodTy = llvm::cast<PodType>(arrTy.getElementType());
+    SmallVector<StringAttr> nestedRecordChain;
+    forEachPodLeaf(elemPodTy, nestedRecordChain, [&](const RecordChain &id, Type) {
+      SmallVector<StringAttr> fullChain(prefix);
+      llvm::append_range(fullChain, id.nameList);
+      leafValues[RecordChain(fullChain)] = genReadAlongPath(rewriter, loc, recordValue, id);
+    });
+    return;
+  }
+
+  leafValues[RecordChain(prefix)] = castValueToTypeIfNeeded(rewriter, loc, recordValue, recordType);
 }
 
 /// Register the dialects and operations that remain legal across the conversion-based stages.
@@ -2245,7 +2318,9 @@ public:
     for (Value element : adaptor.getElements()) {
       SmallVector<Value> flattenedValues;
       if (splittablePod(element.getType())) {
-        processInputOperand(op.getLoc(), element, flattenedValues, rewriter, &virtualPods);
+        processInputOperand(
+            op.getLoc(), element, flattenedValues, rewriter, op.getOperation(), &virtualPods
+        );
       } else {
         flattenedValues.push_back(element);
       }
@@ -2513,7 +2588,9 @@ public:
     const LocalMemberReplacementMap &idToMember =
         repMapRef.at(tgtStructDef->get()).at(op.getMemberNameAttr().getAttr());
     const VirtualPodLeafMap *virtualLeafValues =
-        lookupVirtualPodLeafMap(adaptor.getVal(), virtualPods);
+        !hasEarlierWriteToPodInBlock(op.getOperation(), adaptor.getVal())
+            ? lookupVirtualPodLeafMap(adaptor.getVal(), virtualPods)
+            : nullptr;
 
     for (const auto &[id, newMember] : idToMember) {
       Value scalarValue = virtualLeafValues
@@ -2601,26 +2678,28 @@ static bool tryCollectReadPodSplitPodArrayLeafValues(
     ReadPodOp readOp, ArrayType arrTy, ArrayRef<RecordChain> splitIds, ArrayRef<Type> splitTypes,
     const VirtualPodValueMap &virtualPods, SmallVectorImpl<Value> &leafArrays
 ) {
-  if (const VirtualPodLeafMap *podLeafValues =
-          lookupVirtualPodLeafMap(readOp.getPodRef(), virtualPods)) {
-    leafArrays.reserve(splitIds.size());
-    for (const RecordChain &id : splitIds) {
-      SmallVector<StringAttr> fullChain {readOp.getRecordNameAttr()};
-      llvm::append_range(fullChain, id.nameList);
-      auto it = podLeafValues->find(RecordChain(fullChain));
-      if (it == podLeafValues->end() ||
-          !typesUnify(it->second.getType(), getFlattenedTypeAlongPath(arrTy, id.nameList))) {
-        return false;
-      }
-      leafArrays.push_back(it->second);
-    }
-    return true;
-  }
-
   if (WritePodOp writeOp = findNearestForwardableWriteInBlock(readOp)) {
     return tryCollectMaterializedSplitPodArrayLeafValues(
         writeOp.getValue(), arrTy, splitTypes, leafArrays
     );
+  }
+
+  if (!hasEarlierWriteInBlock(readOp)) {
+    if (const VirtualPodLeafMap *podLeafValues =
+            lookupVirtualPodLeafMap(readOp.getPodRef(), virtualPods)) {
+      leafArrays.reserve(splitIds.size());
+      for (const RecordChain &id : splitIds) {
+        SmallVector<StringAttr> fullChain {readOp.getRecordNameAttr()};
+        llvm::append_range(fullChain, id.nameList);
+        auto it = podLeafValues->find(RecordChain(fullChain));
+        if (it == podLeafValues->end() ||
+            !typesUnify(it->second.getType(), getFlattenedTypeAlongPath(arrTy, id.nameList))) {
+          return false;
+        }
+        leafArrays.push_back(it->second);
+      }
+      return true;
+    }
   }
 
   return false;
@@ -2847,6 +2926,34 @@ public:
   }
 };
 
+/// Update virtual POD leaf storage in response to `pod.write` without materializing the aggregate.
+class ResolveVirtualPodWriteOp : public OpConversionPattern<WritePodOp> {
+  VirtualPodValueMap &virtualPods;
+
+public:
+  ResolveVirtualPodWriteOp(MLIRContext *ctx, VirtualPodValueMap &virtualPodMap)
+      : OpConversionPattern<WritePodOp>(ctx), virtualPods(virtualPodMap) {}
+
+  LogicalResult matchAndRewrite(
+      WritePodOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    auto it = virtualPods.find(adaptor.getPodRef());
+    if (it == virtualPods.end()) {
+      return failure();
+    }
+
+    Type recordType =
+        llvm::cast<PodType>(op.getPodRefType()).getRecordMap().lookup(op.getRecordName());
+    assert(recordType && "record must exist in POD type");
+    updateVirtualPodRecordLeafValues(
+        op.getLoc(), op.getRecordNameAttr(), recordType, adaptor.getValue(), virtualPods, rewriter,
+        it->second
+    );
+    rewriter.eraseOp(op);
+    return success();
+  }
+};
+
 /// Resolve reads from a virtual POD placeholder without materializing the whole aggregate.
 ///
 /// This pattern answers `pod.read` directly from virtual leaf storage, rebuilding nested POD
@@ -2861,6 +2968,10 @@ public:
   LogicalResult matchAndRewrite(
       ReadPodOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
+    if (hasEarlierWriteInBlock(op) || findNearestForwardableWriteInBlock(op)) {
+      return failure();
+    }
+
     const VirtualPodLeafMap *leafValues = lookupVirtualPodLeafMap(adaptor.getPodRef(), virtualPods);
     if (!leafValues) {
       return failure();
@@ -2916,7 +3027,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   );
   patterns.add<ResolvePodReadBackedArrayReadOp>(ctx, virtualPods, deferredPodArrays);
   patterns.add<ResolveDeferredSplitPodArrayCastOp>(ctx, virtualPods, deferredPodArrays);
-  patterns.add<ResolveVirtualPodReadOp>(ctx, virtualPods);
+  patterns.add<ResolveVirtualPodWriteOp, ResolveVirtualPodReadOp>(ctx, virtualPods);
 
   ConversionTarget target(*ctx);
   baseTargetSetup(target);
@@ -2927,6 +3038,9 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   target.addDynamicallyLegalOp<CallOp>(SplitPodInCallOp::legal);
   target.addDynamicallyLegalOp<MemberWriteOp>(SplitPodInMemberWriteOp::legal);
   target.addDynamicallyLegalOp<MemberReadOp>(SplitPodInMemberReadOp::legal);
+  target.addDynamicallyLegalOp<WritePodOp>([&virtualPods](WritePodOp op) {
+    return !lookupVirtualPodLeafMap(op.getPodRef(), virtualPods);
+  });
   target.addDynamicallyLegalOp<ReadArrayOp>([&virtualPods](ReadArrayOp op) {
     return !ResolvePodReadBackedArrayReadOp::canResolve(op, virtualPods);
   });
