@@ -1,5 +1,6 @@
 var NAVTREEINDEX81 =
 {
+"dir_bea58845932c67eea4be1c8906b26c72.html":[13,0,0,0,0,2,2,0],
 "dir_bf1c9d5f0a4fbcc96c8bd057e52371fc.html":[13,0,0,0,0,2,15],
 "dir_c02e2f89181cb759595c63d15e2688c5.html":[13,0,0,0,0,2,13],
 "dir_c2490ce7b8342dca046463bb1b105ace.html":[13,0,0,0,0,2,4,0],
@@ -248,6 +249,5 @@ var NAVTREEINDEX81 =
 "llzk-lsp-server_8cpp.html":[13,0,4,1,0],
 "llzk-lsp-server_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627":[13,0,4,1,0,0],
 "llzk-lsp-server_8cpp_source.html":[13,0,4,1,0],
-"llzk-opt_8cpp.html":[13,0,4,2,0],
-"llzk-opt_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627":[13,0,4,2,0,0]
+"llzk-opt_8cpp.html":[13,0,4,2,0]
 };

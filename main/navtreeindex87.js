@@ -1,5 +1,6 @@
 var NAVTREEINDEX87 =
 {
+"structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html":[12,0,0,14],
 "structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html#a20621aefb1d2c00057fd71d7fcf46cf7":[10,0,3,14,3],
 "structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html#a20621aefb1d2c00057fd71d7fcf46cf7":[12,0,0,14,3],
 "structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html#a7a3ee05fb27865239d3f8152846cf731":[10,0,3,14,2],
@@ -248,6 +249,5 @@ var NAVTREEINDEX87 =
 "structllzk_1_1IntervalAnalysisContext.html#af4997bb2fdf24da82fc65a1b93c1f95a":[12,0,1,52,3],
 "structllzk_1_1IntervalAnalysisPrinterPassOptions.html":[10,0,4,58],
 "structllzk_1_1IntervalAnalysisPrinterPassOptions.html":[12,0,1,55],
-"structllzk_1_1IntervalAnalysisPrinterPassOptions.html#a0003e75d56345bc46505755b3b8cbbd6":[10,0,4,58,6],
-"structllzk_1_1IntervalAnalysisPrinterPassOptions.html#a0003e75d56345bc46505755b3b8cbbd6":[12,0,1,55,6]
+"structllzk_1_1IntervalAnalysisPrinterPassOptions.html#a0003e75d56345bc46505755b3b8cbbd6":[10,0,4,58,6]
 };

@@ -1,5 +1,6 @@
 var NAVTREEINDEX5 =
 {
+"Felt_2IR_2Ops_8capi_8h_8inc.html#a67bc3c2777860741efa3dfb1fe316c04":[13,0,0,0,0,2,4,0,11,29],
 "Felt_2IR_2Ops_8capi_8h_8inc.html#a685607a300dcf5b24a1b920329f78b98":[13,0,0,0,0,2,4,0,11,41],
 "Felt_2IR_2Ops_8capi_8h_8inc.html#a6a5e345c3eacdc7af3f0491f984482fa":[13,0,0,0,0,2,4,0,11,14],
 "Felt_2IR_2Ops_8capi_8h_8inc.html#a6e2d64e9228c79bb384e45a911032da0":[13,0,0,0,0,2,4,0,11,23],
@@ -248,6 +249,5 @@ var NAVTREEINDEX5 =
 "Felt_2IR_2Types_8td_source.html":[13,0,2,0,2,4,0,8],
 "Felt_8cpp.html":[13,0,3,2,0,4],
 "Felt_8cpp.html#a0aca9081ea41fe4def8375e804695bf3":[13,0,3,2,0,4,1],
-"Felt_8cpp.html#a12867e32713261c0814f5ae885d9e0fd":[13,0,3,2,0,4,12],
-"Felt_8cpp.html#a3e697c3166d5e562e89103fd13b02ded":[13,0,3,2,0,4,7]
+"Felt_8cpp.html#a12867e32713261c0814f5ae885d9e0fd":[13,0,3,2,0,4,12]
 };
