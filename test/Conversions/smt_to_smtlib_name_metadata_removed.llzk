@@ -1,4 +1,5 @@
 // RUN: llzk-opt --smt-to-smtlib -o /dev/null %s | FileCheck %s
+// Purpose: helper names no longer synthesize staged metadata during export.
 
 module {
   func.func @helper_target_part_7(%x: !smt.int) {

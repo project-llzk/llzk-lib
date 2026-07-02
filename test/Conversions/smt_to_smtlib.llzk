@@ -1,4 +1,5 @@
 // RUN: llzk-opt --smt-to-smtlib -o /dev/null %s | FileCheck %s
+// Purpose: baseline pure-helper define-fun emission and basic term lowering.
 
 module {
   func.func @helper(%x: !smt.int, %flag: !smt.bool) -> !smt.int {

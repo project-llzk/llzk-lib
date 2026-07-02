@@ -1,4 +1,5 @@
 // RUN: split-file %s %t
+// Purpose: canonical root-contract validation for module-level smt.solver export.
 // RUN: not llzk-opt --smt-to-smtlib -o /dev/null %t/no-solver.mlir 2>&1 | FileCheck %s --check-prefix=NO-SOLVER
 // RUN: not llzk-opt --smt-to-smtlib -o /dev/null %t/multiple-solvers.mlir 2>&1 | FileCheck %s --check-prefix=MULTI-SOLVER
 // RUN: not llzk-opt --smt-to-smtlib -o /dev/null %t/nested-only.mlir 2>&1 | FileCheck %s --check-prefix=NESTED-ONLY

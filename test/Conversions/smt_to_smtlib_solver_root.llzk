@@ -1,4 +1,5 @@
 // RUN: llzk-opt --smt-to-smtlib -o /dev/null %s | FileCheck %s
+// Purpose: module-level solver-root export with reset and helper re-emission behavior.
 
 module {
   func.func @helper(%x: !smt.int) -> !smt.int {

@@ -1,4 +1,5 @@
 // RUN: llzk-opt --smt-to-smtlib -o /dev/null %s | FileCheck %s
+// Purpose: nested let-sharing for reusable pure helper expressions.
 
 module {
   func.func @square_chain(%x: !smt.int) -> !smt.int {
