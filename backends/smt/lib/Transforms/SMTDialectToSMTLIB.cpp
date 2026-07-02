@@ -66,6 +66,9 @@ static std::string sanitizeSymbol(StringRef name) {
   if (out.empty()) {
     out = "tmp";
   }
+  if (llvm::isDigit(out.front())) {
+    out.insert(out.begin(), '_');
+  }
   return out;
 }
 
@@ -167,15 +170,15 @@ private:
   }
 
   FailureOr<llzk::smt::SolverOp> collectRoot() {
-    ModuleOp rootModule = getEffectiveRootModule();
+    selectedRootModule = getEffectiveRootModule();
     llzk::smt::SolverOp solver;
-    for (Operation &op : rootModule.getBody()->getOperations()) {
+    for (Operation &op : selectedRootModule.getBody()->getOperations()) {
       auto solverOp = dyn_cast<llzk::smt::SolverOp>(op);
       if (!solverOp) {
         continue;
       }
       if (solver) {
-        rootModule.emitError(
+        selectedRootModule.emitError(
             "smt-to-smtlib requires exactly one top-level smt.solver in the root module"
         );
         return failure();
@@ -183,13 +186,17 @@ private:
       solver = solverOp;
     }
     if (!solver) {
-      rootModule.emitError(
+      selectedRootModule.emitError(
           "smt-to-smtlib could not find a top-level smt.solver in the root "
           "module"
       );
       return failure();
     }
     return solver;
+  }
+
+  ModuleOp getSelectedRootModule() {
+    return selectedRootModule ? selectedRootModule : getEffectiveRootModule();
   }
 
   LogicalResult emitRoot(llzk::smt::SolverOp solver, bool emitReset) {
@@ -441,7 +448,7 @@ private:
   }
 
   LogicalResult emitCall(func::CallOp callOp, EvalContext &ctx) {
-    auto callee = module.lookupSymbol<func::FuncOp>(callOp.getCallee());
+    auto callee = getSelectedRootModule().lookupSymbol<func::FuncOp>(callOp.getCallee());
     if (!callee) {
       return callOp.emitOpError("smt-to-smtlib could not resolve callee");
     }
@@ -532,7 +539,7 @@ private:
           helperModes[func.getOperation()] = HelperMode::InlineScript;
           return HelperMode::InlineScript;
         }
-        auto nestedFunc = module.lookupSymbol<func::FuncOp>(callOp.getCallee());
+        auto nestedFunc = getSelectedRootModule().lookupSymbol<func::FuncOp>(callOp.getCallee());
         if (!nestedFunc) {
           callOp.emitOpError("smt-to-smtlib could not resolve callee");
           return failure();
@@ -653,7 +660,7 @@ private:
       return success();
     };
 
-    for (auto helperFunc : module.getOps<func::FuncOp>()) {
+    for (auto helperFunc : getSelectedRootModule().getOps<func::FuncOp>()) {
       auto helperMode = classifyHelperMode(helperFunc);
       if (failed(helperMode)) {
         return failure();
@@ -678,7 +685,7 @@ private:
       if (!callOp || callOp.getNumResults() == 0) {
         continue;
       }
-      auto callee = module.lookupSymbol<func::FuncOp>(callOp.getCallee());
+      auto callee = getSelectedRootModule().lookupSymbol<func::FuncOp>(callOp.getCallee());
       if (!callee) {
         callOp.emitOpError("smt-to-smtlib could not resolve callee");
         return failure();
@@ -793,7 +800,7 @@ private:
       }
       os << ") (\n";
       for (const PureHelperDefinition &definition : definitions) {
-        os << "  (" << definition.bodyExpr << ")\n";
+        os << "  " << definition.bodyExpr << '\n';
       }
       os << "))\n";
     }
@@ -1377,6 +1384,7 @@ private:
   }
 
   ModuleOp module;
+  ModuleOp selectedRootModule;
   llvm::raw_ostream &os;
   unsigned nextTempId = 0;
   unsigned pushDepth = 0;
