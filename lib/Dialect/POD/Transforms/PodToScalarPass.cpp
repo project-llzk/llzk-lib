@@ -1576,9 +1576,61 @@ public:
     if (legal(op)) {
       return failure();
     }
-    SmallVector<Value> newOperands = flattenConvertedValues(adaptor.getOperands());
+    SmallVector<Value> newOperands;
+    for (auto [operand, convertedValues] :
+         llvm::zip_equal(op.getOperands(), adaptor.getOperands())) {
+      collectSplitPodArrayOperandValues(
+          op.getLoc(), operand, convertedValues, newOperands, rewriter
+      );
+    }
     rewriter.replaceOpWithNewOp<ReturnOp>(op, ValueRange(newOperands));
     return success();
+  }
+
+  /// Append the split leaf-array values for one step-2 operand.
+  ///
+  /// When dialect conversion has already produced the parallel leaf arrays, reuse those converted
+  /// values directly. Otherwise derive the split arrays from the original aggregate operand so uses
+  /// like `function.return` can still flatten a raw `pod.read` of an array field.
+  static void collectSplitPodArrayOperandValues(
+      Location loc, Value originalOperand, ValueRange convertedValues,
+      SmallVectorImpl<Value> &newOperands, ConversionPatternRewriter &rewriter
+  ) {
+    ArrayType arrTy = splittablePodArray(originalOperand.getType());
+    if (!arrTy) {
+      llvm::append_range(newOperands, convertedValues);
+      return;
+    }
+
+    SmallVector<RecordChain> splitIds;
+    SmallVector<Type> splitTypes;
+    splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
+
+    auto isDirectAggregateToSplitCast = [&convertedValues, &originalOperand]() {
+      if (convertedValues.empty()) {
+        return false;
+      }
+      auto castOp = convertedValues.front().getDefiningOp<UnrealizedConversionCastOp>();
+      if (!castOp || castOp->getNumOperands() != 1 || castOp.getOperand(0) != originalOperand) {
+        return false;
+      }
+      return llvm::all_of(convertedValues, [&castOp](Value value) {
+        return value.getDefiningOp<UnrealizedConversionCastOp>() == castOp;
+      });
+    };
+
+    if (!isDirectAggregateToSplitCast() && convertedValues.size() == splitTypes.size() &&
+        llvm::all_of(llvm::zip_equal(convertedValues, splitTypes), [](auto pair) {
+      return typesUnify(std::get<0>(pair).getType(), std::get<1>(pair));
+    })) {
+      llvm::append_range(newOperands, convertedValues);
+      return;
+    }
+
+    for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
+      Value splitValue = genReadAlongPath(rewriter, loc, originalOperand, id);
+      newOperands.push_back(castValueToTypeIfNeeded(rewriter, loc, splitValue, splitType));
+    }
   }
 };
 
