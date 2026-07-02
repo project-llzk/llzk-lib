@@ -1,0 +1,26 @@
+// RUN: llzk-opt -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+
+#inner = affine_map<()[s0] -> (s0)>
+!Item = !pod.type<[@x: index]>
+!Outer = !pod.type<[@items: !array.type<#inner x !Item>, @tag: index]>
+!OuterArray = !array.type<2 x !Outer>
+module attributes {llzk.lang} {
+  function.def @write_elem(%arr: !OuterArray, %elem: !Outer, %i: index) -> !OuterArray {
+    array.write %arr[%i] = %elem : !OuterArray, !Outer
+    function.return %arr : !OuterArray
+  }
+}
+// CHECK: #[[$MAP:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @write_elem(
+// CHECK-SAME:    %[[ARR_ITEMS:[0-9a-zA-Z_\.]+]]: !array.type<2,#[[$MAP]] x index>,
+// CHECK-SAME:    %[[ARR_TAG:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>,
+// CHECK-SAME:    %[[ELEM_ITEMS:[0-9a-zA-Z_\.]+]]: !array.type<#[[$MAP]] x index>,
+// CHECK-SAME:    %[[ELEM_TAG:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:    %[[IDX:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) -> (!array.type<2,#[[$MAP]] x index>, !array.type<2 x index>) {
+// CHECK-NEXT:      array.insert %[[ARR_ITEMS]]{{\[}}%[[IDX]]] = %[[ELEM_ITEMS]] : <2,#[[$MAP]] x index>, <#[[$MAP]] x index>
+// CHECK-NEXT:      array.write %[[ARR_TAG]]{{\[}}%[[IDX]]] = %[[ELEM_TAG]] : <2 x index>, index
+// CHECK-NEXT:      function.return %[[ARR_ITEMS]], %[[ARR_TAG]] : !array.type<2,#[[$MAP]] x index>, !array.type<2 x index>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

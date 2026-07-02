@@ -702,6 +702,14 @@ genArrayWrite(OpBuilder &bldr, Location loc, Value arrayRef, ArrayAttr index, Va
   genArrayWrite(bldr, loc, arrayRef, indices, value);
 }
 
+/// Strip compatibility casts introduced while threading POD-derived array values through rewrites.
+static Value peelUnifiableCasts(Value value) {
+  while (auto cast = value.getDefiningOp<UnifiableCastOp>()) {
+    value = cast.getInput();
+  }
+  return value;
+}
+
 /// Collect split leaf arrays that are already available for an aggregate array-of-POD value.
 ///
 /// This peels compatibility casts and forwards through a dominating same-record `pod.write` so
@@ -710,9 +718,7 @@ genArrayWrite(OpBuilder &bldr, Location loc, Value arrayRef, ArrayAttr index, Va
 static bool tryCollectDirectSplitPodArrayLeafValues(
     Value arrayValue, ArrayType arrTy, ArrayRef<Type> splitTypes, SmallVectorImpl<Value> &leafArrays
 ) {
-  while (auto cast = arrayValue.getDefiningOp<UnifiableCastOp>()) {
-    arrayValue = cast.getInput();
-  }
+  arrayValue = peelUnifiableCasts(arrayValue);
 
   if (auto cast = arrayValue.getDefiningOp<UnrealizedConversionCastOp>()) {
     if (cast->getNumResults() != 1 || cast.getResult(0).getType() != arrTy ||
@@ -777,10 +783,7 @@ static bool isFreshUnwrittenPodRead(ReadPodOp readOp) {
 
 /// Return `true` iff `value` is an unwritten array-of-POD field read from a fresh `pod.new`.
 static bool isFreshUnwrittenPodArrayRead(Value value) {
-  while (auto cast = value.getDefiningOp<UnifiableCastOp>()) {
-    value = cast.getInput();
-  }
-
+  value = peelUnifiableCasts(value);
   ReadPodOp readOp = value.getDefiningOp<ReadPodOp>();
   return readOp && splittablePodArray(readOp.getType()) && isFreshUnwrittenPodRead(readOp);
 }
@@ -815,6 +818,15 @@ genReadAlongPath(OpBuilder &bldr, Location loc, Value value, ArrayRef<StringAttr
         auto it = llvm::find(splitIds, RecordChain(recordChain));
         assert(it != splitIds.end() && "record path must name a flattened POD array leaf");
         return leafArrays[std::distance(splitIds.begin(), it)];
+      }
+
+      Value strippedValue = peelUnifiableCasts(value);
+      if (strippedValue.getDefiningOp<ReadPodOp>()) {
+        auto splitLeafReads =
+            bldr.create<UnrealizedConversionCastOp>(loc, TypeRange(splitTypes), strippedValue);
+        auto it = llvm::find(splitIds, RecordChain(recordChain));
+        assert(it != splitIds.end() && "record path must name a flattened POD array leaf");
+        return splitLeafReads.getResult(std::distance(splitIds.begin(), it));
       }
 
       llvm_unreachable(
@@ -942,6 +954,24 @@ static SmallVector<Value> orderedVirtualPodLeafValues(
   }
   );
   return orderedValues;
+}
+
+/// Create a POD-typed placeholder for virtual leaf storage tracked in `leafValues`.
+///
+/// PODs that embed affine-map-parameterized arrays cannot always be represented by a bare
+/// `pod.new` at this stage because there may be no op-local instantiation operands available.
+/// Use an unrealized cast from the ordered leaf values for those cases; later rewrites consult
+/// `virtualPods` directly, and only concrete `pod.new` placeholders require materialization.
+static Value createVirtualPodPlaceholder(
+    OpBuilder &bldr, Location loc, PodType podTy, const VirtualPodLeafMap &leafValues
+) {
+  if (!hasAffineMapAttr(podTy)) {
+    return bldr.create<NewPodOp>(loc, podTy);
+  }
+
+  SmallVector<Value> orderedValues = orderedVirtualPodLeafValues(podTy, loc, bldr, leafValues);
+  return bldr.create<UnrealizedConversionCastOp>(loc, TypeRange {podTy}, orderedValues)
+      .getResult(0);
 }
 
 /// Materialize the tracked contents of a virtual POD into concrete `pod.write` operations.
@@ -1971,6 +2001,7 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
 
   ConversionTarget target(*ctx);
   baseTargetSetup(target);
+  target.addLegalOp<UnrealizedConversionCastOp>();
   target.addDynamicallyLegalOp<NonDetOp>(SplitPodArrayNonDetOp::legal);
   target.addDynamicallyLegalOp<CreateArrayOp>(SplitPodArrayCreateArrayOp::legal);
   target.addDynamicallyLegalOp<ReadArrayOp>(SplitPodArrayReadArrayOp::legal);
@@ -2162,19 +2193,21 @@ public:
           Value oldV = entryBlock.getArgument(i);
           if (PodType pt = splittablePod(oldV.getType())) {
             Location loc = oldV.getLoc();
-            auto newPod = rewriter.create<NewPodOp>(loc, pt);
-            rewriter.replaceAllUsesWith(oldV, newPod);
-            // Remove the argument from the block
+            VirtualPodLeafMap leafValues;
+            SmallVector<StringAttr> recordChain;
+            unsigned nextArgIdx = i + 1;
+            forEachPodLeaf(pt, recordChain, [&](const RecordChain &id, Type leafType) {
+              BlockArgument newArg = entryBlock.insertArgument(nextArgIdx, leafType, loc);
+              leafValues[id] = newArg;
+              ++nextArgIdx;
+            });
+
+            Value virtualPod = createVirtualPodPlaceholder(rewriter, loc, pt, leafValues);
+            rewriter.replaceAllUsesWith(oldV, virtualPod);
             entryBlock.eraseArgument(i);
 
-            DenseMap<RecordChain, Value> leafValues;
-            SmallVector<StringAttr> recordChain;
-            forEachPodLeaf(pt, recordChain, [&](const RecordChain &id, Type leafType) {
-              BlockArgument newArg = entryBlock.insertArgument(i, leafType, loc);
-              leafValues[id] = newArg;
-              ++i;
-            });
-            virtualPods[newPod] = std::move(leafValues);
+            i += leafValues.size();
+            virtualPods[virtualPod] = std::move(leafValues);
           } else {
             ++i;
           }
@@ -2240,15 +2273,15 @@ static CallOp newCallOpWithSplitResults(
   for (Value oldVal : oldResults) {
     if (PodType pt = splittablePod(oldVal.getType())) {
       Location loc = oldVal.getLoc();
-      DenseMap<RecordChain, Value> leafValues;
+      VirtualPodLeafMap leafValues;
       SmallVector<StringAttr> recordChain;
       forEachPodLeaf(pt, recordChain, [&leafValues, &newResults](const RecordChain &id, Type) {
         leafValues[id] = *newResults;
         ++newResults;
       });
-      NewPodOp newPod = rewriter.create<NewPodOp>(loc, pt);
-      virtualPods[newPod] = std::move(leafValues);
-      rewriter.replaceAllUsesWith(oldVal, newPod);
+      Value virtualPod = createVirtualPodPlaceholder(rewriter, loc, pt, leafValues);
+      virtualPods[virtualPod] = std::move(leafValues);
+      rewriter.replaceAllUsesWith(oldVal, virtualPod);
     } else {
       rewriter.replaceAllUsesWith(oldVal, *newResults);
       newResults++;
@@ -2366,9 +2399,10 @@ public:
       );
     }
 
-    NewPodOp pod = rewriter.create<NewPodOp>(op.getLoc(), llvm::cast<PodType>(op.getType()));
-    virtualPods[pod] = std::move(leafValues);
-    rewriter.replaceOp(op, pod);
+    PodType podTy = llvm::cast<PodType>(op.getType());
+    Value virtualPod = createVirtualPodPlaceholder(rewriter, op.getLoc(), podTy, leafValues);
+    virtualPods[virtualPod] = std::move(leafValues);
+    rewriter.replaceOp(op, virtualPod);
   }
 };
 
@@ -2428,6 +2462,88 @@ static bool tryCollectReadPodSplitPodArrayLeafValues(
   return false;
 }
 
+/// Materialize or recover split leaf arrays for a dynamic array-of-POD produced by `pod.read`.
+static bool resolveReadPodSplitPodArrayLeafValues(
+    ReadPodOp readOp, ArrayType arrTy, ArrayRef<RecordChain> splitIds, ArrayRef<Type> splitTypes,
+    const VirtualPodValueMap &virtualPods, DeferredPodArrayLeafMap &deferredPodArrays, Location loc,
+    OpBuilder &bldr, SmallVectorImpl<Value> &leafArrays
+) {
+  if (tryCollectReadPodSplitPodArrayLeafValues(
+          readOp, arrTy, splitIds, splitTypes, virtualPods, leafArrays
+      )) {
+    return true;
+  }
+
+  if (!isFreshUnwrittenPodRead(readOp)) {
+    return false;
+  }
+
+  // Reuse one synthetic split-array backing per deferred field read so repeated users of the same
+  // aggregate value continue to observe the same unwritten leaf storage.
+  auto [it, inserted] = deferredPodArrays.try_emplace(readOp.getResult());
+  leafArrays.assign(it->second.begin(), it->second.end());
+  if (inserted) {
+    OpBuilder::InsertionGuard guard(bldr);
+    bldr.setInsertionPointAfter(readOp);
+    leafArrays.reserve(splitTypes.size());
+    for (Type splitType : splitTypes) {
+      leafArrays.push_back(createWritableArrayValue(bldr, loc, llvm::cast<ArrayType>(splitType)));
+    }
+    it->second.assign(leafArrays.begin(), leafArrays.end());
+  } else {
+    assert(
+        leafArrays.size() == splitTypes.size() &&
+        "cached split POD arrays must match the rewritten read arity"
+    );
+  }
+
+  return true;
+}
+
+/// Erase a resolved deferred field-read chain once both the read and its placeholder pod vanish.
+static void eraseDeadDeferredFieldReadChain(ReadPodOp readOp, PatternRewriter &rewriter) {
+  if (!readOp.getResult().use_empty()) {
+    return;
+  }
+
+  Value podRef = readOp.getPodRef();
+  rewriter.eraseOp(readOp);
+  if (podRef.use_empty()) {
+    if (auto cast = podRef.getDefiningOp<UnrealizedConversionCastOp>()) {
+      if (cast->getNumResults() == 1 && cast.getResult(0) == podRef) {
+        rewriter.eraseOp(cast);
+      }
+    }
+  }
+}
+
+/// Return `true` iff `op` is a deferred split placeholder for one array-of-POD aggregate value.
+static bool getDeferredSplitPodArrayCastInfo(
+    UnrealizedConversionCastOp op, ArrayType &arrTy, SmallVector<RecordChain> &splitIds,
+    SmallVectorImpl<Type> &splitTypes
+) {
+  if (op->getNumOperands() != 1) {
+    return false;
+  }
+
+  arrTy = splittablePodArray(op.getOperand(0).getType());
+  if (!arrTy) {
+    return false;
+  }
+
+  splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
+  if (op->getNumResults() != splitTypes.size()) {
+    return false;
+  }
+
+  for (auto [result, splitType] : llvm::zip_equal(op.getResults(), splitTypes)) {
+    if (result.getType() != splitType) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /// Resolve deferred `array.read` from `pod.read`-produced array-of-POD values.
 ///
 /// When step 2 defers a read because the array-of-POD came from a POD record, this pattern
@@ -2478,44 +2594,91 @@ public:
     splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
 
     SmallVector<Value> splitLeafArrays;
-    if (!tryCollectReadPodSplitPodArrayLeafValues(
-            fieldRead, arrTy, splitIds, splitTypes, virtualPods, splitLeafArrays
+    if (!resolveReadPodSplitPodArrayLeafValues(
+            fieldRead, arrTy, splitIds, splitTypes, virtualPods, deferredPodArrays, op.getLoc(),
+            rewriter, splitLeafArrays
         )) {
-      if (!isFreshUnwrittenPodRead(fieldRead)) {
-        return failure();
-      }
-
-      // Reuse one synthetic split-array backing per deferred field read so repeated element reads
-      // from the same aggregate value see the same unwritten leaf storage.
-      auto [it, inserted] = deferredPodArrays.try_emplace(fieldRead.getResult());
-      splitLeafArrays.assign(it->second.begin(), it->second.end());
-      if (inserted) {
-        OpBuilder::InsertionGuard guard(rewriter);
-        rewriter.setInsertionPointAfter(fieldRead);
-        splitLeafArrays.reserve(splitTypes.size());
-        for (Type splitType : splitTypes) {
-          splitLeafArrays.push_back(
-              createWritableArrayValue(rewriter, op.getLoc(), llvm::cast<ArrayType>(splitType))
-          );
-        }
-        it->second = splitLeafArrays;
-      } else {
-        assert(
-            splitLeafArrays.size() == splitTypes.size() &&
-            "cached split POD arrays must match the rewritten read arity"
-        );
-      }
+      return failure();
     }
 
     SmallVector<Value> indices(adaptor.getIndices().begin(), adaptor.getIndices().end());
-    DenseMap<RecordChain, Value> leafValues;
+    VirtualPodLeafMap leafValues;
     for (auto [id, leafArray] : llvm::zip_equal(splitIds, splitLeafArrays)) {
       leafValues[id] = genArrayRead(rewriter, op.getLoc(), leafArray, indices);
     }
 
-    NewPodOp pod = rewriter.create<NewPodOp>(op.getLoc(), podTy);
-    virtualPods[pod] = std::move(leafValues);
-    rewriter.replaceOp(op, pod);
+    Value virtualPod = createVirtualPodPlaceholder(rewriter, op.getLoc(), podTy, leafValues);
+    virtualPods[virtualPod] = std::move(leafValues);
+    rewriter.replaceOp(op, virtualPod);
+    eraseDeadDeferredFieldReadChain(fieldRead, rewriter);
+    return success();
+  }
+};
+
+/// Resolve deferred split-array placeholders created while flattening direct POD operands.
+///
+/// Step 2 may need one specific split leaf array from a dynamic array-of-POD field before step 3
+/// has converted the surrounding POD value into virtual leaf storage. In that case
+/// `genReadAlongPath` leaves behind a `builtin.unrealized_conversion_cast` from the aggregate field
+/// read to all split leaf arrays, and this pattern resolves that placeholder once the backing leaf
+/// arrays become available.
+class ResolveDeferredSplitPodArrayCastOp : public OpConversionPattern<UnrealizedConversionCastOp> {
+  VirtualPodValueMap &virtualPods;
+  DeferredPodArrayLeafMap &deferredPodArrays;
+
+public:
+  ResolveDeferredSplitPodArrayCastOp(
+      MLIRContext *ctx, VirtualPodValueMap &virtualPodMap,
+      DeferredPodArrayLeafMap &deferredPodArrayMap
+  )
+      : OpConversionPattern<UnrealizedConversionCastOp>(ctx), virtualPods(virtualPodMap),
+        deferredPodArrays(deferredPodArrayMap) {}
+
+  static bool canResolve(UnrealizedConversionCastOp op, const VirtualPodValueMap &virtualPods) {
+    ArrayType arrTy;
+    SmallVector<RecordChain> splitIds;
+    SmallVector<Type> splitTypes;
+    if (!getDeferredSplitPodArrayCastInfo(op, arrTy, splitIds, splitTypes)) {
+      return false;
+    }
+
+    ReadPodOp fieldRead = peelUnifiableCasts(op.getOperand(0)).getDefiningOp<ReadPodOp>();
+    if (!fieldRead) {
+      return false;
+    }
+
+    SmallVector<Value> ignoredLeafArrays;
+    return tryCollectReadPodSplitPodArrayLeafValues(
+               fieldRead, arrTy, splitIds, splitTypes, virtualPods, ignoredLeafArrays
+           ) ||
+           isFreshUnwrittenPodRead(fieldRead);
+  }
+
+  LogicalResult matchAndRewrite(
+      UnrealizedConversionCastOp op, OpAdaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    ArrayType arrTy;
+    SmallVector<RecordChain> splitIds;
+    SmallVector<Type> splitTypes;
+    if (!getDeferredSplitPodArrayCastInfo(op, arrTy, splitIds, splitTypes)) {
+      return failure();
+    }
+
+    ReadPodOp fieldRead = peelUnifiableCasts(op.getOperand(0)).getDefiningOp<ReadPodOp>();
+    if (!fieldRead) {
+      return failure();
+    }
+
+    SmallVector<Value> splitLeafArrays;
+    if (!resolveReadPodSplitPodArrayLeafValues(
+            fieldRead, arrTy, splitIds, splitTypes, virtualPods, deferredPodArrays, op.getLoc(),
+            rewriter, splitLeafArrays
+        )) {
+      return failure();
+    }
+
+    rewriter.replaceOp(op, splitLeafArrays);
+    eraseDeadDeferredFieldReadChain(fieldRead, rewriter);
     return success();
   }
 };
@@ -2552,9 +2715,10 @@ public:
         llvm::append_range(fullChain, id.nameList);
         nestedLeafValues[id] = leafValues->at(RecordChain(fullChain));
       });
-      NewPodOp pod = rewriter.create<NewPodOp>(op.getLoc(), nestedPodTy);
-      virtualPods[pod] = std::move(nestedLeafValues);
-      rewriter.replaceOp(op, pod);
+      Value virtualPod =
+          createVirtualPodPlaceholder(rewriter, op.getLoc(), nestedPodTy, nestedLeafValues);
+      virtualPods[virtualPod] = std::move(nestedLeafValues);
+      rewriter.replaceOp(op, virtualPod);
       return success();
     }
 
@@ -2587,6 +2751,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
       ctx, symTables, memberRepMap, virtualPods
   );
   patterns.add<ResolvePodReadBackedArrayReadOp>(ctx, virtualPods, deferredPodArrays);
+  patterns.add<ResolveDeferredSplitPodArrayCastOp>(ctx, virtualPods, deferredPodArrays);
   patterns.add<ResolveVirtualPodReadOp>(ctx, virtualPods);
 
   ConversionTarget target(*ctx);
@@ -2601,6 +2766,11 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   target.addDynamicallyLegalOp<ReadArrayOp>([&virtualPods](ReadArrayOp op) {
     return !ResolvePodReadBackedArrayReadOp::canResolve(op, virtualPods);
   });
+  target.addDynamicallyLegalOp<UnrealizedConversionCastOp>(
+      [&virtualPods](UnrealizedConversionCastOp op) {
+    return !ResolveDeferredSplitPodArrayCastOp::canResolve(op, virtualPods);
+  }
+  );
   target.addDynamicallyLegalOp<ReadPodOp>([&virtualPods](ReadPodOp op) {
     return !canResolveVirtualPodRead(op, virtualPods);
   });
@@ -2619,6 +2789,39 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
       builder.setInsertionPointAfter(newPod);
       materializeVirtualPod(builder, newPod, leafValues);
     }
+  }
+
+  bool erasedDeadPlaceholderOps = false;
+  do {
+    SmallVector<Operation *> deadPlaceholderOps;
+    modOp->walk<WalkOrder::PostOrder>([&](Operation *op) {
+      if (auto readOp = llvm::dyn_cast<ReadPodOp>(op)) {
+        if (readOp.getResult().use_empty()) {
+          deadPlaceholderOps.push_back(op);
+        }
+        return;
+      }
+
+      if (auto castOp = llvm::dyn_cast<UnrealizedConversionCastOp>(op)) {
+        if (llvm::all_of(castOp.getResults(), [](Value result) { return result.use_empty(); })) {
+          deadPlaceholderOps.push_back(op);
+        }
+      }
+    });
+    for (Operation *op : deadPlaceholderOps) {
+      op->erase();
+    }
+    erasedDeadPlaceholderOps = !deadPlaceholderOps.empty();
+  } while (erasedDeadPlaceholderOps);
+
+  SmallVector<Operation *> deadOps;
+  modOp->walk<WalkOrder::PostOrder>([&](Operation *op) {
+    if (op != modOp.getOperation() && isOpTriviallyDead(op)) {
+      deadOps.push_back(op);
+    }
+  });
+  for (Operation *op : deadOps) {
+    op->erase();
   }
   return success();
 }
