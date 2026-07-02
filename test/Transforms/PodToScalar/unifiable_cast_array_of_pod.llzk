@@ -1,0 +1,31 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+
+#map = affine_map<()[s0] -> (s0)>
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @sink(%arr: !array.type<? x !Pair>) -> index {
+    %c0 = arith.constant 0 : index
+    %len = array.len %arr, %c0 : !array.type<? x !Pair>
+    function.return %len : index
+  }
+
+  function.def @main(%arr: !array.type<#map x !Pair>) -> (!array.type<? x !Pair>, index) {
+    %cast = poly.unifiable_cast %arr : (!array.type<#map x !Pair>) -> !array.type<? x !Pair>
+    %len = function.call @sink(%cast) : (!array.type<? x !Pair>) -> index
+    function.return %cast, %len : !array.type<? x !Pair>, index
+  }
+}
+// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @sink(%[[ARR_X:[0-9a-zA-Z_\.]+]]: !array.type<? x index>, %[[ARR_Y:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type>) -> index {
+// CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_X]], %[[C0]] : <? x index>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main(%[[ARG_X:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>, %[[ARG_Y:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>) -> (!array.type<? x index>, !array.type<? x !felt.type>, index) {
+// CHECK-NEXT:      %[[CAST_X:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[ARG_X]] : (!array.type<#[[$M]] x index>) -> !array.type<? x index>
+// CHECK-NEXT:      %[[CAST_Y:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[ARG_Y]] : (!array.type<#[[$M]] x !felt.type>) -> !array.type<? x !felt.type>
+// CHECK-NEXT:      %[[CALL_LEN:[0-9a-zA-Z_\.]+]] = function.call @sink(%[[CAST_X]], %[[CAST_Y]]) : (!array.type<? x index>, !array.type<? x !felt.type>) -> index
+// CHECK-NEXT:      function.return %[[CAST_X]], %[[CAST_Y]], %[[CALL_LEN]] : !array.type<? x index>, !array.type<? x !felt.type>, index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

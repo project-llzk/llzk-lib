@@ -1635,6 +1635,112 @@ public:
   }
 };
 
+/// Append the split leaf-array values for one step-2 operand.
+///
+/// When dialect conversion has already produced the parallel leaf arrays, reuse those converted
+/// values directly. Otherwise derive the split arrays from the original aggregate operand so users
+/// like `poly.unifiable_cast` and `function.return` can still flatten a raw `pod.read` of an array
+/// field.
+static void collectSplitPodArrayOperandValues(
+    Location loc, Value originalOperand, ValueRange convertedValues,
+    SmallVectorImpl<Value> &newOperands, ConversionPatternRewriter &rewriter
+) {
+  ArrayType arrTy = splittablePodArray(originalOperand.getType());
+  if (!arrTy) {
+    llvm::append_range(newOperands, convertedValues);
+    return;
+  }
+
+  SmallVector<RecordChain> splitIds;
+  SmallVector<Type> splitTypes;
+  splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
+
+  auto isDirectAggregateToSplitCast = [&convertedValues, &originalOperand]() {
+    if (convertedValues.empty()) {
+      return false;
+    }
+    auto castOp = convertedValues.front().getDefiningOp<UnrealizedConversionCastOp>();
+    if (!castOp || castOp->getNumOperands() != 1 || castOp.getOperand(0) != originalOperand) {
+      return false;
+    }
+    return llvm::all_of(convertedValues, [&castOp](Value value) {
+      return value.getDefiningOp<UnrealizedConversionCastOp>() == castOp;
+    });
+  };
+
+  if (!isDirectAggregateToSplitCast() && convertedValues.size() == splitTypes.size() &&
+      llvm::all_of(llvm::zip_equal(convertedValues, splitTypes), [](auto pair) {
+    return typesUnify(std::get<0>(pair).getType(), std::get<1>(pair));
+  })) {
+    llvm::append_range(newOperands, convertedValues);
+    return;
+  }
+
+  for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
+    Value splitValue = genReadAlongPath(rewriter, loc, originalOperand, id);
+    newOperands.push_back(castValueToTypeIfNeeded(rewriter, loc, splitValue, splitType));
+  }
+}
+
+/// Rewrite array-of-POD `poly.unifiable_cast` into one leaf-array cast per split array.
+class SplitPodArrayInUnifiableCastOp : public OpConversionPattern<UnifiableCastOp> {
+public:
+  using OpConversionPattern<UnifiableCastOp>::OpConversionPattern;
+
+  static bool legal(UnifiableCastOp op) { return !splittablePodArray(op.getType()); }
+
+  LogicalResult matchAndRewrite(
+      UnifiableCastOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
+
+    ArrayType inputArrTy = splittablePodArray(op.getInput().getType());
+    if (!inputArrTy) {
+      return rewriter.notifyMatchFailure(
+          op, "expected array-of-pod cast input when rewriting array-of-pod cast result"
+      );
+    }
+
+    SmallVector<RecordChain> inputSplitIds;
+    SmallVector<Type> inputSplitTypes;
+    splitPodArrayTypeTo(inputArrTy, inputSplitTypes, &inputSplitIds);
+
+    ArrayType resultArrTy = llvm::cast<ArrayType>(op.getType());
+    SmallVector<RecordChain> resultSplitIds;
+    SmallVector<Type> resultSplitTypes;
+    splitPodArrayTypeTo(resultArrTy, resultSplitTypes, &resultSplitIds);
+
+    if (inputSplitIds != resultSplitIds) {
+      return rewriter.notifyMatchFailure(
+          op, "array-of-pod cast changed POD leaf structure unexpectedly"
+      );
+    }
+
+    SmallVector<Value> splitInputs;
+    collectSplitPodArrayOperandValues(
+        op.getLoc(), op.getInput(), adaptor.getInput(), splitInputs, rewriter
+    );
+    if (splitInputs.size() != resultSplitTypes.size()) {
+      return rewriter.notifyMatchFailure(
+          op, "failed to collect one split input per array-of-pod cast leaf"
+      );
+    }
+
+    SmallVector<Value> replacements;
+    replacements.reserve(resultSplitTypes.size());
+    for (auto [splitInput, resultSplitType] : llvm::zip_equal(splitInputs, resultSplitTypes)) {
+      replacements.push_back(
+          castValueToTypeIfNeeded(rewriter, op.getLoc(), splitInput, resultSplitType)
+      );
+    }
+
+    rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
+    return success();
+  }
+};
+
 /// Rewrite `function.return` to flatten any array-of-POD operands into their parallel arrays.
 class SplitPodArrayInReturnOp : public OpConversionPattern<ReturnOp> {
 public:
@@ -1659,52 +1765,6 @@ public:
     }
     rewriter.replaceOpWithNewOp<ReturnOp>(op, ValueRange(newOperands));
     return success();
-  }
-
-  /// Append the split leaf-array values for one step-2 operand.
-  ///
-  /// When dialect conversion has already produced the parallel leaf arrays, reuse those converted
-  /// values directly. Otherwise derive the split arrays from the original aggregate operand so uses
-  /// like `function.return` can still flatten a raw `pod.read` of an array field.
-  static void collectSplitPodArrayOperandValues(
-      Location loc, Value originalOperand, ValueRange convertedValues,
-      SmallVectorImpl<Value> &newOperands, ConversionPatternRewriter &rewriter
-  ) {
-    ArrayType arrTy = splittablePodArray(originalOperand.getType());
-    if (!arrTy) {
-      llvm::append_range(newOperands, convertedValues);
-      return;
-    }
-
-    SmallVector<RecordChain> splitIds;
-    SmallVector<Type> splitTypes;
-    splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
-
-    auto isDirectAggregateToSplitCast = [&convertedValues, &originalOperand]() {
-      if (convertedValues.empty()) {
-        return false;
-      }
-      auto castOp = convertedValues.front().getDefiningOp<UnrealizedConversionCastOp>();
-      if (!castOp || castOp->getNumOperands() != 1 || castOp.getOperand(0) != originalOperand) {
-        return false;
-      }
-      return llvm::all_of(convertedValues, [&castOp](Value value) {
-        return value.getDefiningOp<UnrealizedConversionCastOp>() == castOp;
-      });
-    };
-
-    if (!isDirectAggregateToSplitCast() && convertedValues.size() == splitTypes.size() &&
-        llvm::all_of(llvm::zip_equal(convertedValues, splitTypes), [](auto pair) {
-      return typesUnify(std::get<0>(pair).getType(), std::get<1>(pair));
-    })) {
-      llvm::append_range(newOperands, convertedValues);
-      return;
-    }
-
-    for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
-      Value splitValue = genReadAlongPath(rewriter, loc, originalOperand, id);
-      newOperands.push_back(castValueToTypeIfNeeded(rewriter, loc, splitValue, splitType));
-    }
   }
 };
 
@@ -2227,9 +2287,9 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   patterns.add<
       SplitPodArrayNonDetOp, SplitPodArrayCreateArrayOp, SplitPodArrayReadArrayOp,
       SplitPodArrayWriteArrayOp, SplitPodArrayExtractArrayOp, SplitPodArrayInsertArrayOp,
-      SplitPodArrayInFuncDefOp, SplitPodArrayInReturnOp, SplitPodArrayInCallOp,
-      SplitPodArrayInEmitEqualityOp, SplitPodArrayInEmitContainmentOp, SplitPodArrayLengthOp,
-      SplitPodArrayForAllOp, SplitPodArrayExistsOp>(typeConverter, ctx);
+      SplitPodArrayInFuncDefOp, SplitPodArrayInUnifiableCastOp, SplitPodArrayInReturnOp,
+      SplitPodArrayInCallOp, SplitPodArrayInEmitEqualityOp, SplitPodArrayInEmitContainmentOp,
+      SplitPodArrayLengthOp, SplitPodArrayForAllOp, SplitPodArrayExistsOp>(typeConverter, ctx);
   patterns.add<SplitPodArrayInMemberWriteOp, SplitPodArrayInMemberReadOp>(
       typeConverter, ctx, symTables, memberRepMap
   );
@@ -2244,6 +2304,7 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   target.addDynamicallyLegalOp<ExtractArrayOp>(SplitPodArrayExtractArrayOp::legal);
   target.addDynamicallyLegalOp<InsertArrayOp>(SplitPodArrayInsertArrayOp::legal);
   target.addDynamicallyLegalOp<FuncDefOp>(SplitPodArrayInFuncDefOp::legal);
+  target.addDynamicallyLegalOp<UnifiableCastOp>(SplitPodArrayInUnifiableCastOp::legal);
   target.addDynamicallyLegalOp<ReturnOp>(SplitPodArrayInReturnOp::legal);
   target.addDynamicallyLegalOp<CallOp>(SplitPodArrayInCallOp::legal);
   target.addDynamicallyLegalOp<constrain::EmitEqualityOp>(SplitPodArrayInEmitEqualityOp::legal);
