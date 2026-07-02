@@ -403,7 +403,7 @@ $(function(){initNavTree('Verif_2IR_2Ops_8cpp_source.html','',''); });
 <div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span> </div>
 <div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span>  <span class="keywordflow">for</span> (<span class="keyword">const</span> ForbiddenIncludedPrecondition &amp;failure : failures) {</div>
 <div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>    <span class="keywordflow">if</span> (failure.calleePreconditionLoc) {</div>
-<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span>      diag.attachNote(*failure.calleePreconditionLoc) &lt;&lt; <span class="stringliteral">&quot;included precondition triggered here&quot;</span>;</div>
+<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span>      diag.attachNote(failure.calleePreconditionLoc) &lt;&lt; <span class="stringliteral">&quot;included precondition triggered here&quot;</span>;</div>
 <div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span>    }</div>
 <div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>    <span class="keywordflow">for</span> (Location sourceLoc : failure.sourceLocs) {</div>
 <div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>      diag.attachNote(sourceLoc) &lt;&lt; <span class="stringliteral">&quot;forbidden struct member value originates here&quot;</span>;</div>

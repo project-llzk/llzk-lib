@@ -2079,7 +2079,7 @@ $(function(){initNavTree('IntervalAnalysis_8cpp_source.html','',''); });
 <div class="line"><a id="l01899" name="l01899"></a><span class="lineno"> 1899</span>          }</div>
 <div class="line"><a id="l01900" name="l01900"></a><span class="lineno"> 1900</span> </div>
 <div class="line"><a id="l01901" name="l01901"></a><span class="lineno"> 1901</span>          std::optional&lt;UnreducedInterval&gt; childUnreduced = std::nullopt;</div>
-<div class="line"><a id="l01902" name="l01902"></a><span class="lineno"> 1902</span>          <span class="keywordflow">if</span> (<span class="keyword">auto</span> *childUnreducedIt = constrainUnreducedIntervals.find(childRef);</div>
+<div class="line"><a id="l01902" name="l01902"></a><span class="lineno"> 1902</span>          <span class="keywordflow">if</span> (<span class="keyword">const</span> <span class="keyword">auto</span> *childUnreducedIt = constrainUnreducedIntervals.find(childRef);</div>
 <div class="line"><a id="l01903" name="l01903"></a><span class="lineno"> 1903</span>              childUnreducedIt != constrainUnreducedIntervals.end()) {</div>
 <div class="line"><a id="l01904" name="l01904"></a><span class="lineno"> 1904</span>            childUnreduced = childUnreducedIt-&gt;second;</div>
 <div class="line"><a id="l01905" name="l01905"></a><span class="lineno"> 1905</span>          }</div>

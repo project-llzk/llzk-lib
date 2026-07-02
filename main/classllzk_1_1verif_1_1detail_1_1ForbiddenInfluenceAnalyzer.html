@@ -126,8 +126,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a2d6a19e19ffbf14929abbbec21d30ae0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Classify the forbidden influence reaching a precondition op, including both the condition operand and any enclosing SCF control ancestors.  <br /></td></tr>
 <tr class="memitem:a1a4b09f09ec4496b546e19db926c7b50" id="r_a1a4b09f09ec4496b546e19db926c7b50"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacellzk_1_1verif_1_1detail.html#ab1d8e96678b155b8594568735bdfa536">InfluenceInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1a4b09f09ec4496b546e19db926c7b50">analyzeCallableResult</a> (mlir::CallableOpInterface callableOp, llvm::ArrayRef&lt; <a class="el" href="namespacellzk_1_1verif_1_1detail.html#ab1d8e96678b155b8594568735bdfa536">InfluenceInfo</a> &gt; argInfluences, unsigned resultNumber)</td></tr>
 <tr class="memdesc:a1a4b09f09ec4496b546e19db926c7b50"><td class="mdescLeft">&#160;</td><td class="mdescRight">Summarize the forbidden influence of one callable result under the given argument influences.  <br /></td></tr>
-<tr class="memitem:a5ef4df00e3a41d8ffd9f4bb173ce2c6b" id="r_a5ef4df00e3a41d8ffd9f4bb173ce2c6b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structllzk_1_1verif_1_1detail_1_1IncludedContractSummary.html">IncludedContractSummary</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5ef4df00e3a41d8ffd9f4bb173ce2c6b">analyzeIncludedContract</a> (<a class="el" href="classllzk_1_1verif_1_1ContractOp.html">verif::ContractOp</a> calleeContract, llvm::ArrayRef&lt; <a class="el" href="namespacellzk_1_1verif_1_1detail.html#ab1d8e96678b155b8594568735bdfa536">InfluenceInfo</a> &gt; argInfluences, <a class="el" href="namespacellzk_1_1verif_1_1detail.html#ab1d8e96678b155b8594568735bdfa536">InfluenceInfo</a> inheritedControlInfluence=<a class="el" href="structllzk_1_1verif_1_1ForbiddenPreconditionInfluenceInfo.html#a56cd6ff5233769910a5e61d03df88a8c">InfluenceInfo::None</a>())</td></tr>
-<tr class="memdesc:a5ef4df00e3a41d8ffd9f4bb173ce2c6b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether an included contract becomes invalid under caller-provided operand influences, returning every failing callee precondition if so.  <br /></td></tr>
+<tr class="memitem:a2029100a16656a19e97c0a11e3957526" id="r_a2029100a16656a19e97c0a11e3957526"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structllzk_1_1verif_1_1detail_1_1IncludedContractSummary.html">IncludedContractSummary</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2029100a16656a19e97c0a11e3957526">analyzeIncludedContract</a> (<a class="el" href="classllzk_1_1verif_1_1ContractOp.html">verif::ContractOp</a> calleeContract, llvm::ArrayRef&lt; <a class="el" href="namespacellzk_1_1verif_1_1detail.html#ab1d8e96678b155b8594568735bdfa536">InfluenceInfo</a> &gt; argInfluences, const <a class="el" href="namespacellzk_1_1verif_1_1detail.html#ab1d8e96678b155b8594568735bdfa536">InfluenceInfo</a> &amp;inheritedControlInfluence=<a class="el" href="structllzk_1_1verif_1_1ForbiddenPreconditionInfluenceInfo.html#a56cd6ff5233769910a5e61d03df88a8c">InfluenceInfo::None</a>())</td></tr>
+<tr class="memdesc:a2029100a16656a19e97c0a11e3957526"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether an included contract becomes invalid under caller-provided operand influences, returning every failing callee precondition if so.  <br /></td></tr>
 <tr class="memitem:a2aab4ab0c5139695362cc0768d6e9a2d" id="r_a2aab4ab0c5139695362cc0768d6e9a2d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structllzk_1_1verif_1_1detail_1_1IncludedContractSummary.html">IncludedContractSummary</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2aab4ab0c5139695362cc0768d6e9a2d">analyzeIncludedOp</a> (<a class="el" href="classllzk_1_1verif_1_1ContractOp.html">verif::ContractOp</a> contract, <a class="el" href="classllzk_1_1verif_1_1IncludeOp.html">verif::IncludeOp</a> includeOp)</td></tr>
 <tr class="memdesc:a2aab4ab0c5139695362cc0768d6e9a2d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether an include op becomes invalid under its caller's operand bindings and enclosing SCF control ancestors.  <br /></td></tr>
 </table>
@@ -222,8 +222,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a5ef4df00e3a41d8ffd9f4bb173ce2c6b" name="a5ef4df00e3a41d8ffd9f4bb173ce2c6b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5ef4df00e3a41d8ffd9f4bb173ce2c6b">&#9670;&#160;</a></span>analyzeIncludedContract()</h2>
+<a id="a2029100a16656a19e97c0a11e3957526" name="a2029100a16656a19e97c0a11e3957526"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2029100a16656a19e97c0a11e3957526">&#9670;&#160;</a></span>analyzeIncludedContract()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -241,7 +241,7 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="namespacellzk_1_1verif_1_1detail.html#ab1d8e96678b155b8594568735bdfa536">InfluenceInfo</a></td>          <td class="paramname"><span class="paramname"><em>inheritedControlInfluence</em></span><span class="paramdefsep"> = </span><span class="paramdefval"><a class="el" href="structllzk_1_1verif_1_1ForbiddenPreconditionInfluenceInfo.html#a56cd6ff5233769910a5e61d03df88a8c">InfluenceInfo::None</a>()</span>&#160;)</td>
+          <td class="paramtype">const <a class="el" href="namespacellzk_1_1verif_1_1detail.html#ab1d8e96678b155b8594568735bdfa536">InfluenceInfo</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>inheritedControlInfluence</em></span><span class="paramdefsep"> = </span><span class="paramdefval"><a class="el" href="structllzk_1_1verif_1_1ForbiddenPreconditionInfluenceInfo.html#a56cd6ff5233769910a5e61d03df88a8c">InfluenceInfo::None</a>()</span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">

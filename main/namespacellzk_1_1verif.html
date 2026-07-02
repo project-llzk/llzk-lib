@@ -190,8 +190,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:abf2ec90ab9c2b529e489f6f530c60d07"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return true when <span class="tt">influence</span> contains the requested <span class="tt">flag</span>.  <br /></td></tr>
 <tr class="memitem:a6c6e9c2237d93cab449bd123c18f10b2" id="r_a6c6e9c2237d93cab449bd123c18f10b2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structllzk_1_1verif_1_1ForbiddenPreconditionInfluenceInfo.html">ForbiddenPreconditionInfluenceInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6c6e9c2237d93cab449bd123c18f10b2">mergeInfluenceInfo</a> (<a class="el" href="structllzk_1_1verif_1_1ForbiddenPreconditionInfluenceInfo.html">ForbiddenPreconditionInfluenceInfo</a> lhs, const <a class="el" href="structllzk_1_1verif_1_1ForbiddenPreconditionInfluenceInfo.html">ForbiddenPreconditionInfluenceInfo</a> &amp;rhs)</td></tr>
 <tr class="memdesc:a6c6e9c2237d93cab449bd123c18f10b2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Merge two forbidden-influence summaries, preserving the first known source location for each forbidden kind.  <br /></td></tr>
-<tr class="memitem:ab957ef5fb9d6370770955b48d35a62a7" id="r_ab957ef5fb9d6370770955b48d35a62a7"><td class="memTemplParams" colspan="2">template&lt;typename T, typename... Args&gt; </td></tr>
-<tr class="memitem:ab957ef5fb9d6370770955b48d35a62a7 template"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structllzk_1_1verif_1_1ForbiddenPreconditionInfluenceInfo.html">ForbiddenPreconditionInfluenceInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab957ef5fb9d6370770955b48d35a62a7">mergeInfluenceInfo</a> (const T &amp;first, const T &amp;next, Args... others)</td></tr>
+<tr class="memitem:ac3bef599d40d4cca83e0ccec1d76845f" id="r_ac3bef599d40d4cca83e0ccec1d76845f"><td class="memTemplParams" colspan="2">template&lt;typename T, typename... Args&gt; </td></tr>
+<tr class="memitem:ac3bef599d40d4cca83e0ccec1d76845f template"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structllzk_1_1verif_1_1ForbiddenPreconditionInfluenceInfo.html">ForbiddenPreconditionInfluenceInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac3bef599d40d4cca83e0ccec1d76845f">mergeInfluenceInfo</a> (const T &amp;first, const T &amp;next, const Args &amp;...others)</td></tr>
 <tr class="memitem:a7dbe51b1fe29c482165d73cfe5082010" id="r_a7dbe51b1fe29c482165d73cfe5082010"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structllzk_1_1verif_1_1ForbiddenPreconditionInfluenceInfo.html">ForbiddenPreconditionInfluenceInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7dbe51b1fe29c482165d73cfe5082010">analyzeForbiddenPreconditionInfluenceInfo</a> (mlir::ModuleOp module, <a class="el" href="classllzk_1_1verif_1_1ContractOp.html">verif::ContractOp</a> contract, mlir::Value value)</td></tr>
 <tr class="memdesc:a7dbe51b1fe29c482165d73cfe5082010"><td class="mdescLeft">&#160;</td><td class="mdescRight">Analyze whether a contract value depends on forbidden precondition sources and recover representative source locations for any forbidden influence.  <br /></td></tr>
 <tr class="memitem:ac213426be349d112b6b6f5e482137978" id="r_ac213426be349d112b6b6f5e482137978"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structllzk_1_1verif_1_1ForbiddenPreconditionInfluenceInfo.html">ForbiddenPreconditionInfluenceInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac213426be349d112b6b6f5e482137978">analyzeForbiddenPreconditionOpInfluenceInfo</a> (mlir::ModuleOp module, <a class="el" href="classllzk_1_1verif_1_1ContractOp.html">verif::ContractOp</a> contract, <a class="el" href="classllzk_1_1verif_1_1PreconditionOpInterface.html">verif::PreconditionOpInterface</a> preCondOp)</td></tr>
@@ -626,8 +626,8 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="ab957ef5fb9d6370770955b48d35a62a7" name="ab957ef5fb9d6370770955b48d35a62a7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab957ef5fb9d6370770955b48d35a62a7">&#9670;&#160;</a></span>mergeInfluenceInfo() <span class="overload">[1/2]</span></h2>
+<a id="ac3bef599d40d4cca83e0ccec1d76845f" name="ac3bef599d40d4cca83e0ccec1d76845f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac3bef599d40d4cca83e0ccec1d76845f">&#9670;&#160;</a></span>mergeInfluenceInfo() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -650,7 +650,7 @@ template&lt;typename T, typename... Args&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">Args...</td>          <td class="paramname"><span class="paramname"><em>others</em></span>&#160;)</td>
+          <td class="paramtype">const Args &amp;...</td>          <td class="paramname"><span class="paramname"><em>others</em></span>&#160;)</td>
         </tr>
       </table>
   </td>

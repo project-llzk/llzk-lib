@@ -132,7 +132,7 @@ $(function(){initNavTree('Walk_8h_source.html','',''); });
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>}</div>
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span></div>
 <div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> MatchType, <span class="keyword">typename</span> R&gt; <span class="keyword">inline</span> <span class="keyword">static</span> <span class="keywordtype">bool</span> walkContains(R &amp;root) {</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  <span class="keywordflow">return</span> root.walk([](MatchType t) { <span class="keywordflow">return</span> mlir::WalkResult::interrupt(); }).wasInterrupted();</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  <span class="keywordflow">return</span> root.walk([](MatchType) { <span class="keywordflow">return</span> mlir::WalkResult::interrupt(); }).wasInterrupted();</div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>}</div>
 <div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span></div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> MatchType, <span class="keyword">typename</span> R&gt;</div>
