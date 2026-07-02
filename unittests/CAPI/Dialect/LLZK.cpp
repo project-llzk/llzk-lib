@@ -51,3 +51,14 @@ std::unique_ptr<NonDetOpBuildFuncHelper> NonDetOpBuildFuncHelper::get() {
   };
   return std::make_unique<Impl>();
 }
+
+// Implementation for `AuxOp_build_pass` test
+std::unique_ptr<AuxOpBuildFuncHelper> AuxOpBuildFuncHelper::get() {
+  struct Impl : public AuxOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      return llzkLlzk_AuxOpBuild(builder, location, wrap(testClass.cppGetFeltType(builder)));
+    }
+  };
+  return std::make_unique<Impl>();
+}

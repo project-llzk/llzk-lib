@@ -88,9 +88,8 @@ def LLZK_NonDetOp
 }
 
 def LLZK_AuxOp
-    : LLZKDialectOp<"aux", [
-          DeclareOpInterfaceMethods<
-              OpAsmOpInterface, ["getAsmResultNames"]>]> {
+    : LLZKDialectOp<"aux", [DeclareOpInterfaceMethods<
+                               OpAsmOpInterface, ["getAsmResultNames"]>]> {
   let summary = "compiler-generated polynomial auxiliary";
   let description = [{
     This operation produces a compiler-generated existential SSA value for

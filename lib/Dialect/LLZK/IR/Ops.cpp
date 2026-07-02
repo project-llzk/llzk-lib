@@ -53,8 +53,6 @@ void NonDetOp::getCanonicalizationPatterns(RewritePatternSet &results, MLIRConte
 // AuxOp
 //===------------------------------------------------------------------===//
 
-void AuxOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
-  setNameFn(getResult(), "aux");
-}
+void AuxOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) { setNameFn(getResult(), "aux"); }
 
 } // namespace llzk
