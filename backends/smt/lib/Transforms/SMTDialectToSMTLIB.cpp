@@ -37,6 +37,7 @@
 #include <llvm/Support/ToolOutputFile.h>
 #include <llvm/Support/raw_ostream.h>
 
+#include <functional>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -96,19 +97,19 @@ static std::string sortForType(Type type) {
 
 static void printSetInfoValue(llvm::raw_ostream &os, Attribute value) {
   TypeSwitch<Attribute>(value)
-      .Case<llzk::smt::KeywordAttr>([&](auto keywordAttr) { os << keywordAttr.getValue(); })
-      .Case<llzk::smt::SymbolAttr>([&](auto symbolAttr) { os << symbolAttr.getValue(); })
-      .Case<StringAttr>([&](auto strAttr) { strAttr.print(os); })
-      .Case<BoolAttr>([&](auto boolAttr) { os << (boolAttr.getValue() ? "true" : "false"); })
-      .Case<IntegerAttr>([&](auto intAttr) {
+      .Case<llzk::smt::KeywordAttr>([&os](auto keywordAttr) { os << keywordAttr.getValue(); })
+      .Case<llzk::smt::SymbolAttr>([&os](auto symbolAttr) { os << symbolAttr.getValue(); })
+      .Case<StringAttr>([&os](auto strAttr) { strAttr.print(os); })
+      .Case<BoolAttr>([&os](auto boolAttr) { os << (boolAttr.getValue() ? "true" : "false"); })
+      .Case<IntegerAttr>([&os](auto intAttr) {
     SmallString<32> valueText;
     intAttr.getValue().toStringSigned(valueText);
     os << valueText;
-  }).Case<ArrayAttr>([&](auto arrayAttr) {
+  }).Case<ArrayAttr>([&os](auto arrayAttr) {
     os << '(';
-    llvm::interleave(arrayAttr, [&](Attribute element) { printSetInfoValue(os, element); }, [&] {
-      os << ' ';
-    });
+    llvm::interleave(arrayAttr, [&os](Attribute element) {
+      printSetInfoValue(os, element);
+    }, [&os] { os << ' '; });
     os << ')';
   });
 }
@@ -139,6 +140,14 @@ private:
     DenseMap<Value, std::string> values;
     SmallVector<std::pair<std::string, std::string>> letBindings;
     bool preserveSharing = false;
+  };
+
+  struct PureHelperDefinition {
+    std::string symbol;
+    SmallVector<std::string> argNames;
+    SmallVector<std::string> argSorts;
+    std::string resultSort;
+    std::string bodyExpr;
   };
 
   ModuleOp getEffectiveRootModule() {
@@ -199,6 +208,7 @@ private:
     emittedAssertions.clear();
     helperSymbols.clear();
     emittedPureHelpers.clear();
+    emittedPureHelperSCCs.clear();
   }
 
   LogicalResult emitRootPreamble(bool emitReset, bool emitDefaultLogic) {
@@ -506,7 +516,8 @@ private:
     if (!inserted.second) {
       return HelperMode::PureFunction;
     }
-    auto cleanup = llvm::make_scope_exit([&] { helperModesInProgress.erase(func.getOperation()); });
+    auto cleanup =
+        llvm::make_scope_exit([this, &func] { helperModesInProgress.erase(func.getOperation()); });
 
     for (Operation &op : func.getBody().front().without_terminator()) {
       if (isa<llzk::smt::SetLogicOp, llzk::smt::SetInfoOp, llzk::smt::DeclareFunOp,
@@ -564,6 +575,238 @@ private:
     return expr;
   }
 
+  LogicalResult initializePureHelperSCCs() {
+    if (pureHelperSCCsInitialized) {
+      return success();
+    }
+    pureHelperSCCsInitialized = true;
+
+    DenseMap<Operation *, unsigned> indexByOp;
+    DenseMap<Operation *, unsigned> lowLinkByOp;
+    SmallVector<func::FuncOp> stack;
+    DenseSet<Operation *> onStack;
+    unsigned nextIndex = 0;
+
+    std::function<LogicalResult(func::FuncOp)> strongConnect = [&](func::FuncOp func) {
+      Operation *funcOp = func.getOperation();
+      indexByOp[funcOp] = nextIndex;
+      lowLinkByOp[funcOp] = nextIndex;
+      ++nextIndex;
+      stack.push_back(func);
+      onStack.insert(funcOp);
+
+      auto callees = collectPureHelperCallees(func);
+      if (failed(callees)) {
+        return failure();
+      }
+      pureHelperCallees.try_emplace(funcOp, callees->begin(), callees->end());
+
+      for (func::FuncOp callee : *callees) {
+        Operation *calleeOp = callee.getOperation();
+        auto indexIt = indexByOp.find(calleeOp);
+        if (indexIt == indexByOp.end()) {
+          if (failed(strongConnect(callee))) {
+            return failure();
+          }
+          lowLinkByOp[funcOp] = std::min(lowLinkByOp[funcOp], lowLinkByOp[calleeOp]);
+          continue;
+        }
+        if (onStack.contains(calleeOp)) {
+          lowLinkByOp[funcOp] = std::min(lowLinkByOp[funcOp], indexIt->second);
+        }
+      }
+
+      if (lowLinkByOp[funcOp] != indexByOp[funcOp]) {
+        return success();
+      }
+
+      SmallVector<func::FuncOp> scc;
+      bool hasSelfRecursion = false;
+      while (!stack.empty()) {
+        func::FuncOp current = stack.pop_back_val();
+        Operation *currentOp = current.getOperation();
+        onStack.erase(currentOp);
+        scc.push_back(current);
+        if (current == func) {
+          break;
+        }
+      }
+      llvm::sort(scc, [](func::FuncOp lhs, func::FuncOp rhs) {
+        return lhs.getSymName() < rhs.getSymName();
+      });
+      for (func::FuncOp member : scc) {
+        pureHelperSCCId[member.getOperation()] = pureHelperSCCs.size();
+      }
+
+      if (scc.size() == 1) {
+        auto it = pureHelperCallees.find(funcOp);
+        hasSelfRecursion =
+            it != pureHelperCallees.end() &&
+            llvm::any_of(it->second, [func](func::FuncOp callee) { return callee == func; });
+      }
+      if (hasSelfRecursion || scc.size() > 1) {
+        recursivePureHelperSCCs.insert(pureHelperSCCs.size());
+      }
+      pureHelperSCCs.push_back(std::move(scc));
+      return success();
+    };
+
+    for (auto func : module.getOps<func::FuncOp>()) {
+      auto helperMode = classifyHelperMode(func);
+      if (failed(helperMode)) {
+        return failure();
+      }
+      if (*helperMode != HelperMode::PureFunction ||
+          pureHelperSCCId.contains(func.getOperation()) ||
+          indexByOp.contains(func.getOperation())) {
+        continue;
+      }
+      if (failed(strongConnect(func))) {
+        return failure();
+      }
+    }
+
+    return success();
+  }
+
+  FailureOr<SmallVector<func::FuncOp>> collectPureHelperCallees(func::FuncOp func) {
+    SmallVector<func::FuncOp> callees;
+    for (Operation &op : func.getBody().front().without_terminator()) {
+      auto callOp = dyn_cast<func::CallOp>(op);
+      if (!callOp || callOp.getNumResults() == 0) {
+        continue;
+      }
+      auto callee = module.lookupSymbol<func::FuncOp>(callOp.getCallee());
+      if (!callee) {
+        callOp.emitOpError("smt-to-smtlib could not resolve callee");
+        return failure();
+      }
+      auto helperMode = classifyHelperMode(callee);
+      if (failed(helperMode)) {
+        return failure();
+      }
+      if (*helperMode != HelperMode::PureFunction) {
+        func.emitError("pure helper depends on a script-style helper");
+        return failure();
+      }
+      callees.push_back(callee);
+    }
+    return callees;
+  }
+
+  FailureOr<PureHelperDefinition> buildPureHelperDefinition(func::FuncOp func) {
+    if (!func || func.empty()) {
+      func.emitError("smt-to-smtlib requires non-empty helper funcs");
+      return failure();
+    }
+    if (func.getFunctionType().getNumResults() != 1) {
+      func.emitError("pure SMT helper definitions require exactly one return value");
+      return failure();
+    }
+
+    SmallVector<std::string> argExprs;
+    PureHelperDefinition definition;
+    definition.symbol = getHelperSymbol(func);
+    definition.resultSort = sortForType(func.getResultTypes().front());
+    argExprs.reserve(func.getNumArguments());
+    definition.argNames.reserve(func.getNumArguments());
+    definition.argSorts.reserve(func.getNumArguments());
+    for (auto [index, arg] : llvm::enumerate(func.getArguments())) {
+      std::string argName = definition.symbol + "__arg" + std::to_string(index);
+      argExprs.push_back(argName);
+      definition.argNames.push_back(std::move(argName));
+      definition.argSorts.push_back(sortForType(arg.getType()));
+    }
+
+    auto results = evalHelper(func, argExprs);
+    if (failed(results) || results->size() != 1) {
+      func.emitError("smt-to-smtlib requires an emit-compatible pure helper");
+      return failure();
+    }
+    definition.bodyExpr = std::move(results->front());
+    return definition;
+  }
+
+  LogicalResult emitPureHelperDefinition(const PureHelperDefinition &definition) {
+    os << "(define-fun " << definition.symbol << " (";
+    for (auto [index, argName] : llvm::enumerate(definition.argNames)) {
+      if (index != 0) {
+        os << ' ';
+      }
+      os << '(' << argName << ' ' << definition.argSorts[index] << ')';
+    }
+    os << ") " << definition.resultSort << ' ' << definition.bodyExpr << ")\n";
+    return success();
+  }
+
+  LogicalResult emitRecursivePureHelperSCC(unsigned sccId) {
+    if (emittedPureHelperSCCs.contains(sccId)) {
+      return success();
+    }
+    [[maybe_unused]] bool inserted = activePureHelperSCCs.insert(sccId).second;
+    assert(inserted && "recursive SCC should not be re-entered during emission");
+    auto cleanup = llvm::make_scope_exit([this, sccId] { activePureHelperSCCs.erase(sccId); });
+
+    SmallVector<PureHelperDefinition> definitions;
+    definitions.reserve(pureHelperSCCs[sccId].size());
+    for (func::FuncOp func : pureHelperSCCs[sccId]) {
+      auto calleesIt = pureHelperCallees.find(func.getOperation());
+      if (calleesIt != pureHelperCallees.end()) {
+        for (func::FuncOp callee : calleesIt->second) {
+          unsigned calleeSccId = pureHelperSCCId[callee.getOperation()];
+          if (calleeSccId != sccId && failed(ensurePureHelperEmitted(callee))) {
+            return failure();
+          }
+        }
+      }
+      auto definition = buildPureHelperDefinition(func);
+      if (failed(definition)) {
+        return failure();
+      }
+      definitions.push_back(std::move(*definition));
+    }
+
+    if (definitions.size() == 1) {
+      const PureHelperDefinition &definition = definitions.front();
+      os << "(define-fun-rec " << definition.symbol << " (";
+      for (auto [index, argName] : llvm::enumerate(definition.argNames)) {
+        if (index != 0) {
+          os << ' ';
+        }
+        os << '(' << argName << ' ' << definition.argSorts[index] << ')';
+      }
+      os << ") " << definition.resultSort << ' ' << definition.bodyExpr << ")\n";
+    } else {
+      os << "(define-funs-rec (\n";
+      for (auto [index, func] : llvm::enumerate(pureHelperSCCs[sccId])) {
+        const PureHelperDefinition &definition = definitions[index];
+        os << "  (" << definition.symbol << " (";
+        for (auto [argIndex, argName] : llvm::enumerate(definition.argNames)) {
+          if (argIndex != 0) {
+            os << ' ';
+          }
+          os << '(' << argName << ' ' << definition.argSorts[argIndex] << ')';
+        }
+        os << ") " << definition.resultSort << ")";
+        (void)func;
+        os << '\n';
+      }
+      os << ") (\n";
+      for (auto [index, definition] : llvm::enumerate(definitions)) {
+        os << "  (" << definition.bodyExpr << ')';
+        (void)index;
+        os << '\n';
+      }
+      os << "))\n";
+    }
+
+    emittedPureHelperSCCs.insert(sccId);
+    for (func::FuncOp func : pureHelperSCCs[sccId]) {
+      emittedPureHelpers.insert(func.getOperation());
+    }
+    return success();
+  }
+
   LogicalResult ensurePureHelperEmitted(func::FuncOp func) {
     if (emittedPureHelpers.contains(func.getOperation())) {
       return success();
@@ -576,53 +819,45 @@ private:
       func.emitError("pure SMT helper definitions require exactly one return value");
       return failure();
     }
-    if (!activePureHelpers.insert(func.getOperation()).second) {
-      func.emitError("recursive pure helper calls are not supported by smt-to-smtlib");
+    if (failed(initializePureHelperSCCs())) {
       return failure();
     }
-    auto cleanup = llvm::make_scope_exit([&] { activePureHelpers.erase(func.getOperation()); });
+    auto sccIt = pureHelperSCCId.find(func.getOperation());
+    if (sccIt == pureHelperSCCId.end()) {
+      func.emitError("smt-to-smtlib could not classify pure helper recursion");
+      return failure();
+    }
 
-    for (Operation &op : func.getBody().front().without_terminator()) {
-      if (auto callOp = dyn_cast<func::CallOp>(op); callOp && callOp.getNumResults() != 0) {
-        auto nestedFunc = module.lookupSymbol<func::FuncOp>(callOp.getCallee());
-        if (!nestedFunc) {
-          callOp.emitOpError("smt-to-smtlib could not resolve callee");
+    unsigned sccId = sccIt->second;
+    if (activePureHelperSCCs.contains(sccId)) {
+      return success();
+    }
+    if (recursivePureHelperSCCs.contains(sccId)) {
+      for (func::FuncOp callee : pureHelperCallees[func.getOperation()]) {
+        unsigned calleeSccId = pureHelperSCCId[callee.getOperation()];
+        if (calleeSccId != sccId && failed(ensurePureHelperEmitted(callee))) {
           return failure();
         }
-        auto nestedMode = classifyHelperMode(nestedFunc);
-        if (failed(nestedMode)) {
-          return failure();
-        }
-        if (*nestedMode != HelperMode::PureFunction) {
-          func.emitError("pure helper depends on a script-style helper");
-          return failure();
-        }
-        if (failed(ensurePureHelperEmitted(nestedFunc))) {
+      }
+      return emitRecursivePureHelperSCC(sccId);
+    }
+
+    auto calleesIt = pureHelperCallees.find(func.getOperation());
+    if (calleesIt != pureHelperCallees.end()) {
+      for (func::FuncOp callee : calleesIt->second) {
+        if (failed(ensurePureHelperEmitted(callee))) {
           return failure();
         }
       }
     }
 
-    SmallVector<std::string> argExprs;
-    argExprs.reserve(func.getNumArguments());
-    std::string funcName = getHelperSymbol(func);
-    os << "(define-fun " << funcName << " (";
-    for (auto [index, arg] : llvm::enumerate(func.getArguments())) {
-      if (index != 0) {
-        os << ' ';
-      }
-      std::string argName = funcName + "__arg" + std::to_string(index);
-      argExprs.push_back(argName);
-      os << "(" << argName << " " << sortForType(arg.getType()) << ")";
-    }
-    os << ") " << sortForType(func.getResultTypes().front()) << " ";
-
-    auto results = evalHelper(func, argExprs);
-    if (failed(results) || results->size() != 1) {
-      func.emitError("smt-to-smtlib requires an emit-compatible pure helper");
+    auto definition = buildPureHelperDefinition(func);
+    if (failed(definition)) {
       return failure();
     }
-    os << results->front() << ")\n";
+    if (failed(emitPureHelperDefinition(*definition))) {
+      return failure();
+    }
     emittedPureHelpers.insert(func.getOperation());
     return success();
   }
@@ -639,10 +874,14 @@ private:
       return failure();
     }
     if (!activeInlineHelpers.insert(func.getOperation()).second) {
-      func.emitError("recursive helper calls are not supported by smt-to-smtlib");
+      func.emitError(
+          "recursive script helpers are not supported by smt-to-smtlib because SMT-LIB has no "
+          "recursive command-sequence abstraction"
+      );
       return failure();
     }
-    auto cleanup = llvm::make_scope_exit([&] { activeInlineHelpers.erase(func.getOperation()); });
+    auto cleanup =
+        llvm::make_scope_exit([this, &func] { activeInlineHelpers.erase(func.getOperation()); });
 
     EvalContext helperCtx;
     helperCtx.preserveSharing = helperIsPurelyExpressionBased(func);
@@ -1142,7 +1381,6 @@ private:
   llvm::raw_ostream &os;
   unsigned nextTempId = 0;
   unsigned pushDepth = 0;
-  DenseSet<Operation *> activePureHelpers;
   DenseSet<Operation *> activeInlineHelpers;
   DenseSet<Operation *> helperModesInProgress;
   DenseMap<Operation *, HelperMode> helperModes;
@@ -1150,6 +1388,13 @@ private:
   llvm::StringSet<> emittedAssertions;
   DenseMap<Operation *, std::string> helperSymbols;
   DenseSet<Operation *> emittedPureHelpers;
+  bool pureHelperSCCsInitialized = false;
+  DenseMap<Operation *, SmallVector<func::FuncOp>> pureHelperCallees;
+  DenseMap<Operation *, unsigned> pureHelperSCCId;
+  SmallVector<SmallVector<func::FuncOp>> pureHelperSCCs;
+  DenseSet<unsigned> recursivePureHelperSCCs;
+  DenseSet<unsigned> activePureHelperSCCs;
+  DenseSet<unsigned> emittedPureHelperSCCs;
 };
 
 class SMTDialectToSMTLIBPass

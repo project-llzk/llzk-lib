@@ -1,3 +1,4 @@
 added:
-  - Add `smt-to-smtlib` pass that generates SMTLIB2 scripts from SMT dialect operations
-  - Add `llzk-smt-check` tool for running generated SMTLIB2 scripts
+  - Add `smt-to-smtlib`, an SMT-LIB exporter for SMT dialect modules rooted at a top-level `smt.solver`
+  - Add `llzk-smt-check` for checking SMT-LIB scripts with `set-info` metadata
+  - Add SMT dialect metadata support with `smt.set_info`, `#smt.keyword`, and `#smt.symbol`

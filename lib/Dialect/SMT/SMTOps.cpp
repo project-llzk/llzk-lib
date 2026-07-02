@@ -28,18 +28,18 @@ static bool isValidSetInfoValue(Attribute attr) {
 
 static void printSetInfoValue(AsmPrinter &printer, Attribute value) {
   TypeSwitch<Attribute>(value)
-      .Case<KeywordAttr>([&](auto keywordAttr) { printer << keywordAttr.getValue(); })
-      .Case<SymbolAttr>([&](auto symbolAttr) { printer << symbolAttr.getValue(); })
-      .Case<StringAttr, BoolAttr>([&](auto attr) { printer.printAttribute(attr); })
-      .Case<IntegerAttr>([&](auto intAttr) {
+      .Case<KeywordAttr>([&printer](auto keywordAttr) { printer << keywordAttr.getValue(); })
+      .Case<SymbolAttr>([&printer](auto symbolAttr) { printer << symbolAttr.getValue(); })
+      .Case<StringAttr, BoolAttr>([&printer](auto attr) { printer.printAttribute(attr); })
+      .Case<IntegerAttr>([&printer](auto intAttr) {
     SmallString<32> valueText;
     intAttr.getValue().toStringSigned(valueText);
     printer << valueText;
-  }).Case<ArrayAttr>([&](ArrayAttr arrayAttr) {
+  }).Case<ArrayAttr>([&printer](ArrayAttr arrayAttr) {
     printer << '(';
-    llvm::interleave(arrayAttr, [&](Attribute element) {
+    llvm::interleave(arrayAttr, [&printer](Attribute element) {
       printSetInfoValue(printer, element);
-    }, [&] { printer << ' '; });
+    }, [&printer] { printer << ' '; });
     printer << ')';
   });
 }
@@ -174,7 +174,7 @@ ParseResult SetInfoOp::parse(OpAsmParser &parser, OperationState &result) {
     return failure();
   }
 
-  auto keyAttr = KeywordAttr::getChecked([&]() {
+  auto keyAttr = KeywordAttr::getChecked([&parser, loc]() {
     return parser.emitError(loc);
   }, parser.getContext(), keyText.getValue());
   if (!keyAttr) {

@@ -1,0 +1,23 @@
+// RUN: not llzk-opt --smt-to-smtlib -o /dev/null %s 2>&1 | FileCheck %s
+// Purpose: reject recursive script helpers because SMT-LIB cannot recurse over command sequences.
+
+module {
+  func.func @script_helper(%x: !smt.int) -> !smt.int {
+    %zero = smt.int.constant 0
+    %ok = smt.eq %x, %zero : !smt.int
+    smt.assert %ok
+    %next = func.call @script_helper(%x) : (!smt.int) -> !smt.int
+    return %next : !smt.int
+  }
+
+  smt.solver () : () -> () {
+    %x = smt.declare_fun "x" : !smt.int
+    %value = func.call @script_helper(%x) : (!smt.int) -> !smt.int
+    %result = smt.declare_fun "result" : !smt.int
+    %ok = smt.eq %result, %value : !smt.int
+    smt.assert %ok
+    smt.yield
+  }
+}
+
+// CHECK: error: recursive script helpers are not supported by smt-to-smtlib because SMT-LIB has no recursive command-sequence abstraction

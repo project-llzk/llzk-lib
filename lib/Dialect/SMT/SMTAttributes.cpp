@@ -85,7 +85,7 @@ std::string BitVectorAttr::getValueAsString(bool prefix) const {
 /// Parse an SMT-LIB formatted bit-vector string.
 static FailureOr<APInt>
 parseBitVectorString(function_ref<InFlightDiagnostic()> emitError, StringRef value) {
-  auto reportError = [&](StringRef msg) -> FailureOr<APInt> {
+  auto reportError = [emitError](StringRef msg) -> FailureOr<APInt> {
     if (emitError) {
       return emitError() << msg;
     }

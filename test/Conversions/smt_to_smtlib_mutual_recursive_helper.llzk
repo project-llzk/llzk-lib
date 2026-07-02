@@ -1,0 +1,50 @@
+// RUN: llzk-opt --smt-to-smtlib -o /dev/null %s | FileCheck %s
+// Purpose: mutually recursive pure helper emission with SMT-LIB define-funs-rec.
+
+module {
+  func.func @is_even(%x: !smt.int) -> !smt.bool {
+    %zero = smt.int.constant 0
+    %is_zero = smt.eq %x, %zero : !smt.int
+    %one = smt.int.constant 1
+    %dec = smt.int.sub %x, %one
+    %next = func.call @is_odd(%dec) : (!smt.int) -> !smt.bool
+    %true = smt.eq %zero, %zero : !smt.int
+    %result = smt.ite %is_zero, %true, %next : !smt.bool
+    return %result : !smt.bool
+  }
+
+  func.func @is_odd(%x: !smt.int) -> !smt.bool {
+    %zero = smt.int.constant 0
+    %is_zero = smt.eq %x, %zero : !smt.int
+    %one = smt.int.constant 1
+    %dec = smt.int.sub %x, %one
+    %next = func.call @is_even(%dec) : (!smt.int) -> !smt.bool
+    %false = smt.eq %zero, %one : !smt.int
+    %result = smt.ite %is_zero, %false, %next : !smt.bool
+    return %result : !smt.bool
+  }
+
+  smt.solver () : () -> () {
+    %x = smt.declare_fun "x" : !smt.int
+    %is_even = func.call @is_even(%x) : (!smt.int) -> !smt.bool
+    smt.assert %is_even
+    smt.yield
+  }
+}
+
+// CHECK:      (set-logic ALL)
+// CHECK-NEXT: (declare-fun x () Int)
+// CHECK-NEXT: (define-funs-rec (
+// CHECK-NEXT:   (is_even ((is_even__arg0 Int)) Bool)
+// CHECK-NEXT:   (is_odd ((is_odd__arg0 Int)) Bool)
+// CHECK-NEXT: ) (
+// CHECK-NEXT:   ((let ((__let0 (= is_even__arg0 0)))
+// CHECK-SAME:   (let ((__let1 (- is_even__arg0 1)))
+// CHECK-SAME:   (let ((__let2 (= 0 0)))
+// CHECK-SAME:   (let ((__let3 (ite __let0 __let2 (is_odd __let1)))) __let3)))))
+// CHECK-NEXT:   ((let ((__let4 (= is_odd__arg0 0)))
+// CHECK-SAME:   (let ((__let5 (- is_odd__arg0 1)))
+// CHECK-SAME:   (let ((__let6 (= 0 1)))
+// CHECK-SAME:   (let ((__let7 (ite __let4 __let6 (is_even __let5)))) __let7)))))
+// CHECK-NEXT: ))
+// CHECK-NEXT: (assert (is_even x))
