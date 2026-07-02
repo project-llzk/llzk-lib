@@ -1,0 +1,87 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-poly-lowering-pass="max-degree=2" -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @ScalarContainment {
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ScalarContainment> {
+      %self = struct.new : !struct.type<@ScalarContainment>
+      function.return %self : !struct.type<@ScalarContainment>
+    }
+
+    function.def @constrain(%self: !struct.type<@ScalarContainment>, %a: !felt.type, %b: !felt.type) {
+      %table = array.new %a, %b : !array.type<2 x !felt.type>
+      %ab = felt.mul %a, %b : !felt.type, !felt.type
+      %lookup = felt.mul %ab, %ab : !felt.type, !felt.type
+      constrain.in %table, %lookup : !array.type<2 x !felt.type>, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @ScalarContainment {
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@ScalarContainment> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@ScalarContainment>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@__llzk_poly_lowering_pass_aux_member_0] = %[[VAL_3]] : <@ScalarContainment>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@ScalarContainment>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@ScalarContainment>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_5]], %[[VAL_6]] : <2 x !felt.type>
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_5]], %[[VAL_6]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@__llzk_poly_lowering_pass_aux_member_0] : <@ScalarContainment>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_9]], %[[VAL_8]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_9]], %[[VAL_9]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.in %[[VAL_7]], %[[VAL_10]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @RowContainment {
+    function.def @compute(%a: !felt.type, %b: !felt.type, %c: !felt.type, %d: !felt.type) -> !struct.type<@RowContainment> {
+      %self = struct.new : !struct.type<@RowContainment>
+      function.return %self : !struct.type<@RowContainment>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@RowContainment>,
+        %a: !felt.type,
+        %b: !felt.type,
+        %c: !felt.type,
+        %d: !felt.type
+    ) {
+      %table = array.new %a, %b, %c, %d : !array.type<2, 2 x !felt.type>
+      %ab = felt.mul %a, %b : !felt.type, !felt.type
+      %lookup = felt.mul %ab, %ab : !felt.type, !felt.type
+      %row = array.new %lookup, %c : !array.type<2 x !felt.type>
+      constrain.in %table, %row : !array.type<2, 2 x !felt.type>, !array.type<2 x !felt.type>
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @RowContainment {
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@RowContainment> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@RowContainment>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@__llzk_poly_lowering_pass_aux_member_0] = %[[VAL_5]] : <@RowContainment>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@RowContainment>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@RowContainment>, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_9:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_10:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_7]], %[[VAL_8]], %[[VAL_9]], %[[VAL_10]] : <2,2 x !felt.type>
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_7]], %[[VAL_8]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_6]][@__llzk_poly_lowering_pass_aux_member_0] : <@RowContainment>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_13]], %[[VAL_12]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_13]], %[[VAL_13]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_14]], %[[VAL_9]] : <2 x !felt.type>
+// CHECK-NEXT:        constrain.in %[[VAL_11]], %[[VAL_15]] : <2,2 x !felt.type>, !array.type<2 x !felt.type>
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

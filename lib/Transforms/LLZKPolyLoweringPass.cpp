@@ -468,6 +468,67 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     return failure(failedCheck);
   }
 
+  void lowerContainmentRhsValue(
+      OpOperand &operand, StructDefOp structDef, FuncDefOp constrainFunc,
+      DominanceInfo &dominanceInfo, DenseMap<Value, unsigned> &degreeMemo,
+      DenseMap<Value, Value> &rewrites, SmallVector<AuxAssignment> &auxAssignments
+  ) {
+    Value value = operand.get();
+
+    if (llvm::isa<FeltType>(value.getType())) {
+      unsigned degree = getDegree(value, degreeMemo);
+      if (degree > maxDegree) {
+        operand.set(lowerExpression(
+            value, structDef, constrainFunc, operand.getOwner(), dominanceInfo, degreeMemo,
+            rewrites, auxAssignments
+        ));
+      }
+      return;
+    }
+
+    if (auto arrayOp = value.getDefiningOp<llzk::array::CreateArrayOp>()) {
+      for (OpOperand &elementOperand : arrayOp.getElementsMutable()) {
+        lowerContainmentRhsValue(
+            elementOperand, structDef, constrainFunc, dominanceInfo, degreeMemo, rewrites,
+            auxAssignments
+        );
+      }
+    }
+  }
+
+  void checkContainmentRhsValue(
+      Value value, EmitContainmentOp containOp, DenseMap<Value, unsigned> &checkMemo,
+      bool &failedCheck
+  ) {
+    if (llvm::isa<FeltType>(value.getType())) {
+      unsigned valueDegree = getDegree(value, checkMemo);
+      if (valueDegree > maxDegree) {
+        auto diag = containOp.emitOpError();
+        diag << "poly lowering postcondition failed: containment RHS element degree "
+                "exceeds max-degree "
+             << maxDegree.getValue() << " (element degree " << valueDegree << ")";
+        diag.report();
+        failedCheck = true;
+      }
+      return;
+    }
+
+    if (auto arrayOp = value.getDefiningOp<llzk::array::CreateArrayOp>()) {
+      for (Value element : arrayOp.getElements()) {
+        checkContainmentRhsValue(element, containOp, checkMemo, failedCheck);
+      }
+    }
+  }
+
+  LogicalResult checkContainmentRhsDegrees(FuncDefOp constrainFunc) {
+    bool failedCheck = false;
+    constrainFunc.walk([&](EmitContainmentOp containOp) {
+      DenseMap<Value, unsigned> checkMemo;
+      checkContainmentRhsValue(containOp.getRhs(), containOp, checkMemo, failedCheck);
+    });
+    return failure(failedCheck);
+  }
+
   void runOnOperation() override {
     ModuleOp moduleOp = getOperation();
 
@@ -480,7 +541,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       return;
     }
 
-    moduleOp.walk([this, &moduleOp](StructDefOp structDef) {
+    moduleOp.walk([this](StructDefOp structDef) {
       FuncDefOp constrainFunc = structDef.getConstrainFuncOp();
       FuncDefOp computeFunc = structDef.getComputeFuncOp();
       if (!constrainFunc) {
@@ -544,14 +605,12 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
         }
       });
 
-      // The pass doesn't currently support EmitContainmentOp.
-      // See https://github.com/project-llzk/llzk-lib/issues/261
-      constrainFunc.walk([this, &moduleOp](EmitContainmentOp /*containOp*/) {
-        auto diag = moduleOp.emitError();
-        diag << "EmitContainmentOp is unsupported for now in the lowering pass";
-        diag.report();
-        signalPassFailure();
-        return;
+      // Lower containment lookup rows.
+      constrainFunc.walk([&](EmitContainmentOp containOp) {
+        lowerContainmentRhsValue(
+            containOp.getRhsMutable(), structDef, constrainFunc, dominanceInfo, degreeMemo,
+            rewrites, auxAssignments
+        );
       });
 
       // Lower function call arguments
@@ -590,6 +649,11 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       });
 
       if (failed(checkEqualityDegrees(constrainFunc))) {
+        signalPassFailure();
+        return;
+      }
+
+      if (failed(checkContainmentRhsDegrees(constrainFunc))) {
         signalPassFailure();
         return;
       }

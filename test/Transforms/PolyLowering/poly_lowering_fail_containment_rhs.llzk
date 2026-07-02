@@ -1,0 +1,25 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-poly-lowering-pass="max-degree=2" -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  struct.def @UnsupportedContainmentArrayElement {
+    function.def @compute(%a: !felt.type, %b: !felt.type, %c: !felt.type) -> !struct.type<@UnsupportedContainmentArrayElement> {
+      %self = struct.new : !struct.type<@UnsupportedContainmentArrayElement>
+      function.return %self : !struct.type<@UnsupportedContainmentArrayElement>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@UnsupportedContainmentArrayElement>,
+        %a: !felt.type,
+        %b: !felt.type,
+        %c: !felt.type
+    ) {
+      %table = array.new %a, %b : !array.type<2, 1 x !felt.type>
+      %ab = felt.mul %a, %b : !felt.type, !felt.type
+      %elt = felt.div %ab, %c : !felt.type, !felt.type
+      %row = array.new %elt : !array.type<1 x !felt.type>
+      // expected-error@+1 {{'constrain.in' op poly lowering postcondition failed: containment RHS element degree exceeds max-degree 2 (element degree 3)}}
+      constrain.in %table, %row : !array.type<2, 1 x !felt.type>, !array.type<1 x !felt.type>
+      function.return
+    }
+  }
+}
