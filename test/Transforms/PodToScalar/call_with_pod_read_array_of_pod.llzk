@@ -1,0 +1,30 @@
+// RUN: llzk-opt -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+
+#outer = affine_map<()[s0] -> (s0)>
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+!Holder = !pod.type<[@pairs: !array.type<#outer x !Pair>]>
+module attributes {llzk.lang} {
+  function.def @sink(%arr: !array.type<#outer x !Pair>) -> index {
+    %c0 = arith.constant 0 : index
+    %len = array.len %arr, %c0 : !array.type<#outer x !Pair>
+    function.return %len : index
+  }
+
+  function.def @main(%holder: !Holder) -> index {
+    %pairs = pod.read %holder[@pairs] : !Holder, !array.type<#outer x !Pair>
+    %len = function.call @sink(%pairs) : (!array.type<#outer x !Pair>) -> index
+    function.return %len : index
+  }
+}
+// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @sink(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_0]], %[[VAL_2]] : <#[[$M]] x index>
+// CHECK-NEXT:      function.return %[[VAL_3]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>) -> index {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @sink(%[[VAL_4]], %[[VAL_5]]) : (!array.type<#[[$M]] x index>, !array.type<#[[$M]] x !felt.type>) -> index
+// CHECK-NEXT:      function.return %[[VAL_6]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

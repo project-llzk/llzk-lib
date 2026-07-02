@@ -1655,16 +1655,22 @@ static void collectSplitPodArrayOperandValues(
   SmallVector<Type> splitTypes;
   splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
 
-  auto isDirectAggregateToSplitCast = [&convertedValues, &originalOperand]() {
+  auto isDirectAggregateToSplitCast = [&convertedValues, &splitTypes]() {
     if (convertedValues.empty()) {
       return false;
     }
     auto castOp = convertedValues.front().getDefiningOp<UnrealizedConversionCastOp>();
-    if (!castOp || castOp->getNumOperands() != 1 || castOp.getOperand(0) != originalOperand) {
+    if (!castOp || castOp->getNumOperands() != 1 ||
+        !splittablePodArray(castOp.getOperand(0).getType()) ||
+        castOp->getNumResults() != splitTypes.size()) {
       return false;
     }
-    return llvm::all_of(convertedValues, [&castOp](Value value) {
-      return value.getDefiningOp<UnrealizedConversionCastOp>() == castOp;
+
+    return llvm::all_of(llvm::zip_equal(convertedValues, splitTypes), [&castOp](auto pair) {
+      Value convertedValue = std::get<0>(pair);
+      Type splitType = std::get<1>(pair);
+      return convertedValue.getDefiningOp<UnrealizedConversionCastOp>() == castOp &&
+             typesUnify(convertedValue.getType(), splitType);
     });
   };
 
@@ -1802,7 +1808,13 @@ public:
       mapOperands.push_back(values);
     }
 
-    SmallVector<Value> newArgOperands = flattenConvertedValues(adaptor.getArgOperands());
+    SmallVector<Value> newArgOperands;
+    for (auto [operand, convertedValues] :
+         llvm::zip_equal(op.getArgOperands(), adaptor.getArgOperands())) {
+      collectSplitPodArrayOperandValues(
+          op.getLoc(), operand, convertedValues, newArgOperands, rewriter
+      );
+    }
     CallOp newCall = createCallPreservingInstantiationOperands(
         op.getLoc(), newResultTypes, op, mapOperands, newArgOperands, rewriter
     );
