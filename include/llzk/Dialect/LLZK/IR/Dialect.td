@@ -20,6 +20,7 @@ def LLZKDialect : Dialect {
 
   let useDefaultAttributePrinterParser = true;
   let hasOperationAttrVerify = 1;
+  let dependentDialects = ["::llzk::felt::FeltDialect"];
 }
 
 #endif // LLZK_DIALECT

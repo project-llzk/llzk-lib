@@ -42,7 +42,7 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   struct.def @LoopAuxPlacement {
-    function.def @compute() -> !struct.type<@LoopAuxPlacement> attributes {function.allow_witness} {
+    function.def @compute(%a: !felt.type) -> !struct.type<@LoopAuxPlacement> attributes {function.allow_witness} {
       %self = struct.new : <@LoopAuxPlacement>
       function.return %self : !struct.type<@LoopAuxPlacement>
     }
@@ -69,7 +69,7 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   struct.def @BranchAuxPlacement {
-    function.def @compute() -> !struct.type<@BranchAuxPlacement> attributes {function.allow_witness} {
+    function.def @compute(%a: !felt.type, %b: !felt.type, %cond: i1) -> !struct.type<@BranchAuxPlacement> attributes {function.allow_witness} {
       %self = struct.new : <@BranchAuxPlacement>
       function.return %self : !struct.type<@BranchAuxPlacement>
     }
