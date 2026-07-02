@@ -119,9 +119,8 @@ def LLZK_AuxOp
     ```
   }];
 
-  let results = (outs AnyLLZKType:$res);
+  let results = (outs LLZK_FeltType:$res);
   let assemblyFormat = [{ `:` type($res) attr-dict }];
-  let hasVerifier = 1;
 }
 
 #endif // LLZK_OPS

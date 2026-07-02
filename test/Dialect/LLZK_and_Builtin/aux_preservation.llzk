@@ -37,3 +37,65 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @LoopAuxPlacement {
+    function.def @compute() -> !struct.type<@LoopAuxPlacement> attributes {function.allow_witness} {
+      %self = struct.new : <@LoopAuxPlacement>
+      function.return %self : !struct.type<@LoopAuxPlacement>
+    }
+    function.def @constrain(%self: !struct.type<@LoopAuxPlacement>, %a: !felt.type) attributes {function.allow_constraint} {
+      %lb = arith.constant 0 : index
+      %ub = arith.constant 4 : index
+      %step = arith.constant 1 : index
+      scf.for %iv = %lb to %ub step %step {
+        %aux = llzk.aux : !felt.type
+        constrain.eq %aux, %a : !felt.type, !felt.type
+      }
+      function.return
+    }
+  }
+}
+// CHECK-LABEL:    struct.def @LoopAuxPlacement {
+// CHECK:          function.def @constrain
+// CHECK-NOT:      llzk.aux
+// CHECK:          scf.for
+// CHECK-NEXT:       %[[LOOP_AUX:[0-9a-zA-Z_\.]+]] = llzk.aux : !felt.type
+// CHECK-NEXT:       constrain.eq %[[LOOP_AUX]]
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @BranchAuxPlacement {
+    function.def @compute() -> !struct.type<@BranchAuxPlacement> attributes {function.allow_witness} {
+      %self = struct.new : <@BranchAuxPlacement>
+      function.return %self : !struct.type<@BranchAuxPlacement>
+    }
+    function.def @constrain(
+        %self: !struct.type<@BranchAuxPlacement>,
+        %a: !felt.type,
+        %b: !felt.type,
+        %cond: i1
+    ) attributes {function.allow_constraint} {
+      scf.if %cond {
+        %then_aux = llzk.aux : !felt.type
+        constrain.eq %then_aux, %a : !felt.type, !felt.type
+      } else {
+        %else_aux = llzk.aux : !felt.type
+        constrain.eq %else_aux, %b : !felt.type, !felt.type
+      }
+      function.return
+    }
+  }
+}
+// CHECK-LABEL:    struct.def @BranchAuxPlacement {
+// CHECK:          function.def @constrain
+// CHECK-NOT:      llzk.aux
+// CHECK:          scf.if
+// CHECK-NEXT:       %[[THEN_AUX:[0-9a-zA-Z_\.]+]] = llzk.aux : !felt.type
+// CHECK-NEXT:       constrain.eq %[[THEN_AUX]]
+// CHECK-NEXT:     } else {
+// CHECK-NEXT:       %[[ELSE_AUX:[0-9a-zA-Z_\.]+]] = llzk.aux : !felt.type
+// CHECK-NEXT:       constrain.eq %[[ELSE_AUX]]

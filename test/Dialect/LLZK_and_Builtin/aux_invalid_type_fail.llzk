@@ -7,7 +7,7 @@ module attributes {llzk.lang} {
       function.return %self : !struct.type<@A>
     }
     function.def @constrain(%self: !struct.type<@A>) attributes {function.allow_constraint} {
-      // expected-error@+1 {{'llzk.aux' op result #0 must be finite field element}}
+      // expected-error@+1 {{'llzk.aux' op result #0 must be finite field element, but got 'index'}}
       %0 = llzk.aux : index
       function.return
     }
