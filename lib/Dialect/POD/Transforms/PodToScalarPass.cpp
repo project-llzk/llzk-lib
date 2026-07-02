@@ -877,6 +877,7 @@ static Value rebuildFlattenedPodRecord(
 
 using VirtualPodLeafMap = DenseMap<RecordChain, Value>;
 using VirtualPodValueMap = DenseMap<Value, VirtualPodLeafMap>;
+using DeferredPodArrayLeafMap = DenseMap<Value, SmallVector<Value>>;
 
 /// Return the flattened leaf values for `podValue` when it is tracked as a virtual POD.
 static const VirtualPodLeafMap *
@@ -924,6 +925,40 @@ static bool canResolveVirtualPodRead(ReadPodOp op, const VirtualPodValueMap &vir
   }
   Type recType = llvm::cast<PodType>(op.getPodRefType()).getRecordMap().lookup(op.getRecordName());
   return llvm::isa<PodType>(recType) || !splittablePodArray(recType);
+}
+
+/// Return whether the read is preceded by a write to the same pod record within its block.
+static bool hasEarlierWriteInBlock(ReadPodOp readOp) {
+  Value podRef = readOp.getPodRef();
+  StringAttr recordName = readOp.getRecordNameAttr();
+
+  for (Operation &op : *readOp->getBlock()) {
+    if (&op == readOp.getOperation()) {
+      return false;
+    }
+
+    if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
+      if (isSamePodRecord(writeOp, podRef, recordName)) {
+        return true;
+      }
+    } else if (hasNestedWriteToRecord(op, podRef, recordName)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/// Return `true` iff `readOp` names a fresh pod record that has not been initialized or written.
+static bool isFreshUnwrittenPodRead(ReadPodOp readOp) {
+  NewPodOp newPod = readOp.getPodRef().getDefiningOp<NewPodOp>();
+  if (!newPod) {
+    return false;
+  }
+  auto isReadOpRecordName = [&readOp](Attribute attr) {
+    return attr == readOp.getRecordNameAttr();
+  };
+  return llvm::none_of(newPod.getInitializedRecords(), isReadOpRecordName) &&
+         !hasEarlierWriteInBlock(readOp);
 }
 
 /// Return `true` iff step 2 should defer splitting this array read until POD-aware rewriting.
@@ -2393,10 +2428,15 @@ static bool tryCollectReadPodSplitPodArrayLeafValues(
 /// rebuilds the element POD virtually instead of materializing the whole aggregate array first.
 class ResolvePodReadBackedArrayReadOp : public OpConversionPattern<ReadArrayOp> {
   VirtualPodValueMap &virtualPods;
+  DeferredPodArrayLeafMap &deferredPodArrays;
 
 public:
-  ResolvePodReadBackedArrayReadOp(MLIRContext *ctx, VirtualPodValueMap &virtualPodMap)
-      : OpConversionPattern<ReadArrayOp>(ctx), virtualPods(virtualPodMap) {}
+  ResolvePodReadBackedArrayReadOp(
+      MLIRContext *ctx, VirtualPodValueMap &virtualPodMap,
+      DeferredPodArrayLeafMap &deferredPodArrayMap
+  )
+      : OpConversionPattern<ReadArrayOp>(ctx), virtualPods(virtualPodMap),
+        deferredPodArrays(deferredPodArrayMap) {}
 
   static bool canResolve(ReadArrayOp op, const VirtualPodValueMap &virtualPods) {
     if (!shouldDeferPodArrayReadToStep3(op)) {
@@ -2404,15 +2444,16 @@ public:
     }
 
     ArrayType arrTy = op.getArrRefType();
+    auto fieldRead = llvm::cast<ReadPodOp>(op.getArrRef().getDefiningOp());
     SmallVector<RecordChain> splitIds;
     SmallVector<Type> splitTypes;
     splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
 
     SmallVector<Value> ignoredLeafArrays;
     return tryCollectReadPodSplitPodArrayLeafValues(
-        llvm::cast<ReadPodOp>(op.getArrRef().getDefiningOp()), arrTy, splitIds, splitTypes,
-        virtualPods, ignoredLeafArrays
-    );
+               fieldRead, arrTy, splitIds, splitTypes, virtualPods, ignoredLeafArrays
+           ) ||
+           isFreshUnwrittenPodRead(fieldRead);
   }
 
   LogicalResult matchAndRewrite(
@@ -2433,7 +2474,30 @@ public:
     if (!tryCollectReadPodSplitPodArrayLeafValues(
             fieldRead, arrTy, splitIds, splitTypes, virtualPods, splitLeafArrays
         )) {
-      return failure();
+      if (!isFreshUnwrittenPodRead(fieldRead)) {
+        return failure();
+      }
+
+      // Reuse one synthetic split-array backing per deferred field read so repeated element reads
+      // from the same aggregate value see the same unwritten leaf storage.
+      auto [it, inserted] = deferredPodArrays.try_emplace(fieldRead.getResult());
+      splitLeafArrays.assign(it->second.begin(), it->second.end());
+      if (inserted) {
+        OpBuilder::InsertionGuard guard(rewriter);
+        rewriter.setInsertionPointAfter(fieldRead);
+        splitLeafArrays.reserve(splitTypes.size());
+        for (Type splitType : splitTypes) {
+          splitLeafArrays.push_back(
+              createWritableArrayValue(rewriter, op.getLoc(), llvm::cast<ArrayType>(splitType))
+          );
+        }
+        it->second = splitLeafArrays;
+      } else {
+        assert(
+            splitLeafArrays.size() == splitTypes.size() &&
+            "cached split POD arrays must match the rewritten read arity"
+        );
+      }
     }
 
     SmallVector<Value> indices(adaptor.getIndices().begin(), adaptor.getIndices().end());
@@ -2506,6 +2570,7 @@ static LogicalResult
 step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementMap &memberRepMap) {
   MLIRContext *ctx = modOp.getContext();
   VirtualPodValueMap virtualPods;
+  DeferredPodArrayLeafMap deferredPodArrays;
 
   RewritePatternSet patterns(ctx);
   patterns.add<SplitInitFromNewPodOp>(ctx);
@@ -2514,7 +2579,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   patterns.add<SplitPodInMemberWriteOp, SplitPodInMemberReadOp>(
       ctx, symTables, memberRepMap, virtualPods
   );
-  patterns.add<ResolvePodReadBackedArrayReadOp>(ctx, virtualPods);
+  patterns.add<ResolvePodReadBackedArrayReadOp>(ctx, virtualPods, deferredPodArrays);
   patterns.add<ResolveVirtualPodReadOp>(ctx, virtualPods);
 
   ConversionTarget target(*ctx);
@@ -2549,30 +2614,6 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
     }
   }
   return success();
-}
-
-/// Return whether the read is preceded by a write to the same pod record within its block.
-static bool hasEarlierWriteInBlock(ReadPodOp readOp) {
-  Value podRef = readOp.getPodRef();
-  StringAttr recordName = readOp.getRecordNameAttr();
-
-  for (Operation &op : *readOp->getBlock()) {
-    if (&op == readOp.getOperation()) {
-      return false;
-    }
-
-    if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
-      if (isSamePodRecord(writeOp, podRef, recordName)) {
-        return true;
-      }
-      continue;
-    }
-
-    if (hasNestedWriteToRecord(op, podRef, recordName)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 /// Return whether `value` is defined within `ancestor` or one of its nested regions.
