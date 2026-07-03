@@ -105,8 +105,7 @@ Value rebuildExprInCompute(
     if (invalidTarget) {
       callOp
           .emitError(
-              "cannot rebuild function.call in compute-side auxiliary expression because the "
-              "callee "
+              "cannot rebuild function.call in compute-side auxiliary expression: callee "
               "requires attributes not present on the compute function"
           )
           .report();

@@ -32,7 +32,7 @@ module attributes {llzk.lang} {
     }
 
     function.def @constrain(%self: !struct.type<@UnsupportedIndexCallAccess>, %idx: index) {
-      // expected-error@+1 {{cannot rebuild function.call in compute-side auxiliary expression because the callee requires attributes not present on the compute function}}
+      // expected-error@+1 {{cannot rebuild function.call in compute-side auxiliary expression: callee requires attributes not present on the compute function}}
       %access = function.call @constraint_index(%idx) : (index) -> index
       %value = struct.readm %self[@cell] {()[%access]} : !struct.type<@UnsupportedIndexCallAccess>, !felt.type {tableOffset = affine_map<()[s0] -> (s0 - 1)>}
       %square = felt.mul %value, %value : !felt.type, !felt.type
@@ -72,7 +72,7 @@ module attributes {llzk.lang} {
     }
 
     function.def @constrain(%self: !struct.type<@UnsupportedCallRootedRead>, %x: !felt.type) {
-      // expected-error@+1 {{cannot rebuild function.call in compute-side auxiliary expression because the callee requires attributes not present on the compute function}}
+      // expected-error@+1 {{cannot rebuild function.call in compute-side auxiliary expression: callee requires attributes not present on the compute function}}
       %payload = function.call @constraint_payload(%x) : (!felt.type) -> !struct.type<@ConstraintOnlyPayload>
       %value = struct.readm %payload[@value] : !struct.type<@ConstraintOnlyPayload>, !felt.type
       %square = felt.mul %value, %value : !felt.type, !felt.type
