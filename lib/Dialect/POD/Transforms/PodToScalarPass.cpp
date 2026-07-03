@@ -1097,6 +1097,30 @@ materializeVirtualPod(OpBuilder &bldr, NewPodOp pod, const VirtualPodLeafMap &le
   }
 }
 
+/// Return the latest same-block operation that defines one of `leafValues`, or `pod` itself.
+///
+/// Virtual PODs created from split block arguments can be updated later with scalar values defined
+/// after the placeholder. Replaying the deferred writes immediately after the placeholder can then
+/// violate SSA dominance. Materializing after the latest same-block leaf definition preserves the
+/// original write ordering for these straight-line updates while keeping the fallback local.
+static Operation *
+findVirtualPodMaterializationAnchor(NewPodOp pod, const VirtualPodLeafMap &leafValues) {
+  Operation *anchor = pod.getOperation();
+  Block *block = anchor->getBlock();
+
+  for (const auto &it : leafValues) {
+    Operation *defOp = it.second.getDefiningOp();
+    if (!defOp || defOp->getBlock() != block) {
+      continue;
+    }
+    if (anchor->isBeforeInBlock(defOp)) {
+      anchor = defOp;
+    }
+  }
+
+  return anchor;
+}
+
 /// Return `true` iff a read from a virtual POD can be resolved without materializing it.
 static bool canResolveVirtualPodRead(ReadPodOp op, const VirtualPodValueMap &virtualPods) {
   if (!lookupVirtualPodLeafMap(op.getPodRef(), virtualPods) || hasEarlierWriteInBlock(op) ||
@@ -3411,7 +3435,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
       continue;
     }
     if (auto newPod = llvm::dyn_cast<NewPodOp>(podValue.getDefiningOp())) {
-      builder.setInsertionPointAfter(newPod);
+      builder.setInsertionPointAfter(findVirtualPodMaterializationAnchor(newPod, leafValues));
       materializeVirtualPod(builder, newPod, leafValues);
     }
   }
@@ -4187,6 +4211,33 @@ public:
   }
 };
 
+/// Rewrite `constrain.eq` over POD values into one equality per flattened leaf.
+///
+/// This runs after step 3 has finished resolving or materializing virtual POD state, so the
+/// replacement leaf reads observe the final concrete write ordering that later folds and mem2reg
+/// expect.
+class SplitPodInEmitEqualityPattern final : public OpRewritePattern<constrain::EmitEqualityOp> {
+public:
+  using OpRewritePattern<constrain::EmitEqualityOp>::OpRewritePattern;
+
+  LogicalResult
+  matchAndRewrite(constrain::EmitEqualityOp op, PatternRewriter &rewriter) const override {
+    PodType podTy = splittablePod(op.getLhs().getType());
+    if (!podTy) {
+      return failure();
+    }
+
+    SmallVector<StringAttr> recordChain;
+    forEachPodLeaf(podTy, recordChain, [&rewriter, &op](const RecordChain &id, Type) {
+      Value lhsLeaf = genReadAlongPath(rewriter, op.getLoc(), op.getLhs(), id);
+      Value rhsLeaf = genReadAlongPath(rewriter, op.getLoc(), op.getRhs(), id);
+      rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhsLeaf, rhsLeaf);
+    });
+    rewriter.eraseOp(op);
+    return success();
+  }
+};
+
 /// Apply a greedy rewrite/fold pass over the module body using the provided patterns.
 static LogicalResult
 applyGreedily(ModuleOp modOp, RewritePatternSet &&patterns, bool *changed = nullptr) {
@@ -4203,7 +4254,7 @@ static LogicalResult step4(ModuleOp modOp) {
   patterns.add<
       FoldReadAfterWriteInBlockPattern, ReplaceIfReadPattern, LiftPodWritesFromIfBlocksPattern,
       LiftPodAccessesFromForLoopPattern, LiftPodAccessesFromWhileLoopPattern,
-      FoldIfCarriedPodReadAfterWritePattern>(patterns.getContext());
+      FoldIfCarriedPodReadAfterWritePattern, SplitPodInEmitEqualityPattern>(patterns.getContext());
 
   LLVM_DEBUG(llvm::dbgs() << "Begin step 4: refactor pod ops within SCF regions\n";);
   return applyGreedily(modOp, std::move(patterns));

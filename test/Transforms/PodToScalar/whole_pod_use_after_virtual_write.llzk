@@ -1,0 +1,25 @@
+// RUN: llzk-opt -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+
+!Single = !pod.type<[@x: index]>
+module attributes {llzk.lang} {
+  function.def @whole_use_after_computed_write(
+      %lhs: !Single, %rhs: !Single, %a: index, %b: index
+  ) attributes {function.allow_constraint} {
+    %sum = arith.addi %a, %b : index
+    pod.write %lhs[@x] = %sum : !Single, index
+    constrain.eq %lhs, %rhs : !Single
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @whole_use_after_computed_write(
+// CHECK-SAME:        %[[UNUSED:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[RHS:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[A:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[B:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[SUM:[0-9a-zA-Z_\.]+]] = arith.addi %[[A]], %[[B]] : index
+// CHECK-NEXT:      constrain.eq %[[SUM]], %[[RHS]] : index, index
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
