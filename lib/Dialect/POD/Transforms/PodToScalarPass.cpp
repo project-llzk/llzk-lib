@@ -1367,6 +1367,11 @@ getFlattenedMemberName(MLIRContext *ctx, StringAttr memberName, ArrayRef<StringA
   return StringAttr::get(ctx, flatName);
 }
 
+/// Build the synthetic shape-carrier member name for a split array-of-POD member.
+inline static StringAttr getSplitPodArrayShapeMemberName(MLIRContext *ctx, StringAttr memberName) {
+  return StringAttr::get(ctx, (memberName.getValue() + "_shape").str());
+}
+
 /// Recursively create scalar leaf members for a POD-typed struct member.
 static void flattenPodMemberIntoLeaves(
     MemberDefOp originalMember, PodType podTy, SmallVectorImpl<StringAttr> &recordChain,
@@ -1458,6 +1463,17 @@ public:
       );
       newMember.setPublicAttr(op.hasPublicAttr());
       localRepMapRef[id] = std::make_pair(structSymbolTable.insert(newMember), splitType);
+    }
+    if (needsPodArrayShapeCarrier(arrTy)) {
+      ArrayType carrierTy = getPodArrayShapeCarrierType(arrTy);
+      StringAttr carrierName =
+          getSplitPodArrayShapeMemberName(op.getContext(), op.getSymNameAttr());
+      MemberDefOp carrierMember = rewriter.create<MemberDefOp>(
+          op.getLoc(), carrierName, carrierTy, op.getSignal(), op.getColumn()
+      );
+      carrierMember.setPublicAttr(op.hasPublicAttr());
+      localRepMapRef[RecordChain()] =
+          std::make_pair(structSymbolTable.insert(carrierMember), carrierTy);
     }
     rewriter.eraseOp(op);
   }
@@ -2672,6 +2688,18 @@ public:
           FlatSymbolRefAttr::get(newMember.first), getSingleConvertedValue(splitValRange)
       );
     }
+    if (needsPodArrayShapeCarrier(arrTy)) {
+      Value carrier = getConvertedPodArrayShapeCarrierIfPresent(arrTy, adaptor.getVal());
+      if (!carrier) {
+        carrier = materializeArrayLengthCarrier(op.getVal(), arrTy, op.getLoc(), rewriter);
+      }
+      const MemberInfo &carrierMember = idToMember.at(RecordChain());
+      rewriter.create<MemberWriteOp>(
+          op.getLoc(), getSingleConvertedValue(adaptor.getComponent()),
+          FlatSymbolRefAttr::get(carrierMember.first),
+          castValueToTypeIfNeeded(rewriter, op.getLoc(), carrier, carrierMember.second)
+      );
+    }
     rewriter.eraseOp(op);
     return success();
   }
@@ -2746,9 +2774,11 @@ public:
       ));
     }
     if (needsPodArrayShapeCarrier(arrTy)) {
-      replacements.push_back(
-          materializeArrayLengthCarrier(op.getResult(), arrTy, op.getLoc(), rewriter)
-      );
+      const MemberInfo &carrierMember = idToMember.at(RecordChain());
+      replacements.push_back(rewriter.create<MemberReadOp>(
+          op.getLoc(), carrierMember.second, getSingleConvertedValue(adaptor.getComponent()),
+          carrierMember.first, op.getTableOffset().value_or(nullptr), mapOperands, numDimsPerMap
+      ));
     }
     rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
     return success();
