@@ -2672,16 +2672,34 @@ public:
       return success();
     }
 
+    ArrayType destArrTy = llvm::cast<ArrayType>(op.getArrRef().getType());
+    ArrayType rvalueTy = llvm::cast<ArrayType>(op.getRvalue().getType());
     SmallVector<Value> indices = flattenConvertedValues(adaptor.getIndices());
-    auto splitArrRefs =
-        adaptor.getArrRef().take_front(getSplitPodArrayLeafCount(op.getRvalue().getType()));
-    auto splitRvalues =
-        adaptor.getRvalue().take_front(getSplitPodArrayLeafCount(op.getRvalue().getType()));
+    size_t leafCount = getSplitPodArrayLeafCount(rvalueTy);
+    auto splitArrRefs = adaptor.getArrRef().take_front(leafCount);
+    auto splitRvalues = adaptor.getRvalue().take_front(leafCount);
     for (auto [splitArrRange, splitRvalueRange] : llvm::zip_equal(splitArrRefs, splitRvalues)) {
       rewriter.create<InsertArrayOp>(
           op.getLoc(), getSingleConvertedValue(splitArrRange), indices,
           getSingleConvertedValue(splitRvalueRange)
       );
+    }
+    if (needsPodArrayShapeCarrier(rvalueTy)) {
+      Value destCarrier = getConvertedPodArrayShapeCarrierIfPresent(destArrTy, adaptor.getArrRef());
+      if (!destCarrier) {
+        return rewriter.notifyMatchFailure(
+            op, "expected converted destination shape carrier for array-of-pod insert"
+        );
+      }
+
+      Value rvalueCarrier =
+          getConvertedPodArrayShapeCarrierIfPresent(rvalueTy, adaptor.getRvalue());
+      if (!rvalueCarrier) {
+        rvalueCarrier =
+            materializeArrayLengthCarrier(op.getRvalue(), rvalueTy, op.getLoc(), rewriter);
+      }
+
+      rewriter.create<InsertArrayOp>(op.getLoc(), destCarrier, indices, rvalueCarrier);
     }
 
     rewriter.eraseOp(op);
