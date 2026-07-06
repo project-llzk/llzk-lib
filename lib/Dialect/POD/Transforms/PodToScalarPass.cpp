@@ -658,6 +658,27 @@ static Value materializeArrayLengthCarrier(
   return rewriter.create<NonDetOp>(loc, carrierTy);
 }
 
+/// Materialize the shape carrier for a rewritten `array.extract` result.
+///
+/// When the extracted array-of-POD still needs a shared shape witness, derive it from the source
+/// carrier using the same indices so later `array.len` or quantifier rewrites observe the selected
+/// subarray shape rather than an unrelated fresh witness.
+static Value materializeExtractedPodArrayShapeCarrier(
+    ExtractArrayOp op, ArrayType resultTy, Value originalArrRef, ValueRange convertedArrRefs,
+    ArrayRef<Value> indices, ConversionPatternRewriter &rewriter
+) {
+  ArrayType originalArrTy = llvm::cast<ArrayType>(originalArrRef.getType());
+  Value sourceCarrier = getConvertedPodArrayShapeCarrierIfPresent(originalArrTy, convertedArrRefs);
+  if (!sourceCarrier) {
+    sourceCarrier =
+        materializeArrayLengthCarrier(originalArrRef, originalArrTy, op.getLoc(), rewriter);
+  }
+
+  return rewriter.create<ExtractArrayOp>(
+      op.getLoc(), getPodArrayShapeCarrierType(resultTy), sourceCarrier, indices
+  );
+}
+
 /// Flatten a range of converted value ranges into a single list of values.
 template <typename RangeOfRanges>
 static SmallVector<Value> flattenConvertedValues(RangeOfRanges ranges) {
@@ -2552,9 +2573,9 @@ public:
       ));
     }
     if (needsPodArrayShapeCarrier(resultTy)) {
-      replacements.push_back(
-          materializeArrayLengthCarrier(op.getResult(), resultTy, op.getLoc(), rewriter)
-      );
+      replacements.push_back(materializeExtractedPodArrayShapeCarrier(
+          op, resultTy, op.getArrRef(), adaptor.getArrRef(), indices, rewriter
+      ));
     }
 
     rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
