@@ -383,9 +383,19 @@ static size_t splitPodArrayTypeTo(
   return 1;
 }
 
-/// Return the index-array carrier type used to preserve the shape of a zero-leaf array-of-POD.
-static ArrayType getZeroLeafPodArrayShapeCarrierType(ArrayType arrTy) {
-  return arrTy.cloneWith(IndexType::get(arrTy.getContext()));
+/// Return `true` iff any array dimension is a wildcard `?`.
+inline static bool hasWildcardArrayDimensions(ArrayRef<Attribute> dims) {
+  return llvm::any_of(dims, [](Attribute dim) {
+    if (auto intAttr = llvm::dyn_cast<IntegerAttr>(dim)) {
+      return isDynamic(intAttr);
+    }
+    return false;
+  });
+}
+
+/// Return the `none`-array carrier type used to preserve one array-of-POD shape witness.
+inline static ArrayType getPodArrayShapeCarrierType(ArrayType arrTy) {
+  return arrTy.cloneWith(NoneType::get(arrTy.getContext()));
 }
 
 /// Return `true` iff splitting `arrTy` produces no concrete POD leaf arrays.
@@ -395,17 +405,33 @@ static bool hasZeroLeafPodArraySplit(ArrayType arrTy) {
   return splitTypes.empty();
 }
 
+/// Return `true` iff step 2 should thread a shared shape witness alongside split POD leaves.
+inline static bool needsPodArrayShapeCarrier(ArrayType arrTy) {
+  return hasZeroLeafPodArraySplit(arrTy) || hasWildcardArrayDimensions(arrTy.getDimensionSizes());
+}
+
+/// Return any explicit carrier already present after converting `arrTy`.
+static Value
+getConvertedPodArrayShapeCarrierIfPresent(ArrayType arrTy, ValueRange convertedValues) {
+  SmallVector<Type> splitTypes;
+  splitPodArrayTypeTo(arrTy, splitTypes);
+  if (!needsPodArrayShapeCarrier(arrTy) || convertedValues.size() != splitTypes.size() + 1) {
+    return {};
+  }
+  return convertedValues.back();
+}
+
 /// Convert one type using the step-2 array-of-POD lowering convention.
 ///
 /// Most arrays-of-POD expand to one parallel array per POD leaf. When the element POD has no
-/// leaves, keep a single index-array carrier so later rewrites can still preserve shape and affine
-/// instantiation information.
+/// leaves, or when the outer array shape uses wildcard `?` dimensions, keep a shared `none`-array
+/// carrier so later rewrites can preserve one common shape witness alongside the split leaves.
 static size_t convertPodArrayTypeTo(Type t, SmallVectorImpl<Type> &collect) {
   if (ArrayType arrTy = splittablePodArray(t)) {
     size_t oldSize = collect.size();
     splitPodArrayTypeTo(arrTy, collect);
-    if (collect.size() == oldSize) {
-      collect.push_back(getZeroLeafPodArrayShapeCarrierType(arrTy));
+    if (needsPodArrayShapeCarrier(arrTy)) {
+      collect.push_back(getPodArrayShapeCarrierType(arrTy));
     }
     return collect.size() - oldSize;
   }
@@ -479,6 +505,9 @@ static SmallVector<std::string> getSplitPodArrayRecordNameSuffixes(Type type) {
       }
       suffixes.push_back(std::move(suffix));
     }
+    if (hasWildcardArrayDimensions(at.getDimensionSizes()) || splitIds.empty()) {
+      suffixes.push_back(".shape");
+    }
   }
   return suffixes;
 }
@@ -518,6 +547,21 @@ genWrite(OpBuilder &bldr, Location loc, Value podRef, StringAttr recordName, Val
 inline static Value getSingleConvertedValue(ValueRange values) {
   assert(values.size() == 1 && "expected a 1:1 converted value range");
   return values.front();
+}
+
+/// Return the number of concrete split leaf arrays produced for one array-of-POD type.
+static size_t getSplitPodArrayLeafCount(ArrayType arrTy) {
+  SmallVector<Type> splitTypes;
+  splitPodArrayTypeTo(arrTy, splitTypes);
+  return splitTypes.size();
+}
+
+/// Return the converted leaf-array values for one rewritten array-of-POD operand/result.
+static ValueRange getConvertedPodArrayLeafValues(ArrayType arrTy, ValueRange convertedValues) {
+  size_t leafCount = getSplitPodArrayLeafCount(arrTy);
+  return convertedValues.take_front(
+      convertedValues.size() < leafCount ? convertedValues.size() : leafCount
+  );
 }
 
 /// Store the affine-map operand groups needed to rebuild one concrete array instantiation.
@@ -566,12 +610,12 @@ static std::optional<ArrayInstantiationInfo> tryGetArrayInstantiationInfo(Value 
 
 /// Materialize a scalar array value that preserves the shape of `originalArrTy`.
 ///
-/// This is used as a shape-only carrier for `array.len` when an array-of-POD splits to
-/// zero parallel leaf arrays (for example, `!array.type<... x !pod.type<[]>>`).
+/// This is used as a shape-only carrier when an array-of-POD needs one explicit shared witness for
+/// later shape-sensitive rewrites such as `array.len`.
 static Value materializeArrayLengthCarrier(
     Value originalArrRef, ArrayType originalArrTy, Location loc, ConversionPatternRewriter &rewriter
 ) {
-  ArrayType carrierTy = getZeroLeafPodArrayShapeCarrierType(originalArrTy);
+  ArrayType carrierTy = getPodArrayShapeCarrierType(originalArrTy);
 
   if (auto create = originalArrRef.getDefiningOp<CreateArrayOp>()) {
     if (create.getMapOperands().empty()) {
@@ -811,13 +855,19 @@ static bool tryCollectDirectSplitPodArrayLeafValues(
   arrayValue = peelUnifiableCasts(arrayValue);
 
   if (auto cast = arrayValue.getDefiningOp<UnrealizedConversionCastOp>()) {
+    size_t expectedOperands = splitTypes.size() + (needsPodArrayShapeCarrier(arrTy) ? 1 : 0);
     if (cast->getNumResults() != 1 || cast.getResult(0).getType() != arrTy ||
-        cast->getNumOperands() != splitTypes.size()) {
+        cast->getNumOperands() != expectedOperands) {
+      return false;
+    }
+    if (needsPodArrayShapeCarrier(arrTy) &&
+        cast.getOperand(splitTypes.size()).getType() != getPodArrayShapeCarrierType(arrTy)) {
       return false;
     }
 
     leafArrays.reserve(splitTypes.size());
-    for (auto [operand, splitType] : llvm::zip_equal(cast.getOperands(), splitTypes)) {
+    for (auto [operand, splitType] :
+         llvm::zip_equal(cast.getOperands().take_front(splitTypes.size()), splitTypes)) {
       if (operand.getType() != splitType) {
         return false;
       }
@@ -1373,7 +1423,7 @@ public:
     SmallVector<Type> splitTypes;
     splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
     if (splitTypes.empty()) {
-      ArrayType carrierTy = getZeroLeafPodArrayShapeCarrierType(arrTy);
+      ArrayType carrierTy = getPodArrayShapeCarrierType(arrTy);
       rewriter.modifyOpInPlace(op, [&]() { op.setType(carrierTy); });
       localRepMapRef[RecordChain()] = std::make_pair(op.getSymNameAttr(), carrierTy);
       return;
@@ -1458,14 +1508,20 @@ public:
     splitPodArrayTypeTo(op.getType(), splitTypes);
     if (splitTypes.empty()) {
       rewriter.replaceOpWithNewOp<NonDetOp>(
-          op, getZeroLeafPodArrayShapeCarrierType(llvm::cast<ArrayType>(op.getType()))
+          op, getPodArrayShapeCarrierType(llvm::cast<ArrayType>(op.getType()))
       );
       return;
     }
     SmallVector<Value> replacements;
-    replacements.reserve(splitTypes.size());
+    ArrayType arrTy = llvm::cast<ArrayType>(op.getType());
+    replacements.reserve(splitTypes.size() + (needsPodArrayShapeCarrier(arrTy) ? 1 : 0));
     for (Type splitType : splitTypes) {
       replacements.push_back(rewriter.create<NonDetOp>(op.getLoc(), splitType));
+    }
+    if (needsPodArrayShapeCarrier(arrTy)) {
+      replacements.push_back(
+          rewriter.create<NonDetOp>(op.getLoc(), getPodArrayShapeCarrierType(arrTy))
+      );
     }
     rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
   }
@@ -1498,7 +1554,7 @@ public:
     SmallVector<Type> splitTypes;
     splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
     if (splitTypes.empty()) {
-      ArrayType carrierTy = getZeroLeafPodArrayShapeCarrierType(arrTy);
+      ArrayType carrierTy = getPodArrayShapeCarrierType(arrTy);
       if (adaptor.getMapOperands().empty()) {
         rewriter.replaceOpWithNewOp<CreateArrayOp>(op, carrierTy);
         return success();
@@ -1521,7 +1577,7 @@ public:
     }
 
     SmallVector<Value> replacements;
-    replacements.reserve(splitTypes.size());
+    replacements.reserve(splitTypes.size() + (needsPodArrayShapeCarrier(arrTy) ? 1 : 0));
     DenseI32ArrayAttr numDimsPerMap = op.getNumDimsPerMapAttr();
     if (isNullOrEmpty(numDimsPerMap)) {
       if (adaptor.getElements().empty()) {
@@ -1531,6 +1587,11 @@ public:
           Value splitArray = rewriter.create<CreateArrayOp>(op.getLoc(), storageSplitType);
           replacements.push_back(
               castValueToTypeIfNeeded(rewriter, op.getLoc(), splitArray, preciseSplitType)
+          );
+        }
+        if (needsPodArrayShapeCarrier(arrTy)) {
+          replacements.push_back(
+              materializeArrayLengthCarrier(op.getResult(), arrTy, op.getLoc(), rewriter)
           );
         }
         rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
@@ -1622,6 +1683,12 @@ public:
       }
     }
 
+    if (needsPodArrayShapeCarrier(arrTy)) {
+      replacements.push_back(
+          materializeArrayLengthCarrier(op.getResult(), arrTy, op.getLoc(), rewriter)
+      );
+    }
+
     rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
     return success();
   }
@@ -1655,7 +1722,8 @@ public:
     SmallVector<Value> indices = flattenConvertedValues(adaptor.getIndices());
     NewPodOp pod = rewriter.create<NewPodOp>(op.getLoc(), podTy);
     DenseMap<RecordChain, Value> leafValues;
-    for (auto [id, splitArrRange] : llvm::zip_equal(splitIds, adaptor.getArrRef())) {
+    auto splitArrRefs = adaptor.getArrRef().take_front(splitIds.size());
+    for (auto [id, splitArrRange] : llvm::zip_equal(splitIds, splitArrRefs)) {
       leafValues[id] =
           genArrayRead(rewriter, op.getLoc(), getSingleConvertedValue(splitArrRange), indices);
     }
@@ -1698,8 +1766,9 @@ public:
 
     SmallVector<Value> indices = flattenConvertedValues(adaptor.getIndices());
     Value podValue = getSingleConvertedValue(adaptor.getRvalue());
+    auto splitArrRefs = adaptor.getArrRef().take_front(splitIds.size());
     for (auto [id, splitArrRange, splitType] :
-         llvm::zip_equal(splitIds, adaptor.getArrRef(), splitTypes)) {
+         llvm::zip_equal(splitIds, splitArrRefs, splitTypes)) {
       Value leafValue = genReadAlongPath(rewriter, op.getLoc(), podValue, id);
       genArrayWrite(
           rewriter, op.getLoc(), getSingleConvertedValue(splitArrRange), indices, leafValue
@@ -1802,10 +1871,16 @@ static void collectSplitPodArrayOperandValues(
   SmallVector<Type> splitTypes;
   splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
   if (splitTypes.empty()) {
-    ArrayType carrierTy = getZeroLeafPodArrayShapeCarrierType(arrTy);
+    if (Value carrier = getConvertedPodArrayShapeCarrierIfPresent(arrTy, convertedValues)) {
+      newOperands.push_back(
+          castValueToTypeIfNeeded(rewriter, loc, carrier, getPodArrayShapeCarrierType(arrTy))
+      );
+      return;
+    }
     if (!convertedValues.empty()) {
       newOperands.push_back(castValueToTypeIfNeeded(
-          rewriter, loc, getSingleConvertedValue(convertedValues), carrierTy
+          rewriter, loc, getSingleConvertedValue(convertedValues),
+          getPodArrayShapeCarrierType(arrTy)
       ));
       return;
     }
@@ -1813,18 +1888,25 @@ static void collectSplitPodArrayOperandValues(
     return;
   }
 
-  auto isDirectAggregateToSplitCast = [&convertedValues, &splitTypes]() {
-    if (convertedValues.empty()) {
+  ValueRange leafConvertedValues = getConvertedPodArrayLeafValues(arrTy, convertedValues);
+  Value carrier = getConvertedPodArrayShapeCarrierIfPresent(arrTy, convertedValues);
+
+  auto isDirectAggregateToSplitCast = [&leafConvertedValues, &splitTypes]() {
+    if (leafConvertedValues.empty()) {
       return false;
     }
-    auto castOp = convertedValues.front().getDefiningOp<UnrealizedConversionCastOp>();
-    if (!castOp || castOp->getNumOperands() != 1 ||
-        !splittablePodArray(castOp.getOperand(0).getType()) ||
-        castOp->getNumResults() != splitTypes.size()) {
+    auto castOp = leafConvertedValues.front().getDefiningOp<UnrealizedConversionCastOp>();
+    if (!castOp || castOp->getNumOperands() != 1) {
+      return false;
+    }
+    ArrayType castArrTy = splittablePodArray(castOp.getOperand(0).getType());
+    size_t expectedResults =
+        castArrTy ? splitTypes.size() + (needsPodArrayShapeCarrier(castArrTy) ? 1 : 0) : 0;
+    if (!castArrTy || castOp->getNumResults() != expectedResults) {
       return false;
     }
 
-    return llvm::all_of(llvm::zip_equal(convertedValues, splitTypes), [&castOp](auto pair) {
+    return llvm::all_of(llvm::zip_equal(leafConvertedValues, splitTypes), [&castOp](auto pair) {
       Value convertedValue = std::get<0>(pair);
       Type splitType = std::get<1>(pair);
       return convertedValue.getDefiningOp<UnrealizedConversionCastOp>() == castOp &&
@@ -1832,14 +1914,29 @@ static void collectSplitPodArrayOperandValues(
     });
   };
 
-  if (!isDirectAggregateToSplitCast() && allValueTypesUnifyWithTypes(convertedValues, splitTypes)) {
-    llvm::append_range(newOperands, convertedValues);
+  if (!isDirectAggregateToSplitCast() &&
+      allValueTypesUnifyWithTypes(leafConvertedValues, splitTypes)) {
+    llvm::append_range(newOperands, leafConvertedValues);
+    if (carrier) {
+      newOperands.push_back(
+          castValueToTypeIfNeeded(rewriter, loc, carrier, getPodArrayShapeCarrierType(arrTy))
+      );
+    } else if (needsPodArrayShapeCarrier(arrTy)) {
+      newOperands.push_back(materializeArrayLengthCarrier(originalOperand, arrTy, loc, rewriter));
+    }
     return;
   }
 
   for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
     Value splitValue = genReadAlongPath(rewriter, loc, originalOperand, id);
     newOperands.push_back(castValueToTypeIfNeeded(rewriter, loc, splitValue, splitType));
+  }
+  if (carrier) {
+    newOperands.push_back(
+        castValueToTypeIfNeeded(rewriter, loc, carrier, getPodArrayShapeCarrierType(arrTy))
+    );
+  } else if (needsPodArrayShapeCarrier(arrTy)) {
+    newOperands.push_back(materializeArrayLengthCarrier(originalOperand, arrTy, loc, rewriter));
   }
 }
 
@@ -1872,13 +1969,14 @@ public:
       collectSplitPodArrayOperandValues(
           op.getLoc(), op.getInput(), adaptor.getInput(), splitInputs, rewriter
       );
+      ValueRange splitInputLeaves = getConvertedPodArrayLeafValues(inputArrTy, splitInputs);
       if (inputSplitTypes.empty()) {
         if (splitInputs.size() != 1) {
           return rewriter.notifyMatchFailure(
               op, "expected one shape carrier for zero-leaf array-of-pod cast input"
           );
         }
-      } else if (splitInputs.size() != inputSplitTypes.size()) {
+      } else if (splitInputLeaves.size() != inputSplitTypes.size()) {
         return rewriter.notifyMatchFailure(
             op, "failed to collect one split input per array-of-pod cast leaf"
         );
@@ -1886,10 +1984,10 @@ public:
 
       // `poly.unifiable_cast` to a non-array target cannot preserve all split leaf values in one
       // SSA value without reintroducing aggregate array-of-POD materialization.
-      auto *it = llvm::find_if(splitInputs, [&op](Value v) {
+      auto it = llvm::find_if(splitInputLeaves, [&op](Value v) {
         return typesUnify(v.getType(), op.getType());
       });
-      if (it == splitInputs.end()) {
+      if (it == splitInputLeaves.end()) {
         return rewriter.notifyMatchFailure(
             op, "failed to find split array leaf type compatible with cast target"
         );
@@ -1925,6 +2023,7 @@ public:
     collectSplitPodArrayOperandValues(
         op.getLoc(), op.getInput(), adaptor.getInput(), splitInputs, rewriter
     );
+    ValueRange splitInputLeaves = getConvertedPodArrayLeafValues(inputArrTy, splitInputs);
     if (resultSplitTypes.empty()) {
       if (splitInputs.size() != 1) {
         return rewriter.notifyMatchFailure(
@@ -1932,25 +2031,36 @@ public:
         );
       }
       rewriter.replaceOp(
-          op, castValueToTypeIfNeeded(
-                  rewriter, op.getLoc(), splitInputs.front(),
-                  getZeroLeafPodArrayShapeCarrierType(resultArrTy)
-              )
+          op,
+          castValueToTypeIfNeeded(
+              rewriter, op.getLoc(), splitInputs.front(), getPodArrayShapeCarrierType(resultArrTy)
+          )
       );
       return success();
     }
-    if (splitInputs.size() != resultSplitTypes.size()) {
+    if (splitInputLeaves.size() != resultSplitTypes.size()) {
       return rewriter.notifyMatchFailure(
           op, "failed to collect one split input per array-of-pod cast leaf"
       );
     }
 
     SmallVector<Value> replacements;
-    replacements.reserve(resultSplitTypes.size());
-    for (auto [splitInput, resultSplitType] : llvm::zip_equal(splitInputs, resultSplitTypes)) {
+    replacements.reserve(
+        resultSplitTypes.size() + (needsPodArrayShapeCarrier(resultArrTy) ? 1 : 0)
+    );
+    for (auto [splitInput, resultSplitType] : llvm::zip_equal(splitInputLeaves, resultSplitTypes)) {
       replacements.push_back(
           castValueToTypeIfNeeded(rewriter, op.getLoc(), splitInput, resultSplitType)
       );
+    }
+    if (needsPodArrayShapeCarrier(resultArrTy)) {
+      Value carrier = getConvertedPodArrayShapeCarrierIfPresent(inputArrTy, splitInputs);
+      if (!carrier) {
+        carrier = materializeArrayLengthCarrier(op.getInput(), inputArrTy, op.getLoc(), rewriter);
+      }
+      replacements.push_back(castValueToTypeIfNeeded(
+          rewriter, op.getLoc(), carrier, getPodArrayShapeCarrierType(resultArrTy)
+      ));
     }
 
     rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
@@ -2071,16 +2181,21 @@ public:
       return failure();
     }
 
-    if (ArrayType lhsTy = splittablePodArray(op.getLhs().getType());
-        lhsTy && hasZeroLeafPodArraySplit(lhsTy)) {
-      Value lhsCarrier =
-          adaptor.getLhs().empty()
-              ? materializeArrayLengthCarrier(op.getLhs(), lhsTy, op.getLoc(), rewriter)
-              : getSingleConvertedValue(adaptor.getLhs());
-      Value rhsCarrier =
-          adaptor.getRhs().empty()
-              ? materializeArrayLengthCarrier(op.getRhs(), lhsTy, op.getLoc(), rewriter)
-              : getSingleConvertedValue(adaptor.getRhs());
+    ArrayType lhsTy = splittablePodArray(op.getLhs().getType());
+    ArrayType rhsTy = splittablePodArray(op.getRhs().getType());
+    if (lhsTy && needsPodArrayShapeCarrier(lhsTy)) {
+      Value lhsCarrier = getConvertedPodArrayShapeCarrierIfPresent(lhsTy, adaptor.getLhs());
+      if (!lhsCarrier) {
+        lhsCarrier = adaptor.getLhs().empty()
+                         ? materializeArrayLengthCarrier(op.getLhs(), lhsTy, op.getLoc(), rewriter)
+                         : getSingleConvertedValue(adaptor.getLhs());
+      }
+      Value rhsCarrier = getConvertedPodArrayShapeCarrierIfPresent(lhsTy, adaptor.getRhs());
+      if (!rhsCarrier) {
+        rhsCarrier = adaptor.getRhs().empty()
+                         ? materializeArrayLengthCarrier(op.getRhs(), lhsTy, op.getLoc(), rewriter)
+                         : getSingleConvertedValue(adaptor.getRhs());
+      }
       for (size_t dim = 0, rank = lhsTy.getDimensionSizes().size(); dim < rank; ++dim) {
         Value dimVal = rewriter.create<arith::ConstantOp>(
             op.getLoc(), rewriter.getIndexAttr(llzk::checkedCast<int64_t>(dim))
@@ -2089,17 +2204,20 @@ public:
         Value rhsLen = rewriter.create<ArrayLengthOp>(op.getLoc(), rhsCarrier, dimVal);
         rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhsLen, rhsLen);
       }
-      rewriter.eraseOp(op);
-      return success();
     }
 
-    if (adaptor.getLhs().size() != adaptor.getRhs().size()) {
+    ValueRange lhsLeaves =
+        lhsTy ? getConvertedPodArrayLeafValues(lhsTy, adaptor.getLhs()) : adaptor.getLhs();
+    ValueRange rhsLeaves =
+        rhsTy ? getConvertedPodArrayLeafValues(rhsTy, adaptor.getRhs()) : adaptor.getRhs();
+
+    if (lhsLeaves.size() != rhsLeaves.size()) {
       return rewriter.notifyMatchFailure(
           op, "expected array-of-pod equality operands to expand to the same number of leaves"
       );
     }
 
-    for (auto [lhs, rhs] : llvm::zip_equal(adaptor.getLhs(), adaptor.getRhs())) {
+    for (auto [lhs, rhs] : llvm::zip_equal(lhsLeaves, rhsLeaves)) {
       rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhs, rhs);
     }
     rewriter.eraseOp(op);
@@ -2138,9 +2256,12 @@ public:
       Location loc, Value originalOperand, ValueRange convertedValues,
       ConversionPatternRewriter &rewriter
   ) {
-    if (ArrayType arrTy = splittablePodArray(originalOperand.getType());
-        arrTy && hasZeroLeafPodArraySplit(arrTy)) {
-      return {};
+    if (ArrayType arrTy = splittablePodArray(originalOperand.getType())) {
+      ValueRange leafValues = getConvertedPodArrayLeafValues(arrTy, convertedValues);
+      if (hasZeroLeafPodArraySplit(arrTy)) {
+        return {};
+      }
+      return SmallVector<Value>(leafValues.begin(), leafValues.end());
     }
 
     if (splittablePod(originalOperand.getType())) {
@@ -2181,11 +2302,14 @@ public:
       );
     }
 
-    Value shapeCarrier =
-        lhsLeaves.empty() ? (adaptor.getLhs().empty()
-                                 ? materializeArrayLengthCarrier(op.getLhs(), lhsTy, loc, rewriter)
-                                 : getSingleConvertedValue(adaptor.getLhs()))
-                          : adaptor.getLhs().front();
+    Value shapeCarrier = getConvertedPodArrayShapeCarrierIfPresent(lhsTy, adaptor.getLhs());
+    if (!shapeCarrier) {
+      shapeCarrier = lhsLeaves.empty()
+                         ? (adaptor.getLhs().empty()
+                                ? materializeArrayLengthCarrier(op.getLhs(), lhsTy, loc, rewriter)
+                                : getSingleConvertedValue(adaptor.getLhs()))
+                         : lhsLeaves.front();
+    }
     Value zero = rewriter.create<arith::ConstantOp>(loc, rewriter.getIndexAttr(0));
     Value trueVal = rewriter.create<arith::ConstantOp>(
         loc, IntegerAttr::get(IntegerType::get(rewriter.getContext(), 1), 1)
@@ -2237,8 +2361,12 @@ public:
 static Value selectArrayLengthShapeSource(
     ArrayLengthOp op, ValueRange convertedArrRefs, ConversionPatternRewriter &rewriter
 ) {
+  if (Value v = getConvertedPodArrayShapeCarrierIfPresent(op.getArrRefType(), convertedArrRefs)) {
+    return v;
+  }
+
   size_t originalRank = op.getArrRefType().getDimensionSizes().size();
-  for (Value arrRef : convertedArrRefs) {
+  for (Value arrRef : getConvertedPodArrayLeafValues(op.getArrRefType(), convertedArrRefs)) {
     auto arrTy = llvm::dyn_cast<ArrayType>(arrRef.getType());
     assert(arrTy && "converted array-of-POD operand must stay an array");
     if (arrTy.getDimensionSizes().size() == originalRank) {
@@ -2281,13 +2409,14 @@ static Value rebuildSplitPodArrayQuantifierIterValue(
   if (splitTypes.empty()) {
     return bldr.create<NewPodOp>(loc, llvm::cast<PodType>(iterType));
   }
+  ValueRange splitLeaves = getConvertedPodArrayLeafValues(sortType, convertedSort);
   assert(
-      convertedSort.size() == splitIds.size() &&
+      splitLeaves.size() == splitIds.size() &&
       "converted quantifier sort must provide one value per POD-array leaf"
   );
 
   DenseMap<RecordChain, Value> leafValues;
-  for (auto [id, leafArray] : llvm::zip_equal(splitIds, convertedSort)) {
+  for (auto [id, leafArray] : llvm::zip_equal(splitIds, splitLeaves)) {
     SmallVector<Value> indices {index};
     leafValues[id] = genArrayRead(bldr, loc, leafArray, indices);
   }
@@ -2305,9 +2434,12 @@ static LogicalResult rewriteSplitPodArrayQuantifier(
   ArrayType sortType = llvm::cast<ArrayType>(op.getSort().getType());
   Location loc = op.getLoc();
 
-  Value shapeCarrier = convertedSort.empty()
-                           ? materializeArrayLengthCarrier(op.getSort(), sortType, loc, rewriter)
-                           : convertedSort.front();
+  Value shapeCarrier = getConvertedPodArrayShapeCarrierIfPresent(sortType, convertedSort);
+  if (!shapeCarrier) {
+    shapeCarrier = convertedSort.empty()
+                       ? materializeArrayLengthCarrier(op.getSort(), sortType, loc, rewriter)
+                       : convertedSort.front();
+  }
   Value lowerBound = rewriter.create<arith::ConstantOp>(loc, rewriter.getIndexAttr(0));
   Value upperBound = rewriter.create<ArrayLengthOp>(loc, shapeCarrier, lowerBound);
   Value step = rewriter.create<arith::ConstantOp>(loc, rewriter.getIndexAttr(1));
@@ -2402,21 +2534,27 @@ public:
     if (splitResultTypes.empty()) {
       ArrayType resultTy = llvm::cast<ArrayType>(op.getResult().getType());
       rewriter.replaceOpWithNewOp<ExtractArrayOp>(
-          op, getZeroLeafPodArrayShapeCarrierType(resultTy),
-          getSingleConvertedValue(adaptor.getArrRef()), flattenConvertedValues(adaptor.getIndices())
+          op, getPodArrayShapeCarrierType(resultTy), getSingleConvertedValue(adaptor.getArrRef()),
+          flattenConvertedValues(adaptor.getIndices())
       );
       return success();
     }
 
     SmallVector<Value> indices = flattenConvertedValues(adaptor.getIndices());
     SmallVector<Value> replacements;
-    replacements.reserve(splitResultTypes.size());
-    for (auto [splitArrRange, splitResultType] :
-         llvm::zip_equal(adaptor.getArrRef(), splitResultTypes)) {
+    ArrayType resultTy = llvm::cast<ArrayType>(op.getResult().getType());
+    replacements.reserve(splitResultTypes.size() + (needsPodArrayShapeCarrier(resultTy) ? 1 : 0));
+    auto splitArrRefs = adaptor.getArrRef().take_front(splitResultTypes.size());
+    for (auto [splitArrRange, splitResultType] : llvm::zip_equal(splitArrRefs, splitResultTypes)) {
       replacements.push_back(rewriter.create<ExtractArrayOp>(
           op.getLoc(), llvm::cast<ArrayType>(splitResultType),
           getSingleConvertedValue(splitArrRange), indices
       ));
+    }
+    if (needsPodArrayShapeCarrier(resultTy)) {
+      replacements.push_back(
+          materializeArrayLengthCarrier(op.getResult(), resultTy, op.getLoc(), rewriter)
+      );
     }
 
     rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
@@ -2448,8 +2586,11 @@ public:
     }
 
     SmallVector<Value> indices = flattenConvertedValues(adaptor.getIndices());
-    for (auto [splitArrRange, splitRvalueRange] :
-         llvm::zip_equal(adaptor.getArrRef(), adaptor.getRvalue())) {
+    auto splitArrRefs =
+        adaptor.getArrRef().take_front(getSplitPodArrayLeafCount(op.getRvalue().getType()));
+    auto splitRvalues =
+        adaptor.getRvalue().take_front(getSplitPodArrayLeafCount(op.getRvalue().getType()));
+    for (auto [splitArrRange, splitRvalueRange] : llvm::zip_equal(splitArrRefs, splitRvalues)) {
       rewriter.create<InsertArrayOp>(
           op.getLoc(), getSingleConvertedValue(splitArrRange), indices,
           getSingleConvertedValue(splitRvalueRange)
@@ -2502,7 +2643,8 @@ public:
       return success();
     }
 
-    for (auto [id, splitValRange] : llvm::zip_equal(splitIds, adaptor.getVal())) {
+    auto splitVals = adaptor.getVal().take_front(splitIds.size());
+    for (auto [id, splitValRange] : llvm::zip_equal(splitIds, splitVals)) {
       const MemberInfo &newMember = idToMember.at(id);
       rewriter.create<MemberWriteOp>(
           op.getLoc(), getSingleConvertedValue(adaptor.getComponent()),
@@ -2574,13 +2716,18 @@ public:
       return success();
     }
     SmallVector<Value> replacements;
-    replacements.reserve(splitIds.size());
+    replacements.reserve(splitIds.size() + (needsPodArrayShapeCarrier(arrTy) ? 1 : 0));
     for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
       const MemberInfo &newMember = idToMember.at(id);
       replacements.push_back(rewriter.create<MemberReadOp>(
           op.getLoc(), splitType, getSingleConvertedValue(adaptor.getComponent()), newMember.first,
           op.getTableOffset().value_or(nullptr), mapOperands, numDimsPerMap
       ));
+    }
+    if (needsPodArrayShapeCarrier(arrTy)) {
+      replacements.push_back(
+          materializeArrayLengthCarrier(op.getResult(), arrTy, op.getLoc(), rewriter)
+      );
     }
     rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
     return success();
@@ -3026,12 +3173,18 @@ static bool tryCollectMaterializedSplitPodArrayLeafValues(
     Value arrayValue, ArrayType arrTy, ArrayRef<Type> splitTypes, SmallVectorImpl<Value> &leafArrays
 ) {
   auto cast = arrayValue.getDefiningOp<UnrealizedConversionCastOp>();
+  size_t expectedOperands = splitTypes.size() + (needsPodArrayShapeCarrier(arrTy) ? 1 : 0);
   if (!cast || cast->getNumResults() != 1 || cast.getResult(0).getType() != arrTy ||
-      cast->getNumOperands() != splitTypes.size()) {
+      cast->getNumOperands() != expectedOperands) {
+    return false;
+  }
+  if (needsPodArrayShapeCarrier(arrTy) &&
+      cast.getOperand(splitTypes.size()).getType() != getPodArrayShapeCarrierType(arrTy)) {
     return false;
   }
 
-  for (auto [operand, splitType] : llvm::zip_equal(cast.getOperands(), splitTypes)) {
+  for (auto [operand, splitType] :
+       llvm::zip_equal(cast.getOperands().take_front(splitTypes.size()), splitTypes)) {
     if (operand.getType() != splitType) {
       return false;
     }
@@ -3146,16 +3299,19 @@ static bool getDeferredSplitPodArrayCastInfo(
   }
 
   splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
-  if (op->getNumResults() != splitTypes.size()) {
+  size_t expectedResults = splitTypes.size() + (needsPodArrayShapeCarrier(arrTy) ? 1 : 0);
+  if (op->getNumResults() != expectedResults) {
     return false;
   }
 
-  for (auto [result, splitType] : llvm::zip_equal(op.getResults(), splitTypes)) {
+  for (auto [result, splitType] :
+       llvm::zip_equal(op.getResults().take_front(splitTypes.size()), splitTypes)) {
     if (result.getType() != splitType) {
       return false;
     }
   }
-  return true;
+  return !needsPodArrayShapeCarrier(arrTy) ||
+         op.getResult(splitTypes.size()).getType() == getPodArrayShapeCarrierType(arrTy);
 }
 
 /// Resolve deferred `array.read` from `pod.read`-produced array-of-POD values.
@@ -3291,7 +3447,13 @@ public:
       return failure();
     }
 
-    rewriter.replaceOp(op, splitLeafArrays);
+    SmallVector<Value> replacements(splitLeafArrays.begin(), splitLeafArrays.end());
+    if (needsPodArrayShapeCarrier(arrTy)) {
+      replacements.push_back(
+          materializeArrayLengthCarrier(fieldRead.getResult(), arrTy, op.getLoc(), rewriter)
+      );
+    }
+    rewriter.replaceOp(op, replacements);
     eraseDeadDeferredFieldReadChain(fieldRead, rewriter);
     return success();
   }
