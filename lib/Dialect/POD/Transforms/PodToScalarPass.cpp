@@ -564,6 +564,20 @@ static ValueRange getConvertedPodArrayLeafValues(ArrayType arrTy, ValueRange con
   );
 }
 
+/// Return a trailing step-2 array shape carrier when present in converted values.
+static Value getTrailingArrayShapeCarrierIfPresent(ValueRange convertedValues) {
+  if (convertedValues.empty()) {
+    return {};
+  }
+
+  auto arrTy = llvm::dyn_cast<ArrayType>(convertedValues.back().getType());
+  if (!arrTy || !llvm::isa<NoneType>(arrTy.getElementType())) {
+    return {};
+  }
+
+  return convertedValues.back();
+}
+
 /// Store the affine-map operand groups needed to rebuild one concrete array instantiation.
 ///
 /// The layout mirrors `array.new`: `mapOperandStorage` keeps each instantiation group separately,
@@ -2220,25 +2234,49 @@ public:
 
     ArrayType lhsTy = splittablePodArray(op.getLhs().getType());
     ArrayType rhsTy = splittablePodArray(op.getRhs().getType());
-    if (lhsTy && needsPodArrayShapeCarrier(lhsTy)) {
-      Value lhsCarrier = getConvertedPodArrayShapeCarrierIfPresent(lhsTy, adaptor.getLhs());
-      if (!lhsCarrier) {
-        lhsCarrier = adaptor.getLhs().empty()
-                         ? materializeArrayLengthCarrier(op.getLhs(), lhsTy, op.getLoc(), rewriter)
-                         : getSingleConvertedValue(adaptor.getLhs());
+    auto getShapeSource = [&op, &rewriter](
+                              ArrayType arrTy, Value originalValue, ValueRange convertedValues
+                          ) -> Value {
+      if (Value carrier = getConvertedPodArrayShapeCarrierIfPresent(arrTy, convertedValues)) {
+        return carrier;
       }
-      Value rhsCarrier = getConvertedPodArrayShapeCarrierIfPresent(lhsTy, adaptor.getRhs());
-      if (!rhsCarrier) {
-        rhsCarrier = adaptor.getRhs().empty()
-                         ? materializeArrayLengthCarrier(op.getRhs(), lhsTy, op.getLoc(), rewriter)
-                         : getSingleConvertedValue(adaptor.getRhs());
+
+      if (Value trailingCarrier = getTrailingArrayShapeCarrierIfPresent(convertedValues)) {
+        return trailingCarrier;
       }
+
+      ValueRange leafValues = getConvertedPodArrayLeafValues(arrTy, convertedValues);
+      if (!leafValues.empty()) {
+        return leafValues.front();
+      }
+
+      if (!convertedValues.empty()) {
+        return getSingleConvertedValue(convertedValues);
+      }
+
+      return materializeArrayLengthCarrier(originalValue, arrTy, op.getLoc(), rewriter);
+    };
+
+    bool lhsNeedsShapeCheck = lhsTy && (needsPodArrayShapeCarrier(lhsTy) ||
+                                        getTrailingArrayShapeCarrierIfPresent(adaptor.getLhs()));
+    bool rhsNeedsShapeCheck = rhsTy && (needsPodArrayShapeCarrier(rhsTy) ||
+                                        getTrailingArrayShapeCarrierIfPresent(adaptor.getRhs()));
+    if (lhsTy && rhsTy && (lhsNeedsShapeCheck || rhsNeedsShapeCheck)) {
+      if (lhsTy.getDimensionSizes().size() != rhsTy.getDimensionSizes().size()) {
+        return rewriter.notifyMatchFailure(
+            op, "expected array-of-pod equality operands with matching rank"
+        );
+      }
+
+      Value lhsShapeSource = getShapeSource(lhsTy, op.getLhs(), adaptor.getLhs());
+      Value rhsShapeSource = getShapeSource(rhsTy, op.getRhs(), adaptor.getRhs());
+
       for (size_t dim = 0, rank = lhsTy.getDimensionSizes().size(); dim < rank; ++dim) {
         Value dimVal = rewriter.create<arith::ConstantOp>(
             op.getLoc(), rewriter.getIndexAttr(llzk::checkedCast<int64_t>(dim))
         );
-        Value lhsLen = rewriter.create<ArrayLengthOp>(op.getLoc(), lhsCarrier, dimVal);
-        Value rhsLen = rewriter.create<ArrayLengthOp>(op.getLoc(), rhsCarrier, dimVal);
+        Value lhsLen = rewriter.create<ArrayLengthOp>(op.getLoc(), lhsShapeSource, dimVal);
+        Value rhsLen = rewriter.create<ArrayLengthOp>(op.getLoc(), rhsShapeSource, dimVal);
         rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhsLen, rhsLen);
       }
     }
