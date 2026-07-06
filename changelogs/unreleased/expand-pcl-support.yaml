@@ -1,0 +1,3 @@
+added:
+  - "`llzk-inline-top-level-functions` pass that inlines calls to module-level `function.def`s and erases the resulting unused helpers"
+  - "`llzk-full-inlining` pass pipeline chaining `llzk-full-struct-inlining` with `llzk-inline-top-level-functions`"
