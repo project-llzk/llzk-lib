@@ -1,0 +1,118 @@
+// RUN: llzk-opt -split-input-file -llzk-inline-top-level-functions %s | FileCheck --enable-var-scope %s
+
+// Simple single-callee scenario.
+module attributes {llzk.lang} {
+  function.def @add_one(%x: !felt.type) -> !felt.type {
+    %one = felt.const 1
+    %r = felt.add %x, %one : !felt.type, !felt.type
+    function.return %r : !felt.type
+  }
+
+  struct.def @Main {
+    struct.member @out : !felt.type {llzk.pub}
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %r = function.call @add_one(%x) : (!felt.type) -> !felt.type
+      %o = struct.readm %self[@out] : !struct.type<@Main>, !felt.type
+      constrain.eq %o, %r : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-NOT: function.def @add_one
+// CHECK-LABEL: struct.def @Main
+// CHECK: function.def @constrain
+// CHECK-NOT: function.call @add_one
+// CHECK: %[[ONE:[0-9a-zA-Z_\.]+]] = felt.const 1
+// CHECK: %[[R:[0-9a-zA-Z_\.]+]] = felt.add {{.*}}, %[[ONE]]
+// CHECK: constrain.eq {{.*}}, %[[R]]
+
+// -----
+
+// Multiple call sites of the same helper.
+module attributes {llzk.lang} {
+  function.def @double(%x: !felt.type) -> !felt.type {
+    %r = felt.add %x, %x : !felt.type, !felt.type
+    function.return %r : !felt.type
+  }
+
+  struct.def @Main {
+    struct.member @out : !felt.type {llzk.pub}
+    function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type, %y: !felt.type) {
+      %a = function.call @double(%x) : (!felt.type) -> !felt.type
+      %b = function.call @double(%y) : (!felt.type) -> !felt.type
+      %sum = felt.add %a, %b : !felt.type, !felt.type
+      %o = struct.readm %self[@out] : !struct.type<@Main>, !felt.type
+      constrain.eq %o, %sum : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-NOT: function.def @double
+// CHECK-LABEL: struct.def @Main
+// CHECK: function.def @constrain
+// CHECK-NOT: function.call @double
+// CHECK-COUNT-2: felt.add
+// CHECK: constrain.eq
+
+// -----
+
+// A call to a struct-scoped function must be left alone, and the containing
+// struct must not be erased by the cleanup sweep.
+// Also exercises the `isExternal()` guard.
+module attributes {llzk.lang} {
+  function.def @top_helper(%x: !felt.type) -> !felt.type {
+    %two = felt.const 2
+    %r = felt.mul %x, %two : !felt.type, !felt.type
+    function.return %r : !felt.type
+  }
+
+  function.def private @abort()
+
+  struct.def @Helper {
+    function.def @compute() -> !struct.type<@Helper> {
+      %self = struct.new : !struct.type<@Helper>
+      function.return %self : !struct.type<@Helper>
+    }
+    function.def @constrain(%self: !struct.type<@Helper>) {
+      function.return
+    }
+  }
+
+  struct.def @Main {
+    struct.member @h : !struct.type<@Helper>
+    struct.member @out : !felt.type {llzk.pub}
+    function.def @compute(%x: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !felt.type) {
+      %r = function.call @top_helper(%x) : (!felt.type) -> !felt.type
+      %h = struct.readm %self[@h] : !struct.type<@Main>, !struct.type<@Helper>
+      function.call @Helper::@constrain(%h) : (!struct.type<@Helper>) -> ()
+      function.call @abort() : () -> ()
+      %o = struct.readm %self[@out] : !struct.type<@Main>, !felt.type
+      constrain.eq %o, %r : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+
+// The top-level helper is inlined and erased; `@abort` survives.
+// CHECK-NOT: function.def @top_helper
+// CHECK: function.def private @abort
+// CHECK-LABEL: struct.def @Helper
+// CHECK-LABEL: struct.def @Main
+// CHECK: felt.mul
+// CHECK-NOT: function.call @top_helper
+// CHECK: function.call @Helper::@constrain
+// CHECK: function.call @abort
