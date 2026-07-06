@@ -141,9 +141,8 @@ static FailureOr<bool> removeUnusedDiscardableAllocations(
     ModuleOp module, StringRef allocatorOpName, const DataLayout &dataLayout
 ) {
   bool changed = false;
-  bool changedThisIteration = false;
+  bool changedThisIteration;
   do {
-    changedThisIteration = false;
     SmallVector<Operation *> opsToErase;
     SmallVector<Operation *> maybeDeadDefs;
     llvm::SmallPtrSet<Operation *, 16> seen;
