@@ -9,9 +9,50 @@
 
 #pragma once
 
+#include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Pass/PassBase.h"
+#include "llzk/Util/Walk.h"
+
+#include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/IR/Operation.h>
 
 namespace llzk::pod {
+
+namespace detail {
+
+/// Return the nearest enclosing SCF loop that carries writes to the same external POD record.
+///
+/// This is used by POD-to-scalar lowering to decide when synthetic split-array backing for a fresh
+/// array-of-POD field read must be hoisted out of the loop body so writes remain visible to later
+/// iterations.
+inline mlir::Operation *findNearestLoopCarriedPodAccess(ReadPodOp readOp) {
+  auto isValueDefinedInside = [](mlir::Operation *ancestor, mlir::Value value) {
+    if (mlir::Operation *defOp = value.getDefiningOp()) {
+      return ancestor->isAncestor(defOp);
+    }
+
+    auto blockArg = llvm::dyn_cast<mlir::BlockArgument>(value);
+    mlir::Operation *parentOp = blockArg.getOwner()->getParentOp();
+    return parentOp && ancestor->isAncestor(parentOp);
+  };
+
+  for (mlir::Operation *parent = readOp->getParentOp(); parent; parent = parent->getParentOp()) {
+    if (!mlir::isa<mlir::scf::ForOp, mlir::scf::WhileOp>(parent) ||
+        isValueDefinedInside(parent, readOp.getPodRef())) {
+      continue;
+    }
+
+    if (walkContainsMatch<WritePodOp>(*parent, [&readOp](WritePodOp writeOp) {
+      return writeOp.getPodRef() == readOp.getPodRef() &&
+             writeOp.getRecordNameAttr() == readOp.getRecordNameAttr();
+    })) {
+      return parent;
+    }
+  }
+  return nullptr;
+}
+
+} // namespace detail
 
 #define GEN_PASS_DECL
 #define GEN_PASS_REGISTRATION

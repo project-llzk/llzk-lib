@@ -3251,7 +3251,11 @@ static bool resolveReadPodSplitPodArrayLeafValues(
   leafArrays.assign(it->second.begin(), it->second.end());
   if (inserted) {
     OpBuilder::InsertionGuard guard(bldr);
-    bldr.setInsertionPointAfter(readOp);
+    if (Operation *loopOp = llzk::pod::detail::findNearestLoopCarriedPodAccess(readOp)) {
+      bldr.setInsertionPoint(loopOp);
+    } else {
+      bldr.setInsertionPointAfter(readOp);
+    }
     leafArrays.reserve(splitTypes.size());
     for (Type splitType : splitTypes) {
       leafArrays.push_back(createWritableArrayValue(bldr, loc, llvm::cast<ArrayType>(splitType)));
