@@ -419,8 +419,9 @@ public:
   }
 
   bool isValidArrayElemTypeImpl(Type type) {
-    // ArrayType element can be any valid type sans ArrayType itself.
-    return !llvm::isa<ArrayType>(type) && isValidTypeImpl(type);
+    // ArrayType element can be any valid type sans ArrayType itself. Additionally, `NoneType`
+    // is permitted for shape-only arrays that carry no element payload.
+    return llvm::isa<NoneType>(type) || (!llvm::isa<ArrayType>(type) && isValidTypeImpl(type));
   }
 
   bool isValidArrayTypeImpl(

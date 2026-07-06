@@ -98,7 +98,7 @@ bool isValidEmitEqType(mlir::Type type);
 /// valid types: {I1, Index, FeltType, TypeVarType}
 bool isValidConstReadType(mlir::Type type);
 
-/// valid types: isValidType() - {ArrayType}
+/// valid types: isValidType() - {ArrayType}, plus `NoneType` for shape-only arrays
 bool isValidArrayElemType(mlir::Type type);
 
 /// Checks if the type is a LLZK Array and it also contains a valid LLZK type.

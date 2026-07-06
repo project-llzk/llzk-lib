@@ -31,6 +31,7 @@ def LLZK_ArrayType
     It can only be instantiated with the following element types:
       - Any LLZK type other than an ArrayType (i.e., arrays cannot be nested)
       - IndexType
+      - NoneType for shape-only arrays with no element payload
       - Unsigned integers of 1 bit (aka booleans)
 
     The dimensions of the array are specified using a list of attributes, one
