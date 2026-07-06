@@ -2444,7 +2444,19 @@ static Value rebuildSplitPodArrayQuantifierIterValue(
   SmallVector<Type> splitTypes;
   splitPodArrayTypeTo(sortType, splitTypes, &splitIds);
   if (splitTypes.empty()) {
-    return bldr.create<NewPodOp>(loc, llvm::cast<PodType>(iterType));
+    if (auto podIterType = llvm::dyn_cast<PodType>(iterType)) {
+      return bldr.create<NewPodOp>(loc, podIterType);
+    }
+
+    auto arrIterType = llvm::cast<ArrayType>(iterType);
+    Value shapeCarrier = getConvertedPodArrayShapeCarrierIfPresent(sortType, convertedSort);
+    if (!shapeCarrier) {
+      assert(!convertedSort.empty() && "expected converted quantifier sort shape carrier");
+      shapeCarrier = convertedSort.front();
+    }
+    Value extracted = genArrayRead(bldr, loc, shapeCarrier, ArrayRef<Value> {index});
+    return bldr.create<UnrealizedConversionCastOp>(loc, TypeRange {arrIterType}, extracted)
+        .getResult(0);
   }
   ValueRange splitLeaves = getConvertedPodArrayLeafValues(sortType, convertedSort);
   assert(
