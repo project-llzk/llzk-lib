@@ -106,6 +106,14 @@ void buildFullStructInliningPipeline(OpPassManager &pm, const FullStructInlining
   );
 }
 
+void buildFullInliningPipeline(OpPassManager &pm, const FullStructInliningConfig &cfg) {
+  buildFullStructInliningPipelineImpl(
+      pm, cfg.flattening, cfg.arrayToScalar, cfg.podToScalar,
+      component::createInlineStructsPass(cfg.inlining)
+  );
+  pm.addPass(createInlineTopLevelFunctionsPass());
+}
+
 void buildFullPolyLoweringPipeline(OpPassManager &pm, const FullPolyLoweringConfig &cfg) {
   buildFullPolyLoweringPipelineImpl(
       pm, cfg.structInlining.flattening, cfg.structInlining.arrayToScalar,
@@ -150,6 +158,20 @@ void registerTransformationPassPipelines() {
         pm, flattening->createPassOptions(), opts.arrayToScalar, opts.podToScalar,
         createConfiguredPass(opts.inlining)
     );
+  }
+  );
+
+  PassPipelineRegistration<FullStructInliningOptions>(
+      "llzk-full-inlining",
+      "Run flattening, struct inlining, and then top-level function inlining. This is the "
+      "recommended pipeline before any downstream pass that does not understand `function.call`.",
+      [](OpPassManager &pm, const FullStructInliningOptions &opts) {
+    auto flattening = opts.flattening.getValue().createOptions();
+    buildFullStructInliningPipelineImpl(
+        pm, flattening->createPassOptions(), opts.arrayToScalar, opts.podToScalar,
+        createConfiguredPass(opts.inlining)
+    );
+    pm.addPass(createInlineTopLevelFunctionsPass());
   }
   );
 

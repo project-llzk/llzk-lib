@@ -120,6 +120,17 @@ def EnforceNoMemberOverwritePass : LLZKPass<"llzk-enforce-no-overwrite"> {
   }];
 }
 
+def InlineTopLevelFunctionsPass
+    : LLZKPass<"llzk-inline-top-level-functions"> {
+  let summary = "Inline calls to top-level (module-level) free functions";
+  let description = [{
+    Inlines `function.call` operations that target top-level `function.def`
+    functions (i.e. functions whose parent is a `builtin.module`)
+    into their callers. After inlining, top-level functions that
+    have no remaining uses in the module are erased.
+  }];
+}
+
 def WhileToForPass : LLZKPass<"llzk-while-to-for"> {
   let summary =
       "Converts scf.while loops to equivalent scf.for loops when possible";

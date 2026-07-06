@@ -125,6 +125,8 @@ void buildProductProgramPipeline(mlir::OpPassManager &);
 
 void buildFullStructInliningPipeline(mlir::OpPassManager &, const FullStructInliningConfig &);
 
+void buildFullInliningPipeline(mlir::OpPassManager &, const FullStructInliningConfig &);
+
 void registerTransformationPassPipelines();
 
 } // namespace llzk
