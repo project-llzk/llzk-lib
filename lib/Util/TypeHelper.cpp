@@ -64,9 +64,12 @@ template <typename Derived, typename ResultType> struct LLZKTypeSwitch {
         .template Case<ArrayType>([this](auto t) {
       return static_cast<Derived *>(this)->caseArray(t);
     })
-        .template Case<PodType>([this](auto t) { return static_cast<Derived *>(this)->casePod(t); })
         .template Case<StructType>([this](auto t) {
       return static_cast<Derived *>(this)->caseStruct(t);
+    }).template Case<PodType>([this](auto t) {
+      return static_cast<Derived *>(this)->casePod(t);
+    }).template Case<NoneType>([this](auto t) {
+      return static_cast<Derived *>(this)->caseNone(t);
     }).Default([this](Type t) {
       if (t.isSignlessInteger(1)) {
         return static_cast<Derived *>(this)->caseBool(cast<IntegerType>(t));
@@ -106,6 +109,7 @@ BuildShortTypeString &BuildShortTypeString::append(Type type) {
     Impl(BuildShortTypeString &outerRef) : outer(outerRef) {}
 
     void caseInvalid(Type) { outer.ss << "!INVALID"; }
+    void caseNone(NoneType) { outer.ss << 'n'; }
     void caseBool(IntegerType) { outer.ss << 'b'; }
     void caseIndex(IndexType) { outer.ss << 'i'; }
     void caseFelt(FeltType) { outer.ss << 'f'; }
@@ -522,6 +526,7 @@ bool AllowedTypes::isValidTypeImpl(Type type) {
       }
       return !outer.no_struct && outer.areValidStructTypeParams(t.getParams());
     }
+    bool caseNone(NoneType) { return false; }
     bool caseInvalid(Type) { return false; }
   };
   return Impl(*this).match(type);
@@ -576,6 +581,7 @@ ArrayType flattenArrayElementType(ArrayType outerArrTy, Type elementType) {
 
 uint64_t computeEmitEqCardinality(Type type) {
   struct Impl : LLZKTypeSwitch<Impl, uint64_t> {
+    uint64_t caseNone(NoneType) { return 0; }
     uint64_t caseBool(IntegerType) { return 1; }
     uint64_t caseIndex(IndexType) { return 1; }
     uint64_t caseFelt(FeltType) { return 1; }
