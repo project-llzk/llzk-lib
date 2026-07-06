@@ -2312,8 +2312,9 @@ public:
 ///    in bounds using `array.len` and `constrain.eq` on the comparison results.
 /// 4. Using that same index tuple for every leaf, reading a scalar leaf with `array.read` or
 ///    extracting an array leaf with `array.extract`.
-/// 5. Emitting one `constrain.eq` per selected lhs leaf and rhs leaf, then erasing the original
-///    `constrain.in`.
+/// 5. Emitting one `constrain.eq` per selected lhs leaf and rhs leaf or, when the POD has no
+///    payload leaves, equating the selected shape carrier with the rhs shape carrier before
+///    erasing the original `constrain.in`.
 ///
 /// Reusing the same nondeterministic indices across all leaves is essential: it guarantees that all
 /// field equalities refer to the same POD element or subarray, rather than allowing different
@@ -2377,14 +2378,29 @@ public:
       );
     }
 
-    Value shapeCarrier = getConvertedPodArrayShapeCarrierIfPresent(lhsTy, adaptor.getLhs());
-    if (!shapeCarrier) {
-      shapeCarrier = lhsLeaves.empty()
-                         ? (adaptor.getLhs().empty()
-                                ? materializeArrayLengthCarrier(op.getLhs(), lhsTy, loc, rewriter)
-                                : getSingleConvertedValue(adaptor.getLhs()))
-                         : lhsLeaves.front();
-    }
+    auto getShapeSource =
+        [&loc, &rewriter](ArrayType arrTy, Value originalValue, ValueRange convertedValues) {
+      if (Value carrier = getConvertedPodArrayShapeCarrierIfPresent(arrTy, convertedValues)) {
+        return carrier;
+      }
+
+      if (Value trailingCarrier = getTrailingArrayShapeCarrierIfPresent(convertedValues)) {
+        return trailingCarrier;
+      }
+
+      ValueRange leafValues = getConvertedPodArrayLeafValues(arrTy, convertedValues);
+      if (!leafValues.empty()) {
+        return leafValues.front();
+      }
+
+      if (!convertedValues.empty()) {
+        return getSingleConvertedValue(convertedValues);
+      }
+
+      return materializeArrayLengthCarrier(originalValue, arrTy, loc, rewriter);
+    };
+
+    Value shapeCarrier = getShapeSource(lhsTy, op.getLhs(), adaptor.getLhs());
     Value zero = rewriter.create<arith::ConstantOp>(loc, rewriter.getIndexAttr(0));
     Value trueVal = rewriter.create<arith::ConstantOp>(
         loc, IntegerAttr::get(IntegerType::get(rewriter.getContext(), 1), 1)
@@ -2406,6 +2422,21 @@ public:
       rewriter.create<constrain::EmitEqualityOp>(loc, inRange, trueVal);
 
       selectedIndices.push_back(idx);
+    }
+
+    if (lhsLeaves.empty() && rhsLeaves.empty()) {
+      if (auto rhsArrTy = llvm::dyn_cast<ArrayType>(rhsTy)) {
+        Value rhsShapeCarrier = getShapeSource(rhsArrTy, op.getRhs(), adaptor.getRhs());
+        Value selectedShape =
+            selectedIndices.empty()
+                ? shapeCarrier
+                : rewriter.create<ExtractArrayOp>(
+                      loc, getPodArrayShapeCarrierType(rhsArrTy), shapeCarrier, selectedIndices
+                  );
+        rewriter.create<constrain::EmitEqualityOp>(loc, selectedShape, rhsShapeCarrier);
+      }
+      rewriter.eraseOp(op);
+      return success();
     }
 
     for (auto [lhsLeaf, rhsLeaf] : llvm::zip_equal(lhsLeaves, rhsLeaves)) {
