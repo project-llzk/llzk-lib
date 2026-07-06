@@ -26,7 +26,7 @@
 namespace llzk {
 #define GEN_PASS_DEF_INLINETOPLEVELFUNCTIONSPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
-}
+} // namespace llzk
 
 #define DEBUG_TYPE "llzk-inline-top-level-functions"
 
@@ -50,8 +50,7 @@ struct TopLevelCall {
 
 /// Collect every `function.call` in `mod` whose callee is a non-external
 /// top-level helper, paired with the resolved callee.
-static SmallVector<TopLevelCall>
-collectTopLevelCalls(ModuleOp mod, SymbolTableCollection &tables) {
+static SmallVector<TopLevelCall> collectTopLevelCalls(ModuleOp mod, SymbolTableCollection &tables) {
   SmallVector<TopLevelCall> topLevelCalls;
   mod.walk([&](CallOp call) {
     auto tgtRes = call.getCalleeTarget(tables);
@@ -100,7 +99,8 @@ class PassImpl : public llzk::impl::InlineTopLevelFunctionsPassBase<PassImpl> {
 
   /// Collects the current top-level helper call sites, then inlines them.
   /// Iterates until all module level calls are inlined.
-  LogicalResult inlineCalls(ModuleOp mod, SymbolTableCollection &tables, InlinerInterface &inliner) {
+  LogicalResult
+  inlineCalls(ModuleOp mod, SymbolTableCollection &tables, InlinerInterface &inliner) {
     SmallVector<TopLevelCall> callsToInline = collectTopLevelCalls(mod, tables);
     while (!callsToInline.empty()) {
       LLVM_DEBUG({
@@ -109,9 +109,7 @@ class PassImpl : public llzk::impl::InlineTopLevelFunctionsPassBase<PassImpl> {
       });
 
       for (auto [call, callee] : callsToInline) {
-        if (failed(inlineCall(
-                inliner, call, callee, callee.getCallableRegion(), true
-            ))) {
+        if (failed(inlineCall(inliner, call, callee, callee.getCallableRegion(), true))) {
           return call.emitError("failed to inline top-level function.call");
         }
         call.erase();
@@ -134,4 +132,4 @@ class PassImpl : public llzk::impl::InlineTopLevelFunctionsPassBase<PassImpl> {
     }
   }
 };
-} 
+} // namespace

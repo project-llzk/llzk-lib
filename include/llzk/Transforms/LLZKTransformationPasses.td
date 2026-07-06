@@ -120,8 +120,7 @@ def EnforceNoMemberOverwritePass : LLZKPass<"llzk-enforce-no-overwrite"> {
   }];
 }
 
-def InlineTopLevelFunctionsPass
-    : LLZKPass<"llzk-inline-top-level-functions"> {
+def InlineTopLevelFunctionsPass : LLZKPass<"llzk-inline-top-level-functions"> {
   let summary = "Inline calls to top-level (module-level) free functions";
   let description = [{
     Inlines `function.call` operations that target top-level `function.def`
