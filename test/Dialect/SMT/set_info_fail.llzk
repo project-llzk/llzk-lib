@@ -1,0 +1,11 @@
+// RUN: not llzk-opt %s 2>&1 | FileCheck %s
+
+// ----- invalid-key.mlir
+module {
+  smt.solver () : () -> () {
+    smt.set_info "status" sat
+    smt.yield
+  }
+}
+
+// CHECK: error: custom op 'smt.set_info' keyword must start with ':'

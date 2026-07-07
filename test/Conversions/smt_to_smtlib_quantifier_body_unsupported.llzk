@@ -1,0 +1,18 @@
+// RUN: llzk-opt --smt-to-smtlib -verify-diagnostics %s
+// Purpose: quantifier-body export failures are checked with op-local diagnostics.
+
+module {
+  smt.solver () : () -> () {
+    %quantified = smt.forall ["x"] {
+    ^bb0(%x: !smt.int):
+      // expected-error @+1 {{smt-to-smtlib quantifier bodies may only contain expression ops because SMT-LIB terms cannot contain script commands or helper emissions}}
+      %p = smt.declare_fun "p" : !smt.bool
+      smt.assert %p
+      smt.yield %p : !smt.bool
+    }
+    %holds = smt.declare_fun "holds" : !smt.bool
+    %ok = smt.eq %holds, %quantified : !smt.bool
+    smt.assert %ok
+    smt.yield
+  }
+}

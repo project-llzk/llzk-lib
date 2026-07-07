@@ -1,0 +1,47 @@
+// RUN: llzk-opt --smt-to-smtlib -o /dev/null %s | FileCheck %s
+// Purpose: module-level solver-root export with reset and helper re-emission behavior.
+
+module {
+  func.func @helper(%x: !smt.int) -> !smt.int {
+    %one = smt.int.constant 1
+    %sum = smt.int.add %x, %one
+    return %sum : !smt.int
+  }
+
+  smt.solver () : () -> () {
+    smt.set_info ":llzk-root" "module"
+    smt.set_logic "ALL"
+    %neg_one = smt.int.constant -1
+    %two = smt.int.constant 2
+    %delta = smt.int.add %neg_one, %two
+    %x = smt.declare_fun "x" : !smt.int
+    %value0 = func.call @helper(%x) : (!smt.int) -> !smt.int
+    %result0 = smt.declare_fun "result" : !smt.int
+    %ok0 = smt.eq %result0, %value0 : !smt.int
+    smt.assert %ok0
+    smt.reset
+    smt.set_logic "ALL"
+    %y = smt.declare_fun "x" : !smt.int
+    %value1 = func.call @helper(%y) : (!smt.int) -> !smt.int
+    %shifted1 = smt.int.add %value1, %delta
+    %result1 = smt.declare_fun "result" : !smt.int
+    %ok1 = smt.eq %result1, %shifted1 : !smt.int
+    smt.assert %ok1
+    smt.yield
+  }
+}
+
+// CHECK:      (set-info :llzk-root "module")
+// CHECK-NEXT: (set-logic ALL)
+// CHECK-NEXT: (declare-fun x () Int)
+// CHECK-NEXT: (define-fun helper ((helper__arg0 Int)) Int
+// CHECK-SAME: (let ((__let0 (+ helper__arg0 1))) __let0))
+// CHECK-NEXT: (declare-fun result () Int)
+// CHECK-NEXT: (assert (= result (helper x)))
+// CHECK-NEXT: (reset)
+// CHECK-NEXT: (set-logic ALL)
+// CHECK-NEXT: (declare-fun x () Int)
+// CHECK-NEXT: (define-fun helper ((helper__arg0 Int)) Int
+// CHECK-SAME: (let ((__let0 (+ helper__arg0 1))) __let0))
+// CHECK-NEXT: (declare-fun result () Int)
+// CHECK-NEXT: (assert (= result (+ (helper x) (+ (- 1) 2))))
