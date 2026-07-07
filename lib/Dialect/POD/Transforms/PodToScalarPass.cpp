@@ -372,9 +372,28 @@ static bool hasZeroLeafPodArraySplit(ArrayType arrTy) {
   return splitTypes.empty();
 }
 
+/// Return `true` iff some split POD leaf array preserves `arrTy`'s visible rank exactly.
+///
+/// Scalar POD leaves keep the original rank, while nested array leaves append their own inner
+/// dimensions. One rank-preserving leaf is enough to witness the original array shape directly in
+/// later rewrites such as `array.len`, `constrain.eq`, and `constrain.in`.
+static bool hasRankPreservingSplitPodArrayLeaf(ArrayType arrTy) {
+  SmallVector<Type> splitTypes;
+  splitPodArrayTypeTo(arrTy, splitTypes);
+  size_t originalRank = arrTy.getDimensionSizes().size();
+  return llvm::any_of(splitTypes, [originalRank](Type splitType) {
+    auto splitArrTy = llvm::dyn_cast<ArrayType>(splitType);
+    return splitArrTy && splitArrTy.getDimensionSizes().size() == originalRank;
+  });
+}
+
 /// Return `true` iff step 2 should thread a shared shape witness alongside split POD leaves.
 inline static bool needsPodArrayShapeCarrier(ArrayType arrTy) {
-  return hasZeroLeafPodArraySplit(arrTy) || hasWildcardArrayDimensions(arrTy.getDimensionSizes());
+  if (hasZeroLeafPodArraySplit(arrTy)) {
+    return true;
+  }
+  return hasWildcardArrayDimensions(arrTy.getDimensionSizes()) &&
+         !hasRankPreservingSplitPodArrayLeaf(arrTy);
 }
 
 /// Collect every converted component of `arrTy`, including any explicit trailing shape carrier.

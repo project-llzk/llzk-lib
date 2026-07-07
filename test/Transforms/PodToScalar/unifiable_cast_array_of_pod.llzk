@@ -19,23 +19,20 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @sink(
 // CHECK-SAME:    %[[ARR_X:[0-9a-zA-Z_\.]+]]: !array.type<? x index>,
-// CHECK-SAME:    %[[ARR_Y:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type>,
-// CHECK-SAME:    %[[SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<? x none>
+// CHECK-SAME:    %[[ARR_Y:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type>
 // CHECK-SAME:    ) -> index {
 // CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SHAPE]], %[[C0]] : <? x none>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_X]], %[[C0]] : <? x index>
 // CHECK-NEXT:      function.return %[[LEN]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @main(
 // CHECK-SAME:    %[[ARG_X:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>,
 // CHECK-SAME:    %[[ARG_Y:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>
-// CHECK-SAME:    ) -> (!array.type<? x index>, !array.type<? x !felt.type>, !array.type<? x none>, index) {
+// CHECK-SAME:    ) -> (!array.type<? x index>, !array.type<? x !felt.type>, index) {
 // CHECK-NEXT:      %[[CAST_X:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[ARG_X]] : (!array.type<#[[$M]] x index>) -> !array.type<? x index>
 // CHECK-NEXT:      %[[CAST_Y:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[ARG_Y]] : (!array.type<#[[$M]] x !felt.type>) -> !array.type<? x !felt.type>
-// CHECK-NEXT:      %[[SHAPE_CONCRETE:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<#[[$M]] x none>
-// CHECK-NEXT:      %[[CAST_SHAPE:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[SHAPE_CONCRETE]] : (!array.type<#[[$M]] x none>) -> !array.type<? x none>
-// CHECK-NEXT:      %[[CALL_LEN:[0-9a-zA-Z_\.]+]] = function.call @sink(%[[CAST_X]], %[[CAST_Y]], %[[CAST_SHAPE]]) : (!array.type<? x index>, !array.type<? x !felt.type>, !array.type<? x none>) -> index
-// CHECK-NEXT:      function.return %[[CAST_X]], %[[CAST_Y]], %[[CAST_SHAPE]], %[[CALL_LEN]] : !array.type<? x index>, !array.type<? x !felt.type>, !array.type<? x none>, index
+// CHECK-NEXT:      %[[CALL_LEN:[0-9a-zA-Z_\.]+]] = function.call @sink(%[[CAST_X]], %[[CAST_Y]]) : (!array.type<? x index>, !array.type<? x !felt.type>) -> index
+// CHECK-NEXT:      function.return %[[CAST_X]], %[[CAST_Y]], %[[CALL_LEN]] : !array.type<? x index>, !array.type<? x !felt.type>, index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----

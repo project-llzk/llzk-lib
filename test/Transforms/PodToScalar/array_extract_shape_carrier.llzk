@@ -12,11 +12,10 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @extract_dynamic_subarray_len(%[[SRC_X:[0-9a-zA-Z_\.]+]]: !array.type<?,? x index>, %[[SRC_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<?,? x none>, %[[IDX:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:    function.def @extract_dynamic_subarray_len(%[[SRC_X:[0-9a-zA-Z_\.]+]]: !array.type<?,? x index>, %[[IDX:[0-9a-zA-Z_\.]+]]: index) -> index {
 // CHECK-NEXT:      %[[ROW_X:[0-9a-zA-Z_\.]+]] = array.extract %[[SRC_X]]{{\[}}%[[IDX]]] : <?,? x index>
-// CHECK-NEXT:      %[[ROW_SHAPE:[0-9a-zA-Z_\.]+]] = array.extract %[[SRC_SHAPE]]{{\[}}%[[IDX]]] : <?,? x none>
 // CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ROW_SHAPE]], %[[C0]] : <? x none>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ROW_X]], %[[C0]] : <? x index>
 // CHECK-NEXT:      function.return %[[LEN]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
