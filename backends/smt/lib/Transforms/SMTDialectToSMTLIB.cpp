@@ -852,8 +852,7 @@ private:
   /// Emit one helper parameter list in SMT-LIB function-definition syntax.
   void emitHelperParameters(const PureHelperDefinition &definition) {
     llvm::interleave(
-        llvm::zip_equal(definition.argNames, definition.argSorts),
-        [this](auto argAndSort) {
+        llvm::zip_equal(definition.argNames, definition.argSorts), [this](auto argAndSort) {
       const auto &[argName, argSort] = argAndSort;
       os << '(' << argName << ' ' << argSort << ')';
     }, [this] { os << ' '; }
