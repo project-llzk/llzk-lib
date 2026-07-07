@@ -53,6 +53,7 @@ var namespacellzk_1_1smt_1_1detail =
     [ "PushOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1PushOpGenericAdaptorBase.html", "classllzk_1_1smt_1_1detail_1_1PushOpGenericAdaptorBase" ],
     [ "RepeatOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1RepeatOpGenericAdaptorBase.html", "classllzk_1_1smt_1_1detail_1_1RepeatOpGenericAdaptorBase" ],
     [ "ResetOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1ResetOpGenericAdaptorBase.html", "classllzk_1_1smt_1_1detail_1_1ResetOpGenericAdaptorBase" ],
+    [ "SetInfoOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1SetInfoOpGenericAdaptorBase.html", "classllzk_1_1smt_1_1detail_1_1SetInfoOpGenericAdaptorBase" ],
     [ "SetLogicOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1SetLogicOpGenericAdaptorBase.html", "classllzk_1_1smt_1_1detail_1_1SetLogicOpGenericAdaptorBase" ],
     [ "SMTFuncTypeStorage", "structllzk_1_1smt_1_1detail_1_1SMTFuncTypeStorage.html", "structllzk_1_1smt_1_1detail_1_1SMTFuncTypeStorage" ],
     [ "SolverOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1SolverOpGenericAdaptorBase.html", "classllzk_1_1smt_1_1detail_1_1SolverOpGenericAdaptorBase" ],

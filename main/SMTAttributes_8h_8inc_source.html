@@ -126,41 +126,87 @@ $(function(){initNavTree('SMTAttributes_8h_8inc_source.html','',''); });
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1smt.html">smt</a> {</div>
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="keyword">class </span>BitVectorAttr;</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1smt_1_1detail.html">detail</a> {</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="keyword">struct </span>BitVectorAttrStorage;</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>} <span class="comment">// namespace detail</span></div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="keyword">class </span>BitVectorAttr : <span class="keyword">public</span> ::mlir::Attribute::AttrBase&lt;BitVectorAttr, ::mlir::Attribute, detail::BitVectorAttrStorage, ::mlir::TypedAttr::Trait&gt; {</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>  <span class="keyword">using </span>Base::Base;</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>  std::string getValueAsString(<span class="keywordtype">bool</span> prefix = <span class="keyword">true</span>) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral name = <span class="stringliteral">&quot;smt.bv&quot;</span>;</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral dialectName = <span class="stringliteral">&quot;smt&quot;</span>;</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>  <span class="keyword">using </span>Base::getChecked;</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  <span class="keyword">static</span> BitVectorAttr get(::mlir::MLIRContext *context, ::llvm::APInt value);</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  <span class="keyword">static</span> BitVectorAttr getChecked(::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError, ::mlir::MLIRContext *context, ::llvm::APInt value);</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  <span class="keyword">static</span> BitVectorAttr get(::mlir::MLIRContext *context, llvm::StringRef value);</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  <span class="keyword">static</span> BitVectorAttr getChecked(::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError, ::mlir::MLIRContext *context, llvm::StringRef value);</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  <span class="keyword">static</span> BitVectorAttr get(::mlir::MLIRContext *context, uint64_t value, <span class="keywordtype">unsigned</span> width);</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <span class="keyword">static</span> BitVectorAttr getChecked(::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError, ::mlir::MLIRContext *context, uint64_t value, <span class="keywordtype">unsigned</span> width);</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  static ::llvm::LogicalResult verify(::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError, ::llvm::APInt value);</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  static ::llvm::LogicalResult verifyInvariants(::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError, ::llvm::APInt value);</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral getMnemonic() {</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    <span class="keywordflow">return</span> {<span class="stringliteral">&quot;bv&quot;</span>};</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  }</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  static ::mlir::Attribute parse(::mlir::AsmParser &amp;odsParser, ::mlir::Type odsType);</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keywordtype">void</span> print(::mlir::AsmPrinter &amp;odsPrinter) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  ::llvm::APInt getValue() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  ::mlir::Type getType() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>};</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>} <span class="comment">// namespace smt</span></div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>} <span class="comment">// namespace llzk</span></div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>MLIR_DECLARE_EXPLICIT_TYPE_ID(::llzk::smt::BitVectorAttr)</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span><span class="preprocessor">#endif  </span><span class="comment">// GET_ATTRDEF_CLASSES</span></div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
-<div class="ttc" id="anamespacellzk_1_1smt_1_1detail_html"><div class="ttname"><a href="namespacellzk_1_1smt_1_1detail.html">llzk::smt::detail</a></div><div class="ttdef"><b>Definition</b> <a href="SMT_8cpp_8inc_source.html#l00360">SMT.cpp.inc:360</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1smt_html"><div class="ttname"><a href="namespacellzk_1_1smt.html">llzk::smt</a></div><div class="ttdef"><b>Definition</b> <a href="SMT_8cpp_8inc_source.html#l00079">SMT.cpp.inc:79</a></div></div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="keyword">class </span>KeywordAttr;</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="keyword">class </span>SymbolAttr;</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1smt_1_1detail.html">detail</a> {</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="keyword">struct </span>BitVectorAttrStorage;</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>} <span class="comment">// namespace detail</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="keyword">class </span>BitVectorAttr : <span class="keyword">public</span> ::mlir::Attribute::AttrBase&lt;BitVectorAttr, ::mlir::Attribute, detail::BitVectorAttrStorage, ::mlir::TypedAttr::Trait&gt; {</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>  <span class="keyword">using </span>Base::Base;</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  std::string getValueAsString(<span class="keywordtype">bool</span> prefix = <span class="keyword">true</span>) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral name = <span class="stringliteral">&quot;smt.bv&quot;</span>;</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral dialectName = <span class="stringliteral">&quot;smt&quot;</span>;</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  <span class="keyword">using </span>Base::getChecked;</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  <span class="keyword">static</span> BitVectorAttr get(::mlir::MLIRContext *context, ::llvm::APInt value);</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  <span class="keyword">static</span> BitVectorAttr getChecked(::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError, ::mlir::MLIRContext *context, ::llvm::APInt value);</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  <span class="keyword">static</span> BitVectorAttr get(::mlir::MLIRContext *context, llvm::StringRef value);</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <span class="keyword">static</span> BitVectorAttr getChecked(::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError, ::mlir::MLIRContext *context, llvm::StringRef value);</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="keyword">static</span> BitVectorAttr get(::mlir::MLIRContext *context, uint64_t value, <span class="keywordtype">unsigned</span> width);</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keyword">static</span> BitVectorAttr getChecked(::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError, ::mlir::MLIRContext *context, uint64_t value, <span class="keywordtype">unsigned</span> width);</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  static ::llvm::LogicalResult verify(::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError, ::llvm::APInt value);</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  static ::llvm::LogicalResult verifyInvariants(::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError, ::llvm::APInt value);</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral getMnemonic() {</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    <span class="keywordflow">return</span> {<span class="stringliteral">&quot;bv&quot;</span>};</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  }</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  static ::mlir::Attribute parse(::mlir::AsmParser &amp;odsParser, ::mlir::Type odsType);</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="keywordtype">void</span> print(::mlir::AsmPrinter &amp;odsPrinter) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  ::llvm::APInt getValue() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  ::mlir::Type getType() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>};</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1smt_1_1detail.html">detail</a> {</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span><span class="keyword">struct </span>KeywordAttrStorage;</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>} <span class="comment">// namespace detail</span></div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span><span class="keyword">class </span>KeywordAttr : <span class="keyword">public</span> ::mlir::Attribute::AttrBase&lt;KeywordAttr, ::mlir::Attribute, detail::KeywordAttrStorage&gt; {</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keyword">using </span>Base::Base;</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral name = <span class="stringliteral">&quot;smt.keyword&quot;</span>;</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral dialectName = <span class="stringliteral">&quot;smt&quot;</span>;</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keyword">using </span>Base::getChecked;</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keyword">static</span> KeywordAttr get(::mlir::MLIRContext *context, ::llvm::StringRef value);</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="keyword">static</span> KeywordAttr getChecked(::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError, ::mlir::MLIRContext *context, ::llvm::StringRef value);</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  static ::llvm::LogicalResult verify(::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError, ::llvm::StringRef value);</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  static ::llvm::LogicalResult verifyInvariants(::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError, ::llvm::StringRef value);</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral getMnemonic() {</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    <span class="keywordflow">return</span> {<span class="stringliteral">&quot;keyword&quot;</span>};</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  }</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  static ::mlir::Attribute parse(::mlir::AsmParser &amp;odsParser, ::mlir::Type odsType);</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <span class="keywordtype">void</span> print(::mlir::AsmPrinter &amp;odsPrinter) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  ::llvm::StringRef getValue() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>};</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1smt_1_1detail.html">detail</a> {</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span><span class="keyword">struct </span>SymbolAttrStorage;</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>} <span class="comment">// namespace detail</span></div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span><span class="keyword">class </span>SymbolAttr : <span class="keyword">public</span> ::mlir::Attribute::AttrBase&lt;SymbolAttr, ::mlir::Attribute, detail::SymbolAttrStorage&gt; {</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <span class="keyword">using </span>Base::Base;</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral name = <span class="stringliteral">&quot;smt.symbol&quot;</span>;</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral dialectName = <span class="stringliteral">&quot;smt&quot;</span>;</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <span class="keyword">using </span>Base::getChecked;</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  <span class="keyword">static</span> SymbolAttr get(::mlir::MLIRContext *context, ::llvm::StringRef value);</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  <span class="keyword">static</span> SymbolAttr getChecked(::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError, ::mlir::MLIRContext *context, ::llvm::StringRef value);</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  static ::llvm::LogicalResult verify(::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError, ::llvm::StringRef value);</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  static ::llvm::LogicalResult verifyInvariants(::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError, ::llvm::StringRef value);</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral getMnemonic() {</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>    <span class="keywordflow">return</span> {<span class="stringliteral">&quot;symbol&quot;</span>};</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  }</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span> </div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  static ::mlir::Attribute parse(::mlir::AsmParser &amp;odsParser, ::mlir::Type odsType);</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  <span class="keywordtype">void</span> print(::mlir::AsmPrinter &amp;odsPrinter) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  ::llvm::StringRef getValue() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>};</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>} <span class="comment">// namespace smt</span></div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>MLIR_DECLARE_EXPLICIT_TYPE_ID(::llzk::smt::BitVectorAttr)</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>MLIR_DECLARE_EXPLICIT_TYPE_ID(::llzk::smt::KeywordAttr)</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>MLIR_DECLARE_EXPLICIT_TYPE_ID(::llzk::smt::SymbolAttr)</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span><span class="preprocessor">#endif  </span><span class="comment">// GET_ATTRDEF_CLASSES</span></div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span> </div>
+<div class="ttc" id="anamespacellzk_1_1smt_1_1detail_html"><div class="ttname"><a href="namespacellzk_1_1smt_1_1detail.html">llzk::smt::detail</a></div><div class="ttdef"><b>Definition</b> <a href="SMT_8cpp_8inc_source.html#l00389">SMT.cpp.inc:389</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1smt_html"><div class="ttname"><a href="namespacellzk_1_1smt.html">llzk::smt</a></div><div class="ttdef"><b>Definition</b> <a href="SMT_8cpp_8inc_source.html#l00080">SMT.cpp.inc:80</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
 <div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="ValueModel_8h_source.html#l00030">ValueModel.h:30</a></div></div>
 </div><!-- fragment --></div><!-- contents -->

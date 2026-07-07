@@ -47,7 +47,7 @@ var searchData=
   ['updatearray_44',['updateArray',['../classllzk_1_1dataflow_1_1AbstractLatticeValue.html#a26a4a54c3b4ef62059b3a8c30d0c7496',1,'llzk::dataflow::AbstractLatticeValue']]],
   ['updatescalar_45',['updateScalar',['../classllzk_1_1dataflow_1_1AbstractLatticeValue.html#a5b7a8e973bd5a7b88414ccbf533d8e8f',1,'llzk::dataflow::AbstractLatticeValue']]],
   ['upgradefromversion_46',['upgradeFromVersion',['../structllzk_1_1component_1_1StructDialectBytecodeInterface.html#adaf0d1e7a0632d4f0f0975c655df43d9',1,'llzk::component::StructDialectBytecodeInterface::upgradeFromVersion()'],['../structllzk_1_1LLZKDialectBytecodeInterface.html#a18418dd87b2b0aa8247e414abceecae3',1,'llzk::LLZKDialectBytecodeInterface::upgradeFromVersion(mlir::Operation *rootOp, const mlir::DialectVersion &amp;version) const final'],['../structllzk_1_1LLZKDialectBytecodeInterface.html#a8323c6336f8bdd5b1951688f40b3c069',1,'llzk::LLZKDialectBytecodeInterface::upgradeFromVersion(mlir::Operation *, const LLZKDialectVersion &amp;current, const LLZKDialectVersion &amp;requested) const']]],
-  ['usage_47',['Basic Usage',['../tools.html#basic-usage',1,'']]],
+  ['usage_47',['Usage',['../tools.html#basic-usage',1,'Basic Usage'],['../tools.html#basic-usage-1',1,'Basic Usage']]],
   ['use_48',['use',['../LICENSE_8txt.html#a6617cfb55e132d069e64bdfdbea31e1c',1,'use:&#160;LICENSE.txt'],['../LICENSE_8txt.html#a6617cfb55e132d069e64bdfdbea31e1c',1,'use:&#160;LICENSE.txt'],['../LICENSE_8txt.html#a6617cfb55e132d069e64bdfdbea31e1c',1,'use:&#160;LICENSE.txt']]],
   ['use_20graph_49',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-symbol-use-graph&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-symbol-use-graph',1,'']]],
   ['utils_2eh_50',['Utils.h',['../Utils_8h.html',1,'']]]

@@ -6,6 +6,6 @@ var searchData=
   ['unused_20declaration_20elim_3',['&lt;span class=&quot;tt&quot;&gt;-llzk-unused-declaration-elim&lt;/span&gt;',['../tools.html#autotoc_md-llzk-unused-declaration-elim',1,'']]],
   ['unused_20discardable_20allocations_4',['&lt;span class=&quot;tt&quot;&gt;-llzk-remove-unused-discardable-allocations&lt;/span&gt;',['../tools.html#autotoc_md-llzk-remove-unused-discardable-allocations',1,'']]],
   ['update_5',['Commit your update',['../contribution-guide.html#commit-your-update',1,'']]],
-  ['usage_6',['Basic Usage',['../tools.html#basic-usage',1,'']]],
+  ['usage_6',['Usage',['../tools.html#basic-usage',1,'Basic Usage'],['../tools.html#basic-usage-1',1,'Basic Usage']]],
   ['use_20graph_7',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-symbol-use-graph&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-symbol-use-graph',1,'']]]
 ];
