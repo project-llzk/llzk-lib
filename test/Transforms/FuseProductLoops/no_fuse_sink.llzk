@@ -1,0 +1,48 @@
+// RUN: llzk-opt --llzk-fuse-product-loops %s | FileCheck --enable-var-scope %s
+
+!F = !felt.type
+!A = !array.type<8 x !F>
+!S = !struct.type<@A>
+
+module attributes {llzk.lang} {
+    struct.def @A {
+        struct.member @foo : !A
+        struct.member @bar : !A
+        function.def @product(%arr1: !A, %b: i1) -> !S {
+            %self = struct.new : !S
+
+            %c0 = arith.constant 0 : index
+            %c1 = arith.constant 1 : index
+            %c8 = arith.constant 8 : index
+
+            %a1 = array.new : !A
+
+            scf.for %i = %c0 to %c8 step %c1 {
+                %arr1_i = array.read %arr1[%i] : !A, !F {product_source = "compute"}
+                array.write %a1[%i] = %arr1_i : !A, !F {product_source = "compute"}
+            } {product_source = "compute"}
+
+            %my_arr = scf.if %b -> !A {
+                struct.writem %self[@foo] = %a1 : !S, !A {product_source = "compute"}
+                %arr = struct.readm %self[@foo] : !S, !A {product_source = "constrain"}
+                scf.yield %arr : !A
+            } else {
+                struct.writem %self[@bar] = %a1 : !S, !A {product_source = "compute"}
+                %arr = struct.readm %self[@bar] : !S, !A {product_source = "constrain"}
+                scf.yield %arr : !A
+            } {product_source = "fused"}
+
+            scf.for %i = %c0 to %c8 step %c1 {
+                %arr1_i = array.read %arr1[%i] : !A, !F {product_source = "constrain"}
+                %my_arr_i = array.read %my_arr[%i] : !A, !F {product_source = "constrain"}
+                constrain.eq %arr1_i, %my_arr_i : !F {product_source = "constrain"}
+            } {product_source = "constrain"}
+
+            function.return %self : !S
+        }
+    }
+}
+
+// CHECK-LABEL: scf.for
+// CHECK-LABEL: scf.if
+// CHECK-LABEL: scf.for

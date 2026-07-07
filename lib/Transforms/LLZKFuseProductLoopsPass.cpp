@@ -120,93 +120,39 @@ static inline bool canLoopsBeFused(scf::ForOp a, scf::ForOp b) {
   return !*solver->check();
 }
 
-static StringRef getProductSource(Operation *op) {
-  if (auto attr = op->getAttrOfType<StringAttr>(PRODUCT_SOURCE)) {
-    return attr.getValue();
-  }
-  return {};
-}
-
-static Operation *getTopLevelAncestorInBlock(Operation *op, Block *block) {
-  while (op && op->getBlock() != block) {
-    op = op->getParentOp();
-  }
-  return op;
-}
-
-static std::optional<llvm::SmallVector<Operation *>>
-getOpsBetween(scf::ForOp firstLoop, scf::ForOp secondLoop) {
-  Block *block = firstLoop->getBlock();
-  if (block != secondLoop->getBlock()) {
-    return std::nullopt;
+/// Determine which ops need to sink past `constraintLoop`, or return failure() if some of these
+/// ops can't be sunk. Conservatively tries to sink all compute ops, but we could do a more precise
+/// analysis here
+static FailureOr<SmallVector<Operation *>>
+canPrepareForFusion(scf::ForOp witnessLoop, scf::ForOp constraintLoop) {
+  if (witnessLoop->getBlock() != constraintLoop->getBlock()) {
+    return failure();
   }
 
-  llvm::SmallVector<Operation *> between;
-  for (Operation *op = firstLoop->getNextNode(); op && op != secondLoop; op = op->getNextNode()) {
-    between.push_back(op);
-  }
-
-  if (between.empty() && firstLoop->getNextNode() != secondLoop) {
-    return std::nullopt;
-  }
-
-  return between;
-}
-
-static bool canPrepareForFusion(
-    scf::ForOp witnessLoop, scf::ForOp constraintLoop,
-    llvm::SmallVectorImpl<Operation *> &computeOpsToSink
-) {
-  auto between = getOpsBetween(witnessLoop, constraintLoop);
-  if (!between.has_value()) {
-    return false;
-  }
-
-  llvm::SmallPtrSet<Operation *, 8> computeOpsSet;
-  for (Operation *op : *between) {
-    StringRef productSource = getProductSource(op);
-    if (productSource.empty() || op->getNumRegions() != 0) {
-      return false;
+  SmallVector<Operation *> opsToSink;
+  for (auto *op = witnessLoop->getNextNode(); op != constraintLoop; op = op->getNextNode()) {
+    if (op->getAttrOfType<StringAttr>(PRODUCT_SOURCE) == "fused") {
+      // "fused" means "compute" + "constrain". Conservatively, a "compute" op we want to sink can't
+      // be sunk if it also has "constrain" since we need to preserve the relative orders within
+      // compute/constrain
+      return failure();
     }
-    if (productSource == FUNC_NAME_COMPUTE) {
-      computeOpsToSink.push_back(op);
-      computeOpsSet.insert(op);
-      continue;
-    }
-    if (productSource != FUNC_NAME_CONSTRAIN) {
-      return false;
+    if (op->getAttrOfType<StringAttr>(PRODUCT_SOURCE) == FUNC_NAME_COMPUTE) {
+      opsToSink.push_back(op);
     }
   }
-
-  Block *block = witnessLoop->getBlock();
-  for (Operation *op : computeOpsToSink) {
-    for (Value result : op->getResults()) {
-      for (Operation *user : result.getUsers()) {
-        Operation *topLevelUser = getTopLevelAncestorInBlock(user, block);
-        if (!topLevelUser) {
-          return false;
-        }
-        if (topLevelUser == constraintLoop || topLevelUser->isBeforeInBlock(constraintLoop)) {
-          if (!computeOpsSet.contains(topLevelUser)) {
-            return false;
-          }
-        }
-      }
-    }
-  }
-
-  return true;
+  return opsToSink;
 }
 
 static LogicalResult
 prepareForFusion(scf::ForOp witnessLoop, scf::ForOp constraintLoop, IRRewriter &rewriter) {
-  llvm::SmallVector<Operation *> computeOpsToSink;
-  if (!canPrepareForFusion(witnessLoop, constraintLoop, computeOpsToSink)) {
+  auto computeOpsToSink = canPrepareForFusion(witnessLoop, constraintLoop);
+  if (failed(computeOpsToSink)) {
     return failure();
   }
 
   Operation *insertionPoint = constraintLoop.getOperation();
-  for (Operation *op : computeOpsToSink) {
+  for (Operation *op : *computeOpsToSink) {
     rewriter.moveOpAfter(op, insertionPoint);
     insertionPoint = op;
   }
