@@ -923,8 +923,7 @@ private:
     return success();
   }
 
-  LogicalResult emitCheck(llzk::smt::CheckOp checkOp, EvalContext &ctx) {
-    (void)ctx;
+  LogicalResult emitCheck(llzk::smt::CheckOp checkOp, EvalContext &) {
     if (checkOp.getNumResults() != 0) {
       return checkOp.emitOpError(
           "cannot lower result-producing smt.check because SMT-LIB has no "
@@ -1167,8 +1166,7 @@ private:
     }).Case<arith::ConstantOp>([&](auto constOp) {
       return buildArithConstantExpr(constOp);
     }).Default([&](Operation *unknownOp) {
-      unknownOp->emitError("unsupported expression op in smt-to-smtlib");
-      return failure();
+      return unknownOp->emitError("unsupported expression op in smt-to-smtlib");
     });
   }
 
@@ -1181,8 +1179,7 @@ private:
       intAttr.getValue().toStringSigned(value);
       return value.str().str();
     }
-    constOp.emitOpError("unsupported arith.constant expression");
-    return failure();
+    return constOp.emitOpError("unsupported arith.constant expression");
   }
 
   FailureOr<std::string> buildCmpExpr(llzk::smt::IntCmpOp cmpOp, EvalContext &ctx) {
@@ -1320,12 +1317,10 @@ private:
   FailureOr<std::string>
   buildQuantifierExpr(StringRef quantifierName, QuantifierOpTy op, EvalContext &ctx) {
     if (!op.getPatterns().empty()) {
-      op.emitError("smt-to-smtlib does not yet support quantified pattern emission");
-      return failure();
+      return op.emitError("smt-to-smtlib does not yet support quantified pattern emission");
     }
     if (!llvm::hasSingleElement(op.getBody())) {
-      op.emitError("smt-to-smtlib requires quantifier bodies with a single block");
-      return failure();
+      return op.emitError("smt-to-smtlib requires quantifier bodies with a single block");
     }
 
     EvalContext bodyCtx = ctx;
@@ -1353,8 +1348,7 @@ private:
 
     auto yieldOp = dyn_cast<llzk::smt::YieldOp>(body.getTerminator());
     if (!yieldOp || yieldOp.getNumOperands() != 1) {
-      op.emitError("smt-to-smtlib requires quantifier bodies to yield exactly one value");
-      return failure();
+      return op.emitError("smt-to-smtlib requires quantifier bodies to yield exactly one value");
     }
     auto yielded = lookup(yieldOp.getOperand(0), bodyCtx);
     if (failed(yielded)) {
