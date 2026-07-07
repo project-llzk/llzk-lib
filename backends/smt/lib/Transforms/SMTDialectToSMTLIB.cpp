@@ -109,6 +109,19 @@ static std::string sortForType(Type type) {
   return storage;
 }
 
+/// Print an SMT-LIB boolean literal for a native boolean value.
+static void printBoolLiteral(llvm::raw_ostream &os, bool value) {
+  os << (value ? "true" : "false");
+}
+
+/// Render an SMT-LIB boolean literal for a native boolean value.
+static std::string formatBoolLiteral(bool value) {
+  std::string storage;
+  llvm::raw_string_ostream os(storage);
+  printBoolLiteral(os, value);
+  return storage;
+}
+
 /// Print a signed integer literal using SMT-LIB term syntax.
 static void printIntegerLiteral(llvm::raw_ostream &os, const llvm::APInt &value) {
   llvm::APSInt signedValue(value, /*isUnsigned=*/false);
@@ -139,7 +152,7 @@ static void printSetInfoValue(llvm::raw_ostream &os, Attribute value) {
       .Case<smt::KeywordAttr>([&os](auto keywordAttr) { os << keywordAttr.getValue(); })
       .Case<smt::SymbolAttr>([&os](auto symbolAttr) { os << symbolAttr.getValue(); })
       .Case<StringAttr>([&os](auto strAttr) { strAttr.print(os); })
-      .Case<BoolAttr>([&os](auto boolAttr) { os << (boolAttr.getValue() ? "true" : "false"); })
+      .Case<BoolAttr>([&os](auto boolAttr) { printBoolLiteral(os, boolAttr.getValue()); })
       .Case<IntegerAttr>([&os](auto intAttr) {
     printIntegerLiteral(os, intAttr.getValue());
   }).Case<ArrayAttr>([&os](auto arrayAttr) {
@@ -175,22 +188,61 @@ public:
   }
 
 private:
+  /// One rendered SSA binding tracked while linearizing SMT dialect IR.
+  ///
+  /// `text` is the SMT-LIB fragment currently bound to an MLIR value. The
+  /// `survivesReset` bit records whether that fragment remains valid after an
+  /// SMT-LIB `(reset)`.
+  ///
+  /// This distinction is necessary because the exporter caches SSA bindings
+  /// across the whole current script, while SMT-LIB reset clears solver state
+  /// such as declarations and function definitions. A cached binding like `x`
+  /// or `(helper x)` becomes invalid after reset unless the underlying symbol
+  /// or helper is re-emitted, whereas self-contained terms like `(- 1)` or
+  /// `(+ (- 1) 2)` remain valid and should not be discarded unnecessarily.
   struct ValueBinding {
+    /// Rendered SMT-LIB term or symbol name for the bound value.
     std::string text;
+
+    /// Whether `text` can still be referenced after an SMT-LIB `(reset)`.
     bool survivesReset = false;
   };
 
+  /// Per-block evaluation state used while emitting or evaluating SMT ops.
+  ///
+  /// The exporter maps MLIR SSA values to their rendered SMT-LIB bindings,
+  /// accumulates `let` bindings when preserving sharing for pure helper bodies,
+  /// and carries the current sharing policy through nested evaluation.
   struct EvalContext {
+    /// Current SSA-to-SMT-LIB binding environment.
     DenseMap<Value, ValueBinding> values;
+
+    /// Pending `let` bindings emitted around a final expression in order.
     SmallVector<std::pair<std::string, std::string>> letBindings;
+
+    /// Whether pure expression evaluation should preserve common subterms.
     bool preserveSharing = false;
   };
 
+  /// Fully rendered data for one pure helper definition.
+  ///
+  /// Pure helpers are emitted as top-level `define-fun` or recursive
+  /// `define-fun-rec`/`define-funs-rec` declarations, so the exporter stores
+  /// the fully rendered symbol, signature, and body before printing them.
   struct PureHelperDefinition {
+    /// Printed helper symbol name after SMT-LIB sanitization/uniquing.
     std::string symbol;
+
+    /// Printed parameter names used in the emitted helper definition.
     SmallVector<std::string> argNames;
+
+    /// SMT-LIB sorts for each helper parameter.
     SmallVector<std::string> argSorts;
+
+    /// SMT-LIB sort of the helper result.
     std::string resultSort;
+
+    /// Rendered SMT-LIB body term for the helper.
     std::string bodyExpr;
   };
 
@@ -212,16 +264,13 @@ private:
     selectedRootModule = getEffectiveRootModule();
     smt::SolverOp solver;
     for (Operation &op : selectedRootModule.getBody()->getOperations()) {
-      auto solverOp = dyn_cast<smt::SolverOp>(op);
-      if (!solverOp) {
-        continue;
-      }
-      if (solver) {
+      if (auto solverOp = dyn_cast<smt::SolverOp>(op); solverOp && !solver) {
+        solver = solverOp;
+      } else if (solverOp) {
         return selectedRootModule.emitError(
             "smt-to-smtlib requires exactly one top-level smt.solver in the root module"
         );
       }
-      solver = solverOp;
     }
     if (!solver) {
       return selectedRootModule.emitError(
@@ -321,6 +370,8 @@ private:
 
   /// Lower one top-level SMT dialect operation into SMT-LIB text or bindings.
   LogicalResult emitOperation(Operation *op, EvalContext &ctx) {
+    auto bind = [&](auto exprOp) { return bindExpr(exprOp, ctx); };
+
     return TypeSwitch<Operation *, LogicalResult>(op)
         .Case<smt::SetLogicOp>([this](auto setLogicOp) {
       os << "(set-logic " << setLogicOp.getLogic() << ")\n";
@@ -362,52 +413,52 @@ private:
       return emitUnrealizedCast(castOp, ctx);
     })
         .Case<arith::ConstantOp>([&](auto constOp) { return emitArithConstant(constOp, ctx); })
-        .Case<smt::BoolConstantOp>([&](auto constOp) { return bindExpr(constOp, ctx); })
-        .Case<smt::IntConstantOp>([&](auto constOp) { return bindExpr(constOp, ctx); })
-        .Case<smt::BVConstantOp>([&](auto constOp) { return bindExpr(constOp, ctx); })
-        .Case<smt::EqOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::NotOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::AndOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::OrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::XOrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::ImpliesOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::IteOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::IntNegOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::IntAddOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::IntMulOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::IntSubOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::IntDivOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::IntModOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::IntCmpOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::Int2BVOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::BV2IntOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::DistinctOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::IntAbsOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::BVNegOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::BVAndOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::BVAddOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::BVMulOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::BVUDivOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::BVSDivOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::BVURemOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::BVSRemOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::BVSModOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::BVOrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::BVXOrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::BVNotOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::BVShlOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::BVLShrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::BVAShrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::BVCmpOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::ConcatOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::ExtractOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::RepeatOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::ApplyFuncOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::ArraySelectOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::ArrayStoreOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::ArrayBroadcastOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::ForallOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<smt::ExistsOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::BoolConstantOp>(bind)
+        .Case<smt::IntConstantOp>(bind)
+        .Case<smt::BVConstantOp>(bind)
+        .Case<smt::EqOp>(bind)
+        .Case<smt::NotOp>(bind)
+        .Case<smt::AndOp>(bind)
+        .Case<smt::OrOp>(bind)
+        .Case<smt::XOrOp>(bind)
+        .Case<smt::ImpliesOp>(bind)
+        .Case<smt::IteOp>(bind)
+        .Case<smt::IntNegOp>(bind)
+        .Case<smt::IntAddOp>(bind)
+        .Case<smt::IntMulOp>(bind)
+        .Case<smt::IntSubOp>(bind)
+        .Case<smt::IntDivOp>(bind)
+        .Case<smt::IntModOp>(bind)
+        .Case<smt::IntCmpOp>(bind)
+        .Case<smt::Int2BVOp>(bind)
+        .Case<smt::BV2IntOp>(bind)
+        .Case<smt::DistinctOp>(bind)
+        .Case<smt::IntAbsOp>(bind)
+        .Case<smt::BVNegOp>(bind)
+        .Case<smt::BVAndOp>(bind)
+        .Case<smt::BVAddOp>(bind)
+        .Case<smt::BVMulOp>(bind)
+        .Case<smt::BVUDivOp>(bind)
+        .Case<smt::BVSDivOp>(bind)
+        .Case<smt::BVURemOp>(bind)
+        .Case<smt::BVSRemOp>(bind)
+        .Case<smt::BVSModOp>(bind)
+        .Case<smt::BVOrOp>(bind)
+        .Case<smt::BVXOrOp>(bind)
+        .Case<smt::BVNotOp>(bind)
+        .Case<smt::BVShlOp>(bind)
+        .Case<smt::BVLShrOp>(bind)
+        .Case<smt::BVAShrOp>(bind)
+        .Case<smt::BVCmpOp>(bind)
+        .Case<smt::ConcatOp>(bind)
+        .Case<smt::ExtractOp>(bind)
+        .Case<smt::RepeatOp>(bind)
+        .Case<smt::ApplyFuncOp>(bind)
+        .Case<smt::ArraySelectOp>(bind)
+        .Case<smt::ArrayStoreOp>(bind)
+        .Case<smt::ArrayBroadcastOp>(bind)
+        .Case<smt::ForallOp>(bind)
+        .Case<smt::ExistsOp>(bind)
         .Case<boolean::AssertOp>([&](auto assertOp) {
       return assertOp.emitError("boolean.assert is not serializable to SMT-LIB");
     }).Default([&](Operation *unknownOp) {
@@ -488,7 +539,7 @@ private:
     }
     if (auto boolAttr = dyn_cast<BoolAttr>(constOp.getValue())) {
       ctx.values[constOp.getResult()] =
-          ValueBinding {boolAttr.getValue() ? "true" : "false", /*survivesReset=*/true};
+          ValueBinding {formatBoolLiteral(boolAttr.getValue()), /*survivesReset=*/true};
       return success();
     }
     if (auto intAttr = dyn_cast<IntegerAttr>(constOp.getValue())) {
@@ -644,7 +695,6 @@ private:
       exprStream << ' ' << argExpr;
     }
     exprStream << ')';
-    exprStream.flush();
     return expr;
   }
 
@@ -799,15 +849,21 @@ private:
     return definition;
   }
 
+  /// Emit one helper parameter list in SMT-LIB function-definition syntax.
+  void emitHelperParameters(const PureHelperDefinition &definition) {
+    llvm::interleave(
+        llvm::zip_equal(definition.argNames, definition.argSorts),
+        [this](auto argAndSort) {
+      const auto &[argName, argSort] = argAndSort;
+      os << '(' << argName << ' ' << argSort << ')';
+    }, [this] { os << ' '; }
+    );
+  }
+
   /// Emit a non-recursive pure helper as a `define-fun`.
   LogicalResult emitPureHelperDefinition(const PureHelperDefinition &definition) {
     os << "(define-fun " << definition.symbol << " (";
-    for (auto [index, argName] : llvm::enumerate(definition.argNames)) {
-      if (index != 0) {
-        os << ' ';
-      }
-      os << '(' << argName << ' ' << definition.argSorts[index] << ')';
-    }
+    emitHelperParameters(definition);
     os << ") " << definition.resultSort << ' ' << definition.bodyExpr << ")\n";
     return success();
   }
@@ -843,24 +899,14 @@ private:
     if (definitions.size() == 1) {
       const PureHelperDefinition &definition = definitions.front();
       os << "(define-fun-rec " << definition.symbol << " (";
-      for (auto [index, argName] : llvm::enumerate(definition.argNames)) {
-        if (index != 0) {
-          os << ' ';
-        }
-        os << '(' << argName << ' ' << definition.argSorts[index] << ')';
-      }
+      emitHelperParameters(definition);
       os << ") " << definition.resultSort << ' ' << definition.bodyExpr << ")\n";
     } else {
       os << "(define-funs-rec (\n";
       for (size_t index = 0; index < pureHelperSCCs[sccId].size(); index++) {
         const PureHelperDefinition &definition = definitions[index];
         os << "  (" << definition.symbol << " (";
-        for (auto [argIndex, argName] : llvm::enumerate(definition.argNames)) {
-          if (argIndex != 0) {
-            os << ' ';
-          }
-          os << '(' << argName << ' ' << definition.argSorts[argIndex] << ')';
-        }
+        emitHelperParameters(definition);
         os << ") " << definition.resultSort << ")\n";
       }
       os << ") (\n";
@@ -1085,9 +1131,7 @@ private:
   FailureOr<ValueBinding> buildExpr(Operation *op, EvalContext &ctx) {
     return TypeSwitch<Operation *, FailureOr<ValueBinding>>(op)
         .Case<smt::BoolConstantOp>([](auto constOp) {
-      return ValueBinding {
-          std::string(constOp.getValue() ? "true" : "false"), /*survivesReset=*/true
-      };
+      return ValueBinding {formatBoolLiteral(constOp.getValue()), /*survivesReset=*/true};
     })
         .Case<smt::IntConstantOp>([](auto constOp) {
       return ValueBinding {formatIntegerLiteral(constOp.getValue()), /*survivesReset=*/true};
@@ -1197,8 +1241,12 @@ private:
       if (failed(valueExpr)) {
         return failure();
       }
+      std::string expr;
+      llvm::raw_string_ostream exprStream(expr);
+      exprStream << "((as const " << sortForType(exprOp.getType()) << ") " << valueExpr->text
+                 << ')';
       return ValueBinding {
-          "((as const " + sortForType(exprOp.getType()) + ") " + valueExpr->text + ")",
+          std::move(expr),
           valueExpr->survivesReset,
       };
     })
@@ -1210,7 +1258,9 @@ private:
       if (exprOp.getArgs().empty()) {
         return *funcExpr;
       }
-      std::string expr = "(" + funcExpr->text;
+      std::string expr;
+      llvm::raw_string_ostream exprStream(expr);
+      exprStream << '(' << funcExpr->text;
       bool survivesReset = funcExpr->survivesReset;
       for (Value arg : exprOp.getArgs()) {
         auto argExpr = lookup(arg, ctx);
@@ -1218,10 +1268,9 @@ private:
           return failure();
         }
         survivesReset &= argExpr->survivesReset;
-        expr.push_back(' ');
-        expr += argExpr->text;
+        exprStream << ' ' << argExpr->text;
       }
-      expr.push_back(')');
+      exprStream << ')';
       return ValueBinding {std::move(expr), survivesReset};
     }).Case<smt::ForallOp>([&](auto exprOp) {
       return buildQuantifierExpr("forall", exprOp, ctx);
@@ -1237,9 +1286,7 @@ private:
   /// Render an `arith.constant` as an SMT-LIB literal term.
   FailureOr<ValueBinding> buildArithConstantExpr(arith::ConstantOp constOp) {
     if (auto boolAttr = dyn_cast<BoolAttr>(constOp.getValue())) {
-      return ValueBinding {
-          std::string(boolAttr.getValue() ? "true" : "false"), /*survivesReset=*/true
-      };
+      return ValueBinding {formatBoolLiteral(boolAttr.getValue()), /*survivesReset=*/true};
     }
     if (auto intAttr = dyn_cast<IntegerAttr>(constOp.getValue())) {
       return ValueBinding {formatIntegerLiteral(intAttr.getValue()), /*survivesReset=*/true};
@@ -1274,8 +1321,11 @@ private:
       return failure();
     }
     auto resultType = cast<smt::BitVectorType>(op.getResult().getType());
+    std::string expr;
+    llvm::raw_string_ostream exprStream(expr);
+    exprStream << "((_ int_to_bv " << resultType.getWidth() << ") " << input->text << ')';
     return ValueBinding {
-        "((_ int_to_bv " + std::to_string(resultType.getWidth()) + ") " + input->text + ")",
+        std::move(expr),
         input->survivesReset,
     };
   }
@@ -1286,42 +1336,29 @@ private:
     if (failed(input)) {
       return failure();
     }
+    std::string expr;
+    llvm::raw_string_ostream exprStream(expr);
+    exprStream << '(' << (op.getIsSigned() ? "sbv_to_int" : "ubv_to_int") << ' ' << input->text
+               << ')';
     return ValueBinding {
-        "(" + std::string(op.getIsSigned() ? "sbv_to_int" : "ubv_to_int") + " " + input->text + ")",
+        std::move(expr),
         input->survivesReset,
     };
   }
 
   /// Render a bitvector comparison predicate using the matching SMT-LIB op.
   FailureOr<ValueBinding> buildBVCmpExpr(smt::BVCmpOp cmpOp, EvalContext &ctx) {
-    StringRef pred;
-    switch (cmpOp.getPred()) {
-    case smt::BVCmpPredicate::slt:
-      pred = "bvslt";
-      break;
-    case smt::BVCmpPredicate::sle:
-      pred = "bvsle";
-      break;
-    case smt::BVCmpPredicate::sgt:
-      pred = "bvsgt";
-      break;
-    case smt::BVCmpPredicate::sge:
-      pred = "bvsge";
-      break;
-    case smt::BVCmpPredicate::ult:
-      pred = "bvult";
-      break;
-    case smt::BVCmpPredicate::ule:
-      pred = "bvule";
-      break;
-    case smt::BVCmpPredicate::ugt:
-      pred = "bvugt";
-      break;
-    case smt::BVCmpPredicate::uge:
-      pred = "bvuge";
-      break;
-    }
-    return buildSExpr(pred, ValueRange {cmpOp.getLhs(), cmpOp.getRhs()}, ctx);
+    static constexpr std::pair<smt::BVCmpPredicate, StringLiteral> predicateSpellings[] = {
+        {smt::BVCmpPredicate::slt, "bvslt"}, {smt::BVCmpPredicate::sle, "bvsle"},
+        {smt::BVCmpPredicate::sgt, "bvsgt"}, {smt::BVCmpPredicate::sge, "bvsge"},
+        {smt::BVCmpPredicate::ult, "bvult"}, {smt::BVCmpPredicate::ule, "bvule"},
+        {smt::BVCmpPredicate::ugt, "bvugt"}, {smt::BVCmpPredicate::uge, "bvuge"},
+    };
+    auto it = llvm::find_if(predicateSpellings, [pred = cmpOp.getPred()](const auto &entry) {
+      return entry.first == pred;
+    });
+    assert(it != std::end(predicateSpellings) && "unhandled BVCmpPredicate");
+    return buildSExpr(it->second, ValueRange {cmpOp.getLhs(), cmpOp.getRhs()}, ctx);
   }
 
   /// Render bitvector extraction with SMT-LIB's indexed `extract` operator.
@@ -1332,9 +1369,11 @@ private:
     }
     unsigned lowBit = op.getLowBit();
     unsigned highBit = lowBit + cast<smt::BitVectorType>(op.getType()).getWidth() - 1;
+    std::string expr;
+    llvm::raw_string_ostream exprStream(expr);
+    exprStream << "((_ extract " << highBit << ' ' << lowBit << ") " << input->text << ')';
     return ValueBinding {
-        "((_ extract " + std::to_string(highBit) + " " + std::to_string(lowBit) + ") " +
-            input->text + ")",
+        std::move(expr),
         input->survivesReset,
     };
   }
@@ -1345,8 +1384,11 @@ private:
     if (failed(input)) {
       return failure();
     }
+    std::string expr;
+    llvm::raw_string_ostream exprStream(expr);
+    exprStream << "((_ repeat " << op.getCount() << ") " << input->text << ')';
     return ValueBinding {
-        "((_ repeat " + std::to_string(op.getCount()) + ") " + input->text + ")",
+        std::move(expr),
         input->survivesReset,
     };
   }
@@ -1377,16 +1419,19 @@ private:
       if (renderedOperands.size() == 1) {
         return ValueBinding {renderedOperands.front(), survivesReset};
       }
-      std::string expr = "(and";
+      std::string expr;
+      llvm::raw_string_ostream exprStream(expr);
+      exprStream << "(and";
       for (const std::string &operand : renderedOperands) {
-        expr.push_back(' ');
-        expr += operand;
+        exprStream << ' ' << operand;
       }
-      expr.push_back(')');
+      exprStream << ')';
       return ValueBinding {std::move(expr), survivesReset};
     }
 
-    std::string expr = "(" + opName.str();
+    std::string expr;
+    llvm::raw_string_ostream exprStream(expr);
+    exprStream << '(' << opName;
     bool survivesReset = true;
     for (Value operand : operands) {
       auto value = lookup(operand, ctx);
@@ -1394,10 +1439,9 @@ private:
         return failure();
       }
       survivesReset &= value->survivesReset;
-      expr.push_back(' ');
-      expr += value->text;
+      exprStream << ' ' << value->text;
     }
-    expr.push_back(')');
+    exprStream << ')';
     return ValueBinding {std::move(expr), survivesReset};
   }
 
@@ -1415,19 +1459,22 @@ private:
     EvalContext bodyCtx = ctx;
     bodyCtx.letBindings.clear();
     Block &body = op.getBody().front();
-    std::string expr = "(" + quantifierName.str() + " (";
+    std::string expr;
+    llvm::raw_string_ostream exprStream(expr);
+    exprStream << '(' << quantifierName << " (";
     auto namesAttr = op.getBoundVarNames();
-    for (auto [index, arg] : llvm::enumerate(body.getArguments())) {
+    llvm::interleave(
+        llvm::enumerate(body.getArguments()),
+        [&bodyCtx, &namesAttr, &exprStream, this](const auto &it) {
+      auto [index, arg] = it;
       std::string name = namesAttr && index < namesAttr->size()
                              ? sanitizeSymbol(cast<StringAttr>((*namesAttr)[index]).getValue())
                              : "q" + std::to_string(nextTempId++);
       bodyCtx.values[arg] = ValueBinding {name, /*survivesReset=*/true};
-      if (index != 0) {
-        expr.push_back(' ');
-      }
-      expr += "(" + name + " " + sortForType(arg.getType()) + ")";
-    }
-    expr += ") ";
+      exprStream << '(' << name << ' ' << sortForType(arg.getType()) << ')';
+    }, [&exprStream] { exprStream << ' '; }
+    );
+    exprStream << ") ";
 
     for (Operation &nestedOp : body.without_terminator()) {
       if (failed(emitOperation(&nestedOp, bodyCtx))) {
@@ -1443,8 +1490,7 @@ private:
     if (failed(yielded)) {
       return failure();
     }
-    expr += wrapWithLets(yielded->text, bodyCtx.letBindings);
-    expr += ")";
+    exprStream << wrapWithLets(yielded->text, bodyCtx.letBindings) << ')';
     return ValueBinding {std::move(expr), yielded->survivesReset};
   }
 
