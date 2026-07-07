@@ -113,7 +113,9 @@ using namespace llzk::function;
 namespace {
 
 /// If the given ArrayType can be split into scalars, return it, otherwise nullptr.
-inline ArrayType splittableArray(ArrayType at) { return at.hasStaticShape() ? at : nullptr; }
+inline ArrayType splittableArray(ArrayType at) {
+  return at.hasStaticShape() && !llvm::isa<NoneType>(at.getElementType()) ? at : nullptr;
+}
 
 /// If the given Type is an ArrayType that can be split into scalars, return it, otherwise nullptr.
 inline ArrayType splittableArray(Type t) {
