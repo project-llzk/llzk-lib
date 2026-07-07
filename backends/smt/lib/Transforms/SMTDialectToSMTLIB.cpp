@@ -49,6 +49,7 @@ namespace llzk::smt {
 } // namespace llzk::smt
 
 using namespace mlir;
+using namespace llzk;
 
 namespace {
 
@@ -76,9 +77,9 @@ static std::string sanitizeSymbol(StringRef name) {
 /// Append an SMT dialect sort using SMT-LIB textual syntax.
 static void printSortForType(llvm::raw_ostream &os, Type type) {
   TypeSwitch<Type>(type)
-      .Case<llzk::smt::IntType>([&os](auto) { os << "Int"; })
-      .Case<llzk::smt::BoolType>([&os](auto) { os << "Bool"; })
-      .Case<llzk::smt::SMTFuncType>([&os](auto funcType) {
+      .Case<smt::IntType>([&os](auto) { os << "Int"; })
+      .Case<smt::BoolType>([&os](auto) { os << "Bool"; })
+      .Case<smt::SMTFuncType>([&os](auto funcType) {
     os << "((";
     llvm::interleave(funcType.getDomainTypes(), [&os](Type domainType) {
       printSortForType(os, domainType);
@@ -87,10 +88,10 @@ static void printSortForType(llvm::raw_ostream &os, Type type) {
     printSortForType(os, funcType.getRangeType());
     os << ')';
   })
-      .Case<llzk::smt::BitVectorType>([&os](auto bvType) {
+      .Case<smt::BitVectorType>([&os](auto bvType) {
     os << "(_ BitVec " << bvType.getWidth() << ')';
   })
-      .Case<llzk::smt::ArrayType>([&os](auto arrayType) {
+      .Case<smt::ArrayType>([&os](auto arrayType) {
     os << "(Array ";
     printSortForType(os, arrayType.getDomainType());
     os << ' ';
@@ -110,8 +111,8 @@ static std::string sortForType(Type type) {
 /// Print a structured SMT-LIB `set-info` value attribute.
 static void printSetInfoValue(llvm::raw_ostream &os, Attribute value) {
   TypeSwitch<Attribute>(value)
-      .Case<llzk::smt::KeywordAttr>([&os](auto keywordAttr) { os << keywordAttr.getValue(); })
-      .Case<llzk::smt::SymbolAttr>([&os](auto symbolAttr) { os << symbolAttr.getValue(); })
+      .Case<smt::KeywordAttr>([&os](auto keywordAttr) { os << keywordAttr.getValue(); })
+      .Case<smt::SymbolAttr>([&os](auto symbolAttr) { os << symbolAttr.getValue(); })
       .Case<StringAttr>([&os](auto strAttr) { strAttr.print(os); })
       .Case<BoolAttr>([&os](auto boolAttr) { os << (boolAttr.getValue() ? "true" : "false"); })
       .Case<IntegerAttr>([&os](auto intAttr) {
@@ -179,11 +180,11 @@ private:
   }
 
   /// Find the unique top-level solver root in the effective root module.
-  FailureOr<llzk::smt::SolverOp> collectRoot() {
+  FailureOr<smt::SolverOp> collectRoot() {
     selectedRootModule = getEffectiveRootModule();
-    llzk::smt::SolverOp solver;
+    smt::SolverOp solver;
     for (Operation &op : selectedRootModule.getBody()->getOperations()) {
-      auto solverOp = dyn_cast<llzk::smt::SolverOp>(op);
+      auto solverOp = dyn_cast<smt::SolverOp>(op);
       if (!solverOp) {
         continue;
       }
@@ -209,14 +210,14 @@ private:
   }
 
   /// Dispatch emission once the root solver has been selected.
-  LogicalResult emitRoot(llzk::smt::SolverOp solver, bool emitReset) {
+  LogicalResult emitRoot(smt::SolverOp solver, bool emitReset) {
     return emitSolverRoot(solver, emitReset);
   }
 
   /// Check whether the selected solver already sets the SMT-LIB logic.
-  static bool solverHasExplicitSetLogic(llzk::smt::SolverOp solver) {
+  static bool solverHasExplicitSetLogic(smt::SolverOp solver) {
     return llvm::any_of(solver.getBodyRegion().front().without_terminator(), [](Operation &op) {
-      return isa<llzk::smt::SetLogicOp>(op);
+      return isa<smt::SetLogicOp>(op);
     });
   }
 
@@ -244,7 +245,7 @@ private:
   }
 
   /// Emit the selected solver as one complete SMT-LIB script body.
-  LogicalResult emitSolverRoot(llzk::smt::SolverOp solver, bool emitReset) {
+  LogicalResult emitSolverRoot(smt::SolverOp solver, bool emitReset) {
     if (solver.getNumOperands() != 0 || solver.getBodyRegion().front().getNumArguments() != 0) {
       return solver.emitError(
           "SMT-LIB scripts have no standard parameter channel; the selected top-level smt.solver "
@@ -281,35 +282,35 @@ private:
   /// Lower one top-level SMT dialect operation into SMT-LIB text or bindings.
   LogicalResult emitOperation(Operation *op, EvalContext &ctx) {
     return TypeSwitch<Operation *, LogicalResult>(op)
-        .Case<llzk::smt::SetLogicOp>([this](auto setLogicOp) {
+        .Case<smt::SetLogicOp>([this](auto setLogicOp) {
       os << "(set-logic " << setLogicOp.getLogic() << ")\n";
       return success();
     })
-        .Case<llzk::smt::SetInfoOp>([this](auto setInfoOp) {
+        .Case<smt::SetInfoOp>([this](auto setInfoOp) {
       os << "(set-info " << setInfoOp.getKey().getValue() << ' ';
       printSetInfoValue(os, setInfoOp.getValueAttr());
       os << ")\n";
       return success();
     })
-        .Case<llzk::smt::DeclareFunOp>([&](auto declareOp) { return emitDeclare(declareOp, ctx); })
-        .Case<llzk::smt::AssertOp>([&](auto assertOp) { return emitAssert(assertOp, ctx); })
-        .Case<llzk::smt::ResetOp>([this](auto) {
+        .Case<smt::DeclareFunOp>([&](auto declareOp) { return emitDeclare(declareOp, ctx); })
+        .Case<smt::AssertOp>([&](auto assertOp) { return emitAssert(assertOp, ctx); })
+        .Case<smt::ResetOp>([this](auto) {
       os << "(reset)\n";
       resetScriptState();
       return success();
     })
-        .Case<llzk::smt::PushOp>([this](auto pushOp) {
+        .Case<smt::PushOp>([this](auto pushOp) {
       pushDepth += pushOp.getCount();
       os << "(push " << pushOp.getCount() << ")\n";
       return success();
     })
-        .Case<llzk::smt::PopOp>([this](auto popOp) {
+        .Case<smt::PopOp>([this](auto popOp) {
       pushDepth -= popOp.getCount();
       os << "(pop " << popOp.getCount() << ")\n";
       return success();
     })
-        .Case<llzk::smt::CheckOp>([&](auto checkOp) { return emitCheck(checkOp, ctx); })
-        .Case<llzk::smt::SolverOp>([&](auto solverOp) {
+        .Case<smt::CheckOp>([&](auto checkOp) { return emitCheck(checkOp, ctx); })
+        .Case<smt::SolverOp>([&](auto solverOp) {
       return solverOp.emitError(
           "nested smt.solver is not exportable to SMT-LIB; SMT-LIB has a single script context, "
           "so use push/pop if same-solver nesting was intended"
@@ -320,53 +321,53 @@ private:
       return emitUnrealizedCast(castOp, ctx);
     })
         .Case<arith::ConstantOp>([&](auto constOp) { return emitArithConstant(constOp, ctx); })
-        .Case<llzk::smt::BoolConstantOp>([&](auto constOp) { return bindExpr(constOp, ctx); })
-        .Case<llzk::smt::IntConstantOp>([&](auto constOp) { return bindExpr(constOp, ctx); })
-        .Case<llzk::smt::BVConstantOp>([&](auto constOp) { return bindExpr(constOp, ctx); })
-        .Case<llzk::smt::EqOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::NotOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::AndOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::OrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::XOrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::ImpliesOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::IteOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::IntNegOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::IntAddOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::IntMulOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::IntSubOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::IntDivOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::IntModOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::IntCmpOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::Int2BVOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::BV2IntOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::DistinctOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::IntAbsOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::BVNegOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::BVAndOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::BVAddOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::BVMulOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::BVUDivOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::BVSDivOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::BVURemOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::BVSRemOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::BVSModOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::BVOrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::BVXOrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::BVNotOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::BVShlOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::BVLShrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::BVAShrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::BVCmpOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::ConcatOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::ExtractOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::RepeatOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::ApplyFuncOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::ArraySelectOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::ArrayStoreOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::ArrayBroadcastOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::ForallOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::smt::ExistsOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
-        .Case<llzk::boolean::AssertOp>([&](auto assertOp) {
+        .Case<smt::BoolConstantOp>([&](auto constOp) { return bindExpr(constOp, ctx); })
+        .Case<smt::IntConstantOp>([&](auto constOp) { return bindExpr(constOp, ctx); })
+        .Case<smt::BVConstantOp>([&](auto constOp) { return bindExpr(constOp, ctx); })
+        .Case<smt::EqOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::NotOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::AndOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::OrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::XOrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::ImpliesOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::IteOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::IntNegOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::IntAddOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::IntMulOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::IntSubOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::IntDivOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::IntModOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::IntCmpOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::Int2BVOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::BV2IntOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::DistinctOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::IntAbsOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::BVNegOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::BVAndOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::BVAddOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::BVMulOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::BVUDivOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::BVSDivOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::BVURemOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::BVSRemOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::BVSModOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::BVOrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::BVXOrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::BVNotOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::BVShlOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::BVLShrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::BVAShrOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::BVCmpOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::ConcatOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::ExtractOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::RepeatOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::ApplyFuncOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::ArraySelectOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::ArrayStoreOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::ArrayBroadcastOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::ForallOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<smt::ExistsOp>([&](auto exprOp) { return bindExpr(exprOp, ctx); })
+        .Case<boolean::AssertOp>([&](auto assertOp) {
       return assertOp.emitError("boolean.assert is not serializable to SMT-LIB");
     }).Default([&](Operation *unknownOp) {
       return unknownOp->emitError("unsupported operation in smt-to-smtlib");
@@ -397,7 +398,7 @@ private:
   }
 
   /// Emit a declared SMT symbol and record its printed SMT-LIB identifier.
-  LogicalResult emitDeclare(llzk::smt::DeclareFunOp declareOp, EvalContext &ctx) {
+  LogicalResult emitDeclare(smt::DeclareFunOp declareOp, EvalContext &ctx) {
     std::string symbol;
     if (auto prefix = declareOp.getNamePrefix()) {
       symbol = sanitizeSymbol(*prefix);
@@ -408,7 +409,7 @@ private:
       symbol += "_" + std::to_string(count);
     }
     ctx.values[declareOp.getResult()] = symbol;
-    if (auto funcType = dyn_cast<llzk::smt::SMTFuncType>(declareOp.getType())) {
+    if (auto funcType = dyn_cast<smt::SMTFuncType>(declareOp.getType())) {
       os << "(declare-fun " << symbol << " (";
       llvm::interleave(funcType.getDomainTypes(), [this](Type domainType) {
         printSortForType(os, domainType);
@@ -425,7 +426,7 @@ private:
   }
 
   /// Emit an assertion, deduplicating top-level assertions when possible.
-  LogicalResult emitAssert(llzk::smt::AssertOp assertOp, EvalContext &ctx) {
+  LogicalResult emitAssert(smt::AssertOp assertOp, EvalContext &ctx) {
     auto expr = lookup(assertOp.getInput(), ctx);
     if (failed(expr)) {
       return assertOp.emitError("missing SMTLIB expression for assertion input");
@@ -548,9 +549,8 @@ private:
     auto cleanup = llvm::make_scope_exit([this, funcOp] { helperModesInProgress.erase(funcOp); });
 
     for (Operation &op : func.getBody().front().without_terminator()) {
-      if (isa<llzk::smt::SetLogicOp, llzk::smt::SetInfoOp, llzk::smt::DeclareFunOp,
-              llzk::smt::AssertOp, llzk::smt::ResetOp, llzk::smt::PushOp, llzk::smt::PopOp,
-              llzk::smt::CheckOp, llzk::smt::SolverOp>(op)) {
+      if (isa<smt::SetLogicOp, smt::SetInfoOp, smt::DeclareFunOp, smt::AssertOp, smt::ResetOp,
+              smt::PushOp, smt::PopOp, smt::CheckOp, smt::SolverOp>(op)) {
         helperModes[func.getOperation()] = HelperMode::InlineScript;
         return HelperMode::InlineScript;
       }
@@ -935,8 +935,7 @@ private:
   }
 
   /// Require that an `smt.check` result region is structurally empty.
-  LogicalResult
-  verifyEmptyCheckRegion(llzk::smt::CheckOp checkOp, StringRef regionName, Region &region) {
+  LogicalResult verifyEmptyCheckRegion(smt::CheckOp checkOp, StringRef regionName, Region &region) {
     if (!llvm::hasSingleElement(region) || !region.front().without_terminator().empty()) {
       return checkOp.emitOpError()
              << "cannot lower smt.check with non-empty result regions because "
@@ -947,7 +946,7 @@ private:
   }
 
   /// Emit the restricted SMT-LIB-compatible form of `smt.check`.
-  LogicalResult emitCheck(llzk::smt::CheckOp checkOp, EvalContext &) {
+  LogicalResult emitCheck(smt::CheckOp checkOp, EvalContext &) {
     if (checkOp.getNumResults() != 0) {
       return checkOp.emitOpError(
           "cannot lower result-producing smt.check because SMT-LIB has no "
@@ -996,8 +995,8 @@ private:
 
     Block &block = func.getBody().front();
     for (Operation &op : block.without_terminator()) {
-      if (isa<llzk::smt::SetInfoOp, llzk::smt::DeclareFunOp, llzk::smt::AssertOp, llzk::smt::PushOp,
-              llzk::smt::PopOp, llzk::smt::CheckOp>(op)) {
+      if (isa<smt::SetInfoOp, smt::DeclareFunOp, smt::AssertOp, smt::PushOp, smt::PopOp,
+              smt::CheckOp>(op)) {
         return op.emitError("script-style SMT ops cannot appear in pure helper definitions");
       }
       if (failed(emitOperation(&op, ctx))) {
@@ -1025,8 +1024,8 @@ private:
   /// Determine whether a helper body can preserve sharing with `let` bindings.
   bool helperIsPurelyExpressionBased(func::FuncOp func) const {
     for (Operation &op : func.getBody().front().without_terminator()) {
-      if (isa<llzk::smt::SetInfoOp, llzk::smt::DeclareFunOp, llzk::smt::AssertOp, llzk::smt::PushOp,
-              llzk::smt::PopOp, llzk::smt::CheckOp>(op)) {
+      if (isa<smt::SetInfoOp, smt::DeclareFunOp, smt::AssertOp, smt::PushOp, smt::PopOp,
+              smt::CheckOp>(op)) {
         return false;
       }
       if (auto callOp = dyn_cast<func::CallOp>(op); callOp && callOp.getNumResults() == 0) {
@@ -1039,134 +1038,120 @@ private:
   /// Render one expression-producing operation into an SMT-LIB term.
   FailureOr<std::string> buildExpr(Operation *op, EvalContext &ctx) {
     return TypeSwitch<Operation *, FailureOr<std::string>>(op)
-        .Case<llzk::smt::BoolConstantOp>([](auto constOp) {
+        .Case<smt::BoolConstantOp>([](auto constOp) {
       return std::string(constOp.getValue() ? "true" : "false");
     })
-        .Case<llzk::smt::IntConstantOp>([](auto constOp) {
+        .Case<smt::IntConstantOp>([](auto constOp) {
       SmallString<32> str;
       constOp.getValue().toStringSigned(str);
       return str.str().str();
     })
-        .Case<llzk::smt::BVConstantOp>([](auto constOp) {
-      return constOp.getValue().getValueAsString();
-    })
-        .Case<llzk::smt::EqOp>([&](auto exprOp) {
-      return buildSExpr("=", exprOp.getInputs(), ctx);
-    })
-        .Case<llzk::smt::DistinctOp>([&](auto exprOp) {
+        .Case<smt::BVConstantOp>([](auto constOp) { return constOp.getValue().getValueAsString(); })
+        .Case<smt::EqOp>([&](auto exprOp) { return buildSExpr("=", exprOp.getInputs(), ctx); })
+        .Case<smt::DistinctOp>([&](auto exprOp) {
       return buildSExpr("distinct", exprOp.getInputs(), ctx);
     })
-        .Case<llzk::smt::NotOp>([&](auto exprOp) {
+        .Case<smt::NotOp>([&](auto exprOp) {
       return buildSExpr("not", ValueRange {exprOp.getInput()}, ctx);
     })
-        .Case<llzk::smt::AndOp>([&](auto exprOp) {
-      return buildSExpr("and", exprOp.getInputs(), ctx);
-    })
-        .Case<llzk::smt::OrOp>([&](auto exprOp) {
-      return buildSExpr("or", exprOp.getInputs(), ctx);
-    })
-        .Case<llzk::smt::XOrOp>([&](auto exprOp) {
-      return buildSExpr("xor", exprOp.getInputs(), ctx);
-    })
-        .Case<llzk::smt::ImpliesOp>([&](auto exprOp) {
+        .Case<smt::AndOp>([&](auto exprOp) { return buildSExpr("and", exprOp.getInputs(), ctx); })
+        .Case<smt::OrOp>([&](auto exprOp) { return buildSExpr("or", exprOp.getInputs(), ctx); })
+        .Case<smt::XOrOp>([&](auto exprOp) { return buildSExpr("xor", exprOp.getInputs(), ctx); })
+        .Case<smt::ImpliesOp>([&](auto exprOp) {
       return buildSExpr("=>", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<llzk::smt::IteOp>([&](auto exprOp) {
+        .Case<smt::IteOp>([&](auto exprOp) {
       return buildSExpr(
           "ite", ValueRange {exprOp.getCond(), exprOp.getThenValue(), exprOp.getElseValue()}, ctx
       );
     })
-        .Case<llzk::smt::IntNegOp>([&](auto exprOp) {
+        .Case<smt::IntNegOp>([&](auto exprOp) {
       return buildSExpr("-", ValueRange {exprOp.getInput()}, ctx);
     })
-        .Case<llzk::smt::IntAbsOp>([&](auto exprOp) {
+        .Case<smt::IntAbsOp>([&](auto exprOp) {
       return buildSExpr("abs", ValueRange {exprOp.getInput()}, ctx);
     })
-        .Case<llzk::smt::IntAddOp>([&](auto exprOp) {
-      return buildSExpr("+", exprOp.getInputs(), ctx);
-    })
-        .Case<llzk::smt::IntMulOp>([&](auto exprOp) {
-      return buildSExpr("*", exprOp.getInputs(), ctx);
-    })
-        .Case<llzk::smt::IntSubOp>([&](auto exprOp) {
+        .Case<smt::IntAddOp>([&](auto exprOp) { return buildSExpr("+", exprOp.getInputs(), ctx); })
+        .Case<smt::IntMulOp>([&](auto exprOp) { return buildSExpr("*", exprOp.getInputs(), ctx); })
+        .Case<smt::IntSubOp>([&](auto exprOp) {
       return buildSExpr("-", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<llzk::smt::IntDivOp>([&](auto exprOp) {
+        .Case<smt::IntDivOp>([&](auto exprOp) {
       return buildSExpr("div", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<llzk::smt::IntModOp>([&](auto exprOp) {
+        .Case<smt::IntModOp>([&](auto exprOp) {
       return buildSExpr("mod", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<llzk::smt::IntCmpOp>([&](auto cmpOp) { return buildCmpExpr(cmpOp, ctx); })
-        .Case<llzk::smt::Int2BVOp>([&](auto exprOp) { return buildInt2BVExpr(exprOp, ctx); })
-        .Case<llzk::smt::BV2IntOp>([&](auto exprOp) { return buildBV2IntExpr(exprOp, ctx); })
-        .Case<llzk::smt::BVNegOp>([&](auto exprOp) {
+        .Case<smt::IntCmpOp>([&](auto cmpOp) { return buildCmpExpr(cmpOp, ctx); })
+        .Case<smt::Int2BVOp>([&](auto exprOp) { return buildInt2BVExpr(exprOp, ctx); })
+        .Case<smt::BV2IntOp>([&](auto exprOp) { return buildBV2IntExpr(exprOp, ctx); })
+        .Case<smt::BVNegOp>([&](auto exprOp) {
       return buildSExpr("bvneg", ValueRange {exprOp.getInput()}, ctx);
     })
-        .Case<llzk::smt::BVAndOp>([&](auto exprOp) {
+        .Case<smt::BVAndOp>([&](auto exprOp) {
       return buildSExpr("bvand", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<llzk::smt::BVAddOp>([&](auto exprOp) {
+        .Case<smt::BVAddOp>([&](auto exprOp) {
       return buildSExpr("bvadd", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<llzk::smt::BVMulOp>([&](auto exprOp) {
+        .Case<smt::BVMulOp>([&](auto exprOp) {
       return buildSExpr("bvmul", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<llzk::smt::BVUDivOp>([&](auto exprOp) {
+        .Case<smt::BVUDivOp>([&](auto exprOp) {
       return buildSExpr("bvudiv", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<llzk::smt::BVSDivOp>([&](auto exprOp) {
+        .Case<smt::BVSDivOp>([&](auto exprOp) {
       return buildSExpr("bvsdiv", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<llzk::smt::BVURemOp>([&](auto exprOp) {
+        .Case<smt::BVURemOp>([&](auto exprOp) {
       return buildSExpr("bvurem", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<llzk::smt::BVSRemOp>([&](auto exprOp) {
+        .Case<smt::BVSRemOp>([&](auto exprOp) {
       return buildSExpr("bvsrem", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<llzk::smt::BVSModOp>([&](auto exprOp) {
+        .Case<smt::BVSModOp>([&](auto exprOp) {
       return buildSExpr("bvsmod", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<llzk::smt::BVOrOp>([&](auto exprOp) {
+        .Case<smt::BVOrOp>([&](auto exprOp) {
       return buildSExpr("bvor", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<llzk::smt::BVXOrOp>([&](auto exprOp) {
+        .Case<smt::BVXOrOp>([&](auto exprOp) {
       return buildSExpr("bvxor", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<llzk::smt::BVNotOp>([&](auto exprOp) {
+        .Case<smt::BVNotOp>([&](auto exprOp) {
       return buildSExpr("bvnot", ValueRange {exprOp.getInput()}, ctx);
     })
-        .Case<llzk::smt::BVShlOp>([&](auto exprOp) {
+        .Case<smt::BVShlOp>([&](auto exprOp) {
       return buildSExpr("bvshl", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<llzk::smt::BVLShrOp>([&](auto exprOp) {
+        .Case<smt::BVLShrOp>([&](auto exprOp) {
       return buildSExpr("bvlshr", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<llzk::smt::BVAShrOp>([&](auto exprOp) {
+        .Case<smt::BVAShrOp>([&](auto exprOp) {
       return buildSExpr("bvashr", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<llzk::smt::BVCmpOp>([&](auto exprOp) { return buildBVCmpExpr(exprOp, ctx); })
-        .Case<llzk::smt::ConcatOp>([&](auto exprOp) {
+        .Case<smt::BVCmpOp>([&](auto exprOp) { return buildBVCmpExpr(exprOp, ctx); })
+        .Case<smt::ConcatOp>([&](auto exprOp) {
       return buildSExpr("concat", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<llzk::smt::ExtractOp>([&](auto exprOp) { return buildExtractExpr(exprOp, ctx); })
-        .Case<llzk::smt::RepeatOp>([&](auto exprOp) { return buildRepeatExpr(exprOp, ctx); })
-        .Case<llzk::smt::ArraySelectOp>([&](auto exprOp) {
+        .Case<smt::ExtractOp>([&](auto exprOp) { return buildExtractExpr(exprOp, ctx); })
+        .Case<smt::RepeatOp>([&](auto exprOp) { return buildRepeatExpr(exprOp, ctx); })
+        .Case<smt::ArraySelectOp>([&](auto exprOp) {
       return buildSExpr("select", ValueRange {exprOp.getArray(), exprOp.getIndex()}, ctx);
     })
-        .Case<llzk::smt::ArrayStoreOp>([&](auto exprOp) {
+        .Case<smt::ArrayStoreOp>([&](auto exprOp) {
       return buildSExpr(
           "store", ValueRange {exprOp.getArray(), exprOp.getIndex(), exprOp.getValue()}, ctx
       );
     })
-        .Case<llzk::smt::ArrayBroadcastOp>([&](auto exprOp) -> FailureOr<std::string> {
+        .Case<smt::ArrayBroadcastOp>([&](auto exprOp) -> FailureOr<std::string> {
       auto valueExpr = lookup(exprOp.getValue(), ctx);
       if (failed(valueExpr)) {
         return failure();
       }
       return "((as const " + sortForType(exprOp.getType()) + ") " + *valueExpr + ")";
     })
-        .Case<llzk::smt::ApplyFuncOp>([&](auto exprOp) -> FailureOr<std::string> {
+        .Case<smt::ApplyFuncOp>([&](auto exprOp) -> FailureOr<std::string> {
       auto funcExpr = lookup(exprOp.getFunc(), ctx);
       if (failed(funcExpr)) {
         return failure();
@@ -1185,11 +1170,9 @@ private:
       }
       expr.push_back(')');
       return expr;
-    })
-        .Case<llzk::smt::ForallOp>([&](auto exprOp) {
+    }).Case<smt::ForallOp>([&](auto exprOp) {
       return buildQuantifierExpr("forall", exprOp, ctx);
-    })
-        .Case<llzk::smt::ExistsOp>([&](auto exprOp) {
+    }).Case<smt::ExistsOp>([&](auto exprOp) {
       return buildQuantifierExpr("exists", exprOp, ctx);
     }).Case<arith::ConstantOp>([&](auto constOp) {
       return buildArithConstantExpr(constOp);
@@ -1212,19 +1195,19 @@ private:
   }
 
   /// Render an integer comparison predicate using SMT-LIB comparison syntax.
-  FailureOr<std::string> buildCmpExpr(llzk::smt::IntCmpOp cmpOp, EvalContext &ctx) {
+  FailureOr<std::string> buildCmpExpr(smt::IntCmpOp cmpOp, EvalContext &ctx) {
     StringRef pred;
     switch (cmpOp.getPred()) {
-    case llzk::smt::IntPredicate::lt:
+    case smt::IntPredicate::lt:
       pred = "<";
       break;
-    case llzk::smt::IntPredicate::le:
+    case smt::IntPredicate::le:
       pred = "<=";
       break;
-    case llzk::smt::IntPredicate::gt:
+    case smt::IntPredicate::gt:
       pred = ">";
       break;
-    case llzk::smt::IntPredicate::ge:
+    case smt::IntPredicate::ge:
       pred = ">=";
       break;
     }
@@ -1232,17 +1215,17 @@ private:
   }
 
   /// Render integer-to-bitvector conversion with an explicit target width.
-  FailureOr<std::string> buildInt2BVExpr(llzk::smt::Int2BVOp op, EvalContext &ctx) {
+  FailureOr<std::string> buildInt2BVExpr(smt::Int2BVOp op, EvalContext &ctx) {
     auto input = lookup(op.getInput(), ctx);
     if (failed(input)) {
       return failure();
     }
-    auto resultType = cast<llzk::smt::BitVectorType>(op.getResult().getType());
+    auto resultType = cast<smt::BitVectorType>(op.getResult().getType());
     return "((_ int_to_bv " + std::to_string(resultType.getWidth()) + ") " + *input + ")";
   }
 
   /// Render bitvector-to-integer conversion with the requested signedness.
-  FailureOr<std::string> buildBV2IntExpr(llzk::smt::BV2IntOp op, EvalContext &ctx) {
+  FailureOr<std::string> buildBV2IntExpr(smt::BV2IntOp op, EvalContext &ctx) {
     auto input = lookup(op.getInput(), ctx);
     if (failed(input)) {
       return failure();
@@ -1251,31 +1234,31 @@ private:
   }
 
   /// Render a bitvector comparison predicate using the matching SMT-LIB op.
-  FailureOr<std::string> buildBVCmpExpr(llzk::smt::BVCmpOp cmpOp, EvalContext &ctx) {
+  FailureOr<std::string> buildBVCmpExpr(smt::BVCmpOp cmpOp, EvalContext &ctx) {
     StringRef pred;
     switch (cmpOp.getPred()) {
-    case llzk::smt::BVCmpPredicate::slt:
+    case smt::BVCmpPredicate::slt:
       pred = "bvslt";
       break;
-    case llzk::smt::BVCmpPredicate::sle:
+    case smt::BVCmpPredicate::sle:
       pred = "bvsle";
       break;
-    case llzk::smt::BVCmpPredicate::sgt:
+    case smt::BVCmpPredicate::sgt:
       pred = "bvsgt";
       break;
-    case llzk::smt::BVCmpPredicate::sge:
+    case smt::BVCmpPredicate::sge:
       pred = "bvsge";
       break;
-    case llzk::smt::BVCmpPredicate::ult:
+    case smt::BVCmpPredicate::ult:
       pred = "bvult";
       break;
-    case llzk::smt::BVCmpPredicate::ule:
+    case smt::BVCmpPredicate::ule:
       pred = "bvule";
       break;
-    case llzk::smt::BVCmpPredicate::ugt:
+    case smt::BVCmpPredicate::ugt:
       pred = "bvugt";
       break;
-    case llzk::smt::BVCmpPredicate::uge:
+    case smt::BVCmpPredicate::uge:
       pred = "bvuge";
       break;
     }
@@ -1283,19 +1266,19 @@ private:
   }
 
   /// Render bitvector extraction with SMT-LIB's indexed `extract` operator.
-  FailureOr<std::string> buildExtractExpr(llzk::smt::ExtractOp op, EvalContext &ctx) {
+  FailureOr<std::string> buildExtractExpr(smt::ExtractOp op, EvalContext &ctx) {
     auto input = lookup(op.getInput(), ctx);
     if (failed(input)) {
       return failure();
     }
     unsigned lowBit = op.getLowBit();
-    unsigned highBit = lowBit + cast<llzk::smt::BitVectorType>(op.getType()).getWidth() - 1;
+    unsigned highBit = lowBit + cast<smt::BitVectorType>(op.getType()).getWidth() - 1;
     return "((_ extract " + std::to_string(highBit) + " " + std::to_string(lowBit) + ") " + *input +
            ")";
   }
 
   /// Render bitvector repetition with SMT-LIB's indexed `repeat` operator.
-  FailureOr<std::string> buildRepeatExpr(llzk::smt::RepeatOp op, EvalContext &ctx) {
+  FailureOr<std::string> buildRepeatExpr(smt::RepeatOp op, EvalContext &ctx) {
     auto input = lookup(op.getInput(), ctx);
     if (failed(input)) {
       return failure();
@@ -1383,7 +1366,7 @@ private:
       }
     }
 
-    auto yieldOp = dyn_cast<llzk::smt::YieldOp>(body.getTerminator());
+    auto yieldOp = dyn_cast<smt::YieldOp>(body.getTerminator());
     if (!yieldOp || yieldOp.getNumOperands() != 1) {
       return op.emitError("smt-to-smtlib requires quantifier bodies to yield exactly one value");
     }
@@ -1430,8 +1413,8 @@ private:
 };
 
 class SMTDialectToSMTLIBPass
-    : public llzk::smt::impl::SMTDialectToSMTLIBPassBase<SMTDialectToSMTLIBPass> {
-  using Base = llzk::smt::impl::SMTDialectToSMTLIBPassBase<SMTDialectToSMTLIBPass>;
+    : public smt::impl::SMTDialectToSMTLIBPassBase<SMTDialectToSMTLIBPass> {
+  using Base = smt::impl::SMTDialectToSMTLIBPassBase<SMTDialectToSMTLIBPass>;
   using Base::Base;
 
   /// Run the exporter and surface script emission failures as pass failures.
@@ -1446,7 +1429,7 @@ class SMTDialectToSMTLIBPass
       }
       stream = &outputFile->os();
     }
-    if (failed(llzk::smt::emitSMTLIBModule(getOperation(), *stream))) {
+    if (failed(smt::emitSMTLIBModule(getOperation(), *stream))) {
       signalPassFailure();
       return;
     }
@@ -1460,6 +1443,6 @@ class SMTDialectToSMTLIBPass
 } // namespace
 
 /// Export the selected SMT solver rooted in `module` to SMT-LIB text.
-LogicalResult llzk::smt::emitSMTLIBModule(ModuleOp module, llvm::raw_ostream &os) {
+LogicalResult smt::emitSMTLIBModule(ModuleOp module, llvm::raw_ostream &os) {
   return SMTLIBEmitter(module, os).emit();
 }
