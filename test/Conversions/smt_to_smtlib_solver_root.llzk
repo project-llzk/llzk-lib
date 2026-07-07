@@ -11,6 +11,9 @@ module {
   smt.solver () : () -> () {
     smt.set_info ":llzk-root" "module"
     smt.set_logic "ALL"
+    %neg_one = smt.int.constant -1
+    %two = smt.int.constant 2
+    %delta = smt.int.add %neg_one, %two
     %x = smt.declare_fun "x" : !smt.int
     %value0 = func.call @helper(%x) : (!smt.int) -> !smt.int
     %result0 = smt.declare_fun "result" : !smt.int
@@ -20,8 +23,9 @@ module {
     smt.set_logic "ALL"
     %y = smt.declare_fun "x" : !smt.int
     %value1 = func.call @helper(%y) : (!smt.int) -> !smt.int
+    %shifted1 = smt.int.add %value1, %delta
     %result1 = smt.declare_fun "result" : !smt.int
-    %ok1 = smt.eq %result1, %value1 : !smt.int
+    %ok1 = smt.eq %result1, %shifted1 : !smt.int
     smt.assert %ok1
     smt.yield
   }
@@ -40,4 +44,4 @@ module {
 // CHECK-NEXT: (define-fun helper ((helper__arg0 Int)) Int
 // CHECK-SAME: (let ((__let0 (+ helper__arg0 1))) __let0))
 // CHECK-NEXT: (declare-fun result () Int)
-// CHECK-NEXT: (assert (= result (helper x)))
+// CHECK-NEXT: (assert (= result (+ (helper x) (+ (- 1) 2))))

@@ -1,0 +1,38 @@
+// RUN: split-file %s %t
+// Purpose: reset-sensitive SSA bindings are invalidated across smt.reset.
+// RUN: not llzk-opt --smt-to-smtlib -o /dev/null %t/reset-declare.mlir 2>&1 | FileCheck %s --check-prefix=RESET-DECLARE
+// RUN: not llzk-opt --smt-to-smtlib -o /dev/null %t/reset-helper-result.mlir 2>&1 | FileCheck %s --check-prefix=RESET-HELPER
+
+//--- reset-declare.mlir
+module {
+  smt.solver () : () -> () {
+    %x = smt.declare_fun "x" : !smt.int
+    smt.reset
+    %ok = smt.eq %x, %x : !smt.int
+    smt.assert %ok
+    smt.yield
+  }
+}
+
+// RESET-DECLARE: error: missing SMTLIB value binding
+
+//--- reset-helper-result.mlir
+module {
+  func.func @helper(%x: !smt.int) -> !smt.int {
+    %one = smt.int.constant 1
+    %sum = smt.int.add %x, %one
+    return %sum : !smt.int
+  }
+
+  smt.solver () : () -> () {
+    %x = smt.declare_fun "x" : !smt.int
+    %value = func.call @helper(%x) : (!smt.int) -> !smt.int
+    smt.reset
+    %result = smt.declare_fun "result" : !smt.int
+    %ok = smt.eq %result, %value : !smt.int
+    smt.assert %ok
+    smt.yield
+  }
+}
+
+// RESET-HELPER: error: missing SMTLIB value binding

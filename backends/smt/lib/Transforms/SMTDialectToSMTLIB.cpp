@@ -25,6 +25,7 @@
 #include <mlir/Pass/Pass.h>
 #include <mlir/Support/FileUtilities.h>
 
+#include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/ScopeExit.h>
 #include <llvm/ADT/SmallString.h>
@@ -108,6 +109,30 @@ static std::string sortForType(Type type) {
   return storage;
 }
 
+/// Print a signed integer literal using SMT-LIB term syntax.
+static void printIntegerLiteral(llvm::raw_ostream &os, const llvm::APInt &value) {
+  llvm::APSInt signedValue(value, /*isUnsigned=*/false);
+  if (!signedValue.isNegative()) {
+    SmallString<32> valueText;
+    signedValue.toString(valueText, /*Radix=*/10);
+    os << valueText;
+    return;
+  }
+
+  llvm::APSInt magnitude(signedValue.abs(), /*isUnsigned=*/false);
+  SmallString<32> valueText;
+  magnitude.toString(valueText, /*Radix=*/10);
+  os << "(- " << valueText << ')';
+}
+
+/// Render a signed integer literal using SMT-LIB term syntax.
+static std::string formatIntegerLiteral(const llvm::APInt &value) {
+  std::string storage;
+  llvm::raw_string_ostream os(storage);
+  printIntegerLiteral(os, value);
+  return storage;
+}
+
 /// Print a structured SMT-LIB `set-info` value attribute.
 static void printSetInfoValue(llvm::raw_ostream &os, Attribute value) {
   TypeSwitch<Attribute>(value)
@@ -116,9 +141,7 @@ static void printSetInfoValue(llvm::raw_ostream &os, Attribute value) {
       .Case<StringAttr>([&os](auto strAttr) { strAttr.print(os); })
       .Case<BoolAttr>([&os](auto boolAttr) { os << (boolAttr.getValue() ? "true" : "false"); })
       .Case<IntegerAttr>([&os](auto intAttr) {
-    SmallString<32> valueText;
-    intAttr.getValue().toStringSigned(valueText);
-    os << valueText;
+    printIntegerLiteral(os, intAttr.getValue());
   }).Case<ArrayAttr>([&os](auto arrayAttr) {
     os << '(';
     llvm::interleave(arrayAttr, [&os](Attribute element) {
@@ -152,8 +175,13 @@ public:
   }
 
 private:
+  struct ValueBinding {
+    std::string text;
+    bool survivesReset = false;
+  };
+
   struct EvalContext {
-    DenseMap<Value, std::string> values;
+    DenseMap<Value, ValueBinding> values;
     SmallVector<std::pair<std::string, std::string>> letBindings;
     bool preserveSharing = false;
   };
@@ -232,6 +260,18 @@ private:
     emittedPureHelperSCCs.clear();
   }
 
+  /// Drop any cached SSA binding that depends on pre-reset solver state.
+  static void pruneResetSensitiveBindings(EvalContext &ctx) {
+    ctx.letBindings.clear();
+    for (auto it = ctx.values.begin(); it != ctx.values.end();) {
+      if (it->second.survivesReset) {
+        ++it;
+        continue;
+      }
+      ctx.values.erase(it++);
+    }
+  }
+
   /// Emit the script preamble and initialize per-script export state.
   LogicalResult emitRootPreamble(bool emitReset, bool emitDefaultLogic) {
     if (emitReset) {
@@ -294,9 +334,10 @@ private:
     })
         .Case<smt::DeclareFunOp>([&](auto declareOp) { return emitDeclare(declareOp, ctx); })
         .Case<smt::AssertOp>([&](auto assertOp) { return emitAssert(assertOp, ctx); })
-        .Case<smt::ResetOp>([this](auto) {
+        .Case<smt::ResetOp>([this, &ctx](auto) {
       os << "(reset)\n";
       resetScriptState();
+      pruneResetSensitiveBindings(ctx);
       return success();
     })
         .Case<smt::PushOp>([this](auto pushOp) {
@@ -383,14 +424,14 @@ private:
     if (op->getNumResults() != 1) {
       return op.emitError("smt-to-smtlib only supports single-result expression ops");
     }
-    if (ctx.preserveSharing && !expr->starts_with("(")) {
+    if (ctx.preserveSharing && !expr->text.starts_with("(")) {
       ctx.values[op->getResult(0)] = std::move(*expr);
       return success();
     }
     if (ctx.preserveSharing) {
       std::string name = makeLetName();
-      ctx.letBindings.emplace_back(name, std::move(*expr));
-      ctx.values[op->getResult(0)] = std::move(name);
+      ctx.letBindings.emplace_back(name, std::move(expr->text));
+      ctx.values[op->getResult(0)] = ValueBinding {std::move(name), expr->survivesReset};
       return success();
     }
     ctx.values[op->getResult(0)] = std::move(*expr);
@@ -408,7 +449,7 @@ private:
     if (unsigned &count = emittedSymbolCounts[symbol]; count++ != 0) {
       symbol += "_" + std::to_string(count);
     }
-    ctx.values[declareOp.getResult()] = symbol;
+    ctx.values[declareOp.getResult()] = ValueBinding {symbol, /*survivesReset=*/false};
     if (auto funcType = dyn_cast<smt::SMTFuncType>(declareOp.getType())) {
       os << "(declare-fun " << symbol << " (";
       llvm::interleave(funcType.getDomainTypes(), [this](Type domainType) {
@@ -431,7 +472,7 @@ private:
     if (failed(expr)) {
       return assertOp.emitError("missing SMTLIB expression for assertion input");
     }
-    std::string rendered = wrapWithLets(*expr, ctx.letBindings);
+    std::string rendered = wrapWithLets(expr->text, ctx.letBindings);
     ctx.letBindings.clear();
     if (pushDepth == 0 && !emittedAssertions.insert(rendered).second) {
       return success();
@@ -446,13 +487,13 @@ private:
       return constOp.emitOpError("smt-to-smtlib only supports single-result arith.constant");
     }
     if (auto boolAttr = dyn_cast<BoolAttr>(constOp.getValue())) {
-      ctx.values[constOp.getResult()] = boolAttr.getValue() ? "true" : "false";
+      ctx.values[constOp.getResult()] =
+          ValueBinding {boolAttr.getValue() ? "true" : "false", /*survivesReset=*/true};
       return success();
     }
     if (auto intAttr = dyn_cast<IntegerAttr>(constOp.getValue())) {
-      SmallString<32> value;
-      intAttr.getValue().toStringSigned(value);
-      ctx.values[constOp.getResult()] = value.str().str();
+      ctx.values[constOp.getResult()] =
+          ValueBinding {formatIntegerLiteral(intAttr.getValue()), /*survivesReset=*/true};
       return success();
     }
     return constOp.emitOpError("unsupported arith.constant for smt-to-smtlib");
@@ -485,7 +526,7 @@ private:
       if (failed(arg)) {
         return callOp.emitOpError("missing SMTLIB expression for call operand");
       }
-      argExprs.push_back(std::move(*arg));
+      argExprs.push_back(std::move(arg->text));
     }
 
     auto helperMode = classifyHelperMode(callee);
@@ -500,7 +541,8 @@ private:
       if (failed(ensurePureHelperEmitted(callee))) {
         return callOp.emitError("smt-to-smtlib requires an emit-compatible helper callee");
       }
-      ctx.values[callOp.getResult(0)] = buildHelperApplication(callee, argExprs);
+      ctx.values[callOp.getResult(0)] =
+          ValueBinding {buildHelperApplication(callee, argExprs), /*survivesReset=*/false};
       return success();
     }
 
@@ -513,7 +555,7 @@ private:
       return callOp.emitOpError("helper result arity mismatch during SMTLIB export");
     }
     for (auto [result, expr] : llvm::zip(callOp.getResults(), *results)) {
-      ctx.values[result] = expr;
+      ctx.values[result] = std::move(expr);
     }
     return success();
   }
@@ -753,7 +795,7 @@ private:
     if (failed(results) || results->size() != 1) {
       return func.emitError("smt-to-smtlib requires an emit-compatible pure helper");
     }
-    definition.bodyExpr = std::move(results->front());
+    definition.bodyExpr = std::move(results->front().text);
     return definition;
   }
 
@@ -893,7 +935,7 @@ private:
   /// This binds callee block arguments to already-rendered caller expressions,
   /// emits the helper body in source order, and then returns the rendered
   /// `func.return` operands back to the caller for subsequent substitution.
-  FailureOr<SmallVector<std::string>>
+  FailureOr<SmallVector<ValueBinding>>
   inlineHelper(func::FuncOp func, ArrayRef<std::string> argExprs) {
     if (!func || func.empty()) {
       return func.emitError("smt-to-smtlib requires non-empty helper funcs");
@@ -910,7 +952,7 @@ private:
     EvalContext helperCtx;
     helperCtx.preserveSharing = helperIsPurelyExpressionBased(func);
     for (auto [arg, expr] : llvm::zip(func.getArguments(), argExprs)) {
-      helperCtx.values[arg] = expr;
+      helperCtx.values[arg] = ValueBinding {expr, /*survivesReset=*/false};
     }
 
     if (failed(emitBlock(func.getBody().front(), helperCtx))) {
@@ -922,14 +964,16 @@ private:
       return func.emitError("helper func must terminate with func.return");
     }
 
-    SmallVector<std::string> results;
+    SmallVector<ValueBinding> results;
     results.reserve(returnOp.getNumOperands());
     for (Value operand : returnOp.getOperands()) {
       auto expr = lookup(operand, helperCtx);
       if (failed(expr)) {
         return failure();
       }
-      results.push_back(wrapWithLets(*expr, helperCtx.letBindings));
+      auto binding = *expr;
+      binding.text = wrapWithLets(binding.text, helperCtx.letBindings);
+      results.push_back(std::move(binding));
     }
     return results;
   }
@@ -964,7 +1008,7 @@ private:
   }
 
   /// Look up the currently rendered SMT-LIB expression bound to an SSA value.
-  FailureOr<std::string> lookup(Value value, EvalContext &ctx) {
+  FailureOr<ValueBinding> lookup(Value value, EvalContext &ctx) {
     auto it = ctx.values.find(value);
     if (it == ctx.values.end()) {
       if (Operation *def = value.getDefiningOp()) {
@@ -978,7 +1022,7 @@ private:
   }
 
   /// Evaluate a pure helper body into rendered result expressions.
-  FailureOr<SmallVector<std::string>>
+  FailureOr<SmallVector<ValueBinding>>
   evalHelper(func::FuncOp func, ArrayRef<std::string> argExprs) {
     if (!func || func.empty()) {
       return func.emitError("smt-to-smtlib requires non-empty helper funcs");
@@ -990,7 +1034,7 @@ private:
       return func.emitError("helper argument arity mismatch during SMTLIB export");
     }
     for (auto [arg, expr] : llvm::zip(func.getArguments(), argExprs)) {
-      ctx.values[arg] = expr;
+      ctx.values[arg] = ValueBinding {expr, /*survivesReset=*/false};
     }
 
     Block &block = func.getBody().front();
@@ -1009,14 +1053,16 @@ private:
       return func.emitError("helper func must terminate with func.return");
     }
 
-    SmallVector<std::string> results;
+    SmallVector<ValueBinding> results;
     results.reserve(returnOp.getNumOperands());
     for (Value operand : returnOp.getOperands()) {
       auto expr = lookup(operand, ctx);
       if (failed(expr)) {
         return failure();
       }
-      results.push_back(wrapWithLets(*expr, ctx.letBindings));
+      auto binding = *expr;
+      binding.text = wrapWithLets(binding.text, ctx.letBindings);
+      results.push_back(std::move(binding));
     }
     return results;
   }
@@ -1036,17 +1082,19 @@ private:
   }
 
   /// Render one expression-producing operation into an SMT-LIB term.
-  FailureOr<std::string> buildExpr(Operation *op, EvalContext &ctx) {
-    return TypeSwitch<Operation *, FailureOr<std::string>>(op)
+  FailureOr<ValueBinding> buildExpr(Operation *op, EvalContext &ctx) {
+    return TypeSwitch<Operation *, FailureOr<ValueBinding>>(op)
         .Case<smt::BoolConstantOp>([](auto constOp) {
-      return std::string(constOp.getValue() ? "true" : "false");
+      return ValueBinding {
+          std::string(constOp.getValue() ? "true" : "false"), /*survivesReset=*/true
+      };
     })
         .Case<smt::IntConstantOp>([](auto constOp) {
-      SmallString<32> str;
-      constOp.getValue().toStringSigned(str);
-      return str.str().str();
+      return ValueBinding {formatIntegerLiteral(constOp.getValue()), /*survivesReset=*/true};
     })
-        .Case<smt::BVConstantOp>([](auto constOp) { return constOp.getValue().getValueAsString(); })
+        .Case<smt::BVConstantOp>([](auto constOp) {
+      return ValueBinding {constOp.getValue().getValueAsString(), /*survivesReset=*/true};
+    })
         .Case<smt::EqOp>([&](auto exprOp) { return buildSExpr("=", exprOp.getInputs(), ctx); })
         .Case<smt::DistinctOp>([&](auto exprOp) {
       return buildSExpr("distinct", exprOp.getInputs(), ctx);
@@ -1144,14 +1192,17 @@ private:
           "store", ValueRange {exprOp.getArray(), exprOp.getIndex(), exprOp.getValue()}, ctx
       );
     })
-        .Case<smt::ArrayBroadcastOp>([&](auto exprOp) -> FailureOr<std::string> {
+        .Case<smt::ArrayBroadcastOp>([&](auto exprOp) -> FailureOr<ValueBinding> {
       auto valueExpr = lookup(exprOp.getValue(), ctx);
       if (failed(valueExpr)) {
         return failure();
       }
-      return "((as const " + sortForType(exprOp.getType()) + ") " + *valueExpr + ")";
+      return ValueBinding {
+          "((as const " + sortForType(exprOp.getType()) + ") " + valueExpr->text + ")",
+          valueExpr->survivesReset,
+      };
     })
-        .Case<smt::ApplyFuncOp>([&](auto exprOp) -> FailureOr<std::string> {
+        .Case<smt::ApplyFuncOp>([&](auto exprOp) -> FailureOr<ValueBinding> {
       auto funcExpr = lookup(exprOp.getFunc(), ctx);
       if (failed(funcExpr)) {
         return failure();
@@ -1159,17 +1210,19 @@ private:
       if (exprOp.getArgs().empty()) {
         return *funcExpr;
       }
-      std::string expr = "(" + *funcExpr;
+      std::string expr = "(" + funcExpr->text;
+      bool survivesReset = funcExpr->survivesReset;
       for (Value arg : exprOp.getArgs()) {
         auto argExpr = lookup(arg, ctx);
         if (failed(argExpr)) {
           return failure();
         }
+        survivesReset &= argExpr->survivesReset;
         expr.push_back(' ');
-        expr += *argExpr;
+        expr += argExpr->text;
       }
       expr.push_back(')');
-      return expr;
+      return ValueBinding {std::move(expr), survivesReset};
     }).Case<smt::ForallOp>([&](auto exprOp) {
       return buildQuantifierExpr("forall", exprOp, ctx);
     }).Case<smt::ExistsOp>([&](auto exprOp) {
@@ -1182,20 +1235,20 @@ private:
   }
 
   /// Render an `arith.constant` as an SMT-LIB literal term.
-  FailureOr<std::string> buildArithConstantExpr(arith::ConstantOp constOp) {
+  FailureOr<ValueBinding> buildArithConstantExpr(arith::ConstantOp constOp) {
     if (auto boolAttr = dyn_cast<BoolAttr>(constOp.getValue())) {
-      return std::string(boolAttr.getValue() ? "true" : "false");
+      return ValueBinding {
+          std::string(boolAttr.getValue() ? "true" : "false"), /*survivesReset=*/true
+      };
     }
     if (auto intAttr = dyn_cast<IntegerAttr>(constOp.getValue())) {
-      SmallString<32> value;
-      intAttr.getValue().toStringSigned(value);
-      return value.str().str();
+      return ValueBinding {formatIntegerLiteral(intAttr.getValue()), /*survivesReset=*/true};
     }
     return constOp.emitOpError("unsupported arith.constant expression");
   }
 
   /// Render an integer comparison predicate using SMT-LIB comparison syntax.
-  FailureOr<std::string> buildCmpExpr(smt::IntCmpOp cmpOp, EvalContext &ctx) {
+  FailureOr<ValueBinding> buildCmpExpr(smt::IntCmpOp cmpOp, EvalContext &ctx) {
     StringRef pred;
     switch (cmpOp.getPred()) {
     case smt::IntPredicate::lt:
@@ -1215,26 +1268,32 @@ private:
   }
 
   /// Render integer-to-bitvector conversion with an explicit target width.
-  FailureOr<std::string> buildInt2BVExpr(smt::Int2BVOp op, EvalContext &ctx) {
+  FailureOr<ValueBinding> buildInt2BVExpr(smt::Int2BVOp op, EvalContext &ctx) {
     auto input = lookup(op.getInput(), ctx);
     if (failed(input)) {
       return failure();
     }
     auto resultType = cast<smt::BitVectorType>(op.getResult().getType());
-    return "((_ int_to_bv " + std::to_string(resultType.getWidth()) + ") " + *input + ")";
+    return ValueBinding {
+        "((_ int_to_bv " + std::to_string(resultType.getWidth()) + ") " + input->text + ")",
+        input->survivesReset,
+    };
   }
 
   /// Render bitvector-to-integer conversion with the requested signedness.
-  FailureOr<std::string> buildBV2IntExpr(smt::BV2IntOp op, EvalContext &ctx) {
+  FailureOr<ValueBinding> buildBV2IntExpr(smt::BV2IntOp op, EvalContext &ctx) {
     auto input = lookup(op.getInput(), ctx);
     if (failed(input)) {
       return failure();
     }
-    return "(" + std::string(op.getIsSigned() ? "sbv_to_int" : "ubv_to_int") + " " + *input + ")";
+    return ValueBinding {
+        "(" + std::string(op.getIsSigned() ? "sbv_to_int" : "ubv_to_int") + " " + input->text + ")",
+        input->survivesReset,
+    };
   }
 
   /// Render a bitvector comparison predicate using the matching SMT-LIB op.
-  FailureOr<std::string> buildBVCmpExpr(smt::BVCmpOp cmpOp, EvalContext &ctx) {
+  FailureOr<ValueBinding> buildBVCmpExpr(smt::BVCmpOp cmpOp, EvalContext &ctx) {
     StringRef pred;
     switch (cmpOp.getPred()) {
     case smt::BVCmpPredicate::slt:
@@ -1266,49 +1325,57 @@ private:
   }
 
   /// Render bitvector extraction with SMT-LIB's indexed `extract` operator.
-  FailureOr<std::string> buildExtractExpr(smt::ExtractOp op, EvalContext &ctx) {
+  FailureOr<ValueBinding> buildExtractExpr(smt::ExtractOp op, EvalContext &ctx) {
     auto input = lookup(op.getInput(), ctx);
     if (failed(input)) {
       return failure();
     }
     unsigned lowBit = op.getLowBit();
     unsigned highBit = lowBit + cast<smt::BitVectorType>(op.getType()).getWidth() - 1;
-    return "((_ extract " + std::to_string(highBit) + " " + std::to_string(lowBit) + ") " + *input +
-           ")";
+    return ValueBinding {
+        "((_ extract " + std::to_string(highBit) + " " + std::to_string(lowBit) + ") " +
+            input->text + ")",
+        input->survivesReset,
+    };
   }
 
   /// Render bitvector repetition with SMT-LIB's indexed `repeat` operator.
-  FailureOr<std::string> buildRepeatExpr(smt::RepeatOp op, EvalContext &ctx) {
+  FailureOr<ValueBinding> buildRepeatExpr(smt::RepeatOp op, EvalContext &ctx) {
     auto input = lookup(op.getInput(), ctx);
     if (failed(input)) {
       return failure();
     }
-    return "((_ repeat " + std::to_string(op.getCount()) + ") " + *input + ")";
+    return ValueBinding {
+        "((_ repeat " + std::to_string(op.getCount()) + ") " + input->text + ")",
+        input->survivesReset,
+    };
   }
 
   /// Build a generic SMT-LIB s-expression from an operator name and operands.
-  FailureOr<std::string> buildSExpr(StringRef opName, ValueRange operands, EvalContext &ctx) {
+  FailureOr<ValueBinding> buildSExpr(StringRef opName, ValueRange operands, EvalContext &ctx) {
     if (opName == "and") {
       SmallVector<std::string> renderedOperands;
       renderedOperands.reserve(operands.size());
+      bool survivesReset = true;
       for (Value operand : operands) {
         auto value = lookup(operand, ctx);
         if (failed(value)) {
           return failure();
         }
-        if (*value == "false") {
-          return std::string("false");
+        survivesReset &= value->survivesReset;
+        if (value->text == "false") {
+          return ValueBinding {std::string("false"), survivesReset};
         }
-        if (*value == "true") {
+        if (value->text == "true") {
           continue;
         }
-        renderedOperands.push_back(std::move(*value));
+        renderedOperands.push_back(std::move(value->text));
       }
       if (renderedOperands.empty()) {
-        return std::string("true");
+        return ValueBinding {std::string("true"), survivesReset};
       }
       if (renderedOperands.size() == 1) {
-        return renderedOperands.front();
+        return ValueBinding {renderedOperands.front(), survivesReset};
       }
       std::string expr = "(and";
       for (const std::string &operand : renderedOperands) {
@@ -1316,25 +1383,27 @@ private:
         expr += operand;
       }
       expr.push_back(')');
-      return expr;
+      return ValueBinding {std::move(expr), survivesReset};
     }
 
     std::string expr = "(" + opName.str();
+    bool survivesReset = true;
     for (Value operand : operands) {
       auto value = lookup(operand, ctx);
       if (failed(value)) {
         return failure();
       }
+      survivesReset &= value->survivesReset;
       expr.push_back(' ');
-      expr += *value;
+      expr += value->text;
     }
     expr.push_back(')');
-    return expr;
+    return ValueBinding {std::move(expr), survivesReset};
   }
 
   /// Render a quantifier body that matches the exporter's structural restrictions.
   template <typename QuantifierOpTy>
-  FailureOr<std::string>
+  FailureOr<ValueBinding>
   buildQuantifierExpr(StringRef quantifierName, QuantifierOpTy op, EvalContext &ctx) {
     if (!op.getPatterns().empty()) {
       return op.emitError("smt-to-smtlib does not yet support quantified pattern emission");
@@ -1352,7 +1421,7 @@ private:
       std::string name = namesAttr && index < namesAttr->size()
                              ? sanitizeSymbol(cast<StringAttr>((*namesAttr)[index]).getValue())
                              : "q" + std::to_string(nextTempId++);
-      bodyCtx.values[arg] = name;
+      bodyCtx.values[arg] = ValueBinding {name, /*survivesReset=*/true};
       if (index != 0) {
         expr.push_back(' ');
       }
@@ -1374,9 +1443,9 @@ private:
     if (failed(yielded)) {
       return failure();
     }
-    expr += wrapWithLets(*yielded, bodyCtx.letBindings);
+    expr += wrapWithLets(yielded->text, bodyCtx.letBindings);
     expr += ")";
-    return expr;
+    return ValueBinding {std::move(expr), yielded->survivesReset};
   }
 
   /// Create a fresh name for a local `let` binding.
