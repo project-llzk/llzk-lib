@@ -21,7 +21,7 @@ config.name = 'LLZK'
 config.test_format = lit.formats.ShTest(not llvm_config.use_lit_shell)
 
 # suffixes: A list of file extensions to treat as test files.
-config.suffixes = ['.mlir', '.llzk', '.td']
+config.suffixes = ['.mlir', '.llzk', '.smt2', '.td']
 config.suffixes.extend(config.extra_suffixes)
 
 # test_source_root: The root path where tests are located.
@@ -64,7 +64,7 @@ llvm_config.with_environment('PATH', config.llvm_tools_dir, append_path=True)
 
 tool_dirs = [config.llzk_tools_dir, config.llzk_tblgen_tools_dir, config.llvm_tools_dir]
 tools = [
-    "llzk-opt", "llzk-tblgen", "llzk-witgen", "r1cs-opt"
+    "llzk-opt", "llzk-smt-check", "llzk-tblgen", "llzk-witgen", "r1cs-opt"
 ]
 
 llvm_config.add_tool_substitutions(tools, tool_dirs)

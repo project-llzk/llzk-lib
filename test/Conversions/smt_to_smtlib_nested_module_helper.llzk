@@ -1,0 +1,28 @@
+// RUN: llzk-opt --smt-to-smtlib -o /dev/null %s | FileCheck %s
+// Purpose: resolve helper calls against the selected nested root module.
+
+module {
+  module {
+    func.func @helper(%x: !smt.int) -> !smt.int {
+      %one = smt.int.constant 1
+      %sum = smt.int.add %x, %one
+      return %sum : !smt.int
+    }
+
+    smt.solver () : () -> () {
+      %x = smt.declare_fun "x" : !smt.int
+      %value = func.call @helper(%x) : (!smt.int) -> !smt.int
+      %result = smt.declare_fun "result" : !smt.int
+      %ok = smt.eq %result, %value : !smt.int
+      smt.assert %ok
+      smt.yield
+    }
+  }
+}
+
+// CHECK:      (set-logic ALL)
+// CHECK-NEXT: (declare-fun x () Int)
+// CHECK-NEXT: (define-fun helper ((helper__arg0 Int)) Int
+// CHECK-SAME: (let ((__let0 (+ helper__arg0 1))) __let0))
+// CHECK-NEXT: (declare-fun result () Int)
+// CHECK-NEXT: (assert (= result (helper x)))

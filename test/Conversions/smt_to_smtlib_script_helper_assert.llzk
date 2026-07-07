@@ -1,0 +1,24 @@
+// RUN: llzk-opt --smt-to-smtlib -o /dev/null %s | FileCheck %s
+// Purpose: inline script helper with smt.assert and returned SMT value substitution.
+
+module {
+  func.func @bad_helper(%x: !smt.int) -> !smt.int {
+    %zero = smt.int.constant 0
+    %ok = smt.eq %x, %zero : !smt.int
+    smt.assert %ok
+    return %x : !smt.int
+  }
+
+  smt.solver () : () -> () {
+    %x = smt.declare_fun "x" : !smt.int
+    %value = func.call @bad_helper(%x) : (!smt.int) -> !smt.int
+    %zero = smt.int.constant 0
+    %ok = smt.eq %value, %zero : !smt.int
+    smt.assert %ok
+    smt.yield
+  }
+}
+
+// CHECK:      (set-logic ALL)
+// CHECK-NEXT: (declare-fun x () Int)
+// CHECK-NEXT: (assert (= x 0))

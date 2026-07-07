@@ -1,0 +1,46 @@
+// RUN: llzk-opt --smt-to-smtlib -o /dev/null %s | FileCheck %s
+// Purpose: mixed pure and script helper interoperability with explicit metadata and bare check-sat.
+
+module {
+  func.func @pure_add(%x: !smt.int) -> !smt.int {
+    %one = smt.int.constant 1
+    %sum = smt.int.add %x, %one
+    return %sum : !smt.int
+  }
+
+  func.func @script_check(%x: !smt.int) {
+    smt.push 1
+    %value = func.call @pure_add(%x) : (!smt.int) -> !smt.int
+    %zero = smt.int.constant 0
+    %ok = smt.eq %value, %zero : !smt.int
+    smt.assert %ok
+    smt.set_info ":llzk-stage" "target"
+    smt.set_info ":status" sat
+    smt.check sat {
+      smt.yield
+    } unknown {
+      smt.yield
+    } unsat {
+      smt.yield
+    }
+    smt.pop 1
+    return
+  }
+
+  smt.solver () : () -> () {
+    %x = smt.declare_fun "x" : !smt.int
+    func.call @script_check(%x) : (!smt.int) -> ()
+    smt.yield
+  }
+}
+
+// CHECK:      (set-logic ALL)
+// CHECK-NEXT: (declare-fun x () Int)
+// CHECK-NEXT: (push 1)
+// CHECK-NEXT: (define-fun pure_add ((pure_add__arg0 Int)) Int
+// CHECK-SAME: (let ((__let0 (+ pure_add__arg0 1))) __let0))
+// CHECK-NEXT: (assert (= (pure_add x) 0))
+// CHECK-NEXT: (set-info :llzk-stage "target")
+// CHECK-NEXT: (set-info :status sat)
+// CHECK-NEXT: (check-sat)
+// CHECK-NEXT: (pop 1)
