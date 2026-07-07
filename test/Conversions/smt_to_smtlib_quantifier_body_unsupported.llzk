@@ -1,10 +1,11 @@
-// RUN: not llzk-opt --smt-to-smtlib -o /dev/null %s 2>&1 | FileCheck %s
-// Purpose: quantifier bodies reject script commands that cannot appear inside SMT-LIB terms.
+// RUN: llzk-opt --smt-to-smtlib -verify-diagnostics %s
+// Purpose: quantifier-body export failures are checked with op-local diagnostics.
 
 module {
   smt.solver () : () -> () {
     %quantified = smt.forall ["x"] {
     ^bb0(%x: !smt.int):
+      // expected-error @+1 {{smt-to-smtlib quantifier bodies may only contain expression ops because SMT-LIB terms cannot contain script commands or helper emissions}}
       %p = smt.declare_fun "p" : !smt.bool
       smt.assert %p
       smt.yield %p : !smt.bool
@@ -15,5 +16,3 @@ module {
     smt.yield
   }
 }
-
-// CHECK: error: smt-to-smtlib quantifier bodies may only contain expression ops because SMT-LIB terms cannot contain script commands or helper emissions

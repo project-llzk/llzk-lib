@@ -1,23 +1,23 @@
 // RUN: split-file %s %t
-// Purpose: canonical root-contract validation for module-level smt.solver export.
-// RUN: not llzk-opt --smt-to-smtlib -o /dev/null %t/no-solver.mlir 2>&1 | FileCheck %s --check-prefix=NO-SOLVER
-// RUN: not llzk-opt --smt-to-smtlib -o /dev/null %t/multiple-solvers.mlir 2>&1 | FileCheck %s --check-prefix=MULTI-SOLVER
-// RUN: not llzk-opt --smt-to-smtlib -o /dev/null %t/nested-only.mlir 2>&1 | FileCheck %s --check-prefix=NESTED-ONLY
-// RUN: not llzk-opt --smt-to-smtlib -o /dev/null %t/solver-inputs.mlir 2>&1 | FileCheck %s --check-prefix=SOLVER-INPUTS
-// RUN: not llzk-opt --smt-to-smtlib -o /dev/null %t/solver-results.mlir 2>&1 | FileCheck %s --check-prefix=SOLVER-RESULTS
-// RUN: not llzk-opt --smt-to-smtlib -o /dev/null %t/direct-nested.mlir 2>&1 | grep -F "use push/pop if same-solver nesting was intended"
-// RUN: not llzk-opt --smt-to-smtlib -o /dev/null %t/helper-nested.mlir 2>&1 | grep -F "use push/pop if same-solver nesting was intended"
+// RUN: llzk-opt --smt-to-smtlib -verify-diagnostics %t/no-solver.mlir
+// RUN: llzk-opt --smt-to-smtlib -verify-diagnostics %t/multiple-solvers.mlir
+// RUN: llzk-opt --smt-to-smtlib -verify-diagnostics %t/nested-only.mlir
+// RUN: llzk-opt --smt-to-smtlib -verify-diagnostics %t/solver-inputs.mlir
+// RUN: llzk-opt --smt-to-smtlib -verify-diagnostics %t/solver-results.mlir
+// RUN: llzk-opt --smt-to-smtlib -verify-diagnostics %t/direct-nested.mlir
+// RUN: llzk-opt --smt-to-smtlib -verify-diagnostics %t/helper-nested.mlir
+// Purpose: canonical root-contract failures are checked with op-local diagnostics.
 
 //--- no-solver.mlir
-module {
+// expected-error @+1 {{smt-to-smtlib could not find a top-level smt.solver in the root module}}
+ module {
   func.func @helper_only(%x: !smt.int) -> !smt.int {
     return %x : !smt.int
   }
 }
 
-// NO-SOLVER: error: smt-to-smtlib could not find a top-level smt.solver in the root module
-
 //--- multiple-solvers.mlir
+// expected-error @+1 {{smt-to-smtlib requires exactly one top-level smt.solver in the root module}}
 module {
   smt.solver () : () -> () {
     smt.yield
@@ -28,9 +28,8 @@ module {
   }
 }
 
-// MULTI-SOLVER: error: smt-to-smtlib requires exactly one top-level smt.solver in the root module
-
 //--- nested-only.mlir
+// expected-error @+1 {{smt-to-smtlib could not find a top-level smt.solver in the root module}}
 module {
   func.func @nested_only() {
     smt.solver () : () -> () {
@@ -40,32 +39,29 @@ module {
   }
 }
 
-// NESTED-ONLY: error: smt-to-smtlib could not find a top-level smt.solver in the root module
-
 //--- solver-inputs.mlir
 module {
   %zero = arith.constant 0 : i32
+  // expected-error @+1 {{SMT-LIB scripts have no standard parameter channel; the selected top-level smt.solver must be a closed script}}
   smt.solver (%zero) : (i32) -> () {
   ^bb0(%arg0: i32):
     smt.yield
   }
 }
 
-// SOLVER-INPUTS: error: SMT-LIB scripts have no standard parameter channel; the selected top-level smt.solver must be a closed script
-
 //--- solver-results.mlir
 module {
+  // expected-error @+1 {{SMT-LIB scripts have no standard return channel; the selected top-level smt.solver must not return results}}
   %value = smt.solver () : () -> (i32) {
     %zero = arith.constant 0 : i32
     smt.yield %zero : i32
   }
 }
 
-// SOLVER-RESULTS: error: SMT-LIB scripts have no standard return channel; the selected top-level smt.solver must not return results
-
 //--- direct-nested.mlir
 module {
   smt.solver () : () -> () {
+    // expected-error @+1 {{nested smt.solver is not exportable to SMT-LIB; SMT-LIB has a single script context, so use push/pop if same-solver nesting was intended}}
     smt.solver () : () -> () {
       smt.yield
     }
@@ -76,6 +72,7 @@ module {
 //--- helper-nested.mlir
 module {
   func.func @nested_helper() {
+    // expected-error @+1 {{nested smt.solver is not exportable to SMT-LIB; SMT-LIB has a single script context, so use push/pop if same-solver nesting was intended}}
     smt.solver () : () -> () {
       smt.yield
     }
@@ -83,6 +80,7 @@ module {
   }
 
   smt.solver () : () -> () {
+    // expected-error @+1 {{smt-to-smtlib requires an emit-compatible helper callee}}
     func.call @nested_helper() : () -> ()
     smt.yield
   }
