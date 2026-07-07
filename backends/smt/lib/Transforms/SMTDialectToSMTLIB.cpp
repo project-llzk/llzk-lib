@@ -165,6 +165,7 @@ private:
     std::string bodyExpr;
   };
 
+  /// Select the effective module root used for solver discovery and helper lookup.
   ModuleOp getEffectiveRootModule() {
     ModuleOp nestedModule;
     for (Operation &op : module.getBody()->getOperations()) {
@@ -177,6 +178,7 @@ private:
     return nestedModule ? nestedModule : module;
   }
 
+  /// Find the unique top-level solver root in the effective root module.
   FailureOr<llzk::smt::SolverOp> collectRoot() {
     selectedRootModule = getEffectiveRootModule();
     llzk::smt::SolverOp solver;
@@ -201,20 +203,24 @@ private:
     return solver;
   }
 
+  /// Return the module that owns helpers reachable from the selected root.
   ModuleOp getSelectedRootModule() {
     return selectedRootModule ? selectedRootModule : getEffectiveRootModule();
   }
 
+  /// Dispatch emission once the root solver has been selected.
   LogicalResult emitRoot(llzk::smt::SolverOp solver, bool emitReset) {
     return emitSolverRoot(solver, emitReset);
   }
 
+  /// Check whether the selected solver already sets the SMT-LIB logic.
   static bool solverHasExplicitSetLogic(llzk::smt::SolverOp solver) {
     return llvm::any_of(solver.getBodyRegion().front().without_terminator(), [](Operation &op) {
       return isa<llzk::smt::SetLogicOp>(op);
     });
   }
 
+  /// Reset exporter-side state that tracks emitted script structure.
   void resetScriptState() {
     nextTempId = 0;
     pushDepth = 0;
@@ -225,6 +231,7 @@ private:
     emittedPureHelperSCCs.clear();
   }
 
+  /// Emit the script preamble and initialize per-script export state.
   LogicalResult emitRootPreamble(bool emitReset, bool emitDefaultLogic) {
     if (emitReset) {
       os << "\n(reset)\n";
@@ -236,6 +243,7 @@ private:
     return success();
   }
 
+  /// Emit the selected solver as one complete SMT-LIB script body.
   LogicalResult emitSolverRoot(llzk::smt::SolverOp solver, bool emitReset) {
     if (solver.getNumOperands() != 0 || solver.getBodyRegion().front().getNumArguments() != 0) {
       return solver.emitError(
@@ -260,6 +268,7 @@ private:
     return emitBlock(solver.getBodyRegion().front(), ctx);
   }
 
+  /// Emit each non-terminator operation in a block in source order.
   LogicalResult emitBlock(Block &block, EvalContext &ctx) {
     for (Operation &op : block.without_terminator()) {
       if (failed(emitOperation(&op, ctx))) {
@@ -269,6 +278,7 @@ private:
     return success();
   }
 
+  /// Lower one top-level SMT dialect operation into SMT-LIB text or bindings.
   LogicalResult emitOperation(Operation *op, EvalContext &ctx) {
     return TypeSwitch<Operation *, LogicalResult>(op)
         .Case<llzk::smt::SetLogicOp>([this](auto setLogicOp) {
@@ -363,6 +373,7 @@ private:
     });
   }
 
+  /// Bind a single-result expression op to its rendered SMT-LIB expression.
   template <typename OpTy> LogicalResult bindExpr(OpTy op, EvalContext &ctx) {
     auto expr = buildExpr(op.getOperation(), ctx);
     if (failed(expr)) {
@@ -385,6 +396,7 @@ private:
     return success();
   }
 
+  /// Emit a declared SMT symbol and record its printed SMT-LIB identifier.
   LogicalResult emitDeclare(llzk::smt::DeclareFunOp declareOp, EvalContext &ctx) {
     std::string symbol;
     if (auto prefix = declareOp.getNamePrefix()) {
@@ -412,6 +424,7 @@ private:
     return success();
   }
 
+  /// Emit an assertion, deduplicating top-level assertions when possible.
   LogicalResult emitAssert(llzk::smt::AssertOp assertOp, EvalContext &ctx) {
     auto expr = lookup(assertOp.getInput(), ctx);
     if (failed(expr)) {
@@ -426,6 +439,7 @@ private:
     return success();
   }
 
+  /// Bind an `arith.constant` that already maps directly onto SMT-LIB syntax.
   LogicalResult emitArithConstant(arith::ConstantOp constOp, EvalContext &ctx) {
     if (constOp->getNumResults() != 1) {
       return constOp.emitOpError("smt-to-smtlib only supports single-result arith.constant");
@@ -443,6 +457,7 @@ private:
     return constOp.emitOpError("unsupported arith.constant for smt-to-smtlib");
   }
 
+  /// Thread one-to-one unrealized casts through the current binding environment.
   LogicalResult emitUnrealizedCast(UnrealizedConversionCastOp castOp, EvalContext &ctx) {
     if (castOp->getNumOperands() != 1 || castOp->getNumResults() != 1) {
       return castOp.emitError("smt-to-smtlib only supports one-to-one unrealized casts");
@@ -455,6 +470,7 @@ private:
     return success();
   }
 
+  /// Lower a helper call as either a pure function application or an inline script.
   LogicalResult emitCall(func::CallOp callOp, EvalContext &ctx) {
     auto callee = getSelectedRootModule().lookupSymbol<func::FuncOp>(callOp.getCallee());
     if (!callee) {
@@ -590,6 +606,7 @@ private:
     return expr;
   }
 
+  /// Build SCC metadata for the pure-helper call graph.
   LogicalResult initializePureHelperSCCs() {
     if (pureHelperSCCsInitialized) {
       return success();
@@ -685,6 +702,7 @@ private:
     return success();
   }
 
+  /// Collect the pure helper callees used when emitting recursive definitions.
   FailureOr<SmallVector<func::FuncOp>> collectPureHelperCallees(func::FuncOp func) {
     SmallVector<func::FuncOp> callees;
     for (Operation &op : func.getBody().front().without_terminator()) {
@@ -708,6 +726,7 @@ private:
     return callees;
   }
 
+  /// Render a pure helper into the data needed for one SMT-LIB function definition.
   FailureOr<PureHelperDefinition> buildPureHelperDefinition(func::FuncOp func) {
     if (!func || func.empty()) {
       return func.emitError("smt-to-smtlib requires non-empty helper funcs");
@@ -738,6 +757,7 @@ private:
     return definition;
   }
 
+  /// Emit a non-recursive pure helper as a `define-fun`.
   LogicalResult emitPureHelperDefinition(const PureHelperDefinition &definition) {
     os << "(define-fun " << definition.symbol << " (";
     for (auto [index, argName] : llvm::enumerate(definition.argNames)) {
@@ -750,6 +770,7 @@ private:
     return success();
   }
 
+  /// Emit one recursive SCC of pure helpers using SMT-LIB recursive definitions.
   LogicalResult emitRecursivePureHelperSCC(unsigned sccId) {
     if (emittedPureHelperSCCs.contains(sccId)) {
       return success();
@@ -814,6 +835,7 @@ private:
     return success();
   }
 
+  /// Ensure a pure helper and its pure dependencies have been emitted.
   LogicalResult ensurePureHelperEmitted(func::FuncOp func) {
     if (emittedPureHelpers.contains(func.getOperation())) {
       return success();
@@ -912,6 +934,7 @@ private:
     return results;
   }
 
+  /// Require that an `smt.check` result region is structurally empty.
   LogicalResult
   verifyEmptyCheckRegion(llzk::smt::CheckOp checkOp, StringRef regionName, Region &region) {
     if (!llvm::hasSingleElement(region) || !region.front().without_terminator().empty()) {
@@ -923,6 +946,7 @@ private:
     return success();
   }
 
+  /// Emit the restricted SMT-LIB-compatible form of `smt.check`.
   LogicalResult emitCheck(llzk::smt::CheckOp checkOp, EvalContext &) {
     if (checkOp.getNumResults() != 0) {
       return checkOp.emitOpError(
@@ -940,6 +964,7 @@ private:
     return success();
   }
 
+  /// Look up the currently rendered SMT-LIB expression bound to an SSA value.
   FailureOr<std::string> lookup(Value value, EvalContext &ctx) {
     auto it = ctx.values.find(value);
     if (it == ctx.values.end()) {
@@ -953,6 +978,7 @@ private:
     return it->second;
   }
 
+  /// Evaluate a pure helper body into rendered result expressions.
   FailureOr<SmallVector<std::string>>
   evalHelper(func::FuncOp func, ArrayRef<std::string> argExprs) {
     if (!func || func.empty()) {
@@ -996,6 +1022,7 @@ private:
     return results;
   }
 
+  /// Determine whether a helper body can preserve sharing with `let` bindings.
   bool helperIsPurelyExpressionBased(func::FuncOp func) const {
     for (Operation &op : func.getBody().front().without_terminator()) {
       if (isa<llzk::smt::SetInfoOp, llzk::smt::DeclareFunOp, llzk::smt::AssertOp, llzk::smt::PushOp,
@@ -1009,6 +1036,7 @@ private:
     return true;
   }
 
+  /// Render one expression-producing operation into an SMT-LIB term.
   FailureOr<std::string> buildExpr(Operation *op, EvalContext &ctx) {
     return TypeSwitch<Operation *, FailureOr<std::string>>(op)
         .Case<llzk::smt::BoolConstantOp>([](auto constOp) {
@@ -1170,6 +1198,7 @@ private:
     });
   }
 
+  /// Render an `arith.constant` as an SMT-LIB literal term.
   FailureOr<std::string> buildArithConstantExpr(arith::ConstantOp constOp) {
     if (auto boolAttr = dyn_cast<BoolAttr>(constOp.getValue())) {
       return std::string(boolAttr.getValue() ? "true" : "false");
@@ -1182,6 +1211,7 @@ private:
     return constOp.emitOpError("unsupported arith.constant expression");
   }
 
+  /// Render an integer comparison predicate using SMT-LIB comparison syntax.
   FailureOr<std::string> buildCmpExpr(llzk::smt::IntCmpOp cmpOp, EvalContext &ctx) {
     StringRef pred;
     switch (cmpOp.getPred()) {
@@ -1201,6 +1231,7 @@ private:
     return buildSExpr(pred, ValueRange {cmpOp.getLhs(), cmpOp.getRhs()}, ctx);
   }
 
+  /// Render integer-to-bitvector conversion with an explicit target width.
   FailureOr<std::string> buildInt2BVExpr(llzk::smt::Int2BVOp op, EvalContext &ctx) {
     auto input = lookup(op.getInput(), ctx);
     if (failed(input)) {
@@ -1210,6 +1241,7 @@ private:
     return "((_ int_to_bv " + std::to_string(resultType.getWidth()) + ") " + *input + ")";
   }
 
+  /// Render bitvector-to-integer conversion with the requested signedness.
   FailureOr<std::string> buildBV2IntExpr(llzk::smt::BV2IntOp op, EvalContext &ctx) {
     auto input = lookup(op.getInput(), ctx);
     if (failed(input)) {
@@ -1218,6 +1250,7 @@ private:
     return "(" + std::string(op.getIsSigned() ? "sbv_to_int" : "ubv_to_int") + " " + *input + ")";
   }
 
+  /// Render a bitvector comparison predicate using the matching SMT-LIB op.
   FailureOr<std::string> buildBVCmpExpr(llzk::smt::BVCmpOp cmpOp, EvalContext &ctx) {
     StringRef pred;
     switch (cmpOp.getPred()) {
@@ -1249,6 +1282,7 @@ private:
     return buildSExpr(pred, ValueRange {cmpOp.getLhs(), cmpOp.getRhs()}, ctx);
   }
 
+  /// Render bitvector extraction with SMT-LIB's indexed `extract` operator.
   FailureOr<std::string> buildExtractExpr(llzk::smt::ExtractOp op, EvalContext &ctx) {
     auto input = lookup(op.getInput(), ctx);
     if (failed(input)) {
@@ -1260,6 +1294,7 @@ private:
            ")";
   }
 
+  /// Render bitvector repetition with SMT-LIB's indexed `repeat` operator.
   FailureOr<std::string> buildRepeatExpr(llzk::smt::RepeatOp op, EvalContext &ctx) {
     auto input = lookup(op.getInput(), ctx);
     if (failed(input)) {
@@ -1268,6 +1303,7 @@ private:
     return "((_ repeat " + std::to_string(op.getCount()) + ") " + *input + ")";
   }
 
+  /// Build a generic SMT-LIB s-expression from an operator name and operands.
   FailureOr<std::string> buildSExpr(StringRef opName, ValueRange operands, EvalContext &ctx) {
     if (opName == "and") {
       SmallVector<std::string> renderedOperands;
@@ -1313,6 +1349,7 @@ private:
     return expr;
   }
 
+  /// Render a quantifier body that matches the exporter's structural restrictions.
   template <typename QuantifierOpTy>
   FailureOr<std::string>
   buildQuantifierExpr(StringRef quantifierName, QuantifierOpTy op, EvalContext &ctx) {
@@ -1359,8 +1396,10 @@ private:
     return expr;
   }
 
+  /// Create a fresh name for a local `let` binding.
   std::string makeLetName() { return "__let" + std::to_string(nextTempId++); }
 
+  /// Wrap an expression with accumulated `let` bindings in dominance order.
   static std::string
   wrapWithLets(std::string expr, ArrayRef<std::pair<std::string, std::string>> letBindings) {
     for (const auto &binding : llvm::reverse(letBindings)) {
@@ -1395,6 +1434,7 @@ class SMTDialectToSMTLIBPass
   using Base = llzk::smt::impl::SMTDialectToSMTLIBPassBase<SMTDialectToSMTLIBPass>;
   using Base::Base;
 
+  /// Run the exporter and surface script emission failures as pass failures.
   void runOnOperation() override {
     raw_ostream *stream = &llvm::outs();
     std::unique_ptr<llvm::ToolOutputFile> outputFile;
