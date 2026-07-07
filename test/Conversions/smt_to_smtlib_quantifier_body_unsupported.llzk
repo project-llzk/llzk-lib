@@ -1,0 +1,19 @@
+// RUN: not llzk-opt --smt-to-smtlib -o /dev/null %s 2>&1 | FileCheck %s
+// Purpose: quantifier bodies reject script commands that cannot appear inside SMT-LIB terms.
+
+module {
+  smt.solver () : () -> () {
+    %quantified = smt.forall ["x"] {
+    ^bb0(%x: !smt.int):
+      %p = smt.declare_fun "p" : !smt.bool
+      smt.assert %p
+      smt.yield %p : !smt.bool
+    }
+    %holds = smt.declare_fun "holds" : !smt.bool
+    %ok = smt.eq %holds, %quantified : !smt.bool
+    smt.assert %ok
+    smt.yield
+  }
+}
+
+// CHECK: error: smt-to-smtlib quantifier bodies may only contain expression ops because SMT-LIB terms cannot contain script commands or helper emissions

@@ -13,6 +13,9 @@ module {
   }
 
   smt.solver () : () -> () {
+    %base = smt.declare_fun "x" : !smt.int
+    %dup = smt.declare_fun "x" : !smt.int
+    %generated_collision = smt.declare_fun "x_2" : !smt.int
     %x = smt.declare_fun "1x" : !smt.int
     %value = func.call @"1helper"(%x) : (!smt.int) -> !smt.int
     %reserved_value = func.call @"forall"(%x) : (!smt.int) -> !smt.int
@@ -27,6 +30,9 @@ module {
 }
 
 // CHECK:      (set-logic ALL)
+// CHECK-NEXT: (declare-fun x () Int)
+// CHECK-NEXT: (declare-fun x_2 () Int)
+// CHECK-NEXT: (declare-fun x_2_2 () Int)
 // CHECK-NEXT: (declare-fun _1x () Int)
 // CHECK-NEXT: (define-fun _1helper ((_1helper__arg0 Int)) Int
 // CHECK-SAME: (let ((__let0 (+ _1helper__arg0 1))) __let0))

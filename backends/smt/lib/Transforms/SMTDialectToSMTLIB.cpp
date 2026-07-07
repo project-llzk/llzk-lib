@@ -333,6 +333,22 @@ private:
     emittedPureHelperSCCs.clear();
   }
 
+  /// Reserve one unique SMT-LIB symbol spelling, including generated suffixes.
+  std::string reserveUniqueSymbol(std::string symbol) {
+    while (emittedSymbolCounts.contains(symbol)) {
+      unsigned &count = emittedSymbolCounts[symbol];
+      if (count == 0) {
+        count = 1;
+      }
+      std::string suffixedSymbol;
+      llvm::raw_string_ostream exprStream(suffixedSymbol);
+      exprStream << symbol << '_' << ++count;
+      symbol = std::move(suffixedSymbol);
+    }
+    emittedSymbolCounts[symbol] = 1;
+    return symbol;
+  }
+
   /// Drop any cached SSA binding that depends on pre-reset solver state.
   static void pruneResetSensitiveBindings(EvalContext &ctx) {
     ctx.letBindings.clear();
@@ -521,9 +537,7 @@ private:
     } else {
       symbol = "tmp" + std::to_string(nextTempId++);
     }
-    if (unsigned &count = emittedSymbolCounts[symbol]; count++ != 0) {
-      symbol += "_" + std::to_string(count);
-    }
+    symbol = reserveUniqueSymbol(std::move(symbol));
     ctx.values[declareOp.getResult()] = ValueBinding {symbol, /*survivesReset=*/false};
     if (auto funcType = dyn_cast<smt::SMTFuncType>(declareOp.getType())) {
       os << "(declare-fun " << symbol << " (";
@@ -709,9 +723,7 @@ private:
     }
 
     std::string symbol = sanitizeSymbol(func.getSymName());
-    if (unsigned &count = emittedSymbolCounts[symbol]; count++ != 0) {
-      symbol += "_" + std::to_string(count);
-    }
+    symbol = reserveUniqueSymbol(std::move(symbol));
     helperSymbols[func.getOperation()] = symbol;
     return symbol;
   }
@@ -1510,6 +1522,14 @@ private:
     exprStream << ") ";
 
     for (Operation &nestedOp : body.without_terminator()) {
+      if (isa<smt::SetLogicOp, smt::SetInfoOp, smt::DeclareFunOp, smt::AssertOp, smt::ResetOp,
+              smt::PushOp, smt::PopOp, smt::CheckOp, smt::SolverOp, func::CallOp,
+              boolean::AssertOp>(nestedOp)) {
+        return nestedOp.emitError(
+            "smt-to-smtlib quantifier bodies may only contain expression ops because SMT-LIB "
+            "terms cannot contain script commands or helper emissions"
+        );
+      }
       if (failed(emitOperation(&nestedOp, bodyCtx))) {
         return failure();
       }
