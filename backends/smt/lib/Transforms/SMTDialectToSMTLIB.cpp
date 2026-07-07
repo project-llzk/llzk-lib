@@ -93,10 +93,7 @@ static std::string sanitizeSymbol(StringRef name) {
       out.push_back('_');
     }
   }
-  if (llvm::isDigit(out.front())) {
-    out.insert(out.begin(), '_');
-  }
-  if (isReservedIdentifier(out)) {
+  if (llvm::isDigit(out.front()) || isReservedIdentifier(out)) {
     out.insert(out.begin(), '_');
   }
   return out;
