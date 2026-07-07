@@ -4090,15 +4090,14 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   }
 
   OpBuilder builder(ctx);
-  for (auto &[podValue, leafValues] : virtualPods) {
-    if (podValue.use_empty()) {
-      continue;
+  modOp.walk([&builder, &virtualPods](NewPodOp newPod) {
+    auto it = virtualPods.find(newPod.getResult());
+    if (it == virtualPods.end() || newPod.use_empty()) {
+      return;
     }
-    if (auto newPod = llvm::dyn_cast_if_present<NewPodOp>(podValue.getDefiningOp())) {
-      builder.setInsertionPointAfter(findVirtualPodMaterializationAnchor(newPod, leafValues));
-      materializeVirtualPod(builder, newPod, leafValues);
-    }
-  }
+    builder.setInsertionPointAfter(findVirtualPodMaterializationAnchor(newPod, it->second));
+    materializeVirtualPod(builder, newPod, it->second);
+  });
 
   bool erasedDeadPlaceholderOps = false;
   do {
