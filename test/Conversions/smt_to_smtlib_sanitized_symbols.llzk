@@ -1,5 +1,5 @@
 // RUN: llzk-opt --smt-to-smtlib -o /dev/null %s | FileCheck %s
-// Purpose: sanitized SMT-LIB symbols must not start with digits.
+// Purpose: sanitized SMT-LIB symbols must avoid leading digits and reserved identifiers.
 
 module {
   func.func @"1helper"(%x: !smt.int) -> !smt.int {
@@ -8,12 +8,20 @@ module {
     return %sum : !smt.int
   }
 
+  func.func @"forall"(%x: !smt.int) -> !smt.int {
+    return %x : !smt.int
+  }
+
   smt.solver () : () -> () {
     %x = smt.declare_fun "1x" : !smt.int
     %value = func.call @"1helper"(%x) : (!smt.int) -> !smt.int
+    %reserved_value = func.call @"forall"(%x) : (!smt.int) -> !smt.int
     %result = smt.declare_fun "1result" : !smt.int
+    %reserved_result = smt.declare_fun "let" : !smt.int
     %ok = smt.eq %result, %value : !smt.int
+    %reserved_ok = smt.eq %reserved_result, %reserved_value : !smt.int
     smt.assert %ok
+    smt.assert %reserved_ok
     smt.yield
   }
 }
@@ -22,5 +30,8 @@ module {
 // CHECK-NEXT: (declare-fun _1x () Int)
 // CHECK-NEXT: (define-fun _1helper ((_1helper__arg0 Int)) Int
 // CHECK-SAME: (let ((__let0 (+ _1helper__arg0 1))) __let0))
+// CHECK-NEXT: (define-fun _forall ((_forall__arg0 Int)) Int _forall__arg0)
 // CHECK-NEXT: (declare-fun _1result () Int)
+// CHECK-NEXT: (declare-fun _let () Int)
 // CHECK-NEXT: (assert (= _1result (_1helper _1x)))
+// CHECK-NEXT: (assert (= _let (_forall _1x)))

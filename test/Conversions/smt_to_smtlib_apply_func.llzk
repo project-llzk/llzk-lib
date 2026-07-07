@@ -1,13 +1,22 @@
 // RUN: llzk-opt --smt-to-smtlib -o /dev/null %s | FileCheck %s
-// Purpose: function-valued symbol declarations and direct smt.apply_func lowering.
+// Purpose: function-valued symbol declarations and helper lowering with smt.apply_func.
 
 module {
+  func.func @apply_helper(%f: !smt.func<(!smt.int) !smt.int>, %x: !smt.int) -> !smt.int {
+    %value = smt.apply_func %f(%x) : !smt.func<(!smt.int) !smt.int>
+    return %value : !smt.int
+  }
+
   smt.solver () : () -> () {
     %x = smt.declare_fun "x" : !smt.int
     %f = smt.declare_fun "f" : !smt.func<(!smt.int) !smt.int>
-    %value = smt.apply_func %f(%x) : !smt.func<(!smt.int) !smt.int>
+    %direct = smt.apply_func %f(%x) : !smt.func<(!smt.int) !smt.int>
+    %value = func.call @apply_helper(%f, %x) : (!smt.func<(!smt.int) !smt.int>, !smt.int) -> !smt.int
+    %direct_symbol = smt.declare_fun "direct_result" : !smt.int
     %symbol = smt.declare_fun "result" : !smt.int
+    %direct_ok = smt.eq %direct_symbol, %direct : !smt.int
     %ok = smt.eq %symbol, %value : !smt.int
+    smt.assert %direct_ok
     smt.assert %ok
     smt.yield
   }
@@ -16,5 +25,7 @@ module {
 // CHECK:      (set-logic ALL)
 // CHECK-NEXT: (declare-fun x () Int)
 // CHECK-NEXT: (declare-fun f (Int) Int)
+// CHECK-NEXT: (declare-fun direct_result () Int)
 // CHECK-NEXT: (declare-fun result () Int)
-// CHECK-NEXT: (assert (= result (f x)))
+// CHECK-NEXT: (assert (= direct_result (f x)))
+// CHECK-NEXT: (assert (= result (let ((__let0 (f x))) __let0)))

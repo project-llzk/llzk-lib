@@ -54,6 +54,30 @@ using namespace llzk;
 
 namespace {
 
+/// Return whether a bare SMT-LIB symbol spelling is reserved by the language.
+static bool isReservedIdentifier(StringRef name) {
+  return llvm::is_contained(
+      ArrayRef<StringRef> {
+          "!",
+          "_",
+          "as",
+          "BINARY",
+          "DECIMAL",
+          "exists",
+          "forall",
+          "HEXADECIMAL",
+          "let",
+          "match",
+          "NUMERAL",
+          "par",
+          "STRING",
+          "true",
+          "false",
+      },
+      name
+  );
+}
+
 /// Sanitize a symbol or user-provided identifier into a bare SMT-LIB symbol.
 static std::string sanitizeSymbol(StringRef name) {
   if (name.empty()) {
@@ -70,6 +94,9 @@ static std::string sanitizeSymbol(StringRef name) {
     }
   }
   if (llvm::isDigit(out.front())) {
+    out.insert(out.begin(), '_');
+  }
+  if (isReservedIdentifier(out)) {
     out.insert(out.begin(), '_');
   }
   return out;
@@ -626,6 +653,12 @@ private:
       return func.emitError("smt-to-smtlib requires non-empty helper funcs");
     }
     if (func.getFunctionType().getNumResults() != 1) {
+      return HelperMode::InlineScript;
+    }
+    if (llvm::any_of(
+            func.getArgumentTypes(), [](Type type) { return isa<smt::SMTFuncType>(type); }
+        ) ||
+        isa<smt::SMTFuncType>(func.getResultTypes().front())) {
       return HelperMode::InlineScript;
     }
 
@@ -1462,13 +1495,17 @@ private:
     llvm::raw_string_ostream exprStream(expr);
     exprStream << '(' << quantifierName << " (";
     auto namesAttr = op.getBoundVarNames();
+    llvm::StringMap<unsigned> binderCounts;
     llvm::interleave(
         llvm::enumerate(body.getArguments()),
-        [&bodyCtx, &namesAttr, &exprStream, this](const auto &it) {
+        [&binderCounts, &bodyCtx, &namesAttr, &exprStream, this](const auto &it) {
       auto [index, arg] = it;
       std::string name = namesAttr && index < namesAttr->size()
                              ? sanitizeSymbol(cast<StringAttr>((*namesAttr)[index]).getValue())
                              : "q" + std::to_string(nextTempId++);
+      if (unsigned &count = binderCounts[name]; count++ != 0) {
+        name += "_" + std::to_string(count);
+      }
       bodyCtx.values[arg] = ValueBinding {name, /*survivesReset=*/true};
       exprStream << '(' << name << ' ' << sortForType(arg.getType()) << ')';
     }, [&exprStream] { exprStream << ' '; }
