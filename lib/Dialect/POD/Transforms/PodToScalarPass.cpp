@@ -291,6 +291,111 @@ inline static ArrayType splittablePodArray(Type t) {
   return nullptr;
 }
 
+/// Return the internal record-chain marker used for one nested array-of-POD shape carrier.
+inline static StringAttr getPodArrayShapeCarrierMarker(MLIRContext *ctx) {
+  static constexpr llvm::StringLiteral marker = "__llzk_pod_array_shape";
+  return StringAttr::get(ctx, marker);
+}
+
+/// Return `true` iff `recordName` is the nested array shape-carrier marker.
+inline static bool isPodArrayShapeCarrierMarker(StringAttr recordName) {
+  return recordName && recordName == getPodArrayShapeCarrierMarker(recordName.getContext());
+}
+
+/// Return the printable record-chain component name.
+inline static StringRef getRecordChainComponentName(StringAttr recordName) {
+  return isPodArrayShapeCarrierMarker(recordName) ? StringRef("shape") : recordName.getValue();
+}
+
+/// Return the attribute name that marks a step-2-deferred POD-backed `array.len`.
+inline static StringRef getDeferredPodArrayLengthAttrName() {
+  return "llzk.defer_pod_array_length";
+}
+
+/// Return the `none`-array carrier type used to preserve one array-of-POD shape witness.
+inline static ArrayType getPodArrayShapeCarrierType(ArrayType arrTy) {
+  return arrTy.cloneWith(NoneType::get(arrTy.getContext()));
+}
+
+/// Return `true` iff any array dimension is a wildcard `?`.
+inline static bool hasWildcardArrayDimensions(ArrayRef<Attribute> dims) {
+  return llvm::any_of(dims, [](Attribute dim) {
+    if (auto intAttr = llvm::dyn_cast<IntegerAttr>(dim)) {
+      return isDynamic(intAttr);
+    }
+    return false;
+  });
+}
+
+// pre-declared (see definition below)
+template <typename Fn>
+static void forEachPodLeaf(PodType podTy, SmallVectorImpl<StringAttr> &recordChain, Fn &&callback);
+
+/// If `t` is an array with POD element type, append one parallel array type for each POD leaf.
+static size_t splitPodArrayTypeTo(
+    Type t, SmallVectorImpl<Type> &collect, SmallVector<RecordChain> *splitIds = nullptr
+) {
+  if (ArrayType at = splittablePodArray(t)) {
+    auto podTy = llvm::cast<PodType>(at.getElementType());
+    SmallVector<StringAttr> recordChain;
+    size_t originalSize = collect.size();
+    forEachPodLeaf(podTy, recordChain, [&](RecordChain id, Type leafType) {
+      collect.push_back(flattenArrayElementType(at, leafType));
+      if (splitIds) {
+        splitIds->push_back(std::move(id));
+      }
+    });
+    return collect.size() - originalSize;
+  }
+
+  collect.push_back(t);
+  return 1;
+}
+
+/// For each Type in the given input collection, call `splitPodArrayTypeTo(Type,...)`.
+template <typename TypeCollection>
+void splitPodArrayTypeTo(
+    TypeCollection types, SmallVectorImpl<Type> &collect, SmallVector<size_t> *originalIdxToSize
+) {
+  for (Type t : types) {
+    size_t count = splitPodArrayTypeTo(t, collect);
+    if (originalIdxToSize) {
+      originalIdxToSize->push_back(count);
+    }
+  }
+}
+
+/// Return `true` iff splitting `arrTy` produces no concrete POD leaf arrays.
+static bool hasZeroLeafPodArraySplit(ArrayType arrTy) {
+  SmallVector<Type> splitTypes;
+  splitPodArrayTypeTo(arrTy, splitTypes);
+  return splitTypes.empty();
+}
+
+/// Return `true` iff step 2 should thread a shared shape witness alongside split POD leaves.
+inline static bool needsPodArrayShapeCarrier(ArrayType arrTy) {
+  return hasZeroLeafPodArraySplit(arrTy) || hasWildcardArrayDimensions(arrTy.getDimensionSizes());
+}
+
+/// Collect every converted component of `arrTy`, including any explicit trailing shape carrier.
+static void collectConvertedPodArrayRecordInfos(
+    ArrayType arrTy, SmallVector<RecordChain> &splitIds, SmallVectorImpl<Type> &splitTypes
+) {
+  splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
+  if (needsPodArrayShapeCarrier(arrTy)) {
+    splitIds.push_back(RecordChain({getPodArrayShapeCarrierMarker(arrTy.getContext())}));
+    splitTypes.push_back(getPodArrayShapeCarrierType(arrTy));
+  }
+}
+
+/// Strip compatibility casts introduced while threading POD-derived array values through rewrites.
+static Value peelUnifiableCasts(Value value) {
+  while (auto cast = value.getDefiningOp<UnifiableCastOp>()) {
+    value = cast.getInput();
+  }
+  return value;
+}
+
 /// Return the flattened leaf type addressed by `recordChain` within `type`.
 static Type getFlattenedTypeAlongPath(Type type, ArrayRef<StringAttr> recordChain) {
   if (recordChain.empty()) {
@@ -304,6 +409,11 @@ static Type getFlattenedTypeAlongPath(Type type, ArrayRef<StringAttr> recordChai
   }
 
   if (ArrayType arrTy = splittablePodArray(type)) {
+    if (recordChain.size() == 1 && isPodArrayShapeCarrierMarker(recordChain.front())) {
+      assert(needsPodArrayShapeCarrier(arrTy) && "shape marker requires an explicit array carrier");
+      return getPodArrayShapeCarrierType(arrTy);
+    }
+
     auto elemPodTy = llvm::cast<PodType>(arrTy.getElementType());
     Type nextType = elemPodTy.getRecordMap().lookup(recordChain.front().getValue());
     assert(nextType && "record path must exist in the POD array element type");
@@ -315,7 +425,7 @@ static Type getFlattenedTypeAlongPath(Type type, ArrayRef<StringAttr> recordChai
   llvm_unreachable("record path cannot continue through a non-POD leaf");
 }
 
-/// Visit each non-POD leaf record in `podTy`, providing its record-name chain and leaf type.
+/// Visit each flattened POD leaf in `podTy`, including nested array shape-carrier leaves.
 template <typename Fn>
 static void forEachPodLeaf(PodType podTy, SmallVectorImpl<StringAttr> &recordChain, Fn &&callback) {
   std::function<void(Type)> walk = [&](Type type) {
@@ -330,6 +440,11 @@ static void forEachPodLeaf(PodType podTy, SmallVectorImpl<StringAttr> &recordCha
       for (RecordAttr record : elemPodTy.getRecords()) {
         recordChain.push_back(record.getName());
         walk(flattenArrayElementType(arrTy, record.getType()));
+        recordChain.pop_back();
+      }
+      if (needsPodArrayShapeCarrier(arrTy)) {
+        recordChain.push_back(getPodArrayShapeCarrierMarker(arrTy.getContext()));
+        callback(RecordChain(recordChain), getPodArrayShapeCarrierType(arrTy));
         recordChain.pop_back();
       }
     } else {
@@ -389,54 +504,6 @@ template <typename T> static bool containsSplittablePodArrayType(ValueTypeRange<
   return llvm::any_of(types, [](Type t) { return splittablePodArray(t); });
 }
 
-/// If `t` is an array with POD element type, append one parallel array type for each POD leaf.
-static size_t splitPodArrayTypeTo(
-    Type t, SmallVectorImpl<Type> &collect, SmallVector<RecordChain> *splitIds = nullptr
-) {
-  if (ArrayType at = splittablePodArray(t)) {
-    auto podTy = llvm::cast<PodType>(at.getElementType());
-    SmallVector<StringAttr> recordChain;
-    size_t originalSize = collect.size();
-    forEachPodLeaf(podTy, recordChain, [&](RecordChain id, Type leafType) {
-      collect.push_back(flattenArrayElementType(at, leafType));
-      if (splitIds) {
-        splitIds->push_back(std::move(id));
-      }
-    });
-    return collect.size() - originalSize;
-  }
-
-  collect.push_back(t);
-  return 1;
-}
-
-/// Return `true` iff any array dimension is a wildcard `?`.
-inline static bool hasWildcardArrayDimensions(ArrayRef<Attribute> dims) {
-  return llvm::any_of(dims, [](Attribute dim) {
-    if (auto intAttr = llvm::dyn_cast<IntegerAttr>(dim)) {
-      return isDynamic(intAttr);
-    }
-    return false;
-  });
-}
-
-/// Return the `none`-array carrier type used to preserve one array-of-POD shape witness.
-inline static ArrayType getPodArrayShapeCarrierType(ArrayType arrTy) {
-  return arrTy.cloneWith(NoneType::get(arrTy.getContext()));
-}
-
-/// Return `true` iff splitting `arrTy` produces no concrete POD leaf arrays.
-static bool hasZeroLeafPodArraySplit(ArrayType arrTy) {
-  SmallVector<Type> splitTypes;
-  splitPodArrayTypeTo(arrTy, splitTypes);
-  return splitTypes.empty();
-}
-
-/// Return `true` iff step 2 should thread a shared shape witness alongside split POD leaves.
-inline static bool needsPodArrayShapeCarrier(ArrayType arrTy) {
-  return hasZeroLeafPodArraySplit(arrTy) || hasWildcardArrayDimensions(arrTy.getDimensionSizes());
-}
-
 /// Return any explicit carrier already present after converting `arrTy`.
 static Value
 getConvertedPodArrayShapeCarrierIfPresent(ArrayType arrTy, ValueRange convertedValues) {
@@ -493,29 +560,6 @@ convertPodArrayTypes(TypeCollection types, SmallVector<size_t> *originalIdxToSiz
   return collect;
 }
 
-/// For each Type in the given input collection, call `splitPodArrayTypeTo(Type,...)`.
-template <typename TypeCollection>
-inline void splitPodArrayTypeTo(
-    TypeCollection types, SmallVectorImpl<Type> &collect, SmallVector<size_t> *originalIdxToSize
-) {
-  for (Type t : types) {
-    size_t count = splitPodArrayTypeTo(t, collect);
-    if (originalIdxToSize) {
-      originalIdxToSize->push_back(count);
-    }
-  }
-}
-
-/// Return a list such that each non-array POD type is kept as-is, while each array-of-POD type is
-/// replaced by one parallel array type per non-POD leaf record in the element POD.
-template <typename TypeCollection>
-inline SmallVector<Type>
-splitPodArrayType(TypeCollection types, SmallVector<size_t> *originalIdxToSize = nullptr) {
-  SmallVector<Type> collect;
-  splitPodArrayTypeTo(types, collect, originalIdxToSize);
-  return collect;
-}
-
 /// Return the suffixes to append to a function arg/result name when splitting an array of PODs.
 static SmallVector<std::string> getSplitPodArrayRecordNameSuffixes(Type type) {
   SmallVector<std::string> suffixes;
@@ -528,7 +572,7 @@ static SmallVector<std::string> getSplitPodArrayRecordNameSuffixes(Type type) {
       std::string suffix;
       llvm::raw_string_ostream os(suffix);
       for (StringAttr recordName : id.nameList) {
-        os << '.' << recordName.getValue();
+        os << '.' << getRecordChainComponentName(recordName);
       }
       suffixes.push_back(std::move(suffix));
     }
@@ -654,7 +698,7 @@ static std::optional<ArrayInstantiationInfo> tryGetArrayInstantiationInfo(Value 
 /// This is used as a shape-only carrier when an array-of-POD needs one explicit shared witness for
 /// later shape-sensitive rewrites such as `array.len`.
 static Value materializeArrayLengthCarrier(
-    Value originalArrRef, ArrayType originalArrTy, Location loc, ConversionPatternRewriter &rewriter
+    Value originalArrRef, ArrayType originalArrTy, Location loc, OpBuilder &rewriter
 ) {
   ArrayType carrierTy = getPodArrayShapeCarrierType(originalArrTy);
 
@@ -898,50 +942,33 @@ genArrayWrite(OpBuilder &bldr, Location loc, Value arrayRef, ArrayAttr index, Va
   genArrayWrite(bldr, loc, arrayRef, indices, value);
 }
 
-/// Strip compatibility casts introduced while threading POD-derived array values through rewrites.
-static Value peelUnifiableCasts(Value value) {
-  while (auto cast = value.getDefiningOp<UnifiableCastOp>()) {
-    value = cast.getInput();
-  }
-  return value;
-}
-
-/// Collect split leaf arrays that are already available for an aggregate array-of-POD value.
-///
-/// This peels compatibility casts and forwards through a dominating same-record `pod.write` so
-/// nested POD scalarization can reuse the split-array representation already produced elsewhere in
-/// the pass instead of re-materializing dynamic arrays element-by-element.
-static bool tryCollectDirectSplitPodArrayLeafValues(
-    Value arrayValue, ArrayType arrTy, ArrayRef<Type> splitTypes, SmallVectorImpl<Value> &leafArrays
+/// Collect all directly available converted components of an aggregate array-of-POD value.
+static bool tryCollectDirectConvertedPodArrayValues(
+    Value arrayValue, ArrayType arrTy, ArrayRef<Type> convertedTypes,
+    SmallVectorImpl<Value> &convertedValues
 ) {
   arrayValue = peelUnifiableCasts(arrayValue);
 
   if (auto cast = arrayValue.getDefiningOp<UnrealizedConversionCastOp>()) {
-    size_t expectedOperands = splitTypes.size() + (needsPodArrayShapeCarrier(arrTy) ? 1 : 0);
     if (cast->getNumResults() != 1 || cast.getResult(0).getType() != arrTy ||
-        cast->getNumOperands() != expectedOperands) {
-      return false;
-    }
-    if (needsPodArrayShapeCarrier(arrTy) &&
-        cast.getOperand(splitTypes.size()).getType() != getPodArrayShapeCarrierType(arrTy)) {
+        cast->getNumOperands() != convertedTypes.size()) {
       return false;
     }
 
-    leafArrays.reserve(splitTypes.size());
-    for (auto [operand, splitType] :
-         llvm::zip_equal(cast.getOperands().take_front(splitTypes.size()), splitTypes)) {
-      if (operand.getType() != splitType) {
+    convertedValues.reserve(convertedTypes.size());
+    for (auto [operand, convertedType] : llvm::zip_equal(cast.getOperands(), convertedTypes)) {
+      if (operand.getType() != convertedType) {
         return false;
       }
-      leafArrays.push_back(operand);
+      convertedValues.push_back(operand);
     }
     return true;
   }
 
   if (ReadPodOp readOp = arrayValue.getDefiningOp<ReadPodOp>()) {
     if (WritePodOp writeOp = findNearestForwardableWrite(readOp)) {
-      return tryCollectDirectSplitPodArrayLeafValues(
-          writeOp.getValue(), arrTy, splitTypes, leafArrays
+      return tryCollectDirectConvertedPodArrayValues(
+          writeOp.getValue(), arrTy, convertedTypes, convertedValues
       );
     }
   }
@@ -1055,28 +1082,35 @@ genReadAlongPath(OpBuilder &bldr, Location loc, Value value, ArrayRef<StringAttr
   }
 
   if (ArrayType arrTy = splittablePodArray(valueType)) {
-    auto splitArrTy = llvm::cast<ArrayType>(getFlattenedTypeAlongPath(valueType, recordChain));
+    Type splitType = getFlattenedTypeAlongPath(valueType, recordChain);
+    auto splitArrTy = llvm::dyn_cast<ArrayType>(splitType);
+    assert(splitArrTy);
+
     SmallVector<RecordChain> splitIds;
     SmallVector<Type> splitTypes;
-    splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
+    collectConvertedPodArrayRecordInfos(arrTy, splitIds, splitTypes);
     auto *splitIt = llvm::find(splitIds, RecordChain(recordChain));
     assert(splitIt != splitIds.end() && "record path must name a flattened POD array leaf");
     size_t splitIdx = std::distance(splitIds.begin(), splitIt);
 
-    SmallVector<Value> leafArrays;
-    if (tryCollectDirectSplitPodArrayLeafValues(value, arrTy, splitTypes, leafArrays)) {
-      return leafArrays[splitIdx];
+    SmallVector<Value> convertedValues;
+    if (tryCollectDirectConvertedPodArrayValues(value, arrTy, splitTypes, convertedValues)) {
+      return convertedValues[splitIdx];
     }
 
     Value strippedValue = peelUnifiableCasts(value);
     if (strippedValue.getDefiningOp<ReadPodOp>()) {
-      auto splitLeafReads =
+      auto splitReads =
           bldr.create<UnrealizedConversionCastOp>(loc, TypeRange(splitTypes), strippedValue);
-      return splitLeafReads.getResult(splitIdx);
+      return splitReads.getResult(splitIdx);
     }
 
     if (isFreshUnwrittenPodArrayRead(value)) {
       return createWritableArrayValue(bldr, loc, splitArrTy);
+    }
+
+    if (isPodArrayShapeCarrierMarker(recordChain.back())) {
+      return bldr.create<CreateArrayOp>(loc, splitArrTy);
     }
 
     if (!arrTy.hasStaticShape()) {
@@ -1128,7 +1162,7 @@ static Value rebuildFlattenedPodRecord(
     if (!arrTy.hasStaticShape()) {
       SmallVector<RecordChain> splitIds;
       SmallVector<Type> splitTypes;
-      splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
+      collectConvertedPodArrayRecordInfos(arrTy, splitIds, splitTypes);
 
       SmallVector<Value> leafArrays;
       leafArrays.reserve(splitIds.size());
@@ -1295,6 +1329,25 @@ static bool shouldDeferPodArrayReadToStep3(ReadArrayOp op) {
          llvm::isa_and_present<ReadPodOp>(op.getArrRef().getDefiningOp());
 }
 
+/// Return a direct `pod.read` backing an array value, looking through compatibility/source casts.
+static ReadPodOp getReadPodBacking(Value value) {
+  value = peelUnifiableCasts(value);
+  if (ReadPodOp readOp = value.getDefiningOp<ReadPodOp>()) {
+    return readOp;
+  }
+
+  auto cast = value.getDefiningOp<UnrealizedConversionCastOp>();
+  if (!cast || cast->getNumOperands() != 1) {
+    return {};
+  }
+  return peelUnifiableCasts(cast.getOperand(0)).getDefiningOp<ReadPodOp>();
+}
+
+/// Return `true` iff step 2 should defer `array.len` on a POD-backed array field to step 3.
+static bool shouldDeferPodArrayLengthToStep3(ArrayLengthOp op) {
+  return splittablePodArray(op.getArrRefType()) && getReadPodBacking(op.getArrRef());
+}
+
 /// Return the suffixes to append to a function arg/result name when splitting the given type.
 static SmallVector<std::string> getSplitRecordNameSuffixes(Type type) {
   SmallVector<std::string> suffixes;
@@ -1304,7 +1357,7 @@ static SmallVector<std::string> getSplitRecordNameSuffixes(Type type) {
       std::string suffix;
       llvm::raw_string_ostream os(suffix);
       for (StringAttr recordName : id.nameList) {
-        os << '.' << recordName.getValue();
+        os << '.' << getRecordChainComponentName(recordName);
       }
       suffixes.push_back(std::move(suffix));
     });
@@ -1382,13 +1435,16 @@ static void updateVirtualPodRecordLeafValues(
   }
 
   if (ArrayType arrTy = splittablePodArray(recordType)) {
-    auto elemPodTy = llvm::cast<PodType>(arrTy.getElementType());
-    SmallVector<StringAttr> nestedRecordChain;
-    forEachPodLeaf(elemPodTy, nestedRecordChain, [&](const RecordChain &id, Type) {
+    SmallVector<RecordChain> splitIds;
+    SmallVector<Type> splitTypes;
+    collectConvertedPodArrayRecordInfos(arrTy, splitIds, splitTypes);
+    for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
       SmallVector<StringAttr> fullChain(prefix);
       llvm::append_range(fullChain, id.nameList);
-      leafValues[RecordChain(fullChain)] = genReadAlongPath(rewriter, loc, recordValue, id);
-    });
+      leafValues[RecordChain(fullChain)] = castValueToTypeIfNeeded(
+          rewriter, loc, genReadAlongPath(rewriter, loc, recordValue, id), splitType
+      );
+    }
     return;
   }
 
@@ -1448,7 +1504,7 @@ getFlattenedMemberName(MLIRContext *ctx, StringAttr memberName, ArrayRef<StringA
   llvm::raw_string_ostream os(flatName);
   os << memberName.getValue();
   for (StringAttr recordName : recordChain) {
-    os << '_' << recordName.getValue();
+    os << '_' << getRecordChainComponentName(recordName);
   }
   return StringAttr::get(ctx, flatName);
 }
@@ -2561,7 +2617,10 @@ class SplitPodArrayLengthOp : public OpConversionPattern<ArrayLengthOp> {
 public:
   using OpConversionPattern<ArrayLengthOp>::OpConversionPattern;
 
-  static bool legal(ArrayLengthOp op) { return !splittablePodArray(op.getArrRefType()); }
+  static bool legal(ArrayLengthOp op) {
+    return !splittablePodArray(op.getArrRefType()) ||
+           op->hasAttr(getDeferredPodArrayLengthAttrName());
+  }
 
   LogicalResult matchAndRewrite(
       ArrayLengthOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
@@ -2569,10 +2628,82 @@ public:
     if (legal(op)) {
       return failure();
     }
+    if (shouldDeferPodArrayLengthToStep3(op)) {
+      auto deferred = rewriter.create<ArrayLengthOp>(
+          op.getLoc(), op.getArrRef(), getSingleConvertedValue(adaptor.getDim())
+      );
+      deferred->setAttr(getDeferredPodArrayLengthAttrName(), UnitAttr::get(op.getContext()));
+      rewriter.replaceOp(op, deferred.getResult());
+      return success();
+    }
     Value arrRef = selectArrayLengthShapeSource(op, adaptor.getArrRef(), rewriter);
     rewriter.replaceOpWithNewOp<ArrayLengthOp>(
         op, arrRef, getSingleConvertedValue(adaptor.getDim())
     );
+    return success();
+  }
+};
+
+/// Rewrite deferred `array.len` on a POD-backed array field once virtual POD leaves are available.
+class ResolvePodReadBackedArrayLengthOp final : public OpConversionPattern<ArrayLengthOp> {
+  const VirtualPodValueMap &virtualPods;
+
+public:
+  ResolvePodReadBackedArrayLengthOp(MLIRContext *ctx, const VirtualPodValueMap &virtualPodMap)
+      : OpConversionPattern<ArrayLengthOp>(ctx), virtualPods(virtualPodMap) {}
+
+  static bool legal(ArrayLengthOp op) { return !op->hasAttr(getDeferredPodArrayLengthAttrName()); }
+
+  LogicalResult
+  matchAndRewrite(ArrayLengthOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    ArrayType arrTy = splittablePodArray(op.getArrRefType());
+    if (!arrTy || !shouldDeferPodArrayLengthToStep3(op)) {
+      return failure();
+    }
+
+    Value shapeSource;
+    ReadPodOp readOp = getReadPodBacking(op.getArrRef());
+    assert(readOp && "deferred POD-backed array.len must still trace to pod.read");
+    if (!hasEarlierWrite(readOp)) {
+      if (const VirtualPodLeafMap *podLeafValues =
+              lookupVirtualPodLeafMap(readOp.getPodRef(), virtualPods)) {
+        SmallVector<StringAttr> carrierPath {
+            readOp.getRecordNameAttr(), getPodArrayShapeCarrierMarker(op.getContext())
+        };
+        if (auto carrierIt = podLeafValues->find(RecordChain(carrierPath));
+            carrierIt != podLeafValues->end()) {
+          shapeSource = castValueToTypeIfNeeded(
+              rewriter, op.getLoc(), carrierIt->second, getPodArrayShapeCarrierType(arrTy)
+          );
+        } else {
+          size_t originalRank = arrTy.getDimensionSizes().size();
+          SmallVector<RecordChain> splitIds;
+          SmallVector<Type> splitTypes;
+          splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
+          for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
+            auto splitArrTy = llvm::dyn_cast<ArrayType>(splitType);
+            if (!splitArrTy || splitArrTy.getDimensionSizes().size() != originalRank) {
+              continue;
+            }
+
+            SmallVector<StringAttr> fullChain {readOp.getRecordNameAttr()};
+            llvm::append_range(fullChain, id.nameList);
+            auto valueIt = podLeafValues->find(RecordChain(fullChain));
+            if (valueIt != podLeafValues->end()) {
+              shapeSource =
+                  castValueToTypeIfNeeded(rewriter, op.getLoc(), valueIt->second, splitArrTy);
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    if (!shapeSource) {
+      shapeSource = materializeArrayLengthCarrier(op.getArrRef(), arrTy, op.getLoc(), rewriter);
+    }
+
+    rewriter.replaceOpWithNewOp<ArrayLengthOp>(op, shapeSource, op.getDim());
     return success();
   }
 };
@@ -3000,7 +3131,7 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   mlir::scf::populateSCFStructuralTypeConversionsAndLegality(typeConverter, patterns, target);
 
   LLVM_DEBUG(llvm::dbgs() << "Begin step 2: split arrays with POD element type\n";);
-  return applyFullConversion(modOp, target, std::move(patterns));
+  return applyPartialConversion(modOp, target, std::move(patterns));
 }
 
 /// Split inline `pod.new` initializers into explicit `pod.write` operations.
@@ -3686,6 +3817,54 @@ public:
   }
 };
 
+/// Greedily resolve deferred split-array placeholders before step-3 conversion starts.
+class ResolveDeferredSplitPodArrayCastPrepass final
+    : public OpRewritePattern<UnrealizedConversionCastOp> {
+  VirtualPodValueMap &virtualPods;
+  DeferredPodArrayLeafMap &deferredPodArrays;
+
+public:
+  ResolveDeferredSplitPodArrayCastPrepass(
+      MLIRContext *ctx, VirtualPodValueMap &virtualPodMap,
+      DeferredPodArrayLeafMap &deferredPodArrayMap
+  )
+      : OpRewritePattern<UnrealizedConversionCastOp>(ctx), virtualPods(virtualPodMap),
+        deferredPodArrays(deferredPodArrayMap) {}
+
+  LogicalResult
+  matchAndRewrite(UnrealizedConversionCastOp op, PatternRewriter &rewriter) const override {
+    ArrayType arrTy;
+    SmallVector<RecordChain> splitIds;
+    SmallVector<Type> splitTypes;
+    if (!getDeferredSplitPodArrayCastInfo(op, arrTy, splitIds, splitTypes)) {
+      return failure();
+    }
+
+    ReadPodOp fieldRead = peelUnifiableCasts(op.getOperand(0)).getDefiningOp<ReadPodOp>();
+    if (!fieldRead) {
+      return failure();
+    }
+
+    SmallVector<Value> splitLeafArrays;
+    if (!resolveReadPodSplitPodArrayLeafValues(
+            fieldRead, arrTy, splitIds, splitTypes, virtualPods, deferredPodArrays, op.getLoc(),
+            rewriter, splitLeafArrays
+        )) {
+      return failure();
+    }
+
+    SmallVector<Value> replacements(splitLeafArrays.begin(), splitLeafArrays.end());
+    if (needsPodArrayShapeCarrier(arrTy)) {
+      replacements.push_back(
+          materializeArrayLengthCarrier(fieldRead.getResult(), arrTy, op.getLoc(), rewriter)
+      );
+    }
+    rewriter.replaceOp(op, replacements);
+    eraseDeadDeferredFieldReadChain(fieldRead, rewriter);
+    return success();
+  }
+};
+
 /// Update virtual POD leaf storage in response to `pod.write` without materializing the aggregate.
 class ResolveVirtualPodWriteOp : public OpConversionPattern<WritePodOp> {
   VirtualPodValueMap &virtualPods;
@@ -3848,6 +4027,17 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   rehydrateVirtualPodPlaceholders(modOp, virtualPods);
   DeferredPodArrayLeafMap deferredPodArrays;
 
+  RewritePatternSet preConversionPatterns(ctx);
+  preConversionPatterns.add<ResolveDeferredSplitPodArrayCastPrepass>(
+      ctx, virtualPods, deferredPodArrays
+  );
+  if (failed(applyPatternsGreedily(
+          modOp->getRegion(0), std::move(preConversionPatterns),
+          GreedyRewriteConfig {.fold = false, .cseConstants = false}
+      ))) {
+    return failure();
+  }
+
   RewritePatternSet patterns(ctx);
   patterns.add<SplitInitFromNewPodOp>(ctx);
   patterns.add<SplitPodElementCreateArrayOp>(ctx, virtualPods);
@@ -3856,6 +4046,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
       ctx, symTables, memberRepMap, virtualPods
   );
   patterns.add<ResolvePodReadBackedArrayReadOp>(ctx, virtualPods, deferredPodArrays);
+  patterns.add<ResolvePodReadBackedArrayLengthOp>(ctx, virtualPods);
   patterns.add<ResolveDeferredSplitPodArrayCastOp>(ctx, virtualPods, deferredPodArrays);
   patterns.add<ResolveVirtualPodWriteOp, ResolveVirtualPodReadOp>(ctx, virtualPods);
 
@@ -3871,6 +4062,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   target.addDynamicallyLegalOp<WritePodOp>([&virtualPods](WritePodOp op) {
     return !lookupVirtualPodLeafMap(op.getPodRef(), virtualPods);
   });
+  target.addDynamicallyLegalOp<ArrayLengthOp>(ResolvePodReadBackedArrayLengthOp::legal);
   target.addDynamicallyLegalOp<ReadArrayOp>([&virtualPods](ReadArrayOp op) {
     return !ResolvePodReadBackedArrayReadOp::canResolve(op, virtualPods);
   });
