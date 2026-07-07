@@ -3902,7 +3902,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
     if (podValue.use_empty()) {
       continue;
     }
-    if (auto newPod = llvm::dyn_cast<NewPodOp>(podValue.getDefiningOp())) {
+    if (auto newPod = llvm::dyn_cast_if_present<NewPodOp>(podValue.getDefiningOp())) {
       builder.setInsertionPointAfter(findVirtualPodMaterializationAnchor(newPod, leafValues));
       materializeVirtualPod(builder, newPod, leafValues);
     }
@@ -3911,7 +3911,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   bool erasedDeadPlaceholderOps = false;
   do {
     SmallVector<Operation *> deadPlaceholderOps;
-    modOp->walk<WalkOrder::PostOrder>([&](Operation *op) {
+    modOp->walk<WalkOrder::PostOrder>([&deadPlaceholderOps](Operation *op) {
       if (auto readOp = llvm::dyn_cast<ReadPodOp>(op)) {
         if (readOp.getResult().use_empty()) {
           deadPlaceholderOps.push_back(op);
