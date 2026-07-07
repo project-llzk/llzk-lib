@@ -2460,7 +2460,9 @@ public:
 ///    in bounds using `array.len` and `constrain.eq` on the comparison results.
 /// 4. Using that same index tuple for every leaf, reading a scalar leaf with `array.read` or
 ///    extracting an array leaf with `array.extract`.
-/// 5. Emitting one `constrain.eq` per selected lhs leaf and rhs leaf or, when the POD has no
+/// 5. When the rhs is a subarray and either side needs an explicit shape witness, constraining
+///    every visible dimension length of the selected lhs subarray to match the rhs shape.
+/// 6. Emitting one `constrain.eq` per selected lhs leaf and rhs leaf or, when the POD has no
 ///    payload leaves, equating the selected shape carrier with the rhs shape carrier before
 ///    erasing the original `constrain.in`.
 ///
@@ -2572,8 +2574,28 @@ public:
       selectedIndices.push_back(idx);
     }
 
+    auto rhsArrTy = llvm::dyn_cast<ArrayType>(rhsTy);
+    bool lhsNeedsShapeCheck = rhsArrTy && (needsPodArrayShapeCarrier(lhsTy) ||
+                                           getTrailingArrayShapeCarrierIfPresent(adaptor.getLhs()));
+    bool rhsNeedsShapeCheck = rhsArrTy && (needsPodArrayShapeCarrier(rhsArrTy) ||
+                                           getTrailingArrayShapeCarrierIfPresent(adaptor.getRhs()));
+    if (rhsArrTy && !lhsLeaves.empty() && (lhsNeedsShapeCheck || rhsNeedsShapeCheck)) {
+      Value rhsShapeSource = getShapeSource(rhsArrTy, op.getRhs(), adaptor.getRhs());
+      Value selectedShapeSource = selectedIndices.empty()
+                                      ? shapeCarrier
+                                      : genArrayRead(rewriter, loc, shapeCarrier, selectedIndices);
+      for (size_t dim = 0; dim < rhsRank; ++dim) {
+        Value dimVal = rewriter.create<arith::ConstantOp>(
+            loc, rewriter.getIndexAttr(llzk::checkedCast<int64_t>(dim))
+        );
+        Value lhsLen = rewriter.create<ArrayLengthOp>(loc, selectedShapeSource, dimVal);
+        Value rhsLen = rewriter.create<ArrayLengthOp>(loc, rhsShapeSource, dimVal);
+        rewriter.create<constrain::EmitEqualityOp>(loc, lhsLen, rhsLen);
+      }
+    }
+
     if (lhsLeaves.empty() && rhsLeaves.empty()) {
-      if (auto rhsArrTy = llvm::dyn_cast<ArrayType>(rhsTy)) {
+      if (rhsArrTy) {
         Value rhsShapeCarrier = getShapeSource(rhsArrTy, op.getRhs(), adaptor.getRhs());
         Value selectedShape =
             selectedIndices.empty()
