@@ -54,6 +54,10 @@ namespace {
 
 /// Sanitize a symbol or user-provided identifier into a bare SMT-LIB symbol.
 static std::string sanitizeSymbol(StringRef name) {
+  if (name.empty()) {
+    return "tmp";
+  }
+
   std::string out;
   out.reserve(name.size());
   for (char ch : name) {
@@ -63,41 +67,47 @@ static std::string sanitizeSymbol(StringRef name) {
       out.push_back('_');
     }
   }
-  if (out.empty()) {
-    out = "tmp";
-  }
   if (llvm::isDigit(out.front())) {
     out.insert(out.begin(), '_');
   }
   return out;
 }
 
-/// Convert an SMT dialect sort to its SMT-LIB textual form.
-static std::string sortForType(Type type) {
-  return TypeSwitch<Type, std::string>(type)
-      .Case<llzk::smt::IntType>([](auto) { return "Int"; })
-      .Case<llzk::smt::BoolType>([](auto) { return "Bool"; })
-      .Case<llzk::smt::SMTFuncType>([](auto funcType) {
-    std::string sort = "((";
-    llvm::interleave(funcType.getDomainTypes(), [&](Type domainType) {
-      sort += sortForType(domainType);
-    }, [&] { sort.push_back(' '); });
-    sort += ") ";
-    sort += sortForType(funcType.getRangeType());
-    sort.push_back(')');
-    return sort;
+/// Append an SMT dialect sort using SMT-LIB textual syntax.
+static void printSortForType(llvm::raw_ostream &os, Type type) {
+  TypeSwitch<Type>(type)
+      .Case<llzk::smt::IntType>([&os](auto) { os << "Int"; })
+      .Case<llzk::smt::BoolType>([&os](auto) { os << "Bool"; })
+      .Case<llzk::smt::SMTFuncType>([&os](auto funcType) {
+    os << "((";
+    llvm::interleave(funcType.getDomainTypes(), [&os](Type domainType) {
+      printSortForType(os, domainType);
+    }, [&os] { os << ' '; });
+    os << ") ";
+    printSortForType(os, funcType.getRangeType());
+    os << ')';
   })
-      .Case<llzk::smt::BitVectorType>([](auto bvType) {
-    return "(_ BitVec " + std::to_string(bvType.getWidth()) + ")";
+      .Case<llzk::smt::BitVectorType>([&os](auto bvType) {
+    os << "(_ BitVec " << bvType.getWidth() << ')';
   })
-      .Case<llzk::smt::ArrayType>([](auto arrayType) {
-    return "(Array " + sortForType(arrayType.getDomainType()) + " " +
-           sortForType(arrayType.getRangeType()) + ")";
-  }).Default([&](Type) -> std::string {
-    llvm::report_fatal_error("unsupported SMTLIB sort in smt-to-smtlib");
-  });
+      .Case<llzk::smt::ArrayType>([&os](auto arrayType) {
+    os << "(Array ";
+    printSortForType(os, arrayType.getDomainType());
+    os << ' ';
+    printSortForType(os, arrayType.getRangeType());
+    os << ')';
+  }).Default([](Type) { llvm::report_fatal_error("unsupported SMTLIB sort in smt-to-smtlib"); });
 }
 
+/// Convert an SMT dialect sort to its SMT-LIB textual form.
+static std::string sortForType(Type type) {
+  std::string storage;
+  llvm::raw_string_ostream os(storage);
+  printSortForType(os, type);
+  return storage;
+}
+
+/// Print a structured SMT-LIB `set-info` value attribute.
 static void printSetInfoValue(llvm::raw_ostream &os, Attribute value) {
   TypeSwitch<Attribute>(value)
       .Case<llzk::smt::KeywordAttr>([&os](auto keywordAttr) { os << keywordAttr.getValue(); })
@@ -117,6 +127,7 @@ static void printSetInfoValue(llvm::raw_ostream &os, Attribute value) {
   });
 }
 
+/// Lowering mode for a helper `func.func` referenced from the script root.
 enum class HelperMode {
   PureFunction,
   InlineScript,
@@ -158,10 +169,7 @@ private:
     ModuleOp nestedModule;
     for (Operation &op : module.getBody()->getOperations()) {
       auto childModule = dyn_cast<ModuleOp>(op);
-      if (!childModule) {
-        return module;
-      }
-      if (nestedModule) {
+      if (!childModule || nestedModule) {
         return module;
       }
       nestedModule = childModule;
@@ -178,19 +186,17 @@ private:
         continue;
       }
       if (solver) {
-        selectedRootModule.emitError(
+        return selectedRootModule.emitError(
             "smt-to-smtlib requires exactly one top-level smt.solver in the root module"
         );
-        return failure();
       }
       solver = solverOp;
     }
     if (!solver) {
-      selectedRootModule.emitError(
+      return selectedRootModule.emitError(
           "smt-to-smtlib could not find a top-level smt.solver in the root "
           "module"
       );
-      return failure();
     }
     return solver;
   }
@@ -265,11 +271,11 @@ private:
 
   LogicalResult emitOperation(Operation *op, EvalContext &ctx) {
     return TypeSwitch<Operation *, LogicalResult>(op)
-        .Case<llzk::smt::SetLogicOp>([&](auto setLogicOp) {
+        .Case<llzk::smt::SetLogicOp>([this](auto setLogicOp) {
       os << "(set-logic " << setLogicOp.getLogic() << ")\n";
       return success();
     })
-        .Case<llzk::smt::SetInfoOp>([&](auto setInfoOp) {
+        .Case<llzk::smt::SetInfoOp>([this](auto setInfoOp) {
       os << "(set-info " << setInfoOp.getKey().getValue() << ' ';
       printSetInfoValue(os, setInfoOp.getValueAttr());
       os << ")\n";
@@ -277,17 +283,17 @@ private:
     })
         .Case<llzk::smt::DeclareFunOp>([&](auto declareOp) { return emitDeclare(declareOp, ctx); })
         .Case<llzk::smt::AssertOp>([&](auto assertOp) { return emitAssert(assertOp, ctx); })
-        .Case<llzk::smt::ResetOp>([&](auto) {
+        .Case<llzk::smt::ResetOp>([this](auto) {
       os << "(reset)\n";
       resetScriptState();
       return success();
     })
-        .Case<llzk::smt::PushOp>([&](auto pushOp) {
+        .Case<llzk::smt::PushOp>([this](auto pushOp) {
       pushDepth += pushOp.getCount();
       os << "(push " << pushOp.getCount() << ")\n";
       return success();
     })
-        .Case<llzk::smt::PopOp>([&](auto popOp) {
+        .Case<llzk::smt::PopOp>([this](auto popOp) {
       pushDepth -= popOp.getCount();
       os << "(pop " << popOp.getCount() << ")\n";
       return success();
@@ -353,8 +359,7 @@ private:
         .Case<llzk::boolean::AssertOp>([&](auto assertOp) {
       return assertOp.emitError("boolean.assert is not serializable to SMT-LIB");
     }).Default([&](Operation *unknownOp) {
-      unknownOp->emitError("unsupported operation in smt-to-smtlib");
-      return failure();
+      return unknownOp->emitError("unsupported operation in smt-to-smtlib");
     });
   }
 
@@ -364,8 +369,7 @@ private:
       return failure();
     }
     if (op->getNumResults() != 1) {
-      op.emitError("smt-to-smtlib only supports single-result expression ops");
-      return failure();
+      return op.emitError("smt-to-smtlib only supports single-result expression ops");
     }
     if (ctx.preserveSharing && !expr->starts_with("(")) {
       ctx.values[op->getResult(0)] = std::move(*expr);
@@ -394,13 +398,17 @@ private:
     ctx.values[declareOp.getResult()] = symbol;
     if (auto funcType = dyn_cast<llzk::smt::SMTFuncType>(declareOp.getType())) {
       os << "(declare-fun " << symbol << " (";
-      llvm::interleave(funcType.getDomainTypes(), [&](Type domainType) {
-        os << sortForType(domainType);
-      }, [&] { os << ' '; });
-      os << ") " << sortForType(funcType.getRangeType()) << ")\n";
+      llvm::interleave(funcType.getDomainTypes(), [this](Type domainType) {
+        printSortForType(os, domainType);
+      }, [this] { os << ' '; });
+      os << ") ";
+      printSortForType(os, funcType.getRangeType());
+      os << ")\n";
       return success();
     }
-    os << "(declare-fun " << symbol << " () " << sortForType(declareOp.getType()) << ")\n";
+    os << "(declare-fun " << symbol << " () ";
+    printSortForType(os, declareOp.getType());
+    os << ")\n";
     return success();
   }
 
@@ -470,12 +478,10 @@ private:
 
     if (*helperMode == HelperMode::PureFunction) {
       if (callOp.getNumResults() != 1) {
-        callOp.emitError("pure SMT helper calls must return exactly one value");
-        return failure();
+        return callOp.emitError("pure SMT helper calls must return exactly one value");
       }
       if (failed(ensurePureHelperEmitted(callee))) {
-        callOp.emitError("smt-to-smtlib requires an emit-compatible helper callee");
-        return failure();
+        return callOp.emitError("smt-to-smtlib requires an emit-compatible helper callee");
       }
       ctx.values[callOp.getResult(0)] = buildHelperApplication(callee, argExprs);
       return success();
@@ -483,8 +489,7 @@ private:
 
     auto results = inlineHelper(callee, argExprs);
     if (failed(results)) {
-      callOp.emitError("smt-to-smtlib requires an emit-compatible helper callee");
-      return failure();
+      return callOp.emitError("smt-to-smtlib requires an emit-compatible helper callee");
     }
 
     if (results->size() != callOp.getNumResults()) {
@@ -508,8 +513,7 @@ private:
   /// remain in the surrounding linear SMT-LIB script.
   FailureOr<HelperMode> classifyHelperMode(func::FuncOp func) {
     if (!func || func.empty()) {
-      func.emitError("smt-to-smtlib requires non-empty helper funcs");
-      return failure();
+      return func.emitError("smt-to-smtlib requires non-empty helper funcs");
     }
     if (func.getFunctionType().getNumResults() != 1) {
       return HelperMode::InlineScript;
@@ -524,8 +528,8 @@ private:
     if (!inserted.second) {
       return HelperMode::PureFunction;
     }
-    auto cleanup =
-        llvm::make_scope_exit([this, &func] { helperModesInProgress.erase(func.getOperation()); });
+    Operation *funcOp = func.getOperation();
+    auto cleanup = llvm::make_scope_exit([this, funcOp] { helperModesInProgress.erase(funcOp); });
 
     for (Operation &op : func.getBody().front().without_terminator()) {
       if (isa<llzk::smt::SetLogicOp, llzk::smt::SetInfoOp, llzk::smt::DeclareFunOp,
@@ -541,8 +545,7 @@ private:
         }
         auto nestedFunc = getSelectedRootModule().lookupSymbol<func::FuncOp>(callOp.getCallee());
         if (!nestedFunc) {
-          callOp.emitOpError("smt-to-smtlib could not resolve callee");
-          return failure();
+          return callOp.emitOpError("smt-to-smtlib could not resolve callee");
         }
         auto nestedMode = classifyHelperMode(nestedFunc);
         if (failed(nestedMode)) {
@@ -559,6 +562,7 @@ private:
     return HelperMode::PureFunction;
   }
 
+  /// Return the unique emitted SMT-LIB symbol name for a helper function.
   std::string getHelperSymbol(func::FuncOp func) {
     auto it = helperSymbols.find(func.getOperation());
     if (it != helperSymbols.end()) {
@@ -573,13 +577,16 @@ private:
     return symbol;
   }
 
+  /// Build an SMT-LIB application of an emitted helper symbol.
   std::string buildHelperApplication(func::FuncOp func, ArrayRef<std::string> argExprs) {
-    std::string expr = "(" + getHelperSymbol(func);
+    std::string expr;
+    llvm::raw_string_ostream exprStream(expr);
+    exprStream << '(' << getHelperSymbol(func);
     for (const std::string &argExpr : argExprs) {
-      expr.push_back(' ');
-      expr += argExpr;
+      exprStream << ' ' << argExpr;
     }
-    expr.push_back(')');
+    exprStream << ')';
+    exprStream.flush();
     return expr;
   }
 
@@ -687,16 +694,14 @@ private:
       }
       auto callee = getSelectedRootModule().lookupSymbol<func::FuncOp>(callOp.getCallee());
       if (!callee) {
-        callOp.emitOpError("smt-to-smtlib could not resolve callee");
-        return failure();
+        return callOp.emitOpError("smt-to-smtlib could not resolve callee");
       }
       auto helperMode = classifyHelperMode(callee);
       if (failed(helperMode)) {
         return failure();
       }
       if (*helperMode != HelperMode::PureFunction) {
-        func.emitError("pure helper depends on a script-style helper");
-        return failure();
+        return func.emitError("pure helper depends on a script-style helper");
       }
       callees.push_back(callee);
     }
@@ -705,12 +710,10 @@ private:
 
   FailureOr<PureHelperDefinition> buildPureHelperDefinition(func::FuncOp func) {
     if (!func || func.empty()) {
-      func.emitError("smt-to-smtlib requires non-empty helper funcs");
-      return failure();
+      return func.emitError("smt-to-smtlib requires non-empty helper funcs");
     }
     if (func.getFunctionType().getNumResults() != 1) {
-      func.emitError("pure SMT helper definitions require exactly one return value");
-      return failure();
+      return func.emitError("pure SMT helper definitions require exactly one return value");
     }
 
     SmallVector<std::string> argExprs;
@@ -729,8 +732,7 @@ private:
 
     auto results = evalHelper(func, argExprs);
     if (failed(results) || results->size() != 1) {
-      func.emitError("smt-to-smtlib requires an emit-compatible pure helper");
-      return failure();
+      return func.emitError("smt-to-smtlib requires an emit-compatible pure helper");
     }
     definition.bodyExpr = std::move(results->front());
     return definition;
@@ -817,20 +819,17 @@ private:
       return success();
     }
     if (!func || func.empty()) {
-      func.emitError("smt-to-smtlib requires non-empty helper funcs");
-      return failure();
+      return func.emitError("smt-to-smtlib requires non-empty helper funcs");
     }
     if (func.getFunctionType().getNumResults() != 1) {
-      func.emitError("pure SMT helper definitions require exactly one return value");
-      return failure();
+      return func.emitError("pure SMT helper definitions require exactly one return value");
     }
     if (failed(initializePureHelperSCCs())) {
       return failure();
     }
     auto sccIt = pureHelperSCCId.find(func.getOperation());
     if (sccIt == pureHelperSCCId.end()) {
-      func.emitError("smt-to-smtlib could not classify pure helper recursion");
-      return failure();
+      return func.emitError("smt-to-smtlib could not classify pure helper recursion");
     }
 
     unsigned sccId = sccIt->second;
@@ -875,18 +874,16 @@ private:
   FailureOr<SmallVector<std::string>>
   inlineHelper(func::FuncOp func, ArrayRef<std::string> argExprs) {
     if (!func || func.empty()) {
-      func.emitError("smt-to-smtlib requires non-empty helper funcs");
-      return failure();
+      return func.emitError("smt-to-smtlib requires non-empty helper funcs");
     }
     if (!activeInlineHelpers.insert(func.getOperation()).second) {
-      func.emitError(
+      return func.emitError(
           "recursive script helpers are not supported by smt-to-smtlib because SMT-LIB has no "
           "recursive command-sequence abstraction"
       );
-      return failure();
     }
-    auto cleanup =
-        llvm::make_scope_exit([this, &func] { activeInlineHelpers.erase(func.getOperation()); });
+    Operation *funcOp = func.getOperation();
+    auto cleanup = llvm::make_scope_exit([this, funcOp] { activeInlineHelpers.erase(funcOp); });
 
     EvalContext helperCtx;
     helperCtx.preserveSharing = helperIsPurelyExpressionBased(func);
@@ -900,8 +897,7 @@ private:
 
     auto returnOp = dyn_cast<func::ReturnOp>(func.getBody().front().getTerminator());
     if (!returnOp) {
-      func.emitError("helper func must terminate with func.return");
-      return failure();
+      return func.emitError("helper func must terminate with func.return");
     }
 
     SmallVector<std::string> results;
@@ -961,15 +957,13 @@ private:
   FailureOr<SmallVector<std::string>>
   evalHelper(func::FuncOp func, ArrayRef<std::string> argExprs) {
     if (!func || func.empty()) {
-      func.emitError("smt-to-smtlib requires non-empty helper funcs");
-      return failure();
+      return func.emitError("smt-to-smtlib requires non-empty helper funcs");
     }
 
     EvalContext ctx;
     ctx.preserveSharing = helperIsPurelyExpressionBased(func);
     if (func.getNumArguments() != argExprs.size()) {
-      func.emitError("helper argument arity mismatch during SMTLIB export");
-      return failure();
+      return func.emitError("helper argument arity mismatch during SMTLIB export");
     }
     for (auto [arg, expr] : llvm::zip(func.getArguments(), argExprs)) {
       ctx.values[arg] = expr;
@@ -979,8 +973,7 @@ private:
     for (Operation &op : block.without_terminator()) {
       if (isa<llzk::smt::SetInfoOp, llzk::smt::DeclareFunOp, llzk::smt::AssertOp, llzk::smt::PushOp,
               llzk::smt::PopOp, llzk::smt::CheckOp>(op)) {
-        op.emitError("script-style SMT ops cannot appear in pure helper definitions");
-        return failure();
+        return op.emitError("script-style SMT ops cannot appear in pure helper definitions");
       }
       if (failed(emitOperation(&op, ctx))) {
         return failure();
@@ -989,8 +982,7 @@ private:
 
     auto returnOp = dyn_cast<func::ReturnOp>(block.getTerminator());
     if (!returnOp) {
-      func.emitError("helper func must terminate with func.return");
-      return failure();
+      return func.emitError("helper func must terminate with func.return");
     }
 
     SmallVector<std::string> results;

@@ -44,7 +44,7 @@ static LogicalResult verifySMTLibSymbolText(
 
   for (char ch : text) {
     if (!isValidSMTLibAtomChar(ch)) {
-      return emitError() << "invalid SMT-LIB symbol character '" << ch << "'";
+      return emitError() << "invalid SMT-LIB symbol character '" << ch << '\'';
     }
   }
   return success();
