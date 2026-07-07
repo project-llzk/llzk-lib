@@ -104,8 +104,10 @@
 #include <llvm/ADT/DenseMapInfo.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/Debug.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include <functional>
+#include <limits>
 #include <optional>
 
 // Include the generated base pass class definitions.
@@ -214,6 +216,31 @@ static WritePodOp findNearestForwardableWriteInBlock(ReadPodOp readOp) {
     auto writeOp = dyn_cast<WritePodOp>(op);
     return writeOp && isSamePodRecord(writeOp, podRef, recordName) ? writeOp : nullptr;
   }
+  return nullptr;
+}
+
+/// Return the nearest preceding same-record write that can be forwarded to `readOp`.
+///
+/// Like `findNearestForwardableWriteInBlock`, this is intentionally conservative: it only forwards
+/// through intervening operations that do not use the POD value at all. The search walks outward
+/// through enclosing blocks so nested reads can still observe a dominating parent-block write.
+static WritePodOp findNearestForwardableWrite(ReadPodOp readOp) {
+  Value podRef = readOp.getPodRef();
+  StringAttr recordName = readOp.getRecordNameAttr();
+
+  for (Operation *cursor = readOp.getOperation(); cursor && cursor->getBlock();) {
+    for (Operation *op = cursor->getPrevNode(); op; op = op->getPrevNode()) {
+      if (!hasValueUse(*op, podRef)) {
+        continue;
+      }
+
+      auto writeOp = dyn_cast<WritePodOp>(op);
+      return writeOp && isSamePodRecord(writeOp, podRef, recordName) ? writeOp : nullptr;
+    }
+
+    cursor = cursor->getBlock()->getParentOp();
+  }
+
   return nullptr;
 }
 
@@ -598,7 +625,7 @@ static std::optional<ArrayInstantiationInfo> tryGetArrayInstantiationInfo(Value 
   }
 
   if (ReadPodOp read = value.getDefiningOp<ReadPodOp>()) {
-    if (WritePodOp write = findNearestForwardableWriteInBlock(read)) {
+    if (WritePodOp write = findNearestForwardableWrite(read)) {
       return tryGetArrayInstantiationInfo(write.getValue());
     }
     return std::nullopt;
@@ -912,7 +939,7 @@ static bool tryCollectDirectSplitPodArrayLeafValues(
   }
 
   if (ReadPodOp readOp = arrayValue.getDefiningOp<ReadPodOp>()) {
-    if (WritePodOp writeOp = findNearestForwardableWriteInBlock(readOp)) {
+    if (WritePodOp writeOp = findNearestForwardableWrite(readOp)) {
       return tryCollectDirectSplitPodArrayLeafValues(
           writeOp.getValue(), arrTy, splitTypes, leafArrays
       );
@@ -939,9 +966,29 @@ static bool hasEarlierWriteToRecordInBlock(Operation *op, Value podRef, StringAt
   return false;
 }
 
+/// Return whether `op` is dominated by a write to `podRef.recordName` in this or an enclosing
+/// block.
+static bool hasEarlierWriteToRecord(Operation *op, Value podRef, StringAttr recordName) {
+  for (Operation *cursor = op; cursor && cursor->getBlock();) {
+    if (hasEarlierWriteToRecordInBlock(cursor, podRef, recordName)) {
+      return true;
+    }
+    cursor = cursor->getBlock()->getParentOp();
+  }
+  return false;
+}
+
 /// Return whether the read is preceded by a write to the same pod record within its block.
-static bool hasEarlierWriteInBlock(ReadPodOp readOp) {
+inline static bool hasEarlierWriteInBlock(ReadPodOp readOp) {
   return hasEarlierWriteToRecordInBlock(
+      readOp.getOperation(), readOp.getPodRef(), readOp.getRecordNameAttr()
+  );
+}
+
+/// Return whether the read is dominated by a write to the same pod record in this or an enclosing
+/// block.
+inline static bool hasEarlierWrite(ReadPodOp readOp) {
+  return hasEarlierWriteToRecord(
       readOp.getOperation(), readOp.getPodRef(), readOp.getRecordNameAttr()
   );
 }
@@ -963,6 +1010,17 @@ static bool hasEarlierWriteToPodInBlock(Operation *op, Value podRef) {
   return false;
 }
 
+/// Return whether `op` is dominated by any write to `podRef` in this or an enclosing block.
+static bool hasEarlierWriteToPod(Operation *op, Value podRef) {
+  for (Operation *cursor = op; cursor && cursor->getBlock();) {
+    if (hasEarlierWriteToPodInBlock(cursor, podRef)) {
+      return true;
+    }
+    cursor = cursor->getBlock()->getParentOp();
+  }
+  return false;
+}
+
 /// Return `true` iff `readOp` names a fresh pod record that has not been initialized or written.
 static bool isFreshUnwrittenPodRead(ReadPodOp readOp) {
   NewPodOp newPod = readOp.getPodRef().getDefiningOp<NewPodOp>();
@@ -973,7 +1031,7 @@ static bool isFreshUnwrittenPodRead(ReadPodOp readOp) {
     return attr == readOp.getRecordNameAttr();
   };
   return llvm::none_of(newPod.getInitializedRecords(), isReadOpRecordName) &&
-         !hasEarlierWriteInBlock(readOp);
+         !hasEarlierWrite(readOp);
 }
 
 /// Return `true` iff `value` is an unwritten array-of-POD field read from a fresh `pod.new`.
@@ -1208,8 +1266,8 @@ findVirtualPodMaterializationAnchor(NewPodOp pod, const VirtualPodLeafMap &leafV
 
 /// Return `true` iff a read from a virtual POD can be resolved without materializing it.
 static bool canResolveVirtualPodRead(ReadPodOp op, const VirtualPodValueMap &virtualPods) {
-  if (!lookupVirtualPodLeafMap(op.getPodRef(), virtualPods) || hasEarlierWriteInBlock(op) ||
-      findNearestForwardableWriteInBlock(op)) {
+  if (!lookupVirtualPodLeafMap(op.getPodRef(), virtualPods) || hasEarlierWrite(op) ||
+      findNearestForwardableWrite(op)) {
     return false;
   }
   Type recType = llvm::cast<PodType>(op.getPodRefType()).getRecordMap().lookup(op.getRecordName());
@@ -1249,7 +1307,7 @@ static void processInputOperand(
   if (PodType pt = splittablePod(operand.getType())) {
     if (virtualPods) {
       if (const VirtualPodLeafMap *leafValues = lookupVirtualPodLeafMap(operand, *virtualPods);
-          leafValues && (!userOp || !hasEarlierWriteToPodInBlock(userOp, operand))) {
+          leafValues && (!userOp || !hasEarlierWriteToPod(userOp, operand))) {
         llvm::append_range(
             newOperands, orderedVirtualPodLeafValues(pt, loc, rewriter, *leafValues)
         );
@@ -1505,6 +1563,7 @@ step1(ModuleOp modOp, SymbolTableCollection &symTables, MemberReplacementMap &me
 
   ConversionTarget target(*ctx);
   baseTargetSetup(target);
+  target.addLegalOp<UnrealizedConversionCastOp>();
   target.addDynamicallyLegalOp<MemberDefOp>([](MemberDefOp op) {
     return SplitPodInMemberDefOp::legal(op) && SplitPodArrayInMemberDefOp::legal(op);
   });
@@ -3256,7 +3315,7 @@ public:
     const LocalMemberReplacementMap &idToMember =
         repMapRef.at(tgtStructDef->get()).at(op.getMemberNameAttr().getAttr());
     const VirtualPodLeafMap *virtualLeafValues =
-        !hasEarlierWriteToPodInBlock(op.getOperation(), adaptor.getVal())
+        !hasEarlierWriteToPod(op.getOperation(), adaptor.getVal())
             ? lookupVirtualPodLeafMap(adaptor.getVal(), virtualPods)
             : nullptr;
 
@@ -3352,13 +3411,13 @@ static bool tryCollectReadPodSplitPodArrayLeafValues(
     ReadPodOp readOp, ArrayType arrTy, ArrayRef<RecordChain> splitIds, ArrayRef<Type> splitTypes,
     const VirtualPodValueMap &virtualPods, SmallVectorImpl<Value> &leafArrays
 ) {
-  if (WritePodOp writeOp = findNearestForwardableWriteInBlock(readOp)) {
+  if (WritePodOp writeOp = findNearestForwardableWrite(readOp)) {
     return tryCollectMaterializedSplitPodArrayLeafValues(
         writeOp.getValue(), arrTy, splitTypes, leafArrays
     );
   }
 
-  if (!hasEarlierWriteInBlock(readOp)) {
+  if (!hasEarlierWrite(readOp)) {
     if (const VirtualPodLeafMap *podLeafValues =
             lookupVirtualPodLeafMap(readOp.getPodRef(), virtualPods)) {
       leafArrays.reserve(splitIds.size());
@@ -3655,7 +3714,7 @@ public:
   LogicalResult matchAndRewrite(
       ReadPodOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    if (hasEarlierWriteInBlock(op) || findNearestForwardableWriteInBlock(op)) {
+    if (hasEarlierWrite(op) || findNearestForwardableWrite(op)) {
       return failure();
     }
 
@@ -3697,12 +3756,44 @@ public:
   }
 };
 
+/// Rebuild virtual POD leaf storage for placeholder casts left by an earlier pass round.
+static void rehydrateVirtualPodPlaceholders(ModuleOp modOp, VirtualPodValueMap &virtualPods) {
+  modOp.walk([&virtualPods](UnrealizedConversionCastOp castOp) {
+    if (castOp->getNumResults() != 1) {
+      return;
+    }
+
+    PodType podTy = llvm::dyn_cast<PodType>(castOp.getResult(0).getType());
+    if (!podTy) {
+      return;
+    }
+
+    VirtualPodLeafMap leafValues;
+    SmallVector<StringAttr> recordChain;
+    auto operandIt = castOp.getOperands().begin();
+    bool matchesVirtualPlaceholder = true;
+    forEachPodLeaf(podTy, recordChain, [&](const RecordChain &id, Type leafType) {
+      if (!matchesVirtualPlaceholder || operandIt == castOp.getOperands().end() ||
+          !typesUnify((*operandIt).getType(), leafType)) {
+        matchesVirtualPlaceholder = false;
+        return;
+      }
+      leafValues[id] = *operandIt++;
+    });
+
+    if (matchesVirtualPlaceholder && operandIt == castOp.getOperands().end()) {
+      virtualPods[castOp.getResult(0)] = std::move(leafValues);
+    }
+  });
+}
+
 /// Special handling to split pods in struct member refs and function signatures and desugar
 /// initializations on pod.new into pod writes.
 static LogicalResult
 step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementMap &memberRepMap) {
   MLIRContext *ctx = modOp.getContext();
   VirtualPodValueMap virtualPods;
+  rehydrateVirtualPodPlaceholders(modOp, virtualPods);
   DeferredPodArrayLeafMap deferredPodArrays;
 
   RewritePatternSet patterns(ctx);
@@ -4615,14 +4706,108 @@ static size_t podAllocScalarizationWeight(ModuleOp modOp) {
   return weight;
 }
 
+/// Return whether `type` still represents one top-level POD value that should be scalarized.
+inline static bool isResidualPodLikeType(Type type) {
+  return splittablePod(type) || splittablePodArray(type);
+}
+
+/// Count the residual POD-like types in `types`.
+template <typename TypeRangeLike>
+static size_t countResidualPodLikeTypes(const TypeRangeLike &types) {
+  size_t count = 0;
+  for (Type type : types) {
+    if (isResidualPodLikeType(type)) {
+      ++count;
+    }
+  }
+  return count;
+}
+
+/// Count residual POD ops, POD-typed values, and placeholder casts that must not survive.
+static size_t countResidualPodIR(ModuleOp modOp) {
+  size_t count = 0;
+  modOp.walk([&count](Operation *op) {
+    if (isa<NewPodOp, ReadPodOp, WritePodOp, UnrealizedConversionCastOp>(op)) {
+      ++count;
+    }
+
+    count += countResidualPodLikeTypes(op->getOperandTypes());
+    count += countResidualPodLikeTypes(op->getResultTypes());
+
+    for (Region &region : op->getRegions()) {
+      for (Block &block : region) {
+        count += countResidualPodLikeTypes(block.getArgumentTypes());
+      }
+    }
+
+    if (auto funcDef = dyn_cast<FuncDefOp>(op)) {
+      FunctionType funcTy = funcDef.getFunctionType();
+      count += countResidualPodLikeTypes(funcTy.getInputs());
+      count += countResidualPodLikeTypes(funcTy.getResults());
+    } else if (auto memberDef = dyn_cast<MemberDefOp>(op)) {
+      count += isResidualPodLikeType(memberDef.getType()) ? 1 : 0;
+    }
+  });
+  return count;
+}
+
 /// Pass driver for the full POD-to-scalar lowering pipeline described above.
 class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
   using Base = PodToScalarPassBase<PassImpl>;
   using Base::Base;
 
+  LogicalResult runScalarizeAndCleanupPipeline(ModuleOp module) {
+    // 1. Use SROA (Destructurable* interfaces) to split each pod with `N` records into `N` pods
+    // with 1 record each. This is necessary because the mem2reg pass cannot deal with splitting
+    // up memory, i.e., it can only convert scalar memory access into SSA values.
+    // 2. The mem2reg pass converts the size 1 pod allocations and accesses into SSA values.
+    OpPassManager scalarizePM(ModuleOp::getOperationName());
+    scalarizePM.addPass(createSpecializedSROAPass<NewPodOp>());
+    scalarizePM.addPass(createSpecializedMem2RegPass<NewPodOp>());
+
+    // Cleanup allocations made dead by memory promotion and other dead SSA values.
+    OpPassManager cleanupPM(ModuleOp::getOperationName());
+    cleanupPM.addPass(createRemoveUnusedDiscardableAllocationsPass(
+        RemoveUnusedDiscardableAllocationsPassOptions {
+            .allocatorOpName = CreateArrayOp::getOperationName().str()
+        }
+    ));
+    cleanupPM.addPass(createRemoveUnusedDiscardableAllocationsPass(
+        RemoveUnusedDiscardableAllocationsPassOptions {
+            .allocatorOpName = NewPodOp::getOperationName().str()
+        }
+    ));
+    cleanupPM.addPass(createRemoveDeadValuesWorkaroundPass());
+
+    size_t podAllocWeight = podAllocScalarizationWeight(module);
+    while (podAllocWeight != 0) {
+      if (failed(runPipeline(scalarizePM, module))) {
+        return failure();
+      }
+
+      // SROA+mem2reg can expose `scf.if`-carried POD values that become redundant after a
+      // same-record write from another `scf.if` result. Fold those reads and clean up before
+      // checking convergence.
+      bool foldedIfCarriedRead = applyIfCarriedPodReadAfterWritePatterns(module);
+      if (failed(runPipeline(cleanupPM, module))) {
+        return failure();
+      }
+
+      // Nested PODs can become visible only after an outer single-record POD has been promoted,
+      // and SROA can transiently increase allocation count while splitting aggregates. Keep
+      // iterating until the allocation-weight heuristic reaches a fixed point.
+      size_t nextPodAllocWeight = podAllocScalarizationWeight(module);
+      if (!foldedIfCarriedRead && nextPodAllocWeight == podAllocWeight) {
+        break;
+      }
+      podAllocWeight = nextPodAllocWeight;
+    }
+
+    return success();
+  }
+
   void runOnOperation() override {
     ModuleOp module = getOperation();
-
     if (failed(step0(module))) {
       return signalPassFailure();
     }
@@ -4631,7 +4816,8 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
       module.dump();
     });
 
-    {
+    size_t previousResidualCount = std::numeric_limits<size_t>::max();
+    while (true) {
       // This is divided into 2 steps to simplify the implementation for member-related ops. The
       // issue is that the conversions for member read/write expect the mapping of record name to
       // member name+type to already be populated for the referenced member (although this could be
@@ -4661,67 +4847,40 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
         llvm::dbgs() << "After step 3:\n";
         module.dump();
       });
-    }
 
-    if (failed(step4(module))) {
-      return signalPassFailure();
-    }
-    LLVM_DEBUG({
-      llvm::dbgs() << "After step 4:\n";
-      module.dump();
-    });
+      if (failed(step4(module))) {
+        return signalPassFailure();
+      }
+      LLVM_DEBUG({
+        llvm::dbgs() << "After step 4:\n";
+        module.dump();
+      });
 
-    // 1. Use SROA (Destructurable* interfaces) to split each pod with `N` records into `N` pods
-    // with 1 record each. This is necessary because the mem2reg pass cannot deal with splitting
-    // up memory, i.e., it can only convert scalar memory access into SSA values.
-    // 2. The mem2reg pass converts the size 1 pod allocations and accesses into SSA values.
-    OpPassManager scalarizePM(ModuleOp::getOperationName());
-    scalarizePM.addPass(createSpecializedSROAPass<NewPodOp>());
-    scalarizePM.addPass(createSpecializedMem2RegPass<NewPodOp>());
-
-    // Cleanup allocations made dead by memory promotion and other dead SSA values.
-    OpPassManager cleanupPM(ModuleOp::getOperationName());
-    cleanupPM.addPass(createRemoveUnusedDiscardableAllocationsPass(
-        RemoveUnusedDiscardableAllocationsPassOptions {
-            .allocatorOpName = CreateArrayOp::getOperationName().str()
-        }
-    ));
-    cleanupPM.addPass(createRemoveUnusedDiscardableAllocationsPass(
-        RemoveUnusedDiscardableAllocationsPassOptions {
-            .allocatorOpName = NewPodOp::getOperationName().str()
-        }
-    ));
-    cleanupPM.addPass(createRemoveDeadValuesWorkaroundPass());
-
-    size_t podAllocWeight = podAllocScalarizationWeight(module);
-    while (podAllocWeight != 0) {
-      if (failed(runPipeline(scalarizePM, module))) {
+      if (failed(runScalarizeAndCleanupPipeline(module))) {
         signalPassFailure();
         return;
       }
+      LLVM_DEBUG({
+        llvm::dbgs() << "After SROA+Mem2Reg pipeline:\n";
+        module.dump();
+      });
 
-      // SROA+mem2reg can expose `scf.if`-carried POD values that become redundant after a
-      // same-record write from another `scf.if` result. Fold those reads and clean up before
-      // checking convergence.
-      bool foldedIfCarriedRead = applyIfCarriedPodReadAfterWritePatterns(module);
-      if (failed(runPipeline(cleanupPM, module))) {
-        signalPassFailure();
-        return;
-      }
-
-      // Nested PODs can become visible only after an outer single-record POD has been promoted,
-      // and SROA can transiently increase allocation count while splitting aggregates. Keep
-      // iterating until the allocation-weight heuristic reaches a fixed point.
-      size_t nextPodAllocWeight = podAllocScalarizationWeight(module);
-      if (!foldedIfCarriedRead && nextPodAllocWeight == podAllocWeight) {
+      size_t residualCount = countResidualPodIR(module);
+      if (residualCount == 0) {
         break;
       }
-      podAllocWeight = nextPodAllocWeight;
+      if (residualCount >= previousResidualCount) {
+        std::string residualIR;
+        llvm::raw_string_ostream os(residualIR);
+        module.print(os);
+        module.emitError() << "llzk-pod-to-scalar left residual pod IR after reaching a fixpoint ("
+                           << residualCount << " residual pod-like items remain)\n"
+                           << residualIR;
+        signalPassFailure();
+        return;
+      }
+      previousResidualCount = residualCount;
     }
-    LLVM_DEBUG({
-      llvm::dbgs() << "After SROA+Mem2Reg pipeline:\n";
-      module.dump();
-    });
   }
 };
 
