@@ -1183,11 +1183,26 @@ using VirtualPodLeafMap = DenseMap<RecordChain, Value>;
 using VirtualPodValueMap = DenseMap<Value, VirtualPodLeafMap>;
 using DeferredPodArrayLeafMap = DenseMap<Value, SmallVector<Value>>;
 
+/// Strip compatibility casts around a virtual POD placeholder.
+static Value peelVirtualPodCompatibilityCasts(Value value) {
+  while (auto cast = value.getDefiningOp<UnifiableCastOp>()) {
+    value = cast.getInput();
+  }
+  return value;
+}
+
 /// Return the flattened leaf values for `podValue` when it is tracked as a virtual POD.
 static const VirtualPodLeafMap *
 lookupVirtualPodLeafMap(Value podValue, const VirtualPodValueMap &virtualPods) {
+  podValue = peelVirtualPodCompatibilityCasts(podValue);
   auto it = virtualPods.find(podValue);
   return it != virtualPods.end() ? &it->second : nullptr;
+}
+
+/// Return the mutable leaf map iterator for `podValue` when it is tracked as a virtual POD.
+static VirtualPodValueMap::iterator
+lookupVirtualPodLeafMapIt(Value podValue, VirtualPodValueMap &virtualPods) {
+  return virtualPods.find(peelVirtualPodCompatibilityCasts(podValue));
 }
 
 /// Collect flattened POD leaf values in canonical traversal order.
@@ -1300,9 +1315,8 @@ static SmallVector<std::string> getSplitRecordNameSuffixes(Type type) {
 // If the operand has PodType, add reads from all pod records to the `newOperands` list otherwise
 // add the original operand to the list.
 static void processInputOperand(
-    Location loc, Value operand, SmallVector<Value> &newOperands,
-    ConversionPatternRewriter &rewriter, Operation *userOp = nullptr,
-    const VirtualPodValueMap *virtualPods = nullptr
+    Location loc, Value operand, SmallVector<Value> &newOperands, OpBuilder &rewriter,
+    Operation *userOp = nullptr, const VirtualPodValueMap *virtualPods = nullptr
 ) {
   if (PodType pt = splittablePod(operand.getType())) {
     if (virtualPods) {
@@ -3315,14 +3329,14 @@ public:
     const LocalMemberReplacementMap &idToMember =
         repMapRef.at(tgtStructDef->get()).at(op.getMemberNameAttr().getAttr());
     const VirtualPodLeafMap *virtualLeafValues =
-        !hasEarlierWriteToPod(op.getOperation(), adaptor.getVal())
-            ? lookupVirtualPodLeafMap(adaptor.getVal(), virtualPods)
+        !hasEarlierWriteToPod(op.getOperation(), op.getVal())
+            ? lookupVirtualPodLeafMap(op.getVal(), virtualPods)
             : nullptr;
 
     for (const auto &[id, newMember] : idToMember) {
       Value scalarValue = virtualLeafValues
                               ? virtualLeafValues->at(id)
-                              : genReadAlongPath(rewriter, op.getLoc(), adaptor.getVal(), id);
+                              : genReadAlongPath(rewriter, op.getLoc(), op.getVal(), id);
       rewriter.create<MemberWriteOp>(
           op.getLoc(), adaptor.getComponent(), FlatSymbolRefAttr::get(newMember.first), scalarValue
       );
@@ -3683,7 +3697,7 @@ public:
   LogicalResult matchAndRewrite(
       WritePodOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    auto it = virtualPods.find(adaptor.getPodRef());
+    auto it = lookupVirtualPodLeafMapIt(op.getPodRef(), virtualPods);
     if (it == virtualPods.end()) {
       return failure();
     }
@@ -3711,14 +3725,13 @@ public:
   ResolveVirtualPodReadOp(MLIRContext *ctx, VirtualPodValueMap &virtualPodMap)
       : OpConversionPattern<ReadPodOp>(ctx), virtualPods(virtualPodMap) {}
 
-  LogicalResult matchAndRewrite(
-      ReadPodOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
-  ) const override {
+  LogicalResult
+  matchAndRewrite(ReadPodOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
     if (hasEarlierWrite(op) || findNearestForwardableWrite(op)) {
       return failure();
     }
 
-    const VirtualPodLeafMap *leafValues = lookupVirtualPodLeafMap(adaptor.getPodRef(), virtualPods);
+    const VirtualPodLeafMap *leafValues = lookupVirtualPodLeafMap(op.getPodRef(), virtualPods);
     if (!leafValues) {
       return failure();
     }
@@ -3787,6 +3800,45 @@ static void rehydrateVirtualPodPlaceholders(ModuleOp modOp, VirtualPodValueMap &
   });
 }
 
+/// Rewrite whole-POD `constrain.eq` while virtual leaf storage is still available.
+///
+/// Affine POD placeholders may exist only as `builtin.unrealized_conversion_cast`, so deferring the
+/// split until after step 3 can lose virtual write updates and reintroduce reads from a cast-only
+/// aggregate. Splitting here preserves the final tracked leaf values before `virtualPods` goes
+/// away while still allowing step 4 to lift any concrete `pod.read` ops that remain.
+class SplitVirtualPodInEmitEqualityPattern final
+    : public OpRewritePattern<constrain::EmitEqualityOp> {
+  const VirtualPodValueMap &virtualPods;
+
+public:
+  SplitVirtualPodInEmitEqualityPattern(MLIRContext *ctx, const VirtualPodValueMap &virtualPodMap)
+      : OpRewritePattern<constrain::EmitEqualityOp>(ctx), virtualPods(virtualPodMap) {}
+
+  LogicalResult
+  matchAndRewrite(constrain::EmitEqualityOp op, PatternRewriter &rewriter) const override {
+    if (!splittablePod(op.getLhs().getType())) {
+      return failure();
+    }
+
+    SmallVector<Value> lhsLeaves;
+    SmallVector<Value> rhsLeaves;
+    processInputOperand(op.getLoc(), op.getLhs(), lhsLeaves, rewriter, nullptr, &virtualPods);
+    processInputOperand(op.getLoc(), op.getRhs(), rhsLeaves, rewriter, nullptr, &virtualPods);
+
+    if (lhsLeaves.size() != rhsLeaves.size()) {
+      return rewriter.notifyMatchFailure(
+          op, "expected POD equality operands to expand to the same number of leaves"
+      );
+    }
+
+    for (auto [lhsLeaf, rhsLeaf] : llvm::zip_equal(lhsLeaves, rhsLeaves)) {
+      rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhsLeaf, rhsLeaf);
+    }
+    rewriter.eraseOp(op);
+    return success();
+  }
+};
+
 /// Special handling to split pods in struct member refs and function signatures and desugar
 /// initializations on pod.new into pod writes.
 static LogicalResult
@@ -3833,6 +3885,15 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
 
   LLVM_DEBUG(llvm::dbgs() << "Begin step 3: update/split other pod ops\n";);
   if (failed(applyFullConversion(modOp, target, std::move(patterns)))) {
+    return failure();
+  }
+
+  RewritePatternSet postConversionPatterns(ctx);
+  postConversionPatterns.add<SplitVirtualPodInEmitEqualityPattern>(ctx, virtualPods);
+  if (failed(applyPatternsGreedily(
+          modOp->getRegion(0), std::move(postConversionPatterns),
+          GreedyRewriteConfig {.fold = false, .cseConstants = false}
+      ))) {
     return failure();
   }
 

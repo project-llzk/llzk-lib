@@ -1,0 +1,28 @@
+// RUN: llzk-opt -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+
+#inner = affine_map<()[s0] -> (s0 + 1)>
+!Leaf = !array.type<#inner x index>
+!Pair = !pod.type<[@vals: !Leaf, @tag: index]>
+module attributes {llzk.lang} {
+  function.def @whole_use_after_scalar_write(
+      %lhs: !Pair, %rhs: !Pair, %new: index
+  ) attributes {function.allow_constraint} {
+    pod.write %lhs[@tag] = %new : !Pair, index
+    constrain.eq %lhs, %rhs : !Pair
+    function.return
+  }
+}
+// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0 + 1)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @whole_use_after_scalar_write(
+// CHECK-SAME:        %[[LHS_VALS:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>,
+// CHECK-SAME:        %[[LHS_TAG:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[RHS_VALS:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>,
+// CHECK-SAME:        %[[RHS_TAG:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[NEW:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      constrain.eq %[[LHS_VALS]], %[[RHS_VALS]] : !array.type<#[[$M]] x index>, !array.type<#[[$M]] x index>
+// CHECK-NEXT:      constrain.eq %[[NEW]], %[[RHS_TAG]] : index, index
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
