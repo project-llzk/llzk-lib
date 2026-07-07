@@ -44,8 +44,9 @@ constexpr int INDEX_WIDTH = 64;
 
 static inline bool isConstOrStructParam(Value val) {
   // TODO: doing arithmetic over constants should also be fine?
-  return val.getDefiningOp<arith::ConstantIndexOp>() ||
-         val.getDefiningOp<polymorphic::ConstReadOp>() || val.getDefiningOp<felt::FeltConstantOp>();
+  return llvm::isa<arith::ConstantIndexOp, polymorphic::ConstReadOp, felt::FeltConstantOp>(
+      val.getDefiningOp()
+  );
 }
 
 static llvm::SMTExprRef mkExpr(Value value, llvm::SMTSolver *solver) {
