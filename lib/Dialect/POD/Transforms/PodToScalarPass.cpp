@@ -3700,26 +3700,45 @@ static bool tryCollectReadPodSplitPodArrayLeafValues(
     ReadPodOp readOp, ArrayType arrTy, ArrayRef<RecordChain> splitIds, ArrayRef<Type> splitTypes,
     const VirtualPodValueMap &virtualPods, SmallVectorImpl<Value> &leafArrays
 ) {
-  if (WritePodOp writeOp = findNearestForwardableWrite(readOp)) {
-    return tryCollectMaterializedSplitPodArrayLeafValues(
-        writeOp.getValue(), arrTy, splitTypes, leafArrays
-    );
-  }
+  auto tryCollectFromVirtualRead = [&](ReadPodOp sourceRead) {
+    if (hasEarlierWrite(sourceRead)) {
+      return false;
+    }
 
-  if (!hasEarlierWrite(readOp)) {
-    if (const VirtualPodLeafMap *podLeafValues =
-            lookupVirtualPodLeafMap(readOp.getPodRef(), virtualPods)) {
-      leafArrays.reserve(splitIds.size());
-      for (const RecordChain &id : splitIds) {
-        auto it = podLeafValues->find(concatRecordChain({readOp.getRecordNameAttr()}, id));
-        if (it == podLeafValues->end() ||
-            !typesUnify(it->second.getType(), getFlattenedTypeAlongPath(arrTy, id))) {
-          return false;
-        }
-        leafArrays.push_back(it->second);
+    const VirtualPodLeafMap *podLeafValues =
+        lookupVirtualPodLeafMap(sourceRead.getPodRef(), virtualPods);
+    if (!podLeafValues) {
+      return false;
+    }
+
+    leafArrays.reserve(splitIds.size());
+    for (const RecordChain &id : splitIds) {
+      auto it = podLeafValues->find(concatRecordChain({sourceRead.getRecordNameAttr()}, id));
+      if (it == podLeafValues->end() ||
+          !typesUnify(it->second.getType(), getFlattenedTypeAlongPath(arrTy, id))) {
+        return false;
       }
+      leafArrays.push_back(it->second);
+    }
+    return true;
+  };
+
+  if (WritePodOp writeOp = findNearestForwardableWrite(readOp)) {
+    if (tryCollectMaterializedSplitPodArrayLeafValues(
+            writeOp.getValue(), arrTy, splitTypes, leafArrays
+        )) {
       return true;
     }
+
+    if (ReadPodOp writtenRead = peelUnifiableCasts(writeOp.getValue()).getDefiningOp<ReadPodOp>()) {
+      if (tryCollectFromVirtualRead(writtenRead)) {
+        return true;
+      }
+    }
+  }
+
+  if (tryCollectFromVirtualRead(readOp)) {
+    return true;
   }
 
   return false;
