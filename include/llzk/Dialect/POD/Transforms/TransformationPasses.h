@@ -13,11 +13,12 @@
 #include "llzk/Pass/PassBase.h"
 #include "llzk/Util/Walk.h"
 
-#include <llvm/ADT/STLExtras.h>
-#include <llvm/ADT/SmallVector.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/Operation.h>
 #include <mlir/IR/ValueRange.h>
+
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/SmallVector.h>
 
 namespace llzk::pod {
 

@@ -154,9 +154,9 @@ TEST_F(LoweringUtilsTests, AppendValuesWithExactTypesDoesNotLeakPartialMatches) 
   SmallVector<Type> expectedTypes {builder.getIndexType(), builder.getIndexType()};
   SmallVector<Value> collectedValues {entryBlock->getArgument(2)};
 
-  EXPECT_FALSE(llzk::pod::detail::appendValuesWithExactTypes(
-      candidateValues, expectedTypes, collectedValues
-  ));
+  EXPECT_FALSE(
+      llzk::pod::detail::appendValuesWithExactTypes(candidateValues, expectedTypes, collectedValues)
+  );
   ASSERT_EQ(collectedValues.size(), 1u);
   EXPECT_EQ(collectedValues.front(), entryBlock->getArgument(2));
 }
