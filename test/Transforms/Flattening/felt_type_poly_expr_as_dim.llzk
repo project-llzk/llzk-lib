@@ -1,0 +1,35 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang = "circom", llzk.main = !struct.type<@T::@T<[12]>>} {
+  poly.template @T {
+    poly.param @n
+    poly.expr @n_Add_1 {
+      %felt_const_1 = felt.const  1 : <"bn128">
+      %0 = poly.read_const @n : !felt.type<"bn128">
+      %1 = felt.add %0, %felt_const_1 : !felt.type<"bn128">, !felt.type<"bn128">
+      poly.yield %1 : !felt.type<"bn128">
+    }
+    struct.def @T {
+      struct.member @r : !array.type<@n_Add_1 x !felt.type<"bn128">>
+      function.def @compute() -> !struct.type<@T::@T<[@n]>> {
+        %self = struct.new : <@T::@T<[@n]>>
+        function.return %self : !struct.type<@T::@T<[@n]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@T::@T<[@n]>>) {
+        function.return
+      }
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang = "circom", llzk.main = !struct.type<@T_12_T>} {
+// CHECK-NEXT:    struct.def @T_12_T {
+// CHECK-NEXT:      struct.member @r : !array.type<13 x !felt.type<"bn128">>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@T_12_T> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@T_12_T>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@T_12_T>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@T_12_T>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

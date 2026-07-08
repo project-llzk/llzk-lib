@@ -583,7 +583,14 @@ class StructCloner {
         if (!dimSizes.empty()) {
           SmallVector<Attribute> updated;
           for (Attribute a : dimSizes) {
-            updated.push_back(convertIfPossible(a));
+            Attribute t = convertIfPossible(a);
+            // Array dimensions cannot be FeltType so convert to index type.
+            if (FeltConstAttr feltAttr = llvm::dyn_cast<FeltConstAttr>(t)) {
+              t = IntegerAttr::get(
+                  IndexType::get(inputTy.getContext()), fromAPInt(feltAttr.getValue())
+              );
+            }
+            updated.push_back(t);
           }
           return ArrayType::get(this->convertType(inputTy.getElementType()), updated);
         }
