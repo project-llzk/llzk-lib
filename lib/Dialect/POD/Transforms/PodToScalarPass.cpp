@@ -2196,18 +2196,27 @@ public:
       }
 
       // `poly.unifiable_cast` to a non-array target cannot preserve all split leaf values in one
-      // SSA value without reintroducing aggregate array-of-POD materialization.
-      auto it = llvm::find_if(splitInputLeaves, [&op](Value v) {
-        return typesUnify(v.getType(), op.getType());
-      });
-      if (it == splitInputLeaves.end()) {
-        return rewriter.notifyMatchFailure(
-            op, "failed to find split array leaf type compatible with cast target"
-        );
+      // SSA value without reintroducing aggregate array-of-POD materialization. Zero-leaf arrays
+      // are represented only by their threaded shape carrier, so use that value directly instead
+      // of searching the empty leaf range.
+      Value compatibleInput;
+      if (inputSplitTypes.empty()) {
+        compatibleInput = splitInputs.front();
+      } else {
+        auto it = llvm::find_if(splitInputLeaves, [&op](Value v) {
+          return typesUnify(v.getType(), op.getType());
+        });
+        if (it == splitInputLeaves.end()) {
+          return rewriter.notifyMatchFailure(
+              op, "failed to find split array leaf type compatible with cast target"
+          );
+        }
+        compatibleInput = *it;
       }
 
       rewriter.replaceOpWithNewOp<UnifiableCastOp>(
-          op, op.getType(), castValueToTypeIfNeeded(rewriter, op.getLoc(), *it, op.getType())
+          op, op.getType(),
+          castValueToTypeIfNeeded(rewriter, op.getLoc(), compatibleInput, op.getType())
       );
       return success();
     }
