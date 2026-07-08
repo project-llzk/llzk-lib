@@ -22,6 +22,7 @@
 #include "llzk/Util/EffectHelper.h"
 #include "llzk/Util/StreamHelper.h"
 
+#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/BuiltinOps.h>
 
 #include <llvm/ADT/DenseMap.h>
@@ -539,13 +540,22 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       // state of this operation.
       if (!op.getRegions().empty()) {
         KnownState parentState = cloneKnownState(state);
+        // Repeating regions (scf.for, scf.while) execute their body
+        // more than once.  Pre-loop global/RAM facts must not be used
+        // to declare a read inside the body redundant — the body may
+        // observe writes from a previous iteration.
+        KnownState regionEntryState = cloneKnownState(state);
+        if (isa<scf::ForOp, scf::WhileOp>(op)) {
+          regionEntryState.globals.clear();
+          regionEntryState.ram.clear();
+        }
         SmallVector<KnownState> regionStates;
         for (Region &region : op.getRegions()) {
           if (region.empty()) {
             continue;
           }
           auto regionState = runOnRegion(
-              region, cloneKnownState(state), replacementMap, readVals, redundantWrites
+              region, cloneKnownState(regionEntryState), replacementMap, readVals, redundantWrites
           );
           regionStates.push_back(regionState);
         }
