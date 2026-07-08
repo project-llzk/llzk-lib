@@ -1257,7 +1257,6 @@ static Value rebuildFlattenedPodRecord(
 
 using VirtualPodLeafMap = DenseMap<RecordChain, Value>;
 using VirtualPodValueMap = DenseMap<Value, VirtualPodLeafMap>;
-using DeferredPodArrayLeafMap = DenseMap<Value, SmallVector<Value>>;
 
 /// Strip compatibility casts around a virtual POD placeholder.
 static Value peelVirtualPodCompatibilityCasts(Value value) {
@@ -2700,13 +2699,78 @@ public:
   }
 };
 
+/// Cache the synthetic backing reused for one deferred array-of-POD field read.
+///
+/// Fresh, unwritten `pod.read` results may need multiple late rewrites to observe the same
+/// synthetic aggregate backing. Keep both the split leaf arrays and any explicit shared shape
+/// carrier here so deferred `array.read`, `array.len`, and split-cast resolution stay aligned.
+struct DeferredPodArrayBacking {
+  SmallVector<Value> leafArrays;
+  Value shapeCarrier;
+};
+
+using DeferredPodArrayBackingMap = DenseMap<Value, DeferredPodArrayBacking>;
+
+/// Insert synthetic deferred POD-array backing close to the field read that owns it.
+static void setDeferredPodArrayBackingInsertionPoint(ReadPodOp readOp, OpBuilder &bldr) {
+  if (Operation *loopOp = llzk::pod::detail::findNearestLoopCarriedPodAccess(readOp)) {
+    bldr.setInsertionPoint(loopOp);
+  } else {
+    bldr.setInsertionPointAfter(readOp);
+  }
+}
+
+/// Materialize any missing synthetic backing components for one deferred fresh `pod.read`.
+static DeferredPodArrayBacking &materializeDeferredPodArrayBacking(
+    ReadPodOp readOp, ArrayType arrTy, ArrayRef<Type> splitTypes,
+    DeferredPodArrayBackingMap &deferredPodArrays, Location loc, OpBuilder &bldr,
+    bool requireLeafArrays, bool requireShapeCarrier
+) {
+  auto [it, inserted] = deferredPodArrays.try_emplace(readOp.getResult());
+  DeferredPodArrayBacking &backing = it->second;
+
+  bool needsShapeCarrier = requireShapeCarrier && needsPodArrayShapeCarrier(arrTy);
+  bool missingLeafArrays = requireLeafArrays && backing.leafArrays.empty();
+  bool missingShapeCarrier = needsShapeCarrier && !backing.shapeCarrier;
+  if (missingLeafArrays || missingShapeCarrier) {
+    OpBuilder::InsertionGuard guard(bldr);
+    setDeferredPodArrayBackingInsertionPoint(readOp, bldr);
+
+    if (missingLeafArrays) {
+      backing.leafArrays.reserve(splitTypes.size());
+      for (Type splitType : splitTypes) {
+        backing.leafArrays.push_back(
+            createWritableArrayValue(bldr, loc, llvm::cast<ArrayType>(splitType))
+        );
+      }
+    }
+
+    if (missingShapeCarrier) {
+      backing.shapeCarrier = materializeArrayLengthCarrier(readOp.getResult(), arrTy, loc, bldr);
+    }
+  }
+
+  if (inserted || requireLeafArrays) {
+    assert(
+        backing.leafArrays.size() == splitTypes.size() &&
+        "cached split POD arrays must match the rewritten read arity"
+    );
+  }
+  return backing;
+}
+
 /// Rewrite deferred `array.len` on a POD-backed array field once virtual POD leaves are available.
 class ResolvePodReadBackedArrayLengthOp final : public OpConversionPattern<ArrayLengthOp> {
   const VirtualPodValueMap &virtualPods;
+  DeferredPodArrayBackingMap &deferredPodArrays;
 
 public:
-  ResolvePodReadBackedArrayLengthOp(MLIRContext *ctx, const VirtualPodValueMap &virtualPodMap)
-      : OpConversionPattern<ArrayLengthOp>(ctx), virtualPods(virtualPodMap) {}
+  ResolvePodReadBackedArrayLengthOp(
+      MLIRContext *ctx, const VirtualPodValueMap &virtualPodMap,
+      DeferredPodArrayBackingMap &deferredPodArrayMap
+  )
+      : OpConversionPattern<ArrayLengthOp>(ctx), virtualPods(virtualPodMap),
+        deferredPodArrays(deferredPodArrayMap) {}
 
   static bool legal(ArrayLengthOp op) { return !op->hasAttr(getDeferredPodArrayLengthAttrName()); }
 
@@ -2750,6 +2814,22 @@ public:
             }
           }
         }
+      }
+    }
+
+    if (!shapeSource) {
+      if (needsPodArrayShapeCarrier(arrTy) && isFreshUnwrittenPodRead(readOp)) {
+        shapeSource = materializeDeferredPodArrayBacking(
+                          readOp, arrTy, /*splitTypes=*/ArrayRef<Type> {}, deferredPodArrays,
+                          op.getLoc(), rewriter, /*requireLeafArrays=*/false,
+                          /*requireShapeCarrier=*/true
+        )
+                          .shapeCarrier;
+      } else if (auto it = deferredPodArrays.find(readOp.getResult());
+                 it != deferredPodArrays.end() && it->second.shapeCarrier) {
+        shapeSource = castValueToTypeIfNeeded(
+            rewriter, op.getLoc(), it->second.shapeCarrier, getPodArrayShapeCarrierType(arrTy)
+        );
       }
     }
 
@@ -3638,8 +3718,8 @@ static bool tryCollectReadPodSplitPodArrayLeafValues(
 /// Materialize or recover split leaf arrays for a dynamic array-of-POD produced by `pod.read`.
 static bool resolveReadPodSplitPodArrayLeafValues(
     ReadPodOp readOp, ArrayType arrTy, ArrayRef<RecordChain> splitIds, ArrayRef<Type> splitTypes,
-    const VirtualPodValueMap &virtualPods, DeferredPodArrayLeafMap &deferredPodArrays, Location loc,
-    OpBuilder &bldr, SmallVectorImpl<Value> &leafArrays
+    const VirtualPodValueMap &virtualPods, DeferredPodArrayBackingMap &deferredPodArrays,
+    Location loc, OpBuilder &bldr, SmallVectorImpl<Value> &leafArrays
 ) {
   if (tryCollectReadPodSplitPodArrayLeafValues(
           readOp, arrTy, splitIds, splitTypes, virtualPods, leafArrays
@@ -3652,27 +3732,12 @@ static bool resolveReadPodSplitPodArrayLeafValues(
   }
 
   // Reuse one synthetic split-array backing per deferred field read so repeated users of the same
-  // aggregate value continue to observe the same unwritten leaf storage.
-  auto [it, inserted] = deferredPodArrays.try_emplace(readOp.getResult());
-  leafArrays.assign(it->second.begin(), it->second.end());
-  if (inserted) {
-    OpBuilder::InsertionGuard guard(bldr);
-    if (Operation *loopOp = llzk::pod::detail::findNearestLoopCarriedPodAccess(readOp)) {
-      bldr.setInsertionPoint(loopOp);
-    } else {
-      bldr.setInsertionPointAfter(readOp);
-    }
-    leafArrays.reserve(splitTypes.size());
-    for (Type splitType : splitTypes) {
-      leafArrays.push_back(createWritableArrayValue(bldr, loc, llvm::cast<ArrayType>(splitType)));
-    }
-    it->second.assign(leafArrays.begin(), leafArrays.end());
-  } else {
-    assert(
-        leafArrays.size() == splitTypes.size() &&
-        "cached split POD arrays must match the rewritten read arity"
-    );
-  }
+  // aggregate value continue to observe the same unwritten leaf storage and shared shape witness.
+  DeferredPodArrayBacking &backing = materializeDeferredPodArrayBacking(
+      readOp, arrTy, splitTypes, deferredPodArrays, loc, bldr,
+      /*requireLeafArrays=*/true, /*requireShapeCarrier=*/true
+  );
+  leafArrays.assign(backing.leafArrays.begin(), backing.leafArrays.end());
 
   return true;
 }
@@ -3731,12 +3796,12 @@ static bool getDeferredSplitPodArrayCastInfo(
 /// rebuilds the element POD virtually instead of materializing the whole aggregate array first.
 class ResolvePodReadBackedArrayReadOp : public OpConversionPattern<ReadArrayOp> {
   VirtualPodValueMap &virtualPods;
-  DeferredPodArrayLeafMap &deferredPodArrays;
+  DeferredPodArrayBackingMap &deferredPodArrays;
 
 public:
   ResolvePodReadBackedArrayReadOp(
       MLIRContext *ctx, VirtualPodValueMap &virtualPodMap,
-      DeferredPodArrayLeafMap &deferredPodArrayMap
+      DeferredPodArrayBackingMap &deferredPodArrayMap
   )
       : OpConversionPattern<ReadArrayOp>(ctx), virtualPods(virtualPodMap),
         deferredPodArrays(deferredPodArrayMap) {}
@@ -3804,12 +3869,12 @@ public:
 /// arrays become available.
 class ResolveDeferredSplitPodArrayCastOp : public OpConversionPattern<UnrealizedConversionCastOp> {
   VirtualPodValueMap &virtualPods;
-  DeferredPodArrayLeafMap &deferredPodArrays;
+  DeferredPodArrayBackingMap &deferredPodArrays;
 
 public:
   ResolveDeferredSplitPodArrayCastOp(
       MLIRContext *ctx, VirtualPodValueMap &virtualPodMap,
-      DeferredPodArrayLeafMap &deferredPodArrayMap
+      DeferredPodArrayBackingMap &deferredPodArrayMap
   )
       : OpConversionPattern<UnrealizedConversionCastOp>(ctx), virtualPods(virtualPodMap),
         deferredPodArrays(deferredPodArrayMap) {}
@@ -3859,9 +3924,17 @@ public:
 
     SmallVector<Value> replacements(splitLeafArrays.begin(), splitLeafArrays.end());
     if (needsPodArrayShapeCarrier(arrTy)) {
-      replacements.push_back(
-          materializeArrayLengthCarrier(fieldRead.getResult(), arrTy, op.getLoc(), rewriter)
-      );
+      Value carrier;
+      if (auto it = deferredPodArrays.find(fieldRead.getResult());
+          it != deferredPodArrays.end() && it->second.shapeCarrier) {
+        carrier = castValueToTypeIfNeeded(
+            rewriter, op.getLoc(), it->second.shapeCarrier, getPodArrayShapeCarrierType(arrTy)
+        );
+      } else {
+        carrier =
+            materializeArrayLengthCarrier(fieldRead.getResult(), arrTy, op.getLoc(), rewriter);
+      }
+      replacements.push_back(carrier);
     }
     rewriter.replaceOp(op, replacements);
     eraseDeadDeferredFieldReadChain(fieldRead, rewriter);
@@ -3873,12 +3946,12 @@ public:
 class ResolveDeferredSplitPodArrayCastPrepass final
     : public OpRewritePattern<UnrealizedConversionCastOp> {
   VirtualPodValueMap &virtualPods;
-  DeferredPodArrayLeafMap &deferredPodArrays;
+  DeferredPodArrayBackingMap &deferredPodArrays;
 
 public:
   ResolveDeferredSplitPodArrayCastPrepass(
       MLIRContext *ctx, VirtualPodValueMap &virtualPodMap,
-      DeferredPodArrayLeafMap &deferredPodArrayMap
+      DeferredPodArrayBackingMap &deferredPodArrayMap
   )
       : OpRewritePattern<UnrealizedConversionCastOp>(ctx), virtualPods(virtualPodMap),
         deferredPodArrays(deferredPodArrayMap) {}
@@ -3907,9 +3980,17 @@ public:
 
     SmallVector<Value> replacements(splitLeafArrays.begin(), splitLeafArrays.end());
     if (needsPodArrayShapeCarrier(arrTy)) {
-      replacements.push_back(
-          materializeArrayLengthCarrier(fieldRead.getResult(), arrTy, op.getLoc(), rewriter)
-      );
+      Value carrier;
+      if (auto it = deferredPodArrays.find(fieldRead.getResult());
+          it != deferredPodArrays.end() && it->second.shapeCarrier) {
+        carrier = castValueToTypeIfNeeded(
+            rewriter, op.getLoc(), it->second.shapeCarrier, getPodArrayShapeCarrierType(arrTy)
+        );
+      } else {
+        carrier =
+            materializeArrayLengthCarrier(fieldRead.getResult(), arrTy, op.getLoc(), rewriter);
+      }
+      replacements.push_back(carrier);
     }
     rewriter.replaceOp(op, replacements);
     eraseDeadDeferredFieldReadChain(fieldRead, rewriter);
@@ -4114,7 +4195,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   MLIRContext *ctx = modOp.getContext();
   VirtualPodValueMap virtualPods;
   rehydrateVirtualPodPlaceholders(modOp, virtualPods);
-  DeferredPodArrayLeafMap deferredPodArrays;
+  DeferredPodArrayBackingMap deferredPodArrays;
 
   RewritePatternSet preConversionPatterns(ctx);
   preConversionPatterns.add<ResolveDeferredSplitPodArrayCastPrepass>(
@@ -4135,7 +4216,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
       ctx, symTables, memberRepMap, virtualPods
   );
   patterns.add<ResolvePodReadBackedArrayReadOp>(ctx, virtualPods, deferredPodArrays);
-  patterns.add<ResolvePodReadBackedArrayLengthOp>(ctx, virtualPods);
+  patterns.add<ResolvePodReadBackedArrayLengthOp>(ctx, virtualPods, deferredPodArrays);
   patterns.add<ResolveDeferredSplitPodArrayCastOp>(ctx, virtualPods, deferredPodArrays);
   patterns.add<ResolveVirtualPodWriteOp, ResolveVirtualPodReadOp>(ctx, virtualPods);
 
