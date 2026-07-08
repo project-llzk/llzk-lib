@@ -517,7 +517,7 @@ evaluateTemplateExprs(TemplateOp templateOp, DenseMap<Attribute, Attribute> &par
   );
 }
 
-namespace Step1A_InstantiateStructs {
+namespace Step1_InstantiateStructs {
 
 static inline bool tableOffsetIsntSymbol(MemberReadOp op) {
   return !llvm::isa_and_present<SymbolRefAttr>(op.getTableOffset().value_or(nullptr));
@@ -965,9 +965,34 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   return applyPartialConversion(modOp, target, std::move(patterns));
 }
 
-} // namespace Step1A_InstantiateStructs
+/// Create an instantiated clone of the struct type specified by the `MAIN_ATTR_NAME` attribute
+/// on `modOp`, if it exists, and update the attribute to refer to the new instantiated type.
+LogicalResult instantiateMainStruct(ModuleOp modOp, ConversionTracker &tracker) {
+  FailureOr<StructType> mainTypeOpt = getMainInstanceType(modOp);
+  if (failed(mainTypeOpt)) {
+    return failure();
+  }
 
-namespace Step1B_InstantiateFunctions {
+  StructType mainType = mainTypeOpt.value();
+  if (!mainType || isNullOrEmpty(mainType.getParams()) || tracker.getInstantiation(mainType)) {
+    return success();
+  }
+
+  StructCloner cloner(tracker, modOp);
+  FailureOr<StructType> cloneRes = cloner.createInstantiatedClone(mainType);
+  if (failed(cloneRes)) {
+    return failure();
+  }
+
+  StructType instantiatedMainType = cloneRes.value();
+  tracker.recordInstantiation(mainType, instantiatedMainType);
+  modOp->setAttr(MAIN_ATTR_NAME, TypeAttr::get(instantiatedMainType));
+  return success();
+}
+
+} // namespace Step1_InstantiateStructs
+
+namespace Step2_InstantiateFunctions {
 
 /// TypeConverter for function instantiation that replaces TypeVarType and symbolic
 /// ArrayType/StructType parameters with their concrete values determined by unification.
@@ -1696,9 +1721,9 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   return failure(failureListener.hadFailure);
 }
 
-} // namespace Step1B_InstantiateFunctions
+} // namespace Step2_InstantiateFunctions
 
-namespace Step2_Unroll {
+namespace Step3_Unroll {
 
 // TODO: not guaranteed to work with WhileOp, can try with our custom attributes though.
 template <HasInterface<LoopLikeOpInterface> OpClass>
@@ -1742,9 +1767,9 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
   return applyAndFoldGreedily(modOp, tracker, std::move(patterns));
 }
-} // namespace Step2_Unroll
+} // namespace Step3_Unroll
 
-namespace Step3_InstantiateAffineMaps {
+namespace Step4_InstantiateAffineMaps {
 
 // Adapted from `mlir::getConstantIntValues()` but that one failed in CI for an unknown reason. This
 // version uses a basic loop instead of llvm::map_to_vector().
@@ -1802,7 +1827,7 @@ struct AffineMapFolder {
             llvm::dbgs() << "[AffineMapFolder] currMapOps as fold results: "
                          << debug::toStringList(currMapOpsCast) << '\n'
         );
-        if (auto constOps = Step3_InstantiateAffineMaps::getConstantIntValues(currMapOpsCast)) {
+        if (auto constOps = Step4_InstantiateAffineMaps::getConstantIntValues(currMapOpsCast)) {
           SmallVector<Attribute> result;
           bool hasPoison = false; // indicates divide by 0 or mod by <1
           auto constAttrs = llvm::map_to_vector(*constOps, [&rewriter](int64_t v) -> Attribute {
@@ -2077,9 +2102,9 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   return applyAndFoldGreedily(modOp, tracker, std::move(patterns));
 }
 
-} // namespace Step3_InstantiateAffineMaps
+} // namespace Step4_InstantiateAffineMaps
 
-namespace Step4_PropagateTypes {
+namespace Step5_PropagateTypes {
 
 /// Update the array element type by looking at the values stored into it from uses.
 class UpdateNewArrayElemFromWrite final : public OpRewritePattern<CreateArrayOp> {
@@ -2462,9 +2487,9 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
   return applyAndFoldGreedily(modOp, tracker, std::move(patterns));
 }
-} // namespace Step4_PropagateTypes
+} // namespace Step5_PropagateTypes
 
-namespace Step5_Cleanup {
+namespace Step6_Cleanup {
 
 class CleanupBase {
 public:
@@ -2746,7 +2771,7 @@ private:
   }
 };
 
-} // namespace Step5_Cleanup
+} // namespace Step6_Cleanup
 
 class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
   using Base = FlatteningPassBase<PassImpl>;
@@ -2797,6 +2822,11 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
     }
 
     ConversionTracker tracker;
+    if (failed(Step1_InstantiateStructs::instantiateMainStruct(modOp, tracker))) {
+      llvm::errs() << DEBUG_TYPE << " failed while instantiating the main struct\n";
+      return failure();
+    }
+
     unsigned loopCount = 0;
     do {
       ++loopCount;
@@ -2814,12 +2844,12 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
       // Find calls to "compute()" that return a parameterized struct type and replace it to call an
       // instantiated version of the struct that has parameters replaced with the constant values.
       // Create the necessary instantiated/flattened struct in the same location as the original.
-      if (failed(Step1A_InstantiateStructs::run(modOp, tracker))) {
+      if (failed(Step1_InstantiateStructs::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while instantiating structs in templates\n";
         return failure();
       }
       // Instantiate calls to templated functions.
-      if (failed(Step1B_InstantiateFunctions::run(modOp, tracker))) {
+      if (failed(Step2_InstantiateFunctions::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while instantiating functions in templates\n";
         return failure();
       }
@@ -2829,7 +2859,7 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
                      << ")] Running step 2: loop unrolling\n";
       });
       // Unroll loops with known iterations.
-      if (failed(Step2_Unroll::run(modOp, tracker))) {
+      if (failed(Step3_Unroll::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while unrolling loops\n";
         return failure();
       }
@@ -2839,7 +2869,7 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
                      << ")] Running step 3: affine maps instantiation\n";
       });
       // Instantiate affine_map parameters of StructType and ArrayType.
-      if (failed(Step3_InstantiateAffineMaps::run(modOp, tracker))) {
+      if (failed(Step4_InstantiateAffineMaps::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while instantiating `affine_map` parameters\n";
         return failure();
       }
@@ -2849,7 +2879,7 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
                      << ")] Running step 4: type propagation\n";
       });
       // Propagate updated types using the semantics of various ops.
-      if (failed(Step4_PropagateTypes::run(modOp, tracker))) {
+      if (failed(Step5_PropagateTypes::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while propagating instantiated types\n";
         return failure();
       }
@@ -2907,7 +2937,7 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
     // "top root" and they also do not indicate a root module so there could be ambiguity. This is a
     // broader problem in the FlatteningPass itself so let's just assume, for now, that these are
     // paths from the "top root". See [LLZK-286].
-    Step5_Cleanup::FromEraseSet cleaner(
+    Step6_Cleanup::FromEraseSet cleaner(
         rootMod, getAnalysis<SymbolDefTree>(), getAnalysis<SymbolUseGraph>(),
         tracker.getInstantiatedDefinitionNames()
     );
@@ -2939,20 +2969,20 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
   LogicalResult eraseUnreachableFromConcreteDefinitions(ModuleOp rootMod) {
     SmallVector<SymbolOpInterface> roots;
     rootMod.walk([&roots](Operation *op) {
-      if (Step5_Cleanup::FromKeepSet::isErasableDefinition(op) &&
-          !Step5_Cleanup::FromKeepSet::hasTemplateSymbolBindings(op)) {
+      if (Step6_Cleanup::FromKeepSet::isErasableDefinition(op) &&
+          !Step6_Cleanup::FromKeepSet::hasTemplateSymbolBindings(op)) {
         roots.push_back(llvm::cast<SymbolOpInterface>(op));
       }
     });
 
-    Step5_Cleanup::FromKeepSet cleaner(
+    Step6_Cleanup::FromKeepSet cleaner(
         rootMod, getAnalysis<SymbolDefTree>(), getAnalysis<SymbolUseGraph>()
     );
     return cleaner.eraseUnreachableFrom(roots);
   }
 
   LogicalResult eraseUnreachableFromMainStruct(ModuleOp rootMod, bool emitWarning = true) {
-    Step5_Cleanup::FromKeepSet cleaner(
+    Step6_Cleanup::FromKeepSet cleaner(
         rootMod, getAnalysis<SymbolDefTree>(), getAnalysis<SymbolUseGraph>()
     );
     FailureOr<SymbolLookupResult<StructDefOp>> mainOpt =
