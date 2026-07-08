@@ -135,4 +135,30 @@ TEST_F(LoweringUtilsTests, IgnoresLoopLocalFreshArrayFieldRead) {
   EXPECT_EQ(llzk::pod::detail::findNearestLoopCarriedPodAccess(readOp), nullptr);
 }
 
+TEST_F(LoweringUtilsTests, AppendValuesWithExactTypesDoesNotLeakPartialMatches) {
+  OpBuilder builder(&ctx);
+  OwningOpRef<ModuleOp> module = ModuleOp::create(loc);
+  builder.setInsertionPointToStart(module->getBody());
+
+  auto funcType = builder.getFunctionType(TypeRange {}, TypeRange {});
+  auto func = builder.create<function::FuncDefOp>(loc, "test", funcType);
+  Block *entryBlock = func.addEntryBlock();
+  entryBlock->addArguments(
+      {builder.getIndexType(), builder.getI1Type(), builder.getIndexType()},
+      SmallVector<Location>(3, loc)
+  );
+  builder.setInsertionPointToEnd(entryBlock);
+  builder.create<function::ReturnOp>(loc);
+
+  SmallVector<Value> candidateValues {entryBlock->getArgument(0), entryBlock->getArgument(1)};
+  SmallVector<Type> expectedTypes {builder.getIndexType(), builder.getIndexType()};
+  SmallVector<Value> collectedValues {entryBlock->getArgument(2)};
+
+  EXPECT_FALSE(llzk::pod::detail::appendValuesWithExactTypes(
+      candidateValues, expectedTypes, collectedValues
+  ));
+  ASSERT_EQ(collectedValues.size(), 1u);
+  EXPECT_EQ(collectedValues.front(), entryBlock->getArgument(2));
+}
+
 } // namespace

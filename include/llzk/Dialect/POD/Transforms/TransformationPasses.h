@@ -13,8 +13,11 @@
 #include "llzk/Pass/PassBase.h"
 #include "llzk/Util/Walk.h"
 
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/SmallVector.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/Operation.h>
+#include <mlir/IR/ValueRange.h>
 
 namespace llzk::pod {
 
@@ -50,6 +53,31 @@ inline mlir::Operation *findNearestLoopCarriedPodAccess(ReadPodOp readOp) {
     }
   }
   return nullptr;
+}
+
+/// Append `values` only when every entry exactly matches the corresponding expected type.
+///
+/// On failure, `output` is left unchanged. POD-to-scalar uses this to avoid leaking partially
+/// collected split-array state into later fallback paths.
+inline bool appendValuesWithExactTypes(
+    mlir::ValueRange values, mlir::TypeRange expectedTypes,
+    llvm::SmallVectorImpl<mlir::Value> &output
+) {
+  if (values.size() != expectedTypes.size()) {
+    return false;
+  }
+
+  llvm::SmallVector<mlir::Value> stagedValues;
+  stagedValues.reserve(values.size());
+  for (auto [value, expectedType] : llvm::zip_equal(values, expectedTypes)) {
+    if (value.getType() != expectedType) {
+      return false;
+    }
+    stagedValues.push_back(value);
+  }
+
+  llvm::append_range(output, stagedValues);
+  return true;
 }
 
 } // namespace detail

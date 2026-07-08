@@ -993,14 +993,9 @@ static bool tryCollectDirectConvertedPodArrayValues(
       return false;
     }
 
-    convertedValues.reserve(convertedTypes.size());
-    for (auto [operand, convertedType] : llvm::zip_equal(cast.getOperands(), convertedTypes)) {
-      if (operand.getType() != convertedType) {
-        return false;
-      }
-      convertedValues.push_back(operand);
-    }
-    return true;
+    return llzk::pod::detail::appendValuesWithExactTypes(
+        cast.getOperands(), convertedTypes, convertedValues
+    );
   }
 
   if (ReadPodOp readOp = arrayValue.getDefiningOp<ReadPodOp>()) {
@@ -3681,14 +3676,9 @@ static bool tryCollectMaterializedSplitPodArrayLeafValues(
     return false;
   }
 
-  for (auto [operand, splitType] :
-       llvm::zip_equal(cast.getOperands().take_front(splitTypes.size()), splitTypes)) {
-    if (operand.getType() != splitType) {
-      return false;
-    }
-    leafArrays.push_back(operand);
-  }
-  return true;
+  return llzk::pod::detail::appendValuesWithExactTypes(
+      cast.getOperands().take_front(splitTypes.size()), splitTypes, leafArrays
+  );
 }
 
 /// Collect precise split leaf arrays for an array-of-POD value backed by a direct `pod.read`.
@@ -3711,15 +3701,17 @@ static bool tryCollectReadPodSplitPodArrayLeafValues(
       return false;
     }
 
-    leafArrays.reserve(splitIds.size());
+    SmallVector<Value> stagedLeafArrays;
+    stagedLeafArrays.reserve(splitIds.size());
     for (const RecordChain &id : splitIds) {
       auto it = podLeafValues->find(concatRecordChain({sourceRead.getRecordNameAttr()}, id));
       if (it == podLeafValues->end() ||
           !typesUnify(it->second.getType(), getFlattenedTypeAlongPath(arrTy, id))) {
         return false;
       }
-      leafArrays.push_back(it->second);
+      stagedLeafArrays.push_back(it->second);
     }
+    llvm::append_range(leafArrays, stagedLeafArrays);
     return true;
   };
 
