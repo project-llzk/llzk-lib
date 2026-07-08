@@ -28,10 +28,25 @@ import multiprocessing
 import os
 import subprocess
 import time
+from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Tuple
+from typing import List
 
-Task = Tuple[str, List[str], Path, Path, float]
+@dataclass(frozen=True)
+class Task:
+    name: str
+    args: list[str]
+    input_path: Path
+    output_path: Path
+    timeout: float
+
+    @property
+    def stdout_path(self) -> Path:
+        return self.output_path.parent / f"{self.input_path.stem}.llzk-opt.stdout.txt"
+
+    @property
+    def stderr_path(self) -> Path:
+        return self.output_path.parent / f"{self.input_path.stem}.llzk-opt.stderr.txt"
 
 def get_pass_args(lvl: int) -> List[str]:
     """Return llzk-opt pass arguments for the selected lowering level."""
@@ -52,50 +67,41 @@ def get_llzk_inputs(llzk_files_dir: Path) -> List[Path]:
 
     return sorted(path for path in llzk_files_dir.rglob("*.llzk") if path.is_file())
 
-def _run_task_unpack(packed: Task):
-    return run_task(*packed)
-
-def run_task(
-    benchmark_name: str,
-    args: List[str],
-    stdout_path: Path,
-    stderr_path: Path,
-    timeout: float,
-):
+def run_task(task: Task):
     start = time.perf_counter()
 
     try:
         proc = subprocess.run(
-            args,
+            task.args,
             capture_output=True,
             text=True,
-            timeout=timeout,
+            timeout=task.timeout,
         )
         elapsed = time.perf_counter() - start
 
-        stdout_path.write_text(proc.stdout, encoding="utf-8")
-        stderr_path.write_text(proc.stderr, encoding="utf-8")
+        task.stdout_path.write_text(proc.stdout, encoding="utf-8")
+        task.stderr_path.write_text(proc.stderr, encoding="utf-8")
 
         if proc.returncode == 0:
             return (
-                benchmark_name,
+                task.name,
                 "success",
                 f"{elapsed:.6f}",
                 proc.returncode,
                 "",
-                str(stdout_path),
-                str(stderr_path),
+                str(task.stdout_path),
+                str(task.stderr_path),
             )
 
         error_message = proc.stderr.strip()[:400]
         return (
-            benchmark_name,
+            task.name,
             "error",
             f"{elapsed:.6f}",
             proc.returncode,
             error_message,
-            str(stdout_path),
-            str(stderr_path),
+            str(task.stdout_path),
+            str(task.stderr_path),
         )
 
     except subprocess.TimeoutExpired as exc:
@@ -109,17 +115,17 @@ def run_task(
         if isinstance(stderr, bytes):
             stderr = stderr.decode("utf-8", errors="replace")
 
-        stdout_path.write_text(stdout, encoding="utf-8")
-        stderr_path.write_text(stderr, encoding="utf-8")
+        task.stdout_path.write_text(stdout, encoding="utf-8")
+        task.stderr_path.write_text(stderr, encoding="utf-8")
 
         return (
-            benchmark_name,
+            task.name,
             "timeout",
             f"{elapsed:.6f}",
             "",
             "timeout",
-            str(stdout_path),
-            str(stderr_path),
+            str(task.stdout_path),
+            str(task.stderr_path),
         )
 
 def run_llzk_lowering(
@@ -148,9 +154,6 @@ def run_llzk_lowering(
         name = llzk_file.stem
 
         output_path = subdir / f"{name}.lowered.llzk"
-        stdout_path = subdir / f"{name}.llzk-opt.stdout.txt"
-        stderr_path = subdir / f"{name}.llzk-opt.stderr.txt"
-
         args = [
             str(llzk_opt_bin),
             *pass_args,
@@ -159,12 +162,20 @@ def run_llzk_lowering(
             str(llzk_file),
         ]
 
-        task_args.append((benchmark_name, args, stdout_path, stderr_path, timeout))
+        task_args.append(
+            Task(
+                name=benchmark_name,
+                args=args,
+                input_path=llzk_file,
+                output_path=output_path,
+                timeout=timeout,
+            )
+        )
 
     if nthreads == 1:
-        for benchmark_name, args, stdout_path, stderr_path, _ in task_args:
-            print(f"Running {benchmark_name}")
-            result = run_task(benchmark_name, args, stdout_path, stderr_path, timeout)
+        for task in task_args:
+            print(f"Running {task.name}")
+            result = run_task(task)
             results.append(result)
             print(f"Exit condition: {result[1]}")
     else:
@@ -173,7 +184,7 @@ def run_llzk_lowering(
         next_milestone = 10
 
         with multiprocessing.Pool(nthreads) as pool:
-            for i, result in enumerate(pool.imap_unordered(_run_task_unpack, task_args), start=1):
+            for i, result in enumerate(pool.imap_unordered(run_task, task_args), start=1):
                 results.append(result)
 
                 pct = i * 100 // total
