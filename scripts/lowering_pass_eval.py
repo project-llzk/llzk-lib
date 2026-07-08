@@ -15,6 +15,7 @@
 #       [--lvl {1,2,3,4,5,6}] \
 #       [--llzk-opt-bin PATH] \
 #       [--timeout SECONDS] \
+#       [--error-message-size N] \
 #       [--nthreads N] \
 #       [--output-csv PATH]
 #
@@ -39,6 +40,7 @@ class Task:
     input_path: Path
     output_path: Path
     timeout: float
+    error_message_size: int
 
     @property
     def stdout_path(self) -> Path:
@@ -93,7 +95,7 @@ def run_task(task: Task):
                 str(task.stderr_path),
             )
 
-        error_message = proc.stderr.strip()[:400]
+        error_message = proc.stderr.strip()[: task.error_message_size]
         return (
             task.name,
             "error",
@@ -135,6 +137,7 @@ def run_llzk_lowering(
     dest_dir: Path,
     lvl: int,
     timeout: float,
+    error_message_size: int,
     nthreads: int,
     output_csv: Path,
 ):
@@ -169,6 +172,7 @@ def run_llzk_lowering(
                 input_path=llzk_file,
                 output_path=output_path,
                 timeout=timeout,
+                error_message_size=error_message_size,
             )
         )
 
@@ -255,6 +259,12 @@ if __name__ == "__main__":
         help="Per-file timeout in seconds.",
     )
     parser.add_argument(
+        "--error-message-size",
+        type=int,
+        default=400,
+        help="Maximum number of stderr characters to include in the CSV error message field.",
+    )
+    parser.add_argument(
         "--nthreads",
         type=int,
         default=multiprocessing.cpu_count(),
@@ -289,6 +299,7 @@ if __name__ == "__main__":
         dest_dir=args.dest_dir,
         lvl=args.lvl,
         timeout=args.timeout,
+        error_message_size=args.error_message_size,
         nthreads=args.nthreads,
         output_csv=args.output_csv,
     )
