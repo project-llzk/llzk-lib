@@ -50,6 +50,29 @@ class Task:
     def stderr_path(self) -> Path:
         return self.output_path.parent / f"{self.input_path.stem}.llzk-opt.stderr.txt"
 
+@dataclass(frozen=True)
+class TaskResult:
+    """Captured result for one llzk-opt lowering task."""
+
+    benchmark: str
+    status: str
+    time_seconds: float
+    return_code: int | None
+    error_message: str
+    stdout_path: Path
+    stderr_path: Path
+
+    def as_csv_row(self) -> list[str | int]:
+        return [
+            self.benchmark,
+            self.status,
+            f"{self.time_seconds:.6f}",
+            "" if self.return_code is None else self.return_code,
+            self.error_message,
+            str(self.stdout_path),
+            str(self.stderr_path),
+        ]
+
 def get_pass_args(lvl: int) -> List[str]:
     """Return llzk-opt pass arguments for the selected lowering level."""
     pass_by_level = {
@@ -69,7 +92,7 @@ def get_llzk_inputs(llzk_files_dir: Path) -> List[Path]:
 
     return sorted(path for path in llzk_files_dir.rglob("*.llzk") if path.is_file())
 
-def run_task(task: Task):
+def run_task(task: Task) -> TaskResult:
     start = time.perf_counter()
 
     try:
@@ -85,25 +108,25 @@ def run_task(task: Task):
         task.stderr_path.write_text(proc.stderr, encoding="utf-8")
 
         if proc.returncode == 0:
-            return (
-                task.name,
-                "success",
-                f"{elapsed:.6f}",
-                proc.returncode,
-                "",
-                str(task.stdout_path),
-                str(task.stderr_path),
+            return TaskResult(
+                benchmark=task.name,
+                status="success",
+                time_seconds=elapsed,
+                return_code=proc.returncode,
+                error_message="",
+                stdout_path=task.stdout_path,
+                stderr_path=task.stderr_path,
             )
 
         error_message = proc.stderr.strip()[: task.error_message_size]
-        return (
-            task.name,
-            "error",
-            f"{elapsed:.6f}",
-            proc.returncode,
-            error_message,
-            str(task.stdout_path),
-            str(task.stderr_path),
+        return TaskResult(
+            benchmark=task.name,
+            status="error",
+            time_seconds=elapsed,
+            return_code=proc.returncode,
+            error_message=error_message,
+            stdout_path=task.stdout_path,
+            stderr_path=task.stderr_path,
         )
 
     except subprocess.TimeoutExpired as exc:
@@ -120,14 +143,14 @@ def run_task(task: Task):
         task.stdout_path.write_text(stdout, encoding="utf-8")
         task.stderr_path.write_text(stderr, encoding="utf-8")
 
-        return (
-            task.name,
-            "timeout",
-            f"{elapsed:.6f}",
-            "",
-            "timeout",
-            str(task.stdout_path),
-            str(task.stderr_path),
+        return TaskResult(
+            benchmark=task.name,
+            status="timeout",
+            time_seconds=elapsed,
+            return_code=None,
+            error_message="timeout",
+            stdout_path=task.stdout_path,
+            stderr_path=task.stderr_path,
         )
 
 def run_llzk_lowering(
@@ -141,7 +164,7 @@ def run_llzk_lowering(
     nthreads: int,
     output_csv: Path,
 ):
-    results = []
+    results: list[TaskResult] = []
     success_cnt = 0
     error_cnt = 0
     timeout_cnt = 0
@@ -181,7 +204,7 @@ def run_llzk_lowering(
             print(f"Running {task.name}")
             result = run_task(task)
             results.append(result)
-            print(f"Exit condition: {result[1]}")
+            print(f"Exit condition: {result.status}")
     else:
         total = len(task_args)
         print(f"Launching {total} llzk-opt tasks.")
@@ -196,12 +219,12 @@ def run_llzk_lowering(
                     print(f"Progress: {i}/{total} ({pct}%) complete")
                     next_milestone += 10
 
-    results.sort()
+    results.sort(key=lambda result: result.benchmark)
 
-    for _, cause, _, _, _, _, _ in results:
-        success_cnt += 1 if cause == "success" else 0
-        error_cnt += 1 if cause == "error" else 0
-        timeout_cnt += 1 if cause == "timeout" else 0
+    for result in results:
+        success_cnt += 1 if result.status == "success" else 0
+        error_cnt += 1 if result.status == "error" else 0
+        timeout_cnt += 1 if result.status == "timeout" else 0
 
     output_csv.parent.mkdir(parents=True, exist_ok=True)
     with output_csv.open("w", encoding="utf-8", newline="") as handle:
@@ -217,7 +240,7 @@ def run_llzk_lowering(
                 "Stderr Path",
             ]
         )
-        writer.writerows(results)
+        writer.writerows(result.as_csv_row() for result in results)
 
     print(f"success: {success_cnt}, errored: {error_cnt}, timeout: {timeout_cnt}")
     return output_csv
