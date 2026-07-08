@@ -86,7 +86,48 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %[[LT_LEN:[0-9a-zA-Z_\.]+]] = arith.cmpi slt, %[[IDX]], %[[LEN]] : index
 // CHECK-NEXT:      constrain.eq %[[LT_LEN]], %[[TRUE]] : i1, i1
 // CHECK-NEXT:      %[[SEL_SHAPE:[0-9a-zA-Z_\.]+]] = array.extract %[[ARR_SHAPE]]{{\[}}%[[IDX]]] : <2,3 x none>
-// CHECK-NEXT:      constrain.eq %[[SEL_SHAPE]], %[[SUB_SHAPE]] : !array.type<3 x none>, !array.type<3 x none>
+// CHECK-NEXT:      %[[SEL_DIM0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[SEL_LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SEL_SHAPE]], %[[SEL_DIM0]] : <3 x none>
+// CHECK-NEXT:      %[[RHS_LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SUB_SHAPE]], %[[SEL_DIM0]] : <3 x none>
+// CHECK-NEXT:      constrain.eq %[[SEL_LEN]], %[[RHS_LEN]] : index, index
+// CHECK-NEXT:      %[[SEL_SHAPE_EQ:[0-9a-zA-Z_\.]+]] = array.extract %[[ARR_SHAPE]]{{\[}}%[[IDX]]] : <2,3 x none>
+// CHECK-NEXT:      constrain.eq %[[SEL_SHAPE_EQ]], %[[SUB_SHAPE]] : !array.type<3 x none>, !array.type<3 x none>
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+!Empty = !pod.type<[]>
+module attributes {llzk.lang} {
+  function.def @contains_dynamic_empty_subarray(
+      %arr: !array.type<2,? x !Empty>, %sub: !array.type<? x !Empty>
+  ) attributes {function.allow_constraint} {
+    constrain.in %arr, %sub : !array.type<2,? x !Empty>, !array.type<? x !Empty>
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @contains_dynamic_empty_subarray(
+// CHECK-SAME:    %[[ARR_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<2,? x none>,
+// CHECK-SAME:    %[[SUB_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<? x none>
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[TRUE:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      %[[IDX:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
+// CHECK-NEXT:      %[[DIM0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_SHAPE]], %[[DIM0]] : <2,? x none>
+// CHECK-NEXT:      %[[GE0:[0-9a-zA-Z_\.]+]] = arith.cmpi sge, %[[IDX]], %[[C0]] : index
+// CHECK-NEXT:      constrain.eq %[[GE0]], %[[TRUE]] : i1, i1
+// CHECK-NEXT:      %[[LT_LEN:[0-9a-zA-Z_\.]+]] = arith.cmpi slt, %[[IDX]], %[[LEN]] : index
+// CHECK-NEXT:      constrain.eq %[[LT_LEN]], %[[TRUE]] : i1, i1
+// CHECK-NEXT:      %[[SEL_SHAPE:[0-9a-zA-Z_\.]+]] = array.extract %[[ARR_SHAPE]]{{\[}}%[[IDX]]] : <2,? x none>
+// CHECK-NEXT:      %[[SEL_DIM0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[SEL_LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SEL_SHAPE]], %[[SEL_DIM0]] : <? x none>
+// CHECK-NEXT:      %[[RHS_LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SUB_SHAPE]], %[[SEL_DIM0]] : <? x none>
+// CHECK-NEXT:      constrain.eq %[[SEL_LEN]], %[[RHS_LEN]] : index, index
+// CHECK-NEXT:      %[[SEL_SHAPE_EQ:[0-9a-zA-Z_\.]+]] = array.extract %[[ARR_SHAPE]]{{\[}}%[[IDX]]] : <2,? x none>
+// CHECK-NEXT:      constrain.eq %[[SEL_SHAPE_EQ]], %[[SUB_SHAPE]] : !array.type<? x none>, !array.type<? x none>
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

@@ -2486,7 +2486,8 @@ public:
 /// 4. Using that same index tuple for every leaf, reading a scalar leaf with `array.read` or
 ///    extracting an array leaf with `array.extract`.
 /// 5. When the rhs is a subarray and either side needs an explicit shape witness, constraining
-///    every visible dimension length of the selected lhs subarray to match the rhs shape.
+///    every visible dimension length of the selected lhs subarray to match the rhs shape, even
+///    when the POD contributes no payload leaves.
 /// 6. Emitting one `constrain.eq` per selected lhs leaf and rhs leaf or, when the POD has no
 ///    payload leaves, equating the selected shape carrier with the rhs shape carrier before
 ///    erasing the original `constrain.in`.
@@ -2604,7 +2605,7 @@ public:
                                            getTrailingArrayShapeCarrierIfPresent(adaptor.getLhs()));
     bool rhsNeedsShapeCheck = rhsArrTy && (needsPodArrayShapeCarrier(rhsArrTy) ||
                                            getTrailingArrayShapeCarrierIfPresent(adaptor.getRhs()));
-    if (rhsArrTy && !lhsLeaves.empty() && (lhsNeedsShapeCheck || rhsNeedsShapeCheck)) {
+    if (rhsArrTy && (lhsNeedsShapeCheck || rhsNeedsShapeCheck)) {
       Value rhsShapeSource = getShapeSource(rhsArrTy, op.getRhs(), adaptor.getRhs());
       Value selectedShapeSource = selectedIndices.empty()
                                       ? shapeCarrier
