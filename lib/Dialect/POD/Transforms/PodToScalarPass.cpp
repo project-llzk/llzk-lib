@@ -131,12 +131,16 @@ namespace {
 /// Path of nested POD record names from the original member to a scalar leaf record.
 struct RecordChain {
   SmallVector<StringAttr> nameList;
+  bool syntheticShapeCarrier = false;
 
   RecordChain() = default;
 
-  explicit RecordChain(ArrayRef<StringAttr> names) : nameList(names.begin(), names.end()) {}
+  explicit RecordChain(ArrayRef<StringAttr> names, bool syntheticShape = false)
+      : nameList(names.begin(), names.end()), syntheticShapeCarrier(syntheticShape) {}
 
-  bool operator==(const RecordChain &other) const { return nameList == other.nameList; }
+  bool operator==(const RecordChain &other) const {
+    return syntheticShapeCarrier == other.syntheticShapeCarrier && nameList == other.nameList;
+  }
 };
 
 } // namespace
@@ -152,7 +156,10 @@ template <> struct DenseMapInfo<RecordChain> {
   }
 
   static unsigned getHashValue(const RecordChain &chain) {
-    return llvm::hash_combine_range(chain.nameList.begin(), chain.nameList.end());
+    return llvm::hash_combine(
+        llvm::hash_combine_range(chain.nameList.begin(), chain.nameList.end()),
+        chain.syntheticShapeCarrier
+    );
   }
 
   static bool isEqual(const RecordChain &lhs, const RecordChain &rhs) { return lhs == rhs; }
@@ -298,13 +305,32 @@ inline static StringAttr getPodArrayShapeCarrierMarker(MLIRContext *ctx) {
 }
 
 /// Return `true` iff `recordName` is the nested array shape-carrier marker.
-inline static bool isPodArrayShapeCarrierMarker(StringAttr recordName) {
+[[maybe_unused]] inline static bool isPodArrayShapeCarrierMarker(StringAttr recordName) {
   return recordName && recordName == getPodArrayShapeCarrierMarker(recordName.getContext());
 }
 
 /// Return the printable record-chain component name.
-inline static StringRef getRecordChainComponentName(StringAttr recordName) {
-  return isPodArrayShapeCarrierMarker(recordName) ? StringRef("shape") : recordName.getValue();
+inline static StringRef
+getRecordChainComponentName(StringAttr recordName, bool syntheticShapeCarrierComponent = false) {
+  return syntheticShapeCarrierComponent ? StringRef("shape") : recordName.getValue();
+}
+
+/// Return the printable component name at `componentIndex` within `recordChain`.
+inline static StringRef
+getRecordChainComponentName(const RecordChain &recordChain, size_t componentIndex) {
+  assert(componentIndex < recordChain.nameList.size() && "component index must be in range");
+  return getRecordChainComponentName(
+      recordChain.nameList[componentIndex],
+      recordChain.syntheticShapeCarrier && componentIndex + 1 == recordChain.nameList.size()
+  );
+}
+
+/// Concatenate a POD record prefix with a flattened leaf suffix while preserving synthetic tags.
+inline static RecordChain
+concatRecordChain(ArrayRef<StringAttr> prefix, const RecordChain &suffix) {
+  SmallVector<StringAttr> fullChain(prefix.begin(), prefix.end());
+  llvm::append_range(fullChain, suffix.nameList);
+  return RecordChain(fullChain, suffix.syntheticShapeCarrier);
 }
 
 /// Return the attribute name that marks a step-2-deferred POD-backed `array.len`.
@@ -402,7 +428,7 @@ static void collectConvertedPodArrayRecordInfos(
 ) {
   splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
   if (needsPodArrayShapeCarrier(arrTy)) {
-    splitIds.push_back(RecordChain({getPodArrayShapeCarrierMarker(arrTy.getContext())}));
+    splitIds.push_back(RecordChain({getPodArrayShapeCarrierMarker(arrTy.getContext())}, true));
     splitTypes.push_back(getPodArrayShapeCarrierType(arrTy));
   }
 }
@@ -416,7 +442,8 @@ static Value peelUnifiableCasts(Value value) {
 }
 
 /// Return the flattened leaf type addressed by `recordChain` within `type`.
-static Type getFlattenedTypeAlongPath(Type type, ArrayRef<StringAttr> recordChain) {
+static Type
+getFlattenedTypeAlongPath(Type type, ArrayRef<StringAttr> recordChain, bool syntheticShapeCarrier) {
   if (recordChain.empty()) {
     return type;
   }
@@ -424,11 +451,15 @@ static Type getFlattenedTypeAlongPath(Type type, ArrayRef<StringAttr> recordChai
   if (PodType podTy = dyn_cast<PodType>(type)) {
     Type nextType = podTy.getRecordMap().lookup(recordChain.front().getValue());
     assert(nextType && "record path must exist in the containing POD");
-    return getFlattenedTypeAlongPath(nextType, recordChain.drop_front());
+    return getFlattenedTypeAlongPath(nextType, recordChain.drop_front(), syntheticShapeCarrier);
   }
 
   if (ArrayType arrTy = splittablePodArray(type)) {
-    if (recordChain.size() == 1 && isPodArrayShapeCarrierMarker(recordChain.front())) {
+    if (syntheticShapeCarrier && recordChain.size() == 1) {
+      assert(
+          isPodArrayShapeCarrierMarker(recordChain.front()) &&
+          "synthetic shape carrier must use the reserved shape marker"
+      );
       assert(needsPodArrayShapeCarrier(arrTy) && "shape marker requires an explicit array carrier");
       return getPodArrayShapeCarrierType(arrTy);
     }
@@ -437,11 +468,23 @@ static Type getFlattenedTypeAlongPath(Type type, ArrayRef<StringAttr> recordChai
     Type nextType = elemPodTy.getRecordMap().lookup(recordChain.front().getValue());
     assert(nextType && "record path must exist in the POD array element type");
     return flattenArrayElementType(
-        arrTy, getFlattenedTypeAlongPath(nextType, recordChain.drop_front())
+        arrTy, getFlattenedTypeAlongPath(nextType, recordChain.drop_front(), syntheticShapeCarrier)
     );
   }
 
   llvm_unreachable("record path cannot continue through a non-POD leaf");
+}
+
+/// Return the flattened leaf type addressed by `recordChain` within `type`.
+inline static Type getFlattenedTypeAlongPath(Type type, ArrayRef<StringAttr> recordChain) {
+  return getFlattenedTypeAlongPath(type, recordChain, false);
+}
+
+/// Return the flattened leaf type addressed by `recordChain` within `type`.
+inline static Type getFlattenedTypeAlongPath(Type type, const RecordChain &recordChain) {
+  return getFlattenedTypeAlongPath(
+      type, ArrayRef(recordChain.nameList), recordChain.syntheticShapeCarrier
+  );
 }
 
 /// Visit each flattened POD leaf in `podTy`, including nested array shape-carrier leaves.
@@ -463,7 +506,7 @@ static void forEachPodLeaf(PodType podTy, SmallVectorImpl<StringAttr> &recordCha
       }
       if (needsPodArrayShapeCarrier(arrTy)) {
         recordChain.push_back(getPodArrayShapeCarrierMarker(arrTy.getContext()));
-        callback(RecordChain(recordChain), getPodArrayShapeCarrierType(arrTy));
+        callback(RecordChain(recordChain, true), getPodArrayShapeCarrierType(arrTy));
         recordChain.pop_back();
       }
     } else {
@@ -590,8 +633,8 @@ static SmallVector<std::string> getSplitPodArrayRecordNameSuffixes(Type type) {
     for (const RecordChain &id : splitIds) {
       std::string suffix;
       llvm::raw_string_ostream os(suffix);
-      for (StringAttr recordName : id.nameList) {
-        os << '.' << getRecordChainComponentName(recordName);
+      for (size_t i = 0; i < id.nameList.size(); ++i) {
+        os << '.' << getRecordChainComponentName(id, i);
       }
       suffixes.push_back(std::move(suffix));
     }
@@ -1064,8 +1107,10 @@ static bool isFreshUnwrittenPodArrayRead(Value value) {
 }
 
 /// Read one flattened POD leaf, including leaves that live inside an array-of-POD record.
-static Value
-genReadAlongPath(OpBuilder &bldr, Location loc, Value value, ArrayRef<StringAttr> recordChain) {
+static Value genReadAlongPath(
+    OpBuilder &bldr, Location loc, Value value, ArrayRef<StringAttr> recordChain,
+    bool syntheticShapeCarrier
+) {
   if (recordChain.empty()) {
     return value;
   }
@@ -1073,18 +1118,18 @@ genReadAlongPath(OpBuilder &bldr, Location loc, Value value, ArrayRef<StringAttr
   Type valueType = value.getType();
   if (llvm::isa<PodType>(valueType)) {
     Value nextValue = genRead(bldr, loc, value, recordChain.front());
-    return genReadAlongPath(bldr, loc, nextValue, recordChain.drop_front());
+    return genReadAlongPath(bldr, loc, nextValue, recordChain.drop_front(), syntheticShapeCarrier);
   }
 
   if (ArrayType arrTy = splittablePodArray(valueType)) {
-    Type splitType = getFlattenedTypeAlongPath(valueType, recordChain);
+    Type splitType = getFlattenedTypeAlongPath(valueType, recordChain, syntheticShapeCarrier);
     auto splitArrTy = llvm::dyn_cast<ArrayType>(splitType);
     assert(splitArrTy);
 
     SmallVector<RecordChain> splitIds;
     SmallVector<Type> splitTypes;
     collectConvertedPodArrayRecordInfos(arrTy, splitIds, splitTypes);
-    auto *splitIt = llvm::find(splitIds, RecordChain(recordChain));
+    auto *splitIt = llvm::find(splitIds, RecordChain(recordChain, syntheticShapeCarrier));
     assert(splitIt != splitIds.end() && "record path must name a flattened POD array leaf");
     size_t splitIdx = std::distance(splitIds.begin(), splitIt);
 
@@ -1104,7 +1149,11 @@ genReadAlongPath(OpBuilder &bldr, Location loc, Value value, ArrayRef<StringAttr
       return createWritableArrayValue(bldr, loc, splitArrTy);
     }
 
-    if (isPodArrayShapeCarrierMarker(recordChain.back())) {
+    if (syntheticShapeCarrier) {
+      assert(
+          isPodArrayShapeCarrierMarker(recordChain.back()) &&
+          "synthetic shape carrier must use the reserved shape marker"
+      );
       return bldr.create<CreateArrayOp>(loc, splitArrTy);
     }
 
@@ -1121,7 +1170,7 @@ genReadAlongPath(OpBuilder &bldr, Location loc, Value value, ArrayRef<StringAttr
     Value splitArray = createWritableArrayValue(bldr, loc, splitArrTy);
     for (ArrayAttr index : *subIndices) {
       Value element = genArrayRead(bldr, loc, value, index);
-      Value leafValue = genReadAlongPath(bldr, loc, element, recordChain);
+      Value leafValue = genReadAlongPath(bldr, loc, element, recordChain, syntheticShapeCarrier);
       genArrayWrite(bldr, loc, splitArray, index, leafValue);
     }
     return splitArray;
@@ -1133,7 +1182,9 @@ genReadAlongPath(OpBuilder &bldr, Location loc, Value value, ArrayRef<StringAttr
 /// Read a flattened POD leaf by following each record name in `recordChain`.
 inline static Value
 genReadAlongPath(OpBuilder &bldr, Location loc, Value podRef, const RecordChain &recordChain) {
-  return genReadAlongPath(bldr, loc, podRef, ArrayRef(recordChain.nameList));
+  return genReadAlongPath(
+      bldr, loc, podRef, ArrayRef(recordChain.nameList), recordChain.syntheticShapeCarrier
+  );
 }
 
 /// Reconstruct a POD record from the leaf values collected while splitting nested accesses.
@@ -1162,9 +1213,7 @@ static Value rebuildFlattenedPodRecord(
       SmallVector<Value> leafArrays;
       leafArrays.reserve(splitIds.size());
       for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
-        SmallVector<StringAttr> fullChain(recordChain.begin(), recordChain.end());
-        llvm::append_range(fullChain, id.nameList);
-        auto it = leafValues.find(RecordChain(fullChain));
+        auto it = leafValues.find(concatRecordChain(recordChain, id));
         assert(it != leafValues.end() && "missing flattened POD array leaf value");
         leafArrays.push_back(castValueToTypeIfNeeded(bldr, loc, it->second, splitType));
       }
@@ -1182,9 +1231,7 @@ static Value rebuildFlattenedPodRecord(
       DenseMap<RecordChain, Value> elementLeafValues;
       SmallVector<StringAttr> elementRecordChain;
       forEachPodLeaf(elemPodTy, elementRecordChain, [&](RecordChain id, Type) {
-        SmallVector<StringAttr> fullChain(recordChain.begin(), recordChain.end());
-        llvm::append_range(fullChain, id.nameList);
-        auto it = leafValues.find(RecordChain(fullChain));
+        auto it = leafValues.find(concatRecordChain(recordChain, id));
         assert(it != leafValues.end() && "missing flattened POD array leaf value");
         elementLeafValues[id] = genArrayRead(bldr, loc, it->second, index);
       });
@@ -1351,8 +1398,8 @@ static SmallVector<std::string> getSplitRecordNameSuffixes(Type type) {
     forEachPodLeaf(pt, recordChain, [&suffixes](const RecordChain &id, Type) {
       std::string suffix;
       llvm::raw_string_ostream os(suffix);
-      for (StringAttr recordName : id.nameList) {
-        os << '.' << getRecordChainComponentName(recordName);
+      for (size_t i = 0; i < id.nameList.size(); ++i) {
+        os << '.' << getRecordChainComponentName(id, i);
       }
       suffixes.push_back(std::move(suffix));
     });
@@ -1413,18 +1460,14 @@ static void updateVirtualPodRecordLeafValues(
             lookupVirtualPodLeafMap(recordValue, virtualPods)) {
       SmallVector<StringAttr> nestedRecordChain;
       forEachPodLeaf(nestedPodTy, nestedRecordChain, [&](const RecordChain &id, Type) {
-        SmallVector<StringAttr> fullChain(prefix);
-        llvm::append_range(fullChain, id.nameList);
-        leafValues[RecordChain(fullChain)] = nestedLeafValues->at(id);
+        leafValues[concatRecordChain(prefix, id)] = nestedLeafValues->at(id);
       });
       return;
     }
 
     SmallVector<StringAttr> nestedRecordChain;
     forEachPodLeaf(nestedPodTy, nestedRecordChain, [&](const RecordChain &id, Type) {
-      SmallVector<StringAttr> fullChain(prefix);
-      llvm::append_range(fullChain, id.nameList);
-      leafValues[RecordChain(fullChain)] = genReadAlongPath(rewriter, loc, recordValue, id);
+      leafValues[concatRecordChain(prefix, id)] = genReadAlongPath(rewriter, loc, recordValue, id);
     });
     return;
   }
@@ -1434,9 +1477,7 @@ static void updateVirtualPodRecordLeafValues(
     SmallVector<Type> splitTypes;
     collectConvertedPodArrayRecordInfos(arrTy, splitIds, splitTypes);
     for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
-      SmallVector<StringAttr> fullChain(prefix);
-      llvm::append_range(fullChain, id.nameList);
-      leafValues[RecordChain(fullChain)] = castValueToTypeIfNeeded(
+      leafValues[concatRecordChain(prefix, id)] = castValueToTypeIfNeeded(
           rewriter, loc, genReadAlongPath(rewriter, loc, recordValue, id), splitType
       );
     }
@@ -1494,12 +1535,12 @@ using MemberReplacementMap = DenseMap<StructDefOp, DenseMap<StringAttr, LocalMem
 
 /// Build a flattened struct-member name like `member_outer_inner_leaf`.
 static StringAttr
-getFlattenedMemberName(MLIRContext *ctx, StringAttr memberName, ArrayRef<StringAttr> recordChain) {
+getFlattenedMemberName(MLIRContext *ctx, StringAttr memberName, const RecordChain &recordChain) {
   std::string flatName;
   llvm::raw_string_ostream os(flatName);
   os << memberName.getValue();
-  for (StringAttr recordName : recordChain) {
-    os << '_' << getRecordChainComponentName(recordName);
+  for (size_t i = 0; i < recordChain.nameList.size(); ++i) {
+    os << '_' << getRecordChainComponentName(recordChain, i);
   }
   return StringAttr::get(ctx, flatName);
 }
@@ -1516,9 +1557,8 @@ static void flattenPodMemberIntoLeaves(
     ConversionPatternRewriter &rewriter
 ) {
   forEachPodLeaf(podTy, recordChain, [&](const RecordChain &id, Type ty) {
-    StringAttr name = getFlattenedMemberName(
-        originalMember.getContext(), originalMember.getSymNameAttr(), id.nameList
-    );
+    StringAttr name =
+        getFlattenedMemberName(originalMember.getContext(), originalMember.getSymNameAttr(), id);
     MemberDefOp newMember = rewriter.create<MemberDefOp>(
         originalMember.getLoc(), name, ty, originalMember.getSignal(), originalMember.getColumn()
     );
@@ -1594,7 +1634,7 @@ public:
 
     SymbolTable &structSymbolTable = tables.getSymbolTable(inStruct);
     for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
-      StringAttr name = getFlattenedMemberName(op.getContext(), op.getSymNameAttr(), id.nameList);
+      StringAttr name = getFlattenedMemberName(op.getContext(), op.getSymNameAttr(), id);
       MemberDefOp newMember = rewriter.create<MemberDefOp>(
           op.getLoc(), name, splitType, op.getSignal(), op.getColumn()
       );
@@ -2687,7 +2727,7 @@ public:
         SmallVector<StringAttr> carrierPath {
             readOp.getRecordNameAttr(), getPodArrayShapeCarrierMarker(op.getContext())
         };
-        if (auto carrierIt = podLeafValues->find(RecordChain(carrierPath));
+        if (auto carrierIt = podLeafValues->find(RecordChain(carrierPath, true));
             carrierIt != podLeafValues->end()) {
           shapeSource = castValueToTypeIfNeeded(
               rewriter, op.getLoc(), carrierIt->second, getPodArrayShapeCarrierType(arrTy)
@@ -2703,9 +2743,7 @@ public:
               continue;
             }
 
-            SmallVector<StringAttr> fullChain {readOp.getRecordNameAttr()};
-            llvm::append_range(fullChain, id.nameList);
-            auto valueIt = podLeafValues->find(RecordChain(fullChain));
+            auto valueIt = podLeafValues->find(concatRecordChain({readOp.getRecordNameAttr()}, id));
             if (valueIt != podLeafValues->end()) {
               shapeSource =
                   castValueToTypeIfNeeded(rewriter, op.getLoc(), valueIt->second, splitArrTy);
@@ -3584,11 +3622,9 @@ static bool tryCollectReadPodSplitPodArrayLeafValues(
             lookupVirtualPodLeafMap(readOp.getPodRef(), virtualPods)) {
       leafArrays.reserve(splitIds.size());
       for (const RecordChain &id : splitIds) {
-        SmallVector<StringAttr> fullChain {readOp.getRecordNameAttr()};
-        llvm::append_range(fullChain, id.nameList);
-        auto it = podLeafValues->find(RecordChain(fullChain));
+        auto it = podLeafValues->find(concatRecordChain({readOp.getRecordNameAttr()}, id));
         if (it == podLeafValues->end() ||
-            !typesUnify(it->second.getType(), getFlattenedTypeAlongPath(arrTy, id.nameList))) {
+            !typesUnify(it->second.getType(), getFlattenedTypeAlongPath(arrTy, id))) {
           return false;
         }
         leafArrays.push_back(it->second);
@@ -3941,9 +3977,7 @@ public:
       VirtualPodLeafMap nestedLeafValues;
       SmallVector<StringAttr> nestedRecordChain;
       forEachPodLeaf(nestedPodTy, nestedRecordChain, [&](RecordChain id, Type) {
-        SmallVector<StringAttr> fullChain(prefix);
-        llvm::append_range(fullChain, id.nameList);
-        nestedLeafValues[id] = leafValues->at(RecordChain(fullChain));
+        nestedLeafValues[id] = leafValues->at(concatRecordChain(prefix, id));
       });
       Value virtualPod =
           createVirtualPodPlaceholder(rewriter, op.getLoc(), nestedPodTy, nestedLeafValues);
