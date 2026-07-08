@@ -1,0 +1,3 @@
+fixed:
+  - Fixed compute-side auxiliary reconstruction for nested and call-rooted member reads during poly lowering.
+  - Added diagnostics for R1CS auxiliary expressions that require unsupported non-self-rooted member reads.

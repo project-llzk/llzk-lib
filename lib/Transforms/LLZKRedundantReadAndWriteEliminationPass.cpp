@@ -532,11 +532,18 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     // An omitted table offset denotes the current row.
     const IntegerAttr zeroTableOffset = IntegerAttr::get(IndexType::get(op->getContext()), 0);
     auto getMemberNode = [&](Value component, FlatSymbolRefAttr member) {
-      return state.at(translate(component))->getOrCreateChild(member);
+      std::shared_ptr<ReferenceNode> componentNode = tryGetValTree(translate(component));
+      if (componentNode == nullptr) {
+        return std::shared_ptr<ReferenceNode>();
+      }
+      return componentNode->getOrCreateChild(member);
     };
     auto getMemberAccessNode = [&](MemberReadOp readm) {
       std::shared_ptr<ReferenceNode> access =
           getMemberNode(readm.getComponent(), readm.getMemberNameAttr());
+      if (access == nullptr) {
+        return access;
+      }
       access = access->getOrCreateChild(readm.getTableOffset().value_or(zeroTableOffset));
       if (!readm.getMapOperands().empty()) {
         access = access->getOrCreateChild(readm.getMapOpGroupSizesAttr());
@@ -553,14 +560,19 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     // Read a value from an array. This works on both readarr operations (which
     // return a scalar value) and extractarr operations (which return a subarray).
     auto doArrayReadLike = [&]<HasInterface<ArrayAccessOpInterface> OpClass>(OpClass readarr) {
-      std::shared_ptr<ReferenceNode> currValTree = state.at(translate(readarr.getArrRef()));
+      Value resVal = readarr.getResult();
+      std::shared_ptr<ReferenceNode> currValTree = tryGetValTree(translate(readarr.getArrRef()));
+      if (currValTree == nullptr) {
+        state[resVal] = ReferenceNode::create(resVal, resVal);
+        readVals.push_back(resVal);
+        return;
+      }
 
       for (Value origIdx : readarr.getIndices()) {
         Value idxVal = translate(origIdx);
         currValTree = currValTree->getOrCreateChild(idxVal);
       }
 
-      Value resVal = readarr.getResult();
       if (!currValTree->hasStoredValue()) {
         currValTree->setCurrentValue(resVal);
       }
@@ -588,7 +600,10 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     // invalidate adjacent subtree state because the variable index may alias
     // another element.
     auto doArrayWriteLike = [&]<HasInterface<ArrayAccessOpInterface> OpClass>(OpClass writearr) {
-      std::shared_ptr<ReferenceNode> currValTree = state.at(translate(writearr.getArrRef()));
+      std::shared_ptr<ReferenceNode> currValTree = tryGetValTree(translate(writearr.getArrRef()));
+      if (currValTree == nullptr) {
+        return;
+      }
       Value newVal = translate(writearr.getRvalue());
       std::shared_ptr<ReferenceNode> valTree = tryGetValTree(newVal);
 
@@ -632,6 +647,11 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     } else if (auto readm = dyn_cast<MemberReadOp>(op)) {
       std::shared_ptr<ReferenceNode> access = getMemberAccessNode(readm);
       Value resVal = readm.getVal();
+      if (access == nullptr) {
+        state[resVal] = ReferenceNode::create(resVal, resVal);
+        readVals.push_back(resVal);
+        return;
+      }
       if (!access->hasStoredValue()) {
         access->setCurrentValue(resVal);
       }
@@ -649,6 +669,9 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     } else if (auto writem = dyn_cast<MemberWriteOp>(op)) {
       std::shared_ptr<ReferenceNode> member =
           getMemberNode(writem.getComponent(), writem.getMemberNameAttr());
+      if (member == nullptr) {
+        return;
+      }
       // Symbolic and affine offsets may resolve to the current row. Constant
       // nonzero offsets stay distinct from a current-row member write.
       bool invalidatedMayAliasRead = member->invalidateNonIntegerOffsetChildren();

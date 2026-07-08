@@ -615,6 +615,10 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
         const auto &assign = auxAssignments[assignIdx];
         Value rebuiltExpr =
             rebuildExprInCompute(assign.computedValue, computeFunc, builder, rebuildMemo);
+        if (!rebuiltExpr) {
+          signalPassFailure();
+          return;
+        }
         builder.create<MemberWriteOp>(
             assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxMemberName),
             rebuiltExpr

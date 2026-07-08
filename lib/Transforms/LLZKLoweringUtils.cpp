@@ -13,8 +13,10 @@
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/IRMapping.h>
 #include <mlir/IR/Operation.h>
+#include <mlir/IR/SymbolTable.h>
 #include <mlir/Support/LogicalResult.h>
 
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/raw_ostream.h>
 
@@ -66,12 +68,73 @@ Value rebuildExprInCompute(
   if (auto readOp = val.getDefiningOp<MemberReadOp>()) {
     IRMapping mapper;
     for (Value operand : readOp->getOperands()) {
-      mapper.map(operand, mapValueIntoCompute(operand, computeFunc, builder, memo));
+      Value rebuiltOperand = mapValueIntoCompute(operand, computeFunc, builder, memo);
+      if (!rebuiltOperand) {
+        return nullptr;
+      }
+      mapper.map(operand, rebuiltOperand);
     }
 
     Operation *rebuiltOp = builder.clone(*readOp.getOperation(), mapper);
     assert(rebuiltOp->getNumResults() == 1 && "member reads have exactly one result");
     return memo[val] = rebuiltOp->getResult(0);
+  }
+
+  if (auto callOp = val.getDefiningOp<CallOp>()) {
+    if (!callOp.getMapOperands().empty()) {
+      callOp
+          .emitError(
+              "cannot rebuild affine-instantiated function.call in compute-side auxiliary "
+              "expression"
+          )
+          .report();
+      return nullptr;
+    }
+
+    SymbolTableCollection tables;
+    FailureOr<SymbolLookupResult<FuncDefOp>> target = callOp.getCalleeTarget(tables);
+    if (failed(target)) {
+      return nullptr;
+    }
+    FuncDefOp targetFunc = target->get();
+    bool invalidTarget =
+        (targetFunc.hasAllowConstraintAttr() && !computeFunc.hasAllowConstraintAttr()) ||
+        (targetFunc.hasAllowWitnessAttr() && !computeFunc.hasAllowWitnessAttr()) ||
+        (targetFunc.hasAllowNonNativeFieldOpsAttr() &&
+         !computeFunc.hasAllowNonNativeFieldOpsAttr());
+    if (invalidTarget) {
+      callOp
+          .emitError(
+              "cannot rebuild function.call in compute-side auxiliary expression: callee "
+              "requires attributes not present on the compute function"
+          )
+          .report();
+      return nullptr;
+    }
+
+    SmallVector<Value> rebuiltArgs;
+    rebuiltArgs.reserve(callOp.getArgOperands().size());
+    for (Value arg : callOp.getArgOperands()) {
+      Value rebuiltArg = rebuildExprInCompute(arg, computeFunc, builder, memo);
+      if (!rebuiltArg) {
+        return nullptr;
+      }
+      rebuiltArgs.push_back(rebuiltArg);
+    }
+
+    ArrayRef<Attribute> templateParams;
+    if (ArrayAttr params = callOp.getTemplateParamsAttr()) {
+      templateParams = params.getValue();
+    }
+
+    CallOp rebuilt = builder.create<CallOp>(
+        callOp.getLoc(), callOp.getResultTypes(), callOp.getCalleeAttr(), rebuiltArgs,
+        templateParams
+    );
+    for (auto [oldResult, newResult] : llvm::zip(callOp.getResults(), rebuilt.getResults())) {
+      memo[oldResult] = newResult;
+    }
+    return memo[val];
   }
 
   if (val.getType().isIndex()) {
@@ -82,7 +145,11 @@ Value rebuildExprInCompute(
 
     IRMapping mapper;
     for (Value operand : defOp->getOperands()) {
-      mapper.map(operand, mapValueIntoCompute(operand, computeFunc, builder, memo));
+      Value rebuiltOperand = mapValueIntoCompute(operand, computeFunc, builder, memo);
+      if (!rebuiltOperand) {
+        return nullptr;
+      }
+      mapper.map(operand, rebuiltOperand);
     }
 
     Operation *rebuiltOp = builder.clone(*defOp, mapper);
@@ -97,29 +164,44 @@ Value rebuildExprInCompute(
   if (auto add = val.getDefiningOp<AddFeltOp>()) {
     Value lhs = rebuildExprInCompute(add.getLhs(), computeFunc, builder, memo);
     Value rhs = rebuildExprInCompute(add.getRhs(), computeFunc, builder, memo);
+    if (!lhs || !rhs) {
+      return nullptr;
+    }
     return memo[val] = builder.create<AddFeltOp>(add.getLoc(), add.getType(), lhs, rhs);
   }
 
   if (auto sub = val.getDefiningOp<SubFeltOp>()) {
     Value lhs = rebuildExprInCompute(sub.getLhs(), computeFunc, builder, memo);
     Value rhs = rebuildExprInCompute(sub.getRhs(), computeFunc, builder, memo);
+    if (!lhs || !rhs) {
+      return nullptr;
+    }
     return memo[val] = builder.create<SubFeltOp>(sub.getLoc(), sub.getType(), lhs, rhs);
   }
 
   if (auto mul = val.getDefiningOp<MulFeltOp>()) {
     Value lhs = rebuildExprInCompute(mul.getLhs(), computeFunc, builder, memo);
     Value rhs = rebuildExprInCompute(mul.getRhs(), computeFunc, builder, memo);
+    if (!lhs || !rhs) {
+      return nullptr;
+    }
     return memo[val] = builder.create<MulFeltOp>(mul.getLoc(), mul.getType(), lhs, rhs);
   }
 
   if (auto neg = val.getDefiningOp<NegFeltOp>()) {
     Value operand = rebuildExprInCompute(neg.getOperand(), computeFunc, builder, memo);
+    if (!operand) {
+      return nullptr;
+    }
     return memo[val] = builder.create<NegFeltOp>(neg.getLoc(), neg.getType(), operand);
   }
 
   if (auto div = val.getDefiningOp<DivFeltOp>()) {
     Value lhs = rebuildExprInCompute(div.getLhs(), computeFunc, builder, memo);
     Value rhs = rebuildExprInCompute(div.getRhs(), computeFunc, builder, memo);
+    if (!lhs || !rhs) {
+      return nullptr;
+    }
     return memo[val] = builder.create<DivFeltOp>(div.getLoc(), div.getType(), lhs, rhs);
   }
 
@@ -127,8 +209,11 @@ Value rebuildExprInCompute(
     return memo[val] = builder.create<FeltConstantOp>(c.getLoc(), c.getValueAttr());
   }
 
-  llvm::errs() << "Unhandled op in rebuildExprInCompute: " << val << '\n';
-  llvm_unreachable("Unsupported op kind");
+  if (Operation *op = val.getDefiningOp()) {
+    op->emitError("cannot rebuild unsupported operation in compute-side auxiliary expression")
+        .report();
+  }
+  return nullptr;
 }
 
 LogicalResult checkForAuxMemberConflicts(StructDefOp structDef, StringRef prefix) {
