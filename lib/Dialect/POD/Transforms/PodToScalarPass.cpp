@@ -802,30 +802,6 @@ inline static bool allValueTypesUnifyWithTypes(const ValueRangeLike &values, Arr
   });
 }
 
-/// Replace any AffineMap-backed array dimensions nested within `type` with wildcard `?` dims.
-///
-/// This preserves the overall array nesting while erasing only the affine-map dimensions that
-/// cannot always be witnessed after flattening a POD leaf array into a split array value.
-static Type replaceAffineMapArrayDimsWithWildcards(Type type) {
-  auto arrTy = llvm::dyn_cast<ArrayType>(type);
-  if (!arrTy) {
-    return type;
-  }
-
-  Builder builder(arrTy.getContext());
-  SmallVector<Attribute> dims;
-  dims.reserve(arrTy.getDimensionSizes().size());
-  for (Attribute dimSize : arrTy.getDimensionSizes()) {
-    if (llvm::isa<AffineMapAttr>(dimSize)) {
-      dims.push_back(builder.getIndexAttr(ShapedType::kDynamic));
-    } else {
-      dims.push_back(dimSize);
-    }
-  }
-
-  return arrTy.cloneWith(replaceAffineMapArrayDimsWithWildcards(arrTy.getElementType()), dims);
-}
-
 /// Return the wildcard-backed storage split type for one flattened POD leaf.
 ///
 /// The precise split type preserves the original affine maps in the flattened leaf array. The

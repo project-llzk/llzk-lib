@@ -77,6 +77,7 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/RAM/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
@@ -107,6 +108,7 @@ using namespace llzk;
 using namespace llzk::array;
 using namespace llzk::component;
 using namespace llzk::function;
+using namespace llzk::polymorphic;
 
 #define DEBUG_TYPE "llzk-array-to-scalar"
 
@@ -722,7 +724,14 @@ class NondetToNewArray : public OpConversionPattern<NonDetOp> {
       NonDetOp nondetOp, OpAdaptor, ConversionPatternRewriter &rewriter
   ) const override {
     if (auto at = dyn_cast<ArrayType>(nondetOp.getType())) {
-      rewriter.replaceOpWithNewOp<CreateArrayOp>(nondetOp, at);
+      auto wildcardTy = llvm::cast<ArrayType>(replaceAffineMapArrayDimsWithWildcards(at));
+      auto newArray = rewriter.create<CreateArrayOp>(nondetOp.getLoc(), wildcardTy);
+      if (wildcardTy == at) {
+        rewriter.replaceOp(nondetOp, newArray);
+      } else {
+        auto cast = rewriter.create<UnifiableCastOp>(nondetOp.getLoc(), at, newArray);
+        rewriter.replaceOp(nondetOp, cast.getResult());
+      }
       return success();
     }
     return failure();

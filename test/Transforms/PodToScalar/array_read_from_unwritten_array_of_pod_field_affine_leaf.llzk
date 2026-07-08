@@ -1,0 +1,27 @@
+// RUN: llzk-opt -llzk-pod-to-scalar -llzk-array-to-scalar %s | FileCheck --enable-var-scope %s
+// COM: requires conversion of affine-map dimensions to wildcard within `NondetToNewArray` in array-to-scalar pass.
+
+#inner = affine_map<()[s0] -> (s0 + 1)>
+!Inner = !array.type<#inner x index>
+!Elem = !pod.type<[@vals: !Inner]>
+!Outer = !pod.type<[@items: !array.type<2 x !Elem>]>
+module attributes {llzk.lang} {
+  function.def @read_unwritten_affine_leaf(%i: index, %j: index) -> index {
+    %p = llzk.nondet : !Outer
+    %items = pod.read %p[@items] : !Outer, !array.type<2 x !Elem>
+    %item = array.read %items[%i] : !array.type<2 x !Elem>, !Elem
+    %vals = pod.read %item[@vals] : !Elem, !Inner
+    %x = array.read %vals[%j] : !Inner, index
+    function.return %x : index
+  }
+}
+// CHECK: #[[$MAP:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0 + 1)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @read_unwritten_affine_leaf(%[[I:[0-9a-zA-Z_\.]+]]: index, %[[J:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[ARR:[0-9a-zA-Z_\.]+]] = array.new  : <2,? x index>
+// CHECK-NEXT:      %[[CAST:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[ARR]] : (!array.type<2,? x index>) -> !array.type<2,#[[$MAP]] x index>
+// CHECK-NEXT:      %[[INNER:[0-9a-zA-Z_\.]+]] = array.extract %[[CAST]]{{\[}}%[[I]]] : <2,#[[$MAP]] x index>
+// CHECK-NEXT:      %[[VAL:[0-9a-zA-Z_\.]+]] = array.read %[[INNER]]{{\[}}%[[J]]] : <#[[$MAP]] x index>, index
+// CHECK-NEXT:      function.return %[[VAL]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
