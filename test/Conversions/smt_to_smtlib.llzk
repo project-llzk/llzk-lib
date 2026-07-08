@@ -1,0 +1,32 @@
+// RUN: llzk-opt --smt-to-smtlib -o /dev/null %s | FileCheck %s
+// Purpose: baseline pure-helper define-fun emission and basic term lowering.
+
+module {
+  func.func @helper(%x: !smt.int, %flag: !smt.bool) -> !smt.int {
+    %c5 = smt.int.constant 5
+    %sum = smt.int.add %x, %c5
+    %neg = smt.int.neg %x
+    %result = smt.ite %flag, %sum, %neg : !smt.int
+    return %result : !smt.int
+  }
+
+  smt.solver () : () -> () {
+    %x = smt.declare_fun "x" : !smt.int
+    %flag = smt.declare_fun "flag" : !smt.bool
+    %value = func.call @helper(%x, %flag) : (!smt.int, !smt.bool) -> !smt.int
+    %symbol = smt.declare_fun "result" : !smt.int
+    %ok = smt.eq %symbol, %value : !smt.int
+    smt.assert %ok
+    smt.yield
+  }
+}
+
+// CHECK:      (set-logic ALL)
+// CHECK-NEXT: (declare-fun x () Int)
+// CHECK-NEXT: (declare-fun flag () Bool)
+// CHECK-NEXT: (define-fun helper ((helper__arg0 Int) (helper__arg1 Bool)) Int
+// CHECK-SAME:   (let ((__let0 (+ helper__arg0 5)))
+// CHECK-SAME:   (let ((__let1 (- helper__arg0)))
+// CHECK-SAME:   (let ((__let2 (ite helper__arg1 __let0 __let1))) __let2))))
+// CHECK-NEXT: (declare-fun result () Int)
+// CHECK-NEXT: (assert (= result (helper x flag)))

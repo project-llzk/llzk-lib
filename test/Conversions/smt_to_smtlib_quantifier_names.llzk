@@ -1,0 +1,20 @@
+// RUN: llzk-opt --smt-to-smtlib -o /dev/null %s | FileCheck %s
+// Purpose: quantifier binders must be unique after SMT-LIB sanitization.
+
+module {
+  smt.solver () : () -> () {
+    %holds = smt.declare_fun "holds" : !smt.bool
+    %quantified = smt.forall ["x-y", "x_y"] {
+    ^bb0(%lhs: !smt.int, %rhs: !smt.int):
+      %same = smt.eq %lhs, %rhs : !smt.int
+      smt.yield %same : !smt.bool
+    }
+    %ok = smt.eq %holds, %quantified : !smt.bool
+    smt.assert %ok
+    smt.yield
+  }
+}
+
+// CHECK:      (set-logic ALL)
+// CHECK-NEXT: (declare-fun holds () Bool)
+// CHECK-NEXT: (assert (= holds (forall ((x_y Int) (x_y_2 Int)) (= x_y x_y_2))))
