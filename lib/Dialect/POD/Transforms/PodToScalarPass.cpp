@@ -595,7 +595,7 @@ static SmallVector<std::string> getSplitPodArrayRecordNameSuffixes(Type type) {
       }
       suffixes.push_back(std::move(suffix));
     }
-    if (hasWildcardArrayDimensions(at.getDimensionSizes()) || splitIds.empty()) {
+    if (needsPodArrayShapeCarrier(at)) {
       suffixes.push_back(".shape");
     }
   }
