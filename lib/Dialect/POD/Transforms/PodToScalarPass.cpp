@@ -1230,7 +1230,7 @@ static Value rebuildFlattenedPodRecord(
     for (ArrayAttr index : *subIndices) {
       DenseMap<RecordChain, Value> elementLeafValues;
       SmallVector<StringAttr> elementRecordChain;
-      forEachPodLeaf(elemPodTy, elementRecordChain, [&](RecordChain id, Type) {
+      forEachPodLeaf(elemPodTy, elementRecordChain, [&](const RecordChain &id, Type) {
         auto it = leafValues.find(concatRecordChain(recordChain, id));
         assert(it != leafValues.end() && "missing flattened POD array leaf value");
         elementLeafValues[id] = genArrayRead(bldr, loc, it->second, index);
@@ -3976,7 +3976,7 @@ public:
     if (PodType nestedPodTy = llvm::dyn_cast<PodType>(recordType)) {
       VirtualPodLeafMap nestedLeafValues;
       SmallVector<StringAttr> nestedRecordChain;
-      forEachPodLeaf(nestedPodTy, nestedRecordChain, [&](RecordChain id, Type) {
+      forEachPodLeaf(nestedPodTy, nestedRecordChain, [&](const RecordChain &id, Type) {
         nestedLeafValues[id] = leafValues->at(concatRecordChain(prefix, id));
       });
       Value virtualPod =
