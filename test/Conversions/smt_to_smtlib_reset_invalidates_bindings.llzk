@@ -1,0 +1,36 @@
+// RUN: split-file %s %t
+// RUN: llzk-opt --smt-to-smtlib -verify-diagnostics %t/reset-declare.mlir
+// RUN: llzk-opt --smt-to-smtlib -verify-diagnostics %t/reset-helper-result.mlir
+// Purpose: reset-invalidated binding failures are checked with op-local diagnostics.
+
+//--- reset-declare.mlir
+module {
+  smt.solver () : () -> () {
+    // expected-error @+1 {{missing SMTLIB value binding}}
+    %x = smt.declare_fun "x" : !smt.int
+    smt.reset
+    %ok = smt.eq %x, %x : !smt.int
+    smt.assert %ok
+    smt.yield
+  }
+}
+
+//--- reset-helper-result.mlir
+module {
+  func.func @helper(%x: !smt.int) -> !smt.int {
+    %one = smt.int.constant 1
+    %sum = smt.int.add %x, %one
+    return %sum : !smt.int
+  }
+
+  smt.solver () : () -> () {
+    %x = smt.declare_fun "x" : !smt.int
+    // expected-error @+1 {{missing SMTLIB value binding}}
+    %value = func.call @helper(%x) : (!smt.int) -> !smt.int
+    smt.reset
+    %result = smt.declare_fun "result" : !smt.int
+    %ok = smt.eq %result, %value : !smt.int
+    smt.assert %ok
+    smt.yield
+  }
+}

@@ -12,9 +12,105 @@
 #include <mlir/IR/OpImplementation.h>
 
 #include <llvm/ADT/APSInt.h>
+#include <llvm/ADT/StringExtras.h>
+#include <llvm/ADT/TypeSwitch.h>
 
 using namespace mlir;
 using namespace llzk::smt;
+
+static bool isValidSetInfoValue(Attribute attr) {
+  return TypeSwitch<Attribute, bool>(attr)
+      .Case<BoolAttr, IntegerAttr, StringAttr, KeywordAttr, SymbolAttr>([](auto) { return true; })
+      .Case<ArrayAttr>([](ArrayAttr arrayAttr) {
+    return llvm::all_of(arrayAttr, [](Attribute element) { return isValidSetInfoValue(element); });
+  }).Default([](Attribute) { return false; });
+}
+
+static void printSetInfoValue(AsmPrinter &printer, Attribute value) {
+  TypeSwitch<Attribute>(value)
+      .Case<KeywordAttr>([&printer](auto keywordAttr) { printer << keywordAttr.getValue(); })
+      .Case<SymbolAttr>([&printer](auto symbolAttr) { printer << symbolAttr.getValue(); })
+      .Case<StringAttr, BoolAttr>([&printer](auto attr) { printer.printAttribute(attr); })
+      .Case<IntegerAttr>([&printer](auto intAttr) {
+    SmallString<32> valueText;
+    intAttr.getValue().toStringSigned(valueText);
+    printer << valueText;
+  }).Case<ArrayAttr>([&printer](ArrayAttr arrayAttr) {
+    printer << '(';
+    llvm::interleave(arrayAttr, [&printer](Attribute element) {
+      printSetInfoValue(printer, element);
+    }, [&printer] { printer << ' '; });
+    printer << ')';
+  });
+}
+
+static ParseResult parseSetInfoValue(OpAsmParser &parser, Attribute &value) {
+  Builder builder(parser.getContext());
+
+  if (succeeded(parser.parseOptionalLParen())) {
+    SmallVector<Attribute> elements;
+    while (failed(parser.parseOptionalRParen())) {
+      Attribute element;
+      if (parseSetInfoValue(parser, element)) {
+        return failure();
+      }
+      elements.push_back(element);
+    }
+    value = builder.getArrayAttr(elements);
+    return success();
+  }
+
+  if (succeeded(parser.parseOptionalColon())) {
+    StringRef keyword;
+    if (parser.parseKeyword(&keyword)) {
+      return failure();
+    }
+    value = KeywordAttr::get(parser.getContext(), (":" + keyword).str());
+    return success();
+  }
+
+  {
+    APInt numeral;
+    OptionalParseResult parseResult = parser.parseOptionalInteger(numeral);
+    if (!parseResult.has_value()) {
+      // no numeral
+    } else {
+      if (failed(*parseResult)) {
+        return failure();
+      }
+      auto intType = IntegerType::get(parser.getContext(), numeral.getBitWidth());
+      value = IntegerAttr::get(intType, numeral);
+      return success();
+    }
+  }
+
+  {
+    StringAttr strAttr;
+    OptionalParseResult parseResult = parser.parseOptionalAttribute(strAttr, Type());
+    if (!parseResult.has_value()) {
+      // no string attribute
+    } else {
+      if (failed(*parseResult)) {
+        return failure();
+      }
+      value = strAttr;
+      return success();
+    }
+  }
+
+  StringRef symbolOrBool;
+  if (succeeded(parser.parseOptionalKeyword(&symbolOrBool))) {
+    if (symbolOrBool == "true" || symbolOrBool == "false") {
+      value = builder.getBoolAttr(symbolOrBool == "true");
+    } else {
+      value = SymbolAttr::get(parser.getContext(), symbolOrBool);
+    }
+    return success();
+  }
+
+  parser.emitError(parser.getCurrentLocation()) << "expected SMT-LIB set-info value";
+  return failure();
+}
 
 //===----------------------------------------------------------------------===//
 // BVConstantOp
@@ -61,6 +157,51 @@ LogicalResult SolverOp::verifyRegions() {
     return emitOpError() << "block argument types must match the types of the 'inputs'";
   }
 
+  return success();
+}
+
+//===----------------------------------------------------------------------===//
+// SetInfoOp
+//===----------------------------------------------------------------------===//
+
+ParseResult SetInfoOp::parse(OpAsmParser &parser, OperationState &result) {
+  SMLoc loc = parser.getCurrentLocation();
+  StringAttr keyText;
+  Attribute value;
+
+  if (parser.parseAttribute(keyText) || parseSetInfoValue(parser, value) ||
+      parser.parseOptionalAttrDict(result.attributes)) {
+    return failure();
+  }
+
+  auto keyAttr = KeywordAttr::getChecked([&parser, loc]() {
+    return parser.emitError(loc);
+  }, parser.getContext(), keyText.getValue());
+  if (!keyAttr) {
+    return failure();
+  }
+
+  result.addAttribute("key", keyAttr);
+  result.addAttribute("value", value);
+  result.location = parser.getEncodedSourceLoc(loc);
+  return success();
+}
+
+void SetInfoOp::print(OpAsmPrinter &printer) {
+  printer << ' ';
+  printer.printAttribute(StringAttr::get(getContext(), getKey().getValue()));
+  printer << ' ';
+  printSetInfoValue(printer, getValueAttr());
+  printer.printOptionalAttrDict(getOperation()->getAttrs(), {"key", "value"});
+}
+
+LogicalResult SetInfoOp::verify() {
+  if (!isValidSetInfoValue(getValueAttr())) {
+    return emitOpError(
+        "requires an SMT-LIB set-info value built from strings, booleans, "
+        "integers, SMT keywords, SMT symbols, or nested lists"
+    );
+  }
   return success();
 }
 

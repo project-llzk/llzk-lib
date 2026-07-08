@@ -1,0 +1,37 @@
+// RUN: llzk-opt --smt-to-smtlib -o /dev/null %s | FileCheck %s
+// Purpose: remaining core/int pure op coverage such as distinct and abs.
+
+module {
+  smt.solver () : () -> () {
+    %x = smt.declare_fun "x" : !smt.int
+    %y = smt.declare_fun "y" : !smt.int
+    %z = smt.declare_fun "z" : !smt.int
+    %neg_one = smt.int.constant -1
+    %neg_two_i32 = arith.constant -2 : i32
+    %neg_two = builtin.unrealized_conversion_cast %neg_two_i32 : i32 to !smt.int
+    %sum = smt.int.add %x, %neg_one, %neg_two
+    %abs = smt.int.abs %x
+    %distinct = smt.distinct %x, %y, %z : !smt.int
+    %sum_symbol = smt.declare_fun "sum_result" : !smt.int
+    %abs_symbol = smt.declare_fun "abs_result" : !smt.int
+    %distinct_symbol = smt.declare_fun "all_distinct" : !smt.bool
+    %sum_ok = smt.eq %sum_symbol, %sum : !smt.int
+    %abs_ok = smt.eq %abs_symbol, %abs : !smt.int
+    %distinct_ok = smt.eq %distinct_symbol, %distinct : !smt.bool
+    smt.assert %sum_ok
+    smt.assert %abs_ok
+    smt.assert %distinct_ok
+    smt.yield
+  }
+}
+
+// CHECK:      (set-logic ALL)
+// CHECK-NEXT: (declare-fun x () Int)
+// CHECK-NEXT: (declare-fun y () Int)
+// CHECK-NEXT: (declare-fun z () Int)
+// CHECK-NEXT: (declare-fun sum_result () Int)
+// CHECK-NEXT: (declare-fun abs_result () Int)
+// CHECK-NEXT: (declare-fun all_distinct () Bool)
+// CHECK-NEXT: (assert (= sum_result (+ x (- 1) (- 2))))
+// CHECK-NEXT: (assert (= abs_result (abs x)))
+// CHECK-NEXT: (assert (= all_distinct (distinct x y z)))
