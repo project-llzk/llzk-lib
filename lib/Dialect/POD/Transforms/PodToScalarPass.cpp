@@ -230,10 +230,12 @@ static WritePodOp findNearestForwardableWriteInBlock(ReadPodOp readOp) {
 ///
 /// Like `findNearestForwardableWriteInBlock`, this is intentionally conservative: it only forwards
 /// through intervening operations that do not use the POD value at all. The search walks outward
-/// through enclosing blocks so nested reads can still observe a dominating parent-block write.
+/// through enclosing blocks so nested reads can still observe a dominating parent-block write, but
+/// it stops before leaving an enclosing loop that carries writes to the same external POD record.
 static WritePodOp findNearestForwardableWrite(ReadPodOp readOp) {
   Value podRef = readOp.getPodRef();
   StringAttr recordName = readOp.getRecordNameAttr();
+  Operation *loopBoundary = llzk::pod::detail::findNearestLoopCarriedPodAccess(readOp);
 
   for (Operation *cursor = readOp.getOperation(); cursor && cursor->getBlock();) {
     for (Operation *op = cursor->getPrevNode(); op; op = op->getPrevNode()) {
@@ -245,7 +247,11 @@ static WritePodOp findNearestForwardableWrite(ReadPodOp readOp) {
       return writeOp && isSamePodRecord(writeOp, podRef, recordName) ? writeOp : nullptr;
     }
 
-    cursor = cursor->getBlock()->getParentOp();
+    Operation *parentOp = cursor->getBlock()->getParentOp();
+    if (parentOp == loopBoundary) {
+      break;
+    }
+    cursor = parentOp;
   }
 
   return nullptr;
