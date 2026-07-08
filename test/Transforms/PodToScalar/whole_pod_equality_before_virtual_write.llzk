@@ -1,0 +1,61 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+
+!Pair = !pod.type<[@x: index, @y: index]>
+module attributes {llzk.lang} {
+  function.def @direct_eq_before_later_write(
+      %lhs: !Pair, %rhs: !Pair, %new: index
+  ) attributes {function.allow_constraint} {
+    constrain.eq %lhs, %rhs : !Pair
+    pod.write %lhs[@y] = %new : !Pair, index
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @direct_eq_before_later_write(
+// CHECK-SAME:        %[[LHS_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[LHS_Y:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[RHS_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[RHS_Y:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[NEW:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      constrain.eq %[[LHS_X]], %[[RHS_X]] : index, index
+// CHECK-NEXT:      constrain.eq %[[LHS_Y]], %[[RHS_Y]] : index, index
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+!Pair = !pod.type<[@x: index, @y: index]>
+module attributes {llzk.lang} {
+  function.def @make_pair(%x: index, %y: index) -> !Pair {
+    %p = pod.new { @x = %x, @y = %y } : !Pair
+    function.return %p : !Pair
+  }
+
+  function.def @call_result_eq_before_later_write(
+      %rhs: !Pair, %a: index, %b: index, %new: index
+  ) attributes {function.allow_constraint} {
+    %lhs = function.call @make_pair(%a, %b) : (index, index) -> !Pair
+    constrain.eq %lhs, %rhs : !Pair
+    pod.write %lhs[@y] = %new : !Pair, index
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @make_pair(%[[X:[0-9a-zA-Z_\.]+]]: index, %[[Y:[0-9a-zA-Z_\.]+]]: index) -> (index, index) {
+// CHECK-NEXT:      function.return %[[X]], %[[Y]] : index, index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_result_eq_before_later_write(
+// CHECK-SAME:        %[[RHS_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[RHS_Y:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[A:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[B:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[NEW:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[CALL:[0-9a-zA-Z_\.]+]]:2 = function.call @make_pair(%[[A]], %[[B]]) : (index, index) -> (index, index)
+// CHECK-NEXT:      constrain.eq %[[CALL]]#0, %[[RHS_X]] : index, index
+// CHECK-NEXT:      constrain.eq %[[CALL]]#1, %[[RHS_Y]] : index, index
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

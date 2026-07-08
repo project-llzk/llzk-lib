@@ -1450,8 +1450,7 @@ static void processInputOperands(
 /// Update the tracked leaf values for one top-level POD record after a virtual `pod.write`.
 static void updateVirtualPodRecordLeafValues(
     Location loc, StringAttr recordName, Type recordType, Value recordValue,
-    const VirtualPodValueMap &virtualPods, ConversionPatternRewriter &rewriter,
-    VirtualPodLeafMap &leafValues
+    const VirtualPodValueMap &virtualPods, RewriterBase &rewriter, VirtualPodLeafMap &leafValues
 ) {
   SmallVector<StringAttr> prefix {recordName};
 
@@ -3918,6 +3917,62 @@ public:
   }
 };
 
+/// Rewrite a whole-POD equality into one equality per leaf using the current virtual POD state.
+static void splitVirtualPodEmitEquality(
+    constrain::EmitEqualityOp op, RewriterBase &rewriter, const VirtualPodValueMap &virtualPods
+) {
+  SmallVector<Value> lhsLeaves;
+  SmallVector<Value> rhsLeaves;
+  processInputOperand(
+      op.getLoc(), op.getLhs(), lhsLeaves, rewriter, op.getOperation(), &virtualPods
+  );
+  processInputOperand(
+      op.getLoc(), op.getRhs(), rhsLeaves, rewriter, op.getOperation(), &virtualPods
+  );
+
+  assert(lhsLeaves.size() == rhsLeaves.size() && "POD equality leaves must stay aligned");
+  for (auto [lhsLeaf, rhsLeaf] : llvm::zip_equal(lhsLeaves, rhsLeaves)) {
+    rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhsLeaf, rhsLeaf);
+  }
+  rewriter.eraseOp(op);
+}
+
+/// Rewrite same-block whole-POD equalities that appear before a tracked virtual `pod.write`.
+///
+/// Step 3 resolves virtual writes by mutating `virtualPods` in place and erasing the write op.
+/// Whole-POD equalities that stay in the IR until after that mutation would otherwise observe the
+/// final leaf map instead of the value at the equality's program point. Splitting those earlier
+/// equalities immediately before the write update preserves the pre-write leaf values.
+static void splitEarlierVirtualPodEqualitiesBeforeWriteInBlock(
+    WritePodOp writeOp, RewriterBase &rewriter, const VirtualPodValueMap &virtualPods
+) {
+  Value writtenPod = peelVirtualPodCompatibilityCasts(writeOp.getPodRef());
+  for (Operation &candidate : llvm::make_early_inc_range(*writeOp->getBlock())) {
+    if (&candidate == writeOp) {
+      break;
+    }
+
+    auto equalityOp = dyn_cast<constrain::EmitEqualityOp>(&candidate);
+    if (!equalityOp || !splittablePod(equalityOp.getLhs().getType())) {
+      continue;
+    }
+
+    Value lhs = peelVirtualPodCompatibilityCasts(equalityOp.getLhs());
+    Value rhs = peelVirtualPodCompatibilityCasts(equalityOp.getRhs());
+    if (lhs != writtenPod && rhs != writtenPod) {
+      continue;
+    }
+
+    if (!lookupVirtualPodLeafMap(equalityOp.getLhs(), virtualPods) &&
+        !lookupVirtualPodLeafMap(equalityOp.getRhs(), virtualPods)) {
+      continue;
+    }
+
+    rewriter.setInsertionPoint(equalityOp);
+    splitVirtualPodEmitEquality(equalityOp, rewriter, virtualPods);
+  }
+}
+
 /// Update virtual POD leaf storage in response to `pod.write` without materializing the aggregate.
 class ResolveVirtualPodWriteOp : public OpConversionPattern<WritePodOp> {
   VirtualPodValueMap &virtualPods;
@@ -3933,6 +3988,8 @@ public:
     if (it == virtualPods.end()) {
       return failure();
     }
+
+    splitEarlierVirtualPodEqualitiesBeforeWriteInBlock(op, rewriter, virtualPods);
 
     Type recordType =
         llvm::cast<PodType>(op.getPodRefType()).getRecordMap().lookup(op.getRecordName());
@@ -4031,11 +4088,6 @@ static void rehydrateVirtualPodPlaceholders(ModuleOp modOp, VirtualPodValueMap &
 }
 
 /// Rewrite whole-POD `constrain.eq` while virtual leaf storage is still available.
-///
-/// Affine POD placeholders may exist only as `builtin.unrealized_conversion_cast`, so deferring the
-/// split until after step 3 can lose virtual write updates and reintroduce reads from a cast-only
-/// aggregate. Splitting here preserves the final tracked leaf values before `virtualPods` goes
-/// away while still allowing step 4 to lift any concrete `pod.read` ops that remain.
 class SplitVirtualPodInEmitEqualityPattern final
     : public OpRewritePattern<constrain::EmitEqualityOp> {
   const VirtualPodValueMap &virtualPods;
@@ -4050,21 +4102,7 @@ public:
       return failure();
     }
 
-    SmallVector<Value> lhsLeaves;
-    SmallVector<Value> rhsLeaves;
-    processInputOperand(op.getLoc(), op.getLhs(), lhsLeaves, rewriter, nullptr, &virtualPods);
-    processInputOperand(op.getLoc(), op.getRhs(), rhsLeaves, rewriter, nullptr, &virtualPods);
-
-    if (lhsLeaves.size() != rhsLeaves.size()) {
-      return rewriter.notifyMatchFailure(
-          op, "expected POD equality operands to expand to the same number of leaves"
-      );
-    }
-
-    for (auto [lhsLeaf, rhsLeaf] : llvm::zip_equal(lhsLeaves, rhsLeaves)) {
-      rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhsLeaf, rhsLeaf);
-    }
-    rewriter.eraseOp(op);
+    splitVirtualPodEmitEquality(op, rewriter, virtualPods);
     return success();
   }
 };
@@ -4936,7 +4974,6 @@ public:
     if (!podTy) {
       return failure();
     }
-
     SmallVector<StringAttr> recordChain;
     forEachPodLeaf(podTy, recordChain, [&rewriter, &op](const RecordChain &id, Type) {
       Value lhsLeaf = genReadAlongPath(rewriter, op.getLoc(), op.getLhs(), id);
