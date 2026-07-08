@@ -1,0 +1,14 @@
+// RUN: llzk-opt -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  function.def @preserve_unrelated_cast(%flag: i1) -> !felt.type {
+    %cast = builtin.unrealized_conversion_cast %flag : i1 to !felt.type
+    function.return %cast : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @preserve_unrelated_cast(%[[FLAG:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type {
+// CHECK-NEXT:      %[[CAST:[0-9a-zA-Z_\.]+]] = builtin.unrealized_conversion_cast %[[FLAG]] : i1 to !felt.type
+// CHECK-NEXT:      function.return %[[CAST]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

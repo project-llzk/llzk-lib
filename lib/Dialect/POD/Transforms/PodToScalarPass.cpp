@@ -1519,6 +1519,7 @@ static LogicalResult step0(ModuleOp modOp) {
   ConversionTarget target {*ctx};
 
   baseTargetSetup(target);
+  target.addLegalOp<UnrealizedConversionCastOp>();
   target.addDynamicallyLegalOp<NonDetOp>([](NonDetOp op) { return !isa<PodType>(op.getType()); });
 
   return applyFullConversion(modOp, target, std::move(patterns));
@@ -5153,11 +5154,20 @@ static size_t countResidualPodLikeTypes(const TypeRangeLike &types) {
   return count;
 }
 
+/// Return whether `castOp` is one of this pass's POD-related placeholder casts.
+static bool isResidualPodPlaceholderCast(UnrealizedConversionCastOp castOp) {
+  return countResidualPodLikeTypes(castOp.getOperandTypes()) != 0 ||
+         countResidualPodLikeTypes(castOp.getResultTypes()) != 0;
+}
+
 /// Count residual POD ops, POD-typed values, and placeholder casts that must not survive.
 static size_t countResidualPodIR(ModuleOp modOp) {
   size_t count = 0;
   modOp.walk([&count](Operation *op) {
-    if (isa<NewPodOp, ReadPodOp, WritePodOp, UnrealizedConversionCastOp>(op)) {
+    if (isa<NewPodOp, ReadPodOp, WritePodOp>(op)) {
+      ++count;
+    } else if (auto castOp = dyn_cast<UnrealizedConversionCastOp>(op);
+               castOp && isResidualPodPlaceholderCast(castOp)) {
       ++count;
     }
 
