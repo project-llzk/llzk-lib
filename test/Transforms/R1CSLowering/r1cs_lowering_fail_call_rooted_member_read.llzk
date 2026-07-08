@@ -1,0 +1,39 @@
+// RUN: llzk-opt -split-input-file -llzk-full-r1cs-lowering -verify-diagnostics %s
+
+module attributes {llzk.lang, llzk.main = !struct.type<@UsesExternPayload>} {
+  struct.def @ExternPayload {
+    struct.member @value : !felt.type {llzk.pub}
+
+    function.def @compute(%value: !felt.type) -> !struct.type<@ExternPayload> {
+      %self = struct.new : !struct.type<@ExternPayload>
+      struct.writem %self[@value] = %value : !struct.type<@ExternPayload>, !felt.type
+      function.return %self : !struct.type<@ExternPayload>
+    }
+
+    function.def @constrain(%self: !struct.type<@ExternPayload>, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  function.def private @extern_wrap(%value: !felt.type) -> !struct.type<@ExternPayload> attributes {extern}
+
+  struct.def @UsesExternPayload {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%x: !felt.type) -> !struct.type<@UsesExternPayload> {
+      %self = struct.new : !struct.type<@UsesExternPayload>
+      function.return %self : !struct.type<@UsesExternPayload>
+    }
+
+    function.def @constrain(%self: !struct.type<@UsesExternPayload>, %x: !felt.type) {
+      %payload = function.call @extern_wrap(%x) : (!felt.type) -> !struct.type<@ExternPayload>
+      // expected-error@+1 {{R1CS lowering only supports member reads rooted at the current constrain self value}}
+      %value = struct.readm %payload[@value] : !struct.type<@ExternPayload>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %quad = felt.mul %square, %square : !felt.type, !felt.type
+      %out = struct.readm %self[@out] : !struct.type<@UsesExternPayload>, !felt.type
+      constrain.eq %out, %quad : !felt.type
+      function.return
+    }
+  }
+}

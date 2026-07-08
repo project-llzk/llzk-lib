@@ -242,3 +242,78 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Mod1>} {
 // CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_4 : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang, llzk.main = !struct.type<@UsesExternPayload>} {
+  struct.def @ExternPayload {
+    struct.member @value : !felt.type {llzk.pub}
+
+    function.def @compute(%value: !felt.type) -> !struct.type<@ExternPayload> {
+      %self = struct.new : !struct.type<@ExternPayload>
+      struct.writem %self[@value] = %value : !struct.type<@ExternPayload>, !felt.type
+      function.return %self : !struct.type<@ExternPayload>
+    }
+
+    function.def @constrain(%self: !struct.type<@ExternPayload>, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  function.def private @extern_wrap(%value: !felt.type) -> !struct.type<@ExternPayload> attributes {extern}
+
+  struct.def @UsesExternPayload {
+    struct.member @out : !felt.type
+
+    function.def @compute(%x: !felt.type) -> !struct.type<@UsesExternPayload> {
+      %self = struct.new : !struct.type<@UsesExternPayload>
+      function.return %self : !struct.type<@UsesExternPayload>
+    }
+
+    function.def @constrain(%self: !struct.type<@UsesExternPayload>, %x: !felt.type) {
+      %payload = function.call @extern_wrap(%x) : (!felt.type) -> !struct.type<@ExternPayload>
+      %value = struct.readm %payload[@value] : !struct.type<@ExternPayload>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %quad = felt.mul %square, %square : !felt.type, !felt.type
+      %out = struct.readm %self[@out] : !struct.type<@UsesExternPayload>, !felt.type
+      constrain.eq %out, %quad : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@UsesExternPayload>} {
+// CHECK-NEXT:    struct.def @ExternPayload {
+// CHECK-NEXT:      struct.member @value : !felt.type {llzk.pub}
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@ExternPayload> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@ExternPayload>
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@value] = %[[VAL_0]] : <@ExternPayload>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@ExternPayload>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@ExternPayload>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def private @extern_wrap(!felt.type) -> !struct.type<@ExternPayload> attributes {extern}
+// CHECK-NEXT:    struct.def @UsesExternPayload {
+// CHECK-NEXT:      struct.member @out : !felt.type
+// CHECK-NEXT:      function.def @compute(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@UsesExternPayload> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@UsesExternPayload>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @extern_wrap(%[[VAL_5]]) : (!felt.type) -> !struct.type<@ExternPayload>
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_7]][@value] : <@ExternPayload>, !felt.type
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_8]], %[[VAL_8]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_6]][@__llzk_poly_lowering_pass_aux_member_0] = %[[VAL_9]] : <@UsesExternPayload>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@UsesExternPayload>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !struct.type<@UsesExternPayload>, %[[VAL_11:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @extern_wrap(%[[VAL_11]]) : (!felt.type) -> !struct.type<@ExternPayload>
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_12]][@value] : <@ExternPayload>, !felt.type
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_13]], %[[VAL_13]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_10]][@__llzk_poly_lowering_pass_aux_member_0] : <@UsesExternPayload>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_15]], %[[VAL_14]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_15]], %[[VAL_15]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_10]][@out] : <@UsesExternPayload>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_17]], %[[VAL_16]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
