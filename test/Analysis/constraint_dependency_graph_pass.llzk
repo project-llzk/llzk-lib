@@ -1151,3 +1151,35 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @CallTranslatedIntervals ConstraintDependencyGraph {
 // CHECK-NEXT:      { %arg0[@out], <felt.const: 7> }
 // CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @PodInitializedRoot {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%arg0: !felt.type) -> !struct.type<@PodInitializedRoot> {
+      %self = struct.new : !struct.type<@PodInitializedRoot>
+      struct.writem %self[@out] = %arg0 : !struct.type<@PodInitializedRoot>, !felt.type
+      function.return %self : !struct.type<@PodInitializedRoot>
+    }
+
+    function.def @constrain(%arg0: !struct.type<@PodInitializedRoot>, %arg1: !felt.type) {
+      %expected = struct.readm %arg0[@out] : !struct.type<@PodInitializedRoot>, !felt.type
+      %c1 = arith.constant 1 : index
+      %pod = pod.new { @count = %c1, @value = %arg1 } : !pod.type<[@count: index, @value: !felt.type]>
+      %count = pod.read %pod[@count] : !pod.type<[@count: index, @value: !felt.type]>, index
+      pod.write %pod[@count] = %count : !pod.type<[@count: index, @value: !felt.type]>, index
+      %actual = pod.read %pod[@value] : !pod.type<[@count: index, @value: !felt.type]>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @PodInitializedRoot ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0[@out], <%pod = pod.new { @count = %c1, @value = %arg1 } : !pod.type<[@count: index, @value: !felt.type]>[@value] }
+// CHECK-NEXT: }
+// INTRA-LABEL: @PodInitializedRoot ConstraintDependencyGraph {
+// INTRA-NEXT:     { %arg0[@out], <%pod = pod.new { @count = %c1, @value = %arg1 } : !pod.type<[@count: index, @value: !felt.type]>[@value] }
+// INTRA-NEXT: }

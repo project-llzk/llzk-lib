@@ -13,6 +13,7 @@
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Util/Hash.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/TypeHelper.h"
@@ -36,6 +37,7 @@ using namespace array;
 using namespace component;
 using namespace constrain;
 using namespace function;
+using namespace pod;
 
 /* SourceRefAnalysis */
 
@@ -161,6 +163,12 @@ LogicalResult SourceRefAnalysis::visitOperation(
       (void)newArrayVal.getElemFlatIdx(i).setValue(operandVals.at(elements[i])->getValue());
     }
     propagateIfChanged(results.front(), results.front()->setValue(newArrayVal));
+    return success();
+  }
+
+  if (auto newPod = llvm::dyn_cast<NewPodOp>(op)) {
+    auto newPodValue = SourceRefLattice::getDefaultValue(newPod.getResult());
+    propagateIfChanged(results.front(), results.front()->setValue(newPodValue));
     return success();
   }
 
