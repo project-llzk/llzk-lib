@@ -616,6 +616,7 @@ Functions</h2></td></tr>
 <tr class="memitem:ace269cecbfb44bc5826cd9136d88ae7f" id="r_ace269cecbfb44bc5826cd9136d88ae7f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1function_1_1CallOp.html">function::CallOp</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ace269cecbfb44bc5826cd9136d88ae7f">createCallPreservingInstantiationOperands</a> (mlir::Location loc, mlir::TypeRange newResultTypes, <a class="el" href="classllzk_1_1function_1_1CallOp.html">function::CallOp</a> oldCall, llvm::ArrayRef&lt; mlir::ValueRange &gt; mapOperands, mlir::ValueRange argOperands, mlir::ConversionPatternRewriter &amp;rewriter)</td></tr>
 <tr class="memdesc:ace269cecbfb44bc5826cd9136d88ae7f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rebuild a <span class="tt">function.call</span> while preserving explicit instantiation state from <span class="tt">oldCall</span>.  <br /></td></tr>
 <tr class="memitem:ad809d2a8931e263f7879703211032d0d" id="r_ad809d2a8931e263f7879703211032d0d"><td class="memItemLeft" align="right" valign="top">mlir::Value&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad809d2a8931e263f7879703211032d0d">rebuildExprInCompute</a> (mlir::Value val, <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a> computeFunc, mlir::OpBuilder &amp;builder, llvm::DenseMap&lt; mlir::Value, mlir::Value &gt; &amp;memo)</td></tr>
+<tr class="memdesc:ad809d2a8931e263f7879703211032d0d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rebuilds a straight-line constrain-side felt expression in <span class="tt">computeFunc</span>.  <br /></td></tr>
 <tr class="memitem:a61474e8347bb745efe90d84dccb680a8" id="r_a61474e8347bb745efe90d84dccb680a8"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a61474e8347bb745efe90d84dccb680a8">checkForAuxMemberConflicts</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> structDef, llvm::StringRef auxPrefix)</td></tr>
 <tr class="memitem:ac6677ce6c8f60fb650f590dc83088f01" id="r_ac6677ce6c8f60fb650f590dc83088f01"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac6677ce6c8f60fb650f590dc83088f01">checkFuncBodyIsStraightLine</a> (<a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a> func, llvm::StringRef passName)</td></tr>
 <tr class="memdesc:ac6677ce6c8f60fb650f590dc83088f01"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rejects control flow under <span class="tt">func</span>; auxiliary materialization assumes control flow has already been flattened or otherwise lowered away.  <br /></td></tr>
@@ -1179,7 +1180,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKLoweringUtils_8cpp_source.html#l00204">204</a> of file <a class="el" href="LLZKLoweringUtils_8cpp_source.html">LLZKLoweringUtils.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKLoweringUtils_8cpp_source.html#l00289">289</a> of file <a class="el" href="LLZKLoweringUtils_8cpp_source.html">LLZKLoweringUtils.cpp</a>.</p>
 
 </div>
 </div>
@@ -2353,7 +2354,7 @@ template&lt;typename T, typename U&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKLoweringUtils_8cpp_source.html#l00134">134</a> of file <a class="el" href="LLZKLoweringUtils_8cpp_source.html">LLZKLoweringUtils.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKLoweringUtils_8cpp_source.html#l00219">219</a> of file <a class="el" href="LLZKLoweringUtils_8cpp_source.html">LLZKLoweringUtils.cpp</a>.</p>
 
 </div>
 </div>
@@ -2376,7 +2377,7 @@ template&lt;typename T, typename U&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKLoweringUtils_8cpp_source.html#l00149">149</a> of file <a class="el" href="LLZKLoweringUtils_8cpp_source.html">LLZKLoweringUtils.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKLoweringUtils_8cpp_source.html#l00234">234</a> of file <a class="el" href="LLZKLoweringUtils_8cpp_source.html">LLZKLoweringUtils.cpp</a>.</p>
 
 </div>
 </div>
@@ -4103,7 +4104,7 @@ template&lt;typename OpImplClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKLoweringUtils_8cpp_source.html#l00212">212</a> of file <a class="el" href="LLZKLoweringUtils_8cpp_source.html">LLZKLoweringUtils.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKLoweringUtils_8cpp_source.html#l00297">297</a> of file <a class="el" href="LLZKLoweringUtils_8cpp_source.html">LLZKLoweringUtils.cpp</a>.</p>
 
 </div>
 </div>
@@ -7816,6 +7817,9 @@ template&lt;typename ConcreteOp&gt; </div>
       </table>
 </div><div class="memdoc">
 
+<p>Rebuilds a straight-line constrain-side felt expression in <span class="tt">computeFunc</span>. </p>
+<p>Block arguments are mapped by constrain entry-block position: argument 0 to compute <span class="tt">self</span>, and later arguments to compute inputs. Returns null after emitting a diagnostic when an expression root cannot be rebuilt safely in compute. </p>
+
 </div>
 </div>
 <a id="a12a702f1e67b6a7dd0c787d2770dfb8c" name="a12a702f1e67b6a7dd0c787d2770dfb8c"></a>
@@ -7847,7 +7851,7 @@ template&lt;typename ConcreteOp&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKLoweringUtils_8cpp_source.html#l00055">55</a> of file <a class="el" href="LLZKLoweringUtils_8cpp_source.html">LLZKLoweringUtils.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKLoweringUtils_8cpp_source.html#l00057">57</a> of file <a class="el" href="LLZKLoweringUtils_8cpp_source.html">LLZKLoweringUtils.cpp</a>.</p>
 
 </div>
 </div>
@@ -9159,7 +9163,7 @@ template&lt;typename OpClass, typename Rewriter, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKLoweringUtils_8cpp_source.html#l00185">185</a> of file <a class="el" href="LLZKLoweringUtils_8cpp_source.html">LLZKLoweringUtils.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKLoweringUtils_8cpp_source.html#l00270">270</a> of file <a class="el" href="LLZKLoweringUtils_8cpp_source.html">LLZKLoweringUtils.cpp</a>.</p>
 
 </div>
 </div>

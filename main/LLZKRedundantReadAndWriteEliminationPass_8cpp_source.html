@@ -599,199 +599,222 @@ $(function(){initNavTree('LLZKRedundantReadAndWriteEliminationPass_8cpp_source.h
 <div class="line"><a id="l00533" name="l00533"></a><span class="lineno">  533</span>    <span class="keyword">const</span> IntegerAttr zeroTableOffset = IntegerAttr::get(IndexType::get(op-&gt;getContext()), 0);</div>
 <div class="foldopen" id="foldopen00534" data-start="{" data-end="}">
 <div class="line"><a id="l00534" name="l00534"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a9134dc85ee4da34068b0c76993a6b364">  534</a></span>    <span class="keyword">auto</span> getMemberNode = [&amp;](Value <a class="code hl_namespace" href="namespacellzk_1_1component.html">component</a>, FlatSymbolRefAttr member) {</div>
-<div class="line"><a id="l00535" name="l00535"></a><span class="lineno">  535</span>      <span class="keywordflow">return</span> state.at(translate(<a class="code hl_namespace" href="namespacellzk_1_1component.html">component</a>))-&gt;getOrCreateChild(member);</div>
-<div class="line"><a id="l00536" name="l00536"></a><span class="lineno">  536</span>    };</div>
+<div class="line"><a id="l00535" name="l00535"></a><span class="lineno">  535</span>      std::shared_ptr&lt;ReferenceNode&gt; componentNode = tryGetValTree(translate(<a class="code hl_namespace" href="namespacellzk_1_1component.html">component</a>));</div>
+<div class="line"><a id="l00536" name="l00536"></a><span class="lineno">  536</span>      <span class="keywordflow">if</span> (componentNode == <span class="keyword">nullptr</span>) {</div>
 </div>
-<div class="line"><a id="l00537" name="l00537"></a><span class="lineno">  537</span>    <span class="keyword">auto</span> getMemberAccessNode = [&amp;](<a class="code hl_class" href="classllzk_1_1component_1_1MemberReadOp.html">MemberReadOp</a> readm) {</div>
-<div class="line"><a id="l00538" name="l00538"></a><span class="lineno">  538</span>      std::shared_ptr&lt;ReferenceNode&gt; access =</div>
+<div class="line"><a id="l00537" name="l00537"></a><span class="lineno">  537</span>        <span class="keywordflow">return</span> std::shared_ptr&lt;ReferenceNode&gt;();</div>
+<div class="line"><a id="l00538" name="l00538"></a><span class="lineno">  538</span>      }</div>
 <div class="foldopen" id="foldopen00539" data-start="{" data-end="}">
-<div class="line"><a id="l00539" name="l00539"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a2249e8647e952b18909c5638c2aba484">  539</a></span>          getMemberNode(readm.getComponent(), readm.getMemberNameAttr());</div>
-<div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span>      access = access-&gt;getOrCreateChild(readm.getTableOffset().value_or(zeroTableOffset));</div>
-<div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span>      <span class="keywordflow">if</span> (!readm.getMapOperands().empty()) {</div>
+<div class="line"><a id="l00539" name="l00539"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a2249e8647e952b18909c5638c2aba484">  539</a></span>      <span class="keywordflow">return</span> componentNode-&gt;getOrCreateChild(member);</div>
+<div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span>    };</div>
+<div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span>    <span class="keyword">auto</span> getMemberAccessNode = [&amp;](<a class="code hl_class" href="classllzk_1_1component_1_1MemberReadOp.html">MemberReadOp</a> readm) {</div>
 </div>
-<div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span>        access = access-&gt;getOrCreateChild(readm.getMapOpGroupSizesAttr());</div>
-<div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span>        access = access-&gt;getOrCreateChild(readm.getNumDimsPerMapAttr());</div>
+<div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span>      std::shared_ptr&lt;ReferenceNode&gt; access =</div>
+<div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span>          getMemberNode(readm.getComponent(), readm.getMemberNameAttr());</div>
 <div class="foldopen" id="foldopen00544" data-start="{" data-end="}">
-<div class="line"><a id="l00544" name="l00544"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a0eded59070e39c55a0b743478622ad7d">  544</a></span>      }</div>
-<div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> mapOperands : readm.getMapOperands()) {</div>
-<div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span>        <span class="keywordflow">for</span> (Value operand : mapOperands) {</div>
-<div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>          access = access-&gt;getOrCreateChild(translate(operand));</div>
-<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span>        }</div>
-<div class="line"><a id="l00549" name="l00549"></a><span class="lineno">  549</span>      }</div>
-<div class="line"><a id="l00550" name="l00550"></a><span class="lineno">  550</span>      <span class="keywordflow">return</span> access;</div>
-<div class="line"><a id="l00551" name="l00551"></a><span class="lineno">  551</span>    };</div>
-<div class="line"><a id="l00552" name="l00552"></a><span class="lineno">  552</span> </div>
-<div class="line"><a id="l00553" name="l00553"></a><span class="lineno">  553</span>    <span class="comment">// Read a value from an array. This works on both readarr operations (which</span></div>
-<div class="line"><a id="l00554" name="l00554"></a><span class="lineno">  554</span>    <span class="comment">// return a scalar value) and extractarr operations (which return a subarray).</span></div>
-<div class="line"><a id="l00555" name="l00555"></a><span class="lineno">  555</span>    <span class="keyword">auto</span> doArrayReadLike = [&amp;]&lt;HasInterface&lt;ArrayAccessOpInterface&gt; OpClass&gt;(OpClass readarr) {</div>
-<div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span>      std::shared_ptr&lt;ReferenceNode&gt; currValTree = state.at(translate(readarr.getArrRef()));</div>
-<div class="line"><a id="l00557" name="l00557"></a><span class="lineno">  557</span> </div>
-<div class="line"><a id="l00558" name="l00558"></a><span class="lineno">  558</span>      <span class="keywordflow">for</span> (Value origIdx : readarr.getIndices()) {</div>
+<div class="line"><a id="l00544" name="l00544"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a0eded59070e39c55a0b743478622ad7d">  544</a></span>      <span class="keywordflow">if</span> (access == <span class="keyword">nullptr</span>) {</div>
+<div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>        <span class="keywordflow">return</span> access;</div>
+<div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span>      }</div>
+<div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>      access = access-&gt;getOrCreateChild(readm.getTableOffset().value_or(zeroTableOffset));</div>
+<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span>      <span class="keywordflow">if</span> (!readm.getMapOperands().empty()) {</div>
+<div class="line"><a id="l00549" name="l00549"></a><span class="lineno">  549</span>        access = access-&gt;getOrCreateChild(readm.getMapOpGroupSizesAttr());</div>
+<div class="line"><a id="l00550" name="l00550"></a><span class="lineno">  550</span>        access = access-&gt;getOrCreateChild(readm.getNumDimsPerMapAttr());</div>
+<div class="line"><a id="l00551" name="l00551"></a><span class="lineno">  551</span>      }</div>
+<div class="line"><a id="l00552" name="l00552"></a><span class="lineno">  552</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> mapOperands : readm.getMapOperands()) {</div>
+<div class="line"><a id="l00553" name="l00553"></a><span class="lineno">  553</span>        <span class="keywordflow">for</span> (Value operand : mapOperands) {</div>
+<div class="line"><a id="l00554" name="l00554"></a><span class="lineno">  554</span>          access = access-&gt;getOrCreateChild(translate(operand));</div>
+<div class="line"><a id="l00555" name="l00555"></a><span class="lineno">  555</span>        }</div>
+<div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span>      }</div>
+<div class="line"><a id="l00557" name="l00557"></a><span class="lineno">  557</span>      <span class="keywordflow">return</span> access;</div>
+<div class="line"><a id="l00558" name="l00558"></a><span class="lineno">  558</span>    };</div>
 </div>
-<div class="line"><a id="l00559" name="l00559"></a><span class="lineno">  559</span>        Value idxVal = translate(origIdx);</div>
-<div class="line"><a id="l00560" name="l00560"></a><span class="lineno">  560</span>        currValTree = currValTree-&gt;getOrCreateChild(idxVal);</div>
-<div class="line"><a id="l00561" name="l00561"></a><span class="lineno">  561</span>      }</div>
-<div class="line"><a id="l00562" name="l00562"></a><span class="lineno">  562</span> </div>
+<div class="line"><a id="l00559" name="l00559"></a><span class="lineno">  559</span> </div>
+<div class="line"><a id="l00560" name="l00560"></a><span class="lineno">  560</span>    <span class="comment">// Read a value from an array. This works on both readarr operations (which</span></div>
+<div class="line"><a id="l00561" name="l00561"></a><span class="lineno">  561</span>    <span class="comment">// return a scalar value) and extractarr operations (which return a subarray).</span></div>
+<div class="line"><a id="l00562" name="l00562"></a><span class="lineno">  562</span>    <span class="keyword">auto</span> doArrayReadLike = [&amp;]&lt;HasInterface&lt;ArrayAccessOpInterface&gt; OpClass&gt;(OpClass readarr) {</div>
 <div class="line"><a id="l00563" name="l00563"></a><span class="lineno">  563</span>      Value resVal = readarr.getResult();</div>
-<div class="line"><a id="l00564" name="l00564"></a><span class="lineno">  564</span>      <span class="keywordflow">if</span> (!currValTree-&gt;hasStoredValue()) {</div>
-<div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span>        currValTree-&gt;setCurrentValue(resVal);</div>
-<div class="line"><a id="l00566" name="l00566"></a><span class="lineno">  566</span>      }</div>
-<div class="line"><a id="l00567" name="l00567"></a><span class="lineno">  567</span> </div>
+<div class="line"><a id="l00564" name="l00564"></a><span class="lineno">  564</span>      std::shared_ptr&lt;ReferenceNode&gt; currValTree = tryGetValTree(translate(readarr.getArrRef()));</div>
+<div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span>      <span class="keywordflow">if</span> (currValTree == <span class="keyword">nullptr</span>) {</div>
+<div class="line"><a id="l00566" name="l00566"></a><span class="lineno">  566</span>        state[resVal] = ReferenceNode::create(resVal, resVal);</div>
+<div class="line"><a id="l00567" name="l00567"></a><span class="lineno">  567</span>        readVals.push_back(resVal);</div>
 <div class="foldopen" id="foldopen00568" data-start="{" data-end="}">
-<div class="line"><a id="l00568" name="l00568"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#aa24244c5b2c7eee981cc7efcd51fbe6b">  568</a></span>      <span class="keywordflow">if</span> (currValTree-&gt;getStoredValue() != resVal) {</div>
-<div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span>        LLVM_DEBUG(</div>
-<div class="line"><a id="l00570" name="l00570"></a><span class="lineno">  570</span>            llvm::dbgs() &lt;&lt; readarr.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: replace &quot;</span> &lt;&lt; resVal &lt;&lt; <span class="stringliteral">&quot; with &quot;</span></div>
+<div class="line"><a id="l00568" name="l00568"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#aa24244c5b2c7eee981cc7efcd51fbe6b">  568</a></span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span>      }</div>
+<div class="line"><a id="l00570" name="l00570"></a><span class="lineno">  570</span> </div>
 </div>
-<div class="line"><a id="l00571" name="l00571"></a><span class="lineno">  571</span>                         &lt;&lt; currValTree-&gt;getStoredValue() &lt;&lt; <span class="charliteral">&#39;\n&#39;</span></div>
+<div class="line"><a id="l00571" name="l00571"></a><span class="lineno">  571</span>      <span class="keywordflow">for</span> (Value origIdx : readarr.getIndices()) {</div>
 </div>
-<div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span>        );</div>
-<div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span>        replacementMap[resVal] = currValTree-&gt;getStoredValue();</div>
+<div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span>        Value idxVal = translate(origIdx);</div>
+<div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span>        currValTree = currValTree-&gt;getOrCreateChild(idxVal);</div>
 <div class="foldopen" id="foldopen00574" data-start="{" data-end="}">
-<div class="line"><a id="l00574" name="l00574"></a><span class="lineno"><a class="line" href="namespacellzk.html#af73faea85b5225f29d750ce00d34cc76">  574</a></span>      } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span>        state[resVal] = currValTree;</div>
-<div class="line"><a id="l00576" name="l00576"></a><span class="lineno">  576</span>        LLVM_DEBUG(</div>
+<div class="line"><a id="l00574" name="l00574"></a><span class="lineno"><a class="line" href="namespacellzk.html#af73faea85b5225f29d750ce00d34cc76">  574</a></span>      }</div>
+<div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span> </div>
+<div class="line"><a id="l00576" name="l00576"></a><span class="lineno">  576</span>      <span class="keywordflow">if</span> (!currValTree-&gt;hasStoredValue()) {</div>
 </div>
-<div class="line"><a id="l00577" name="l00577"></a><span class="lineno">  577</span>            llvm::dbgs() &lt;&lt; readarr.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: &quot;</span> &lt;&lt; resVal &lt;&lt; <span class="stringliteral">&quot; =&gt; &quot;</span> &lt;&lt; *currValTree</div>
-<div class="line"><a id="l00578" name="l00578"></a><span class="lineno">  578</span>                         &lt;&lt; <span class="charliteral">&#39;\n&#39;</span></div>
-<div class="line"><a id="l00579" name="l00579"></a><span class="lineno">  579</span>        );</div>
-<div class="line"><a id="l00580" name="l00580"></a><span class="lineno">  580</span>      }</div>
-<div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span> </div>
-<div class="line"><a id="l00582" name="l00582"></a><span class="lineno">  582</span>      readVals.push_back(resVal);</div>
-<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span>    };</div>
-<div class="line"><a id="l00584" name="l00584"></a><span class="lineno">  584</span> </div>
-<div class="line"><a id="l00585" name="l00585"></a><span class="lineno">  585</span>    <span class="comment">// Write a scalar value (for writearr) or a subarray value (for insertarr)</span></div>
-<div class="line"><a id="l00586" name="l00586"></a><span class="lineno">  586</span>    <span class="comment">// to an array. The unique part of this operation relative to others is that</span></div>
-<div class="line"><a id="l00587" name="l00587"></a><span class="lineno">  587</span>    <span class="comment">// we may receive a variable index (i.e., not a constant). In this case, we</span></div>
-<div class="line"><a id="l00588" name="l00588"></a><span class="lineno">  588</span>    <span class="comment">// invalidate adjacent subtree state because the variable index may alias</span></div>
-<div class="line"><a id="l00589" name="l00589"></a><span class="lineno">  589</span>    <span class="comment">// another element.</span></div>
-<div class="line"><a id="l00590" name="l00590"></a><span class="lineno">  590</span>    <span class="keyword">auto</span> doArrayWriteLike = [&amp;]&lt;HasInterface&lt;ArrayAccessOpInterface&gt; OpClass&gt;(OpClass writearr) {</div>
-<div class="line"><a id="l00591" name="l00591"></a><span class="lineno">  591</span>      std::shared_ptr&lt;ReferenceNode&gt; currValTree = state.at(translate(writearr.getArrRef()));</div>
-<div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span>      Value newVal = translate(writearr.getRvalue());</div>
-<div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span>      std::shared_ptr&lt;ReferenceNode&gt; valTree = tryGetValTree(newVal);</div>
-<div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span> </div>
-<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span>      <span class="keywordflow">for</span> (Value origIdx : writearr.getIndices()) {</div>
-<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>        Value idxVal = translate(origIdx);</div>
-<div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>        <span class="comment">// This write will invalidate all children, since it may reference</span></div>
-<div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>        <span class="comment">// any number of them.</span></div>
-<div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>        <span class="keywordflow">if</span> (ReferenceID(idxVal).isValue()) {</div>
-<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>          LLVM_DEBUG(llvm::dbgs() &lt;&lt; writearr.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: invalidate alias\n&quot;</span>);</div>
-<div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span>          currValTree-&gt;invalidateChildren();</div>
-<div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span>        }</div>
-<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span>        currValTree = currValTree-&gt;getOrCreateChild(idxVal);</div>
-<div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span>      }</div>
-<div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span> </div>
-<div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span>      <span class="keywordflow">if</span> (currValTree-&gt;getStoredValue() == newVal) {</div>
-<div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span>        LLVM_DEBUG(</div>
-<div class="line"><a id="l00608" name="l00608"></a><span class="lineno">  608</span>            llvm::dbgs() &lt;&lt; writearr.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: subsequent &quot;</span> &lt;&lt; writearr</div>
-<div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span>                         &lt;&lt; <span class="stringliteral">&quot; is redundant\n&quot;</span></div>
-<div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span>        );</div>
-<div class="line"><a id="l00611" name="l00611"></a><span class="lineno">  611</span>        redundantWrites.push_back(writearr);</div>
-<div class="line"><a id="l00612" name="l00612"></a><span class="lineno">  612</span>      } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00613" name="l00613"></a><span class="lineno">  613</span>        <span class="keywordflow">if</span> (Operation *lastWrite = currValTree-&gt;updateLastWrite(writearr)) {</div>
-<div class="line"><a id="l00614" name="l00614"></a><span class="lineno">  614</span>          LLVM_DEBUG(</div>
-<div class="line"><a id="l00615" name="l00615"></a><span class="lineno">  615</span>              llvm::dbgs() &lt;&lt; writearr.getOperationName() &lt;&lt; <span class="stringliteral">&quot;writearr: replacing &quot;</span> &lt;&lt; lastWrite</div>
-<div class="line"><a id="l00616" name="l00616"></a><span class="lineno">  616</span>                           &lt;&lt; <span class="stringliteral">&quot; with prior write &quot;</span> &lt;&lt; *lastWrite &lt;&lt; <span class="charliteral">&#39;\n&#39;</span></div>
-<div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span>          );</div>
-<div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span>          redundantWrites.push_back(lastWrite);</div>
-<div class="line"><a id="l00619" name="l00619"></a><span class="lineno">  619</span>        }</div>
-<div class="line"><a id="l00620" name="l00620"></a><span class="lineno">  620</span>        currValTree-&gt;setCurrentValue(newVal, valTree);</div>
-<div class="line"><a id="l00621" name="l00621"></a><span class="lineno">  621</span>      }</div>
-<div class="line"><a id="l00622" name="l00622"></a><span class="lineno">  622</span>    };</div>
-<div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span> </div>
-<div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>    <span class="comment">// struct ops</span></div>
-<div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> newStruct = dyn_cast&lt;CreateStructOp&gt;(op)) {</div>
-<div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span>      <span class="comment">// For new values, the &quot;stored value&quot; of the reference is the creation site.</span></div>
-<div class="line"><a id="l00627" name="l00627"></a><span class="lineno">  627</span>      <span class="keyword">auto</span> structVal = ReferenceNode::create(newStruct, newStruct);</div>
-<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>      state[newStruct] = structVal;</div>
-<div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span>      LLVM_DEBUG(llvm::dbgs() &lt;&lt; newStruct.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: &quot;</span> &lt;&lt; *state[newStruct] &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>);</div>
-<div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span>      <span class="comment">// adding this to readVals</span></div>
-<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span>      readVals.push_back(newStruct);</div>
-<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> readm = dyn_cast&lt;MemberReadOp&gt;(op)) {</div>
-<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>      std::shared_ptr&lt;ReferenceNode&gt; access = getMemberAccessNode(readm);</div>
-<div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>      Value resVal = readm.getVal();</div>
-<div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>      <span class="keywordflow">if</span> (!access-&gt;hasStoredValue()) {</div>
-<div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span>        access-&gt;setCurrentValue(resVal);</div>
-<div class="line"><a id="l00637" name="l00637"></a><span class="lineno">  637</span>      }</div>
-<div class="line"><a id="l00638" name="l00638"></a><span class="lineno">  638</span>      <span class="keywordflow">if</span> (access-&gt;getStoredValue() != resVal) {</div>
-<div class="line"><a id="l00639" name="l00639"></a><span class="lineno">  639</span>        LLVM_DEBUG(</div>
-<div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span>            llvm::dbgs() &lt;&lt; readm.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: adding replacement map entry { &quot;</span></div>
-<div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span>                         &lt;&lt; resVal &lt;&lt; <span class="stringliteral">&quot; =&gt; &quot;</span> &lt;&lt; access-&gt;getStoredValue() &lt;&lt; <span class="stringliteral">&quot; }\n&quot;</span></div>
-<div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span>        );</div>
-<div class="line"><a id="l00643" name="l00643"></a><span class="lineno">  643</span>        replacementMap[resVal] = access-&gt;getStoredValue();</div>
-<div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span>      } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span>        state[resVal] = access;</div>
-<div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span>        LLVM_DEBUG(llvm::dbgs() &lt;&lt; readm.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: &quot;</span> &lt;&lt; *access &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>);</div>
-<div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span>      }</div>
-<div class="line"><a id="l00648" name="l00648"></a><span class="lineno">  648</span>      readVals.push_back(resVal);</div>
-<div class="line"><a id="l00649" name="l00649"></a><span class="lineno">  649</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> writem = dyn_cast&lt;MemberWriteOp&gt;(op)) {</div>
-<div class="line"><a id="l00650" name="l00650"></a><span class="lineno">  650</span>      std::shared_ptr&lt;ReferenceNode&gt; member =</div>
-<div class="line"><a id="l00651" name="l00651"></a><span class="lineno">  651</span>          getMemberNode(writem.getComponent(), writem.getMemberNameAttr());</div>
-<div class="line"><a id="l00652" name="l00652"></a><span class="lineno">  652</span>      <span class="comment">// Symbolic and affine offsets may resolve to the current row. Constant</span></div>
-<div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span>      <span class="comment">// nonzero offsets stay distinct from a current-row member write.</span></div>
-<div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span>      <span class="keywordtype">bool</span> invalidatedMayAliasRead = member-&gt;invalidateNonIntegerOffsetChildren();</div>
-<div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span>      Value writeVal = translate(writem.getVal());</div>
-<div class="line"><a id="l00656" name="l00656"></a><span class="lineno">  656</span>      <span class="keyword">auto</span> valTree = tryGetValTree(writeVal);</div>
-<div class="line"><a id="l00657" name="l00657"></a><span class="lineno">  657</span> </div>
-<div class="line"><a id="l00658" name="l00658"></a><span class="lineno">  658</span>      <span class="keyword">auto</span> access = member-&gt;getOrCreateChild(zeroTableOffset);</div>
-<div class="line"><a id="l00659" name="l00659"></a><span class="lineno">  659</span>      <span class="keywordflow">if</span> (invalidatedMayAliasRead) {</div>
-<div class="line"><a id="l00660" name="l00660"></a><span class="lineno">  660</span>        access-&gt;clearLastWrite();</div>
-<div class="line"><a id="l00661" name="l00661"></a><span class="lineno">  661</span>      }</div>
-<div class="line"><a id="l00662" name="l00662"></a><span class="lineno">  662</span>      <span class="keywordflow">if</span> (access-&gt;getStoredValue() == writeVal) {</div>
-<div class="line"><a id="l00663" name="l00663"></a><span class="lineno">  663</span>        LLVM_DEBUG(</div>
-<div class="line"><a id="l00664" name="l00664"></a><span class="lineno">  664</span>            llvm::dbgs() &lt;&lt; writem.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: recording redundant write &quot;</span> &lt;&lt; writem</div>
-<div class="line"><a id="l00665" name="l00665"></a><span class="lineno">  665</span>                         &lt;&lt; <span class="charliteral">&#39;\n&#39;</span></div>
-<div class="line"><a id="l00666" name="l00666"></a><span class="lineno">  666</span>        );</div>
-<div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span>        redundantWrites.push_back(writem);</div>
-<div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span>      } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span>        <span class="keywordflow">if</span> (<span class="keyword">auto</span> *lastWrite = access-&gt;updateLastWrite(writem)) {</div>
-<div class="line"><a id="l00670" name="l00670"></a><span class="lineno">  670</span>          LLVM_DEBUG(</div>
-<div class="line"><a id="l00671" name="l00671"></a><span class="lineno">  671</span>              llvm::dbgs() &lt;&lt; writem.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: recording overwritten write &quot;</span></div>
-<div class="line"><a id="l00672" name="l00672"></a><span class="lineno">  672</span>                           &lt;&lt; *lastWrite &lt;&lt; <span class="charliteral">&#39;\n&#39;</span></div>
-<div class="line"><a id="l00673" name="l00673"></a><span class="lineno">  673</span>          );</div>
-<div class="line"><a id="l00674" name="l00674"></a><span class="lineno">  674</span>          redundantWrites.push_back(lastWrite);</div>
-<div class="line"><a id="l00675" name="l00675"></a><span class="lineno">  675</span>        }</div>
-<div class="line"><a id="l00676" name="l00676"></a><span class="lineno">  676</span>        access-&gt;setCurrentValue(writeVal, valTree);</div>
-<div class="line"><a id="l00677" name="l00677"></a><span class="lineno">  677</span>        LLVM_DEBUG(</div>
-<div class="line"><a id="l00678" name="l00678"></a><span class="lineno">  678</span>            llvm::dbgs() &lt;&lt; writem.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: &quot;</span> &lt;&lt; *access &lt;&lt; <span class="stringliteral">&quot; set to &quot;</span> &lt;&lt; writeVal</div>
-<div class="line"><a id="l00679" name="l00679"></a><span class="lineno">  679</span>                         &lt;&lt; <span class="charliteral">&#39;\n&#39;</span></div>
-<div class="line"><a id="l00680" name="l00680"></a><span class="lineno">  680</span>        );</div>
-<div class="line"><a id="l00681" name="l00681"></a><span class="lineno">  681</span>      }</div>
-<div class="line"><a id="l00682" name="l00682"></a><span class="lineno">  682</span>    }</div>
-<div class="line"><a id="l00683" name="l00683"></a><span class="lineno">  683</span>    <span class="comment">// array ops</span></div>
-<div class="line"><a id="l00684" name="l00684"></a><span class="lineno">  684</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> newArray = dyn_cast&lt;CreateArrayOp&gt;(op)) {</div>
-<div class="line"><a id="l00685" name="l00685"></a><span class="lineno">  685</span>      <span class="keyword">auto</span> arrayVal = ReferenceNode::create(newArray, newArray);</div>
-<div class="line"><a id="l00686" name="l00686"></a><span class="lineno">  686</span>      state[newArray] = arrayVal;</div>
-<div class="line"><a id="l00687" name="l00687"></a><span class="lineno">  687</span> </div>
-<div class="line"><a id="l00688" name="l00688"></a><span class="lineno">  688</span>      <span class="comment">// If we&#39;re given a constructor, we can instantiate elements using</span></div>
-<div class="line"><a id="l00689" name="l00689"></a><span class="lineno">  689</span>      <span class="comment">// constant indices.</span></div>
-<div class="line"><a id="l00690" name="l00690"></a><span class="lineno">  690</span>      <span class="keywordtype">unsigned</span> idx = 0;</div>
-<div class="line"><a id="l00691" name="l00691"></a><span class="lineno">  691</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> elem : newArray.getElements()) {</div>
-<div class="line"><a id="l00692" name="l00692"></a><span class="lineno">  692</span>        Value elemVal = translate(elem);</div>
-<div class="line"><a id="l00693" name="l00693"></a><span class="lineno">  693</span>        <span class="keyword">auto</span> valTree = tryGetValTree(elemVal);</div>
-<div class="line"><a id="l00694" name="l00694"></a><span class="lineno">  694</span>        <span class="keyword">auto</span> elemChild = arrayVal-&gt;createChild(idx, elemVal, valTree);</div>
-<div class="line"><a id="l00695" name="l00695"></a><span class="lineno">  695</span>        LLVM_DEBUG(</div>
-<div class="line"><a id="l00696" name="l00696"></a><span class="lineno">  696</span>            llvm::dbgs() &lt;&lt; newArray.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: element &quot;</span> &lt;&lt; idx &lt;&lt; <span class="stringliteral">&quot; initialized to &quot;</span></div>
-<div class="line"><a id="l00697" name="l00697"></a><span class="lineno">  697</span>                         &lt;&lt; *elemChild &lt;&lt; <span class="charliteral">&#39;\n&#39;</span></div>
-<div class="line"><a id="l00698" name="l00698"></a><span class="lineno">  698</span>        );</div>
-<div class="line"><a id="l00699" name="l00699"></a><span class="lineno">  699</span>        idx++;</div>
-<div class="line"><a id="l00700" name="l00700"></a><span class="lineno">  700</span>      }</div>
-<div class="line"><a id="l00701" name="l00701"></a><span class="lineno">  701</span> </div>
-<div class="line"><a id="l00702" name="l00702"></a><span class="lineno">  702</span>      readVals.push_back(newArray);</div>
-<div class="line"><a id="l00703" name="l00703"></a><span class="lineno">  703</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> readarr = dyn_cast&lt;ReadArrayOp&gt;(op)) {</div>
-<div class="line"><a id="l00704" name="l00704"></a><span class="lineno">  704</span>      doArrayReadLike(readarr);</div>
-<div class="line"><a id="l00705" name="l00705"></a><span class="lineno">  705</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> writearr = dyn_cast&lt;WriteArrayOp&gt;(op)) {</div>
-<div class="line"><a id="l00706" name="l00706"></a><span class="lineno">  706</span>      doArrayWriteLike(writearr);</div>
-<div class="line"><a id="l00707" name="l00707"></a><span class="lineno">  707</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> extractarr = dyn_cast&lt;ExtractArrayOp&gt;(op)) {</div>
-<div class="line"><a id="l00708" name="l00708"></a><span class="lineno">  708</span>      <span class="comment">// Logic is essentially the same as readarr</span></div>
-<div class="line"><a id="l00709" name="l00709"></a><span class="lineno">  709</span>      doArrayReadLike(extractarr);</div>
-<div class="line"><a id="l00710" name="l00710"></a><span class="lineno">  710</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> insertarr = dyn_cast&lt;InsertArrayOp&gt;(op)) {</div>
-<div class="line"><a id="l00711" name="l00711"></a><span class="lineno">  711</span>      <span class="comment">// Logic is essentially the same as writearr</span></div>
-<div class="line"><a id="l00712" name="l00712"></a><span class="lineno">  712</span>      doArrayWriteLike(insertarr);</div>
-<div class="line"><a id="l00713" name="l00713"></a><span class="lineno">  713</span>    }</div>
-<div class="line"><a id="l00714" name="l00714"></a><span class="lineno">  714</span>  }</div>
-<div class="line"><a id="l00715" name="l00715"></a><span class="lineno">  715</span>};</div>
-<div class="line"><a id="l00716" name="l00716"></a><span class="lineno">  716</span> </div>
-<div class="line"><a id="l00717" name="l00717"></a><span class="lineno">  717</span>} <span class="comment">// namespace</span></div>
+<div class="line"><a id="l00577" name="l00577"></a><span class="lineno">  577</span>        currValTree-&gt;setCurrentValue(resVal);</div>
+<div class="line"><a id="l00578" name="l00578"></a><span class="lineno">  578</span>      }</div>
+<div class="line"><a id="l00579" name="l00579"></a><span class="lineno">  579</span> </div>
+<div class="line"><a id="l00580" name="l00580"></a><span class="lineno">  580</span>      <span class="keywordflow">if</span> (currValTree-&gt;getStoredValue() != resVal) {</div>
+<div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span>        LLVM_DEBUG(</div>
+<div class="line"><a id="l00582" name="l00582"></a><span class="lineno">  582</span>            llvm::dbgs() &lt;&lt; readarr.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: replace &quot;</span> &lt;&lt; resVal &lt;&lt; <span class="stringliteral">&quot; with &quot;</span></div>
+<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span>                         &lt;&lt; currValTree-&gt;getStoredValue() &lt;&lt; <span class="charliteral">&#39;\n&#39;</span></div>
+<div class="line"><a id="l00584" name="l00584"></a><span class="lineno">  584</span>        );</div>
+<div class="line"><a id="l00585" name="l00585"></a><span class="lineno">  585</span>        replacementMap[resVal] = currValTree-&gt;getStoredValue();</div>
+<div class="line"><a id="l00586" name="l00586"></a><span class="lineno">  586</span>      } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00587" name="l00587"></a><span class="lineno">  587</span>        state[resVal] = currValTree;</div>
+<div class="line"><a id="l00588" name="l00588"></a><span class="lineno">  588</span>        LLVM_DEBUG(</div>
+<div class="line"><a id="l00589" name="l00589"></a><span class="lineno">  589</span>            llvm::dbgs() &lt;&lt; readarr.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: &quot;</span> &lt;&lt; resVal &lt;&lt; <span class="stringliteral">&quot; =&gt; &quot;</span> &lt;&lt; *currValTree</div>
+<div class="line"><a id="l00590" name="l00590"></a><span class="lineno">  590</span>                         &lt;&lt; <span class="charliteral">&#39;\n&#39;</span></div>
+<div class="line"><a id="l00591" name="l00591"></a><span class="lineno">  591</span>        );</div>
+<div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span>      }</div>
+<div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span> </div>
+<div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>      readVals.push_back(resVal);</div>
+<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span>    };</div>
+<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span> </div>
+<div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>    <span class="comment">// Write a scalar value (for writearr) or a subarray value (for insertarr)</span></div>
+<div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>    <span class="comment">// to an array. The unique part of this operation relative to others is that</span></div>
+<div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>    <span class="comment">// we may receive a variable index (i.e., not a constant). In this case, we</span></div>
+<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>    <span class="comment">// invalidate adjacent subtree state because the variable index may alias</span></div>
+<div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span>    <span class="comment">// another element.</span></div>
+<div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span>    <span class="keyword">auto</span> doArrayWriteLike = [&amp;]&lt;HasInterface&lt;ArrayAccessOpInterface&gt; OpClass&gt;(OpClass writearr) {</div>
+<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span>      std::shared_ptr&lt;ReferenceNode&gt; currValTree = tryGetValTree(translate(writearr.getArrRef()));</div>
+<div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span>      <span class="keywordflow">if</span> (currValTree == <span class="keyword">nullptr</span>) {</div>
+<div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span>      }</div>
+<div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span>      Value newVal = translate(writearr.getRvalue());</div>
+<div class="line"><a id="l00608" name="l00608"></a><span class="lineno">  608</span>      std::shared_ptr&lt;ReferenceNode&gt; valTree = tryGetValTree(newVal);</div>
+<div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span> </div>
+<div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span>      <span class="keywordflow">for</span> (Value origIdx : writearr.getIndices()) {</div>
+<div class="line"><a id="l00611" name="l00611"></a><span class="lineno">  611</span>        Value idxVal = translate(origIdx);</div>
+<div class="line"><a id="l00612" name="l00612"></a><span class="lineno">  612</span>        <span class="comment">// This write will invalidate all children, since it may reference</span></div>
+<div class="line"><a id="l00613" name="l00613"></a><span class="lineno">  613</span>        <span class="comment">// any number of them.</span></div>
+<div class="line"><a id="l00614" name="l00614"></a><span class="lineno">  614</span>        <span class="keywordflow">if</span> (ReferenceID(idxVal).isValue()) {</div>
+<div class="line"><a id="l00615" name="l00615"></a><span class="lineno">  615</span>          LLVM_DEBUG(llvm::dbgs() &lt;&lt; writearr.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: invalidate alias\n&quot;</span>);</div>
+<div class="line"><a id="l00616" name="l00616"></a><span class="lineno">  616</span>          currValTree-&gt;invalidateChildren();</div>
+<div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span>        }</div>
+<div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span>        currValTree = currValTree-&gt;getOrCreateChild(idxVal);</div>
+<div class="line"><a id="l00619" name="l00619"></a><span class="lineno">  619</span>      }</div>
+<div class="line"><a id="l00620" name="l00620"></a><span class="lineno">  620</span> </div>
+<div class="line"><a id="l00621" name="l00621"></a><span class="lineno">  621</span>      <span class="keywordflow">if</span> (currValTree-&gt;getStoredValue() == newVal) {</div>
+<div class="line"><a id="l00622" name="l00622"></a><span class="lineno">  622</span>        LLVM_DEBUG(</div>
+<div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span>            llvm::dbgs() &lt;&lt; writearr.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: subsequent &quot;</span> &lt;&lt; writearr</div>
+<div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>                         &lt;&lt; <span class="stringliteral">&quot; is redundant\n&quot;</span></div>
+<div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>        );</div>
+<div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span>        redundantWrites.push_back(writearr);</div>
+<div class="line"><a id="l00627" name="l00627"></a><span class="lineno">  627</span>      } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>        <span class="keywordflow">if</span> (Operation *lastWrite = currValTree-&gt;updateLastWrite(writearr)) {</div>
+<div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span>          LLVM_DEBUG(</div>
+<div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span>              llvm::dbgs() &lt;&lt; writearr.getOperationName() &lt;&lt; <span class="stringliteral">&quot;writearr: replacing &quot;</span> &lt;&lt; lastWrite</div>
+<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span>                           &lt;&lt; <span class="stringliteral">&quot; with prior write &quot;</span> &lt;&lt; *lastWrite &lt;&lt; <span class="charliteral">&#39;\n&#39;</span></div>
+<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span>          );</div>
+<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>          redundantWrites.push_back(lastWrite);</div>
+<div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>        }</div>
+<div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>        currValTree-&gt;setCurrentValue(newVal, valTree);</div>
+<div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span>      }</div>
+<div class="line"><a id="l00637" name="l00637"></a><span class="lineno">  637</span>    };</div>
+<div class="line"><a id="l00638" name="l00638"></a><span class="lineno">  638</span> </div>
+<div class="line"><a id="l00639" name="l00639"></a><span class="lineno">  639</span>    <span class="comment">// struct ops</span></div>
+<div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> newStruct = dyn_cast&lt;CreateStructOp&gt;(op)) {</div>
+<div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span>      <span class="comment">// For new values, the &quot;stored value&quot; of the reference is the creation site.</span></div>
+<div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span>      <span class="keyword">auto</span> structVal = ReferenceNode::create(newStruct, newStruct);</div>
+<div class="line"><a id="l00643" name="l00643"></a><span class="lineno">  643</span>      state[newStruct] = structVal;</div>
+<div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span>      LLVM_DEBUG(llvm::dbgs() &lt;&lt; newStruct.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: &quot;</span> &lt;&lt; *state[newStruct] &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>);</div>
+<div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span>      <span class="comment">// adding this to readVals</span></div>
+<div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span>      readVals.push_back(newStruct);</div>
+<div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> readm = dyn_cast&lt;MemberReadOp&gt;(op)) {</div>
+<div class="line"><a id="l00648" name="l00648"></a><span class="lineno">  648</span>      std::shared_ptr&lt;ReferenceNode&gt; access = getMemberAccessNode(readm);</div>
+<div class="line"><a id="l00649" name="l00649"></a><span class="lineno">  649</span>      Value resVal = readm.getVal();</div>
+<div class="line"><a id="l00650" name="l00650"></a><span class="lineno">  650</span>      <span class="keywordflow">if</span> (access == <span class="keyword">nullptr</span>) {</div>
+<div class="line"><a id="l00651" name="l00651"></a><span class="lineno">  651</span>        state[resVal] = ReferenceNode::create(resVal, resVal);</div>
+<div class="line"><a id="l00652" name="l00652"></a><span class="lineno">  652</span>        readVals.push_back(resVal);</div>
+<div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span>      }</div>
+<div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span>      <span class="keywordflow">if</span> (!access-&gt;hasStoredValue()) {</div>
+<div class="line"><a id="l00656" name="l00656"></a><span class="lineno">  656</span>        access-&gt;setCurrentValue(resVal);</div>
+<div class="line"><a id="l00657" name="l00657"></a><span class="lineno">  657</span>      }</div>
+<div class="line"><a id="l00658" name="l00658"></a><span class="lineno">  658</span>      <span class="keywordflow">if</span> (access-&gt;getStoredValue() != resVal) {</div>
+<div class="line"><a id="l00659" name="l00659"></a><span class="lineno">  659</span>        LLVM_DEBUG(</div>
+<div class="line"><a id="l00660" name="l00660"></a><span class="lineno">  660</span>            llvm::dbgs() &lt;&lt; readm.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: adding replacement map entry { &quot;</span></div>
+<div class="line"><a id="l00661" name="l00661"></a><span class="lineno">  661</span>                         &lt;&lt; resVal &lt;&lt; <span class="stringliteral">&quot; =&gt; &quot;</span> &lt;&lt; access-&gt;getStoredValue() &lt;&lt; <span class="stringliteral">&quot; }\n&quot;</span></div>
+<div class="line"><a id="l00662" name="l00662"></a><span class="lineno">  662</span>        );</div>
+<div class="line"><a id="l00663" name="l00663"></a><span class="lineno">  663</span>        replacementMap[resVal] = access-&gt;getStoredValue();</div>
+<div class="line"><a id="l00664" name="l00664"></a><span class="lineno">  664</span>      } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00665" name="l00665"></a><span class="lineno">  665</span>        state[resVal] = access;</div>
+<div class="line"><a id="l00666" name="l00666"></a><span class="lineno">  666</span>        LLVM_DEBUG(llvm::dbgs() &lt;&lt; readm.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: &quot;</span> &lt;&lt; *access &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>);</div>
+<div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span>      }</div>
+<div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span>      readVals.push_back(resVal);</div>
+<div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> writem = dyn_cast&lt;MemberWriteOp&gt;(op)) {</div>
+<div class="line"><a id="l00670" name="l00670"></a><span class="lineno">  670</span>      std::shared_ptr&lt;ReferenceNode&gt; member =</div>
+<div class="line"><a id="l00671" name="l00671"></a><span class="lineno">  671</span>          getMemberNode(writem.getComponent(), writem.getMemberNameAttr());</div>
+<div class="line"><a id="l00672" name="l00672"></a><span class="lineno">  672</span>      <span class="keywordflow">if</span> (member == <span class="keyword">nullptr</span>) {</div>
+<div class="line"><a id="l00673" name="l00673"></a><span class="lineno">  673</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00674" name="l00674"></a><span class="lineno">  674</span>      }</div>
+<div class="line"><a id="l00675" name="l00675"></a><span class="lineno">  675</span>      <span class="comment">// Symbolic and affine offsets may resolve to the current row. Constant</span></div>
+<div class="line"><a id="l00676" name="l00676"></a><span class="lineno">  676</span>      <span class="comment">// nonzero offsets stay distinct from a current-row member write.</span></div>
+<div class="line"><a id="l00677" name="l00677"></a><span class="lineno">  677</span>      <span class="keywordtype">bool</span> invalidatedMayAliasRead = member-&gt;invalidateNonIntegerOffsetChildren();</div>
+<div class="line"><a id="l00678" name="l00678"></a><span class="lineno">  678</span>      Value writeVal = translate(writem.getVal());</div>
+<div class="line"><a id="l00679" name="l00679"></a><span class="lineno">  679</span>      <span class="keyword">auto</span> valTree = tryGetValTree(writeVal);</div>
+<div class="line"><a id="l00680" name="l00680"></a><span class="lineno">  680</span> </div>
+<div class="line"><a id="l00681" name="l00681"></a><span class="lineno">  681</span>      <span class="keyword">auto</span> access = member-&gt;getOrCreateChild(zeroTableOffset);</div>
+<div class="line"><a id="l00682" name="l00682"></a><span class="lineno">  682</span>      <span class="keywordflow">if</span> (invalidatedMayAliasRead) {</div>
+<div class="line"><a id="l00683" name="l00683"></a><span class="lineno">  683</span>        access-&gt;clearLastWrite();</div>
+<div class="line"><a id="l00684" name="l00684"></a><span class="lineno">  684</span>      }</div>
+<div class="line"><a id="l00685" name="l00685"></a><span class="lineno">  685</span>      <span class="keywordflow">if</span> (access-&gt;getStoredValue() == writeVal) {</div>
+<div class="line"><a id="l00686" name="l00686"></a><span class="lineno">  686</span>        LLVM_DEBUG(</div>
+<div class="line"><a id="l00687" name="l00687"></a><span class="lineno">  687</span>            llvm::dbgs() &lt;&lt; writem.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: recording redundant write &quot;</span> &lt;&lt; writem</div>
+<div class="line"><a id="l00688" name="l00688"></a><span class="lineno">  688</span>                         &lt;&lt; <span class="charliteral">&#39;\n&#39;</span></div>
+<div class="line"><a id="l00689" name="l00689"></a><span class="lineno">  689</span>        );</div>
+<div class="line"><a id="l00690" name="l00690"></a><span class="lineno">  690</span>        redundantWrites.push_back(writem);</div>
+<div class="line"><a id="l00691" name="l00691"></a><span class="lineno">  691</span>      } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00692" name="l00692"></a><span class="lineno">  692</span>        <span class="keywordflow">if</span> (<span class="keyword">auto</span> *lastWrite = access-&gt;updateLastWrite(writem)) {</div>
+<div class="line"><a id="l00693" name="l00693"></a><span class="lineno">  693</span>          LLVM_DEBUG(</div>
+<div class="line"><a id="l00694" name="l00694"></a><span class="lineno">  694</span>              llvm::dbgs() &lt;&lt; writem.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: recording overwritten write &quot;</span></div>
+<div class="line"><a id="l00695" name="l00695"></a><span class="lineno">  695</span>                           &lt;&lt; *lastWrite &lt;&lt; <span class="charliteral">&#39;\n&#39;</span></div>
+<div class="line"><a id="l00696" name="l00696"></a><span class="lineno">  696</span>          );</div>
+<div class="line"><a id="l00697" name="l00697"></a><span class="lineno">  697</span>          redundantWrites.push_back(lastWrite);</div>
+<div class="line"><a id="l00698" name="l00698"></a><span class="lineno">  698</span>        }</div>
+<div class="line"><a id="l00699" name="l00699"></a><span class="lineno">  699</span>        access-&gt;setCurrentValue(writeVal, valTree);</div>
+<div class="line"><a id="l00700" name="l00700"></a><span class="lineno">  700</span>        LLVM_DEBUG(</div>
+<div class="line"><a id="l00701" name="l00701"></a><span class="lineno">  701</span>            llvm::dbgs() &lt;&lt; writem.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: &quot;</span> &lt;&lt; *access &lt;&lt; <span class="stringliteral">&quot; set to &quot;</span> &lt;&lt; writeVal</div>
+<div class="line"><a id="l00702" name="l00702"></a><span class="lineno">  702</span>                         &lt;&lt; <span class="charliteral">&#39;\n&#39;</span></div>
+<div class="line"><a id="l00703" name="l00703"></a><span class="lineno">  703</span>        );</div>
+<div class="line"><a id="l00704" name="l00704"></a><span class="lineno">  704</span>      }</div>
+<div class="line"><a id="l00705" name="l00705"></a><span class="lineno">  705</span>    }</div>
+<div class="line"><a id="l00706" name="l00706"></a><span class="lineno">  706</span>    <span class="comment">// array ops</span></div>
+<div class="line"><a id="l00707" name="l00707"></a><span class="lineno">  707</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> newArray = dyn_cast&lt;CreateArrayOp&gt;(op)) {</div>
+<div class="line"><a id="l00708" name="l00708"></a><span class="lineno">  708</span>      <span class="keyword">auto</span> arrayVal = ReferenceNode::create(newArray, newArray);</div>
+<div class="line"><a id="l00709" name="l00709"></a><span class="lineno">  709</span>      state[newArray] = arrayVal;</div>
+<div class="line"><a id="l00710" name="l00710"></a><span class="lineno">  710</span> </div>
+<div class="line"><a id="l00711" name="l00711"></a><span class="lineno">  711</span>      <span class="comment">// If we&#39;re given a constructor, we can instantiate elements using</span></div>
+<div class="line"><a id="l00712" name="l00712"></a><span class="lineno">  712</span>      <span class="comment">// constant indices.</span></div>
+<div class="line"><a id="l00713" name="l00713"></a><span class="lineno">  713</span>      <span class="keywordtype">unsigned</span> idx = 0;</div>
+<div class="line"><a id="l00714" name="l00714"></a><span class="lineno">  714</span>      <span class="keywordflow">for</span> (<span class="keyword">auto</span> elem : newArray.getElements()) {</div>
+<div class="line"><a id="l00715" name="l00715"></a><span class="lineno">  715</span>        Value elemVal = translate(elem);</div>
+<div class="line"><a id="l00716" name="l00716"></a><span class="lineno">  716</span>        <span class="keyword">auto</span> valTree = tryGetValTree(elemVal);</div>
+<div class="line"><a id="l00717" name="l00717"></a><span class="lineno">  717</span>        <span class="keyword">auto</span> elemChild = arrayVal-&gt;createChild(idx, elemVal, valTree);</div>
+<div class="line"><a id="l00718" name="l00718"></a><span class="lineno">  718</span>        LLVM_DEBUG(</div>
+<div class="line"><a id="l00719" name="l00719"></a><span class="lineno">  719</span>            llvm::dbgs() &lt;&lt; newArray.getOperationName() &lt;&lt; <span class="stringliteral">&quot;: element &quot;</span> &lt;&lt; idx &lt;&lt; <span class="stringliteral">&quot; initialized to &quot;</span></div>
+<div class="line"><a id="l00720" name="l00720"></a><span class="lineno">  720</span>                         &lt;&lt; *elemChild &lt;&lt; <span class="charliteral">&#39;\n&#39;</span></div>
+<div class="line"><a id="l00721" name="l00721"></a><span class="lineno">  721</span>        );</div>
+<div class="line"><a id="l00722" name="l00722"></a><span class="lineno">  722</span>        idx++;</div>
+<div class="line"><a id="l00723" name="l00723"></a><span class="lineno">  723</span>      }</div>
+<div class="line"><a id="l00724" name="l00724"></a><span class="lineno">  724</span> </div>
+<div class="line"><a id="l00725" name="l00725"></a><span class="lineno">  725</span>      readVals.push_back(newArray);</div>
+<div class="line"><a id="l00726" name="l00726"></a><span class="lineno">  726</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> readarr = dyn_cast&lt;ReadArrayOp&gt;(op)) {</div>
+<div class="line"><a id="l00727" name="l00727"></a><span class="lineno">  727</span>      doArrayReadLike(readarr);</div>
+<div class="line"><a id="l00728" name="l00728"></a><span class="lineno">  728</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> writearr = dyn_cast&lt;WriteArrayOp&gt;(op)) {</div>
+<div class="line"><a id="l00729" name="l00729"></a><span class="lineno">  729</span>      doArrayWriteLike(writearr);</div>
+<div class="line"><a id="l00730" name="l00730"></a><span class="lineno">  730</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> extractarr = dyn_cast&lt;ExtractArrayOp&gt;(op)) {</div>
+<div class="line"><a id="l00731" name="l00731"></a><span class="lineno">  731</span>      <span class="comment">// Logic is essentially the same as readarr</span></div>
+<div class="line"><a id="l00732" name="l00732"></a><span class="lineno">  732</span>      doArrayReadLike(extractarr);</div>
+<div class="line"><a id="l00733" name="l00733"></a><span class="lineno">  733</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<span class="keyword">auto</span> insertarr = dyn_cast&lt;InsertArrayOp&gt;(op)) {</div>
+<div class="line"><a id="l00734" name="l00734"></a><span class="lineno">  734</span>      <span class="comment">// Logic is essentially the same as writearr</span></div>
+<div class="line"><a id="l00735" name="l00735"></a><span class="lineno">  735</span>      doArrayWriteLike(insertarr);</div>
+<div class="line"><a id="l00736" name="l00736"></a><span class="lineno">  736</span>    }</div>
+<div class="line"><a id="l00737" name="l00737"></a><span class="lineno">  737</span>  }</div>
+<div class="line"><a id="l00738" name="l00738"></a><span class="lineno">  738</span>};</div>
+<div class="line"><a id="l00739" name="l00739"></a><span class="lineno">  739</span> </div>
+<div class="line"><a id="l00740" name="l00740"></a><span class="lineno">  740</span>} <span class="comment">// namespace</span></div>
 <div class="ttc" id="aArray_2IR_2Ops_8h_html"><div class="ttname"><a href="Array_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aConcepts_8h_html"><div class="ttname"><a href="Concepts_8h.html">Concepts.h</a></div></div>
 <div class="ttc" id="aFelt_2IR_2Ops_8h_html"><div class="ttname"><a href="Felt_2IR_2Ops_8h.html">Ops.h</a></div></div>

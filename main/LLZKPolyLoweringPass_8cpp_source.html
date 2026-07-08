@@ -738,21 +738,25 @@ $(function(){initNavTree('LLZKPolyLoweringPass_8cpp_source.html','',''); });
 <div class="line"><a id="l00615" name="l00615"></a><span class="lineno">  615</span>        <span class="keyword">const</span> <span class="keyword">auto</span> &amp;assign = auxAssignments[assignIdx];</div>
 <div class="line"><a id="l00616" name="l00616"></a><span class="lineno">  616</span>        Value rebuiltExpr =</div>
 <div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span>            <a class="code hl_function" href="namespacellzk.html#a12a702f1e67b6a7dd0c787d2770dfb8c">rebuildExprInCompute</a>(assign.computedValue, computeFunc, builder, rebuildMemo);</div>
-<div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span>        builder.create&lt;MemberWriteOp&gt;(</div>
-<div class="line"><a id="l00619" name="l00619"></a><span class="lineno">  619</span>            assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxMemberName),</div>
-<div class="line"><a id="l00620" name="l00620"></a><span class="lineno">  620</span>            rebuiltExpr</div>
-<div class="line"><a id="l00621" name="l00621"></a><span class="lineno">  621</span>        );</div>
-<div class="line"><a id="l00622" name="l00622"></a><span class="lineno">  622</span>        <span class="keywordflow">if</span> (assign.auxValue) {</div>
-<div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span>          <span class="comment">// Reuse the expression just written so later aux producers do not need an</span></div>
-<div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>          <span class="comment">// immediate read from the generated aux member.</span></div>
-<div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>          rebuildMemo[assign.auxValue] = rebuiltExpr;</div>
-<div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span>        }</div>
-<div class="line"><a id="l00627" name="l00627"></a><span class="lineno">  627</span>      }</div>
-<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>    });</div>
-<div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span>  }</div>
-<div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span>};</div>
-<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span> </div>
-<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span>} <span class="comment">// namespace</span></div>
+<div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span>        <span class="keywordflow">if</span> (!rebuiltExpr) {</div>
+<div class="line"><a id="l00619" name="l00619"></a><span class="lineno">  619</span>          signalPassFailure();</div>
+<div class="line"><a id="l00620" name="l00620"></a><span class="lineno">  620</span>          <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00621" name="l00621"></a><span class="lineno">  621</span>        }</div>
+<div class="line"><a id="l00622" name="l00622"></a><span class="lineno">  622</span>        builder.create&lt;MemberWriteOp&gt;(</div>
+<div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span>            assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxMemberName),</div>
+<div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>            rebuiltExpr</div>
+<div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>        );</div>
+<div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span>        <span class="keywordflow">if</span> (assign.auxValue) {</div>
+<div class="line"><a id="l00627" name="l00627"></a><span class="lineno">  627</span>          <span class="comment">// Reuse the expression just written so later aux producers do not need an</span></div>
+<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>          <span class="comment">// immediate read from the generated aux member.</span></div>
+<div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span>          rebuildMemo[assign.auxValue] = rebuiltExpr;</div>
+<div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span>        }</div>
+<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span>      }</div>
+<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span>    });</div>
+<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>  }</div>
+<div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>};</div>
+<div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span> </div>
+<div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span>} <span class="comment">// namespace</span></div>
 <div class="ttc" id="aArray_2IR_2Ops_8h_html"><div class="ttname"><a href="Array_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aConstrain_2IR_2Ops_8h_html"><div class="ttname"><a href="Constrain_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aFunction_2IR_2Ops_8h_html"><div class="ttname"><a href="Function_2IR_2Ops_8h.html">Ops.h</a></div></div>
@@ -798,12 +802,12 @@ $(function(){initNavTree('LLZKPolyLoweringPass_8cpp_source.html','',''); });
 <div class="ttc" id="anamespacellzk_1_1function_html"><div class="ttname"><a href="namespacellzk_1_1function.html">llzk::function</a></div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_source.html#l00050">Ops.cpp:50</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a078ca0039bbcd069858d9c9141c015d0"><div class="ttname"><a href="namespacellzk.html#a078ca0039bbcd069858d9c9141c015d0">llzk::FUNC_NAME_COMPUTE</a></div><div class="ttdeci">constexpr char FUNC_NAME_COMPUTE[]</div><div class="ttdoc">Symbol name for the witness generation (and resp.</div><div class="ttdef"><b>Definition</b> <a href="llzk_2Util_2Constants_8h_source.html#l00016">Constants.h:16</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a12a702f1e67b6a7dd0c787d2770dfb8c"><div class="ttname"><a href="namespacellzk.html#a12a702f1e67b6a7dd0c787d2770dfb8c">llzk::rebuildExprInCompute</a></div><div class="ttdeci">Value rebuildExprInCompute(Value val, FuncDefOp computeFunc, OpBuilder &amp;builder, DenseMap&lt; Value, Value &gt; &amp;memo)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00055">LLZKLoweringUtils.cpp:55</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a1adebd123866cbb2b9e02bbd5b99c9ca"><div class="ttname"><a href="namespacellzk.html#a1adebd123866cbb2b9e02bbd5b99c9ca">llzk::replaceSubsequentUsesWith</a></div><div class="ttdeci">void replaceSubsequentUsesWith(Value oldVal, Value newVal, Operation *afterOp)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00185">LLZKLoweringUtils.cpp:185</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a12a702f1e67b6a7dd0c787d2770dfb8c"><div class="ttname"><a href="namespacellzk.html#a12a702f1e67b6a7dd0c787d2770dfb8c">llzk::rebuildExprInCompute</a></div><div class="ttdeci">Value rebuildExprInCompute(Value val, FuncDefOp computeFunc, OpBuilder &amp;builder, DenseMap&lt; Value, Value &gt; &amp;memo)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00057">LLZKLoweringUtils.cpp:57</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a1adebd123866cbb2b9e02bbd5b99c9ca"><div class="ttname"><a href="namespacellzk.html#a1adebd123866cbb2b9e02bbd5b99c9ca">llzk::replaceSubsequentUsesWith</a></div><div class="ttdeci">void replaceSubsequentUsesWith(Value oldVal, Value newVal, Operation *afterOp)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00270">LLZKLoweringUtils.cpp:270</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a353b99dc283d18cdecb549edcb8d096f"><div class="ttname"><a href="namespacellzk.html#a353b99dc283d18cdecb549edcb8d096f">llzk::FUNC_NAME_CONSTRAIN</a></div><div class="ttdeci">constexpr char FUNC_NAME_CONSTRAIN[]</div><div class="ttdef"><b>Definition</b> <a href="llzk_2Util_2Constants_8h_source.html#l00017">Constants.h:17</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a5fe59d40fb1bc5ada1e38667de05c6f2"><div class="ttname"><a href="namespacellzk.html#a5fe59d40fb1bc5ada1e38667de05c6f2">llzk::addAuxMember</a></div><div class="ttdeci">MemberDefOp addAuxMember(StructDefOp structDef, StringRef name, Type type)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00204">LLZKLoweringUtils.cpp:204</a></div></div>
-<div class="ttc" id="anamespacellzk_html_aa916f2d231aaa798b6d3189254c5f11f"><div class="ttname"><a href="namespacellzk.html#aa916f2d231aaa798b6d3189254c5f11f">llzk::checkFuncBodyIsStraightLine</a></div><div class="ttdeci">LogicalResult checkFuncBodyIsStraightLine(FuncDefOp func, StringRef passName)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00149">LLZKLoweringUtils.cpp:149</a></div></div>
-<div class="ttc" id="anamespacellzk_html_affe604776b9bbde83b6a6d31f9bc4c86"><div class="ttname"><a href="namespacellzk.html#affe604776b9bbde83b6a6d31f9bc4c86">llzk::checkForAuxMemberConflicts</a></div><div class="ttdeci">LogicalResult checkForAuxMemberConflicts(StructDefOp structDef, StringRef prefix)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00134">LLZKLoweringUtils.cpp:134</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a5fe59d40fb1bc5ada1e38667de05c6f2"><div class="ttname"><a href="namespacellzk.html#a5fe59d40fb1bc5ada1e38667de05c6f2">llzk::addAuxMember</a></div><div class="ttdeci">MemberDefOp addAuxMember(StructDefOp structDef, StringRef name, Type type)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00289">LLZKLoweringUtils.cpp:289</a></div></div>
+<div class="ttc" id="anamespacellzk_html_aa916f2d231aaa798b6d3189254c5f11f"><div class="ttname"><a href="namespacellzk.html#aa916f2d231aaa798b6d3189254c5f11f">llzk::checkFuncBodyIsStraightLine</a></div><div class="ttdeci">LogicalResult checkFuncBodyIsStraightLine(FuncDefOp func, StringRef passName)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00234">LLZKLoweringUtils.cpp:234</a></div></div>
+<div class="ttc" id="anamespacellzk_html_affe604776b9bbde83b6a6d31f9bc4c86"><div class="ttname"><a href="namespacellzk.html#affe604776b9bbde83b6a6d31f9bc4c86">llzk::checkForAuxMemberConflicts</a></div><div class="ttdeci">LogicalResult checkForAuxMemberConflicts(StructDefOp structDef, StringRef prefix)</div><div class="ttdef"><b>Definition</b> <a href="LLZKLoweringUtils_8cpp_source.html#l00219">LLZKLoweringUtils.cpp:219</a></div></div>
 <div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="ValueModel_8h_source.html#l00030">ValueModel.h:30</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
