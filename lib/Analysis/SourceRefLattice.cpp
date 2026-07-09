@@ -74,6 +74,15 @@ SourceRefLatticeValue::referenceMember(SymbolLookupResult<MemberDefOp> memberRef
 }
 
 mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
+SourceRefLatticeValue::referencePodRecord(mlir::StringAttr recordName) const {
+  SourceRefIndex idx(recordName);
+  auto transform = [&idx](const SourceRef &r) -> mlir::FailureOr<SourceRef> {
+    return r.createChild(idx);
+  };
+  return elementwiseTransform(transform);
+}
+
+mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
 SourceRefLatticeValue::extract(const std::vector<SourceRefIndex> &indices) const {
   if (isArray()) {
     ensure(indices.size() <= getNumArrayDims(), "invalid extract array operands");

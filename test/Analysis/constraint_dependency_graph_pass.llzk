@@ -1178,8 +1178,8 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @PodInitializedRoot ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@out], <%pod = pod.new { @count = %c1, @value = %arg1 } : !pod.type<[@count: index, @value: !felt.type]>[@value] }
+// CHECK-NEXT:     { %arg0[@out], %pod[@value] }
 // CHECK-NEXT: }
 // INTRA-LABEL: @PodInitializedRoot ConstraintDependencyGraph {
-// INTRA-NEXT:     { %arg0[@out], <%pod = pod.new { @count = %c1, @value = %arg1 } : !pod.type<[@count: index, @value: !felt.type]>[@value] }
+// INTRA-NEXT:     { %arg0[@out], %pod[@value] }
 // INTRA-NEXT: }

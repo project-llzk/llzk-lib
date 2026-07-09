@@ -72,6 +72,16 @@ SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
     }
   }
 
+  if (auto podAccessOp = llvm::dyn_cast<PodAccessOpInterface>(op)) {
+    if (!podAccessOp.isRead()) {
+      auto podIt = operandVals.find(podAccessOp.getPodRef());
+      ensure(podIt != operandVals.end(), "missing pod lattice for pod write");
+      auto podValsRes = podIt->second.referencePodRecord(podAccessOp.getRecordNameAttr());
+      ensure(succeeded(podValsRes), "could not create SourceRef child for pod write");
+      return podValsRes->first;
+    }
+  }
+
   if (auto arrayAccessOp = llvm::dyn_cast<ArrayAccessOpInterface>(op)) {
     if (llvm::isa<WriteArrayOp, InsertArrayOp>(arrayAccessOp)) {
       auto array = arrayAccessOp.getArrRef();
@@ -135,6 +145,18 @@ LogicalResult SourceRefAnalysis::visitOperation(
     if (memberRefOp.isRead()) {
       auto [memberVals, _] = *memberValsRes;
       propagateIfChanged(results.front(), results.front()->setValue(memberVals));
+    }
+    return success();
+  }
+
+  if (auto podAccessOp = llvm::dyn_cast<PodAccessOpInterface>(op)) {
+    auto podValsRes = operandVals.at(podAccessOp.getPodRef())
+                          ->getValue()
+                          .referencePodRecord(podAccessOp.getRecordNameAttr());
+    ensure(succeeded(podValsRes), "could not create SourceRef child for pod reference");
+    if (podAccessOp.isRead()) {
+      auto [podVals, _] = *podValsRes;
+      propagateIfChanged(results.front(), results.front()->setValue(podVals));
     }
     return success();
   }
