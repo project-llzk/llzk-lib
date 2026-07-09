@@ -306,6 +306,75 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
+// -----
+
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  poly.template @EqArrayPodAndTypeVar {
+    poly.param @T : !poly.tvar<@T>
+    function.def @constrain(
+        %lhs: !array.type<2 x !Pair>, %rhs: !poly.tvar<@T>
+    ) attributes {function.allow_constraint} {
+      constrain.eq %lhs, %rhs : !array.type<2 x !Pair>, !poly.tvar<@T>
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @EqArrayPodAndTypeVar {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @constrain(
+// CHECK-SAME:         %[[LHS_X:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>,
+// CHECK-SAME:         %[[LHS_Y:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>,
+// CHECK-SAME:         %[[RHS:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[RHS_LEAVES:[0-9a-zA-Z_\.]+]]:2 = builtin.unrealized_conversion_cast %[[RHS]] : !poly.tvar<@T> to !array.type<2 x index>, !array.type<2 x !felt.type>
+// CHECK-NEXT:        constrain.eq %[[LHS_X]], %[[RHS_LEAVES]]#0 : !array.type<2 x index>, !array.type<2 x index>
+// CHECK-NEXT:        constrain.eq %[[LHS_Y]], %[[RHS_LEAVES]]#1 : !array.type<2 x !felt.type>, !array.type<2 x !felt.type>
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  poly.template @ContainArrayPodAndTypeVar {
+    poly.param @E : !poly.tvar<@E>
+    function.def @constrain(
+        %arr: !array.type<2 x !Pair>, %elem: !poly.tvar<@E>
+    ) attributes {function.allow_constraint} {
+      constrain.in %arr, %elem : !array.type<2 x !Pair>, !poly.tvar<@E>
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @ContainArrayPodAndTypeVar {
+// CHECK-NEXT:      poly.param @E : !poly.tvar<@E>
+// CHECK-NEXT:      function.def @constrain(
+// CHECK-SAME:         %[[ARR_X:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>,
+// CHECK-SAME:         %[[ARR_Y:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>,
+// CHECK-SAME:         %[[ELEM:[0-9a-zA-Z_\.]+]]: !poly.tvar<@E>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[ELEM_LEAVES:[0-9a-zA-Z_\.]+]]:2 = builtin.unrealized_conversion_cast %[[ELEM]] : !poly.tvar<@E> to index, !felt.type
+// CHECK-NEXT:        %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[TRUE:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        %[[IDX:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
+// CHECK-NEXT:        %[[DIM0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_X]], %[[DIM0]] : <2 x index>
+// CHECK-NEXT:        %[[GE0:[0-9a-zA-Z_\.]+]] = arith.cmpi sge, %[[IDX]], %[[C0]] : index
+// CHECK-NEXT:        constrain.eq %[[GE0]], %[[TRUE]] : i1, i1
+// CHECK-NEXT:        %[[LT_LEN:[0-9a-zA-Z_\.]+]] = arith.cmpi slt, %[[IDX]], %[[LEN]] : index
+// CHECK-NEXT:        constrain.eq %[[LT_LEN]], %[[TRUE]] : i1, i1
+// CHECK-NEXT:        %[[SEL_X:[0-9a-zA-Z_\.]+]] = array.read %[[ARR_X]]{{\[}}%[[IDX]]] : <2 x index>, index
+// CHECK-NEXT:        constrain.eq %[[SEL_X]], %[[ELEM_LEAVES]]#0 : index, index
+// CHECK-NEXT:        %[[SEL_Y:[0-9a-zA-Z_\.]+]] = array.read %[[ARR_Y]]{{\[}}%[[IDX]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[SEL_Y]], %[[ELEM_LEAVES]]#1 : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 // -----
 
 !Pair = !pod.type<[@x: index, @y: index]>

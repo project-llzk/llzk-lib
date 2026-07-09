@@ -1341,6 +1341,23 @@ genReadAlongPath(OpBuilder &bldr, Location loc, Value podRef, const RecordChain 
   );
 }
 
+/// Materialize one value per split POD-array leaf by reading from `arrayValue` directly.
+static SmallVector<Value> materializeCompatiblePodArrayLeafValues(
+    Location loc, Value arrayValue, ArrayType arrTy, OpBuilder &rewriter
+) {
+  SmallVector<RecordChain> splitIds;
+  SmallVector<Type> splitTypes;
+  splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
+
+  SmallVector<Value> leaves;
+  leaves.reserve(splitIds.size());
+  for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
+    Value splitValue = genReadAlongPath(rewriter, loc, arrayValue, id);
+    leaves.push_back(castValueToTypeIfNeeded(rewriter, loc, splitValue, splitType));
+  }
+  return leaves;
+}
+
 /// Reconstruct a POD record from the leaf values collected while splitting nested accesses.
 static Value rebuildFlattenedPodRecord(
     OpBuilder &bldr, Location loc, Type recordType, SmallVectorImpl<StringAttr> &recordChain,
@@ -1519,15 +1536,48 @@ static ArrayRef<Value> getOrMaterializeCompatiblePodLeafValues(
     Location loc, Value source, PodType podTy, OpBuilder &rewriter,
     CompatiblePodLeafMaterializationMap &materializedLeaves
 ) {
+  SmallVector<Type> leafTypes;
+  splitPodTypeTo(podTy, leafTypes);
   source = peelUnifiableCasts(source);
+  assert(
+      typesUnify(source.getType(), podTy) &&
+      "materialized POD leaves require a source type compatible with the POD shape"
+  );
   CompatiblePodLeafMaterializationKey key {source, podTy};
   auto [it, inserted] = materializedLeaves.try_emplace(key);
   if (!inserted) {
     return it->second;
   }
 
+  if (leafTypes.empty()) {
+    return it->second;
+  }
+
+  OpBuilder::InsertionGuard guard(rewriter);
+  setInsertionPointAfterValueDefinition(source, rewriter);
+  auto splitCast = rewriter.create<UnrealizedConversionCastOp>(loc, TypeRange(leafTypes), source);
+  llvm::append_range(it->second, splitCast.getResults());
+  return it->second;
+}
+
+/// Materialize and cache leaf-array values for one non-array value that unifies with `arrTy`.
+static ArrayRef<Value> getOrMaterializeCompatiblePodArrayLeafValues(
+    Location loc, Value source, ArrayType arrTy, OpBuilder &rewriter,
+    CompatiblePodLeafMaterializationMap &materializedLeaves
+) {
   SmallVector<Type> leafTypes;
-  splitPodTypeTo(podTy, leafTypes);
+  splitPodArrayTypeTo(arrTy, leafTypes);
+  source = peelUnifiableCasts(source);
+  assert(
+      typesUnify(source.getType(), arrTy) &&
+      "materialized POD-array leaves require a source type compatible with the array shape"
+  );
+  CompatiblePodLeafMaterializationKey key {source, arrTy};
+  auto [it, inserted] = materializedLeaves.try_emplace(key);
+  if (!inserted) {
+    return it->second;
+  }
+
   if (leafTypes.empty()) {
     return it->second;
   }
@@ -2628,10 +2678,74 @@ public:
   }
 };
 
+/// Return the best available converted shape source for array-of-POD equality checks.
+static Value getPodArrayEqualityShapeSource(
+    ArrayType arrTy, Value originalValue, ValueRange convertedValues, Location loc,
+    OpBuilder &rewriter
+) {
+  if (Value carrier = getConvertedPodArrayShapeCarrierIfPresent(arrTy, convertedValues)) {
+    return carrier;
+  }
+
+  if (Value trailingCarrier = getTrailingArrayShapeCarrierIfPresent(convertedValues)) {
+    return trailingCarrier;
+  }
+
+  ValueRange leafValues = getConvertedPodArrayLeafValues(arrTy, convertedValues);
+  if (!leafValues.empty()) {
+    return leafValues.front();
+  }
+
+  if (!convertedValues.empty()) {
+    return getSingleConvertedValue(convertedValues);
+  }
+
+  return materializeArrayLengthCarrier(originalValue, arrTy, loc, rewriter);
+}
+
+/// Collect aligned equality leaves for one operand, materializing compatible leaves when needed.
+static SmallVector<Value> collectCompatiblePodArrayEqualityLeaves(
+    Location loc, Value originalValue, ValueRange convertedValues, ArrayType arrTy,
+    ArrayType peerArrTy, ConversionPatternRewriter &rewriter,
+    CompatiblePodLeafMaterializationMap &materializedLeaves
+) {
+  if (arrTy) {
+    ValueRange leafValues = getConvertedPodArrayLeafValues(arrTy, convertedValues);
+    size_t leafCount = getSplitPodArrayLeafCount(arrTy);
+    if (leafValues.size() == leafCount || leafCount == 0) {
+      return SmallVector<Value>(leafValues.begin(), leafValues.end());
+    }
+
+    return materializeCompatiblePodArrayLeafValues(loc, originalValue, arrTy, rewriter);
+  }
+
+  if (!peerArrTy || convertedValues.size() != 1) {
+    if (!peerArrTy || !convertedValues.empty()) {
+      return SmallVector<Value>(convertedValues.begin(), convertedValues.end());
+    }
+  }
+
+  Value source = convertedValues.empty() ? originalValue : getSingleConvertedValue(convertedValues);
+  SmallVector<Value> materialized;
+  llvm::append_range(
+      materialized, getOrMaterializeCompatiblePodArrayLeafValues(
+                        loc, source, peerArrTy, rewriter, materializedLeaves
+                    )
+  );
+  return materialized;
+}
+
 /// Rewrite `constrain.eq` over arrays-of-POD into one equality per parallel leaf array.
 class SplitPodArrayInEmitEqualityOp : public OpConversionPattern<constrain::EmitEqualityOp> {
+  CompatiblePodLeafMaterializationMap &materializedLeaves;
+
 public:
-  using OpConversionPattern<constrain::EmitEqualityOp>::OpConversionPattern;
+  SplitPodArrayInEmitEqualityOp(
+      TypeConverter &typeConverter, MLIRContext *ctx,
+      CompatiblePodLeafMaterializationMap &materializedLeafMap
+  )
+      : OpConversionPattern<constrain::EmitEqualityOp>(typeConverter, ctx),
+        materializedLeaves(materializedLeafMap) {}
 
   static bool legal(constrain::EmitEqualityOp op) {
     return !containsSplittablePodArrayType(op->getOperandTypes());
@@ -2646,28 +2760,6 @@ public:
 
     ArrayType lhsTy = splittablePodArray(op.getLhs().getType());
     ArrayType rhsTy = splittablePodArray(op.getRhs().getType());
-    auto getShapeSource = [&op, &rewriter](
-                              ArrayType arrTy, Value originalValue, ValueRange convertedValues
-                          ) -> Value {
-      if (Value carrier = getConvertedPodArrayShapeCarrierIfPresent(arrTy, convertedValues)) {
-        return carrier;
-      }
-
-      if (Value trailingCarrier = getTrailingArrayShapeCarrierIfPresent(convertedValues)) {
-        return trailingCarrier;
-      }
-
-      ValueRange leafValues = getConvertedPodArrayLeafValues(arrTy, convertedValues);
-      if (!leafValues.empty()) {
-        return leafValues.front();
-      }
-
-      if (!convertedValues.empty()) {
-        return getSingleConvertedValue(convertedValues);
-      }
-
-      return materializeArrayLengthCarrier(originalValue, arrTy, op.getLoc(), rewriter);
-    };
 
     bool lhsNeedsShapeCheck = lhsTy && (needsPodArrayShapeCarrier(lhsTy) ||
                                         getTrailingArrayShapeCarrierIfPresent(adaptor.getLhs()));
@@ -2680,8 +2772,12 @@ public:
         );
       }
 
-      Value lhsShapeSource = getShapeSource(lhsTy, op.getLhs(), adaptor.getLhs());
-      Value rhsShapeSource = getShapeSource(rhsTy, op.getRhs(), adaptor.getRhs());
+      Value lhsShapeSource = getPodArrayEqualityShapeSource(
+          lhsTy, op.getLhs(), adaptor.getLhs(), op.getLoc(), rewriter
+      );
+      Value rhsShapeSource = getPodArrayEqualityShapeSource(
+          rhsTy, op.getRhs(), adaptor.getRhs(), op.getLoc(), rewriter
+      );
 
       for (size_t dim = 0, rank = lhsTy.getDimensionSizes().size(); dim < rank; ++dim) {
         Value dimVal = rewriter.create<arith::ConstantOp>(
@@ -2693,11 +2789,12 @@ public:
       }
     }
 
-    ValueRange lhsLeaves =
-        lhsTy ? getConvertedPodArrayLeafValues(lhsTy, adaptor.getLhs()) : adaptor.getLhs();
-    ValueRange rhsLeaves =
-        rhsTy ? getConvertedPodArrayLeafValues(rhsTy, adaptor.getRhs()) : adaptor.getRhs();
-
+    SmallVector<Value> lhsLeaves = collectCompatiblePodArrayEqualityLeaves(
+        op.getLoc(), op.getLhs(), adaptor.getLhs(), lhsTy, rhsTy, rewriter, materializedLeaves
+    );
+    SmallVector<Value> rhsLeaves = collectCompatiblePodArrayEqualityLeaves(
+        op.getLoc(), op.getRhs(), adaptor.getRhs(), rhsTy, lhsTy, rewriter, materializedLeaves
+    );
     if (lhsLeaves.size() != rhsLeaves.size()) {
       return rewriter.notifyMatchFailure(
           op, "expected array-of-pod equality operands to expand to the same number of leaves"
@@ -2735,8 +2832,15 @@ public:
 /// field equalities refer to the same POD element or subarray, rather than allowing different
 /// leaves to match at different positions.
 class SplitPodArrayInEmitContainmentOp : public OpConversionPattern<constrain::EmitContainmentOp> {
+  CompatiblePodLeafMaterializationMap &materializedLeaves;
+
 public:
-  using OpConversionPattern<constrain::EmitContainmentOp>::OpConversionPattern;
+  SplitPodArrayInEmitContainmentOp(
+      TypeConverter &typeConverter, MLIRContext *ctx,
+      CompatiblePodLeafMaterializationMap &materializedLeafMap
+  )
+      : OpConversionPattern<constrain::EmitContainmentOp>(typeConverter, ctx),
+        materializedLeaves(materializedLeafMap) {}
 
   static bool legal(constrain::EmitContainmentOp op) {
     return !containsSplittablePodArrayType(op->getOperandTypes());
@@ -2745,20 +2849,36 @@ public:
   /// Return the split scalar or leaf-array values representing one containment operand.
   static SmallVector<Value> collectContainmentLeaves(
       Location loc, Value originalOperand, ValueRange convertedValues,
-      ConversionPatternRewriter &rewriter
+      ConversionPatternRewriter &rewriter,
+      CompatiblePodLeafMaterializationMap *materializedLeaves = nullptr,
+      std::optional<PodType> compatiblePodTy = std::nullopt
   ) {
     if (ArrayType arrTy = splittablePodArray(originalOperand.getType())) {
       ValueRange leafValues = getConvertedPodArrayLeafValues(arrTy, convertedValues);
       if (hasZeroLeafPodArraySplit(arrTy)) {
         return {};
       }
-      return SmallVector<Value>(leafValues.begin(), leafValues.end());
+      size_t leafCount = getSplitPodArrayLeafCount(arrTy);
+      if (leafValues.size() == leafCount) {
+        return SmallVector<Value>(leafValues.begin(), leafValues.end());
+      }
+      return materializeCompatiblePodArrayLeafValues(loc, originalOperand, arrTy, rewriter);
     }
 
     if (splittablePod(originalOperand.getType())) {
       SmallVector<Value> podLeaves;
       processInputOperand(loc, getSingleConvertedValue(convertedValues), podLeaves, rewriter);
       return podLeaves;
+    }
+
+    if (materializedLeaves && compatiblePodTy &&
+        (convertedValues.empty() || convertedValues.size() == 1)) {
+      Value source =
+          convertedValues.empty() ? originalOperand : getSingleConvertedValue(convertedValues);
+      ArrayRef<Value> leaves = getOrMaterializeCompatiblePodLeafValues(
+          loc, source, *compatiblePodTy, rewriter, *materializedLeaves
+      );
+      return SmallVector<Value>(leaves.begin(), leaves.end());
     }
 
     return SmallVector<Value>(convertedValues.begin(), convertedValues.end());
@@ -2785,8 +2905,10 @@ public:
 
     SmallVector<Value> lhsLeaves =
         collectContainmentLeaves(loc, op.getLhs(), adaptor.getLhs(), rewriter);
-    SmallVector<Value> rhsLeaves =
-        collectContainmentLeaves(loc, op.getRhs(), adaptor.getRhs(), rewriter);
+    PodType lhsElemPodTy = llvm::cast<PodType>(lhsTy.getElementType());
+    SmallVector<Value> rhsLeaves = collectContainmentLeaves(
+        loc, op.getRhs(), adaptor.getRhs(), rewriter, &materializedLeaves, lhsElemPodTy
+    );
     if (lhsLeaves.size() != rhsLeaves.size()) {
       return rewriter.notifyMatchFailure(
           op, "expected array-of-pod containment operands to expand to the same number of leaves"
@@ -3459,15 +3581,18 @@ static LogicalResult
 step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementMap &memberRepMap) {
   MLIRContext *ctx = modOp.getContext();
   PodArrayTypeConverter typeConverter;
+  CompatiblePodLeafMaterializationMap materializedLeaves;
 
   RewritePatternSet patterns(ctx);
   patterns.add<
       SplitPodArrayNonDetOp, SplitPodArrayCreateArrayOp, SplitPodArrayReadArrayOp,
       SplitPodArrayWriteArrayOp, SplitPodArrayExtractArrayOp, SplitPodArrayInsertArrayOp,
       SplitPodArrayInFuncDefOp, SplitPodArrayInUnifiableCastOp, SplitPodArrayInReturnOp,
-      SplitPodArrayInCallOp, SplitPodArrayInEmitEqualityOp, SplitPodArrayInEmitContainmentOp,
-      RejectRaggedNestedLeafArrayLengthOp, SplitPodArrayLengthOp, SplitPodArrayForAllOp,
-      SplitPodArrayExistsOp>(typeConverter, ctx);
+      SplitPodArrayInCallOp, RejectRaggedNestedLeafArrayLengthOp, SplitPodArrayLengthOp,
+      SplitPodArrayForAllOp, SplitPodArrayExistsOp>(typeConverter, ctx);
+  patterns.add<SplitPodArrayInEmitEqualityOp, SplitPodArrayInEmitContainmentOp>(
+      typeConverter, ctx, materializedLeaves
+  );
   patterns.add<SplitPodArrayInMemberWriteOp, SplitPodArrayInMemberReadOp>(
       typeConverter, ctx, symTables, memberRepMap
   );
