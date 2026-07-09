@@ -18,10 +18,11 @@ module attributes {llzk.lang} {
 // CHECK: #[[$M1:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
 // CHECK: #[[$M2:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0 + 1)>
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @uninitialized(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !array.type<#[[$M1]],#[[$M2]] x index> {
+// CHECK-NEXT:    function.def @uninitialized(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> (!array.type<#[[$M1]],#[[$M2]] x index>, !array.type<#[[$M1]] x none>) {
 // CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = array.new{(){{\[}}%[[VAL_0]]]} : <#[[$M1]],? x index>
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_1]] : (!array.type<#[[$M1]],? x index>) -> !array.type<#[[$M1]],#[[$M2]] x index>
-// CHECK-NEXT:      function.return %[[VAL_2]] : !array.type<#[[$M1]],#[[$M2]] x index>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new{(){{\[}}%[[VAL_0]]]} : <#[[$M1]] x none>
+// CHECK-NEXT:      function.return %[[VAL_2]], %[[VAL_3]] : !array.type<#[[$M1]],#[[$M2]] x index>, !array.type<#[[$M1]] x none>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----

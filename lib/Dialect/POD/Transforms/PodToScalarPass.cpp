@@ -359,6 +359,11 @@ inline static bool hasWildcardArrayDimensions(ArrayRef<Attribute> dims) {
   });
 }
 
+/// Return `true` iff any visible array dimension is defined by an affine-map instantiation.
+inline static bool hasAffineArrayDimensions(ArrayRef<Attribute> dims) {
+  return llvm::any_of(dims, [](Attribute dim) { return llvm::isa<AffineMapAttr>(dim); });
+}
+
 // pre-declared (see definition below)
 template <typename Fn>
 static void forEachPodLeaf(PodType podTy, SmallVectorImpl<StringAttr> &recordChain, Fn &&callback);
@@ -420,12 +425,18 @@ static bool hasRankPreservingSplitPodArrayLeaf(ArrayType arrTy) {
 }
 
 /// Return `true` iff step 2 should thread a shared shape witness alongside split POD leaves.
+///
+/// A shared carrier is required when later rewrites cannot recover the original visible array rank
+/// from any split leaf alone. Wildcard dimensions need that carrier to preserve runtime shape, and
+/// affine-map dimensions need it whenever the source is not a concrete `array.new` that still
+/// exposes instantiation operands.
 inline static bool needsPodArrayShapeCarrier(ArrayType arrTy) {
   if (hasZeroLeafPodArraySplit(arrTy)) {
     return true;
   }
-  return hasWildcardArrayDimensions(arrTy.getDimensionSizes()) &&
-         !hasRankPreservingSplitPodArrayLeaf(arrTy);
+  return !hasRankPreservingSplitPodArrayLeaf(arrTy) &&
+         (hasWildcardArrayDimensions(arrTy.getDimensionSizes()) ||
+          hasAffineArrayDimensions(arrTy.getDimensionSizes()));
 }
 
 /// Collect every converted component of `arrTy`, including any explicit trailing shape carrier.
@@ -586,8 +597,9 @@ getConvertedPodArrayShapeCarrierIfPresent(ArrayType arrTy, ValueRange convertedV
 /// Convert one type using the step-2 array-of-POD lowering convention.
 ///
 /// Most arrays-of-POD expand to one parallel array per POD leaf. When the element POD has no
-/// leaves, or when the outer array shape uses wildcard `?` dimensions, keep a shared `none`-array
-/// carrier so later rewrites can preserve one common shape witness alongside the split leaves.
+/// leaves, or when no split leaf preserves the original visible rank across wildcard or affine-map
+/// dimensions, keep a shared `none`-array carrier so later rewrites can preserve one common shape
+/// witness alongside the split leaves.
 static size_t convertPodArrayTypeTo(Type t, SmallVectorImpl<Type> &collect) {
   if (ArrayType arrTy = splittablePodArray(t)) {
     size_t oldSize = collect.size();
