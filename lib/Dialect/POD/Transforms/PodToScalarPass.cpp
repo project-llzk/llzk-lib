@@ -2741,10 +2741,10 @@ class SplitPodArrayInEmitEqualityOp : public OpConversionPattern<constrain::Emit
 
 public:
   SplitPodArrayInEmitEqualityOp(
-      TypeConverter &typeConverter, MLIRContext *ctx,
+      TypeConverter &tyConv, MLIRContext *ctx,
       CompatiblePodLeafMaterializationMap &materializedLeafMap
   )
-      : OpConversionPattern<constrain::EmitEqualityOp>(typeConverter, ctx),
+      : OpConversionPattern<constrain::EmitEqualityOp>(tyConv, ctx),
         materializedLeaves(materializedLeafMap) {}
 
   static bool legal(constrain::EmitEqualityOp op) {
@@ -2836,10 +2836,10 @@ class SplitPodArrayInEmitContainmentOp : public OpConversionPattern<constrain::E
 
 public:
   SplitPodArrayInEmitContainmentOp(
-      TypeConverter &typeConverter, MLIRContext *ctx,
+      TypeConverter &tyConv, MLIRContext *ctx,
       CompatiblePodLeafMaterializationMap &materializedLeafMap
   )
-      : OpConversionPattern<constrain::EmitContainmentOp>(typeConverter, ctx),
+      : OpConversionPattern<constrain::EmitContainmentOp>(tyConv, ctx),
         materializedLeaves(materializedLeafMap) {}
 
   static bool legal(constrain::EmitContainmentOp op) {
