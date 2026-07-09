@@ -1,0 +1,27 @@
+// REQUIRES: with-pcl
+// RUN: llzk-opt -llzk-to-pcl -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+!F = !felt.type<"goldilocks">
+module attributes {llzk.lang} {
+  struct.def @A {
+    function.def @compute(%a: !F, %b: !F, %c: !F) -> !struct.type<@A> attributes {function.allow_witness} {
+      %self = struct.new : <@A>
+      function.return %self : !struct.type<@A>
+    }
+
+    function.def @constrain(%self: !struct.type<@A>, %a: !F, %b: !F, %c: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %eq1 = bool.cmp eq(%a, %b) : !F, !F
+      %eq2 = bool.cmp eq(%b, %c) : !F, !F
+      %xor = bool.xor %eq1, %eq2
+      %use = bool.and %xor, %eq1
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: func.func @A(
+// CHECK:         %[[EQ1:[0-9a-zA-Z_\.]+]] = pcl.eq %arg0, %arg1
+// CHECK:         %[[EQ2:[0-9a-zA-Z_\.]+]] = pcl.eq %arg1, %arg2
+// CHECK:         %[[IFF:[0-9a-zA-Z_\.]+]] = pcl.iff %[[EQ1]], %[[EQ2]]
+// CHECK:         %[[XOR:[0-9a-zA-Z_\.]+]] = pcl.not %[[IFF]]
+// CHECK:         %[[USE:[0-9a-zA-Z_\.]+]] = pcl.and %[[XOR]], %[[EQ1]]
