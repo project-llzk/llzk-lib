@@ -486,3 +486,59 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_18]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+!Single = !pod.type<[@x: index]>
+module attributes {llzk.lang} {
+  function.def @virtual_arg_if_write(%p: !Single, %flag: index, %v: index) -> index {
+    %c0 = arith.constant 0 : index
+    %cond = arith.cmpi sgt, %flag, %c0 : index
+    scf.if %cond {
+      %sum = arith.addi %v, %flag : index
+      pod.write %p[@x] = %sum : !Single, index
+    }
+    %r = pod.read %p[@x] : !Single, index
+    function.return %r : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @virtual_arg_if_write(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_1]], %[[VAL_3]] : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_4]] -> (index) {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_2]], %[[VAL_1]] : index
+// CHECK-NEXT:        scf.yield %[[VAL_6]] : index
+// CHECK-NEXT:      } else {
+// CHECK-NEXT:        scf.yield %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_5]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Single = !pod.type<[@x: index]>
+module attributes {llzk.lang} {
+  function.def @virtual_arg_for_write(%p: !Single, %start: index) -> index {
+    %lb = arith.constant 0 : index
+    %ub = arith.constant 4 : index
+    %step = arith.constant 1 : index
+    scf.for %iv = %lb to %ub step %step {
+      %next = arith.addi %start, %iv : index
+      pod.write %p[@x] = %next : !Single, index
+    }
+    %r = pod.read %p[@x] : !Single, index
+    function.return %r : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @virtual_arg_for_write(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_6:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_4]] iter_args(%[[VAL_7:[0-9a-zA-Z_\.]+]] = %[[VAL_0]]) -> (index) {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_1]], %[[VAL_6]] : index
+// CHECK-NEXT:        scf.yield %[[VAL_8]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_5]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

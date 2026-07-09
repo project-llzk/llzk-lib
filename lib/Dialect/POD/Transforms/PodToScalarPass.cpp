@@ -1355,6 +1355,14 @@ findVirtualPodMaterializationAnchor(NewPodOp pod, const VirtualPodLeafMap &leafV
   return anchor;
 }
 
+/// Return `true` iff `op` is nested under an SCF region that step 4 can lift.
+///
+/// Step 3 tracks virtual POD leaf values as straight-line state. Nested writes must remain
+/// materialized so the SCF lifting rewrite can model them as conditional or loop-carried values.
+inline static bool isInsideSupportedScfRegion(Operation *op) {
+  return hasParentThatIsa<scf::IfOp, scf::ForOp, scf::WhileOp>(op);
+}
+
 /// Return `true` iff a read from a virtual POD can be resolved without materializing it.
 static bool canResolveVirtualPodRead(ReadPodOp op, const VirtualPodValueMap &virtualPods) {
   if (!lookupVirtualPodLeafMap(op.getPodRef(), virtualPods) || hasEarlierWrite(op) ||
@@ -4082,7 +4090,10 @@ static void splitEarlierVirtualPodEqualitiesBeforeWriteInBlock(
   }
 }
 
-/// Update virtual POD leaf storage in response to `pod.write` without materializing the aggregate.
+/// Update straight-line virtual POD leaf storage in response to `pod.write`.
+///
+/// Writes nested under supported SCF regions are left materialized so step 4 can lift them into
+/// explicit region results or loop-carried values instead of mutating the global virtual state.
 class ResolveVirtualPodWriteOp : public OpConversionPattern<WritePodOp> {
   VirtualPodValueMap &virtualPods;
 
@@ -4094,7 +4105,7 @@ public:
       WritePodOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
     auto it = lookupVirtualPodLeafMapIt(op.getPodRef(), virtualPods);
-    if (it == virtualPods.end()) {
+    if (it == virtualPods.end() || isInsideSupportedScfRegion(op.getOperation())) {
       return failure();
     }
 
@@ -4258,7 +4269,8 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   target.addDynamicallyLegalOp<MemberWriteOp>(SplitPodInMemberWriteOp::legal);
   target.addDynamicallyLegalOp<MemberReadOp>(SplitPodInMemberReadOp::legal);
   target.addDynamicallyLegalOp<WritePodOp>([&virtualPods](WritePodOp op) {
-    return !lookupVirtualPodLeafMap(op.getPodRef(), virtualPods);
+    return !lookupVirtualPodLeafMap(op.getPodRef(), virtualPods) ||
+           isInsideSupportedScfRegion(op.getOperation());
   });
   target.addDynamicallyLegalOp<ArrayLengthOp>(ResolvePodReadBackedArrayLengthOp::legal);
   target.addDynamicallyLegalOp<ReadArrayOp>([&virtualPods](ReadArrayOp op) {
