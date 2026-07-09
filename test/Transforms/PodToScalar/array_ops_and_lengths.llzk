@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 !Pair = !pod.type<[@lhs: index, @rhs: !felt.type]>
 !PairRow = !array.type<2 x !Pair>
@@ -157,4 +157,51 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[LEN1]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
 
+// COM: Regression test: deferred `array.len` after `pod.write` must reuse the written shape
+// COM: carrier instead of fabricating a fresh one.
+!Inner = !pod.type<[@vals: !array.type<3 x index>]>
+!Outer = !pod.type<[@items: !array.type<? x !Inner>]>
+module attributes {llzk.lang} {
+  function.def @write_then_len(%src: !Outer, %dim: index) -> index {
+    %arg = pod.read %src[@items] : !Outer, !array.type<? x !Inner>
+    %p = pod.new : !Outer
+    pod.write %p[@items] = %arg : !Outer, !array.type<? x !Inner>
+    %items = pod.read %p[@items] : !Outer, !array.type<? x !Inner>
+    %len = array.len %items, %dim : !array.type<? x !Inner>
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @write_then_len(
+// CHECK-SAME:    %[[SRC_ITEMS_VALS:[0-9a-zA-Z_\.]+]]: !array.type<?,3 x index>,
+// CHECK-SAME:    %[[SRC_ITEMS_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<? x none>,
+// CHECK-SAME:    %[[DIM:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) -> index {
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SRC_ITEMS_SHAPE]], %[[DIM]] : <? x none>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// COM: Regression test: dynamic arrays of PODs with multiple rank-preserving leaves must thread
+// COM: a shared shape witness so every split leaf keeps the same runtime outer length.
+!Pair = !pod.type<[@x: index, @y: index]>
+module attributes {llzk.lang} {
+  function.def @len_arg(%arr: !array.type<? x !Pair>, %dim: index) -> index {
+    %len = array.len %arr, %dim : !array.type<? x !Pair>
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @len_arg(
+// CHECK-SAME:    %[[ARR_X:[0-9a-zA-Z_\.]+]]: !array.type<? x index>,
+// CHECK-SAME:    %[[ARR_Y:[0-9a-zA-Z_\.]+]]: !array.type<? x index>,
+// CHECK-SAME:    %[[ARR_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<? x none>,
+// CHECK-SAME:    %[[DIM:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) -> index {
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_SHAPE]], %[[DIM]] : <? x none>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -19,20 +19,23 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @sink(
 // CHECK-SAME:    %[[ARR_X:[0-9a-zA-Z_\.]+]]: !array.type<? x index>,
-// CHECK-SAME:    %[[ARR_Y:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type>
+// CHECK-SAME:    %[[ARR_Y:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type>,
+// CHECK-SAME:    %[[ARR_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<? x none>
 // CHECK-SAME:    ) -> index {
 // CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_X]], %[[C0]] : <? x index>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_SHAPE]], %[[C0]] : <? x none>
 // CHECK-NEXT:      function.return %[[LEN]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @main(
 // CHECK-SAME:    %[[ARG_X:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>,
-// CHECK-SAME:    %[[ARG_Y:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>
-// CHECK-SAME:    ) -> (!array.type<? x index>, !array.type<? x !felt.type>, index) {
+// CHECK-SAME:    %[[ARG_Y:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>,
+// CHECK-SAME:    %[[ARG_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x none>
+// CHECK-SAME:    ) -> (!array.type<? x index>, !array.type<? x !felt.type>, !array.type<? x none>, index) {
 // CHECK-NEXT:      %[[CAST_X:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[ARG_X]] : (!array.type<#[[$M]] x index>) -> !array.type<? x index>
 // CHECK-NEXT:      %[[CAST_Y:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[ARG_Y]] : (!array.type<#[[$M]] x !felt.type>) -> !array.type<? x !felt.type>
-// CHECK-NEXT:      %[[CALL_LEN:[0-9a-zA-Z_\.]+]] = function.call @sink(%[[CAST_X]], %[[CAST_Y]]) : (!array.type<? x index>, !array.type<? x !felt.type>) -> index
-// CHECK-NEXT:      function.return %[[CAST_X]], %[[CAST_Y]], %[[CALL_LEN]] : !array.type<? x index>, !array.type<? x !felt.type>, index
+// CHECK-NEXT:      %[[CAST_SHAPE:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[ARG_SHAPE]] : (!array.type<#[[$M]] x none>) -> !array.type<? x none>
+// CHECK-NEXT:      %[[CALL_LEN:[0-9a-zA-Z_\.]+]] = function.call @sink(%[[CAST_X]], %[[CAST_Y]], %[[CAST_SHAPE]]) : (!array.type<? x index>, !array.type<? x !felt.type>, !array.type<? x none>) -> index
+// CHECK-NEXT:      function.return %[[CAST_X]], %[[CAST_Y]], %[[CAST_SHAPE]], %[[CALL_LEN]] : !array.type<? x index>, !array.type<? x !felt.type>, !array.type<? x none>, index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----
@@ -52,10 +55,10 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @CastToTypeVar {
 // CHECK-NEXT:      poly.param @T_return : !poly.tvar<@T_return>
-// CHECK-NEXT:      function.def @main(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>) -> !poly.tvar<@T_return> {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (!array.type<#[[$M]] x index>) -> !poly.tvar<@T_return>
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_2]] : (!poly.tvar<@T_return>) -> !poly.tvar<@T_return>
-// CHECK-NEXT:        function.return %[[VAL_3]] : !poly.tvar<@T_return>
+// CHECK-NEXT:      function.def @main(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x none>) -> !poly.tvar<@T_return> {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (!array.type<#[[$M]] x index>) -> !poly.tvar<@T_return>
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_3]] : (!poly.tvar<@T_return>) -> !poly.tvar<@T_return>
+// CHECK-NEXT:        function.return %[[VAL_4]] : !poly.tvar<@T_return>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

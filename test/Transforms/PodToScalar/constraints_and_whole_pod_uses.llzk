@@ -144,8 +144,13 @@ module attributes {llzk.lang} {
 // CHECK-SAME:    %[[LHS_X:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>,
 // CHECK-SAME:    %[[LHS_Y:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>,
 // CHECK-SAME:    %[[RHS_X:[0-9a-zA-Z_\.]+]]: !array.type<? x index>,
-// CHECK-SAME:    %[[RHS_Y:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type>
+// CHECK-SAME:    %[[RHS_Y:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type>,
+// CHECK-SAME:    %[[RHS_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<? x none>
 // CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[LHS_LEN:[0-9a-zA-Z_\.]+]] = array.len %[[LHS_X]], %[[C0]] : <2 x index>
+// CHECK-NEXT:      %[[RHS_LEN:[0-9a-zA-Z_\.]+]] = array.len %[[RHS_SHAPE]], %[[C0]] : <? x none>
+// CHECK-NEXT:      constrain.eq %[[LHS_LEN]], %[[RHS_LEN]] : index, index
 // CHECK-NEXT:      constrain.eq %[[LHS_X]], %[[RHS_X]] : !array.type<2 x index>, !array.type<? x index>
 // CHECK-NEXT:      constrain.eq %[[LHS_Y]], %[[RHS_Y]] : !array.type<2 x !felt.type>, !array.type<? x !felt.type>
 // CHECK-NEXT:      function.return

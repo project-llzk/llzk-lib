@@ -379,6 +379,16 @@ inline static StringRef getDeferredPodArrayLengthAttrName() {
   return "llzk.defer_pod_array_length";
 }
 
+/// Return the attribute name that marks a nested dynamic array leaf lacking per-element shape.
+inline static StringRef getRaggedDynamicNestedLeafAttrName() {
+  return "llzk.ragged_nested_dynamic_leaf";
+}
+
+/// Return the attribute name that marks a nested affine array leaf lacking per-element shape.
+inline static StringRef getRaggedAffineNestedLeafAttrName() {
+  return "llzk.ragged_nested_affine_leaf";
+}
+
 /// Return the `none`-array carrier type used to preserve one array-of-POD shape witness.
 inline static ArrayType getPodArrayShapeCarrierType(ArrayType arrTy) {
   return arrTy.cloneWith(NoneType::get(arrTy.getContext()));
@@ -444,16 +454,15 @@ static bool hasZeroLeafPodArraySplit(ArrayType arrTy) {
   return splitTypes.empty();
 }
 
-/// Return `true` iff some split POD leaf array preserves `arrTy`'s visible rank exactly.
+/// Return the number of split POD leaf arrays that preserve `arrTy`'s visible rank exactly.
 ///
 /// Scalar POD leaves keep the original rank, while nested array leaves append their own inner
-/// dimensions. One rank-preserving leaf is enough to witness the original array shape directly in
-/// later rewrites such as `array.len`, `constrain.eq`, and `constrain.in`.
-static bool hasRankPreservingSplitPodArrayLeaf(ArrayType arrTy) {
+/// dimensions.
+static size_t countRankPreservingSplitPodArrayLeaves(ArrayType arrTy) {
   SmallVector<Type> splitTypes;
   splitPodArrayTypeTo(arrTy, splitTypes);
   size_t originalRank = arrTy.getDimensionSizes().size();
-  return llvm::any_of(splitTypes, [originalRank](Type splitType) {
+  return llvm::count_if(splitTypes, [originalRank](Type splitType) {
     auto splitArrTy = llvm::dyn_cast<ArrayType>(splitType);
     return splitArrTy && splitArrTy.getDimensionSizes().size() == originalRank;
   });
@@ -469,9 +478,11 @@ inline static bool needsPodArrayShapeCarrier(ArrayType arrTy) {
   if (hasZeroLeafPodArraySplit(arrTy)) {
     return true;
   }
-  return !hasRankPreservingSplitPodArrayLeaf(arrTy) &&
-         (hasWildcardArrayDimensions(arrTy.getDimensionSizes()) ||
-          hasAffineArrayDimensions(arrTy.getDimensionSizes()));
+  if (!hasWildcardArrayDimensions(arrTy.getDimensionSizes()) &&
+      !hasAffineArrayDimensions(arrTy.getDimensionSizes())) {
+    return false;
+  }
+  return countRankPreservingSplitPodArrayLeaves(arrTy) != 1;
 }
 
 /// Collect every converted component of `arrTy`, including any explicit trailing shape carrier.
@@ -483,6 +494,56 @@ static void collectConvertedPodArrayRecordInfos(
     splitIds.push_back(RecordChain({getPodArrayShapeCarrierMarker(arrTy.getContext())}, true));
     splitTypes.push_back(getPodArrayShapeCarrierType(arrTy));
   }
+}
+
+/// Return the attribute that tags one extracted nested leaf array lacking per-element shape.
+static StringRef getRaggedNestedLeafAttrName(ArrayType arrTy, Type splitType) {
+  auto splitArrTy = llvm::dyn_cast<ArrayType>(splitType);
+  if (!splitArrTy) {
+    return {};
+  }
+
+  size_t originalRank = arrTy.getDimensionSizes().size();
+  if (splitArrTy.getDimensionSizes().size() <= originalRank) {
+    return {};
+  }
+
+  ArrayRef<Attribute> nestedDims = splitArrTy.getDimensionSizes().drop_front(originalRank);
+  if (hasWildcardArrayDimensions(nestedDims)) {
+    return getRaggedDynamicNestedLeafAttrName();
+  }
+  if (hasAffineArrayDimensions(nestedDims)) {
+    return getRaggedAffineNestedLeafAttrName();
+  }
+  return {};
+}
+
+/// Wrap `value` in a tagged no-op cast so later shape-sensitive rewrites can diagnose it.
+static Value
+tagRaggedNestedLeafValue(OpBuilder &bldr, Location loc, Value value, StringRef attrName) {
+  if (attrName.empty()) {
+    return value;
+  }
+  auto cast = bldr.create<UnrealizedConversionCastOp>(loc, TypeRange {value.getType()}, value);
+  cast->setAttr(attrName, UnitAttr::get(bldr.getContext()));
+  return cast.getResult(0);
+}
+
+/// Return the ragged nested leaf kind carried by `value`, if any.
+static StringRef getTaggedRaggedNestedLeafKind(Value value) {
+  while (auto cast = value.getDefiningOp<UnrealizedConversionCastOp>()) {
+    if (cast->hasAttr(getRaggedDynamicNestedLeafAttrName())) {
+      return "dynamic";
+    }
+    if (cast->hasAttr(getRaggedAffineNestedLeafAttrName())) {
+      return "affine";
+    }
+    if (cast->getNumOperands() != 1) {
+      break;
+    }
+    value = cast.getOperand(0);
+  }
+  return {};
 }
 
 /// Strip compatibility casts introduced while threading POD-derived array values through rewrites.
@@ -879,6 +940,29 @@ static Value materializeExtractedPodArrayShapeCarrier(
   );
 }
 
+/// Return one converted component whose rank still matches `arrTy`'s visible rank.
+static Value getRankPreservingConvertedPodArrayLeaf(ArrayType arrTy, ValueRange convertedValues) {
+  size_t originalRank = arrTy.getDimensionSizes().size();
+  for (Value arrRef : getConvertedPodArrayLeafValues(arrTy, convertedValues)) {
+    auto leafArrTy = llvm::dyn_cast<ArrayType>(arrRef.getType());
+    if (leafArrTy && leafArrTy.getDimensionSizes().size() == originalRank) {
+      return arrRef;
+    }
+  }
+  return {};
+}
+
+/// Return the best available converted shape source for one array-of-POD value.
+static Value getConvertedPodArrayShapeSource(ArrayType arrTy, ValueRange convertedValues) {
+  if (Value carrier = getConvertedPodArrayShapeCarrierIfPresent(arrTy, convertedValues)) {
+    return carrier;
+  }
+  if (Value trailingCarrier = getTrailingArrayShapeCarrierIfPresent(convertedValues)) {
+    return trailingCarrier;
+  }
+  return getRankPreservingConvertedPodArrayLeaf(arrTy, convertedValues);
+}
+
 /// Flatten a range of converted value ranges into a single list of values.
 template <typename RangeOfRanges>
 static SmallVector<Value> flattenConvertedValues(RangeOfRanges ranges) {
@@ -1060,6 +1144,28 @@ static bool tryCollectDirectConvertedPodArrayValues(
   }
 
   return false;
+}
+
+/// Try to recover the converted shape source directly available for `arrayValue`.
+static Value tryCollectDirectConvertedPodArrayShapeSource(
+    Value arrayValue, ArrayType arrTy, Location loc, OpBuilder &bldr
+) {
+  SmallVector<RecordChain> splitIds;
+  SmallVector<Type> convertedTypes;
+  collectConvertedPodArrayRecordInfos(arrTy, splitIds, convertedTypes);
+
+  SmallVector<Value> convertedValues;
+  if (!tryCollectDirectConvertedPodArrayValues(
+          arrayValue, arrTy, convertedTypes, convertedValues
+      )) {
+    return {};
+  }
+
+  if (Value shapeSource = getConvertedPodArrayShapeSource(arrTy, convertedValues)) {
+    return castValueToTypeIfNeeded(bldr, loc, shapeSource, getPodArrayShapeCarrierType(arrTy));
+  }
+
+  return {};
 }
 
 /// Return whether `op` is preceded in its block by a write to `podRef.recordName`.
@@ -2063,9 +2169,13 @@ public:
     NewPodOp pod = rewriter.create<NewPodOp>(op.getLoc(), podTy);
     DenseMap<RecordChain, Value> leafValues;
     auto splitArrRefs = adaptor.getArrRef().take_front(splitIds.size());
-    for (auto [id, splitArrRange] : llvm::zip_equal(splitIds, splitArrRefs)) {
-      leafValues[id] =
+    for (auto [id, splitType, splitArrRange] :
+         llvm::zip_equal(splitIds, splitTypes, splitArrRefs)) {
+      Value leafValue =
           genArrayRead(rewriter, op.getLoc(), getSingleConvertedValue(splitArrRange), indices);
+      leafValues[id] = tagRaggedNestedLeafValue(
+          rewriter, op.getLoc(), leafValue, getRaggedNestedLeafAttrName(arrTy, splitType)
+      );
     }
 
     SmallVector<StringAttr> recordChain;
@@ -2253,9 +2363,9 @@ static void collectSplitPodArrayOperandValues(
              typesUnify(convertedValue.getType(), splitType);
     });
   };
+  bool directAggregateToSplitCast = isDirectAggregateToSplitCast();
 
-  if (!isDirectAggregateToSplitCast() &&
-      allValueTypesUnifyWithTypes(leafConvertedValues, splitTypes)) {
+  if (!directAggregateToSplitCast && allValueTypesUnifyWithTypes(leafConvertedValues, splitTypes)) {
     llvm::append_range(newOperands, leafConvertedValues);
     if (carrier) {
       newOperands.push_back(
@@ -2271,12 +2381,16 @@ static void collectSplitPodArrayOperandValues(
     Value splitValue = genReadAlongPath(rewriter, loc, originalOperand, id);
     newOperands.push_back(castValueToTypeIfNeeded(rewriter, loc, splitValue, splitType));
   }
-  if (carrier) {
+  if (carrier && !directAggregateToSplitCast) {
     newOperands.push_back(
         castValueToTypeIfNeeded(rewriter, loc, carrier, getPodArrayShapeCarrierType(arrTy))
     );
   } else if (needsPodArrayShapeCarrier(arrTy)) {
-    newOperands.push_back(materializeArrayLengthCarrier(originalOperand, arrTy, loc, rewriter));
+    RecordChain carrierId({getPodArrayShapeCarrierMarker(rewriter.getContext())}, true);
+    Value splitCarrier = genReadAlongPath(rewriter, loc, originalOperand, carrierId);
+    newOperands.push_back(
+        castValueToTypeIfNeeded(rewriter, loc, splitCarrier, getPodArrayShapeCarrierType(arrTy))
+    );
   }
 }
 
@@ -2681,17 +2795,8 @@ public:
 
     auto getShapeSource =
         [&loc, &rewriter](ArrayType arrTy, Value originalValue, ValueRange convertedValues) {
-      if (Value carrier = getConvertedPodArrayShapeCarrierIfPresent(arrTy, convertedValues)) {
+      if (Value carrier = getConvertedPodArrayShapeSource(arrTy, convertedValues)) {
         return carrier;
-      }
-
-      if (Value trailingCarrier = getTrailingArrayShapeCarrierIfPresent(convertedValues)) {
-        return trailingCarrier;
-      }
-
-      ValueRange leafValues = getConvertedPodArrayLeafValues(arrTy, convertedValues);
-      if (!leafValues.empty()) {
-        return leafValues.front();
       }
 
       if (!convertedValues.empty()) {
@@ -2788,21 +2893,40 @@ public:
 static Value selectArrayLengthShapeSource(
     ArrayLengthOp op, ValueRange convertedArrRefs, ConversionPatternRewriter &rewriter
 ) {
-  if (Value v = getConvertedPodArrayShapeCarrierIfPresent(op.getArrRefType(), convertedArrRefs)) {
+  if (Value v = getConvertedPodArrayShapeSource(op.getArrRefType(), convertedArrRefs)) {
     return v;
-  }
-
-  size_t originalRank = op.getArrRefType().getDimensionSizes().size();
-  for (Value arrRef : getConvertedPodArrayLeafValues(op.getArrRefType(), convertedArrRefs)) {
-    auto arrTy = llvm::dyn_cast<ArrayType>(arrRef.getType());
-    assert(arrTy && "converted array-of-POD operand must stay an array");
-    if (arrTy.getDimensionSizes().size() == originalRank) {
-      return arrRef;
-    }
   }
 
   return materializeArrayLengthCarrier(op.getArrRef(), op.getArrRefType(), op.getLoc(), rewriter);
 }
+
+static Value tryResolveReadPodArrayShapeSource(
+    ReadPodOp readOp, ArrayType arrTy, const VirtualPodValueMap &virtualPods, Location loc,
+    RewriterBase &rewriter
+);
+
+/// Reject `array.len` on one nested leaf array whose per-element shape was lost while flattening.
+class RejectRaggedNestedLeafArrayLengthOp : public OpConversionPattern<ArrayLengthOp> {
+public:
+  using OpConversionPattern<ArrayLengthOp>::OpConversionPattern;
+
+  static bool legal(ArrayLengthOp op) {
+    return getTaggedRaggedNestedLeafKind(op.getArrRef()).empty();
+  }
+
+  LogicalResult
+  matchAndRewrite(ArrayLengthOp op, OneToNOpAdaptor, ConversionPatternRewriter &) const override {
+    StringRef raggedKind = getTaggedRaggedNestedLeafKind(op.getArrRef());
+    if (raggedKind.empty()) {
+      return failure();
+    }
+
+    op.emitOpError() << "cannot lower nested " << raggedKind
+                     << " array leaf length after reading an array-of-POD element without "
+                        "per-element shape witnesses";
+    return failure();
+  }
+};
 
 /// Replace `array.length` on an array-of-POD with an equivalent rank-preserving array value.
 class SplitPodArrayLengthOp : public OpConversionPattern<ArrayLengthOp> {
@@ -2810,8 +2934,9 @@ public:
   using OpConversionPattern<ArrayLengthOp>::OpConversionPattern;
 
   static bool legal(ArrayLengthOp op) {
-    return !splittablePodArray(op.getArrRefType()) ||
-           op->hasAttr(getDeferredPodArrayLengthAttrName());
+    return RejectRaggedNestedLeafArrayLengthOp::legal(op) &&
+           (!splittablePodArray(op.getArrRefType()) ||
+            op->hasAttr(getDeferredPodArrayLengthAttrName()));
   }
 
   LogicalResult matchAndRewrite(
@@ -2921,38 +3046,8 @@ public:
     Value shapeSource;
     ReadPodOp readOp = getReadPodBacking(op.getArrRef());
     assert(readOp && "deferred POD-backed array.len must still trace to pod.read");
-    if (!hasEarlierWrite(readOp)) {
-      if (const VirtualPodLeafMap *podLeafValues =
-              lookupVirtualPodLeafMap(readOp.getPodRef(), virtualPods)) {
-        SmallVector<StringAttr> carrierPath {
-            readOp.getRecordNameAttr(), getPodArrayShapeCarrierMarker(op.getContext())
-        };
-        if (auto carrierIt = podLeafValues->find(RecordChain(carrierPath, true));
-            carrierIt != podLeafValues->end()) {
-          shapeSource = castValueToTypeIfNeeded(
-              rewriter, op.getLoc(), carrierIt->second, getPodArrayShapeCarrierType(arrTy)
-          );
-        } else {
-          size_t originalRank = arrTy.getDimensionSizes().size();
-          SmallVector<RecordChain> splitIds;
-          SmallVector<Type> splitTypes;
-          splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
-          for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
-            auto splitArrTy = llvm::dyn_cast<ArrayType>(splitType);
-            if (!splitArrTy || splitArrTy.getDimensionSizes().size() != originalRank) {
-              continue;
-            }
-
-            auto valueIt = podLeafValues->find(concatRecordChain({readOp.getRecordNameAttr()}, id));
-            if (valueIt != podLeafValues->end()) {
-              shapeSource =
-                  castValueToTypeIfNeeded(rewriter, op.getLoc(), valueIt->second, splitArrTy);
-              break;
-            }
-          }
-        }
-      }
-    }
+    shapeSource =
+        tryResolveReadPodArrayShapeSource(readOp, arrTy, virtualPods, op.getLoc(), rewriter);
 
     if (!shapeSource) {
       if (needsPodArrayShapeCarrier(arrTy) && isFreshUnwrittenPodRead(readOp)) {
@@ -3371,7 +3466,8 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
       SplitPodArrayWriteArrayOp, SplitPodArrayExtractArrayOp, SplitPodArrayInsertArrayOp,
       SplitPodArrayInFuncDefOp, SplitPodArrayInUnifiableCastOp, SplitPodArrayInReturnOp,
       SplitPodArrayInCallOp, SplitPodArrayInEmitEqualityOp, SplitPodArrayInEmitContainmentOp,
-      SplitPodArrayLengthOp, SplitPodArrayForAllOp, SplitPodArrayExistsOp>(typeConverter, ctx);
+      RejectRaggedNestedLeafArrayLengthOp, SplitPodArrayLengthOp, SplitPodArrayForAllOp,
+      SplitPodArrayExistsOp>(typeConverter, ctx);
   patterns.add<SplitPodArrayInMemberWriteOp, SplitPodArrayInMemberReadOp>(
       typeConverter, ctx, symTables, memberRepMap
   );
@@ -3895,6 +3991,73 @@ static bool resolveReadPodSplitPodArrayLeafValues(
   return true;
 }
 
+/// Try to recover the shared visible-rank shape source for one array-of-POD `pod.read`.
+static Value tryResolveReadPodArrayShapeSource(
+    ReadPodOp readOp, ArrayType arrTy, const VirtualPodValueMap &virtualPods, Location loc,
+    RewriterBase &rewriter
+) {
+  auto tryGetVirtualShapeSource = [&](ReadPodOp sourceRead) -> Value {
+    if (hasEarlierWrite(sourceRead)) {
+      return {};
+    }
+
+    const VirtualPodLeafMap *podLeafValues =
+        lookupVirtualPodLeafMap(sourceRead.getPodRef(), virtualPods);
+    if (!podLeafValues) {
+      return {};
+    }
+
+    SmallVector<StringAttr> carrierPath {
+        sourceRead.getRecordNameAttr(), getPodArrayShapeCarrierMarker(rewriter.getContext())
+    };
+    if (auto carrierIt = podLeafValues->find(RecordChain(carrierPath, true));
+        carrierIt != podLeafValues->end()) {
+      return castValueToTypeIfNeeded(
+          rewriter, loc, carrierIt->second, getPodArrayShapeCarrierType(arrTy)
+      );
+    }
+
+    size_t originalRank = arrTy.getDimensionSizes().size();
+    SmallVector<RecordChain> splitIds;
+    SmallVector<Type> splitTypes;
+    splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
+    for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
+      auto splitArrTy = llvm::dyn_cast<ArrayType>(splitType);
+      if (!splitArrTy || splitArrTy.getDimensionSizes().size() != originalRank) {
+        continue;
+      }
+
+      auto valueIt = podLeafValues->find(concatRecordChain({sourceRead.getRecordNameAttr()}, id));
+      if (valueIt != podLeafValues->end()) {
+        return castValueToTypeIfNeeded(rewriter, loc, valueIt->second, splitArrTy);
+      }
+    }
+
+    return {};
+  };
+
+  if (!hasEarlierWrite(readOp)) {
+    if (Value shapeSource = tryGetVirtualShapeSource(readOp)) {
+      return shapeSource;
+    }
+  }
+
+  if (WritePodOp writeOp = findNearestForwardableWrite(readOp)) {
+    if (Value shapeSource = tryCollectDirectConvertedPodArrayShapeSource(
+            writeOp.getValue(), arrTy, loc, rewriter
+        )) {
+      return shapeSource;
+    }
+    if (ReadPodOp writtenRead = peelUnifiableCasts(writeOp.getValue()).getDefiningOp<ReadPodOp>()) {
+      if (Value shapeSource = tryGetVirtualShapeSource(writtenRead)) {
+        return shapeSource;
+      }
+    }
+  }
+
+  return {};
+}
+
 /// Erase a resolved deferred field-read chain once both the read and its placeholder pod vanish.
 static void eraseDeadDeferredFieldReadChain(ReadPodOp readOp, PatternRewriter &rewriter) {
   if (!readOp.getResult().use_empty()) {
@@ -4001,8 +4164,11 @@ public:
 
     SmallVector<Value> indices(adaptor.getIndices().begin(), adaptor.getIndices().end());
     VirtualPodLeafMap leafValues;
-    for (auto [id, leafArray] : llvm::zip_equal(splitIds, splitLeafArrays)) {
-      leafValues[id] = genArrayRead(rewriter, op.getLoc(), leafArray, indices);
+    for (auto [id, splitType, leafArray] : llvm::zip_equal(splitIds, splitTypes, splitLeafArrays)) {
+      Value leafValue = genArrayRead(rewriter, op.getLoc(), leafArray, indices);
+      leafValues[id] = tagRaggedNestedLeafValue(
+          rewriter, op.getLoc(), leafValue, getRaggedNestedLeafAttrName(arrTy, splitType)
+      );
     }
 
     Value virtualPod = createVirtualPodPlaceholder(rewriter, op.getLoc(), podTy, leafValues);
@@ -4077,15 +4243,18 @@ public:
 
     SmallVector<Value> replacements(splitLeafArrays.begin(), splitLeafArrays.end());
     if (needsPodArrayShapeCarrier(arrTy)) {
-      Value carrier;
-      if (auto it = deferredPodArrays.find(fieldRead.getResult());
-          it != deferredPodArrays.end() && it->second.shapeCarrier) {
-        carrier = castValueToTypeIfNeeded(
-            rewriter, op.getLoc(), it->second.shapeCarrier, getPodArrayShapeCarrierType(arrTy)
-        );
-      } else {
-        carrier =
-            materializeArrayLengthCarrier(fieldRead.getResult(), arrTy, op.getLoc(), rewriter);
+      Value carrier =
+          tryResolveReadPodArrayShapeSource(fieldRead, arrTy, virtualPods, op.getLoc(), rewriter);
+      if (!carrier) {
+        if (auto it = deferredPodArrays.find(fieldRead.getResult());
+            it != deferredPodArrays.end() && it->second.shapeCarrier) {
+          carrier = castValueToTypeIfNeeded(
+              rewriter, op.getLoc(), it->second.shapeCarrier, getPodArrayShapeCarrierType(arrTy)
+          );
+        } else {
+          carrier =
+              materializeArrayLengthCarrier(fieldRead.getResult(), arrTy, op.getLoc(), rewriter);
+        }
       }
       replacements.push_back(carrier);
     }
@@ -4133,15 +4302,18 @@ public:
 
     SmallVector<Value> replacements(splitLeafArrays.begin(), splitLeafArrays.end());
     if (needsPodArrayShapeCarrier(arrTy)) {
-      Value carrier;
-      if (auto it = deferredPodArrays.find(fieldRead.getResult());
-          it != deferredPodArrays.end() && it->second.shapeCarrier) {
-        carrier = castValueToTypeIfNeeded(
-            rewriter, op.getLoc(), it->second.shapeCarrier, getPodArrayShapeCarrierType(arrTy)
-        );
-      } else {
-        carrier =
-            materializeArrayLengthCarrier(fieldRead.getResult(), arrTy, op.getLoc(), rewriter);
+      Value carrier =
+          tryResolveReadPodArrayShapeSource(fieldRead, arrTy, virtualPods, op.getLoc(), rewriter);
+      if (!carrier) {
+        if (auto it = deferredPodArrays.find(fieldRead.getResult());
+            it != deferredPodArrays.end() && it->second.shapeCarrier) {
+          carrier = castValueToTypeIfNeeded(
+              rewriter, op.getLoc(), it->second.shapeCarrier, getPodArrayShapeCarrierType(arrTy)
+          );
+        } else {
+          carrier =
+              materializeArrayLengthCarrier(fieldRead.getResult(), arrTy, op.getLoc(), rewriter);
+        }
       }
       replacements.push_back(carrier);
     }
@@ -4391,6 +4563,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   patterns.add<SplitPodInMemberWriteOp, SplitPodInMemberReadOp>(
       ctx, symTables, memberRepMap, virtualPods
   );
+  patterns.add<RejectRaggedNestedLeafArrayLengthOp>(ctx);
   patterns.add<ResolvePodReadBackedArrayReadOp>(ctx, virtualPods, deferredPodArrays);
   patterns.add<ResolvePodReadBackedArrayLengthOp>(ctx, virtualPods, deferredPodArrays);
   patterns.add<ResolveDeferredSplitPodArrayCastOp>(ctx, virtualPods, deferredPodArrays);
@@ -4410,7 +4583,10 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
     return !lookupVirtualPodLeafMap(op.getPodRef(), virtualPods) ||
            isInsideSupportedScfRegion(op.getOperation());
   });
-  target.addDynamicallyLegalOp<ArrayLengthOp>(ResolvePodReadBackedArrayLengthOp::legal);
+  target.addDynamicallyLegalOp<ArrayLengthOp>([](ArrayLengthOp op) {
+    return RejectRaggedNestedLeafArrayLengthOp::legal(op) &&
+           ResolvePodReadBackedArrayLengthOp::legal(op);
+  });
   target.addDynamicallyLegalOp<ReadArrayOp>([&virtualPods](ReadArrayOp op) {
     return !ResolvePodReadBackedArrayReadOp::canResolve(op, virtualPods);
   });
@@ -5376,6 +5552,22 @@ static size_t countResidualPodIR(ModuleOp modOp) {
   return count;
 }
 
+/// Reject any `array.len` that still targets a tagged ragged nested leaf array.
+static LogicalResult rejectRaggedNestedLeafArrayLengths(ModuleOp modOp) {
+  WalkResult result = modOp.walk([](ArrayLengthOp op) {
+    StringRef raggedKind = getTaggedRaggedNestedLeafKind(op.getArrRef());
+    if (raggedKind.empty()) {
+      return WalkResult::advance();
+    }
+
+    op.emitOpError() << "cannot lower nested " << raggedKind
+                     << " array leaf length after reading an array-of-POD element without "
+                        "per-element shape witnesses";
+    return WalkResult::interrupt();
+  });
+  return failure(result.wasInterrupted());
+}
+
 /// Pass driver for the full POD-to-scalar lowering pipeline described above.
 class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
   using Base = PodToScalarPassBase<PassImpl>;
@@ -5473,6 +5665,11 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
         module.dump();
       });
 
+      if (failed(rejectRaggedNestedLeafArrayLengths(module))) {
+        signalPassFailure();
+        return;
+      }
+
       if (failed(step4(module))) {
         return signalPassFailure();
       }
@@ -5489,6 +5686,11 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
         llvm::dbgs() << "After SROA+Mem2Reg pipeline:\n";
         module.dump();
       });
+
+      if (failed(rejectRaggedNestedLeafArrayLengths(module))) {
+        signalPassFailure();
+        return;
+      }
 
       size_t residualCount = countResidualPodIR(module);
       if (residualCount == 0) {

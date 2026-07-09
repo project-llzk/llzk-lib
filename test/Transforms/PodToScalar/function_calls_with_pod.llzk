@@ -202,14 +202,14 @@ module attributes {llzk.lang} {
 }
 // CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @sink(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>) -> index {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_0]], %[[VAL_2]] : <#[[$M]] x index>
-// CHECK-NEXT:      function.return %[[VAL_3]] : index
+// CHECK-NEXT:    function.def @sink(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x none>) -> index {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_2]], %[[VAL_3]] : <#[[$M]] x none>
+// CHECK-NEXT:      function.return %[[VAL_4]] : index
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @main(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>) -> index {
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @sink(%[[VAL_4]], %[[VAL_5]]) : (!array.type<#[[$M]] x index>, !array.type<#[[$M]] x !felt.type>) -> index
-// CHECK-NEXT:      function.return %[[VAL_6]] : index
+// CHECK-NEXT:    function.def @main(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x none>) -> index {
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @sink(%[[VAL_5]], %[[VAL_6]], %[[VAL_7]]) : (!array.type<#[[$M]] x index>, !array.type<#[[$M]] x !felt.type>, !array.type<#[[$M]] x none>) -> index
+// CHECK-NEXT:      function.return %[[VAL_8]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----
@@ -266,9 +266,10 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @named_wildcard_array(
 // CHECK-SAME:    %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<? x index> {function.arg_name = "input.lhs"},
-// CHECK-SAME:    %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type> {function.arg_name = "input.rhs"}
-// CHECK-SAME:    ) -> (!array.type<? x index> {function.res_name = "output.lhs"}, !array.type<? x !felt.type> {function.res_name = "output.rhs"}) {
-// CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_1]] : !array.type<? x index>, !array.type<? x !felt.type>
+// CHECK-SAME:    %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type> {function.arg_name = "input.rhs"},
+// CHECK-SAME:    %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<? x none> {function.arg_name = "input.shape"}
+// CHECK-SAME:    ) -> (!array.type<? x index> {function.res_name = "output.lhs"}, !array.type<? x !felt.type> {function.res_name = "output.rhs"}, !array.type<? x none> {function.res_name = "output.shape"}) {
+// CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_1]], %[[VAL_2]] : !array.type<? x index>, !array.type<? x !felt.type>, !array.type<? x none>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----
@@ -331,7 +332,8 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @get_items(
 // CHECK-SAME:    %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>,
 // CHECK-SAME:    %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>
-// CHECK-SAME:    ) -> (!array.type<#[[$M]] x index>, !array.type<#[[$M]] x !felt.type>) {
-// CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_1]] : !array.type<#[[$M]] x index>, !array.type<#[[$M]] x !felt.type>
+// CHECK-SAME:    , %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x none>
+// CHECK-SAME:    ) -> (!array.type<#[[$M]] x index>, !array.type<#[[$M]] x !felt.type>, !array.type<#[[$M]] x none>) {
+// CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_1]], %[[VAL_2]] : !array.type<#[[$M]] x index>, !array.type<#[[$M]] x !felt.type>, !array.type<#[[$M]] x none>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
