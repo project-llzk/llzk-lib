@@ -585,7 +585,8 @@ static void populateStep1ConversionPatterns(
       RemoveIntToFeltOp,
       ConvertCmpOp,
       ConvertEmitEqualityOp,
-      ConvertAssertOp,
+      // This pattern is currently disabled because asserts may represent predicates that are not actually part of the constraint system.
+      // ConvertAssertOp,
       ConvertSelfMemberReadOpOfFelt,
       ConvertSelfMemberReadOpOfSubcmp,
       ConvertSubcmpMemberReadOp,
