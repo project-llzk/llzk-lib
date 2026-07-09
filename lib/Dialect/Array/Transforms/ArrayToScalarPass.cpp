@@ -565,7 +565,7 @@ public:
 
   /// If 'dimIdx' is constant and that dimension of the ArrayType has static size, return it.
   static std::optional<llvm::APInt> getDimSizeIfKnown(Value dimIdx, ArrayType baseArrType) {
-    if (splittableArray(baseArrType)) {
+    if (baseArrType.hasStaticShape()) {
       llvm::APInt idxAP;
       if (mlir::matchPattern(dimIdx, mlir::m_ConstantInt(&idxAP))) {
         std::optional<int64_t> signedIdx = idxAP.trySExtValue();

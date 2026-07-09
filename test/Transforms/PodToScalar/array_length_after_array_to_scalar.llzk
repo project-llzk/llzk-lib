@@ -1,0 +1,17 @@
+// RUN: llzk-opt -llzk-pod-to-scalar -llzk-array-to-scalar %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  function.def @len_empty_leaf_static_arg_after_array_to_scalar(
+      %arr: !array.type<4 x !pod.type<[]>>
+  ) -> index {
+    %dim = arith.constant 0 : index
+    %len = array.len %arr, %dim : !array.type<4 x !pod.type<[]>>
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @len_empty_leaf_static_arg_after_array_to_scalar(%[[ARR:[0-9a-zA-Z_\.]+]]: !array.type<4 x none>) -> index {
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
