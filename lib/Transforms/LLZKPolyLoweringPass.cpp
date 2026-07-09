@@ -492,8 +492,8 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
         << detail;
   }
 
-  template <typename IndexRange, typename PrefixRange>
   /// Returns true when \p index begins with the exact attribute sequence in \p prefix.
+  template <typename IndexRange, typename PrefixRange>
   bool indexStartsWith(const IndexRange &index, const PrefixRange &prefix) const {
     auto indexIt = index.begin();
     for (Attribute attr : prefix) {
@@ -505,8 +505,8 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     return true;
   }
 
-  template <typename LhsRange, typename RhsRange>
   /// Returns true when \p lhs and \p rhs share a common prefix (one is a prefix of the other).
+  template <typename LhsRange, typename RhsRange>
   bool prefixesCanOverlap(const LhsRange &lhs, const RhsRange &rhs) const {
     auto lhsIt = lhs.begin();
     auto rhsIt = rhs.begin();
@@ -532,8 +532,8 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     return ArrayAttr::get(ctx, attrs);
   }
 
-  template <typename PrefixRange>
   /// Returns a new ArrayAttr formed by concatenating \p prefix and \p suffix.
+  template <typename PrefixRange>
   ArrayAttr appendIndex(MLIRContext *ctx, const PrefixRange &prefix, ArrayAttr suffix) const {
     SmallVector<Attribute> attrs;
     for (Attribute attr : prefix) {

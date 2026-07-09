@@ -27,7 +27,7 @@
 // CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-// CHECK-NEXT:  // -----
+// CHECK:  // -----
 module attributes {llzk.lang} {
   struct.def @ScalarContainment {
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ScalarContainment> {
@@ -44,8 +44,6 @@ module attributes {llzk.lang} {
     }
   }
 }
-
-
 // -----
 
 // CHECK-LABEL: module attributes {llzk.lang} {
@@ -71,7 +69,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-// CHECK-NEXT:  // -----
+// CHECK:  // -----
 module attributes {llzk.lang} {
   struct.def @RowWriteContainment {
     function.def @compute(%a: !felt.type, %b: !felt.type, %c: !felt.type, %d: !felt.type) -> !struct.type<@RowWriteContainment> {
@@ -120,7 +118,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-// CHECK-NEXT:  // -----
+// CHECK:  // -----
 module attributes {llzk.lang} {
   struct.def @RowOverwriteContainment {
     function.def @compute(%a: !felt.type, %b: !felt.type, %c: !felt.type) -> !struct.type<@RowOverwriteContainment> {
@@ -170,7 +168,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-// CHECK-NEXT:  // -----
+// CHECK:  // -----
 module attributes {llzk.lang} {
   struct.def @RowInsertOverwriteContainment {
     function.def @compute(%a: !felt.type, %b: !felt.type, %c: !felt.type) -> !struct.type<@RowInsertOverwriteContainment> {
@@ -225,7 +223,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-// CHECK-NEXT:  // -----
+// CHECK:  // -----
 module attributes {llzk.lang} {
   struct.def @RowFinalWriteContainment {
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@RowFinalWriteContainment> {
@@ -277,7 +275,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-// CHECK-NEXT:  // -----
+// CHECK:  // -----
 module attributes {llzk.lang} {
   struct.def @RowInsertContainment {
     function.def @compute(%a: !felt.type, %b: !felt.type, %c: !felt.type, %d: !felt.type) -> !struct.type<@RowInsertContainment> {
@@ -330,7 +328,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-// CHECK-NEXT:  // -----
+// CHECK:  // -----
 module attributes {llzk.lang} {
   struct.def @RowExtractContainment {
     function.def @compute(%a: !felt.type, %b: !felt.type, %c: !felt.type, %d: !felt.type) -> !struct.type<@RowExtractContainment> {
@@ -356,7 +354,6 @@ module attributes {llzk.lang} {
     }
   }
 }
-
 
 // -----
 
@@ -404,4 +401,3 @@ module attributes {llzk.lang} {
     }
   }
 }
-
