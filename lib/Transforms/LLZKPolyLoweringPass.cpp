@@ -488,8 +488,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
 
   LogicalResult emitAmbiguousContainmentRhs(EmitContainmentOp containOp, StringRef detail) const {
     return containOp.emitOpError()
-        << "poly lowering cannot resolve containment RHS row write history: "
-        << detail;
+           << "poly lowering cannot resolve containment RHS row write history: " << detail;
   }
 
   /// Returns true when \p index begins with the exact attribute sequence in \p prefix.
