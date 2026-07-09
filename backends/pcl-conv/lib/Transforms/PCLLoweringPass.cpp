@@ -866,10 +866,8 @@ class PassImpl : public pcl::conversion::impl::PCLLoweringPassBase<PassImpl> {
   }
 
   void runOnOperation() override {
-    ModuleOp moduleOp = getOperation();
-    (void)moduleOp; // To avoid -Wshadow false positives when asserts are compiled out.
     // check PCLDialect is loaded.
-    assert(moduleOp->getContext()->getLoadedDialect<pcl::PCLDialect>() && "PCL dialect not loaded");
+    assert(getContext().getLoadedDialect<pcl::PCLDialect>() && "PCL dialect not loaded");
     auto prime = selectPrime();
     if (failed(prime)) {
       signalPassFailure();
