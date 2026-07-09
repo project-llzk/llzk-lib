@@ -414,3 +414,36 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  poly.template @EqPodAndTypeVar {
+    poly.param @T : !poly.tvar<@T>
+    function.def @constrain(
+        %lhs: !Pair, %rhs: !Pair, %t: !poly.tvar<@T>
+    ) attributes {function.allow_constraint} {
+      constrain.eq %lhs, %t : !Pair, !poly.tvar<@T>
+      constrain.eq %t, %rhs : !poly.tvar<@T>, !Pair
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @EqPodAndTypeVar {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @constrain(
+// CHECK-SAME:       %[[LHS_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:       %[[LHS_Y:[0-9a-zA-Z_\.]+]]: !felt.type,
+// CHECK-SAME:       %[[RHS_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:       %[[RHS_Y:[0-9a-zA-Z_\.]+]]: !felt.type,
+// CHECK-SAME:       %[[TVAR:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[TVAR_LEAVES:[0-9a-zA-Z_\.]+]]:2 = builtin.unrealized_conversion_cast %[[TVAR]] : !poly.tvar<@T> to index, !felt.type
+// CHECK-NEXT:        constrain.eq %[[LHS_X]], %[[TVAR_LEAVES]]#0 : index, index
+// CHECK-NEXT:        constrain.eq %[[LHS_Y]], %[[TVAR_LEAVES]]#1 : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[TVAR_LEAVES]]#0, %[[RHS_X]] : index, index
+// CHECK-NEXT:        constrain.eq %[[TVAR_LEAVES]]#1, %[[RHS_Y]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

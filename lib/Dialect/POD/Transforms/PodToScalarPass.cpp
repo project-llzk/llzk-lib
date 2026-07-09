@@ -143,9 +143,23 @@ struct RecordChain {
   }
 };
 
+/// Cache key for a stable leaf decomposition of one non-POD value into a concrete POD shape.
+struct CompatiblePodLeafMaterializationKey {
+  Value source;
+  Type podType;
+
+  bool operator==(const CompatiblePodLeafMaterializationKey &other) const {
+    return source == other.source && podType == other.podType;
+  }
+};
+
+using CompatiblePodLeafMaterializationMap =
+    DenseMap<CompatiblePodLeafMaterializationKey, SmallVector<Value>>;
+
 } // namespace
 
 namespace llvm {
+
 template <> struct DenseMapInfo<RecordChain> {
   static RecordChain getEmptyKey() {
     return RecordChain {{DenseMapInfo<StringAttr>::getEmptyKey()}};
@@ -164,6 +178,27 @@ template <> struct DenseMapInfo<RecordChain> {
 
   static bool isEqual(const RecordChain &lhs, const RecordChain &rhs) { return lhs == rhs; }
 };
+
+template <> struct DenseMapInfo<CompatiblePodLeafMaterializationKey> {
+  static CompatiblePodLeafMaterializationKey getEmptyKey() {
+    return {DenseMapInfo<Value>::getEmptyKey(), DenseMapInfo<Type>::getEmptyKey()};
+  }
+
+  static CompatiblePodLeafMaterializationKey getTombstoneKey() {
+    return {DenseMapInfo<Value>::getTombstoneKey(), DenseMapInfo<Type>::getTombstoneKey()};
+  }
+
+  static unsigned getHashValue(const CompatiblePodLeafMaterializationKey &key) {
+    return llvm::hash_combine(key.source, key.podType);
+  }
+
+  static bool isEqual(
+      const CompatiblePodLeafMaterializationKey &lhs, const CompatiblePodLeafMaterializationKey &rhs
+  ) {
+    return lhs == rhs;
+  }
+};
+
 } // namespace llvm
 
 namespace {
@@ -1310,6 +1345,116 @@ static SmallVector<Value> orderedVirtualPodLeafValues(
   return orderedValues;
 }
 
+// If the operand has PodType, add reads from all pod records to the `newOperands` list otherwise
+// add the original operand to the list.
+static void processInputOperand(
+    Location loc, Value operand, SmallVector<Value> &newOperands, OpBuilder &rewriter,
+    Operation *userOp = nullptr, const VirtualPodValueMap *virtualPods = nullptr
+) {
+  if (PodType pt = splittablePod(operand.getType())) {
+    if (virtualPods) {
+      if (const VirtualPodLeafMap *leafValues = lookupVirtualPodLeafMap(operand, *virtualPods);
+          leafValues && (!userOp || !hasEarlierWriteToPod(userOp, operand))) {
+        llvm::append_range(
+            newOperands, orderedVirtualPodLeafValues(pt, loc, rewriter, *leafValues)
+        );
+        return;
+      }
+    }
+    SmallVector<StringAttr> recordChain;
+    forEachPodLeaf(pt, recordChain, [&](const RecordChain &id, Type) {
+      newOperands.push_back(genReadAlongPath(rewriter, loc, operand, id));
+    });
+  } else {
+    newOperands.push_back(operand);
+  }
+}
+
+/// For each operand with PodType, add reads from all pod records in place of the original operand
+/// and update the op to use the new operands.
+static void processInputOperands(
+    ValueRange operands, MutableOperandRange outputOpRef, Operation *op,
+    ConversionPatternRewriter &rewriter, const VirtualPodValueMap *virtualPods = nullptr
+) {
+  SmallVector<Value> newOperands;
+  for (Value v : operands) {
+    processInputOperand(op->getLoc(), v, newOperands, rewriter, op, virtualPods);
+  }
+  rewriter.modifyOpInPlace(op, [&outputOpRef, &newOperands]() {
+    outputOpRef.assign(ValueRange(newOperands));
+  });
+}
+
+/// Return the POD type that drives a whole-POD equality split, if either side is POD-typed.
+static PodType getWholePodEqualityType(constrain::EmitEqualityOp op) {
+  if (PodType lhsTy = splittablePod(peelUnifiableCasts(op.getLhs()).getType())) {
+    return lhsTy;
+  }
+  return splittablePod(peelUnifiableCasts(op.getRhs()).getType());
+}
+
+/// Set the insertion point so a helper op dominates every use of `value`.
+static void setInsertionPointAfterValueDefinition(Value value, OpBuilder &bldr) {
+  if (Operation *defOp = value.getDefiningOp()) {
+    bldr.setInsertionPointAfter(defOp);
+  } else {
+    auto blockArg = llvm::cast<BlockArgument>(value);
+    bldr.setInsertionPointToStart(blockArg.getOwner());
+  }
+}
+
+/// Materialize and cache a stable leaf decomposition for one non-POD value.
+///
+/// Whole-POD equality can legally compare a concrete POD against a unifying `!poly.tvar`. The
+/// splitter needs one leaf-aligned SSA value per POD field on both sides, so materialize that
+/// decomposition once per source value and POD shape, then reuse it across every rewritten
+/// equality that observes the same source.
+static ArrayRef<Value> getOrMaterializeCompatiblePodLeafValues(
+    Location loc, Value source, PodType podTy, OpBuilder &rewriter,
+    CompatiblePodLeafMaterializationMap &materializedLeaves
+) {
+  source = peelUnifiableCasts(source);
+  CompatiblePodLeafMaterializationKey key {source, podTy};
+  auto [it, inserted] = materializedLeaves.try_emplace(key);
+  if (!inserted) {
+    return it->second;
+  }
+
+  SmallVector<Type> leafTypes;
+  splitPodTypeTo(podTy, leafTypes);
+  if (leafTypes.empty()) {
+    return it->second;
+  }
+
+  OpBuilder::InsertionGuard guard(rewriter);
+  setInsertionPointAfterValueDefinition(source, rewriter);
+  auto splitCast = rewriter.create<UnrealizedConversionCastOp>(loc, TypeRange(leafTypes), source);
+  llvm::append_range(it->second, splitCast.getResults());
+  return it->second;
+}
+
+/// Collect the leaf-aligned values that represent one whole-POD equality operand.
+static void collectWholePodEqualityOperandLeaves(
+    Location loc, Value operand, PodType podTy, SmallVector<Value> &leaves, OpBuilder &rewriter,
+    CompatiblePodLeafMaterializationMap &materializedLeaves, Operation *userOp = nullptr,
+    const VirtualPodValueMap *virtualPods = nullptr
+) {
+  operand = peelUnifiableCasts(operand);
+  if (splittablePod(operand.getType())) {
+    processInputOperand(loc, operand, leaves, rewriter, userOp, virtualPods);
+    return;
+  }
+
+  assert(
+      typesUnify(operand.getType(), podTy) &&
+      "whole-POD equality operand must unify with the concrete POD shape"
+  );
+  llvm::append_range(
+      leaves,
+      getOrMaterializeCompatiblePodLeafValues(loc, operand, podTy, rewriter, materializedLeaves)
+  );
+}
+
 /// Create a POD-typed placeholder for virtual leaf storage tracked in `leafValues`.
 ///
 /// PODs that embed affine-map-parameterized arrays cannot always be represented by a bare
@@ -1425,46 +1570,6 @@ static SmallVector<std::string> getSplitRecordNameSuffixes(Type type) {
     });
   }
   return suffixes;
-}
-
-// If the operand has PodType, add reads from all pod records to the `newOperands` list otherwise
-// add the original operand to the list.
-static void processInputOperand(
-    Location loc, Value operand, SmallVector<Value> &newOperands, OpBuilder &rewriter,
-    Operation *userOp = nullptr, const VirtualPodValueMap *virtualPods = nullptr
-) {
-  if (PodType pt = splittablePod(operand.getType())) {
-    if (virtualPods) {
-      if (const VirtualPodLeafMap *leafValues = lookupVirtualPodLeafMap(operand, *virtualPods);
-          leafValues && (!userOp || !hasEarlierWriteToPod(userOp, operand))) {
-        llvm::append_range(
-            newOperands, orderedVirtualPodLeafValues(pt, loc, rewriter, *leafValues)
-        );
-        return;
-      }
-    }
-    SmallVector<StringAttr> recordChain;
-    forEachPodLeaf(pt, recordChain, [&](const RecordChain &id, Type) {
-      newOperands.push_back(genReadAlongPath(rewriter, loc, operand, id));
-    });
-  } else {
-    newOperands.push_back(operand);
-  }
-}
-
-/// For each operand with PodType, add reads from all pod records in place of the original operand
-/// and update the op to use the new operands.
-static void processInputOperands(
-    ValueRange operands, MutableOperandRange outputOpRef, Operation *op,
-    ConversionPatternRewriter &rewriter, const VirtualPodValueMap *virtualPods = nullptr
-) {
-  SmallVector<Value> newOperands;
-  for (Value v : operands) {
-    processInputOperand(op->getLoc(), v, newOperands, rewriter, op, virtualPods);
-  }
-  rewriter.modifyOpInPlace(op, [&outputOpRef, &newOperands]() {
-    outputOpRef.assign(ValueRange(newOperands));
-  });
 }
 
 /// Update the tracked leaf values for one top-level POD record after a virtual `pod.write`.
@@ -4048,15 +4153,21 @@ public:
 
 /// Rewrite a whole-POD equality into one equality per leaf using the current virtual POD state.
 static void splitVirtualPodEmitEquality(
-    constrain::EmitEqualityOp op, RewriterBase &rewriter, const VirtualPodValueMap &virtualPods
+    constrain::EmitEqualityOp op, RewriterBase &rewriter, const VirtualPodValueMap &virtualPods,
+    CompatiblePodLeafMaterializationMap &materializedLeaves
 ) {
+  PodType podTy = getWholePodEqualityType(op);
+  assert(podTy && "expected a whole-POD equality to expose a concrete POD side");
+
   SmallVector<Value> lhsLeaves;
   SmallVector<Value> rhsLeaves;
-  processInputOperand(
-      op.getLoc(), op.getLhs(), lhsLeaves, rewriter, op.getOperation(), &virtualPods
+  collectWholePodEqualityOperandLeaves(
+      op.getLoc(), op.getLhs(), podTy, lhsLeaves, rewriter, materializedLeaves, op.getOperation(),
+      &virtualPods
   );
-  processInputOperand(
-      op.getLoc(), op.getRhs(), rhsLeaves, rewriter, op.getOperation(), &virtualPods
+  collectWholePodEqualityOperandLeaves(
+      op.getLoc(), op.getRhs(), podTy, rhsLeaves, rewriter, materializedLeaves, op.getOperation(),
+      &virtualPods
   );
 
   assert(lhsLeaves.size() == rhsLeaves.size() && "POD equality leaves must stay aligned");
@@ -4073,7 +4184,8 @@ static void splitVirtualPodEmitEquality(
 /// final leaf map instead of the value at the equality's program point. Splitting those earlier
 /// equalities immediately before the write update preserves the pre-write leaf values.
 static void splitEarlierVirtualPodEqualitiesBeforeWriteInBlock(
-    WritePodOp writeOp, RewriterBase &rewriter, const VirtualPodValueMap &virtualPods
+    WritePodOp writeOp, RewriterBase &rewriter, const VirtualPodValueMap &virtualPods,
+    CompatiblePodLeafMaterializationMap &materializedLeaves
 ) {
   Value writtenPod = peelVirtualPodCompatibilityCasts(writeOp.getPodRef());
   for (Operation &candidate : llvm::make_early_inc_range(*writeOp->getBlock())) {
@@ -4082,7 +4194,7 @@ static void splitEarlierVirtualPodEqualitiesBeforeWriteInBlock(
     }
 
     auto equalityOp = dyn_cast<constrain::EmitEqualityOp>(&candidate);
-    if (!equalityOp || !splittablePod(equalityOp.getLhs().getType())) {
+    if (!equalityOp || !getWholePodEqualityType(equalityOp)) {
       continue;
     }
 
@@ -4098,7 +4210,7 @@ static void splitEarlierVirtualPodEqualitiesBeforeWriteInBlock(
     }
 
     rewriter.setInsertionPoint(equalityOp);
-    splitVirtualPodEmitEquality(equalityOp, rewriter, virtualPods);
+    splitVirtualPodEmitEquality(equalityOp, rewriter, virtualPods, materializedLeaves);
   }
 }
 
@@ -4108,10 +4220,15 @@ static void splitEarlierVirtualPodEqualitiesBeforeWriteInBlock(
 /// explicit region results or loop-carried values instead of mutating the global virtual state.
 class ResolveVirtualPodWriteOp : public OpConversionPattern<WritePodOp> {
   VirtualPodValueMap &virtualPods;
+  CompatiblePodLeafMaterializationMap &materializedLeaves;
 
 public:
-  ResolveVirtualPodWriteOp(MLIRContext *ctx, VirtualPodValueMap &virtualPodMap)
-      : OpConversionPattern<WritePodOp>(ctx), virtualPods(virtualPodMap) {}
+  ResolveVirtualPodWriteOp(
+      MLIRContext *ctx, VirtualPodValueMap &virtualPodMap,
+      CompatiblePodLeafMaterializationMap &materializedLeafMap
+  )
+      : OpConversionPattern<WritePodOp>(ctx), virtualPods(virtualPodMap),
+        materializedLeaves(materializedLeafMap) {}
 
   LogicalResult matchAndRewrite(
       WritePodOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
@@ -4121,7 +4238,9 @@ public:
       return failure();
     }
 
-    splitEarlierVirtualPodEqualitiesBeforeWriteInBlock(op, rewriter, virtualPods);
+    splitEarlierVirtualPodEqualitiesBeforeWriteInBlock(
+        op, rewriter, virtualPods, materializedLeaves
+    );
 
     Type recordType =
         llvm::cast<PodType>(op.getPodRefType()).getRecordMap().lookup(op.getRecordName());
@@ -4223,18 +4342,23 @@ static void rehydrateVirtualPodPlaceholders(ModuleOp modOp, VirtualPodValueMap &
 class SplitVirtualPodInEmitEqualityPattern final
     : public OpRewritePattern<constrain::EmitEqualityOp> {
   const VirtualPodValueMap &virtualPods;
+  CompatiblePodLeafMaterializationMap &materializedLeaves;
 
 public:
-  SplitVirtualPodInEmitEqualityPattern(MLIRContext *ctx, const VirtualPodValueMap &virtualPodMap)
-      : OpRewritePattern<constrain::EmitEqualityOp>(ctx), virtualPods(virtualPodMap) {}
+  SplitVirtualPodInEmitEqualityPattern(
+      MLIRContext *ctx, const VirtualPodValueMap &virtualPodMap,
+      CompatiblePodLeafMaterializationMap &materializedLeafMap
+  )
+      : OpRewritePattern<constrain::EmitEqualityOp>(ctx), virtualPods(virtualPodMap),
+        materializedLeaves(materializedLeafMap) {}
 
   LogicalResult
   matchAndRewrite(constrain::EmitEqualityOp op, PatternRewriter &rewriter) const override {
-    if (!splittablePod(op.getLhs().getType())) {
+    if (!getWholePodEqualityType(op)) {
       return failure();
     }
 
-    splitVirtualPodEmitEquality(op, rewriter, virtualPods);
+    splitVirtualPodEmitEquality(op, rewriter, virtualPods, materializedLeaves);
     return success();
   }
 };
@@ -4245,6 +4369,7 @@ static LogicalResult
 step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementMap &memberRepMap) {
   MLIRContext *ctx = modOp.getContext();
   VirtualPodValueMap virtualPods;
+  CompatiblePodLeafMaterializationMap materializedLeaves;
   rehydrateVirtualPodPlaceholders(modOp, virtualPods);
   DeferredPodArrayBackingMap deferredPodArrays;
 
@@ -4269,7 +4394,8 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   patterns.add<ResolvePodReadBackedArrayReadOp>(ctx, virtualPods, deferredPodArrays);
   patterns.add<ResolvePodReadBackedArrayLengthOp>(ctx, virtualPods, deferredPodArrays);
   patterns.add<ResolveDeferredSplitPodArrayCastOp>(ctx, virtualPods, deferredPodArrays);
-  patterns.add<ResolveVirtualPodWriteOp, ResolveVirtualPodReadOp>(ctx, virtualPods);
+  patterns.add<ResolveVirtualPodWriteOp>(ctx, virtualPods, materializedLeaves);
+  patterns.add<ResolveVirtualPodReadOp>(ctx, virtualPods);
 
   ConversionTarget target(*ctx);
   baseTargetSetup(target);
@@ -4303,7 +4429,9 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   }
 
   RewritePatternSet postConversionPatterns(ctx);
-  postConversionPatterns.add<SplitVirtualPodInEmitEqualityPattern>(ctx, virtualPods);
+  postConversionPatterns.add<SplitVirtualPodInEmitEqualityPattern>(
+      ctx, virtualPods, materializedLeaves
+  );
   if (failed(applyPatternsGreedily(
           modOp->getRegion(0), std::move(postConversionPatterns),
           GreedyRewriteConfig {.fold = false, .cseConstants = false}
@@ -5098,21 +5226,34 @@ public:
 /// replacement leaf reads observe the final concrete write ordering that later folds and mem2reg
 /// expect.
 class SplitPodInEmitEqualityPattern final : public OpRewritePattern<constrain::EmitEqualityOp> {
+  CompatiblePodLeafMaterializationMap &materializedLeaves;
+
 public:
-  using OpRewritePattern<constrain::EmitEqualityOp>::OpRewritePattern;
+  SplitPodInEmitEqualityPattern(
+      MLIRContext *ctx, CompatiblePodLeafMaterializationMap &materializedLeafMap
+  )
+      : OpRewritePattern<constrain::EmitEqualityOp>(ctx), materializedLeaves(materializedLeafMap) {}
 
   LogicalResult
   matchAndRewrite(constrain::EmitEqualityOp op, PatternRewriter &rewriter) const override {
-    PodType podTy = splittablePod(op.getLhs().getType());
+    PodType podTy = getWholePodEqualityType(op);
     if (!podTy) {
       return failure();
     }
-    SmallVector<StringAttr> recordChain;
-    forEachPodLeaf(podTy, recordChain, [&rewriter, &op](const RecordChain &id, Type) {
-      Value lhsLeaf = genReadAlongPath(rewriter, op.getLoc(), op.getLhs(), id);
-      Value rhsLeaf = genReadAlongPath(rewriter, op.getLoc(), op.getRhs(), id);
+
+    SmallVector<Value> lhsLeaves;
+    SmallVector<Value> rhsLeaves;
+    collectWholePodEqualityOperandLeaves(
+        op.getLoc(), op.getLhs(), podTy, lhsLeaves, rewriter, materializedLeaves
+    );
+    collectWholePodEqualityOperandLeaves(
+        op.getLoc(), op.getRhs(), podTy, rhsLeaves, rewriter, materializedLeaves
+    );
+
+    assert(lhsLeaves.size() == rhsLeaves.size() && "POD equality leaves must stay aligned");
+    for (auto [lhsLeaf, rhsLeaf] : llvm::zip_equal(lhsLeaves, rhsLeaves)) {
       rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhsLeaf, rhsLeaf);
-    });
+    }
     rewriter.eraseOp(op);
     return success();
   }
@@ -5130,11 +5271,13 @@ applyGreedily(ModuleOp modOp, RewritePatternSet &&patterns, bool *changed = null
 /// Repeatedly lift pod accesses out of supported SCF regions so SROA + mem2reg can eliminate the
 /// remaining POD storage.
 static LogicalResult step4(ModuleOp modOp) {
+  CompatiblePodLeafMaterializationMap materializedLeaves;
   RewritePatternSet patterns(modOp.getContext());
   patterns.add<
       FoldReadAfterWriteInBlockPattern, ReplaceIfReadPattern, LiftPodWritesFromIfBlocksPattern,
       LiftPodAccessesFromForLoopPattern, LiftPodAccessesFromWhileLoopPattern,
-      FoldIfCarriedPodReadAfterWritePattern, SplitPodInEmitEqualityPattern>(patterns.getContext());
+      FoldIfCarriedPodReadAfterWritePattern>(patterns.getContext());
+  patterns.add<SplitPodInEmitEqualityPattern>(patterns.getContext(), materializedLeaves);
 
   LLVM_DEBUG(llvm::dbgs() << "Begin step 4: refactor pod ops within SCF regions\n";);
   return applyGreedily(modOp, std::move(patterns));
