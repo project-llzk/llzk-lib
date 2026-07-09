@@ -47,13 +47,17 @@
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/Func/IR/FuncOps.h>
 #include <mlir/IR/Attributes.h>
+#include <mlir/IR/Builders.h>
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Dominance.h>
 #include <mlir/IR/IRMapping.h>
+#include <mlir/IR/Location.h>
 #include <mlir/IR/MLIRContext.h>
 #include <mlir/IR/PatternMatch.h>
 #include <mlir/IR/SymbolTable.h>
+#include <mlir/IR/ValueRange.h>
+#include <mlir/IR/Visitors.h>
 #include <mlir/Support/LLVM.h>
 #include <mlir/Transforms/DialectConversion.h>
 
@@ -124,12 +128,16 @@ template <typename SrcOp, typename DstOp>
 class ConvertBinaryOp : public OpConversionPattern<SrcOp> {
   using OpAdaptor = typename OpConversionPattern<SrcOp>::OpAdaptor;
 
+  using OpConversionPattern<SrcOp>::getTypeConverter;
+  using OpConversionPattern<SrcOp>::getContext;
+
 public:
   using OpConversionPattern<SrcOp>::OpConversionPattern;
 
   LogicalResult match(SrcOp) const override { return success(); }
 
   void rewrite(SrcOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+
     rewriter.replaceOpWithNewOp<DstOp>(op, adaptor.getLhs(), adaptor.getRhs());
   }
 };
@@ -368,13 +376,13 @@ class ConvertNonDetOp : public OpConversionPattern<NonDetOp> {
   NonDetOpNames &names;
 
 public:
-  ConvertNonDetOp(MLIRContext *context, NonDetOpNames &opNames, PatternBenefit benefit = 1)
-      : OpConversionPattern(context, benefit), names(opNames) {}
+  ConvertNonDetOp(MLIRContext *context, NonDetOpNames &opNames, PatternBenefit patBenefit = 1)
+      : OpConversionPattern(context, patBenefit), names(opNames) {}
   ConvertNonDetOp(
-      const TypeConverter &typeConverter, MLIRContext *context, NonDetOpNames &opNames,
-      PatternBenefit benefit = 1
+      const TypeConverter &tc, MLIRContext *context, NonDetOpNames &opNames,
+      PatternBenefit patBenefit = 1
   )
-      : OpConversionPattern(typeConverter, context, benefit), names(opNames) {}
+      : OpConversionPattern(tc, context, patBenefit), names(opNames) {}
 
   LogicalResult match(NonDetOp op) const override { return success(names.find(op) != names.end()); }
 
@@ -458,14 +466,14 @@ class RemoveDuplicateVarOp : public OpConversionPattern<pcl::VarOp> {
 
 public:
   RemoveDuplicateVarOp(
-      MLIRContext *context, DupVarsReplacements &opReplacements, PatternBenefit benefit = 1
+      MLIRContext *context, DupVarsReplacements &opReplacements, PatternBenefit patBenefit = 1
   )
-      : OpConversionPattern(context, benefit), replacements(opReplacements) {}
+      : OpConversionPattern(context, patBenefit), replacements(opReplacements) {}
   RemoveDuplicateVarOp(
-      const TypeConverter &typeConverter, MLIRContext *context, DupVarsReplacements &opReplacements,
-      PatternBenefit benefit = 1
+      const TypeConverter &tc, MLIRContext *context, DupVarsReplacements &opReplacements,
+      PatternBenefit patBenefit = 1
   )
-      : OpConversionPattern(typeConverter, context, benefit), replacements(opReplacements) {}
+      : OpConversionPattern(tc, context, patBenefit), replacements(opReplacements) {}
 
   LogicalResult match(pcl::VarOp op) const override {
     return success(replacements.find(op) != replacements.end());
@@ -616,9 +624,82 @@ struct PCLTypeConverter : public TypeConverter {
     // Default conversion.
     addConversion([](Type t) { return t; });
 
-    addConversion([](IntegerType t) { return pcl::FeltType::get(t.getContext()); });
+    addConversion([](IntegerType t) -> Type {
+      // return pcl::FeltType::get(t.getContext());
+      return pcl::BoolType::get(t.getContext());
+    });
 
     addConversion([](FeltType t) { return pcl::FeltType::get(t.getContext()); });
+
+    addSourceMaterialization(
+        [](OpBuilder &builder, Type t, ValueRange values, Location location) -> Value {
+      if (values.size() != 1) {
+        return nullptr;
+      }
+      return builder.create<UnrealizedConversionCastOp>(location, t, values[0]).getResult(0);
+    }
+    );
+
+    addTargetMaterialization(
+        [](OpBuilder &builder, Type t, ValueRange values, Location location) -> Value {
+      if (values.size() != 1) {
+        return nullptr;
+      }
+
+      return builder.create<UnrealizedConversionCastOp>(location, t, values[0]).getResult(0);
+    }
+    );
+
+    // Handles the conversion from booleans to felts.
+    //
+    // This conversion may be necessary in situations where a boolean result is used as operand of
+    // an operation that expects a felt. For example, the following input IR:
+    //
+    // ```
+    //  %felt_const_1 = felt.const 1 : !F
+    //  %felt_const_65536 = felt.const 65536 : !F
+    //  %0 = bool.cmp lt(%in, %felt_const_65536) : !F, !F
+    //  %1 = cast.tofelt %0 : i1, !F
+    //  constrain.eq %1, %felt_const_1 : !F, !F
+    // ```
+    //
+    // Can be represented in PCL as:
+    //
+    // ```
+    // (assert (= (< %in 65536) 1))
+    // ```
+    //
+    // The result of `(< %in 65536)` needs to be converted from a `pcl.bool` to a `pcl.felt` in
+    // order for the IR to typecheck.
+    addTargetMaterialization(
+        [](OpBuilder &builder, pcl::FeltType, ValueRange values, Location location) -> Value {
+      if (values.size() != 1 || !mlir::isa<pcl::BoolType>(values[0].getType())) {
+        return nullptr;
+      }
+      return builder.create<pcl::AsFeltOp>(location, values[0]);
+    }
+    );
+
+    // Handles the conversion from felts to booleans.
+    //
+    // This conversion is the counterpart of the conversion above and is used in situations where a
+    // felt was passed as operand to an op that expects a boolean.
+    //
+    // The value is converted by testing for equality against the falsy value (0).
+    addTargetMaterialization(
+        [](OpBuilder &builder, pcl::BoolType, ValueRange values, Location location) -> Value {
+      if (values.size() != 1 || !mlir::isa<pcl::FeltType>(values[0].getType())) {
+        return nullptr;
+      }
+
+      llvm::APInt zeroValue;
+      auto zero = builder.create<pcl::ConstOp>(
+          location, pcl::FeltAttr::get(builder.getContext(), zeroValue)
+      );
+      auto eqOp = builder.create<pcl::CmpEqOp>(location, values[0], zero);
+      return builder.create<pcl::NotOp>(location, eqOp);
+    }
+    );
   }
 };
 
@@ -634,12 +715,24 @@ class PassImpl : public pcl::conversion::impl::PCLLoweringPassBase<PassImpl> {
   LogicalResult validateStruct(StructDefOp structDef) {
     for (auto member : structDef.getMemberDefs()) {
       auto memberType = member.getType();
-      if (!llvm::isa<FeltType>(memberType)) {
-        return member.emitError() << "Member must be felt type. Found " << memberType
+      if (!llvm::isa<FeltType, StructType>(memberType)) {
+        return member.emitError() << "Member must be felt or struct type. Found " << memberType
                                   << " for member: " << member.getName();
       }
     }
     return success();
+  }
+
+  LogicalResult validateStructs() {
+    return failure(
+        getOperation()
+            ->walk([this](StructDefOp op) {
+      if (failed(validateStruct(op))) {
+        return WalkResult::interrupt();
+      }
+      return WalkResult::advance();
+    }).wasInterrupted()
+    );
   }
 
   // PCL programs require a module-level attribute specifying the prime.
@@ -681,7 +774,7 @@ class PassImpl : public pcl::conversion::impl::PCLLoweringPassBase<PassImpl> {
   ///
   /// Only `llzk.nondet` ops of type `!felt.type` are considered.
   NonDetOpNames collectNonDetOpNames() {
-    uint64_t count;
+    uint64_t count = 0;
     NonDetOpNames names;
     getOperation()->walk([&count, &names](NonDetOp op) {
       if (!mlir::isa<FeltType>(op.getType())) {
@@ -705,11 +798,8 @@ class PassImpl : public pcl::conversion::impl::PCLLoweringPassBase<PassImpl> {
     PCLTypeConverter tc;
     populateStep1ConversionPatterns(tc, patterns, &getContext(), nonDetNames);
     populateStep1ConversionTarget(target, nonDetNames);
-    ConversionConfig config;
-    // Use `builtin.unrealized_conversion_cast` ops for materialization.
-    config.buildMaterializations = false;
 
-    return applyFullConversion(getOperation(), target, std::move(patterns), config);
+    return applyFullConversion(getOperation(), target, std::move(patterns));
   }
 
   /// Step 2 converts the struct to a function, moving the contents of the @constrain function
@@ -720,11 +810,8 @@ class PassImpl : public pcl::conversion::impl::PCLLoweringPassBase<PassImpl> {
     PCLTypeConverter tc;
     populateStep2ConversionPatterns(tc, patterns, &getContext());
     populateStep2ConversionTarget(target);
-    ConversionConfig config;
-    // Use `builtin.unrealized_conversion_cast` ops for materialization.
-    config.buildMaterializations = false;
 
-    return applyFullConversion(getOperation(), target, std::move(patterns), config);
+    return applyFullConversion(getOperation(), target, std::move(patterns));
   }
 
   /// The conversion process may generate multiple copies of the same variable. This is fine since
@@ -765,10 +852,16 @@ class PassImpl : public pcl::conversion::impl::PCLLoweringPassBase<PassImpl> {
 
   void runOnOperation() override {
     ModuleOp moduleOp = getOperation();
+    (void)moduleOp; // To avoid -Wshadow false positives when asserts are compiled out.
     // check PCLDialect is loaded.
     assert(moduleOp->getContext()->getLoadedDialect<pcl::PCLDialect>() && "PCL dialect not loaded");
     auto prime = selectPrime();
     if (failed(prime)) {
+      signalPassFailure();
+      return;
+    }
+
+    if (failed(validateStructs())) {
       signalPassFailure();
       return;
     }

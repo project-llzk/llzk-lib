@@ -24,7 +24,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_1]], %[[VAL_0]]
 // CHECK-NEXT:      pcl.assert %[[VAL_2]]
-// CHECK-NEXT:      pcl.return %[[VAL_1]] : !pcl.felt
+// CHECK-NEXT:      return %[[VAL_1]] : !pcl.felt
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
