@@ -4485,16 +4485,20 @@ static void splitEarlierVirtualPodEqualitiesBeforeWriteInBlock(
     CompatiblePodLeafMaterializationMap &materializedLeaves
 ) {
   Value writtenPod = peelVirtualPodCompatibilityCasts(writeOp.getPodRef());
+
+  SmallVector<constrain::EmitEqualityOp> equalityOps;
   for (Operation &candidate : llvm::make_early_inc_range(*writeOp->getBlock())) {
     if (&candidate == writeOp) {
       break;
     }
+    candidate.walk<WalkOrder::PreOrder>([&equalityOps](constrain::EmitEqualityOp op) {
+      if (getWholePodEqualityType(op)) {
+        equalityOps.push_back(op);
+      }
+    });
+  }
 
-    auto equalityOp = dyn_cast<constrain::EmitEqualityOp>(&candidate);
-    if (!equalityOp || !getWholePodEqualityType(equalityOp)) {
-      continue;
-    }
-
+  for (constrain::EmitEqualityOp equalityOp : equalityOps) {
     Value lhs = peelVirtualPodCompatibilityCasts(equalityOp.getLhs());
     Value rhs = peelVirtualPodCompatibilityCasts(equalityOp.getRhs());
     if (lhs != writtenPod && rhs != writtenPod) {

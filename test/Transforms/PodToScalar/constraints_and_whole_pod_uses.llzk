@@ -404,6 +404,36 @@ module attributes {llzk.lang} {
 
 !Pair = !pod.type<[@x: index, @y: index]>
 module attributes {llzk.lang} {
+  function.def @nested_eq_before_later_write(
+      %cond: i1, %lhs: !Pair, %rhs: !Pair, %new: index
+  ) attributes {function.allow_constraint} {
+    scf.if %cond {
+      constrain.eq %lhs, %rhs : !Pair
+    }
+    pod.write %lhs[@y] = %new : !Pair, index
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @nested_eq_before_later_write(
+// CHECK-SAME:        %[[COND:[0-9a-zA-Z_\.]+]]: i1,
+// CHECK-SAME:        %[[LHS_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[LHS_Y:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[RHS_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[RHS_Y:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[NEW:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      scf.if %[[COND]] {
+// CHECK-NEXT:        constrain.eq %[[LHS_X]], %[[RHS_X]] : index, index
+// CHECK-NEXT:        constrain.eq %[[LHS_Y]], %[[RHS_Y]] : index, index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: index]>
+module attributes {llzk.lang} {
   function.def @make_pair(%x: index, %y: index) -> !Pair {
     %p = pod.new { @x = %x, @y = %y } : !Pair
     function.return %p : !Pair
