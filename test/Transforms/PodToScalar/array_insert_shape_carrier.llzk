@@ -31,3 +31,41 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_6]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
+// -----
+
+!NestedElem = !pod.type<[@items: !array.type<? x index>]>
+!StaticNestedSrc = !array.type<1,2 x !NestedElem>
+!DynNestedDst = !array.type<?,2 x !NestedElem>
+!StaticNestedRow = !array.type<2 x !NestedElem>
+module attributes {llzk.lang} {
+  function.def @insert_static_nested_row_then_len(
+      %src: !StaticNestedSrc, %dstIdx: index
+  ) -> index {
+    %c0 = arith.constant 0 : index
+    %row = array.extract %src[%c0] : !StaticNestedSrc
+    %dst = array.new : !DynNestedDst
+    array.insert %dst[%dstIdx] = %row : !DynNestedDst, !StaticNestedRow
+    %inserted = array.extract %dst[%dstIdx] : !DynNestedDst
+    %len = array.len %inserted, %c0 : !StaticNestedRow
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @insert_static_nested_row_then_len(
+// CHECK-SAME:    %[[SRC_ITEMS:[0-9a-zA-Z_\.]+]]: !array.type<1,2,? x index>,
+// CHECK-SAME:    %[[DST_IDX:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) -> index {
+// CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[ROW_ITEMS:[0-9a-zA-Z_\.]+]] = array.extract %[[SRC_ITEMS]]{{\[}}%[[C0]]] : <1,2,? x index>
+// CHECK-NEXT:      %[[DST_ITEMS:[0-9a-zA-Z_\.]+]] = array.new  : <?,2,? x index>
+// CHECK-NEXT:      %[[DST_SHAPE:[0-9a-zA-Z_\.]+]] = array.new  : <?,2 x none>
+// CHECK-NEXT:      array.insert %[[DST_ITEMS]]{{\[}}%[[DST_IDX]]] = %[[ROW_ITEMS]] : <?,2,? x index>, <2,? x index>
+// CHECK-NEXT:      %[[ROW_SHAPE:[0-9a-zA-Z_\.]+]] = array.new  : <2 x none>
+// CHECK-NEXT:      array.insert %[[DST_SHAPE]]{{\[}}%[[DST_IDX]]] = %[[ROW_SHAPE]] : <?,2 x none>, <2 x none>
+// CHECK-NEXT:      %[[INSERTED_ITEMS:[0-9a-zA-Z_\.]+]] = array.extract %[[DST_ITEMS]]{{\[}}%[[DST_IDX]]] : <?,2,? x index>
+// CHECK-NEXT:      %[[LEN_SHAPE:[0-9a-zA-Z_\.]+]] = array.new  : <2 x none>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[LEN_SHAPE]], %[[C0]] : <2 x none>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

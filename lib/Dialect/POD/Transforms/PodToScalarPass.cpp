@@ -3065,7 +3065,7 @@ public:
           getSingleConvertedValue(splitRvalueRange)
       );
     }
-    if (needsPodArrayShapeCarrier(rvalueTy)) {
+    if (needsPodArrayShapeCarrier(destArrTy)) {
       Value destCarrier = getConvertedPodArrayShapeCarrierIfPresent(destArrTy, adaptor.getArrRef());
       if (!destCarrier) {
         return rewriter.notifyMatchFailure(
