@@ -73,6 +73,8 @@ compareSourceRefPaths(llvm::ArrayRef<SourceRefIndex> lhs, llvm::ArrayRef<SourceR
 void SourceRefIndex::print(raw_ostream &os) const {
   if (isMember()) {
     os << '@' << getMember().getName();
+  } else if (isPodRecord()) {
+    os << '@' << getPodRecordName();
   } else if (isIndex()) {
     os << getIndex();
   } else {
@@ -95,6 +97,9 @@ std::strong_ordering SourceRefIndex::operator<=>(const SourceRefIndex &rhs) cons
     }
     return std::strong_ordering::equal;
   }
+  if (isPodRecord() && rhs.isPodRecord()) {
+    return compareStringRef(getPodRecordName(), rhs.getPodRecordName());
+  }
   if (isIndex() && rhs.isIndex()) {
     return compareDynamicAPInt(getIndex(), rhs.getIndex());
   }
@@ -111,6 +116,12 @@ std::strong_ordering SourceRefIndex::operator<=>(const SourceRefIndex &rhs) cons
     return std::strong_ordering::less;
   }
   if (rhs.isMember()) {
+    return std::strong_ordering::greater;
+  }
+  if (isPodRecord()) {
+    return std::strong_ordering::less;
+  }
+  if (rhs.isPodRecord()) {
     return std::strong_ordering::greater;
   }
   if (isIndex()) {
@@ -132,6 +143,8 @@ size_t SourceRefIndex::Hash::operator()(const SourceRefIndex &c) const {
   } else if (c.isIndexRange()) {
     auto r = c.getIndexRange();
     return llvm::hash_value(std::get<0>(r)) ^ llvm::hash_value(std::get<1>(r));
+  } else if (c.isPodRecord()) {
+    return llvm::hash_value(c.getPodRecordName());
   } else {
     return OpHash<component::MemberDefOp> {}(c.getMember());
   }
@@ -289,28 +302,35 @@ std::vector<SourceRef> SourceRef::getAllSourceRefs(StructDefOp structDef, Member
 }
 
 Type SourceRef::getType() const {
-  auto pathRef = getPath();
-  size_t arrayDerefs = 0;
-  size_t idx = pathRef.size();
-  while (idx > 0 && (pathRef[idx - 1].isIndex() || pathRef[idx - 1].isIndexRange())) {
-    arrayDerefs++;
-    idx--;
-  }
+  Type currTy = value.getType();
+  for (const auto &idx : getPath()) {
+    if (idx.isMember()) {
+      currTy = idx.getMember().getType();
+      continue;
+    }
+    if (idx.isPodRecord()) {
+      auto podTy = dyn_cast<pod::PodType>(currTy);
+      ensure(static_cast<bool>(podTy), "SourceRef pod record requires a pod-typed base");
+      auto lookup = podTy.getRecord(idx.getPodRecordName(), [ctx = value.getContext()]() {
+        return mlir::emitError(
+            mlir::UnknownLoc::get(ctx), "SourceRef references a missing pod record"
+        );
+      });
+      ensure(succeeded(lookup), "SourceRef references a missing pod record");
+      currTy = *lookup;
+      continue;
+    }
 
-  Type currTy = idx > 0 ? pathRef[idx - 1].getMember().getType() : value.getType();
-  if (arrayDerefs > 0) {
     auto arrTy = dyn_cast<ArrayType>(currTy);
-    ensure(static_cast<bool>(arrTy), "SourceRef array indices require an array-typed base");
+    ensure(static_cast<bool>(arrTy), "SourceRef array index requires an array-typed base");
     ensure(
-        arrayDerefs <= arrTy.getDimensionSizes().size(),
+        !arrTy.getDimensionSizes().empty(),
         "SourceRef indexes more array dimensions than exist in the base type"
     );
-
-    if (arrayDerefs == arrTy.getDimensionSizes().size()) {
+    if (arrTy.getDimensionSizes().size() == 1) {
       currTy = arrTy.getElementType();
     } else {
-      currTy =
-          ArrayType::get(arrTy.getElementType(), arrTy.getDimensionSizes().drop_front(arrayDerefs));
+      currTy = ArrayType::get(arrTy.getElementType(), arrTy.getDimensionSizes().drop_front());
     }
   }
   return currTy;
@@ -407,11 +427,23 @@ std::vector<SourceRef> getAllChildren(
   return res;
 }
 
+std::vector<SourceRef> getAllChildren(pod::PodType podTy, const SourceRef &root) {
+  std::vector<SourceRef> res;
+  for (auto record : podTy.getRecords()) {
+    auto childRef = root.createChild(SourceRefIndex(record.getName()));
+    ensure(succeeded(childRef), "pod children require a rooted SourceRef");
+    res.push_back(*childRef);
+  }
+  return res;
+}
+
 std::vector<SourceRef>
 SourceRef::getAllChildren(SymbolTableCollection &tables, ModuleOp mod) const {
   auto ty = getType();
   if (auto structTy = dyn_cast<StructType>(ty)) {
     return llzk::getAllChildren(tables, mod, getStructDef(tables, mod, structTy), *this);
+  } else if (auto podTy = dyn_cast<pod::PodType>(ty)) {
+    return llzk::getAllChildren(podTy, *this);
   } else if (auto arrayType = dyn_cast<ArrayType>(ty)) {
     return llzk::getAllChildren(tables, mod, arrayType, *this);
   }

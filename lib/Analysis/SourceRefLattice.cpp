@@ -13,6 +13,7 @@
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Util/Hash.h"
 #include "llzk/Util/SymbolHelper.h"
 
@@ -33,6 +34,7 @@ namespace llzk {
 using namespace array;
 using namespace component;
 using namespace felt;
+using namespace pod;
 using namespace polymorphic;
 
 /* SourceRefLatticeValue */
@@ -65,6 +67,15 @@ SourceRefLatticeValue::translate(const TranslationMap &translation) const {
 mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
 SourceRefLatticeValue::referenceMember(SymbolLookupResult<MemberDefOp> memberRef) const {
   SourceRefIndex idx(std::move(memberRef));
+  auto transform = [&idx](const SourceRef &r) -> mlir::FailureOr<SourceRef> {
+    return r.createChild(idx);
+  };
+  return elementwiseTransform(transform);
+}
+
+mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
+SourceRefLatticeValue::referencePodRecord(mlir::StringAttr recordName) const {
+  SourceRefIndex idx(recordName);
   auto transform = [&idx](const SourceRef &r) -> mlir::FailureOr<SourceRef> {
     return r.createChild(idx);
   };
@@ -226,6 +237,8 @@ mlir::FailureOr<SourceRef> SourceRefLattice::getSourceRef(mlir::Value val) {
       return SourceRef(nonDet);
     } else if (auto createArray = llvm::dyn_cast<CreateArrayOp>(defOp)) {
       return SourceRef(createArray->getResult(0));
+    } else if (auto newPod = llvm::dyn_cast<NewPodOp>(defOp)) {
+      return SourceRef(newPod->getResult(0));
     } else if (llvm::isa<function::CallOp>(defOp)) {
       auto callResult = llvm::dyn_cast<mlir::OpResult>(val);
       ensure(callResult != nullptr, "function.call value should be an OpResult");

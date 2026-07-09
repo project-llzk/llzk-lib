@@ -22,7 +22,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %0 = pcl.eq %arg0, %arg1
 // CHECK-NEXT:      %1 = pcl.eq %arg1, %arg2
 // CHECK-NEXT:      %2 = pcl.and %0, %1
-// CHECK-NEXT:      pcl.return
+// CHECK-NEXT:      return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
@@ -49,7 +49,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %0 = pcl.lt %arg0, %arg1
 // CHECK-NEXT:      %1 = pcl.le %arg1, %arg2
 // CHECK-NEXT:      %2 = pcl.or %0, %1
-// CHECK-NEXT:      pcl.return
+// CHECK-NEXT:      return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
@@ -74,7 +74,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    func.func @A(%arg0: !pcl.felt, %arg1: !pcl.felt) {
 // CHECK-NEXT:      %0 = pcl.ge %arg0, %arg1
 // CHECK-NEXT:      %1 = pcl.not %0
-// CHECK-NEXT:      pcl.return
+// CHECK-NEXT:      return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
@@ -102,7 +102,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %1 = pcl.eq %arg1, %arg2
 // CHECK-NEXT:      %2 = pcl.iff %0, %1
 // CHECK-NEXT:      %3 = pcl.not %2
-// CHECK-NEXT:      pcl.return
+// CHECK-NEXT:      return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
@@ -126,6 +126,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    func.func @A(%arg0: !pcl.felt, %arg1: !pcl.felt) {
 // CHECK-NEXT:      %0 = pcl.eq %arg0, %arg1
 // CHECK-NEXT:      %1 = pcl.not %0
-// CHECK-NEXT:      pcl.return
+// CHECK-NEXT:      return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

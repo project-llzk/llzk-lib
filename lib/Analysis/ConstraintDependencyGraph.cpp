@@ -13,6 +13,7 @@
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Util/Hash.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/TypeHelper.h"
@@ -36,6 +37,7 @@ using namespace array;
 using namespace component;
 using namespace constrain;
 using namespace function;
+using namespace pod;
 
 /* SourceRefAnalysis */
 
@@ -67,6 +69,16 @@ SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
       auto memberValsRes = componentIt->second.referenceMember(memberOpRes.value());
       ensure(succeeded(memberValsRes), "could not create SourceRef child for member write");
       return memberValsRes->first;
+    }
+  }
+
+  if (auto podAccessOp = llvm::dyn_cast<PodAccessOpInterface>(op)) {
+    if (!podAccessOp.isRead()) {
+      auto podIt = operandVals.find(podAccessOp.getPodRef());
+      ensure(podIt != operandVals.end(), "missing pod lattice for pod write");
+      auto podValsRes = podIt->second.referencePodRecord(podAccessOp.getRecordNameAttr());
+      ensure(succeeded(podValsRes), "could not create SourceRef child for pod write");
+      return podValsRes->first;
     }
   }
 
@@ -137,6 +149,18 @@ LogicalResult SourceRefAnalysis::visitOperation(
     return success();
   }
 
+  if (auto podAccessOp = llvm::dyn_cast<PodAccessOpInterface>(op)) {
+    auto podValsRes = operandVals.at(podAccessOp.getPodRef())
+                          ->getValue()
+                          .referencePodRecord(podAccessOp.getRecordNameAttr());
+    ensure(succeeded(podValsRes), "could not create SourceRef child for pod reference");
+    if (podAccessOp.isRead()) {
+      auto [podVals, _] = *podValsRes;
+      propagateIfChanged(results.front(), results.front()->setValue(podVals));
+    }
+    return success();
+  }
+
   if (auto arrayAccessOp = llvm::dyn_cast<ArrayAccessOpInterface>(op)) {
     if (!results.empty()) {
       auto newVals = arraySubdivisionOpUpdate(arrayAccessOp, operandVals);
@@ -161,6 +185,12 @@ LogicalResult SourceRefAnalysis::visitOperation(
       (void)newArrayVal.getElemFlatIdx(i).setValue(operandVals.at(elements[i])->getValue());
     }
     propagateIfChanged(results.front(), results.front()->setValue(newArrayVal));
+    return success();
+  }
+
+  if (auto newPod = llvm::dyn_cast<NewPodOp>(op)) {
+    auto newPodValue = SourceRefLattice::getDefaultValue(newPod.getResult());
+    propagateIfChanged(results.front(), results.front()->setValue(newPodValue));
     return success();
   }
 
