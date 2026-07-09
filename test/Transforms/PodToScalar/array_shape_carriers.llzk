@@ -1,0 +1,215 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+
+!Elem = !pod.type<[@x: index]>
+!DynElemMatrix = !array.type<?,? x !Elem>
+!DynElemRow = !array.type<? x !Elem>
+module attributes {llzk.lang} {
+  function.def @extract_dynamic_subarray_len(%src: !DynElemMatrix, %idx: index) -> index {
+    %row = array.extract %src[%idx] : !DynElemMatrix
+    %c0 = arith.constant 0 : index
+    %len = array.len %row, %c0 : !DynElemRow
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @extract_dynamic_subarray_len(%[[SRC_X:[0-9a-zA-Z_\.]+]]: !array.type<?,? x index>, %[[IDX:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[ROW_X:[0-9a-zA-Z_\.]+]] = array.extract %[[SRC_X]]{{\[}}%[[IDX]]] : <?,? x index>
+// CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ROW_X]], %[[C0]] : <? x index>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Elem = !pod.type<[@x: index]>
+!DynElemMatrix = !array.type<?,? x !Elem>
+!DynElemRow = !array.type<? x !Elem>
+module attributes {llzk.lang} {
+  function.def @insert_dynamic_subarray_then_len(
+      %src: !DynElemMatrix, %srcIdx: index, %dstIdx: index
+  ) -> index {
+    %row = array.extract %src[%srcIdx] : !DynElemMatrix
+    %dst = array.new : !DynElemMatrix
+    array.insert %dst[%dstIdx] = %row : !DynElemMatrix, !DynElemRow
+    %inserted = array.extract %dst[%dstIdx] : !DynElemMatrix
+    %c0 = arith.constant 0 : index
+    %len = array.len %inserted, %c0 : !DynElemRow
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @insert_dynamic_subarray_then_len(
+// CHECK-SAME:    %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<?,? x index>,
+// CHECK-SAME:    %[[VAL_1:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:    %[[VAL_2:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) -> index {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_1]]] : <?,? x index>
+// CHECK-NEXT:      %array = array.new  : <?,? x index>
+// CHECK-NEXT:      array.insert %array{{\[}}%[[VAL_2]]] = %[[VAL_3]] : <?,? x index>, <? x index>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.extract %array{{\[}}%[[VAL_2]]] : <?,? x index>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_4]], %[[VAL_5]] : <? x index>
+// CHECK-NEXT:      function.return %[[VAL_6]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!NestedElem = !pod.type<[@items: !array.type<? x index>]>
+!StaticNestedSrc = !array.type<1,2 x !NestedElem>
+!DynNestedDst = !array.type<?,2 x !NestedElem>
+!StaticNestedRow = !array.type<2 x !NestedElem>
+module attributes {llzk.lang} {
+  function.def @insert_static_nested_row_then_len(
+      %src: !StaticNestedSrc, %dstIdx: index
+  ) -> index {
+    %c0 = arith.constant 0 : index
+    %row = array.extract %src[%c0] : !StaticNestedSrc
+    %dst = array.new : !DynNestedDst
+    array.insert %dst[%dstIdx] = %row : !DynNestedDst, !StaticNestedRow
+    %inserted = array.extract %dst[%dstIdx] : !DynNestedDst
+    %len = array.len %inserted, %c0 : !StaticNestedRow
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @insert_static_nested_row_then_len(
+// CHECK-SAME:    %[[SRC_ITEMS:[0-9a-zA-Z_\.]+]]: !array.type<1,2,? x index>,
+// CHECK-SAME:    %[[DST_IDX:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) -> index {
+// CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[ROW_ITEMS:[0-9a-zA-Z_\.]+]] = array.extract %[[SRC_ITEMS]]{{\[}}%[[C0]]] : <1,2,? x index>
+// CHECK-NEXT:      %[[DST_ITEMS:[0-9a-zA-Z_\.]+]] = array.new  : <?,2,? x index>
+// CHECK-NEXT:      %[[DST_SHAPE:[0-9a-zA-Z_\.]+]] = array.new  : <?,2 x none>
+// CHECK-NEXT:      array.insert %[[DST_ITEMS]]{{\[}}%[[DST_IDX]]] = %[[ROW_ITEMS]] : <?,2,? x index>, <2,? x index>
+// CHECK-NEXT:      %[[ROW_SHAPE:[0-9a-zA-Z_\.]+]] = array.new  : <2 x none>
+// CHECK-NEXT:      array.insert %[[DST_SHAPE]]{{\[}}%[[DST_IDX]]] = %[[ROW_SHAPE]] : <?,2 x none>, <2 x none>
+// CHECK-NEXT:      %[[INSERTED_ITEMS:[0-9a-zA-Z_\.]+]] = array.extract %[[DST_ITEMS]]{{\[}}%[[DST_IDX]]] : <?,2,? x index>
+// CHECK-NEXT:      %[[LEN_SHAPE:[0-9a-zA-Z_\.]+]] = array.new  : <2 x none>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[LEN_SHAPE]], %[[C0]] : <2 x none>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Elem = !pod.type<[@__llzk_pod_array_shape: !array.type<2 x index>]>
+!Outer = !pod.type<[@items: !array.type<? x !Elem>]>
+module attributes {llzk.lang} {
+  function.def @read_payload(%p: !Outer, %i: index, %j: index) -> index {
+    %items = pod.read %p[@items] : !Outer, !array.type<? x !Elem>
+    %item = array.read %items[%i] : !array.type<? x !Elem>, !Elem
+    %vals = pod.read %item[@__llzk_pod_array_shape] : !Elem, !array.type<2 x index>
+    %elt = array.read %vals[%j] : !array.type<2 x index>, index
+    function.return %elt : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @read_payload(
+// CHECK-SAME:    %[[PAYLOAD:[0-9a-zA-Z_\.]+]]: !array.type<?,2 x index>,
+// CHECK-SAME:    %[[SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<? x none>,
+// CHECK-SAME:    %[[I:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:    %[[J:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) -> index {
+// CHECK-NEXT:      %[[ROW:[0-9a-zA-Z_\.]+]] = array.extract %[[PAYLOAD]]{{\[}}%[[I]]] : <?,2 x index>
+// CHECK-NEXT:      %[[ELEM:[0-9a-zA-Z_\.]+]] = array.read %[[ROW]]{{\[}}%[[J]]] : <2 x index>, index
+// CHECK-NEXT:      function.return %[[ELEM]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Inner = !pod.type<[@vals: !array.type<3 x index>]>
+!Outer = !pod.type<[@items: !array.type<? x !Inner>]>
+module attributes {llzk.lang} {
+  function.def @shared_shape(%i: index, %dim: index) -> (index, index) {
+    %pod = pod.new : !Outer
+    %items = pod.read %pod[@items] : !Outer, !array.type<? x !Inner>
+    %item = array.read %items[%i] : !array.type<? x !Inner>, !Inner
+    %vals = pod.read %item[@vals] : !Inner, !array.type<3 x index>
+    %c0 = arith.constant 0 : index
+    %x = array.read %vals[%c0] : !array.type<3 x index>, index
+    %len = array.len %items, %dim : !array.type<? x !Inner>
+    function.return %x, %len : index, index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @shared_shape(%[[IDX:[0-9a-zA-Z_\.]+]]: index, %[[DIM:[0-9a-zA-Z_\.]+]]: index) -> (index, index) {
+// CHECK-NEXT:      %[[VALS:[0-9a-zA-Z_\.]+]] = array.new  : <?,3 x index>
+// CHECK-NEXT:      %[[SHAPE:[0-9a-zA-Z_\.]+]] = array.new  : <? x none>
+// CHECK-NEXT:      %[[ITEM_VALS:[0-9a-zA-Z_\.]+]] = array.extract %[[VALS]]{{\[}}%[[IDX]]] : <?,3 x index>
+// CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[X:[0-9a-zA-Z_\.]+]] = array.read %[[ITEM_VALS]]{{\[}}%[[C0]]] : <3 x index>, index
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SHAPE]], %[[DIM]] : <? x none>
+// CHECK-NEXT:      function.return %[[X]], %[[LEN]] : index, index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Elem = !pod.type<[@vals: !array.type<3 x index>]>
+module attributes {llzk.lang} {
+  struct.def @S {
+    struct.member @m : !array.type<? x !Elem>
+    struct.member @out : index
+
+    function.def @compute(%arr: !array.type<? x !Elem>, %dim: index) -> !struct.type<@S> {
+      %self = struct.new : !struct.type<@S>
+      struct.writem %self[@m] = %arr : !struct.type<@S>, !array.type<? x !Elem>
+      %loaded = struct.readm %self[@m] : !struct.type<@S>, !array.type<? x !Elem>
+      %len = array.len %loaded, %dim : !array.type<? x !Elem>
+      struct.writem %self[@out] = %len : !struct.type<@S>, index
+      function.return %self : !struct.type<@S>
+    }
+
+    function.def @constrain(%self: !struct.type<@S>, %arr: !array.type<? x !Elem>, %dim: index) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @S {
+// CHECK-NEXT:      struct.member @m_vals : !array.type<?,3 x index>
+// CHECK-NEXT:      struct.member @m_shape : !array.type<? x none>
+// CHECK-NEXT:      struct.member @out : index
+// CHECK-NEXT:      function.def @compute(
+// CHECK-SAME:      %[[ARR_VALS:[0-9a-zA-Z_\.]+]]: !array.type<?,3 x index>,
+// CHECK-SAME:      %[[ARR_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<? x none>,
+// CHECK-SAME:      %[[VAL_2:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:      ) -> !struct.type<@S> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@S>
+// CHECK-NEXT:        struct.writem %[[VAL_3]][@m_vals] = %[[ARR_VALS]] : <@S>, !array.type<?,3 x index>
+// CHECK-NEXT:        struct.writem %[[VAL_3]][@m_shape] = %[[ARR_SHAPE]] : <@S>, !array.type<? x none>
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@m_vals] : <@S>, !array.type<?,3 x index>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@m_shape] : <@S>, !array.type<? x none>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_5]], %[[VAL_2]] : <? x none>
+// CHECK-NEXT:        struct.writem %[[VAL_3]][@out] = %[[VAL_6]] : <@S>, index
+// CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@S>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(
+// CHECK-SAME:      %[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@S>,
+// CHECK-SAME:      %[[VAL_8:[0-9a-zA-Z_\.]+]]: !array.type<?,3 x index>,
+// CHECK-SAME:      %[[VAL_9:[0-9a-zA-Z_\.]+]]: !array.type<? x none>,
+// CHECK-SAME:      %[[VAL_10:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:      ) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Inner = !pod.type<[@vals: !array.type<3 x index>]>
+!Outer = !pod.type<[@items: !array.type<? x !Inner>]>
+module attributes {llzk.lang} {
+  function.def @main(%arg: !Outer, %dim: index) -> index {
+    %items = pod.read %arg[@items] : !Outer, !array.type<? x !Inner>
+    %len = array.len %items, %dim : !array.type<? x !Inner>
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @main(
+// CHECK-SAME:    %[[ITEMS_VALS:[0-9a-zA-Z_\.]+]]: !array.type<?,3 x index>,
+// CHECK-SAME:    %[[ITEMS_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<? x none>,
+// CHECK-SAME:    %[[DIM:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) -> index {
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ITEMS_SHAPE]], %[[DIM]] : <? x none>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 #outer = affine_map<()[s0] -> (s0)>
 #inner = affine_map<()[s0] -> (s0 + 1)>
@@ -83,3 +83,23 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+#inner = affine_map<()[s0] -> (s0 + 1)>
+!InnerArr = !array.type<#inner x index>
+!Elem = !pod.type<[@vals: !InnerArr]>
+!ElemArray = !array.type<2 x !Elem>
+module attributes {llzk.lang} {
+  function.def @conflict(%m: index, %n: index) -> !ElemArray {
+    %vals0 = array.new{()[%m]} : !InnerArr
+    %vals1 = array.new{()[%n]} : !InnerArr
+    %lhs = pod.new()[%m] : !Elem
+    pod.write %lhs[@vals] = %vals0 : !Elem, !InnerArr
+    %rhs = pod.new()[%n] : !Elem
+    pod.write %rhs[@vals] = %vals1 : !Elem, !InnerArr
+    // expected-error@+2 {{'array.new' op with POD elements having conflicting affine map instantiations cannot be promoted to higher dimensional array}}
+    // expected-error@+1 {{failed to legalize operation 'array.new'}}
+    %arr = array.new %lhs, %rhs : !ElemArray
+    function.return %arr : !ElemArray
+  }
+}

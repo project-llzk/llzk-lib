@@ -21,7 +21,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 !LeafArrayPod = !pod.type<[@vals: !array.type<3 x index>]>
@@ -59,7 +58,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 !Empty = !pod.type<[]>
@@ -95,7 +93,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 !Empty = !pod.type<[]>
@@ -131,7 +128,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 !Pair = !pod.type<[@x: index, @y: !felt.type]>
@@ -220,6 +216,201 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      constrain.eq %[[SEL_X]], %[[SUB_X]] : !array.type<2 x index>, !array.type<2 x index>
 // CHECK-NEXT:      %[[SEL_Y:[0-9a-zA-Z_\.]+]] = array.extract %[[ARR_Y]]{{\[}}%[[IDX]]] : <2,2 x !felt.type>
 // CHECK-NEXT:      constrain.eq %[[SEL_Y]], %[[SUB_Y]] : !array.type<2 x !felt.type>, !array.type<2 x !felt.type>
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Single = !pod.type<[@x: index]>
+module attributes {llzk.lang} {
+  function.def @arg_case(%p: !Single, %new: index) -> index {
+    pod.write %p[@x] = %new : !Single, index
+    %x = pod.read %p[@x] : !Single, index
+    function.return %x : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @arg_case(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      function.return %[[VAL_1]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Single = !pod.type<[@x: index]>
+module attributes {llzk.lang} {
+  function.def @mk(%old: index) -> !Single {
+    %p = pod.new : !Single
+    pod.write %p[@x] = %old : !Single, index
+    function.return %p : !Single
+  }
+
+  function.def @call_case(%old: index, %new: index) -> index {
+    %p = function.call @mk(%old) : (index) -> !Single
+    pod.write %p[@x] = %new : !Single, index
+    %x = pod.read %p[@x] : !Single, index
+    function.return %x : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @mk(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_case(%[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @mk(%[[VAL_1]]) : (index) -> index
+// CHECK-NEXT:      function.return %[[VAL_2]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Single = !pod.type<[@x: index]>
+module attributes {llzk.lang} {
+  struct.def @Box {
+    struct.member @p : !Single
+    struct.member @out : index
+
+    function.def @compute(%old: index, %new: index) -> !struct.type<@Box> {
+      %self = struct.new : !struct.type<@Box>
+      %p = pod.new : !Single
+      pod.write %p[@x] = %old : !Single, index
+      struct.writem %self[@p] = %p : !struct.type<@Box>, !Single
+      %loaded = struct.readm %self[@p] : !struct.type<@Box>, !Single
+      pod.write %loaded[@x] = %new : !Single, index
+      %x = pod.read %loaded[@x] : !Single, index
+      struct.writem %self[@out] = %x : !struct.type<@Box>, index
+      function.return %self : !struct.type<@Box>
+    }
+
+    function.def @constrain(%self: !struct.type<@Box>, %old: index, %new: index) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Box {
+// CHECK-NEXT:      struct.member @p_x : index
+// CHECK-NEXT:      struct.member @out : index
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@Box> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Box>
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@p_x] = %[[VAL_0]] : <@Box>, index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@p_x] : <@Box>, index
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@out] = %[[VAL_1]] : <@Box>, index
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@Box>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Box>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: index, %[[VAL_6:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: index]>
+module attributes {llzk.lang} {
+  function.def @direct_eq_before_later_write(
+      %lhs: !Pair, %rhs: !Pair, %new: index
+  ) attributes {function.allow_constraint} {
+    constrain.eq %lhs, %rhs : !Pair
+    pod.write %lhs[@y] = %new : !Pair, index
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @direct_eq_before_later_write(
+// CHECK-SAME:        %[[LHS_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[LHS_Y:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[RHS_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[RHS_Y:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[NEW:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      constrain.eq %[[LHS_X]], %[[RHS_X]] : index, index
+// CHECK-NEXT:      constrain.eq %[[LHS_Y]], %[[RHS_Y]] : index, index
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: index]>
+module attributes {llzk.lang} {
+  function.def @make_pair(%x: index, %y: index) -> !Pair {
+    %p = pod.new { @x = %x, @y = %y } : !Pair
+    function.return %p : !Pair
+  }
+
+  function.def @call_result_eq_before_later_write(
+      %rhs: !Pair, %a: index, %b: index, %new: index
+  ) attributes {function.allow_constraint} {
+    %lhs = function.call @make_pair(%a, %b) : (index, index) -> !Pair
+    constrain.eq %lhs, %rhs : !Pair
+    pod.write %lhs[@y] = %new : !Pair, index
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @make_pair(%[[X:[0-9a-zA-Z_\.]+]]: index, %[[Y:[0-9a-zA-Z_\.]+]]: index) -> (index, index) {
+// CHECK-NEXT:      function.return %[[X]], %[[Y]] : index, index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_result_eq_before_later_write(
+// CHECK-SAME:        %[[RHS_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[RHS_Y:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[A:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[B:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[NEW:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[CALL:[0-9a-zA-Z_\.]+]]:2 = function.call @make_pair(%[[A]], %[[B]]) : (index, index) -> (index, index)
+// CHECK-NEXT:      constrain.eq %[[CALL]]#0, %[[RHS_X]] : index, index
+// CHECK-NEXT:      constrain.eq %[[CALL]]#1, %[[RHS_Y]] : index, index
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Single = !pod.type<[@x: index]>
+module attributes {llzk.lang} {
+  function.def @whole_use_after_computed_write(
+      %lhs: !Single, %rhs: !Single, %a: index, %b: index
+  ) attributes {function.allow_constraint} {
+    %sum = arith.addi %a, %b : index
+    pod.write %lhs[@x] = %sum : !Single, index
+    constrain.eq %lhs, %rhs : !Single
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @whole_use_after_computed_write(
+// CHECK-SAME:        %[[UNUSED:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[RHS:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[A:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[B:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[SUM:[0-9a-zA-Z_\.]+]] = arith.addi %[[A]], %[[B]] : index
+// CHECK-NEXT:      constrain.eq %[[SUM]], %[[RHS]] : index, index
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+#inner = affine_map<()[s0] -> (s0 + 1)>
+!Leaf = !array.type<#inner x index>
+!Pair = !pod.type<[@vals: !Leaf, @tag: index]>
+module attributes {llzk.lang} {
+  function.def @whole_use_after_scalar_write(
+      %lhs: !Pair, %rhs: !Pair, %new: index
+  ) attributes {function.allow_constraint} {
+    pod.write %lhs[@tag] = %new : !Pair, index
+    constrain.eq %lhs, %rhs : !Pair
+    function.return
+  }
+}
+// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0 + 1)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @whole_use_after_scalar_write(
+// CHECK-SAME:        %[[LHS_VALS:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>,
+// CHECK-SAME:        %[[LHS_TAG:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[RHS_VALS:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>,
+// CHECK-SAME:        %[[RHS_TAG:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[NEW:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      constrain.eq %[[LHS_VALS]], %[[RHS_VALS]] : !array.type<#[[$M]] x index>, !array.type<#[[$M]] x index>
+// CHECK-NEXT:      constrain.eq %[[NEW]], %[[RHS_TAG]] : index, index
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
