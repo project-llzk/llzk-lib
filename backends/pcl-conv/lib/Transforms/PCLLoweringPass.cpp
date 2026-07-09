@@ -67,6 +67,7 @@
 #include <llvm/ADT/EquivalenceClasses.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/SmallVectorExtras.h>
+#include <llvm/ADT/StringSet.h>
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Debug.h>
 #include <llvm/Support/LogicalResult.h>
@@ -770,19 +771,33 @@ class PassImpl : public pcl::conversion::impl::PCLLoweringPassBase<PassImpl> {
     return toAPSInt(selectedField.get().prime());
   }
 
+  /// Collects all the member names that are already in use.
+  llvm::StringSet<> collectUsedNames() {
+    llvm::StringSet<> names;
+    getOperation()->walk([&names](MemberDefOp op) { names.insert(op.getSymName()); });
+    return names;
+  }
+
   /// Collects all the `llzk.nondet` ops that need to be replaced.
   ///
   /// Only `llzk.nondet` ops of type `!felt.type` are considered.
   NonDetOpNames collectNonDetOpNames() {
     uint64_t count = 0;
+    auto usedNames = collectUsedNames();
     NonDetOpNames names;
-    getOperation()->walk([&count, &names](NonDetOp op) {
+    getOperation()->walk([&count, &names, &usedNames, this](NonDetOp op) {
       if (!mlir::isa<FeltType>(op.getType())) {
         return;
       }
-      auto name = "_nondet_internal_var__" + Twine(count);
-      names.insert({op, StringAttr::get(op.getContext(), name)});
-      count++;
+      StringRef nameRef;
+      SmallVector<char, 25> nameSto;
+      do {
+        nameSto.clear();
+        Twine name = "_nondet_internal_var__" + Twine(count);
+        nameRef = name.toStringRef(nameSto);
+        count++;
+      } while (usedNames.contains(nameRef));
+      names.insert({op, StringAttr::get(&getContext(), nameRef)});
     });
     return names;
   }
