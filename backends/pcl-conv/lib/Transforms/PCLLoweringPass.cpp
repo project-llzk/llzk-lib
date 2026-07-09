@@ -93,6 +93,21 @@ using namespace llzk::component;
 
 namespace {
 
+/// Returns a flat representation of the fully qualified name of the struct.
+static std::string flatStructName(StructDefOp op) {
+  auto fqn = op.getFullyQualifiedName();
+  std::string name;
+  llvm::raw_string_ostream o(name);
+  StringRef sep = "::";
+  o << fqn.getRootReference().getValue();
+  if (!fqn.getNestedReferences().empty()) {
+    o << sep;
+    llvm::interleave(fqn.getNestedReferences(), o, [&o](auto ref) { o << ref.getValue(); }, sep);
+  }
+
+  return name;
+}
+
 template <typename Op> class ConstantOpValue {};
 
 template <> class ConstantOpValue<FeltConstantOp> {
@@ -138,7 +153,6 @@ public:
   LogicalResult match(SrcOp) const override { return success(); }
 
   void rewrite(SrcOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
-
     rewriter.replaceOpWithNewOp<DstOp>(op, adaptor.getLhs(), adaptor.getRhs());
   }
 };
@@ -337,9 +351,8 @@ struct ConvertSelfMemberReadOpOfSubcmp : public OpConversionPattern<MemberReadOp
 struct ConvertSubcmpMemberReadOp : public OpConversionPattern<MemberReadOp> {
   using OpConversionPattern<MemberReadOp>::OpConversionPattern;
 
-  LogicalResult matchAndRewrite(
-      MemberReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter
-  ) const override {
+  LogicalResult
+  matchAndRewrite(MemberReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
     auto subcmp = mlir::dyn_cast_if_present<MemberReadOp>(op.getComponent().getDefiningOp());
     if (!subcmp) {
       return failure();
@@ -422,23 +435,15 @@ public:
 
 /// Converts `struct.def` ops into pcl modules (represented with `func.def` ops).
 class ConvertStructDefOp : public OpConversionPattern<StructDefOp> {
-  /// Returns a flat representation of the fully qualified name of the struct.
-  std::string flatStructName(StructDefOp op) const {
-    auto fqn = op.getFullyQualifiedName();
-    std::string name;
-    llvm::raw_string_ostream o(name);
-    StringRef sep = "::";
-    o << fqn.getRootReference().getValue();
-    if (!fqn.getNestedReferences().empty()) {
-      o << sep;
-      llvm::interleave(fqn.getNestedReferences(), o, [&o](auto ref) { o << ref.getValue(); }, sep);
-    }
-
-    return name;
-  }
+  ModuleOp root;
 
 public:
-  using OpConversionPattern<StructDefOp>::OpConversionPattern;
+  ConvertStructDefOp(MLIRContext *context, ModuleOp rootMod, PatternBenefit patBenefit = 1)
+      : OpConversionPattern(context, patBenefit), root(rootMod) {}
+  ConvertStructDefOp(
+      const TypeConverter &tc, MLIRContext *context, ModuleOp rootMod, PatternBenefit patBenefit = 1
+  )
+      : OpConversionPattern(tc, context, patBenefit), root(rootMod) {}
 
   LogicalResult
   matchAndRewrite(StructDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
@@ -483,8 +488,24 @@ public:
     );
     rewriter.mergeBlocks(&funcOp.getRegion().back(), &funcOp.getRegion().front());
 
-    rewriter.replaceOp(op, rewriter.insert(funcOp));
+    rewriter.eraseOp(op);
+    {
+      OpBuilder::InsertionGuard guard(rewriter);
+      rewriter.setInsertionPointToEnd(&root->getRegion(0).front());
+      rewriter.insert(funcOp);
+    }
     return success();
+  }
+};
+
+/// Removes `builtin.module` operations.
+struct RemoveModuleOp : public OpConversionPattern<ModuleOp> {
+  using OpConversionPattern<ModuleOp>::OpConversionPattern;
+
+  LogicalResult match(ModuleOp) const override { return success(); }
+
+  void rewrite(ModuleOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    rewriter.eraseOp(op);
   }
 };
 
@@ -549,9 +570,9 @@ struct ConvertConstrainCall : public OpConversionPattern<CallOp> {
       return memberDefOp.hasPublicAttr();
     });
     SmallVector<Type> resultTypes(publicMembers.size(), pcl::FeltType::get(getContext()));
+    auto calleeName = flatStructName(defOp->get());
     auto call = rewriter.create<func::CallOp>(
-        op.getLoc(), defOp->get().getSymName(), TypeRange(resultTypes),
-        adaptor.getArgOperands().drop_front()
+        op.getLoc(), calleeName, TypeRange(resultTypes), adaptor.getArgOperands().drop_front()
     );
     for (auto [member, result] : llvm::zip_equal(publicMembers, call.getResults())) {
       auto name = Twine(subcmpOp.getMemberName()) + "." + member.getSymName();
@@ -599,13 +620,17 @@ static void populateStep1ConversionPatterns(
 
 /// Populates the set with the patterns used in step 2 of the conversion.
 static void populateStep2ConversionPatterns(
-    const TypeConverter &tc, RewritePatternSet &patterns, MLIRContext *ctx
+    const TypeConverter &tc, RewritePatternSet &patterns, MLIRContext *ctx, ModuleOp root
 ) {
-  patterns.add<
-      // clang-format off
-      ConvertStructDefOp
-      // clang-format on
-      >(tc, ctx);
+  patterns.add<ConvertStructDefOp>(tc, ctx, root);
+}
+
+/// Populates the set with the patterns used in step 3 of the conversion.
+static void populateStep3ConversionPatterns(
+    RewritePatternSet &patterns, MLIRContext *context, DupVarsReplacements &replacements
+) {
+  patterns.add<RemoveDuplicateVarOp>(context, replacements);
+  patterns.add<RemoveModuleOp>(context);
 }
 
 /// Returns true if the operation is legal wrt step 1.
@@ -647,6 +672,17 @@ static void populateStep2ConversionTarget(ConversionTarget &target) {
   target.addLegalDialect<pcl::PCLDialect>();
   target.addLegalOp<ModuleOp, func::FuncOp, func::CallOp, func::ReturnOp>();
   target.addIllegalOp<StructDefOp>();
+}
+
+/// Populates the conversion target with the legalluty expected of step 3 of the conversion.
+static void populateStep3ConversionTarget(
+    ConversionTarget &target, DupVarsReplacements &replacements, ModuleOp root
+) {
+  target.addLegalDialect<pcl::PCLDialect, func::FuncDialect>();
+  target.addDynamicallyLegalOp<pcl::VarOp>([&replacements](pcl::VarOp op) {
+    return replacements.find(op) == replacements.end();
+  });
+  target.addDynamicallyLegalOp<ModuleOp>([root](ModuleOp op) { return op == root; });
 }
 
 /// Type converter from LLZK types to PCL.
@@ -832,6 +868,30 @@ class PassImpl : public pcl::conversion::impl::PCLLoweringPassBase<PassImpl> {
     return names;
   }
 
+  /// Collects all the vars that need to be replaced.
+  DupVarsReplacements collectDupVarsReplacements() {
+    DupVarsReplacements replacements;
+    getOperation()->walk([&replacements](func::FuncOp fn) {
+      DominanceInfo dom(fn);
+      llvm::StringMap<llvm::SmallVector<pcl::VarOp, 1>> varsByName;
+      fn->walk([&varsByName](pcl::VarOp var) { varsByName[var.getName()].push_back(var); });
+
+      for (auto &[_, vars] : varsByName) {
+        if (vars.empty()) {
+          continue;
+        }
+        std::stable_sort(vars.begin(), vars.end(), [&dom](pcl::VarOp lhs, pcl::VarOp rhs) {
+          return dom.dominates(lhs.getOperation(), rhs);
+        });
+        auto fst = vars[0];
+        for (auto other : ArrayRef(vars).drop_front()) {
+          replacements[other] = fst;
+        }
+      }
+    });
+    return replacements;
+  }
+
   /// Step 1 converts the body of each struct to PCL operations.
   ///
   /// This conversion is performed before moving the body to a function because
@@ -853,44 +913,28 @@ class PassImpl : public pcl::conversion::impl::PCLLoweringPassBase<PassImpl> {
     ConversionTarget target(getContext());
     RewritePatternSet patterns(&getContext());
     PCLTypeConverter tc;
-    populateStep2ConversionPatterns(tc, patterns, &getContext());
+    populateStep2ConversionPatterns(tc, patterns, &getContext(), getOperation());
     populateStep2ConversionTarget(target);
 
     return applyFullConversion(getOperation(), target, std::move(patterns));
   }
 
-  /// The conversion process may generate multiple copies of the same variable. This is fine since
+  /// Step 3 cleans up the IR removing unnecessary ops that may be left over by the previous steps.
+  ///
+  /// The cleanup operations are:
+  ///
+  /// - The conversion process may generate multiple copies of the same variable. This is fine since
   /// `VarOp` implements `Pure`. However, for cleaniness we remove these duplicates now, replacing
   /// all extra instances with the value that dominates everyone else.
-  LogicalResult removeDuplicateVars() {
-    DupVarsReplacements replacements;
-    getOperation()->walk([&replacements](func::FuncOp fn) {
-      DominanceInfo dom(fn);
-      llvm::StringMap<llvm::SmallVector<pcl::VarOp, 1>> varsByName;
-      fn->walk([&varsByName](pcl::VarOp var) { varsByName[var.getName()].push_back(var); });
-
-      for (auto &[_, vars] : varsByName) {
-        if (vars.empty()) {
-          continue;
-        }
-        std::stable_sort(vars.begin(), vars.end(), [&dom](pcl::VarOp lhs, pcl::VarOp rhs) {
-          return dom.dominates(lhs.getOperation(), rhs);
-        });
-        auto fst = vars[0];
-        for (auto other : ArrayRef(vars).drop_front()) {
-          replacements[other] = fst;
-        }
-      }
-    });
+  ///
+  /// - Remove empty non-root module ops.
+  LogicalResult runStep3() {
+    DupVarsReplacements replacements = collectDupVarsReplacements();
 
     ConversionTarget target(getContext());
-    target.addLegalOp<ModuleOp>();
-    target.addLegalDialect<pcl::PCLDialect, func::FuncDialect>();
-    target.addDynamicallyLegalOp<pcl::VarOp>([&replacements](pcl::VarOp op) {
-      return replacements.find(op) == replacements.end();
-    });
     RewritePatternSet patterns(&getContext());
-    patterns.add<RemoveDuplicateVarOp>(&getContext(), replacements);
+    populateStep3ConversionPatterns(patterns, &getContext(), replacements);
+    populateStep3ConversionTarget(target, replacements, getOperation());
 
     return applyFullConversion(getOperation(), target, std::move(patterns));
   }
@@ -919,7 +963,7 @@ class PassImpl : public pcl::conversion::impl::PCLLoweringPassBase<PassImpl> {
       return;
     }
 
-    if (failed(removeDuplicateVars())) {
+    if (failed(runStep3())) {
       signalPassFailure();
       return;
     }
