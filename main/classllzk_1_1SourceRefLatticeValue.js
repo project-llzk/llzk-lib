@@ -14,6 +14,7 @@ var classllzk_1_1SourceRefLatticeValue =
     [ "operator=", "classllzk_1_1SourceRefLatticeValue.html#a4b0bb21d7996e8ff92c0edeb579a7839", null ],
     [ "operator=", "classllzk_1_1SourceRefLatticeValue.html#af02cd749d74125555242a461ea73ae84", null ],
     [ "referenceMember", "classllzk_1_1SourceRefLatticeValue.html#a9d4360bfd5246c3dc32a8835538bd66d", null ],
+    [ "referencePodRecord", "classllzk_1_1SourceRefLatticeValue.html#a77853bb944b513a04261789d0040064a", null ],
     [ "translate", "classllzk_1_1SourceRefLatticeValue.html#aceaa981713550fcca3e5fcaea6b788d3", null ],
     [ "translateScalar", "classllzk_1_1SourceRefLatticeValue.html#aea85925ae5b731368fbdaed6868c7f0a", null ]
 ];
