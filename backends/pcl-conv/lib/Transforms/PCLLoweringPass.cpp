@@ -372,7 +372,6 @@ struct ConvertSubcmpMemberReadOp : public OpConversionPattern<MemberReadOp> {
         defOp->get().getLoc(), rewriter.getStringAttr(name), /*public=*/false
     );
     
-      llvm::dbgs() << "[ConvertSubcmpMemberReadOp] Created var " << pclVar << '\n';
     rewriter.replaceOp(op, pclVar);
 
     return success();
@@ -581,7 +580,6 @@ struct ConvertConstrainCall : public OpConversionPattern<CallOp> {
       auto name = (subcmpName + "." + member.getSymName()).str();
       auto var =
           rewriter.create<pcl::VarOp>(op.getLoc(), rewriter.getStringAttr(name), /*public=*/false);
-      llvm::dbgs() << "[ConvertConstrainCall] Created var " << var << '\n';
       auto eqCmp = rewriter.create<pcl::CmpEqOp>(op.getLoc(), var, result);
       rewriter.create<pcl::AssertOp>(op.getLoc(), eqCmp);
     }
