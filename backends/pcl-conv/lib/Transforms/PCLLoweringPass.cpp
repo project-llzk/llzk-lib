@@ -371,7 +371,7 @@ struct ConvertSubcmpMemberReadOp : public OpConversionPattern<MemberReadOp> {
     auto pclVar = rewriter.create<pcl::VarOp>(
         defOp->get().getLoc(), rewriter.getStringAttr(name), /*public=*/false
     );
-    
+
     rewriter.replaceOp(op, pclVar);
 
     return success();
@@ -693,10 +693,7 @@ struct PCLTypeConverter : public TypeConverter {
     // Default conversion.
     addConversion([](Type t) { return t; });
 
-    addConversion([](IntegerType t) -> Type {
-      // return pcl::FeltType::get(t.getContext());
-      return pcl::BoolType::get(t.getContext());
-    });
+    addConversion([](IntegerType t) -> Type { return pcl::BoolType::get(t.getContext()); });
 
     addConversion([](FeltType t) { return pcl::FeltType::get(t.getContext()); });
 
