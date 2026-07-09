@@ -371,6 +371,8 @@ struct ConvertSubcmpMemberReadOp : public OpConversionPattern<MemberReadOp> {
     auto pclVar = rewriter.create<pcl::VarOp>(
         defOp->get().getLoc(), rewriter.getStringAttr(name), /*public=*/false
     );
+    
+      llvm::dbgs() << "Created var " << pclVar << '\n';
     rewriter.replaceOp(op, pclVar);
 
     return success();
@@ -560,6 +562,7 @@ struct ConvertConstrainCall : public OpConversionPattern<CallOp> {
     if (!subcmpOp) {
       return failure();
     }
+    Twine subcmpName(subcmpOp.getMemberName());
     auto defOp = subcmp.getType().getDefinition(tables, op);
     if (failed(defOp)) {
       return failure();
@@ -575,9 +578,10 @@ struct ConvertConstrainCall : public OpConversionPattern<CallOp> {
         op.getLoc(), calleeName, TypeRange(resultTypes), adaptor.getArgOperands().drop_front()
     );
     for (auto [member, result] : llvm::zip_equal(publicMembers, call.getResults())) {
-      auto name = Twine(subcmpOp.getMemberName()) + "." + member.getSymName();
+      auto name = subcmpName + "." + member.getSymName();
       auto var =
           rewriter.create<pcl::VarOp>(op.getLoc(), rewriter.getStringAttr(name), /*public=*/false);
+      llvm::dbgs() << "Created var " << var << '\n';
       auto eqCmp = rewriter.create<pcl::CmpEqOp>(op.getLoc(), var, result);
       rewriter.create<pcl::AssertOp>(op.getLoc(), eqCmp);
     }
