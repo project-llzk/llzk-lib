@@ -281,8 +281,8 @@ struct ConvertAssertOp : public OpConversionPattern<AssertOp> {
   }
 };
 
-/// Converts `struct.readm` ops that read members from the struct into `pcl.var` ops.
-struct ConvertSelfMemberReadOp : public OpConversionPattern<MemberReadOp> {
+/// Converts `struct.readm` ops that read members of felt type from the struct into `pcl.var` ops.
+struct ConvertSelfMemberReadOpOfFelt : public OpConversionPattern<MemberReadOp> {
   using OpConversionPattern<MemberReadOp>::OpConversionPattern;
 
   LogicalResult
@@ -296,6 +296,9 @@ struct ConvertSelfMemberReadOp : public OpConversionPattern<MemberReadOp> {
     if (failed(defOp)) {
       return failure();
     }
+    if (!mlir::isa<FeltType>(defOp->get().getType())) {
+      return failure();
+    }
 
     auto pclVar = rewriter.create<pcl::VarOp>(
         defOp->get().getLoc(), defOp->get().getName(), defOp->get().hasPublicAttr()
@@ -306,13 +309,38 @@ struct ConvertSelfMemberReadOp : public OpConversionPattern<MemberReadOp> {
   }
 };
 
+/// Removes `struct.readm` ops that read subcmp members from the struct.
+struct ConvertSelfMemberReadOpOfSubcmp : public OpConversionPattern<MemberReadOp> {
+  using OpConversionPattern<MemberReadOp>::OpConversionPattern;
+
+  LogicalResult
+  matchAndRewrite(MemberReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    auto parent = op->getParentOfType<FuncDefOp>();
+    if (!parent || op.getComponent() != parent.getArgument(0)) {
+      return failure();
+    }
+    SymbolTableCollection tables;
+    auto defOp = op.getMemberDefOp(tables);
+    if (failed(defOp)) {
+      return failure();
+    }
+    if (!mlir::isa<StructType>(defOp->get().getType())) {
+      return failure();
+    }
+
+    rewriter.eraseOp(op);
+
+    return success();
+  }
+};
+
 struct ConvertSubcmpMemberReadOp : public OpConversionPattern<MemberReadOp> {
   using OpConversionPattern<MemberReadOp>::OpConversionPattern;
 
   LogicalResult matchAndRewrite(
-      MemberReadOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+      MemberReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    auto subcmp = mlir::dyn_cast_if_present<MemberReadOp>(adaptor.getComponent().getDefiningOp());
+    auto subcmp = mlir::dyn_cast_if_present<MemberReadOp>(op.getComponent().getDefiningOp());
     if (!subcmp) {
       return failure();
     }
@@ -558,7 +586,8 @@ static void populateStep1ConversionPatterns(
       ConvertCmpOp,
       ConvertEmitEqualityOp,
       ConvertAssertOp,
-      ConvertSelfMemberReadOp,
+      ConvertSelfMemberReadOpOfFelt,
+      ConvertSelfMemberReadOpOfSubcmp,
       ConvertSubcmpMemberReadOp,
       ConvertReturnOp,
       ConvertConstrainCall
