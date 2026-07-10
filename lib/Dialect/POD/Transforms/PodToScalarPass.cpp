@@ -820,20 +820,6 @@ static ValueRange getConvertedPodArrayLeafValues(ArrayType arrTy, ValueRange con
   );
 }
 
-/// Return a trailing step-2 array shape carrier when present in converted values.
-static Value getTrailingArrayShapeCarrierIfPresent(ValueRange convertedValues) {
-  if (convertedValues.empty()) {
-    return {};
-  }
-
-  auto arrTy = llvm::dyn_cast<ArrayType>(convertedValues.back().getType());
-  if (!arrTy || !llvm::isa<NoneType>(arrTy.getElementType())) {
-    return {};
-  }
-
-  return convertedValues.back();
-}
-
 /// Return whether `op` is preceded in its block by a write to `podRef.recordName`.
 static bool hasEarlierWriteToRecordInBlock(Operation *op, Value podRef, StringAttr recordName) {
   for (Operation &candidate : *op->getBlock()) {
@@ -1126,9 +1112,6 @@ static Value getRankPreservingConvertedPodArrayLeaf(ArrayType arrTy, ValueRange 
 static Value getConvertedPodArrayShapeSource(ArrayType arrTy, ValueRange convertedValues) {
   if (Value carrier = getConvertedPodArrayShapeCarrierIfPresent(arrTy, convertedValues)) {
     return carrier;
-  }
-  if (Value trailingCarrier = getTrailingArrayShapeCarrierIfPresent(convertedValues)) {
-    return trailingCarrier;
   }
   return getRankPreservingConvertedPodArrayLeaf(arrTy, convertedValues);
 }
@@ -2861,10 +2844,6 @@ static Value getPodArrayEqualityShapeSource(
     return carrier;
   }
 
-  if (Value trailingCarrier = getTrailingArrayShapeCarrierIfPresent(convertedValues)) {
-    return trailingCarrier;
-  }
-
   ValueRange leafValues = getConvertedPodArrayLeafValues(arrTy, convertedValues);
   if (!leafValues.empty()) {
     return leafValues.front();
@@ -2935,10 +2914,8 @@ public:
     ArrayType lhsTy = splittablePodArray(op.getLhs().getType());
     ArrayType rhsTy = splittablePodArray(op.getRhs().getType());
 
-    bool lhsNeedsShapeCheck = lhsTy && (needsPodArrayShapeCarrier(lhsTy) ||
-                                        getTrailingArrayShapeCarrierIfPresent(adaptor.getLhs()));
-    bool rhsNeedsShapeCheck = rhsTy && (needsPodArrayShapeCarrier(rhsTy) ||
-                                        getTrailingArrayShapeCarrierIfPresent(adaptor.getRhs()));
+    bool lhsNeedsShapeCheck = lhsTy && needsPodArrayShapeCarrier(lhsTy);
+    bool rhsNeedsShapeCheck = rhsTy && needsPodArrayShapeCarrier(rhsTy);
     SmallVector<Value> lhsCompatibleConvertedValues;
     SmallVector<Value> rhsCompatibleConvertedValues;
     if (rhsTy && rhsNeedsShapeCheck && !lhsTy &&
@@ -3166,10 +3143,8 @@ public:
     }
 
     auto rhsArrTy = llvm::dyn_cast<ArrayType>(rhsTy);
-    bool lhsNeedsShapeCheck = rhsArrTy && (needsPodArrayShapeCarrier(lhsTy) ||
-                                           getTrailingArrayShapeCarrierIfPresent(adaptor.getLhs()));
-    bool rhsNeedsShapeCheck = rhsArrTy && (needsPodArrayShapeCarrier(rhsArrTy) ||
-                                           getTrailingArrayShapeCarrierIfPresent(adaptor.getRhs()));
+    bool lhsNeedsShapeCheck = rhsArrTy && needsPodArrayShapeCarrier(lhsTy);
+    bool rhsNeedsShapeCheck = rhsArrTy && needsPodArrayShapeCarrier(rhsArrTy);
     if (rhsArrTy && (lhsNeedsShapeCheck || rhsNeedsShapeCheck)) {
       Value rhsShapeSource = getShapeSource(rhsArrTy, op.getRhs(), adaptor.getRhs());
       Value selectedShapeSource = selectedIndices.empty()

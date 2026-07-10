@@ -63,6 +63,27 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
+// Tests: a real `none`-array payload leaf must not be mistaken for the synthetic shape carrier.
+// The lowered `array.len` still needs a fresh rank-1 shape source, not the flattened `<2,3 x none>`
+// payload leaf.
+!NoneLeaf = !pod.type<[@s: !array.type<3 x none>]>
+module attributes {llzk.lang} {
+  function.def @len_none_leaf_array_dynamic_dim(
+      %arr: !array.type<2 x !NoneLeaf>, %dim: index
+  ) -> index {
+    %len = array.len %arr, %dim : !array.type<2 x !NoneLeaf>
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @len_none_leaf_array_dynamic_dim(%[[ARR:[0-9a-zA-Z_\.]+]]: !array.type<2,3 x none>, %[[DIM:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[SHAPE:[0-9a-zA-Z_\.]+]] = array.new  : <2 x none>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SHAPE]], %[[DIM]] : <2 x none>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
 module attributes {llzk.lang} {
   function.def @len_empty_leaf_static_create(%dim: index) -> index {
     %arr = array.new : !array.type<4 x !pod.type<[]>>
