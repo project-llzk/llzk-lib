@@ -1,0 +1,28 @@
+// RUN: llzk-opt -llzk-duplicate-op-elim %s | FileCheck %s
+
+module attributes {llzk.lang} {
+  struct.def @AuxSelfEquality {
+    function.def @compute() -> !struct.type<@AuxSelfEquality> attributes {function.allow_witness} {
+      %self = struct.new : <@AuxSelfEquality>
+      function.return %self : !struct.type<@AuxSelfEquality>
+    }
+    function.def @constrain(%self: !struct.type<@AuxSelfEquality>) attributes {function.allow_constraint} {
+      %aux = llzk.aux : !felt.type
+      constrain.eq %aux, %aux : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @AuxSelfEquality {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@AuxSelfEquality> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@AuxSelfEquality>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@AuxSelfEquality>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@AuxSelfEquality>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = llzk.aux : !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
