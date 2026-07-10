@@ -1,6 +1,6 @@
-// RUN: llzk-opt -split-input-file --pass-pipeline='builtin.module(cse, canonicalize)' -verify-diagnostics %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file --pass-pipeline='builtin.module(cse, canonicalize, llzk-duplicate-op-elim, loop-invariant-code-motion, control-flow-sink)' -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
-// Ensures that `cse` and `canonicalize` do not combine multiple generated
+// Ensures that cleanup and placement transformations preserve generated
 // polynomial auxiliary operations. Each `llzk.aux` is a placement-sensitive
 // existential value, not a pure constant and not user-level nondeterminism.
 module attributes {llzk.lang} {
@@ -58,6 +58,7 @@ module attributes {llzk.lang} {
     }
   }
 }
+// `loop-invariant-code-motion` must not hoist an auxiliary out of its loop.
 // CHECK-LABEL:    struct.def @LoopAuxPlacement {
 // CHECK:          function.def @constrain
 // CHECK-NOT:      llzk.aux
@@ -79,23 +80,19 @@ module attributes {llzk.lang} {
         %b: !felt.type,
         %cond: i1
     ) attributes {function.allow_constraint} {
+      %aux = llzk.aux : !felt.type
       scf.if %cond {
-        %then_aux = llzk.aux : !felt.type
-        constrain.eq %then_aux, %a : !felt.type, !felt.type
+        constrain.eq %aux, %a : !felt.type, !felt.type
       } else {
-        %else_aux = llzk.aux : !felt.type
-        constrain.eq %else_aux, %b : !felt.type, !felt.type
+        constrain.eq %a, %b : !felt.type, !felt.type
       }
       function.return
     }
   }
 }
+// `control-flow-sink` must not move this auxiliary into the then-region.
 // CHECK-LABEL:    struct.def @BranchAuxPlacement {
 // CHECK:          function.def @constrain
-// CHECK-NOT:      llzk.aux
-// CHECK:          scf.if
-// CHECK-NEXT:       %[[THEN_AUX:[0-9a-zA-Z_\.]+]] = llzk.aux : !felt.type
-// CHECK-NEXT:       constrain.eq %[[THEN_AUX]]
-// CHECK-NEXT:     } else {
-// CHECK-NEXT:       %[[ELSE_AUX:[0-9a-zA-Z_\.]+]] = llzk.aux : !felt.type
-// CHECK-NEXT:       constrain.eq %[[ELSE_AUX]]
+// CHECK-NEXT:       %[[BRANCH_AUX:[0-9a-zA-Z_\.]+]] = llzk.aux : !felt.type
+// CHECK-NEXT:       scf.if
+// CHECK:            constrain.eq %[[BRANCH_AUX]]

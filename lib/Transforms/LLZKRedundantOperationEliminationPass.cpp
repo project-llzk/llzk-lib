@@ -222,7 +222,7 @@ class PassImpl : public llzk::impl::RedundantOperationEliminationPassBase<PassIm
 
       // Case 2: An equivalent operation A has already been performed before
       // the current operation B and A dominates B.
-      if (!isa<NonDetOp>(op)) {
+      if (!isa<NonDetOp, AuxOp>(op)) {
         OperationComparator comp(op, map);
         if (auto it = uniqueOps.find(comp);
             it != uniqueOps.end() && domInfo.dominates(it->getOp(), op)) {
