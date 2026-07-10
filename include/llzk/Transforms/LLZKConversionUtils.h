@@ -76,7 +76,11 @@ getAttrAtIndexWithName(mlir::ArrayAttr attrs, unsigned index, llvm::StringRef at
     return std::nullopt;
   }
   if (auto dictAttr = llvm::dyn_cast<mlir::DictionaryAttr>(attrs[index])) {
-    if (auto nameAttr = llvm::dyn_cast<mlir::StringAttr>(dictAttr.get(attrName))) {
+    mlir::Attribute attr = dictAttr.get(attrName);
+    if (!attr) {
+      return std::nullopt;
+    }
+    if (auto nameAttr = llvm::dyn_cast<mlir::StringAttr>(attr)) {
       return nameAttr;
     }
   }

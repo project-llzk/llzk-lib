@@ -473,6 +473,20 @@ SourceRef::getAllChildren(SymbolTableCollection &tables, ModuleOp mod) const {
   return {};
 }
 
+static void printCallResultFallback(raw_ostream &os, function::CallOp callOp, Value value) {
+  os << "<call " << callOp.getCallee();
+  os << ' ';
+  Operation *printScope = callOp.getOperation();
+  if (auto funcOp = callOp->getParentOfType<FuncDefOp>()) {
+    printScope = funcOp.getOperation();
+  }
+  // Allows us to print the SSA result value of the call to disambiguate
+  // repeated calls in the same function.
+  AsmState state(printScope);
+  value.printAsOperand(os, state);
+  os << '>';
+}
+
 void SourceRef::print(raw_ostream &os) const {
   if (isConstantFelt()) {
     os << "<felt.const: " << *getConstantFeltValue() << '>';
@@ -500,17 +514,18 @@ void SourceRef::print(raw_ostream &os) const {
       os << '<' << *getNonDetOp() << '>';
     } else if (isCallResult()) {
       auto callOp = *getCallOp();
-      os << "<call " << callOp.getCallee();
-      os << ' ';
-      Operation *printScope = callOp.getOperation();
-      if (auto funcOp = callOp->getParentOfType<FuncDefOp>()) {
-        printScope = funcOp.getOperation();
+      auto callResult = llvm::cast<OpResult>(value);
+      auto callee = resolveCallable<FuncDefOp>(callOp);
+      if (succeeded(callee)) {
+        auto calleeFunc = llvm::dyn_cast_if_present<FuncDefOp>((*callee).get());
+        if (auto resName = calleeFunc.getResNameAttr(callResult.getResultNumber())) {
+          os << resName->getValue();
+        } else {
+          printCallResultFallback(os, callOp, value);
+        }
+      } else {
+        printCallResultFallback(os, callOp, value);
       }
-      // Allows us to print the SSA result value of the call to disambiguate
-      // repeated calls in the same function.
-      AsmState state(printScope);
-      value.printAsOperand(os, state);
-      os << '>';
     } else {
       ensure(isRooted(), "unhandled print case");
       OpPrintingFlags flags;

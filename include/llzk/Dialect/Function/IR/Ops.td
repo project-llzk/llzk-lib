@@ -194,6 +194,18 @@ def FuncDefOp
     /// Set the `function.arg_name` attribute for the argument at the given index from a string.
     void setArgName(unsigned index, ::llvm::StringRef name);
 
+    /// Return `true` iff the result at the given index has a `function.res_name` attribute.
+    bool hasResName(unsigned index);
+
+    /// Return the `function.res_name` attribute for the result at the given index.
+    ::std::optional<::mlir::StringAttr> getResNameAttr(unsigned index);
+
+    /// Set the `function.res_name` attribute for the result at the given index.
+    void setResNameAttr(unsigned index, const ::mlir::StringAttr &attr);
+
+    /// Set the `function.res_name` attribute for the result at the given index from a string.
+    void setResName(unsigned index, ::llvm::StringRef name);
+
     /// Required by FunctionOpInterface.
     /// Returns the region on the current operation that is callable. This may
     /// return null in the case of an external callable object, e.g. an external

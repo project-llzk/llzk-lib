@@ -119,6 +119,23 @@ static LogicalResult verifyArgOrResNameAttrs(
   }
   return success();
 }
+
+static std::optional<StringAttr>
+getFunctionNameAttrAtIndex(ArrayAttr attrs, unsigned index, StringRef attrName) {
+  if (!attrs || index >= attrs.size()) {
+    return std::nullopt;
+  }
+  if (auto dictAttr = llvm::dyn_cast<DictionaryAttr>(attrs[index])) {
+    Attribute attr = dictAttr.get(attrName);
+    if (!attr) {
+      return std::nullopt;
+    }
+    if (auto nameAttr = llvm::dyn_cast<StringAttr>(attr)) {
+      return nameAttr;
+    }
+  }
+  return std::nullopt;
+}
 } // namespace
 
 //===----------------------------------------------------------------------===//
@@ -295,13 +312,7 @@ bool FuncDefOp::hasArgPublicAttr(unsigned index) {
 bool FuncDefOp::hasArgName(unsigned index) { return static_cast<bool>(getArgNameAttr(index)); }
 
 std::optional<StringAttr> FuncDefOp::getArgNameAttr(unsigned index) {
-  if (index >= getNumArguments()) {
-    return std::nullopt;
-  }
-  if (StringAttr attr = getArgAttrOfType<StringAttr>(index, ARG_NAME_ATTR_NAME)) {
-    return attr;
-  }
-  return std::nullopt;
+  return getFunctionNameAttrAtIndex(getAllArgAttrs(), index, ARG_NAME_ATTR_NAME);
 }
 
 void FuncDefOp::setArgNameAttr(unsigned index, const StringAttr &attr) {
@@ -311,6 +322,21 @@ void FuncDefOp::setArgNameAttr(unsigned index, const StringAttr &attr) {
 
 void FuncDefOp::setArgName(unsigned index, StringRef name) {
   setArgNameAttr(index, StringAttr::get(getContext(), name));
+}
+
+bool FuncDefOp::hasResName(unsigned index) { return static_cast<bool>(getResNameAttr(index)); }
+
+std::optional<StringAttr> FuncDefOp::getResNameAttr(unsigned index) {
+  return getFunctionNameAttrAtIndex(getAllResultAttrs(), index, RES_NAME_ATTR_NAME);
+}
+
+void FuncDefOp::setResNameAttr(unsigned index, const StringAttr &attr) {
+  assert(index < getNumResults() && "result index out of range");
+  setResultAttr(index, RES_NAME_ATTR_NAME, attr);
+}
+
+void FuncDefOp::setResName(unsigned index, StringRef name) {
+  setResNameAttr(index, StringAttr::get(getContext(), name));
 }
 
 LogicalResult FuncDefOp::verify() {

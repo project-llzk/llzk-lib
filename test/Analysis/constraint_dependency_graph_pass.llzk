@@ -933,7 +933,7 @@ module attributes {llzk.lang} {
     }
   }
 
-  function.def private @extern_wrap(%value: !felt.type) -> !struct.type<@ExternPayload> attributes {extern}
+  function.def private @extern_wrap(%value: !felt.type) -> (!struct.type<@ExternPayload> {function.res_name = "payload"}) attributes {extern}
 
   struct.def @ExternMemberDependency {
     struct.member @value : !felt.type {llzk.pub}
@@ -954,7 +954,7 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @ExternMemberDependency ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0.value, <call @extern_wrap %[[WRAP_RESULT:[0-9]+]]>.value }
+// CHECK-NEXT:     { %arg0.value, payload.value }
 // CHECK-NEXT: }
 
 // -----
@@ -975,7 +975,7 @@ module attributes {llzk.lang} {
     }
   }
 
-  function.def private @extern_wrap(%value: !felt.type) -> !struct.type<@ExternPayload> attributes {extern}
+  function.def private @extern_wrap(%value: !felt.type) -> (!struct.type<@ExternPayload> {function.res_name = "payload"}) attributes {extern}
 
   struct.def @ExternRepeatedMemberDependency {
     struct.member @lhs : !felt.type {llzk.pub}
@@ -1001,15 +1001,15 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @ExternRepeatedMemberDependency ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0.lhs, <call @extern_wrap %[[LEFT_WRAP_RESULT:[0-9]+]]>.value }
-// CHECK-NEXT:     { %arg0.rhs, <call @extern_wrap %[[RIGHT_WRAP_RESULT:[0-9]+]]>.value }
+// CHECK-NEXT:     { %arg0.lhs, payload.value }
+// CHECK-NEXT:     { %arg0.rhs, payload.value }
 // CHECK-NEXT: }
 
 // -----
 
 module attributes {llzk.lang} {
 
-  function.def private @extern_pair(%value: !felt.type) -> (!felt.type, !felt.type) attributes {extern}
+  function.def private @extern_pair(%value: !felt.type) -> (!felt.type {function.res_name = "left"}, !felt.type {function.res_name = "right"}) attributes {extern}
 
   struct.def @ExternPairDependency {
     struct.member @lhs : !felt.type {llzk.pub}
@@ -1032,8 +1032,8 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @ExternPairDependency ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0.lhs, <call @extern_pair %[[PAIR_RESULT:[0-9]+]]#0> }
-// CHECK-NEXT:     { %arg0.rhs, <call @extern_pair %[[PAIR_RESULT]]#1> }
+// CHECK-NEXT:     { %arg0.lhs, left }
+// CHECK-NEXT:     { %arg0.rhs, right }
 // CHECK-NEXT: }
 
 // -----
