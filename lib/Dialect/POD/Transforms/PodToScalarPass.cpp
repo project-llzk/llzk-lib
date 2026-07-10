@@ -972,9 +972,36 @@ tryGetFreshUnwrittenPodReadInstantiationInfo(ReadPodOp readOp) {
 
 /// Return the number of affine-map attributes nested anywhere inside `type`.
 static size_t countRecursiveAffineMapAttrs(Type type) {
-  size_t count = 0;
-  type.walk([&count](AffineMapAttr) { ++count; });
-  return count;
+  return llvm::TypeSwitch<Type, size_t>(type)
+      .Case([](PodType podTy) {
+    size_t count = 0;
+    for (RecordAttr record : podTy.getRecords()) {
+      count += countRecursiveAffineMapAttrs(record.getType());
+    }
+    return count;
+  })
+      .Case([](ArrayType arrTy) {
+    size_t count = 0;
+    for (Attribute dimSize : arrTy.getDimensionSizes()) {
+      if (llvm::isa<AffineMapAttr>(dimSize)) {
+        ++count;
+      }
+    }
+    return count + countRecursiveAffineMapAttrs(arrTy.getElementType());
+  })
+      .Case([](StructType structTy) {
+    size_t count = 0;
+    if (ArrayAttr params = structTy.getParams()) {
+      for (Attribute param : params) {
+        if (llvm::isa<AffineMapAttr>(param)) {
+          ++count;
+        } else if (auto typeAttr = llvm::dyn_cast<TypeAttr>(param)) {
+          count += countRecursiveAffineMapAttrs(typeAttr.getValue());
+        }
+      }
+    }
+    return count;
+  }).Default([](Type) { return 0; });
 }
 
 /// Try to recover affine-map instantiation operands from a concrete array-producing value.
@@ -1168,6 +1195,49 @@ inline static Value createWritableArrayValue(
   } else {
     return bldr.create<CreateArrayOp>(loc, arrTy);
   }
+}
+
+/// Materialize one unread top-level record of a fresh `pod.new` without preserving the POD shell.
+static std::optional<Value>
+tryMaterializeFreshUnwrittenDirectRecordRead(OpBuilder &bldr, Location loc, ReadPodOp readOp) {
+  if (!isFreshUnwrittenPodRead(readOp)) {
+    return std::nullopt;
+  }
+
+  Type recordType = readOp.getType();
+  if (llvm::isa<PodType>(recordType)) {
+    return std::nullopt;
+  }
+
+  if (ArrayType arrTy = llvm::dyn_cast<ArrayType>(recordType)) {
+    return createWritableArrayValue(
+        bldr, loc, arrTy, tryGetFreshUnwrittenPodReadInstantiationInfo(readOp)
+    );
+  }
+
+  if (StructType structTy = llvm::dyn_cast<StructType>(recordType)) {
+    SymbolRefAttr computeCallee = appendLeaf(structTy.getNameRef(), FUNC_NAME_COMPUTE);
+    std::optional<ArrayInstantiationInfo> instantiation =
+        tryGetFreshUnwrittenPodReadInstantiationInfo(readOp);
+    if (instantiation && !instantiation->mapOperandStorage.empty()) {
+      SmallVector<ValueRange> mapOperands;
+      mapOperands.reserve(instantiation->mapOperandStorage.size());
+      for (const SmallVector<Value> &group : instantiation->mapOperandStorage) {
+        mapOperands.push_back(group);
+      }
+      return bldr
+          .create<CallOp>(
+              loc, TypeRange {structTy}, computeCallee, mapOperands, instantiation->numDimsPerMap,
+              ValueRange {}, ArrayRef<Attribute> {}
+          )
+          .getResult(0);
+    } else {
+      return bldr.create<CallOp>(loc, TypeRange {structTy}, computeCallee, ValueRange {})
+          .getResult(0);
+    }
+  }
+
+  return bldr.create<NonDetOp>(loc, recordType).getResult();
 }
 
 /// Return `true` iff two recovered array instantiations can be rebuilt identically.
@@ -1374,6 +1444,12 @@ static Value genReadAlongPath(
     bool syntheticShapeCarrier
 ) {
   if (recordChain.empty()) {
+    if (ReadPodOp readOp = peelUnifiableCasts(value).getDefiningOp<ReadPodOp>()) {
+      if (std::optional<Value> materialized =
+              tryMaterializeFreshUnwrittenDirectRecordRead(bldr, loc, readOp)) {
+        return *materialized;
+      }
+    }
     return value;
   }
 
