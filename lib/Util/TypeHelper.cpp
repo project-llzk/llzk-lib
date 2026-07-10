@@ -586,8 +586,12 @@ uint64_t computeEmitEqCardinality(Type type) {
     uint64_t caseIndex(IndexType) { return 1; }
     uint64_t caseFelt(FeltType) { return 1; }
     uint64_t caseArray(ArrayType t) {
+      uint64_t elementCardinality = computeEmitEqCardinality(t.getElementType());
+      if (elementCardinality == 0) {
+        return 0;
+      }
       int64_t n = t.getNumElements();
-      return llzk::checkedCast<uint64_t>(n) * computeEmitEqCardinality(t.getElementType());
+      return llzk::checkedCast<uint64_t>(n) * elementCardinality;
     }
     uint64_t caseStruct(StructType) { llvm_unreachable("not a valid EmitEq type"); }
     uint64_t casePod(PodType t) {
