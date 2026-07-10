@@ -1,5 +1,16 @@
 var NAVTREEINDEX80 =
 {
+"concepts.html":[11],
+"config_8h.html":[13,0,4,0,0,0],
+"config_8h.html#adf7c7c6700e3090f8c0024c209c3c519":[13,0,4,0,0,0,0],
+"config_8h_source.html":[13,0,4,0,0,0],
+"contribution-guide.html":[5],
+"contribution-guide.html#best-practices-checklist":[5,1,3,0],
+"contribution-guide.html#commit-your-update":[5,1,2],
+"contribution-guide.html#contribution-philosophy":[5,0],
+"contribution-guide.html#create-a-new-issue":[5,1,0,0],
+"contribution-guide.html#getting-started":[5,1],
+"contribution-guide.html#issues":[5,1,0],
 "contribution-guide.html#make-changes":[5,1,1],
 "contribution-guide.html#pull-request":[5,1,3],
 "contribution-guide.html#pull-request-review":[5,1,3,1],
@@ -238,16 +249,5 @@ var NAVTREEINDEX80 =
 "dialects.html#structdef-llzkcomponentstructdefop":[7,12,0,0],
 "dialects.html#structmember-llzkcomponentmemberdefop":[7,12,0,1],
 "dialects.html#structnew-llzkcomponentcreatestructop":[7,12,0,2],
-"dialects.html#structreadm-llzkcomponentmemberreadop":[7,12,0,3],
-"dialects.html#structtype":[7,12,1,0],
-"dialects.html#structwritem-llzkcomponentmemberwriteop":[7,12,0,4],
-"dialects.html#types-1":[7,0,1],
-"dialects.html#types-2":[7,4,2],
-"dialects.html#types-3":[7,9,2],
-"dialects.html#types-4":[7,10,1],
-"dialects.html#types-5":[7,11,1],
-"dialects.html#types-6":[7,12,1],
-"dialects.html#typevartype":[7,10,1,0],
-"dir_006f948be47a2a3cfc802ecb2004dee0.html":[13,0,2,0,6],
-"dir_014d0f5a4c28e696e617f500599cae9b.html":[13,0,4,2]
+"dialects.html#structreadm-llzkcomponentmemberreadop":[7,12,0,3]
 };

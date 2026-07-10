@@ -192,6 +192,14 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a19990bd8843ef81a17e097bea04b3786"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the <span class="tt">function.arg_name</span> attribute for the argument at the given index.  <br /></td></tr>
 <tr class="memitem:a23d57ef45c4a7a431afaeac0e2a50566" id="r_a23d57ef45c4a7a431afaeac0e2a50566"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a23d57ef45c4a7a431afaeac0e2a50566">setArgName</a> (unsigned index, ::llvm::StringRef name)</td></tr>
 <tr class="memdesc:a23d57ef45c4a7a431afaeac0e2a50566"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the <span class="tt">function.arg_name</span> attribute for the argument at the given index from a string.  <br /></td></tr>
+<tr class="memitem:a823891be63e6a2b5dddd9b08c815bb1d" id="r_a823891be63e6a2b5dddd9b08c815bb1d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a823891be63e6a2b5dddd9b08c815bb1d">hasResName</a> (unsigned index)</td></tr>
+<tr class="memdesc:a823891be63e6a2b5dddd9b08c815bb1d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff the result at the given index has a <span class="tt">function.res_name</span> attribute.  <br /></td></tr>
+<tr class="memitem:a98afeb6d38cab4fa8fe3608d62b5c72f" id="r_a98afeb6d38cab4fa8fe3608d62b5c72f"><td class="memItemLeft" align="right" valign="top">::std::optional&lt;::mlir::StringAttr &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a98afeb6d38cab4fa8fe3608d62b5c72f">getResNameAttr</a> (unsigned index)</td></tr>
+<tr class="memdesc:a98afeb6d38cab4fa8fe3608d62b5c72f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the <span class="tt">function.res_name</span> attribute for the result at the given index.  <br /></td></tr>
+<tr class="memitem:a395e0ee2e2aa7dfe2445e6856b5e5e29" id="r_a395e0ee2e2aa7dfe2445e6856b5e5e29"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a395e0ee2e2aa7dfe2445e6856b5e5e29">setResNameAttr</a> (unsigned index, const ::mlir::StringAttr &amp;attr)</td></tr>
+<tr class="memdesc:a395e0ee2e2aa7dfe2445e6856b5e5e29"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the <span class="tt">function.res_name</span> attribute for the result at the given index.  <br /></td></tr>
+<tr class="memitem:aad1b0f949f41dd79265ff29230006be7" id="r_aad1b0f949f41dd79265ff29230006be7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aad1b0f949f41dd79265ff29230006be7">setResName</a> (unsigned index, ::llvm::StringRef name)</td></tr>
+<tr class="memdesc:aad1b0f949f41dd79265ff29230006be7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the <span class="tt">function.res_name</span> attribute for the result at the given index from a string.  <br /></td></tr>
 <tr class="memitem:adf116ecb31969911123cbd50b112cfcc" id="r_adf116ecb31969911123cbd50b112cfcc"><td class="memItemLeft" align="right" valign="top">::mlir::Region *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#adf116ecb31969911123cbd50b112cfcc">getCallableRegion</a> ()</td></tr>
 <tr class="memdesc:adf116ecb31969911123cbd50b112cfcc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Required by FunctionOpInterface.  <br /></td></tr>
 <tr class="memitem:a2d4551d504284454c052b0d6d02aaf72" id="r_a2d4551d504284454c052b0d6d02aaf72"><td class="memItemLeft" align="right" valign="top">::llvm::ArrayRef&lt;::mlir::Type &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2d4551d504284454c052b0d6d02aaf72">getArgumentTypes</a> ()</td></tr>
@@ -644,7 +652,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00256">256</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00269">269</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -691,7 +699,7 @@ template&lt;typename RangeT&gt; </div>
 <p>Clone the internal blocks from this function into dest and all attributes from this function to dest.</p>
 <p>Any cloned blocks are appended to the back of dest. This function asserts that the attributes of the current function and dest are compatible. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00189">189</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00202">202</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -961,7 +969,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return the <span class="tt">function.arg_name</span> attribute for the argument at the given index. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00297">297</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00310">310</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -991,7 +999,7 @@ template&lt;typename RangeT&gt; </div>
 <p>Required by FunctionOpInterface. </p>
 <p>Returns the argument types of this function. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00858">858</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00870">870</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1075,7 +1083,7 @@ template&lt;typename RangeT&gt; </div>
 <p>Required by FunctionOpInterface. </p>
 <p>Returns the region on the current operation that is callable. This may return null in the case of an external callable object, e.g. an external function. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00854">854</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00866">866</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1096,7 +1104,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return the full name for this function from the root module, including all surrounding symbol table names (i.e., modules and structs). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00447">447</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00469">469</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1502,6 +1510,27 @@ template&lt;typename RangeT&gt; </div>
 
 </div>
 </div>
+<a id="a98afeb6d38cab4fa8fe3608d62b5c72f" name="a98afeb6d38cab4fa8fe3608d62b5c72f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a98afeb6d38cab4fa8fe3608d62b5c72f">&#9670;&#160;</a></span>getResNameAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::optional&lt; StringAttr &gt; llzk::function::FuncDefOp::getResNameAttr </td>
+          <td>(</td>
+          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>index</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the <span class="tt">function.res_name</span> attribute for the result at the given index. </p>
+
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00325">325</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+
+</div>
+</div>
 <a id="acbc2d9391e551564b6abcb009e964576" name="acbc2d9391e551564b6abcb009e964576"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#acbc2d9391e551564b6abcb009e964576">&#9670;&#160;</a></span>getResultTypes()</h2>
 
@@ -1528,7 +1557,7 @@ template&lt;typename RangeT&gt; </div>
 <p>Required by FunctionOpInterface. </p>
 <p>Returns the result types of this function. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00862">862</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00874">874</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1550,7 +1579,7 @@ template&lt;typename RangeT&gt; </div>
 <p>Return the "self" value (i.e. </p>
 <p>the return value) from the function (which must be named <span class="tt">FUNC_NAME_COMPUTE</span>). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00457">457</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00479">479</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1572,7 +1601,7 @@ template&lt;typename RangeT&gt; </div>
 <p>Return the "self" value (i.e. </p>
 <p>the first parameter) from the function (which must be named <span class="tt">FUNC_NAME_CONSTRAIN</span>). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00476">476</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00498">498</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1593,7 +1622,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Assuming the name is <span class="tt">FUNC_NAME_COMPUTE</span>, return the single <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> result. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00481">481</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00503">503</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1801,7 +1830,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the argument at the given index has a <span class="tt">function.arg_name</span> attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00295">295</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00308">308</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1822,7 +1851,28 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the argument at the given index has <span class="tt">pub</span> attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00285">285</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00298">298</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a823891be63e6a2b5dddd9b08c815bb1d" name="a823891be63e6a2b5dddd9b08c815bb1d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a823891be63e6a2b5dddd9b08c815bb1d">&#9670;&#160;</a></span>hasResName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::function::FuncDefOp::hasResName </td>
+          <td>(</td>
+          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>index</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return <span class="tt">true</span> iff the result at the given index has a <span class="tt">function.res_name</span> attribute. </p>
+
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00323">323</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1851,7 +1901,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by SymbolOpInterface. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00865">865</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00877">877</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1880,7 +1930,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the function is within a <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00884">884</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00896">896</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1909,7 +1959,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the function is within a <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> and named <span class="tt">FUNC_NAME_COMPUTE</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00887">887</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00899">899</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1938,7 +1988,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the function is within a <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> and named <span class="tt">FUNC_NAME_CONSTRAIN</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00890">890</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00902">902</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1967,7 +2017,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the function is within a <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> and named <span class="tt">FUNC_NAME_PRODUCT</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00893">893</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00905">905</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1996,7 +2046,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the function name is <span class="tt">FUNC_NAME_COMPUTE</span> (if needed, a check that this <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> is located within a <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> must be done separately). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00873">873</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00885">885</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -2025,7 +2075,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the function name is <span class="tt">FUNC_NAME_CONSTRAIN</span> (if needed, a check that this <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> is located within a <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> must be done separately). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00877">877</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00889">889</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -2054,7 +2104,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the function name is <span class="tt">FUNC_NAME_PRODUCT</span> (if needed, a check that this <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> is located within a <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> must be done separately). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00881">881</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00893">893</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -2085,7 +2135,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00169">169</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00182">182</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2140,7 +2190,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00180">180</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00193">193</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2246,7 +2296,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Add (resp. remove) the <span class="tt">allow_constraint</span> attribute to (resp. from) the function def. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00261">261</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00274">274</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2267,7 +2317,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Add (resp. remove) the <span class="tt">allow_non_native_field_ops</span> attribute to (resp. from) the function def. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00277">277</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00290">290</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2288,7 +2338,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Add (resp. remove) the <span class="tt">allow_witness</span> attribute to (resp. from) the function def. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00269">269</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00282">282</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2340,7 +2390,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Set the <span class="tt">function.arg_name</span> attribute for the argument at the given index from a string. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00312">312</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00319">319</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2365,7 +2415,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Set the <span class="tt">function.arg_name</span> attribute for the argument at the given index. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00307">307</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00314">314</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2514,6 +2564,56 @@ template&lt;typename RangeT&gt; </div>
 
 </div>
 </div>
+<a id="aad1b0f949f41dd79265ff29230006be7" name="aad1b0f949f41dd79265ff29230006be7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aad1b0f949f41dd79265ff29230006be7">&#9670;&#160;</a></span>setResName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::function::FuncDefOp::setResName </td>
+          <td>(</td>
+          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>index</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set the <span class="tt">function.res_name</span> attribute for the result at the given index from a string. </p>
+
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00334">334</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a395e0ee2e2aa7dfe2445e6856b5e5e29" name="a395e0ee2e2aa7dfe2445e6856b5e5e29"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a395e0ee2e2aa7dfe2445e6856b5e5e29">&#9670;&#160;</a></span>setResNameAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::function::FuncDefOp::setResNameAttr </td>
+          <td>(</td>
+          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>index</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const ::mlir::StringAttr &amp;</td>          <td class="paramname"><span class="paramname"><em>attr</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set the <span class="tt">function.res_name</span> attribute for the result at the given index. </p>
+
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00329">329</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+
+</div>
+</div>
 <a id="ad16c5f7b7dad556634943c0ceaca625f" name="ad16c5f7b7dad556634943c0ceaca625f"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad16c5f7b7dad556634943c0ceaca625f">&#9670;&#160;</a></span>setSymName()</h2>
 
@@ -2575,7 +2675,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00316">316</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00338">338</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2668,7 +2768,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00431">431</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00453">453</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>

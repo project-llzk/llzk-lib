@@ -45,6 +45,7 @@ var Function_2IR_2Ops_8capi_8cpp_8inc =
     [ "llzkFunction_FuncDefOpHasAllowWitnessAttr", "Function_2IR_2Ops_8capi_8cpp_8inc.html#a490f12b76a246a23dfbbc62828f3e605", null ],
     [ "llzkFunction_FuncDefOpHasArgName", "Function_2IR_2Ops_8capi_8cpp_8inc.html#a848fb7806d1367eb359430d9881bebe1", null ],
     [ "llzkFunction_FuncDefOpHasArgPublicAttr", "Function_2IR_2Ops_8capi_8cpp_8inc.html#a89f996d4fbdcc67e8c254b6ee66ee60c", null ],
+    [ "llzkFunction_FuncDefOpHasResName", "Function_2IR_2Ops_8capi_8cpp_8inc.html#ae213d3bb9b73e1a70d9a2b4afe146df8", null ],
     [ "llzkFunction_FuncDefOpIsDeclaration", "Function_2IR_2Ops_8capi_8cpp_8inc.html#a6d61c52ecc365a015765b5ab7ae00dbf", null ],
     [ "llzkFunction_FuncDefOpIsInStruct", "Function_2IR_2Ops_8capi_8cpp_8inc.html#a7a87414642c710764444a61f2fce96e1", null ],
     [ "llzkFunction_FuncDefOpIsStructCompute", "Function_2IR_2Ops_8capi_8cpp_8inc.html#ac443e9c83d39f83c4468a83162dbfbbb", null ],
