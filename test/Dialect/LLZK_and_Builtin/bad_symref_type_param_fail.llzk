@@ -377,7 +377,7 @@ module attributes {llzk.lang} {
 // -----
 module attributes {llzk.lang} {
   poly.template @TMemberReadWithUnknownInResultArr {
-    poly.param @A
+    poly.param @A : index
 
     struct.def @MemberReadWithUnknownInResultArr {
       struct.member @f: !array.type<@A x i1>
@@ -438,7 +438,7 @@ module attributes {llzk.lang} {
 // -----
 module attributes {llzk.lang} {
   poly.template @TMemberWriteWithUnknownInRHSArr {
-    poly.param @A
+    poly.param @A : index
 
     struct.def @MemberWriteWithUnknownInRHSArr {
       struct.member @f: !array.type<@A x i1>

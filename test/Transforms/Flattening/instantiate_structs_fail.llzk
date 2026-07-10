@@ -4,7 +4,7 @@ module attributes {llzk.lang} {
   poly.template @TUnpack {
     poly.param @N
     poly.param @P
-    poly.param @Aff
+    poly.param @Aff : index
 
     struct.def @Unpack {
       function.def @compute(%arg0: !array.type<@Aff x !felt.type>) -> !struct.type<@TUnpack::@Unpack<[@N, @P, @Aff]>> {
