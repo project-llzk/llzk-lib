@@ -74,9 +74,6 @@ llzkFunction_FuncDefOpCreateWithoutAttrs(MlirLocation loc, MlirStringRef name, M
   return llzkFunction_FuncDefOpCreateWithAttrs(loc, name, type, /*nAttrs=*/0, /*attrs=*/NULL);
 }
 
-/// Returns true iff the argument at the given index has a `function.arg_name` attribute.
-MLIR_CAPI_EXPORTED bool llzkFunction_FuncDefOpHasArgNameAttr(MlirOperation op, unsigned index);
-
 /// Returns the `function.arg_name` StringAttr for the argument at the given index, or null if the
 /// argument has no `function.arg_name` attribute.
 MLIR_CAPI_EXPORTED MlirAttribute
@@ -94,9 +91,6 @@ llzkFunction_FuncDefOpSetArgNameAttr(MlirOperation op, unsigned index, MlirAttri
 /// Empty and duplicate names are rejected by the FuncDefOp verifier.
 MLIR_CAPI_EXPORTED void
 llzkFunction_FuncDefOpSetArgName(MlirOperation op, unsigned index, MlirStringRef name);
-
-/// Returns true iff the result at the given index has a `function.res_name` attribute.
-MLIR_CAPI_EXPORTED bool llzkFunction_FuncDefOpHasResNameAttr(MlirOperation op, unsigned index);
 
 /// Returns the `function.res_name` StringAttr for the result at the given index, or null if the
 /// result has no `function.res_name` attribute.
