@@ -16,7 +16,7 @@
 #include "zklean/Dialect/ZKBuilder/IR/ZKBuilderOps.h"
 #include "zklean/Dialect/ZKExpr/IR/ZKExprOps.h"
 #include "zklean/Dialect/ZKLeanLean/IR/ZKLeanLeanOps.h"
-#include "zklean/Transforms/ZKLeanPasses.h"
+#include "zklean/Target/ZKLean.h"
 
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
@@ -28,6 +28,7 @@
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/Pass/Pass.h>
 #include <mlir/Support/FileUtilities.h>
+#include <mlir/Support/LLVM.h>
 
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseSet.h>
@@ -42,10 +43,6 @@
 
 #include <optional>
 
-namespace zklean {
-#define GEN_PASS_DEF_PRETTYPRINTZKLEANPASS
-#include "zklean/Transforms/ZKLeanPasses.h.inc"
-} // namespace zklean
 
 using namespace mlir;
 
@@ -530,11 +527,16 @@ static void emitZKLeanFuncIfAny(
   os << '\n';
 }
 
+} // namespace
+
 // Emit Lean output from modules that already contain ZKLean/ZKBuilder ops.
 // Prints structs first, then functions using `emitLeanFunc`.
-static bool emitZKLeanModule(ModuleOp module, raw_ostream &os) {
+ LogicalResult zklean::emitZKLeanModule(ModuleOp module, raw_ostream &os) {
   bool printedSomething = false;
   llvm::DenseSet<StringRef> structNames;
+  os << "import zkLean\n";
+  os << "open ZKBuilder\n\n";
+
   auto structDefs = collectZKLeanStructDefs(module, structNames);
 
   if (emitLeanStructsFromZKLean(structDefs, os)) {
@@ -546,43 +548,12 @@ static bool emitZKLeanModule(ModuleOp module, raw_ostream &os) {
     return WalkResult::advance();
   });
 
-  return printedSomething;
+  if (!printedSomething) {
+    os << "-- No zk dialect operations found.\n";
+  }
+
+  return success(printedSomething);
 }
 
-// Pass that pretty-prints ZK dialect IR into Lean-like syntax.
-// Manages output file handling for pretty-printed Lean code.
-class PassImpl : public zklean::impl::PrettyPrintZKLeanPassBase<PassImpl> {
-  using Base = PrettyPrintZKLeanPassBase<PassImpl>;
-  using Base::Base;
 
-  // Run the pass and emit Lean output to the selected stream.
-  // Uses ZKLean formatting when ZK ops are present.
-  void runOnOperation() override {
-    raw_ostream *stream = &llvm::outs();
-    std::unique_ptr<llvm::ToolOutputFile> outputFile;
-    if (!outputFilename.empty() && outputFilename != "-") {
-      outputFile = openOutputFile(outputFilename);
-      if (!outputFile) {
-        signalPassFailure();
-        return;
-      }
-      stream = &outputFile->os();
-    }
 
-    ModuleOp module = getOperation();
-    *stream << "import zkLean\n";
-    *stream << "open ZKBuilder\n\n";
-
-    bool printedSomething = emitZKLeanModule(module, *stream);
-
-    if (!printedSomething) {
-      *stream << "-- No zk dialect operations found.\n";
-    }
-
-    if (outputFile) {
-      outputFile->keep();
-    }
-  }
-};
-
-} // namespace

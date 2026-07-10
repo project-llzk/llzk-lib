@@ -23,5 +23,4 @@ install(
 add_subdirectory(zklean/Dialect/ZKExpr/IR)
 add_subdirectory(zklean/Dialect/ZKBuilder/IR)
 add_subdirectory(zklean/Dialect/ZKLeanLean/IR)
-add_subdirectory(zklean/Transforms)
 add_subdirectory(zklean/Conversions)
