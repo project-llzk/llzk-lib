@@ -21,8 +21,8 @@ var SymbolHelper_8cpp =
     [ "llzk::getRootModule", "namespacellzk.html#a44fd8ecd88f8e6b80079bf6c1328412a", null ],
     [ "llzk::getTopRootModule", "namespacellzk.html#a858ad75166540367bf85ae38bc875707", null ],
     [ "llzk::replaceLeaf", "namespacellzk.html#a6233c90d2afb42113aa36eddeebd8f76", null ],
-    [ "llzk::verifyParamOfType", "namespacellzk.html#adb5ab0e54d49d74723127a7315e8ba22", null ],
-    [ "llzk::verifyParamsOfType", "namespacellzk.html#aaa90d2946d0210b5c3be6279175cf786", null ],
+    [ "llzk::verifyParamOfType", "namespacellzk.html#af40b899e1eab6e10a664b0bebada2da3", null ],
+    [ "llzk::verifyParamsOfType", "namespacellzk.html#a889208db1cfb1783bdbf616178900a5c", null ],
     [ "llzk::verifyStructTypeResolution", "namespacellzk.html#a75f8539d20e1d1066b30e5b8d15b0546", null ],
     [ "llzk::verifyTypeResolution", "namespacellzk.html#a8a20668e5af9ce080f868692b9d199a6", null ]
 ];

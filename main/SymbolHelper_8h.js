@@ -31,8 +31,8 @@ var SymbolHelper_8h =
     [ "llzk::resolveCallable", "namespacellzk.html#a043fe7093faebb4db2da50ae89f82b71", null ],
     [ "llzk::resolveCallable", "namespacellzk.html#a76f6ee502fe0bb6ab1986e1ad9090c77", null ],
     [ "llzk::resolveCallableSilently", "namespacellzk.html#a955ceb911210b69bc82ee311eb2edf77", null ],
-    [ "llzk::verifyParamOfType", "namespacellzk.html#acc811579523974df9a00a8e969ea1ffc", null ],
-    [ "llzk::verifyParamsOfType", "namespacellzk.html#ad11e39677b93aea53264f2ffcd504f3c", null ],
+    [ "llzk::verifyParamOfType", "namespacellzk.html#a08a0790384d9bc6f7ffc505c873a11d3", null ],
+    [ "llzk::verifyParamsOfType", "namespacellzk.html#aa328bd3b88aebaac3b6f9049a5961596", null ],
     [ "llzk::verifyStructTypeResolution", "namespacellzk.html#a6a440b2851118a528c4cf09f990ae4a5", null ],
     [ "llzk::verifyTypeResolution", "namespacellzk.html#aa2361346b0d5cd8b5817a8c8b65ef23e", null ],
     [ "llzk::verifyTypeResolution", "namespacellzk.html#abcc40d684f6ca8079665a69cf2866838", null ]
