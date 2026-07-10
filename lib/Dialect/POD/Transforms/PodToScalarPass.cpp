@@ -1589,6 +1589,35 @@ static ArrayRef<Value> getOrMaterializeCompatiblePodArrayLeafValues(
   return it->second;
 }
 
+/// Materialize the full converted component list for one non-array value that unifies with
+/// `arrTy`, including any explicit trailing shape carrier that step 2 would otherwise thread.
+static SmallVector<Value> materializeCompatiblePodArrayConvertedValues(
+    Location loc, Value source, ArrayType arrTy, OpBuilder &rewriter
+) {
+  SmallVector<RecordChain> splitIds;
+  SmallVector<Type> convertedTypes;
+  collectConvertedPodArrayRecordInfos(arrTy, splitIds, convertedTypes);
+  source = peelUnifiableCasts(source);
+  assert(
+      typesUnify(source.getType(), arrTy) &&
+      "materialized POD-array components require a source type compatible with the array shape"
+  );
+
+  if (convertedTypes.empty()) {
+    return {};
+  }
+
+  OpBuilder::InsertionGuard guard(rewriter);
+  setInsertionPointAfterValueDefinition(source, rewriter);
+
+  SmallVector<Value> convertedValues;
+  convertedValues.reserve(convertedTypes.size());
+  for (Type convertedType : convertedTypes) {
+    convertedValues.push_back(castValueToTypeIfNeeded(rewriter, loc, source, convertedType));
+  }
+  return convertedValues;
+}
+
 /// Collect the leaf-aligned values that represent one whole-POD equality operand.
 static void collectWholePodEqualityOperandLeaves(
     Location loc, Value operand, PodType podTy, SmallVector<Value> &leaves, OpBuilder &rewriter,
@@ -2765,21 +2794,45 @@ public:
                                         getTrailingArrayShapeCarrierIfPresent(adaptor.getLhs()));
     bool rhsNeedsShapeCheck = rhsTy && (needsPodArrayShapeCarrier(rhsTy) ||
                                         getTrailingArrayShapeCarrierIfPresent(adaptor.getRhs()));
-    if (lhsTy && rhsTy && (lhsNeedsShapeCheck || rhsNeedsShapeCheck)) {
+    SmallVector<Value> lhsCompatibleConvertedValues;
+    SmallVector<Value> rhsCompatibleConvertedValues;
+    if (rhsTy && rhsNeedsShapeCheck && !lhsTy &&
+        (adaptor.getLhs().empty() || adaptor.getLhs().size() == 1)) {
+      Value lhsSource =
+          adaptor.getLhs().empty() ? op.getLhs() : getSingleConvertedValue(adaptor.getLhs());
+      lhsCompatibleConvertedValues =
+          materializeCompatiblePodArrayConvertedValues(op.getLoc(), lhsSource, rhsTy, rewriter);
+    }
+    if (lhsTy && lhsNeedsShapeCheck && !rhsTy &&
+        (adaptor.getRhs().empty() || adaptor.getRhs().size() == 1)) {
+      Value rhsSource =
+          adaptor.getRhs().empty() ? op.getRhs() : getSingleConvertedValue(adaptor.getRhs());
+      rhsCompatibleConvertedValues =
+          materializeCompatiblePodArrayConvertedValues(op.getLoc(), rhsSource, lhsTy, rewriter);
+    }
+
+    ArrayType shapeCheckTy = lhsTy ? lhsTy : rhsTy;
+    bool needsShapeCheck = lhsTy ? lhsNeedsShapeCheck : rhsNeedsShapeCheck;
+    if (lhsTy && rhsTy) {
       if (lhsTy.getDimensionSizes().size() != rhsTy.getDimensionSizes().size()) {
         return rewriter.notifyMatchFailure(
             op, "expected array-of-pod equality operands with matching rank"
         );
       }
+      needsShapeCheck = lhsNeedsShapeCheck || rhsNeedsShapeCheck;
+    }
 
+    if (shapeCheckTy && needsShapeCheck) {
       Value lhsShapeSource = getPodArrayEqualityShapeSource(
-          lhsTy, op.getLhs(), adaptor.getLhs(), op.getLoc(), rewriter
+          lhsTy ? lhsTy : rhsTy, op.getLhs(),
+          lhsTy ? adaptor.getLhs() : ValueRange(lhsCompatibleConvertedValues), op.getLoc(), rewriter
       );
       Value rhsShapeSource = getPodArrayEqualityShapeSource(
-          rhsTy, op.getRhs(), adaptor.getRhs(), op.getLoc(), rewriter
+          rhsTy ? rhsTy : lhsTy, op.getRhs(),
+          rhsTy ? adaptor.getRhs() : ValueRange(rhsCompatibleConvertedValues), op.getLoc(), rewriter
       );
 
-      for (size_t dim = 0, rank = lhsTy.getDimensionSizes().size(); dim < rank; ++dim) {
+      for (size_t dim = 0, rank = shapeCheckTy.getDimensionSizes().size(); dim < rank; ++dim) {
         Value dimVal = rewriter.create<arith::ConstantOp>(
             op.getLoc(), rewriter.getIndexAttr(llzk::checkedCast<int64_t>(dim))
         );
@@ -2789,12 +2842,27 @@ public:
       }
     }
 
-    SmallVector<Value> lhsLeaves = collectCompatiblePodArrayEqualityLeaves(
-        op.getLoc(), op.getLhs(), adaptor.getLhs(), lhsTy, rhsTy, rewriter, materializedLeaves
-    );
-    SmallVector<Value> rhsLeaves = collectCompatiblePodArrayEqualityLeaves(
-        op.getLoc(), op.getRhs(), adaptor.getRhs(), rhsTy, lhsTy, rewriter, materializedLeaves
-    );
+    SmallVector<Value> lhsLeaves;
+    if (!lhsTy && rhsTy && !lhsCompatibleConvertedValues.empty()) {
+      ValueRange materializedLeavesForLhs =
+          getConvertedPodArrayLeafValues(rhsTy, lhsCompatibleConvertedValues);
+      llvm::append_range(lhsLeaves, materializedLeavesForLhs);
+    } else {
+      lhsLeaves = collectCompatiblePodArrayEqualityLeaves(
+          op.getLoc(), op.getLhs(), adaptor.getLhs(), lhsTy, rhsTy, rewriter, materializedLeaves
+      );
+    }
+
+    SmallVector<Value> rhsLeaves;
+    if (!rhsTy && lhsTy && !rhsCompatibleConvertedValues.empty()) {
+      ValueRange materializedLeavesForRhs =
+          getConvertedPodArrayLeafValues(lhsTy, rhsCompatibleConvertedValues);
+      llvm::append_range(rhsLeaves, materializedLeavesForRhs);
+    } else {
+      rhsLeaves = collectCompatiblePodArrayEqualityLeaves(
+          op.getLoc(), op.getRhs(), adaptor.getRhs(), rhsTy, lhsTy, rewriter, materializedLeaves
+      );
+    }
     if (lhsLeaves.size() != rhsLeaves.size()) {
       return rewriter.notifyMatchFailure(
           op, "expected array-of-pod equality operands to expand to the same number of leaves"

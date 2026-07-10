@@ -551,3 +551,61 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  poly.template @EqDynamicArrayPodAndTypeVar {
+    poly.param @T : !poly.tvar<@T>
+    function.def @constrain(
+        %lhs: !array.type<? x !Pair>, %rhs: !poly.tvar<@T>
+    ) attributes {function.allow_constraint} {
+      constrain.eq %lhs, %rhs : !array.type<? x !Pair>, !poly.tvar<@T>
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @EqDynamicArrayPodAndTypeVar {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @constrain(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<? x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type>, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<? x none>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_3]] : (!poly.tvar<@T>) -> !array.type<? x index>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_3]] : (!poly.tvar<@T>) -> !array.type<? x !felt.type>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_3]] : (!poly.tvar<@T>) -> !array.type<? x none>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_2]], %[[VAL_7]] : <? x none>
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_6]], %[[VAL_7]] : <? x none>
+// CHECK-NEXT:        constrain.eq %[[VAL_8]], %[[VAL_9]] : index, index
+// CHECK-NEXT:        constrain.eq %[[VAL_0]], %[[VAL_4]] : !array.type<? x index>, !array.type<? x index>
+// CHECK-NEXT:        constrain.eq %[[VAL_1]], %[[VAL_5]] : !array.type<? x !felt.type>, !array.type<? x !felt.type>
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Empty = !pod.type<[]>
+module attributes {llzk.lang} {
+  poly.template @EqEmptyArrayPodAndTypeVar {
+    poly.param @T : !poly.tvar<@T>
+    function.def @constrain(
+        %lhs: !array.type<? x !Empty>, %rhs: !poly.tvar<@T>
+    ) attributes {function.allow_constraint} {
+      constrain.eq %lhs, %rhs : !array.type<? x !Empty>, !poly.tvar<@T>
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @EqEmptyArrayPodAndTypeVar {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @constrain(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<? x none>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_1]] : (!poly.tvar<@T>) -> !array.type<? x none>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_0]], %[[VAL_3]] : <? x none>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_2]], %[[VAL_3]] : <? x none>
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_5]] : index, index
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
