@@ -95,6 +95,27 @@ llzkFunction_FuncDefOpSetArgNameAttr(MlirOperation op, unsigned index, MlirAttri
 MLIR_CAPI_EXPORTED void
 llzkFunction_FuncDefOpSetArgName(MlirOperation op, unsigned index, MlirStringRef name);
 
+/// Returns true iff the result at the given index has a `function.res_name` attribute.
+MLIR_CAPI_EXPORTED bool llzkFunction_FuncDefOpHasResNameAttr(MlirOperation op, unsigned index);
+
+/// Returns the `function.res_name` StringAttr for the result at the given index, or null if the
+/// result has no `function.res_name` attribute.
+MLIR_CAPI_EXPORTED MlirAttribute
+llzkFunction_FuncDefOpGetResNameAttr(MlirOperation op, unsigned index);
+
+/// Sets the `function.res_name` attribute for the result at the given index.
+///
+/// The attribute must be a StringAttr. Empty and duplicate names are rejected by the FuncDefOp
+/// verifier.
+MLIR_CAPI_EXPORTED void
+llzkFunction_FuncDefOpSetResNameAttr(MlirOperation op, unsigned index, MlirAttribute attr);
+
+/// Sets the `function.res_name` attribute for the result at the given index from a string value.
+///
+/// Empty and duplicate names are rejected by the FuncDefOp verifier.
+MLIR_CAPI_EXPORTED void
+llzkFunction_FuncDefOpSetResName(MlirOperation op, unsigned index, MlirStringRef name);
+
 //===----------------------------------------------------------------------===//
 // CallOp
 //===----------------------------------------------------------------------===//
