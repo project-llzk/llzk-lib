@@ -134,14 +134,18 @@ Functions</h2></td></tr>
 <tr class="memdesc:a6f5189b8e68ab4545d46db506a71efea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get reference to the LLZK <span class="tt">function</span> dialect.  <br /></td></tr>
 <tr class="memitem:a25f7da9ea2a7234becf953ca72d23e86" id="r_a25f7da9ea2a7234becf953ca72d23e86"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a25f7da9ea2a7234becf953ca72d23e86">llzkFunction_FuncDefOpCreateWithAttrsAndArgAttrs</a> (MlirLocation loc, MlirStringRef name, MlirType type, intptr_t nAttrs, MlirNamedAttribute const *attrs, intptr_t nArgAttrs, MlirAttribute const *argAttrs)</td></tr>
 <tr class="memdesc:a25f7da9ea2a7234becf953ca72d23e86"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a FuncDefOp with the given attributes and argument attributes.  <br /></td></tr>
-<tr class="memitem:a2de36971515010e5f3988ca38ec08c63" id="r_a2de36971515010e5f3988ca38ec08c63"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2de36971515010e5f3988ca38ec08c63">llzkFunction_FuncDefOpHasArgNameAttr</a> (MlirOperation op, unsigned index)</td></tr>
-<tr class="memdesc:a2de36971515010e5f3988ca38ec08c63"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true iff the argument at the given index has a <span class="tt">function.arg_name</span> attribute.  <br /></td></tr>
 <tr class="memitem:ab519ade5845445e53f36b262c1f4fd59" id="r_ab519ade5845445e53f36b262c1f4fd59"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab519ade5845445e53f36b262c1f4fd59">llzkFunction_FuncDefOpGetArgNameAttr</a> (MlirOperation op, unsigned index)</td></tr>
 <tr class="memdesc:ab519ade5845445e53f36b262c1f4fd59"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the <span class="tt">function.arg_name</span> StringAttr for the argument at the given index, or null if the argument has no <span class="tt">function.arg_name</span> attribute.  <br /></td></tr>
 <tr class="memitem:af10435ed8da64528d70daa1a453ac996" id="r_af10435ed8da64528d70daa1a453ac996"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af10435ed8da64528d70daa1a453ac996">llzkFunction_FuncDefOpSetArgNameAttr</a> (MlirOperation op, unsigned index, MlirAttribute attr)</td></tr>
 <tr class="memdesc:af10435ed8da64528d70daa1a453ac996"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the <span class="tt">function.arg_name</span> attribute for the argument at the given index.  <br /></td></tr>
 <tr class="memitem:a461de89b2f940f2e10c0c633935ef996" id="r_a461de89b2f940f2e10c0c633935ef996"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a461de89b2f940f2e10c0c633935ef996">llzkFunction_FuncDefOpSetArgName</a> (MlirOperation op, unsigned index, MlirStringRef name)</td></tr>
 <tr class="memdesc:a461de89b2f940f2e10c0c633935ef996"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the <span class="tt">function.arg_name</span> attribute for the argument at the given index from a string value.  <br /></td></tr>
+<tr class="memitem:a8bb164ee69f6e923f814a8cb4b74a670" id="r_a8bb164ee69f6e923f814a8cb4b74a670"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirAttribute&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8bb164ee69f6e923f814a8cb4b74a670">llzkFunction_FuncDefOpGetResNameAttr</a> (MlirOperation op, unsigned index)</td></tr>
+<tr class="memdesc:a8bb164ee69f6e923f814a8cb4b74a670"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the <span class="tt">function.res_name</span> StringAttr for the result at the given index, or null if the result has no <span class="tt">function.res_name</span> attribute.  <br /></td></tr>
+<tr class="memitem:a5634c3f262604d3a623b5b770e8e9927" id="r_a5634c3f262604d3a623b5b770e8e9927"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5634c3f262604d3a623b5b770e8e9927">llzkFunction_FuncDefOpSetResNameAttr</a> (MlirOperation op, unsigned index, MlirAttribute attr)</td></tr>
+<tr class="memdesc:a5634c3f262604d3a623b5b770e8e9927"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the <span class="tt">function.res_name</span> attribute for the result at the given index.  <br /></td></tr>
+<tr class="memitem:a7e0097c653c84a3cd74b4a777fc64c78" id="r_a7e0097c653c84a3cd74b4a777fc64c78"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7e0097c653c84a3cd74b4a777fc64c78">llzkFunction_FuncDefOpSetResName</a> (MlirOperation op, unsigned index, MlirStringRef name)</td></tr>
+<tr class="memdesc:a7e0097c653c84a3cd74b4a777fc64c78"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the <span class="tt">function.res_name</span> attribute for the result at the given index from a string value.  <br /></td></tr>
 <tr class="memitem:a04e5f152eb35f77bfda7fde557bcd2c1" id="r_a04e5f152eb35f77bfda7fde557bcd2c1"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a04e5f152eb35f77bfda7fde557bcd2c1">LLZK_DECLARE_OP_BUILD_METHOD</a> (Function, CallOp, intptr_t numResults, MlirType const *results, MlirAttribute name, intptr_t numOperands, MlirValue const *operands)</td></tr>
 <tr class="memdesc:a04e5f152eb35f77bfda7fde557bcd2c1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a CallOp.  <br /></td></tr>
 <tr class="memitem:a3ed7feebe12d89ad7f4e831353626aa3" id="r_a3ed7feebe12d89ad7f4e831353626aa3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3ed7feebe12d89ad7f4e831353626aa3">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD</a> (Function, CallOp, ToCallee, MlirOperation callee, intptr_t numOperands, MlirValue const *operands)</td></tr>
@@ -541,18 +545,18 @@ Functions</h2></td></tr>
 
 <p>Returns the <span class="tt">function.arg_name</span> StringAttr for the argument at the given index, or null if the argument has no <span class="tt">function.arg_name</span> attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00070">70</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00066">66</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
 
 </div>
 </div>
-<a id="a2de36971515010e5f3988ca38ec08c63" name="a2de36971515010e5f3988ca38ec08c63"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2de36971515010e5f3988ca38ec08c63">&#9670;&#160;</a></span>llzkFunction_FuncDefOpHasArgNameAttr()</h2>
+<a id="a8bb164ee69f6e923f814a8cb4b74a670" name="a8bb164ee69f6e923f814a8cb4b74a670"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8bb164ee69f6e923f814a8cb4b74a670">&#9670;&#160;</a></span>llzkFunction_FuncDefOpGetResNameAttr()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">MLIR_CAPI_EXPORTED bool llzkFunction_FuncDefOpHasArgNameAttr </td>
+          <td class="memname">MLIR_CAPI_EXPORTED MlirAttribute llzkFunction_FuncDefOpGetResNameAttr </td>
           <td>(</td>
           <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
         </tr>
@@ -564,9 +568,9 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Returns true iff the argument at the given index has a <span class="tt">function.arg_name</span> attribute. </p>
+<p>Returns the <span class="tt">function.res_name</span> StringAttr for the result at the given index, or null if the result has no <span class="tt">function.res_name</span> attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00066">66</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00079">79</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
 
 </div>
 </div>
@@ -597,7 +601,7 @@ Functions</h2></td></tr>
 <p>Sets the <span class="tt">function.arg_name</span> attribute for the argument at the given index from a string value. </p>
 <p>Empty and duplicate names are rejected by the FuncDefOp verifier. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00079">79</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00075">75</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
 
 </div>
 </div>
@@ -628,7 +632,69 @@ Functions</h2></td></tr>
 <p>Sets the <span class="tt">function.arg_name</span> attribute for the argument at the given index. </p>
 <p>The attribute must be a StringAttr. Empty and duplicate names are rejected by the FuncDefOp verifier. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00075">75</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00071">71</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a7e0097c653c84a3cd74b4a777fc64c78" name="a7e0097c653c84a3cd74b4a777fc64c78"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7e0097c653c84a3cd74b4a777fc64c78">&#9670;&#160;</a></span>llzkFunction_FuncDefOpSetResName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED void llzkFunction_FuncDefOpSetResName </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>index</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirStringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the <span class="tt">function.res_name</span> attribute for the result at the given index from a string value. </p>
+<p>Empty and duplicate names are rejected by the FuncDefOp verifier. </p>
+
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00088">88</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a5634c3f262604d3a623b5b770e8e9927" name="a5634c3f262604d3a623b5b770e8e9927"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5634c3f262604d3a623b5b770e8e9927">&#9670;&#160;</a></span>llzkFunction_FuncDefOpSetResNameAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED void llzkFunction_FuncDefOpSetResNameAttr </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>index</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>attr</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the <span class="tt">function.res_name</span> attribute for the result at the given index. </p>
+<p>The attribute must be a StringAttr. Empty and duplicate names are rejected by the FuncDefOp verifier. </p>
+
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00084">84</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
 
 </div>
 </div>

@@ -1,5 +1,9 @@
 var NAVTREEINDEX81 =
 {
+"dialects.html#structdef-llzkcomponentstructdefop":[7,12,0,0],
+"dialects.html#structmember-llzkcomponentmemberdefop":[7,12,0,1],
+"dialects.html#structnew-llzkcomponentcreatestructop":[7,12,0,2],
+"dialects.html#structreadm-llzkcomponentmemberreadop":[7,12,0,3],
 "dialects.html#structtype":[7,12,1,0],
 "dialects.html#structwritem-llzkcomponentmemberwriteop":[7,12,0,4],
 "dialects.html#types-1":[7,0,1],
@@ -245,9 +249,5 @@ var NAVTREEINDEX81 =
 "functions_vars_b.html":[12,3,2,1],
 "functions_vars_c.html":[12,3,2,2],
 "functions_vars_d.html":[12,3,2,3],
-"functions_vars_e.html":[12,3,2,4],
-"functions_vars_f.html":[12,3,2,5],
-"functions_vars_g.html":[12,3,2,6],
-"functions_vars_h.html":[12,3,2,7],
-"functions_vars_i.html":[12,3,2,8]
+"functions_vars_e.html":[12,3,2,4]
 };
