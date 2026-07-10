@@ -11,9 +11,13 @@
 
 #include "../CAPITestBase.h"
 
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Util/Compare.h"
 
 #include <mlir-c/BuiltinAttributes.h>
+
+#include <mlir/CAPI/Wrap.h>
+#include <mlir/Parser/Parser.h>
 
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/SmallVector.h>
@@ -70,6 +74,13 @@ static MlirStringRef to_mlir_string_ref(llvm::StringRef value) {
 static MlirNamedAttribute create_arg_name_named_attr(MlirContext ctx, llvm::StringRef value) {
   return mlirNamedAttributeGet(
       mlirIdentifierGet(ctx, mlirStringRefCreateFromCString("function.arg_name")),
+      mlirStringAttrGet(ctx, to_mlir_string_ref(value))
+  );
+}
+
+static MlirNamedAttribute create_res_name_named_attr(MlirContext ctx, llvm::StringRef value) {
+  return mlirNamedAttributeGet(
+      mlirIdentifierGet(ctx, mlirStringRefCreateFromCString("function.res_name")),
       mlirStringAttrGet(ctx, to_mlir_string_ref(value))
   );
 }
@@ -208,11 +219,11 @@ TEST_F(FuncDialectTest, llzk_func_def_op_get_arg_name_attr) {
   );
   MlirOperation module = create_module_with_owned_op(context, op);
 
-  EXPECT_TRUE(llzkFunction_FuncDefOpHasArgNameAttr(op, 0));
+  EXPECT_TRUE(llzkFunction_FuncDefOpHasArgName(op, 0));
   expect_string_attr_value(llzkFunction_FuncDefOpGetArgNameAttr(op, 0), "input 0");
-  EXPECT_FALSE(llzkFunction_FuncDefOpHasArgNameAttr(op, 1));
+  EXPECT_FALSE(llzkFunction_FuncDefOpHasArgName(op, 1));
   EXPECT_TRUE(mlirAttributeIsNull(llzkFunction_FuncDefOpGetArgNameAttr(op, 1)));
-  EXPECT_FALSE(llzkFunction_FuncDefOpHasArgNameAttr(op, 2));
+  EXPECT_FALSE(llzkFunction_FuncDefOpHasArgName(op, 2));
   EXPECT_TRUE(mlirAttributeIsNull(llzkFunction_FuncDefOpGetArgNameAttr(op, 2)));
   EXPECT_TRUE(mlirOperationVerify(op));
 
@@ -230,17 +241,67 @@ TEST_F(FuncDialectTest, llzk_func_def_op_set_arg_name_attr) {
   );
   MlirOperation module = create_module_with_owned_op(context, op);
 
-  EXPECT_FALSE(llzkFunction_FuncDefOpHasArgNameAttr(op, 0));
-  EXPECT_FALSE(llzkFunction_FuncDefOpHasArgNameAttr(op, 1));
+  EXPECT_FALSE(llzkFunction_FuncDefOpHasArgName(op, 0));
+  EXPECT_FALSE(llzkFunction_FuncDefOpHasArgName(op, 1));
 
   llzkFunction_FuncDefOpSetArgName(op, 0, to_mlir_string_ref("x"));
   MlirAttribute arg1Name = mlirStringAttrGet(context, to_mlir_string_ref("a/b"));
   llzkFunction_FuncDefOpSetArgNameAttr(op, 1, arg1Name);
 
-  EXPECT_TRUE(llzkFunction_FuncDefOpHasArgNameAttr(op, 0));
+  EXPECT_TRUE(llzkFunction_FuncDefOpHasArgName(op, 0));
   expect_string_attr_value(llzkFunction_FuncDefOpGetArgNameAttr(op, 0), "x");
-  EXPECT_TRUE(llzkFunction_FuncDefOpHasArgNameAttr(op, 1));
+  EXPECT_TRUE(llzkFunction_FuncDefOpHasArgName(op, 1));
   expect_string_attr_value(llzkFunction_FuncDefOpGetArgNameAttr(op, 1), "a/b");
+  EXPECT_TRUE(mlirOperationVerify(op));
+
+  mlirOperationDestroy(module);
+}
+
+TEST_F(FuncDialectTest, llzk_func_def_op_get_res_name_attr) {
+  auto module = mlir::parseSourceString<mlir::ModuleOp>(
+      R"mlir(
+        module {
+          function.def private @foo() -> (index {function.res_name = "out"}, index)
+        }
+      )mlir",
+      mlir::ParserConfig(unwrap(context))
+  );
+  ASSERT_TRUE(module);
+
+  auto func = module->lookupSymbol<llzk::function::FuncDefOp>("foo");
+  ASSERT_TRUE(func);
+  MlirOperation op = wrap(func.getOperation());
+
+  EXPECT_TRUE(llzkFunction_FuncDefOpHasResName(op, 0));
+  expect_string_attr_value(llzkFunction_FuncDefOpGetResNameAttr(op, 0), "out");
+  EXPECT_FALSE(llzkFunction_FuncDefOpHasResName(op, 1));
+  EXPECT_TRUE(mlirAttributeIsNull(llzkFunction_FuncDefOpGetResNameAttr(op, 1)));
+  EXPECT_FALSE(llzkFunction_FuncDefOpHasResName(op, 2));
+  EXPECT_TRUE(mlirAttributeIsNull(llzkFunction_FuncDefOpGetResNameAttr(op, 2)));
+  EXPECT_TRUE(mlirOperationVerify(op));
+}
+
+TEST_F(FuncDialectTest, llzk_func_def_op_set_res_name_attr) {
+  MlirType out_types[] = {createIndexType(), createIndexType()};
+  MlirNamedAttribute attrs[] = {create_private_visibility_attr(context)};
+  auto op = create_func_def_op(
+      context, "foo",
+      create_func_type(context, llvm::ArrayRef<MlirType>(), llvm::ArrayRef(out_types, 2)),
+      llvm::ArrayRef(attrs, 1), llvm::ArrayRef<MlirAttribute>()
+  );
+  MlirOperation module = create_module_with_owned_op(context, op);
+
+  EXPECT_FALSE(llzkFunction_FuncDefOpHasResName(op, 0));
+  EXPECT_FALSE(llzkFunction_FuncDefOpHasResName(op, 1));
+
+  llzkFunction_FuncDefOpSetResName(op, 0, to_mlir_string_ref("out"));
+  MlirAttribute res1Name = create_res_name_named_attr(context, "a/b").attribute;
+  llzkFunction_FuncDefOpSetResNameAttr(op, 1, res1Name);
+
+  EXPECT_TRUE(llzkFunction_FuncDefOpHasResName(op, 0));
+  expect_string_attr_value(llzkFunction_FuncDefOpGetResNameAttr(op, 0), "out");
+  EXPECT_TRUE(llzkFunction_FuncDefOpHasResName(op, 1));
+  expect_string_attr_value(llzkFunction_FuncDefOpGetResNameAttr(op, 1), "a/b");
   EXPECT_TRUE(mlirOperationVerify(op));
 
   mlirOperationDestroy(module);
