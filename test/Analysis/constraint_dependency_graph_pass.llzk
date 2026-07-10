@@ -45,10 +45,10 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @Adder ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@sum], %arg1, %arg2 }
+// CHECK-NEXT:     { %arg0.sum, %arg1, %arg2 }
 // CHECK-NEXT: }
 // INTRA-LABEL: @Adder ConstraintDependencyGraph {
-// INTRA-NEXT:     { %arg0[@sum], %arg1, %arg2 }
+// INTRA-NEXT:     { %arg0.sum, %arg1, %arg2 }
 // INTRA-NEXT: }
 // -----
 
@@ -80,10 +80,10 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @Adder2 ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@sum], %arg1, %arg2 }
+// CHECK-NEXT:     { %arg0.sum, %arg1, %arg2 }
 // CHECK-NEXT: }
 // INTRA-LABEL: @Adder2 ConstraintDependencyGraph {
-// INTRA-NEXT:     { %arg0[@sum], %arg1, %arg2 }
+// INTRA-NEXT:     { %arg0.sum, %arg1, %arg2 }
 // INTRA-NEXT: }
 // -----
 
@@ -197,17 +197,17 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @Passthrough ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@out], %arg1 }
+// CHECK-NEXT:     { %arg0.out, %arg1 }
 // CHECK-NEXT: }
 // CHECK-NEXT: @EnsureIsZero ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@p][@out], %arg1 },
-// CHECK-NEXT:     { %arg0[@p][@out], <felt.const: 0> }
+// CHECK-NEXT:     { %arg0.p.out, %arg1 },
+// CHECK-NEXT:     { %arg0.p.out, <felt.const: 0> }
 // CHECK-NEXT: }
 // INTRA-LABEL: @Passthrough ConstraintDependencyGraph {
-// INTRA-NEXT:     { %arg0[@out], %arg1 }
+// INTRA-NEXT:     { %arg0.out, %arg1 }
 // INTRA-NEXT: }
 // INTRA-NEXT: @EnsureIsZero ConstraintDependencyGraph {
-// INTRA-NEXT:     { %arg0[@p][@out], %arg1 }
+// INTRA-NEXT:     { %arg0.p.out, %arg1 }
 // INTRA-NEXT: }
 // -----
 
@@ -262,6 +262,150 @@ module attributes {llzk.lang} {
 // CHECK-NEXT: }
 // INTRA-LABEL: @ArrayForCheck ConstraintDependencyGraph {
 // INTRA-NEXT:     { %arg1[0:5], <felt.const: 7> }
+// INTRA-NEXT: }
+// -----
+
+!NamedPodInput = !pod.type<[@comp: !felt.type, @arr: !array.type<2 x !felt.type>]>
+
+module attributes {llzk.lang} {
+  struct.def @NamedPodCheck {
+    function.def @compute(
+      %arg0: !NamedPodInput {function.arg_name = "input"},
+      %arg1: !felt.type {function.arg_name = "expected"}
+    ) -> !struct.type<@NamedPodCheck> {
+      %self = struct.new : !struct.type<@NamedPodCheck>
+      function.return %self : !struct.type<@NamedPodCheck>
+    }
+
+    function.def @constrain(
+      %arg0: !struct.type<@NamedPodCheck>,
+      %arg1: !NamedPodInput {function.arg_name = "input"},
+      %arg2: !felt.type {function.arg_name = "expected"}
+    ) {
+      %comp = pod.read %arg1[@comp] : !NamedPodInput, !felt.type
+      %arr = pod.read %arg1[@arr] : !NamedPodInput, !array.type<2 x !felt.type>
+      %idx = arith.constant 1 : index
+      %elem = array.read %arr[%idx] : !array.type<2 x !felt.type>, !felt.type
+      constrain.eq %comp, %arg2 : !felt.type
+      constrain.eq %elem, %arg2 : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @NamedPodCheck ConstraintDependencyGraph {
+// CHECK-NEXT:     { input.arr[1], input.comp, expected }
+// CHECK-NEXT: }
+// INTRA-LABEL: @NamedPodCheck ConstraintDependencyGraph {
+// INTRA-NEXT:     { input.arr[1], input.comp, expected }
+// INTRA-NEXT: }
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @NamedArrayRangeCheck {
+    function.def @compute(
+      %arg0: !array.type<5 x !felt.type> {function.arg_name = "input"}
+    ) -> !struct.type<@NamedArrayRangeCheck> {
+      %self = struct.new : !struct.type<@NamedArrayRangeCheck>
+      function.return %self : !struct.type<@NamedArrayRangeCheck>
+    }
+
+    function.def @constrain(
+      %arg0: !struct.type<@NamedArrayRangeCheck>,
+      %arg1: !array.type<5 x !felt.type> {function.arg_name = "input"}
+    ) {
+      %lb = arith.constant 0 : index
+      %up = arith.constant 5 : index
+      %step = arith.constant 1 : index
+      %fval = felt.const 7
+      scf.for %iv = %lb to %up step %step {
+        %elem = array.read %arg1[%iv] : !array.type<5 x !felt.type>, !felt.type
+        constrain.eq %elem, %fval : !felt.type
+      }
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @NamedArrayRangeCheck ConstraintDependencyGraph {
+// CHECK-NEXT:     { input[0:5], <felt.const: 7> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @NamedArrayRangeCheck ConstraintDependencyGraph {
+// INTRA-NEXT:     { input[0:5], <felt.const: 7> }
+// INTRA-NEXT: }
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @NamedScalarCheck {
+    function.def @compute(
+      %arg0: !felt.type {function.arg_name = "input"}
+    ) -> !struct.type<@NamedScalarCheck> {
+      %self = struct.new : !struct.type<@NamedScalarCheck>
+      function.return %self : !struct.type<@NamedScalarCheck>
+    }
+
+    function.def @constrain(
+      %arg0: !struct.type<@NamedScalarCheck>,
+      %arg1: !felt.type {function.arg_name = "input"}
+    ) {
+      %fval = felt.const 7
+      constrain.eq %arg1, %fval : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @NamedScalarCheck ConstraintDependencyGraph {
+// CHECK-NEXT:     { input, <felt.const: 7> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @NamedScalarCheck ConstraintDependencyGraph {
+// INTRA-NEXT:     { input, <felt.const: 7> }
+// INTRA-NEXT: }
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @NamedStructMemberInput {
+    struct.member @lhs : !felt.type {llzk.pub}
+    struct.member @rhs : !felt.type {llzk.pub}
+
+    function.def @compute(%lhs: !felt.type, %rhs: !felt.type) -> !struct.type<@NamedStructMemberInput> {
+      %self = struct.new : !struct.type<@NamedStructMemberInput>
+      struct.writem %self[@lhs] = %lhs : !struct.type<@NamedStructMemberInput>, !felt.type
+      struct.writem %self[@rhs] = %rhs : !struct.type<@NamedStructMemberInput>, !felt.type
+      function.return %self : !struct.type<@NamedStructMemberInput>
+    }
+
+    function.def @constrain(%self: !struct.type<@NamedStructMemberInput>, %lhs: !felt.type, %rhs: !felt.type) {
+      function.return
+    }
+  }
+
+  struct.def @NamedStructMemberCheck {
+    function.def @compute(
+      %arg0: !struct.type<@NamedStructMemberInput> {function.arg_name = "input"},
+      %arg1: !felt.type {function.arg_name = "expected"}
+    ) -> !struct.type<@NamedStructMemberCheck> {
+      %self = struct.new : !struct.type<@NamedStructMemberCheck>
+      function.return %self : !struct.type<@NamedStructMemberCheck>
+    }
+
+    function.def @constrain(
+      %arg0: !struct.type<@NamedStructMemberCheck>,
+      %arg1: !struct.type<@NamedStructMemberInput> {function.arg_name = "input"},
+      %arg2: !felt.type {function.arg_name = "expected"}
+    ) {
+      %lhs = struct.readm %arg1[@lhs] : !struct.type<@NamedStructMemberInput>, !felt.type
+      constrain.eq %lhs, %arg2 : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @NamedStructMemberCheck ConstraintDependencyGraph {
+// CHECK-NEXT:     { input.lhs, expected }
+// CHECK-NEXT: }
+// INTRA-LABEL: @NamedStructMemberCheck ConstraintDependencyGraph {
+// INTRA-NEXT:     { input.lhs, expected }
 // INTRA-NEXT: }
 // -----
 
@@ -444,7 +588,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:     { %arg1[1], <felt.const: 7> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @MatrixConstrain ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@b], <felt.const: 7> }
+// CHECK-NEXT:     { %arg0.b, <felt.const: 7> }
 // CHECK-NEXT: }
 // INTRA-LABEL: @ArrayConstrain ConstraintDependencyGraph {
 // INTRA-NEXT:     { %arg1[1], <felt.const: 7> }
@@ -454,7 +598,7 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   poly.template @TUnknownArrayConstrain {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @UnknownArrayConstrain {
       function.def @compute(%arr: !array.type<@N x !felt.type>) -> !struct.type<@TUnknownArrayConstrain::@UnknownArrayConstrain<[@N]>> {
@@ -483,7 +627,7 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   poly.template @TUnknownArrayConstrain {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @UnknownArrayConstrain {
       function.def @compute(%arr: !array.type<@N x !felt.type>) -> !struct.type<@TUnknownArrayConstrain::@UnknownArrayConstrain<[@N]>> {
@@ -502,8 +646,8 @@ module attributes {llzk.lang} {
   }
 
   poly.template @TUnknownMatrixConstrain {
-    poly.param @M
-    poly.param @N
+    poly.param @M : index
+    poly.param @N : index
 
     struct.def @UnknownMatrixConstrain {
       struct.member @check : !struct.type<@TUnknownArrayConstrain::@UnknownArrayConstrain<[@N]>>
@@ -542,20 +686,20 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: @zir::@risc0::@ValU32 ConstraintDependencyGraph { }
 // CHECK-NEXT: @zir::@risc0::@Reg ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@reg], %arg1 }
+// CHECK-NEXT:     { %arg0.reg, %arg1 }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@risc0::@Div ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@reciprocal], %arg0[@synthetic_return], %arg1, %arg2 },
-// CHECK-NEXT:     { %arg0[@reciprocal], <felt.const: 1> },
+// CHECK-NEXT:     { %arg0.reciprocal, %arg0.synthetic_return, %arg1, %arg2 },
+// CHECK-NEXT:     { %arg0.reciprocal, <felt.const: 1> },
 // CHECK-NEXT:     { %arg2, <felt.const: 1> }
 // CHECK-NEXT: }
 // INTRA-LABEL: @zir::@risc0::@ValU32 ConstraintDependencyGraph { }
 // INTRA-NEXT: @zir::@risc0::@Reg ConstraintDependencyGraph {
-// INTRA-NEXT:     { %arg0[@reg], %arg1 }
+// INTRA-NEXT:     { %arg0.reg, %arg1 }
 // INTRA-NEXT: }
 // INTRA-NEXT: @zir::@risc0::@Div ConstraintDependencyGraph {
-// INTRA-NEXT:     { %arg0[@reciprocal], %arg0[@synthetic_return], %arg1, %arg2 },
-// INTRA-NEXT:     { %arg0[@reciprocal], <felt.const: 1> },
+// INTRA-NEXT:     { %arg0.reciprocal, %arg0.synthetic_return, %arg1, %arg2 },
+// INTRA-NEXT:     { %arg0.reciprocal, <felt.const: 1> },
 // INTRA-NEXT:     { %arg2, <felt.const: 1> }
 // INTRA-NEXT: }
 // -----
@@ -566,32 +710,32 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: @zir::@std::@risc0::@ValU32 ConstraintDependencyGraph { }
 // CHECK-NEXT: @zir::@std::@risc0::@Reg ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@reg], %arg1 }
+// CHECK-NEXT:     { %arg0.reg, %arg1 }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@std::@risc0::@Div ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@reciprocal], %arg0[@synthetic_return], %arg1, %arg2 },
-// CHECK-NEXT:     { %arg0[@reciprocal], <felt.const: 1> },
+// CHECK-NEXT:     { %arg0.reciprocal, %arg0.synthetic_return, %arg1, %arg2 },
+// CHECK-NEXT:     { %arg0.reciprocal, <felt.const: 1> },
 // CHECK-NEXT:     { %arg2, <felt.const: 1> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@C1 ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@z][@reg], %arg1, %arg2 }
+// CHECK-NEXT:     { %arg0.z.reg, %arg1, %arg2 }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@C2 ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@fc1][@z][@reg], %arg1[@low], %arg1[@high] },
-// CHECK-NEXT:     { %arg0[@fc1][@z][@reg], <felt.const: 0> }
+// CHECK-NEXT:     { %arg0.fc1.z.reg, %arg1.low, %arg1.high },
+// CHECK-NEXT:     { %arg0.fc1.z.reg, <felt.const: 0> }
 // CHECK-NEXT: }
 // INTRA-LABEL: @zir::@std::@risc0::@ValU32 ConstraintDependencyGraph { }
 // INTRA-NEXT: @zir::@std::@risc0::@Reg ConstraintDependencyGraph {
-// INTRA-NEXT:     { %arg0[@reg], %arg1 }
+// INTRA-NEXT:     { %arg0.reg, %arg1 }
 // INTRA-NEXT: }
 // INTRA-NEXT: @zir::@std::@risc0::@Div ConstraintDependencyGraph {
-// INTRA-NEXT:     { %arg0[@reciprocal], %arg0[@synthetic_return], %arg1, %arg2 },
-// INTRA-NEXT:     { %arg0[@reciprocal], <felt.const: 1> },
+// INTRA-NEXT:     { %arg0.reciprocal, %arg0.synthetic_return, %arg1, %arg2 },
+// INTRA-NEXT:     { %arg0.reciprocal, <felt.const: 1> },
 // INTRA-NEXT:     { %arg2, <felt.const: 1> }
 // INTRA-NEXT: }
 // INTRA-NEXT: @zir::@C1 ConstraintDependencyGraph { }
 // INTRA-NEXT: @zir::@C2 ConstraintDependencyGraph {
-// INTRA-NEXT:     { %arg0[@fc1][@z][@reg], <felt.const: 0> }
+// INTRA-NEXT:     { %arg0.fc1.z.reg, <felt.const: 0> }
 // INTRA-NEXT: }
 // -----
 
@@ -601,45 +745,45 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: @zir::@std::@risc0::@ValU32 ConstraintDependencyGraph { }
 // CHECK-NEXT: @zir::@std::@risc0::@Reg ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@reg], %arg1 }
+// CHECK-NEXT:     { %arg0.reg, %arg1 }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@std::@risc0::@Div ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@reciprocal], %arg0[@synthetic_return], %arg1, %arg2 },
-// CHECK-NEXT:     { %arg0[@reciprocal], <felt.const: 1> },
+// CHECK-NEXT:     { %arg0.reciprocal, %arg0.synthetic_return, %arg1, %arg2 },
+// CHECK-NEXT:     { %arg0.reciprocal, <felt.const: 1> },
 // CHECK-NEXT:     { %arg2, <felt.const: 1> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@AssertBit ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg1, <felt.const: 0>, <felt.const: 1> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@NondetBitReg ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@reg], %arg0[@synthetic_return] },
-// CHECK-NEXT:     { %arg0[@reg], <felt.const: 0>, <felt.const: 1> }
+// CHECK-NEXT:     { %arg0.reg, %arg0.synthetic_return },
+// CHECK-NEXT:     { %arg0.reg, <felt.const: 0>, <felt.const: 1> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@ArgU16 ConstraintDependencyGraph { }
 // CHECK-NEXT: @zir::@NondetU16Reg ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@arg][@count], <felt.const: 1> },
-// CHECK-NEXT:     { %arg0[@arg][@val], %arg0[@synthetic_return] }
+// CHECK-NEXT:     { %arg0.arg.count, <felt.const: 1> },
+// CHECK-NEXT:     { %arg0.arg.val, %arg0.synthetic_return }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@U16Reg ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@ret][@arg][@count], <felt.const: 1> },
-// CHECK-NEXT:     { %arg0[@ret][@arg][@val], %arg0[@ret][@synthetic_return], %arg0[@synthetic_return], %arg1 }
+// CHECK-NEXT:     { %arg0.ret.arg.count, <felt.const: 1> },
+// CHECK-NEXT:     { %arg0.ret.arg.val, %arg0.ret.synthetic_return, %arg0.synthetic_return, %arg1 }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@AddrDecomposeBits ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@low0][@reg], %arg0[@low0][@synthetic_return], %arg0[@low1][@reg], %arg0[@low1][@synthetic_return], %arg0[@low2], %arg0[@upperDiff][@ret][@arg][@val], %arg0[@upperDiff][@ret][@synthetic_return], %arg0[@upperDiff][@synthetic_return], %arg0[@med14][@arg][@val], %arg0[@med14][@synthetic_return], %arg0[@addr], %arg0[@synthetic_return], %arg1[@low], %arg1[@high], %arg2 },
-// CHECK-NEXT:     { %arg0[@low0][@reg], <felt.const: 0>, <felt.const: 1> },
-// CHECK-NEXT:     { %arg0[@low0][@synthetic_return], <felt.const: 0>, <felt.const: 1>, <felt.const: 2> },
-// CHECK-NEXT:     { %arg0[@low1][@reg], <felt.const: 0>, <felt.const: 1> },
-// CHECK-NEXT:     { %arg0[@low1][@synthetic_return], <felt.const: 0>, <felt.const: 1>, <felt.const: 2> },
-// CHECK-NEXT:     { %arg0[@low2], <felt.const: 2>, <felt.const: 4> },
-// CHECK-NEXT:     { %arg0[@upperDiff][@ret][@arg][@count], <felt.const: 1> },
-// CHECK-NEXT:     { %arg0[@upperDiff][@ret][@arg][@val], <felt.const: 1>, <felt.const: 49151>, <felt.const: 65535> },
-// CHECK-NEXT:     { %arg0[@upperDiff][@ret][@synthetic_return], <felt.const: 1>, <felt.const: 49151>, <felt.const: 65535> },
-// CHECK-NEXT:     { %arg0[@upperDiff][@synthetic_return], <felt.const: 1>, <felt.const: 49151>, <felt.const: 65535> },
-// CHECK-NEXT:     { %arg0[@med14][@arg][@count], <felt.const: 1> },
-// CHECK-NEXT:     { %arg0[@med14][@synthetic_return], <felt.const: 4>, <felt.const: 16384> },
-// CHECK-NEXT:     { %arg0[@addr], <felt.const: 16384> },
-// CHECK-NEXT:     { %arg1[@low], <felt.const: 4> },
-// CHECK-NEXT:     { %arg1[@high], <felt.const: 1>, <felt.const: 16384>, <felt.const: 49151>, <felt.const: 65535> },
+// CHECK-NEXT:     { %arg0.low0.reg, %arg0.low0.synthetic_return, %arg0.low1.reg, %arg0.low1.synthetic_return, %arg0.low2, %arg0.upperDiff.ret.arg.val, %arg0.upperDiff.ret.synthetic_return, %arg0.upperDiff.synthetic_return, %arg0.med14.arg.val, %arg0.med14.synthetic_return, %arg0.addr, %arg0.synthetic_return, %arg1.low, %arg1.high, %arg2 },
+// CHECK-NEXT:     { %arg0.low0.reg, <felt.const: 0>, <felt.const: 1> },
+// CHECK-NEXT:     { %arg0.low0.synthetic_return, <felt.const: 0>, <felt.const: 1>, <felt.const: 2> },
+// CHECK-NEXT:     { %arg0.low1.reg, <felt.const: 0>, <felt.const: 1> },
+// CHECK-NEXT:     { %arg0.low1.synthetic_return, <felt.const: 0>, <felt.const: 1>, <felt.const: 2> },
+// CHECK-NEXT:     { %arg0.low2, <felt.const: 2>, <felt.const: 4> },
+// CHECK-NEXT:     { %arg0.upperDiff.ret.arg.count, <felt.const: 1> },
+// CHECK-NEXT:     { %arg0.upperDiff.ret.arg.val, <felt.const: 1>, <felt.const: 49151>, <felt.const: 65535> },
+// CHECK-NEXT:     { %arg0.upperDiff.ret.synthetic_return, <felt.const: 1>, <felt.const: 49151>, <felt.const: 65535> },
+// CHECK-NEXT:     { %arg0.upperDiff.synthetic_return, <felt.const: 1>, <felt.const: 49151>, <felt.const: 65535> },
+// CHECK-NEXT:     { %arg0.med14.arg.count, <felt.const: 1> },
+// CHECK-NEXT:     { %arg0.med14.synthetic_return, <felt.const: 4>, <felt.const: 16384> },
+// CHECK-NEXT:     { %arg0.addr, <felt.const: 16384> },
+// CHECK-NEXT:     { %arg1.low, <felt.const: 4> },
+// CHECK-NEXT:     { %arg1.high, <felt.const: 1>, <felt.const: 16384>, <felt.const: 49151>, <felt.const: 65535> },
 // CHECK-NEXT:     { %arg2, <felt.const: 1>, <felt.const: 49151>, <felt.const: 65535> }
 // CHECK-NEXT: }
 
@@ -652,17 +796,17 @@ module attributes {llzk.lang} {
 // COM: @zir::@B now tracks the empty array.new allocation site as a root in the
 // COM: interprocedural graph, but remains empty intraprocedurally.
 // CHECK-LABEL: @zir::@THead::@Head ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@$super], %arg1[0] }
+// CHECK-NEXT:     { %arg0.$super, %arg1[0] }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@TA::@A ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@$super][@$super], @A<[@N]> }
+// CHECK-NEXT:     { %arg0.$super.$super, @A<[@N]> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@B ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@$super][@$super], %array[0] }
+// CHECK-NEXT:     { %arg0.$super.$super, %array[0] }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@Top ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@a][@$super][@$super], %arg0[@b][@$super][@$super][@$super][@$super] },
-// CHECK-NEXT:     { %arg0[@a][@$super][@$super], @A<[@N]> }
+// CHECK-NEXT:     { %arg0.a.$super.$super, %arg0.b.$super.$super.$super.$super },
+// CHECK-NEXT:     { %arg0.a.$super.$super, @A<[@N]> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @zir::@VoidComponent ConstraintDependencyGraph { }
 
@@ -679,13 +823,13 @@ module attributes {llzk.lang} {
 // CHECK-NEXT: @bits::@NondetExtReg ConstraintDependencyGraph { }
 // CHECK-NEXT: @bits::@EqzExt ConstraintDependencyGraph { }
 // CHECK-NEXT: @bits::@Reg ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@reg][@$super], %arg1 }
+// CHECK-NEXT:     { %arg0.reg.$super, %arg1 }
 // CHECK-NEXT: }
 // COM: ExtReg is unconstrained due to a front-end bug
 // CHECK-NEXT: @bits::@ExtReg ConstraintDependencyGraph { }
 // CHECK-NEXT: @bits::@Div ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@reciprocal], %arg2 },
-// CHECK-NEXT:     { %arg0[@reciprocal], <felt.const: 1> },
+// CHECK-NEXT:     { %arg0.reciprocal, %arg2 },
+// CHECK-NEXT:     { %arg0.reciprocal, <felt.const: 1> },
 // CHECK-NEXT:     { %arg2, <felt.const: 1> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @bits::@Log ConstraintDependencyGraph { }
@@ -695,47 +839,47 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:     { %arg1, <felt.const: 0>, <felt.const: 1> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @bits::@NondetBitReg ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@reg][@$super], <felt.const: 0>, <felt.const: 1> }
+// CHECK-NEXT:     { %arg0.reg.$super, <felt.const: 0>, <felt.const: 1> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @bits::@BitReg ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@reg][@$super][@$super], %arg1 },
-// CHECK-NEXT:     { %arg0[@reg][@reg][@$super], <felt.const: 0>, <felt.const: 1> }
+// CHECK-NEXT:     { %arg0.reg.$super.$super, %arg1 },
+// CHECK-NEXT:     { %arg0.reg.reg.$super, <felt.const: 0>, <felt.const: 1> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @bits::@AssertTwit ConstraintDependencyGraph {
 // CHECK-NEXT:     { %arg1, <felt.const: 0>, <felt.const: 1>, <felt.const: 2>, <felt.const: 3> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @bits::@BitAnd ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@$temp][@reg][@$super], %arg1, %arg2 }
+// CHECK-NEXT:     { %arg0.$temp.reg.$super, %arg1, %arg2 }
 // CHECK-NEXT: }
 // CHECK-NEXT: @bits::@BitOr ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@$temp][@reg][@$super], %arg1, %arg2 },
-// CHECK-NEXT:     { %arg0[@$temp][@reg][@$super], <felt.const: 1> },
+// CHECK-NEXT:     { %arg0.$temp.reg.$super, %arg1, %arg2 },
+// CHECK-NEXT:     { %arg0.$temp.reg.$super, <felt.const: 1> },
 // CHECK-NEXT:     { %arg1, <felt.const: 1> },
 // CHECK-NEXT:     { %arg2, <felt.const: 1> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @bits::@NondetTwitReg ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@reg][@$super], <felt.const: 0>, <felt.const: 1>, <felt.const: 2>, <felt.const: 3> }
+// CHECK-NEXT:     { %arg0.reg.$super, <felt.const: 0>, <felt.const: 1>, <felt.const: 2>, <felt.const: 3> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @bits::@NondetFakeTwitReg ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@reg1][@reg][@$super], <felt.const: 0>, <felt.const: 1> },
-// CHECK-NEXT:     { %arg0[@$temp_1][@reciprocal], <felt.const: 1>, <felt.const: 2> },
-// CHECK-NEXT:     { %arg0[@$temp_0][@$temp][@reg][@$super], %arg0[@$temp][@$temp][@reg][@$super], %arg1 },
-// CHECK-NEXT:     { %arg0[@$temp_0][@$temp][@reg][@$super], <felt.const: 2> },
-// CHECK-NEXT:     { %arg0[@reg0][@reg][@$super], <felt.const: 0>, <felt.const: 1> },
-// CHECK-NEXT:     { %arg0[@$temp][@$temp][@reg][@$super], <felt.const: 1> },
+// CHECK-NEXT:     { %arg0.reg1.reg.$super, <felt.const: 0>, <felt.const: 1> },
+// CHECK-NEXT:     { %arg0.$temp_1.reciprocal, <felt.const: 1>, <felt.const: 2> },
+// CHECK-NEXT:     { %arg0.$temp_0.$temp.reg.$super, %arg0.$temp.$temp.reg.$super, %arg1 },
+// CHECK-NEXT:     { %arg0.$temp_0.$temp.reg.$super, <felt.const: 2> },
+// CHECK-NEXT:     { %arg0.reg0.reg.$super, <felt.const: 0>, <felt.const: 1> },
+// CHECK-NEXT:     { %arg0.$temp.$temp.reg.$super, <felt.const: 1> },
 // CHECK-NEXT:     { %arg1, <felt.const: 1>, <felt.const: 2> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @bits::@TwitReg ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@reg][@$super][@$super], %arg1 },
-// CHECK-NEXT:     { %arg0[@reg][@reg][@$super], <felt.const: 0>, <felt.const: 1>, <felt.const: 2>, <felt.const: 3> }
+// CHECK-NEXT:     { %arg0.reg.$super.$super, %arg1 },
+// CHECK-NEXT:     { %arg0.reg.reg.$super, <felt.const: 0>, <felt.const: 1>, <felt.const: 2>, <felt.const: 3> }
 // CHECK-NEXT: }
 // CHECK-NEXT: @bits::@FakeTwitReg ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@reg][@$super], %arg0[@reg][@$temp_0][@$temp][@reg][@$super], %arg0[@reg][@$temp][@$temp][@reg][@$super], %arg1 },
-// CHECK-NEXT:     { %arg0[@reg][@reg1][@reg][@$super], <felt.const: 0>, <felt.const: 1> },
-// CHECK-NEXT:     { %arg0[@reg][@$temp_1][@reciprocal], <felt.const: 1>, <felt.const: 2> },
-// CHECK-NEXT:     { %arg0[@reg][@$temp_0][@$temp][@reg][@$super], <felt.const: 1>, <felt.const: 2> },
-// CHECK-NEXT:     { %arg0[@reg][@reg0][@reg][@$super], <felt.const: 0>, <felt.const: 1> },
-// CHECK-NEXT:     { %arg0[@reg][@$temp][@$temp][@reg][@$super], <felt.const: 1>, <felt.const: 2> },
+// CHECK-NEXT:     { %arg0.reg.$super, %arg0.reg.$temp_0.$temp.reg.$super, %arg0.reg.$temp.$temp.reg.$super, %arg1 },
+// CHECK-NEXT:     { %arg0.reg.reg1.reg.$super, <felt.const: 0>, <felt.const: 1> },
+// CHECK-NEXT:     { %arg0.reg.$temp_1.reciprocal, <felt.const: 1>, <felt.const: 2> },
+// CHECK-NEXT:     { %arg0.reg.$temp_0.$temp.reg.$super, <felt.const: 1>, <felt.const: 2> },
+// CHECK-NEXT:     { %arg0.reg.reg0.reg.$super, <felt.const: 0>, <felt.const: 1> },
+// CHECK-NEXT:     { %arg0.reg.$temp.$temp.reg.$super, <felt.const: 1>, <felt.const: 2> },
 // CHECK-NEXT:     { %arg1, <felt.const: 1>, <felt.const: 2> }
 // CHECK-NEXT: }
 
@@ -768,7 +912,7 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @ExternAdder ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@sum], <call @extern_add %[[ADD_RESULT:[0-9]+]]> }
+// CHECK-NEXT:     { %arg0.sum, <call @extern_add %[[ADD_RESULT:[0-9]+]]> }
 // CHECK-NEXT: }
 
 // -----
@@ -789,7 +933,7 @@ module attributes {llzk.lang} {
     }
   }
 
-  function.def private @extern_wrap(%value: !felt.type) -> !struct.type<@ExternPayload> attributes {extern}
+  function.def private @extern_wrap(%value: !felt.type) -> (!struct.type<@ExternPayload> {function.res_name = "payload"}) attributes {extern}
 
   struct.def @ExternMemberDependency {
     struct.member @value : !felt.type {llzk.pub}
@@ -810,7 +954,7 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @ExternMemberDependency ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@value], <call @extern_wrap %[[WRAP_RESULT:[0-9]+]]>[@value] }
+// CHECK-NEXT:     { %arg0.value, payload.value }
 // CHECK-NEXT: }
 
 // -----
@@ -831,7 +975,7 @@ module attributes {llzk.lang} {
     }
   }
 
-  function.def private @extern_wrap(%value: !felt.type) -> !struct.type<@ExternPayload> attributes {extern}
+  function.def private @extern_wrap(%value: !felt.type) -> (!struct.type<@ExternPayload> {function.res_name = "payload"}) attributes {extern}
 
   struct.def @ExternRepeatedMemberDependency {
     struct.member @lhs : !felt.type {llzk.pub}
@@ -857,15 +1001,15 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @ExternRepeatedMemberDependency ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@lhs], <call @extern_wrap %[[LEFT_WRAP_RESULT:[0-9]+]]>[@value] }
-// CHECK-NEXT:     { %arg0[@rhs], <call @extern_wrap %[[RIGHT_WRAP_RESULT:[0-9]+]]>[@value] }
+// CHECK-NEXT:     { %arg0.lhs, <call @extern_wrap %[[LEFT_WRAP_RESULT:[0-9]+]]>.value }
+// CHECK-NEXT:     { %arg0.rhs, <call @extern_wrap %[[RIGHT_WRAP_RESULT:[0-9]+]]>.value }
 // CHECK-NEXT: }
 
 // -----
 
 module attributes {llzk.lang} {
 
-  function.def private @extern_pair(%value: !felt.type) -> (!felt.type, !felt.type) attributes {extern}
+  function.def private @extern_pair(%value: !felt.type) -> (!felt.type {function.res_name = "left"}, !felt.type {function.res_name = "right"}) attributes {extern}
 
   struct.def @ExternPairDependency {
     struct.member @lhs : !felt.type {llzk.pub}
@@ -888,8 +1032,8 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @ExternPairDependency ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@lhs], <call @extern_pair %[[PAIR_RESULT:[0-9]+]]#0> }
-// CHECK-NEXT:     { %arg0[@rhs], <call @extern_pair %[[PAIR_RESULT]]#1> }
+// CHECK-NEXT:     { %arg0.lhs, left }
+// CHECK-NEXT:     { %arg0.rhs, right }
 // CHECK-NEXT: }
 
 // -----
@@ -925,7 +1069,7 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @Adder2 ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0[@sum], %arg1, %arg2 }
+// CHECK-NEXT:     { %arg0.sum, %arg1, %arg2 }
 // CHECK-NEXT: }
 
 // -----
@@ -933,7 +1077,7 @@ module attributes {llzk.lang} {
 #map = affine_map<()[s0] -> (s0)>
 module attributes {llzk.lang} {
   poly.template @TFoo {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @Foo {
       struct.member @"$temp_0" : !array.type<#map x !felt.type> {column}
@@ -944,7 +1088,7 @@ module attributes {llzk.lang} {
         %c0 = arith.constant 0 : index
         %c1 = arith.constant 1 : index
         %self = struct.new : <@TFoo::@Foo<[@N]>>
-        %0 = poly.read_const @N : !felt.type
+        %0 = poly.read_const @N : index
         %1 = poly.read_const @N : index
         %array = array.new{()[%1]} : <#map x !felt.type>
         %2 = poly.read_const @N : index
@@ -994,7 +1138,7 @@ module attributes {llzk.lang} {
       function.def @constrain(%arg0: !struct.type<@TFoo::@Foo<[@N]>>,  %arg1: !array.type<@N x !felt.type>) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
         %c0 = arith.constant 0 : index
         %c1 = arith.constant 1 : index
-        %0 = poly.read_const @N : !felt.type
+        %0 = poly.read_const @N : index
         %1 = poly.read_const @N : index
         %array = array.new{()[%1]} : <#map x !felt.type>
         %2 = poly.read_const @N : index
@@ -1050,7 +1194,7 @@ module attributes {llzk.lang} {
 #map = affine_map<()[s0] -> (s0)>
 module attributes {llzk.lang} {
   poly.template @TFoo {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @Foo {
       function.def @compute(%arg0: !array.type<@N x !felt.type>) -> !struct.type<@TFoo::@Foo<[@N]>> attributes {function.allow_witness} {
@@ -1149,5 +1293,37 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @CallTranslatedIntervals ConstraintDependencyGraph {
-// CHECK-NEXT:      { %arg0[@out], <felt.const: 7> }
+// CHECK-NEXT:      { %arg0.out, <felt.const: 7> }
 // CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @PodInitializedRoot {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%arg0: !felt.type) -> !struct.type<@PodInitializedRoot> {
+      %self = struct.new : !struct.type<@PodInitializedRoot>
+      struct.writem %self[@out] = %arg0 : !struct.type<@PodInitializedRoot>, !felt.type
+      function.return %self : !struct.type<@PodInitializedRoot>
+    }
+
+    function.def @constrain(%arg0: !struct.type<@PodInitializedRoot>, %arg1: !felt.type) {
+      %expected = struct.readm %arg0[@out] : !struct.type<@PodInitializedRoot>, !felt.type
+      %c1 = arith.constant 1 : index
+      %pod = pod.new { @count = %c1, @value = %arg1 } : !pod.type<[@count: index, @value: !felt.type]>
+      %count = pod.read %pod[@count] : !pod.type<[@count: index, @value: !felt.type]>, index
+      pod.write %pod[@count] = %count : !pod.type<[@count: index, @value: !felt.type]>, index
+      %actual = pod.read %pod[@value] : !pod.type<[@count: index, @value: !felt.type]>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @PodInitializedRoot ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg0.out, %pod.value }
+// CHECK-NEXT: }
+// INTRA-LABEL: @PodInitializedRoot ConstraintDependencyGraph {
+// INTRA-NEXT:     { %arg0.out, %pod.value }
+// INTRA-NEXT: }

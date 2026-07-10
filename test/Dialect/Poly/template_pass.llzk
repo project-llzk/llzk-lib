@@ -92,8 +92,8 @@ module attributes {llzk.lang} {
   poly.template @template_f {
     poly.param @In
     poly.param @Out
-    poly.param @N1
-    poly.param @N2
+    poly.param @N1 : index
+    poly.param @N2 : index
 
     function.def @f(%inp: !poly.tvar<@In>) -> !poly.tvar<@Out> {
       %1 = poly.unifiable_cast %inp : (!poly.tvar<@In>) -> !array.type<@N1,@N2 x !poly.tvar<@Out>>
@@ -114,8 +114,8 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @template_f {
 // CHECK-NEXT:      poly.param @In
 // CHECK-NEXT:      poly.param @Out
-// CHECK-NEXT:      poly.param @N1
-// CHECK-NEXT:      poly.param @N2
+// CHECK-NEXT:      poly.param @N1 : index
+// CHECK-NEXT:      poly.param @N2 : index
 // CHECK-NEXT:      function.def @f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !poly.tvar<@In>) -> !poly.tvar<@Out> {
 // CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (!poly.tvar<@In>) -> !array.type<@N1,@N2 x !poly.tvar<@Out>>
 // CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
@@ -135,7 +135,7 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   poly.template @template_f1 {
-    poly.param @N
+    poly.param @N : index
 
     function.def @f(%inp: !array.type<8,5,@N x !felt.type>) -> !array.type<@N x !felt.type> {
       %c0 = arith.constant 0 : index
@@ -145,7 +145,7 @@ module attributes {llzk.lang} {
   }
 
   poly.template @template_f2 {
-    poly.param @N
+    poly.param @N : index
 
     function.def @f(%inp: !array.type<8,@N x !felt.type>) -> !felt.type {
       %c0 = arith.constant 0 : index
@@ -162,7 +162,7 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @template_f1 {
-// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.param @N : index
 // CHECK-NEXT:      function.def @f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<8,5,@N x !felt.type>) -> !array.type<@N x !felt.type> {
 // CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_1]], %[[VAL_1]]] : <8,5,@N x !felt.type>
@@ -170,7 +170,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @template_f2 {
-// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.param @N : index
 // CHECK-NEXT:      function.def @f(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<8,@N x !felt.type>) -> !felt.type {
 // CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_4]], %[[VAL_4]]] : <8,@N x !felt.type>, !felt.type
