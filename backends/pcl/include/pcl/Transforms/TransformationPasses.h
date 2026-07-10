@@ -2,21 +2,21 @@
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
-// Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
 
 #pragma once
 
-#include "llzk/Config/Config.h"
 #include "llzk/Pass/PassBase.h"
-#include "llzk/Transforms/Parsers.h"
 
-namespace pcl::conversion {
+#include <mlir/IR/BuiltinOps.h>
+namespace pcl {
 
-#define GEN_PASS_DECL
+std::unique_ptr<mlir::Pass> createPrintPass();
+
 #define GEN_PASS_REGISTRATION
-#include "pcl-conv/Transforms/TransformationPasses.h.inc"
+#include "pcl/Transforms/TransformationPasses.h.inc"
 
-} // namespace pcl::conversion
+}; // namespace pcl

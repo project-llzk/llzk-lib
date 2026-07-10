@@ -51,38 +51,6 @@
         "type": "github"
       }
     },
-    "pcl-mlir-pkg": {
-      "inputs": {
-        "flake-utils": [
-          "llzk-pkgs",
-          "flake-utils"
-        ],
-        "nixpkgs": [
-          "llzk-pkgs",
-          "nixpkgs"
-        ],
-        "release-helpers": [
-          "release-helpers"
-        ],
-        "shared-pkgs": [
-          "llzk-pkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1783529664,
-        "narHash": "sha256-iZ8W2H+1Ed2hnmue1NcyPIvYvQ9w3lv3uEUIcMcdKYk=",
-        "owner": "Veridise",
-        "repo": "pcl-mlir",
-        "rev": "d19e84e4578a2c2be3dd6fd8d1539984ef355ce8",
-        "type": "github"
-      },
-      "original": {
-        "owner": "Veridise",
-        "ref": "dani/as-felt-op",
-        "repo": "pcl-mlir",
-        "type": "github"
-      }
-    },
     "release-helpers": {
       "inputs": {
         "flake-utils": [
@@ -119,7 +87,6 @@
           "llzk-pkgs",
           "nixpkgs"
         ],
-        "pcl-mlir-pkg": "pcl-mlir-pkg",
         "release-helpers": "release-helpers"
       }
     }
