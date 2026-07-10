@@ -10,7 +10,6 @@
 //   build/bin/llzk-opt test/Migration/v1_syntax.llzk.bc | scripts/generate-test-checks.py
 // [use this output to update test/Migration/v1_syntax_check.llzk]
 
-
 #mapSum = affine_map<()[s0, s1] -> (s0 + s1)>
 #dynLen = affine_map<(d0) -> (d0 * 5 + 1)>
 
