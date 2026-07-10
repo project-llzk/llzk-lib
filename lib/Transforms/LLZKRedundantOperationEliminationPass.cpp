@@ -17,6 +17,7 @@
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/SymbolHelper.h"
 
@@ -266,7 +267,9 @@ class PassImpl : public llzk::impl::RedundantOperationEliminationPassBase<PassIm
 
     while (!unusedOps.empty()) {
       Operation *op = unusedOps.pop_back_val();
-      if (!isOpTriviallyDead(op)) {
+      // Member reads have no observable effect, but do not implement MLIR's
+      // MemoryEffectOpInterface and are therefore not trivially dead.
+      if (!isOpTriviallyDead(op) && !(isa<MemberReadOp>(op) && op->use_empty())) {
         continue;
       }
       for (Value operand : op->getOperands()) {
