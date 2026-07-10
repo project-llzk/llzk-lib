@@ -1,0 +1,31 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s
+
+// COM: Once an array-of-POD value is split into parallel leaf arrays, step 2 cannot soundly
+// COM: collapse those pieces back into one non-array SSA value for `poly.unifiable_cast`.
+// COM: Supporting this would require aggregate reification or extra signature/template rewriting.
+
+#map = affine_map<()[s0] -> (s0)>
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  poly.template @CastArrayPodToTypeVar {
+    poly.param @T_return : !poly.tvar<@T_return>
+    function.def @main(%arr: !array.type<#map x !Pair>) -> !poly.tvar<@T_return> {
+      // expected-error@+1 {{'poly.unifiable_cast' op cannot lower a split array-of-POD input to a non-array result without materializing the aggregate or rewriting the surrounding function/template signature}}
+      %cast = poly.unifiable_cast %arr : (!array.type<#map x !Pair>) -> !poly.tvar<@T_return>
+      function.return %cast : !poly.tvar<@T_return>
+    }
+  }
+}
+// -----
+
+!Empty = !pod.type<[]>
+module attributes {llzk.lang} {
+  poly.template @CastEmptyArrayPodToTypeVar {
+    poly.param @T_return : !poly.tvar<@T_return>
+    function.def @main(%arr: !array.type<2 x !Empty>) -> !poly.tvar<@T_return> {
+      // expected-error@+1 {{'poly.unifiable_cast' op cannot lower a split array-of-POD input to a non-array result without materializing the aggregate or rewriting the surrounding function/template signature}}
+      %cast = poly.unifiable_cast %arr : (!array.type<2 x !Empty>) -> !poly.tvar<@T_return>
+      function.return %cast : !poly.tvar<@T_return>
+    }
+  }
+}

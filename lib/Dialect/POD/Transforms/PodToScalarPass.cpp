@@ -2500,53 +2500,14 @@ public:
     ArrayType inputArrTy = splittablePodArray(op.getInput().getType());
     ArrayType resultArrTy = splittablePodArray(op.getType());
 
-    // When only the input is split, rebuild the aggregate input and preserve the original
-    // scalar/tvar result cast.
+    // Lowering a split array-of-POD input to one non-array SSA value would require either
+    // materializing the original aggregate or rewriting the surrounding function/template
+    // signature to thread separate generic pieces.
     if (inputArrTy && !resultArrTy) {
-      SmallVector<Type> inputSplitTypes;
-      splitPodArrayTypeTo(inputArrTy, inputSplitTypes);
-
-      SmallVector<Value> splitInputs;
-      collectSplitPodArrayOperandValues(
-          op.getLoc(), op.getInput(), adaptor.getInput(), splitInputs, rewriter
+      return rewriter.notifyMatchFailure(
+          op, "array-of-pod input to non-array result requires aggregate materialization or "
+              "signature/template rewriting"
       );
-      ValueRange splitInputLeaves = getConvertedPodArrayLeafValues(inputArrTy, splitInputs);
-      if (inputSplitTypes.empty()) {
-        if (splitInputs.size() != 1) {
-          return rewriter.notifyMatchFailure(
-              op, "expected one shape carrier for zero-leaf array-of-pod cast input"
-          );
-        }
-      } else if (splitInputLeaves.size() != inputSplitTypes.size()) {
-        return rewriter.notifyMatchFailure(
-            op, "failed to collect one split input per array-of-pod cast leaf"
-        );
-      }
-
-      // `poly.unifiable_cast` to a non-array target cannot preserve all split leaf values in one
-      // SSA value without reintroducing aggregate array-of-POD materialization. Zero-leaf arrays
-      // are represented only by their threaded shape carrier, so use that value directly instead
-      // of searching the empty leaf range.
-      Value compatibleInput;
-      if (inputSplitTypes.empty()) {
-        compatibleInput = splitInputs.front();
-      } else {
-        auto it = llvm::find_if(splitInputLeaves, [&op](Value v) {
-          return typesUnify(v.getType(), op.getType());
-        });
-        if (it == splitInputLeaves.end()) {
-          return rewriter.notifyMatchFailure(
-              op, "failed to find split array leaf type compatible with cast target"
-          );
-        }
-        compatibleInput = *it;
-      }
-
-      rewriter.replaceOpWithNewOp<UnifiableCastOp>(
-          op, op.getType(),
-          castValueToTypeIfNeeded(rewriter, op.getLoc(), compatibleInput, op.getType())
-      );
-      return success();
     }
 
     if (!inputArrTy) {
@@ -3652,20 +3613,36 @@ public:
   }
 };
 
-/// Reject `poly.unifiable_cast` from a generic input to an array-of-POD result until step 2 can
-/// split the surrounding function/template signature to carry one compatible value per leaf.
-static LogicalResult rejectUnsupportedGenericPodArrayResultCasts(ModuleOp modOp) {
+/// Reject whole-array `poly.unifiable_cast` cases that step 2 cannot lower soundly without either
+/// reifying the aggregate array-of-POD value or rewriting surrounding function/template
+/// signatures.
+static LogicalResult rejectUnsupportedPodArrayUnifiableCasts(ModuleOp modOp) {
   WalkResult result = modOp.walk([](UnifiableCastOp op) {
-    if (!splittablePodArray(op.getType()) || splittablePodArray(op.getInput().getType())) {
+    ArrayType inputArrTy = splittablePodArray(op.getInput().getType());
+    ArrayType resultArrTy = splittablePodArray(op.getType());
+    if (!inputArrTy && !resultArrTy) {
       return WalkResult::advance();
     }
-    op.emitOpError()
-        .append(
-            "cannot lower a generic input to a split array-of-POD result without rewriting the "
-            "surrounding function/template signature"
-        )
-        .report();
-    return WalkResult::interrupt();
+    if (!inputArrTy && resultArrTy) {
+      op.emitOpError()
+          .append(
+              "cannot lower a generic input to a split array-of-POD result without rewriting "
+              "the surrounding function/template signature"
+          )
+          .report();
+      return WalkResult::interrupt();
+    }
+    if (inputArrTy && !resultArrTy) {
+      op.emitOpError()
+          .append(
+              "cannot lower a split array-of-POD input to a non-array result without "
+              "materializing the aggregate or rewriting the surrounding function/template "
+              "signature"
+          )
+          .report();
+      return WalkResult::interrupt();
+    }
+    return WalkResult::advance();
   });
   return failure(result.wasInterrupted());
 }
@@ -3673,7 +3650,7 @@ static LogicalResult rejectUnsupportedGenericPodArrayResultCasts(ModuleOp modOp)
 /// Split arrays-of-POD into parallel arrays before direct pod scalarization.
 static LogicalResult
 step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementMap &memberRepMap) {
-  if (failed(rejectUnsupportedGenericPodArrayResultCasts(modOp))) {
+  if (failed(rejectUnsupportedPodArrayUnifiableCasts(modOp))) {
     return failure();
   }
 

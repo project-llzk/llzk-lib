@@ -40,51 +40,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
-#map = affine_map<()[s0] -> (s0)>
-!Pair = !pod.type<[@x: index, @y: !felt.type]>
-module attributes {llzk.lang} {
-  poly.template @CastToTypeVar {
-    poly.param @T_return : !poly.tvar<@T_return>
-    function.def @main(%arr: !array.type<#map x !Pair>) -> !poly.tvar<@T_return> {
-      %cast = poly.unifiable_cast %arr : (!array.type<#map x !Pair>) -> !poly.tvar<@T_return>
-      function.return %cast : !poly.tvar<@T_return>
-    }
-  }
-}
-// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    poly.template @CastToTypeVar {
-// CHECK-NEXT:      poly.param @T_return : !poly.tvar<@T_return>
-// CHECK-NEXT:      function.def @main(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x none>) -> !poly.tvar<@T_return> {
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (!array.type<#[[$M]] x index>) -> !poly.tvar<@T_return>
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_3]] : (!poly.tvar<@T_return>) -> !poly.tvar<@T_return>
-// CHECK-NEXT:        function.return %[[VAL_4]] : !poly.tvar<@T_return>
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-// -----
-
-module attributes {llzk.lang} {
-  poly.template @CastEmptyArrayToTypeVar {
-    poly.param @T_return : !poly.tvar<@T_return>
-    function.def @main(%arr: !array.type<2 x !pod.type<[]>>) -> !poly.tvar<@T_return> {
-      %cast = poly.unifiable_cast %arr : (!array.type<2 x !pod.type<[]>>) -> !poly.tvar<@T_return>
-      function.return %cast : !poly.tvar<@T_return>
-    }
-  }
-}
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    poly.template @CastEmptyArrayToTypeVar {
-// CHECK-NEXT:      poly.param @T_return : !poly.tvar<@T_return>
-// CHECK-NEXT:      function.def @main(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2 x none>) -> !poly.tvar<@T_return> {
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (!array.type<2 x none>) -> !poly.tvar<@T_return>
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_1]] : (!poly.tvar<@T_return>) -> !poly.tvar<@T_return>
-// CHECK-NEXT:        function.return %[[VAL_2]] : !poly.tvar<@T_return>
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-// -----
-
 // COM: ensures `unrealized_conversion_cast` that was unreleated to this pass is preserved
 module attributes {llzk.lang} {
   function.def @preserve_unrelated_cast(%flag: i1) -> !felt.type {
