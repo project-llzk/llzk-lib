@@ -45,9 +45,8 @@ TEST_F(CAPITest, llzk_aux_op_rejects_non_felt_result) {
   MlirOpBuilder builder = mlirOpBuilderCreate(context);
   MlirLocation location = mlirLocationUnknownGet(context);
   MlirType result = createIndexType();
-  MlirOperationState state = mlirOperationStateGet(
-      mlirStringRefCreateFromCString("llzk.aux"), location
-  );
+  MlirOperationState state =
+      mlirOperationStateGet(mlirStringRefCreateFromCString("llzk.aux"), location);
   mlirOperationStateAddResults(&state, 1, &result);
   MlirOperation op = mlirOperationCreate(&state);
 
@@ -79,4 +78,3 @@ std::unique_ptr<AuxOpBuildFuncHelper> AuxOpBuildFuncHelper::get() {
   };
   return std::make_unique<Impl>();
 }
-
