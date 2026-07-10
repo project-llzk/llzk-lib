@@ -1,0 +1,8 @@
+added:
+  - verification that `poly.param` and `poly.expr` bindings that are used as array indices are of type `index`
+
+fixed:
+  - type checking of function call template arguments incorrectly rejected symbol-refs
+
+removed:
+  - backwards compatibility with v1 bytecode that uses struct parameters as array dimensions

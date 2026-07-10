@@ -287,7 +287,7 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   poly.template @TComponent04A {
-    poly.param @A
+    poly.param @A : index
 
     struct.def @Component04A {
       struct.member @f : !array.type<@A,@A x index>
@@ -367,7 +367,7 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   poly.template @TComponent05 {
-    poly.param @S
+    poly.param @S : index
     poly.param @T
 
     struct.def @Component05 {
@@ -492,7 +492,7 @@ module attributes {llzk.lang} {
   }
 
   poly.template @TComponent06B {
-    poly.param @T
+    poly.param @T : index
 
     struct.def @Component06B {
       struct.member @f2 : !struct.type<@TComponent06A::@Component06A<[!array.type<@T x i1>]>>
@@ -527,7 +527,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: poly.template @TComponent06B {
-// CHECK-NEXT:    poly.param @T
+// CHECK-NEXT:    poly.param @T : index
 // CHECK-NEXT:    struct.def @Component06B {
 // CHECK-NEXT:      struct.member @f2 : !struct.type<@TComponent06A::@Component06A<[!array.type<@T x i1>]>>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TComponent06B::@Component06B<[@T]>> attributes {function.allow_witness} {
@@ -566,7 +566,7 @@ module attributes {llzk.lang} {
   }
 
   poly.template @TComponent07B {
-    poly.param @T
+    poly.param @T : index
 
     struct.def @Component07B {
       struct.member @f2 : !struct.type<@TComponent07A::@Component07A<[!array.type<@T x i1>]>>
@@ -629,7 +629,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: poly.template @TComponent07B {
-// CHECK-NEXT:    poly.param @T
+// CHECK-NEXT:    poly.param @T : index
 // CHECK-NEXT:    struct.def @Component07B {
 // CHECK-NEXT:      struct.member @f2 : !struct.type<@TComponent07A::@Component07A<[!array.type<@T x i1>]>>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TComponent07B::@Component07B<[@T]>> attributes {function.allow_witness} {
