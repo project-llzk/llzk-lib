@@ -116,12 +116,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@BranchSinkAuxPlacement>
 // CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@BranchSinkAuxPlacement>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(
-// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@BranchSinkAuxPlacement>,
-// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type,
-// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type,
-// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]]: i1
-// CHECK-NEXT:      ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@BranchSinkAuxPlacement>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_7:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
 // CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = llzk.aux : !felt.type
 // CHECK-NEXT:        scf.if %[[VAL_7]] {
 // CHECK-NEXT:          constrain.eq %[[VAL_8]], %[[VAL_5]] : !felt.type, !felt.type
@@ -165,12 +160,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@BranchLocalAuxPlacement>
 // CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@BranchLocalAuxPlacement>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(
-// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@BranchLocalAuxPlacement>,
-// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type,
-// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type,
-// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]]: i1
-// CHECK-NEXT:      ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@BranchLocalAuxPlacement>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_7:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
 // CHECK-NEXT:        scf.if %[[VAL_7]] {
 // CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = llzk.aux : !felt.type
 // CHECK-NEXT:          constrain.eq %[[VAL_8]], %[[VAL_5]] : !felt.type, !felt.type
