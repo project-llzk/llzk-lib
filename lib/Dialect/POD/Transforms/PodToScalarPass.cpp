@@ -2551,7 +2551,7 @@ public:
 
     if (!inputArrTy) {
       return rewriter.notifyMatchFailure(
-          op, "expected array-of-pod cast input when rewriting array-of-pod cast result"
+          op, "generic input to array-of-pod result requires signature/template rewriting"
       );
     }
 
@@ -3652,9 +3652,31 @@ public:
   }
 };
 
+/// Reject `poly.unifiable_cast` from a generic input to an array-of-POD result until step 2 can
+/// split the surrounding function/template signature to carry one compatible value per leaf.
+static LogicalResult rejectUnsupportedGenericPodArrayResultCasts(ModuleOp modOp) {
+  WalkResult result = modOp.walk([](UnifiableCastOp op) {
+    if (!splittablePodArray(op.getType()) || splittablePodArray(op.getInput().getType())) {
+      return WalkResult::advance();
+    }
+    op.emitOpError()
+        .append(
+            "cannot lower a generic input to a split array-of-POD result without rewriting the "
+            "surrounding function/template signature"
+        )
+        .report();
+    return WalkResult::interrupt();
+  });
+  return failure(result.wasInterrupted());
+}
+
 /// Split arrays-of-POD into parallel arrays before direct pod scalarization.
 static LogicalResult
 step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementMap &memberRepMap) {
+  if (failed(rejectUnsupportedGenericPodArrayResultCasts(modOp))) {
+    return failure();
+  }
+
   MLIRContext *ctx = modOp.getContext();
   PodArrayTypeConverter typeConverter;
   CompatiblePodLeafMaterializationMap materializedLeaves;

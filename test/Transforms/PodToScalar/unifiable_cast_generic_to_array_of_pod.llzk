@@ -1,0 +1,31 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s
+
+// COM: A generic `poly.unifiable_cast` whose result becomes split array-of-POD leaves
+// COM: must not lower by reusing the same source value for every leaf/shape component.
+// COM: Until the pass can rewrite the surrounding function/template signature, this
+// COM: case is a hard error.
+
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  poly.template @CastTypeVarToDynamicArrayPod {
+    poly.param @T_arg : !poly.tvar<@T_arg>
+    function.def @main(%arg: !poly.tvar<@T_arg>) -> !array.type<? x !Pair> {
+      // expected-error@+1 {{'poly.unifiable_cast' op cannot lower a generic input to a split array-of-POD result without rewriting the surrounding function/template signature}}
+      %cast = poly.unifiable_cast %arg : (!poly.tvar<@T_arg>) -> !array.type<? x !Pair>
+      function.return %cast : !array.type<? x !Pair>
+    }
+  }
+}
+// -----
+
+!Empty = !pod.type<[]>
+module attributes {llzk.lang} {
+  poly.template @CastTypeVarToDynamicEmptyArrayPod {
+    poly.param @T_arg : !poly.tvar<@T_arg>
+    function.def @main(%arg: !poly.tvar<@T_arg>) -> !array.type<? x !Empty> {
+      // expected-error@+1 {{'poly.unifiable_cast' op cannot lower a generic input to a split array-of-POD result without rewriting the surrounding function/template signature}}
+      %cast = poly.unifiable_cast %arg : (!poly.tvar<@T_arg>) -> !array.type<? x !Empty>
+      function.return %cast : !array.type<? x !Empty>
+    }
+  }
+}
