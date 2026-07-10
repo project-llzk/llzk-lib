@@ -56,6 +56,28 @@ std::strong_ordering compareStringRef(llvm::StringRef lhs, llvm::StringRef rhs) 
   return std::strong_ordering::equal;
 }
 
+// Prints SourceRef path using source-style syntax, i.e. `.` for struct members
+// and pod records and `[...]` for array indices.
+// Returns failure if an unexpected `SourceRefIndex` type is encountered.
+LogicalResult printSourceStylePath(raw_ostream &os, llvm::ArrayRef<SourceRefIndex> path) {
+  for (const auto &idx : path) {
+    if (idx.isMember()) {
+      os << '.' << idx.getMember().getName();
+      continue;
+    }
+    if (idx.isPodRecord()) {
+      os << '.' << idx.getPodRecordName();
+      continue;
+    }
+    if (idx.isIndex() || idx.isIndexRange()) {
+      os << '[' << idx << ']';
+      continue;
+    }
+    return failure();
+  }
+  return success();
+}
+
 std::strong_ordering
 compareSourceRefPaths(llvm::ArrayRef<SourceRefIndex> lhs, llvm::ArrayRef<SourceRefIndex> rhs) {
   for (size_t i = 0; i < lhs.size() && i < rhs.size(); i++) {
@@ -466,7 +488,14 @@ void SourceRef::print(raw_ostream &os) const {
     if (isCreateStructOp()) {
       os << "%self";
     } else if (isBlockArgument()) {
-      os << "%arg" << *getInputNum();
+      auto blockArg = *getBlockArgument();
+      auto funcOp = llvm::dyn_cast<FuncDefOp>(blockArg.getOwner()->getParentOp());
+      auto argName = funcOp ? funcOp.getArgNameAttr(blockArg.getArgNumber()) : nullptr;
+      if (argName) {
+        os << argName->getValue();
+      } else {
+        os << "%arg" << *getInputNum();
+      }
     } else if (isNonDetOp()) {
       os << '<' << *getNonDetOp() << '>';
     } else if (isCallResult()) {
@@ -488,9 +517,8 @@ void SourceRef::print(raw_ostream &os) const {
       value.printAsOperand(os, flags);
     }
 
-    for (const auto &f : getPath()) {
-      os << "[" << f << "]";
-    }
+    auto res = printSourceStylePath(os, getPath());
+    ensure(succeeded(res), "unhandled path print case");
   }
 }
 
