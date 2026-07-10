@@ -13,5 +13,5 @@
 #include <mlir/Support/LogicalResult.h>
 
 namespace pcl {
-  mlir::LogicalResult moduleToPcl(mlir::ModuleOp mod, llvm::raw_ostream &os);
+mlir::LogicalResult moduleToPcl(mlir::ModuleOp mod, llvm::raw_ostream &os);
 }

@@ -80,7 +80,7 @@ namespace pcl {
 #define GEN_PASS_DECL_PCLLOWERINGPASS
 #define GEN_PASS_DEF_PCLLOWERINGPASS
 #include "pcl/Conversion/ConversionPasses.h.inc"
-} // namespace pcl::conversion
+} // namespace pcl
 
 using namespace mlir;
 using namespace llzk;

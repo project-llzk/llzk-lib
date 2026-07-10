@@ -12,8 +12,7 @@
 
 include "llzk/Pass/PassBase.td"
 
-def PCLPrintPass
-    : LLZKPass<"pcl-print-pass"> {
+def PCLPrintPass : LLZKPass<"pcl-print-pass"> {
   let summary = "prints pcl IR into Picus lisp";
   let description = [{
     Convert a PCL module into lisp form suitable for Picus.

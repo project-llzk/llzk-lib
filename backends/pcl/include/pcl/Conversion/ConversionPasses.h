@@ -19,4 +19,4 @@ namespace pcl {
 #define GEN_PASS_REGISTRATION
 #include "pcl/Conversion/ConversionPasses.h.inc"
 
-} // namespace pcl::conversion
+} // namespace pcl

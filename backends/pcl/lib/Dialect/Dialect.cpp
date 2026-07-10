@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "pcl/Dialect/IR/Dialect.h"
+
 #include "pcl/Dialect/IR/Ops.h"
 #include "pcl/Dialect/IR/Types.h"
 
