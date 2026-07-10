@@ -6,6 +6,14 @@
 - When you need to run a project command inside the development environment, use:
   `nix develop --command bash -c "[command]"`
 
+## Tool freshness
+
+- After modifying C++/TableGen/build files that can affect `llzk-opt`, do not run `llzk-opt` or any example pipeline using `llzk-opt` until rebuilding it first.
+- Preferred command before any manual `llzk-opt ...` invocation after relevant edits:
+  `nix develop --command bash -c "cmake --build build --target llzk-opt"`
+- When validating lit/FileCheck tests, prefer `cmake --build build --target check-lit` rather than manually running a possibly stale `llzk-opt`; the lit config resolves tools from the build tree.
+- If a manual `llzk-opt` command fails unexpectedly after code changes, rebuild `llzk-opt` once before debugging the behavior.
+
 ## Fast context for agents
 
 - For project questions and code-change tasks, start by checking the generated project documentation in `doc/doxygen/`.
