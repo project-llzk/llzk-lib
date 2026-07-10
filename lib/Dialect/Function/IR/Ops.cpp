@@ -126,11 +126,7 @@ getFunctionNameAttrAtIndex(ArrayAttr attrs, unsigned index, StringRef attrName) 
     return std::nullopt;
   }
   if (auto dictAttr = llvm::dyn_cast<DictionaryAttr>(attrs[index])) {
-    Attribute attr = dictAttr.get(attrName);
-    if (!attr) {
-      return std::nullopt;
-    }
-    if (auto nameAttr = llvm::dyn_cast<StringAttr>(attr)) {
+    if (auto nameAttr = llvm::dyn_cast_if_present<StringAttr>(dictAttr.get(attrName))) {
       return nameAttr;
     }
   }
