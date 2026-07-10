@@ -12,8 +12,16 @@ target_link_libraries(
     ${LLZK_DEP_DIALECT_LIBS}
     MLIRIR
   PRIVATE
+    LLZKArrayDialect
+    LLZKFeltDialect
+    LLZKFunctionDialect
+    LLZKGlobalDialect
     LLZKIncludeDialect
     LLZKPODDialect
+    LLZKPolymorphicDialect
+    LLZKStringDialect
+    LLZKStructDialect
+    LLZKVerifDialect
 )
 add_dependencies(LLZKUtil LLZKDialect)
 llzk_target_add_mlir_link_settings(LLZKUtil)
