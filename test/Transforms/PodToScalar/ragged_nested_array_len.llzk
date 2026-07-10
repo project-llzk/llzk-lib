@@ -17,6 +17,21 @@ module attributes {llzk.lang} {
 }
 // -----
 
+!Inner = !pod.type<[@vals: !array.type<? x index>]>
+!OuterArr = !array.type<2 x !Inner>
+module attributes {llzk.lang} {
+  function.def @ragged_dynamic_len_after_unifiable_cast(%items: !OuterArr, %i: index) -> index {
+    %item = array.read %items[%i] : !OuterArr, !Inner
+    %vals = pod.read %item[@vals] : !Inner, !array.type<? x index>
+    %cast = poly.unifiable_cast %vals : (!array.type<? x index>) -> !array.type<? x index>
+    %c0 = arith.constant 0 : index
+    // expected-error@+1 {{'array.len' op cannot lower nested dynamic array leaf length after reading an array-of-POD element without per-element shape witnesses}}
+    %len = array.len %cast, %c0 : !array.type<? x index>
+    function.return %len : index
+  }
+}
+// -----
+
 #map = affine_map<()[s0] -> (s0 + 1)>
 !Inner = !pod.type<[@vals: !array.type<#map x index>]>
 !OuterArr = !array.type<2 x !Inner>
@@ -27,6 +42,22 @@ module attributes {llzk.lang} {
     %c0 = arith.constant 0 : index
     // expected-error@+1 {{'array.len' op cannot lower nested affine array leaf length after reading an array-of-POD element without per-element shape witnesses}}
     %len = array.len %vals, %c0 : !array.type<#map x index>
+    function.return %len : index
+  }
+}
+// -----
+
+#map = affine_map<()[s0] -> (s0 + 1)>
+!Inner = !pod.type<[@vals: !array.type<#map x index>]>
+!OuterArr = !array.type<2 x !Inner>
+module attributes {llzk.lang} {
+  function.def @ragged_affine_len_after_unifiable_cast(%items: !OuterArr, %i: index) -> index {
+    %item = array.read %items[%i] : !OuterArr, !Inner
+    %vals = pod.read %item[@vals] : !Inner, !array.type<#map x index>
+    %cast = poly.unifiable_cast %vals : (!array.type<#map x index>) -> !array.type<#map x index>
+    %c0 = arith.constant 0 : index
+    // expected-error@+1 {{'array.len' op cannot lower nested affine array leaf length after reading an array-of-POD element without per-element shape witnesses}}
+    %len = array.len %cast, %c0 : !array.type<#map x index>
     function.return %len : index
   }
 }

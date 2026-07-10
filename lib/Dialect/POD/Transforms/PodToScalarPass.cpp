@@ -531,7 +531,15 @@ tagRaggedNestedLeafValue(OpBuilder &bldr, Location loc, Value value, StringRef a
 
 /// Return the ragged nested leaf kind carried by `value`, if any.
 static StringRef getTaggedRaggedNestedLeafKind(Value value) {
-  while (auto cast = value.getDefiningOp<UnrealizedConversionCastOp>()) {
+  while (true) {
+    if (auto cast = value.getDefiningOp<UnifiableCastOp>()) {
+      value = cast.getInput();
+      continue;
+    }
+    auto cast = value.getDefiningOp<UnrealizedConversionCastOp>();
+    if (!cast) {
+      break;
+    }
     if (cast->hasAttr(getRaggedDynamicNestedLeafAttrName())) {
       return "dynamic";
     }
