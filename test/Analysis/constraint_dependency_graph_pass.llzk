@@ -454,7 +454,7 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   poly.template @TUnknownArrayConstrain {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @UnknownArrayConstrain {
       function.def @compute(%arr: !array.type<@N x !felt.type>) -> !struct.type<@TUnknownArrayConstrain::@UnknownArrayConstrain<[@N]>> {
@@ -483,7 +483,7 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   poly.template @TUnknownArrayConstrain {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @UnknownArrayConstrain {
       function.def @compute(%arr: !array.type<@N x !felt.type>) -> !struct.type<@TUnknownArrayConstrain::@UnknownArrayConstrain<[@N]>> {
@@ -502,8 +502,8 @@ module attributes {llzk.lang} {
   }
 
   poly.template @TUnknownMatrixConstrain {
-    poly.param @M
-    poly.param @N
+    poly.param @M : index
+    poly.param @N : index
 
     struct.def @UnknownMatrixConstrain {
       struct.member @check : !struct.type<@TUnknownArrayConstrain::@UnknownArrayConstrain<[@N]>>
@@ -933,7 +933,7 @@ module attributes {llzk.lang} {
 #map = affine_map<()[s0] -> (s0)>
 module attributes {llzk.lang} {
   poly.template @TFoo {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @Foo {
       struct.member @"$temp_0" : !array.type<#map x !felt.type> {column}
@@ -944,7 +944,7 @@ module attributes {llzk.lang} {
         %c0 = arith.constant 0 : index
         %c1 = arith.constant 1 : index
         %self = struct.new : <@TFoo::@Foo<[@N]>>
-        %0 = poly.read_const @N : !felt.type
+        %0 = poly.read_const @N : index
         %1 = poly.read_const @N : index
         %array = array.new{()[%1]} : <#map x !felt.type>
         %2 = poly.read_const @N : index
@@ -994,7 +994,7 @@ module attributes {llzk.lang} {
       function.def @constrain(%arg0: !struct.type<@TFoo::@Foo<[@N]>>,  %arg1: !array.type<@N x !felt.type>) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
         %c0 = arith.constant 0 : index
         %c1 = arith.constant 1 : index
-        %0 = poly.read_const @N : !felt.type
+        %0 = poly.read_const @N : index
         %1 = poly.read_const @N : index
         %array = array.new{()[%1]} : <#map x !felt.type>
         %2 = poly.read_const @N : index
@@ -1050,7 +1050,7 @@ module attributes {llzk.lang} {
 #map = affine_map<()[s0] -> (s0)>
 module attributes {llzk.lang} {
   poly.template @TFoo {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @Foo {
       function.def @compute(%arg0: !array.type<@N x !felt.type>) -> !struct.type<@TFoo::@Foo<[@N]>> attributes {function.allow_witness} {

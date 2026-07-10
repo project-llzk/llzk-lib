@@ -132,7 +132,7 @@ module attributes {llzk.lang} {
 // Template with function member cannot be removed
 module attributes {llzk.lang} {
   poly.template @Templ {
-    poly.param @A
+    poly.param @A : index
     function.def @c(%arg0: !array.type<@A x i1>) {
       function.return
     }
@@ -140,7 +140,7 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @Templ {
-// CHECK-NEXT:      poly.param @A
+// CHECK-NEXT:      poly.param @A : index
 // CHECK-NEXT:      function.def @c(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<@A x i1>) {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }

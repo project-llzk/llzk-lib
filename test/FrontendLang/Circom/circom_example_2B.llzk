@@ -37,7 +37,7 @@
 
 module attributes {llzk.lang = "circom"} {
   poly.template @TGetSum {
-    poly.param @A // instantiations of A are {1, 6, 11, ... 5*P+1}
+    poly.param @A : index // instantiations of A are {1, 6, 11, ... 5*P+1}
 
     struct.def @GetSum {
       struct.member @out: !felt.type {llzk.pub}
@@ -75,7 +75,7 @@ module attributes {llzk.lang = "circom"} {
   // and can't be created via `array.new` outside the loop where the loop induction
   // variable does not yet exist.
   poly.template @TVarArray {
-    poly.param @N
+    poly.param @N : index
     poly.param @T
 
     struct.def @VarArray {
@@ -94,7 +94,7 @@ module attributes {llzk.lang = "circom"} {
   }
 
   poly.template @TComputeValue {
-    poly.param @P
+    poly.param @P : index
 
     struct.def @ComputeValue {
       struct.member @ret: !array.type<@P x !felt.type> {llzk.pub}
@@ -203,7 +203,7 @@ module attributes {llzk.lang = "circom"} {
 //
 // CHECK-LABEL: module attributes {llzk.lang = "circom"} {
 // CHECK-NEXT:    poly.template @TGetSum {
-// CHECK-NEXT:      poly.param @A
+// CHECK-NEXT:      poly.param @A : index
 // CHECK-NEXT:      struct.def @GetSum {
 // CHECK-NEXT:        struct.member @out : !felt.type {llzk.pub}
 // CHECK-NEXT:        struct.member @sum : !felt.type
@@ -231,7 +231,7 @@ module attributes {llzk.lang = "circom"} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TVarArray {
-// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.param @N : index
 // CHECK-NEXT:      poly.param @T
 // CHECK-NEXT:      struct.def @VarArray {
 // CHECK-NEXT:        struct.member @val : !array.type<@N x !poly.tvar<@T>> {llzk.pub}
@@ -246,7 +246,7 @@ module attributes {llzk.lang = "circom"} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TComputeValue {
-// CHECK-NEXT:      poly.param @P
+// CHECK-NEXT:      poly.param @P : index
 // CHECK-NEXT:      struct.def @ComputeValue {
 // CHECK-NEXT:        struct.member @ret : !array.type<@P x !felt.type> {llzk.pub}
 // CHECK-NEXT:        struct.member @ws : !array.type<@P x !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>>

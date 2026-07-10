@@ -3,7 +3,7 @@
 // Test instantiation of templates with function member.
 module attributes {llzk.lang} {
   poly.template @template_f1 {
-    poly.param @N
+    poly.param @N : index
 
     function.def @f(%inp: !array.type<8,5,@N x !felt.type>) -> !array.type<@N x !felt.type> {
       %c0 = arith.constant 0 : index
@@ -13,14 +13,15 @@ module attributes {llzk.lang} {
   }
 
   poly.template @template_f2 {
-    poly.param @N
+    poly.param @N : index
 
     function.def @f(%inp: !array.type<8,@N x !felt.type>) -> !felt.type {
       %c0 = arith.constant 0 : index
       %2 = array.read %inp[%c0, %c0] : !array.type<8,@N x !felt.type>, !felt.type
-      %3 = poly.read_const @N : !felt.type
-      %4 = felt.add %2, %3 : !felt.type
-      function.return %4 : !felt.type
+      %3 = poly.read_const @N : index
+      %4 = cast.tofelt %3 : index, !felt.type
+      %5 = felt.add %2, %4 : !felt.type
+      function.return %5 : !felt.type
     }
   }
 
@@ -44,12 +45,13 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: function.def @template_f2_12_f(
-// CHECK-SAME:  %[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<8,12 x !felt.type>) -> !felt.type {
-// CHECK-NEXT:    %[[VAL_9:[0-9a-zA-Z_\.]+]] = felt.const 12
-// CHECK-NEXT:    %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:    %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_7]], %[[VAL_7]]] : <8,12 x !felt.type>, !felt.type
-// CHECK-NEXT:    %[[VAL_10:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_8]], %[[VAL_9]] : !felt.type
-// CHECK-NEXT:    function.return %[[VAL_10]] : !felt.type
+// CHECK-SAME:  %[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<8,12 x !felt.type>) -> !felt.type {
+// CHECK-NEXT:    %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 12 : index
+// CHECK-NEXT:    %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:    %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_5]], %[[VAL_5]]] : <8,12 x !felt.type>, !felt.type
+// CHECK-NEXT:    %[[VAL_7:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_4]] : index, !felt.type
+// CHECK-NEXT:    %[[VAL_8:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_6]], %[[VAL_7]] : !felt.type, !felt.type
+// CHECK-NEXT:    function.return %[[VAL_8]] : !felt.type
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: struct.def @Main {
@@ -68,7 +70,7 @@ module attributes {llzk.lang} {
 // Test transitive instantiation of functions. Also different instantiations of the same function.
 module attributes {llzk.lang} {
   poly.template @template_g1 {
-    poly.param @N
+    poly.param @N : index
 
     function.def @f(%inp: !array.type<8,@N x !felt.type>) -> !felt.type {
       %c0 = arith.constant 0 : index
@@ -235,7 +237,7 @@ module attributes {llzk.lang} {
 // Test instantiation of function with template parameters specified at call site.
 module attributes {llzk.lang} {
   poly.template @GlobalFunc {
-    poly.param @A
+    poly.param @A : index
 
     function.def @id() -> index {
       %a = poly.read_const @A : index
@@ -274,7 +276,7 @@ module attributes {llzk.lang} {
 // Test instantiation of function with template parameters specified at call site.
 module attributes {llzk.lang} {
   poly.template @template_b1 {
-    poly.param @X
+    poly.param @X : index
     function.def @f(%inp: !array.type<8,@X x !felt.type>) -> !felt.type {
       %c0 = arith.constant 0 : index
       %2 = array.read %inp[%c0, %c0] : !array.type<8,@X x !felt.type>, !felt.type
