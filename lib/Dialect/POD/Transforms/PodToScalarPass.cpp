@@ -103,6 +103,7 @@
 
 #include <llvm/ADT/DenseMapInfo.h>
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Debug.h>
 #include <llvm/Support/raw_ostream.h>
 
@@ -833,6 +834,89 @@ static Value getTrailingArrayShapeCarrierIfPresent(ValueRange convertedValues) {
   return convertedValues.back();
 }
 
+/// Return whether `op` is preceded in its block by a write to `podRef.recordName`.
+static bool hasEarlierWriteToRecordInBlock(Operation *op, Value podRef, StringAttr recordName) {
+  for (Operation &candidate : *op->getBlock()) {
+    if (&candidate == op) {
+      return false;
+    }
+    if (auto writeOp = dyn_cast<WritePodOp>(&candidate)) {
+      if (isSamePodRecord(writeOp, podRef, recordName)) {
+        return true;
+      }
+    } else if (hasNestedWriteToRecord(candidate, podRef, recordName)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/// Return whether `op` is dominated by a write to `podRef.recordName` in this or an enclosing
+/// block.
+static bool hasEarlierWriteToRecord(Operation *op, Value podRef, StringAttr recordName) {
+  for (Operation *cursor = op; cursor && cursor->getBlock();) {
+    if (hasEarlierWriteToRecordInBlock(cursor, podRef, recordName)) {
+      return true;
+    }
+    cursor = cursor->getBlock()->getParentOp();
+  }
+  return false;
+}
+
+/// Return whether the read is preceded by a write to the same pod record within its block.
+inline static bool hasEarlierWriteInBlock(ReadPodOp readOp) {
+  return hasEarlierWriteToRecordInBlock(
+      readOp.getOperation(), readOp.getPodRef(), readOp.getRecordNameAttr()
+  );
+}
+
+/// Return whether the read is dominated by a write to the same pod record in this or an enclosing
+/// block.
+inline static bool hasEarlierWrite(ReadPodOp readOp) {
+  return hasEarlierWriteToRecord(
+      readOp.getOperation(), readOp.getPodRef(), readOp.getRecordNameAttr()
+  );
+}
+
+/// Return `true` iff `readOp` names a fresh pod record that has not been initialized or written.
+static bool isFreshUnwrittenPodRead(ReadPodOp readOp) {
+  NewPodOp newPod = readOp.getPodRef().getDefiningOp<NewPodOp>();
+  if (!newPod) {
+    return false;
+  }
+  auto isReadOpRecordName = [&readOp](Attribute attr) {
+    return attr == readOp.getRecordNameAttr();
+  };
+  return llvm::none_of(newPod.getInitializedRecords(), isReadOpRecordName) &&
+         !hasEarlierWrite(readOp);
+}
+
+/// Collect affine-map attributes in the same preorder that `pod.new` verification expects.
+static void collectNewPodMapAttrs(Type type, SmallVectorImpl<AffineMapAttr> &mapAttrs) {
+  llvm::TypeSwitch<Type, void>(type)
+      .Case([&mapAttrs](PodType podTy) {
+    for (RecordAttr record : podTy.getRecords()) {
+      collectNewPodMapAttrs(record.getType(), mapAttrs);
+    }
+  })
+      .Case([&mapAttrs](ArrayType arrTy) {
+    for (Attribute dimSize : arrTy.getDimensionSizes()) {
+      if (auto mapAttr = llvm::dyn_cast<AffineMapAttr>(dimSize)) {
+        mapAttrs.push_back(mapAttr);
+      }
+    }
+  })
+      .Case([&mapAttrs](component::StructType structTy) {
+    if (ArrayAttr params = structTy.getParams()) {
+      for (Attribute param : params) {
+        if (auto mapAttr = llvm::dyn_cast<AffineMapAttr>(param)) {
+          mapAttrs.push_back(mapAttr);
+        }
+      }
+    }
+  }).Default([](Type) {});
+}
+
 /// Store the affine-map operand groups needed to rebuild one concrete array instantiation.
 ///
 /// The layout mirrors `array.new`: `mapOperandStorage` keeps each instantiation group separately,
@@ -841,6 +925,56 @@ struct ArrayInstantiationInfo {
   SmallVector<SmallVector<Value>> mapOperandStorage;
   SmallVector<int32_t> numDimsPerMap;
 };
+
+/// Recover the `pod.new` instantiation groups for one unread array record, if any.
+static std::optional<ArrayInstantiationInfo>
+tryGetFreshUnwrittenPodReadInstantiationInfo(ReadPodOp readOp) {
+  if (!isFreshUnwrittenPodRead(readOp)) {
+    return std::nullopt;
+  }
+
+  NewPodOp newPod = readOp.getPodRef().getDefiningOp<NewPodOp>();
+  if (!newPod || newPod.getMapOperands().empty()) {
+    return std::nullopt;
+  }
+
+  size_t groupBegin = 0;
+  ArrayRef<int32_t> allNumDims = newPod.getNumDimsPerMap();
+  for (RecordAttr record : newPod.getType().getRecords()) {
+    SmallVector<AffineMapAttr> recordMapAttrs;
+    collectNewPodMapAttrs(record.getType(), recordMapAttrs);
+    size_t recordGroupCount = recordMapAttrs.size();
+    if (record.getName() == readOp.getRecordNameAttr()) {
+      if (recordGroupCount == 0 || newPod.getMapOperands().size() < groupBegin + recordGroupCount) {
+        return std::nullopt;
+      }
+
+      ArrayInstantiationInfo info;
+      info.mapOperandStorage.reserve(recordGroupCount);
+      info.numDimsPerMap.reserve(recordGroupCount);
+      for (size_t i = 0; i < recordGroupCount; ++i) {
+        OperandRange group = newPod.getMapOperands()[groupBegin + i];
+        info.mapOperandStorage.emplace_back(group.begin(), group.end());
+        int32_t numDims =
+            groupBegin + i < allNumDims.size()
+                ? allNumDims[groupBegin + i]
+                : llzk::checkedCast<int32_t>(recordMapAttrs[i].getAffineMap().getNumDims());
+        info.numDimsPerMap.push_back(numDims);
+      }
+      return info;
+    }
+    groupBegin += recordGroupCount;
+  }
+
+  return std::nullopt;
+}
+
+/// Return the number of affine-map attributes nested anywhere inside `type`.
+static size_t countRecursiveAffineMapAttrs(Type type) {
+  size_t count = 0;
+  type.walk([&count](AffineMapAttr) { ++count; });
+  return count;
+}
 
 /// Try to recover affine-map instantiation operands from a concrete array-producing value.
 ///
@@ -856,7 +990,7 @@ static std::optional<ArrayInstantiationInfo> tryGetArrayInstantiationInfo(Value 
     if (WritePodOp write = findNearestForwardableWrite(read)) {
       return tryGetArrayInstantiationInfo(write.getValue());
     }
-    return std::nullopt;
+    return tryGetFreshUnwrittenPodReadInstantiationInfo(read);
   }
 
   auto create = value.getDefiningOp<CreateArrayOp>();
@@ -1005,8 +1139,30 @@ static ArrayType getSplitPodArrayStorageType(ArrayType arrTy, ArrayRef<StringAtt
 ///
 /// Use `llzk.nondet` as the base when affine-map dimensions are present because `array.new`
 /// cannot carry both inline elements and affine-map instantiation operands.
-inline static Value createWritableArrayValue(OpBuilder &bldr, Location loc, ArrayType arrTy) {
+inline static Value createWritableArrayValue(
+    OpBuilder &bldr, Location loc, ArrayType arrTy,
+    std::optional<ArrayInstantiationInfo> instantiation = std::nullopt
+) {
   if (hasAffineMapAttr(arrTy)) {
+    SmallVector<AffineMapAttr> topLevelMapAttrs;
+    for (Attribute dimSize : arrTy.getDimensionSizes()) {
+      if (auto mapAttr = llvm::dyn_cast<AffineMapAttr>(dimSize)) {
+        topLevelMapAttrs.push_back(mapAttr);
+      }
+    }
+
+    if (instantiation && !topLevelMapAttrs.empty() &&
+        countRecursiveAffineMapAttrs(arrTy) == topLevelMapAttrs.size() &&
+        instantiation->mapOperandStorage.size() == topLevelMapAttrs.size() &&
+        instantiation->numDimsPerMap.size() == topLevelMapAttrs.size()) {
+      SmallVector<ValueRange> mapOperands;
+      mapOperands.reserve(instantiation->mapOperandStorage.size());
+      for (const SmallVector<Value> &group : instantiation->mapOperandStorage) {
+        mapOperands.push_back(group);
+      }
+      return bldr.create<CreateArrayOp>(loc, arrTy, mapOperands, instantiation->numDimsPerMap);
+    }
+
     return bldr.create<NonDetOp>(loc, arrTy);
   } else {
     return bldr.create<CreateArrayOp>(loc, arrTy);
@@ -1176,50 +1332,6 @@ static Value tryCollectDirectConvertedPodArrayShapeSource(
   return {};
 }
 
-/// Return whether `op` is preceded in its block by a write to `podRef.recordName`.
-static bool hasEarlierWriteToRecordInBlock(Operation *op, Value podRef, StringAttr recordName) {
-  for (Operation &candidate : *op->getBlock()) {
-    if (&candidate == op) {
-      return false;
-    }
-    if (auto writeOp = dyn_cast<WritePodOp>(&candidate)) {
-      if (isSamePodRecord(writeOp, podRef, recordName)) {
-        return true;
-      }
-    } else if (hasNestedWriteToRecord(candidate, podRef, recordName)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-/// Return whether `op` is dominated by a write to `podRef.recordName` in this or an enclosing
-/// block.
-static bool hasEarlierWriteToRecord(Operation *op, Value podRef, StringAttr recordName) {
-  for (Operation *cursor = op; cursor && cursor->getBlock();) {
-    if (hasEarlierWriteToRecordInBlock(cursor, podRef, recordName)) {
-      return true;
-    }
-    cursor = cursor->getBlock()->getParentOp();
-  }
-  return false;
-}
-
-/// Return whether the read is preceded by a write to the same pod record within its block.
-inline static bool hasEarlierWriteInBlock(ReadPodOp readOp) {
-  return hasEarlierWriteToRecordInBlock(
-      readOp.getOperation(), readOp.getPodRef(), readOp.getRecordNameAttr()
-  );
-}
-
-/// Return whether the read is dominated by a write to the same pod record in this or an enclosing
-/// block.
-inline static bool hasEarlierWrite(ReadPodOp readOp) {
-  return hasEarlierWriteToRecord(
-      readOp.getOperation(), readOp.getPodRef(), readOp.getRecordNameAttr()
-  );
-}
-
 /// Return whether `op` is preceded in its block by any write to `podRef`.
 static bool hasEarlierWriteToPodInBlock(Operation *op, Value podRef) {
   for (Operation &candidate : *op->getBlock()) {
@@ -1246,19 +1358,6 @@ static bool hasEarlierWriteToPod(Operation *op, Value podRef) {
     cursor = cursor->getBlock()->getParentOp();
   }
   return false;
-}
-
-/// Return `true` iff `readOp` names a fresh pod record that has not been initialized or written.
-static bool isFreshUnwrittenPodRead(ReadPodOp readOp) {
-  NewPodOp newPod = readOp.getPodRef().getDefiningOp<NewPodOp>();
-  if (!newPod) {
-    return false;
-  }
-  auto isReadOpRecordName = [&readOp](Attribute attr) {
-    return attr == readOp.getRecordNameAttr();
-  };
-  return llvm::none_of(newPod.getInitializedRecords(), isReadOpRecordName) &&
-         !hasEarlierWrite(readOp);
 }
 
 /// Return `true` iff `value` is an unwritten array-of-POD field read from a fresh `pod.new`.
@@ -1301,14 +1400,14 @@ static Value genReadAlongPath(
     }
 
     Value strippedValue = peelUnifiableCasts(value);
+    if (isFreshUnwrittenPodArrayRead(value)) {
+      return createWritableArrayValue(bldr, loc, splitArrTy, tryGetArrayInstantiationInfo(value));
+    }
+
     if (strippedValue.getDefiningOp<ReadPodOp>()) {
       auto splitReads =
           bldr.create<UnrealizedConversionCastOp>(loc, TypeRange(splitTypes), strippedValue);
       return splitReads.getResult(splitIdx);
-    }
-
-    if (isFreshUnwrittenPodArrayRead(value)) {
-      return createWritableArrayValue(bldr, loc, splitArrTy);
     }
 
     if (syntheticShapeCarrier) {
