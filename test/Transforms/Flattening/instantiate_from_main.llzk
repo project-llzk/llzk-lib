@@ -32,7 +32,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@TBar::@Bar<[]>>} {
 
 module attributes {llzk.lang, llzk.main = !struct.type<@TFoo::@Foo<[27]>>} {
   poly.template @TFoo {
-    poly.param @N
+    poly.param @N : index
     struct.def @Foo {
       struct.member @x : !array.type<@N x !felt.type>
       function.def @compute() -> !struct.type<@TFoo::@Foo<[@N]>> {

@@ -52,7 +52,7 @@
 module attributes { llzk.lang = "circom" } {
 
   poly.template @TSum {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @Sum {
       struct.member @sum : !felt.type {llzk.pub}
@@ -269,7 +269,7 @@ module attributes { llzk.lang = "circom" } {
 
 // CHECK-LABEL: module attributes {llzk.lang = "circom"} {
 // CHECK-NEXT:    poly.template @TSum {
-// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.param @N : index
 // CHECK-NEXT:      struct.def @Sum {
 // CHECK-NEXT:        struct.member @sum : !felt.type {llzk.pub}
 // CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !pod.type<[@p: !array.type<@N x !felt.type>]>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@TSum::@Sum<[@N]>> attributes {function.allow_witness} {

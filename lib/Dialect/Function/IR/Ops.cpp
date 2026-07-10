@@ -624,9 +624,28 @@ CallOp::verifyTemplateParamCompatibility(Attribute paramFromCallOp, TemplatePara
     }
   }
   if (std::optional<Type> declaredType = targetParam.getTypeOpt()) {
-    // Note: `declaredType` is restricted by `isValidConstReadType()`
     bool compatible = false;
-    if (llvm::isa<TypeVarType>(*declaredType)) {
+    if (auto sym = llvm::dyn_cast<SymbolRefAttr>(paramFromCallOp)) {
+      if (sym.getNestedReferences().empty()) {
+        SymbolTableCollection tables;
+        FailureOr<TemplateOp> parentTemplate = getConstResolutionTemplate(tables, *this);
+        if (failed(parentTemplate)) {
+          return failure();
+        }
+        if (TemplateOp p = *parentTemplate) {
+          auto binding = p.getConstNamed<TemplateSymbolBindingOpInterface>(sym.getRootReference());
+          if (binding) {
+            // Once we know it references a template symbol binding, assume it's compatible unless
+            // the optional type is present and doesn't unify with the declared type.
+            if (std::optional<Type> actualType = binding.getTypeOpt()) {
+              compatible = typesUnify(*actualType, *declaredType);
+            } else {
+              compatible = true;
+            }
+          }
+        }
+      }
+    } else if (llvm::isa<TypeVarType>(*declaredType)) {
       compatible = llvm::isa<TypeAttr>(paramFromCallOp);
     } else if (llvm::isa<FeltType>(*declaredType)) {
       compatible = llvm::isa<FeltConstAttr, IntegerAttr>(paramFromCallOp) &&
@@ -638,6 +657,7 @@ CallOp::verifyTemplateParamCompatibility(Attribute paramFromCallOp, TemplatePara
       compatible = llvm::isa<IntegerAttr>(paramFromCallOp) &&
                    isValidConstReadType(llvm::cast<TypedAttr>(paramFromCallOp).getType());
     } else {
+      // Note: `declaredType` is restricted by `isValidConstReadType()`
       llvm_unreachable("inconsistent with `isValidConstReadType()`");
     }
     if (!compatible) {

@@ -65,7 +65,7 @@ module attributes {llzk.lang = "zirgen"} {
   poly.template @TFoo {
     poly.param @N
     poly.param @P
-    poly.param @Aff$0
+    poly.param @Aff$0 : index
 
     struct.def @Foo {
       struct.member @"$super" : !struct.type<@Component<[]>>
@@ -99,7 +99,7 @@ module attributes {llzk.lang = "zirgen"} {
   poly.template @TBar {
     poly.param @N
     poly.param @P
-    poly.param @Aff$0
+    poly.param @Aff$0 : index
 
     struct.def @Bar {
       struct.member @"$super" : !struct.type<@Component<[]>>

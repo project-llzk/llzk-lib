@@ -2,7 +2,7 @@
 
 module attributes {llzk.lang = "llzk"} {
     poly.template @TA {
-      poly.param @N
+      poly.param @N : index
 
       struct.def @A {
           struct.member @arr : !array.type<@N x !felt.type>

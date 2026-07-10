@@ -54,7 +54,7 @@ module attributes {llzk.lang = "circom"} {
   }
 
   poly.template @TComputeValue {
-    poly.param @P
+    poly.param @P : index
 
     struct.def @ComputeValue {
       struct.member @ws: !array.type<@P x !GetWeightStride5>
@@ -144,7 +144,7 @@ module attributes {llzk.lang = "circom"} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TComputeValue {
-// CHECK-NEXT:      poly.param @P
+// CHECK-NEXT:      poly.param @P : index
 // CHECK-NEXT:      struct.def @ComputeValue {
 // CHECK-NEXT:        struct.member @ws : !array.type<@P x !struct.type<@TGetWeight::@GetWeight<[#[[$M0]]]>>>
 // CHECK-NEXT:        struct.member @ret : !array.type<@P x !felt.type> {llzk.pub}
