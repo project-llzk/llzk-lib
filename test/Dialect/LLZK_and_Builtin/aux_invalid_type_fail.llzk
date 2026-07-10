@@ -9,7 +9,10 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@A>) attributes {function.allow_constraint} {
       // expected-error@+1 {{custom op 'llzk.aux' invalid kind of Type specified}}
       %0 = llzk.aux : !string.type
+      // expected-error@+1 {{'llzk.aux' op result #0 must be finite field element, but got '!string.type'}}
+      %1 = "llzk.aux"() : () -> !string.type
       function.return
     }
   }
 }
+
