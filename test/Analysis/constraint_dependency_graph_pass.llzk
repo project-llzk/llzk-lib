@@ -1001,8 +1001,8 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @ExternRepeatedMemberDependency ConstraintDependencyGraph {
-// CHECK-NEXT:     { %arg0.lhs, payload.value }
-// CHECK-NEXT:     { %arg0.rhs, payload.value }
+// CHECK-NEXT:     { %arg0.lhs, <call @extern_wrap %[[LEFT_WRAP_RESULT:[0-9]+]]>.value }
+// CHECK-NEXT:     { %arg0.rhs, <call @extern_wrap %[[RIGHT_WRAP_RESULT:[0-9]+]]>.value }
 // CHECK-NEXT: }
 
 // -----

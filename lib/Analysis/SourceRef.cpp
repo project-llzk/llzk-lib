@@ -487,6 +487,49 @@ static void printCallResultFallback(raw_ostream &os, function::CallOp callOp, Va
   os << '>';
 }
 
+static bool shouldPrintNamedCallResult(
+    function::CallOp callOp, OpResult callResult, function::FuncDefOp calleeFunc
+) {
+  auto resName = calleeFunc.getResNameAttr(callResult.getResultNumber());
+  if (!resName) {
+    return false;
+  }
+
+  auto parentFunc = callOp->getParentOfType<FuncDefOp>();
+  if (!parentFunc) {
+    return true;
+  }
+
+  bool foundThisCall = false;
+  bool foundDuplicate = false;
+  parentFunc.walk([&](function::CallOp otherCall) {
+    if (foundDuplicate) {
+      return WalkResult::interrupt();
+    }
+
+    auto otherFunc = llvm::dyn_cast_if_present<FuncDefOp>(otherCall.resolveCallable());
+    if (!otherFunc) {
+      return WalkResult::advance();
+    }
+    for (Value otherValue : otherCall->getResults()) {
+      auto otherResult = llvm::cast<OpResult>(otherValue);
+      auto otherResName = otherFunc.getResNameAttr(otherResult.getResultNumber());
+      if (!otherResName || otherResName->getValue() != resName->getValue()) {
+        continue;
+      }
+      if (otherResult == callResult) {
+        foundThisCall = true;
+        continue;
+      }
+      foundDuplicate = true;
+      return WalkResult::interrupt();
+    }
+    return WalkResult::advance();
+  });
+
+  return foundThisCall && !foundDuplicate;
+}
+
 void SourceRef::print(raw_ostream &os) const {
   if (isConstantFelt()) {
     os << "<felt.const: " << *getConstantFeltValue() << '>';
@@ -518,8 +561,9 @@ void SourceRef::print(raw_ostream &os) const {
       auto callee = resolveCallable<FuncDefOp>(callOp);
       if (succeeded(callee)) {
         auto calleeFunc = llvm::dyn_cast_if_present<FuncDefOp>((*callee).get());
-        if (auto resName = calleeFunc.getResNameAttr(callResult.getResultNumber())) {
-          os << resName->getValue();
+        if (shouldPrintNamedCallResult(callOp, callResult, calleeFunc)) {
+          auto resName = *calleeFunc.getResNameAttr(callResult.getResultNumber());
+          os << resName.getValue();
         } else {
           printCallResultFallback(os, callOp, value);
         }
