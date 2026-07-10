@@ -103,7 +103,7 @@ inline ForbiddenPreconditionInfluenceInfo mergeInfluenceInfo(
 
 template <typename T, typename... Args>
 inline ForbiddenPreconditionInfluenceInfo
-mergeInfluenceInfo(const T &first, const T &next, Args... others) {
+mergeInfluenceInfo(const T &first, const T &next, const Args &...others) {
   T merged = mergeInfluenceInfo(first, next);
   return mergeInfluenceInfo(merged, others...);
 }
@@ -246,7 +246,7 @@ public:
   /// operand influences, returning every failing callee precondition if so.
   IncludedContractSummary analyzeIncludedContract(
       verif::ContractOp calleeContract, llvm::ArrayRef<InfluenceInfo> argInfluences,
-      InfluenceInfo inheritedControlInfluence = InfluenceInfo::None()
+      const InfluenceInfo &inheritedControlInfluence = InfluenceInfo::None()
   );
 
   /// Check whether an include op becomes invalid under its caller's operand

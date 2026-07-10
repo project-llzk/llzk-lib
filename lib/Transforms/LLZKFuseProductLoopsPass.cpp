@@ -12,6 +12,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
@@ -25,6 +26,7 @@
 #include <llvm/Support/SMTAPI.h>
 
 #include <memory>
+#include <optional>
 
 // Include the generated base pass class definitions.
 namespace llzk {
@@ -42,8 +44,9 @@ constexpr int INDEX_WIDTH = 64;
 
 static inline bool isConstOrStructParam(Value val) {
   // TODO: doing arithmetic over constants should also be fine?
-  return val.getDefiningOp<arith::ConstantIndexOp>() ||
-         val.getDefiningOp<polymorphic::ConstReadOp>();
+  return llvm::isa<arith::ConstantIndexOp, polymorphic::ConstReadOp, felt::FeltConstantOp>(
+      val.getDefiningOp()
+  );
 }
 
 static llvm::SMTExprRef mkExpr(Value value, llvm::SMTSolver *solver) {
@@ -118,6 +121,46 @@ static inline bool canLoopsBeFused(scf::ForOp a, scf::ForOp b) {
   return !*solver->check();
 }
 
+/// Determine which ops need to sink past `constraintLoop`, or return failure() if some of these
+/// ops can't be sunk. Conservatively tries to sink all compute ops, but we could do a more precise
+/// analysis here
+static FailureOr<SmallVector<Operation *>>
+canPrepareForFusion(scf::ForOp witnessLoop, scf::ForOp constraintLoop) {
+  if (witnessLoop->getBlock() != constraintLoop->getBlock()) {
+    return failure();
+  }
+
+  SmallVector<Operation *> opsToSink;
+  for (auto *op = witnessLoop->getNextNode(); op != constraintLoop; op = op->getNextNode()) {
+    if (op->getAttrOfType<StringAttr>(PRODUCT_SOURCE) == "fused") {
+      // "fused" means "compute" + "constrain". Conservatively, a "compute" op we want to sink can't
+      // be sunk if it also has "constrain" since we need to preserve the relative orders within
+      // compute/constrain
+      return failure();
+    }
+    if (op->getAttrOfType<StringAttr>(PRODUCT_SOURCE) == FUNC_NAME_COMPUTE) {
+      opsToSink.push_back(op);
+    }
+  }
+  return opsToSink;
+}
+
+static LogicalResult
+prepareForFusion(scf::ForOp witnessLoop, scf::ForOp constraintLoop, IRRewriter &rewriter) {
+  auto computeOpsToSink = canPrepareForFusion(witnessLoop, constraintLoop);
+  if (failed(computeOpsToSink)) {
+    return failure();
+  }
+
+  Operation *insertionPoint = constraintLoop.getOperation();
+  for (Operation *op : *computeOpsToSink) {
+    rewriter.moveOpAfter(op, insertionPoint);
+    insertionPoint = op;
+  }
+
+  return success();
+}
+
 static LogicalResult fuseMatchingLoopPairs(Region &body, MLIRContext *context) {
   // Start by collecting all possible loops
   llvm::SmallVector<scf::ForOp> witnessLoops, constraintLoops;
@@ -149,6 +192,9 @@ static LogicalResult fuseMatchingLoopPairs(Region &body, MLIRContext *context) {
   // Finally, fuse all the marked loops...
   IRRewriter rewriter {context};
   for (auto [w, c] : *fusionCandidates) {
+    if (failed(prepareForFusion(w, c, rewriter))) {
+      continue;
+    }
     auto fusedLoop = fuseIndependentSiblingForLoops(w, c, rewriter);
     fusedLoop->setAttr(PRODUCT_SOURCE, rewriter.getAttr<StringAttr>("fused"));
     // ...and recurse to fuse nested loops

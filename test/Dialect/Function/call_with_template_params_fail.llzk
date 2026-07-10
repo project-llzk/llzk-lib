@@ -152,7 +152,7 @@ module attributes {llzk.lang} {
 // -----
 module attributes {llzk.lang} {
   poly.template @GlobalFunc {
-    poly.param @N
+    poly.param @N : index
 
     function.def @id() -> !array.type<2,@N x index> {
       %a = array.new : !array.type<2,@N x index>
@@ -174,7 +174,7 @@ module attributes {llzk.lang} {
 // -----
 module attributes {llzk.lang} {
   poly.template @GlobalFunc {
-    poly.param @N
+    poly.param @N : index
 
     function.def @id() -> !array.type<2,@N x index> {
       %a = array.new : !array.type<2,@N x index>
@@ -196,7 +196,7 @@ module attributes {llzk.lang} {
 // -----
 module attributes {llzk.lang} {
   poly.template @GlobalFunc {
-    poly.param @N
+    poly.param @N : index
 
     function.def @id() -> !array.type<2,@N x index> {
       %a = array.new : !array.type<2,@N x index>
@@ -207,7 +207,7 @@ module attributes {llzk.lang} {
   struct.def @CannotUnifyWithInferredC {
     function.def @compute() -> !struct.type<@CannotUnifyWithInferredC> {
       %self = struct.new : !struct.type<@CannotUnifyWithInferredC>
-      // expected-error@+1 {{'function.call' op template instantiation value '#felt<const 5> : !felt.type' for parameter "@N" conflicts with value '5 : index' inferred from function type signature}}
+      // expected-error@+1 {{'function.call' op instantiation value '#felt<const 5> : !felt.type' is not compatible with parameter "@N" type restriction 'index'}}
       %0 = function.call @GlobalFunc::@id<[#felt<const 5>]>() : () -> !array.type<2,5 x index>
       function.return %self : !struct.type<@CannotUnifyWithInferredC>
     }
@@ -218,7 +218,7 @@ module attributes {llzk.lang} {
 // -----
 module attributes {llzk.lang} {
   poly.template @GlobalFunc {
-    poly.param @N
+    poly.param @N : index
 
     function.def @id() -> !array.type<2,@N x index> {
       %a = array.new : !array.type<2,@N x index>
@@ -229,7 +229,7 @@ module attributes {llzk.lang} {
   struct.def @CannotUnifyWithInferredD {
     function.def @compute() -> !struct.type<@CannotUnifyWithInferredD> {
       %self = struct.new : !struct.type<@CannotUnifyWithInferredD>
-      // expected-error@+1 {{'function.call' op template instantiation value 'i1' for parameter "@N" conflicts with value '5 : index' inferred from function type signature}}
+      // expected-error@+1 {{'function.call' op instantiation value 'i1' is not compatible with parameter "@N" type restriction 'index'}}
       %0 = function.call @GlobalFunc::@id<[i1]>() : () -> !array.type<2,5 x index>
       function.return %self : !struct.type<@CannotUnifyWithInferredD>
     }

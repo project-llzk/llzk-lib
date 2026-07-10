@@ -56,6 +56,28 @@ std::strong_ordering compareStringRef(llvm::StringRef lhs, llvm::StringRef rhs) 
   return std::strong_ordering::equal;
 }
 
+// Prints SourceRef path using source-style syntax, i.e. `.` for struct members
+// and pod records and `[...]` for array indices.
+// Returns failure if an unexpected `SourceRefIndex` type is encountered.
+LogicalResult printSourceStylePath(raw_ostream &os, llvm::ArrayRef<SourceRefIndex> path) {
+  for (const auto &idx : path) {
+    if (idx.isMember()) {
+      os << '.' << idx.getMember().getName();
+      continue;
+    }
+    if (idx.isPodRecord()) {
+      os << '.' << idx.getPodRecordName();
+      continue;
+    }
+    if (idx.isIndex() || idx.isIndexRange()) {
+      os << '[' << idx << ']';
+      continue;
+    }
+    return failure();
+  }
+  return success();
+}
+
 std::strong_ordering
 compareSourceRefPaths(llvm::ArrayRef<SourceRefIndex> lhs, llvm::ArrayRef<SourceRefIndex> rhs) {
   for (size_t i = 0; i < lhs.size() && i < rhs.size(); i++) {
@@ -73,6 +95,8 @@ compareSourceRefPaths(llvm::ArrayRef<SourceRefIndex> lhs, llvm::ArrayRef<SourceR
 void SourceRefIndex::print(raw_ostream &os) const {
   if (isMember()) {
     os << '@' << getMember().getName();
+  } else if (isPodRecord()) {
+    os << '@' << getPodRecordName();
   } else if (isIndex()) {
     os << getIndex();
   } else {
@@ -95,6 +119,9 @@ std::strong_ordering SourceRefIndex::operator<=>(const SourceRefIndex &rhs) cons
     }
     return std::strong_ordering::equal;
   }
+  if (isPodRecord() && rhs.isPodRecord()) {
+    return compareStringRef(getPodRecordName(), rhs.getPodRecordName());
+  }
   if (isIndex() && rhs.isIndex()) {
     return compareDynamicAPInt(getIndex(), rhs.getIndex());
   }
@@ -111,6 +138,12 @@ std::strong_ordering SourceRefIndex::operator<=>(const SourceRefIndex &rhs) cons
     return std::strong_ordering::less;
   }
   if (rhs.isMember()) {
+    return std::strong_ordering::greater;
+  }
+  if (isPodRecord()) {
+    return std::strong_ordering::less;
+  }
+  if (rhs.isPodRecord()) {
     return std::strong_ordering::greater;
   }
   if (isIndex()) {
@@ -132,6 +165,8 @@ size_t SourceRefIndex::Hash::operator()(const SourceRefIndex &c) const {
   } else if (c.isIndexRange()) {
     auto r = c.getIndexRange();
     return llvm::hash_value(std::get<0>(r)) ^ llvm::hash_value(std::get<1>(r));
+  } else if (c.isPodRecord()) {
+    return llvm::hash_value(c.getPodRecordName());
   } else {
     return OpHash<component::MemberDefOp> {}(c.getMember());
   }
@@ -289,28 +324,35 @@ std::vector<SourceRef> SourceRef::getAllSourceRefs(StructDefOp structDef, Member
 }
 
 Type SourceRef::getType() const {
-  auto pathRef = getPath();
-  size_t arrayDerefs = 0;
-  size_t idx = pathRef.size();
-  while (idx > 0 && (pathRef[idx - 1].isIndex() || pathRef[idx - 1].isIndexRange())) {
-    arrayDerefs++;
-    idx--;
-  }
+  Type currTy = value.getType();
+  for (const auto &idx : getPath()) {
+    if (idx.isMember()) {
+      currTy = idx.getMember().getType();
+      continue;
+    }
+    if (idx.isPodRecord()) {
+      auto podTy = dyn_cast<pod::PodType>(currTy);
+      ensure(static_cast<bool>(podTy), "SourceRef pod record requires a pod-typed base");
+      auto lookup = podTy.getRecord(idx.getPodRecordName(), [ctx = value.getContext()]() {
+        return mlir::emitError(
+            mlir::UnknownLoc::get(ctx), "SourceRef references a missing pod record"
+        );
+      });
+      ensure(succeeded(lookup), "SourceRef references a missing pod record");
+      currTy = *lookup;
+      continue;
+    }
 
-  Type currTy = idx > 0 ? pathRef[idx - 1].getMember().getType() : value.getType();
-  if (arrayDerefs > 0) {
     auto arrTy = dyn_cast<ArrayType>(currTy);
-    ensure(static_cast<bool>(arrTy), "SourceRef array indices require an array-typed base");
+    ensure(static_cast<bool>(arrTy), "SourceRef array index requires an array-typed base");
     ensure(
-        arrayDerefs <= arrTy.getDimensionSizes().size(),
+        !arrTy.getDimensionSizes().empty(),
         "SourceRef indexes more array dimensions than exist in the base type"
     );
-
-    if (arrayDerefs == arrTy.getDimensionSizes().size()) {
+    if (arrTy.getDimensionSizes().size() == 1) {
       currTy = arrTy.getElementType();
     } else {
-      currTy =
-          ArrayType::get(arrTy.getElementType(), arrTy.getDimensionSizes().drop_front(arrayDerefs));
+      currTy = ArrayType::get(arrTy.getElementType(), arrTy.getDimensionSizes().drop_front());
     }
   }
   return currTy;
@@ -407,16 +449,85 @@ std::vector<SourceRef> getAllChildren(
   return res;
 }
 
+std::vector<SourceRef> getAllChildren(pod::PodType podTy, const SourceRef &root) {
+  std::vector<SourceRef> res;
+  for (auto record : podTy.getRecords()) {
+    auto childRef = root.createChild(SourceRefIndex(record.getName()));
+    ensure(succeeded(childRef), "pod children require a rooted SourceRef");
+    res.push_back(*childRef);
+  }
+  return res;
+}
+
 std::vector<SourceRef>
 SourceRef::getAllChildren(SymbolTableCollection &tables, ModuleOp mod) const {
   auto ty = getType();
   if (auto structTy = dyn_cast<StructType>(ty)) {
     return llzk::getAllChildren(tables, mod, getStructDef(tables, mod, structTy), *this);
+  } else if (auto podTy = dyn_cast<pod::PodType>(ty)) {
+    return llzk::getAllChildren(podTy, *this);
   } else if (auto arrayType = dyn_cast<ArrayType>(ty)) {
     return llzk::getAllChildren(tables, mod, arrayType, *this);
   }
   // Scalar type, no children
   return {};
+}
+
+static void printCallResultFallback(raw_ostream &os, function::CallOp callOp, Value value) {
+  os << "<call " << callOp.getCallee();
+  os << ' ';
+  Operation *printScope = callOp.getOperation();
+  if (auto funcOp = callOp->getParentOfType<FuncDefOp>()) {
+    printScope = funcOp.getOperation();
+  }
+  // Allows us to print the SSA result value of the call to disambiguate
+  // repeated calls in the same function.
+  AsmState state(printScope);
+  value.printAsOperand(os, state);
+  os << '>';
+}
+
+static bool shouldPrintNamedCallResult(
+    function::CallOp callOp, OpResult callResult, function::FuncDefOp calleeFunc
+) {
+  auto resName = calleeFunc.getResNameAttr(callResult.getResultNumber());
+  if (!resName) {
+    return false;
+  }
+
+  auto parentFunc = callOp->getParentOfType<FuncDefOp>();
+  if (!parentFunc) {
+    return true;
+  }
+
+  bool foundThisCall = false;
+  bool foundDuplicate = false;
+  parentFunc.walk([&](function::CallOp otherCall) {
+    if (foundDuplicate) {
+      return WalkResult::interrupt();
+    }
+
+    auto otherFunc = llvm::dyn_cast_if_present<FuncDefOp>(otherCall.resolveCallable());
+    if (!otherFunc) {
+      return WalkResult::advance();
+    }
+    for (Value otherValue : otherCall->getResults()) {
+      auto otherResult = llvm::cast<OpResult>(otherValue);
+      auto otherResName = otherFunc.getResNameAttr(otherResult.getResultNumber());
+      if (!otherResName || otherResName->getValue() != resName->getValue()) {
+        continue;
+      }
+      if (otherResult == callResult) {
+        foundThisCall = true;
+        continue;
+      }
+      foundDuplicate = true;
+      return WalkResult::interrupt();
+    }
+    return WalkResult::advance();
+  });
+
+  return foundThisCall && !foundDuplicate;
 }
 
 void SourceRef::print(raw_ostream &os) const {
@@ -434,31 +545,39 @@ void SourceRef::print(raw_ostream &os) const {
     if (isCreateStructOp()) {
       os << "%self";
     } else if (isBlockArgument()) {
-      os << "%arg" << *getInputNum();
+      auto blockArg = *getBlockArgument();
+      auto funcOp = llvm::dyn_cast<FuncDefOp>(blockArg.getOwner()->getParentOp());
+      auto argName = funcOp ? funcOp.getArgNameAttr(blockArg.getArgNumber()) : nullptr;
+      if (argName) {
+        os << argName->getValue();
+      } else {
+        os << "%arg" << *getInputNum();
+      }
     } else if (isNonDetOp()) {
       os << '<' << *getNonDetOp() << '>';
     } else if (isCallResult()) {
       auto callOp = *getCallOp();
-      os << "<call " << callOp.getCallee();
-      os << ' ';
-      Operation *printScope = callOp.getOperation();
-      if (auto funcOp = callOp->getParentOfType<FuncDefOp>()) {
-        printScope = funcOp.getOperation();
+      auto callResult = llvm::cast<OpResult>(value);
+      auto callee = resolveCallable<FuncDefOp>(callOp);
+      if (succeeded(callee)) {
+        auto calleeFunc = llvm::dyn_cast_if_present<FuncDefOp>((*callee).get());
+        if (shouldPrintNamedCallResult(callOp, callResult, calleeFunc)) {
+          auto resName = *calleeFunc.getResNameAttr(callResult.getResultNumber());
+          os << resName.getValue();
+        } else {
+          printCallResultFallback(os, callOp, value);
+        }
+      } else {
+        printCallResultFallback(os, callOp, value);
       }
-      // Allows us to print the SSA result value of the call to disambiguate
-      // repeated calls in the same function.
-      AsmState state(printScope);
-      value.printAsOperand(os, state);
-      os << '>';
     } else {
       ensure(isRooted(), "unhandled print case");
       OpPrintingFlags flags;
       value.printAsOperand(os, flags);
     }
 
-    for (const auto &f : getPath()) {
-      os << "[" << f << "]";
-    }
+    auto res = printSourceStylePath(os, getPath());
+    ensure(succeeded(res), "unhandled path print case");
   }
 }
 

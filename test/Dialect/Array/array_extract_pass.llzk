@@ -71,7 +71,7 @@ module attributes {llzk.lang} {
   }
 
   poly.template @TComponent02 {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @Component02 {
       struct.member @g : !array.type<@N x !struct.type<@Component01>>
@@ -124,7 +124,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TComponent02 {
-// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.param @N : index
 // CHECK-NEXT:      struct.def @Component02 {
 // CHECK-NEXT:        struct.member @g : !array.type<@N x !struct.type<@Component01>>
 // CHECK-NEXT:        function.def @compute(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<@N,2 x !felt.type>) -> !struct.type<@TComponent02::@Component02<[@N]>> attributes {function.allow_witness} {

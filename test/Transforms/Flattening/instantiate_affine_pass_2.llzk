@@ -10,7 +10,7 @@
 module attributes {llzk.lang} {
   // pre-defined
   poly.template @TVarArray {
-    poly.param @N
+    poly.param @N : index
     poly.param @T
 
     struct.def @VarArray {

@@ -77,8 +77,8 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @MemberRangeConstraint StructIntervals {
-// CHECK-NEXT:     %arg0[@foo] in Degenerate(1)
-// CHECK-NEXT:     %arg0[@bar] in TypeA:[ 0, 2 ]
+// CHECK-NEXT:     %arg0.foo in Degenerate(1)
+// CHECK-NEXT:     %arg0.bar in TypeA:[ 0, 2 ]
 // CHECK-NEXT:     %arg1 in TypeC:[ 2, 21888242871839275222246405745257275088548364400416034343698204186575808495616 ]
 // CHECK-NEXT:     %arg2 in TypeA:[ 0, 2 ]
 // CHECK-NEXT: }
@@ -123,9 +123,9 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @ArrayConstraint StructIntervals {
-// CHECK-NEXT:     %arg0[@arr][0] in TypeA:[ 5, 7 ]
-// CHECK-NEXT:     %arg0[@arr][1] in TypeA:[ 7, 11 ]
-// CHECK-NEXT:     %arg0[@arr][2] in TypeA:[ 5, 7 ]
+// CHECK-NEXT:     %arg0.arr[0] in TypeA:[ 5, 7 ]
+// CHECK-NEXT:     %arg0.arr[1] in TypeA:[ 7, 11 ]
+// CHECK-NEXT:     %arg0.arr[2] in TypeA:[ 5, 7 ]
 // CHECK-NEXT: }
 
 // -----
@@ -152,7 +152,7 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @JoinedReadIntervals StructIntervals {
-// CHECK-NEXT:     %arg0[@x] in TypeA:[ 0, 9 ]
+// CHECK-NEXT:     %arg0.x in TypeA:[ 0, 9 ]
 // CHECK-NEXT: }
 
 // -----
@@ -186,8 +186,8 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @Div StructIntervals {
-// CHECK-NEXT:     %arg0[@$super] in Entire
-// CHECK-NEXT:     %arg0[@reciprocal] in TypeC:[ 1, 21888242871839275222246405745257275088548364400416034343698204186575808495616 ]
+// CHECK-NEXT:     %arg0.$super in Entire
+// CHECK-NEXT:     %arg0.reciprocal in TypeC:[ 1, 21888242871839275222246405745257275088548364400416034343698204186575808495616 ]
 // CHECK-NEXT:     %arg1 in Entire
 // CHECK-NEXT:     %arg2 in TypeC:[ 1, 21888242871839275222246405745257275088548364400416034343698204186575808495616 ]
 // CHECK-NEXT: }
@@ -273,18 +273,18 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @ByteDecompCorrect StructIntervals {
-// CHECK-NEXT:     %arg0[@b1] in TypeA:[ 0, 255 ]
-// CHECK-NEXT:     %arg0[@b0] in TypeA:[ 0, 255 ]
+// CHECK-NEXT:     %arg0.b1 in TypeA:[ 0, 255 ]
+// CHECK-NEXT:     %arg0.b0 in TypeA:[ 0, 255 ]
 // CHECK-NEXT:     %arg1 in TypeA:[ 0, 65535 ]
 // CHECK-NEXT: }
 // CHECK-NEXT: @ByteDecompIncorrect StructIntervals {
-// CHECK-NEXT:     %arg0[@b1] in Entire
-// CHECK-NEXT:     %arg0[@b0] in Entire
+// CHECK-NEXT:     %arg0.b1 in Entire
+// CHECK-NEXT:     %arg0.b0 in Entire
 // CHECK-NEXT:     %arg1 in Entire
 // CHECK-NEXT: }
 // CHECK-NEXT: @ByteDecompPartial StructIntervals {
-// CHECK-NEXT:     %arg0[@b1] in Entire
-// CHECK-NEXT:     %arg0[@b0] in Entire
+// CHECK-NEXT:     %arg0.b1 in Entire
+// CHECK-NEXT:     %arg0.b0 in Entire
 // CHECK-NEXT:     %arg1 in TypeA:[ 0, 65535 ]
 // CHECK-NEXT: }
 
@@ -312,7 +312,7 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @BitConstraint StructIntervals {
-// CHECK-NEXT:    %arg0[@bit] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:    %arg0.bit in TypeA:[ 0, 1 ]
 // CHECK-NEXT: }
 
 // -----
@@ -345,7 +345,7 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @BitConstraint StructIntervals {
-// CHECK-NEXT:    %arg0[@bit] in TypeA:[ 0, 3 ]
+// CHECK-NEXT:    %arg0.bit in TypeA:[ 0, 3 ]
 // CHECK-NEXT: }
 
 // -----
@@ -372,7 +372,7 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @BitConstraint StructIntervals {
-// CHECK-NEXT:    %arg0[@bit] in TypeA:[ 0, 3 ]
+// CHECK-NEXT:    %arg0.bit in TypeA:[ 0, 3 ]
 // CHECK-NEXT: }
 
 // -----
@@ -452,8 +452,8 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @IntTest StructIntervals {
-// CHECK-NEXT:     %arg0[@x] in TypeA:[ 0, 511 ]
-// CHECK-NEXT:     %arg0[@y] in TypeF:[ 21888242871839275222246405745257275088548364400416034343698204186575808495106, 65535 ]
+// CHECK-NEXT:     %arg0.x in TypeA:[ 0, 511 ]
+// CHECK-NEXT:     %arg0.y in TypeF:[ 21888242871839275222246405745257275088548364400416034343698204186575808495106, 65535 ]
 // CHECK-NEXT: }
 
 // -----
@@ -500,9 +500,9 @@ module attributes {llzk.lang} {
 
 // TODO: Refine multiplication range
 // CHECK-LABEL: @IntTest StructIntervals {
-// CHECK-NEXT:     %arg0[@x] in TypeA:[ 0, 511 ]
-// CHECK-NEXT:     %arg0[@y] in TypeA:[ 256, 511 ]
-// CHECK-NEXT:     %arg0[@z] in TypeA:[ 65536, 131327 ]
+// CHECK-NEXT:     %arg0.x in TypeA:[ 0, 511 ]
+// CHECK-NEXT:     %arg0.y in TypeA:[ 256, 511 ]
+// CHECK-NEXT:     %arg0.z in TypeA:[ 65536, 131327 ]
 // CHECK-NEXT: }
 
 // -----
@@ -544,8 +544,8 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @IntTest StructIntervals {
-// CHECK-NEXT:     %arg0[@x] in TypeA:[ 0, 511 ]
-// CHECK-NEXT:     %arg0[@y] in Entire
+// CHECK-NEXT:     %arg0.x in TypeA:[ 0, 511 ]
+// CHECK-NEXT:     %arg0.y in Entire
 // CHECK-NEXT: }
 
 // -----
@@ -587,8 +587,8 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @IntTest StructIntervals {
-// CHECK-NEXT:     %arg0[@x] in TypeA:[ 0, 511 ]
-// CHECK-NEXT:     %arg0[@y] in TypeA:[ 32257, 65535 ]
+// CHECK-NEXT:     %arg0.x in TypeA:[ 0, 511 ]
+// CHECK-NEXT:     %arg0.y in TypeA:[ 32257, 65535 ]
 // CHECK-NEXT: }
 
 // -----
@@ -625,9 +625,9 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @SubTest StructIntervals {
-// CHECK-NEXT:     %arg0[@x] in TypeA:[ 0, 255 ]
-// CHECK-NEXT:     %arg0[@y] in TypeA:[ 0, 255 ]
-// CHECK-NEXT:     %arg0[@z] in Entire
+// CHECK-NEXT:     %arg0.x in TypeA:[ 0, 255 ]
+// CHECK-NEXT:     %arg0.y in TypeA:[ 0, 255 ]
+// CHECK-NEXT:     %arg0.z in Entire
 // CHECK-NEXT: }
 
 // -----
@@ -663,9 +663,9 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @SubTest StructIntervals {
-// CHECK-NEXT:     %arg0[@x] in TypeA:[ 0, 255 ]
-// CHECK-NEXT:     %arg0[@y] in TypeA:[ 0, 255 ]
-// CHECK-NEXT:     %arg0[@z] in TypeF:[ 21888242871839275222246405745257275088548364400416034343698204186575808495362, 255 ]
+// CHECK-NEXT:     %arg0.x in TypeA:[ 0, 255 ]
+// CHECK-NEXT:     %arg0.y in TypeA:[ 0, 255 ]
+// CHECK-NEXT:     %arg0.z in TypeF:[ 21888242871839275222246405745257275088548364400416034343698204186575808495362, 255 ]
 // CHECK-NEXT: }
 
 // -----

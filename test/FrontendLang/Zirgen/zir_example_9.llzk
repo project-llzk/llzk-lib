@@ -69,7 +69,7 @@ module attributes {llzk.lang = "zirgen"} {
   poly.template @TFoo {
     poly.param @N
     poly.param @P
-    poly.param @Aff$0
+    poly.param @Aff$0 : index
 
     struct.def @Foo {
       struct.member @"$super" : !struct.type<@TComponent::@Component<[]>>
@@ -103,7 +103,7 @@ module attributes {llzk.lang = "zirgen"} {
   poly.template @TBar {
     poly.param @N
     poly.param @P
-    poly.param @Aff$0
+    poly.param @Aff$0 : index
 
     struct.def @Bar {
       struct.member @"$super" : !struct.type<@TComponent::@Component<[]>>
@@ -201,7 +201,7 @@ module attributes {llzk.lang = "zirgen"} {
 // CHECK-LABEL: poly.template @TFoo {
 // CHECK-NEXT:    poly.param @N
 // CHECK-NEXT:    poly.param @P
-// CHECK-NEXT:    poly.param @Aff$0
+// CHECK-NEXT:    poly.param @Aff$0 : index
 // CHECK-NEXT:    struct.def @Foo {
 // CHECK-NEXT:      struct.member @"$super" : !struct.type<@TComponent::@Component<[]>>
 // CHECK-NEXT:      struct.member @"$temp_0" : !struct.type<@TComponent::@Component<[]>>
@@ -234,7 +234,7 @@ module attributes {llzk.lang = "zirgen"} {
 // CHECK-LABEL: poly.template @TBar {
 // CHECK-NEXT:    poly.param @N
 // CHECK-NEXT:    poly.param @P
-// CHECK-NEXT:    poly.param @Aff$0
+// CHECK-NEXT:    poly.param @Aff$0 : index
 // CHECK-NEXT:    struct.def @Bar {
 // CHECK-NEXT:      struct.member @"$super" : !struct.type<@TComponent::@Component<[]>>
 // CHECK-NEXT:      struct.member @"$temp_1" : !struct.type<@TComponent::@Component<[]>>

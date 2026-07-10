@@ -1,10 +1,10 @@
 // This is the plaintext source for `v2_syntax.llzk.bc` (that was converted from this
-// file at commit TODO_last_commit_pre_v3_TODO) which is intended to test
-// that migration from v2 syntax to later versions works correctly. The test uses
-// nearly all LLZK v2 syntax except for `include.from`.
+// file at commit b1b8d52ca4e6114cdd9a80417f96342a9f9e8b6c, v2.1.2) which is intended
+// to test that migration from v2 syntax to later versions works correctly. The test
+// uses all LLZK v2 syntax.
 //
 // Commands used to generate the test files:
-// [with v2 build]
+// [with v2.1.2 build]
 //   build/bin/llzk-opt -emit-bytecode test/Migration/v2_syntax.llzk.txt > test/Migration/v2_syntax.llzk.bc
 // [with current version build]
 //   build/bin/llzk-opt test/Migration/v2_syntax.llzk.bc | scripts/generate-test-checks.py
@@ -28,6 +28,9 @@ module attributes {
     // Private decl with {llzk.pub} argument attributes.
     function.def private @pub_args(%a: !felt.type {llzk.pub}, %b: index {llzk.pub})
   }
+
+  // This path doesn't exist but that's okay since `@stdlib` is not referenced.
+  include.from "lib/stdlib.llzk" as @stdlib
 
   module @gstore {
     // global.def: const/mutable, initialized/uninitialized, all basic types.
@@ -66,7 +69,7 @@ module attributes {
   // ── @Reg ──────────────────────────────────────────────────────────────────
   // Numeric param @N, {column} member, struct.readm with {tableOffset}.
   poly.template @Reg {
-    poly.param @N
+    poly.param @N : index
     struct.def @Reg {
       struct.member @data : !array.type<@N x !felt.type> {column}
 
@@ -91,10 +94,12 @@ module attributes {
     poly.param @X
     poly.param @Y
     poly.expr @N {
+      // This is similar to what the circom frontend would do: treat all as felt and cast final result.
       %a = poly.read_const @X : !felt.type
       %b = poly.read_const @Y : !felt.type
       %c = felt.add %a, %b
-      poly.yield %c : !felt.type
+      %d = cast.toindex %c : !felt.type
+      poly.yield %d : index
     }
 
     struct.def @ArrComp {
@@ -316,7 +321,9 @@ module attributes {
   }
 
   // Multi-return function + caller with destructured result.
-  function.def @pair(%x: index) -> (index, index) {
+  function.def @pair(%x: index {function.arg_name = "x"})
+      -> (index {function.res_name = "first"},
+          index {function.res_name = "second"}) {
     %one = arith.constant 1 : index
     function.return %x, %one : index, index
   }

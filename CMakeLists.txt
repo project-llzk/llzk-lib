@@ -98,10 +98,16 @@ add_compile_options(
   -Wall
   -Wextra
   -Wno-unused-parameter
-  -Wshadow
   $<$<COMPILE_LANGUAGE:CXX>:-Wnon-virtual-dtor>
   -pedantic
   -fno-omit-frame-pointer)
+
+if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
+  add_compile_options(-Wshadow)
+  add_compile_options(-Wshadow-field-in-constructor)
+else()
+  add_compile_options(-Wshadow)
+endif()
 
 if(CMAKE_CONFIGURATION_TYPES)
   list(APPEND CMAKE_CONFIGURATION_TYPES DebWithSans)
