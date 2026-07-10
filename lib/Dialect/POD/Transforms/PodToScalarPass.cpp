@@ -940,7 +940,8 @@ tryGetFreshUnwrittenPodReadInstantiationInfo(ReadPodOp readOp) {
 
   size_t groupBegin = 0;
   ArrayRef<int32_t> allNumDims = newPod.getNumDimsPerMap();
-  for (RecordAttr record : newPod.getType().getRecords()) {
+  PodType newPodTy = newPod.getType(); // variable to avoid "dangling-reference"
+  for (RecordAttr record : newPodTy.getRecords()) {
     SmallVector<AffineMapAttr> recordMapAttrs;
     collectNewPodMapAttrs(record.getType(), recordMapAttrs);
     size_t recordGroupCount = recordMapAttrs.size();
