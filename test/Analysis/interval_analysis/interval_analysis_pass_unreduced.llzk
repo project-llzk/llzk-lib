@@ -24,7 +24,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @TrackUnreducedArithmetic StructIntervals {
 // CHECK: compute {
 // CHECK-NEXT:    %arg0 in Entire ( Unreduced:[ 0, 2013265920 ] )
-// CHECK-NEXT:    %self[@out] in Entire ( Unreduced:[ -2013265925, -5 ] )
+// CHECK-NEXT:    %self.out in Entire ( Unreduced:[ -2013265925, -5 ] )
 // CHECK-NEXT:  }
 
 // -----
@@ -67,11 +67,11 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @TrackUnreducedBoolSelect StructIntervals {
 // CHECK: compute {
 // CHECK-NEXT:    %arg0 in TypeA:[ 0, 1 ] ( Unreduced:[ 0, 1 ] )
-// CHECK-NEXT:    %self[@xor] in Degenerate(1) ( Unreduced:[ 1, 1 ] )
-// CHECK-NEXT:    %self[@not] in TypeA:[ 0, 1 ] ( Unreduced:[ 0, 1 ] )
-// CHECK-NEXT:    %self[@sel_true] in Degenerate(3) ( Unreduced:[ 3, 3 ] )
-// CHECK-NEXT:    %self[@sel_false] in Degenerate(9) ( Unreduced:[ 9, 9 ] )
-// CHECK-NEXT:    %self[@sel_flag] in TypeA:[ 3, 9 ] ( Unreduced:[ 3, 9 ] )
+// CHECK-NEXT:    %self.xor in Degenerate(1) ( Unreduced:[ 1, 1 ] )
+// CHECK-NEXT:    %self.not in TypeA:[ 0, 1 ] ( Unreduced:[ 0, 1 ] )
+// CHECK-NEXT:    %self.sel_true in Degenerate(3) ( Unreduced:[ 3, 3 ] )
+// CHECK-NEXT:    %self.sel_false in Degenerate(9) ( Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:    %self.sel_flag in TypeA:[ 3, 9 ] ( Unreduced:[ 3, 9 ] )
 // CHECK-NEXT:  }
 
 // -----
@@ -122,10 +122,10 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: @TrackUnreducedSignalReadDefault StructIntervals {
 // CHECK: compute {
-// CHECK-NEXT:    %self[@sig] in Entire ( Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:    %self.sig in Entire ( Unreduced:[ 0, 2013265920 ] )
 // CHECK-NEXT:  }
 // CHECK: constrain {
-// CHECK-NEXT:    %arg0[@sig] in Entire ( Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:    %arg0.sig in Entire ( Unreduced:[ 0, 2013265920 ] )
 // CHECK-NEXT:  }
 
 // -----
@@ -168,12 +168,12 @@ module @Comparators attributes {llzk.lang = "llzk"} {
 // CHECK-LABEL: @Comparators::@IsZero StructIntervals {
 // CHECK: compute {
 // CHECK-NEXT:    %arg0 in Entire ( Unreduced:[ 0, 2013265920 ] )
-// CHECK-NEXT:    %self[@out] in Entire ( Unreduced:[ -4053239664633446399, 1 ] )
-// CHECK-NEXT:    %self[@inv] in Entire ( Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:    %self.out in Entire ( Unreduced:[ -4053239664633446399, 1 ] )
+// CHECK-NEXT:    %self.inv in Entire ( Unreduced:[ 0, 2013265920 ] )
 // CHECK-NEXT:  }
 // CHECK-NEXT:  constrain {
-// CHECK-NEXT:    %arg0[@out] in Entire ( Unreduced:[ 0, 2013265920 ] )
-// CHECK-NEXT:    %arg0[@inv] in Entire ( Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:    %arg0.out in Entire ( Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:    %arg0.inv in Entire ( Unreduced:[ 0, 2013265920 ] )
 // CHECK-NEXT:    %arg1 in Entire ( Unreduced:[ 0, 2013265920 ] )
 // CHECK-NEXT:  }
 

@@ -56,6 +56,28 @@ std::strong_ordering compareStringRef(llvm::StringRef lhs, llvm::StringRef rhs) 
   return std::strong_ordering::equal;
 }
 
+// Prints SourceRef path using source-style syntax, i.e. `.` for struct members
+// and pod records and `[...]` for array indices.
+// Returns failure if an unexpected `SourceRefIndex` type is encountered.
+LogicalResult printSourceStylePath(raw_ostream &os, llvm::ArrayRef<SourceRefIndex> path) {
+  for (const auto &idx : path) {
+    if (idx.isMember()) {
+      os << '.' << idx.getMember().getName();
+      continue;
+    }
+    if (idx.isPodRecord()) {
+      os << '.' << idx.getPodRecordName();
+      continue;
+    }
+    if (idx.isIndex() || idx.isIndexRange()) {
+      os << '[' << idx << ']';
+      continue;
+    }
+    return failure();
+  }
+  return success();
+}
+
 std::strong_ordering
 compareSourceRefPaths(llvm::ArrayRef<SourceRefIndex> lhs, llvm::ArrayRef<SourceRefIndex> rhs) {
   for (size_t i = 0; i < lhs.size() && i < rhs.size(); i++) {
@@ -451,6 +473,63 @@ SourceRef::getAllChildren(SymbolTableCollection &tables, ModuleOp mod) const {
   return {};
 }
 
+static void printCallResultFallback(raw_ostream &os, function::CallOp callOp, Value value) {
+  os << "<call " << callOp.getCallee();
+  os << ' ';
+  Operation *printScope = callOp.getOperation();
+  if (auto funcOp = callOp->getParentOfType<FuncDefOp>()) {
+    printScope = funcOp.getOperation();
+  }
+  // Allows us to print the SSA result value of the call to disambiguate
+  // repeated calls in the same function.
+  AsmState state(printScope);
+  value.printAsOperand(os, state);
+  os << '>';
+}
+
+static bool shouldPrintNamedCallResult(
+    function::CallOp callOp, OpResult callResult, function::FuncDefOp calleeFunc
+) {
+  auto resName = calleeFunc.getResNameAttr(callResult.getResultNumber());
+  if (!resName) {
+    return false;
+  }
+
+  auto parentFunc = callOp->getParentOfType<FuncDefOp>();
+  if (!parentFunc) {
+    return true;
+  }
+
+  bool foundThisCall = false;
+  bool foundDuplicate = false;
+  parentFunc.walk([&](function::CallOp otherCall) {
+    if (foundDuplicate) {
+      return WalkResult::interrupt();
+    }
+
+    auto otherFunc = llvm::dyn_cast_if_present<FuncDefOp>(otherCall.resolveCallable());
+    if (!otherFunc) {
+      return WalkResult::advance();
+    }
+    for (Value otherValue : otherCall->getResults()) {
+      auto otherResult = llvm::cast<OpResult>(otherValue);
+      auto otherResName = otherFunc.getResNameAttr(otherResult.getResultNumber());
+      if (!otherResName || otherResName->getValue() != resName->getValue()) {
+        continue;
+      }
+      if (otherResult == callResult) {
+        foundThisCall = true;
+        continue;
+      }
+      foundDuplicate = true;
+      return WalkResult::interrupt();
+    }
+    return WalkResult::advance();
+  });
+
+  return foundThisCall && !foundDuplicate;
+}
+
 void SourceRef::print(raw_ostream &os) const {
   if (isConstantFelt()) {
     os << "<felt.const: " << *getConstantFeltValue() << '>';
@@ -466,31 +545,39 @@ void SourceRef::print(raw_ostream &os) const {
     if (isCreateStructOp()) {
       os << "%self";
     } else if (isBlockArgument()) {
-      os << "%arg" << *getInputNum();
+      auto blockArg = *getBlockArgument();
+      auto funcOp = llvm::dyn_cast<FuncDefOp>(blockArg.getOwner()->getParentOp());
+      auto argName = funcOp ? funcOp.getArgNameAttr(blockArg.getArgNumber()) : nullptr;
+      if (argName) {
+        os << argName->getValue();
+      } else {
+        os << "%arg" << *getInputNum();
+      }
     } else if (isNonDetOp()) {
       os << '<' << *getNonDetOp() << '>';
     } else if (isCallResult()) {
       auto callOp = *getCallOp();
-      os << "<call " << callOp.getCallee();
-      os << ' ';
-      Operation *printScope = callOp.getOperation();
-      if (auto funcOp = callOp->getParentOfType<FuncDefOp>()) {
-        printScope = funcOp.getOperation();
+      auto callResult = llvm::cast<OpResult>(value);
+      auto callee = resolveCallable<FuncDefOp>(callOp);
+      if (succeeded(callee)) {
+        auto calleeFunc = llvm::dyn_cast_if_present<FuncDefOp>((*callee).get());
+        if (shouldPrintNamedCallResult(callOp, callResult, calleeFunc)) {
+          auto resName = *calleeFunc.getResNameAttr(callResult.getResultNumber());
+          os << resName.getValue();
+        } else {
+          printCallResultFallback(os, callOp, value);
+        }
+      } else {
+        printCallResultFallback(os, callOp, value);
       }
-      // Allows us to print the SSA result value of the call to disambiguate
-      // repeated calls in the same function.
-      AsmState state(printScope);
-      value.printAsOperand(os, state);
-      os << '>';
     } else {
       ensure(isRooted(), "unhandled print case");
       OpPrintingFlags flags;
       value.printAsOperand(os, flags);
     }
 
-    for (const auto &f : getPath()) {
-      os << "[" << f << "]";
-    }
+    auto res = printSourceStylePath(os, getPath());
+    ensure(succeeded(res), "unhandled path print case");
   }
 }
 
