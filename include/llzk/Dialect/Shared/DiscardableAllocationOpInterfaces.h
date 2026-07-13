@@ -17,6 +17,7 @@ namespace llzk {
 /// Memory resource for allocations that may be erased when no stored value is ever read.
 struct DiscardableAllocationResource final
     : public mlir::SideEffects::Resource::Base<DiscardableAllocationResource> {
+  using mlir::SideEffects::Resource::Base<DiscardableAllocationResource>::Base;
   mlir::StringRef getName() final;
 };
 
