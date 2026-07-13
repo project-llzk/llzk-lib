@@ -13,7 +13,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
-// #include "smt/Target/TranslateRegistration.h"
+#include "smt/Target/TranslateRegistration.h"
 #include "zklean/Target/TranslateRegistration.h"
 #include "tools/config.h"
 #include "llzk/Config/Config.h"
@@ -37,7 +37,7 @@
 // TODO
 #endif // LLZK_WITH_PCL
 
-// using namespace llzk;
+using namespace llzk;
 
 int main(int argc, char **argv) {
   llvm::sys::PrintStackTraceOnErrorSignal(llvm::StringRef());
@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
 
   // Register all MLIR translations 
   mlir::registerAllTranslations();
-  // smt::registerSmtTranslation();
+  smt::registerSmtTranslation();
   zklean::registerZKLeanTranslation();
 
   // Run 'mlir-translate'
