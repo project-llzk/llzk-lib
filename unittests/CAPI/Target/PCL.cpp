@@ -13,10 +13,10 @@
 
 #include "llzk/Config/Config.h"
 
-#include <pcl/Dialect/IR/Attrs.h>
-#include <pcl/Dialect/IR/Ops.h>
-#include <pcl/Dialect/IR/Types.h>
-#include <pcl/InitAllDialects.h>
+#include "pcl/Dialect/IR/Attrs.h"
+#include "pcl/Dialect/IR/Ops.h"
+#include "pcl/Dialect/IR/Types.h"
+#include "pcl/DialectRegistration.h"
 
 #include <mlir-c/IR.h>
 

@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #pragma once
+
 #include "pcl/Dialect/IR/Dialect.h"
 
 #include <llvm/ADT/TypeSwitch.h>

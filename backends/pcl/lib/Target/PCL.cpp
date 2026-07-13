@@ -52,31 +52,31 @@ static void emitExpr(Value v, raw_ostream &os, NameState &ns) {
   if (auto add = v.getDefiningOp<pcl::AddOp>()) {
     os << "(+ ";
     emitExpr(add.getLhs(), os, ns);
-    os << " ";
+    os << ' ';
     emitExpr(add.getRhs(), os, ns);
-    os << ")";
+    os << ')';
     return;
   }
   if (auto sub = v.getDefiningOp<pcl::SubOp>()) {
     os << "(- ";
     emitExpr(sub.getLhs(), os, ns);
-    os << " ";
+    os << ' ';
     emitExpr(sub.getRhs(), os, ns);
-    os << ")";
+    os << ')';
     return;
   }
   if (auto mul = v.getDefiningOp<pcl::MulOp>()) {
     os << "(* ";
     emitExpr(mul.getLhs(), os, ns);
-    os << " ";
+    os << ' ';
     emitExpr(mul.getRhs(), os, ns);
-    os << ")";
+    os << ')';
     return;
   }
   if (auto neg = v.getDefiningOp<pcl::NegOp>()) {
     os << "(- ";
     emitExpr(neg.getVal(), os, ns);
-    os << ")";
+    os << ')';
     return;
   }
   if (auto asFelt = v.getDefiningOp<pcl::AsFeltOp>()) {
@@ -93,59 +93,59 @@ static void emitBool(Value v, raw_ostream &os, NameState &ns) {
   if (auto eq = v.getDefiningOp<pcl::CmpEqOp>()) {
     os << "(= ";
     emitExpr(eq.getLhs(), os, ns);
-    os << " ";
+    os << ' ';
     emitExpr(eq.getRhs(), os, ns);
-    os << ")";
+    os << ')';
     return;
   }
   if (auto lt = v.getDefiningOp<pcl::CmpLtOp>()) {
     os << "(< ";
     emitExpr(lt.getLhs(), os, ns);
-    os << " ";
+    os << ' ';
     emitExpr(lt.getRhs(), os, ns);
-    os << ")";
+    os << ')';
     return;
   }
   if (auto le = v.getDefiningOp<pcl::CmpLeOp>()) {
     os << "(<= ";
     emitExpr(le.getLhs(), os, ns);
-    os << " ";
+    os << ' ';
     emitExpr(le.getRhs(), os, ns);
-    os << ")";
+    os << ')';
     return;
   }
   if (auto gt = v.getDefiningOp<pcl::CmpGtOp>()) {
     os << "(> ";
     emitExpr(gt.getLhs(), os, ns);
-    os << " ";
+    os << ' ';
     emitExpr(gt.getRhs(), os, ns);
-    os << ")";
+    os << ')';
     return;
   }
   if (auto ge = v.getDefiningOp<pcl::CmpGeOp>()) {
     os << "(>= ";
     emitExpr(ge.getLhs(), os, ns);
-    os << " ";
+    os << ' ';
     emitExpr(ge.getRhs(), os, ns);
-    os << ")";
+    os << ')';
     return;
   }
   if (auto det = v.getDefiningOp<pcl::DetOp>()) {
     os << "(det ";
     emitExpr(det.getA(), os, ns);
-    os << ")";
+    os << ')';
     return;
   }
   // Fallback: treat as variable
   os << ns.get(v);
 }
-}; // namespace
+} // namespace
 
 LogicalResult pcl::moduleToPcl(ModuleOp mod, raw_ostream &os) {
   // (prime-number …)
   auto prime = mod->getAttrOfType<pcl::PrimeAttr>("pcl.prime");
   if (!prime) {
-    return mod.emitError("missing 'pcl.prime'"), failure();
+    return mod.emitError("missing 'pcl.prime'");
   }
   os << "(prime-number " << prime.getValue().getValue() << ")\n";
 
