@@ -3347,18 +3347,32 @@ static DeferredPodArrayBacking &materializeDeferredPodArrayBacking(
   return backing;
 }
 
+/// Shared mutable state and helper workflow for step 3 of pod-to-scalar.
+struct Step3Resolver {
+  VirtualPodValueMap virtualPods;
+  CompatiblePodLeafMaterializationMap materializedLeaves;
+  DeferredPodArrayBackingMap deferredPodArrays;
+
+  void rehydrateVirtualPodPlaceholders(ModuleOp modOp);
+  void addPreConversionPatterns(RewritePatternSet &patterns);
+  void addConversionPatterns(
+      RewritePatternSet &patterns, SymbolTableCollection &symTables,
+      const MemberReplacementMap &memberRepMap
+  );
+  void addLateResolutionPatterns(RewritePatternSet &patterns);
+  void addPostConversionPatterns(RewritePatternSet &patterns);
+  void configureLateVirtualPodLegality(ConversionTarget &target) const;
+  bool hasResolvableLateVirtualPodOps(ModuleOp modOp) const;
+  void materializeRemainingVirtualPods(ModuleOp modOp);
+};
+
 /// Rewrite deferred `array.len` on a POD-backed array field once virtual POD leaves are available.
 class ResolvePodReadBackedArrayLengthOp final : public OpConversionPattern<ArrayLengthOp> {
-  const VirtualPodValueMap &virtualPods;
-  DeferredPodArrayBackingMap &deferredPodArrays;
+  Step3Resolver &resolver;
 
 public:
-  ResolvePodReadBackedArrayLengthOp(
-      MLIRContext *ctx, const VirtualPodValueMap &virtualPodMap,
-      DeferredPodArrayBackingMap &deferredPodArrayMap
-  )
-      : OpConversionPattern<ArrayLengthOp>(ctx), virtualPods(virtualPodMap),
-        deferredPodArrays(deferredPodArrayMap) {}
+  ResolvePodReadBackedArrayLengthOp(MLIRContext *ctx, Step3Resolver &step3Resolver)
+      : OpConversionPattern<ArrayLengthOp>(ctx), resolver(step3Resolver) {}
 
   static bool legal(ArrayLengthOp op) { return !op->hasAttr(getDeferredPodArrayLengthAttrName()); }
 
@@ -3372,19 +3386,21 @@ public:
     Value shapeSource;
     ReadPodOp readOp = getReadPodBacking(op.getArrRef());
     assert(readOp && "deferred POD-backed array.len must still trace to pod.read");
-    shapeSource =
-        tryResolveReadPodArrayShapeSource(readOp, arrTy, virtualPods, op.getLoc(), rewriter);
+    shapeSource = tryResolveReadPodArrayShapeSource(
+        readOp, arrTy, resolver.virtualPods, op.getLoc(), rewriter
+    );
 
     if (!shapeSource) {
       if (needsPodArrayShapeCarrier(arrTy) && isFreshUnwrittenPodRead(readOp)) {
-        shapeSource = materializeDeferredPodArrayBacking(
-                          readOp, arrTy, /*splitTypes=*/ArrayRef<Type> {}, deferredPodArrays,
-                          op.getLoc(), rewriter, /*requireLeafArrays=*/false,
-                          /*requireShapeCarrier=*/true
-        )
-                          .shapeCarrier;
-      } else if (auto it = deferredPodArrays.find(readOp.getResult());
-                 it != deferredPodArrays.end() && it->second.shapeCarrier) {
+        shapeSource =
+            materializeDeferredPodArrayBacking(
+                readOp, arrTy, /*splitTypes=*/ArrayRef<Type> {}, resolver.deferredPodArrays,
+                op.getLoc(), rewriter, /*requireLeafArrays=*/false,
+                /*requireShapeCarrier=*/true
+            )
+                .shapeCarrier;
+      } else if (auto it = resolver.deferredPodArrays.find(readOp.getResult());
+                 it != resolver.deferredPodArrays.end() && it->second.shapeCarrier) {
         shapeSource = castValueToTypeIfNeeded(
             rewriter, op.getLoc(), it->second.shapeCarrier, getPodArrayShapeCarrierType(arrTy)
         );
@@ -3901,11 +3917,11 @@ public:
 /// scalarized. Rebuild the destination array explicitly so leaf arrays become subarray inserts
 /// rather than invalid inline operands to the flattened `array.new`.
 class SplitPodElementCreateArrayOp : public OpConversionPattern<CreateArrayOp> {
-  const VirtualPodValueMap &virtualPods;
+  const Step3Resolver &resolver;
 
 public:
-  SplitPodElementCreateArrayOp(MLIRContext *ctx, const VirtualPodValueMap &virtualPodMap)
-      : OpConversionPattern<CreateArrayOp>(ctx), virtualPods(virtualPodMap) {}
+  SplitPodElementCreateArrayOp(MLIRContext *ctx, const Step3Resolver &step3Resolver)
+      : OpConversionPattern<CreateArrayOp>(ctx), resolver(step3Resolver) {}
 
   static bool legal(CreateArrayOp op) {
     return !llvm::any_of(op.getElements().getTypes(), [](Type type) {
@@ -3925,7 +3941,8 @@ public:
       SmallVector<Value> flattenedValues;
       if (splittablePod(element.getType())) {
         processInputOperand(
-            op.getLoc(), element, flattenedValues, rewriter, op.getOperation(), &virtualPods
+            op.getLoc(), element, flattenedValues, rewriter, op.getOperation(),
+            &resolver.virtualPods
         );
       } else {
         flattenedValues.push_back(element);
@@ -3983,11 +4000,11 @@ public:
 /// rest of the function can continue to use POD values until later cleanup passes scalarize those
 /// local temporaries away.
 class SplitPodInFuncDefOp : public OpConversionPattern<FuncDefOp> {
-  VirtualPodValueMap &virtualPods;
+  Step3Resolver &resolver;
 
 public:
-  SplitPodInFuncDefOp(MLIRContext *ctx, VirtualPodValueMap &virtualPodMap)
-      : OpConversionPattern<FuncDefOp>(ctx), virtualPods(virtualPodMap) {}
+  SplitPodInFuncDefOp(MLIRContext *ctx, Step3Resolver &step3Resolver)
+      : OpConversionPattern<FuncDefOp>(ctx), resolver(step3Resolver) {}
 
   inline static bool legal(FuncDefOp op) {
     return !containsSplittablePodType(op.getArgumentTypes()) &&
@@ -4002,7 +4019,7 @@ public:
       SmallVector<size_t> originalInputIdxToSize, originalResultIdxToSize;
       SplitFunctionNameInfo inputNameInfo;
       SplitFunctionNameInfo resultNameInfo;
-      VirtualPodValueMap &virtualPods;
+      Step3Resolver &resolver;
 
     protected:
       SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) override {
@@ -4052,7 +4069,7 @@ public:
             entryBlock.eraseArgument(i);
 
             i += leafValues.size();
-            virtualPods[virtualPod] = std::move(leafValues);
+            resolver.virtualPods[virtualPod] = std::move(leafValues);
           } else {
             ++i;
           }
@@ -4060,7 +4077,7 @@ public:
       }
 
     public:
-      Impl(FuncDefOp op, VirtualPodValueMap &virtualPodMap) : virtualPods(virtualPodMap) {
+      Impl(FuncDefOp op, Step3Resolver &step3Resolver) : resolver(step3Resolver) {
         inputNameInfo = collectSplitFunctionNameInfo(op.getArgumentTypes(), [&op](unsigned i) {
           return op.getArgNameAttr(i);
         }, getSplitRecordNameSuffixes);
@@ -4071,7 +4088,7 @@ public:
         );
       }
     };
-    Impl(op, virtualPods).convert(op, rewriter);
+    Impl(op, resolver).convert(op, rewriter);
   }
 };
 
@@ -4081,11 +4098,11 @@ public:
 /// are returned as one SSA value per record, using local `pod.read` operations to extract the
 /// scalar pieces immediately before the return.
 class SplitPodInReturnOp : public OpConversionPattern<ReturnOp> {
-  const VirtualPodValueMap &virtualPods;
+  const Step3Resolver &resolver;
 
 public:
-  SplitPodInReturnOp(MLIRContext *ctx, const VirtualPodValueMap &virtualPodMap)
-      : OpConversionPattern<ReturnOp>(ctx), virtualPods(virtualPodMap) {}
+  SplitPodInReturnOp(MLIRContext *ctx, const Step3Resolver &step3Resolver)
+      : OpConversionPattern<ReturnOp>(ctx), resolver(step3Resolver) {}
 
   inline static bool legal(ReturnOp op) {
     return !containsSplittablePodType(op.getOperands().getTypes());
@@ -4095,7 +4112,7 @@ public:
 
   void rewrite(ReturnOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
     processInputOperands(
-        adaptor.getOperands(), op.getOperandsMutable(), op, rewriter, &virtualPods
+        adaptor.getOperands(), op.getOperandsMutable(), op, rewriter, &resolver.virtualPods
     );
   }
 };
@@ -4103,7 +4120,7 @@ public:
 /// Rebuild a call with split scalar results, then reconstruct POD-typed results locally.
 static CallOp newCallOpWithSplitResults(
     CallOp oldCall, CallOp::Adaptor adaptor, ConversionPatternRewriter &rewriter,
-    VirtualPodValueMap &virtualPods
+    Step3Resolver &resolver
 ) {
   OpBuilder::InsertionGuard guard(rewriter);
   rewriter.setInsertionPointAfter(oldCall);
@@ -4125,7 +4142,7 @@ static CallOp newCallOpWithSplitResults(
         ++newResults;
       });
       Value virtualPod = createVirtualPodPlaceholder(rewriter, loc, pt, leafValues);
-      virtualPods[virtualPod] = std::move(leafValues);
+      resolver.virtualPods[virtualPod] = std::move(leafValues);
       rewriter.replaceAllUsesWith(oldVal, virtualPod);
     } else {
       rewriter.replaceAllUsesWith(oldVal, *newResults);
@@ -4145,11 +4162,11 @@ static CallOp newCallOpWithSplitResults(
 /// the original POD-typed uses in the caller until later optimization passes remove the temporary
 /// POD allocations.
 class SplitPodInCallOp : public OpConversionPattern<CallOp> {
-  VirtualPodValueMap &virtualPods;
+  Step3Resolver &resolver;
 
 public:
-  SplitPodInCallOp(MLIRContext *ctx, VirtualPodValueMap &virtualPodMap)
-      : OpConversionPattern<CallOp>(ctx), virtualPods(virtualPodMap) {}
+  SplitPodInCallOp(MLIRContext *ctx, Step3Resolver &step3Resolver)
+      : OpConversionPattern<CallOp>(ctx), resolver(step3Resolver) {}
 
   inline static bool legal(CallOp op) {
     return !containsSplittablePodType(op.getArgOperands().getTypes()) &&
@@ -4160,9 +4177,10 @@ public:
 
   void rewrite(CallOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
     // Create new CallOp with split results first so, then process its inputs to split types
-    CallOp newCall = newCallOpWithSplitResults(op, adaptor, rewriter, virtualPods);
+    CallOp newCall = newCallOpWithSplitResults(op, adaptor, rewriter, resolver);
     processInputOperands(
-        newCall.getArgOperands(), newCall.getArgOperandsMutable(), newCall, rewriter, &virtualPods
+        newCall.getArgOperands(), newCall.getArgOperandsMutable(), newCall, rewriter,
+        &resolver.virtualPods
     );
   }
 };
@@ -4171,15 +4189,15 @@ public:
 class SplitPodInMemberWriteOp : public OpConversionPattern<MemberWriteOp> {
   SymbolTableCollection &tables;
   const MemberReplacementMap &repMapRef;
-  const VirtualPodValueMap &virtualPods;
+  const Step3Resolver &resolver;
 
 public:
   SplitPodInMemberWriteOp(
       MLIRContext *ctx, SymbolTableCollection &symTables, const MemberReplacementMap &memberRepMap,
-      const VirtualPodValueMap &virtualPodMap
+      const Step3Resolver &step3Resolver
   )
       : OpConversionPattern<MemberWriteOp>(ctx), tables(symTables), repMapRef(memberRepMap),
-        virtualPods(virtualPodMap) {}
+        resolver(step3Resolver) {}
 
   static bool legal(MemberWriteOp op) { return !containsSplittablePodType(op.getVal().getType()); }
 
@@ -4195,7 +4213,7 @@ public:
         repMapRef.at(tgtStructDef->get()).at(op.getMemberNameAttr().getAttr());
     const VirtualPodLeafMap *virtualLeafValues =
         !hasEarlierWriteToPod(op.getOperation(), op.getVal())
-            ? lookupVirtualPodLeafMap(op.getVal(), virtualPods)
+            ? lookupVirtualPodLeafMap(op.getVal(), resolver.virtualPods)
             : nullptr;
 
     for (const auto &[id, newMember] : idToMember) {
@@ -4214,15 +4232,15 @@ public:
 class SplitPodInMemberReadOp : public OpConversionPattern<MemberReadOp> {
   SymbolTableCollection &tables;
   const MemberReplacementMap &repMapRef;
-  VirtualPodValueMap &virtualPods;
+  Step3Resolver &resolver;
 
 public:
   SplitPodInMemberReadOp(
       MLIRContext *ctx, SymbolTableCollection &symTables, const MemberReplacementMap &memberRepMap,
-      VirtualPodValueMap &virtualPodMap
+      Step3Resolver &step3Resolver
   )
       : OpConversionPattern<MemberReadOp>(ctx), tables(symTables), repMapRef(memberRepMap),
-        virtualPods(virtualPodMap) {}
+        resolver(step3Resolver) {}
 
   static bool legal(MemberReadOp op) {
     return !containsSplittablePodType(op.getResult().getType());
@@ -4248,7 +4266,7 @@ public:
 
     PodType podTy = llvm::cast<PodType>(op.getType());
     Value virtualPod = createVirtualPodPlaceholder(rewriter, op.getLoc(), podTy, leafValues);
-    virtualPods[virtualPod] = std::move(leafValues);
+    resolver.virtualPods[virtualPod] = std::move(leafValues);
     rewriter.replaceOp(op, virtualPod);
   }
 };
@@ -4474,8 +4492,7 @@ static bool getDeferredSplitPodArrayCastInfo(
 
 /// Resolve one deferred split-array placeholder into its concrete split leaf arrays.
 static LogicalResult resolveDeferredSplitPodArrayCast(
-    UnrealizedConversionCastOp op, PatternRewriter &rewriter, const VirtualPodValueMap &virtualPods,
-    DeferredPodArrayBackingMap &deferredPodArrays
+    UnrealizedConversionCastOp op, PatternRewriter &rewriter, Step3Resolver &resolver
 ) {
   ArrayType arrTy;
   SmallVector<RecordChain> splitIds;
@@ -4491,19 +4508,20 @@ static LogicalResult resolveDeferredSplitPodArrayCast(
 
   SmallVector<Value> splitLeafArrays;
   if (!resolveReadPodSplitPodArrayLeafValues(
-          fieldRead, arrTy, splitIds, splitTypes, virtualPods, deferredPodArrays, op.getLoc(),
-          rewriter, splitLeafArrays
+          fieldRead, arrTy, splitIds, splitTypes, resolver.virtualPods, resolver.deferredPodArrays,
+          op.getLoc(), rewriter, splitLeafArrays
       )) {
     return failure();
   }
 
   SmallVector<Value> replacements(splitLeafArrays.begin(), splitLeafArrays.end());
   if (needsPodArrayShapeCarrier(arrTy)) {
-    Value carrier =
-        tryResolveReadPodArrayShapeSource(fieldRead, arrTy, virtualPods, op.getLoc(), rewriter);
+    Value carrier = tryResolveReadPodArrayShapeSource(
+        fieldRead, arrTy, resolver.virtualPods, op.getLoc(), rewriter
+    );
     if (!carrier) {
-      if (auto it = deferredPodArrays.find(fieldRead.getResult());
-          it != deferredPodArrays.end() && it->second.shapeCarrier) {
+      if (auto it = resolver.deferredPodArrays.find(fieldRead.getResult());
+          it != resolver.deferredPodArrays.end() && it->second.shapeCarrier) {
         carrier = castValueToTypeIfNeeded(
             rewriter, op.getLoc(), it->second.shapeCarrier, getPodArrayShapeCarrierType(arrTy)
         );
@@ -4526,18 +4544,13 @@ static LogicalResult resolveDeferredSplitPodArrayCast(
 /// reconstructs the per-leaf split arrays, performs the array read on each leaf array, and then
 /// rebuilds the element POD virtually instead of materializing the whole aggregate array first.
 class ResolvePodReadBackedArrayReadOp : public OpConversionPattern<ReadArrayOp> {
-  VirtualPodValueMap &virtualPods;
-  DeferredPodArrayBackingMap &deferredPodArrays;
+  Step3Resolver &resolver;
 
 public:
-  ResolvePodReadBackedArrayReadOp(
-      MLIRContext *ctx, VirtualPodValueMap &virtualPodMap,
-      DeferredPodArrayBackingMap &deferredPodArrayMap
-  )
-      : OpConversionPattern<ReadArrayOp>(ctx), virtualPods(virtualPodMap),
-        deferredPodArrays(deferredPodArrayMap) {}
+  ResolvePodReadBackedArrayReadOp(MLIRContext *ctx, Step3Resolver &step3Resolver)
+      : OpConversionPattern<ReadArrayOp>(ctx), resolver(step3Resolver) {}
 
-  static bool canResolve(ReadArrayOp op, const VirtualPodValueMap &virtualPods) {
+  static bool canResolve(ReadArrayOp op, const Step3Resolver &resolver) {
     if (!shouldDeferPodArrayReadToStep3(op)) {
       return false;
     }
@@ -4550,7 +4563,7 @@ public:
 
     SmallVector<Value> ignoredLeafArrays;
     return tryCollectReadPodSplitPodArrayLeafValues(
-               fieldRead, arrTy, splitIds, splitTypes, virtualPods, ignoredLeafArrays
+               fieldRead, arrTy, splitIds, splitTypes, resolver.virtualPods, ignoredLeafArrays
            ) ||
            isFreshUnwrittenPodRead(fieldRead);
   }
@@ -4571,8 +4584,8 @@ public:
 
     SmallVector<Value> splitLeafArrays;
     if (!resolveReadPodSplitPodArrayLeafValues(
-            fieldRead, arrTy, splitIds, splitTypes, virtualPods, deferredPodArrays, op.getLoc(),
-            rewriter, splitLeafArrays
+            fieldRead, arrTy, splitIds, splitTypes, resolver.virtualPods,
+            resolver.deferredPodArrays, op.getLoc(), rewriter, splitLeafArrays
         )) {
       return failure();
     }
@@ -4587,7 +4600,7 @@ public:
     }
 
     Value virtualPod = createVirtualPodPlaceholder(rewriter, op.getLoc(), podTy, leafValues);
-    virtualPods[virtualPod] = std::move(leafValues);
+    resolver.virtualPods[virtualPod] = std::move(leafValues);
     rewriter.replaceOp(op, virtualPod);
     eraseDeadDeferredFieldReadChain(fieldRead, rewriter);
     return success();
@@ -4602,18 +4615,13 @@ public:
 /// read to all split leaf arrays, and this pattern resolves that placeholder once the backing leaf
 /// arrays become available.
 class ResolveDeferredSplitPodArrayCastOp : public OpConversionPattern<UnrealizedConversionCastOp> {
-  VirtualPodValueMap &virtualPods;
-  DeferredPodArrayBackingMap &deferredPodArrays;
+  Step3Resolver &resolver;
 
 public:
-  ResolveDeferredSplitPodArrayCastOp(
-      MLIRContext *ctx, VirtualPodValueMap &virtualPodMap,
-      DeferredPodArrayBackingMap &deferredPodArrayMap
-  )
-      : OpConversionPattern<UnrealizedConversionCastOp>(ctx), virtualPods(virtualPodMap),
-        deferredPodArrays(deferredPodArrayMap) {}
+  ResolveDeferredSplitPodArrayCastOp(MLIRContext *ctx, Step3Resolver &step3Resolver)
+      : OpConversionPattern<UnrealizedConversionCastOp>(ctx), resolver(step3Resolver) {}
 
-  static bool canResolve(UnrealizedConversionCastOp op, const VirtualPodValueMap &virtualPods) {
+  static bool canResolve(UnrealizedConversionCastOp op, const Step3Resolver &resolver) {
     ArrayType arrTy;
     SmallVector<RecordChain> splitIds;
     SmallVector<Type> splitTypes;
@@ -4628,7 +4636,7 @@ public:
 
     SmallVector<Value> ignoredLeafArrays;
     return tryCollectReadPodSplitPodArrayLeafValues(
-               fieldRead, arrTy, splitIds, splitTypes, virtualPods, ignoredLeafArrays
+               fieldRead, arrTy, splitIds, splitTypes, resolver.virtualPods, ignoredLeafArrays
            ) ||
            isFreshUnwrittenPodRead(fieldRead);
   }
@@ -4636,34 +4644,28 @@ public:
   LogicalResult matchAndRewrite(
       UnrealizedConversionCastOp op, OpAdaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    return resolveDeferredSplitPodArrayCast(op, rewriter, virtualPods, deferredPodArrays);
+    return resolveDeferredSplitPodArrayCast(op, rewriter, resolver);
   }
 };
 
 /// Greedily resolve deferred split-array placeholders before step-3 conversion starts.
 class ResolveDeferredSplitPodArrayCastPrepass final
     : public OpRewritePattern<UnrealizedConversionCastOp> {
-  VirtualPodValueMap &virtualPods;
-  DeferredPodArrayBackingMap &deferredPodArrays;
+  Step3Resolver &resolver;
 
 public:
-  ResolveDeferredSplitPodArrayCastPrepass(
-      MLIRContext *ctx, VirtualPodValueMap &virtualPodMap,
-      DeferredPodArrayBackingMap &deferredPodArrayMap
-  )
-      : OpRewritePattern<UnrealizedConversionCastOp>(ctx), virtualPods(virtualPodMap),
-        deferredPodArrays(deferredPodArrayMap) {}
+  ResolveDeferredSplitPodArrayCastPrepass(MLIRContext *ctx, Step3Resolver &step3Resolver)
+      : OpRewritePattern<UnrealizedConversionCastOp>(ctx), resolver(step3Resolver) {}
 
   LogicalResult
   matchAndRewrite(UnrealizedConversionCastOp op, PatternRewriter &rewriter) const override {
-    return resolveDeferredSplitPodArrayCast(op, rewriter, virtualPods, deferredPodArrays);
+    return resolveDeferredSplitPodArrayCast(op, rewriter, resolver);
   }
 };
 
 /// Rewrite a whole-POD equality into one equality per leaf using the current virtual POD state.
 static void splitVirtualPodEmitEquality(
-    constrain::EmitEqualityOp op, RewriterBase &rewriter, const VirtualPodValueMap &virtualPods,
-    CompatiblePodLeafMaterializationMap &materializedLeaves
+    constrain::EmitEqualityOp op, RewriterBase &rewriter, Step3Resolver &resolver
 ) {
   PodType podTy = getWholePodEqualityType(op);
   assert(podTy && "expected a whole-POD equality to expose a concrete POD side");
@@ -4671,12 +4673,12 @@ static void splitVirtualPodEmitEquality(
   SmallVector<Value> lhsLeaves;
   SmallVector<Value> rhsLeaves;
   collectWholePodEqualityOperandLeaves(
-      op.getLoc(), op.getLhs(), podTy, lhsLeaves, rewriter, materializedLeaves, op.getOperation(),
-      &virtualPods
+      op.getLoc(), op.getLhs(), podTy, lhsLeaves, rewriter, resolver.materializedLeaves,
+      op.getOperation(), &resolver.virtualPods
   );
   collectWholePodEqualityOperandLeaves(
-      op.getLoc(), op.getRhs(), podTy, rhsLeaves, rewriter, materializedLeaves, op.getOperation(),
-      &virtualPods
+      op.getLoc(), op.getRhs(), podTy, rhsLeaves, rewriter, resolver.materializedLeaves,
+      op.getOperation(), &resolver.virtualPods
   );
 
   assert(lhsLeaves.size() == rhsLeaves.size() && "POD equality leaves must stay aligned");
@@ -4693,8 +4695,7 @@ static void splitVirtualPodEmitEquality(
 /// final leaf map instead of the value at the equality's program point. Splitting those earlier
 /// equalities immediately before the write update preserves the pre-write leaf values.
 static void splitEarlierVirtualPodEqualitiesBeforeWriteInBlock(
-    WritePodOp writeOp, RewriterBase &rewriter, const VirtualPodValueMap &virtualPods,
-    CompatiblePodLeafMaterializationMap &materializedLeaves
+    WritePodOp writeOp, RewriterBase &rewriter, Step3Resolver &resolver
 ) {
   Value writtenPod = peelVirtualPodCompatibilityCasts(writeOp.getPodRef());
 
@@ -4717,13 +4718,13 @@ static void splitEarlierVirtualPodEqualitiesBeforeWriteInBlock(
       continue;
     }
 
-    if (!lookupVirtualPodLeafMap(equalityOp.getLhs(), virtualPods) &&
-        !lookupVirtualPodLeafMap(equalityOp.getRhs(), virtualPods)) {
+    if (!lookupVirtualPodLeafMap(equalityOp.getLhs(), resolver.virtualPods) &&
+        !lookupVirtualPodLeafMap(equalityOp.getRhs(), resolver.virtualPods)) {
       continue;
     }
 
     rewriter.setInsertionPoint(equalityOp);
-    splitVirtualPodEmitEquality(equalityOp, rewriter, virtualPods, materializedLeaves);
+    splitVirtualPodEmitEquality(equalityOp, rewriter, resolver);
   }
 }
 
@@ -4732,35 +4733,28 @@ static void splitEarlierVirtualPodEqualitiesBeforeWriteInBlock(
 /// Writes nested under supported SCF regions are left materialized so step 4 can lift them into
 /// explicit region results or loop-carried values instead of mutating the global virtual state.
 class ResolveVirtualPodWriteOp : public OpConversionPattern<WritePodOp> {
-  VirtualPodValueMap &virtualPods;
-  CompatiblePodLeafMaterializationMap &materializedLeaves;
+  Step3Resolver &resolver;
 
 public:
-  ResolveVirtualPodWriteOp(
-      MLIRContext *ctx, VirtualPodValueMap &virtualPodMap,
-      CompatiblePodLeafMaterializationMap &materializedLeafMap
-  )
-      : OpConversionPattern<WritePodOp>(ctx), virtualPods(virtualPodMap),
-        materializedLeaves(materializedLeafMap) {}
+  ResolveVirtualPodWriteOp(MLIRContext *ctx, Step3Resolver &step3Resolver)
+      : OpConversionPattern<WritePodOp>(ctx), resolver(step3Resolver) {}
 
   LogicalResult matchAndRewrite(
       WritePodOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    auto it = lookupVirtualPodLeafMapIt(op.getPodRef(), virtualPods);
-    if (it == virtualPods.end() || isInsideSupportedScfRegion(op.getOperation())) {
+    auto it = lookupVirtualPodLeafMapIt(op.getPodRef(), resolver.virtualPods);
+    if (it == resolver.virtualPods.end() || isInsideSupportedScfRegion(op.getOperation())) {
       return failure();
     }
 
-    splitEarlierVirtualPodEqualitiesBeforeWriteInBlock(
-        op, rewriter, virtualPods, materializedLeaves
-    );
+    splitEarlierVirtualPodEqualitiesBeforeWriteInBlock(op, rewriter, resolver);
 
     Type recordType =
         llvm::cast<PodType>(op.getPodRefType()).getRecordMap().lookup(op.getRecordName());
     assert(recordType && "record must exist in POD type");
     updateVirtualPodRecordLeafValues(
-        op.getLoc(), op.getRecordNameAttr(), recordType, adaptor.getValue(), virtualPods, rewriter,
-        it->second
+        op.getLoc(), op.getRecordNameAttr(), recordType, adaptor.getValue(), resolver.virtualPods,
+        rewriter, it->second
     );
     rewriter.eraseOp(op);
     return success();
@@ -4772,11 +4766,11 @@ public:
 /// This pattern answers `pod.read` directly from virtual leaf storage, rebuilding nested POD
 /// subrecords on demand and casting scalar leaves back to the precise record type when needed.
 class ResolveVirtualPodReadOp : public OpConversionPattern<ReadPodOp> {
-  VirtualPodValueMap &virtualPods;
+  Step3Resolver &resolver;
 
 public:
-  ResolveVirtualPodReadOp(MLIRContext *ctx, VirtualPodValueMap &virtualPodMap)
-      : OpConversionPattern<ReadPodOp>(ctx), virtualPods(virtualPodMap) {}
+  ResolveVirtualPodReadOp(MLIRContext *ctx, Step3Resolver &step3Resolver)
+      : OpConversionPattern<ReadPodOp>(ctx), resolver(step3Resolver) {}
 
   LogicalResult
   matchAndRewrite(ReadPodOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
@@ -4784,7 +4778,8 @@ public:
       return failure();
     }
 
-    const VirtualPodLeafMap *leafValues = lookupVirtualPodLeafMap(op.getPodRef(), virtualPods);
+    const VirtualPodLeafMap *leafValues =
+        lookupVirtualPodLeafMap(op.getPodRef(), resolver.virtualPods);
     if (!leafValues) {
       return failure();
     }
@@ -4802,7 +4797,7 @@ public:
       });
       Value virtualPod =
           createVirtualPodPlaceholder(rewriter, op.getLoc(), nestedPodTy, nestedLeafValues);
-      virtualPods[virtualPod] = std::move(nestedLeafValues);
+      resolver.virtualPods[virtualPod] = std::move(nestedLeafValues);
       rewriter.replaceOp(op, virtualPod);
       return success();
     }
@@ -4854,16 +4849,11 @@ static void rehydrateVirtualPodPlaceholders(ModuleOp modOp, VirtualPodValueMap &
 /// Rewrite whole-POD `constrain.eq` while virtual leaf storage is still available.
 class SplitVirtualPodInEmitEqualityPattern final
     : public OpRewritePattern<constrain::EmitEqualityOp> {
-  const VirtualPodValueMap &virtualPods;
-  CompatiblePodLeafMaterializationMap &materializedLeaves;
+  Step3Resolver &resolver;
 
 public:
-  SplitVirtualPodInEmitEqualityPattern(
-      MLIRContext *ctx, const VirtualPodValueMap &virtualPodMap,
-      CompatiblePodLeafMaterializationMap &materializedLeafMap
-  )
-      : OpRewritePattern<constrain::EmitEqualityOp>(ctx), virtualPods(virtualPodMap),
-        materializedLeaves(materializedLeafMap) {}
+  SplitVirtualPodInEmitEqualityPattern(MLIRContext *ctx, Step3Resolver &step3Resolver)
+      : OpRewritePattern<constrain::EmitEqualityOp>(ctx), resolver(step3Resolver) {}
 
   LogicalResult
   matchAndRewrite(constrain::EmitEqualityOp op, PatternRewriter &rewriter) const override {
@@ -4871,16 +4861,53 @@ public:
       return failure();
     }
 
-    splitVirtualPodEmitEquality(op, rewriter, virtualPods, materializedLeaves);
+    splitVirtualPodEmitEquality(op, rewriter, resolver);
     return success();
   }
 };
 
-/// Add the shared legality rules for step 3's late virtual-POD cleanup operations.
-static void configureStep3LateVirtualPodLegality(
-    ConversionTarget &target, const VirtualPodValueMap &virtualPods
+void Step3Resolver::rehydrateVirtualPodPlaceholders(ModuleOp modOp) {
+  ::rehydrateVirtualPodPlaceholders(modOp, virtualPods);
+}
+
+void Step3Resolver::addPreConversionPatterns(RewritePatternSet &patterns) {
+  patterns.add<ResolveDeferredSplitPodArrayCastPrepass>(patterns.getContext(), *this);
+}
+
+void Step3Resolver::addConversionPatterns(
+    RewritePatternSet &patterns, SymbolTableCollection &symTables,
+    const MemberReplacementMap &memberRepMap
 ) {
-  target.addDynamicallyLegalOp<WritePodOp>([&virtualPods](WritePodOp op) {
+  patterns.add<SplitInitFromNewPodOp>(patterns.getContext());
+  patterns.add<SplitPodElementCreateArrayOp>(patterns.getContext(), *this);
+  patterns.add<SplitPodInFuncDefOp, SplitPodInReturnOp, SplitPodInCallOp>(
+      patterns.getContext(), *this
+  );
+  patterns.add<SplitPodInMemberWriteOp, SplitPodInMemberReadOp>(
+      patterns.getContext(), symTables, memberRepMap, *this
+  );
+  patterns.add<RejectRaggedNestedLeafArrayLengthOp>(patterns.getContext());
+  patterns.add<ResolvePodReadBackedArrayReadOp>(patterns.getContext(), *this);
+  patterns.add<ResolvePodReadBackedArrayLengthOp>(patterns.getContext(), *this);
+  patterns.add<ResolveDeferredSplitPodArrayCastOp>(patterns.getContext(), *this);
+  patterns.add<ResolveVirtualPodWriteOp>(patterns.getContext(), *this);
+  patterns.add<ResolveVirtualPodReadOp>(patterns.getContext(), *this);
+}
+
+void Step3Resolver::addLateResolutionPatterns(RewritePatternSet &patterns) {
+  patterns.add<ResolvePodReadBackedArrayReadOp>(patterns.getContext(), *this);
+  patterns.add<ResolvePodReadBackedArrayLengthOp>(patterns.getContext(), *this);
+  patterns.add<ResolveDeferredSplitPodArrayCastOp>(patterns.getContext(), *this);
+  patterns.add<ResolveVirtualPodWriteOp>(patterns.getContext(), *this);
+  patterns.add<ResolveVirtualPodReadOp>(patterns.getContext(), *this);
+}
+
+void Step3Resolver::addPostConversionPatterns(RewritePatternSet &patterns) {
+  patterns.add<SplitVirtualPodInEmitEqualityPattern>(patterns.getContext(), *this);
+}
+
+void Step3Resolver::configureLateVirtualPodLegality(ConversionTarget &target) const {
+  target.addDynamicallyLegalOp<WritePodOp>([this](WritePodOp op) {
     return !lookupVirtualPodLeafMap(op.getPodRef(), virtualPods) ||
            isInsideSupportedScfRegion(op.getOperation());
   });
@@ -4888,16 +4915,48 @@ static void configureStep3LateVirtualPodLegality(
     return RejectRaggedNestedLeafArrayLengthOp::legal(op) &&
            ResolvePodReadBackedArrayLengthOp::legal(op);
   });
-  target.addDynamicallyLegalOp<ReadArrayOp>([&virtualPods](ReadArrayOp op) {
-    return !ResolvePodReadBackedArrayReadOp::canResolve(op, virtualPods);
+  target.addDynamicallyLegalOp<ReadArrayOp>([this](ReadArrayOp op) {
+    return !ResolvePodReadBackedArrayReadOp::canResolve(op, *this);
   });
-  target.addDynamicallyLegalOp<UnrealizedConversionCastOp>(
-      [&virtualPods](UnrealizedConversionCastOp op) {
-    return !ResolveDeferredSplitPodArrayCastOp::canResolve(op, virtualPods);
-  }
-  );
-  target.addDynamicallyLegalOp<ReadPodOp>([&virtualPods](ReadPodOp op) {
+  target.addDynamicallyLegalOp<UnrealizedConversionCastOp>([this](UnrealizedConversionCastOp op) {
+    return !ResolveDeferredSplitPodArrayCastOp::canResolve(op, *this);
+  });
+  target.addDynamicallyLegalOp<ReadPodOp>([this](ReadPodOp op) {
     return !canResolveVirtualPodRead(op, virtualPods);
+  });
+}
+
+bool Step3Resolver::hasResolvableLateVirtualPodOps(ModuleOp modOp) const {
+  return walkContainsMatch<Operation *>(*modOp, [this](Operation *op) {
+    return TypeSwitch<Operation *, bool>(op)
+        .Case<WritePodOp>([this](auto writeOp) {
+      return lookupVirtualPodLeafMap(writeOp.getPodRef(), virtualPods) &&
+             !isInsideSupportedScfRegion(writeOp.getOperation());
+    })
+        .Case<ReadPodOp>([this](auto readOp) {
+      return canResolveVirtualPodRead(readOp, virtualPods);
+    })
+        .Case<ReadArrayOp>([this](auto readOp) {
+      return ResolvePodReadBackedArrayReadOp::canResolve(readOp, *this);
+    })
+        .Case<ArrayLengthOp>([](auto lenOp) {
+      return !ResolvePodReadBackedArrayLengthOp::legal(lenOp);
+    })
+        .Case<UnrealizedConversionCastOp>([this](auto castOp) {
+      return ResolveDeferredSplitPodArrayCastOp::canResolve(castOp, *this);
+    }).Default([](Operation *) { return false; });
+  });
+}
+
+void Step3Resolver::materializeRemainingVirtualPods(ModuleOp modOp) {
+  OpBuilder builder(modOp.getContext());
+  modOp.walk([this, &builder](NewPodOp newPod) {
+    auto it = virtualPods.find(newPod.getResult());
+    if (it == virtualPods.end() || newPod.use_empty()) {
+      return;
+    }
+    builder.setInsertionPointAfter(findVirtualPodMaterializationAnchor(newPod, it->second));
+    materializeVirtualPod(builder, newPod, it->second);
   });
 }
 
@@ -4906,15 +4965,11 @@ static void configureStep3LateVirtualPodLegality(
 static LogicalResult
 step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementMap &memberRepMap) {
   MLIRContext *ctx = modOp.getContext();
-  VirtualPodValueMap virtualPods;
-  CompatiblePodLeafMaterializationMap materializedLeaves;
-  rehydrateVirtualPodPlaceholders(modOp, virtualPods);
-  DeferredPodArrayBackingMap deferredPodArrays;
+  Step3Resolver resolver;
+  resolver.rehydrateVirtualPodPlaceholders(modOp);
 
   RewritePatternSet preConversionPatterns(ctx);
-  preConversionPatterns.add<ResolveDeferredSplitPodArrayCastPrepass>(
-      ctx, virtualPods, deferredPodArrays
-  );
+  resolver.addPreConversionPatterns(preConversionPatterns);
   if (failed(applyPatternsGreedily(
           modOp->getRegion(0), std::move(preConversionPatterns),
           GreedyRewriteConfig {.fold = false, .cseConstants = false}
@@ -4923,18 +4978,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   }
 
   RewritePatternSet patterns(ctx);
-  patterns.add<SplitInitFromNewPodOp>(ctx);
-  patterns.add<SplitPodElementCreateArrayOp>(ctx, virtualPods);
-  patterns.add<SplitPodInFuncDefOp, SplitPodInReturnOp, SplitPodInCallOp>(ctx, virtualPods);
-  patterns.add<SplitPodInMemberWriteOp, SplitPodInMemberReadOp>(
-      ctx, symTables, memberRepMap, virtualPods
-  );
-  patterns.add<RejectRaggedNestedLeafArrayLengthOp>(ctx);
-  patterns.add<ResolvePodReadBackedArrayReadOp>(ctx, virtualPods, deferredPodArrays);
-  patterns.add<ResolvePodReadBackedArrayLengthOp>(ctx, virtualPods, deferredPodArrays);
-  patterns.add<ResolveDeferredSplitPodArrayCastOp>(ctx, virtualPods, deferredPodArrays);
-  patterns.add<ResolveVirtualPodWriteOp>(ctx, virtualPods, materializedLeaves);
-  patterns.add<ResolveVirtualPodReadOp>(ctx, virtualPods);
+  resolver.addConversionPatterns(patterns, symTables, memberRepMap);
 
   ConversionTarget target(*ctx);
   baseTargetSetup(target);
@@ -4945,7 +4989,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   target.addDynamicallyLegalOp<CallOp>(SplitPodInCallOp::legal);
   target.addDynamicallyLegalOp<MemberWriteOp>(SplitPodInMemberWriteOp::legal);
   target.addDynamicallyLegalOp<MemberReadOp>(SplitPodInMemberReadOp::legal);
-  configureStep3LateVirtualPodLegality(target, virtualPods);
+  resolver.configureLateVirtualPodLegality(target);
 
   LLVM_DEBUG(llvm::dbgs() << "Begin step 3: update/split other pod ops\n";);
   if (failed(applyFullConversion(modOp, target, std::move(patterns)))) {
@@ -4957,50 +5001,18 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   // previously-illegal pod.read/pod.write or cast finally resolvable. Scan for
   // exactly those ops here so we can drive a small fixpoint loop before the
   // final materialization stage.
-  auto hasResolvableLateVirtualPodOps = [&modOp, &virtualPods]() {
-    return walkContainsMatch<Operation *>(*modOp, [&virtualPods](Operation *op) {
-      return TypeSwitch<Operation *, bool>(op)
-          .Case<WritePodOp>([&virtualPods](auto writeOp) {
-        return lookupVirtualPodLeafMap(writeOp.getPodRef(), virtualPods) &&
-               !isInsideSupportedScfRegion(writeOp.getOperation());
-      })
-          .Case<ReadPodOp>([&virtualPods](auto readOp) {
-        return canResolveVirtualPodRead(readOp, virtualPods);
-      })
-          .Case<ReadArrayOp>([&virtualPods](auto readOp) {
-        return ResolvePodReadBackedArrayReadOp::canResolve(readOp, virtualPods);
-      })
-          .Case<ArrayLengthOp>([](auto lenOp) {
-        return !ResolvePodReadBackedArrayLengthOp::legal(lenOp);
-      })
-          .Case<UnrealizedConversionCastOp>([&virtualPods](auto castOp) {
-        return ResolveDeferredSplitPodArrayCastOp::canResolve(castOp, virtualPods);
-      }).Default([](Operation *) { return false; });
-    });
-  };
-
   // Rebuild the late-resolution target and pattern set each round because the
   // set of remaining virtual-POD placeholders shrinks as patterns fire. This
   // phase intentionally uses partial conversion: each round resolves whatever
   // is now legal to lower, then we rescan for any newly-exposed opportunities.
   auto runLateResolutionRound = [&]() {
     RewritePatternSet lateResolutionPatterns(ctx);
-    lateResolutionPatterns.add<ResolvePodReadBackedArrayReadOp>(
-        ctx, virtualPods, deferredPodArrays
-    );
-    lateResolutionPatterns.add<ResolvePodReadBackedArrayLengthOp>(
-        ctx, virtualPods, deferredPodArrays
-    );
-    lateResolutionPatterns.add<ResolveDeferredSplitPodArrayCastOp>(
-        ctx, virtualPods, deferredPodArrays
-    );
-    lateResolutionPatterns.add<ResolveVirtualPodWriteOp>(ctx, virtualPods, materializedLeaves);
-    lateResolutionPatterns.add<ResolveVirtualPodReadOp>(ctx, virtualPods);
+    resolver.addLateResolutionPatterns(lateResolutionPatterns);
 
     ConversionTarget lateResolutionTarget(*ctx);
     baseTargetSetup(lateResolutionTarget);
     lateResolutionTarget.addLegalOp<ModuleOp>();
-    configureStep3LateVirtualPodLegality(lateResolutionTarget, virtualPods);
+    resolver.configureLateVirtualPodLegality(lateResolutionTarget);
 
     return applyPartialConversion(modOp, lateResolutionTarget, std::move(lateResolutionPatterns));
   };
@@ -5008,20 +5020,19 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   // Iterate to a fixpoint before post-processing materializes any surviving
   // virtual PODs. A bounded loop guards against accidental non-progress.
   for (unsigned lateResolutionRounds = 0;
-       lateResolutionRounds < 64 && hasResolvableLateVirtualPodOps(); ++lateResolutionRounds) {
+       lateResolutionRounds < 64 && resolver.hasResolvableLateVirtualPodOps(modOp);
+       ++lateResolutionRounds) {
     if (failed(runLateResolutionRound())) {
       return failure();
     }
   }
-  if (hasResolvableLateVirtualPodOps()) {
+  if (resolver.hasResolvableLateVirtualPodOps(modOp)) {
     modOp.emitError("late virtual POD resolution did not reach a fixpoint");
     return failure();
   }
 
   RewritePatternSet postConversionPatterns(ctx);
-  postConversionPatterns.add<SplitVirtualPodInEmitEqualityPattern>(
-      ctx, virtualPods, materializedLeaves
-  );
+  resolver.addPostConversionPatterns(postConversionPatterns);
   if (failed(applyPatternsGreedily(
           modOp->getRegion(0), std::move(postConversionPatterns),
           GreedyRewriteConfig {.fold = false, .cseConstants = false}
@@ -5029,15 +5040,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
     return failure();
   }
 
-  OpBuilder builder(ctx);
-  modOp.walk([&builder, &virtualPods](NewPodOp newPod) {
-    auto it = virtualPods.find(newPod.getResult());
-    if (it == virtualPods.end() || newPod.use_empty()) {
-      return;
-    }
-    builder.setInsertionPointAfter(findVirtualPodMaterializationAnchor(newPod, it->second));
-    materializeVirtualPod(builder, newPod, it->second);
-  });
+  resolver.materializeRemainingVirtualPods(modOp);
 
   bool erasedDeadPlaceholderOps = false;
   do {
