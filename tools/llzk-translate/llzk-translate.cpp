@@ -8,25 +8,26 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// This file implements a version of the mlir-translate tool configured for 
+/// This file implements a version of the mlir-translate tool configured for
 /// use on LLZK files.
 ///
 //===----------------------------------------------------------------------===//
 
 #include "smt/Target/TranslateRegistration.h"
-#include "zklean/Target/TranslateRegistration.h"
 #include "tools/config.h"
+#include "zklean/Target/TranslateRegistration.h"
+
 #include "llzk/Config/Config.h"
 
 #include <mlir/Dialect/Func/Extensions/InlinerExtension.h>
 #include <mlir/Dialect/Func/IR/FuncOps.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/DialectRegistry.h>
+#include <mlir/InitAllTranslations.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Pass/PassRegistry.h>
 #include <mlir/Tools/mlir-translate/MlirTranslateMain.h>
 #include <mlir/Transforms/Passes.h>
-#include <mlir/InitAllTranslations.h>
 
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/CommandLine.h>
@@ -50,11 +51,11 @@ int main(int argc, char **argv) {
     os << "\nLLZK (" LLZK_URL "):\n  LLZK version " LLZK_VERSION_STRING "\n";
   });
 
-  // Register all MLIR translations 
+  // Register all MLIR translations
   mlir::registerAllTranslations();
   smt::registerSmtTranslation();
   zklean::registerZKLeanTranslation();
-#if LLZK_WITH_PCL 
+#if LLZK_WITH_PCL
   pcl::registerPclTranslation();
 #endif
 

@@ -42,4 +42,3 @@ void smt::registerSmtTranslation() {
   }
   );
 }
-

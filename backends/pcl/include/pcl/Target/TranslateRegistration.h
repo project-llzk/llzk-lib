@@ -10,6 +10,6 @@
 #pragma once
 
 namespace pcl {
-  /// Registers the translation from PCL IR to PCL lisp.
-  void registerPclTranslation();
-}
+/// Registers the translation from PCL IR to PCL lisp.
+void registerPclTranslation();
+} // namespace pcl

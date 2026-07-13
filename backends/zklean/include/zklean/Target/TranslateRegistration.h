@@ -10,6 +10,6 @@
 #pragma once
 
 namespace zklean {
-  /// Registers the translation from ZKLean to Lean.
-  void registerZKLeanTranslation();
-}
+/// Registers the translation from ZKLean to Lean.
+void registerZKLeanTranslation();
+} // namespace zklean

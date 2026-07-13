@@ -45,5 +45,3 @@ void zklean::registerZKLeanTranslation() {
   }
   );
 }
-
-

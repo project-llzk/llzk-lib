@@ -10,6 +10,6 @@
 #pragma once
 
 namespace llzk::smt {
-  /// Registers the translation from SMT to SMTLIB.
-  void registerSmtTranslation();
-}
+/// Registers the translation from SMT to SMTLIB.
+void registerSmtTranslation();
+} // namespace llzk::smt

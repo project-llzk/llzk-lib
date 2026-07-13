@@ -43,7 +43,6 @@
 #include <string_view>
 #include <utility>
 
-
 using namespace mlir;
 using namespace llzk;
 
@@ -1574,7 +1573,6 @@ private:
   DenseSet<unsigned> activePureHelperSCCs;
   DenseSet<unsigned> emittedPureHelperSCCs;
 };
-
 
 } // namespace
 

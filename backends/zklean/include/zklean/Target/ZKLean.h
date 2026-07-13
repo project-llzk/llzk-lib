@@ -18,4 +18,4 @@ namespace zklean {
 
 mlir::LogicalResult emitZKLeanModule(mlir::ModuleOp module, llvm::raw_ostream &os);
 
-} // namespace llzk::smt
+} // namespace zklean

@@ -43,7 +43,6 @@
 
 #include <optional>
 
-
 using namespace mlir;
 
 namespace {
@@ -531,7 +530,7 @@ static void emitZKLeanFuncIfAny(
 
 // Emit Lean output from modules that already contain ZKLean/ZKBuilder ops.
 // Prints structs first, then functions using `emitLeanFunc`.
- LogicalResult zklean::emitZKLeanModule(ModuleOp module, raw_ostream &os) {
+LogicalResult zklean::emitZKLeanModule(ModuleOp module, raw_ostream &os) {
   bool printedSomething = false;
   llvm::DenseSet<StringRef> structNames;
   os << "import zkLean\n";
@@ -554,6 +553,3 @@ static void emitZKLeanFuncIfAny(
 
   return success(printedSomething);
 }
-
-
-
