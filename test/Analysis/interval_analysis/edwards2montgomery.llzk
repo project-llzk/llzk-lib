@@ -336,28 +336,28 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @Div StructIntervals {
-// CHECK-NEXT:     %arg0[@$super] in Entire
-// CHECK-NEXT:     %arg0[@reciprocal] in TypeC:[ 1, 2013265920 ]
+// CHECK-NEXT:     %arg0.$super in Entire
+// CHECK-NEXT:     %arg0.reciprocal in TypeC:[ 1, 2013265920 ]
 // CHECK-NEXT:     %arg1 in Entire
 // CHECK-NEXT:     %arg2 in TypeC:[ 1, 2013265920 ]
 // CHECK-NEXT: }
 // CHECK-LABEL: @Edwards2Montgomery StructIntervals {
-// CHECK-NEXT:     %arg0[@$super][0][@$super] in Entire
-// CHECK-NEXT:     %arg0[@$super][0][@reg] in Entire
-// CHECK-NEXT:     %arg0[@$super][1][@$super] in Entire
-// CHECK-NEXT:     %arg0[@$super][1][@reg] in Entire
-// CHECK-NEXT:     %arg0[@out][0][@$super] in Entire
-// CHECK-NEXT:     %arg0[@out][0][@reg] in Entire
-// CHECK-NEXT:     %arg0[@out][1][@$super] in Entire
-// CHECK-NEXT:     %arg0[@out][1][@reg] in Entire
-// CHECK-NEXT:     %arg0[@$temp_1][@$super] in Entire
-// CHECK-NEXT:     %arg0[@$temp_1][@reg] in Entire
-// CHECK-NEXT:     %arg0[@$temp_0][@$super] in Entire
-// CHECK-NEXT:     %arg0[@$temp_0][@reciprocal] in TypeC:[ 1, 2013265920 ]
-// CHECK-NEXT:     %arg0[@$temp][@$super] in Entire
-// CHECK-NEXT:     %arg0[@$temp][@reg] in Entire
-// CHECK-NEXT:     %arg0[@v][@$super] in Entire
-// CHECK-NEXT:     %arg0[@v][@reciprocal] in TypeC:[ 1, 2013265920 ]
+// CHECK-NEXT:     %arg0.$super[0].$super in Entire
+// CHECK-NEXT:     %arg0.$super[0].reg in Entire
+// CHECK-NEXT:     %arg0.$super[1].$super in Entire
+// CHECK-NEXT:     %arg0.$super[1].reg in Entire
+// CHECK-NEXT:     %arg0.out[0].$super in Entire
+// CHECK-NEXT:     %arg0.out[0].reg in Entire
+// CHECK-NEXT:     %arg0.out[1].$super in Entire
+// CHECK-NEXT:     %arg0.out[1].reg in Entire
+// CHECK-NEXT:     %arg0.$temp_1.$super in Entire
+// CHECK-NEXT:     %arg0.$temp_1.reg in Entire
+// CHECK-NEXT:     %arg0.$temp_0.$super in Entire
+// CHECK-NEXT:     %arg0.$temp_0.reciprocal in TypeC:[ 1, 2013265920 ]
+// CHECK-NEXT:     %arg0.$temp.$super in Entire
+// CHECK-NEXT:     %arg0.$temp.reg in Entire
+// CHECK-NEXT:     %arg0.v.$super in Entire
+// CHECK-NEXT:     %arg0.v.reciprocal in TypeC:[ 1, 2013265920 ]
 // CHECK-NEXT:     %arg1[0] in TypeC:[ 1, 2013265920 ]
 // CHECK-NEXT:     %arg1[1] in Entire
 // CHECK-NEXT: }
@@ -366,12 +366,12 @@ module attributes {llzk.lang} {
 // CMP-NEXT:     compute {
 // CMP-NEXT:         %arg0 in Entire
 // CMP-NEXT:         %arg1 in Entire
-// CMP-NEXT:         %self[@$super] in Entire
-// CMP-NEXT:         %self[@reciprocal] in Entire
+// CMP-NEXT:         %self.$super in Entire
+// CMP-NEXT:         %self.reciprocal in Entire
 // CMP-NEXT:     }
 // CMP-NEXT:     constrain {
-// CMP-NEXT:         %arg0[@$super] in Entire
-// CMP-NEXT:         %arg0[@reciprocal] in TypeC:[ 1, 2013265920 ]
+// CMP-NEXT:         %arg0.$super in Entire
+// CMP-NEXT:         %arg0.reciprocal in TypeC:[ 1, 2013265920 ]
 // CMP-NEXT:         %arg1 in Entire
 // CMP-NEXT:         %arg2 in TypeC:[ 1, 2013265920 ]
 // CMP-NEXT:     }
@@ -381,12 +381,12 @@ module attributes {llzk.lang} {
 // PROP-NEXT:     compute {
 // PROP-NEXT:         %arg0 in Entire
 // PROP-NEXT:         %arg1 in TypeC:[ 1, 2013265920 ]
-// PROP-NEXT:         %self[@$super] in Entire
-// PROP-NEXT:         %self[@reciprocal] in Entire
+// PROP-NEXT:         %self.$super in Entire
+// PROP-NEXT:         %self.reciprocal in Entire
 // PROP-NEXT:     }
 // PROP-NEXT:     constrain {
-// PROP-NEXT:         %arg0[@$super] in Entire
-// PROP-NEXT:         %arg0[@reciprocal] in TypeC:[ 1, 2013265920 ]
+// PROP-NEXT:         %arg0.$super in Entire
+// PROP-NEXT:         %arg0.reciprocal in TypeC:[ 1, 2013265920 ]
 // PROP-NEXT:         %arg1 in Entire
 // PROP-NEXT:         %arg2 in TypeC:[ 1, 2013265920 ]
 // PROP-NEXT:     }

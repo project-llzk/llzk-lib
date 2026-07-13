@@ -699,7 +699,7 @@ module attributes {llzk.lang} {
 // MemberDef and MemberRead w/ non-static shape (i.e., cannot be flattened to scalars)
 module attributes {llzk.lang} {
   poly.template @TComponentB2 {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @ComponentB2 {
       function.def @compute(%p: !struct.type<@TComponentB1::@ComponentB1<[@N]>>) -> !struct.type<@TComponentB2::@ComponentB2<[@N]>> {
@@ -715,7 +715,7 @@ module attributes {llzk.lang} {
   }
 
   poly.template @TComponentB1 {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @ComponentB1 {
       struct.member @f1 : !array.type<4,@N x !felt.type> {llzk.pub}
@@ -729,7 +729,7 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: poly.template @TComponentB2 {
-// CHECK-NEXT:    poly.param @N
+// CHECK-NEXT:    poly.param @N : index
 // CHECK-NEXT:    struct.def @ComponentB2 {
 // CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentB1::@ComponentB1<[@N]>>) -> !struct.type<@TComponentB2::@ComponentB2<[@N]>> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponentB2::@ComponentB2<[@N]>>
@@ -743,7 +743,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: poly.template @TComponentB1 {
-// CHECK-NEXT:    poly.param @N
+// CHECK-NEXT:    poly.param @N : index
 // CHECK-NEXT:    struct.def @ComponentB1 {
 // CHECK-NEXT:      struct.member @f1 : !array.type<4,@N x !felt.type> {llzk.pub}
 // CHECK-NEXT:      function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentB1::@ComponentB1<[@N]>>) attributes {function.allow_constraint} {
@@ -760,7 +760,7 @@ module attributes {llzk.lang} {
 // Func and CallOp w/ non-static shape (i.e., cannot be flattened to scalars)
 module attributes {llzk.lang} {
   poly.template @TComponentC1 {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @ComponentC1 {
       function.def @compute(%p: !array.type<@N x !felt.type>) -> !struct.type<@TComponentC1::@ComponentC1<[@N]>> {
@@ -775,7 +775,7 @@ module attributes {llzk.lang} {
   }
 
   poly.template @TComponentC2 {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @ComponentC2 {
       struct.member @f1 : !struct.type<@TComponentC1::@ComponentC1<[@N]>>
@@ -795,7 +795,7 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TComponentC1 {
-// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.param @N : index
 // CHECK-NEXT:      struct.def @ComponentC1 {
 // CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) -> !struct.type<@TComponentC1::@ComponentC1<[@N]>> attributes {function.allow_witness} {
 // CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponentC1::@ComponentC1<[@N]>>
@@ -807,7 +807,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TComponentC2 {
-// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.param @N : index
 // CHECK-NEXT:      struct.def @ComponentC2 {
 // CHECK-NEXT:        struct.member @f1 : !struct.type<@TComponentC1::@ComponentC1<[@N]>>
 // CHECK-NEXT:        function.def @compute(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) -> !struct.type<@TComponentC2::@ComponentC2<[@N]>> attributes {function.allow_witness} {

@@ -7,10 +7,10 @@ target_link_libraries(llzk-opt PRIVATE ${LLZK_DEP_DIALECT_LIBS} MLIROptLib
                       ZKLean::DialectRegistration ZKLeanDialectHeaders
 		                  ZKLean::Conversions
                       MLIRFuncDialect MLIRFuncInlinerExtension
-                      $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLConvDialectHeaders>
-                      $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCL::PCLDialect>
-                      $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCL::PCLTransforms>
-                      $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLConvTransforms>
+                      $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLDialectHeaders>
+                      $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLDialect>
+                      $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLTransforms>
+                      $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLConversion>
                       )
 llzk_target_add_mlir_link_settings(llzk-opt)
 include_directories(${MLIR_INCLUDE_DIRS} ${LLVM_INCLUDE_DIRS} ${R1CS_INCLUDE_DIR}

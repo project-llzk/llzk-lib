@@ -3,7 +3,7 @@
 #map = affine_map<()[s0, s1] -> (s0 floordiv s1)>
 module attributes {llzk.lang = "zirgen"} {
   poly.template @TS {
-    poly.param @X
+    poly.param @X : index
     poly.param @N
     poly.param @P
 
