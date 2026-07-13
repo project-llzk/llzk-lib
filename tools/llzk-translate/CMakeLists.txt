@@ -4,7 +4,7 @@ add_executable(llzk-translate llzk-translate.cpp)
 target_link_libraries(llzk-translate PRIVATE ${LLZK_DEP_DIALECT_LIBS} MLIRTranslateLib
                       LLZKDialect
                       LLZKDialectHeaders MLIRIR 
-                       SMTTarget 
+                       # SMTTarget 
                       ZKLeanTarget
                       ${translation_libs}
                       # $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLConvTransforms>
