@@ -125,7 +125,6 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@SubCmp::@SubC
 // CHECK-NEXT:          function.return %[[VAL_9]] : !struct.type<@SubCmp::@SubCmp>
 // CHECK-NEXT:        }
 // CHECK-NEXT:        function.def @constrain(%[[VAL_15:[0-9a-zA-Z_\.]+]]: !struct.type<@SubCmp::@SubCmp>, %[[VAL_16:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128"> {function.arg_name = "i"}) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
-// CHECK-NEXT:          %[[VAL_17:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_15]][@o] : <@SubCmp::@SubCmp>, !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_18:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_15]][@n] : <@SubCmp::@SubCmp>, !struct.type<@Nop::@Nop>
 // CHECK-NEXT:          %[[VAL_19:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_15]][@n$inputs_i] : <@SubCmp::@SubCmp>, !felt.type<"bn128">
 // CHECK-NEXT:          function.call @Nop::@Nop::@constrain(%[[VAL_18]], %[[VAL_19]]) : (!struct.type<@Nop::@Nop>, !felt.type<"bn128">) -> ()

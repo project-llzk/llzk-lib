@@ -15,10 +15,14 @@
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Global/IR/Ops.h"
+#include "llzk/Dialect/RAM/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/Concepts.h"
+#include "llzk/Util/EffectHelper.h"
 #include "llzk/Util/StreamHelper.h"
 
+#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/BuiltinOps.h>
 
 #include <llvm/ADT/DenseMap.h>
@@ -314,7 +318,16 @@ private:
 
 using ValueMap = DenseMap<mlir::Value, std::shared_ptr<ReferenceNode>>;
 
-ValueMap intersect(const ValueMap &lhs, const ValueMap &rhs) {
+/// Known values at a program point, split between tree-shaped value state and
+/// flat stateful-memory read facts.
+struct KnownState {
+  ValueMap values;
+  DenseMap<SymbolRefAttr, Value> globals;
+  DenseMap<ReferenceID, Value> ram;
+};
+
+/// Intersects tree-shaped value facts by retaining only common subtrees.
+ValueMap intersectValueMap(const ValueMap &lhs, const ValueMap &rhs) {
   ValueMap res;
   for (const auto &[id, lhsValTree] : lhs) {
     if (auto it = rhs.find(id); it != rhs.end()) {
@@ -325,6 +338,27 @@ ValueMap intersect(const ValueMap &lhs, const ValueMap &rhs) {
   return res;
 }
 
+/// Intersects flat lookup facts by retaining keys mapped to the same value.
+template <typename KeyT>
+DenseMap<KeyT, Value>
+intersectValueLookup(const DenseMap<KeyT, Value> &lhs, const DenseMap<KeyT, Value> &rhs) {
+  DenseMap<KeyT, Value> res;
+  for (const auto &[id, lhsVal] : lhs) {
+    if (auto it = rhs.find(id); it != rhs.end() && it->second == lhsVal) {
+      res[id] = lhsVal;
+    }
+  }
+  return res;
+}
+
+/// Intersects known state across predecessor blocks.
+KnownState intersect(const KnownState &lhs, const KnownState &rhs) {
+  return {
+      intersectValueMap(lhs.values, rhs.values), intersectValueLookup(lhs.globals, rhs.globals),
+      intersectValueLookup(lhs.ram, rhs.ram)
+  };
+}
+
 /// @brief Deep copy the ValueMap for when exclusive branches/regions need state
 /// tracking, so that the orig state is not polluted through pointer updates.
 ValueMap cloneValueMap(const ValueMap &orig) {
@@ -333,6 +367,12 @@ ValueMap cloneValueMap(const ValueMap &orig) {
     res[id] = tree->clone();
   }
   return res;
+}
+
+/// Deep copy the KnownState for exclusive branches/regions so tree updates do
+/// not mutate the incoming state.
+KnownState cloneKnownState(const KnownState &orig) {
+  return {cloneValueMap(orig.values), orig.globals, orig.ram};
 }
 
 class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<PassImpl> {
@@ -366,10 +406,10 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     // write a value that is already written.
     SmallVector<Operation *> redundantWrites;
 
-    ValueMap initState;
+    KnownState initState;
     // Initialize the state to the function arguments.
     for (auto arg : fn.getArguments()) {
-      initState[arg] = ReferenceNode::create(arg, arg);
+      initState.values[arg] = ReferenceNode::create(arg, arg);
     }
     // Functions only have a single region
     (void)runOnRegion(
@@ -400,38 +440,62 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     }
   }
 
-  ValueMap runOnRegion(
-      Region &r, ValueMap &&initState, DenseMap<Value, Value> &replacementMap,
+  KnownState runOnRegion(
+      Region &r, KnownState &&initState, DenseMap<Value, Value> &replacementMap,
       SmallVector<Value> &readVals, SmallVector<Operation *> &redundantWrites
   ) {
     // maps block -> state at the end of the block
-    DenseMap<Block *, ValueMap> endStates;
+    DenseMap<Block *, KnownState> endStates;
     // The first block has no predecessors, so nullptr contains the init state
     endStates[nullptr] = initState;
     auto getBlockState = [&endStates](Block *blockPtr) {
       auto it = endStates.find(blockPtr);
       ensure(it != endStates.end(), "unknown end state means we have an unsupported backedge");
-      return cloneValueMap(it->second);
+      return cloneKnownState(it->second);
+    };
+    auto hasBlockState = [&endStates](Block *blockPtr) {
+      return endStates.find(blockPtr) != endStates.end();
     };
     std::deque<Block *> frontier;
-    frontier.push_back(&r.front());
-    DenseSet<Block *> visited;
+    DenseSet<Block *> queued;
+    DenseSet<Block *> processed;
+    auto enqueue = [&](Block *blockPtr) {
+      if (processed.find(blockPtr) == processed.end() && queued.insert(blockPtr).second) {
+        frontier.push_back(blockPtr);
+      }
+    };
+    enqueue(&r.front());
 
-    SmallVector<std::reference_wrapper<const ValueMap>> terminalStates;
+    SmallVector<KnownState> terminalStates;
+    size_t deferralsWithoutProgress = 0;
 
     while (!frontier.empty()) {
       Block *currentBlock = frontier.front();
       frontier.pop_front();
-      visited.insert(currentBlock);
+      queued.erase(currentBlock);
 
       // get predecessors
-      ValueMap currentState;
+      KnownState currentState;
       auto it = currentBlock->pred_begin();
       auto itEnd = currentBlock->pred_end();
       if (it == itEnd) {
         // get the state for the entry block.
         currentState = getBlockState(nullptr);
       } else {
+        bool ready = true;
+        for (auto predIt = it; predIt != itEnd; predIt++) {
+          ready &= hasBlockState(*predIt);
+        }
+        if (!ready) {
+          deferralsWithoutProgress++;
+          ensure(
+              deferralsWithoutProgress <= frontier.size(),
+              "unknown end state means we have an unsupported backedge"
+          );
+          enqueue(currentBlock);
+          continue;
+        }
+
         currentState = getBlockState(*it);
         // If we have multiple predecessors, we take a pessimistic view and
         // set the state as only the intersection of all predecessor states
@@ -442,6 +506,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       }
 
       // Run this block, consuming currentState and producing the endState
+      deferralsWithoutProgress = 0;
       auto endState = runOnBlock(
           *currentBlock, std::move(currentState), replacementMap, readVals, redundantWrites
       );
@@ -449,53 +514,78 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       // Update the end states.
       // Since we only support the scf dialect, we should never have any
       // backedges, so we should never already have state for this block.
-      ensure(endStates.find(currentBlock) == endStates.end(), "backedge");
+      ensure(processed.find(currentBlock) == processed.end(), "backedge");
       endStates[currentBlock] = std::move(endState);
+      processed.insert(currentBlock);
 
       // add successors to frontier
       if (currentBlock->hasNoSuccessors()) {
-        terminalStates.push_back(endStates[currentBlock]);
+        terminalStates.push_back(cloneKnownState(endStates[currentBlock]));
       } else {
         for (Block *succ : currentBlock->getSuccessors()) {
-          if (visited.find(succ) == visited.end()) {
-            frontier.push_back(succ);
-          }
+          enqueue(succ);
         }
       }
     }
 
     // The final state is the intersection of all possible terminal states.
     ensure(!terminalStates.empty(), "computed no states");
-    auto finalState = terminalStates.front().get();
+    auto finalState = terminalStates.front();
     for (const auto *it = terminalStates.begin() + 1; it != terminalStates.end(); it++) {
-      finalState = intersect(finalState, it->get());
+      finalState = intersect(finalState, *it);
     }
     return finalState;
   }
 
-  ValueMap runOnBlock(
-      Block &b, ValueMap &&state, DenseMap<Value, Value> &replacementMap,
+  KnownState runOnBlock(
+      Block &b, KnownState &&state, DenseMap<Value, Value> &replacementMap,
       SmallVector<Value> &readVals, SmallVector<Operation *> &redundantWrites
   ) {
     for (Operation &op : b) {
-      runOperation(&op, state, replacementMap, readVals, redundantWrites);
       // Some operations have regions (e.g., scf.if). These regions must be
       // traversed and the resulting state(s) are intersected for the final
       // state of this operation.
       if (!op.getRegions().empty()) {
-        SmallVector<ValueMap> regionStates;
+        KnownState parentState = cloneKnownState(state);
+        // Repeating regions (scf.for, scf.while) execute their body
+        // more than once.  Pre-loop global/RAM facts must not be used
+        // to declare a read inside the body redundant — the body may
+        // observe writes from a previous iteration.
+        KnownState regionEntryState = cloneKnownState(state);
+        if (isa<scf::ForOp, scf::WhileOp>(op)) {
+          regionEntryState.globals.clear();
+          regionEntryState.ram.clear();
+        }
+        SmallVector<KnownState> regionStates;
         for (Region &region : op.getRegions()) {
-          auto regionState =
-              runOnRegion(region, cloneValueMap(state), replacementMap, readVals, redundantWrites);
+          if (region.empty()) {
+            continue;
+          }
+          auto regionState = runOnRegion(
+              region, cloneKnownState(regionEntryState), replacementMap, readVals, redundantWrites
+          );
           regionStates.push_back(regionState);
         }
+        if (regionStates.empty()) {
+          // Region-bearing ops with no bodies still need their own effects handled.
+          runOperation(&op, state, replacementMap, readVals, redundantWrites);
+          continue;
+        }
 
-        ValueMap finalState = regionStates.front();
+        KnownState finalState = regionStates.front();
         for (const auto *it = regionStates.begin() + 1; it != regionStates.end(); it++) {
           finalState = intersect(finalState, *it);
         }
+        // A nested region may be conditional, zero-iteration, or otherwise not
+        // execute exactly once. Keep prior struct/array behavior, but only
+        // propagate global/RAM facts that remain true both before and after the
+        // region traversal.
+        finalState.globals = intersectValueLookup(parentState.globals, finalState.globals);
+        finalState.ram = intersectValueLookup(parentState.ram, finalState.ram);
         state = std::move(finalState);
+        continue;
       }
+      runOperation(&op, state, replacementMap, readVals, redundantWrites);
     }
     return std::move(state);
   }
@@ -508,7 +598,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
   /// @param readVals A mutable list of all read values
   /// @param redundantWrites A mutable list of all writes that are considered redundant
   void runOperation(
-      Operation *op, ValueMap &state, DenseMap<Value, Value> &replacementMap,
+      Operation *op, KnownState &state, DenseMap<Value, Value> &replacementMap,
       SmallVector<Value> &readVals, SmallVector<Operation *> &redundantWrites
   ) {
     // Uses the replacement map to look up values to simplify later replacement.
@@ -523,10 +613,21 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
 
     // Lookup the value tree in the current state or return nullptr.
     auto tryGetValTree = [&state](Value v) -> std::shared_ptr<ReferenceNode> {
-      if (auto it = state.find(v); it != state.end()) {
+      if (auto it = state.values.find(v); it != state.values.end()) {
         return it->second;
       }
       return nullptr;
+    };
+
+    auto doStatefulRead =
+        [&]<typename KeyT>(Value resVal, DenseMap<KeyT, Value> &knownValues, const KeyT &key) {
+      if (auto it = knownValues.find(key); it != knownValues.end()) {
+        replacementMap[resVal] = it->second;
+      } else {
+        knownValues[key] = resVal;
+        state.values[resVal] = ReferenceNode::create(resVal, resVal);
+      }
+      readVals.push_back(resVal);
     };
 
     // An omitted table offset denotes the current row.
@@ -563,7 +664,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       Value resVal = readarr.getResult();
       std::shared_ptr<ReferenceNode> currValTree = tryGetValTree(translate(readarr.getArrRef()));
       if (currValTree == nullptr) {
-        state[resVal] = ReferenceNode::create(resVal, resVal);
+        state.values[resVal] = ReferenceNode::create(resVal, resVal);
         readVals.push_back(resVal);
         return;
       }
@@ -584,7 +685,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
         );
         replacementMap[resVal] = currValTree->getStoredValue();
       } else {
-        state[resVal] = currValTree;
+        state.values[resVal] = currValTree;
         LLVM_DEBUG(
             llvm::dbgs() << readarr.getOperationName() << ": " << resVal << " => " << *currValTree
                          << '\n'
@@ -636,19 +737,34 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       }
     };
 
+    // global ops
+    if (auto readGlobal = dyn_cast<global::GlobalReadOp>(op)) {
+      doStatefulRead(readGlobal.getVal(), state.globals, readGlobal.getNameRef());
+    } else if (auto writeGlobal = dyn_cast<global::GlobalWriteOp>(op)) {
+      state.globals[writeGlobal.getNameRef()] = translate(writeGlobal.getVal());
+    }
+    // RAM ops
+    else if (auto load = dyn_cast<ram::LoadOp>(op)) {
+      doStatefulRead(load.getVal(), state.ram, ReferenceID(translate(load.getAddr())));
+    } else if (auto store = dyn_cast<ram::StoreOp>(op)) {
+      state.ram.clear();
+      state.ram[ReferenceID(translate(store.getAddr()))] = translate(store.getVal());
+    }
     // struct ops
-    if (auto newStruct = dyn_cast<CreateStructOp>(op)) {
+    else if (auto newStruct = dyn_cast<CreateStructOp>(op)) {
       // For new values, the "stored value" of the reference is the creation site.
       auto structVal = ReferenceNode::create(newStruct, newStruct);
-      state[newStruct] = structVal;
-      LLVM_DEBUG(llvm::dbgs() << newStruct.getOperationName() << ": " << *state[newStruct] << '\n');
+      state.values[newStruct] = structVal;
+      LLVM_DEBUG(
+          llvm::dbgs() << newStruct.getOperationName() << ": " << *state.values[newStruct] << '\n'
+      );
       // adding this to readVals
       readVals.push_back(newStruct);
     } else if (auto readm = dyn_cast<MemberReadOp>(op)) {
       std::shared_ptr<ReferenceNode> access = getMemberAccessNode(readm);
       Value resVal = readm.getVal();
       if (access == nullptr) {
-        state[resVal] = ReferenceNode::create(resVal, resVal);
+        state.values[resVal] = ReferenceNode::create(resVal, resVal);
         readVals.push_back(resVal);
         return;
       }
@@ -662,7 +778,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
         );
         replacementMap[resVal] = access->getStoredValue();
       } else {
-        state[resVal] = access;
+        state.values[resVal] = access;
         LLVM_DEBUG(llvm::dbgs() << readm.getOperationName() << ": " << *access << '\n');
       }
       readVals.push_back(resVal);
@@ -706,7 +822,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     // array ops
     else if (auto newArray = dyn_cast<CreateArrayOp>(op)) {
       auto arrayVal = ReferenceNode::create(newArray, newArray);
-      state[newArray] = arrayVal;
+      state.values[newArray] = arrayVal;
 
       // If we're given a constructor, we can instantiate elements using
       // constant indices.
@@ -733,6 +849,9 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     } else if (auto insertarr = dyn_cast<InsertArrayOp>(op)) {
       // Logic is essentially the same as writearr
       doArrayWriteLike(insertarr);
+    } else if (hasUnknownOrNonReadEffect(op)) {
+      state.globals.clear();
+      state.ram.clear();
     }
   }
 };
