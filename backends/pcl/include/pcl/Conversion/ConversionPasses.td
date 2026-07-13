@@ -1,14 +1,14 @@
-//===-- TransformationPasses.td ----------------------------*- tablegen -*-===//
+//===-- ConversionPasses.td --------------------------------*- tablegen -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
-// Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef PCL_CONV_TRANSFORMATION_PASSES_TD
-#define PCL_CONV_TRANSFORMATION_PASSES_TD
+#ifndef PCL_CONV_CONVERSION_PASSES_TD
+#define PCL_CONV_CONVERSION_PASSES_TD
 
 include "llzk/Pass/PassBase.td"
 
@@ -21,4 +21,4 @@ def PCLLoweringPass : LLZKPass<"llzk-to-pcl"> {
     }];
 }
 
-#endif // PCL_CONV_TRANSFORMATION_PASSES_TD
+#endif // PCL_CONV_CONVERSION_PASSES_TD

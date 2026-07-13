@@ -53,13 +53,9 @@ set_property(CACHE LLZK_WITH_PCL PROPERTY STRINGS "AUTO;ON;OFF")
 set(LLZK_WITH_PCL_BOOL OFF)
 
 if(LLZK_WITH_PCL STREQUAL "ON")
-  find_package(PCL CONFIG REQUIRED)
   set(LLZK_WITH_PCL_BOOL ON)
 elseif(LLZK_WITH_PCL STREQUAL "AUTO")
-  find_package(PCL CONFIG QUIET)
-  if(PCL_FOUND)
-    set(LLZK_WITH_PCL_BOOL ON)
-  endif()
+  set(LLZK_WITH_PCL_BOOL ON)
 elseif(LLZK_WITH_PCL STREQUAL "OFF")
   # do nothing
 else()
@@ -209,7 +205,7 @@ set(R1CS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/backends/r1cs/include")
 set(ZKLEAN_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/backends/zklean/include")
 
 if(LLZK_WITH_PCL_BOOL)
-  set(PCL_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/backends/pcl-conv/include")
+  set(PCL_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/backends/pcl/include")
 endif()
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/LLZKMacros.cmake)

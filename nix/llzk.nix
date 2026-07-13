@@ -3,7 +3,7 @@
 
   # build dependencies
   clang, cmake, ninja,
-  mlir_pkg, nlohmann_json, pcl_pkg,
+  mlir_pkg, nlohmann_json,
 
   # test dependencies
   gtest, python3, lit, z3, cvc5,
@@ -38,13 +38,11 @@ stdenv.mkDerivation {
 
   nativeBuildInputs = [ cmake ninja ];
   buildInputs = [
-    clang.dev mlir_pkg z3.lib pcl_pkg
+    clang.dev mlir_pkg z3.lib 
   ] ++ lib.optionals mlir_pkg.hasPythonBindings [
     mlir_pkg.python
     mlir_pkg.pythonDeps
   ];
-
-  propagatedBuildInputs = [ pcl_pkg ];
 
   cmakeFlags = [
     "-DCMAKE_BUILD_TYPE=${cmakeBuildType}"

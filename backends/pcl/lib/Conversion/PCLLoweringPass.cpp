@@ -2,7 +2,7 @@
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
-// Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
@@ -12,7 +12,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "pcl-conv/Transforms/TransformationPasses.h"
+#include "pcl/Conversion/ConversionPasses.h"
 
 #include "llzk/Config/Config.h"
 #include "llzk/Dialect/Array/IR/Dialect.h"
@@ -76,11 +76,11 @@
 #include <optional>
 
 // Include the generated base pass class definitions.
-namespace pcl::conversion {
+namespace pcl {
 #define GEN_PASS_DECL_PCLLOWERINGPASS
 #define GEN_PASS_DEF_PCLLOWERINGPASS
-#include "pcl-conv/Transforms/TransformationPasses.h.inc"
-} // namespace pcl::conversion
+#include "pcl/Conversion/ConversionPasses.h.inc"
+} // namespace pcl
 
 using namespace mlir;
 using namespace llzk;
@@ -769,7 +769,7 @@ struct PCLTypeConverter : public TypeConverter {
   }
 };
 
-class PassImpl : public pcl::conversion::impl::PCLLoweringPassBase<PassImpl> {
+class PassImpl : public pcl::impl::PCLLoweringPassBase<PassImpl> {
   using Base = PCLLoweringPassBase<PassImpl>;
   using Base::Base;
 
