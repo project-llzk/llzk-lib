@@ -5,6 +5,7 @@ var classllzk_1_1global_1_1GlobalWriteOp =
     [ "GenericAdaptor", "classllzk_1_1global_1_1GlobalWriteOp.html#a9c2135fc4fbef1fa894d3a8c968d0f3b", null ],
     [ "Properties", "classllzk_1_1global_1_1GlobalWriteOp.html#a80fa803b73e37d9e5e0b2aed71ff0f49", null ],
     [ "getAttributeNames", "classllzk_1_1global_1_1GlobalWriteOp.html#ae8f3ff8d35be4a867a3a7d4c60f5d19c", null ],
+    [ "getEffects", "classllzk_1_1global_1_1GlobalWriteOp.html#aa62511da67069baf2e75b9be966cf5db", null ],
     [ "getGlobalDefOp", "classllzk_1_1global_1_1GlobalWriteOp.html#a674551d9d30eed77b62b7157acd2bed6", null ],
     [ "getNameRef", "classllzk_1_1global_1_1GlobalWriteOp.html#aefebb32886de2b380fca9921069e3c10", null ],
     [ "getNameRefAttr", "classllzk_1_1global_1_1GlobalWriteOp.html#a370ebc01e1355ef2ecdd6a3fc45f3756", null ],

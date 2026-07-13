@@ -1,5 +1,7 @@
 var NAVTREEINDEX11 =
 {
+"Polymorphic_2IR_2Ops_8capi_8test_8cpp_8inc.html#a2f5ea71711b0b6a510ecafae842985b3":[13,0,0,0,0,2,10,0,7,29],
+"Polymorphic_2IR_2Ops_8capi_8test_8cpp_8inc.html#a448bc492c03719cd3cfbc3afc601182d":[13,0,0,0,0,2,10,0,7,37],
 "Polymorphic_2IR_2Ops_8capi_8test_8cpp_8inc.html#a4687455228b1cd1bfe07204a42670501":[13,0,0,0,0,2,10,0,7,42],
 "Polymorphic_2IR_2Ops_8capi_8test_8cpp_8inc.html#a4741909b2293b16e8779de4cc371e35b":[13,0,0,0,0,2,10,0,7,30],
 "Polymorphic_2IR_2Ops_8capi_8test_8cpp_8inc.html#a4c95acf8337df68ba71eb89ec1dec8f3":[13,0,0,0,0,2,10,0,7,26],
@@ -247,7 +249,5 @@ var NAVTREEINDEX11 =
 "SharedImpl_8h.html#ad78e062f62e0d6e453941fb4ca843e4d":[13,0,3,3,10,1,3,2],
 "SharedImpl_8h_source.html":[13,0,3,3,10,1,3],
 "Shared_2OpTraits_8td.html":[13,0,2,0,2,12,5],
-"Shared_2OpTraits_8td_source.html":[13,0,2,0,2,12,5],
-"Shared_2Types_8td.html":[13,0,2,0,2,12,7],
-"Shared_2Types_8td_source.html":[13,0,2,0,2,12,7]
+"Shared_2OpTraits_8td_source.html":[13,0,2,0,2,12,5]
 };

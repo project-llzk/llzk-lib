@@ -33,5 +33,6 @@ var searchData=
   ['hasstructtarget_30',['hasStructTarget',['../classllzk_1_1verif_1_1ContractOp.html#a7d1164ea4d63e96bfa44922f9060b190',1,'llzk::verif::ContractOp']]],
   ['hassuccessor_31',['hasSuccessor',['../classllzk_1_1SymbolUseGraphNode.html#a1b1087a96c4e50ce0b9b8960aa89aafb',1,'llzk::SymbolUseGraphNode']]],
   ['hastemplatesymbolbindings_32',['hasTemplateSymbolBindings',['../classllzk_1_1component_1_1StructDefOp.html#ad2431f2ff8226862ffa9dfe9a0e7999e',1,'llzk::component::StructDefOp']]],
-  ['hasunreducedinterval_33',['hasUnreducedInterval',['../classllzk_1_1ExpressionValue.html#a92765712c15e7b01df0025e6838ecc72',1,'llzk::ExpressionValue']]]
+  ['hasunknownornonreadeffect_33',['hasUnknownOrNonReadEffect',['../namespacellzk.html#ad3fb1acc95bcf8b458a36fb94c1c1229',1,'llzk']]],
+  ['hasunreducedinterval_34',['hasUnreducedInterval',['../classllzk_1_1ExpressionValue.html#a92765712c15e7b01df0025e6838ecc72',1,'llzk::ExpressionValue']]]
 ];

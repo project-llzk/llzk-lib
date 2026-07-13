@@ -7,6 +7,7 @@ var classllzk_1_1component_1_1MemberWriteOp =
     [ "getAttributeNames", "classllzk_1_1component_1_1MemberWriteOp.html#a7df0198fd6de00239d6f0b6f3194a1f4", null ],
     [ "getComponent", "classllzk_1_1component_1_1MemberWriteOp.html#a438059e894cde83fc783bc24d7e020c5", null ],
     [ "getComponentMutable", "classllzk_1_1component_1_1MemberWriteOp.html#a3997370eba3f9dc92cc99c7b999f99ca", null ],
+    [ "getEffects", "classllzk_1_1component_1_1MemberWriteOp.html#a1c920ac917afa6c558aad64080ab28be", null ],
     [ "getMemberDefOp", "classllzk_1_1component_1_1MemberWriteOp.html#a4e1743efc73330f22824bb7376d19145", null ],
     [ "getMemberName", "classllzk_1_1component_1_1MemberWriteOp.html#a9a91333fec2c2fa028b8dafd416c4ced", null ],
     [ "getMemberNameAttr", "classllzk_1_1component_1_1MemberWriteOp.html#a4e718a47e5ff323a3740ee0af4bf59cb", null ],

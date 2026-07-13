@@ -2599,7 +2599,8 @@ Attributes:</h4>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">operation ::= `global.read` $name_ref `:` type($val) attr-dict</div>
 </div><!-- fragment --><p>This operation reads the value of a named global.</p>
-<p>Interfaces: <span class="tt">GlobalRefOpInterface</span>, <span class="tt">SymbolUserOpInterface</span></p>
+<p>Interfaces: <span class="tt">GlobalRefOpInterface</span>, <span class="tt">MemoryEffectOpInterface (MemoryEffectOpInterface)</span>, <span class="tt">SymbolUserOpInterface</span></p>
+<p>Effects: <span class="tt">MemoryEffects::Effect{MemoryEffects::Read on ::mlir::SideEffects::DefaultResource}</span></p>
 <h4 class="doxsection"><a class="anchor" id="attributes-12"></a>
 Attributes:</h4>
 <table class="doxtable">
@@ -2623,7 +2624,8 @@ Results:</h4>
 <div class="fragment"><div class="line">operation ::= `global.write` $name_ref `=` $val `:` type($val) attr-dict</div>
 </div><!-- fragment --><p>This operation writes a value to a named global. Not allowed for globals declared with the "const" modifier.</p>
 <p>Traits: <span class="tt">WitnessGen</span></p>
-<p>Interfaces: <span class="tt">GlobalRefOpInterface</span>, <span class="tt">SymbolUserOpInterface</span></p>
+<p>Interfaces: <span class="tt">GlobalRefOpInterface</span>, <span class="tt">MemoryEffectOpInterface (MemoryEffectOpInterface)</span>, <span class="tt">SymbolUserOpInterface</span></p>
+<p>Effects: <span class="tt">MemoryEffects::Effect{MemoryEffects::Write on ::mlir::SideEffects::DefaultResource}</span></p>
 <h4 class="doxsection"><a class="anchor" id="attributes-13"></a>
 Attributes:</h4>
 <table class="doxtable">
@@ -3310,7 +3312,8 @@ Results:</h4>
 <p>A struct can read its own members regardless of whether they are marked as public (i.e., with the <span class="tt">llzk.pub</span> attribute) or private (members without the <span class="tt">llzk.pub</span> attribute). However, when reading members of other components, only public members can be accessed. Free functions may also only read public members.</p>
 <p>The value can be read from the signals table, in which case it can be offset by a constant value. A negative value represents reading a value backwards and a positive value represents reading a value forward. Only members marked as columns can be read in this manner.</p>
 <p>Traits: <span class="tt">VerifySizesForMultiAffineOps&lt;1&gt;</span></p>
-<p>Interfaces: <span class="tt">MemberRefOpInterface</span>, <span class="tt">SymbolUserOpInterface</span></p>
+<p>Interfaces: <span class="tt">MemberRefOpInterface</span>, <span class="tt">MemoryEffectOpInterface (MemoryEffectOpInterface)</span>, <span class="tt">SymbolUserOpInterface</span></p>
+<p>Effects: <span class="tt">MemoryEffects::Effect{MemoryEffects::Read on ::mlir::SideEffects::DefaultResource}</span></p>
 <h4 class="doxsection"><a class="anchor" id="attributes-28"></a>
 Attributes:</h4>
 <table class="doxtable">
@@ -3351,7 +3354,8 @@ Results:</h4>
 </div><!-- fragment --><p>This operation writes a value to a named member in a struct/component.</p>
 <p>A struct can write its own members. However, writing members of other components is not allowed.</p>
 <p>Traits: <span class="tt">WitnessGen</span></p>
-<p>Interfaces: <span class="tt">MemberRefOpInterface</span>, <span class="tt">SymbolUserOpInterface</span></p>
+<p>Interfaces: <span class="tt">MemberRefOpInterface</span>, <span class="tt">MemoryEffectOpInterface (MemoryEffectOpInterface)</span>, <span class="tt">SymbolUserOpInterface</span></p>
+<p>Effects: <span class="tt">MemoryEffects::Effect{MemoryEffects::Write on ::mlir::SideEffects::DefaultResource}</span></p>
 <h4 class="doxsection"><a class="anchor" id="attributes-29"></a>
 Attributes:</h4>
 <table class="doxtable">

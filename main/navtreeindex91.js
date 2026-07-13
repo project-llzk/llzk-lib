@@ -1,5 +1,16 @@
 var NAVTREEINDEX91 =
 {
+"structllzk_1_1function_1_1detail_1_1FuncDefOpGenericAdaptorBase_1_1Properties.html#ae6b9721884b1836d14230f639c7b5f6c":[10,0,4,11,0,1,0,15],
+"structllzk_1_1function_1_1detail_1_1FuncDefOpGenericAdaptorBase_1_1Properties.html#ae6b9721884b1836d14230f639c7b5f6c":[12,0,1,8,0,1,0,15],
+"structllzk_1_1global_1_1GlobalRefOpInterface_1_1Trait.html":[10,0,4,12,8,0],
+"structllzk_1_1global_1_1GlobalRefOpInterface_1_1Trait.html":[12,0,1,9,8,0],
+"structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html":[10,0,4,12,0,0,0],
+"structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html":[12,0,1,9,0,0,0],
+"structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#a0487f8bee9a00ace462e080b703d55e9":[10,0,4,12,0,0,0,11],
+"structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#a0487f8bee9a00ace462e080b703d55e9":[12,0,1,9,0,0,0,11],
+"structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#a0f50e5b423b077c07e674ecb81ef933c":[10,0,4,12,0,0,0,2],
+"structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#a0f50e5b423b077c07e674ecb81ef933c":[12,0,1,9,0,0,0,2],
+"structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#a1482ceb9633a6f4ec31b77defb8f35cd":[10,0,4,12,0,0,0,17],
 "structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#a1482ceb9633a6f4ec31b77defb8f35cd":[12,0,1,9,0,0,0,17],
 "structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#a17681c1290dc3c6035c13f88d1f2c174":[10,0,4,12,0,0,0,6],
 "structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#a17681c1290dc3c6035c13f88d1f2c174":[12,0,1,9,0,0,0,6],
@@ -238,16 +249,5 @@ var NAVTREEINDEX91 =
 "structllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase_1_1Properties.html#aef8e52d7d7dd5cca69de3c8888139d62":[10,0,4,16,0,0,0,8],
 "structllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase_1_1Properties.html#aef8e52d7d7dd5cca69de3c8888139d62":[12,0,1,13,0,0,0,8],
 "structllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase_1_1Properties.html":[10,0,4,16,0,1,0],
-"structllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase_1_1Properties.html":[12,0,1,13,0,1,0],
-"structllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase_1_1Properties.html#a26e457df38ba02f3ce579bca26f5d0c2":[10,0,4,16,0,1,0,0],
-"structllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase_1_1Properties.html#a26e457df38ba02f3ce579bca26f5d0c2":[12,0,1,13,0,1,0,0],
-"structllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase_1_1Properties.html#a486801e6a58173fe89639e66fe6ee145":[10,0,4,16,0,1,0,1],
-"structllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase_1_1Properties.html#a486801e6a58173fe89639e66fe6ee145":[12,0,1,13,0,1,0,1],
-"structllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase_1_1Properties.html#a5fe2b9ddbe99a64ad00fea3acc419b1a":[10,0,4,16,0,1,0,3],
-"structllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase_1_1Properties.html#a5fe2b9ddbe99a64ad00fea3acc419b1a":[12,0,1,13,0,1,0,3],
-"structllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase_1_1Properties.html#a658b7d66e1bee0e412505e49192a5b00":[10,0,4,16,0,1,0,2],
-"structllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase_1_1Properties.html#a658b7d66e1bee0e412505e49192a5b00":[12,0,1,13,0,1,0,2],
-"structllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase_1_1Properties.html#a8aab5a3770da8f533b48a95bd1387c4f":[10,0,4,16,0,1,0,5],
-"structllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase_1_1Properties.html#a8aab5a3770da8f533b48a95bd1387c4f":[12,0,1,13,0,1,0,5],
-"structllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase_1_1Properties.html#aa4f7e8fc5e4245d015ba69cd73c0b3d1":[10,0,4,16,0,1,0,4]
+"structllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase_1_1Properties.html":[12,0,1,13,0,1,0]
 };

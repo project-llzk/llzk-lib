@@ -1,5 +1,15 @@
 var NAVTREEINDEX81 =
 {
+"dialects.html#results-41":[7,12,0,3,2],
+"dialects.html#results-5":[7,1,0,2,2],
+"dialects.html#results-6":[7,1,0,3,1],
+"dialects.html#results-7":[7,1,0,4,1],
+"dialects.html#results-8":[7,1,0,5,1],
+"dialects.html#results-9":[7,1,0,6,1],
+"dialects.html#string-dialect":[7,11],
+"dialects.html#stringnew-llzkstringlitstringop":[7,11,0,0],
+"dialects.html#stringtype":[7,11,1,0],
+"dialects.html#struct-dialect":[7,12],
 "dialects.html#structdef-llzkcomponentstructdefop":[7,12,0,0],
 "dialects.html#structmember-llzkcomponentmemberdefop":[7,12,0,1],
 "dialects.html#structnew-llzkcomponentcreatestructop":[7,12,0,2],
@@ -239,15 +249,5 @@ var NAVTREEINDEX81 =
 "functions_type_p.html":[12,3,3,12],
 "functions_type_r.html":[12,3,3,13],
 "functions_type_s.html":[12,3,3,14],
-"functions_type_t.html":[12,3,3,15],
-"functions_type_v.html":[12,3,3,16],
-"functions_type_w.html":[12,3,3,17],
-"functions_u.html":[12,3,0,20],
-"functions_v.html":[12,3,0,21],
-"functions_vars.html":[12,3,2],
-"functions_vars.html":[12,3,2,0],
-"functions_vars_b.html":[12,3,2,1],
-"functions_vars_c.html":[12,3,2,2],
-"functions_vars_d.html":[12,3,2,3],
-"functions_vars_e.html":[12,3,2,4]
+"functions_type_t.html":[12,3,3,15]
 };

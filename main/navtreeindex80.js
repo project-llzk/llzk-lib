@@ -1,5 +1,15 @@
 var NAVTREEINDEX80 =
 {
+"conceptllzk_1_1NamedOpComparable.html":[10,0,4,120],
+"conceptllzk_1_1NamedOpComparable.html":[11,0,7],
+"conceptllzk_1_1OpComparable.html":[10,0,4,119],
+"conceptllzk_1_1OpComparable.html":[11,0,6],
+"conceptllzk_1_1OpHashable.html":[10,0,4,121],
+"conceptllzk_1_1OpHashable.html":[11,0,8],
+"conceptllzk_1_1StructAnalysisType.html":[10,0,4,118],
+"conceptllzk_1_1StructAnalysisType.html":[11,0,5],
+"conceptllzk_1_1alignmentHelpers_1_1Matcher.html":[10,0,4,1,0],
+"conceptllzk_1_1alignmentHelpers_1_1Matcher.html":[11,0,0,0],
 "conceptllzk_1_1dataflow_1_1ScalarLatticeValue.html":[10,0,4,7,3],
 "conceptllzk_1_1dataflow_1_1ScalarLatticeValue.html":[11,0,1,0],
 "conceptllzk_1_1polymorphic_1_1TemplateSymbolBindingOp.html":[10,0,4,16,28],
@@ -239,15 +249,5 @@ var NAVTREEINDEX80 =
 "dialects.html#results-38":[7,10,0,5,1],
 "dialects.html#results-39":[7,11,0,0,1],
 "dialects.html#results-4":[7,1,0,0,1],
-"dialects.html#results-40":[7,12,0,2,0],
-"dialects.html#results-41":[7,12,0,3,2],
-"dialects.html#results-5":[7,1,0,2,2],
-"dialects.html#results-6":[7,1,0,3,1],
-"dialects.html#results-7":[7,1,0,4,1],
-"dialects.html#results-8":[7,1,0,5,1],
-"dialects.html#results-9":[7,1,0,6,1],
-"dialects.html#string-dialect":[7,11],
-"dialects.html#stringnew-llzkstringlitstringop":[7,11,0,0],
-"dialects.html#stringtype":[7,11,1,0],
-"dialects.html#struct-dialect":[7,12]
+"dialects.html#results-40":[7,12,0,2,0]
 };

@@ -7,6 +7,7 @@ var classllzk_1_1component_1_1MemberReadOp =
     [ "getAttributeNames", "classllzk_1_1component_1_1MemberReadOp.html#ace0af25b1bc1362e5a0a95a97cc73cfa", null ],
     [ "getComponent", "classllzk_1_1component_1_1MemberReadOp.html#a07ae395a982761abbc8ab84330a09c4b", null ],
     [ "getComponentMutable", "classllzk_1_1component_1_1MemberReadOp.html#a21ea3b7cf272e67ae72455c49325ec24", null ],
+    [ "getEffects", "classllzk_1_1component_1_1MemberReadOp.html#aa34d0cf86a09ebdd28b8104564cdab85", null ],
     [ "getMapOperands", "classllzk_1_1component_1_1MemberReadOp.html#a244a4d52d5e7b181e6c2f79b0233cbf2", null ],
     [ "getMapOperandsMutable", "classllzk_1_1component_1_1MemberReadOp.html#a02942b0086a8495fae04863f2a74b082", null ],
     [ "getMapOpGroupSizes", "classllzk_1_1component_1_1MemberReadOp.html#a405725875a95ca7f5c13b423f5cfe060", null ],

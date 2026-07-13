@@ -121,20 +121,23 @@ $(function(){initNavTree('LLZKRedundantOperationEliminationPass_8cpp.html','',''
 <code>#include &quot;<a class="el" href="LLZK_2IR_2Ops_8h_source.html">llzk/Dialect/LLZK/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Struct_2IR_2Dialect_8h_source.html">llzk/Dialect/Struct/IR/Dialect.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="LLZKTransformationPasses_8h_source.html">llzk/Transforms/LLZKTransformationPasses.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="EffectHelper_8h_source.html">llzk/Util/EffectHelper.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="SymbolHelper_8h_source.html">llzk/Util/SymbolHelper.h</a>&quot;</code><br />
 <code>#include &lt;mlir/Dialect/Arith/IR/Arith.h&gt;</code><br />
-<code>#include &lt;mlir/Dialect/SCF/IR/SCF.h&gt;</code><br />
 <code>#include &lt;mlir/IR/BuiltinOps.h&gt;</code><br />
 <code>#include &lt;mlir/IR/Dominance.h&gt;</code><br />
+<code>#include &lt;mlir/IR/OperationSupport.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/DenseMap.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/DenseSet.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/Hashing.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/PostOrderIterator.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/SmallVector.h&gt;</code><br />
-<code>#include &lt;deque&gt;</code><br />
+<code>#include &lt;utility&gt;</code><br />
 <code>#include &quot;<a class="el" href="LLZKTransformationPasses_8h_8inc_source.html">llzk/Transforms/LLZKTransformationPasses.h.inc</a>&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for LLZKRedundantOperationEliminationPass.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="LLZKRedundantOperationEliminationPass_8cpp__incl.svg" width="4959" height="502"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="LLZKRedundantOperationEliminationPass_8cpp__incl.svg" width="4522" height="502"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="LLZKRedundantOperationEliminationPass_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -177,7 +180,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKRedundantOperationEliminationPass_8cpp_source.html#l00047">47</a> of file <a class="el" href="LLZKRedundantOperationEliminationPass_8cpp_source.html">LLZKRedundantOperationEliminationPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKRedundantOperationEliminationPass_8cpp_source.html#l00050">50</a> of file <a class="el" href="LLZKRedundantOperationEliminationPass_8cpp_source.html">LLZKRedundantOperationEliminationPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -193,7 +196,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKRedundantOperationEliminationPass_8cpp_source.html#l00036">36</a> of file <a class="el" href="LLZKRedundantOperationEliminationPass_8cpp_source.html">LLZKRedundantOperationEliminationPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKRedundantOperationEliminationPass_8cpp_source.html#l00039">39</a> of file <a class="el" href="LLZKRedundantOperationEliminationPass_8cpp_source.html">LLZKRedundantOperationEliminationPass.cpp</a>.</p>
 
 </div>
 </div>

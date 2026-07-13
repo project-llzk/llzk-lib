@@ -8,6 +8,7 @@ var dir_7093d9bec9e6df023c20339d9b6c0d59 =
     [ "Constants.h", "llzk_2Util_2Constants_8h.html", "llzk_2Util_2Constants_8h" ],
     [ "Debug.h", "Debug_8h.html", "Debug_8h" ],
     [ "DynamicAPIntHelper.h", "DynamicAPIntHelper_8h.html", "DynamicAPIntHelper_8h" ],
+    [ "EffectHelper.h", "EffectHelper_8h.html", "EffectHelper_8h" ],
     [ "ErrorHelper.h", "ErrorHelper_8h.html", "ErrorHelper_8h" ],
     [ "Field.h", "Field_8h.html", "Field_8h" ],
     [ "Hash.h", "Hash_8h.html", "Hash_8h" ],

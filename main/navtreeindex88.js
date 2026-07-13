@@ -1,5 +1,16 @@
 var NAVTREEINDEX88 =
 {
+"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html#af48d11d5b37f93fd9114d256cc5f1ce5":[10,0,3,19,1],
+"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html#af48d11d5b37f93fd9114d256cc5f1ce5":[12,0,0,19,1],
+"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4.html":[10,0,3,22],
+"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4.html":[12,0,0,22],
+"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4.html#a95c1538cb92b77118049539822c46441":[10,0,3,22,1],
+"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4.html#a95c1538cb92b77118049539822c46441":[12,0,0,22,1],
+"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4.html#abb4f3c7b78155935beb249d1010b42e5":[10,0,3,22,0],
+"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4.html#abb4f3c7b78155935beb249d1010b42e5":[12,0,0,22,0],
+"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html":[10,0,3,21],
+"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html":[12,0,0,21],
+"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html#a354e59a3f4b9005c38a46226e6b85403":[10,0,3,21,1],
 "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html#a354e59a3f4b9005c38a46226e6b85403":[12,0,0,21,1],
 "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html#a8a55317b9bb52714e3c534aa1d91c9bd":[10,0,3,21,0],
 "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html#a8a55317b9bb52714e3c534aa1d91c9bd":[12,0,0,21,0],
@@ -238,16 +249,5 @@ var NAVTREEINDEX88 =
 "structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html":[10,0,4,88],
 "structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html":[12,0,1,85],
 "structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html#acfbcd77415c268e0b34b2d8c28c5381e":[10,0,4,88,0],
-"structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html#acfbcd77415c268e0b34b2d8c28c5381e":[12,0,1,85,0],
-"structllzk_1_1SourceRefIndex_1_1Hash.html":[10,0,4,91,0],
-"structllzk_1_1SourceRefIndex_1_1Hash.html":[12,0,1,88,0],
-"structllzk_1_1SourceRefIndex_1_1Hash.html#a0f94d9c05bb31c8b7ce923cae6b5eb46":[10,0,4,91,0,0],
-"structllzk_1_1SourceRefIndex_1_1Hash.html#a0f94d9c05bb31c8b7ce923cae6b5eb46":[12,0,1,88,0,0],
-"structllzk_1_1SourceRef_1_1Hash.html":[10,0,4,89,0],
-"structllzk_1_1SourceRef_1_1Hash.html":[12,0,1,86,0],
-"structllzk_1_1SourceRef_1_1Hash.html#ae5f0de99c170669d5cfe252b9a8d1517":[10,0,4,89,0,0],
-"structllzk_1_1SourceRef_1_1Hash.html#ae5f0de99c170669d5cfe252b9a8d1517":[12,0,1,86,0,0],
-"structllzk_1_1SpecializedMem2Reg.html":[10,0,4,95],
-"structllzk_1_1SpecializedMem2Reg.html":[12,0,1,92],
-"structllzk_1_1SpecializedMem2Reg.html#a2d0b0da35bd31542880453a50509048c":[10,0,4,95,2]
+"structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html#acfbcd77415c268e0b34b2d8c28c5381e":[12,0,1,85,0]
 };

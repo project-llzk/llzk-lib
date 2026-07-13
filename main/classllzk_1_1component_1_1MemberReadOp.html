@@ -115,12 +115,12 @@ $(function(){initNavTree('classllzk_1_1component_1_1MemberReadOp.html','','class
 <div class="dynheader">
 Inheritance diagram for llzk::component::MemberReadOp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1component_1_1MemberReadOp__inherit__graph.svg" width="612" height="226"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1component_1_1MemberReadOp__inherit__graph.svg" width="771" height="226"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
 Collaboration diagram for llzk::component::MemberReadOp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1component_1_1MemberReadOp__coll__graph.svg" width="612" height="226"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classllzk_1_1component_1_1MemberReadOp__coll__graph.svg" width="771" height="226"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-types" class="groupheader"><a id="pub-types" name="pub-types"></a>
@@ -171,6 +171,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a2c3c7e9553b15dc014d5b4e9f5bfe65e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> if the op is a read, <span class="tt">false</span> if it's a write.  <br /></td></tr>
 <tr class="memitem:a8180f811990d1195b04a8270061ac2bd" id="r_a8180f811990d1195b04a8270061ac2bd"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8180f811990d1195b04a8270061ac2bd">verifySymbolUses</a> (::mlir::SymbolTableCollection &amp;symbolTable)</td></tr>
 <tr class="memitem:adfb1ea2fa7abd13e4e9a7ec4c0cc63de" id="r_adfb1ea2fa7abd13e4e9a7ec4c0cc63de"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#adfb1ea2fa7abd13e4e9a7ec4c0cc63de">print</a> (::mlir::OpAsmPrinter &amp;_odsPrinter)</td></tr>
+<tr class="memitem:aa34d0cf86a09ebdd28b8104564cdab85" id="r_aa34d0cf86a09ebdd28b8104564cdab85"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa34d0cf86a09ebdd28b8104564cdab85">getEffects</a> (::llvm::SmallVectorImpl&lt;::mlir::SideEffects::EffectInstance&lt;::mlir::MemoryEffects::Effect &gt; &gt; &amp;effects)</td></tr>
 <tr class="memitem:a4911ec71b2b98a88b3cfd04e8a009168" id="r_a4911ec71b2b98a88b3cfd04e8a009168"><td class="memItemLeft" align="right" valign="top">inline ::mlir::FailureOr&lt; <a class="el" href="classllzk_1_1SymbolLookupResult.html">SymbolLookupResult</a>&lt; <a class="el" href="classllzk_1_1component_1_1MemberDefOp.html">MemberDefOp</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4911ec71b2b98a88b3cfd04e8a009168">getMemberDefOp</a> (::mlir::SymbolTableCollection &amp;tables)</td></tr>
 <tr class="memdesc:a4911ec71b2b98a88b3cfd04e8a009168"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the definition for the <span class="tt">member</span> referenced in this op.  <br /></td></tr>
 </table><table class="memberdecls">
@@ -625,6 +626,25 @@ template&lt;typename RangeT&gt; </div>
 
 </div>
 </div>
+<a id="aa34d0cf86a09ebdd28b8104564cdab85" name="aa34d0cf86a09ebdd28b8104564cdab85"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa34d0cf86a09ebdd28b8104564cdab85">&#9670;&#160;</a></span>getEffects()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::component::MemberReadOp::getEffects </td>
+          <td>(</td>
+          <td class="paramtype">::llvm::SmallVectorImpl&lt;::mlir::SideEffects::EffectInstance&lt;::mlir::MemoryEffects::Effect &gt; &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>effects</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01198">1198</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
 <a id="a0722a82d8d2c04abce6b2f659ba1e62e" name="a0722a82d8d2c04abce6b2f659ba1e62e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0722a82d8d2c04abce6b2f659ba1e62e">&#9670;&#160;</a></span>getInherentAttr()</h2>
 
@@ -832,7 +852,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Gets the definition for the <span class="tt">member</span> referenced in this op. </p>
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l00798">798</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html#l00799">799</a> of file <a class="el" href="Struct_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1338,7 +1358,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> if the op is a read, <span class="tt">false</span> if it's a write. </p>
 
-<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01199">1199</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html#l01203">1203</a> of file <a class="el" href="Struct_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>

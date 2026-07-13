@@ -1,5 +1,16 @@
 var NAVTREEINDEX87 =
 {
+"structMulFeltOpBuildFuncHelper.html#a33324efd0c9341c648ce5af45f32b795":[12,0,79,0],
+"structMulFeltOpBuildFuncHelper.html#ab92b0b677730b705265dc3765be73932":[12,0,79,1],
+"structNegFeltOpBuildFuncHelper.html":[12,0,80],
+"structNegFeltOpBuildFuncHelper.html#a359654d1afab6f4506e70aa223ef985d":[12,0,80,0],
+"structNegFeltOpBuildFuncHelper.html#aa7b3d568791e4b2d8da1459b34664e2f":[12,0,80,1],
+"structNonDetOpBuildFuncHelper.html":[12,0,81],
+"structNonDetOpBuildFuncHelper.html#a0f1c35e64673cbefb596aa88ff323bbc":[12,0,81,1],
+"structNonDetOpBuildFuncHelper.html#af3e5cbb767285e6dde42777ed07ae902":[12,0,81,0],
+"structNotBoolOpBuildFuncHelper.html":[12,0,82],
+"structNotBoolOpBuildFuncHelper.html#a4d343e63f64cded4c9e60a6685987e29":[12,0,82,0],
+"structNotBoolOpBuildFuncHelper.html#a73533e0c5d9d00b10f3fdc701675d261":[12,0,82,1],
 "structNotFeltOpBuildFuncHelper.html":[12,0,83],
 "structNotFeltOpBuildFuncHelper.html#a7c7ea898e49da34d41eaa17759c2c341":[12,0,83,0],
 "structNotFeltOpBuildFuncHelper.html#abad9643cfd03ee2c9225284ee27568d1":[12,0,83,1],
@@ -238,16 +249,5 @@ var NAVTREEINDEX87 =
 "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html":[10,0,3,19],
 "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html":[12,0,0,19],
 "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html#ac2c24dfeba3e086a5c0bf179766f3ac0":[10,0,3,19,0],
-"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html#ac2c24dfeba3e086a5c0bf179766f3ac0":[12,0,0,19,0],
-"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html#af48d11d5b37f93fd9114d256cc5f1ce5":[10,0,3,19,1],
-"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html#af48d11d5b37f93fd9114d256cc5f1ce5":[12,0,0,19,1],
-"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4.html":[10,0,3,22],
-"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4.html":[12,0,0,22],
-"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4.html#a95c1538cb92b77118049539822c46441":[10,0,3,22,1],
-"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4.html#a95c1538cb92b77118049539822c46441":[12,0,0,22,1],
-"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4.html#abb4f3c7b78155935beb249d1010b42e5":[10,0,3,22,0],
-"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4.html#abb4f3c7b78155935beb249d1010b42e5":[12,0,0,22,0],
-"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html":[10,0,3,21],
-"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html":[12,0,0,21],
-"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html#a354e59a3f4b9005c38a46226e6b85403":[10,0,3,21,1]
+"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html#ac2c24dfeba3e086a5c0bf179766f3ac0":[12,0,0,19,0]
 };

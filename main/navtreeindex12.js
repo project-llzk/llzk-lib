@@ -1,5 +1,7 @@
 var NAVTREEINDEX12 =
 {
+"Shared_2Types_8td.html":[13,0,2,0,2,12,7],
+"Shared_2Types_8td_source.html":[13,0,2,0,2,12,7],
 "SourceRefLattice_8cpp.html":[13,0,3,0,14],
 "SourceRefLattice_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d":[13,0,3,0,14,0],
 "SourceRefLattice_8cpp_source.html":[13,0,3,0,14],
@@ -17,8 +19,8 @@ var NAVTREEINDEX12 =
 "SpecializedMemoryPasses_8h_source.html":[13,0,2,0,4,7],
 "StreamHelper_8cpp.html":[13,0,3,5,4],
 "StreamHelper_8cpp_source.html":[13,0,3,5,4],
-"StreamHelper_8h.html":[13,0,2,0,5,11],
-"StreamHelper_8h_source.html":[13,0,2,0,5,11],
+"StreamHelper_8h.html":[13,0,2,0,5,12],
+"StreamHelper_8h_source.html":[13,0,2,0,5,12],
 "String_2IR_2Dialect_8capi_8test_8cpp_8inc.html":[13,0,0,0,0,2,14,0,0],
 "String_2IR_2Dialect_8capi_8test_8cpp_8inc.html#a50c4905f337e8acbd65d8c002384da61":[13,0,0,0,0,2,14,0,0,1],
 "String_2IR_2Dialect_8capi_8test_8cpp_8inc_source.html":[13,0,0,0,0,2,14,0,0],
@@ -247,7 +249,5 @@ var NAVTREEINDEX12 =
 "Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a32411f28d9d14c01c373fb65c3420cad":[13,0,0,0,0,2,15,0,7,11],
 "Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a3498cf9a953532039f328ff81e6b2c26":[13,0,0,0,0,2,15,0,7,28],
 "Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a373c8aadcace8f02183488edbc51bae4":[13,0,0,0,0,2,15,0,7,19],
-"Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a3d12becdcdd9695387a1b1b6f2fe8985":[13,0,0,0,0,2,15,0,7,37],
-"Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a3fa31802acd74402c54c333762ce8e53":[13,0,0,0,0,2,15,0,7,31],
-"Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a4e06c2e1aada19e9697f5317cce6f155":[13,0,0,0,0,2,15,0,7,57]
+"Struct_2IR_2Ops_8capi_8test_8cpp_8inc.html#a3d12becdcdd9695387a1b1b6f2fe8985":[13,0,0,0,0,2,15,0,7,37]
 };

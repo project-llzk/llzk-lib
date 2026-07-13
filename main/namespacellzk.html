@@ -677,6 +677,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:ab655bb1748d3ea9a799f9c044ce65d0e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a DynamicAPInt to an APInt with exactly the requested bit width.  <br /></td></tr>
 <tr class="memitem:a79c7df33a29f599757f22c2920d8addf" id="r_a79c7df33a29f599757f22c2920d8addf"><td class="memItemLeft" align="right" valign="top">llvm::DynamicAPInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a79c7df33a29f599757f22c2920d8addf">modExp</a> (const llvm::DynamicAPInt &amp;base, const llvm::DynamicAPInt &amp;exp, const llvm::DynamicAPInt &amp;<a class="el" href="#a17efa635db7bf7658f865515aefd0cce">mod</a>)</td></tr>
 <tr class="memitem:a1f83757b07f122a5c8f74807ce83119a" id="r_a1f83757b07f122a5c8f74807ce83119a"><td class="memItemLeft" align="right" valign="top">llvm::DynamicAPInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1f83757b07f122a5c8f74807ce83119a">modInversePrime</a> (const llvm::DynamicAPInt &amp;f, const llvm::DynamicAPInt &amp;p)</td></tr>
+<tr class="memitem:ad3fb1acc95bcf8b458a36fb94c1c1229" id="r_ad3fb1acc95bcf8b458a36fb94c1c1229"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad3fb1acc95bcf8b458a36fb94c1c1229">hasUnknownOrNonReadEffect</a> (mlir::Operation *op)</td></tr>
+<tr class="memdesc:ad3fb1acc95bcf8b458a36fb94c1c1229"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true when <code class="param">op</code> may have an unknown effect or any effect other than memory read.  <br /></td></tr>
 <tr class="memitem:a9b8e8dff43891ffe5045760d87d2899b" id="r_a9b8e8dff43891ffe5045760d87d2899b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="#ab5453821bd84f89bfb591269a9554005">OwningEmitErrorFn</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9b8e8dff43891ffe5045760d87d2899b">getEmitOpErrFn</a> (mlir::Operation *op)</td></tr>
 <tr class="memitem:ae652b6e04c6c655275407417dccd48f9" id="r_ae652b6e04c6c655275407417dccd48f9"><td class="memTemplParams" colspan="2">template&lt;typename OpImplClass&gt; </td></tr>
 <tr class="memitem:ae652b6e04c6c655275407417dccd48f9 template"><td class="memItemLeft" align="right" valign="top"><a class="el" href="#ab5453821bd84f89bfb591269a9554005">OwningEmitErrorFn</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae652b6e04c6c655275407417dccd48f9">getEmitOpErrFn</a> (OpImplClass *opImpl)</td></tr>
@@ -5457,6 +5459,35 @@ template&lt;typename... OpTys&gt; </div>
 <p>Return true if the parameter has a parent/ancestor op that is an instance of one of the template type arguments. </p>
 
 <p class="definition">Definition at line <a class="el" href="OpHelpers_8h_source.html#l00062">62</a> of file <a class="el" href="OpHelpers_8h_source.html">OpHelpers.h</a>.</p>
+
+</div>
+</div>
+<a id="ad3fb1acc95bcf8b458a36fb94c1c1229" name="ad3fb1acc95bcf8b458a36fb94c1c1229"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad3fb1acc95bcf8b458a36fb94c1c1229">&#9670;&#160;</a></span>hasUnknownOrNonReadEffect()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::hasUnknownOrNonReadEffect </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns true when <code class="param">op</code> may have an unknown effect or any effect other than memory read. </p>
+
+<p class="definition">Definition at line <a class="el" href="EffectHelper_8h_source.html#l00021">21</a> of file <a class="el" href="EffectHelper_8h_source.html">EffectHelper.h</a>.</p>
 
 </div>
 </div>

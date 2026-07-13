@@ -1,5 +1,16 @@
 var NAVTREEINDEX90 =
 {
+"structllzk_1_1component_1_1detail_1_1MemberReadOpGenericAdaptorBase_1_1Properties.html":[10,0,4,5,0,2,0],
+"structllzk_1_1component_1_1detail_1_1MemberReadOpGenericAdaptorBase_1_1Properties.html":[12,0,1,3,0,2,0],
+"structllzk_1_1component_1_1detail_1_1MemberReadOpGenericAdaptorBase_1_1Properties.html#a09aa54db47f24b8bbbc9e7575b6f9891":[10,0,4,5,0,2,0,8],
+"structllzk_1_1component_1_1detail_1_1MemberReadOpGenericAdaptorBase_1_1Properties.html#a09aa54db47f24b8bbbc9e7575b6f9891":[12,0,1,3,0,2,0,8],
+"structllzk_1_1component_1_1detail_1_1MemberReadOpGenericAdaptorBase_1_1Properties.html#a1282c12855475f0127f889732e151eec":[10,0,4,5,0,2,0,5],
+"structllzk_1_1component_1_1detail_1_1MemberReadOpGenericAdaptorBase_1_1Properties.html#a1282c12855475f0127f889732e151eec":[12,0,1,3,0,2,0,5],
+"structllzk_1_1component_1_1detail_1_1MemberReadOpGenericAdaptorBase_1_1Properties.html#a14a5dd8a9218294d67b3a4da77808789":[10,0,4,5,0,2,0,7],
+"structllzk_1_1component_1_1detail_1_1MemberReadOpGenericAdaptorBase_1_1Properties.html#a14a5dd8a9218294d67b3a4da77808789":[12,0,1,3,0,2,0,7],
+"structllzk_1_1component_1_1detail_1_1MemberReadOpGenericAdaptorBase_1_1Properties.html#a18ad2ffd27c04b42efc95bcf4d9341e1":[10,0,4,5,0,2,0,4],
+"structllzk_1_1component_1_1detail_1_1MemberReadOpGenericAdaptorBase_1_1Properties.html#a18ad2ffd27c04b42efc95bcf4d9341e1":[12,0,1,3,0,2,0,4],
+"structllzk_1_1component_1_1detail_1_1MemberReadOpGenericAdaptorBase_1_1Properties.html#a1a692d62c4512f88b4401ced4ec70b89":[10,0,4,5,0,2,0,12],
 "structllzk_1_1component_1_1detail_1_1MemberReadOpGenericAdaptorBase_1_1Properties.html#a1a692d62c4512f88b4401ced4ec70b89":[12,0,1,3,0,2,0,12],
 "structllzk_1_1component_1_1detail_1_1MemberReadOpGenericAdaptorBase_1_1Properties.html#a3134c0c7f5486d3faf277b06c78e3b58":[10,0,4,5,0,2,0,1],
 "structllzk_1_1component_1_1detail_1_1MemberReadOpGenericAdaptorBase_1_1Properties.html#a3134c0c7f5486d3faf277b06c78e3b58":[12,0,1,3,0,2,0,1],
@@ -238,16 +249,5 @@ var NAVTREEINDEX90 =
 "structllzk_1_1function_1_1detail_1_1FuncDefOpGenericAdaptorBase_1_1Properties.html#ac84b1b8ba4f242e9090efdb1a6d14dd3":[10,0,4,11,0,1,0,3],
 "structllzk_1_1function_1_1detail_1_1FuncDefOpGenericAdaptorBase_1_1Properties.html#ac84b1b8ba4f242e9090efdb1a6d14dd3":[12,0,1,8,0,1,0,3],
 "structllzk_1_1function_1_1detail_1_1FuncDefOpGenericAdaptorBase_1_1Properties.html#acc1920a82fee4f470809e9bf6fc3a081":[10,0,4,11,0,1,0,1],
-"structllzk_1_1function_1_1detail_1_1FuncDefOpGenericAdaptorBase_1_1Properties.html#acc1920a82fee4f470809e9bf6fc3a081":[12,0,1,8,0,1,0,1],
-"structllzk_1_1function_1_1detail_1_1FuncDefOpGenericAdaptorBase_1_1Properties.html#ae6b9721884b1836d14230f639c7b5f6c":[10,0,4,11,0,1,0,15],
-"structllzk_1_1function_1_1detail_1_1FuncDefOpGenericAdaptorBase_1_1Properties.html#ae6b9721884b1836d14230f639c7b5f6c":[12,0,1,8,0,1,0,15],
-"structllzk_1_1global_1_1GlobalRefOpInterface_1_1Trait.html":[10,0,4,12,8,0],
-"structllzk_1_1global_1_1GlobalRefOpInterface_1_1Trait.html":[12,0,1,9,8,0],
-"structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html":[10,0,4,12,0,0,0],
-"structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html":[12,0,1,9,0,0,0],
-"structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#a0487f8bee9a00ace462e080b703d55e9":[10,0,4,12,0,0,0,11],
-"structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#a0487f8bee9a00ace462e080b703d55e9":[12,0,1,9,0,0,0,11],
-"structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#a0f50e5b423b077c07e674ecb81ef933c":[10,0,4,12,0,0,0,2],
-"structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#a0f50e5b423b077c07e674ecb81ef933c":[12,0,1,9,0,0,0,2],
-"structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#a1482ceb9633a6f4ec31b77defb8f35cd":[10,0,4,12,0,0,0,17]
+"structllzk_1_1function_1_1detail_1_1FuncDefOpGenericAdaptorBase_1_1Properties.html#acc1920a82fee4f470809e9bf6fc3a081":[12,0,1,8,0,1,0,1]
 };
