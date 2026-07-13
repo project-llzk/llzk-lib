@@ -4959,6 +4959,90 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
     return failure();
   }
 
+  // Step 3's full conversion can expose a second wave of virtual-POD cleanup
+  // opportunities. For example, resolving one deferred array bridge can make a
+  // previously-illegal pod.read/pod.write or cast finally resolvable. Scan for
+  // exactly those ops here so we can drive a small fixpoint loop before the
+  // final materialization stage.
+  auto hasResolvableLateVirtualPodOps = [&modOp, &virtualPods]() {
+    return walkContainsMatch<Operation *>(*modOp, [&virtualPods](Operation *op) {
+      return TypeSwitch<Operation *, bool>(op)
+          .Case<WritePodOp>([&virtualPods](auto writeOp) {
+        return lookupVirtualPodLeafMap(writeOp.getPodRef(), virtualPods) &&
+               !isInsideSupportedScfRegion(writeOp.getOperation());
+      })
+          .Case<ReadPodOp>([&virtualPods](auto readOp) {
+        return canResolveVirtualPodRead(readOp, virtualPods);
+      })
+          .Case<ReadArrayOp>([&virtualPods](auto readOp) {
+        return ResolvePodReadBackedArrayReadOp::canResolve(readOp, virtualPods);
+      })
+          .Case<ArrayLengthOp>([](auto lenOp) {
+        return !ResolvePodReadBackedArrayLengthOp::legal(lenOp);
+      })
+          .Case<UnrealizedConversionCastOp>([&virtualPods](auto castOp) {
+        return ResolveDeferredSplitPodArrayCastOp::canResolve(castOp, virtualPods);
+      }).Default([](Operation *) { return false; });
+    });
+  };
+
+  // Rebuild the late-resolution target and pattern set each round because the
+  // set of remaining virtual-POD placeholders shrinks as patterns fire. This
+  // phase intentionally uses partial conversion: each round resolves whatever
+  // is now legal to lower, then we rescan for any newly-exposed opportunities.
+  auto runLateResolutionRound = [&]() {
+    RewritePatternSet lateResolutionPatterns(ctx);
+    lateResolutionPatterns.add<ResolvePodReadBackedArrayReadOp>(
+        ctx, virtualPods, deferredPodArrays
+    );
+    lateResolutionPatterns.add<ResolvePodReadBackedArrayLengthOp>(
+        ctx, virtualPods, deferredPodArrays
+    );
+    lateResolutionPatterns.add<ResolveDeferredSplitPodArrayCastOp>(
+        ctx, virtualPods, deferredPodArrays
+    );
+    lateResolutionPatterns.add<ResolveVirtualPodWriteOp>(ctx, virtualPods, materializedLeaves);
+    lateResolutionPatterns.add<ResolveVirtualPodReadOp>(ctx, virtualPods);
+
+    ConversionTarget lateResolutionTarget(*ctx);
+    baseTargetSetup(lateResolutionTarget);
+    lateResolutionTarget.addLegalOp<ModuleOp>();
+    lateResolutionTarget.addDynamicallyLegalOp<WritePodOp>([&virtualPods](WritePodOp op) {
+      return !lookupVirtualPodLeafMap(op.getPodRef(), virtualPods) ||
+             isInsideSupportedScfRegion(op.getOperation());
+    });
+    lateResolutionTarget.addDynamicallyLegalOp<ArrayLengthOp>([](ArrayLengthOp op) {
+      return RejectRaggedNestedLeafArrayLengthOp::legal(op) &&
+             ResolvePodReadBackedArrayLengthOp::legal(op);
+    });
+    lateResolutionTarget.addDynamicallyLegalOp<ReadArrayOp>([&virtualPods](ReadArrayOp op) {
+      return !ResolvePodReadBackedArrayReadOp::canResolve(op, virtualPods);
+    });
+    lateResolutionTarget.addDynamicallyLegalOp<UnrealizedConversionCastOp>(
+        [&virtualPods](UnrealizedConversionCastOp op) {
+      return !ResolveDeferredSplitPodArrayCastOp::canResolve(op, virtualPods);
+    }
+    );
+    lateResolutionTarget.addDynamicallyLegalOp<ReadPodOp>([&virtualPods](ReadPodOp op) {
+      return !canResolveVirtualPodRead(op, virtualPods);
+    });
+
+    return applyPartialConversion(modOp, lateResolutionTarget, std::move(lateResolutionPatterns));
+  };
+
+  // Iterate to a fixpoint before post-processing materializes any surviving
+  // virtual PODs. A bounded loop guards against accidental non-progress.
+  for (unsigned lateResolutionRounds = 0;
+       lateResolutionRounds < 64 && hasResolvableLateVirtualPodOps(); ++lateResolutionRounds) {
+    if (failed(runLateResolutionRound())) {
+      return failure();
+    }
+  }
+  if (hasResolvableLateVirtualPodOps()) {
+    modOp.emitError("late virtual POD resolution did not reach a fixpoint");
+    return failure();
+  }
+
   RewritePatternSet postConversionPatterns(ctx);
   postConversionPatterns.add<SplitVirtualPodInEmitEqualityPattern>(
       ctx, virtualPods, materializedLeaves

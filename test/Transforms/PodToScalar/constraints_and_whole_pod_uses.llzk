@@ -297,7 +297,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@Box> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Box>
 // CHECK-NEXT:        struct.writem %[[VAL_2]][@p_x] = %[[VAL_0]] : <@Box>, index
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@p_x] : <@Box>, index
 // CHECK-NEXT:        struct.writem %[[VAL_2]][@out] = %[[VAL_1]] : <@Box>, index
 // CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@Box>
 // CHECK-NEXT:      }
