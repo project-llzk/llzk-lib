@@ -3519,6 +3519,17 @@ static Value rebuildSplitPodArrayQuantifierIterValue(
     SmallVector<Value> indices {index};
     leafValues[id] = genArrayRead(bldr, loc, leafArray, indices);
   }
+  if (ArrayType iterArrTy = splittablePodArray(iterType);
+      iterArrTy && needsPodArrayShapeCarrier(iterArrTy)) {
+    Value sortShapeCarrier = getConvertedPodArrayShapeCarrierIfPresent(sortType, convertedSort);
+    assert(
+        sortShapeCarrier &&
+        "expected converted quantifier sort shape carrier for array-of-POD subarray iterand"
+    );
+    SmallVector<Value> indices {index};
+    RecordChain carrierId({getPodArrayShapeCarrierMarker(bldr.getContext())}, true);
+    leafValues[carrierId] = genArrayRead(bldr, loc, sortShapeCarrier, indices);
+  }
 
   SmallVector<StringAttr> recordChain;
   return rebuildFlattenedPodRecord(bldr, loc, iterType, recordChain, leafValues);
