@@ -247,11 +247,9 @@ static bool hasValueUse(Operation &op, Value value) {
 /// This fold is intentionally conservative: it only forwards through intervening operations that do
 /// not use the POD value at all. That keeps the rewrite local and avoids reasoning about other
 /// whole-POD uses or record accesses that may observe mutation ordering.
-static WritePodOp findNearestForwardableWriteInBlock(ReadPodOp readOp) {
-  Value podRef = readOp.getPodRef();
-  StringAttr recordName = readOp.getRecordNameAttr();
-
-  for (Operation *op = readOp->getPrevNode(); op; op = op->getPrevNode()) {
+static WritePodOp
+findNearestForwardableWriteBefore(Operation *cursor, Value podRef, StringAttr recordName) {
+  for (Operation *op = cursor; op; op = op->getPrevNode()) {
     if (!hasValueUse(*op, podRef)) {
       continue;
     }
@@ -260,6 +258,13 @@ static WritePodOp findNearestForwardableWriteInBlock(ReadPodOp readOp) {
     return writeOp && isSamePodRecord(writeOp, podRef, recordName) ? writeOp : nullptr;
   }
   return nullptr;
+}
+
+/// Return the nearest preceding same-record write in the current block that can be forwarded.
+static WritePodOp findNearestForwardableWriteInBlock(ReadPodOp readOp) {
+  return findNearestForwardableWriteBefore(
+      readOp->getPrevNode(), readOp.getPodRef(), readOp.getRecordNameAttr()
+  );
 }
 
 /// Return the nearest preceding same-record write that can be forwarded to `readOp`.
@@ -274,13 +279,9 @@ static WritePodOp findNearestForwardableWrite(ReadPodOp readOp) {
   Operation *loopBoundary = llzk::pod::detail::findNearestLoopCarriedPodAccess(readOp);
 
   for (Operation *cursor = readOp.getOperation(); cursor && cursor->getBlock();) {
-    for (Operation *op = cursor->getPrevNode(); op; op = op->getPrevNode()) {
-      if (!hasValueUse(*op, podRef)) {
-        continue;
-      }
-
-      auto writeOp = dyn_cast<WritePodOp>(op);
-      return writeOp && isSamePodRecord(writeOp, podRef, recordName) ? writeOp : nullptr;
+    if (WritePodOp writeOp =
+            findNearestForwardableWriteBefore(cursor->getPrevNode(), podRef, recordName)) {
+      return writeOp;
     }
 
     Operation *parentOp = cursor->getBlock()->getParentOp();
@@ -1693,6 +1694,56 @@ static void setInsertionPointAfterValueDefinition(Value value, OpBuilder &bldr) 
   }
 }
 
+/// Return the canonical compatible source used by the late leaf materializers.
+static Value
+getCompatibleMaterializationSource(Value source, Type compatibleType, const char *assertMessage) {
+  source = peelUnifiableCasts(source);
+  assert(typesUnify(source.getType(), compatibleType) && assertMessage);
+  return source;
+}
+
+/// Materialize derived SSA values immediately after the source definition when required.
+template <typename EmitValuesFn>
+static void materializeCompatibleValuesAfterDefinition(
+    Location loc, Value source, ArrayRef<Type> targetTypes, OpBuilder &rewriter,
+    SmallVectorImpl<Value> &out, EmitValuesFn &&emitValues
+) {
+  if (!targetTypes.empty()) {
+    OpBuilder::InsertionGuard guard(rewriter);
+    setInsertionPointAfterValueDefinition(source, rewriter);
+    emitValues(loc, source, targetTypes, rewriter, out);
+  }
+}
+
+/// Materialize and cache one stable leaf decomposition for a source value compatible with
+/// `shapeTy`.
+template <typename CollectTypesFn>
+static ArrayRef<Value> getOrMaterializeCompatibleLeafValues(
+    Location loc, Value source, Type shapeTy, OpBuilder &rewriter,
+    CompatiblePodLeafMaterializationMap &materializedLeaves, CollectTypesFn &&collectTypes,
+    const char *assertMessage
+) {
+  source = getCompatibleMaterializationSource(source, shapeTy, assertMessage);
+  CompatiblePodLeafMaterializationKey key {source, shapeTy};
+  auto [it, inserted] = materializedLeaves.try_emplace(key);
+  if (!inserted) {
+    return it->second;
+  }
+
+  SmallVector<Type> leafTypes;
+  collectTypes(leafTypes);
+  materializeCompatibleValuesAfterDefinition(
+      loc, source, leafTypes, rewriter, it->second,
+      [](Location loc, Value source, ArrayRef<Type> targetTypes, OpBuilder &rewriter,
+         SmallVectorImpl<Value> &out) {
+    auto splitCast =
+        rewriter.create<UnrealizedConversionCastOp>(loc, TypeRange(targetTypes), source);
+    llvm::append_range(out, splitCast.getResults());
+  }
+  );
+  return it->second;
+}
+
 /// Materialize and cache a stable leaf decomposition for one non-POD value.
 ///
 /// Whole-POD equality can legally compare a concrete POD against a unifying `!poly.tvar`. The
@@ -1703,28 +1754,11 @@ static ArrayRef<Value> getOrMaterializeCompatiblePodLeafValues(
     Location loc, Value source, PodType podTy, OpBuilder &rewriter,
     CompatiblePodLeafMaterializationMap &materializedLeaves
 ) {
-  SmallVector<Type> leafTypes;
-  splitPodTypeTo(podTy, leafTypes);
-  source = peelUnifiableCasts(source);
-  assert(
-      typesUnify(source.getType(), podTy) &&
-      "materialized POD leaves require a source type compatible with the POD shape"
+  return getOrMaterializeCompatibleLeafValues(
+      loc, source, podTy, rewriter, materializedLeaves, [&podTy](SmallVector<Type> &leafTypes) {
+    splitPodTypeTo(podTy, leafTypes);
+  }, "materialized POD leaves require a source type compatible with the POD shape"
   );
-  CompatiblePodLeafMaterializationKey key {source, podTy};
-  auto [it, inserted] = materializedLeaves.try_emplace(key);
-  if (!inserted) {
-    return it->second;
-  }
-
-  if (leafTypes.empty()) {
-    return it->second;
-  }
-
-  OpBuilder::InsertionGuard guard(rewriter);
-  setInsertionPointAfterValueDefinition(source, rewriter);
-  auto splitCast = rewriter.create<UnrealizedConversionCastOp>(loc, TypeRange(leafTypes), source);
-  llvm::append_range(it->second, splitCast.getResults());
-  return it->second;
 }
 
 /// Materialize and cache leaf-array values for one non-array value that unifies with `arrTy`.
@@ -1732,28 +1766,11 @@ static ArrayRef<Value> getOrMaterializeCompatiblePodArrayLeafValues(
     Location loc, Value source, ArrayType arrTy, OpBuilder &rewriter,
     CompatiblePodLeafMaterializationMap &materializedLeaves
 ) {
-  SmallVector<Type> leafTypes;
-  splitPodArrayTypeTo(arrTy, leafTypes);
-  source = peelUnifiableCasts(source);
-  assert(
-      typesUnify(source.getType(), arrTy) &&
-      "materialized POD-array leaves require a source type compatible with the array shape"
+  return getOrMaterializeCompatibleLeafValues(
+      loc, source, arrTy, rewriter, materializedLeaves, [&arrTy](SmallVector<Type> &leafTypes) {
+    splitPodArrayTypeTo(arrTy, leafTypes);
+  }, "materialized POD-array leaves require a source type compatible with the array shape"
   );
-  CompatiblePodLeafMaterializationKey key {source, arrTy};
-  auto [it, inserted] = materializedLeaves.try_emplace(key);
-  if (!inserted) {
-    return it->second;
-  }
-
-  if (leafTypes.empty()) {
-    return it->second;
-  }
-
-  OpBuilder::InsertionGuard guard(rewriter);
-  setInsertionPointAfterValueDefinition(source, rewriter);
-  auto splitCast = rewriter.create<UnrealizedConversionCastOp>(loc, TypeRange(leafTypes), source);
-  llvm::append_range(it->second, splitCast.getResults());
-  return it->second;
 }
 
 /// Materialize the full converted component list for one non-array value that unifies with
@@ -1764,24 +1781,23 @@ static SmallVector<Value> materializeCompatiblePodArrayConvertedValues(
   SmallVector<RecordChain> splitIds;
   SmallVector<Type> convertedTypes;
   collectConvertedPodArrayRecordInfos(arrTy, splitIds, convertedTypes);
-  source = peelUnifiableCasts(source);
-  assert(
-      typesUnify(source.getType(), arrTy) &&
-      "materialized POD-array components require a source type compatible with the array shape"
+  source = getCompatibleMaterializationSource(
+      source, arrTy,
+      "materialized POD-array components require a source type compatible with the "
+      "array shape"
   );
 
-  if (convertedTypes.empty()) {
-    return {};
-  }
-
-  OpBuilder::InsertionGuard guard(rewriter);
-  setInsertionPointAfterValueDefinition(source, rewriter);
-
   SmallVector<Value> convertedValues;
-  convertedValues.reserve(convertedTypes.size());
-  for (Type convertedType : convertedTypes) {
-    convertedValues.push_back(castValueToTypeIfNeeded(rewriter, loc, source, convertedType));
+  materializeCompatibleValuesAfterDefinition(
+      loc, source, convertedTypes, rewriter, convertedValues,
+      [](Location loc, Value source, ArrayRef<Type> targetTypes, OpBuilder &rewriter,
+         SmallVectorImpl<Value> &out) {
+    out.reserve(targetTypes.size());
+    for (Type targetType : targetTypes) {
+      out.push_back(castValueToTypeIfNeeded(rewriter, loc, source, targetType));
+    }
   }
+  );
   return convertedValues;
 }
 
@@ -4456,6 +4472,54 @@ static bool getDeferredSplitPodArrayCastInfo(
          op.getResult(splitTypes.size()).getType() == getPodArrayShapeCarrierType(arrTy);
 }
 
+/// Resolve one deferred split-array placeholder into its concrete split leaf arrays.
+static LogicalResult resolveDeferredSplitPodArrayCast(
+    UnrealizedConversionCastOp op, PatternRewriter &rewriter, const VirtualPodValueMap &virtualPods,
+    DeferredPodArrayBackingMap &deferredPodArrays
+) {
+  ArrayType arrTy;
+  SmallVector<RecordChain> splitIds;
+  SmallVector<Type> splitTypes;
+  if (!getDeferredSplitPodArrayCastInfo(op, arrTy, splitIds, splitTypes)) {
+    return failure();
+  }
+
+  ReadPodOp fieldRead = peelUnifiableCasts(op.getOperand(0)).getDefiningOp<ReadPodOp>();
+  if (!fieldRead) {
+    return failure();
+  }
+
+  SmallVector<Value> splitLeafArrays;
+  if (!resolveReadPodSplitPodArrayLeafValues(
+          fieldRead, arrTy, splitIds, splitTypes, virtualPods, deferredPodArrays, op.getLoc(),
+          rewriter, splitLeafArrays
+      )) {
+    return failure();
+  }
+
+  SmallVector<Value> replacements(splitLeafArrays.begin(), splitLeafArrays.end());
+  if (needsPodArrayShapeCarrier(arrTy)) {
+    Value carrier =
+        tryResolveReadPodArrayShapeSource(fieldRead, arrTy, virtualPods, op.getLoc(), rewriter);
+    if (!carrier) {
+      if (auto it = deferredPodArrays.find(fieldRead.getResult());
+          it != deferredPodArrays.end() && it->second.shapeCarrier) {
+        carrier = castValueToTypeIfNeeded(
+            rewriter, op.getLoc(), it->second.shapeCarrier, getPodArrayShapeCarrierType(arrTy)
+        );
+      } else {
+        carrier =
+            materializeArrayLengthCarrier(fieldRead.getResult(), arrTy, op.getLoc(), rewriter);
+      }
+    }
+    replacements.push_back(carrier);
+  }
+
+  rewriter.replaceOp(op, replacements);
+  eraseDeadDeferredFieldReadChain(fieldRead, rewriter);
+  return success();
+}
+
 /// Resolve deferred `array.read` from `pod.read`-produced array-of-POD values.
 ///
 /// When step 2 defers a read because the array-of-POD came from a POD record, this pattern
@@ -4572,46 +4636,7 @@ public:
   LogicalResult matchAndRewrite(
       UnrealizedConversionCastOp op, OpAdaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    ArrayType arrTy;
-    SmallVector<RecordChain> splitIds;
-    SmallVector<Type> splitTypes;
-    if (!getDeferredSplitPodArrayCastInfo(op, arrTy, splitIds, splitTypes)) {
-      return failure();
-    }
-
-    ReadPodOp fieldRead = peelUnifiableCasts(op.getOperand(0)).getDefiningOp<ReadPodOp>();
-    if (!fieldRead) {
-      return failure();
-    }
-
-    SmallVector<Value> splitLeafArrays;
-    if (!resolveReadPodSplitPodArrayLeafValues(
-            fieldRead, arrTy, splitIds, splitTypes, virtualPods, deferredPodArrays, op.getLoc(),
-            rewriter, splitLeafArrays
-        )) {
-      return failure();
-    }
-
-    SmallVector<Value> replacements(splitLeafArrays.begin(), splitLeafArrays.end());
-    if (needsPodArrayShapeCarrier(arrTy)) {
-      Value carrier =
-          tryResolveReadPodArrayShapeSource(fieldRead, arrTy, virtualPods, op.getLoc(), rewriter);
-      if (!carrier) {
-        if (auto it = deferredPodArrays.find(fieldRead.getResult());
-            it != deferredPodArrays.end() && it->second.shapeCarrier) {
-          carrier = castValueToTypeIfNeeded(
-              rewriter, op.getLoc(), it->second.shapeCarrier, getPodArrayShapeCarrierType(arrTy)
-          );
-        } else {
-          carrier =
-              materializeArrayLengthCarrier(fieldRead.getResult(), arrTy, op.getLoc(), rewriter);
-        }
-      }
-      replacements.push_back(carrier);
-    }
-    rewriter.replaceOp(op, replacements);
-    eraseDeadDeferredFieldReadChain(fieldRead, rewriter);
-    return success();
+    return resolveDeferredSplitPodArrayCast(op, rewriter, virtualPods, deferredPodArrays);
   }
 };
 
@@ -4631,46 +4656,7 @@ public:
 
   LogicalResult
   matchAndRewrite(UnrealizedConversionCastOp op, PatternRewriter &rewriter) const override {
-    ArrayType arrTy;
-    SmallVector<RecordChain> splitIds;
-    SmallVector<Type> splitTypes;
-    if (!getDeferredSplitPodArrayCastInfo(op, arrTy, splitIds, splitTypes)) {
-      return failure();
-    }
-
-    ReadPodOp fieldRead = peelUnifiableCasts(op.getOperand(0)).getDefiningOp<ReadPodOp>();
-    if (!fieldRead) {
-      return failure();
-    }
-
-    SmallVector<Value> splitLeafArrays;
-    if (!resolveReadPodSplitPodArrayLeafValues(
-            fieldRead, arrTy, splitIds, splitTypes, virtualPods, deferredPodArrays, op.getLoc(),
-            rewriter, splitLeafArrays
-        )) {
-      return failure();
-    }
-
-    SmallVector<Value> replacements(splitLeafArrays.begin(), splitLeafArrays.end());
-    if (needsPodArrayShapeCarrier(arrTy)) {
-      Value carrier =
-          tryResolveReadPodArrayShapeSource(fieldRead, arrTy, virtualPods, op.getLoc(), rewriter);
-      if (!carrier) {
-        if (auto it = deferredPodArrays.find(fieldRead.getResult());
-            it != deferredPodArrays.end() && it->second.shapeCarrier) {
-          carrier = castValueToTypeIfNeeded(
-              rewriter, op.getLoc(), it->second.shapeCarrier, getPodArrayShapeCarrierType(arrTy)
-          );
-        } else {
-          carrier =
-              materializeArrayLengthCarrier(fieldRead.getResult(), arrTy, op.getLoc(), rewriter);
-        }
-      }
-      replacements.push_back(carrier);
-    }
-    rewriter.replaceOp(op, replacements);
-    eraseDeadDeferredFieldReadChain(fieldRead, rewriter);
-    return success();
+    return resolveDeferredSplitPodArrayCast(op, rewriter, virtualPods, deferredPodArrays);
   }
 };
 
@@ -4890,6 +4876,31 @@ public:
   }
 };
 
+/// Add the shared legality rules for step 3's late virtual-POD cleanup operations.
+static void configureStep3LateVirtualPodLegality(
+    ConversionTarget &target, const VirtualPodValueMap &virtualPods
+) {
+  target.addDynamicallyLegalOp<WritePodOp>([&virtualPods](WritePodOp op) {
+    return !lookupVirtualPodLeafMap(op.getPodRef(), virtualPods) ||
+           isInsideSupportedScfRegion(op.getOperation());
+  });
+  target.addDynamicallyLegalOp<ArrayLengthOp>([](ArrayLengthOp op) {
+    return RejectRaggedNestedLeafArrayLengthOp::legal(op) &&
+           ResolvePodReadBackedArrayLengthOp::legal(op);
+  });
+  target.addDynamicallyLegalOp<ReadArrayOp>([&virtualPods](ReadArrayOp op) {
+    return !ResolvePodReadBackedArrayReadOp::canResolve(op, virtualPods);
+  });
+  target.addDynamicallyLegalOp<UnrealizedConversionCastOp>(
+      [&virtualPods](UnrealizedConversionCastOp op) {
+    return !ResolveDeferredSplitPodArrayCastOp::canResolve(op, virtualPods);
+  }
+  );
+  target.addDynamicallyLegalOp<ReadPodOp>([&virtualPods](ReadPodOp op) {
+    return !canResolveVirtualPodRead(op, virtualPods);
+  });
+}
+
 /// Special handling to split pods in struct member refs and function signatures and desugar
 /// initializations on pod.new into pod writes.
 static LogicalResult
@@ -4934,25 +4945,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   target.addDynamicallyLegalOp<CallOp>(SplitPodInCallOp::legal);
   target.addDynamicallyLegalOp<MemberWriteOp>(SplitPodInMemberWriteOp::legal);
   target.addDynamicallyLegalOp<MemberReadOp>(SplitPodInMemberReadOp::legal);
-  target.addDynamicallyLegalOp<WritePodOp>([&virtualPods](WritePodOp op) {
-    return !lookupVirtualPodLeafMap(op.getPodRef(), virtualPods) ||
-           isInsideSupportedScfRegion(op.getOperation());
-  });
-  target.addDynamicallyLegalOp<ArrayLengthOp>([](ArrayLengthOp op) {
-    return RejectRaggedNestedLeafArrayLengthOp::legal(op) &&
-           ResolvePodReadBackedArrayLengthOp::legal(op);
-  });
-  target.addDynamicallyLegalOp<ReadArrayOp>([&virtualPods](ReadArrayOp op) {
-    return !ResolvePodReadBackedArrayReadOp::canResolve(op, virtualPods);
-  });
-  target.addDynamicallyLegalOp<UnrealizedConversionCastOp>(
-      [&virtualPods](UnrealizedConversionCastOp op) {
-    return !ResolveDeferredSplitPodArrayCastOp::canResolve(op, virtualPods);
-  }
-  );
-  target.addDynamicallyLegalOp<ReadPodOp>([&virtualPods](ReadPodOp op) {
-    return !canResolveVirtualPodRead(op, virtualPods);
-  });
+  configureStep3LateVirtualPodLegality(target, virtualPods);
 
   LLVM_DEBUG(llvm::dbgs() << "Begin step 3: update/split other pod ops\n";);
   if (failed(applyFullConversion(modOp, target, std::move(patterns)))) {
@@ -5007,25 +5000,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
     ConversionTarget lateResolutionTarget(*ctx);
     baseTargetSetup(lateResolutionTarget);
     lateResolutionTarget.addLegalOp<ModuleOp>();
-    lateResolutionTarget.addDynamicallyLegalOp<WritePodOp>([&virtualPods](WritePodOp op) {
-      return !lookupVirtualPodLeafMap(op.getPodRef(), virtualPods) ||
-             isInsideSupportedScfRegion(op.getOperation());
-    });
-    lateResolutionTarget.addDynamicallyLegalOp<ArrayLengthOp>([](ArrayLengthOp op) {
-      return RejectRaggedNestedLeafArrayLengthOp::legal(op) &&
-             ResolvePodReadBackedArrayLengthOp::legal(op);
-    });
-    lateResolutionTarget.addDynamicallyLegalOp<ReadArrayOp>([&virtualPods](ReadArrayOp op) {
-      return !ResolvePodReadBackedArrayReadOp::canResolve(op, virtualPods);
-    });
-    lateResolutionTarget.addDynamicallyLegalOp<UnrealizedConversionCastOp>(
-        [&virtualPods](UnrealizedConversionCastOp op) {
-      return !ResolveDeferredSplitPodArrayCastOp::canResolve(op, virtualPods);
-    }
-    );
-    lateResolutionTarget.addDynamicallyLegalOp<ReadPodOp>([&virtualPods](ReadPodOp op) {
-      return !canResolveVirtualPodRead(op, virtualPods);
-    });
+    configureStep3LateVirtualPodLegality(lateResolutionTarget, virtualPods);
 
     return applyPartialConversion(modOp, lateResolutionTarget, std::move(lateResolutionPatterns));
   };
@@ -5530,6 +5505,37 @@ static bool hasUnliftableLoopPodUses(Block &block, ArrayRef<LoopPodSlot> slots) 
   return false;
 }
 
+/// Clone one loop region while replacing tracked pod reads/writes with slot SSA values.
+template <typename RewriteTerminatorFn>
+static void cloneLoopBodyWithLiftedPodSlots(
+    Block &source, PatternRewriter &rewriter, IRMapping &mapping, ArrayRef<LoopPodSlot> slots,
+    SmallVectorImpl<Value> &slotValues, RewriteTerminatorFn &&rewriteTerminator
+) {
+  for (Operation &op : source) {
+    if (rewriteTerminator(op)) {
+      continue;
+    }
+
+    if (auto readOp = dyn_cast<ReadPodOp>(&op)) {
+      if (std::optional<size_t> slotIdx =
+              findLoopSlotIndex(slots, readOp.getPodRef(), readOp.getRecordNameAttr())) {
+        mapping.map(readOp.getResult(), slotValues[*slotIdx]);
+        continue;
+      }
+    }
+
+    if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
+      if (std::optional<size_t> slotIdx =
+              findLoopSlotIndex(slots, writeOp.getPodRef(), writeOp.getRecordNameAttr())) {
+        slotValues[*slotIdx] = mapping.lookupOrDefault(writeOp.getValue());
+        continue;
+      }
+    }
+
+    rewriter.clone(op, mapping);
+  }
+}
+
 /// Lift direct branch-local writes out of `scf.if` as yielded values, then write those values in
 /// the parent block. Existing `scf.if` results are preserved as a prefix of the new result list,
 /// which gives mem2reg parent-block pod writes instead of nested-region writes.
@@ -5650,34 +5656,17 @@ public:
     );
 
     rewriter.setInsertionPointToEnd(&newBody);
-    for (Operation &op : body) {
+    cloneLoopBodyWithLiftedPodSlots(body, rewriter, mapping, slots, slotValues, [&](Operation &op) {
       if (auto yieldOp = dyn_cast<scf::YieldOp>(&op)) {
         auto yieldValues = llvm::map_to_vector(yieldOp.getOperands(), [&mapping](Value operand) {
           return mapping.lookupOrDefault(operand);
         });
         llvm::append_range(yieldValues, slotValues);
         rewriter.create<scf::YieldOp>(yieldOp.getLoc(), yieldValues);
-        continue;
+        return true;
       }
-
-      if (auto readOp = dyn_cast<ReadPodOp>(&op)) {
-        if (std::optional<size_t> slotIdx =
-                findLoopSlotIndex(slots, readOp.getPodRef(), readOp.getRecordNameAttr())) {
-          mapping.map(readOp.getResult(), slotValues[*slotIdx]);
-          continue;
-        }
-      }
-
-      if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
-        if (std::optional<size_t> slotIdx =
-                findLoopSlotIndex(slots, writeOp.getPodRef(), writeOp.getRecordNameAttr())) {
-          slotValues[*slotIdx] = mapping.lookupOrDefault(writeOp.getValue());
-          continue;
-        }
-      }
-
-      rewriter.clone(op, mapping);
-    }
+      return false;
+    });
 
     rewriter.setInsertionPointAfter(newFor);
     for (auto [idx, slot] : llvm::enumerate(slots)) {
@@ -5743,7 +5732,8 @@ public:
     );
 
     rewriter.setInsertionPointToEnd(&newBeforeBody);
-    for (Operation &op : beforeBody) {
+    cloneLoopBodyWithLiftedPodSlots(
+        beforeBody, rewriter, beforeMapping, slots, beforeSlotValues, [&](Operation &op) {
       if (auto conditionOp = dyn_cast<scf::ConditionOp>(&op)) {
         SmallVector<Value> conditionArgs =
             llvm::map_to_vector(conditionOp.getArgs(), [&beforeMapping](Value a) {
@@ -5754,27 +5744,11 @@ public:
             conditionOp.getLoc(), beforeMapping.lookupOrDefault(conditionOp.getCondition()),
             conditionArgs
         );
-        continue;
+        return true;
       }
-
-      if (auto readOp = dyn_cast<ReadPodOp>(&op)) {
-        if (std::optional<size_t> slotIdx =
-                findLoopSlotIndex(slots, readOp.getPodRef(), readOp.getRecordNameAttr())) {
-          beforeMapping.map(readOp.getResult(), beforeSlotValues[*slotIdx]);
-          continue;
-        }
-      }
-
-      if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
-        if (std::optional<size_t> slotIdx =
-                findLoopSlotIndex(slots, writeOp.getPodRef(), writeOp.getRecordNameAttr())) {
-          beforeSlotValues[*slotIdx] = beforeMapping.lookupOrDefault(writeOp.getValue());
-          continue;
-        }
-      }
-
-      rewriter.clone(op, beforeMapping);
+      return false;
     }
+    );
 
     IRMapping afterMapping;
     for (auto [oldArg, newArg] : llvm::zip_equal(
@@ -5792,7 +5766,8 @@ public:
     );
 
     rewriter.setInsertionPointToEnd(&newAfterBody);
-    for (Operation &op : afterBody) {
+    cloneLoopBodyWithLiftedPodSlots(
+        afterBody, rewriter, afterMapping, slots, afterSlotValues, [&](Operation &op) {
       if (auto yieldOp = dyn_cast<scf::YieldOp>(&op)) {
         SmallVector<Value> yieldValues =
             llvm::map_to_vector(yieldOp.getOperands(), [&afterMapping](Value v) {
@@ -5800,27 +5775,11 @@ public:
         });
         llvm::append_range(yieldValues, afterSlotValues);
         rewriter.create<scf::YieldOp>(yieldOp.getLoc(), yieldValues);
-        continue;
+        return true;
       }
-
-      if (auto readOp = dyn_cast<ReadPodOp>(&op)) {
-        if (std::optional<size_t> slotIdx =
-                findLoopSlotIndex(slots, readOp.getPodRef(), readOp.getRecordNameAttr())) {
-          afterMapping.map(readOp.getResult(), afterSlotValues[*slotIdx]);
-          continue;
-        }
-      }
-
-      if (auto writeOp = dyn_cast<WritePodOp>(&op)) {
-        if (std::optional<size_t> slotIdx =
-                findLoopSlotIndex(slots, writeOp.getPodRef(), writeOp.getRecordNameAttr())) {
-          afterSlotValues[*slotIdx] = afterMapping.lookupOrDefault(writeOp.getValue());
-          continue;
-        }
-      }
-
-      rewriter.clone(op, afterMapping);
+      return false;
     }
+    );
 
     rewriter.setInsertionPointAfter(newWhile);
     for (auto [idx, slot] : llvm::enumerate(slots)) {
