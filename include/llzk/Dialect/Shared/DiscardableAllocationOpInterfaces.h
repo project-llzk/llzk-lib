@@ -18,6 +18,7 @@ namespace llzk {
 struct DiscardableAllocationResource
     : public mlir::SideEffects::Resource::Base<DiscardableAllocationResource> {
   mlir::StringRef getName() final;
+  ~DiscardableAllocationResource() override = default;
 };
 
 } // namespace llzk
