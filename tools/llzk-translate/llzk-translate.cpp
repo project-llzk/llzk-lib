@@ -13,31 +13,10 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "r1cs/Dialect/IR/Dialect.h"
-#include "r1cs/DialectRegistration.h"
-#include "r1cs/Transforms/TransformationPassPipelines.h"
-#include "r1cs/Transforms/TransformationPasses.h"
-#include "smt/Conversions/ConversionPasses.h"
-// #include "smt/Transforms/SMTPasses.h"
 #include "smt/Target/TranslateRegistration.h"
 #include "zklean/Target/TranslateRegistration.h"
 #include "tools/config.h"
-#include "zklean/Conversions/Passes.h"
-#include "zklean/DialectRegistration.h"
-
-#include "llzk/Analysis/AnalysisPasses.h"
 #include "llzk/Config/Config.h"
-#include "llzk/Dialect/Array/Transforms/TransformationPasses.h"
-#include "llzk/Dialect/Include/Transforms/InlineIncludesPass.h"
-#include "llzk/Dialect/Include/Util/IncludeHelper.h"
-#include "llzk/Dialect/InitDialects.h"
-#include "llzk/Dialect/POD/Transforms/TransformationPasses.h"
-#include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
-#include "llzk/Dialect/Struct/Transforms/TransformationPasses.h"
-#include "llzk/Transforms/LLZKTransformationPassPipelines.h"
-#include "llzk/Transforms/LLZKTransformationPasses.h"
-#include "llzk/Transforms/SpecializedMemoryPasses.h"
-#include "llzk/Validators/LLZKValidationPasses.h"
 
 #include <mlir/Dialect/Func/Extensions/InlinerExtension.h>
 #include <mlir/Dialect/Func/IR/FuncOps.h>
@@ -55,11 +34,7 @@
 #include <llvm/Support/Signals.h>
 
 #if LLZK_WITH_PCL
-#include "pcl-conv/Transforms/TransformationPasses.h"
-
-#include <pcl/Dialect/IR/Dialect.h>
-#include <pcl/InitAllDialects.h>
-#include <pcl/Transforms/PCLTransformationPasses.h>
+// TODO
 #endif // LLZK_WITH_PCL
 
 using namespace llzk;

@@ -3,18 +3,11 @@ get_property(translation_libs GLOBAL PROPERTY MLIR_TRANSLATION_LIBS)
 add_executable(llzk-translate llzk-translate.cpp)
 target_link_libraries(llzk-translate PRIVATE ${LLZK_DEP_DIALECT_LIBS} MLIRTranslateLib
                       LLZKDialect
-                      LLZK::DialectRegistration R1CS::DialectRegistration
-                      LLZKDialectHeaders MLIRIR R1CSDialectHeaders
-                      LLZKUtil LLZKAnalysis LLZKValidators LLZKTransforms R1CSTransforms
-                      SMTConversions SMTTarget ZKLeanTarget SMTDialectHeaders
-                      ZKLean::DialectRegistration ZKLeanDialectHeaders
-		                  ZKLean::Conversions
-                      MLIRFuncDialect MLIRFuncInlinerExtension
+                      LLZKDialectHeaders MLIRIR 
+                       SMTTarget 
+                      ZKLeanTarget
                       ${translation_libs}
-                      $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLConvDialectHeaders>
-                      $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCL::PCLDialect>
-                      $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCL::PCLTransforms>
-                      $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLConvTransforms>
+                      # $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLConvTransforms>
                       )
 llzk_target_add_mlir_link_settings(llzk-translate)
 include_directories(${MLIR_INCLUDE_DIRS} ${LLVM_INCLUDE_DIRS} ${R1CS_INCLUDE_DIR}

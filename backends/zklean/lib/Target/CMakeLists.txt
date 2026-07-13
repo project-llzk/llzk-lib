@@ -18,8 +18,9 @@ target_link_libraries(
   PRIVATE
     LLZKDialect
     ZKLeanZKExprDialect
+    ZKLeanZKBuilderDialect
     ZKLeanZKLeanLeanDialect
-    LLZKBoolDialect
+    LLZKAllDialects
 )
 
 llzk_target_add_mlir_link_settings(ZKLeanTarget)
