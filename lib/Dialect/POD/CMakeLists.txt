@@ -12,7 +12,7 @@ target_sources(LLZKPODDialect PRIVATE
 target_link_libraries(
   LLZKPODDialect PUBLIC LLZKDialectHeaders ${LLZK_DEP_DIALECT_LIBS} MLIRIR
                      MLIRPass MLIRParser MLIRTransformUtils MLIRSCFTransforms
-                     LLVMHeaders MLIRHeaders LLZKDialect)
+                     LLVMHeaders MLIRHeaders LLZKDialect LLZKArrayDialect)
 llzk_target_add_mlir_link_settings(LLZKPODDialect)
 
 install(TARGETS LLZKPODDialect EXPORT LLZKTargets)

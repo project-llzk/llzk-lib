@@ -14,6 +14,7 @@ target_link_libraries(
   PRIVATE
     LLZKIncludeDialect
     LLZKPODDialect
+    LLZKPolymorphicDialect
 )
 add_dependencies(LLZKUtil LLZKDialect)
 llzk_target_add_mlir_link_settings(LLZKUtil)
