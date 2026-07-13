@@ -34,7 +34,7 @@
 #include <llvm/Support/Signals.h>
 
 #if LLZK_WITH_PCL
-// TODO
+#include "pcl/Target/TranslateRegistration.h"
 #endif // LLZK_WITH_PCL
 
 using namespace llzk;
@@ -54,6 +54,9 @@ int main(int argc, char **argv) {
   mlir::registerAllTranslations();
   smt::registerSmtTranslation();
   zklean::registerZKLeanTranslation();
+#if LLZK_WITH_PCL 
+  pcl::registerPclTranslation();
+#endif
 
   // Run 'mlir-translate'
   return failed(mlir::mlirTranslateMain(argc, argv, "LLZK Translation tool"));

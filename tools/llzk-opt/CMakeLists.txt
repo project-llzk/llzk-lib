@@ -9,7 +9,6 @@ target_link_libraries(llzk-opt PRIVATE ${LLZK_DEP_DIALECT_LIBS} MLIROptLib
                       MLIRFuncDialect MLIRFuncInlinerExtension
                       $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLDialectHeaders>
                       $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLDialect>
-                      $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLTransforms>
                       $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLConversion>
                       )
 llzk_target_add_mlir_link_settings(llzk-opt)

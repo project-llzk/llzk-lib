@@ -7,7 +7,7 @@ target_link_libraries(llzk-translate PRIVATE ${LLZK_DEP_DIALECT_LIBS} MLIRTransl
                       SMTTarget 
                       ZKLeanTarget
                       ${translation_libs}
-                      # $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLConvTransforms>
+                      $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLTarget>
                       )
 llzk_target_add_mlir_link_settings(llzk-translate)
 include_directories(${MLIR_INCLUDE_DIRS} ${LLVM_INCLUDE_DIRS} ${R1CS_INCLUDE_DIR}
