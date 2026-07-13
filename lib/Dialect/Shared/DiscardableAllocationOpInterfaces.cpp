@@ -12,13 +12,3 @@
 // Include the generated interface definitions.
 #include "llzk/Dialect/Shared/DiscardableAllocationOpInterfaces.cpp.inc"
 
-namespace llzk {
-
-// DiscardableAllocationResource::DiscardableAllocationResource()
-//     : mlir::SideEffects::Resource::Base<DiscardableAllocationResource>() {}
-//
-// // Note: definition is placed here rather than the header to avoid the error:
-// //       "vtable will be emitted in every translation unit"
-// mlir::StringRef DiscardableAllocationResource::getName() { return "DiscardableAllocation"; }
-
-} // namespace llzk

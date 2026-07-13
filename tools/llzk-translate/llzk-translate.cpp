@@ -50,39 +50,6 @@ int main(int argc, char **argv) {
     os << "\nLLZK (" LLZK_URL "):\n  LLZK version " LLZK_VERSION_STRING "\n";
   });
 
-//   // MLIR initialization
-//   mlir::DialectRegistry registry;
-//   // registers CSE, etc
-//   mlir_hotfix::registerTransformsPasses();
-//   llzk::registerAllDialects(registry);
-//   r1cs::registerAllDialects(registry);
-//   zklean::registerAllDialects(registry);
-//   mlir::func::registerInlinerExtension(registry);
-// #if LLZK_WITH_PCL
-//   pcl::registerAllDialects(registry);
-// #endif // LLZK_WITH_PCL
-//
-//   llzk::registerValidationPasses();
-//   llzk::registerAnalysisPasses();
-//   llzk::registerTransformationPasses();
-//   llzk::component::registerTransformationPasses();
-//   llzk::array::registerTransformationPasses();
-//   llzk::include::registerTransformationPasses();
-//   llzk::polymorphic::registerTransformationPasses();
-//   llzk::pod::registerTransformationPasses();
-//   r1cs::registerTransformationPasses();
-//   zklean::registerConversionPasses();
-//   zklean::registerZKLeanPasses();
-// #if LLZK_WITH_PCL
-//   pcl::registerTransformationPasses();
-//   pcl::conversion::registerPCLTransformationPasses();
-// #endif // LLZK_WITH_PCL
-//   llzk::smt::registerConversionPasses();
-//
-//   llzk::registerTransformationPassPipelines();
-//   r1cs::registerTransformationPassPipelines();
-//   llzk::smt::registerSMTPasses();
-
   // Register all MLIR translations 
   mlir::registerAllTranslations();
   smt::registerSmtTranslation();
