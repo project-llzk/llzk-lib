@@ -2903,6 +2903,14 @@ static SmallVector<Value> collectCompatiblePodArrayEqualityLeaves(
   return materialized;
 }
 
+/// Return `arrTy` when it already names an array-of-POD, otherwise rebuild it with `elemPodTy`.
+static ArrayType getCompatiblePodArrayType(ArrayType arrTy, PodType elemPodTy) {
+  if (ArrayType concreteArrTy = splittablePodArray(arrTy)) {
+    return concreteArrTy;
+  }
+  return ArrayType::get(elemPodTy, arrTy.getDimensionSizes());
+}
+
 /// Rewrite `constrain.eq` over arrays-of-POD into one equality per parallel leaf array.
 class SplitPodArrayInEmitEqualityOp : public OpConversionPattern<constrain::EmitEqualityOp> {
   CompatiblePodLeafMaterializationMap &materializedLeaves;
@@ -3108,12 +3116,67 @@ public:
     assert(lhsRank >= rhsRank && "constrain.in verifier should reject higher-rank rhs arrays");
     size_t selectedDims = lhsRank - rhsRank;
 
-    SmallVector<Value> lhsLeaves =
-        collectContainmentLeaves(loc, op.getLhs(), adaptor.getLhs(), rewriter);
-    PodType lhsElemPodTy = llvm::cast<PodType>(lhsTy.getElementType());
-    SmallVector<Value> rhsLeaves = collectContainmentLeaves(
-        loc, op.getRhs(), adaptor.getRhs(), rewriter, &materializedLeaves, lhsElemPodTy
+    ArrayType lhsPodArrTy = splittablePodArray(lhsTy);
+    ArrayType rhsPodArrTy = splittablePodArray(rhsTy);
+    assert(
+        (lhsPodArrTy || rhsPodArrTy) &&
+        "containment rewrite requires at least one concrete array-of-POD operand"
     );
+
+    PodType compatibleElemPodTy = lhsPodArrTy ? llvm::cast<PodType>(lhsPodArrTy.getElementType())
+                                              : llvm::cast<PodType>(rhsPodArrTy.getElementType());
+    ArrayType compatibleLhsTy = getCompatiblePodArrayType(lhsTy, compatibleElemPodTy);
+    ArrayType rhsArrTy = llvm::dyn_cast<ArrayType>(rhsTy);
+    ArrayType compatibleRhsArrTy =
+        rhsArrTy ? getCompatiblePodArrayType(rhsArrTy, compatibleElemPodTy) : ArrayType();
+
+    SmallVector<Value> lhsCompatibleConvertedValues;
+    if (!lhsPodArrTy) {
+      if (!adaptor.getLhs().empty() && adaptor.getLhs().size() != 1) {
+        return rewriter.notifyMatchFailure(
+            op, "expected a single converted lhs value to materialize generic containment leaves"
+        );
+      }
+      Value lhsSource =
+          adaptor.getLhs().empty() ? op.getLhs() : getSingleConvertedValue(adaptor.getLhs());
+      lhsCompatibleConvertedValues =
+          materializeCompatiblePodArrayConvertedValues(loc, lhsSource, compatibleLhsTy, rewriter);
+    }
+
+    SmallVector<Value> rhsCompatibleConvertedValues;
+    if (compatibleRhsArrTy && !rhsPodArrTy) {
+      if (!adaptor.getRhs().empty() && adaptor.getRhs().size() != 1) {
+        return rewriter.notifyMatchFailure(
+            op, "expected a single converted rhs value to materialize generic containment leaves"
+        );
+      }
+      Value rhsSource =
+          adaptor.getRhs().empty() ? op.getRhs() : getSingleConvertedValue(adaptor.getRhs());
+      rhsCompatibleConvertedValues = materializeCompatiblePodArrayConvertedValues(
+          loc, rhsSource, compatibleRhsArrTy, rewriter
+      );
+    }
+
+    SmallVector<Value> lhsLeaves;
+    if (!lhsCompatibleConvertedValues.empty()) {
+      llvm::append_range(
+          lhsLeaves, getConvertedPodArrayLeafValues(compatibleLhsTy, lhsCompatibleConvertedValues)
+      );
+    } else {
+      lhsLeaves = collectContainmentLeaves(loc, op.getLhs(), adaptor.getLhs(), rewriter);
+    }
+
+    SmallVector<Value> rhsLeaves;
+    if (!rhsCompatibleConvertedValues.empty()) {
+      llvm::append_range(
+          rhsLeaves,
+          getConvertedPodArrayLeafValues(compatibleRhsArrTy, rhsCompatibleConvertedValues)
+      );
+    } else {
+      rhsLeaves = collectContainmentLeaves(
+          loc, op.getRhs(), adaptor.getRhs(), rewriter, &materializedLeaves, compatibleElemPodTy
+      );
+    }
     if (lhsLeaves.size() != rhsLeaves.size()) {
       return rewriter.notifyMatchFailure(
           op, "expected array-of-pod containment operands to expand to the same number of leaves"
@@ -3133,7 +3196,11 @@ public:
       return materializeArrayLengthCarrier(originalValue, arrTy, loc, rewriter);
     };
 
-    Value shapeCarrier = getShapeSource(lhsTy, op.getLhs(), adaptor.getLhs());
+    Value shapeCarrier = getShapeSource(
+        compatibleLhsTy, op.getLhs(),
+        lhsCompatibleConvertedValues.empty() ? adaptor.getLhs()
+                                             : ValueRange(lhsCompatibleConvertedValues)
+    );
     Value zero = rewriter.create<arith::ConstantOp>(loc, rewriter.getIndexAttr(0));
     Value trueVal = rewriter.create<arith::ConstantOp>(
         loc, IntegerAttr::get(IntegerType::get(rewriter.getContext(), 1), 1)
@@ -3157,11 +3224,14 @@ public:
       selectedIndices.push_back(idx);
     }
 
-    auto rhsArrTy = llvm::dyn_cast<ArrayType>(rhsTy);
-    bool lhsNeedsShapeCheck = rhsArrTy && needsPodArrayShapeCarrier(lhsTy);
-    bool rhsNeedsShapeCheck = rhsArrTy && needsPodArrayShapeCarrier(rhsArrTy);
-    if (rhsArrTy && (lhsNeedsShapeCheck || rhsNeedsShapeCheck)) {
-      Value rhsShapeSource = getShapeSource(rhsArrTy, op.getRhs(), adaptor.getRhs());
+    bool lhsNeedsShapeCheck = rhsArrTy && needsPodArrayShapeCarrier(compatibleLhsTy);
+    bool rhsNeedsShapeCheck = compatibleRhsArrTy && needsPodArrayShapeCarrier(compatibleRhsArrTy);
+    if (compatibleRhsArrTy && (lhsNeedsShapeCheck || rhsNeedsShapeCheck)) {
+      Value rhsShapeSource = getShapeSource(
+          compatibleRhsArrTy, op.getRhs(),
+          rhsCompatibleConvertedValues.empty() ? adaptor.getRhs()
+                                               : ValueRange(rhsCompatibleConvertedValues)
+      );
       Value selectedShapeSource = selectedIndices.empty()
                                       ? shapeCarrier
                                       : genArrayRead(rewriter, loc, shapeCarrier, selectedIndices);

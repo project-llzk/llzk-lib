@@ -608,3 +608,46 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  poly.template @ContainGenericArrayAndPodSubarray {
+    poly.param @T : !poly.tvar<@T>
+    function.def @constrain(
+        %table: !array.type<2,? x !poly.tvar<@T>>, %row: !array.type<? x !Pair>
+    ) attributes {function.allow_constraint} {
+      constrain.in %table, %row : !array.type<2,? x !poly.tvar<@T>>, !array.type<? x !Pair>
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @ContainGenericArrayAndPodSubarray {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @constrain(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2,? x !poly.tvar<@T>>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<? x index>, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<? x none>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (!array.type<2,? x !poly.tvar<@T>>) -> !array.type<2,? x index>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (!array.type<2,? x !poly.tvar<@T>>) -> !array.type<2,? x !felt.type>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (!array.type<2,? x !poly.tvar<@T>>) -> !array.type<2,? x none>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_6]], %[[VAL_10]] : <2,? x none>
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = arith.cmpi sge, %[[VAL_9]], %[[VAL_7]] : index
+// CHECK-NEXT:        constrain.eq %[[VAL_12]], %[[VAL_8]] : i1, i1
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = arith.cmpi slt, %[[VAL_9]], %[[VAL_11]] : index
+// CHECK-NEXT:        constrain.eq %[[VAL_13]], %[[VAL_8]] : i1, i1
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_6]]{{\[}}%[[VAL_9]]] : <2,? x none>
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_14]], %[[VAL_15]] : <? x none>
+// CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_3]], %[[VAL_15]] : <? x none>
+// CHECK-NEXT:        constrain.eq %[[VAL_16]], %[[VAL_17]] : index, index
+// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_4]]{{\[}}%[[VAL_9]]] : <2,? x index>
+// CHECK-NEXT:        constrain.eq %[[VAL_18]], %[[VAL_1]] : !array.type<? x index>, !array.type<? x index>
+// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_5]]{{\[}}%[[VAL_9]]] : <2,? x !felt.type>
+// CHECK-NEXT:        constrain.eq %[[VAL_19]], %[[VAL_2]] : !array.type<? x !felt.type>, !array.type<? x !felt.type>
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
