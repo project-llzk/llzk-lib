@@ -1719,7 +1719,7 @@ static void materializeCompatibleValuesAfterDefinition(
 /// `shapeTy`.
 template <typename CollectTypesFn>
 static ArrayRef<Value> getOrMaterializeCompatibleLeafValues(
-    Location loc, Value source, Type shapeTy, OpBuilder &rewriter,
+    Location location, Value source, Type shapeTy, OpBuilder &rewriter,
     CompatiblePodLeafMaterializationMap &materializedLeaves, CollectTypesFn &&collectTypes,
     const char *assertMessage
 ) {
@@ -1733,11 +1733,10 @@ static ArrayRef<Value> getOrMaterializeCompatibleLeafValues(
   SmallVector<Type> leafTypes;
   collectTypes(leafTypes);
   materializeCompatibleValuesAfterDefinition(
-      loc, source, leafTypes, rewriter, it->second,
-      [](Location loc, Value source, ArrayRef<Type> targetTypes, OpBuilder &rewriter,
+      location, source, leafTypes, rewriter, it->second,
+      [](Location loc, Value src, ArrayRef<Type> targetTypes, OpBuilder &bldr,
          SmallVectorImpl<Value> &out) {
-    auto splitCast =
-        rewriter.create<UnrealizedConversionCastOp>(loc, TypeRange(targetTypes), source);
+    auto splitCast = bldr.create<UnrealizedConversionCastOp>(loc, TypeRange(targetTypes), src);
     llvm::append_range(out, splitCast.getResults());
   }
   );
@@ -1776,7 +1775,7 @@ static ArrayRef<Value> getOrMaterializeCompatiblePodArrayLeafValues(
 /// Materialize the full converted component list for one non-array value that unifies with
 /// `arrTy`, including any explicit trailing shape carrier that step 2 would otherwise thread.
 static SmallVector<Value> materializeCompatiblePodArrayConvertedValues(
-    Location loc, Value source, ArrayType arrTy, OpBuilder &rewriter
+    Location location, Value source, ArrayType arrTy, OpBuilder &rewriter
 ) {
   SmallVector<RecordChain> splitIds;
   SmallVector<Type> convertedTypes;
@@ -1789,12 +1788,12 @@ static SmallVector<Value> materializeCompatiblePodArrayConvertedValues(
 
   SmallVector<Value> convertedValues;
   materializeCompatibleValuesAfterDefinition(
-      loc, source, convertedTypes, rewriter, convertedValues,
-      [](Location loc, Value source, ArrayRef<Type> targetTypes, OpBuilder &rewriter,
+      location, source, convertedTypes, rewriter, convertedValues,
+      [](Location loc, Value src, ArrayRef<Type> targetTypes, OpBuilder &bldr,
          SmallVectorImpl<Value> &out) {
     out.reserve(targetTypes.size());
     for (Type targetType : targetTypes) {
-      out.push_back(castValueToTypeIfNeeded(rewriter, loc, source, targetType));
+      out.push_back(castValueToTypeIfNeeded(bldr, loc, src, targetType));
     }
   }
   );
