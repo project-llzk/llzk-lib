@@ -8,7 +8,6 @@ target_link_libraries(
   LLZKArrayDialect
   PUBLIC
     LLZKDialectHeaders
-    LLZKDialectShared
     ${LLZK_DEP_DIALECT_LIBS}
     MLIRIR
     MLIRPass
@@ -18,6 +17,7 @@ target_link_libraries(
     LLVMHeaders
     MLIRHeaders
     LLZKDialect
+    LLZKDialectShared
 )
 llzk_target_add_mlir_link_settings(LLZKArrayDialect)
 
