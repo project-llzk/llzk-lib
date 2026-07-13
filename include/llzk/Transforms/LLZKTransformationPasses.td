@@ -16,18 +16,25 @@ def RedundantReadAndWriteEliminationPass
     : LLZKPass<"llzk-duplicate-read-write-elim"> {
   let summary = "Remove redundant reads and writes";
   let description = [{
-    Remove struct-member and array reads or writes that repeat the same access.
+    Remove redundant or unnecessary reads and writes to struct members and
+    arrays, and redundant reads from globals and RAM.
+    Global writes and RAM stores update stateful-read facts, but redundant
+    global/RAM write removal is left to follow-up alias-aware overwrite handling.
+
     Struct-member accesses match only when the base, member, table offset,
     affine map metadata, and translated affine operands match. Omitted
     member-read offsets and member writes denote the current row.
+
+    Stateful reads are reused when the current analysis state proves the read
+    observes the same value. Writes and stores update that known state, while
+    unknown or non-read state effects invalidate it.
   }];
 }
 
 def RedundantOperationEliminationPass : LLZKPass<"llzk-duplicate-op-elim"> {
   let summary = "Remove redundant operations";
   let description = [{
-    Remove llzk and arith dialect operations that produce the same results
-    as previously executed operations.
+    Remove equivalent memory-effect-free operations and duplicate LLZK constraints.
 
     Pass should be run after `llzk-duplicate-read-write-elim` for maximum effect.
   }];

@@ -16,6 +16,7 @@ include "llzk/Dialect/Global/IR/OpInterfaces.td"
 include "llzk/Dialect/Function/IR/OpTraits.td"
 
 include "mlir/IR/SymbolInterfaces.td"
+include "mlir/Interfaces/SideEffectInterfaces.td"
 
 class GlobalDialectOp<string mnemonic, list<Trait> traits = []>
     : Op<GlobalDialect, mnemonic, traits>;
@@ -79,7 +80,7 @@ class GlobalRefOpBase<string mnemonic, list<Trait> traits = []>
   }];
 }
 
-def LLZK_GlobalReadOp : GlobalRefOpBase<"read"> {
+def LLZK_GlobalReadOp : GlobalRefOpBase<"read", [MemoryEffects<[MemRead]>]> {
   let summary = "read value of a global";
   let description = [{
     This operation reads the value of a named global.
@@ -93,7 +94,8 @@ def LLZK_GlobalReadOp : GlobalRefOpBase<"read"> {
   }];
 }
 
-def LLZK_GlobalWriteOp : GlobalRefOpBase<"write", [WitnessGen]> {
+def LLZK_GlobalWriteOp
+    : GlobalRefOpBase<"write", [WitnessGen, MemoryEffects<[MemWrite]>]> {
   let summary = "write value to a global";
   let description = [{
     This operation writes a value to a named global.

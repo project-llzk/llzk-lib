@@ -336,7 +336,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_1]] : !struct.type<@TComponent04A_2_Component04A>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent04A_2_Component04A>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<2,2 x index>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@f] : <@TComponent04A_2_Component04A>, !array.type<2,2 x index>
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

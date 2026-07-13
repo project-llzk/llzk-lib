@@ -1,0 +1,190 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-poly-lowering-pass="max-degree=2" -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  struct.def @UnsupportedContainmentArrayElement {
+    function.def @compute(%a: !felt.type, %b: !felt.type, %c: !felt.type) -> !struct.type<@UnsupportedContainmentArrayElement> {
+      %self = struct.new : !struct.type<@UnsupportedContainmentArrayElement>
+      function.return %self : !struct.type<@UnsupportedContainmentArrayElement>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@UnsupportedContainmentArrayElement>,
+        %a: !felt.type,
+        %b: !felt.type,
+        %c: !felt.type
+    ) {
+      %table = array.new %a, %b : !array.type<2, 1 x !felt.type>
+      %ab = felt.mul %a, %b : !felt.type, !felt.type
+      %elt = felt.div %ab, %c : !felt.type, !felt.type
+      %row = array.new %elt : !array.type<1 x !felt.type>
+      // expected-error@+1 {{'constrain.in' op poly lowering postcondition failed: containment RHS element degree exceeds max-degree 2 (element degree 3)}}
+      constrain.in %table, %row : !array.type<2, 1 x !felt.type>, !array.type<1 x !felt.type>
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @UnsupportedContainmentArrayWriteElement {
+    function.def @compute(%a: !felt.type, %b: !felt.type, %c: !felt.type) -> !struct.type<@UnsupportedContainmentArrayWriteElement> {
+      %self = struct.new : !struct.type<@UnsupportedContainmentArrayWriteElement>
+      function.return %self : !struct.type<@UnsupportedContainmentArrayWriteElement>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@UnsupportedContainmentArrayWriteElement>,
+        %a: !felt.type,
+        %b: !felt.type,
+        %c: !felt.type
+    ) {
+      %i = arith.constant 0 : index
+      %table = array.new %a, %b : !array.type<2, 1 x !felt.type>
+      %row = array.new : !array.type<1 x !felt.type>
+      %ab = felt.mul %a, %b : !felt.type, !felt.type
+      %elt = felt.div %ab, %c : !felt.type, !felt.type
+      array.write %row[%i] = %elt : !array.type<1 x !felt.type>, !felt.type
+      // expected-error@+1 {{'constrain.in' op poly lowering postcondition failed: containment RHS element degree exceeds max-degree 2 (element degree 3)}}
+      constrain.in %table, %row : !array.type<2, 1 x !felt.type>, !array.type<1 x !felt.type>
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @UnsupportedContainmentExtractElement {
+    function.def @compute(%a: !felt.type, %b: !felt.type, %c: !felt.type, %d: !felt.type) -> !struct.type<@UnsupportedContainmentExtractElement> {
+      %self = struct.new : !struct.type<@UnsupportedContainmentExtractElement>
+      function.return %self : !struct.type<@UnsupportedContainmentExtractElement>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@UnsupportedContainmentExtractElement>,
+        %a: !felt.type,
+        %b: !felt.type,
+        %c: !felt.type,
+        %d: !felt.type
+    ) {
+      %i = arith.constant 0 : index
+      %table = array.new %a, %b, %c, %d : !array.type<2, 2 x !felt.type>
+      %ab = felt.mul %a, %b : !felt.type, !felt.type
+      %elt = felt.div %ab, %c : !felt.type, !felt.type
+      %source = array.new %elt, %c, %d, %a : !array.type<2, 2 x !felt.type>
+      %row = array.extract %source[%i] : !array.type<2, 2 x !felt.type>
+      // expected-error@+1 {{'constrain.in' op poly lowering postcondition failed: containment RHS element degree exceeds max-degree 2 (element degree 3)}}
+      constrain.in %table, %row : !array.type<2, 2 x !felt.type>, !array.type<2 x !felt.type>
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @UnsupportedContainmentArrayInsertElement {
+    function.def @compute(%a: !felt.type, %b: !felt.type, %c: !felt.type) -> !struct.type<@UnsupportedContainmentArrayInsertElement> {
+      %self = struct.new : !struct.type<@UnsupportedContainmentArrayInsertElement>
+      function.return %self : !struct.type<@UnsupportedContainmentArrayInsertElement>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@UnsupportedContainmentArrayInsertElement>,
+        %a: !felt.type,
+        %b: !felt.type,
+        %c: !felt.type
+    ) {
+      %table = array.new %a, %b : !array.type<2, 1 x !felt.type>
+      %row = array.new : !array.type<1 x !felt.type>
+      %ab = felt.mul %a, %b : !felt.type, !felt.type
+      %elt = felt.div %ab, %c : !felt.type, !felt.type
+      %inserted = array.new %elt : !array.type<1 x !felt.type>
+      array.insert %row[] = %inserted : !array.type<1 x !felt.type>, !array.type<1 x !felt.type>
+      // expected-error@+1 {{'constrain.in' op poly lowering postcondition failed: containment RHS element degree exceeds max-degree 2 (element degree 3)}}
+      constrain.in %table, %row : !array.type<2, 1 x !felt.type>, !array.type<1 x !felt.type>
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @AmbiguousContainmentArrayWriteIndex {
+    function.def @compute(%a: !felt.type, %b: !felt.type, %i: index) -> !struct.type<@AmbiguousContainmentArrayWriteIndex> {
+      %self = struct.new : !struct.type<@AmbiguousContainmentArrayWriteIndex>
+      function.return %self : !struct.type<@AmbiguousContainmentArrayWriteIndex>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@AmbiguousContainmentArrayWriteIndex>,
+        %a: !felt.type,
+        %b: !felt.type,
+        %i: index
+    ) {
+      %table = array.new %a, %b : !array.type<2, 1 x !felt.type>
+      %row = array.new : !array.type<1 x !felt.type>
+      array.write %row[%i] = %a : !array.type<1 x !felt.type>, !felt.type
+      // expected-error@+1 {{'constrain.in' op poly lowering cannot resolve containment RHS row write history: array.write index is not static}}
+      constrain.in %table, %row : !array.type<2, 1 x !felt.type>, !array.type<1 x !felt.type>
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @AmbiguousContainmentArrayInsertIndex {
+    function.def @compute(%a: !felt.type, %b: !felt.type, %c: !felt.type, %d: !felt.type, %i: index) -> !struct.type<@AmbiguousContainmentArrayInsertIndex> {
+      %self = struct.new : !struct.type<@AmbiguousContainmentArrayInsertIndex>
+      function.return %self : !struct.type<@AmbiguousContainmentArrayInsertIndex>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@AmbiguousContainmentArrayInsertIndex>,
+        %a: !felt.type,
+        %b: !felt.type,
+        %c: !felt.type,
+        %d: !felt.type,
+        %i: index
+    ) {
+      %table = array.new %a, %b, %c, %d : !array.type<2, 2, 1 x !felt.type>
+      %row = array.new : !array.type<2, 1 x !felt.type>
+      %inserted = array.new %a : !array.type<1 x !felt.type>
+      array.insert %row[%i] = %inserted : !array.type<2, 1 x !felt.type>, !array.type<1 x !felt.type>
+      // expected-error@+1 {{'constrain.in' op poly lowering cannot resolve containment RHS row write history: array.insert index is not static}}
+      constrain.in %table, %row : !array.type<2, 2, 1 x !felt.type>, !array.type<2, 1 x !felt.type>
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @AmbiguousContainmentArrayExtractIndex {
+    function.def @compute(%a: !felt.type, %b: !felt.type, %c: !felt.type, %d: !felt.type, %i: index) -> !struct.type<@AmbiguousContainmentArrayExtractIndex> {
+      %self = struct.new : !struct.type<@AmbiguousContainmentArrayExtractIndex>
+      function.return %self : !struct.type<@AmbiguousContainmentArrayExtractIndex>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@AmbiguousContainmentArrayExtractIndex>,
+        %a: !felt.type,
+        %b: !felt.type,
+        %c: !felt.type,
+        %d: !felt.type,
+        %i: index
+    ) {
+      %table = array.new %a, %b, %c, %d : !array.type<2, 2 x !felt.type>
+      %source = array.new %a, %b, %c, %d : !array.type<2, 2 x !felt.type>
+      %row = array.extract %source[%i] : !array.type<2, 2 x !felt.type>
+      // expected-error@+1 {{'constrain.in' op poly lowering cannot resolve containment RHS row write history: array.extract index is not static}}
+      constrain.in %table, %row : !array.type<2, 2 x !felt.type>, !array.type<2 x !felt.type>
+      function.return
+    }
+  }
+}
