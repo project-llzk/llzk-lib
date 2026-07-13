@@ -2,6 +2,7 @@ get_property(translation_libs GLOBAL PROPERTY MLIR_TRANSLATION_LIBS)
 
 add_executable(llzk-translate llzk-translate.cpp)
 target_link_libraries(llzk-translate PRIVATE ${LLZK_DEP_DIALECT_LIBS} MLIRTranslateLib
+                      LLZKDialect
                       LLZK::DialectRegistration R1CS::DialectRegistration
                       LLZKDialectHeaders MLIRIR R1CSDialectHeaders
                       LLZKUtil LLZKAnalysis LLZKValidators LLZKTransforms R1CSTransforms
