@@ -1517,10 +1517,13 @@ static SmallVector<Value> materializeCompatiblePodArrayLeafValues(
   return leaves;
 }
 
+using VirtualPodLeafMap = DenseMap<RecordChain, Value>;
+using VirtualPodValueMap = DenseMap<Value, VirtualPodLeafMap>;
+
 /// Reconstruct a POD record from the leaf values collected while splitting nested accesses.
 static Value rebuildFlattenedPodRecord(
     OpBuilder &bldr, Location loc, Type recordType, SmallVectorImpl<StringAttr> &recordChain,
-    const DenseMap<RecordChain, Value> &leafValues
+    const VirtualPodLeafMap &leafValues
 ) {
   if (PodType nestedPodTy = dyn_cast<PodType>(recordType)) {
     NewPodOp nestedPod = bldr.create<NewPodOp>(loc, nestedPodTy);
@@ -1558,7 +1561,7 @@ static Value rebuildFlattenedPodRecord(
 
     Value rebuiltArray = bldr.create<CreateArrayOp>(loc, arrTy);
     for (ArrayAttr index : *subIndices) {
-      DenseMap<RecordChain, Value> elementLeafValues;
+      VirtualPodLeafMap elementLeafValues;
       SmallVector<StringAttr> elementRecordChain;
       forEachPodLeaf(elemPodTy, elementRecordChain, [&](const RecordChain &id, Type) {
         auto it = leafValues.find(concatRecordChain(recordChain, id));
@@ -1584,9 +1587,6 @@ static Value rebuildFlattenedPodRecord(
   assert(it != leafValues.end() && "missing flattened POD leaf value");
   return it->second;
 }
-
-using VirtualPodLeafMap = DenseMap<RecordChain, Value>;
-using VirtualPodValueMap = DenseMap<Value, VirtualPodLeafMap>;
 
 /// Strip compatibility casts around a virtual POD placeholder.
 static Value peelVirtualPodCompatibilityCasts(Value value) {
@@ -2419,7 +2419,7 @@ public:
 
     SmallVector<Value> indices = flattenConvertedValues(adaptor.getIndices());
     NewPodOp pod = rewriter.create<NewPodOp>(op.getLoc(), podTy);
-    DenseMap<RecordChain, Value> leafValues;
+    VirtualPodLeafMap leafValues;
     auto splitArrRefs = adaptor.getArrRef().take_front(splitIds.size());
     for (auto [id, splitType, splitArrRange] :
          llvm::zip_equal(splitIds, splitTypes, splitArrRefs)) {
@@ -3504,7 +3504,7 @@ static Value rebuildSplitPodArrayQuantifierIterValue(
       "converted quantifier sort must provide one value per POD-array leaf"
   );
 
-  DenseMap<RecordChain, Value> leafValues;
+  VirtualPodLeafMap leafValues;
   for (auto [id, leafArray] : llvm::zip_equal(splitIds, splitLeaves)) {
     SmallVector<Value> indices {index};
     leafValues[id] = genArrayRead(bldr, loc, leafArray, indices);
