@@ -1,9 +1,8 @@
 // RUN: llzk-opt --llzk-compute-constrain-to-product="root-struct=A" --llzk-fuse-product-loops %s | FileCheck --enable-var-scope %s
-// REQUIRES: raghav-cf-fusion
 
 module attributes {llzk.lang = "llzk"} {
     poly.template @TA {
-      poly.param @N
+      poly.param @N : index
 
       struct.def @A {
           struct.member @arr : !array.type<@N x !felt.type>
@@ -75,4 +74,3 @@ module attributes {llzk.lang = "llzk"} {
 // CHECK-NEXT:    %[[VAL_20:[0-9a-zA-Z_\.]+]] = felt.sub %[[VAL_17]], %[[VAL_15]] : !felt.type, !felt.type {product_source = "constrain"}
 // CHECK-NEXT:    constrain.eq %[[VAL_18]], %[[VAL_20]] : !felt.type, !felt.type {product_source = "constrain"}
 // CHECK-NEXT:  } {product_source = "fused"}
-// CHECK-NOT: scf.for

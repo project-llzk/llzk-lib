@@ -34,11 +34,11 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @Child StructIntervals {
-// CHECK-NEXT:     %arg0[@out] in Degenerate(7)
+// CHECK-NEXT:     %arg0.out in Degenerate(7)
 // CHECK-NEXT: }
 
 // CHECK-LABEL: @Parent StructIntervals {
-// CHECK-NEXT:     %arg0[@child][@out] in Degenerate(7)
+// CHECK-NEXT:     %arg0.child.out in Degenerate(7)
 // CHECK-NEXT: }
 
 // -----
@@ -112,23 +112,23 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @ArrayChild StructIntervals {
-// CHECK-NEXT:     %arg0[@out] in Degenerate(7)
+// CHECK-NEXT:     %arg0.out in Degenerate(7)
 // CHECK-NEXT: }
 
 // CHECK-LABEL: @DynamicArrayParent StructIntervals {
-// CHECK-NEXT:     %arg0[@children][0][@out] in Entire
-// CHECK-NEXT:     %arg0[@children][1][@out] in Entire
+// CHECK-NEXT:     %arg0.children[0].out in Entire
+// CHECK-NEXT:     %arg0.children[1].out in Entire
 // CHECK-NEXT:     %arg1 in Entire
 // CHECK-NEXT: }
 
 // CHECK-LABEL: @ArrayConsumer StructIntervals {
-// CHECK-DAG:     %arg1[0][@out] in Degenerate(7)
-// CHECK-DAG:     %arg1[1][@out] in Entire
+// CHECK-DAG:     %arg1[0].out in Degenerate(7)
+// CHECK-DAG:     %arg1[1].out in Entire
 // CHECK: }
 
 // CHECK-LABEL: @ArrayValueParent StructIntervals {
-// CHECK-DAG:     %arg0[@left][@out] in Degenerate(7)
-// CHECK-DAG:     %arg0[@right][@out] in Entire
+// CHECK-DAG:     %arg0.left.out in Degenerate(7)
+// CHECK-DAG:     %arg0.right.out in Entire
 // CHECK: }
 
 // -----
@@ -171,11 +171,11 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @SkippedChild StructIntervals {
-// CHECK-NEXT:     %arg0[@out] in Degenerate(7)
+// CHECK-NEXT:     %arg0.out in Degenerate(7)
 // CHECK-NEXT: }
 
 // CHECK-LABEL: @FreeFunctionParent StructIntervals {
-// CHECK-DAG:     %arg0[@child][@out] in Entire
+// CHECK-DAG:     %arg0.child.out in Entire
 // CHECK: }
 
 // -----
@@ -211,13 +211,13 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @CycleA StructIntervals {
-// CHECK-DAG:     %arg0[@out] in Entire
-// CHECK-DAG:     %arg1[@out] in Entire
+// CHECK-DAG:     %arg0.out in Entire
+// CHECK-DAG:     %arg1.out in Entire
 // CHECK: }
 
 // CHECK-LABEL: @CycleB StructIntervals {
-// CHECK-DAG:     %arg0[@out] in Entire
-// CHECK-DAG:     %arg1[@out] in Entire
+// CHECK-DAG:     %arg0.out in Entire
+// CHECK-DAG:     %arg1.out in Entire
 // CHECK: }
 
 // -----
@@ -264,11 +264,11 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @Child StructIntervals {
-// CHECK-NEXT:     %arg0[@out] in TypeA:[ 0, 7 ]
+// CHECK-NEXT:     %arg0.out in TypeA:[ 0, 7 ]
 // CHECK-NEXT: }
 
 // CHECK-LABEL: @Parent StructIntervals {
-// CHECK-NEXT:     %arg0[@child][@out] in TypeA:[ 1, 7 ]
+// CHECK-NEXT:     %arg0.child.out in TypeA:[ 1, 7 ]
 // CHECK-NEXT: }
 
 // -----
@@ -318,13 +318,13 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @Child StructIntervals {
-// CHECK-NEXT:     %arg0[@out] in TypeA:[ 0, 7 ]
+// CHECK-NEXT:     %arg0.out in TypeA:[ 0, 7 ]
 // CHECK-NEXT:     %arg1 in TypeA:[ 0, 7 ]
 // CHECK-NEXT: }
 
 // CHECK-LABEL: @Parent StructIntervals {
-// CHECK-NEXT:     %arg0[@child_in] in TypeA:[ 3, 7 ]
-// CHECK-NEXT:     %arg0[@child][@out] in TypeA:[ 3, 7 ]
+// CHECK-NEXT:     %arg0.child_in in TypeA:[ 3, 7 ]
+// CHECK-NEXT:     %arg0.child.out in TypeA:[ 3, 7 ]
 // CHECK-NEXT: }
 
 // -----
@@ -375,11 +375,11 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @Child StructIntervals {
-// CHECK-NEXT:     %arg0[@out] in TypeA:[ 0, 7 ]
+// CHECK-NEXT:     %arg0.out in TypeA:[ 0, 7 ]
 // CHECK-NEXT:     %arg1 in TypeA:[ 0, 7 ]
 // CHECK-NEXT: }
 
 // CHECK-LABEL: @Parent StructIntervals {
-// CHECK-NEXT:     %arg0[@child_in] in TypeC:[ 3, 21888242871839275222246405745257275088548364400416034343698204186575808495616 ]
-// CHECK-NEXT:     %arg0[@child][@out] in TypeA:[ 1, 7 ]
+// CHECK-NEXT:     %arg0.child_in in TypeC:[ 3, 21888242871839275222246405745257275088548364400416034343698204186575808495616 ]
+// CHECK-NEXT:     %arg0.child.out in TypeA:[ 1, 7 ]
 // CHECK-NEXT: }

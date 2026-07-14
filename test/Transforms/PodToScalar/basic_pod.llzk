@@ -214,16 +214,12 @@ module attributes {llzk.lang} {
 // CHECK-DAG:         struct.writem %[[VAL_3]][@p_a_y] = %[[VAL_1]] : <@NestedMemberPod>, index
 // CHECK-DAG:         struct.writem %[[VAL_3]][@p_a_x] = %[[VAL_0]] : <@NestedMemberPod>, index
 // CHECK-DAG:         %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@p_b] : <@NestedMemberPod>, index
-// CHECK-DAG:         %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@p_a_y] : <@NestedMemberPod>, index
 // CHECK-DAG:         %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@p_a_x] : <@NestedMemberPod>, index
 // CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_6]], %[[VAL_4]] : index
 // CHECK-NEXT:        struct.writem %[[VAL_3]][@out] = %[[VAL_7]] : <@NestedMemberPod>, index
 // CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@NestedMemberPod>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@NestedMemberPod>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: index, %[[VAL_10:[0-9a-zA-Z_\.]+]]: index, %[[VAL_11:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
-// CHECK-DAG:         %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_8]][@p_b] : <@NestedMemberPod>, index
-// CHECK-DAG:         %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_8]][@p_a_y] : <@NestedMemberPod>, index
-// CHECK-DAG:         %[[VAL_14:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_8]][@p_a_x] : <@NestedMemberPod>, index
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

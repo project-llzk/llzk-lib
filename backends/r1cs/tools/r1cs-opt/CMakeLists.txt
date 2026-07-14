@@ -12,8 +12,6 @@ target_link_libraries(r1cs-opt PRIVATE
   LLZKValidators
   LLZKTransforms
   R1CSTransforms
-  $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCL::PCLDialect>
-  $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCL::PCLTransforms>
 )
 llzk_target_add_mlir_link_settings(r1cs-opt)
 set_target_properties(r1cs-opt PROPERTIES RUNTIME_OUTPUT_DIRECTORY

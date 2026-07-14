@@ -75,6 +75,12 @@ public:
   mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
   referenceMember(SymbolLookupResult<component::MemberDefOp> memberRef) const;
 
+  /// @brief Add the given pod `recordName` to the `SourceRef`s contained within this value.
+  /// For example, if `recordName` is `@foo` and this value represents `%pod`, the new value will
+  /// represent `%pod[@foo]`.
+  mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
+  referencePodRecord(mlir::StringAttr recordName) const;
+
   /// @brief Perform an array.extract or array.read operation, depending on how many indices
   /// are provided.
   mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>

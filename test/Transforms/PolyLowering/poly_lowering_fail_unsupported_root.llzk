@@ -16,3 +16,70 @@ module attributes {llzk.lang} {
     }
   }
 }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def private @constraint_index(%idx: index) -> index attributes {extern, function.allow_constraint}
+
+  struct.def @UnsupportedIndexCallAccess {
+    struct.member @cell : !felt.type {column}
+    struct.member @out : !felt.type
+
+    function.def @compute(%idx: index) -> !struct.type<@UnsupportedIndexCallAccess> {
+      %self = struct.new : !struct.type<@UnsupportedIndexCallAccess>
+      function.return %self : !struct.type<@UnsupportedIndexCallAccess>
+    }
+
+    function.def @constrain(%self: !struct.type<@UnsupportedIndexCallAccess>, %idx: index) {
+      // expected-error@+1 {{cannot rebuild function.call in compute-side auxiliary expression: callee requires attributes not present on the compute function}}
+      %access = function.call @constraint_index(%idx) : (index) -> index
+      %value = struct.readm %self[@cell] {()[%access]} : !struct.type<@UnsupportedIndexCallAccess>, !felt.type {tableOffset = affine_map<()[s0] -> (s0 - 1)>}
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %quad = felt.mul %square, %square : !felt.type, !felt.type
+      %out = struct.readm %self[@out] : !struct.type<@UnsupportedIndexCallAccess>, !felt.type
+      constrain.eq %out, %quad : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ConstraintOnlyPayload {
+    struct.member @value : !felt.type {llzk.pub}
+
+    function.def @compute(%value: !felt.type) -> !struct.type<@ConstraintOnlyPayload> {
+      %self = struct.new : !struct.type<@ConstraintOnlyPayload>
+      struct.writem %self[@value] = %value : !struct.type<@ConstraintOnlyPayload>, !felt.type
+      function.return %self : !struct.type<@ConstraintOnlyPayload>
+    }
+
+    function.def @constrain(%self: !struct.type<@ConstraintOnlyPayload>, %value: !felt.type) {
+      function.return
+    }
+  }
+
+  function.def private @constraint_payload(%value: !felt.type) -> !struct.type<@ConstraintOnlyPayload> attributes {extern, function.allow_constraint}
+
+  struct.def @UnsupportedCallRootedRead {
+    struct.member @out : !felt.type
+
+    function.def @compute(%x: !felt.type) -> !struct.type<@UnsupportedCallRootedRead> {
+      %self = struct.new : !struct.type<@UnsupportedCallRootedRead>
+      function.return %self : !struct.type<@UnsupportedCallRootedRead>
+    }
+
+    function.def @constrain(%self: !struct.type<@UnsupportedCallRootedRead>, %x: !felt.type) {
+      // expected-error@+1 {{cannot rebuild function.call in compute-side auxiliary expression: callee requires attributes not present on the compute function}}
+      %payload = function.call @constraint_payload(%x) : (!felt.type) -> !struct.type<@ConstraintOnlyPayload>
+      %value = struct.readm %payload[@value] : !struct.type<@ConstraintOnlyPayload>, !felt.type
+      %square = felt.mul %value, %value : !felt.type, !felt.type
+      %quad = felt.mul %square, %square : !felt.type, !felt.type
+      %out = struct.readm %self[@out] : !struct.type<@UnsupportedCallRootedRead>, !felt.type
+      constrain.eq %out, %quad : !felt.type
+      function.return
+    }
+  }
+}

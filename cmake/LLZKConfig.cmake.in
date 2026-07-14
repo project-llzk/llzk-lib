@@ -4,10 +4,5 @@ include(CMakeFindDependencyMacro)
 find_dependency(LLVM)
 find_dependency(MLIR)
 
-set(LLZK_WITH_PCL @LLZK_WITH_PCL_BOOL@)
-if(LLZK_WITH_PCL)
-  find_dependency(PCL CONFIG)
-endif()
-
 include("${CMAKE_CURRENT_LIST_DIR}/@LLZK_EXPORT_TARGETS@.cmake")
 check_required_components(@LLZK_EXPORT_TARGETS@)

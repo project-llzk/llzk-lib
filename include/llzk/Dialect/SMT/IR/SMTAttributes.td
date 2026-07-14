@@ -61,4 +61,34 @@ def BitVectorAttr
   }];
 }
 
+def KeywordAttr : AttrDef<SMTDialect, "Keyword"> {
+  let mnemonic = "keyword";
+  let summary = "an SMT-LIB keyword";
+  let description = [{
+    Represents a bare SMT-LIB keyword such as `:status` or `:produce-models`.
+    These values are used by operations such as `smt.set_info` that need the
+    structured surface syntax of the SMT-LIB language rather than quoted
+    strings.
+  }];
+
+  let parameters = (ins StringRefParameter<"The keyword text">:$value);
+
+  let hasCustomAssemblyFormat = 1;
+  let genVerifyDecl = 1;
+}
+
+def SymbolAttr : AttrDef<SMTDialect, "Symbol"> {
+  let mnemonic = "symbol";
+  let summary = "an SMT-LIB bare symbol";
+  let description = [{
+    Represents a bare SMT-LIB symbol, for example `sat`, `unknown`, or a
+    user-defined identifier used inside an SMT-LIB `set-info` payload.
+  }];
+
+  let parameters = (ins StringRefParameter<"The symbol text">:$value);
+
+  let hasCustomAssemblyFormat = 1;
+  let genVerifyDecl = 1;
+}
+
 #endif // MLIR_DIALECT_SMT_IR_SMTATTRIBUTES_TD

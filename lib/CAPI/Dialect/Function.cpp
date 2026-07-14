@@ -63,10 +63,6 @@ MlirOperation llzkFunction_FuncDefOpCreateWithAttrsAndArgAttrs(
   );
 }
 
-bool llzkFunction_FuncDefOpHasArgNameAttr(MlirOperation op, unsigned index) {
-  return llvm::cast<FuncDefOp>(unwrap(op)).hasArgName(index);
-}
-
 MlirAttribute llzkFunction_FuncDefOpGetArgNameAttr(MlirOperation op, unsigned index) {
   std::optional<StringAttr> argNameAttr = llvm::cast<FuncDefOp>(unwrap(op)).getArgNameAttr(index);
   return wrap(argNameAttr ? Attribute(*argNameAttr) : Attribute());
@@ -78,6 +74,19 @@ void llzkFunction_FuncDefOpSetArgNameAttr(MlirOperation op, unsigned index, Mlir
 
 void llzkFunction_FuncDefOpSetArgName(MlirOperation op, unsigned index, MlirStringRef name) {
   llvm::cast<FuncDefOp>(unwrap(op)).setArgName(index, unwrap(name));
+}
+
+MlirAttribute llzkFunction_FuncDefOpGetResNameAttr(MlirOperation op, unsigned index) {
+  std::optional<StringAttr> resNameAttr = llvm::cast<FuncDefOp>(unwrap(op)).getResNameAttr(index);
+  return wrap(resNameAttr ? Attribute(*resNameAttr) : Attribute());
+}
+
+void llzkFunction_FuncDefOpSetResNameAttr(MlirOperation op, unsigned index, MlirAttribute attr) {
+  llvm::cast<FuncDefOp>(unwrap(op)).setResNameAttr(index, llvm::cast<StringAttr>(unwrap(attr)));
+}
+
+void llzkFunction_FuncDefOpSetResName(MlirOperation op, unsigned index, MlirStringRef name) {
+  llvm::cast<FuncDefOp>(unwrap(op)).setResName(index, unwrap(name));
 }
 
 //===----------------------------------------------------------------------===//

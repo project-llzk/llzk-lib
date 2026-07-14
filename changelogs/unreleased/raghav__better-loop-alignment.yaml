@@ -1,0 +1,2 @@
+fixed:
+  - Fixed issue where default loop alignment would hoist fused loop above ops that implicitly depend on it (e.g. struct.writem of an array populated in the loop)

@@ -1,0 +1,24 @@
+// RUN: llzk-opt --smt-to-smtlib -verify-diagnostics %s
+// Purpose: recursive script-helper export failures are checked with op-local diagnostics.
+
+module {
+  // expected-error @+1 {{recursive script helpers are not supported by smt-to-smtlib because SMT-LIB has no recursive command-sequence abstraction}}
+  func.func @script_helper(%x: !smt.int) -> !smt.int {
+    %zero = smt.int.constant 0
+    %ok = smt.eq %x, %zero : !smt.int
+    smt.assert %ok
+    // expected-error @+1 {{smt-to-smtlib requires an emit-compatible helper callee}}
+    %next = func.call @script_helper(%x) : (!smt.int) -> !smt.int
+    return %next : !smt.int
+  }
+
+  smt.solver () : () -> () {
+    %x = smt.declare_fun "x" : !smt.int
+    // expected-error @+1 {{smt-to-smtlib requires an emit-compatible helper callee}}
+    %value = func.call @script_helper(%x) : (!smt.int) -> !smt.int
+    %result = smt.declare_fun "result" : !smt.int
+    %ok = smt.eq %result, %value : !smt.int
+    smt.assert %ok
+    smt.yield
+  }
+}

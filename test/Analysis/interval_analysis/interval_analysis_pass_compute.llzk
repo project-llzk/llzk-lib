@@ -54,15 +54,15 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @BoolAnd StructIntervals {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in Entire
-// CHECK-NEXT:     %self[@case0] in Degenerate(1)
-// CHECK-NEXT:     %self[@case1] in Degenerate(0)
-// CHECK-NEXT:     %self[@case2] in Degenerate(0)
-// CHECK-NEXT:     %self[@case3] in Degenerate(0)
-// CHECK-NEXT:     %self[@case4] in TypeA:[ 0, 1 ]
-// CHECK-NEXT:     %self[@case5] in TypeA:[ 0, 1 ]
-// CHECK-NEXT:     %self[@case6] in TypeA:[ 0, 1 ]
-// CHECK-NEXT:     %self[@case7] in Degenerate(0)
-// CHECK-NEXT:     %self[@case8] in Degenerate(0)
+// CHECK-NEXT:     %self.case0 in Degenerate(1)
+// CHECK-NEXT:     %self.case1 in Degenerate(0)
+// CHECK-NEXT:     %self.case2 in Degenerate(0)
+// CHECK-NEXT:     %self.case3 in Degenerate(0)
+// CHECK-NEXT:     %self.case4 in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self.case5 in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self.case6 in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self.case7 in Degenerate(0)
+// CHECK-NEXT:     %self.case8 in Degenerate(0)
 // CHECK-NEXT: }
 
 // -----
@@ -121,15 +121,15 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @BoolOr StructIntervals {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in Entire
-// CHECK-NEXT:     %self[@case0] in Degenerate(1)
-// CHECK-NEXT:     %self[@case1] in Degenerate(1)
-// CHECK-NEXT:     %self[@case2] in Degenerate(1)
-// CHECK-NEXT:     %self[@case3] in Degenerate(0)
-// CHECK-NEXT:     %self[@case4] in TypeA:[ 0, 1 ]
-// CHECK-NEXT:     %self[@case5] in Degenerate(1)
-// CHECK-NEXT:     %self[@case6] in Degenerate(1)
-// CHECK-NEXT:     %self[@case7] in TypeA:[ 0, 1 ]
-// CHECK-NEXT:     %self[@case8] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self.case0 in Degenerate(1)
+// CHECK-NEXT:     %self.case1 in Degenerate(1)
+// CHECK-NEXT:     %self.case2 in Degenerate(1)
+// CHECK-NEXT:     %self.case3 in Degenerate(0)
+// CHECK-NEXT:     %self.case4 in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self.case5 in Degenerate(1)
+// CHECK-NEXT:     %self.case6 in Degenerate(1)
+// CHECK-NEXT:     %self.case7 in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self.case8 in TypeA:[ 0, 1 ]
 // CHECK-NEXT: }
 
 // -----
@@ -188,15 +188,15 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @BoolXor StructIntervals {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in Entire
-// CHECK-NEXT:     %self[@case0] in Degenerate(0)
-// CHECK-NEXT:     %self[@case1] in Degenerate(1)
-// CHECK-NEXT:     %self[@case2] in Degenerate(1)
-// CHECK-NEXT:     %self[@case3] in Degenerate(0)
-// CHECK-NEXT:     %self[@case4] in TypeA:[ 0, 1 ]
-// CHECK-NEXT:     %self[@case5] in TypeA:[ 0, 1 ]
-// CHECK-NEXT:     %self[@case6] in TypeA:[ 0, 1 ]
-// CHECK-NEXT:     %self[@case7] in TypeA:[ 0, 1 ]
-// CHECK-NEXT:     %self[@case8] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self.case0 in Degenerate(0)
+// CHECK-NEXT:     %self.case1 in Degenerate(1)
+// CHECK-NEXT:     %self.case2 in Degenerate(1)
+// CHECK-NEXT:     %self.case3 in Degenerate(0)
+// CHECK-NEXT:     %self.case4 in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self.case5 in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self.case6 in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self.case7 in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self.case8 in TypeA:[ 0, 1 ]
 // CHECK-NEXT: }
 
 // -----
@@ -237,9 +237,9 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @BoolNot StructIntervals {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in Entire
-// CHECK-NEXT:     %self[@case0] in Degenerate(0)
-// CHECK-NEXT:     %self[@case1] in Degenerate(1)
-// CHECK-NEXT:     %self[@case2] in  TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self.case0 in Degenerate(0)
+// CHECK-NEXT:     %self.case1 in Degenerate(1)
+// CHECK-NEXT:     %self.case2 in  TypeA:[ 0, 1 ]
 // CHECK-NEXT: }
 
 // -----
@@ -280,10 +280,10 @@ module attributes {llzk.lang} {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in Entire
 // CHECK-NEXT:     %arg1 in Entire
-// CHECK-NEXT:     %self[@case0] in Entire
-// CHECK-NEXT:     %self[@case1] in TypeA:[ 0, 255 ]
-// CHECK-NEXT:     %self[@case2] in TypeA:[ 0, 255 ]
-// CHECK-NEXT:     %self[@case3] in Degenerate(2)
+// CHECK-NEXT:     %self.case0 in Entire
+// CHECK-NEXT:     %self.case1 in TypeA:[ 0, 255 ]
+// CHECK-NEXT:     %self.case2 in TypeA:[ 0, 255 ]
+// CHECK-NEXT:     %self.case3 in Degenerate(2)
 // CHECK-NEXT: }
 
 // -----
@@ -327,11 +327,11 @@ module attributes {llzk.lang} {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in Entire
 // CHECK-NEXT:     %arg1 in Entire
-// CHECK-NEXT:     %self[@case0] in Entire
-// CHECK-NEXT:     %self[@case1] in Entire
-// CHECK-NEXT:     %self[@case2] in Degenerate(1020)
-// CHECK-NEXT:     %self[@case3] in Entire
-// CHECK-NEXT:     %self[@case4] in Entire
+// CHECK-NEXT:     %self.case0 in Entire
+// CHECK-NEXT:     %self.case1 in Entire
+// CHECK-NEXT:     %self.case2 in Degenerate(1020)
+// CHECK-NEXT:     %self.case3 in Entire
+// CHECK-NEXT:     %self.case4 in Entire
 // CHECK-NEXT: }
 
 // -----
@@ -375,11 +375,11 @@ module attributes {llzk.lang} {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in Entire
 // CHECK-NEXT:     %arg1 in Entire
-// CHECK-NEXT:     %self[@case0] in Entire
-// CHECK-NEXT:     %self[@case1] in Entire
-// CHECK-NEXT:     %self[@case2] in Degenerate(63)
-// CHECK-NEXT:     %self[@case3] in Entire
-// CHECK-NEXT:     %self[@case4] in Degenerate(0)
+// CHECK-NEXT:     %self.case0 in Entire
+// CHECK-NEXT:     %self.case1 in Entire
+// CHECK-NEXT:     %self.case2 in Degenerate(63)
+// CHECK-NEXT:     %self.case3 in Entire
+// CHECK-NEXT:     %self.case4 in Degenerate(0)
 // CHECK-NEXT: }
 
 // -----
@@ -411,8 +411,8 @@ module attributes {llzk.lang} {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in Entire
 // CHECK-NEXT:     %arg1 in Entire
-// CHECK-NEXT:     %self[@data] in Entire
-// CHECK-NEXT:     %self[@const] in Entire
+// CHECK-NEXT:     %self.data in Entire
+// CHECK-NEXT:     %self.const in Entire
 // CHECK-NEXT: }
 
 // -----
@@ -454,10 +454,10 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @IsZero StructIntervals {
 // CHECK-NEXT:     compute {
 // CHECK-NEXT:         %arg0 in Entire
-// CHECK-NEXT:         %self[@bit] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:         %self.bit in TypeA:[ 0, 1 ]
 // CHECK-NEXT:     }
 // CHECK-NEXT:     constrain {
-// CHECK-NEXT:         %arg0[@bit] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:         %arg0.bit in TypeA:[ 0, 1 ]
 // CHECK-NEXT:         %arg1 in Entire
 // CHECK-NEXT:     }
 // CHECK-NEXT: }
@@ -498,9 +498,9 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @MultiYield StructIntervals {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:    %arg0 in Entire
-// CHECK-NEXT:    %self[@a] in TypeA:[ 1, 2 ]
-// CHECK-NEXT:    %self[@b] in TypeA:[ 2, 99 ]
-// CHECK-NEXT:    %self[@c] in Entire
+// CHECK-NEXT:    %self.a in TypeA:[ 1, 2 ]
+// CHECK-NEXT:    %self.b in TypeA:[ 2, 99 ]
+// CHECK-NEXT:    %self.c in Entire
 // CHECK-NEXT:  }
 
 // -----
@@ -528,7 +528,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @NoYieldFor StructIntervals {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:    %arg0 in Entire
-// CHECK-NEXT:    %self[@a] in Entire
+// CHECK-NEXT:    %self.a in Entire
 // CHECK-NEXT:  }
 
 // -----
@@ -562,7 +562,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @NoYieldWhile StructIntervals {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:    %arg0 in Entire
-// CHECK-NEXT:    %self[@a] in Entire
+// CHECK-NEXT:    %self.a in Entire
 // CHECK-NEXT:  }
 
 // -----
@@ -599,7 +599,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @YieldForConst StructIntervals {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:    %arg0 in Entire
-// CHECK-NEXT:    %self[@a] in Entire
+// CHECK-NEXT:    %self.a in Entire
 // CHECK-NEXT:  }
 
 // -----
@@ -631,7 +631,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @YieldForConst StructIntervals {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:    %arg0 in Entire
-// CHECK-NEXT:    %self[@a] in Entire
+// CHECK-NEXT:    %self.a in Entire
 // CHECK-NEXT:  }
 
 // -----
@@ -664,7 +664,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @YieldForSum StructIntervals {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:    %arg0 in Entire
-// CHECK-NEXT:    %self[@a] in Entire
+// CHECK-NEXT:    %self.a in Entire
 // CHECK-NEXT:  }
 
 // -----
@@ -707,7 +707,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    %arg0 in TypeA:[ 5, 6 ]
 // CHECK-NEXT:    %arg1 in TypeA:[ 10, 11 ]
 // CHECK-NEXT:    %arg2 in Entire
-// CHECK-NEXT:    %self[@out] in TypeA:[ 5, 11 ]
+// CHECK-NEXT:    %self.out in TypeA:[ 5, 11 ]
 // CHECK-NEXT:  }
 
 // -----
@@ -738,7 +738,7 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: @ConstBools StructIntervals {
 // CHECK-NEXT: compute {
-// CHECK-NEXT:    %self[@out] in Degenerate(0)
+// CHECK-NEXT:    %self.out in Degenerate(0)
 // CHECK-NEXT:  }
 
 // -----
@@ -774,9 +774,9 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @ArithXorI StructIntervals {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:    %arg0 in TypeA:[ 0, 1 ]
-// CHECK-NEXT:    %self[@case0] in Degenerate(1)
-// CHECK-NEXT:    %self[@case1] in Degenerate(0)
-// CHECK-NEXT:    %self[@case2] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:    %self.case0 in Degenerate(1)
+// CHECK-NEXT:    %self.case1 in Degenerate(0)
+// CHECK-NEXT:    %self.case2 in TypeA:[ 0, 1 ]
 // CHECK-NEXT:  }
 
 // -----
@@ -819,9 +819,9 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @BitOrFelt StructIntervals {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:    %arg0 in TypeA:[ 1, 2 ]
-// CHECK-NEXT:    %self[@case0] in Degenerate(3)
-// CHECK-NEXT:    %self[@case1] in TypeA:[ 1, 2 ]
-// CHECK-NEXT:    %self[@case2] in Entire
+// CHECK-NEXT:    %self.case0 in Degenerate(3)
+// CHECK-NEXT:    %self.case1 in TypeA:[ 1, 2 ]
+// CHECK-NEXT:    %self.case2 in Entire
 // CHECK-NEXT:  }
 
 // -----
@@ -849,7 +849,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:    %arg0 in TypeA:[ 0, 1 ]
 // CHECK-NEXT:    %arg1 in TypeA:[ 0, 1 ]
-// CHECK-NEXT:    %self[@out] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:    %self.out in TypeA:[ 0, 1 ]
 // CHECK-NEXT:  }
 
 // -----
@@ -902,9 +902,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in TypeA:[ 10, 12 ]
 // CHECK-NEXT:     %arg1 in TypeA:[ 20, 22 ]
-// CHECK-NEXT:     %self[@case0] in TypeA:[ 10, 12 ]
-// CHECK-NEXT:     %self[@case1] in TypeA:[ 20, 22 ]
-// CHECK-NEXT:     %self[@case2] in TypeA:[ 10, 22 ]
+// CHECK-NEXT:     %self.case0 in TypeA:[ 10, 12 ]
+// CHECK-NEXT:     %self.case1 in TypeA:[ 20, 22 ]
+// CHECK-NEXT:     %self.case2 in TypeA:[ 10, 22 ]
 // CHECK-NEXT: }
 
 // -----
@@ -953,8 +953,8 @@ module attributes {llzk.lang} {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in TypeA:[ 10, 11 ]
 // CHECK-NEXT:     %arg1 in TypeA:[ 20, 22 ]
-// CHECK-NEXT:     %self[@cond] in Degenerate(1)
-// CHECK-NEXT:     %self[@value] in TypeA:[ 10, 12 ]
+// CHECK-NEXT:     %self.cond in Degenerate(1)
+// CHECK-NEXT:     %self.value in TypeA:[ 10, 12 ]
 // CHECK-NEXT: }
 
 // -----
@@ -1043,9 +1043,9 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @UIntDiv StructIntervals {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in TypeA:[ 10, 15 ]
-// CHECK-NEXT:     %self[@case0] in TypeA:[ 2, 3 ]
-// CHECK-NEXT:     %self[@case1] in Degenerate(3)
-// CHECK-NEXT:     %self[@case2] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self.case0 in TypeA:[ 2, 3 ]
+// CHECK-NEXT:     %self.case1 in Degenerate(3)
+// CHECK-NEXT:     %self.case2 in TypeA:[ 0, 1 ]
 // CHECK-NEXT: }
 
 // -----
@@ -1090,9 +1090,9 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @SIntDiv StructIntervals {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in TypeA:[ 10, 15 ]
-// CHECK-NEXT:     %self[@case0] in TypeA:[ 0, 1 ]
-// CHECK-NEXT:     %self[@case1] in TypeA:[ 0, 1 ]
-// CHECK-NEXT:     %self[@case2] in Degenerate(2013265920)
+// CHECK-NEXT:     %self.case0 in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self.case1 in TypeA:[ 0, 1 ]
+// CHECK-NEXT:     %self.case2 in Degenerate(2013265920)
 // CHECK-NEXT: }
 
 // -----
@@ -1135,9 +1135,9 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @DivIntervals StructIntervals {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in TypeA:[ 1, 2 ]
-// CHECK-NEXT:     %self[@case0] in Entire
-// CHECK-NEXT:     %self[@case1] in Degenerate(5)
-// CHECK-NEXT:     %self[@case2] in Degenerate(1006632961)
+// CHECK-NEXT:     %self.case0 in Entire
+// CHECK-NEXT:     %self.case1 in Degenerate(5)
+// CHECK-NEXT:     %self.case2 in Degenerate(1006632961)
 // CHECK-NEXT: }
 
 // -----
@@ -1184,8 +1184,8 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:     %arg0[0] in TypeA:[ 5, 6 ]
 // CHECK-NEXT:     %arg0[1] in Entire
 // CHECK-NEXT:     %arg1 in TypeA:[ 5, 6 ]
-// CHECK-NEXT:     %self[@case0] in TypeA:[ 5, 6 ]
-// CHECK-NEXT:     %self[@case1] in Entire
+// CHECK-NEXT:     %self.case0 in TypeA:[ 5, 6 ]
+// CHECK-NEXT:     %self.case1 in Entire
 // CHECK-NEXT: }
 
 // -----
@@ -1228,8 +1228,8 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @ArrayNew StructIntervals {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in TypeA:[ 5, 6 ]
-// CHECK-NEXT:     %self[@case0] in Entire
-// CHECK-NEXT:     %self[@case1] in TypeA:[ 5, 6 ]
+// CHECK-NEXT:     %self.case0 in Entire
+// CHECK-NEXT:     %self.case1 in TypeA:[ 5, 6 ]
 // CHECK-NEXT: }
 
 // -----
@@ -1288,10 +1288,10 @@ module attributes {llzk.lang} {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in TypeA:[ 5, 6 ]
 // CHECK-NEXT:     %arg1 in TypeA:[ 10, 11 ]
-// CHECK-NEXT:     %self[@case00] in TypeA:[ 5, 6 ]
-// CHECK-NEXT:     %self[@case01] in TypeA:[ 10, 11 ]
-// CHECK-NEXT:     %self[@case10] in Degenerate(7)
-// CHECK-NEXT:     %self[@case11] in Degenerate(8)
+// CHECK-NEXT:     %self.case00 in TypeA:[ 5, 6 ]
+// CHECK-NEXT:     %self.case01 in TypeA:[ 10, 11 ]
+// CHECK-NEXT:     %self.case10 in Degenerate(7)
+// CHECK-NEXT:     %self.case11 in Degenerate(8)
 // CHECK-NEXT: }
 
 // -----
@@ -1327,6 +1327,6 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @ArrayNewMemberWrite StructIntervals {
 // CHECK-NEXT: compute {
 // CHECK-NEXT:     %arg0 in TypeA:[ 5, 6 ]
-// CHECK-NEXT:     %self[@out][0] in Degenerate(0)
-// CHECK-NEXT:     %self[@out][1] in TypeA:[ 5, 6 ]
+// CHECK-NEXT:     %self.out[0] in Degenerate(0)
+// CHECK-NEXT:     %self.out[1] in TypeA:[ 5, 6 ]
 // CHECK-NEXT: }

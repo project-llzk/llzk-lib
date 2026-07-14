@@ -135,7 +135,7 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
   poly.template @TVarArray {
-    poly.param @N
+    poly.param @N : index
     poly.param @T
 
     struct.def @VarArray {
@@ -226,7 +226,7 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
   }
 
   poly.template @TVarArray {
-    poly.param @N
+    poly.param @N : index
     poly.param @T
 
     struct.def @VarArray {
