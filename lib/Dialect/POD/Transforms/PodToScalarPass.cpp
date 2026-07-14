@@ -376,20 +376,17 @@ concatRecordChain(ArrayRef<StringAttr> prefix, const RecordChain &suffix) {
   return RecordChain(fullChain, suffix.syntheticShapeCarrier);
 }
 
-/// Return the attribute name that marks a step-2-deferred POD-backed `array.len`.
-inline static StringRef getDeferredPodArrayLengthAttrName() {
-  return "llzk.defer_pod_array_length";
-}
+/// Attribute name that marks a step-2-deferred POD-backed `array.len`.
+inline constexpr llvm::StringLiteral DEFERRED_POD_ARRAY_LENGTH_ATTR =
+    "llzk.deferred_pod_array_length";
 
-/// Return the attribute name that marks a nested dynamic array leaf lacking per-element shape.
-inline static StringRef getRaggedDynamicNestedLeafAttrName() {
-  return "llzk.ragged_nested_dynamic_leaf";
-}
+/// Attribute name that marks a nested dynamic array leaf lacking per-element shape.
+inline constexpr llvm::StringLiteral RAGGED_DYNAMIC_NESTED_LEAF_ATTR =
+    "llzk.ragged_nested_dynamic_leaf";
 
-/// Return the attribute name that marks a nested affine array leaf lacking per-element shape.
-inline static StringRef getRaggedAffineNestedLeafAttrName() {
-  return "llzk.ragged_nested_affine_leaf";
-}
+/// Attribute name that marks a nested affine array leaf lacking per-element shape.
+inline constexpr llvm::StringLiteral RAGGED_AFFINE_NESTED_LEAF_ATTR =
+    "llzk.ragged_nested_affine_leaf";
 
 /// Return the `none`-array carrier type used to preserve one array-of-POD shape witness.
 inline static ArrayType getPodArrayShapeCarrierType(ArrayType arrTy) {
@@ -512,10 +509,10 @@ static StringRef getRaggedNestedLeafAttrName(ArrayType arrTy, Type splitType) {
 
   ArrayRef<Attribute> nestedDims = splitArrTy.getDimensionSizes().drop_front(originalRank);
   if (hasWildcardArrayDimensions(nestedDims)) {
-    return getRaggedDynamicNestedLeafAttrName();
+    return RAGGED_DYNAMIC_NESTED_LEAF_ATTR;
   }
   if (hasAffineArrayDimensions(nestedDims)) {
-    return getRaggedAffineNestedLeafAttrName();
+    return RAGGED_AFFINE_NESTED_LEAF_ATTR;
   }
   return {};
 }
@@ -542,10 +539,10 @@ static StringRef getTaggedRaggedNestedLeafKind(Value value) {
     if (!cast) {
       break;
     }
-    if (cast->hasAttr(getRaggedDynamicNestedLeafAttrName())) {
+    if (cast->hasAttr(RAGGED_DYNAMIC_NESTED_LEAF_ATTR)) {
       return "dynamic";
     }
-    if (cast->hasAttr(getRaggedAffineNestedLeafAttrName())) {
+    if (cast->hasAttr(RAGGED_AFFINE_NESTED_LEAF_ATTR)) {
       return "affine";
     }
     if (cast->getNumOperands() != 1) {
@@ -3326,8 +3323,7 @@ public:
 
   static bool legal(ArrayLengthOp op) {
     return RejectRaggedNestedLeafArrayLengthOp::legal(op) &&
-           (!splittablePodArray(op.getArrRefType()) ||
-            op->hasAttr(getDeferredPodArrayLengthAttrName()));
+           (!splittablePodArray(op.getArrRefType()) || op->hasAttr(DEFERRED_POD_ARRAY_LENGTH_ATTR));
   }
 
   LogicalResult matchAndRewrite(
@@ -3340,7 +3336,7 @@ public:
       auto deferred = rewriter.create<ArrayLengthOp>(
           op.getLoc(), op.getArrRef(), getSingleConvertedValue(adaptor.getDim())
       );
-      deferred->setAttr(getDeferredPodArrayLengthAttrName(), UnitAttr::get(op.getContext()));
+      deferred->setAttr(DEFERRED_POD_ARRAY_LENGTH_ATTR, UnitAttr::get(op.getContext()));
       rewriter.replaceOp(op, deferred.getResult());
       return success();
     }
@@ -3439,7 +3435,7 @@ public:
   ResolvePodReadBackedArrayLengthOp(MLIRContext *ctx, Step3Resolver &step3Resolver)
       : OpConversionPattern<ArrayLengthOp>(ctx), resolver(step3Resolver) {}
 
-  static bool legal(ArrayLengthOp op) { return !op->hasAttr(getDeferredPodArrayLengthAttrName()); }
+  static bool legal(ArrayLengthOp op) { return !op->hasAttr(DEFERRED_POD_ARRAY_LENGTH_ATTR); }
 
   LogicalResult
   matchAndRewrite(ArrayLengthOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
