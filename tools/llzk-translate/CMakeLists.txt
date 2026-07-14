@@ -6,7 +6,6 @@ target_link_libraries(
   PRIVATE
     ${LLZK_DEP_DIALECT_LIBS}
     MLIRTranslateLib
-    LLZK::DialectRegistration
     LLZKDialectHeaders
     MLIRIR
     SMTTarget
