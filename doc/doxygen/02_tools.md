@@ -43,6 +43,26 @@ available in `mlir-opt` are not available in `llzk-opt`.
 
 \include{doc,raise=1} build/doc/mlir/passes/LLZKValidationPasses.md
 
+# llzk-translate {#llzk-translate}
+
+`llzk-translate` is a version of the `mlir-translate` tool. Includes translations for backends 
+specific to LLZK along with translations available in upstream MLIR (i.e. LLVM or C++).
+`llzk-translate -h` will show a list of all available flags and options.
+
+The tool expects that the IR has already been converted to the backend's dialect IR. For example:
+
+```sh 
+llzk-opt <input.llzk> --llzk-to-pcl | llzk-translate --pcl-to-lisp
+```
+
+#### LLZK-Specific Options
+
+```
+--pcl-to-lisp           Translates from pcl IR to pcl lisp
+--smt-to-smtlib         Translates from smt to smtlib
+--zklean-to-lean        Translates from zkLean dialects IR to Lean code
+```
+
 # llzk-witgen {#llzk-witgen}
 
 `llzk-witgen` executes LLZK witness-generation logic for the concrete main
