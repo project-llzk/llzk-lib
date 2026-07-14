@@ -253,7 +253,6 @@ findNearestForwardableWriteBefore(Operation *cursor, Value podRef, StringAttr re
     if (!hasValueUse(*op, podRef)) {
       continue;
     }
-
     auto writeOp = dyn_cast<WritePodOp>(op);
     return writeOp && isSamePodRecord(writeOp, podRef, recordName) ? writeOp : nullptr;
   }
@@ -261,7 +260,7 @@ findNearestForwardableWriteBefore(Operation *cursor, Value podRef, StringAttr re
 }
 
 /// Return the nearest preceding same-record write in the current block that can be forwarded.
-static WritePodOp findNearestForwardableWriteInBlock(ReadPodOp readOp) {
+inline static WritePodOp findNearestForwardableWriteInBlock(ReadPodOp readOp) {
   return findNearestForwardableWriteBefore(
       readOp->getPrevNode(), readOp.getPodRef(), readOp.getRecordNameAttr()
   );
@@ -319,7 +318,7 @@ inline static bool containsSplittablePodType(ArrayRef<Type> types) {
 
 /// Return `true` iff the given range contains any top-level PodType that this pass can split into
 /// scalars.
-template <typename T> static bool containsSplittablePodType(ValueTypeRange<T> types) {
+template <typename T> inline static bool containsSplittablePodType(ValueTypeRange<T> types) {
   for (Type t : types) {
     if (splittablePod(t)) {
       return true;
@@ -341,10 +340,19 @@ inline static ArrayType splittablePodArray(Type t) {
   return nullptr;
 }
 
+/// Return `true` iff any type in the range is an array whose element type is a POD.
+inline static bool containsSplittablePodArrayType(ArrayRef<Type> types) {
+  return llvm::any_of(types, [](Type t) { return splittablePodArray(t); });
+}
+
+/// Return `true` iff any type in the range is an array whose element type is a POD.
+template <typename T> inline static bool containsSplittablePodArrayType(ValueTypeRange<T> types) {
+  return llvm::any_of(types, [](Type t) { return splittablePodArray(t); });
+}
+
 /// Return the internal record-chain marker used for one nested array-of-POD shape carrier.
 inline static StringAttr getPodArrayShapeCarrierMarker(MLIRContext *ctx) {
-  static constexpr llvm::StringLiteral marker = "__llzk_pod_array_shape";
-  return StringAttr::get(ctx, marker);
+  return StringAttr::get(ctx, "__llzk_pod_array_shape");
 }
 
 /// Return `true` iff `recordName` is the nested array shape-carrier marker.
@@ -473,7 +481,7 @@ static size_t countRankPreservingSplitPodArrayLeaves(ArrayType arrTy) {
 /// from any split leaf alone. Wildcard dimensions need that carrier to preserve runtime shape, and
 /// affine-map dimensions need it whenever the source is not a concrete `array.new` that still
 /// exposes instantiation operands.
-inline static bool needsPodArrayShapeCarrier(ArrayType arrTy) {
+static bool needsPodArrayShapeCarrier(ArrayType arrTy) {
   if (hasZeroLeafPodArraySplit(arrTy)) {
     return true;
   }
@@ -672,16 +680,6 @@ splitPodType(TypeCollection types, SmallVector<size_t> *originalIdxToSize = null
   return collect;
 }
 
-/// Return `true` iff any type in the range is an array whose element type is a POD.
-inline static bool containsSplittablePodArrayType(ArrayRef<Type> types) {
-  return llvm::any_of(types, [](Type t) { return splittablePodArray(t); });
-}
-
-/// Return `true` iff any type in the range is an array whose element type is a POD.
-template <typename T> static bool containsSplittablePodArrayType(ValueTypeRange<T> types) {
-  return llvm::any_of(types, [](Type t) { return splittablePodArray(t); });
-}
-
 /// Return any explicit carrier already present after converting `arrTy`.
 static Value
 getConvertedPodArrayShapeCarrierIfPresent(ArrayType arrTy, ValueRange convertedValues) {
@@ -732,7 +730,7 @@ inline void convertPodArrayTypesTo(
 
 /// Return the step-2 converted types for the given collection.
 template <typename TypeCollection>
-static SmallVector<Type>
+inline static SmallVector<Type>
 convertPodArrayTypes(TypeCollection types, SmallVector<size_t> *originalIdxToSize = nullptr) {
   SmallVector<Type> collect;
   convertPodArrayTypesTo(types, collect, originalIdxToSize);
@@ -800,7 +798,7 @@ inline static Value getSingleConvertedValue(ValueRange values) {
 }
 
 /// Return the number of concrete split leaf arrays produced for one array-of-POD type.
-static size_t getSplitPodArrayLeafCount(ArrayType arrTy) {
+inline static size_t getSplitPodArrayLeafCount(ArrayType arrTy) {
   SmallVector<Type> splitTypes;
   splitPodArrayTypeTo(arrTy, splitTypes);
   return splitTypes.size();
@@ -1112,7 +1110,7 @@ static Value getConvertedPodArrayShapeSource(ArrayType arrTy, ValueRange convert
 
 /// Flatten a range of converted value ranges into a single list of values.
 template <typename RangeOfRanges>
-static SmallVector<Value> flattenConvertedValues(RangeOfRanges ranges) {
+inline static SmallVector<Value> flattenConvertedValues(RangeOfRanges ranges) {
   SmallVector<Value> values;
   for (ValueRange range : ranges) {
     llvm::append_range(values, range);
@@ -1605,7 +1603,7 @@ lookupVirtualPodLeafMap(Value podValue, const VirtualPodValueMap &virtualPods) {
 }
 
 /// Return the mutable leaf map iterator for `podValue` when it is tracked as a virtual POD.
-static VirtualPodValueMap::iterator
+inline static VirtualPodValueMap::iterator
 lookupVirtualPodLeafMapIt(Value podValue, VirtualPodValueMap &virtualPods) {
   return virtualPods.find(peelVirtualPodCompatibilityCasts(podValue));
 }
@@ -1889,7 +1887,7 @@ static bool canResolveVirtualPodRead(ReadPodOp op, const VirtualPodValueMap &vir
 }
 
 /// Return `true` iff step 2 should defer splitting this array read until POD-aware rewriting.
-static bool shouldDeferPodArrayReadToStep3(ReadArrayOp op) {
+inline static bool shouldDeferPodArrayReadToStep3(ReadArrayOp op) {
   return splittablePodArray(op.getArrRefType()) &&
          llvm::isa_and_present<ReadPodOp>(op.getArrRef().getDefiningOp());
 }
@@ -1909,7 +1907,7 @@ static ReadPodOp getReadPodBacking(Value value) {
 }
 
 /// Return `true` iff step 2 should defer `array.len` on a POD-backed array field to step 3.
-static bool shouldDeferPodArrayLengthToStep3(ArrayLengthOp op) {
+inline static bool shouldDeferPodArrayLengthToStep3(ArrayLengthOp op) {
   return splittablePodArray(op.getArrRefType()) && getReadPodBacking(op.getArrRef());
 }
 
