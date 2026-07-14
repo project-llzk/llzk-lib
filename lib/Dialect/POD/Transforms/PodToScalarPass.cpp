@@ -565,8 +565,9 @@ static Value peelUnifiableCasts(Value value) {
 }
 
 /// Return the flattened leaf type addressed by `recordChain` within `type`.
-static Type
-getFlattenedTypeAlongPath(Type type, ArrayRef<StringAttr> recordChain, bool syntheticShapeCarrier) {
+static Type getFlattenedTypeAlongPath(
+    Type type, ArrayRef<StringAttr> recordChain, bool syntheticShapeCarrier = false
+) {
   if (recordChain.empty()) {
     return type;
   }
@@ -596,11 +597,6 @@ getFlattenedTypeAlongPath(Type type, ArrayRef<StringAttr> recordChain, bool synt
   }
 
   llvm_unreachable("record path cannot continue through a non-POD leaf");
-}
-
-/// Return the flattened leaf type addressed by `recordChain` within `type`.
-inline static Type getFlattenedTypeAlongPath(Type type, ArrayRef<StringAttr> recordChain) {
-  return getFlattenedTypeAlongPath(type, recordChain, false);
 }
 
 /// Return the flattened leaf type addressed by `recordChain` within `type`.
