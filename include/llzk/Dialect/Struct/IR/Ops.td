@@ -248,7 +248,16 @@ def LLZK_MemberDefOp
   let assemblyFormat = [{ $sym_name `:` $type attr-dict }];
 
   let extraClassDeclaration = [{
+    /// Returns whether this member is stored as a witness signal.
+    inline bool hasSignalAttr() { return getOperation()->hasAttr(getSignalAttrName()); }
+
+    /// Adds or removes the unit `signal` attribute according to `newValue`.
+    void setSignalAttr(bool newValue = true);
+
+    /// Returns whether this member is a public output.
     inline bool hasPublicAttr() { return getOperation()->hasAttr(llzk::PublicAttr::name); }
+
+    /// Adds or removes the unit `llzk.pub` attribute according to `newValue`.
     void setPublicAttr(bool newValue = true);
   }];
 

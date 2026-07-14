@@ -329,6 +329,18 @@ TEST_F(StructDefTest, llzk_member_def_op_set_public_attr) {
   }
 }
 
+TEST_F(StructDefTest, llzk_member_def_op_signal_attr_lifecycle) {
+  TestOp op {.op = make_member_def_op()};
+
+  EXPECT_FALSE(llzkStruct_MemberDefOpHasSignalAttr(op.op));
+
+  llzkStruct_MemberDefOpSetSignalAttr(op.op, true);
+  EXPECT_TRUE(llzkStruct_MemberDefOpHasSignalAttr(op.op));
+
+  llzkStruct_MemberDefOpSetSignalAttr(op.op, false);
+  EXPECT_FALSE(llzkStruct_MemberDefOpHasSignalAttr(op.op));
+}
+
 struct MemberReadOpBuildFuncHelper : public TestAnyBuildFuncHelper<StructDefTest> {
   MlirOperation struct_new_op;
   bool callIsA(MlirOperation op) override { return llzkOperationIsA_Struct_MemberReadOp(op); }
