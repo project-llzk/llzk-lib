@@ -271,6 +271,7 @@ module attributes {llzk.lang} {
 module attributes {llzk.lang} {
   struct.def @Box {
     struct.member @p : !Single
+    struct.member @p_x : i1
     struct.member @out : index
 
     function.def @compute(%old: index, %new: index) -> !struct.type<@Box> {
@@ -292,11 +293,12 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @Box {
-// CHECK-NEXT:      struct.member @p_x : index
+// CHECK-NEXT:      struct.member @p_x_0 : index
+// CHECK-NEXT:      struct.member @p_x : i1
 // CHECK-NEXT:      struct.member @out : index
 // CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@Box> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Box>
-// CHECK-NEXT:        struct.writem %[[VAL_2]][@p_x] = %[[VAL_0]] : <@Box>, index
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@p_x_0] = %[[VAL_0]] : <@Box>, index
 // CHECK-NEXT:        struct.writem %[[VAL_2]][@out] = %[[VAL_1]] : <@Box>, index
 // CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@Box>
 // CHECK-NEXT:      }
@@ -305,7 +307,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 !Pair = !pod.type<[@x: index, @y: !felt.type]>
@@ -334,7 +335,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 !Pair = !pod.type<[@x: index, @y: !felt.type]>
