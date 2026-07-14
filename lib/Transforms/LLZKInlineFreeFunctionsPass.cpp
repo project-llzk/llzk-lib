@@ -20,6 +20,8 @@
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/Transforms/InliningUtils.h>
 
+#include <llvm/ADT/DenseSet.h>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Debug.h>
 
@@ -42,6 +44,20 @@ static bool isFreeFunction(FuncDefOp func) {
   return llvm::isa_and_nonnull<ModuleOp>(func->getParentOp());
 }
 
+/// Resolve `call`'s callee if it is a non-external free function; returns
+/// null otherwise.
+static FuncDefOp resolveFreeCallee(CallOp call, SymbolTableCollection &tables) {
+  auto tgtRes = call.getCalleeTarget(tables);
+  if (failed(tgtRes)) {
+    return nullptr;
+  }
+  FuncDefOp callee = tgtRes->get();
+  if (!isFreeFunction(callee) || callee.isExternal()) {
+    return nullptr;
+  }
+  return callee;
+}
+
 /// A `function.call` paired with its callee.
 struct FreeFunctionCall {
   CallOp call;
@@ -54,15 +70,9 @@ static SmallVector<FreeFunctionCall>
 collectFreeFunctionCalls(ModuleOp mod, SymbolTableCollection &tables) {
   SmallVector<FreeFunctionCall> calls;
   mod.walk([&](CallOp call) {
-    auto tgtRes = call.getCalleeTarget(tables);
-    if (failed(tgtRes)) {
-      return;
+    if (FuncDefOp callee = resolveFreeCallee(call, tables)) {
+      calls.push_back({call, callee});
     }
-    FuncDefOp callee = tgtRes->get();
-    if (!isFreeFunction(callee) || callee.isExternal()) {
-      return;
-    }
-    calls.push_back({call, callee});
   });
   return calls;
 }
@@ -82,6 +92,63 @@ static SmallVector<FuncDefOp> collectUnusedHelpers(ModuleOp mod) {
   return unusedFunctions;
 }
 
+/// Inlining re-materializes the callee body, including any calls it
+/// contains, so a call cycle among free functions never converges. The
+/// functions considered must match what the inliner acts on (every
+/// non-external free function, including in nested modules), or a cycle
+/// could slip past the check and hang the pass.
+static LogicalResult checkNoRecursion(ModuleOp mod, SymbolTableCollection &tables) {
+  SmallVector<FuncDefOp> funcs;
+  mod.walk([&](FuncDefOp func) {
+    if (isFreeFunction(func) && !func.isExternal()) {
+      funcs.push_back(func);
+    }
+  });
+  llvm::DenseSet<Operation *> remaining(funcs.begin(), funcs.end());
+  llvm::DenseMap<Operation *, SmallVector<Operation *>> callees;
+  for (FuncDefOp func : funcs) {
+    auto &edges = callees[func];
+    func.walk([&](CallOp call) {
+      if (FuncDefOp callee = resolveFreeCallee(call, tables)) {
+        edges.push_back(callee);
+      }
+    });
+  }
+
+  // Release functions whose bodies call no unreleased free function; what
+  // remains is on or upstream of a cycle.
+  bool changed = true;
+  while (changed) {
+    changed = false;
+    for (FuncDefOp func : funcs) {
+      if (!remaining.contains(func)) {
+        continue;
+      }
+      bool callsRemaining = llvm::any_of(callees[func], [&](Operation *callee) {
+        return remaining.contains(callee);
+      });
+      if (!callsRemaining) {
+        remaining.erase(func);
+        changed = true;
+      }
+    }
+  }
+  if (remaining.empty()) {
+    return success();
+  }
+
+  // A leftover function may merely call into a cycle; follow unreleased
+  // edges (every leftover has one) until a repeat to blame an actual cycle
+  // member.
+  auto isRemaining = [&](Operation *op) { return remaining.contains(op); };
+  Operation *cur = *llvm::find_if(funcs, isRemaining);
+  llvm::DenseSet<Operation *> visited;
+  while (visited.insert(cur).second) {
+    cur = *llvm::find_if(callees[cur], isRemaining);
+  }
+  return cur->emitError("cannot inline recursive free function");
+}
+
 class PassImpl : public llzk::impl::InlineFreeFunctionsPassBase<PassImpl> {
   using Base = InlineFreeFunctionsPassBase<PassImpl>;
   using Base::Base;
@@ -91,6 +158,10 @@ class PassImpl : public llzk::impl::InlineFreeFunctionsPassBase<PassImpl> {
     SymbolTableCollection tables;
     InlinerInterface inliner(&getContext());
 
+    if (failed(checkNoRecursion(mod, tables))) {
+      signalPassFailure();
+      return;
+    }
     if (failed(inlineCalls(mod, tables, inliner))) {
       signalPassFailure();
       return;

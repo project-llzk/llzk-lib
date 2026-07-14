@@ -134,6 +134,9 @@ def InlineFreeFunctionsPass : LLZKPass<"llzk-inline-free-functions"> {
     functions (i.e. functions not bound to a struct, whose parent is a
     `builtin.module`) into their callers. After inlining, free functions
     that have no remaining uses in the module are erased.
+
+    Recursive free functions are rejected with an error, since inlining a
+    call cycle never converges.
   }];
 }
 
