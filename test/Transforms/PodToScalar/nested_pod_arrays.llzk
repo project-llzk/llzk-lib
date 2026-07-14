@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 module attributes {llzk.lang} {
   struct.def @S {

@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 !F = !felt.type<"bn128">
 module attributes {llzk.lang = "circom", llzk.main = !struct.type<@SubCmp>} {
