@@ -1685,17 +1685,9 @@ static void setInsertionPointAfterValueDefinition(Value value, OpBuilder &bldr) 
   }
 }
 
-/// Return the canonical compatible source used by the late leaf materializers.
-static Value
-getCompatibleMaterializationSource(Value source, Type compatibleType, const char *assertMessage) {
-  source = peelUnifiableCasts(source);
-  assert(typesUnify(source.getType(), compatibleType) && assertMessage);
-  return source;
-}
-
 /// Materialize derived SSA values immediately after the source definition when required.
 template <typename EmitValuesFn>
-static void materializeCompatibleValuesAfterDefinition(
+inline static void materializeCompatibleValuesAfterDefinition(
     Location loc, Value source, ArrayRef<Type> targetTypes, OpBuilder &rewriter,
     SmallVectorImpl<Value> &out, EmitValuesFn &&emitValues
 ) {
@@ -1704,6 +1696,14 @@ static void materializeCompatibleValuesAfterDefinition(
     setInsertionPointAfterValueDefinition(source, rewriter);
     emitValues(loc, source, targetTypes, rewriter, out);
   }
+}
+
+/// Return the canonical compatible source used by the late leaf materializers.
+static Value
+getCompatibleMaterializationSource(Value source, Type compatibleType, const char *assertMessage) {
+  source = peelUnifiableCasts(source);
+  assert(typesUnify(source.getType(), compatibleType) && assertMessage);
+  return source;
 }
 
 /// Materialize and cache one stable leaf decomposition for a source value compatible with
