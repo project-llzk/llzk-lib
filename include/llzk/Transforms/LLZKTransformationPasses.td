@@ -127,13 +127,13 @@ def EnforceNoMemberOverwritePass : LLZKPass<"llzk-enforce-no-overwrite"> {
   }];
 }
 
-def InlineTopLevelFunctionsPass : LLZKPass<"llzk-inline-top-level-functions"> {
-  let summary = "Inline calls to top-level (module-level) free functions";
+def InlineFreeFunctionsPass : LLZKPass<"llzk-inline-free-functions"> {
+  let summary = "Inline calls to free functions";
   let description = [{
-    Inlines `function.call` operations that target top-level `function.def`
-    functions (i.e. functions whose parent is a `builtin.module`)
-    into their callers. After inlining, top-level functions that
-    have no remaining uses in the module are erased.
+    Inlines `function.call` operations that target free `function.def`
+    functions (i.e. functions not bound to a struct, whose parent is a
+    `builtin.module`) into their callers. After inlining, free functions
+    that have no remaining uses in the module are erased.
   }];
 }
 

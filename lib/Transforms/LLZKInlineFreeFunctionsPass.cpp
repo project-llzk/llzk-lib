@@ -1,4 +1,4 @@
-//===-- LLZKInlineTopLevelFunctionsPass.cpp ---------------------*- C++ -*-===//
+//===-- LLZKInlineFreeFunctionsPass.cpp -------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// This file implements the `-llzk-inline-top-level-functions` pass.
+/// This file implements the `-llzk-inline-free-functions` pass.
 ///
 //===----------------------------------------------------------------------===//
 
@@ -24,11 +24,11 @@
 #include <llvm/Support/Debug.h>
 
 namespace llzk {
-#define GEN_PASS_DEF_INLINETOPLEVELFUNCTIONSPASS
+#define GEN_PASS_DEF_INLINEFREEFUNCTIONSPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
 
-#define DEBUG_TYPE "llzk-inline-top-level-functions"
+#define DEBUG_TYPE "llzk-inline-free-functions"
 
 using namespace mlir;
 using namespace llzk;
@@ -36,42 +36,43 @@ using namespace llzk::function;
 
 namespace {
 
-/// A "root" function is a `function.def` whose immediate parent is a
+/// A free function is a `function.def` whose immediate parent is a
 /// `ModuleOp`.
-static bool isRootFunction(FuncDefOp func) {
+static bool isFreeFunction(FuncDefOp func) {
   return llvm::isa_and_nonnull<ModuleOp>(func->getParentOp());
 }
 
 /// A `function.call` paired with its callee.
-struct TopLevelCall {
+struct FreeFunctionCall {
   CallOp call;
   FuncDefOp callee;
 };
 
 /// Collect every `function.call` in `mod` whose callee is a non-external
-/// top-level helper, paired with the resolved callee.
-static SmallVector<TopLevelCall> collectTopLevelCalls(ModuleOp mod, SymbolTableCollection &tables) {
-  SmallVector<TopLevelCall> topLevelCalls;
+/// free function, paired with the resolved callee.
+static SmallVector<FreeFunctionCall>
+collectFreeFunctionCalls(ModuleOp mod, SymbolTableCollection &tables) {
+  SmallVector<FreeFunctionCall> calls;
   mod.walk([&](CallOp call) {
     auto tgtRes = call.getCalleeTarget(tables);
     if (failed(tgtRes)) {
       return;
     }
     FuncDefOp callee = tgtRes->get();
-    if (!isRootFunction(callee) || callee.isExternal()) {
+    if (!isFreeFunction(callee) || callee.isExternal()) {
       return;
     }
-    topLevelCalls.push_back({call, callee});
+    calls.push_back({call, callee});
   });
-  return topLevelCalls;
+  return calls;
 }
 
-/// Collect every non-external top-level helper in `mod` whose symbol has no
+/// Collect every non-external free function in `mod` whose symbol has no
 /// remaining uses.
 static SmallVector<FuncDefOp> collectUnusedHelpers(ModuleOp mod) {
   SmallVector<FuncDefOp> unusedFunctions;
   for (FuncDefOp func : mod.getOps<FuncDefOp>()) {
-    if (!isRootFunction(func) || func.isExternal()) {
+    if (!isFreeFunction(func) || func.isExternal()) {
       continue;
     }
     if (symbolKnownUseEmpty(func.getOperation(), mod.getOperation())) {
@@ -81,8 +82,8 @@ static SmallVector<FuncDefOp> collectUnusedHelpers(ModuleOp mod) {
   return unusedFunctions;
 }
 
-class PassImpl : public llzk::impl::InlineTopLevelFunctionsPassBase<PassImpl> {
-  using Base = InlineTopLevelFunctionsPassBase<PassImpl>;
+class PassImpl : public llzk::impl::InlineFreeFunctionsPassBase<PassImpl> {
+  using Base = InlineFreeFunctionsPassBase<PassImpl>;
   using Base::Base;
 
   void runOnOperation() override {
@@ -97,30 +98,30 @@ class PassImpl : public llzk::impl::InlineTopLevelFunctionsPassBase<PassImpl> {
     removeUnusedFunctions(mod);
   }
 
-  /// Collects the current top-level helper call sites, then inlines them.
-  /// Iterates until all module level calls are inlined.
+  /// Collects the current free-function call sites, then inlines them.
+  /// Iterates until all such calls are inlined.
   LogicalResult
   inlineCalls(ModuleOp mod, SymbolTableCollection &tables, InlinerInterface &inliner) {
-    SmallVector<TopLevelCall> callsToInline = collectTopLevelCalls(mod, tables);
+    SmallVector<FreeFunctionCall> callsToInline = collectFreeFunctionCalls(mod, tables);
     while (!callsToInline.empty()) {
       LLVM_DEBUG({
-        llvm::dbgs() << "[llzk-inline-top-level-functions] round found " << callsToInline.size()
-                     << " top-level call site(s) to inline\n";
+        llvm::dbgs() << "[" DEBUG_TYPE "] round found " << callsToInline.size()
+                     << " free-function call site(s) to inline\n";
       });
 
       for (auto [call, callee] : callsToInline) {
         if (failed(inlineCall(inliner, call, callee, callee.getCallableRegion(), true))) {
-          return call.emitError("failed to inline top-level function.call");
+          return call.emitError("failed to inline free function call");
         }
         call.erase();
       }
 
-      callsToInline = collectTopLevelCalls(mod, tables);
+      callsToInline = collectFreeFunctionCalls(mod, tables);
     }
     return success();
   }
 
-  /// Erase top-level helpers that are no longer referenced anywhere in the
+  /// Erase free functions that are no longer referenced anywhere in the
   /// module.
   void removeUnusedFunctions(ModuleOp mod) {
     SmallVector<FuncDefOp> toErase = collectUnusedHelpers(mod);
