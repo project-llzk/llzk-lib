@@ -17,6 +17,10 @@
 #include "mlir-c/IR.h"
 #include "mlir-c/Support.h"
 
+// Include the generated CAPI
+#include "pcl/Conversion/ConversionPasses.capi.h.inc"
+#include "pcl/Transforms/TransformationPasses.capi.h.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
