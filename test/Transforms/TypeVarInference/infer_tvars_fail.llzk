@@ -1,0 +1,15 @@
+// RUN: llzk-opt -split-input-file -llzk-infer-tvar -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  poly.template @TConflict {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @conflict(%arg: !poly.tvar<@T>) {
+      // expected-note@+1 {{previous inference here}}
+      %first = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> !array.type<4 x index>
+      // expected-error@+1 {{conflicting inferred type for template parameter @T: '!array.type<4 x index>' vs '!array.type<8 x index>'}}
+      %second = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> !array.type<8 x index>
+      function.return
+    }
+  }
+}

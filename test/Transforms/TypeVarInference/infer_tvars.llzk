@@ -1,0 +1,58 @@
+// RUN: llzk-opt -split-input-file -llzk-infer-tvar -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  poly.template @TIdentity {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @id(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      %cast = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> !array.type<4 x index>
+      function.return %cast : !array.type<4 x index>
+    }
+  }
+
+  function.def @call_id(%arg: !array.type<4 x index>) -> !array.type<4 x index> {
+    %0 = function.call @TIdentity::@id<[!array.type<4 x index>]>(%arg) : (!array.type<4 x index>) -> !array.type<4 x index>
+    function.return %0 : !array.type<4 x index>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TIdentity {
+// CHECK-NEXT:      function.def @id(%[[ARG:[0-9a-zA-Z_\.]+]]: !array.type<4 x index>) -> !array.type<4 x index> {
+// CHECK-NEXT:        function.return %[[ARG]] : !array.type<4 x index>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_id(%[[CALL_ARG:[0-9a-zA-Z_\.]+]]: !array.type<4 x index>) -> !array.type<4 x index> {
+// CHECK-NEXT:      %[[CALL:[0-9a-zA-Z_\.]+]] = function.call @TIdentity::@id(%[[CALL_ARG]]) : (!array.type<4 x index>) -> !array.type<4 x index>
+// CHECK-NEXT:      function.return %[[CALL]] : !array.type<4 x index>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TMake {
+    poly.param @Ret : !poly.tvar<@Ret>
+
+    function.def @make() -> !poly.tvar<@Ret> {
+      %arr = array.new : !array.type<2 x i1>
+      %cast = poly.unifiable_cast %arr : (!array.type<2 x i1>) -> !poly.tvar<@Ret>
+      function.return %cast : !poly.tvar<@Ret>
+    }
+  }
+
+  function.def @call_make() -> !array.type<2 x i1> {
+    %0 = function.call @TMake::@make<[!array.type<2 x i1>]>() : () -> !array.type<2 x i1>
+    function.return %0 : !array.type<2 x i1>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TMake {
+// CHECK-NEXT:      function.def @make() -> !array.type<2 x i1> {
+// CHECK-NEXT:        %[[ARR:[0-9a-zA-Z_\.]+]] = array.new  : <2 x i1>
+// CHECK-NEXT:        function.return %[[ARR]] : !array.type<2 x i1>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_make() -> !array.type<2 x i1> {
+// CHECK-NEXT:      %[[CALL:[0-9a-zA-Z_\.]+]] = function.call @TMake::@make() : () -> !array.type<2 x i1>
+// CHECK-NEXT:      function.return %[[CALL]] : !array.type<2 x i1>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

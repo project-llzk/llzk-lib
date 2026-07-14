@@ -116,4 +116,14 @@ def WildcardArraySpecializationPass
                         "reaching a fixpoint.">];
 }
 
+def TypeVarInferencePass : LLZKPass<"llzk-infer-tvar"> {
+  let summary = "Infer concrete function types for polymorphic type variables";
+  let description = [{
+    Infers concrete replacements for `!poly.tvar` template parameters from operations in the
+    function body, such as `poly.unifiable_cast` between a type variable and a concrete aggregate
+    type. Rewrites affected function signatures and body types, removes redundant casts, drops
+    resolved `poly.param` declarations, and updates call-site template parameter lists.
+  }];
+}
+
 #endif // LLZK_POLYMORPHIC_TRANSFORMATION_PASSES_TD
