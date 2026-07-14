@@ -62,6 +62,13 @@
 /// Note: This transformation will introduce a `nondet` op when there exists a read from a pod
 /// record that was not earlier written to.
 ///
+/// Terminology: A "virtual POD" is a POD-typed placeholder whose contents are represented by SSA
+/// values for each flattened leaf record rather than by explicit `pod.write` operations on an
+/// aggregate POD object. The pass uses virtual PODs to keep propagating scalar leaves through
+/// rewrites for as long as possible because that avoids re-introducing aggregate POD storage that
+/// later stages would need to split or promote again. Concrete POD storage is materialized only
+/// when some remaining use cannot be resolved from those leaf values directly.
+///
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Dialect.h"
