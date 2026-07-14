@@ -1275,7 +1275,7 @@ inferCommonArrayInstantiation(ArrayRef<Value> values, ArrayInstantiationInfo &re
 static SmallVector<Value> genArrayIndexConstants(OpBuilder &bldr, Location loc, ArrayAttr index) {
   SmallVector<Value> indices;
   for (Attribute attr : index) {
-    assert(llvm::isa<IntegerAttr>(attr) && "array index must be an integer attribute");
+    // Note: array index must be an integer attribute
     indices.push_back(bldr.create<arith::ConstantOp>(loc, llvm::cast<IntegerAttr>(attr)));
   }
   return indices;
@@ -1293,8 +1293,7 @@ static Type getArraySelectionType(ArrayType arrTy, size_t numIndices) {
 /// Create an `array.read` or `array.extract` for one concrete element or subarray.
 static Value genArrayRead(OpBuilder &bldr, Location loc, Value arrayRef, ArrayRef<Value> indices) {
   Type t = arrayRef.getType();
-  assert(llvm::isa<ArrayType>(t) && "array access must target an array type");
-  ArrayType arrTy = llvm::cast<ArrayType>(t);
+  ArrayType arrTy = llvm::cast<ArrayType>(t); // array access must target an array type
   if (indices.size() == arrTy.getDimensionSizes().size()) {
     return bldr.create<ReadArrayOp>(loc, arrTy.getElementType(), arrayRef, indices);
   }
@@ -1312,8 +1311,7 @@ inline static Value genArrayRead(OpBuilder &bldr, Location loc, Value arrayRef, 
 static void
 genArrayWrite(OpBuilder &bldr, Location loc, Value arrayRef, ArrayRef<Value> indices, Value value) {
   Type t = arrayRef.getType();
-  assert(llvm::isa<ArrayType>(t) && "array access must target an array type");
-  ArrayType arrTy = llvm::cast<ArrayType>(t);
+  ArrayType arrTy = llvm::cast<ArrayType>(t); // array access must target an array type
   value = castValueToTypeIfNeeded(bldr, loc, value, getArraySelectionType(arrTy, indices.size()));
   if (indices.size() == arrTy.getDimensionSizes().size()) {
     bldr.create<WriteArrayOp>(loc, arrayRef, indices, value);
