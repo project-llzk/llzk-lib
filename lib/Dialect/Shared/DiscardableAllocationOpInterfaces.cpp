@@ -11,3 +11,9 @@
 
 // Include the generated interface definitions.
 #include "llzk/Dialect/Shared/DiscardableAllocationOpInterfaces.cpp.inc"
+
+namespace llzk {
+
+mlir::StringRef DiscardableAllocationResource::getName() { return "DiscardableAllocation"; }
+
+} // namespace llzk
