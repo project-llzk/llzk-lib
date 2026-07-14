@@ -1287,25 +1287,16 @@ static SmallVector<Value> genArrayIndexConstants(OpBuilder &bldr, Location loc, 
   return indices;
 }
 
-/// Return the type produced by selecting `numIndices` leading dimensions from `arrTy`.
-static Type getArraySelectionType(ArrayType arrTy, size_t numIndices) {
-  assert(numIndices <= arrTy.getDimensionSizes().size() && "cannot select past the array rank");
-  if (numIndices == arrTy.getDimensionSizes().size()) {
-    return arrTy.getElementType();
-  }
-  return ArrayType::get(arrTy.getElementType(), arrTy.getDimensionSizes().drop_front(numIndices));
-}
-
 /// Create an `array.read` or `array.extract` for one concrete element or subarray.
 static Value genArrayRead(OpBuilder &bldr, Location loc, Value arrayRef, ArrayRef<Value> indices) {
   Type t = arrayRef.getType();
   ArrayType arrTy = llvm::cast<ArrayType>(t); // array access must target an array type
-  if (indices.size() == arrTy.getDimensionSizes().size()) {
-    return bldr.create<ReadArrayOp>(loc, arrTy.getElementType(), arrayRef, indices);
+  Type reducedType = arrTy.getSelectionType(indices.size());
+  if (llvm::isa<ArrayType>(reducedType)) {
+    return bldr.create<ExtractArrayOp>(loc, reducedType, arrayRef, indices);
+  } else {
+    return bldr.create<ReadArrayOp>(loc, reducedType, arrayRef, indices);
   }
-  return bldr.create<ExtractArrayOp>(
-      loc, llvm::cast<ArrayType>(getArraySelectionType(arrTy, indices.size())), arrayRef, indices
-  );
 }
 
 inline static Value genArrayRead(OpBuilder &bldr, Location loc, Value arrayRef, ArrayAttr index) {
@@ -1318,13 +1309,16 @@ static void
 genArrayWrite(OpBuilder &bldr, Location loc, Value arrayRef, ArrayRef<Value> indices, Value value) {
   Type t = arrayRef.getType();
   ArrayType arrTy = llvm::cast<ArrayType>(t); // array access must target an array type
-  value = castValueToTypeIfNeeded(bldr, loc, value, getArraySelectionType(arrTy, indices.size()));
-  if (indices.size() == arrTy.getDimensionSizes().size()) {
-    bldr.create<WriteArrayOp>(loc, arrayRef, indices, value);
-    return;
+  Type reducedType = arrTy.getSelectionType(indices.size());
+  if (llvm::isa<ArrayType>(reducedType)) {
+    bldr.create<InsertArrayOp>(
+        loc, arrayRef, indices, castValueToTypeIfNeeded(bldr, loc, value, reducedType)
+    );
+  } else {
+    bldr.create<WriteArrayOp>(
+        loc, arrayRef, indices, castValueToTypeIfNeeded(bldr, loc, value, reducedType)
+    );
   }
-  assert(llvm::isa<ArrayType>(value.getType()) && "subarray insertion requires an array value");
-  bldr.create<InsertArrayOp>(loc, arrayRef, indices, value);
 }
 
 inline static void

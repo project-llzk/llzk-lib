@@ -118,6 +118,9 @@ def LLZK_ArrayType
     /// Required by the ShapedTypeInterface interface.
     inline bool hasRank() const { return true; }
 
+    /// Return the type produced by selecting/removing `numIndices` leading dimensions.
+    ::mlir::Type getSelectionType(size_t numIndices) const;
+
     /// Clone this type with the given shape and element type. If the
     /// provided shape is `std::nullopt`, the current shape of the type is used.
     /// Required by the ShapedTypeInterface interface.

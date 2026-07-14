@@ -283,15 +283,3 @@ ParseResult ExistsOp::parse(OpAsmParser &parser, OperationState &result) {
 void ExistsOp::print(OpAsmPrinter &p) { printQuantOp(p, *this); }
 
 } // namespace llzk::boolean
-
-/// Extracts the type used for a quantifier op block argument.
-///
-/// If the array has only one dimension, returns the element type.
-/// Otherwise, returns an array type with the first dimension removed.
-Type llzk::boolean::getQuantifierOpDomainIterType(array::ArrayType arr) {
-  if (arr.getDimensionSizes().size() == 1) {
-    return arr.getElementType();
-  }
-
-  return array::ArrayType::get(arr.getElementType(), arr.getDimensionSizes().drop_front());
-}

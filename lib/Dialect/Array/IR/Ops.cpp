@@ -396,10 +396,9 @@ LogicalResult ExtractArrayOp::inferReturnTypes(
   Type arrRefType = adaptor.getArrRef().getType();
   assert(llvm::isa<ArrayType>(arrRefType)); // per ODS spec of ExtractArrayOp
   ArrayType arrRefArrType = llvm::cast<ArrayType>(arrRefType);
-  ArrayRef<Attribute> arrRefDimSizes = arrRefArrType.getDimensionSizes();
 
   // Check for invalid cases
-  auto compare = numToSkip <=> arrRefDimSizes.size();
+  auto compare = numToSkip <=> arrRefArrType.getDimensionSizes().size();
   if (compare == 0) {
     return mlir::emitOptionalError(
         location, '\'', ExtractArrayOp::getOperationName(),
@@ -415,8 +414,7 @@ LogicalResult ExtractArrayOp::inferReturnTypes(
 
   // Generate and store reduced array type
   inferredReturnTypes.resize(1);
-  inferredReturnTypes[0] =
-      ArrayType::get(arrRefArrType.getElementType(), arrRefDimSizes.drop_front(numToSkip));
+  inferredReturnTypes[0] = arrRefArrType.getSelectionType(numToSkip);
   return success();
 }
 
