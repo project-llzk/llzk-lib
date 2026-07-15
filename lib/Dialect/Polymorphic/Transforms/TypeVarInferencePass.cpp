@@ -382,11 +382,10 @@ private:
 
   /// Collect inferences from a pair of types known to unify.
   ///
-  /// The direct case is `!poly.tvar<@T>` on one side and a concrete type on the
-  /// other. The function also descends into array element types and matching
-  /// struct type parameters so an aggregate shape can force a nested type
-  /// variable. If one side is still a type variable but its SSA value already has
-  /// a concrete inference from an earlier cast, that concrete value-level proof is
+  /// The direct case is `!poly.tvar<@T>` on one side and a concrete type on the other. The function
+  /// also descends into array element types and matching struct type parameters so an aggregate
+  /// shape can force a nested type variable. If one side is still a type variable but its SSA value
+  /// already has a concrete inference from an earlier cast, that concrete value-level proof is
   /// propagated through chained casts.
   LogicalResult
   collectTypePairInferences(Type lhs, Type rhs, Value lhsValue, Value rhsValue, Location loc) {
@@ -428,25 +427,23 @@ private:
     }
 
     if (auto lhsStruct = llvm::dyn_cast<StructType>(lhs)) {
-      auto rhsStruct = llvm::dyn_cast<StructType>(rhs);
-      if (!rhsStruct) {
-        return success();
-      }
-      ArrayRef<Attribute> lhsParams =
-          lhsStruct.getParams() ? lhsStruct.getParams().getValue() : ArrayRef<Attribute> {};
-      ArrayRef<Attribute> rhsParams =
-          rhsStruct.getParams() ? rhsStruct.getParams().getValue() : ArrayRef<Attribute> {};
-      if (lhsParams.size() != rhsParams.size()) {
-        return success();
-      }
-      for (auto [lhsAttr, rhsAttr] : llvm::zip_equal(lhsParams, rhsParams)) {
-        auto lhsTyAttr = llvm::dyn_cast<TypeAttr>(lhsAttr);
-        auto rhsTyAttr = llvm::dyn_cast<TypeAttr>(rhsAttr);
-        if (lhsTyAttr && rhsTyAttr &&
-            failed(collectTypePairInferences(
-                lhsTyAttr.getValue(), rhsTyAttr.getValue(), Value(), Value(), loc
-            ))) {
-          return failure();
+      if (auto rhsStruct = llvm::dyn_cast<StructType>(rhs)) {
+        ArrayRef<Attribute> lhsParams =
+            lhsStruct.getParams() ? lhsStruct.getParams().getValue() : ArrayRef<Attribute> {};
+        ArrayRef<Attribute> rhsParams =
+            rhsStruct.getParams() ? rhsStruct.getParams().getValue() : ArrayRef<Attribute> {};
+        if (lhsParams.size() != rhsParams.size()) {
+          return success();
+        }
+        for (auto [lhsAttr, rhsAttr] : llvm::zip_equal(lhsParams, rhsParams)) {
+          auto lhsTyAttr = llvm::dyn_cast<TypeAttr>(lhsAttr);
+          auto rhsTyAttr = llvm::dyn_cast<TypeAttr>(rhsAttr);
+          if (lhsTyAttr && rhsTyAttr &&
+              failed(collectTypePairInferences(
+                  lhsTyAttr.getValue(), rhsTyAttr.getValue(), Value(), Value(), loc
+              ))) {
+            return failure();
+          }
         }
       }
     }
