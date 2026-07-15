@@ -9,6 +9,10 @@
 
 #include <mlir/Bytecode/BytecodeImplementation.h>
 
+#include <llvm/ADT/APInt.h>
+
+#include <limits>
+
 namespace llzk {
 
 /// Temporary attribute name used during v1→v2 bytecode upgrade to carry the old
@@ -34,6 +38,25 @@ struct LLZKDialectVersion : public mlir::DialectVersion {
 
   uint64_t majorVersion, minorVersion, patchVersion;
 };
+
+/// Write an APInt with its bit width, so the bytecode reader can use MLIR's
+/// native APInt payload encoding instead of falling back to decimal assembly.
+inline void writeAPInt(mlir::DialectBytecodeWriter &writer, const llvm::APInt &value) {
+  writer.writeVarInt(value.getBitWidth());
+  writer.writeAPIntWithKnownWidth(value);
+}
+
+/// Read an APInt written by `writeAPInt`.
+inline mlir::FailureOr<llvm::APInt> readAPInt(mlir::DialectBytecodeReader &reader) {
+  uint64_t bitWidth;
+  if (mlir::failed(reader.readVarInt(bitWidth))) {
+    return mlir::failure();
+  }
+  if (bitWidth > std::numeric_limits<unsigned>::max()) {
+    return reader.emitError("APInt bit width too large");
+  }
+  return reader.readAPIntWithKnownWidth(static_cast<unsigned>(bitWidth));
+}
 
 /// @brief This implements the bytecode interface for the LLZK dialect.
 template <typename DialectTy>
