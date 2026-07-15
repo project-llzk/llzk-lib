@@ -118,7 +118,9 @@ def LLZK_ArrayType
     /// Required by the ShapedTypeInterface interface.
     inline bool hasRank() const { return true; }
 
-    /// Return the type produced by selecting/removing `numIndices` leading dimensions.
+    /// Return the type produced by selecting/removing `numIndices` leading dimensions. Returns
+    /// itself if `numIndices` is 0. Returns the element type if `numIndices` equals the rank
+    /// of this type. Asserts if `numIndices` is greater than the rank of this type.
     ::mlir::Type getSelectionType(size_t numIndices) const;
 
     /// Clone this type with the given shape and element type. If the
