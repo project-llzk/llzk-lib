@@ -143,6 +143,8 @@ class TypeVarReplacementConverter {
   DenseSet<StringAttr> removedParams_;
   /// Concrete type replacement for each inferred template type variable.
   DenseMap<StringAttr, Type> replacements_;
+  /// Whether struct/call template argument lists should remove resolved parameter positions.
+  bool trimResolvedParams_;
 
 public:
   /// Create a converter for a single template rewrite.
@@ -152,10 +154,10 @@ public:
   /// positional layout.
   TypeVarReplacementConverter(
       MLIRContext *ctx, ArrayRef<StringAttr> templatePath, ArrayRef<StringAttr> oldParamOrder,
-      const DenseMap<StringAttr, Type> &replacements
+      const DenseMap<StringAttr, Type> &replacements, bool trimResolvedParams = true
   )
       : ctx_(ctx), templatePath_(templatePath), oldParamOrder_(oldParamOrder),
-        replacements_(replacements) {
+        replacements_(replacements), trimResolvedParams_(trimResolvedParams) {
     for (const auto &entry : replacements_) {
       removedParams_.insert(entry.first);
     }
@@ -310,7 +312,8 @@ private:
     for (auto indexedAttr : llvm::enumerate(params.getValue())) {
       unsigned index = indexedAttr.index();
       Attribute attr = indexedAttr.value();
-      if (removeOwnedParams && removedParams_.contains(oldParamOrder_[index])) {
+      if (trimResolvedParams_ && removeOwnedParams &&
+          removedParams_.contains(oldParamOrder_[index])) {
         changed = true;
         continue;
       }
@@ -335,7 +338,102 @@ struct TemplateInferenceInfo {
   DenseMap<StringAttr, TemplateParamOp> typeVarParams;
   /// Concrete replacement type inferred for each eligible type variable.
   DenseMap<StringAttr, InferredType> replacements;
+  /// Function-local concrete replacements before the template-wide safety merge.
+  DenseMap<Operation *, DenseMap<StringAttr, InferredType>> functionReplacements;
 };
+
+/// Return whether a flat symbol reference names `paramName`.
+static bool symbolMatchesParam(SymbolRefAttr symRef, StringAttr paramName) {
+  return symRef && symRef.getNestedReferences().empty() && symRef.getRootReference() == paramName;
+}
+
+/// Return whether a type mentions an eligible type-variable parameter.
+static bool typeMentionsParam(Type ty, StringAttr paramName);
+
+/// Return whether an attribute mentions an eligible type-variable parameter.
+///
+/// Symbol references only count in template-argument positions, such as struct
+/// type parameter arrays or call-site template parameters. Top-level operation
+/// symbol attributes like callee or member names are not type-variable uses.
+static bool attrMentionsParam(Attribute attr, StringAttr paramName, bool allowSymbolRefs) {
+  if (!attr) {
+    return false;
+  }
+  if (auto typeAttr = llvm::dyn_cast<TypeAttr>(attr)) {
+    return typeMentionsParam(typeAttr.getValue(), paramName);
+  }
+  if (auto arrayAttr = llvm::dyn_cast<ArrayAttr>(attr)) {
+    return llvm::any_of(arrayAttr, [paramName](Attribute nested) {
+      return attrMentionsParam(nested, paramName, /*allowSymbolRefs=*/true);
+    });
+  }
+  return allowSymbolRefs && symbolMatchesParam(llvm::dyn_cast<SymbolRefAttr>(attr), paramName);
+}
+
+/// Return whether a type mentions an eligible type-variable parameter.
+static bool typeMentionsParam(Type ty, StringAttr paramName) {
+  if (!ty) {
+    return false;
+  }
+  if (auto tvarTy = llvm::dyn_cast<TypeVarType>(ty)) {
+    return tvarTy.getNameRef().getAttr() == paramName;
+  }
+  if (auto arrayTy = llvm::dyn_cast<ArrayType>(ty)) {
+    return typeMentionsParam(arrayTy.getElementType(), paramName) ||
+           llvm::any_of(arrayTy.getDimensionSizes(), [paramName](Attribute dim) {
+      return attrMentionsParam(dim, paramName, /*allowSymbolRefs=*/true);
+    });
+  }
+  if (auto structTy = llvm::dyn_cast<StructType>(ty)) {
+    ArrayAttr params = structTy.getParams();
+    return params && attrMentionsParam(params, paramName, /*allowSymbolRefs=*/true);
+  }
+  if (auto podTy = llvm::dyn_cast<PodType>(ty)) {
+    return llvm::any_of(podTy.getRecords(), [paramName](RecordAttr record) {
+      return typeMentionsParam(record.getType(), paramName);
+    });
+  }
+  if (auto funcTy = llvm::dyn_cast<FunctionType>(ty)) {
+    return llvm::any_of(funcTy.getInputs(), [paramName](Type input) {
+      return typeMentionsParam(input, paramName);
+    }) || llvm::any_of(funcTy.getResults(), [paramName](Type result) {
+      return typeMentionsParam(result, paramName);
+    });
+  }
+  return false;
+}
+
+/// Return whether `op` mentions an eligible type-variable parameter in a type-bearing surface.
+static bool operationMentionsParam(Operation *op, StringAttr paramName) {
+  if (llvm::any_of(op->getResultTypes(), [paramName](Type ty) {
+    return typeMentionsParam(ty, paramName);
+  })) {
+    return true;
+  }
+  for (Region &region : op->getRegions()) {
+    for (Block &block : region.getBlocks()) {
+      if (llvm::any_of(block.getArgumentTypes(), [paramName](Type ty) {
+        return typeMentionsParam(ty, paramName);
+      })) {
+        return true;
+      }
+    }
+  }
+  return llvm::any_of(op->getAttrs(), [paramName](NamedAttribute attr) {
+    return attrMentionsParam(attr.getValue(), paramName, /*allowSymbolRefs=*/false);
+  });
+}
+
+/// Return whether a function body/signature mentions an eligible type-variable parameter.
+static bool funcMentionsParam(FuncDefOp func, StringAttr paramName) {
+  if (operationMentionsParam(func.getOperation(), paramName)) {
+    return true;
+  }
+  WalkResult result = func.walk([paramName](Operation *op) {
+    return operationMentionsParam(op, paramName) ? WalkResult::interrupt() : WalkResult::advance();
+  });
+  return result.wasInterrupted();
+}
 
 /// Walk a template body and collect all type-variable inferences from
 /// `poly.unifiable_cast` operations.
@@ -346,20 +444,25 @@ struct TemplateInferenceInfo {
 class TypeVarInferenceCollector {
   /// Per-template inference output and eligible parameter metadata.
   TemplateInferenceInfo &inferenceInfo;
+  /// Concrete replacements proven within the current inference scope.
+  DenseMap<StringAttr, InferredType> &replacements;
   /// Concrete inferences for SSA values observed during collection.
   DenseMap<Value, InferredType> byValue;
   /// Whether the current collection iteration learned a new concrete fact.
-  bool changedInIteration;
+  bool changedInIteration = false;
 
 public:
-  /// Create a collector for one template's inference state.
-  explicit TypeVarInferenceCollector(TemplateInferenceInfo &info) : inferenceInfo(info) {}
+  /// Create a collector for one function's inference state.
+  TypeVarInferenceCollector(
+      TemplateInferenceInfo &info, DenseMap<StringAttr, InferredType> &scopeReplacements
+  )
+      : inferenceInfo(info), replacements(scopeReplacements) {}
 
   /// Visit all casts until no new concrete parameter or SSA value facts appear.
-  LogicalResult collect() {
+  LogicalResult collect(FuncDefOp func) {
     do {
       changedInIteration = false;
-      WalkResult result = inferenceInfo.templateOp.walk([this](UnifiableCastOp castOp) {
+      WalkResult result = func.walk([this](UnifiableCastOp castOp) {
         return WalkResult(collectTypePairInferences(
             castOp.getInput().getType(), castOp.getResult().getType(), castOp.getInput(),
             castOp.getResult(), castOp.getLoc()
@@ -397,9 +500,9 @@ private:
       return diag;
     };
 
-    auto byParamIt = inferenceInfo.replacements.find(paramName);
-    if (byParamIt == inferenceInfo.replacements.end()) {
-      inferenceInfo.replacements.try_emplace(paramName, InferredType {inferredTy, loc});
+    auto byParamIt = replacements.find(paramName);
+    if (byParamIt == replacements.end()) {
+      replacements.try_emplace(paramName, InferredType {inferredTy, loc});
       changedInIteration = true;
     } else if (byParamIt->second.type != inferredTy) {
       return reportConflict("template parameter", byParamIt->second.loc, byParamIt->second.type);
@@ -615,9 +718,9 @@ static bool convertOperationTypes(Operation *op, const TypeVarReplacementConvert
 /// `!poly.tvar<@T> -> !array.type<4 x index>` becomes
 /// `!array.type<4 x index> -> !array.type<4 x index>`. Such casts no longer
 /// carry information and can be replaced with their input value.
-static void removeIdentityCasts(TemplateOp templateOp) {
+static void removeIdentityCasts(Operation *root) {
   SmallVector<UnifiableCastOp> erase;
-  templateOp.walk([&erase](UnifiableCastOp castOp) {
+  root->walk([&erase](UnifiableCastOp castOp) {
     if (castOp.getInput().getType() == castOp.getResult().getType()) {
       erase.push_back(castOp);
     }
@@ -626,6 +729,114 @@ static void removeIdentityCasts(TemplateOp templateOp) {
     castOp.getResult().replaceAllUsesWith(castOp.getInput());
     castOp.erase();
   }
+}
+
+/// Build concrete replacement types from function-local inferences that still
+/// need call-site cloning after any template-wide replacements have been applied.
+static DenseMap<StringAttr, Type>
+getResidualFunctionReplacements(const TemplateInferenceInfo &info, FuncDefOp func) {
+  DenseMap<StringAttr, Type> replacements;
+  auto funcIt = info.functionReplacements.find(func.getOperation());
+  if (funcIt == info.functionReplacements.end()) {
+    return replacements;
+  }
+  for (const auto &entry : funcIt->second) {
+    if (!info.replacements.contains(entry.first)) {
+      replacements.try_emplace(entry.first, entry.second.type);
+    }
+  }
+  return replacements;
+}
+
+/// Return the original template parameter index for `paramName`, if present.
+static std::optional<unsigned>
+getParamIndex(ArrayRef<StringAttr> paramOrder, StringAttr paramName) {
+  for (auto indexedParam : llvm::enumerate(paramOrder)) {
+    if (indexedParam.value() == paramName) {
+      return indexedParam.index();
+    }
+  }
+  return std::nullopt;
+}
+
+/// Return true if explicit call-site template parameters match the inferred
+/// concrete function-local replacements.
+static bool callParamsMatchReplacements(
+    ArrayAttr callParams, ArrayRef<StringAttr> oldParamOrder,
+    const DenseMap<StringAttr, Type> &replacements
+) {
+  if (!callParams || callParams.size() != oldParamOrder.size()) {
+    return false;
+  }
+  for (const auto &entry : replacements) {
+    std::optional<unsigned> index = getParamIndex(oldParamOrder, entry.first);
+    if (!index) {
+      return false;
+    }
+    if (callParams[*index] != TypeAttr::get(entry.second)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/// Build concrete type-variable replacements from an explicit call instantiation.
+///
+/// A module-level function clone has no enclosing `poly.template`, so every
+/// type-variable parameter mentioned by the cloned function must be replaced by
+/// a concrete type from the call's template argument list.
+static DenseMap<StringAttr, Type> getConcreteCallSiteReplacements(
+    ArrayAttr callParams, const TemplateInferenceInfo &info, FuncDefOp func
+) {
+  DenseMap<StringAttr, Type> replacements;
+  if (!callParams || callParams.size() != info.oldParamOrder.size()) {
+    return replacements;
+  }
+
+  for (const auto &entry : info.typeVarParams) {
+    StringAttr paramName = entry.first;
+    if (!funcMentionsParam(func, paramName)) {
+      continue;
+    }
+    std::optional<unsigned> index = getParamIndex(info.oldParamOrder, paramName);
+    assert(index && "eligible type-variable parameter must appear in parameter order");
+    Attribute attr = callParams[*index];
+    auto tyAttr = llvm::dyn_cast<TypeAttr>(attr);
+    if (!tyAttr || !isConcreteType(tyAttr.getValue())) {
+      return DenseMap<StringAttr, Type>();
+    }
+    replacements.try_emplace(paramName, tyAttr.getValue());
+  }
+  return replacements;
+}
+
+/// Create or reuse a module-level clone for a concrete function-local tvar instantiation.
+static FailureOr<FuncDefOp> getOrCreateSpecializedFunctionClone(
+    ModuleOp module, TemplateOp templateOp, FuncDefOp func, ArrayAttr callParams,
+    const TemplateInferenceInfo &info, const DenseMap<StringAttr, Type> &replacements,
+    SymbolTableCollection &tables
+) {
+  std::string cloneName = buildInstantiatedFunctionName(
+      templateOp.getSymName(), func.getSymName(), callParams.getValue()
+  );
+  SymbolTable &moduleSymbols = tables.getSymbolTable(module);
+  if (Operation *existing = moduleSymbols.lookup(cloneName)) {
+    if (auto existingFunc = llvm::dyn_cast<FuncDefOp>(existing)) {
+      return existingFunc;
+    }
+    return failure();
+  }
+
+  FuncDefOp clone = func.clone();
+  clone.setSymName(cloneName);
+  TypeVarReplacementConverter converter(
+      module.getContext(), info.templatePath, info.oldParamOrder, replacements,
+      /*trimResolvedParams=*/false
+  );
+  clone.walk([&converter](Operation *op) { convertOperationTypes(op, converter); });
+  removeIdentityCasts(clone.getOperation());
+  moduleSymbols.insert(clone, Block::iterator(templateOp));
+  return clone;
 }
 
 /// Erase `poly.param` definitions whose type variables were fully resolved.
@@ -684,11 +895,72 @@ static bool updateCallTemplateParams(
   return modified;
 }
 
+/// Specialize calls to template functions with concrete tvar instantiations.
+///
+/// This intentionally handles only fully-concrete explicit call-site type
+/// arguments for free functions directly nested in a template. More general
+/// partial instantiations should follow the flattening pass' template-cloning
+/// machinery, but this covers the tvar-only cases without invoking flattening's
+/// struct/array transformations. Function-local inference facts are used to
+/// reject call-site instantiations that disagree with a proof in the body.
+static LogicalResult specializeFunctionLocalCalls(
+    ModuleOp module, DenseMap<Operation *, const TemplateInferenceInfo *> &infoByTemplate
+) {
+  bool failedClone = false;
+  SymbolTableCollection tables;
+  module.walk([&](CallOp callOp) {
+    if (failedClone) {
+      return;
+    }
+    FailureOr<SymbolLookupResult<FuncDefOp>> target = callOp.getCalleeTarget(tables);
+    if (failed(target)) {
+      return;
+    }
+    FuncDefOp targetFunc = target->get();
+    auto parentTemplate = llvm::dyn_cast_or_null<TemplateOp>(targetFunc->getParentOp());
+    if (!parentTemplate) {
+      return;
+    }
+    const TemplateInferenceInfo *info = infoByTemplate.lookup(parentTemplate.getOperation());
+    if (!info) {
+      return;
+    }
+
+    ArrayAttr callParams = callOp.getTemplateParamsAttr();
+    DenseMap<StringAttr, Type> replacements =
+        getConcreteCallSiteReplacements(callParams, *info, targetFunc);
+    if (replacements.empty()) {
+      return;
+    }
+    DenseMap<StringAttr, Type> inferredReplacements =
+        getResidualFunctionReplacements(*info, targetFunc);
+    if (!callParamsMatchReplacements(callParams, info->oldParamOrder, inferredReplacements)) {
+      return;
+    }
+
+    FailureOr<FuncDefOp> clone = getOrCreateSpecializedFunctionClone(
+        module, parentTemplate, targetFunc, callParams, *info, replacements, tables
+    );
+    if (failed(clone)) {
+      failedClone = true;
+      return;
+    }
+
+    callOp.setCalleeAttr(
+        getInstantiatedFunctionCallee(callOp.getCalleeAttr(), clone->getSymNameAttr())
+    );
+    callOp.setTemplateParamsAttr(nullptr);
+  });
+  return failure(failedClone);
+}
+
 /// Build all analysis state needed to rewrite one template.
 ///
 /// The function records the original template parameter order before any
 /// rewrites, identifies eligible type-variable parameters, and collects concrete
-/// replacements from the template body.
+/// replacements only when every function that mentions a parameter proves the
+/// same replacement. This preserves per-call instantiation for sibling entry
+/// points that remain unconstrained.
 static FailureOr<TemplateInferenceInfo> buildInfo(TemplateOp templateOp) {
   TemplateInferenceInfo info;
   info.templateOp = templateOp;
@@ -705,8 +977,45 @@ static FailureOr<TemplateInferenceInfo> buildInfo(TemplateOp templateOp) {
       info.typeVarParams.try_emplace(name, paramOp);
     }
   }
-  if (failed(TypeVarInferenceCollector(info).collect())) {
-    return failure();
+
+  SmallVector<FuncDefOp> funcs;
+  templateOp.walk([&funcs](FuncDefOp func) { funcs.push_back(func); });
+
+  DenseMap<StringAttr, unsigned> mentionCounts;
+  DenseMap<StringAttr, unsigned> proofCounts;
+  DenseMap<StringAttr, InferredType> commonReplacements;
+  DenseSet<StringAttr> incompatibleReplacements;
+  for (FuncDefOp func : funcs) {
+    for (const auto &entry : info.typeVarParams) {
+      if (funcMentionsParam(func, entry.first)) {
+        ++mentionCounts[entry.first];
+      }
+    }
+
+    DenseMap<StringAttr, InferredType> funcReplacements;
+    if (failed(TypeVarInferenceCollector(info, funcReplacements).collect(func))) {
+      return failure();
+    }
+    if (!funcReplacements.empty()) {
+      info.functionReplacements.try_emplace(func.getOperation(), funcReplacements);
+    }
+    for (const auto &entry : funcReplacements) {
+      ++proofCounts[entry.first];
+      auto commonIt = commonReplacements.find(entry.first);
+      if (commonIt == commonReplacements.end()) {
+        commonReplacements.try_emplace(entry.first, entry.second);
+      } else if (commonIt->second.type != entry.second.type) {
+        incompatibleReplacements.insert(entry.first);
+      }
+    }
+  }
+
+  for (const auto &entry : commonReplacements) {
+    StringAttr paramName = entry.first;
+    if (!incompatibleReplacements.contains(paramName) &&
+        proofCounts.lookup(paramName) == mentionCounts.lookup(paramName)) {
+      info.replacements.try_emplace(paramName, entry.second);
+    }
   }
   return info;
 }
@@ -735,7 +1044,7 @@ private:
       if (failed(info)) {
         return WalkResult::interrupt();
       }
-      if (!info->replacements.empty()) {
+      if (!info->replacements.empty() || !info->functionReplacements.empty()) {
         rewrites.push_back(std::move(*info));
       }
       return WalkResult::advance();
@@ -749,7 +1058,9 @@ private:
     // call-site rewriting can use the same positional template-parameter map.
     SmallVector<std::unique_ptr<TypeVarReplacementConverter>> converterStorage;
     DenseMap<Operation *, const TypeVarReplacementConverter *> convertersByTemplate;
+    DenseMap<Operation *, const TemplateInferenceInfo *> infoByTemplate;
     for (TemplateInferenceInfo &info : rewrites) {
+      infoByTemplate.try_emplace(info.templateOp.getOperation(), &info);
       DenseMap<StringAttr, Type> replacements;
       for (const auto &entry : info.replacements) {
         replacements.try_emplace(entry.first, entry.second.type);
@@ -760,13 +1071,17 @@ private:
       convertersByTemplate.try_emplace(info.templateOp.getOperation(), converter.get());
 
       info.templateOp.walk([&converter](Operation *op) { convertOperationTypes(op, *converter); });
-      removeIdentityCasts(info.templateOp);
+      removeIdentityCasts(info.templateOp.getOperation());
       converterStorage.push_back(std::move(converter));
     }
 
     // Calls are outside the rewritten template bodies, so update them after all
     // target templates have their converters registered.
     updateCallTemplateParams(module, convertersByTemplate);
+    if (failed(specializeFunctionLocalCalls(module, infoByTemplate))) {
+      signalPassFailure();
+      return;
+    }
 
     // Erase resolved parameters last; before this point, their original order is
     // still useful for template argument list conversion.

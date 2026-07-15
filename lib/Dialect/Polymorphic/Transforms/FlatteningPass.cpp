@@ -1611,7 +1611,7 @@ private:
   ) {
     MLIRContext *ctx = op.getContext();
     std::string newFuncName =
-        (mlir::Twine(templateNameWithAttrs) + "_" + callTgt.getSymName()).str();
+        buildInstantiatedFunctionName(templateNameWithAttrs, callTgt.getSymName());
     StringRef actualNewFuncName = newFuncName;
     if (!symTables.getSymbolTable(parentModule).lookup(newFuncName)) {
       FuncDefOp newFunc = callTgt.clone();
@@ -1644,12 +1644,9 @@ private:
     // Callee: drop template & original function names, add the new module-level function name.
     // Original: @[prefix...]::@TemplateName::@funcName
     // New:      @[prefix...]::@newFuncName
-    SmallVector<FlatSymbolRefAttr> symPieces = getPieces(op.getCalleeAttr());
-    assert(symPieces.size() >= 2 && "callee must include at least template and function names");
-    symPieces.pop_back(); // remove original function name
-    symPieces.pop_back(); // remove template name
-    symPieces.push_back(FlatSymbolRefAttr::get(StringAttr::get(ctx, actualNewFuncName)));
-    return asSymbolRefAttr(symPieces);
+    return getInstantiatedFunctionCallee(
+        op.getCalleeAttr(), StringAttr::get(ctx, actualNewFuncName)
+    );
   }
 
   /// Create or reuse a partially-instantiated template that preserves the remaining non-concrete

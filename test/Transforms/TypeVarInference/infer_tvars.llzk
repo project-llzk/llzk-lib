@@ -257,3 +257,67 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[CHAIN_CALL]] : !array.type<2 x i1>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TSiblingEntryPoints {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @f(%arg: !poly.tvar<@T>) -> index {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      function.return %index : index
+    }
+
+    function.def @g(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      function.return %arg : !poly.tvar<@T>
+    }
+  }
+
+  function.def @call_f(%arg: index) -> index {
+    %0 = function.call @TSiblingEntryPoints::@f<[index]>(%arg) : (index) -> index
+    function.return %0 : index
+  }
+
+  function.def @call_g1(%arg: !felt.type) -> !felt.type {
+    %0 = function.call @TSiblingEntryPoints::@g<[!felt.type]>(%arg) : (!felt.type) -> !felt.type
+    function.return %0 : !felt.type
+  }
+
+  function.def @call_g2(%arg: i1) -> i1 {
+    %0 = function.call @TSiblingEntryPoints::@g<[i1]>(%arg) : (i1) -> i1
+    function.return %0 : i1
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @TSiblingEntryPoints_i_f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @TSiblingEntryPoints_f_g(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:      function.return %[[VAL_1]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @TSiblingEntryPoints_b_g(%[[VAL_2:[0-9a-zA-Z_\.]+]]: i1) -> i1 {
+// CHECK-NEXT:      function.return %[[VAL_2]] : i1
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TSiblingEntryPoints {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @f(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> index {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_3]] : (!poly.tvar<@T>) -> index
+// CHECK-NEXT:        function.return %[[VAL_4]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @g(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !poly.tvar<@T> {
+// CHECK-NEXT:        function.return %[[VAL_5]] : !poly.tvar<@T>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_f(%[[VAL_6:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @TSiblingEntryPoints_i_f(%[[VAL_6]]) : (index) -> index
+// CHECK-NEXT:      function.return %[[VAL_7]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_g1(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @TSiblingEntryPoints_f_g(%[[VAL_8]]) : (!felt.type) -> !felt.type
+// CHECK-NEXT:      function.return %[[VAL_9]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_g2(%[[VAL_10:[0-9a-zA-Z_\.]+]]: i1) -> i1 {
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @TSiblingEntryPoints_b_g(%[[VAL_10]]) : (i1) -> i1
+// CHECK-NEXT:      function.return %[[VAL_11]] : i1
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

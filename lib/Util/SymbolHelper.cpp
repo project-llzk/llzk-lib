@@ -21,6 +21,7 @@
 #include "llzk/Dialect/Verif/IR/Ops.h"
 #include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/SymbolTableLLZK.h"
+#include "llzk/Util/TypeHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/BuiltinTypes.h>
@@ -293,6 +294,30 @@ SymbolRefAttr appendLeafName(SymbolRefAttr orig, const Twine &newLeafSuffix) {
         getFlatSymbolRefAttr(orig.getContext(), origTail.back().getValue() + newLeafSuffix)
     );
   }
+}
+
+std::string
+buildInstantiatedFunctionName(StringRef instantiatedTemplateName, StringRef functionName) {
+  return (Twine(instantiatedTemplateName) + "_" + functionName).str();
+}
+
+std::string buildInstantiatedFunctionName(
+    StringRef templateName, StringRef functionName, ArrayRef<Attribute> templateArgs
+) {
+  return buildInstantiatedFunctionName(
+      BuildShortTypeString::from(templateName.str(), templateArgs), functionName
+  );
+}
+
+SymbolRefAttr getInstantiatedFunctionCallee(
+    SymbolRefAttr templateFunctionCallee, StringAttr instantiatedFunctionName
+) {
+  SmallVector<FlatSymbolRefAttr> pieces = getPieces(templateFunctionCallee);
+  assert(pieces.size() >= 2 && "callee must include at least template and function names");
+  pieces.pop_back();
+  pieces.pop_back();
+  pieces.push_back(FlatSymbolRefAttr::get(instantiatedFunctionName));
+  return asSymbolRefAttr(pieces);
 }
 
 FailureOr<ModuleOp> getRootModule(Operation *from) {
