@@ -363,7 +363,9 @@ static LogicalResult recordInference(
 /// The direct case is `!poly.tvar<@T>` on one side and a concrete type on the
 /// other. The function also descends into array element types and matching
 /// struct type parameters so an aggregate shape can force a nested type
-/// variable.
+/// variable. If one side is still a type variable but its SSA value already has
+/// a concrete inference from an earlier cast, that concrete value-level proof is
+/// propagated through chained casts.
 static LogicalResult collectTypePairInferences(
     Type lhs, Type rhs, Value lhsValue, Value rhsValue, Location loc,
     DenseMap<StringAttr, TemplateParamOp> &typeVarParams,
@@ -375,12 +377,32 @@ static LogicalResult collectTypePairInferences(
         ))) {
       return failure();
     }
+    if (rhsValue) {
+      auto rhsValueIt = byValue.find(rhsValue);
+      if (rhsValueIt != byValue.end() &&
+          failed(recordInference(
+              typeVarParams, byParam, byValue, lhsTvar.getNameRef().getAttr(),
+              rhsValueIt->second.type, lhsValue, loc
+          ))) {
+        return failure();
+      }
+    }
   }
   if (auto rhsTvar = llvm::dyn_cast<TypeVarType>(rhs)) {
     if (failed(recordInference(
             typeVarParams, byParam, byValue, rhsTvar.getNameRef().getAttr(), lhs, rhsValue, loc
         ))) {
       return failure();
+    }
+    if (lhsValue) {
+      auto lhsValueIt = byValue.find(lhsValue);
+      if (lhsValueIt != byValue.end() &&
+          failed(recordInference(
+              typeVarParams, byParam, byValue, rhsTvar.getNameRef().getAttr(),
+              lhsValueIt->second.type, rhsValue, loc
+          ))) {
+        return failure();
+      }
     }
   }
 

@@ -56,3 +56,61 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[CALL]] : !array.type<2 x i1>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TFlattenNestedArray {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @flatten(%elem: !poly.tvar<@T>, %arr: !array.type<4 x !poly.tvar<@T>>) -> !array.type<4 x !poly.tvar<@T>> {
+      %cast = poly.unifiable_cast %elem : (!poly.tvar<@T>) -> !array.type<8 x index>
+      function.return %arr : !array.type<4 x !poly.tvar<@T>>
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TFlattenNestedArray {
+// CHECK-NEXT:      function.def @flatten(%{{[0-9a-zA-Z_\.]+}}: !array.type<8 x index>, %[[ARR:[0-9a-zA-Z_\.]+]]: !array.type<4,8 x index>) -> !array.type<4,8 x index> {
+// CHECK-NEXT:        function.return %[[ARR]] : !array.type<4,8 x index>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!A = !array.type<2 x i1>
+module attributes {llzk.lang} {
+  poly.template @TChainedCasts {
+    poly.param @A : !poly.tvar<@A>
+    poly.param @B : !poly.tvar<@B>
+    poly.param @C : !poly.tvar<@C>
+    poly.param @D : !poly.tvar<@D>
+    poly.param @E : !poly.tvar<@E>
+
+    function.def @make() -> !poly.tvar<@E> {
+      %arr = array.new : !A
+      %castA = poly.unifiable_cast %arr : (!A) -> !poly.tvar<@A>
+      %castB = poly.unifiable_cast %castA : (!poly.tvar<@A>) -> !poly.tvar<@B>
+      %castC = poly.unifiable_cast %castB : (!poly.tvar<@B>) -> !poly.tvar<@C>
+      %castD = poly.unifiable_cast %castC : (!poly.tvar<@C>) -> !poly.tvar<@D>
+      %castE = poly.unifiable_cast %castD : (!poly.tvar<@D>) -> !poly.tvar<@E>
+      function.return %castE : !poly.tvar<@E>
+    }
+  }
+
+  function.def @call_make() -> !A {
+    %0 = function.call @TChainedCasts::@make<[!A, !A, !A, !A, !A]>() : () -> !A
+    function.return %0 : !A
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TChainedCasts {
+// CHECK-NEXT:      function.def @make() -> !array.type<2 x i1> {
+// CHECK-NEXT:        %[[CHAIN_ARR:[0-9a-zA-Z_\.]+]] = array.new  : <2 x i1>
+// CHECK-NEXT:        function.return %[[CHAIN_ARR]] : !array.type<2 x i1>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_make() -> !array.type<2 x i1> {
+// CHECK-NEXT:      %[[CHAIN_CALL:[0-9a-zA-Z_\.]+]] = function.call @TChainedCasts::@make() : () -> !array.type<2 x i1>
+// CHECK-NEXT:      function.return %[[CHAIN_CALL]] : !array.type<2 x i1>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
