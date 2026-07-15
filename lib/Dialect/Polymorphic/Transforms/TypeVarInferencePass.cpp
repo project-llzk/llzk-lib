@@ -383,10 +383,10 @@ private:
   /// Collect inferences from a pair of types known to unify.
   ///
   /// The direct case is `!poly.tvar<@T>` on one side and a concrete type on the other. The function
-  /// also descends into array element types and matching struct type parameters so an aggregate
-  /// shape can force a nested type variable. If one side is still a type variable but its SSA value
-  /// already has a concrete inference from an earlier cast, that concrete value-level proof is
-  /// propagated through chained casts.
+  /// also descends into aggregate type contents so an aggregate shape can force a nested type
+  /// variable. If one side is still a type variable but its SSA value already has a concrete
+  /// inference from an earlier cast, that concrete value-level proof is propagated through chained
+  /// casts.
   LogicalResult
   collectTypePairInferences(Type lhs, Type rhs, Value lhsValue, Value rhsValue, Location loc) {
     if (auto lhsTvar = llvm::dyn_cast<TypeVarType>(lhs)) {
@@ -441,6 +441,26 @@ private:
           if (lhsTyAttr && rhsTyAttr &&
               failed(collectTypePairInferences(
                   lhsTyAttr.getValue(), rhsTyAttr.getValue(), Value(), Value(), loc
+              ))) {
+            return failure();
+          }
+        }
+      }
+    }
+
+    if (auto lhsPod = llvm::dyn_cast<PodType>(lhs)) {
+      if (auto rhsPod = llvm::dyn_cast<PodType>(rhs)) {
+        ArrayRef<RecordAttr> lhsRecords = lhsPod.getRecords();
+        ArrayRef<RecordAttr> rhsRecords = rhsPod.getRecords();
+        if (lhsRecords.size() != rhsRecords.size()) {
+          return success();
+        }
+        for (auto [lhsRecord, rhsRecord] : llvm::zip_equal(lhsRecords, rhsRecords)) {
+          if (lhsRecord.getName() != rhsRecord.getName()) {
+            return success();
+          }
+          if (failed(collectTypePairInferences(
+                  lhsRecord.getType(), rhsRecord.getType(), Value(), Value(), loc
               ))) {
             return failure();
           }

@@ -77,6 +77,105 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
+module attributes {llzk.lang} {
+  poly.template @TInferArrayElement {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @from_array(%arg: !array.type<4 x !poly.tvar<@T>>) -> !array.type<4 x !poly.tvar<@T>> {
+      %cast = poly.unifiable_cast %arg : (!array.type<4 x !poly.tvar<@T>>) -> !array.type<4 x index>
+      function.return %cast : !array.type<4 x index>
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TInferArrayElement {
+// CHECK-NEXT:      function.def @from_array(%[[ARR_ARG:[0-9a-zA-Z_\.]+]]: !array.type<4 x index>) -> !array.type<4 x index> {
+// CHECK-NEXT:        function.return %[[ARR_ARG]] : !array.type<4 x index>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TBox {
+    poly.param @Element
+
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@Element>
+
+      function.def @product(%arg: !poly.tvar<@Element>) -> !struct.type<@TBox::@Box<[@Element]>> {
+        %self = struct.new : !struct.type<@TBox::@Box<[@Element]>>
+        struct.writem %self[@value] = %arg : !struct.type<@TBox::@Box<[@Element]>>, !poly.tvar<@Element>
+        function.return %self : !struct.type<@TBox::@Box<[@Element]>>
+      }
+    }
+  }
+
+  poly.template @TInferStructParam {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @from_struct(%arg: !struct.type<@TBox::@Box<[!poly.tvar<@T>]>>) -> !struct.type<@TBox::@Box<[!poly.tvar<@T>]>> {
+      %cast = poly.unifiable_cast %arg : (!struct.type<@TBox::@Box<[!poly.tvar<@T>]>>) -> !struct.type<@TBox::@Box<[index]>>
+      function.return %cast : !struct.type<@TBox::@Box<[index]>>
+    }
+  }
+
+  poly.template @TInferArrayPodStruct {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @from_array_pod_struct(
+        %arg: !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@Box<[!poly.tvar<@T>]>>]>>
+    ) -> !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@Box<[!poly.tvar<@T>]>>]>> {
+      %cast = poly.unifiable_cast %arg : (!array.type<4 x !pod.type<[@value: !struct.type<@TBox::@Box<[!poly.tvar<@T>]>>]>>) ->
+          !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@Box<[index]>>]>>
+      function.return %cast : !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@Box<[index]>>]>>
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TBox {
+// CHECK-NEXT:      poly.param @Element
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        struct.member @value : !poly.tvar<@Element>
+// CHECK-NEXT:        function.def @product(%[[BOX_ARG:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Element>) -> !struct.type<@TBox::@Box<[@Element]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[BOX_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@TBox::@Box<[@Element]>>
+// CHECK-NEXT:          struct.writem %[[BOX_SELF]][@value] = %[[BOX_ARG]] : <@TBox::@Box<[@Element]>>, !poly.tvar<@Element>
+// CHECK-NEXT:          function.return %[[BOX_SELF]] : !struct.type<@TBox::@Box<[@Element]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TInferStructParam {
+// CHECK-NEXT:      function.def @from_struct(%[[STRUCT_ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox::@Box<[index]>>) -> !struct.type<@TBox::@Box<[index]>> {
+// CHECK-NEXT:        function.return %[[STRUCT_ARG]] : !struct.type<@TBox::@Box<[index]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TInferArrayPodStruct {
+// CHECK-NEXT:      function.def @from_array_pod_struct(%[[COMPOSITE_ARG:[0-9a-zA-Z_\.]+]]: !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@Box<[index]>>]>>) -> !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@Box<[index]>>]>> {
+// CHECK-NEXT:        function.return %[[COMPOSITE_ARG]] : !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@Box<[index]>>]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TInferPodRecord {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @from_pod(%arg: !pod.type<[@value: !poly.tvar<@T>]>) -> !pod.type<[@value: !poly.tvar<@T>]> {
+      %cast = poly.unifiable_cast %arg : (!pod.type<[@value: !poly.tvar<@T>]>) -> !pod.type<[@value: index]>
+      function.return %cast : !pod.type<[@value: index]>
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TInferPodRecord {
+// CHECK-NEXT:      function.def @from_pod(%[[POD_ARG:[0-9a-zA-Z_\.]+]]: !pod.type<[@value: index]>) -> !pod.type<[@value: index]> {
+// CHECK-NEXT:        function.return %[[POD_ARG]] : !pod.type<[@value: index]>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
 !A = !array.type<2 x i1>
 module attributes {llzk.lang} {
   poly.template @TChainedCasts {
