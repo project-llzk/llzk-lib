@@ -1,0 +1,131 @@
+// RUN: llzk-opt -split-input-file -llzk-algebraize-felt-ops -verify-diagnostics %s > %t
+// RUN: FileCheck --enable-var-scope %s < %t
+// RUN: FileCheck --enable-var-scope --check-prefix=BUDGET %s < %t
+
+// `felt.inv` becomes a witness `w` pinned by `v*w == 1` (unsatisfiable for
+// v == 0). No bit decomposition: 1 pin + 1 output equality.
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  struct.def @Inv {
+    struct.member @out : !F {llzk.pub}
+    function.def @compute(%a: !F) -> !struct.type<@Inv> {
+      %self = struct.new : <@Inv>
+      function.return %self : !struct.type<@Inv>
+    }
+    function.def @constrain(%self: !struct.type<@Inv>, %a: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %0 = felt.inv %a : !F
+      %1 = struct.readm %self[@out] : !struct.type<@Inv>, !F
+      constrain.eq %0, %1 : !F, !F
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Inv
+// CHECK:         %[[W:[0-9a-zA-Z_\.]+]] = llzk.nondet : !felt.type<"koalabear">
+// CHECK:         %[[PROD:[0-9a-zA-Z_\.]+]] = felt.mul %arg1, %[[W]]
+// CHECK:         constrain.eq %[[PROD]], %{{[0-9a-zA-Z_\.]+}}
+// The witness itself is the op result; it lands in the output equality.
+// CHECK:         constrain.eq %[[W]], %{{[0-9a-zA-Z_\.]+}}
+
+// BUDGET-LABEL:   struct.def @Inv
+// BUDGET-COUNT-2: constrain.eq
+// BUDGET-NOT:     constrain.eq
+
+// -----
+
+// `felt.div` inverts the divisor and multiplies (not the cheaper
+// `b*w == a` hint, which underconstrains when a == b == 0).
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  struct.def @Div {
+    struct.member @out : !F {llzk.pub}
+    function.def @compute(%a: !F, %b: !F) -> !struct.type<@Div> {
+      %self = struct.new : <@Div>
+      function.return %self : !struct.type<@Div>
+    }
+    function.def @constrain(%self: !struct.type<@Div>, %a: !F, %b: !F) attributes {function.allow_constraint} {
+      %0 = felt.div %a, %b : !F, !F
+      %1 = struct.readm %self[@out] : !struct.type<@Div>, !F
+      constrain.eq %0, %1 : !F, !F
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Div
+// CHECK:         %[[W:[0-9a-zA-Z_\.]+]] = llzk.nondet : !felt.type<"koalabear">
+// CHECK:         %[[PROD:[0-9a-zA-Z_\.]+]] = felt.mul %arg2, %[[W]]
+// CHECK:         constrain.eq %[[PROD]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK:         %[[RES:[0-9a-zA-Z_\.]+]] = felt.mul %arg1, %[[W]]
+// CHECK:         constrain.eq %[[RES]], %{{[0-9a-zA-Z_\.]+}}
+
+// BUDGET-LABEL:   struct.def @Div
+// BUDGET-COUNT-2: constrain.eq
+// BUDGET-NOT:     constrain.eq
+
+// -----
+
+// uintdiv and umod by the same power of two share one decomposition of the
+// dividend (the bits are cached): 1 guard + (8+1) + 2 outputs = 12, not 21.
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  struct.def @DivModPair {
+    struct.member @q : !F {llzk.pub}
+    struct.member @r : !F {llzk.pub}
+    function.def @compute(%a: !F) -> !struct.type<@DivModPair> {
+      %self = struct.new : <@DivModPair>
+      function.return %self : !struct.type<@DivModPair>
+    }
+    function.def @constrain(%self: !struct.type<@DivModPair>, %a: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %bound = felt.const 256 : <"koalabear">
+      %one = felt.const 1 : <"koalabear">
+      %ga = bool.cmp lt(%a, %bound) : !F, !F
+      %gaf = cast.tofelt %ga : i1, !F
+      constrain.eq %gaf, %one : !F, !F
+      %d = felt.const 4 : <"koalabear">
+      %q = felt.uintdiv %a, %d : !F, !F
+      %r = felt.umod %a, %d : !F, !F
+      %oq = struct.readm %self[@q] : !struct.type<@DivModPair>, !F
+      %or = struct.readm %self[@r] : !struct.type<@DivModPair>, !F
+      constrain.eq %q, %oq : !F, !F
+      constrain.eq %r, %or : !F, !F
+      function.return
+    }
+  }
+}
+
+// BUDGET-LABEL:    struct.def @DivModPair
+// BUDGET-COUNT-12: constrain.eq
+// BUDGET-NOT:      constrain.eq
+
+// -----
+
+// A divisor of p + 4 IS a division by 4: the power-of-two check must see
+// the canonical value (felt.const does not enforce < p). The unguarded
+// dividend decomposes at full width: (31+1+1 range check) + 1 output = 34.
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  struct.def @NonCanonPow2Div {
+    struct.member @out : !F {llzk.pub}
+    function.def @compute(%a: !F) -> !struct.type<@NonCanonPow2Div> {
+      %self = struct.new : <@NonCanonPow2Div>
+      function.return %self : !struct.type<@NonCanonPow2Div>
+    }
+    function.def @constrain(%self: !struct.type<@NonCanonPow2Div>, %a: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %d = felt.const 2130706437 : <"koalabear">
+      %q = felt.uintdiv %a, %d : !F, !F
+      %r = struct.readm %self[@out] : !struct.type<@NonCanonPow2Div>, !F
+      constrain.eq %q, %r : !F, !F
+      function.return
+    }
+  }
+}
+
+// BUDGET-LABEL:    struct.def @NonCanonPow2Div
+// BUDGET-COUNT-34: constrain.eq
+// BUDGET-NOT:      constrain.eq

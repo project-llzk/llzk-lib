@@ -1,0 +1,70 @@
+// RUN: llzk-opt -split-input-file -llzk-algebraize-felt-ops -verify-diagnostics %s
+
+// A sound encoding of `a == q*b + r` for a dynamic divisor `b` needs a
+// multiprecision product argument to rule out field wraparound, so dynamic
+// and non-power-of-two divisors are rejected.
+
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  struct.def @DynDiv {
+    struct.member @out : !F {llzk.pub}
+    function.def @compute(%a: !F, %b: !F) -> !struct.type<@DynDiv> {
+      %self = struct.new : <@DynDiv>
+      function.return %self : !struct.type<@DynDiv>
+    }
+    function.def @constrain(%self: !struct.type<@DynDiv>, %a: !F, %b: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      // expected-error@+1 {{algebraization supports only constant divisors}}
+      %0 = felt.uintdiv %a, %b : !F, !F
+      %1 = struct.readm %self[@out] : !struct.type<@DynDiv>, !F
+      constrain.eq %0, %1 : !F, !F
+      function.return
+    }
+  }
+}
+
+// -----
+
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  struct.def @NonPow2Mod {
+    struct.member @out : !F {llzk.pub}
+    function.def @compute(%a: !F) -> !struct.type<@NonPow2Mod> {
+      %self = struct.new : <@NonPow2Mod>
+      function.return %self : !struct.type<@NonPow2Mod>
+    }
+    function.def @constrain(%self: !struct.type<@NonPow2Mod>, %a: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %d = felt.const 3 : <"koalabear">
+      // expected-error@+1 {{algebraization supports only power-of-two divisors}}
+      %0 = felt.umod %a, %d : !F, !F
+      %1 = struct.readm %self[@out] : !struct.type<@NonPow2Mod>, !F
+      constrain.eq %0, %1 : !F, !F
+      function.return
+    }
+  }
+}
+
+// -----
+
+// A raw power of two that is NOT a power of two mod p must be rejected:
+// 2^31 mod koalabear = 2^31 - p = 16777215 (not a power of two).
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  struct.def @RawPow2AbovePrime {
+    struct.member @out : !F {llzk.pub}
+    function.def @compute(%a: !F) -> !struct.type<@RawPow2AbovePrime> {
+      %self = struct.new : <@RawPow2AbovePrime>
+      function.return %self : !struct.type<@RawPow2AbovePrime>
+    }
+    function.def @constrain(%self: !struct.type<@RawPow2AbovePrime>, %a: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %d = felt.const 2147483648 : <"koalabear">
+      // expected-error@+1 {{algebraization supports only power-of-two divisors}}
+      %0 = felt.uintdiv %a, %d : !F, !F
+      %1 = struct.readm %self[@out] : !struct.type<@RawPow2AbovePrime>, !F
+      constrain.eq %0, %1 : !F, !F
+      function.return
+    }
+  }
+}

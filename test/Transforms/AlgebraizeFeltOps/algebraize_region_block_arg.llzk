@@ -1,0 +1,29 @@
+// RUN: llzk-opt -llzk-algebraize-felt-ops %s > /dev/null
+
+// A nested-region block argument is not in scope in the function entry
+// block. Its decomposition must be emitted inside the owning block.
+
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  struct.def @LoopArg {
+    struct.member @out : !F {llzk.pub}
+    function.def @compute(%a: !F) -> !struct.type<@LoopArg> {
+      %self = struct.new : <@LoopArg>
+      function.return %self : !struct.type<@LoopArg>
+    }
+    function.def @constrain(%self: !struct.type<@LoopArg>, %a: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %lb = arith.constant 0 : index
+      %ub = arith.constant 2 : index
+      %step = arith.constant 1 : index
+      %one = felt.const 1 : <"koalabear">
+      %result = scf.for %iv = %lb to %ub step %step iter_args(%acc = %a) -> !F {
+        %masked = felt.bit_and %acc, %one : !F, !F
+        scf.yield %masked : !F
+      }
+      %out = struct.readm %self[@out] : !struct.type<@LoopArg>, !F
+      constrain.eq %result, %out : !F, !F
+      function.return
+    }
+  }
+}
