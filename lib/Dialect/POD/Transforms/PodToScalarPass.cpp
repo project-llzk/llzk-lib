@@ -1277,53 +1277,19 @@ inferCommonArrayInstantiation(ArrayRef<Value> values, ArrayInstantiationInfo &re
                      : CommonArrayInstantiationStatus::unavailable;
 }
 
-/// Generate `arith.constant` indices for one static array element position.
-static SmallVector<Value> genArrayIndexConstants(OpBuilder &bldr, Location loc, ArrayAttr index) {
-  SmallVector<Value> indices;
-  for (Attribute attr : index) {
-    // Note: array index must be an integer attribute
-    indices.push_back(bldr.create<arith::ConstantOp>(loc, llvm::cast<IntegerAttr>(attr)));
-  }
-  return indices;
-}
-
-/// Create an `array.read` or `array.extract` for one concrete element or subarray.
-static Value genArrayRead(OpBuilder &bldr, Location loc, Value arrayRef, ArrayRef<Value> indices) {
-  Type t = arrayRef.getType();
-  ArrayType arrTy = llvm::cast<ArrayType>(t); // array access must target an array type
-  Type reducedType = arrTy.getSelectionType(indices.size());
-  if (llvm::isa<ArrayType>(reducedType)) {
-    return bldr.create<ExtractArrayOp>(loc, reducedType, arrayRef, indices);
-  } else {
-    return bldr.create<ReadArrayOp>(loc, reducedType, arrayRef, indices);
-  }
-}
-
-inline static Value genArrayRead(OpBuilder &bldr, Location loc, Value arrayRef, ArrayAttr index) {
-  SmallVector<Value> indices = genArrayIndexConstants(bldr, loc, index);
-  return genArrayRead(bldr, loc, arrayRef, indices);
-}
-
 /// Create an `array.write` or `array.insert` for one concrete element or subarray.
 static void
-genArrayWrite(OpBuilder &bldr, Location loc, Value arrayRef, ArrayRef<Value> indices, Value value) {
-  Type t = arrayRef.getType();
-  ArrayType arrTy = llvm::cast<ArrayType>(t); // array access must target an array type
-  Type reducedType = arrTy.getSelectionType(indices.size());
-  if (llvm::isa<ArrayType>(reducedType)) {
-    bldr.create<InsertArrayOp>(
-        loc, arrayRef, indices, castValueToTypeIfNeeded(bldr, loc, value, reducedType)
-    );
-  } else {
-    bldr.create<WriteArrayOp>(
-        loc, arrayRef, indices, castValueToTypeIfNeeded(bldr, loc, value, reducedType)
-    );
-  }
+genArrayWrite(OpBuilder &bldr, Location loc, Value arrayRef, ValueRange indices, Value value) {
+  ArrayType arrTy = llvm::cast<ArrayType>(arrayRef.getType());
+  Type selectedType = arrTy.getSelectionType(indices.size());
+  ArrayAccessOpInterface::genWrite(
+      bldr, loc, arrayRef, indices, castValueToTypeIfNeeded(bldr, loc, value, selectedType)
+  );
 }
 
 inline static void
 genArrayWrite(OpBuilder &bldr, Location loc, Value arrayRef, ArrayAttr index, Value value) {
-  SmallVector<Value> indices = genArrayIndexConstants(bldr, loc, index);
+  SmallVector<Value> indices = ArrayAccessOpInterface::genIndexConstants(bldr, loc, index);
   genArrayWrite(bldr, loc, arrayRef, indices, value);
 }
 
@@ -1482,7 +1448,7 @@ static Value genReadAlongPath(
 
     Value splitArray = createWritableArrayValue(bldr, loc, splitArrTy);
     for (ArrayAttr index : *subIndices) {
-      Value element = genArrayRead(bldr, loc, value, index);
+      Value element = ArrayAccessOpInterface::genRead(bldr, loc, value, index);
       Value leafValue = genReadAlongPath(bldr, loc, element, recordChain, syntheticShapeCarrier);
       genArrayWrite(bldr, loc, splitArray, index, leafValue);
     }
@@ -1566,7 +1532,7 @@ static Value rebuildFlattenedPodRecord(
       forEachPodLeaf(elemPodTy, elementRecordChain, [&](const RecordChain &id, Type) {
         auto it = leafValues.find(id.withPrefix(recordChain));
         assert(it != leafValues.end() && "missing flattened POD array leaf value");
-        elementLeafValues[id] = genArrayRead(bldr, loc, it->second, index);
+        elementLeafValues[id] = ArrayAccessOpInterface::genRead(bldr, loc, it->second, index);
       });
 
       NewPodOp elementPod = bldr.create<NewPodOp>(loc, elemPodTy);
@@ -2411,8 +2377,9 @@ public:
     auto splitArrRefs = adaptor.getArrRef().take_front(splitIds.size());
     for (auto [id, splitType, splitArrRange] :
          llvm::zip_equal(splitIds, splitTypes, splitArrRefs)) {
-      Value leafValue =
-          genArrayRead(rewriter, op.getLoc(), getSingleConvertedValue(splitArrRange), indices);
+      Value leafValue = ArrayAccessOpInterface::genRead(
+          rewriter, op.getLoc(), getSingleConvertedValue(splitArrRange), indices
+      );
       leafValues[id] = tagRaggedNestedLeafValue(
           rewriter, op.getLoc(), leafValue, getRaggedNestedLeafAttrName(arrTy, splitType)
       );
@@ -3211,9 +3178,10 @@ public:
           rhsCompatibleConvertedValues.empty() ? adaptor.getRhs()
                                                : ValueRange(rhsCompatibleConvertedValues)
       );
-      Value selectedShapeSource = selectedIndices.empty()
-                                      ? shapeCarrier
-                                      : genArrayRead(rewriter, loc, shapeCarrier, selectedIndices);
+      Value selectedShapeSource =
+          selectedIndices.empty()
+              ? shapeCarrier
+              : ArrayAccessOpInterface::genRead(rewriter, loc, shapeCarrier, selectedIndices);
       for (size_t dim = 0; dim < rhsRank; ++dim) {
         Value dimVal = rewriter.create<arith::ConstantOp>(
             loc, rewriter.getIndexAttr(llzk::checkedCast<int64_t>(dim))
@@ -3482,7 +3450,8 @@ static Value rebuildSplitPodArrayQuantifierIterValue(
       assert(!convertedSort.empty() && "expected converted quantifier sort shape carrier");
       shapeCarrier = convertedSort.front();
     }
-    Value extracted = genArrayRead(bldr, loc, shapeCarrier, ArrayRef<Value> {index});
+    SmallVector<Value> indices {index};
+    Value extracted = ArrayAccessOpInterface::genRead(bldr, loc, shapeCarrier, indices);
     return bldr.create<UnrealizedConversionCastOp>(loc, TypeRange {arrIterType}, extracted)
         .getResult(0);
   }
@@ -3495,7 +3464,7 @@ static Value rebuildSplitPodArrayQuantifierIterValue(
   VirtualPodLeafMap leafValues;
   for (auto [id, leafArray] : llvm::zip_equal(splitIds, splitLeaves)) {
     SmallVector<Value> indices {index};
-    leafValues[id] = genArrayRead(bldr, loc, leafArray, indices);
+    leafValues[id] = ArrayAccessOpInterface::genRead(bldr, loc, leafArray, indices);
   }
   if (ArrayType iterArrTy = splittablePodArray(iterType);
       iterArrTy && needsPodArrayShapeCarrier(iterArrTy)) {
@@ -3506,7 +3475,7 @@ static Value rebuildSplitPodArrayQuantifierIterValue(
     );
     SmallVector<Value> indices {index};
     RecordChain carrierId({getPodArrayShapeCarrierMarker(bldr.getContext())}, true);
-    leafValues[carrierId] = genArrayRead(bldr, loc, sortShapeCarrier, indices);
+    leafValues[carrierId] = ArrayAccessOpInterface::genRead(bldr, loc, sortShapeCarrier, indices);
   }
 
   SmallVector<StringAttr> recordChain;
@@ -4651,7 +4620,7 @@ public:
     SmallVector<Value> indices(adaptor.getIndices().begin(), adaptor.getIndices().end());
     VirtualPodLeafMap leafValues;
     for (auto [id, splitType, leafArray] : llvm::zip_equal(splitIds, splitTypes, splitLeafArrays)) {
-      Value leafValue = genArrayRead(rewriter, op.getLoc(), leafArray, indices);
+      Value leafValue = ArrayAccessOpInterface::genRead(rewriter, op.getLoc(), leafArray, indices);
       leafValues[id] = tagRaggedNestedLeafValue(
           rewriter, op.getLoc(), leafValue, getRaggedNestedLeafAttrName(arrTy, splitType)
       );

@@ -15,6 +15,8 @@
 #include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Util/TypeHelper.h"
 
+#include <mlir/IR/Builders.h>
+#include <mlir/IR/ValueRange.h>
 #include <mlir/Interfaces/InferTypeOpInterface.h>
 #include <mlir/Interfaces/SideEffectInterfaces.h>
 

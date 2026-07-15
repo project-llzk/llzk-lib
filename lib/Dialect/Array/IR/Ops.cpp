@@ -223,6 +223,59 @@ ArrayAttr ArrayAccessOpInterface::indexOperandsToAttributeArray() {
   return nullptr;
 }
 
+/// Generate `arith.constant` indices for one static array element position.
+SmallVector<Value>
+ArrayAccessOpInterface::genIndexConstants(OpBuilder &bldr, Location loc, ArrayAttr index) {
+  SmallVector<Value> indices;
+  indices.reserve(index.size());
+  for (Attribute attr : index) {
+    // Note: array index must be an integer attribute.
+    indices.push_back(bldr.create<arith::ConstantOp>(loc, llvm::cast<IntegerAttr>(attr)));
+  }
+  return indices;
+}
+
+/// Create an `array.read` or `array.extract` for one concrete element or subarray.
+Value ArrayAccessOpInterface::genRead(
+    OpBuilder &bldr, Location loc, Value arrayRef, ValueRange indices
+) {
+  ArrayType arrTy = llvm::cast<ArrayType>(arrayRef.getType());
+  Type selectedType = arrTy.getSelectionType(indices.size());
+  if (llvm::isa<ArrayType>(selectedType)) {
+    return bldr.create<ExtractArrayOp>(loc, selectedType, arrayRef, indices);
+  }
+  return bldr.create<ReadArrayOp>(loc, selectedType, arrayRef, indices);
+}
+
+/// Create an `array.read` or `array.extract` for one concrete element or subarray.
+Value ArrayAccessOpInterface::genRead(
+    OpBuilder &bldr, Location loc, Value arrayRef, ArrayAttr index
+) {
+  SmallVector<Value> indices = genIndexConstants(bldr, loc, index);
+  return genRead(bldr, loc, arrayRef, indices);
+}
+
+/// Create an `array.write` or `array.insert` for one concrete element or subarray.
+void ArrayAccessOpInterface::genWrite(
+    OpBuilder &bldr, Location loc, Value arrayRef, ValueRange indices, Value value
+) {
+  ArrayType arrTy = llvm::cast<ArrayType>(arrayRef.getType());
+  Type selectedType = arrTy.getSelectionType(indices.size());
+  if (llvm::isa<ArrayType>(selectedType)) {
+    bldr.create<InsertArrayOp>(loc, arrayRef, indices, value);
+    return;
+  }
+  bldr.create<WriteArrayOp>(loc, arrayRef, indices, value);
+}
+
+/// Create an `array.write` or `array.insert` for one concrete element or subarray.
+void ArrayAccessOpInterface::genWrite(
+    OpBuilder &bldr, Location loc, Value arrayRef, ArrayAttr index, Value value
+) {
+  SmallVector<Value> indices = genIndexConstants(bldr, loc, index);
+  genWrite(bldr, loc, arrayRef, indices, value);
+}
+
 /// Required by DestructurableAllocationOpInterface / SROA pass
 bool ArrayAccessOpInterface::canRewire(
     const DestructurableMemorySlot &slot, SmallPtrSetImpl<Attribute> &usedIndices,
