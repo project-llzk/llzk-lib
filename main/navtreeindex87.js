@@ -1,5 +1,7 @@
 var NAVTREEINDEX87 =
 {
+"structMlirValueRange.html#aafbcc65a54341152d7c3cbeb48a30072":[12,0,78,0],
+"structMulFeltOpBuildFuncHelper.html":[12,0,79],
 "structMulFeltOpBuildFuncHelper.html#a33324efd0c9341c648ce5af45f32b795":[12,0,79,0],
 "structMulFeltOpBuildFuncHelper.html#ab92b0b677730b705265dc3765be73932":[12,0,79,1],
 "structNegFeltOpBuildFuncHelper.html":[12,0,80],
@@ -247,7 +249,5 @@ var NAVTREEINDEX87 =
 "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html#a714bad10cf4fd218a27c8d12eebb7b7d":[10,0,3,20,1],
 "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html#a714bad10cf4fd218a27c8d12eebb7b7d":[12,0,0,20,1],
 "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html":[10,0,3,19],
-"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html":[12,0,0,19],
-"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html#ac2c24dfeba3e086a5c0bf179766f3ac0":[10,0,3,19,0],
-"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html#ac2c24dfeba3e086a5c0bf179766f3ac0":[12,0,0,19,0]
+"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html":[12,0,0,19]
 };

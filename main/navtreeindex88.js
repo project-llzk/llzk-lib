@@ -1,5 +1,7 @@
 var NAVTREEINDEX88 =
 {
+"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html#ac2c24dfeba3e086a5c0bf179766f3ac0":[10,0,3,19,0],
+"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html#ac2c24dfeba3e086a5c0bf179766f3ac0":[12,0,0,19,0],
 "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html#af48d11d5b37f93fd9114d256cc5f1ce5":[10,0,3,19,1],
 "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html#af48d11d5b37f93fd9114d256cc5f1ce5":[12,0,0,19,1],
 "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4.html":[10,0,3,22],
@@ -247,7 +249,5 @@ var NAVTREEINDEX88 =
 "structllzk_1_1RefValueCapture.html#af047b48aae277d6cb8ddef093e32558c":[10,0,4,87,1],
 "structllzk_1_1RefValueCapture.html#af047b48aae277d6cb8ddef093e32558c":[12,0,1,84,1],
 "structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html":[10,0,4,88],
-"structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html":[12,0,1,85],
-"structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html#acfbcd77415c268e0b34b2d8c28c5381e":[10,0,4,88,0],
-"structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html#acfbcd77415c268e0b34b2d8c28c5381e":[12,0,1,85,0]
+"structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html":[12,0,1,85]
 };

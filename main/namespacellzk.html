@@ -564,6 +564,10 @@ Functions</h2></td></tr>
 <tr class="memitem:a53fd11575f45740ca49d163fff8c925e" id="r_a53fd11575f45740ca49d163fff8c925e"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a53fd11575f45740ca49d163fff8c925e">stringWithoutType</a> (mlir::Attribute a)</td></tr>
 <tr class="memitem:ab3aea79f1ec3c694d5d0bcf1f949c5fe" id="r_ab3aea79f1ec3c694d5d0bcf1f949c5fe"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab3aea79f1ec3c694d5d0bcf1f949c5fe">printAttrs</a> (mlir::AsmPrinter &amp;printer, mlir::ArrayRef&lt; mlir::Attribute &gt; attrs, const mlir::StringRef &amp;separator)</td></tr>
 <tr class="memitem:afa6ef0d937bae15784ca01d0a01c32b4" id="r_afa6ef0d937bae15784ca01d0a01c32b4"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1component_1_1StructType.html">component::StructType</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afa6ef0d937bae15784ca01d0a01c32b4">getTypeFromLlzkMainAttr</a> (mlir::ModuleOp op, mlir::Attribute attr)</td></tr>
+<tr class="memitem:a36fb7107da98c39ae715ff024f4ad07e" id="r_a36fb7107da98c39ae715ff024f4ad07e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a36fb7107da98c39ae715ff024f4ad07e">writeAPInt</a> (mlir::DialectBytecodeWriter &amp;writer, const llvm::APInt &amp;value)</td></tr>
+<tr class="memdesc:a36fb7107da98c39ae715ff024f4ad07e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write an APInt with its bit width, so the bytecode reader can use MLIR's native APInt payload encoding instead of falling back to decimal assembly.  <br /></td></tr>
+<tr class="memitem:a82afa19ff769b0dd05db76e22a364bd5" id="r_a82afa19ff769b0dd05db76e22a364bd5"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; llvm::APInt &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a82afa19ff769b0dd05db76e22a364bd5">readAPInt</a> (mlir::DialectBytecodeReader &amp;reader)</td></tr>
+<tr class="memdesc:a82afa19ff769b0dd05db76e22a364bd5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read an APInt written by <span class="tt">writeAPInt</span>.  <br /></td></tr>
 <tr class="memitem:af218387a3d9b9824ec5b1d060d4989ea" id="r_af218387a3d9b9824ec5b1d060d4989ea"><td class="memItemLeft" align="right" valign="top">mlir::Location&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af218387a3d9b9824ec5b1d060d4989ea">getUnknownLoc</a> (mlir::MLIRContext *context)</td></tr>
 <tr class="memitem:a5fca8161d33010dac2a613d7ff184db2" id="r_a5fca8161d33010dac2a613d7ff184db2"><td class="memItemLeft" align="right" valign="top">mlir::OwningOpRef&lt; mlir::ModuleOp &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5fca8161d33010dac2a613d7ff184db2">createLLZKModule</a> (mlir::MLIRContext *context, mlir::Location loc)</td></tr>
 <tr class="memitem:a24a8f8d60a445812f3792f04b6420f5c" id="r_a24a8f8d60a445812f3792f04b6420f5c"><td class="memItemLeft" align="right" valign="top">mlir::OwningOpRef&lt; mlir::ModuleOp &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a24a8f8d60a445812f3792f04b6420f5c">createLLZKModule</a> (mlir::MLIRContext *context)</td></tr>
@@ -7843,6 +7847,35 @@ template&lt;typename ConcreteOp&gt; </div>
 
 </div>
 </div>
+<a id="a82afa19ff769b0dd05db76e22a364bd5" name="a82afa19ff769b0dd05db76e22a364bd5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a82afa19ff769b0dd05db76e22a364bd5">&#9670;&#160;</a></span>readAPInt()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::FailureOr&lt; llvm::APInt &gt; llzk::readAPInt </td>
+          <td>(</td>
+          <td class="paramtype">mlir::DialectBytecodeReader &amp;</td>          <td class="paramname"><span class="paramname"><em>reader</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Read an APInt written by <span class="tt">writeAPInt</span>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Versioning_8h_source.html#l00050">50</a> of file <a class="el" href="Versioning_8h_source.html">Versioning.h</a>.</p>
+
+</div>
+</div>
 <a id="ad809d2a8931e263f7879703211032d0d" name="ad809d2a8931e263f7879703211032d0d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad809d2a8931e263f7879703211032d0d">&#9670;&#160;</a></span>rebuildExprInCompute() <span class="overload">[1/2]</span></h2>
 
@@ -11450,6 +11483,39 @@ template&lt;std::ranges::input_range Range&gt; </div>
 <p>SEE: <a href="https://github.com/llvm/llvm-project/blob/0897373f1a329a7a02f8ce3c501a05d2f9c89390/mlir/include/mlir/IR/StorageUniquerSupport.h#L179-L180">https://github.com/llvm/llvm-project/blob/0897373f1a329a7a02f8ce3c501a05d2f9c89390/mlir/include/mlir/IR/StorageUniquerSupport.h#L179-L180</a> </p>
 
 <p class="definition">Definition at line <a class="el" href="ErrorHelper_8h_source.html#l00175">175</a> of file <a class="el" href="ErrorHelper_8h_source.html">ErrorHelper.h</a>.</p>
+
+</div>
+</div>
+<a id="a36fb7107da98c39ae715ff024f4ad07e" name="a36fb7107da98c39ae715ff024f4ad07e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a36fb7107da98c39ae715ff024f4ad07e">&#9670;&#160;</a></span>writeAPInt()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::writeAPInt </td>
+          <td>(</td>
+          <td class="paramtype">mlir::DialectBytecodeWriter &amp;</td>          <td class="paramname"><span class="paramname"><em>writer</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const llvm::APInt &amp;</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Write an APInt with its bit width, so the bytecode reader can use MLIR's native APInt payload encoding instead of falling back to decimal assembly. </p>
+
+<p class="definition">Definition at line <a class="el" href="Versioning_8h_source.html#l00044">44</a> of file <a class="el" href="Versioning_8h_source.html">Versioning.h</a>.</p>
 
 </div>
 </div>
