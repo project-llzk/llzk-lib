@@ -130,14 +130,16 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     Pod, NewPodOp, InferredFromInitialValues, intptr_t nValues, LlzkRecordValue const *values
 ) {
   auto recordValues = fromRawRecordValues(nValues, values);
-  return wrap(create<NewPodOp>(builder, location, recordValues));
+  return mlirOpBuilderInsert(builder, wrap(create<NewPodOp>(builder, location, recordValues)));
 }
 
 LLZK_DEFINE_OP_BUILD_METHOD(
     Pod, NewPodOp, MlirType type, intptr_t nValues, LlzkRecordValue const *values
 ) {
   auto recordValues = fromRawRecordValues(nValues, values);
-  return wrap(create<NewPodOp>(builder, location, unwrap_cast<PodType>(type), recordValues));
+  return mlirOpBuilderInsert(
+      builder, wrap(create<NewPodOp>(builder, location, unwrap_cast<PodType>(type), recordValues))
+  );
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
@@ -148,10 +150,12 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   MapOperandsHelper<> mapOps(mapOperands.nMapOperands, mapOperands.mapOperands);
   auto numDimsPerMap =
       llzkAffineMapOperandsBuilderGetDimsPerMapAttr(mapOperands, mlirLocationGetContext(location));
-  return wrap(
-      create<NewPodOp>(
-          builder, location, unwrap_cast<PodType>(type), *mapOps,
-          unwrap_cast<DenseI32ArrayAttr>(numDimsPerMap), recordValues
-      )
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<NewPodOp>(
+                       builder, location, unwrap_cast<PodType>(type), *mapOps,
+                       unwrap_cast<DenseI32ArrayAttr>(numDimsPerMap), recordValues
+                   )
+               )
   );
 }
