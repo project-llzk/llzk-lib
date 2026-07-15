@@ -312,153 +312,148 @@ struct TemplateInferenceInfo {
   DenseMap<StringAttr, InferredType> replacements;
 };
 
-/// Record one concrete type inference and diagnose conflicts.
-///
-/// Inferences are tracked in two dimensions:
-///   * by template parameter, so `@T` cannot be proven to be two different
-///     concrete types;
-///   * by SSA value, so a single value cannot be rewritten to incompatible
-///     concrete types through separate casts.
-///
-/// Non-eligible parameters and non-concrete candidate types are ignored because
-/// this pass only removes template type variables once a concrete replacement is
-/// known.
-static LogicalResult recordInference(
-    DenseMap<StringAttr, TemplateParamOp> &typeVarParams,
-    DenseMap<StringAttr, InferredType> &byParam, DenseMap<Value, InferredType> &byValue,
-    StringAttr paramName, Type inferredTy, Value value, Location loc
-) {
-  if (!typeVarParams.contains(paramName) || !isConcreteType(inferredTy)) {
-    return success();
-  }
-
-  auto reportConflict = [&](StringRef kind, Location originalLoc, Type originalTy) {
-    InFlightDiagnostic diag = emitError(loc)
-                              << "conflicting inferred type for " << kind << " @"
-                              << paramName.getValue() << ": " << originalTy << " vs " << inferredTy;
-    diag.attachNote(originalLoc) << "previous inference here";
-    return failure();
-  };
-
-  auto byParamIt = byParam.find(paramName);
-  if (byParamIt == byParam.end()) {
-    byParam.try_emplace(paramName, InferredType {inferredTy, loc});
-  } else if (byParamIt->second.type != inferredTy) {
-    return reportConflict("template parameter", byParamIt->second.loc, byParamIt->second.type);
-  }
-
-  if (value) {
-    auto byValueIt = byValue.find(value);
-    if (byValueIt == byValue.end()) {
-      byValue.try_emplace(value, InferredType {inferredTy, loc});
-    } else if (byValueIt->second.type != inferredTy) {
-      return reportConflict("SSA value using", byValueIt->second.loc, byValueIt->second.type);
-    }
-  }
-  return success();
-}
-
-/// Collect inferences from a pair of types known to unify.
-///
-/// The direct case is `!poly.tvar<@T>` on one side and a concrete type on the
-/// other. The function also descends into array element types and matching
-/// struct type parameters so an aggregate shape can force a nested type
-/// variable. If one side is still a type variable but its SSA value already has
-/// a concrete inference from an earlier cast, that concrete value-level proof is
-/// propagated through chained casts.
-static LogicalResult collectTypePairInferences(
-    Type lhs, Type rhs, Value lhsValue, Value rhsValue, Location loc,
-    DenseMap<StringAttr, TemplateParamOp> &typeVarParams,
-    DenseMap<StringAttr, InferredType> &byParam, DenseMap<Value, InferredType> &byValue
-) {
-  if (auto lhsTvar = llvm::dyn_cast<TypeVarType>(lhs)) {
-    if (failed(recordInference(
-            typeVarParams, byParam, byValue, lhsTvar.getNameRef().getAttr(), rhs, lhsValue, loc
-        ))) {
-      return failure();
-    }
-    if (rhsValue) {
-      auto rhsValueIt = byValue.find(rhsValue);
-      if (rhsValueIt != byValue.end() &&
-          failed(recordInference(
-              typeVarParams, byParam, byValue, lhsTvar.getNameRef().getAttr(),
-              rhsValueIt->second.type, lhsValue, loc
-          ))) {
-        return failure();
-      }
-    }
-  }
-  if (auto rhsTvar = llvm::dyn_cast<TypeVarType>(rhs)) {
-    if (failed(recordInference(
-            typeVarParams, byParam, byValue, rhsTvar.getNameRef().getAttr(), lhs, rhsValue, loc
-        ))) {
-      return failure();
-    }
-    if (lhsValue) {
-      auto lhsValueIt = byValue.find(lhsValue);
-      if (lhsValueIt != byValue.end() &&
-          failed(recordInference(
-              typeVarParams, byParam, byValue, rhsTvar.getNameRef().getAttr(),
-              lhsValueIt->second.type, rhsValue, loc
-          ))) {
-        return failure();
-      }
-    }
-  }
-
-  if (auto lhsArr = llvm::dyn_cast<ArrayType>(lhs)) {
-    if (auto rhsArr = llvm::dyn_cast<ArrayType>(rhs)) {
-      return collectTypePairInferences(
-          lhsArr.getElementType(), rhsArr.getElementType(), Value(), Value(), loc, typeVarParams,
-          byParam, byValue
-      );
-    }
-  }
-
-  if (auto lhsStruct = llvm::dyn_cast<StructType>(lhs)) {
-    auto rhsStruct = llvm::dyn_cast<StructType>(rhs);
-    if (!rhsStruct) {
-      return success();
-    }
-    ArrayRef<Attribute> lhsParams =
-        lhsStruct.getParams() ? lhsStruct.getParams().getValue() : ArrayRef<Attribute> {};
-    ArrayRef<Attribute> rhsParams =
-        rhsStruct.getParams() ? rhsStruct.getParams().getValue() : ArrayRef<Attribute> {};
-    if (lhsParams.size() != rhsParams.size()) {
-      return success();
-    }
-    for (auto [lhsAttr, rhsAttr] : llvm::zip_equal(lhsParams, rhsParams)) {
-      auto lhsTyAttr = llvm::dyn_cast<TypeAttr>(lhsAttr);
-      auto rhsTyAttr = llvm::dyn_cast<TypeAttr>(rhsAttr);
-      if (lhsTyAttr && rhsTyAttr &&
-          failed(collectTypePairInferences(
-              lhsTyAttr.getValue(), rhsTyAttr.getValue(), Value(), Value(), loc, typeVarParams,
-              byParam, byValue
-          ))) {
-        return failure();
-      }
-    }
-  }
-
-  return success();
-}
-
 /// Walk a template body and collect all type-variable inferences from
 /// `poly.unifiable_cast` operations.
 ///
 /// `poly.unifiable_cast` is the proof source for this pass: when one side of the
 /// cast is a template type variable and the other side is concrete, the cast
 /// establishes the concrete replacement that later makes the cast redundant.
-static LogicalResult collectInferences(TemplateInferenceInfo &info) {
+class TypeVarInferenceCollector {
+  /// Per-template inference output and eligible parameter metadata.
+  TemplateInferenceInfo &inferenceInfo;
+  /// Concrete inferences for SSA values observed during collection.
   DenseMap<Value, InferredType> byValue;
-  WalkResult result = info.templateOp.walk([&info, &byValue](UnifiableCastOp castOp) {
-    return WalkResult(collectTypePairInferences(
-        castOp.getInput().getType(), castOp.getResult().getType(), castOp.getInput(),
-        castOp.getResult(), castOp.getLoc(), info.typeVarParams, info.replacements, byValue
-    ));
-  });
-  return failure(result.wasInterrupted());
-}
+
+public:
+  explicit TypeVarInferenceCollector(TemplateInferenceInfo &info) : inferenceInfo(info) {}
+
+  LogicalResult collect() {
+    WalkResult result = inferenceInfo.templateOp.walk([this](UnifiableCastOp castOp) {
+      return WalkResult(collectTypePairInferences(
+          castOp.getInput().getType(), castOp.getResult().getType(), castOp.getInput(),
+          castOp.getResult(), castOp.getLoc()
+      ));
+    });
+    return failure(result.wasInterrupted());
+  }
+
+private:
+  /// Record one concrete type inference and diagnose conflicts.
+  ///
+  /// Inferences are tracked in two dimensions:
+  ///   * by template parameter, so `@T` cannot be proven to be two different
+  ///     concrete types;
+  ///   * by SSA value, so a single value cannot be rewritten to incompatible
+  ///     concrete types through separate casts.
+  ///
+  /// Non-eligible parameters and non-concrete candidate types are ignored because
+  /// this pass only removes template type variables once a concrete replacement is
+  /// known.
+  LogicalResult recordInference(StringAttr paramName, Type inferredTy, Value value, Location loc) {
+    if (!inferenceInfo.typeVarParams.contains(paramName) || !isConcreteType(inferredTy)) {
+      return success();
+    }
+
+    auto reportConflict = [&](StringRef kind, Location originalLoc, Type originalTy) {
+      InFlightDiagnostic diag = emitError(loc) << "conflicting inferred type for " << kind << " @"
+                                               << paramName.getValue() << ": " << originalTy
+                                               << " vs " << inferredTy;
+      diag.attachNote(originalLoc) << "previous inference here";
+      return diag;
+    };
+
+    auto byParamIt = inferenceInfo.replacements.find(paramName);
+    if (byParamIt == inferenceInfo.replacements.end()) {
+      inferenceInfo.replacements.try_emplace(paramName, InferredType {inferredTy, loc});
+    } else if (byParamIt->second.type != inferredTy) {
+      return reportConflict("template parameter", byParamIt->second.loc, byParamIt->second.type);
+    }
+
+    if (value) {
+      auto byValueIt = byValue.find(value);
+      if (byValueIt == byValue.end()) {
+        byValue.try_emplace(value, InferredType {inferredTy, loc});
+      } else if (byValueIt->second.type != inferredTy) {
+        return reportConflict("SSA value using", byValueIt->second.loc, byValueIt->second.type);
+      }
+    }
+    return success();
+  }
+
+  /// Collect inferences from a pair of types known to unify.
+  ///
+  /// The direct case is `!poly.tvar<@T>` on one side and a concrete type on the
+  /// other. The function also descends into array element types and matching
+  /// struct type parameters so an aggregate shape can force a nested type
+  /// variable. If one side is still a type variable but its SSA value already has
+  /// a concrete inference from an earlier cast, that concrete value-level proof is
+  /// propagated through chained casts.
+  LogicalResult
+  collectTypePairInferences(Type lhs, Type rhs, Value lhsValue, Value rhsValue, Location loc) {
+    if (auto lhsTvar = llvm::dyn_cast<TypeVarType>(lhs)) {
+      if (failed(recordInference(lhsTvar.getNameRef().getAttr(), rhs, lhsValue, loc))) {
+        return failure();
+      }
+      if (rhsValue) {
+        auto rhsValueIt = byValue.find(rhsValue);
+        if (rhsValueIt != byValue.end() &&
+            failed(recordInference(
+                lhsTvar.getNameRef().getAttr(), rhsValueIt->second.type, lhsValue, loc
+            ))) {
+          return failure();
+        }
+      }
+    }
+    if (auto rhsTvar = llvm::dyn_cast<TypeVarType>(rhs)) {
+      if (failed(recordInference(rhsTvar.getNameRef().getAttr(), lhs, rhsValue, loc))) {
+        return failure();
+      }
+      if (lhsValue) {
+        auto lhsValueIt = byValue.find(lhsValue);
+        if (lhsValueIt != byValue.end() &&
+            failed(recordInference(
+                rhsTvar.getNameRef().getAttr(), lhsValueIt->second.type, rhsValue, loc
+            ))) {
+          return failure();
+        }
+      }
+    }
+
+    if (auto lhsArr = llvm::dyn_cast<ArrayType>(lhs)) {
+      if (auto rhsArr = llvm::dyn_cast<ArrayType>(rhs)) {
+        return collectTypePairInferences(
+            lhsArr.getElementType(), rhsArr.getElementType(), Value(), Value(), loc
+        );
+      }
+    }
+
+    if (auto lhsStruct = llvm::dyn_cast<StructType>(lhs)) {
+      auto rhsStruct = llvm::dyn_cast<StructType>(rhs);
+      if (!rhsStruct) {
+        return success();
+      }
+      ArrayRef<Attribute> lhsParams =
+          lhsStruct.getParams() ? lhsStruct.getParams().getValue() : ArrayRef<Attribute> {};
+      ArrayRef<Attribute> rhsParams =
+          rhsStruct.getParams() ? rhsStruct.getParams().getValue() : ArrayRef<Attribute> {};
+      if (lhsParams.size() != rhsParams.size()) {
+        return success();
+      }
+      for (auto [lhsAttr, rhsAttr] : llvm::zip_equal(lhsParams, rhsParams)) {
+        auto lhsTyAttr = llvm::dyn_cast<TypeAttr>(lhsAttr);
+        auto rhsTyAttr = llvm::dyn_cast<TypeAttr>(rhsAttr);
+        if (lhsTyAttr && rhsTyAttr &&
+            failed(collectTypePairInferences(
+                lhsTyAttr.getValue(), rhsTyAttr.getValue(), Value(), Value(), loc
+            ))) {
+          return failure();
+        }
+      }
+    }
+
+    return success();
+  }
+};
 
 /// Rewrite a function type and keep the entry block arguments in sync.
 ///
@@ -633,7 +628,7 @@ static FailureOr<TemplateInferenceInfo> buildInfo(TemplateOp templateOp) {
       info.typeVarParams.try_emplace(name, paramOp);
     }
   }
-  if (failed(collectInferences(info))) {
+  if (failed(TypeVarInferenceCollector(info).collect())) {
     return failure();
   }
   return info;
