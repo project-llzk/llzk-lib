@@ -348,18 +348,28 @@ class TypeVarInferenceCollector {
   TemplateInferenceInfo &inferenceInfo;
   /// Concrete inferences for SSA values observed during collection.
   DenseMap<Value, InferredType> byValue;
+  /// Whether the current collection iteration learned a new concrete fact.
+  bool changedInIteration;
 
 public:
+  /// Create a collector for one template's inference state.
   explicit TypeVarInferenceCollector(TemplateInferenceInfo &info) : inferenceInfo(info) {}
 
+  /// Visit all casts until no new concrete parameter or SSA value facts appear.
   LogicalResult collect() {
-    WalkResult result = inferenceInfo.templateOp.walk([this](UnifiableCastOp castOp) {
-      return WalkResult(collectTypePairInferences(
-          castOp.getInput().getType(), castOp.getResult().getType(), castOp.getInput(),
-          castOp.getResult(), castOp.getLoc()
-      ));
-    });
-    return failure(result.wasInterrupted());
+    do {
+      changedInIteration = false;
+      WalkResult result = inferenceInfo.templateOp.walk([this](UnifiableCastOp castOp) {
+        return WalkResult(collectTypePairInferences(
+            castOp.getInput().getType(), castOp.getResult().getType(), castOp.getInput(),
+            castOp.getResult(), castOp.getLoc()
+        ));
+      });
+      if (result.wasInterrupted()) {
+        return failure();
+      }
+    } while (changedInIteration);
+    return success();
   }
 
 private:
@@ -390,6 +400,7 @@ private:
     auto byParamIt = inferenceInfo.replacements.find(paramName);
     if (byParamIt == inferenceInfo.replacements.end()) {
       inferenceInfo.replacements.try_emplace(paramName, InferredType {inferredTy, loc});
+      changedInIteration = true;
     } else if (byParamIt->second.type != inferredTy) {
       return reportConflict("template parameter", byParamIt->second.loc, byParamIt->second.type);
     }
@@ -398,6 +409,7 @@ private:
       auto byValueIt = byValue.find(value);
       if (byValueIt == byValue.end()) {
         byValue.try_emplace(value, InferredType {inferredTy, loc});
+        changedInIteration = true;
       } else if (byValueIt->second.type != inferredTy) {
         return reportConflict("SSA value using", byValueIt->second.loc, byValueIt->second.type);
       }
@@ -409,9 +421,9 @@ private:
   ///
   /// The direct case is `!poly.tvar<@T>` on one side and a concrete type on the other. The function
   /// also descends into aggregate type contents so an aggregate shape can force a nested type
-  /// variable. If one side is still a type variable but its SSA value already has a concrete
-  /// inference from an earlier cast, that concrete value-level proof is propagated through chained
-  /// casts.
+  /// variable. The collector runs to a fixed point, so if one side is still a type variable but the
+  /// opposite SSA value has a concrete inference from any cast, that concrete value-level proof is
+  /// propagated through chained casts regardless of operation order.
   LogicalResult
   collectTypePairInferences(Type lhs, Type rhs, Value lhsValue, Value rhsValue, Location loc) {
     if (auto lhsTvar = llvm::dyn_cast<TypeVarType>(lhs)) {

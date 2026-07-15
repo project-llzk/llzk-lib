@@ -29,6 +29,36 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @TLateConcreteChainedCast {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @make(%arg: !poly.tvar<@T>) -> !poly.tvar<@U> {
+      %castU = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> !poly.tvar<@U>
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      function.return %castU : !poly.tvar<@U>
+    }
+  }
+
+  function.def @call_make(%arg: index) -> index {
+    %0 = function.call @TLateConcreteChainedCast::@make<[index, index]>(%arg) : (index) -> index
+    function.return %0 : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TLateConcreteChainedCast {
+// CHECK-NEXT:      function.def @make(%[[ARG:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:        function.return %[[ARG]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_make(%[[CALL_ARG:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[CALL:[0-9a-zA-Z_\.]+]] = function.call @TLateConcreteChainedCast::@make(%[[CALL_ARG]]) : (index) -> index
+// CHECK-NEXT:      function.return %[[CALL]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
   poly.template @TMake {
     poly.param @Ret : !poly.tvar<@Ret>
 
