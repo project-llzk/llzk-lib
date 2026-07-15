@@ -37,5 +37,6 @@ var searchData=
   ['llzkvalidationpasses_2eh_34',['LLZKValidationPasses.h',['../LLZKValidationPasses_8h.html',1,'']]],
   ['llzkvalidationpasses_2eh_2einc_35',['LLZKValidationPasses.h.inc',['../LLZKValidationPasses_8h_8inc.html',1,'']]],
   ['llzkvalidationpasses_2etd_36',['LLZKValidationPasses.td',['../LLZKValidationPasses_8td.html',1,'']]],
-  ['llzkwhiletoforpass_2ecpp_37',['LLZKWhileToForPass.cpp',['../LLZKWhileToForPass_8cpp.html',1,'']]]
+  ['llzkwhiletoforpass_2ecpp_37',['LLZKWhileToForPass.cpp',['../LLZKWhileToForPass_8cpp.html',1,'']]],
+  ['lowerboolquantifierspass_2ecpp_38',['LowerBoolQuantifiersPass.cpp',['../LowerBoolQuantifiersPass_8cpp.html',1,'']]]
 ];

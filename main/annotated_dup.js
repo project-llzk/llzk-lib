@@ -86,6 +86,9 @@ var annotated_dup =
           [ "XorBoolOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1XorBoolOpGenericAdaptorBase.html", "classllzk_1_1boolean_1_1detail_1_1XorBoolOpGenericAdaptorBase" ],
           [ "YieldOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase.html", "classllzk_1_1boolean_1_1detail_1_1YieldOpGenericAdaptorBase" ]
         ] ],
+        [ "impl", "namespacellzk_1_1boolean_1_1impl.html", [
+          [ "LowerBoolQuantifiersPassBase", "classllzk_1_1boolean_1_1impl_1_1LowerBoolQuantifiersPassBase.html", "classllzk_1_1boolean_1_1impl_1_1LowerBoolQuantifiersPassBase" ]
+        ] ],
         [ "AndBoolOp", "classllzk_1_1boolean_1_1AndBoolOp.html", "classllzk_1_1boolean_1_1AndBoolOp" ],
         [ "AndBoolOpAdaptor", "classllzk_1_1boolean_1_1AndBoolOpAdaptor.html", "classllzk_1_1boolean_1_1AndBoolOpAdaptor" ],
         [ "AndBoolOpGenericAdaptor", "classllzk_1_1boolean_1_1AndBoolOpGenericAdaptor.html", "classllzk_1_1boolean_1_1AndBoolOpGenericAdaptor" ],

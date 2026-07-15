@@ -28,5 +28,6 @@ var searchData=
   ['loadopgenericadaptor_3c_3a_3allvm_3a_3aarrayref_3c_3a_3amlir_3a_3aattribute_20_3e_20_3e_25',['LoadOpGenericAdaptor&lt;::llvm::ArrayRef&lt;::mlir::Attribute &gt; &gt;',['../classllzk_1_1ram_1_1LoadOpGenericAdaptor.html',1,'llzk::ram']]],
   ['loadopgenericadaptor_3c_3a_3amlir_3a_3avaluerange_20_3e_26',['LoadOpGenericAdaptor&lt;::mlir::ValueRange &gt;',['../classllzk_1_1ram_1_1LoadOpGenericAdaptor.html',1,'llzk::ram']]],
   ['loadopgenericadaptorbase_27',['LoadOpGenericAdaptorBase',['../classllzk_1_1ram_1_1detail_1_1LoadOpGenericAdaptorBase.html',1,'llzk::ram::detail']]],
-  ['locationcomparator_28',['LocationComparator',['../structllzk_1_1LocationComparator.html',1,'llzk']]]
+  ['locationcomparator_28',['LocationComparator',['../structllzk_1_1LocationComparator.html',1,'llzk']]],
+  ['lowerboolquantifierspassbase_29',['LowerBoolQuantifiersPassBase',['../classllzk_1_1boolean_1_1impl_1_1LowerBoolQuantifiersPassBase.html',1,'llzk::boolean::impl']]]
 ];

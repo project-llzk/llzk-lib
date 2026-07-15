@@ -1,6 +1,7 @@
 var namespacellzk_1_1boolean =
 [
     [ "detail", "namespacellzk_1_1boolean_1_1detail.html", "namespacellzk_1_1boolean_1_1detail" ],
+    [ "impl", "namespacellzk_1_1boolean_1_1impl.html", "namespacellzk_1_1boolean_1_1impl" ],
     [ "AndBoolOp", "classllzk_1_1boolean_1_1AndBoolOp.html", "classllzk_1_1boolean_1_1AndBoolOp" ],
     [ "AndBoolOpAdaptor", "classllzk_1_1boolean_1_1AndBoolOpAdaptor.html", "classllzk_1_1boolean_1_1AndBoolOpAdaptor" ],
     [ "AndBoolOpGenericAdaptor", "classllzk_1_1boolean_1_1AndBoolOpGenericAdaptor.html", "classllzk_1_1boolean_1_1AndBoolOpGenericAdaptor" ],
@@ -37,8 +38,12 @@ var namespacellzk_1_1boolean =
       [ "GT", "namespacellzk_1_1boolean.html#aa2a08eb552270cddaf816ec7c01afd37acd6a9bd2a175104eed40f0d33a8b4020", null ],
       [ "GE", "namespacellzk_1_1boolean.html#aa2a08eb552270cddaf816ec7c01afd37af803729628adf4199f224c2a225038e9", null ]
     ] ],
+    [ "createLowerBoolQuantifiersPass", "namespacellzk_1_1boolean.html#a622bf63bc0609e519a40c49bad6b408c", null ],
     [ "getMaxEnumValForFeltCmpPredicate", "namespacellzk_1_1boolean.html#ad4cba17dc8c37746f8d293f81c79bbdd", null ],
     [ "getQuantifierOpDomainIterType", "namespacellzk_1_1boolean.html#a83746658a6bab3f77b74e522f9ec02d8", null ],
+    [ "registerLowerBoolQuantifiersPass", "namespacellzk_1_1boolean.html#aa4b351ea115cc4dafa807b3d75aca519", null ],
+    [ "registerLowerBoolQuantifiersPassPass", "namespacellzk_1_1boolean.html#a6107845865354e714d2e4a679d72795f", null ],
+    [ "registerTransformationPasses", "namespacellzk_1_1boolean.html#aa2f4457c4fe537de91b6ef2172347134", null ],
     [ "stringifyEnum", "namespacellzk_1_1boolean.html#a40050f1e934e705612fc8951359c1260", null ],
     [ "stringifyFeltCmpPredicate", "namespacellzk_1_1boolean.html#ab40b742f364c045b94bed16badb84ebf", null ],
     [ "symbolizeEnum", "namespacellzk_1_1boolean.html#a18163ecc0ef14f8969b6b3eb8c7b3a91", null ],

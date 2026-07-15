@@ -134,24 +134,26 @@ $(function(){initNavTree('Bool_8h_source.html','',''); });
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="comment">// Enums must come before Attrs and Ops</span></div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &quot;<a class="code" href="Bool_2IR_2Attrs_8capi_8h_8inc.html">llzk/Dialect/Bool/IR/Attrs.capi.h.inc</a>&quot;</span></div>
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &quot;<a class="code" href="Bool_2IR_2Ops_8capi_8h_8inc.html">llzk/Dialect/Bool/IR/Ops.capi.h.inc</a>&quot;</span></div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="keyword">extern</span> <span class="stringliteral">&quot;C&quot;</span> {</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span></div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno"><a class="line" href="Bool_8h.html#a48e5dcab263075e4d9fd22e731dfae65">   34</a></span><a class="code hl_function" href="Bool_8h.html#a48e5dcab263075e4d9fd22e731dfae65">MLIR_DECLARE_CAPI_DIALECT_REGISTRATION</a>(Bool, llzk__boolean);</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span></div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>MLIR_CAPI_EXPORTED MlirType <a class="code hl_function" href="Bool_8h.html#a3e8ed85a9698742747048653e7e52c1b">llzkBool_QuantifierOpGetDomainIterType</a>(MlirType type);</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>}</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="preprocessor">#endif </span><span class="comment">// LLZK_C_DIALECT_BOOL_H</span></div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#include &quot;<a class="code" href="Bool_2Transforms_2TransformationPasses_8capi_8h_8inc.html">llzk/Dialect/Bool/Transforms/TransformationPasses.capi.h.inc</a>&quot;</span></div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span> </div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="keyword">extern</span> <span class="stringliteral">&quot;C&quot;</span> {</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span></div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno"><a class="line" href="Bool_8h.html#a48e5dcab263075e4d9fd22e731dfae65">   35</a></span><a class="code hl_function" href="Bool_8h.html#a48e5dcab263075e4d9fd22e731dfae65">MLIR_DECLARE_CAPI_DIALECT_REGISTRATION</a>(Bool, llzk__boolean);</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span></div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>MLIR_CAPI_EXPORTED MlirType <a class="code hl_function" href="Bool_8h.html#a3e8ed85a9698742747048653e7e52c1b">llzkBool_QuantifierOpGetDomainIterType</a>(MlirType type);</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>}</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="preprocessor">#endif </span><span class="comment">// LLZK_C_DIALECT_BOOL_H</span></div>
 <div class="ttc" id="aBool_2IR_2Attrs_8capi_8h_8inc_html"><div class="ttname"><a href="Bool_2IR_2Attrs_8capi_8h_8inc.html">Attrs.capi.h.inc</a></div></div>
 <div class="ttc" id="aBool_2IR_2Enums_8capi_8h_8inc_html"><div class="ttname"><a href="Bool_2IR_2Enums_8capi_8h_8inc.html">Enums.capi.h.inc</a></div></div>
 <div class="ttc" id="aBool_2IR_2Ops_8capi_8h_8inc_html"><div class="ttname"><a href="Bool_2IR_2Ops_8capi_8h_8inc.html">Ops.capi.h.inc</a></div></div>
-<div class="ttc" id="aBool_8h_html_a3e8ed85a9698742747048653e7e52c1b"><div class="ttname"><a href="Bool_8h.html#a3e8ed85a9698742747048653e7e52c1b">llzkBool_QuantifierOpGetDomainIterType</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirType llzkBool_QuantifierOpGetDomainIterType(MlirType type)</div><div class="ttdoc">Returns the type used in a quantifier operation&#39;s block argument.</div><div class="ttdef"><b>Definition</b> <a href="Bool_8cpp_source.html#l00031">Bool.cpp:31</a></div></div>
+<div class="ttc" id="aBool_2Transforms_2TransformationPasses_8capi_8h_8inc_html"><div class="ttname"><a href="Bool_2Transforms_2TransformationPasses_8capi_8h_8inc.html">TransformationPasses.capi.h.inc</a></div></div>
+<div class="ttc" id="aBool_8h_html_a3e8ed85a9698742747048653e7e52c1b"><div class="ttname"><a href="Bool_8h.html#a3e8ed85a9698742747048653e7e52c1b">llzkBool_QuantifierOpGetDomainIterType</a></div><div class="ttdeci">MLIR_CAPI_EXPORTED MlirType llzkBool_QuantifierOpGetDomainIterType(MlirType type)</div><div class="ttdoc">Returns the type used in a quantifier operation&#39;s block argument.</div><div class="ttdef"><b>Definition</b> <a href="Bool_8cpp_source.html#l00036">Bool.cpp:36</a></div></div>
 <div class="ttc" id="aBool_8h_html_a48e5dcab263075e4d9fd22e731dfae65"><div class="ttname"><a href="Bool_8h.html#a48e5dcab263075e4d9fd22e731dfae65">MLIR_DECLARE_CAPI_DIALECT_REGISTRATION</a></div><div class="ttdeci">MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Bool, llzk__boolean)</div><div class="ttdoc">Get reference to the LLZK bool dialect.</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
