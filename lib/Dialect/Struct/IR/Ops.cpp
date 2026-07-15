@@ -573,22 +573,6 @@ void MemberDefOp::setPublicAttr(bool newValue) {
   }
 }
 
-void MemberDefOp::setIsSignal(bool newValue) {
-  if (newValue) {
-    getOperation()->setAttr(getSignalAttrName(), UnitAttr::get(getContext()));
-  } else {
-    getOperation()->removeAttr(getSignalAttrName());
-  }
-}
-
-void MemberDefOp::setIsColumn(bool newValue) {
-  if (newValue) {
-    getOperation()->setAttr(getColumnAttrName(), UnitAttr::get(getContext()));
-  } else {
-    getOperation()->removeAttr(getColumnAttrName());
-  }
-}
-
 static LogicalResult
 verifyMemberDefTypeImpl(Type memberType, SymbolTableCollection &tables, Operation *origin) {
   if (StructType memberStructType = llvm::dyn_cast<StructType>(memberType)) {

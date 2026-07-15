@@ -160,6 +160,26 @@ intptr_t llzkStruct_StructDefOpGetNumTemplateExprOpNames(MlirOperation op) {
 }
 
 //===----------------------------------------------------------------------===//
+// MemberDefOp
+//===----------------------------------------------------------------------===//
+
+bool llzkStruct_MemberDefOpGetColumnValue(MlirOperation op) {
+  return llvm::cast<MemberDefOp>(unwrap(op)).getColumn();
+}
+
+void llzkStruct_MemberDefOpSetColumnValue(MlirOperation op, bool newValue) {
+  llvm::cast<MemberDefOp>(unwrap(op)).setColumn(newValue);
+}
+
+bool llzkStruct_MemberDefOpGetSignalValue(MlirOperation op) {
+  return llvm::cast<MemberDefOp>(unwrap(op)).getSignal();
+}
+
+void llzkStruct_MemberDefOpSetSignalValue(MlirOperation op, bool newValue) {
+  llvm::cast<MemberDefOp>(unwrap(op)).setSignal(newValue);
+}
+
+//===----------------------------------------------------------------------===//
 // MemberReadOp
 //===----------------------------------------------------------------------===//
 

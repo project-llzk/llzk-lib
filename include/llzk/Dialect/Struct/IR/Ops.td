@@ -248,18 +248,6 @@ def LLZK_MemberDefOp
   let assemblyFormat = [{ $sym_name `:` $type attr-dict }];
 
   let extraClassDeclaration = [{
-    /// Returns whether this member supports offset table accesses.
-    inline bool isColumn() { return getOperation()->hasAttr(getColumnAttrName()); }
-
-    /// Adds or removes the unit `column` attribute according to `newValue`.
-    void setIsColumn(bool newValue = true);
-
-    /// Returns whether this member is stored as a witness signal.
-    inline bool isSignal() { return getOperation()->hasAttr(getSignalAttrName()); }
-
-    /// Adds or removes the unit `signal` attribute according to `newValue`.
-    void setIsSignal(bool newValue = true);
-
     /// Returns whether this member is a public output.
     inline bool hasPublicAttr() { return getOperation()->hasAttr(llzk::PublicAttr::name); }
 

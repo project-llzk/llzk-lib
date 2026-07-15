@@ -332,25 +332,25 @@ TEST_F(StructDefTest, llzk_member_def_op_set_public_attr) {
 TEST_F(StructDefTest, llzk_member_def_op_signal_attr_lifecycle) {
   TestOp op {.op = make_member_def_op()};
 
-  EXPECT_FALSE(llzkStruct_MemberDefOpIsSignal(op.op));
+  EXPECT_FALSE(llzkStruct_MemberDefOpGetSignalValue(op.op));
 
-  llzkStruct_MemberDefOpSetIsSignal(op.op, true);
-  EXPECT_TRUE(llzkStruct_MemberDefOpIsSignal(op.op));
+  llzkStruct_MemberDefOpSetSignalValue(op.op, true);
+  EXPECT_TRUE(llzkStruct_MemberDefOpGetSignalValue(op.op));
 
-  llzkStruct_MemberDefOpSetIsSignal(op.op, false);
-  EXPECT_FALSE(llzkStruct_MemberDefOpIsSignal(op.op));
+  llzkStruct_MemberDefOpSetSignalValue(op.op, false);
+  EXPECT_FALSE(llzkStruct_MemberDefOpGetSignalValue(op.op));
 }
 
 TEST_F(StructDefTest, llzk_member_def_op_column_attr_lifecycle) {
   TestOp op {.op = make_member_def_op()};
 
-  EXPECT_FALSE(llzkStruct_MemberDefOpIsColumn(op.op));
+  EXPECT_FALSE(llzkStruct_MemberDefOpGetColumnValue(op.op));
 
-  llzkStruct_MemberDefOpSetIsColumn(op.op, true);
-  EXPECT_TRUE(llzkStruct_MemberDefOpIsColumn(op.op));
+  llzkStruct_MemberDefOpSetColumnValue(op.op, true);
+  EXPECT_TRUE(llzkStruct_MemberDefOpGetColumnValue(op.op));
 
-  llzkStruct_MemberDefOpSetIsColumn(op.op, false);
-  EXPECT_FALSE(llzkStruct_MemberDefOpIsColumn(op.op));
+  llzkStruct_MemberDefOpSetColumnValue(op.op, false);
+  EXPECT_FALSE(llzkStruct_MemberDefOpGetColumnValue(op.op));
 }
 
 struct MemberReadOpBuildFuncHelper : public TestAnyBuildFuncHelper<StructDefTest> {
