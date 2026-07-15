@@ -164,6 +164,14 @@ Functions</h2></td></tr>
 <tr class="memdesc:a8d3e4fed747a9445a4a41d38e03d4d7f"><td class="mdescLeft">&#160;</td><td class="mdescRight">If this <span class="tt">struct.def</span> is within a <span class="tt">poly.template</span>, add names of all <span class="tt">poly.expr</span> within the <span class="tt">poly.template</span> in the order they are defined.  <br /></td></tr>
 <tr class="memitem:a71ddd91fb47e8f6fc0d01c435b448d65" id="r_a71ddd91fb47e8f6fc0d01c435b448d65"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED intptr_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a71ddd91fb47e8f6fc0d01c435b448d65">llzkStruct_StructDefOpGetNumTemplateExprOpNames</a> (MlirOperation op)</td></tr>
 <tr class="memdesc:a71ddd91fb47e8f6fc0d01c435b448d65"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the number of <span class="tt">poly.expr</span> operations defined within this template.  <br /></td></tr>
+<tr class="memitem:ac933e6cc6dbdbaa5b7b8cadafb7e4c21" id="r_ac933e6cc6dbdbaa5b7b8cadafb7e4c21"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac933e6cc6dbdbaa5b7b8cadafb7e4c21">llzkStruct_MemberDefOpGetColumnValue</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:ac933e6cc6dbdbaa5b7b8cadafb7e4c21"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns whether this member supports offset table accesses.  <br /></td></tr>
+<tr class="memitem:a95595625e391edc35fa7ffa42fc6969e" id="r_a95595625e391edc35fa7ffa42fc6969e"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a95595625e391edc35fa7ffa42fc6969e">llzkStruct_MemberDefOpSetColumnValue</a> (MlirOperation op, bool newValue)</td></tr>
+<tr class="memdesc:a95595625e391edc35fa7ffa42fc6969e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds or removes the unit <span class="tt">column</span> attribute according to <span class="tt">newValue</span>.  <br /></td></tr>
+<tr class="memitem:a562d043d551cbeb41e4eac2edfa4719c" id="r_a562d043d551cbeb41e4eac2edfa4719c"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a562d043d551cbeb41e4eac2edfa4719c">llzkStruct_MemberDefOpGetSignalValue</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:a562d043d551cbeb41e4eac2edfa4719c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns whether this member is stored as a witness signal.  <br /></td></tr>
+<tr class="memitem:ad4a82d05d440d439beb07b9df75b82fc" id="r_ad4a82d05d440d439beb07b9df75b82fc"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad4a82d05d440d439beb07b9df75b82fc">llzkStruct_MemberDefOpSetSignalValue</a> (MlirOperation op, bool newValue)</td></tr>
+<tr class="memdesc:ad4a82d05d440d439beb07b9df75b82fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds or removes the unit <span class="tt">signal</span> attribute according to <span class="tt">newValue</span>.  <br /></td></tr>
 <tr class="memitem:ae34fdb570bd9a2d0205f9e2a242e1ea7" id="r_ae34fdb570bd9a2d0205f9e2a242e1ea7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae34fdb570bd9a2d0205f9e2a242e1ea7">LLZK_DECLARE_OP_BUILD_METHOD</a> (Struct, MemberReadOp, MlirType type, MlirValue component, MlirIdentifier memberName)</td></tr>
 <tr class="memdesc:ae34fdb570bd9a2d0205f9e2a242e1ea7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a MemberReadOp.  <br /></td></tr>
 <tr class="memitem:a7c8afd2e02e44179744303166a353976" id="r_a7c8afd2e02e44179744303166a353976"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7c8afd2e02e44179744303166a353976">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD</a> (Struct, MemberReadOp, WithAffineMapDistance, MlirType type, MlirValue component, MlirIdentifier memberName, MlirAffineMap affineMap, <a class="el" href="structMlirValueRange.html">MlirValueRange</a> mapOperands)</td></tr>
@@ -359,6 +367,98 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Creates a MemberReadOp to a column offset by the given distance defined by a name to a constant parameter in the struct. </p>
+
+</div>
+</div>
+<a id="ac933e6cc6dbdbaa5b7b8cadafb7e4c21" name="ac933e6cc6dbdbaa5b7b8cadafb7e4c21"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac933e6cc6dbdbaa5b7b8cadafb7e4c21">&#9670;&#160;</a></span>llzkStruct_MemberDefOpGetColumnValue()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED bool llzkStruct_MemberDefOpGetColumnValue </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns whether this member supports offset table accesses. </p>
+
+<p class="definition">Definition at line <a class="el" href="Struct_8cpp_source.html#l00166">166</a> of file <a class="el" href="Struct_8cpp_source.html">Struct.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a562d043d551cbeb41e4eac2edfa4719c" name="a562d043d551cbeb41e4eac2edfa4719c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a562d043d551cbeb41e4eac2edfa4719c">&#9670;&#160;</a></span>llzkStruct_MemberDefOpGetSignalValue()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED bool llzkStruct_MemberDefOpGetSignalValue </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns whether this member is stored as a witness signal. </p>
+
+<p class="definition">Definition at line <a class="el" href="Struct_8cpp_source.html#l00174">174</a> of file <a class="el" href="Struct_8cpp_source.html">Struct.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a95595625e391edc35fa7ffa42fc6969e" name="a95595625e391edc35fa7ffa42fc6969e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a95595625e391edc35fa7ffa42fc6969e">&#9670;&#160;</a></span>llzkStruct_MemberDefOpSetColumnValue()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED void llzkStruct_MemberDefOpSetColumnValue </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>newValue</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Adds or removes the unit <span class="tt">column</span> attribute according to <span class="tt">newValue</span>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Struct_8cpp_source.html#l00170">170</a> of file <a class="el" href="Struct_8cpp_source.html">Struct.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ad4a82d05d440d439beb07b9df75b82fc" name="ad4a82d05d440d439beb07b9df75b82fc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad4a82d05d440d439beb07b9df75b82fc">&#9670;&#160;</a></span>llzkStruct_MemberDefOpSetSignalValue()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED void llzkStruct_MemberDefOpSetSignalValue </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>newValue</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Adds or removes the unit <span class="tt">signal</span> attribute according to <span class="tt">newValue</span>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Struct_8cpp_source.html#l00178">178</a> of file <a class="el" href="Struct_8cpp_source.html">Struct.cpp</a>.</p>
 
 </div>
 </div>

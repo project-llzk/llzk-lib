@@ -1,5 +1,13 @@
 var NAVTREEINDEX81 =
 {
+"dialects.html#parameters-3":[7,4,1,0,0],
+"dialects.html#parameters-4":[7,4,1,1,0],
+"dialects.html#parameters-5":[7,4,2,0,0],
+"dialects.html#parameters-6":[7,8,1,0,0],
+"dialects.html#parameters-7":[7,9,1,0,0],
+"dialects.html#parameters-8":[7,9,2,0,0],
+"dialects.html#parameters-9":[7,10,1,0,0],
+"dialects.html#pod-dialect":[7,9],
 "dialects.html#podnew-llzkpodnewpodop":[7,9,0,0],
 "dialects.html#podread-llzkpodreadpodop":[7,9,0,1],
 "dialects.html#podtype":[7,9,2,0],
@@ -241,13 +249,5 @@ var NAVTREEINDEX81 =
 "functions.html":[12,3,0,0],
 "functions_a.html":[12,3,0,1],
 "functions_b.html":[12,3,0,2],
-"functions_c.html":[12,3,0,3],
-"functions_d.html":[12,3,0,4],
-"functions_e.html":[12,3,0,5],
-"functions_enum.html":[12,3,4],
-"functions_f.html":[12,3,0,6],
-"functions_func.html":[12,3,1],
-"functions_func.html":[12,3,1,0],
-"functions_func_b.html":[12,3,1,1],
-"functions_func_c.html":[12,3,1,2]
+"functions_c.html":[12,3,0,3]
 };

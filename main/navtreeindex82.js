@@ -1,5 +1,13 @@
 var NAVTREEINDEX82 =
 {
+"functions_d.html":[12,3,0,4],
+"functions_e.html":[12,3,0,5],
+"functions_enum.html":[12,3,4],
+"functions_f.html":[12,3,0,6],
+"functions_func.html":[12,3,1],
+"functions_func.html":[12,3,1,0],
+"functions_func_b.html":[12,3,1,1],
+"functions_func_c.html":[12,3,1,2],
 "functions_func_d.html":[12,3,1,3],
 "functions_func_e.html":[12,3,1,4],
 "functions_func_f.html":[12,3,1,5],
@@ -241,13 +249,5 @@ var NAVTREEINDEX82 =
 "namespaceStep3__Unroll.html":[10,0,9],
 "namespaceStep4__InstantiateAffineMaps.html":[10,0,10],
 "namespaceStep5__PropagateTypes.html":[10,0,11],
-"namespaceStep6__Cleanup.html":[10,0,12],
-"namespaceWildcardFunctionSpecialization.html":[10,0,14],
-"namespaceclang.html":[10,0,1],
-"namespacellvm.html":[10,0,3],
-"namespacellvm.html#a0fc2145917e31225cbcd377de7b88080":[10,0,3,30],
-"namespacellvm.html#a21116bbe45c869941be8cfe628ef4eca":[10,0,3,25],
-"namespacellvm.html#a56bc18c8aa3441a4ac9333dd2d58014e":[10,0,3,29],
-"namespacellvm.html#a5fd8a1866579e360203d0ae936fa7920":[10,0,3,31],
-"namespacellvm.html#aaecf54ee82ac62485fb87ad594a08b17":[10,0,3,26]
+"namespaceStep6__Cleanup.html":[10,0,12]
 };

@@ -150,9 +150,9 @@ Functions</h2></td></tr>
 <tr class="memitem:aac72410e88cc5df155f9baeacb1065ee" id="r_aac72410e88cc5df155f9baeacb1065ee"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aac72410e88cc5df155f9baeacb1065ee">llzkStruct_MemberDefOpSetSignal</a> (MlirOperation op, MlirAttribute attr)</td></tr>
 <tr class="memdesc:aac72410e88cc5df155f9baeacb1065ee"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set Signal attribute of <a class="el" href="classllzk_1_1component_1_1MemberDefOp.html">llzk::component::MemberDefOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:a8be006fa8bca315daf3ac601bf187dfb" id="r_a8be006fa8bca315daf3ac601bf187dfb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8be006fa8bca315daf3ac601bf187dfb">llzkStruct_MemberDefOpSetPublicAttr</a> (MlirOperation inp, bool newValue)</td></tr>
-<tr class="memdesc:a8be006fa8bca315daf3ac601bf187dfb"><td class="mdescLeft">&#160;</td><td class="mdescRight">setPublicAttr  <br /></td></tr>
+<tr class="memdesc:a8be006fa8bca315daf3ac601bf187dfb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds or removes the unit <span class="tt">llzk.pub</span> attribute according to <span class="tt">newValue</span>.  <br /></td></tr>
 <tr class="memitem:ab9488445765dd5a9da6a8008c545c856" id="r_ab9488445765dd5a9da6a8008c545c856"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab9488445765dd5a9da6a8008c545c856">llzkStruct_MemberDefOpHasPublicAttr</a> (MlirOperation inp)</td></tr>
-<tr class="memdesc:ab9488445765dd5a9da6a8008c545c856"><td class="mdescLeft">&#160;</td><td class="mdescRight">hasPublicAttr  <br /></td></tr>
+<tr class="memdesc:ab9488445765dd5a9da6a8008c545c856"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns whether this member is a public output.  <br /></td></tr>
 <tr class="memitem:a4aebd0d79a696cfd0c9d926f4b764a8a" id="r_a4aebd0d79a696cfd0c9d926f4b764a8a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4aebd0d79a696cfd0c9d926f4b764a8a">llzkOperationIsA_Struct_MemberReadOp</a> (MlirOperation inp)</td></tr>
 <tr class="memdesc:a4aebd0d79a696cfd0c9d926f4b764a8a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the Operation is a <a class="el" href="classllzk_1_1component_1_1MemberReadOp.html">llzk::component::MemberReadOp</a>.  <br /></td></tr>
 <tr class="memitem:aeac2d07ee8a170f5ea92ab607cef8b70" id="r_aeac2d07ee8a170f5ea92ab607cef8b70"><td class="memItemLeft" align="right" valign="top">MlirValue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aeac2d07ee8a170f5ea92ab607cef8b70">llzkStruct_MemberReadOpGetComponent</a> (MlirOperation op)</td></tr>
@@ -486,7 +486,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>hasPublicAttr </p>
+<p>Returns whether this member is a public output. </p>
 
 <p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8capi_8cpp_8inc_source.html#l00071">71</a> of file <a class="el" href="Struct_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
@@ -536,7 +536,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>setPublicAttr </p>
+<p>Adds or removes the unit <span class="tt">llzk.pub</span> attribute according to <span class="tt">newValue</span>. </p>
 
 <p class="definition">Definition at line <a class="el" href="Struct_2IR_2Ops_8capi_8cpp_8inc_source.html#l00067">67</a> of file <a class="el" href="Struct_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
