@@ -133,8 +133,9 @@ module attributes {llzk.lang} {
     poly.param @A : !poly.tvar<@A>
 
     function.def @id() -> !poly.tvar<@A> {
-      %a = poly.read_const @A : !poly.tvar<@A>
-      function.return %a : !poly.tvar<@A>
+      %0 = felt.const 1 : !felt.type
+      %1 = poly.unifiable_cast %0 : (!felt.type) -> !poly.tvar<@A>
+      function.return %1 : !poly.tvar<@A>
     }
   }
 

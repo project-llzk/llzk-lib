@@ -119,3 +119,21 @@ module attributes {llzk.lang} {
     }
   }
 }
+// -----
+module attributes {llzk.lang} {
+  poly.template @TReadConstTypeVarParam {
+    poly.param @T : !poly.tvar<@T>
+
+    struct.def @ReadConstTypeVarParam {
+      function.def @compute() -> !struct.type<@TReadConstTypeVarParam::@ReadConstTypeVarParam<[@T]>> {
+        %self = struct.new : !struct.type<@TReadConstTypeVarParam::@ReadConstTypeVarParam<[@T]>>
+        function.return %self : !struct.type<@TReadConstTypeVarParam::@ReadConstTypeVarParam<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@TReadConstTypeVarParam::@ReadConstTypeVarParam<[@T]>>) {
+        // expected-error@+1 {{'poly.read_const' op cannot target "@T" because it is a type variable}}
+        %0 = poly.read_const @T : !poly.tvar<@T>
+        function.return
+      }
+    }
+  }
+}
