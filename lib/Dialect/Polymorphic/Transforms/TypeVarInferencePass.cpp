@@ -86,6 +86,15 @@ static SmallVector<StringAttr> getStringPieces(SymbolRefAttr ref) {
   }));
 }
 
+/// Return the name of a flat symbol attribute, or null for non-symbol/nested refs.
+static StringAttr getFlatSymbolName(Attribute attr) {
+  auto symRef = llvm::dyn_cast_if_present<SymbolRefAttr>(attr);
+  if (!symRef || !symRef.getNestedReferences().empty()) {
+    return {};
+  }
+  return symRef.getRootReference();
+}
+
 /// Return true when `op` is exactly the self-typed type variable parameter this
 /// pass knows how to remove.
 ///
@@ -211,7 +220,7 @@ public:
       SmallVector<Attribute> newAttrs;
       bool changed = false;
       for (Attribute nested : arrAttr.getValue()) {
-        Attribute newNested = convertAttr(nested);
+        Attribute newNested = convertTemplateArgAttr(nested);
         newAttrs.push_back(newNested);
         changed |= newNested != nested;
       }
@@ -237,13 +246,29 @@ public:
     SmallVector<Attribute> kept;
     for (auto [paramName, attr] : llvm::zip_equal(oldParamOrder_, params.getValue())) {
       if (!removedParams_.contains(paramName)) {
-        kept.push_back(convertAttr(attr));
+        kept.push_back(convertTemplateArgAttr(attr));
       }
     }
     return kept.empty() ? nullptr : ArrayAttr::get(ctx_, kept);
   }
 
 private:
+  /// Convert a template argument attribute.
+  ///
+  /// Direct `SymbolRefAttr` template arguments can name self-typed type-variable
+  /// parameters (`@T` for `poly.param @T : !poly.tvar<@T>`). Once such a
+  /// parameter has a concrete replacement, the symbol argument becomes the
+  /// corresponding `TypeAttr`.
+  Attribute convertTemplateArgAttr(Attribute attr) const {
+    if (StringAttr symbolName = getFlatSymbolName(attr)) {
+      auto it = replacements_.find(symbolName);
+      if (it != replacements_.end()) {
+        return TypeAttr::get(it->second);
+      }
+    }
+    return convertAttr(attr);
+  }
+
   /// Convert every type in `oldTypes`, returning whether any entry changed.
   bool convertTypes(TypeRange oldTypes, SmallVectorImpl<Type> &newTypes) const {
     bool changed = false;
@@ -289,7 +314,7 @@ private:
         changed = true;
         continue;
       }
-      Attribute newAttr = convertAttr(attr);
+      Attribute newAttr = convertTemplateArgAttr(attr);
       newParams.push_back(newAttr);
       changed |= newAttr != attr;
     }
@@ -436,12 +461,7 @@ private:
           return success();
         }
         for (auto [lhsAttr, rhsAttr] : llvm::zip_equal(lhsParams, rhsParams)) {
-          auto lhsTyAttr = llvm::dyn_cast<TypeAttr>(lhsAttr);
-          auto rhsTyAttr = llvm::dyn_cast<TypeAttr>(rhsAttr);
-          if (lhsTyAttr && rhsTyAttr &&
-              failed(collectTypePairInferences(
-                  lhsTyAttr.getValue(), rhsTyAttr.getValue(), Value(), Value(), loc
-              ))) {
+          if (failed(collectTemplateArgInferences(lhsAttr, rhsAttr, loc))) {
             return failure();
           }
         }
@@ -468,6 +488,34 @@ private:
       }
     }
 
+    return success();
+  }
+
+  /// Collect inferences from a pair of struct template argument attributes.
+  ///
+  /// Type arguments encoded as `TypeAttr` are recursively unified by type. A
+  /// flat `SymbolRefAttr` is treated as an inference target only when it names
+  /// an eligible self-typed type-variable parameter; `recordInference` filters
+  /// out ordinary value parameters and non-concrete candidates.
+  LogicalResult collectTemplateArgInferences(Attribute lhsAttr, Attribute rhsAttr, Location loc) {
+    auto lhsTyAttr = llvm::dyn_cast<TypeAttr>(lhsAttr);
+    auto rhsTyAttr = llvm::dyn_cast<TypeAttr>(rhsAttr);
+    if (lhsTyAttr && rhsTyAttr) {
+      return collectTypePairInferences(
+          lhsTyAttr.getValue(), rhsTyAttr.getValue(), Value(), Value(), loc
+      );
+    }
+
+    if (StringAttr lhsSymbolName = getFlatSymbolName(lhsAttr)) {
+      if (rhsTyAttr && failed(recordInference(lhsSymbolName, rhsTyAttr.getValue(), Value(), loc))) {
+        return failure();
+      }
+    }
+    if (StringAttr rhsSymbolName = getFlatSymbolName(rhsAttr)) {
+      if (lhsTyAttr && failed(recordInference(rhsSymbolName, lhsTyAttr.getValue(), Value(), loc))) {
+        return failure();
+      }
+    }
     return success();
   }
 };

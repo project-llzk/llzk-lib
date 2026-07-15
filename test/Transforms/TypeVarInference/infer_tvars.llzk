@@ -120,6 +120,15 @@ module attributes {llzk.lang} {
     }
   }
 
+  poly.template @TInferStructSymbolParam {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @from_struct_symbol(%arg: !struct.type<@TBox::@Box<[@T]>>) -> !struct.type<@TBox::@Box<[@T]>> {
+      %cast = poly.unifiable_cast %arg : (!struct.type<@TBox::@Box<[@T]>>) -> !struct.type<@TBox::@Box<[index]>>
+      function.return %cast : !struct.type<@TBox::@Box<[index]>>
+    }
+  }
+
   poly.template @TInferArrayPodStruct {
     poly.param @T : !poly.tvar<@T>
 
@@ -147,6 +156,11 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TInferStructParam {
 // CHECK-NEXT:      function.def @from_struct(%[[STRUCT_ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox::@Box<[index]>>) -> !struct.type<@TBox::@Box<[index]>> {
 // CHECK-NEXT:        function.return %[[STRUCT_ARG]] : !struct.type<@TBox::@Box<[index]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TInferStructSymbolParam {
+// CHECK-NEXT:      function.def @from_struct_symbol(%[[STRUCT_SYMBOL_ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox::@Box<[index]>>) -> !struct.type<@TBox::@Box<[index]>> {
+// CHECK-NEXT:        function.return %[[STRUCT_SYMBOL_ARG]] : !struct.type<@TBox::@Box<[index]>>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TInferArrayPodStruct {
