@@ -238,82 +238,89 @@ $(function(){initNavTree('Poly_8cpp_source.html','',''); });
 <div class="foldopen" id="foldopen00109" data-start="{" data-end="}">
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno"><a class="line" href="Poly_8cpp.html#a22d3d723f676b59c57ebd3890c06a7d0">  109</a></span><a class="code hl_define" href="llzk_2CAPI_2Support_8h.html#a49a9508dcfa6502c1d009b1409f70fb5">LLZK_DEFINE_OP_BUILD_METHOD</a>(Poly, <a class="code hl_class" href="classllzk_1_1polymorphic_1_1ApplyMapOp.html">ApplyMapOp</a>, MlirAttribute map, <a class="code hl_struct" href="structMlirValueRange.html">MlirValueRange</a> mapOperands) {</div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  SmallVector&lt;Value&gt; mapOperandsSto;</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  <span class="keywordflow">return</span> wrap(</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>      <a class="code hl_function" href="namespacellzk.html#ae4e8d048536cc8cc728bec99f1f7c0f4">create&lt;ApplyMapOp&gt;</a>(</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>          builder, location, llvm::cast&lt;AffineMapAttr&gt;(unwrap(map)),</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>          ValueRange(unwrapList(mapOperands.<a class="code hl_variable" href="structMlirValueRange.html#aafbcc65a54341152d7c3cbeb48a30072">size</a>, mapOperands.<a class="code hl_variable" href="structMlirValueRange.html#a60bb2ca633fa41244ec22b9610ee6c14">values</a>, mapOperandsSto))</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>      )</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  );</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>}</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">mlirOpBuilderInsert</a>(</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>      builder, wrap(</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>                   <a class="code hl_function" href="namespacellzk.html#ae4e8d048536cc8cc728bec99f1f7c0f4">create&lt;ApplyMapOp&gt;</a>(</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>                       builder, location, llvm::cast&lt;AffineMapAttr&gt;(unwrap(map)),</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>                       ValueRange(unwrapList(mapOperands.<a class="code hl_variable" href="structMlirValueRange.html#aafbcc65a54341152d7c3cbeb48a30072">size</a>, mapOperands.<a class="code hl_variable" href="structMlirValueRange.html#a60bb2ca633fa41244ec22b9610ee6c14">values</a>, mapOperandsSto))</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>                   )</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>               )</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  );</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>}</div>
 </div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span> </div>
-<div class="foldopen" id="foldopen00119" data-start="{" data-end="}">
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno"><a class="line" href="Poly_8cpp.html#adfe8bc7afb2a8dbacbb7975d7a18c4b7">  119</a></span><a class="code hl_define" href="llzk_2CAPI_2Support_8h.html#ac40521d1742d3d6e0277892780f6cff1">LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD</a>(</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>    Poly, <a class="code hl_class" href="classllzk_1_1polymorphic_1_1ApplyMapOp.html">ApplyMapOp</a>, WithAffineMap, MlirAffineMap map, <a class="code hl_struct" href="structMlirValueRange.html">MlirValueRange</a> mapOperands</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>) {</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  SmallVector&lt;Value&gt; mapOperandsSto;</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  <span class="keywordflow">return</span> wrap(</div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>      <a class="code hl_function" href="namespacellzk.html#ae4e8d048536cc8cc728bec99f1f7c0f4">create&lt;ApplyMapOp&gt;</a>(</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>          builder, location, unwrap(map),</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>          ValueRange(unwrapList(mapOperands.<a class="code hl_variable" href="structMlirValueRange.html#aafbcc65a54341152d7c3cbeb48a30072">size</a>, mapOperands.<a class="code hl_variable" href="structMlirValueRange.html#a60bb2ca633fa41244ec22b9610ee6c14">values</a>, mapOperandsSto))</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>      )</div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  );</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>}</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span> </div>
+<div class="foldopen" id="foldopen00121" data-start="{" data-end="}">
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno"><a class="line" href="Poly_8cpp.html#adfe8bc7afb2a8dbacbb7975d7a18c4b7">  121</a></span><a class="code hl_define" href="llzk_2CAPI_2Support_8h.html#ac40521d1742d3d6e0277892780f6cff1">LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD</a>(</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>    Poly, <a class="code hl_class" href="classllzk_1_1polymorphic_1_1ApplyMapOp.html">ApplyMapOp</a>, WithAffineMap, MlirAffineMap map, <a class="code hl_struct" href="structMlirValueRange.html">MlirValueRange</a> mapOperands</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>) {</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  SmallVector&lt;Value&gt; mapOperandsSto;</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">mlirOpBuilderInsert</a>(</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>      builder, wrap(</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>                   <a class="code hl_function" href="namespacellzk.html#ae4e8d048536cc8cc728bec99f1f7c0f4">create&lt;ApplyMapOp&gt;</a>(</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>                       builder, location, unwrap(map),</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>                       ValueRange(unwrapList(mapOperands.<a class="code hl_variable" href="structMlirValueRange.html#aafbcc65a54341152d7c3cbeb48a30072">size</a>, mapOperands.<a class="code hl_variable" href="structMlirValueRange.html#a60bb2ca633fa41244ec22b9610ee6c14">values</a>, mapOperandsSto))</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>                   )</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>               )</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  );</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>}</div>
 </div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span> </div>
-<div class="foldopen" id="foldopen00131" data-start="{" data-end="}">
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno"><a class="line" href="Poly_8cpp.html#a9f2ce9cca7406e2d2b6901c801656fb3">  131</a></span><a class="code hl_define" href="llzk_2CAPI_2Support_8h.html#ac40521d1742d3d6e0277892780f6cff1">LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD</a>(</div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>    Poly, <a class="code hl_class" href="classllzk_1_1polymorphic_1_1ApplyMapOp.html">ApplyMapOp</a>, WithAffineExpr, MlirAffineExpr expr, <a class="code hl_struct" href="structMlirValueRange.html">MlirValueRange</a> mapOperands</div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>) {</div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>  SmallVector&lt;Value&gt; mapOperandsSto;</div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>  <span class="keywordflow">return</span> wrap(</div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>      <a class="code hl_function" href="namespacellzk.html#ae4e8d048536cc8cc728bec99f1f7c0f4">create&lt;ApplyMapOp&gt;</a>(</div>
-<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>          builder, location, unwrap(expr),</div>
-<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>          ValueRange(unwrapList(mapOperands.<a class="code hl_variable" href="structMlirValueRange.html#aafbcc65a54341152d7c3cbeb48a30072">size</a>, mapOperands.<a class="code hl_variable" href="structMlirValueRange.html#a60bb2ca633fa41244ec22b9610ee6c14">values</a>, mapOperandsSto))</div>
-<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>      )</div>
-<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>  );</div>
-<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>}</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span> </div>
+<div class="foldopen" id="foldopen00135" data-start="{" data-end="}">
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno"><a class="line" href="Poly_8cpp.html#a9f2ce9cca7406e2d2b6901c801656fb3">  135</a></span><a class="code hl_define" href="llzk_2CAPI_2Support_8h.html#ac40521d1742d3d6e0277892780f6cff1">LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD</a>(</div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>    Poly, <a class="code hl_class" href="classllzk_1_1polymorphic_1_1ApplyMapOp.html">ApplyMapOp</a>, WithAffineExpr, MlirAffineExpr expr, <a class="code hl_struct" href="structMlirValueRange.html">MlirValueRange</a> mapOperands</div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>) {</div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>  SmallVector&lt;Value&gt; mapOperandsSto;</div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">mlirOpBuilderInsert</a>(</div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>      builder, wrap(</div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>                   <a class="code hl_function" href="namespacellzk.html#ae4e8d048536cc8cc728bec99f1f7c0f4">create&lt;ApplyMapOp&gt;</a>(</div>
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>                       builder, location, unwrap(expr),</div>
+<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>                       ValueRange(unwrapList(mapOperands.<a class="code hl_variable" href="structMlirValueRange.html#aafbcc65a54341152d7c3cbeb48a30072">size</a>, mapOperands.<a class="code hl_variable" href="structMlirValueRange.html#a60bb2ca633fa41244ec22b9610ee6c14">values</a>, mapOperandsSto))</div>
+<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>                   )</div>
+<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>               )</div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>  );</div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>}</div>
 </div>
-<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span> </div>
-<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span><span class="keyword">static</span> <span class="keyword">inline</span> ValueRange dimOperands(MlirOperation op) {</div>
-<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacemlir.html#ab8a6c4b0af7bb4ad955c5e4f44a4827e">unwrap_cast&lt;ApplyMapOp&gt;</a>(op).getDimOperands();</div>
-<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>}</div>
-<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span> </div>
-<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span><span class="keyword">static</span> <span class="keyword">inline</span> ValueRange symbolOperands(MlirOperation op) {</div>
-<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacemlir.html#ab8a6c4b0af7bb4ad955c5e4f44a4827e">unwrap_cast&lt;ApplyMapOp&gt;</a>(op).getSymbolOperands();</div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>}</div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span> </div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> copyValues(ValueRange in, MlirValue *out) {</div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span> [n, value] : llvm::enumerate(in)) {</div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>    out[n] = wrap(value);</div>
-<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  }</div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span> </div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span><span class="keyword">static</span> <span class="keyword">inline</span> ValueRange dimOperands(MlirOperation op) {</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacemlir.html#ab8a6c4b0af7bb4ad955c5e4f44a4827e">unwrap_cast&lt;ApplyMapOp&gt;</a>(op).getDimOperands();</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>}</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span> </div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span><span class="keyword">static</span> <span class="keyword">inline</span> ValueRange symbolOperands(MlirOperation op) {</div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacemlir.html#ab8a6c4b0af7bb4ad955c5e4f44a4827e">unwrap_cast&lt;ApplyMapOp&gt;</a>(op).getSymbolOperands();</div>
 <div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>}</div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span></div>
-<div class="foldopen" id="foldopen00158" data-start="{" data-end="}">
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno"><a class="line" href="Poly_8cpp.html#addea62220081c5b73852c2781e8594fc">  158</a></span>intptr_t <a class="code hl_function" href="Poly_8cpp.html#addea62220081c5b73852c2781e8594fc">llzkPoly_ApplyMapOpGetNumDimOperands</a>(MlirOperation op) {</div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a60ca7c6c3ae1d404296cec5b7fdf2237">llzk::checkedCast&lt;intptr_t&gt;</a>(dimOperands(op).size());</div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>}</div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span> </div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> copyValues(ValueRange in, MlirValue *out) {</div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span> [n, value] : llvm::enumerate(in)) {</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>    out[n] = wrap(value);</div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>  }</div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>}</div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span></div>
+<div class="foldopen" id="foldopen00164" data-start="{" data-end="}">
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno"><a class="line" href="Poly_8cpp.html#addea62220081c5b73852c2781e8594fc">  164</a></span>intptr_t <a class="code hl_function" href="Poly_8cpp.html#addea62220081c5b73852c2781e8594fc">llzkPoly_ApplyMapOpGetNumDimOperands</a>(MlirOperation op) {</div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a60ca7c6c3ae1d404296cec5b7fdf2237">llzk::checkedCast&lt;intptr_t&gt;</a>(dimOperands(op).size());</div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>}</div>
 </div>
-<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span></div>
-<div class="foldopen" id="foldopen00165" data-start="{" data-end="}">
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno"><a class="line" href="Poly_8cpp.html#a7270c2ba289e9de836f08e473a00b4e5">  165</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="Poly_8cpp.html#a7270c2ba289e9de836f08e473a00b4e5">llzkPoly_ApplyMapOpGetDimOperands</a>(MlirOperation op, MlirValue *dst) {</div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>  copyValues(dimOperands(op), dst);</div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>}</div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span></div>
+<div class="foldopen" id="foldopen00171" data-start="{" data-end="}">
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno"><a class="line" href="Poly_8cpp.html#a7270c2ba289e9de836f08e473a00b4e5">  171</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="Poly_8cpp.html#a7270c2ba289e9de836f08e473a00b4e5">llzkPoly_ApplyMapOpGetDimOperands</a>(MlirOperation op, MlirValue *dst) {</div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>  copyValues(dimOperands(op), dst);</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>}</div>
 </div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span></div>
-<div class="foldopen" id="foldopen00170" data-start="{" data-end="}">
-<div class="line"><a id="l00170" name="l00170"></a><span class="lineno"><a class="line" href="Poly_8cpp.html#a449a617869b47e553bae28825137d9aa">  170</a></span>intptr_t <a class="code hl_function" href="Poly_8cpp.html#a449a617869b47e553bae28825137d9aa">llzkPoly_ApplyMapOpGetNumSymbolOperands</a>(MlirOperation op) {</div>
-<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a60ca7c6c3ae1d404296cec5b7fdf2237">llzk::checkedCast&lt;intptr_t&gt;</a>(symbolOperands(op).size());</div>
-<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>}</div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span></div>
+<div class="foldopen" id="foldopen00176" data-start="{" data-end="}">
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno"><a class="line" href="Poly_8cpp.html#a449a617869b47e553bae28825137d9aa">  176</a></span>intptr_t <a class="code hl_function" href="Poly_8cpp.html#a449a617869b47e553bae28825137d9aa">llzkPoly_ApplyMapOpGetNumSymbolOperands</a>(MlirOperation op) {</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a60ca7c6c3ae1d404296cec5b7fdf2237">llzk::checkedCast&lt;intptr_t&gt;</a>(symbolOperands(op).size());</div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>}</div>
 </div>
-<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span></div>
-<div class="foldopen" id="foldopen00177" data-start="{" data-end="}">
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno"><a class="line" href="Poly_8cpp.html#a030dbe97ecff4c5cf9bb4224a4c66aa4">  177</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="Poly_8cpp.html#a030dbe97ecff4c5cf9bb4224a4c66aa4">llzkPoly_ApplyMapOpGetSymbolOperands</a>(MlirOperation op, MlirValue *dst) {</div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>  copyValues(symbolOperands(op), dst);</div>
-<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>}</div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span></div>
+<div class="foldopen" id="foldopen00183" data-start="{" data-end="}">
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno"><a class="line" href="Poly_8cpp.html#a030dbe97ecff4c5cf9bb4224a4c66aa4">  183</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="Poly_8cpp.html#a030dbe97ecff4c5cf9bb4224a4c66aa4">llzkPoly_ApplyMapOpGetSymbolOperands</a>(MlirOperation op, MlirValue *dst) {</div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>  copyValues(symbolOperands(op), dst);</div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>}</div>
 </div>
+<div class="ttc" id="aBuilder_8cpp_html_ae83ea6c8112a8f7042f9962b06443d1c"><div class="ttname"><a href="Builder_8cpp.html#ae83ea6c8112a8f7042f9962b06443d1c">mlirOpBuilderInsert</a></div><div class="ttdeci">MlirOperation mlirOpBuilderInsert(MlirOpBuilder builder, MlirOperation op)</div><div class="ttdoc">Inserts op at the current insertion point of builder and returns it.</div><div class="ttdef"><b>Definition</b> <a href="Builder_8cpp_source.html#l00167">Builder.cpp:167</a></div></div>
 <div class="ttc" id="aCompare_8h_html"><div class="ttname"><a href="Compare_8h.html">Compare.h</a></div></div>
-<div class="ttc" id="aPoly_8cpp_html_a030dbe97ecff4c5cf9bb4224a4c66aa4"><div class="ttname"><a href="Poly_8cpp.html#a030dbe97ecff4c5cf9bb4224a4c66aa4">llzkPoly_ApplyMapOpGetSymbolOperands</a></div><div class="ttdeci">void llzkPoly_ApplyMapOpGetSymbolOperands(MlirOperation op, MlirValue *dst)</div><div class="ttdoc">Writes into the destination buffer the operands that correspond to symbols in the affine map.</div><div class="ttdef"><b>Definition</b> <a href="#l00177">Poly.cpp:177</a></div></div>
+<div class="ttc" id="aPoly_8cpp_html_a030dbe97ecff4c5cf9bb4224a4c66aa4"><div class="ttname"><a href="Poly_8cpp.html#a030dbe97ecff4c5cf9bb4224a4c66aa4">llzkPoly_ApplyMapOpGetSymbolOperands</a></div><div class="ttdeci">void llzkPoly_ApplyMapOpGetSymbolOperands(MlirOperation op, MlirValue *dst)</div><div class="ttdoc">Writes into the destination buffer the operands that correspond to symbols in the affine map.</div><div class="ttdef"><b>Definition</b> <a href="#l00183">Poly.cpp:183</a></div></div>
 <div class="ttc" id="aPoly_8cpp_html_a09480e846a00738bb93904d92a5931ef"><div class="ttname"><a href="Poly_8cpp.html#a09480e846a00738bb93904d92a5931ef">llzkPoly_TemplateOpGetConstExprNames</a></div><div class="ttdeci">void llzkPoly_TemplateOpGetConstExprNames(MlirOperation op, MlirAttribute *dst)</div><div class="ttdoc">Writes into the destination buffer the names of all TemplateExprOp children as FlatSymbolRefAttr attr...</div><div class="ttdef"><b>Definition</b> <a href="#l00097">Poly.cpp:97</a></div></div>
 <div class="ttc" id="aPoly_8cpp_html_a0d34803e1a375784060a5626826e0f0a"><div class="ttname"><a href="Poly_8cpp.html#a0d34803e1a375784060a5626826e0f0a">llzkPoly_TemplateOpNumConstExprOps</a></div><div class="ttdeci">intptr_t llzkPoly_TemplateOpNumConstExprOps(MlirOperation op)</div><div class="ttdoc">Returns the number of TemplateExprOp children in the TemplateOp.</div><div class="ttdef"><b>Definition</b> <a href="#l00093">Poly.cpp:93</a></div></div>
 <div class="ttc" id="aPoly_8cpp_html_a126493991d7c2ab0949cb206c7cfcaf1"><div class="ttname"><a href="Poly_8cpp.html#a126493991d7c2ab0949cb206c7cfcaf1">llzkPoly_TemplateOpGetConstParamNames</a></div><div class="ttdeci">void llzkPoly_TemplateOpGetConstParamNames(MlirOperation op, MlirAttribute *dst)</div><div class="ttdoc">Writes into the destination buffer the names of all TemplateParamOp children as FlatSymbolRefAttr att...</div><div class="ttdef"><b>Definition</b> <a href="#l00081">Poly.cpp:81</a></div></div>
@@ -321,12 +328,12 @@ $(function(){initNavTree('Poly_8cpp_source.html','',''); });
 <div class="ttc" id="aPoly_8cpp_html_a2fae64d1336fa34353c48f3fa8eeffde"><div class="ttname"><a href="Poly_8cpp.html#a2fae64d1336fa34353c48f3fa8eeffde">llzkPoly_TemplateOpHasConstExprNamed</a></div><div class="ttdeci">bool llzkPoly_TemplateOpHasConstExprNamed(MlirOperation op, MlirStringRef find)</div><div class="ttdoc">Returns true if the TemplateOp has a TemplateExprOp with the given name.</div><div class="ttdef"><b>Definition</b> <a href="#l00101">Poly.cpp:101</a></div></div>
 <div class="ttc" id="aPoly_8cpp_html_a3d5efdb79d3f211fb39a923928f5dbbd"><div class="ttname"><a href="Poly_8cpp.html#a3d5efdb79d3f211fb39a923928f5dbbd">llzkPoly_TemplateOpGetBody</a></div><div class="ttdeci">MlirBlock llzkPoly_TemplateOpGetBody(MlirOperation op)</div><div class="ttdoc">Returns the single body Block within the TemplateOp&#39;s Region.</div><div class="ttdef"><b>Definition</b> <a href="#l00071">Poly.cpp:71</a></div></div>
 <div class="ttc" id="aPoly_8cpp_html_a4396bbaf3768d51eb20a3a906a1f4899"><div class="ttname"><a href="Poly_8cpp.html#a4396bbaf3768d51eb20a3a906a1f4899">llzkPoly_TemplateOpHasConstParamNamed</a></div><div class="ttdeci">bool llzkPoly_TemplateOpHasConstParamNamed(MlirOperation op, MlirStringRef find)</div><div class="ttdoc">Returns true if the TemplateOp has a TemplateParamOp with the given name.</div><div class="ttdef"><b>Definition</b> <a href="#l00085">Poly.cpp:85</a></div></div>
-<div class="ttc" id="aPoly_8cpp_html_a449a617869b47e553bae28825137d9aa"><div class="ttname"><a href="Poly_8cpp.html#a449a617869b47e553bae28825137d9aa">llzkPoly_ApplyMapOpGetNumSymbolOperands</a></div><div class="ttdeci">intptr_t llzkPoly_ApplyMapOpGetNumSymbolOperands(MlirOperation op)</div><div class="ttdoc">Returns the number of operands that correspond to symbols in the affine map.</div><div class="ttdef"><b>Definition</b> <a href="#l00170">Poly.cpp:170</a></div></div>
-<div class="ttc" id="aPoly_8cpp_html_a7270c2ba289e9de836f08e473a00b4e5"><div class="ttname"><a href="Poly_8cpp.html#a7270c2ba289e9de836f08e473a00b4e5">llzkPoly_ApplyMapOpGetDimOperands</a></div><div class="ttdeci">void llzkPoly_ApplyMapOpGetDimOperands(MlirOperation op, MlirValue *dst)</div><div class="ttdoc">Writes into the destination buffer the operands that correspond to dimensions in the affine map.</div><div class="ttdef"><b>Definition</b> <a href="#l00165">Poly.cpp:165</a></div></div>
+<div class="ttc" id="aPoly_8cpp_html_a449a617869b47e553bae28825137d9aa"><div class="ttname"><a href="Poly_8cpp.html#a449a617869b47e553bae28825137d9aa">llzkPoly_ApplyMapOpGetNumSymbolOperands</a></div><div class="ttdeci">intptr_t llzkPoly_ApplyMapOpGetNumSymbolOperands(MlirOperation op)</div><div class="ttdoc">Returns the number of operands that correspond to symbols in the affine map.</div><div class="ttdef"><b>Definition</b> <a href="#l00176">Poly.cpp:176</a></div></div>
+<div class="ttc" id="aPoly_8cpp_html_a7270c2ba289e9de836f08e473a00b4e5"><div class="ttname"><a href="Poly_8cpp.html#a7270c2ba289e9de836f08e473a00b4e5">llzkPoly_ApplyMapOpGetDimOperands</a></div><div class="ttdeci">void llzkPoly_ApplyMapOpGetDimOperands(MlirOperation op, MlirValue *dst)</div><div class="ttdoc">Writes into the destination buffer the operands that correspond to dimensions in the affine map.</div><div class="ttdef"><b>Definition</b> <a href="#l00171">Poly.cpp:171</a></div></div>
 <div class="ttc" id="aPoly_8cpp_html_a9eaaecf8f7e9c706c958c2d476949e13"><div class="ttname"><a href="Poly_8cpp.html#a9eaaecf8f7e9c706c958c2d476949e13">llzkPoly_TemplateOpHasConstParamOps</a></div><div class="ttdeci">bool llzkPoly_TemplateOpHasConstParamOps(MlirOperation op)</div><div class="ttdoc">Returns true if the TemplateOp has any TemplateParamOp children.</div><div class="ttdef"><b>Definition</b> <a href="#l00073">Poly.cpp:73</a></div></div>
 <div class="ttc" id="aPoly_8cpp_html_ab7e760a9f89497bd8bb2612ca9b5fa95"><div class="ttname"><a href="Poly_8cpp.html#ab7e760a9f89497bd8bb2612ca9b5fa95">llzkPoly_TypeVarTypeGetFromAttr</a></div><div class="ttdeci">MlirType llzkPoly_TypeVarTypeGetFromAttr(MlirAttribute attrWrapper)</div><div class="ttdoc">Creates a llzk::polymorphic::TypeVarType from either a StringAttr or a FlatSymbolRefAttr.</div><div class="ttdef"><b>Definition</b> <a href="#l00051">Poly.cpp:51</a></div></div>
 <div class="ttc" id="aPoly_8cpp_html_acadeb77afffbd7859e5d5c2e40c9be6a"><div class="ttname"><a href="Poly_8cpp.html#acadeb77afffbd7859e5d5c2e40c9be6a">llzkPoly_TypeVarTypeGetFromStringRef</a></div><div class="ttdeci">MlirType llzkPoly_TypeVarTypeGetFromStringRef(MlirContext ctx, MlirStringRef name)</div><div class="ttdoc">Creates a llzk::polymorphic::TypeVarType.</div><div class="ttdef"><b>Definition</b> <a href="#l00047">Poly.cpp:47</a></div></div>
-<div class="ttc" id="aPoly_8cpp_html_addea62220081c5b73852c2781e8594fc"><div class="ttname"><a href="Poly_8cpp.html#addea62220081c5b73852c2781e8594fc">llzkPoly_ApplyMapOpGetNumDimOperands</a></div><div class="ttdeci">intptr_t llzkPoly_ApplyMapOpGetNumDimOperands(MlirOperation op)</div><div class="ttdoc">Returns the number of operands that correspond to dimensions in the affine map.</div><div class="ttdef"><b>Definition</b> <a href="#l00158">Poly.cpp:158</a></div></div>
+<div class="ttc" id="aPoly_8cpp_html_addea62220081c5b73852c2781e8594fc"><div class="ttname"><a href="Poly_8cpp.html#addea62220081c5b73852c2781e8594fc">llzkPoly_ApplyMapOpGetNumDimOperands</a></div><div class="ttdeci">intptr_t llzkPoly_ApplyMapOpGetNumDimOperands(MlirOperation op)</div><div class="ttdoc">Returns the number of operands that correspond to dimensions in the affine map.</div><div class="ttdef"><b>Definition</b> <a href="#l00164">Poly.cpp:164</a></div></div>
 <div class="ttc" id="aPoly_8cpp_html_adfabe38e61ac450a4d00cc81711d0a3b"><div class="ttname"><a href="Poly_8cpp.html#adfabe38e61ac450a4d00cc81711d0a3b">llzkPoly_TemplateOpNumConstParamOps</a></div><div class="ttdeci">intptr_t llzkPoly_TemplateOpNumConstParamOps(MlirOperation op)</div><div class="ttdoc">Returns the number of TemplateParamOp children in the TemplateOp.</div><div class="ttdef"><b>Definition</b> <a href="#l00077">Poly.cpp:77</a></div></div>
 <div class="ttc" id="aPoly_8h_html"><div class="ttname"><a href="Poly_8h.html">Poly.h</a></div></div>
 <div class="ttc" id="aPolymorphic_2IR_2Dialect_8h_html"><div class="ttname"><a href="Polymorphic_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
