@@ -104,11 +104,9 @@ static bool isTypeVarParam(TemplateParamOp op) {
 
 /// Merge nested array dimensions produced by replacing an array element type.
 ///
-/// If `array<4 x !poly.tvar<@T>>` is rewritten with
-/// `@T -> array<8 x index>`, the canonical aggregate shape should become
-/// `array<4 x 8 x index>` rather than an array whose element type is another
-/// array. This mirrors the array instantiation behavior used by the existing
-/// polymorphic transforms.
+/// If `array<4 x !poly.tvar<@T>>` is rewritten with `@T -> array<8 x index>`, the canonical
+/// aggregate shape should become `array<4,8 x index>` rather than an array whose element type
+/// is another array because the latter is not allowed in LLZK IR.
 static ArrayType flattenInstantiatedArrayType(ArrayType inputTy, Type convertedElemTy) {
   SmallVector<Attribute> mergedDims(inputTy.getDimensionSizes());
   while (ArrayType nestedArrTy = llvm::dyn_cast<ArrayType>(convertedElemTy)) {

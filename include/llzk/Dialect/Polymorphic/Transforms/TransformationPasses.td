@@ -123,6 +123,9 @@ def TypeVarInferencePass : LLZKPass<"llzk-infer-tvar"> {
     function body, such as `poly.unifiable_cast` between a type variable and a concrete aggregate
     type. Rewrites affected function signatures and body types, removes redundant casts, drops
     resolved `poly.param` declarations, and updates call-site template parameter lists.
+
+    This pass may result in `poly.template` containing no `poly.param` or `poly.expr`. Run
+    `llzk-drop-empty-templates` after this pass to simplify these templates.
   }];
 }
 
