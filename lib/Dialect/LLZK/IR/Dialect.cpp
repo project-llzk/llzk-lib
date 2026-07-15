@@ -24,6 +24,8 @@
 
 #include <llvm/ADT/TypeSwitch.h>
 
+#include <limits>
+
 // TableGen'd implementation files
 #include "llzk/Dialect/LLZK/IR/Dialect.cpp.inc"
 
@@ -39,6 +41,52 @@ using namespace llzk;
 //===------------------------------------------------------------------===//
 
 namespace {
+
+/// Denotes which dialect attribute is serialized.
+enum class LLZKAttrEncoding : uint8_t {
+  LoopBounds = 0,
+};
+
+struct LLZKDialectBytecodeInterfaceImpl : public LLZKDialectBytecodeInterface<LLZKDialect> {
+  using LLZKDialectBytecodeInterface::LLZKDialectBytecodeInterface;
+
+  Attribute readAttribute(DialectBytecodeReader &reader) const final {
+    uint64_t encoding;
+    if (failed(reader.readVarInt(encoding))) {
+      return {};
+    }
+    if (encoding > std::numeric_limits<uint8_t>::max()) {
+      reader.emitError() << "unknown LLZK attribute encoding: " << encoding;
+      return {};
+    }
+
+    switch (static_cast<LLZKAttrEncoding>(encoding)) {
+    case LLZKAttrEncoding::LoopBounds: {
+      FailureOr<APInt> lower = readAPInt(reader);
+      FailureOr<APInt> upper = readAPInt(reader);
+      FailureOr<APInt> step = readAPInt(reader);
+      if (failed(lower) || failed(upper) || failed(step)) {
+        return {};
+      }
+      return LoopBoundsAttr::get(getContext(), *lower, *upper, *step);
+    }
+    }
+
+    reader.emitError() << "unknown LLZK attribute encoding: " << encoding;
+    return {};
+  }
+
+  LogicalResult writeAttribute(Attribute attr, DialectBytecodeWriter &writer) const final {
+    if (auto loopBounds = dyn_cast<LoopBoundsAttr>(attr)) {
+      writer.writeVarInt(static_cast<uint64_t>(LLZKAttrEncoding::LoopBounds));
+      writeAPInt(writer, loopBounds.getLower());
+      writeAPInt(writer, loopBounds.getUpper());
+      writeAPInt(writer, loopBounds.getStep());
+      return success();
+    }
+    return failure();
+  }
+};
 
 LogicalResult verifyLlzkMainAttr(Operation *op, Attribute attr) {
   ModuleOp moduleOp = llvm::dyn_cast<ModuleOp>(op);
@@ -82,5 +130,5 @@ auto LLZKDialect::initialize() -> void {
     #include "llzk/Dialect/LLZK/IR/Ops.cpp.inc"
   >();
   // clang-format on
-  addInterfaces<LLZKDialectBytecodeInterface<LLZKDialect>>();
+  addInterfaces<LLZKDialectBytecodeInterfaceImpl>();
 }

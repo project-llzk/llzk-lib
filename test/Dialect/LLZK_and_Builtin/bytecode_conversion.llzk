@@ -1,8 +1,10 @@
-// RUN: llzk-opt -split-input-file -emit-bytecode %s | llzk-opt - 2>&1 | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -emit-bytecode %s | llzk-opt - 2>&1 | FileCheck --enable-var-scope %s
 // COM: This chained `llzk-opt` construction converts text -> bytecode -> text
-// COM: https://veridise.atlassian.net/browse/LLZK-205
 
-module attributes {llzk.lang} {
+module attributes {
+    llzk.fields = #felt.field<"profilefield", 28948022309329048855892746252171976963363056481941560715954676764349967630337>,
+    llzk.lang
+  } {
   struct.def @ComponentA {
     function.def @compute(%a: !felt.type) -> !struct.type<@ComponentA> {
       %self = struct.new : !struct.type<@ComponentA>
@@ -14,15 +16,45 @@ module attributes {llzk.lang} {
       function.return
     }
   }
-}
 
-// CHECK-LABEL: struct.def @ComponentA {
-// CHECK-NEXT:     function.def @compute(%[[VAL_0:.*]]: !felt.type) -> !struct.type<@ComponentA> attributes {function.allow_witness} {
-// CHECK-NEXT:       %[[VAL_1:.*]] = struct.new : <@ComponentA>
-// CHECK-NEXT:       %[[VAL_2:.*]] = felt.const 1
-// CHECK-NEXT:       function.return %[[VAL_1]] : !struct.type<@ComponentA>
+  function.def @bytecode_apints(%a: !felt.type<"profilefield">) -> !felt.type<"profilefield"> {
+    %c = felt.const 21888242871839275222246405745257275088696311157297823662689037894645226208583 : !felt.type<"profilefield">
+    %res = scf.while (%arg1 = %c) : (!felt.type<"profilefield">) -> !felt.type<"profilefield"> {
+      %condition = arith.constant true
+      scf.condition(%condition) %arg1 : !felt.type<"profilefield">
+    } do {
+    ^bb0(%arg2: !felt.type<"profilefield">):
+      scf.yield %arg2 : !felt.type<"profilefield">
+    } attributes { llzk.loopbounds = #llzk.loopbounds<0 to 115792089237316195423570985008687907853269984665640564039457584007908834671663 step 1> }
+    function.return %res : !felt.type<"profilefield">
+  }
+}
+// CHECK-LABEL: module attributes {
+// CHECK-SAME:    llzk.fields = #felt.field<"profilefield", 28948022309329048855892746252171976963363056481941560715954676764349967630337>,
+// CHECK-SAME:    llzk.lang
+// CHECK-SAME:  } {
+//
+// CHECK-LABEL:   struct.def @ComponentA {
+// CHECK-NEXT:       function.def @compute(%[[VAL_0:.*]]: !felt.type) -> !struct.type<@ComponentA> attributes {function.allow_witness} {
+// CHECK-NEXT:         %[[VAL_1:.*]] = struct.new : <@ComponentA>
+// CHECK-NEXT:         %[[VAL_2:.*]] = felt.const 1
+// CHECK-NEXT:         function.return %[[VAL_1]] : !struct.type<@ComponentA>
+// CHECK-NEXT:       }
+// CHECK-NEXT:       function.def @constrain(%[[VAL_3:.*]]: !struct.type<@ComponentA>, %[[VAL_4:.*]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:         function.return
+// CHECK-NEXT:       }
 // CHECK-NEXT:     }
-// CHECK-NEXT:     function.def @constrain(%[[VAL_3:.*]]: !struct.type<@ComponentA>, %[[VAL_4:.*]]: !felt.type) attributes {function.allow_constraint} {
-// CHECK-NEXT:       function.return
-// CHECK-NEXT:     }
-// CHECK-NEXT:   }
+//
+// CHECK-LABEL:   function.def @bytecode_apints
+// CHECK-SAME:    (%[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type<"profilefield">) -> !felt.type<"profilefield"> {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = felt.const  21888242871839275222246405745257275088696311157297823662689037894645226208583 : <"profilefield">
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = scf.while (%[[VAL_8:[0-9a-zA-Z_\.]+]] = %[[VAL_6]]) : (!felt.type<"profilefield">) -> !felt.type<"profilefield"> {
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        scf.condition(%[[VAL_9]]) %[[VAL_8]] : !felt.type<"profilefield">
+// CHECK-NEXT:      } do {
+// CHECK-NEXT:      ^bb0(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !felt.type<"profilefield">):
+// CHECK-NEXT:        scf.yield %[[VAL_10]] : !felt.type<"profilefield">
+// CHECK-NEXT:      } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 115792089237316195423570985008687907853269984665640564039457584007908834671663 step 1>}
+// CHECK-NEXT:      function.return %[[VAL_7]] : !felt.type<"profilefield">
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
