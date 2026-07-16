@@ -733,7 +733,7 @@ class StructCloner {
     if (remainingNames.empty()) { // FULL INSTANTIATION CASE
       // Set name of the new struct by prepending its name with instantiated template name.
       newStruct.setSymName(
-          (templateNameWithAttrs + mlir::Twine('_') + newStruct.getSymName()).str()
+          buildInstantiatedStructName(templateNameWithAttrs, newStruct.getSymName())
       );
       // Insert 'newStruct' into the parent ModuleOp of the original TemplateOp. Use the
       // `SymbolTable::insert()` function so that the name will be made unique if necessary.
@@ -993,18 +993,6 @@ LogicalResult instantiateMainStruct(ModuleOp modOp, ConversionTracker &tracker) 
 } // namespace Step1_InstantiateStructs
 
 namespace Step2_InstantiateFunctions {
-
-/// Flatten nested array instantiations by appending any dimensions contributed by the converted
-/// element type onto the outer array. This allows wildcard element types to resolve to
-/// higher-rank arrays even though LLZK array element types cannot themselves be arrays.
-static ArrayType flattenInstantiatedArrayType(ArrayType inputTy, Type convertedElemTy) {
-  SmallVector<Attribute> mergedDims(inputTy.getDimensionSizes());
-  while (ArrayType nestedArrTy = llvm::dyn_cast<ArrayType>(convertedElemTy)) {
-    llvm::append_range(mergedDims, nestedArrTy.getDimensionSizes());
-    convertedElemTy = nestedArrTy.getElementType();
-  }
-  return ArrayType::get(convertedElemTy, mergedDims);
-}
 
 /// TypeConverter for function instantiation that replaces TypeVarType and symbolic
 /// ArrayType/StructType parameters with their concrete values determined by unification.
@@ -1609,44 +1597,38 @@ private:
       TemplateOp parentTemplate, ModuleOp parentModule, StringRef templateNameWithAttrs,
       const DenseMap<Attribute, Attribute> &paramNameToConcrete
   ) {
-    MLIRContext *ctx = op.getContext();
-    std::string newFuncName =
-        buildInstantiatedFunctionName(templateNameWithAttrs, callTgt.getSymName());
-    StringRef actualNewFuncName = newFuncName;
-    if (!symTables.getSymbolTable(parentModule).lookup(newFuncName)) {
-      FuncDefOp newFunc = callTgt.clone();
-      newFunc.setSymName(newFuncName);
+    auto initClone = [&](FuncDefOp newFunc) -> LogicalResult {
       convertCalleesInPlace(newFunc, paramNameToConcrete);
-      // Insert before the TemplateOp; symbol table may adjust the name to ensure uniqueness.
-      symTables.getSymbolTable(parentModule).insert(newFunc, Block::iterator(parentTemplate));
-      actualNewFuncName = newFunc.getSymName();
-      LLVM_DEBUG(
-          llvm::dbgs() << "[InstantiateFuncAtCallOp]  created full instantiation function: "
-                       << actualNewFuncName << '\n'
-      );
       if (failed(applyBodyConversions(op, newFunc, paramNameToConcrete))) {
+        StringRef newFuncName = newFunc.getSymName();
         LLVM_DEBUG(
-            llvm::dbgs() << "[InstantiateFuncAtCallOp]   body conversion failed for "
-                         << actualNewFuncName << '\n'
+            llvm::dbgs() << "[InstantiateFuncAtCallOp]   body conversion failed for " << newFuncName
+                         << '\n'
         );
-        newFunc->erase();
         return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
-          diag.append("failure while creating instantiated function '", actualNewFuncName, '\'');
+          diag.append("failure while creating instantiated function '", newFuncName, '\'');
         });
       }
-    } else {
-      LLVM_DEBUG(
-          llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing full instantiation function: "
-                       << actualNewFuncName << '\n'
-      );
+      return success();
+    };
+
+    FailureOr<FullFunctionInstantiationResult> instantiation = getOrCreateFullFunctionInstantiation(
+        parentModule, parentTemplate, callTgt, op.getCalleeAttr(), templateNameWithAttrs, symTables,
+        initClone
+    );
+    if (failed(instantiation)) {
+      return failure();
     }
+    LLVM_DEBUG(
+        llvm::dbgs() << "[InstantiateFuncAtCallOp]  "
+                     << (instantiation->created ? "created" : "reusing")
+                     << " full instantiation function: " << instantiation->func.getSymName() << '\n'
+    );
 
     // Callee: drop template & original function names, add the new module-level function name.
     // Original: @[prefix...]::@TemplateName::@funcName
     // New:      @[prefix...]::@newFuncName
-    return getInstantiatedFunctionCallee(
-        op.getCalleeAttr(), StringAttr::get(ctx, actualNewFuncName)
-    );
+    return instantiation->callee;
   }
 
   /// Create or reuse a partially-instantiated template that preserves the remaining non-concrete

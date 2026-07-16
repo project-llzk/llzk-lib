@@ -296,30 +296,6 @@ SymbolRefAttr appendLeafName(SymbolRefAttr orig, const Twine &newLeafSuffix) {
   }
 }
 
-std::string
-buildInstantiatedFunctionName(StringRef instantiatedTemplateName, StringRef functionName) {
-  return (Twine(instantiatedTemplateName) + "_" + functionName).str();
-}
-
-std::string buildInstantiatedFunctionName(
-    StringRef templateName, StringRef functionName, ArrayRef<Attribute> templateArgs
-) {
-  return buildInstantiatedFunctionName(
-      BuildShortTypeString::from(templateName.str(), templateArgs), functionName
-  );
-}
-
-SymbolRefAttr getInstantiatedFunctionCallee(
-    SymbolRefAttr templateFunctionCallee, StringAttr instantiatedFunctionName
-) {
-  SmallVector<FlatSymbolRefAttr> pieces = getPieces(templateFunctionCallee);
-  assert(pieces.size() >= 2 && "callee must include at least template and function names");
-  pieces.pop_back();
-  pieces.pop_back();
-  pieces.push_back(FlatSymbolRefAttr::get(instantiatedFunctionName));
-  return asSymbolRefAttr(pieces);
-}
-
 FailureOr<ModuleOp> getRootModule(Operation *from) {
   std::vector<FlatSymbolRefAttr> path;
   return RootPathBuilder(RootSelector::CLOSEST, from, nullptr).collectPathToRoot(from, path);

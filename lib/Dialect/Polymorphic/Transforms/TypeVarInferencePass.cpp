@@ -54,6 +54,8 @@ namespace llzk::polymorphic {
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h.inc"
 } // namespace llzk::polymorphic
 
+#include "SharedImpl.h"
+
 #define DEBUG_TYPE "llzk-infer-tvar"
 
 using namespace mlir;
@@ -111,18 +113,41 @@ static bool isTypeVarParam(TemplateParamOp op) {
   return tvarTy && tvarTy.getRefName() == op.getName();
 }
 
-/// Merge nested array dimensions produced by replacing an array element type.
-///
-/// If `array<4 x !poly.tvar<@T>>` is rewritten with `@T -> array<8 x index>`, the canonical
-/// aggregate shape should become `array<4,8 x index>` rather than an array whose element type
-/// is another array because the latter is not allowed in LLZK IR.
-static ArrayType flattenInstantiatedArrayType(ArrayType inputTy, Type convertedElemTy) {
-  SmallVector<Attribute> mergedDims(inputTy.getDimensionSizes());
-  while (ArrayType nestedArrTy = llvm::dyn_cast<ArrayType>(convertedElemTy)) {
-    llvm::append_range(mergedDims, nestedArrTy.getDimensionSizes());
-    convertedElemTy = nestedArrTy.getElementType();
+/// Convert every type in `oldTypes`, returning whether any entry changed.
+template <typename ConverterT>
+static bool
+convertTypeRange(TypeRange oldTypes, SmallVectorImpl<Type> &newTypes, ConverterT &converter) {
+  bool changed = false;
+  newTypes.reserve(oldTypes.size());
+  for (Type oldTy : oldTypes) {
+    Type newTy = converter.convertType(oldTy);
+    newTypes.push_back(newTy);
+    changed |= newTy != oldTy;
   }
-  return ArrayType::get(convertedElemTy, mergedDims);
+  return changed;
+}
+
+/// Convert a POD type by recursively converting its record types.
+template <typename ConverterT>
+static Type convertPodType(PodType podTy, MLIRContext *ctx, ConverterT &converter) {
+  SmallVector<RecordAttr> newRecords;
+  bool changed = false;
+  for (RecordAttr record : podTy.getRecords()) {
+    Type newRecordTy = converter.convertType(record.getType());
+    newRecords.push_back(RecordAttr::get(ctx, record.getName(), newRecordTy));
+    changed |= newRecordTy != record.getType();
+  }
+  return changed ? PodType::get(ctx, newRecords) : podTy;
+}
+
+/// Convert a function type by recursively converting inputs and results.
+template <typename ConverterT>
+static Type convertFunctionType(FunctionType funcTy, ConverterT &converter) {
+  SmallVector<Type> newInputs;
+  SmallVector<Type> newResults;
+  bool changed = convertTypeRange(funcTy.getInputs(), newInputs, converter);
+  changed |= convertTypeRange(funcTy.getResults(), newResults, converter);
+  return changed ? FunctionType::get(funcTy.getContext(), newInputs, newResults) : funcTy;
 }
 
 /// Converts types and attributes by replacing inferred template type variables.
@@ -180,27 +205,16 @@ public:
       if (newElemTy == arrTy.getElementType()) {
         return ty;
       }
-      return flattenInstantiatedArrayType(arrTy, newElemTy);
+      return llzk::polymorphic::detail::flattenInstantiatedArrayType(arrTy, newElemTy);
     }
     if (auto structTy = llvm::dyn_cast<StructType>(ty)) {
       return convertStructType(structTy);
     }
     if (auto podTy = llvm::dyn_cast<PodType>(ty)) {
-      SmallVector<RecordAttr> newRecords;
-      bool changed = false;
-      for (RecordAttr record : podTy.getRecords()) {
-        Type newRecordTy = convertType(record.getType());
-        newRecords.push_back(RecordAttr::get(ctx_, record.getName(), newRecordTy));
-        changed |= newRecordTy != record.getType();
-      }
-      return changed ? PodType::get(ctx_, newRecords) : ty;
+      return convertPodType(podTy, ctx_, *this);
     }
     if (auto funcTy = llvm::dyn_cast<FunctionType>(ty)) {
-      SmallVector<Type> newInputs;
-      SmallVector<Type> newResults;
-      bool changed = convertTypes(funcTy.getInputs(), newInputs);
-      changed |= convertTypes(funcTy.getResults(), newResults);
-      return changed ? FunctionType::get(ctx_, newInputs, newResults) : ty;
+      return convertFunctionType(funcTy, *this);
     }
     return ty;
   }
@@ -298,18 +312,6 @@ private:
     return diag;
   }
 
-  /// Convert every type in `oldTypes`, returning whether any entry changed.
-  bool convertTypes(TypeRange oldTypes, SmallVectorImpl<Type> &newTypes) const {
-    bool changed = false;
-    newTypes.reserve(oldTypes.size());
-    for (Type oldTy : oldTypes) {
-      Type newTy = convertType(oldTy);
-      newTypes.push_back(newTy);
-      changed |= newTy != oldTy;
-    }
-    return changed;
-  }
-
   /// Return true when `structTy` names a symbol nested inside the template being
   /// rewritten.
   ///
@@ -353,6 +355,283 @@ private:
   }
 };
 
+/// Return true if `attr` is a concrete struct-instantiation argument.
+static bool isConcreteInstantiationAttr(Attribute attr) {
+  if (auto tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
+    return isConcreteType(tyAttr.getValue(), /*allowStructParams=*/false);
+  }
+  if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
+    return !isDynamic(intAttr);
+  }
+  return false;
+}
+
+/// Rewrite a function type and keep the entry block arguments in sync.
+///
+/// `function.def` stores its function signature separately from the entry block
+/// argument types, so both surfaces must be updated when an argument slot is
+/// rewritten from `!poly.tvar` to a concrete type.
+template <typename ConverterT>
+static void updateFuncSignature(FuncDefOp func, ConverterT &converter) {
+  FunctionType oldFuncTy = func.getFunctionType();
+  Type converted = converter.convertType(oldFuncTy);
+  auto newFuncTy = llvm::cast<FunctionType>(converted);
+  if (oldFuncTy == newFuncTy) {
+    return;
+  }
+
+  func.setType(newFuncTy);
+  if (func.getFunctionBody().empty()) {
+    return;
+  }
+
+  Block &entryBlock = func.getFunctionBody().front();
+  assert(entryBlock.getNumArguments() == newFuncTy.getNumInputs());
+  for (auto [arg, newTy] : llvm::zip_equal(entryBlock.getArguments(), newFuncTy.getInputs())) {
+    arg.setType(newTy);
+  }
+}
+
+/// Convert every type-bearing surface on `op` that can mention an inferred type
+/// variable.
+///
+/// This handles operation results, region block arguments, function signatures,
+/// and attributes containing types. The pass mutates the IR directly because the
+/// transformation preserves operation semantics and only changes already-proven
+/// type annotations.
+template <typename ConverterT>
+static bool convertOperationTypes(Operation *op, ConverterT &converter) {
+  bool changed = false;
+
+  if (auto func = llvm::dyn_cast<FuncDefOp>(op)) {
+    FunctionType oldFuncTy = func.getFunctionType();
+    updateFuncSignature(func, converter);
+    changed |= oldFuncTy != func.getFunctionType();
+  }
+
+  for (Region &region : op->getRegions()) {
+    for (Block &block : region.getBlocks()) {
+      for (BlockArgument arg : block.getArguments()) {
+        Type newTy = converter.convertType(arg.getType());
+        if (newTy != arg.getType()) {
+          arg.setType(newTy);
+          changed = true;
+        }
+      }
+    }
+  }
+
+  for (Value result : op->getResults()) {
+    Type newTy = converter.convertType(result.getType());
+    if (newTy != result.getType()) {
+      result.setType(newTy);
+      changed = true;
+    }
+  }
+
+  SmallVector<NamedAttribute> newAttrs;
+  bool attrsChanged = false;
+  newAttrs.reserve(op->getAttrs().size());
+  for (NamedAttribute attr : op->getAttrs()) {
+    Attribute newAttr = converter.convertAttr(attr.getValue());
+    newAttrs.emplace_back(attr.getName(), newAttr);
+    attrsChanged |= newAttr != attr.getValue();
+  }
+  if (attrsChanged) {
+    op->setAttrs(DictionaryAttr::get(op->getContext(), newAttrs));
+    changed = true;
+  }
+
+  return changed;
+}
+
+/// Remove `poly.unifiable_cast` operations that became identity casts.
+///
+/// After type replacement, a cast such as
+/// `!poly.tvar<@T> -> !array.type<4 x index>` becomes
+/// `!array.type<4 x index> -> !array.type<4 x index>`. Such casts no longer
+/// carry information and can be replaced with their input value.
+static void removeIdentityCasts(Operation *root) {
+  SmallVector<UnifiableCastOp> erase;
+  root->walk([&erase](UnifiableCastOp castOp) {
+    if (castOp.getInput().getType() == castOp.getResult().getType()) {
+      erase.push_back(castOp);
+    }
+  });
+  for (UnifiableCastOp castOp : erase) {
+    castOp.getResult().replaceAllUsesWith(castOp.getInput());
+    castOp.erase();
+  }
+}
+
+/// Convert concrete parameterized struct uses into module-level struct clones.
+///
+/// This intentionally implements only the fully-concrete case needed after
+/// type-variable inference exposes an external instantiation such as
+/// `!struct.type<@TBox::@Box<[index]>>`. More general partial struct
+/// instantiation remains the flattening pass' job.
+class ConcreteStructInstantiationConverter {
+  /// Context used to allocate converted aggregate types and attributes.
+  MLIRContext *ctx_;
+  /// Root operation used for resolving struct definitions.
+  ModuleOp module_;
+  /// Symbol tables reused for lookup and insertion.
+  SymbolTableCollection &tables_;
+  /// Already-created instantiations keyed by the original concrete struct type.
+  DenseMap<StructType, StructType> instantiations_;
+  /// Type replacements active while rewriting the body of one cloned struct.
+  DenseMap<StringAttr, Type> activeTypeReplacements_;
+
+public:
+  /// Create a converter for concrete struct instantiations in `module`.
+  ConcreteStructInstantiationConverter(
+      MLIRContext *ctx, ModuleOp module, SymbolTableCollection &tables
+  )
+      : ctx_(ctx), module_(module), tables_(tables) {}
+
+  /// Convert a type by recursively instantiating concrete parameterized structs.
+  Type convertType(Type ty) {
+    if (!ty) {
+      return ty;
+    }
+    if (auto tvarTy = llvm::dyn_cast<TypeVarType>(ty)) {
+      auto it = activeTypeReplacements_.find(tvarTy.getNameRef().getAttr());
+      return it == activeTypeReplacements_.end() ? ty : it->second;
+    }
+    if (auto arrTy = llvm::dyn_cast<ArrayType>(ty)) {
+      Type newElemTy = convertType(arrTy.getElementType());
+      return newElemTy == arrTy.getElementType()
+                 ? ty
+                 : llzk::polymorphic::detail::flattenInstantiatedArrayType(arrTy, newElemTy);
+    }
+    if (auto podTy = llvm::dyn_cast<PodType>(ty)) {
+      return convertPodType(podTy, ctx_, *this);
+    }
+    if (auto funcTy = llvm::dyn_cast<FunctionType>(ty)) {
+      return convertFunctionType(funcTy, *this);
+    }
+    if (auto structTy = llvm::dyn_cast<StructType>(ty)) {
+      return convertStructType(structTy);
+    }
+    return ty;
+  }
+
+  /// Convert an attribute that can contain type or template argument references.
+  Attribute convertAttr(Attribute attr) {
+    if (!attr) {
+      return attr;
+    }
+    if (StringAttr symbolName = getFlatSymbolName(attr)) {
+      auto it = activeTypeReplacements_.find(symbolName);
+      if (it != activeTypeReplacements_.end()) {
+        return TypeAttr::get(it->second);
+      }
+    }
+    if (auto tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
+      Type newTy = convertType(tyAttr.getValue());
+      return newTy == tyAttr.getValue() ? attr : TypeAttr::get(newTy);
+    }
+    if (auto arrAttr = llvm::dyn_cast<ArrayAttr>(attr)) {
+      SmallVector<Attribute> newAttrs;
+      bool changed = false;
+      for (Attribute nested : arrAttr.getValue()) {
+        Attribute newNested = convertAttr(nested);
+        newAttrs.push_back(newNested);
+        changed |= newNested != nested;
+      }
+      return changed ? ArrayAttr::get(ctx_, newAttrs) : attr;
+    }
+    return attr;
+  }
+
+private:
+  /// Convert struct parameters and instantiate the struct if all parameters are concrete.
+  StructType convertStructType(StructType structTy) {
+    ArrayAttr params = structTy.getParams();
+    if (!params) {
+      return structTy;
+    }
+
+    SmallVector<Attribute> newParams;
+    bool changed = false;
+    for (Attribute attr : params.getValue()) {
+      Attribute newAttr = convertAttr(attr);
+      newParams.push_back(newAttr);
+      changed |= newAttr != attr;
+    }
+    StructType convertedTy =
+        changed ? StructType::get(structTy.getNameRef(), ArrayAttr::get(ctx_, newParams))
+                : structTy;
+
+    if (!llvm::all_of(newParams, isConcreteInstantiationAttr)) {
+      return convertedTy;
+    }
+
+    FailureOr<StructType> cloneTy = getOrCreateStructClone(convertedTy, newParams);
+    return succeeded(cloneTy) ? *cloneTy : convertedTy;
+  }
+
+  /// Create or reuse a module-level clone for `concreteStructTy`.
+  FailureOr<StructType>
+  getOrCreateStructClone(StructType concreteStructTy, ArrayRef<Attribute> concreteParams) {
+    if (auto it = instantiations_.find(concreteStructTy); it != instantiations_.end()) {
+      return it->second;
+    }
+
+    FailureOr<SymbolLookupResult<StructDefOp>> lookup =
+        concreteStructTy.getDefinition(tables_, module_, /*emitError=*/false);
+    if (failed(lookup)) {
+      return failure();
+    }
+
+    StructDefOp origStruct = lookup->get();
+    TemplateOp parentTemplate = getParentOfType<TemplateOp>(origStruct);
+    if (!parentTemplate) {
+      return failure();
+    }
+    StructType typeAtDef = origStruct.getType();
+    ArrayAttr paramNames = typeAtDef.getParams();
+    if (!paramNames || paramNames.size() != concreteParams.size()) {
+      return failure();
+    }
+
+    ModuleOp parentModule = getParentOfType<ModuleOp>(parentTemplate);
+    assert(parentModule && "TemplateOp must be nested in a ModuleOp");
+    std::string cloneName = llzk::polymorphic::detail::buildInstantiatedStructName(
+        parentTemplate.getSymName(), origStruct.getSymName(), concreteParams
+    );
+    SymbolTable &moduleSymbols = tables_.getSymbolTable(parentModule);
+    if (Operation *existing = moduleSymbols.lookup(cloneName)) {
+      if (auto existingStruct = llvm::dyn_cast<StructDefOp>(existing)) {
+        StructType existingTy = existingStruct.getType();
+        instantiations_.try_emplace(concreteStructTy, existingTy);
+        return existingTy;
+      }
+      return failure();
+    }
+
+    StructDefOp clone = origStruct.clone();
+    clone.setSymName(cloneName);
+    moduleSymbols.insert(clone, Block::iterator(parentTemplate));
+    StructType cloneTy = clone.getType();
+    instantiations_.try_emplace(concreteStructTy, cloneTy);
+
+    DenseMap<StringAttr, Type> previousReplacements = std::move(activeTypeReplacements_);
+    activeTypeReplacements_.clear();
+    for (auto [paramName, concreteAttr] : llvm::zip_equal(paramNames.getValue(), concreteParams)) {
+      auto paramSym = llvm::dyn_cast<FlatSymbolRefAttr>(paramName);
+      auto concreteType = llvm::dyn_cast<TypeAttr>(concreteAttr);
+      if (paramSym && concreteType) {
+        activeTypeReplacements_.try_emplace(paramSym.getAttr(), concreteType.getValue());
+      }
+    }
+    clone.walk([this](Operation *op) { convertOperationTypes(op, *this); });
+    removeIdentityCasts(clone.getOperation());
+    activeTypeReplacements_ = std::move(previousReplacements);
+    return cloneTy;
+  }
+};
+
 /// All inference state collected for one `poly.template`.
 struct TemplateInferenceInfo {
   /// The template being analyzed and potentially rewritten.
@@ -374,80 +653,84 @@ static bool symbolMatchesParam(SymbolRefAttr symRef, StringAttr paramName) {
   return symRef && symRef.getNestedReferences().empty() && symRef.getRootReference() == paramName;
 }
 
-/// Return whether a type mentions an eligible type-variable parameter.
-static bool typeMentionsParam(Type ty, StringAttr paramName);
+/// Checks whether types and type-bearing attributes mention one template parameter.
+class ParamMentionChecker {
+  StringAttr paramName_;
 
-/// Return whether an attribute mentions an eligible type-variable parameter.
-///
-/// Symbol references only count in template-argument positions, such as struct
-/// type parameter arrays or call-site template parameters. Top-level operation
-/// symbol attributes like callee or member names are not type-variable uses.
-static bool attrMentionsParam(Attribute attr, StringAttr paramName, bool allowSymbolRefs) {
-  if (!attr) {
+public:
+  explicit ParamMentionChecker(StringAttr paramName) : paramName_(paramName) {}
+
+  /// Return whether a type mentions the tracked type-variable parameter.
+  bool typeMentions(Type ty) const {
+    if (!ty) {
+      return false;
+    }
+    if (auto tvarTy = llvm::dyn_cast<TypeVarType>(ty)) {
+      return tvarTy.getNameRef().getAttr() == paramName_;
+    }
+    if (auto arrayTy = llvm::dyn_cast<ArrayType>(ty)) {
+      return typeMentions(arrayTy.getElementType()) ||
+             llvm::any_of(arrayTy.getDimensionSizes(), [this](Attribute dim) {
+        return attrMentions(dim, /*allowSymbolRefs=*/true);
+      });
+    }
+    if (auto structTy = llvm::dyn_cast<StructType>(ty)) {
+      ArrayAttr params = structTy.getParams();
+      return params && attrMentions(params, /*allowSymbolRefs=*/true);
+    }
+    if (auto podTy = llvm::dyn_cast<PodType>(ty)) {
+      return llvm::any_of(podTy.getRecords(), [this](RecordAttr record) {
+        return typeMentions(record.getType());
+      });
+    }
+    if (auto funcTy = llvm::dyn_cast<FunctionType>(ty)) {
+      return llvm::any_of(funcTy.getInputs(), [this](Type input) {
+        return typeMentions(input);
+      }) || llvm::any_of(funcTy.getResults(), [this](Type result) { return typeMentions(result); });
+    }
     return false;
   }
-  if (auto typeAttr = llvm::dyn_cast<TypeAttr>(attr)) {
-    return typeMentionsParam(typeAttr.getValue(), paramName);
-  }
-  if (auto arrayAttr = llvm::dyn_cast<ArrayAttr>(attr)) {
-    return llvm::any_of(arrayAttr, [paramName](Attribute nested) {
-      return attrMentionsParam(nested, paramName, /*allowSymbolRefs=*/true);
-    });
-  }
-  return allowSymbolRefs && symbolMatchesParam(llvm::dyn_cast<SymbolRefAttr>(attr), paramName);
-}
 
-/// Return whether a type mentions an eligible type-variable parameter.
-static bool typeMentionsParam(Type ty, StringAttr paramName) {
-  if (!ty) {
-    return false;
+  /// Return whether an attribute mentions the tracked type-variable parameter.
+  ///
+  /// Symbol references only count in template-argument positions, such as struct
+  /// type parameter arrays or call-site template parameters. Top-level operation
+  /// symbol attributes like callee or member names are not type-variable uses.
+  bool attrMentions(Attribute attr, bool allowSymbolRefs) const {
+    if (!attr) {
+      return false;
+    }
+    if (auto typeAttr = llvm::dyn_cast<TypeAttr>(attr)) {
+      return typeMentions(typeAttr.getValue());
+    }
+    if (auto arrayAttr = llvm::dyn_cast<ArrayAttr>(attr)) {
+      return llvm::any_of(arrayAttr, [this](Attribute nested) {
+        return attrMentions(nested, /*allowSymbolRefs=*/true);
+      });
+    }
+    return allowSymbolRefs && symbolMatchesParam(llvm::dyn_cast<SymbolRefAttr>(attr), paramName_);
   }
-  if (auto tvarTy = llvm::dyn_cast<TypeVarType>(ty)) {
-    return tvarTy.getNameRef().getAttr() == paramName;
-  }
-  if (auto arrayTy = llvm::dyn_cast<ArrayType>(ty)) {
-    return typeMentionsParam(arrayTy.getElementType(), paramName) ||
-           llvm::any_of(arrayTy.getDimensionSizes(), [paramName](Attribute dim) {
-      return attrMentionsParam(dim, paramName, /*allowSymbolRefs=*/true);
-    });
-  }
-  if (auto structTy = llvm::dyn_cast<StructType>(ty)) {
-    ArrayAttr params = structTy.getParams();
-    return params && attrMentionsParam(params, paramName, /*allowSymbolRefs=*/true);
-  }
-  if (auto podTy = llvm::dyn_cast<PodType>(ty)) {
-    return llvm::any_of(podTy.getRecords(), [paramName](RecordAttr record) {
-      return typeMentionsParam(record.getType(), paramName);
-    });
-  }
-  if (auto funcTy = llvm::dyn_cast<FunctionType>(ty)) {
-    return llvm::any_of(funcTy.getInputs(), [paramName](Type input) {
-      return typeMentionsParam(input, paramName);
-    }) || llvm::any_of(funcTy.getResults(), [paramName](Type result) {
-      return typeMentionsParam(result, paramName);
-    });
-  }
-  return false;
-}
+};
 
 /// Return whether `op` mentions an eligible type-variable parameter in a type-bearing surface.
 static bool operationMentionsParam(Operation *op, StringAttr paramName) {
-  if (llvm::any_of(op->getResultTypes(), [paramName](Type ty) {
-    return typeMentionsParam(ty, paramName);
+  ParamMentionChecker mentions(paramName);
+  if (llvm::any_of(op->getResultTypes(), [&mentions](Type ty) {
+    return mentions.typeMentions(ty);
   })) {
     return true;
   }
   for (Region &region : op->getRegions()) {
     for (Block &block : region.getBlocks()) {
-      if (llvm::any_of(block.getArgumentTypes(), [paramName](Type ty) {
-        return typeMentionsParam(ty, paramName);
+      if (llvm::any_of(block.getArgumentTypes(), [&mentions](Type ty) {
+        return mentions.typeMentions(ty);
       })) {
         return true;
       }
     }
   }
-  return llvm::any_of(op->getAttrs(), [paramName](NamedAttribute attr) {
-    return attrMentionsParam(attr.getValue(), paramName, /*allowSymbolRefs=*/false);
+  return llvm::any_of(op->getAttrs(), [&mentions](NamedAttribute attr) {
+    return mentions.attrMentions(attr.getValue(), /*allowSymbolRefs=*/false);
   });
 }
 
@@ -662,115 +945,16 @@ private:
   }
 };
 
-/// Rewrite a function type and keep the entry block arguments in sync.
-///
-/// `function.def` stores its function signature separately from the entry block
-/// argument types, so both surfaces must be updated when an argument slot is
-/// rewritten from `!poly.tvar` to a concrete type.
-static void updateFuncSignature(FuncDefOp func, const TypeVarReplacementConverter &converter) {
-  FunctionType oldFuncTy = func.getFunctionType();
-  Type converted = converter.convertType(oldFuncTy);
-  auto newFuncTy = llvm::cast<FunctionType>(converted);
-  if (oldFuncTy == newFuncTy) {
-    return;
-  }
-
-  func.setType(newFuncTy);
-  if (func.getFunctionBody().empty()) {
-    return;
-  }
-
-  Block &entryBlock = func.getFunctionBody().front();
-  assert(entryBlock.getNumArguments() == newFuncTy.getNumInputs());
-  for (auto [arg, newTy] : llvm::zip_equal(entryBlock.getArguments(), newFuncTy.getInputs())) {
-    arg.setType(newTy);
-  }
-}
-
-/// Convert every type-bearing surface on `op` that can mention an inferred type
-/// variable.
-///
-/// This handles operation results, region block arguments, function signatures,
-/// and attributes containing types. The pass mutates the IR directly because the
-/// transformation preserves operation semantics and only changes already-proven
-/// type annotations.
-static bool convertOperationTypes(Operation *op, const TypeVarReplacementConverter &converter) {
-  bool changed = false;
-
-  if (auto func = llvm::dyn_cast<FuncDefOp>(op)) {
-    FunctionType oldFuncTy = func.getFunctionType();
-    updateFuncSignature(func, converter);
-    changed |= oldFuncTy != func.getFunctionType();
-  }
-
-  for (Region &region : op->getRegions()) {
-    for (Block &block : region.getBlocks()) {
-      for (BlockArgument arg : block.getArguments()) {
-        Type newTy = converter.convertType(arg.getType());
-        if (newTy != arg.getType()) {
-          arg.setType(newTy);
-          changed = true;
-        }
-      }
-    }
-  }
-
-  for (Value result : op->getResults()) {
-    Type newTy = converter.convertType(result.getType());
-    if (newTy != result.getType()) {
-      result.setType(newTy);
-      changed = true;
-    }
-  }
-
-  SmallVector<NamedAttribute> newAttrs;
-  bool attrsChanged = false;
-  newAttrs.reserve(op->getAttrs().size());
-  for (NamedAttribute attr : op->getAttrs()) {
-    Attribute newAttr = converter.convertAttr(attr.getValue());
-    newAttrs.emplace_back(attr.getName(), newAttr);
-    attrsChanged |= newAttr != attr.getValue();
-  }
-  if (attrsChanged) {
-    op->setAttrs(DictionaryAttr::get(op->getContext(), newAttrs));
-    changed = true;
-  }
-
-  return changed;
-}
-
-/// Remove `poly.unifiable_cast` operations that became identity casts.
-///
-/// After type replacement, a cast such as
-/// `!poly.tvar<@T> -> !array.type<4 x index>` becomes
-/// `!array.type<4 x index> -> !array.type<4 x index>`. Such casts no longer
-/// carry information and can be replaced with their input value.
-static void removeIdentityCasts(Operation *root) {
-  SmallVector<UnifiableCastOp> erase;
-  root->walk([&erase](UnifiableCastOp castOp) {
-    if (castOp.getInput().getType() == castOp.getResult().getType()) {
-      erase.push_back(castOp);
-    }
-  });
-  for (UnifiableCastOp castOp : erase) {
-    castOp.getResult().replaceAllUsesWith(castOp.getInput());
-    castOp.erase();
-  }
-}
-
-/// Build concrete replacement types from function-local inferences that still
-/// need call-site cloning after any template-wide replacements have been applied.
+/// Build concrete replacement types proven by a function body.
 static DenseMap<StringAttr, Type>
-getResidualFunctionReplacements(const TemplateInferenceInfo &info, FuncDefOp func) {
+getFunctionProofReplacements(const TemplateInferenceInfo &info, FuncDefOp func) {
   DenseMap<StringAttr, Type> replacements;
   auto funcIt = info.functionReplacements.find(func.getOperation());
   if (funcIt == info.functionReplacements.end()) {
     return replacements;
   }
   for (const auto &entry : funcIt->second) {
-    if (!info.replacements.contains(entry.first)) {
-      replacements.try_emplace(entry.first, entry.second.type);
-    }
+    replacements.try_emplace(entry.first, entry.second.type);
   }
   return replacements;
 }
@@ -837,33 +1021,38 @@ static DenseMap<StringAttr, Type> getConcreteCallSiteReplacements(
   return replacements;
 }
 
-/// Create or reuse a module-level clone for a concrete function-local tvar instantiation.
-static FailureOr<FuncDefOp> getOrCreateSpecializedFunctionClone(
-    ModuleOp module, TemplateOp templateOp, FuncDefOp func, ArrayAttr callParams,
-    const TemplateInferenceInfo &info, const DenseMap<StringAttr, Type> &replacements,
-    SymbolTableCollection &tables
-) {
-  std::string cloneName = buildInstantiatedFunctionName(
-      templateOp.getSymName(), func.getSymName(), callParams.getValue()
-  );
-  SymbolTable &moduleSymbols = tables.getSymbolTable(module);
-  if (Operation *existing = moduleSymbols.lookup(cloneName)) {
-    if (auto existingFunc = llvm::dyn_cast<FuncDefOp>(existing)) {
-      return existingFunc;
-    }
-    return failure();
-  }
+/// Return true when `func` still needs per-call cloning after template-wide rewrites.
+///
+/// Parameters in `info.replacements` are safe to rewrite in the template itself.
+/// A clone is only necessary when the function mentions an eligible type
+/// variable that was not proven for every relevant entry point.
+static bool hasResidualFunctionTvar(const TemplateInferenceInfo &info, FuncDefOp func) {
+  return llvm::any_of(info.typeVarParams, [&](const auto &entry) {
+    return !info.replacements.contains(entry.first) && funcMentionsParam(func, entry.first);
+  });
+}
 
-  FuncDefOp clone = func.clone();
-  clone.setSymName(cloneName);
-  TypeVarReplacementConverter converter(
-      module.getContext(), info.templatePath, info.oldParamOrder, replacements,
-      /*trimResolvedParams=*/false
+/// Create or reuse a module-level clone for a concrete function-local tvar instantiation.
+static FailureOr<llzk::polymorphic::detail::FullFunctionInstantiationResult>
+getOrCreateSpecializedFunctionClone(
+    ModuleOp module, TemplateOp templateOp, FuncDefOp func, SymbolRefAttr originalCallee,
+    ArrayAttr callParams, const TemplateInferenceInfo &info,
+    const DenseMap<StringAttr, Type> &replacements, SymbolTableCollection &tables
+) {
+  std::string instantiatedTemplateName =
+      BuildShortTypeString::from(templateOp.getSymName().str(), callParams.getValue());
+  auto initClone = [&](FuncDefOp clone) {
+    TypeVarReplacementConverter converter(
+        module.getContext(), info.templatePath, info.oldParamOrder, replacements,
+        /*trimResolvedParams=*/false
+    );
+    clone.walk([&converter](Operation *op) { convertOperationTypes(op, converter); });
+    removeIdentityCasts(clone.getOperation());
+    return success();
+  };
+  return llzk::polymorphic::detail::getOrCreateFullFunctionInstantiation(
+      module, templateOp, func, originalCallee, instantiatedTemplateName, tables, initClone
   );
-  clone.walk([&converter](Operation *op) { convertOperationTypes(op, converter); });
-  removeIdentityCasts(clone.getOperation());
-  moduleSymbols.insert(clone, Block::iterator(templateOp));
-  return clone;
 }
 
 /// Erase `poly.param` definitions whose type variables were fully resolved.
@@ -933,6 +1122,13 @@ static FailureOr<bool> updateCallTemplateParams(
   return modified;
 }
 
+/// Instantiate concrete parameterized struct types exposed by type-variable inference.
+static void instantiateConcreteStructUses(ModuleOp module) {
+  SymbolTableCollection tables;
+  ConcreteStructInstantiationConverter converter(module.getContext(), module, tables);
+  module.walk([&converter](Operation *op) { convertOperationTypes(op, converter); });
+}
+
 /// Specialize calls to template functions with concrete tvar instantiations.
 ///
 /// This intentionally handles only fully-concrete explicit call-site type
@@ -963,6 +1159,9 @@ static LogicalResult specializeFunctionLocalCalls(
     if (!info) {
       return;
     }
+    if (!hasResidualFunctionTvar(*info, targetFunc)) {
+      return;
+    }
 
     ArrayAttr callParams = callOp.getTemplateParamsAttr();
     DenseMap<StringAttr, Type> replacements =
@@ -971,22 +1170,22 @@ static LogicalResult specializeFunctionLocalCalls(
       return;
     }
     DenseMap<StringAttr, Type> inferredReplacements =
-        getResidualFunctionReplacements(*info, targetFunc);
+        getFunctionProofReplacements(*info, targetFunc);
     if (!callParamsMatchReplacements(callParams, info->oldParamOrder, inferredReplacements)) {
       return;
     }
 
-    FailureOr<FuncDefOp> clone = getOrCreateSpecializedFunctionClone(
-        module, parentTemplate, targetFunc, callParams, *info, replacements, tables
-    );
+    FailureOr<llzk::polymorphic::detail::FullFunctionInstantiationResult> clone =
+        getOrCreateSpecializedFunctionClone(
+            module, parentTemplate, targetFunc, callOp.getCalleeAttr(), callParams, *info,
+            replacements, tables
+        );
     if (failed(clone)) {
       failedClone = true;
       return;
     }
 
-    callOp.setCalleeAttr(
-        getInstantiatedFunctionCallee(callOp.getCalleeAttr(), clone->getSymNameAttr())
-    );
+    callOp.setCalleeAttr(clone->callee);
     callOp.setTemplateParamsAttr(nullptr);
   });
   return failure(failedClone);
@@ -1076,15 +1275,13 @@ private:
 
     // Collect all template-local inferences before mutating IR. Conflicts are
     // reported during collection and abort the pass.
-    SmallVector<TemplateInferenceInfo> rewrites;
-    WalkResult collectResult = module.walk([&rewrites](TemplateOp templateOp) {
+    SmallVector<TemplateInferenceInfo> templateInfos;
+    WalkResult collectResult = module.walk([&templateInfos](TemplateOp templateOp) {
       FailureOr<TemplateInferenceInfo> info = buildInfo(templateOp);
       if (failed(info)) {
         return WalkResult::interrupt();
       }
-      if (!info->replacements.empty() || !info->functionReplacements.empty()) {
-        rewrites.push_back(std::move(*info));
-      }
+      templateInfos.push_back(std::move(*info));
       return WalkResult::advance();
     });
     if (collectResult.wasInterrupted()) {
@@ -1092,42 +1289,64 @@ private:
       return;
     }
 
+    SmallVector<TemplateInferenceInfo *> rewrites;
+    DenseMap<Operation *, const TemplateInferenceInfo *> infoByTemplate;
+    for (TemplateInferenceInfo &info : templateInfos) {
+      infoByTemplate.try_emplace(info.templateOp.getOperation(), &info);
+      if (!info.replacements.empty() || !info.functionReplacements.empty()) {
+        rewrites.push_back(&info);
+      }
+    }
+
     // Rewrite each affected template in place, but keep the converters alive so
     // call-site rewriting can use the same positional template-parameter map.
     SmallVector<std::unique_ptr<TypeVarReplacementConverter>> converterStorage;
     DenseMap<Operation *, const TypeVarReplacementConverter *> convertersByTemplate;
-    DenseMap<Operation *, const TemplateInferenceInfo *> infoByTemplate;
-    for (TemplateInferenceInfo &info : rewrites) {
-      infoByTemplate.try_emplace(info.templateOp.getOperation(), &info);
+    for (TemplateInferenceInfo *info : rewrites) {
       DenseMap<StringAttr, Type> replacements;
-      for (const auto &entry : info.replacements) {
+      for (const auto &entry : info->replacements) {
         replacements.try_emplace(entry.first, entry.second.type);
       }
       auto converter = std::make_unique<TypeVarReplacementConverter>(
-          module.getContext(), info.templatePath, info.oldParamOrder, replacements
+          module.getContext(), info->templatePath, info->oldParamOrder, replacements
       );
-      convertersByTemplate.try_emplace(info.templateOp.getOperation(), converter.get());
-
-      info.templateOp.walk([&converter](Operation *op) { convertOperationTypes(op, *converter); });
-      removeIdentityCasts(info.templateOp.getOperation());
+      convertersByTemplate.try_emplace(info->templateOp.getOperation(), converter.get());
       converterStorage.push_back(std::move(converter));
     }
 
-    // Calls are outside the rewritten template bodies, so update them after all
-    // target templates have their converters registered.
-    if (failed(updateCallTemplateParams(module, convertersByTemplate))) {
-      signalPassFailure();
-      return;
-    }
+    // Clone concrete call-site instantiations before trimming template
+    // arguments; the clone decision needs the original explicit arguments.
     if (failed(specializeFunctionLocalCalls(module, infoByTemplate))) {
       signalPassFailure();
       return;
     }
 
+    for (TemplateInferenceInfo *info : rewrites) {
+      const TypeVarReplacementConverter *converter =
+          convertersByTemplate.lookup(info->templateOp.getOperation());
+      assert(converter && "rewritten template must have a converter");
+      info->templateOp.walk([converter](Operation *op) { convertOperationTypes(op, *converter); });
+      removeIdentityCasts(info->templateOp.getOperation());
+    }
+
+    // Calls that still target rewritten templates are updated after all target
+    // templates have their converters registered.
+    if (failed(updateCallTemplateParams(module, convertersByTemplate))) {
+      signalPassFailure();
+      return;
+    }
+    // Re-run specialization after rewriting because template bodies may now
+    // contain concrete forwarded calls into otherwise unconstrained templates.
+    if (failed(specializeFunctionLocalCalls(module, infoByTemplate))) {
+      signalPassFailure();
+      return;
+    }
+    instantiateConcreteStructUses(module);
+
     // Erase resolved parameters last; before this point, their original order is
     // still useful for template argument list conversion.
-    for (TemplateInferenceInfo &info : rewrites) {
-      removeResolvedParams(info);
+    for (TemplateInferenceInfo *info : rewrites) {
+      removeResolvedParams(*info);
     }
   }
 };

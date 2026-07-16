@@ -17,13 +17,13 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TIdentity {
-// CHECK-NEXT:      function.def @id(%[[ARG:[0-9a-zA-Z_\.]+]]: !array.type<4 x index>) -> !array.type<4 x index> {
-// CHECK-NEXT:        function.return %[[ARG]] : !array.type<4 x index>
+// CHECK-NEXT:      function.def @id(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<4 x index>) -> !array.type<4 x index> {
+// CHECK-NEXT:        function.return %[[VAL_0]] : !array.type<4 x index>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @call_id(%[[CALL_ARG:[0-9a-zA-Z_\.]+]]: !array.type<4 x index>) -> !array.type<4 x index> {
-// CHECK-NEXT:      %[[CALL:[0-9a-zA-Z_\.]+]] = function.call @TIdentity::@id(%[[CALL_ARG]]) : (!array.type<4 x index>) -> !array.type<4 x index>
-// CHECK-NEXT:      function.return %[[CALL]] : !array.type<4 x index>
+// CHECK-NEXT:    function.def @call_id(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<4 x index>) -> !array.type<4 x index> {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @TIdentity::@id(%[[VAL_1]]) : (!array.type<4 x index>) -> !array.type<4 x index>
+// CHECK-NEXT:      function.return %[[VAL_2]] : !array.type<4 x index>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----
@@ -47,13 +47,13 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TLateConcreteChainedCast {
-// CHECK-NEXT:      function.def @make(%[[ARG:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:        function.return %[[ARG]] : index
+// CHECK-NEXT:      function.def @make(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:        function.return %[[VAL_0]] : index
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @call_make(%[[CALL_ARG:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[CALL:[0-9a-zA-Z_\.]+]] = function.call @TLateConcreteChainedCast::@make(%[[CALL_ARG]]) : (index) -> index
-// CHECK-NEXT:      function.return %[[CALL]] : index
+// CHECK-NEXT:    function.def @call_make(%[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @TLateConcreteChainedCast::@make(%[[VAL_1]]) : (index) -> index
+// CHECK-NEXT:      function.return %[[VAL_2]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----
@@ -77,13 +77,60 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TMake {
 // CHECK-NEXT:      function.def @make() -> !array.type<2 x i1> {
-// CHECK-NEXT:        %[[ARR:[0-9a-zA-Z_\.]+]] = array.new  : <2 x i1>
-// CHECK-NEXT:        function.return %[[ARR]] : !array.type<2 x i1>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = array.new  : <2 x i1>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !array.type<2 x i1>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @call_make() -> !array.type<2 x i1> {
-// CHECK-NEXT:      %[[CALL:[0-9a-zA-Z_\.]+]] = function.call @TMake::@make() : () -> !array.type<2 x i1>
-// CHECK-NEXT:      function.return %[[CALL]] : !array.type<2 x i1>
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @TMake::@make() : () -> !array.type<2 x i1>
+// CHECK-NEXT:      function.return %[[VAL_1]] : !array.type<2 x i1>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TForwardedCallee {
+    poly.param @Element : !poly.tvar<@Element>
+
+    function.def @id(%arg: !poly.tvar<@Element>) -> !poly.tvar<@Element> {
+      function.return %arg : !poly.tvar<@Element>
+    }
+  }
+
+  poly.template @TForwardCallSymbolParam {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @forward(%arg: !poly.tvar<@T>) -> index {
+      %forwarded = function.call @TForwardedCallee::@id<[@T]>(%arg) : (!poly.tvar<@T>) -> !poly.tvar<@T>
+      %index = poly.unifiable_cast %forwarded : (!poly.tvar<@T>) -> index
+      function.return %index : index
+    }
+  }
+
+  function.def @call_forward(%arg: index) -> index {
+    %0 = function.call @TForwardCallSymbolParam::@forward<[index]>(%arg) : (index) -> index
+    function.return %0 : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @TForwardedCallee_i_id(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TForwardedCallee {
+// CHECK-NEXT:      poly.param @Element : !poly.tvar<@Element>
+// CHECK-NEXT:      function.def @id(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Element>) -> !poly.tvar<@Element> {
+// CHECK-NEXT:        function.return %[[VAL_1]] : !poly.tvar<@Element>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TForwardCallSymbolParam {
+// CHECK-NEXT:      function.def @forward(%[[VAL_2:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @TForwardedCallee_i_id(%[[VAL_2]]) : (index) -> index
+// CHECK-NEXT:        function.return %[[VAL_3]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_forward(%[[VAL_4:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @TForwardCallSymbolParam::@forward(%[[VAL_4]]) : (index) -> index
+// CHECK-NEXT:      function.return %[[VAL_5]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----
@@ -100,8 +147,8 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TFlattenNestedArray {
-// CHECK-NEXT:      function.def @flatten(%{{[0-9a-zA-Z_\.]+}}: !array.type<8 x index>, %[[ARR:[0-9a-zA-Z_\.]+]]: !array.type<4,8 x index>) -> !array.type<4,8 x index> {
-// CHECK-NEXT:        function.return %[[ARR]] : !array.type<4,8 x index>
+// CHECK-NEXT:      function.def @flatten(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<8 x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<4,8 x index>) -> !array.type<4,8 x index> {
+// CHECK-NEXT:        function.return %[[VAL_1]] : !array.type<4,8 x index>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -119,8 +166,8 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TInferArrayElement {
-// CHECK-NEXT:      function.def @from_array(%[[ARR_ARG:[0-9a-zA-Z_\.]+]]: !array.type<4 x index>) -> !array.type<4 x index> {
-// CHECK-NEXT:        function.return %[[ARR_ARG]] : !array.type<4 x index>
+// CHECK-NEXT:      function.def @from_array(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<4 x index>) -> !array.type<4 x index> {
+// CHECK-NEXT:        function.return %[[VAL_0]] : !array.type<4 x index>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -170,33 +217,72 @@ module attributes {llzk.lang} {
       function.return %cast : !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@Box<[index]>>]>>
     }
   }
+
+  function.def @call_from_struct(%arg: !struct.type<@TBox::@Box<[index]>>) -> !struct.type<@TBox::@Box<[index]>> {
+    %0 = function.call @TInferStructParam::@from_struct<[index]>(%arg) : (!struct.type<@TBox::@Box<[index]>>) -> !struct.type<@TBox::@Box<[index]>>
+    function.return %0 : !struct.type<@TBox::@Box<[index]>>
+  }
+
+  function.def @call_from_struct_symbol(%arg: !struct.type<@TBox::@Box<[index]>>) -> !struct.type<@TBox::@Box<[index]>> {
+    %0 = function.call @TInferStructSymbolParam::@from_struct_symbol<[index]>(%arg) : (!struct.type<@TBox::@Box<[index]>>) -> !struct.type<@TBox::@Box<[index]>>
+    function.return %0 : !struct.type<@TBox::@Box<[index]>>
+  }
+
+  function.def @call_from_array_pod_struct(
+      %arg: !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@Box<[index]>>]>>
+  ) -> !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@Box<[index]>>]>> {
+    %0 = function.call @TInferArrayPodStruct::@from_array_pod_struct<[index]>(%arg) :
+        (!array.type<4 x !pod.type<[@value: !struct.type<@TBox::@Box<[index]>>]>>) ->
+        !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@Box<[index]>>]>>
+    function.return %0 : !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@Box<[index]>>]>>
+  }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @TBox_i_Box {
+// CHECK-NEXT:      struct.member @value : index
+// CHECK-NEXT:      function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@TBox_i_Box> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TBox_i_Box>
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@value] = %[[VAL_0]] : <@TBox_i_Box>, index
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@TBox_i_Box>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TBox {
 // CHECK-NEXT:      poly.param @Element
 // CHECK-NEXT:      struct.def @Box {
 // CHECK-NEXT:        struct.member @value : !poly.tvar<@Element>
-// CHECK-NEXT:        function.def @product(%[[BOX_ARG:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Element>) -> !struct.type<@TBox::@Box<[@Element]>> attributes {function.allow_constraint, function.allow_witness} {
-// CHECK-NEXT:          %[[BOX_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@TBox::@Box<[@Element]>>
-// CHECK-NEXT:          struct.writem %[[BOX_SELF]][@value] = %[[BOX_ARG]] : <@TBox::@Box<[@Element]>>, !poly.tvar<@Element>
-// CHECK-NEXT:          function.return %[[BOX_SELF]] : !struct.type<@TBox::@Box<[@Element]>>
+// CHECK-NEXT:        function.def @product(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Element>) -> !struct.type<@TBox::@Box<[@Element]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@TBox::@Box<[@Element]>>
+// CHECK-NEXT:          struct.writem %[[VAL_3]][@value] = %[[VAL_2]] : <@TBox::@Box<[@Element]>>, !poly.tvar<@Element>
+// CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@TBox::@Box<[@Element]>>
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TInferStructParam {
-// CHECK-NEXT:      function.def @from_struct(%[[STRUCT_ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox::@Box<[index]>>) -> !struct.type<@TBox::@Box<[index]>> {
-// CHECK-NEXT:        function.return %[[STRUCT_ARG]] : !struct.type<@TBox::@Box<[index]>>
+// CHECK-NEXT:      function.def @from_struct(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox_i_Box>) -> !struct.type<@TBox_i_Box> {
+// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@TBox_i_Box>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TInferStructSymbolParam {
-// CHECK-NEXT:      function.def @from_struct_symbol(%[[STRUCT_SYMBOL_ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox::@Box<[index]>>) -> !struct.type<@TBox::@Box<[index]>> {
-// CHECK-NEXT:        function.return %[[STRUCT_SYMBOL_ARG]] : !struct.type<@TBox::@Box<[index]>>
+// CHECK-NEXT:      function.def @from_struct_symbol(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox_i_Box>) -> !struct.type<@TBox_i_Box> {
+// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@TBox_i_Box>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TInferArrayPodStruct {
-// CHECK-NEXT:      function.def @from_array_pod_struct(%[[COMPOSITE_ARG:[0-9a-zA-Z_\.]+]]: !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@Box<[index]>>]>>) -> !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@Box<[index]>>]>> {
-// CHECK-NEXT:        function.return %[[COMPOSITE_ARG]] : !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@Box<[index]>>]>>
+// CHECK-NEXT:      function.def @from_array_pod_struct(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<4 x !pod.type<[@value: !struct.type<@TBox_i_Box>]>>) -> !array.type<4 x !pod.type<[@value: !struct.type<@TBox_i_Box>]>> {
+// CHECK-NEXT:        function.return %[[VAL_6]] : !array.type<4 x !pod.type<[@value: !struct.type<@TBox_i_Box>]>>
 // CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_from_struct(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox_i_Box>) -> !struct.type<@TBox_i_Box> {
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @TInferStructParam::@from_struct(%[[VAL_7]]) : (!struct.type<@TBox_i_Box>) -> !struct.type<@TBox_i_Box>
+// CHECK-NEXT:      function.return %[[VAL_8]] : !struct.type<@TBox_i_Box>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_from_struct_symbol(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox_i_Box>) -> !struct.type<@TBox_i_Box> {
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @TInferStructSymbolParam::@from_struct_symbol(%[[VAL_9]]) : (!struct.type<@TBox_i_Box>) -> !struct.type<@TBox_i_Box>
+// CHECK-NEXT:      function.return %[[VAL_10]] : !struct.type<@TBox_i_Box>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_from_array_pod_struct(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !array.type<4 x !pod.type<[@value: !struct.type<@TBox_i_Box>]>>) -> !array.type<4 x !pod.type<[@value: !struct.type<@TBox_i_Box>]>> {
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @TInferArrayPodStruct::@from_array_pod_struct(%[[VAL_11]]) : (!array.type<4 x !pod.type<[@value: !struct.type<@TBox_i_Box>]>>) -> !array.type<4 x !pod.type<[@value: !struct.type<@TBox_i_Box>]>>
+// CHECK-NEXT:      function.return %[[VAL_12]] : !array.type<4 x !pod.type<[@value: !struct.type<@TBox_i_Box>]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----
@@ -213,8 +299,8 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TInferPodRecord {
-// CHECK-NEXT:      function.def @from_pod(%[[POD_ARG:[0-9a-zA-Z_\.]+]]: !pod.type<[@value: index]>) -> !pod.type<[@value: index]> {
-// CHECK-NEXT:        function.return %[[POD_ARG]] : !pod.type<[@value: index]>
+// CHECK-NEXT:      function.def @from_pod(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !pod.type<[@value: index]>) -> !pod.type<[@value: index]> {
+// CHECK-NEXT:        function.return %[[VAL_0]] : !pod.type<[@value: index]>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -248,13 +334,13 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TChainedCasts {
 // CHECK-NEXT:      function.def @make() -> !array.type<2 x i1> {
-// CHECK-NEXT:        %[[CHAIN_ARR:[0-9a-zA-Z_\.]+]] = array.new  : <2 x i1>
-// CHECK-NEXT:        function.return %[[CHAIN_ARR]] : !array.type<2 x i1>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = array.new  : <2 x i1>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !array.type<2 x i1>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @call_make() -> !array.type<2 x i1> {
-// CHECK-NEXT:      %[[CHAIN_CALL:[0-9a-zA-Z_\.]+]] = function.call @TChainedCasts::@make() : () -> !array.type<2 x i1>
-// CHECK-NEXT:      function.return %[[CHAIN_CALL]] : !array.type<2 x i1>
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @TChainedCasts::@make() : () -> !array.type<2 x i1>
+// CHECK-NEXT:      function.return %[[VAL_1]] : !array.type<2 x i1>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----

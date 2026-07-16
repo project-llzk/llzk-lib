@@ -90,29 +90,6 @@ inline mlir::SymbolRefAttr appendLeaf(mlir::SymbolRefAttr orig, const mlir::Twin
 /// given suffix.
 mlir::SymbolRefAttr appendLeafName(mlir::SymbolRefAttr orig, const mlir::Twine &newLeafSuffix);
 
-/// Build the module-level symbol name from an instantiated template name and function name.
-std::string buildInstantiatedFunctionName(
-    llvm::StringRef instantiatedTemplateName, llvm::StringRef functionName
-);
-
-/// Build the module-level symbol name for a fully-instantiated template function.
-///
-/// The generated name encodes the original template name, the concrete template
-/// arguments, and the leaf function name. It matches the naming convention used
-/// by the flattening pass for full function instantiations.
-std::string buildInstantiatedFunctionName(
-    llvm::StringRef templateName, llvm::StringRef functionName,
-    llvm::ArrayRef<mlir::Attribute> templateArgs
-);
-
-/// Return the callee path for a module-level clone of a nested template function.
-///
-/// Given a callee like `@Template::@f` or `@M::@Template::@f`, this removes the
-/// template and function leaves and appends `instantiatedFunctionName`.
-mlir::SymbolRefAttr getInstantiatedFunctionCallee(
-    mlir::SymbolRefAttr templateFunctionCallee, mlir::StringAttr instantiatedFunctionName
-);
-
 /// @brief Starting at the Operation `from`, find the nearest ancestor ModuleOp marked with
 /// LANG_ATTR_NAME from which symbol lookups are rooted.
 mlir::FailureOr<mlir::ModuleOp> getRootModule(mlir::Operation *from);
