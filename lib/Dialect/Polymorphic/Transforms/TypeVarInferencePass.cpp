@@ -233,25 +233,29 @@ public:
 
   /// Convert and trim a call-site or type-site template parameter list.
   ///
-  /// If the list still has the original arity, entries corresponding to resolved
-  /// `poly.param`s are removed. Remaining entries are recursively converted in
-  /// case they mention a now-concrete type variable. A fully removed list is
-  /// represented as `nullptr` so the printer elides the template argument
-  /// syntax.
-  ArrayAttr convertTemplateParams(ArrayAttr params) const {
+  /// If the list still has the original arity, entries corresponding to resolved `poly.param`s are
+  /// removed. Remaining entries are recursively converted in case they mention a now-concrete type
+  /// variable. A fully removed list is represented as `nullptr` so the printer elides the template
+  /// argument syntax. A removed argument must agree with the inferred replacement before it is
+  /// dropped.
+  FailureOr<ArrayAttr> convertTemplateParams(ArrayAttr params, Operation *diagnosticOp) const {
     if (!params) {
-      return nullptr;
+      return ArrayAttr();
     }
     if (params.size() != oldParamOrder_.size()) {
       return params;
     }
     SmallVector<Attribute> kept;
     for (auto [paramName, attr] : llvm::zip_equal(oldParamOrder_, params.getValue())) {
-      if (!removedParams_.contains(paramName)) {
-        kept.push_back(convertTemplateArgAttr(attr));
+      if (removedParams_.contains(paramName)) {
+        if (failed(checkRemovedTemplateParam(paramName, attr, diagnosticOp))) {
+          return failure();
+        }
+        continue;
       }
+      kept.push_back(convertTemplateArgAttr(attr));
     }
-    return kept.empty() ? nullptr : ArrayAttr::get(ctx_, kept);
+    return kept.empty() ? ArrayAttr() : ArrayAttr::get(ctx_, kept);
   }
 
 private:
@@ -269,6 +273,29 @@ private:
       }
     }
     return convertAttr(attr);
+  }
+
+  /// Check that an explicit argument for a removed parameter matches its replacement.
+  LogicalResult
+  checkRemovedTemplateParam(StringAttr paramName, Attribute attr, Operation *diagnosticOp) const {
+    auto replacementIt = replacements_.find(paramName);
+    assert(replacementIt != replacements_.end() && "removed parameter must have a replacement");
+    Attribute convertedAttr = convertTemplateArgAttr(attr);
+    Attribute expectedAttr = TypeAttr::get(replacementIt->second);
+    if (convertedAttr == expectedAttr) {
+      return success();
+    }
+
+    InFlightDiagnostic diag = diagnosticOp->emitError()
+                              << "explicit template argument for inferred parameter @"
+                              << paramName.getValue() << " must match inferred type "
+                              << replacementIt->second << ", but found ";
+    if (auto typeAttr = llvm::dyn_cast<TypeAttr>(attr)) {
+      diag << typeAttr.getValue();
+    } else {
+      diag << attr;
+    }
+    return diag;
   }
 
   /// Convert every type in `oldTypes`, returning whether any entry changed.
@@ -858,12 +885,16 @@ static void removeResolvedParams(TemplateInferenceInfo &info) {
 /// callee template loses resolved `poly.param`s, call-site argument lists must
 /// drop the same positions. Result types are also converted because call results
 /// may mention an inferred return type variable.
-static bool updateCallTemplateParams(
+static FailureOr<bool> updateCallTemplateParams(
     ModuleOp module, DenseMap<Operation *, const TypeVarReplacementConverter *> &converters
 ) {
   bool modified = false;
+  bool failedConversion = false;
   SymbolTableCollection tables;
   module.walk([&](CallOp callOp) {
+    if (failedConversion) {
+      return;
+    }
     FailureOr<SymbolLookupResult<FuncDefOp>> target = callOp.getCalleeTarget(tables);
     if (failed(target)) {
       return;
@@ -878,9 +909,13 @@ static bool updateCallTemplateParams(
     }
 
     ArrayAttr oldParams = callOp.getTemplateParamsAttr();
-    ArrayAttr newParams = converter->convertTemplateParams(oldParams);
-    if (oldParams != newParams) {
-      callOp.setTemplateParamsAttr(newParams);
+    FailureOr<ArrayAttr> newParams = converter->convertTemplateParams(oldParams, callOp);
+    if (failed(newParams)) {
+      failedConversion = true;
+      return;
+    }
+    if (oldParams != *newParams) {
+      callOp.setTemplateParamsAttr(*newParams);
       modified = true;
     }
 
@@ -892,6 +927,9 @@ static bool updateCallTemplateParams(
       }
     }
   });
+  if (failedConversion) {
+    return failure();
+  }
   return modified;
 }
 
@@ -1077,7 +1115,10 @@ private:
 
     // Calls are outside the rewritten template bodies, so update them after all
     // target templates have their converters registered.
-    updateCallTemplateParams(module, convertersByTemplate);
+    if (failed(updateCallTemplateParams(module, convertersByTemplate))) {
+      signalPassFailure();
+      return;
+    }
     if (failed(specializeFunctionLocalCalls(module, infoByTemplate))) {
       signalPassFailure();
       return;
