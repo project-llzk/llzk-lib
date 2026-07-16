@@ -993,9 +993,10 @@ static bool callParamsMatchReplacements(
 
 /// Build concrete type-variable replacements from an explicit call instantiation.
 ///
-/// A module-level function clone has no enclosing `poly.template`, so every
-/// type-variable parameter mentioned by the cloned function must be replaced by
-/// a concrete type from the call's template argument list.
+/// A specialized function clone keeps the original enclosing `poly.template`,
+/// so non-type parameters remain available to operations such as
+/// `poly.read_const`. Type-variable parameters mentioned by the cloned function
+/// are replaced by concrete types from the call's template argument list.
 static DenseMap<StringAttr, Type> getConcreteCallSiteReplacements(
     ArrayAttr callParams, const TemplateInferenceInfo &info, FuncDefOp func
 ) {
@@ -1032,15 +1033,72 @@ static bool hasResidualFunctionTvar(const TemplateInferenceInfo &info, FuncDefOp
   });
 }
 
-/// Create or reuse a module-level clone for a concrete function-local tvar instantiation.
-static FailureOr<llzk::polymorphic::detail::FullFunctionInstantiationResult>
-getOrCreateSpecializedFunctionClone(
-    ModuleOp module, TemplateOp templateOp, FuncDefOp func, SymbolRefAttr originalCallee,
-    ArrayAttr callParams, const TemplateInferenceInfo &info,
-    const DenseMap<StringAttr, Type> &replacements, SymbolTableCollection &tables
+/// Result of creating or finding a template-local function instantiation.
+struct TemplateLocalFunctionInstantiationResult {
+  /// Existing or newly-created instantiated function.
+  FuncDefOp func;
+  /// Callee symbol reference that targets `func` from the original call path.
+  SymbolRefAttr callee;
+  /// Whether `func` was cloned during this request.
+  bool created;
+};
+
+/// Build the symbol name for a template-local specialized function clone.
+///
+/// The containing template already contributes its own name to the fully-qualified
+/// callee path, so the clone name only encodes the instantiation layout plus the
+/// original function name. Parameters that remain provided by the template are
+/// represented with the same placeholder marker used by flattening's partial
+/// instantiation names.
+static std::string buildTemplateLocalFunctionCloneName(
+    StringRef functionName, ArrayRef<StringAttr> oldParamOrder,
+    const DenseMap<StringAttr, Type> &replacements
 ) {
-  std::string instantiatedTemplateName =
-      BuildShortTypeString::from(templateOp.getSymName().str(), callParams.getValue());
+  SmallVector<Attribute> attrsForName;
+  attrsForName.reserve(oldParamOrder.size());
+  for (StringAttr paramName : oldParamOrder) {
+    auto replacementIt = replacements.find(paramName);
+    attrsForName.push_back(
+        replacementIt == replacements.end() ? Attribute() : TypeAttr::get(replacementIt->second)
+    );
+  }
+  std::string cloneName = BuildShortTypeString::from(attrsForName);
+  cloneName += "_";
+  cloneName += functionName;
+  return cloneName;
+}
+
+/// Return the callee path for a clone nested in the same template as the original callee.
+static SymbolRefAttr
+getTemplateLocalFunctionCloneCallee(SymbolRefAttr originalCallee, StringAttr cloneName) {
+  SmallVector<FlatSymbolRefAttr> pieces = getPieces(originalCallee);
+  assert(pieces.size() >= 2 && "callee must include at least template and function names");
+  pieces.pop_back();
+  pieces.push_back(FlatSymbolRefAttr::get(cloneName));
+  return asSymbolRefAttr(pieces);
+}
+
+/// Create or reuse a template-local clone for a concrete function-local tvar instantiation.
+static FailureOr<TemplateLocalFunctionInstantiationResult> getOrCreateSpecializedFunctionClone(
+    ModuleOp module, TemplateOp templateOp, FuncDefOp func, SymbolRefAttr originalCallee,
+    const TemplateInferenceInfo &info, const DenseMap<StringAttr, Type> &replacements,
+    SymbolTableCollection &tables
+) {
+  std::string newFuncName =
+      buildTemplateLocalFunctionCloneName(func.getSymName(), info.oldParamOrder, replacements);
+  SymbolTable &templateSymbols = tables.getSymbolTable(templateOp);
+  if (Operation *existing = templateSymbols.lookup(newFuncName)) {
+    auto existingFunc = llvm::dyn_cast<FuncDefOp>(existing);
+    if (!existingFunc) {
+      return failure();
+    }
+    return TemplateLocalFunctionInstantiationResult {
+        existingFunc,
+        getTemplateLocalFunctionCloneCallee(originalCallee, existingFunc.getSymNameAttr()),
+        /*created=*/false,
+    };
+  }
+
   auto initClone = [&](FuncDefOp clone) {
     TypeVarReplacementConverter converter(
         module.getContext(), info.templatePath, info.oldParamOrder, replacements,
@@ -1050,9 +1108,19 @@ getOrCreateSpecializedFunctionClone(
     removeIdentityCasts(clone.getOperation());
     return success();
   };
-  return llzk::polymorphic::detail::getOrCreateFullFunctionInstantiation(
-      module, templateOp, func, originalCallee, instantiatedTemplateName, tables, initClone
-  );
+
+  FuncDefOp clone = func.clone();
+  clone.setSymName(newFuncName);
+  templateSymbols.insert(clone, Block::iterator(func));
+  if (failed(initClone(clone))) {
+    clone->erase();
+    return failure();
+  }
+  return TemplateLocalFunctionInstantiationResult {
+      clone,
+      getTemplateLocalFunctionCloneCallee(originalCallee, clone.getSymNameAttr()),
+      /*created=*/true,
+  };
 }
 
 /// Erase `poly.param` definitions whose type variables were fully resolved.
@@ -1175,18 +1243,15 @@ static LogicalResult specializeFunctionLocalCalls(
       return;
     }
 
-    FailureOr<llzk::polymorphic::detail::FullFunctionInstantiationResult> clone =
-        getOrCreateSpecializedFunctionClone(
-            module, parentTemplate, targetFunc, callOp.getCalleeAttr(), callParams, *info,
-            replacements, tables
-        );
+    FailureOr<TemplateLocalFunctionInstantiationResult> clone = getOrCreateSpecializedFunctionClone(
+        module, parentTemplate, targetFunc, callOp.getCalleeAttr(), *info, replacements, tables
+    );
     if (failed(clone)) {
       failedClone = true;
       return;
     }
 
     callOp.setCalleeAttr(clone->callee);
-    callOp.setTemplateParamsAttr(nullptr);
   });
   return failure(failedClone);
 }

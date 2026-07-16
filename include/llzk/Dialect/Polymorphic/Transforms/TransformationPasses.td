@@ -124,9 +124,10 @@ def TypeVarInferencePass : LLZKPass<"llzk-infer-tvar"> {
     type. Rewrites affected function signatures and body types, removes redundant casts, drops
     resolved `poly.param` declarations, and updates call-site template parameter lists.
 
-    The pass also creates instantiated versions of functions for each type-variable replacement.
-    The `llzk-flatten` pass performs similar instantiation of type variables but only as part of
-    its broader lowering and flattening work, all of which may not be desired in some cases.
+    The pass also creates template-local instantiated versions of functions for each
+    type-variable replacement. The `llzk-flatten` pass performs similar instantiation of type
+    variables but only as part of its more extensive lowering and flattening, all of which may
+    not be desired in some cases (hence the utility of this pass).
 
     This pass may result in `poly.template` containing no `poly.param` or `poly.expr`. Run
     `llzk-drop-empty-templates` after this pass to simplify these templates.

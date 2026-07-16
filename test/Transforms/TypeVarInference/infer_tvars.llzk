@@ -113,18 +113,18 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @TForwardedCallee_i_id(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      function.return %[[VAL_0]] : index
-// CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TForwardedCallee {
 // CHECK-NEXT:      poly.param @Element : !poly.tvar<@Element>
+// CHECK-NEXT:      function.def @i_id(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:        function.return %[[VAL_0]] : index
+// CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @id(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Element>) -> !poly.tvar<@Element> {
 // CHECK-NEXT:        function.return %[[VAL_1]] : !poly.tvar<@Element>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TForwardCallSymbolParam {
 // CHECK-NEXT:      function.def @forward(%[[VAL_2:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @TForwardedCallee_i_id(%[[VAL_2]]) : (index) -> index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @TForwardedCallee::@i_id<[index]>(%[[VAL_2]]) : (index) -> index
 // CHECK-NEXT:        function.return %[[VAL_3]] : index
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -375,35 +375,72 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @TSiblingEntryPoints_i_f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      function.return %[[VAL_0]] : index
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @TSiblingEntryPoints_f_g(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
-// CHECK-NEXT:      function.return %[[VAL_1]] : !felt.type
-// CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @TSiblingEntryPoints_b_g(%[[VAL_2:[0-9a-zA-Z_\.]+]]: i1) -> i1 {
-// CHECK-NEXT:      function.return %[[VAL_2]] : i1
-// CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TSiblingEntryPoints {
 // CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
-// CHECK-NEXT:      function.def @f(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> index {
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_3]] : (!poly.tvar<@T>) -> index
-// CHECK-NEXT:        function.return %[[VAL_4]] : index
+// CHECK-NEXT:      function.def @i_f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:        function.return %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @f(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> index {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_1]] : (!poly.tvar<@T>) -> index
+// CHECK-NEXT:        function.return %[[VAL_2]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @f_g(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:        function.return %[[VAL_3]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @b_g(%[[VAL_4:[0-9a-zA-Z_\.]+]]: i1) -> i1 {
+// CHECK-NEXT:        function.return %[[VAL_4]] : i1
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @g(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !poly.tvar<@T> {
 // CHECK-NEXT:        function.return %[[VAL_5]] : !poly.tvar<@T>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @call_f(%[[VAL_6:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @TSiblingEntryPoints_i_f(%[[VAL_6]]) : (index) -> index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @TSiblingEntryPoints::@i_f<[index]>(%[[VAL_6]]) : (index) -> index
 // CHECK-NEXT:      function.return %[[VAL_7]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @call_g1(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @TSiblingEntryPoints_f_g(%[[VAL_8]]) : (!felt.type) -> !felt.type
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @TSiblingEntryPoints::@f_g<[!felt.type]>(%[[VAL_8]]) : (!felt.type) -> !felt.type
 // CHECK-NEXT:      function.return %[[VAL_9]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @call_g2(%[[VAL_10:[0-9a-zA-Z_\.]+]]: i1) -> i1 {
-// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @TSiblingEntryPoints_b_g(%[[VAL_10]]) : (i1) -> i1
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @TSiblingEntryPoints::@b_g<[i1]>(%[[VAL_10]]) : (i1) -> i1
 // CHECK-NEXT:      function.return %[[VAL_11]] : i1
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// COM: `read_const` with a variable type
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @Num
+    poly.param @Ty : !poly.tvar<@Ty>
+
+    function.def @compute() -> !poly.tvar<@Ty> {
+      %0 = poly.read_const @Num : !poly.tvar<@Ty>
+      function.return %0 : !poly.tvar<@Ty>
+    }
+  }
+
+  function.def @main() -> index {
+    %0 = function.call @T::@compute<[89, index]>() : () -> index
+    function.return %0 : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @Num
+// CHECK-NEXT:      poly.param @Ty : !poly.tvar<@Ty>
+// CHECK-NEXT:      function.def @"\1A_i_compute"() -> index {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @Num : index
+// CHECK-NEXT:        function.return %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @compute() -> !poly.tvar<@Ty> {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @Num : !poly.tvar<@Ty>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !poly.tvar<@Ty>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main() -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @T::@"\1A_i_compute"<[89, index]>() : () -> index
+// CHECK-NEXT:      function.return %[[VAL_2]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
