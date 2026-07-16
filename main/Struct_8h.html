@@ -164,6 +164,12 @@ Functions</h2></td></tr>
 <tr class="memdesc:a8d3e4fed747a9445a4a41d38e03d4d7f"><td class="mdescLeft">&#160;</td><td class="mdescRight">If this <span class="tt">struct.def</span> is within a <span class="tt">poly.template</span>, add names of all <span class="tt">poly.expr</span> within the <span class="tt">poly.template</span> in the order they are defined.  <br /></td></tr>
 <tr class="memitem:a71ddd91fb47e8f6fc0d01c435b448d65" id="r_a71ddd91fb47e8f6fc0d01c435b448d65"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED intptr_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a71ddd91fb47e8f6fc0d01c435b448d65">llzkStruct_StructDefOpGetNumTemplateExprOpNames</a> (MlirOperation op)</td></tr>
 <tr class="memdesc:a71ddd91fb47e8f6fc0d01c435b448d65"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the number of <span class="tt">poly.expr</span> operations defined within this template.  <br /></td></tr>
+<tr class="memitem:aedfb5e223291207ffbe986a83ca4ac7c" id="r_aedfb5e223291207ffbe986a83ca4ac7c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aedfb5e223291207ffbe986a83ca4ac7c">LLZK_DECLARE_OP_BUILD_METHOD</a> (Struct, MemberDefOp, MlirStringRef name, MlirType type, bool isSignal, bool isColumn)</td></tr>
+<tr class="memdesc:aedfb5e223291207ffbe986a83ca4ac7c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a MemberDefOp.  <br /></td></tr>
+<tr class="memitem:affe9b83a1ca79419ae4e39cbaa108dd2" id="r_affe9b83a1ca79419ae4e39cbaa108dd2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#affe9b83a1ca79419ae4e39cbaa108dd2">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD</a> (Struct, MemberDefOp, WithAttrs, MlirAttribute name, MlirAttribute type, bool isSignal, bool isColumn)</td></tr>
+<tr class="memdesc:affe9b83a1ca79419ae4e39cbaa108dd2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a MemberDefOp using a StringAttr name and TypeAttr type.  <br /></td></tr>
+<tr class="memitem:a4768a9d4b575167acc0599ef9f635f26" id="r_a4768a9d4b575167acc0599ef9f635f26"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4768a9d4b575167acc0599ef9f635f26">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD</a> (Struct, MemberDefOp, WithNamedAttrs, intptr_t numAttrs, MlirNamedAttribute const *attrs, bool isSignal, bool isColumn)</td></tr>
+<tr class="memdesc:a4768a9d4b575167acc0599ef9f635f26"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a MemberDefOp using a raw attribute list.  <br /></td></tr>
 <tr class="memitem:ac933e6cc6dbdbaa5b7b8cadafb7e4c21" id="r_ac933e6cc6dbdbaa5b7b8cadafb7e4c21"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac933e6cc6dbdbaa5b7b8cadafb7e4c21">llzkStruct_MemberDefOpGetColumnValue</a> (MlirOperation op)</td></tr>
 <tr class="memdesc:ac933e6cc6dbdbaa5b7b8cadafb7e4c21"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns whether this member supports offset table accesses.  <br /></td></tr>
 <tr class="memitem:a95595625e391edc35fa7ffa42fc6969e" id="r_a95595625e391edc35fa7ffa42fc6969e"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a95595625e391edc35fa7ffa42fc6969e">llzkStruct_MemberDefOpSetColumnValue</a> (MlirOperation op, bool newValue)</td></tr>
@@ -182,8 +188,51 @@ Functions</h2></td></tr>
 <tr class="memdesc:a94828f96fe8e21b2ffcdc241cfc84a0c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a MemberReadOp to a column offset by the given distance defined by an integer value.  <br /></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+<a id="aedfb5e223291207ffbe986a83ca4ac7c" name="aedfb5e223291207ffbe986a83ca4ac7c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aedfb5e223291207ffbe986a83ca4ac7c">&#9670;&#160;</a></span>LLZK_DECLARE_OP_BUILD_METHOD() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">LLZK_DECLARE_OP_BUILD_METHOD </td>
+          <td>(</td>
+          <td class="paramtype">Struct</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MemberDefOp</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirStringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirType</td>          <td class="paramname"><span class="paramname"><em>type</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>isSignal</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>isColumn</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Creates a MemberDefOp. </p>
+
+</div>
+</div>
 <a id="ae34fdb570bd9a2d0205f9e2a242e1ea7" name="ae34fdb570bd9a2d0205f9e2a242e1ea7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae34fdb570bd9a2d0205f9e2a242e1ea7">&#9670;&#160;</a></span>LLZK_DECLARE_OP_BUILD_METHOD()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ae34fdb570bd9a2d0205f9e2a242e1ea7">&#9670;&#160;</a></span>LLZK_DECLARE_OP_BUILD_METHOD() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -220,8 +269,105 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="affe9b83a1ca79419ae4e39cbaa108dd2" name="affe9b83a1ca79419ae4e39cbaa108dd2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#affe9b83a1ca79419ae4e39cbaa108dd2">&#9670;&#160;</a></span>LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[1/5]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD </td>
+          <td>(</td>
+          <td class="paramtype">Struct</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MemberDefOp</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">WithAttrs</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>type</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>isSignal</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>isColumn</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Creates a MemberDefOp using a StringAttr name and TypeAttr type. </p>
+
+</div>
+</div>
+<a id="a4768a9d4b575167acc0599ef9f635f26" name="a4768a9d4b575167acc0599ef9f635f26"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4768a9d4b575167acc0599ef9f635f26">&#9670;&#160;</a></span>LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[2/5]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD </td>
+          <td>(</td>
+          <td class="paramtype">Struct</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MemberDefOp</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">WithNamedAttrs</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">intptr_t</td>          <td class="paramname"><span class="paramname"><em>numAttrs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirNamedAttribute const *</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>isSignal</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>isColumn</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Creates a MemberDefOp using a raw attribute list. </p>
+<p>The attributes must include <span class="tt">sym_name</span> and <span class="tt">type</span>. </p>
+
+</div>
+</div>
 <a id="a7c8afd2e02e44179744303166a353976" name="a7c8afd2e02e44179744303166a353976"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7c8afd2e02e44179744303166a353976">&#9670;&#160;</a></span>LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[1/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a7c8afd2e02e44179744303166a353976">&#9670;&#160;</a></span>LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[3/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -275,7 +421,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a id="a94828f96fe8e21b2ffcdc241cfc84a0c" name="a94828f96fe8e21b2ffcdc241cfc84a0c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a94828f96fe8e21b2ffcdc241cfc84a0c">&#9670;&#160;</a></span>LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[2/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a94828f96fe8e21b2ffcdc241cfc84a0c">&#9670;&#160;</a></span>LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[4/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -323,7 +469,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a id="ae7088fdafbf7573f6a0f875e811428c5" name="ae7088fdafbf7573f6a0f875e811428c5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae7088fdafbf7573f6a0f875e811428c5">&#9670;&#160;</a></span>LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[3/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ae7088fdafbf7573f6a0f875e811428c5">&#9670;&#160;</a></span>LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[5/5]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -387,7 +533,7 @@ Functions</h2></td></tr>
 
 <p>Returns whether this member supports offset table accesses. </p>
 
-<p class="definition">Definition at line <a class="el" href="Struct_8cpp_source.html#l00166">166</a> of file <a class="el" href="Struct_8cpp_source.html">Struct.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_8cpp_source.html#l00203">203</a> of file <a class="el" href="Struct_8cpp_source.html">Struct.cpp</a>.</p>
 
 </div>
 </div>
@@ -408,7 +554,7 @@ Functions</h2></td></tr>
 
 <p>Returns whether this member is stored as a witness signal. </p>
 
-<p class="definition">Definition at line <a class="el" href="Struct_8cpp_source.html#l00174">174</a> of file <a class="el" href="Struct_8cpp_source.html">Struct.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_8cpp_source.html#l00211">211</a> of file <a class="el" href="Struct_8cpp_source.html">Struct.cpp</a>.</p>
 
 </div>
 </div>
@@ -433,7 +579,7 @@ Functions</h2></td></tr>
 
 <p>Adds or removes the unit <span class="tt">column</span> attribute according to <span class="tt">newValue</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Struct_8cpp_source.html#l00170">170</a> of file <a class="el" href="Struct_8cpp_source.html">Struct.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_8cpp_source.html#l00207">207</a> of file <a class="el" href="Struct_8cpp_source.html">Struct.cpp</a>.</p>
 
 </div>
 </div>
@@ -458,7 +604,7 @@ Functions</h2></td></tr>
 
 <p>Adds or removes the unit <span class="tt">signal</span> attribute according to <span class="tt">newValue</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Struct_8cpp_source.html#l00178">178</a> of file <a class="el" href="Struct_8cpp_source.html">Struct.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Struct_8cpp_source.html#l00215">215</a> of file <a class="el" href="Struct_8cpp_source.html">Struct.cpp</a>.</p>
 
 </div>
 </div>

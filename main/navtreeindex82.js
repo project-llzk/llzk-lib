@@ -1,5 +1,11 @@
 var NAVTREEINDEX82 =
 {
+"files.html":[13,0],
+"functions.html":[12,3,0],
+"functions.html":[12,3,0,0],
+"functions_a.html":[12,3,0,1],
+"functions_b.html":[12,3,0,2],
+"functions_c.html":[12,3,0,3],
 "functions_d.html":[12,3,0,4],
 "functions_e.html":[12,3,0,5],
 "functions_enum.html":[12,3,4],
@@ -243,11 +249,5 @@ var NAVTREEINDEX82 =
 "maintanence.html#releasing-a-new-version":[6,1],
 "maintanence.html#tracking-a-new-version":[6,0],
 "namespaceCastRefinement.html":[10,0,0],
-"namespaceCleanup.html":[10,0,2],
-"namespaceStep1__InstantiateStructs.html":[10,0,7],
-"namespaceStep2__InstantiateFunctions.html":[10,0,8],
-"namespaceStep3__Unroll.html":[10,0,9],
-"namespaceStep4__InstantiateAffineMaps.html":[10,0,10],
-"namespaceStep5__PropagateTypes.html":[10,0,11],
-"namespaceStep6__Cleanup.html":[10,0,12]
+"namespaceCleanup.html":[10,0,2]
 };

@@ -1,6 +1,9 @@
 var Struct_8h =
 [
+    [ "LLZK_DECLARE_OP_BUILD_METHOD", "Struct_8h.html#aedfb5e223291207ffbe986a83ca4ac7c", null ],
     [ "LLZK_DECLARE_OP_BUILD_METHOD", "Struct_8h.html#ae34fdb570bd9a2d0205f9e2a242e1ea7", null ],
+    [ "LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD", "Struct_8h.html#affe9b83a1ca79419ae4e39cbaa108dd2", null ],
+    [ "LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD", "Struct_8h.html#a4768a9d4b575167acc0599ef9f635f26", null ],
     [ "LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD", "Struct_8h.html#a7c8afd2e02e44179744303166a353976", null ],
     [ "LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD", "Struct_8h.html#a94828f96fe8e21b2ffcdc241cfc84a0c", null ],
     [ "LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD", "Struct_8h.html#ae7088fdafbf7573f6a0f875e811428c5", null ],

@@ -1,5 +1,11 @@
 var NAVTREEINDEX83 =
 {
+"namespaceStep1__InstantiateStructs.html":[10,0,7],
+"namespaceStep2__InstantiateFunctions.html":[10,0,8],
+"namespaceStep3__Unroll.html":[10,0,9],
+"namespaceStep4__InstantiateAffineMaps.html":[10,0,10],
+"namespaceStep5__PropagateTypes.html":[10,0,11],
+"namespaceStep6__Cleanup.html":[10,0,12],
 "namespaceWildcardFunctionSpecialization.html":[10,0,14],
 "namespaceclang.html":[10,0,1],
 "namespacellvm.html":[10,0,3],
@@ -243,11 +249,5 @@ var NAVTREEINDEX83 =
 "namespacellzk.html#a8a20668e5af9ce080f868692b9d199a6":[10,0,4,530],
 "namespacellzk.html#a8a4057e4e77ea614edbcee1fba37b30a":[10,0,4,262],
 "namespacellzk.html#a8a7476f05c4dce2ef7554e0ba1c3d567":[10,0,4,505],
-"namespacellzk.html#a8b33b9355a067d821226cff34134b7d4":[10,0,4,357],
-"namespacellzk.html#a8b72620c55defe1f3d66eda8fac6e0e7":[10,0,4,246],
-"namespacellzk.html#a8bdf8232394377a0c78dbd67d63d6764":[10,0,4,342],
-"namespacellzk.html#a8cd193ef7cefe4761ace3d044ef00586":[10,0,4,173],
-"namespacellzk.html#a8d01d0aaba5ad1f572efab7c32da3a19":[10,0,4,203],
-"namespacellzk.html#a8d8a6091a342556308a1e52f90a32f28":[10,0,4,178],
-"namespacellzk.html#a8e9a147744897bef293d3a64a10dedc0":[10,0,4,380]
+"namespacellzk.html#a8b33b9355a067d821226cff34134b7d4":[10,0,4,357]
 };

@@ -1,6 +1,9 @@
 var Struct_8cpp =
 [
+    [ "LLZK_DEFINE_OP_BUILD_METHOD", "Struct_8cpp.html#a478827e368bfcaf00f6b1f61400184b3", null ],
     [ "LLZK_DEFINE_OP_BUILD_METHOD", "Struct_8cpp.html#af92c1c4557e989890e0677280694ccd5", null ],
+    [ "LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD", "Struct_8cpp.html#aa67c2e091368b5fb7fe9de35b5801cc3", null ],
+    [ "LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD", "Struct_8cpp.html#ab1d83a66a02d1c3854d103c3c85d0a78", null ],
     [ "LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD", "Struct_8cpp.html#a60b2f5fd7d08bc9d589bd835f4df288f", null ],
     [ "LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD", "Struct_8cpp.html#a2a2901e0ccf3bb4b90822c09b43ca80b", null ],
     [ "LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD", "Struct_8cpp.html#a0b41ca13769bffde9408198bbca832b6", null ],

@@ -1,5 +1,11 @@
 var NAVTREEINDEX27 =
 {
+"classllzk_1_1boolean_1_1OrBoolOpGenericAdaptor.html#af298922f3267dcf1557ccf5a9d57c346":[10,0,4,3,23,1],
+"classllzk_1_1boolean_1_1OrBoolOpGenericAdaptor.html#af298922f3267dcf1557ccf5a9d57c346":[12,0,1,1,23,1],
+"classllzk_1_1boolean_1_1XorBoolOp.html":[10,0,4,3,24],
+"classllzk_1_1boolean_1_1XorBoolOp.html":[12,0,1,1,24],
+"classllzk_1_1boolean_1_1XorBoolOp.html#a0781093d7a21eb7e33371a9345060a63":[10,0,4,3,24,7],
+"classllzk_1_1boolean_1_1XorBoolOp.html#a0781093d7a21eb7e33371a9345060a63":[12,0,1,1,24,7],
 "classllzk_1_1boolean_1_1XorBoolOp.html#a171adcef3080a4bbce17d00c992b50f6":[10,0,4,3,24,1],
 "classllzk_1_1boolean_1_1XorBoolOp.html#a171adcef3080a4bbce17d00c992b50f6":[12,0,1,1,24,1],
 "classllzk_1_1boolean_1_1XorBoolOp.html#a42a1b142d8f98912e62294b13839dcc2":[10,0,4,3,24,4],
@@ -243,11 +249,5 @@ var NAVTREEINDEX27 =
 "classllzk_1_1boolean_1_1detail_1_1NotBoolOpGenericAdaptorBase.html#a477e6733c5f59f529f057c18c4036d25":[10,0,4,3,0,5,6],
 "classllzk_1_1boolean_1_1detail_1_1NotBoolOpGenericAdaptorBase.html#a477e6733c5f59f529f057c18c4036d25":[12,0,1,1,0,5,6],
 "classllzk_1_1boolean_1_1detail_1_1NotBoolOpGenericAdaptorBase.html#a624666f21b384ae804e663be06a07eb9":[10,0,4,3,0,5,1],
-"classllzk_1_1boolean_1_1detail_1_1NotBoolOpGenericAdaptorBase.html#a624666f21b384ae804e663be06a07eb9":[12,0,1,1,0,5,1],
-"classllzk_1_1boolean_1_1detail_1_1NotBoolOpGenericAdaptorBase.html#a80b30b7cf1068ca5189d7c3a93e032e0":[10,0,4,3,0,5,2],
-"classllzk_1_1boolean_1_1detail_1_1NotBoolOpGenericAdaptorBase.html#a80b30b7cf1068ca5189d7c3a93e032e0":[12,0,1,1,0,5,2],
-"classllzk_1_1boolean_1_1detail_1_1NotBoolOpGenericAdaptorBase.html#ad8aa49d193d38322be7c9c91671ac251":[10,0,4,3,0,5,5],
-"classllzk_1_1boolean_1_1detail_1_1NotBoolOpGenericAdaptorBase.html#ad8aa49d193d38322be7c9c91671ac251":[12,0,1,1,0,5,5],
-"classllzk_1_1boolean_1_1detail_1_1NotBoolOpGenericAdaptorBase.html#af7aae6ac2d07e9f2b7842800d9677574":[10,0,4,3,0,5,3],
-"classllzk_1_1boolean_1_1detail_1_1NotBoolOpGenericAdaptorBase.html#af7aae6ac2d07e9f2b7842800d9677574":[12,0,1,1,0,5,3]
+"classllzk_1_1boolean_1_1detail_1_1NotBoolOpGenericAdaptorBase.html#a624666f21b384ae804e663be06a07eb9":[12,0,1,1,0,5,1]
 };
