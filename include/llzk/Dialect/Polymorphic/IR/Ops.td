@@ -237,6 +237,9 @@ def LLZK_ConstReadOp
     ```llzk
     // Read a `!felt.type` value from struct parameter "@A"
     %0 = poly.read_const @A : !felt.type
+    // Read a value from struct parameter "@B" where its type is
+    // specified by struct parameter "@T"
+    %1 = poly.read_const @B : !poly.tvar<@T>
     ```
   }];
 
