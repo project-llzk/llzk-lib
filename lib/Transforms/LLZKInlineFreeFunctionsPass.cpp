@@ -12,6 +12,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Analysis/CallGraphAnalyses.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/SymbolTableLLZK.h"
@@ -21,7 +22,7 @@
 #include <mlir/Transforms/InliningUtils.h>
 
 #include <llvm/ADT/DenseSet.h>
-#include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/SCCIterator.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Debug.h>
 
@@ -44,15 +45,36 @@ static bool isFreeFunction(FuncDefOp func) {
   return llvm::isa_and_nonnull<ModuleOp>(func->getParentOp());
 }
 
-/// Resolve `call`'s callee if it is a non-external free function; returns
-/// null otherwise.
-static FuncDefOp resolveFreeCallee(CallOp call, SymbolTableCollection &tables) {
+/// Free functions that participate in a call cycle: inlining one would
+/// re-materialize its calls forever, so their call sites are skipped and
+/// their definitions left untouched. A free function whose cycle passes
+/// through struct functions is skipped too — over-conservative but safe.
+static llvm::DenseSet<Operation *> collectRecursiveFunctions(const llzk::CallGraph &cg) {
+  llvm::DenseSet<Operation *> recursive;
+  for (auto scc = llvm::scc_begin(&cg); !scc.isAtEnd(); ++scc) {
+    if (scc->size() == 1 && !scc.hasCycle()) {
+      continue;
+    }
+    for (const llzk::CallGraphNode *node : *scc) {
+      if (!node->isExternal()) {
+        recursive.insert(node->getCalledFunction().getOperation());
+      }
+    }
+  }
+  return recursive;
+}
+
+/// Resolve `call`'s callee if it is a non-external, non-recursive free
+/// function; returns null otherwise.
+static FuncDefOp resolveFreeCallee(
+    CallOp call, SymbolTableCollection &tables, const llvm::DenseSet<Operation *> &recursive
+) {
   auto tgtRes = call.getCalleeTarget(tables);
   if (failed(tgtRes)) {
     return nullptr;
   }
   FuncDefOp callee = tgtRes->get();
-  if (!isFreeFunction(callee) || callee.isExternal()) {
+  if (!isFreeFunction(callee) || callee.isExternal() || recursive.contains(callee)) {
     return nullptr;
   }
   return callee;
@@ -64,13 +86,14 @@ struct FreeFunctionCall {
   FuncDefOp callee;
 };
 
-/// Collect every `function.call` in `mod` whose callee is a non-external
-/// free function, paired with the resolved callee.
-static SmallVector<FreeFunctionCall>
-collectFreeFunctionCalls(ModuleOp mod, SymbolTableCollection &tables) {
+/// Collect every `function.call` in `mod` whose callee is a non-external,
+/// non-recursive free function, paired with the resolved callee.
+static SmallVector<FreeFunctionCall> collectFreeFunctionCalls(
+    ModuleOp mod, SymbolTableCollection &tables, const llvm::DenseSet<Operation *> &recursive
+) {
   SmallVector<FreeFunctionCall> calls;
   mod.walk([&](CallOp call) {
-    if (FuncDefOp callee = resolveFreeCallee(call, tables)) {
+    if (FuncDefOp callee = resolveFreeCallee(call, tables, recursive)) {
       calls.push_back({call, callee});
     }
   });
@@ -92,63 +115,6 @@ static SmallVector<FuncDefOp> collectUnusedHelpers(ModuleOp mod) {
   return unusedFunctions;
 }
 
-/// Inlining re-materializes the callee body, including any calls it
-/// contains, so a call cycle among free functions never converges. The
-/// functions considered must match what the inliner acts on (every
-/// non-external free function, including in nested modules), or a cycle
-/// could slip past the check and hang the pass.
-static LogicalResult checkNoRecursion(ModuleOp mod, SymbolTableCollection &tables) {
-  SmallVector<FuncDefOp> funcs;
-  mod.walk([&](FuncDefOp func) {
-    if (isFreeFunction(func) && !func.isExternal()) {
-      funcs.push_back(func);
-    }
-  });
-  llvm::DenseSet<Operation *> remaining(funcs.begin(), funcs.end());
-  llvm::DenseMap<Operation *, SmallVector<Operation *>> callees;
-  for (FuncDefOp func : funcs) {
-    auto &edges = callees[func];
-    func.walk([&](CallOp call) {
-      if (FuncDefOp callee = resolveFreeCallee(call, tables)) {
-        edges.push_back(callee);
-      }
-    });
-  }
-
-  // Release functions whose bodies call no unreleased free function; what
-  // remains is on or upstream of a cycle.
-  bool changed = true;
-  while (changed) {
-    changed = false;
-    for (FuncDefOp func : funcs) {
-      if (!remaining.contains(func)) {
-        continue;
-      }
-      bool callsRemaining = llvm::any_of(callees[func], [&](Operation *callee) {
-        return remaining.contains(callee);
-      });
-      if (!callsRemaining) {
-        remaining.erase(func);
-        changed = true;
-      }
-    }
-  }
-  if (remaining.empty()) {
-    return success();
-  }
-
-  // A leftover function may merely call into a cycle; follow unreleased
-  // edges (every leftover has one) until a repeat to blame an actual cycle
-  // member.
-  auto isRemaining = [&](Operation *op) { return remaining.contains(op); };
-  Operation *cur = *llvm::find_if(funcs, isRemaining);
-  llvm::DenseSet<Operation *> visited;
-  while (visited.insert(cur).second) {
-    cur = *llvm::find_if(callees[cur], isRemaining);
-  }
-  return cur->emitError("cannot inline recursive free function");
-}
-
 class PassImpl : public llzk::impl::InlineFreeFunctionsPassBase<PassImpl> {
   using Base = InlineFreeFunctionsPassBase<PassImpl>;
   using Base::Base;
@@ -157,12 +123,10 @@ class PassImpl : public llzk::impl::InlineFreeFunctionsPassBase<PassImpl> {
     ModuleOp mod = getOperation();
     SymbolTableCollection tables;
     InlinerInterface inliner(&getContext());
+    llvm::DenseSet<Operation *> recursive =
+        collectRecursiveFunctions(getAnalysis<CallGraphAnalysis>().getCallGraph());
 
-    if (failed(checkNoRecursion(mod, tables))) {
-      signalPassFailure();
-      return;
-    }
-    if (failed(inlineCalls(mod, tables, inliner))) {
+    if (failed(inlineCalls(mod, tables, inliner, recursive))) {
       signalPassFailure();
       return;
     }
@@ -170,10 +134,14 @@ class PassImpl : public llzk::impl::InlineFreeFunctionsPassBase<PassImpl> {
   }
 
   /// Collects the current free-function call sites, then inlines them.
-  /// Iterates until all such calls are inlined.
-  LogicalResult
-  inlineCalls(ModuleOp mod, SymbolTableCollection &tables, InlinerInterface &inliner) {
-    SmallVector<FreeFunctionCall> callsToInline = collectFreeFunctionCalls(mod, tables);
+  /// Iterates until all such calls are inlined: inlined bodies can expose
+  /// new calls, but recursive callees are excluded, so every exposed call
+  /// chain is finite.
+  LogicalResult inlineCalls(
+      ModuleOp mod, SymbolTableCollection &tables, InlinerInterface &inliner,
+      const llvm::DenseSet<Operation *> &recursive
+  ) {
+    SmallVector<FreeFunctionCall> callsToInline = collectFreeFunctionCalls(mod, tables, recursive);
     while (!callsToInline.empty()) {
       LLVM_DEBUG({
         llvm::dbgs() << "[" DEBUG_TYPE "] round found " << callsToInline.size()
@@ -187,7 +155,7 @@ class PassImpl : public llzk::impl::InlineFreeFunctionsPassBase<PassImpl> {
         call.erase();
       }
 
-      callsToInline = collectFreeFunctionCalls(mod, tables);
+      callsToInline = collectFreeFunctionCalls(mod, tables, recursive);
     }
     return success();
   }

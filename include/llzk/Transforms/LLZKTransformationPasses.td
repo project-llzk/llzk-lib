@@ -135,8 +135,9 @@ def InlineFreeFunctionsPass : LLZKPass<"llzk-inline-free-functions"> {
     `builtin.module`) into their callers. After inlining, free functions
     that have no remaining uses in the module are erased.
 
-    Recursive free functions are rejected with an error, since inlining a
-    call cycle never converges.
+    Free functions that participate in a call cycle are skipped — inlining
+    one would re-materialize its calls forever — leaving their call sites
+    and definitions untouched.
   }];
 }
 
