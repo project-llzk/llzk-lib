@@ -238,16 +238,16 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    struct.def @TBox_i_Box {
-// CHECK-NEXT:      struct.member @value : index
-// CHECK-NEXT:      function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@TBox_i_Box> attributes {function.allow_constraint, function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TBox_i_Box>
-// CHECK-NEXT:        struct.writem %[[VAL_1]][@value] = %[[VAL_0]] : <@TBox_i_Box>, index
-// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@TBox_i_Box>
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TBox {
 // CHECK-NEXT:      poly.param @Element
+// CHECK-NEXT:      struct.def @i_Box {
+// CHECK-NEXT:        struct.member @value : index
+// CHECK-NEXT:        function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@TBox::@i_Box<[@Element]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TBox::@i_Box<[@Element]>>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@value] = %[[VAL_0]] : <@TBox::@i_Box<[@Element]>>, index
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TBox::@i_Box<[@Element]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
 // CHECK-NEXT:      struct.def @Box {
 // CHECK-NEXT:        struct.member @value : !poly.tvar<@Element>
 // CHECK-NEXT:        function.def @product(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Element>) -> !struct.type<@TBox::@Box<[@Element]>> attributes {function.allow_constraint, function.allow_witness} {
@@ -258,31 +258,31 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TInferStructParam {
-// CHECK-NEXT:      function.def @from_struct(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox_i_Box>) -> !struct.type<@TBox_i_Box> {
-// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@TBox_i_Box>
+// CHECK-NEXT:      function.def @from_struct(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox::@i_Box<[index]>>) -> !struct.type<@TBox::@i_Box<[index]>> {
+// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@TBox::@i_Box<[index]>>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TInferStructSymbolParam {
-// CHECK-NEXT:      function.def @from_struct_symbol(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox_i_Box>) -> !struct.type<@TBox_i_Box> {
-// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@TBox_i_Box>
+// CHECK-NEXT:      function.def @from_struct_symbol(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox::@i_Box<[index]>>) -> !struct.type<@TBox::@i_Box<[index]>> {
+// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@TBox::@i_Box<[index]>>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TInferArrayPodStruct {
-// CHECK-NEXT:      function.def @from_array_pod_struct(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<4 x !pod.type<[@value: !struct.type<@TBox_i_Box>]>>) -> !array.type<4 x !pod.type<[@value: !struct.type<@TBox_i_Box>]>> {
-// CHECK-NEXT:        function.return %[[VAL_6]] : !array.type<4 x !pod.type<[@value: !struct.type<@TBox_i_Box>]>>
+// CHECK-NEXT:      function.def @from_array_pod_struct(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@i_Box<[index]>>]>>) -> !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@i_Box<[index]>>]>> {
+// CHECK-NEXT:        function.return %[[VAL_6]] : !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@i_Box<[index]>>]>>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @call_from_struct(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox_i_Box>) -> !struct.type<@TBox_i_Box> {
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @TInferStructParam::@from_struct(%[[VAL_7]]) : (!struct.type<@TBox_i_Box>) -> !struct.type<@TBox_i_Box>
-// CHECK-NEXT:      function.return %[[VAL_8]] : !struct.type<@TBox_i_Box>
+// CHECK-NEXT:    function.def @call_from_struct(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox::@i_Box<[index]>>) -> !struct.type<@TBox::@i_Box<[index]>> {
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @TInferStructParam::@from_struct(%[[VAL_7]]) : (!struct.type<@TBox::@i_Box<[index]>>) -> !struct.type<@TBox::@i_Box<[index]>>
+// CHECK-NEXT:      function.return %[[VAL_8]] : !struct.type<@TBox::@i_Box<[index]>>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @call_from_struct_symbol(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox_i_Box>) -> !struct.type<@TBox_i_Box> {
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @TInferStructSymbolParam::@from_struct_symbol(%[[VAL_9]]) : (!struct.type<@TBox_i_Box>) -> !struct.type<@TBox_i_Box>
-// CHECK-NEXT:      function.return %[[VAL_10]] : !struct.type<@TBox_i_Box>
+// CHECK-NEXT:    function.def @call_from_struct_symbol(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox::@i_Box<[index]>>) -> !struct.type<@TBox::@i_Box<[index]>> {
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @TInferStructSymbolParam::@from_struct_symbol(%[[VAL_9]]) : (!struct.type<@TBox::@i_Box<[index]>>) -> !struct.type<@TBox::@i_Box<[index]>>
+// CHECK-NEXT:      function.return %[[VAL_10]] : !struct.type<@TBox::@i_Box<[index]>>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @call_from_array_pod_struct(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !array.type<4 x !pod.type<[@value: !struct.type<@TBox_i_Box>]>>) -> !array.type<4 x !pod.type<[@value: !struct.type<@TBox_i_Box>]>> {
-// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @TInferArrayPodStruct::@from_array_pod_struct(%[[VAL_11]]) : (!array.type<4 x !pod.type<[@value: !struct.type<@TBox_i_Box>]>>) -> !array.type<4 x !pod.type<[@value: !struct.type<@TBox_i_Box>]>>
-// CHECK-NEXT:      function.return %[[VAL_12]] : !array.type<4 x !pod.type<[@value: !struct.type<@TBox_i_Box>]>>
+// CHECK-NEXT:    function.def @call_from_array_pod_struct(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@i_Box<[index]>>]>>) -> !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@i_Box<[index]>>]>> {
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @TInferArrayPodStruct::@from_array_pod_struct(%[[VAL_11]]) : (!array.type<4 x !pod.type<[@value: !struct.type<@TBox::@i_Box<[index]>>]>>) -> !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@i_Box<[index]>>]>>
+// CHECK-NEXT:      function.return %[[VAL_12]] : !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@i_Box<[index]>>]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----
@@ -442,5 +442,102 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @main() -> index {
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @T::@"\1A_i_compute"<[89, index]>() : () -> index
 // CHECK-NEXT:      function.return %[[VAL_2]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TCollidingMemberName {
+    poly.param @T
+
+    struct.def @Box {
+      struct.member @T : !poly.tvar<@T>
+
+      function.def @compute(%arg: !poly.tvar<@T>) -> !struct.type<@TCollidingMemberName::@Box<[@T]>> {
+        %self = struct.new : !struct.type<@TCollidingMemberName::@Box<[@T]>>
+        struct.writem %self[@T] = %arg : !struct.type<@TCollidingMemberName::@Box<[@T]>>, !poly.tvar<@T>
+        function.return %self : !struct.type<@TCollidingMemberName::@Box<[@T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCollidingMemberName::@Box<[@T]>>, %arg: !poly.tvar<@T>) {
+        %value = struct.readm %self[@T] : !struct.type<@TCollidingMemberName::@Box<[@T]>>, !poly.tvar<@T>
+        constrain.eq %value, %arg : !poly.tvar<@T>
+        function.return
+      }
+    }
+  }
+
+  function.def @use_box(%arg: !struct.type<@TCollidingMemberName::@Box<[!felt.type]>>) -> !struct.type<@TCollidingMemberName::@Box<[!felt.type]>> {
+    function.return %arg : !struct.type<@TCollidingMemberName::@Box<[!felt.type]>>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TCollidingMemberName {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      struct.def @f_Box {
+// CHECK-NEXT:        struct.member @T : !felt.type
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@TCollidingMemberName::@f_Box<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TCollidingMemberName::@f_Box<[@T]>>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@T] = %[[VAL_0]] : <@TCollidingMemberName::@f_Box<[@T]>>, !felt.type
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TCollidingMemberName::@f_Box<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TCollidingMemberName::@f_Box<[@T]>>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@T] : <@TCollidingMemberName::@f_Box<[@T]>>, !felt.type
+// CHECK-NEXT:          constrain.eq %[[VAL_4]], %[[VAL_3]] : !felt.type, !felt.type
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        struct.member @T : !poly.tvar<@T>
+// CHECK-NEXT:        function.def @compute(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !struct.type<@TCollidingMemberName::@Box<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@TCollidingMemberName::@Box<[@T]>>
+// CHECK-NEXT:          struct.writem %[[VAL_6]][@T] = %[[VAL_5]] : <@TCollidingMemberName::@Box<[@T]>>, !poly.tvar<@T>
+// CHECK-NEXT:          function.return %[[VAL_6]] : !struct.type<@TCollidingMemberName::@Box<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@TCollidingMemberName::@Box<[@T]>>, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_7]][@T] : <@TCollidingMemberName::@Box<[@T]>>, !poly.tvar<@T>
+// CHECK-NEXT:          constrain.eq %[[VAL_9]], %[[VAL_8]] : !poly.tvar<@T>, !poly.tvar<@T>
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @use_box(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !struct.type<@TCollidingMemberName::@f_Box<[!felt.type]>>) -> !struct.type<@TCollidingMemberName::@f_Box<[!felt.type]>> {
+// CHECK-NEXT:      function.return %[[VAL_10]] : !struct.type<@TCollidingMemberName::@f_Box<[!felt.type]>>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TFunctionCloneNonTypeParam {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @N
+
+    function.def @with_const(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      %n = poly.read_const @N : index
+      function.return %arg : !poly.tvar<@T>
+    }
+  }
+
+  function.def @call_with_const(%arg: !felt.type) -> !felt.type {
+    %0 = function.call @TFunctionCloneNonTypeParam::@with_const<[!felt.type, 7]>(%arg) : (!felt.type) -> !felt.type
+    function.return %0 : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TFunctionCloneNonTypeParam {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      function.def @"f_\1A_with_const"(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:        function.return %[[VAL_0]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @with_const(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !poly.tvar<@T> {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:        function.return %[[VAL_2]] : !poly.tvar<@T>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_with_const(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @TFunctionCloneNonTypeParam::@"f_\1A_with_const"<[!felt.type, 7]>(%[[VAL_4]]) : (!felt.type) -> !felt.type
+// CHECK-NEXT:      function.return %[[VAL_5]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

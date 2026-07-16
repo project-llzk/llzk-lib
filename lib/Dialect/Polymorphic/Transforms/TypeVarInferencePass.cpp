@@ -464,13 +464,20 @@ static void removeIdentityCasts(Operation *root) {
   }
 }
 
-/// Convert concrete parameterized struct uses into module-level struct clones.
+/// Convert concrete parameterized struct uses into template-local struct clones.
 ///
 /// This intentionally implements only the fully-concrete case needed after
 /// type-variable inference exposes an external instantiation such as
 /// `!struct.type<@TBox::@Box<[index]>>`. More general partial struct
 /// instantiation remains the flattening pass' job.
 class ConcreteStructInstantiationConverter {
+  struct StructInstantiationTypes {
+    /// Type used inside the cloned struct body as the required self type.
+    StructType localType;
+    /// Type used by external concrete references to the clone.
+    StructType remoteType;
+  };
+
   /// Context used to allocate converted aggregate types and attributes.
   MLIRContext *ctx_;
   /// Root operation used for resolving struct definitions.
@@ -478,7 +485,11 @@ class ConcreteStructInstantiationConverter {
   /// Symbol tables reused for lookup and insertion.
   SymbolTableCollection &tables_;
   /// Already-created instantiations keyed by the original concrete struct type.
-  DenseMap<StructType, StructType> instantiations_;
+  DenseMap<StructType, StructInstantiationTypes> instantiations_;
+  /// Fully-qualified names of template-local clones created by this converter.
+  DenseSet<SymbolRefAttr> instantiatedCloneNames_;
+  /// Template-local self types active while rewriting a cloned struct body.
+  DenseMap<StructType, StructType> activeLocalStructReplacements_;
   /// Type replacements active while rewriting the body of one cloned struct.
   DenseMap<StringAttr, Type> activeTypeReplacements_;
 
@@ -516,16 +527,10 @@ public:
     return ty;
   }
 
-  /// Convert an attribute that can contain type or template argument references.
+  /// Convert an attribute that can contain type references.
   Attribute convertAttr(Attribute attr) {
     if (!attr) {
       return attr;
-    }
-    if (StringAttr symbolName = getFlatSymbolName(attr)) {
-      auto it = activeTypeReplacements_.find(symbolName);
-      if (it != activeTypeReplacements_.end()) {
-        return TypeAttr::get(it->second);
-      }
     }
     if (auto tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
       Type newTy = convertType(tyAttr.getValue());
@@ -535,7 +540,7 @@ public:
       SmallVector<Attribute> newAttrs;
       bool changed = false;
       for (Attribute nested : arrAttr.getValue()) {
-        Attribute newNested = convertAttr(nested);
+        Attribute newNested = convertTemplateArgAttr(nested);
         newAttrs.push_back(newNested);
         changed |= newNested != nested;
       }
@@ -545,6 +550,17 @@ public:
   }
 
 private:
+  /// Convert an attribute that is known to be in a template-argument position.
+  Attribute convertTemplateArgAttr(Attribute attr) {
+    if (StringAttr symbolName = getFlatSymbolName(attr)) {
+      auto it = activeTypeReplacements_.find(symbolName);
+      if (it != activeTypeReplacements_.end()) {
+        return TypeAttr::get(it->second);
+      }
+    }
+    return convertAttr(attr);
+  }
+
   /// Convert struct parameters and instantiate the struct if all parameters are concrete.
   StructType convertStructType(StructType structTy) {
     ArrayAttr params = structTy.getParams();
@@ -555,13 +571,21 @@ private:
     SmallVector<Attribute> newParams;
     bool changed = false;
     for (Attribute attr : params.getValue()) {
-      Attribute newAttr = convertAttr(attr);
+      Attribute newAttr = convertTemplateArgAttr(attr);
       newParams.push_back(newAttr);
       changed |= newAttr != attr;
     }
     StructType convertedTy =
         changed ? StructType::get(structTy.getNameRef(), ArrayAttr::get(ctx_, newParams))
                 : structTy;
+
+    if (auto it = activeLocalStructReplacements_.find(convertedTy);
+        it != activeLocalStructReplacements_.end()) {
+      return it->second;
+    }
+    if (instantiatedCloneNames_.contains(convertedTy.getNameRef())) {
+      return convertedTy;
+    }
 
     if (!llvm::all_of(newParams, isConcreteInstantiationAttr)) {
       return convertedTy;
@@ -571,11 +595,20 @@ private:
     return succeeded(cloneTy) ? *cloneTy : convertedTy;
   }
 
-  /// Create or reuse a module-level clone for `concreteStructTy`.
+  /// Build the symbol name for a template-local specialized struct clone.
+  static std::string
+  buildTemplateLocalStructCloneName(StringRef structName, ArrayRef<Attribute> concreteParams) {
+    std::string cloneName = BuildShortTypeString::from(concreteParams);
+    cloneName += "_";
+    cloneName += structName;
+    return cloneName;
+  }
+
+  /// Create or reuse a template-local clone for `concreteStructTy`.
   FailureOr<StructType>
   getOrCreateStructClone(StructType concreteStructTy, ArrayRef<Attribute> concreteParams) {
     if (auto it = instantiations_.find(concreteStructTy); it != instantiations_.end()) {
-      return it->second;
+      return it->second.remoteType;
     }
 
     FailureOr<SymbolLookupResult<StructDefOp>> lookup =
@@ -595,29 +628,40 @@ private:
       return failure();
     }
 
-    ModuleOp parentModule = getParentOfType<ModuleOp>(parentTemplate);
-    assert(parentModule && "TemplateOp must be nested in a ModuleOp");
-    std::string cloneName = llzk::polymorphic::detail::buildInstantiatedStructName(
-        parentTemplate.getSymName(), origStruct.getSymName(), concreteParams
-    );
-    SymbolTable &moduleSymbols = tables_.getSymbolTable(parentModule);
-    if (Operation *existing = moduleSymbols.lookup(cloneName)) {
+    std::string cloneName =
+        buildTemplateLocalStructCloneName(origStruct.getSymName(), concreteParams);
+    SymbolTable &templateSymbols = tables_.getSymbolTable(parentTemplate);
+    if (Operation *existing = templateSymbols.lookup(cloneName)) {
       if (auto existingStruct = llvm::dyn_cast<StructDefOp>(existing)) {
-        StructType existingTy = existingStruct.getType();
-        instantiations_.try_emplace(concreteStructTy, existingTy);
-        return existingTy;
+        StructType localTy = existingStruct.getType();
+        StructType remoteTy = StructType::get(
+            existingStruct.getFullyQualifiedName(), ArrayAttr::get(ctx_, concreteParams)
+        );
+        instantiations_.try_emplace(concreteStructTy, StructInstantiationTypes {localTy, remoteTy});
+        instantiatedCloneNames_.insert(existingStruct.getFullyQualifiedName());
+        return remoteTy;
       }
       return failure();
     }
 
     StructDefOp clone = origStruct.clone();
     clone.setSymName(cloneName);
-    moduleSymbols.insert(clone, Block::iterator(parentTemplate));
-    StructType cloneTy = clone.getType();
-    instantiations_.try_emplace(concreteStructTy, cloneTy);
+    templateSymbols.insert(clone, Block::iterator(origStruct));
+    StructType localTy = clone.getType();
+    StructType remoteTy =
+        StructType::get(clone.getFullyQualifiedName(), ArrayAttr::get(ctx_, concreteParams));
+    instantiations_.try_emplace(concreteStructTy, StructInstantiationTypes {localTy, remoteTy});
+    instantiatedCloneNames_.insert(clone.getFullyQualifiedName());
 
     DenseMap<StringAttr, Type> previousReplacements = std::move(activeTypeReplacements_);
+    DenseMap<StructType, StructType> previousLocalStructReplacements =
+        std::move(activeLocalStructReplacements_);
     activeTypeReplacements_.clear();
+    activeLocalStructReplacements_.clear();
+    activeLocalStructReplacements_.try_emplace(concreteStructTy, localTy);
+    activeLocalStructReplacements_.try_emplace(
+        StructType::get(localTy.getNameRef(), ArrayAttr::get(ctx_, concreteParams)), localTy
+    );
     for (auto [paramName, concreteAttr] : llvm::zip_equal(paramNames.getValue(), concreteParams)) {
       auto paramSym = llvm::dyn_cast<FlatSymbolRefAttr>(paramName);
       auto concreteType = llvm::dyn_cast<TypeAttr>(concreteAttr);
@@ -627,8 +671,9 @@ private:
     }
     clone.walk([this](Operation *op) { convertOperationTypes(op, *this); });
     removeIdentityCasts(clone.getOperation());
+    activeLocalStructReplacements_ = std::move(previousLocalStructReplacements);
     activeTypeReplacements_ = std::move(previousReplacements);
-    return cloneTy;
+    return remoteTy;
   }
 };
 
