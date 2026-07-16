@@ -1086,6 +1086,40 @@ static bool callParamsMatchReplacements(
   return true;
 }
 
+/// Diagnose explicit call-site template parameters that disagree with concrete
+/// replacements proven inside the callee body.
+static LogicalResult diagnoseCallParamsMismatch(
+    CallOp callOp, ArrayAttr callParams, ArrayRef<StringAttr> oldParamOrder,
+    const DenseMap<StringAttr, Type> &replacements
+) {
+  if (callParamsMatchReplacements(callParams, oldParamOrder, replacements)) {
+    return success();
+  }
+  for (const auto &entry : replacements) {
+    std::optional<unsigned> index = getParamIndex(oldParamOrder, entry.first);
+    if (!index || !callParams || *index >= callParams.size()) {
+      continue;
+    }
+    Attribute attr = callParams[*index];
+    Attribute expectedAttr = TypeAttr::get(entry.second);
+    if (attr == expectedAttr) {
+      continue;
+    }
+
+    InFlightDiagnostic diag = callOp.emitError()
+                              << "explicit template argument for inferred parameter @"
+                              << entry.first.getValue() << " must match inferred type "
+                              << entry.second << ", but found ";
+    if (auto typeAttr = llvm::dyn_cast<TypeAttr>(attr)) {
+      diag << typeAttr.getValue();
+    } else {
+      diag << attr;
+    }
+    return diag;
+  }
+  return callOp.emitError() << "explicit template arguments do not match inferred callee types";
+}
+
 /// Build concrete type-variable replacements from an explicit call instantiation.
 ///
 /// A specialized function clone keeps the original enclosing `poly.template`,
@@ -1308,7 +1342,10 @@ static LogicalResult specializeFunctionLocalCalls(
     }
     DenseMap<StringAttr, Type> inferredReplacements =
         getFunctionProofReplacements(*info, targetFunc);
-    if (!callParamsMatchReplacements(callParams, info->oldParamOrder, inferredReplacements)) {
+    if (failed(diagnoseCallParamsMismatch(
+            callOp, callParams, info->oldParamOrder, inferredReplacements
+        ))) {
+      failedClone = true;
       return;
     }
 
