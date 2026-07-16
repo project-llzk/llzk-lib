@@ -1380,6 +1380,28 @@ getParamIndex(ArrayRef<StringAttr> paramOrder, StringAttr paramName) {
 
 /// Return true if explicit call-site template parameters match the inferred
 /// concrete function-local replacements.
+static Type
+substituteExplicitCallTypeArgs(Type ty, ArrayAttr callParams, ArrayRef<StringAttr> oldParamOrder) {
+  if (!callParams || callParams.size() != oldParamOrder.size()) {
+    return ty;
+  }
+
+  DenseMap<StringAttr, Type> callTypeArgs;
+  for (auto [paramName, attr] : llvm::zip_equal(oldParamOrder, callParams.getValue())) {
+    if (auto tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
+      callTypeArgs.try_emplace(paramName, tyAttr.getValue());
+    }
+  }
+  TypeVarReplacementConverter converter(
+      ty.getContext(), ArrayRef<StringAttr> {}, oldParamOrder, callTypeArgs,
+      /*trimResolvedParams=*/false
+  );
+  return converter.convertType(ty);
+}
+
+/// Return true if explicit call-site template parameters match the inferred
+/// concrete function-local replacements after substituting remaining explicit
+/// type arguments into symbolic replacement types.
 static bool callParamsMatchReplacements(
     ArrayAttr callParams, ArrayRef<StringAttr> oldParamOrder,
     const DenseMap<StringAttr, Type> &replacements
@@ -1392,7 +1414,8 @@ static bool callParamsMatchReplacements(
     if (!index) {
       return false;
     }
-    if (callParams[*index] != TypeAttr::get(entry.second)) {
+    Type expectedTy = substituteExplicitCallTypeArgs(entry.second, callParams, oldParamOrder);
+    if (callParams[*index] != TypeAttr::get(expectedTy)) {
       return false;
     }
   }
@@ -1414,7 +1437,8 @@ static LogicalResult diagnoseCallParamsMismatch(
       continue;
     }
     Attribute attr = callParams[*index];
-    Attribute expectedAttr = TypeAttr::get(entry.second);
+    Type expectedTy = substituteExplicitCallTypeArgs(entry.second, callParams, oldParamOrder);
+    Attribute expectedAttr = TypeAttr::get(expectedTy);
     if (attr == expectedAttr) {
       continue;
     }
@@ -1422,7 +1446,7 @@ static LogicalResult diagnoseCallParamsMismatch(
     InFlightDiagnostic diag = callOp.emitError()
                               << "explicit template argument for inferred parameter @"
                               << entry.first.getValue() << " must match inferred type "
-                              << entry.second << ", but found ";
+                              << expectedTy << ", but found ";
     if (auto typeAttr = llvm::dyn_cast<TypeAttr>(attr)) {
       diag << typeAttr.getValue();
     } else {

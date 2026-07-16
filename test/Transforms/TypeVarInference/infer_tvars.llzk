@@ -990,3 +990,74 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_9]] : !struct.type<@TFunctionLocalDespiteStructMember::@f_Box<[!felt.type]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TSymbolicStructReplacementBox {
+    poly.param @Element : !poly.tvar<@Element>
+
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@Element>
+
+      function.def @product(%arg: !poly.tvar<@Element>) -> !struct.type<@TSymbolicStructReplacementBox::@Box<[@Element]>> attributes {function.allow_constraint, function.allow_witness} {
+        %self = struct.new : <@TSymbolicStructReplacementBox::@Box<[@Element]>>
+        struct.writem %self[@value] = %arg : <@TSymbolicStructReplacementBox::@Box<[@Element]>>, !poly.tvar<@Element>
+        function.return %self : !struct.type<@TSymbolicStructReplacementBox::@Box<[@Element]>>
+      }
+    }
+  }
+
+  poly.template @TDropSymbolicStructReplacement {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @id(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      %box = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> !struct.type<@TSymbolicStructReplacementBox::@Box<[@U]>>
+      function.return %box : !struct.type<@TSymbolicStructReplacementBox::@Box<[@U]>>
+    }
+  }
+
+  function.def @call_id(
+      %arg: !struct.type<@TSymbolicStructReplacementBox::@Box<[index]>>
+  ) -> !struct.type<@TSymbolicStructReplacementBox::@Box<[index]>> {
+    %0 = function.call @TDropSymbolicStructReplacement::@id<[!struct.type<@TSymbolicStructReplacementBox::@Box<[index]>>, index]>(%arg) :
+        (!struct.type<@TSymbolicStructReplacementBox::@Box<[index]>>) -> !struct.type<@TSymbolicStructReplacementBox::@Box<[index]>>
+    function.return %0 : !struct.type<@TSymbolicStructReplacementBox::@Box<[index]>>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TSymbolicStructReplacementBox {
+// CHECK-NEXT:      poly.param @Element : !poly.tvar<@Element>
+// CHECK-NEXT:      struct.def @i_Box {
+// CHECK-NEXT:        struct.member @value : index
+// CHECK-NEXT:        function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@TSymbolicStructReplacementBox::@i_Box<[@Element]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TSymbolicStructReplacementBox::@i_Box<[@Element]>>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@value] = %[[VAL_0]] : <@TSymbolicStructReplacementBox::@i_Box<[@Element]>>, index
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TSymbolicStructReplacementBox::@i_Box<[@Element]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        struct.member @value : !poly.tvar<@Element>
+// CHECK-NEXT:        function.def @product(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Element>) -> !struct.type<@TSymbolicStructReplacementBox::@Box<[@Element]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@TSymbolicStructReplacementBox::@Box<[@Element]>>
+// CHECK-NEXT:          struct.writem %[[VAL_3]][@value] = %[[VAL_2]] : <@TSymbolicStructReplacementBox::@Box<[@Element]>>, !poly.tvar<@Element>
+// CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@TSymbolicStructReplacementBox::@Box<[@Element]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TDropSymbolicStructReplacement {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      poly.param @U : !poly.tvar<@U>
+// CHECK-NEXT:      function.def @"!s<@TSymbolicStructReplacementBox::@Box_i>_i_id"(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@TSymbolicStructReplacementBox::@i_Box<[index]>>) -> !struct.type<@TSymbolicStructReplacementBox::@i_Box<[index]>> {
+// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@TSymbolicStructReplacementBox::@i_Box<[index]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @id(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !poly.tvar<@T> {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_5]] : (!poly.tvar<@T>) -> !struct.type<@TSymbolicStructReplacementBox::@Box<[@U]>>
+// CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@TSymbolicStructReplacementBox::@Box<[@U]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_id(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@TSymbolicStructReplacementBox::@i_Box<[index]>>) -> !struct.type<@TSymbolicStructReplacementBox::@i_Box<[index]>> {
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @TDropSymbolicStructReplacement::@"!s<@TSymbolicStructReplacementBox::@Box_i>_i_id"<[!struct.type<@TSymbolicStructReplacementBox::@i_Box<[index]>>, index]>(%[[VAL_7]]) : (!struct.type<@TSymbolicStructReplacementBox::@i_Box<[index]>>) -> !struct.type<@TSymbolicStructReplacementBox::@i_Box<[index]>>
+// CHECK-NEXT:      function.return %[[VAL_8]] : !struct.type<@TSymbolicStructReplacementBox::@i_Box<[index]>>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
