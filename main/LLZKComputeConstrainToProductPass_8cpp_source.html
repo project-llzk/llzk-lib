@@ -372,13 +372,19 @@ $(function(){initNavTree('LLZKComputeConstrainToProductPass_8cpp_source.html',''
 <div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>      }</div>
 <div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>    });</div>
 <div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span> </div>
-<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>    <span class="keywordflow">if</span> (failed(alignStartingAt(root, tables, equivalence))) {</div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>      signalPassFailure();</div>
-<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>    }</div>
-<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>  }</div>
-<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>};</div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>    <span class="keywordflow">if</span> (!root) {</div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>      <a class="code hl_function" href="namespacellzk.html#a17efa635db7bf7658f865515aefd0cce">mod</a>.emitError().append(<span class="stringliteral">&quot;could not find root struct \&quot;&quot;</span>, rootStruct, <span class="stringliteral">&quot;\&quot;&quot;</span>).report();</div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>      signalPassFailure();</div>
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>    }</div>
 <div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span> </div>
-<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>} <span class="comment">// namespace</span></div>
+<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>    <span class="keywordflow">if</span> (failed(alignStartingAt(root, tables, equivalence))) {</div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>      signalPassFailure();</div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>    }</div>
+<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>  }</div>
+<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>};</div>
+<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span> </div>
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>} <span class="comment">// namespace</span></div>
 </div>
 </div>
 <div class="ttc" id="aFunction_2IR_2Ops_8h_html"><div class="ttname"><a href="Function_2IR_2Ops_8h.html">Ops.h</a></div></div>
