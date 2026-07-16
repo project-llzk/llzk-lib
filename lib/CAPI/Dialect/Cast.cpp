@@ -32,5 +32,7 @@ MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Cast, llzk__cast, CastDialect)
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     Cast, IntToFeltOp, WithType, MlirType feltType, MlirValue value
 ) {
-  return wrap(create<IntToFeltOp>(builder, location, unwrap(feltType), unwrap(value)));
+  return mlirOpBuilderInsert(
+      builder, wrap(create<IntToFeltOp>(builder, location, unwrap(feltType), unwrap(value)))
+  );
 }
