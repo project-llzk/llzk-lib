@@ -62,11 +62,13 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     Array, CreateArrayOp, WithValues, MlirType arrayType, intptr_t nValues, MlirValue const *values
 ) {
   SmallVector<Value> valueSto;
-  return wrap(
-      create<CreateArrayOp>(
-          builder, location, unwrap_cast<ArrayType>(arrayType),
-          ValueRange(unwrapList(nValues, values, valueSto))
-      )
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<CreateArrayOp>(
+                       builder, location, unwrap_cast<ArrayType>(arrayType),
+                       ValueRange(unwrapList(nValues, values, valueSto))
+                   )
+               )
   );
 }
 
@@ -77,10 +79,12 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   MapOperandsHelper<> mapOps(mapOperands.nMapOperands, mapOperands.mapOperands);
   auto numDimsPerMap =
       llzkAffineMapOperandsBuilderGetDimsPerMapAttr(mapOperands, mlirLocationGetContext(location));
-  return wrap(
-      create<CreateArrayOp>(
-          builder, location, unwrap_cast<ArrayType>(arrayType), *mapOps,
-          unwrap_cast<DenseI32ArrayAttr>(numDimsPerMap)
-      )
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<CreateArrayOp>(
+                       builder, location, unwrap_cast<ArrayType>(arrayType), *mapOps,
+                       unwrap_cast<DenseI32ArrayAttr>(numDimsPerMap)
+                   )
+               )
   );
 }

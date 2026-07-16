@@ -108,11 +108,13 @@ bool llzkPoly_TemplateOpHasConstExprNamed(MlirOperation op, MlirStringRef find) 
 
 LLZK_DEFINE_OP_BUILD_METHOD(Poly, ApplyMapOp, MlirAttribute map, MlirValueRange mapOperands) {
   SmallVector<Value> mapOperandsSto;
-  return wrap(
-      create<ApplyMapOp>(
-          builder, location, llvm::cast<AffineMapAttr>(unwrap(map)),
-          ValueRange(unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto))
-      )
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<ApplyMapOp>(
+                       builder, location, llvm::cast<AffineMapAttr>(unwrap(map)),
+                       ValueRange(unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto))
+                   )
+               )
   );
 }
 
@@ -120,11 +122,13 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     Poly, ApplyMapOp, WithAffineMap, MlirAffineMap map, MlirValueRange mapOperands
 ) {
   SmallVector<Value> mapOperandsSto;
-  return wrap(
-      create<ApplyMapOp>(
-          builder, location, unwrap(map),
-          ValueRange(unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto))
-      )
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<ApplyMapOp>(
+                       builder, location, unwrap(map),
+                       ValueRange(unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto))
+                   )
+               )
   );
 }
 
@@ -132,11 +136,13 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     Poly, ApplyMapOp, WithAffineExpr, MlirAffineExpr expr, MlirValueRange mapOperands
 ) {
   SmallVector<Value> mapOperandsSto;
-  return wrap(
-      create<ApplyMapOp>(
-          builder, location, unwrap(expr),
-          ValueRange(unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto))
-      )
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<ApplyMapOp>(
+                       builder, location, unwrap(expr),
+                       ValueRange(unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto))
+                   )
+               )
   );
 }
 
