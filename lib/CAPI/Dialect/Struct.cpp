@@ -163,6 +163,43 @@ intptr_t llzkStruct_StructDefOpGetNumTemplateExprOpNames(MlirOperation op) {
 // MemberDefOp
 //===----------------------------------------------------------------------===//
 
+LLZK_DEFINE_OP_BUILD_METHOD(
+    Struct, MemberDefOp, MlirStringRef name, MlirType type, bool isSignal, bool isColumn
+) {
+  return mlirOpBuilderInsert(
+      builder,
+      wrap(create<MemberDefOp>(builder, location, unwrap(name), unwrap(type), isSignal, isColumn))
+  );
+}
+
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
+    Struct, MemberDefOp, WithAttrs, MlirAttribute name, MlirAttribute type, bool isSignal,
+    bool isColumn
+) {
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<MemberDefOp>(
+                       builder, location, llvm::cast<StringAttr>(unwrap(name)),
+                       llvm::cast<TypeAttr>(unwrap(type)), isSignal, isColumn
+                   )
+               )
+  );
+}
+
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
+    Struct, MemberDefOp, WithNamedAttrs, intptr_t numAttrs, MlirNamedAttribute const *attrs,
+    bool isSignal, bool isColumn
+) {
+  SmallVector<NamedAttribute> attrsSto;
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<MemberDefOp>(
+                       builder, location, unwrapList(numAttrs, attrs, attrsSto), isSignal, isColumn
+                   )
+               )
+  );
+}
+
 bool llzkStruct_MemberDefOpGetColumnValue(MlirOperation op) {
   return llvm::cast<MemberDefOp>(unwrap(op)).getColumn();
 }
