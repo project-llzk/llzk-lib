@@ -174,6 +174,31 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @TArrayElementAccess {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @access(%elem: !poly.tvar<@T>, %arr: !array.type<2 x !poly.tvar<@T>>) -> !poly.tvar<@T> {
+      %c0 = arith.constant 0 : index
+      %cast = poly.unifiable_cast %elem : (!poly.tvar<@T>) -> !array.type<3 x index>
+      %row = array.read %arr[%c0] : !array.type<2 x !poly.tvar<@T>>, !poly.tvar<@T>
+      array.write %arr[%c0] = %elem : !array.type<2 x !poly.tvar<@T>>, !poly.tvar<@T>
+      function.return %row : !poly.tvar<@T>
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TArrayElementAccess {
+// CHECK-NEXT:      function.def @access(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<3 x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2,3 x index>) -> !array.type<3 x index> {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_1]]{{\[}}%[[VAL_2]]] : <2,3 x index>
+// CHECK-NEXT:        array.insert %[[VAL_1]]{{\[}}%[[VAL_2]]] = %[[VAL_0]] : <2,3 x index>, <3 x index>
+// CHECK-NEXT:        function.return %[[VAL_3]] : !array.type<3 x index>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
   poly.template @TAggregateParamRelations {
     poly.param @T : !poly.tvar<@T>
     poly.param @U : !poly.tvar<@U>

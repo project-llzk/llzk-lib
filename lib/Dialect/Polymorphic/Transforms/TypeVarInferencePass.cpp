@@ -402,6 +402,31 @@ static void updateFuncSignature(FuncDefOp func, ConverterT &converter) {
 /// type annotations.
 template <typename ConverterT>
 static bool convertOperationTypes(Operation *op, ConverterT &converter) {
+  if (auto readOp = llvm::dyn_cast<ReadArrayOp>(op)) {
+    Type newResultTy = converter.convertType(readOp.getResult().getType());
+    if (auto newArrayTy = llvm::dyn_cast<ArrayType>(newResultTy)) {
+      OpBuilder builder(readOp);
+      auto extractOp = builder.create<ExtractArrayOp>(
+          readOp.getLoc(), newArrayTy, readOp.getArrRef(), readOp.getIndices()
+      );
+      readOp.getResult().replaceAllUsesWith(extractOp.getResult());
+      readOp.erase();
+      return true;
+    }
+  }
+
+  if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(op)) {
+    Type newRvalueTy = converter.convertType(writeOp.getRvalue().getType());
+    if (llvm::isa<ArrayType>(newRvalueTy)) {
+      OpBuilder builder(writeOp);
+      builder.create<InsertArrayOp>(
+          writeOp.getLoc(), writeOp.getArrRef(), writeOp.getIndices(), writeOp.getRvalue()
+      );
+      writeOp.erase();
+      return true;
+    }
+  }
+
   bool changed = false;
 
   if (auto func = llvm::dyn_cast<FuncDefOp>(op)) {
