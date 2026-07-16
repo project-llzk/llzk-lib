@@ -204,6 +204,41 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @TIncludeTemplateParams {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @compute(%arg: !poly.tvar<@T>) {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      function.return
+    }
+
+    verif.contract @Base for @TIncludeTemplateParams::@compute (%arg: !poly.tvar<@T>) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+
+    verif.contract @Wrapper for @TIncludeTemplateParams::@compute (%arg: !poly.tvar<@T>) {
+      verif.include @TIncludeTemplateParams::@Base<[index]>(%arg) : (!poly.tvar<@T>) -> ()
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TIncludeTemplateParams {
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Base for @TIncludeTemplateParams::@compute (%[[VAL_1:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        verif.ensure_compute %[[VAL_2]]
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Wrapper for @TIncludeTemplateParams::@compute (%[[VAL_3:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:        verif.include @TIncludeTemplateParams::@Base(%[[VAL_3]]) : (index) -> ()
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
   poly.template @TBox {
     poly.param @Element
 

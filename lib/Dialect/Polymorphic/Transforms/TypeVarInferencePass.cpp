@@ -34,6 +34,7 @@
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Dialect/Verif/IR/Ops.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/SymbolTableLLZK.h"
@@ -1239,13 +1240,14 @@ static void removeResolvedParams(TemplateInferenceInfo &info) {
   }
 }
 
-/// Update calls to functions inside rewritten templates.
+/// Update references to callable symbols inside rewritten templates.
 ///
 /// Call operations keep their explicit template argument list, if any. When a
 /// callee template loses resolved `poly.param`s, call-site argument lists must
 /// drop the same positions. Result types are also converted because call results
-/// may mention an inferred return type variable.
-static FailureOr<bool> updateCallTemplateParams(
+/// may mention an inferred return type variable. Contract includes use the same
+/// template parameter representation and need the same positional trimming.
+static FailureOr<bool> updateCallableTemplateParams(
     ModuleOp module, DenseMap<Operation *, const TypeVarReplacementConverter *> &converters
 ) {
   bool modified = false;
@@ -1285,6 +1287,34 @@ static FailureOr<bool> updateCallTemplateParams(
         result.setType(newTy);
         modified = true;
       }
+    }
+  });
+  module.walk([&](verif::IncludeOp includeOp) {
+    if (failedConversion) {
+      return;
+    }
+    FailureOr<SymbolLookupResult<verif::ContractOp>> target = includeOp.getCalleeTarget(tables);
+    if (failed(target)) {
+      return;
+    }
+    TemplateOp parentTemplate = getParentOfType<TemplateOp>(target->get().getOperation());
+    if (!parentTemplate) {
+      return;
+    }
+    const TypeVarReplacementConverter *converter = converters.lookup(parentTemplate.getOperation());
+    if (!converter) {
+      return;
+    }
+
+    ArrayAttr oldParams = includeOp.getTemplateParamsAttr();
+    FailureOr<ArrayAttr> newParams = converter->convertTemplateParams(oldParams, includeOp);
+    if (failed(newParams)) {
+      failedConversion = true;
+      return;
+    }
+    if (oldParams != *newParams) {
+      includeOp.setTemplateParamsAttr(*newParams);
+      modified = true;
     }
   });
   if (failedConversion) {
@@ -1502,7 +1532,7 @@ private:
 
     // Calls that still target rewritten templates are updated after all target
     // templates have their converters registered.
-    if (failed(updateCallTemplateParams(module, convertersByTemplate))) {
+    if (failed(updateCallableTemplateParams(module, convertersByTemplate))) {
       signalPassFailure();
       return;
     }
