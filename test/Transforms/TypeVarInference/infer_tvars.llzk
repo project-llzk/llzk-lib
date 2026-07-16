@@ -606,6 +606,44 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
+module attributes {llzk.lang} {
+  poly.template @TSpecializationNameCollision {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @i_f(%arg: !felt.type) -> !felt.type {
+      function.return %arg : !felt.type
+    }
+
+    function.def @f(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      function.return %arg : !poly.tvar<@T>
+    }
+  }
+
+  function.def @call_f(%arg: index) -> index {
+    %0 = function.call @TSpecializationNameCollision::@f<[index]>(%arg) : (index) -> index
+    function.return %0 : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TSpecializationNameCollision {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @i_f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:        function.return %[[VAL_0]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @i_f_0(%[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:        function.return %[[VAL_1]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @f(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !poly.tvar<@T> {
+// CHECK-NEXT:        function.return %[[VAL_2]] : !poly.tvar<@T>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_f(%[[VAL_3:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @TSpecializationNameCollision::@i_f_0<[index]>(%[[VAL_3]]) : (index) -> index
+// CHECK-NEXT:      function.return %[[VAL_4]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
 // COM: `read_const` with a variable type
 module attributes {llzk.lang} {
   poly.template @T {

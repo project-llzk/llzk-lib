@@ -46,6 +46,7 @@
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/StringMap.h>
 
 #include <memory>
 
@@ -77,6 +78,16 @@ struct InferredType {
   Type type;
   Location loc;
 };
+
+/// Template-local clone callees created by this pass, keyed by the clone name that
+/// would be preferred before `SymbolTable::insert` uniquifies it.
+///
+/// The cache deliberately records only pass-created clones. A user-defined symbol
+/// may already occupy the preferred name, and `SymbolTable::insert` will rename the
+/// clone in that case. Reusing the cached callee avoids confusing such user symbols
+/// with generated clones and keeps repeated calls to the same instantiation pointed
+/// at the same uniquely-named clone.
+using SpecializedFunctionCloneCache = DenseMap<Operation *, llvm::StringMap<SymbolRefAttr>>;
 
 /// Return the pieces of a symbol reference as `StringAttr`s.
 ///
@@ -1235,20 +1246,21 @@ getTemplateLocalFunctionCloneCallee(SymbolRefAttr originalCallee, StringAttr clo
 static FailureOr<SymbolRefAttr> getOrCreateSpecializedFunctionClone(
     TemplateOp templateOp, FuncDefOp func, SymbolRefAttr originalCallee,
     const TemplateInferenceInfo &info, const DenseMap<StringAttr, Type> &replacements,
-    SymbolTableCollection &tables
+    SymbolTableCollection &tables, llvm::StringMap<SymbolRefAttr> &cloneCallees
 ) {
-  std::string newFuncName =
+  std::string requestedFuncName =
       buildTemplateLocalFunctionCloneName(func.getSymName(), info.oldParamOrder, replacements);
-  SymbolTable &templateSymbols = tables.getSymbolTable(templateOp);
-  if (Operation *existing = templateSymbols.lookup(newFuncName)) {
-    if (auto existingFunc = llvm::dyn_cast<FuncDefOp>(existing)) {
-      return getTemplateLocalFunctionCloneCallee(originalCallee, existingFunc.getSymNameAttr());
-    }
-    return failure();
+  // `requestedFuncName` is a stable instantiation key; the clone may receive a
+  // uniquified symbol name when inserted if user IR already defines that symbol.
+  auto cachedCallee = cloneCallees.find(requestedFuncName);
+  if (cachedCallee != cloneCallees.end()) {
+    return cachedCallee->second;
   }
 
+  SymbolTable &templateSymbols = tables.getSymbolTable(templateOp);
+
   FuncDefOp clone = func.clone();
-  clone.setSymName(newFuncName);
+  clone.setSymName(requestedFuncName);
   templateSymbols.insert(clone, Block::iterator(func));
 
   TypeVarReplacementConverter converter(
@@ -1257,7 +1269,10 @@ static FailureOr<SymbolRefAttr> getOrCreateSpecializedFunctionClone(
   );
   clone.walk([&converter](Operation *op) { convertOperationTypes(op, converter); });
   removeIdentityCasts(clone.getOperation());
-  return getTemplateLocalFunctionCloneCallee(originalCallee, clone.getSymNameAttr());
+  SymbolRefAttr cloneCallee =
+      getTemplateLocalFunctionCloneCallee(originalCallee, clone.getSymNameAttr());
+  cloneCallees.try_emplace(requestedFuncName, cloneCallee);
+  return cloneCallee;
 }
 
 /// Erase `poly.param` definitions whose type variables were fully resolved.
@@ -1382,7 +1397,8 @@ static void instantiateConcreteStructUses(ModuleOp module) {
 /// struct/array transformations. Function-local inference facts are used to
 /// reject call-site instantiations that disagree with a proof in the body.
 static LogicalResult specializeFunctionLocalCalls(
-    ModuleOp module, DenseMap<Operation *, const TemplateInferenceInfo *> &infoByTemplate
+    ModuleOp module, DenseMap<Operation *, const TemplateInferenceInfo *> &infoByTemplate,
+    SpecializedFunctionCloneCache &cloneCache
 ) {
   bool failedClone = false;
   SymbolTableCollection tables;
@@ -1423,7 +1439,8 @@ static LogicalResult specializeFunctionLocalCalls(
     }
 
     FailureOr<SymbolRefAttr> cloneCallee = getOrCreateSpecializedFunctionClone(
-        parentTemplate, targetFunc, callOp.getCalleeAttr(), *info, replacements, tables
+        parentTemplate, targetFunc, callOp.getCalleeAttr(), *info, replacements, tables,
+        cloneCache[parentTemplate.getOperation()]
     );
     if (failed(cloneCallee)) {
       failedClone = true;
@@ -1560,7 +1577,8 @@ private:
 
     // Clone concrete call-site instantiations before trimming template
     // arguments; the clone decision needs the original explicit arguments.
-    if (failed(specializeFunctionLocalCalls(module, infoByTemplate))) {
+    SpecializedFunctionCloneCache cloneCache;
+    if (failed(specializeFunctionLocalCalls(module, infoByTemplate, cloneCache))) {
       signalPassFailure();
       return;
     }
@@ -1581,7 +1599,7 @@ private:
     }
     // Re-run specialization after rewriting because template bodies may now
     // contain concrete forwarded calls into otherwise unconstrained templates.
-    if (failed(specializeFunctionLocalCalls(module, infoByTemplate))) {
+    if (failed(specializeFunctionLocalCalls(module, infoByTemplate, cloneCache))) {
       signalPassFailure();
       return;
     }
