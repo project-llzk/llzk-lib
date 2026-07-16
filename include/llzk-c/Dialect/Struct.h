@@ -141,6 +141,24 @@ MLIR_CAPI_EXPORTED intptr_t llzkStruct_StructDefOpGetNumTemplateExprOpNames(Mlir
 // MemberDefOp
 //===----------------------------------------------------------------------===//
 
+/// Creates a MemberDefOp.
+LLZK_DECLARE_OP_BUILD_METHOD(
+    Struct, MemberDefOp, MlirStringRef name, MlirType type, bool isSignal, bool isColumn
+);
+
+/// Creates a MemberDefOp using a StringAttr name and TypeAttr type.
+LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
+    Struct, MemberDefOp, WithAttrs, MlirAttribute name, MlirAttribute type, bool isSignal,
+    bool isColumn
+);
+
+/// Creates a MemberDefOp using a raw attribute list. The attributes must include `sym_name` and
+/// `type`.
+LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
+    Struct, MemberDefOp, WithNamedAttrs, intptr_t numAttrs, MlirNamedAttribute const *attrs,
+    bool isSignal, bool isColumn
+);
+
 /// Returns whether this member supports offset table accesses.
 MLIR_CAPI_EXPORTED bool llzkStruct_MemberDefOpGetColumnValue(MlirOperation op);
 
