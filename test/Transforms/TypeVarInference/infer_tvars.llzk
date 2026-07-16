@@ -415,6 +415,20 @@ module attributes {llzk.lang} {
     }
   }
 
+  poly.template @TInferStructSymbolRelation {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @from_related(
+        %arg: !struct.type<@TBox::@Box<[@T]>>, %proof: !poly.tvar<@T>
+    ) -> !struct.type<@TBox::@Box<[@U]>> {
+      %related = poly.unifiable_cast %arg :
+          (!struct.type<@TBox::@Box<[@T]>>) -> !struct.type<@TBox::@Box<[@U]>>
+      %index = poly.unifiable_cast %proof : (!poly.tvar<@T>) -> index
+      function.return %related : !struct.type<@TBox::@Box<[@U]>>
+    }
+  }
+
   function.def @call_from_struct(%arg: !struct.type<@TBox::@Box<[index]>>) -> !struct.type<@TBox::@Box<[index]>> {
     %0 = function.call @TInferStructParam::@from_struct<[index]>(%arg) : (!struct.type<@TBox::@Box<[index]>>) -> !struct.type<@TBox::@Box<[index]>>
     function.return %0 : !struct.type<@TBox::@Box<[index]>>
@@ -432,6 +446,14 @@ module attributes {llzk.lang} {
         (!array.type<4 x !pod.type<[@value: !struct.type<@TBox::@Box<[index]>>]>>) ->
         !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@Box<[index]>>]>>
     function.return %0 : !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@Box<[index]>>]>>
+  }
+
+  function.def @call_from_related(
+      %arg: !struct.type<@TBox::@Box<[index]>>, %proof: index
+  ) -> !struct.type<@TBox::@Box<[index]>> {
+    %0 = function.call @TInferStructSymbolRelation::@from_related<[index, index]>(%arg, %proof) :
+        (!struct.type<@TBox::@Box<[index]>>, index) -> !struct.type<@TBox::@Box<[index]>>
+    function.return %0 : !struct.type<@TBox::@Box<[index]>>
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
@@ -469,17 +491,26 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        function.return %[[VAL_6]] : !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@i_Box<[index]>>]>>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @call_from_struct(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox::@i_Box<[index]>>) -> !struct.type<@TBox::@i_Box<[index]>> {
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @TInferStructParam::@from_struct(%[[VAL_7]]) : (!struct.type<@TBox::@i_Box<[index]>>) -> !struct.type<@TBox::@i_Box<[index]>>
-// CHECK-NEXT:      function.return %[[VAL_8]] : !struct.type<@TBox::@i_Box<[index]>>
+// CHECK-NEXT:    poly.template @TInferStructSymbolRelation {
+// CHECK-NEXT:      function.def @from_related(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox::@i_Box<[index]>>, %[[VAL_8:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@TBox::@i_Box<[index]>> {
+// CHECK-NEXT:        function.return %[[VAL_7]] : !struct.type<@TBox::@i_Box<[index]>>
+// CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @call_from_struct_symbol(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox::@i_Box<[index]>>) -> !struct.type<@TBox::@i_Box<[index]>> {
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @TInferStructSymbolParam::@from_struct_symbol(%[[VAL_9]]) : (!struct.type<@TBox::@i_Box<[index]>>) -> !struct.type<@TBox::@i_Box<[index]>>
+// CHECK-NEXT:    function.def @call_from_struct(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox::@i_Box<[index]>>) -> !struct.type<@TBox::@i_Box<[index]>> {
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @TInferStructParam::@from_struct(%[[VAL_9]]) : (!struct.type<@TBox::@i_Box<[index]>>) -> !struct.type<@TBox::@i_Box<[index]>>
 // CHECK-NEXT:      function.return %[[VAL_10]] : !struct.type<@TBox::@i_Box<[index]>>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @call_from_array_pod_struct(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@i_Box<[index]>>]>>) -> !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@i_Box<[index]>>]>> {
-// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @TInferArrayPodStruct::@from_array_pod_struct(%[[VAL_11]]) : (!array.type<4 x !pod.type<[@value: !struct.type<@TBox::@i_Box<[index]>>]>>) -> !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@i_Box<[index]>>]>>
-// CHECK-NEXT:      function.return %[[VAL_12]] : !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@i_Box<[index]>>]>>
+// CHECK-NEXT:    function.def @call_from_struct_symbol(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox::@i_Box<[index]>>) -> !struct.type<@TBox::@i_Box<[index]>> {
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @TInferStructSymbolParam::@from_struct_symbol(%[[VAL_11]]) : (!struct.type<@TBox::@i_Box<[index]>>) -> !struct.type<@TBox::@i_Box<[index]>>
+// CHECK-NEXT:      function.return %[[VAL_12]] : !struct.type<@TBox::@i_Box<[index]>>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_from_array_pod_struct(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@i_Box<[index]>>]>>) -> !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@i_Box<[index]>>]>> {
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = function.call @TInferArrayPodStruct::@from_array_pod_struct(%[[VAL_13]]) : (!array.type<4 x !pod.type<[@value: !struct.type<@TBox::@i_Box<[index]>>]>>) -> !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@i_Box<[index]>>]>>
+// CHECK-NEXT:      function.return %[[VAL_14]] : !array.type<4 x !pod.type<[@value: !struct.type<@TBox::@i_Box<[index]>>]>>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_from_related(%[[VAL_15:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox::@i_Box<[index]>>, %[[VAL_16:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@TBox::@i_Box<[index]>> {
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.]+]] = function.call @TInferStructSymbolRelation::@from_related(%[[VAL_15]], %[[VAL_16]]) : (!struct.type<@TBox::@i_Box<[index]>>, index) -> !struct.type<@TBox::@i_Box<[index]>>
+// CHECK-NEXT:      function.return %[[VAL_17]] : !struct.type<@TBox::@i_Box<[index]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----

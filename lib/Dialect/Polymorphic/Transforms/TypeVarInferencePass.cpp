@@ -1093,8 +1093,9 @@ private:
   ///
   /// Type arguments encoded as `TypeAttr` are recursively unified by type. A
   /// flat `SymbolRefAttr` is treated as an inference target only when it names
-  /// an eligible self-typed type-variable parameter; `recordInference` filters
-  /// out ordinary value parameters and non-concrete candidates.
+  /// an eligible self-typed type-variable parameter; two flat symbol arguments
+  /// record a parameter equality. `recordInference` and `recordParamRelation`
+  /// filter out ordinary value parameters and non-concrete candidates.
   LogicalResult collectTemplateArgInferences(Attribute lhsAttr, Attribute rhsAttr, Location loc) {
     auto lhsTyAttr = llvm::dyn_cast<TypeAttr>(lhsAttr);
     auto rhsTyAttr = llvm::dyn_cast<TypeAttr>(rhsAttr);
@@ -1105,6 +1106,9 @@ private:
     }
 
     if (StringAttr lhsSymbolName = getFlatSymbolName(lhsAttr)) {
+      if (StringAttr rhsSymbolName = getFlatSymbolName(rhsAttr)) {
+        return recordParamRelation(lhsSymbolName, rhsSymbolName, loc);
+      }
       if (rhsTyAttr && failed(recordInference(lhsSymbolName, rhsTyAttr.getValue(), Value(), loc))) {
         return failure();
       }
