@@ -1033,16 +1033,6 @@ static bool hasResidualFunctionTvar(const TemplateInferenceInfo &info, FuncDefOp
   });
 }
 
-/// Result of creating or finding a template-local function instantiation.
-struct TemplateLocalFunctionInstantiationResult {
-  /// Existing or newly-created instantiated function.
-  FuncDefOp func;
-  /// Callee symbol reference that targets `func` from the original call path.
-  SymbolRefAttr callee;
-  /// Whether `func` was cloned during this request.
-  bool created;
-};
-
 /// Build the symbol name for a template-local specialized function clone.
 ///
 /// The containing template already contributes its own name to the fully-qualified
@@ -1079,8 +1069,8 @@ getTemplateLocalFunctionCloneCallee(SymbolRefAttr originalCallee, StringAttr clo
 }
 
 /// Create or reuse a template-local clone for a concrete function-local tvar instantiation.
-static FailureOr<TemplateLocalFunctionInstantiationResult> getOrCreateSpecializedFunctionClone(
-    ModuleOp module, TemplateOp templateOp, FuncDefOp func, SymbolRefAttr originalCallee,
+static FailureOr<SymbolRefAttr> getOrCreateSpecializedFunctionClone(
+    TemplateOp templateOp, FuncDefOp func, SymbolRefAttr originalCallee,
     const TemplateInferenceInfo &info, const DenseMap<StringAttr, Type> &replacements,
     SymbolTableCollection &tables
 ) {
@@ -1088,39 +1078,23 @@ static FailureOr<TemplateLocalFunctionInstantiationResult> getOrCreateSpecialize
       buildTemplateLocalFunctionCloneName(func.getSymName(), info.oldParamOrder, replacements);
   SymbolTable &templateSymbols = tables.getSymbolTable(templateOp);
   if (Operation *existing = templateSymbols.lookup(newFuncName)) {
-    auto existingFunc = llvm::dyn_cast<FuncDefOp>(existing);
-    if (!existingFunc) {
-      return failure();
+    if (auto existingFunc = llvm::dyn_cast<FuncDefOp>(existing)) {
+      return getTemplateLocalFunctionCloneCallee(originalCallee, existingFunc.getSymNameAttr());
     }
-    return TemplateLocalFunctionInstantiationResult {
-        existingFunc,
-        getTemplateLocalFunctionCloneCallee(originalCallee, existingFunc.getSymNameAttr()),
-        /*created=*/false,
-    };
+    return failure();
   }
-
-  auto initClone = [&](FuncDefOp clone) {
-    TypeVarReplacementConverter converter(
-        module.getContext(), info.templatePath, info.oldParamOrder, replacements,
-        /*trimResolvedParams=*/false
-    );
-    clone.walk([&converter](Operation *op) { convertOperationTypes(op, converter); });
-    removeIdentityCasts(clone.getOperation());
-    return success();
-  };
 
   FuncDefOp clone = func.clone();
   clone.setSymName(newFuncName);
   templateSymbols.insert(clone, Block::iterator(func));
-  if (failed(initClone(clone))) {
-    clone->erase();
-    return failure();
-  }
-  return TemplateLocalFunctionInstantiationResult {
-      clone,
-      getTemplateLocalFunctionCloneCallee(originalCallee, clone.getSymNameAttr()),
-      /*created=*/true,
-  };
+
+  TypeVarReplacementConverter converter(
+      templateOp.getContext(), info.templatePath, info.oldParamOrder, replacements,
+      /*trimResolvedParams=*/false
+  );
+  clone.walk([&converter](Operation *op) { convertOperationTypes(op, converter); });
+  removeIdentityCasts(clone.getOperation());
+  return getTemplateLocalFunctionCloneCallee(originalCallee, clone.getSymNameAttr());
 }
 
 /// Erase `poly.param` definitions whose type variables were fully resolved.
@@ -1243,15 +1217,15 @@ static LogicalResult specializeFunctionLocalCalls(
       return;
     }
 
-    FailureOr<TemplateLocalFunctionInstantiationResult> clone = getOrCreateSpecializedFunctionClone(
-        module, parentTemplate, targetFunc, callOp.getCalleeAttr(), *info, replacements, tables
+    FailureOr<SymbolRefAttr> cloneCallee = getOrCreateSpecializedFunctionClone(
+        parentTemplate, targetFunc, callOp.getCalleeAttr(), *info, replacements, tables
     );
-    if (failed(clone)) {
+    if (failed(cloneCallee)) {
       failedClone = true;
       return;
     }
 
-    callOp.setCalleeAttr(clone->callee);
+    callOp.setCalleeAttr(*cloneCallee);
   });
   return failure(failedClone);
 }
