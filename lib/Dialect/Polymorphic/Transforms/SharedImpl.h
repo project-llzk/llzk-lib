@@ -41,9 +41,6 @@
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/Debug.h>
 
-#include <string>
-#include <tuple>
-
 #define DEBUG_TYPE "poly-dialect-shared"
 
 namespace llzk::polymorphic::detail {
@@ -70,62 +67,6 @@ mlir::ConversionTarget newBaseTarget(mlir::MLIRContext *ctx);
 /// aggregate shape should become `array<4,8 x index>` rather than an array whose element type
 /// is another array because the latter is not allowed in LLZK IR.
 array::ArrayType flattenInstantiatedArrayType(array::ArrayType inputTy, mlir::Type convertedElemTy);
-
-/// Build the module-level symbol name from an instantiated template name and function name.
-std::string buildInstantiatedFunctionName(
-    llvm::StringRef instantiatedTemplateName, llvm::StringRef functionName
-);
-
-/// Build the module-level symbol name from an instantiated template name and struct name.
-std::string
-buildInstantiatedStructName(llvm::StringRef instantiatedTemplateName, llvm::StringRef structName);
-
-/// Build the module-level symbol name for a fully-instantiated template function.
-///
-/// The generated name encodes the original template name, the concrete template
-/// arguments, and the leaf function name.
-std::string buildInstantiatedFunctionName(
-    llvm::StringRef templateName, llvm::StringRef functionName,
-    llvm::ArrayRef<mlir::Attribute> templateArgs
-);
-
-/// Build the module-level symbol name for a fully-instantiated template struct.
-///
-/// The generated name encodes the original template name, the concrete template
-/// arguments, and the leaf struct name.
-std::string buildInstantiatedStructName(
-    llvm::StringRef templateName, llvm::StringRef structName,
-    llvm::ArrayRef<mlir::Attribute> templateArgs
-);
-
-/// Return the callee path for a module-level clone of a nested template function.
-///
-/// Given a callee like `@Template::@f` or `@M::@Template::@f`, this removes the
-/// template and function leaves and appends `instantiatedFunctionName`.
-mlir::SymbolRefAttr getInstantiatedFunctionCallee(
-    mlir::SymbolRefAttr templateFunctionCallee, mlir::StringAttr instantiatedFunctionName
-);
-
-/// Result of creating or finding a module-level function instantiation.
-struct FullFunctionInstantiationResult {
-  /// Existing or newly-created instantiated function.
-  function::FuncDefOp func;
-  /// Callee symbol reference that targets `func` from the original call path.
-  mlir::SymbolRefAttr callee;
-  /// Whether `func` was cloned during this request.
-  bool created;
-};
-
-/// Create or reuse a module-level clone for a fully-instantiated template function.
-///
-/// `initializeClone` runs only for newly-created clones, after the clone has been inserted before
-/// `parentTemplate`. If initialization fails, the helper erases the clone before returning failure.
-mlir::FailureOr<FullFunctionInstantiationResult> getOrCreateFullFunctionInstantiation(
-    mlir::ModuleOp parentModule, TemplateOp parentTemplate, function::FuncDefOp sourceFunc,
-    mlir::SymbolRefAttr originalCallee, llvm::StringRef instantiatedTemplateName,
-    mlir::SymbolTableCollection &symbolTables,
-    llvm::function_ref<mlir::LogicalResult(function::FuncDefOp)> initializeClone
-);
 
 class LegalityCheckCallback {
 public:

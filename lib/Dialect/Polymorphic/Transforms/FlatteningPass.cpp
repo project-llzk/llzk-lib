@@ -56,6 +56,7 @@
 #include <llvm/ADT/DepthFirstIterator.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/Twine.h>
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Debug.h>
 
@@ -82,6 +83,82 @@ using namespace llzk::polymorphic;
 using namespace llzk::polymorphic::detail;
 
 namespace {
+
+/// Build the module-level symbol name from an instantiated template name and function name.
+static std::string
+buildInstantiatedFunctionName(StringRef instantiatedTemplateName, StringRef functionName) {
+  return (llvm::Twine(instantiatedTemplateName) + "_" + functionName).str();
+}
+
+/// Build the module-level symbol name from an instantiated template name and struct name.
+static std::string
+buildInstantiatedStructName(StringRef instantiatedTemplateName, StringRef structName) {
+  return (llvm::Twine(instantiatedTemplateName) + "_" + structName).str();
+}
+
+/// Return the callee path for a module-level clone of a nested template function.
+///
+/// Given a callee like `@Template::@f` or `@M::@Template::@f`, this removes the
+/// template and function leaves and appends `instantiatedFunctionName`.
+static SymbolRefAttr getInstantiatedFunctionCallee(
+    SymbolRefAttr templateFunctionCallee, StringAttr instantiatedFunctionName
+) {
+  SmallVector<FlatSymbolRefAttr> pieces = getPieces(templateFunctionCallee);
+  assert(pieces.size() >= 2 && "callee must include at least template and function names");
+  pieces.pop_back();
+  pieces.pop_back();
+  pieces.push_back(FlatSymbolRefAttr::get(instantiatedFunctionName));
+  return asSymbolRefAttr(pieces);
+}
+
+/// Result of creating or finding a module-level function instantiation.
+struct FullFunctionInstantiationResult {
+  /// Existing or newly-created instantiated function.
+  FuncDefOp func;
+  /// Callee symbol reference that targets `func` from the original call path.
+  SymbolRefAttr callee;
+  /// Whether `func` was cloned during this request.
+  bool created;
+};
+
+/// Create or reuse a module-level clone for a fully-instantiated template function.
+///
+/// `initializeClone` runs only for newly-created clones, after the clone has been inserted before
+/// `parentTemplate`. If initialization fails, the helper erases the clone before returning failure.
+static FailureOr<FullFunctionInstantiationResult> getOrCreateFullFunctionInstantiation(
+    ModuleOp parentModule, TemplateOp parentTemplate, FuncDefOp sourceFunc,
+    SymbolRefAttr originalCallee, StringRef instantiatedTemplateName,
+    SymbolTableCollection &symbolTables,
+    llvm::function_ref<LogicalResult(FuncDefOp)> initializeClone
+) {
+  std::string newFuncName =
+      buildInstantiatedFunctionName(instantiatedTemplateName, sourceFunc.getSymName());
+  SymbolTable &moduleSymbols = symbolTables.getSymbolTable(parentModule);
+  if (Operation *existing = moduleSymbols.lookup(newFuncName)) {
+    auto existingFunc = llvm::dyn_cast<FuncDefOp>(existing);
+    if (!existingFunc) {
+      return failure();
+    }
+    return FullFunctionInstantiationResult {
+        existingFunc,
+        getInstantiatedFunctionCallee(originalCallee, existingFunc.getSymNameAttr()),
+        /*created=*/false,
+    };
+  }
+
+  FuncDefOp clone = sourceFunc.clone();
+  clone.setSymName(newFuncName);
+  moduleSymbols.insert(clone, Block::iterator(parentTemplate));
+  if (failed(initializeClone(clone))) {
+    clone->erase();
+    return failure();
+  }
+  return FullFunctionInstantiationResult {
+      clone,
+      getInstantiatedFunctionCallee(originalCallee, clone.getSymNameAttr()),
+      /*created=*/true,
+  };
+}
 
 static void reportDelayedDiagnostics(CallOp caller, SmallVector<Diagnostic> &&diagnostics) {
   DiagnosticEngine &engine = caller.getContext()->getDiagEngine();
