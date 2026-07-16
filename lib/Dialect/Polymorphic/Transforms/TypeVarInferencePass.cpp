@@ -300,6 +300,9 @@ private:
   ) const {
     auto replacementIt = replacements_.find(paramName);
     assert(replacementIt != replacements_.end() && "removed parameter must have a replacement");
+    if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr); intAttr && isDynamic(intAttr)) {
+      return success();
+    }
     Attribute convertedAttr = resolveTemplateSymbolArgs ? convertTemplateArgAttr(attr) : attr;
     Attribute expectedAttr = TypeAttr::get(replacementIt->second);
     if (convertedAttr == expectedAttr) {
