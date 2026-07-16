@@ -33,3 +33,27 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+// COM: `read_const` with a variable type
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @Num
+    poly.param @Ty : !poly.tvar<@Ty>
+
+    function.def @compute() -> !poly.tvar<@Ty> {
+      %0 = poly.read_const @Num : !poly.tvar<@Ty>
+      function.return %0 : !poly.tvar<@Ty>
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @Num
+// CHECK-NEXT:      poly.param @Ty : !poly.tvar<@Ty>
+// CHECK-NEXT:      function.def @compute() -> !poly.tvar<@Ty> {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @Num : !poly.tvar<@Ty>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !poly.tvar<@Ty>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
