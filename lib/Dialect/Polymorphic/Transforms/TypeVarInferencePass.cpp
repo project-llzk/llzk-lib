@@ -803,6 +803,8 @@ class TypeVarInferenceCollector {
   DenseMap<StringAttr, InferredType> &replacements;
   /// Concrete inferences for SSA values observed during collection.
   DenseMap<Value, InferredType> byValue;
+  /// Type-variable parameters proven to be equal by casts or aggregate contents.
+  DenseMap<StringAttr, DenseSet<StringAttr>> paramRelations;
   /// Whether the current collection iteration learned a new concrete fact.
   bool changedInIteration = false;
 
@@ -839,11 +841,19 @@ private:
   ///   * by SSA value, so a single value cannot be rewritten to incompatible
   ///     concrete types through separate casts.
   ///
-  /// Non-eligible parameters and non-concrete candidate types are ignored because
-  /// this pass only removes template type variables once a concrete replacement is
-  /// known.
+  /// Non-eligible parameters are ignored. A candidate type variable records a
+  /// parameter equality instead of a concrete replacement, so later concrete
+  /// proofs can propagate across aggregate casts such as `array<T> -> array<U>`.
+  /// Other non-concrete candidates are ignored because this pass only removes
+  /// template type variables once a concrete replacement is known.
   LogicalResult recordInference(StringAttr paramName, Type inferredTy, Value value, Location loc) {
-    if (!inferenceInfo.typeVarParams.contains(paramName) || !isConcreteType(inferredTy)) {
+    if (!inferenceInfo.typeVarParams.contains(paramName)) {
+      return success();
+    }
+    if (auto inferredTvar = llvm::dyn_cast<TypeVarType>(inferredTy)) {
+      return recordParamRelation(paramName, inferredTvar.getNameRef().getAttr(), loc);
+    }
+    if (!isConcreteType(inferredTy)) {
       return success();
     }
 
@@ -856,9 +866,11 @@ private:
     };
 
     auto byParamIt = replacements.find(paramName);
+    bool learnedParamInference = false;
     if (byParamIt == replacements.end()) {
       replacements.try_emplace(paramName, InferredType {inferredTy, loc});
       changedInIteration = true;
+      learnedParamInference = true;
     } else if (byParamIt->second.type != inferredTy) {
       return reportConflict("template parameter", byParamIt->second.loc, byParamIt->second.type);
     }
@@ -871,6 +883,44 @@ private:
       } else if (byValueIt->second.type != inferredTy) {
         return reportConflict("SSA value using", byValueIt->second.loc, byValueIt->second.type);
       }
+    }
+
+    if (learnedParamInference) {
+      auto relatedIt = paramRelations.find(paramName);
+      if (relatedIt != paramRelations.end()) {
+        for (StringAttr relatedParam : relatedIt->second) {
+          if (failed(recordInference(relatedParam, inferredTy, Value(), loc))) {
+            return failure();
+          }
+        }
+      }
+    }
+    return success();
+  }
+
+  /// Record that two eligible type-variable parameters must have the same type.
+  LogicalResult recordParamRelation(StringAttr lhsParam, StringAttr rhsParam, Location loc) {
+    if (lhsParam == rhsParam || !inferenceInfo.typeVarParams.contains(rhsParam)) {
+      return success();
+    }
+
+    bool inserted = paramRelations[lhsParam].insert(rhsParam).second;
+    inserted |= paramRelations[rhsParam].insert(lhsParam).second;
+    if (!inserted) {
+      return success();
+    }
+
+    changedInIteration = true;
+
+    auto lhsIt = replacements.find(lhsParam);
+    if (lhsIt != replacements.end() &&
+        failed(recordInference(rhsParam, lhsIt->second.type, Value(), loc))) {
+      return failure();
+    }
+    auto rhsIt = replacements.find(rhsParam);
+    if (rhsIt != replacements.end() &&
+        failed(recordInference(lhsParam, rhsIt->second.type, Value(), loc))) {
+      return failure();
     }
     return success();
   }
