@@ -239,8 +239,7 @@ class ConvertEmitEqualityOp : public OpConversionPattern<EmitEqualityOp> {
 
   std::optional<llvm::APInt> getConstAPInt(Value v) const {
     if (auto c = llvm::dyn_cast_if_present<pcl::ConstOp>(v.getDefiningOp())) {
-      // Chain: ConstOp -> FeltAttr (or BoolAttr-as-int) -> IntegerAttr -> APInt
-      return c.getValue().getValue().getValue();
+      return c.getValueAPInt();
     }
     return std::nullopt;
   }
