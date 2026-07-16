@@ -136,6 +136,50 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @TForwardedSameNameCallee {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @id(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      function.return %arg : !poly.tvar<@T>
+    }
+  }
+
+  poly.template @TForwardSameNameCaller {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @forward(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      %forwarded = function.call @TForwardedSameNameCallee::@id<[@T]>(%arg) : (!poly.tvar<@T>) -> !poly.tvar<@T>
+      function.return %forwarded : !poly.tvar<@T>
+    }
+  }
+
+  function.def @call_forward_same_name(%arg: index) -> index {
+    %0 = function.call @TForwardSameNameCaller::@forward<[index]>(%arg) : (index) -> index
+    function.return %0 : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TForwardedSameNameCallee {
+// CHECK-NEXT:      function.def @id(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:        function.return %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TForwardSameNameCaller {
+// CHECK-NEXT:      function.def @forward(%[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @TForwardedSameNameCallee::@id(%[[VAL_1]]) : (index) -> index
+// CHECK-NEXT:        function.return %[[VAL_2]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_forward_same_name(%[[VAL_3:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @TForwardSameNameCaller::@forward(%[[VAL_3]]) : (index) -> index
+// CHECK-NEXT:      function.return %[[VAL_4]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
   poly.template @TFlattenNestedArray {
     poly.param @T : !poly.tvar<@T>
 

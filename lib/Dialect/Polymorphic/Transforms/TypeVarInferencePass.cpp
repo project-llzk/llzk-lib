@@ -253,7 +253,9 @@ public:
   /// variable. A fully removed list is represented as `nullptr` so the printer elides the template
   /// argument syntax. A removed argument must agree with the inferred replacement before it is
   /// dropped.
-  FailureOr<ArrayAttr> convertTemplateParams(ArrayAttr params, Operation *diagnosticOp) const {
+  FailureOr<ArrayAttr> convertTemplateParams(
+      ArrayAttr params, Operation *diagnosticOp, bool resolveTemplateSymbolArgs = true
+  ) const {
     if (!params) {
       return ArrayAttr();
     }
@@ -263,12 +265,14 @@ public:
     SmallVector<Attribute> kept;
     for (auto [paramName, attr] : llvm::zip_equal(oldParamOrder_, params.getValue())) {
       if (removedParams_.contains(paramName)) {
-        if (failed(checkRemovedTemplateParam(paramName, attr, diagnosticOp))) {
+        if (failed(
+                checkRemovedTemplateParam(paramName, attr, diagnosticOp, resolveTemplateSymbolArgs)
+            )) {
           return failure();
         }
         continue;
       }
-      kept.push_back(convertTemplateArgAttr(attr));
+      kept.push_back(resolveTemplateSymbolArgs ? convertTemplateArgAttr(attr) : attr);
     }
     return kept.empty() ? ArrayAttr() : ArrayAttr::get(ctx_, kept);
   }
@@ -291,11 +295,12 @@ private:
   }
 
   /// Check that an explicit argument for a removed parameter matches its replacement.
-  LogicalResult
-  checkRemovedTemplateParam(StringAttr paramName, Attribute attr, Operation *diagnosticOp) const {
+  LogicalResult checkRemovedTemplateParam(
+      StringAttr paramName, Attribute attr, Operation *diagnosticOp, bool resolveTemplateSymbolArgs
+  ) const {
     auto replacementIt = replacements_.find(paramName);
     assert(replacementIt != replacements_.end() && "removed parameter must have a replacement");
-    Attribute convertedAttr = convertTemplateArgAttr(attr);
+    Attribute convertedAttr = resolveTemplateSymbolArgs ? convertTemplateArgAttr(attr) : attr;
     Attribute expectedAttr = TypeAttr::get(replacementIt->second);
     if (convertedAttr == expectedAttr) {
       return success();
@@ -1295,8 +1300,12 @@ static FailureOr<bool> updateCallableTemplateParams(
       return;
     }
 
+    TemplateOp callTemplate = getParentOfType<TemplateOp>(callOp.getOperation());
+    bool resolveTemplateSymbolArgs =
+        callTemplate && callTemplate.getOperation() == parentTemplate.getOperation();
     ArrayAttr oldParams = callOp.getTemplateParamsAttr();
-    FailureOr<ArrayAttr> newParams = converter->convertTemplateParams(oldParams, callOp);
+    FailureOr<ArrayAttr> newParams =
+        converter->convertTemplateParams(oldParams, callOp, resolveTemplateSymbolArgs);
     if (failed(newParams)) {
       failedConversion = true;
       return;
@@ -1306,11 +1315,13 @@ static FailureOr<bool> updateCallableTemplateParams(
       modified = true;
     }
 
-    for (Value result : callOp.getResults()) {
-      Type newTy = converter->convertType(result.getType());
-      if (newTy != result.getType()) {
-        result.setType(newTy);
-        modified = true;
+    if (resolveTemplateSymbolArgs) {
+      for (Value result : callOp.getResults()) {
+        Type newTy = converter->convertType(result.getType());
+        if (newTy != result.getType()) {
+          result.setType(newTy);
+          modified = true;
+        }
       }
     }
   });
@@ -1331,8 +1342,12 @@ static FailureOr<bool> updateCallableTemplateParams(
       return;
     }
 
+    TemplateOp includeTemplate = getParentOfType<TemplateOp>(includeOp.getOperation());
+    bool resolveTemplateSymbolArgs =
+        includeTemplate && includeTemplate.getOperation() == parentTemplate.getOperation();
     ArrayAttr oldParams = includeOp.getTemplateParamsAttr();
-    FailureOr<ArrayAttr> newParams = converter->convertTemplateParams(oldParams, includeOp);
+    FailureOr<ArrayAttr> newParams =
+        converter->convertTemplateParams(oldParams, includeOp, resolveTemplateSymbolArgs);
     if (failed(newParams)) {
       failedConversion = true;
       return;
