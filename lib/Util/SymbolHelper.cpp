@@ -21,7 +21,6 @@
 #include "llzk/Dialect/Verif/IR/Ops.h"
 #include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/SymbolTableLLZK.h"
-#include "llzk/Util/TypeHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/BuiltinTypes.h>

@@ -11,7 +11,6 @@
 
 #include "llzk/Util/SymbolLookup.h"
 
-#include <mlir/IR/Attributes.h>
 #include <mlir/Interfaces/CallInterfaces.h>
 
 #include <optional>
