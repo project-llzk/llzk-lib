@@ -879,6 +879,64 @@ static bool funcMentionsParam(FuncDefOp func, StringAttr paramName) {
   return result.wasInterrupted();
 }
 
+/// Return whether a struct's non-function mentions are covered by its own
+/// structural function proofs.
+static bool structUseCoveredByFunctionProof(
+    StructDefOp structOp, StringAttr paramName, Type replacementType,
+    const DenseMap<Operation *, DenseMap<StringAttr, InferredType>> &functionReplacements
+) {
+  bool sawMention = false;
+  bool missingProof = false;
+  structOp.walk([&](FuncDefOp func) {
+    if (func->getParentOfType<StructDefOp>() != structOp || !funcMentionsParam(func, paramName)) {
+      return;
+    }
+    sawMention = true;
+    auto funcIt = functionReplacements.find(func.getOperation());
+    if (funcIt == functionReplacements.end()) {
+      missingProof = true;
+      return;
+    }
+    auto replacementIt = funcIt->second.find(paramName);
+    if (replacementIt == funcIt->second.end() || replacementIt->second.type != replacementType) {
+      missingProof = true;
+    }
+  });
+  return sawMention && !missingProof;
+}
+
+/// Return whether `templateOp` has non-function type-bearing mentions that are
+/// not covered by their own structural function proofs.
+///
+/// Uncovered uses do not have function-local proof sites, so a concrete
+/// inference from one function cannot safely become a template-wide replacement
+/// while they remain. Keeping the replacement function-local preserves sibling
+/// symbols such as generic struct members.
+static bool hasUncoveredNonFunctionMention(
+    TemplateOp templateOp, StringAttr paramName, Type replacementType,
+    const DenseMap<Operation *, DenseMap<StringAttr, InferredType>> &functionReplacements
+) {
+  WalkResult result =
+      templateOp.walk([paramName, replacementType, &functionReplacements](Operation *op) {
+    if (llvm::isa<FuncDefOp, TemplateParamOp, verif::ContractOp>(op) ||
+        op->getParentOfType<FuncDefOp>() || op->getParentOfType<verif::ContractOp>()) {
+      return WalkResult::advance();
+    }
+    if (!operationMentionsParam(op, paramName)) {
+      return WalkResult::advance();
+    }
+    if (StructDefOp structOp = op->getParentOfType<StructDefOp>()) {
+      if (structUseCoveredByFunctionProof(
+              structOp, paramName, replacementType, functionReplacements
+          )) {
+        return WalkResult::advance();
+      }
+    }
+    return WalkResult::interrupt();
+  });
+  return result.wasInterrupted();
+}
+
 /// Walk a template body and collect all type-variable inferences from
 /// `poly.unifiable_cast` operations.
 ///
@@ -1897,6 +1955,12 @@ static bool sameReplacementTypes(
 }
 
 /// Recompute the template-wide replacements from the per-function proofs.
+///
+/// A replacement becomes template-wide only when every function that mentions
+/// the parameter proves the same concrete type and every non-function
+/// type-bearing operation is either covered by a structural function proof or
+/// absent. Uncovered non-function uses cannot be cloned per call, so they force
+/// the replacement to remain function-local.
 static void recomputeTemplateWideReplacements(TemplateInferenceInfo &info) {
   SmallVector<FuncDefOp> funcs;
   info.templateOp.walk([&funcs](FuncDefOp func) { funcs.push_back(func); });
@@ -1905,6 +1969,7 @@ static void recomputeTemplateWideReplacements(TemplateInferenceInfo &info) {
   DenseMap<StringAttr, unsigned> proofCounts;
   DenseMap<StringAttr, InferredType> commonReplacements;
   DenseSet<StringAttr> incompatibleReplacements;
+
   for (FuncDefOp func : funcs) {
     for (const auto &entry : info.typeVarParams) {
       if (funcMentionsParam(func, entry.first)) {
@@ -1930,7 +1995,10 @@ static void recomputeTemplateWideReplacements(TemplateInferenceInfo &info) {
   info.replacements.clear();
   for (const auto &entry : commonReplacements) {
     StringAttr paramName = entry.first;
-    if (!incompatibleReplacements.contains(paramName) &&
+    if (!hasUncoveredNonFunctionMention(
+            info.templateOp, paramName, entry.second.type, info.functionReplacements
+        ) &&
+        !incompatibleReplacements.contains(paramName) &&
         proofCounts.lookup(paramName) == mentionCounts.lookup(paramName)) {
       info.replacements.try_emplace(paramName, entry.second);
     }
