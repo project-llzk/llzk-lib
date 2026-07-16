@@ -225,13 +225,12 @@ def LLZK_YieldOp
 def LLZK_ConstReadOp
     : PolymorphicDialectOp<"read_const", [Pure, DeclareOpInterfaceMethods<
                                                     SymbolUserOpInterface>]> {
-  let summary = "read value of a struct parameter";
+  let summary = "read value of a template parameter";
   let description = [{
-    This operation reads the value from the named constant parameter of
-    the struct/component in which this op appears. The op itself puts
-    some restriction on the type of this value, but leaves it to a later
-    type-checking pass to ensure the struct parameters are instantiated
-    with types matching the uses of the parameter within the struct.
+    This operation reads the value from the named constant parameter of the template in
+    which this op appears. The op itself puts some restriction on the type of this value,
+    but leaves it to a later type-checking pass to ensure the template parameters are
+    instantiated with types matching the uses of the parameter within the template.
 
     Examples:
     ```llzk
