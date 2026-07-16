@@ -227,8 +227,8 @@ def LLZK_ConstReadOp
                                                     SymbolUserOpInterface>]> {
   let summary = "read value of a template parameter";
   let description = [{
-    This operation reads the value from the named constant parameter of the template in
-    which this op appears. The op itself puts some restriction on the type of this value,
+    This operation reads the value from the named constant parameter of the template
+    in which this op appears. The op itself puts a type restriction on the value,
     but leaves it to a later type-checking pass to ensure the template parameters are
     instantiated with types matching the uses of the parameter within the template.
 
