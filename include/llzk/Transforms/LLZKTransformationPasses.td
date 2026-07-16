@@ -112,8 +112,16 @@ def ComputeConstrainToProductPass
 }
 
 def FuseProductLoopsPass : LLZKPass<"llzk-fuse-product-loops"> {
-  let summary = "Fuse matching witness/constraint loops in a @product function";
-  let description = summary;
+  let summary =
+      "Fuse matching witness/constraint control flow in a @product function";
+  let description = [{
+    Fuses unambiguous compute/constrain sibling `scf.for` loops with matching trip counts and
+    sibling `scf.if` ops with the same SSA condition, same else structure, and a resultless
+    constrain side.
+
+    For `scf.if`, fusion is skipped if the moved constrain branch reads or writes storage, calls
+    functions (including witness functions), may trap, or has unknown effects.
+  }];
 }
 
 def EnforceNoMemberOverwritePass : LLZKPass<"llzk-enforce-no-overwrite"> {

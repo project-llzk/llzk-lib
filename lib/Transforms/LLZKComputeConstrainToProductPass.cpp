@@ -20,6 +20,7 @@
 #include "llzk/Dialect/Struct/Transforms/InlineStructsPass.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/Constants.h"
+#include "llzk/Util/ProductSourceHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/IR/Builders.h>
@@ -52,13 +53,9 @@ FuncDefOp ProductAligner::alignFuncs(StructDefOp root, FuncDefOp compute, FuncDe
   OpBuilder funcBuilder(compute);
 
   // Add compute/constrain attributes
-  compute.walk([&funcBuilder](Operation *op) {
-    op->setAttr(PRODUCT_SOURCE, funcBuilder.getStringAttr(FUNC_NAME_COMPUTE));
-  });
+  compute.walk([](Operation *op) { setProductSource(op, FUNC_NAME_COMPUTE); });
 
-  constrain.walk([&funcBuilder](Operation *op) {
-    op->setAttr(PRODUCT_SOURCE, funcBuilder.getStringAttr(FUNC_NAME_CONSTRAIN));
-  });
+  constrain.walk([](Operation *op) { setProductSource(op, FUNC_NAME_CONSTRAIN); });
 
   // Create an empty @product func...
   FuncDefOp productFunc = funcBuilder.create<FuncDefOp>(
