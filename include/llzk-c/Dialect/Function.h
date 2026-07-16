@@ -40,39 +40,30 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Function, llzk__function);
 // FuncDefOp
 //===----------------------------------------------------------------------===//
 
-/// Creates a FuncDefOp with the given attributes and argument attributes. Each argument attribute
-/// has to be a DictionaryAttr.
-MLIR_CAPI_EXPORTED MlirOperation llzkFunction_FuncDefOpCreateWithAttrsAndArgAttrs(
-    MlirLocation loc, MlirStringRef name, MlirType type, intptr_t nAttrs,
+/// Builds a FuncDefOp with the given attributes and argument attributes. Each argument attribute
+/// must be a DictionaryAttr.
+LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
+    Function, FuncDefOp, WithAttrsAndArgAttrs, MlirStringRef name, MlirType type, intptr_t nAttrs,
     MlirNamedAttribute const *attrs, intptr_t nArgAttrs, MlirAttribute const *argAttrs
 );
 
-/// Creates a FuncDefOp with the given attributes.
-static inline MlirOperation llzkFunction_FuncDefOpCreateWithAttrs(
-    MlirLocation loc, MlirStringRef name, MlirType type, intptr_t nAttrs,
+/// Builds a FuncDefOp with the given attributes.
+LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
+    Function, FuncDefOp, WithAttrs, MlirStringRef name, MlirType type, intptr_t nAttrs,
     MlirNamedAttribute const *attrs
-) {
-  return llzkFunction_FuncDefOpCreateWithAttrsAndArgAttrs(
-      loc, name, type, nAttrs, attrs, /*nArgAttrs=*/0, /*argAttrs=*/NULL
-  );
-}
+);
 
-/// Creates a FuncDefOp with the given argument attributes. Each argument attribute has to be a
+/// Builds a FuncDefOp with the given argument attributes. Each argument attribute must be a
 /// DictionaryAttr.
-static inline MlirOperation llzkFunction_FuncDefOpCreateWithArgAttrs(
-    MlirLocation loc, MlirStringRef name, MlirType type, intptr_t nArgAttrs,
+LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
+    Function, FuncDefOp, WithArgAttrs, MlirStringRef name, MlirType type, intptr_t nArgAttrs,
     MlirAttribute const *argAttrs
-) {
-  return llzkFunction_FuncDefOpCreateWithAttrsAndArgAttrs(
-      loc, name, type, /*nAttrs=*/0, /*attrs=*/NULL, nArgAttrs, argAttrs
-  );
-}
+);
 
-/// Creates a FuncDefOp.
-static inline MlirOperation
-llzkFunction_FuncDefOpCreateWithoutAttrs(MlirLocation loc, MlirStringRef name, MlirType type) {
-  return llzkFunction_FuncDefOpCreateWithAttrs(loc, name, type, /*nAttrs=*/0, /*attrs=*/NULL);
-}
+/// Builds a FuncDefOp.
+LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
+    Function, FuncDefOp, WithoutAttrs, MlirStringRef name, MlirType type
+);
 
 /// Returns the `function.arg_name` StringAttr for the argument at the given index, or null if the
 /// argument has no `function.arg_name` attribute.
