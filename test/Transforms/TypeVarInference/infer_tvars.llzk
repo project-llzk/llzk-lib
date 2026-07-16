@@ -1061,3 +1061,68 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_8]] : !struct.type<@TSymbolicStructReplacementBox::@i_Box<[index]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TStructCloneNameCollision {
+    poly.param @T : !poly.tvar<@T>
+
+    struct.def @i_Box {
+      struct.member @other : !felt.type
+
+      function.def @product(%arg: !felt.type) -> !struct.type<@TStructCloneNameCollision::@i_Box<[@T]>> attributes {function.allow_constraint, function.allow_witness} {
+        %self = struct.new : <@TStructCloneNameCollision::@i_Box<[@T]>>
+        struct.writem %self[@other] = %arg : <@TStructCloneNameCollision::@i_Box<[@T]>>, !felt.type
+        function.return %self : !struct.type<@TStructCloneNameCollision::@i_Box<[@T]>>
+      }
+    }
+
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@T>
+
+      function.def @product(%arg: !poly.tvar<@T>) -> !struct.type<@TStructCloneNameCollision::@Box<[@T]>> attributes {function.allow_constraint, function.allow_witness} {
+        %self = struct.new : <@TStructCloneNameCollision::@Box<[@T]>>
+        struct.writem %self[@value] = %arg : <@TStructCloneNameCollision::@Box<[@T]>>, !poly.tvar<@T>
+        function.return %self : !struct.type<@TStructCloneNameCollision::@Box<[@T]>>
+      }
+    }
+  }
+
+  function.def @use_collision_box(
+      %arg: !struct.type<@TStructCloneNameCollision::@Box<[index]>>
+  ) -> !struct.type<@TStructCloneNameCollision::@Box<[index]>> {
+    function.return %arg : !struct.type<@TStructCloneNameCollision::@Box<[index]>>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TStructCloneNameCollision {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      struct.def @i_Box {
+// CHECK-NEXT:        struct.member @other : !felt.type
+// CHECK-NEXT:        function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@TStructCloneNameCollision::@i_Box<[@T]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TStructCloneNameCollision::@i_Box<[@T]>>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@other] = %[[VAL_0]] : <@TStructCloneNameCollision::@i_Box<[@T]>>, !felt.type
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TStructCloneNameCollision::@i_Box<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @i_Box_0 {
+// CHECK-NEXT:        struct.member @value : index
+// CHECK-NEXT:        function.def @product(%[[VAL_2:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@TStructCloneNameCollision::@i_Box_0<[@T]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@TStructCloneNameCollision::@i_Box_0<[@T]>>
+// CHECK-NEXT:          struct.writem %[[VAL_3]][@value] = %[[VAL_2]] : <@TStructCloneNameCollision::@i_Box_0<[@T]>>, index
+// CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@TStructCloneNameCollision::@i_Box_0<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        struct.member @value : !poly.tvar<@T>
+// CHECK-NEXT:        function.def @product(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !struct.type<@TStructCloneNameCollision::@Box<[@T]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@TStructCloneNameCollision::@Box<[@T]>>
+// CHECK-NEXT:          struct.writem %[[VAL_5]][@value] = %[[VAL_4]] : <@TStructCloneNameCollision::@Box<[@T]>>, !poly.tvar<@T>
+// CHECK-NEXT:          function.return %[[VAL_5]] : !struct.type<@TStructCloneNameCollision::@Box<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @use_collision_box(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@TStructCloneNameCollision::@i_Box_0<[index]>>) -> !struct.type<@TStructCloneNameCollision::@i_Box_0<[index]>> {
+// CHECK-NEXT:      function.return %[[VAL_6]] : !struct.type<@TStructCloneNameCollision::@i_Box_0<[index]>>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

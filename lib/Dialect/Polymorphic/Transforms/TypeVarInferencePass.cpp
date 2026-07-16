@@ -693,7 +693,7 @@ private:
     return cloneName;
   }
 
-  /// Create or reuse a template-local clone for `concreteStructTy`.
+  /// Create or reuse a pass-created template-local clone for `concreteStructTy`.
   FailureOr<StructType>
   getOrCreateStructClone(StructType concreteStructTy, ArrayRef<Attribute> concreteParams) {
     if (auto it = instantiations_.find(concreteStructTy); it != instantiations_.end()) {
@@ -720,19 +720,6 @@ private:
     std::string cloneName =
         buildTemplateLocalStructCloneName(origStruct.getSymName(), concreteParams);
     SymbolTable &templateSymbols = tables_.getSymbolTable(parentTemplate);
-    if (Operation *existing = templateSymbols.lookup(cloneName)) {
-      if (auto existingStruct = llvm::dyn_cast<StructDefOp>(existing)) {
-        StructType localTy = existingStruct.getType();
-        StructType remoteTy = StructType::get(
-            existingStruct.getFullyQualifiedName(), ArrayAttr::get(ctx_, concreteParams)
-        );
-        instantiations_.try_emplace(concreteStructTy, StructInstantiationTypes {localTy, remoteTy});
-        instantiatedCloneNames_.insert(existingStruct.getFullyQualifiedName());
-        return remoteTy;
-      }
-      return failure();
-    }
-
     StructDefOp clone = origStruct.clone();
     clone.setSymName(cloneName);
     templateSymbols.insert(clone, Block::iterator(origStruct));
