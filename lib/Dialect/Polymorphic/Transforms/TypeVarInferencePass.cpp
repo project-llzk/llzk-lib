@@ -1745,7 +1745,7 @@ static FailureOr<bool> updateStructTemplateParams(
   bool modified = false;
   SymbolTableCollection tables;
   ReferencedStructTemplateParamConverter converter(module.getContext(), module, tables, converters);
-  WalkResult result = module.walk([&](Operation *op) {
+  WalkResult res = module.walk([&](Operation *op) {
     converter.startOperation(op);
     bool changed = false;
 
@@ -1803,7 +1803,7 @@ static FailureOr<bool> updateStructTemplateParams(
     modified |= changed;
     return WalkResult::advance();
   });
-  if (result.wasInterrupted()) {
+  if (res.wasInterrupted()) {
     return failure();
   }
   return modified;
