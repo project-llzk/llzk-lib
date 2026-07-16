@@ -334,143 +334,142 @@ $(function(){initNavTree('Polymorphic_2IR_2Ops_8td_source.html','',''); });
 <div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>def LLZK_ConstReadOp</div>
 <div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>    : PolymorphicDialectOp&lt;&quot;read_const&quot;, [Pure, DeclareOpInterfaceMethods&lt;</div>
 <div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>                                                    SymbolUserOpInterface&gt;]&gt; {</div>
-<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>  let summary = &quot;read value of a struct parameter&quot;;</div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>  let summary = &quot;read value of a template parameter&quot;;</div>
 <div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>  let description = [{</div>
-<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>    This operation reads the value from the named constant parameter of</div>
-<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>    the struct/component in which this op appears. The op itself puts</div>
-<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>    some restriction on the type of this value, but leaves it to a later</div>
-<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>    type-checking pass to ensure the struct parameters are instantiated</div>
-<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>    with types matching the uses of the parameter within the struct.</div>
-<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span> </div>
-<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>    Examples:</div>
-<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>    ```llzk</div>
-<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>    // Read a `!felt.type` value from struct parameter &quot;@A&quot;</div>
-<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>    %0 = poly.read_const @A : !felt.type</div>
-<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>    // Read a value from struct parameter &quot;@B&quot; where its type is</div>
-<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>    // specified by struct parameter &quot;@T&quot;</div>
-<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>    %1 = poly.read_const @B : !poly.tvar&lt;@T&gt;</div>
-<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>    ```</div>
-<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>  }];</div>
-<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span> </div>
-<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>  let arguments = (ins FlatSymbolRefAttr:$const_name);</div>
-<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>  let results = (outs ConstReadType:$val);</div>
-<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span> </div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>  let assemblyFormat = [{ $const_name `:` type($val) attr-dict }];</div>
-<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>}</div>
-<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span> </div>
-<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>def LLZK_UnifiableCastOp : PolymorphicDialectOp&lt;&quot;unifiable_cast&quot;, [Pure]&gt; {</div>
-<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>  let summary = &quot;cast between two unifiable types&quot;;</div>
-<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>  let description = [{</div>
-<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>    This operation reinterprets a value as a different type with the restriction</div>
-<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>    that the input and output types of the cast are unifiable.</div>
-<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span> </div>
-<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>    Most ops that accept LLZK types accept unifiable types as input and thus there</div>
-<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>    is no need for casting between types. This op is meant to be used in situations where</div>
-<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>    is not possible to modify the given or the target type and they are different but unifiable.</div>
-<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>    For example, inside a conversion pattern the driver may introduce `unrealized_conversion_cast`</div>
-<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>    operations if the types are not equal. This will happen regardless of whether the two types unify.</div>
-<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>    This cast can be introduced instead of the default cast operation to satisfy MLIR&#39;s assumptions</div>
-<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>    on type equality.</div>
-<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span> </div>
-<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>    Example:</div>
-<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>    ```llzk</div>
-<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>    %0 = some_other_op : !array.type&lt;@N x !felt.type&gt;</div>
-<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>    %1 = unifiable_cast %0 : (!array.type&lt;@N x @felt.type&gt;) -&gt; !array.type&lt;affine_map&lt;()[s0, s1] -&gt; (s0 + s1)&gt; x !felt.type&gt;</div>
-<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>    ```</div>
-<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>  }];</div>
-<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span> </div>
-<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>  let arguments = (ins AnyLLZKType:$input);</div>
-<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>  let results = (outs AnyLLZKType:$result);</div>
-<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>  let assemblyFormat = [{</div>
-<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>    $input `:` functional-type($input, results) attr-dict</div>
-<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>  }];</div>
-<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span> </div>
-<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>  let hasVerifier = 1;</div>
-<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>}</div>
-<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span> </div>
-<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>def LLZK_ApplyMapOp : PolymorphicDialectOp&lt;&quot;applymap&quot;, [Pure]&gt; {</div>
-<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>  let summary = &quot;apply an AffineMap&quot;;</div>
-<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>  let description = [{</div>
-<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>    This operation applies an AffineMap to a list of SSA values, yielding a single</div>
-<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>    SSA value. The number of dimension and symbol arguments must be equal to the</div>
-<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>    respective number of dimensional and symbolic inputs to the AffineMap; the</div>
-<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>    AffineMap has to be one-dimensional, and so this operation always returns one</div>
-<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>    value. The input operands and result all have `index` type.</div>
-<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span> </div>
-<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>    Named map example:</div>
-<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>    ```llzk</div>
-<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>    #map10 = affine_map&lt;(d0, d1) -&gt; (d0 floordiv 8 + d1 floordiv 128)&gt;</div>
-<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>    ...</div>
-<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>    %1 = poly.applymap(%s, %t) #map10</div>
-<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>    ```</div>
-<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span> </div>
-<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>    Inline example:</div>
-<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span>    ```llzk</div>
-<div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>    %2 = poly.applymap(%42)[%n] affine_map&lt;(i)[s0] -&gt; (i+s0)&gt;</div>
-<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span>    ```</div>
-<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span>  }];</div>
-<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span> </div>
-<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>  let arguments = (ins AffineMapAttr:$map, Variadic&lt;Index&gt;:$mapOperands,</div>
-<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>      IndexAttr:$numDims);</div>
-<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>  let results = (outs Index);</div>
-<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span> </div>
-<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>  // Define builders manually so inference of `numDims` attribute is not</div>
-<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>  // circumvented.</div>
-<div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span>  let skipDefaultBuilders = 1;</div>
-<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span>  let builders = [OpBuilder&lt;(ins &quot;::mlir::AffineMapAttr&quot;:$map,</div>
-<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span>                                CArg&lt;&quot;::mlir::ValueRange&quot;, &quot;{}&quot;&gt;:$mapOperands),</div>
-<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span>                            [{</div>
-<div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>                  $_state.addOperands(mapOperands);</div>
-<div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span>                  Properties &amp;props = $_state.getOrAddProperties&lt;Properties&gt;();</div>
-<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>                  props.setMap(map);</div>
-<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>                  props.setNumDims($_builder.getIntegerAttr($_builder.getIndexType(),</div>
-<div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>                                                            map.getAffineMap().getNumDims()));</div>
-<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>                  $_state.addTypes($_builder.getIndexType());</div>
-<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span>                }]&gt;,</div>
-<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span>                  OpBuilder&lt;(ins &quot;::mlir::AffineMap&quot;:$map,</div>
-<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>                                CArg&lt;&quot;::mlir::ValueRange&quot;, &quot;{}&quot;&gt;:$mapOperands),</div>
-<div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span>                            [{</div>
-<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>                  build($_builder, $_state, ::mlir::AffineMapAttr::get(map), mapOperands);</div>
-<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>                }]&gt;,</div>
-<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>                  OpBuilder&lt;(ins &quot;::mlir::AffineExpr&quot;:$expr,</div>
-<div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>                                CArg&lt;&quot;::mlir::ValueRange&quot;, &quot;{}&quot;&gt;:$mapOperands),</div>
-<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>                            [{</div>
-<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span>                  auto map = ::mlir::AffineMap::inferFromExprList({expr}, $_builder.getContext()).front();</div>
-<div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span>                  build($_builder, $_state, map, mapOperands);</div>
-<div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span>                }]&gt;];</div>
-<div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span> </div>
-<div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span>  let assemblyFormat = [{</div>
-<div class="line"><a id="l00334" name="l00334"></a><span class="lineno">  334</span>    custom&lt;DimAndSymbolList&gt;($mapOperands, $numDims) $map attr-dict</div>
-<div class="line"><a id="l00335" name="l00335"></a><span class="lineno">  335</span>  }];</div>
-<div class="line"><a id="l00336" name="l00336"></a><span class="lineno">  336</span> </div>
-<div class="line"><a id="l00337" name="l00337"></a><span class="lineno">  337</span>  let hasVerifier = 1;</div>
-<div class="line"><a id="l00338" name="l00338"></a><span class="lineno">  338</span> </div>
-<div class="line"><a id="l00339" name="l00339"></a><span class="lineno">  339</span>  let extraClassDeclaration = [{</div>
-<div class="line"><a id="l00340" name="l00340"></a><span class="lineno">  340</span>    /// Returns the affine map to be applied by this operation.</div>
-<div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span>    ::mlir::AffineMap inline getAffineMap() { return getMap(); }</div>
-<div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span> </div>
-<div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>    /// Returns the affine value map computed from this operation.</div>
-<div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span>    ::mlir::affine::AffineValueMap getAffineValueMap() {</div>
-<div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span>      return ::mlir::affine::AffineValueMap(getAffineMap(), getOperands(), getResult());</div>
-<div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span>    }</div>
-<div class="line"><a id="l00347" name="l00347"></a><span class="lineno">  347</span> </div>
-<div class="line"><a id="l00348" name="l00348"></a><span class="lineno">  348</span>    /// Returns all dimension operands.</div>
-<div class="line"><a id="l00349" name="l00349"></a><span class="lineno">  349</span>    ::mlir::ValueRange getDimOperands() {</div>
-<div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span>      return ::mlir::OperandRange{</div>
-<div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span>                          getOperands().begin(),</div>
-<div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span>                          getOperands().begin() + getMap().getNumDims()};</div>
-<div class="line"><a id="l00353" name="l00353"></a><span class="lineno">  353</span>    }</div>
-<div class="line"><a id="l00354" name="l00354"></a><span class="lineno">  354</span> </div>
-<div class="line"><a id="l00355" name="l00355"></a><span class="lineno">  355</span>    /// Returns all symbol operands.</div>
-<div class="line"><a id="l00356" name="l00356"></a><span class="lineno">  356</span>    ::mlir::ValueRange getSymbolOperands() {</div>
-<div class="line"><a id="l00357" name="l00357"></a><span class="lineno">  357</span>      return ::mlir::OperandRange{</div>
-<div class="line"><a id="l00358" name="l00358"></a><span class="lineno">  358</span>                          getOperands().begin() + getMap().getNumDims(),</div>
-<div class="line"><a id="l00359" name="l00359"></a><span class="lineno">  359</span>                          getOperands().end()};</div>
-<div class="line"><a id="l00360" name="l00360"></a><span class="lineno">  360</span>    }</div>
-<div class="line"><a id="l00361" name="l00361"></a><span class="lineno">  361</span>  }];</div>
-<div class="line"><a id="l00362" name="l00362"></a><span class="lineno">  362</span>}</div>
-<div class="line"><a id="l00363" name="l00363"></a><span class="lineno">  363</span> </div>
-<div class="line"><a id="l00364" name="l00364"></a><span class="lineno">  364</span>#endif // LLZK_POLYMORPHIC_OPS</div>
+<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>    This operation reads the value from the named constant parameter of the template</div>
+<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>    in which this op appears. The op itself puts a type restriction on the value,</div>
+<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>    but leaves it to a later type-checking pass to ensure the template parameters are</div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>    instantiated with types matching the uses of the parameter within the template.</div>
+<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span> </div>
+<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>    Examples:</div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>    ```llzk</div>
+<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>    // Read a `!felt.type` value from struct parameter &quot;@A&quot;</div>
+<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>    %0 = poly.read_const @A : !felt.type</div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>    // Read a value from struct parameter &quot;@B&quot; where its type is</div>
+<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>    // specified by struct parameter &quot;@T&quot;</div>
+<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>    %1 = poly.read_const @B : !poly.tvar&lt;@T&gt;</div>
+<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>    ```</div>
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>  }];</div>
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span> </div>
+<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>  let arguments = (ins FlatSymbolRefAttr:$const_name);</div>
+<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>  let results = (outs ConstReadType:$val);</div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span> </div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>  let assemblyFormat = [{ $const_name `:` type($val) attr-dict }];</div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>}</div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span> </div>
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>def LLZK_UnifiableCastOp : PolymorphicDialectOp&lt;&quot;unifiable_cast&quot;, [Pure]&gt; {</div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>  let summary = &quot;cast between two unifiable types&quot;;</div>
+<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>  let description = [{</div>
+<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>    This operation reinterprets a value as a different type with the restriction</div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>    that the input and output types of the cast are unifiable.</div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span> </div>
+<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>    Most ops that accept LLZK types accept unifiable types as input and thus there</div>
+<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>    is no need for casting between types. This op is meant to be used in situations where</div>
+<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>    is not possible to modify the given or the target type and they are different but unifiable.</div>
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>    For example, inside a conversion pattern the driver may introduce `unrealized_conversion_cast`</div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>    operations if the types are not equal. This will happen regardless of whether the two types unify.</div>
+<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>    This cast can be introduced instead of the default cast operation to satisfy MLIR&#39;s assumptions</div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>    on type equality.</div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span> </div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>    Example:</div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>    ```llzk</div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>    %0 = some_other_op : !array.type&lt;@N x !felt.type&gt;</div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>    %1 = unifiable_cast %0 : (!array.type&lt;@N x @felt.type&gt;) -&gt; !array.type&lt;affine_map&lt;()[s0, s1] -&gt; (s0 + s1)&gt; x !felt.type&gt;</div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>    ```</div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>  }];</div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span> </div>
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>  let arguments = (ins AnyLLZKType:$input);</div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>  let results = (outs AnyLLZKType:$result);</div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>  let assemblyFormat = [{</div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>    $input `:` functional-type($input, results) attr-dict</div>
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>  }];</div>
+<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span> </div>
+<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>  let hasVerifier = 1;</div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>}</div>
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span> </div>
+<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>def LLZK_ApplyMapOp : PolymorphicDialectOp&lt;&quot;applymap&quot;, [Pure]&gt; {</div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>  let summary = &quot;apply an AffineMap&quot;;</div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>  let description = [{</div>
+<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>    This operation applies an AffineMap to a list of SSA values, yielding a single</div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>    SSA value. The number of dimension and symbol arguments must be equal to the</div>
+<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>    respective number of dimensional and symbolic inputs to the AffineMap; the</div>
+<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>    AffineMap has to be one-dimensional, and so this operation always returns one</div>
+<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>    value. The input operands and result all have `index` type.</div>
+<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span> </div>
+<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span>    Named map example:</div>
+<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>    ```llzk</div>
+<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>    #map10 = affine_map&lt;(d0, d1) -&gt; (d0 floordiv 8 + d1 floordiv 128)&gt;</div>
+<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>    ...</div>
+<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>    %1 = poly.applymap(%s, %t) #map10</div>
+<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>    ```</div>
+<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span> </div>
+<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>    Inline example:</div>
+<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>    ```llzk</div>
+<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span>    %2 = poly.applymap(%42)[%n] affine_map&lt;(i)[s0] -&gt; (i+s0)&gt;</div>
+<div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>    ```</div>
+<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span>  }];</div>
+<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span> </div>
+<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>  let arguments = (ins AffineMapAttr:$map, Variadic&lt;Index&gt;:$mapOperands,</div>
+<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>      IndexAttr:$numDims);</div>
+<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>  let results = (outs Index);</div>
+<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span> </div>
+<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span>  // Define builders manually so inference of `numDims` attribute is not</div>
+<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>  // circumvented.</div>
+<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>  let skipDefaultBuilders = 1;</div>
+<div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span>  let builders = [OpBuilder&lt;(ins &quot;::mlir::AffineMapAttr&quot;:$map,</div>
+<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span>                                CArg&lt;&quot;::mlir::ValueRange&quot;, &quot;{}&quot;&gt;:$mapOperands),</div>
+<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span>                            [{</div>
+<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span>                  $_state.addOperands(mapOperands);</div>
+<div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>                  Properties &amp;props = $_state.getOrAddProperties&lt;Properties&gt;();</div>
+<div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span>                  props.setMap(map);</div>
+<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>                  props.setNumDims($_builder.getIntegerAttr($_builder.getIndexType(),</div>
+<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>                                                            map.getAffineMap().getNumDims()));</div>
+<div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>                  $_state.addTypes($_builder.getIndexType());</div>
+<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>                }]&gt;,</div>
+<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span>                  OpBuilder&lt;(ins &quot;::mlir::AffineMap&quot;:$map,</div>
+<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span>                                CArg&lt;&quot;::mlir::ValueRange&quot;, &quot;{}&quot;&gt;:$mapOperands),</div>
+<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>                            [{</div>
+<div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span>                  build($_builder, $_state, ::mlir::AffineMapAttr::get(map), mapOperands);</div>
+<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>                }]&gt;,</div>
+<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>                  OpBuilder&lt;(ins &quot;::mlir::AffineExpr&quot;:$expr,</div>
+<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>                                CArg&lt;&quot;::mlir::ValueRange&quot;, &quot;{}&quot;&gt;:$mapOperands),</div>
+<div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>                            [{</div>
+<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>                  auto map = ::mlir::AffineMap::inferFromExprList({expr}, $_builder.getContext()).front();</div>
+<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span>                  build($_builder, $_state, map, mapOperands);</div>
+<div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span>                }]&gt;];</div>
+<div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span> </div>
+<div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span>  let assemblyFormat = [{</div>
+<div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span>    custom&lt;DimAndSymbolList&gt;($mapOperands, $numDims) $map attr-dict</div>
+<div class="line"><a id="l00334" name="l00334"></a><span class="lineno">  334</span>  }];</div>
+<div class="line"><a id="l00335" name="l00335"></a><span class="lineno">  335</span> </div>
+<div class="line"><a id="l00336" name="l00336"></a><span class="lineno">  336</span>  let hasVerifier = 1;</div>
+<div class="line"><a id="l00337" name="l00337"></a><span class="lineno">  337</span> </div>
+<div class="line"><a id="l00338" name="l00338"></a><span class="lineno">  338</span>  let extraClassDeclaration = [{</div>
+<div class="line"><a id="l00339" name="l00339"></a><span class="lineno">  339</span>    /// Returns the affine map to be applied by this operation.</div>
+<div class="line"><a id="l00340" name="l00340"></a><span class="lineno">  340</span>    ::mlir::AffineMap inline getAffineMap() { return getMap(); }</div>
+<div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span> </div>
+<div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span>    /// Returns the affine value map computed from this operation.</div>
+<div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>    ::mlir::affine::AffineValueMap getAffineValueMap() {</div>
+<div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span>      return ::mlir::affine::AffineValueMap(getAffineMap(), getOperands(), getResult());</div>
+<div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span>    }</div>
+<div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span> </div>
+<div class="line"><a id="l00347" name="l00347"></a><span class="lineno">  347</span>    /// Returns all dimension operands.</div>
+<div class="line"><a id="l00348" name="l00348"></a><span class="lineno">  348</span>    ::mlir::ValueRange getDimOperands() {</div>
+<div class="line"><a id="l00349" name="l00349"></a><span class="lineno">  349</span>      return ::mlir::OperandRange{</div>
+<div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span>                          getOperands().begin(),</div>
+<div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span>                          getOperands().begin() + getMap().getNumDims()};</div>
+<div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span>    }</div>
+<div class="line"><a id="l00353" name="l00353"></a><span class="lineno">  353</span> </div>
+<div class="line"><a id="l00354" name="l00354"></a><span class="lineno">  354</span>    /// Returns all symbol operands.</div>
+<div class="line"><a id="l00355" name="l00355"></a><span class="lineno">  355</span>    ::mlir::ValueRange getSymbolOperands() {</div>
+<div class="line"><a id="l00356" name="l00356"></a><span class="lineno">  356</span>      return ::mlir::OperandRange{</div>
+<div class="line"><a id="l00357" name="l00357"></a><span class="lineno">  357</span>                          getOperands().begin() + getMap().getNumDims(),</div>
+<div class="line"><a id="l00358" name="l00358"></a><span class="lineno">  358</span>                          getOperands().end()};</div>
+<div class="line"><a id="l00359" name="l00359"></a><span class="lineno">  359</span>    }</div>
+<div class="line"><a id="l00360" name="l00360"></a><span class="lineno">  360</span>  }];</div>
+<div class="line"><a id="l00361" name="l00361"></a><span class="lineno">  361</span>}</div>
+<div class="line"><a id="l00362" name="l00362"></a><span class="lineno">  362</span> </div>
+<div class="line"><a id="l00363" name="l00363"></a><span class="lineno">  363</span>#endif // LLZK_POLYMORPHIC_OPS</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

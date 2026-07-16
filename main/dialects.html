@@ -3019,10 +3019,10 @@ Attributes:</h4>
 </table>
 <h3 class="doxsection"><a class="anchor" id="polyread_const-llzkpolymorphicconstreadop"></a>
 <span class="tt">poly.read_const</span> (::llzk::polymorphic::ConstReadOp)</h3>
-<p><em>Read value of a struct parameter</em></p>
+<p><em>Read value of a template parameter</em></p>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">operation ::= `poly.read_const` $const_name `:` type($val) attr-dict</div>
-</div><!-- fragment --><p>This operation reads the value from the named constant parameter of the struct/component in which this op appears. The op itself puts some restriction on the type of this value, but leaves it to a later type-checking pass to ensure the struct parameters are instantiated with types matching the uses of the parameter within the struct.</p>
+</div><!-- fragment --><p>This operation reads the value from the named constant parameter of the template in which this op appears. The op itself puts a type restriction on the value, but leaves it to a later type-checking pass to ensure the template parameters are instantiated with types matching the uses of the parameter within the template.</p>
 <p>Examples: </p><div class="fragment"><div class="line">// Read a `!felt.type` value from struct parameter &quot;@A&quot;</div>
 <div class="line">%0 = poly.read_const @A : !felt.type</div>
 <div class="line">// Read a value from struct parameter &quot;@B&quot; where its type is</div>
