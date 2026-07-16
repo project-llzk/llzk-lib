@@ -294,22 +294,27 @@ public:
   ) const {
     APInt attrValue = a.getValue();
     Type origResTy = op.getType();
-    if (FeltType ty = llvm::dyn_cast<FeltType>(origResTy)) {
+    Type newResTy = getTypeConverter()->convertType(origResTy);
+    if (!newResTy) {
+      return op->emitOpError().append("could not convert result type ", origResTy);
+    }
+
+    if (FeltType ty = llvm::dyn_cast<FeltType>(newResTy)) {
       replaceOpWithNewOp<FeltConstantOp>(
           rewriter, op, FeltConstAttr::get(getContext(), attrValue, ty)
       );
       return success();
     }
 
-    if (llvm::isa<IndexType>(origResTy)) {
+    if (llvm::isa<IndexType>(newResTy)) {
       replaceOpWithNewOp<arith::ConstantIndexOp>(rewriter, op, fromAPInt(attrValue));
       return success();
     }
 
-    if (origResTy.isSignlessInteger(1)) {
+    if (newResTy.isSignlessInteger(1)) {
       // Treat 0 as false and any other value as true (but give a warning if it's not 1)
       if (attrValue.isZero()) {
-        replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, false, origResTy);
+        replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, false, newResTy);
         return success();
       }
       if (!attrValue.isOne()) {
@@ -324,10 +329,10 @@ public:
             << "\" for this call";
         diagnostics.push_back(std::move(diag));
       }
-      replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, true, origResTy);
+      replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, true, newResTy);
       return success();
     }
-    return op->emitOpError().append("unexpected result type ", origResTy);
+    return op->emitOpError().append("unexpected result type ", newResTy);
   }
 
   LogicalResult handleRewrite(
