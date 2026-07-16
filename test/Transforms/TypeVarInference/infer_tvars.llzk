@@ -879,3 +879,46 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_5]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TBoxEraseParam {
+    poly.param @T : !poly.tvar<@T>
+
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@T>
+
+      function.def @product(%arg: !poly.tvar<@T>) -> !struct.type<@TBoxEraseParam::@Box<[@T]>> {
+        %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+        %self = struct.new : !struct.type<@TBoxEraseParam::@Box<[@T]>>
+        struct.writem %self[@value] = %index : !struct.type<@TBoxEraseParam::@Box<[@T]>>, index
+        function.return %self : !struct.type<@TBoxEraseParam::@Box<[@T]>>
+      }
+    }
+  }
+
+  poly.template @THoldsSymbolicBoxUse {
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @use(%box: !struct.type<@TBoxEraseParam::@Box<[@U]>>) -> !struct.type<@TBoxEraseParam::@Box<[@U]>> {
+      function.return %box : !struct.type<@TBoxEraseParam::@Box<[@U]>>
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TBoxEraseParam {
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        struct.member @value : index
+// CHECK-NEXT:        function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@TBoxEraseParam::@Box> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TBoxEraseParam::@Box>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@value] = %[[VAL_0]] : <@TBoxEraseParam::@Box>, index
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TBoxEraseParam::@Box>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @THoldsSymbolicBoxUse {
+// CHECK-NEXT:      function.def @use(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TBoxEraseParam::@Box>) -> !struct.type<@TBoxEraseParam::@Box> {
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@TBoxEraseParam::@Box>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

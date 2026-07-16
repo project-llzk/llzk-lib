@@ -162,6 +162,18 @@ static Type convertFunctionType(FunctionType funcTy, ConverterT &converter) {
   return changed ? FunctionType::get(funcTy.getContext(), newInputs, newResults) : funcTy;
 }
 
+/// Build a struct type while representing an empty parameter list as absent.
+static StructType getStructTypeWithParams(SymbolRefAttr nameRef, ArrayAttr params) {
+  return params && !params.empty() ? StructType::get(nameRef, params) : StructType::get(nameRef);
+}
+
+/// Build a struct type while representing an empty parameter list as absent.
+static StructType
+getStructTypeWithParams(SymbolRefAttr nameRef, MLIRContext *ctx, ArrayRef<Attribute> params) {
+  return params.empty() ? StructType::get(nameRef)
+                        : StructType::get(nameRef, ArrayAttr::get(ctx, params));
+}
+
 /// Converts types and attributes by replacing inferred template type variables.
 ///
 /// The converter is scoped to one `poly.template`. Besides direct
@@ -403,8 +415,7 @@ private:
       newParams.push_back(newAttr);
       changed |= newAttr != attr;
     }
-    return changed ? StructType::get(structTy.getNameRef(), ArrayAttr::get(ctx_, newParams))
-                   : structTy;
+    return changed ? getStructTypeWithParams(structTy.getNameRef(), ctx_, newParams) : structTy;
   }
 };
 
@@ -910,7 +921,169 @@ public:
     return success();
   }
 
+  /// Walk `root` and collect cross-template inferences from every type-bearing surface.
+  ///
+  /// This extends the normal cast-based collection with facts implied by struct type
+  /// instantiations. If a type site in the current template references another template-owned
+  /// struct whose owner already proved a parameter concrete, the corresponding argument at the use
+  /// site is unified with that concrete replacement. For example, when `@TBox::@T` is known to be
+  /// `index`, a use of `!struct.type<@TBox::@Box<[@U]>>` records `@U = index` before `@TBox::@T`
+  /// is erased.
+  LogicalResult collectStructTemplateParamInferences(
+      Operation *root, ModuleOp module, DenseMap<Operation *, TemplateInferenceInfo *> &infos,
+      SymbolTableCollection &tables
+  ) {
+    WalkResult result = root->walk([&](Operation *op) {
+      Location loc = op->getLoc();
+
+      if (auto func = llvm::dyn_cast<FuncDefOp>(op)) {
+        if (failed(collectStructTemplateParamInferences(
+                func.getFunctionType(), loc, module, infos, tables
+            ))) {
+          return WalkResult::interrupt();
+        }
+      }
+
+      for (Region &region : op->getRegions()) {
+        for (Block &block : region.getBlocks()) {
+          for (Type argTy : block.getArgumentTypes()) {
+            if (failed(collectStructTemplateParamInferences(argTy, loc, module, infos, tables))) {
+              return WalkResult::interrupt();
+            }
+          }
+        }
+      }
+
+      for (Type resultTy : op->getResultTypes()) {
+        if (failed(collectStructTemplateParamInferences(resultTy, loc, module, infos, tables))) {
+          return WalkResult::interrupt();
+        }
+      }
+
+      for (NamedAttribute attr : op->getAttrs()) {
+        if (failed(
+                collectStructTemplateParamInferences(attr.getValue(), loc, module, infos, tables)
+            )) {
+          return WalkResult::interrupt();
+        }
+      }
+      return WalkResult::advance();
+    });
+    return failure(result.wasInterrupted());
+  }
+
 private:
+  /// Recurse through an attribute that may contain type-site struct references.
+  ///
+  /// Struct template arguments can be nested in `TypeAttr` or in array-shaped attributes used by
+  /// template parameter lists, so this preserves the same template-argument traversal shape used by
+  /// the rewrite converters.
+  LogicalResult collectStructTemplateParamInferences(
+      Attribute attr, Location loc, ModuleOp module,
+      DenseMap<Operation *, TemplateInferenceInfo *> &infos, SymbolTableCollection &tables
+  ) {
+    if (!attr) {
+      return success();
+    }
+    if (auto tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
+      return collectStructTemplateParamInferences(tyAttr.getValue(), loc, module, infos, tables);
+    }
+    if (auto arrAttr = llvm::dyn_cast<ArrayAttr>(attr)) {
+      for (Attribute nested : arrAttr.getValue()) {
+        if (failed(collectStructTemplateParamInferences(nested, loc, module, infos, tables))) {
+          return failure();
+        }
+      }
+    }
+    return success();
+  }
+
+  /// Recurse through a type and unify arguments of referenced rewritten struct templates.
+  ///
+  /// Aggregate containers are searched structurally. At each `StructType`, the referenced
+  /// definition is resolved; if its owning template has concrete replacements and the type still
+  /// has the original parameter arity, each soon-to-be-erased parameter position is checked with
+  /// `collectTemplateArgInferences`. That deliberately uses unification rather than equality, so a
+  /// symbolic argument from the current template can become a concrete replacement instead of being
+  /// rejected as a mismatch.
+  LogicalResult collectStructTemplateParamInferences(
+      Type ty, Location loc, ModuleOp module, DenseMap<Operation *, TemplateInferenceInfo *> &infos,
+      SymbolTableCollection &tables
+  ) {
+    if (!ty) {
+      return success();
+    }
+    if (auto arrTy = llvm::dyn_cast<ArrayType>(ty)) {
+      return collectStructTemplateParamInferences(
+          arrTy.getElementType(), loc, module, infos, tables
+      );
+    }
+    if (auto podTy = llvm::dyn_cast<PodType>(ty)) {
+      for (RecordAttr record : podTy.getRecords()) {
+        if (failed(
+                collectStructTemplateParamInferences(record.getType(), loc, module, infos, tables)
+            )) {
+          return failure();
+        }
+      }
+      return success();
+    }
+    if (auto funcTy = llvm::dyn_cast<FunctionType>(ty)) {
+      for (Type inputTy : funcTy.getInputs()) {
+        if (failed(collectStructTemplateParamInferences(inputTy, loc, module, infos, tables))) {
+          return failure();
+        }
+      }
+      for (Type resultTy : funcTy.getResults()) {
+        if (failed(collectStructTemplateParamInferences(resultTy, loc, module, infos, tables))) {
+          return failure();
+        }
+      }
+      return success();
+    }
+    auto structTy = llvm::dyn_cast<StructType>(ty);
+    if (!structTy) {
+      return success();
+    }
+
+    ArrayAttr params = structTy.getParams();
+    if (!params) {
+      return success();
+    }
+    for (Attribute attr : params.getValue()) {
+      if (failed(collectStructTemplateParamInferences(attr, loc, module, infos, tables))) {
+        return failure();
+      }
+    }
+
+    FailureOr<SymbolLookupResult<StructDefOp>> lookup =
+        structTy.getDefinition(tables, module, /*reportMissing=*/false);
+    if (failed(lookup)) {
+      return success();
+    }
+    TemplateOp parentTemplate = getParentOfType<TemplateOp>(lookup->get().getOperation());
+    if (!parentTemplate) {
+      return success();
+    }
+    TemplateInferenceInfo *targetInfo = infos.lookup(parentTemplate.getOperation());
+    if (!targetInfo || targetInfo->replacements.empty() ||
+        params.size() != targetInfo->oldParamOrder.size()) {
+      return success();
+    }
+
+    for (auto [paramName, attr] : llvm::zip_equal(targetInfo->oldParamOrder, params.getValue())) {
+      auto replacementIt = targetInfo->replacements.find(paramName);
+      if (replacementIt == targetInfo->replacements.end()) {
+        continue;
+      }
+      Attribute expectedAttr = TypeAttr::get(replacementIt->second.type);
+      if (failed(collectTemplateArgInferences(attr, expectedAttr, loc))) {
+        return failure();
+      }
+    }
+    return success();
+  }
+
   /// Record one concrete type inference and diagnose conflicts.
   ///
   /// Inferences are tracked in two dimensions:
@@ -1428,6 +1601,214 @@ static FailureOr<bool> updateCallableTemplateParams(
   return modified;
 }
 
+/// Converts struct type sites that reference templates whose parameter list is being trimmed.
+///
+/// Concrete struct instantiation handles fully concrete uses by cloning. Sites that still mention
+/// symbols from another template need a checked pass before erased parameters disappear; otherwise
+/// a type such as `!struct.type<@TBox::@Box<[@U]>>` can be left with one argument for a
+/// zero-parameter owner template.
+class ReferencedStructTemplateParamConverter {
+  /// Context used to allocate converted aggregate types and attributes.
+  MLIRContext *ctx_;
+  /// Root operation used for resolving struct definitions.
+  ModuleOp module_;
+  /// Symbol tables reused for lookup.
+  SymbolTableCollection &tables_;
+  /// Converters for templates whose resolved parameters will be erased.
+  DenseMap<Operation *, const TypeVarReplacementConverter *> &converters_;
+  /// Operation used as the diagnostic anchor while converting one op.
+  Operation *diagnosticOp_ = nullptr;
+  /// Whether conversion of the current operation failed.
+  bool failed_ = false;
+
+public:
+  ReferencedStructTemplateParamConverter(
+      MLIRContext *ctx, ModuleOp module, SymbolTableCollection &tables,
+      DenseMap<Operation *, const TypeVarReplacementConverter *> &converters
+  )
+      : ctx_(ctx), module_(module), tables_(tables), converters_(converters) {}
+
+  /// Start converting a new operation and use it for diagnostics.
+  void startOperation(Operation *op) {
+    diagnosticOp_ = op;
+    failed_ = false;
+  }
+
+  /// Return whether conversion of the current operation failed.
+  bool failed() const { return failed_; }
+
+  /// Convert a type by recursively updating struct template parameter lists.
+  Type convertType(Type ty) {
+    if (!ty || failed_) {
+      return ty;
+    }
+    if (auto arrTy = llvm::dyn_cast<ArrayType>(ty)) {
+      Type newElemTy = convertType(arrTy.getElementType());
+      return newElemTy == arrTy.getElementType()
+                 ? ty
+                 : llzk::polymorphic::detail::flattenInstantiatedArrayType(arrTy, newElemTy);
+    }
+    if (auto structTy = llvm::dyn_cast<StructType>(ty)) {
+      return convertStructType(structTy);
+    }
+    if (auto podTy = llvm::dyn_cast<PodType>(ty)) {
+      return convertPodType(podTy, ctx_, *this);
+    }
+    if (auto funcTy = llvm::dyn_cast<FunctionType>(ty)) {
+      return convertFunctionType(funcTy, *this);
+    }
+    return ty;
+  }
+
+  /// Convert an attribute that can contain struct type references.
+  Attribute convertAttr(Attribute attr) {
+    if (!attr || failed_) {
+      return attr;
+    }
+    if (auto tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
+      Type newTy = convertType(tyAttr.getValue());
+      return newTy == tyAttr.getValue() ? attr : TypeAttr::get(newTy);
+    }
+    if (auto arrAttr = llvm::dyn_cast<ArrayAttr>(attr)) {
+      SmallVector<Attribute> newAttrs;
+      bool changed = false;
+      for (Attribute nested : arrAttr.getValue()) {
+        Attribute newNested = convertAttr(nested);
+        newAttrs.push_back(newNested);
+        changed |= newNested != nested;
+        if (failed_) {
+          return attr;
+        }
+      }
+      return changed ? ArrayAttr::get(ctx_, newAttrs) : attr;
+    }
+    return attr;
+  }
+
+private:
+  /// Convert a struct type and checked-trim params when its owner template is being rewritten.
+  StructType convertStructType(StructType structTy) {
+    ArrayAttr params = structTy.getParams();
+    if (!params) {
+      return structTy;
+    }
+
+    SmallVector<Attribute> newParams;
+    bool changed = false;
+    for (Attribute attr : params.getValue()) {
+      Attribute newAttr = convertAttr(attr);
+      newParams.push_back(newAttr);
+      changed |= newAttr != attr;
+      if (failed_) {
+        return structTy;
+      }
+    }
+    StructType convertedTy =
+        changed ? getStructTypeWithParams(structTy.getNameRef(), ctx_, newParams) : structTy;
+
+    FailureOr<SymbolLookupResult<StructDefOp>> lookup =
+        convertedTy.getDefinition(tables_, module_, /*reportMissing=*/false);
+    if (::failed(lookup)) {
+      return convertedTy;
+    }
+    TemplateOp parentTemplate = getParentOfType<TemplateOp>(lookup->get().getOperation());
+    if (!parentTemplate) {
+      return convertedTy;
+    }
+    const TypeVarReplacementConverter *converter =
+        converters_.lookup(parentTemplate.getOperation());
+    if (!converter) {
+      return convertedTy;
+    }
+
+    TemplateOp useTemplate = getParentOfType<TemplateOp>(diagnosticOp_);
+    bool resolveTemplateSymbolArgs =
+        useTemplate && useTemplate.getOperation() == parentTemplate.getOperation();
+    FailureOr<ArrayAttr> trimmedParams = converter->convertTemplateParams(
+        convertedTy.getParams(), diagnosticOp_, resolveTemplateSymbolArgs
+    );
+    if (::failed(trimmedParams)) {
+      failed_ = true;
+      return convertedTy;
+    }
+    if (convertedTy.getParams() == *trimmedParams) {
+      return convertedTy;
+    }
+    return getStructTypeWithParams(convertedTy.getNameRef(), *trimmedParams);
+  }
+};
+
+/// Rewrite or reject struct type sites that reference rewritten templates.
+static FailureOr<bool> updateStructTemplateParams(
+    ModuleOp module, DenseMap<Operation *, const TypeVarReplacementConverter *> &converters
+) {
+  bool modified = false;
+  SymbolTableCollection tables;
+  ReferencedStructTemplateParamConverter converter(module.getContext(), module, tables, converters);
+  WalkResult result = module.walk([&](Operation *op) {
+    converter.startOperation(op);
+    bool changed = false;
+
+    if (auto func = llvm::dyn_cast<FuncDefOp>(op)) {
+      FunctionType oldFuncTy = func.getFunctionType();
+      updateFuncSignature(func, converter);
+      if (converter.failed()) {
+        return WalkResult::interrupt();
+      }
+      changed |= oldFuncTy != func.getFunctionType();
+    }
+
+    for (Region &region : op->getRegions()) {
+      for (Block &block : region.getBlocks()) {
+        for (BlockArgument arg : block.getArguments()) {
+          Type newTy = converter.convertType(arg.getType());
+          if (converter.failed()) {
+            return WalkResult::interrupt();
+          }
+          if (newTy != arg.getType()) {
+            arg.setType(newTy);
+            changed = true;
+          }
+        }
+      }
+    }
+
+    for (Value result : op->getResults()) {
+      Type newTy = converter.convertType(result.getType());
+      if (converter.failed()) {
+        return WalkResult::interrupt();
+      }
+      if (newTy != result.getType()) {
+        result.setType(newTy);
+        changed = true;
+      }
+    }
+
+    SmallVector<NamedAttribute> newAttrs;
+    bool attrsChanged = false;
+    newAttrs.reserve(op->getAttrs().size());
+    for (NamedAttribute attr : op->getAttrs()) {
+      Attribute newAttr = converter.convertAttr(attr.getValue());
+      if (converter.failed()) {
+        return WalkResult::interrupt();
+      }
+      newAttrs.emplace_back(attr.getName(), newAttr);
+      attrsChanged |= newAttr != attr.getValue();
+    }
+    if (attrsChanged) {
+      op->setAttrs(DictionaryAttr::get(op->getContext(), newAttrs));
+      changed = true;
+    }
+
+    modified |= changed;
+    return WalkResult::advance();
+  });
+  if (result.wasInterrupted()) {
+    return failure();
+  }
+  return modified;
+}
+
 /// Instantiate concrete parameterized struct types exposed by type-variable inference.
 static void instantiateConcreteStructUses(ModuleOp module) {
   SymbolTableCollection tables;
@@ -1499,6 +1880,113 @@ static LogicalResult specializeFunctionLocalCalls(
   return failure(failedClone);
 }
 
+/// Return whether two inference maps contain the same concrete replacement types.
+static bool sameReplacementTypes(
+    const DenseMap<StringAttr, InferredType> &lhs, const DenseMap<StringAttr, InferredType> &rhs
+) {
+  if (lhs.size() != rhs.size()) {
+    return false;
+  }
+  for (const auto &entry : lhs) {
+    auto rhsIt = rhs.find(entry.first);
+    if (rhsIt == rhs.end() || rhsIt->second.type != entry.second.type) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/// Recompute the template-wide replacements from the per-function proofs.
+static void recomputeTemplateWideReplacements(TemplateInferenceInfo &info) {
+  SmallVector<FuncDefOp> funcs;
+  info.templateOp.walk([&funcs](FuncDefOp func) { funcs.push_back(func); });
+
+  DenseMap<StringAttr, unsigned> mentionCounts;
+  DenseMap<StringAttr, unsigned> proofCounts;
+  DenseMap<StringAttr, InferredType> commonReplacements;
+  DenseSet<StringAttr> incompatibleReplacements;
+  for (FuncDefOp func : funcs) {
+    for (const auto &entry : info.typeVarParams) {
+      if (funcMentionsParam(func, entry.first)) {
+        ++mentionCounts[entry.first];
+      }
+    }
+
+    auto funcIt = info.functionReplacements.find(func.getOperation());
+    if (funcIt == info.functionReplacements.end()) {
+      continue;
+    }
+    for (const auto &entry : funcIt->second) {
+      ++proofCounts[entry.first];
+      auto commonIt = commonReplacements.find(entry.first);
+      if (commonIt == commonReplacements.end()) {
+        commonReplacements.try_emplace(entry.first, entry.second);
+      } else if (commonIt->second.type != entry.second.type) {
+        incompatibleReplacements.insert(entry.first);
+      }
+    }
+  }
+
+  info.replacements.clear();
+  for (const auto &entry : commonReplacements) {
+    StringAttr paramName = entry.first;
+    if (!incompatibleReplacements.contains(paramName) &&
+        proofCounts.lookup(paramName) == mentionCounts.lookup(paramName)) {
+      info.replacements.try_emplace(paramName, entry.second);
+    }
+  }
+}
+
+/// Infer type-variable replacements from struct type arguments whose target
+/// template parameters are already resolved.
+static LogicalResult inferStructTemplateParamUses(
+    ModuleOp module, MutableArrayRef<TemplateInferenceInfo> templateInfos,
+    DenseMap<Operation *, TemplateInferenceInfo *> &infoByTemplate
+) {
+  bool changed = false;
+  do {
+    changed = false;
+    SymbolTableCollection tables;
+    for (TemplateInferenceInfo &info : templateInfos) {
+      SmallVector<FuncDefOp> funcs;
+      info.templateOp.walk([&funcs](FuncDefOp func) { funcs.push_back(func); });
+
+      for (FuncDefOp func : funcs) {
+        DenseMap<StringAttr, InferredType> funcReplacements;
+        auto funcIt = info.functionReplacements.find(func.getOperation());
+        if (funcIt != info.functionReplacements.end()) {
+          funcReplacements = funcIt->second;
+        }
+        DenseMap<StringAttr, InferredType> oldFuncReplacements = funcReplacements;
+
+        TypeVarInferenceCollector collector(info, funcReplacements);
+        if (failed(collector.collect(func)) ||
+            failed(collector.collectStructTemplateParamInferences(
+                func.getOperation(), module, infoByTemplate, tables
+            ))) {
+          return failure();
+        }
+
+        if (!sameReplacementTypes(oldFuncReplacements, funcReplacements)) {
+          changed = true;
+        }
+        if (funcReplacements.empty()) {
+          info.functionReplacements.erase(func.getOperation());
+        } else {
+          info.functionReplacements[func.getOperation()] = std::move(funcReplacements);
+        }
+      }
+
+      DenseMap<StringAttr, InferredType> oldReplacements = info.replacements;
+      recomputeTemplateWideReplacements(info);
+      if (!sameReplacementTypes(oldReplacements, info.replacements)) {
+        changed = true;
+      }
+    }
+  } while (changed);
+  return success();
+}
+
 /// Build all analysis state needed to rewrite one template.
 ///
 /// The function records the original template parameter order before any
@@ -1526,17 +2014,7 @@ static FailureOr<TemplateInferenceInfo> buildInfo(TemplateOp templateOp) {
   SmallVector<FuncDefOp> funcs;
   templateOp.walk([&funcs](FuncDefOp func) { funcs.push_back(func); });
 
-  DenseMap<StringAttr, unsigned> mentionCounts;
-  DenseMap<StringAttr, unsigned> proofCounts;
-  DenseMap<StringAttr, InferredType> commonReplacements;
-  DenseSet<StringAttr> incompatibleReplacements;
   for (FuncDefOp func : funcs) {
-    for (const auto &entry : info.typeVarParams) {
-      if (funcMentionsParam(func, entry.first)) {
-        ++mentionCounts[entry.first];
-      }
-    }
-
     DenseMap<StringAttr, InferredType> funcReplacements;
     if (failed(TypeVarInferenceCollector(info, funcReplacements).collect(func))) {
       return failure();
@@ -1544,24 +2022,9 @@ static FailureOr<TemplateInferenceInfo> buildInfo(TemplateOp templateOp) {
     if (!funcReplacements.empty()) {
       info.functionReplacements.try_emplace(func.getOperation(), funcReplacements);
     }
-    for (const auto &entry : funcReplacements) {
-      ++proofCounts[entry.first];
-      auto commonIt = commonReplacements.find(entry.first);
-      if (commonIt == commonReplacements.end()) {
-        commonReplacements.try_emplace(entry.first, entry.second);
-      } else if (commonIt->second.type != entry.second.type) {
-        incompatibleReplacements.insert(entry.first);
-      }
-    }
   }
 
-  for (const auto &entry : commonReplacements) {
-    StringAttr paramName = entry.first;
-    if (!incompatibleReplacements.contains(paramName) &&
-        proofCounts.lookup(paramName) == mentionCounts.lookup(paramName)) {
-      info.replacements.try_emplace(paramName, entry.second);
-    }
-  }
+  recomputeTemplateWideReplacements(info);
   return info;
 }
 
@@ -1593,6 +2056,15 @@ private:
       return WalkResult::advance();
     });
     if (collectResult.wasInterrupted()) {
+      signalPassFailure();
+      return;
+    }
+
+    DenseMap<Operation *, TemplateInferenceInfo *> mutableInfoByTemplate;
+    for (TemplateInferenceInfo &info : templateInfos) {
+      mutableInfoByTemplate.try_emplace(info.templateOp.getOperation(), &info);
+    }
+    if (failed(inferStructTemplateParamUses(module, templateInfos, mutableInfoByTemplate))) {
       signalPassFailure();
       return;
     }
@@ -1647,6 +2119,10 @@ private:
     // Re-run specialization after rewriting because template bodies may now
     // contain concrete forwarded calls into otherwise unconstrained templates.
     if (failed(specializeFunctionLocalCalls(module, infoByTemplate, cloneCache))) {
+      signalPassFailure();
+      return;
+    }
+    if (failed(updateStructTemplateParams(module, convertersByTemplate))) {
       signalPassFailure();
       return;
     }
