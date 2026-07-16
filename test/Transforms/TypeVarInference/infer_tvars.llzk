@@ -607,6 +607,78 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @TNestedReplacementBox {
+    poly.param @Element
+
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@Element>
+
+      function.def @product(%arg: !poly.tvar<@Element>) -> !struct.type<@TNestedReplacementBox::@Box<[@Element]>> {
+        %self = struct.new : !struct.type<@TNestedReplacementBox::@Box<[@Element]>>
+        struct.writem %self[@value] = %arg : !struct.type<@TNestedReplacementBox::@Box<[@Element]>>, !poly.tvar<@Element>
+        function.return %self : !struct.type<@TNestedReplacementBox::@Box<[@Element]>>
+      }
+    }
+  }
+
+  poly.template @TNestedReplacement {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @id(%arg: !poly.tvar<@T>, %u: !poly.tvar<@U>) -> !poly.tvar<@T> {
+      %index = poly.unifiable_cast %u : (!poly.tvar<@U>) -> index
+      function.return %arg : !poly.tvar<@T>
+    }
+
+    function.def @call_id(
+        %arg: !struct.type<@TNestedReplacementBox::@Box<[@U]>>, %u: !poly.tvar<@U>
+    ) -> !struct.type<@TNestedReplacementBox::@Box<[index]>> {
+      %arg_index = poly.unifiable_cast %arg : (!struct.type<@TNestedReplacementBox::@Box<[@U]>>) -> !struct.type<@TNestedReplacementBox::@Box<[index]>>
+      %index = poly.unifiable_cast %u : (!poly.tvar<@U>) -> index
+      %0 = function.call @TNestedReplacement::@id<[!struct.type<@TNestedReplacementBox::@Box<[@U]>>, index]>(%arg, %index) :
+          (!struct.type<@TNestedReplacementBox::@Box<[@U]>>, index) -> !struct.type<@TNestedReplacementBox::@Box<[@U]>>
+      %out = poly.unifiable_cast %0 : (!struct.type<@TNestedReplacementBox::@Box<[@U]>>) -> !struct.type<@TNestedReplacementBox::@Box<[index]>>
+      function.return %out : !struct.type<@TNestedReplacementBox::@Box<[index]>>
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TNestedReplacementBox {
+// CHECK-NEXT:      poly.param @Element
+// CHECK-NEXT:      struct.def @i_Box {
+// CHECK-NEXT:        struct.member @value : index
+// CHECK-NEXT:        function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@TNestedReplacementBox::@i_Box<[@Element]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TNestedReplacementBox::@i_Box<[@Element]>>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@value] = %[[VAL_0]] : <@TNestedReplacementBox::@i_Box<[@Element]>>, index
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TNestedReplacementBox::@i_Box<[@Element]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        struct.member @value : !poly.tvar<@Element>
+// CHECK-NEXT:        function.def @product(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Element>) -> !struct.type<@TNestedReplacementBox::@Box<[@Element]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@TNestedReplacementBox::@Box<[@Element]>>
+// CHECK-NEXT:          struct.writem %[[VAL_3]][@value] = %[[VAL_2]] : <@TNestedReplacementBox::@Box<[@Element]>>, !poly.tvar<@Element>
+// CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@TNestedReplacementBox::@Box<[@Element]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TNestedReplacement {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @"!s<@TNestedReplacementBox::@Box_@U>_i_id"(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@TNestedReplacementBox::@i_Box<[index]>>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@TNestedReplacementBox::@i_Box<[index]>> {
+// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@TNestedReplacementBox::@i_Box<[index]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @id(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>, %[[VAL_7:[0-9a-zA-Z_\.]+]]: index) -> !poly.tvar<@T> {
+// CHECK-NEXT:        function.return %[[VAL_6]] : !poly.tvar<@T>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @call_id(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@TNestedReplacementBox::@i_Box<[index]>>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@TNestedReplacementBox::@i_Box<[index]>> {
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @TNestedReplacement::@"!s<@TNestedReplacementBox::@Box_@U>_i_id"<[!struct.type<@TNestedReplacementBox::@i_Box<[index]>>]>(%[[VAL_8]], %[[VAL_9]]) : (!struct.type<@TNestedReplacementBox::@i_Box<[index]>>, index) -> !struct.type<@TNestedReplacementBox::@i_Box<[index]>>
+// CHECK-NEXT:        function.return %[[VAL_10]] : !struct.type<@TNestedReplacementBox::@i_Box<[index]>>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
   poly.template @TSpecializationNameCollision {
     poly.param @T : !poly.tvar<@T>
 

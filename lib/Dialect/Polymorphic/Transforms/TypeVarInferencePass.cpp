@@ -205,22 +205,37 @@ public:
   /// Supported containers are array, struct, POD, and function types. Unknown
   /// or unsupported types are returned unchanged.
   Type convertType(Type ty) const {
+    DenseSet<StringAttr> resolvingParams;
+    return convertType(ty, resolvingParams);
+  }
+
+private:
+  Type convertType(Type ty, DenseSet<StringAttr> &resolvingParams) const {
     if (!ty) {
       return ty;
     }
     if (auto tvarTy = llvm::dyn_cast<TypeVarType>(ty)) {
-      auto it = replacements_.find(tvarTy.getNameRef().getAttr());
-      return it == replacements_.end() ? ty : it->second;
+      StringAttr paramName = tvarTy.getNameRef().getAttr();
+      auto it = replacements_.find(paramName);
+      if (it == replacements_.end()) {
+        return ty;
+      }
+      if (!resolvingParams.insert(paramName).second) {
+        return ty;
+      }
+      Type replacement = convertType(it->second, resolvingParams);
+      resolvingParams.erase(paramName);
+      return replacement;
     }
     if (auto arrTy = llvm::dyn_cast<ArrayType>(ty)) {
-      Type newElemTy = convertType(arrTy.getElementType());
+      Type newElemTy = convertType(arrTy.getElementType(), resolvingParams);
       if (newElemTy == arrTy.getElementType()) {
         return ty;
       }
       return llzk::polymorphic::detail::flattenInstantiatedArrayType(arrTy, newElemTy);
     }
     if (auto structTy = llvm::dyn_cast<StructType>(ty)) {
-      return convertStructType(structTy);
+      return convertStructType(structTy, resolvingParams);
     }
     if (auto podTy = llvm::dyn_cast<PodType>(ty)) {
       return convertPodType(podTy, ctx_, *this);
@@ -231,24 +246,31 @@ public:
     return ty;
   }
 
+public:
   /// Convert an attribute that may contain types needing replacement.
   ///
   /// This currently handles `TypeAttr` and nested `ArrayAttr`, which covers the
   /// template parameter lists and type-encoded op attributes used by the
   /// polymorphic/function dialects.
   Attribute convertAttr(Attribute attr) const {
+    DenseSet<StringAttr> resolvingParams;
+    return convertAttr(attr, resolvingParams);
+  }
+
+private:
+  Attribute convertAttr(Attribute attr, DenseSet<StringAttr> &resolvingParams) const {
     if (!attr) {
       return attr;
     }
     if (auto tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
-      Type newTy = convertType(tyAttr.getValue());
+      Type newTy = convertType(tyAttr.getValue(), resolvingParams);
       return newTy == tyAttr.getValue() ? attr : TypeAttr::get(newTy);
     }
     if (auto arrAttr = llvm::dyn_cast<ArrayAttr>(attr)) {
       SmallVector<Attribute> newAttrs;
       bool changed = false;
       for (Attribute nested : arrAttr.getValue()) {
-        Attribute newNested = convertTemplateArgAttr(nested);
+        Attribute newNested = convertTemplateArgAttr(nested, resolvingParams);
         newAttrs.push_back(newNested);
         changed |= newNested != nested;
       }
@@ -257,6 +279,7 @@ public:
     return attr;
   }
 
+public:
   /// Convert and trim a call-site or type-site template parameter list.
   ///
   /// If the list still has the original arity, entries corresponding to resolved `poly.param`s are
@@ -289,20 +312,30 @@ public:
   }
 
 private:
+  Attribute convertTemplateArgAttr(Attribute attr) const {
+    DenseSet<StringAttr> resolvingParams;
+    return convertTemplateArgAttr(attr, resolvingParams);
+  }
+
   /// Convert a template argument attribute.
   ///
   /// Direct `SymbolRefAttr` template arguments can name self-typed type-variable
   /// parameters (`@T` for `poly.param @T : !poly.tvar<@T>`). Once such a
   /// parameter has a concrete replacement, the symbol argument becomes the
   /// corresponding `TypeAttr`.
-  Attribute convertTemplateArgAttr(Attribute attr) const {
+  Attribute convertTemplateArgAttr(Attribute attr, DenseSet<StringAttr> &resolvingParams) const {
     if (StringAttr symbolName = getFlatSymbolName(attr)) {
       auto it = replacements_.find(symbolName);
       if (it != replacements_.end()) {
-        return TypeAttr::get(it->second);
+        if (!resolvingParams.insert(symbolName).second) {
+          return attr;
+        }
+        Type replacement = convertType(it->second, resolvingParams);
+        resolvingParams.erase(symbolName);
+        return TypeAttr::get(replacement);
       }
     }
-    return convertAttr(attr);
+    return convertAttr(attr, resolvingParams);
   }
 
   /// Check that an explicit argument for a removed parameter matches its replacement.
@@ -315,7 +348,7 @@ private:
       return success();
     }
     Attribute convertedAttr = resolveTemplateSymbolArgs ? convertTemplateArgAttr(attr) : attr;
-    Attribute expectedAttr = TypeAttr::get(replacementIt->second);
+    Attribute expectedAttr = TypeAttr::get(convertType(replacementIt->second));
     if (convertedAttr == expectedAttr) {
       return success();
     }
@@ -349,7 +382,7 @@ private:
   /// For structs defined inside the current template, parameter entries for
   /// resolved type variables are removed by original position. For all structs,
   /// remaining parameter attributes are recursively converted.
-  StructType convertStructType(StructType structTy) const {
+  StructType convertStructType(StructType structTy, DenseSet<StringAttr> &resolvingParams) const {
     ArrayAttr params = structTy.getParams();
     if (!params) {
       return structTy;
@@ -366,7 +399,7 @@ private:
         changed = true;
         continue;
       }
-      Attribute newAttr = convertTemplateArgAttr(attr);
+      Attribute newAttr = convertTemplateArgAttr(attr, resolvingParams);
       newParams.push_back(newAttr);
       changed |= newAttr != attr;
     }
@@ -1188,10 +1221,20 @@ static DenseMap<StringAttr, Type> getConcreteCallSiteReplacements(
     assert(index && "eligible type-variable parameter must appear in parameter order");
     Attribute attr = callParams[*index];
     auto tyAttr = llvm::dyn_cast<TypeAttr>(attr);
-    if (!tyAttr || !isConcreteType(tyAttr.getValue())) {
+    if (!tyAttr) {
       return DenseMap<StringAttr, Type>();
     }
     replacements.try_emplace(paramName, tyAttr.getValue());
+  }
+
+  TypeVarReplacementConverter converter(
+      info.templatePath.front().getContext(), info.templatePath, info.oldParamOrder, replacements,
+      /*trimResolvedParams=*/false
+  );
+  for (const auto &entry : replacements) {
+    if (!isConcreteType(converter.convertType(entry.second))) {
+      return DenseMap<StringAttr, Type>();
+    }
   }
   return replacements;
 }
