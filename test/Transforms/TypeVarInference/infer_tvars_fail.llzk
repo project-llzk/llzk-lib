@@ -17,44 +17,6 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  poly.template @TExplicitParamConflict {
-    poly.param @T : !poly.tvar<@T>
-
-    function.def @id(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
-      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
-      function.return %arg : !poly.tvar<@T>
-    }
-  }
-
-  function.def @call_id(%arg: !felt.type) -> !felt.type {
-    // expected-error@+1 {{explicit template argument for inferred parameter @T must match inferred type 'index', but found '!felt.type'}}
-    %0 = function.call @TExplicitParamConflict::@id<[!felt.type]>(%arg) : (!felt.type) -> !felt.type
-    function.return %0 : !felt.type
-  }
-}
-
-// -----
-
-module attributes {llzk.lang} {
-  poly.template @TWildcardParamConflict {
-    poly.param @T : !poly.tvar<@T>
-
-    function.def @id(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
-      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
-      function.return %arg : !poly.tvar<@T>
-    }
-  }
-
-  function.def @call_id(%arg: !felt.type) -> !felt.type {
-    // expected-error@+1 {{call signature '(!felt.type) -> !felt.type' does not match inferred callee signature '(index) -> index'}}
-    %0 = function.call @TWildcardParamConflict::@id<[?]>(%arg) : (!felt.type) -> !felt.type
-    function.return %0 : !felt.type
-  }
-}
-
-// -----
-
-module attributes {llzk.lang} {
   poly.template @TContractProofConflict {
     poly.param @T : !poly.tvar<@T>
 
@@ -76,23 +38,19 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  poly.template @TFunctionLocalExplicitParamConflict {
+  poly.template @TWildcardParamConflict {
     poly.param @T : !poly.tvar<@T>
 
-    function.def @f(%arg: !poly.tvar<@T>) -> index {
+    function.def @id(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
       %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
-      function.return %index : index
-    }
-
-    function.def @g(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
       function.return %arg : !poly.tvar<@T>
     }
   }
 
-  function.def @call_f(%arg: !felt.type) -> index {
-    // expected-error@+1 {{explicit template argument for inferred parameter @T must match inferred type 'index', but found '!felt.type'}}
-    %0 = function.call @TFunctionLocalExplicitParamConflict::@f<[!felt.type]>(%arg) : (!felt.type) -> index
-    function.return %0 : index
+  function.def @call_id(%arg: !felt.type) -> !felt.type {
+    // expected-error@+1 {{call signature '(!felt.type) -> !felt.type' does not match inferred callee signature '(index) -> index'}}
+    %0 = function.call @TWildcardParamConflict::@id<[?]>(%arg) : (!felt.type) -> !felt.type
+    function.return %0 : !felt.type
   }
 }
 
@@ -173,6 +131,48 @@ module attributes {llzk.lang} {
     // expected-error@+2 {{'function.call' op operand type mismatch: expected type 'index', but found '!felt.type' for operand number 0}}
     // expected-error@+1 {{'function.call' op result type mismatch: expected type 'index', but found '!felt.type' for result number 0}}
     %0 = function.call @TImplicitSignatureConflict::@id(%arg) : (!felt.type) -> !felt.type
+    function.return %0 : !felt.type
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TFunctionLocalExplicitParamConflict {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @f(%arg: !poly.tvar<@T>) -> index {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      function.return %index : index
+    }
+
+    function.def @g(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      function.return %arg : !poly.tvar<@T>
+    }
+  }
+
+  function.def @call_f(%arg: !felt.type) -> index {
+    // expected-error@+1 {{explicit template argument for inferred parameter @T must match inferred type 'index', but found '!felt.type'}}
+    %0 = function.call @TFunctionLocalExplicitParamConflict::@f<[!felt.type]>(%arg) : (!felt.type) -> index
+    function.return %0 : index
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TExplicitParamConflict {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @id(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      function.return %arg : !poly.tvar<@T>
+    }
+  }
+
+  function.def @call_id(%arg: !felt.type) -> !felt.type {
+    // expected-error@+1 {{explicit template argument for inferred parameter @T must match inferred type 'index', but found '!felt.type'}}
+    %0 = function.call @TExplicitParamConflict::@id<[!felt.type]>(%arg) : (!felt.type) -> !felt.type
     function.return %0 : !felt.type
   }
 }
