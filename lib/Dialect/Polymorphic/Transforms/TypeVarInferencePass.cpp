@@ -1646,6 +1646,26 @@ static DenseMap<StringAttr, Type> getConcreteCallSiteReplacements(
   return replacements;
 }
 
+/// Infer the call-site template argument list from call/callee type unification.
+static FailureOr<ArrayAttr>
+getCallSignatureTemplateParams(CallOp callOp, const TemplateInferenceInfo &info, FuncDefOp func) {
+  FailureOr<UnificationMap> unifyResult = callOp.unifyTypeSignature(func.getFunctionType());
+  if (failed(unifyResult)) {
+    return failure();
+  }
+
+  SmallVector<Attribute> params;
+  params.reserve(info.oldParamOrder.size());
+  for (StringAttr paramName : info.oldParamOrder) {
+    auto it = unifyResult->find({FlatSymbolRefAttr::get(paramName), Side::RHS});
+    if (it == unifyResult->end()) {
+      return failure();
+    }
+    params.push_back(it->second);
+  }
+  return ArrayAttr::get(callOp.getContext(), params);
+}
+
 /// Return true when `func` still needs per-call cloning after template-wide rewrites.
 ///
 /// Parameters in `info.replacements` are safe to rewrite in the template itself.
@@ -2082,6 +2102,15 @@ static LogicalResult specializeFunctionLocalCalls(
     }
 
     ArrayAttr callParams = callOp.getTemplateParamsAttr();
+    bool inferredCallParams = false;
+    if (isNullOrEmpty(callParams)) {
+      FailureOr<ArrayAttr> inferredParams =
+          getCallSignatureTemplateParams(callOp, *info, targetFunc);
+      if (succeeded(inferredParams)) {
+        callParams = *inferredParams;
+        inferredCallParams = true;
+      }
+    }
     DenseMap<StringAttr, Type> replacements =
         getConcreteCallSiteReplacements(callParams, *info, targetFunc);
     if (replacements.empty()) {
@@ -2106,6 +2135,9 @@ static LogicalResult specializeFunctionLocalCalls(
     }
 
     callOp.setCalleeAttr(*cloneCallee);
+    if (inferredCallParams) {
+      callOp.setTemplateParamsAttr(callParams);
+    }
   });
   return failure(failedClone);
 }

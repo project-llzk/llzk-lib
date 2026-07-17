@@ -59,6 +59,29 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @TFunctionLocalImplicitParamConflict {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @f(%arg: !poly.tvar<@T>) -> index {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      function.return %index : index
+    }
+
+    function.def @g(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      function.return %arg : !poly.tvar<@T>
+    }
+  }
+
+  function.def @call_f(%arg: !felt.type) -> index {
+    // expected-error@+1 {{explicit template argument for inferred parameter @T must match inferred type 'index', but found '!felt.type'}}
+    %0 = function.call @TFunctionLocalImplicitParamConflict::@f(%arg) : (!felt.type) -> index
+    function.return %0 : index
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
   poly.template @TConflict {
     poly.param @T : !poly.tvar<@T>
 
