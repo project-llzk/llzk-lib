@@ -267,17 +267,17 @@ module attributes {llzk.lang} {
 // CHECK-SAME:         %[[VAL_25:[0-9a-zA-Z_\.]+]]: !pcl.felt,
 // CHECK-SAME:         %[[VAL_26:[0-9a-zA-Z_\.]+]]: !pcl.felt
 // CHECK-SAME:    ) -> (!pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt) {
-// CHECK-DAG:       %[[VAL_27:[0-9a-zA-Z_\.]+]] = pcl.const  2 : i4
-// CHECK-DAG:       %[[VAL_28:[0-9a-zA-Z_\.]+]] = pcl.const  3 : i4
-// CHECK-DAG:       %[[VAL_29:[0-9a-zA-Z_\.]+]] = pcl.const  256 : i12
-// CHECK-DAG:       %[[VAL_30:[0-9a-zA-Z_\.]+]] = pcl.const  8192 : i16
-// CHECK-DAG:       %[[VAL_31:[0-9a-zA-Z_\.]+]] = pcl.const  1864368129 : i40
-// CHECK-DAG:       %[[VAL_32:[0-9a-zA-Z_\.]+]] = pcl.const  65537 : i20
-// CHECK-DAG:       %[[VAL_33:[0-9a-zA-Z_\.]+]] = pcl.const  4 : i4
-// CHECK-DAG:       %[[VAL_34:[0-9a-zA-Z_\.]+]] = pcl.const  65536 : i20
-// CHECK-DAG:       %[[VAL_35:[0-9a-zA-Z_\.]+]] = pcl.const  2130673921 : i40
-// CHECK-DAG:       %[[VAL_36:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i64
-// CHECK-DAG:       %[[VAL_37:[0-9a-zA-Z_\.]+]] = pcl.const  1 : i4
+// CHECK-DAG:       %[[VAL_27:[0-9a-zA-Z_\.]+]] = pcl.const  2 : i
+// CHECK-DAG:       %[[VAL_28:[0-9a-zA-Z_\.]+]] = pcl.const  3 : i
+// CHECK-DAG:       %[[VAL_29:[0-9a-zA-Z_\.]+]] = pcl.const  256 : i
+// CHECK-DAG:       %[[VAL_30:[0-9a-zA-Z_\.]+]] = pcl.const  8192 : i
+// CHECK-DAG:       %[[VAL_31:[0-9a-zA-Z_\.]+]] = pcl.const  1864368129 : i
+// CHECK-DAG:       %[[VAL_32:[0-9a-zA-Z_\.]+]] = pcl.const  65537 : i
+// CHECK-DAG:       %[[VAL_33:[0-9a-zA-Z_\.]+]] = pcl.const  4 : i
+// CHECK-DAG:       %[[VAL_34:[0-9a-zA-Z_\.]+]] = pcl.const  65536 : i
+// CHECK-DAG:       %[[VAL_35:[0-9a-zA-Z_\.]+]] = pcl.const  2130673921 : i
+// CHECK-DAG:       %[[VAL_36:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i
+// CHECK-DAG:       %[[VAL_37:[0-9a-zA-Z_\.]+]] = pcl.const  1 : i
 // CHECK-DAG:       %[[VAL_38:[0-9a-zA-Z_\.]+]] = pcl.var "add_operation_29" true
 // CHECK-DAG:       %[[VAL_39:[0-9a-zA-Z_\.]+]] = pcl.var "add_operation_30" true
 // CHECK-DAG:       %[[VAL_40:[0-9a-zA-Z_\.]+]] = pcl.var "add_operation_31" true
@@ -368,7 +368,7 @@ module attributes {llzk.lang} {
 // CHECK-DAG:       %[[VAL_112:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_111]]
 // CHECK-DAG:       %[[VAL_113:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_112]], %[[VAL_37]]
 // CHECK-DAG:       pcl.assert %[[VAL_113]]
-// CHECK-DAG:       %[[VAL_114:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i32
+// CHECK-DAG:       %[[VAL_114:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i
 // CHECK-DAG:       %[[VAL_115:[0-9a-zA-Z_\.]+]] = pcl.lt %[[VAL_114]], %[[VAL_29]]
 // CHECK-DAG:       %[[VAL_116:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_115]]
 // CHECK-DAG:       %[[VAL_117:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_116]], %[[VAL_37]]
@@ -784,18 +784,18 @@ module attributes {llzk.lang} {
 // CHECK-SAME:         %[[VAL_26:[0-9a-zA-Z_\.]+]]: !pcl.felt,
 // CHECK-SAME:         %[[VAL_27:[0-9a-zA-Z_\.]+]]: !pcl.felt
 // CHECK-SAME:    ) -> (!pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt) {
-// CHECK-DAG:       %[[VAL_28:[0-9a-zA-Z_\.]+]] = pcl.const  3 : i4
-// CHECK-DAG:       %[[VAL_29:[0-9a-zA-Z_\.]+]] = pcl.const  65535 : i20
-// CHECK-DAG:       %[[VAL_30:[0-9a-zA-Z_\.]+]] = pcl.const  256 : i12
-// CHECK-DAG:       %[[VAL_31:[0-9a-zA-Z_\.]+]] = pcl.const  8192 : i16
-// CHECK-DAG:       %[[VAL_32:[0-9a-zA-Z_\.]+]] = pcl.const  1864368129 : i40
-// CHECK-DAG:       %[[VAL_33:[0-9a-zA-Z_\.]+]] = pcl.const  65537 : i20
-// CHECK-DAG:       %[[VAL_34:[0-9a-zA-Z_\.]+]] = pcl.const  4 : i4
-// CHECK-DAG:       %[[VAL_35:[0-9a-zA-Z_\.]+]] = pcl.const  2 : i4
-// CHECK-DAG:       %[[VAL_36:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i64
-// CHECK-DAG:       %[[VAL_37:[0-9a-zA-Z_\.]+]] = pcl.const  2130673921 : i40
-// CHECK-DAG:       %[[VAL_38:[0-9a-zA-Z_\.]+]] = pcl.const  65536 : i20
-// CHECK-DAG:       %[[VAL_39:[0-9a-zA-Z_\.]+]] = pcl.const  1 : i4
+// CHECK-DAG:       %[[VAL_28:[0-9a-zA-Z_\.]+]] = pcl.const  3 : i
+// CHECK-DAG:       %[[VAL_29:[0-9a-zA-Z_\.]+]] = pcl.const  65535 : i
+// CHECK-DAG:       %[[VAL_30:[0-9a-zA-Z_\.]+]] = pcl.const  256 : i
+// CHECK-DAG:       %[[VAL_31:[0-9a-zA-Z_\.]+]] = pcl.const  8192 : i
+// CHECK-DAG:       %[[VAL_32:[0-9a-zA-Z_\.]+]] = pcl.const  1864368129 : i
+// CHECK-DAG:       %[[VAL_33:[0-9a-zA-Z_\.]+]] = pcl.const  65537 : i
+// CHECK-DAG:       %[[VAL_34:[0-9a-zA-Z_\.]+]] = pcl.const  4 : i
+// CHECK-DAG:       %[[VAL_35:[0-9a-zA-Z_\.]+]] = pcl.const  2 : i
+// CHECK-DAG:       %[[VAL_36:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i
+// CHECK-DAG:       %[[VAL_37:[0-9a-zA-Z_\.]+]] = pcl.const  2130673921 : i
+// CHECK-DAG:       %[[VAL_38:[0-9a-zA-Z_\.]+]] = pcl.const  65536 : i
+// CHECK-DAG:       %[[VAL_39:[0-9a-zA-Z_\.]+]] = pcl.const  1 : i
 // CHECK-DAG:       %[[VAL_40:[0-9a-zA-Z_\.]+]] = pcl.var "subw_operation_29" true
 // CHECK-DAG:       %[[VAL_41:[0-9a-zA-Z_\.]+]] = pcl.var "subw_operation_30" true
 // CHECK-DAG:       %[[VAL_42:[0-9a-zA-Z_\.]+]] = pcl.var "subw_operation_31" false
@@ -873,7 +873,7 @@ module attributes {llzk.lang} {
 // CHECK-DAG:       %[[VAL_103:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_102]]
 // CHECK-DAG:       %[[VAL_104:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_103]], %[[VAL_39]]
 // CHECK-DAG:       pcl.assert %[[VAL_104]]
-// CHECK-DAG:       %[[VAL_105:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i32
+// CHECK-DAG:       %[[VAL_105:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i
 // CHECK-DAG:       %[[VAL_106:[0-9a-zA-Z_\.]+]] = pcl.lt %[[VAL_105]], %[[VAL_30]]
 // CHECK-DAG:       %[[VAL_107:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_106]]
 // CHECK-DAG:       %[[VAL_108:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_107]], %[[VAL_39]]
@@ -23340,22 +23340,22 @@ module attributes {llzk.lang} {
 // CHECK-SAME:         %[[VAL_26:[0-9a-zA-Z_\.]+]]: !pcl.felt,
 // CHECK-SAME:         %[[VAL_27:[0-9a-zA-Z_\.]+]]: !pcl.felt
 // CHECK-SAME:    ) -> (!pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt) {
-// CHECK-DAG:       %[[VAL_28:[0-9a-zA-Z_\.]+]] = pcl.const  3 : i4
-// CHECK-DAG:       %[[VAL_29:[0-9a-zA-Z_\.]+]] = pcl.const  8192 : i16
-// CHECK-DAG:       %[[VAL_30:[0-9a-zA-Z_\.]+]] = pcl.const  1864368129 : i40
-// CHECK-DAG:       %[[VAL_31:[0-9a-zA-Z_\.]+]] = pcl.const  65537 : i20
-// CHECK-DAG:       %[[VAL_32:[0-9a-zA-Z_\.]+]] = pcl.const  4 : i4
-// CHECK-DAG:       %[[VAL_33:[0-9a-zA-Z_\.]+]] = pcl.const  2130673921 : i40
-// CHECK-DAG:       %[[VAL_34:[0-9a-zA-Z_\.]+]] = pcl.const  32768 : i20
-// CHECK-DAG:       %[[VAL_35:[0-9a-zA-Z_\.]+]] = pcl.const  255 : i12
-// CHECK-DAG:       %[[VAL_36:[0-9a-zA-Z_\.]+]] = pcl.const  65536 : i20
-// CHECK-DAG:       %[[VAL_37:[0-9a-zA-Z_\.]+]] = pcl.const  2 : i4
-// CHECK-DAG:       %[[VAL_38:[0-9a-zA-Z_\.]+]] = pcl.const  128 : i12
-// CHECK-DAG:       %[[VAL_39:[0-9a-zA-Z_\.]+]] = pcl.const  256 : i12
-// CHECK-DAG:       %[[VAL_40:[0-9a-zA-Z_\.]+]] = pcl.const  2122383361 : i40
-// CHECK-DAG:       %[[VAL_41:[0-9a-zA-Z_\.]+]] = pcl.const  65535 : i20
-// CHECK-DAG:       %[[VAL_42:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i64
-// CHECK-DAG:       %[[VAL_43:[0-9a-zA-Z_\.]+]] = pcl.const  1 : i4
+// CHECK-DAG:       %[[VAL_28:[0-9a-zA-Z_\.]+]] = pcl.const  3 : i
+// CHECK-DAG:       %[[VAL_29:[0-9a-zA-Z_\.]+]] = pcl.const  8192 : i
+// CHECK-DAG:       %[[VAL_30:[0-9a-zA-Z_\.]+]] = pcl.const  1864368129 : i
+// CHECK-DAG:       %[[VAL_31:[0-9a-zA-Z_\.]+]] = pcl.const  65537 : i
+// CHECK-DAG:       %[[VAL_32:[0-9a-zA-Z_\.]+]] = pcl.const  4 : i
+// CHECK-DAG:       %[[VAL_33:[0-9a-zA-Z_\.]+]] = pcl.const  2130673921 : i
+// CHECK-DAG:       %[[VAL_34:[0-9a-zA-Z_\.]+]] = pcl.const  32768 : i
+// CHECK-DAG:       %[[VAL_35:[0-9a-zA-Z_\.]+]] = pcl.const  255 : i
+// CHECK-DAG:       %[[VAL_36:[0-9a-zA-Z_\.]+]] = pcl.const  65536 : i
+// CHECK-DAG:       %[[VAL_37:[0-9a-zA-Z_\.]+]] = pcl.const  2 : i
+// CHECK-DAG:       %[[VAL_38:[0-9a-zA-Z_\.]+]] = pcl.const  128 : i
+// CHECK-DAG:       %[[VAL_39:[0-9a-zA-Z_\.]+]] = pcl.const  256 : i
+// CHECK-DAG:       %[[VAL_40:[0-9a-zA-Z_\.]+]] = pcl.const  2122383361 : i
+// CHECK-DAG:       %[[VAL_41:[0-9a-zA-Z_\.]+]] = pcl.const  65535 : i
+// CHECK-DAG:       %[[VAL_42:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i
+// CHECK-DAG:       %[[VAL_43:[0-9a-zA-Z_\.]+]] = pcl.const  1 : i
 // CHECK-DAG:       %[[VAL_44:[0-9a-zA-Z_\.]+]] = pcl.var "is_real_not_word_240" false
 // CHECK-DAG:       %[[VAL_45:[0-9a-zA-Z_\.]+]] = pcl.sub %[[VAL_44]], %[[VAL_43]]
 // CHECK-DAG:       %[[VAL_46:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_45]], %[[VAL_42]]
@@ -26226,7 +26226,7 @@ module attributes {llzk.lang} {
 // CHECK-DAG:       %[[VAL_2448:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_2447]]
 // CHECK-DAG:       %[[VAL_2449:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_2448]], %[[VAL_43]]
 // CHECK-DAG:       pcl.assert %[[VAL_2449]]
-// CHECK-DAG:       %[[VAL_2450:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i32
+// CHECK-DAG:       %[[VAL_2450:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i
 // CHECK-DAG:       %[[VAL_2451:[0-9a-zA-Z_\.]+]] = pcl.lt %[[VAL_2450]], %[[VAL_39]]
 // CHECK-DAG:       %[[VAL_2452:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_2451]]
 // CHECK-DAG:       %[[VAL_2453:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_2452]], %[[VAL_43]]
@@ -26412,22 +26412,22 @@ module attributes {llzk.lang} {
 // CHECK-SAME:         %[[VAL_2596:[0-9a-zA-Z_\.]+]]: !pcl.felt,
 // CHECK-SAME:         %[[VAL_2597:[0-9a-zA-Z_\.]+]]: !pcl.felt
 // CHECK-SAME:    ) -> (!pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt) {
-// CHECK-DAG:       %[[VAL_2598:[0-9a-zA-Z_\.]+]] = pcl.const  3 : i4
-// CHECK-DAG:       %[[VAL_2599:[0-9a-zA-Z_\.]+]] = pcl.const  8192 : i16
-// CHECK-DAG:       %[[VAL_2600:[0-9a-zA-Z_\.]+]] = pcl.const  1864368129 : i40
-// CHECK-DAG:       %[[VAL_2601:[0-9a-zA-Z_\.]+]] = pcl.const  65537 : i20
-// CHECK-DAG:       %[[VAL_2602:[0-9a-zA-Z_\.]+]] = pcl.const  4 : i4
-// CHECK-DAG:       %[[VAL_2603:[0-9a-zA-Z_\.]+]] = pcl.const  2130673921 : i40
-// CHECK-DAG:       %[[VAL_2604:[0-9a-zA-Z_\.]+]] = pcl.const  32768 : i20
-// CHECK-DAG:       %[[VAL_2605:[0-9a-zA-Z_\.]+]] = pcl.const  255 : i12
-// CHECK-DAG:       %[[VAL_2606:[0-9a-zA-Z_\.]+]] = pcl.const  65536 : i20
-// CHECK-DAG:       %[[VAL_2607:[0-9a-zA-Z_\.]+]] = pcl.const  2 : i4
-// CHECK-DAG:       %[[VAL_2608:[0-9a-zA-Z_\.]+]] = pcl.const  128 : i12
-// CHECK-DAG:       %[[VAL_2609:[0-9a-zA-Z_\.]+]] = pcl.const  256 : i12
-// CHECK-DAG:       %[[VAL_2610:[0-9a-zA-Z_\.]+]] = pcl.const  2122383361 : i40
-// CHECK-DAG:       %[[VAL_2611:[0-9a-zA-Z_\.]+]] = pcl.const  65535 : i20
-// CHECK-DAG:       %[[VAL_2612:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i64
-// CHECK-DAG:       %[[VAL_2613:[0-9a-zA-Z_\.]+]] = pcl.const  1 : i4
+// CHECK-DAG:       %[[VAL_2598:[0-9a-zA-Z_\.]+]] = pcl.const  3 : i
+// CHECK-DAG:       %[[VAL_2599:[0-9a-zA-Z_\.]+]] = pcl.const  8192 : i
+// CHECK-DAG:       %[[VAL_2600:[0-9a-zA-Z_\.]+]] = pcl.const  1864368129 : i
+// CHECK-DAG:       %[[VAL_2601:[0-9a-zA-Z_\.]+]] = pcl.const  65537 : i
+// CHECK-DAG:       %[[VAL_2602:[0-9a-zA-Z_\.]+]] = pcl.const  4 : i
+// CHECK-DAG:       %[[VAL_2603:[0-9a-zA-Z_\.]+]] = pcl.const  2130673921 : i
+// CHECK-DAG:       %[[VAL_2604:[0-9a-zA-Z_\.]+]] = pcl.const  32768 : i
+// CHECK-DAG:       %[[VAL_2605:[0-9a-zA-Z_\.]+]] = pcl.const  255 : i
+// CHECK-DAG:       %[[VAL_2606:[0-9a-zA-Z_\.]+]] = pcl.const  65536 : i
+// CHECK-DAG:       %[[VAL_2607:[0-9a-zA-Z_\.]+]] = pcl.const  2 : i
+// CHECK-DAG:       %[[VAL_2608:[0-9a-zA-Z_\.]+]] = pcl.const  128 : i
+// CHECK-DAG:       %[[VAL_2609:[0-9a-zA-Z_\.]+]] = pcl.const  256 : i
+// CHECK-DAG:       %[[VAL_2610:[0-9a-zA-Z_\.]+]] = pcl.const  2122383361 : i
+// CHECK-DAG:       %[[VAL_2611:[0-9a-zA-Z_\.]+]] = pcl.const  65535 : i
+// CHECK-DAG:       %[[VAL_2612:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i
+// CHECK-DAG:       %[[VAL_2613:[0-9a-zA-Z_\.]+]] = pcl.const  1 : i
 // CHECK-DAG:       %[[VAL_2614:[0-9a-zA-Z_\.]+]] = pcl.var "is_real_not_word_240" false
 // CHECK-DAG:       %[[VAL_2615:[0-9a-zA-Z_\.]+]] = pcl.sub %[[VAL_2614]], %[[VAL_2613]]
 // CHECK-DAG:       %[[VAL_2616:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_2615]], %[[VAL_2612]]
@@ -29298,7 +29298,7 @@ module attributes {llzk.lang} {
 // CHECK-DAG:       %[[VAL_5018:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_5017]]
 // CHECK-DAG:       %[[VAL_5019:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_5018]], %[[VAL_2613]]
 // CHECK-DAG:       pcl.assert %[[VAL_5019]]
-// CHECK-DAG:       %[[VAL_5020:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i32
+// CHECK-DAG:       %[[VAL_5020:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i
 // CHECK-DAG:       %[[VAL_5021:[0-9a-zA-Z_\.]+]] = pcl.lt %[[VAL_5020]], %[[VAL_2609]]
 // CHECK-DAG:       %[[VAL_5022:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_5021]]
 // CHECK-DAG:       %[[VAL_5023:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_5022]], %[[VAL_2613]]
@@ -29484,22 +29484,22 @@ module attributes {llzk.lang} {
 // CHECK-SAME:         %[[VAL_5166:[0-9a-zA-Z_\.]+]]: !pcl.felt,
 // CHECK-SAME:         %[[VAL_5167:[0-9a-zA-Z_\.]+]]: !pcl.felt
 // CHECK-SAME:    ) -> (!pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt) {
-// CHECK-DAG:       %[[VAL_5168:[0-9a-zA-Z_\.]+]] = pcl.const  3 : i4
-// CHECK-DAG:       %[[VAL_5169:[0-9a-zA-Z_\.]+]] = pcl.const  8192 : i16
-// CHECK-DAG:       %[[VAL_5170:[0-9a-zA-Z_\.]+]] = pcl.const  1864368129 : i40
-// CHECK-DAG:       %[[VAL_5171:[0-9a-zA-Z_\.]+]] = pcl.const  65537 : i20
-// CHECK-DAG:       %[[VAL_5172:[0-9a-zA-Z_\.]+]] = pcl.const  4 : i4
-// CHECK-DAG:       %[[VAL_5173:[0-9a-zA-Z_\.]+]] = pcl.const  2130673921 : i40
-// CHECK-DAG:       %[[VAL_5174:[0-9a-zA-Z_\.]+]] = pcl.const  32768 : i20
-// CHECK-DAG:       %[[VAL_5175:[0-9a-zA-Z_\.]+]] = pcl.const  255 : i12
-// CHECK-DAG:       %[[VAL_5176:[0-9a-zA-Z_\.]+]] = pcl.const  65536 : i20
-// CHECK-DAG:       %[[VAL_5177:[0-9a-zA-Z_\.]+]] = pcl.const  2 : i4
-// CHECK-DAG:       %[[VAL_5178:[0-9a-zA-Z_\.]+]] = pcl.const  128 : i12
-// CHECK-DAG:       %[[VAL_5179:[0-9a-zA-Z_\.]+]] = pcl.const  256 : i12
-// CHECK-DAG:       %[[VAL_5180:[0-9a-zA-Z_\.]+]] = pcl.const  2122383361 : i40
-// CHECK-DAG:       %[[VAL_5181:[0-9a-zA-Z_\.]+]] = pcl.const  65535 : i20
-// CHECK-DAG:       %[[VAL_5182:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i64
-// CHECK-DAG:       %[[VAL_5183:[0-9a-zA-Z_\.]+]] = pcl.const  1 : i4
+// CHECK-DAG:       %[[VAL_5168:[0-9a-zA-Z_\.]+]] = pcl.const  3 : i
+// CHECK-DAG:       %[[VAL_5169:[0-9a-zA-Z_\.]+]] = pcl.const  8192 : i
+// CHECK-DAG:       %[[VAL_5170:[0-9a-zA-Z_\.]+]] = pcl.const  1864368129 : i
+// CHECK-DAG:       %[[VAL_5171:[0-9a-zA-Z_\.]+]] = pcl.const  65537 : i
+// CHECK-DAG:       %[[VAL_5172:[0-9a-zA-Z_\.]+]] = pcl.const  4 : i
+// CHECK-DAG:       %[[VAL_5173:[0-9a-zA-Z_\.]+]] = pcl.const  2130673921 : i
+// CHECK-DAG:       %[[VAL_5174:[0-9a-zA-Z_\.]+]] = pcl.const  32768 : i
+// CHECK-DAG:       %[[VAL_5175:[0-9a-zA-Z_\.]+]] = pcl.const  255 : i
+// CHECK-DAG:       %[[VAL_5176:[0-9a-zA-Z_\.]+]] = pcl.const  65536 : i
+// CHECK-DAG:       %[[VAL_5177:[0-9a-zA-Z_\.]+]] = pcl.const  2 : i
+// CHECK-DAG:       %[[VAL_5178:[0-9a-zA-Z_\.]+]] = pcl.const  128 : i
+// CHECK-DAG:       %[[VAL_5179:[0-9a-zA-Z_\.]+]] = pcl.const  256 : i
+// CHECK-DAG:       %[[VAL_5180:[0-9a-zA-Z_\.]+]] = pcl.const  2122383361 : i
+// CHECK-DAG:       %[[VAL_5181:[0-9a-zA-Z_\.]+]] = pcl.const  65535 : i
+// CHECK-DAG:       %[[VAL_5182:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i
+// CHECK-DAG:       %[[VAL_5183:[0-9a-zA-Z_\.]+]] = pcl.const  1 : i
 // CHECK-DAG:       %[[VAL_5184:[0-9a-zA-Z_\.]+]] = pcl.var "is_real_not_word_240" false
 // CHECK-DAG:       %[[VAL_5185:[0-9a-zA-Z_\.]+]] = pcl.sub %[[VAL_5184]], %[[VAL_5183]]
 // CHECK-DAG:       %[[VAL_5186:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_5185]], %[[VAL_5182]]
@@ -32370,7 +32370,7 @@ module attributes {llzk.lang} {
 // CHECK-DAG:       %[[VAL_7588:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_7587]]
 // CHECK-DAG:       %[[VAL_7589:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_7588]], %[[VAL_5183]]
 // CHECK-DAG:       pcl.assert %[[VAL_7589]]
-// CHECK-DAG:       %[[VAL_7590:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i32
+// CHECK-DAG:       %[[VAL_7590:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i
 // CHECK-DAG:       %[[VAL_7591:[0-9a-zA-Z_\.]+]] = pcl.lt %[[VAL_7590]], %[[VAL_5179]]
 // CHECK-DAG:       %[[VAL_7592:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_7591]]
 // CHECK-DAG:       %[[VAL_7593:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_7592]], %[[VAL_5183]]
@@ -32556,22 +32556,22 @@ module attributes {llzk.lang} {
 // CHECK-SAME:         %[[VAL_7736:[0-9a-zA-Z_\.]+]]: !pcl.felt,
 // CHECK-SAME:         %[[VAL_7737:[0-9a-zA-Z_\.]+]]: !pcl.felt
 // CHECK-SAME:    ) -> (!pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt) {
-// CHECK-DAG:       %[[VAL_7738:[0-9a-zA-Z_\.]+]] = pcl.const  3 : i4
-// CHECK-DAG:       %[[VAL_7739:[0-9a-zA-Z_\.]+]] = pcl.const  8192 : i16
-// CHECK-DAG:       %[[VAL_7740:[0-9a-zA-Z_\.]+]] = pcl.const  1864368129 : i40
-// CHECK-DAG:       %[[VAL_7741:[0-9a-zA-Z_\.]+]] = pcl.const  65537 : i20
-// CHECK-DAG:       %[[VAL_7742:[0-9a-zA-Z_\.]+]] = pcl.const  4 : i4
-// CHECK-DAG:       %[[VAL_7743:[0-9a-zA-Z_\.]+]] = pcl.const  2130673921 : i40
-// CHECK-DAG:       %[[VAL_7744:[0-9a-zA-Z_\.]+]] = pcl.const  32768 : i20
-// CHECK-DAG:       %[[VAL_7745:[0-9a-zA-Z_\.]+]] = pcl.const  255 : i12
-// CHECK-DAG:       %[[VAL_7746:[0-9a-zA-Z_\.]+]] = pcl.const  65536 : i20
-// CHECK-DAG:       %[[VAL_7747:[0-9a-zA-Z_\.]+]] = pcl.const  2 : i4
-// CHECK-DAG:       %[[VAL_7748:[0-9a-zA-Z_\.]+]] = pcl.const  128 : i12
-// CHECK-DAG:       %[[VAL_7749:[0-9a-zA-Z_\.]+]] = pcl.const  256 : i12
-// CHECK-DAG:       %[[VAL_7750:[0-9a-zA-Z_\.]+]] = pcl.const  2122383361 : i40
-// CHECK-DAG:       %[[VAL_7751:[0-9a-zA-Z_\.]+]] = pcl.const  65535 : i20
-// CHECK-DAG:       %[[VAL_7752:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i64
-// CHECK-DAG:       %[[VAL_7753:[0-9a-zA-Z_\.]+]] = pcl.const  1 : i4
+// CHECK-DAG:       %[[VAL_7738:[0-9a-zA-Z_\.]+]] = pcl.const  3 : i
+// CHECK-DAG:       %[[VAL_7739:[0-9a-zA-Z_\.]+]] = pcl.const  8192 : i
+// CHECK-DAG:       %[[VAL_7740:[0-9a-zA-Z_\.]+]] = pcl.const  1864368129 : i
+// CHECK-DAG:       %[[VAL_7741:[0-9a-zA-Z_\.]+]] = pcl.const  65537 : i
+// CHECK-DAG:       %[[VAL_7742:[0-9a-zA-Z_\.]+]] = pcl.const  4 : i
+// CHECK-DAG:       %[[VAL_7743:[0-9a-zA-Z_\.]+]] = pcl.const  2130673921 : i
+// CHECK-DAG:       %[[VAL_7744:[0-9a-zA-Z_\.]+]] = pcl.const  32768 : i
+// CHECK-DAG:       %[[VAL_7745:[0-9a-zA-Z_\.]+]] = pcl.const  255 : i
+// CHECK-DAG:       %[[VAL_7746:[0-9a-zA-Z_\.]+]] = pcl.const  65536 : i
+// CHECK-DAG:       %[[VAL_7747:[0-9a-zA-Z_\.]+]] = pcl.const  2 : i
+// CHECK-DAG:       %[[VAL_7748:[0-9a-zA-Z_\.]+]] = pcl.const  128 : i
+// CHECK-DAG:       %[[VAL_7749:[0-9a-zA-Z_\.]+]] = pcl.const  256 : i
+// CHECK-DAG:       %[[VAL_7750:[0-9a-zA-Z_\.]+]] = pcl.const  2122383361 : i
+// CHECK-DAG:       %[[VAL_7751:[0-9a-zA-Z_\.]+]] = pcl.const  65535 : i
+// CHECK-DAG:       %[[VAL_7752:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i
+// CHECK-DAG:       %[[VAL_7753:[0-9a-zA-Z_\.]+]] = pcl.const  1 : i
 // CHECK-DAG:       %[[VAL_7754:[0-9a-zA-Z_\.]+]] = pcl.var "is_real_not_word_240" false
 // CHECK-DAG:       %[[VAL_7755:[0-9a-zA-Z_\.]+]] = pcl.sub %[[VAL_7754]], %[[VAL_7753]]
 // CHECK-DAG:       %[[VAL_7756:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_7755]], %[[VAL_7752]]
@@ -35442,7 +35442,7 @@ module attributes {llzk.lang} {
 // CHECK-DAG:       %[[VAL_10158:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_10157]]
 // CHECK-DAG:       %[[VAL_10159:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_10158]], %[[VAL_7753]]
 // CHECK-DAG:       pcl.assert %[[VAL_10159]]
-// CHECK-DAG:       %[[VAL_10160:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i32
+// CHECK-DAG:       %[[VAL_10160:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i
 // CHECK-DAG:       %[[VAL_10161:[0-9a-zA-Z_\.]+]] = pcl.lt %[[VAL_10160]], %[[VAL_7749]]
 // CHECK-DAG:       %[[VAL_10162:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_10161]]
 // CHECK-DAG:       %[[VAL_10163:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_10162]], %[[VAL_7753]]
@@ -35628,22 +35628,22 @@ module attributes {llzk.lang} {
 // CHECK-SAME:         %[[VAL_10306:[0-9a-zA-Z_\.]+]]: !pcl.felt,
 // CHECK-SAME:         %[[VAL_10307:[0-9a-zA-Z_\.]+]]: !pcl.felt
 // CHECK-SAME:    ) -> (!pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt) {
-// CHECK-DAG:       %[[VAL_10308:[0-9a-zA-Z_\.]+]] = pcl.const  3 : i4
-// CHECK-DAG:       %[[VAL_10309:[0-9a-zA-Z_\.]+]] = pcl.const  8192 : i16
-// CHECK-DAG:       %[[VAL_10310:[0-9a-zA-Z_\.]+]] = pcl.const  1864368129 : i40
-// CHECK-DAG:       %[[VAL_10311:[0-9a-zA-Z_\.]+]] = pcl.const  65537 : i20
-// CHECK-DAG:       %[[VAL_10312:[0-9a-zA-Z_\.]+]] = pcl.const  4 : i4
-// CHECK-DAG:       %[[VAL_10313:[0-9a-zA-Z_\.]+]] = pcl.const  2130673921 : i40
-// CHECK-DAG:       %[[VAL_10314:[0-9a-zA-Z_\.]+]] = pcl.const  32768 : i20
-// CHECK-DAG:       %[[VAL_10315:[0-9a-zA-Z_\.]+]] = pcl.const  255 : i12
-// CHECK-DAG:       %[[VAL_10316:[0-9a-zA-Z_\.]+]] = pcl.const  65536 : i20
-// CHECK-DAG:       %[[VAL_10317:[0-9a-zA-Z_\.]+]] = pcl.const  2 : i4
-// CHECK-DAG:       %[[VAL_10318:[0-9a-zA-Z_\.]+]] = pcl.const  128 : i12
-// CHECK-DAG:       %[[VAL_10319:[0-9a-zA-Z_\.]+]] = pcl.const  256 : i12
-// CHECK-DAG:       %[[VAL_10320:[0-9a-zA-Z_\.]+]] = pcl.const  2122383361 : i40
-// CHECK-DAG:       %[[VAL_10321:[0-9a-zA-Z_\.]+]] = pcl.const  65535 : i20
-// CHECK-DAG:       %[[VAL_10322:[0-9a-zA-Z_\.]+]] = pcl.const  1 : i4
-// CHECK-DAG:       %[[VAL_10323:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i64
+// CHECK-DAG:       %[[VAL_10308:[0-9a-zA-Z_\.]+]] = pcl.const  3 : i
+// CHECK-DAG:       %[[VAL_10309:[0-9a-zA-Z_\.]+]] = pcl.const  8192 : i
+// CHECK-DAG:       %[[VAL_10310:[0-9a-zA-Z_\.]+]] = pcl.const  1864368129 : i
+// CHECK-DAG:       %[[VAL_10311:[0-9a-zA-Z_\.]+]] = pcl.const  65537 : i
+// CHECK-DAG:       %[[VAL_10312:[0-9a-zA-Z_\.]+]] = pcl.const  4 : i
+// CHECK-DAG:       %[[VAL_10313:[0-9a-zA-Z_\.]+]] = pcl.const  2130673921 : i
+// CHECK-DAG:       %[[VAL_10314:[0-9a-zA-Z_\.]+]] = pcl.const  32768 : i
+// CHECK-DAG:       %[[VAL_10315:[0-9a-zA-Z_\.]+]] = pcl.const  255 : i
+// CHECK-DAG:       %[[VAL_10316:[0-9a-zA-Z_\.]+]] = pcl.const  65536 : i
+// CHECK-DAG:       %[[VAL_10317:[0-9a-zA-Z_\.]+]] = pcl.const  2 : i
+// CHECK-DAG:       %[[VAL_10318:[0-9a-zA-Z_\.]+]] = pcl.const  128 : i
+// CHECK-DAG:       %[[VAL_10319:[0-9a-zA-Z_\.]+]] = pcl.const  256 : i
+// CHECK-DAG:       %[[VAL_10320:[0-9a-zA-Z_\.]+]] = pcl.const  2122383361 : i
+// CHECK-DAG:       %[[VAL_10321:[0-9a-zA-Z_\.]+]] = pcl.const  65535 : i
+// CHECK-DAG:       %[[VAL_10322:[0-9a-zA-Z_\.]+]] = pcl.const  1 : i
+// CHECK-DAG:       %[[VAL_10323:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i
 // CHECK-DAG:       %[[VAL_10324:[0-9a-zA-Z_\.]+]] = pcl.var "is_real_not_word_240" false
 // CHECK-DAG:       %[[VAL_10325:[0-9a-zA-Z_\.]+]] = pcl.sub %[[VAL_10324]], %[[VAL_10323]]
 // CHECK-DAG:       %[[VAL_10326:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_10325]], %[[VAL_10323]]
@@ -38514,7 +38514,7 @@ module attributes {llzk.lang} {
 // CHECK-DAG:       %[[VAL_12728:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_12727]]
 // CHECK-DAG:       %[[VAL_12729:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_12728]], %[[VAL_10322]]
 // CHECK-DAG:       pcl.assert %[[VAL_12729]]
-// CHECK-DAG:       %[[VAL_12730:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i32
+// CHECK-DAG:       %[[VAL_12730:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i
 // CHECK-DAG:       %[[VAL_12731:[0-9a-zA-Z_\.]+]] = pcl.lt %[[VAL_12730]], %[[VAL_10319]]
 // CHECK-DAG:       %[[VAL_12732:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_12731]]
 // CHECK-DAG:       %[[VAL_12733:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_12732]], %[[VAL_10322]]
@@ -38700,22 +38700,22 @@ module attributes {llzk.lang} {
 // CHECK-SAME:         %[[VAL_12876:[0-9a-zA-Z_\.]+]]: !pcl.felt,
 // CHECK-SAME:         %[[VAL_12877:[0-9a-zA-Z_\.]+]]: !pcl.felt
 // CHECK-SAME:    ) -> (!pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt) {
-// CHECK-DAG:       %[[VAL_12878:[0-9a-zA-Z_\.]+]] = pcl.const  3 : i4
-// CHECK-DAG:       %[[VAL_12879:[0-9a-zA-Z_\.]+]] = pcl.const  8192 : i16
-// CHECK-DAG:       %[[VAL_12880:[0-9a-zA-Z_\.]+]] = pcl.const  1864368129 : i40
-// CHECK-DAG:       %[[VAL_12881:[0-9a-zA-Z_\.]+]] = pcl.const  65537 : i20
-// CHECK-DAG:       %[[VAL_12882:[0-9a-zA-Z_\.]+]] = pcl.const  4 : i4
-// CHECK-DAG:       %[[VAL_12883:[0-9a-zA-Z_\.]+]] = pcl.const  2130673921 : i40
-// CHECK-DAG:       %[[VAL_12884:[0-9a-zA-Z_\.]+]] = pcl.const  32768 : i20
-// CHECK-DAG:       %[[VAL_12885:[0-9a-zA-Z_\.]+]] = pcl.const  255 : i12
-// CHECK-DAG:       %[[VAL_12886:[0-9a-zA-Z_\.]+]] = pcl.const  65536 : i20
-// CHECK-DAG:       %[[VAL_12887:[0-9a-zA-Z_\.]+]] = pcl.const  2 : i4
-// CHECK-DAG:       %[[VAL_12888:[0-9a-zA-Z_\.]+]] = pcl.const  128 : i12
-// CHECK-DAG:       %[[VAL_12889:[0-9a-zA-Z_\.]+]] = pcl.const  256 : i12
-// CHECK-DAG:       %[[VAL_12890:[0-9a-zA-Z_\.]+]] = pcl.const  2122383361 : i40
-// CHECK-DAG:       %[[VAL_12891:[0-9a-zA-Z_\.]+]] = pcl.const  65535 : i20
-// CHECK-DAG:       %[[VAL_12892:[0-9a-zA-Z_\.]+]] = pcl.const  1 : i4
-// CHECK-DAG:       %[[VAL_12893:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i64
+// CHECK-DAG:       %[[VAL_12878:[0-9a-zA-Z_\.]+]] = pcl.const  3 : i
+// CHECK-DAG:       %[[VAL_12879:[0-9a-zA-Z_\.]+]] = pcl.const  8192 : i
+// CHECK-DAG:       %[[VAL_12880:[0-9a-zA-Z_\.]+]] = pcl.const  1864368129 : i
+// CHECK-DAG:       %[[VAL_12881:[0-9a-zA-Z_\.]+]] = pcl.const  65537 : i
+// CHECK-DAG:       %[[VAL_12882:[0-9a-zA-Z_\.]+]] = pcl.const  4 : i
+// CHECK-DAG:       %[[VAL_12883:[0-9a-zA-Z_\.]+]] = pcl.const  2130673921 : i
+// CHECK-DAG:       %[[VAL_12884:[0-9a-zA-Z_\.]+]] = pcl.const  32768 : i
+// CHECK-DAG:       %[[VAL_12885:[0-9a-zA-Z_\.]+]] = pcl.const  255 : i
+// CHECK-DAG:       %[[VAL_12886:[0-9a-zA-Z_\.]+]] = pcl.const  65536 : i
+// CHECK-DAG:       %[[VAL_12887:[0-9a-zA-Z_\.]+]] = pcl.const  2 : i
+// CHECK-DAG:       %[[VAL_12888:[0-9a-zA-Z_\.]+]] = pcl.const  128 : i
+// CHECK-DAG:       %[[VAL_12889:[0-9a-zA-Z_\.]+]] = pcl.const  256 : i
+// CHECK-DAG:       %[[VAL_12890:[0-9a-zA-Z_\.]+]] = pcl.const  2122383361 : i
+// CHECK-DAG:       %[[VAL_12891:[0-9a-zA-Z_\.]+]] = pcl.const  65535 : i
+// CHECK-DAG:       %[[VAL_12892:[0-9a-zA-Z_\.]+]] = pcl.const  1 : i
+// CHECK-DAG:       %[[VAL_12893:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i
 // CHECK-DAG:       %[[VAL_12894:[0-9a-zA-Z_\.]+]] = pcl.var "is_real_not_word_240" false
 // CHECK-DAG:       %[[VAL_12895:[0-9a-zA-Z_\.]+]] = pcl.sub %[[VAL_12894]], %[[VAL_12893]]
 // CHECK-DAG:       %[[VAL_12896:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_12895]], %[[VAL_12893]]
@@ -41586,7 +41586,7 @@ module attributes {llzk.lang} {
 // CHECK-DAG:       %[[VAL_15298:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_15297]]
 // CHECK-DAG:       %[[VAL_15299:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_15298]], %[[VAL_12892]]
 // CHECK-DAG:       pcl.assert %[[VAL_15299]]
-// CHECK-DAG:       %[[VAL_15300:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i32
+// CHECK-DAG:       %[[VAL_15300:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i
 // CHECK-DAG:       %[[VAL_15301:[0-9a-zA-Z_\.]+]] = pcl.lt %[[VAL_15300]], %[[VAL_12889]]
 // CHECK-DAG:       %[[VAL_15302:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_15301]]
 // CHECK-DAG:       %[[VAL_15303:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_15302]], %[[VAL_12892]]
@@ -41772,22 +41772,22 @@ module attributes {llzk.lang} {
 // CHECK-SAME:         %[[VAL_15446:[0-9a-zA-Z_\.]+]]: !pcl.felt,
 // CHECK-SAME:         %[[VAL_15447:[0-9a-zA-Z_\.]+]]: !pcl.felt
 // CHECK-SAME:    ) -> (!pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt) {
-// CHECK-DAG:       %[[VAL_15448:[0-9a-zA-Z_\.]+]] = pcl.const  3 : i4
-// CHECK-DAG:       %[[VAL_15449:[0-9a-zA-Z_\.]+]] = pcl.const  8192 : i16
-// CHECK-DAG:       %[[VAL_15450:[0-9a-zA-Z_\.]+]] = pcl.const  1864368129 : i40
-// CHECK-DAG:       %[[VAL_15451:[0-9a-zA-Z_\.]+]] = pcl.const  65537 : i20
-// CHECK-DAG:       %[[VAL_15452:[0-9a-zA-Z_\.]+]] = pcl.const  4 : i4
-// CHECK-DAG:       %[[VAL_15453:[0-9a-zA-Z_\.]+]] = pcl.const  2130673921 : i40
-// CHECK-DAG:       %[[VAL_15454:[0-9a-zA-Z_\.]+]] = pcl.const  32768 : i20
-// CHECK-DAG:       %[[VAL_15455:[0-9a-zA-Z_\.]+]] = pcl.const  255 : i12
-// CHECK-DAG:       %[[VAL_15456:[0-9a-zA-Z_\.]+]] = pcl.const  65536 : i20
-// CHECK-DAG:       %[[VAL_15457:[0-9a-zA-Z_\.]+]] = pcl.const  2 : i4
-// CHECK-DAG:       %[[VAL_15458:[0-9a-zA-Z_\.]+]] = pcl.const  128 : i12
-// CHECK-DAG:       %[[VAL_15459:[0-9a-zA-Z_\.]+]] = pcl.const  256 : i12
-// CHECK-DAG:       %[[VAL_15460:[0-9a-zA-Z_\.]+]] = pcl.const  2122383361 : i40
-// CHECK-DAG:       %[[VAL_15461:[0-9a-zA-Z_\.]+]] = pcl.const  65535 : i20
-// CHECK-DAG:       %[[VAL_15462:[0-9a-zA-Z_\.]+]] = pcl.const  1 : i4
-// CHECK-DAG:       %[[VAL_15463:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i64
+// CHECK-DAG:       %[[VAL_15448:[0-9a-zA-Z_\.]+]] = pcl.const  3 : i
+// CHECK-DAG:       %[[VAL_15449:[0-9a-zA-Z_\.]+]] = pcl.const  8192 : i
+// CHECK-DAG:       %[[VAL_15450:[0-9a-zA-Z_\.]+]] = pcl.const  1864368129 : i
+// CHECK-DAG:       %[[VAL_15451:[0-9a-zA-Z_\.]+]] = pcl.const  65537 : i
+// CHECK-DAG:       %[[VAL_15452:[0-9a-zA-Z_\.]+]] = pcl.const  4 : i
+// CHECK-DAG:       %[[VAL_15453:[0-9a-zA-Z_\.]+]] = pcl.const  2130673921 : i
+// CHECK-DAG:       %[[VAL_15454:[0-9a-zA-Z_\.]+]] = pcl.const  32768 : i
+// CHECK-DAG:       %[[VAL_15455:[0-9a-zA-Z_\.]+]] = pcl.const  255 : i
+// CHECK-DAG:       %[[VAL_15456:[0-9a-zA-Z_\.]+]] = pcl.const  65536 : i
+// CHECK-DAG:       %[[VAL_15457:[0-9a-zA-Z_\.]+]] = pcl.const  2 : i
+// CHECK-DAG:       %[[VAL_15458:[0-9a-zA-Z_\.]+]] = pcl.const  128 : i
+// CHECK-DAG:       %[[VAL_15459:[0-9a-zA-Z_\.]+]] = pcl.const  256 : i
+// CHECK-DAG:       %[[VAL_15460:[0-9a-zA-Z_\.]+]] = pcl.const  2122383361 : i
+// CHECK-DAG:       %[[VAL_15461:[0-9a-zA-Z_\.]+]] = pcl.const  65535 : i
+// CHECK-DAG:       %[[VAL_15462:[0-9a-zA-Z_\.]+]] = pcl.const  1 : i
+// CHECK-DAG:       %[[VAL_15463:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i
 // CHECK-DAG:       %[[VAL_15464:[0-9a-zA-Z_\.]+]] = pcl.var "is_real_not_word_240" false
 // CHECK-DAG:       %[[VAL_15465:[0-9a-zA-Z_\.]+]] = pcl.sub %[[VAL_15464]], %[[VAL_15463]]
 // CHECK-DAG:       %[[VAL_15466:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_15465]], %[[VAL_15463]]
@@ -44658,7 +44658,7 @@ module attributes {llzk.lang} {
 // CHECK-DAG:       %[[VAL_17868:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_17867]]
 // CHECK-DAG:       %[[VAL_17869:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_17868]], %[[VAL_15462]]
 // CHECK-DAG:       pcl.assert %[[VAL_17869]]
-// CHECK-DAG:       %[[VAL_17870:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i32
+// CHECK-DAG:       %[[VAL_17870:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i
 // CHECK-DAG:       %[[VAL_17871:[0-9a-zA-Z_\.]+]] = pcl.lt %[[VAL_17870]], %[[VAL_15459]]
 // CHECK-DAG:       %[[VAL_17872:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_17871]]
 // CHECK-DAG:       %[[VAL_17873:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_17872]], %[[VAL_15462]]
@@ -44844,22 +44844,22 @@ module attributes {llzk.lang} {
 // CHECK-SAME:         %[[VAL_18016:[0-9a-zA-Z_\.]+]]: !pcl.felt,
 // CHECK-SAME:         %[[VAL_18017:[0-9a-zA-Z_\.]+]]: !pcl.felt
 // CHECK-SAME:    ) -> (!pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt) {
-// CHECK-DAG:       %[[VAL_18018:[0-9a-zA-Z_\.]+]] = pcl.const  3 : i4
-// CHECK-DAG:       %[[VAL_18019:[0-9a-zA-Z_\.]+]] = pcl.const  8192 : i16
-// CHECK-DAG:       %[[VAL_18020:[0-9a-zA-Z_\.]+]] = pcl.const  1864368129 : i40
-// CHECK-DAG:       %[[VAL_18021:[0-9a-zA-Z_\.]+]] = pcl.const  65537 : i20
-// CHECK-DAG:       %[[VAL_18022:[0-9a-zA-Z_\.]+]] = pcl.const  4 : i4
-// CHECK-DAG:       %[[VAL_18023:[0-9a-zA-Z_\.]+]] = pcl.const  2130673921 : i40
-// CHECK-DAG:       %[[VAL_18024:[0-9a-zA-Z_\.]+]] = pcl.const  32768 : i20
-// CHECK-DAG:       %[[VAL_18025:[0-9a-zA-Z_\.]+]] = pcl.const  255 : i12
-// CHECK-DAG:       %[[VAL_18026:[0-9a-zA-Z_\.]+]] = pcl.const  65536 : i20
-// CHECK-DAG:       %[[VAL_18027:[0-9a-zA-Z_\.]+]] = pcl.const  2 : i4
-// CHECK-DAG:       %[[VAL_18028:[0-9a-zA-Z_\.]+]] = pcl.const  128 : i12
-// CHECK-DAG:       %[[VAL_18029:[0-9a-zA-Z_\.]+]] = pcl.const  256 : i12
-// CHECK-DAG:       %[[VAL_18030:[0-9a-zA-Z_\.]+]] = pcl.const  2122383361 : i40
-// CHECK-DAG:       %[[VAL_18031:[0-9a-zA-Z_\.]+]] = pcl.const  65535 : i20
-// CHECK-DAG:       %[[VAL_18032:[0-9a-zA-Z_\.]+]] = pcl.const  1 : i4
-// CHECK-DAG:       %[[VAL_18033:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i64
+// CHECK-DAG:       %[[VAL_18018:[0-9a-zA-Z_\.]+]] = pcl.const  3 : i
+// CHECK-DAG:       %[[VAL_18019:[0-9a-zA-Z_\.]+]] = pcl.const  8192 : i
+// CHECK-DAG:       %[[VAL_18020:[0-9a-zA-Z_\.]+]] = pcl.const  1864368129 : i
+// CHECK-DAG:       %[[VAL_18021:[0-9a-zA-Z_\.]+]] = pcl.const  65537 : i
+// CHECK-DAG:       %[[VAL_18022:[0-9a-zA-Z_\.]+]] = pcl.const  4 : i
+// CHECK-DAG:       %[[VAL_18023:[0-9a-zA-Z_\.]+]] = pcl.const  2130673921 : i
+// CHECK-DAG:       %[[VAL_18024:[0-9a-zA-Z_\.]+]] = pcl.const  32768 : i
+// CHECK-DAG:       %[[VAL_18025:[0-9a-zA-Z_\.]+]] = pcl.const  255 : i
+// CHECK-DAG:       %[[VAL_18026:[0-9a-zA-Z_\.]+]] = pcl.const  65536 : i
+// CHECK-DAG:       %[[VAL_18027:[0-9a-zA-Z_\.]+]] = pcl.const  2 : i
+// CHECK-DAG:       %[[VAL_18028:[0-9a-zA-Z_\.]+]] = pcl.const  128 : i
+// CHECK-DAG:       %[[VAL_18029:[0-9a-zA-Z_\.]+]] = pcl.const  256 : i
+// CHECK-DAG:       %[[VAL_18030:[0-9a-zA-Z_\.]+]] = pcl.const  2122383361 : i
+// CHECK-DAG:       %[[VAL_18031:[0-9a-zA-Z_\.]+]] = pcl.const  65535 : i
+// CHECK-DAG:       %[[VAL_18032:[0-9a-zA-Z_\.]+]] = pcl.const  1 : i
+// CHECK-DAG:       %[[VAL_18033:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i
 // CHECK-DAG:       %[[VAL_18034:[0-9a-zA-Z_\.]+]] = pcl.var "is_real_not_word_240" false
 // CHECK-DAG:       %[[VAL_18035:[0-9a-zA-Z_\.]+]] = pcl.sub %[[VAL_18034]], %[[VAL_18033]]
 // CHECK-DAG:       %[[VAL_18036:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_18035]], %[[VAL_18033]]
@@ -47730,7 +47730,7 @@ module attributes {llzk.lang} {
 // CHECK-DAG:       %[[VAL_20438:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_20437]]
 // CHECK-DAG:       %[[VAL_20439:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_20438]], %[[VAL_18032]]
 // CHECK-DAG:       pcl.assert %[[VAL_20439]]
-// CHECK-DAG:       %[[VAL_20440:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i32
+// CHECK-DAG:       %[[VAL_20440:[0-9a-zA-Z_\.]+]] = pcl.const  0 : i
 // CHECK-DAG:       %[[VAL_20441:[0-9a-zA-Z_\.]+]] = pcl.lt %[[VAL_20440]], %[[VAL_18029]]
 // CHECK-DAG:       %[[VAL_20442:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_20441]]
 // CHECK-DAG:       %[[VAL_20443:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_20442]], %[[VAL_18032]]
