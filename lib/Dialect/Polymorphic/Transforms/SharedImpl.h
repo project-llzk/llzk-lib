@@ -63,6 +63,21 @@ mlir::ConversionTarget newBaseTarget(mlir::MLIRContext *ctx);
 /// is another array because the latter is not allowed in LLZK IR.
 array::ArrayType flattenInstantiatedArrayType(array::ArrayType inputTy, mlir::Type convertedElemTy);
 
+/// Build a struct type while representing an empty parameter list as absent.
+inline component::StructType
+getStructTypeWithParams(mlir::SymbolRefAttr nameRef, mlir::ArrayAttr params) {
+  return params && !params.empty() ? component::StructType::get(nameRef, params)
+                                   : component::StructType::get(nameRef);
+}
+
+/// Build a struct type while representing an empty parameter list as absent.
+inline component::StructType getStructTypeWithParams(
+    mlir::SymbolRefAttr nameRef, mlir::MLIRContext *ctx, mlir::ArrayRef<mlir::Attribute> params
+) {
+  return params.empty() ? component::StructType::get(nameRef)
+                        : component::StructType::get(nameRef, mlir::ArrayAttr::get(ctx, params));
+}
+
 class LegalityCheckCallback {
 public:
   virtual ~LegalityCheckCallback() = default;

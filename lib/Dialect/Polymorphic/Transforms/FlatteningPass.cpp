@@ -554,9 +554,7 @@ class StructCloner {
               updated.push_back(convertIfPossible(a));
             }
           }
-          return StructType::get(
-              inputTy.getNameRef(), ArrayAttr::get(inputTy.getContext(), updated)
-          );
+          return getStructTypeWithParams(inputTy.getNameRef(), inputTy.getContext(), updated);
         }
         // Otherwise, return the type unchanged
         return inputTy;
@@ -1046,9 +1044,7 @@ public:
           updated.push_back(a);
         }
         if (changed) {
-          return StructType::get(
-              inputTy.getNameRef(), ArrayAttr::get(inputTy.getContext(), updated)
-          );
+          return getStructTypeWithParams(inputTy.getNameRef(), inputTy.getContext(), updated);
         }
       }
       return inputTy;

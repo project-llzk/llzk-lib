@@ -70,6 +70,7 @@ using namespace llzk::component;
 using namespace llzk::function;
 using namespace llzk::pod;
 using namespace llzk::polymorphic;
+using namespace llzk::polymorphic::detail;
 
 namespace {
 
@@ -164,18 +165,6 @@ static Type convertFunctionType(FunctionType funcTy, ConverterT &converter) {
   bool changed = convertTypeRange(funcTy.getInputs(), newInputs, converter);
   changed |= convertTypeRange(funcTy.getResults(), newResults, converter);
   return changed ? FunctionType::get(funcTy.getContext(), newInputs, newResults) : funcTy;
-}
-
-/// Build a struct type while representing an empty parameter list as absent.
-static StructType getStructTypeWithParams(SymbolRefAttr nameRef, ArrayAttr params) {
-  return params && !params.empty() ? StructType::get(nameRef, params) : StructType::get(nameRef);
-}
-
-/// Build a struct type while representing an empty parameter list as absent.
-static StructType
-getStructTypeWithParams(SymbolRefAttr nameRef, MLIRContext *ctx, ArrayRef<Attribute> params) {
-  return params.empty() ? StructType::get(nameRef)
-                        : StructType::get(nameRef, ArrayAttr::get(ctx, params));
 }
 
 /// Converts types and attributes by replacing inferred template type variables.
