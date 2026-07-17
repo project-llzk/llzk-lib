@@ -173,12 +173,6 @@ size_t SourceRefIndex::Hash::operator()(const SourceRefIndex &c) const {
 }
 
 bool SourceRefIndex::overlaps(const SourceRefIndex &rhs) const {
-  if (isPodRecord() && rhs.isMember()) {
-    return getPodRecordName() == rhs.getMember().getName();
-  }
-  if (isMember() && rhs.isPodRecord()) {
-    return rhs.overlaps(*this);
-  }
   if (isIndex() && rhs.isIndexRange()) {
     auto [low, high] = rhs.getIndexRange();
     return low <= getIndex() && getIndex() < high;
@@ -396,6 +390,15 @@ bool SourceRef::isValidPrefix(const SourceRef &prefix) const {
     }
   }
   return true;
+}
+
+bool SourceRef::overlaps(const SourceRef &rhs) const {
+  if (isConstant() || rhs.isConstant() || value != rhs.value || path.size() != rhs.path.size()) {
+    return false;
+  }
+  return llvm::all_of(llvm::zip(path, rhs.path), [](const auto &indices) {
+    return std::get<0>(indices).overlaps(std::get<1>(indices));
+  });
 }
 
 FailureOr<SourceRef::Path> SourceRef::getSuffix(const SourceRef &prefix) const {
