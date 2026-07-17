@@ -281,19 +281,14 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TImplicitForwardCaller {
-// CHECK-NEXT:      poly.param @U : !poly.tvar<@U>
-// CHECK-NEXT:      function.def @i_forward(%[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      function.def @forward(%[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
 // CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @TImplicitForwardedCallee::@id(%[[VAL_1]]) : (index) -> index
 // CHECK-NEXT:        function.return %[[VAL_2]] : index
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @forward(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !poly.tvar<@U>) -> !poly.tvar<@U> {
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @TImplicitForwardedCallee::@id(%[[VAL_3]]) : (!poly.tvar<@U>) -> !poly.tvar<@U>
-// CHECK-NEXT:        function.return %[[VAL_4]] : !poly.tvar<@U>
-// CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @call_forward(%[[VAL_5:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @TImplicitForwardCaller::@i_forward<[index]>(%[[VAL_5]]) : (index) -> index
-// CHECK-NEXT:      function.return %[[VAL_6]] : index
+// CHECK-NEXT:    function.def @call_forward(%[[VAL_3:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @TImplicitForwardCaller::@forward(%[[VAL_3]]) : (index) -> index
+// CHECK-NEXT:      function.return %[[VAL_4]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----
@@ -489,6 +484,54 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:      verif.contract @Wrapper for @TIncludeWildcardParams::@compute (%[[VAL_3:[0-9a-zA-Z_\.]+]]: index) {
 // CHECK-NEXT:        verif.include @TIncludeWildcardParams::@Base(%[[VAL_3]]) : (index) -> ()
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TIncludeOmittedCallee {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @compute(%arg: !poly.tvar<@T>) {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      function.return
+    }
+
+    verif.contract @Base for @TIncludeOmittedCallee::@compute (%arg: !poly.tvar<@T>) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  poly.template @TIncludeOmittedCaller {
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @compute(%arg: !poly.tvar<@U>) {
+      function.return
+    }
+
+    verif.contract @Wrapper for @TIncludeOmittedCaller::@compute (%arg: !poly.tvar<@U>) {
+      verif.include @TIncludeOmittedCallee::@Base(%arg) : (!poly.tvar<@U>) -> ()
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TIncludeOmittedCallee {
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Base for @TIncludeOmittedCallee::@compute (%[[VAL_1:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        verif.ensure_compute %[[VAL_2]]
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TIncludeOmittedCaller {
+// CHECK-NEXT:      function.def @compute(%[[VAL_3:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Wrapper for @TIncludeOmittedCaller::@compute (%[[VAL_4:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:        verif.include @TIncludeOmittedCallee::@Base(%[[VAL_4]]) : (index) -> ()
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

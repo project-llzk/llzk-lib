@@ -1200,6 +1200,11 @@ public:
           return WalkResult::interrupt();
         }
       }
+      if (auto includeOp = llvm::dyn_cast<verif::IncludeOp>(op)) {
+        if (failed(collectIncludeTemplateParamInferences(includeOp, module, infos, tables))) {
+          return WalkResult::interrupt();
+        }
+      }
 
       for (NamedAttribute attr : op->getAttrs()) {
         if (failed(
@@ -1325,6 +1330,28 @@ private:
     return success();
   }
 
+  /// Return the arguments inferred for an omitted target template parameter.
+  ///
+  /// The unifier records a direct RHS entry when a target type variable is matched by a concrete
+  /// type. If both sides are type variables, it may instead record the caller-side variable as a
+  /// LHS entry whose value is the target parameter. That still represents a forwarded template
+  /// argument and must be propagated before the target parameter is erased.
+  SmallVector<Attribute>
+  getInferredOmittedTemplateArgs(const UnificationMap &unifyResult, StringAttr targetParamName) {
+    SmallVector<Attribute> inferredAttrs;
+    auto targetRef = FlatSymbolRefAttr::get(targetParamName);
+    auto inferredIt = unifyResult.find({targetRef, Side::RHS});
+    if (inferredIt != unifyResult.end()) {
+      inferredAttrs.push_back(inferredIt->second);
+    }
+    for (const auto &entry : unifyResult) {
+      if (entry.first.second == Side::LHS && entry.second == targetRef) {
+        inferredAttrs.push_back(entry.first.first);
+      }
+    }
+    return inferredAttrs;
+  }
+
   /// Infer current-template parameters from calls into rewritten templates.
   ///
   /// A call may omit its template argument list when the original callee signature exposes every
@@ -1380,27 +1407,110 @@ private:
       if (replacementIt == targetInfo->replacements.end()) {
         continue;
       }
-      auto inferredIt = unifyResult->find({FlatSymbolRefAttr::get(paramName), Side::RHS});
-      if (inferredIt == unifyResult->end()) {
+      SmallVector<Attribute> inferredAttrs =
+          getInferredOmittedTemplateArgs(*unifyResult, paramName);
+      if (inferredAttrs.empty()) {
         continue;
       }
 
-      Attribute inferredAttr = inferredIt->second;
       Attribute expectedAttr = TypeAttr::get(replacementIt->second.type);
-      if (!inferredAttr || !typeParamsUnify({inferredAttr}, {expectedAttr})) {
-        InFlightDiagnostic diag = callOp.emitError()
-                                  << "implicit template argument for inferred parameter @"
-                                  << paramName.getValue() << " must match inferred type "
-                                  << replacementIt->second.type << ", but found ";
-        if (auto typeAttr = llvm::dyn_cast_if_present<TypeAttr>(inferredAttr)) {
-          diag << typeAttr.getValue();
-        } else {
-          diag << inferredAttr;
+      for (Attribute inferredAttr : inferredAttrs) {
+        if (!inferredAttr || !typeParamsUnify({inferredAttr}, {expectedAttr})) {
+          InFlightDiagnostic diag = callOp.emitError()
+                                    << "implicit template argument for inferred parameter @"
+                                    << paramName.getValue() << " must match inferred type "
+                                    << replacementIt->second.type << ", but found ";
+          if (auto typeAttr = llvm::dyn_cast_if_present<TypeAttr>(inferredAttr)) {
+            diag << typeAttr.getValue();
+          } else {
+            diag << inferredAttr;
+          }
+          return diag;
         }
-        return diag;
+        if (failed(collectTemplateArgInferences(inferredAttr, expectedAttr, callOp.getLoc()))) {
+          return failure();
+        }
       }
-      if (failed(collectTemplateArgInferences(inferredAttr, expectedAttr, callOp.getLoc()))) {
-        return failure();
+    }
+    return success();
+  }
+
+  /// Infer current-template parameters from contract includes into rewritten templates.
+  ///
+  /// `verif.include` has the same optional template-parameter behavior as function calls. When an
+  /// include omits arguments, the target contract signature can expose the target template
+  /// parameter and let unification prove the current template's forwarded parameter. Explicit
+  /// include arguments carry the same fact directly in the argument list.
+  LogicalResult collectIncludeTemplateParamInferences(
+      verif::IncludeOp includeOp, ModuleOp module,
+      DenseMap<Operation *, TemplateInferenceInfo *> &infos, SymbolTableCollection &tables
+  ) {
+    FailureOr<SymbolLookupResult<verif::ContractOp>> target = includeOp.getCalleeTarget(tables);
+    if (failed(target)) {
+      return success();
+    }
+    verif::ContractOp targetContract = target->get();
+    TemplateOp parentTemplate = getParentOfType<TemplateOp>(targetContract.getOperation());
+    if (!parentTemplate) {
+      return success();
+    }
+    TemplateInferenceInfo *targetInfo = infos.lookup(parentTemplate.getOperation());
+    if (!targetInfo || targetInfo->replacements.empty()) {
+      return success();
+    }
+
+    ArrayAttr includeParams = includeOp.getTemplateParamsAttr();
+    if (!isNullOrEmpty(includeParams)) {
+      if (includeParams.size() != targetInfo->oldParamOrder.size()) {
+        return success();
+      }
+      for (auto [paramName, attr] : llvm::zip_equal(targetInfo->oldParamOrder, includeParams)) {
+        auto replacementIt = targetInfo->replacements.find(paramName);
+        if (replacementIt == targetInfo->replacements.end()) {
+          continue;
+        }
+        Attribute expectedAttr = TypeAttr::get(replacementIt->second.type);
+        if (failed(collectTemplateArgInferences(attr, expectedAttr, includeOp.getLoc()))) {
+          return failure();
+        }
+      }
+      return success();
+    }
+
+    FailureOr<UnificationMap> unifyResult =
+        includeOp.unifyTypeSignature(targetContract.getFunctionType());
+    if (failed(unifyResult)) {
+      return success();
+    }
+
+    for (StringAttr paramName : targetInfo->oldParamOrder) {
+      auto replacementIt = targetInfo->replacements.find(paramName);
+      if (replacementIt == targetInfo->replacements.end()) {
+        continue;
+      }
+      SmallVector<Attribute> inferredAttrs =
+          getInferredOmittedTemplateArgs(*unifyResult, paramName);
+      if (inferredAttrs.empty()) {
+        continue;
+      }
+
+      Attribute expectedAttr = TypeAttr::get(replacementIt->second.type);
+      for (Attribute inferredAttr : inferredAttrs) {
+        if (!inferredAttr || !typeParamsUnify({inferredAttr}, {expectedAttr})) {
+          InFlightDiagnostic diag = includeOp.emitError()
+                                    << "implicit template argument for inferred parameter @"
+                                    << paramName.getValue() << " must match inferred type "
+                                    << replacementIt->second.type << ", but found ";
+          if (auto typeAttr = llvm::dyn_cast_if_present<TypeAttr>(inferredAttr)) {
+            diag << typeAttr.getValue();
+          } else {
+            diag << inferredAttr;
+          }
+          return diag;
+        }
+        if (failed(collectTemplateArgInferences(inferredAttr, expectedAttr, includeOp.getLoc()))) {
+          return failure();
+        }
       }
     }
     return success();
