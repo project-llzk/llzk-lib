@@ -1727,7 +1727,7 @@ static FailureOr<ArrayAttr>
 getCallSignatureTemplateParams(CallOp callOp, const TemplateInferenceInfo &info, FuncDefOp func) {
   FailureOr<UnificationMap> unifyResult = callOp.unifyTypeSignature(func.getFunctionType());
   if (failed(unifyResult)) {
-    return failure();
+    return callOp.emitError() << "could not infer omitted template arguments from callee signature";
   }
 
   SmallVector<Attribute> params;
@@ -1735,7 +1735,12 @@ getCallSignatureTemplateParams(CallOp callOp, const TemplateInferenceInfo &info,
   for (StringAttr paramName : info.oldParamOrder) {
     auto it = unifyResult->find({FlatSymbolRefAttr::get(paramName), Side::RHS});
     if (it == unifyResult->end()) {
-      return failure();
+      return callOp.emitError() << "could not infer omitted template argument for parameter @"
+                                << paramName.getValue() << " from callee signature";
+    }
+    if (!it->second) {
+      return callOp.emitError() << "conflicting implicit template argument inferred for parameter @"
+                                << paramName.getValue() << " from callee signature";
     }
     params.push_back(it->second);
   }
@@ -2213,10 +2218,12 @@ static LogicalResult specializeFunctionLocalCalls(
     if (isNullOrEmpty(callParams)) {
       FailureOr<ArrayAttr> inferredParams =
           getCallSignatureTemplateParams(callOp, *info, targetFunc);
-      if (succeeded(inferredParams)) {
-        callParams = *inferredParams;
-        inferredCallParams = true;
+      if (failed(inferredParams)) {
+        failedClone = true;
+        return;
       }
+      callParams = *inferredParams;
+      inferredCallParams = true;
     }
     DenseMap<StringAttr, Type> replacements =
         getConcreteCallSiteReplacements(callParams, *info, targetFunc);
