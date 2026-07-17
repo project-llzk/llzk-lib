@@ -1116,10 +1116,10 @@ public:
       : inferenceInfo(info), replacements(scopeReplacements) {}
 
   /// Visit all casts until no new concrete parameter or SSA value facts appear.
-  LogicalResult collect(FuncDefOp func) {
+  LogicalResult collect(Operation *root) {
     do {
       changedInIteration = false;
-      WalkResult result = func.walk([this](UnifiableCastOp castOp) {
+      WalkResult result = root->walk([this](UnifiableCastOp castOp) {
         return WalkResult(collectTypePairInferences(
             castOp.getInput().getType(), castOp.getResult().getType(), castOp.getInput(),
             castOp.getResult(), castOp.getLoc()
@@ -2265,6 +2265,54 @@ static bool sameReplacementTypes(
   return true;
 }
 
+/// Collect proof facts from a contract into the function it verifies.
+///
+/// A contract must have the same signature as its target, so a contract-local
+/// proof about a target type variable is part of that target's compatibility
+/// story. Merging the facts catches incompatible contract casts before the
+/// target function is rewritten.
+static LogicalResult collectContractTargetFunctionInferences(
+    TemplateInferenceInfo &info, verif::ContractOp contract, ModuleOp module,
+    DenseMap<Operation *, TemplateInferenceInfo *> *infoByTemplate, SymbolTableCollection &tables,
+    bool &changed
+) {
+  FailureOr<SymbolLookupResult<FuncDefOp>> target = contract.getFuncTarget(tables);
+  if (failed(target)) {
+    return success();
+  }
+  FuncDefOp targetFunc = target->get();
+  if (getParentOfType<TemplateOp>(targetFunc.getOperation()) != info.templateOp) {
+    return success();
+  }
+
+  DenseMap<StringAttr, InferredType> funcReplacements;
+  auto funcIt = info.functionReplacements.find(targetFunc.getOperation());
+  if (funcIt != info.functionReplacements.end()) {
+    funcReplacements = funcIt->second;
+  }
+  DenseMap<StringAttr, InferredType> oldFuncReplacements = funcReplacements;
+
+  TypeVarInferenceCollector collector(info, funcReplacements);
+  if (failed(collector.collect(contract.getOperation()))) {
+    return failure();
+  }
+  if (infoByTemplate && failed(collector.collectStructTemplateParamInferences(
+                            contract.getOperation(), module, *infoByTemplate, tables
+                        ))) {
+    return failure();
+  }
+
+  if (!sameReplacementTypes(oldFuncReplacements, funcReplacements)) {
+    changed = true;
+  }
+  if (funcReplacements.empty()) {
+    info.functionReplacements.erase(targetFunc.getOperation());
+  } else {
+    info.functionReplacements[targetFunc.getOperation()] = std::move(funcReplacements);
+  }
+  return success();
+}
+
 /// Recompute the template-wide replacements from the per-function proofs.
 ///
 /// A replacement becomes template-wide only when every function that mentions
@@ -2339,7 +2387,7 @@ static LogicalResult inferStructTemplateParamUses(
         DenseMap<StringAttr, InferredType> oldFuncReplacements = funcReplacements;
 
         TypeVarInferenceCollector collector(info, funcReplacements);
-        if (failed(collector.collect(func)) ||
+        if (failed(collector.collect(func.getOperation())) ||
             failed(collector.collectStructTemplateParamInferences(
                 func.getOperation(), module, infoByTemplate, tables
             ))) {
@@ -2353,6 +2401,18 @@ static LogicalResult inferStructTemplateParamUses(
           info.functionReplacements.erase(func.getOperation());
         } else {
           info.functionReplacements[func.getOperation()] = std::move(funcReplacements);
+        }
+      }
+
+      SmallVector<verif::ContractOp> contracts;
+      info.templateOp.walk([&contracts](verif::ContractOp contract) {
+        contracts.push_back(contract);
+      });
+      for (verif::ContractOp contract : contracts) {
+        if (failed(collectContractTargetFunctionInferences(
+                info, contract, module, &infoByTemplate, tables, changed
+            ))) {
+          return failure();
         }
       }
 
@@ -2395,11 +2455,24 @@ static FailureOr<TemplateInferenceInfo> buildInfo(TemplateOp templateOp) {
 
   for (FuncDefOp func : funcs) {
     DenseMap<StringAttr, InferredType> funcReplacements;
-    if (failed(TypeVarInferenceCollector(info, funcReplacements).collect(func))) {
+    if (failed(TypeVarInferenceCollector(info, funcReplacements).collect(func.getOperation()))) {
       return failure();
     }
     if (!funcReplacements.empty()) {
       info.functionReplacements.try_emplace(func.getOperation(), funcReplacements);
+    }
+  }
+
+  SymbolTableCollection tables;
+  SmallVector<verif::ContractOp> contracts;
+  templateOp.walk([&contracts](verif::ContractOp contract) { contracts.push_back(contract); });
+  bool changed = false;
+  ModuleOp module = templateOp->getParentOfType<ModuleOp>();
+  for (verif::ContractOp contract : contracts) {
+    if (failed(collectContractTargetFunctionInferences(
+            info, contract, module, /*infoByTemplate=*/nullptr, tables, changed
+        ))) {
+      return failure();
     }
   }
 

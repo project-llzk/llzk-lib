@@ -36,6 +36,27 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @TContractProofConflict {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @compute(%arg: !poly.tvar<@T>) {
+      // expected-note@+1 {{previous inference here}}
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      function.return
+    }
+
+    verif.contract @Bad for @TContractProofConflict::@compute (%arg: !poly.tvar<@T>) {
+      // expected-error@+1 {{conflicting inferred type for template parameter @T: 'index' vs '!felt.type'}}
+      %felt = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> !felt.type
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
   poly.template @TFunctionLocalExplicitParamConflict {
     poly.param @T : !poly.tvar<@T>
 
