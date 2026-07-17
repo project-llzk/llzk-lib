@@ -1056,6 +1056,76 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @TFunctionLocalFeltConstStructParam {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @C
+
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@T>
+
+      function.def @product(%arg0: !poly.tvar<@T>) -> !struct.type<@TFunctionLocalFeltConstStructParam::@Box<[@T, @C]>> attributes {function.allow_constraint, function.allow_witness} {
+        %self = struct.new : <@TFunctionLocalFeltConstStructParam::@Box<[@T, @C]>>
+        struct.writem %self[@value] = %arg0 : <@TFunctionLocalFeltConstStructParam::@Box<[@T, @C]>>, !poly.tvar<@T>
+        function.return %self : !struct.type<@TFunctionLocalFeltConstStructParam::@Box<[@T, @C]>>
+      }
+    }
+
+    function.def @force(%arg: !poly.tvar<@T>) -> index {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      function.return %index : index
+    }
+  }
+
+  function.def @call_force(%arg: index) -> index {
+    %0 = function.call @TFunctionLocalFeltConstStructParam::@force<[index, #felt<const 7>]>(%arg) : (index) -> index
+    function.return %0 : index
+  }
+
+  function.def @use_index_box(
+      %box: !struct.type<@TFunctionLocalFeltConstStructParam::@Box<[index, #felt<const 7>]>>
+  ) -> !struct.type<@TFunctionLocalFeltConstStructParam::@Box<[index, #felt<const 7>]>> {
+    function.return %box : !struct.type<@TFunctionLocalFeltConstStructParam::@Box<[index, #felt<const 7>]>>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TFunctionLocalFeltConstStructParam {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      poly.param @C
+// CHECK-NEXT:      struct.def @i__Box {
+// CHECK-NEXT:        struct.member @value : index
+// CHECK-NEXT:        function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@TFunctionLocalFeltConstStructParam::@i__Box<[@T, @C]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TFunctionLocalFeltConstStructParam::@i__Box<[@T, @C]>>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@value] = %[[VAL_0]] : <@TFunctionLocalFeltConstStructParam::@i__Box<[@T, @C]>>, index
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TFunctionLocalFeltConstStructParam::@i__Box<[@T, @C]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        struct.member @value : !poly.tvar<@T>
+// CHECK-NEXT:        function.def @product(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !struct.type<@TFunctionLocalFeltConstStructParam::@Box<[@T, @C]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@TFunctionLocalFeltConstStructParam::@Box<[@T, @C]>>
+// CHECK-NEXT:          struct.writem %[[VAL_3]][@value] = %[[VAL_2]] : <@TFunctionLocalFeltConstStructParam::@Box<[@T, @C]>>, !poly.tvar<@T>
+// CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@TFunctionLocalFeltConstStructParam::@Box<[@T, @C]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @"i_\1A_force"(%[[VAL_4:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:        function.return %[[VAL_4]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @force(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> index {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_5]] : (!poly.tvar<@T>) -> index
+// CHECK-NEXT:        function.return %[[VAL_6]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_force(%[[VAL_7:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @TFunctionLocalFeltConstStructParam::@"i_\1A_force"<[index, #felt<const 7>]>(%[[VAL_7]]) : (index) -> index
+// CHECK-NEXT:      function.return %[[VAL_8]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @use_index_box(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@TFunctionLocalFeltConstStructParam::@i__Box<[index, #felt<const 7>]>>) -> !struct.type<@TFunctionLocalFeltConstStructParam::@i__Box<[index, #felt<const 7>]>> {
+// CHECK-NEXT:      function.return %[[VAL_9]] : !struct.type<@TFunctionLocalFeltConstStructParam::@i__Box<[index, #felt<const 7>]>>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
   poly.template @TSymbolicStructReplacementBox {
     poly.param @Element : !poly.tvar<@Element>
 

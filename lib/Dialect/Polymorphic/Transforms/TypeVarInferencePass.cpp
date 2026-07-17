@@ -527,17 +527,6 @@ private:
   }
 };
 
-/// Return true if `attr` is a concrete struct-instantiation argument.
-static bool isConcreteInstantiationAttr(Attribute attr) {
-  if (auto tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
-    return isConcreteType(tyAttr.getValue(), /*allowStructParams=*/false);
-  }
-  if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
-    return !isDynamic(intAttr);
-  }
-  return false;
-}
-
 /// Rewrite a function type and keep the entry block arguments in sync.
 ///
 /// `function.def` stores its function signature separately from the entry block
@@ -839,7 +828,9 @@ private:
       return convertedTy;
     }
 
-    if (!llvm::all_of(newParams, isConcreteInstantiationAttr)) {
+    if (llvm::any_of(newParams, [](Attribute attr) {
+      return !isConcreteStructParamAttr(attr, /*allowStructParams=*/false);
+    })) {
       return convertedTy;
     }
 
@@ -897,17 +888,29 @@ private:
         std::move(activeLocalStructReplacements_);
     activeTypeReplacements_.clear();
     activeLocalStructReplacements_.clear();
-    activeLocalStructReplacements_.try_emplace(concreteStructTy, localTy);
-    activeLocalStructReplacements_.try_emplace(
-        StructType::get(localTy.getNameRef(), ArrayAttr::get(ctx_, concreteParams)), localTy
-    );
+    SmallVector<Attribute> convertedSourceParams;
+    convertedSourceParams.reserve(concreteParams.size());
     for (auto [paramName, concreteAttr] : llvm::zip_equal(paramNames.getValue(), concreteParams)) {
       auto paramSym = llvm::dyn_cast<FlatSymbolRefAttr>(paramName);
       auto concreteType = llvm::dyn_cast<TypeAttr>(concreteAttr);
       if (paramSym && concreteType) {
         activeTypeReplacements_.try_emplace(paramSym.getAttr(), concreteType.getValue());
+        convertedSourceParams.push_back(concreteType);
+      } else {
+        convertedSourceParams.push_back(paramName);
       }
     }
+    activeLocalStructReplacements_.try_emplace(concreteStructTy, localTy);
+    activeLocalStructReplacements_.try_emplace(
+        StructType::get(typeAtDef.getNameRef(), ArrayAttr::get(ctx_, convertedSourceParams)),
+        localTy
+    );
+    activeLocalStructReplacements_.try_emplace(
+        StructType::get(localTy.getNameRef(), ArrayAttr::get(ctx_, convertedSourceParams)), localTy
+    );
+    activeLocalStructReplacements_.try_emplace(
+        StructType::get(localTy.getNameRef(), ArrayAttr::get(ctx_, concreteParams)), localTy
+    );
     clone.walk([this](Operation *op) { convertOperationTypes(op, *this); });
     removeIdentityCasts(clone.getOperation());
     activeLocalStructReplacements_ = std::move(previousLocalStructReplacements);

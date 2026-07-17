@@ -372,29 +372,9 @@ applyAndFoldGreedily(ModuleOp modOp, ConversionTracker &tracker, RewritePatternS
   return failure(result.failed() || failureListener.hadFailure);
 }
 
-/// Classifies the concreteness of an attribute value for the purposes of determining
-/// if a struct instantiation can replace a parameter reference with that value.
-enum class AttrConcreteness : std::uint8_t {
-  NonConcrete,
-  Concrete,
-  Wildcard,
-};
-
-/// Classify the concreteness of the given attribute value for the purposes of struct instantiation.
-template <bool AllowStructParams = true> AttrConcreteness classifyAttrConcreteness(Attribute a) {
-  if (TypeAttr tyAttr = dyn_cast<TypeAttr>(a)) {
-    return isConcreteType(tyAttr.getValue(), AllowStructParams) ? AttrConcreteness::Concrete
-                                                                : AttrConcreteness::NonConcrete;
-  }
-  if (IntegerAttr intAttr = dyn_cast<IntegerAttr>(a)) {
-    return isDynamic(intAttr) ? AttrConcreteness::Wildcard : AttrConcreteness::Concrete;
-  }
-  return AttrConcreteness::NonConcrete;
-}
-
 /// Return true if the given attribute value is concrete for the purposes of struct instantiation.
 template <bool AllowStructParams = true> bool isConcreteAttr(Attribute a) {
-  return classifyAttrConcreteness<AllowStructParams>(a) == AttrConcreteness::Concrete;
+  return classifyAttrConcreteness(a, AllowStructParams) == AttrConcreteness::Concrete;
 }
 
 static SymbolRefAttr
