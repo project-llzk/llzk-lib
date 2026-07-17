@@ -122,6 +122,16 @@ SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
 
 void SourceRefAnalysis::setToEntryState(Lattice *lattice) {
   if (auto value = llvm::dyn_cast_if_present<Value>(lattice->getAnchor())) {
+    if (auto arg = llvm::dyn_cast<BlockArgument>(value)) {
+      Operation *parent = arg.getOwner()->getParentOp();
+      if (parent && llvm::isa<RegionBranchOpInterface>(parent) &&
+          llvm::isa<ArrayType, StructType, PodType>(value.getType())) {
+        // Region-branch arguments are aliases of their incoming aggregate storage. Giving them a
+        // fresh root would make loop-carried writes unstable and would discard that identity.
+        (void)lattice->setValue(SourceRefLatticeValue());
+        return;
+      }
+    }
     (void)lattice->setValue(SourceRefLattice::getDefaultValue(value));
   }
 }
@@ -627,16 +637,22 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
   SourceRefSet res;
   auto currRef = mlir::FailureOr<SourceRef>(ref);
   while (mlir::succeeded(currRef)) {
-    // Add signals
-    for (auto it = signalSets.findLeader(*currRef); it != signalSets.member_end(); it++) {
-      if (currRef.value() != *it) {
-        res.insert(*it);
+    // A dynamic access is represented by a half-open range. Match every concrete element and
+    // range that overlaps the queried path, as well as exact references.
+    for (auto candidate = signalSets.begin(); candidate != signalSets.end(); ++candidate) {
+      const SourceRef &candidateRef = candidate->getData();
+      if (!candidateRef.overlaps(*currRef)) {
+        continue;
       }
-    }
-    // Add constants
-    auto constIt = constantSets.find(*currRef);
-    if (constIt != constantSets.end()) {
-      res.insert(constIt->second.begin(), constIt->second.end());
+      for (auto it = signalSets.findLeader(candidate); it != signalSets.member_end(); ++it) {
+        if (!it->overlaps(ref)) {
+          res.insert(*it);
+        }
+      }
+      auto constIt = constantSets.find(candidateRef);
+      if (constIt != constantSets.end()) {
+        res.insert(constIt->second.begin(), constIt->second.end());
+      }
     }
     // Go to parent
     currRef = currRef->getParentPrefix();

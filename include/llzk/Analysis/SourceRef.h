@@ -100,6 +100,10 @@ public:
     return index == rhs.index;
   }
 
+  /// Return true when these path components select any common storage.
+  /// Index ranges are half-open.
+  bool overlaps(const SourceRefIndex &rhs) const;
+
   std::strong_ordering operator<=>(const SourceRefIndex &rhs) const;
 
   struct Hash {
@@ -318,6 +322,9 @@ public:
 
   /// @brief Returns true iff `prefix` is a valid prefix of this reference.
   bool isValidPrefix(const SourceRef &prefix) const;
+
+  /// Return true when both references select overlapping storage at the same path depth.
+  bool overlaps(const SourceRef &rhs) const;
 
   /// @brief If `prefix` is a valid prefix of this reference, return the suffix that
   /// remains after removing the prefix. I.e., `this` = `prefix` + `suffix`
