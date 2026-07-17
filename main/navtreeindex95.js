@@ -1,5 +1,9 @@
 var NAVTREEINDEX95 =
 {
+"structllzk_1_1witgen_1_1WitgenOptions.html#aa9a1ccb452462595fcd2d462c56fb9b2":[10,0,4,21,8,1],
+"structllzk_1_1witgen_1_1WitgenOptions.html#aa9a1ccb452462595fcd2d462c56fb9b2":[12,0,1,18,8,1],
+"structllzk_1_1witgen_1_1WitgenOptions.html#abfa42bfb7258119b3a9f16f832e20d03":[10,0,4,21,8,3],
+"structllzk_1_1witgen_1_1WitgenOptions.html#abfa42bfb7258119b3a9f16f832e20d03":[12,0,1,18,8,3],
 "structmlir_1_1FieldParser.html":[10,0,5,0],
 "structmlir_1_1FieldParser.html":[12,0,2,0],
 "structmlir_1_1FieldParser_3_01llvm_1_1APInt_01_4.html":[10,0,5,1],

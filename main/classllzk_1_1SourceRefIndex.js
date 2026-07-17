@@ -22,5 +22,6 @@ var classllzk_1_1SourceRefIndex =
     [ "isPodRecord", "classllzk_1_1SourceRefIndex.html#a37ed68a585165086f55b59af53e75571", null ],
     [ "operator<=>", "classllzk_1_1SourceRefIndex.html#a1d6036549b476aa2b7f2c18fc2d53847", null ],
     [ "operator==", "classllzk_1_1SourceRefIndex.html#a1e0f193c8efafd7cef0230a5d780b3e1", null ],
+    [ "overlaps", "classllzk_1_1SourceRefIndex.html#ab5568af3d68c368f637d72a059527306", null ],
     [ "print", "classllzk_1_1SourceRefIndex.html#a99f5b6ca8abf9eceb0e436b582d62b1f", null ]
 ];

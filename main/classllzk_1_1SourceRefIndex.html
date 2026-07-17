@@ -143,6 +143,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a97c29d97d448b708b47bcce2a03e4ac3" id="r_a97c29d97d448b708b47bcce2a03e4ac3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a97c29d97d448b708b47bcce2a03e4ac3">dump</a> () const</td></tr>
 <tr class="memitem:a99f5b6ca8abf9eceb0e436b582d62b1f" id="r_a99f5b6ca8abf9eceb0e436b582d62b1f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a99f5b6ca8abf9eceb0e436b582d62b1f">print</a> (mlir::raw_ostream &amp;os) const</td></tr>
 <tr class="memitem:a1e0f193c8efafd7cef0230a5d780b3e1" id="r_a1e0f193c8efafd7cef0230a5d780b3e1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1e0f193c8efafd7cef0230a5d780b3e1">operator==</a> (const <a class="el" href="classllzk_1_1SourceRefIndex.html">SourceRefIndex</a> &amp;rhs) const</td></tr>
+<tr class="memitem:ab5568af3d68c368f637d72a059527306" id="r_ab5568af3d68c368f637d72a059527306"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab5568af3d68c368f637d72a059527306">overlaps</a> (const <a class="el" href="classllzk_1_1SourceRefIndex.html">SourceRefIndex</a> &amp;rhs) const</td></tr>
+<tr class="memdesc:ab5568af3d68c368f637d72a059527306"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return true when these path components select any common storage.  <br /></td></tr>
 <tr class="memitem:a1d6036549b476aa2b7f2c18fc2d53847" id="r_a1d6036549b476aa2b7f2c18fc2d53847"><td class="memItemLeft" align="right" valign="top">std::strong_ordering&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1d6036549b476aa2b7f2c18fc2d53847">operator&lt;=&gt;</a> (const <a class="el" href="classllzk_1_1SourceRefIndex.html">SourceRefIndex</a> &amp;rhs) const</td></tr>
 <tr class="memitem:a29651943856b55e37c47b126a2f4ba12" id="r_a29651943856b55e37c47b126a2f4ba12"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a29651943856b55e37c47b126a2f4ba12">getHash</a> () const</td></tr>
 </table>
@@ -423,7 +425,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00109">109</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00113">113</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
 
 </div>
 </div>
@@ -713,6 +715,28 @@ Public Member Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="SourceRef_8h_source.html#l00091">91</a> of file <a class="el" href="SourceRef_8h_source.html">SourceRef.h</a>.</p>
+
+</div>
+</div>
+<a id="ab5568af3d68c368f637d72a059527306" name="ab5568af3d68c368f637d72a059527306"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab5568af3d68c368f637d72a059527306">&#9670;&#160;</a></span>overlaps()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::SourceRefIndex::overlaps </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1SourceRefIndex.html">SourceRefIndex</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>rhs</em></span></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return true when these path components select any common storage. </p>
+<p>Index ranges are half-open. </p>
+
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00175">175</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>

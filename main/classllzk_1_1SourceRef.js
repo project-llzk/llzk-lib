@@ -47,6 +47,7 @@ var classllzk_1_1SourceRef =
     [ "operator!=", "classllzk_1_1SourceRef.html#ad9d10ff217fe7ffc7c372933464eafe0", null ],
     [ "operator<=>", "classllzk_1_1SourceRef.html#a60c9310b627dd2223dbdad0d951bd40a", null ],
     [ "operator==", "classllzk_1_1SourceRef.html#a38f4c7d6b01daf6563cdfcaedbdc3256", null ],
+    [ "overlaps", "classllzk_1_1SourceRef.html#a0960f96d359b2ee6beb071f9e3d61348", null ],
     [ "print", "classllzk_1_1SourceRef.html#a34e6a6ea3f7e1b96753c57d43b878859", null ],
     [ "translate", "classllzk_1_1SourceRef.html#abf7267ebf9d6ba04624925f41d34d551", null ],
     [ "llvm::DenseMapInfo< SourceRef >", "classllzk_1_1SourceRef.html#a922558ccd0c16d32f1709e5e77b27937", null ]
