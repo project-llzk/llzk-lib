@@ -36,6 +36,25 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @TWildcardParamConflict {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @id(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      function.return %arg : !poly.tvar<@T>
+    }
+  }
+
+  function.def @call_id(%arg: !felt.type) -> !felt.type {
+    // expected-error@+1 {{call signature '(!felt.type) -> !felt.type' does not match inferred callee signature '(index) -> index'}}
+    %0 = function.call @TWildcardParamConflict::@id<[?]>(%arg) : (!felt.type) -> !felt.type
+    function.return %0 : !felt.type
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
   poly.template @TContractProofConflict {
     poly.param @T : !poly.tvar<@T>
 

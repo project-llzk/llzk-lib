@@ -427,6 +427,23 @@ public:
     return kept.empty() ? ArrayAttr() : ArrayAttr::get(ctx_, kept);
   }
 
+  /// Return true if a template argument list uses `?` for a parameter that this
+  /// converter removes.
+  bool hasWildcardForRemovedParam(ArrayAttr params) const {
+    if (!params || params.size() != oldParamOrder_.size()) {
+      return false;
+    }
+    for (auto [paramName, attr] : llvm::zip_equal(oldParamOrder_, params.getValue())) {
+      if (!removedParams_.contains(paramName)) {
+        continue;
+      }
+      if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr); intAttr && isDynamic(intAttr)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
 private:
   Attribute convertTemplateArgAttr(Attribute attr) const {
     DenseSet<StringAttr> resolvingParams;
@@ -2046,6 +2063,17 @@ static void removeResolvedParams(TemplateInferenceInfo &info) {
   }
 }
 
+/// Verify that a wildcard call/include still matches its target after type-variable inference.
+template <typename CallableOp>
+static LogicalResult
+validateWildcardCallableSignature(CallableOp callableOp, FunctionType targetTy) {
+  if (succeeded(callableOp.unifyTypeSignature(targetTy))) {
+    return success();
+  }
+  return callableOp.emitError() << "call signature " << callableOp.getTypeSignature()
+                                << " does not match inferred callee signature " << targetTy;
+}
+
 /// Update references to callable symbols inside rewritten templates.
 ///
 /// Call operations keep their explicit template argument list, if any. When a
@@ -2083,6 +2111,11 @@ static FailureOr<bool> updateCallableTemplateParams(
     FailureOr<ArrayAttr> newParams =
         converter->convertTemplateParams(oldParams, callOp, resolveTemplateSymbolArgs);
     if (failed(newParams)) {
+      failedConversion = true;
+      return;
+    }
+    if (converter->hasWildcardForRemovedParam(oldParams) &&
+        failed(validateWildcardCallableSignature(callOp, target->get().getFunctionType()))) {
       failedConversion = true;
       return;
     }
@@ -2125,6 +2158,11 @@ static FailureOr<bool> updateCallableTemplateParams(
     FailureOr<ArrayAttr> newParams =
         converter->convertTemplateParams(oldParams, includeOp, resolveTemplateSymbolArgs);
     if (failed(newParams)) {
+      failedConversion = true;
+      return;
+    }
+    if (converter->hasWildcardForRemovedParam(oldParams) &&
+        failed(validateWildcardCallableSignature(includeOp, target->get().getFunctionType()))) {
       failedConversion = true;
       return;
     }
