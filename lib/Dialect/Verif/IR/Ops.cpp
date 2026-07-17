@@ -156,7 +156,6 @@ FailureOr<TargetTypeInfo> getTargetTypeInfo(Operation *op) {
 }
 
 enum class ForbiddenRequireConditionKind : uint8_t {
-  MainContract,
   StructMember,
   FunctionReturn,
 };
@@ -251,10 +250,6 @@ LogicalResult emitForbiddenPrecondition(
     llvm::ArrayRef<Location> sourceLocs = {}
 ) {
   switch (kind) {
-  case ForbiddenRequireConditionKind::MainContract:
-    return preCondOp->emitOpError(
-        "cannot appear directly in a contract that targets the main entry-point struct"
-    );
   case ForbiddenRequireConditionKind::StructMember: {
     InFlightDiagnostic diag =
         preCondOp->emitOpError("condition cannot be derived from a struct member value");
@@ -654,19 +649,6 @@ LogicalResult ContractOp::verifyRegions() {
   SmallVector<IncludeOp> includeOps = walkCollect<IncludeOp>(*this);
   if (preconditionOps.empty() && includeOps.empty()) {
     return success();
-  }
-
-  bool targetsMainStruct = false;
-  {
-    SymbolTableCollection tables;
-    auto structTarget = getStructTarget(tables);
-    targetsMainStruct = succeeded(structTarget) && structTarget->get().isMainComponent();
-  }
-
-  for (PreconditionOpInterface preCond : preconditionOps) {
-    if (targetsMainStruct) {
-      return emitForbiddenPrecondition(preCond, ForbiddenRequireConditionKind::MainContract);
-    }
   }
 
   ModuleOp module = getOperation()->getParentOfType<ModuleOp>();
