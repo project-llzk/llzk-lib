@@ -35,6 +35,7 @@
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/Verif/IR/Ops.h"
+#include "llzk/Util/Constants.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/SymbolTableLLZK.h"
@@ -561,6 +562,20 @@ static void updateFuncSignature(FuncDefOp func, ConverterT &converter) {
   }
 }
 
+/// Convert call targets when the active converter knows how to keep symbol
+/// references in sync with converted types.
+template <typename ConverterT> static bool convertCallCallee(CallOp callOp, ConverterT &converter) {
+  if constexpr (requires { converter.convertCallCallee(callOp); }) {
+    SymbolRefAttr oldCallee = callOp.getCalleeAttr();
+    SymbolRefAttr newCallee = converter.convertCallCallee(callOp);
+    if (newCallee != oldCallee) {
+      callOp.setCalleeAttr(newCallee);
+      return true;
+    }
+  }
+  return false;
+}
+
 /// Convert every type-bearing surface on `op` that can mention an inferred type
 /// variable.
 ///
@@ -621,6 +636,10 @@ static bool convertOperationTypes(Operation *op, ConverterT &converter) {
       result.setType(newTy);
       changed = true;
     }
+  }
+
+  if (auto callOp = llvm::dyn_cast<CallOp>(op)) {
+    changed |= convertCallCallee(callOp, converter);
   }
 
   SmallVector<NamedAttribute> newAttrs;
@@ -743,7 +762,44 @@ public:
     return attr;
   }
 
+  /// Convert a struct-function callee whose self/result type was instantiated.
+  SymbolRefAttr convertCallCallee(CallOp callOp) {
+    SymbolRefAttr callee = callOp.getCalleeAttr();
+    if (!callee || callee.getNestedReferences().empty()) {
+      return callee;
+    }
+
+    StructType targetStructTy = getStructFunctionTargetType(callOp);
+    if (!targetStructTy) {
+      return callee;
+    }
+    auto convertedStructTy = llvm::dyn_cast<StructType>(convertType(targetStructTy));
+    if (!convertedStructTy) {
+      return callee;
+    }
+
+    SymbolRefAttr convertedStructName = convertedStructTy.getNameRef();
+    if (convertedStructName == getPrefixAsSymbolRefAttr(callee)) {
+      return callee;
+    }
+    SmallVector<FlatSymbolRefAttr> pieces = getPieces(convertedStructName);
+    pieces.push_back(FlatSymbolRefAttr::get(callee.getLeafReference()));
+    return asSymbolRefAttr(pieces);
+  }
+
 private:
+  /// Return the struct type that determines a struct function call's target.
+  static StructType getStructFunctionTargetType(CallOp callOp) {
+    StringAttr calleeLeaf = callOp.getCallee().getLeafReference();
+    if (calleeLeaf == FUNC_NAME_CONSTRAIN) {
+      return dyn_cast<StructType>(callOp.getSelfValueFromConstrain().getType());
+    }
+    if (calleeLeaf == FUNC_NAME_COMPUTE || calleeLeaf == FUNC_NAME_PRODUCT) {
+      return callOp.getSingleResultTypeOfWitnessGen();
+    }
+    return {};
+  }
+
   /// Convert an attribute that is known to be in a template-argument position.
   Attribute convertTemplateArgAttr(Attribute attr) {
     if (StringAttr symbolName = getFlatSymbolName(attr)) {

@@ -455,6 +455,11 @@ module attributes {llzk.lang} {
         (!struct.type<@TBox::@Box<[index]>>, index) -> !struct.type<@TBox::@Box<[index]>>
     function.return %0 : !struct.type<@TBox::@Box<[index]>>
   }
+
+  function.def @call_product(%arg: index) -> !struct.type<@TBox::@Box<[index]>> attributes {function.allow_constraint, function.allow_witness} {
+    %0 = function.call @TBox::@Box::@product(%arg) : (index) -> !struct.type<@TBox::@Box<[index]>>
+    function.return %0 : !struct.type<@TBox::@Box<[index]>>
+  }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TBox {
@@ -511,6 +516,10 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @call_from_related(%[[VAL_15:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox::@i_Box<[index]>>, %[[VAL_16:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@TBox::@i_Box<[index]>> {
 // CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.]+]] = function.call @TInferStructSymbolRelation::@from_related(%[[VAL_15]], %[[VAL_16]]) : (!struct.type<@TBox::@i_Box<[index]>>, index) -> !struct.type<@TBox::@i_Box<[index]>>
 // CHECK-NEXT:      function.return %[[VAL_17]] : !struct.type<@TBox::@i_Box<[index]>>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_product(%[[VAL_18:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@TBox::@i_Box<[index]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_19:[0-9a-zA-Z_\.]+]] = function.call @TBox::@i_Box::@product(%[[VAL_18]]) : (index) -> !struct.type<@TBox::@i_Box<[index]>>
+// CHECK-NEXT:      function.return %[[VAL_19]] : !struct.type<@TBox::@i_Box<[index]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----
