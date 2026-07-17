@@ -135,9 +135,10 @@ def InlineFreeFunctionsPass : LLZKPass<"llzk-inline-free-functions"> {
     `builtin.module`) into their callers. After inlining, free functions
     that have no remaining uses in the module are erased.
 
-    Free functions that participate in a call cycle are skipped — inlining
-    one would re-materialize its calls forever — leaving their call sites
-    and definitions untouched.
+    Inlining is best effort: free functions that participate in a call
+    cycle are skipped (inlining one would re-materialize its calls
+    forever). If inlining a callee fails, its remaining calls are left in
+    place with a warning while processing continues with other callees.
   }];
 }
 
