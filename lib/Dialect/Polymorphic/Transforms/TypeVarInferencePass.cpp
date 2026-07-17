@@ -1171,6 +1171,12 @@ public:
         }
       }
 
+      if (auto callOp = llvm::dyn_cast<CallOp>(op)) {
+        if (failed(collectCallableTemplateParamInferences(callOp, module, infos, tables))) {
+          return WalkResult::interrupt();
+        }
+      }
+
       for (NamedAttribute attr : op->getAttrs()) {
         if (failed(
                 collectStructTemplateParamInferences(attr.getValue(), loc, module, infos, tables)
@@ -1289,6 +1295,71 @@ private:
       }
       Attribute expectedAttr = TypeAttr::get(replacementIt->second.type);
       if (failed(collectTemplateArgInferences(attr, expectedAttr, loc))) {
+        return failure();
+      }
+    }
+    return success();
+  }
+
+  /// Infer current-template parameters from implicit calls into rewritten templates.
+  ///
+  /// A call may omit its template argument list when the original callee signature exposes every
+  /// target template parameter. If that target template has since proven a parameter concrete, the
+  /// omitted argument inferred from the call signature must either agree with the concrete proof or
+  /// propagate the proof into the caller's template parameter before the callee signature is
+  /// rewritten.
+  LogicalResult collectCallableTemplateParamInferences(
+      CallOp callOp, ModuleOp module, DenseMap<Operation *, TemplateInferenceInfo *> &infos,
+      SymbolTableCollection &tables
+  ) {
+    if (!isNullOrEmpty(callOp.getTemplateParamsAttr())) {
+      return success();
+    }
+
+    FailureOr<SymbolLookupResult<FuncDefOp>> target = callOp.getCalleeTarget(tables);
+    if (failed(target)) {
+      return success();
+    }
+    FuncDefOp targetFunc = target->get();
+    TemplateOp parentTemplate = getParentOfType<TemplateOp>(targetFunc.getOperation());
+    if (!parentTemplate) {
+      return success();
+    }
+    TemplateInferenceInfo *targetInfo = infos.lookup(parentTemplate.getOperation());
+    if (!targetInfo || targetInfo->replacements.empty()) {
+      return success();
+    }
+
+    FailureOr<UnificationMap> unifyResult = callOp.unifyTypeSignature(targetFunc.getFunctionType());
+    if (failed(unifyResult)) {
+      return success();
+    }
+
+    for (StringAttr paramName : targetInfo->oldParamOrder) {
+      auto replacementIt = targetInfo->replacements.find(paramName);
+      if (replacementIt == targetInfo->replacements.end()) {
+        continue;
+      }
+      auto inferredIt = unifyResult->find({FlatSymbolRefAttr::get(paramName), Side::RHS});
+      if (inferredIt == unifyResult->end()) {
+        continue;
+      }
+
+      Attribute inferredAttr = inferredIt->second;
+      Attribute expectedAttr = TypeAttr::get(replacementIt->second.type);
+      if (!inferredAttr || !typeParamsUnify({inferredAttr}, {expectedAttr})) {
+        InFlightDiagnostic diag = callOp.emitError()
+                                  << "implicit template argument for inferred parameter @"
+                                  << paramName.getValue() << " must match inferred type "
+                                  << replacementIt->second.type << ", but found ";
+        if (auto typeAttr = llvm::dyn_cast_if_present<TypeAttr>(inferredAttr)) {
+          diag << typeAttr.getValue();
+        } else {
+          diag << inferredAttr;
+        }
+        return diag;
+      }
+      if (failed(collectTemplateArgInferences(inferredAttr, expectedAttr, callOp.getLoc()))) {
         return failure();
       }
     }

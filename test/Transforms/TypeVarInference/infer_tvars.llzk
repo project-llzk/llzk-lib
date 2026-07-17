@@ -208,6 +208,54 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @TImplicitForwardedCallee {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @id(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      function.return %arg : !poly.tvar<@T>
+    }
+  }
+
+  poly.template @TImplicitForwardCaller {
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @forward(%arg: !poly.tvar<@U>) -> !poly.tvar<@U> {
+      %forwarded = function.call @TImplicitForwardedCallee::@id(%arg) : (!poly.tvar<@U>) -> !poly.tvar<@U>
+      function.return %forwarded : !poly.tvar<@U>
+    }
+  }
+
+  function.def @call_forward(%arg: index) -> index {
+    %0 = function.call @TImplicitForwardCaller::@forward<[index]>(%arg) : (index) -> index
+    function.return %0 : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TImplicitForwardedCallee {
+// CHECK-NEXT:      function.def @id(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:        function.return %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TImplicitForwardCaller {
+// CHECK-NEXT:      poly.param @U : !poly.tvar<@U>
+// CHECK-NEXT:      function.def @i_forward(%[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @TImplicitForwardedCallee::@id(%[[VAL_1]]) : (index) -> index
+// CHECK-NEXT:        function.return %[[VAL_2]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @forward(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !poly.tvar<@U>) -> !poly.tvar<@U> {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @TImplicitForwardedCallee::@id(%[[VAL_3]]) : (!poly.tvar<@U>) -> !poly.tvar<@U>
+// CHECK-NEXT:        function.return %[[VAL_4]] : !poly.tvar<@U>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_forward(%[[VAL_5:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @TImplicitForwardCaller::@i_forward<[index]>(%[[VAL_5]]) : (index) -> index
+// CHECK-NEXT:      function.return %[[VAL_6]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
   poly.template @TFlattenNestedArray {
     poly.param @T : !poly.tvar<@T>
 
