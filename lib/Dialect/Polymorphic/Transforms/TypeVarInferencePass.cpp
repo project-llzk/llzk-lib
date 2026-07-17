@@ -29,6 +29,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
@@ -576,6 +577,40 @@ template <typename ConverterT> static bool convertCallCallee(CallOp callOp, Conv
 /// type annotations.
 template <typename ConverterT>
 static bool convertOperationTypes(Operation *op, ConverterT &converter) {
+  if (auto createOp = llvm::dyn_cast<CreateArrayOp>(op)) {
+    ArrayType oldResultTy = createOp.getType();
+    auto newResultTy = llvm::dyn_cast<ArrayType>(converter.convertType(oldResultTy));
+    auto newElemTy = llvm::dyn_cast<ArrayType>(converter.convertType(oldResultTy.getElementType()));
+    if (newResultTy && newElemTy && newResultTy != oldResultTy && !createOp.getElements().empty() &&
+        newElemTy.hasStaticShape()) {
+      OpBuilder builder(createOp);
+      Location loc = createOp.getLoc();
+      SmallVector<Value> flattenedElements;
+      ArrayIndexGen idxGen = ArrayIndexGen::from(newElemTy);
+      for (Value element : createOp.getElements()) {
+        Type newElementValueTy = converter.convertType(element.getType());
+        if (newElementValueTy != newElemTy) {
+          return false;
+        }
+        if (element.getType() != newElementValueTy) {
+          element.setType(newElementValueTy);
+        }
+        for (int64_t i = 0, e = newElemTy.getNumElements(); i < e; ++i) {
+          std::optional<SmallVector<Value>> indices = idxGen.delinearize(i, loc, builder);
+          assert(indices && "static array element index should delinearize");
+          flattenedElements.push_back(
+              builder.create<ReadArrayOp>(loc, element, ValueRange(*indices)).getResult()
+          );
+        }
+      }
+      CreateArrayOp newCreate =
+          builder.create<CreateArrayOp>(loc, newResultTy, ValueRange(flattenedElements));
+      createOp.getResult().replaceAllUsesWith(newCreate.getResult());
+      createOp.erase();
+      return true;
+    }
+  }
+
   if (auto readOp = llvm::dyn_cast<ReadArrayOp>(op)) {
     Type newResultTy = converter.convertType(readOp.getResult().getType());
     if (auto newArrayTy = llvm::dyn_cast<ArrayType>(newResultTy)) {
