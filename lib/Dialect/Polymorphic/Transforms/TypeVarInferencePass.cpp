@@ -269,7 +269,87 @@ public:
     return convertAttr(attr, resolvingParams);
   }
 
+  /// Validate type-bearing surfaces before resolved owned-struct parameters are
+  /// dropped.
+  LogicalResult validateOperation(Operation *op) const {
+    if (auto func = llvm::dyn_cast<FuncDefOp>(op)) {
+      if (failed(validateType(func.getFunctionType(), op))) {
+        return failure();
+      }
+    }
+    for (Region &region : op->getRegions()) {
+      for (Block &block : region.getBlocks()) {
+        for (Type argTy : block.getArgumentTypes()) {
+          if (failed(validateType(argTy, op))) {
+            return failure();
+          }
+        }
+      }
+    }
+    for (Type resultTy : op->getResultTypes()) {
+      if (failed(validateType(resultTy, op))) {
+        return failure();
+      }
+    }
+    for (NamedAttribute attr : op->getAttrs()) {
+      if (failed(validateAttr(attr.getValue(), op))) {
+        return failure();
+      }
+    }
+    return success();
+  }
+
 private:
+  LogicalResult validateType(Type ty, Operation *diagnosticOp) const {
+    if (!ty) {
+      return success();
+    }
+    if (auto arrTy = llvm::dyn_cast<ArrayType>(ty)) {
+      return validateType(arrTy.getElementType(), diagnosticOp);
+    }
+    if (auto structTy = llvm::dyn_cast<StructType>(ty)) {
+      return validateStructType(structTy, diagnosticOp);
+    }
+    if (auto podTy = llvm::dyn_cast<PodType>(ty)) {
+      for (RecordAttr record : podTy.getRecords()) {
+        if (failed(validateType(record.getType(), diagnosticOp))) {
+          return failure();
+        }
+      }
+      return success();
+    }
+    if (auto funcTy = llvm::dyn_cast<FunctionType>(ty)) {
+      for (Type inputTy : funcTy.getInputs()) {
+        if (failed(validateType(inputTy, diagnosticOp))) {
+          return failure();
+        }
+      }
+      for (Type resultTy : funcTy.getResults()) {
+        if (failed(validateType(resultTy, diagnosticOp))) {
+          return failure();
+        }
+      }
+    }
+    return success();
+  }
+
+  LogicalResult validateAttr(Attribute attr, Operation *diagnosticOp) const {
+    if (!attr) {
+      return success();
+    }
+    if (auto tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
+      return validateType(tyAttr.getValue(), diagnosticOp);
+    }
+    if (auto arrAttr = llvm::dyn_cast<ArrayAttr>(attr)) {
+      for (Attribute nested : arrAttr.getValue()) {
+        if (failed(validateAttr(nested, diagnosticOp))) {
+          return failure();
+        }
+      }
+    }
+    return success();
+  }
+
   Attribute convertAttr(Attribute attr, DenseSet<StringAttr> &resolvingParams) const {
     if (!attr) {
       return attr;
@@ -416,6 +496,31 @@ private:
       changed |= newAttr != attr;
     }
     return changed ? getStructTypeWithParams(structTy.getNameRef(), ctx_, newParams) : structTy;
+  }
+
+  LogicalResult validateStructType(StructType structTy, Operation *diagnosticOp) const {
+    ArrayAttr params = structTy.getParams();
+    if (!params) {
+      return success();
+    }
+    bool removeOwnedParams = isOwnedStructType(structTy) && params.size() == oldParamOrder_.size();
+    for (auto indexedAttr : llvm::enumerate(params.getValue())) {
+      unsigned index = indexedAttr.index();
+      Attribute attr = indexedAttr.value();
+      if (trimResolvedParams_ && removeOwnedParams &&
+          removedParams_.contains(oldParamOrder_[index])) {
+        if (failed(checkRemovedTemplateParam(
+                oldParamOrder_[index], attr, diagnosticOp, /*resolveTemplateSymbolArgs=*/true
+            ))) {
+          return failure();
+        }
+        continue;
+      }
+      if (failed(validateAttr(attr, diagnosticOp))) {
+        return failure();
+      }
+    }
+    return success();
   }
 };
 
@@ -2185,6 +2290,14 @@ private:
       const TypeVarReplacementConverter *converter =
           convertersByTemplate.lookup(info->templateOp.getOperation());
       assert(converter && "rewritten template must have a converter");
+      WalkResult validationResult = info->templateOp.walk([converter](Operation *op) {
+        return failed(converter->validateOperation(op)) ? WalkResult::interrupt()
+                                                        : WalkResult::advance();
+      });
+      if (validationResult.wasInterrupted()) {
+        signalPassFailure();
+        return;
+      }
       info->templateOp.walk([converter](Operation *op) { convertOperationTypes(op, *converter); });
       removeIdentityCasts(info->templateOp.getOperation());
     }

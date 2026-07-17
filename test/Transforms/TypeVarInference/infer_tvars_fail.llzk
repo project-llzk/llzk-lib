@@ -117,3 +117,27 @@ module attributes {llzk.lang} {
     }
   }
 }
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TOwnedStructExplicitParamConflict {
+    poly.param @T : !poly.tvar<@T>
+
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@T>
+
+      function.def @product(%arg: !poly.tvar<@T>) -> !struct.type<@TOwnedStructExplicitParamConflict::@Box<[@T]>> attributes {function.allow_constraint, function.allow_witness} {
+        %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+        %self = struct.new : <@TOwnedStructExplicitParamConflict::@Box<[@T]>>
+        struct.writem %self[@value] = %index : <@TOwnedStructExplicitParamConflict::@Box<[@T]>>, index
+        function.return %self : !struct.type<@TOwnedStructExplicitParamConflict::@Box<[@T]>>
+      }
+    }
+
+    // expected-error@+1 {{explicit template argument for inferred parameter @T must match inferred type 'index', but found '!felt.type'}}
+    function.def @use_bad(%box: !struct.type<@TOwnedStructExplicitParamConflict::@Box<[!felt.type]>>) -> !struct.type<@TOwnedStructExplicitParamConflict::@Box<[!felt.type]>> {
+      function.return %box : !struct.type<@TOwnedStructExplicitParamConflict::@Box<[!felt.type]>>
+    }
+  }
+}
