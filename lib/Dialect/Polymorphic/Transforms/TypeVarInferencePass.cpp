@@ -1839,11 +1839,15 @@ static bool callParamsMatchReplacements(
   return true;
 }
 
-/// Diagnose explicit call-site template parameters that disagree with concrete
+/// Diagnose call-site template parameters that disagree with concrete
 /// replacements proven inside the callee body.
+///
+/// Omitted call parameters can be materialized from the call signature before
+/// this check runs. The `explicitCallParams` flag keeps the diagnostic aligned
+/// with the user's source syntax.
 static LogicalResult diagnoseCallParamsMismatch(
     CallOp callOp, ArrayAttr callParams, ArrayRef<StringAttr> oldParamOrder,
-    const DenseMap<StringAttr, Type> &replacements
+    const DenseMap<StringAttr, Type> &replacements, bool explicitCallParams
 ) {
   if (callParamsMatchReplacements(callParams, oldParamOrder, replacements)) {
     return success();
@@ -1861,7 +1865,8 @@ static LogicalResult diagnoseCallParamsMismatch(
     }
 
     InFlightDiagnostic diag = callOp.emitError()
-                              << "explicit template argument for inferred parameter @"
+                              << (explicitCallParams ? "explicit" : "implicit")
+                              << " template argument for inferred parameter @"
                               << entry.first.getValue() << " must match inferred type "
                               << expectedTy << ", but found ";
     if (auto typeAttr = llvm::dyn_cast<TypeAttr>(attr)) {
@@ -1871,7 +1876,8 @@ static LogicalResult diagnoseCallParamsMismatch(
     }
     return diag;
   }
-  return callOp.emitError() << "explicit template arguments do not match inferred callee types";
+  return callOp.emitError() << (explicitCallParams ? "explicit" : "implicit")
+                            << " template arguments do not match inferred callee types";
 }
 
 /// Build concrete type-variable replacements from an explicit call instantiation.
@@ -1915,6 +1921,129 @@ static DenseMap<StringAttr, Type> getConcreteCallSiteReplacements(
   return replacements;
 }
 
+/// Append `ty` to `types` unless it is already present.
+static void appendUniqueType(SmallVectorImpl<Type> &types, Type ty) {
+  if (!llvm::any_of(types, [ty](Type existing) { return existing == ty; })) {
+    types.push_back(ty);
+  }
+}
+
+/// Collect call-side types that bind to `targetRef` at matching callee type positions.
+static void collectRhsTypeVarCandidates(
+    Type lhsTy, Type rhsTy, SymbolRefAttr targetRef, SmallVectorImpl<Type> &candidates
+);
+
+/// Collect call-side types from matching template parameter attribute lists.
+static void collectRhsTypeVarCandidates(
+    ArrayRef<Attribute> lhsAttrs, ArrayRef<Attribute> rhsAttrs, SymbolRefAttr targetRef,
+    SmallVectorImpl<Type> &candidates
+) {
+  if (lhsAttrs.size() != rhsAttrs.size()) {
+    return;
+  }
+  for (auto [lhsAttr, rhsAttr] : llvm::zip_equal(lhsAttrs, rhsAttrs)) {
+    collectRhsTypeVarCandidates(lhsAttr, rhsAttr, targetRef, candidates);
+  }
+}
+
+/// Collect call-side types from matching template parameter attributes.
+static void collectRhsTypeVarCandidates(
+    Attribute lhsAttr, Attribute rhsAttr, SymbolRefAttr targetRef, SmallVectorImpl<Type> &candidates
+) {
+  if (auto rhsTypeAttr = llvm::dyn_cast_if_present<TypeAttr>(rhsAttr)) {
+    if (auto lhsTypeAttr = llvm::dyn_cast_if_present<TypeAttr>(lhsAttr)) {
+      collectRhsTypeVarCandidates(
+          lhsTypeAttr.getValue(), rhsTypeAttr.getValue(), targetRef, candidates
+      );
+    }
+    return;
+  }
+
+  auto lhsArray = llvm::dyn_cast_if_present<ArrayAttr>(lhsAttr);
+  auto rhsArray = llvm::dyn_cast_if_present<ArrayAttr>(rhsAttr);
+  if (!lhsArray || !rhsArray || lhsArray.size() != rhsArray.size()) {
+    return;
+  }
+  collectRhsTypeVarCandidates(lhsArray.getValue(), rhsArray.getValue(), targetRef, candidates);
+}
+
+/// Collect call-side types from matching type structure.
+///
+/// The normal unifier records a null value after two different types bind to
+/// the same RHS type variable. This helper reconstructs those concrete
+/// candidates for diagnostics by walking the same call/callee type positions.
+static void collectRhsTypeVarCandidates(
+    Type lhsTy, Type rhsTy, SymbolRefAttr targetRef, SmallVectorImpl<Type> &candidates
+) {
+  if (auto rhsTvar = llvm::dyn_cast<TypeVarType>(rhsTy);
+      rhsTvar && rhsTvar.getNameRef() == targetRef) {
+    appendUniqueType(candidates, lhsTy);
+    return;
+  }
+
+  if (auto lhsArray = llvm::dyn_cast<ArrayType>(lhsTy)) {
+    if (auto rhsArray = llvm::dyn_cast<ArrayType>(rhsTy)) {
+      collectRhsTypeVarCandidates(
+          lhsArray.getElementType(), rhsArray.getElementType(), targetRef, candidates
+      );
+      collectRhsTypeVarCandidates(
+          lhsArray.getDimensionSizes(), rhsArray.getDimensionSizes(), targetRef, candidates
+      );
+    }
+    return;
+  }
+
+  if (auto lhsStruct = llvm::dyn_cast<StructType>(lhsTy)) {
+    if (auto rhsStruct = llvm::dyn_cast<StructType>(rhsTy)) {
+      collectRhsTypeVarCandidates(
+          lhsStruct.getParams(), rhsStruct.getParams(), targetRef, candidates
+      );
+    }
+    return;
+  }
+
+  if (auto lhsPod = llvm::dyn_cast<PodType>(lhsTy)) {
+    if (auto rhsPod = llvm::dyn_cast<PodType>(rhsTy);
+        rhsPod && lhsPod.getRecords().size() == rhsPod.getRecords().size()) {
+      for (auto [lhsRecord, rhsRecord] :
+           llvm::zip_equal(lhsPod.getRecords(), rhsPod.getRecords())) {
+        collectRhsTypeVarCandidates(
+            lhsRecord.getType(), rhsRecord.getType(), targetRef, candidates
+        );
+      }
+    }
+    return;
+  }
+
+  if (auto lhsFunc = llvm::dyn_cast<FunctionType>(lhsTy)) {
+    if (auto rhsFunc = llvm::dyn_cast<FunctionType>(rhsTy)) {
+      for (auto [lhsInput, rhsInput] : llvm::zip_equal(lhsFunc.getInputs(), rhsFunc.getInputs())) {
+        collectRhsTypeVarCandidates(lhsInput, rhsInput, targetRef, candidates);
+      }
+      for (auto [lhsResult, rhsResult] :
+           llvm::zip_equal(lhsFunc.getResults(), rhsFunc.getResults())) {
+        collectRhsTypeVarCandidates(lhsResult, rhsResult, targetRef, candidates);
+      }
+    }
+  }
+}
+
+/// Return unique call-side types that conflict for an omitted callee type variable.
+static SmallVector<Type>
+getConflictingRhsTypeVarCandidates(FunctionType lhs, FunctionType rhs, SymbolRefAttr targetRef) {
+  SmallVector<Type> candidates;
+  if (lhs.getNumInputs() != rhs.getNumInputs() || lhs.getNumResults() != rhs.getNumResults()) {
+    return candidates;
+  }
+  for (auto [lhsInput, rhsInput] : llvm::zip_equal(lhs.getInputs(), rhs.getInputs())) {
+    collectRhsTypeVarCandidates(lhsInput, rhsInput, targetRef, candidates);
+  }
+  for (auto [lhsResult, rhsResult] : llvm::zip_equal(lhs.getResults(), rhs.getResults())) {
+    collectRhsTypeVarCandidates(lhsResult, rhsResult, targetRef, candidates);
+  }
+  return candidates;
+}
+
 /// Infer the call-site template argument list from call/callee type unification.
 static FailureOr<ArrayAttr>
 getCallSignatureTemplateParams(CallOp callOp, const TemplateInferenceInfo &info, FuncDefOp func) {
@@ -1932,8 +2061,18 @@ getCallSignatureTemplateParams(CallOp callOp, const TemplateInferenceInfo &info,
                                 << paramName.getValue() << " from callee signature";
     }
     if (!it->second) {
-      return callOp.emitError() << "conflicting implicit template argument inferred for parameter @"
-                                << paramName.getValue() << " from callee signature";
+      InFlightDiagnostic diag = callOp.emitError()
+                                << "conflicting inferred types for @" << paramName.getValue();
+      SmallVector<Type> candidates = getConflictingRhsTypeVarCandidates(
+          callOp.getTypeSignature(), func.getFunctionType(), FlatSymbolRefAttr::get(paramName)
+      );
+      if (candidates.size() >= 2) {
+        diag << ": " << candidates.front();
+        for (Type candidate : llvm::drop_begin(candidates)) {
+          diag << " vs " << candidate;
+        }
+      }
+      return diag;
     }
     params.push_back(it->second);
   }
@@ -2447,7 +2586,8 @@ static LogicalResult specializeFunctionLocalCalls(
     DenseMap<StringAttr, Type> inferredReplacements =
         getFunctionProofReplacements(*info, targetFunc);
     if (failed(diagnoseCallParamsMismatch(
-            callOp, callParams, info->oldParamOrder, inferredReplacements
+            callOp, callParams, info->oldParamOrder, inferredReplacements,
+            /*explicitCallParams=*/!inferredCallParams
         ))) {
       failedClone = true;
       return;
