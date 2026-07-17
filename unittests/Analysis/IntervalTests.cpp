@@ -60,6 +60,19 @@ TEST_F(IntervalTests, UnreducedIntervalOverlap) {
   ASSERT_FALSE(d.overlaps(a));
 }
 
+TEST_F(IntervalTests, SourceRefIndexHalfOpenOverlap) {
+  SourceRefIndex range(APInt(64, 2), APInt(64, 5));
+  SourceRefIndex overlappingRange(APInt(64, 4), APInt(64, 7));
+  SourceRefIndex adjacentRange(APInt(64, 5), APInt(64, 8));
+
+  EXPECT_FALSE(range.overlaps(SourceRefIndex(1)));
+  EXPECT_TRUE(range.overlaps(SourceRefIndex(2)));
+  EXPECT_TRUE(range.overlaps(SourceRefIndex(4)));
+  EXPECT_FALSE(range.overlaps(SourceRefIndex(5)));
+  EXPECT_TRUE(range.overlaps(overlappingRange));
+  EXPECT_FALSE(range.overlaps(adjacentRange));
+}
+
 TEST_F(IntervalTests, UnreducedIntervalWidth) {
   // Standard width.
   UnreducedInterval a(0, 100);

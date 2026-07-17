@@ -172,6 +172,28 @@ size_t SourceRefIndex::Hash::operator()(const SourceRefIndex &c) const {
   }
 }
 
+bool SourceRefIndex::overlaps(const SourceRefIndex &rhs) const {
+  if (isPodRecord() && rhs.isMember()) {
+    return getPodRecordName() == rhs.getMember().getName();
+  }
+  if (isMember() && rhs.isPodRecord()) {
+    return rhs.overlaps(*this);
+  }
+  if (isIndex() && rhs.isIndexRange()) {
+    auto [low, high] = rhs.getIndexRange();
+    return low <= getIndex() && getIndex() < high;
+  }
+  if (isIndexRange() && rhs.isIndex()) {
+    return rhs.overlaps(*this);
+  }
+  if (isIndexRange() && rhs.isIndexRange()) {
+    auto [lhsLow, lhsHigh] = getIndexRange();
+    auto [rhsLow, rhsHigh] = rhs.getIndexRange();
+    return lhsLow < rhsHigh && rhsLow < lhsHigh;
+  }
+  return *this == rhs;
+}
+
 /* SourceRef */
 
 SourceRef::SortCategory SourceRef::getSortCategory() const {

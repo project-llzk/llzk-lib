@@ -21,6 +21,7 @@
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/Field.h"
@@ -429,7 +430,8 @@ private:
   getGeneralizedDecompInterval(mlir::Operation *baseOp, mlir::Value lhs, mlir::Value rhs);
 
   bool isReadOp(mlir::Operation *op) const {
-    return llvm::isa<component::MemberReadOp, polymorphic::ConstReadOp, array::ReadArrayOp>(op);
+    return llvm::isa<
+        component::MemberReadOp, polymorphic::ConstReadOp, array::ReadArrayOp, pod::ReadPodOp>(op);
   }
 
   bool isDefinitionOp(mlir::Operation *op) const {
