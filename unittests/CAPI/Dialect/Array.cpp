@@ -20,12 +20,8 @@
 #include <mlir-c/BuiltinTypes.h>
 #include <mlir-c/IR.h>
 
-#include <mlir/IR/BuiltinOps.h>
-
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/SmallVector.h>
-
-#include <array>
 
 // Include the auto-generated tests
 #include "llzk/Dialect/Array/IR/Dialect.capi.test.cpp.inc"
