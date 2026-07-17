@@ -1,4 +1,4 @@
 var Include_8cpp =
 [
-    [ "llzkInclude_IncludeOpCreateInferredContext", "Include_8cpp.html#ae6e10066dab5fd22cb23bc1f01314772", null ]
+    [ "LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD", "Include_8cpp.html#a69d7545811f1b33e9aee8b0eaae2a2b0", null ]
 ];

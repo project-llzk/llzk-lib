@@ -109,14 +109,15 @@ $(function(){initNavTree('Include_8h.html','',''); });
   <div class="headertitle"><div class="title">Include.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;mlir-c/IR.h&gt;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="llzk-c_2Support_8h_source.html">llzk-c/Support.h</a>&quot;</code><br />
+<code>#include &lt;mlir-c/IR.h&gt;</code><br />
 <code>#include &lt;mlir-c/Support.h&gt;</code><br />
 <code>#include &quot;<a class="el" href="Include_2IR_2Ops_8capi_8h_8inc_source.html">llzk/Dialect/Include/IR/Ops.capi.h.inc</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="InlineIncludesPass_8capi_8h_8inc_source.html">llzk/Dialect/Include/Transforms/InlineIncludesPass.capi.h.inc</a>&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for Include.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Include_8h__incl.svg" width="608" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Include_8h__incl.svg" width="727" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
@@ -130,20 +131,30 @@ This graph shows which files directly or indirectly include this file:</div>
 Functions</h2></td></tr>
 <tr class="memitem:a4774bf5cc22886a70881671aa5a4dff8" id="r_a4774bf5cc22886a70881671aa5a4dff8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4774bf5cc22886a70881671aa5a4dff8">MLIR_DECLARE_CAPI_DIALECT_REGISTRATION</a> (Include, llzk__include)</td></tr>
 <tr class="memdesc:a4774bf5cc22886a70881671aa5a4dff8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get reference to the LLZK <span class="tt">include</span> dialect.  <br /></td></tr>
-<tr class="memitem:a84acdedba5a49794b11fead5e74df3ce" id="r_a84acdedba5a49794b11fead5e74df3ce"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a84acdedba5a49794b11fead5e74df3ce">llzkInclude_IncludeOpCreateInferredContext</a> (MlirLocation loc, MlirStringRef name, MlirStringRef path)</td></tr>
-<tr class="memdesc:a84acdedba5a49794b11fead5e74df3ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates an IncludeOp pointing to another MLIR file.  <br /></td></tr>
+<tr class="memitem:a53a124830f1f010abbdcdfec0bc64a88" id="r_a53a124830f1f010abbdcdfec0bc64a88"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a53a124830f1f010abbdcdfec0bc64a88">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD</a> (Include, IncludeOp, InferredContext, MlirStringRef name, MlirStringRef path)</td></tr>
+<tr class="memdesc:a53a124830f1f010abbdcdfec0bc64a88"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds an IncludeOp pointing to another MLIR file.  <br /></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
-<a id="a84acdedba5a49794b11fead5e74df3ce" name="a84acdedba5a49794b11fead5e74df3ce"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a84acdedba5a49794b11fead5e74df3ce">&#9670;&#160;</a></span>llzkInclude_IncludeOpCreateInferredContext()</h2>
+<a id="a53a124830f1f010abbdcdfec0bc64a88" name="a53a124830f1f010abbdcdfec0bc64a88"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a53a124830f1f010abbdcdfec0bc64a88">&#9670;&#160;</a></span>LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">MLIR_CAPI_EXPORTED MlirOperation llzkInclude_IncludeOpCreateInferredContext </td>
+          <td class="memname">LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD </td>
           <td>(</td>
-          <td class="paramtype">MlirLocation</td>          <td class="paramname"><span class="paramname"><em>loc</em></span>, </td>
+          <td class="paramtype">Include</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">IncludeOp</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">InferredContext</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -158,9 +169,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Creates an IncludeOp pointing to another MLIR file. </p>
-
-<p class="definition">Definition at line <a class="el" href="Include_8cpp_source.html#l00033">33</a> of file <a class="el" href="Include_8cpp_source.html">Include.cpp</a>.</p>
+<p>Builds an IncludeOp pointing to another MLIR file. </p>
 
 </div>
 </div>

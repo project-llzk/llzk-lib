@@ -137,8 +137,10 @@ Include dependency graph for Function.cpp:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a8532cc416bd6b5aba878e336a81f116d" id="r_a8532cc416bd6b5aba878e336a81f116d"><td class="memItemLeft" align="right" valign="top">MlirOperation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8532cc416bd6b5aba878e336a81f116d">llzkFunction_FuncDefOpCreateWithAttrsAndArgAttrs</a> (MlirLocation location, MlirStringRef name, MlirType funcType, intptr_t numAttrs, MlirNamedAttribute const *attrs, intptr_t numArgAttrs, MlirAttribute const *argAttrs)</td></tr>
-<tr class="memdesc:a8532cc416bd6b5aba878e336a81f116d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> with the given attributes and argument attributes.  <br /></td></tr>
+<tr class="memitem:aee3c88695bb757c19507e347e05444bd" id="r_aee3c88695bb757c19507e347e05444bd"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aee3c88695bb757c19507e347e05444bd">LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD</a> (Function, <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a>, WithAttrsAndArgAttrs, MlirStringRef name, MlirType funcType, intptr_t numAttrs, MlirNamedAttribute const *attrs, intptr_t numArgAttrs, MlirAttribute const *argAttrs)</td></tr>
+<tr class="memitem:ad1b4e687ce4e69b4843813950c0cf4d0" id="r_ad1b4e687ce4e69b4843813950c0cf4d0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad1b4e687ce4e69b4843813950c0cf4d0">LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD</a> (Function, <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a>, WithAttrs, MlirStringRef name, MlirType funcType, intptr_t numAttrs, MlirNamedAttribute const *attrs)</td></tr>
+<tr class="memitem:a2e24b55b34b95c3edadba41aebbb8774" id="r_a2e24b55b34b95c3edadba41aebbb8774"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2e24b55b34b95c3edadba41aebbb8774">LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD</a> (Function, <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a>, WithArgAttrs, MlirStringRef name, MlirType funcType, intptr_t numArgAttrs, MlirAttribute const *argAttrs)</td></tr>
+<tr class="memitem:ae319254782e712c55faa3ac3e709d30f" id="r_ae319254782e712c55faa3ac3e709d30f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae319254782e712c55faa3ac3e709d30f">LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD</a> (Function, <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a>, WithoutAttrs, MlirStringRef name, MlirType funcType)</td></tr>
 <tr class="memitem:a7c3c1415ffcb5165558aabf8d49fcbb4" id="r_a7c3c1415ffcb5165558aabf8d49fcbb4"><td class="memItemLeft" align="right" valign="top">MlirAttribute&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7c3c1415ffcb5165558aabf8d49fcbb4">llzkFunction_FuncDefOpGetArgNameAttr</a> (MlirOperation op, unsigned index)</td></tr>
 <tr class="memdesc:a7c3c1415ffcb5165558aabf8d49fcbb4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the <span class="tt">function.arg_name</span> StringAttr for the argument at the given index, or null if the argument has no <span class="tt">function.arg_name</span> attribute.  <br /></td></tr>
 <tr class="memitem:a48f1c8ec4fdb5b86ebea710f28f237a4" id="r_a48f1c8ec4fdb5b86ebea710f28f237a4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a48f1c8ec4fdb5b86ebea710f28f237a4">llzkFunction_FuncDefOpSetArgNameAttr</a> (MlirOperation op, unsigned index, MlirAttribute attr)</td></tr>
@@ -203,12 +205,12 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00102">102</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00129">129</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
 
 </div>
 </div>
 <a id="aa37511b92764607c531aed89c9ad9549" name="aa37511b92764607c531aed89c9ad9549"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa37511b92764607c531aed89c9ad9549">&#9670;&#160;</a></span>LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[1/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#aa37511b92764607c531aed89c9ad9549">&#9670;&#160;</a></span>LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[1/9]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -246,12 +248,12 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00118">118</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00145">145</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
 
 </div>
 </div>
 <a id="abbeb9307274cd6224b5994f9013e93bb" name="abbeb9307274cd6224b5994f9013e93bb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abbeb9307274cd6224b5994f9013e93bb">&#9670;&#160;</a></span>LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[2/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#abbeb9307274cd6224b5994f9013e93bb">&#9670;&#160;</a></span>LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[2/9]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -294,12 +296,12 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00154">154</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00181">181</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
 
 </div>
 </div>
 <a id="a11d0abc6a075e846e2c49c01f50219a3" name="a11d0abc6a075e846e2c49c01f50219a3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a11d0abc6a075e846e2c49c01f50219a3">&#9670;&#160;</a></span>LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[3/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a11d0abc6a075e846e2c49c01f50219a3">&#9670;&#160;</a></span>LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[3/9]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -347,12 +349,12 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00192">192</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00219">219</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
 
 </div>
 </div>
 <a id="a73eac0a452723137dadaedb4aa17322d" name="a73eac0a452723137dadaedb4aa17322d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a73eac0a452723137dadaedb4aa17322d">&#9670;&#160;</a></span>LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[4/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a73eac0a452723137dadaedb4aa17322d">&#9670;&#160;</a></span>LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[4/9]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -405,12 +407,12 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00133">133</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00160">160</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
 
 </div>
 </div>
 <a id="a1e022fe1045662fb95cedcacaecdc222" name="a1e022fe1045662fb95cedcacaecdc222"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1e022fe1045662fb95cedcacaecdc222">&#9670;&#160;</a></span>LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[5/5]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a1e022fe1045662fb95cedcacaecdc222">&#9670;&#160;</a></span>LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[5/9]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -468,20 +470,126 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00173">173</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00200">200</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
 
 </div>
 </div>
-<a id="a8532cc416bd6b5aba878e336a81f116d" name="a8532cc416bd6b5aba878e336a81f116d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8532cc416bd6b5aba878e336a81f116d">&#9670;&#160;</a></span>llzkFunction_FuncDefOpCreateWithAttrsAndArgAttrs()</h2>
+<a id="a2e24b55b34b95c3edadba41aebbb8774" name="a2e24b55b34b95c3edadba41aebbb8774"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2e24b55b34b95c3edadba41aebbb8774">&#9670;&#160;</a></span>LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[6/9]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">MlirOperation llzkFunction_FuncDefOpCreateWithAttrsAndArgAttrs </td>
+          <td class="memname">LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD </td>
           <td>(</td>
-          <td class="paramtype">MlirLocation</td>          <td class="paramname"><span class="paramname"><em>location</em></span>, </td>
+          <td class="paramtype">Function</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a></td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">WithArgAttrs</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirStringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirType</td>          <td class="paramname"><span class="paramname"><em>funcType</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">intptr_t</td>          <td class="paramname"><span class="paramname"><em>numArgAttrs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute const *</td>          <td class="paramname"><span class="paramname"><em>argAttrs</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00076">76</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ad1b4e687ce4e69b4843813950c0cf4d0" name="ad1b4e687ce4e69b4843813950c0cf4d0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad1b4e687ce4e69b4843813950c0cf4d0">&#9670;&#160;</a></span>LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[7/9]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD </td>
+          <td>(</td>
+          <td class="paramtype">Function</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a></td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">WithAttrs</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirStringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirType</td>          <td class="paramname"><span class="paramname"><em>funcType</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">intptr_t</td>          <td class="paramname"><span class="paramname"><em>numAttrs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirNamedAttribute const *</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00067">67</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
+
+</div>
+</div>
+<a id="aee3c88695bb757c19507e347e05444bd" name="aee3c88695bb757c19507e347e05444bd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aee3c88695bb757c19507e347e05444bd">&#9670;&#160;</a></span>LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[8/9]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD </td>
+          <td>(</td>
+          <td class="paramtype">Function</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a></td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">WithAttrsAndArgAttrs</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -516,10 +624,45 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Creates a <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> with the given attributes and argument attributes. </p>
-<p>Each argument attribute has to be a DictionaryAttr. </p>
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00046">46</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00048">48</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
+</div>
+</div>
+<a id="ae319254782e712c55faa3ac3e709d30f" name="ae319254782e712c55faa3ac3e709d30f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae319254782e712c55faa3ac3e709d30f">&#9670;&#160;</a></span>LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD() <span class="overload">[9/9]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD </td>
+          <td>(</td>
+          <td class="paramtype">Function</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a></td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">WithoutAttrs</td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirStringRef</td>          <td class="paramname"><span class="paramname"><em>name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirType</td>          <td class="paramname"><span class="paramname"><em>funcType</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00085">85</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
 
 </div>
 </div>
@@ -544,7 +687,7 @@ Functions</h2></td></tr>
 
 <p>Returns the <span class="tt">function.arg_name</span> StringAttr for the argument at the given index, or null if the argument has no <span class="tt">function.arg_name</span> attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00066">66</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00093">93</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
 
 </div>
 </div>
@@ -569,7 +712,7 @@ Functions</h2></td></tr>
 
 <p>Returns the <span class="tt">function.res_name</span> StringAttr for the result at the given index, or null if the result has no <span class="tt">function.res_name</span> attribute. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00079">79</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00106">106</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
 
 </div>
 </div>
@@ -600,7 +743,7 @@ Functions</h2></td></tr>
 <p>Sets the <span class="tt">function.arg_name</span> attribute for the argument at the given index from a string value. </p>
 <p>Empty and duplicate names are rejected by the FuncDefOp verifier. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00075">75</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00102">102</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
 
 </div>
 </div>
@@ -631,7 +774,7 @@ Functions</h2></td></tr>
 <p>Sets the <span class="tt">function.arg_name</span> attribute for the argument at the given index. </p>
 <p>The attribute must be a StringAttr. Empty and duplicate names are rejected by the FuncDefOp verifier. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00071">71</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00098">98</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
 
 </div>
 </div>
@@ -662,7 +805,7 @@ Functions</h2></td></tr>
 <p>Sets the <span class="tt">function.res_name</span> attribute for the result at the given index from a string value. </p>
 <p>Empty and duplicate names are rejected by the FuncDefOp verifier. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00088">88</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00115">115</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
 
 </div>
 </div>
@@ -693,7 +836,7 @@ Functions</h2></td></tr>
 <p>Sets the <span class="tt">function.res_name</span> attribute for the result at the given index. </p>
 <p>The attribute must be a StringAttr. Empty and duplicate names are rejected by the FuncDefOp verifier. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00084">84</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_8cpp_source.html#l00111">111</a> of file <a class="el" href="Function_8cpp_source.html">Function.cpp</a>.</p>
 
 </div>
 </div>

@@ -1,5 +1,11 @@
 var NAVTREEINDEX81 =
 {
+"dialects.html#operations-4":[7,4,0],
+"dialects.html#operations-5":[7,5,0],
+"dialects.html#operations-6":[7,6,0],
+"dialects.html#operations-7":[7,7,0],
+"dialects.html#operations-8":[7,8,0],
+"dialects.html#operations-9":[7,9,0],
 "dialects.html#overflowsemantics":[7,2,2,0],
 "dialects.html#overflowsemanticsattr":[7,2,1,0],
 "dialects.html#parameters":[7,0,1,0,0],
@@ -243,11 +249,5 @@ var NAVTREEINDEX81 =
 "dir_f38c3fa6151289ed96db329754eda5d7.html":[13,0,2,0,2,3],
 "dir_f3be09ebd0e5cf0af67f11cdd6c84b89.html":[13,0,0,0,0,2,3,0],
 "dir_f3e73a72551dfe6ccaf5a218fcf613e8.html":[13,0,3,3,15,0],
-"dir_f525f3dba9a7ae1591a7aca7556eba45.html":[13,0,0,0,0,2,4],
-"dir_f5b4f9dcbadf5974ef9349e2e99d864f.html":[13,0,2,0,2,9,1],
-"dir_f63655cd686fcee5469c99e34fd78084.html":[13,0,3,3,15],
-"dir_f6927357d7d44edfb0d5107d0237e395.html":[13,0,0,0,0,2,1],
-"dir_fb315d91a34cbf3080d3279b2d582048.html":[13,0,3,3,6],
-"dir_fbb5839660df89f0c7872b7fe52b5d6c.html":[13,0,3,3,4],
-"dir_fe0ef27a24ecf63102ca83760db7d332.html":[13,0,3,2,1]
+"dir_f525f3dba9a7ae1591a7aca7556eba45.html":[13,0,0,0,0,2,4]
 };
