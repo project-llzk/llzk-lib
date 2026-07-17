@@ -265,6 +265,11 @@ public:
   /// Validate type-bearing surfaces before resolved owned-struct parameters are
   /// dropped.
   LogicalResult validateOperation(Operation *op) const {
+    if (auto createOp = llvm::dyn_cast<CreateArrayOp>(op)) {
+      if (failed(validateCreateArrayOp(createOp))) {
+        return failure();
+      }
+    }
     if (auto func = llvm::dyn_cast<FuncDefOp>(op)) {
       if (failed(validateType(func.getFunctionType(), op))) {
         return failure();
@@ -293,6 +298,32 @@ public:
   }
 
 private:
+  /// Reject initialized nested array rewrites when the original initializer list
+  /// cannot be mapped to concrete outer indices.
+  ///
+  /// When a `!poly.tvar` element is inferred as an array type,
+  /// `convertOperationTypes` lowers `array.new %a, %b : <2 x !poly.tvar<@T>>`
+  /// by creating the flattened result array and inserting each subarray operand
+  /// at its original outer position. That lowering works even if the inferred
+  /// subarray has dynamic dimensions, but the original array shape must still be
+  /// static so each initializer operand has a known insertion index.
+  LogicalResult validateCreateArrayOp(CreateArrayOp createOp) const {
+    if (createOp.getElements().empty()) {
+      return success();
+    }
+
+    ArrayType oldResultTy = createOp.getType();
+    auto newResultTy = llvm::dyn_cast<ArrayType>(convertType(oldResultTy));
+    auto newElemTy = llvm::dyn_cast<ArrayType>(convertType(oldResultTy.getElementType()));
+    if (!newResultTy || !newElemTy || newResultTy == oldResultTy || oldResultTy.hasStaticShape()) {
+      return success();
+    }
+
+    return createOp.emitError()
+           << "cannot rewrite initialized array.new with non-static initializer shape "
+           << oldResultTy;
+  }
+
   LogicalResult validateType(Type ty, Operation *diagnosticOp) const {
     if (!ty) {
       return success();
@@ -571,12 +602,12 @@ static bool convertOperationTypes(Operation *op, ConverterT &converter) {
     auto newResultTy = llvm::dyn_cast<ArrayType>(converter.convertType(oldResultTy));
     auto newElemTy = llvm::dyn_cast<ArrayType>(converter.convertType(oldResultTy.getElementType()));
     if (newResultTy && newElemTy && newResultTy != oldResultTy && !createOp.getElements().empty() &&
-        newElemTy.hasStaticShape()) {
+        oldResultTy.hasStaticShape()) {
       OpBuilder builder(createOp);
       Location loc = createOp.getLoc();
-      SmallVector<Value> flattenedElements;
-      ArrayIndexGen idxGen = ArrayIndexGen::from(newElemTy);
-      for (Value element : createOp.getElements()) {
+      CreateArrayOp newCreate = builder.create<CreateArrayOp>(loc, newResultTy);
+      ArrayIndexGen idxGen = ArrayIndexGen::from(oldResultTy);
+      for (auto [index, element] : llvm::enumerate(createOp.getElements())) {
         Type newElementValueTy = converter.convertType(element.getType());
         if (newElementValueTy != newElemTy) {
           return false;
@@ -584,16 +615,11 @@ static bool convertOperationTypes(Operation *op, ConverterT &converter) {
         if (element.getType() != newElementValueTy) {
           element.setType(newElementValueTy);
         }
-        for (int64_t i = 0, e = newElemTy.getNumElements(); i < e; ++i) {
-          std::optional<SmallVector<Value>> indices = idxGen.delinearize(i, loc, builder);
-          assert(indices && "static array element index should delinearize");
-          flattenedElements.push_back(
-              builder.create<ReadArrayOp>(loc, element, ValueRange(*indices)).getResult()
-          );
-        }
+        std::optional<SmallVector<Value>> indices =
+            idxGen.delinearize(checkedCast<int64_t>(index), loc, builder);
+        assert(indices && "static array initializer index should delinearize");
+        builder.create<InsertArrayOp>(loc, newCreate.getResult(), ValueRange(*indices), element);
       }
-      CreateArrayOp newCreate =
-          builder.create<CreateArrayOp>(loc, newResultTy, ValueRange(flattenedElements));
       createOp.getResult().replaceAllUsesWith(newCreate.getResult());
       createOp.erase();
       return true;
