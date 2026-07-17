@@ -16,6 +16,7 @@
 #include "llzk/Analysis/IntervalAnalysis.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/SymbolHelper.h"
 
@@ -98,7 +99,7 @@ class PassImpl : public llzk::impl::IntervalAnalysisPrinterPassBase<PassImpl> {
     AsmState asmState(modOp);
 
     auto printValueInterval = [this, &asmState, &mia](raw_ostream &out, int indent, Value value) {
-      if (llvm::isa<llzk::array::ArrayType, StructType>(value.getType())) {
+      if (llvm::isa<llzk::array::ArrayType, StructType, llzk::pod::PodType>(value.getType())) {
         return;
       }
       const auto *lattice = mia.getSolver().lookupState<IntervalAnalysisLattice>(value);

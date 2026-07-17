@@ -13,6 +13,7 @@
 #include "llzk/Analysis/Matchers.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -729,7 +730,7 @@ Interval IntervalDataFlowAnalysis::getRefInterval(const SourceRef &ref) {
 
   if (ref.isRooted() && ref.getPath().empty()) {
     auto rootVal = ref.getRoot();
-    if (succeeded(rootVal) && !llvm::isa<ArrayType, StructType>(rootVal->getType())) {
+    if (succeeded(rootVal) && !llvm::isa<ArrayType, StructType, pod::PodType>(rootVal->getType())) {
       const ExpressionValue &rootExpr = getLatticeElement(*rootVal)->getValue().getScalarValue();
       if (rootExpr.getExpr() != nullptr) {
         return rootExpr.getInterval();
@@ -770,7 +771,7 @@ IntervalDataFlowAnalysis::getRefUnreducedInterval(const SourceRef &ref) {
 
   if (ref.isRooted() && ref.getPath().empty()) {
     auto rootVal = ref.getRoot();
-    if (succeeded(rootVal) && !llvm::isa<ArrayType, StructType>(rootVal->getType())) {
+    if (succeeded(rootVal) && !llvm::isa<ArrayType, StructType, pod::PodType>(rootVal->getType())) {
       const ExpressionValue &rootExpr = getLatticeElement(*rootVal)->getValue().getScalarValue();
       if (rootExpr.hasUnreducedInterval()) {
         return rootExpr.getUnreducedInterval();
@@ -915,10 +916,9 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     }
 
     // Else, look up the stored value by `SourceRef`.
-    // We only care about scalar type values, so we ignore composite types, which
-    // are currently limited to structs and arrays.
+    // We only care about scalar type values here, so ignore aggregate storage values.
     Type valTy = val.getType();
-    if (llvm::isa<ArrayType, StructType>(valTy)) {
+    if (llvm::isa<ArrayType, StructType, pod::PodType>(valTy)) {
       ExpressionValue anyVal(field.get(), createSymbol(valTy, buildStringViaPrint(val).c_str()));
       operandVals.emplace_back(anyVal);
       continue;
@@ -941,7 +941,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
 
   if (isReadOp(op) && op->getNumResults() == 1) {
     Value resultVal = op->getResult(0);
-    if (!llvm::isa<ArrayType, StructType>(resultVal.getType())) {
+    if (!llvm::isa<ArrayType, StructType, pod::PodType>(resultVal.getType())) {
       auto resolvedValue = resolveRefStateValue(resultVal, getSourceRefState(resultVal));
       if (resolvedValue.has_value()) {
         propagateIfChanged(results[0], results[0]->setValue(*resolvedValue));
@@ -1018,6 +1018,35 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     auto assertExpr = operandVals[0].getScalarValue();
     // No need to propagate the constraint
     (void)getLatticeElement(cond)->addSolverConstraint(assertExpr);
+  } else if (auto writePod = llvm::dyn_cast<pod::WritePodOp>(op)) {
+    const bool maySkipWrite = isInMaybeSkippedScfRegion(op);
+    SourceRefLatticeValue podRefs = getSourceRefState(writePod.getPodRef());
+    if (podRefs.isScalar()) {
+      auto recordRefsRes = podRefs.referencePodRecord(writePod.getRecordNameAttr());
+      ensure(succeeded(recordRefsRes), "could not create SourceRef child for pod write");
+      SourceRefLatticeValue recordRefs = recordRefsRes->first;
+      Type valueTy = writePod.getValue().getType();
+      if (!llvm::isa<ArrayType, StructType, pod::PodType>(valueTy)) {
+        ExpressionValue writeVal = operandVals[1].getScalarValue();
+        for (const SourceRef &recordRef : recordRefs.getScalarValue()) {
+          recordRefWrite(recordRef, writeVal, maySkipWrite);
+        }
+      } else if (operandRefs[1].has_value()) {
+        llvm::SmallVector<std::pair<SourceRef, ExpressionValue>> remappedWrites;
+        for (const SourceRef &recordRef : recordRefs.getScalarValue()) {
+          for (const auto &[writtenRef, writtenVal] : writeResults) {
+            if (writtenRef.isValidPrefix(*operandRefs[1])) {
+              auto translated = writtenRef.translate(*operandRefs[1], recordRef);
+              ensure(succeeded(translated), "could not translate aggregate pod write");
+              remappedWrites.emplace_back(*translated, writtenVal);
+            }
+          }
+        }
+        for (const auto &[translatedRef, translatedVal] : remappedWrites) {
+          recordRefWrite(translatedRef, translatedVal, maySkipWrite);
+        }
+      }
+    }
   } else if (auto writem = llvm::dyn_cast<MemberWriteOp>(op)) {
     const bool maySkipWrite = isInMaybeSkippedScfRegion(op);
     // Update values stored in a member
@@ -1033,7 +1062,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
         ensure(succeeded(memberRefRes), "could not create SourceRef child for member write");
         const SourceRef &memberRef = *memberRefRes;
         Type memberTy = writem.getVal().getType();
-        if (!llvm::isa<ArrayType, StructType>(memberTy)) {
+        if (!llvm::isa<ArrayType, StructType, pod::PodType>(memberTy)) {
           // Simple scalar update
           recordRefWrite(memberRef, writeVal, maySkipWrite);
         } else {
@@ -1090,7 +1119,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     ArrayType arrayTy = createArray.getType();
     Type elemTy = arrayTy.getElementType();
 
-    if (!elements.empty() && !llvm::isa<ArrayType, StructType>(elemTy)) {
+    if (!elements.empty() && !llvm::isa<ArrayType, StructType, pod::PodType>(elemTy)) {
       ensure(arrayTy.hasStaticShape(), "array.new with explicit elements must have static shape");
       ensure(
           std::cmp_equal(elements.size(), arrayTy.getNumElements()),
@@ -1112,6 +1141,63 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
         }
 
         recordRefWrite(SourceRef(arrayRes, std::move(path)), operandVals[i].getScalarValue());
+      }
+    } else if (!elements.empty()) {
+      ensure(arrayTy.hasStaticShape(), "aggregate array.new initializer requires static shape");
+      array::ArrayIndexGen indexGen = array::ArrayIndexGen::from(arrayTy);
+      SourceRef arrayRoot(llvm::cast<OpResult>(createArray.getResult()));
+      llvm::SmallVector<std::pair<SourceRef, ExpressionValue>> remappedWrites;
+      for (auto [i, element] : llvm::enumerate(elements)) {
+        SourceRefLatticeValue elementRefs = getSourceRefState(element);
+        if (!elementRefs.isSingleValue()) {
+          continue;
+        }
+        auto maybeIndices = indexGen.delinearize(i, op->getContext());
+        ensure(maybeIndices.has_value(), "could not delinearize aggregate array.new index");
+        SourceRef elementTarget = arrayRoot;
+        for (Attribute attr : *maybeIndices) {
+          auto child =
+              elementTarget.createChild(SourceRefIndex(llvm::cast<IntegerAttr>(attr).getValue()));
+          ensure(succeeded(child), "could not create aggregate array element SourceRef");
+          elementTarget = *child;
+        }
+        for (const auto &[writtenRef, writtenVal] : writeResults) {
+          if (writtenRef.isValidPrefix(elementRefs.getSingleValue())) {
+            auto translated = writtenRef.translate(elementRefs.getSingleValue(), elementTarget);
+            ensure(succeeded(translated), "could not translate aggregate array initializer");
+            remappedWrites.emplace_back(*translated, writtenVal);
+          }
+        }
+      }
+      for (const auto &[translatedRef, translatedVal] : remappedWrites) {
+        recordRefWrite(translatedRef, translatedVal);
+      }
+    }
+  } else if (auto newPod = llvm::dyn_cast<pod::NewPodOp>(op)) {
+    SourceRef podRoot(llvm::cast<OpResult>(newPod.getResult()));
+    for (auto [idx, record] : llvm::enumerate(newPod.getInitializedRecordValues())) {
+      auto recordRef =
+          podRoot.createChild(SourceRefIndex(StringAttr::get(op->getContext(), record.name)));
+      ensure(succeeded(recordRef), "could not create SourceRef child for pod initializer");
+      if (!llvm::isa<ArrayType, StructType, pod::PodType>(record.value.getType())) {
+        recordRefWrite(*recordRef, operandVals[idx].getScalarValue());
+        continue;
+      }
+
+      SourceRefLatticeValue sourceRefs = getSourceRefState(record.value);
+      if (!sourceRefs.isSingleValue()) {
+        continue;
+      }
+      llvm::SmallVector<std::pair<SourceRef, ExpressionValue>> remappedWrites;
+      for (const auto &[writtenRef, writtenVal] : writeResults) {
+        if (writtenRef.isValidPrefix(sourceRefs.getSingleValue())) {
+          auto translated = writtenRef.translate(sourceRefs.getSingleValue(), *recordRef);
+          ensure(succeeded(translated), "could not translate aggregate pod initializer");
+          remappedWrites.emplace_back(*translated, writtenVal);
+        }
+      }
+      for (const auto &[translatedRef, translatedVal] : remappedWrites) {
+        recordRefWrite(translatedRef, translatedVal);
       }
     }
   } else if (isa<IntToFeltOp, FeltToIndexOp>(op)) {
@@ -1165,7 +1251,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       // The analysis ignores definition ops.
       && !isDefinitionOp(op)
       // We do not need to analyze storage creation directly.
-      && !llvm::isa<CreateArrayOp, CreateStructOp, NonDetOp>(op)
+      && !llvm::isa<CreateArrayOp, CreateStructOp, pod::NewPodOp, NonDetOp>(op)
   ) {
     op->emitWarning("unhandled operation, analysis may be incomplete").report();
   }
@@ -1879,7 +1965,7 @@ LogicalResult StructIntervals::computeIntervals(
             identityTranslations.push_back({prefix, *identityVal});
           }
 
-          if (!llvm::isa<ArrayType, StructType>(operand.getType())) {
+          if (!llvm::isa<ArrayType, StructType, pod::PodType>(operand.getType())) {
             const IntervalAnalysisLattice *lattice =
                 solver.lookupState<IntervalAnalysisLattice>(operand);
             if (lattice != nullptr) {

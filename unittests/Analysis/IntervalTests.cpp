@@ -60,6 +60,105 @@ TEST_F(IntervalTests, UnreducedIntervalOverlap) {
   ASSERT_FALSE(d.overlaps(a));
 }
 
+TEST_F(IntervalTests, SourceRefIndexHalfOpenOverlap) {
+  SourceRefIndex range(APInt(64, 2), APInt(64, 5));
+  SourceRefIndex overlappingRange(APInt(64, 4), APInt(64, 7));
+  SourceRefIndex adjacentRange(APInt(64, 5), APInt(64, 8));
+
+  EXPECT_FALSE(range.overlaps(SourceRefIndex(1)));
+  EXPECT_TRUE(range.overlaps(SourceRefIndex(2)));
+  EXPECT_TRUE(range.overlaps(SourceRefIndex(4)));
+  EXPECT_FALSE(range.overlaps(SourceRefIndex(5)));
+  EXPECT_TRUE(range.overlaps(overlappingRange));
+  EXPECT_FALSE(range.overlaps(adjacentRange));
+}
+
+class SourceRefTests : public LLZKTest {
+protected:
+  static constexpr auto kModule = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @SourceRefs {
+    struct.member @storage : !pod.type<[@value: !felt.type]>
+
+    function.def @compute() -> !struct.type<@SourceRefs> {
+      %self = struct.new : !struct.type<@SourceRefs>
+      %pod = pod.new : !pod.type<[@storage: !felt.type]>
+      function.return %self : !struct.type<@SourceRefs>
+    }
+
+    function.def @constrain(%self: !struct.type<@SourceRefs>) {
+      function.return
+    }
+  }
+}
+)mlir";
+};
+
+TEST_F(SourceRefTests, PodRecordsAndMembersRemainDistinct) {
+  auto mod = parseSourceString<ModuleOp>(kModule, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto storage = *structDef.getOps<MemberDefOp>().begin();
+  pod::NewPodOp newPod;
+  computeFn.walk([&](pod::NewPodOp op) { newPod = op; });
+  ASSERT_TRUE(newPod);
+  SourceRef root(mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()));
+  SourceRef memberRef(
+      mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()), {SourceRefIndex(storage)}
+  );
+  SourceRef podRef(
+      mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()),
+      {SourceRefIndex(StringAttr::get(&ctx, "storage"))}
+  );
+
+  EXPECT_FALSE(memberRef.isValidPrefix(podRef));
+  EXPECT_FALSE(podRef.isValidPrefix(memberRef));
+  EXPECT_FALSE(memberRef.overlaps(podRef));
+  EXPECT_FALSE(podRef.overlaps(memberRef));
+  EXPECT_TRUE(memberRef.isValidPrefix(root));
+
+  SourceRef arbitraryPodRef(
+      mlir::cast<OpResult>(newPod.getResult()), {SourceRefIndex(StringAttr::get(&ctx, "storage"))}
+  );
+  EXPECT_FALSE(memberRef.isValidPrefix(arbitraryPodRef));
+  EXPECT_FALSE(memberRef.overlaps(arbitraryPodRef));
+}
+
+TEST_F(SourceRefTests, ComputeSelfRebasesToConstrainSelfWithoutChangingPath) {
+  auto mod = parseSourceString<ModuleOp>(kModule, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto constrainFn = structDef.getConstrainFuncOp();
+  auto storage = *structDef.getOps<MemberDefOp>().begin();
+  auto valueName = StringAttr::get(&ctx, "value");
+
+  SourceRef computeSelf(mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()));
+  auto constrainSelfArg = mlir::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain());
+  SourceRef constrainSelf(constrainSelfArg);
+  SourceRef computeValue(
+      mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()),
+      {SourceRefIndex(storage), SourceRefIndex(valueName)}
+  );
+  SourceRef expectedConstrainValue(
+      constrainSelfArg, {SourceRefIndex(storage), SourceRefIndex(valueName)}
+  );
+
+  auto translated = computeValue.translate(computeSelf, constrainSelf);
+  ASSERT_TRUE(succeeded(translated));
+  EXPECT_EQ(*translated, expectedConstrainValue);
+
+  SourceRef mismatchedComputeValue(
+      mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()),
+      {SourceRefIndex(StringAttr::get(&ctx, "storage")), SourceRefIndex(valueName)}
+  );
+  auto mismatchedTranslation = mismatchedComputeValue.translate(computeSelf, constrainSelf);
+  ASSERT_TRUE(succeeded(mismatchedTranslation));
+  EXPECT_NE(*mismatchedTranslation, expectedConstrainValue);
+  EXPECT_TRUE(mismatchedTranslation->getPath().front().isPodRecord());
+}
+
 TEST_F(IntervalTests, UnreducedIntervalWidth) {
   // Standard width.
   UnreducedInterval a(0, 100);
