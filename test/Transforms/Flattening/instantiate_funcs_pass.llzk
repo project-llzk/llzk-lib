@@ -328,3 +328,31 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+// COM: `read_const` with a variable type
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @Num
+    poly.param @Ty : !poly.tvar<@Ty>
+
+    function.def @compute() -> !poly.tvar<@Ty> {
+      %0 = poly.read_const @Num : !poly.tvar<@Ty>
+      function.return %0 : !poly.tvar<@Ty>
+    }
+  }
+
+  function.def @main() -> index {
+    %0 = function.call @T::@compute<[89, index]>() : () -> index
+    function.return %0 : index
+  }
+}
+// CHECK-LABEL: function.def @T_89_i_compute() -> index {
+// CHECK-NEXT:    %[[VAL_15:[0-9a-zA-Z_\.]+]] = arith.constant 89 : index
+// CHECK-NEXT:    function.return %[[VAL_15]] : index
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: function.def @main() -> index {
+// CHECK-NEXT:    %[[VAL_16:[0-9a-zA-Z_\.]+]] = function.call @T_89_i_compute() : () -> index
+// CHECK-NEXT:    function.return %[[VAL_16]] : index
+// CHECK-NEXT:  }

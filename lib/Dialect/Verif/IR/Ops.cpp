@@ -824,8 +824,10 @@ LogicalResult IncludeOp::verifyTemplateParamsMatchInferred(
 
   for (auto [paramOp, attr] : llvm::zip_equal(targetParamDefs, callParams.getValue())) {
     // Skip wildcards (`?` / kDynamic) - their value will be resolved by a later inference pass.
-    if (isDynamic(llvm::dyn_cast<IntegerAttr>(attr))) {
-      continue;
+    if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
+      if (isDynamic(intAttr)) {
+        continue;
+      }
     }
     auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::RHS});
     if (it != unifications.end() && !typeParamsUnify({attr}, {it->second})) {

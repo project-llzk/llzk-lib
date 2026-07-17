@@ -6,13 +6,22 @@
 - When you need to run a project command inside the development environment, use:
   `nix develop --command bash -c "[command]"`
 
-## Tool freshness
+### Tool freshness
 
 - After modifying C++/TableGen/build files that can affect `llzk-opt`, do not run `llzk-opt` or any example pipeline using `llzk-opt` until rebuilding it first.
 - Preferred command before any manual `llzk-opt ...` invocation after relevant edits:
   `nix develop --command bash -c "cmake --build build --target llzk-opt"`
 - When validating lit/FileCheck tests, prefer `cmake --build build --target check-lit` rather than manually running a possibly stale `llzk-opt`; the lit config resolves tools from the build tree.
 - If a manual `llzk-opt` command fails unexpectedly after code changes, rebuild `llzk-opt` once before debugging the behavior.
+
+### Lit test execution
+
+- Do not run `llvm-lit` directly unless you have first confirmed it is available in the active environment.
+- Prefer CMake test targets because they use the lit runner and freshly built tools from the configured build tree:
+  `nix develop --command bash -c "cmake --build build --target check-lit"`
+- For focused lit coverage, prefer an appropriate CMake/ninja target over invoking `llvm-lit` from the ambient shell. If a direct lit command is unavoidable, run it inside the Nix development environment and use the configured lit runner from the build tree rather than assuming `llvm-lit` is on `PATH`.
+- If lit/FileCheck output looks inconsistent with recent C++/TableGen/build changes, rebuild the affected tool target first, especially `llzk-opt`, before debugging test behavior:
+  `nix develop --command bash -c "cmake --build build --target llzk-opt"`
 
 ## Fast context for agents
 
