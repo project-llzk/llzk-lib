@@ -1,0 +1,90 @@
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals" %s 2>&1 | FileCheck %s --implicit-check-not=error:
+
+module attributes {llzk.lang} {
+  struct.def @PodStorage {
+    struct.member @storage : !pod.type<[@initialized: !felt.type, @written: !felt.type]>
+
+    function.def @compute() -> !struct.type<@PodStorage> {
+      %self = struct.new : !struct.type<@PodStorage>
+      %five = felt.const 5
+      %seven = felt.const 7
+      %storage = pod.new { @initialized = %five } : !pod.type<[@initialized: !felt.type, @written: !felt.type]>
+      pod.write %storage[@written] = %seven : !pod.type<[@initialized: !felt.type, @written: !felt.type]>, !felt.type
+      %read = pod.read %storage[@initialized] : !pod.type<[@initialized: !felt.type, @written: !felt.type]>, !felt.type
+      struct.writem %self[@storage] = %storage : !struct.type<@PodStorage>, !pod.type<[@initialized: !felt.type, @written: !felt.type]>
+      function.return %self : !struct.type<@PodStorage>
+    }
+
+    function.def @constrain(%self: !struct.type<@PodStorage>) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @PodStorage StructIntervals {
+// CHECK: compute {
+// CHECK-NEXT:         %self.storage.initialized in Degenerate(5)
+// CHECK-NEXT:         %self.storage.written in Degenerate(7)
+// CHECK: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @PodArrayStorage {
+    struct.member @storage : !array.type<2 x !pod.type<[@value: !felt.type]>>
+
+    function.def @compute() -> !struct.type<@PodArrayStorage> {
+      %self = struct.new : !struct.type<@PodArrayStorage>
+      %three = felt.const 3
+      %nine = felt.const 9
+      %left = pod.new { @value = %three } : !pod.type<[@value: !felt.type]>
+      %right = pod.new { @value = %nine } : !pod.type<[@value: !felt.type]>
+      %storage = array.new %left, %right : !array.type<2 x !pod.type<[@value: !felt.type]>>
+      struct.writem %self[@storage] = %storage : !struct.type<@PodArrayStorage>, !array.type<2 x !pod.type<[@value: !felt.type]>>
+      function.return %self : !struct.type<@PodArrayStorage>
+    }
+
+    function.def @constrain(%self: !struct.type<@PodArrayStorage>) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @PodArrayStorage StructIntervals {
+// CHECK: compute {
+// CHECK-NEXT:         %self.storage[0].value in Degenerate(3)
+// CHECK-NEXT:         %self.storage[1].value in Degenerate(9)
+// CHECK: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @LoopCarriedPodStorage {
+    struct.member @storage : !pod.type<[@value: !felt.type]>
+
+    function.def @compute() -> !struct.type<@LoopCarriedPodStorage> {
+      %self = struct.new : !struct.type<@LoopCarriedPodStorage>
+      %five = felt.const 5
+      %seven = felt.const 7
+      %storage = pod.new { @value = %five } : !pod.type<[@value: !felt.type]>
+      %lb = arith.constant 0 : index
+      %ub = arith.constant 1 : index
+      %step = arith.constant 1 : index
+      %result = scf.for %i = %lb to %ub step %step iter_args(%iter = %storage) -> (!pod.type<[@value: !felt.type]>) {
+        pod.write %iter[@value] = %seven : !pod.type<[@value: !felt.type]>, !felt.type
+        scf.yield %iter : !pod.type<[@value: !felt.type]>
+      }
+      struct.writem %self[@storage] = %result : !struct.type<@LoopCarriedPodStorage>, !pod.type<[@value: !felt.type]>
+      function.return %self : !struct.type<@LoopCarriedPodStorage>
+    }
+
+    function.def @constrain(%self: !struct.type<@LoopCarriedPodStorage>) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @LoopCarriedPodStorage StructIntervals {
+// CHECK: compute {
+// CHECK-NEXT:         %self.storage.value in TypeA:[ 5, 7 ]
+// CHECK: }
