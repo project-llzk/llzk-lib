@@ -58,8 +58,8 @@ llzk-opt <input.llzk> --llzk-to-pcl | llzk-translate --pcl-to-lisp
 #### LLZK-Specific Options
 
 ```
---pcl-to-lisp           Translates from pcl IR to pcl lisp
---smt-to-smtlib         Translates from smt to smtlib
+--pcl-to-lisp           Translates from PCL IR to PCL lisp
+--smt-to-smtlib         Translates from SMT to SMTLIB
 --zklean-to-lean        Translates from zkLean dialects IR to Lean code
 ```
 

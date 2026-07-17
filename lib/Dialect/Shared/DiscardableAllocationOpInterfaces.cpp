@@ -14,6 +14,8 @@
 
 namespace llzk {
 
+// Note: definition is placed here rather than the header to avoid the error:
+//       "vtable will be emitted in every translation unit"
 mlir::StringRef DiscardableAllocationResource::getName() { return "DiscardableAllocation"; }
 
 } // namespace llzk

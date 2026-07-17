@@ -23,7 +23,7 @@ using namespace llzk;
 
 void smt::registerSmtTranslation() {
   mlir::TranslateFromMLIRRegistration reg(
-      "smt-to-smtlib", "translate from smt to smtlib",
+      "smt-to-smtlib", "translate from SMT to SMTLIB",
       [](Operation *op, raw_ostream &output) -> LogicalResult {
     ModuleOp modOp = mlir::dyn_cast_if_present<ModuleOp>(op);
     if (!modOp) {
