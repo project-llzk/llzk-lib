@@ -647,6 +647,60 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @TCloneCachePodKey {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @force_index(%arg: !poly.tvar<@T>) -> index {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      function.return %index : index
+    }
+
+    function.def @id(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      function.return %arg : !poly.tvar<@T>
+    }
+  }
+
+  function.def @call_index_pod(%arg: !pod.type<[@x: index]>) -> !pod.type<[@x: index]> {
+    %0 = function.call @TCloneCachePodKey::@id<[!pod.type<[@x: index]>]>(%arg) :
+        (!pod.type<[@x: index]>) -> !pod.type<[@x: index]>
+    function.return %0 : !pod.type<[@x: index]>
+  }
+
+  function.def @call_bool_pod(%arg: !pod.type<[@x: i1]>) -> !pod.type<[@x: i1]> {
+    %0 = function.call @TCloneCachePodKey::@id<[!pod.type<[@x: i1]>]>(%arg) :
+        (!pod.type<[@x: i1]>) -> !pod.type<[@x: i1]>
+    function.return %0 : !pod.type<[@x: i1]>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TCloneCachePodKey {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @force_index(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> index {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (!poly.tvar<@T>) -> index
+// CHECK-NEXT:        function.return %[[VAL_1]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @"!r<@x>_id"(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !pod.type<[@x: index]>) -> !pod.type<[@x: index]> {
+// CHECK-NEXT:        function.return %[[VAL_2]] : !pod.type<[@x: index]>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @"!r<@x>_id_0"(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !pod.type<[@x: i1]>) -> !pod.type<[@x: i1]> {
+// CHECK-NEXT:        function.return %[[VAL_3]] : !pod.type<[@x: i1]>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @id(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !poly.tvar<@T> {
+// CHECK-NEXT:        function.return %[[VAL_4]] : !poly.tvar<@T>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_index_pod(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !pod.type<[@x: index]>) -> !pod.type<[@x: index]> {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @TCloneCachePodKey::@"!r<@x>_id"<[!pod.type<[@x: index]>]>(%[[VAL_5]]) : (!pod.type<[@x: index]>) -> !pod.type<[@x: index]>
+// CHECK-NEXT:      function.return %[[VAL_6]] : !pod.type<[@x: index]>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_bool_pod(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !pod.type<[@x: i1]>) -> !pod.type<[@x: i1]> {
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @TCloneCachePodKey::@"!r<@x>_id_0"<[!pod.type<[@x: i1]>]>(%[[VAL_7]]) : (!pod.type<[@x: i1]>) -> !pod.type<[@x: i1]>
+// CHECK-NEXT:      function.return %[[VAL_8]] : !pod.type<[@x: i1]>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
   poly.template @TNestedReplacementBox {
     poly.param @Element
 

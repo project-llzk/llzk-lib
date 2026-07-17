@@ -48,6 +48,7 @@
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringMap.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include <memory>
 
@@ -80,14 +81,15 @@ struct InferredType {
   Location loc;
 };
 
-/// Template-local clone callees created by this pass, keyed by the clone name that
-/// would be preferred before `SymbolTable::insert` uniquifies it.
+/// Template-local clone callees created by this pass, keyed by the exact
+/// replacement list used to create each clone.
 ///
 /// The cache deliberately records only pass-created clones. A user-defined symbol
-/// may already occupy the preferred name, and `SymbolTable::insert` will rename the
-/// clone in that case. Reusing the cached callee avoids confusing such user symbols
-/// with generated clones and keeps repeated calls to the same instantiation pointed
-/// at the same uniquely-named clone.
+/// may already occupy the preferred name, and different exact type lists may also
+/// share the same preferred name. `SymbolTable::insert` will rename the clone in
+/// those cases. Reusing the cached callee avoids confusing such symbols with
+/// generated clones and keeps repeated calls to the same exact instantiation
+/// pointed at the same uniquely-named clone.
 using SpecializedFunctionCloneCache = DenseMap<Operation *, llvm::StringMap<SymbolRefAttr>>;
 
 /// Return the pieces of a symbol reference as `StringAttr`s.
@@ -1702,6 +1704,37 @@ static std::string buildTemplateLocalFunctionCloneName(
   return cloneName;
 }
 
+/// Build a lossless key for a template-local specialized function clone.
+///
+/// The emitted clone symbol uses `BuildShortTypeString`, which intentionally
+/// shortens some structural types. This cache key keeps the same parameter
+/// positions but prints full replacement types so two distinct instantiations
+/// that prefer the same clone name still get distinct clones.
+static std::string buildTemplateLocalFunctionCloneCacheKey(
+    StringRef functionName, ArrayRef<StringAttr> oldParamOrder,
+    const DenseMap<StringAttr, Type> &replacements
+) {
+  std::string key;
+  llvm::raw_string_ostream os(key);
+  os << functionName.size() << ':' << functionName;
+  for (StringAttr paramName : oldParamOrder) {
+    os << '|';
+    os << paramName.getValue().size() << ':' << paramName.getValue() << '=';
+    auto replacementIt = replacements.find(paramName);
+    if (replacementIt == replacements.end()) {
+      os << '_';
+      continue;
+    }
+
+    std::string typeText;
+    llvm::raw_string_ostream typeOs(typeText);
+    replacementIt->second.print(typeOs);
+    typeOs.flush();
+    os << typeText.size() << ':' << typeText;
+  }
+  return key;
+}
+
 /// Return the callee path for a clone nested in the same template as the original callee.
 static SymbolRefAttr
 getTemplateLocalFunctionCloneCallee(SymbolRefAttr originalCallee, StringAttr cloneName) {
@@ -1720,9 +1753,9 @@ static FailureOr<SymbolRefAttr> getOrCreateSpecializedFunctionClone(
 ) {
   std::string requestedFuncName =
       buildTemplateLocalFunctionCloneName(func.getSymName(), info.oldParamOrder, replacements);
-  // `requestedFuncName` is a stable instantiation key; the clone may receive a
-  // uniquified symbol name when inserted if user IR already defines that symbol.
-  auto cachedCallee = cloneCallees.find(requestedFuncName);
+  std::string cacheKey =
+      buildTemplateLocalFunctionCloneCacheKey(func.getSymName(), info.oldParamOrder, replacements);
+  auto cachedCallee = cloneCallees.find(cacheKey);
   if (cachedCallee != cloneCallees.end()) {
     return cachedCallee->second;
   }
@@ -1741,7 +1774,7 @@ static FailureOr<SymbolRefAttr> getOrCreateSpecializedFunctionClone(
   removeIdentityCasts(clone.getOperation());
   SymbolRefAttr cloneCallee =
       getTemplateLocalFunctionCloneCallee(originalCallee, clone.getSymNameAttr());
-  cloneCallees.try_emplace(requestedFuncName, cloneCallee);
+  cloneCallees.try_emplace(cacheKey, cloneCallee);
   return cloneCallee;
 }
 
