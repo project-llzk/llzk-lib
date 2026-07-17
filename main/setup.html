@@ -232,10 +232,7 @@ Development Workflow</h1>
 <li>Generate API docs (in <span class="tt">doc/html</span>): <span class="tt">cmake --build . --target doc</span></li>
 <li>Run install target (requires <span class="tt">CMAKE_INSTALL_PREFIX</span> to be set): <span class="tt">cmake --build . --target install</span></li>
 <li>Run clang-format on C++ and tablegen files: <span class="tt">clang-format -i $(find include lib tools backends unittests -name '*.h' -o -name '*.cpp' -o -name '*.td' -type f)</span></li>
-<li>Run clang-tidy on C++ files: <span class="tt">clang-tidy -p build/compile_commands.json $(find include/llzk lib tools backends unittests -name '*.h' -o -name '*.cpp' -type f)</span><ul>
-<li>Note that due to bugs in clang-tidy, this may segfault if running on all files.</li>
-</ul>
-</li>
+<li>Run clang-tidy on C++ files: <span class="tt">clang-tidy -p build/compile_commands.json $(find include/llzk lib tools backends unittests -name '*.h' -o -name '*.cpp' -type f)</span></li>
 </ul>
 <p>The build configuration will automatically export <span class="tt">compile_commands.json</span>, so LSP servers such as <span class="tt">clangd</span> should be able to pick up helpful IDE information like include paths, etc.</p>
 <div class="section_buttons"> <table class="markdownTable">
