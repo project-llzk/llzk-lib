@@ -35,6 +35,43 @@ module attributes {llzk.lang} {
 
 // -----
 
+module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
+  struct.def @Main {
+    function.def @compute(%value : !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %value : !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @MainPre for @Main (%self: !struct.type<@Main>, %value : !felt.type) {
+    %ok = arith.constant true
+    verif.require_compute %ok
+    verif.require_constrain %ok
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @MainPre for @Main (%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      verif.require_compute %[[VAL_6]]
+// CHECK-NEXT:      verif.require_constrain %[[VAL_6]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
 module attributes {llzk.lang} {
   struct.def @Top {
     function.def @compute(%a : !felt.type) -> !struct.type<@Top> {
