@@ -1325,21 +1325,19 @@ private:
     return success();
   }
 
-  /// Infer current-template parameters from implicit calls into rewritten templates.
+  /// Infer current-template parameters from calls into rewritten templates.
   ///
   /// A call may omit its template argument list when the original callee signature exposes every
   /// target template parameter. If that target template has since proven a parameter concrete, the
   /// omitted argument inferred from the call signature must either agree with the concrete proof or
   /// propagate the proof into the caller's template parameter before the callee signature is
-  /// rewritten.
+  /// rewritten. Explicit template arguments carry the same cross-template facts directly in the
+  /// argument list, so forwarded caller parameters are unified with the target's concrete proof
+  /// before resolved callee parameters are trimmed.
   LogicalResult collectCallableTemplateParamInferences(
       CallOp callOp, ModuleOp module, DenseMap<Operation *, TemplateInferenceInfo *> &infos,
       SymbolTableCollection &tables
   ) {
-    if (!isNullOrEmpty(callOp.getTemplateParamsAttr())) {
-      return success();
-    }
-
     FailureOr<SymbolLookupResult<FuncDefOp>> target = callOp.getCalleeTarget(tables);
     if (failed(target)) {
       return success();
@@ -1351,6 +1349,24 @@ private:
     }
     TemplateInferenceInfo *targetInfo = infos.lookup(parentTemplate.getOperation());
     if (!targetInfo || targetInfo->replacements.empty()) {
+      return success();
+    }
+
+    ArrayAttr callParams = callOp.getTemplateParamsAttr();
+    if (!isNullOrEmpty(callParams)) {
+      if (callParams.size() != targetInfo->oldParamOrder.size()) {
+        return success();
+      }
+      for (auto [paramName, attr] : llvm::zip_equal(targetInfo->oldParamOrder, callParams)) {
+        auto replacementIt = targetInfo->replacements.find(paramName);
+        if (replacementIt == targetInfo->replacements.end()) {
+          continue;
+        }
+        Attribute expectedAttr = TypeAttr::get(replacementIt->second.type);
+        if (failed(collectTemplateArgInferences(attr, expectedAttr, callOp.getLoc()))) {
+          return failure();
+        }
+      }
       return success();
     }
 

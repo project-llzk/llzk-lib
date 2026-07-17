@@ -59,6 +59,49 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @TExplicitForwardedCallee {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @id(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      function.return %arg : !poly.tvar<@T>
+    }
+  }
+
+  poly.template @TExplicitForwardedCaller {
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @forward(%arg: !poly.tvar<@U>) -> !poly.tvar<@U> {
+      %0 = function.call @TExplicitForwardedCallee::@id<[@U]>(%arg) : (!poly.tvar<@U>) -> !poly.tvar<@U>
+      function.return %0 : !poly.tvar<@U>
+    }
+  }
+
+  function.def @call_forward(%arg: index) -> index {
+    %0 = function.call @TExplicitForwardedCaller::@forward<[index]>(%arg) : (index) -> index
+    function.return %0 : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TExplicitForwardedCallee {
+// CHECK-NEXT:      function.def @id(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:        function.return %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TExplicitForwardedCaller {
+// CHECK-NEXT:      function.def @forward(%[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @TExplicitForwardedCallee::@id(%[[VAL_1]]) : (index) -> index
+// CHECK-NEXT:        function.return %[[VAL_2]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_forward(%[[VAL_3:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @TExplicitForwardedCaller::@forward(%[[VAL_3]]) : (index) -> index
+// CHECK-NEXT:      function.return %[[VAL_4]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
   poly.template @TWildcardCall {
     poly.param @T : !poly.tvar<@T>
 
