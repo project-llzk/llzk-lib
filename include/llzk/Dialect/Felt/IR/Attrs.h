@@ -10,6 +10,7 @@
 #pragma once
 
 #include "llzk/Dialect/Felt/IR/Types.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinAttributeInterfaces.h>
