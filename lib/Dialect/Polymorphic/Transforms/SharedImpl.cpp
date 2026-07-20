@@ -41,8 +41,7 @@ llzk::array::ArrayType llzk::polymorphic::detail::flattenInstantiatedArrayType(
     llzk::array::ArrayType inputTy, mlir::Type convertedElemTy
 ) {
   llvm::SmallVector<mlir::Attribute> mergedDims(inputTy.getDimensionSizes());
-  while (llzk::array::ArrayType nestedArrTy =
-             llvm::dyn_cast<llzk::array::ArrayType>(convertedElemTy)) {
+  while (auto nestedArrTy = llvm::dyn_cast<llzk::array::ArrayType>(convertedElemTy)) {
     llvm::append_range(mergedDims, nestedArrTy.getDimensionSizes());
     convertedElemTy = nestedArrTy.getElementType();
   }

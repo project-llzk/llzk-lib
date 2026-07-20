@@ -524,9 +524,7 @@ private:
     SmallVector<Attribute> newParams;
     bool changed = false;
     bool removeOwnedParams = isOwnedStructType(structTy) && params.size() == oldParamOrder_.size();
-    for (auto indexedAttr : llvm::enumerate(params.getValue())) {
-      unsigned index = indexedAttr.index();
-      Attribute attr = indexedAttr.value();
+    for (auto [index, attr] : llvm::enumerate(params.getValue())) {
       if (trimResolvedParams_ && removeOwnedParams &&
           removedParams_.contains(oldParamOrder_[index])) {
         changed = true;
@@ -2140,7 +2138,6 @@ static std::string buildTemplateLocalFunctionCloneCacheKey(
     std::string typeText;
     llvm::raw_string_ostream typeOs(typeText);
     replacementIt->second.print(typeOs);
-    typeOs.flush();
     os << typeText.size() << ':' << typeText;
   }
   return key;
