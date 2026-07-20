@@ -101,6 +101,7 @@ var NAVTREE =
           ] ]
         ] ]
       ] ],
+      [ "llzk-translate", "tools.html#llzk-translate", null ],
       [ "llzk-witgen", "tools.html#llzk-witgen", null ],
       [ "llzk-smt-check", "tools.html#llzk-smt-check", null ],
       [ "llzk-lsp-server", "tools.html#llzk-lsp-server", null ]
@@ -653,20 +654,20 @@ var NAVTREEINDEX =
 "classllzk_1_1verif_1_1detail_1_1ContractTargetOpInterfaceInterfaceTraits_1_1ExternalModel.html",
 "classllzk_1_1verif_1_1detail_1_1RequireConstrainOpGenericAdaptorBase.html#a8463b6c2a8e2cf4c3ebb39af9f88bf52",
 "dialects.html#operations-11",
-"dir_f38c3fa6151289ed96db329754eda5d7.html",
-"maintanence.html",
-"namespacellzk.html#a84f2b49a9741a01a9ed402e6d6096e3f",
-"namespacellzk_1_1boolean.html",
-"namespacellzk_1_1verif.html#a6c6e9c2237d93cab449bd123c18f10b2",
-"structGenStringFromOpPieces.html#a01f9a5216bd64084fe6e0c7a1c3daeff",
-"structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html",
-"structllzk_1_1IntervalAnalysisPrinterPassOptions.html#a95ef28057e2af966ae529fca33de8e06",
-"structllzk_1_1boolean_1_1detail_1_1CmpOpGenericAdaptorBase_1_1Properties.html#a66d865adbffda4dd1d638d7750de3d75",
-"structllzk_1_1felt_1_1detail_1_1FeltTypeStorage.html#a22103f0fc1effbb6331e70f154197069",
-"structllzk_1_1pod_1_1detail_1_1PodAccessOpInterfaceInterfaceTraits_1_1Concept.html#a8e553e6b211dffa1db7834913c445a0d",
-"structllzk_1_1smt_1_1detail_1_1BoolConstantOpGenericAdaptorBase_1_1Properties.html#a797a01d1a9ba902e773e2867e06294ad",
-"structllzk_1_1verif_1_1detail_1_1CallableSummaryKey.html",
-"structllzk_1_1witgen_1_1WitgenOptions.html#aa9a1ccb452462595fcd2d462c56fb9b2"
+"dir_f16d4d7e899fbab47b4b7b1d6d737e7f.html",
+"llzk_2Dialect_2InitDialects_8h.html",
+"namespacellzk.html#a82aa1619e2215af70fc59bfeb152da54",
+"namespacellzk_1_1array.html#aee303a81a7d8f2895e40166e5754fced",
+"namespacellzk_1_1verif.html#a0497408c6f000900a125534dc2b9e849",
+"structFuncDefOpBuildFuncHelper.html",
+"structllvm_1_1DOTGraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html#a8e69ef71d24c583a21d9523371583f85",
+"structllzk_1_1IntervalAnalysisPrinterPassOptions.html#a7b7f86d0440cd34c2d1a9abfaa6c0e7e",
+"structllzk_1_1boolean_1_1detail_1_1AssertOpGenericAdaptorBase_1_1Properties.html#afee29b035b28d3b6c4b20458b39aa6c0",
+"structllzk_1_1felt_1_1detail_1_1FeltConstantOpGenericAdaptorBase_1_1Properties.html#aab7948acd06dccb5a20b0d6f03a9f7ca",
+"structllzk_1_1pod_1_1detail_1_1PodAccessOpInterfaceInterfaceTraits_1_1Concept.html#a16b3af9809f263e3bbe29aba064788c5",
+"structllzk_1_1smt_1_1detail_1_1BoolConstantOpGenericAdaptorBase_1_1Properties.html",
+"structllzk_1_1verif_1_1PostconditionOpInterface_1_1Trait.html",
+"structllzk_1_1witgen_1_1WitgenOptions.html#a95253bbcfffc26a669f7c715562eec4d"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronization';

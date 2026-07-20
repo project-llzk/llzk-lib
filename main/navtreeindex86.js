@@ -1,5 +1,9 @@
 var NAVTREEINDEX86 =
 {
+"namespacellzk_1_1verif.html#a0497408c6f000900a125534dc2b9e849":[10,0,4,20,63],
+"namespacellzk_1_1verif.html#a4eee2e847b41c04baf5d2b33d10284bc":[10,0,4,20,50],
+"namespacellzk_1_1verif.html#a53b28ec4a1d345083518a4b91d14da44":[10,0,4,20,51],
+"namespacellzk_1_1verif.html#a5779cd4460ca024c3161ff72a10eb3ce":[10,0,4,20,48],
 "namespacellzk_1_1verif.html#a6c6e9c2237d93cab449bd123c18f10b2":[10,0,4,20,60],
 "namespacellzk_1_1verif.html#a6f399ab88c68b5d90aeb54490666d7e1":[10,0,4,20,49],
 "namespacellzk_1_1verif.html#a7dbe51b1fe29c482165d73cfe5082010":[10,0,4,20,53],
@@ -245,9 +249,5 @@ var NAVTREEINDEX86 =
 "structFeltToIndexOpBuildFuncHelper.html#ad1e0a2f7d257068005f535d132c6237b":[12,0,43,0],
 "structForAllOpBuildFuncHelper.html":[12,0,45],
 "structForAllOpBuildFuncHelper.html#a0b0ec430372921e2f3ff9d4c847dab2d":[12,0,45,0],
-"structForAllOpBuildFuncHelper.html#a9bd0effc38a8d3e028cb6f98d21d183e":[12,0,45,1],
-"structFuncDefOpBuildFuncHelper.html":[12,0,46],
-"structFuncDefOpBuildFuncHelper.html#acdacfb1f865fff8bb6a1500582b904cc":[12,0,46,1],
-"structFuncDefOpBuildFuncHelper.html#aec7a5262aea4a6a5323577d35df37fb0":[12,0,46,0],
-"structGenStringFromOpPieces.html":[12,0,51]
+"structForAllOpBuildFuncHelper.html#a9bd0effc38a8d3e028cb6f98d21d183e":[12,0,45,1]
 };

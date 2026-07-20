@@ -284,6 +284,22 @@ $(function(){initNavTree('tools.html','',''); });
     </ul>
   </li>
   <li class="level1">
+    <a href="#llzk-translate">llzk-translate </a>
+    <ul>
+      <li class="level2 empty">
+        <ul>
+          <li class="level3 empty">
+            <ul>
+              <li class="level4">
+                <a href="#llzk-specific-options-1">LLZK-Specific Options </a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li class="level1">
     <a href="#llzk-witgen">llzk-witgen </a>
     <ul>
       <li class="level2 empty">
@@ -294,7 +310,7 @@ $(function(){initNavTree('tools.html','',''); });
                 <a href="#basic-usage">Basic Usage </a>
               </li>
               <li class="level4">
-                <a href="#llzk-specific-options-1">LLZK-Specific Options </a>
+                <a href="#llzk-specific-options-2">LLZK-Specific Options </a>
               </li>
               <li class="level4">
                 <a href="#input-format">Input Format </a>
@@ -325,7 +341,7 @@ $(function(){initNavTree('tools.html','',''); });
                 <a href="#basic-usage-1">Basic Usage </a>
               </li>
               <li class="level4">
-                <a href="#llzk-specific-options-2">LLZK-Specific Options </a>
+                <a href="#llzk-specific-options-3">LLZK-Specific Options </a>
               </li>
               <li class="level4">
                 <a href="#behavior">Behavior </a>
@@ -507,13 +523,23 @@ Validation Passes</h3>
 <p><em>Detect multiple and missing writes to the same member of a component.</em></p>
 <p>Detect multiple and missing writes to the same member of a component.</p>
 <p>Note that this is overapproximate (i.e., some writes may erroneously be flagged as overwrites, and some members may erroneously be marked unwritten).  </p>
-<h1 class="doxsection"><a class="anchor" id="llzk-witgen"></a>
+<h1 class="doxsection"><a class="anchor" id="llzk-translate"></a>
+llzk-translate</h1>
+<p><span class="tt">llzk-translate</span> is a version of the <span class="tt">mlir-translate</span> tool. Includes translations for backends specific to LLZK along with translations available in upstream MLIR (i.e. LLVM or C++). <span class="tt">llzk-translate -h</span> will show a list of all available flags and options.</p>
+<p>The tool expects that the IR has already been converted to the backend's dialect IR. For example:</p>
+<div class="fragment"><div class="line">llzk-opt &lt;input.llzk&gt; --llzk-to-pcl | llzk-translate --pcl-to-lisp</div>
+</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="llzk-specific-options-1"></a>
+LLZK-Specific Options</h4>
+<div class="fragment"><div class="line">--pcl-to-lisp           Translates from PCL IR to PCL lisp</div>
+<div class="line">--smt-to-smtlib         Translates from SMT to SMTLIB</div>
+<div class="line">--zklean-to-lean        Translates from zkLean dialects IR to Lean code</div>
+</div><!-- fragment --><h1 class="doxsection"><a class="anchor" id="llzk-witgen"></a>
 llzk-witgen</h1>
 <p><span class="tt">llzk-witgen</span> executes LLZK witness-generation logic for the concrete main component declared by <span class="tt">llzk.main</span>. It evaluates <span class="tt">compute()</span> and prints JSON for either the public outputs of the main component or the full generated witness signal set.</p>
 <h4 class="doxsection"><a class="anchor" id="basic-usage"></a>
 Basic Usage</h4>
 <div class="fragment"><div class="line">llzk-witgen &lt;input.llzk&gt; --inputs &lt;input.json&gt;</div>
-</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="llzk-specific-options-1"></a>
+</div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="llzk-specific-options-2"></a>
 LLZK-Specific Options</h4>
 <div class="fragment"><div class="line">--inputs &lt;file&gt;              JSON file containing main compute inputs</div>
 <div class="line">-I &lt;directory&gt;               Directory of include files</div>
@@ -581,7 +607,7 @@ Basic Usage</h4>
 <div class="line">smt.set_info &quot;:llzk-stage&quot; &quot;pre&quot;</div>
 <div class="line">smt.set_info &quot;:status&quot; unsat</div>
 </div><!-- fragment --><p><span class="tt">smt.check</span> lowers only to a bare <span class="tt">(check-sat)</span>. Because SMT-LIB scripts cannot branch on <span class="tt">check-sat</span> results internally, <span class="tt">--smt-to-smtlib</span> accepts only <span class="tt">smt.check</span> operations whose <span class="tt">sat</span>, <span class="tt">unknown</span>, and <span class="tt">unsat</span> regions are empty. Result-dependent script behavior would need a higher-level driver format outside SMT-LIB.</p>
-<h4 class="doxsection"><a class="anchor" id="llzk-specific-options-2"></a>
+<h4 class="doxsection"><a class="anchor" id="llzk-specific-options-3"></a>
 LLZK-Specific Options</h4>
 <div class="fragment"><div class="line">--solver-binary=&lt;path&gt;      SMT solver executable to run (default: z3)</div>
 <div class="line">--quiet                     Suppress per-stage summaries and rely on exit status</div>

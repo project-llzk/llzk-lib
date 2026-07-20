@@ -261,7 +261,7 @@ var searchData=
   ['specializedmem2reg_258',['SpecializedMem2Reg',['../structllzk_1_1SpecializedMem2Reg.html',1,'llzk']]],
   ['specializedmemorypasses_2eh_259',['SpecializedMemoryPasses.h',['../SpecializedMemoryPasses_8h.html',1,'']]],
   ['specializedsroa_260',['SpecializedSROA',['../structllzk_1_1SpecializedSROA.html',1,'llzk']]],
-  ['specific_20options_261',['Specific Options',['../tools.html#llzk-specific-options',1,'LLZK-Specific Options'],['../tools.html#llzk-specific-options-1',1,'LLZK-Specific Options'],['../tools.html#llzk-specific-options-2',1,'LLZK-Specific Options']]],
+  ['specific_20options_261',['Specific Options',['../tools.html#llzk-specific-options',1,'LLZK-Specific Options'],['../tools.html#llzk-specific-options-1',1,'LLZK-Specific Options'],['../tools.html#llzk-specific-options-2',1,'LLZK-Specific Options'],['../tools.html#llzk-specific-options-3',1,'LLZK-Specific Options']]],
   ['specification_262',['LLZK Language Specification',['../syntax.html',1,'']]],
   ['splitaggregateinmemberrefop_263',['SplitAggregateInMemberRefOp',['../classllzk_1_1SplitAggregateInMemberRefOp.html',1,'llzk::SplitAggregateInMemberRefOp&lt; ImplClass, MemberRefOpClass, GenHeaderType, IdType &gt;'],['../classllzk_1_1SplitAggregateInMemberRefOp.html#a9896779f0fb5d3757f67a0990bf3f8f2',1,'llzk::SplitAggregateInMemberRefOp::SplitAggregateInMemberRefOp()']]],
   ['splitfunctionnameinfo_264',['SplitFunctionNameInfo',['../structllzk_1_1SplitFunctionNameInfo.html',1,'llzk']]],

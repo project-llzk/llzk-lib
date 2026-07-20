@@ -5,5 +5,6 @@ var dir_4eeb864c4eec08c7d6b9d3b0352cfdde =
     [ "llzk-opt", "dir_014d0f5a4c28e696e617f500599cae9b.html", "dir_014d0f5a4c28e696e617f500599cae9b" ],
     [ "llzk-smt-check", "dir_6dcc4aae895c82dffa48c6ddd2fcba81.html", "dir_6dcc4aae895c82dffa48c6ddd2fcba81" ],
     [ "llzk-tblgen", "dir_85d38d591fcf5568be01a31c4fb807ff.html", "dir_85d38d591fcf5568be01a31c4fb807ff" ],
+    [ "llzk-translate", "dir_097117d6767b013903c3aa46238da5b9.html", "dir_097117d6767b013903c3aa46238da5b9" ],
     [ "llzk-witgen", "dir_4a3790577358e817e6e7c6a8797f9590.html", "dir_4a3790577358e817e6e7c6a8797f9590" ]
 ];

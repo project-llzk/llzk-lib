@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.14.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>LLZK: include/llzk/Validators -&gt; build Relation</title>
+<title>LLZK: tools/llzk-translate/llzk-translate.cpp File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -78,7 +78,7 @@ $(function() {
   </div>
 </div>
 <script type="text/javascript">
-$(function(){initNavTree('dir_006f948be47a2a3cfc802ecb2004dee0.html','',''); });
+$(function(){initNavTree('llzk-translate_8cpp.html','',''); });
 </script>
 <div id="container">
 <div id="doc-content">
@@ -103,15 +103,80 @@ $(function(){initNavTree('dir_006f948be47a2a3cfc802ecb2004dee0.html','',''); });
 </div>
 </div>
 
+<div class="header">
+  <div class="summary">
+<a href="#func-members">Functions</a>  </div>
+  <div class="headertitle"><div class="title">llzk-translate.cpp File Reference</div></div>
+</div><!--header-->
 <div class="contents">
-<h3>Validators &rarr; build Relation</h3><table class="dirtab"><tr class="dirtab"><th class="dirtab">File in include/llzk/Validators</th><th class="dirtab">Includes file in build</th></tr><tr class="dirtab"><td class="dirtab"><a class="el" href="LLZKValidationPasses_8h.html">LLZKValidationPasses.h</a></td><td class="dirtab"><a class="el" href="dir_8f2980731aba7ec7b9fcae5764f196e3.html">include</a>&#160;/&#160;<a class="el" href="dir_6c0d0ddf22739aa3410ca194a6ed8d73.html">llzk</a>&#160;/&#160;<a class="el" href="dir_ba0b87a1c71c7656624deb1072f340d5.html">Validators</a>&#160;/&#160;<a class="el" href="LLZKValidationPasses_8h_8inc.html">LLZKValidationPasses.h.inc</a></td></tr></table></div><!-- contents -->
+
+<p>This file implements a version of the mlir-translate tool configured for use on LLZK files.  
+<a href="#details">More...</a></p>
+<div class="textblock"><code>#include &quot;smt/Target/TranslateRegistration.h&quot;</code><br />
+<code>#include &quot;<a class="el" href="config_8h_source.html">tools/config.h</a>&quot;</code><br />
+<code>#include &quot;zklean/Target/TranslateRegistration.h&quot;</code><br />
+<code>#include &quot;<a class="el" href="Config_8h_source.html">llzk/Config/Config.h</a>&quot;</code><br />
+<code>#include &lt;mlir/Dialect/Func/Extensions/InlinerExtension.h&gt;</code><br />
+<code>#include &lt;mlir/Dialect/Func/IR/FuncOps.h&gt;</code><br />
+<code>#include &lt;mlir/Dialect/SCF/IR/SCF.h&gt;</code><br />
+<code>#include &lt;mlir/IR/DialectRegistry.h&gt;</code><br />
+<code>#include &lt;mlir/InitAllTranslations.h&gt;</code><br />
+<code>#include &lt;mlir/Pass/PassManager.h&gt;</code><br />
+<code>#include &lt;mlir/Pass/PassRegistry.h&gt;</code><br />
+<code>#include &lt;mlir/Tools/mlir-translate/MlirTranslateMain.h&gt;</code><br />
+<code>#include &lt;mlir/Transforms/Passes.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/StringRef.h&gt;</code><br />
+<code>#include &lt;llvm/Support/CommandLine.h&gt;</code><br />
+<code>#include &lt;llvm/Support/PrettyStackTrace.h&gt;</code><br />
+<code>#include &lt;llvm/Support/Signals.h&gt;</code><br />
+</div><div class="textblock"><div class="dynheader">
+Include dependency graph for llzk-translate.cpp:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="llzk-translate_8cpp__incl.svg" width="3294" height="242"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div>
+<p><a href="llzk-translate_8cpp_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:a3c04138a5bfe5d72780bb7e82a18e627" id="r_a3c04138a5bfe5d72780bb7e82a18e627"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3c04138a5bfe5d72780bb7e82a18e627">main</a> (int argc, char **argv)</td></tr>
+</table>
+<a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>This file implements a version of the mlir-translate tool configured for use on LLZK files. </p>
+
+<p class="definition">Definition in file <a class="el" href="llzk-translate_8cpp_source.html">llzk-translate.cpp</a>.</p>
+</div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+<a id="a3c04138a5bfe5d72780bb7e82a18e627" name="a3c04138a5bfe5d72780bb7e82a18e627"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3c04138a5bfe5d72780bb7e82a18e627">&#9670;&#160;</a></span>main()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int main </td>
+          <td>(</td>
+          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>argc</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">char **</td>          <td class="paramname"><span class="paramname"><em>argv</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="llzk-translate_8cpp_source.html#l00043">43</a> of file <a class="el" href="llzk-translate_8cpp_source.html">llzk-translate.cpp</a>.</p>
+
+</div>
+</div>
+</div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->
 <!-- HTML footer for doxygen 1.13.2-->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a href="dir_5804947f485dbfa35f1b2a5b6cdecd1f.html">llzk</a></li><li class="navelem"><a href="dir_006f948be47a2a3cfc802ecb2004dee0.html">Validators</a></li>
+    <li class="navelem"><a href="dir_4eeb864c4eec08c7d6b9d3b0352cfdde.html">tools</a></li><li class="navelem"><a href="dir_097117d6767b013903c3aa46238da5b9.html">llzk-translate</a></li><li class="navelem"><a href="llzk-translate_8cpp.html">llzk-translate.cpp</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.14.0 </li>
     <li class="footer">Copyright 2025 Veridise Inc. under the Apache License v2.0. Copyright 2026 Project LLZK under the Apache License v2.0.</li>
   </ul>

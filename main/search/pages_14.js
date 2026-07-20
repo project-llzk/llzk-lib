@@ -15,7 +15,7 @@ var searchData=
   ['smt_20check_12',['llzk-smt-check',['../tools.html#llzk-smt-check',1,'']]],
   ['solve_20an_20issue_13',['Solve an issue',['../contribution-guide.html#solve-an-issue',1,'']]],
   ['specialize_20wildcard_20arrays_14',['&lt;span class=&quot;tt&quot;&gt;-llzk-specialize-wildcard-arrays&lt;/span&gt;',['../tools.html#autotoc_md-llzk-specialize-wildcard-arrays',1,'']]],
-  ['specific_20options_15',['Specific Options',['../tools.html#llzk-specific-options',1,'LLZK-Specific Options'],['../tools.html#llzk-specific-options-1',1,'LLZK-Specific Options'],['../tools.html#llzk-specific-options-2',1,'LLZK-Specific Options']]],
+  ['specific_20options_15',['Specific Options',['../tools.html#llzk-specific-options',1,'LLZK-Specific Options'],['../tools.html#llzk-specific-options-1',1,'LLZK-Specific Options'],['../tools.html#llzk-specific-options-2',1,'LLZK-Specific Options'],['../tools.html#llzk-specific-options-3',1,'LLZK-Specific Options']]],
   ['specification_16',['LLZK Language Specification',['../syntax.html',1,'']]],
   ['standards_17',['Our Standards',['../code-of-conduct.html#our-standards',1,'']]],
   ['started_18',['Getting started',['../contribution-guide.html#getting-started',1,'']]],
