@@ -1,4 +1,4 @@
-//===-- TransformationPasses.h ----------------------------------*- C++ -*-===//
+//===-- ZKLean.h ------------------------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -9,15 +9,13 @@
 
 #pragma once
 
-#include "llzk/Pass/PassBase.h"
-
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/Support/LogicalResult.h>
 
-namespace pcl {
+#include <llvm/Support/raw_ostream.h>
 
-std::unique_ptr<mlir::Pass> createPrintPass();
+namespace zklean {
 
-#define GEN_PASS_REGISTRATION
-#include "pcl/Transforms/TransformationPasses.h.inc"
+mlir::LogicalResult emitZKLeanModule(mlir::ModuleOp module, llvm::raw_ostream &os);
 
-}; // namespace pcl
+} // namespace zklean

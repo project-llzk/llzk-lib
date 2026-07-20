@@ -1,4 +1,4 @@
-//===-- SMTPasses.h ---------------------------------------------*- C++ -*-===//
+//===-- TranslateRegistration.h ---------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -9,14 +9,7 @@
 
 #pragma once
 
-#include <mlir/Pass/Pass.h>
-
-#include <memory>
-
-namespace llzk::smt {
-
-#define GEN_PASS_DECL
-#define GEN_PASS_REGISTRATION
-#include "smt/Transforms/SMTPasses.h.inc"
-
-} // namespace llzk::smt
+namespace zklean {
+/// Registers the translation from ZKLean to Lean.
+void registerZKLeanTranslation();
+} // namespace zklean

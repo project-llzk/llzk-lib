@@ -17,6 +17,7 @@ target_link_libraries(
     LLVMHeaders MLIRHeaders
     LLZKAllDialects
   PRIVATE
+    LLZKArrayTransforms
     LLZKAnalysis
 )
 

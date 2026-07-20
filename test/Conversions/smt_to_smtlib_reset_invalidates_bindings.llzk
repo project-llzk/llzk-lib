@@ -1,6 +1,6 @@
 // RUN: split-file %s %t
-// RUN: llzk-opt --smt-to-smtlib -verify-diagnostics %t/reset-declare.mlir
-// RUN: llzk-opt --smt-to-smtlib -verify-diagnostics %t/reset-helper-result.mlir
+// RUN: llzk-translate --smt-to-smtlib -verify-diagnostics %t/reset-declare.mlir
+// RUN: llzk-translate --smt-to-smtlib -verify-diagnostics %t/reset-helper-result.mlir
 // Purpose: reset-invalidated binding failures are checked with op-local diagnostics.
 
 //--- reset-declare.mlir
