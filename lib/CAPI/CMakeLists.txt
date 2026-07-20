@@ -35,6 +35,7 @@ target_link_libraries(
   MLIRCAPIRegisterEverything
   LLZK::DialectRegistration
   LLZK::LLZKTransforms
+  LLZKArrayTransforms
   LLZK::LLZKValidators
   LLZK::LLZKAnalysis
   $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:LLZK::PCLDialect>

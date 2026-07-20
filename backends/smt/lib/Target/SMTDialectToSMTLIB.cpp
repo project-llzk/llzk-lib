@@ -7,8 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "smt/Transforms/SMTLIBEmitter.h"
-#include "smt/Transforms/SMTPasses.h"
+#include "smt/Target/SMTLIBEmitter.h"
 
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/SMT/IR/SMTAttributes.h"
@@ -43,11 +42,6 @@
 #include <string>
 #include <string_view>
 #include <utility>
-
-namespace llzk::smt {
-#define GEN_PASS_DEF_SMTDIALECTTOSMTLIBPASS
-#include "smt/Transforms/SMTPasses.h.inc"
-} // namespace llzk::smt
 
 using namespace mlir;
 using namespace llzk;
@@ -1578,34 +1572,6 @@ private:
   DenseSet<unsigned> recursivePureHelperSCCs;
   DenseSet<unsigned> activePureHelperSCCs;
   DenseSet<unsigned> emittedPureHelperSCCs;
-};
-
-class SMTDialectToSMTLIBPass
-    : public smt::impl::SMTDialectToSMTLIBPassBase<SMTDialectToSMTLIBPass> {
-  using Base = smt::impl::SMTDialectToSMTLIBPassBase<SMTDialectToSMTLIBPass>;
-  using Base::Base;
-
-  /// Run the exporter and surface script emission failures as pass failures.
-  void runOnOperation() override {
-    raw_ostream *stream = &llvm::outs();
-    std::unique_ptr<llvm::ToolOutputFile> outputFile;
-    if (!outputFilename.empty() && outputFilename != "-") {
-      outputFile = openOutputFile(outputFilename);
-      if (!outputFile) {
-        signalPassFailure();
-        return;
-      }
-      stream = &outputFile->os();
-    }
-    if (failed(smt::emitSMTLIBModule(getOperation(), *stream))) {
-      signalPassFailure();
-      return;
-    }
-
-    if (outputFile) {
-      outputFile->keep();
-    }
-  }
 };
 
 } // namespace

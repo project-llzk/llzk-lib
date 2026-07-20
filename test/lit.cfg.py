@@ -64,7 +64,7 @@ llvm_config.with_environment('PATH', config.llvm_tools_dir, append_path=True)
 
 tool_dirs = [config.llzk_tools_dir, config.llzk_tblgen_tools_dir, config.llvm_tools_dir]
 tools = [
-    "llzk-opt", "llzk-smt-check", "llzk-tblgen", "llzk-witgen", "r1cs-opt"
+    "llzk-opt", "llzk-smt-check", "llzk-tblgen", "llzk-translate", "llzk-witgen", "r1cs-opt"
 ]
 
 llvm_config.add_tool_substitutions(tools, tool_dirs)

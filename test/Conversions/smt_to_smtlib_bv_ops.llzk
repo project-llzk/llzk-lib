@@ -1,4 +1,4 @@
-// RUN: llzk-opt --smt-to-smtlib -o /dev/null %s | FileCheck %s
+// RUN: llzk-translate --smt-to-smtlib %s | FileCheck %s
 // Purpose: bitvector arithmetic, comparisons, concatenation, extraction, and conversions.
 
 module {
