@@ -315,6 +315,107 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  module @A {
+    poly.template @BoxT {
+      poly.param @T : !poly.tvar<@T>
+
+      struct.def @Box {
+        struct.member @value : !poly.tvar<@T>
+
+        function.def @product(%arg: !poly.tvar<@T>) -> !struct.type<@A::@BoxT::@Box<[@T]>> attributes {function.allow_constraint, function.allow_witness} {
+          %self = struct.new : <@A::@BoxT::@Box<[@T]>>
+          struct.writem %self[@value] = %arg : <@A::@BoxT::@Box<[@T]>>, !poly.tvar<@T>
+          function.return %self : !struct.type<@A::@BoxT::@Box<[@T]>>
+        }
+      }
+    }
+  }
+
+  module @B {
+    poly.template @BoxT {
+      poly.param @T : !poly.tvar<@T>
+
+      struct.def @Box {
+        struct.member @value : !poly.tvar<@T>
+
+        function.def @product(%arg: !poly.tvar<@T>) -> !struct.type<@B::@BoxT::@Box<[@T]>> attributes {function.allow_constraint, function.allow_witness} {
+          %self = struct.new : <@B::@BoxT::@Box<[@T]>>
+          struct.writem %self[@value] = %arg : <@B::@BoxT::@Box<[@T]>>, !poly.tvar<@T>
+          function.return %self : !struct.type<@B::@BoxT::@Box<[@T]>>
+        }
+      }
+    }
+  }
+
+  function.def @use_a(
+      %arg: !struct.type<@A::@BoxT::@Box<[index]>>
+  ) -> !struct.type<@A::@BoxT::@Box<[index]>> {
+    function.return %arg : !struct.type<@A::@BoxT::@Box<[index]>>
+  }
+
+  function.def @use_b(
+      %arg: !struct.type<@B::@BoxT::@Box<[index]>>
+  ) -> !struct.type<@B::@BoxT::@Box<[index]>> {
+    function.return %arg : !struct.type<@B::@BoxT::@Box<[index]>>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    module @A {
+// CHECK-NEXT:      poly.template @BoxT_i {
+// CHECK-NEXT:        struct.def @Box {
+// CHECK-NEXT:          struct.member @value : index
+// CHECK-NEXT:          function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@A::@BoxT_i::@Box> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:            %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@A::@BoxT_i::@Box>
+// CHECK-NEXT:            struct.writem %[[VAL_1]][@value] = %[[VAL_0]] : <@A::@BoxT_i::@Box>, index
+// CHECK-NEXT:            function.return %[[VAL_1]] : !struct.type<@A::@BoxT_i::@Box>
+// CHECK-NEXT:          }
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      poly.template @BoxT {
+// CHECK-NEXT:        poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:        struct.def @Box {
+// CHECK-NEXT:          struct.member @value : !poly.tvar<@T>
+// CHECK-NEXT:          function.def @product(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !struct.type<@A::@BoxT::@Box<[@T]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:            %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@A::@BoxT::@Box<[@T]>>
+// CHECK-NEXT:            struct.writem %[[VAL_3]][@value] = %[[VAL_2]] : <@A::@BoxT::@Box<[@T]>>, !poly.tvar<@T>
+// CHECK-NEXT:            function.return %[[VAL_3]] : !struct.type<@A::@BoxT::@Box<[@T]>>
+// CHECK-NEXT:          }
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    module @B {
+// CHECK-NEXT:      poly.template @BoxT_i {
+// CHECK-NEXT:        struct.def @Box {
+// CHECK-NEXT:          struct.member @value : index
+// CHECK-NEXT:          function.def @product(%[[VAL_4:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@B::@BoxT_i::@Box> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:            %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@B::@BoxT_i::@Box>
+// CHECK-NEXT:            struct.writem %[[VAL_5]][@value] = %[[VAL_4]] : <@B::@BoxT_i::@Box>, index
+// CHECK-NEXT:            function.return %[[VAL_5]] : !struct.type<@B::@BoxT_i::@Box>
+// CHECK-NEXT:          }
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      poly.template @BoxT {
+// CHECK-NEXT:        poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:        struct.def @Box {
+// CHECK-NEXT:          struct.member @value : !poly.tvar<@T>
+// CHECK-NEXT:          function.def @product(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !struct.type<@B::@BoxT::@Box<[@T]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:            %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.new : <@B::@BoxT::@Box<[@T]>>
+// CHECK-NEXT:            struct.writem %[[VAL_7]][@value] = %[[VAL_6]] : <@B::@BoxT::@Box<[@T]>>, !poly.tvar<@T>
+// CHECK-NEXT:            function.return %[[VAL_7]] : !struct.type<@B::@BoxT::@Box<[@T]>>
+// CHECK-NEXT:          }
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @use_a(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@A::@BoxT_i::@Box>) -> !struct.type<@A::@BoxT_i::@Box> {
+// CHECK-NEXT:      function.return %[[VAL_8]] : !struct.type<@A::@BoxT_i::@Box>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @use_b(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@B::@BoxT_i::@Box>) -> !struct.type<@B::@BoxT_i::@Box> {
+// CHECK-NEXT:      function.return %[[VAL_9]] : !struct.type<@B::@BoxT_i::@Box>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
   poly.template @TTrimmedTarget {
     poly.param @A : !poly.tvar<@A>
     poly.param @B : !poly.tvar<@B>

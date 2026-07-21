@@ -960,8 +960,8 @@ class ConcreteStructInstantiationConverter {
   SymbolTableCollection &tables_;
   /// Already-created instantiations keyed by the original concrete struct type.
   DenseMap<StructType, StructInstantiationTypes> instantiations_;
-  /// Pass-created sibling templates keyed by concrete instantiation layout.
-  llvm::StringMap<StringAttr> templateClones_;
+  /// Pass-created sibling templates keyed by owning template and concrete instantiation layout.
+  SpecializedTemplateCloneCache templateClones_;
   /// Fully-qualified names of sibling-template clones created by this converter.
   DenseSet<SymbolRefAttr> instantiatedCloneNames_;
   /// Specialized self types active while rewriting a cloned struct body.
@@ -1157,7 +1157,7 @@ private:
     ArrayAttr concreteParamArray = ArrayAttr::get(ctx_, concreteParams);
     FailureOr<TemplateOp> newTemplate = getOrCreateSpecializedTemplateClone(
         parentTemplate, oldParamOrder, paramNameToConcrete, concreteParamArray, tables_,
-        templateClones_, layout
+        templateClones_[parentTemplate.getOperation()], layout
     );
     if (::failed(newTemplate)) {
       return failure();
