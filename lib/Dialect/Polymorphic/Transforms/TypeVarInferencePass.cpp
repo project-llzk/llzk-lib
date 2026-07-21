@@ -94,7 +94,7 @@ struct InferredType {
 /// those cases. Reusing the cached callee avoids confusing such symbols with
 /// generated clones and keeps repeated calls to the same exact instantiation
 /// pointed at the same uniquely-named clone.
-using SpecializedFunctionCloneCache = DenseMap<Operation *, llvm::StringMap<SymbolRefAttr>>;
+using SpecializedCallableCloneCache = DenseMap<Operation *, llvm::StringMap<SymbolRefAttr>>;
 
 /// Return the pieces of a symbol reference as `StringAttr`s.
 ///
@@ -590,6 +590,28 @@ static void updateFuncSignature(FuncDefOp func, ConverterT &converter) {
   }
 }
 
+/// Rewrite a contract type and keep the entry block arguments in sync.
+template <typename ConverterT>
+static void updateContractSignature(verif::ContractOp contract, ConverterT &converter) {
+  FunctionType oldFuncTy = contract.getFunctionType();
+  Type converted = converter.convertType(oldFuncTy);
+  auto newFuncTy = llvm::cast<FunctionType>(converted);
+  if (oldFuncTy == newFuncTy) {
+    return;
+  }
+
+  contract.setFunctionType(newFuncTy);
+  if (contract.getBody().empty()) {
+    return;
+  }
+
+  Block &entryBlock = contract.getBody().front();
+  assert(entryBlock.getNumArguments() == newFuncTy.getNumInputs());
+  for (auto [arg, newTy] : llvm::zip_equal(entryBlock.getArguments(), newFuncTy.getInputs())) {
+    arg.setType(newTy);
+  }
+}
+
 /// Convert call targets when the active converter knows how to keep symbol
 /// references in sync with converted types.
 template <typename ConverterT> static bool convertCallCallee(CallOp callOp, ConverterT &converter) {
@@ -706,6 +728,14 @@ static FailureOr<bool> convertOperationTypes(Operation *op, ConverterT &converte
       return failure();
     }
     changed |= oldFuncTy != func.getFunctionType();
+  }
+  if (auto contract = llvm::dyn_cast<verif::ContractOp>(op)) {
+    FunctionType oldFuncTy = contract.getFunctionType();
+    updateContractSignature(contract, converter);
+    if (converterFailed(converter)) {
+      return failure();
+    }
+    changed |= oldFuncTy != contract.getFunctionType();
   }
 
   for (Region &region : op->getRegions()) {
@@ -1167,6 +1197,25 @@ static bool funcMentionsParam(FuncDefOp func, StringAttr paramName) {
     return operationMentionsParam(op, paramName) ? WalkResult::interrupt() : WalkResult::advance();
   });
   return result.wasInterrupted();
+}
+
+/// Return whether a contract body/signature mentions an eligible type-variable parameter.
+static bool contractMentionsParam(verif::ContractOp contract, StringAttr paramName) {
+  if (operationMentionsParam(contract.getOperation(), paramName)) {
+    return true;
+  }
+  WalkResult result = contract.walk([paramName](Operation *op) {
+    return operationMentionsParam(op, paramName) ? WalkResult::interrupt() : WalkResult::advance();
+  });
+  return result.wasInterrupted();
+}
+
+static bool targetMentionsParam(FuncDefOp func, StringAttr paramName) {
+  return funcMentionsParam(func, paramName);
+}
+
+static bool targetMentionsParam(verif::ContractOp contract, StringAttr paramName) {
+  return contractMentionsParam(contract, paramName);
 }
 
 /// Return whether a `poly.expr` body mentions an eligible type-variable parameter.
@@ -1891,7 +1940,7 @@ static bool callParamsMatchReplacements(
 /// this check runs. The `explicitCallParams` flag keeps the diagnostic aligned
 /// with the user's source syntax.
 static LogicalResult diagnoseCallParamsMismatch(
-    CallOp callOp, ArrayAttr callParams, ArrayRef<StringAttr> oldParamOrder,
+    Operation *callableOp, ArrayAttr callParams, ArrayRef<StringAttr> oldParamOrder,
     const DenseMap<StringAttr, Type> &replacements, bool explicitCallParams
 ) {
   if (callParamsMatchReplacements(callParams, oldParamOrder, replacements)) {
@@ -1909,7 +1958,7 @@ static LogicalResult diagnoseCallParamsMismatch(
       continue;
     }
 
-    InFlightDiagnostic diag = callOp.emitError()
+    InFlightDiagnostic diag = callableOp->emitError()
                               << (explicitCallParams ? "explicit" : "implicit")
                               << " template argument for inferred parameter @"
                               << entry.first.getValue() << " must match inferred type "
@@ -1921,8 +1970,8 @@ static LogicalResult diagnoseCallParamsMismatch(
     }
     return diag;
   }
-  return callOp.emitError() << (explicitCallParams ? "explicit" : "implicit")
-                            << " template arguments do not match inferred callee types";
+  return callableOp->emitError() << (explicitCallParams ? "explicit" : "implicit")
+                                 << " template arguments do not match inferred callee types";
 }
 
 /// Build concrete type-variable replacements from an explicit call instantiation.
@@ -1931,8 +1980,9 @@ static LogicalResult diagnoseCallParamsMismatch(
 /// so non-type parameters remain available to operations such as
 /// `poly.read_const`. Type-variable parameters mentioned by the cloned function
 /// are replaced by concrete types from the call's template argument list.
+template <typename TargetOp>
 static DenseMap<StringAttr, Type> getConcreteCallSiteReplacements(
-    ArrayAttr callParams, const TemplateInferenceInfo &info, FuncDefOp func
+    ArrayAttr callParams, const TemplateInferenceInfo &info, TargetOp targetOp
 ) {
   DenseMap<StringAttr, Type> replacements;
   if (!callParams || callParams.size() != info.oldParamOrder.size()) {
@@ -1941,7 +1991,7 @@ static DenseMap<StringAttr, Type> getConcreteCallSiteReplacements(
 
   for (const auto &entry : info.typeVarParams) {
     StringAttr paramName = entry.first;
-    if (!funcMentionsParam(func, paramName)) {
+    if (!targetMentionsParam(targetOp, paramName)) {
       continue;
     }
     std::optional<unsigned> index = getParamIndex(info.oldParamOrder, paramName);
@@ -2096,11 +2146,14 @@ getConflictingRhsTypeVarCandidates(FunctionType lhs, FunctionType rhs, SymbolRef
 }
 
 /// Infer the call-site template argument list from call/callee type unification.
-static FailureOr<ArrayAttr>
-getCallSignatureTemplateParams(CallOp callOp, const TemplateInferenceInfo &info, FuncDefOp func) {
-  FailureOr<UnificationMap> unifyResult = callOp.unifyTypeSignature(func.getFunctionType());
+template <typename CallableOp, typename TargetOp>
+static FailureOr<ArrayAttr> getCallSignatureTemplateParams(
+    CallableOp callableOp, const TemplateInferenceInfo &info, TargetOp targetOp
+) {
+  FailureOr<UnificationMap> unifyResult = callableOp.unifyTypeSignature(targetOp.getFunctionType());
   if (failed(unifyResult)) {
-    return callOp.emitError() << "could not infer omitted template arguments from callee signature";
+    return callableOp.emitError()
+           << "could not infer omitted template arguments from callee signature";
   }
 
   SmallVector<Attribute> params;
@@ -2108,14 +2161,15 @@ getCallSignatureTemplateParams(CallOp callOp, const TemplateInferenceInfo &info,
   for (StringAttr paramName : info.oldParamOrder) {
     auto it = unifyResult->find({FlatSymbolRefAttr::get(paramName), Side::RHS});
     if (it == unifyResult->end()) {
-      return callOp.emitError() << "could not infer omitted template argument for parameter @"
-                                << paramName.getValue() << " from callee signature";
+      return callableOp.emitError() << "could not infer omitted template argument for parameter @"
+                                    << paramName.getValue() << " from callee signature";
     }
     if (!it->second) {
-      InFlightDiagnostic diag = callOp.emitError()
+      InFlightDiagnostic diag = callableOp.emitError()
                                 << "conflicting inferred types for @" << paramName.getValue();
       SmallVector<Type> candidates = getConflictingRhsTypeVarCandidates(
-          callOp.getTypeSignature(), func.getFunctionType(), FlatSymbolRefAttr::get(paramName)
+          callableOp.getTypeSignature(), targetOp.getFunctionType(),
+          FlatSymbolRefAttr::get(paramName)
       );
       if (candidates.size() >= 2) {
         diag << ": " << candidates.front();
@@ -2127,20 +2181,21 @@ getCallSignatureTemplateParams(CallOp callOp, const TemplateInferenceInfo &info,
     }
     params.push_back(it->second);
   }
-  return ArrayAttr::get(callOp.getContext(), params);
+  return ArrayAttr::get(callableOp.getContext(), params);
 }
 
 /// Return true when a call's explicit template arguments contain `?` for a
 /// residual type-variable parameter mentioned by `func`.
+template <typename TargetOp>
 static bool hasResidualFunctionTvarWildcard(
-    ArrayAttr callParams, const TemplateInferenceInfo &info, FuncDefOp func
+    ArrayAttr callParams, const TemplateInferenceInfo &info, TargetOp targetOp
 ) {
   if (!callParams || callParams.size() != info.oldParamOrder.size()) {
     return false;
   }
   for (const auto &entry : info.typeVarParams) {
     StringAttr paramName = entry.first;
-    if (!funcMentionsParam(func, paramName)) {
+    if (!targetMentionsParam(targetOp, paramName)) {
       continue;
     }
     std::optional<unsigned> index = getParamIndex(info.oldParamOrder, paramName);
@@ -2154,19 +2209,21 @@ static bool hasResidualFunctionTvarWildcard(
 
 /// Materialize explicit `?` type arguments from the call signature before
 /// choosing a function-local clone.
+template <typename CallableOp, typename TargetOp>
 static FailureOr<ArrayAttr> materializeResidualFunctionTvarWildcards(
-    CallOp callOp, ArrayAttr callParams, const TemplateInferenceInfo &info, FuncDefOp func
+    CallableOp callableOp, ArrayAttr callParams, const TemplateInferenceInfo &info,
+    TargetOp targetOp
 ) {
-  FailureOr<UnificationMap> unifyResult = callOp.unifyTypeSignature(func.getFunctionType());
+  FailureOr<UnificationMap> unifyResult = callableOp.unifyTypeSignature(targetOp.getFunctionType());
   if (failed(unifyResult)) {
-    return callOp.emitError()
+    return callableOp.emitError()
            << "could not infer wildcard template arguments from callee signature";
   }
 
   SmallVector<Attribute> params(callParams.begin(), callParams.end());
   for (const auto &entry : info.typeVarParams) {
     StringAttr paramName = entry.first;
-    if (!funcMentionsParam(func, paramName)) {
+    if (!targetMentionsParam(targetOp, paramName)) {
       continue;
     }
     std::optional<unsigned> index = getParamIndex(info.oldParamOrder, paramName);
@@ -2177,14 +2234,15 @@ static FailureOr<ArrayAttr> materializeResidualFunctionTvarWildcards(
 
     auto inferredIt = unifyResult->find({FlatSymbolRefAttr::get(paramName), Side::RHS});
     if (inferredIt == unifyResult->end()) {
-      return callOp.emitError() << "could not infer wildcard template argument for parameter @"
-                                << paramName.getValue() << " from callee signature";
+      return callableOp.emitError() << "could not infer wildcard template argument for parameter @"
+                                    << paramName.getValue() << " from callee signature";
     }
     if (!inferredIt->second) {
-      InFlightDiagnostic diag = callOp.emitError()
+      InFlightDiagnostic diag = callableOp.emitError()
                                 << "conflicting inferred types for @" << paramName.getValue();
       SmallVector<Type> candidates = getConflictingRhsTypeVarCandidates(
-          callOp.getTypeSignature(), func.getFunctionType(), FlatSymbolRefAttr::get(paramName)
+          callableOp.getTypeSignature(), targetOp.getFunctionType(),
+          FlatSymbolRefAttr::get(paramName)
       );
       if (candidates.size() >= 2) {
         diag << ": " << candidates.front();
@@ -2196,7 +2254,7 @@ static FailureOr<ArrayAttr> materializeResidualFunctionTvarWildcards(
     }
     params[*index] = inferredIt->second;
   }
-  return ArrayAttr::get(callOp.getContext(), params);
+  return ArrayAttr::get(callableOp.getContext(), params);
 }
 
 /// Return true when `func` still needs per-call cloning after template-wide rewrites.
@@ -2204,9 +2262,10 @@ static FailureOr<ArrayAttr> materializeResidualFunctionTvarWildcards(
 /// Parameters in `info.replacements` are safe to rewrite in the template itself.
 /// A clone is only necessary when the function mentions an eligible type
 /// variable that was not proven for every relevant entry point.
-static bool hasResidualFunctionTvar(const TemplateInferenceInfo &info, FuncDefOp func) {
+template <typename TargetOp>
+static bool hasResidualFunctionTvar(const TemplateInferenceInfo &info, TargetOp targetOp) {
   return llvm::any_of(info.typeVarParams, [&](const auto &entry) {
-    return !info.replacements.contains(entry.first) && funcMentionsParam(func, entry.first);
+    return !info.replacements.contains(entry.first) && targetMentionsParam(targetOp, entry.first);
   });
 }
 
@@ -2295,6 +2354,45 @@ static FailureOr<SymbolRefAttr> getOrCreateSpecializedFunctionClone(
   FuncDefOp clone = func.clone();
   clone.setSymName(requestedFuncName);
   templateSymbols.insert(clone, Block::iterator(func));
+
+  TypeVarReplacementConverter converter(
+      templateOp.getContext(), info.templatePath, info.oldParamOrder, replacements,
+      /*trimResolvedParams=*/false
+  );
+  if (failed(convertOperationTypesIn(clone.getOperation(), converter))) {
+    clone.erase();
+    return failure();
+  }
+  removeIdentityCasts(clone.getOperation());
+  SymbolRefAttr cloneCallee =
+      getTemplateLocalFunctionCloneCallee(originalCallee, clone.getSymNameAttr());
+  cloneCallees.try_emplace(cacheKey, cloneCallee);
+  return cloneCallee;
+}
+
+/// Create or reuse a template-local clone for a concrete contract-local tvar instantiation.
+static FailureOr<SymbolRefAttr> getOrCreateSpecializedContractClone(
+    TemplateOp templateOp, verif::ContractOp contract, SymbolRefAttr originalCallee,
+    SymbolRefAttr specializedTarget, const TemplateInferenceInfo &info,
+    const DenseMap<StringAttr, Type> &replacements, SymbolTableCollection &tables,
+    llvm::StringMap<SymbolRefAttr> &cloneCallees
+) {
+  std::string requestedContractName =
+      buildTemplateLocalFunctionCloneName(contract.getSymName(), info.oldParamOrder, replacements);
+  std::string cacheKey = buildTemplateLocalFunctionCloneCacheKey(
+      contract.getSymName(), info.oldParamOrder, replacements
+  );
+  auto cachedCallee = cloneCallees.find(cacheKey);
+  if (cachedCallee != cloneCallees.end()) {
+    return cachedCallee->second;
+  }
+
+  SymbolTable &templateSymbols = tables.getSymbolTable(templateOp);
+
+  auto clone = llvm::cast<verif::ContractOp>(contract.getOperation()->clone());
+  clone.setSymName(requestedContractName);
+  clone.setTargetAttr(specializedTarget);
+  templateSymbols.insert(clone, Block::iterator(contract));
 
   TypeVarReplacementConverter converter(
       templateOp.getContext(), info.templatePath, info.oldParamOrder, replacements,
@@ -2594,6 +2692,14 @@ static FailureOr<bool> updateStructTemplateParams(
       }
       changed |= oldFuncTy != func.getFunctionType();
     }
+    if (auto contract = llvm::dyn_cast<verif::ContractOp>(op)) {
+      FunctionType oldFuncTy = contract.getFunctionType();
+      updateContractSignature(contract, converter);
+      if (converter.failed()) {
+        return WalkResult::interrupt();
+      }
+      changed |= oldFuncTy != contract.getFunctionType();
+    }
 
     for (Region &region : op->getRegions()) {
       for (Block &block : region.getBlocks()) {
@@ -2653,17 +2759,18 @@ static LogicalResult instantiateConcreteStructUses(ModuleOp module) {
   return convertOperationTypesIn(module.getOperation(), converter);
 }
 
-/// Specialize calls to template functions with concrete tvar instantiations.
+/// Specialize calls/includes to template-local callables with concrete tvar instantiations.
 ///
 /// This intentionally handles only fully-concrete explicit call-site type
-/// arguments for free functions directly nested in a template. More general
-/// partial instantiations should follow the flattening pass' template-cloning
-/// machinery, but this covers the tvar-only cases without invoking flattening's
+/// arguments for callables directly nested in a template. More general partial
+/// instantiations should follow the flattening pass' template-cloning machinery,
+/// but this covers the tvar-only cases without invoking flattening's
 /// struct/array transformations. Function-local inference facts are used to
 /// reject call-site instantiations that disagree with a proof in the body.
-static LogicalResult specializeFunctionLocalCalls(
+static LogicalResult specializeFunctionLocalCallables(
     ModuleOp module, DenseMap<Operation *, const TemplateInferenceInfo *> &infoByTemplate,
-    SpecializedFunctionCloneCache &cloneCache
+    SpecializedCallableCloneCache &functionCloneCache,
+    SpecializedCallableCloneCache &contractCloneCache
 ) {
   bool failedClone = false;
   SymbolTableCollection tables;
@@ -2719,7 +2826,7 @@ static LogicalResult specializeFunctionLocalCalls(
     DenseMap<StringAttr, Type> inferredReplacements =
         getFunctionProofReplacements(*info, targetFunc);
     if (failed(diagnoseCallParamsMismatch(
-            callOp, callParams, info->oldParamOrder, inferredReplacements,
+            callOp.getOperation(), callParams, info->oldParamOrder, inferredReplacements,
             /*explicitCallParams=*/explicitCallParams
         ))) {
       failedClone = true;
@@ -2728,7 +2835,7 @@ static LogicalResult specializeFunctionLocalCalls(
 
     FailureOr<SymbolRefAttr> cloneCallee = getOrCreateSpecializedFunctionClone(
         parentTemplate, targetFunc, callOp.getCalleeAttr(), *info, replacements, tables,
-        cloneCache[parentTemplate.getOperation()]
+        functionCloneCache[parentTemplate.getOperation()]
     );
     if (failed(cloneCallee)) {
       failedClone = true;
@@ -2738,6 +2845,97 @@ static LogicalResult specializeFunctionLocalCalls(
     callOp.setCalleeAttr(*cloneCallee);
     if (inferredCallParams || materializedWildcardParams) {
       callOp.setTemplateParamsAttr(callParams);
+    }
+  });
+  module.walk([&](verif::IncludeOp includeOp) {
+    if (failedClone) {
+      return;
+    }
+    FailureOr<SymbolLookupResult<verif::ContractOp>> target = includeOp.getCalleeTarget(tables);
+    if (failed(target)) {
+      return;
+    }
+    verif::ContractOp targetContract = target->get();
+    auto parentTemplate = llvm::dyn_cast_or_null<TemplateOp>(targetContract->getParentOp());
+    if (!parentTemplate) {
+      return;
+    }
+    const TemplateInferenceInfo *info = infoByTemplate.lookup(parentTemplate.getOperation());
+    if (!info) {
+      return;
+    }
+    if (!hasResidualFunctionTvar(*info, targetContract)) {
+      return;
+    }
+
+    FailureOr<SymbolLookupResult<FuncDefOp>> targetFuncResult =
+        targetContract.getFuncTarget(tables);
+    if (failed(targetFuncResult)) {
+      return;
+    }
+    FuncDefOp targetFunc = targetFuncResult->get();
+    if (getParentOfType<TemplateOp>(targetFunc.getOperation()) != parentTemplate) {
+      return;
+    }
+
+    ArrayAttr includeParams = includeOp.getTemplateParamsAttr();
+    bool explicitIncludeParams = !isNullOrEmpty(includeParams);
+    bool inferredIncludeParams = false;
+    bool materializedWildcardParams = false;
+    if (isNullOrEmpty(includeParams)) {
+      FailureOr<ArrayAttr> inferredParams =
+          getCallSignatureTemplateParams(includeOp, *info, targetContract);
+      if (failed(inferredParams)) {
+        failedClone = true;
+        return;
+      }
+      includeParams = *inferredParams;
+      inferredIncludeParams = true;
+    } else if (hasResidualFunctionTvarWildcard(includeParams, *info, targetContract)) {
+      FailureOr<ArrayAttr> materializedParams =
+          materializeResidualFunctionTvarWildcards(includeOp, includeParams, *info, targetContract);
+      if (failed(materializedParams)) {
+        failedClone = true;
+        return;
+      }
+      includeParams = *materializedParams;
+      materializedWildcardParams = true;
+    }
+    DenseMap<StringAttr, Type> replacements =
+        getConcreteCallSiteReplacements(includeParams, *info, targetContract);
+    if (replacements.empty()) {
+      return;
+    }
+    DenseMap<StringAttr, Type> inferredReplacements =
+        getFunctionProofReplacements(*info, targetFunc);
+    if (failed(diagnoseCallParamsMismatch(
+            includeOp.getOperation(), includeParams, info->oldParamOrder, inferredReplacements,
+            /*explicitCallParams=*/explicitIncludeParams
+        ))) {
+      failedClone = true;
+      return;
+    }
+
+    FailureOr<SymbolRefAttr> specializedTarget = getOrCreateSpecializedFunctionClone(
+        parentTemplate, targetFunc, targetContract.getTargetAttr(), *info, replacements, tables,
+        functionCloneCache[parentTemplate.getOperation()]
+    );
+    if (failed(specializedTarget)) {
+      failedClone = true;
+      return;
+    }
+    FailureOr<SymbolRefAttr> cloneCallee = getOrCreateSpecializedContractClone(
+        parentTemplate, targetContract, includeOp.getCalleeAttr(), *specializedTarget, *info,
+        replacements, tables, contractCloneCache[parentTemplate.getOperation()]
+    );
+    if (failed(cloneCallee)) {
+      failedClone = true;
+      return;
+    }
+
+    includeOp.setCalleeAttr(*cloneCallee);
+    if (inferredIncludeParams || materializedWildcardParams) {
+      includeOp.setTemplateParamsAttr(includeParams);
     }
   });
   return failure(failedClone);
@@ -3082,8 +3280,11 @@ private:
 
     // Clone concrete call-site instantiations before trimming template
     // arguments; the clone decision needs the original explicit arguments.
-    SpecializedFunctionCloneCache cloneCache;
-    if (failed(specializeFunctionLocalCalls(module, infoByTemplate, cloneCache))) {
+    SpecializedCallableCloneCache functionCloneCache;
+    SpecializedCallableCloneCache contractCloneCache;
+    if (failed(specializeFunctionLocalCallables(
+            module, infoByTemplate, functionCloneCache, contractCloneCache
+        ))) {
       signalPassFailure();
       return;
     }
@@ -3115,7 +3316,9 @@ private:
     }
     // Re-run specialization after rewriting because template bodies may now
     // contain concrete forwarded calls into otherwise unconstrained templates.
-    if (failed(specializeFunctionLocalCalls(module, infoByTemplate, cloneCache))) {
+    if (failed(specializeFunctionLocalCallables(
+            module, infoByTemplate, functionCloneCache, contractCloneCache
+        ))) {
       signalPassFailure();
       return;
     }
