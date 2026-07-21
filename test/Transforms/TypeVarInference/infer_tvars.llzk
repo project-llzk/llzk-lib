@@ -476,6 +476,34 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @TWildcardArrayExplicitCall {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @id(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      %pattern = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> !array.type<? x index>
+      function.return %arg : !poly.tvar<@T>
+    }
+  }
+
+  function.def @call_id(%arg: !array.type<4 x index>) -> !array.type<4 x index> {
+    %0 = function.call @TWildcardArrayExplicitCall::@id<[!array.type<4 x index>]>(%arg) : (!array.type<4 x index>) -> !array.type<4 x index>
+    function.return %0 : !array.type<4 x index>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TWildcardArrayExplicitCall {
+// CHECK-NEXT:      function.def @id(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<? x index>) -> !array.type<? x index> {
+// CHECK-NEXT:        function.return %[[VAL_0]] : !array.type<? x index>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_id(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<4 x index>) -> !array.type<4 x index> {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @TWildcardArrayExplicitCall::@id(%[[VAL_1]]) : (!array.type<4 x index>) -> !array.type<4 x index>
+// CHECK-NEXT:      function.return %[[VAL_2]] : !array.type<4 x index>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
   poly.template @TAggregateParamRelations {
     poly.param @T : !poly.tvar<@T>
     poly.param @U : !poly.tvar<@U>

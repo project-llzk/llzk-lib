@@ -206,6 +206,13 @@ static Attribute convertTypeOrArrayAttr(
   return attr;
 }
 
+/// Return true when a template argument is compatible with an inferred concrete
+/// type under LLZK type-parameter unification rules.
+static bool templateArgUnifiesWithType(Attribute attr, Type expectedTy) {
+  Attribute expectedAttr = TypeAttr::get(expectedTy);
+  return typeParamsUnify(ArrayRef<Attribute> {attr}, ArrayRef<Attribute> {expectedAttr});
+}
+
 /// Converts types and attributes by replacing inferred template type variables.
 ///
 /// The converter is scoped to one `poly.template`. Besides direct
@@ -504,8 +511,7 @@ private:
       return success();
     }
     Attribute convertedAttr = resolveTemplateSymbolArgs ? convertTemplateArgAttr(attr) : attr;
-    Attribute expectedAttr = TypeAttr::get(convertType(replacementIt->second));
-    if (convertedAttr == expectedAttr) {
+    if (templateArgUnifiesWithType(convertedAttr, convertType(replacementIt->second))) {
       return success();
     }
 
@@ -2054,7 +2060,7 @@ static bool callParamsMatchReplacements(
       return false;
     }
     Type expectedTy = substituteExplicitCallTypeArgs(entry.second, callParams, oldParamOrder);
-    if (callParams[*index] != TypeAttr::get(expectedTy)) {
+    if (!templateArgUnifiesWithType(callParams[*index], expectedTy)) {
       return false;
     }
   }
@@ -2081,8 +2087,7 @@ static LogicalResult diagnoseCallParamsMismatch(
     }
     Attribute attr = callParams[*index];
     Type expectedTy = substituteExplicitCallTypeArgs(entry.second, callParams, oldParamOrder);
-    Attribute expectedAttr = TypeAttr::get(expectedTy);
-    if (attr == expectedAttr) {
+    if (templateArgUnifiesWithType(attr, expectedTy)) {
       continue;
     }
 
