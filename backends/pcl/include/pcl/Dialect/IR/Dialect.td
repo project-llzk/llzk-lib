@@ -19,6 +19,7 @@ def PCLDialect : Dialect {
   let usePropertiesForAttributes = 0;
   let useDefaultTypePrinterParser = true;
   let useDefaultAttributePrinterParser = true;
+  let hasConstantMaterializer = 1;
 
   let extraClassDeclaration = [{
     ::mlir::LogicalResult verifyOperationAttribute(::mlir::Operation *op,

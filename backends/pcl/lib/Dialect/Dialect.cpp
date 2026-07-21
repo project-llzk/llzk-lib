@@ -12,7 +12,11 @@
 #include "pcl/Dialect/IR/Ops.h"
 #include "pcl/Dialect/IR/Types.h"
 
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+
 #include <mlir/IR/DialectImplementation.h>
+
+#include <llvm/Support/Debug.h>
 
 // TableGen'd implementation files
 #include "pcl/Dialect/IR/Dialect.cpp.inc"
@@ -42,6 +46,10 @@ void pcl::PCLDialect::initialize() {
 
 using namespace pcl;
 
+//===----------------------------------------------------------------------===//
+// PCLDialect
+//===----------------------------------------------------------------------===//
+
 mlir::LogicalResult
 PCLDialect::verifyOperationAttribute(mlir::Operation *op, mlir::NamedAttribute attr) {
   if (attr.getName() == "pcl.prime") {
@@ -54,10 +62,41 @@ PCLDialect::verifyOperationAttribute(mlir::Operation *op, mlir::NamedAttribute a
       return op->emitError() << "'pcl.prime' may only be on builtin.module";
     }
 
-    const llvm::APInt &v = prime.getValue().getValue();
+    const llvm::APInt &v = prime.getValue();
     if (v.isZero() || v.isNegative()) {
       return op->emitError() << "prime must be positive";
     }
   }
   return mlir::success();
+}
+
+mlir::Operation *PCLDialect::materializeConstant(
+    mlir::OpBuilder &builder, mlir::Attribute value, mlir::Type, mlir::Location loc
+) {
+  return llvm::TypeSwitch<mlir::Attribute, mlir::Operation *>(value)
+      .Case<FeltAttr>([&builder, loc](auto attr) -> mlir::Operation * {
+    return builder.create<ConstOp>(loc, attr);
+  })
+      .Case<BoolAttr>([&builder, loc](auto attr) -> mlir::Operation * {
+    if (attr.getValue()) {
+      return builder.create<TrueOp>(loc);
+    } else {
+      return builder.create<FalseOp>(loc);
+    }
+  }).Default([](auto) {
+    llvm_unreachable("unsupported constant attribute");
+    return nullptr;
+  });
+}
+
+//===----------------------------------------------------------------------===//
+// PrimeAttr
+//===----------------------------------------------------------------------===//
+
+FeltAttr PrimeAttr::reduce(FeltAttr attr) {
+  auto value = attr.getValue().srem(getValue());
+  if (value.isNegative()) {
+    value += getValue();
+  }
+  return FeltAttr::get(getContext(), value);
 }
