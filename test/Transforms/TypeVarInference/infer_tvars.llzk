@@ -1533,3 +1533,92 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_2]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TForeignBox {
+    poly.param @Element : !poly.tvar<@Element>
+
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@Element>
+
+      function.def @product(%arg: !poly.tvar<@Element>) -> !struct.type<@TForeignBox::@Box<[@Element]>> attributes {function.allow_constraint, function.allow_witness} {
+        %self = struct.new : <@TForeignBox::@Box<[@Element]>>
+        struct.writem %self[@value] = %arg : <@TForeignBox::@Box<[@Element]>>, !poly.tvar<@Element>
+        function.return %self : !struct.type<@TForeignBox::@Box<[@Element]>>
+      }
+    }
+  }
+
+  poly.template @TGenericCallee {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @id(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      function.return %arg : !poly.tvar<@T>
+    }
+
+    function.def @force(%arg: !poly.tvar<@T>) -> index {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      function.return %index : index
+    }
+  }
+
+  poly.template @TCaller {
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @forward(
+        %arg: !struct.type<@TForeignBox::@Box<[@U]>>, %u: !poly.tvar<@U>
+    ) -> !struct.type<@TForeignBox::@Box<[index]>> {
+      %index = poly.unifiable_cast %u : (!poly.tvar<@U>) -> index
+      %arg_index = poly.unifiable_cast %arg : (!struct.type<@TForeignBox::@Box<[@U]>>) -> !struct.type<@TForeignBox::@Box<[index]>>
+      %0 = function.call @TGenericCallee::@id<[!struct.type<@TForeignBox::@Box<[@U]>>]>(%arg) :
+          (!struct.type<@TForeignBox::@Box<[@U]>>) -> !struct.type<@TForeignBox::@Box<[@U]>>
+      %out = poly.unifiable_cast %0 : (!struct.type<@TForeignBox::@Box<[@U]>>) -> !struct.type<@TForeignBox::@Box<[index]>>
+      function.return %out : !struct.type<@TForeignBox::@Box<[index]>>
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TForeignBox_i {
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        struct.member @value : index
+// CHECK-NEXT:        function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@TForeignBox_i::@Box> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TForeignBox_i::@Box>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@value] = %[[VAL_0]] : <@TForeignBox_i::@Box>, index
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TForeignBox_i::@Box>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TForeignBox {
+// CHECK-NEXT:      poly.param @Element : !poly.tvar<@Element>
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        struct.member @value : !poly.tvar<@Element>
+// CHECK-NEXT:        function.def @product(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Element>) -> !struct.type<@TForeignBox::@Box<[@Element]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@TForeignBox::@Box<[@Element]>>
+// CHECK-NEXT:          struct.writem %[[VAL_3]][@value] = %[[VAL_2]] : <@TForeignBox::@Box<[@Element]>>, !poly.tvar<@Element>
+// CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@TForeignBox::@Box<[@Element]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @"TGenericCallee_!s<@TForeignBox::@Box_i>" {
+// CHECK-NEXT:      function.def @id(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@TForeignBox_i::@Box>) -> !struct.type<@TForeignBox_i::@Box> {
+// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@TForeignBox_i::@Box>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TGenericCallee {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @id(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !poly.tvar<@T> {
+// CHECK-NEXT:        function.return %[[VAL_5]] : !poly.tvar<@T>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @force(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> index {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_6]] : (!poly.tvar<@T>) -> index
+// CHECK-NEXT:        function.return %[[VAL_7]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TCaller {
+// CHECK-NEXT:      function.def @forward(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@TForeignBox_i::@Box>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@TForeignBox_i::@Box> {
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @"TGenericCallee_!s<@TForeignBox::@Box_i>"::@id(%[[VAL_8]]) : (!struct.type<@TForeignBox_i::@Box>) -> !struct.type<@TForeignBox_i::@Box>
+// CHECK-NEXT:        function.return %[[VAL_10]] : !struct.type<@TForeignBox_i::@Box>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
