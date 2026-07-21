@@ -315,6 +315,73 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @TTrimmedTarget {
+    poly.param @A : !poly.tvar<@A>
+    poly.param @B : !poly.tvar<@B>
+
+    function.def @force_a(%arg: !poly.tvar<@A>) -> index {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@A>) -> index
+      function.return %index : index
+    }
+
+    function.def @local_b(%arg: !poly.tvar<@B>) -> !poly.tvar<@B> {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@B>) -> index
+      function.return %arg : !poly.tvar<@B>
+    }
+
+    function.def @keep_b(%arg: !poly.tvar<@B>) -> !poly.tvar<@B> {
+      function.return %arg : !poly.tvar<@B>
+    }
+  }
+
+  poly.template @TTrimmedCaller {
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @forward(%arg: !poly.tvar<@U>) -> index {
+      %forwarded = function.call @TTrimmedTarget::@local_b<[index, @U]>(%arg) : (!poly.tvar<@U>) -> !poly.tvar<@U>
+      %index = poly.unifiable_cast %forwarded : (!poly.tvar<@U>) -> index
+      function.return %index : index
+    }
+  }
+
+  function.def @call_forward(%arg: index) -> index {
+    %0 = function.call @TTrimmedCaller::@forward<[index]>(%arg) : (index) -> index
+    function.return %0 : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TTrimmedTarget_i_i {
+// CHECK-NEXT:      function.def @local_b(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:        function.return %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TTrimmedTarget {
+// CHECK-NEXT:      poly.param @B : !poly.tvar<@B>
+// CHECK-NEXT:      function.def @force_a(%[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:        function.return %[[VAL_1]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @local_b(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !poly.tvar<@B>) -> !poly.tvar<@B> {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_2]] : (!poly.tvar<@B>) -> index
+// CHECK-NEXT:        function.return %[[VAL_2]] : !poly.tvar<@B>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @keep_b(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !poly.tvar<@B>) -> !poly.tvar<@B> {
+// CHECK-NEXT:        function.return %[[VAL_4]] : !poly.tvar<@B>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TTrimmedCaller {
+// CHECK-NEXT:      function.def @forward(%[[VAL_5:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @TTrimmedTarget_i_i::@local_b(%[[VAL_5]]) : (index) -> index
+// CHECK-NEXT:        function.return %[[VAL_6]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_forward(%[[VAL_7:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @TTrimmedCaller::@forward(%[[VAL_7]]) : (index) -> index
+// CHECK-NEXT:      function.return %[[VAL_8]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
   poly.template @TInferArrayElement {
     poly.param @T : !poly.tvar<@T>
 

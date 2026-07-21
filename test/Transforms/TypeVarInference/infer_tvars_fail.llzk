@@ -200,3 +200,42 @@ module attributes {llzk.lang} {
     }
   }
 }
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TTrimmedTargetConflict {
+    poly.param @A : !poly.tvar<@A>
+    poly.param @B : !poly.tvar<@B>
+
+    function.def @force_a(%arg: !poly.tvar<@A>) -> index {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@A>) -> index
+      function.return %index : index
+    }
+
+    function.def @local_b(%arg: !poly.tvar<@B>) -> !poly.tvar<@B> {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@B>) -> index
+      function.return %arg : !poly.tvar<@B>
+    }
+
+    function.def @keep_b(%arg: !poly.tvar<@B>) -> !poly.tvar<@B> {
+      function.return %arg : !poly.tvar<@B>
+    }
+  }
+
+  poly.template @TTrimmedCallerConflict {
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @forward(%arg: !poly.tvar<@U>) -> !felt.type {
+      // expected-error@+1 {{explicit template argument for inferred parameter @B must match inferred type 'index', but found '!felt.type'}}
+      %forwarded = function.call @TTrimmedTargetConflict::@local_b<[index, @U]>(%arg) : (!poly.tvar<@U>) -> !poly.tvar<@U>
+      %felt = poly.unifiable_cast %forwarded : (!poly.tvar<@U>) -> !felt.type
+      function.return %felt : !felt.type
+    }
+  }
+
+  function.def @call_forward(%arg: !felt.type) -> !felt.type {
+    %0 = function.call @TTrimmedCallerConflict::@forward<[!felt.type]>(%arg) : (!felt.type) -> !felt.type
+    function.return %0 : !felt.type
+  }
+}

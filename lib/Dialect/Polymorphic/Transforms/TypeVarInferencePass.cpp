@@ -2102,6 +2102,37 @@ static LogicalResult diagnoseCallParamsMismatch(
                                  << " template arguments do not match inferred callee types";
 }
 
+/// Expand a call/include template argument list that has already had
+/// template-wide resolved parameters trimmed back to the original parameter
+/// order used by inference metadata.
+static ArrayAttr expandCurrentTemplateParamsToOriginalOrder(
+    ArrayAttr callParams, const TemplateInferenceInfo &info
+) {
+  if (!callParams || callParams.size() == info.oldParamOrder.size()) {
+    return callParams;
+  }
+
+  unsigned currentParamCount = llvm::count_if(info.oldParamOrder, [&info](StringAttr paramName) {
+    return !info.replacements.contains(paramName);
+  });
+  if (callParams.size() != currentParamCount) {
+    return callParams;
+  }
+
+  SmallVector<Attribute> expandedParams;
+  expandedParams.reserve(info.oldParamOrder.size());
+  unsigned currentIndex = 0;
+  for (StringAttr paramName : info.oldParamOrder) {
+    auto replacementIt = info.replacements.find(paramName);
+    if (replacementIt != info.replacements.end()) {
+      expandedParams.push_back(TypeAttr::get(replacementIt->second.type));
+      continue;
+    }
+    expandedParams.push_back(callParams[currentIndex++]);
+  }
+  return ArrayAttr::get(callParams.getContext(), expandedParams);
+}
+
 /// Build concrete type-variable replacements from an explicit call instantiation.
 ///
 /// A specialized function clone keeps the original enclosing `poly.template`,
@@ -2117,8 +2148,12 @@ static DenseMap<StringAttr, Type> getConcreteCallSiteReplacements(
     return replacements;
   }
 
+  bool sawResidualReplacement = false;
   for (const auto &entry : info.typeVarParams) {
     StringAttr paramName = entry.first;
+    if (info.replacements.contains(paramName)) {
+      continue;
+    }
     if (!targetMentionsParam(targetOp, paramName)) {
       continue;
     }
@@ -2130,6 +2165,14 @@ static DenseMap<StringAttr, Type> getConcreteCallSiteReplacements(
       return DenseMap<StringAttr, Type>();
     }
     replacements.try_emplace(paramName, tyAttr.getValue());
+    sawResidualReplacement = true;
+  }
+  if (!sawResidualReplacement) {
+    return DenseMap<StringAttr, Type>();
+  }
+
+  for (const auto &entry : info.replacements) {
+    replacements.try_emplace(entry.first, entry.second.type);
   }
 
   TypeVarReplacementConverter converter(
@@ -2323,6 +2366,11 @@ static FailureOr<ArrayAttr> getCallSignatureTemplateParams(
   SmallVector<Attribute> params;
   params.reserve(info.oldParamOrder.size());
   for (StringAttr paramName : info.oldParamOrder) {
+    auto replacementIt = info.replacements.find(paramName);
+    if (replacementIt != info.replacements.end()) {
+      params.push_back(TypeAttr::get(replacementIt->second.type));
+      continue;
+    }
     FailureOr<Attribute> inferredAttr =
         getInferredRhsTemplateArg(callableOp, targetOp, *unifyResult, paramName, "omitted");
     if (failed(inferredAttr)) {
@@ -2432,14 +2480,17 @@ static LogicalResult prepareCallableSpecialization(
     }
     inputs.params = *inferredParams;
     inputs.paramsChanged = true;
-  } else if (hasResidualFunctionTvarWildcard(inputs.params, info, targetOp)) {
-    FailureOr<ArrayAttr> materializedParams =
-        materializeResidualFunctionTvarWildcards(callableOp, inputs.params, info, targetOp);
-    if (failed(materializedParams)) {
-      return failure();
+  } else {
+    inputs.params = expandCurrentTemplateParamsToOriginalOrder(inputs.params, info);
+    if (hasResidualFunctionTvarWildcard(inputs.params, info, targetOp)) {
+      FailureOr<ArrayAttr> materializedParams =
+          materializeResidualFunctionTvarWildcards(callableOp, inputs.params, info, targetOp);
+      if (failed(materializedParams)) {
+        return failure();
+      }
+      inputs.params = *materializedParams;
+      inputs.paramsChanged = true;
     }
-    inputs.params = *materializedParams;
-    inputs.paramsChanged = true;
   }
 
   inputs.replacements = getConcreteCallSiteReplacements(inputs.params, info, targetOp);
