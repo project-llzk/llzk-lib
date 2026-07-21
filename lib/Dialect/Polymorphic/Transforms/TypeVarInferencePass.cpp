@@ -298,15 +298,14 @@ public:
   }
 
 private:
-  /// Reject initialized nested array rewrites when the original initializer list
-  /// cannot be mapped to concrete outer indices.
+  /// Reject initialized nested array rewrites when the original initializer list cannot be mapped
+  /// to concrete outer indices.
   ///
-  /// When a `!poly.tvar` element is inferred as an array type,
-  /// `convertOperationTypes` lowers `array.new %a, %b : <2 x !poly.tvar<@T>>`
-  /// by creating the flattened result array and inserting each subarray operand
-  /// at its original outer position. That lowering works even if the inferred
-  /// subarray has dynamic dimensions, but the original array shape must still be
-  /// static so each initializer operand has a known insertion index.
+  /// When a `!poly.tvar` element is inferred as an array type, `convertOperationTypes` lowers
+  /// `array.new %a, %b : <2 x !poly.tvar<@T>>` by creating the flattened result array and inserting
+  /// each subarray operand at its original outer position. That lowering works even if the inferred
+  /// subarray has dynamic dimensions, but the original array shape must still be static so each
+  /// initializer operand has a known insertion index.
   LogicalResult validateCreateArrayOp(CreateArrayOp createOp) const {
     if (createOp.getElements().empty()) {
       return success();
@@ -603,13 +602,11 @@ template <typename ConverterT> static bool convertCallCallee(CallOp callOp, Conv
   return false;
 }
 
-/// Convert every type-bearing surface on `op` that can mention an inferred type
-/// variable.
+/// Convert every type-bearing surface on `op` that can mention an inferred type variable.
 ///
-/// This handles operation results, region block arguments, function signatures,
-/// and attributes containing types. The pass mutates the IR directly because the
-/// transformation preserves operation semantics and only changes already-proven
-/// type annotations.
+/// This handles operation results, region block arguments, function signatures, and attributes
+/// containing types. The pass mutates the IR directly because the transformation preserves
+/// operation semantics and only changes already-proven type annotations.
 template <typename ConverterT>
 static bool convertOperationTypes(Operation *op, ConverterT &converter) {
   if (auto createOp = llvm::dyn_cast<CreateArrayOp>(op)) {
@@ -618,15 +615,24 @@ static bool convertOperationTypes(Operation *op, ConverterT &converter) {
     auto newElemTy = llvm::dyn_cast<ArrayType>(converter.convertType(oldResultTy.getElementType()));
     if (newResultTy && newElemTy && newResultTy != oldResultTy && !createOp.getElements().empty() &&
         oldResultTy.hasStaticShape()) {
+      // Validate every init value in the `array.new` before creating replacement ops to avoid
+      // dangling IR if one of the init values is invalid.
+      SmallVector<Type> newElementValueTypes;
+      newElementValueTypes.reserve(createOp.getElements().size());
+      for (Value element : createOp.getElements()) {
+        Type newElementValueTy = converter.convertType(element.getType());
+        if (newElementValueTy != newElemTy) {
+          return false;
+        }
+        newElementValueTypes.push_back(newElementValueTy);
+      }
+
       OpBuilder builder(createOp);
       Location loc = createOp.getLoc();
       CreateArrayOp newCreate = builder.create<CreateArrayOp>(loc, newResultTy);
       ArrayIndexGen idxGen = ArrayIndexGen::from(oldResultTy);
       for (auto [index, element] : llvm::enumerate(createOp.getElements())) {
-        Type newElementValueTy = converter.convertType(element.getType());
-        if (newElementValueTy != newElemTy) {
-          return false;
-        }
+        Type newElementValueTy = newElementValueTypes[index];
         if (element.getType() != newElementValueTy) {
           element.setType(newElementValueTy);
         }
