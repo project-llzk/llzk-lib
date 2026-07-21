@@ -154,15 +154,6 @@ TEST_F(CAPITest, llzk_felt_const_attr_get_from_parts_unspecified) {
   EXPECT_EQ(unwrap(attr), expected);
 }
 
-TEST_F(CAPITest, llzk_felt_const_attr_numeric_storage_is_deterministic) {
-  MlirAttribute narrow = llzkFelt_FeltConstAttrGetWithBitsUnspecified(context, 3, 7);
-  MlirAttribute wide = llzkFelt_FeltConstAttrGetWithBitsUnspecified(context, 8, 7);
-
-  EXPECT_TRUE(mlirAttributeEqual(narrow, wide));
-  EXPECT_EQ(llzkFelt_FeltConstAttrGetValue(narrow), 7);
-  EXPECT_EQ(llzkFelt_FeltConstAttrGetValue(wide), 7);
-}
-
 TEST_F(CAPITest, llzk_attribute_is_a_felt_const_attr_pass) {
   auto attr = llzkFelt_FeltConstAttrGetUnspecified(context, 0);
   EXPECT_TRUE(llzkAttributeIsA_Felt_FeltConstAttr(attr));

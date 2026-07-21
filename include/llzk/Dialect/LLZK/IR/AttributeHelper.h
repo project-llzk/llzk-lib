@@ -36,27 +36,22 @@ namespace llzk {
 /// Storage key for APInts whose numeric value is independent of bit width.
 class APIntValue {
 public:
-  APIntValue(llvm::APInt apInt) : value(canonicalize(std::move(apInt))) {}
+  APIntValue(llvm::APInt apInt) : value(std::move(apInt)) {}
 
   const llvm::APInt &getValue() const { return value; }
   operator const llvm::APInt &() const { return value; }
 
   friend bool operator==(const APIntValue &lhs, const APIntValue &rhs) {
-    return lhs.value == rhs.value;
+    return llvm::APInt::isSameValue(lhs.value, rhs.value);
   }
 
-  friend llvm::hash_code hash_value(const APIntValue &key) { return llvm::hash_value(key.value); }
+  friend llvm::hash_code hash_value(const APIntValue &key) {
+    unsigned activeBits = key.value.getActiveBits();
+    llvm::APInt canonical = key.value.trunc(activeBits == 0 ? 1 : activeBits);
+    return llvm::hash_value(canonical);
+  }
 
 private:
-  static llvm::APInt canonicalize(llvm::APInt value) {
-    unsigned activeBits = value.getActiveBits();
-    // A 64-bit minimum keeps the existing signed C API projection stable for
-    // values representable by its int64_t return type. It also gives zero-width
-    // APInts a valid, deterministic representation.
-    unsigned canonicalWidth = activeBits < 64 ? 64 : activeBits;
-    return value.zextOrTrunc(canonicalWidth);
-  }
-
   llvm::APInt value;
 };
 

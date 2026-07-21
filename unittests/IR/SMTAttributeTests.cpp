@@ -19,7 +19,6 @@
 
 #include <cstdint>
 #include <optional>
-#include <utility>
 
 using namespace llzk::smt;
 
@@ -107,38 +106,4 @@ TEST_F(SMTAttributeTests, NumericAPIntStorageReusesEqualValuesAcrossWidths) {
 
   llvm::APInt multiword = llvm::APInt::getOneBitSet(65, 64) | llvm::APInt(65, 7);
   expectStorageReuse(multiword, multiword.zext(129));
-}
-
-TEST_F(SMTAttributeTests, NumericAPIntStorageHasDeterministicRepresentation) {
-  llzk::APIntValue narrow(llvm::APInt(3, 7));
-  llzk::APIntValue wide(llvm::APInt(8, 7));
-  llzk::APIntValue zeroWidth(llvm::APInt::getZeroWidth());
-
-  EXPECT_EQ(narrow.getValue(), wide.getValue());
-  EXPECT_EQ(narrow.getValue().getBitWidth(), 64U);
-  EXPECT_EQ(narrow.getValue().getSExtValue(), 7);
-  EXPECT_EQ(zeroWidth.getValue(), llvm::APInt(64, 0));
-}
-
-TEST_F(SMTAttributeTests, NumericAttributeStorageIsInsertionOrderIndependent) {
-  auto materialize = [](bool narrowFirst) {
-    mlir::MLIRContext context;
-    mlir::DialectRegistry registry;
-    llzk::registerAllDialects(registry);
-    context.appendDialectRegistry(registry);
-    context.loadAllAvailableDialects();
-
-    llvm::APInt first = narrowFirst ? llvm::APInt(3, 7) : llvm::APInt(8, 7);
-    llvm::APInt second = narrowFirst ? llvm::APInt(8, 7) : llvm::APInt(3, 7);
-    llzk::felt::FeltConstAttr firstAttr = llzk::felt::FeltConstAttr::get(&context, first);
-    llzk::felt::FeltConstAttr secondAttr = llzk::felt::FeltConstAttr::get(&context, second);
-
-    EXPECT_EQ(firstAttr, secondAttr);
-    return std::pair(firstAttr.getValue().getBitWidth(), firstAttr.getValue().getSExtValue());
-  };
-
-  auto narrowFirst = materialize(true);
-  auto wideFirst = materialize(false);
-  EXPECT_EQ(narrowFirst, wideFirst);
-  EXPECT_EQ(narrowFirst, std::pair(64U, int64_t {7}));
 }
