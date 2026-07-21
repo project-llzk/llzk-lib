@@ -13,6 +13,7 @@
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
+#include "llzk/Util/Field.h"
 
 #include <gtest/gtest.h>
 
@@ -120,11 +121,11 @@ TEST_F(TypeTests, testShortString) {
   EXPECT_EQ("f<35>", BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::APInt(6, 35))));
   EXPECT_EQ("f<35>", BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::APInt(7, 35))));
   EXPECT_EQ(
-      "f<35:bn128>",
+      "f<35:5:bn128>",
       BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::APInt(6, 35), "bn128"))
   );
   EXPECT_EQ(
-      "f<35:bn128>",
+      "f<35:5:bn128>",
       BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::APInt(7, 35), "bn128"))
   );
   EXPECT_EQ(
@@ -193,6 +194,30 @@ TEST_F(TypeTests, testShortString) {
         // clang-format on
     );
   }
+}
+
+TEST_F(TypeTests, testShortStringDistinguishesDelimitedFeltFieldNames) {
+  constexpr llvm::StringLiteral fieldA("a>_f<36:b");
+  constexpr llvm::StringLiteral fieldB("a");
+  constexpr llvm::StringLiteral fieldC("b>_f<37");
+  constexpr llvm::StringLiteral prime("101");
+  Field::addField(fieldA, prime, nullptr);
+  Field::addField(fieldB, prime, nullptr);
+  Field::addField(fieldC, prime, nullptr);
+
+  auto felt = [&](uint64_t value, llvm::StringRef field) {
+    return FeltConstAttr::get(&ctx, llvm::APInt(7, value), field);
+  };
+  FeltConstAttr unspecified = FeltConstAttr::get(&ctx, llvm::APInt(7, 37));
+
+  std::string first = BuildShortTypeString::from(
+      ArrayAttr::get(&ctx, ArrayRef<Attribute> {felt(35, fieldA), unspecified})
+  );
+  std::string second = BuildShortTypeString::from(
+      ArrayAttr::get(&ctx, ArrayRef<Attribute> {felt(35, fieldB), felt(36, fieldC)})
+  );
+
+  EXPECT_NE(first, second);
 }
 
 TEST_F(TypeTests, testShortStringWithPartials) {

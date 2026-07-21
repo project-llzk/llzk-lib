@@ -167,7 +167,9 @@ BuildShortTypeString &BuildShortTypeString::append(Attribute a) {
     ss << "f<";
     fa.getValue().print(ss, false);
     if (StringAttr fieldName = fa.getFieldName()) {
-      ss << ':' << fieldName.getValue();
+      // Field names may contain the delimiters used by this compact representation. Include the
+      // byte length so adjacent parameters cannot produce the same instantiation name.
+      ss << ':' << fieldName.getValue().size() << ':' << fieldName.getValue();
     }
     ss << '>';
   } else if (auto sra = llvm::dyn_cast<SymbolRefAttr>(a)) {
