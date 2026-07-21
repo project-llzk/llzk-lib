@@ -289,6 +289,19 @@ public:
 
   Attribute getNameAttr(ConstReadOp op) const override { return op.getConstNameAttr(); }
 
+  static FailureOr<FeltType> getMaterializedFeltType(FeltConstAttr value, FeltType readType) {
+    FeltType valueType = value.getType();
+    if (valueType.hasField()) {
+      // Do not silently discard a named field. An unspecified read would also
+      // require changing the surrounding SSA types, which is outside this
+      // local materialization pattern.
+      if (!readType.hasField() || valueType != readType) {
+        return failure();
+      }
+    }
+    return readType;
+  }
+
   LogicalResult handleRewrite(
       Attribute sym, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, IntegerAttr a
   ) const {
@@ -337,8 +350,14 @@ public:
     if (!ty) {
       return op->emitOpError().append("unexpected result type ", op.getType());
     }
+    FailureOr<FeltType> materializedType = getMaterializedFeltType(a, ty);
+    if (failed(materializedType)) {
+      return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+        diag << "cannot materialize constant from field '" << a.getType() << "' as '" << ty << "'";
+      });
+    }
     replaceOpWithNewOp<FeltConstantOp>(
-        rewriter, op, FeltConstAttr::get(getContext(), a.getValue(), ty)
+        rewriter, op, FeltConstAttr::get(getContext(), a.getValue(), *materializedType)
     );
     return success();
   }
@@ -468,7 +487,12 @@ evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramN
         if (auto intAttr = llvm::dyn_cast<IntegerAttr>(val)) {
           val = FeltConstAttr::get(bodyOp.getContext(), intAttr.getValue(), feltTy);
         } else if (auto feltAttr = llvm::dyn_cast<FeltConstAttr>(val)) {
-          val = FeltConstAttr::get(bodyOp.getContext(), feltAttr.getValue(), feltTy);
+          FailureOr<FeltType> materializedType =
+              ClonedBodyConstReadOpPattern::getMaterializedFeltType(feltAttr, feltTy);
+          if (failed(materializedType)) {
+            return std::nullopt;
+          }
+          val = FeltConstAttr::get(bodyOp.getContext(), feltAttr.getValue(), *materializedType);
         }
       }
       valueMap[constReadOp.getResult()] = val;

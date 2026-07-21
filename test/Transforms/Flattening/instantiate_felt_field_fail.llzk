@@ -1,0 +1,36 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s
+
+module attributes {llzk.lang, llzk.main = !struct.type<@T::@S<[#felt<const 35 : !felt.type<"goldilocks">>]>>} {
+  poly.template @T {
+    poly.param @N
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        // expected-error@+1 {{failed to legalize operation 'poly.read_const'}}
+        %value = poly.read_const @N : !felt.type<"bn128">
+        %self = struct.new : <@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) {
+        function.return
+      }
+    }
+  }
+}
+// -----
+
+module attributes {llzk.lang, llzk.main = !struct.type<@T::@S<[#felt<const 35 : !felt.type<"goldilocks">>]>>} {
+  poly.template @T {
+    poly.param @N
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        // expected-error@+1 {{failed to legalize operation 'poly.read_const'}}
+        %value = poly.read_const @N : !felt.type
+        %self = struct.new : <@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) {
+        function.return
+      }
+    }
+  }
+}
