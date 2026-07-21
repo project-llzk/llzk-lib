@@ -1221,53 +1221,6 @@ private:
   }
 };
 
-/// Groups the information needed after concrete parameters have been chosen to decide whether to
-/// build a full or partial instantiation and how to rewrite the call site.
-struct InstantiationLayout {
-  SmallVector<Attribute> remainingNames;
-  std::string templateNameWithAttrs;
-  ArrayAttr rewrittenCallParams;
-};
-
-/// Derive the (partially-)instantiated template name and the remaining explicit call parameters
-/// that should stay on the rewritten call. Partially-instantiated names will contain the `\x1A`
-/// placeholder character at the position of a non-concrete parameter: "TemplateName_8_\x1A".
-static InstantiationLayout buildInstantiationLayout(
-    TemplateOp parentTemplate, ArrayAttr callParams,
-    const DenseMap<Attribute, Attribute> &paramNameToConcrete
-) {
-  SmallVector<Attribute> remainingNames;
-  SmallVector<Attribute> attrsForInstantiatedNameSuffix;
-  for (Attribute paramName : parentTemplate.getConstNames<TemplateParamOp>()) {
-    auto it = paramNameToConcrete.find(paramName);
-    if (it != paramNameToConcrete.end()) {
-      attrsForInstantiatedNameSuffix.push_back(it->second);
-    } else {
-      attrsForInstantiatedNameSuffix.push_back(nullptr);
-      remainingNames.push_back(paramName);
-    }
-  }
-
-  ArrayAttr rewrittenCallParams = nullptr;
-  if (!isNullOrEmpty(callParams) && !remainingNames.empty()) {
-    SmallVector<Attribute> remainingCallParams;
-    for (auto [paramOp, attr] :
-         llvm::zip_equal(parentTemplate.getConstOps<TemplateParamOp>(), callParams.getValue())) {
-      auto paramName = FlatSymbolRefAttr::get(paramOp.getSymNameAttr());
-      if (!paramNameToConcrete.contains(paramName)) {
-        remainingCallParams.push_back(attr);
-      }
-    }
-    rewrittenCallParams = ArrayAttr::get(parentTemplate.getContext(), remainingCallParams);
-  }
-
-  return {
-      std::move(remainingNames),
-      BuildShortTypeString::from(parentTemplate.getSymName().str(), attrsForInstantiatedNameSuffix),
-      rewrittenCallParams,
-  };
-}
-
 /// Rewrite cloned scalar array reads to ranged extract ops when a wildcard element type
 /// resolves to a higher-rank array.
 class ClonedBodyArrayReadOpPattern final : public OpConversionPattern<ReadArrayOp> {

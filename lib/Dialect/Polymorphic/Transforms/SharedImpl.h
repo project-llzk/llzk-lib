@@ -18,9 +18,11 @@
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Shared/TypeConversionPatterns.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Util/TypeHelper.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
@@ -76,6 +78,53 @@ inline component::StructType getStructTypeWithParams(
 ) {
   return params.empty() ? component::StructType::get(nameRef)
                         : component::StructType::get(nameRef, mlir::ArrayAttr::get(ctx, params));
+}
+
+/// Groups the information needed after concrete parameters have been chosen to decide how to name
+/// a new instantiated template and how to rewrite the remaining argument list at the use site.
+struct InstantiationLayout {
+  mlir::SmallVector<mlir::Attribute> remainingNames;
+  std::string templateNameWithAttrs;
+  mlir::ArrayAttr rewrittenCallParams;
+};
+
+/// Derive the instantiated template name and the remaining explicit parameters that should stay on
+/// the rewritten use site. Partially-instantiated names contain the `BuildShortTypeString`
+/// placeholder character at the position of each non-concrete parameter.
+inline InstantiationLayout buildInstantiationLayout(
+    TemplateOp parentTemplate, mlir::ArrayAttr callParams,
+    const llvm::DenseMap<mlir::Attribute, mlir::Attribute> &paramNameToConcrete
+) {
+  mlir::SmallVector<mlir::Attribute> remainingNames;
+  mlir::SmallVector<mlir::Attribute> attrsForInstantiatedNameSuffix;
+  for (mlir::Attribute paramName : parentTemplate.getConstNames<TemplateParamOp>()) {
+    auto it = paramNameToConcrete.find(paramName);
+    if (it != paramNameToConcrete.end()) {
+      attrsForInstantiatedNameSuffix.push_back(it->second);
+    } else {
+      attrsForInstantiatedNameSuffix.push_back(nullptr);
+      remainingNames.push_back(paramName);
+    }
+  }
+
+  mlir::ArrayAttr rewrittenCallParams = nullptr;
+  if (!isNullOrEmpty(callParams) && !remainingNames.empty()) {
+    mlir::SmallVector<mlir::Attribute> remainingCallParams;
+    for (auto [paramOp, attr] :
+         llvm::zip_equal(parentTemplate.getConstOps<TemplateParamOp>(), callParams.getValue())) {
+      auto paramName = mlir::FlatSymbolRefAttr::get(paramOp.getSymNameAttr());
+      if (!paramNameToConcrete.contains(paramName)) {
+        remainingCallParams.push_back(attr);
+      }
+    }
+    rewrittenCallParams = mlir::ArrayAttr::get(parentTemplate.getContext(), remainingCallParams);
+  }
+
+  return {
+      std::move(remainingNames),
+      BuildShortTypeString::from(parentTemplate.getSymName().str(), attrsForInstantiatedNameSuffix),
+      rewrittenCallParams,
+  };
 }
 
 class LegalityCheckCallback {

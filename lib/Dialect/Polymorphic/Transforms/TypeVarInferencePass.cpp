@@ -95,6 +95,7 @@ struct InferredType {
 /// generated clones and keeps repeated calls to the same exact instantiation
 /// pointed at the same uniquely-named clone.
 using SpecializedCallableCloneCache = DenseMap<Operation *, llvm::StringMap<SymbolRefAttr>>;
+using SpecializedTemplateCloneCache = DenseMap<Operation *, llvm::StringMap<StringAttr>>;
 
 /// Return the pieces of a symbol reference as `StringAttr`s.
 ///
@@ -857,7 +858,81 @@ static void removeIdentityCasts(Operation *root) {
   }
 }
 
-/// Convert concrete parameterized struct uses into template-local struct clones.
+/// Build a lossless key for a specialized sibling template.
+///
+/// The emitted template symbol uses `BuildShortTypeString`, which intentionally shortens some
+/// types. This key prints full replacement types so distinct instantiations that prefer the same
+/// name still get distinct generated templates.
+static std::string buildSpecializedTemplateCloneCacheKey(
+    StringRef templateName, ArrayRef<StringAttr> oldParamOrder,
+    const DenseMap<Attribute, Attribute> &paramNameToConcrete
+) {
+  std::string key;
+  llvm::raw_string_ostream os(key);
+  os << templateName.size() << ':' << templateName;
+  for (StringAttr paramName : oldParamOrder) {
+    os << '|';
+    os << paramName.getValue().size() << ':' << paramName.getValue() << '=';
+    auto concreteIt = paramNameToConcrete.find(FlatSymbolRefAttr::get(paramName));
+    if (concreteIt == paramNameToConcrete.end()) {
+      os << '_';
+      continue;
+    }
+
+    std::string attrText;
+    llvm::raw_string_ostream attrOs(attrText);
+    concreteIt->second.print(attrOs);
+    os << attrText.size() << ':' << attrText;
+  }
+  return key;
+}
+
+/// Create or reuse a sibling template named with the concrete replacement values.
+static FailureOr<TemplateOp> getOrCreateSpecializedTemplateClone(
+    TemplateOp parentTemplate, ArrayRef<StringAttr> oldParamOrder,
+    const DenseMap<Attribute, Attribute> &paramNameToConcrete, ArrayAttr callParams,
+    SymbolTableCollection &tables, llvm::StringMap<StringAttr> &templateClones,
+    InstantiationLayout &layout
+) {
+  layout = buildInstantiationLayout(parentTemplate, callParams, paramNameToConcrete);
+  std::string cacheKey = buildSpecializedTemplateCloneCacheKey(
+      parentTemplate.getSymName(), oldParamOrder, paramNameToConcrete
+  );
+
+  ModuleOp parentModule = getParentOfType<ModuleOp>(parentTemplate);
+  if (!parentModule) {
+    return failure();
+  }
+  SymbolTable &moduleSymbols = tables.getSymbolTable(parentModule);
+
+  auto cachedName = templateClones.find(cacheKey);
+  if (cachedName != templateClones.end()) {
+    Operation *existing = moduleSymbols.lookup(cachedName->second);
+    if (auto existingTemplate = llvm::dyn_cast_or_null<TemplateOp>(existing)) {
+      return existingTemplate;
+    }
+    return failure();
+  }
+
+  TemplateOp newTemplate = parentTemplate.cloneWithoutRegions();
+  newTemplate.setSymName(layout.templateNameWithAttrs);
+  assert(newTemplate->getNumRegions() > 0 && "region exists");
+  newTemplate.getBodyRegion().emplaceBlock();
+  Block &newTemplateBody = newTemplate.getBodyRegion().front();
+  SymbolTable &parentTemplateSymbols = tables.getSymbolTable(parentTemplate);
+  for (Attribute name : layout.remainingNames) {
+    FlatSymbolRefAttr nameSym = llvm::cast<FlatSymbolRefAttr>(name);
+    Operation *paramOp = parentTemplateSymbols.lookup(nameSym.getAttr());
+    assert(paramOp && "symbol must exist");
+    newTemplateBody.push_back(paramOp->clone());
+  }
+
+  moduleSymbols.insert(newTemplate, Block::iterator(parentTemplate));
+  templateClones.try_emplace(cacheKey, newTemplate.getSymNameAttr());
+  return newTemplate;
+}
+
+/// Convert concrete parameterized struct uses into sibling-template struct clones.
 ///
 /// This intentionally implements only the fully-concrete case needed after
 /// type-variable inference exposes an external instantiation such as
@@ -879,9 +954,11 @@ class ConcreteStructInstantiationConverter {
   SymbolTableCollection &tables_;
   /// Already-created instantiations keyed by the original concrete struct type.
   DenseMap<StructType, StructInstantiationTypes> instantiations_;
-  /// Fully-qualified names of template-local clones created by this converter.
+  /// Pass-created sibling templates keyed by concrete instantiation layout.
+  llvm::StringMap<StringAttr> templateClones_;
+  /// Fully-qualified names of sibling-template clones created by this converter.
   DenseSet<SymbolRefAttr> instantiatedCloneNames_;
-  /// Template-local self types active while rewriting a cloned struct body.
+  /// Specialized self types active while rewriting a cloned struct body.
   DenseMap<StructType, StructType> activeLocalStructReplacements_;
   /// Type replacements active while rewriting the body of one cloned struct.
   DenseMap<StringAttr, Type> activeTypeReplacements_;
@@ -1021,16 +1098,7 @@ private:
     return *cloneTy;
   }
 
-  /// Build the symbol name for a template-local specialized struct clone.
-  static std::string
-  buildTemplateLocalStructCloneName(StringRef structName, ArrayRef<Attribute> concreteParams) {
-    std::string cloneName = BuildShortTypeString::from(concreteParams);
-    cloneName += "_";
-    cloneName += structName;
-    return cloneName;
-  }
-
-  /// Create or reuse a pass-created template-local clone for `concreteStructTy`.
+  /// Create or reuse a pass-created sibling-template clone for `concreteStructTy`.
   FailureOr<StructType>
   getOrCreateStructClone(StructType concreteStructTy, ArrayRef<Attribute> concreteParams) {
     if (auto it = instantiations_.find(concreteStructTy); it != instantiations_.end()) {
@@ -1054,35 +1122,56 @@ private:
       return failure();
     }
 
-    std::string cloneName =
-        buildTemplateLocalStructCloneName(origStruct.getSymName(), concreteParams);
-    SymbolTable &templateSymbols = tables_.getSymbolTable(parentTemplate);
+    DenseMap<StringAttr, Type> typeReplacements;
+    DenseMap<Attribute, Attribute> paramNameToConcrete;
+    SmallVector<StringAttr> oldParamOrder;
+    oldParamOrder.reserve(paramNames.size());
+    SmallVector<Attribute> convertedSourceParams;
+    convertedSourceParams.reserve(concreteParams.size());
+    for (auto [paramName, concreteAttr] : llvm::zip_equal(paramNames.getValue(), concreteParams)) {
+      auto paramSym = llvm::dyn_cast<FlatSymbolRefAttr>(paramName);
+      if (!paramSym) {
+        return failure();
+      }
+      oldParamOrder.push_back(paramSym.getAttr());
+      auto concreteType = llvm::dyn_cast<TypeAttr>(concreteAttr);
+      if (concreteType) {
+        paramNameToConcrete.try_emplace(FlatSymbolRefAttr::get(paramSym.getAttr()), concreteAttr);
+        typeReplacements.try_emplace(paramSym.getAttr(), concreteType.getValue());
+        convertedSourceParams.push_back(concreteType);
+      } else {
+        convertedSourceParams.push_back(paramName);
+      }
+    }
+    if (paramNameToConcrete.empty()) {
+      return failure();
+    }
+
+    InstantiationLayout layout;
+    ArrayAttr concreteParamArray = ArrayAttr::get(ctx_, concreteParams);
+    FailureOr<TemplateOp> newTemplate = getOrCreateSpecializedTemplateClone(
+        parentTemplate, oldParamOrder, paramNameToConcrete, concreteParamArray, tables_,
+        templateClones_, layout
+    );
+    if (::failed(newTemplate)) {
+      return failure();
+    }
+
+    SymbolTable &templateSymbols = tables_.getSymbolTable(*newTemplate);
     StructDefOp clone = origStruct.clone();
-    clone.setSymName(cloneName);
-    templateSymbols.insert(clone, Block::iterator(origStruct));
-    StructType localTy = clone.getType();
+    templateSymbols.insert(clone);
+    StructType localTy =
+        getStructTypeWithParams(clone.getFullyQualifiedName(), clone.getType().getParams());
     StructType remoteTy =
-        StructType::get(clone.getFullyQualifiedName(), ArrayAttr::get(ctx_, concreteParams));
+        getStructTypeWithParams(clone.getFullyQualifiedName(), layout.rewrittenCallParams);
     instantiations_.try_emplace(concreteStructTy, StructInstantiationTypes {localTy, remoteTy});
     instantiatedCloneNames_.insert(clone.getFullyQualifiedName());
 
     DenseMap<StringAttr, Type> previousReplacements = std::move(activeTypeReplacements_);
     DenseMap<StructType, StructType> previousLocalStructReplacements =
         std::move(activeLocalStructReplacements_);
-    activeTypeReplacements_.clear();
+    activeTypeReplacements_ = std::move(typeReplacements);
     activeLocalStructReplacements_.clear();
-    SmallVector<Attribute> convertedSourceParams;
-    convertedSourceParams.reserve(concreteParams.size());
-    for (auto [paramName, concreteAttr] : llvm::zip_equal(paramNames.getValue(), concreteParams)) {
-      auto paramSym = llvm::dyn_cast<FlatSymbolRefAttr>(paramName);
-      auto concreteType = llvm::dyn_cast<TypeAttr>(concreteAttr);
-      if (paramSym && concreteType) {
-        activeTypeReplacements_.try_emplace(paramSym.getAttr(), concreteType.getValue());
-        convertedSourceParams.push_back(concreteType);
-      } else {
-        convertedSourceParams.push_back(paramName);
-      }
-    }
     activeLocalStructReplacements_.try_emplace(concreteStructTy, localTy);
     activeLocalStructReplacements_.try_emplace(
         StructType::get(typeAtDef.getNameRef(), ArrayAttr::get(ctx_, convertedSourceParams)),
@@ -1915,6 +2004,19 @@ getParamIndex(ArrayRef<StringAttr> paramOrder, StringAttr paramName) {
   return std::nullopt;
 }
 
+/// Convert a concrete type-variable replacement map to the attribute map consumed by shared
+/// template-instantiation layout helpers.
+static DenseMap<Attribute, Attribute>
+buildParamNameToConcrete(const DenseMap<StringAttr, Type> &replacements) {
+  DenseMap<Attribute, Attribute> paramNameToConcrete;
+  for (const auto &entry : replacements) {
+    paramNameToConcrete.try_emplace(
+        FlatSymbolRefAttr::get(entry.first), TypeAttr::get(entry.second)
+    );
+  }
+  return paramNameToConcrete;
+}
+
 /// Return true if explicit call-site template parameters match the inferred
 /// concrete function-local replacements.
 static Type
@@ -2345,32 +2447,7 @@ static LogicalResult prepareCallableSpecialization(
   return success();
 }
 
-/// Build the symbol name for a template-local specialized function clone.
-///
-/// The containing template already contributes its own name to the fully-qualified
-/// callee path, so the clone name only encodes the instantiation layout plus the
-/// original function name. Parameters that remain provided by the template are
-/// represented with the same placeholder marker used by flattening's partial
-/// instantiation names.
-static std::string buildTemplateLocalFunctionCloneName(
-    StringRef functionName, ArrayRef<StringAttr> oldParamOrder,
-    const DenseMap<StringAttr, Type> &replacements
-) {
-  SmallVector<Attribute> attrsForName;
-  attrsForName.reserve(oldParamOrder.size());
-  for (StringAttr paramName : oldParamOrder) {
-    auto replacementIt = replacements.find(paramName);
-    attrsForName.push_back(
-        replacementIt == replacements.end() ? Attribute() : TypeAttr::get(replacementIt->second)
-    );
-  }
-  std::string cloneName = BuildShortTypeString::from(attrsForName);
-  cloneName += "_";
-  cloneName += functionName;
-  return cloneName;
-}
-
-/// Build a lossless key for a template-local specialized function clone.
+/// Build a lossless key for a sibling-template specialized function clone.
 ///
 /// The emitted clone symbol uses `BuildShortTypeString`, which intentionally
 /// shortens some structural types. This cache key keeps the same parameter
@@ -2400,26 +2477,37 @@ static std::string buildTemplateLocalFunctionCloneCacheKey(
   return key;
 }
 
-/// Return the callee path for a clone nested in the same template as the original callee.
-static SymbolRefAttr
-getTemplateLocalFunctionCloneCallee(SymbolRefAttr originalCallee, StringAttr cloneName) {
+/// Return the callee path for a clone nested in a sibling specialization template.
+static SymbolRefAttr getSpecializedFunctionCloneCallee(
+    SymbolRefAttr originalCallee, StringAttr templateName, StringAttr cloneName
+) {
   SmallVector<FlatSymbolRefAttr> pieces = getPieces(originalCallee);
   assert(pieces.size() >= 2 && "callee must include at least template and function names");
   pieces.pop_back();
+  pieces.pop_back();
+  pieces.push_back(FlatSymbolRefAttr::get(templateName));
   pieces.push_back(FlatSymbolRefAttr::get(cloneName));
   return asSymbolRefAttr(pieces);
 }
 
-/// Create or reuse a template-local clone for a concrete callable-local tvar instantiation.
+/// Create or reuse a sibling-template clone for a concrete callable-local tvar instantiation.
 template <typename CallableOp, typename ConfigureCloneFn>
 static FailureOr<SymbolRefAttr> getOrCreateSpecializedCallableClone(
     TemplateOp templateOp, CallableOp callable, SymbolRefAttr originalCallee,
     const TemplateInferenceInfo &info, const DenseMap<StringAttr, Type> &replacements,
     SymbolTableCollection &tables, llvm::StringMap<SymbolRefAttr> &cloneCallees,
+    llvm::StringMap<StringAttr> &templateClones, InstantiationLayout &layout, ArrayAttr callParams,
     ConfigureCloneFn configureClone
 ) {
-  std::string requestedName =
-      buildTemplateLocalFunctionCloneName(callable.getSymName(), info.oldParamOrder, replacements);
+  DenseMap<Attribute, Attribute> paramNameToConcrete = buildParamNameToConcrete(replacements);
+  FailureOr<TemplateOp> newTemplate = getOrCreateSpecializedTemplateClone(
+      templateOp, info.oldParamOrder, paramNameToConcrete, callParams, tables, templateClones,
+      layout
+  );
+  if (failed(newTemplate)) {
+    return failure();
+  }
+
   std::string cacheKey = buildTemplateLocalFunctionCloneCacheKey(
       callable.getSymName(), info.oldParamOrder, replacements
   );
@@ -2428,12 +2516,11 @@ static FailureOr<SymbolRefAttr> getOrCreateSpecializedCallableClone(
     return cachedCallee->second;
   }
 
-  SymbolTable &templateSymbols = tables.getSymbolTable(templateOp);
+  SymbolTable &templateSymbols = tables.getSymbolTable(*newTemplate);
 
   auto clone = llvm::cast<CallableOp>(callable.getOperation()->clone());
-  clone.setSymName(requestedName);
   configureClone(clone);
-  templateSymbols.insert(clone, Block::iterator(callable));
+  templateSymbols.insert(clone);
 
   TypeVarReplacementConverter converter(
       templateOp.getContext(), info.templatePath, info.oldParamOrder, replacements,
@@ -2444,32 +2531,37 @@ static FailureOr<SymbolRefAttr> getOrCreateSpecializedCallableClone(
     return failure();
   }
   removeIdentityCasts(clone.getOperation());
-  SymbolRefAttr cloneCallee =
-      getTemplateLocalFunctionCloneCallee(originalCallee, clone.getSymNameAttr());
+  SymbolRefAttr cloneCallee = getSpecializedFunctionCloneCallee(
+      originalCallee, newTemplate->getSymNameAttr(), clone.getSymNameAttr()
+  );
   cloneCallees.try_emplace(cacheKey, cloneCallee);
   return cloneCallee;
 }
 
-/// Create or reuse a template-local clone for a concrete function-local tvar instantiation.
+/// Create or reuse a sibling-template clone for a concrete function-local tvar instantiation.
 static FailureOr<SymbolRefAttr> getOrCreateSpecializedFunctionClone(
     TemplateOp templateOp, FuncDefOp func, SymbolRefAttr originalCallee,
     const TemplateInferenceInfo &info, const DenseMap<StringAttr, Type> &replacements,
-    SymbolTableCollection &tables, llvm::StringMap<SymbolRefAttr> &cloneCallees
+    SymbolTableCollection &tables, llvm::StringMap<SymbolRefAttr> &cloneCallees,
+    llvm::StringMap<StringAttr> &templateClones, InstantiationLayout &layout, ArrayAttr callParams
 ) {
   return getOrCreateSpecializedCallableClone(
-      templateOp, func, originalCallee, info, replacements, tables, cloneCallees, [](FuncDefOp) {}
+      templateOp, func, originalCallee, info, replacements, tables, cloneCallees, templateClones,
+      layout, callParams, [](FuncDefOp) {}
   );
 }
 
-/// Create or reuse a template-local clone for a concrete contract-local tvar instantiation.
+/// Create or reuse a sibling-template clone for a concrete contract-local tvar instantiation.
 static FailureOr<SymbolRefAttr> getOrCreateSpecializedContractClone(
     TemplateOp templateOp, verif::ContractOp contract, SymbolRefAttr originalCallee,
     SymbolRefAttr specializedTarget, const TemplateInferenceInfo &info,
     const DenseMap<StringAttr, Type> &replacements, SymbolTableCollection &tables,
-    llvm::StringMap<SymbolRefAttr> &cloneCallees
+    llvm::StringMap<SymbolRefAttr> &cloneCallees, llvm::StringMap<StringAttr> &templateClones,
+    InstantiationLayout &layout, ArrayAttr callParams
 ) {
   return getOrCreateSpecializedCallableClone(
       templateOp, contract, originalCallee, info, replacements, tables, cloneCallees,
+      templateClones, layout, callParams,
       [specializedTarget](verif::ContractOp clone) { clone.setTargetAttr(specializedTarget); }
   );
 }
@@ -2785,7 +2877,7 @@ static LogicalResult updateExternalContractTemplateParams(
   return failure(failedConversion);
 }
 
-/// Specialize calls/includes to template-local callables with concrete tvar instantiations.
+/// Specialize calls/includes to sibling-template callables with concrete tvar instantiations.
 ///
 /// This intentionally handles only fully-concrete explicit call-site type
 /// arguments for callables directly nested in a template. More general partial
@@ -2796,7 +2888,8 @@ static LogicalResult updateExternalContractTemplateParams(
 static LogicalResult specializeFunctionLocalCallables(
     ModuleOp module, DenseMap<Operation *, const TemplateInferenceInfo *> &infoByTemplate,
     SpecializedCallableCloneCache &functionCloneCache,
-    SpecializedCallableCloneCache &contractCloneCache
+    SpecializedCallableCloneCache &contractCloneCache,
+    SpecializedTemplateCloneCache &templateCloneCache
 ) {
   bool failedClone = false;
   SymbolTableCollection tables;
@@ -2842,9 +2935,11 @@ static LogicalResult specializeFunctionLocalCallables(
       return;
     }
 
+    InstantiationLayout layout;
     FailureOr<SymbolRefAttr> cloneCallee = getOrCreateSpecializedFunctionClone(
         parentTemplate, targetFunc, callOp.getCalleeAttr(), *info, inputs.replacements, tables,
-        functionCloneCache[parentTemplate.getOperation()]
+        functionCloneCache[parentTemplate.getOperation()],
+        templateCloneCache[parentTemplate.getOperation()], layout, inputs.params
     );
     if (failed(cloneCallee)) {
       failedClone = true;
@@ -2852,9 +2947,7 @@ static LogicalResult specializeFunctionLocalCallables(
     }
 
     callOp.setCalleeAttr(*cloneCallee);
-    if (inputs.paramsChanged) {
-      callOp.setTemplateParamsAttr(inputs.params);
-    }
+    callOp.setTemplateParamsAttr(layout.rewrittenCallParams);
   });
   module.walk([&](verif::IncludeOp includeOp) {
     if (failedClone) {
@@ -2908,17 +3001,21 @@ static LogicalResult specializeFunctionLocalCallables(
       return;
     }
 
+    InstantiationLayout targetLayout;
     FailureOr<SymbolRefAttr> specializedTarget = getOrCreateSpecializedFunctionClone(
         parentTemplate, targetFunc, targetContract.getTargetAttr(), *info, inputs.replacements,
-        tables, functionCloneCache[parentTemplate.getOperation()]
+        tables, functionCloneCache[parentTemplate.getOperation()],
+        templateCloneCache[parentTemplate.getOperation()], targetLayout, inputs.params
     );
     if (failed(specializedTarget)) {
       failedClone = true;
       return;
     }
+    InstantiationLayout contractLayout;
     FailureOr<SymbolRefAttr> cloneCallee = getOrCreateSpecializedContractClone(
         parentTemplate, targetContract, includeOp.getCalleeAttr(), *specializedTarget, *info,
-        inputs.replacements, tables, contractCloneCache[parentTemplate.getOperation()]
+        inputs.replacements, tables, contractCloneCache[parentTemplate.getOperation()],
+        templateCloneCache[parentTemplate.getOperation()], contractLayout, inputs.params
     );
     if (failed(cloneCallee)) {
       failedClone = true;
@@ -2926,9 +3023,7 @@ static LogicalResult specializeFunctionLocalCallables(
     }
 
     includeOp.setCalleeAttr(*cloneCallee);
-    if (inputs.paramsChanged) {
-      includeOp.setTemplateParamsAttr(inputs.params);
-    }
+    includeOp.setTemplateParamsAttr(contractLayout.rewrittenCallParams);
   });
   return failure(failedClone);
 }
@@ -3274,8 +3369,9 @@ private:
     // arguments; the clone decision needs the original explicit arguments.
     SpecializedCallableCloneCache functionCloneCache;
     SpecializedCallableCloneCache contractCloneCache;
+    SpecializedTemplateCloneCache templateCloneCache;
     if (failed(specializeFunctionLocalCallables(
-            module, infoByTemplate, functionCloneCache, contractCloneCache
+            module, infoByTemplate, functionCloneCache, contractCloneCache, templateCloneCache
         ))) {
       signalPassFailure();
       return;
@@ -3314,7 +3410,7 @@ private:
     // Re-run specialization after rewriting because template bodies may now
     // contain concrete forwarded calls into otherwise unconstrained templates.
     if (failed(specializeFunctionLocalCallables(
-            module, infoByTemplate, functionCloneCache, contractCloneCache
+            module, infoByTemplate, functionCloneCache, contractCloneCache, templateCloneCache
         ))) {
       signalPassFailure();
       return;
