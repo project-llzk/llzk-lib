@@ -159,6 +159,16 @@ static Type convertPodType(PodType podTy, MLIRContext *ctx, ConverterT &converte
   return changed ? PodType::get(ctx, newRecords) : podTy;
 }
 
+/// Convert an array element type and flatten nested array replacements.
+template <typename ConvertElementFn>
+static Type convertArrayElementType(ArrayType arrTy, ConvertElementFn convertElement) {
+  Type newElemTy = convertElement(arrTy.getElementType());
+  if (newElemTy == arrTy.getElementType()) {
+    return arrTy;
+  }
+  return llzk::polymorphic::detail::flattenInstantiatedArrayType(arrTy, newElemTy);
+}
+
 /// Convert a function type by recursively converting inputs and results.
 template <typename ConverterT>
 static Type convertFunctionType(FunctionType funcTy, ConverterT &converter) {
@@ -167,6 +177,32 @@ static Type convertFunctionType(FunctionType funcTy, ConverterT &converter) {
   bool changed = convertTypeRange(funcTy.getInputs(), newInputs, converter);
   changed |= convertTypeRange(funcTy.getResults(), newResults, converter);
   return changed ? FunctionType::get(funcTy.getContext(), newInputs, newResults) : funcTy;
+}
+
+/// Convert `TypeAttr` and nested `ArrayAttr` values with caller-provided recursion behavior.
+template <typename ConvertTypeFn, typename ConvertNestedAttrFn>
+static Attribute convertTypeOrArrayAttr(
+    Attribute attr, MLIRContext *ctx, ConvertTypeFn convertType,
+    ConvertNestedAttrFn convertNestedAttr
+) {
+  if (!attr) {
+    return attr;
+  }
+  if (auto tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
+    Type newTy = convertType(tyAttr.getValue());
+    return newTy == tyAttr.getValue() ? attr : TypeAttr::get(newTy);
+  }
+  if (auto arrAttr = llvm::dyn_cast<ArrayAttr>(attr)) {
+    SmallVector<Attribute> newAttrs;
+    bool changed = false;
+    for (Attribute nested : arrAttr.getValue()) {
+      Attribute newNested = convertNestedAttr(nested);
+      newAttrs.push_back(newNested);
+      changed |= newNested != nested;
+    }
+    return changed ? ArrayAttr::get(ctx, newAttrs) : attr;
+  }
+  return attr;
 }
 
 /// Converts types and attributes by replacing inferred template type variables.
@@ -235,11 +271,9 @@ private:
       return replacement;
     }
     if (auto arrTy = llvm::dyn_cast<ArrayType>(ty)) {
-      Type newElemTy = convertType(arrTy.getElementType(), resolvingParams);
-      if (newElemTy == arrTy.getElementType()) {
-        return ty;
-      }
-      return llzk::polymorphic::detail::flattenInstantiatedArrayType(arrTy, newElemTy);
+      return convertArrayElementType(arrTy, [this, &resolvingParams](Type elemTy) {
+        return convertType(elemTy, resolvingParams);
+      });
     }
     if (auto structTy = llvm::dyn_cast<StructType>(ty)) {
       return convertStructType(structTy, resolvingParams);
@@ -376,24 +410,11 @@ private:
   }
 
   Attribute convertAttr(Attribute attr, DenseSet<StringAttr> &resolvingParams) const {
-    if (!attr) {
-      return attr;
-    }
-    if (auto tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
-      Type newTy = convertType(tyAttr.getValue(), resolvingParams);
-      return newTy == tyAttr.getValue() ? attr : TypeAttr::get(newTy);
-    }
-    if (auto arrAttr = llvm::dyn_cast<ArrayAttr>(attr)) {
-      SmallVector<Attribute> newAttrs;
-      bool changed = false;
-      for (Attribute nested : arrAttr.getValue()) {
-        Attribute newNested = convertTemplateArgAttr(nested, resolvingParams);
-        newAttrs.push_back(newNested);
-        changed |= newNested != nested;
-      }
-      return changed ? ArrayAttr::get(ctx_, newAttrs) : attr;
-    }
-    return attr;
+    return convertTypeOrArrayAttr(attr, ctx_, [this, &resolvingParams](Type ty) {
+      return convertType(ty, resolvingParams);
+    }, [this, &resolvingParams](Attribute nested) {
+      return convertTemplateArgAttr(nested, resolvingParams);
+    });
   }
 
 public:
@@ -564,6 +585,29 @@ private:
   }
 };
 
+/// Rewrite a callable type and keep the entry block arguments in sync.
+template <typename ConverterT, typename SetSignatureFn>
+static void updateCallableSignature(
+    FunctionType oldFuncTy, Region &body, ConverterT &converter, SetSignatureFn setSignature
+) {
+  Type converted = converter.convertType(oldFuncTy);
+  auto newFuncTy = llvm::cast<FunctionType>(converted);
+  if (oldFuncTy == newFuncTy) {
+    return;
+  }
+
+  setSignature(newFuncTy);
+  if (body.empty()) {
+    return;
+  }
+
+  Block &entryBlock = body.front();
+  assert(entryBlock.getNumArguments() == newFuncTy.getNumInputs());
+  for (auto [arg, newTy] : llvm::zip_equal(entryBlock.getArguments(), newFuncTy.getInputs())) {
+    arg.setType(newTy);
+  }
+}
+
 /// Rewrite a function type and keep the entry block arguments in sync.
 ///
 /// `function.def` stores its function signature separately from the entry block
@@ -571,45 +615,19 @@ private:
 /// rewritten from `!poly.tvar` to a concrete type.
 template <typename ConverterT>
 static void updateFuncSignature(FuncDefOp func, ConverterT &converter) {
-  FunctionType oldFuncTy = func.getFunctionType();
-  Type converted = converter.convertType(oldFuncTy);
-  auto newFuncTy = llvm::cast<FunctionType>(converted);
-  if (oldFuncTy == newFuncTy) {
-    return;
-  }
-
-  func.setType(newFuncTy);
-  if (func.getFunctionBody().empty()) {
-    return;
-  }
-
-  Block &entryBlock = func.getFunctionBody().front();
-  assert(entryBlock.getNumArguments() == newFuncTy.getNumInputs());
-  for (auto [arg, newTy] : llvm::zip_equal(entryBlock.getArguments(), newFuncTy.getInputs())) {
-    arg.setType(newTy);
-  }
+  updateCallableSignature(
+      func.getFunctionType(), func.getFunctionBody(), converter,
+      [func](FunctionType newFuncTy) mutable { func.setType(newFuncTy); }
+  );
 }
 
 /// Rewrite a contract type and keep the entry block arguments in sync.
 template <typename ConverterT>
 static void updateContractSignature(verif::ContractOp contract, ConverterT &converter) {
-  FunctionType oldFuncTy = contract.getFunctionType();
-  Type converted = converter.convertType(oldFuncTy);
-  auto newFuncTy = llvm::cast<FunctionType>(converted);
-  if (oldFuncTy == newFuncTy) {
-    return;
-  }
-
-  contract.setFunctionType(newFuncTy);
-  if (contract.getBody().empty()) {
-    return;
-  }
-
-  Block &entryBlock = contract.getBody().front();
-  assert(entryBlock.getNumArguments() == newFuncTy.getNumInputs());
-  for (auto [arg, newTy] : llvm::zip_equal(entryBlock.getArguments(), newFuncTy.getInputs())) {
-    arg.setType(newTy);
-  }
+  updateCallableSignature(
+      contract.getFunctionType(), contract.getBody(), converter,
+      [contract](FunctionType newFuncTy) mutable { contract.setFunctionType(newFuncTy); }
+  );
 }
 
 /// Convert call targets when the active converter knows how to keep symbol
@@ -632,6 +650,14 @@ template <typename ConverterT> static bool converterFailed(ConverterT &converter
     return converter.failed();
   }
   return false;
+}
+
+/// Notify converters that track per-operation diagnostic state.
+template <typename ConverterT>
+static void startConverterOperation(ConverterT &converter, Operation *op) {
+  if constexpr (requires { converter.startOperation(op); }) {
+    converter.startOperation(op);
+  }
 }
 
 /// Convert every type-bearing surface on `op` that can mention an inferred type variable.
@@ -792,12 +818,27 @@ static FailureOr<bool> convertOperationTypes(Operation *op, ConverterT &converte
 
 /// Convert all type-bearing surfaces under `root`, interrupting on the first failure.
 template <typename ConverterT>
-static LogicalResult convertOperationTypesIn(Operation *root, ConverterT &converter) {
-  WalkResult res = root->walk([&converter](Operation *op) {
-    return failed(convertOperationTypes(op, converter)) ? WalkResult::interrupt()
-                                                        : WalkResult::advance();
+static FailureOr<bool> convertOperationTypesInAndTrack(Operation *root, ConverterT &converter) {
+  bool changed = false;
+  WalkResult res = root->walk([&converter, &changed](Operation *op) {
+    startConverterOperation(converter, op);
+    FailureOr<bool> opChanged = convertOperationTypes(op, converter);
+    if (failed(opChanged)) {
+      return WalkResult::interrupt();
+    }
+    changed |= *opChanged;
+    return WalkResult::advance();
   });
-  return res.wasInterrupted() ? failure() : success();
+  if (res.wasInterrupted()) {
+    return failure();
+  }
+  return changed;
+}
+
+/// Convert all type-bearing surfaces under `root`, interrupting on the first failure.
+template <typename ConverterT>
+static LogicalResult convertOperationTypesIn(Operation *root, ConverterT &converter) {
+  return failure(failed(convertOperationTypesInAndTrack(root, converter)));
 }
 
 /// Remove `poly.unifiable_cast` operations that became identity casts.
@@ -867,10 +908,7 @@ public:
       return it == activeTypeReplacements_.end() ? ty : it->second;
     }
     if (auto arrTy = llvm::dyn_cast<ArrayType>(ty)) {
-      Type newElemTy = convertType(arrTy.getElementType());
-      return newElemTy == arrTy.getElementType()
-                 ? ty
-                 : llzk::polymorphic::detail::flattenInstantiatedArrayType(arrTy, newElemTy);
+      return convertArrayElementType(arrTy, [this](Type elemTy) { return convertType(elemTy); });
     }
     if (auto podTy = llvm::dyn_cast<PodType>(ty)) {
       return convertPodType(podTy, ctx_, *this);
@@ -886,24 +924,12 @@ public:
 
   /// Convert an attribute that can contain type references.
   Attribute convertAttr(Attribute attr) {
-    if (!attr || failed_) {
+    if (failed_) {
       return attr;
     }
-    if (auto tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
-      Type newTy = convertType(tyAttr.getValue());
-      return newTy == tyAttr.getValue() ? attr : TypeAttr::get(newTy);
-    }
-    if (auto arrAttr = llvm::dyn_cast<ArrayAttr>(attr)) {
-      SmallVector<Attribute> newAttrs;
-      bool changed = false;
-      for (Attribute nested : arrAttr.getValue()) {
-        Attribute newNested = convertTemplateArgAttr(nested);
-        newAttrs.push_back(newNested);
-        changed |= newNested != nested;
-      }
-      return changed ? ArrayAttr::get(ctx_, newAttrs) : attr;
-    }
-    return attr;
+    return convertTypeOrArrayAttr(attr, ctx_, [this](Type ty) {
+      return convertType(ty);
+    }, [this](Attribute nested) { return convertTemplateArgAttr(nested); });
   }
 
   /// Convert a struct-function callee whose self/result type was instantiated.
@@ -2145,6 +2171,42 @@ getConflictingRhsTypeVarCandidates(FunctionType lhs, FunctionType rhs, SymbolRef
   return candidates;
 }
 
+/// Emit the shared diagnostic for ambiguous call-signature inference.
+template <typename CallableOp, typename TargetOp>
+static LogicalResult
+emitConflictingInferredTypes(CallableOp callableOp, TargetOp targetOp, StringAttr paramName) {
+  InFlightDiagnostic diag = callableOp.emitError()
+                            << "conflicting inferred types for @" << paramName.getValue();
+  SmallVector<Type> candidates = getConflictingRhsTypeVarCandidates(
+      callableOp.getTypeSignature(), targetOp.getFunctionType(), FlatSymbolRefAttr::get(paramName)
+  );
+  if (candidates.size() >= 2) {
+    diag << ": " << candidates.front();
+    for (Type candidate : llvm::drop_begin(candidates)) {
+      diag << " vs " << candidate;
+    }
+  }
+  return diag;
+}
+
+/// Return one inferred RHS template argument from a call-signature unification.
+template <typename CallableOp, typename TargetOp>
+static FailureOr<Attribute> getInferredRhsTemplateArg(
+    CallableOp callableOp, TargetOp targetOp, const UnificationMap &unifyResult,
+    StringAttr paramName, StringRef argKind
+) {
+  auto inferredIt = unifyResult.find({FlatSymbolRefAttr::get(paramName), Side::RHS});
+  if (inferredIt == unifyResult.end()) {
+    return callableOp.emitError() << "could not infer " << argKind
+                                  << " template argument for parameter @" << paramName.getValue()
+                                  << " from callee signature";
+  }
+  if (!inferredIt->second) {
+    return emitConflictingInferredTypes(callableOp, targetOp, paramName);
+  }
+  return inferredIt->second;
+}
+
 /// Infer the call-site template argument list from call/callee type unification.
 template <typename CallableOp, typename TargetOp>
 static FailureOr<ArrayAttr> getCallSignatureTemplateParams(
@@ -2159,27 +2221,12 @@ static FailureOr<ArrayAttr> getCallSignatureTemplateParams(
   SmallVector<Attribute> params;
   params.reserve(info.oldParamOrder.size());
   for (StringAttr paramName : info.oldParamOrder) {
-    auto it = unifyResult->find({FlatSymbolRefAttr::get(paramName), Side::RHS});
-    if (it == unifyResult->end()) {
-      return callableOp.emitError() << "could not infer omitted template argument for parameter @"
-                                    << paramName.getValue() << " from callee signature";
+    FailureOr<Attribute> inferredAttr =
+        getInferredRhsTemplateArg(callableOp, targetOp, *unifyResult, paramName, "omitted");
+    if (failed(inferredAttr)) {
+      return failure();
     }
-    if (!it->second) {
-      InFlightDiagnostic diag = callableOp.emitError()
-                                << "conflicting inferred types for @" << paramName.getValue();
-      SmallVector<Type> candidates = getConflictingRhsTypeVarCandidates(
-          callableOp.getTypeSignature(), targetOp.getFunctionType(),
-          FlatSymbolRefAttr::get(paramName)
-      );
-      if (candidates.size() >= 2) {
-        diag << ": " << candidates.front();
-        for (Type candidate : llvm::drop_begin(candidates)) {
-          diag << " vs " << candidate;
-        }
-      }
-      return diag;
-    }
-    params.push_back(it->second);
+    params.push_back(*inferredAttr);
   }
   return ArrayAttr::get(callableOp.getContext(), params);
 }
@@ -2232,27 +2279,12 @@ static FailureOr<ArrayAttr> materializeResidualFunctionTvarWildcards(
       continue;
     }
 
-    auto inferredIt = unifyResult->find({FlatSymbolRefAttr::get(paramName), Side::RHS});
-    if (inferredIt == unifyResult->end()) {
-      return callableOp.emitError() << "could not infer wildcard template argument for parameter @"
-                                    << paramName.getValue() << " from callee signature";
+    FailureOr<Attribute> inferredAttr =
+        getInferredRhsTemplateArg(callableOp, targetOp, *unifyResult, paramName, "wildcard");
+    if (failed(inferredAttr)) {
+      return failure();
     }
-    if (!inferredIt->second) {
-      InFlightDiagnostic diag = callableOp.emitError()
-                                << "conflicting inferred types for @" << paramName.getValue();
-      SmallVector<Type> candidates = getConflictingRhsTypeVarCandidates(
-          callableOp.getTypeSignature(), targetOp.getFunctionType(),
-          FlatSymbolRefAttr::get(paramName)
-      );
-      if (candidates.size() >= 2) {
-        diag << ": " << candidates.front();
-        for (Type candidate : llvm::drop_begin(candidates)) {
-          diag << " vs " << candidate;
-        }
-      }
-      return diag;
-    }
-    params[*index] = inferredIt->second;
+    params[*index] = *inferredAttr;
   }
   return ArrayAttr::get(callableOp.getContext(), params);
 }
@@ -2267,6 +2299,50 @@ static bool hasResidualFunctionTvar(const TemplateInferenceInfo &info, TargetOp 
   return llvm::any_of(info.typeVarParams, [&](const auto &entry) {
     return !info.replacements.contains(entry.first) && targetMentionsParam(targetOp, entry.first);
   });
+}
+
+/// Common call/include specialization inputs after template arguments are materialized.
+struct CallableSpecializationInputs {
+  ArrayAttr params;
+  bool explicitParams = false;
+  bool paramsChanged = false;
+  DenseMap<StringAttr, Type> replacements;
+};
+
+/// Materialize call/include template arguments and compute concrete tvar replacements.
+template <typename CallableOp, typename TargetOp>
+static LogicalResult prepareCallableSpecialization(
+    CallableOp callableOp, const TemplateInferenceInfo &info, TargetOp targetOp,
+    CallableSpecializationInputs &inputs, bool &shouldSpecialize
+) {
+  shouldSpecialize = false;
+  inputs.params = {};
+  inputs.explicitParams = false;
+  inputs.paramsChanged = false;
+  inputs.replacements.clear();
+  inputs.params = callableOp.getTemplateParamsAttr();
+  inputs.explicitParams = !isNullOrEmpty(inputs.params);
+  if (isNullOrEmpty(inputs.params)) {
+    FailureOr<ArrayAttr> inferredParams =
+        getCallSignatureTemplateParams(callableOp, info, targetOp);
+    if (failed(inferredParams)) {
+      return failure();
+    }
+    inputs.params = *inferredParams;
+    inputs.paramsChanged = true;
+  } else if (hasResidualFunctionTvarWildcard(inputs.params, info, targetOp)) {
+    FailureOr<ArrayAttr> materializedParams =
+        materializeResidualFunctionTvarWildcards(callableOp, inputs.params, info, targetOp);
+    if (failed(materializedParams)) {
+      return failure();
+    }
+    inputs.params = *materializedParams;
+    inputs.paramsChanged = true;
+  }
+
+  inputs.replacements = getConcreteCallSiteReplacements(inputs.params, info, targetOp);
+  shouldSpecialize = !inputs.replacements.empty();
+  return success();
 }
 
 /// Build the symbol name for a template-local specialized function clone.
@@ -2334,16 +2410,19 @@ getTemplateLocalFunctionCloneCallee(SymbolRefAttr originalCallee, StringAttr clo
   return asSymbolRefAttr(pieces);
 }
 
-/// Create or reuse a template-local clone for a concrete function-local tvar instantiation.
-static FailureOr<SymbolRefAttr> getOrCreateSpecializedFunctionClone(
-    TemplateOp templateOp, FuncDefOp func, SymbolRefAttr originalCallee,
+/// Create or reuse a template-local clone for a concrete callable-local tvar instantiation.
+template <typename CallableOp, typename ConfigureCloneFn>
+static FailureOr<SymbolRefAttr> getOrCreateSpecializedCallableClone(
+    TemplateOp templateOp, CallableOp callable, SymbolRefAttr originalCallee,
     const TemplateInferenceInfo &info, const DenseMap<StringAttr, Type> &replacements,
-    SymbolTableCollection &tables, llvm::StringMap<SymbolRefAttr> &cloneCallees
+    SymbolTableCollection &tables, llvm::StringMap<SymbolRefAttr> &cloneCallees,
+    ConfigureCloneFn configureClone
 ) {
-  std::string requestedFuncName =
-      buildTemplateLocalFunctionCloneName(func.getSymName(), info.oldParamOrder, replacements);
-  std::string cacheKey =
-      buildTemplateLocalFunctionCloneCacheKey(func.getSymName(), info.oldParamOrder, replacements);
+  std::string requestedName =
+      buildTemplateLocalFunctionCloneName(callable.getSymName(), info.oldParamOrder, replacements);
+  std::string cacheKey = buildTemplateLocalFunctionCloneCacheKey(
+      callable.getSymName(), info.oldParamOrder, replacements
+  );
   auto cachedCallee = cloneCallees.find(cacheKey);
   if (cachedCallee != cloneCallees.end()) {
     return cachedCallee->second;
@@ -2351,9 +2430,10 @@ static FailureOr<SymbolRefAttr> getOrCreateSpecializedFunctionClone(
 
   SymbolTable &templateSymbols = tables.getSymbolTable(templateOp);
 
-  FuncDefOp clone = func.clone();
-  clone.setSymName(requestedFuncName);
-  templateSymbols.insert(clone, Block::iterator(func));
+  auto clone = llvm::cast<CallableOp>(callable.getOperation()->clone());
+  clone.setSymName(requestedName);
+  configureClone(clone);
+  templateSymbols.insert(clone, Block::iterator(callable));
 
   TypeVarReplacementConverter converter(
       templateOp.getContext(), info.templatePath, info.oldParamOrder, replacements,
@@ -2370,6 +2450,17 @@ static FailureOr<SymbolRefAttr> getOrCreateSpecializedFunctionClone(
   return cloneCallee;
 }
 
+/// Create or reuse a template-local clone for a concrete function-local tvar instantiation.
+static FailureOr<SymbolRefAttr> getOrCreateSpecializedFunctionClone(
+    TemplateOp templateOp, FuncDefOp func, SymbolRefAttr originalCallee,
+    const TemplateInferenceInfo &info, const DenseMap<StringAttr, Type> &replacements,
+    SymbolTableCollection &tables, llvm::StringMap<SymbolRefAttr> &cloneCallees
+) {
+  return getOrCreateSpecializedCallableClone(
+      templateOp, func, originalCallee, info, replacements, tables, cloneCallees, [](FuncDefOp) {}
+  );
+}
+
 /// Create or reuse a template-local clone for a concrete contract-local tvar instantiation.
 static FailureOr<SymbolRefAttr> getOrCreateSpecializedContractClone(
     TemplateOp templateOp, verif::ContractOp contract, SymbolRefAttr originalCallee,
@@ -2377,36 +2468,10 @@ static FailureOr<SymbolRefAttr> getOrCreateSpecializedContractClone(
     const DenseMap<StringAttr, Type> &replacements, SymbolTableCollection &tables,
     llvm::StringMap<SymbolRefAttr> &cloneCallees
 ) {
-  std::string requestedContractName =
-      buildTemplateLocalFunctionCloneName(contract.getSymName(), info.oldParamOrder, replacements);
-  std::string cacheKey = buildTemplateLocalFunctionCloneCacheKey(
-      contract.getSymName(), info.oldParamOrder, replacements
+  return getOrCreateSpecializedCallableClone(
+      templateOp, contract, originalCallee, info, replacements, tables, cloneCallees,
+      [specializedTarget](verif::ContractOp clone) { clone.setTargetAttr(specializedTarget); }
   );
-  auto cachedCallee = cloneCallees.find(cacheKey);
-  if (cachedCallee != cloneCallees.end()) {
-    return cachedCallee->second;
-  }
-
-  SymbolTable &templateSymbols = tables.getSymbolTable(templateOp);
-
-  auto clone = llvm::cast<verif::ContractOp>(contract.getOperation()->clone());
-  clone.setSymName(requestedContractName);
-  clone.setTargetAttr(specializedTarget);
-  templateSymbols.insert(clone, Block::iterator(contract));
-
-  TypeVarReplacementConverter converter(
-      templateOp.getContext(), info.templatePath, info.oldParamOrder, replacements,
-      /*trimResolvedParams=*/false
-  );
-  if (failed(convertOperationTypesIn(clone.getOperation(), converter))) {
-    clone.erase();
-    return failure();
-  }
-  removeIdentityCasts(clone.getOperation());
-  SymbolRefAttr cloneCallee =
-      getTemplateLocalFunctionCloneCallee(originalCallee, clone.getSymNameAttr());
-  cloneCallees.try_emplace(cacheKey, cloneCallee);
-  return cloneCallee;
 }
 
 /// Erase `poly.param` definitions whose type variables were fully resolved.
@@ -2433,6 +2498,79 @@ validateWildcardCallableSignature(CallableOp callableOp, FunctionType targetTy) 
                                 << " does not match inferred callee signature " << targetTy;
 }
 
+/// Update call result types when same-template template symbol arguments were resolved.
+static void updateCallableResultTypesIfNeeded(
+    CallOp callOp, const TypeVarReplacementConverter &converter, bool &modified
+) {
+  for (Value result : callOp.getResults()) {
+    Type newTy = converter.convertType(result.getType());
+    if (newTy != result.getType()) {
+      result.setType(newTy);
+      modified = true;
+    }
+  }
+}
+
+/// Includes have no SSA results to update.
+static void
+updateCallableResultTypesIfNeeded(verif::IncludeOp, const TypeVarReplacementConverter &, bool &) {}
+
+/// Update one callable op family that references rewritten templates.
+template <typename CallableOp>
+static FailureOr<bool> updateCallableTemplateParamsFor(
+    ModuleOp module, DenseMap<Operation *, const TypeVarReplacementConverter *> &converters,
+    SymbolTableCollection &tables
+) {
+  bool modified = false;
+  bool failedConversion = false;
+  module.walk([&](CallableOp callableOp) {
+    if (failedConversion) {
+      return;
+    }
+    auto target = callableOp.getCalleeTarget(tables);
+    if (failed(target)) {
+      return;
+    }
+    auto targetOp = target->get();
+    TemplateOp parentTemplate = getParentOfType<TemplateOp>(targetOp.getOperation());
+    if (!parentTemplate) {
+      return;
+    }
+    const TypeVarReplacementConverter *converter = converters.lookup(parentTemplate.getOperation());
+    if (!converter) {
+      return;
+    }
+
+    TemplateOp callableTemplate = getParentOfType<TemplateOp>(callableOp.getOperation());
+    bool resolveTemplateSymbolArgs =
+        callableTemplate && callableTemplate.getOperation() == parentTemplate.getOperation();
+    ArrayAttr oldParams = callableOp.getTemplateParamsAttr();
+    FailureOr<ArrayAttr> newParams =
+        converter->convertTemplateParams(oldParams, callableOp, resolveTemplateSymbolArgs);
+    if (failed(newParams)) {
+      failedConversion = true;
+      return;
+    }
+    if (converter->hasWildcardForRemovedParam(oldParams) &&
+        failed(validateWildcardCallableSignature(callableOp, targetOp.getFunctionType()))) {
+      failedConversion = true;
+      return;
+    }
+    if (oldParams != *newParams) {
+      callableOp.setTemplateParamsAttr(*newParams);
+      modified = true;
+    }
+
+    if (resolveTemplateSymbolArgs) {
+      updateCallableResultTypesIfNeeded(callableOp, *converter, modified);
+    }
+  });
+  if (failedConversion) {
+    return failure();
+  }
+  return modified;
+}
+
 /// Update references to callable symbols inside rewritten templates.
 ///
 /// Call operations keep their explicit template argument list, if any. When a
@@ -2443,97 +2581,18 @@ validateWildcardCallableSignature(CallableOp callableOp, FunctionType targetTy) 
 static FailureOr<bool> updateCallableTemplateParams(
     ModuleOp module, DenseMap<Operation *, const TypeVarReplacementConverter *> &converters
 ) {
-  bool modified = false;
-  bool failedConversion = false;
   SymbolTableCollection tables;
-  module.walk([&](CallOp callOp) {
-    if (failedConversion) {
-      return;
-    }
-    FailureOr<SymbolLookupResult<FuncDefOp>> target = callOp.getCalleeTarget(tables);
-    if (failed(target)) {
-      return;
-    }
-    TemplateOp parentTemplate = getParentOfType<TemplateOp>(target->get().getOperation());
-    if (!parentTemplate) {
-      return;
-    }
-    const TypeVarReplacementConverter *converter = converters.lookup(parentTemplate.getOperation());
-    if (!converter) {
-      return;
-    }
-
-    TemplateOp callTemplate = getParentOfType<TemplateOp>(callOp.getOperation());
-    bool resolveTemplateSymbolArgs =
-        callTemplate && callTemplate.getOperation() == parentTemplate.getOperation();
-    ArrayAttr oldParams = callOp.getTemplateParamsAttr();
-    FailureOr<ArrayAttr> newParams =
-        converter->convertTemplateParams(oldParams, callOp, resolveTemplateSymbolArgs);
-    if (failed(newParams)) {
-      failedConversion = true;
-      return;
-    }
-    if (converter->hasWildcardForRemovedParam(oldParams) &&
-        failed(validateWildcardCallableSignature(callOp, target->get().getFunctionType()))) {
-      failedConversion = true;
-      return;
-    }
-    if (oldParams != *newParams) {
-      callOp.setTemplateParamsAttr(*newParams);
-      modified = true;
-    }
-
-    if (resolveTemplateSymbolArgs) {
-      for (Value result : callOp.getResults()) {
-        Type newTy = converter->convertType(result.getType());
-        if (newTy != result.getType()) {
-          result.setType(newTy);
-          modified = true;
-        }
-      }
-    }
-  });
-  module.walk([&](verif::IncludeOp includeOp) {
-    if (failedConversion) {
-      return;
-    }
-    FailureOr<SymbolLookupResult<verif::ContractOp>> target = includeOp.getCalleeTarget(tables);
-    if (failed(target)) {
-      return;
-    }
-    TemplateOp parentTemplate = getParentOfType<TemplateOp>(target->get().getOperation());
-    if (!parentTemplate) {
-      return;
-    }
-    const TypeVarReplacementConverter *converter = converters.lookup(parentTemplate.getOperation());
-    if (!converter) {
-      return;
-    }
-
-    TemplateOp includeTemplate = getParentOfType<TemplateOp>(includeOp.getOperation());
-    bool resolveTemplateSymbolArgs =
-        includeTemplate && includeTemplate.getOperation() == parentTemplate.getOperation();
-    ArrayAttr oldParams = includeOp.getTemplateParamsAttr();
-    FailureOr<ArrayAttr> newParams =
-        converter->convertTemplateParams(oldParams, includeOp, resolveTemplateSymbolArgs);
-    if (failed(newParams)) {
-      failedConversion = true;
-      return;
-    }
-    if (converter->hasWildcardForRemovedParam(oldParams) &&
-        failed(validateWildcardCallableSignature(includeOp, target->get().getFunctionType()))) {
-      failedConversion = true;
-      return;
-    }
-    if (oldParams != *newParams) {
-      includeOp.setTemplateParamsAttr(*newParams);
-      modified = true;
-    }
-  });
-  if (failedConversion) {
+  FailureOr<bool> callsModified =
+      updateCallableTemplateParamsFor<CallOp>(module, converters, tables);
+  if (failed(callsModified)) {
     return failure();
   }
-  return modified;
+  FailureOr<bool> includesModified =
+      updateCallableTemplateParamsFor<verif::IncludeOp>(module, converters, tables);
+  if (failed(includesModified)) {
+    return failure();
+  }
+  return *callsModified || *includesModified;
 }
 
 /// Converts struct type sites that reference templates whose parameter list is being trimmed.
@@ -2578,10 +2637,7 @@ public:
       return ty;
     }
     if (auto arrTy = llvm::dyn_cast<ArrayType>(ty)) {
-      Type newElemTy = convertType(arrTy.getElementType());
-      return newElemTy == arrTy.getElementType()
-                 ? ty
-                 : llzk::polymorphic::detail::flattenInstantiatedArrayType(arrTy, newElemTy);
+      return convertArrayElementType(arrTy, [this](Type elemTy) { return convertType(elemTy); });
     }
     if (auto structTy = llvm::dyn_cast<StructType>(ty)) {
       return convertStructType(structTy);
@@ -2597,27 +2653,12 @@ public:
 
   /// Convert an attribute that can contain struct type references.
   Attribute convertAttr(Attribute attr) {
-    if (!attr || failed_) {
+    if (failed_) {
       return attr;
     }
-    if (auto tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
-      Type newTy = convertType(tyAttr.getValue());
-      return newTy == tyAttr.getValue() ? attr : TypeAttr::get(newTy);
-    }
-    if (auto arrAttr = llvm::dyn_cast<ArrayAttr>(attr)) {
-      SmallVector<Attribute> newAttrs;
-      bool changed = false;
-      for (Attribute nested : arrAttr.getValue()) {
-        Attribute newNested = convertAttr(nested);
-        newAttrs.push_back(newNested);
-        changed |= newNested != nested;
-        if (failed_) {
-          return attr;
-        }
-      }
-      return changed ? ArrayAttr::get(ctx_, newAttrs) : attr;
-    }
-    return attr;
+    return convertTypeOrArrayAttr(attr, ctx_, [this](Type ty) {
+      return convertType(ty);
+    }, [this](Attribute nested) { return convertAttr(nested); });
   }
 
 private:
@@ -2677,79 +2718,9 @@ private:
 static FailureOr<bool> updateStructTemplateParams(
     ModuleOp module, DenseMap<Operation *, const TypeVarReplacementConverter *> &converters
 ) {
-  bool modified = false;
   SymbolTableCollection tables;
   ReferencedStructTemplateParamConverter converter(module.getContext(), module, tables, converters);
-  WalkResult res = module.walk([&](Operation *op) {
-    converter.startOperation(op);
-    bool changed = false;
-
-    if (auto func = llvm::dyn_cast<FuncDefOp>(op)) {
-      FunctionType oldFuncTy = func.getFunctionType();
-      updateFuncSignature(func, converter);
-      if (converter.failed()) {
-        return WalkResult::interrupt();
-      }
-      changed |= oldFuncTy != func.getFunctionType();
-    }
-    if (auto contract = llvm::dyn_cast<verif::ContractOp>(op)) {
-      FunctionType oldFuncTy = contract.getFunctionType();
-      updateContractSignature(contract, converter);
-      if (converter.failed()) {
-        return WalkResult::interrupt();
-      }
-      changed |= oldFuncTy != contract.getFunctionType();
-    }
-
-    for (Region &region : op->getRegions()) {
-      for (Block &block : region.getBlocks()) {
-        for (BlockArgument arg : block.getArguments()) {
-          Type newTy = converter.convertType(arg.getType());
-          if (converter.failed()) {
-            return WalkResult::interrupt();
-          }
-          if (newTy != arg.getType()) {
-            arg.setType(newTy);
-            changed = true;
-          }
-        }
-      }
-    }
-
-    for (Value result : op->getResults()) {
-      Type newTy = converter.convertType(result.getType());
-      if (converter.failed()) {
-        return WalkResult::interrupt();
-      }
-      if (newTy != result.getType()) {
-        result.setType(newTy);
-        changed = true;
-      }
-    }
-
-    SmallVector<NamedAttribute> newAttrs;
-    bool attrsChanged = false;
-    newAttrs.reserve(op->getAttrs().size());
-    for (NamedAttribute attr : op->getAttrs()) {
-      Attribute newAttr = converter.convertAttr(attr.getValue());
-      if (converter.failed()) {
-        return WalkResult::interrupt();
-      }
-      newAttrs.emplace_back(attr.getName(), newAttr);
-      attrsChanged |= newAttr != attr.getValue();
-    }
-    if (attrsChanged) {
-      op->setAttrs(DictionaryAttr::get(op->getContext(), newAttrs));
-      changed = true;
-    }
-
-    modified |= changed;
-    return WalkResult::advance();
-  });
-  if (res.wasInterrupted()) {
-    return failure();
-  }
-  return modified;
+  return convertOperationTypesInAndTrack(module.getOperation(), converter);
 }
 
 /// Instantiate concrete parameterized struct types exposed by type-variable inference.
@@ -2850,46 +2821,29 @@ static LogicalResult specializeFunctionLocalCallables(
       return;
     }
 
-    ArrayAttr callParams = callOp.getTemplateParamsAttr();
-    bool explicitCallParams = !isNullOrEmpty(callParams);
-    bool inferredCallParams = false;
-    bool materializedWildcardParams = false;
-    if (isNullOrEmpty(callParams)) {
-      FailureOr<ArrayAttr> inferredParams =
-          getCallSignatureTemplateParams(callOp, *info, targetFunc);
-      if (failed(inferredParams)) {
-        failedClone = true;
-        return;
-      }
-      callParams = *inferredParams;
-      inferredCallParams = true;
-    } else if (hasResidualFunctionTvarWildcard(callParams, *info, targetFunc)) {
-      FailureOr<ArrayAttr> materializedParams =
-          materializeResidualFunctionTvarWildcards(callOp, callParams, *info, targetFunc);
-      if (failed(materializedParams)) {
-        failedClone = true;
-        return;
-      }
-      callParams = *materializedParams;
-      materializedWildcardParams = true;
+    CallableSpecializationInputs inputs;
+    bool shouldSpecialize = false;
+    if (failed(
+            prepareCallableSpecialization(callOp, *info, targetFunc, inputs, shouldSpecialize)
+        )) {
+      failedClone = true;
+      return;
     }
-    DenseMap<StringAttr, Type> replacements =
-        getConcreteCallSiteReplacements(callParams, *info, targetFunc);
-    if (replacements.empty()) {
+    if (!shouldSpecialize) {
       return;
     }
     DenseMap<StringAttr, Type> inferredReplacements =
         getFunctionProofReplacements(*info, targetFunc);
     if (failed(diagnoseCallParamsMismatch(
-            callOp.getOperation(), callParams, info->oldParamOrder, inferredReplacements,
-            /*explicitCallParams=*/explicitCallParams
+            callOp.getOperation(), inputs.params, info->oldParamOrder, inferredReplacements,
+            /*explicitCallParams=*/inputs.explicitParams
         ))) {
       failedClone = true;
       return;
     }
 
     FailureOr<SymbolRefAttr> cloneCallee = getOrCreateSpecializedFunctionClone(
-        parentTemplate, targetFunc, callOp.getCalleeAttr(), *info, replacements, tables,
+        parentTemplate, targetFunc, callOp.getCalleeAttr(), *info, inputs.replacements, tables,
         functionCloneCache[parentTemplate.getOperation()]
     );
     if (failed(cloneCallee)) {
@@ -2898,8 +2852,8 @@ static LogicalResult specializeFunctionLocalCallables(
     }
 
     callOp.setCalleeAttr(*cloneCallee);
-    if (inferredCallParams || materializedWildcardParams) {
-      callOp.setTemplateParamsAttr(callParams);
+    if (inputs.paramsChanged) {
+      callOp.setTemplateParamsAttr(inputs.params);
     }
   });
   module.walk([&](verif::IncludeOp includeOp) {
@@ -2933,47 +2887,30 @@ static LogicalResult specializeFunctionLocalCallables(
       return;
     }
 
-    ArrayAttr includeParams = includeOp.getTemplateParamsAttr();
-    bool explicitIncludeParams = !isNullOrEmpty(includeParams);
-    bool inferredIncludeParams = false;
-    bool materializedWildcardParams = false;
-    if (isNullOrEmpty(includeParams)) {
-      FailureOr<ArrayAttr> inferredParams =
-          getCallSignatureTemplateParams(includeOp, *info, targetContract);
-      if (failed(inferredParams)) {
-        failedClone = true;
-        return;
-      }
-      includeParams = *inferredParams;
-      inferredIncludeParams = true;
-    } else if (hasResidualFunctionTvarWildcard(includeParams, *info, targetContract)) {
-      FailureOr<ArrayAttr> materializedParams =
-          materializeResidualFunctionTvarWildcards(includeOp, includeParams, *info, targetContract);
-      if (failed(materializedParams)) {
-        failedClone = true;
-        return;
-      }
-      includeParams = *materializedParams;
-      materializedWildcardParams = true;
+    CallableSpecializationInputs inputs;
+    bool shouldSpecialize = false;
+    if (failed(prepareCallableSpecialization(
+            includeOp, *info, targetContract, inputs, shouldSpecialize
+        ))) {
+      failedClone = true;
+      return;
     }
-    DenseMap<StringAttr, Type> replacements =
-        getConcreteCallSiteReplacements(includeParams, *info, targetContract);
-    if (replacements.empty()) {
+    if (!shouldSpecialize) {
       return;
     }
     DenseMap<StringAttr, Type> inferredReplacements =
         getFunctionProofReplacements(*info, targetFunc);
     if (failed(diagnoseCallParamsMismatch(
-            includeOp.getOperation(), includeParams, info->oldParamOrder, inferredReplacements,
-            /*explicitCallParams=*/explicitIncludeParams
+            includeOp.getOperation(), inputs.params, info->oldParamOrder, inferredReplacements,
+            /*explicitCallParams=*/inputs.explicitParams
         ))) {
       failedClone = true;
       return;
     }
 
     FailureOr<SymbolRefAttr> specializedTarget = getOrCreateSpecializedFunctionClone(
-        parentTemplate, targetFunc, targetContract.getTargetAttr(), *info, replacements, tables,
-        functionCloneCache[parentTemplate.getOperation()]
+        parentTemplate, targetFunc, targetContract.getTargetAttr(), *info, inputs.replacements,
+        tables, functionCloneCache[parentTemplate.getOperation()]
     );
     if (failed(specializedTarget)) {
       failedClone = true;
@@ -2981,7 +2918,7 @@ static LogicalResult specializeFunctionLocalCallables(
     }
     FailureOr<SymbolRefAttr> cloneCallee = getOrCreateSpecializedContractClone(
         parentTemplate, targetContract, includeOp.getCalleeAttr(), *specializedTarget, *info,
-        replacements, tables, contractCloneCache[parentTemplate.getOperation()]
+        inputs.replacements, tables, contractCloneCache[parentTemplate.getOperation()]
     );
     if (failed(cloneCallee)) {
       failedClone = true;
@@ -2989,8 +2926,8 @@ static LogicalResult specializeFunctionLocalCallables(
     }
 
     includeOp.setCalleeAttr(*cloneCallee);
-    if (inferredIncludeParams || materializedWildcardParams) {
-      includeOp.setTemplateParamsAttr(includeParams);
+    if (inputs.paramsChanged) {
+      includeOp.setTemplateParamsAttr(inputs.params);
     }
   });
   return failure(failedClone);
