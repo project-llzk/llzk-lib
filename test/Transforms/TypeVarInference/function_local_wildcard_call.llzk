@@ -1,0 +1,40 @@
+// RUN: llzk-opt -split-input-file -llzk-infer-tvar %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  poly.template @TFunctionLocalWildcardCall {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @f(%arg: !poly.tvar<@T>) -> index {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      function.return %index : index
+    }
+
+    function.def @g(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      function.return %arg : !poly.tvar<@T>
+    }
+  }
+
+  function.def @call_f(%arg: index) -> index {
+    %0 = function.call @TFunctionLocalWildcardCall::@f<[?]>(%arg) : (index) -> index
+    function.return %0 : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TFunctionLocalWildcardCall {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @i_f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:        function.return %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @f(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> index {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_1]] : (!poly.tvar<@T>) -> index
+// CHECK-NEXT:        function.return %[[VAL_2]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @g(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !poly.tvar<@T> {
+// CHECK-NEXT:        function.return %[[VAL_3]] : !poly.tvar<@T>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_f(%[[VAL_4:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @TFunctionLocalWildcardCall::@i_f<[index]>(%[[VAL_4]]) : (index) -> index
+// CHECK-NEXT:      function.return %[[VAL_5]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

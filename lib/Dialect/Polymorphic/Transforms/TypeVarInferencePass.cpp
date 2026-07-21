@@ -1966,6 +1966,12 @@ static DenseMap<StringAttr, Type> getConcreteCallSiteReplacements(
   return replacements;
 }
 
+/// Return true when an attribute is the parser's `?` template-argument marker.
+static bool isWildcardTemplateArg(Attribute attr) {
+  auto intAttr = llvm::dyn_cast_if_present<IntegerAttr>(attr);
+  return intAttr && isDynamic(intAttr);
+}
+
 /// Append `ty` to `types` unless it is already present.
 static void appendUniqueType(SmallVectorImpl<Type> &types, Type ty) {
   if (!llvm::any_of(types, [ty](Type existing) { return existing == ty; })) {
@@ -2120,6 +2126,75 @@ getCallSignatureTemplateParams(CallOp callOp, const TemplateInferenceInfo &info,
       return diag;
     }
     params.push_back(it->second);
+  }
+  return ArrayAttr::get(callOp.getContext(), params);
+}
+
+/// Return true when a call's explicit template arguments contain `?` for a
+/// residual type-variable parameter mentioned by `func`.
+static bool hasResidualFunctionTvarWildcard(
+    ArrayAttr callParams, const TemplateInferenceInfo &info, FuncDefOp func
+) {
+  if (!callParams || callParams.size() != info.oldParamOrder.size()) {
+    return false;
+  }
+  for (const auto &entry : info.typeVarParams) {
+    StringAttr paramName = entry.first;
+    if (!funcMentionsParam(func, paramName)) {
+      continue;
+    }
+    std::optional<unsigned> index = getParamIndex(info.oldParamOrder, paramName);
+    assert(index && "eligible type-variable parameter must appear in parameter order");
+    if (isWildcardTemplateArg(callParams[*index])) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/// Materialize explicit `?` type arguments from the call signature before
+/// choosing a function-local clone.
+static FailureOr<ArrayAttr> materializeResidualFunctionTvarWildcards(
+    CallOp callOp, ArrayAttr callParams, const TemplateInferenceInfo &info, FuncDefOp func
+) {
+  FailureOr<UnificationMap> unifyResult = callOp.unifyTypeSignature(func.getFunctionType());
+  if (failed(unifyResult)) {
+    return callOp.emitError()
+           << "could not infer wildcard template arguments from callee signature";
+  }
+
+  SmallVector<Attribute> params(callParams.begin(), callParams.end());
+  for (const auto &entry : info.typeVarParams) {
+    StringAttr paramName = entry.first;
+    if (!funcMentionsParam(func, paramName)) {
+      continue;
+    }
+    std::optional<unsigned> index = getParamIndex(info.oldParamOrder, paramName);
+    assert(index && "eligible type-variable parameter must appear in parameter order");
+    if (!isWildcardTemplateArg(params[*index])) {
+      continue;
+    }
+
+    auto inferredIt = unifyResult->find({FlatSymbolRefAttr::get(paramName), Side::RHS});
+    if (inferredIt == unifyResult->end()) {
+      return callOp.emitError() << "could not infer wildcard template argument for parameter @"
+                                << paramName.getValue() << " from callee signature";
+    }
+    if (!inferredIt->second) {
+      InFlightDiagnostic diag = callOp.emitError()
+                                << "conflicting inferred types for @" << paramName.getValue();
+      SmallVector<Type> candidates = getConflictingRhsTypeVarCandidates(
+          callOp.getTypeSignature(), func.getFunctionType(), FlatSymbolRefAttr::get(paramName)
+      );
+      if (candidates.size() >= 2) {
+        diag << ": " << candidates.front();
+        for (Type candidate : llvm::drop_begin(candidates)) {
+          diag << " vs " << candidate;
+        }
+      }
+      return diag;
+    }
+    params[*index] = inferredIt->second;
   }
   return ArrayAttr::get(callOp.getContext(), params);
 }
@@ -2614,7 +2689,9 @@ static LogicalResult specializeFunctionLocalCalls(
     }
 
     ArrayAttr callParams = callOp.getTemplateParamsAttr();
+    bool explicitCallParams = !isNullOrEmpty(callParams);
     bool inferredCallParams = false;
+    bool materializedWildcardParams = false;
     if (isNullOrEmpty(callParams)) {
       FailureOr<ArrayAttr> inferredParams =
           getCallSignatureTemplateParams(callOp, *info, targetFunc);
@@ -2624,6 +2701,15 @@ static LogicalResult specializeFunctionLocalCalls(
       }
       callParams = *inferredParams;
       inferredCallParams = true;
+    } else if (hasResidualFunctionTvarWildcard(callParams, *info, targetFunc)) {
+      FailureOr<ArrayAttr> materializedParams =
+          materializeResidualFunctionTvarWildcards(callOp, callParams, *info, targetFunc);
+      if (failed(materializedParams)) {
+        failedClone = true;
+        return;
+      }
+      callParams = *materializedParams;
+      materializedWildcardParams = true;
     }
     DenseMap<StringAttr, Type> replacements =
         getConcreteCallSiteReplacements(callParams, *info, targetFunc);
@@ -2634,7 +2720,7 @@ static LogicalResult specializeFunctionLocalCalls(
         getFunctionProofReplacements(*info, targetFunc);
     if (failed(diagnoseCallParamsMismatch(
             callOp, callParams, info->oldParamOrder, inferredReplacements,
-            /*explicitCallParams=*/!inferredCallParams
+            /*explicitCallParams=*/explicitCallParams
         ))) {
       failedClone = true;
       return;
@@ -2650,7 +2736,7 @@ static LogicalResult specializeFunctionLocalCalls(
     }
 
     callOp.setCalleeAttr(*cloneCallee);
-    if (inferredCallParams) {
+    if (inferredCallParams || materializedWildcardParams) {
       callOp.setTemplateParamsAttr(callParams);
     }
   });
