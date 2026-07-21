@@ -1,4 +1,4 @@
-// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
 
 module attributes {llzk.lang, llzk.main = !struct.type<@T::@S<[#felt<const 35 : !felt.type<"goldilocks">>]>>} {
   poly.template @T {
