@@ -24,6 +24,8 @@ class ReadOnlyOp : public mlir::Op<
                        ReadOnlyOp, mlir::OpTrait::ZeroOperands, mlir::OpTrait::ZeroResults,
                        mlir::MemoryEffectOpInterface::Trait> {
 public:
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(ReadOnlyOp)
+
   using Op::Op;
 
   static llvm::StringRef getOperationName() { return "test.read_only"; }
@@ -36,6 +38,8 @@ public:
 
 class TestDialect : public mlir::Dialect {
 public:
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(TestDialect)
+
   explicit TestDialect(mlir::MLIRContext *ctxPtr)
       : Dialect(getDialectNamespace(), ctxPtr, mlir::TypeID::get<TestDialect>()) {
     addOperations<ReadOnlyOp>();
