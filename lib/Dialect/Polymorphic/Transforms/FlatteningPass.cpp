@@ -99,6 +99,8 @@ static void reportDelayedDiagnostics(CallOp caller, SmallVector<Diagnostic> &&di
 }
 
 class ConversionTracker {
+  using FuncInstantiationKey = std::pair<Operation *, ArrayAttr>;
+
   /// Tracks if some step performed a modification of the code such that another pass should be run.
   bool modified;
   /// Maps original remote (i.e., use site) type to new remote type.
@@ -108,6 +110,14 @@ class ConversionTracker {
   DenseMap<StructType, StructType> reverseInstantiations;
   /// Tracks original free function definitions for which instantiated clones were created.
   DenseSet<SymbolRefAttr> funcInstantiations;
+  /// Exact source-function and concrete-parameter identities for clones created by this pass. The
+  /// generated symbol name is intentionally not the identity because user symbols can collide with
+  /// it.
+  DenseMap<FuncInstantiationKey, StringAttr> fullFuncInstantiations;
+  DenseMap<FuncInstantiationKey, TemplateOp> partialFuncInstantiations;
+  /// Templates created by partial struct or function instantiation. Their names may contain the
+  /// internal placeholder byte; user-authored template names must instead escape that byte.
+  DenseSet<Operation *> generatedPartialTemplates;
   /// Maps new remote type (i.e., the values in 'structInstantiations') to a list of Diagnostic
   /// to report at the location(s) of the compute() that causes the instantiation to the StructType.
   DenseMap<StructType, SmallVector<Diagnostic>> delayedDiagnostics;
@@ -150,6 +160,43 @@ public:
   void recordInstantiation(SymbolRefAttr funcName) {
     funcInstantiations.insert(funcName);
     modified = true;
+  }
+
+  std::optional<StringAttr>
+  getFullFuncInstantiation(Operation *sourceFunc, ArrayAttr concreteParams) const {
+    auto it = fullFuncInstantiations.find({sourceFunc, concreteParams});
+    return it == fullFuncInstantiations.end() ? std::nullopt : std::make_optional(it->second);
+  }
+
+  void recordFullFuncInstantiation(
+      Operation *sourceFunc, ArrayAttr concreteParams, StringAttr instantiatedName
+  ) {
+    auto [it, inserted] =
+        fullFuncInstantiations.try_emplace({sourceFunc, concreteParams}, instantiatedName);
+    assert((inserted || it->second == instantiatedName) && "instantiation identity is stable");
+  }
+
+  std::optional<TemplateOp>
+  getPartialFuncInstantiation(Operation *sourceFunc, ArrayAttr concreteParams) const {
+    auto it = partialFuncInstantiations.find({sourceFunc, concreteParams});
+    return it == partialFuncInstantiations.end() ? std::nullopt : std::make_optional(it->second);
+  }
+
+  void recordPartialFuncInstantiation(
+      Operation *sourceFunc, ArrayAttr concreteParams, TemplateOp instantiatedTemplate
+  ) {
+    auto [it, inserted] =
+        partialFuncInstantiations.try_emplace({sourceFunc, concreteParams}, instantiatedTemplate);
+    assert((inserted || it->second == instantiatedTemplate) && "instantiation identity is stable");
+    recordGeneratedPartialTemplate(instantiatedTemplate);
+  }
+
+  void recordGeneratedPartialTemplate(TemplateOp instantiatedTemplate) {
+    generatedPartialTemplates.insert(instantiatedTemplate.getOperation());
+  }
+
+  bool isGeneratedPartialTemplate(TemplateOp templateOp) const {
+    return generatedPartialTemplates.contains(templateOp.getOperation());
   }
 
   /// Collect the fully-qualified names of all structs and free functions that were instantiated.
@@ -289,19 +336,6 @@ public:
 
   Attribute getNameAttr(ConstReadOp op) const override { return op.getConstNameAttr(); }
 
-  static FailureOr<FeltType> getMaterializedFeltType(FeltConstAttr value, FeltType readType) {
-    FeltType valueType = value.getType();
-    if (valueType.hasField()) {
-      // Do not silently discard a named field. An unspecified read would also
-      // require changing the surrounding SSA types, which is outside this
-      // local materialization pattern.
-      if (!readType.hasField() || valueType != readType) {
-        return failure();
-      }
-    }
-    return readType;
-  }
-
   LogicalResult handleRewrite(
       Attribute sym, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, IntegerAttr a
   ) const {
@@ -346,11 +380,17 @@ public:
   LogicalResult handleRewrite(
       Attribute, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, FeltConstAttr a
   ) const {
-    FeltType ty = llvm::dyn_cast<FeltType>(op.getType());
-    if (!ty) {
-      return op->emitOpError().append("unexpected result type ", op.getType());
+    Type origResTy = op.getType();
+    Type newResTy = getTypeConverter()->convertType(origResTy);
+    if (!newResTy) {
+      return op->emitOpError().append("could not convert result type ", origResTy);
     }
-    FailureOr<FeltType> materializedType = getMaterializedFeltType(a, ty);
+
+    FeltType ty = llvm::dyn_cast<FeltType>(newResTy);
+    if (!ty) {
+      return op->emitOpError().append("unexpected result type ", newResTy);
+    }
+    FailureOr<FeltType> materializedType = a.getMaterializedType(ty);
     if (failed(materializedType)) {
       return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
         diag << "cannot materialize constant from field '" << a.getType() << "' as '" << ty << "'";
@@ -487,8 +527,7 @@ evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramN
         if (auto intAttr = llvm::dyn_cast<IntegerAttr>(val)) {
           val = FeltConstAttr::get(bodyOp.getContext(), intAttr.getValue(), feltTy);
         } else if (auto feltAttr = llvm::dyn_cast<FeltConstAttr>(val)) {
-          FailureOr<FeltType> materializedType =
-              ClonedBodyConstReadOpPattern::getMaterializedFeltType(feltAttr, feltTy);
+          FailureOr<FeltType> materializedType = feltAttr.getMaterializedType(feltTy);
           if (failed(materializedType)) {
             return std::nullopt;
           }
@@ -747,16 +786,19 @@ class StructCloner {
     // This list will be used to build the new remote/external type.
     SmallVector<FlatSymbolRefAttr> typeAtCallerSymPieces = getPieces(typeAtCaller.getNameRef());
     typeAtCallerSymPieces.pop_back(); // drop struct name
-    // Name of template with instantiated parameter values.
-    std::string templateNameWithAttrs = BuildShortTypeString::from(
-        typeAtCallerSymPieces.back().getValue().str(), attrsForInstantiatedNameSuffix
-    );
-
     // Get parent refs
     TemplateOp parentTemplate = getParentOfType<TemplateOp>(origStruct);
     assert(parentTemplate && "parameterized struct must be nested in a TemplateOp");
     ModuleOp parentModule = getParentOfType<ModuleOp>(parentTemplate);
     assert(parentModule && "TemplateOp must be nested in a ModuleOp");
+
+    // Name of template with instantiated parameter values. Only names created by an earlier partial
+    // instantiation may contain replacement placeholders; user-authored names are escaped first.
+    StringRef templateBase = typeAtCallerSymPieces.back().getValue();
+    std::string templateNameWithAttrs =
+        tracker_.isGeneratedPartialTemplate(parentTemplate)
+            ? BuildShortTypeString::from(templateBase.str(), attrsForInstantiatedNameSuffix)
+            : BuildShortTypeString::fromRawName(templateBase, attrsForInstantiatedNameSuffix);
 
     // Evaluate any poly.expr symbols whose param dependencies are now concrete; add them to the
     // map so ClonedBodyConstReadOpPattern can replace uses of those symbols too.
@@ -796,6 +838,7 @@ class StructCloner {
       // `SymbolTable::insert()` function so that the name will be made unique if necessary.
       symTables.getSymbolTable(newTemplate).insert(newStruct);
       symTables.getSymbolTable(parentModule).insert(newTemplate, Block::iterator(parentTemplate));
+      tracker_.recordGeneratedPartialTemplate(newTemplate);
 
       // Replace the old template name in the list with the new one (get template name after
       // symbol table insertion since it may be modified to make it unique).
@@ -1293,6 +1336,7 @@ struct InstantiationLayout {
   SmallVector<Attribute> remainingNames;
   std::string templateNameWithAttrs;
   ArrayAttr rewrittenCallParams;
+  ArrayAttr concreteParamKey;
 };
 
 /// Derive the (partially-)instantiated template name and the remaining explicit call parameters
@@ -1300,14 +1344,17 @@ struct InstantiationLayout {
 /// placeholder character at the position of a non-concrete parameter: "TemplateName_8_\x1A".
 static InstantiationLayout buildInstantiationLayout(
     TemplateOp parentTemplate, ArrayAttr callParams,
-    const DenseMap<Attribute, Attribute> &paramNameToConcrete
+    const DenseMap<Attribute, Attribute> &paramNameToConcrete, const ConversionTracker &tracker
 ) {
   SmallVector<Attribute> remainingNames;
   SmallVector<Attribute> attrsForInstantiatedNameSuffix;
+  SmallVector<Attribute> concreteParamKey;
   for (Attribute paramName : parentTemplate.getConstNames<TemplateParamOp>()) {
     auto it = paramNameToConcrete.find(paramName);
     if (it != paramNameToConcrete.end()) {
       attrsForInstantiatedNameSuffix.push_back(it->second);
+      concreteParamKey.push_back(paramName);
+      concreteParamKey.push_back(it->second);
     } else {
       attrsForInstantiatedNameSuffix.push_back(nullptr);
       remainingNames.push_back(paramName);
@@ -1327,10 +1374,19 @@ static InstantiationLayout buildInstantiationLayout(
     rewrittenCallParams = ArrayAttr::get(parentTemplate.getContext(), remainingCallParams);
   }
 
+  std::string templateNameWithAttrs =
+      tracker.isGeneratedPartialTemplate(parentTemplate)
+          ? BuildShortTypeString::from(
+                parentTemplate.getSymName().str(), attrsForInstantiatedNameSuffix
+            )
+          : BuildShortTypeString::fromRawName(
+                parentTemplate.getSymName(), attrsForInstantiatedNameSuffix
+            );
   return {
       std::move(remainingNames),
-      BuildShortTypeString::from(parentTemplate.getSymName().str(), attrsForInstantiatedNameSuffix),
+      std::move(templateNameWithAttrs),
       rewrittenCallParams,
+      ArrayAttr::get(parentTemplate.getContext(), concreteParamKey),
   };
 }
 
@@ -1471,22 +1527,23 @@ public:
 
     evaluateTemplateExprs(parentTemplate, paramNameToConcrete);
 
-    InstantiationLayout layout =
-        buildInstantiationLayout(parentTemplate, op.getTemplateParamsAttr(), paramNameToConcrete);
+    InstantiationLayout layout = buildInstantiationLayout(
+        parentTemplate, op.getTemplateParamsAttr(), paramNameToConcrete, tracker_
+    );
     ModuleOp parentModule = getParentOfType<ModuleOp>(parentTemplate);
     assert(parentModule && "TemplateOp must be nested in a ModuleOp");
 
     SymbolRefAttr originalCalleeAttr = op.getCalleeAttr();
     FailureOr<SymbolRefAttr> newCalleeAttr =
-        layout.remainingNames.empty()
-            ? instantiateFully(
-                  op, rewriter, symTables, callTgt, parentTemplate, parentModule,
-                  layout.templateNameWithAttrs, paramNameToConcrete
-              )
-            : instantiatePartially(
-                  op, rewriter, symTables, callTgt, parentTemplate, parentModule, layout,
-                  paramNameToConcrete
-              );
+        layout.remainingNames.empty() ? instantiateFully(
+                                            op, rewriter, symTables, callTgt, parentTemplate,
+                                            parentModule, layout.templateNameWithAttrs,
+                                            layout.concreteParamKey, paramNameToConcrete, tracker_
+                                        )
+                                      : instantiatePartially(
+                                            op, rewriter, symTables, callTgt, parentTemplate,
+                                            parentModule, layout, paramNameToConcrete, tracker_
+                                        );
     if (failed(newCalleeAttr)) {
       return failure();
     }
@@ -1642,13 +1699,21 @@ private:
   static FailureOr<SymbolRefAttr> instantiateFully(
       CallOp op, PatternRewriter &rewriter, SymbolTableCollection &symTables, FuncDefOp callTgt,
       TemplateOp parentTemplate, ModuleOp parentModule, StringRef templateNameWithAttrs,
-      const DenseMap<Attribute, Attribute> &paramNameToConcrete
+      ArrayAttr concreteParamKey, const DenseMap<Attribute, Attribute> &paramNameToConcrete,
+      ConversionTracker &tracker
   ) {
     MLIRContext *ctx = op.getContext();
     std::string newFuncName =
         (mlir::Twine(templateNameWithAttrs) + "_" + callTgt.getSymName()).str();
     StringRef actualNewFuncName = newFuncName;
-    if (!symTables.getSymbolTable(parentModule).lookup(newFuncName)) {
+    if (std::optional<StringAttr> cached =
+            tracker.getFullFuncInstantiation(callTgt.getOperation(), concreteParamKey)) {
+      actualNewFuncName = cached->getValue();
+      LLVM_DEBUG(
+          llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing full instantiation function: "
+                       << actualNewFuncName << '\n'
+      );
+    } else {
       FuncDefOp newFunc = callTgt.clone();
       newFunc.setSymName(newFuncName);
       convertCalleesInPlace(newFunc, paramNameToConcrete);
@@ -1669,10 +1734,8 @@ private:
           diag.append("failure while creating instantiated function '", actualNewFuncName, '\'');
         });
       }
-    } else {
-      LLVM_DEBUG(
-          llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing full instantiation function: "
-                       << actualNewFuncName << '\n'
+      tracker.recordFullFuncInstantiation(
+          callTgt.getOperation(), concreteParamKey, newFunc.getSymNameAttr()
       );
     }
 
@@ -1694,14 +1757,17 @@ private:
   static FailureOr<SymbolRefAttr> instantiatePartially(
       CallOp op, PatternRewriter &rewriter, SymbolTableCollection &symTables, FuncDefOp callTgt,
       TemplateOp parentTemplate, ModuleOp parentModule, const InstantiationLayout &layout,
-      const DenseMap<Attribute, Attribute> &paramNameToConcrete
+      const DenseMap<Attribute, Attribute> &paramNameToConcrete, ConversionTracker &tracker
   ) {
     TemplateOp newTemplate;
-    if (Operation *existing =
-            symTables.getSymbolTable(parentModule).lookup(layout.templateNameWithAttrs)) {
-      newTemplate = llvm::dyn_cast<TemplateOp>(existing);
-    }
-    if (!newTemplate) {
+    if (std::optional<TemplateOp> cached =
+            tracker.getPartialFuncInstantiation(callTgt.getOperation(), layout.concreteParamKey)) {
+      newTemplate = *cached;
+      LLVM_DEBUG(
+          llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing partial instantiation template: "
+                       << newTemplate.getSymName() << '\n'
+      );
+    } else {
       newTemplate = parentTemplate.cloneWithoutRegions();
       newTemplate.setSymName(layout.templateNameWithAttrs);
       assert(newTemplate->getNumRegions() > 0 && "region exists");
@@ -1739,10 +1805,8 @@ private:
           llvm::dbgs() << "[InstantiateFuncAtCallOp]  created partial instantiation template: "
                        << newTemplate.getSymName() << '\n'
       );
-    } else {
-      LLVM_DEBUG(
-          llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing partial instantiation template: "
-                       << newTemplate.getSymName() << '\n'
+      tracker.recordPartialFuncInstantiation(
+          callTgt.getOperation(), layout.concreteParamKey, newTemplate
       );
     }
 

@@ -130,6 +130,28 @@ module attributes {llzk.lang} {
 // -----
 module attributes {llzk.lang} {
   poly.template @GlobalFunc {
+    poly.param @A : !felt.type<"bn128">
+
+    function.def @id() -> index {
+      %value = arith.constant 7 : index
+      function.return %value : index
+    }
+  }
+
+  struct.def @WrongFeltField {
+    function.def @compute() -> !struct.type<@WrongFeltField> {
+      %self = struct.new : !struct.type<@WrongFeltField>
+      // expected-error@+1 {{'function.call' op instantiation value '#felt<const 35 : <"goldilocks">> : !felt.type<"goldilocks">' is not compatible with parameter "@A" type restriction '!felt.type<"bn128">'}}
+      %0 = function.call @GlobalFunc::@id<[#felt<const 35 : !felt.type<"goldilocks">>]>() : () -> index
+      function.return %self : !struct.type<@WrongFeltField>
+    }
+
+    function.def @constrain(%self: !struct.type<@WrongFeltField>) { function.return }
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
     poly.param @A : !poly.tvar<@A>
 
     function.def @id() -> !poly.tvar<@A> {

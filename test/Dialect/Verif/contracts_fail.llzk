@@ -208,6 +208,25 @@ module attributes {llzk.lang} {
 }
 
 // -----
+module attributes {llzk.lang} {
+  poly.template @SpecTemplate {
+    poly.param @N : !felt.type<"bn128">
+
+    function.def @token() { function.return }
+
+    verif.contract @Base for @SpecTemplate::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+
+    verif.contract @Wrapper for @SpecTemplate::@token () {
+      // expected-error@+1 {{'verif.include' op instantiation value '#felt<const 9 : <"goldilocks">> : !felt.type<"goldilocks">' is not compatible with parameter "@N" type restriction '!felt.type<"bn128">'}}
+      verif.include @SpecTemplate::@Base<[#felt<const 9 : !felt.type<"goldilocks">>]>() : () -> ()
+    }
+  }
+}
+
+// -----
 
 module attributes {llzk.lang} {
   struct.def @ProductOnly { // expected-note {{target defined here}}

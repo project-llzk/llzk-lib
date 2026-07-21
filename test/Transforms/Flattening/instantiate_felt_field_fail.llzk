@@ -18,6 +18,25 @@ module attributes {llzk.lang, llzk.main = !struct.type<@T::@S<[#felt<const 35 : 
 }
 // -----
 
+// A concrete felt value must satisfy the declared field restriction even if the parameter is not
+// read by the instantiated body.
+// expected-error@+1 {{instantiation value '#felt<const 35 : <"goldilocks">> : !felt.type<"goldilocks">' is not compatible with parameter "@N" type restriction '!felt.type<"bn128">'}}
+module attributes {llzk.lang, llzk.main = !struct.type<@T::@S<[#felt<const 35 : !felt.type<"goldilocks">>]>>} {
+  poly.template @T {
+    poly.param @N : !felt.type<"bn128">
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : <@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) {
+        function.return
+      }
+    }
+  }
+}
+// -----
+
 module attributes {llzk.lang, llzk.main = !struct.type<@T::@S<[#felt<const 35 : !felt.type<"goldilocks">>]>>} {
   poly.template @T {
     poly.param @N

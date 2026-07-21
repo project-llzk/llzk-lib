@@ -666,7 +666,7 @@ static SymbolRefAttr replaceLeafReference(SymbolRefAttr symRef, StringRef newLea
 
 static std::string
 buildWildcardSpecializationName(StringRef baseName, const WildcardArraySpecializationInfo &info) {
-  return BuildShortTypeString::from(baseName.str(), info.getConcreteTypeAttrs());
+  return BuildShortTypeString::fromRawName(baseName, info.getConcreteTypeAttrs());
 }
 
 /// Retargets calls nested inside a specialized struct body to the corresponding

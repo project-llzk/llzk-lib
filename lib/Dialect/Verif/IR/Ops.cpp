@@ -777,9 +777,13 @@ LogicalResult IncludeOp::verifyTemplateParamCompatibility(
     bool compatible = false;
     if (llvm::isa<TypeVarType>(*declaredType)) {
       compatible = llvm::isa<TypeAttr>(paramFromIncludeOp);
-    } else if (llvm::isa<FeltType>(*declaredType)) {
-      compatible = llvm::isa<FeltConstAttr, IntegerAttr>(paramFromIncludeOp) &&
-                   isValidConstReadType(llvm::cast<TypedAttr>(paramFromIncludeOp).getType());
+    } else if (auto feltType = llvm::dyn_cast<FeltType>(*declaredType)) {
+      if (auto feltValue = llvm::dyn_cast<FeltConstAttr>(paramFromIncludeOp)) {
+        compatible = succeeded(feltValue.getMaterializedType(feltType));
+      } else {
+        compatible = llvm::isa<IntegerAttr>(paramFromIncludeOp) &&
+                     isValidConstReadType(llvm::cast<TypedAttr>(paramFromIncludeOp).getType());
+      }
     } else if (llvm::isa<IndexType, IntegerType>(*declaredType)) {
       // Note: Just like struct type instantiation, there is no restriction on passing a
       // larger value to an `i1`. The flattening pass will treat 0 as false and any other

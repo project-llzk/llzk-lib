@@ -1,0 +1,67 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten=cleanup=disabled -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  poly.template @"T_f<35:5:bn128>_\1A" {
+    poly.param @Ty : !poly.tvar<@Ty>
+    function.def @compute() -> index {
+      %wrong = arith.constant 99 : index
+      function.return %wrong : index
+    }
+  }
+
+  poly.template @T {
+    poly.param @N : !felt.type<"bn128">
+    poly.param @Ty : !poly.tvar<@Ty>
+    function.def @compute() -> index {
+      %value = arith.constant 7 : index
+      function.return %value : index
+    }
+  }
+
+  function.def @main() -> index {
+    %got = function.call @T::@compute<[#felt<const 35 : !felt.type<"bn128">>, ?]>()
+      : () -> index
+    %got_again = function.call @T::@compute<[#felt<const 35 : !felt.type<"bn128">>, ?]>()
+      : () -> index
+    function.return %got_again : index
+  }
+}
+
+// CHECK: arith.constant 99 : index
+// CHECK: arith.constant 7 : index
+// CHECK-LABEL: function.def @main() -> index {
+// CHECK-NOT: function.call @"T_f<35:5:bn128>_\1A"::@compute
+// CHECK: function.call @"T_f<35:5:bn128>_\1A_[[PARTIAL_SUFFIX:[0-9]+]]"::@compute<[?]>()
+// CHECK-NEXT: function.call @"T_f<35:5:bn128>_\1A_[[PARTIAL_SUFFIX]]"::@compute<[?]>()
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @"S\1A" {
+    function.def @compute() -> !struct.type<@"S\1A"> {
+      %self = struct.new : <@"S\1A">
+      function.return %self : !struct.type<@"S\1A">
+    }
+    function.def @constrain(%self: !struct.type<@"S\1A">) {
+      function.return
+    }
+  }
+
+  poly.template @T {
+    poly.param @Concrete : !poly.tvar<@Concrete>
+    poly.param @Remaining : !poly.tvar<@Remaining>
+    function.def @compute() -> index {
+      %value = arith.constant 7 : index
+      function.return %value : index
+    }
+  }
+
+  function.def @main() -> index {
+    %got = function.call @T::@compute<[!struct.type<@"S\1A">, ?]>() : () -> index
+    function.return %got : index
+  }
+}
+
+// CHECK: poly.template @"T_!s<@S%1A>_\1A"
+// CHECK-LABEL: function.def @main() -> index {
+// CHECK: function.call @"T_!s<@S%1A>_\1A"::@compute<[?]>()

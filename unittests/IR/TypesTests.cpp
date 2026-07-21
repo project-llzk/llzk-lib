@@ -220,6 +220,47 @@ TEST_F(TypeTests, testShortStringDistinguishesDelimitedFeltFieldNames) {
   EXPECT_NE(first, second);
 }
 
+TEST_F(TypeTests, testShortStringEscapesReservedFeltFieldNameBytes) {
+  constexpr char withPlaceholder[] = {'x', '\x1A'};
+  constexpr llvm::StringLiteral resemblingEscape("x%1A");
+  constexpr llvm::StringLiteral prime("101");
+  llvm::StringRef placeholderField(withPlaceholder, sizeof(withPlaceholder));
+  Field::addField(placeholderField, prime, nullptr);
+  Field::addField(resemblingEscape, prime, nullptr);
+
+  auto shortString = [&](llvm::StringRef field) {
+    return BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::APInt(7, 35), field));
+  };
+
+  EXPECT_EQ("f<35:4:x%1A>", shortString(placeholderField));
+  EXPECT_EQ("f<35:6:x%251A>", shortString(resemblingEscape));
+}
+
+TEST_F(TypeTests, testShortStringEscapesReservedRawNameBytes) {
+  constexpr char withPlaceholders[] = {'T', '\x1A', '\x1A'};
+  llvm::StringRef placeholderName(withPlaceholders, sizeof(withPlaceholders));
+  IntegerAttr value = IntegerAttr::get(IndexType::get(&ctx), 35);
+
+  EXPECT_EQ(
+      "T%1A%1A_35", BuildShortTypeString::fromRawName(placeholderName, ArrayRef<Attribute> {value})
+  );
+  EXPECT_EQ("T%251A_35", BuildShortTypeString::fromRawName("T%1A", ArrayRef<Attribute> {value}));
+}
+
+TEST_F(TypeTests, testShortStringEscapesReservedNestedSymbolBytes) {
+  constexpr char withPlaceholder[] = {'S', '\x1A'};
+  llvm::StringRef placeholderName(withPlaceholder, sizeof(withPlaceholder));
+
+  auto shortString = [&](llvm::StringRef symbol) {
+    return BuildShortTypeString::from(
+        TypeAttr::get(StructType::get(FlatSymbolRefAttr::get(&ctx, symbol)))
+    );
+  };
+
+  EXPECT_EQ("!s<@S%1A>", shortString(placeholderName));
+  EXPECT_EQ("!s<@S%251A>", shortString("S%1A"));
+}
+
 TEST_F(TypeTests, testShortStringWithPartials) {
   auto symA = FlatSymbolRefAttr::get(&ctx, "A");
   auto symB = FlatSymbolRefAttr::get(&ctx, "B");

@@ -44,6 +44,22 @@ using namespace polymorphic;
 using namespace string;
 using namespace pod;
 
+std::string BuildShortTypeString::escapeSpecialCharacters(StringRef value) {
+  std::string encoded;
+  for (char c : value) {
+    if (c == PLACEHOLDER || c == '%') {
+      constexpr char HEX[] = "0123456789ABCDEF";
+      unsigned char byte = static_cast<unsigned char>(c);
+      encoded.push_back('%');
+      encoded.push_back(HEX[byte >> 4]);
+      encoded.push_back(HEX[byte & 0x0F]);
+    } else {
+      encoded.push_back(c);
+    }
+  }
+  return encoded;
+}
+
 /// Template pattern for performing some operation by cases based on a given LLZK type. This
 /// pattern allows any missing cases in a new implementation to be reported by the compiler.
 template <typename Derived, typename ResultType> struct LLZKTypeSwitch {
@@ -85,7 +101,7 @@ void BuildShortTypeString::appendSymName(StringRef str) {
   if (str.empty()) {
     ss << '?';
   } else {
-    ss << '@' << str;
+    ss << '@' << escapeSpecialCharacters(str);
   }
 }
 
@@ -167,9 +183,11 @@ BuildShortTypeString &BuildShortTypeString::append(Attribute a) {
     ss << "f<";
     fa.getValue().print(ss, false);
     if (StringAttr fieldName = fa.getFieldName()) {
-      // Field names may contain the delimiters used by this compact representation. Include the
-      // byte length so adjacent parameters cannot produce the same instantiation name.
-      ss << ':' << fieldName.getValue().size() << ':' << fieldName.getValue();
+      // Field names may contain both delimiters and the partial-instantiation placeholder. Escape
+      // the placeholder and escape marker, then include the encoded byte length so adjacent
+      // parameters cannot produce the same instantiation name.
+      std::string encodedField = escapeSpecialCharacters(fieldName.getValue());
+      ss << ':' << encodedField.size() << ':' << encodedField;
     }
     ss << '>';
   } else if (auto sra = llvm::dyn_cast<SymbolRefAttr>(a)) {
@@ -229,6 +247,10 @@ std::string BuildShortTypeString::from(const std::string &base, ArrayRef<Attribu
   }
 
   return bldr.ret;
+}
+
+std::string BuildShortTypeString::fromRawName(StringRef base, ArrayRef<Attribute> attrs) {
+  return from(escapeSpecialCharacters(base), attrs);
 }
 
 namespace {

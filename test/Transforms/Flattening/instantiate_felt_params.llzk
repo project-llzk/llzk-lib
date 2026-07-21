@@ -1,0 +1,104 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @Num
+    poly.param @Ty : !poly.tvar<@Ty>
+
+    function.def @compute() -> !poly.tvar<@Ty> {
+      %0 = poly.read_const @Num : !poly.tvar<@Ty>
+      function.return %0 : !poly.tvar<@Ty>
+    }
+  }
+
+  function.def @main() -> !felt.type<"bn128"> {
+    %0 = function.call @T::@compute<[#felt<const 35 : !felt.type<"bn128">>, !felt.type<"bn128">]>()
+      : () -> !felt.type<"bn128">
+    function.return %0 : !felt.type<"bn128">
+  }
+}
+
+// CHECK-LABEL: function.def @"T_f<35:5:bn128>_f_compute"() -> !felt.type<"bn128"> {
+// CHECK-NEXT:    %[[VALUE:[0-9a-zA-Z_\.]+]] = felt.const{{ +}}35 : <"bn128">
+// CHECK-NEXT:    function.return %[[VALUE]] : !felt.type<"bn128">
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: function.def @main() -> !felt.type<"bn128"> {
+// CHECK-NEXT:    %[[VALUE:[0-9a-zA-Z_\.]+]] = function.call @"T_f<35:5:bn128>_f_compute"() : () -> !felt.type<"bn128">
+// CHECK-NEXT:    function.return %[[VALUE]] : !felt.type<"bn128">
+// CHECK-NEXT:  }
+// -----
+
+module attributes {
+  llzk.lang,
+  llzk.fields = #felt.field<"x\1A", 101>,
+  llzk.main = !struct.type<@T::@S<[#felt<const 35 : !felt.type<"x\1A">>]>>
+} {
+  poly.template @T {
+    poly.param @N
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : <@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {
+// CHECK-SAME: llzk.main = !struct.type<@"T_f<35:4:x%1A>_S">
+// CHECK: struct.def @"T_f<35:4:x%1A>_S" {
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @N : !felt.type<"bn128">
+    function.def @compute() -> !felt.type<"bn128"> {
+      %n = poly.read_const @N : !felt.type<"bn128">
+      function.return %n : !felt.type<"bn128">
+    }
+  }
+
+  function.def @"T_f<35:5:bn128>_compute"() -> !felt.type<"bn128"> {
+    %wrong = felt.const 99 : !felt.type<"bn128">
+    function.return %wrong : !felt.type<"bn128">
+  }
+
+  function.def @main() -> !felt.type<"bn128"> {
+    %got = function.call @T::@compute<[#felt<const 35 : !felt.type<"bn128">>]>()
+      : () -> !felt.type<"bn128">
+    %got_again = function.call @T::@compute<[#felt<const 35 : !felt.type<"bn128">>]>()
+      : () -> !felt.type<"bn128">
+    function.return %got_again : !felt.type<"bn128">
+  }
+}
+
+// CHECK: felt.const 35 : <"bn128">
+// CHECK: felt.const 99 : <"bn128">
+// CHECK-LABEL: function.def @main() -> !felt.type<"bn128"> {
+// CHECK-NOT: function.call @"T_f<35:5:bn128>_compute"()
+// CHECK: function.call @"[[FULL_CLONE:T_f<35:5:bn128>_compute_[0-9]+]]"()
+// CHECK-NEXT: function.call @"[[FULL_CLONE]]"()
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @"T\1A\1A" {
+    poly.param @N : index
+    function.def @f() -> index {
+      %n = poly.read_const @N : index
+      function.return %n : index
+    }
+  }
+
+  function.def @main() -> index {
+    %n = function.call @"T\1A\1A"::@f<[35]>() : () -> index
+    function.return %n : index
+  }
+}
+
+// CHECK-LABEL: function.def @"T%1A%1A_35_f"() -> index {
+// CHECK-LABEL: function.def @main() -> index {
+// CHECK: function.call @"T%1A%1A_35_f"()
