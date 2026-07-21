@@ -2759,6 +2759,61 @@ static LogicalResult instantiateConcreteStructUses(ModuleOp module) {
   return convertOperationTypesIn(module.getOperation(), converter);
 }
 
+/// Return the template that owns the function or struct targeted by `contract`.
+static TemplateOp
+getContractTargetTemplate(verif::ContractOp contract, SymbolTableCollection &tables) {
+  if (FailureOr<SymbolLookupResult<FuncDefOp>> funcTarget = contract.getFuncTarget(tables);
+      succeeded(funcTarget)) {
+    return getParentOfType<TemplateOp>(funcTarget->get().getOperation());
+  }
+  if (FailureOr<SymbolLookupResult<StructDefOp>> structTarget = contract.getStructTarget(tables);
+      succeeded(structTarget)) {
+    return getParentOfType<TemplateOp>(structTarget->get().getOperation());
+  }
+  return {};
+}
+
+/// Rewrite external contracts that target callables or structs inside rewritten templates.
+///
+/// A contract can be physically outside the `poly.template` whose parameters it
+/// references through its target signature. Template-body conversion does not
+/// visit those contracts, so apply the target template's converter here before
+/// resolved parameters are erased.
+static LogicalResult updateExternalContractTemplateParams(
+    ModuleOp module, DenseMap<Operation *, const TypeVarReplacementConverter *> &converters
+) {
+  bool failedConversion = false;
+  SymbolTableCollection tables;
+  module.walk([&](verif::ContractOp contract) {
+    if (failedConversion) {
+      return;
+    }
+    TemplateOp targetTemplate = getContractTargetTemplate(contract, tables);
+    if (!targetTemplate) {
+      return;
+    }
+    if (getParentOfType<TemplateOp>(contract.getOperation()) == targetTemplate) {
+      return;
+    }
+    const TypeVarReplacementConverter *converter = converters.lookup(targetTemplate.getOperation());
+    if (!converter) {
+      return;
+    }
+
+    WalkResult validationResult = contract.walk([converter](Operation *op) {
+      return failed(converter->validateOperation(op)) ? WalkResult::interrupt()
+                                                      : WalkResult::advance();
+    });
+    if (validationResult.wasInterrupted() ||
+        failed(convertOperationTypesIn(contract.getOperation(), *converter))) {
+      failedConversion = true;
+      return;
+    }
+    removeIdentityCasts(contract.getOperation());
+  });
+  return failure(failedConversion);
+}
+
 /// Specialize calls/includes to template-local callables with concrete tvar instantiations.
 ///
 /// This intentionally handles only fully-concrete explicit call-site type
@@ -3306,6 +3361,11 @@ private:
         return;
       }
       removeIdentityCasts(info->templateOp.getOperation());
+    }
+
+    if (failed(updateExternalContractTemplateParams(module, convertersByTemplate))) {
+      signalPassFailure();
+      return;
     }
 
     // Calls that still target rewritten templates are updated after all target

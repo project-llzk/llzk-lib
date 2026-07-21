@@ -1,0 +1,78 @@
+// RUN: llzk-opt -split-input-file -llzk-infer-tvar %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  poly.template @TExternalFunctionContract {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @f(%arg: !poly.tvar<@T>) {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      function.return
+    }
+  }
+
+  verif.contract @C for @TExternalFunctionContract::@f (%arg: !poly.tvar<@T>) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TExternalFunctionContract {
+// CHECK-NEXT:      function.def @f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @C for @TExternalFunctionContract::@f (%[[VAL_1:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      verif.ensure_compute %[[VAL_2]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TExternalStructContract {
+    poly.param @T : !poly.tvar<@T>
+
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@T>
+
+      function.def @compute(%arg: !poly.tvar<@T>) -> !struct.type<@TExternalStructContract::@Box<[@T]>> {
+        %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+        %self = struct.new : <@TExternalStructContract::@Box<[@T]>>
+        struct.writem %self[@value] = %index : <@TExternalStructContract::@Box<[@T]>>, index
+        function.return %self : !struct.type<@TExternalStructContract::@Box<[@T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TExternalStructContract::@Box<[@T]>>, %arg: !poly.tvar<@T>) {
+        %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+        function.return
+      }
+    }
+  }
+
+  verif.contract @C for @TExternalStructContract::@Box (
+      %self: !struct.type<@TExternalStructContract::@Box<[@T]>>, %arg: !poly.tvar<@T>
+  ) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TExternalStructContract {
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        struct.member @value : index
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@TExternalStructContract::@Box> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TExternalStructContract::@Box>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@value] = %[[VAL_0]] : <@TExternalStructContract::@Box>, index
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TExternalStructContract::@Box>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TExternalStructContract::@Box>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @C for @TExternalStructContract::@Box (%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@TExternalStructContract::@Box>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      verif.ensure_compute %[[VAL_6]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
