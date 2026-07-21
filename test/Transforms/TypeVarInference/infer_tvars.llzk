@@ -1443,3 +1443,41 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_6]] : !struct.type<@TStructCloneNameCollision::@i_Box_0<[index]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T1 {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @N
+    poly.expr @M {
+      %n = poly.read_const @N : !poly.tvar<@T>
+      %n_felt = poly.unifiable_cast %n : (!poly.tvar<@T>) -> !felt.type
+      poly.yield %n_felt : !felt.type
+    }
+    function.def @compute() -> !felt.type {
+      %m = poly.read_const @M : !felt.type
+      function.return %m : !felt.type
+    }
+  }
+  function.def @call_compute() -> !felt.type {
+    %0 = function.call @T1::@compute<[!felt.type, 7]>() : () -> !felt.type
+    function.return %0 : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @T1 {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.expr @M {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
+// CHECK-NEXT:        poly.yield %[[VAL_0]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @compute() -> !felt.type {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @M : !felt.type
+// CHECK-NEXT:        function.return %[[VAL_1]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_compute() -> !felt.type {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @T1::@compute<[7]>() : () -> !felt.type
+// CHECK-NEXT:      function.return %[[VAL_2]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

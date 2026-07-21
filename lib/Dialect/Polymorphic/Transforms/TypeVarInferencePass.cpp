@@ -16,8 +16,8 @@
 /// type mentions a template type variable and a value whose type is concrete.
 ///
 /// For each `poly.template`, the pass:
-///   1. Collects concrete type inferences for `poly.param` definitions of the
-///      form `poly.param @T : !poly.tvar<@T>`.
+///   1. Collects concrete type inferences from function and `poly.expr` bodies
+///      for `poly.param` definitions of the form `poly.param @T : !poly.tvar<@T>`.
 ///   2. Rejects conflicting inferences for the same template parameter or the
 ///      same SSA value.
 ///   3. Rewrites function signatures, body value types, and type-bearing
@@ -41,6 +41,7 @@
 #include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/SymbolTableLLZK.h"
 #include "llzk/Util/TypeHelper.h"
+#include "llzk/Util/Walk.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/PatternMatch.h>
@@ -52,6 +53,7 @@
 #include <llvm/Support/raw_ostream.h>
 
 #include <memory>
+#include <vector>
 
 // Include the generated base pass class definitions.
 namespace llzk::polymorphic {
@@ -775,13 +777,10 @@ static LogicalResult convertOperationTypesIn(Operation *root, ConverterT &conver
 /// `!array.type<4 x index> -> !array.type<4 x index>`. Such casts no longer
 /// carry information and can be replaced with their input value.
 static void removeIdentityCasts(Operation *root) {
-  SmallVector<UnifiableCastOp> erase;
-  root->walk([&erase](UnifiableCastOp castOp) {
-    if (castOp.getInput().getType() == castOp.getResult().getType()) {
-      erase.push_back(castOp);
+  for (UnifiableCastOp castOp : walkCollect<UnifiableCastOp>(*root)) {
+    if (castOp.getInput().getType() != castOp.getResult().getType()) {
+      continue;
     }
-  });
-  for (UnifiableCastOp castOp : erase) {
     castOp.getResult().replaceAllUsesWith(castOp.getInput());
     castOp.erase();
   }
@@ -1067,6 +1066,8 @@ struct TemplateInferenceInfo {
   DenseMap<StringAttr, TemplateParamOp> typeVarParams;
   /// Concrete replacement type inferred for each eligible type variable.
   DenseMap<StringAttr, InferredType> replacements;
+  /// Template-scope concrete replacements proven by `poly.expr` bodies.
+  DenseMap<StringAttr, InferredType> templateScopeReplacements;
   /// Function-local concrete replacements before the template-wide safety merge.
   DenseMap<Operation *, DenseMap<StringAttr, InferredType>> functionReplacements;
 };
@@ -1168,6 +1169,14 @@ static bool funcMentionsParam(FuncDefOp func, StringAttr paramName) {
   return result.wasInterrupted();
 }
 
+/// Return whether a `poly.expr` body mentions an eligible type-variable parameter.
+static bool exprMentionsParam(TemplateExprOp expr, StringAttr paramName) {
+  WalkResult result = expr.walk([paramName](Operation *op) {
+    return operationMentionsParam(op, paramName) ? WalkResult::interrupt() : WalkResult::advance();
+  });
+  return result.wasInterrupted();
+}
+
 /// Return whether a struct's non-function mentions are covered by its own
 /// structural function proofs.
 static bool structUseCoveredByFunctionProof(
@@ -1207,8 +1216,8 @@ static bool hasUncoveredNonFunctionMention(
 ) {
   WalkResult result =
       templateOp.walk([paramName, replacementType, &functionReplacements](Operation *op) {
-    if (llvm::isa<FuncDefOp, TemplateParamOp, verif::ContractOp>(op) ||
-        op->getParentOfType<FuncDefOp>() || op->getParentOfType<verif::ContractOp>()) {
+    if (llvm::isa<FuncDefOp, TemplateExprOp, TemplateParamOp, verif::ContractOp>(op) ||
+        hasParentThatIsa<FuncDefOp, TemplateExprOp, verif::ContractOp>(op)) {
       return WalkResult::advance();
     }
     if (!operationMentionsParam(op, paramName)) {
@@ -2714,21 +2723,20 @@ static LogicalResult collectContractTargetFunctionInferences(
 
 /// Recompute the template-wide replacements from the per-function proofs.
 ///
-/// A replacement becomes template-wide only when every function that mentions
-/// the parameter proves the same concrete type and every non-function
+/// Template-scope proofs from `poly.expr` bodies constrain every instantiation
+/// of the template, so they are always template-wide. A replacement proven only
+/// by function bodies becomes template-wide only when every function that
+/// mentions the parameter proves the same concrete type and every non-function
 /// type-bearing operation is either covered by a structural function proof or
 /// absent. Uncovered non-function uses cannot be cloned per call, so they force
 /// the replacement to remain function-local.
-static void recomputeTemplateWideReplacements(TemplateInferenceInfo &info) {
-  SmallVector<FuncDefOp> funcs;
-  info.templateOp.walk([&funcs](FuncDefOp func) { funcs.push_back(func); });
-
+static LogicalResult recomputeTemplateWideReplacements(TemplateInferenceInfo &info) {
   DenseMap<StringAttr, unsigned> mentionCounts;
   DenseMap<StringAttr, unsigned> proofCounts;
   DenseMap<StringAttr, InferredType> commonReplacements;
   DenseSet<StringAttr> incompatibleReplacements;
 
-  for (FuncDefOp func : funcs) {
+  for (FuncDefOp func : walkCollect<FuncDefOp>(info.templateOp)) {
     for (const auto &entry : info.typeVarParams) {
       if (funcMentionsParam(func, entry.first)) {
         ++mentionCounts[entry.first];
@@ -2750,9 +2758,32 @@ static void recomputeTemplateWideReplacements(TemplateInferenceInfo &info) {
     }
   }
 
-  info.replacements.clear();
+  for (TemplateExprOp expr : walkCollect<TemplateExprOp>(info.templateOp)) {
+    for (const auto &entry : info.typeVarParams) {
+      if (exprMentionsParam(expr, entry.first)) {
+        ++mentionCounts[entry.first];
+      }
+    }
+  }
+
+  info.replacements = info.templateScopeReplacements;
+  for (const auto &entry : info.templateScopeReplacements) {
+    auto commonIt = commonReplacements.find(entry.first);
+    if (commonIt != commonReplacements.end() && commonIt->second.type != entry.second.type) {
+      InFlightDiagnostic diag = emitError(entry.second.loc)
+                                << "conflicting inferred type for template parameter @"
+                                << entry.first.getValue() << ": " << commonIt->second.type << " vs "
+                                << entry.second.type;
+      diag.attachNote(commonIt->second.loc) << "previous function-local inference here";
+      return diag;
+    }
+  }
+
   for (const auto &entry : commonReplacements) {
     StringAttr paramName = entry.first;
+    if (info.replacements.contains(paramName)) {
+      continue;
+    }
     if (!hasUncoveredNonFunctionMention(
             info.templateOp, paramName, entry.second.type, info.functionReplacements
         ) &&
@@ -2761,6 +2792,7 @@ static void recomputeTemplateWideReplacements(TemplateInferenceInfo &info) {
       info.replacements.try_emplace(paramName, entry.second);
     }
   }
+  return success();
 }
 
 /// Infer type-variable replacements from struct type arguments whose target
@@ -2774,10 +2806,7 @@ static LogicalResult inferStructTemplateParamUses(
     changed = false;
     SymbolTableCollection tables;
     for (TemplateInferenceInfo &info : templateInfos) {
-      SmallVector<FuncDefOp> funcs;
-      info.templateOp.walk([&funcs](FuncDefOp func) { funcs.push_back(func); });
-
-      for (FuncDefOp func : funcs) {
+      for (FuncDefOp func : walkCollect<FuncDefOp>(info.templateOp)) {
         DenseMap<StringAttr, InferredType> funcReplacements;
         auto funcIt = info.functionReplacements.find(func.getOperation());
         if (funcIt != info.functionReplacements.end()) {
@@ -2803,11 +2832,7 @@ static LogicalResult inferStructTemplateParamUses(
         }
       }
 
-      SmallVector<verif::ContractOp> contracts;
-      info.templateOp.walk([&contracts](verif::ContractOp contract) {
-        contracts.push_back(contract);
-      });
-      for (verif::ContractOp contract : contracts) {
+      for (verif::ContractOp contract : walkCollect<verif::ContractOp>(info.templateOp)) {
         if (failed(collectContractTargetFunctionInferences(
                 info, contract, module, &infoByTemplate, tables, changed
             ))) {
@@ -2815,8 +2840,27 @@ static LogicalResult inferStructTemplateParamUses(
         }
       }
 
+      for (TemplateExprOp expr : walkCollect<TemplateExprOp>(info.templateOp)) {
+        DenseMap<StringAttr, InferredType> oldTemplateScopeReplacements =
+            info.templateScopeReplacements;
+
+        TypeVarInferenceCollector collector(info, info.templateScopeReplacements);
+        if (failed(collector.collect(expr.getOperation())) ||
+            failed(collector.collectStructTemplateParamInferences(
+                expr.getOperation(), module, infoByTemplate, tables
+            ))) {
+          return failure();
+        }
+
+        if (!sameReplacementTypes(oldTemplateScopeReplacements, info.templateScopeReplacements)) {
+          changed = true;
+        }
+      }
+
       DenseMap<StringAttr, InferredType> oldReplacements = info.replacements;
-      recomputeTemplateWideReplacements(info);
+      if (failed(recomputeTemplateWideReplacements(info))) {
+        return failure();
+      }
       if (!sameReplacementTypes(oldReplacements, info.replacements)) {
         changed = true;
       }
@@ -2829,9 +2873,9 @@ static LogicalResult inferStructTemplateParamUses(
 ///
 /// The function records the original template parameter order before any
 /// rewrites, identifies eligible type-variable parameters, and collects concrete
-/// replacements only when every function that mentions a parameter proves the
-/// same replacement. This preserves per-call instantiation for sibling entry
-/// points that remain unconstrained.
+/// replacements. Function-local proofs are kept local unless every relevant
+/// function agrees, while proofs from `poly.expr` bodies become template-scope
+/// constraints.
 static FailureOr<TemplateInferenceInfo> buildInfo(TemplateOp templateOp) {
   TemplateInferenceInfo info;
   info.templateOp = templateOp;
@@ -2849,10 +2893,7 @@ static FailureOr<TemplateInferenceInfo> buildInfo(TemplateOp templateOp) {
     }
   }
 
-  SmallVector<FuncDefOp> funcs;
-  templateOp.walk([&funcs](FuncDefOp func) { funcs.push_back(func); });
-
-  for (FuncDefOp func : funcs) {
+  for (FuncDefOp func : walkCollect<FuncDefOp>(templateOp)) {
     DenseMap<StringAttr, InferredType> funcReplacements;
     if (failed(TypeVarInferenceCollector(info, funcReplacements).collect(func.getOperation()))) {
       return failure();
@@ -2862,12 +2903,17 @@ static FailureOr<TemplateInferenceInfo> buildInfo(TemplateOp templateOp) {
     }
   }
 
-  SymbolTableCollection tables;
-  SmallVector<verif::ContractOp> contracts;
-  templateOp.walk([&contracts](verif::ContractOp contract) { contracts.push_back(contract); });
+  for (TemplateExprOp expr : walkCollect<TemplateExprOp>(templateOp)) {
+    if (failed(TypeVarInferenceCollector(info, info.templateScopeReplacements)
+                   .collect(expr.getOperation()))) {
+      return failure();
+    }
+  }
+
   bool changed = false;
+  SymbolTableCollection tables;
   ModuleOp module = templateOp->getParentOfType<ModuleOp>();
-  for (verif::ContractOp contract : contracts) {
+  for (verif::ContractOp contract : walkCollect<verif::ContractOp>(templateOp)) {
     if (failed(collectContractTargetFunctionInferences(
             info, contract, module, /*infoByTemplate=*/nullptr, tables, changed
         ))) {
@@ -2875,7 +2921,9 @@ static FailureOr<TemplateInferenceInfo> buildInfo(TemplateOp templateOp) {
     }
   }
 
-  recomputeTemplateWideReplacements(info);
+  if (failed(recomputeTemplateWideReplacements(info))) {
+    return failure();
+  }
   return info;
 }
 
@@ -2897,7 +2945,8 @@ private:
 
     // Collect all template-local inferences before mutating IR. Conflicts are
     // reported during collection and abort the pass.
-    SmallVector<TemplateInferenceInfo> templateInfos;
+    // Note: SmallVector doesn't work because the element size is too large.
+    std::vector<TemplateInferenceInfo> templateInfos;
     WalkResult collectResult = module.walk([&templateInfos](TemplateOp templateOp) {
       FailureOr<TemplateInferenceInfo> info = buildInfo(templateOp);
       if (failed(info)) {
