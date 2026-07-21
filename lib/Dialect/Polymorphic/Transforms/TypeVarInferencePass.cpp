@@ -602,27 +602,44 @@ template <typename ConverterT> static bool convertCallCallee(CallOp callOp, Conv
   return false;
 }
 
+/// Return whether `converter` recorded a conversion failure, if it exposes that state.
+template <typename ConverterT> static bool converterFailed(ConverterT &converter) {
+  if constexpr (requires { converter.failed(); }) {
+    return converter.failed();
+  }
+  return false;
+}
+
 /// Convert every type-bearing surface on `op` that can mention an inferred type variable.
 ///
 /// This handles operation results, region block arguments, function signatures, and attributes
 /// containing types. The pass mutates the IR directly because the transformation preserves
 /// operation semantics and only changes already-proven type annotations.
 template <typename ConverterT>
-static bool convertOperationTypes(Operation *op, ConverterT &converter) {
+static FailureOr<bool> convertOperationTypes(Operation *op, ConverterT &converter) {
   if (auto createOp = llvm::dyn_cast<CreateArrayOp>(op)) {
     ArrayType oldResultTy = createOp.getType();
     auto newResultTy = llvm::dyn_cast<ArrayType>(converter.convertType(oldResultTy));
     auto newElemTy = llvm::dyn_cast<ArrayType>(converter.convertType(oldResultTy.getElementType()));
+    if (converterFailed(converter)) {
+      return failure();
+    }
     if (newResultTy && newElemTy && newResultTy != oldResultTy && !createOp.getElements().empty() &&
         oldResultTy.hasStaticShape()) {
       // Validate every init value in the `array.new` before creating replacement ops to avoid
       // dangling IR if one of the init values is invalid.
       SmallVector<Type> newElementValueTypes;
       newElementValueTypes.reserve(createOp.getElements().size());
-      for (Value element : createOp.getElements()) {
+      for (auto [index, element] : llvm::enumerate(createOp.getElements())) {
         Type newElementValueTy = converter.convertType(element.getType());
+        if (converterFailed(converter)) {
+          return failure();
+        }
         if (newElementValueTy != newElemTy) {
-          return false;
+          createOp.emitError() << "cannot rewrite initialized array.new: initializer " << index
+                               << " converts to " << newElementValueTy << ", but expected "
+                               << newElemTy;
+          return failure();
         }
         newElementValueTypes.push_back(newElementValueTy);
       }
@@ -649,6 +666,9 @@ static bool convertOperationTypes(Operation *op, ConverterT &converter) {
 
   if (auto readOp = llvm::dyn_cast<ReadArrayOp>(op)) {
     Type newResultTy = converter.convertType(readOp.getResult().getType());
+    if (converterFailed(converter)) {
+      return failure();
+    }
     if (auto newArrayTy = llvm::dyn_cast<ArrayType>(newResultTy)) {
       OpBuilder builder(readOp);
       auto extractOp = builder.create<ExtractArrayOp>(
@@ -662,6 +682,9 @@ static bool convertOperationTypes(Operation *op, ConverterT &converter) {
 
   if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(op)) {
     Type newRvalueTy = converter.convertType(writeOp.getRvalue().getType());
+    if (converterFailed(converter)) {
+      return failure();
+    }
     if (llvm::isa<ArrayType>(newRvalueTy)) {
       OpBuilder builder(writeOp);
       builder.create<InsertArrayOp>(
@@ -677,6 +700,9 @@ static bool convertOperationTypes(Operation *op, ConverterT &converter) {
   if (auto func = llvm::dyn_cast<FuncDefOp>(op)) {
     FunctionType oldFuncTy = func.getFunctionType();
     updateFuncSignature(func, converter);
+    if (converterFailed(converter)) {
+      return failure();
+    }
     changed |= oldFuncTy != func.getFunctionType();
   }
 
@@ -684,6 +710,9 @@ static bool convertOperationTypes(Operation *op, ConverterT &converter) {
     for (Block &block : region.getBlocks()) {
       for (BlockArgument arg : block.getArguments()) {
         Type newTy = converter.convertType(arg.getType());
+        if (converterFailed(converter)) {
+          return failure();
+        }
         if (newTy != arg.getType()) {
           arg.setType(newTy);
           changed = true;
@@ -694,6 +723,9 @@ static bool convertOperationTypes(Operation *op, ConverterT &converter) {
 
   for (Value result : op->getResults()) {
     Type newTy = converter.convertType(result.getType());
+    if (converterFailed(converter)) {
+      return failure();
+    }
     if (newTy != result.getType()) {
       result.setType(newTy);
       changed = true;
@@ -702,6 +734,9 @@ static bool convertOperationTypes(Operation *op, ConverterT &converter) {
 
   if (auto callOp = llvm::dyn_cast<CallOp>(op)) {
     changed |= convertCallCallee(callOp, converter);
+    if (converterFailed(converter)) {
+      return failure();
+    }
   }
 
   SmallVector<NamedAttribute> newAttrs;
@@ -709,6 +744,9 @@ static bool convertOperationTypes(Operation *op, ConverterT &converter) {
   newAttrs.reserve(op->getAttrs().size());
   for (NamedAttribute attr : op->getAttrs()) {
     Attribute newAttr = converter.convertAttr(attr.getValue());
+    if (converterFailed(converter)) {
+      return failure();
+    }
     newAttrs.emplace_back(attr.getName(), newAttr);
     attrsChanged |= newAttr != attr.getValue();
   }
@@ -718,6 +756,16 @@ static bool convertOperationTypes(Operation *op, ConverterT &converter) {
   }
 
   return changed;
+}
+
+/// Convert all type-bearing surfaces under `root`, interrupting on the first failure.
+template <typename ConverterT>
+static LogicalResult convertOperationTypesIn(Operation *root, ConverterT &converter) {
+  WalkResult res = root->walk([&converter](Operation *op) {
+    return failed(convertOperationTypes(op, converter)) ? WalkResult::interrupt()
+                                                        : WalkResult::advance();
+  });
+  return res.wasInterrupted() ? failure() : success();
 }
 
 /// Remove `poly.unifiable_cast` operations that became identity casts.
@@ -767,6 +815,8 @@ class ConcreteStructInstantiationConverter {
   DenseMap<StructType, StructType> activeLocalStructReplacements_;
   /// Type replacements active while rewriting the body of one cloned struct.
   DenseMap<StringAttr, Type> activeTypeReplacements_;
+  /// Whether a nested conversion failed and emitted a diagnostic.
+  bool failed_ = false;
 
 public:
   /// Create a converter for concrete struct instantiations in `module`.
@@ -775,9 +825,12 @@ public:
   )
       : ctx_(ctx), module_(module), tables_(tables) {}
 
+  /// Return whether a nested conversion failed and emitted a diagnostic.
+  bool failed() const { return failed_; }
+
   /// Convert a type by recursively instantiating concrete parameterized structs.
   Type convertType(Type ty) {
-    if (!ty) {
+    if (!ty || failed_) {
       return ty;
     }
     if (auto tvarTy = llvm::dyn_cast<TypeVarType>(ty)) {
@@ -804,7 +857,7 @@ public:
 
   /// Convert an attribute that can contain type references.
   Attribute convertAttr(Attribute attr) {
-    if (!attr) {
+    if (!attr || failed_) {
       return attr;
     }
     if (auto tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
@@ -906,7 +959,11 @@ private:
     }
 
     FailureOr<StructType> cloneTy = getOrCreateStructClone(convertedTy, newParams);
-    return succeeded(cloneTy) ? *cloneTy : convertedTy;
+    if (::failed(cloneTy)) {
+      failed_ = true;
+      return convertedTy;
+    }
+    return *cloneTy;
   }
 
   /// Build the symbol name for a template-local specialized struct clone.
@@ -927,7 +984,7 @@ private:
 
     FailureOr<SymbolLookupResult<StructDefOp>> lookup =
         concreteStructTy.getDefinition(tables_, module_, /*emitError=*/false);
-    if (failed(lookup)) {
+    if (::failed(lookup)) {
       return failure();
     }
 
@@ -982,7 +1039,15 @@ private:
     activeLocalStructReplacements_.try_emplace(
         StructType::get(localTy.getNameRef(), ArrayAttr::get(ctx_, concreteParams)), localTy
     );
-    clone.walk([this](Operation *op) { convertOperationTypes(op, *this); });
+    SymbolRefAttr cloneNameRef = clone.getFullyQualifiedName();
+    if (::failed(convertOperationTypesIn(clone.getOperation(), *this))) {
+      activeLocalStructReplacements_ = std::move(previousLocalStructReplacements);
+      activeTypeReplacements_ = std::move(previousReplacements);
+      instantiations_.erase(concreteStructTy);
+      instantiatedCloneNames_.erase(cloneNameRef);
+      clone.erase();
+      return failure();
+    }
     removeIdentityCasts(clone.getOperation());
     activeLocalStructReplacements_ = std::move(previousLocalStructReplacements);
     activeTypeReplacements_ = std::move(previousReplacements);
@@ -2184,7 +2249,10 @@ static FailureOr<SymbolRefAttr> getOrCreateSpecializedFunctionClone(
       templateOp.getContext(), info.templatePath, info.oldParamOrder, replacements,
       /*trimResolvedParams=*/false
   );
-  clone.walk([&converter](Operation *op) { convertOperationTypes(op, converter); });
+  if (failed(convertOperationTypesIn(clone.getOperation(), converter))) {
+    clone.erase();
+    return failure();
+  }
   removeIdentityCasts(clone.getOperation());
   SymbolRefAttr cloneCallee =
       getTemplateLocalFunctionCloneCallee(originalCallee, clone.getSymNameAttr());
@@ -2528,10 +2596,10 @@ static FailureOr<bool> updateStructTemplateParams(
 }
 
 /// Instantiate concrete parameterized struct types exposed by type-variable inference.
-static void instantiateConcreteStructUses(ModuleOp module) {
+static LogicalResult instantiateConcreteStructUses(ModuleOp module) {
   SymbolTableCollection tables;
   ConcreteStructInstantiationConverter converter(module.getContext(), module, tables);
-  module.walk([&converter](Operation *op) { convertOperationTypes(op, converter); });
+  return convertOperationTypesIn(module.getOperation(), converter);
 }
 
 /// Specialize calls to template functions with concrete tvar instantiations.
@@ -2930,7 +2998,10 @@ private:
         signalPassFailure();
         return;
       }
-      info->templateOp.walk([converter](Operation *op) { convertOperationTypes(op, *converter); });
+      if (failed(convertOperationTypesIn(info->templateOp.getOperation(), *converter))) {
+        signalPassFailure();
+        return;
+      }
       removeIdentityCasts(info->templateOp.getOperation());
     }
 
@@ -2950,7 +3021,10 @@ private:
       signalPassFailure();
       return;
     }
-    instantiateConcreteStructUses(module);
+    if (failed(instantiateConcreteStructUses(module))) {
+      signalPassFailure();
+      return;
+    }
 
     // Erase resolved parameters last; before this point, their original order is
     // still useful for template argument list conversion.
