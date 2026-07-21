@@ -171,7 +171,7 @@ public:
   void recordFullFuncInstantiation(
       Operation *sourceFunc, ArrayAttr concreteParams, StringAttr instantiatedName
   ) {
-    auto [it, inserted] =
+    [[maybe_unused]] auto [it, inserted] =
         fullFuncInstantiations.try_emplace({sourceFunc, concreteParams}, instantiatedName);
     assert((inserted || it->second == instantiatedName) && "instantiation identity is stable");
   }
@@ -185,7 +185,7 @@ public:
   void recordPartialFuncInstantiation(
       Operation *sourceFunc, ArrayAttr concreteParams, TemplateOp instantiatedTemplate
   ) {
-    auto [it, inserted] =
+    [[maybe_unused]] auto [it, inserted] =
         partialFuncInstantiations.try_emplace({sourceFunc, concreteParams}, instantiatedTemplate);
     assert((inserted || it->second == instantiatedTemplate) && "instantiation identity is stable");
     recordGeneratedPartialTemplate(instantiatedTemplate);
