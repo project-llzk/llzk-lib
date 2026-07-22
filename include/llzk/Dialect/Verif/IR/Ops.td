@@ -26,9 +26,7 @@ class VerifDialectOp<string mnemonic, list<Trait> traits = []>
     : Op<VerifDialect, mnemonic, traits>;
 
 class ConditionOp<string mnemonic, list<Trait> traits = []>
-    : VerifDialectOp<mnemonic,
-                     traits#[ConditionOpInterface,
-                             HasAncestor<"::llzk::verif::ContractOp">]> {
+    : VerifDialectOp<mnemonic, traits#[ConditionOpInterface]> {
 
   let arguments = (ins I1:$condition);
   let results = (outs);
@@ -46,12 +44,33 @@ class ConditionOp<string mnemonic, list<Trait> traits = []>
   }];
 }
 
+class ContractConditionOp<string mnemonic, list<Trait> traits = []>
+    : ConditionOp<mnemonic, traits#[HasAncestor<"::llzk::verif::ContractOp">]>;
+
+//===------------------------------------------------------------------===//
+// Struct verification condition operations
+//===------------------------------------------------------------------===//
+
+// def AssertOp : ConditionOp<"assert", []> {
+//   let summary = "An assertion in the target of a contract, derived from one
+//   of "
+//                 "the contract's specifications";
+//   let description = summary;
+// }
+
+// def ProveOp : ConditionOp<"prove", []> {
+//   let summary = "A proof obligation in the target of a contract, derived from
+//   "
+//                 "one of the contract's specifications";
+//   let description = summary;
+// }
+
 //===------------------------------------------------------------------===//
 // Precondition operations
 //===------------------------------------------------------------------===//
 
 class RequireOpBase<string mnemonic, list<Trait> traits = []>
-    : ConditionOp<mnemonic, traits#[PreconditionOpInterface]> {
+    : ContractConditionOp<mnemonic, traits#[PreconditionOpInterface]> {
   let description = [{
     Base of an operation that encodes a precondition.
 
@@ -75,7 +94,7 @@ def RequireConstrainOp : RequireOpBase<"require_constrain"> {
 //===------------------------------------------------------------------===//
 
 class EnsureOpBase<string mnemonic, list<Trait> traits = []>
-    : ConditionOp<mnemonic, traits#[PostconditionOpInterface]>;
+    : ContractConditionOp<mnemonic, traits#[PostconditionOpInterface]>;
 
 def EnsureComputeOp : EnsureOpBase<"ensure_compute"> {
   let summary = "witness computation postcondition";
