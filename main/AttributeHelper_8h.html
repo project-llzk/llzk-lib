@@ -114,15 +114,17 @@ $(function(){initNavTree('AttributeHelper_8h.html','',''); });
 <div class="textblock"><code>#include &quot;<a class="el" href="StreamHelper_8h_source.html">llzk/Util/StreamHelper.h</a>&quot;</code><br />
 <code>#include &lt;mlir/IR/DialectImplementation.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/APInt.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/Hashing.h&gt;</code><br />
+<code>#include &lt;utility&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for AttributeHelper.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="AttributeHelper_8h__incl.svg" width="612" height="207"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="AttributeHelper_8h__incl.svg" width="871" height="207"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="AttributeHelper_8h__dep__incl.svg" width="7080" height="907"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="AttributeHelper_8h__dep__incl.svg" width="6799" height="628"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="AttributeHelper_8h_source.html">Go to the source code of this file.</a></p>
@@ -130,6 +132,8 @@ This graph shows which files directly or indirectly include this file:</div>
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:mlir_3A_3AFieldParser_3C_20llvm_3A_3AAPInt_20_3E" id="r_mlir_3A_3AFieldParser_3C_20llvm_3A_3AAPInt_20_3E"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmlir_1_1FieldParser_3_01llvm_1_1APInt_01_4.html">mlir::FieldParser&lt; llvm::APInt &gt;</a></td></tr>
+<tr class="memitem:llzk_3A_3AAPIntValue" id="r_llzk_3A_3AAPIntValue"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1APIntValue.html">llzk::APIntValue</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Storage key for APInts whose numeric value is independent of bit width.  <a href="classllzk_1_1APIntValue.html#details">More...</a><br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
 Namespaces</h2></td></tr>
@@ -137,6 +141,7 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:a727e2234b62c3fd5538d2e09c3a3f5ba" id="r_a727e2234b62c3fd5538d2e09c3a3f5ba"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1APIntValue.html">APIntValue</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a727e2234b62c3fd5538d2e09c3a3f5ba">llzk::parseAPIntValue</a> (mlir::AsmParser &amp;parser)</td></tr>
 <tr class="memitem:a39859e51fc665588ce50b49754e871cd" id="r_a39859e51fc665588ce50b49754e871cd"><td class="memItemLeft" align="right" valign="top">llvm::APInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a39859e51fc665588ce50b49754e871cd">llzk::toAPInt</a> (int64_t i)</td></tr>
 <tr class="memitem:ab58b991633496850e1ed92acd413908d" id="r_ab58b991633496850e1ed92acd413908d"><td class="memItemLeft" align="right" valign="top">int64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#ab58b991633496850e1ed92acd413908d">llzk::fromAPInt</a> (const llvm::APInt &amp;i)</td></tr>
 <tr class="memitem:a5a58995f554b579f9f32b1454376fa38" id="r_a5a58995f554b579f9f32b1454376fa38"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a5a58995f554b579f9f32b1454376fa38">llzk::isNullOrEmpty</a> (mlir::ArrayAttr a)</td></tr>

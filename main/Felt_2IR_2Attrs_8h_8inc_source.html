@@ -138,51 +138,53 @@ $(function(){initNavTree('Felt_2IR_2Attrs_8h_8inc_source.html','',''); });
 <div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  ::mlir::StringAttr getFieldName() <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral name = <span class="stringliteral">&quot;felt.const&quot;</span>;</div>
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral dialectName = <span class="stringliteral">&quot;felt&quot;</span>;</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  <span class="keyword">static</span> FeltConstAttr get(::mlir::MLIRContext *context, ::llvm::APInt value, FeltType type);</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  <span class="keyword">static</span> FeltConstAttr get(::mlir::MLIRContext *context, <span class="keywordtype">unsigned</span> numBits, ::llvm::StringRef str, FeltType ty);</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <span class="keyword">static</span> FeltConstAttr get(::mlir::MLIRContext *context, <span class="keywordtype">unsigned</span> numBits, ::llvm::ArrayRef&lt;uint64_t&gt; parts, FeltType ty);</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="keyword">static</span> FeltConstAttr get(::mlir::MLIRContext *context, ::llvm::APInt value);</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keyword">static</span> FeltConstAttr get(::mlir::MLIRContext *context, <span class="keywordtype">unsigned</span> numBits, ::llvm::StringRef str);</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keyword">static</span> FeltConstAttr get(::mlir::MLIRContext *context, <span class="keywordtype">unsigned</span> numBits, ::llvm::ArrayRef&lt;uint64_t&gt; parts);</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keyword">static</span> FeltConstAttr get(::mlir::MLIRContext *context, ::llvm::APInt value, ::llvm::StringRef fieldName);</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="keyword">static</span> FeltConstAttr get(::mlir::MLIRContext *context, <span class="keywordtype">unsigned</span> numBits, ::llvm::StringRef str, ::llvm::StringRef fieldName);</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keyword">static</span> FeltConstAttr get(::mlir::MLIRContext *context, <span class="keywordtype">unsigned</span> numBits, ::llvm::ArrayRef&lt;uint64_t&gt; parts, ::llvm::StringRef fieldName);</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral getMnemonic() {</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    <span class="keywordflow">return</span> {<span class="stringliteral">&quot;const&quot;</span>};</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  }</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  static ::mlir::Attribute parse(::mlir::AsmParser &amp;odsParser, ::mlir::Type odsType);</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  <span class="keywordtype">void</span> print(::mlir::AsmPrinter &amp;odsPrinter) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  ::llvm::APInt getValue() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  FeltType getType() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>};</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1felt_1_1detail.html">detail</a> {</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span><span class="keyword">struct </span>FieldSpecAttrStorage;</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>} <span class="comment">// namespace detail</span></div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span><span class="keyword">class </span>FieldSpecAttr : <span class="keyword">public</span> ::mlir::Attribute::AttrBase&lt;FieldSpecAttr, ::mlir::Attribute, detail::FieldSpecAttrStorage&gt; {</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keyword">using </span>Base::Base;</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral name = <span class="stringliteral">&quot;felt.field&quot;</span>;</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral dialectName = <span class="stringliteral">&quot;felt&quot;</span>;</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="keyword">static</span> FieldSpecAttr get(::mlir::MLIRContext *context, ::mlir::StringAttr fieldName, ::llvm::APInt prime);</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keyword">static</span> FieldSpecAttr get(::mlir::MLIRContext *context, ::llvm::StringRef fieldName, <span class="keywordtype">unsigned</span> numBits, ::llvm::StringRef primeStr);</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  <span class="keyword">static</span> FieldSpecAttr get(::mlir::MLIRContext *context, ::llvm::StringRef fieldName, <span class="keywordtype">unsigned</span> numBits, ::llvm::ArrayRef&lt;uint64_t&gt; parts);</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral getMnemonic() {</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    <span class="keywordflow">return</span> {<span class="stringliteral">&quot;field&quot;</span>};</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  }</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  static ::mlir::Attribute parse(::mlir::AsmParser &amp;odsParser, ::mlir::Type odsType);</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <span class="keywordtype">void</span> print(::mlir::AsmPrinter &amp;odsPrinter) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  ::mlir::StringAttr getFieldName() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  ::llvm::APInt getPrime() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>};</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>} <span class="comment">// namespace felt</span></div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>} <span class="comment">// namespace llzk</span></div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>MLIR_DECLARE_EXPLICIT_TYPE_ID(::llzk::felt::FeltConstAttr)</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>MLIR_DECLARE_EXPLICIT_TYPE_ID(::llzk::felt::FieldSpecAttr)</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span> </div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span><span class="preprocessor">#endif  </span><span class="comment">// GET_ATTRDEF_CLASSES</span></div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  <span class="keyword">static</span> FeltConstAttr get(::mlir::MLIRContext *context, ::llzk::APIntValue value, FeltType type);</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  <span class="keyword">static</span> FeltConstAttr get(::mlir::MLIRContext *context, ::llvm::APInt value, FeltType ty);</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <span class="keyword">static</span> FeltConstAttr get(::mlir::MLIRContext *context, <span class="keywordtype">unsigned</span> numBits, ::llvm::StringRef str, FeltType ty);</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="keyword">static</span> FeltConstAttr get(::mlir::MLIRContext *context, <span class="keywordtype">unsigned</span> numBits, ::llvm::ArrayRef&lt;uint64_t&gt; parts, FeltType ty);</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keyword">static</span> FeltConstAttr get(::mlir::MLIRContext *context, ::llvm::APInt value);</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keyword">static</span> FeltConstAttr get(::mlir::MLIRContext *context, <span class="keywordtype">unsigned</span> numBits, ::llvm::StringRef str);</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keyword">static</span> FeltConstAttr get(::mlir::MLIRContext *context, <span class="keywordtype">unsigned</span> numBits, ::llvm::ArrayRef&lt;uint64_t&gt; parts);</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="keyword">static</span> FeltConstAttr get(::mlir::MLIRContext *context, ::llvm::APInt value, ::llvm::StringRef fieldName);</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keyword">static</span> FeltConstAttr get(::mlir::MLIRContext *context, <span class="keywordtype">unsigned</span> numBits, ::llvm::StringRef str, ::llvm::StringRef fieldName);</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <span class="keyword">static</span> FeltConstAttr get(::mlir::MLIRContext *context, <span class="keywordtype">unsigned</span> numBits, ::llvm::ArrayRef&lt;uint64_t&gt; parts, ::llvm::StringRef fieldName);</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral getMnemonic() {</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>    <span class="keywordflow">return</span> {<span class="stringliteral">&quot;const&quot;</span>};</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  }</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span> </div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  static ::mlir::Attribute parse(::mlir::AsmParser &amp;odsParser, ::mlir::Type odsType);</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="keywordtype">void</span> print(::mlir::AsmPrinter &amp;odsPrinter) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  const ::llvm::APInt &amp;getValue() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  FeltType getType() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>};</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1felt_1_1detail.html">detail</a> {</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span><span class="keyword">struct </span>FieldSpecAttrStorage;</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>} <span class="comment">// namespace detail</span></div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="keyword">class </span>FieldSpecAttr : <span class="keyword">public</span> ::mlir::Attribute::AttrBase&lt;FieldSpecAttr, ::mlir::Attribute, detail::FieldSpecAttrStorage&gt; {</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keyword">using </span>Base::Base;</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral name = <span class="stringliteral">&quot;felt.field&quot;</span>;</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral dialectName = <span class="stringliteral">&quot;felt&quot;</span>;</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keyword">static</span> FieldSpecAttr get(::mlir::MLIRContext *context, ::mlir::StringAttr fieldName, ::llzk::APIntValue prime);</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  <span class="keyword">static</span> FieldSpecAttr get(::mlir::MLIRContext *context, ::mlir::StringAttr fieldName, ::llvm::APInt prime);</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keyword">static</span> FieldSpecAttr get(::mlir::MLIRContext *context, ::llvm::StringRef fieldName, <span class="keywordtype">unsigned</span> numBits, ::llvm::StringRef primeStr);</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keyword">static</span> FieldSpecAttr get(::mlir::MLIRContext *context, ::llvm::StringRef fieldName, <span class="keywordtype">unsigned</span> numBits, ::llvm::ArrayRef&lt;uint64_t&gt; parts);</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral getMnemonic() {</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    <span class="keywordflow">return</span> {<span class="stringliteral">&quot;field&quot;</span>};</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  }</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  static ::mlir::Attribute parse(::mlir::AsmParser &amp;odsParser, ::mlir::Type odsType);</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="keywordtype">void</span> print(::mlir::AsmPrinter &amp;odsPrinter) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  ::mlir::StringAttr getFieldName() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  const ::llvm::APInt &amp;getPrime() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>};</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>} <span class="comment">// namespace felt</span></div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>MLIR_DECLARE_EXPLICIT_TYPE_ID(::llzk::felt::FeltConstAttr)</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>MLIR_DECLARE_EXPLICIT_TYPE_ID(::llzk::felt::FieldSpecAttr)</div>
 <div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span> </div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span><span class="preprocessor">#endif  </span><span class="comment">// GET_ATTRDEF_CLASSES</span></div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span> </div>
 <div class="ttc" id="anamespacellzk_1_1felt_1_1detail_html"><div class="ttname"><a href="namespacellzk_1_1felt_1_1detail.html">llzk::felt::detail</a></div><div class="ttdef"><b>Definition</b> <a href="Felt_2IR_2OpInterfaces_8h_8inc_source.html#l00012">OpInterfaces.h.inc:12</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1felt_html"><div class="ttname"><a href="namespacellzk_1_1felt.html">llzk::felt</a></div><div class="ttdef"><b>Definition</b> <a href="Felt_2IR_2Attrs_8cpp_source.html#l00014">Attrs.cpp:14</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>

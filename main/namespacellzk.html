@@ -144,6 +144,8 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
+<tr class="memitem:APIntValue" id="r_APIntValue"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1APIntValue.html">APIntValue</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Storage key for APInts whose numeric value is independent of bit width.  <a href="classllzk_1_1APIntValue.html#details">More...</a><br /></td></tr>
 <tr class="memitem:AuxAssignment" id="r_AuxAssignment"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1AuxAssignment.html">AuxAssignment</a></td></tr>
 <tr class="memitem:BaseBuilder" id="r_BaseBuilder"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1BaseBuilder.html">BaseBuilder</a></td></tr>
 <tr class="memitem:BuildShortTypeString" id="r_BuildShortTypeString"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1BuildShortTypeString.html">BuildShortTypeString</a></td></tr>
@@ -555,6 +557,7 @@ Functions</h2></td></tr>
 <tr class="memitem:ae4e8d048536cc8cc728bec99f1f7c0f4" id="r_ae4e8d048536cc8cc728bec99f1f7c0f4"><td class="memTemplParams" colspan="2">template&lt;typename OpTy, typename... Args&gt; </td></tr>
 <tr class="memitem:ae4e8d048536cc8cc728bec99f1f7c0f4 template"><td class="memItemLeft" align="right" valign="top">mlir::Operation *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae4e8d048536cc8cc728bec99f1f7c0f4">create</a> (MlirOpBuilder cBuilder, MlirLocation cLocation, Args &amp;&amp;...args)</td></tr>
 <tr class="memdesc:ae4e8d048536cc8cc728bec99f1f7c0f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a new operation using an ODS build method.  <br /></td></tr>
+<tr class="memitem:a727e2234b62c3fd5538d2e09c3a3f5ba" id="r_a727e2234b62c3fd5538d2e09c3a3f5ba"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1APIntValue.html">APIntValue</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a727e2234b62c3fd5538d2e09c3a3f5ba">parseAPIntValue</a> (mlir::AsmParser &amp;parser)</td></tr>
 <tr class="memitem:a39859e51fc665588ce50b49754e871cd" id="r_a39859e51fc665588ce50b49754e871cd"><td class="memItemLeft" align="right" valign="top">llvm::APInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a39859e51fc665588ce50b49754e871cd">toAPInt</a> (int64_t i)</td></tr>
 <tr class="memitem:ab58b991633496850e1ed92acd413908d" id="r_ab58b991633496850e1ed92acd413908d"><td class="memItemLeft" align="right" valign="top">int64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab58b991633496850e1ed92acd413908d">fromAPInt</a> (const llvm::APInt &amp;i)</td></tr>
 <tr class="memitem:a5a58995f554b579f9f32b1454376fa38" id="r_a5a58995f554b579f9f32b1454376fa38"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5a58995f554b579f9f32b1454376fa38">isNullOrEmpty</a> (mlir::ArrayAttr a)</td></tr>
@@ -1502,7 +1505,7 @@ template&lt;typename OpClass&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00040">40</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00073">73</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -3740,7 +3743,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00034">34</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00067">67</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -5765,7 +5768,7 @@ template&lt;OpComparable Op&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00036">36</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00069">69</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -5792,7 +5795,7 @@ template&lt;OpComparable Op&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00037">37</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00070">70</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -5819,7 +5822,7 @@ template&lt;OpComparable Op&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00038">38</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00071">71</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -7361,6 +7364,33 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a id="a727e2234b62c3fd5538d2e09c3a3f5ba" name="a727e2234b62c3fd5538d2e09c3a3f5ba"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a727e2234b62c3fd5538d2e09c3a3f5ba">&#9670;&#160;</a></span>parseAPIntValue()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1APIntValue.html">APIntValue</a> &gt; llzk::parseAPIntValue </td>
+          <td>(</td>
+          <td class="paramtype">mlir::AsmParser &amp;</td>          <td class="paramname"><span class="paramname"><em>parser</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00058">58</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -9793,7 +9823,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00041">41</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00074">74</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -10126,7 +10156,7 @@ template&lt;&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00033">33</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="AttributeHelper_8h_source.html#l00066">66</a> of file <a class="el" href="AttributeHelper_8h_source.html">AttributeHelper.h</a>.</p>
 
 </div>
 </div>

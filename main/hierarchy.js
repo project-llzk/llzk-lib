@@ -55,6 +55,7 @@ var hierarchy =
       ] ],
       [ "llzk::smt::AndOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1AndOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::APIntValue", "classllzk_1_1APIntValue.html", null ],
     [ "llzk::smt::detail::ApplyFuncOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1ApplyFuncOpGenericAdaptorBase.html", [
       [ "llzk::smt::ApplyFuncOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1ApplyFuncOpGenericAdaptor.html", null ],
       [ "llzk::smt::ApplyFuncOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1ApplyFuncOpGenericAdaptor.html", [

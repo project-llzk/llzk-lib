@@ -2379,7 +2379,7 @@ Parameters:</h4>
 <tr class="markdownTableHead">
 <th class="markdownTableHeadCenter">Parameter  </th><th class="markdownTableHeadCenter">C++ type  </th><th class="markdownTableHeadNone">Description  </th></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyCenter">value  </td><td class="markdownTableBodyCenter"><span class="tt">::llvm::APInt</span>  </td><td class="markdownTableBodyNone">The felt constant value  </td></tr>
+<td class="markdownTableBodyCenter">value  </td><td class="markdownTableBodyCenter"><span class="tt"><a class="el" href="classllzk_1_1APIntValue.html" title="Storage key for APInts whose numeric value is independent of bit width.">llzk::APIntValue</a></span>  </td><td class="markdownTableBodyNone">The felt constant value  </td></tr>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyCenter">type  </td><td class="markdownTableBodyCenter"><span class="tt">FeltType</span>  </td><td class="markdownTableBodyNone"></td></tr>
 </table>
@@ -2405,7 +2405,7 @@ Parameters:</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyCenter">fieldName  </td><td class="markdownTableBodyCenter"><span class="tt">::mlir::StringAttr</span>  </td><td class="markdownTableBodyNone"></td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyCenter">prime  </td><td class="markdownTableBodyCenter"><span class="tt">::llvm::APInt</span>  </td><td class="markdownTableBodyNone">The prime modulus  </td></tr>
+<td class="markdownTableBodyCenter">prime  </td><td class="markdownTableBodyCenter"><span class="tt"><a class="el" href="classllzk_1_1APIntValue.html" title="Storage key for APInts whose numeric value is independent of bit width.">llzk::APIntValue</a></span>  </td><td class="markdownTableBodyNone">The prime modulus  </td></tr>
 </table>
 <h2 class="doxsection"><a class="anchor" id="types-2"></a>
 Types</h2>
@@ -2715,9 +2715,9 @@ LoopBoundsAttr</h3>
 <p>Annotation with the bounds of a loop</p>
 <p>Syntax:</p>
 <div class="fragment"><div class="line">#llzk.loopbounds&lt;</div>
-<div class="line">  ::llvm::APInt,   # lower</div>
-<div class="line">  ::llvm::APInt,   # upper</div>
-<div class="line">  ::llvm::APInt   # step</div>
+<div class="line">  ::llzk::APIntValue,   # lower</div>
+<div class="line">  ::llzk::APIntValue,   # upper</div>
+<div class="line">  ::llzk::APIntValue   # step</div>
 <div class="line">&gt;</div>
 </div><!-- fragment --><p>This attribute holds information useful for the analysis of loops. Holds the bounds of the loop and the step size.</p>
 <p>Example:</p>
@@ -2732,11 +2732,11 @@ Parameters:</h4>
 <tr class="markdownTableHead">
 <th class="markdownTableHeadCenter">Parameter  </th><th class="markdownTableHeadCenter">C++ type  </th><th class="markdownTableHeadNone">Description  </th></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyCenter">lower  </td><td class="markdownTableBodyCenter"><span class="tt">::llvm::APInt</span>  </td><td class="markdownTableBodyNone">Loop variable lower bound (inclusive)  </td></tr>
+<td class="markdownTableBodyCenter">lower  </td><td class="markdownTableBodyCenter"><span class="tt"><a class="el" href="classllzk_1_1APIntValue.html" title="Storage key for APInts whose numeric value is independent of bit width.">llzk::APIntValue</a></span>  </td><td class="markdownTableBodyNone">Loop variable lower bound (inclusive)  </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyCenter">upper  </td><td class="markdownTableBodyCenter"><span class="tt">::llvm::APInt</span>  </td><td class="markdownTableBodyNone">Loop variable upper bound (exclusive)  </td></tr>
+<td class="markdownTableBodyCenter">upper  </td><td class="markdownTableBodyCenter"><span class="tt"><a class="el" href="classllzk_1_1APIntValue.html" title="Storage key for APInts whose numeric value is independent of bit width.">llzk::APIntValue</a></span>  </td><td class="markdownTableBodyNone">Loop variable upper bound (exclusive)  </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyCenter">step  </td><td class="markdownTableBodyCenter"><span class="tt">::llvm::APInt</span>  </td><td class="markdownTableBodyNone">Loop variable step/increment  </td></tr>
+<td class="markdownTableBodyCenter">step  </td><td class="markdownTableBodyCenter"><span class="tt"><a class="el" href="classllzk_1_1APIntValue.html" title="Storage key for APInts whose numeric value is independent of bit width.">llzk::APIntValue</a></span>  </td><td class="markdownTableBodyNone">Loop variable step/increment  </td></tr>
 </table>
 <h3 class="doxsection"><a class="anchor" id="publicattr"></a>
 PublicAttr</h3>

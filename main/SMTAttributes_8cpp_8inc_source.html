@@ -178,7 +178,7 @@ $(function(){initNavTree('SMTAttributes_8cpp_8inc_source.html','',''); });
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  }</div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  <span class="keywordtype">bool</span> operator==(<span class="keyword">const</span> KeyTy &amp;tblgenKey)<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    <span class="keywordflow">return</span> (::llvm::APInt::isSameValue(value, std::get&lt;0&gt;(tblgenKey)));</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    <span class="keywordflow">return</span> (value.getBitWidth() == std::get&lt;0&gt;(tblgenKey).getBitWidth() &amp;&amp; value == std::get&lt;0&gt;(tblgenKey));</div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  }</div>
 <div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span> </div>
 <div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  static ::llvm::hash_code hashKey(<span class="keyword">const</span> KeyTy &amp;tblgenKey) {</div>

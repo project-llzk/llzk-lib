@@ -782,6 +782,7 @@ var annotated_dup =
         [ "StructValue", "structllzk_1_1witgen_1_1StructValue.html", "structllzk_1_1witgen_1_1StructValue" ],
         [ "WitgenOptions", "structllzk_1_1witgen_1_1WitgenOptions.html", "structllzk_1_1witgen_1_1WitgenOptions" ]
       ] ],
+      [ "APIntValue", "classllzk_1_1APIntValue.html", "classllzk_1_1APIntValue" ],
       [ "AuxAssignment", "structllzk_1_1AuxAssignment.html", "structllzk_1_1AuxAssignment" ],
       [ "BaseBuilder", "classllzk_1_1BaseBuilder.html", "classllzk_1_1BaseBuilder" ],
       [ "BuildShortTypeString", "classllzk_1_1BuildShortTypeString.html", null ],
