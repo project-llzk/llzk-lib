@@ -176,6 +176,12 @@ def AssertOp : SMTOp<"assert", []> {
   let assemblyFormat = "$input attr-dict";
 }
 
+def ProveOp : SMTOp<"prove", []> {
+  let summary = "emit a proof obligation for a boolean expression";
+  let arguments = (ins BoolType:$input);
+  let assemblyFormat = "$input attr-dict";
+}
+
 def ResetOp : SMTOp<"reset", []> {
   let summary = "reset the solver";
   let assemblyFormat = "attr-dict";
