@@ -1,0 +1,33 @@
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+    struct.def @A {
+        function.def @product(%x: !felt.type, %y: !felt.type) -> !struct.type<@A> {
+            %self = struct.new : <@A>
+            %ok = bool.cmp lt(%x, %y)
+            verif.assert %ok
+            function.return %self : !struct.type<@A>
+        }
+    }
+
+}
+
+// -----
+
+module attributes {llzk.lang} {
+    struct.def @Sum {
+        struct.member @sum : !felt.type
+        function.def @product(%x: !felt.type, %y: !felt.type) -> !struct.type<@Sum> {
+            %self = struct.new : <@Sum>
+            %sum = felt.add %x, %y
+            struct.writem %self[@sum] = %sum : <@Sum>, !felt.type
+
+            %written_sum = struct.readm %self[@sum] : <@Sum>, !felt.type
+            %required_sum = felt.add %x, %y
+            %ok = bool.cmp eq(%written_sum, %required_sum)
+            verif.prove %ok
+
+            function.return %self : !struct.type<@Sum>
+        }
+    }
+}
