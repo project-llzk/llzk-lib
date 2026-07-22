@@ -115,15 +115,16 @@ FailureOr<TargetTypeInfo> getTargetTypeInfo(Operation *op) {
     };
   }
   if (auto structOp = dyn_cast<StructDefOp>(op)) {
-    if (structOp.hasComputeConstrain()) {
-      auto fnOp = structOp.getConstrainFuncOp();
+    if (FuncDefOp fnOp = structOp.getConstrainFuncOp(); fnOp && structOp.getComputeFuncOp()) {
       return TargetTypeInfo {
           .funcType = fnOp.getFunctionType(),
           .argAttrs = fnOp.getArgAttrsAttr(),
       };
     } else {
       FuncDefOp productFn = structOp.getProductFuncOp();
-      assert(productFn);
+      if (!productFn) {
+        return failure();
+      }
       // Augment the product function signature to accept the self argument.
       FunctionType fnTy = productFn.getFunctionType();
       ArrayRef<Type> curInputs = fnTy.getInputs();
@@ -422,6 +423,12 @@ LogicalResult ContractOp::verifySymbolUses(SymbolTableCollection &tables) {
   }
   FailureOr<TargetTypeInfo> targetInfoRes = getTargetTypeInfo(targetOp);
   if (failed(targetInfoRes)) {
+    // The struct verifier reports malformed struct bodies; avoid cascading diagnostics here.
+    // Returning failure() would actually cause the expected diagnostic from the first failure
+    // to be suppressed, so we return success() to avoid that.
+    if (isa<StructDefOp>(targetOp)) {
+      return success();
+    }
     return emitOpError()
         .append("unsupported target type \"", targetOp->getName(), "\"")
         .attachNote(targetOp->getLoc())

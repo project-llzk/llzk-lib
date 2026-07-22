@@ -1116,3 +1116,21 @@ module attributes {llzk.lang} {
     verif.ensure_compute %1
   }
 }
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TBox {
+    poly.param @T : !poly.tvar<@T>
+
+    // expected-error@+1 {{'struct.def' op must define either only a non-derived "@product" function, or both non-derived "@compute" and "@constrain" functions; could not find "@product", "@compute", or "@constrain"}}
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@T>
+    }
+  }
+
+  verif.contract @C for @TBox::@Box (%self: !struct.type<@TBox::@Box<[index]>>) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
