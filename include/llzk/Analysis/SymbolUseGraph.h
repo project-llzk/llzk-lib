@@ -162,14 +162,15 @@ class SymbolUseGraph {
   );
 
   SymbolUseGraphNode *getSymbolUserNode(const mlir::SymbolTable::SymbolUse &u);
-  void buildGraph(mlir::SymbolOpInterface symbolOp);
+  void buildGraph(mlir::Operation *symbolTableOp);
 
   // Friend declarations for the specializations of GraphTraits
   friend struct llvm::GraphTraits<const llzk::SymbolUseGraph *>;
   friend struct llvm::GraphTraits<llvm::Inverse<const llzk::SymbolUseGraph *>>;
 
 public:
-  SymbolUseGraph(mlir::SymbolOpInterface rootSymbolOp);
+  /// Build a use graph rooted at an operation with the `SymbolTable` trait.
+  SymbolUseGraph(mlir::Operation *rootSymbolTableOp);
 
   /// Return the existing node for the symbol reference relative to the given module, else nullptr.
   const SymbolUseGraphNode *lookupNode(mlir::ModuleOp pathRoot, mlir::SymbolRefAttr path) const;

@@ -13,9 +13,9 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/CallGraphAnalyses.h"
+#include "llzk/Analysis/SymbolUseGraph.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
-#include "llzk/Util/SymbolTableLLZK.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/SymbolTable.h>
@@ -39,10 +39,18 @@ using namespace llzk::function;
 
 namespace {
 
-/// A free function is a `function.def` whose immediate parent is a
-/// `ModuleOp`.
-static bool isFreeFunction(FuncDefOp func) {
-  return llvm::isa_and_nonnull<ModuleOp>(func->getParentOp());
+/// An inlinable free function is a direct child of the module on which the
+/// pass runs. Nested and included modules define separate symbol scopes, so
+/// their functions are left for a pass running on those modules.
+static bool isInlinableFreeFunction(FuncDefOp func, ModuleOp root) {
+  return func->getParentOp() == root;
+}
+
+/// Only inline calls inside `function.def` bodies in the root module's symbol
+/// namespace. Calls in nested modules or other function-like operations (such
+/// as contracts) are outside this pass's scope.
+static bool isInlinableCallSite(CallOp call, ModuleOp root) {
+  return call->getParentOfType<FuncDefOp>() && call->getParentOfType<ModuleOp>() == root;
 }
 
 /// Free functions that participate in a call cycle: inlining one would
@@ -67,14 +75,16 @@ static llvm::DenseSet<Operation *> collectRecursiveFunctions(const llzk::CallGra
 /// Resolve `call`'s callee if it is a non-external, non-skipped free
 /// function; returns null otherwise.
 static FuncDefOp resolveFreeCallee(
-    CallOp call, SymbolTableCollection &tables, const llvm::DenseSet<Operation *> &skippedCallees
+    CallOp call, ModuleOp root, SymbolTableCollection &tables,
+    const llvm::DenseSet<Operation *> &skippedCallees
 ) {
   auto tgtRes = call.getCalleeTarget(tables);
   if (failed(tgtRes)) {
     return nullptr;
   }
   FuncDefOp callee = tgtRes->get();
-  if (!isFreeFunction(callee) || callee.isExternal() || skippedCallees.contains(callee)) {
+  if (!isInlinableFreeFunction(callee, root) || callee.isExternal() ||
+      skippedCallees.contains(callee)) {
     return nullptr;
   }
   return callee;
@@ -93,39 +103,28 @@ static SmallVector<FreeFunctionCall> collectFreeFunctionCalls(
 ) {
   SmallVector<FreeFunctionCall> calls;
   mod.walk([&](CallOp call) {
-    if (FuncDefOp callee = resolveFreeCallee(call, tables, skippedCallees)) {
+    if (!isInlinableCallSite(call, mod)) {
+      return;
+    }
+    if (FuncDefOp callee = resolveFreeCallee(call, mod, tables, skippedCallees)) {
       calls.push_back({call, callee});
     }
   });
   return calls;
 }
 
-/// Collect free functions targeted by calls anywhere in `mod`, including
-/// across nested symbol tables.
-static llvm::DenseSet<Operation *> collectCalledFreeFunctions(ModuleOp mod) {
-  SymbolTableCollection tables;
-  llvm::DenseSet<Operation *> calledFunctions;
-  mod.walk([&](CallOp call) {
-    auto tgtRes = call.getCalleeTarget(tables);
-    if (succeeded(tgtRes) && isFreeFunction(tgtRes->get())) {
-      calledFunctions.insert(tgtRes->get().getOperation());
-    }
-  });
-  return calledFunctions;
-}
-
 /// Collect every non-external free function in `mod` whose symbol has no
-/// remaining uses. Call targets are collected separately because
-/// `symbolKnownUseEmpty` does not traverse nested symbol tables.
+/// remaining uses anywhere in the symbol-use graph, including uses in nested
+/// symbol tables.
 static SmallVector<FuncDefOp> collectUnusedHelpers(ModuleOp mod) {
-  llvm::DenseSet<Operation *> calledFunctions = collectCalledFreeFunctions(mod);
+  SymbolUseGraph useGraph(mod.getOperation());
   SmallVector<FuncDefOp> unusedFunctions;
   for (FuncDefOp func : mod.getOps<FuncDefOp>()) {
-    if (!isFreeFunction(func) || func.isExternal()) {
+    if (func.isExternal()) {
       continue;
     }
-    if (!calledFunctions.contains(func) &&
-        symbolKnownUseEmpty(func.getOperation(), mod.getOperation())) {
+    const SymbolUseGraphNode *node = useGraph.lookupNode(func);
+    if (!node || !node->hasPredecessor()) {
       unusedFunctions.push_back(func);
     }
   }

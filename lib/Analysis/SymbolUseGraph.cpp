@@ -85,9 +85,9 @@ R getPathAndCall(SymbolOpInterface defOp, llvm::function_ref<R(ModuleOp, SymbolR
 
 } // namespace
 
-SymbolUseGraph::SymbolUseGraph(SymbolOpInterface rootSymbolOp) {
-  assert(rootSymbolOp->hasTrait<OpTrait::SymbolTable>());
-  buildGraph(rootSymbolOp);
+SymbolUseGraph::SymbolUseGraph(Operation *rootSymbolTableOp) {
+  assert(rootSymbolTableOp && rootSymbolTableOp->hasTrait<OpTrait::SymbolTable>());
+  buildGraph(rootSymbolTableOp);
 }
 
 /// Get (add if not present) the graph node for the "user" symbol def op.
@@ -102,7 +102,7 @@ SymbolUseGraphNode *SymbolUseGraph::getSymbolUserNode(const SymbolTable::SymbolU
   );
 }
 
-void SymbolUseGraph::buildGraph(SymbolOpInterface symbolOp) {
+void SymbolUseGraph::buildGraph(Operation *symbolTableOp) {
   auto walkFn = [this](Operation *op, bool) {
     assert(op->hasTrait<OpTrait::SymbolTable>());
     FailureOr<ModuleOp> opRootModule = llzk::getRootModule(op);
@@ -145,7 +145,7 @@ void SymbolUseGraph::buildGraph(SymbolOpInterface symbolOp) {
       }
     }
   };
-  SymbolTable::walkSymbolTables(symbolOp.getOperation(), true, walkFn);
+  SymbolTable::walkSymbolTables(symbolTableOp, true, walkFn);
 
   // Find all nodes with no successors and add the tail node as successor.
   for (SymbolUseGraphNode *n : nodesIter()) {
