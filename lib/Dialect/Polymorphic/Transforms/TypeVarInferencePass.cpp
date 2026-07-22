@@ -1150,7 +1150,7 @@ private:
       }
     }
     if (paramNameToConcrete.empty()) {
-      return failure();
+      return concreteStructTy;
     }
 
     InstantiationLayout layout;

@@ -1818,3 +1818,40 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @Sized {
+    poly.param @N : index
+
+    struct.def @Box {
+      struct.member @values : !array.type<@N x index>
+
+      function.def @product(%arg: !array.type<@N x index>) -> !struct.type<@Sized::@Box<[@N]>> attributes {function.allow_constraint, function.allow_witness} {
+        %self = struct.new : !struct.type<@Sized::@Box<[@N]>>
+        struct.writem %self[@values] = %arg : !struct.type<@Sized::@Box<[@N]>>, !array.type<@N x index>
+        function.return %self : !struct.type<@Sized::@Box<[@N]>>
+      }
+    }
+  }
+
+  function.def @use_box(%box: !struct.type<@Sized::@Box<[4]>>) -> !struct.type<@Sized::@Box<[4]>> {
+    function.return %box : !struct.type<@Sized::@Box<[4]>>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @Sized {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        struct.member @values : !array.type<@N x index>
+// CHECK-NEXT:        function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<@N x index>) -> !struct.type<@Sized::@Box<[@N]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Sized::@Box<[@N]>>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@values] = %[[VAL_0]] : <@Sized::@Box<[@N]>>, !array.type<@N x index>
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@Sized::@Box<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @use_box(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Sized::@Box<[4]>>) -> !struct.type<@Sized::@Box<[4]>> {
+// CHECK-NEXT:      function.return %[[VAL_2]] : !struct.type<@Sized::@Box<[4]>>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
