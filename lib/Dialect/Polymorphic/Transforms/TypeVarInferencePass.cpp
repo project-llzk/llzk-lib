@@ -864,6 +864,18 @@ static void removeIdentityCasts(Operation *root) {
   }
 }
 
+/// Convert type-bearing surfaces in template expressions copied into a sibling template.
+template <typename ConverterT>
+static LogicalResult convertTemplateExprTypesIn(TemplateOp templateOp, ConverterT &converter) {
+  for (TemplateExprOp expr : templateOp.getConstOps<TemplateExprOp>()) {
+    if (failed(convertOperationTypesIn(expr.getOperation(), converter))) {
+      return failure();
+    }
+    removeIdentityCasts(expr.getOperation());
+  }
+  return success();
+}
+
 /// Build a lossless key for a specialized sibling template.
 ///
 /// The emitted template symbol uses `BuildShortTypeString`, which intentionally shortens some
@@ -891,6 +903,40 @@ static std::string buildSpecializedTemplateCloneCacheKey(
     os << attrText.size() << ':' << attrText;
   }
   return key;
+}
+
+/// Return true if `expr` only reads constants that will still be bound in a sibling template.
+static bool
+canCopyTemplateExprToSpecialization(TemplateExprOp expr, const DenseSet<StringAttr> &availableNames) {
+  bool canCopy = true;
+  expr->walk([&](ConstReadOp readOp) {
+    if (!availableNames.contains(readOp.getConstNameAttr().getAttr())) {
+      canCopy = false;
+      return WalkResult::interrupt();
+    }
+    return WalkResult::advance();
+  });
+  return canCopy;
+}
+
+/// Copy preserved `poly.expr` definitions into a sibling template.
+///
+/// A specialized clone keeps only the not-yet-concrete template parameters. Any
+/// expression copied into it must therefore read only those remaining bindings.
+static void copyPreservedTemplateExprs(
+    TemplateOp parentTemplate, Block &newTemplateBody, ArrayRef<Attribute> remainingNames
+) {
+  DenseSet<StringAttr> availableNames;
+  for (Attribute name : remainingNames) {
+    FlatSymbolRefAttr nameSym = llvm::cast<FlatSymbolRefAttr>(name);
+    availableNames.insert(nameSym.getAttr());
+  }
+
+  for (TemplateExprOp expr : parentTemplate.getConstOps<TemplateExprOp>()) {
+    if (canCopyTemplateExprToSpecialization(expr, availableNames)) {
+      newTemplateBody.push_back(expr->clone());
+    }
+  }
 }
 
 /// Create or reuse a sibling template named with the concrete replacement values.
@@ -932,6 +978,7 @@ static FailureOr<TemplateOp> getOrCreateSpecializedTemplateClone(
     assert(paramOp && "symbol must exist");
     newTemplateBody.push_back(paramOp->clone());
   }
+  copyPreservedTemplateExprs(parentTemplate, newTemplateBody, layout.remainingNames);
 
   moduleSymbols.insert(newTemplate, Block::iterator(parentTemplate));
   templateClones.try_emplace(cacheKey, newTemplate.getSymNameAttr());
@@ -1190,6 +1237,14 @@ private:
         StructType::get(localTy.getNameRef(), ArrayAttr::get(ctx_, concreteParams)), localTy
     );
     SymbolRefAttr cloneNameRef = clone.getFullyQualifiedName();
+    if (::failed(convertTemplateExprTypesIn(*newTemplate, *this))) {
+      activeLocalStructReplacements_ = std::move(previousLocalStructReplacements);
+      activeTypeReplacements_ = std::move(previousReplacements);
+      instantiations_.erase(concreteStructTy);
+      instantiatedCloneNames_.erase(cloneNameRef);
+      clone.erase();
+      return failure();
+    }
     if (::failed(convertOperationTypesIn(clone.getOperation(), *this))) {
       activeLocalStructReplacements_ = std::move(previousLocalStructReplacements);
       activeTypeReplacements_ = std::move(previousReplacements);
@@ -2593,6 +2648,10 @@ static FailureOr<SymbolRefAttr> getOrCreateSpecializedCallableClone(
       templateOp.getContext(), info.templatePath, info.oldParamOrder, replacements,
       /*trimResolvedParams=*/false
   );
+  if (failed(convertTemplateExprTypesIn(*newTemplate, converter))) {
+    clone.erase();
+    return failure();
+  }
   if (failed(convertOperationTypesIn(clone.getOperation(), converter))) {
     clone.erase();
     return failure();
