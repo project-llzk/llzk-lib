@@ -46,6 +46,7 @@ LLZK supports arrays where the element type is not truly homogeneous, specifical
 ## Semantic Rules
 
 - Each `array.new` operation creates a fresh mutable array allocation. Two identical `array.new` operations are not interchangeable when either result may be read or written. The same is true for `pod.new`.
+- Felt constants are valid template arguments for parameterized struct types, free-function calls, and `verif.include` contract inclusions. A fieldless constant adopts the required felt type; an explicitly fielded constant can materialize only when its type exactly matches the required felt type.
 - A `function.def` argument may have `function.arg_name = "..."` to preserve the source-level argument name independently from the SSA name printed by MLIR. The value must be a non-empty, untyped string attribute; typed string attributes such as `"x" : i1` are rejected. Attached argument names must be unique within the function. Argument-splitting transforms derive names for generated arguments, such as `input[0]` for array elements or `self.member` for struct members.
 - Ops marked with the `WitnessGen` trait can only be used in functions with the `allow_witness` attribute (`compute()` within `struct.def` has this by default). Similarly, ops marked with the `ConstraintGen` trait can only be used in functions with the `allow_constraint` attribute (`constrain()` within `struct.def` has this by default).
 - Functions with the `allow_witness` attribute can only call other functions marked with `allow_witness`. Likewise for `allow_constraint`.
