@@ -210,6 +210,30 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @T1 {
+    poly.param @N
+    struct.def @A {
+      function.def @compute() -> !struct.type<@T1::@A<[@N]>> {
+        %self = struct.new : !struct.type<@T1::@A<[@N]>>
+        function.return %self : !struct.type<@T1::@A<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T1::@A<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @T2 {
+    poly.param @N
+    // expected-error@+1 {{'verif.contract' op contract nested in template "@T2" must target a symbol in the same template}}
+    verif.contract @Foo for @T1::@A(%self: !struct.type<@T1::@A<[@N]>>) {
+      %N = poly.read_const @N : !felt.type
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
   struct.def @ProductOnly { // expected-note {{target defined here}}
     function.def @product(%a: !felt.type {function.arg_name = "foo"}) -> !struct.type<@ProductOnly> {
       %self = struct.new : !struct.type<@ProductOnly>

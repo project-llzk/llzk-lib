@@ -119,7 +119,8 @@ def ContractOp
 
     For templated targets (i.e., functions or structs within a `poly.template`),
     the contract body may reference the target template's parameters and
-    expressions even if the contract is physically nested elsewhere.
+    expressions. If a contract is physically nested inside a `poly.template`,
+    then the target must be in that same template.
 
     Examples:
 
