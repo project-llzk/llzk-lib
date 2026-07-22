@@ -197,13 +197,16 @@ TEST_F(TypeTests, testShortString) {
 }
 
 TEST_F(TypeTests, testShortStringDistinguishesDelimitedFeltFieldNames) {
-  constexpr llvm::StringLiteral fieldA("a>_f<36:b");
-  constexpr llvm::StringLiteral fieldB("a");
-  constexpr llvm::StringLiteral fieldC("b>_f<37");
-  constexpr llvm::StringLiteral prime("101");
-  Field::addField(fieldA, prime, nullptr);
-  Field::addField(fieldB, prime, nullptr);
-  Field::addField(fieldC, prime, nullptr);
+  static constexpr llvm::StringLiteral fieldA("a>_f<36:b");
+  static constexpr llvm::StringLiteral fieldB("a");
+  static constexpr llvm::StringLiteral fieldC("b>_f<37");
+  static constexpr llvm::StringLiteral prime("101");
+  [[maybe_unused]] static const bool fieldsRegistered = [] {
+    Field::addField(fieldA, prime, nullptr);
+    Field::addField(fieldB, prime, nullptr);
+    Field::addField(fieldC, prime, nullptr);
+    return true;
+  }();
 
   auto felt = [&](uint64_t value, llvm::StringRef field) {
     return FeltConstAttr::get(&ctx, llvm::APInt(7, value), field);
@@ -221,12 +224,15 @@ TEST_F(TypeTests, testShortStringDistinguishesDelimitedFeltFieldNames) {
 }
 
 TEST_F(TypeTests, testShortStringEscapesReservedFeltFieldNameBytes) {
-  constexpr char withPlaceholder[] = {'x', '\x1A'};
-  constexpr llvm::StringLiteral resemblingEscape("x%1A");
-  constexpr llvm::StringLiteral prime("101");
-  llvm::StringRef placeholderField(withPlaceholder, sizeof(withPlaceholder));
-  Field::addField(placeholderField, prime, nullptr);
-  Field::addField(resemblingEscape, prime, nullptr);
+  static constexpr char withPlaceholder[] = {'x', '\x1A'};
+  static constexpr llvm::StringLiteral resemblingEscape("x%1A");
+  static constexpr llvm::StringLiteral prime("101");
+  static const llvm::StringRef placeholderField(withPlaceholder, sizeof(withPlaceholder));
+  [[maybe_unused]] static const bool fieldsRegistered = [] {
+    Field::addField(placeholderField, prime, nullptr);
+    Field::addField(resemblingEscape, prime, nullptr);
+    return true;
+  }();
 
   auto shortString = [&](llvm::StringRef field) {
     return BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::APInt(7, 35), field));
