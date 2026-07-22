@@ -33,8 +33,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @FRT_f_free_ret() -> !felt.type<"bn128"> {
 // CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (!felt.type<"bn128">) -> !felt.type<"bn128">
-// CHECK-NEXT:      function.return %[[VAL_1]] : !felt.type<"bn128">
+// CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type<"bn128">
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @synth_f_synth() {
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @FRT_f_free_ret() : () -> !felt.type<"bn128">
@@ -100,16 +99,14 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def private @"Log$$extern_!a<f:1>"(!string.type, !array.type<1 x !felt.type>) -> !felt.type attributes {extern}
 // CHECK-NEXT:    function.def @call_log_extern(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type>) -> !felt.type {
 // CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = string.new "extern: "
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_6]] : (!array.type<1 x !felt.type>) -> !array.type<1 x !felt.type>
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @"Log$$extern_!a<f:1>"(%[[VAL_7]], %[[VAL_8]]) : (!string.type, !array.type<1 x !felt.type>) -> !felt.type
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @"Log$$extern_!a<f:1>"(%[[VAL_7]], %[[VAL_6]]) : (!string.type, !array.type<1 x !felt.type>) -> !felt.type
 // CHECK-NEXT:      function.return %[[VAL_9]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @ComponentD {
 // CHECK-NEXT:      function.def @compute(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type>) -> !struct.type<@ComponentD> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = string.new "test: "
 // CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentD>
-// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_10]] : (!array.type<1 x !felt.type>) -> !array.type<1 x !felt.type>
-// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = function.call @"Log_!a<f:1>"::@compute(%[[VAL_11]], %[[VAL_13]]) : (!string.type, !array.type<1 x !felt.type>) -> !struct.type<@"Log_!a<f:1>">
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = function.call @"Log_!a<f:1>"::@compute(%[[VAL_11]], %[[VAL_10]]) : (!string.type, !array.type<1 x !felt.type>) -> !struct.type<@"Log_!a<f:1>">
 // CHECK-NEXT:        function.return %[[VAL_12]] : !struct.type<@ComponentD>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[VAL_15:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentD>, %[[VAL_16:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type>) attributes {function.allow_constraint} {
@@ -235,8 +232,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @call_id(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type>) -> !array.type<1 x !felt.type> {
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @"id_!a<f:1>"(%[[VAL_1]]) : (!array.type<1 x !felt.type>) -> !array.type<1 x !felt.type>
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_2]] : (!array.type<1 x !felt.type>) -> !array.type<1 x !felt.type>
-// CHECK-NEXT:      function.return %[[VAL_3]] : !array.type<1 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_2]] : !array.type<1 x !felt.type>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----
@@ -285,8 +281,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.def @compute(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type>) -> !struct.type<@UseTLog> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = string.new "templated: "
 // CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.new : <@UseTLog>
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_6]] : (!array.type<1 x !felt.type>) -> !array.type<1 x !felt.type>
-// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @TLog::@"Log_!a<f:1>"::@compute(%[[VAL_7]], %[[VAL_9]]) : (!string.type, !array.type<1 x !felt.type>) -> !struct.type<@TLog::@"Log_!a<f:1>">
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @TLog::@"Log_!a<f:1>"::@compute(%[[VAL_7]], %[[VAL_6]]) : (!string.type, !array.type<1 x !felt.type>) -> !struct.type<@TLog::@"Log_!a<f:1>">
 // CHECK-NEXT:        function.return %[[VAL_8]] : !struct.type<@UseTLog>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !struct.type<@UseTLog>, %[[VAL_12:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type>) attributes {function.allow_constraint} {

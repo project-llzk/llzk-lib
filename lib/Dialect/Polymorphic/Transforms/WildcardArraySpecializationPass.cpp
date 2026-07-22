@@ -606,6 +606,20 @@ static LogicalResult erasePreimageOfInstantiations(
 
 namespace CastRefinement {
 
+/// Removes `poly.unifiable_cast` operations whose input and result types are identical.
+class RemoveIdentityUnifiableCast final : public OpRewritePattern<UnifiableCastOp> {
+public:
+  RemoveIdentityUnifiableCast(MLIRContext *ctx) : OpRewritePattern(ctx, 4) {}
+
+  LogicalResult match(UnifiableCastOp op) const override {
+    return success(op.getInput().getType() == op.getResult().getType());
+  }
+
+  void rewrite(UnifiableCastOp op, PatternRewriter &rewriter) const override {
+    rewriter.replaceOp(op, op.getInput());
+  }
+};
+
 /// Refines `poly.unifiable_cast` result types by replacing wildcard array
 /// dimensions with concrete dimensions inferred from the operand type.
 class UpdateUnifiableCastResultType final : public OpRewritePattern<UnifiableCastOp> {
@@ -634,6 +648,7 @@ public:
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
   RewritePatternSet patterns(ctx);
+  patterns.add<RemoveIdentityUnifiableCast>(ctx);
   patterns.add<UpdateUnifiableCastResultType>(ctx, tracker);
   return applyAndFoldGreedily(modOp, tracker, std::move(patterns));
 }

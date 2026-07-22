@@ -1,4 +1,4 @@
-// RUN: not llzk-opt --split-input-file --smt-to-smtlib -o /dev/null %s 2>&1 | FileCheck %s
+// RUN: not llzk-translate --split-input-file --smt-to-smtlib %s 2>&1 | FileCheck %s
 // Purpose: reject non-empty smt.check regions because SMT-LIB cannot branch on check-sat results.
 
 // CHECK: cannot lower smt.check with non-empty result regions because SMT-LIB

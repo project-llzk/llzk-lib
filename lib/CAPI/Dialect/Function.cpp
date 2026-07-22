@@ -43,11 +43,10 @@ MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Function, llzk__function, FunctionDialect)
 // FuncDefOp
 //===----------------------------------------------------------------------===//
 
-/// Creates a FuncDefOp with the given attributes and argument attributes. Each argument attribute
-/// has to be a DictionaryAttr.
-MlirOperation llzkFunction_FuncDefOpCreateWithAttrsAndArgAttrs(
-    MlirLocation location, MlirStringRef name, MlirType funcType, intptr_t numAttrs,
-    MlirNamedAttribute const *attrs, intptr_t numArgAttrs, MlirAttribute const *argAttrs
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
+    Function, FuncDefOp, WithAttrsAndArgAttrs, MlirStringRef name, MlirType funcType,
+    intptr_t numAttrs, MlirNamedAttribute const *attrs, intptr_t numArgAttrs,
+    MlirAttribute const *argAttrs
 ) {
   SmallVector<NamedAttribute> attrsSto;
   SmallVector<Attribute> argAttrsSto;
@@ -55,11 +54,39 @@ MlirOperation llzkFunction_FuncDefOpCreateWithAttrsAndArgAttrs(
       llvm::map_to_vector(unwrapList(numArgAttrs, argAttrs, argAttrsSto), [](auto attr) {
     return llvm::cast<DictionaryAttr>(attr);
   });
-  return wrap(
-      FuncDefOp::create(
-          unwrap(location), unwrap(name), llvm::cast<FunctionType>(unwrap(funcType)),
-          unwrapList(numAttrs, attrs, attrsSto), unwrappedArgAttrs
-      )
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<FuncDefOp>(
+                       builder, location, unwrap(name), llvm::cast<FunctionType>(unwrap(funcType)),
+                       unwrapList(numAttrs, attrs, attrsSto), unwrappedArgAttrs
+                   )
+               )
+  );
+}
+
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
+    Function, FuncDefOp, WithAttrs, MlirStringRef name, MlirType funcType, intptr_t numAttrs,
+    MlirNamedAttribute const *attrs
+) {
+  return llzkFunction_FuncDefOpBuildWithAttrsAndArgAttrs(
+      builder, location, name, funcType, numAttrs, attrs, /*numArgAttrs=*/0, /*argAttrs=*/NULL
+  );
+}
+
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
+    Function, FuncDefOp, WithArgAttrs, MlirStringRef name, MlirType funcType, intptr_t numArgAttrs,
+    MlirAttribute const *argAttrs
+) {
+  return llzkFunction_FuncDefOpBuildWithAttrsAndArgAttrs(
+      builder, location, name, funcType, /*numAttrs=*/0, /*attrs=*/NULL, numArgAttrs, argAttrs
+  );
+}
+
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
+    Function, FuncDefOp, WithoutAttrs, MlirStringRef name, MlirType funcType
+) {
+  return llzkFunction_FuncDefOpBuildWithAttrs(
+      builder, location, name, funcType, /*numAttrs=*/0, /*attrs=*/NULL
   );
 }
 
@@ -105,11 +132,13 @@ LLZK_DEFINE_OP_BUILD_METHOD(
 ) {
   SmallVector<Type> resultsSto;
   SmallVector<Value> operandsSto;
-  return wrap(
-      create<CallOp>(
-          builder, location, unwrapList(numResults, results, resultsSto), unwrapName(name),
-          unwrapList(numOperands, operands, operandsSto)
-      )
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<CallOp>(
+                       builder, location, unwrapList(numResults, results, resultsSto),
+                       unwrapName(name), unwrapList(numOperands, operands, operandsSto)
+                   )
+               )
   );
 }
 
@@ -118,10 +147,13 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
     MlirValue const *operands
 ) {
   SmallVector<Value> operandsSto;
-  return wrap(
-      create<CallOp>(
-          builder, location, unwrapCallee(callee), unwrapList(numOperands, operands, operandsSto)
-      )
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<CallOp>(
+                       builder, location, unwrapCallee(callee),
+                       unwrapList(numOperands, operands, operandsSto)
+                   )
+               )
   );
 }
 
@@ -135,12 +167,14 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   MapOperandsHelper<> mapOperandsHelper(mapOperands.nMapOperands, mapOperands.mapOperands);
   auto numDimsPerMap =
       llzkAffineMapOperandsBuilderGetDimsPerMapAttr(mapOperands, mlirLocationGetContext(location));
-  return wrap(
-      create<CallOp>(
-          builder, location, unwrapList(numResults, results, resultsSto), unwrapName(name),
-          *mapOperandsHelper, unwrapDims(numDimsPerMap),
-          unwrapList(numArgOperands, argOperands, argOperandsSto)
-      )
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<CallOp>(
+                       builder, location, unwrapList(numResults, results, resultsSto),
+                       unwrapName(name), *mapOperandsHelper, unwrapDims(numDimsPerMap),
+                       unwrapList(numArgOperands, argOperands, argOperandsSto)
+                   )
+               )
   );
 }
 
@@ -152,10 +186,13 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   MapOperandsHelper<> mapOperandsHelper(mapOperands.nMapOperands, mapOperands.mapOperands);
   auto numDimsPerMap =
       llzkAffineMapOperandsBuilderGetDimsPerMapAttr(mapOperands, mlirLocationGetContext(location));
-  return wrap(
-      create<CallOp>(
-          builder, location, unwrapCallee(callee), *mapOperandsHelper, unwrapDims(numDimsPerMap),
-          unwrapList(numArgOperands, argOperands, argOperandsSto)
+  return mlirOpBuilderInsert(
+      builder,
+      wrap(
+          create<CallOp>(
+              builder, location, unwrapCallee(callee), *mapOperandsHelper,
+              unwrapDims(numDimsPerMap), unwrapList(numArgOperands, argOperands, argOperandsSto)
+          )
       )
   );
 }
@@ -168,12 +205,14 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
   SmallVector<Type> resultsSto;
   SmallVector<Value> argOperandsSto;
   SmallVector<Attribute> templateParamsSto;
-  return wrap(
-      create<CallOp>(
-          builder, location, unwrapList(numResults, results, resultsSto), unwrapName(name),
-          unwrapList(numArgOperands, argOperands, argOperandsSto),
-          unwrapList(numTemplateParams, templateParams, templateParamsSto)
-      )
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<CallOp>(
+                       builder, location, unwrapList(numResults, results, resultsSto),
+                       unwrapName(name), unwrapList(numArgOperands, argOperands, argOperandsSto),
+                       unwrapList(numTemplateParams, templateParams, templateParamsSto)
+                   )
+               )
   );
 }
 
@@ -183,11 +222,13 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
 ) {
   SmallVector<Value> argOperandsSto;
   SmallVector<Attribute> templateParamsSto;
-  return wrap(
-      create<CallOp>(
-          builder, location, unwrapCallee(callee),
-          unwrapList(numArgOperands, argOperands, argOperandsSto),
-          unwrapList(numTemplateParams, templateParams, templateParamsSto)
-      )
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<CallOp>(
+                       builder, location, unwrapCallee(callee),
+                       unwrapList(numArgOperands, argOperands, argOperandsSto),
+                       unwrapList(numTemplateParams, templateParams, templateParamsSto)
+                   )
+               )
   );
 }

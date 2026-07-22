@@ -37,7 +37,7 @@ IncludeCategories:
     Priority: 9
   - Regex: '^<.*(\.h)?>$'          # Standard library headers
     Priority: 8
-  - Regex: '^.*$'                  # Everything else (ex: the backends `pcl-conv`, `r1cs`, `zklean`, etc.)
+  - Regex: '^.*$'                  # Everything else (ex: the backends `pcl`, `r1cs`, `zklean`, etc.)
     Priority: 1
 InsertNewlineAtEOF: true
 ---

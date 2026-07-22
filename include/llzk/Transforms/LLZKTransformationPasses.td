@@ -106,7 +106,7 @@ def ComputeConstrainToProductPass
                 "struct with a single @product function";
   let description = summary;
   let options = [Option<"rootStruct", "root-struct", "std::string",
-                        /* default */ "\"@Main\"",
+                        /* default */ "\"Main\"",
                         "Root struct at which to start alignment "
                         "(default to `@Main`)">];
 }
