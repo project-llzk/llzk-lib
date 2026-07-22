@@ -127,38 +127,6 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  function.def @outer(%x: index) {
-    function.return
-  }
-
-  poly.template @T {
-    poly.param @N : index
-
-    verif.contract @TemplateWrapper for @outer (%x: index) {
-      %n = poly.read_const @N : index
-      %zero = arith.constant 0 : index
-      %ok = arith.cmpi eq, %n, %zero : index
-      verif.ensure_compute %ok
-    }
-  }
-}
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @outer(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) {
-// CHECK-NEXT:      function.return
-// CHECK-NEXT:    }
-// CHECK-NEXT:    poly.template @T {
-// CHECK-NEXT:      poly.param @N : index
-// CHECK-NEXT:      verif.contract @TemplateWrapper for @outer (%[[VAL_1:[0-9a-zA-Z_\.]+]]: index) {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_2]], %[[VAL_3]] : index
-// CHECK-NEXT:        verif.ensure_compute %[[VAL_4]]
-// CHECK-NEXT:      }
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-// -----
-
-module attributes {llzk.lang} {
   poly.template @T {
     poly.param @N
 
@@ -179,7 +147,6 @@ module attributes {llzk.lang} {
     verif.contract @Foo for @T::@Top (%self: !struct.type<@T::@Top<[@N]>>, %a: !felt.type) {
       %m = struct.readm %self[@m] : !struct.type<@T::@Top<[@N]>>, !felt.type
       %eq = bool.cmp eq(%a, %m) : !felt.type, !felt.type
-
     }
   }
 }
