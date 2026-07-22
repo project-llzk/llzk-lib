@@ -40,3 +40,44 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_5]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TFunctionLocalWildcardWithResolvedBodyParam {
+    poly.param @Resolved : !poly.tvar<@Resolved>
+    poly.param @N
+    poly.param @Residual : !poly.tvar<@Residual>
+
+    function.def @f(%arg: !poly.tvar<@Residual>) -> !poly.tvar<@Residual> {
+      %n = poly.read_const @N : !poly.tvar<@Resolved>
+      %index = poly.unifiable_cast %n : (!poly.tvar<@Resolved>) -> index
+      function.return %arg : !poly.tvar<@Residual>
+    }
+  }
+
+  function.def @call_f(%arg: !felt.type) -> !felt.type {
+    %0 = function.call @TFunctionLocalWildcardWithResolvedBodyParam::@f<[?, 7, !felt.type]>(%arg) : (!felt.type) -> !felt.type
+    function.return %0 : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @"TFunctionLocalWildcardWithResolvedBodyParam_i_\1A_f" {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      function.def @f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:        function.return %[[VAL_0]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TFunctionLocalWildcardWithResolvedBodyParam {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.param @Residual : !poly.tvar<@Residual>
+// CHECK-NEXT:      function.def @f(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Residual>) -> !poly.tvar<@Residual> {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:        function.return %[[VAL_2]] : !poly.tvar<@Residual>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_f(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @"TFunctionLocalWildcardWithResolvedBodyParam_i_\1A_f"::@f<[7]>(%[[VAL_4]]) : (!felt.type) -> !felt.type
+// CHECK-NEXT:      function.return %[[VAL_5]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

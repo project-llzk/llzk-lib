@@ -2160,7 +2160,8 @@ substituteExplicitCallTypeArgs(Type ty, ArrayAttr callParams, ArrayRef<StringAtt
 /// type arguments into symbolic replacement types.
 static bool callParamsMatchReplacements(
     ArrayAttr callParams, ArrayRef<StringAttr> oldParamOrder,
-    const DenseMap<StringAttr, Type> &replacements
+    const DenseMap<StringAttr, Type> &replacements,
+    const DenseMap<StringAttr, InferredType> *wildcardAllowedReplacements = nullptr
 ) {
   if (!callParams || callParams.size() != oldParamOrder.size()) {
     return false;
@@ -2171,7 +2172,13 @@ static bool callParamsMatchReplacements(
       return false;
     }
     Type expectedTy = substituteExplicitCallTypeArgs(entry.second, callParams, oldParamOrder);
-    if (!templateArgUnifiesWithType(callParams[*index], expectedTy)) {
+    Attribute attr = callParams[*index];
+    if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr);
+        intAttr && isDynamic(intAttr) && wildcardAllowedReplacements &&
+        wildcardAllowedReplacements->contains(entry.first)) {
+      continue;
+    }
+    if (!templateArgUnifiesWithType(attr, expectedTy)) {
       return false;
     }
   }
@@ -2186,9 +2193,12 @@ static bool callParamsMatchReplacements(
 /// with the user's source syntax.
 static LogicalResult diagnoseCallParamsMismatch(
     Operation *callableOp, ArrayAttr callParams, ArrayRef<StringAttr> oldParamOrder,
-    const DenseMap<StringAttr, Type> &replacements, bool explicitCallParams
+    const DenseMap<StringAttr, Type> &replacements,
+    const DenseMap<StringAttr, InferredType> *wildcardAllowedReplacements, bool explicitCallParams
 ) {
-  if (callParamsMatchReplacements(callParams, oldParamOrder, replacements)) {
+  if (callParamsMatchReplacements(
+          callParams, oldParamOrder, replacements, wildcardAllowedReplacements
+      )) {
     return success();
   }
   for (const auto &entry : replacements) {
@@ -2198,6 +2208,11 @@ static LogicalResult diagnoseCallParamsMismatch(
     }
     Attribute attr = callParams[*index];
     Type expectedTy = substituteExplicitCallTypeArgs(entry.second, callParams, oldParamOrder);
+    if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr);
+        intAttr && isDynamic(intAttr) && wildcardAllowedReplacements &&
+        wildcardAllowedReplacements->contains(entry.first)) {
+      continue;
+    }
     if (templateArgUnifiesWithType(attr, expectedTy)) {
       continue;
     }
@@ -2508,6 +2523,9 @@ static bool hasResidualFunctionTvarWildcard(
   }
   for (const auto &entry : info.typeVarParams) {
     StringAttr paramName = entry.first;
+    if (info.replacements.contains(paramName)) {
+      continue;
+    }
     if (!targetMentionsParam(targetOp, paramName)) {
       continue;
     }
@@ -2536,6 +2554,9 @@ static FailureOr<ArrayAttr> materializeResidualFunctionTvarWildcards(
   SmallVector<Attribute> params(callParams.begin(), callParams.end());
   for (const auto &entry : info.typeVarParams) {
     StringAttr paramName = entry.first;
+    if (info.replacements.contains(paramName)) {
+      continue;
+    }
     if (!targetMentionsParam(targetOp, paramName)) {
       continue;
     }
@@ -3100,7 +3121,7 @@ static LogicalResult specializeFunctionLocalCallables(
         getFunctionProofReplacements(*info, targetFunc);
     if (failed(diagnoseCallParamsMismatch(
             callOp.getOperation(), inputs.params, info->oldParamOrder, inferredReplacements,
-            /*explicitCallParams=*/inputs.explicitParams
+            &info->replacements, /*explicitCallParams=*/inputs.explicitParams
         ))) {
       failedClone = true;
       return;
@@ -3166,7 +3187,7 @@ static LogicalResult specializeFunctionLocalCallables(
         getFunctionProofReplacements(*info, targetFunc);
     if (failed(diagnoseCallParamsMismatch(
             includeOp.getOperation(), inputs.params, info->oldParamOrder, inferredReplacements,
-            /*explicitCallParams=*/inputs.explicitParams
+            &info->replacements, /*explicitCallParams=*/inputs.explicitParams
         ))) {
       failedClone = true;
       return;
