@@ -16,7 +16,6 @@ module attributes {llzk.lang} {
     verif.ensure_compute %1
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @Top {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Top> attributes {function.allow_witness} {
@@ -32,7 +31,41 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_3]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
 
+module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
+  struct.def @Main {
+    function.def @compute(%value : !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %value : !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @MainPre for @Main (%self: !struct.type<@Main>, %value : !felt.type) {
+    %ok = arith.constant true
+    verif.require_compute %ok
+    verif.require_constrain %ok
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @MainPre for @Main (%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      verif.require_compute %[[VAL_6]]
+// CHECK-NEXT:      verif.require_constrain %[[VAL_6]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 // -----
 
 module attributes {llzk.lang} {
@@ -49,7 +82,6 @@ module attributes {llzk.lang} {
   verif.contract @Foo for @Top (%self: !struct.type<@Top>, %a: !felt.type) {
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @Top {
 // CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Top> attributes {function.allow_witness} {
@@ -63,7 +95,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    verif.contract @Foo for @Top (%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Top>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) {
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -80,7 +111,6 @@ module attributes {llzk.lang} {
     }
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    module @lib {
 // CHECK-NEXT:      function.def @token(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) {
@@ -94,7 +124,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -113,7 +142,6 @@ module attributes {llzk.lang} {
     }
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @outer(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) {
 // CHECK-NEXT:      function.return
@@ -128,7 +156,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -156,7 +183,6 @@ module attributes {llzk.lang} {
     }
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @T {
 // CHECK-NEXT:      poly.param @N
@@ -179,7 +205,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -198,7 +223,6 @@ module attributes {llzk.lang} {
     verif.ensure_compute %ok
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @T {
 // CHECK-NEXT:      poly.param @N : index
@@ -213,7 +237,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_4]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -232,7 +255,6 @@ module attributes {llzk.lang} {
     verif.ensure_compute %ok
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @SpecTemplate {
 // CHECK-NEXT:      poly.param @N : index
@@ -247,7 +269,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_2]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -274,7 +295,6 @@ module attributes {llzk.lang} {
     verif.ensure_compute %ok
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @T {
 // CHECK-NEXT:      poly.param @N : index
@@ -297,7 +317,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_8]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -314,7 +333,6 @@ module attributes {llzk.lang} {
     verif.include @Base(%x, %ok) : (index, i1) -> ()
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @check(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) {
 // CHECK-NEXT:      function.return
@@ -327,7 +345,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.include @Base(%[[VAL_4]], %[[VAL_5]]) : (index, i1) -> ()
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -348,7 +365,6 @@ module attributes {llzk.lang} {
     verif.require_compute %isEq
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @touch_input_if(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type {
 // CHECK-NEXT:      scf.if %[[VAL_1]] {
@@ -365,7 +381,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.require_compute %[[VAL_8]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -383,7 +398,6 @@ module attributes {llzk.lang} {
     verif.require_compute %isEq
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @same(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
 // CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type
@@ -397,7 +411,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.require_compute %[[VAL_4]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -420,7 +433,6 @@ module attributes {llzk.lang} {
     verif.require_compute %isEq
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @select_input(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_2:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type {
 // CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_2]] -> (!felt.type) {
@@ -439,7 +451,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.require_compute %[[VAL_9]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -454,7 +465,6 @@ module attributes {llzk.lang} {
     }
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @check(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) {
 // CHECK-NEXT:      function.return
@@ -466,7 +476,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -496,7 +505,6 @@ module attributes {llzk.lang} {
     verif.require_compute %selected
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @GateBox {
 // CHECK-NEXT:      struct.member @gate : i1
@@ -523,7 +531,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.require_compute %[[VAL_8]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -541,7 +548,6 @@ module attributes {llzk.lang} {
     verif.ensure_compute %isEq
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @same(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
 // CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type
@@ -555,7 +561,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_5]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -581,7 +586,6 @@ module attributes {llzk.lang} {
     verif.ensure_constrain %isEq
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @SecretBox {
 // CHECK-NEXT:      struct.member @secret : !felt.type
@@ -602,7 +606,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_constrain %[[VAL_8]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -624,7 +627,6 @@ module attributes {llzk.lang} {
     }
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @SpecTemplate {
 // CHECK-NEXT:      poly.param @N : index
@@ -641,7 +643,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -657,7 +658,6 @@ module attributes {llzk.lang} {
     verif.ensure_compute %ok
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @ProductOnly {
 // CHECK-NEXT:      function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "foo"}) -> !struct.type<@ProductOnly> attributes {function.allow_constraint, function.allow_witness} {
@@ -670,7 +670,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_4]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -686,7 +685,6 @@ module attributes {llzk.lang} {
     verif.ensure_compute %ok
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @ProductOnlyEmptyArgs {
 // CHECK-NEXT:      function.def @product() -> !struct.type<@ProductOnlyEmptyArgs> attributes {function.allow_constraint, function.allow_witness} {
@@ -699,7 +697,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_2]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -713,7 +710,6 @@ module attributes {llzk.lang} {
     verif.ensure_compute %is_eq
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @passthrough(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
 // CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type
@@ -724,7 +720,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_4]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -738,7 +733,6 @@ module attributes {llzk.lang} {
     verif.ensure_compute %is_eq
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @passthrough(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> (!felt.type {function.res_name = "ret_value"}) {
 // CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type
@@ -749,7 +743,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_4]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
@@ -777,7 +770,6 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
     verif.ensure_compute %ok
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 // CHECK-NEXT:    function.def @helper(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) {
 // CHECK-NEXT:      function.return
@@ -800,7 +792,6 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_10]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -826,7 +817,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_5]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -847,7 +837,6 @@ module attributes {llzk.lang} {
     verif.ensure_compute %ok
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @helper_gate(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) {
 // CHECK-NEXT:      function.return

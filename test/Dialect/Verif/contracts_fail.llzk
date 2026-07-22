@@ -893,46 +893,6 @@ module attributes {llzk.lang} {
 
 // -----
 
-module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
-  struct.def @Main {
-    function.def @compute(%value : !felt.type) -> !struct.type<@Main> {
-      %self = struct.new : !struct.type<@Main>
-      function.return %self : !struct.type<@Main>
-    }
-    function.def @constrain(%self: !struct.type<@Main>, %value : !felt.type) {
-      function.return
-    }
-  }
-
-  verif.contract @MainPre for @Main (%self: !struct.type<@Main>, %value : !felt.type) {
-    %ok = arith.constant true
-    // expected-error@+1 {{'verif.require_compute' op cannot appear directly in a contract that targets the main entry-point struct}}
-    verif.require_compute %ok
-  }
-}
-
-// -----
-
-module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
-  struct.def @Main {
-    function.def @compute(%value : !felt.type) -> !struct.type<@Main> {
-      %self = struct.new : !struct.type<@Main>
-      function.return %self : !struct.type<@Main>
-    }
-    function.def @constrain(%self: !struct.type<@Main>, %value : !felt.type) {
-      function.return
-    }
-  }
-
-  verif.contract @MainPre for @Main (%self: !struct.type<@Main>, %value : !felt.type) {
-    %ok = arith.constant true
-    // expected-error@+1 {{'verif.require_constrain' op cannot appear directly in a contract that targets the main entry-point struct}}
-    verif.require_constrain %ok
-  }
-}
-
-// -----
-
 module attributes {llzk.lang} {
   function.def @helper_gates(%gate_a: i1, %gate_b: i1) {
     function.return
@@ -1173,5 +1133,23 @@ module attributes {llzk.lang} {
     // expected-error@+1 {{'poly.read_const' op only valid within a 'poly.template' ancestor or 'verif.contract' that targets an operation with a 'poly.template' ancestor}}
     %1 = poly.read_const @DNE : i1
     verif.ensure_compute %1
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TBox {
+    poly.param @T : !poly.tvar<@T>
+
+    // expected-error@+1 {{'struct.def' op must define either only a non-derived "@product" function, or both non-derived "@compute" and "@constrain" functions; could not find "@product", "@compute", or "@constrain"}}
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@T>
+    }
+  }
+
+  verif.contract @C for @TBox::@Box (%self: !struct.type<@TBox::@Box<[index]>>) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
   }
 }

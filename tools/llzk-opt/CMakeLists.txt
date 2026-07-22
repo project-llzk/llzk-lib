@@ -3,13 +3,12 @@ target_link_libraries(llzk-opt PRIVATE ${LLZK_DEP_DIALECT_LIBS} MLIROptLib
                       LLZK::DialectRegistration R1CS::DialectRegistration
                       LLZKDialectHeaders MLIRIR R1CSDialectHeaders
                       LLZKUtil LLZKAnalysis LLZKValidators LLZKTransforms R1CSTransforms
-                      SMTConversions SMTTransforms SMTDialectHeaders
+                      SMTConversions SMTDialectHeaders
                       ZKLean::DialectRegistration ZKLeanDialectHeaders
-		                  ZKLeanTransforms ZKLean::Conversions
+		                  ZKLean::Conversions
                       MLIRFuncDialect MLIRFuncInlinerExtension
                       $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLDialectHeaders>
                       $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLDialect>
-                      $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLTransforms>
                       $<$<BOOL:${LLZK_WITH_PCL_BOOL}>:PCLConversion>
                       )
 llzk_target_add_mlir_link_settings(llzk-opt)

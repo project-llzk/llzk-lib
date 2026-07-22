@@ -1,4 +1,4 @@
-//===-- ZKLeanPasses.h ------------------------------------------*- C++ -*-===//
+//===-- TranslateRegistration.h ---------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -9,14 +9,7 @@
 
 #pragma once
 
-#include <mlir/Pass/Pass.h>
-
-#include <memory>
-
-namespace zklean {
-
-#define GEN_PASS_DECL
-#define GEN_PASS_REGISTRATION
-#include "zklean/Transforms/ZKLeanPasses.h.inc"
-
-} // namespace zklean
+namespace pcl {
+/// Registers the translation from PCL IR to PCL lisp.
+void registerPclTranslation();
+} // namespace pcl

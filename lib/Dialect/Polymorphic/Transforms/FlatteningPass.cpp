@@ -342,10 +342,12 @@ public:
       Attribute sym, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, IntegerAttr a
   ) const {
     APInt attrValue = a.getValue();
-    Type newResTy = getTypeConverter()->convertType(op.getType());
+    Type origResTy = op.getType();
+    Type newResTy = getTypeConverter()->convertType(origResTy);
     if (!newResTy) {
-      return op->emitOpError().append("could not convert result type ", op.getType());
+      return op->emitOpError().append("could not convert result type ", origResTy);
     }
+
     if (FeltType ty = llvm::dyn_cast<FeltType>(newResTy)) {
       replaceOpWithNewOp<FeltConstantOp>(
           rewriter, op, FeltConstAttr::get(getContext(), attrValue, ty)

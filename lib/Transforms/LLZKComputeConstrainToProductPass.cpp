@@ -245,6 +245,12 @@ class PassImpl : public llzk::impl::ComputeConstrainToProductPassBase<PassImpl> 
       }
     });
 
+    if (!root) {
+      mod.emitError().append("could not find root struct \"", rootStruct, "\"").report();
+      signalPassFailure();
+      return;
+    }
+
     if (failed(alignStartingAt(root, tables, equivalence))) {
       signalPassFailure();
     }
