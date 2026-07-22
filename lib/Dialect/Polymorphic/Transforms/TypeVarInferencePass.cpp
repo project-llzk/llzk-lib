@@ -660,6 +660,21 @@ template <typename ConverterT> static bool convertCallCallee(CallOp callOp, Conv
   return false;
 }
 
+/// Convert contract targets when the active converter knows how to keep symbol
+/// references in sync with converted types.
+template <typename ConverterT>
+static bool convertContractTarget(verif::ContractOp contract, ConverterT &converter) {
+  if constexpr (requires { converter.convertContractTarget(contract); }) {
+    SymbolRefAttr oldTarget = contract.getTargetAttr();
+    SymbolRefAttr newTarget = converter.convertContractTarget(contract);
+    if (newTarget != oldTarget) {
+      contract.setTargetAttr(newTarget);
+      return true;
+    }
+  }
+  return false;
+}
+
 /// Return whether `converter` recorded a conversion failure, if it exposes that state.
 template <typename ConverterT> static bool converterFailed(ConverterT &converter) {
   if constexpr (requires { converter.hadFailure(); }) {
@@ -778,6 +793,10 @@ static FailureOr<bool> convertOperationTypes(Operation *op, ConverterT &converte
       return failure();
     }
     changed |= oldFuncTy != contract.getFunctionType();
+    changed |= convertContractTarget(contract, converter);
+    if (converterFailed(converter)) {
+      return failure();
+    }
   }
 
   for (Region &region : op->getRegions()) {
@@ -1093,6 +1112,24 @@ public:
     SmallVector<FlatSymbolRefAttr> pieces = getPieces(convertedStructName);
     pieces.push_back(FlatSymbolRefAttr::get(callee.getLeafReference()));
     return asSymbolRefAttr(pieces);
+  }
+
+  /// Convert a struct contract target whose self type was instantiated.
+  SymbolRefAttr convertContractTarget(verif::ContractOp contract) {
+    SymbolRefAttr target = contract.getTargetAttr();
+    if (!target || failed(contract.getStructTarget(tables_))) {
+      return target;
+    }
+
+    FunctionType contractTy = contract.getFunctionType();
+    if (contractTy.getNumInputs() == 0) {
+      return target;
+    }
+    auto selfTy = llvm::dyn_cast<StructType>(contractTy.getInput(0));
+    if (!selfTy || selfTy.getNameRef() == target) {
+      return target;
+    }
+    return instantiatedCloneNames_.contains(selfTy.getNameRef()) ? selfTy.getNameRef() : target;
   }
 
 private:
