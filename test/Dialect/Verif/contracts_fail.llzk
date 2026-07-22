@@ -210,6 +210,30 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @T1 { // expected-note {{target template defined here}}
+    poly.param @N
+    struct.def @A {
+      function.def @compute() -> !struct.type<@T1::@A<[@N]>> {
+        %self = struct.new : !struct.type<@T1::@A<[@N]>>
+        function.return %self : !struct.type<@T1::@A<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T1::@A<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @T2 {
+    poly.param @N
+    // expected-error@+1 {{'verif.contract' op contract nested in template "@T2" must target a symbol in the same template}}
+    verif.contract @Foo for @T1::@A(%self: !struct.type<@T1::@A<[@N]>>) {
+      %N = poly.read_const @N : !felt.type
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
   struct.def @ProductOnly { // expected-note {{target defined here}}
     function.def @product(%a: !felt.type {function.arg_name = "foo"}) -> !struct.type<@ProductOnly> {
       %self = struct.new : !struct.type<@ProductOnly>
@@ -1132,5 +1156,25 @@ module attributes {llzk.lang} {
   verif.contract @C for @TBox::@Box (%self: !struct.type<@TBox::@Box<[index]>>) {
     %ok = arith.constant true
     verif.ensure_compute %ok
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @outer(%x: index) { // expected-note {{target defined here}}
+    function.return
+  }
+
+  poly.template @T {
+    poly.param @N : index
+
+    // expected-error@+1 {{'verif.contract' op contract nested in template "@T" must target a symbol in the same template}}
+    verif.contract @TemplateWrapper for @outer (%x: index) {
+      %n = poly.read_const @N : index
+      %zero = arith.constant 0 : index
+      %ok = arith.cmpi eq, %n, %zero : index
+      verif.ensure_compute %ok
+    }
   }
 }

@@ -421,6 +421,21 @@ LogicalResult ContractOp::verifySymbolUses(SymbolTableCollection &tables) {
         .attachNote(targetOp->getLoc())
         .append("target defined here");
   }
+  if (auto contractParentTemplate = getParentOfType<TemplateOp>(*this)) {
+    auto targetParentTemplate = getParentOfType<TemplateOp>(targetOp);
+    if (targetParentTemplate != contractParentTemplate) {
+      InFlightDiagnostic diag = emitOpError().append(
+          "contract nested in template \"@", contractParentTemplate.getSymName(),
+          "\" must target a symbol in the same template"
+      );
+      if (targetParentTemplate) {
+        diag.attachNote(targetParentTemplate.getLoc()).append("target template defined here");
+      } else {
+        diag.attachNote(targetOp->getLoc()).append("target defined here");
+      }
+      return diag;
+    }
+  }
   FailureOr<TargetTypeInfo> targetInfoRes = getTargetTypeInfo(targetOp);
   if (failed(targetInfoRes)) {
     // The struct verifier reports malformed struct bodies; avoid cascading diagnostics here.
