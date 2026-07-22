@@ -433,7 +433,7 @@ LogicalResult ContractOp::verifySymbolUses(SymbolTableCollection &tables) {
       } else {
         diag.attachNote(targetOp->getLoc()).append("target defined here");
       }
-      return failure();
+      return diag;
     }
   }
   FailureOr<TargetTypeInfo> targetInfoRes = getTargetTypeInfo(targetOp);
