@@ -239,3 +239,26 @@ module attributes {llzk.lang} {
     function.return %0 : !felt.type
   }
 }
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TExplicitForeignSymbolConflictCallee {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @f(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      %felt = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> !felt.type
+      function.return %arg : !poly.tvar<@T>
+    }
+  }
+
+  poly.template @TExplicitForeignSymbolConflictCaller {
+    poly.param @N : index
+
+    function.def @forward(%arg: !felt.type) -> !felt.type {
+      // expected-error@+1 {{explicit template argument for inferred parameter @T must match inferred type '!felt.type', but found @N}}
+      %0 = function.call @TExplicitForeignSymbolConflictCallee::@f<[@N]>(%arg) : (!felt.type) -> !felt.type
+      function.return %0 : !felt.type
+    }
+  }
+}

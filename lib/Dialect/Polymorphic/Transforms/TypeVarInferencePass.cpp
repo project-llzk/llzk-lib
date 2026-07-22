@@ -511,14 +511,23 @@ private:
       return success();
     }
     Attribute convertedAttr = resolveTemplateSymbolArgs ? convertTemplateArgAttr(attr) : attr;
+    if (getFlatSymbolName(convertedAttr)) {
+      return emitRemovedTemplateParamMismatch(paramName, attr, replacementIt->second, diagnosticOp);
+    }
     if (templateArgUnifiesWithType(convertedAttr, convertType(replacementIt->second))) {
       return success();
     }
 
+    return emitRemovedTemplateParamMismatch(paramName, attr, replacementIt->second, diagnosticOp);
+  }
+
+  LogicalResult emitRemovedTemplateParamMismatch(
+      StringAttr paramName, Attribute attr, Type replacementTy, Operation *diagnosticOp
+  ) const {
     InFlightDiagnostic diag = diagnosticOp->emitError()
                               << "explicit template argument for inferred parameter @"
                               << paramName.getValue() << " must match inferred type "
-                              << replacementIt->second << ", but found ";
+                              << replacementTy << ", but found ";
     if (auto typeAttr = llvm::dyn_cast<TypeAttr>(attr)) {
       diag << typeAttr.getValue();
     } else {
