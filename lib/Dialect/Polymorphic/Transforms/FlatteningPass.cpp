@@ -418,7 +418,7 @@ public:
 /// Converts template type variables whose bindings became concrete. More specialized converters
 /// extend this for compound types, while deferred expressions need this common scalar behavior.
 class TemplateParamTypeConverter : public TypeConverter {
-  DenseMap<Attribute, Attribute> paramNameToValue;
+  const DenseMap<Attribute, Attribute> &paramNameToValue;
 
 protected:
   Attribute convertIfPossible(Attribute attr) const {
@@ -427,8 +427,8 @@ protected:
   }
 
 public:
-  explicit TemplateParamTypeConverter(DenseMap<Attribute, Attribute> paramNameToConcrete)
-      : TypeConverter(), paramNameToValue(std::move(paramNameToConcrete)) {
+  explicit TemplateParamTypeConverter(const DenseMap<Attribute, Attribute> &paramNameToConcrete)
+      : TypeConverter(), paramNameToValue(paramNameToConcrete) {
     addConversion([](Type type) { return type; });
     addConversion([this](TypeVarType inputTy) -> Type {
       if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(convertIfPossible(inputTy.getNameRef()))) {
@@ -452,7 +452,6 @@ public:
   }
 
   bool containsParam(Attribute nameAttr) const { return paramNameToValue.contains(nameAttr); }
-  const DenseMap<Attribute, Attribute> &getParamMap() const { return paramNameToValue; }
 };
 
 /// Clone a deferred template expression and materialize parameters that became concrete. The
@@ -593,16 +592,9 @@ static bool calleeReferencesTemplateParam(CallOp op) {
   return parentTemplate.hasConstNamed<TemplateParamOp>(callee.getRootReference());
 }
 
-enum class ExprEvaluationKind : std::uint8_t { Evaluated, Deferred };
-
-struct ExprEvaluation {
-  ExprEvaluationKind kind;
-  Attribute value;
-};
-
 /// Evaluate a single template expression. An unresolved parameter defers evaluation; malformed,
 /// incompatible, or non-foldable concrete expressions are semantic errors.
-static FailureOr<ExprEvaluation>
+static FailureOr<std::optional<Attribute>>
 evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramNameToConcrete) {
   // Deferral depends on the expression's complete parameter set, not operation order. Do not
   // diagnose a non-foldable prefix while a later read still requires partial instantiation.
@@ -610,7 +602,7 @@ evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramN
           exprOp.getInitializerRegion().front().getOps<ConstReadOp>(),
           [&](ConstReadOp op) { return !paramNameToConcrete.contains(op.getConstNameAttr()); }
       )) {
-    return ExprEvaluation {ExprEvaluationKind::Deferred, {}};
+    return std::optional<Attribute>();
   }
 
   // Map from SSA value in the expr body to its concrete Attribute.
@@ -619,7 +611,7 @@ evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramN
     if (auto yieldOp = llvm::dyn_cast<YieldOp>(bodyOp)) {
       auto it = valueMap.find(yieldOp.getVal());
       if (it != valueMap.end()) {
-        return ExprEvaluation {ExprEvaluationKind::Evaluated, it->second};
+        return std::make_optional(it->second);
       }
       yieldOp.emitOpError("cannot evaluate yielded value as a concrete template constant");
       return failure();
@@ -628,7 +620,7 @@ evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramN
     if (auto constReadOp = llvm::dyn_cast<ConstReadOp>(bodyOp)) {
       auto it = paramNameToConcrete.find(constReadOp.getConstNameAttr());
       if (it == paramNameToConcrete.end()) {
-        return ExprEvaluation {ExprEvaluationKind::Deferred, {}};
+        return std::optional<Attribute>();
       }
       // Interpret numeric template values in the read's field so folding observes the same type
       // that body conversion will materialize.
@@ -695,16 +687,17 @@ evaluateTemplateExprs(TemplateOp templateOp, DenseMap<Attribute, Attribute> &par
   );
   SmallVector<TemplateExprOp> deferredExprs;
   for (TemplateExprOp exprOp : templateOp.getConstOps<TemplateExprOp>()) {
-    FailureOr<ExprEvaluation> result = evaluateExpr(exprOp, paramNameToConcrete);
+    FailureOr<std::optional<Attribute>> result = evaluateExpr(exprOp, paramNameToConcrete);
     if (failed(result)) {
       return failure();
     }
-    if (result->kind == ExprEvaluationKind::Evaluated) {
+    if (*result) {
+      Attribute value = result->value();
       auto exprNameAttr = FlatSymbolRefAttr::get(exprOp.getSymNameAttr());
-      paramNameToConcrete.try_emplace(exprNameAttr, result->value);
+      paramNameToConcrete.try_emplace(exprNameAttr, value);
       LLVM_DEBUG(
           llvm::dbgs() << "[evaluateTemplateExprs] expr @" << exprOp.getSymName()
-                       << " evaluated to " << result->value << '\n'
+                       << " evaluated to " << value << '\n'
       );
     } else {
       deferredExprs.push_back(exprOp);
@@ -731,15 +724,9 @@ class StructCloner {
   SymbolTableCollection symTables;
   bool reportMissing = true;
 
-  class MappedTypeConverter : public TypeConverter {
+  class MappedTypeConverter : public TemplateParamTypeConverter {
     StructType origTy;
     StructType newTy;
-    const DenseMap<Attribute, Attribute> &paramNameToValue;
-
-    inline Attribute convertIfPossible(Attribute a) const {
-      auto res = this->paramNameToValue.find(a);
-      return (res != this->paramNameToValue.end()) ? res->second : a;
-    }
 
   public:
     MappedTypeConverter(
@@ -747,10 +734,8 @@ class StructCloner {
         /// Instantiated values for the parameter names in `originalType`
         const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
     )
-        : TypeConverter(), origTy(originalType), newTy(newType),
-          paramNameToValue(paramNameToInstantiatedValue) {
-
-      addConversion([](Type inputTy) { return inputTy; });
+        : TemplateParamTypeConverter(paramNameToInstantiatedValue), origTy(originalType),
+          newTy(newType) {
 
       addConversion([this](StructType inputTy) {
         LLVM_DEBUG(llvm::dbgs() << "[MappedTypeConverter] convert " << inputTy << '\n');
@@ -763,11 +748,7 @@ class StructCloner {
         if (ArrayAttr inputTyParams = inputTy.getParams()) {
           SmallVector<Attribute> updated;
           for (Attribute a : inputTyParams) {
-            if (TypeAttr ta = dyn_cast<TypeAttr>(a)) {
-              updated.push_back(TypeAttr::get(this->convertType(ta.getValue())));
-            } else {
-              updated.push_back(convertIfPossible(a));
-            }
+            updated.push_back(convertAttr(a));
           }
           return StructType::get(
               inputTy.getNameRef(), ArrayAttr::get(inputTy.getContext(), updated)
@@ -788,20 +769,6 @@ class StructCloner {
           return ArrayType::get(this->convertType(inputTy.getElementType()), updated);
         }
         // Otherwise, return the type unchanged
-        return inputTy;
-      });
-
-      addConversion([this](TypeVarType inputTy) -> Type {
-        // Check for replacement of parameter symbol name with a concrete type
-        if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(convertIfPossible(inputTy.getNameRef()))) {
-          Type convertedType = tyAttr.getValue();
-          // Use the new type unless it contains a TypeVarType because a TypeVarType from a
-          // different struct references a parameter name from that other struct, not from the
-          // current struct so the reference would be invalid.
-          if (isConcreteType(convertedType)) {
-            return convertedType;
-          }
-        }
         return inputTy;
       });
     }
@@ -1258,8 +1225,8 @@ static ArrayType flattenInstantiatedArrayType(ArrayType inputTy, Type convertedE
 /// ArrayType/StructType parameters with their concrete values determined by unification.
 class FuncInstTypeConverter : public TemplateParamTypeConverter {
 public:
-  explicit FuncInstTypeConverter(DenseMap<Attribute, Attribute> paramNameToConcrete)
-      : TemplateParamTypeConverter(std::move(paramNameToConcrete)) {
+  explicit FuncInstTypeConverter(const DenseMap<Attribute, Attribute> &paramNameToConcrete)
+      : TemplateParamTypeConverter(paramNameToConcrete) {
     addConversion([this](ArrayType inputTy) {
       SmallVector<Attribute> updated;
       bool changed = false;
@@ -1284,22 +1251,11 @@ public:
         SmallVector<Attribute> updated;
         bool changed = false;
         for (Attribute a : params) {
-          if (TypeAttr ta = dyn_cast<TypeAttr>(a)) {
-            Type newTy = this->convertType(ta.getValue());
-            if (newTy != ta.getValue()) {
-              updated.push_back(TypeAttr::get(newTy));
-              changed = true;
-              continue;
-            }
-          } else {
-            Attribute converted = convertIfPossible(a);
-            if (converted != a) {
-              updated.push_back(converted);
-              changed = true;
-              continue;
-            }
+          Attribute converted = convertAttr(a);
+          if (converted != a) {
+            changed = true;
           }
-          updated.push_back(a);
+          updated.push_back(converted);
         }
         if (changed) {
           return StructType::get(
@@ -1584,7 +1540,7 @@ static LogicalResult applyBodyConversions(
   std::optional<Diagnostic> failureDiagnostic;
   RewritePatternSet bodyPatterns = newGeneralRewritePatternSet(tyConv, ctx, target);
   bodyPatterns.add<ClonedBodyConstReadOpPattern>(
-      tyConv, ctx, tyConv.getParamMap(), delayedDiagnostics, failureDiagnostic
+      tyConv, ctx, paramNameToConcrete, delayedDiagnostics, failureDiagnostic
   );
   bodyPatterns.add<ClonedBodyArrayReadOpPattern, ClonedBodyArrayWriteOpPattern>(tyConv, ctx);
   if (failed(applyFullConversion(newFunc, target, std::move(bodyPatterns)))) {
