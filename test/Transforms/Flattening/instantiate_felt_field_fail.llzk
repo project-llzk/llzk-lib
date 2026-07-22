@@ -5,6 +5,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@T::@S<[#felt<const 35 : 
     poly.param @N
     struct.def @S {
       function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        // expected-error@+2 {{cannot materialize constant with type '!felt.type<"goldilocks">' as expected type '!felt.type<"bn128">'}}
         // expected-error@+1 {{failed to legalize operation 'poly.read_const'}}
         %value = poly.read_const @N : !felt.type<"bn128">
         %self = struct.new : <@T::@S<[@N]>>
@@ -42,6 +43,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@T::@S<[#felt<const 35 : 
     poly.param @N
     struct.def @S {
       function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        // expected-error@+2 {{cannot materialize constant with type '!felt.type<"goldilocks">' as expected type '!felt.type'}}
         // expected-error@+1 {{failed to legalize operation 'poly.read_const'}}
         %value = poly.read_const @N : !felt.type
         %self = struct.new : <@T::@S<[@N]>>
@@ -50,6 +52,55 @@ module attributes {llzk.lang, llzk.main = !struct.type<@T::@S<[#felt<const 35 : 
       function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) {
         function.return
       }
+    }
+  }
+}
+// -----
+
+module attributes {llzk.lang, llzk.main = !struct.type<@T::@S<[#felt<const 35 : !felt.type<"goldilocks">>]>>} {
+  poly.template @T {
+    poly.param @N
+    poly.expr @Twice {
+      // expected-error@+1 {{cannot materialize constant with type '!felt.type<"goldilocks">' as expected type '!felt.type<"bn128">' while evaluating template expression}}
+      %n = poly.read_const @N : !felt.type<"bn128">
+      %twice = felt.add %n, %n : !felt.type<"bn128">, !felt.type<"bn128">
+      poly.yield %twice : !felt.type<"bn128">
+    }
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %value = poly.read_const @Twice : !felt.type<"bn128">
+        %self = struct.new : <@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) {
+        function.return
+      }
+    }
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @N
+    function.def @value() -> !felt.type<"bn128"> {
+      // expected-error@+2 {{cannot materialize constant with type '!felt.type<"goldilocks">' as expected type '!felt.type<"bn128">'}}
+      // expected-error@+1 {{failed to legalize operation 'poly.read_const'}}
+      %value = poly.read_const @N : !felt.type<"bn128">
+      function.return %value : !felt.type<"bn128">
+    }
+  }
+
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      // expected-note@+2 {{while instantiating this call}}
+      // expected-error@+1 {{failure while creating instantiated function}}
+      %value = function.call @T::@value<[#felt<const 35 : !felt.type<"goldilocks">>]>() : () -> !felt.type<"bn128">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
     }
   }
 }

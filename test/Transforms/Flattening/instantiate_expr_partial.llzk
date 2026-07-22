@@ -1,0 +1,126 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
+
+#id = affine_map<(i)->(i)>
+module attributes {llzk.lang, llzk.main = !struct.type<@Outer::@Wrapper<[7]>>} {
+  poly.template @Inner {
+    poly.param @N : index
+    poly.param @M : index
+    poly.expr @TwiceM {
+      %m = poly.read_const @M : index
+      %two = arith.constant 2 : index
+      %result = arith.muli %m, %two : index
+      poly.yield %result : index
+    }
+    struct.def @Value {
+      struct.member @values : !array.type<#id x !felt.type>
+      function.def @compute() -> !struct.type<@Inner::@Value<[@N, @M]>> {
+        %twice = poly.read_const @TwiceM : index
+        %self = struct.new : <@Inner::@Value<[@N, @M]>>
+        %values = array.new{(%twice)[]} : !array.type<#id x !felt.type>
+        struct.writem %self[@values] = %values : <@Inner::@Value<[@N, @M]>>, !array.type<#id x !felt.type>
+        function.return %self : !struct.type<@Inner::@Value<[@N, @M]>>
+      }
+      function.def @constrain(%self: !struct.type<@Inner::@Value<[@N, @M]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Outer {
+    poly.param @M : index
+    struct.def @Wrapper {
+      struct.member @value : !struct.type<@Inner::@Value<[5, @M]>>
+      function.def @compute() -> !struct.type<@Outer::@Wrapper<[@M]>> {
+        %self = struct.new : <@Outer::@Wrapper<[@M]>>
+        function.return %self : !struct.type<@Outer::@Wrapper<[@M]>>
+      }
+      function.def @constrain(%self: !struct.type<@Outer::@Wrapper<[@M]>>) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Inner_5_7_Value {
+// CHECK:         struct.member @values : !array.type<14 x !felt.type>
+// CHECK-NOT:     poly.read_const @TwiceM
+// CHECK-LABEL: poly.template @"Inner_5_\1A" {
+// CHECK:         poly.param @M : index
+// CHECK:         poly.expr @TwiceM {
+// CHECK:           poly.read_const @M : index
+// CHECK:         struct.def @Value {
+// CHECK:           poly.read_const @TwiceM : index
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @InnerFunc {
+    poly.param @N : index
+    poly.param @M : index
+    poly.expr @TwiceM {
+      %m = poly.read_const @M : index
+      %two = arith.constant 2 : index
+      %result = arith.muli %m, %two : index
+      poly.yield %result : index
+    }
+    function.def @value(%input: !array.type<@N,@M x !felt.type>) -> index {
+      %twice = poly.read_const @TwiceM : index
+      function.return %twice : index
+    }
+  }
+
+  poly.template @OuterFunc {
+    poly.param @M : index
+    function.def @value(%input: !array.type<5,@M x !felt.type>) -> index {
+      %result = function.call @InnerFunc::@value(%input) : (!array.type<5,@M x !felt.type>) -> index
+      function.return %result : index
+    }
+  }
+
+  struct.def @Main {
+    function.def @compute(%input: !array.type<5,7 x !felt.type>) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      %result = function.call @OuterFunc::@value(%input) : (!array.type<5,7 x !felt.type>) -> index
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %input: !array.type<5,7 x !felt.type>) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: function.def @InnerFunc_5_7_value(
+// CHECK:         arith.constant 14 : index
+// CHECK-NOT:     poly.read_const @TwiceM
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @InnerFunc {
+    poly.param @N : index
+    poly.param @M : index
+    poly.expr @TwiceM {
+      %m = poly.read_const @M : index
+      %two = arith.constant 2 : index
+      %result = arith.muli %m, %two : index
+      poly.yield %result : index
+    }
+    function.def @value(%input: !array.type<@N,@M x !felt.type>) -> index {
+      %twice = poly.read_const @TwiceM : index
+      function.return %twice : index
+    }
+  }
+
+  poly.template @OuterFunc {
+    poly.param @M : index
+    function.def @value(%input: !array.type<5,@M x !felt.type>) -> index {
+      %result = function.call @InnerFunc::@value(%input) : (!array.type<5,@M x !felt.type>) -> index
+      function.return %result : index
+    }
+  }
+}
+
+// CHECK-LABEL: poly.template @"InnerFunc_5_\1A" {
+// CHECK:         poly.param @M : index
+// CHECK:         poly.expr @TwiceM {
+// CHECK:           poly.read_const @M : index
+// CHECK:         function.def @value
+// CHECK:           poly.read_const @TwiceM : index
