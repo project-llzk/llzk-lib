@@ -435,7 +435,7 @@ LogicalResult ContractOp::verifySymbolUses(SymbolTableCollection &tables) {
         .append("target defined here");
   }
   TargetTypeInfo &targetInfo = *targetInfoRes;
-  if (targetInfo.funcType != contractTy) {
+  if (!functionTypesUnify(contractTy, targetInfo.funcType, targetRes->getNamespace())) {
     return emitOpError()
         .append("contract type does not match target type")
         .attachNote(targetOp->getLoc())

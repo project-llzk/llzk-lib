@@ -172,10 +172,12 @@ StructType StructDefOp::getType(std::optional<ArrayAttr> constParams) {
   }
   // Check if there is an enclosing `TemplateOp` defining parameters, else there are none.
   if (TemplateOp parent = getParentOfType<TemplateOp>(*this)) {
-    return StructType::get(pathRes.value(), parent.getConstNames<TemplateParamOp>());
-  } else {
-    return StructType::get(pathRes.value());
+    auto params = parent.getConstNames<TemplateParamOp>();
+    if (!params.empty()) {
+      return StructType::get(pathRes.value(), params);
+    }
   }
+  return StructType::get(pathRes.value());
 }
 
 std::string StructDefOp::getHeaderString() {

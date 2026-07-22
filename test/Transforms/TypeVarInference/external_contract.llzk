@@ -26,7 +26,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_2]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
 module attributes {llzk.lang} {
@@ -74,5 +73,78 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    verif.contract @C for @TExternalStructContract::@Box (%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@TExternalStructContract::@Box>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: index) {
 // CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant true
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_6]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TBox {
+    poly.param @T : !poly.tvar<@T>
+
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@T>
+
+      function.def @product() -> !struct.type<@TBox::@Box<[@T]>> {
+        %self = struct.new : <@TBox::@Box<[@T]>>
+        function.return %self : !struct.type<@TBox::@Box<[@T]>>
+      }
+    }
+  }
+
+  verif.contract @C for @TBox::@Box (%self: !struct.type<@TBox::@Box<[@T]>>) {
+    %index_self = poly.unifiable_cast %self : (!struct.type<@TBox::@Box<[@T]>>) -> !struct.type<@TBox::@Box<[index]>>
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TBox {
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        struct.member @value : index
+// CHECK-NEXT:        function.def @product() -> !struct.type<@TBox::@Box> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TBox::@Box>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@TBox::@Box>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @C for @TBox::@Box (%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox::@Box>) {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      verif.ensure_compute %[[VAL_2]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TBox {
+    poly.param @T : !poly.tvar<@T>
+
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@T>
+
+      function.def @product() -> !struct.type<@TBox::@Box<[@T]>> {
+        %self = struct.new : <@TBox::@Box<[@T]>>
+        function.return %self : !struct.type<@TBox::@Box<[@T]>>
+      }
+    }
+  }
+
+  verif.contract @C for @TBox::@Box (%self: !struct.type<@TBox::@Box<[index]>>) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TBox {
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        struct.member @value : index
+// CHECK-NEXT:        function.def @product() -> !struct.type<@TBox::@Box> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TBox::@Box>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@TBox::@Box>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @C for @TBox::@Box (%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TBox::@Box>) {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      verif.ensure_compute %[[VAL_2]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

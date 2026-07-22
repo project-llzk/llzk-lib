@@ -1447,6 +1447,17 @@ public:
     return success();
   }
 
+  /// Collect inferences from one proven type relationship.
+  LogicalResult collectTypeInferences(Type lhs, Type rhs, Location loc) {
+    do {
+      changedInIteration = false;
+      if (failed(collectTypePairInferences(lhs, rhs, Value(), Value(), loc))) {
+        return failure();
+      }
+    } while (changedInIteration);
+    return success();
+  }
+
   /// Walk `root` and collect cross-template inferences from every type-bearing surface.
   ///
   /// This extends the normal cast-based collection with facts implied by struct type
@@ -3148,6 +3159,53 @@ static LogicalResult collectContractTargetFunctionInferences(
   return success();
 }
 
+/// Collect proof facts from a contract into the struct it verifies.
+///
+/// A struct-target contract has the same self signature as the target struct's
+/// product/constrain contract type. Proofs in the contract body therefore
+/// constrain the target template directly, even when the contract is physically
+/// outside that template.
+static LogicalResult collectContractTargetStructInferences(
+    TemplateInferenceInfo &info, verif::ContractOp contract, ModuleOp module,
+    DenseMap<Operation *, TemplateInferenceInfo *> *infoByTemplate, SymbolTableCollection &tables,
+    bool &changed
+) {
+  FailureOr<SymbolLookupResult<StructDefOp>> target = contract.getStructTarget(tables);
+  if (failed(target)) {
+    return success();
+  }
+  StructDefOp targetStruct = target->get();
+  if (getParentOfType<TemplateOp>(targetStruct.getOperation()) != info.templateOp) {
+    return success();
+  }
+
+  DenseMap<StringAttr, InferredType> oldTemplateScopeReplacements = info.templateScopeReplacements;
+
+  TypeVarInferenceCollector collector(info, info.templateScopeReplacements);
+  FunctionType contractTy = contract.getFunctionType();
+  if (contractTy.getNumInputs() > 0) {
+    StructType targetSelfTy = targetStruct.getType();
+    if (auto contractSelfTy = llvm::dyn_cast<StructType>(contractTy.getInput(0));
+        contractSelfTy && contractSelfTy.getNameRef() == targetSelfTy.getNameRef() &&
+        failed(collector.collectTypeInferences(contractSelfTy, targetSelfTy, contract.getLoc()))) {
+      return failure();
+    }
+  }
+  if (failed(collector.collect(contract.getOperation()))) {
+    return failure();
+  }
+  if (infoByTemplate && failed(collector.collectStructTemplateParamInferences(
+                            contract.getOperation(), module, *infoByTemplate, tables
+                        ))) {
+    return failure();
+  }
+
+  if (!sameReplacementTypes(oldTemplateScopeReplacements, info.templateScopeReplacements)) {
+    changed = true;
+  }
+  return success();
+}
+
 /// Recompute the template-wide replacements from the per-function proofs.
 ///
 /// Template-scope proofs from `poly.expr` bodies constrain every instantiation
@@ -3262,6 +3320,9 @@ static LogicalResult inferStructTemplateParamUses(
       for (verif::ContractOp contract : walkCollect<verif::ContractOp>(info.templateOp)) {
         if (failed(collectContractTargetFunctionInferences(
                 info, contract, module, &infoByTemplate, tables, changed
+            )) ||
+            failed(collectContractTargetStructInferences(
+                info, contract, module, &infoByTemplate, tables, changed
             ))) {
           return failure();
         }
@@ -3284,6 +3345,55 @@ static LogicalResult inferStructTemplateParamUses(
         }
       }
 
+      DenseMap<StringAttr, InferredType> oldReplacements = info.replacements;
+      if (failed(recomputeTemplateWideReplacements(info))) {
+        return failure();
+      }
+      if (!sameReplacementTypes(oldReplacements, info.replacements)) {
+        changed = true;
+      }
+    }
+  } while (changed);
+  return success();
+}
+
+/// Collect proof facts from contracts that target a rewritten template but are
+/// physically outside it.
+static LogicalResult collectExternalContractTargetInferences(
+    ModuleOp module, MutableArrayRef<TemplateInferenceInfo> templateInfos,
+    DenseMap<Operation *, TemplateInferenceInfo *> &infoByTemplate
+) {
+  bool changed = false;
+  do {
+    changed = false;
+    bool failedCollection = false;
+    SymbolTableCollection tables;
+    module.walk([&](verif::ContractOp contract) {
+      TemplateOp targetTemplate = getContractTargetTemplate(contract, tables);
+      if (!targetTemplate) {
+        return;
+      }
+      if (getParentOfType<TemplateOp>(contract.getOperation()) == targetTemplate) {
+        return;
+      }
+      TemplateInferenceInfo *info = infoByTemplate.lookup(targetTemplate.getOperation());
+      if (!info) {
+        return;
+      }
+      if (failed(collectContractTargetFunctionInferences(
+              *info, contract, module, &infoByTemplate, tables, changed
+          )) ||
+          failed(collectContractTargetStructInferences(
+              *info, contract, module, &infoByTemplate, tables, changed
+          ))) {
+        failedCollection = true;
+      }
+    });
+    if (failedCollection) {
+      return failure();
+    }
+
+    for (TemplateInferenceInfo &info : templateInfos) {
       DenseMap<StringAttr, InferredType> oldReplacements = info.replacements;
       if (failed(recomputeTemplateWideReplacements(info))) {
         return failure();
@@ -3343,6 +3453,9 @@ static FailureOr<TemplateInferenceInfo> buildInfo(TemplateOp templateOp) {
   for (verif::ContractOp contract : walkCollect<verif::ContractOp>(templateOp)) {
     if (failed(collectContractTargetFunctionInferences(
             info, contract, module, /*infoByTemplate=*/nullptr, tables, changed
+        )) ||
+        failed(collectContractTargetStructInferences(
+            info, contract, module, /*infoByTemplate=*/nullptr, tables, changed
         ))) {
       return failure();
     }
@@ -3390,6 +3503,12 @@ private:
     DenseMap<Operation *, TemplateInferenceInfo *> mutableInfoByTemplate;
     for (TemplateInferenceInfo &info : templateInfos) {
       mutableInfoByTemplate.try_emplace(info.templateOp.getOperation(), &info);
+    }
+    if (failed(
+            collectExternalContractTargetInferences(module, templateInfos, mutableInfoByTemplate)
+        )) {
+      signalPassFailure();
+      return;
     }
     if (failed(inferStructTemplateParamUses(module, templateInfos, mutableInfoByTemplate))) {
       signalPassFailure();
