@@ -421,8 +421,8 @@ LogicalResult ContractOp::verifySymbolUses(SymbolTableCollection &tables) {
         .attachNote(targetOp->getLoc())
         .append("target defined here");
   }
-  if (TemplateOp contractParentTemplate = getParentOfType<TemplateOp>(*this)) {
-    TemplateOp targetParentTemplate = getParentOfType<TemplateOp>(targetOp);
+  if (auto contractParentTemplate = getParentOfType<TemplateOp>(*this)) {
+    auto targetParentTemplate = getParentOfType<TemplateOp>(targetOp);
     if (targetParentTemplate != contractParentTemplate) {
       InFlightDiagnostic diag = emitOpError().append(
           "contract nested in template \"@", contractParentTemplate.getSymName(),
