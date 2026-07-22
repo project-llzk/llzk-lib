@@ -241,10 +241,10 @@ public:
   /// call-site template argument lists can be trimmed using their original
   /// positional layout.
   TypeVarReplacementConverter(
-      MLIRContext *ctx, ArrayRef<StringAttr> templatePath, ArrayRef<StringAttr> oldParamOrder,
+      MLIRContext *c, ArrayRef<StringAttr> templatePath, ArrayRef<StringAttr> oldParamOrder,
       const DenseMap<StringAttr, Type> &replacements, bool trimResolvedParams = true
   )
-      : ctx_(ctx), templatePath_(templatePath), oldParamOrder_(oldParamOrder),
+      : ctx_(c), templatePath_(templatePath), oldParamOrder_(oldParamOrder),
         replacements_(replacements), trimResolvedParams_(trimResolvedParams) {
     for (const auto &entry : replacements_) {
       removedParams_.insert(entry.first);
@@ -653,8 +653,8 @@ template <typename ConverterT> static bool convertCallCallee(CallOp callOp, Conv
 
 /// Return whether `converter` recorded a conversion failure, if it exposes that state.
 template <typename ConverterT> static bool converterFailed(ConverterT &converter) {
-  if constexpr (requires { converter.failed(); }) {
-    return converter.failed();
+  if constexpr (requires { converter.hadFailure(); }) {
+    return converter.hadFailure();
   }
   return false;
 }
@@ -906,8 +906,9 @@ static std::string buildSpecializedTemplateCloneCacheKey(
 }
 
 /// Return true if `expr` only reads constants that will still be bound in a sibling template.
-static bool
-canCopyTemplateExprToSpecialization(TemplateExprOp expr, const DenseSet<StringAttr> &availableNames) {
+static bool canCopyTemplateExprToSpecialization(
+    TemplateExprOp expr, const DenseSet<StringAttr> &availableNames
+) {
   bool canCopy = true;
   expr->walk([&](ConstReadOp readOp) {
     if (!availableNames.contains(readOp.getConstNameAttr().getAttr())) {
@@ -1016,21 +1017,19 @@ class ConcreteStructInstantiationConverter {
   /// Type replacements active while rewriting the body of one cloned struct.
   DenseMap<StringAttr, Type> activeTypeReplacements_;
   /// Whether a nested conversion failed and emitted a diagnostic.
-  bool failed_ = false;
+  bool hasFailure = false;
 
 public:
   /// Create a converter for concrete struct instantiations in `module`.
-  ConcreteStructInstantiationConverter(
-      MLIRContext *ctx, ModuleOp module, SymbolTableCollection &tables
-  )
-      : ctx_(ctx), module_(module), tables_(tables) {}
+  ConcreteStructInstantiationConverter(MLIRContext *c, ModuleOp m, SymbolTableCollection &t)
+      : ctx_(c), module_(m), tables_(t) {}
 
   /// Return whether a nested conversion failed and emitted a diagnostic.
-  bool failed() const { return failed_; }
+  bool hadFailure() const { return hasFailure; }
 
   /// Convert a type by recursively instantiating concrete parameterized structs.
   Type convertType(Type ty) {
-    if (!ty || failed_) {
+    if (!ty || hasFailure) {
       return ty;
     }
     if (auto tvarTy = llvm::dyn_cast<TypeVarType>(ty)) {
@@ -1054,7 +1053,7 @@ public:
 
   /// Convert an attribute that can contain type references.
   Attribute convertAttr(Attribute attr) {
-    if (failed_) {
+    if (hasFailure) {
       return attr;
     }
     return convertTypeOrArrayAttr(attr, ctx_, [this](Type ty) {
@@ -1144,8 +1143,8 @@ private:
     }
 
     FailureOr<StructType> cloneTy = getOrCreateStructClone(convertedTy, newParams);
-    if (::failed(cloneTy)) {
-      failed_ = true;
+    if (failed(cloneTy)) {
+      hasFailure = true;
       return convertedTy;
     }
     return *cloneTy;
@@ -1160,7 +1159,7 @@ private:
 
     FailureOr<SymbolLookupResult<StructDefOp>> lookup =
         concreteStructTy.getDefinition(tables_, module_, /*emitError=*/false);
-    if (::failed(lookup)) {
+    if (failed(lookup)) {
       return failure();
     }
 
@@ -1206,7 +1205,7 @@ private:
         parentTemplate, oldParamOrder, paramNameToConcrete, concreteParamArray, tables_,
         templateClones_[parentTemplate.getOperation()], layout
     );
-    if (::failed(newTemplate)) {
+    if (failed(newTemplate)) {
       return failure();
     }
 
@@ -1237,7 +1236,7 @@ private:
         StructType::get(localTy.getNameRef(), ArrayAttr::get(ctx_, concreteParams)), localTy
     );
     SymbolRefAttr cloneNameRef = clone.getFullyQualifiedName();
-    if (::failed(convertTemplateExprTypesIn(*newTemplate, *this))) {
+    if (failed(convertTemplateExprTypesIn(*newTemplate, *this))) {
       activeLocalStructReplacements_ = std::move(previousLocalStructReplacements);
       activeTypeReplacements_ = std::move(previousReplacements);
       instantiations_.erase(concreteStructTy);
@@ -1245,7 +1244,7 @@ private:
       clone.erase();
       return failure();
     }
-    if (::failed(convertOperationTypesIn(clone.getOperation(), *this))) {
+    if (failed(convertOperationTypesIn(clone.getOperation(), *this))) {
       activeLocalStructReplacements_ = std::move(previousLocalStructReplacements);
       activeTypeReplacements_ = std::move(previousReplacements);
       instantiations_.erase(concreteStructTy);
@@ -2831,7 +2830,7 @@ class ReferencedStructTemplateParamConverter {
   /// Operation used as the diagnostic anchor while converting one op.
   Operation *diagnosticOp_ = nullptr;
   /// Whether conversion of the current operation failed.
-  bool failed_ = false;
+  bool hasFailure = false;
 
 public:
   ReferencedStructTemplateParamConverter(
@@ -2843,15 +2842,15 @@ public:
   /// Start converting a new operation and use it for diagnostics.
   void startOperation(Operation *op) {
     diagnosticOp_ = op;
-    failed_ = false;
+    hasFailure = false;
   }
 
   /// Return whether conversion of the current operation failed.
-  bool failed() const { return failed_; }
+  bool hadFailure() const { return hasFailure; }
 
   /// Convert a type by recursively updating struct template parameter lists.
   Type convertType(Type ty) {
-    if (!ty || failed_) {
+    if (!ty || hasFailure) {
       return ty;
     }
     if (auto arrTy = llvm::dyn_cast<ArrayType>(ty)) {
@@ -2871,7 +2870,7 @@ public:
 
   /// Convert an attribute that can contain struct type references.
   Attribute convertAttr(Attribute attr) {
-    if (failed_) {
+    if (hasFailure) {
       return attr;
     }
     return convertTypeOrArrayAttr(attr, ctx_, [this](Type ty) {
@@ -2893,7 +2892,7 @@ private:
       Attribute newAttr = convertAttr(attr);
       newParams.push_back(newAttr);
       changed |= newAttr != attr;
-      if (failed_) {
+      if (hasFailure) {
         return structTy;
       }
     }
@@ -2902,7 +2901,7 @@ private:
 
     FailureOr<SymbolLookupResult<StructDefOp>> lookup =
         convertedTy.getDefinition(tables_, module_, /*reportMissing=*/false);
-    if (::failed(lookup)) {
+    if (failed(lookup)) {
       return convertedTy;
     }
     TemplateOp parentTemplate = getParentOfType<TemplateOp>(lookup->get().getOperation());
@@ -2921,8 +2920,8 @@ private:
     FailureOr<ArrayAttr> trimmedParams = converter->convertTemplateParams(
         convertedTy.getParams(), diagnosticOp_, resolveTemplateSymbolArgs
     );
-    if (::failed(trimmedParams)) {
-      failed_ = true;
+    if (failed(trimmedParams)) {
+      hasFailure = true;
       return convertedTy;
     }
     if (convertedTy.getParams() == *trimmedParams) {
