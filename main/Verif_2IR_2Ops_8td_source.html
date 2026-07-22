@@ -226,9 +226,9 @@ $(function(){initNavTree('Verif_2IR_2Ops_8td_source.html','',''); });
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>    or `verif.require_constrain` operations. A circuit whose main-level contract contains such</div>
 <div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>    preconditions is valid only for inputs that satisfy them.</div>
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span> </div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>    For templated targets (i.e., functions or structs within a `poly.template`),</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>    the contract body may reference the target template&#39;s parameters and</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>    expressions even if the contract is physically nested elsewhere.</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>    For templated targets (i.e., functions or structs within a `poly.template`), the contract</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>    body may reference the target template&#39;s parameters and expressions. If a contract is nested</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>    inside a `poly.template`, then the target must be in that same template.</div>
 <div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span> </div>
 <div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>    Examples:</div>
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span> </div>
