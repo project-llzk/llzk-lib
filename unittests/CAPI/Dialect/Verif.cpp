@@ -343,6 +343,28 @@ struct VerifConditionOpBuildBase {
 };
 } // namespace
 
+std::unique_ptr<VerifProveOpBuildFuncHelper> VerifProveOpBuildFuncHelper::get() {
+  struct Impl : public VerifProveOpBuildFuncHelper, VerifConditionOpBuildBase {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      MlirValue cond = prepareInsertionSite(testClass, builder, location);
+      return llzkVerif_VerifProveOpBuild(builder, location, cond);
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+std::unique_ptr<VerifAssertOpBuildFuncHelper> VerifAssertOpBuildFuncHelper::get() {
+  struct Impl : public VerifAssertOpBuildFuncHelper, VerifConditionOpBuildBase {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      MlirValue cond = prepareInsertionSite(testClass, builder, location);
+      return llzkVerif_VerifAssertOpBuild(builder, location, cond);
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
 std::unique_ptr<EnsureComputeOpBuildFuncHelper> EnsureComputeOpBuildFuncHelper::get() {
   struct Impl : public EnsureComputeOpBuildFuncHelper, VerifConditionOpBuildBase {
     MlirOperation

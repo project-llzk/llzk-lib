@@ -51,19 +51,17 @@ class ContractConditionOp<string mnemonic, list<Trait> traits = []>
 // Struct verification condition operations
 //===------------------------------------------------------------------===//
 
-// def AssertOp : ConditionOp<"assert", []> {
-//   let summary = "An assertion in the target of a contract, derived from one
-//   of "
-//                 "the contract's specifications";
-//   let description = summary;
-// }
+def VerifAssertOp : ConditionOp<"assert", []> {
+  let summary = "An assertion in the target of a contract, derived from one of "
+                "the contract's specifications";
+  let description = summary;
+}
 
-// def ProveOp : ConditionOp<"prove", []> {
-//   let summary = "A proof obligation in the target of a contract, derived from
-//   "
-//                 "one of the contract's specifications";
-//   let description = summary;
-// }
+def VerifProveOp : ConditionOp<"prove", []> {
+  let summary = "A proof obligation in the target of a contract, derived from"
+                "one of the contract's specifications";
+  let description = summary;
+}
 
 //===------------------------------------------------------------------===//
 // Precondition operations
