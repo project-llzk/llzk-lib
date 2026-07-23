@@ -35,34 +35,20 @@ module attributes {
   llzk.lang,
   llzk.main = !struct.type<@OffsetTemplate::@Main<[#felt<const 35 : !felt.type<"bn128">>]>>
 } {
-  struct.def @Row {
-    struct.member @value : !felt.type<"bn128"> {column, llzk.pub}
-
-    function.def @compute() -> !struct.type<@Row> {
-      %self = struct.new : <@Row>
-      function.return %self : !struct.type<@Row>
-    }
-
-    function.def @constrain(%self: !struct.type<@Row>) {
-      function.return
-    }
-  }
-
   poly.template @OffsetTemplate {
     poly.param @Offset
 
     struct.def @Main {
-      function.def @compute(%row: !struct.type<@Row>) -> !struct.type<@OffsetTemplate::@Main<[@Offset]>> {
+      struct.member @value : !felt.type<"bn128"> {column, llzk.pub}
+
+      function.def @compute() -> !struct.type<@OffsetTemplate::@Main<[@Offset]>> {
         %self = struct.new : <@OffsetTemplate::@Main<[@Offset]>>
         // expected-error@+1 {{'struct.readm' op table offset requires an integer template value}}
-        %value = struct.readm %row[@value] : <@Row>, !felt.type<"bn128"> {tableOffset = @Offset}
+        %value = struct.readm %self[@value] : <@OffsetTemplate::@Main<[@Offset]>>, !felt.type<"bn128"> {tableOffset = @Offset}
         function.return %self : !struct.type<@OffsetTemplate::@Main<[@Offset]>>
       }
 
-      function.def @constrain(
-          %self: !struct.type<@OffsetTemplate::@Main<[@Offset]>>,
-          %row: !struct.type<@Row>
-      ) {
+      function.def @constrain(%self: !struct.type<@OffsetTemplate::@Main<[@Offset]>>) {
         function.return
       }
     }
