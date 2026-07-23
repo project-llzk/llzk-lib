@@ -592,8 +592,7 @@ class StructCloner {
 
   class ClonedStructMemberReadOpPattern
       : public SymbolUserHelper<ClonedStructMemberReadOpPattern, MemberReadOp, IntegerAttr> {
-    using super =
-        SymbolUserHelper<ClonedStructMemberReadOpPattern, MemberReadOp, IntegerAttr>;
+    using super = SymbolUserHelper<ClonedStructMemberReadOpPattern, MemberReadOp, IntegerAttr>;
 
   public:
     ClonedStructMemberReadOpPattern(
