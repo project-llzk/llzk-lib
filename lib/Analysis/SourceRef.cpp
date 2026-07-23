@@ -172,6 +172,22 @@ size_t SourceRefIndex::Hash::operator()(const SourceRefIndex &c) const {
   }
 }
 
+bool SourceRefIndex::overlaps(const SourceRefIndex &rhs) const {
+  if (isIndex() && rhs.isIndexRange()) {
+    auto [low, high] = rhs.getIndexRange();
+    return low <= getIndex() && getIndex() < high;
+  }
+  if (isIndexRange() && rhs.isIndex()) {
+    return rhs.overlaps(*this);
+  }
+  if (isIndexRange() && rhs.isIndexRange()) {
+    auto [lhsLow, lhsHigh] = getIndexRange();
+    auto [rhsLow, rhsHigh] = rhs.getIndexRange();
+    return lhsLow < rhsHigh && rhsLow < lhsHigh;
+  }
+  return *this == rhs;
+}
+
 /* SourceRef */
 
 SourceRef::SortCategory SourceRef::getSortCategory() const {
@@ -366,6 +382,15 @@ bool SourceRef::isValidPrefix(const SourceRef &prefix) const {
     }
   }
   return true;
+}
+
+bool SourceRef::overlaps(const SourceRef &rhs) const {
+  if (isConstant() || rhs.isConstant() || value != rhs.value || path.size() != rhs.path.size()) {
+    return false;
+  }
+  return llvm::all_of(llvm::zip(path, rhs.path), [](const auto &indices) {
+    return std::get<0>(indices).overlaps(std::get<1>(indices));
+  });
 }
 
 FailureOr<SourceRef::Path> SourceRef::getSuffix(const SourceRef &prefix) const {

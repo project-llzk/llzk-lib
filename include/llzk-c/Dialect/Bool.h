@@ -25,6 +25,7 @@
 // Enums must come before Attrs and Ops
 #include "llzk/Dialect/Bool/IR/Attrs.capi.h.inc"
 #include "llzk/Dialect/Bool/IR/Ops.capi.h.inc"
+#include "llzk/Dialect/Bool/Transforms/TransformationPasses.capi.h.inc"
 
 #ifdef __cplusplus
 extern "C" {

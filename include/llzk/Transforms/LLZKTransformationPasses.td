@@ -16,10 +16,10 @@ def RedundantReadAndWriteEliminationPass
     : LLZKPass<"llzk-duplicate-read-write-elim"> {
   let summary = "Remove redundant reads and writes";
   let description = [{
-    Remove redundant or unnecessary reads and writes to struct members and
-    arrays, and redundant reads from globals and RAM.
-    Global writes and RAM stores update stateful-read facts, but redundant
-    global/RAM write removal is left to follow-up alias-aware overwrite handling.
+    Remove redundant or unnecessary reads and writes to struct members, arrays,
+    globals, and RAM. Global writes are removed when they are overwritten or
+    write an already-known value. RAM stores require the same translated address
+    SSA value.
 
     Struct-member accesses match only when the base, member, table offset,
     affine map metadata, and translated affine operands match. Omitted
@@ -106,7 +106,7 @@ def ComputeConstrainToProductPass
                 "struct with a single @product function";
   let description = summary;
   let options = [Option<"rootStruct", "root-struct", "std::string",
-                        /* default */ "\"@Main\"",
+                        /* default */ "\"Main\"",
                         "Root struct at which to start alignment "
                         "(default to `@Main`)">];
 }

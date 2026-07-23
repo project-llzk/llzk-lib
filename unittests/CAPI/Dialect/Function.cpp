@@ -41,11 +41,18 @@ static MlirOperation create_func_def_op(
     llvm::ArrayRef<MlirAttribute> arg_attrs
 ) {
   auto location = mlirLocationUnknownGet(ctx);
-  return llzkFunction_FuncDefOpCreateWithAttrsAndArgAttrs(
-      location, mlirStringRefCreateFromCString(name), type,
+  MlirModule module = mlirModuleCreateEmpty(location);
+  MlirOpBuilder builder = mlirOpBuilderCreate(ctx);
+  mlirOpBuilderSetInsertionPointToStart(builder, mlirModuleGetBody(module));
+  MlirOperation op = llzkFunction_FuncDefOpBuildWithAttrsAndArgAttrs(
+      builder, location, mlirStringRefCreateFromCString(name), type,
       llzk::checkedCast<intptr_t>(attrs.size()), attrs.data(),
       llzk::checkedCast<intptr_t>(arg_attrs.size()), arg_attrs.data()
   );
+  mlirOperationRemoveFromParent(op);
+  mlirOpBuilderDestroy(builder);
+  mlirModuleDestroy(module);
+  return op;
 }
 
 static MlirOperation create_module_with_owned_op(MlirContext ctx, MlirOperation op) {
@@ -141,7 +148,7 @@ struct FuncDialectTest : public CAPITest {
   }
 };
 
-TEST_F(FuncDialectTest, llzk_func_def_op_create_with_attrs_and_arg_attrs) {
+TEST_F(FuncDialectTest, llzk_func_def_op_build_with_attrs_and_arg_attrs) {
   MlirType in_types[] = {createIndexType()};
   auto in_attrs = empty_arg_attrs<1>(context);
   auto op = create_func_def_op(

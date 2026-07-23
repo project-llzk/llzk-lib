@@ -14,4 +14,3 @@ target_include_directories(SMTDialectHeaders
 install(TARGETS SMTDialectHeaders EXPORT LLZKTargets)
 
 add_subdirectory(smt/Conversions)
-add_subdirectory(smt/Transforms)

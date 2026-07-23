@@ -147,7 +147,6 @@ you can run the following commands:
   ``clang-format -i $(find include lib tools backends unittests -name '*.h' -o -name '*.cpp' -o -name '*.td' -type f)``
 * Run clang-tidy on C++ files:
   ``clang-tidy -p build/compile_commands.json $(find include/llzk lib tools backends unittests -name '*.h' -o -name '*.cpp' -type f)``
-  * Note that due to bugs in clang-tidy, this may segfault if running on all files.
 
 The build configuration will automatically export `compile_commands.json`, so
 LSP servers such as `clangd` should be able to pick up helpful IDE information

@@ -329,6 +329,112 @@ TEST_F(StructDefTest, llzk_member_def_op_set_public_attr) {
   }
 }
 
+TEST_F(StructDefTest, llzk_member_def_op_signal_attr_lifecycle) {
+  TestOp op {.op = make_member_def_op()};
+
+  EXPECT_FALSE(llzkStruct_MemberDefOpGetSignalValue(op.op));
+
+  llzkStruct_MemberDefOpSetSignalValue(op.op, true);
+  EXPECT_TRUE(llzkStruct_MemberDefOpGetSignalValue(op.op));
+
+  llzkStruct_MemberDefOpSetSignalValue(op.op, false);
+  EXPECT_FALSE(llzkStruct_MemberDefOpGetSignalValue(op.op));
+}
+
+TEST_F(StructDefTest, llzk_member_def_op_column_attr_lifecycle) {
+  TestOp op {.op = make_member_def_op()};
+
+  EXPECT_FALSE(llzkStruct_MemberDefOpGetColumnValue(op.op));
+
+  llzkStruct_MemberDefOpSetColumnValue(op.op, true);
+  EXPECT_TRUE(llzkStruct_MemberDefOpGetColumnValue(op.op));
+
+  llzkStruct_MemberDefOpSetColumnValue(op.op, false);
+  EXPECT_FALSE(llzkStruct_MemberDefOpGetColumnValue(op.op));
+}
+
+struct MemberDefOpBuildFuncHelper : public TestAnyBuildFuncHelper<StructDefTest> {
+  mlir::OwningOpRef<mlir::ModuleOp> parentModule;
+
+  bool callIsA(MlirOperation op) override { return llzkOperationIsA_Struct_MemberDefOp(op); }
+
+  void setInsertionPointToStructBody(
+      const StructDefTest &testClass, MlirOpBuilder builder, MlirLocation location
+  ) {
+    this->parentModule = testClass.cppNewModuleAndSetInsertionPoint(builder, location);
+    auto *bldr = unwrap(builder);
+    auto structDef =
+        bldr->create<llzk::component::StructDefOp>(unwrap(location), mlir::StringRef("TestStruct"));
+    bldr->setInsertionPointToStart(&structDef.getBodyRegion().emplaceBlock());
+  }
+};
+
+TEST_F(StructDefTest, llzk_member_def_op_build) {
+  struct : MemberDefOpBuildFuncHelper {
+    MlirOperation callBuild(
+        const StructDefTest &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      setInsertionPointToStructBody(testClass, builder, location);
+      return llzkStruct_MemberDefOpBuild(
+          builder, location, mlirStringRefCreateFromCString("member"),
+          wrap(testClass.cppGetFeltType(builder)), true, true
+      );
+    }
+
+    void doOtherChecks(MlirOperation op) override {
+      EXPECT_TRUE(llzkStruct_MemberDefOpGetSignalValue(op));
+      EXPECT_TRUE(llzkStruct_MemberDefOpGetColumnValue(op));
+    }
+  } helper;
+  helper.run(*this);
+}
+
+TEST_F(StructDefTest, llzk_member_def_op_build_with_attrs) {
+  struct : MemberDefOpBuildFuncHelper {
+    MlirOperation callBuild(
+        const StructDefTest &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      setInsertionPointToStructBody(testClass, builder, location);
+      auto name = mlirStringAttrGet(testClass.context, mlirStringRefCreateFromCString("member"));
+      auto type = mlirTypeAttrGet(wrap(testClass.cppGetFeltType(builder)));
+      return llzkStruct_MemberDefOpBuildWithAttrs(builder, location, name, type, true, false);
+    }
+
+    void doOtherChecks(MlirOperation op) override {
+      EXPECT_TRUE(llzkStruct_MemberDefOpGetSignalValue(op));
+      EXPECT_FALSE(llzkStruct_MemberDefOpGetColumnValue(op));
+    }
+  } helper;
+  helper.run(*this);
+}
+
+TEST_F(StructDefTest, llzk_member_def_op_build_with_named_attrs) {
+  struct : MemberDefOpBuildFuncHelper {
+    MlirOperation callBuild(
+        const StructDefTest &testClass, MlirOpBuilder builder, MlirLocation location
+    ) override {
+      setInsertionPointToStructBody(testClass, builder, location);
+      MlirNamedAttribute attrs[] = {
+          mlirNamedAttributeGet(
+              mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString("sym_name")),
+              mlirStringAttrGet(testClass.context, mlirStringRefCreateFromCString("member"))
+          ),
+          mlirNamedAttributeGet(
+              mlirIdentifierGet(testClass.context, mlirStringRefCreateFromCString("type")),
+              mlirTypeAttrGet(wrap(testClass.cppGetFeltType(builder)))
+          ),
+      };
+      return llzkStruct_MemberDefOpBuildWithNamedAttrs(builder, location, 2, attrs, false, true);
+    }
+
+    void doOtherChecks(MlirOperation op) override {
+      EXPECT_FALSE(llzkStruct_MemberDefOpGetSignalValue(op));
+      EXPECT_TRUE(llzkStruct_MemberDefOpGetColumnValue(op));
+    }
+  } helper;
+  helper.run(*this);
+}
+
 struct MemberReadOpBuildFuncHelper : public TestAnyBuildFuncHelper<StructDefTest> {
   MlirOperation struct_new_op;
   bool callIsA(MlirOperation op) override { return llzkOperationIsA_Struct_MemberReadOp(op); }

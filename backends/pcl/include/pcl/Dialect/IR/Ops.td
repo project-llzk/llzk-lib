@@ -54,6 +54,9 @@ def PCL_ConstOp : PCL_Op<"const", [Pure, InsideFunc]> {
   let arguments = (ins FeltAttr:$value);
   let results = (outs PCL_FieldType:$res);
   let assemblyFormat = "$value attr-dict";
+  let extraClassDeclaration = [{
+    auto getValueAPInt() -> ::llvm::APInt { return getValue().getValue().getValue(); }
+  }];
 }
 
 def PCL_AddOp : PCL_Op<"add", [Pure, Commutative, SameOperandsAndResultType,

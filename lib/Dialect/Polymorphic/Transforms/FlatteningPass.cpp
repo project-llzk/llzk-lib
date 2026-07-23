@@ -294,22 +294,27 @@ public:
   ) const {
     APInt attrValue = a.getValue();
     Type origResTy = op.getType();
-    if (FeltType ty = llvm::dyn_cast<FeltType>(origResTy)) {
+    Type newResTy = getTypeConverter()->convertType(origResTy);
+    if (!newResTy) {
+      return op->emitOpError().append("could not convert result type ", origResTy);
+    }
+
+    if (FeltType ty = llvm::dyn_cast<FeltType>(newResTy)) {
       replaceOpWithNewOp<FeltConstantOp>(
           rewriter, op, FeltConstAttr::get(getContext(), attrValue, ty)
       );
       return success();
     }
 
-    if (llvm::isa<IndexType>(origResTy)) {
+    if (llvm::isa<IndexType>(newResTy)) {
       replaceOpWithNewOp<arith::ConstantIndexOp>(rewriter, op, fromAPInt(attrValue));
       return success();
     }
 
-    if (origResTy.isSignlessInteger(1)) {
+    if (newResTy.isSignlessInteger(1)) {
       // Treat 0 as false and any other value as true (but give a warning if it's not 1)
       if (attrValue.isZero()) {
-        replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, false, origResTy);
+        replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, false, newResTy);
         return success();
       }
       if (!attrValue.isOne()) {
@@ -324,10 +329,10 @@ public:
             << "\" for this call";
         diagnostics.push_back(std::move(diag));
       }
-      replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, true, origResTy);
+      replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, true, newResTy);
       return success();
     }
-    return op->emitOpError().append("unexpected result type ", origResTy);
+    return op->emitOpError().append("unexpected result type ", newResTy);
   }
 
   LogicalResult handleRewrite(
@@ -367,29 +372,9 @@ applyAndFoldGreedily(ModuleOp modOp, ConversionTracker &tracker, RewritePatternS
   return failure(result.failed() || failureListener.hadFailure);
 }
 
-/// Classifies the concreteness of an attribute value for the purposes of determining
-/// if a struct instantiation can replace a parameter reference with that value.
-enum class AttrConcreteness : std::uint8_t {
-  NonConcrete,
-  Concrete,
-  Wildcard,
-};
-
-/// Classify the concreteness of the given attribute value for the purposes of struct instantiation.
-template <bool AllowStructParams = true> AttrConcreteness classifyAttrConcreteness(Attribute a) {
-  if (TypeAttr tyAttr = dyn_cast<TypeAttr>(a)) {
-    return isConcreteType(tyAttr.getValue(), AllowStructParams) ? AttrConcreteness::Concrete
-                                                                : AttrConcreteness::NonConcrete;
-  }
-  if (IntegerAttr intAttr = dyn_cast<IntegerAttr>(a)) {
-    return isDynamic(intAttr) ? AttrConcreteness::Wildcard : AttrConcreteness::Concrete;
-  }
-  return AttrConcreteness::NonConcrete;
-}
-
 /// Return true if the given attribute value is concrete for the purposes of struct instantiation.
 template <bool AllowStructParams = true> bool isConcreteAttr(Attribute a) {
-  return classifyAttrConcreteness<AllowStructParams>(a) == AttrConcreteness::Concrete;
+  return classifyAttrConcreteness(a, AllowStructParams) == AttrConcreteness::Concrete;
 }
 
 static SymbolRefAttr
@@ -569,9 +554,7 @@ class StructCloner {
               updated.push_back(convertIfPossible(a));
             }
           }
-          return StructType::get(
-              inputTy.getNameRef(), ArrayAttr::get(inputTy.getContext(), updated)
-          );
+          return getStructTypeWithParams(inputTy.getNameRef(), inputTy.getContext(), updated);
         }
         // Otherwise, return the type unchanged
         return inputTy;
@@ -1061,9 +1044,7 @@ public:
           updated.push_back(a);
         }
         if (changed) {
-          return StructType::get(
-              inputTy.getNameRef(), ArrayAttr::get(inputTy.getContext(), updated)
-          );
+          return getStructTypeWithParams(inputTy.getNameRef(), inputTy.getContext(), updated);
         }
       }
       return inputTy;
@@ -1239,53 +1220,6 @@ private:
     return std::nullopt;
   }
 };
-
-/// Groups the information needed after concrete parameters have been chosen to decide whether to
-/// build a full or partial instantiation and how to rewrite the call site.
-struct InstantiationLayout {
-  SmallVector<Attribute> remainingNames;
-  std::string templateNameWithAttrs;
-  ArrayAttr rewrittenCallParams;
-};
-
-/// Derive the (partially-)instantiated template name and the remaining explicit call parameters
-/// that should stay on the rewritten call. Partially-instantiated names will contain the `\x1A`
-/// placeholder character at the position of a non-concrete parameter: "TemplateName_8_\x1A".
-static InstantiationLayout buildInstantiationLayout(
-    TemplateOp parentTemplate, ArrayAttr callParams,
-    const DenseMap<Attribute, Attribute> &paramNameToConcrete
-) {
-  SmallVector<Attribute> remainingNames;
-  SmallVector<Attribute> attrsForInstantiatedNameSuffix;
-  for (Attribute paramName : parentTemplate.getConstNames<TemplateParamOp>()) {
-    auto it = paramNameToConcrete.find(paramName);
-    if (it != paramNameToConcrete.end()) {
-      attrsForInstantiatedNameSuffix.push_back(it->second);
-    } else {
-      attrsForInstantiatedNameSuffix.push_back(nullptr);
-      remainingNames.push_back(paramName);
-    }
-  }
-
-  ArrayAttr rewrittenCallParams = nullptr;
-  if (!isNullOrEmpty(callParams) && !remainingNames.empty()) {
-    SmallVector<Attribute> remainingCallParams;
-    for (auto [paramOp, attr] :
-         llvm::zip_equal(parentTemplate.getConstOps<TemplateParamOp>(), callParams.getValue())) {
-      auto paramName = FlatSymbolRefAttr::get(paramOp.getSymNameAttr());
-      if (!paramNameToConcrete.contains(paramName)) {
-        remainingCallParams.push_back(attr);
-      }
-    }
-    rewrittenCallParams = ArrayAttr::get(parentTemplate.getContext(), remainingCallParams);
-  }
-
-  return {
-      std::move(remainingNames),
-      BuildShortTypeString::from(parentTemplate.getSymName().str(), attrsForInstantiatedNameSuffix),
-      rewrittenCallParams,
-  };
-}
 
 /// Rewrite cloned scalar array reads to ranged extract ops when a wildcard element type
 /// resolves to a higher-rank array.

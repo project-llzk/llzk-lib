@@ -113,12 +113,13 @@ def ContractOp
     return values are appended to the end of the contract's argument list.
 
     Contracts may not directly target struct functions; they must target the structs themselves.
-    Contracts targeting the module's `llzk.main` struct may not contain direct
-    `verif.require_compute` or `verif.require_constrain` operations in their body.
+    Contracts targeting the module's `llzk.main` struct may contain `verif.require_compute`
+    or `verif.require_constrain` operations. A circuit whose main-level contract contains such
+    preconditions is valid only for inputs that satisfy them.
 
-    For templated targets (i.e., functions or structs within a `poly.template`),
-    the contract body may reference the target template's parameters and
-    expressions even if the contract is physically nested elsewhere.
+    For templated targets (i.e., functions or structs within a `poly.template`), the contract
+    body may reference the target template's parameters and expressions. If a contract is nested
+    inside a `poly.template`, then the target must be in that same template.
 
     Examples:
 
@@ -288,7 +289,7 @@ def ContractOp
       return getFuncTarget(tables);
     }
 
-    /// Return the operation that this contract targets, or failure if it does not 
+    /// Return the operation that this contract targets, or failure if it does not
     /// target an operation that implements the `ContractTarget` op interface or is not found.
     ::mlir::FailureOr<SymbolLookupResult<::llzk::verif::ContractTargetOpInterface>> getTargetOp(::mlir::SymbolTableCollection &tables);
 
@@ -504,12 +505,12 @@ def InvariantOp
     Defines an invariant for a loop inside the target of a contract.
 
     The targeted loop op must implement the `InvariantTargetOpInterface`.
-    This interface is already implemented by the `scf.while` and `scf.for` 
-    operations. The loop name is defined on either of those ops with a 
+    This interface is already implemented by the `scf.while` and `scf.for`
+    operations. The loop name is defined on either of those ops with a
     string attribute named `loop_label`.
 
-    The arguments of the body must match those declared by the target op. 
-    In the case of `scf.for` the control values must also be block arguments 
+    The arguments of the body must match those declared by the target op.
+    In the case of `scf.for` the control values must also be block arguments
     in the following order: lower bound, induction variable, upper bound, and stride.
 
     Example:
@@ -518,9 +519,9 @@ def InvariantOp
       struct.def @Top {
         function.def @compute() -> !struct.type<@Top> {
           %self = struct.new : !struct.type<@Top>
-          %c0 = arith.constant 0 : index 
-          %c10 = arith.constant 10 : index 
-          %c1 = arith.constant 1  : index 
+          %c0 = arith.constant 0 : index
+          %c10 = arith.constant 10 : index
+          %c1 = arith.constant 1  : index
           %0 = felt.const  5
           %1 = scf.for %iv = %c0 to %c10 step %c1 iter_args(%2 = %0) -> !felt.type {
             scf.yield %2 : !felt.type
@@ -606,7 +607,7 @@ def StepOp : VerifDialectOp<
   let summary = "step predicate operation";
   let description = [{
     Defines a predicate that must be satisfied between iterations of the loop.
-    
+
     The predicate can access the value in the previous iteration by using the `verif.old` operation.
 
     Declares the `MemoryEffectsOpInterface`, which, like the `cf.assert` (MLIR `cf` dialect)
