@@ -18,11 +18,9 @@
 #include "r1cs/Transforms/TransformationPassPipelines.h"
 #include "r1cs/Transforms/TransformationPasses.h"
 #include "smt/Conversions/ConversionPasses.h"
-#include "smt/Transforms/SMTPasses.h"
 #include "tools/config.h"
 #include "zklean/Conversions/Passes.h"
 #include "zklean/DialectRegistration.h"
-#include "zklean/Transforms/ZKLeanPasses.h"
 
 #include "llzk/Analysis/AnalysisPasses.h"
 #include "llzk/Config/Config.h"
@@ -57,7 +55,6 @@
 #include "pcl/Conversion/ConversionPasses.h"
 #include "pcl/Dialect/IR/Dialect.h"
 #include "pcl/DialectRegistration.h"
-#include "pcl/Transforms/TransformationPasses.h"
 #endif // LLZK_WITH_PCL
 
 static llvm::cl::list<std::string> IncludeDirs(
@@ -132,16 +129,13 @@ int main(int argc, char **argv) {
   llzk::pod::registerTransformationPasses();
   r1cs::registerTransformationPasses();
   zklean::registerConversionPasses();
-  zklean::registerZKLeanPasses();
 #if LLZK_WITH_PCL
-  pcl::registerTransformationPasses();
   pcl::registerPCLConversionPasses();
 #endif // LLZK_WITH_PCL
   llzk::smt::registerConversionPasses();
 
   llzk::registerTransformationPassPipelines();
   r1cs::registerTransformationPassPipelines();
-  llzk::smt::registerSMTPasses();
 
   // Register and parse command line options.
   std::string inputFilename, outputFilename;

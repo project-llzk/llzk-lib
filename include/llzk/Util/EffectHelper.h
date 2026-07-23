@@ -16,6 +16,15 @@
 
 namespace llzk {
 
+/// Returns true when \p op has a memory read effect. Unknown effects are
+/// handled separately by hasUnknownOrNonReadEffect().
+inline bool hasReadEffect(mlir::Operation *op) {
+  auto effects = mlir::getEffectsRecursively(op);
+  return effects && llvm::any_of(*effects, [](const mlir::MemoryEffects::EffectInstance &effect) {
+    return llvm::isa<mlir::MemoryEffects::Read>(effect.getEffect());
+  });
+}
+
 /// Returns true when \p op may have an unknown effect or any effect other than
 /// memory read.
 inline bool hasUnknownOrNonReadEffect(mlir::Operation *op) {

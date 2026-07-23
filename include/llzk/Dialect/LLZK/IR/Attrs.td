@@ -61,6 +61,13 @@ def LLZK_LoopBoundsAttr : LLZKDialectAttr<"LoopBounds", "loopbounds"> {
           APIntParameter<"Loop variable upper bound (exclusive)">:$upper,
           APIntParameter<"Loop variable step/increment">:$step);
 
+  let builders = [AttrBuilder<
+      (ins "::llvm::APInt":$lower, "::llvm::APInt":$upper,
+          "::llvm::APInt":$step),
+      [{ return $_get(context, ::llzk::APIntValue(std::move(lower)),
+          ::llzk::APIntValue(std::move(upper)),
+          ::llzk::APIntValue(std::move(step))); }]>];
+
   let assemblyFormat = "`<` $lower `to` $upper `step` $step `>`";
 }
 

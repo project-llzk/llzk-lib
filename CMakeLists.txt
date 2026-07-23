@@ -1,18 +1,25 @@
 cmake_minimum_required(VERSION 3.23)
 
-if (NOT DEFINED LLZK_VERSION_OVERRIDE)
+# Try to automatically deduplicate libraries when linking
+if(POLICY CMP0156)
+  cmake_policy(SET CMP0156 NEW)
+endif()
+
+if(NOT DEFINED LLZK_VERSION_OVERRIDE)
   include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GitVersion.cmake)
   get_git_version(LLZK_VERSION)
 else()
-  message(WARNING "LLZK_VERSION_OVERRIDE specified, setting version to ${LLZK_VERSION_OVERRIDE}")
+  message(
+    WARNING
+      "LLZK_VERSION_OVERRIDE specified, setting version to ${LLZK_VERSION_OVERRIDE}"
+  )
   set(LLZK_VERSION "${LLZK_VERSION_OVERRIDE}")
 endif()
 
 project(
   LLZK
   # Keeping this description short since it's also used by doxygen
-  DESCRIPTION
-    "An open-source IR for Zero Knowledge (ZK) circuits"
+  DESCRIPTION "An open-source IR for Zero Knowledge (ZK) circuits"
   VERSION "${LLZK_VERSION}"
   HOMEPAGE_URL https://github.com/project-llzk/llzk-lib)
 
@@ -46,8 +53,32 @@ find_package(MLIR 20.1.8 REQUIRED CONFIG)
 find_package(Clang 20.1.8 REQUIRED CONFIG)
 
 # Optional PCL dialect
-set(LLZK_WITH_PCL "AUTO" CACHE STRING "Enable PCL integration (AUTO, ON, OFF)")
+set(LLZK_WITH_PCL
+    "AUTO"
+    CACHE STRING "Enable PCL integration (AUTO, ON, OFF)")
 set_property(CACHE LLZK_WITH_PCL PROPERTY STRINGS "AUTO;ON;OFF")
+
+# Specifies that llzk-tblgen must link against libclang-cpp instead of
+# individual libraries. This option is OFF by default and should be set to true
+# in situations where Clang's libraries are bundled together in libclang-cpp,
+# for example in Fedora >=32.
+set(LLZK_TBLGEN_USE_LIBCLANGCPP
+    "OFF"
+    CACHE
+      STRING
+      "Make llzk-tblgen link against libclang-cpp instead of individual Clang libraries"
+)
+set_property(CACHE LLZK_TBLGEN_USE_LIBCLANGCPP PROPERTY STRINGS "ON;OFF")
+
+# boolean used to guard imports in other CMakeLists.txt
+set(LLZK_TBLGEN_USE_LIBCLANGCPP_BOOL OFF)
+if(LLZK_TBLGEN_USE_LIBCLANGCPP STREQUAL "ON")
+  set(LLZK_TBLGEN_USE_LIBCLANGCPP_BOOL ON)
+elseif(LLZK_TBLGEN_USE_LIBCLANGCPP STREQUAL "OFF")
+  # do nothing
+else()
+  message(FATAL_ERROR "LLZK_TBLGEN_USE_LIBCLANGCPP must be ON or OFF")
+endif()
 
 # boolean used to guard imports in other CMakeLists.txt
 set(LLZK_WITH_PCL_BOOL OFF)
@@ -62,7 +93,8 @@ else()
   message(FATAL_ERROR "LLZK_WITH_PCL must be AUTO, ON, or OFF")
 endif()
 
-message(STATUS "LLZK_WITH_PCL=${LLZK_WITH_PCL} (found pcl=${LLZK_WITH_PCL_BOOL})")
+message(
+  STATUS "LLZK_WITH_PCL=${LLZK_WITH_PCL} (found pcl=${LLZK_WITH_PCL_BOOL})")
 
 message(STATUS "Using LLVM in: ${LLVM_DIR}")
 message(STATUS "Using MLIR in: ${MLIR_DIR}")
@@ -144,7 +176,8 @@ endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "DebWithSans")
   # NOTE: undefined behavior sanitizer ("undefined") has been removed due to its
-  # poor interaction with gtest fixtures and other standard MLIR/LLVM operations.
+  # poor interaction with gtest fixtures and other standard MLIR/LLVM
+  # operations.
   add_compile_options(-fsanitize=address)
   add_link_options(-fsanitize=address)
   # LeakSanitizer is not supported on all platforms (notably, MacOS)
@@ -210,7 +243,8 @@ endif()
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/LLZKMacros.cmake)
 
-# Build `llzk-tblgen` first since it generates files used by the `include` directory below
+# Build `llzk-tblgen` first since it generates files used by the `include`
+# directory below
 add_subdirectory(tools/llzk-tblgen)
 set(LLZK_TABLEGEN_EXE llzk-tblgen)
 set(LLZK_TABLEGEN_TARGET llzk-tblgen)
@@ -240,25 +274,26 @@ if(Doxygen_FOUND)
 
   # Fetch style document
   include(FetchContent)
-  set(DoxygenAwesomeCSS_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/deps/doxygen-awesome-css")
+  set(DoxygenAwesomeCSS_SOURCE_DIR
+      "${CMAKE_CURRENT_BINARY_DIR}/deps/doxygen-awesome-css")
   FetchContent_Declare(
     DoxygenAwesomeCSS
     GIT_REPOSITORY https://github.com/jothepro/doxygen-awesome-css.git
     GIT_TAG v2.4.1
-    SOURCE_DIR "${DoxygenAwesomeCSS_SOURCE_DIR}"
-  )
+    SOURCE_DIR "${DoxygenAwesomeCSS_SOURCE_DIR}")
   FetchContent_MakeAvailable(DoxygenAwesomeCSS)
 
-  # - doxygen awesome settings
+  # * doxygen awesome settings
   set(DOXYGEN_HTML_EXTRA_STYLESHEET
-    "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome.css"
-    "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-sidebar-only.css"
-    "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-sidebar-only-darkmode-toggle.css")
+      "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome.css"
+      "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-sidebar-only.css"
+      "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-sidebar-only-darkmode-toggle.css"
+  )
   set(DOXYGEN_HTML_EXTRA_FILES
-    "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-darkmode-toggle.js"
-    "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-paragraph-link.js"
-    "${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/interactive-toc.js"
-    "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-fragment-copy-button.js")
+      "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-darkmode-toggle.js"
+      "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-paragraph-link.js"
+      "${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/interactive-toc.js"
+      "${DoxygenAwesomeCSS_SOURCE_DIR}/doxygen-awesome-fragment-copy-button.js")
   set(DOXYGEN_HTML_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/header.html")
   set(DOXYGEN_HTML_FOOTER "${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/footer.html")
   set(DOXYGEN_GENERATE_TREEVIEW YES)
@@ -273,7 +308,7 @@ if(Doxygen_FOUND)
   set(DOXYGEN_MARKDOWN_SUPPORT YES)
   set(DOXYGEN_MARKDOWN_ID_STYLE "GITHUB")
 
-  if (DOXYGEN_VERSION VERSION_GREATER_EQUAL "1.14.0")
+  if(DOXYGEN_VERSION VERSION_GREATER_EQUAL "1.14.0")
     # https://jothepro.github.io/doxygen-awesome-css/md_docs_2extensions.html#extension-toc
     set(DOXYGEN_PAGE_OUTLINE_PANEL NO)
   endif()
@@ -282,12 +317,13 @@ if(Doxygen_FOUND)
   set(DOXYGEN_EXTRACT_ALL YES)
   set(DOXYGEN_INCLUDE_PATH "${CMAKE_CURRENT_BINARY_DIR}/include/")
   set(DOXYGEN_EXCLUDE_PATTERNS
-    "${CMAKE_CURRENT_BINARY_DIR}/include/*/*.md"
-    # We ignore the passes because we aggregate the documentation in doc/doxygen/2_tools.md under `llzk-opt`
-    "${LLZK_MLIR_DOC_OUTPUT_DIR}/passes/*.md"
-    # We ignore the dialects because we aggregate the documentation in doc/doxygen/7_dialects.md
-    "${LLZK_MLIR_DOC_OUTPUT_DIR}/dialect/*.md"
-  )
+      "${CMAKE_CURRENT_BINARY_DIR}/include/*/*.md"
+      # We ignore the passes because we aggregate the documentation in
+      # doc/doxygen/2_tools.md under `llzk-opt`
+      "${LLZK_MLIR_DOC_OUTPUT_DIR}/passes/*.md"
+      # We ignore the dialects because we aggregate the documentation in
+      # doc/doxygen/7_dialects.md
+      "${LLZK_MLIR_DOC_OUTPUT_DIR}/dialect/*.md")
   set(DOXYGEN_USE_MDFILE_AS_MAINPAGE
       ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/index.md)
   set(DOXYGEN_FILE_PATTERNS

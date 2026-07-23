@@ -1,0 +1,224 @@
+// RUN: llzk-opt -split-input-file -llzk-duplicate-read-write-elim %s 2>&1 | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  global.def @g : !felt.type = 1
+
+  function.def @global_overwrite(%before: !felt.type, %after: !felt.type)
+      attributes {function.allow_witness} {
+    global.write @g = %before : !felt.type
+    global.write @g = %after : !felt.type
+    function.return
+  }
+
+  function.def @global_redundant_value(%value: !felt.type)
+      attributes {function.allow_witness} {
+    global.write @g = %value : !felt.type
+    global.write @g = %value : !felt.type
+    function.return
+  }
+
+  function.def @global_region_boundary(%before: !felt.type, %inside: !felt.type,
+      %after: !felt.type, %cond: i1) attributes {function.allow_witness} {
+    global.write @g = %before : !felt.type
+    scf.if %cond {
+      global.write @g = %inside : !felt.type
+    }
+    global.write @g = %after : !felt.type
+    function.return
+  }
+}
+
+// CHECK-LABEL: function.def @global_overwrite(
+// CHECK-SAME: %[[BEFORE:[0-9a-zA-Z_\.]+]]: !felt.type, %[[AFTER:[0-9a-zA-Z_\.]+]]: !felt.type)
+// CHECK-NEXT: global.write @g = %[[AFTER]] : !felt.type
+// CHECK-NEXT: function.return
+
+// CHECK-LABEL: function.def @global_redundant_value(
+// CHECK-SAME: %[[VALUE:[0-9a-zA-Z_\.]+]]: !felt.type)
+// CHECK-NEXT: global.write @g = %[[VALUE]] : !felt.type
+// CHECK-NEXT: function.return
+
+// CHECK-LABEL: function.def @global_region_boundary(
+// CHECK-SAME: %[[BEFORE:[0-9a-zA-Z_\.]+]]: !felt.type, %[[INSIDE:[0-9a-zA-Z_\.]+]]: !felt.type, %[[AFTER:[0-9a-zA-Z_\.]+]]: !felt.type, %[[COND:[0-9a-zA-Z_\.]+]]: i1)
+// CHECK-NEXT: global.write @g = %[[BEFORE]] : !felt.type
+// CHECK-NEXT: scf.if %[[COND]] {
+// CHECK-NEXT: global.write @g = %[[INSIDE]] : !felt.type
+// CHECK-NEXT: }
+// CHECK-NEXT: global.write @g = %[[AFTER]] : !felt.type
+// CHECK-NEXT: function.return
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @ram_overwrite(%addr: index, %before: !felt.type, %after: !felt.type)
+      attributes {function.allow_witness} {
+    ram.store %addr, %before : !felt.type
+    ram.store %addr, %after : !felt.type
+    function.return
+  }
+
+  function.def @ram_redundant_value(%addr: index, %value: !felt.type)
+      attributes {function.allow_witness} {
+    ram.store %addr, %value : !felt.type
+    ram.store %addr, %value : !felt.type
+    function.return
+  }
+}
+
+// CHECK-LABEL: function.def @ram_overwrite(
+// CHECK-SAME: %[[ADDR:[0-9a-zA-Z_\.]+]]: index, %[[BEFORE:[0-9a-zA-Z_\.]+]]: !felt.type, %[[AFTER:[0-9a-zA-Z_\.]+]]: !felt.type)
+// CHECK-NEXT: ram.store %[[ADDR]], %[[AFTER]] : !felt.type
+// CHECK-NEXT: function.return
+
+// CHECK-LABEL: function.def @ram_redundant_value(
+// CHECK-SAME: %[[ADDR:[0-9a-zA-Z_\.]+]]: index, %[[VALUE:[0-9a-zA-Z_\.]+]]: !felt.type)
+// CHECK-NEXT: ram.store %[[ADDR]], %[[VALUE]] : !felt.type
+// CHECK-NEXT: function.return
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @ram_distinct_addresses(%first_addr: index, %second_addr: index,
+      %first: !felt.type, %second: !felt.type) attributes {function.allow_witness} {
+    ram.store %first_addr, %first : !felt.type
+    ram.store %second_addr, %second : !felt.type
+    function.return
+  }
+
+  function.def @ram_equal_constants_are_distinct_ssa(%first: !felt.type, %second: !felt.type)
+      attributes {function.allow_witness} {
+    %first_addr = arith.constant 0 : index
+    %second_addr = arith.constant 0 : index
+    ram.store %first_addr, %first : !felt.type
+    ram.store %second_addr, %second : !felt.type
+    function.return
+  }
+}
+
+// CHECK-LABEL: function.def @ram_distinct_addresses(
+// CHECK-SAME: %[[FIRST_ADDR:[0-9a-zA-Z_\.]+]]: index, %[[SECOND_ADDR:[0-9a-zA-Z_\.]+]]: index, %[[FIRST:[0-9a-zA-Z_\.]+]]: !felt.type, %[[SECOND:[0-9a-zA-Z_\.]+]]: !felt.type)
+// CHECK-NEXT: ram.store %[[FIRST_ADDR]], %[[FIRST]] : !felt.type
+// CHECK-NEXT: ram.store %[[SECOND_ADDR]], %[[SECOND]] : !felt.type
+// CHECK-NEXT: function.return
+
+// CHECK-LABEL: function.def @ram_equal_constants_are_distinct_ssa(
+// CHECK-SAME: %[[FIRST:[0-9a-zA-Z_\.]+]]: !felt.type, %[[SECOND:[0-9a-zA-Z_\.]+]]: !felt.type)
+// CHECK-NEXT: %[[FIRST_ADDR:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT: %[[SECOND_ADDR:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT: ram.store %[[FIRST_ADDR]], %[[FIRST]] : !felt.type
+// CHECK-NEXT: ram.store %[[SECOND_ADDR]], %[[SECOND]] : !felt.type
+// CHECK-NEXT: function.return
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @ram_unreused_load_preserves_write(%store_addr: index, %load_addr: index,
+      %before: !felt.type, %after: !felt.type) -> !felt.type attributes {function.allow_witness} {
+    ram.store %store_addr, %before : !felt.type
+    %observed = ram.load %load_addr : !felt.type
+    ram.store %store_addr, %after : !felt.type
+    function.return %observed : !felt.type
+  }
+
+  function.def @ram_reused_load_does_not_preserve_write(%addr: index, %before: !felt.type,
+      %after: !felt.type) -> !felt.type attributes {function.allow_witness} {
+    ram.store %addr, %before : !felt.type
+    %observed = ram.load %addr : !felt.type
+    ram.store %addr, %after : !felt.type
+    function.return %observed : !felt.type
+  }
+}
+
+// CHECK-LABEL: function.def @ram_unreused_load_preserves_write(
+// CHECK-SAME: %[[STORE_ADDR:[0-9a-zA-Z_\.]+]]: index, %[[LOAD_ADDR:[0-9a-zA-Z_\.]+]]: index, %[[BEFORE:[0-9a-zA-Z_\.]+]]: !felt.type, %[[AFTER:[0-9a-zA-Z_\.]+]]: !felt.type)
+// CHECK-NEXT: ram.store %[[STORE_ADDR]], %[[BEFORE]] : !felt.type
+// CHECK-NEXT: %[[OBSERVED:[0-9a-zA-Z_\.]+]] = ram.load %[[LOAD_ADDR]] : !felt.type
+// CHECK-NEXT: ram.store %[[STORE_ADDR]], %[[AFTER]] : !felt.type
+// CHECK-NEXT: function.return %[[OBSERVED]] : !felt.type
+
+// CHECK-LABEL: function.def @ram_reused_load_does_not_preserve_write(
+// CHECK-SAME: %[[ADDR:[0-9a-zA-Z_\.]+]]: index, %[[BEFORE:[0-9a-zA-Z_\.]+]]: !felt.type, %[[AFTER:[0-9a-zA-Z_\.]+]]: !felt.type)
+// CHECK-NEXT: ram.store %[[ADDR]], %[[AFTER]] : !felt.type
+// CHECK-NEXT: function.return %[[BEFORE]] : !felt.type
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @ram_region_boundary(%addr: index, %before: !felt.type, %inside: !felt.type,
+      %after: !felt.type, %cond: i1) attributes {function.allow_witness} {
+    ram.store %addr, %before : !felt.type
+    scf.if %cond {
+      ram.store %addr, %inside : !felt.type
+    }
+    ram.store %addr, %after : !felt.type
+    function.return
+  }
+}
+
+// CHECK-LABEL: function.def @ram_region_boundary(
+// CHECK-SAME: %[[ADDR:[0-9a-zA-Z_\.]+]]: index, %[[BEFORE:[0-9a-zA-Z_\.]+]]: !felt.type, %[[INSIDE:[0-9a-zA-Z_\.]+]]: !felt.type, %[[AFTER:[0-9a-zA-Z_\.]+]]: !felt.type, %[[COND:[0-9a-zA-Z_\.]+]]: i1)
+// CHECK-NEXT: ram.store %[[ADDR]], %[[BEFORE]] : !felt.type
+// CHECK-NEXT: scf.if %[[COND]] {
+// CHECK-NEXT: ram.store %[[ADDR]], %[[INSIDE]] : !felt.type
+// CHECK-NEXT: }
+// CHECK-NEXT: ram.store %[[ADDR]], %[[AFTER]] : !felt.type
+// CHECK-NEXT: function.return
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @mutate_ram(%addr: index, %value: !felt.type)
+      attributes {function.allow_witness} {
+    ram.store %addr, %value : !felt.type
+    function.return
+  }
+
+  function.def @ram_call_boundary(%addr: index, %before: !felt.type, %during: !felt.type,
+      %after: !felt.type) attributes {function.allow_witness} {
+    ram.store %addr, %before : !felt.type
+    function.call @mutate_ram(%addr, %during) : (index, !felt.type) -> ()
+    ram.store %addr, %after : !felt.type
+    function.return
+  }
+}
+
+// CHECK-LABEL: function.def @mutate_ram(
+// CHECK-SAME: %[[ADDR:[0-9a-zA-Z_\.]+]]: index, %[[VALUE:[0-9a-zA-Z_\.]+]]: !felt.type)
+// CHECK-NEXT: ram.store %[[ADDR]], %[[VALUE]] : !felt.type
+// CHECK-NEXT: function.return
+
+// CHECK-LABEL: function.def @ram_call_boundary(
+// CHECK-SAME: %[[ADDR:[0-9a-zA-Z_\.]+]]: index, %[[BEFORE:[0-9a-zA-Z_\.]+]]: !felt.type, %[[DURING:[0-9a-zA-Z_\.]+]]: !felt.type, %[[AFTER:[0-9a-zA-Z_\.]+]]: !felt.type)
+// CHECK-NEXT: ram.store %[[ADDR]], %[[BEFORE]] : !felt.type
+// CHECK-NEXT: function.call @mutate_ram(%[[ADDR]], %[[DURING]]) : (index, !felt.type) -> ()
+// CHECK-NEXT: ram.store %[[ADDR]], %[[AFTER]] : !felt.type
+// CHECK-NEXT: function.return
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @ram_loaded_value_is_redundant(%addr: index) -> !felt.type
+      attributes {function.allow_witness} {
+    %value = ram.load %addr : !felt.type
+    ram.store %addr, %value : !felt.type
+    function.return %value : !felt.type
+  }
+
+  function.def @ram_loaded_value_distinct_ssa(%load_addr: index, %store_addr: index)
+      -> !felt.type attributes {function.allow_witness} {
+    %value = ram.load %load_addr : !felt.type
+    ram.store %store_addr, %value : !felt.type
+    function.return %value : !felt.type
+  }
+}
+
+// CHECK-LABEL: function.def @ram_loaded_value_is_redundant(
+// CHECK-SAME: %[[ADDR:[0-9a-zA-Z_\.]+]]: index)
+// CHECK-NEXT: %[[VALUE:[0-9a-zA-Z_\.]+]] = ram.load %[[ADDR]] : !felt.type
+// CHECK-NEXT: function.return %[[VALUE]] : !felt.type
+
+// CHECK-LABEL: function.def @ram_loaded_value_distinct_ssa(
+// CHECK-SAME: %[[LOAD_ADDR:[0-9a-zA-Z_\.]+]]: index, %[[STORE_ADDR:[0-9a-zA-Z_\.]+]]: index)
+// CHECK-NEXT: %[[VALUE:[0-9a-zA-Z_\.]+]] = ram.load %[[LOAD_ADDR]] : !felt.type
+// CHECK-NEXT: ram.store %[[STORE_ADDR]], %[[VALUE]] : !felt.type
+// CHECK-NEXT: function.return %[[VALUE]] : !felt.type

@@ -70,6 +70,10 @@ bool isValidTarget(Operation *op) {
   return isa<StructDefOp>(op);
 }
 
+inline bool hasConflictingUnifications(const llzk::UnificationMap &unifications) {
+  return llvm::any_of(unifications, [](const auto &entry) { return !entry.second; });
+}
+
 struct TargetTypeInfo {
   FunctionType funcType {};
   ArrayAttr argAttrs {};
@@ -115,15 +119,16 @@ FailureOr<TargetTypeInfo> getTargetTypeInfo(Operation *op) {
     };
   }
   if (auto structOp = dyn_cast<StructDefOp>(op)) {
-    if (structOp.hasComputeConstrain()) {
-      auto fnOp = structOp.getConstrainFuncOp();
+    if (FuncDefOp fnOp = structOp.getConstrainFuncOp(); fnOp && structOp.getComputeFuncOp()) {
       return TargetTypeInfo {
           .funcType = fnOp.getFunctionType(),
           .argAttrs = fnOp.getArgAttrsAttr(),
       };
     } else {
       FuncDefOp productFn = structOp.getProductFuncOp();
-      assert(productFn);
+      if (!productFn) {
+        return failure();
+      }
       // Augment the product function signature to accept the self argument.
       FunctionType fnTy = productFn.getFunctionType();
       ArrayRef<Type> curInputs = fnTy.getInputs();
@@ -420,15 +425,39 @@ LogicalResult ContractOp::verifySymbolUses(SymbolTableCollection &tables) {
         .attachNote(targetOp->getLoc())
         .append("target defined here");
   }
+  if (auto contractParentTemplate = getParentOfType<TemplateOp>(*this)) {
+    auto targetParentTemplate = getParentOfType<TemplateOp>(targetOp);
+    if (targetParentTemplate != contractParentTemplate) {
+      InFlightDiagnostic diag = emitOpError().append(
+          "contract nested in template \"@", contractParentTemplate.getSymName(),
+          "\" must target a symbol in the same template"
+      );
+      if (targetParentTemplate) {
+        diag.attachNote(targetParentTemplate.getLoc()).append("target template defined here");
+      } else {
+        diag.attachNote(targetOp->getLoc()).append("target defined here");
+      }
+      return diag;
+    }
+  }
   FailureOr<TargetTypeInfo> targetInfoRes = getTargetTypeInfo(targetOp);
   if (failed(targetInfoRes)) {
+    // The struct verifier reports malformed struct bodies; avoid cascading diagnostics here.
+    // Returning failure() would actually cause the expected diagnostic from the first failure
+    // to be suppressed, so we return success() to avoid that.
+    if (isa<StructDefOp>(targetOp)) {
+      return success();
+    }
     return emitOpError()
         .append("unsupported target type \"", targetOp->getName(), "\"")
         .attachNote(targetOp->getLoc())
         .append("target defined here");
   }
   TargetTypeInfo &targetInfo = *targetInfoRes;
-  if (targetInfo.funcType != contractTy) {
+  UnificationMap unifications;
+  bool unifies =
+      functionTypesUnify(contractTy, targetInfo.funcType, targetRes->getNamespace(), &unifications);
+  if (!unifies || hasConflictingUnifications(unifications)) {
     return emitOpError()
         .append("contract type does not match target type")
         .attachNote(targetOp->getLoc())

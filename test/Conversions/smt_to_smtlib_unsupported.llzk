@@ -1,4 +1,4 @@
-// RUN: llzk-opt --smt-to-smtlib -verify-diagnostics %s
+// RUN: llzk-translate --smt-to-smtlib -verify-diagnostics %s
 // Purpose: result-producing smt.check export failures are checked with op-local diagnostics.
 
 module {
