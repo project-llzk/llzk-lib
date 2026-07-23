@@ -1,0 +1,40 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+// COM: The `llzk-pod-to-scalar` pass always pre-runs `llzk-infer-tvar` which resolves the type variable
+// COM: via the `poly.unifiable_cast` before arrays-of-POD are split into parallel leaf arrays.
+!Empty = !pod.type<[]>
+module attributes {llzk.lang} {
+  poly.template @CastEmptyArrayPodToTypeVar {
+    poly.param @T_return : !poly.tvar<@T_return>
+    function.def @main(%arr: !array.type<2 x !Empty>) -> !poly.tvar<@T_return> {
+      %cast = poly.unifiable_cast %arr : (!array.type<2 x !Empty>) -> !poly.tvar<@T_return>
+      function.return %cast : !poly.tvar<@T_return>
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @CastEmptyArrayPodToTypeVar {
+// CHECK-NEXT:      function.def @main(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2 x none>) -> !array.type<2 x none> {
+// CHECK-NEXT:        function.return %[[VAL_0]] : !array.type<2 x none>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// TODO: `llzk-infer-tvar` should be updated to support this case.
+// COM: Once an array-of-POD value is split into parallel leaf arrays, step 2 cannot soundly
+// COM: collapse those pieces back into one non-array SSA value for `poly.unifiable_cast`.
+// COM: Supporting this would require aggregate reification or extra signature/template rewriting.
+#map = affine_map<()[s0] -> (s0)>
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  poly.template @CastArrayPodToTypeVar {
+    poly.param @T_return : !poly.tvar<@T_return>
+    function.def @main(%arr: !array.type<#map x !Pair>) -> !poly.tvar<@T_return> {
+      // expected-error@+1 {{'poly.unifiable_cast' op cannot lower a split array-of-POD input to a non-array result without materializing the aggregate or rewriting the surrounding function/template signature}}
+      %cast = poly.unifiable_cast %arr : (!array.type<#map x !Pair>) -> !poly.tvar<@T_return>
+      function.return %cast : !poly.tvar<@T_return>
+    }
+  }
+}
