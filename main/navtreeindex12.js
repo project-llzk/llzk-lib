@@ -1,5 +1,10 @@
 var NAVTREEINDEX12 =
 {
+"SMTOps_8h_source.html":[13,0,2,0,2,13,0,8],
+"SMTOps_8td.html":[13,0,2,0,2,13,0,9],
+"SMTOps_8td_source.html":[13,0,2,0,2,13,0,9],
+"SMTTypes_8cpp.html":[13,0,3,3,13,3],
+"SMTTypes_8cpp.html#a04238f0caf2c5ba30e7cf5a550dfd09f":[13,0,3,3,13,3,1],
 "SMTTypes_8cpp.html#a69e2a4688847620f9e0b19eb7d719156":[13,0,3,3,13,3,0],
 "SMTTypes_8cpp_8inc.html":[13,0,0,0,0,2,13,0,8],
 "SMTTypes_8cpp_8inc_source.html":[13,0,0,0,0,2,13,0,8],
@@ -24,7 +29,7 @@ var NAVTREEINDEX12 =
 "SharedImpl_8cpp.html":[13,0,3,3,10,1,2],
 "SharedImpl_8cpp_source.html":[13,0,3,3,10,1,2],
 "SharedImpl_8h.html":[13,0,3,3,10,1,3],
-"SharedImpl_8h.html#ad78e062f62e0d6e453941fb4ca843e4d":[13,0,3,3,10,1,3,2],
+"SharedImpl_8h.html#ad78e062f62e0d6e453941fb4ca843e4d":[13,0,3,3,10,1,3,3],
 "SharedImpl_8h_source.html":[13,0,3,3,10,1,3],
 "Shared_2OpTraits_8td.html":[13,0,2,0,2,12,5],
 "Shared_2OpTraits_8td_source.html":[13,0,2,0,2,12,5],
@@ -244,10 +249,5 @@ var NAVTREEINDEX12 =
 "Struct_2IR_2Ops_8capi_8h_8inc.html#ab0c47bdfc158f8bc462e54cc8d995e38":[13,0,0,0,0,2,15,0,6,15],
 "Struct_2IR_2Ops_8capi_8h_8inc.html#ab397798a1603504480d209df854b2aa1":[13,0,0,0,0,2,15,0,6,51],
 "Struct_2IR_2Ops_8capi_8h_8inc.html#abf71894a558c78e31257ca16e22a38fc":[13,0,0,0,0,2,15,0,6,29],
-"Struct_2IR_2Ops_8capi_8h_8inc.html#ac01861a357a2234787cfb8433bb4ece2":[13,0,0,0,0,2,15,0,6,19],
-"Struct_2IR_2Ops_8capi_8h_8inc.html#ac0e521a4105f4306d7a2c47f8da19963":[13,0,0,0,0,2,15,0,6,33],
-"Struct_2IR_2Ops_8capi_8h_8inc.html#ac133c7b9858cfa47ddfb1a13a5e23f1f":[13,0,0,0,0,2,15,0,6,10],
-"Struct_2IR_2Ops_8capi_8h_8inc.html#ac49cf98f4ec4b86b45cccc16fe52d086":[13,0,0,0,0,2,15,0,6,27],
-"Struct_2IR_2Ops_8capi_8h_8inc.html#ac80539fc28490203bd64cb3a54b843c4":[13,0,0,0,0,2,15,0,6,1],
-"Struct_2IR_2Ops_8capi_8h_8inc.html#acd42ab2d7557bb3f0de537100b0f4d98":[13,0,0,0,0,2,15,0,6,36]
+"Struct_2IR_2Ops_8capi_8h_8inc.html#ac01861a357a2234787cfb8433bb4ece2":[13,0,0,0,0,2,15,0,6,19]
 };

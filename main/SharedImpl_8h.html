@@ -119,9 +119,11 @@ $(function(){initNavTree('SharedImpl_8h.html','',''); });
 <code>#include &quot;<a class="el" href="Constrain_2IR_2Ops_8h_source.html">llzk/Dialect/Constrain/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Function_2IR_2Ops_8h_source.html">llzk/Dialect/Function/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Global_2IR_2Ops_8h_source.html">llzk/Dialect/Global/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="AttributeHelper_8h_source.html">llzk/Dialect/LLZK/IR/AttributeHelper.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Polymorphic_2IR_2Ops_8h_source.html">llzk/Dialect/Polymorphic/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="TypeConversionPatterns_8h_source.html">llzk/Dialect/Shared/TypeConversionPatterns.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Struct_2IR_2Ops_8h_source.html">llzk/Dialect/Struct/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="TypeHelper_8h_source.html">llzk/Util/TypeHelper.h</a>&quot;</code><br />
 <code>#include &lt;mlir/Dialect/Arith/IR/Arith.h&gt;</code><br />
 <code>#include &lt;mlir/Dialect/SCF/IR/SCF.h&gt;</code><br />
 <code>#include &lt;mlir/Dialect/SCF/Transforms/Patterns.h&gt;</code><br />
@@ -134,22 +136,23 @@ $(function(){initNavTree('SharedImpl_8h.html','',''); });
 <code>#include &lt;llvm/ADT/STLExtras.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/SmallVector.h&gt;</code><br />
 <code>#include &lt;llvm/Support/Debug.h&gt;</code><br />
-<code>#include &lt;tuple&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for SharedImpl.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="SharedImpl_8h__incl.svg" width="3538" height="780"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="SharedImpl_8h__incl.svg" width="4280" height="780"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="SharedImpl_8h__dep__incl.svg" width="1056" height="166"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="SharedImpl_8h__dep__incl.svg" width="1294" height="166"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="SharedImpl_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
+<tr class="memitem:llzk_3A_3Apolymorphic_3A_3Adetail_3A_3AInstantiationLayout" id="r_llzk_3A_3Apolymorphic_3A_3Adetail_3A_3AInstantiationLayout"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html">llzk::polymorphic::detail::InstantiationLayout</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Groups the information needed after concrete parameters have been chosen to decide how to name a new instantiated template and how to rewrite the remaining argument list at the use site.  <a href="structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html#details">More...</a><br /></td></tr>
 <tr class="memitem:llzk_3A_3Apolymorphic_3A_3Adetail_3A_3ALegalityCheckCallback" id="r_llzk_3A_3Apolymorphic_3A_3Adetail_3A_3ALegalityCheckCallback"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html">llzk::polymorphic::detail::LegalityCheckCallback</a></td></tr>
 <tr class="memitem:llzk_3A_3Apolymorphic_3A_3Adetail_3A_3AEmptyLegalityCheckCallback" id="r_llzk_3A_3Apolymorphic_3A_3Adetail_3A_3AEmptyLegalityCheckCallback"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback.html">llzk::polymorphic::detail::EmptyLegalityCheckCallback</a></td></tr>
 </table><table class="memberdecls">
@@ -167,6 +170,14 @@ Macros</h2></td></tr>
 Functions</h2></td></tr>
 <tr class="memitem:afa4db6a4baedb109176585c4bfc46e48" id="r_afa4db6a4baedb109176585c4bfc46e48"><td class="memItemLeft" align="right" valign="top">mlir::ConversionTarget&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#afa4db6a4baedb109176585c4bfc46e48">llzk::polymorphic::detail::newBaseTarget</a> (mlir::MLIRContext *ctx)</td></tr>
 <tr class="memdesc:afa4db6a4baedb109176585c4bfc46e48"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new <span class="tt">ConversionTarget</span> allowing all LLZK-required dialects.  <br /></td></tr>
+<tr class="memitem:afea25c760e69980cdc91a16b373bc182" id="r_afea25c760e69980cdc91a16b373bc182"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1array_1_1ArrayType.html">array::ArrayType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#afea25c760e69980cdc91a16b373bc182">llzk::polymorphic::detail::flattenInstantiatedArrayType</a> (<a class="el" href="classllzk_1_1array_1_1ArrayType.html">array::ArrayType</a> inputTy, mlir::Type convertedElemTy)</td></tr>
+<tr class="memdesc:afea25c760e69980cdc91a16b373bc182"><td class="mdescLeft">&#160;</td><td class="mdescRight">Merge nested array dimensions produced by replacing an array element type.  <br /></td></tr>
+<tr class="memitem:a0201e1ef6ecd6cb698f4241014159708" id="r_a0201e1ef6ecd6cb698f4241014159708"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1component_1_1StructType.html">component::StructType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#a0201e1ef6ecd6cb698f4241014159708">llzk::polymorphic::detail::getStructTypeWithParams</a> (mlir::SymbolRefAttr nameRef, mlir::ArrayAttr params)</td></tr>
+<tr class="memdesc:a0201e1ef6ecd6cb698f4241014159708"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a struct type while representing an empty parameter list as absent.  <br /></td></tr>
+<tr class="memitem:ab757bbb96d42abba8120944b70a39f67" id="r_ab757bbb96d42abba8120944b70a39f67"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1component_1_1StructType.html">component::StructType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#ab757bbb96d42abba8120944b70a39f67">llzk::polymorphic::detail::getStructTypeWithParams</a> (mlir::SymbolRefAttr nameRef, mlir::MLIRContext *ctx, mlir::ArrayRef&lt; mlir::Attribute &gt; params)</td></tr>
+<tr class="memdesc:ab757bbb96d42abba8120944b70a39f67"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a struct type while representing an empty parameter list as absent.  <br /></td></tr>
+<tr class="memitem:a40e528ec96116275726d39965289df2b" id="r_a40e528ec96116275726d39965289df2b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html">InstantiationLayout</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#a40e528ec96116275726d39965289df2b">llzk::polymorphic::detail::buildInstantiationLayout</a> (<a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> parentTemplate, mlir::ArrayAttr callParams, const llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; &amp;paramNameToConcrete)</td></tr>
+<tr class="memdesc:a40e528ec96116275726d39965289df2b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Derive the instantiated template name and the remaining explicit parameters that should stay on the rewritten use site.  <br /></td></tr>
 <tr class="memitem:a49b3116406d5104fcf8b37bed9f1f386" id="r_a49b3116406d5104fcf8b37bed9f1f386"><td class="memTemplParams" colspan="2">template&lt;typename... AdditionalOpClasses, typename... AdditionalChecks&gt; </td></tr>
 <tr class="memitem:a49b3116406d5104fcf8b37bed9f1f386 template"><td class="memItemLeft" align="right" valign="top">mlir::ConversionTarget&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#a49b3116406d5104fcf8b37bed9f1f386">llzk::polymorphic::detail::newConverterDefinedTarget</a> (mlir::TypeConverter &amp;tyConv, mlir::MLIRContext *ctx, AdditionalChecks &amp;&amp;...checks)</td></tr>
 <tr class="memdesc:a49b3116406d5104fcf8b37bed9f1f386"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new <span class="tt">ConversionTarget</span> allowing all LLZK-required dialects and defining Op legality based on the given <span class="tt">TypeConverter</span> for Ops listed in both members of <span class="tt">OpClassesWithStructTypes</span> and in <span class="tt">AdditionalOpClasses</span>.  <br /></td></tr>

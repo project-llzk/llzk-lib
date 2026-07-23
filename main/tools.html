@@ -262,6 +262,9 @@ $(function(){initNavTree('tools.html','',''); });
                 </ul>
               </li>
               <li class="level4">
+                <a href="#autotoc_md-llzk-infer-tvar"><span class="tt">-llzk-infer-tvar</span> </a>
+              </li>
+              <li class="level4">
                 <a href="#autotoc_md-llzk-specialize-wildcard-arrays"><span class="tt">-llzk-specialize-wildcard-arrays</span> </a>
                 <ul>
                   <li class="level5">
@@ -508,7 +511,13 @@ Options</h5>
 Options</h5>
 <div class="fragment"><div class="line">-max-iter : Maximum number of times the pass will run if a fixpoint is not reached earlier. Unrolling loops can provide more opportunities for instantiating structs but the converse is true as well. Thus, the pass will run multiple times until no further changes can be made or the upper limit provided in this option is reached.</div>
 <div class="line">-cleanup  : Specifies the extent to which unused parameterized definitions (i.e. structs or free functions within a `poly.template`) are removed during the flattening pass.</div>
-</div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-specialize-wildcard-arrays"></a>
+</div><!-- fragment --> <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-infer-tvar"></a>
+<span class="tt">-llzk-infer-tvar</span></h4>
+<p><em>Infer concrete function types for polymorphic type variables</em></p>
+<p>Infers concrete replacements for <span class="tt">!poly.tvar</span> template parameters from operations in <span class="tt">function.def</span> or <span class="tt">poly.expr</span> bodies, such as <span class="tt">poly.unifiable_cast</span> between a type variable and a more concrete type. Rewrites affected function signatures and body types, removes redundant casts, drops resolved <span class="tt">poly.param</span> declarations, and updates call-site template parameter lists.</p>
+<p>The pass also creates template-local instantiated versions of functions for each type-variable replacement. The <span class="tt">llzk-flatten</span> pass performs similar instantiation of type variables but only as part of its more extensive lowering and flattening, all of which may not be desired in some cases (hence the utility of this pass).</p>
+<p>This pass may result in <span class="tt">poly.template</span> containing no <span class="tt">poly.param</span> or <span class="tt">poly.expr</span>. Run <span class="tt">llzk-drop-empty-templates</span> after this pass to simplify these templates. </p>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-specialize-wildcard-arrays"></a>
 <span class="tt">-llzk-specialize-wildcard-arrays</span></h4>
 <p><em>Refine wildcard array casts and specialize concrete call targets</em></p>
 <p>Refines <span class="tt">poly.unifiable_cast</span> results when wildcard <span class="tt">array.type</span> dimensions can be replaced with concrete integer sizes from the input type. Then specializes free functions, extern declarations, and whole structs for calls whose wildcard array dimensions have become concrete.</p>

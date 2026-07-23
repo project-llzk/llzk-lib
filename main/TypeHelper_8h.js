@@ -3,6 +3,11 @@ var TypeHelper_8h =
     [ "llzk::BuildShortTypeString", "classllzk_1_1BuildShortTypeString.html", null ],
     [ "llvm::DenseMapInfo< llzk::Side >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4.html", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4" ],
     [ "llzk::UnificationMap", "namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904", null ],
+    [ "llzk::AttrConcreteness", "namespacellzk.html#a41c7611294e8e147781abc732a50159f", [
+      [ "llzk::AttrConcreteness::NonConcrete", "namespacellzk.html#a41c7611294e8e147781abc732a50159fa629520a84a1c9269b04bc0f811417391", null ],
+      [ "llzk::AttrConcreteness::Concrete", "namespacellzk.html#a41c7611294e8e147781abc732a50159fac02221ae67f642f240ee3e57161e433a", null ],
+      [ "llzk::AttrConcreteness::Wildcard", "namespacellzk.html#a41c7611294e8e147781abc732a50159fac4a0dbaac3bd0f3bf581ad822f5fb4b4", null ]
+    ] ],
     [ "llzk::Side", "namespacellzk.html#afc702f955fa2d6d30b19fae69930f11a", [
       [ "llzk::Side::EMPTY", "namespacellzk.html#afc702f955fa2d6d30b19fae69930f11aaba2b45bdc11e2a4a6e86aab2ac693cbb", null ],
       [ "llzk::Side::LHS", "namespacellzk.html#afc702f955fa2d6d30b19fae69930f11aa8cbc0fb889c6cc21e0be26227a2b468b", null ],
@@ -12,6 +17,7 @@ var TypeHelper_8h =
     [ "llzk::arrayTypesUnify", "namespacellzk.html#a5920231c88c6c04af215312177a62a68", null ],
     [ "llzk::assertValidAttrForParamOfType", "namespacellzk.html#a3840dc2d50d9f0cda122fb59ebaf32ed", null ],
     [ "llzk::checkValidType", "namespacellzk.html#ae30042843555f938699fed6daf364eac", null ],
+    [ "llzk::classifyAttrConcreteness", "namespacellzk.html#af6e26e61350d513b129fd1541e233f2d", null ],
     [ "llzk::computeEmitEqCardinality", "namespacellzk.html#a01267bf6363cdd14607bb650e8c2f435", null ],
     [ "llzk::forceIntAttrType", "namespacellzk.html#af747df5c204799e7abbc73f7bfe34376", null ],
     [ "llzk::forceIntAttrTypes", "namespacellzk.html#addd241b1e4627ad4ccde996cefb6cd1f", null ],
@@ -20,6 +26,7 @@ var TypeHelper_8h =
     [ "llzk::getAtIndex", "namespacellzk.html#a8b72620c55defe1f3d66eda8fac6e0e7", null ],
     [ "llzk::getIfSingleton", "namespacellzk.html#a374eec2da9f2f274eabc9dd54d33f27c", null ],
     [ "llzk::hasAffineMapAttr", "namespacellzk.html#a21a0759043e8fb39b7ccae07f0d788da", null ],
+    [ "llzk::isConcreteStructParamAttr", "namespacellzk.html#ac198e9b82f251f6645808153271876fc", null ],
     [ "llzk::isConcreteType", "namespacellzk.html#a9798d3afd220d09f46b40473781a6e86", null ],
     [ "llzk::isDynamic", "namespacellzk.html#a0112dda4887f249d668efa60a5646bdd", null ],
     [ "llzk::isFeltOrSimpleFeltAggregate", "namespacellzk.html#a874d45e73577b58a7de9f25eda1f6a25", null ],

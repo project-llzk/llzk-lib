@@ -18,6 +18,7 @@ var searchData=
   ['translate_15',['llzk-translate',['../tools.html#llzk-translate',1,'']]],
   ['translation_20guidelines_16',['Translation Guidelines',['../syntax.html#translation-guidelines',1,'']]],
   ['tree_17',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-symbol-def-tree&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-symbol-def-tree',1,'']]],
-  ['types_18',['Types',['../syntax.html#types',1,'Types'],['../dialects.html#types-1',1,'Types'],['../dialects.html#types-2',1,'Types'],['../dialects.html#types-3',1,'Types'],['../dialects.html#types-4',1,'Types'],['../dialects.html#types-5',1,'Types'],['../dialects.html#types-6',1,'Types'],['../backend-dialects.html#types-7',1,'Types']]],
-  ['typevartype_19',['TypeVarType',['../dialects.html#typevartype',1,'']]]
+  ['tvar_18',['&lt;span class=&quot;tt&quot;&gt;-llzk-infer-tvar&lt;/span&gt;',['../tools.html#autotoc_md-llzk-infer-tvar',1,'']]],
+  ['types_19',['Types',['../syntax.html#types',1,'Types'],['../dialects.html#types-1',1,'Types'],['../dialects.html#types-2',1,'Types'],['../dialects.html#types-3',1,'Types'],['../dialects.html#types-4',1,'Types'],['../dialects.html#types-5',1,'Types'],['../dialects.html#types-6',1,'Types'],['../backend-dialects.html#types-7',1,'Types']]],
+  ['typevartype_20',['TypeVarType',['../dialects.html#typevartype',1,'']]]
 ];

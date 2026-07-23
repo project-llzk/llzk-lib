@@ -24,6 +24,7 @@ var searchData=
   ['types_2eh_21',['Types.h',['../Array_2IR_2Types_8h.html',1,'(Global Namespace)'],['../Felt_2IR_2Types_8h.html',1,'(Global Namespace)'],['../POD_2IR_2Types_8h.html',1,'(Global Namespace)'],['../Polymorphic_2IR_2Types_8h.html',1,'(Global Namespace)'],['../String_2IR_2Types_8h.html',1,'(Global Namespace)'],['../Struct_2IR_2Types_8h.html',1,'(Global Namespace)']]],
   ['types_2eh_2einc_22',['Types.h.inc',['../Array_2IR_2Types_8h_8inc.html',1,'(Global Namespace)'],['../Felt_2IR_2Types_8h_8inc.html',1,'(Global Namespace)'],['../POD_2IR_2Types_8h_8inc.html',1,'(Global Namespace)'],['../Polymorphic_2IR_2Types_8h_8inc.html',1,'(Global Namespace)'],['../String_2IR_2Types_8h_8inc.html',1,'(Global Namespace)'],['../Struct_2IR_2Types_8h_8inc.html',1,'(Global Namespace)']]],
   ['types_2etd_23',['Types.td',['../Array_2IR_2Types_8td.html',1,'(Global Namespace)'],['../Felt_2IR_2Types_8td.html',1,'(Global Namespace)'],['../POD_2IR_2Types_8td.html',1,'(Global Namespace)'],['../Polymorphic_2IR_2Types_8td.html',1,'(Global Namespace)'],['../Shared_2Types_8td.html',1,'(Global Namespace)'],['../String_2IR_2Types_8td.html',1,'(Global Namespace)'],['../Struct_2IR_2Types_8td.html',1,'(Global Namespace)']]],
-  ['typing_2ecpp_24',['Typing.cpp',['../Typing_8cpp.html',1,'']]],
-  ['typing_2eh_25',['Typing.h',['../Typing_8h.html',1,'']]]
+  ['typevarinferencepass_2ecpp_24',['TypeVarInferencePass.cpp',['../TypeVarInferencePass_8cpp.html',1,'']]],
+  ['typing_2ecpp_25',['Typing.cpp',['../Typing_8cpp.html',1,'']]],
+  ['typing_2eh_26',['Typing.h',['../Typing_8h.html',1,'']]]
 ];

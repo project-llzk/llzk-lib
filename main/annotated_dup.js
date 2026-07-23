@@ -383,6 +383,7 @@ var annotated_dup =
           [ "ApplyMapOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase" ],
           [ "ConstReadOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase" ],
           [ "EmptyLegalityCheckCallback", "classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback.html", "classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback" ],
+          [ "InstantiationLayout", "structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html", "structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout" ],
           [ "LegalityCheckCallback", "classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html", "classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback" ],
           [ "TemplateExprOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1TemplateExprOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1TemplateExprOpGenericAdaptorBase" ],
           [ "TemplateOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1TemplateOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1TemplateOpGenericAdaptorBase" ],
@@ -396,6 +397,7 @@ var annotated_dup =
         [ "impl", "namespacellzk_1_1polymorphic_1_1impl.html", [
           [ "EmptyTemplateRemovalPassBase", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase" ],
           [ "FlatteningPassBase", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase" ],
+          [ "TypeVarInferencePassBase", "classllzk_1_1polymorphic_1_1impl_1_1TypeVarInferencePassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1TypeVarInferencePassBase" ],
           [ "WildcardArraySpecializationPassBase", "classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase" ]
         ] ],
         [ "ApplyMapOp", "classllzk_1_1polymorphic_1_1ApplyMapOp.html", "classllzk_1_1polymorphic_1_1ApplyMapOp" ],

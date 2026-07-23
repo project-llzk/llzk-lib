@@ -4,6 +4,7 @@ var TypeHelper_8cpp =
     [ "DEBUG_TYPE", "TypeHelper_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d", null ],
     [ "llzk::arrayTypesUnify", "namespacellzk.html#a9bdd2635c665c9a009596b32ceeeafec", null ],
     [ "llzk::assertValidAttrForParamOfType", "namespacellzk.html#a06f8a74431f12f0298cc7033691f84ec", null ],
+    [ "llzk::classifyAttrConcreteness", "namespacellzk.html#a5b7b247b9d299875ee108f15066493e7", null ],
     [ "llzk::computeEmitEqCardinality", "namespacellzk.html#a1b91475e8b41cc2d6a7d4716274d324f", null ],
     [ "llzk::forceIntAttrType", "namespacellzk.html#a1575048cc6105ca9b8d50d99ef654562", null ],
     [ "llzk::forceIntAttrTypes", "namespacellzk.html#a57632163fc64aabdf3ee27eaec6cea72", null ],

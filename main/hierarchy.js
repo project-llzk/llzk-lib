@@ -813,6 +813,7 @@ var hierarchy =
       ] ],
       [ "llzk::array::InsertArrayOpGenericAdaptor< RangeT >", "classllzk_1_1array_1_1InsertArrayOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::polymorphic::detail::InstantiationLayout", "structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html", null ],
     [ "llzk::component::InStructFunctionNamed< FuncName >", "structllzk_1_1component_1_1InStructFunctionNamed.html", null ],
     [ "llzk::smt::detail::Int2BVOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1Int2BVOpGenericAdaptorBase.html", [
       [ "llzk::smt::Int2BVOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1Int2BVOpGenericAdaptor.html", null ],
@@ -1206,6 +1207,7 @@ var hierarchy =
       [ "llzk::pod::impl::PodToScalarPassBase< DerivedT >", "classllzk_1_1pod_1_1impl_1_1PodToScalarPassBase.html", null ],
       [ "llzk::polymorphic::impl::EmptyTemplateRemovalPassBase< DerivedT >", "classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html", null ],
       [ "llzk::polymorphic::impl::FlatteningPassBase< DerivedT >", "classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html", null ],
+      [ "llzk::polymorphic::impl::TypeVarInferencePassBase< DerivedT >", "classllzk_1_1polymorphic_1_1impl_1_1TypeVarInferencePassBase.html", null ],
       [ "llzk::polymorphic::impl::WildcardArraySpecializationPassBase< DerivedT >", "classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html", null ]
     ] ],
     [ "OpGeneratorData", "structOpGeneratorData.html", [

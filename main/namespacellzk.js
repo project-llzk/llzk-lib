@@ -152,6 +152,11 @@ var namespacellzk =
     [ "SourceRefRemappings", "namespacellzk.html#a1780e9185d5b6b142a646abf09ec26c7", null ],
     [ "TranslationMap", "namespacellzk.html#a6424545e301f08405b938316b59bb751", null ],
     [ "UnificationMap", "namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904", null ],
+    [ "AttrConcreteness", "namespacellzk.html#a41c7611294e8e147781abc732a50159f", [
+      [ "NonConcrete", "namespacellzk.html#a41c7611294e8e147781abc732a50159fa629520a84a1c9269b04bc0f811417391", null ],
+      [ "Concrete", "namespacellzk.html#a41c7611294e8e147781abc732a50159fac02221ae67f642f240ee3e57161e433a", null ],
+      [ "Wildcard", "namespacellzk.html#a41c7611294e8e147781abc732a50159fac4a0dbaac3bd0f3bf581ad822f5fb4b4", null ]
+    ] ],
     [ "OutputStream", "namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2", [
       [ "Outs", "namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ac31eed413e5e7ea16023bcfa3a4e5e55", null ],
       [ "Errs", "namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ae9ee3f615e1fc88e4ae0293db27987f1", null ],
@@ -216,6 +221,8 @@ var namespacellzk =
     [ "checkFuncBodyIsStraightLine", "namespacellzk.html#aa916f2d231aaa798b6d3189254c5f11f", null ],
     [ "checkFuncBodyIsStraightLine", "namespacellzk.html#ac6677ce6c8f60fb650f590dc83088f01", null ],
     [ "checkValidType", "namespacellzk.html#ae30042843555f938699fed6daf364eac", null ],
+    [ "classifyAttrConcreteness", "namespacellzk.html#a5b7b247b9d299875ee108f15066493e7", null ],
+    [ "classifyAttrConcreteness", "namespacellzk.html#af6e26e61350d513b129fd1541e233f2d", null ],
     [ "cmp", "namespacellzk.html#a562ddceaa4861060a3920d4427ac2909", null ],
     [ "collectFields", "namespacellzk.html#afcfdee46edb27b06b8bd67475a16ec37", null ],
     [ "collectSplitFunctionNameInfo", "namespacellzk.html#acf9d9148e9ad315cad36f0a144450de5", null ],
@@ -346,6 +353,7 @@ var namespacellzk =
     [ "hasReadEffect", "namespacellzk.html#a77bb6a13dd663cf33ccf6248ac67029a", null ],
     [ "hasUnknownOrNonReadEffect", "namespacellzk.html#ad3fb1acc95bcf8b458a36fb94c1c1229", null ],
     [ "intersection", "namespacellzk.html#a160d32b5250af73dbd20a60ccedfedfd", null ],
+    [ "isConcreteStructParamAttr", "namespacellzk.html#ac198e9b82f251f6645808153271876fc", null ],
     [ "isConcreteType", "namespacellzk.html#a9798d3afd220d09f46b40473781a6e86", null ],
     [ "isConcreteType", "namespacellzk.html#a2bbb039982f4d0a01e53f8901fdaa34d", null ],
     [ "isDynamic", "namespacellzk.html#aac04ef36bb784819019624d62b493ce6", null ],

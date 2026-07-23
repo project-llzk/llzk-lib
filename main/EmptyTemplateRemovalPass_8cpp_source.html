@@ -123,61 +123,62 @@ $(function(){initNavTree('EmptyTemplateRemovalPass_8cpp_source.html','',''); });
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &quot;<a class="code" href="POD_2IR_2Types_8h.html">llzk/Dialect/POD/IR/Types.h</a>&quot;</span></div>
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &quot;<a class="code" href="Polymorphic_2IR_2Ops_8h.html">llzk/Dialect/Polymorphic/IR/Ops.h</a>&quot;</span></div>
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &quot;<a class="code" href="Polymorphic_2Transforms_2TransformationPasses_8h.html">llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h</a>&quot;</span></div>
-<div class="foldopen" id="foldopen00021" data-start="{" data-end="}">
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno"><a class="line" href="namespacellzk_1_1polymorphic_1_1impl.html">   21</a></span><span class="preprocessor">#include &quot;<a class="code" href="Struct_2IR_2Types_8h.html">llzk/Dialect/Struct/IR/Types.h</a>&quot;</span></div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &quot;<a class="code" href="Debug_8h.html">llzk/Util/Debug.h</a>&quot;</span></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &quot;<a class="code" href="Struct_2IR_2Types_8h.html">llzk/Dialect/Struct/IR/Types.h</a>&quot;</span></div>
+<div class="foldopen" id="foldopen00022" data-start="{" data-end="}">
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno"><a class="line" href="namespacellzk_1_1polymorphic_1_1impl.html">   22</a></span><span class="preprocessor">#include &quot;<a class="code" href="Debug_8h.html">llzk/Util/Debug.h</a>&quot;</span></div>
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span> </div>
-</div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &lt;mlir/Dialect/SCF/Transforms/Patterns.h&gt;</span></div>
+</div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;mlir/Transforms/DialectConversion.h&gt;</span></div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
-<div class="foldopen" id="foldopen00027" data-start="{" data-end="};">
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html">   27</a></span><span class="comment">// Include the generated base pass class definitions.</span></div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1polymorphic.html">llzk::polymorphic</a> {</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#aef60a06fbb5222a660c7cc186316f5c1">   29</a></span><span class="preprocessor">#define GEN_PASS_DEF_EMPTYTEMPLATEREMOVALPASS</span></div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="preprocessor">#include &quot;<a class="code" href="Polymorphic_2Transforms_2TransformationPasses_8h_8inc.html">llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h.inc</a>&quot;</span></div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#ae44288cd0abeaa4820e7893c756138ff">   31</a></span>} <span class="comment">// namespace llzk::polymorphic</span></div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#ace8ef1af797261a72986d597c92b165c">   32</a></span> </div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a3cd921726a260d12c29f01ec63cbd5e2">   33</a></span><span class="preprocessor">#include &quot;<a class="code" href="SharedImpl_8h.html">SharedImpl.h</a>&quot;</span></div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a3b92f10c6b0531edfe417ad4de3884df">   34</a></span> </div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#aaf5cea5d405d57aa945e89bfccaa34de">   35</a></span><span class="preprocessor">#define DEBUG_TYPE &quot;llzk-drop-empty-templates&quot;</span></div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a68441917e8cc527314703bbe36e8df7f">   36</a></span> </div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="comment">// Include the generated base pass class definitions.</span></div>
+<div class="foldopen" id="foldopen00028" data-start="{" data-end="};">
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html">   28</a></span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1polymorphic.html">llzk::polymorphic</a> {</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno"><a class="line" href="EmptyTemplateRemovalPass_8cpp.html#a4c4c4b73ef795d708fdc35bbb197564b">   29</a></span><span class="preprocessor">#define GEN_PASS_DEF_EMPTYTEMPLATEREMOVALPASS</span></div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#aef60a06fbb5222a660c7cc186316f5c1">   30</a></span><span class="preprocessor">#include &quot;<a class="code" href="Polymorphic_2Transforms_2TransformationPasses_8h_8inc.html">llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h.inc</a>&quot;</span></div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>} <span class="comment">// namespace llzk::polymorphic</span></div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#ae44288cd0abeaa4820e7893c756138ff">   32</a></span> </div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#ace8ef1af797261a72986d597c92b165c">   33</a></span><span class="preprocessor">#include &quot;<a class="code" href="SharedImpl_8h.html">SharedImpl.h</a>&quot;</span></div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a3cd921726a260d12c29f01ec63cbd5e2">   34</a></span> </div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a3b92f10c6b0531edfe417ad4de3884df">   35</a></span><span class="preprocessor">#define DEBUG_TYPE &quot;llzk-drop-empty-templates&quot;</span></div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#aaf5cea5d405d57aa945e89bfccaa34de">   36</a></span> </div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a68441917e8cc527314703bbe36e8df7f">   37</a></span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk_1_1array.html">llzk::array</a>;</div>
-<div class="foldopen" id="foldopen00039" data-start="{" data-end="}">
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a7879024d9c9c7d171b51d406b73127c9">   39</a></span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk_1_1component.html">llzk::component</a>;</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk_1_1function.html">llzk::function</a>;</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk_1_1component.html">llzk::component</a>;</div>
+<div class="foldopen" id="foldopen00040" data-start="{" data-end="}">
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a7879024d9c9c7d171b51d406b73127c9">   40</a></span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk_1_1function.html">llzk::function</a>;</div>
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk_1_1pod.html">llzk::pod</a>;</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk_1_1polymorphic.html">llzk::polymorphic</a>;</div>
 </div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a8caf5901db65852941e0af71ffd38fca">   42</a></span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk_1_1polymorphic.html">llzk::polymorphic</a>;</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk_1_1polymorphic_1_1detail.html">llzk::polymorphic::detail</a>;</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a0ca04ea66371c875afb4990b5fa75816">   44</a></span> </div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span><span class="keyword">namespace </span>{</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a8caf5901db65852941e0af71ffd38fca">   43</a></span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk_1_1polymorphic_1_1detail.html">llzk::polymorphic::detail</a>;</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a0ca04ea66371c875afb4990b5fa75816">   45</a></span><span class="keyword">namespace </span>{</div>
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
-<div class="foldopen" id="foldopen00047" data-start="{" data-end="}">
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a2d1b61c7f0c9f895bbeea858036d0621">   47</a></span><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">bool</span> hasEmptyParamList(<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> t) {</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  <span class="keywordflow">if</span> (ArrayAttr paramList = t.<a class="code hl_function" href="classllzk_1_1component_1_1StructType.html#a9388689c322310c1d5c4bcf5445cfd53">getParams</a>()) {</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">bool</span> hasEmptyParamList(<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> t) {</div>
+<div class="foldopen" id="foldopen00048" data-start="{" data-end="}">
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a2d1b61c7f0c9f895bbeea858036d0621">   48</a></span>  <span class="keywordflow">if</span> (ArrayAttr paramList = t.<a class="code hl_function" href="classllzk_1_1component_1_1StructType.html#a9388689c322310c1d5c4bcf5445cfd53">getParams</a>()) {</div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    <span class="keywordflow">return</span> paramList.empty();</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  }</div>
 </div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#aea7ecc56695f68f1d5595d52c90b823c">   50</a></span>  }</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#aea7ecc56695f68f1d5595d52c90b823c">   51</a></span>  <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>}</div>
-<div class="foldopen" id="foldopen00053" data-start="{" data-end="}">
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a7a34b66d0fa975836de89d4c488e87de">   53</a></span></div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span></div>
+<div class="foldopen" id="foldopen00054" data-start="{" data-end="}">
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a7a34b66d0fa975836de89d4c488e87de">   54</a></span><span class="comment">/// Convert StructType with empty parameter list to one with no parameters.</span></div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span><span class="keyword">class </span>EmptyParamListStructTypeConverter : <span class="keyword">public</span> TypeConverter {</div>
-</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  EmptyParamListStructTypeConverter() : TypeConverter() {</div>
-<div class="foldopen" id="foldopen00058" data-start="{" data-end="}">
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a3879f2b62d03b7453c9a6570c161700e">   58</a></span> </div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    addConversion([](Type inputTy) { <span class="keywordflow">return</span> inputTy; });</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
 </div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  EmptyParamListStructTypeConverter() : TypeConverter() {</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
+<div class="foldopen" id="foldopen00059" data-start="{" data-end="}">
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a3879f2b62d03b7453c9a6570c161700e">   59</a></span>    addConversion([](Type inputTy) { <span class="keywordflow">return</span> inputTy; });</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    addConversion([](<a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> inputTy) -&gt; <a class="code hl_class" href="classllzk_1_1component_1_1StructType.html">StructType</a> {</div>
+</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>      <span class="keywordflow">return</span> hasEmptyParamList(inputTy) ? <a class="code hl_function" href="classllzk_1_1component_1_1StructType.html#a466bcba80e7887ad05b18747bcde2a47">StructType::get</a>(inputTy.<a class="code hl_function" href="classllzk_1_1component_1_1StructType.html#a12d44299436c85f76ce4f6a94ed741a1">getNameRef</a>()) : inputTy;</div>
-<div class="foldopen" id="foldopen00063" data-start="{" data-end="}">
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a9735e157104a2344e971a06690cefd29">   63</a></span>    });</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span> </div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    });</div>
+<div class="foldopen" id="foldopen00064" data-start="{" data-end="}">
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#a9735e157104a2344e971a06690cefd29">   64</a></span> </div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    addConversion([<span class="keyword">this</span>](<a class="code hl_class" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> inputTy) {</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>      <span class="comment">// Recursively convert element type</span></div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>      <span class="keywordflow">return</span> <a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#ac459ea5326db470922dd1fb865b08acb">ArrayType::get</a>(</div>
@@ -191,8 +192,8 @@ $(function(){initNavTree('EmptyTemplateRemovalPass_8cpp_source.html','',''); });
 <div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>      <span class="keywordflow">if</span> (records.empty()) {</div>
 <div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>        <span class="keywordflow">return</span> inputTy;</div>
 <div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>      }</div>
-</div>
 <div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>      llvm::SmallVector&lt;RecordAttr&gt; newRecords;</div>
+</div>
 <div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>      newRecords.reserve(records.size());</div>
 <div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>      MLIRContext *ctx = inputTy.getContext();</div>
 <div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>      <span class="keywordflow">for</span> (RecordAttr attr : records) {</div>
@@ -201,21 +202,21 @@ $(function(){initNavTree('EmptyTemplateRemovalPass_8cpp_source.html','',''); });
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>        );</div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>      }</div>
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>      <span class="keywordflow">return</span> <a class="code hl_function" href="classllzk_1_1pod_1_1PodType.html#a66be8d09f73bc1e5a32b5385a86351da">PodType::get</a>(ctx, newRecords);</div>
-<div class="foldopen" id="foldopen00087" data-start="{" data-end="}">
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#aeb632ce6778e79ce1e4214872982288f">   87</a></span>    });</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  }</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>    });</div>
+<div class="foldopen" id="foldopen00088" data-start="{" data-end="}">
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno"><a class="line" href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html#aeb632ce6778e79ce1e4214872982288f">   88</a></span>  }</div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>};</div>
-</div>
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span></div>
 </div>
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span></div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span><span class="keyword">class </span>DeleteNoDefTemplatePattern : <span class="keyword">public</span> OpConversionPattern&lt;TemplateOp&gt; {</div>
-<div class="foldopen" id="foldopen00093" data-start="{" data-end="}">
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno"><a class="line" href="namespacellzk_1_1polymorphic.html#a4167d219fba917ab844dcf3b9814c544">   93</a></span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <span class="keyword">using </span>OpConversionPattern&lt;<a class="code hl_class" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a>&gt;::OpConversionPattern;</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span> </div>
 </div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span><span class="keyword">class </span>DeleteNoDefTemplatePattern : <span class="keyword">public</span> OpConversionPattern&lt;TemplateOp&gt; {</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span><span class="keyword">public</span>:</div>
+<div class="foldopen" id="foldopen00094" data-start="{" data-end="}">
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno"><a class="line" href="namespacellzk_1_1polymorphic.html#a4167d219fba917ab844dcf3b9814c544">   94</a></span>  <span class="keyword">using </span>OpConversionPattern&lt;<a class="code hl_class" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a>&gt;::OpConversionPattern;</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span> </div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">bool</span> legal(<a class="code hl_class" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> op) {</div>
+</div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    <span class="keywordflow">return</span> llvm::any_of(op.<a class="code hl_function" href="classllzk_1_1polymorphic_1_1TemplateOp.html#a18edabcfb493d452d5e3a9a41a221383">getBodyRegion</a>().getOps(), [](Operation &amp;p) {</div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>      return llvm::isa&lt;StructDefOp, FuncDefOp&gt;(p);</div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    });</div>
@@ -320,13 +321,13 @@ $(function(){initNavTree('EmptyTemplateRemovalPass_8cpp_source.html','',''); });
 <div class="ttc" id="aclassllzk_1_1polymorphic_1_1TemplateOp_html_a71c0cb61651c087e69ccb3a37bb27ec9"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1TemplateOp.html#a71c0cb61651c087e69ccb3a37bb27ec9">llzk::polymorphic::TemplateOp::hasConstOps</a></div><div class="ttdeci">bool hasConstOps()</div><div class="ttdoc">Return true if there are ops of type OpT within the body region.</div><div class="ttdef"><b>Definition</b> <a href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00927">Ops.h.inc:927</a></div></div>
 <div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1TemplateOpGenericAdaptorBase_html_a84a1dbad41fa52fecdc2114776d34a36"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1TemplateOpGenericAdaptorBase.html#a84a1dbad41fa52fecdc2114776d34a36">llzk::polymorphic::detail::TemplateOpGenericAdaptorBase::getBodyRegion</a></div><div class="ttdeci">::mlir::Region &amp; getBodyRegion()</div><div class="ttdef"><b>Definition</b> <a href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00776">Ops.h.inc:776</a></div></div>
 <div class="ttc" id="aclassllzk_1_1polymorphic_1_1detail_1_1TemplateOpGenericAdaptorBase_html_ae391d672e0c9eaa290a2a1d5e5a5cbc0"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1detail_1_1TemplateOpGenericAdaptorBase.html#ae391d672e0c9eaa290a2a1d5e5a5cbc0">llzk::polymorphic::detail::TemplateOpGenericAdaptorBase::getSymName</a></div><div class="ttdeci">::llvm::StringRef getSymName()</div><div class="ttdef"><b>Definition</b> <a href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l00960">Ops.cpp.inc:960</a></div></div>
-<div class="ttc" id="aclassllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase_html"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html">llzk::polymorphic::impl::EmptyTemplateRemovalPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00027">EmptyTemplateRemovalPass.cpp:27</a></div></div>
+<div class="ttc" id="aclassllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase_html"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1impl_1_1EmptyTemplateRemovalPassBase.html">llzk::polymorphic::impl::EmptyTemplateRemovalPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00028">EmptyTemplateRemovalPass.cpp:28</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1array_html"><div class="ttname"><a href="namespacellzk_1_1array.html">llzk::array</a></div><div class="ttdef"><b>Definition</b> <a href="Array_2IR_2Ops_8cpp_source.html#l00043">Ops.cpp:43</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1component_html"><div class="ttname"><a href="namespacellzk_1_1component.html">llzk::component</a></div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Dialect_8cpp_source.html#l00209">Dialect.cpp:209</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1function_html"><div class="ttname"><a href="namespacellzk_1_1function.html">llzk::function</a></div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_source.html#l00050">Ops.cpp:50</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1pod_html"><div class="ttname"><a href="namespacellzk_1_1pod.html">llzk::pod</a></div><div class="ttdef"><b>Definition</b> <a href="POD_2IR_2Attrs_8cpp_source.html#l00019">Attrs.cpp:19</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1polymorphic_1_1detail_html"><div class="ttname"><a href="namespacellzk_1_1polymorphic_1_1detail.html">llzk::polymorphic::detail</a></div><div class="ttdef"><b>Definition</b> <a href="SharedImpl_8h_source.html#l00043">SharedImpl.h:43</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1polymorphic_1_1detail_html_a49b3116406d5104fcf8b37bed9f1f386"><div class="ttname"><a href="namespacellzk_1_1polymorphic_1_1detail.html#a49b3116406d5104fcf8b37bed9f1f386">llzk::polymorphic::detail::newConverterDefinedTarget</a></div><div class="ttdeci">mlir::ConversionTarget newConverterDefinedTarget(mlir::TypeConverter &amp;tyConv, mlir::MLIRContext *ctx, AdditionalChecks &amp;&amp;...checks)</div><div class="ttdoc">Return a new ConversionTarget allowing all LLZK-required dialects and defining Op legality based on t...</div><div class="ttdef"><b>Definition</b> <a href="SharedImpl_8h_source.html#l00081">SharedImpl.h:81</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1polymorphic_1_1detail_html_a49b3116406d5104fcf8b37bed9f1f386"><div class="ttname"><a href="namespacellzk_1_1polymorphic_1_1detail.html#a49b3116406d5104fcf8b37bed9f1f386">llzk::polymorphic::detail::newConverterDefinedTarget</a></div><div class="ttdeci">mlir::ConversionTarget newConverterDefinedTarget(mlir::TypeConverter &amp;tyConv, mlir::MLIRContext *ctx, AdditionalChecks &amp;&amp;...checks)</div><div class="ttdoc">Return a new ConversionTarget allowing all LLZK-required dialects and defining Op legality based on t...</div><div class="ttdef"><b>Definition</b> <a href="SharedImpl_8h_source.html#l00150">SharedImpl.h:150</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1polymorphic_html"><div class="ttname"><a href="namespacellzk_1_1polymorphic.html">llzk::polymorphic</a></div><div class="ttdef"><b>Definition</b> <a href="Polymorphic_2IR_2Ops_8cpp_source.html#l00032">Ops.cpp:32</a></div></div>
 <div class="ttc" id="anamespacellzk_html_aaa4a11b9841dc711843a40d178fea482"><div class="ttname"><a href="namespacellzk.html#aaa4a11b9841dc711843a40d178fea482">llzk::newGeneralRewritePatternSet</a></div><div class="ttdeci">mlir::RewritePatternSet newGeneralRewritePatternSet(mlir::TypeConverter &amp;tyConv, mlir::MLIRContext *ctx, mlir::ConversionTarget &amp;target)</div><div class="ttdoc">Return a new RewritePatternSet covering all LLZK op types that may contain a StructType.</div><div class="ttdef"><b>Definition</b> <a href="TypeConversionPatterns_8h_source.html#l00266">TypeConversionPatterns.h:266</a></div></div>
 <div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="ValueModel_8h_source.html#l00030">ValueModel.h:30</a></div></div>
