@@ -3296,126 +3296,132 @@ $(function(){initNavTree('TypeVarInferencePass_8cpp_source.html','',''); });
 <div class="line"><a id="l03613" name="l03613"></a><span class="lineno"> 3613</span>    <span class="comment">// Note: SmallVector doesn&#39;t work because the element size is too large.</span></div>
 <div class="line"><a id="l03614" name="l03614"></a><span class="lineno"> 3614</span>    std::vector&lt;TemplateInferenceInfo&gt; templateInfos;</div>
 <div class="line"><a id="l03615" name="l03615"></a><span class="lineno"> 3615</span>    WalkResult collectResult = <span class="keyword">module</span>.walk([&amp;templateInfos](TemplateOp templateOp) {</div>
-<div class="line"><a id="l03616" name="l03616"></a><span class="lineno"> 3616</span>      FailureOr&lt;TemplateInferenceInfo&gt; info = buildInfo(templateOp);</div>
-<div class="line"><a id="l03617" name="l03617"></a><span class="lineno"> 3617</span>      <span class="keywordflow">if</span> (failed(info)) {</div>
-<div class="line"><a id="l03618" name="l03618"></a><span class="lineno"> 3618</span>        <span class="keywordflow">return</span> WalkResult::interrupt();</div>
-<div class="line"><a id="l03619" name="l03619"></a><span class="lineno"> 3619</span>      }</div>
-<div class="line"><a id="l03620" name="l03620"></a><span class="lineno"> 3620</span>      templateInfos.push_back(std::move(*info));</div>
-<div class="line"><a id="l03621" name="l03621"></a><span class="lineno"> 3621</span>      <span class="keywordflow">return</span> WalkResult::advance();</div>
-<div class="line"><a id="l03622" name="l03622"></a><span class="lineno"> 3622</span>    });</div>
-<div class="line"><a id="l03623" name="l03623"></a><span class="lineno"> 3623</span>    <span class="keywordflow">if</span> (collectResult.wasInterrupted()) {</div>
-<div class="line"><a id="l03624" name="l03624"></a><span class="lineno"> 3624</span>      signalPassFailure();</div>
-<div class="line"><a id="l03625" name="l03625"></a><span class="lineno"> 3625</span>      <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l03626" name="l03626"></a><span class="lineno"> 3626</span>    }</div>
-<div class="line"><a id="l03627" name="l03627"></a><span class="lineno"> 3627</span> </div>
-<div class="line"><a id="l03628" name="l03628"></a><span class="lineno"> 3628</span>    DenseMap&lt;Operation *, TemplateInferenceInfo *&gt; mutableInfoByTemplate;</div>
-<div class="line"><a id="l03629" name="l03629"></a><span class="lineno"> 3629</span>    <span class="keywordflow">for</span> (TemplateInferenceInfo &amp;info : templateInfos) {</div>
-<div class="line"><a id="l03630" name="l03630"></a><span class="lineno"> 3630</span>      mutableInfoByTemplate.try_emplace(info.templateOp.getOperation(), &amp;info);</div>
-<div class="line"><a id="l03631" name="l03631"></a><span class="lineno"> 3631</span>    }</div>
-<div class="line"><a id="l03632" name="l03632"></a><span class="lineno"> 3632</span>    <span class="keywordflow">if</span> (failed(</div>
-<div class="line"><a id="l03633" name="l03633"></a><span class="lineno"> 3633</span>            collectExternalContractTargetInferences(module, templateInfos, mutableInfoByTemplate)</div>
-<div class="line"><a id="l03634" name="l03634"></a><span class="lineno"> 3634</span>        )) {</div>
-<div class="line"><a id="l03635" name="l03635"></a><span class="lineno"> 3635</span>      signalPassFailure();</div>
-<div class="line"><a id="l03636" name="l03636"></a><span class="lineno"> 3636</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l03616" name="l03616"></a><span class="lineno"> 3616</span>      if (templateOp.getConstOps&lt;TemplateParamOp&gt;().empty()) {</div>
+<div class="line"><a id="l03617" name="l03617"></a><span class="lineno"> 3617</span>        return WalkResult::advance();</div>
+<div class="line"><a id="l03618" name="l03618"></a><span class="lineno"> 3618</span>      }</div>
+<div class="line"><a id="l03619" name="l03619"></a><span class="lineno"> 3619</span>      FailureOr&lt;TemplateInferenceInfo&gt; info = buildInfo(templateOp);</div>
+<div class="line"><a id="l03620" name="l03620"></a><span class="lineno"> 3620</span>      <span class="keywordflow">if</span> (failed(info)) {</div>
+<div class="line"><a id="l03621" name="l03621"></a><span class="lineno"> 3621</span>        <span class="keywordflow">return</span> WalkResult::interrupt();</div>
+<div class="line"><a id="l03622" name="l03622"></a><span class="lineno"> 3622</span>      }</div>
+<div class="line"><a id="l03623" name="l03623"></a><span class="lineno"> 3623</span>      templateInfos.push_back(std::move(*info));</div>
+<div class="line"><a id="l03624" name="l03624"></a><span class="lineno"> 3624</span>      <span class="keywordflow">return</span> WalkResult::advance();</div>
+<div class="line"><a id="l03625" name="l03625"></a><span class="lineno"> 3625</span>    });</div>
+<div class="line"><a id="l03626" name="l03626"></a><span class="lineno"> 3626</span>    <span class="keywordflow">if</span> (collectResult.wasInterrupted()) {</div>
+<div class="line"><a id="l03627" name="l03627"></a><span class="lineno"> 3627</span>      signalPassFailure();</div>
+<div class="line"><a id="l03628" name="l03628"></a><span class="lineno"> 3628</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l03629" name="l03629"></a><span class="lineno"> 3629</span>    }</div>
+<div class="line"><a id="l03630" name="l03630"></a><span class="lineno"> 3630</span>    <span class="keywordflow">if</span> (templateInfos.empty()) {</div>
+<div class="line"><a id="l03631" name="l03631"></a><span class="lineno"> 3631</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l03632" name="l03632"></a><span class="lineno"> 3632</span>    }</div>
+<div class="line"><a id="l03633" name="l03633"></a><span class="lineno"> 3633</span> </div>
+<div class="line"><a id="l03634" name="l03634"></a><span class="lineno"> 3634</span>    DenseMap&lt;Operation *, TemplateInferenceInfo *&gt; mutableInfoByTemplate;</div>
+<div class="line"><a id="l03635" name="l03635"></a><span class="lineno"> 3635</span>    <span class="keywordflow">for</span> (TemplateInferenceInfo &amp;info : templateInfos) {</div>
+<div class="line"><a id="l03636" name="l03636"></a><span class="lineno"> 3636</span>      mutableInfoByTemplate.try_emplace(info.templateOp.getOperation(), &amp;info);</div>
 <div class="line"><a id="l03637" name="l03637"></a><span class="lineno"> 3637</span>    }</div>
-<div class="line"><a id="l03638" name="l03638"></a><span class="lineno"> 3638</span>    <span class="keywordflow">if</span> (failed(inferStructTemplateParamUses(module, templateInfos, mutableInfoByTemplate))) {</div>
-<div class="line"><a id="l03639" name="l03639"></a><span class="lineno"> 3639</span>      signalPassFailure();</div>
-<div class="line"><a id="l03640" name="l03640"></a><span class="lineno"> 3640</span>      <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l03641" name="l03641"></a><span class="lineno"> 3641</span>    }</div>
-<div class="line"><a id="l03642" name="l03642"></a><span class="lineno"> 3642</span> </div>
-<div class="line"><a id="l03643" name="l03643"></a><span class="lineno"> 3643</span>    SmallVector&lt;TemplateInferenceInfo *&gt; rewrites;</div>
-<div class="line"><a id="l03644" name="l03644"></a><span class="lineno"> 3644</span>    DenseMap&lt;Operation *, const TemplateInferenceInfo *&gt; infoByTemplate;</div>
-<div class="line"><a id="l03645" name="l03645"></a><span class="lineno"> 3645</span>    <span class="keywordflow">for</span> (TemplateInferenceInfo &amp;info : templateInfos) {</div>
-<div class="line"><a id="l03646" name="l03646"></a><span class="lineno"> 3646</span>      infoByTemplate.try_emplace(info.templateOp.getOperation(), &amp;info);</div>
-<div class="line"><a id="l03647" name="l03647"></a><span class="lineno"> 3647</span>      <span class="keywordflow">if</span> (!info.replacements.empty() || !info.functionReplacements.empty()) {</div>
-<div class="line"><a id="l03648" name="l03648"></a><span class="lineno"> 3648</span>        rewrites.push_back(&amp;info);</div>
-<div class="line"><a id="l03649" name="l03649"></a><span class="lineno"> 3649</span>      }</div>
-<div class="line"><a id="l03650" name="l03650"></a><span class="lineno"> 3650</span>    }</div>
-<div class="line"><a id="l03651" name="l03651"></a><span class="lineno"> 3651</span> </div>
-<div class="line"><a id="l03652" name="l03652"></a><span class="lineno"> 3652</span>    <span class="comment">// Rewrite each affected template in place, but keep the converters alive so</span></div>
-<div class="line"><a id="l03653" name="l03653"></a><span class="lineno"> 3653</span>    <span class="comment">// call-site rewriting can use the same positional template-parameter map.</span></div>
-<div class="line"><a id="l03654" name="l03654"></a><span class="lineno"> 3654</span>    SmallVector&lt;std::unique_ptr&lt;TypeVarReplacementConverter&gt;&gt; converterStorage;</div>
-<div class="line"><a id="l03655" name="l03655"></a><span class="lineno"> 3655</span>    DenseMap&lt;Operation *, const TypeVarReplacementConverter *&gt; convertersByTemplate;</div>
-<div class="line"><a id="l03656" name="l03656"></a><span class="lineno"> 3656</span>    <span class="keywordflow">for</span> (TemplateInferenceInfo *info : rewrites) {</div>
-<div class="line"><a id="l03657" name="l03657"></a><span class="lineno"> 3657</span>      DenseMap&lt;StringAttr, Type&gt; replacements;</div>
-<div class="line"><a id="l03658" name="l03658"></a><span class="lineno"> 3658</span>      <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;entry : info-&gt;replacements) {</div>
-<div class="line"><a id="l03659" name="l03659"></a><span class="lineno"> 3659</span>        replacements.try_emplace(entry.first, entry.second.type);</div>
-<div class="line"><a id="l03660" name="l03660"></a><span class="lineno"> 3660</span>      }</div>
-<div class="line"><a id="l03661" name="l03661"></a><span class="lineno"> 3661</span>      <span class="keyword">auto</span> converter = std::make_unique&lt;TypeVarReplacementConverter&gt;(</div>
-<div class="line"><a id="l03662" name="l03662"></a><span class="lineno"> 3662</span>          module.getContext(), info-&gt;templatePath, info-&gt;oldParamOrder, replacements</div>
-<div class="line"><a id="l03663" name="l03663"></a><span class="lineno"> 3663</span>      );</div>
-<div class="line"><a id="l03664" name="l03664"></a><span class="lineno"> 3664</span>      convertersByTemplate.try_emplace(info-&gt;templateOp.getOperation(), converter.get());</div>
-<div class="line"><a id="l03665" name="l03665"></a><span class="lineno"> 3665</span>      converterStorage.push_back(std::move(converter));</div>
-<div class="line"><a id="l03666" name="l03666"></a><span class="lineno"> 3666</span>    }</div>
-<div class="line"><a id="l03667" name="l03667"></a><span class="lineno"> 3667</span> </div>
-<div class="line"><a id="l03668" name="l03668"></a><span class="lineno"> 3668</span>    <span class="comment">// Clone concrete call-site instantiations before trimming template</span></div>
-<div class="line"><a id="l03669" name="l03669"></a><span class="lineno"> 3669</span>    <span class="comment">// arguments; the clone decision needs the original explicit arguments.</span></div>
-<div class="line"><a id="l03670" name="l03670"></a><span class="lineno"> 3670</span>    SpecializedCallableCloneCache functionCloneCache;</div>
-<div class="line"><a id="l03671" name="l03671"></a><span class="lineno"> 3671</span>    SpecializedCallableCloneCache contractCloneCache;</div>
-<div class="line"><a id="l03672" name="l03672"></a><span class="lineno"> 3672</span>    SpecializedTemplateCloneCache templateCloneCache;</div>
-<div class="line"><a id="l03673" name="l03673"></a><span class="lineno"> 3673</span>    <span class="keywordflow">if</span> (failed(specializeFunctionLocalCallables(</div>
-<div class="line"><a id="l03674" name="l03674"></a><span class="lineno"> 3674</span>            module, infoByTemplate, functionCloneCache, contractCloneCache, templateCloneCache</div>
-<div class="line"><a id="l03675" name="l03675"></a><span class="lineno"> 3675</span>        ))) {</div>
-<div class="line"><a id="l03676" name="l03676"></a><span class="lineno"> 3676</span>      signalPassFailure();</div>
-<div class="line"><a id="l03677" name="l03677"></a><span class="lineno"> 3677</span>      <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l03678" name="l03678"></a><span class="lineno"> 3678</span>    }</div>
-<div class="line"><a id="l03679" name="l03679"></a><span class="lineno"> 3679</span> </div>
-<div class="line"><a id="l03680" name="l03680"></a><span class="lineno"> 3680</span>    <span class="keywordflow">for</span> (TemplateInferenceInfo *info : rewrites) {</div>
-<div class="line"><a id="l03681" name="l03681"></a><span class="lineno"> 3681</span>      <span class="keyword">const</span> TypeVarReplacementConverter *converter =</div>
-<div class="line"><a id="l03682" name="l03682"></a><span class="lineno"> 3682</span>          convertersByTemplate.lookup(info-&gt;templateOp.getOperation());</div>
-<div class="line"><a id="l03683" name="l03683"></a><span class="lineno"> 3683</span>      assert(converter &amp;&amp; <span class="stringliteral">&quot;rewritten template must have a converter&quot;</span>);</div>
-<div class="line"><a id="l03684" name="l03684"></a><span class="lineno"> 3684</span>      WalkResult validationResult = info-&gt;templateOp.walk([converter](Operation *op) {</div>
-<div class="line"><a id="l03685" name="l03685"></a><span class="lineno"> 3685</span>        <span class="keywordflow">return</span> failed(converter-&gt;validateOperation(op)) ? WalkResult::interrupt()</div>
-<div class="line"><a id="l03686" name="l03686"></a><span class="lineno"> 3686</span>                                                        : WalkResult::advance();</div>
-<div class="line"><a id="l03687" name="l03687"></a><span class="lineno"> 3687</span>      });</div>
-<div class="line"><a id="l03688" name="l03688"></a><span class="lineno"> 3688</span>      <span class="keywordflow">if</span> (validationResult.wasInterrupted()) {</div>
-<div class="line"><a id="l03689" name="l03689"></a><span class="lineno"> 3689</span>        signalPassFailure();</div>
-<div class="line"><a id="l03690" name="l03690"></a><span class="lineno"> 3690</span>        <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l03691" name="l03691"></a><span class="lineno"> 3691</span>      }</div>
-<div class="line"><a id="l03692" name="l03692"></a><span class="lineno"> 3692</span>      <span class="keywordflow">if</span> (failed(convertOperationTypesIn(info-&gt;templateOp.getOperation(), *converter))) {</div>
-<div class="line"><a id="l03693" name="l03693"></a><span class="lineno"> 3693</span>        signalPassFailure();</div>
-<div class="line"><a id="l03694" name="l03694"></a><span class="lineno"> 3694</span>        <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l03695" name="l03695"></a><span class="lineno"> 3695</span>      }</div>
-<div class="line"><a id="l03696" name="l03696"></a><span class="lineno"> 3696</span>      removeIdentityCasts(info-&gt;templateOp.getOperation());</div>
-<div class="line"><a id="l03697" name="l03697"></a><span class="lineno"> 3697</span>    }</div>
-<div class="line"><a id="l03698" name="l03698"></a><span class="lineno"> 3698</span> </div>
-<div class="line"><a id="l03699" name="l03699"></a><span class="lineno"> 3699</span>    <span class="keywordflow">if</span> (failed(updateExternalContractTemplateParams(module, convertersByTemplate))) {</div>
-<div class="line"><a id="l03700" name="l03700"></a><span class="lineno"> 3700</span>      signalPassFailure();</div>
-<div class="line"><a id="l03701" name="l03701"></a><span class="lineno"> 3701</span>      <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l03702" name="l03702"></a><span class="lineno"> 3702</span>    }</div>
-<div class="line"><a id="l03703" name="l03703"></a><span class="lineno"> 3703</span> </div>
-<div class="line"><a id="l03704" name="l03704"></a><span class="lineno"> 3704</span>    <span class="comment">// Calls that still target rewritten templates are updated after all target</span></div>
-<div class="line"><a id="l03705" name="l03705"></a><span class="lineno"> 3705</span>    <span class="comment">// templates have their converters registered.</span></div>
-<div class="line"><a id="l03706" name="l03706"></a><span class="lineno"> 3706</span>    <span class="keywordflow">if</span> (failed(updateCallableTemplateParams(module, convertersByTemplate))) {</div>
-<div class="line"><a id="l03707" name="l03707"></a><span class="lineno"> 3707</span>      signalPassFailure();</div>
-<div class="line"><a id="l03708" name="l03708"></a><span class="lineno"> 3708</span>      <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l03709" name="l03709"></a><span class="lineno"> 3709</span>    }</div>
-<div class="line"><a id="l03710" name="l03710"></a><span class="lineno"> 3710</span>    <span class="comment">// Re-run specialization after rewriting because template bodies may now</span></div>
-<div class="line"><a id="l03711" name="l03711"></a><span class="lineno"> 3711</span>    <span class="comment">// contain concrete forwarded calls into otherwise unconstrained templates.</span></div>
-<div class="line"><a id="l03712" name="l03712"></a><span class="lineno"> 3712</span>    <span class="keywordflow">if</span> (failed(specializeFunctionLocalCallables(</div>
-<div class="line"><a id="l03713" name="l03713"></a><span class="lineno"> 3713</span>            module, infoByTemplate, functionCloneCache, contractCloneCache, templateCloneCache</div>
-<div class="line"><a id="l03714" name="l03714"></a><span class="lineno"> 3714</span>        ))) {</div>
-<div class="line"><a id="l03715" name="l03715"></a><span class="lineno"> 3715</span>      signalPassFailure();</div>
-<div class="line"><a id="l03716" name="l03716"></a><span class="lineno"> 3716</span>      <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l03717" name="l03717"></a><span class="lineno"> 3717</span>    }</div>
-<div class="line"><a id="l03718" name="l03718"></a><span class="lineno"> 3718</span>    <span class="keywordflow">if</span> (failed(updateStructTemplateParams(module, convertersByTemplate))) {</div>
-<div class="line"><a id="l03719" name="l03719"></a><span class="lineno"> 3719</span>      signalPassFailure();</div>
-<div class="line"><a id="l03720" name="l03720"></a><span class="lineno"> 3720</span>      <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l03721" name="l03721"></a><span class="lineno"> 3721</span>    }</div>
-<div class="line"><a id="l03722" name="l03722"></a><span class="lineno"> 3722</span>    <span class="keywordflow">if</span> (failed(instantiateConcreteStructUses(module))) {</div>
-<div class="line"><a id="l03723" name="l03723"></a><span class="lineno"> 3723</span>      signalPassFailure();</div>
-<div class="line"><a id="l03724" name="l03724"></a><span class="lineno"> 3724</span>      <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l03725" name="l03725"></a><span class="lineno"> 3725</span>    }</div>
-<div class="line"><a id="l03726" name="l03726"></a><span class="lineno"> 3726</span> </div>
-<div class="line"><a id="l03727" name="l03727"></a><span class="lineno"> 3727</span>    <span class="comment">// Erase resolved parameters last; before this point, their original order is</span></div>
-<div class="line"><a id="l03728" name="l03728"></a><span class="lineno"> 3728</span>    <span class="comment">// still useful for template argument list conversion.</span></div>
-<div class="line"><a id="l03729" name="l03729"></a><span class="lineno"> 3729</span>    <span class="keywordflow">for</span> (TemplateInferenceInfo *info : rewrites) {</div>
-<div class="line"><a id="l03730" name="l03730"></a><span class="lineno"> 3730</span>      removeResolvedParams(*info);</div>
+<div class="line"><a id="l03638" name="l03638"></a><span class="lineno"> 3638</span>    <span class="keywordflow">if</span> (failed(</div>
+<div class="line"><a id="l03639" name="l03639"></a><span class="lineno"> 3639</span>            collectExternalContractTargetInferences(module, templateInfos, mutableInfoByTemplate)</div>
+<div class="line"><a id="l03640" name="l03640"></a><span class="lineno"> 3640</span>        )) {</div>
+<div class="line"><a id="l03641" name="l03641"></a><span class="lineno"> 3641</span>      signalPassFailure();</div>
+<div class="line"><a id="l03642" name="l03642"></a><span class="lineno"> 3642</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l03643" name="l03643"></a><span class="lineno"> 3643</span>    }</div>
+<div class="line"><a id="l03644" name="l03644"></a><span class="lineno"> 3644</span>    <span class="keywordflow">if</span> (failed(inferStructTemplateParamUses(module, templateInfos, mutableInfoByTemplate))) {</div>
+<div class="line"><a id="l03645" name="l03645"></a><span class="lineno"> 3645</span>      signalPassFailure();</div>
+<div class="line"><a id="l03646" name="l03646"></a><span class="lineno"> 3646</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l03647" name="l03647"></a><span class="lineno"> 3647</span>    }</div>
+<div class="line"><a id="l03648" name="l03648"></a><span class="lineno"> 3648</span> </div>
+<div class="line"><a id="l03649" name="l03649"></a><span class="lineno"> 3649</span>    SmallVector&lt;TemplateInferenceInfo *&gt; rewrites;</div>
+<div class="line"><a id="l03650" name="l03650"></a><span class="lineno"> 3650</span>    DenseMap&lt;Operation *, const TemplateInferenceInfo *&gt; infoByTemplate;</div>
+<div class="line"><a id="l03651" name="l03651"></a><span class="lineno"> 3651</span>    <span class="keywordflow">for</span> (TemplateInferenceInfo &amp;info : templateInfos) {</div>
+<div class="line"><a id="l03652" name="l03652"></a><span class="lineno"> 3652</span>      infoByTemplate.try_emplace(info.templateOp.getOperation(), &amp;info);</div>
+<div class="line"><a id="l03653" name="l03653"></a><span class="lineno"> 3653</span>      <span class="keywordflow">if</span> (!info.replacements.empty() || !info.functionReplacements.empty()) {</div>
+<div class="line"><a id="l03654" name="l03654"></a><span class="lineno"> 3654</span>        rewrites.push_back(&amp;info);</div>
+<div class="line"><a id="l03655" name="l03655"></a><span class="lineno"> 3655</span>      }</div>
+<div class="line"><a id="l03656" name="l03656"></a><span class="lineno"> 3656</span>    }</div>
+<div class="line"><a id="l03657" name="l03657"></a><span class="lineno"> 3657</span> </div>
+<div class="line"><a id="l03658" name="l03658"></a><span class="lineno"> 3658</span>    <span class="comment">// Rewrite each affected template in place, but keep the converters alive so</span></div>
+<div class="line"><a id="l03659" name="l03659"></a><span class="lineno"> 3659</span>    <span class="comment">// call-site rewriting can use the same positional template-parameter map.</span></div>
+<div class="line"><a id="l03660" name="l03660"></a><span class="lineno"> 3660</span>    SmallVector&lt;std::unique_ptr&lt;TypeVarReplacementConverter&gt;&gt; converterStorage;</div>
+<div class="line"><a id="l03661" name="l03661"></a><span class="lineno"> 3661</span>    DenseMap&lt;Operation *, const TypeVarReplacementConverter *&gt; convertersByTemplate;</div>
+<div class="line"><a id="l03662" name="l03662"></a><span class="lineno"> 3662</span>    <span class="keywordflow">for</span> (TemplateInferenceInfo *info : rewrites) {</div>
+<div class="line"><a id="l03663" name="l03663"></a><span class="lineno"> 3663</span>      DenseMap&lt;StringAttr, Type&gt; replacements;</div>
+<div class="line"><a id="l03664" name="l03664"></a><span class="lineno"> 3664</span>      <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;entry : info-&gt;replacements) {</div>
+<div class="line"><a id="l03665" name="l03665"></a><span class="lineno"> 3665</span>        replacements.try_emplace(entry.first, entry.second.type);</div>
+<div class="line"><a id="l03666" name="l03666"></a><span class="lineno"> 3666</span>      }</div>
+<div class="line"><a id="l03667" name="l03667"></a><span class="lineno"> 3667</span>      <span class="keyword">auto</span> converter = std::make_unique&lt;TypeVarReplacementConverter&gt;(</div>
+<div class="line"><a id="l03668" name="l03668"></a><span class="lineno"> 3668</span>          module.getContext(), info-&gt;templatePath, info-&gt;oldParamOrder, replacements</div>
+<div class="line"><a id="l03669" name="l03669"></a><span class="lineno"> 3669</span>      );</div>
+<div class="line"><a id="l03670" name="l03670"></a><span class="lineno"> 3670</span>      convertersByTemplate.try_emplace(info-&gt;templateOp.getOperation(), converter.get());</div>
+<div class="line"><a id="l03671" name="l03671"></a><span class="lineno"> 3671</span>      converterStorage.push_back(std::move(converter));</div>
+<div class="line"><a id="l03672" name="l03672"></a><span class="lineno"> 3672</span>    }</div>
+<div class="line"><a id="l03673" name="l03673"></a><span class="lineno"> 3673</span> </div>
+<div class="line"><a id="l03674" name="l03674"></a><span class="lineno"> 3674</span>    <span class="comment">// Clone concrete call-site instantiations before trimming template</span></div>
+<div class="line"><a id="l03675" name="l03675"></a><span class="lineno"> 3675</span>    <span class="comment">// arguments; the clone decision needs the original explicit arguments.</span></div>
+<div class="line"><a id="l03676" name="l03676"></a><span class="lineno"> 3676</span>    SpecializedCallableCloneCache functionCloneCache;</div>
+<div class="line"><a id="l03677" name="l03677"></a><span class="lineno"> 3677</span>    SpecializedCallableCloneCache contractCloneCache;</div>
+<div class="line"><a id="l03678" name="l03678"></a><span class="lineno"> 3678</span>    SpecializedTemplateCloneCache templateCloneCache;</div>
+<div class="line"><a id="l03679" name="l03679"></a><span class="lineno"> 3679</span>    <span class="keywordflow">if</span> (failed(specializeFunctionLocalCallables(</div>
+<div class="line"><a id="l03680" name="l03680"></a><span class="lineno"> 3680</span>            module, infoByTemplate, functionCloneCache, contractCloneCache, templateCloneCache</div>
+<div class="line"><a id="l03681" name="l03681"></a><span class="lineno"> 3681</span>        ))) {</div>
+<div class="line"><a id="l03682" name="l03682"></a><span class="lineno"> 3682</span>      signalPassFailure();</div>
+<div class="line"><a id="l03683" name="l03683"></a><span class="lineno"> 3683</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l03684" name="l03684"></a><span class="lineno"> 3684</span>    }</div>
+<div class="line"><a id="l03685" name="l03685"></a><span class="lineno"> 3685</span> </div>
+<div class="line"><a id="l03686" name="l03686"></a><span class="lineno"> 3686</span>    <span class="keywordflow">for</span> (TemplateInferenceInfo *info : rewrites) {</div>
+<div class="line"><a id="l03687" name="l03687"></a><span class="lineno"> 3687</span>      <span class="keyword">const</span> TypeVarReplacementConverter *converter =</div>
+<div class="line"><a id="l03688" name="l03688"></a><span class="lineno"> 3688</span>          convertersByTemplate.lookup(info-&gt;templateOp.getOperation());</div>
+<div class="line"><a id="l03689" name="l03689"></a><span class="lineno"> 3689</span>      assert(converter &amp;&amp; <span class="stringliteral">&quot;rewritten template must have a converter&quot;</span>);</div>
+<div class="line"><a id="l03690" name="l03690"></a><span class="lineno"> 3690</span>      WalkResult validationResult = info-&gt;templateOp.walk([converter](Operation *op) {</div>
+<div class="line"><a id="l03691" name="l03691"></a><span class="lineno"> 3691</span>        <span class="keywordflow">return</span> failed(converter-&gt;validateOperation(op)) ? WalkResult::interrupt()</div>
+<div class="line"><a id="l03692" name="l03692"></a><span class="lineno"> 3692</span>                                                        : WalkResult::advance();</div>
+<div class="line"><a id="l03693" name="l03693"></a><span class="lineno"> 3693</span>      });</div>
+<div class="line"><a id="l03694" name="l03694"></a><span class="lineno"> 3694</span>      <span class="keywordflow">if</span> (validationResult.wasInterrupted()) {</div>
+<div class="line"><a id="l03695" name="l03695"></a><span class="lineno"> 3695</span>        signalPassFailure();</div>
+<div class="line"><a id="l03696" name="l03696"></a><span class="lineno"> 3696</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l03697" name="l03697"></a><span class="lineno"> 3697</span>      }</div>
+<div class="line"><a id="l03698" name="l03698"></a><span class="lineno"> 3698</span>      <span class="keywordflow">if</span> (failed(convertOperationTypesIn(info-&gt;templateOp.getOperation(), *converter))) {</div>
+<div class="line"><a id="l03699" name="l03699"></a><span class="lineno"> 3699</span>        signalPassFailure();</div>
+<div class="line"><a id="l03700" name="l03700"></a><span class="lineno"> 3700</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l03701" name="l03701"></a><span class="lineno"> 3701</span>      }</div>
+<div class="line"><a id="l03702" name="l03702"></a><span class="lineno"> 3702</span>      removeIdentityCasts(info-&gt;templateOp.getOperation());</div>
+<div class="line"><a id="l03703" name="l03703"></a><span class="lineno"> 3703</span>    }</div>
+<div class="line"><a id="l03704" name="l03704"></a><span class="lineno"> 3704</span> </div>
+<div class="line"><a id="l03705" name="l03705"></a><span class="lineno"> 3705</span>    <span class="keywordflow">if</span> (failed(updateExternalContractTemplateParams(module, convertersByTemplate))) {</div>
+<div class="line"><a id="l03706" name="l03706"></a><span class="lineno"> 3706</span>      signalPassFailure();</div>
+<div class="line"><a id="l03707" name="l03707"></a><span class="lineno"> 3707</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l03708" name="l03708"></a><span class="lineno"> 3708</span>    }</div>
+<div class="line"><a id="l03709" name="l03709"></a><span class="lineno"> 3709</span> </div>
+<div class="line"><a id="l03710" name="l03710"></a><span class="lineno"> 3710</span>    <span class="comment">// Calls that still target rewritten templates are updated after all target</span></div>
+<div class="line"><a id="l03711" name="l03711"></a><span class="lineno"> 3711</span>    <span class="comment">// templates have their converters registered.</span></div>
+<div class="line"><a id="l03712" name="l03712"></a><span class="lineno"> 3712</span>    <span class="keywordflow">if</span> (failed(updateCallableTemplateParams(module, convertersByTemplate))) {</div>
+<div class="line"><a id="l03713" name="l03713"></a><span class="lineno"> 3713</span>      signalPassFailure();</div>
+<div class="line"><a id="l03714" name="l03714"></a><span class="lineno"> 3714</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l03715" name="l03715"></a><span class="lineno"> 3715</span>    }</div>
+<div class="line"><a id="l03716" name="l03716"></a><span class="lineno"> 3716</span>    <span class="comment">// Re-run specialization after rewriting because template bodies may now</span></div>
+<div class="line"><a id="l03717" name="l03717"></a><span class="lineno"> 3717</span>    <span class="comment">// contain concrete forwarded calls into otherwise unconstrained templates.</span></div>
+<div class="line"><a id="l03718" name="l03718"></a><span class="lineno"> 3718</span>    <span class="keywordflow">if</span> (failed(specializeFunctionLocalCallables(</div>
+<div class="line"><a id="l03719" name="l03719"></a><span class="lineno"> 3719</span>            module, infoByTemplate, functionCloneCache, contractCloneCache, templateCloneCache</div>
+<div class="line"><a id="l03720" name="l03720"></a><span class="lineno"> 3720</span>        ))) {</div>
+<div class="line"><a id="l03721" name="l03721"></a><span class="lineno"> 3721</span>      signalPassFailure();</div>
+<div class="line"><a id="l03722" name="l03722"></a><span class="lineno"> 3722</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l03723" name="l03723"></a><span class="lineno"> 3723</span>    }</div>
+<div class="line"><a id="l03724" name="l03724"></a><span class="lineno"> 3724</span>    <span class="keywordflow">if</span> (failed(updateStructTemplateParams(module, convertersByTemplate))) {</div>
+<div class="line"><a id="l03725" name="l03725"></a><span class="lineno"> 3725</span>      signalPassFailure();</div>
+<div class="line"><a id="l03726" name="l03726"></a><span class="lineno"> 3726</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l03727" name="l03727"></a><span class="lineno"> 3727</span>    }</div>
+<div class="line"><a id="l03728" name="l03728"></a><span class="lineno"> 3728</span>    <span class="keywordflow">if</span> (failed(instantiateConcreteStructUses(module))) {</div>
+<div class="line"><a id="l03729" name="l03729"></a><span class="lineno"> 3729</span>      signalPassFailure();</div>
+<div class="line"><a id="l03730" name="l03730"></a><span class="lineno"> 3730</span>      <span class="keywordflow">return</span>;</div>
 <div class="line"><a id="l03731" name="l03731"></a><span class="lineno"> 3731</span>    }</div>
-<div class="line"><a id="l03732" name="l03732"></a><span class="lineno"> 3732</span>  }</div>
-<div class="line"><a id="l03733" name="l03733"></a><span class="lineno"> 3733</span>};</div>
-<div class="line"><a id="l03734" name="l03734"></a><span class="lineno"> 3734</span> </div>
-<div class="line"><a id="l03735" name="l03735"></a><span class="lineno"> 3735</span>} <span class="comment">// namespace</span></div>
+<div class="line"><a id="l03732" name="l03732"></a><span class="lineno"> 3732</span> </div>
+<div class="line"><a id="l03733" name="l03733"></a><span class="lineno"> 3733</span>    <span class="comment">// Erase resolved parameters last; before this point, their original order is</span></div>
+<div class="line"><a id="l03734" name="l03734"></a><span class="lineno"> 3734</span>    <span class="comment">// still useful for template argument list conversion.</span></div>
+<div class="line"><a id="l03735" name="l03735"></a><span class="lineno"> 3735</span>    <span class="keywordflow">for</span> (TemplateInferenceInfo *info : rewrites) {</div>
+<div class="line"><a id="l03736" name="l03736"></a><span class="lineno"> 3736</span>      removeResolvedParams(*info);</div>
+<div class="line"><a id="l03737" name="l03737"></a><span class="lineno"> 3737</span>    }</div>
+<div class="line"><a id="l03738" name="l03738"></a><span class="lineno"> 3738</span>  }</div>
+<div class="line"><a id="l03739" name="l03739"></a><span class="lineno"> 3739</span>};</div>
+<div class="line"><a id="l03740" name="l03740"></a><span class="lineno"> 3740</span> </div>
+<div class="line"><a id="l03741" name="l03741"></a><span class="lineno"> 3741</span>} <span class="comment">// namespace</span></div>
 <div class="ttc" id="aArrayTypeHelper_8h_html"><div class="ttname"><a href="ArrayTypeHelper_8h.html">ArrayTypeHelper.h</a></div></div>
 <div class="ttc" id="aArray_2IR_2Ops_8h_html"><div class="ttname"><a href="Array_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aFunction_2IR_2Ops_8h_html"><div class="ttname"><a href="Function_2IR_2Ops_8h.html">Ops.h</a></div></div>
