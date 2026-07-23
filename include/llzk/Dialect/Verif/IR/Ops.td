@@ -117,9 +117,9 @@ def ContractOp
     or `verif.require_constrain` operations. A circuit whose main-level contract contains such
     preconditions is valid only for inputs that satisfy them.
 
-    For templated targets (i.e., functions or structs within a `poly.template`),
-    the contract body may reference the target template's parameters and
-    expressions even if the contract is physically nested elsewhere.
+    For templated targets (i.e., functions or structs within a `poly.template`), the contract
+    body may reference the target template's parameters and expressions. If a contract is nested
+    inside a `poly.template`, then the target must be in that same template.
 
     Examples:
 

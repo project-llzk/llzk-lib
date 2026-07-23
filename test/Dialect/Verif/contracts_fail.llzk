@@ -43,6 +43,58 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @ContractTargetFunctionParamConflict {
+    poly.param @N : index
+
+    function.def @check(%lhs: !array.type<@N x index>, %rhs: !array.type<@N x index>) { // expected-note {{target defined here}}
+      function.return
+    }
+  }
+
+  // expected-error@+1 {{'verif.contract' op contract type does not match target type}}
+  verif.contract @BadTargetParams for @ContractTargetFunctionParamConflict::@check (
+      %lhs: !array.type<4 x index>, %rhs: !array.type<8 x index>
+  ) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @ContractTargetStructParamConflict {
+    poly.param @N : index
+
+    struct.def @Box { // expected-note {{target defined here}}
+      function.def @compute() -> !struct.type<@ContractTargetStructParamConflict::@Box<[@N]>> {
+        %self = struct.new : !struct.type<@ContractTargetStructParamConflict::@Box<[@N]>>
+        function.return %self : !struct.type<@ContractTargetStructParamConflict::@Box<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@ContractTargetStructParamConflict::@Box<[@N]>>,
+          %lhs: !array.type<@N x index>,
+          %rhs: !array.type<@N x index>
+      ) {
+        function.return
+      }
+    }
+  }
+
+  // expected-error@+1 {{'verif.contract' op contract type does not match target type}}
+  verif.contract @BadTargetParams for @ContractTargetStructParamConflict::@Box (
+      %self: !struct.type<@ContractTargetStructParamConflict::@Box<[4]>>,
+      %lhs: !array.type<4 x index>,
+      %rhs: !array.type<8 x index>
+  ) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
   struct.def @Box { // expected-note {{target defined here}}
     function.def @compute(%x: index) -> !struct.type<@Box> {
       %self = struct.new : !struct.type<@Box>
@@ -203,6 +255,30 @@ module attributes {llzk.lang} {
     verif.contract @Wrapper for @SpecTemplate::@token () {
       // expected-error@+1 {{'verif.include' op instantiation value '#felt<const 9> : !felt.type' is not compatible with parameter "@N" type restriction 'index'}}
       verif.include @SpecTemplate::@Base<[#felt<const 9>]>() : () -> ()
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T1 { // expected-note {{target template defined here}}
+    poly.param @N
+    struct.def @A {
+      function.def @compute() -> !struct.type<@T1::@A<[@N]>> {
+        %self = struct.new : !struct.type<@T1::@A<[@N]>>
+        function.return %self : !struct.type<@T1::@A<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T1::@A<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @T2 {
+    poly.param @N
+    // expected-error@+1 {{'verif.contract' op contract nested in template "@T2" must target a symbol in the same template}}
+    verif.contract @Foo for @T1::@A(%self: !struct.type<@T1::@A<[@N]>>) {
+      %N = poly.read_const @N : !felt.type
     }
   }
 }
@@ -1132,5 +1208,25 @@ module attributes {llzk.lang} {
   verif.contract @C for @TBox::@Box (%self: !struct.type<@TBox::@Box<[index]>>) {
     %ok = arith.constant true
     verif.ensure_compute %ok
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @outer(%x: index) { // expected-note {{target defined here}}
+    function.return
+  }
+
+  poly.template @T {
+    poly.param @N : index
+
+    // expected-error@+1 {{'verif.contract' op contract nested in template "@T" must target a symbol in the same template}}
+    verif.contract @TemplateWrapper for @outer (%x: index) {
+      %n = poly.read_const @N : index
+      %zero = arith.constant 0 : index
+      %ok = arith.cmpi eq, %n, %zero : index
+      verif.ensure_compute %ok
+    }
   }
 }

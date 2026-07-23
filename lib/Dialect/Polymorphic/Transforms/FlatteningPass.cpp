@@ -372,29 +372,9 @@ applyAndFoldGreedily(ModuleOp modOp, ConversionTracker &tracker, RewritePatternS
   return failure(result.failed() || failureListener.hadFailure);
 }
 
-/// Classifies the concreteness of an attribute value for the purposes of determining
-/// if a struct instantiation can replace a parameter reference with that value.
-enum class AttrConcreteness : std::uint8_t {
-  NonConcrete,
-  Concrete,
-  Wildcard,
-};
-
-/// Classify the concreteness of the given attribute value for the purposes of struct instantiation.
-template <bool AllowStructParams = true> AttrConcreteness classifyAttrConcreteness(Attribute a) {
-  if (TypeAttr tyAttr = dyn_cast<TypeAttr>(a)) {
-    return isConcreteType(tyAttr.getValue(), AllowStructParams) ? AttrConcreteness::Concrete
-                                                                : AttrConcreteness::NonConcrete;
-  }
-  if (IntegerAttr intAttr = dyn_cast<IntegerAttr>(a)) {
-    return isDynamic(intAttr) ? AttrConcreteness::Wildcard : AttrConcreteness::Concrete;
-  }
-  return AttrConcreteness::NonConcrete;
-}
-
 /// Return true if the given attribute value is concrete for the purposes of struct instantiation.
 template <bool AllowStructParams = true> bool isConcreteAttr(Attribute a) {
-  return classifyAttrConcreteness<AllowStructParams>(a) == AttrConcreteness::Concrete;
+  return classifyAttrConcreteness(a, AllowStructParams) == AttrConcreteness::Concrete;
 }
 
 static SymbolRefAttr
@@ -574,9 +554,7 @@ class StructCloner {
               updated.push_back(convertIfPossible(a));
             }
           }
-          return StructType::get(
-              inputTy.getNameRef(), ArrayAttr::get(inputTy.getContext(), updated)
-          );
+          return getStructTypeWithParams(inputTy.getNameRef(), inputTy.getContext(), updated);
         }
         // Otherwise, return the type unchanged
         return inputTy;
@@ -999,18 +977,6 @@ LogicalResult instantiateMainStruct(ModuleOp modOp, ConversionTracker &tracker) 
 
 namespace Step2_InstantiateFunctions {
 
-/// Flatten nested array instantiations by appending any dimensions contributed by the converted
-/// element type onto the outer array. This allows wildcard element types to resolve to
-/// higher-rank arrays even though LLZK array element types cannot themselves be arrays.
-static ArrayType flattenInstantiatedArrayType(ArrayType inputTy, Type convertedElemTy) {
-  SmallVector<Attribute> mergedDims(inputTy.getDimensionSizes());
-  while (ArrayType nestedArrTy = llvm::dyn_cast<ArrayType>(convertedElemTy)) {
-    llvm::append_range(mergedDims, nestedArrTy.getDimensionSizes());
-    convertedElemTy = nestedArrTy.getElementType();
-  }
-  return ArrayType::get(convertedElemTy, mergedDims);
-}
-
 /// TypeConverter for function instantiation that replaces TypeVarType and symbolic
 /// ArrayType/StructType parameters with their concrete values determined by unification.
 class FuncInstTypeConverter : public TypeConverter {
@@ -1078,9 +1044,7 @@ public:
           updated.push_back(a);
         }
         if (changed) {
-          return StructType::get(
-              inputTy.getNameRef(), ArrayAttr::get(inputTy.getContext(), updated)
-          );
+          return getStructTypeWithParams(inputTy.getNameRef(), inputTy.getContext(), updated);
         }
       }
       return inputTy;
@@ -1256,53 +1220,6 @@ private:
     return std::nullopt;
   }
 };
-
-/// Groups the information needed after concrete parameters have been chosen to decide whether to
-/// build a full or partial instantiation and how to rewrite the call site.
-struct InstantiationLayout {
-  SmallVector<Attribute> remainingNames;
-  std::string templateNameWithAttrs;
-  ArrayAttr rewrittenCallParams;
-};
-
-/// Derive the (partially-)instantiated template name and the remaining explicit call parameters
-/// that should stay on the rewritten call. Partially-instantiated names will contain the `\x1A`
-/// placeholder character at the position of a non-concrete parameter: "TemplateName_8_\x1A".
-static InstantiationLayout buildInstantiationLayout(
-    TemplateOp parentTemplate, ArrayAttr callParams,
-    const DenseMap<Attribute, Attribute> &paramNameToConcrete
-) {
-  SmallVector<Attribute> remainingNames;
-  SmallVector<Attribute> attrsForInstantiatedNameSuffix;
-  for (Attribute paramName : parentTemplate.getConstNames<TemplateParamOp>()) {
-    auto it = paramNameToConcrete.find(paramName);
-    if (it != paramNameToConcrete.end()) {
-      attrsForInstantiatedNameSuffix.push_back(it->second);
-    } else {
-      attrsForInstantiatedNameSuffix.push_back(nullptr);
-      remainingNames.push_back(paramName);
-    }
-  }
-
-  ArrayAttr rewrittenCallParams = nullptr;
-  if (!isNullOrEmpty(callParams) && !remainingNames.empty()) {
-    SmallVector<Attribute> remainingCallParams;
-    for (auto [paramOp, attr] :
-         llvm::zip_equal(parentTemplate.getConstOps<TemplateParamOp>(), callParams.getValue())) {
-      auto paramName = FlatSymbolRefAttr::get(paramOp.getSymNameAttr());
-      if (!paramNameToConcrete.contains(paramName)) {
-        remainingCallParams.push_back(attr);
-      }
-    }
-    rewrittenCallParams = ArrayAttr::get(parentTemplate.getContext(), remainingCallParams);
-  }
-
-  return {
-      std::move(remainingNames),
-      BuildShortTypeString::from(parentTemplate.getSymName().str(), attrsForInstantiatedNameSuffix),
-      rewrittenCallParams,
-  };
-}
 
 /// Rewrite cloned scalar array reads to ranged extract ops when a wildcard element type
 /// resolves to a higher-rank array.
