@@ -366,6 +366,8 @@ var namespacellzk =
     [ "isNullOrEmpty", "namespacellzk.html#a5a58995f554b579f9f32b1454376fa38", null ],
     [ "isNullOrEmpty", "namespacellzk.html#a89cd221cd3a7abc89c253af02c81538e", null ],
     [ "isNullOrEmpty", "namespacellzk.html#a080b2e46f6958963ba7d1ff00b26fbc4", null ],
+    [ "isTypeVarFreeType", "namespacellzk.html#ae5c9f60d509d0ea9eb212310eea703c0", null ],
+    [ "isTypeVarFreeType", "namespacellzk.html#abb35fb9fca0b6ce1ad1fdf15d18de169", null ],
     [ "isValidArrayElemType", "namespacellzk.html#ab02ae76b4775530127301c9dcbd1b22f", null ],
     [ "isValidArrayElemType", "namespacellzk.html#a2de2a95f4fd67e14caa528a032aa00a3", null ],
     [ "isValidArrayType", "namespacellzk.html#aaa4a1de20992b561a5506d6b4e629234", null ],

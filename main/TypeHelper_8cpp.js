@@ -15,6 +15,7 @@ var TypeHelper_8cpp =
     [ "llzk::isDynamic", "namespacellzk.html#aac04ef36bb784819019624d62b493ce6", null ],
     [ "llzk::isFeltOrSimpleFeltAggregate", "namespacellzk.html#a4a2ab06a3956dbf1490063c357bf10c7", null ],
     [ "llzk::isMoreConcreteUnification", "namespacellzk.html#ac69242a61e4e25958e9c6e8fa0f8549e", null ],
+    [ "llzk::isTypeVarFreeType", "namespacellzk.html#abb35fb9fca0b6ce1ad1fdf15d18de169", null ],
     [ "llzk::isValidArrayElemType", "namespacellzk.html#a2de2a95f4fd67e14caa528a032aa00a3", null ],
     [ "llzk::isValidArrayType", "namespacellzk.html#a23b1909ae78d62ab7d8906197c2f486b", null ],
     [ "llzk::isValidColumnType", "namespacellzk.html#a4f47b3b9d1f45f35599782a8abaae2c4", null ],
