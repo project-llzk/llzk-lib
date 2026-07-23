@@ -111,6 +111,14 @@ bool isValidArrayType(mlir::Type type);
 /// - `StructType` with parameters if `allowStructParams==false`
 bool isConcreteType(mlir::Type type, bool allowStructParams = true);
 
+/// Return `false` if the type contains a `TypeVarType`.
+///
+/// This is weaker than `isConcreteType`: array dimensions may be symbols or affine maps, and
+/// parameterized struct types may use nested type attributes or direct affine-map parameters.
+/// Direct symbol references remain invalid as struct type parameters because they still require
+/// template instantiation.
+bool isTypeVarFreeType(mlir::Type type);
+
 /// Concreteness classification for an argument to a parameterized struct type.
 enum class AttrConcreteness : std::uint8_t {
   NonConcrete,

@@ -324,6 +324,7 @@ class AllowedTypes {
   bool no_int : 1 = false;
   bool no_struct_params : 1 = false;
   bool must_be_column : 1 = false;
+  bool type_var_free : 1 = false;
 
   ColumnCheckData columnCheck;
 
@@ -380,6 +381,12 @@ public:
     return *this;
   }
 
+  constexpr AllowedTypes &typeVarFree() {
+    no_var = true;
+    type_var_free = true;
+    return *this;
+  }
+
   constexpr AllowedTypes &onlyInt() {
     no_int = false;
     return noFelt().noString().noStruct().noArray().noPod().noVar();
@@ -410,7 +417,7 @@ public:
       if (!ArrayDimensionTypes::matches(a)) {
         ArrayDimensionTypes::reportInvalid(emitError, a, "Array dimension");
         success = false;
-      } else if (no_var && !llvm::isa_and_present<IntegerAttr>(a)) {
+      } else if (no_var && !type_var_free && !llvm::isa_and_present<IntegerAttr>(a)) {
         TypeList<IntegerAttr>::reportInvalid(emitError, a, "Concrete array dimension");
         success = false;
       } else if (failed(verifyAffineMapAttrType(emitError, a))) {
@@ -482,7 +489,12 @@ public:
           }
           success = false;
         }
-      } else if (no_var && !llvm::isa<IntegerAttr, FeltConstAttr>(p)) {
+      } else if (type_var_free && llvm::isa<SymbolRefAttr>(p)) {
+        TypeList<IntegerAttr, FeltConstAttr, TypeAttr, AffineMapAttr>::reportInvalid(
+            emitError, p, "Type-variable-free struct parameter"
+        );
+        success = false;
+      } else if (no_var && !type_var_free && !llvm::isa<IntegerAttr, FeltConstAttr>(p)) {
         TypeList<IntegerAttr>::reportInvalid(emitError, p, "Concrete struct parameter");
         success = false;
       } else if (failed(verifyAffineMapAttrType(emitError, p))) {
@@ -559,6 +571,8 @@ bool isConcreteType(Type type, bool allowStructParams) {
   return AllowedTypes().noVar().noStructParams(!allowStructParams).isValidTypeImpl(type);
 }
 
+bool isTypeVarFreeType(Type type) { return AllowedTypes().typeVarFree().isValidTypeImpl(type); }
+
 AttrConcreteness classifyAttrConcreteness(Attribute attr, bool allowStructParams) {
   if (auto tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
     return isConcreteType(tyAttr.getValue(), allowStructParams) ? AttrConcreteness::Concrete
@@ -572,12 +586,7 @@ AttrConcreteness classifyAttrConcreteness(Attribute attr, bool allowStructParams
 }
 
 bool hasAffineMapAttr(Type type) {
-  bool encountered = false;
-  type.walk([&](AffineMapAttr) {
-    encountered = true;
-    return WalkResult::interrupt();
-  });
-  return encountered;
+  return type.walk([](AffineMapAttr) { return WalkResult::interrupt(); }).wasInterrupted();
 }
 
 bool isDynamic(IntegerAttr intAttr) { return ShapedType::isDynamic(fromAPInt(intAttr.getValue())); }
