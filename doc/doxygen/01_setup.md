@@ -48,6 +48,7 @@ Notes:
   yet, but they should work.
 
 # Manual Build Setup
+
 Note that the manual build instructions may be out of date; if you encounter issues, look at the build options as configured in Nix.
 LLZK requires the following to be installed:
 
