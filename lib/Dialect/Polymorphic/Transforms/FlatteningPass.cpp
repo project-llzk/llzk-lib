@@ -585,10 +585,8 @@ static bool targetMayUseTemplateExpr(Operation *target, TemplateExprOp exprOp) {
 /// Evaluate the `TemplateExprOp`s used by `target` that can be computed from the currently-known
 /// concrete param values, adding results to the map and returning the expressions that must remain
 /// available for a later partial instantiation.
-static FailureOr<SmallVector<TemplateExprOp>>
-evaluateTemplateExprs(
-    TemplateOp templateOp, Operation *target,
-    DenseMap<Attribute, Attribute> &paramNameToConcrete
+static FailureOr<SmallVector<TemplateExprOp>> evaluateTemplateExprs(
+    TemplateOp templateOp, Operation *target, DenseMap<Attribute, Attribute> &paramNameToConcrete
 ) {
   LLVM_DEBUG(
       llvm::dbgs() << "[evaluateTemplateExprs] before: " << debug::toStringList(paramNameToConcrete)
