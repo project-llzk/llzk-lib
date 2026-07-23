@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 
-# Apple ld can resolve symbols from previously scanned static archives, so
-# repeating an archive on the link line is unnecessary.  Use CMake's
-# linker-aware de-duplication when available to avoid its duplicate-library
-# warnings while retaining compatibility with older CMake versions.
+# Try to automatically deduplicate libraries when linking
 if(POLICY CMP0156)
   cmake_policy(SET CMP0156 NEW)
 endif()

@@ -18,9 +18,11 @@
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Shared/TypeConversionPatterns.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Util/TypeHelper.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
@@ -35,8 +37,6 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Debug.h>
-
-#include <tuple>
 
 #define DEBUG_TYPE "poly-dialect-shared"
 
@@ -57,6 +57,75 @@ template <typename Check> inline bool runCheck(mlir::Operation *op, Check check)
 
 /// Return a new `ConversionTarget` allowing all LLZK-required dialects.
 mlir::ConversionTarget newBaseTarget(mlir::MLIRContext *ctx);
+
+/// Merge nested array dimensions produced by replacing an array element type.
+///
+/// If `array<4 x !poly.tvar<@T>>` is rewritten with `@T -> array<8 x index>`, the canonical
+/// aggregate shape should become `array<4,8 x index>` rather than an array whose element type
+/// is another array because the latter is not allowed in LLZK IR.
+array::ArrayType flattenInstantiatedArrayType(array::ArrayType inputTy, mlir::Type convertedElemTy);
+
+/// Build a struct type while representing an empty parameter list as absent.
+inline component::StructType
+getStructTypeWithParams(mlir::SymbolRefAttr nameRef, mlir::ArrayAttr params) {
+  return params && !params.empty() ? component::StructType::get(nameRef, params)
+                                   : component::StructType::get(nameRef);
+}
+
+/// Build a struct type while representing an empty parameter list as absent.
+inline component::StructType getStructTypeWithParams(
+    mlir::SymbolRefAttr nameRef, mlir::MLIRContext *ctx, mlir::ArrayRef<mlir::Attribute> params
+) {
+  return params.empty() ? component::StructType::get(nameRef)
+                        : component::StructType::get(nameRef, mlir::ArrayAttr::get(ctx, params));
+}
+
+/// Groups the information needed after concrete parameters have been chosen to decide how to name
+/// a new instantiated template and how to rewrite the remaining argument list at the use site.
+struct InstantiationLayout {
+  mlir::SmallVector<mlir::Attribute> remainingNames;
+  std::string templateNameWithAttrs;
+  mlir::ArrayAttr rewrittenCallParams;
+};
+
+/// Derive the instantiated template name and the remaining explicit parameters that should stay on
+/// the rewritten use site. Partially-instantiated names contain the `BuildShortTypeString`
+/// placeholder character at the position of each non-concrete parameter.
+inline InstantiationLayout buildInstantiationLayout(
+    TemplateOp parentTemplate, mlir::ArrayAttr callParams,
+    const llvm::DenseMap<mlir::Attribute, mlir::Attribute> &paramNameToConcrete
+) {
+  mlir::SmallVector<mlir::Attribute> remainingNames;
+  mlir::SmallVector<mlir::Attribute> attrsForInstantiatedNameSuffix;
+  for (mlir::Attribute paramName : parentTemplate.getConstNames<TemplateParamOp>()) {
+    auto it = paramNameToConcrete.find(paramName);
+    if (it != paramNameToConcrete.end()) {
+      attrsForInstantiatedNameSuffix.push_back(it->second);
+    } else {
+      attrsForInstantiatedNameSuffix.push_back(nullptr);
+      remainingNames.push_back(paramName);
+    }
+  }
+
+  mlir::ArrayAttr rewrittenCallParams = nullptr;
+  if (!isNullOrEmpty(callParams) && !remainingNames.empty()) {
+    mlir::SmallVector<mlir::Attribute> remainingCallParams;
+    for (auto [paramOp, attr] :
+         llvm::zip_equal(parentTemplate.getConstOps<TemplateParamOp>(), callParams.getValue())) {
+      auto paramName = mlir::FlatSymbolRefAttr::get(paramOp.getSymNameAttr());
+      if (!paramNameToConcrete.contains(paramName)) {
+        remainingCallParams.push_back(attr);
+      }
+    }
+    rewrittenCallParams = mlir::ArrayAttr::get(parentTemplate.getContext(), remainingCallParams);
+  }
+
+  return {
+      std::move(remainingNames),
+      BuildShortTypeString::from(parentTemplate.getSymName().str(), attrsForInstantiatedNameSuffix),
+      rewrittenCallParams,
+  };
+}
 
 class LegalityCheckCallback {
 public:
