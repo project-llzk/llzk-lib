@@ -45,8 +45,8 @@ mlir::Region *CallGraphNode::getCallableRegion() const {
   return callableRegion;
 }
 
-FuncDefOp CallGraphNode::getCalledFunction() const {
-  return llvm::dyn_cast<FuncDefOp>(getCallableRegion()->getParentOp());
+mlir::CallableOpInterface CallGraphNode::getCalledFunction() const {
+  return llvm::dyn_cast<mlir::CallableOpInterface>(getCallableRegion()->getParentOp());
 }
 
 /// Adds an reference edge to the given node. This is only valid on the
@@ -163,13 +163,12 @@ CallGraphNode *CallGraph::lookupNode(mlir::Region *region) const {
 CallGraphNode *CallGraph::resolveCallable(
     mlir::CallOpInterface call, mlir::SymbolTableCollection &symbolTable
 ) const {
-  auto res = llzk::resolveCallable<FuncDefOp>(symbolTable, call);
+  auto res = llzk::resolveCallable<mlir::CallableOpInterface>(symbolTable, call);
   if (mlir::succeeded(res)) {
     if (auto *node = lookupNode(res->get().getCallableRegion())) {
       return node;
     }
   }
-
   return getUnknownCalleeNode();
 }
 

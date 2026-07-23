@@ -467,13 +467,7 @@ LogicalResult FuncDefOp::verifySymbolUses(SymbolTableCollection &tables) {
 }
 
 SymbolRefAttr FuncDefOp::getFullyQualifiedName(bool requireParent) {
-  // If the parent is not present and not required, just return the symbol name
-  if (!requireParent && getOperation()->getParentOp() == nullptr) {
-    return SymbolRefAttr::get(getOperation());
-  }
-  auto res = getPathFromRoot(*this);
-  assert(succeeded(res));
-  return res.value();
+  return llzk::getFullyQualifiedName(*this, requireParent);
 }
 
 Value FuncDefOp::getSelfValueFromCompute() {
