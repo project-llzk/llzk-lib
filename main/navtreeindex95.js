@@ -1,5 +1,6 @@
 var NAVTREEINDEX95 =
 {
+"structllzk_1_1witgen_1_1StructValue.html":[10,0,4,21,7],
 "structllzk_1_1witgen_1_1StructValue.html":[12,0,1,18,7],
 "structllzk_1_1witgen_1_1StructValue.html#a5501b58bf0bfc9416180790966fa8c18":[10,0,4,21,7,0],
 "structllzk_1_1witgen_1_1StructValue.html#a5501b58bf0bfc9416180790966fa8c18":[12,0,1,18,7,0],

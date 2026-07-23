@@ -1,5 +1,6 @@
 var NAVTREEINDEX87 =
 {
+"structExtraMethod.html#ac390da29009ebcc2985321d0df1ed054":[12,0,38,3],
 "structExtraMethod.html#adece370eb95e462adfa9e610bcaf3ec9":[12,0,38,0],
 "structExtractArrayOpBuildFuncHelper.html":[12,0,37],
 "structExtractArrayOpBuildFuncHelper.html#a7219d6760848c76e0f60ba5ce0629d99":[12,0,37,0],
@@ -248,6 +249,5 @@ var NAVTREEINDEX87 =
 "structWritePodOpBuildFuncHelper.html#ac0b539216c9356b9334f9962419ef270":[12,0,130,1],
 "structXorBoolOpBuildFuncHelper.html":[12,0,131],
 "structXorBoolOpBuildFuncHelper.html#a2954b55ae036c5db730d9c462dcb0d90":[12,0,131,1],
-"structXorBoolOpBuildFuncHelper.html#a38c6cbcfff18fd1bb5610cfbc650688f":[12,0,131,0],
-"structXorFeltOpBuildFuncHelper.html":[12,0,132]
+"structXorBoolOpBuildFuncHelper.html#a38c6cbcfff18fd1bb5610cfbc650688f":[12,0,131,0]
 };

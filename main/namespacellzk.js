@@ -343,6 +343,7 @@ var namespacellzk =
     [ "hasAffineMapAttr", "namespacellzk.html#ae16625d8c85094fae24fb003012b2380", null ],
     [ "hasCycle", "namespacellzk.html#ae6fdef4971f7aa74e1bf5cf1c33895a2", null ],
     [ "hasParentThatIsa", "namespacellzk.html#ad080efcf3526896dde0a65efe82cb65f", null ],
+    [ "hasReadEffect", "namespacellzk.html#a77bb6a13dd663cf33ccf6248ac67029a", null ],
     [ "hasUnknownOrNonReadEffect", "namespacellzk.html#ad3fb1acc95bcf8b458a36fb94c1c1229", null ],
     [ "intersection", "namespacellzk.html#a160d32b5250af73dbd20a60ccedfedfd", null ],
     [ "isConcreteType", "namespacellzk.html#a9798d3afd220d09f46b40473781a6e86", null ],

@@ -27,12 +27,13 @@ var searchData=
   ['haspredecessor_24',['hasPredecessor',['../classllzk_1_1SymbolUseGraphNode.html#a5c44a964376df20232444d22b3a4a638',1,'llzk::SymbolUseGraphNode']]],
   ['haspublicattr_25',['hasPublicAttr',['../classllzk_1_1component_1_1MemberDefOp.html#a10901034b55d289ded3c0c43cb6e5a8b',1,'llzk::component::MemberDefOp']]],
   ['hasrank_26',['hasRank',['../classllzk_1_1array_1_1ArrayType.html#a486d3814308138df484cb43cf29d45a3',1,'llzk::array::ArrayType']]],
-  ['hasresname_27',['hasResName',['../classllzk_1_1function_1_1FuncDefOp.html#a823891be63e6a2b5dddd9b08c815bb1d',1,'llzk::function::FuncDefOp']]],
-  ['hasresult_28',['hasResult',['../classllzk_1_1ModuleAnalysis.html#ad4b94a3b20deff662d2f8ac6b5856c94',1,'llzk::ModuleAnalysis']]],
-  ['hassignals_29',['hasSignals',['../classllzk_1_1component_1_1StructDefOp.html#ac909a8972867c67e7e72ce9338308e0f',1,'llzk::component::StructDefOp']]],
-  ['hasstructtarget_30',['hasStructTarget',['../classllzk_1_1verif_1_1ContractOp.html#a7d1164ea4d63e96bfa44922f9060b190',1,'llzk::verif::ContractOp']]],
-  ['hassuccessor_31',['hasSuccessor',['../classllzk_1_1SymbolUseGraphNode.html#a1b1087a96c4e50ce0b9b8960aa89aafb',1,'llzk::SymbolUseGraphNode']]],
-  ['hastemplatesymbolbindings_32',['hasTemplateSymbolBindings',['../classllzk_1_1component_1_1StructDefOp.html#ad2431f2ff8226862ffa9dfe9a0e7999e',1,'llzk::component::StructDefOp']]],
-  ['hasunknownornonreadeffect_33',['hasUnknownOrNonReadEffect',['../namespacellzk.html#ad3fb1acc95bcf8b458a36fb94c1c1229',1,'llzk']]],
-  ['hasunreducedinterval_34',['hasUnreducedInterval',['../classllzk_1_1ExpressionValue.html#a92765712c15e7b01df0025e6838ecc72',1,'llzk::ExpressionValue']]]
+  ['hasreadeffect_27',['hasReadEffect',['../namespacellzk.html#a77bb6a13dd663cf33ccf6248ac67029a',1,'llzk']]],
+  ['hasresname_28',['hasResName',['../classllzk_1_1function_1_1FuncDefOp.html#a823891be63e6a2b5dddd9b08c815bb1d',1,'llzk::function::FuncDefOp']]],
+  ['hasresult_29',['hasResult',['../classllzk_1_1ModuleAnalysis.html#ad4b94a3b20deff662d2f8ac6b5856c94',1,'llzk::ModuleAnalysis']]],
+  ['hassignals_30',['hasSignals',['../classllzk_1_1component_1_1StructDefOp.html#ac909a8972867c67e7e72ce9338308e0f',1,'llzk::component::StructDefOp']]],
+  ['hasstructtarget_31',['hasStructTarget',['../classllzk_1_1verif_1_1ContractOp.html#a7d1164ea4d63e96bfa44922f9060b190',1,'llzk::verif::ContractOp']]],
+  ['hassuccessor_32',['hasSuccessor',['../classllzk_1_1SymbolUseGraphNode.html#a1b1087a96c4e50ce0b9b8960aa89aafb',1,'llzk::SymbolUseGraphNode']]],
+  ['hastemplatesymbolbindings_33',['hasTemplateSymbolBindings',['../classllzk_1_1component_1_1StructDefOp.html#ad2431f2ff8226862ffa9dfe9a0e7999e',1,'llzk::component::StructDefOp']]],
+  ['hasunknownornonreadeffect_34',['hasUnknownOrNonReadEffect',['../namespacellzk.html#ad3fb1acc95bcf8b458a36fb94c1c1229',1,'llzk']]],
+  ['hasunreducedinterval_35',['hasUnreducedInterval',['../classllzk_1_1ExpressionValue.html#a92765712c15e7b01df0025e6838ecc72',1,'llzk::ExpressionValue']]]
 ];

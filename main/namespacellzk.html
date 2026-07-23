@@ -684,6 +684,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:ab655bb1748d3ea9a799f9c044ce65d0e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a DynamicAPInt to an APInt with exactly the requested bit width.  <br /></td></tr>
 <tr class="memitem:a79c7df33a29f599757f22c2920d8addf" id="r_a79c7df33a29f599757f22c2920d8addf"><td class="memItemLeft" align="right" valign="top">llvm::DynamicAPInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a79c7df33a29f599757f22c2920d8addf">modExp</a> (const llvm::DynamicAPInt &amp;base, const llvm::DynamicAPInt &amp;exp, const llvm::DynamicAPInt &amp;<a class="el" href="#a17efa635db7bf7658f865515aefd0cce">mod</a>)</td></tr>
 <tr class="memitem:a1f83757b07f122a5c8f74807ce83119a" id="r_a1f83757b07f122a5c8f74807ce83119a"><td class="memItemLeft" align="right" valign="top">llvm::DynamicAPInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1f83757b07f122a5c8f74807ce83119a">modInversePrime</a> (const llvm::DynamicAPInt &amp;f, const llvm::DynamicAPInt &amp;p)</td></tr>
+<tr class="memitem:a77bb6a13dd663cf33ccf6248ac67029a" id="r_a77bb6a13dd663cf33ccf6248ac67029a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a77bb6a13dd663cf33ccf6248ac67029a">hasReadEffect</a> (mlir::Operation *op)</td></tr>
+<tr class="memdesc:a77bb6a13dd663cf33ccf6248ac67029a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true when <code class="param">op</code> has a memory read effect.  <br /></td></tr>
 <tr class="memitem:ad3fb1acc95bcf8b458a36fb94c1c1229" id="r_ad3fb1acc95bcf8b458a36fb94c1c1229"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad3fb1acc95bcf8b458a36fb94c1c1229">hasUnknownOrNonReadEffect</a> (mlir::Operation *op)</td></tr>
 <tr class="memdesc:ad3fb1acc95bcf8b458a36fb94c1c1229"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true when <code class="param">op</code> may have an unknown effect or any effect other than memory read.  <br /></td></tr>
 <tr class="memitem:a9b8e8dff43891ffe5045760d87d2899b" id="r_a9b8e8dff43891ffe5045760d87d2899b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="#ab5453821bd84f89bfb591269a9554005">OwningEmitErrorFn</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9b8e8dff43891ffe5045760d87d2899b">getEmitOpErrFn</a> (mlir::Operation *op)</td></tr>
@@ -5469,6 +5471,36 @@ template&lt;typename... OpTys&gt; </div>
 
 </div>
 </div>
+<a id="a77bb6a13dd663cf33ccf6248ac67029a" name="a77bb6a13dd663cf33ccf6248ac67029a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a77bb6a13dd663cf33ccf6248ac67029a">&#9670;&#160;</a></span>hasReadEffect()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::hasReadEffect </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns true when <code class="param">op</code> has a memory read effect. </p>
+<p>Unknown effects are handled separately by <a class="el" href="#ad3fb1acc95bcf8b458a36fb94c1c1229" title="Returns true when op may have an unknown effect or any effect other than memory read.">hasUnknownOrNonReadEffect()</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="EffectHelper_8h_source.html#l00021">21</a> of file <a class="el" href="EffectHelper_8h_source.html">EffectHelper.h</a>.</p>
+
+</div>
+</div>
 <a id="ad3fb1acc95bcf8b458a36fb94c1c1229" name="ad3fb1acc95bcf8b458a36fb94c1c1229"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad3fb1acc95bcf8b458a36fb94c1c1229">&#9670;&#160;</a></span>hasUnknownOrNonReadEffect()</h2>
 
@@ -5494,7 +5526,7 @@ template&lt;typename... OpTys&gt; </div>
 
 <p>Returns true when <code class="param">op</code> may have an unknown effect or any effect other than memory read. </p>
 
-<p class="definition">Definition at line <a class="el" href="EffectHelper_8h_source.html#l00021">21</a> of file <a class="el" href="EffectHelper_8h_source.html">EffectHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="EffectHelper_8h_source.html#l00030">30</a> of file <a class="el" href="EffectHelper_8h_source.html">EffectHelper.h</a>.</p>
 
 </div>
 </div>
