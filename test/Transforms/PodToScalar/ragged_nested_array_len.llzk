@@ -1,7 +1,15 @@
 // RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s
 
-// COM: Regression test: reading one POD element from a flattened array-of-POD must reject nested
-// COM: dynamic or affine array leaves until the lowering can preserve per-element shape witnesses.
+// COM: Regression test: reading one POD element from an array-of-POD whose POD contains an array
+// COM: leaf is intentionally rejected when that leaf needs shape information for array.len. After
+// COM: POD-to-scalar flattens the outer array, an array.read selects only the leaf values for one
+// COM: element. It does not also select a matching per-element shape witness for a nested dynamic
+// COM: or affine leaf, so lowering array.len would have to invent or reuse shape information that
+// COM: may belong to a different element. Keep this unsupported until the lowering can thread the
+// COM: selected element's shape witness alongside the selected leaf value.
+// COM: A future implementation should split an additional nested shape-carrier leaf, e.g. an
+// COM: array-of-none parallel to the flattened payload, and select that carrier with the same
+// COM: indices used by array.read before rewriting array.len.
 
 !Inner = !pod.type<[@vals: !array.type<? x index>]>
 !OuterArr = !array.type<2 x !Inner>
