@@ -61,6 +61,8 @@ def FlatteningPass : LLZKPass<"llzk-flatten"> {
     - Replace parameterized structs with flattened (i.e., no parameter)
       versions of those structs based on requested return type at calls
       to `compute()` functions and unroll loops
+    - Preserve template expressions needed by partial specializations until
+      their remaining parameters become concrete
     - Unroll loops
   }];
   // Implementation note: These options should be kept in sync with

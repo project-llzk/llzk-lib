@@ -185,3 +185,91 @@ module attributes {llzk.lang} {
 // CHECK:           arith.addi
 // CHECK:         function.def @value
 // CHECK:           poly.read_const @NPlusM : index
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @Inner {
+    poly.param @Num
+    poly.param @Ty : !poly.tvar<@Ty>
+    poly.param @M : index
+    poly.expr @Sum {
+      %num = poly.read_const @Num : !poly.tvar<@Ty>
+      %cast = poly.unifiable_cast %num : (!poly.tvar<@Ty>) -> index
+      %m = poly.read_const @M : index
+      %sum = arith.addi %m, %cast : index
+      poly.yield %sum : index
+    }
+    struct.def @Value {
+      function.def @compute() -> !struct.type<@Inner::@Value<[@Num, @Ty, @M]>> {
+        %sum = poly.read_const @Sum : index
+        %self = struct.new : <@Inner::@Value<[@Num, @Ty, @M]>>
+        function.return %self : !struct.type<@Inner::@Value<[@Num, @Ty, @M]>>
+      }
+      function.def @constrain(%self: !struct.type<@Inner::@Value<[@Num, @Ty, @M]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Outer {
+    poly.param @M : index
+    struct.def @Wrapper {
+      struct.member @value : !struct.type<@Inner::@Value<[35, index, @M]>>
+      function.def @compute() -> !struct.type<@Outer::@Wrapper<[@M]>> {
+        %self = struct.new : <@Outer::@Wrapper<[@M]>>
+        function.return %self : !struct.type<@Outer::@Wrapper<[@M]>>
+      }
+      function.def @constrain(%self: !struct.type<@Outer::@Wrapper<[@M]>>) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: poly.template @"Inner_35_i_\1A"
+// CHECK:         poly.expr @Sum
+// CHECK:           arith.constant 35 : index
+// CHECK:           poly.read_const @M : index
+// CHECK:           arith.addi
+// CHECK-NOT:       !poly.tvar
+// CHECK:         struct.def @Value
+// CHECK:           poly.read_const @Sum : index
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @Inner {
+    poly.param @Num
+    poly.param @Ty : !poly.tvar<@Ty>
+    poly.param @M : index
+    poly.expr @Sum {
+      %num = poly.read_const @Num : !poly.tvar<@Ty>
+      %cast = poly.unifiable_cast %num : (!poly.tvar<@Ty>) -> index
+      %m = poly.read_const @M : index
+      %sum = arith.addi %m, %cast : index
+      poly.yield %sum : index
+    }
+    function.def @value() -> index {
+      %sum = poly.read_const @Sum : index
+      function.return %sum : index
+    }
+  }
+
+  poly.template @Outer {
+    poly.param @M : index
+    function.def @value() -> index {
+      %sum = function.call @Inner::@value<[35, index, @M]>() : () -> index
+      function.return %sum : index
+    }
+  }
+}
+
+// CHECK-LABEL: poly.template @"Inner_35_i_\1A"
+// CHECK:         poly.expr @Sum
+// CHECK:           arith.constant 35 : index
+// CHECK:           poly.read_const @M : index
+// CHECK:           arith.addi
+// CHECK-NOT:       !poly.tvar
+// CHECK:         function.def @value
+// CHECK:           poly.read_const @Sum : index
