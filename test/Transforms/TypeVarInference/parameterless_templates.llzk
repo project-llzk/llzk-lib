@@ -1,0 +1,46 @@
+// RUN: llzk-opt -split-input-file -llzk-infer-tvar %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  poly.template @NoParamsOnly {
+    function.def @id(%arg: index) -> index {
+      function.return %arg : index
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @NoParamsOnly {
+// CHECK-NEXT:      function.def @id(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:        function.return %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @NoParamsBeforeTVar {
+    function.def @id(%arg: index) -> index {
+      function.return %arg : index
+    }
+  }
+
+  poly.template @ResolveTVar {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @id(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      %cast = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      function.return %cast : index
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @NoParamsBeforeTVar {
+// CHECK-NEXT:      function.def @id(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:        function.return %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @ResolveTVar {
+// CHECK-NEXT:      function.def @id(%[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:        function.return %[[VAL_1]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
