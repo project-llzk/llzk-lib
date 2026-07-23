@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.23)
 
+# Try to automatically deduplicate libraries when linking
+if(POLICY CMP0156)
+  cmake_policy(SET CMP0156 NEW)
+endif()
+
 if(NOT DEFINED LLZK_VERSION_OVERRIDE)
   include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GitVersion.cmake)
   get_git_version(LLZK_VERSION)
