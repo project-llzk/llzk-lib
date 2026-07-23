@@ -57,3 +57,23 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+    func.func @lowered(%x: !smt.int, %y: !smt.int) -> !smt.int {
+        %sum_w = smt.declare_fun "sum_w" : !smt.int
+        %sum = smt.int.add %x, %y
+        %ok = smt.eq %sum_w, %sum : !smt.int
+        verif.smt_prove %ok
+        func.return %x : !smt.int
+    }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    func.func @lowered(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.int {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = smt.declare_fun "sum_w" : !smt.int
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = smt.int.add %[[VAL_0]], %[[VAL_1]]
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = smt.eq %[[VAL_2]], %[[VAL_3]] : !smt.int
+// CHECK-NEXT:      verif.smt_prove %[[VAL_4]]
+// CHECK-NEXT:      return %[[VAL_0]] : !smt.int
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
