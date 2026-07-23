@@ -3,9 +3,8 @@
 \tableofcontents
 
 There are two options for setting up the environment:
-
-- Nix (recommended)
-- manual (does not require Nix)
+* Nix (recommended)
+* manual (does not require Nix)
 
 Tip: Following the manual setup steps through cloning the LLVM project in the
 `third-party` directory may enable code exploration in your IDE.
@@ -30,9 +29,7 @@ Within the developer shell, run the following command to generate the CMake conf
 ```bash
 phases=configurePhase genericBuild
 ```
-
 or (since v23.11)
-
 ```bash
 runPhase configurePhase
 ```
@@ -46,29 +43,26 @@ phases=configurePhase cmakeFlags="$cmakeFlags -DCMAKE_BUILD_TYPE=Release" generi
 
 Notes:
 
-- Nix flakes are required for this to work.
-- Nix 2.13 is assumed. Compatibility with other versions has not been checked
+* Nix flakes are required for this to work.
+* Nix 2.13 is assumed. Compatibility with other versions has not been checked
   yet, but they should work.
 
 # Manual Build Setup
-
 Note that the manual build instructions may be out of date; if you encounter issues, look at the build options as configured in Nix.
 LLZK requires the following to be installed:
 
-- CMake 3.18 or newer
-- Ninja
-- Z3
-- Clang 16 or higher (use the same compiler for both LLVM and LLZK repos)
+* CMake 3.18 or newer
+* Ninja
+* Z3
+* Clang 16 or higher (use the same compiler for both LLVM and LLZK repos)
 
 To optionally generate API documentation, you need:
-
-- Doxygen (tested on 1.10 and newer)
+* Doxygen (tested on 1.10 and newer)
 
 To run tests, you also need:
-
-- Python 3
-- llvm-lit
-- gtest
+* Python 3
+* llvm-lit
+* gtest
 
 Note that tests are enabled by default; they can be disabled by setting
 `-DBUILD_TESTING=off` when invoking CMake.
@@ -140,17 +134,17 @@ cmake .. -GNinja \
 Once you have generated the build configuration and are in the `build` directory,
 you can run the following commands:
 
-- Compile: `cmake --build .`
-- Run all tests: `cmake --build . --target check`
-  - To run only unit tests: `cmake --build . --target check-unit`
-  - To run only lit tests: `cmake --build . --target check-lit`
-- Generate API docs (in `doc/html`): `cmake --build . --target doc`
-- Run install target (requires `CMAKE_INSTALL_PREFIX` to be set):
+* Compile: `cmake --build .`
+* Run all tests: `cmake --build . --target check`
+  * To run only unit tests: `cmake --build . --target check-unit`
+  * To run only lit tests: `cmake --build . --target check-lit`
+* Generate API docs (in `doc/html`): `cmake --build . --target doc`
+* Run install target (requires `CMAKE_INSTALL_PREFIX` to be set):
   `cmake --build . --target install`
-- Run clang-format on C++ and tablegen files:
-  `clang-format -i $(find include lib tools backends unittests -name '*.h' -o -name '*.cpp' -o -name '*.td' -type f)`
-- Run clang-tidy on C++ files:
-  `clang-tidy -p build/compile_commands.json $(find include/llzk lib tools backends unittests -name '*.h' -o -name '*.cpp' -type f)`
+* Run clang-format on C++ and tablegen files:
+  ``clang-format -i $(find include lib tools backends unittests -name '*.h' -o -name '*.cpp' -o -name '*.td' -type f)``
+* Run clang-tidy on C++ files:
+  ``clang-tidy -p build/compile_commands.json $(find include/llzk lib tools backends unittests -name '*.h' -o -name '*.cpp' -type f)``
 
 The build configuration will automatically export `compile_commands.json`, so
 LSP servers such as `clangd` should be able to pick up helpful IDE information
