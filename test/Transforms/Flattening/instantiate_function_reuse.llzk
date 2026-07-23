@@ -1,0 +1,63 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten=cleanup=disabled %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @N : index
+    function.def @compute() -> index {
+      %n = poly.read_const @N : index
+      function.return %n : index
+    }
+  }
+
+  function.def @T_35_compute() -> index {
+    %wrong = arith.constant 99 : index
+    function.return %wrong : index
+  }
+
+  function.def @main() -> index {
+    %got = function.call @T::@compute<[35]>() : () -> index
+    %got_again = function.call @T::@compute<[35]>() : () -> index
+    function.return %got_again : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK:       function.def @[[FULL_CLONE:T_35_compute_[0-9]+]]() -> index {
+// CHECK:         arith.constant 35 : index
+// CHECK:       function.def @main() -> index {
+// CHECK:         function.call @[[FULL_CLONE]]()
+// CHECK-NEXT:    function.call @[[FULL_CLONE]]()
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @"T_35_\1A" {
+    poly.param @Ty : !poly.tvar<@Ty>
+    function.def @compute() -> index {
+      %wrong = arith.constant 99 : index
+      function.return %wrong : index
+    }
+  }
+
+  poly.template @T {
+    poly.param @N : index
+    poly.param @Ty : !poly.tvar<@Ty>
+    function.def @compute() -> index {
+      %value = arith.constant 7 : index
+      function.return %value : index
+    }
+  }
+
+  function.def @main() -> index {
+    %got = function.call @T::@compute<[35, ?]>() : () -> index
+    %got_again = function.call @T::@compute<[35, ?]>() : () -> index
+    function.return %got_again : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK:       poly.template @"[[PARTIAL_CLONE:T_35_\\1A_[0-9]+]]" {
+// CHECK:         arith.constant 7 : index
+// CHECK:       function.def @main() -> index {
+// CHECK:         function.call @"[[PARTIAL_CLONE]]"::@compute<[?]>()
+// CHECK-NEXT:    function.call @"[[PARTIAL_CLONE]]"::@compute<[?]>()

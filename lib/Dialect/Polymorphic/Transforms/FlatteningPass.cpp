@@ -99,6 +99,8 @@ static void reportDelayedDiagnostics(CallOp caller, SmallVector<Diagnostic> &&di
 }
 
 class ConversionTracker {
+  using FuncInstantiationKey = std::pair<Operation *, ArrayAttr>;
+
   /// Tracks if some step performed a modification of the code such that another pass should be run.
   bool modified;
   /// Maps original remote (i.e., use site) type to new remote type.
@@ -108,6 +110,9 @@ class ConversionTracker {
   DenseMap<StructType, StructType> reverseInstantiations;
   /// Tracks original free function definitions for which instantiated clones were created.
   DenseSet<SymbolRefAttr> funcInstantiations;
+  /// Generated spelling is not specialization identity because user symbols can collide with it.
+  DenseMap<FuncInstantiationKey, StringAttr> fullFuncInstantiations;
+  DenseMap<FuncInstantiationKey, TemplateOp> partialFuncInstantiations;
   /// Maps new remote type (i.e., the values in 'structInstantiations') to a list of Diagnostic
   /// to report at the location(s) of the compute() that causes the instantiation to the StructType.
   DenseMap<StructType, SmallVector<Diagnostic>> delayedDiagnostics;
@@ -150,6 +155,34 @@ public:
   void recordInstantiation(SymbolRefAttr funcName) {
     funcInstantiations.insert(funcName);
     modified = true;
+  }
+
+  std::optional<StringAttr>
+  getFullFuncInstantiation(Operation *sourceFunc, ArrayAttr concreteParams) const {
+    auto it = fullFuncInstantiations.find({sourceFunc, concreteParams});
+    return it == fullFuncInstantiations.end() ? std::nullopt : std::make_optional(it->second);
+  }
+
+  void recordFullFuncInstantiation(
+      Operation *sourceFunc, ArrayAttr concreteParams, StringAttr instantiatedName
+  ) {
+    [[maybe_unused]] auto [it, inserted] =
+        fullFuncInstantiations.try_emplace({sourceFunc, concreteParams}, instantiatedName);
+    assert((inserted || it->second == instantiatedName) && "instantiation identity is stable");
+  }
+
+  std::optional<TemplateOp>
+  getPartialFuncInstantiation(Operation *sourceFunc, ArrayAttr concreteParams) const {
+    auto it = partialFuncInstantiations.find({sourceFunc, concreteParams});
+    return it == partialFuncInstantiations.end() ? std::nullopt : std::make_optional(it->second);
+  }
+
+  void recordPartialFuncInstantiation(
+      Operation *sourceFunc, ArrayAttr concreteParams, TemplateOp instantiatedTemplate
+  ) {
+    [[maybe_unused]] auto [it, inserted] =
+        partialFuncInstantiations.try_emplace({sourceFunc, concreteParams}, instantiatedTemplate);
+    assert((inserted || it->second == instantiatedTemplate) && "instantiation identity is stable");
   }
 
   /// Collect the fully-qualified names of all structs and free functions that were instantiated.
@@ -1368,11 +1401,11 @@ public:
         layout.remainingNames.empty()
             ? instantiateFully(
                   op, rewriter, symTables, callTgt, parentTemplate, parentModule,
-                  layout.templateNameWithAttrs, paramNameToConcrete
+                  layout.templateNameWithAttrs, layout.concreteParamKey, paramNameToConcrete, tracker_
               )
             : instantiatePartially(
                   op, rewriter, symTables, callTgt, parentTemplate, parentModule, layout,
-                  paramNameToConcrete
+                  paramNameToConcrete, tracker_
               );
     if (failed(newCalleeAttr)) {
       return failure();
@@ -1529,13 +1562,21 @@ private:
   static FailureOr<SymbolRefAttr> instantiateFully(
       CallOp op, PatternRewriter &rewriter, SymbolTableCollection &symTables, FuncDefOp callTgt,
       TemplateOp parentTemplate, ModuleOp parentModule, StringRef templateNameWithAttrs,
-      const DenseMap<Attribute, Attribute> &paramNameToConcrete
+      ArrayAttr concreteParamKey, const DenseMap<Attribute, Attribute> &paramNameToConcrete,
+      ConversionTracker &tracker
   ) {
     MLIRContext *ctx = op.getContext();
     std::string newFuncName =
         (mlir::Twine(templateNameWithAttrs) + "_" + callTgt.getSymName()).str();
     StringRef actualNewFuncName = newFuncName;
-    if (!symTables.getSymbolTable(parentModule).lookup(newFuncName)) {
+    if (std::optional<StringAttr> cached =
+            tracker.getFullFuncInstantiation(callTgt.getOperation(), concreteParamKey)) {
+      actualNewFuncName = cached->getValue();
+      LLVM_DEBUG(
+          llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing full instantiation function: "
+                       << actualNewFuncName << '\n'
+      );
+    } else {
       FuncDefOp newFunc = callTgt.clone();
       newFunc.setSymName(newFuncName);
       convertCalleesInPlace(newFunc, paramNameToConcrete);
@@ -1556,10 +1597,8 @@ private:
           diag.append("failure while creating instantiated function '", actualNewFuncName, '\'');
         });
       }
-    } else {
-      LLVM_DEBUG(
-          llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing full instantiation function: "
-                       << actualNewFuncName << '\n'
+      tracker.recordFullFuncInstantiation(
+          callTgt.getOperation(), concreteParamKey, newFunc.getSymNameAttr()
       );
     }
 
@@ -1581,14 +1620,17 @@ private:
   static FailureOr<SymbolRefAttr> instantiatePartially(
       CallOp op, PatternRewriter &rewriter, SymbolTableCollection &symTables, FuncDefOp callTgt,
       TemplateOp parentTemplate, ModuleOp parentModule, const InstantiationLayout &layout,
-      const DenseMap<Attribute, Attribute> &paramNameToConcrete
+      const DenseMap<Attribute, Attribute> &paramNameToConcrete, ConversionTracker &tracker
   ) {
     TemplateOp newTemplate;
-    if (Operation *existing =
-            symTables.getSymbolTable(parentModule).lookup(layout.templateNameWithAttrs)) {
-      newTemplate = llvm::dyn_cast<TemplateOp>(existing);
-    }
-    if (!newTemplate) {
+    if (std::optional<TemplateOp> cached =
+            tracker.getPartialFuncInstantiation(callTgt.getOperation(), layout.concreteParamKey)) {
+      newTemplate = *cached;
+      LLVM_DEBUG(
+          llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing partial instantiation template: "
+                       << newTemplate.getSymName() << '\n'
+      );
+    } else {
       newTemplate = parentTemplate.cloneWithoutRegions();
       newTemplate.setSymName(layout.templateNameWithAttrs);
       assert(newTemplate->getNumRegions() > 0 && "region exists");
@@ -1626,10 +1668,8 @@ private:
           llvm::dbgs() << "[InstantiateFuncAtCallOp]  created partial instantiation template: "
                        << newTemplate.getSymName() << '\n'
       );
-    } else {
-      LLVM_DEBUG(
-          llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing partial instantiation template: "
-                       << newTemplate.getSymName() << '\n'
+      tracker.recordPartialFuncInstantiation(
+          callTgt.getOperation(), layout.concreteParamKey, newTemplate
       );
     }
 
