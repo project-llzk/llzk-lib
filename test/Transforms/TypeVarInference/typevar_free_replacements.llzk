@@ -12,11 +12,11 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: #map = affine_map<()[s0] -> (s0)>
+// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @InferAffineArrayDim {
-// CHECK-NEXT:      function.def @id(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<#map x index>) -> !array.type<#map x index> {
-// CHECK-NEXT:        function.return %[[VAL_0]] : !array.type<#map x index>
+// CHECK-NEXT:      function.def @id(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>) -> !array.type<#[[$M]] x index> {
+// CHECK-NEXT:        function.return %[[VAL_0]] : !array.type<#[[$M]] x index>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -44,7 +44,6 @@ module attributes {llzk.lang} {
 // -----
 
 #map = affine_map<()[s0] -> (s0)>
-
 module attributes {llzk.lang} {
   poly.template @AffineParamBox {
     poly.param @M
@@ -66,7 +65,7 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: #map = affine_map<()[s0] -> (s0)>
+// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @AffineParamBox {
 // CHECK-NEXT:      poly.param @M
@@ -78,8 +77,8 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @InferAffineStructParam {
-// CHECK-NEXT:      function.def @id(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@AffineParamBox::@Box<[#map]>>) -> !struct.type<@AffineParamBox::@Box<[#map]>> {
-// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@AffineParamBox::@Box<[#map]>>
+// CHECK-NEXT:      function.def @id(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@AffineParamBox::@Box<[#[[$M]]]>>) -> !struct.type<@AffineParamBox::@Box<[#[[$M]]]>> {
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@AffineParamBox::@Box<[#[[$M]]]>>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -123,6 +122,42 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.def @id(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !struct.type<@SymbolParamBox::@Box<[@N]>> {
 // CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_1]] : (!poly.tvar<@T>) -> !struct.type<@SymbolParamBox::@Box<[@N]>>
 // CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@SymbolParamBox::@Box<[@N]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @B {
+    poly.param @N : index
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @f(%arg: !poly.tvar<@T>) -> !array.type<@N x !felt.type>{
+      %cast = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> !array.type<@N x !felt.type>
+      function.return %cast : !array.type<@N x !felt.type>
+    }
+  }
+
+  poly.template @A {
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @g(%x: !poly.tvar<@U>) {
+      %0 = function.call @B::@f<[7, !poly.tvar<@U>]>(%x) : (!poly.tvar<@U>) -> !array.type<7 x !poly.tvar<@U>>
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @B {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      function.def @f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) -> !array.type<@N x !felt.type> {
+// CHECK-NEXT:        function.return %[[VAL_0]] : !array.type<@N x !felt.type>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @A {
+// CHECK-NEXT:      function.def @g(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<7 x !felt.type>) {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @B::@f<[7]>(%[[VAL_1]]) : (!array.type<7 x !felt.type>) -> !array.type<7 x !felt.type>
+// CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
