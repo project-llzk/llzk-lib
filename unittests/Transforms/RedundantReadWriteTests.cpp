@@ -54,6 +54,8 @@ protected:
 };
 
 TEST_F(RedundantReadWriteTests, ReadOnlyOperationPreservesObservedWrite) {
+  // A generic read effect may observe the first write, so a later write must not make it
+  // removable.
   mlir::OwningOpRef<mlir::ModuleOp> module = mlir::parseSourceString<mlir::ModuleOp>(
       R"mlir(
     module attributes {llzk.lang} {
