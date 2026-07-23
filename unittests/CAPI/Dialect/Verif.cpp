@@ -11,6 +11,8 @@
 
 #include "../CAPITestBase.h"
 
+#include "llzk-c/Builder.h"
+
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
@@ -360,6 +362,17 @@ std::unique_ptr<VerifAssertOpBuildFuncHelper> VerifAssertOpBuildFuncHelper::get(
     callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
       MlirValue cond = prepareInsertionSite(testClass, builder, location);
       return llzkVerif_VerifAssertOpBuild(builder, location, cond);
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+std::unique_ptr<VerifSMTProveOpBuildFuncHelper> VerifSMTProveOpBuildFuncHelper::get() {
+  struct Impl : public VerifSMTProveOpBuildFuncHelper {
+    MlirOperation
+    callBuild(const CAPITest &, MlirOpBuilder builder, MlirLocation location) override {
+      MlirValue cond = wrap(CAPITest::cppGenSMTBoolConstant(builder, location));
+      return llzkVerif_VerifSMTProveOpBuild(builder, location, cond);
     }
   };
   return std::make_unique<Impl>();

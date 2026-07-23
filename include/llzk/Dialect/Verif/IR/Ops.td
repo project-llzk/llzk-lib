@@ -12,6 +12,7 @@
 
 include "llzk/Dialect/Verif/IR/Dialect.td"
 include "llzk/Dialect/Verif/IR/OpInterfaces.td"
+include "llzk/Dialect/SMT/IR/SMTTypes.td"
 include "mlir/Interfaces/CallInterfaces.td"
 include "mlir/Interfaces/FunctionInterfaces.td"
 include "llzk/Dialect/Shared/OpTraits.td"
@@ -61,6 +62,13 @@ def VerifProveOp : ConditionOp<"prove", []> {
   let summary = "A proof obligation in the target of a contract, derived from"
                 "one of the contract's specifications";
   let description = summary;
+}
+
+def VerifSMTProveOp : Op<VerifDialect, "smt_prove", []> {
+  let arguments = (ins BoolType:$condition);
+  let results = (outs);
+  let summary = "A lowered proof obligation over an SMT expression";
+  let assemblyFormat = "$input attr-dict";
 }
 
 //===------------------------------------------------------------------===//
