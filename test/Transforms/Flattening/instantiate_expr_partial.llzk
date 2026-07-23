@@ -198,6 +198,10 @@ module attributes {llzk.lang, llzk.main = !struct.type<@UnusedStructExpr::@Value
       }
       poly.yield %value : index
     }
+    function.def @other() -> index {
+      %value = poly.read_const @Unused : index
+      function.return %value : index
+    }
     struct.def @Value {
       function.def @compute() -> !struct.type<@UnusedStructExpr::@Value<[@N]>> {
         %self = struct.new : <@UnusedStructExpr::@Value<[@N]>>
@@ -224,6 +228,10 @@ module attributes {llzk.lang} {
         scf.yield %n : index
       }
       poly.yield %value : index
+    }
+    function.def @other() -> index {
+      %value = poly.read_const @Unused : index
+      function.return %value : index
     }
     function.def @value() -> index {
       %result = arith.constant 1 : index
