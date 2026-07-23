@@ -1750,10 +1750,15 @@ static SmallVector<Value> materializeCompatiblePodArrayConvertedValues(
       location, source, convertedTypes, rewriter, convertedValues,
       [](Location loc, Value src, ArrayRef<Type> targetTypes, OpBuilder &bldr,
          SmallVectorImpl<Value> &out) {
-    out.reserve(targetTypes.size());
-    for (Type targetType : targetTypes) {
-      out.push_back(castValueToTypeIfNeeded(bldr, loc, src, targetType));
+    if (targetTypes.size() == 1) {
+      out.push_back(castValueToTypeIfNeeded(bldr, loc, src, targetTypes.front()));
+      return;
     }
+    // Keep the compatible components tied to one split cast so function arguments can
+    // be promoted to the concrete component types instead of casting one argument
+    // independently to each type.
+    auto splitCast = bldr.create<UnrealizedConversionCastOp>(loc, TypeRange(targetTypes), src);
+    llvm::append_range(out, splitCast.getResults());
   }
   );
   return convertedValues;
