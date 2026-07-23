@@ -2,6 +2,7 @@
 
 // COM: The `llzk-pod-to-scalar` pass always pre-runs `llzk-infer-tvar` which resolves the type variable
 // COM: via the `poly.unifiable_cast` before arrays-of-POD are split into parallel leaf arrays.
+
 !Empty = !pod.type<[]>
 module attributes {llzk.lang} {
   poly.template @CastEmptyArrayPodToTypeVar {
@@ -19,22 +20,24 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-
 // -----
 
-// TODO: `llzk-infer-tvar` should be updated to support this case.
-// COM: Once an array-of-POD value is split into parallel leaf arrays, step 2 cannot soundly
-// COM: collapse those pieces back into one non-array SSA value for `poly.unifiable_cast`.
-// COM: Supporting this would require aggregate reification or extra signature/template rewriting.
 #map = affine_map<()[s0] -> (s0)>
 !Pair = !pod.type<[@x: index, @y: !felt.type]>
 module attributes {llzk.lang} {
   poly.template @CastArrayPodToTypeVar {
     poly.param @T_return : !poly.tvar<@T_return>
     function.def @main(%arr: !array.type<#map x !Pair>) -> !poly.tvar<@T_return> {
-      // expected-error@+1 {{'poly.unifiable_cast' op cannot lower a split array-of-POD input to a non-array result without materializing the aggregate or rewriting the surrounding function/template signature}}
       %cast = poly.unifiable_cast %arr : (!array.type<#map x !Pair>) -> !poly.tvar<@T_return>
       function.return %cast : !poly.tvar<@T_return>
     }
   }
 }
+// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @CastArrayPodToTypeVar {
+// CHECK-NEXT:      function.def @main(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x none>) -> (!array.type<#[[$M]] x index>, !array.type<#[[$M]] x !felt.type>, !array.type<#[[$M]] x none>) {
+// CHECK-NEXT:        function.return %[[VAL_0]], %[[VAL_1]], %[[VAL_2]] : !array.type<#[[$M]] x index>, !array.type<#[[$M]] x !felt.type>, !array.type<#[[$M]] x none>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
