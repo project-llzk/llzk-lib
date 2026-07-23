@@ -144,7 +144,7 @@ Nix Setup</h1>
 </ul>
 <h1 class="doxsection"><a class="anchor" id="manual-build-setup"></a>
 Manual Build Setup</h1>
-<p>LLZK requires the following to be installed:</p>
+<p>Note that the manual build instructions may be out of date; if you encounter issues, look at the build options as configured in Nix. LLZK requires the following to be installed:</p>
 <ul>
 <li>CMake 3.18 or newer</li>
 <li>Ninja</li>
@@ -184,8 +184,6 @@ Manual Build Setup</h1>
 <div class="line">  -DLLVM_BUILD_TESTS=off \</div>
 <div class="line">  -DLLVM_TARGETS_TO_BUILD=host \</div>
 <div class="line">  -DCMAKE_INSTALL_PREFIX=&quot;$INSTALL_ROOT&quot; \</div>
-<div class="line">  -DLLVM_BUILD_LLVM_DYLIB=on \</div>
-<div class="line">  -DLLVM_LINK_LLVM_DYLIB=on \</div>
 <div class="line">  -DLLVM_ENABLE_RTTI=on \</div>
 <div class="line">  -DLLVM_ENABLE_EH=on \</div>
 <div class="line">  -DLLVM_ENABLE_ASSERTIONS=on \</div>
