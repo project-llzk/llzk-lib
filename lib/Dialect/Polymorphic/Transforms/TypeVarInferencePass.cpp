@@ -3613,6 +3613,9 @@ private:
     // Note: SmallVector doesn't work because the element size is too large.
     std::vector<TemplateInferenceInfo> templateInfos;
     WalkResult collectResult = module.walk([&templateInfos](TemplateOp templateOp) {
+      if (templateOp.getConstOps<TemplateParamOp>().empty()) {
+        return WalkResult::advance();
+      }
       FailureOr<TemplateInferenceInfo> info = buildInfo(templateOp);
       if (failed(info)) {
         return WalkResult::interrupt();
@@ -3622,6 +3625,9 @@ private:
     });
     if (collectResult.wasInterrupted()) {
       signalPassFailure();
+      return;
+    }
+    if (templateInfos.empty()) {
       return;
     }
 
