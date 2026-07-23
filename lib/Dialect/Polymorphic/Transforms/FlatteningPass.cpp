@@ -652,17 +652,34 @@ evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramN
   return failure();
 }
 
-/// Evaluate all `TemplateExprOp`s in `templateOp` that can be computed from the currently-known
+/// Return whether `target` may use `exprOp`. Symbol-use analysis stops at symbol-table boundaries,
+/// so inspect target regions separately. An unknown result is conservatively treated as a use.
+static bool targetMayUseTemplateExpr(Operation *target, TemplateExprOp exprOp) {
+  if (!symbolKnownUseEmpty(exprOp.getOperation(), target)) {
+    return true;
+  }
+  return llvm::any_of(target->getRegions(), [&](Region &region) {
+    return !symbolKnownUseEmpty(exprOp.getOperation(), &region);
+  });
+}
+
+/// Evaluate the `TemplateExprOp`s used by `target` that can be computed from the currently-known
 /// concrete param values, adding results to the map and returning the expressions that must remain
 /// available for a later partial instantiation.
 static FailureOr<SmallVector<TemplateExprOp>>
-evaluateTemplateExprs(TemplateOp templateOp, DenseMap<Attribute, Attribute> &paramNameToConcrete) {
+evaluateTemplateExprs(
+    TemplateOp templateOp, Operation *target,
+    DenseMap<Attribute, Attribute> &paramNameToConcrete
+) {
   LLVM_DEBUG(
       llvm::dbgs() << "[evaluateTemplateExprs] before: " << debug::toStringList(paramNameToConcrete)
                    << '\n'
   );
   SmallVector<TemplateExprOp> deferredExprs;
   for (TemplateExprOp exprOp : templateOp.getConstOps<TemplateExprOp>()) {
+    if (!targetMayUseTemplateExpr(target, exprOp)) {
+      continue;
+    }
     FailureOr<std::optional<Attribute>> result = evaluateExpr(exprOp, paramNameToConcrete);
     if (failed(result)) {
       return failure();
@@ -862,7 +879,7 @@ class StructCloner {
     // Evaluate any poly.expr symbols whose param dependencies are now concrete; add them to the
     // map so ClonedBodyConstReadOpPattern can replace uses of those symbols too.
     FailureOr<SmallVector<TemplateExprOp>> exprEvaluation =
-        evaluateTemplateExprs(parentTemplate, paramNameToConcrete);
+        evaluateTemplateExprs(parentTemplate, origStruct.getOperation(), paramNameToConcrete);
     if (failed(exprEvaluation)) {
       return failure();
     }
@@ -1510,7 +1527,7 @@ public:
     }
 
     FailureOr<SmallVector<TemplateExprOp>> exprEvaluation =
-        evaluateTemplateExprs(parentTemplate, paramNameToConcrete);
+        evaluateTemplateExprs(parentTemplate, callTgt.getOperation(), paramNameToConcrete);
     if (failed(exprEvaluation)) {
       return failure();
     }
