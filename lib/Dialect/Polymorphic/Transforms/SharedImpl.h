@@ -86,7 +86,6 @@ struct InstantiationLayout {
   mlir::SmallVector<mlir::Attribute> remainingNames;
   std::string templateNameWithAttrs;
   mlir::ArrayAttr rewrittenCallParams;
-  mlir::ArrayAttr concreteParamKey;
 };
 
 /// Identifies whether an instantiation name came from source IR or a prior partial instantiation.
@@ -106,13 +105,10 @@ inline InstantiationLayout buildInstantiationLayout(
 ) {
   mlir::SmallVector<mlir::Attribute> remainingNames;
   mlir::SmallVector<mlir::Attribute> attrsForInstantiatedNameSuffix;
-  mlir::SmallVector<mlir::Attribute> concreteParamKey;
   for (mlir::Attribute paramName : parentTemplate.getConstNames<TemplateParamOp>()) {
     auto it = paramNameToConcrete.find(paramName);
     if (it != paramNameToConcrete.end()) {
       attrsForInstantiatedNameSuffix.push_back(it->second);
-      concreteParamKey.push_back(paramName);
-      concreteParamKey.push_back(it->second);
     } else {
       attrsForInstantiatedNameSuffix.push_back(nullptr);
       remainingNames.push_back(paramName);
@@ -144,7 +140,6 @@ inline InstantiationLayout buildInstantiationLayout(
       std::move(remainingNames),
       std::move(templateNameWithAttrs),
       rewrittenCallParams,
-      mlir::ArrayAttr::get(parentTemplate.getContext(), concreteParamKey),
   };
 }
 
