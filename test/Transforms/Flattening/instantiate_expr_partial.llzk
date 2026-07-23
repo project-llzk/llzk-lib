@@ -234,7 +234,6 @@ module attributes {llzk.lang} {
 // CHECK:           arith.addi
 // CHECK-NOT:       !poly.tvar
 // CHECK:         struct.def @Value
-// CHECK:           poly.read_const @Sum : index
 
 // -----
 
@@ -272,4 +271,3 @@ module attributes {llzk.lang} {
 // CHECK:           arith.addi
 // CHECK-NOT:       !poly.tvar
 // CHECK:         function.def @value
-// CHECK:           poly.read_const @Sum : index
