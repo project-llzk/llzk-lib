@@ -178,6 +178,10 @@ def AssertOp : SMTOp<"assert", []> {
 
 def ProveOp : SMTOp<"prove", []> {
   let summary = "emit a proof obligation for a boolean expression";
+  let description = "This op is used to document proof obligations and thus "
+                    "does not admit a straightforward translation to "
+                    "SMTLIB2, since it provides no information to the "
+                    "solver. ";
   let arguments = (ins BoolType:$input);
   let assemblyFormat = "$input attr-dict";
 }
