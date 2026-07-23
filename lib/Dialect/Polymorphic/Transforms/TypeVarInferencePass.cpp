@@ -261,6 +261,7 @@ public:
   }
 
 private:
+  /// Convert a type while detecting cycles among inferred type-variable replacements.
   Type convertType(Type ty, DenseSet<StringAttr> &resolvingParams) const {
     if (!ty) {
       return ty;
@@ -306,6 +307,7 @@ public:
     return convertAttr(attr, resolvingParams);
   }
 
+  /// Return the template parameter order captured before trimming.
   ArrayRef<StringAttr> getOldParamOrder() const { return oldParamOrder_; }
 
   /// Validate type-bearing surfaces before resolved owned-struct parameters are
@@ -369,6 +371,7 @@ private:
            << oldResultTy;
   }
 
+  /// Validate nested type sites whose template parameter arrays may be trimmed.
   LogicalResult validateType(Type ty, Operation *diagnosticOp) const {
     if (!ty) {
       return success();
@@ -402,6 +405,7 @@ private:
     return success();
   }
 
+  /// Validate attributes that may contain type sites affected by replacement.
   LogicalResult validateAttr(Attribute attr, Operation *diagnosticOp) const {
     if (!attr) {
       return success();
@@ -419,6 +423,7 @@ private:
     return success();
   }
 
+  /// Convert an attribute while reusing the active cycle-detection set.
   Attribute convertAttr(Attribute attr, DenseSet<StringAttr> &resolvingParams) const {
     return convertTypeOrArrayAttr(attr, ctx_, [this, &resolvingParams](Type ty) {
       return convertType(ty, resolvingParams);
@@ -477,6 +482,7 @@ public:
   }
 
 private:
+  /// Convert an attribute appearing directly in a template argument list.
   Attribute convertTemplateArgAttr(Attribute attr) const {
     DenseSet<StringAttr> resolvingParams;
     return convertTemplateArgAttr(attr, resolvingParams);
@@ -523,6 +529,7 @@ private:
     return emitRemovedTemplateParamMismatch(paramName, attr, replacementIt->second, diagnosticOp);
   }
 
+  /// Emit the shared diagnostic for a call/struct argument that cannot be dropped.
   LogicalResult emitRemovedTemplateParamMismatch(
       StringAttr paramName, Attribute attr, Type replacementTy, Operation *diagnosticOp
   ) const {
@@ -577,6 +584,7 @@ private:
     return changed ? getStructTypeWithParams(structTy.getNameRef(), ctx_, newParams) : structTy;
   }
 
+  /// Validate a struct type before owned resolved parameter positions are removed.
   LogicalResult validateStructType(StructType structTy, Operation *diagnosticOp) const {
     ArrayAttr params = structTy.getParams();
     if (!params) {
@@ -1023,6 +1031,7 @@ static FailureOr<TemplateOp> getOrCreateSpecializedTemplateClone(
 /// `!struct.type<@TBox::@Box<[index]>>`. More general partial struct
 /// instantiation remains the flattening pass' job.
 class ConcreteStructInstantiationConverter {
+  /// Local and external struct types produced for one concrete instantiation.
   struct StructInstantiationTypes {
     /// Type used inside the cloned struct body as the required self type.
     StructType localType;
@@ -1325,6 +1334,7 @@ struct TemplateInferenceInfo {
   DenseMap<Operation *, DenseMap<StringAttr, InferredType>> functionReplacements;
 };
 
+/// Build a map from original template parameter symbols to explicit call arguments.
 static DenseMap<Attribute, Attribute>
 buildParamNameToCallArg(ArrayAttr callParams, ArrayRef<StringAttr> oldParamOrder) {
   DenseMap<Attribute, Attribute> paramNameToCallArg;
@@ -1337,8 +1347,7 @@ buildParamNameToCallArg(ArrayAttr callParams, ArrayRef<StringAttr> oldParamOrder
   return paramNameToCallArg;
 }
 
-/// Return true if explicit call-site template parameters match the inferred
-/// concrete function-local replacements.
+/// Substitute explicit call-site template arguments through aggregate type structure.
 static Type
 substituteExplicitCallArgsInType(Type ty, const DenseMap<Attribute, Attribute> &paramNameToCallArg);
 
@@ -1357,6 +1366,7 @@ static Attribute substituteExplicitCallArgsInAttr(
   return it == paramNameToCallArg.end() ? attr : it->second;
 }
 
+/// Substitute explicit call-site template arguments through aggregate type structure.
 static Type substituteExplicitCallArgsInType(
     Type ty, const DenseMap<Attribute, Attribute> &paramNameToCallArg
 ) {
@@ -1433,6 +1443,7 @@ static Type substituteExplicitCallArgsInType(
   return ty;
 }
 
+/// Substitute explicit call-site arguments described by the original parameter order.
 static Type
 substituteExplicitCallArgs(Type ty, ArrayAttr callParams, ArrayRef<StringAttr> oldParamOrder) {
   return substituteExplicitCallArgsInType(ty, buildParamNameToCallArg(callParams, oldParamOrder));
@@ -1546,10 +1557,12 @@ static bool contractMentionsParam(verif::ContractOp contract, StringAttr paramNa
   return result.wasInterrupted();
 }
 
+/// Return whether a function target mentions an eligible type-variable parameter.
 static bool targetMentionsParam(FuncDefOp func, StringAttr paramName) {
   return funcMentionsParam(func, paramName);
 }
 
+/// Return whether a contract target mentions an eligible type-variable parameter.
 static bool targetMentionsParam(verif::ContractOp contract, StringAttr paramName) {
   return contractMentionsParam(contract, paramName);
 }
