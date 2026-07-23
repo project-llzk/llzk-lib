@@ -1885,19 +1885,19 @@ private:
     );
   }
 
-  /// Record one concrete type inference and diagnose conflicts.
+  /// Record one type-variable-free type inference and diagnose conflicts.
   ///
   /// Inferences are tracked in two dimensions:
   ///   * by template parameter, so `@T` cannot be proven to be two different
-  ///     concrete types;
+  ///     resolved types;
   ///   * by SSA value, so a single value cannot be rewritten to incompatible
-  ///     concrete types through separate casts.
+  ///     resolved types through separate casts.
   ///
   /// Non-eligible parameters are ignored. A candidate type variable records a
-  /// parameter equality instead of a concrete replacement, so later concrete
+  /// parameter equality instead of a replacement, so later type-variable-free
   /// proofs can propagate across aggregate casts such as `array<T> -> array<U>`.
-  /// Other non-concrete candidates are ignored because this pass only removes
-  /// template type variables once a concrete replacement is known.
+  /// Other candidates are ignored because this pass only removes template type
+  /// variables once no type variables remain in the replacement type.
   LogicalResult recordInference(StringAttr paramName, Type inferredTy, Value value, Location loc) {
     if (!inferenceInfo.typeVarParams.contains(paramName)) {
       return success();
@@ -1905,7 +1905,7 @@ private:
     if (auto inferredTvar = llvm::dyn_cast<TypeVarType>(inferredTy)) {
       return recordParamRelation(paramName, inferredTvar.getNameRef().getAttr(), loc);
     }
-    if (!isConcreteType(inferredTy)) {
+    if (!isTypeVarFreeType(inferredTy)) {
       return success();
     }
 
@@ -2264,12 +2264,12 @@ static ArrayAttr expandCurrentTemplateParamsToOriginalOrder(
   return ArrayAttr::get(callParams.getContext(), expandedParams);
 }
 
-/// Build concrete type-variable replacements from an explicit call instantiation.
+/// Build type-variable-free replacements from an explicit call instantiation.
 ///
 /// A specialized function clone keeps the original enclosing `poly.template`,
 /// so non-type parameters remain available to operations such as
 /// `poly.read_const`. Type-variable parameters mentioned by the cloned function
-/// are replaced by concrete types from the call's template argument list.
+/// are replaced by resolved types from the call's template argument list.
 template <typename TargetOp>
 static DenseMap<StringAttr, Type> getConcreteCallSiteReplacements(
     ArrayAttr callParams, const TemplateInferenceInfo &info, TargetOp targetOp
@@ -2311,7 +2311,7 @@ static DenseMap<StringAttr, Type> getConcreteCallSiteReplacements(
       /*trimResolvedParams=*/false
   );
   for (const auto &entry : replacements) {
-    if (!isConcreteType(converter.convertType(entry.second))) {
+    if (!isTypeVarFreeType(converter.convertType(entry.second))) {
       return DenseMap<StringAttr, Type>();
     }
   }
@@ -3613,6 +3613,9 @@ private:
     // Note: SmallVector doesn't work because the element size is too large.
     std::vector<TemplateInferenceInfo> templateInfos;
     WalkResult collectResult = module.walk([&templateInfos](TemplateOp templateOp) {
+      if (templateOp.getConstOps<TemplateParamOp>().empty()) {
+        return WalkResult::advance();
+      }
       FailureOr<TemplateInferenceInfo> info = buildInfo(templateOp);
       if (failed(info)) {
         return WalkResult::interrupt();
@@ -3622,6 +3625,9 @@ private:
     });
     if (collectResult.wasInterrupted()) {
       signalPassFailure();
+      return;
+    }
+    if (templateInfos.empty()) {
       return;
     }
 
