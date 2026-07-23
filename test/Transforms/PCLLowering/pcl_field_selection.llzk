@@ -19,7 +19,7 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<2130706433 : i65>} {
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<2130706433>} {
 // CHECK-NEXT:    func.func @DetectedPrime(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> !pcl.felt {
 // CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_1]], %[[VAL_0]]

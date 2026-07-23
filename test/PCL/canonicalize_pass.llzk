@@ -247,7 +247,7 @@ module attributes {pcl.prime = #pcl.prime<7>} {
 }
 
 // CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<7>} {
-// CHECK-NEXT:    func.func @mul() -> !pcl.felt {
+// CHECK-NEXT:    func.func @neg() -> !pcl.felt {
 // CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.const 6
 // CHECK-NEXT:      return %[[VAL_0]] : !pcl.felt
 // CHECK-NEXT:    }
@@ -497,10 +497,10 @@ module attributes {pcl.prime = #pcl.prime<7>} {
 
 // CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<7>} {
 // CHECK-NEXT:    func.func @and() -> !pcl.bool {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.var "a" true
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.const 1
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_0]], %[[VAL_1]]
-// CHECK-NEXT:      return %[[VAL_0]] : !pcl.bool
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.const 1
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "a" true
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_1]], %[[VAL_0]]
+// CHECK-NEXT:      return %[[VAL_2]] : !pcl.bool
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
@@ -520,10 +520,10 @@ module attributes {pcl.prime = #pcl.prime<7>} {
 
 // CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<7>} {
 // CHECK-NEXT:    func.func @and() -> !pcl.bool {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.var "a" true
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.const 1
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_0]], %[[VAL_1]]
-// CHECK-NEXT:      return %[[VAL_0]] : !pcl.bool
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.const 1
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "a" true
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_1]], %[[VAL_0]]
+// CHECK-NEXT:      return %[[VAL_2]] : !pcl.bool
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
@@ -600,10 +600,10 @@ module attributes {pcl.prime = #pcl.prime<7>} {
 
 // CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<7>} {
 // CHECK-NEXT:    func.func @or() -> !pcl.bool {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.var "a" true
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.const 1
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_0]], %[[VAL_1]]
-// CHECK-NEXT:      return %[[VAL_0]] : !pcl.bool
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.const 1
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "a" true
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_1]], %[[VAL_0]]
+// CHECK-NEXT:      return %[[VAL_2]] : !pcl.bool
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
@@ -623,10 +623,10 @@ module attributes {pcl.prime = #pcl.prime<7>} {
 
 // CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<7>} {
 // CHECK-NEXT:    func.func @or() -> !pcl.bool {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.var "a" true
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.const 1
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_0]], %[[VAL_1]]
-// CHECK-NEXT:      return %[[VAL_0]] : !pcl.bool
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.const 1
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "a" true
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_1]], %[[VAL_0]]
+// CHECK-NEXT:      return %[[VAL_2]] : !pcl.bool
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
@@ -702,9 +702,9 @@ module attributes {pcl.prime = #pcl.prime<7>} {
 
 // CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<7>} {
 // CHECK-NEXT:    func.func @double_not() -> !pcl.bool {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.var "x" false
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.const 1
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_0]], %[[VAL_1]]
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.const 1
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "x" false
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_1]], %[[VAL_0]]
 // CHECK-NEXT:      return %[[VAL_2]] : !pcl.bool
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -756,7 +756,7 @@ module attributes {pcl.prime = #pcl.prime<7>} {
 }
 
 // CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<7>} {
-// CHECK-NEXT:    func.func @iff() -> !pcl.bool {
+// CHECK-NEXT:    func.func @det() -> !pcl.bool {
 // CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.true
 // CHECK-NEXT:      return %[[VAL_0]] : !pcl.bool
 // CHECK-NEXT:    }

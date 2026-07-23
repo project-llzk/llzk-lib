@@ -17,6 +17,7 @@
 #include <mlir/IR/DialectImplementation.h>
 
 #include <llvm/Support/Debug.h>
+#include <algorithm>
 
 // TableGen'd implementation files
 #include "pcl/Dialect/IR/Dialect.cpp.inc"
@@ -93,10 +94,18 @@ mlir::Operation *PCLDialect::materializeConstant(
 // PrimeAttr
 //===----------------------------------------------------------------------===//
 
+namespace {
+  
+}
+
 FeltAttr PrimeAttr::reduce(FeltAttr attr) {
-  auto value = attr.getValue().srem(getValue());
+  auto max = std::max({getValue().getBitWidth(), attr.getValue().getBitWidth()}) + 1;
+  auto pExt = getValue().zext(max);
+  // The incoming value could be negative so we need to sign-extend.
+  auto vExt = attr.getValue().sext(max);
+  auto value = vExt.srem(pExt);
   if (value.isNegative()) {
-    value += getValue();
+    value += pExt;
   }
   return FeltAttr::get(getContext(), value);
 }

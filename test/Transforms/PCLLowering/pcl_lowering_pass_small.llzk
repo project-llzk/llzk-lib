@@ -19,7 +19,7 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL:   func.func @ArithConst() -> !pcl.felt {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.const  true
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.const 1
 // CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_1]], %[[VAL_0]]
 // CHECK-NEXT:      pcl.assert %[[VAL_2]]

@@ -19,6 +19,8 @@
 #include <mlir/Support/LLVM.h>
 
 #include <llvm/Support/Debug.h>
+#include <llvm/Support/LogicalResult.h>
+#include <algorithm>
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES
@@ -114,34 +116,56 @@ OpFoldResult foldBinaryOp(
 /// Attempts to fold a binary operation over felts.
 ///
 /// If the operation does not have access to the prime field, is not folded.
-template <typename Op>
+template <typename Op, typename Fn>
 OpFoldResult tryFoldBinaryFeltOp(
-    Op &op, typename Op::FoldAdaptor adaptor, llvm::function_ref<FeltAttr(FeltAttr, FeltAttr)> opFn,
-    llvm::function_ref<bool(FeltAttr)> isIdentity, llvm::function_ref<bool(FeltAttr)> isZero
+    Op &op, typename Op::FoldAdaptor adaptor, Fn opFn,
+    llvm::function_ref<bool(const APInt &)> isIdentity,
+    llvm::function_ref<bool(const APInt &)> isZero
 ) {
   auto prime = getFieldPrime(op);
   if (!prime) {
     return nullptr;
   }
 
-  return foldBinaryOp<FeltAttr>(op, adaptor, opFn, isIdentity, isZero, [&prime](auto value) {
-    return prime->reduce(value);
-  });
+  return foldBinaryOp<FeltAttr>(op, adaptor, [&prime, opFn](FeltAttr lhs, FeltAttr rhs) {
+    lhs = prime->reduce(lhs);
+    rhs = prime->reduce(rhs);
+    auto max = std::max(
+                   {lhs.getValue().getBitWidth(), rhs.getValue().getBitWidth(),
+                    prime->getValue().getBitWidth()}
+               ) +
+               1;
+    auto lhsValue = lhs.getValue().zext(max);
+    auto rhsValue = rhs.getValue().zext(max);
+    auto primeValue = prime->getValue().zext(max);
+
+    return FeltAttr::get(lhs.getContext(), opFn(lhsValue, rhsValue, primeValue));
+  }, [&prime, isIdentity](FeltAttr value) {
+    return isIdentity(prime->reduce(value).getValue());
+  }, [&prime, isZero](FeltAttr value) {
+    return isZero(prime->reduce(value).getValue());
+  }, [&prime](auto value) { return prime->reduce(value); });
 }
 
 /// Attempts to fold a comparison operation over felts.
-template <typename Op>
+template <typename Op, typename Fn>
 OpFoldResult foldCmpOp(
-    Op &op, typename Op::FoldAdaptor adaptor, llvm::function_ref<bool(FeltAttr, FeltAttr)> opFn
+    Op &op, typename Op::FoldAdaptor adaptor, Fn opFn
 ) {
+  auto prime = getFieldPrime(op);
+  if (!prime) {
+    return nullptr;
+  }
   auto lhs = mlir::dyn_cast_if_present<FeltAttr>(adaptor.getLhs());
   auto rhs = mlir::dyn_cast_if_present<FeltAttr>(adaptor.getRhs());
   // Shortcircuit if either operand is not constant.
   if (!rhs || !lhs) {
     return nullptr;
   }
+  lhs = prime->reduce(lhs);
+  rhs = prime->reduce(rhs);
 
-  return pcl::BoolAttr::get(op->getContext(), opFn(lhs, rhs));
+  return pcl::BoolAttr::get(op->getContext(), opFn(lhs.getValue(), rhs.getValue()));
 }
 
 } // namespace
@@ -155,23 +179,32 @@ OpFoldResult foldCmpOp(
 //===----------------------------------------------------------------------===//
 
 OpFoldResult AddOp::fold(FoldAdaptor adaptor) {
-  return tryFoldBinaryFeltOp(*this, adaptor, [](auto lhs, auto rhs) {
-    return FeltAttr::get(lhs.getContext(), lhs.getValue() + rhs.getValue());
-  }, [](auto value) { return value.getValue().isZero(); }, [](auto) { return false; });
+  return tryFoldBinaryFeltOp(*this, adaptor, [](auto lhs, const auto &rhs, const auto &) {
+    return std::move(lhs) + rhs;
+  }, [](const auto &value) { return value.isZero(); }, [](const auto &) { return false; });
 }
 
 //===----------------------------------------------------------------------===//
 // ConstOp
 //===----------------------------------------------------------------------===//
 
-OpFoldResult ConstOp::fold(FoldAdaptor adaptor) { return adaptor.getValue(); }
+OpFoldResult ConstOp::fold(FoldAdaptor adaptor) {
+  auto prime = getFieldPrime(*this);
+  if (!prime) {
+    return adaptor.getValue();
+  }
+  return prime->reduce(adaptor.getValue());
+}
 
 //===----------------------------------------------------------------------===//
 // MulOp
 //===----------------------------------------------------------------------===//
 
 namespace {
-struct FoldXTimesMinus1 : public OpRewritePattern<MulOp> {
+
+/// Rewrites multiplication operations of the form `X * (p - 1)`
+/// to `-X`
+struct RewriteXTimesMinus1ToNegX : public OpRewritePattern<MulOp> {
   using OpRewritePattern<MulOp>::OpRewritePattern;
 
   LogicalResult matchAndRewrite(MulOp op, PatternRewriter &rewriter) const override {
@@ -201,9 +234,11 @@ private:
     if (!feltAttr) {
       return failure();
     }
-    auto diff = prime.getValue() - feltAttr.getValue();
-    llvm::dbgs() << "Prime: " << prime.getValue() << "\nValue: " << feltAttr.getValue()
-                 << "\nDiff: " << diff << "\n";
+    auto value = prime.reduce(feltAttr).getValue();
+    auto max = std::max({value.getBitWidth(), prime.getBitWidth()});
+    auto primeValue = prime.getValue().zext(max);
+    value = value.zext(max);
+    auto diff = primeValue - value;
     if (!diff.isOne()) {
       return failure();
     }
@@ -222,15 +257,13 @@ private:
 } // namespace
 
 OpFoldResult MulOp::fold(FoldAdaptor adaptor) {
-  return tryFoldBinaryFeltOp(*this, adaptor, [](auto lhs, auto rhs) {
-    return FeltAttr::get(lhs.getContext(), lhs.getValue() * rhs.getValue());
-  }, [](auto value) { return value.getValue().isOne(); }, [](auto value) {
-    return value.getValue().isZero();
-  });
+  return tryFoldBinaryFeltOp(*this, adaptor, [](const auto &lhs, const auto &rhs, const auto &) {
+    return lhs * rhs;
+  }, [](auto &value) { return value.isOne(); }, [](auto &value) { return value.isZero(); });
 }
 
 void MulOp::getCanonicalizationPatterns(RewritePatternSet &patterns, MLIRContext *context) {
-  patterns.add<FoldXTimesMinus1>(context);
+  patterns.add<RewriteXTimesMinus1ToNegX>(context);
 }
 
 //===----------------------------------------------------------------------===//
@@ -286,9 +319,11 @@ void SubOp::getCanonicalizationPatterns(RewritePatternSet &patterns, MLIRContext
 }
 
 OpFoldResult SubOp::fold(FoldAdaptor adaptor) {
-  return tryFoldBinaryFeltOp(*this, adaptor, [](auto lhs, auto rhs) {
-    return FeltAttr::get(lhs.getContext(), lhs.getValue() - rhs.getValue());
-  }, [](auto) { return false; }, [](auto) { return false; });
+  return tryFoldBinaryFeltOp(
+      *this, adaptor, [](const auto &lhs, const auto &rhs, const auto &prime) {
+    return lhs + (prime - rhs);
+  }, [](auto &) { return false; }, [](auto &) { return false; }
+  );
 }
 
 //===----------------------------------------------------------------------===//
@@ -371,8 +406,8 @@ private:
 //===----------------------------------------------------------------------===//
 
 OpFoldResult CmpEqOp::fold(FoldAdaptor adaptor) {
-  return foldCmpOp(*this, adaptor, [](auto lhs, auto rhs) {
-    return lhs.getValue() == rhs.getValue();
+  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) {
+    return lhs == rhs;
   });
 }
 
@@ -385,8 +420,8 @@ void CmpEqOp::getCanonicalizationPatterns(RewritePatternSet &patterns, MLIRConte
 //===----------------------------------------------------------------------===//
 
 OpFoldResult CmpLtOp::fold(FoldAdaptor adaptor) {
-  return foldCmpOp(*this, adaptor, [](auto lhs, auto rhs) {
-    return lhs.getValue().ult(rhs.getValue());
+  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) {
+    return lhs.ult(rhs);
   });
 }
 
@@ -395,8 +430,8 @@ OpFoldResult CmpLtOp::fold(FoldAdaptor adaptor) {
 //===----------------------------------------------------------------------===//
 
 OpFoldResult CmpLeOp::fold(FoldAdaptor adaptor) {
-  return foldCmpOp(*this, adaptor, [](auto lhs, auto rhs) {
-    return lhs.getValue().ule(rhs.getValue());
+  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) {
+    return lhs.ule(rhs);
   });
 }
 
@@ -405,8 +440,8 @@ OpFoldResult CmpLeOp::fold(FoldAdaptor adaptor) {
 //===----------------------------------------------------------------------===//
 
 OpFoldResult CmpGtOp::fold(FoldAdaptor adaptor) {
-  return foldCmpOp(*this, adaptor, [](auto lhs, auto rhs) {
-    return lhs.getValue().ugt(rhs.getValue());
+  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) {
+    return lhs.ugt(rhs);
   });
 }
 
@@ -415,8 +450,8 @@ OpFoldResult CmpGtOp::fold(FoldAdaptor adaptor) {
 //===----------------------------------------------------------------------===//
 
 OpFoldResult CmpGeOp::fold(FoldAdaptor adaptor) {
-  return foldCmpOp(*this, adaptor, [](auto lhs, auto rhs) {
-    return lhs.getValue().uge(rhs.getValue());
+  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) {
+    return lhs.uge(rhs);
   });
 }
 
@@ -500,13 +535,14 @@ namespace {
 struct FoldDoubleNeg : public OpRewritePattern<NotOp> {
   using OpRewritePattern<NotOp>::OpRewritePattern;
 
-  LogicalResult match(NotOp op) const override {
-    return success(mlir::isa_and_present<NotOp>(op.getCond().getDefiningOp()));
-  }
-
-  void rewrite(NotOp op, PatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(NotOp op, PatternRewriter &rewriter) const override {
+    if (!mlir::isa_and_present<NotOp>(op.getCond().getDefiningOp())) {
+      return failure();
+    }
     auto cond = mlir::cast<NotOp>(op.getCond().getDefiningOp());
     rewriter.replaceOp(op, cond.getCond());
+
+    return success();
   }
 };
 } // namespace
@@ -550,12 +586,14 @@ namespace {
 template <typename Op> struct RemoveTauto : public OpRewritePattern<Op> {
   using OpRewritePattern<Op>::OpRewritePattern;
 
-  LogicalResult match(Op op) const override {
+  LogicalResult matchAndRewrite(Op op, PatternRewriter &rewriter) const override {
     auto condAttr = getCondAttr(op);
-    return failure(!condAttr || !condAttr.getValue());
+    if (!condAttr || !condAttr.getValue()) {
+      return failure();
+    }
+    rewriter.eraseOp(op);
+    return success();
   }
-
-  void rewrite(Op op, PatternRewriter &rewriter) const override { rewriter.eraseOp(op); }
 
 private:
   pcl::BoolAttr getCondAttr(Op op) const {

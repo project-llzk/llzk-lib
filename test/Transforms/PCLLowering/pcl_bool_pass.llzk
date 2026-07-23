@@ -17,7 +17,7 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<2013265921 : i65>} {
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<2013265921>} {
 // CHECK-NEXT:    func.func @A(%arg0: !pcl.felt, %arg1: !pcl.felt, %arg2: !pcl.felt) {
 // CHECK-NEXT:      %0 = pcl.eq %arg0, %arg1
 // CHECK-NEXT:      %1 = pcl.eq %arg1, %arg2
@@ -44,7 +44,7 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<18446744069414584321 : i66>} {
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<18446744069414584321>} {
 // CHECK-NEXT:    func.func @A(%arg0: !pcl.felt, %arg1: !pcl.felt, %arg2: !pcl.felt) {
 // CHECK-NEXT:      %0 = pcl.lt %arg0, %arg1
 // CHECK-NEXT:      %1 = pcl.le %arg1, %arg2
@@ -70,7 +70,7 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<21888242871839275222246405745257275088548364400416034343698204186575808495617 : i256>} {
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<21888242871839275222246405745257275088548364400416034343698204186575808495617>} {
 // CHECK-NEXT:    func.func @A(%arg0: !pcl.felt, %arg1: !pcl.felt) {
 // CHECK-NEXT:      %0 = pcl.ge %arg0, %arg1
 // CHECK-NEXT:      %1 = pcl.not %0
@@ -96,7 +96,7 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<18446744069414584321 : i66>} {
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<18446744069414584321>} {
 // CHECK-NEXT:    func.func @A(%arg0: !pcl.felt, %arg1: !pcl.felt, %arg2: !pcl.felt) {
 // CHECK-NEXT:      %0 = pcl.eq %arg0, %arg1
 // CHECK-NEXT:      %1 = pcl.eq %arg1, %arg2
@@ -122,7 +122,7 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<18446744069414584321 : i66>} {
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<18446744069414584321>} {
 // CHECK-NEXT:    func.func @A(%arg0: !pcl.felt, %arg1: !pcl.felt) {
 // CHECK-NEXT:      %0 = pcl.eq %arg0, %arg1
 // CHECK-NEXT:      %1 = pcl.not %0
