@@ -616,6 +616,14 @@ class StructCloner {
       return success();
     }
 
+    LogicalResult handleDefaultRewrite(
+        Attribute, MemberReadOp op, OpAdaptor, ConversionPatternRewriter &, Attribute a
+    ) const override {
+      return op->emitOpError().append(
+          "table offset requires an integer template value, but found ", a
+      );
+    }
+
     LogicalResult matchAndRewrite(
         MemberReadOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
     ) const override {

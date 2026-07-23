@@ -43,7 +43,8 @@ module attributes {
 
       function.def @compute() -> !struct.type<@OffsetTemplate::@Main<[@Offset]>> {
         %self = struct.new : <@OffsetTemplate::@Main<[@Offset]>>
-        // expected-error@+1 {{failed to legalize operation 'struct.readm'}}
+        // expected-error@+2 {{'struct.readm' op table offset requires an integer template value}}
+        // expected-error@+1 {{'struct.readm' op table offset requires an integer template value}}
         %value = struct.readm %self[@value] : <@OffsetTemplate::@Main<[@Offset]>>, !felt.type<"bn128"> {tableOffset = @Offset}
         function.return %self : !struct.type<@OffsetTemplate::@Main<[@Offset]>>
       }
