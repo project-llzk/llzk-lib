@@ -553,6 +553,18 @@ bool isConcreteType(Type type, bool allowStructParams) {
   return AllowedTypes().noVar().noStructParams(!allowStructParams).isValidTypeImpl(type);
 }
 
+AttrConcreteness classifyAttrConcreteness(Attribute attr, bool allowStructParams) {
+  if (auto tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
+    return isConcreteType(tyAttr.getValue(), allowStructParams) ? AttrConcreteness::Concrete
+                                                                : AttrConcreteness::NonConcrete;
+  }
+  if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
+    return isDynamic(intAttr) ? AttrConcreteness::Wildcard : AttrConcreteness::Concrete;
+  }
+  return llvm::isa<FeltConstAttr>(attr) ? AttrConcreteness::Concrete
+                                        : AttrConcreteness::NonConcrete;
+}
+
 bool hasAffineMapAttr(Type type) {
   bool encountered = false;
   type.walk([&](AffineMapAttr) {

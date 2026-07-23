@@ -43,6 +43,58 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  poly.template @ContractTargetFunctionParamConflict {
+    poly.param @N : index
+
+    function.def @check(%lhs: !array.type<@N x index>, %rhs: !array.type<@N x index>) { // expected-note {{target defined here}}
+      function.return
+    }
+  }
+
+  // expected-error@+1 {{'verif.contract' op contract type does not match target type}}
+  verif.contract @BadTargetParams for @ContractTargetFunctionParamConflict::@check (
+      %lhs: !array.type<4 x index>, %rhs: !array.type<8 x index>
+  ) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @ContractTargetStructParamConflict {
+    poly.param @N : index
+
+    struct.def @Box { // expected-note {{target defined here}}
+      function.def @compute() -> !struct.type<@ContractTargetStructParamConflict::@Box<[@N]>> {
+        %self = struct.new : !struct.type<@ContractTargetStructParamConflict::@Box<[@N]>>
+        function.return %self : !struct.type<@ContractTargetStructParamConflict::@Box<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@ContractTargetStructParamConflict::@Box<[@N]>>,
+          %lhs: !array.type<@N x index>,
+          %rhs: !array.type<@N x index>
+      ) {
+        function.return
+      }
+    }
+  }
+
+  // expected-error@+1 {{'verif.contract' op contract type does not match target type}}
+  verif.contract @BadTargetParams for @ContractTargetStructParamConflict::@Box (
+      %self: !struct.type<@ContractTargetStructParamConflict::@Box<[4]>>,
+      %lhs: !array.type<4 x index>,
+      %rhs: !array.type<8 x index>
+  ) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
   struct.def @Box { // expected-note {{target defined here}}
     function.def @compute(%x: index) -> !struct.type<@Box> {
       %self = struct.new : !struct.type<@Box>

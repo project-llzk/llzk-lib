@@ -70,6 +70,10 @@ bool isValidTarget(Operation *op) {
   return isa<StructDefOp>(op);
 }
 
+inline bool hasConflictingUnifications(const llzk::UnificationMap &unifications) {
+  return llvm::any_of(unifications, [](const auto &entry) { return !entry.second; });
+}
+
 struct TargetTypeInfo {
   FunctionType funcType {};
   ArrayAttr argAttrs {};
@@ -450,7 +454,10 @@ LogicalResult ContractOp::verifySymbolUses(SymbolTableCollection &tables) {
         .append("target defined here");
   }
   TargetTypeInfo &targetInfo = *targetInfoRes;
-  if (targetInfo.funcType != contractTy) {
+  UnificationMap unifications;
+  bool unifies =
+      functionTypesUnify(contractTy, targetInfo.funcType, targetRes->getNamespace(), &unifications);
+  if (!unifies || hasConflictingUnifications(unifications)) {
     return emitOpError()
         .append("contract type does not match target type")
         .attachNote(targetOp->getLoc())

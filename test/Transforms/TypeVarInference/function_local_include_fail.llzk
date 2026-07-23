@@ -1,0 +1,30 @@
+// RUN: llzk-opt -split-input-file -llzk-infer-tvar -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  poly.template @TFunctionLocalIncludeConflict {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @f(%arg: !poly.tvar<@T>) {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      function.return
+    }
+
+    function.def @g(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      function.return %arg : !poly.tvar<@T>
+    }
+
+    function.def @wrapper_target(%arg: !felt.type) {
+      function.return
+    }
+
+    verif.contract @Base for @TFunctionLocalIncludeConflict::@f (%arg: !poly.tvar<@T>) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+
+    verif.contract @Wrapper for @TFunctionLocalIncludeConflict::@wrapper_target (%arg: !felt.type) {
+      // expected-error@+1 {{explicit template argument for inferred parameter @T must match inferred type 'index', but found '!felt.type'}}
+      verif.include @TFunctionLocalIncludeConflict::@Base<[!felt.type]>(%arg) : (!felt.type) -> ()
+    }
+  }
+}
