@@ -266,7 +266,7 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: function.def @matchingFeltFields()
 // CHECK:         function.call @GlobalFunc::@id<[#felt<const 35>]>()
-// CHECK:         function.call @GlobalFunc::@id<[#felt<const 35 : !felt.type<"bn128">>]>()
+// CHECK:         function.call @GlobalFunc::@id<[#felt<const 35 : <"bn128">>]>()
 // -----
 
 module attributes {llzk.lang} {
