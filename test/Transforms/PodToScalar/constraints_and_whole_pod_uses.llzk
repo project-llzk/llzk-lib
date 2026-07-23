@@ -327,10 +327,10 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.def @constrain(
 // CHECK-SAME:         %[[LHS_X:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>,
 // CHECK-SAME:         %[[LHS_Y:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>,
-// CHECK-SAME:         %[[RHS:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[RHS_LEAVES:[0-9a-zA-Z_\.]+]]:2 = builtin.unrealized_conversion_cast %[[RHS]] : !poly.tvar<@T> to !array.type<2 x index>, !array.type<2 x !felt.type>
-// CHECK-NEXT:        constrain.eq %[[LHS_X]], %[[RHS_LEAVES]]#0 : !array.type<2 x index>, !array.type<2 x index>
-// CHECK-NEXT:        constrain.eq %[[LHS_Y]], %[[RHS_LEAVES]]#1 : !array.type<2 x !felt.type>, !array.type<2 x !felt.type>
+// CHECK-SAME:         %[[RHS_X:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>,
+// CHECK-SAME:         %[[RHS_Y:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        constrain.eq %[[LHS_X]], %[[RHS_X]] : !array.type<2 x index>, !array.type<2 x index>
+// CHECK-NEXT:        constrain.eq %[[LHS_Y]], %[[RHS_Y]] : !array.type<2 x !felt.type>, !array.type<2 x !felt.type>
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -355,8 +355,8 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.def @constrain(
 // CHECK-SAME:         %[[ARR_X:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>,
 // CHECK-SAME:         %[[ARR_Y:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>,
-// CHECK-SAME:         %[[ELEM:[0-9a-zA-Z_\.]+]]: !poly.tvar<@E>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[ELEM_LEAVES:[0-9a-zA-Z_\.]+]]:2 = builtin.unrealized_conversion_cast %[[ELEM]] : !poly.tvar<@E> to index, !felt.type
+// CHECK-SAME:         %[[ELEM_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:         %[[ELEM_Y:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:        %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:        %[[TRUE:[0-9a-zA-Z_\.]+]] = arith.constant true
 // CHECK-NEXT:        %[[IDX:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
@@ -367,9 +367,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        %[[LT_LEN:[0-9a-zA-Z_\.]+]] = arith.cmpi slt, %[[IDX]], %[[LEN]] : index
 // CHECK-NEXT:        constrain.eq %[[LT_LEN]], %[[TRUE]] : i1, i1
 // CHECK-NEXT:        %[[SEL_X:[0-9a-zA-Z_\.]+]] = array.read %[[ARR_X]]{{\[}}%[[IDX]]] : <2 x index>, index
-// CHECK-NEXT:        constrain.eq %[[SEL_X]], %[[ELEM_LEAVES]]#0 : index, index
+// CHECK-NEXT:        constrain.eq %[[SEL_X]], %[[ELEM_X]] : index, index
 // CHECK-NEXT:        %[[SEL_Y:[0-9a-zA-Z_\.]+]] = array.read %[[ARR_Y]]{{\[}}%[[IDX]]] : <2 x !felt.type>, !felt.type
-// CHECK-NEXT:        constrain.eq %[[SEL_Y]], %[[ELEM_LEAVES]]#1 : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[SEL_Y]], %[[ELEM_Y]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -540,12 +540,12 @@ module attributes {llzk.lang} {
 // CHECK-SAME:       %[[LHS_Y:[0-9a-zA-Z_\.]+]]: !felt.type,
 // CHECK-SAME:       %[[RHS_X:[0-9a-zA-Z_\.]+]]: index,
 // CHECK-SAME:       %[[RHS_Y:[0-9a-zA-Z_\.]+]]: !felt.type,
-// CHECK-SAME:       %[[TVAR:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[TVAR_LEAVES:[0-9a-zA-Z_\.]+]]:2 = builtin.unrealized_conversion_cast %[[TVAR]] : !poly.tvar<@T> to index, !felt.type
-// CHECK-NEXT:        constrain.eq %[[LHS_X]], %[[TVAR_LEAVES]]#0 : index, index
-// CHECK-NEXT:        constrain.eq %[[LHS_Y]], %[[TVAR_LEAVES]]#1 : !felt.type, !felt.type
-// CHECK-NEXT:        constrain.eq %[[TVAR_LEAVES]]#0, %[[RHS_X]] : index, index
-// CHECK-NEXT:        constrain.eq %[[TVAR_LEAVES]]#1, %[[RHS_Y]] : !felt.type, !felt.type
+// CHECK-SAME:       %[[TVAR_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:       %[[TVAR_Y:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        constrain.eq %[[LHS_X]], %[[TVAR_X]] : index, index
+// CHECK-NEXT:        constrain.eq %[[LHS_Y]], %[[TVAR_Y]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[TVAR_X]], %[[RHS_X]] : index, index
+// CHECK-NEXT:        constrain.eq %[[TVAR_Y]], %[[RHS_Y]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

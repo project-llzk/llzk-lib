@@ -4762,6 +4762,273 @@ public:
   }
 };
 
+/// Description of one entry-block argument that can be replaced by several typed arguments.
+///
+/// Step 2 and the whole-POD constraint rewrites may materialize a compatible generic argument
+/// into concrete leaf values with a multi-result `builtin.unrealized_conversion_cast`. When that
+/// cast is the only use of the entry argument, the aggregate argument has become just a signature
+/// placeholder. This record remembers the original argument position, the replacement types, and
+/// every identical cast that should be replaced by the new block arguments.
+struct PromotedFunctionArgCast {
+  unsigned argIndex;
+  SmallVector<Type> resultTypes;
+  SmallVector<UnrealizedConversionCastOp> casts;
+};
+
+/// Description of a function whose signature changed because one or more entry arguments were
+/// promoted from a generic aggregate value into concrete leaf values.
+///
+/// `funcOp` is stored separately from `func` so const call-update code can key a map by operation
+/// pointer without needing non-const access to the operation wrapper.
+struct PromotedFunctionSignature {
+  FuncDefOp func;
+  Operation *funcOp;
+  unsigned oldInputCount;
+  SmallVector<PromotedFunctionArgCast> argCasts;
+};
+
+static const PromotedFunctionArgCast *
+findPromotedArgCast(ArrayRef<PromotedFunctionArgCast> argCasts, unsigned argIndex) {
+  auto it = llvm::find_if(argCasts, [argIndex](const PromotedFunctionArgCast &argCast) {
+    return argCast.argIndex == argIndex;
+  });
+  return it == argCasts.end() ? nullptr : &*it;
+}
+
+/// Return the multi-result casts that completely define a block argument's split replacement.
+///
+/// Promotion is intentionally conservative: every use of the argument must be a one-operand
+/// multi-result cast from that argument, and all such casts must have exactly the same result
+/// types. If the argument still has a generic use, or if different users need incompatible split
+/// shapes, the function signature is left unchanged.
+static std::optional<PromotedFunctionArgCast> getPromotableFunctionArgCast(BlockArgument arg) {
+  PromotedFunctionArgCast promoted;
+  promoted.argIndex = arg.getArgNumber();
+  bool initialized = false;
+
+  for (OpOperand &use : arg.getUses()) {
+    auto castOp = dyn_cast<UnrealizedConversionCastOp>(use.getOwner());
+    if (!castOp || castOp->getNumOperands() != 1 || castOp.getOperand(0) != arg ||
+        castOp->getNumResults() <= 1) {
+      return std::nullopt;
+    }
+
+    SmallVector<Type> castResultTypes(castOp.getResultTypes());
+    if (!initialized) {
+      promoted.resultTypes = std::move(castResultTypes);
+      initialized = true;
+    } else if (promoted.resultTypes != castResultTypes) {
+      return std::nullopt;
+    }
+    promoted.casts.push_back(castOp);
+  }
+
+  return initialized ? std::optional<PromotedFunctionArgCast>(std::move(promoted)) : std::nullopt;
+}
+
+/// Expand argument attributes for arguments whose source-level value becomes several inputs.
+///
+/// Name metadata is preserved where possible. A promoted argument named `x` keeps `x` on the first
+/// replacement and derives unique `x#N` names for the remaining replacements, avoiding collisions
+/// with the names on arguments that were not promoted.
+static ArrayAttr expandArgAttrsForPromotedFunctionArgCasts(
+    FuncDefOp func, ArrayRef<PromotedFunctionArgCast> argCasts
+) {
+  ArrayAttr origAttrs = func.getArgAttrsAttr();
+  if (!origAttrs) {
+    return nullptr;
+  }
+
+  llvm::StringSet<> usedNames;
+  for (auto [i, attr] : llvm::enumerate(origAttrs)) {
+    if (findPromotedArgCast(argCasts, i)) {
+      continue;
+    }
+    auto dictAttr = dyn_cast<DictionaryAttr>(attr);
+    if (!dictAttr) {
+      continue;
+    }
+    if (auto nameAttr = dyn_cast_if_present<StringAttr>(dictAttr.get(ARG_NAME_ATTR_NAME))) {
+      usedNames.insert(nameAttr.getValue());
+    }
+  }
+
+  SmallVector<Attribute> newAttrs;
+  for (auto [i, attr] : llvm::enumerate(origAttrs)) {
+    const PromotedFunctionArgCast *argCast = findPromotedArgCast(argCasts, i);
+    if (!argCast) {
+      newAttrs.push_back(attr);
+      continue;
+    }
+
+    auto dictAttr = mlir::cast<DictionaryAttr>(attr);
+    auto nameAttr = dyn_cast_if_present<StringAttr>(dictAttr.get(ARG_NAME_ATTR_NAME));
+    if (!nameAttr) {
+      newAttrs.append(argCast->resultTypes.size(), attr);
+      continue;
+    }
+
+    llvm::StringRef baseName = nameAttr.getValue();
+    for (unsigned splitIdx = 0, e = argCast->resultTypes.size(); splitIdx < e; ++splitIdx) {
+      std::string desiredName =
+          splitIdx == 0 ? baseName.str() : (baseName + "#" + llvm::Twine(splitIdx)).str();
+      newAttrs.push_back(
+          withFunctionArgNameAttr(dictAttr, reserveUniqueAttrName(usedNames, desiredName))
+      );
+    }
+  }
+  return ArrayAttr::get(func.getContext(), newAttrs);
+}
+
+/// Promote entry-block casts such as `%x:2 = unrealized_conversion_cast %arg` into real
+/// function arguments, then erase the now-redundant casts.
+///
+/// This handles the case where POD-to-scalar has learned a concrete decomposition for a generic
+/// function argument only through whole-POD or array-of-POD uses. Keeping the cast in the body
+/// would leave the public function signature with one aggregate/generic argument even though the
+/// lowered body consumes several concrete leaves. Promotion rewrites the function type and entry
+/// block together so the replacement values are passed explicitly.
+static std::optional<PromotedFunctionSignature> promoteFunctionArgCasts(FuncDefOp func) {
+  if (func.isExternal()) {
+    return std::nullopt;
+  }
+
+  Block &entryBlock = func.getBody().front();
+  SmallVector<PromotedFunctionArgCast> argCasts;
+  for (BlockArgument arg : entryBlock.getArguments()) {
+    if (auto promoted = getPromotableFunctionArgCast(arg)) {
+      argCasts.push_back(std::move(*promoted));
+    }
+  }
+  if (argCasts.empty()) {
+    return std::nullopt;
+  }
+
+  FunctionType oldFuncTy = func.getFunctionType();
+  SmallVector<Type> newInputs;
+  for (auto [i, inputType] : llvm::enumerate(oldFuncTy.getInputs())) {
+    if (const PromotedFunctionArgCast *argCast = findPromotedArgCast(argCasts, i)) {
+      llvm::append_range(newInputs, argCast->resultTypes);
+    } else {
+      newInputs.push_back(inputType);
+    }
+  }
+
+  ArrayAttr newArgAttrs = expandArgAttrsForPromotedFunctionArgCasts(func, argCasts);
+  func.setFunctionType(FunctionType::get(func.getContext(), newInputs, oldFuncTy.getResults()));
+  if (newArgAttrs) {
+    func.setArgAttrsAttr(newArgAttrs);
+  }
+
+  for (const PromotedFunctionArgCast &argCast : llvm::reverse(argCasts)) {
+    BlockArgument oldArg = entryBlock.getArgument(argCast.argIndex);
+    SmallVector<BlockArgument> newArgs;
+    newArgs.reserve(argCast.resultTypes.size());
+    unsigned nextArgIdx = argCast.argIndex + 1;
+    for (Type resultType : argCast.resultTypes) {
+      newArgs.push_back(entryBlock.insertArgument(nextArgIdx, resultType, oldArg.getLoc()));
+      ++nextArgIdx;
+    }
+
+    for (UnrealizedConversionCastOp castOp : argCast.casts) {
+      for (auto [result, newArg] : llvm::zip_equal(castOp.getResults(), newArgs)) {
+        result.replaceAllUsesWith(newArg);
+      }
+      castOp.erase();
+    }
+    entryBlock.eraseArgument(argCast.argIndex);
+  }
+
+  return PromotedFunctionSignature {
+      .func = func,
+      .funcOp = func.getOperation(),
+      .oldInputCount = oldFuncTy.getNumInputs(),
+      .argCasts = std::move(argCasts)
+  };
+}
+
+/// Update direct calls to functions whose generic entry argument casts were promoted.
+///
+/// A caller may still have only the original aggregate/generic operand available. In that case,
+/// emit the same leaf-producing unrealized cast at the call site and pass its results to the new
+/// callee signature. If the call site operand is itself a function argument and the cast fully
+/// defines that argument, the fixpoint driver below can promote the caller's signature too.
+static LogicalResult updateCallsForPromotedFunctionArgCasts(
+    ModuleOp modOp, SymbolTableCollection &symTables,
+    ArrayRef<PromotedFunctionSignature> promotedSignatures
+) {
+  if (promotedSignatures.empty()) {
+    return success();
+  }
+
+  DenseMap<Operation *, const PromotedFunctionSignature *> promotedByFunc;
+  for (const PromotedFunctionSignature &signature : promotedSignatures) {
+    promotedByFunc[signature.funcOp] = &signature;
+  }
+
+  OpBuilder builder(modOp.getContext());
+  SmallVector<CallOp> calls;
+  modOp.walk([&calls](CallOp callOp) { calls.push_back(callOp); });
+  for (CallOp callOp : calls) {
+    FailureOr<SymbolLookupResult<FuncDefOp>> targetRes = callOp.getCalleeTarget(symTables);
+    if (failed(targetRes)) {
+      return failure();
+    }
+
+    auto signatureIt = promotedByFunc.find(targetRes->get().getOperation());
+    if (signatureIt == promotedByFunc.end()) {
+      continue;
+    }
+
+    const PromotedFunctionSignature &signature = *signatureIt->second;
+    if (callOp.getArgOperands().size() != signature.oldInputCount) {
+      return callOp.emitOpError("argument count does not match pre-promotion callee signature");
+    }
+
+    SmallVector<Value> newOperands;
+    builder.setInsertionPoint(callOp);
+    for (auto [i, operand] : llvm::enumerate(callOp.getArgOperands())) {
+      if (const PromotedFunctionArgCast *argCast = findPromotedArgCast(signature.argCasts, i)) {
+        auto castOp = builder.create<UnrealizedConversionCastOp>(
+            callOp.getLoc(), TypeRange(argCast->resultTypes), operand
+        );
+        llvm::append_range(newOperands, castOp.getResults());
+      } else {
+        newOperands.push_back(operand);
+      }
+    }
+    callOp.getArgOperandsMutable().assign(ValueRange(newOperands));
+  }
+  return success();
+}
+
+/// Promote all eligible function-entry cast decompositions to function signatures.
+///
+/// Updating a call to a promoted callee can introduce a new entry-argument cast in the caller.
+/// Iterate to a fixpoint so chains of forwarding functions are scalarized consistently instead of
+/// leaving a one-argument-to-many-types cast one level up the call graph.
+static LogicalResult
+promoteFunctionArgCastsToSignature(ModuleOp modOp, SymbolTableCollection &symTables) {
+  SmallVector<FuncDefOp> funcs;
+  modOp.walk([&funcs](FuncDefOp func) { funcs.push_back(func); });
+
+  for (unsigned promotionRounds = 0; promotionRounds < 64; ++promotionRounds) {
+    SmallVector<PromotedFunctionSignature> promotedSignatures;
+    for (FuncDefOp func : funcs) {
+      if (auto promoted = promoteFunctionArgCasts(func)) {
+        promotedSignatures.push_back(std::move(*promoted));
+      }
+    }
+    if (promotedSignatures.empty()) {
+      return success();
+    }
+    if (failed(updateCallsForPromotedFunctionArgCasts(modOp, symTables, promotedSignatures))) {
+      return failure();
+    }
+  }
+  return modOp.emitError("function argument cast promotion did not reach a fixpoint");
+}
+
 void Step3Resolver::rehydrateVirtualPodPlaceholders(ModuleOp modOp) {
   ::rehydrateVirtualPodPlaceholders(modOp, virtualPods);
 }
@@ -4933,6 +5200,9 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
           modOp->getRegion(0), std::move(postConversionPatterns),
           GreedyRewriteConfig {.fold = false, .cseConstants = false}
       ))) {
+    return failure();
+  }
+  if (failed(promoteFunctionArgCastsToSignature(modOp, symTables))) {
     return failure();
   }
 
