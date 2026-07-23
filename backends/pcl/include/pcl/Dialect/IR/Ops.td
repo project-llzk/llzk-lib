@@ -49,14 +49,15 @@ def PCL_VarOp : PCL_Op<"var", [Pure, InsideFunc]> {
 // Arithmetic over fields
 // -----------------------------------------------------------------------------
 
-def PCL_ConstOp : PCL_Op<"const", [Pure, InsideFunc]> {
+def PCL_ConstOp : PCL_Op<"const", [Pure, InsideFunc, ConstantLike]> {
   let summary = "Constant felt";
   let arguments = (ins FeltAttr:$value);
   let results = (outs PCL_FieldType:$res);
   let assemblyFormat = "$value attr-dict";
   let extraClassDeclaration = [{
-    auto getValueAPInt() -> ::llvm::APInt { return getValue().getValue().getValue(); }
+    auto getValueAPInt() -> ::llvm::APInt { return getValue().getValue(); }
   }];
+  let hasFolder = 1;
 }
 
 def PCL_AddOp : PCL_Op<"add", [Pure, Commutative, SameOperandsAndResultType,
@@ -65,6 +66,7 @@ def PCL_AddOp : PCL_Op<"add", [Pure, Commutative, SameOperandsAndResultType,
   let arguments = (ins PCL_FieldType:$lhs, PCL_FieldType:$rhs);
   let results = (outs PCL_FieldType:$res);
   let assemblyFormat = "$lhs `,` $rhs attr-dict";
+  let hasFolder = 1;
 }
 
 def PCL_SubOp : PCL_Op<"sub", [Pure, SameOperandsAndResultType, InsideFunc]> {
@@ -72,6 +74,8 @@ def PCL_SubOp : PCL_Op<"sub", [Pure, SameOperandsAndResultType, InsideFunc]> {
   let arguments = (ins PCL_FieldType:$lhs, PCL_FieldType:$rhs);
   let results = (outs PCL_FieldType:$res);
   let assemblyFormat = "$lhs `,` $rhs attr-dict";
+  let hasFolder = 1;
+  let hasCanonicalizer = 1;
 }
 
 def PCL_MulOp : PCL_Op<"mul", [Pure, Commutative, SameOperandsAndResultType,
@@ -80,6 +84,8 @@ def PCL_MulOp : PCL_Op<"mul", [Pure, Commutative, SameOperandsAndResultType,
   let arguments = (ins PCL_FieldType:$lhs, PCL_FieldType:$rhs);
   let results = (outs PCL_FieldType:$res);
   let assemblyFormat = "$lhs `,` $rhs attr-dict";
+  let hasFolder = 1;
+  let hasCanonicalizer = 1;
 }
 
 def PCL_NegOp : PCL_Op<"neg", [Pure, SameOperandsAndResultType, InsideFunc]> {
@@ -87,6 +93,7 @@ def PCL_NegOp : PCL_Op<"neg", [Pure, SameOperandsAndResultType, InsideFunc]> {
   let arguments = (ins PCL_FieldType:$val);
   let results = (outs PCL_FieldType:$res);
   let assemblyFormat = "$val attr-dict";
+  let hasFolder = 1;
 }
 
 // -----------------------------------------------------------------------------
@@ -97,39 +104,62 @@ def PCL_AsFeltOp : PCL_Op<"asfelt", [Pure, InsideFunc]> {
   let arguments = (ins PCL_BoolType:$val);
   let results = (outs PCL_FieldType:$res);
   let assemblyFormat = "$val attr-dict";
+  let hasFolder = 1;
 }
 
 // -----------------------------------------------------------------------------
 // Comparisons: return !pcl.bool
 // -----------------------------------------------------------------------------
-class PCLCmpBase<string mnem, string doc> : Op<PCLDialect, mnem, [Pure]> {
+class PCLCmpBase<string mnem, string doc, bit canonicalizer = 0>
+    : Op<PCLDialect, mnem, [Pure]> {
   let summary = doc;
   let arguments = (ins PCL_FieldType:$lhs, PCL_FieldType:$rhs);
   let results = (outs PCL_BoolType:$res);
   let assemblyFormat = "$lhs `,` $rhs attr-dict";
+  let hasFolder = 1;
+  let hasCanonicalizer = canonicalizer;
 }
 
-def PCL_CmpEqOp : PCLCmpBase<"eq", "lhs == rhs (field equality)">;
+def PCL_CmpEqOp : PCLCmpBase<"eq", "lhs == rhs (field equality)", true>;
 def PCL_CmpLtOp : PCLCmpBase<"lt", "lhs < rhs (signed/semantic: range)">;
 def PCL_CmpLeOp : PCLCmpBase<"le", "lhs <= rhs">;
 def PCL_CmpGtOp : PCLCmpBase<"gt", "lhs > rhs">;
 def PCL_CmpGeOp : PCLCmpBase<"ge", "lhs >= rhs">;
 
 // -----------------------------------------------------------------------------
+// Boolean constants
+// -----------------------------------------------------------------------------
+def PCL_TrueOp : PCL_Op<"true", [Pure, InsideFunc, ConstantLike]> {
+  let summary = "constant true value";
+  let results = (outs PCL_BoolType:$res);
+  let assemblyFormat = "attr-dict";
+  let hasFolder = 1;
+}
+
+def PCL_FalseOp : PCL_Op<"false", [Pure, InsideFunc, ConstantLike]> {
+  let summary = "constant false value";
+  let results = (outs PCL_BoolType:$res);
+  let assemblyFormat = "attr-dict";
+  let hasFolder = 1;
+}
+
+// -----------------------------------------------------------------------------
 // Boolean connectives on !pcl.bool
 // -----------------------------------------------------------------------------
 def PCL_AndOp : PCL_Op<"and", [Pure, Commutative, SameOperandsAndResultType]> {
-  let summary = "Boolean conjunction (a && b)";
-  let arguments = (ins PCL_BoolType:$a, PCL_BoolType:$b);
+  let summary = "Boolean conjunction (lhs && rhs)";
+  let arguments = (ins PCL_BoolType:$lhs, PCL_BoolType:$rhs);
   let results = (outs PCL_BoolType:$res);
-  let assemblyFormat = "$a `,` $b attr-dict";
+  let assemblyFormat = "$lhs `,` $rhs attr-dict";
+  let hasFolder = 1;
 }
 
 def PCL_OrOp : PCL_Op<"or", [Pure, Commutative, SameOperandsAndResultType]> {
-  let summary = "Boolean disjunction (a || b)";
-  let arguments = (ins PCL_BoolType:$a, PCL_BoolType:$b);
+  let summary = "Boolean disjunction (lhs || rhs)";
+  let arguments = (ins PCL_BoolType:$lhs, PCL_BoolType:$rhs);
   let results = (outs PCL_BoolType:$res);
-  let assemblyFormat = "$a `,` $b attr-dict";
+  let assemblyFormat = "$lhs `,` $rhs attr-dict";
+  let hasFolder = 1;
 }
 
 def PCL_NotOp : PCL_Op<"not", [Pure, SameOperandsAndResultType]> {
@@ -137,27 +167,32 @@ def PCL_NotOp : PCL_Op<"not", [Pure, SameOperandsAndResultType]> {
   let arguments = (ins PCL_BoolType:$cond);
   let results = (outs PCL_BoolType:$res);
   let assemblyFormat = "$cond attr-dict";
+  let hasFolder = 1;
+  let hasCanonicalizer = 1;
 }
 
 def PCL_ImpliesOp : PCL_Op<"implies", [Pure]> {
-  let summary = "Boolean implication (a => b)";
-  let arguments = (ins PCL_BoolType:$a, PCL_BoolType:$b);
+  let summary = "Boolean implication (lhs => rhs)";
+  let arguments = (ins PCL_BoolType:$lhs, PCL_BoolType:$rhs);
   let results = (outs PCL_BoolType:$res);
-  let assemblyFormat = "$a `,` $b attr-dict";
+  let assemblyFormat = "$lhs `,` $rhs attr-dict";
+  let hasFolder = 1;
 }
 
 def PCL_IffOp : PCL_Op<"iff", [Pure, Commutative]> {
-  let summary = "Boolean equivalence (a <=> b)";
-  let arguments = (ins PCL_BoolType:$a, PCL_BoolType:$b);
+  let summary = "Boolean equivalence (lhs <=> rhs)";
+  let arguments = (ins PCL_BoolType:$lhs, PCL_BoolType:$rhs);
   let results = (outs PCL_BoolType:$res);
-  let assemblyFormat = "$a `,` $b attr-dict";
+  let assemblyFormat = "$lhs `,` $rhs attr-dict";
+  let hasFolder = 1;
 }
 
 def PCL_DetOp : PCL_Op<"det", [Pure]> {
-  let summary = "returns true iff $a deterministic";
-  let arguments = (ins PCL_FieldType:$a);
+  let summary = "returns true iff $expr deterministic";
+  let arguments = (ins PCL_FieldType:$expr);
   let results = (outs PCL_BoolType:$res);
-  let assemblyFormat = "$a attr-dict";
+  let assemblyFormat = "$expr attr-dict";
+  let hasFolder = 1;
 }
 
 // -----------------------------------------------------------------------------
@@ -167,12 +202,14 @@ def PCL_AssertOp : PCL_Op<"assert", []> {
   let summary = "Assert that a boolean holds";
   let arguments = (ins PCL_BoolType:$cond);
   let assemblyFormat = "$cond attr-dict";
+  let hasCanonicalizer = 1;
 }
 
-def PCL_PostOp : PCL_Op<"post-cond", []> {
+def PCL_PostOp : PCL_Op<"post_cond", []> {
   let summary = "Post-condition on function outputs";
   let arguments = (ins PCL_BoolType:$cond);
   let assemblyFormat = "$cond attr-dict";
+  let hasCanonicalizer = 1;
 }
 
 def PCL_AssumeDeterministicOp : PCL_Op<"assume.deterministic", []> {

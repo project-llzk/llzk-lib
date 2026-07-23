@@ -118,7 +118,9 @@ protected:
 template <> class ConstantOpValue<arith::ConstantOp> {
 protected:
   llvm::APInt getValue(arith::ConstantOp op) const {
-    return mlir::cast<IntegerAttr>(op.getValue()).getValue();
+    // Extend width by 1 bit to avoid sign issues.
+    auto value = mlir::cast<IntegerAttr>(op.getValue()).getValue();
+    return value.zext(value.getBitWidth() + 1);
   }
 };
 
@@ -802,12 +804,8 @@ class PassImpl : public pcl::impl::PCLLoweringPassBase<PassImpl> {
 
   // PCL programs require a module-level attribute specifying the prime.
   LogicalResult setPrime(llvm::APInt &prime) {
-    // Add an extra bit to avoid the prime being represented as a negative number
-    auto newBitWidth = prime.getBitWidth() + 1;
-    auto ty = IntegerType::get(&getContext(), newBitWidth);
-    auto intAttr = IntegerAttr::get(ty, prime.zext(newBitWidth));
     getOperation()->setAttrs(DictionaryAttr::get(&getContext()));
-    getOperation()->setAttr("pcl.prime", pcl::PrimeAttr::get(&getContext(), intAttr));
+    getOperation()->setAttr("pcl.prime", pcl::PrimeAttr::get(&getContext(), prime));
 
     return success();
   }

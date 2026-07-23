@@ -132,7 +132,7 @@ static void emitBool(Value v, raw_ostream &os, NameState &ns) {
   }
   if (auto det = v.getDefiningOp<pcl::DetOp>()) {
     os << "(det ";
-    emitExpr(det.getA(), os, ns);
+    emitExpr(det.getExpr(), os, ns);
     os << ')';
     return;
   }
@@ -147,7 +147,7 @@ LogicalResult pcl::moduleToPcl(ModuleOp mod, raw_ostream &os) {
   if (!prime) {
     return mod.emitError("missing 'pcl.prime'");
   }
-  os << "(prime-number " << prime.getValue().getValue() << ")\n";
+  os << "(prime-number " << prime.getValue() << ")\n";
 
   for (auto fn : mod.getOps<func::FuncOp>()) {
     NameState ns;

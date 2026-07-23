@@ -14,7 +14,7 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<2013265921 : i65>} {
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<2013265921>} {
 // CHECK-NEXT:    func.func @A() {
 // CHECK-NEXT:      %0 = pcl.var "_nondet_internal_var__0" false
 // CHECK-NEXT:      return
@@ -39,7 +39,7 @@ module attributes {llzk.lang} {
   }
 }
 
-// CHECK-LABEL:  module attributes {pcl.prime = #pcl.prime<2013265921 : i65>} {
+// CHECK-LABEL:  module attributes {pcl.prime = #pcl.prime<2013265921>} {
 // CHECK-NEXT:    func.func @B() {
 // CHECK-NEXT:      %0 = pcl.var "_nondet_internal_var__0" false
 // CHECK-NEXT:      %1 = pcl.var "_nondet_internal_var__1" false
