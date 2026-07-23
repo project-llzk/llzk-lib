@@ -7,6 +7,11 @@ module attributes {llzk.lang} {
       %n = poly.read_const @N : index
       function.return %n : index
     }
+
+    function.def @other() -> index {
+      %value = arith.constant 8 : index
+      function.return %value : index
+    }
   }
 
   function.def @T_35_compute() -> index {
@@ -17,16 +22,28 @@ module attributes {llzk.lang} {
   function.def @main() -> index {
     %got = function.call @T::@compute<[35]>() : () -> index
     %got_again = function.call @T::@compute<[35]>() : () -> index
-    function.return %got_again : index
+    %different_binding = function.call @T::@compute<[36]>() : () -> index
+    %different_binding_again = function.call @T::@compute<[36]>() : () -> index
+    %different_source = function.call @T::@other<[35]>() : () -> index
+    %different_source_again = function.call @T::@other<[35]>() : () -> index
+    function.return %different_source_again : index
   }
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK:       function.def @[[FULL_CLONE:T_35_compute_[0-9]+]]() -> index {
+// CHECK:       function.def @[[COMPUTE_35:T_35_compute_[0-9]+]]() -> index {
 // CHECK:         arith.constant 35 : index
+// CHECK:       function.def @[[COMPUTE_36:T_36_compute]]() -> index {
+// CHECK:         arith.constant 36 : index
+// CHECK:       function.def @[[OTHER_35:T_35_other]]() -> index {
+// CHECK:         arith.constant 8 : index
 // CHECK:       function.def @main() -> index {
-// CHECK:         function.call @[[FULL_CLONE]]()
-// CHECK-NEXT:    function.call @[[FULL_CLONE]]()
+// CHECK:         function.call @[[COMPUTE_35]]()
+// CHECK-NEXT:    function.call @[[COMPUTE_35]]()
+// CHECK-NEXT:    function.call @[[COMPUTE_36]]()
+// CHECK-NEXT:    function.call @[[COMPUTE_36]]()
+// CHECK-NEXT:    function.call @[[OTHER_35]]()
+// CHECK-NEXT:    function.call @[[OTHER_35]]()
 
 // -----
 
@@ -46,18 +63,35 @@ module attributes {llzk.lang} {
       %value = arith.constant 7 : index
       function.return %value : index
     }
+
+    function.def @other() -> index {
+      %value = arith.constant 8 : index
+      function.return %value : index
+    }
   }
 
   function.def @main() -> index {
     %got = function.call @T::@compute<[35, ?]>() : () -> index
     %got_again = function.call @T::@compute<[35, ?]>() : () -> index
-    function.return %got_again : index
+    %different_binding = function.call @T::@compute<[36, ?]>() : () -> index
+    %different_binding_again = function.call @T::@compute<[36, ?]>() : () -> index
+    %different_source = function.call @T::@other<[35, ?]>() : () -> index
+    %different_source_again = function.call @T::@other<[35, ?]>() : () -> index
+    function.return %different_source_again : index
   }
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK:       poly.template @"[[PARTIAL_CLONE:T_35_\\1A_[0-9]+]]" {
+// CHECK:       poly.template @"[[COMPUTE_35:T_35_\\1A_[0-9]+]]" {
 // CHECK:         arith.constant 7 : index
+// CHECK:       poly.template @"[[COMPUTE_36:T_36_\\1A]]" {
+// CHECK:         arith.constant 7 : index
+// CHECK:       poly.template @"[[OTHER_35:T_35_\\1A_[0-9]+]]" {
+// CHECK:         arith.constant 8 : index
 // CHECK:       function.def @main() -> index {
-// CHECK:         function.call @"[[PARTIAL_CLONE]]"::@compute<[?]>()
-// CHECK-NEXT:    function.call @"[[PARTIAL_CLONE]]"::@compute<[?]>()
+// CHECK:         function.call @"[[COMPUTE_35]]"::@compute<[?]>()
+// CHECK-NEXT:    function.call @"[[COMPUTE_35]]"::@compute<[?]>()
+// CHECK-NEXT:    function.call @"[[COMPUTE_36]]"::@compute<[?]>()
+// CHECK-NEXT:    function.call @"[[COMPUTE_36]]"::@compute<[?]>()
+// CHECK-NEXT:    function.call @"[[OTHER_35]]"::@other<[?]>()
+// CHECK-NEXT:    function.call @"[[OTHER_35]]"::@other<[?]>()
