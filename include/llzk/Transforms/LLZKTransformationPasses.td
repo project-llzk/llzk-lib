@@ -127,6 +127,33 @@ def EnforceNoMemberOverwritePass : LLZKPass<"llzk-enforce-no-overwrite"> {
   }];
 }
 
+def ArithmetizeSCFIfPass : LLZKPass<"llzk-arithmetize-scf-if"> {
+  let summary =
+      "Replace constraint-side scf.if operations with select polynomials";
+  let description = [{
+    Rewrites `scf.if` operations inside constraint-bearing functions (those
+    marked `function.allow_constraint`) into straight-line felt arithmetic.
+    Felt results become
+
+        else + condition * (then - else)
+
+    where the `i1` condition is converted to a felt. Equality constraints in
+    the then and else regions are gated by `condition` and `1 - condition`,
+    respectively, so constraints from the inactive branch do not apply.
+    Nested conditionals accumulate the enclosing gates.
+
+    Both branches execute after the rewrite. The pass therefore accepts only
+    speculatable operations (including `llzk.nondet`) and felt equality
+    constraints in the regions. Other effects and non-felt results or
+    constraints are rejected.
+
+    Run `-llzk-algebraize-felt-ops` first when branch bodies contain felt
+    division or non-native felt operations. Algebraization turns their
+    branch-local validity constraints into equality constraints that this
+    pass can gate safely.
+  }];
+}
+
 def WhileToForPass : LLZKPass<"llzk-while-to-for"> {
   let summary =
       "Converts scf.while loops to equivalent scf.for loops when possible";
