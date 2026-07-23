@@ -1,0 +1,79 @@
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+    struct.def @A {
+        function.def @product(%x: !felt.type, %y: !felt.type) -> !struct.type<@A> {
+            %self = struct.new : <@A>
+            %ok = bool.cmp lt(%x, %y)
+            verif.assert %ok
+            function.return %self : !struct.type<@A>
+        }
+    }
+
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @A {
+// CHECK-NEXT:      function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@A> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@A>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_0]], %[[VAL_1]]) : !felt.type, !felt.type
+// CHECK-NEXT:        verif.assert %[[VAL_3]]
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@A>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+    struct.def @Sum {
+        struct.member @sum : !felt.type
+        function.def @product(%x: !felt.type, %y: !felt.type) -> !struct.type<@Sum> {
+            %self = struct.new : <@Sum>
+            %sum = felt.add %x, %y
+            struct.writem %self[@sum] = %sum : <@Sum>, !felt.type
+
+            %written_sum = struct.readm %self[@sum] : <@Sum>, !felt.type
+            %required_sum = felt.add %x, %y
+            %ok = bool.cmp eq(%written_sum, %required_sum)
+            verif.prove %ok
+
+            function.return %self : !struct.type<@Sum>
+        }
+    }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Sum {
+// CHECK-NEXT:      struct.member @sum : !felt.type
+// CHECK-NEXT:      function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Sum> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Sum>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@sum] = %[[VAL_3]] : <@Sum>, !felt.type
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@sum] : <@Sum>, !felt.type
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = bool.cmp eq(%[[VAL_4]], %[[VAL_5]]) : !felt.type, !felt.type
+// CHECK-NEXT:        verif.prove %[[VAL_6]]
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@Sum>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+    func.func @lowered(%x: !smt.int, %y: !smt.int) -> !smt.int {
+        %sum_w = smt.declare_fun "sum_w" : !smt.int
+        %sum = smt.int.add %x, %y
+        %ok = smt.eq %sum_w, %sum : !smt.int
+        verif.smt_prove %ok
+        func.return %x : !smt.int
+    }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    func.func @lowered(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !smt.int) -> !smt.int {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = smt.declare_fun "sum_w" : !smt.int
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = smt.int.add %[[VAL_0]], %[[VAL_1]]
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = smt.eq %[[VAL_2]], %[[VAL_3]] : !smt.int
+// CHECK-NEXT:      verif.smt_prove %[[VAL_4]]
+// CHECK-NEXT:      return %[[VAL_0]] : !smt.int
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

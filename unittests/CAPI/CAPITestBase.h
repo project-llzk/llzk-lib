@@ -17,6 +17,7 @@
 #include "llzk/Dialect/Bool/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
+#include "llzk/Dialect/SMT/IR/SMTOps.h"
 #include "llzk/Dialect/Shared/Builders.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 
@@ -98,6 +99,15 @@ public:
   static mlir::Value cppGenBoolConstant(MlirOpBuilder builder, MlirLocation location) {
     mlir::OpBuilder *cppBuilder = unwrap(builder);
     return cppBuilder->create<mlir::arith::ConstantOp>(
+        unwrap(location), cppBuilder->getAttr<mlir::BoolAttr>(true)
+    );
+  }
+
+  /// Build an SMT boolean constant value, using C++ API to avoid indirectly testing other
+  ///  LLZK C API functions within the tests.
+  static mlir::Value cppGenSMTBoolConstant(MlirOpBuilder builder, MlirLocation location) {
+    mlir::OpBuilder *cppBuilder = unwrap(builder);
+    return cppBuilder->create<llzk::smt::BoolConstantOp>(
         unwrap(location), cppBuilder->getAttr<mlir::BoolAttr>(true)
     );
   }
