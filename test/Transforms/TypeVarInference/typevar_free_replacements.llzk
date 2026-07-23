@@ -1,0 +1,128 @@
+// RUN: llzk-opt -split-input-file -llzk-infer-tvar -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+#map = affine_map<()[s0] -> (s0)>
+
+module attributes {llzk.lang} {
+  poly.template @InferAffineArrayDim {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @id(%arg: !poly.tvar<@T>) -> !array.type<#map x index> {
+      %cast = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> !array.type<#map x index>
+      function.return %cast : !array.type<#map x index>
+    }
+  }
+}
+// CHECK-LABEL: #map = affine_map<()[s0] -> (s0)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @InferAffineArrayDim {
+// CHECK-NEXT:      function.def @id(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<#map x index>) -> !array.type<#map x index> {
+// CHECK-NEXT:        function.return %[[VAL_0]] : !array.type<#map x index>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @InferSymbolArrayDim {
+    poly.param @N : index
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @id(%arg: !poly.tvar<@T>) -> !array.type<@N x index> {
+      %cast = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> !array.type<@N x index>
+      function.return %cast : !array.type<@N x index>
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @InferSymbolArrayDim {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      function.def @id(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<@N x index>) -> !array.type<@N x index> {
+// CHECK-NEXT:        function.return %[[VAL_0]] : !array.type<@N x index>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+#map = affine_map<()[s0] -> (s0)>
+
+module attributes {llzk.lang} {
+  poly.template @AffineParamBox {
+    poly.param @M
+
+    struct.def @Box {
+      function.def @product() -> !struct.type<@AffineParamBox::@Box<[@M]>> {
+        %self = struct.new : !struct.type<@AffineParamBox::@Box<[@M]>>
+        function.return %self : !struct.type<@AffineParamBox::@Box<[@M]>>
+      }
+    }
+  }
+
+  poly.template @InferAffineStructParam {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @id(%arg: !poly.tvar<@T>) -> !struct.type<@AffineParamBox::@Box<[#map]>> {
+      %cast = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> !struct.type<@AffineParamBox::@Box<[#map]>>
+      function.return %cast : !struct.type<@AffineParamBox::@Box<[#map]>>
+    }
+  }
+}
+// CHECK-LABEL: #map = affine_map<()[s0] -> (s0)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @AffineParamBox {
+// CHECK-NEXT:      poly.param @M
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        function.def @product() -> !struct.type<@AffineParamBox::@Box<[@M]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new  : <@AffineParamBox::@Box<[@M]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@AffineParamBox::@Box<[@M]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @InferAffineStructParam {
+// CHECK-NEXT:      function.def @id(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@AffineParamBox::@Box<[#map]>>) -> !struct.type<@AffineParamBox::@Box<[#map]>> {
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@AffineParamBox::@Box<[#map]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @SymbolParamBox {
+    poly.param @N : index
+
+    struct.def @Box {
+      function.def @product() -> !struct.type<@SymbolParamBox::@Box<[@N]>> {
+        %self = struct.new : !struct.type<@SymbolParamBox::@Box<[@N]>>
+        function.return %self : !struct.type<@SymbolParamBox::@Box<[@N]>>
+      }
+    }
+  }
+
+  poly.template @RejectSymbolStructParam {
+    poly.param @N : index
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @id(%arg: !poly.tvar<@T>) -> !struct.type<@SymbolParamBox::@Box<[@N]>> {
+      %cast = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> !struct.type<@SymbolParamBox::@Box<[@N]>>
+      function.return %cast : !struct.type<@SymbolParamBox::@Box<[@N]>>
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @SymbolParamBox {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        function.def @product() -> !struct.type<@SymbolParamBox::@Box<[@N]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new  : <@SymbolParamBox::@Box<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@SymbolParamBox::@Box<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @RejectSymbolStructParam {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @id(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !struct.type<@SymbolParamBox::@Box<[@N]>> {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_1]] : (!poly.tvar<@T>) -> !struct.type<@SymbolParamBox::@Box<[@N]>>
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@SymbolParamBox::@Box<[@N]>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
