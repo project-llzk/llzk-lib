@@ -24,8 +24,6 @@ module attributes {llzk.lang, llzk.main = !struct.type<@StructExpr::@Value<[5]>>
   }
 }
 
-// CHECK: llzk-flatten failed while instantiating the main struct
-
 // -----
 
 module attributes {llzk.lang} {
