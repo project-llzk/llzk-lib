@@ -1362,9 +1362,6 @@ buildParamNameToCallArg(ArrayAttr callParams, ArrayRef<StringAttr> oldParamOrder
   return paramNameToCallArg;
 }
 
-static Type
-substituteCallTemplateParams(Type ty, const DenseMap<Attribute, Attribute> &paramNameToCallArg);
-
 /// Substitute explicit type-valued call arguments into a symbolic replacement type.
 ///
 /// This handles the common replacement-type check where only `!poly.tvar`
@@ -1390,30 +1387,41 @@ substituteExplicitCallTypeArgs(Type ty, ArrayAttr callParams, ArrayRef<StringAtt
   return converter.convertType(ty);
 }
 
+/// Substitutes explicit call arguments through target-side types and attributes.
+class ExplicitCallTemplateParamSubstituter {
+  /// Original target template parameter symbols mapped to call-site arguments.
+  const DenseMap<Attribute, Attribute> &paramNameToCallArg_;
+  /// Parameter symbols currently being expanded, used to break recursive mappings.
+  DenseSet<Attribute> resolvingParams_;
+
+public:
+  explicit ExplicitCallTemplateParamSubstituter(
+      const DenseMap<Attribute, Attribute> &paramNameToCallArg
+  )
+      : paramNameToCallArg_(paramNameToCallArg) {}
+
+  Type substituteType(Type ty);
+  Attribute substituteAttr(Attribute attr);
+};
+
 /// Substitute explicit call arguments inside a template-argument attribute.
-///
-/// Flat parameter symbols are replaced directly. Type-bearing attributes are
-/// recursively converted so nested struct parameters, array dimensions, and
-/// type variables are kept in sync with the same call-site instantiation.
-static Attribute substituteCallTemplateParamAttr(
-    Attribute attr, const DenseMap<Attribute, Attribute> &paramNameToCallArg
-) {
+Attribute ExplicitCallTemplateParamSubstituter::substituteAttr(Attribute attr) {
   if (!attr) {
     return attr;
   }
-  auto it = paramNameToCallArg.find(attr);
-  if (it != paramNameToCallArg.end()) {
+  auto it = paramNameToCallArg_.find(attr);
+  if (it != paramNameToCallArg_.end()) {
     return it->second;
   }
   if (auto tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
-    Type newTy = substituteCallTemplateParams(tyAttr.getValue(), paramNameToCallArg);
+    Type newTy = substituteType(tyAttr.getValue());
     return newTy == tyAttr.getValue() ? attr : TypeAttr::get(newTy);
   }
   if (auto arrAttr = llvm::dyn_cast<ArrayAttr>(attr)) {
     SmallVector<Attribute> newAttrs;
     bool changed = false;
     for (Attribute nested : arrAttr.getValue()) {
-      Attribute newNested = substituteCallTemplateParamAttr(nested, paramNameToCallArg);
+      Attribute newNested = substituteAttr(nested);
       newAttrs.push_back(newNested);
       changed |= newNested != nested;
     }
@@ -1429,28 +1437,36 @@ static Attribute substituteCallTemplateParamAttr(
 /// the call-site argument list. The helper is used while collecting
 /// cross-template facts, where leaving a callee-local symbol in the inferred
 /// caller type would produce invalid IR after replacement.
-static Type
-substituteCallTemplateParams(Type ty, const DenseMap<Attribute, Attribute> &paramNameToCallArg) {
+Type ExplicitCallTemplateParamSubstituter::substituteType(Type ty) {
   if (!ty) {
     return ty;
   }
   if (auto tvarTy = llvm::dyn_cast<TypeVarType>(ty)) {
-    auto it = paramNameToCallArg.find(tvarTy.getNameRef());
-    if (it == paramNameToCallArg.end()) {
+    Attribute paramRef = tvarTy.getNameRef();
+    auto it = paramNameToCallArg_.find(paramRef);
+    if (it == paramNameToCallArg_.end()) {
       return ty;
     }
     auto tyAttr = llvm::dyn_cast<TypeAttr>(it->second);
-    return tyAttr ? substituteCallTemplateParams(tyAttr.getValue(), paramNameToCallArg) : ty;
+    if (!tyAttr || tyAttr.getValue() == ty) {
+      return ty;
+    }
+    if (!resolvingParams_.insert(paramRef).second) {
+      return ty;
+    }
+    Type replacement = substituteType(tyAttr.getValue());
+    resolvingParams_.erase(paramRef);
+    return replacement;
   }
   if (auto arrTy = llvm::dyn_cast<ArrayType>(ty)) {
     SmallVector<Attribute> newDims;
     bool changed = false;
     for (Attribute dim : arrTy.getDimensionSizes()) {
-      Attribute newDim = substituteCallTemplateParamAttr(dim, paramNameToCallArg);
+      Attribute newDim = substituteAttr(dim);
       newDims.push_back(newDim);
       changed |= newDim != dim;
     }
-    Type newElemTy = substituteCallTemplateParams(arrTy.getElementType(), paramNameToCallArg);
+    Type newElemTy = substituteType(arrTy.getElementType());
     if (!changed && newElemTy == arrTy.getElementType()) {
       return arrTy;
     }
@@ -1466,7 +1482,7 @@ substituteCallTemplateParams(Type ty, const DenseMap<Attribute, Attribute> &para
     SmallVector<Attribute> newParams;
     bool changed = false;
     for (Attribute param : params.getValue()) {
-      Attribute newParam = substituteCallTemplateParamAttr(param, paramNameToCallArg);
+      Attribute newParam = substituteAttr(param);
       newParams.push_back(newParam);
       changed |= newParam != param;
     }
@@ -1477,7 +1493,7 @@ substituteCallTemplateParams(Type ty, const DenseMap<Attribute, Attribute> &para
     SmallVector<RecordAttr> newRecords;
     bool changed = false;
     for (RecordAttr record : podTy.getRecords()) {
-      Type newRecordTy = substituteCallTemplateParams(record.getType(), paramNameToCallArg);
+      Type newRecordTy = substituteType(record.getType());
       newRecords.push_back(RecordAttr::get(ty.getContext(), record.getName(), newRecordTy));
       changed |= newRecordTy != record.getType();
     }
@@ -1490,12 +1506,12 @@ substituteCallTemplateParams(Type ty, const DenseMap<Attribute, Attribute> &para
     newInputs.reserve(funcTy.getNumInputs());
     newResults.reserve(funcTy.getNumResults());
     for (Type inputTy : funcTy.getInputs()) {
-      Type newInputTy = substituteCallTemplateParams(inputTy, paramNameToCallArg);
+      Type newInputTy = substituteType(inputTy);
       newInputs.push_back(newInputTy);
       changed |= newInputTy != inputTy;
     }
     for (Type resultTy : funcTy.getResults()) {
-      Type newResultTy = substituteCallTemplateParams(resultTy, paramNameToCallArg);
+      Type newResultTy = substituteType(resultTy);
       newResults.push_back(newResultTy);
       changed |= newResultTy != resultTy;
     }
@@ -1508,7 +1524,9 @@ substituteCallTemplateParams(Type ty, const DenseMap<Attribute, Attribute> &para
 static Type substituteExplicitCallTemplateParams(
     Type ty, ArrayAttr callParams, ArrayRef<StringAttr> oldParamOrder
 ) {
-  return substituteCallTemplateParams(ty, buildParamNameToCallArg(callParams, oldParamOrder));
+  auto paramNameToCallArg = buildParamNameToCallArg(callParams, oldParamOrder);
+  ExplicitCallTemplateParamSubstituter substituter(paramNameToCallArg);
+  return substituter.substituteType(ty);
 }
 
 /// Return whether a flat symbol reference names `paramName`.
@@ -2011,9 +2029,9 @@ private:
             callableOp.getContext(), targetInfo.templatePath, targetInfo.oldParamOrder,
             targetReplacements, /*trimResolvedParams=*/false
         );
-        Type rewrittenTy = converter.convertType(targetSignature);
-        rewrittenTy =
-            substituteExplicitCallTemplateParams(rewrittenTy, params, targetInfo.oldParamOrder);
+        Type rewrittenTy = substituteExplicitCallTemplateParams(
+            converter.convertType(targetSignature), params, targetInfo.oldParamOrder
+        );
         if (failed(collectTypeInferences(
                 callableOp.getTypeSignature(), llvm::cast<FunctionType>(rewrittenTy),
                 callableOp.getLoc()

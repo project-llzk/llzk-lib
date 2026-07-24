@@ -1855,3 +1855,61 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_2]] : !struct.type<@Sized::@Box<[4]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TDeferredSelfForwardCallee {
+    poly.param @A : !poly.tvar<@A>
+    poly.param @R : !poly.tvar<@R>
+
+    function.def @forward(%lhs: !poly.tvar<@A>, %rhs: !poly.tvar<@R>) -> !poly.tvar<@R> {
+      %index = poly.unifiable_cast %lhs : (!poly.tvar<@A>) -> index
+      function.return %rhs : !poly.tvar<@R>
+    }
+  }
+
+  poly.template @TDeferredSelfForwardCaller {
+    poly.param @A : !poly.tvar<@A>
+    poly.param @R : !poly.tvar<@R>
+
+    function.def @forward(%lhs: !poly.tvar<@A>, %rhs: !poly.tvar<@R>) -> !poly.tvar<@R> {
+      %forwarded = function.call @TDeferredSelfForwardCallee::@forward<[!poly.tvar<@A>, !poly.tvar<@R>]>(%lhs, %rhs) : (!poly.tvar<@A>, !poly.tvar<@R>) -> !poly.tvar<@R>
+      function.return %forwarded : !poly.tvar<@R>
+    }
+  }
+
+  function.def @call_forward(%lhs: index, %rhs: !felt.type) -> !felt.type {
+    %0 = function.call @TDeferredSelfForwardCaller::@forward<[index, !felt.type]>(%lhs, %rhs) : (index, !felt.type) -> !felt.type
+    function.return %0 : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TDeferredSelfForwardCallee_i_f {
+// CHECK-NEXT:      function.def @forward(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:        function.return %[[VAL_1]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TDeferredSelfForwardCallee {
+// CHECK-NEXT:      poly.param @R : !poly.tvar<@R>
+// CHECK-NEXT:      function.def @forward(%[[VAL_2:[0-9a-zA-Z_\.]+]]: index, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !poly.tvar<@R>) -> !poly.tvar<@R> {
+// CHECK-NEXT:        function.return %[[VAL_3]] : !poly.tvar<@R>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TDeferredSelfForwardCaller_i_f {
+// CHECK-NEXT:      function.def @forward(%[[VAL_4:[0-9a-zA-Z_\.]+]]: index, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @TDeferredSelfForwardCallee_i_f::@forward(%[[VAL_4]], %[[VAL_5]]) : (index, !felt.type) -> !felt.type
+// CHECK-NEXT:        function.return %[[VAL_6]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TDeferredSelfForwardCaller {
+// CHECK-NEXT:      poly.param @R : !poly.tvar<@R>
+// CHECK-NEXT:      function.def @forward(%[[VAL_7:[0-9a-zA-Z_\.]+]]: index, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !poly.tvar<@R>) -> !poly.tvar<@R> {
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @TDeferredSelfForwardCallee::@forward<[!poly.tvar<@R>]>(%[[VAL_7]], %[[VAL_8]]) : (index, !poly.tvar<@R>) -> !poly.tvar<@R>
+// CHECK-NEXT:        function.return %[[VAL_9]] : !poly.tvar<@R>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_forward(%[[VAL_10:[0-9a-zA-Z_\.]+]]: index, %[[VAL_11:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @TDeferredSelfForwardCaller_i_f::@forward(%[[VAL_10]], %[[VAL_11]]) : (index, !felt.type) -> !felt.type
+// CHECK-NEXT:      function.return %[[VAL_12]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
