@@ -253,7 +253,8 @@ bool podTypesUnify(
 /// full instantiation of template parameters.
 bool functionTypesUnify(
     mlir::FunctionType lhs, mlir::FunctionType rhs,
-    mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}, UnificationMap *unifications = nullptr
+    mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}, UnificationMap *unifications = nullptr,
+    bool trackEqualSymbolRefs = false
 );
 
 /// Return `true` iff the two Type instances are equivalent or could be equivalent after full

@@ -1,0 +1,6 @@
+// RUN: llzk-witgen %S/../FrontendLang/Circom/large_const_main.llzk --inputs %S/Inputs/felt_template_parameter_input.json --check-output %S/Inputs/felt_template_parameter_output.json | FileCheck %s
+// RUN: llzk-witgen %S/../FrontendLang/Circom/large_const_main.llzk --inputs %S/Inputs/felt_template_parameter_input.json --backend=execution-engine --check-output %S/Inputs/felt_template_parameter_output.json | FileCheck %s
+
+// Exercise the complete frontend fixture so both witness backends consume a felt template argument
+// after flattening.
+// CHECK: output matched expected JSON

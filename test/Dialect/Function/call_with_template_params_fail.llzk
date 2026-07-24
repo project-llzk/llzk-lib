@@ -21,6 +21,73 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@MissingTemplateParams>) { function.return }
   }
 }
+
+// -----
+
+// A forwarded symbolic argument must satisfy the target's declared restriction.
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) { function.return }
+    }
+  }
+
+  poly.template @Target {
+    poly.param @N : !felt.type<"bn128">
+
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@N]>>) { function.return }
+  }
+
+  poly.template @Caller {
+    poly.param @M : !felt.type<"goldilocks">
+
+    function.def @forward(%value: !struct.type<@BoxTemplate::@Box<[@M]>>) {
+      // expected-error@+1 {{'function.call' op instantiation value '@M' is not compatible with parameter "@N" type restriction '!felt.type<"bn128">'}}
+      function.call @Target::@accept(%value) : (!struct.type<@BoxTemplate::@Box<[@M]>>) -> ()
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Syntactic use inside another template does not infer a target template argument.
+module attributes {llzk.lang} {
+  poly.template @Inner {
+    poly.param @M
+
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@Inner::@Box<[@M]>> {
+        %self = struct.new : <@Inner::@Box<[@M]>>
+        function.return %self : !struct.type<@Inner::@Box<[@M]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@Inner::@Box<[@M]>>) { function.return }
+    }
+  }
+
+  poly.template @Outer {
+    poly.param @N : !felt.type<"bn128">
+
+    function.def @accept(%value: !struct.type<@Inner::@Box<[@N]>>) { function.return }
+  }
+
+  function.def @requireInferredValue(
+      %value: !struct.type<@Inner::@Box<[#felt<const 35 : !felt.type<"goldilocks">>]>>
+  ) {
+    // expected-error@+1 {{'function.call' op instantiation value '#felt<const 35 : <"goldilocks">> : !felt.type<"goldilocks">' is not compatible with parameter "@N" type restriction '!felt.type<"bn128">'}}
+    function.call @Outer::@accept(%value) : (!struct.type<@Inner::@Box<[#felt<const 35 : !felt.type<"goldilocks">>]>>) -> ()
+    function.return
+  }
+}
+
 // -----
 module attributes {llzk.lang} {
   poly.template @GlobalFunc {
@@ -236,5 +303,27 @@ module attributes {llzk.lang} {
     }
 
     function.def @constrain(%self: !struct.type<@CannotUnifyWithInferredD>) { function.return }
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @A : !felt.type<"bn128">
+
+    function.def @id() -> index {
+      %value = arith.constant 7 : index
+      function.return %value : index
+    }
+  }
+
+  struct.def @WrongFeltField {
+    function.def @compute() -> !struct.type<@WrongFeltField> {
+      %self = struct.new : !struct.type<@WrongFeltField>
+      // expected-error@+1 {{'function.call' op instantiation value '#felt<const 35 : <"goldilocks">> : !felt.type<"goldilocks">' is not compatible with parameter "@A" type restriction '!felt.type<"bn128">'}}
+      %0 = function.call @GlobalFunc::@id<[#felt<const 35 : !felt.type<"goldilocks">>]>() : () -> index
+      function.return %self : !struct.type<@WrongFeltField>
+    }
+
+    function.def @constrain(%self: !struct.type<@WrongFeltField>) { function.return }
   }
 }

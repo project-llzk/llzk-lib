@@ -338,7 +338,25 @@ public:
   LogicalResult handleRewrite(
       Attribute, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, FeltConstAttr a
   ) const {
-    replaceOpWithNewOp<FeltConstantOp>(rewriter, op, a);
+    Type origResTy = op.getType();
+    Type newResTy = getTypeConverter()->convertType(origResTy);
+    if (!newResTy) {
+      return op->emitOpError().append("could not convert result type ", origResTy);
+    }
+
+    FeltType ty = llvm::dyn_cast<FeltType>(newResTy);
+    if (!ty) {
+      return op->emitOpError().append("unexpected result type ", newResTy);
+    }
+    FailureOr<FeltType> materializedType = a.getMaterializedType(ty);
+    if (failed(materializedType)) {
+      return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+        diag << "cannot materialize constant from field '" << a.getType() << "' as '" << ty << "'";
+      });
+    }
+    replaceOpWithNewOp<FeltConstantOp>(
+        rewriter, op, FeltConstAttr::get(getContext(), a.getValue(), *materializedType)
+    );
     return success();
   }
 };
@@ -437,12 +455,18 @@ evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramN
       if (it == paramNameToConcrete.end()) {
         return std::nullopt; // a referenced param is not concrete
       }
-      // If the attribute type is `FeltType` but it's stored as an IntegerAttr, promote to
-      // a `FeltConstAttr`.
+      // Interpret numeric template values in the read's field so folding observes the same type
+      // that body conversion will materialize.
       Attribute val = it->second;
-      if (auto intAttr = llvm::dyn_cast<IntegerAttr>(val)) {
-        if (auto feltTy = llvm::dyn_cast<FeltType>(constReadOp.getResult().getType())) {
+      if (auto feltTy = llvm::dyn_cast<FeltType>(constReadOp.getType())) {
+        if (auto intAttr = llvm::dyn_cast<IntegerAttr>(val)) {
           val = FeltConstAttr::get(bodyOp.getContext(), intAttr.getValue(), feltTy);
+        } else if (auto feltAttr = llvm::dyn_cast<FeltConstAttr>(val)) {
+          FailureOr<FeltType> materializedType = feltAttr.getMaterializedType(feltTy);
+          if (failed(materializedType)) {
+            return std::nullopt;
+          }
+          val = FeltConstAttr::get(bodyOp.getContext(), feltAttr.getValue(), *materializedType);
         }
       }
       valueMap[constReadOp.getResult()] = val;

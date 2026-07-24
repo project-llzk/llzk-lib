@@ -528,6 +528,74 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_5]]
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
+// -----
+
+// Fieldless and explicitly matching felt constants both satisfy a felt restriction.
+module attributes {llzk.lang} {
+  poly.template @SpecTemplate {
+    poly.param @N : !felt.type<"bn128">
+
+    function.def @token() { function.return }
+
+    verif.contract @Base for @SpecTemplate::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+
+    verif.contract @Wrapper for @SpecTemplate::@token () {
+      verif.include @SpecTemplate::@Base<[#felt<const 9>]>() : () -> ()
+      verif.include @SpecTemplate::@Base<[#felt<const 9 : !felt.type<"bn128">>]>() : () -> ()
+    }
+  }
+}
+// CHECK-LABEL: verif.contract @Wrapper
+// CHECK:         verif.include @SpecTemplate::@Base<[#felt<const 9>]>()
+// CHECK:         verif.include @SpecTemplate::@Base<[#felt<const 9 : <"bn128">>]>()
+
+// -----
+
+// An explicit fieldless felt matches the same fielded value inferred from the contract signature.
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) { function.return }
+    }
+  }
+
+  poly.template @Target {
+    poly.param @N : !felt.type<"bn128">
+
+    function.def @token(%value: !struct.type<@BoxTemplate::@Box<[@N]>>) { function.return }
+
+    verif.contract @Base for @Target::@token (%value: !struct.type<@BoxTemplate::@Box<[@N]>>) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  function.def @caller(
+      %value: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>
+  ) {
+    function.return
+  }
+
+  verif.contract @MatchingFieldlessExplicitWithInferredField for @caller (
+      %value: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>
+  ) {
+    verif.include @Target::@Base<[#felt<const 35>]>(%value) : (!struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>) -> ()
+  }
+}
+// CHECK-LABEL: verif.contract @MatchingFieldlessExplicitWithInferredField
+// CHECK:         verif.include @Target::@Base<[#felt<const 35>]>
+
 // -----
 
 module attributes {llzk.lang} {

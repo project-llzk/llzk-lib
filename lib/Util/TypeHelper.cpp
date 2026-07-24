@@ -44,6 +44,26 @@ using namespace polymorphic;
 using namespace string;
 using namespace pod;
 
+namespace {
+
+std::string escapeFeltFieldName(StringRef value) {
+  std::string encoded;
+  for (char c : value) {
+    if (c == '\x1A' || c == '%') {
+      constexpr char HEX[] = "0123456789ABCDEF";
+      unsigned char byte = static_cast<unsigned char>(c);
+      encoded.push_back('%');
+      encoded.push_back(HEX[byte >> 4]);
+      encoded.push_back(HEX[byte & 0x0F]);
+    } else {
+      encoded.push_back(c);
+    }
+  }
+  return encoded;
+}
+
+} // namespace
+
 /// Template pattern for performing some operation by cases based on a given LLZK type. This
 /// pattern allows any missing cases in a new implementation to be reported by the compiler.
 template <typename Derived, typename ResultType> struct LLZKTypeSwitch {
@@ -163,6 +183,14 @@ BuildShortTypeString &BuildShortTypeString::append(Attribute a) {
     Type ty = ia.getType();
     bool isUnsigned = ty.isUnsignedInteger() || ty.isSignlessInteger(1);
     ia.getValue().print(ss, !isUnsigned);
+  } else if (auto fa = llvm::dyn_cast<FeltConstAttr>(a)) {
+    ss << "f<";
+    fa.getValue().print(ss, false);
+    if (StringAttr fieldName = fa.getFieldName()) {
+      std::string encodedField = escapeFeltFieldName(fieldName.getValue());
+      ss << ':' << encodedField.size() << ':' << encodedField;
+    }
+    ss << '>';
   } else if (auto sra = llvm::dyn_cast<SymbolRefAttr>(a)) {
     appendSymRef(sra);
   } else if (auto ta = llvm::dyn_cast<TypeAttr>(a)) {
@@ -625,13 +653,18 @@ using AffineInstantiations = DenseMap<std::pair<AffineMapAttr, Side>, IntegerAtt
 struct UnifierImpl {
   ArrayRef<StringRef> rhsRevPrefix;
   UnificationMap *unifications;
+  bool trackEqualSymbolRefs;
   AffineInstantiations *affineToIntTracker;
   // This optional function can be used to provide an exception to the standard unification
   // rules and return a true/success result when it otherwise may not.
   llvm::function_ref<bool(Type oldTy, Type newTy)> overrideSuccess;
 
-  UnifierImpl(UnificationMap *unificationMap, ArrayRef<StringRef> rhsReversePrefix = {})
-      : rhsRevPrefix(rhsReversePrefix), unifications(unificationMap), affineToIntTracker(nullptr),
+  UnifierImpl(
+      UnificationMap *unificationMap, ArrayRef<StringRef> rhsReversePrefix = {},
+      bool trackEqualSymbolRefsFlag = false
+  )
+      : rhsRevPrefix(rhsReversePrefix), unifications(unificationMap),
+        trackEqualSymbolRefs(trackEqualSymbolRefsFlag), affineToIntTracker(nullptr),
         overrideSuccess(nullptr) {}
 
   UnifierImpl &trackAffineToInt(AffineInstantiations *tracker) {
@@ -738,6 +771,9 @@ struct UnifierImpl {
 
   bool typesUnify(Type lhs, Type rhs) {
     if (lhs == rhs) {
+      if (trackEqualSymbolRefs) {
+        lhs.walk([this](SymbolRefAttr symRef) { track(Side::LHS, symRef, symRef); });
+      }
       return true;
     }
     if (overrideSuccess && overrideSuccess(lhs, rhs)) {
@@ -830,6 +866,11 @@ private:
     assertValidAttrForParamOfType(rhsAttr);
     // Straightforward equality check.
     if (lhsAttr == rhsAttr) {
+      if (trackEqualSymbolRefs) {
+        if (SymbolRefAttr symRef = llvm::dyn_cast<SymbolRefAttr>(lhsAttr)) {
+          track(Side::LHS, symRef, symRef);
+        }
+      }
       return true;
     }
     // AffineMapAttr can unify with IntegerAttr (other than kDynamic) because struct parameter
@@ -937,9 +978,10 @@ bool podTypesUnify(
 
 bool functionTypesUnify(
     FunctionType lhs, FunctionType rhs, ArrayRef<StringRef> rhsReversePrefix,
-    UnificationMap *unifications
+    UnificationMap *unifications, bool trackEqualSymbolRefs
 ) {
-  return UnifierImpl(unifications, rhsReversePrefix).functionTypesUnify(lhs, rhs);
+  return UnifierImpl(unifications, rhsReversePrefix, trackEqualSymbolRefs)
+      .functionTypesUnify(lhs, rhs);
 }
 
 bool typesUnify(

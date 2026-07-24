@@ -94,6 +94,21 @@ protected:
   void expectNoFold(FeltConstAttr result) { EXPECT_FALSE(result) << "expected fold to be skipped"; }
 };
 
+TEST_F(BabyBearFoldTest, MaterializeConstantType) {
+  FeltType babyBear = FeltType::get(&ctx, BB_FIELD);
+  FeltType goldilocks = FeltType::get(&ctx, "goldilocks");
+
+  FailureOr<FeltType> adopted = unspecifiedConst(5).getMaterializedType(babyBear);
+  ASSERT_TRUE(succeeded(adopted));
+  EXPECT_EQ(*adopted, babyBear);
+
+  FailureOr<FeltType> matching = babyBearConst(5).getMaterializedType(babyBear);
+  ASSERT_TRUE(succeeded(matching));
+  EXPECT_EQ(*matching, babyBear);
+
+  EXPECT_TRUE(failed(babyBearConst(5).getMaterializedType(goldilocks)));
+}
+
 //===------------------------------------------------------------------===//
 // felt.add
 //===------------------------------------------------------------------===//

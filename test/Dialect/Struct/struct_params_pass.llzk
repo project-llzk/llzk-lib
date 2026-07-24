@@ -100,6 +100,36 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 
 // -----
+
+// Fieldless and explicitly matching felt constants both satisfy a felt restriction.
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @N : !felt.type<"bn128">
+
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : <@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  function.def @matchingFeltFields(
+      %fieldless: !struct.type<@T::@S<[#felt<const 35>]>>,
+      %matching: !struct.type<@T::@S<[#felt<const 35 : !felt.type<"bn128">>]>>
+  ) {
+    function.return
+  }
+}
+// CHECK-LABEL: function.def @matchingFeltFields(
+// CHECK-SAME:    %{{.*}}: !struct.type<@T::@S<[#felt<const 35>]>>,
+// CHECK-SAME:    %{{.*}}: !struct.type<@T::@S<[#felt<const 35 : <"bn128">>]>>
+
+// -----
 module attributes {llzk.lang} {
   poly.template @TComponentB1 {
     poly.param @A
