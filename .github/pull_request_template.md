@@ -5,8 +5,8 @@
 ## Related issues
 
 <!--
-External contributions must resolve one or more existing issues marked
-`approved`. Use a closing keyword so GitHub links the PR:
+External contributions must resolve one or more existing issues that have been
+marked `approved`. Use a closing keyword so GitHub links the PR:
 https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue
 -->
 

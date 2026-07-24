@@ -56,7 +56,11 @@ jobs:
               repo,
               issue_number: issueNumber,
               body: [
-                '@project-llzk/core-devs, please review this issue.',
+                '@project-llzk/core-devs, please review this issue and update its status:',
+                '',
+                '- Replace `under review` with `approved` if the issue is ready for someone to work on.',
+                '- Replace `under review` with `wontfix`, `duplicate`, or another appropriate label if it should not proceed.',
+                '- Leave it `under review` if more discussion or information is needed.',
                 '',
                 '<!-- core-dev-review-reminder -->',
               ].join('\n'),
@@ -139,7 +143,7 @@ jobs:
                 repo,
                 issue_number: issue.number,
                 body: [
-                  '@project-llzk/core-devs, this issue has remained `under review` for four weeks. Please review it again.',
+                  '@project-llzk/core-devs, this issue has remained `under review` for four weeks. Please review it and update the label.',
                   '',
                   reminderMarker,
                 ].join('\n'),
