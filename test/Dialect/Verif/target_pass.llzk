@@ -9,9 +9,7 @@ module attributes {llzk.lang} {
             function.return %self : !struct.type<@A>
         }
     }
-
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @A {
 // CHECK-NEXT:      function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@A> attributes {function.allow_constraint, function.allow_witness} {
@@ -41,7 +39,6 @@ module attributes {llzk.lang} {
         }
     }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @Sum {
 // CHECK-NEXT:      struct.member @sum : !felt.type
