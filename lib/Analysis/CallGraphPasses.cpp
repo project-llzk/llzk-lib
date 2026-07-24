@@ -21,6 +21,7 @@
 #include "llzk/Analysis/AnalysisPasses.h"
 #include "llzk/Analysis/CallGraphAnalyses.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Util/SymbolHelper.h"
 
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/ErrorHandling.h>
@@ -70,7 +71,10 @@ class SCCPassImpl : public llzk::impl::CallGraphSCCsPrinterPassBase<SCCPassImpl>
         if (CGN->isExternal()) {
           os << "external node";
         } else {
-          os << CGN->getCalledFunction().getFullyQualifiedName();
+          mlir::CallableOpInterface calledFn = CGN->getCalledFunction();
+          auto calledSym = llvm::dyn_cast<mlir::SymbolOpInterface>(calledFn.getOperation());
+          assert(calledSym && "call graph nodes must refer to callable symbols");
+          os << llzk::getFullyQualifiedName(calledSym);
         }
       }
 

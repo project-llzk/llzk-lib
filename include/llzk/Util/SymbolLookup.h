@@ -253,8 +253,14 @@ inline mlir::FailureOr<SymbolLookupResult<T>> lookupSymbolIn(
   SymbolLookupResult<T> ret(std::move(*found));
   if (!ret) {
     if (reportMissing) {
-      return origin->emitError() << "symbol \"" << symbol << "\" references a '" << op->getName()
-                                 << "' but expected a '" << T::getOperationName() << '\'';
+      auto diag = origin->emitError() << "symbol \"" << symbol << "\" references a '"
+                                      << op->getName() << "' but expected ";
+      if constexpr (requires { T::getOperationName(); }) {
+        diag << "a '" << T::getOperationName() << '\'';
+      } else {
+        diag << "a symbol with the requested interface";
+      }
+      return diag;
     } else {
       return mlir::failure();
     }
