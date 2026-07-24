@@ -843,6 +843,9 @@ LogicalResult IncludeOp::verifyTemplateParamsMatchInferred(
             paramOp.getName(), "\" from contract type signature"
         );
       }
+      if (llvm::isa<SymbolRefAttr>(it->second)) {
+        continue;
+      }
       if (failed(verifyTemplateParamCompatibility(it->second, paramOp))) {
         return failure();
       }
@@ -1087,6 +1090,16 @@ FunctionType IncludeOp::getTypeSignature() {
 FailureOr<UnificationMap> IncludeOp::unifyTypeSignature(FunctionType other) {
   UnificationMap unifications;
   if (functionTypesUnify(getTypeSignature(), other, {}, &unifications)) {
+    llvm::SmallDenseSet<SymbolRefAttr> sourceSymbols;
+    llzk::getSymbolsUsedIn(getTypeSignature().getInputs(), sourceSymbols);
+    llvm::SmallDenseSet<SymbolRefAttr> targetSymbols;
+    llzk::getSymbolsUsedIn(other.getInputs(), targetSymbols);
+    for (SymbolRefAttr symbol : sourceSymbols) {
+      if (targetSymbols.contains(symbol)) {
+        unifications.try_emplace({symbol, Side::LHS}, symbol);
+        unifications.try_emplace({symbol, Side::RHS}, symbol);
+      }
+    }
     return unifications;
   }
   return failure();
