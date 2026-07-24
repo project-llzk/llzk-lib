@@ -975,7 +975,9 @@ static FailureOr<TemplateOp> getOrCreateSpecializedTemplateClone(
     SymbolTableCollection &tables, llvm::StringMap<StringAttr> &templateClones,
     InstantiationLayout &layout
 ) {
-  layout = buildInstantiationLayout(parentTemplate, callParams, paramNameToConcrete);
+  layout = buildInstantiationLayout(
+      parentTemplate, callParams, paramNameToConcrete, InstantiationNameOrigin::SourceTemplate
+  );
   std::string cacheKey = buildSpecializedTemplateCloneCacheKey(
       parentTemplate.getSymName(), oldParamOrder, paramNameToConcrete
   );

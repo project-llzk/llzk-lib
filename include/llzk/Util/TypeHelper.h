@@ -32,10 +32,9 @@ namespace pod {
 class PodType;
 } // namespace pod
 
-/// Note: If any symbol refs in an input Type/Attribute use any of the special characters that this
-/// class generates, they are not escaped. That means these string representations are not safe to
-/// reverse back into a Type. It's only intended to produce a unique name for instantiated structs
-/// that may give some hint when debugging regarding the original struct name and the params used.
+/// The bytes reserved for partial-instantiation placeholders and escaping are escaped in symbol
+/// references. Other display delimiters are not, so these representations cannot be reversed into
+/// Types. They are intended only as compact, recognizable names for instantiated symbols.
 class BuildShortTypeString {
   static constexpr char PLACEHOLDER = '\x1A';
 
@@ -47,6 +46,7 @@ class BuildShortTypeString {
   BuildShortTypeString &append(mlir::ArrayRef<mlir::Attribute>);
   BuildShortTypeString &append(mlir::Attribute);
 
+  static std::string escapeSpecialCharacters(mlir::StringRef);
   void appendSymRef(mlir::SymbolRefAttr);
   void appendSymName(mlir::StringRef);
 
@@ -70,6 +70,11 @@ public:
   /// instantiation of a parameterized type, preserving the location of attributes that were not
   /// available in an earlier instantiation so they can be added by a later instantiation.
   static std::string from(const std::string &base, mlir::ArrayRef<mlir::Attribute> attrs);
+
+  /// Format a source symbol name and its parameters. Unlike the overload above, the base cannot
+  /// contain pass-created placeholders, so reserved bytes are escaped before parameters are
+  /// appended.
+  static std::string fromRawName(mlir::StringRef base, mlir::ArrayRef<mlir::Attribute> attrs);
 };
 
 // This function asserts that the given Attribute kind is legal within the LLZK types that can

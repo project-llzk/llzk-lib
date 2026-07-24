@@ -108,6 +108,9 @@ class ConversionTracker {
   DenseMap<StructType, StructType> reverseInstantiations;
   /// Tracks original free function definitions for which instantiated clones were created.
   DenseSet<SymbolRefAttr> funcInstantiations;
+  /// Exact templates created by partial instantiation. Only these names contain replaceable
+  /// placeholder bytes; the same bytes in source symbol names must be escaped.
+  DenseSet<Operation *> generatedPartialTemplates;
   /// Maps new remote type (i.e., the values in 'structInstantiations') to a list of Diagnostic
   /// to report at the location(s) of the compute() that causes the instantiation to the StructType.
   DenseMap<StructType, SmallVector<Diagnostic>> delayedDiagnostics;
@@ -150,6 +153,16 @@ public:
   void recordInstantiation(SymbolRefAttr funcName) {
     funcInstantiations.insert(funcName);
     modified = true;
+  }
+
+  /// Record a pass-created partial template whose placeholder bytes remain replaceable.
+  void recordGeneratedPartialTemplate(TemplateOp instantiatedTemplate) {
+    generatedPartialTemplates.insert(instantiatedTemplate.getOperation());
+  }
+
+  /// Return whether `templateOp` was created by partial instantiation in this pass run.
+  bool isGeneratedPartialTemplate(TemplateOp templateOp) const {
+    return generatedPartialTemplates.contains(templateOp.getOperation());
   }
 
   /// Collect the fully-qualified names of all structs and free functions that were instantiated.
@@ -695,16 +708,21 @@ class StructCloner {
     // This list will be used to build the new remote/external type.
     SmallVector<FlatSymbolRefAttr> typeAtCallerSymPieces = getPieces(typeAtCaller.getNameRef());
     typeAtCallerSymPieces.pop_back(); // drop struct name
-    // Name of template with instantiated parameter values.
-    std::string templateNameWithAttrs = BuildShortTypeString::from(
-        typeAtCallerSymPieces.back().getValue().str(), attrsForInstantiatedNameSuffix
-    );
-
     // Get parent refs
     TemplateOp parentTemplate = getParentOfType<TemplateOp>(origStruct);
     assert(parentTemplate && "parameterized struct must be nested in a TemplateOp");
     ModuleOp parentModule = getParentOfType<ModuleOp>(parentTemplate);
     assert(parentModule && "TemplateOp must be nested in a ModuleOp");
+
+    // Preserve placeholders only in names created by an earlier partial instantiation.
+    std::string templateNameWithAttrs =
+        tracker_.isGeneratedPartialTemplate(parentTemplate)
+            ? BuildShortTypeString::from(
+                  typeAtCallerSymPieces.back().getValue().str(), attrsForInstantiatedNameSuffix
+              )
+            : BuildShortTypeString::fromRawName(
+                  typeAtCallerSymPieces.back().getValue(), attrsForInstantiatedNameSuffix
+              );
 
     // Evaluate any poly.expr symbols whose param dependencies are now concrete; add them to the
     // map so ClonedBodyConstReadOpPattern can replace uses of those symbols too.
@@ -744,6 +762,7 @@ class StructCloner {
       // `SymbolTable::insert()` function so that the name will be made unique if necessary.
       symTables.getSymbolTable(newTemplate).insert(newStruct);
       symTables.getSymbolTable(parentModule).insert(newTemplate, Block::iterator(parentTemplate));
+      tracker_.recordGeneratedPartialTemplate(newTemplate);
 
       // Replace the old template name in the list with the new one (get template name after
       // symbol table insertion since it may be modified to make it unique).
@@ -1358,8 +1377,12 @@ public:
 
     evaluateTemplateExprs(parentTemplate, paramNameToConcrete);
 
-    InstantiationLayout layout =
-        buildInstantiationLayout(parentTemplate, op.getTemplateParamsAttr(), paramNameToConcrete);
+    InstantiationNameOrigin nameOrigin = tracker_.isGeneratedPartialTemplate(parentTemplate)
+                                             ? InstantiationNameOrigin::GeneratedPartialTemplate
+                                             : InstantiationNameOrigin::SourceTemplate;
+    InstantiationLayout layout = buildInstantiationLayout(
+        parentTemplate, op.getTemplateParamsAttr(), paramNameToConcrete, nameOrigin
+    );
     ModuleOp parentModule = getParentOfType<ModuleOp>(parentTemplate);
     assert(parentModule && "TemplateOp must be nested in a ModuleOp");
 
@@ -1372,7 +1395,7 @@ public:
               )
             : instantiatePartially(
                   op, rewriter, symTables, callTgt, parentTemplate, parentModule, layout,
-                  paramNameToConcrete
+                  paramNameToConcrete, tracker_
               );
     if (failed(newCalleeAttr)) {
       return failure();
@@ -1581,7 +1604,7 @@ private:
   static FailureOr<SymbolRefAttr> instantiatePartially(
       CallOp op, PatternRewriter &rewriter, SymbolTableCollection &symTables, FuncDefOp callTgt,
       TemplateOp parentTemplate, ModuleOp parentModule, const InstantiationLayout &layout,
-      const DenseMap<Attribute, Attribute> &paramNameToConcrete
+      const DenseMap<Attribute, Attribute> &paramNameToConcrete, ConversionTracker &tracker
   ) {
     TemplateOp newTemplate;
     if (Operation *existing =
@@ -1626,6 +1649,7 @@ private:
           llvm::dbgs() << "[InstantiateFuncAtCallOp]  created partial instantiation template: "
                        << newTemplate.getSymName() << '\n'
       );
+      tracker.recordGeneratedPartialTemplate(newTemplate);
     } else {
       LLVM_DEBUG(
           llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing partial instantiation template: "

@@ -10,8 +10,10 @@
 #include "../LLZKTestBase.h"
 
 #include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
+#include "llzk/Util/Field.h"
 
 #include <gtest/gtest.h>
 
@@ -116,6 +118,16 @@ TEST_F(TypeTests, testShortString) {
   OpBuilder bldr(&ctx);
   EXPECT_EQ("b", BuildShortTypeString::from(bldr.getIntegerType(1)));
   EXPECT_EQ("i", BuildShortTypeString::from(bldr.getIndexType()));
+  EXPECT_EQ("f<35>", BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::APInt(6, 35))));
+  EXPECT_EQ("f<35>", BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::APInt(7, 35))));
+  EXPECT_EQ(
+      "f<35:5:bn128>",
+      BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::APInt(6, 35), "bn128"))
+  );
+  EXPECT_EQ(
+      "f<35:5:bn128>",
+      BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::APInt(7, 35), "bn128"))
+  );
   EXPECT_EQ(
       "!t<@A>", BuildShortTypeString::from(TypeVarType::get(FlatSymbolRefAttr::get(&ctx, "A")))
   );
@@ -157,7 +169,7 @@ TEST_F(TypeTests, testShortString) {
     );
   }
 
-  // No protection/escaping of special characters in the original name
+  // Display delimiters other than the reserved escape and placeholder bytes remain readable.
   EXPECT_EQ(
       "!s<@S1_!a<>>",
       BuildShortTypeString::from(StructType::get(FlatSymbolRefAttr::get(&ctx, "S1_!a<>")))
@@ -182,6 +194,77 @@ TEST_F(TypeTests, testShortString) {
         // clang-format on
     );
   }
+}
+
+TEST_F(TypeTests, testShortStringDistinguishesDelimitedFeltFieldNames) {
+  static constexpr llvm::StringLiteral fieldA("a>_f<36:b");
+  static constexpr llvm::StringLiteral fieldB("a");
+  static constexpr llvm::StringLiteral fieldC("b>_f<37");
+  static constexpr llvm::StringLiteral prime("101");
+  [[maybe_unused]] static const bool fieldsRegistered = [] {
+    Field::addField(fieldA, prime, nullptr);
+    Field::addField(fieldB, prime, nullptr);
+    Field::addField(fieldC, prime, nullptr);
+    return true;
+  }();
+
+  auto felt = [&](uint64_t value, llvm::StringRef field) {
+    return FeltConstAttr::get(&ctx, llvm::APInt(7, value), field);
+  };
+  FeltConstAttr unspecified = FeltConstAttr::get(&ctx, llvm::APInt(7, 37));
+
+  std::string first = BuildShortTypeString::from(
+      ArrayAttr::get(&ctx, ArrayRef<Attribute> {felt(35, fieldA), unspecified})
+  );
+  std::string second = BuildShortTypeString::from(
+      ArrayAttr::get(&ctx, ArrayRef<Attribute> {felt(35, fieldB), felt(36, fieldC)})
+  );
+
+  EXPECT_NE(first, second);
+}
+
+TEST_F(TypeTests, testShortStringEscapesReservedFeltFieldNameBytes) {
+  static constexpr char withPlaceholder[] = {'x', '\x1A'};
+  static constexpr llvm::StringLiteral resemblingEscape("x%1A");
+  static constexpr llvm::StringLiteral prime("101");
+  static const llvm::StringRef placeholderField(withPlaceholder, sizeof(withPlaceholder));
+  [[maybe_unused]] static const bool fieldsRegistered = [] {
+    Field::addField(placeholderField, prime, nullptr);
+    Field::addField(resemblingEscape, prime, nullptr);
+    return true;
+  }();
+
+  auto shortString = [&](llvm::StringRef field) {
+    return BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::APInt(7, 35), field));
+  };
+
+  EXPECT_EQ("f<35:4:x%1A>", shortString(placeholderField));
+  EXPECT_EQ("f<35:6:x%251A>", shortString(resemblingEscape));
+}
+
+TEST_F(TypeTests, testShortStringEscapesReservedRawNameBytes) {
+  constexpr char withPlaceholders[] = {'T', '\x1A', '\x1A'};
+  llvm::StringRef placeholderName(withPlaceholders, sizeof(withPlaceholders));
+  IntegerAttr value = IntegerAttr::get(IndexType::get(&ctx), 35);
+
+  EXPECT_EQ(
+      "T%1A%1A_35", BuildShortTypeString::fromRawName(placeholderName, ArrayRef<Attribute> {value})
+  );
+  EXPECT_EQ("T%251A_35", BuildShortTypeString::fromRawName("T%1A", ArrayRef<Attribute> {value}));
+}
+
+TEST_F(TypeTests, testShortStringEscapesReservedNestedSymbolBytes) {
+  constexpr char withPlaceholder[] = {'S', '\x1A'};
+  llvm::StringRef placeholderName(withPlaceholder, sizeof(withPlaceholder));
+
+  auto shortString = [&](llvm::StringRef symbol) {
+    return BuildShortTypeString::from(
+        TypeAttr::get(StructType::get(FlatSymbolRefAttr::get(&ctx, symbol)))
+    );
+  };
+
+  EXPECT_EQ("!s<@S%1A>", shortString(placeholderName));
+  EXPECT_EQ("!s<@S%251A>", shortString("S%1A"));
 }
 
 TEST_F(TypeTests, testShortStringWithPartials) {

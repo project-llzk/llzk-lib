@@ -1,0 +1,93 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten=cleanup=disabled %s | FileCheck %s
+
+module attributes {llzk.lang} {
+  poly.template @"T\1A\1A" {
+    poly.param @N : index
+    function.def @compute() -> index {
+      %n = poly.read_const @N : index
+      function.return %n : index
+    }
+  }
+
+  function.def @main() -> index {
+    %got = function.call @"T\1A\1A"::@compute<[35]>() : () -> index
+    function.return %got : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT: function.def @"T%[[VAL_0:[0-9a-zA-Z_\.]+]]A%[[VAL_0]]A_35_compute"() -> index {
+// CHECK-NEXT: %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 35 : index
+// CHECK-NEXT: function.return %[[VAL_1]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: poly.template @"T\1A\1A" {
+// CHECK-NEXT: poly.param @N : index
+// CHECK-NEXT: function.def @compute() -> index {
+// CHECK-NEXT: %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT: function.return %[[VAL_2]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @main() -> index {
+// CHECK-NEXT: %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @"T%[[VAL_4:[0-9a-zA-Z_\.]+]]A%[[VAL_4]]A_35_compute"() : () -> index
+// CHECK-NEXT: function.return %[[VAL_3]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @"S\1A" {
+    function.def @compute() -> !struct.type<@"S\1A"> {
+      %self = struct.new : <@"S\1A">
+      function.return %self : !struct.type<@"S\1A">
+    }
+    function.def @constrain(%self: !struct.type<@"S\1A">) {
+      function.return
+    }
+  }
+
+  poly.template @T {
+    poly.param @Concrete : !poly.tvar<@Concrete>
+    poly.param @Remaining : !poly.tvar<@Remaining>
+    function.def @compute() -> index {
+      %value = arith.constant 7 : index
+      function.return %value : index
+    }
+  }
+
+  function.def @main() -> index {
+    %got = function.call @T::@compute<[!struct.type<@"S\1A">, ?]>() : () -> index
+    function.return %got : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT: struct.def @"S\1A" {
+// CHECK-NEXT: function.def @compute() -> !struct.type<@"S\1A"> attributes {function.allow_witness} {
+// CHECK-NEXT: %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@"S\1A">
+// CHECK-NEXT: function.return %[[VAL_0]] : !struct.type<@"S\1A">
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@"S\1A">) attributes {function.allow_constraint} {
+// CHECK-NEXT: function.return
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: poly.template @"T_!s<@S%[[VAL_2:[0-9a-zA-Z_\.]+]]A>_\1A" {
+// CHECK-NEXT: poly.param @Remaining : !poly.tvar<@Remaining>
+// CHECK-NEXT: function.def @compute() -> index {
+// CHECK-NEXT: %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT: function.return %[[VAL_3]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: poly.template @T {
+// CHECK-NEXT: poly.param @Concrete : !poly.tvar<@Concrete>
+// CHECK-NEXT: poly.param @Remaining : !poly.tvar<@Remaining>
+// CHECK-NEXT: function.def @compute() -> index {
+// CHECK-NEXT: %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT: function.return %[[VAL_4]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @main() -> index {
+// CHECK-NEXT: %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @"T_!s<@S%[[VAL_6:[0-9a-zA-Z_\.]+]]A>_\1A"::@compute<[?]>() : () -> index
+// CHECK-NEXT: function.return %[[VAL_5]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: }

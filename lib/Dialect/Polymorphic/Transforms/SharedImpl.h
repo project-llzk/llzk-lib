@@ -88,12 +88,20 @@ struct InstantiationLayout {
   mlir::ArrayAttr rewrittenCallParams;
 };
 
+/// Identifies whether an instantiation name came from source IR or a prior partial instantiation.
+/// Only generated partial names may contain placeholders that later instantiations should replace.
+enum class InstantiationNameOrigin {
+  SourceTemplate,
+  GeneratedPartialTemplate,
+};
+
 /// Derive the instantiated template name and the remaining explicit parameters that should stay on
 /// the rewritten use site. Partially-instantiated names contain the `BuildShortTypeString`
 /// placeholder character at the position of each non-concrete parameter.
 inline InstantiationLayout buildInstantiationLayout(
     TemplateOp parentTemplate, mlir::ArrayAttr callParams,
-    const llvm::DenseMap<mlir::Attribute, mlir::Attribute> &paramNameToConcrete
+    const llvm::DenseMap<mlir::Attribute, mlir::Attribute> &paramNameToConcrete,
+    InstantiationNameOrigin nameOrigin
 ) {
   mlir::SmallVector<mlir::Attribute> remainingNames;
   mlir::SmallVector<mlir::Attribute> attrsForInstantiatedNameSuffix;
@@ -120,9 +128,17 @@ inline InstantiationLayout buildInstantiationLayout(
     rewrittenCallParams = mlir::ArrayAttr::get(parentTemplate.getContext(), remainingCallParams);
   }
 
+  std::string templateNameWithAttrs =
+      nameOrigin == InstantiationNameOrigin::GeneratedPartialTemplate
+          ? BuildShortTypeString::from(
+                parentTemplate.getSymName().str(), attrsForInstantiatedNameSuffix
+            )
+          : BuildShortTypeString::fromRawName(
+                parentTemplate.getSymName(), attrsForInstantiatedNameSuffix
+            );
   return {
       std::move(remainingNames),
-      BuildShortTypeString::from(parentTemplate.getSymName().str(), attrsForInstantiatedNameSuffix),
+      std::move(templateNameWithAttrs),
       rewrittenCallParams,
   };
 }
