@@ -61,7 +61,6 @@ def FlatteningPass : LLZKPass<"llzk-flatten"> {
     - Replace parameterized structs with flattened (i.e., no parameter)
       versions of those structs based on requested return type at calls
       to `compute()` functions and unroll loops
-    - Materialize symbolic member table offsets only from integer template values
     - Unroll loops
   }];
   // Implementation note: These options should be kept in sync with

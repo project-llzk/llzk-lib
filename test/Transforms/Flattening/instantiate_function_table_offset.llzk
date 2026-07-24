@@ -28,7 +28,23 @@ module attributes {llzk.lang} {
     function.return %value : !felt.type<"bn128">
   }
 }
-// CHECK-LABEL: function.def @OffsetTemplate_2_read(
-// CHECK:         struct.readm {{.*}} {tableOffset = 2 : index}
-// CHECK-LABEL: function.def @main(
-// CHECK:         function.call @OffsetTemplate_2_read(
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Data {
+// CHECK-NEXT:      struct.member @value : !felt.type<"bn128"> {column, llzk.pub}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Data> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Data>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Data>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Data>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @OffsetTemplate_2_read(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Data>) -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@value] : <@Data>, !felt.type<"bn128"> {tableOffset = 2 : index}
+// CHECK-NEXT:      function.return %[[VAL_3]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Data>) -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @OffsetTemplate_2_read(%[[VAL_4]]) : (!struct.type<@Data>) -> !felt.type<"bn128">
+// CHECK-NEXT:      function.return %[[VAL_5]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
