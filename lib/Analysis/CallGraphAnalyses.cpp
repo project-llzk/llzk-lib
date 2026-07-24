@@ -16,6 +16,8 @@
 
 #include "llzk/Dialect/Function/IR/Ops.h"
 
+#include <mlir/Interfaces/CallInterfaces.h>
+
 #include <llvm/ADT/DepthFirstIterator.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/ErrorHandling.h>
@@ -48,7 +50,9 @@ CallGraphReachabilityAnalysis::CallGraphReachabilityAnalysis(
     // getting the CallGraphAnalysis will enforce the need for a module op
     : callGraph(am.getAnalysis<CallGraphAnalysis>().getCallGraph()) {}
 
-bool CallGraphReachabilityAnalysis::isReachable(FuncDefOp &A, FuncDefOp &B) const {
+bool CallGraphReachabilityAnalysis::isReachable(
+    mlir::CallableOpInterface A, mlir::CallableOpInterface B
+) const {
   if (isReachableCached(A, B)) {
     return true;
   }
@@ -73,15 +77,15 @@ bool CallGraphReachabilityAnalysis::isReachable(FuncDefOp &A, FuncDefOp &B) cons
     if (currNode->isExternal()) {
       continue;
     }
-    FuncDefOp currFn = currNode->getCalledFunction();
+    mlir::CallableOpInterface current = currNode->getCalledFunction();
 
     // Update the cache according to the path before checking if B is reachable.
     for (unsigned i = 0; i < dfsIt.getPathLength(); i++) {
-      FuncDefOp ancestorFn = dfsIt.getPath(i)->getCalledFunction();
-      reachabilityMap[ancestorFn].insert(currFn);
+      mlir::CallableOpInterface ancestor = dfsIt.getPath(i)->getCalledFunction();
+      reachabilityMap[ancestor].insert(current);
     }
 
-    if (isReachableCached(currFn, B)) {
+    if (isReachableCached(current, B)) {
       return true;
     }
   }

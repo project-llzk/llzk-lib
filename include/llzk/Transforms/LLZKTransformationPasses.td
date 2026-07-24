@@ -127,6 +127,25 @@ def EnforceNoMemberOverwritePass : LLZKPass<"llzk-enforce-no-overwrite"> {
   }];
 }
 
+def InlineFreeFunctionsPass : LLZKPass<"llzk-inline-free-functions"> {
+  let summary = "Inline calls to free functions";
+  let description = [{
+    Inlines `function.call` operations inside `function.def` bodies when the
+    target is a free `function.def` directly inside the pass's root
+    `builtin.module`. Calls to functions in nested or included modules, and
+    calls outside `function.def` bodies, are left unchanged. After inlining,
+    root free functions that have no remaining symbol uses anywhere in the
+    module are erased. This cleanup applies to every non-external root free
+    function, regardless of its symbol visibility or whether any call to it
+    was inlined.
+
+    Inlining is best effort: free functions that participate in a call
+    cycle are skipped (inlining one would re-materialize its calls
+    forever). If inlining a callee fails, its remaining calls are left in
+    place with a warning while processing continues with other callees.
+  }];
+}
+
 def WhileToForPass : LLZKPass<"llzk-while-to-for"> {
   let summary =
       "Converts scf.while loops to equivalent scf.for loops when possible";

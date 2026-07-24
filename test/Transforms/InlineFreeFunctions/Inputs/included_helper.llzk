@@ -1,0 +1,5 @@
+module attributes {llzk.lang} {
+  function.def @helper(%x: !felt.type) -> !felt.type {
+    function.return %x : !felt.type
+  }
+}

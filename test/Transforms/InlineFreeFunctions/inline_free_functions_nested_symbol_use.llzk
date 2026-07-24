@@ -1,0 +1,24 @@
+// RUN: llzk-opt -llzk-inline-free-functions %s | FileCheck --enable-var-scope %s
+
+// Cleanup must preserve root free functions referenced from nested symbol
+// tables, including non-call uses such as contract targets.
+module attributes {llzk.lang} {
+  function.def @helper(%x: !felt.type) {
+    function.return
+  }
+
+  module @spec {
+    verif.contract @C for @helper (%x: !felt.type) {
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @helper(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    module @spec {
+// CHECK-NEXT:      verif.contract @C for @helper (%[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) {
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
