@@ -68,7 +68,6 @@ def VerifSMTProveOp : Op<VerifDialect, "smt_prove", []> {
   let arguments = (ins BoolType:$condition);
   let results = (outs);
   let summary = "A lowered proof obligation over an SMT expression";
-  let assemblyFormat = [{ $condition attr-dict }];
 }
 
 //===------------------------------------------------------------------===//
