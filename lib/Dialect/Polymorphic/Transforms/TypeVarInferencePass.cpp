@@ -1620,13 +1620,24 @@ static bool operationMentionsParam(Operation *op, StringAttr paramName) {
   });
 }
 
+/// Return eligible type-variable parameters mentioned by a template-argument attribute.
+static SmallVector<StringAttr> getMentionedTypeVarParams(
+    Attribute attr, const DenseMap<StringAttr, TemplateParamOp> &typeVarParams
+) {
+  SmallVector<StringAttr> mentionedParams;
+  for (const auto &entry : typeVarParams) {
+    if (ParamMentionChecker(entry.first).attrMentions(attr, /*allowSymbolRefs=*/true)) {
+      mentionedParams.push_back(entry.first);
+    }
+  }
+  return mentionedParams;
+}
+
 /// Return whether a template-argument attribute mentions an eligible type variable.
 static bool attrMentionsAnyTypeVarParam(
     Attribute attr, const DenseMap<StringAttr, TemplateParamOp> &typeVarParams
 ) {
-  return llvm::any_of(typeVarParams, [attr](const auto &entry) {
-    return ParamMentionChecker(entry.first).attrMentions(attr, /*allowSymbolRefs=*/true);
-  });
+  return !getMentionedTypeVarParams(attr, typeVarParams).empty();
 }
 
 /// Return whether a function body/signature mentions an eligible type-variable parameter.
@@ -2005,9 +2016,9 @@ private:
   ///
   /// Function calls and contract includes have the same template-argument surface. Concrete
   /// explicit arguments are checked directly. Explicit arguments that mention current-template
-  /// type variables are inferred from the target signature after callee-local replacements and
-  /// explicit non-type parameters have been applied, so callee-local symbols cannot leak into the
-  /// caller's replacement map.
+  /// type variables are also checked against the target signature after callee-local replacements
+  /// and explicit non-type parameters have been applied, so callee-local symbols cannot leak into
+  /// the caller's replacement map.
   template <typename CallableOp>
   LogicalResult collectCallableUseTemplateParamInferences(
       CallableOp callableOp, FunctionType targetSignature, TemplateInferenceInfo &targetInfo
@@ -2017,6 +2028,12 @@ private:
       if (params.size() != targetInfo.oldParamOrder.size()) {
         return success();
       }
+      struct DeferredExplicitArgInference {
+        Attribute attr;
+        Attribute expectedAttr;
+        SmallVector<StringAttr> mentionedParams;
+      };
+      SmallVector<DeferredExplicitArgInference> deferredExplicitArgInferences;
       bool deferredToSignature = false;
       for (auto [paramName, attr] : llvm::zip_equal(targetInfo.oldParamOrder, params)) {
         auto replacementIt = targetInfo.replacements.find(paramName);
@@ -2029,9 +2046,16 @@ private:
         Attribute expectedAttr = TypeAttr::get(expectedTy);
         if (attrMentionsAnyTypeVarParam(attr, inferenceInfo.typeVarParams)) {
           deferredToSignature = true;
-          if (!ParamMentionChecker(paramName).typeMentions(targetSignature) &&
-              failed(collectTemplateArgInferences(attr, expectedAttr, callableOp.getLoc()))) {
-            return failure();
+          SmallVector<StringAttr> mentionedParams =
+              getMentionedTypeVarParams(attr, inferenceInfo.typeVarParams);
+          if (!ParamMentionChecker(paramName).typeMentions(targetSignature)) {
+            if (failed(collectTemplateArgInferences(attr, expectedAttr, callableOp.getLoc()))) {
+              return failure();
+            }
+          } else {
+            deferredExplicitArgInferences.push_back(
+                {attr, expectedAttr, std::move(mentionedParams)}
+            );
           }
           continue;
         }
@@ -2056,6 +2080,25 @@ private:
                 callableOp.getLoc()
             ))) {
           return failure();
+        }
+
+        for (const DeferredExplicitArgInference &deferred : deferredExplicitArgInferences) {
+          bool signatureCanInferAllParams =
+              llvm::all_of(deferred.mentionedParams, [&](StringAttr mentionedParam) {
+            return ParamMentionChecker(mentionedParam).typeMentions(callableOp.getTypeSignature());
+          });
+          bool signatureHasInferredAllParams =
+              llvm::all_of(deferred.mentionedParams, [&](StringAttr mentionedParam) {
+            return replacements.contains(mentionedParam);
+          });
+          if (signatureCanInferAllParams && signatureHasInferredAllParams) {
+            continue;
+          }
+          if (failed(collectTemplateArgInferences(
+                  deferred.attr, deferred.expectedAttr, callableOp.getLoc()
+              ))) {
+            return failure();
+          }
         }
       }
       return success();
