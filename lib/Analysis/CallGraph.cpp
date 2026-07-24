@@ -45,8 +45,8 @@ mlir::Region *CallGraphNode::getCallableRegion() const {
   return callableRegion;
 }
 
-FuncDefOp CallGraphNode::getCalledFunction() const {
-  return llvm::dyn_cast<FuncDefOp>(getCallableRegion()->getParentOp());
+mlir::CallableOpInterface CallGraphNode::getCalledFunction() const {
+  return llvm::dyn_cast<mlir::CallableOpInterface>(getCallableRegion()->getParentOp());
 }
 
 /// Adds an reference edge to the given node. This is only valid on the
@@ -166,18 +166,22 @@ CallGraphNode *CallGraph::resolveCallable(
   // `function.call` deliberately resolves from the LLZK root module rather
   // than the nearest symbol table. Use the same lookup here so analyses and
   // transformations agree when a nested symbol table shadows a root symbol.
-  auto res = [&]() -> mlir::FailureOr<SymbolLookupResult<FuncDefOp>> {
-    if (auto funcCall = llvm::dyn_cast<CallOp>(call.getOperation())) {
-      return funcCall.getCalleeTarget(symbolTable);
+  if (auto funcCall = llvm::dyn_cast<CallOp>(call.getOperation())) {
+    auto res = funcCall.getCalleeTarget(symbolTable);
+    if (mlir::succeeded(res)) {
+      if (auto *node = lookupNode(res->get().getCallableRegion())) {
+        return node;
+      }
     }
-    return llzk::resolveCallable<FuncDefOp>(symbolTable, call);
-  }();
-  if (mlir::succeeded(res) && !res->isManaged()) {
+    return getUnknownCalleeNode();
+  }
+
+  auto res = llzk::resolveCallable<mlir::CallableOpInterface>(symbolTable, call);
+  if (mlir::succeeded(res)) {
     if (auto *node = lookupNode(res->get().getCallableRegion())) {
       return node;
     }
   }
-
   return getUnknownCalleeNode();
 }
 
