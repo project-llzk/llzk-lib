@@ -390,12 +390,7 @@ void ContractOp::setArgName(unsigned index, llvm::StringRef name) {
 }
 
 SymbolRefAttr ContractOp::getFullyQualifiedName(bool requireParent) {
-  if (!requireParent && getOperation()->getParentOp() == nullptr) {
-    return SymbolRefAttr::get(getOperation());
-  }
-  auto res = getPathFromRoot(*this);
-  assert(succeeded(res));
-  return res.value();
+  return llzk::getFullyQualifiedName(*this, requireParent);
 }
 
 LogicalResult ContractOp::verifySymbolUses(SymbolTableCollection &tables) {

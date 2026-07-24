@@ -229,11 +229,11 @@ class PassImpl : public llzk::impl::RedundantOperationEliminationPassBase<PassIm
     return succeeded(callLookup) && isPurposelessConstrainFunc(symbolTables, callLookup->get());
   }
 
-  void runOnFunc(SymbolTableCollection &symbolTables, FuncDefOp fn) {
+  void runOnFunc(SymbolTableCollection &symbolTables, CallableOpInterface callable) {
     TranslationMap map;
     SmallVector<Operation *> redundantOps;
     DenseSet<OperationComparator> uniqueOps;
-    DominanceInfo domInfo(fn);
+    DominanceInfo domInfo(callable);
 
     auto unnecessaryOpCheck = [&](Operation *op) -> bool {
       if (auto emiteq = dyn_cast<EmitEqualityOp>(op);
@@ -250,8 +250,8 @@ class PassImpl : public llzk::impl::RedundantOperationEliminationPassBase<PassIm
       return false;
     };
 
-    fn.walk([&](Operation *op) {
-      if (op == fn.getOperation()) {
+    callable.walk([&](Operation *op) {
+      if (op == callable.getOperation()) {
         return WalkResult::advance();
       }
 

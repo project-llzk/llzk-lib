@@ -13,6 +13,7 @@
 
 #include <mlir/Interfaces/CallInterfaces.h>
 
+#include <cassert>
 #include <optional>
 #include <ranges>
 
@@ -100,6 +101,19 @@ mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromRoot(component::MemberDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromRoot(function::FuncDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
+
+/// Return the full name for this symbol from the root module, including any surrounding symbol
+/// table names. If `requireParent` is false and the symbol is not nested in any operation, return
+/// its flat symbol name directly.
+inline mlir::SymbolRefAttr
+getFullyQualifiedName(mlir::SymbolOpInterface symbol, bool requireParent = true) {
+  if (!requireParent && symbol.getOperation()->getParentOp() == nullptr) {
+    return mlir::SymbolRefAttr::get(symbol.getOperation());
+  }
+  mlir::FailureOr<mlir::SymbolRefAttr> res = getPathFromRoot(symbol);
+  assert(mlir::succeeded(res));
+  return res.value();
+}
 
 /// @brief With include statements, there may be root modules nested within
 /// other root modules. This function resolves the topmost root module.
