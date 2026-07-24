@@ -828,21 +828,50 @@ LogicalResult IncludeOp::verifyTemplateParamsMatchInferred(
     const UnificationMap &unifications
 ) {
   ArrayAttr callParams = this->getTemplateParamsAttr();
-  assert(!isNullOrEmpty(callParams) && "pre-condition");
+  if (isNullOrEmpty(callParams)) {
+    for (TemplateParamOp paramOp : targetParamDefs) {
+      auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getSymNameAttr()), Side::RHS});
+      if (it != unifications.end() && it->second &&
+          failed(verifyTemplateParamCompatibility(it->second, paramOp))) {
+        return failure();
+      }
+    }
+    return success();
+  }
   assert((callParams.size() == llvm::range_size(targetParamDefs)) && "pre-condition");
 
   for (auto [paramOp, attr] : llvm::zip_equal(targetParamDefs, callParams.getValue())) {
+    Attribute materializedAttr = attr;
     // Skip wildcards (`?` / kDynamic) - their value will be resolved by a later inference pass.
     if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
       if (isDynamic(intAttr)) {
         continue;
       }
     }
-    auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::RHS});
-    if (it != unifications.end() && !typeParamsUnify({attr}, {it->second})) {
+    auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getSymNameAttr()), Side::RHS});
+    Attribute inferred = it != unifications.end() ? it->second : nullptr;
+    if (inferred && failed(verifyTemplateParamCompatibility(inferred, paramOp))) {
+      return failure();
+    }
+    if (std::optional<Type> declaredType = paramOp.getTypeOpt()) {
+      if (auto feltType = llvm::dyn_cast<FeltType>(*declaredType)) {
+        auto materialize = [&](Attribute value) -> Attribute {
+          if (auto feltValue = llvm::dyn_cast_or_null<FeltConstAttr>(value)) {
+            FailureOr<FeltType> materializedType = feltValue.getMaterializedType(feltType);
+            assert(succeeded(materializedType) && "template parameter compatibility was verified");
+            return FeltConstAttr::get(getContext(), feltValue.getValue(), *materializedType);
+          }
+          return value;
+        };
+        materializedAttr = materialize(materializedAttr);
+        inferred = materialize(inferred);
+      }
+    }
+    if (inferred && !typeParamsUnify({materializedAttr}, {inferred})) {
       return this->emitOpError().append(
-          "template instantiation value '", attr, "' for parameter \"@", paramOp.getName(),
-          "\" conflicts with value '", it->second, "' inferred from function type signature"
+          "template instantiation value '", materializedAttr, "' for parameter \"@",
+          paramOp.getName(), "\" conflicts with value '", inferred,
+          "' inferred from function type signature"
       );
     }
   }
@@ -917,7 +946,11 @@ struct KnownTargetVerifier : public IncludeOpVerifier {
           return referencedInSignature.contains(FlatSymbolRefAttr::get(p.getNameAttr()));
         });
         if (allParamsReferenced) {
-          return success();
+          FailureOr<UnificationMap> unifyResult = includeOp->unifyTypeSignature(tgtType);
+          if (failed(unifyResult)) {
+            return failure();
+          }
+          return includeOp->verifyTemplateParamsMatchInferred(realParams, unifyResult.value());
         }
         return includeOp->emitOpError().append(
             "must provide template instantiation parameters when calling \"@", tgt.getSymName(),

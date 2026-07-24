@@ -21,6 +21,7 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@MissingTemplateParams>) { function.return }
   }
 }
+
 // -----
 module attributes {llzk.lang} {
   poly.template @GlobalFunc {

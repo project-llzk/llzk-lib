@@ -539,9 +539,7 @@ def CallOp : FunctionDialectOp<
     /// `UnificationMap` is expected to contain the unification results of this `CallOp` against
     /// the target function type signature.
     ///
-    /// Pre-condition assertions:
-    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`
-    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`
+    /// When the instantiation list is present, it must contain one entry per template parameter.
     ::mlir::LogicalResult verifyTemplateParamsMatchInferred(
         ::llvm::iterator_range<::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs,
         const UnificationMap &unifications

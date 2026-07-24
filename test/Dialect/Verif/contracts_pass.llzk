@@ -552,6 +552,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: verif.contract @Wrapper
 // CHECK:         verif.include @SpecTemplate::@Base<[#felt<const 9>]>()
 // CHECK:         verif.include @SpecTemplate::@Base<[#felt<const 9 : <"bn128">>]>()
+
 // -----
 
 module attributes {llzk.lang} {

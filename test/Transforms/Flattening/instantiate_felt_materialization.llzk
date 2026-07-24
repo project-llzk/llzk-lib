@@ -73,3 +73,29 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK:         felt.const 36 : <"bn128">
 // CHECK-LABEL:   function.def @main() -> !felt.type<"bn128">
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @N : !felt.type<"bn128">
+
+    function.def @value() -> !felt.type<"bn128"> {
+      %n = poly.read_const @N : !felt.type<"bn128">
+      function.return %n : !felt.type<"bn128">
+    }
+  }
+
+  function.def @main() -> !felt.type<"bn128"> {
+    %one = function.call @T::@value<[#felt<const 1>]>() : () -> !felt.type<"bn128">
+    %two = function.call @T::@value<[#felt<const 2>]>() : () -> !felt.type<"bn128">
+    function.return %two : !felt.type<"bn128">
+  }
+}
+// CHECK-LABEL: function.def @"T_f<1>_value"() -> !felt.type<"bn128"> {
+// CHECK:         felt.const 1 : <"bn128">
+// CHECK-LABEL: function.def @"T_f<2>_value"() -> !felt.type<"bn128"> {
+// CHECK:         felt.const 2 : <"bn128">
+// CHECK-LABEL: function.def @main() -> !felt.type<"bn128"> {
+// CHECK:         function.call @"T_f<1>_value"()
+// CHECK:         function.call @"T_f<2>_value"()
