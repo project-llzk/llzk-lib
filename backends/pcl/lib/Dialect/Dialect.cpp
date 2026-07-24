@@ -95,8 +95,6 @@ mlir::Operation *PCLDialect::materializeConstant(
 // PrimeAttr
 //===----------------------------------------------------------------------===//
 
-namespace {}
-
 FeltAttr PrimeAttr::reduce(FeltAttr attr) {
   auto max = std::max({getValue().getBitWidth(), attr.getValue().getBitWidth()}) + 1;
   auto pExt = getValue().zext(max);
