@@ -1967,7 +1967,10 @@ private:
       if (replacementIt == targetInfo->replacements.end()) {
         continue;
       }
-      Attribute expectedAttr = TypeAttr::get(replacementIt->second.type);
+      Type expectedTy = substituteExplicitCallTemplateParams(
+          replacementIt->second.type, params, targetInfo->oldParamOrder
+      );
+      Attribute expectedAttr = TypeAttr::get(expectedTy);
       if (failed(collectTemplateArgInferences(attr, expectedAttr, loc))) {
         return failure();
       }
@@ -3279,8 +3282,9 @@ private:
     StructType convertedTy =
         changed ? getStructTypeWithParams(structTy.getNameRef(), ctx_, newParams) : structTy;
 
-    FailureOr<SymbolLookupResult<StructDefOp>> lookup =
-        convertedTy.getDefinition(tables_, module_, /*reportMissing=*/false);
+    FailureOr<SymbolLookupResult<StructDefOp>> lookup = lookupTopLevelSymbol<StructDefOp>(
+        tables_, convertedTy.getNameRef(), module_, /*reportMissing=*/false
+    );
     if (failed(lookup)) {
       return convertedTy;
     }
@@ -4069,15 +4073,17 @@ private:
       signalPassFailure();
       return;
     }
+
+    // Erase resolved parameters after all argument-list conversion has used
+    // the original order, but before concrete struct instantiation verifies
+    // rewritten owned-struct arities.
+    for (TemplateInferenceInfo *info : rewrites) {
+      removeResolvedParams(*info);
+    }
+
     if (failed(instantiateConcreteStructUses(module))) {
       signalPassFailure();
       return;
-    }
-
-    // Erase resolved parameters last; before this point, their original order is
-    // still useful for template argument list conversion.
-    for (TemplateInferenceInfo *info : rewrites) {
-      removeResolvedParams(*info);
     }
   }
 };
