@@ -217,11 +217,7 @@ SmallVector<Attribute> StructDefOp::getTemplateExprOpNames() {
   }
 }
 
-SymbolRefAttr StructDefOp::getFullyQualifiedName() {
-  auto res = getPathFromRoot(*this);
-  assert(succeeded(res));
-  return res.value();
-}
+SymbolRefAttr StructDefOp::getFullyQualifiedName() { return llzk::getFullyQualifiedName(*this); }
 
 namespace {
 
