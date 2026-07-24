@@ -831,16 +831,20 @@ LogicalResult IncludeOp::verifyTemplateParamsMatchInferred(
   if (isNullOrEmpty(callParams)) {
     for (TemplateParamOp paramOp : targetParamDefs) {
       auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getSymNameAttr()), Side::RHS});
-      if (it != unifications.end()) {
-        if (!it->second) {
-          return this->emitOpError().append(
-              "cannot infer a unique template instantiation value for parameter \"@",
-              paramOp.getName(), "\" from contract type signature"
-          );
-        }
-        if (failed(verifyTemplateParamCompatibility(it->second, paramOp))) {
-          return failure();
-        }
+      if (it == unifications.end()) {
+        return this->emitOpError().append(
+            "cannot infer template instantiation value for parameter \"@", paramOp.getName(),
+            "\" from contract type signature"
+        );
+      }
+      if (!it->second) {
+        return this->emitOpError().append(
+            "cannot infer a unique template instantiation value for parameter \"@",
+            paramOp.getName(), "\" from contract type signature"
+        );
+      }
+      if (failed(verifyTemplateParamCompatibility(it->second, paramOp))) {
+        return failure();
       }
     }
     return success();

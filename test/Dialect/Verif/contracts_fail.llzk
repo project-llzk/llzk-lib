@@ -14,6 +14,48 @@ module attributes {llzk.lang} {
 
 // -----
 
+// Syntactic use inside another template does not infer a target template argument.
+module attributes {llzk.lang} {
+  poly.template @Inner {
+    poly.param @M
+
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@Inner::@Box<[@M]>> {
+        %self = struct.new : <@Inner::@Box<[@M]>>
+        function.return %self : !struct.type<@Inner::@Box<[@M]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@Inner::@Box<[@M]>>) { function.return }
+    }
+  }
+
+  poly.template @Outer {
+    poly.param @N : !felt.type<"bn128">
+
+    function.def @token(%value: !struct.type<@Inner::@Box<[@N]>>) { function.return }
+
+    verif.contract @Base for @Outer::@token (%value: !struct.type<@Inner::@Box<[@N]>>) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  function.def @caller(
+      %value: !struct.type<@Inner::@Box<[#felt<const 35 : !felt.type<"goldilocks">>]>>
+  ) {
+    function.return
+  }
+
+  verif.contract @RequireInferredValue for @caller (
+      %value: !struct.type<@Inner::@Box<[#felt<const 35 : !felt.type<"goldilocks">>]>>
+  ) {
+    // expected-error@+1 {{'verif.include' op cannot infer template instantiation value for parameter "@N" from contract type signature}}
+    verif.include @Outer::@Base(%value) : (!struct.type<@Inner::@Box<[#felt<const 35 : !felt.type<"goldilocks">>]>>) -> ()
+  }
+}
+
+// -----
+
 // Repeated target parameters must infer one value; conflicting arguments are not an implicit
 // choice for either omitted or explicit instantiations.
 module attributes {llzk.lang} {

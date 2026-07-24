@@ -24,6 +24,38 @@ module attributes {llzk.lang} {
 
 // -----
 
+// Syntactic use inside another template does not infer a target template argument.
+module attributes {llzk.lang} {
+  poly.template @Inner {
+    poly.param @M
+
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@Inner::@Box<[@M]>> {
+        %self = struct.new : <@Inner::@Box<[@M]>>
+        function.return %self : !struct.type<@Inner::@Box<[@M]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@Inner::@Box<[@M]>>) { function.return }
+    }
+  }
+
+  poly.template @Outer {
+    poly.param @N : !felt.type<"bn128">
+
+    function.def @accept(%value: !struct.type<@Inner::@Box<[@N]>>) { function.return }
+  }
+
+  function.def @requireInferredValue(
+      %value: !struct.type<@Inner::@Box<[#felt<const 35 : !felt.type<"goldilocks">>]>>
+  ) {
+    // expected-error@+1 {{'function.call' op cannot infer template instantiation value for parameter "@N" from function type signature}}
+    function.call @Outer::@accept(%value) : (!struct.type<@Inner::@Box<[#felt<const 35 : !felt.type<"goldilocks">>]>>) -> ()
+    function.return
+  }
+}
+
+// -----
+
 // Repeated target parameters must infer one value; conflicting arguments are not an implicit
 // choice for either omitted or explicit instantiations.
 module attributes {llzk.lang} {
