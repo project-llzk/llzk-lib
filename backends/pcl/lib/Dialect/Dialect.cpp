@@ -17,6 +17,7 @@
 #include <mlir/IR/DialectImplementation.h>
 
 #include <llvm/Support/Debug.h>
+
 #include <algorithm>
 
 // TableGen'd implementation files
@@ -94,9 +95,7 @@ mlir::Operation *PCLDialect::materializeConstant(
 // PrimeAttr
 //===----------------------------------------------------------------------===//
 
-namespace {
-  
-}
+namespace {}
 
 FeltAttr PrimeAttr::reduce(FeltAttr attr) {
   auto max = std::max({getValue().getBitWidth(), attr.getValue().getBitWidth()}) + 1;

@@ -20,6 +20,7 @@
 
 #include <llvm/Support/Debug.h>
 #include <llvm/Support/LogicalResult.h>
+
 #include <algorithm>
 
 // TableGen'd implementation files
@@ -149,9 +150,7 @@ OpFoldResult tryFoldBinaryFeltOp(
 
 /// Attempts to fold a comparison operation over felts.
 template <typename Op, typename Fn>
-OpFoldResult foldCmpOp(
-    Op &op, typename Op::FoldAdaptor adaptor, Fn opFn
-) {
+OpFoldResult foldCmpOp(Op &op, typename Op::FoldAdaptor adaptor, Fn opFn) {
   auto prime = getFieldPrime(op);
   if (!prime) {
     return nullptr;
@@ -406,9 +405,7 @@ private:
 //===----------------------------------------------------------------------===//
 
 OpFoldResult CmpEqOp::fold(FoldAdaptor adaptor) {
-  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) {
-    return lhs == rhs;
-  });
+  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) { return lhs == rhs; });
 }
 
 void CmpEqOp::getCanonicalizationPatterns(RewritePatternSet &patterns, MLIRContext *context) {
@@ -420,9 +417,7 @@ void CmpEqOp::getCanonicalizationPatterns(RewritePatternSet &patterns, MLIRConte
 //===----------------------------------------------------------------------===//
 
 OpFoldResult CmpLtOp::fold(FoldAdaptor adaptor) {
-  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) {
-    return lhs.ult(rhs);
-  });
+  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) { return lhs.ult(rhs); });
 }
 
 //===----------------------------------------------------------------------===//
@@ -430,9 +425,7 @@ OpFoldResult CmpLtOp::fold(FoldAdaptor adaptor) {
 //===----------------------------------------------------------------------===//
 
 OpFoldResult CmpLeOp::fold(FoldAdaptor adaptor) {
-  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) {
-    return lhs.ule(rhs);
-  });
+  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) { return lhs.ule(rhs); });
 }
 
 //===----------------------------------------------------------------------===//
@@ -440,9 +433,7 @@ OpFoldResult CmpLeOp::fold(FoldAdaptor adaptor) {
 //===----------------------------------------------------------------------===//
 
 OpFoldResult CmpGtOp::fold(FoldAdaptor adaptor) {
-  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) {
-    return lhs.ugt(rhs);
-  });
+  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) { return lhs.ugt(rhs); });
 }
 
 //===----------------------------------------------------------------------===//
@@ -450,9 +441,7 @@ OpFoldResult CmpGtOp::fold(FoldAdaptor adaptor) {
 //===----------------------------------------------------------------------===//
 
 OpFoldResult CmpGeOp::fold(FoldAdaptor adaptor) {
-  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) {
-    return lhs.uge(rhs);
-  });
+  return foldCmpOp(*this, adaptor, [](const auto &lhs, const auto &rhs) { return lhs.uge(rhs); });
 }
 
 //===----------------------------------------------------------------------===//
