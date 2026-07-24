@@ -453,7 +453,8 @@ public:
   /// argument syntax. A removed argument must agree with the inferred replacement before it is
   /// dropped.
   FailureOr<ArrayAttr> convertTemplateParams(
-      ArrayAttr params, Operation *diagnosticOp, bool resolveTemplateSymbolArgs = true
+      ArrayAttr params, Operation *diagnosticOp, bool resolveTemplateSymbolArgs = true,
+      bool allowCurrentTemplateTypeVarSymbols = false
   ) const {
     if (!params) {
       return ArrayAttr();
@@ -464,9 +465,10 @@ public:
     SmallVector<Attribute> kept;
     for (auto [paramName, attr] : llvm::zip_equal(oldParamOrder_, params.getValue())) {
       if (removedParams_.contains(paramName)) {
-        if (failed(
-                checkRemovedTemplateParam(paramName, attr, diagnosticOp, resolveTemplateSymbolArgs)
-            )) {
+        if (failed(checkRemovedTemplateParam(
+                paramName, attr, diagnosticOp, resolveTemplateSymbolArgs,
+                allowCurrentTemplateTypeVarSymbols
+            ))) {
           return failure();
         }
         continue;
@@ -523,7 +525,8 @@ private:
 
   /// Check that an explicit argument for a removed parameter matches its replacement.
   LogicalResult checkRemovedTemplateParam(
-      StringAttr paramName, Attribute attr, Operation *diagnosticOp, bool resolveTemplateSymbolArgs
+      StringAttr paramName, Attribute attr, Operation *diagnosticOp, bool resolveTemplateSymbolArgs,
+      bool allowCurrentTemplateTypeVarSymbols = false
   ) const {
     auto replacementIt = replacements_.find(paramName);
     assert(replacementIt != replacements_.end() && "removed parameter must have a replacement");
@@ -532,7 +535,8 @@ private:
     }
     Attribute convertedAttr = resolveTemplateSymbolArgs ? convertTemplateArgAttr(attr) : attr;
     if (StringAttr symbolName = getFlatSymbolName(convertedAttr)) {
-      if (isCurrentTemplateTypeVarParamSymbol(symbolName, diagnosticOp)) {
+      if (allowCurrentTemplateTypeVarSymbols &&
+          isCurrentTemplateTypeVarParamSymbol(symbolName, diagnosticOp)) {
         return success();
       }
       return emitRemovedTemplateParamMismatch(paramName, attr, replacementIt->second, diagnosticOp);
@@ -612,7 +616,8 @@ private:
       if (trimResolvedParams_ && removeOwnedParams &&
           removedParams_.contains(oldParamOrder_[index])) {
         if (failed(checkRemovedTemplateParam(
-                oldParamOrder_[index], attr, diagnosticOp, /*resolveTemplateSymbolArgs=*/true
+                oldParamOrder_[index], attr, diagnosticOp, /*resolveTemplateSymbolArgs=*/true,
+                /*allowCurrentTemplateTypeVarSymbols=*/false
             ))) {
           return failure();
         }
@@ -1788,53 +1793,63 @@ public:
       SymbolTableCollection &tables
   ) {
     WalkResult result = root->walk([&](Operation *op) {
-      Location loc = op->getLoc();
+      return failed(collectOperationStructTemplateParamInferences(op, module, infos, tables))
+                 ? WalkResult::interrupt()
+                 : WalkResult::advance();
+    });
+    return failure(result.wasInterrupted());
+  }
 
-      if (auto func = llvm::dyn_cast<FuncDefOp>(op)) {
-        if (failed(collectStructTemplateParamInferences(
-                func.getFunctionType(), loc, module, infos, tables
-            ))) {
-          return WalkResult::interrupt();
-        }
+  /// Collect struct-template argument inferences from one operation's own type-bearing surfaces.
+  LogicalResult collectOperationStructTemplateParamInferences(
+      Operation *op, ModuleOp module, DenseMap<Operation *, TemplateInferenceInfo *> &infos,
+      SymbolTableCollection &tables
+  ) {
+    Location loc = op->getLoc();
+
+    if (auto func = llvm::dyn_cast<FuncDefOp>(op)) {
+      if (failed(collectStructTemplateParamInferences(
+              func.getFunctionType(), loc, module, infos, tables
+          ))) {
+        return failure();
       }
+    }
 
-      for (Region &region : op->getRegions()) {
-        for (Block &block : region.getBlocks()) {
-          for (Type argTy : block.getArgumentTypes()) {
-            if (failed(collectStructTemplateParamInferences(argTy, loc, module, infos, tables))) {
-              return WalkResult::interrupt();
-            }
+    for (Region &region : op->getRegions()) {
+      for (Block &block : region.getBlocks()) {
+        for (Type argTy : block.getArgumentTypes()) {
+          if (failed(collectStructTemplateParamInferences(argTy, loc, module, infos, tables))) {
+            return failure();
           }
         }
       }
+    }
 
-      for (Type resultTy : op->getResultTypes()) {
-        if (failed(collectStructTemplateParamInferences(resultTy, loc, module, infos, tables))) {
-          return WalkResult::interrupt();
-        }
+    for (Type resultTy : op->getResultTypes()) {
+      if (failed(collectStructTemplateParamInferences(resultTy, loc, module, infos, tables))) {
+        return failure();
       }
+    }
 
-      if (auto callOp = llvm::dyn_cast<CallOp>(op)) {
-        if (failed(collectCallableTemplateParamInferences(callOp, infos, tables))) {
-          return WalkResult::interrupt();
-        }
+    if (auto callOp = llvm::dyn_cast<CallOp>(op)) {
+      if (failed(collectCallableTemplateParamInferences(callOp, infos, tables))) {
+        return failure();
       }
-      if (auto includeOp = llvm::dyn_cast<verif::IncludeOp>(op)) {
-        if (failed(collectIncludeTemplateParamInferences(includeOp, infos, tables))) {
-          return WalkResult::interrupt();
-        }
+    }
+    if (auto includeOp = llvm::dyn_cast<verif::IncludeOp>(op)) {
+      if (failed(collectIncludeTemplateParamInferences(includeOp, infos, tables))) {
+        return failure();
       }
+    }
 
-      for (NamedAttribute attr : op->getAttrs()) {
-        if (failed(
-                collectStructTemplateParamInferences(attr.getValue(), loc, module, infos, tables)
-            )) {
-          return WalkResult::interrupt();
-        }
+    for (NamedAttribute attr : op->getAttrs()) {
+      if (failed(
+              collectStructTemplateParamInferences(attr.getValue(), loc, module, infos, tables)
+          )) {
+        return failure();
       }
-      return WalkResult::advance();
-    });
-    return failure(result.wasInterrupted());
+    }
+    return success();
   }
 
 private:
@@ -3079,8 +3094,10 @@ static FailureOr<bool> updateCallableTemplateParamsFor(
     bool resolveTemplateSymbolArgs =
         callableTemplate && callableTemplate.getOperation() == parentTemplate.getOperation();
     ArrayAttr oldParams = callableOp.getTemplateParamsAttr();
-    FailureOr<ArrayAttr> newParams =
-        converter->convertTemplateParams(oldParams, callableOp, resolveTemplateSymbolArgs);
+    FailureOr<ArrayAttr> newParams = converter->convertTemplateParams(
+        oldParams, callableOp, resolveTemplateSymbolArgs,
+        /*allowCurrentTemplateTypeVarSymbols=*/true
+    );
     if (failed(newParams)) {
       failedConversion = true;
       return;
@@ -3238,7 +3255,8 @@ private:
     bool resolveTemplateSymbolArgs =
         useTemplate && useTemplate.getOperation() == parentTemplate.getOperation();
     FailureOr<ArrayAttr> trimmedParams = converter->convertTemplateParams(
-        convertedTy.getParams(), diagnosticOp_, resolveTemplateSymbolArgs
+        convertedTy.getParams(), diagnosticOp_, resolveTemplateSymbolArgs,
+        /*allowCurrentTemplateTypeVarSymbols=*/false
     );
     if (failed(trimmedParams)) {
       hasFailure = true;
@@ -3721,6 +3739,28 @@ static LogicalResult inferStructTemplateParamUses(
         if (!sameReplacementTypes(oldTemplateScopeReplacements, info.templateScopeReplacements)) {
           changed = true;
         }
+      }
+
+      DenseMap<StringAttr, InferredType> oldTemplateScopeReplacements =
+          info.templateScopeReplacements;
+      TypeVarInferenceCollector collector(info, info.templateScopeReplacements);
+      WalkResult nonFunctionResult = info.templateOp.walk([&](Operation *op) {
+        if (llvm::isa<FuncDefOp, TemplateExprOp, verif::ContractOp>(op) ||
+            hasParentThatIsa<FuncDefOp, TemplateExprOp, verif::ContractOp>(op)) {
+          return WalkResult::advance();
+        }
+        if (failed(collector.collectOperationStructTemplateParamInferences(
+                op, module, infoByTemplate, tables
+            ))) {
+          return WalkResult::interrupt();
+        }
+        return WalkResult::advance();
+      });
+      if (nonFunctionResult.wasInterrupted()) {
+        return failure();
+      }
+      if (!sameReplacementTypes(oldTemplateScopeReplacements, info.templateScopeReplacements)) {
+        changed = true;
       }
 
       DenseMap<StringAttr, InferredType> oldReplacements = info.replacements;
