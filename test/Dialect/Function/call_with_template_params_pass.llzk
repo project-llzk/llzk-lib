@@ -270,6 +270,39 @@ module attributes {llzk.lang} {
 
 // -----
 
+// An explicit fieldless felt matches the same fielded value inferred from the signature.
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) { function.return }
+    }
+  }
+
+  poly.template @Target {
+    poly.param @N : !felt.type<"bn128">
+
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@N]>>) { function.return }
+  }
+
+  function.def @matchingFieldlessExplicitWithInferredField(
+      %value: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>
+  ) {
+    function.call @Target::@accept<[#felt<const 35>]>(%value) : (!struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>) -> ()
+    function.return
+  }
+}
+// CHECK-LABEL: function.def @matchingFieldlessExplicitWithInferredField
+// CHECK:         function.call @Target::@accept<[#felt<const 35>]>
+
+// -----
+
 module attributes {llzk.lang} {
   poly.template @GlobalFunc {
     poly.param @A : !poly.tvar<@A>
