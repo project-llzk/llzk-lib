@@ -135,7 +135,9 @@ def InlineFreeFunctionsPass : LLZKPass<"llzk-inline-free-functions"> {
     `builtin.module`. Calls to functions in nested or included modules, and
     calls outside `function.def` bodies, are left unchanged. After inlining,
     root free functions that have no remaining symbol uses anywhere in the
-    module are erased.
+    module are erased. This cleanup applies to every non-external root free
+    function, regardless of its symbol visibility or whether any call to it
+    was inlined.
 
     Inlining is best effort: free functions that participate in a call
     cycle are skipped (inlining one would re-materialize its calls
