@@ -178,6 +178,28 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  function.def @shape_identity(%shape: !array.type<4 x none>) -> !array.type<4 x none> {
+    function.return %shape : !array.type<4 x none>
+  }
+
+  function.def @shape_passthrough() -> !array.type<4 x none> {
+    %shape = llzk.nondet : !array.type<4 x none>
+    %result = function.call @shape_identity(%shape) : (!array.type<4 x none>) -> !array.type<4 x none>
+    function.return %result : !array.type<4 x none>
+  }
+}
+// CHECK-LABEL: function.def @shape_identity(
+// CHECK-SAME:              %[[SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<4 x none>) -> !array.type<4 x none> {
+// CHECK-NEXT:    function.return %[[SHAPE]] : !array.type<4 x none>
+// CHECK-NEXT:  }
+// CHECK-LABEL: function.def @shape_passthrough() -> !array.type<4 x none> {
+// CHECK-NEXT:    %[[SHAPE:[0-9a-zA-Z_\.]+]] = array.new  : <4 x none>
+// CHECK-NEXT:    %[[RESULT:[0-9a-zA-Z_\.]+]] = function.call @shape_identity(%[[SHAPE]]) : (!array.type<4 x none>) -> !array.type<4 x none>
+// CHECK-NEXT:    function.return %[[RESULT]] : !array.type<4 x none>
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
   poly.template @TFree {
     poly.param @A
 

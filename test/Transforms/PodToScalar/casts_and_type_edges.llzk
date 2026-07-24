@@ -1,0 +1,55 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+#map = affine_map<()[s0] -> (s0)>
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @sink(%arr: !array.type<? x !Pair>) -> index {
+    %c0 = arith.constant 0 : index
+    %len = array.len %arr, %c0 : !array.type<? x !Pair>
+    function.return %len : index
+  }
+
+  function.def @main(%arr: !array.type<#map x !Pair>) -> (!array.type<? x !Pair>, index) {
+    %cast = poly.unifiable_cast %arr : (!array.type<#map x !Pair>) -> !array.type<? x !Pair>
+    %len = function.call @sink(%cast) : (!array.type<? x !Pair>) -> index
+    function.return %cast, %len : !array.type<? x !Pair>, index
+  }
+}
+// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @sink(
+// CHECK-SAME:    %[[ARR_X:[0-9a-zA-Z_\.]+]]: !array.type<? x index>,
+// CHECK-SAME:    %[[ARR_Y:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type>,
+// CHECK-SAME:    %[[ARR_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<? x none>
+// CHECK-SAME:    ) -> index {
+// CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_SHAPE]], %[[C0]] : <? x none>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main(
+// CHECK-SAME:    %[[ARG_X:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>,
+// CHECK-SAME:    %[[ARG_Y:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x !felt.type>,
+// CHECK-SAME:    %[[ARG_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x none>
+// CHECK-SAME:    ) -> (!array.type<? x index>, !array.type<? x !felt.type>, !array.type<? x none>, index) {
+// CHECK-NEXT:      %[[CAST_X:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[ARG_X]] : (!array.type<#[[$M]] x index>) -> !array.type<? x index>
+// CHECK-NEXT:      %[[CAST_Y:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[ARG_Y]] : (!array.type<#[[$M]] x !felt.type>) -> !array.type<? x !felt.type>
+// CHECK-NEXT:      %[[CAST_SHAPE:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[ARG_SHAPE]] : (!array.type<#[[$M]] x none>) -> !array.type<? x none>
+// CHECK-NEXT:      %[[CALL_LEN:[0-9a-zA-Z_\.]+]] = function.call @sink(%[[CAST_X]], %[[CAST_Y]], %[[CAST_SHAPE]]) : (!array.type<? x index>, !array.type<? x !felt.type>, !array.type<? x none>) -> index
+// CHECK-NEXT:      function.return %[[CAST_X]], %[[CAST_Y]], %[[CAST_SHAPE]], %[[CALL_LEN]] : !array.type<? x index>, !array.type<? x !felt.type>, !array.type<? x none>, index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// COM: ensures `unrealized_conversion_cast` that was unreleated to this pass is preserved
+module attributes {llzk.lang} {
+  function.def @preserve_unrelated_cast(%flag: i1) -> !felt.type {
+    %cast = builtin.unrealized_conversion_cast %flag : i1 to !felt.type
+    function.return %cast : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @preserve_unrelated_cast(%[[FLAG:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type {
+// CHECK-NEXT:      %[[CAST:[0-9a-zA-Z_\.]+]] = builtin.unrealized_conversion_cast %[[FLAG]] : i1 to !felt.type
+// CHECK-NEXT:      function.return %[[CAST]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

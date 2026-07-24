@@ -1,0 +1,247 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @S {
+    struct.member @m : !pod.type<[@a: !array.type<2 x !pod.type<[@x: index, @y: !felt.type]>>, @b: index]>
+
+    function.def @compute(%p: !pod.type<[@a: !array.type<2 x !pod.type<[@x: index, @y: !felt.type]>>, @b: index]>)
+        -> !struct.type<@S> {
+      %self = struct.new : !struct.type<@S>
+      struct.writem %self[@m] = %p : !struct.type<@S>, !pod.type<[@a: !array.type<2 x !pod.type<[@x: index, @y: !felt.type]>>, @b: index]>
+      %loaded = struct.readm %self[@m] : !struct.type<@S>, !pod.type<[@a: !array.type<2 x !pod.type<[@x: index, @y: !felt.type]>>, @b: index]>
+      %b = pod.read %loaded[@b] : !pod.type<[@a: !array.type<2 x !pod.type<[@x: index, @y: !felt.type]>>, @b: index]>, index
+      function.return %self : !struct.type<@S>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@S>, %p: !pod.type<[@a: !array.type<2 x !pod.type<[@x: index, @y: !felt.type]>>, @b: index]>
+    ) {
+      %loaded = struct.readm %self[@m] : !struct.type<@S>, !pod.type<[@a: !array.type<2 x !pod.type<[@x: index, @y: !felt.type]>>, @b: index]>
+      %b = pod.read %loaded[@b] : !pod.type<[@a: !array.type<2 x !pod.type<[@x: index, @y: !felt.type]>>, @b: index]>, index
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @S {
+// CHECK-DAG:       struct.member @m_a_x : !array.type<2 x index>
+// CHECK-DAG:       struct.member @m_a_y : !array.type<2 x !felt.type>
+// CHECK-DAG:       struct.member @m_b : index
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@S> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@S>
+// CHECK-DAG:         struct.writem %[[VAL_3]][@m_a_x] = %[[VAL_0]] : <@S>, !array.type<2 x index>
+// CHECK-DAG:         struct.writem %[[VAL_3]][@m_a_y] = %[[VAL_1]] : <@S>, !array.type<2 x !felt.type>
+// CHECK-DAG:         struct.writem %[[VAL_3]][@m_b] = %[[VAL_2]] : <@S>, index
+// CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@S>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@S>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>, %[[VAL_7:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+#outer = affine_map<()[s0] -> (s0)>
+!Item = !pod.type<[@x: index]>
+!Outer = !pod.type<[@items: !array.type<#outer x !Item>]>
+module attributes {llzk.lang} {
+  function.def @return_direct(%n: index) -> !Outer {
+    %p = pod.new()[%n] : !Outer
+    function.return %p : !Outer
+  }
+}
+// CHECK: #[[$MAP0:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @return_direct(%[[N0:[0-9a-zA-Z_\.]+]]: index) -> !array.type<#[[$MAP0]] x index> {
+// CHECK-NEXT:      %[[ARR0:[0-9a-zA-Z_\.]+]] = array.new{()[%[[N0]]]} : <#[[$MAP0]] x index>
+// CHECK-NEXT:      function.return %[[ARR0]] : !array.type<#[[$MAP0]] x index>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+#outer = affine_map<()[s0] -> (s0)>
+!Item = !pod.type<[@x: index]>
+!Outer = !pod.type<[@items: !array.type<#outer x !Item>]>
+module attributes {llzk.lang} {
+  struct.def @S {
+    struct.member @m : !Outer
+
+    function.def @compute(%n: index) -> !struct.type<@S> {
+      %p = pod.new()[%n] : !Outer
+      %self = struct.new : !struct.type<@S>
+      struct.writem %self[@m] = %p : !struct.type<@S>, !Outer
+      function.return %self : !struct.type<@S>
+    }
+
+    function.def @constrain(%self: !struct.type<@S>, %n: index) {
+      function.return
+    }
+  }
+}
+// CHECK: #[[$MAP1:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @S {
+// CHECK-NEXT:      struct.member @m_items_x : !array.type<#[[$MAP1]] x index>
+// CHECK-NEXT:      function.def @compute(%[[N1:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@S> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@S>
+// CHECK-NEXT:        %[[ARR1:[0-9a-zA-Z_\.]+]] = array.new{()[%[[N1]]]} : <#[[$MAP1]] x index>
+// CHECK-NEXT:        struct.writem %[[SELF]][@m_items_x] = %[[ARR1]] : <@S>, !array.type<#[[$MAP1]] x index>
+// CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@S>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[SELFARG:[0-9a-zA-Z_\.]+]]: !struct.type<@S>, %[[N2:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Item = !pod.type<[@x: index]>
+!Outer = !pod.type<[@items: !array.type<2 x !Item>]>
+module attributes {llzk.lang} {
+  function.def @return_unwritten_static() -> !Outer {
+    %p = pod.new : !Outer
+    function.return %p : !Outer
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @return_unwritten_static() -> !array.type<2 x index> {
+// CHECK-NEXT:      %[[ARR:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:      function.return %[[ARR]] : !array.type<2 x index>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Item = !pod.type<[@x: index]>
+!Outer = !pod.type<[@items: !array.type<2 x !Item>]>
+module attributes {llzk.lang} {
+  struct.def @S {
+    struct.member @m : !Outer
+
+    function.def @compute() -> !struct.type<@S> {
+      %p = pod.new : !Outer
+      %self = struct.new : !struct.type<@S>
+      struct.writem %self[@m] = %p : !struct.type<@S>, !Outer
+      function.return %self : !struct.type<@S>
+    }
+
+    function.def @constrain(%self: !struct.type<@S>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @S {
+// CHECK-NEXT:      struct.member @m_items_x : !array.type<2 x index>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@S> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@S>
+// CHECK-NEXT:        %[[ARR:[0-9a-zA-Z_\.]+]] = array.new  : <2 x index>
+// CHECK-NEXT:        struct.writem %[[SELF]][@m_items_x] = %[[ARR]] : <@S>, !array.type<2 x index>
+// CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@S>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[SELFARG:[0-9a-zA-Z_\.]+]]: !struct.type<@S>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+#map = affine_map<()[s0] -> (s0 - 1)>
+module attributes {llzk.lang} {
+  struct.def @S {
+    struct.member @m : !array.type<2 x !pod.type<[@x: !felt.type, @y: !felt.type]>> {column}
+
+    function.def @compute(%idx: index) -> !struct.type<@S> {
+      %self = struct.new : !struct.type<@S>
+      function.return %self : !struct.type<@S>
+    }
+
+    function.def @constrain(%self: !struct.type<@S>, %idx: index) {
+      %arr = struct.readm %self[@m] {()[%idx]} :
+          !struct.type<@S>, !array.type<2 x !pod.type<[@x: !felt.type, @y: !felt.type]>>
+          {tableOffset = #map}
+      %c0 = arith.constant 0 : index
+      %elt = array.read %arr[%c0] :
+          !array.type<2 x !pod.type<[@x: !felt.type, @y: !felt.type]>>,
+          !pod.type<[@x: !felt.type, @y: !felt.type]>
+      %x = pod.read %elt[@x] : !pod.type<[@x: !felt.type, @y: !felt.type]>, !felt.type
+      %y = pod.read %elt[@y] : !pod.type<[@x: !felt.type, @y: !felt.type]>, !felt.type
+      constrain.eq %x, %y : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0 - 1)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @S {
+// CHECK-NEXT:      struct.member @m_x : !array.type<2 x !felt.type> {column}
+// CHECK-NEXT:      struct.member @m_y : !array.type<2 x !felt.type> {column}
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@S> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@S>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@S>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@S>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@m_x] {(){{\[}}%[[VAL_3]]]} : <@S>, !array.type<2 x !felt.type> {tableOffset = #[[$M]]}
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@m_y] {(){{\[}}%[[VAL_3]]]} : <@S>, !array.type<2 x !felt.type> {tableOffset = #[[$M]]}
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_4]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_4]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_7]], %[[VAL_8]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+#map = affine_map<()[s0, s1] -> (s0 + s1)>
+!Outer = !pod.type<[
+  @a: !felt.type,
+  @b: !array.type<#map, #map x !felt.type>,
+  @c: !struct.type<@TS::@S<[#map, #map]>>
+]>
+module attributes {llzk.lang} {
+  poly.template @TS {
+    poly.param @P0
+    poly.param @P1
+
+    struct.def @S {
+      struct.member @tag : index
+
+      function.def @compute() -> !struct.type<@TS::@S<[@P0, @P1]>> {
+        %self = struct.new : !struct.type<@TS::@S<[@P0, @P1]>>
+        function.return %self : !struct.type<@TS::@S<[@P0, @P1]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TS::@S<[@P0, @P1]>>) {
+        function.return
+      }
+    }
+  }
+
+  function.def @return_direct(%m0: index, %m1: index, %m2: index, %m3: index) -> !Outer attributes {function.allow_witness} {
+    %pod = pod.new()[%m0, %m1], ()[%m1, %m0], ()[%m2, %m3], ()[%m3, %m2] : !Outer
+    function.return %pod : !Outer
+  }
+}
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<()[s0, s1] -> (s0 + s1)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TS {
+// CHECK-NEXT:      poly.param @P0
+// CHECK-NEXT:      poly.param @P1
+// CHECK-NEXT:      struct.def @S {
+// CHECK-NEXT:        struct.member @tag : index
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@TS::@S<[@P0, @P1]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TS::@S<[@P0, @P1]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@TS::@S<[@P0, @P1]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TS::@S<[@P0, @P1]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @return_direct(%[[VAL_2:[0-9a-zA-Z_\.]+]]: index, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index, %[[VAL_4:[0-9a-zA-Z_\.]+]]: index, %[[VAL_5:[0-9a-zA-Z_\.]+]]: index) -> (!felt.type, !array.type<#[[$ATTR_0]],#[[$ATTR_0]] x !felt.type>, !struct.type<@TS::@S<[#[[$ATTR_0]], #[[$ATTR_0]]]>>) attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = llzk.nondet : !felt.type
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.new{(){{\[}}%[[VAL_2]], %[[VAL_3]]], (){{\[}}%[[VAL_3]], %[[VAL_2]]]} : <#[[$ATTR_0]],#[[$ATTR_0]] x !felt.type>
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TS::@S<[#[[$ATTR_0]], #[[$ATTR_0]]]>>
+// CHECK-NEXT:      function.return %[[VAL_6]], %[[VAL_7]], %[[VAL_8]] : !felt.type, !array.type<#[[$ATTR_0]],#[[$ATTR_0]] x !felt.type>, !struct.type<@TS::@S<[#[[$ATTR_0]], #[[$ATTR_0]]]>>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

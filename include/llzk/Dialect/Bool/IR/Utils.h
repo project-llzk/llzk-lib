@@ -12,9 +12,13 @@
 #include "llzk/Dialect/Array/IR/Types.h"
 
 namespace llzk::boolean {
+
 /// Extracts the type used for a quantifier op block argument.
 ///
 /// If the array has only one dimension, returns the element type.
 /// Otherwise, returns an array type with the first dimension removed.
-mlir::Type getQuantifierOpDomainIterType(llzk::array::ArrayType arr);
+inline mlir::Type getQuantifierOpDomainIterType(llzk::array::ArrayType arr) {
+  return arr.getSelectionType(1);
+}
+
 } // namespace llzk::boolean

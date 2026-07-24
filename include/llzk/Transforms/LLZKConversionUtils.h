@@ -183,6 +183,27 @@ inline function::CallOp createCallPreservingInstantiationOperands(
   );
 }
 
+/// Replace any AffineMap-backed array dimensions within `type` with wildcard `?` dims.
+inline static mlir::Type replaceAffineMapArrayDimsWithWildcards(mlir::Type type) {
+  auto arrTy = llvm::dyn_cast<array::ArrayType>(type);
+  if (!arrTy) {
+    return type;
+  }
+
+  mlir::Builder builder(arrTy.getContext());
+  llvm::SmallVector<mlir::Attribute> dims;
+  dims.reserve(arrTy.getDimensionSizes().size());
+  for (mlir::Attribute dimSize : arrTy.getDimensionSizes()) {
+    if (llvm::isa<mlir::AffineMapAttr>(dimSize)) {
+      dims.push_back(builder.getIndexAttr(mlir::ShapedType::kDynamic));
+    } else {
+      dims.push_back(dimSize);
+    }
+  }
+
+  return arrTy.cloneWith(replaceAffineMapArrayDimsWithWildcards(arrTy.getElementType()), dims);
+}
+
 /// General helper for converting a `FuncDefOp` by changing its input and/or result types and the
 /// associated attributes for those types.
 class FunctionTypeConverter {

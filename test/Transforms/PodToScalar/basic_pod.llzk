@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 module attributes {llzk.lang} {
   function.def @new_empty() -> index {
@@ -225,3 +225,40 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 // -----
+
+module attributes {llzk.lang} {
+  struct.def @NeedsInput {
+    struct.member @m : index
+    function.def @compute(%i: index) -> !struct.type<@NeedsInput> {
+      %self = struct.new : !struct.type<@NeedsInput>
+      struct.writem %self[@m] = %i : !struct.type<@NeedsInput>, index
+      function.return %self : !struct.type<@NeedsInput>
+    }
+    function.def @constrain(%self: !struct.type<@NeedsInput>, %i: index) {
+      function.return
+    }
+  }
+
+  function.def @new_then_read_struct_without_write() -> !struct.type<@NeedsInput> {
+    %pod = pod.new : !pod.type<[@component: !struct.type<@NeedsInput>]>
+    %component = pod.read %pod[@component] : !pod.type<[@component: !struct.type<@NeedsInput>]>, !struct.type<@NeedsInput>
+    function.return %component : !struct.type<@NeedsInput>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @NeedsInput {
+// CHECK-NEXT:      struct.member @m : index
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@NeedsInput> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@NeedsInput>
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@m] = %[[VAL_0]] : <@NeedsInput>, index
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@NeedsInput>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@NeedsInput>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @new_then_read_struct_without_write() -> !struct.type<@NeedsInput> {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@NeedsInput>
+// CHECK-NEXT:      function.return %[[VAL_4]] : !struct.type<@NeedsInput>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

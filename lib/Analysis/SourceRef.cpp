@@ -361,15 +361,7 @@ Type SourceRef::getType() const {
 
     auto arrTy = dyn_cast<ArrayType>(currTy);
     ensure(static_cast<bool>(arrTy), "SourceRef array index requires an array-typed base");
-    ensure(
-        !arrTy.getDimensionSizes().empty(),
-        "SourceRef indexes more array dimensions than exist in the base type"
-    );
-    if (arrTy.getDimensionSizes().size() == 1) {
-      currTy = arrTy.getElementType();
-    } else {
-      currTy = ArrayType::get(arrTy.getElementType(), arrTy.getDimensionSizes().drop_front());
-    }
+    currTy = arrTy.getSelectionType(1);
   }
   return currTy;
 }

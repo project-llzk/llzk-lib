@@ -64,9 +64,12 @@ template <typename Derived, typename ResultType> struct LLZKTypeSwitch {
         .template Case<ArrayType>([this](auto t) {
       return static_cast<Derived *>(this)->caseArray(t);
     })
-        .template Case<PodType>([this](auto t) { return static_cast<Derived *>(this)->casePod(t); })
         .template Case<StructType>([this](auto t) {
       return static_cast<Derived *>(this)->caseStruct(t);
+    }).template Case<PodType>([this](auto t) {
+      return static_cast<Derived *>(this)->casePod(t);
+    }).template Case<NoneType>([this](auto t) {
+      return static_cast<Derived *>(this)->caseNone(t);
     }).Default([this](Type t) {
       if (t.isSignlessInteger(1)) {
         return static_cast<Derived *>(this)->caseBool(cast<IntegerType>(t));
@@ -106,6 +109,7 @@ BuildShortTypeString &BuildShortTypeString::append(Type type) {
     Impl(BuildShortTypeString &outerRef) : outer(outerRef) {}
 
     void caseInvalid(Type) { outer.ss << "!INVALID"; }
+    void caseNone(NoneType) { outer.ss << 'n'; }
     void caseBool(IntegerType) { outer.ss << 'b'; }
     void caseIndex(IndexType) { outer.ss << 'i'; }
     void caseFelt(FeltType) { outer.ss << 'f'; }
@@ -426,8 +430,9 @@ public:
   }
 
   bool isValidArrayElemTypeImpl(Type type) {
-    // ArrayType element can be any valid type sans ArrayType itself.
-    return !llvm::isa<ArrayType>(type) && isValidTypeImpl(type);
+    // ArrayType element can be any valid type sans ArrayType itself. Additionally, `NoneType`
+    // is permitted for shape-only arrays that carry no element payload.
+    return llvm::isa<NoneType>(type) || (!llvm::isa<ArrayType>(type) && isValidTypeImpl(type));
   }
 
   bool isValidArrayTypeImpl(
@@ -533,6 +538,7 @@ bool AllowedTypes::isValidTypeImpl(Type type) {
       }
       return !outer.no_struct && outer.areValidStructTypeParams(t.getParams());
     }
+    bool caseNone(NoneType) { return false; }
     bool caseInvalid(Type) { return false; }
   };
   return Impl(*this).match(type);
@@ -585,14 +591,28 @@ bool hasAffineMapAttr(Type type) {
 
 bool isDynamic(IntegerAttr intAttr) { return ShapedType::isDynamic(fromAPInt(intAttr.getValue())); }
 
+ArrayType flattenArrayElementType(ArrayType outerArrTy, Type elementType) {
+  SmallVector<Attribute> mergedDims(outerArrTy.getDimensionSizes());
+  while (ArrayType nestedArrTy = llvm::dyn_cast<ArrayType>(elementType)) {
+    llvm::append_range(mergedDims, nestedArrTy.getDimensionSizes());
+    elementType = nestedArrTy.getElementType();
+  }
+  return ArrayType::get(elementType, mergedDims);
+}
+
 uint64_t computeEmitEqCardinality(Type type) {
   struct Impl : LLZKTypeSwitch<Impl, uint64_t> {
+    uint64_t caseNone(NoneType) { return 0; }
     uint64_t caseBool(IntegerType) { return 1; }
     uint64_t caseIndex(IndexType) { return 1; }
     uint64_t caseFelt(FeltType) { return 1; }
     uint64_t caseArray(ArrayType t) {
+      uint64_t elementCardinality = computeEmitEqCardinality(t.getElementType());
+      if (elementCardinality == 0) {
+        return 0;
+      }
       int64_t n = t.getNumElements();
-      return llzk::checkedCast<uint64_t>(n) * computeEmitEqCardinality(t.getElementType());
+      return llzk::checkedCast<uint64_t>(n) * elementCardinality;
     }
     uint64_t caseStruct(StructType) { llvm_unreachable("not a valid EmitEq type"); }
     uint64_t casePod(PodType t) {

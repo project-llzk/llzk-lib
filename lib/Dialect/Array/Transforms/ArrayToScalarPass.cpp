@@ -77,6 +77,7 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/RAM/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
@@ -107,13 +108,16 @@ using namespace llzk;
 using namespace llzk::array;
 using namespace llzk::component;
 using namespace llzk::function;
+using namespace llzk::polymorphic;
 
 #define DEBUG_TYPE "llzk-array-to-scalar"
 
 namespace {
 
 /// If the given ArrayType can be split into scalars, return it, otherwise nullptr.
-inline ArrayType splittableArray(ArrayType at) { return at.hasStaticShape() ? at : nullptr; }
+inline ArrayType splittableArray(ArrayType at) {
+  return at.hasStaticShape() && !llvm::isa<NoneType>(at.getElementType()) ? at : nullptr;
+}
 
 /// If the given Type is an ArrayType that can be split into scalars, return it, otherwise nullptr.
 inline ArrayType splittableArray(Type t) {
@@ -181,26 +185,6 @@ splitArrayType(TypeCollection types, SmallVector<size_t> *originalIdxToSize = nu
   return collect;
 }
 
-/// Generate `arith::ConstantOp` at the current position of the `rewriter` for each int attribute in
-/// the ArrayAttr.
-SmallVector<Value> genIndexConstants(ArrayAttr index, Location loc, RewriterBase &rewriter) {
-  SmallVector<Value> operands;
-  for (Attribute a : index) {
-    // ASSERT: Attributes are index constants, created by ArrayType::getSubelementIndices().
-    IntegerAttr ia = llvm::dyn_cast<IntegerAttr>(a);
-    assert(ia && ia.getType().isIndex());
-    operands.push_back(rewriter.create<arith::ConstantOp>(loc, ia));
-  }
-  return operands;
-}
-
-/// Create an `array.write` for one scalar element of `baseArrayOp`.
-inline WriteArrayOp
-genWrite(Location loc, Value baseArrayOp, ArrayAttr index, Value init, RewriterBase &rewriter) {
-  SmallVector<Value> readOperands = genIndexConstants(index, loc, rewriter);
-  return rewriter.create<WriteArrayOp>(loc, baseArrayOp, ValueRange(readOperands), init);
-}
-
 /// Return the suffix for one split scalar element of an array, using its multidimensional index.
 static std::string formatSplitArrayIndexSuffix(ArrayAttr index) {
   std::string suffix;
@@ -254,7 +238,7 @@ CallOp newCallOpWithSplitResults(
       assert(allIndices); // follows from legal() check
       assert(std::cmp_equal(allIndices->size(), at.getNumElements()));
       for (ArrayAttr subIdx : allIndices.value()) {
-        genWrite(loc, newArray, subIdx, *newResults, rewriter);
+        ArrayAccessOpInterface::genWrite(rewriter, loc, newArray, subIdx, *newResults);
         newResults++;
       }
     } else {
@@ -268,13 +252,6 @@ CallOp newCallOpWithSplitResults(
   return newCall;
 }
 
-/// Create an `array.read` for one scalar element of `baseArrayOp`.
-inline ReadArrayOp
-genRead(Location loc, Value baseArrayOp, ArrayAttr index, ConversionPatternRewriter &rewriter) {
-  SmallVector<Value> readOperands = genIndexConstants(index, loc, rewriter);
-  return rewriter.create<ReadArrayOp>(loc, baseArrayOp, ValueRange(readOperands));
-}
-
 /// If the operand has ArrayType, add N reads from the array to `newOperands`; otherwise add the
 /// original operand unchanged.
 void processInputOperand(
@@ -285,7 +262,7 @@ void processInputOperand(
     std::optional<SmallVector<ArrayAttr>> indices = at.getSubelementIndices();
     assert(indices.has_value() && "passed earlier hasStaticShape() check");
     for (ArrayAttr index : indices.value()) {
-      newOperands.push_back(genRead(loc, operand, index, rewriter));
+      newOperands.push_back(ArrayAccessOpInterface::genRead(rewriter, loc, operand, index));
     }
   } else {
     newOperands.push_back(operand);
@@ -341,11 +318,11 @@ inline void rewriteImpl(
     ArrayAttr fullIndex = ArrayAttr::get(ctx, joined);
 
     if constexpr (dir == Direction::SMALL_TO_LARGE) {
-      auto init = genRead(loc, smallArr, indexingTail, rewriter);
-      genWrite(loc, largeArr, fullIndex, init, rewriter);
+      auto init = ArrayAccessOpInterface::genRead(rewriter, loc, smallArr, indexingTail);
+      ArrayAccessOpInterface::genWrite(rewriter, loc, largeArr, fullIndex, init);
     } else if constexpr (dir == Direction::LARGE_TO_SMALL) {
-      auto init = genRead(loc, largeArr, fullIndex, rewriter);
-      genWrite(loc, smallArr, indexingTail, init, rewriter);
+      auto init = ArrayAccessOpInterface::genRead(rewriter, loc, largeArr, fullIndex);
+      ArrayAccessOpInterface::genWrite(rewriter, loc, smallArr, indexingTail, init);
     }
   }
 }
@@ -493,7 +470,7 @@ public:
             assert(std::cmp_equal(allIndices->size(), at.getNumElements()));
             for (ArrayAttr subIdx : allIndices.value()) {
               BlockArgument newArg = entryBlock.insertArgument(i, at.getElementType(), loc);
-              genWrite(loc, newArray, subIdx, newArg, rewriter);
+              ArrayAccessOpInterface::genWrite(rewriter, loc, newArray, subIdx, newArg);
               ++i;
             }
           } else {
@@ -561,7 +538,7 @@ public:
 
   /// If 'dimIdx' is constant and that dimension of the ArrayType has static size, return it.
   static std::optional<llvm::APInt> getDimSizeIfKnown(Value dimIdx, ArrayType baseArrType) {
-    if (splittableArray(baseArrType)) {
+    if (baseArrType.hasStaticShape()) {
       llvm::APInt idxAP;
       if (mlir::matchPattern(dimIdx, mlir::m_ConstantInt(&idxAP))) {
         std::optional<int64_t> signedIdx = idxAP.trySExtValue();
@@ -663,7 +640,7 @@ public:
       Location loc, void *, ArrayAttr idx, MemberInfo newMember, OpAdaptor adaptor,
       ConversionPatternRewriter &rewriter
   ) {
-    ReadArrayOp scalarRead = genRead(loc, adaptor.getVal(), idx, rewriter);
+    Value scalarRead = ArrayAccessOpInterface::genRead(rewriter, loc, adaptor.getVal(), idx);
     rewriter.create<MemberWriteOp>(
         loc, adaptor.getComponent(), FlatSymbolRefAttr::get(newMember.first), scalarRead
     );
@@ -698,7 +675,7 @@ public:
     MemberReadOp scalarRead = rewriter.create<MemberReadOp>(
         loc, newMember.second, adaptor.getComponent(), newMember.first
     );
-    genWrite(loc, newArray, idx, scalarRead, rewriter);
+    ArrayAccessOpInterface::genWrite(rewriter, loc, newArray, idx, scalarRead);
   }
 };
 
@@ -720,7 +697,14 @@ class NondetToNewArray : public OpConversionPattern<NonDetOp> {
       NonDetOp nondetOp, OpAdaptor, ConversionPatternRewriter &rewriter
   ) const override {
     if (auto at = dyn_cast<ArrayType>(nondetOp.getType())) {
-      rewriter.replaceOpWithNewOp<CreateArrayOp>(nondetOp, at);
+      auto wildcardTy = llvm::cast<ArrayType>(replaceAffineMapArrayDimsWithWildcards(at));
+      auto newArray = rewriter.create<CreateArrayOp>(nondetOp.getLoc(), wildcardTy);
+      if (wildcardTy == at) {
+        rewriter.replaceOp(nondetOp, newArray);
+      } else {
+        auto cast = rewriter.create<UnifiableCastOp>(nondetOp.getLoc(), at, newArray);
+        rewriter.replaceOp(nondetOp, cast.getResult());
+      }
       return success();
     }
     return failure();

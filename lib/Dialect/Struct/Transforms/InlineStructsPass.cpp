@@ -378,14 +378,14 @@ class StructInliner {
       /// Combine chained MemberReadOp according to replacements in `destToSrcToClone`.
       /// See `combineReadChain()`
       auto memberReadHandler = [this](MemberReadOp readOp) {
-        // Check if the member ref op should be deleted in the end
+        // If the MemberReadOp was replaced/erased, it must not be queued for later deletion.
+        if (combineReadChain(readOp, this->data.tables, destToSrcToClone)) {
+          return WalkResult::skip();
+        }
         if (this->destToSrcToClone.contains(this->data.getDef(readOp))) {
           this->data.toDelete.memberReadOps.insert(readOp);
         }
-        // If the MemberReadOp was replaced/erased, must skip.
-        return combineReadChain(readOp, this->data.tables, destToSrcToClone)
-                   ? WalkResult::skip()
-                   : WalkResult::advance();
+        return WalkResult::advance();
       };
 
       WalkResult walkRes = destFunc.getBody().walk<WalkOrder::PreOrder>([&](Operation *op) {

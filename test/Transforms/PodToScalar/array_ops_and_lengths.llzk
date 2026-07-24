@@ -1,0 +1,251 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+!Pair = !pod.type<[@lhs: index, @rhs: !felt.type]>
+!PairRow = !array.type<2 x !Pair>
+!PairMatrix = !array.type<2,2 x !Pair>
+module attributes {llzk.lang} {
+  function.def @extract_then_insert(%src: !PairMatrix) -> !PairMatrix {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %row = array.extract %src[%c0] : !PairMatrix
+    %dst = array.new : !PairMatrix
+    array.insert %dst[%c1] = %row : !PairMatrix, !PairRow
+    function.return %dst : !PairMatrix
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @extract_then_insert
+// CHECK-SAME:    (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2,2 x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2,2 x !felt.type>)
+// CHECK-SAME:    -> (!array.type<2,2 x index>, !array.type<2,2 x !felt.type>) {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_2]]] : <2,2 x index>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_1]]{{\[}}%[[VAL_2]]] : <2,2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.new : <2,2 x index>
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.new : <2,2 x !felt.type>
+// CHECK-NEXT:      array.insert %[[VAL_6]]{{\[}}%[[VAL_3]]] = %[[VAL_4]] : <2,2 x index>, <2 x index>
+// CHECK-NEXT:      array.insert %[[VAL_7]]{{\[}}%[[VAL_3]]] = %[[VAL_5]] : <2,2 x !felt.type>, <2 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_6]], %[[VAL_7]] : !array.type<2,2 x index>, !array.type<2,2 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @len_multi_leaf(%arr: !array.type<2 x !Pair>, %dim: index) -> index {
+    %len = array.len %arr, %dim : !array.type<2 x !Pair>
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @len_multi_leaf(%[[ARR_X:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>, %[[ARR_Y:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>, %[[DIM:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_X]], %[[DIM]] : <2 x index>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// Tests: preserve the `array.len` semantics so a dynamic dimension selection
+// cannot observe dimensions that did not exist before pod flattening.
+!Elem = !pod.type<[@vals: !array.type<3 x index>]>
+module attributes {llzk.lang} {
+  function.def @len_leaf_array_dynamic_dim(%arr: !array.type<2 x !Elem>, %dim: index) -> index {
+    %len = array.len %arr, %dim : !array.type<2 x !Elem>
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @len_leaf_array_dynamic_dim(%[[ARR:[0-9a-zA-Z_\.]+]]: !array.type<2,3 x index>, %[[DIM:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[SHAPE:[0-9a-zA-Z_\.]+]] = array.new  : <2 x none>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SHAPE]], %[[DIM]] : <2 x none>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// Tests: a real `none`-array payload leaf must not be mistaken for the synthetic shape carrier.
+// The lowered `array.len` still needs a fresh rank-1 shape source, not the flattened `<2,3 x none>`
+// payload leaf.
+!NoneLeaf = !pod.type<[@s: !array.type<3 x none>]>
+module attributes {llzk.lang} {
+  function.def @len_none_leaf_array_dynamic_dim(
+      %arr: !array.type<2 x !NoneLeaf>, %dim: index
+  ) -> index {
+    %len = array.len %arr, %dim : !array.type<2 x !NoneLeaf>
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @len_none_leaf_array_dynamic_dim(%[[ARR:[0-9a-zA-Z_\.]+]]: !array.type<2,3 x none>, %[[DIM:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[SHAPE:[0-9a-zA-Z_\.]+]] = array.new  : <2 x none>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SHAPE]], %[[DIM]] : <2 x none>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @len_empty_leaf_static_create(%dim: index) -> index {
+    %arr = array.new : !array.type<4 x !pod.type<[]>>
+    %len = array.len %arr, %dim : !array.type<4 x !pod.type<[]>>
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @len_empty_leaf_static_create(%[[DIM:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[ARR:[0-9a-zA-Z_\.]+]] = array.new  : <4 x none>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR]], %[[DIM]] : <4 x none>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+#map = affine_map<()[s0] -> (s0)>
+module attributes {llzk.lang} {
+  function.def @len_empty_leaf_array(%n: index, %dim: index) -> index {
+    %arr = array.new{()[%n]} : !array.type<#map x !pod.type<[]>>
+    %len = array.len %arr, %dim : !array.type<#map x !pod.type<[]>>
+    function.return %len : index
+  }
+}
+// CHECK: #[[$MAP:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @len_empty_leaf_array(%[[N:[0-9a-zA-Z_\.]+]]: index, %[[DIM:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[ARR:[0-9a-zA-Z_\.]+]] = array.new{()[%[[N]]]} : <#[[$MAP]] x none>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR]], %[[DIM]] : <#[[$MAP]] x none>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @len_empty_leaf_static_arg(%arr: !array.type<4 x !pod.type<[]>>, %dim: index) -> index {
+    %len = array.len %arr, %dim : !array.type<4 x !pod.type<[]>>
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @len_empty_leaf_static_arg(%[[ARR:[0-9a-zA-Z_\.]+]]: !array.type<4 x none>, %[[DIM:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR]], %[[DIM]] : <4 x none>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+#map_arg = affine_map<()[s0] -> (s0)>
+module attributes {llzk.lang} {
+  function.def @len_empty_leaf_affine_arg(
+      %arr: !array.type<#map_arg x !pod.type<[]>>, %dim: index
+  ) -> index {
+    %len = array.len %arr, %dim : !array.type<#map_arg x !pod.type<[]>>
+    function.return %len : index
+  }
+}
+// CHECK: #[[$MAP:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @len_empty_leaf_affine_arg(%[[ARR:[0-9a-zA-Z_\.]+]]: !array.type<#[[$MAP]] x none>, %[[DIM:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR]], %[[DIM]] : <#[[$MAP]] x none>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+#map_call = affine_map<()[s0] -> (s0)>
+module attributes {llzk.lang} {
+  function.def @len_empty_leaf_affine_sink(
+      %arr: !array.type<#map_call x !pod.type<[]>>, %dim: index
+  ) -> index {
+    %len = array.len %arr, %dim : !array.type<#map_call x !pod.type<[]>>
+    function.return %len : index
+  }
+
+  function.def @len_empty_leaf_affine_call(
+      %arr: !array.type<#map_call x !pod.type<[]>>, %dim: index
+  ) -> index {
+    %len = function.call @len_empty_leaf_affine_sink(%arr, %dim)
+        : (!array.type<#map_call x !pod.type<[]>>, index) -> index
+    function.return %len : index
+  }
+}
+// CHECK: #[[$MAP:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @len_empty_leaf_affine_sink(%[[ARR0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$MAP]] x none>, %[[DIM0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[LEN0:[0-9a-zA-Z_\.]+]] = array.len %[[ARR0]], %[[DIM0]] : <#[[$MAP]] x none>
+// CHECK-NEXT:      function.return %[[LEN0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @len_empty_leaf_affine_call(%[[ARR1:[0-9a-zA-Z_\.]+]]: !array.type<#[[$MAP]] x none>, %[[DIM1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[LEN1:[0-9a-zA-Z_\.]+]] = function.call @len_empty_leaf_affine_sink(%[[ARR1]], %[[DIM1]]) : (!array.type<#[[$MAP]] x none>, index) -> index
+// CHECK-NEXT:      function.return %[[LEN1]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// COM: Regression test: deferred `array.len` after `pod.write` must reuse the written shape
+// COM: carrier instead of fabricating a fresh one.
+!Inner = !pod.type<[@vals: !array.type<3 x index>]>
+!Outer = !pod.type<[@items: !array.type<? x !Inner>]>
+module attributes {llzk.lang} {
+  function.def @write_then_len(%src: !Outer, %dim: index) -> index {
+    %arg = pod.read %src[@items] : !Outer, !array.type<? x !Inner>
+    %p = pod.new : !Outer
+    pod.write %p[@items] = %arg : !Outer, !array.type<? x !Inner>
+    %items = pod.read %p[@items] : !Outer, !array.type<? x !Inner>
+    %len = array.len %items, %dim : !array.type<? x !Inner>
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @write_then_len(
+// CHECK-SAME:    %[[SRC_ITEMS_VALS:[0-9a-zA-Z_\.]+]]: !array.type<?,3 x index>,
+// CHECK-SAME:    %[[SRC_ITEMS_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<? x none>,
+// CHECK-SAME:    %[[DIM:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) -> index {
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SRC_ITEMS_SHAPE]], %[[DIM]] : <? x none>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// COM: Regression test: when a deferred `array.len` forwards through a `pod.write` of an
+// COM: array-of-POD with exactly one rank-preserving split leaf, that leaf is already the
+// COM: correct shape source and must not be cast to a synthetic `none` carrier.
+!SingleLeaf = !pod.type<[@x: index]>
+!SingleOuter = !pod.type<[@items: !array.type<? x !SingleLeaf>]>
+module attributes {llzk.lang} {
+  function.def @write_then_len_single_rank_leaf(%src: !SingleOuter, %dim: index) -> index {
+    %arg = pod.read %src[@items] : !SingleOuter, !array.type<? x !SingleLeaf>
+    %p = pod.new : !SingleOuter
+    pod.write %p[@items] = %arg : !SingleOuter, !array.type<? x !SingleLeaf>
+    %items = pod.read %p[@items] : !SingleOuter, !array.type<? x !SingleLeaf>
+    %len = array.len %items, %dim : !array.type<? x !SingleLeaf>
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @write_then_len_single_rank_leaf(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<? x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_0]], %[[VAL_1]] : <? x index>
+// CHECK-NEXT:      function.return %[[VAL_2]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// COM: Regression test: dynamic arrays of PODs with multiple rank-preserving leaves must thread
+// COM: a shared shape witness so every split leaf keeps the same runtime outer length.
+!Pair = !pod.type<[@x: index, @y: index]>
+module attributes {llzk.lang} {
+  function.def @len_arg(%arr: !array.type<? x !Pair>, %dim: index) -> index {
+    %len = array.len %arr, %dim : !array.type<? x !Pair>
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @len_arg(
+// CHECK-SAME:    %[[ARR_X:[0-9a-zA-Z_\.]+]]: !array.type<? x index>,
+// CHECK-SAME:    %[[ARR_Y:[0-9a-zA-Z_\.]+]]: !array.type<? x index>,
+// CHECK-SAME:    %[[ARR_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<? x none>,
+// CHECK-SAME:    %[[DIM:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) -> index {
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_SHAPE]], %[[DIM]] : <? x none>
+// CHECK-NEXT:      function.return %[[LEN]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

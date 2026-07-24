@@ -31,6 +31,7 @@ def LLZK_ArrayType
     It can only be instantiated with the following element types:
       - Any LLZK type other than an ArrayType (i.e., arrays cannot be nested)
       - IndexType
+      - NoneType for shape-only arrays with no element payload
       - Unsigned integers of 1 bit (aka booleans)
 
     The dimensions of the array are specified using a list of attributes, one
@@ -116,6 +117,11 @@ def LLZK_ArrayType
     /// LLZK arrays are always ranked, i.e., the number of dimensions is known.
     /// Required by the ShapedTypeInterface interface.
     inline bool hasRank() const { return true; }
+
+    /// Return the type produced by selecting/removing `numIndices` leading dimensions. Returns
+    /// itself if `numIndices` is 0. Returns the element type if `numIndices` equals the rank
+    /// of this type. Asserts if `numIndices` is greater than the rank of this type.
+    ::mlir::Type getSelectionType(size_t numIndices) const;
 
     /// Clone this type with the given shape and element type. If the
     /// provided shape is `std::nullopt`, the current shape of the type is used.

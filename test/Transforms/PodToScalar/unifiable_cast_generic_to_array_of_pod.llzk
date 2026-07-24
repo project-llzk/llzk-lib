@@ -1,0 +1,45 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+// COM: The `llzk-pod-to-scalar` pass always pre-runs `llzk-infer-tvar` which resolves the type variable
+// COM: via the `poly.unifiable_cast` before arrays-of-POD are split into parallel leaf arrays.
+
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  poly.template @CastTypeVarToDynamicArrayPod {
+    poly.param @T_arg : !poly.tvar<@T_arg>
+    function.def @main(%arg: !poly.tvar<@T_arg>) -> !array.type<? x !Pair> {
+      %cast = poly.unifiable_cast %arg : (!poly.tvar<@T_arg>) -> !array.type<? x !Pair>
+      function.return %cast : !array.type<? x !Pair>
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @CastTypeVarToDynamicArrayPod {
+// CHECK-NEXT:      function.def @main(
+// CHECK-SAME:      %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<? x index>,
+// CHECK-SAME:      %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type>,
+// CHECK-SAME:      %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<? x none>
+// CHECK-SAME:      ) -> (!array.type<? x index>, !array.type<? x !felt.type>, !array.type<? x none>) {
+// CHECK-NEXT:        function.return %[[VAL_0]], %[[VAL_1]], %[[VAL_2]] : !array.type<? x index>, !array.type<? x !felt.type>, !array.type<? x none>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Empty = !pod.type<[]>
+module attributes {llzk.lang} {
+  poly.template @CastTypeVarToDynamicEmptyArrayPod {
+    poly.param @T_arg : !poly.tvar<@T_arg>
+    function.def @main(%arg: !poly.tvar<@T_arg>) -> !array.type<? x !Empty> {
+      %cast = poly.unifiable_cast %arg : (!poly.tvar<@T_arg>) -> !array.type<? x !Empty>
+      function.return %cast : !array.type<? x !Empty>
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @CastTypeVarToDynamicEmptyArrayPod {
+// CHECK-NEXT:      function.def @main(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<? x none>) -> !array.type<? x none> {
+// CHECK-NEXT:        function.return %[[VAL_0]] : !array.type<? x none>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
