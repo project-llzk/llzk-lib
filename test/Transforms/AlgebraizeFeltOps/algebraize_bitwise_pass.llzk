@@ -1,0 +1,152 @@
+// RUN: llzk-opt -split-input-file -llzk-algebraize-felt-ops -verify-diagnostics %s > %t
+// RUN: FileCheck --enable-var-scope %s < %t
+// RUN: FileCheck --enable-var-scope --check-prefix=BUDGET %s < %t
+
+// Bitwise felt ops become per-bit felt arithmetic over checked bit
+// decompositions (llzk.nondet bits with booleanity and weighted-sum
+// constraints). An asserted range guard `x < 2^k` lets `x` decompose with k
+// bits instead of the full field width (koalabear: 31), and a decomposition
+// narrower than the field skips the range check against the prime.
+
+// Both operands guarded to 8 bits: AND costs two 8-bit decompositions
+// (8 booleanity + 1 sum each) plus 2 guards and 1 output equality: 21.
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  struct.def @GuardedAnd {
+    struct.member @out : !F {llzk.pub}
+    function.def @compute(%a: !F, %b: !F) -> !struct.type<@GuardedAnd> {
+      %self = struct.new : <@GuardedAnd>
+      function.return %self : !struct.type<@GuardedAnd>
+    }
+    function.def @constrain(%self: !struct.type<@GuardedAnd>, %a: !F, %b: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %bound = felt.const 256 : <"koalabear">
+      %one = felt.const 1 : <"koalabear">
+      %ga = bool.cmp lt(%a, %bound) : !F, !F
+      %gaf = cast.tofelt %ga : i1, !F
+      constrain.eq %gaf, %one : !F, !F
+      %gb = bool.cmp lt(%b, %bound) : !F, !F
+      %gbf = cast.tofelt %gb : i1, !F
+      constrain.eq %gbf, %one : !F, !F
+      %0 = felt.bit_and %a, %b : !F, !F
+      %1 = struct.readm %self[@out] : !struct.type<@GuardedAnd>, !F
+      constrain.eq %0, %1 : !F, !F
+      function.return
+    }
+  }
+}
+
+// The first decomposed bit: nondet, booleanity, and its weighted-sum term.
+// CHECK-LABEL: struct.def @GuardedAnd
+// CHECK:         %[[BIT:[0-9a-zA-Z_\.]+]] = llzk.nondet : !felt.type<"koalabear">
+// CHECK:         %[[BM1:[0-9a-zA-Z_\.]+]] = felt.sub %[[BIT]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK:         %[[BPROD:[0-9a-zA-Z_\.]+]] = felt.mul %[[BIT]], %[[BM1]]
+// CHECK:         constrain.eq %[[BPROD]], %{{[0-9a-zA-Z_\.]+}}
+// The sum equality re-asserts the guarded bound against the operand.
+// CHECK:         constrain.eq %{{[0-9a-zA-Z_\.]+}}, %arg1
+// CHECK:         constrain.eq %{{[0-9a-zA-Z_\.]+}}, %arg2
+
+// BUDGET-LABEL:    struct.def @GuardedAnd
+// BUDGET-COUNT-21: constrain.eq
+// BUDGET-NOT:      constrain.eq
+
+// -----
+
+// Mixed widths: a < 16 (4 bits), b < 256 (8 bits). OR pads the shorter side
+// with constant zeros: 2 guards + (4+1) + (8+1) + 1 output = 17.
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  struct.def @MixedOr {
+    struct.member @out : !F {llzk.pub}
+    function.def @compute(%a: !F, %b: !F) -> !struct.type<@MixedOr> {
+      %self = struct.new : <@MixedOr>
+      function.return %self : !struct.type<@MixedOr>
+    }
+    function.def @constrain(%self: !struct.type<@MixedOr>, %a: !F, %b: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %bound_a = felt.const 16 : <"koalabear">
+      %bound_b = felt.const 256 : <"koalabear">
+      %one = felt.const 1 : <"koalabear">
+      %ga = bool.cmp lt(%a, %bound_a) : !F, !F
+      %gaf = cast.tofelt %ga : i1, !F
+      constrain.eq %gaf, %one : !F, !F
+      %gb = bool.cmp lt(%b, %bound_b) : !F, !F
+      %gbf = cast.tofelt %gb : i1, !F
+      constrain.eq %gbf, %one : !F, !F
+      %0 = felt.bit_or %a, %b : !F, !F
+      %1 = struct.readm %self[@out] : !struct.type<@MixedOr>, !F
+      constrain.eq %0, %1 : !F, !F
+      function.return
+    }
+  }
+}
+
+// BUDGET-LABEL:    struct.def @MixedOr
+// BUDGET-COUNT-17: constrain.eq
+// BUDGET-NOT:      constrain.eq
+
+// -----
+
+// XOR has the same shape and budget as OR.
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  struct.def @MixedXor {
+    struct.member @out : !F {llzk.pub}
+    function.def @compute(%a: !F, %b: !F) -> !struct.type<@MixedXor> {
+      %self = struct.new : <@MixedXor>
+      function.return %self : !struct.type<@MixedXor>
+    }
+    function.def @constrain(%self: !struct.type<@MixedXor>, %a: !F, %b: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %bound_a = felt.const 16 : <"koalabear">
+      %bound_b = felt.const 256 : <"koalabear">
+      %one = felt.const 1 : <"koalabear">
+      %ga = bool.cmp lt(%a, %bound_a) : !F, !F
+      %gaf = cast.tofelt %ga : i1, !F
+      constrain.eq %gaf, %one : !F, !F
+      %gb = bool.cmp lt(%b, %bound_b) : !F, !F
+      %gbf = cast.tofelt %gb : i1, !F
+      constrain.eq %gbf, %one : !F, !F
+      %0 = felt.bit_xor %a, %b : !F, !F
+      %1 = struct.readm %self[@out] : !struct.type<@MixedXor>, !F
+      constrain.eq %0, %1 : !F, !F
+      function.return
+    }
+  }
+}
+
+// BUDGET-LABEL:    struct.def @MixedXor
+// BUDGET-COUNT-17: constrain.eq
+// BUDGET-NOT:      constrain.eq
+
+// -----
+
+// NOT complements at full field width (one's-complement of the modulus
+// width), but the operand still decomposes narrowly: 1 guard + (8+1) + 1
+// output = 11.
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  struct.def @GuardedNot {
+    struct.member @out : !F {llzk.pub}
+    function.def @compute(%a: !F) -> !struct.type<@GuardedNot> {
+      %self = struct.new : <@GuardedNot>
+      function.return %self : !struct.type<@GuardedNot>
+    }
+    function.def @constrain(%self: !struct.type<@GuardedNot>, %a: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %bound = felt.const 256 : <"koalabear">
+      %one = felt.const 1 : <"koalabear">
+      %ga = bool.cmp lt(%a, %bound) : !F, !F
+      %gaf = cast.tofelt %ga : i1, !F
+      constrain.eq %gaf, %one : !F, !F
+      %0 = felt.bit_not %a : !F
+      %1 = struct.readm %self[@out] : !struct.type<@GuardedNot>, !F
+      constrain.eq %0, %1 : !F, !F
+      function.return
+    }
+  }
+}
+
+// BUDGET-LABEL:    struct.def @GuardedNot
+// BUDGET-COUNT-11: constrain.eq
+// BUDGET-NOT:      constrain.eq

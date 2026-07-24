@@ -1,0 +1,136 @@
+// RUN: llzk-opt -split-input-file -llzk-algebraize-felt-ops -verify-diagnostics %s > %t
+// RUN: FileCheck --enable-var-scope --check-prefix=BUDGET %s < %t
+
+// Width inference beyond the basic `lt` guard: other predicates, bound
+// propagation through native ops, integer-cast provenance, and reuse of one
+// decomposition across operations.
+
+// `x <= 255` and a reversed guard `256 > y` prove the same 8-bit bound.
+// AND of the two: 2 guards + (8+1)*2 + 1 output = 21.
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  struct.def @LeAndReversedGt {
+    struct.member @out : !F {llzk.pub}
+    function.def @compute(%a: !F, %b: !F) -> !struct.type<@LeAndReversedGt> {
+      %self = struct.new : <@LeAndReversedGt>
+      function.return %self : !struct.type<@LeAndReversedGt>
+    }
+    function.def @constrain(%self: !struct.type<@LeAndReversedGt>, %a: !F, %b: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %c255 = felt.const 255 : <"koalabear">
+      %c256 = felt.const 256 : <"koalabear">
+      %one = felt.const 1 : <"koalabear">
+      %ga = bool.cmp le(%a, %c255) : !F, !F
+      %gaf = cast.tofelt %ga : i1, !F
+      constrain.eq %gaf, %one : !F, !F
+      %gb = bool.cmp gt(%c256, %b) : !F, !F
+      %gbf = cast.tofelt %gb : i1, !F
+      constrain.eq %gbf, %one : !F, !F
+      %0 = felt.bit_and %a, %b : !F, !F
+      %1 = struct.readm %self[@out] : !struct.type<@LeAndReversedGt>, !F
+      constrain.eq %0, %1 : !F, !F
+      function.return
+    }
+  }
+}
+
+// BUDGET-LABEL:    struct.def @LeAndReversedGt
+// BUDGET-COUNT-21: constrain.eq
+// BUDGET-NOT:      constrain.eq
+
+// -----
+
+// Bounds propagate through native ops: a < 16 and b < 16, so a + b < 32
+// (5 bits). AND with a constant truncates to the shorter side:
+// 2 guards + (5+1) + 1 output = 9.
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  struct.def @AddPropagation {
+    struct.member @out : !F {llzk.pub}
+    function.def @compute(%a: !F, %b: !F) -> !struct.type<@AddPropagation> {
+      %self = struct.new : <@AddPropagation>
+      function.return %self : !struct.type<@AddPropagation>
+    }
+    function.def @constrain(%self: !struct.type<@AddPropagation>, %a: !F, %b: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %bound = felt.const 16 : <"koalabear">
+      %one = felt.const 1 : <"koalabear">
+      %ga = bool.cmp lt(%a, %bound) : !F, !F
+      %gaf = cast.tofelt %ga : i1, !F
+      constrain.eq %gaf, %one : !F, !F
+      %gb = bool.cmp lt(%b, %bound) : !F, !F
+      %gbf = cast.tofelt %gb : i1, !F
+      constrain.eq %gbf, %one : !F, !F
+      %sum = felt.add %a, %b : !F, !F
+      %mask = felt.const 255 : <"koalabear">
+      %0 = felt.bit_and %sum, %mask : !F, !F
+      %1 = struct.readm %self[@out] : !struct.type<@AddPropagation>, !F
+      constrain.eq %0, %1 : !F, !F
+      function.return
+    }
+  }
+}
+
+// BUDGET-LABEL:   struct.def @AddPropagation
+// BUDGET-COUNT-9: constrain.eq
+// BUDGET-NOT:     constrain.eq
+
+// -----
+
+// A felt cast from an i1 is bounded by 2^1 with no guard at all: the cast
+// result decomposes as a single bit. (1+1) + 1 output = 3.
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  struct.def @BoolCastAnd {
+    struct.member @out : !F {llzk.pub}
+    function.def @compute(%a: !F, %b: !F) -> !struct.type<@BoolCastAnd> {
+      %self = struct.new : <@BoolCastAnd>
+      function.return %self : !struct.type<@BoolCastAnd>
+    }
+    function.def @constrain(%self: !struct.type<@BoolCastAnd>, %a: !F, %b: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %one = felt.const 1 : <"koalabear">
+      %c = bool.cmp lt(%a, %b) : !F, !F
+      %cf = cast.tofelt %c : i1, !F
+      %0 = felt.bit_and %cf, %one : !F, !F
+      %1 = struct.readm %self[@out] : !struct.type<@BoolCastAnd>, !F
+      constrain.eq %0, %1 : !F, !F
+      function.return
+    }
+  }
+}
+
+// BUDGET-LABEL:   struct.def @BoolCastAnd
+// BUDGET-COUNT-3: constrain.eq
+// BUDGET-NOT:     constrain.eq
+
+// -----
+
+// The same value used by both operands decomposes once:
+// 1 guard + (8+1) + 1 output = 11, not 20.
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  struct.def @SharedDecomposition {
+    struct.member @out : !F {llzk.pub}
+    function.def @compute(%a: !F) -> !struct.type<@SharedDecomposition> {
+      %self = struct.new : <@SharedDecomposition>
+      function.return %self : !struct.type<@SharedDecomposition>
+    }
+    function.def @constrain(%self: !struct.type<@SharedDecomposition>, %a: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %bound = felt.const 256 : <"koalabear">
+      %one = felt.const 1 : <"koalabear">
+      %ga = bool.cmp lt(%a, %bound) : !F, !F
+      %gaf = cast.tofelt %ga : i1, !F
+      constrain.eq %gaf, %one : !F, !F
+      %0 = felt.bit_xor %a, %a : !F, !F
+      %1 = struct.readm %self[@out] : !struct.type<@SharedDecomposition>, !F
+      constrain.eq %0, %1 : !F, !F
+      function.return
+    }
+  }
+}
+
+// BUDGET-LABEL:    struct.def @SharedDecomposition
+// BUDGET-COUNT-11: constrain.eq
+// BUDGET-NOT:      constrain.eq

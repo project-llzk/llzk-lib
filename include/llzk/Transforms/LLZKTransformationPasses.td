@@ -127,6 +127,40 @@ def EnforceNoMemberOverwritePass : LLZKPass<"llzk-enforce-no-overwrite"> {
   }];
 }
 
+def AlgebraizeFeltOpsPass : LLZKPass<"llzk-algebraize-felt-ops"> {
+  let summary = "Rewrite non-native felt ops in @constrain bodies into "
+                "algebraic constraints";
+  let description = [{
+    Rewrites felt operations that have no direct polynomial form —
+    `felt.bit_and`, `felt.bit_or`, `felt.bit_xor`, `felt.bit_not`,
+    `felt.shl`, `felt.shr`, `felt.inv`, `felt.div`, `felt.uintdiv`, and
+    `felt.umod` — inside constraint-bearing functions (those marked
+    `function.allow_constraint`, e.g. `@constrain` and `@product`) into
+    native felt arithmetic over `llzk.nondet` witnesses pinned by
+    `constrain.eq`.
+
+    Bitwise and shift operations are expressed through checked bit
+    decompositions (booleanity, weighted-sum equality, and a range check
+    against the prime when decomposing at full field width). A value proven
+    smaller than `2^k` — by an asserted range guard `x < c`, by constant or
+    integer-cast provenance, or by propagation through `felt.add`/`felt.mul`
+    — is decomposed with `k` bits instead of the full field width.
+    Decompositions are cached and shared between operations on the same
+    value.
+
+    `felt.inv`/`felt.div` introduce a witness `w` with `v*w == 1`
+    (unsatisfiable for `v == 0`). `felt.uintdiv`/`felt.umod` support only
+    constant power-of-two divisors, taken as slices of the dividend's
+    decomposition; a sound encoding for dynamic divisors would require a
+    multiprecision product argument.
+
+    Values are not analyzed across `function.call`s, so running after call
+    inlining gives the tightest decompositions. Run before a constraint
+    backend (e.g. `-llzk-to-pcl`), which then only sees native felt
+    arithmetic.
+  }];
+}
+
 def WhileToForPass : LLZKPass<"llzk-while-to-for"> {
   let summary =
       "Converts scf.while loops to equivalent scf.for loops when possible";

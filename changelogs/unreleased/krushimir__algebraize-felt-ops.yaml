@@ -1,0 +1,2 @@
+added:
+  - "`llzk-algebraize-felt-ops` pass that rewrites non-native felt ops (bitwise, shifts, inv/div, uintdiv/umod) in `@constrain` bodies into felt arithmetic over `llzk.nondet` witnesses, with width-bucketed bit decompositions driven by asserted range guards"

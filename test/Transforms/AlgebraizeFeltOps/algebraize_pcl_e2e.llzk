@@ -1,0 +1,35 @@
+// REQUIRES: with-pcl
+// RUN: llzk-opt -llzk-algebraize-felt-ops -llzk-to-pcl %s | FileCheck --enable-var-scope %s
+
+// End-to-end: after algebraization the PCL conversion only sees native felt
+// arithmetic, nondets, and equality constraints. Every constrain.eq becomes
+// one pcl.assert: 2 guards + 2 8-bit decompositions (8+1 each) + 1 output.
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  struct.def @Main {
+    struct.member @out : !F {llzk.pub}
+    function.def @compute(%a: !F, %b: !F) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %a: !F, %b: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %bound = felt.const 256 : <"koalabear">
+      %one = felt.const 1 : <"koalabear">
+      %ga = bool.cmp lt(%a, %bound) : !F, !F
+      %gaf = cast.tofelt %ga : i1, !F
+      constrain.eq %gaf, %one : !F, !F
+      %gb = bool.cmp lt(%b, %bound) : !F, !F
+      %gbf = cast.tofelt %gb : i1, !F
+      constrain.eq %gbf, %one : !F, !F
+      %0 = felt.bit_and %a, %b : !F, !F
+      %1 = struct.readm %self[@out] : !struct.type<@Main>, !F
+      constrain.eq %0, %1 : !F, !F
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL:     func.func @Main(
+// CHECK-COUNT-21:  pcl.assert
+// CHECK-NOT:       pcl.assert
