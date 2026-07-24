@@ -358,27 +358,33 @@ $(function(){initNavTree('SymbolLookup_8h_source.html','',''); });
 <div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>  <a class="code hl_class" href="classllzk_1_1SymbolLookupResult.html">SymbolLookupResult&lt;T&gt;</a> ret(std::move(*found));</div>
 <div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>  <span class="keywordflow">if</span> (!ret) {</div>
 <div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>    <span class="keywordflow">if</span> (reportMissing) {</div>
-<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>      <span class="keywordflow">return</span> origin-&gt;emitError() &lt;&lt; <span class="stringliteral">&quot;symbol \&quot;&quot;</span> &lt;&lt; symbol &lt;&lt; <span class="stringliteral">&quot;\&quot; references a &#39;&quot;</span> &lt;&lt; op-&gt;getName()</div>
-<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>                                 &lt;&lt; <span class="stringliteral">&quot;&#39; but expected a &#39;&quot;</span> &lt;&lt; T::getOperationName() &lt;&lt; <span class="charliteral">&#39;\&#39;&#39;</span>;</div>
-<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>      <span class="keywordflow">return</span> mlir::failure();</div>
-<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>    }</div>
-<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>  }</div>
-<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>  <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>}</div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>      <span class="keyword">auto</span> diag = origin-&gt;emitError() &lt;&lt; <span class="stringliteral">&quot;symbol \&quot;&quot;</span> &lt;&lt; symbol &lt;&lt; <span class="stringliteral">&quot;\&quot; references a &#39;&quot;</span></div>
+<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>                                      &lt;&lt; op-&gt;getName() &lt;&lt; <span class="stringliteral">&quot;&#39; but expected &quot;</span>;</div>
+<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>      <span class="keywordflow">if</span> <span class="keyword">constexpr</span> (<span class="keyword">requires</span> { T::getOperationName(); }) {</div>
+<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>        diag &lt;&lt; <span class="stringliteral">&quot;a &#39;&quot;</span> &lt;&lt; T::getOperationName() &lt;&lt; <span class="charliteral">&#39;\&#39;&#39;</span>;</div>
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>      } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>        diag &lt;&lt; <span class="stringliteral">&quot;a symbol with the requested interface&quot;</span>;</div>
+<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>      }</div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>      <span class="keywordflow">return</span> diag;</div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>    } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>      <span class="keywordflow">return</span> mlir::failure();</div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>    }</div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>  }</div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>  <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>}</div>
 </div>
-<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span> </div>
-<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="foldopen" id="foldopen00266" data-start="{" data-end="}">
-<div class="line"><a id="l00266" name="l00266"></a><span class="lineno"><a class="line" href="namespacellzk.html#ae2f55b37d1b77dfa44c0030cefbef162">  266</a></span><span class="keyword">inline</span> mlir::FailureOr&lt;SymbolLookupResult&lt;T&gt;&gt; <a class="code hl_function" href="namespacellzk.html#a3073035b30825ce363ac236f14fe289a">lookupTopLevelSymbol</a>(</div>
-<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>    mlir::SymbolTableCollection &amp;tables, mlir::SymbolRefAttr symbol, mlir::Operation *origin,</div>
-<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>    <span class="keywordtype">bool</span> reportMissing = <span class="keyword">true</span></div>
-<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>) {</div>
-<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#aa28c2948d69e2d33367e147f19cb29ce">lookupSymbolIn&lt;T&gt;</a>(tables, symbol, <a class="code hl_class" href="classllzk_1_1Within.html">Within</a>(), origin, reportMissing);</div>
-<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>}</div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span> </div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
+<div class="foldopen" id="foldopen00272" data-start="{" data-end="}">
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno"><a class="line" href="namespacellzk.html#ae2f55b37d1b77dfa44c0030cefbef162">  272</a></span><span class="keyword">inline</span> mlir::FailureOr&lt;SymbolLookupResult&lt;T&gt;&gt; <a class="code hl_function" href="namespacellzk.html#a3073035b30825ce363ac236f14fe289a">lookupTopLevelSymbol</a>(</div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>    mlir::SymbolTableCollection &amp;tables, mlir::SymbolRefAttr symbol, mlir::Operation *origin,</div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>    <span class="keywordtype">bool</span> reportMissing = <span class="keyword">true</span></div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>) {</div>
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#aa28c2948d69e2d33367e147f19cb29ce">lookupSymbolIn&lt;T&gt;</a>(tables, symbol, <a class="code hl_class" href="classllzk_1_1Within.html">Within</a>(), origin, reportMissing);</div>
+<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>}</div>
 </div>
-<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span> </div>
-<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span> </div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>} <span class="comment">// namespace llzk</span></div>
 <div class="ttc" id="aLICENSE_8txt_html_aaf8226a059307a1b18aac1295b5cf3a2"><div class="ttname"><a href="LICENSE_8txt.html#aaf8226a059307a1b18aac1295b5cf3a2">from</a></div><div class="ttdeci">Apache License January AND DISTRIBUTION Definitions License shall mean the terms and conditions for and distribution as defined by Sections through of this document Licensor shall mean the copyright owner or entity authorized by the copyright owner that is granting the License Legal Entity shall mean the union of the acting entity and all other entities that control are controlled by or are under common control with that entity For the purposes of this definition control direct or to cause the direction or management of such whether by contract or including but not limited to software source documentation and configuration files Object form shall mean any form resulting from mechanical transformation or translation of a Source including but not limited to compiled object generated and conversions to other media types Work shall mean the work of whether in Source or Object made available under the as indicated by a copyright notice that is included in or attached to the whether in Source or Object that is based or other modifications as a an original work of authorship For the purposes of this Derivative Works shall not include works that remain separable from</div><div class="ttdef"><b>Definition</b> <a href="LICENSE_8txt_source.html#l00045">LICENSE.txt:45</a></div></div>
 <div class="ttc" id="aclassllzk_1_1SymbolLookupResultUntyped_html"><div class="ttname"><a href="classllzk_1_1SymbolLookupResultUntyped.html">llzk::SymbolLookupResultUntyped</a></div><div class="ttdef"><b>Definition</b> <a href="#l00037">SymbolLookup.h:37</a></div></div>
 <div class="ttc" id="aclassllzk_1_1SymbolLookupResultUntyped_html_a09efd5977415056e536864e8d683ef39"><div class="ttname"><a href="classllzk_1_1SymbolLookupResultUntyped.html#a09efd5977415056e536864e8d683ef39">llzk::SymbolLookupResultUntyped::getSymbolTableCache</a></div><div class="ttdeci">mlir::SymbolTableCollection * getSymbolTableCache()</div><div class="ttdef"><b>Definition</b> <a href="#l00099">SymbolLookup.h:99</a></div></div>

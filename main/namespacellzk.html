@@ -747,6 +747,8 @@ Functions</h2></td></tr>
 <tr class="memitem:a3d5f5cb52ce07e8385c8ed43ebfcb393" id="r_a3d5f5cb52ce07e8385c8ed43ebfcb393"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; mlir::SymbolRefAttr &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3d5f5cb52ce07e8385c8ed43ebfcb393">getPathFromRoot</a> (<a class="el" href="classllzk_1_1component_1_1StructDefOp.html">component::StructDefOp</a> &amp;to, mlir::ModuleOp *foundRoot=nullptr)</td></tr>
 <tr class="memitem:adb644c6ee4397684491d5b7e3519fe40" id="r_adb644c6ee4397684491d5b7e3519fe40"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; mlir::SymbolRefAttr &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#adb644c6ee4397684491d5b7e3519fe40">getPathFromRoot</a> (<a class="el" href="classllzk_1_1component_1_1MemberDefOp.html">component::MemberDefOp</a> &amp;to, mlir::ModuleOp *foundRoot=nullptr)</td></tr>
 <tr class="memitem:a7855026c509864d9196b4a40802774f5" id="r_a7855026c509864d9196b4a40802774f5"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; mlir::SymbolRefAttr &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7855026c509864d9196b4a40802774f5">getPathFromRoot</a> (<a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">function::FuncDefOp</a> &amp;to, mlir::ModuleOp *foundRoot=nullptr)</td></tr>
+<tr class="memitem:ab6b7b26f334c212bb749b118a3b09972" id="r_ab6b7b26f334c212bb749b118a3b09972"><td class="memItemLeft" align="right" valign="top">mlir::SymbolRefAttr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab6b7b26f334c212bb749b118a3b09972">getFullyQualifiedName</a> (mlir::SymbolOpInterface symbol, bool requireParent=true)</td></tr>
+<tr class="memdesc:ab6b7b26f334c212bb749b118a3b09972"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the full name for this symbol from the root module, including any surrounding symbol table names.  <br /></td></tr>
 <tr class="memitem:a6982559aa99cea04c0cf47ee38166ce2" id="r_a6982559aa99cea04c0cf47ee38166ce2"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; mlir::ModuleOp &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6982559aa99cea04c0cf47ee38166ce2">getTopRootModule</a> (mlir::Operation *<a class="el" href="LICENSE_8txt.html#aaf8226a059307a1b18aac1295b5cf3a2">from</a>)</td></tr>
 <tr class="memdesc:a6982559aa99cea04c0cf47ee38166ce2"><td class="mdescLeft">&#160;</td><td class="mdescRight">With include statements, there may be root modules nested within other root modules.  <br /></td></tr>
 <tr class="memitem:a25f6edaf11599fca47b52450508f0453" id="r_a25f6edaf11599fca47b52450508f0453"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; mlir::SymbolRefAttr &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a25f6edaf11599fca47b52450508f0453">getPathFromTopRoot</a> (mlir::SymbolOpInterface to, mlir::ModuleOp *foundRoot=nullptr)</td></tr>
@@ -1397,7 +1399,7 @@ template&lt;typename OpClass&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00084">84</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00085">85</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -1451,7 +1453,7 @@ template&lt;typename OpClass&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00081">81</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00082">82</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -1682,7 +1684,7 @@ template&lt;typename OpClass&gt; </div>
 
 <p>Build a SymbolRefAttr from the list of pieces. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00054">54</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00055">55</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -1711,7 +1713,7 @@ template&lt;typename OpClass&gt; </div>
 
 <p>Build a SymbolRefAttr from the list of pieces. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00049">49</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00050">50</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -1744,7 +1746,7 @@ template&lt;typename OpClass&gt; </div>
 
 <p>Build a SymbolRefAttr that prepends <span class="tt">tail</span> with <span class="tt">root</span>, i.e., <span class="tt">root::tail</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00044">44</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00045">45</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -4263,7 +4265,41 @@ template&lt;typename OpImplClass&gt; </div>
 
 <p>Construct a FlatSymbolRefAttr with the given content. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00039">39</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00040">40</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+
+</div>
+</div>
+<a id="ab6b7b26f334c212bb749b118a3b09972" name="ab6b7b26f334c212bb749b118a3b09972"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab6b7b26f334c212bb749b118a3b09972">&#9670;&#160;</a></span>getFullyQualifiedName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::SymbolRefAttr llzk::getFullyQualifiedName </td>
+          <td>(</td>
+          <td class="paramtype">mlir::SymbolOpInterface</td>          <td class="paramname"><span class="paramname"><em>symbol</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>requireParent</em></span><span class="paramdefsep"> = </span><span class="paramdefval">true</span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Return the full name for this symbol from the root module, including any surrounding symbol table names. </p>
+<p>If <span class="tt">requireParent</span> is false and the symbol is not nested in any operation, return its flat symbol name directly. </p>
+
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00109">109</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -4967,7 +5003,7 @@ template&lt;typename OpClass&gt; </div>
 
 <p>Return SymbolRefAttr like the one given but with the leaf/final element removed. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00064">64</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00065">65</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -5358,7 +5394,7 @@ template&lt;typename OpClass&gt; </div>
 
 <p>Return SymbolRefAttr like the one given but with the root/head element removed. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00059">59</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00060">60</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -6518,7 +6554,7 @@ template&lt;typename T&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolLookup_8h_source.html#l00266">266</a> of file <a class="el" href="SymbolLookup_8h_source.html">SymbolLookup.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolLookup_8h_source.html#l00272">272</a> of file <a class="el" href="SymbolLookup_8h_source.html">SymbolLookup.h</a>.</p>
 
 </div>
 </div>
@@ -9268,7 +9304,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00075">75</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00076">76</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -9322,7 +9358,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00072">72</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00073">73</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -9596,7 +9632,7 @@ template&lt;typename T&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00186">186</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00200">200</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -9645,7 +9681,7 @@ template&lt;typename T&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>the symbol or failure </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00136">136</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00150">150</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -9681,7 +9717,7 @@ template&lt;typename T&gt; </div>
 <p>Resolve a callable without emitting a diagnostic for missing top-level symbols. </p>
 <p>Use this when an unresolved call should make an analysis conservatively skip the call instead of reporting a verifier-style symbol error. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00162">162</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00176">176</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -11484,7 +11520,7 @@ template&lt;std::ranges::input_range Range&gt; </div>
 
 <p>Ensure that all symbols used within all Type instances can be resolved. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00226">226</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00240">240</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>

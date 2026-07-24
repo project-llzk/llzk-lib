@@ -125,91 +125,99 @@ $(function(){initNavTree('CallGraphPasses_8cpp_source.html','',''); });
 <div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &quot;<a class="code" href="AnalysisPasses_8h.html">llzk/Analysis/AnalysisPasses.h</a>&quot;</span></div>
 <div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &quot;<a class="code" href="CallGraphAnalyses_8h.html">llzk/Analysis/CallGraphAnalyses.h</a>&quot;</span></div>
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &quot;<a class="code" href="Function_2IR_2Ops_8h.html">llzk/Dialect/Function/IR/Ops.h</a>&quot;</span></div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;llvm/ADT/SmallVector.h&gt;</span></div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;llvm/Support/ErrorHandling.h&gt;</span></div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno"><a class="line" href="CallGraphPasses_8cpp.html#aeb6a7e2a63458e588b77658a83379043">   29</a></span><span class="preprocessor">#define GEN_PASS_DEF_CALLGRAPHPRINTERPASS</span></div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno"><a class="line" href="CallGraphPasses_8cpp.html#a956397ea931d4608b93bb9575a95a8d5">   30</a></span><span class="preprocessor">#define GEN_PASS_DEF_CALLGRAPHSCCSPRINTERPASS</span></div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="preprocessor">#include &quot;<a class="code" href="AnalysisPasses_8h_8inc.html">llzk/Analysis/AnalysisPasses.h.inc</a>&quot;</span></div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>} <span class="comment">// namespace llzk</span></div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span> </div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="keyword">namespace </span>{</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="keyword">class </span>PassImpl : <span class="keyword">public</span> <a class="code hl_class" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html">llzk::impl::CallGraphPrinterPassBase</a>&lt;PassImpl&gt; {</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="keyword">using </span>Base = CallGraphPrinterPassBase&lt;PassImpl&gt;;</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keyword">using </span>Base::Base;</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &quot;<a class="code" href="SymbolHelper_8h.html">llzk/Util/SymbolHelper.h</a>&quot;</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;llvm/ADT/SmallVector.h&gt;</span></div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &lt;llvm/Support/ErrorHandling.h&gt;</span></div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
+<div class="foldopen" id="foldopen00029" data-start="{" data-end="}">
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno"><a class="line" href="namespacellzk_1_1impl.html">   29</a></span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno"><a class="line" href="CallGraphPasses_8cpp.html#aeb6a7e2a63458e588b77658a83379043">   30</a></span><span class="preprocessor">#define GEN_PASS_DEF_CALLGRAPHPRINTERPASS</span></div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno"><a class="line" href="CallGraphPasses_8cpp.html#a956397ea931d4608b93bb9575a95a8d5">   31</a></span><span class="preprocessor">#define GEN_PASS_DEF_CALLGRAPHSCCSPRINTERPASS</span></div>
+</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="preprocessor">#include &quot;<a class="code" href="AnalysisPasses_8h_8inc.html">llzk/Analysis/AnalysisPasses.h.inc</a>&quot;</span></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span> </div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="keyword">namespace </span>{</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="keyword">class </span>PassImpl : <span class="keyword">public</span> <a class="code hl_class" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html">llzk::impl::CallGraphPrinterPassBase</a>&lt;PassImpl&gt; {</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keyword">using </span>Base = CallGraphPrinterPassBase&lt;PassImpl&gt;;</div>
 <div class="foldopen" id="foldopen00039" data-start="{" data-end="};">
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html">   39</a></span> </div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a55544e455ba45b5517c7326bf34d2e1c">   41</a></span>    markAllAnalysesPreserved();</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a3c0bf64e9855ffb097e32c11e596496a">   43</a></span>    <span class="keyword">auto</span> &amp;cga = getAnalysis&lt;llzk::CallGraphAnalysis&gt;();</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a96c27a16c455a370d3bb1f363103f367">   44</a></span>    cga.getCallGraph().print(<a class="code hl_function" href="namespacellzk.html#a42cb6a92faed14a82333740ab343d167">llzk::toStream</a>(<a class="code hl_variable" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a1d85d44faf7d6bb8cc15b2af2c4e57d4">outputStream</a>));</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#ac04ef82ec9b79713042835a029261992">   45</a></span>  }</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a4d4748c5d8a553fa16aa8fd2d331b7e5">   46</a></span>};</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a5fef156eccfb00f210878673ffa6beb5">   47</a></span> </div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a899ffbc0232af3fffe1d5fccaaf5b244">   48</a></span><span class="keyword">class </span>SCCPassImpl : <span class="keyword">public</span> <a class="code hl_class" href="classllzk_1_1impl_1_1CallGraphSCCsPrinterPassBase.html">llzk::impl::CallGraphSCCsPrinterPassBase</a>&lt;SCCPassImpl&gt; {</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="keyword">using </span><a class="code hl_typedef" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a55544e455ba45b5517c7326bf34d2e1c">Base</a> = <a class="code hl_class" href="classllzk_1_1impl_1_1CallGraphSCCsPrinterPassBase.html">CallGraphSCCsPrinterPassBase&lt;SCCPassImpl&gt;</a>;</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  <span class="keyword">using </span><a class="code hl_typedef" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a55544e455ba45b5517c7326bf34d2e1c">Base::Base</a>;</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html">   39</a></span>  <span class="keyword">using </span><a class="code hl_typedef" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a55544e455ba45b5517c7326bf34d2e1c">Base::Base</a>;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a55544e455ba45b5517c7326bf34d2e1c">   41</a></span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    markAllAnalysesPreserved();</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a3c0bf64e9855ffb097e32c11e596496a">   43</a></span> </div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a96c27a16c455a370d3bb1f363103f367">   44</a></span>    <span class="keyword">auto</span> &amp;cga = getAnalysis&lt;llzk::CallGraphAnalysis&gt;();</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#ac04ef82ec9b79713042835a029261992">   45</a></span>    cga.getCallGraph().print(<a class="code hl_function" href="namespacellzk.html#a42cb6a92faed14a82333740ab343d167">llzk::toStream</a>(<a class="code hl_variable" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a1d85d44faf7d6bb8cc15b2af2c4e57d4">outputStream</a>));</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a4d4748c5d8a553fa16aa8fd2d331b7e5">   46</a></span>  }</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a5fef156eccfb00f210878673ffa6beb5">   47</a></span>};</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a899ffbc0232af3fffe1d5fccaaf5b244">   48</a></span> </div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="keyword">class </span>SCCPassImpl : <span class="keyword">public</span> <a class="code hl_class" href="classllzk_1_1impl_1_1CallGraphSCCsPrinterPassBase.html">llzk::impl::CallGraphSCCsPrinterPassBase</a>&lt;SCCPassImpl&gt; {</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  <span class="keyword">using </span><a class="code hl_typedef" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a55544e455ba45b5517c7326bf34d2e1c">Base</a> = <a class="code hl_class" href="classllzk_1_1impl_1_1CallGraphSCCsPrinterPassBase.html">CallGraphSCCsPrinterPassBase&lt;SCCPassImpl&gt;</a>;</div>
 <div class="foldopen" id="foldopen00051" data-start="{" data-end="}">
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a177b44bb138a983003c846df28ce0b38">   51</a></span> </div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    markAllAnalysesPreserved();</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a177b44bb138a983003c846df28ce0b38">   51</a></span>  <span class="keyword">using </span><a class="code hl_typedef" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a55544e455ba45b5517c7326bf34d2e1c">Base::Base</a>;</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
 </div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a1882799f9393b801ac5721b83766f2b4">   54</a></span> </div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    <span class="keyword">auto</span> &amp;os = <a class="code hl_function" href="namespacellzk.html#a42cb6a92faed14a82333740ab343d167">llzk::toStream</a>(<a class="code hl_variable" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a1d85d44faf7d6bb8cc15b2af2c4e57d4">outputStream</a>);</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a1e30c4a4563e6d110ecb82e39126cae4">   56</a></span>    <span class="keyword">auto</span> &amp;CG = getAnalysis&lt;llzk::CallGraphAnalysis&gt;();</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    <span class="keywordtype">unsigned</span> sccNum = 0;</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    os &lt;&lt; <span class="stringliteral">&quot;SCCs for the program in PostOrder:&quot;</span>;</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a1882799f9393b801ac5721b83766f2b4">   54</a></span>    markAllAnalysesPreserved();</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a1e30c4a4563e6d110ecb82e39126cae4">   56</a></span>    <span class="keyword">auto</span> &amp;os = <a class="code hl_function" href="namespacellzk.html#a42cb6a92faed14a82333740ab343d167">llzk::toStream</a>(<a class="code hl_variable" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a1d85d44faf7d6bb8cc15b2af2c4e57d4">outputStream</a>);</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    <span class="keyword">auto</span> &amp;CG = getAnalysis&lt;llzk::CallGraphAnalysis&gt;();</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    <span class="keywordtype">unsigned</span> sccNum = 0;</div>
 <div class="foldopen" id="foldopen00059" data-start="{" data-end="}">
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a2d27e33123dd1877a9349eb426db1cc9">   59</a></span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> SCCI = llvm::scc_begin&lt;const llzk::CallGraph *&gt;(&amp;CG.getCallGraph()); !SCCI.isAtEnd();</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>         ++SCCI) {</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>      <span class="keyword">const</span> std::vector&lt;const llzk::CallGraphNode *&gt; &amp;nextSCC = *SCCI;</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a2d27e33123dd1877a9349eb426db1cc9">   59</a></span>    os &lt;&lt; <span class="stringliteral">&quot;SCCs for the program in PostOrder:&quot;</span>;</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> SCCI = llvm::scc_begin&lt;const llzk::CallGraph *&gt;(&amp;CG.getCallGraph()); !SCCI.isAtEnd();</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>         ++SCCI) {</div>
 </div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#ae5e78248e39961b00ca03fa57fba7fbd">   62</a></span>      os &lt;&lt; <span class="stringliteral">&quot;\nSCC #&quot;</span> &lt;&lt; ++sccNum &lt;&lt; <span class="stringliteral">&quot;: &quot;</span>;</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>      <span class="keywordtype">bool</span> First = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>      <span class="keywordflow">for</span> (<span class="keyword">const</span> <a class="code hl_class" href="classllzk_1_1CallGraphNode.html">llzk::CallGraphNode</a> *CGN : nextSCC) {</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#ae5e78248e39961b00ca03fa57fba7fbd">   62</a></span>      <span class="keyword">const</span> std::vector&lt;const llzk::CallGraphNode *&gt; &amp;nextSCC = *SCCI;</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>      os &lt;&lt; <span class="stringliteral">&quot;\nSCC #&quot;</span> &lt;&lt; ++sccNum &lt;&lt; <span class="stringliteral">&quot;: &quot;</span>;</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>      <span class="keywordtype">bool</span> First = <span class="keyword">true</span>;</div>
 <div class="foldopen" id="foldopen00065" data-start="{" data-end="}">
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#af43c2dbec21f72a6308c312f6f63576f">   65</a></span>        <span class="keywordflow">if</span> (First) {</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>          First = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>        } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#af43c2dbec21f72a6308c312f6f63576f">   65</a></span>      <span class="keywordflow">for</span> (<span class="keyword">const</span> <a class="code hl_class" href="classllzk_1_1CallGraphNode.html">llzk::CallGraphNode</a> *CGN : nextSCC) {</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>        <span class="keywordflow">if</span> (First) {</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>          First = <span class="keyword">false</span>;</div>
 </div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>          os &lt;&lt; <span class="stringliteral">&quot;, &quot;</span>;</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>        }</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>        } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>          os &lt;&lt; <span class="stringliteral">&quot;, &quot;</span>;</div>
 <div class="foldopen" id="foldopen00070" data-start="{" data-end="}">
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#ad827302e9c44498b37b080f4e852293c">   70</a></span>        <span class="keywordflow">if</span> (CGN-&gt;isExternal()) {</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>          os &lt;&lt; <span class="stringliteral">&quot;external node&quot;</span>;</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>        } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#ad827302e9c44498b37b080f4e852293c">   70</a></span>        }</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>        <span class="keywordflow">if</span> (CGN-&gt;isExternal()) {</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>          os &lt;&lt; <span class="stringliteral">&quot;external node&quot;</span>;</div>
 </div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>          os &lt;&lt; CGN-&gt;getCalledFunction().getFullyQualifiedName();</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>        }</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>        } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>          mlir::CallableOpInterface calledFn = CGN-&gt;getCalledFunction();</div>
 <div class="foldopen" id="foldopen00075" data-start="{" data-end="}">
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a5d3482050ca7a0cd90be4905c9aee633">   75</a></span>      }</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span> </div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>      <span class="keywordflow">if</span> (nextSCC.size() == 1 &amp;&amp; SCCI.hasCycle()) {</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>        os &lt;&lt; <span class="stringliteral">&quot; (Has self-loop).&quot;</span>;</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a5d3482050ca7a0cd90be4905c9aee633">   75</a></span>          <span class="keyword">auto</span> calledSym = llvm::dyn_cast&lt;mlir::SymbolOpInterface&gt;(calledFn.getOperation());</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>          assert(calledSym &amp;&amp; <span class="stringliteral">&quot;call graph nodes must refer to callable symbols&quot;</span>);</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>          os &lt;&lt; <a class="code hl_function" href="namespacellzk.html#ab6b7b26f334c212bb749b118a3b09972">llzk::getFullyQualifiedName</a>(calledSym);</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>        }</div>
 <div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>      }</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>    }</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>    os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  }</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>};</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span> </div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>} <span class="comment">// namespace</span></div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span> </div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>      <span class="keywordflow">if</span> (nextSCC.size() == 1 &amp;&amp; SCCI.hasCycle()) {</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>        os &lt;&lt; <span class="stringliteral">&quot; (Has self-loop).&quot;</span>;</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>      }</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    }</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>    os &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  }</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>};</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span> </div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>} <span class="comment">// namespace</span></div>
 </div>
 </div>
 <div class="ttc" id="aAnalysisPasses_8h_8inc_html"><div class="ttname"><a href="AnalysisPasses_8h_8inc.html">AnalysisPasses.h.inc</a></div></div>
 <div class="ttc" id="aAnalysisPasses_8h_html"><div class="ttname"><a href="AnalysisPasses_8h.html">AnalysisPasses.h</a></div></div>
 <div class="ttc" id="aCallGraphAnalyses_8h_html"><div class="ttname"><a href="CallGraphAnalyses_8h.html">CallGraphAnalyses.h</a></div></div>
 <div class="ttc" id="aFunction_2IR_2Ops_8h_html"><div class="ttname"><a href="Function_2IR_2Ops_8h.html">Ops.h</a></div></div>
-<div class="ttc" id="aclassllzk_1_1CallGraphNode_html"><div class="ttname"><a href="classllzk_1_1CallGraphNode.html">llzk::CallGraphNode</a></div><div class="ttdoc">This is a simple port of the mlir::CallGraphNode with llzk::CallGraph as a friend class,...</div><div class="ttdef"><b>Definition</b> <a href="CallGraph_8h_source.html#l00039">CallGraph.h:39</a></div></div>
+<div class="ttc" id="aSymbolHelper_8h_html"><div class="ttname"><a href="SymbolHelper_8h.html">SymbolHelper.h</a></div></div>
+<div class="ttc" id="aclassllzk_1_1CallGraphNode_html"><div class="ttname"><a href="classllzk_1_1CallGraphNode.html">llzk::CallGraphNode</a></div><div class="ttdoc">This is a simple port of the mlir::CallGraphNode with llzk::CallGraph as a friend class,...</div><div class="ttdef"><b>Definition</b> <a href="CallGraph_8h_source.html#l00036">CallGraph.h:36</a></div></div>
 <div class="ttc" id="aclassllzk_1_1impl_1_1CallGraphPrinterPassBase_html"><div class="ttname"><a href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html">llzk::impl::CallGraphPrinterPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00039">CallGraphPasses.cpp:39</a></div></div>
 <div class="ttc" id="aclassllzk_1_1impl_1_1CallGraphPrinterPassBase_html_a1d85d44faf7d6bb8cc15b2af2c4e57d4"><div class="ttname"><a href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a1d85d44faf7d6bb8cc15b2af2c4e57d4">llzk::impl::CallGraphPrinterPassBase::outputStream</a></div><div class="ttdeci">::mlir::Pass::Option&lt;::llzk::OutputStream &gt; outputStream</div><div class="ttdef"><b>Definition</b> <a href="#l00100">CallGraphPasses.cpp:100</a></div></div>
 <div class="ttc" id="aclassllzk_1_1impl_1_1CallGraphPrinterPassBase_html_a55544e455ba45b5517c7326bf34d2e1c"><div class="ttname"><a href="classllzk_1_1impl_1_1CallGraphPrinterPassBase.html#a55544e455ba45b5517c7326bf34d2e1c">llzk::impl::CallGraphPrinterPassBase::Base</a></div><div class="ttdeci">CallGraphPrinterPassBase Base</div><div class="ttdef"><b>Definition</b> <a href="#l00041">CallGraphPasses.cpp:41</a></div></div>
 <div class="ttc" id="aclassllzk_1_1impl_1_1CallGraphSCCsPrinterPassBase_html"><div class="ttname"><a href="classllzk_1_1impl_1_1CallGraphSCCsPrinterPassBase.html">llzk::impl::CallGraphSCCsPrinterPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00153">CallGraphPasses.cpp:153</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a42cb6a92faed14a82333740ab343d167"><div class="ttname"><a href="namespacellzk.html#a42cb6a92faed14a82333740ab343d167">llzk::toStream</a></div><div class="ttdeci">llvm::raw_ostream &amp; toStream(OutputStream val)</div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00021">AnalysisPassEnums.cpp:21</a></div></div>
+<div class="ttc" id="anamespacellzk_html_ab6b7b26f334c212bb749b118a3b09972"><div class="ttname"><a href="namespacellzk.html#ab6b7b26f334c212bb749b118a3b09972">llzk::getFullyQualifiedName</a></div><div class="ttdeci">mlir::SymbolRefAttr getFullyQualifiedName(mlir::SymbolOpInterface symbol, bool requireParent=true)</div><div class="ttdoc">Return the full name for this symbol from the root module, including any surrounding symbol table nam...</div><div class="ttdef"><b>Definition</b> <a href="SymbolHelper_8h_source.html#l00109">SymbolHelper.h:109</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

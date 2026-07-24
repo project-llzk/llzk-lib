@@ -293,6 +293,7 @@ var namespacellzk =
     [ "getFeltDegree", "namespacellzk.html#a07235a51b81f09557523887e9b11ca93", null ],
     [ "getFeltDegree", "namespacellzk.html#ad4ff96ece25453858228f3aff1f625c7", null ],
     [ "getFlatSymbolRefAttr", "namespacellzk.html#a301a571a8339726388d6173ba81b5283", null ],
+    [ "getFullyQualifiedName", "namespacellzk.html#ab6b7b26f334c212bb749b118a3b09972", null ],
     [ "getIfSingleton", "namespacellzk.html#a374eec2da9f2f274eabc9dd54d33f27c", null ],
     [ "getMainInstanceDef", "namespacellzk.html#af2ee56cf8771e642184d08d9864f6d8d", null ],
     [ "getMainInstanceDef", "namespacellzk.html#abea185ddb9923e1423c6f3562c60e38f", null ],

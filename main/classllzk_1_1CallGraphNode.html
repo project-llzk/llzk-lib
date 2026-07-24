@@ -135,8 +135,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a0b95b89d83dddb54b92737d41fcab921"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if this node is an external node.  <br /></td></tr>
 <tr class="memitem:a3c2f52b8983c5b177c97a2f841b54b56" id="r_a3c2f52b8983c5b177c97a2f841b54b56"><td class="memItemLeft" align="right" valign="top">mlir::Region *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3c2f52b8983c5b177c97a2f841b54b56">getCallableRegion</a> () const</td></tr>
 <tr class="memdesc:a3c2f52b8983c5b177c97a2f841b54b56"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the callable region this node represents.  <br /></td></tr>
-<tr class="memitem:afd588337736fd2895201222aee98c567" id="r_afd588337736fd2895201222aee98c567"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afd588337736fd2895201222aee98c567">getCalledFunction</a> () const</td></tr>
-<tr class="memdesc:afd588337736fd2895201222aee98c567"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the called function that the callable region represents.  <br /></td></tr>
+<tr class="memitem:a88a71f929f26e673807d2fec4cc15fa2" id="r_a88a71f929f26e673807d2fec4cc15fa2"><td class="memItemLeft" align="right" valign="top">mlir::CallableOpInterface&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a88a71f929f26e673807d2fec4cc15fa2">getCalledFunction</a> () const</td></tr>
+<tr class="memdesc:a88a71f929f26e673807d2fec4cc15fa2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the called function that the callable region represents.  <br /></td></tr>
 <tr class="memitem:a947372cf83eb386be6054bd829fba754" id="r_a947372cf83eb386be6054bd829fba754"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a947372cf83eb386be6054bd829fba754">addAbstractEdge</a> (<a class="el" href="classllzk_1_1CallGraphNode.html">CallGraphNode</a> *node)</td></tr>
 <tr class="memdesc:a947372cf83eb386be6054bd829fba754"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds an abstract reference edge to the given node.  <br /></td></tr>
 <tr class="memitem:a838ff297b3f54861144a2676e24f205c" id="r_a838ff297b3f54861144a2676e24f205c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a838ff297b3f54861144a2676e24f205c">addCallEdge</a> (<a class="el" href="classllzk_1_1CallGraphNode.html">CallGraphNode</a> *node)</td></tr>
@@ -157,7 +157,7 @@ Friends</h2></td></tr>
 <div class="textblock"><p>This is a simple port of the mlir::CallGraphNode with <a class="el" href="classllzk_1_1CallGraph.html" title="This is a port of mlir::CallGraph that has been adapted to use the custom symbol lookup helpers (see ...">llzk::CallGraph</a> as a friend class, for mlir::CallGraphNode has a private constructor and can only be constructed by mlir::CallGraph. </p>
 <p>mlir::CallGraphNode is also not polymorphic, so a port is cleaner than requiring casts on mlir::CallGraphNode return types. </p>
 
-<p class="definition">Definition at line <a class="el" href="CallGraph_8h_source.html#l00039">39</a> of file <a class="el" href="CallGraph_8h_source.html">CallGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallGraph_8h_source.html#l00036">36</a> of file <a class="el" href="CallGraph_8h_source.html">CallGraph.h</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="a16d87a629727401373cca0508b88c719" name="a16d87a629727401373cca0508b88c719"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a16d87a629727401373cca0508b88c719">&#9670;&#160;</a></span>iterator</h2>
@@ -173,7 +173,7 @@ Friends</h2></td></tr>
 
 <p>Iterator over the outgoing edges of this node. </p>
 
-<p class="definition">Definition at line <a class="el" href="CallGraph_8h_source.html#l00123">123</a> of file <a class="el" href="CallGraph_8h_source.html">CallGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallGraph_8h_source.html#l00120">120</a> of file <a class="el" href="CallGraph_8h_source.html">CallGraph.h</a>.</p>
 
 </div>
 </div>
@@ -267,7 +267,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CallGraph_8h_source.html#l00124">124</a> of file <a class="el" href="CallGraph_8h_source.html">CallGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallGraph_8h_source.html#l00121">121</a> of file <a class="el" href="CallGraph_8h_source.html">CallGraph.h</a>.</p>
 
 </div>
 </div>
@@ -294,7 +294,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CallGraph_8h_source.html#l00127">127</a> of file <a class="el" href="CallGraph_8h_source.html">CallGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallGraph_8h_source.html#l00124">124</a> of file <a class="el" href="CallGraph_8h_source.html">CallGraph.h</a>.</p>
 
 </div>
 </div>
@@ -321,7 +321,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CallGraph_8h_source.html#l00125">125</a> of file <a class="el" href="CallGraph_8h_source.html">CallGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallGraph_8h_source.html#l00122">122</a> of file <a class="el" href="CallGraph_8h_source.html">CallGraph.h</a>.</p>
 
 </div>
 </div>
@@ -348,14 +348,14 @@ Friends</h2></td></tr>
 
 </div>
 </div>
-<a id="afd588337736fd2895201222aee98c567" name="afd588337736fd2895201222aee98c567"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afd588337736fd2895201222aee98c567">&#9670;&#160;</a></span>getCalledFunction()</h2>
+<a id="a88a71f929f26e673807d2fec4cc15fa2" name="a88a71f929f26e673807d2fec4cc15fa2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a88a71f929f26e673807d2fec4cc15fa2">&#9670;&#160;</a></span>getCalledFunction()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> llzk::CallGraphNode::getCalledFunction </td>
+          <td class="memname">mlir::CallableOpInterface llzk::CallGraphNode::getCalledFunction </td>
           <td>(</td>
           <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
           <td> const</td>
@@ -434,7 +434,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="CallGraph_8h_source.html#l00161">161</a> of file <a class="el" href="CallGraph_8h_source.html">CallGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CallGraph_8h_source.html#l00158">158</a> of file <a class="el" href="CallGraph_8h_source.html">CallGraph.h</a>.</p>
 
 </div>
 </div>
