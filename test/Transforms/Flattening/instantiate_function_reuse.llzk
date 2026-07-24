@@ -1,0 +1,158 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten=cleanup=disabled %s | FileCheck %s
+
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @N : index
+    function.def @compute() -> index {
+      %n = poly.read_const @N : index
+      function.return %n : index
+    }
+
+    function.def @other() -> index {
+      %value = arith.constant 8 : index
+      function.return %value : index
+    }
+  }
+
+  function.def @T_35_compute() -> index {
+    %wrong = arith.constant 99 : index
+    function.return %wrong : index
+  }
+
+  function.def @main() -> index {
+    %got = function.call @T::@compute<[35]>() : () -> index
+    %got_again = function.call @T::@compute<[35]>() : () -> index
+    %different_binding = function.call @T::@compute<[36]>() : () -> index
+    %different_binding_again = function.call @T::@compute<[36]>() : () -> index
+    %different_source = function.call @T::@other<[35]>() : () -> index
+    %different_source_again = function.call @T::@other<[35]>() : () -> index
+    function.return %different_source_again : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT: function.def @T_35_compute_0() -> index {
+// CHECK-NEXT: %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 35 : index
+// CHECK-NEXT: function.return %[[VAL_0]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @T_36_compute() -> index {
+// CHECK-NEXT: %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 36 : index
+// CHECK-NEXT: function.return %[[VAL_1]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @T_35_other() -> index {
+// CHECK-NEXT: %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 8 : index
+// CHECK-NEXT: function.return %[[VAL_2]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: poly.template @T {
+// CHECK-NEXT: poly.param @N : index
+// CHECK-NEXT: function.def @compute() -> index {
+// CHECK-NEXT: %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT: function.return %[[VAL_3]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @other() -> index {
+// CHECK-NEXT: %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 8 : index
+// CHECK-NEXT: function.return %[[VAL_4]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @T_35_compute() -> index {
+// CHECK-NEXT: %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 99 : index
+// CHECK-NEXT: function.return %[[VAL_5]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @main() -> index {
+// CHECK-NEXT: %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @T_35_compute_0() : () -> index
+// CHECK-NEXT: %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @T_35_compute_0() : () -> index
+// CHECK-NEXT: %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @T_36_compute() : () -> index
+// CHECK-NEXT: %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @T_36_compute() : () -> index
+// CHECK-NEXT: %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @T_35_other() : () -> index
+// CHECK-NEXT: %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @T_35_other() : () -> index
+// CHECK-NEXT: function.return %[[VAL_11]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @"T_35_\1A" {
+    poly.param @Ty : !poly.tvar<@Ty>
+    function.def @compute() -> index {
+      %wrong = arith.constant 99 : index
+      function.return %wrong : index
+    }
+  }
+
+  poly.template @T {
+    poly.param @N : index
+    poly.param @Ty : !poly.tvar<@Ty>
+    function.def @compute() -> index {
+      %value = arith.constant 7 : index
+      function.return %value : index
+    }
+
+    function.def @other() -> index {
+      %value = arith.constant 8 : index
+      function.return %value : index
+    }
+  }
+
+  function.def @main() -> index {
+    %got = function.call @T::@compute<[35, ?]>() : () -> index
+    %got_again = function.call @T::@compute<[35, ?]>() : () -> index
+    %different_binding = function.call @T::@compute<[36, ?]>() : () -> index
+    %different_binding_again = function.call @T::@compute<[36, ?]>() : () -> index
+    %different_source = function.call @T::@other<[35, ?]>() : () -> index
+    %different_source_again = function.call @T::@other<[35, ?]>() : () -> index
+    function.return %different_source_again : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT: poly.template @"T_35_\1A" {
+// CHECK-NEXT: poly.param @Ty : !poly.tvar<@Ty>
+// CHECK-NEXT: function.def @compute() -> index {
+// CHECK-NEXT: %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 99 : index
+// CHECK-NEXT: function.return %[[VAL_0]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: poly.template @"T_35_\1A_0" {
+// CHECK-NEXT: poly.param @Ty : !poly.tvar<@Ty>
+// CHECK-NEXT: function.def @compute() -> index {
+// CHECK-NEXT: %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT: function.return %[[VAL_1]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: poly.template @"T_36_\1A" {
+// CHECK-NEXT: poly.param @Ty : !poly.tvar<@Ty>
+// CHECK-NEXT: function.def @compute() -> index {
+// CHECK-NEXT: %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT: function.return %[[VAL_2]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: poly.template @"T_35_\1A_1" {
+// CHECK-NEXT: poly.param @Ty : !poly.tvar<@Ty>
+// CHECK-NEXT: function.def @other() -> index {
+// CHECK-NEXT: %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 8 : index
+// CHECK-NEXT: function.return %[[VAL_3]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: poly.template @T {
+// CHECK-NEXT: poly.param @N : index
+// CHECK-NEXT: poly.param @Ty : !poly.tvar<@Ty>
+// CHECK-NEXT: function.def @compute() -> index {
+// CHECK-NEXT: %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT: function.return %[[VAL_4]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @other() -> index {
+// CHECK-NEXT: %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 8 : index
+// CHECK-NEXT: function.return %[[VAL_5]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @main() -> index {
+// CHECK-NEXT: %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @"T_35_\1A_0"::@compute<[?]>() : () -> index
+// CHECK-NEXT: %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @"T_35_\1A_0"::@compute<[?]>() : () -> index
+// CHECK-NEXT: %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @"T_36_\1A"::@compute<[?]>() : () -> index
+// CHECK-NEXT: %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @"T_36_\1A"::@compute<[?]>() : () -> index
+// CHECK-NEXT: %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @"T_35_\1A_1"::@other<[?]>() : () -> index
+// CHECK-NEXT: %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @"T_35_\1A_1"::@other<[?]>() : () -> index
+// CHECK-NEXT: function.return %[[VAL_11]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: }
