@@ -206,6 +206,29 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
+// COM: Regression test: when a deferred `array.len` forwards through a `pod.write` of an
+// COM: array-of-POD with exactly one rank-preserving split leaf, that leaf is already the
+// COM: correct shape source and must not be cast to a synthetic `none` carrier.
+!SingleLeaf = !pod.type<[@x: index]>
+!SingleOuter = !pod.type<[@items: !array.type<? x !SingleLeaf>]>
+module attributes {llzk.lang} {
+  function.def @write_then_len_single_rank_leaf(%src: !SingleOuter, %dim: index) -> index {
+    %arg = pod.read %src[@items] : !SingleOuter, !array.type<? x !SingleLeaf>
+    %p = pod.new : !SingleOuter
+    pod.write %p[@items] = %arg : !SingleOuter, !array.type<? x !SingleLeaf>
+    %items = pod.read %p[@items] : !SingleOuter, !array.type<? x !SingleLeaf>
+    %len = array.len %items, %dim : !array.type<? x !SingleLeaf>
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @write_then_len_single_rank_leaf(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<? x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_0]], %[[VAL_1]] : <? x index>
+// CHECK-NEXT:      function.return %[[VAL_2]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
 // COM: Regression test: dynamic arrays of PODs with multiple rank-preserving leaves must thread
 // COM: a shared shape witness so every split leaf keeps the same runtime outer length.
 !Pair = !pod.type<[@x: index, @y: index]>

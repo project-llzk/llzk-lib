@@ -1339,8 +1339,11 @@ static Value tryCollectDirectConvertedPodArrayShapeSource(
     return {};
   }
 
-  if (Value shapeSource = getConvertedPodArrayShapeSource(arrTy, convertedValues)) {
-    return castValueToTypeIfNeeded(bldr, loc, shapeSource, getPodArrayShapeCarrierType(arrTy));
+  if (Value carrier = getConvertedPodArrayShapeCarrierIfPresent(arrTy, convertedValues)) {
+    return castValueToTypeIfNeeded(bldr, loc, carrier, getPodArrayShapeCarrierType(arrTy));
+  }
+  if (Value leaf = getRankPreservingConvertedPodArrayLeaf(arrTy, convertedValues)) {
+    return leaf;
   }
 
   return {};
