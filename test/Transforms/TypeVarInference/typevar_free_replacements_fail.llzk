@@ -1,0 +1,24 @@
+// RUN: llzk-opt -split-input-file -llzk-infer-tvar -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  poly.template @B {
+    poly.param @N : index
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @f(%arg: !poly.tvar<@T>) -> !array.type<@N x !felt.type>{
+      %cast = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> !array.type<@N x !felt.type>
+      function.return %cast : !array.type<@N x !felt.type>
+    }
+  }
+
+  poly.template @A {
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @g(%x: !poly.tvar<@U>) {
+      // expected-error @+2 {{conflicting inferred type for template parameter @U: '!array.type<7 x !felt.type>' vs '!felt.type'}}
+      // expected-note @+1 {{previous inference here}}
+      %0 = function.call @B::@f<[7, !poly.tvar<@U>]>(%x) : (!poly.tvar<@U>) -> !array.type<7 x !poly.tvar<@U>>
+      function.return
+    }
+  }
+}

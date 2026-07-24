@@ -133,6 +133,21 @@ static bool isTypeVarParam(TemplateParamOp op) {
   return tvarTy && tvarTy.getRefName() == op.getName();
 }
 
+/// Return true when `symbolName` names a self-typed type-variable parameter in
+/// the template that contains `op`.
+///
+/// Forwarded caller-side type variables are allowed to stand in explicit
+/// arguments for callee parameters that are about to be erased. They are checked
+/// later through signature inference rather than rejected as foreign symbols.
+static bool isCurrentTemplateTypeVarParamSymbol(StringAttr symbolName, Operation *op) {
+  TemplateOp templateOp = getParentOfType<TemplateOp>(op);
+  if (!templateOp) {
+    return false;
+  }
+  TemplateParamOp paramOp = templateOp.getConstNamed<TemplateParamOp>(symbolName);
+  return paramOp && isTypeVarParam(paramOp);
+}
+
 /// Convert every type in `oldTypes`, returning whether any entry changed.
 template <typename ConverterT>
 static bool
@@ -306,9 +321,6 @@ public:
     DenseSet<StringAttr> resolvingParams;
     return convertAttr(attr, resolvingParams);
   }
-
-  /// Return the template parameter order captured before trimming.
-  ArrayRef<StringAttr> getOldParamOrder() const { return oldParamOrder_; }
 
   /// Validate type-bearing surfaces before resolved owned-struct parameters are
   /// dropped.
@@ -519,7 +531,10 @@ private:
       return success();
     }
     Attribute convertedAttr = resolveTemplateSymbolArgs ? convertTemplateArgAttr(attr) : attr;
-    if (getFlatSymbolName(convertedAttr)) {
+    if (StringAttr symbolName = getFlatSymbolName(convertedAttr)) {
+      if (isCurrentTemplateTypeVarParamSymbol(symbolName, diagnosticOp)) {
+        return success();
+      }
       return emitRemovedTemplateParamMismatch(paramName, attr, replacementIt->second, diagnosticOp);
     }
     if (templateArgUnifiesWithType(convertedAttr, convertType(replacementIt->second))) {
@@ -1347,52 +1362,97 @@ buildParamNameToCallArg(ArrayAttr callParams, ArrayRef<StringAttr> oldParamOrder
   return paramNameToCallArg;
 }
 
-/// Substitute explicit call-site template arguments through aggregate type structure.
 static Type
-substituteExplicitCallArgsInType(Type ty, const DenseMap<Attribute, Attribute> &paramNameToCallArg);
+substituteCallTemplateParams(Type ty, const DenseMap<Attribute, Attribute> &paramNameToCallArg);
 
-/// Substitute explicit call-site template arguments into a callee-side type.
-static Attribute substituteExplicitCallArgsInAttr(
+/// Substitute explicit type-valued call arguments into a symbolic replacement type.
+///
+/// This handles the common replacement-type check where only `!poly.tvar`
+/// occurrences need rewriting. Symbolic non-type parameters, such as array
+/// dimensions, are intentionally left alone for diagnostics that should still
+/// mention the callee-side inferred type.
+static Type
+substituteExplicitCallTypeArgs(Type ty, ArrayAttr callParams, ArrayRef<StringAttr> oldParamOrder) {
+  if (!callParams || callParams.size() != oldParamOrder.size()) {
+    return ty;
+  }
+
+  DenseMap<StringAttr, Type> callTypeArgs;
+  for (auto [paramName, attr] : llvm::zip_equal(oldParamOrder, callParams.getValue())) {
+    if (auto tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
+      callTypeArgs.try_emplace(paramName, tyAttr.getValue());
+    }
+  }
+  TypeVarReplacementConverter converter(
+      ty.getContext(), ArrayRef<StringAttr> {}, oldParamOrder, callTypeArgs,
+      /*trimResolvedParams=*/false
+  );
+  return converter.convertType(ty);
+}
+
+/// Substitute explicit call arguments inside a template-argument attribute.
+///
+/// Flat parameter symbols are replaced directly. Type-bearing attributes are
+/// recursively converted so nested struct parameters, array dimensions, and
+/// type variables are kept in sync with the same call-site instantiation.
+static Attribute substituteCallTemplateParamAttr(
     Attribute attr, const DenseMap<Attribute, Attribute> &paramNameToCallArg
 ) {
   if (!attr) {
     return attr;
   }
-  if (auto typeAttr = llvm::dyn_cast<TypeAttr>(attr)) {
-    Type newTy = substituteExplicitCallArgsInType(typeAttr.getValue(), paramNameToCallArg);
-    return newTy == typeAttr.getValue() ? attr : TypeAttr::get(newTy);
-  }
   auto it = paramNameToCallArg.find(attr);
-  return it == paramNameToCallArg.end() ? attr : it->second;
+  if (it != paramNameToCallArg.end()) {
+    return it->second;
+  }
+  if (auto tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
+    Type newTy = substituteCallTemplateParams(tyAttr.getValue(), paramNameToCallArg);
+    return newTy == tyAttr.getValue() ? attr : TypeAttr::get(newTy);
+  }
+  if (auto arrAttr = llvm::dyn_cast<ArrayAttr>(attr)) {
+    SmallVector<Attribute> newAttrs;
+    bool changed = false;
+    for (Attribute nested : arrAttr.getValue()) {
+      Attribute newNested = substituteCallTemplateParamAttr(nested, paramNameToCallArg);
+      newAttrs.push_back(newNested);
+      changed |= newNested != nested;
+    }
+    return changed ? ArrayAttr::get(attr.getContext(), newAttrs) : attr;
+  }
+  return attr;
 }
 
-/// Substitute explicit call-site template arguments through aggregate type structure.
-static Type substituteExplicitCallArgsInType(
-    Type ty, const DenseMap<Attribute, Attribute> &paramNameToCallArg
-) {
+/// Substitute explicit call template parameters into a target-side type.
+///
+/// This is intentionally broader than `TypeVarReplacementConverter`: it also
+/// rewrites symbolic array dimensions and struct parameters such as `@N` using
+/// the call-site argument list. The helper is used while collecting
+/// cross-template facts, where leaving a callee-local symbol in the inferred
+/// caller type would produce invalid IR after replacement.
+static Type
+substituteCallTemplateParams(Type ty, const DenseMap<Attribute, Attribute> &paramNameToCallArg) {
   if (!ty) {
     return ty;
   }
-  if (auto typeVarTy = llvm::dyn_cast<TypeVarType>(ty)) {
-    auto it = paramNameToCallArg.find(typeVarTy.getNameRef());
-    if (it != paramNameToCallArg.end()) {
-      if (auto typeAttr = llvm::dyn_cast<TypeAttr>(it->second)) {
-        return typeAttr.getValue();
-      }
+  if (auto tvarTy = llvm::dyn_cast<TypeVarType>(ty)) {
+    auto it = paramNameToCallArg.find(tvarTy.getNameRef());
+    if (it == paramNameToCallArg.end()) {
+      return ty;
     }
-    return ty;
+    auto tyAttr = llvm::dyn_cast<TypeAttr>(it->second);
+    return tyAttr ? substituteCallTemplateParams(tyAttr.getValue(), paramNameToCallArg) : ty;
   }
   if (auto arrTy = llvm::dyn_cast<ArrayType>(ty)) {
     SmallVector<Attribute> newDims;
     bool changed = false;
     for (Attribute dim : arrTy.getDimensionSizes()) {
-      Attribute newDim = substituteExplicitCallArgsInAttr(dim, paramNameToCallArg);
+      Attribute newDim = substituteCallTemplateParamAttr(dim, paramNameToCallArg);
       newDims.push_back(newDim);
       changed |= newDim != dim;
     }
-    Type newElemTy = substituteExplicitCallArgsInType(arrTy.getElementType(), paramNameToCallArg);
+    Type newElemTy = substituteCallTemplateParams(arrTy.getElementType(), paramNameToCallArg);
     if (!changed && newElemTy == arrTy.getElementType()) {
-      return ty;
+      return arrTy;
     }
     return flattenInstantiatedArrayType(
         arrTy.cloneWith(arrTy.getElementType(), newDims), newElemTy
@@ -1401,52 +1461,54 @@ static Type substituteExplicitCallArgsInType(
   if (auto structTy = llvm::dyn_cast<StructType>(ty)) {
     ArrayAttr params = structTy.getParams();
     if (!params) {
-      return ty;
+      return structTy;
     }
     SmallVector<Attribute> newParams;
     bool changed = false;
     for (Attribute param : params.getValue()) {
-      Attribute newParam = substituteExplicitCallArgsInAttr(param, paramNameToCallArg);
+      Attribute newParam = substituteCallTemplateParamAttr(param, paramNameToCallArg);
       newParams.push_back(newParam);
       changed |= newParam != param;
     }
-    return changed
-               ? getStructTypeWithParams(structTy.getNameRef(), structTy.getContext(), newParams)
-               : ty;
+    return changed ? getStructTypeWithParams(structTy.getNameRef(), ty.getContext(), newParams)
+                   : structTy;
   }
   if (auto podTy = llvm::dyn_cast<PodType>(ty)) {
     SmallVector<RecordAttr> newRecords;
     bool changed = false;
     for (RecordAttr record : podTy.getRecords()) {
-      Type newRecordTy = substituteExplicitCallArgsInType(record.getType(), paramNameToCallArg);
+      Type newRecordTy = substituteCallTemplateParams(record.getType(), paramNameToCallArg);
       newRecords.push_back(RecordAttr::get(ty.getContext(), record.getName(), newRecordTy));
       changed |= newRecordTy != record.getType();
     }
-    return changed ? PodType::get(ty.getContext(), newRecords) : ty;
+    return changed ? PodType::get(ty.getContext(), newRecords) : podTy;
   }
   if (auto funcTy = llvm::dyn_cast<FunctionType>(ty)) {
     SmallVector<Type> newInputs;
     SmallVector<Type> newResults;
     bool changed = false;
+    newInputs.reserve(funcTy.getNumInputs());
+    newResults.reserve(funcTy.getNumResults());
     for (Type inputTy : funcTy.getInputs()) {
-      Type newInputTy = substituteExplicitCallArgsInType(inputTy, paramNameToCallArg);
+      Type newInputTy = substituteCallTemplateParams(inputTy, paramNameToCallArg);
       newInputs.push_back(newInputTy);
       changed |= newInputTy != inputTy;
     }
     for (Type resultTy : funcTy.getResults()) {
-      Type newResultTy = substituteExplicitCallArgsInType(resultTy, paramNameToCallArg);
+      Type newResultTy = substituteCallTemplateParams(resultTy, paramNameToCallArg);
       newResults.push_back(newResultTy);
       changed |= newResultTy != resultTy;
     }
-    return changed ? FunctionType::get(funcTy.getContext(), newInputs, newResults) : ty;
+    return changed ? FunctionType::get(ty.getContext(), newInputs, newResults) : funcTy;
   }
   return ty;
 }
 
-/// Substitute explicit call-site arguments described by the original parameter order.
-static Type
-substituteExplicitCallArgs(Type ty, ArrayAttr callParams, ArrayRef<StringAttr> oldParamOrder) {
-  return substituteExplicitCallArgsInType(ty, buildParamNameToCallArg(callParams, oldParamOrder));
+/// Substitute all explicit call arguments into a target-side type.
+static Type substituteExplicitCallTemplateParams(
+    Type ty, ArrayAttr callParams, ArrayRef<StringAttr> oldParamOrder
+) {
+  return substituteCallTemplateParams(ty, buildParamNameToCallArg(callParams, oldParamOrder));
 }
 
 /// Return whether a flat symbol reference names `paramName`.
@@ -1532,6 +1594,15 @@ static bool operationMentionsParam(Operation *op, StringAttr paramName) {
   }
   return llvm::any_of(op->getAttrs(), [&mentions](NamedAttribute attr) {
     return mentions.attrMentions(attr.getValue(), /*allowSymbolRefs=*/false);
+  });
+}
+
+/// Return whether a template-argument attribute mentions an eligible type variable.
+static bool attrMentionsAnyTypeVarParam(
+    Attribute attr, const DenseMap<StringAttr, TemplateParamOp> &typeVarParams
+) {
+  return llvm::any_of(typeVarParams, [attr](const auto &entry) {
+    return ParamMentionChecker(entry.first).attrMentions(attr, /*allowSymbolRefs=*/true);
   });
 }
 
@@ -1899,9 +1970,11 @@ private:
 
   /// Infer current-template parameters from a call/include use of a rewritten template target.
   ///
-  /// Function calls and contract includes have the same template-argument surface. Explicit
-  /// arguments carry forwarded parameter facts directly, while omitted arguments are recovered by
-  /// unifying the use-site signature with the target's original signature.
+  /// Function calls and contract includes have the same template-argument surface. Concrete
+  /// explicit arguments are checked directly. Explicit arguments that mention current-template
+  /// type variables are inferred from the target signature after callee-local replacements and
+  /// explicit non-type parameters have been applied, so callee-local symbols cannot leak into the
+  /// caller's replacement map.
   template <typename CallableOp>
   LogicalResult collectCallableUseTemplateParamInferences(
       CallableOp callableOp, FunctionType targetSignature, TemplateInferenceInfo &targetInfo
@@ -1911,17 +1984,40 @@ private:
       if (params.size() != targetInfo.oldParamOrder.size()) {
         return success();
       }
-      DenseMap<Attribute, Attribute> paramNameToCallArg =
-          buildParamNameToCallArg(params, targetInfo.oldParamOrder);
+      bool deferredToSignature = false;
       for (auto [paramName, attr] : llvm::zip_equal(targetInfo.oldParamOrder, params)) {
         auto replacementIt = targetInfo.replacements.find(paramName);
         if (replacementIt == targetInfo.replacements.end()) {
           continue;
         }
-        Type expectedTy =
-            substituteExplicitCallArgsInType(replacementIt->second.type, paramNameToCallArg);
+        Type expectedTy = substituteExplicitCallTemplateParams(
+            replacementIt->second.type, params, targetInfo.oldParamOrder
+        );
         Attribute expectedAttr = TypeAttr::get(expectedTy);
+        if (attrMentionsAnyTypeVarParam(attr, inferenceInfo.typeVarParams)) {
+          deferredToSignature = true;
+          continue;
+        }
         if (failed(collectTemplateArgInferences(attr, expectedAttr, callableOp.getLoc()))) {
+          return failure();
+        }
+      }
+      if (deferredToSignature) {
+        DenseMap<StringAttr, Type> targetReplacements;
+        for (const auto &entry : targetInfo.replacements) {
+          targetReplacements.try_emplace(entry.first, entry.second.type);
+        }
+        TypeVarReplacementConverter converter(
+            callableOp.getContext(), targetInfo.templatePath, targetInfo.oldParamOrder,
+            targetReplacements, /*trimResolvedParams=*/false
+        );
+        Type rewrittenTy = converter.convertType(targetSignature);
+        rewrittenTy =
+            substituteExplicitCallTemplateParams(rewrittenTy, params, targetInfo.oldParamOrder);
+        if (failed(collectTypeInferences(
+                callableOp.getTypeSignature(), llvm::cast<FunctionType>(rewrittenTy),
+                callableOp.getLoc()
+            ))) {
           return failure();
         }
       }
@@ -2192,6 +2288,27 @@ private:
       }
     }
 
+    if (auto lhsFunc = llvm::dyn_cast<FunctionType>(lhs)) {
+      if (auto rhsFunc = llvm::dyn_cast<FunctionType>(rhs)) {
+        if (lhsFunc.getNumInputs() != rhsFunc.getNumInputs() ||
+            lhsFunc.getNumResults() != rhsFunc.getNumResults()) {
+          return success();
+        }
+        for (auto [lhsInput, rhsInput] :
+             llvm::zip_equal(lhsFunc.getInputs(), rhsFunc.getInputs())) {
+          if (failed(collectTypePairInferences(lhsInput, rhsInput, Value(), Value(), loc))) {
+            return failure();
+          }
+        }
+        for (auto [lhsResult, rhsResult] :
+             llvm::zip_equal(lhsFunc.getResults(), rhsFunc.getResults())) {
+          if (failed(collectTypePairInferences(lhsResult, rhsResult, Value(), Value(), loc))) {
+            return failure();
+          }
+        }
+      }
+    }
+
     return success();
   }
 
@@ -2282,7 +2399,7 @@ static bool callParamsMatchReplacements(
     if (!index) {
       return false;
     }
-    Type expectedTy = substituteExplicitCallArgs(entry.second, callParams, oldParamOrder);
+    Type expectedTy = substituteExplicitCallTypeArgs(entry.second, callParams, oldParamOrder);
     Attribute attr = callParams[*index];
     if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr);
         intAttr && isDynamic(intAttr) && wildcardAllowedReplacements &&
@@ -2318,7 +2435,7 @@ static LogicalResult diagnoseCallParamsMismatch(
       continue;
     }
     Attribute attr = callParams[*index];
-    Type expectedTy = substituteExplicitCallArgs(entry.second, callParams, oldParamOrder);
+    Type expectedTy = substituteExplicitCallTypeArgs(entry.second, callParams, oldParamOrder);
     if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr);
         intAttr && isDynamic(intAttr) && wildcardAllowedReplacements &&
         wildcardAllowedReplacements->contains(entry.first)) {
@@ -2906,40 +3023,9 @@ static void updateCallableResultTypesIfNeeded(
   }
 }
 
-/// Update call result types from the target's rewritten signature and the call's explicit args.
-static void updateCallableResultTypesFromTargetIfNeeded(
-    CallOp callOp, FunctionType targetTy, ArrayAttr originalParams,
-    ArrayRef<StringAttr> oldParamOrder, const TypeVarReplacementConverter &converter,
-    bool resolveTemplateSymbolArgs, bool &modified
-) {
-  if (originalParams && originalParams.size() == oldParamOrder.size() &&
-      callOp.getNumResults() == targetTy.getNumResults()) {
-    DenseMap<Attribute, Attribute> paramNameToCallArg =
-        buildParamNameToCallArg(originalParams, oldParamOrder);
-    for (auto [result, targetResultTy] :
-         llvm::zip_equal(callOp.getResults(), targetTy.getResults())) {
-      Type newTy = substituteExplicitCallArgsInType(targetResultTy, paramNameToCallArg);
-      if (templateArgUnifiesWithType(TypeAttr::get(result.getType()), newTy)) {
-        continue;
-      }
-      if (newTy != result.getType()) {
-        result.setType(newTy);
-        modified = true;
-      }
-    }
-    return;
-  }
-
-  if (resolveTemplateSymbolArgs) {
-    updateCallableResultTypesIfNeeded(callOp, converter, modified);
-  }
-}
-
 /// Includes have no SSA results to update.
-static void updateCallableResultTypesFromTargetIfNeeded(
-    verif::IncludeOp, FunctionType, ArrayAttr, ArrayRef<StringAttr>,
-    const TypeVarReplacementConverter &, bool, bool &
-) {}
+static void
+updateCallableResultTypesIfNeeded(verif::IncludeOp, const TypeVarReplacementConverter &, bool &) {}
 
 /// Update one callable op family that references rewritten templates.
 template <typename CallableOp>
@@ -2971,27 +3057,28 @@ static FailureOr<bool> updateCallableTemplateParamsFor(
     bool resolveTemplateSymbolArgs =
         callableTemplate && callableTemplate.getOperation() == parentTemplate.getOperation();
     ArrayAttr oldParams = callableOp.getTemplateParamsAttr();
-    FunctionType targetTy = targetOp.getFunctionType();
     FailureOr<ArrayAttr> newParams =
         converter->convertTemplateParams(oldParams, callableOp, resolveTemplateSymbolArgs);
     if (failed(newParams)) {
       failedConversion = true;
       return;
     }
-    if (converter->hasWildcardForRemovedParam(oldParams) &&
-        failed(validateWildcardCallableSignature(callableOp, targetOp.getFunctionType()))) {
-      failedConversion = true;
-      return;
+    if (converter->hasWildcardForRemovedParam(oldParams)) {
+      auto inferredTargetTy =
+          llvm::cast<FunctionType>(converter->convertType(targetOp.getFunctionType()));
+      if (failed(validateWildcardCallableSignature(callableOp, inferredTargetTy))) {
+        failedConversion = true;
+        return;
+      }
     }
     if (oldParams != *newParams) {
       callableOp.setTemplateParamsAttr(*newParams);
       modified = true;
     }
 
-    updateCallableResultTypesFromTargetIfNeeded(
-        callableOp, targetTy, oldParams, converter->getOldParamOrder(), *converter,
-        resolveTemplateSymbolArgs, modified
-    );
+    if (resolveTemplateSymbolArgs) {
+      updateCallableResultTypesIfNeeded(callableOp, *converter, modified);
+    }
   });
   if (failedConversion) {
     return failure();
@@ -3823,6 +3910,14 @@ private:
     if (failed(specializeFunctionLocalCallables(
             module, infoByTemplate, functionCloneCache, contractCloneCache, templateCloneCache
         ))) {
+      signalPassFailure();
+      return;
+    }
+
+    // Trim call/include argument lists before rewriting caller bodies, so a
+    // caller-local type variable in an explicit argument for an erased callee
+    // parameter is not rewritten in the caller's scope before it can be dropped.
+    if (failed(updateCallableTemplateParams(module, convertersByTemplate))) {
       signalPassFailure();
       return;
     }
