@@ -1,5 +1,6 @@
 var LLZKTransformationPassPipelines_8cpp =
 [
+    [ "llzk::buildFullInliningPipeline", "namespacellzk.html#af5f78e4799250d3737eddc75ea6b61d9", null ],
     [ "llzk::buildFullPolyLoweringPipeline", "namespacellzk.html#aa14b5d0f7b215093118360bd44023927", null ],
     [ "llzk::buildFullStructInliningPipeline", "namespacellzk.html#a9895e6a380f73371e874f1f80d60c507", null ],
     [ "llzk::buildProductProgramPipeline", "namespacellzk.html#a8cd193ef7cefe4761ace3d044ef00586", null ],

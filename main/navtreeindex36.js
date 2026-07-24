@@ -1,5 +1,14 @@
 var NAVTREEINDEX36 =
 {
+"classllzk_1_1felt_1_1OrFeltOp.html#a037622d4f6e58fb6164d2134424b350b":[10,0,4,10,28,7],
+"classllzk_1_1felt_1_1OrFeltOp.html#a037622d4f6e58fb6164d2134424b350b":[12,0,1,7,28,7],
+"classllzk_1_1felt_1_1OrFeltOp.html#a0eaff1b389b05cae920b1de77573d881":[10,0,4,10,28,10],
+"classllzk_1_1felt_1_1OrFeltOp.html#a0eaff1b389b05cae920b1de77573d881":[12,0,1,7,28,10],
+"classllzk_1_1felt_1_1OrFeltOp.html#a1d7dae2c3e4e81c6f8fdd1b80db2aceb":[10,0,4,10,28,1],
+"classllzk_1_1felt_1_1OrFeltOp.html#a1d7dae2c3e4e81c6f8fdd1b80db2aceb":[12,0,1,7,28,1],
+"classllzk_1_1felt_1_1OrFeltOp.html#a22d50d4837c07ec51d3f3fb6ae0e1e5a":[10,0,4,10,28,11],
+"classllzk_1_1felt_1_1OrFeltOp.html#a22d50d4837c07ec51d3f3fb6ae0e1e5a":[12,0,1,7,28,11],
+"classllzk_1_1felt_1_1OrFeltOp.html#a606706dc5705eb396f09d769ec6076aa":[10,0,4,10,28,2],
 "classllzk_1_1felt_1_1OrFeltOp.html#a606706dc5705eb396f09d769ec6076aa":[12,0,1,7,28,2],
 "classllzk_1_1felt_1_1OrFeltOp.html#a6408a937378ec088ae59130cb518fc7a":[10,0,4,10,28,15],
 "classllzk_1_1felt_1_1OrFeltOp.html#a6408a937378ec088ae59130cb518fc7a":[12,0,1,7,28,15],
@@ -240,14 +249,5 @@ var NAVTREEINDEX36 =
 "classllzk_1_1felt_1_1ShrFeltOp.html#acaf490a7c867e9c2aaf4ce1a1fec9e21":[10,0,4,10,37,10],
 "classllzk_1_1felt_1_1ShrFeltOp.html#acaf490a7c867e9c2aaf4ce1a1fec9e21":[12,0,1,7,37,10],
 "classllzk_1_1felt_1_1ShrFeltOp.html#aea69ba31fda75913282e807e07717306":[10,0,4,10,37,7],
-"classllzk_1_1felt_1_1ShrFeltOp.html#aea69ba31fda75913282e807e07717306":[12,0,1,7,37,7],
-"classllzk_1_1felt_1_1ShrFeltOp.html#afe14a7957518f0ecae6fdf39b3ade551":[10,0,4,10,37,4],
-"classllzk_1_1felt_1_1ShrFeltOp.html#afe14a7957518f0ecae6fdf39b3ade551":[12,0,1,7,37,4],
-"classllzk_1_1felt_1_1ShrFeltOpAdaptor.html":[10,0,4,10,38],
-"classllzk_1_1felt_1_1ShrFeltOpAdaptor.html":[12,0,1,7,38],
-"classllzk_1_1felt_1_1ShrFeltOpAdaptor.html#a12eb8df52b8cf04c96150db672e2ec08":[10,0,4,10,38,1],
-"classllzk_1_1felt_1_1ShrFeltOpAdaptor.html#a12eb8df52b8cf04c96150db672e2ec08":[12,0,1,7,38,1],
-"classllzk_1_1felt_1_1ShrFeltOpAdaptor.html#a3b8835f05469a75f37f0dc91ceeb4be9":[10,0,4,10,38,0],
-"classllzk_1_1felt_1_1ShrFeltOpAdaptor.html#a3b8835f05469a75f37f0dc91ceeb4be9":[12,0,1,7,38,0],
-"classllzk_1_1felt_1_1ShrFeltOpAdaptor.html#a826295e66c69e0511e7c5980cd351f2b":[10,0,4,10,38,4]
+"classllzk_1_1felt_1_1ShrFeltOp.html#aea69ba31fda75913282e807e07717306":[12,0,1,7,37,7]
 };

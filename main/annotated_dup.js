@@ -325,6 +325,7 @@ var annotated_dup =
         [ "ConstraintDependencyGraphPrinterPassBase", "classllzk_1_1impl_1_1ConstraintDependencyGraphPrinterPassBase.html", "classllzk_1_1impl_1_1ConstraintDependencyGraphPrinterPassBase" ],
         [ "EnforceNoMemberOverwritePassBase", "classllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase.html", "classllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase" ],
         [ "FuseProductLoopsPassBase", "classllzk_1_1impl_1_1FuseProductLoopsPassBase.html", "classllzk_1_1impl_1_1FuseProductLoopsPassBase" ],
+        [ "InlineFreeFunctionsPassBase", "classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html", "classllzk_1_1impl_1_1InlineFreeFunctionsPassBase" ],
         [ "IntervalAnalysisPrinterPassBase", "classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html", "classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase" ],
         [ "MemberWriteValidatorPassBase", "classllzk_1_1impl_1_1MemberWriteValidatorPassBase.html", "classllzk_1_1impl_1_1MemberWriteValidatorPassBase" ],
         [ "PolyLoweringPassBase", "classllzk_1_1impl_1_1PolyLoweringPassBase.html", "classllzk_1_1impl_1_1PolyLoweringPassBase" ],

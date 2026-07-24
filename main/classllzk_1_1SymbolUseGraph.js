@@ -2,7 +2,7 @@ var classllzk_1_1SymbolUseGraph =
 [
     [ "iterator", "classllzk_1_1SymbolUseGraph.html#ab8f3b5fc8b3995cb3a394cca5b35a526", null ],
     [ "roots_iterator", "classllzk_1_1SymbolUseGraph.html#a472d2c0d54569e136aade8244e356b41", null ],
-    [ "SymbolUseGraph", "classllzk_1_1SymbolUseGraph.html#ad529732b15e9c841d0162adbd60181ca", null ],
+    [ "SymbolUseGraph", "classllzk_1_1SymbolUseGraph.html#af63217d66db886b0174009cb3226e7b0", null ],
     [ "begin", "classllzk_1_1SymbolUseGraph.html#a75930e3924df0e706b0594348063b0f4", null ],
     [ "dump", "classllzk_1_1SymbolUseGraph.html#a130a86a602142eb1ca6eb60f32e0612e", null ],
     [ "dumpToDotFile", "classllzk_1_1SymbolUseGraph.html#a5fa7dca12e202242b184afeed7a11896", null ],

@@ -211,6 +211,9 @@ $(function(){initNavTree('tools.html','',''); });
                 <a href="#autotoc_md-llzk-fuse-product-loops"><span class="tt">-llzk-fuse-product-loops</span> </a>
               </li>
               <li class="level4">
+                <a href="#autotoc_md-llzk-inline-free-functions"><span class="tt">-llzk-inline-free-functions</span> </a>
+              </li>
+              <li class="level4">
                 <a href="#autotoc_md-llzk-poly-lowering-pass"><span class="tt">-llzk-poly-lowering-pass</span> </a>
                 <ul>
                   <li class="level5">
@@ -455,6 +458,11 @@ Options</h5>
 <span class="tt">-llzk-fuse-product-loops</span></h4>
 <p>_Fuse matching witness/constraint loops in a @product function_</p>
 <p>Fuse matching witness/constraint loops in a @product function </p>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-inline-free-functions"></a>
+<span class="tt">-llzk-inline-free-functions</span></h4>
+<p><em>Inline calls to free functions</em></p>
+<p>Inlines <span class="tt">function.call</span> operations inside <span class="tt">function.def</span> bodies when the target is a free <span class="tt">function.def</span> directly inside the pass's root <span class="tt">builtin.module</span>. Calls to functions in nested or included modules, and calls outside <span class="tt">function.def</span> bodies, are left unchanged. After inlining, root free functions that have no remaining symbol uses anywhere in the module are erased. This cleanup applies to every non-external root free function, regardless of its symbol visibility or whether any call to it was inlined.</p>
+<p>Inlining is best effort: free functions that participate in a call cycle are skipped (inlining one would re-materialize its calls forever). If inlining a callee fails, its remaining calls are left in place with a warning while processing continues with other callees. </p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-poly-lowering-pass"></a>
 <span class="tt">-llzk-poly-lowering-pass</span></h4>
 <p><em>Lower the degree of all polynomial equations to a specified maximum</em></p>

@@ -562,53 +562,43 @@ $(function(){initNavTree('LLZKRedundantReadAndWriteEliminationPass_8cpp_source.h
 <div class="line"><a id="l00505" name="l00505"></a><span class="lineno">  505</span>          <a class="code hl_function" href="namespacellzk.html#a43a1a0bc20c43606f2cd2aa67022fdac">ensure</a>(</div>
 <div class="line"><a id="l00506" name="l00506"></a><span class="lineno">  506</span>              deferralsWithoutProgress &lt;= frontier.size(),</div>
 <div class="line"><a id="l00507" name="l00507"></a><span class="lineno">  507</span>              <span class="stringliteral">&quot;unknown end state means we have an unsupported backedge&quot;</span></div>
-<div class="foldopen" id="foldopen00508" data-start="{" data-end="};">
-<div class="line"><a id="l00508" name="l00508"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html">  508</a></span>          );</div>
+<div class="line"><a id="l00508" name="l00508"></a><span class="lineno">  508</span>          );</div>
 <div class="line"><a id="l00509" name="l00509"></a><span class="lineno">  509</span>          enqueue(currentBlock);</div>
-<div class="line"><a id="l00510" name="l00510"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a6cfd583eb6aa0a69c242d013547fdaaf">  510</a></span>          <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00510" name="l00510"></a><span class="lineno">  510</span>          <span class="keywordflow">continue</span>;</div>
 <div class="line"><a id="l00511" name="l00511"></a><span class="lineno">  511</span>        }</div>
-<div class="line"><a id="l00512" name="l00512"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a3f636cd93dd538aa99029a5fdca0eb6d">  512</a></span> </div>
-<div class="line"><a id="l00513" name="l00513"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a9183f3a7a29f033b5b61ec193df1eae4">  513</a></span>        currentState = getBlockState(*it);</div>
-<div class="line"><a id="l00514" name="l00514"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#ab42be819b184ab75d7ec8280a9236017">  514</a></span>        <span class="comment">// If we have multiple predecessors, we take a pessimistic view and</span></div>
-<div class="line"><a id="l00515" name="l00515"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a5812a639ea5fa8034f49e56001a3a366">  515</a></span>        <span class="comment">// set the state as only the intersection of all predecessor states</span></div>
-<div class="line"><a id="l00516" name="l00516"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#ac897eab7794517d41579feec2bb9325c">  516</a></span>        <span class="comment">// (e.g., only the common state from an if branch).</span></div>
-<div class="line"><a id="l00517" name="l00517"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#afae66c7a90669e7252b56dc0825359c1">  517</a></span>        <span class="keywordflow">for</span> (it++; it != itEnd; it++) {</div>
+<div class="line"><a id="l00512" name="l00512"></a><span class="lineno">  512</span> </div>
+<div class="line"><a id="l00513" name="l00513"></a><span class="lineno">  513</span>        currentState = getBlockState(*it);</div>
+<div class="line"><a id="l00514" name="l00514"></a><span class="lineno">  514</span>        <span class="comment">// If we have multiple predecessors, we take a pessimistic view and</span></div>
+<div class="line"><a id="l00515" name="l00515"></a><span class="lineno">  515</span>        <span class="comment">// set the state as only the intersection of all predecessor states</span></div>
+<div class="line"><a id="l00516" name="l00516"></a><span class="lineno">  516</span>        <span class="comment">// (e.g., only the common state from an if branch).</span></div>
+<div class="line"><a id="l00517" name="l00517"></a><span class="lineno">  517</span>        <span class="keywordflow">for</span> (it++; it != itEnd; it++) {</div>
 <div class="line"><a id="l00518" name="l00518"></a><span class="lineno">  518</span>          currentState = intersect(currentState, getBlockState(*it));</div>
 <div class="line"><a id="l00519" name="l00519"></a><span class="lineno">  519</span>        }</div>
-<div class="foldopen" id="foldopen00520" data-start="{" data-end="}">
-<div class="line"><a id="l00520" name="l00520"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#af7888b2de6e01eb395822e1650f5dc05">  520</a></span>      }</div>
+<div class="line"><a id="l00520" name="l00520"></a><span class="lineno">  520</span>      }</div>
 <div class="line"><a id="l00521" name="l00521"></a><span class="lineno">  521</span> </div>
 <div class="line"><a id="l00522" name="l00522"></a><span class="lineno">  522</span>      <span class="comment">// Run this block, consuming currentState and producing the endState</span></div>
-</div>
-<div class="line"><a id="l00523" name="l00523"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a407060e30dfa9022915543bbe415adea">  523</a></span>      deferralsWithoutProgress = 0;</div>
+<div class="line"><a id="l00523" name="l00523"></a><span class="lineno">  523</span>      deferralsWithoutProgress = 0;</div>
 <div class="line"><a id="l00524" name="l00524"></a><span class="lineno">  524</span>      <span class="keyword">auto</span> endState = runOnBlock(</div>
-<div class="line"><a id="l00525" name="l00525"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a0065cbd894233a9ea9587be816352f83">  525</a></span>          *currentBlock, std::move(currentState), replacementMap, readVals, redundantWrites</div>
+<div class="line"><a id="l00525" name="l00525"></a><span class="lineno">  525</span>          *currentBlock, std::move(currentState), replacementMap, readVals, redundantWrites</div>
 <div class="line"><a id="l00526" name="l00526"></a><span class="lineno">  526</span>      );</div>
 <div class="line"><a id="l00527" name="l00527"></a><span class="lineno">  527</span> </div>
-<div class="foldopen" id="foldopen00528" data-start="{" data-end="}">
-<div class="line"><a id="l00528" name="l00528"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a31c04e74d187fd85ac1366b823288950">  528</a></span>      <span class="comment">// Update the end states.</span></div>
+<div class="line"><a id="l00528" name="l00528"></a><span class="lineno">  528</span>      <span class="comment">// Update the end states.</span></div>
 <div class="line"><a id="l00529" name="l00529"></a><span class="lineno">  529</span>      <span class="comment">// Since we only support the scf dialect, we should never have any</span></div>
 <div class="line"><a id="l00530" name="l00530"></a><span class="lineno">  530</span>      <span class="comment">// backedges, so we should never already have state for this block.</span></div>
-</div>
-<div class="line"><a id="l00531" name="l00531"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a6a8979cb9239ba8edf54d128987f2e48">  531</a></span>      <a class="code hl_function" href="namespacellzk.html#a43a1a0bc20c43606f2cd2aa67022fdac">ensure</a>(processed.find(currentBlock) == processed.end(), <span class="stringliteral">&quot;backedge&quot;</span>);</div>
+<div class="line"><a id="l00531" name="l00531"></a><span class="lineno">  531</span>      <a class="code hl_function" href="namespacellzk.html#a43a1a0bc20c43606f2cd2aa67022fdac">ensure</a>(processed.find(currentBlock) == processed.end(), <span class="stringliteral">&quot;backedge&quot;</span>);</div>
 <div class="line"><a id="l00532" name="l00532"></a><span class="lineno">  532</span>      endStates[currentBlock] = std::move(endState);</div>
 <div class="line"><a id="l00533" name="l00533"></a><span class="lineno">  533</span>      processed.insert(currentBlock);</div>
-<div class="foldopen" id="foldopen00534" data-start="{" data-end="}">
-<div class="line"><a id="l00534" name="l00534"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a9134dc85ee4da34068b0c76993a6b364">  534</a></span> </div>
+<div class="line"><a id="l00534" name="l00534"></a><span class="lineno">  534</span> </div>
 <div class="line"><a id="l00535" name="l00535"></a><span class="lineno">  535</span>      <span class="comment">// add successors to frontier</span></div>
 <div class="line"><a id="l00536" name="l00536"></a><span class="lineno">  536</span>      <span class="keywordflow">if</span> (currentBlock-&gt;hasNoSuccessors()) {</div>
-</div>
 <div class="line"><a id="l00537" name="l00537"></a><span class="lineno">  537</span>        terminalStates.push_back(cloneKnownState(endStates[currentBlock]));</div>
 <div class="line"><a id="l00538" name="l00538"></a><span class="lineno">  538</span>      } <span class="keywordflow">else</span> {</div>
-<div class="foldopen" id="foldopen00539" data-start="{" data-end="}">
-<div class="line"><a id="l00539" name="l00539"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a2249e8647e952b18909c5638c2aba484">  539</a></span>        <span class="keywordflow">for</span> (Block *succ : currentBlock-&gt;getSuccessors()) {</div>
+<div class="line"><a id="l00539" name="l00539"></a><span class="lineno">  539</span>        <span class="keywordflow">for</span> (Block *succ : currentBlock-&gt;getSuccessors()) {</div>
 <div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span>          enqueue(succ);</div>
 <div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span>        }</div>
-</div>
 <div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span>      }</div>
 <div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span>    }</div>
-<div class="foldopen" id="foldopen00544" data-start="{" data-end="}">
-<div class="line"><a id="l00544" name="l00544"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a0eded59070e39c55a0b743478622ad7d">  544</a></span> </div>
+<div class="line"><a id="l00544" name="l00544"></a><span class="lineno">  544</span> </div>
 <div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>    <span class="comment">// The final state is the intersection of all possible terminal states.</span></div>
 <div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span>    <a class="code hl_function" href="namespacellzk.html#a43a1a0bc20c43606f2cd2aa67022fdac">ensure</a>(!terminalStates.empty(), <span class="stringliteral">&quot;computed no states&quot;</span>);</div>
 <div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>    <span class="keyword">auto</span> finalState = terminalStates.front();</div>
@@ -623,7 +613,6 @@ $(function(){initNavTree('LLZKRedundantReadAndWriteEliminationPass_8cpp_source.h
 <div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span>      SmallVector&lt;Value&gt; &amp;readVals, SmallVector&lt;Operation *&gt; &amp;redundantWrites</div>
 <div class="line"><a id="l00557" name="l00557"></a><span class="lineno">  557</span>  ) {</div>
 <div class="line"><a id="l00558" name="l00558"></a><span class="lineno">  558</span>    BlockWriteCandidates writeCandidates;</div>
-</div>
 <div class="line"><a id="l00559" name="l00559"></a><span class="lineno">  559</span>    <span class="keywordflow">for</span> (Operation &amp;op : b) {</div>
 <div class="line"><a id="l00560" name="l00560"></a><span class="lineno">  560</span>      <span class="comment">// Some operations have regions (e.g., scf.if). These regions must be</span></div>
 <div class="line"><a id="l00561" name="l00561"></a><span class="lineno">  561</span>      <span class="comment">// traversed and the resulting state(s) are intersected for the final</span></div>
@@ -633,20 +622,15 @@ $(function(){initNavTree('LLZKRedundantReadAndWriteEliminationPass_8cpp_source.h
 <div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span>        <span class="comment">// Repeating regions (scf.for, scf.while) execute their body</span></div>
 <div class="line"><a id="l00566" name="l00566"></a><span class="lineno">  566</span>        <span class="comment">// more than once.  Pre-loop global/RAM facts must not be used</span></div>
 <div class="line"><a id="l00567" name="l00567"></a><span class="lineno">  567</span>        <span class="comment">// to declare a read inside the body redundant — the body may</span></div>
-<div class="foldopen" id="foldopen00568" data-start="{" data-end="}">
-<div class="line"><a id="l00568" name="l00568"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#aa24244c5b2c7eee981cc7efcd51fbe6b">  568</a></span>        <span class="comment">// observe writes from a previous iteration.</span></div>
+<div class="line"><a id="l00568" name="l00568"></a><span class="lineno">  568</span>        <span class="comment">// observe writes from a previous iteration.</span></div>
 <div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span>        KnownState regionEntryState = cloneKnownState(state);</div>
 <div class="line"><a id="l00570" name="l00570"></a><span class="lineno">  570</span>        <span class="keywordflow">if</span> (isa&lt;scf::ForOp, scf::WhileOp&gt;(op)) {</div>
-</div>
 <div class="line"><a id="l00571" name="l00571"></a><span class="lineno">  571</span>          regionEntryState.globals.clear();</div>
-</div>
 <div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span>          regionEntryState.ram.clear();</div>
 <div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span>          regionEntryState.ramExact.clear();</div>
-<div class="foldopen" id="foldopen00574" data-start="{" data-end="}">
-<div class="line"><a id="l00574" name="l00574"></a><span class="lineno"><a class="line" href="namespacellzk.html#af73faea85b5225f29d750ce00d34cc76">  574</a></span>        }</div>
+<div class="line"><a id="l00574" name="l00574"></a><span class="lineno">  574</span>        }</div>
 <div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span>        SmallVector&lt;KnownState&gt; regionStates;</div>
 <div class="line"><a id="l00576" name="l00576"></a><span class="lineno">  576</span>        <span class="keywordflow">for</span> (Region &amp;region : op.getRegions()) {</div>
-</div>
 <div class="line"><a id="l00577" name="l00577"></a><span class="lineno">  577</span>          <span class="keywordflow">if</span> (region.empty()) {</div>
 <div class="line"><a id="l00578" name="l00578"></a><span class="lineno">  578</span>            <span class="keywordflow">continue</span>;</div>
 <div class="line"><a id="l00579" name="l00579"></a><span class="lineno">  579</span>          }</div>
@@ -666,36 +650,49 @@ $(function(){initNavTree('LLZKRedundantReadAndWriteEliminationPass_8cpp_source.h
 <div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span>        <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> *it = regionStates.begin() + 1; it != regionStates.end(); it++) {</div>
 <div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>          finalState = intersect(finalState, *it);</div>
 <div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span>        }</div>
-<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>        <span class="comment">// A nested region may be conditional, zero-iteration, or otherwise not</span></div>
+<div class="foldopen" id="foldopen00596" data-start="{" data-end="};">
+<div class="line"><a id="l00596" name="l00596"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html">  596</a></span>        <span class="comment">// A nested region may be conditional, zero-iteration, or otherwise not</span></div>
 <div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>        <span class="comment">// execute exactly once. Keep prior struct/array behavior, but only</span></div>
-<div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>        <span class="comment">// propagate global/RAM facts that remain true both before and after the</span></div>
+<div class="line"><a id="l00598" name="l00598"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a6cfd583eb6aa0a69c242d013547fdaaf">  598</a></span>        <span class="comment">// propagate global/RAM facts that remain true both before and after the</span></div>
 <div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>        <span class="comment">// region traversal.</span></div>
-<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>        finalState.globals = intersectValueLookup(parentState.globals, finalState.globals);</div>
-<div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span>        finalState.ram = intersectValueLookup(parentState.ram, finalState.ram);</div>
-<div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span>        finalState.ramExact = intersectValueLookup(parentState.ramExact, finalState.ramExact);</div>
-<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span>        state = std::move(finalState);</div>
-<div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span>        writeCandidates.clear();</div>
-<div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span>        <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00600" name="l00600"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a3f636cd93dd538aa99029a5fdca0eb6d">  600</a></span>        finalState.globals = intersectValueLookup(parentState.globals, finalState.globals);</div>
+<div class="line"><a id="l00601" name="l00601"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a9183f3a7a29f033b5b61ec193df1eae4">  601</a></span>        finalState.ram = intersectValueLookup(parentState.ram, finalState.ram);</div>
+<div class="line"><a id="l00602" name="l00602"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#ab42be819b184ab75d7ec8280a9236017">  602</a></span>        finalState.ramExact = intersectValueLookup(parentState.ramExact, finalState.ramExact);</div>
+<div class="line"><a id="l00603" name="l00603"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a5812a639ea5fa8034f49e56001a3a366">  603</a></span>        state = std::move(finalState);</div>
+<div class="line"><a id="l00604" name="l00604"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#ac897eab7794517d41579feec2bb9325c">  604</a></span>        writeCandidates.clear();</div>
+<div class="line"><a id="l00605" name="l00605"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#afae66c7a90669e7252b56dc0825359c1">  605</a></span>        <span class="keywordflow">continue</span>;</div>
 <div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span>      }</div>
 <div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span>      runOperation(&amp;op, state, replacementMap, readVals, redundantWrites, writeCandidates);</div>
-<div class="line"><a id="l00608" name="l00608"></a><span class="lineno">  608</span>    }</div>
+<div class="foldopen" id="foldopen00608" data-start="{" data-end="}">
+<div class="line"><a id="l00608" name="l00608"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#af7888b2de6e01eb395822e1650f5dc05">  608</a></span>    }</div>
 <div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span>    <span class="keywordflow">return</span> std::move(state);</div>
 <div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span>  }</div>
-<div class="line"><a id="l00611" name="l00611"></a><span class="lineno">  611</span></div>
-<div class="line"><a id="l00619" name="l00619"></a><span class="lineno">  619</span>  <span class="keywordtype">void</span> runOperation(</div>
+</div>
+<div class="line"><a id="l00611" name="l00611"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a407060e30dfa9022915543bbe415adea">  611</a></span></div>
+<div class="foldopen" id="foldopen00616" data-start="{" data-end="}">
+<div class="line"><a id="l00616" name="l00616"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a31c04e74d187fd85ac1366b823288950">  616</a></span><span class="comment">  /// @param replacementMap A mutable map of original -&gt; replacement values</span></div>
+<div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span><span class="comment">  /// @param readVals A mutable list of all read values</span></div>
+<div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span><span class="comment">  /// @param redundantWrites A mutable list of all writes that are considered redundant</span></div>
+</div>
+<div class="line"><a id="l00619" name="l00619"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a6a8979cb9239ba8edf54d128987f2e48">  619</a></span>  <span class="keywordtype">void</span> runOperation(</div>
 <div class="line"><a id="l00620" name="l00620"></a><span class="lineno">  620</span>      Operation *op, KnownState &amp;state, DenseMap&lt;Value, Value&gt; &amp;replacementMap,</div>
 <div class="line"><a id="l00621" name="l00621"></a><span class="lineno">  621</span>      SmallVector&lt;Value&gt; &amp;readVals, SmallVector&lt;Operation *&gt; &amp;redundantWrites,</div>
-<div class="line"><a id="l00622" name="l00622"></a><span class="lineno">  622</span>      BlockWriteCandidates &amp;writeCandidates</div>
+<div class="foldopen" id="foldopen00622" data-start="{" data-end="}">
+<div class="line"><a id="l00622" name="l00622"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a9134dc85ee4da34068b0c76993a6b364">  622</a></span>      BlockWriteCandidates &amp;writeCandidates</div>
 <div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span>  ) {</div>
 <div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>    <span class="comment">// Uses the replacement map to look up values to simplify later replacement.</span></div>
+</div>
 <div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>    <span class="comment">// This avoids having a daisy chain of &quot;replace B with A&quot;, &quot;replace C with B&quot;,</span></div>
 <div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span>    <span class="comment">// etc.</span></div>
-<div class="line"><a id="l00627" name="l00627"></a><span class="lineno">  627</span>    <span class="keyword">auto</span> translate = [&amp;replacementMap](Value v) {</div>
+<div class="foldopen" id="foldopen00627" data-start="{" data-end="}">
+<div class="line"><a id="l00627" name="l00627"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a2249e8647e952b18909c5638c2aba484">  627</a></span>    <span class="keyword">auto</span> translate = [&amp;replacementMap](Value v) {</div>
 <div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>      <span class="keywordflow">if</span> (<span class="keyword">auto</span> it = replacementMap.find(v); it != replacementMap.end()) {</div>
 <div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span>        <span class="keywordflow">return</span> it-&gt;second;</div>
+</div>
 <div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span>      }</div>
 <div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span>      <span class="keywordflow">return</span> v;</div>
-<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span>    };</div>
+<div class="foldopen" id="foldopen00632" data-start="{" data-end="}">
+<div class="line"><a id="l00632" name="l00632"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#a0eded59070e39c55a0b743478622ad7d">  632</a></span>    };</div>
 <div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span> </div>
 <div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>    <span class="comment">// Lookup the value tree in the current state or return nullptr.</span></div>
 <div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>    <span class="keyword">auto</span> tryGetValTree = [&amp;state](Value v) -&gt; std::shared_ptr&lt;ReferenceNode&gt; {</div>
@@ -710,6 +707,7 @@ $(function(){initNavTree('LLZKRedundantReadAndWriteEliminationPass_8cpp_source.h
 <div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span>      <span class="keywordflow">if</span> (<span class="keyword">auto</span> it = knownValues.find(key); it != knownValues.end()) {</div>
 <div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span>        replacementMap[resVal] = it-&gt;second;</div>
 <div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span>        readVals.push_back(resVal);</div>
+</div>
 <div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span>        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a id="l00648" name="l00648"></a><span class="lineno">  648</span>      } <span class="keywordflow">else</span> {</div>
 <div class="line"><a id="l00649" name="l00649"></a><span class="lineno">  649</span>        knownValues[key] = resVal;</div>
@@ -719,15 +717,20 @@ $(function(){initNavTree('LLZKRedundantReadAndWriteEliminationPass_8cpp_source.h
 <div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span>      <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span>    };</div>
 <div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span> </div>
-<div class="line"><a id="l00656" name="l00656"></a><span class="lineno">  656</span>    <span class="comment">// An omitted table offset denotes the current row.</span></div>
+<div class="foldopen" id="foldopen00656" data-start="{" data-end="}">
+<div class="line"><a id="l00656" name="l00656"></a><span class="lineno"><a class="line" href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html#aa24244c5b2c7eee981cc7efcd51fbe6b">  656</a></span>    <span class="comment">// An omitted table offset denotes the current row.</span></div>
 <div class="line"><a id="l00657" name="l00657"></a><span class="lineno">  657</span>    <span class="keyword">const</span> IntegerAttr zeroTableOffset = IntegerAttr::get(IndexType::get(op-&gt;getContext()), 0);</div>
-<div class="line"><a id="l00658" name="l00658"></a><span class="lineno">  658</span>    <span class="keyword">auto</span> getMemberNode = [&amp;](Value component, FlatSymbolRefAttr member) {</div>
-<div class="line"><a id="l00659" name="l00659"></a><span class="lineno">  659</span>      std::shared_ptr&lt;ReferenceNode&gt; componentNode = tryGetValTree(translate(component));</div>
+<div class="line"><a id="l00658" name="l00658"></a><span class="lineno">  658</span>    <span class="keyword">auto</span> getMemberNode = [&amp;](Value <a class="code hl_namespace" href="namespacellzk_1_1component.html">component</a>, FlatSymbolRefAttr member) {</div>
+</div>
+<div class="line"><a id="l00659" name="l00659"></a><span class="lineno">  659</span>      std::shared_ptr&lt;ReferenceNode&gt; componentNode = tryGetValTree(translate(<a class="code hl_namespace" href="namespacellzk_1_1component.html">component</a>));</div>
+</div>
 <div class="line"><a id="l00660" name="l00660"></a><span class="lineno">  660</span>      <span class="keywordflow">if</span> (componentNode == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a id="l00661" name="l00661"></a><span class="lineno">  661</span>        <span class="keywordflow">return</span> std::shared_ptr&lt;ReferenceNode&gt;();</div>
-<div class="line"><a id="l00662" name="l00662"></a><span class="lineno">  662</span>      }</div>
+<div class="foldopen" id="foldopen00662" data-start="{" data-end="}">
+<div class="line"><a id="l00662" name="l00662"></a><span class="lineno"><a class="line" href="namespacellzk.html#af73faea85b5225f29d750ce00d34cc76">  662</a></span>      }</div>
 <div class="line"><a id="l00663" name="l00663"></a><span class="lineno">  663</span>      <span class="keywordflow">return</span> componentNode-&gt;getOrCreateChild(member);</div>
 <div class="line"><a id="l00664" name="l00664"></a><span class="lineno">  664</span>    };</div>
+</div>
 <div class="line"><a id="l00665" name="l00665"></a><span class="lineno">  665</span>    <span class="keyword">auto</span> getMemberAccessNode = [&amp;](MemberReadOp readm) {</div>
 <div class="line"><a id="l00666" name="l00666"></a><span class="lineno">  666</span>      std::shared_ptr&lt;ReferenceNode&gt; access =</div>
 <div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span>          getMemberNode(readm.getComponent(), readm.getMemberNameAttr());</div>
@@ -997,7 +1000,7 @@ $(function(){initNavTree('LLZKRedundantReadAndWriteEliminationPass_8cpp_source.h
 <div class="ttc" id="aStreamHelper_8h_html"><div class="ttname"><a href="StreamHelper_8h.html">StreamHelper.h</a></div></div>
 <div class="ttc" id="aclassllzk_1_1Interval_html_a52bd7748f087dc64682eb89063510cd8"><div class="ttname"><a href="classllzk_1_1Interval.html#a52bd7748f087dc64682eb89063510cd8">llzk::Interval::print</a></div><div class="ttdeci">void print(llvm::raw_ostream &amp;os) const</div><div class="ttdef"><b>Definition</b> <a href="Intervals_8cpp_source.html#l00797">Intervals.cpp:797</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_adf116ecb31969911123cbd50b112cfcc"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#adf116ecb31969911123cbd50b112cfcc">llzk::function::FuncDefOp::getCallableRegion</a></div><div class="ttdeci">::mlir::Region * getCallableRegion()</div><div class="ttdoc">Required by FunctionOpInterface.</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00866">Ops.h.inc:866</a></div></div>
-<div class="ttc" id="aclassllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase_html"><div class="ttname"><a href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html">llzk::impl::RedundantReadAndWriteEliminationPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00508">LLZKRedundantReadAndWriteEliminationPass.cpp:508</a></div></div>
+<div class="ttc" id="aclassllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase_html"><div class="ttname"><a href="classllzk_1_1impl_1_1RedundantReadAndWriteEliminationPassBase.html">llzk::impl::RedundantReadAndWriteEliminationPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00596">LLZKRedundantReadAndWriteEliminationPass.cpp:596</a></div></div>
 <div class="ttc" id="anamespacellvm_html"><div class="ttname"><a href="namespacellvm.html">llvm</a></div><div class="ttdef"><b>Definition</b> <a href="SourceRefLattice_8cpp_source.html#l00284">SourceRefLattice.cpp:284</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1array_html"><div class="ttname"><a href="namespacellzk_1_1array.html">llzk::array</a></div><div class="ttdef"><b>Definition</b> <a href="Array_2IR_2Ops_8cpp_source.html#l00043">Ops.cpp:43</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1component_html"><div class="ttname"><a href="namespacellzk_1_1component.html">llzk::component</a></div><div class="ttdef"><b>Definition</b> <a href="Struct_2IR_2Dialect_8cpp_source.html#l00209">Dialect.cpp:209</a></div></div>
