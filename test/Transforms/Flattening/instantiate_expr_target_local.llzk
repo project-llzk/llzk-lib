@@ -1,0 +1,131 @@
+// RUN: llzk-opt -split-input-file --pass-pipeline='builtin.module(llzk-flatten{cleanup=disabled})' %s | FileCheck %s
+
+module attributes {llzk.lang, llzk.main = !struct.type<@UnusedStructExpr::@Value<[5]>>} {
+  poly.template @UnusedStructExpr {
+    poly.param @N : index
+    poly.expr @Unused {
+      %value = scf.execute_region -> index {
+        %n = poly.read_const @N : index
+        scf.yield %n : index
+      }
+      poly.yield %value : index
+    }
+    function.def @other() -> index {
+      %value = poly.read_const @Unused : index
+      function.return %value : index
+    }
+    struct.def @Value {
+      function.def @compute() -> !struct.type<@UnusedStructExpr::@Value<[@N]>> {
+        %self = struct.new : <@UnusedStructExpr::@Value<[@N]>>
+        function.return %self : !struct.type<@UnusedStructExpr::@Value<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@UnusedStructExpr::@Value<[@N]>>) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@UnusedStructExpr_5_Value>} {
+// CHECK-NEXT: struct.def @UnusedStructExpr_5_Value {
+// CHECK-NEXT: function.def @compute() -> !struct.type<@UnusedStructExpr_5_Value> attributes {function.allow_witness} {
+// CHECK-NEXT: %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@UnusedStructExpr_5_Value>
+// CHECK-NEXT: function.return %[[VAL_0]] : !struct.type<@UnusedStructExpr_5_Value>
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@UnusedStructExpr_5_Value>) attributes {function.allow_constraint} {
+// CHECK-NEXT: function.return
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: poly.template @UnusedStructExpr {
+// CHECK-NEXT: poly.param @N : index
+// CHECK-NEXT: poly.expr @Unused {
+// CHECK-NEXT: %[[VAL_2:[0-9a-zA-Z_\.]+]] = scf.execute_region -> index {
+// CHECK-NEXT: %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT: scf.yield %[[VAL_3]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: poly.yield %[[VAL_2]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @other() -> index {
+// CHECK-NEXT: %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.read_const @Unused : index
+// CHECK-NEXT: function.return %[[VAL_4]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: struct.def @Value {
+// CHECK-NEXT: function.def @compute() -> !struct.type<@UnusedStructExpr::@Value<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT: %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@UnusedStructExpr::@Value<[@N]>>
+// CHECK-NEXT: function.return %[[VAL_5]] : !struct.type<@UnusedStructExpr::@Value<[@N]>>
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@UnusedStructExpr::@Value<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT: function.return
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @UnusedFunctionExpr {
+    poly.param @N : index
+    poly.expr @Unused {
+      %value = scf.execute_region -> index {
+        %n = poly.read_const @N : index
+        scf.yield %n : index
+      }
+      poly.yield %value : index
+    }
+    function.def @other() -> index {
+      %value = poly.read_const @Unused : index
+      function.return %value : index
+    }
+    function.def @value() -> index {
+      %result = arith.constant 1 : index
+      function.return %result : index
+    }
+  }
+
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      %result = function.call @UnusedFunctionExpr::@value<[5]>() : () -> index
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT: function.def @UnusedFunctionExpr_5_value() -> index {
+// CHECK-NEXT: %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT: function.return %[[VAL_0]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: poly.template @UnusedFunctionExpr {
+// CHECK-NEXT: poly.param @N : index
+// CHECK-NEXT: poly.expr @Unused {
+// CHECK-NEXT: %[[VAL_1:[0-9a-zA-Z_\.]+]] = scf.execute_region -> index {
+// CHECK-NEXT: %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT: scf.yield %[[VAL_2]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: poly.yield %[[VAL_1]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @other() -> index {
+// CHECK-NEXT: %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.read_const @Unused : index
+// CHECK-NEXT: function.return %[[VAL_3]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @value() -> index {
+// CHECK-NEXT: %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT: function.return %[[VAL_4]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: struct.def @Main {
+// CHECK-NEXT: function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT: %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT: %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @UnusedFunctionExpr_5_value() : () -> index
+// CHECK-NEXT: function.return %[[VAL_5]] : !struct.type<@Main>
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT: function.return
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: }

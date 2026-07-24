@@ -1,0 +1,58 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s 2>&1 | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang, llzk.main = !struct.type<@StructExpr::@Value<[5]>>} {
+  poly.template @StructExpr {
+    poly.param @N : index
+    poly.expr @NestedN {
+      // expected-error@+1 {{'scf.execute_region' op cannot fold concrete template expression}}
+      %value = scf.execute_region -> index {
+        %n = poly.read_const @N : index
+        scf.yield %n : index
+      }
+      poly.yield %value : index
+    }
+    struct.def @Value {
+      function.def @compute() -> !struct.type<@StructExpr::@Value<[@N]>> {
+        %value = poly.read_const @NestedN : index
+        %self = struct.new : <@StructExpr::@Value<[@N]>>
+        function.return %self : !struct.type<@StructExpr::@Value<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@StructExpr::@Value<[@N]>>) {
+        function.return
+      }
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @FunctionExpr {
+    poly.param @N : index
+    poly.expr @NestedN {
+      // expected-error@+1 {{'scf.execute_region' op cannot fold concrete template expression}}
+      %value = scf.execute_region -> index {
+        %n = poly.read_const @N : index
+        scf.yield %n : index
+      }
+      poly.yield %value : index
+    }
+    function.def @value() -> index {
+      %value = poly.read_const @NestedN : index
+      function.return %value : index
+    }
+  }
+
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      %value = function.call @FunctionExpr::@value<[5]>() : () -> index
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// CHECK: llzk-flatten failed while instantiating the main struct

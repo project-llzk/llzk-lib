@@ -1,0 +1,398 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck %s
+
+#id = affine_map<(i)->(i)>
+module attributes {llzk.lang, llzk.main = !struct.type<@Outer::@Wrapper<[7]>>} {
+  poly.template @Inner {
+    poly.param @N : index
+    poly.param @M : index
+    poly.expr @TwiceM {
+      %m = poly.read_const @M : index
+      %two = arith.constant 2 : index
+      %result = arith.muli %m, %two : index
+      poly.yield %result : index
+    }
+    poly.expr @NPlusM {
+      %n = poly.read_const @N : index
+      %m = poly.read_const @M : index
+      %result = arith.addi %n, %m : index
+      poly.yield %result : index
+    }
+    struct.def @Value {
+      struct.member @values : !array.type<#id x !felt.type>
+      function.def @compute() -> !struct.type<@Inner::@Value<[@N, @M]>> {
+        %sum = poly.read_const @NPlusM : index
+        %self = struct.new : <@Inner::@Value<[@N, @M]>>
+        %values = array.new{(%sum)[]} : !array.type<#id x !felt.type>
+        struct.writem %self[@values] = %values : <@Inner::@Value<[@N, @M]>>, !array.type<#id x !felt.type>
+        function.return %self : !struct.type<@Inner::@Value<[@N, @M]>>
+      }
+      function.def @constrain(%self: !struct.type<@Inner::@Value<[@N, @M]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Outer {
+    poly.param @M : index
+    struct.def @Wrapper {
+      struct.member @value : !struct.type<@Inner::@Value<[5, @M]>>
+      function.def @compute() -> !struct.type<@Outer::@Wrapper<[@M]>> {
+        %self = struct.new : <@Outer::@Wrapper<[@M]>>
+        function.return %self : !struct.type<@Outer::@Wrapper<[@M]>>
+      }
+      function.def @constrain(%self: !struct.type<@Outer::@Wrapper<[@M]>>) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Outer_7_Wrapper>} {
+// CHECK-NEXT: struct.def @Inner_5_7_Value {
+// CHECK-NEXT: struct.member @values : !array.type<12 x !felt.type>
+// CHECK-NEXT: function.def @compute() -> !struct.type<@Inner_5_7_Value> attributes {function.allow_witness} {
+// CHECK-NEXT: %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Inner_5_7_Value>
+// CHECK-NEXT: %[[VAL_1:[0-9a-zA-Z_\.]+]] = array.new : <12 x !felt.type>
+// CHECK-NEXT: struct.writem %[[VAL_0]][@values] = %[[VAL_1]] : <@Inner_5_7_Value>, !array.type<12 x !felt.type>
+// CHECK-NEXT: function.return %[[VAL_0]] : !struct.type<@Inner_5_7_Value>
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Inner_5_7_Value>) attributes {function.allow_constraint} {
+// CHECK-NEXT: function.return
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: poly.template @"Inner_5_\1A" {
+// CHECK-NEXT: poly.param @M : index
+// CHECK-NEXT: poly.expr @NPlusM {
+// CHECK-NEXT: %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 5 : index
+// CHECK-NEXT: %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.read_const @M : index
+// CHECK-NEXT: %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_4]], %[[VAL_3]] : index
+// CHECK-NEXT: poly.yield %[[VAL_5]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: struct.def @Value {
+// CHECK-NEXT: struct.member @values : !array.type<#[[$ATTR_0]] x !felt.type>
+// CHECK-NEXT: function.def @compute() -> !struct.type<@"Inner_5_\1A"::@Value<[@M]>> attributes {function.allow_witness} {
+// CHECK-NEXT: %[[VAL_6:[0-9a-zA-Z_\.]+]] = poly.read_const @NPlusM : index
+// CHECK-NEXT: %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.new : <@"Inner_5_\1A"::@Value<[@M]>>
+// CHECK-NEXT: %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.new{(%[[VAL_6]])} : <#[[$ATTR_0]] x !felt.type>
+// CHECK-NEXT: struct.writem %[[VAL_7]][@values] = %[[VAL_8]] : <@"Inner_5_\1A"::@Value<[@M]>>, !array.type<#[[$ATTR_0]] x !felt.type>
+// CHECK-NEXT: function.return %[[VAL_7]] : !struct.type<@"Inner_5_\1A"::@Value<[@M]>>
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @constrain(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@"Inner_5_\1A"::@Value<[@M]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT: function.return
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: struct.def @Outer_7_Wrapper {
+// CHECK-NEXT: struct.member @value : !struct.type<@Inner_5_7_Value>
+// CHECK-NEXT: function.def @compute() -> !struct.type<@Outer_7_Wrapper> attributes {function.allow_witness} {
+// CHECK-NEXT: %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.new : <@Outer_7_Wrapper>
+// CHECK-NEXT: function.return %[[VAL_10]] : !struct.type<@Outer_7_Wrapper>
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @constrain(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !struct.type<@Outer_7_Wrapper>) attributes {function.allow_constraint} {
+// CHECK-NEXT: function.return
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @InnerFunc {
+    poly.param @N : index
+    poly.param @M : index
+    poly.expr @TwiceM {
+      %m = poly.read_const @M : index
+      %two = arith.constant 2 : index
+      %result = arith.muli %m, %two : index
+      poly.yield %result : index
+    }
+    poly.expr @NPlusM {
+      %n = poly.read_const @N : index
+      %m = poly.read_const @M : index
+      %result = arith.addi %n, %m : index
+      poly.yield %result : index
+    }
+    function.def @value(%input: !array.type<@N,@M x !felt.type>) -> index {
+      %sum = poly.read_const @NPlusM : index
+      function.return %sum : index
+    }
+  }
+
+  poly.template @OuterFunc {
+    poly.param @M : index
+    function.def @value(%input: !array.type<5,@M x !felt.type>) -> index {
+      %result = function.call @InnerFunc::@value(%input) : (!array.type<5,@M x !felt.type>) -> index
+      function.return %result : index
+    }
+  }
+
+  struct.def @Main {
+    function.def @compute(%input: !array.type<5,7 x !felt.type>) -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      %result = function.call @OuterFunc::@value(%input) : (!array.type<5,7 x !felt.type>) -> index
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %input: !array.type<5,7 x !felt.type>) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT: function.def @InnerFunc_5_7_value(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<5,7 x !felt.type>) -> index {
+// CHECK-NEXT: %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 12 : index
+// CHECK-NEXT: function.return %[[VAL_1]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @OuterFunc_7_value(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<5,7 x !felt.type>) -> index {
+// CHECK-NEXT: %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @InnerFunc_5_7_value(%[[VAL_2]]) : (!array.type<5,7 x !felt.type>) -> index
+// CHECK-NEXT: function.return %[[VAL_3]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: struct.def @Main {
+// CHECK-NEXT: function.def @compute(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !array.type<5,7 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT: %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT: %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @OuterFunc_7_value(%[[VAL_4]]) : (!array.type<5,7 x !felt.type>) -> index
+// CHECK-NEXT: function.return %[[VAL_5]] : !struct.type<@Main>
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !array.type<5,7 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT: function.return
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @Inner {
+    poly.param @N : index
+    poly.param @M : index
+    poly.expr @NestedM {
+      %value = scf.execute_region -> index {
+        %m = poly.read_const @M : index
+        scf.yield %m : index
+      }
+      poly.yield %value : index
+    }
+    function.def @value() -> index {
+      %value = poly.read_const @NestedM : index
+      function.return %value : index
+    }
+  }
+
+  poly.template @Outer {
+    poly.param @M : index
+    function.def @value() -> index {
+      %value = function.call @Inner::@value<[5, @M]>() : () -> index
+      function.return %value : index
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT: poly.template @"Inner_5_\1A" {
+// CHECK-NEXT: poly.param @M : index
+// CHECK-NEXT: poly.expr @NestedM {
+// CHECK-NEXT: %[[VAL_0:[0-9a-zA-Z_\.]+]] = scf.execute_region -> index {
+// CHECK-NEXT: %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @M : index
+// CHECK-NEXT: scf.yield %[[VAL_1]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: poly.yield %[[VAL_0]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @value() -> index {
+// CHECK-NEXT: %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.read_const @NestedM : index
+// CHECK-NEXT: function.return %[[VAL_2]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: poly.template @Outer {
+// CHECK-NEXT: poly.param @M : index
+// CHECK-NEXT: function.def @value() -> index {
+// CHECK-NEXT: %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @"Inner_5_\1A"::@value<[@M]>() : () -> index
+// CHECK-NEXT: function.return %[[VAL_3]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @InnerFunc {
+    poly.param @N : index
+    poly.param @M : index
+    poly.expr @TwiceM {
+      %m = poly.read_const @M : index
+      %two = arith.constant 2 : index
+      %result = arith.muli %m, %two : index
+      poly.yield %result : index
+    }
+    poly.expr @NPlusM {
+      %n = poly.read_const @N : index
+      %m = poly.read_const @M : index
+      %result = arith.addi %n, %m : index
+      poly.yield %result : index
+    }
+    function.def @value(%input: !array.type<@N,@M x !felt.type>) -> index {
+      %sum = poly.read_const @NPlusM : index
+      function.return %sum : index
+    }
+  }
+
+  poly.template @OuterFunc {
+    poly.param @M : index
+    function.def @value(%input: !array.type<5,@M x !felt.type>) -> index {
+      %result = function.call @InnerFunc::@value(%input) : (!array.type<5,@M x !felt.type>) -> index
+      function.return %result : index
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT: poly.template @"InnerFunc_5_\1A" {
+// CHECK-NEXT: poly.param @M : index
+// CHECK-NEXT: poly.expr @NPlusM {
+// CHECK-NEXT: %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 5 : index
+// CHECK-NEXT: %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @M : index
+// CHECK-NEXT: %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_1]], %[[VAL_0]] : index
+// CHECK-NEXT: poly.yield %[[VAL_2]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @value(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<5,@M x !felt.type>) -> index {
+// CHECK-NEXT: %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.read_const @NPlusM : index
+// CHECK-NEXT: function.return %[[VAL_4]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: poly.template @OuterFunc {
+// CHECK-NEXT: poly.param @M : index
+// CHECK-NEXT: function.def @value(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<5,@M x !felt.type>) -> index {
+// CHECK-NEXT: %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @"InnerFunc_5_\1A"::@value(%[[VAL_5]]) : (!array.type<5,@M x !felt.type>) -> index
+// CHECK-NEXT: function.return %[[VAL_6]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @Inner {
+    poly.param @Num
+    poly.param @Ty : !poly.tvar<@Ty>
+    poly.param @M : index
+    poly.expr @Sum {
+      %num = poly.read_const @Num : !poly.tvar<@Ty>
+      %cast = poly.unifiable_cast %num : (!poly.tvar<@Ty>) -> index
+      %m = poly.read_const @M : index
+      %sum = arith.addi %m, %cast : index
+      poly.yield %sum : index
+    }
+    struct.def @Value {
+      function.def @compute() -> !struct.type<@Inner::@Value<[@Num, @Ty, @M]>> {
+        %sum = poly.read_const @Sum : index
+        %self = struct.new : <@Inner::@Value<[@Num, @Ty, @M]>>
+        function.return %self : !struct.type<@Inner::@Value<[@Num, @Ty, @M]>>
+      }
+      function.def @constrain(%self: !struct.type<@Inner::@Value<[@Num, @Ty, @M]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Outer {
+    poly.param @M : index
+    struct.def @Wrapper {
+      struct.member @value : !struct.type<@Inner::@Value<[35, index, @M]>>
+      function.def @compute() -> !struct.type<@Outer::@Wrapper<[@M]>> {
+        %self = struct.new : <@Outer::@Wrapper<[@M]>>
+        function.return %self : !struct.type<@Outer::@Wrapper<[@M]>>
+      }
+      function.def @constrain(%self: !struct.type<@Outer::@Wrapper<[@M]>>) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT: poly.template @"Inner_35_i_\1A" {
+// CHECK-NEXT: poly.param @M : index
+// CHECK-NEXT: poly.expr @Sum {
+// CHECK-NEXT: %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 35 : index
+// CHECK-NEXT: %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (index) -> index
+// CHECK-NEXT: %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.read_const @M : index
+// CHECK-NEXT: %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_2]], %[[VAL_1]] : index
+// CHECK-NEXT: poly.yield %[[VAL_3]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: struct.def @Value {
+// CHECK-NEXT: function.def @compute() -> !struct.type<@"Inner_35_i_\1A"::@Value<[@M]>> attributes {function.allow_witness} {
+// CHECK-NEXT: %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@"Inner_35_i_\1A"::@Value<[@M]>>
+// CHECK-NEXT: function.return %[[VAL_4]] : !struct.type<@"Inner_35_i_\1A"::@Value<[@M]>>
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@"Inner_35_i_\1A"::@Value<[@M]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT: function.return
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: poly.template @Outer {
+// CHECK-NEXT: poly.param @M : index
+// CHECK-NEXT: struct.def @Wrapper {
+// CHECK-NEXT: struct.member @value : !struct.type<@"Inner_35_i_\1A"::@Value<[@M]>>
+// CHECK-NEXT: function.def @compute() -> !struct.type<@Outer::@Wrapper<[@M]>> attributes {function.allow_witness} {
+// CHECK-NEXT: %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@Outer::@Wrapper<[@M]>>
+// CHECK-NEXT: function.return %[[VAL_6]] : !struct.type<@Outer::@Wrapper<[@M]>>
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@Outer::@Wrapper<[@M]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT: function.return
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @Inner {
+    poly.param @Num
+    poly.param @Ty : !poly.tvar<@Ty>
+    poly.param @M : index
+    poly.expr @Sum {
+      %num = poly.read_const @Num : !poly.tvar<@Ty>
+      %cast = poly.unifiable_cast %num : (!poly.tvar<@Ty>) -> index
+      %m = poly.read_const @M : index
+      %sum = arith.addi %m, %cast : index
+      poly.yield %sum : index
+    }
+    function.def @value() -> index {
+      %sum = poly.read_const @Sum : index
+      function.return %sum : index
+    }
+  }
+
+  poly.template @Outer {
+    poly.param @M : index
+    function.def @value() -> index {
+      %sum = function.call @Inner::@value<[35, index, @M]>() : () -> index
+      function.return %sum : index
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT: poly.template @"Inner_35_i_\1A" {
+// CHECK-NEXT: poly.param @M : index
+// CHECK-NEXT: poly.expr @Sum {
+// CHECK-NEXT: %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 35 : index
+// CHECK-NEXT: %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (index) -> index
+// CHECK-NEXT: %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.read_const @M : index
+// CHECK-NEXT: %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_2]], %[[VAL_1]] : index
+// CHECK-NEXT: poly.yield %[[VAL_3]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: function.def @value() -> index {
+// CHECK-NEXT: %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.read_const @Sum : index
+// CHECK-NEXT: function.return %[[VAL_4]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: poly.template @Outer {
+// CHECK-NEXT: poly.param @M : index
+// CHECK-NEXT: function.def @value() -> index {
+// CHECK-NEXT: %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @"Inner_35_i_\1A"::@value<[@M]>() : () -> index
+// CHECK-NEXT: function.return %[[VAL_5]] : index
+// CHECK-NEXT: }
+// CHECK-NEXT: }
+// CHECK-NEXT: }
