@@ -1,0 +1,100 @@
+name: Bug report
+description: Report a reproducible problem with LLZK
+title: "[Bug]: "
+labels:
+  - bug
+  - "under review"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping improve LLZK.
+
+        Before filing an issue, search the existing issues for related reports. External contributors should not begin implementation until a core developer marks the issue `approved`.
+
+  - type: checkboxes
+    id: existing-issues
+    attributes:
+      label: Existing issues
+      options:
+        - label: I searched the open and closed issues and did not find an existing report for this problem.
+          required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation and impact
+      description: Explain why this bug matters and who or what it affects.
+      placeholder: Describe the practical impact, severity, and affected workflows.
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug description
+      description: Clearly describe the observed behavior.
+      placeholder: What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Provide the smallest example and exact commands needed to reproduce the problem.
+      placeholder: |
+        1. Build or install...
+        2. Run...
+        3. Observe...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: Explain what you expected to happen instead.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: LLZK version or commit
+      description: Provide the release version or commit SHA where the problem occurs.
+      placeholder: v0.0.0 or commit SHA
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Workarounds or alternatives considered
+      description: Describe any workarounds, related approaches, or possible resolutions you considered.
+      placeholder: Write "None" if no workaround is known.
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add logs, diagnostics, links, screenshots, or other relevant context.
+
+  - type: checkboxes
+    id: contribution-policy
+    attributes:
+      label: Contribution policy
+      options:
+        - label: "I understand that external contributors should wait for the `approved` label before beginning implementation."
+          required: true
+
+  - type: textarea
+    id: core-developer-review
+    attributes:
+      label: Core developer review
+      description: Leave this team mention in place so a core developer can review the issue.
+      value: "@project-llzk/core-devs"
+    validations:
+      required: true
