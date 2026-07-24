@@ -31,7 +31,7 @@ Please contribute to an existing issue when possible instead of opening a duplic
 If a related issue does not exist, open a new issue using the relevant
 [issue form](https://github.com/project-llzk/llzk-lib/issues/new/choose). A new
 issue must clearly describe and motivate the bug or feature, including its
-impact or use case, expected behavior, and enough detail for a core developer
+impact or use case, expected behavior, and enough detail for a maintainer
 to evaluate it.
 
 New issues begin with the `under review` label. This means the proposal
