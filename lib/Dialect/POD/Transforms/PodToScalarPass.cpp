@@ -1200,28 +1200,6 @@ tryMaterializeFreshUnwrittenDirectRecordRead(OpBuilder &bldr, Location loc, Read
     );
   }
 
-  if (StructType structTy = llvm::dyn_cast<StructType>(recordType)) {
-    SymbolRefAttr computeCallee = appendLeaf(structTy.getNameRef(), FUNC_NAME_COMPUTE);
-    std::optional<ArrayInstantiationInfo> instantiation =
-        tryGetFreshUnwrittenPodReadInstantiationInfo(readOp);
-    if (instantiation && !instantiation->mapOperandStorage.empty()) {
-      SmallVector<ValueRange> mapOperands;
-      mapOperands.reserve(instantiation->mapOperandStorage.size());
-      for (const SmallVector<Value> &group : instantiation->mapOperandStorage) {
-        mapOperands.push_back(group);
-      }
-      return bldr
-          .create<CallOp>(
-              loc, TypeRange {structTy}, computeCallee, mapOperands, instantiation->numDimsPerMap,
-              ValueRange {}, ArrayRef<Attribute> {}
-          )
-          .getResult(0);
-    } else {
-      return bldr.create<CallOp>(loc, TypeRange {structTy}, computeCallee, ValueRange {})
-          .getResult(0);
-    }
-  }
-
   return bldr.create<NonDetOp>(loc, recordType).getResult();
 }
 

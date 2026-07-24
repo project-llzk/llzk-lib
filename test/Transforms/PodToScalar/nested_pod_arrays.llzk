@@ -241,7 +241,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @return_direct(%[[VAL_2:[0-9a-zA-Z_\.]+]]: index, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index, %[[VAL_4:[0-9a-zA-Z_\.]+]]: index, %[[VAL_5:[0-9a-zA-Z_\.]+]]: index) -> (!felt.type, !array.type<#[[$ATTR_0]],#[[$ATTR_0]] x !felt.type>, !struct.type<@TS::@S<[#[[$ATTR_0]], #[[$ATTR_0]]]>>) attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = llzk.nondet : !felt.type
 // CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.new{(){{\[}}%[[VAL_2]], %[[VAL_3]]], (){{\[}}%[[VAL_3]], %[[VAL_2]]]} : <#[[$ATTR_0]],#[[$ATTR_0]] x !felt.type>
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @TS::@S::@compute() {(){{\[}}%[[VAL_4]], %[[VAL_5]]], (){{\[}}%[[VAL_5]], %[[VAL_4]]]} : () -> !struct.type<@TS::@S<[#[[$ATTR_0]], #[[$ATTR_0]]]>>
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TS::@S<[#[[$ATTR_0]], #[[$ATTR_0]]]>>
 // CHECK-NEXT:      function.return %[[VAL_6]], %[[VAL_7]], %[[VAL_8]] : !felt.type, !array.type<#[[$ATTR_0]],#[[$ATTR_0]] x !felt.type>, !struct.type<@TS::@S<[#[[$ATTR_0]], #[[$ATTR_0]]]>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
