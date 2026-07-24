@@ -657,11 +657,10 @@ static bool isStep1LegalOp(Operation *op) {
 static void populateStep1ConversionTarget(ConversionTarget &target, NonDetOpNames &names) {
   target.addLegalDialect<pcl::PCLDialect, func::FuncDialect>();
   target.addLegalOp<ModuleOp, UnrealizedConversionCastOp>();
-  target.addDynamicallyLegalDialect<
-      BoolDialect, FeltDialect, CastDialect, arith::ArithDialect, ConstrainDialect,
-      array::ArrayDialect, global::GlobalDialect, include::IncludeDialect, pod::PODDialect,
-      polymorphic::PolymorphicDialect, ram::RAMDialect, smt::SMTDialect, string::StringDialect,
-      verif::VerifDialect, LLZKDialect, StructDialect, FunctionDialect>(isStep1LegalOp);
+  // Step 1 converts only struct constrain functions. Use the fallback for
+  // operations from any dialect that may appear elsewhere; the callback still
+  // rejects unconverted operations inside constrain functions.
+  target.markUnknownOpDynamicallyLegal(isStep1LegalOp);
 
   target.addDynamicallyLegalOp<NonDetOp>([&names](NonDetOp op) {
     return isStep1LegalOp(op) && names.find(op) == names.end();

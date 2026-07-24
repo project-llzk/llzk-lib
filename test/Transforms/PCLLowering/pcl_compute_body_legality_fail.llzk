@@ -1,0 +1,22 @@
+// REQUIRES: with-pcl
+// RUN: llzk-opt -llzk-to-pcl -verify-diagnostics %s
+
+// The fallback legality rule applies only outside struct constraint functions.
+
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  struct.def @ConstraintSCF {
+    function.def @compute(%a: !F, %b: !F) -> !struct.type<@ConstraintSCF> {
+      %self = struct.new : <@ConstraintSCF>
+      function.return %self : !struct.type<@ConstraintSCF>
+    }
+    function.def @constrain(%self: !struct.type<@ConstraintSCF>, %a: !F, %b: !F) {
+      %condition = bool.cmp eq(%a, %b) : !F, !F
+      // expected-error@+1 {{failed to legalize operation 'scf.if'}}
+      scf.if %condition {
+      }
+      function.return
+    }
+  }
+}

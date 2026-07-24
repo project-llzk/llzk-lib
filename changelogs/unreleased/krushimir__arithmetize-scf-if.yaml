@@ -1,0 +1,4 @@
+added:
+  - "`llzk-arithmetize-scf-if` pass that replaces constraint-side `scf.if` operations with select polynomials and gated branch constraints"
+fixed:
+  - "Allow operations outside struct constraint functions to pass through the first PCL conversion step"

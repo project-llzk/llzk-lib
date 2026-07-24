@@ -1,0 +1,87 @@
+// RUN: llzk-opt -split-input-file -llzk-arithmetize-scf-if -verify-diagnostics %s
+
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  function.def @callee() {
+    function.return
+  }
+  struct.def @CallEffect {
+    function.def @compute(%cond: i1) -> !struct.type<@CallEffect> {
+      %self = struct.new : <@CallEffect>
+      function.return %self : !struct.type<@CallEffect>
+    }
+    function.def @constrain(%self: !struct.type<@CallEffect>, %cond: i1) attributes {function.allow_constraint} {
+      scf.if %cond {
+        // expected-error@+1 {{cannot arithmetize scf.if branch operation 'function.call' because executing both branches may change its effects}}
+        function.call @callee() : () -> ()
+      }
+      function.return
+    }
+  }
+}
+
+// -----
+
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  struct.def @IndexResult {
+    function.def @compute(%cond: i1) -> !struct.type<@IndexResult> {
+      %self = struct.new : <@IndexResult>
+      function.return %self : !struct.type<@IndexResult>
+    }
+    function.def @constrain(%self: !struct.type<@IndexResult>, %cond: i1) attributes {function.allow_constraint} {
+      // expected-error@+1 {{scf.if arithmetization supports only felt results}}
+      %result = scf.if %cond -> index {
+        %one = arith.constant 1 : index
+        scf.yield %one : index
+      } else {
+        %zero = arith.constant 0 : index
+        scf.yield %zero : index
+      }
+      function.return
+    }
+  }
+}
+
+// -----
+
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  struct.def @IntegerConstraint {
+    function.def @compute(%cond: i1) -> !struct.type<@IntegerConstraint> {
+      %self = struct.new : <@IntegerConstraint>
+      function.return %self : !struct.type<@IntegerConstraint>
+    }
+    function.def @constrain(%self: !struct.type<@IntegerConstraint>, %cond: i1) attributes {function.allow_constraint} {
+      scf.if %cond {
+        %one = arith.constant 1 : i1
+        // expected-error@+1 {{scf.if arithmetization supports only felt equality constraints}}
+        constrain.eq %cond, %one : i1, i1
+      }
+      function.return
+    }
+  }
+}
+
+// -----
+
+!F = !felt.type<"koalabear">
+
+module attributes {llzk.lang} {
+  struct.def @Division {
+    function.def @compute(%a: !F, %b: !F, %cond: i1) -> !struct.type<@Division> {
+      %self = struct.new : <@Division>
+      function.return %self : !struct.type<@Division>
+    }
+    function.def @constrain(%self: !struct.type<@Division>, %a: !F, %b: !F, %cond: i1) attributes {function.allow_constraint} {
+      scf.if %cond {
+        // expected-error@+1 {{felt division and non-native operations must be lowered before scf.if}}
+        %quotient = felt.div %a, %b : !F, !F
+      }
+      function.return
+    }
+  }
+}
