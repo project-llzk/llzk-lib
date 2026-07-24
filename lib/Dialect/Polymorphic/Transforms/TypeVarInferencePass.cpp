@@ -2014,6 +2014,10 @@ private:
         Attribute expectedAttr = TypeAttr::get(expectedTy);
         if (attrMentionsAnyTypeVarParam(attr, inferenceInfo.typeVarParams)) {
           deferredToSignature = true;
+          if (!ParamMentionChecker(paramName).typeMentions(targetSignature) &&
+              failed(collectTemplateArgInferences(attr, expectedAttr, callableOp.getLoc()))) {
+            return failure();
+          }
           continue;
         }
         if (failed(collectTemplateArgInferences(attr, expectedAttr, callableOp.getLoc()))) {
