@@ -1,0 +1,3 @@
+added:
+  - "`llzk-inline-free-functions` pass that inlines calls to free `function.def`s and erases the inlined helpers once unused"
+  - "`llzk-full-inlining` pass pipeline chaining `llzk-full-struct-inlining` with `llzk-inline-free-functions`"
