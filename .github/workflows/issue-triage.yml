@@ -16,7 +16,6 @@ on:
 
 permissions:
   contents: read
-  issues: write
 
 jobs:
   # Put every new issue into the review queue and notify the core team once.
@@ -24,9 +23,23 @@ jobs:
     if: github.event_name == 'issues'
     runs-on: ubuntu-24.04
     steps:
+      # The app token has organization context, allowing its comments to notify
+      # the core-developers team rather than rendering the mention as plain text.
+      - name: Generate issue triage token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.ISSUE_TRIAGE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.ISSUE_TRIAGE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-issues: write
+          permission-members: read
+
       - name: Request core developer review
         uses: actions/github-script@v9
         with:
+          github-token: ${{ steps.app-token.outputs.token }}
           script: |
             const { owner, repo } = context.repo;
             const issueNumber = context.payload.issue.number;
@@ -54,13 +67,25 @@ jobs:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     steps:
+      - name: Generate issue triage token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.ISSUE_TRIAGE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.ISSUE_TRIAGE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-issues: write
+          permission-members: read
+
       - name: Find issues due for review reminders
         uses: actions/github-script@v9
         with:
+          github-token: ${{ steps.app-token.outputs.token }}
           script: |
             const { owner, repo } = context.repo;
-            // The hidden marker identifies comments made by this workflow so a
-            // reminder is not posted more than once in a four-week interval.
+            // The hidden marker identifies bot comments made by this workflow
+            // so reminders are not posted more than once per four-week interval.
             const reminderMarker = '<!-- core-dev-review-reminder -->';
             const reminderIntervalMs = 28 * 24 * 60 * 60 * 1000;
             const now = Date.now();
@@ -94,7 +119,7 @@ jobs:
 
               const reminderComments = comments.filter(
                 (comment) =>
-                  comment.user?.login === 'github-actions[bot]' &&
+                  comment.user?.type === 'Bot' &&
                   comment.body?.includes(reminderMarker),
               );
               const lastReminderAt = reminderComments.reduce(
