@@ -89,12 +89,3 @@ body:
       options:
         - label: "I understand that external contributors should wait for the `approved` label before beginning implementation."
           required: true
-
-  - type: textarea
-    id: core-developer-review
-    attributes:
-      label: Core developer review
-      description: Leave this team mention in place so a core developer can review the issue.
-      value: "@project-llzk/core-devs"
-    validations:
-      required: true

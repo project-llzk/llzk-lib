@@ -37,7 +37,8 @@ to evaluate it.
 New issues begin with the `under review` label. This means the proposal
 is still being evaluated or refined. A maintainer may ask for more
 information, narrow the scope, suggest an alternative, or decline the proposal.
-Do not begin implementation while an issue is under review.
+Do not submit a PR while an issue is still `under review` because it will be
+closed.
 
 A maintainer will replace that label with `approved` when the issue is
 sufficiently motivated, appropriately scoped, and suitable for implementation.
@@ -93,7 +94,7 @@ Before submitting your PR, ensure you have:
 
 #### Pull Request Review
 
-Once you submit your PR, a maintainer will first review its linked issues. We
+Once you submit your PR, a maintainer will first review its linked issue(s). We
 may defer implementation review until every issue addressed by an external PR
 is marked `approved`. If the motivation or scope is unclear, we will continue
 that discussion on the issue before reviewing the implementation.
