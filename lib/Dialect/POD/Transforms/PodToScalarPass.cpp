@@ -571,6 +571,21 @@ static StringRef getTaggedRaggedNestedLeafKind(Value value) {
   return {};
 }
 
+/// Reject a leaf equality whose nested array shape was not selected with the leaf value.
+static LogicalResult
+rejectRaggedNestedLeafEquality(constrain::EmitEqualityOp op, Value lhsLeaf, Value rhsLeaf) {
+  StringRef raggedKind = getTaggedRaggedNestedLeafKind(lhsLeaf);
+  if (raggedKind.empty()) {
+    raggedKind = getTaggedRaggedNestedLeafKind(rhsLeaf);
+  }
+  if (raggedKind.empty()) {
+    return success();
+  }
+  return op.emitOpError() << "cannot lower nested " << raggedKind
+                          << " array leaf equality after reading an array-of-POD element without "
+                             "per-element shape witnesses";
+}
+
 /// Strip compatibility casts introduced while threading POD-derived array values through rewrites.
 static Value peelUnifiableCasts(Value value) {
   while (auto cast = value.getDefiningOp<UnifiableCastOp>()) {
@@ -3261,11 +3276,9 @@ public:
     if (raggedKind.empty()) {
       return failure();
     }
-
-    op.emitOpError() << "cannot lower nested " << raggedKind
-                     << " array leaf length after reading an array-of-POD element without "
-                        "per-element shape witnesses";
-    return failure();
+    return op.emitOpError() << "cannot lower nested " << raggedKind
+                            << " array leaf length after reading an array-of-POD element without "
+                               "per-element shape witnesses";
   }
 };
 
@@ -4548,7 +4561,7 @@ public:
 };
 
 /// Rewrite a whole-POD equality into one equality per leaf using the current virtual POD state.
-static void splitVirtualPodEmitEquality(
+static LogicalResult splitVirtualPodEmitEquality(
     constrain::EmitEqualityOp op, RewriterBase &rewriter, Step3Resolver &resolver
 ) {
   PodType podTy = getWholePodEqualityType(op);
@@ -4567,9 +4580,13 @@ static void splitVirtualPodEmitEquality(
 
   assert(lhsLeaves.size() == rhsLeaves.size() && "POD equality leaves must stay aligned");
   for (auto [lhsLeaf, rhsLeaf] : llvm::zip_equal(lhsLeaves, rhsLeaves)) {
+    if (failed(rejectRaggedNestedLeafEquality(op, lhsLeaf, rhsLeaf))) {
+      return failure();
+    }
     rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhsLeaf, rhsLeaf);
   }
   rewriter.eraseOp(op);
+  return success();
 }
 
 /// Rewrite same-block whole-POD equalities that appear before a tracked virtual `pod.write`.
@@ -4578,7 +4595,7 @@ static void splitVirtualPodEmitEquality(
 /// Whole-POD equalities that stay in the IR until after that mutation would otherwise observe the
 /// final leaf map instead of the value at the equality's program point. Splitting those earlier
 /// equalities immediately before the write update preserves the pre-write leaf values.
-static void splitEarlierVirtualPodEqualitiesBeforeWriteInBlock(
+static LogicalResult splitEarlierVirtualPodEqualitiesBeforeWriteInBlock(
     WritePodOp writeOp, RewriterBase &rewriter, Step3Resolver &resolver
 ) {
   Value writtenPod = peelVirtualPodCompatibilityCasts(writeOp.getPodRef());
@@ -4608,8 +4625,11 @@ static void splitEarlierVirtualPodEqualitiesBeforeWriteInBlock(
     }
 
     rewriter.setInsertionPoint(equalityOp);
-    splitVirtualPodEmitEquality(equalityOp, rewriter, resolver);
+    if (failed(splitVirtualPodEmitEquality(equalityOp, rewriter, resolver))) {
+      return failure();
+    }
   }
+  return success();
 }
 
 /// Update straight-line virtual POD leaf storage in response to `pod.write`.
@@ -4631,7 +4651,9 @@ public:
       return failure();
     }
 
-    splitEarlierVirtualPodEqualitiesBeforeWriteInBlock(op, rewriter, resolver);
+    if (failed(splitEarlierVirtualPodEqualitiesBeforeWriteInBlock(op, rewriter, resolver))) {
+      return failure();
+    }
 
     Type recordType =
         llvm::cast<PodType>(op.getPodRefType()).getRecordMap().lookup(op.getRecordName());
@@ -4745,8 +4767,7 @@ public:
       return failure();
     }
 
-    splitVirtualPodEmitEquality(op, rewriter, resolver);
-    return success();
+    return splitVirtualPodEmitEquality(op, rewriter, resolver);
   }
 };
 
@@ -5983,6 +6004,9 @@ public:
 
     assert(lhsLeaves.size() == rhsLeaves.size() && "POD equality leaves must stay aligned");
     for (auto [lhsLeaf, rhsLeaf] : llvm::zip_equal(lhsLeaves, rhsLeaves)) {
+      if (failed(rejectRaggedNestedLeafEquality(op, lhsLeaf, rhsLeaf))) {
+        return failure();
+      }
       rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhsLeaf, rhsLeaf);
     }
     rewriter.eraseOp(op);
@@ -6114,9 +6138,26 @@ static LogicalResult rejectRaggedNestedLeafArrayLengths(ModuleOp modOp) {
     if (raggedKind.empty()) {
       return WalkResult::advance();
     }
-
     op.emitOpError() << "cannot lower nested " << raggedKind
                      << " array leaf length after reading an array-of-POD element without "
+                        "per-element shape witnesses";
+    return WalkResult::interrupt();
+  });
+  return failure(result.wasInterrupted());
+}
+
+/// Reject any `constrain.eq` that still compares a tagged ragged nested leaf array.
+static LogicalResult rejectRaggedNestedLeafArrayEqualities(ModuleOp modOp) {
+  WalkResult result = modOp.walk([](constrain::EmitEqualityOp op) {
+    StringRef raggedKind = getTaggedRaggedNestedLeafKind(op.getLhs());
+    if (raggedKind.empty()) {
+      raggedKind = getTaggedRaggedNestedLeafKind(op.getRhs());
+    }
+    if (raggedKind.empty()) {
+      return WalkResult::advance();
+    }
+    op.emitOpError() << "cannot lower nested " << raggedKind
+                     << " array leaf equality after reading an array-of-POD element without "
                         "per-element shape witnesses";
     return WalkResult::interrupt();
   });
@@ -6224,6 +6265,10 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
         signalPassFailure();
         return;
       }
+      if (failed(rejectRaggedNestedLeafArrayEqualities(module))) {
+        signalPassFailure();
+        return;
+      }
 
       if (failed(step4(module))) {
         return signalPassFailure();
@@ -6243,6 +6288,10 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
       });
 
       if (failed(rejectRaggedNestedLeafArrayLengths(module))) {
+        signalPassFailure();
+        return;
+      }
+      if (failed(rejectRaggedNestedLeafArrayEqualities(module))) {
         signalPassFailure();
         return;
       }
