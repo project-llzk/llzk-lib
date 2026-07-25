@@ -55,4 +55,5 @@ module attributes {llzk.lang} {
   }
 }
 
+// Verify the command-level pass failure after the split-local diagnostics.
 // CHECK: llzk-flatten failed while instantiating the main struct
