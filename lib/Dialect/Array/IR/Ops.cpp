@@ -346,6 +346,14 @@ ensureNumIndicesMatchDims(ArrayType ty, size_t numIndices, const OwningEmitError
   return success();
 }
 
+LogicalResult
+verifyScalarArrayAccess(ArrayType ty, size_t numIndices, const OwningEmitErrorFn &errFn) {
+  if (llvm::isa<NoneType>(ty.getElementType())) {
+    return errFn().append("cannot access a scalar element from array with none element type");
+  }
+  return ensureNumIndicesMatchDims(ty, numIndices, errFn);
+}
+
 } // namespace
 
 LogicalResult ReadArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
@@ -369,8 +377,7 @@ bool ReadArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
 }
 
 LogicalResult ReadArrayOp::verify() {
-  // Ensure the number of indices used match the shape of the array exactly.
-  return ensureNumIndicesMatchDims(getArrRefType(), getIndices().size(), getEmitOpErrFn(this));
+  return verifyScalarArrayAccess(getArrRefType(), getIndices().size(), getEmitOpErrFn(this));
 }
 
 /// Required by PromotableMemOpInterface / mem2reg pass
@@ -408,8 +415,7 @@ LogicalResult WriteArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
 }
 
 LogicalResult WriteArrayOp::verify() {
-  // Ensure the number of indices used match the shape of the array exactly.
-  return ensureNumIndicesMatchDims(getArrRefType(), getIndices().size(), getEmitOpErrFn(this));
+  return verifyScalarArrayAccess(getArrRefType(), getIndices().size(), getEmitOpErrFn(this));
 }
 
 /// Required by PromotableMemOpInterface / mem2reg pass
