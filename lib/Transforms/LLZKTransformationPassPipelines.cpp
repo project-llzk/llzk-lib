@@ -106,6 +106,16 @@ void buildFullStructInliningPipeline(OpPassManager &pm, const FullStructInlining
   );
 }
 
+void buildFullInliningPipeline(OpPassManager &pm, const FullStructInliningConfig &cfg) {
+  // Inline free-function bodies before struct cleanup so their struct uses
+  // participate in flattening and keep the referenced definitions alive.
+  pm.addPass(createInlineFreeFunctionsPass());
+  buildFullStructInliningPipelineImpl(
+      pm, cfg.flattening, cfg.arrayToScalar, cfg.podToScalar,
+      component::createInlineStructsPass(cfg.inlining)
+  );
+}
+
 void buildFullPolyLoweringPipeline(OpPassManager &pm, const FullPolyLoweringConfig &cfg) {
   buildFullPolyLoweringPipelineImpl(
       pm, cfg.structInlining.flattening, cfg.structInlining.arrayToScalar,
@@ -146,6 +156,22 @@ void registerTransformationPassPipelines() {
       "leave behind parameterized templates that later cause `llzk-inline-structs` to crash.",
       [](OpPassManager &pm, const FullStructInliningOptions &opts) {
     auto flattening = opts.flattening.getValue().createOptions();
+    buildFullStructInliningPipelineImpl(
+        pm, flattening->createPassOptions(), opts.arrayToScalar, opts.podToScalar,
+        createConfiguredPass(opts.inlining)
+    );
+  }
+  );
+
+  PassPipelineRegistration<FullStructInliningOptions>(
+      "llzk-full-inlining",
+      "Run free function inlining, flattening, and struct inlining. This is the "
+      "recommended pipeline before any downstream pass that does not understand `function.call`.",
+      [](OpPassManager &pm, const FullStructInliningOptions &opts) {
+    auto flattening = opts.flattening.getValue().createOptions();
+    // Inline free-function bodies before struct cleanup so their struct uses
+    // participate in flattening and keep the referenced definitions alive.
+    pm.addPass(createInlineFreeFunctionsPass());
     buildFullStructInliningPipelineImpl(
         pm, flattening->createPassOptions(), opts.arrayToScalar, opts.podToScalar,
         createConfiguredPass(opts.inlining)

@@ -28,3 +28,64 @@ module attributes {llzk.lang} {
     }
   }
 }
+
+// -----
+
+module attributes {
+  llzk.lang,
+  llzk.main = !struct.type<@OffsetTemplate::@Main<[#felt<const 35 : !felt.type<"bn128">>]>>
+} {
+  poly.template @OffsetTemplate {
+    poly.param @Offset
+
+    struct.def @Main {
+      struct.member @value : !felt.type<"bn128"> {column, llzk.pub}
+
+      function.def @compute() -> !struct.type<@OffsetTemplate::@Main<[@Offset]>> {
+        %self = struct.new : <@OffsetTemplate::@Main<[@Offset]>>
+        // expected-error@+2 {{'struct.readm' op table offset requires an integer template value}}
+        // expected-error@+1 {{failed to legalize operation 'struct.readm'}}
+        %value = struct.readm %self[@value] : <@OffsetTemplate::@Main<[@Offset]>>, !felt.type<"bn128"> {tableOffset = @Offset}
+        function.return %self : !struct.type<@OffsetTemplate::@Main<[@Offset]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@OffsetTemplate::@Main<[@Offset]>>) {
+        function.return
+      }
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Data {
+    struct.member @value : !felt.type<"bn128"> {column, llzk.pub}
+
+    function.def @compute() -> !struct.type<@Data> {
+      %self = struct.new : !struct.type<@Data>
+      function.return %self : !struct.type<@Data>
+    }
+
+    function.def @constrain(%self: !struct.type<@Data>) {
+      function.return
+    }
+  }
+
+  poly.template @OffsetTemplate {
+    poly.param @Offset
+
+    function.def @read(%data: !struct.type<@Data>) -> !felt.type<"bn128"> {
+      // expected-error@+2 {{'struct.readm' op table offset requires an integer template value}}
+      // expected-error@+1 {{failed to legalize operation 'struct.readm'}}
+      %value = struct.readm %data[@value] : <@Data>, !felt.type<"bn128"> {tableOffset = @Offset}
+      function.return %value : !felt.type<"bn128">
+    }
+  }
+
+  function.def @main(%data: !struct.type<@Data>) -> !felt.type<"bn128"> {
+    // expected-error@+1 {{failure while creating instantiated function 'OffsetTemplate__read'}}
+    %value = function.call @OffsetTemplate::@read<[#felt<const 35 : !felt.type<"bn128">>]>(%data) : (!struct.type<@Data>) -> !felt.type<"bn128">
+    function.return %value : !felt.type<"bn128">
+  }
+}

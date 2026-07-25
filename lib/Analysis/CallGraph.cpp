@@ -163,6 +163,19 @@ CallGraphNode *CallGraph::lookupNode(mlir::Region *region) const {
 CallGraphNode *CallGraph::resolveCallable(
     mlir::CallOpInterface call, mlir::SymbolTableCollection &symbolTable
 ) const {
+  // `function.call` deliberately resolves from the LLZK root module rather
+  // than the nearest symbol table. Use the same lookup here so analyses and
+  // transformations agree when a nested symbol table shadows a root symbol.
+  if (auto funcCall = llvm::dyn_cast<CallOp>(call.getOperation())) {
+    auto res = funcCall.getCalleeTarget(symbolTable);
+    if (mlir::succeeded(res)) {
+      if (auto *node = lookupNode(res->get().getCallableRegion())) {
+        return node;
+      }
+    }
+    return getUnknownCalleeNode();
+  }
+
   auto res = llzk::resolveCallable<mlir::CallableOpInterface>(symbolTable, call);
   if (mlir::succeeded(res)) {
     if (auto *node = lookupNode(res->get().getCallableRegion())) {

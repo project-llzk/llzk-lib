@@ -24,16 +24,39 @@ To keep the LLZK codebase maintainable and approachable, we follow these guiding
 
 #### Create a new issue
 
-If you spot a problem, encounter a bug, or want to request a new feature, [search if an issue already exists](https://docs.github.com/en/github/searching-for-information-on-github/searching-on-github/searching-issues-and-pull-requests#search-by-the-title-body-or-comments).
-If a related issue doesn't exist, you can open a new issue using a relevant [issue form](https://github.com/project-llzk/llzk-lib/issues/new/choose).
+If you spot a problem, encounter a bug, or want to request a new feature, first
+[search for an existing issue](https://github.com/project-llzk/llzk-lib/issues).
+Please contribute to an existing issue when possible instead of opening a duplicate.
+
+If a related issue does not exist, open a new issue using the relevant
+[issue form](https://github.com/project-llzk/llzk-lib/issues/new/choose). A new
+issue must clearly describe and motivate the bug or feature, including its
+impact or use case, expected behavior, and enough detail for a maintainer
+to evaluate it.
+
+New issues begin with the `under review` label. This means the proposal
+is still being evaluated or refined. A maintainer may ask for more
+information, narrow the scope, suggest an alternative, or decline the proposal.
+Do not submit a PR while an issue is still `under review` because it will be
+closed.
+
+A maintainer will replace that label with `approved` when the issue is
+sufficiently motivated, appropriately scoped, and suitable for implementation.
+Approval does not assign the issue to a contributor or guarantee that a
+resulting PR will be merged.
 
 #### Solve an issue
 
-Scan through our [existing issues](https://github.com/project-llzk/llzk-lib/issues) to find one that interests you.
-You can narrow down the search using `labels` as filters.
-See ["Label reference"](https://docs.github.com/en/contributing/collaborating-on-github-docs/label-reference) for more information.
-As a general rule, we don’t assign issues to anyone.
-If you find an issue to work on, you are welcome to open a PR with a fix.
+External contributors should start by scanning our
+[existing issues](https://github.com/project-llzk/llzk-lib/issues) for one that
+interests them. Issues labeled `approved` are ready for
+implementation; issues also labeled `good first issue` are intended to be
+approachable for newcomers. You can narrow the search using labels as filters.
+
+As a general rule, we do not assign issues. Before starting work, comment on the
+issue to share your intended approach and coordinate with other contributors.
+Every external contribution must resolve one or more existing issues, and those
+issues must be marked `approved` before implementation begins.
 
 
 ### Make Changes
@@ -55,7 +78,8 @@ before pushing your commits. For more information, see \ref dev-workflow "the de
 
 ### Pull Request
 
-When you're finished with the changes, create a _pull request_, also known as a PR.
+When you are finished with the changes, create a _pull request_, also known as a
+PR. External PRs must link to the approved issue or issues they resolve.
 
 #### Best Practices Checklist
 
@@ -64,12 +88,19 @@ Before submitting your PR, ensure you have:
 - [ ] Added lit and/or unit tests covering all relevant cases.
 - [ ] Updated TableGen and/or other documentation to describe new features.
 - [ ] Added a changelog. All PRs require a changelog describing what user-level changes have been made in the PR. To create a template changelog, run `create-changelog` from the nix shell.
-- [ ] [Linked the PR to an existing issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue), if applicable.
+- [ ] [Linked the PR to the existing issue or issues it resolves](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue). For external contributions, each issue must be marked `approved`.
+- [ ] Disclosed whether AI tools contributed to the PR. If they did, identified the tools, described how they contributed, and explained how their output was verified.
 - [ ] Enabled the checkbox to [allow maintainer edits](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/allowing-changes-to-a-pull-request-branch-created-from-a-fork) so the branch can be updated for a merge.
 
 #### Pull Request Review
 
-Once you submit your PR, a maintainer will review your proposal. We may ask questions or request additional information.
+Once you submit your PR, a maintainer will first review its linked issue(s). We
+may defer implementation review until every issue addressed by an external PR
+is marked `approved`. If the motivation or scope is unclear, we will continue
+that discussion on the issue before reviewing the implementation.
+
+After the linked issues are approved, a maintainer will review the PR. We
+may ask questions or request additional information.
 - We may ask for changes to be made before a PR can be merged, either using [suggested changes](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/incorporating-feedback-in-your-pull-request) or pull request comments.
 You can apply suggested changes directly through the UI.
 You can make any other changes in your fork, then commit them to your branch.
