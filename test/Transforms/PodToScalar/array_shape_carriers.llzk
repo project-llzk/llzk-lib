@@ -91,6 +91,66 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
+!Elem = !pod.type<[@vals: !array.type<3 x !felt.type>]>
+module attributes {llzk.lang} {
+  struct.def @SignalCarrier {
+    struct.member @m : !array.type<? x !Elem> {signal}
+
+    function.def @compute() -> !struct.type<@SignalCarrier> {
+      %self = struct.new : !struct.type<@SignalCarrier>
+      function.return %self : !struct.type<@SignalCarrier>
+    }
+
+    function.def @constrain(%self: !struct.type<@SignalCarrier>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @SignalCarrier {
+// CHECK-NEXT:      struct.member @m_vals : !array.type<?,3 x !felt.type> {signal}
+// CHECK-NEXT:      struct.member @m_shape : !array.type<? x none>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@SignalCarrier> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[SIG_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@SignalCarrier>
+// CHECK-NEXT:        function.return %[[SIG_SELF]] : !struct.type<@SignalCarrier>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[SIG_ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@SignalCarrier>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Elem = !pod.type<[@vals: !array.type<3 x !felt.type>]>
+module attributes {llzk.lang} {
+  struct.def @ColumnCarrier {
+    struct.member @m : !array.type<? x !Elem> {column}
+
+    function.def @compute() -> !struct.type<@ColumnCarrier> {
+      %self = struct.new : !struct.type<@ColumnCarrier>
+      function.return %self : !struct.type<@ColumnCarrier>
+    }
+
+    function.def @constrain(%self: !struct.type<@ColumnCarrier>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @ColumnCarrier {
+// CHECK-NEXT:      struct.member @m_vals : !array.type<?,3 x !felt.type> {column}
+// CHECK-NEXT:      struct.member @m_shape : !array.type<? x none>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@ColumnCarrier> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[COL_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ColumnCarrier>
+// CHECK-NEXT:        function.return %[[COL_SELF]] : !struct.type<@ColumnCarrier>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[COL_ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@ColumnCarrier>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
 !Elem = !pod.type<[@__llzk_pod_array_shape: !array.type<2 x index>]>
 !Outer = !pod.type<[@items: !array.type<? x !Elem>]>
 module attributes {llzk.lang} {
