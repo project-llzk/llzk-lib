@@ -1,0 +1,56 @@
+// RUN: llzk-opt -split-input-file -llzk-infer-tvar %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  poly.template @TExprOnlyCallee {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @N
+
+    poly.expr @Expr {
+      %n = poly.read_const @N : !poly.tvar<@T>
+      %index = poly.unifiable_cast %n : (!poly.tvar<@T>) -> index
+      poly.yield %index : index
+    }
+
+    function.def @compute() -> index {
+      %expr = poly.read_const @Expr : index
+      function.return %expr : index
+    }
+  }
+
+  poly.template @TExprOnlyCaller {
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @forward() -> index {
+      %0 = function.call @TExprOnlyCallee::@compute<[!poly.tvar<@U>, 7]>() : () -> index
+      function.return %0 : index
+    }
+  }
+
+  function.def @call_forward() -> index {
+    %0 = function.call @TExprOnlyCaller::@forward<[index]>() : () -> index
+    function.return %0 : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TExprOnlyCallee {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.expr @Expr {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:        poly.yield %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @compute() -> index {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @Expr : index
+// CHECK-NEXT:        function.return %[[VAL_1]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TExprOnlyCaller {
+// CHECK-NEXT:      function.def @forward() -> index {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @TExprOnlyCallee::@compute<[7]>() : () -> index
+// CHECK-NEXT:        function.return %[[VAL_2]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_forward() -> index {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @TExprOnlyCaller::@forward() : () -> index
+// CHECK-NEXT:      function.return %[[VAL_3]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

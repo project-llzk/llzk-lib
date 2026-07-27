@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include "llzk/Analysis/SymbolDefTree.h"
+#include "llzk/Analysis/SymbolUseGraph.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
@@ -32,8 +34,11 @@
 #include <mlir/IR/MLIRContext.h>
 #include <mlir/IR/Operation.h>
 #include <mlir/IR/PatternMatch.h>
+#include <mlir/IR/SymbolTable.h>
 #include <mlir/Transforms/DialectConversion.h>
 
+#include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Debug.h>
@@ -57,6 +62,52 @@ template <typename Check> inline bool runCheck(mlir::Operation *op, Check check)
 
 /// Return a new `ConversionTarget` allowing all LLZK-required dialects.
 mlir::ConversionTarget newBaseTarget(mlir::MLIRContext *ctx);
+
+/// Shared state for post-instantiation cleanup helpers.
+class CleanupBase {
+public:
+  mlir::SymbolTableCollection tables;
+
+  CleanupBase(
+      mlir::ModuleOp root, const SymbolDefTree &symDefTree, const SymbolUseGraph &symUseGraph
+  );
+
+protected:
+  mlir::ModuleOp rootMod;
+  const SymbolDefTree &defTree;
+  const SymbolUseGraph &useGraph;
+};
+
+/// Return `true` iff `op` is a cleanup candidate.
+bool isErasableDefinition(mlir::Operation *op);
+
+/// Removes parameterized definitions whose instantiated replacements now cover
+/// every remaining use.
+class FromEraseSet : public CleanupBase {
+public:
+  /// Note: paths in `tryToErase` should be relative to `root`.
+  FromEraseSet(
+      mlir::ModuleOp root, const SymbolDefTree &symDefTree, const SymbolUseGraph &symUseGraph,
+      llvm::DenseSet<mlir::SymbolRefAttr> &&tryToErasePaths
+  );
+
+  mlir::LogicalResult eraseUnusedDefinitions();
+
+  const llvm::DenseSet<mlir::SymbolOpInterface> &getTryToEraseSet() const { return tryToErase; }
+
+private:
+  /// The initial set of definitions that this should try to erase (if there are no other uses).
+  llvm::DenseSet<mlir::SymbolOpInterface> tryToErase;
+  /// Track visited nodes to avoid cycles and map if they were determined safe to remove or not.
+  llvm::DenseMap<mlir::SymbolOpInterface, bool> visitedPlusSafetyResult;
+  /// Cache results of 'lookup()' for performance.
+  llvm::DenseMap<const SymbolUseGraphNode *, mlir::SymbolOpInterface> lookupCache;
+
+  bool collectSafeToErase(mlir::SymbolOpInterface check);
+  bool collectSafeToErase(const SymbolDefTreeNode *check);
+  bool collectSafeToErase(const SymbolUseGraphNode *check);
+  mlir::SymbolOpInterface cachedLookup(const SymbolUseGraphNode *node);
+};
 
 /// Merge nested array dimensions produced by replacing an array element type.
 ///

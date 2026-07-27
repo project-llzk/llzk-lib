@@ -1,0 +1,56 @@
+// RUN: llzk-opt -split-input-file -llzk-infer-tvar %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  poly.template @TStructSiteExplicitArgCallee {
+    poly.param @N : index
+    poly.param @T : !poly.tvar<@T>
+
+    struct.def @Box {
+      function.def @product(%arg: !poly.tvar<@T>) -> !struct.type<@TStructSiteExplicitArgCallee::@Box<[@N, @T]>> attributes {function.allow_constraint, function.allow_witness} {
+        %self = struct.new : <@TStructSiteExplicitArgCallee::@Box<[@N, @T]>>
+        %cast = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> !array.type<@N x !felt.type>
+        function.return %self : !struct.type<@TStructSiteExplicitArgCallee::@Box<[@N, @T]>>
+      }
+    }
+  }
+
+  poly.template @TStructSiteExplicitArgHolder {
+    poly.param @U : !poly.tvar<@U>
+
+    struct.def @Holder {
+      struct.member @box : !struct.type<@TStructSiteExplicitArgCallee::@Box<[7, @U]>>
+
+      function.def @product() -> !struct.type<@TStructSiteExplicitArgHolder::@Holder<[@U]>> attributes {function.allow_constraint, function.allow_witness} {
+        %self = struct.new : <@TStructSiteExplicitArgHolder::@Holder<[@U]>>
+        function.return %self : !struct.type<@TStructSiteExplicitArgHolder::@Holder<[@U]>>
+      }
+    }
+
+    function.def @use(%arg: !poly.tvar<@U>) -> !poly.tvar<@U> {
+      function.return %arg : !poly.tvar<@U>
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TStructSiteExplicitArgCallee {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) -> !struct.type<@TStructSiteExplicitArgCallee::@Box<[@N]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TStructSiteExplicitArgCallee::@Box<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TStructSiteExplicitArgCallee::@Box<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TStructSiteExplicitArgHolder {
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @box : !struct.type<@TStructSiteExplicitArgCallee::@Box<[7]>>
+// CHECK-NEXT:        function.def @product() -> !struct.type<@TStructSiteExplicitArgHolder::@Holder> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TStructSiteExplicitArgHolder::@Holder>
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@TStructSiteExplicitArgHolder::@Holder>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @use(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<7 x !felt.type>) -> !array.type<7 x !felt.type> {
+// CHECK-NEXT:        function.return %[[VAL_3]] : !array.type<7 x !felt.type>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

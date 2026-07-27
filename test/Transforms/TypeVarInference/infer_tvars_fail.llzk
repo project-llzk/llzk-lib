@@ -262,3 +262,60 @@ module attributes {llzk.lang} {
     }
   }
 }
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TForwardedReturnOnlyCallee {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @produce() -> !poly.tvar<@T> {
+      %c0 = arith.constant 0 : index
+      %out = poly.unifiable_cast %c0 : (index) -> !poly.tvar<@T>
+      function.return %out : !poly.tvar<@T>
+    }
+  }
+
+  poly.template @TForwardedReturnOnlyCaller {
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @forward() -> index {
+      %0 = function.call @TForwardedReturnOnlyCallee::@produce<[!poly.tvar<@U>]>() : () -> index
+      function.return %0 : index
+    }
+  }
+
+  function.def @call_forward() -> index {
+    // expected-error@+1 {{explicit template argument for inferred parameter @U must match inferred type 'index', but found '!felt.type'}}
+    %0 = function.call @TForwardedReturnOnlyCaller::@forward<[!felt.type]>() : () -> index
+    function.return %0 : index
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TForwardedConcreteSignatureCallee {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @id(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      function.return %arg : !poly.tvar<@T>
+    }
+  }
+
+  poly.template @TForwardedConcreteSignatureCaller {
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @forward(%x: index) -> index {
+      %0 = function.call @TForwardedConcreteSignatureCallee::@id<[!poly.tvar<@U>]>(%x) : (index) -> index
+      function.return %0 : index
+    }
+  }
+
+  function.def @call_forward(%x: index) -> index {
+    // expected-error@+1 {{explicit template argument for inferred parameter @U must match inferred type 'index', but found '!felt.type'}}
+    %0 = function.call @TForwardedConcreteSignatureCaller::@forward<[!felt.type]>(%x) : (index) -> index
+    function.return %0 : index
+  }
+}

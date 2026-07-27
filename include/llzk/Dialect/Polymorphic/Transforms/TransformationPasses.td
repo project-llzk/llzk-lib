@@ -121,9 +121,10 @@ def TypeVarInferencePass : LLZKPass<"llzk-infer-tvar"> {
   let description = [{
     Infers concrete replacements for `!poly.tvar` template parameters from operations in
     `function.def` or `poly.expr` bodies, such as `poly.unifiable_cast` between a type variable
-    and a more concrete type. Rewrites affected function signatures and body types, removes
-    redundant casts, drops resolved `poly.param` declarations, and updates call-site template
-    parameter lists.
+    and a more concrete type (which means for maximum effect you should run it before other
+    optimization passes that can remove `poly.unifiable_cast`). Rewrites affected function
+    signatures and body types, removes redundant casts, drops resolved `poly.param` declarations,
+    and updates call-site template parameter lists.
 
     The pass also creates template-local instantiated versions of functions for each
     type-variable replacement. The `llzk-flatten` pass performs similar instantiation of type
