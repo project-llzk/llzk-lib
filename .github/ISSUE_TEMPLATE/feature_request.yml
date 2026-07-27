@@ -1,0 +1,70 @@
+name: Feature request
+description: Propose a well-motivated improvement to LLZK
+title: "[Feature]: "
+labels:
+  - enhancement
+  - "under review"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for proposing an improvement to LLZK.
+
+        Before filing an issue, search the existing issues for related proposals. External contributors should not begin implementation until a core developer marks the issue `approved`.
+
+  - type: checkboxes
+    id: existing-issues
+    attributes:
+      label: Existing issues
+      options:
+        - label: I searched the open and closed issues and did not find an existing proposal that addresses this need.
+          required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Problem and motivation
+      description: Describe the concrete problem, limitation, or use case that motivates this request.
+      placeholder: Who needs this, what are they trying to do, and why is the current behavior insufficient?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-behavior
+    attributes:
+      label: Proposed behavior
+      description: Describe the desired behavior and the boundaries of the requested change.
+    validations:
+      required: true
+
+  - type: textarea
+    id: example
+    attributes:
+      label: Example or intended use
+      description: Provide a concrete example showing how the feature would be used.
+      placeholder: Include sample LLZK, commands, API usage, or expected output where applicable.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe existing workarounds or alternative designs and why they are insufficient.
+      placeholder: Write "None" if no alternative is known.
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add relevant links, prior art, design constraints, or other context.
+
+  - type: checkboxes
+    id: contribution-policy
+    attributes:
+      label: Contribution policy
+      options:
+        - label: "I understand that external contributors should wait for the `approved` label before beginning implementation."
+          required: true

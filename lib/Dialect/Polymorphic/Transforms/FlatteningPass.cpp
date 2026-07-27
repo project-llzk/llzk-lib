@@ -502,11 +502,59 @@ evaluateTemplateExprs(TemplateOp templateOp, DenseMap<Attribute, Attribute> &par
   );
 }
 
-namespace Step1_InstantiateStructs {
-
 static inline bool tableOffsetIsntSymbol(MemberReadOp op) {
   return !llvm::isa_and_present<SymbolRefAttr>(op.getTableOffset().value_or(nullptr));
 }
+
+/// Materialize symbolic member table offsets only from integer template bindings. Member tables are
+/// index-addressed, so other concrete attribute kinds emit diagnostics instead of being coerced.
+class ClonedMemberReadOpPattern
+    : public SymbolUserHelper<ClonedMemberReadOpPattern, MemberReadOp, IntegerAttr> {
+  using super = SymbolUserHelper<ClonedMemberReadOpPattern, MemberReadOp, IntegerAttr>;
+
+public:
+  ClonedMemberReadOpPattern(
+      TypeConverter &converter, MLIRContext *ctx,
+      const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
+  )
+      // benefit>0 so this applies instead of GeneralTypeReplacePattern<MemberReadOp>
+      : super(converter, ctx, /*patternBenefit=*/1, paramNameToInstantiatedValue) {}
+
+  Attribute getNameAttr(MemberReadOp op) const override {
+    return op.getTableOffset().value_or(nullptr);
+  }
+
+  LogicalResult handleRewrite(
+      Attribute, MemberReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, IntegerAttr a
+  ) const {
+    rewriter.modifyOpInPlace(op, [&]() {
+      op.setTableOffsetAttr(rewriter.getIndexAttr(fromAPInt(a.getValue())));
+    });
+
+    return success();
+  }
+
+  LogicalResult handleDefaultRewrite(
+      Attribute, MemberReadOp op, OpAdaptor, ConversionPatternRewriter &, Attribute a
+  ) const override {
+    return op->emitOpError().append(
+        "table offset requires an integer template value, but found ", a
+    );
+  }
+
+  LogicalResult matchAndRewrite(
+      MemberReadOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    LLVM_DEBUG(llvm::dbgs() << "[ClonedMemberReadOpPattern]   MemberReadOp: " << op << '\n';);
+    if (tableOffsetIsntSymbol(op)) {
+      return failure();
+    }
+
+    return super::matchAndRewrite(op, adaptor, rewriter);
+  }
+};
+
+namespace Step1_InstantiateStructs {
 
 /// Implements cloning a `StructDefOp` for a specific instantiation site, using the concrete
 /// parameters from the instantiation to replace parameters from the original `StructDefOp`.
@@ -587,49 +635,6 @@ class StructCloner {
         }
         return inputTy;
       });
-    }
-  };
-
-  class ClonedStructMemberReadOpPattern
-      : public SymbolUserHelper<
-            ClonedStructMemberReadOpPattern, MemberReadOp, IntegerAttr, FeltConstAttr> {
-    using super =
-        SymbolUserHelper<ClonedStructMemberReadOpPattern, MemberReadOp, IntegerAttr, FeltConstAttr>;
-
-  public:
-    ClonedStructMemberReadOpPattern(
-        TypeConverter &converter, MLIRContext *ctx,
-        const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
-    )
-        // benefit>0 so this applies instead of GeneralTypeReplacePattern<MemberReadOp>
-        : super(converter, ctx, /*patternBenefit=*/1, paramNameToInstantiatedValue) {}
-
-    Attribute getNameAttr(MemberReadOp op) const override {
-      return op.getTableOffset().value_or(nullptr);
-    }
-
-    template <typename Attr>
-    LogicalResult handleRewrite(
-        Attribute, MemberReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, Attr a
-    ) const {
-      rewriter.modifyOpInPlace(op, [&]() {
-        op.setTableOffsetAttr(rewriter.getIndexAttr(fromAPInt(a.getValue())));
-      });
-
-      return success();
-    }
-
-    LogicalResult matchAndRewrite(
-        MemberReadOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
-    ) const override {
-      LLVM_DEBUG(
-          llvm::dbgs() << "[ClonedStructMemberReadOpPattern]   MemberReadOp: " << op << '\n';
-      );
-      if (tableOffsetIsntSymbol(op)) {
-        return failure();
-      }
-
-      return super::matchAndRewrite(op, adaptor, rewriter);
     }
   };
 
@@ -781,7 +786,7 @@ class StructCloner {
     patterns.add<ClonedBodyConstReadOpPattern>(
         tyConv, ctx, paramNameToConcrete, tracker_.delayedDiagnosticSet(newLocalType)
     );
-    patterns.add<ClonedStructMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
+    patterns.add<ClonedMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
     if (failed(applyFullConversion(newStruct, target, std::move(patterns)))) {
       LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   instantiating body of struct failed \n");
       return failure();
@@ -1268,7 +1273,7 @@ static LogicalResult applyBodyConversions(
 ) {
   MLIRContext *ctx = op.getContext();
   FuncInstTypeConverter tyConv(paramNameToConcrete);
-  ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx);
+  ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx, tableOffsetIsntSymbol);
   target.addDynamicallyLegalOp<ConstReadOp>([&tyConv](ConstReadOp p) {
     // Legal if it's not in the map of concrete attribute instantiations
     return !tyConv.containsParam(p.getConstNameAttr());
@@ -1279,6 +1284,7 @@ static LogicalResult applyBodyConversions(
       tyConv, ctx, tyConv.getParamMap(), delayedDiagnostics
   );
   bodyPatterns.add<ClonedBodyArrayReadOpPattern, ClonedBodyArrayWriteOpPattern>(tyConv, ctx);
+  bodyPatterns.add<ClonedMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
   if (failed(applyFullConversion(newFunc, target, std::move(bodyPatterns)))) {
     return failure();
   }
@@ -2425,19 +2431,6 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
 namespace Step6_Cleanup {
 
-class CleanupBase {
-public:
-  SymbolTableCollection tables;
-
-  CleanupBase(ModuleOp root, const SymbolDefTree &symDefTree, const SymbolUseGraph &symUseGraph)
-      : rootMod(root), defTree(symDefTree), useGraph(symUseGraph) {}
-
-protected:
-  ModuleOp rootMod;
-  const SymbolDefTree &defTree;
-  const SymbolUseGraph &useGraph;
-};
-
 struct FromKeepSet : public CleanupBase {
   using CleanupBase::CleanupBase;
 
@@ -2451,17 +2444,6 @@ struct FromKeepSet : public CleanupBase {
       if (TemplateOp parent = getParentOfType<TemplateOp>(op)) {
         return parent.hasConstOps<TemplateSymbolBindingOpInterface>();
       }
-    }
-    return false;
-  }
-
-  /// Return `true` iff `op` is a cleanup candidate.
-  static bool isErasableDefinition(Operation *op) {
-    if (llvm::isa<StructDefOp>(op)) {
-      return true;
-    }
-    if (function::FuncDefOp fdef = llvm::dyn_cast<function::FuncDefOp>(op)) {
-      return !fdef.isInStruct();
     }
     return false;
   }
@@ -2554,154 +2536,6 @@ struct FromKeepSet : public CleanupBase {
     }
 
     return success();
-  }
-};
-
-struct FromEraseSet : public CleanupBase {
-
-  /// Note: paths in `tryToErase` should be relative to `root` (which is likely the "top root")
-  FromEraseSet(
-      ModuleOp root, const SymbolDefTree &symDefTree, const SymbolUseGraph &symUseGraph,
-      DenseSet<SymbolRefAttr> &&tryToErasePaths
-  )
-      : CleanupBase(root, symDefTree, symUseGraph) {
-    // Convert the set of paths targeted for erasure into a set of cleanup-candidate definitions.
-    for (SymbolRefAttr path : tryToErasePaths) {
-      LLVM_DEBUG(llvm::dbgs() << "[FromEraseSet] path to erase: " << path << '\n';);
-      Operation *lookupFrom = rootMod.getOperation();
-      auto res = lookupSymbolIn(tables, path, Within(), lookupFrom);
-      assert(succeeded(res) && "inputs must be valid symbol references");
-      assert(FromKeepSet::isErasableDefinition(res->get()) && "inputs must be cleanup candidates");
-      if (!res->viaInclude()) { // do not remove if it's from another source file
-        SymbolOpInterface op = llvm::cast<SymbolOpInterface>(res->get());
-        LLVM_DEBUG(llvm::dbgs() << "[FromEraseSet]   added op to the erase set: " << op << '\n';);
-        tryToErase.insert(op);
-      } else {
-        LLVM_DEBUG(
-            llvm::dbgs() << "[FromEraseSet]   ignored op because it comes from an include: "
-                         << res->get() << '\n';
-        );
-      }
-    }
-  }
-
-  LogicalResult eraseUnusedDefinitions() {
-    // Collect the subset of 'tryToErase' that has no remaining uses.
-    for (SymbolOpInterface sym : tryToErase) {
-      collectSafeToErase(sym);
-    }
-    // The `visitedPlusSafetyResult` may contain child FuncDefOp within an erased StructDefOp, so
-    // reduce the map to only top-level erase targets before erasing in a separate loop.
-    for (auto &it : llvm::make_early_inc_range(visitedPlusSafetyResult)) {
-      if (!it.second || !tryToErase.contains(it.first)) {
-        visitedPlusSafetyResult.erase(it.first);
-      }
-    }
-    for (auto &[sym, _] : visitedPlusSafetyResult) {
-      LLVM_DEBUG(llvm::dbgs() << "[EraseIfUnused] removing: " << sym.getNameAttr() << '\n');
-      sym.erase();
-    }
-    return success();
-  }
-
-  const DenseSet<SymbolOpInterface> &getTryToEraseSet() const { return tryToErase; }
-
-private:
-  /// The initial set of definitions that this should try to erase (if there are no other uses).
-  DenseSet<SymbolOpInterface> tryToErase;
-  /// Track visited nodes to avoid cycles (for example, a struct has its functions as children in
-  /// the def graph but the opposite direction edges exist in the use graph) and map if they were
-  /// determined safe to remove or not.
-  DenseMap<SymbolOpInterface, bool> visitedPlusSafetyResult;
-  /// Cache results of 'lookup()' for performance.
-  DenseMap<const SymbolUseGraphNode *, SymbolOpInterface> lookupCache;
-
-  /// The main checks to determine if a SymbolOp (but especially a StructDefOp) is safe to erase
-  /// without leaving any dangling references to it.
-  bool collectSafeToErase(SymbolOpInterface check) {
-    assert(check); // pre-condition
-
-    // If previously visited, return the safety result.
-    auto visited = visitedPlusSafetyResult.find(check);
-    if (visited != visitedPlusSafetyResult.end()) {
-      return visited->second;
-    }
-
-    // If it's an erasable definition that is not in `tryToErase` then it cannot be erased.
-    if (FromKeepSet::isErasableDefinition(check.getOperation()) && !tryToErase.contains(check)) {
-      visitedPlusSafetyResult[check] = false;
-      return false;
-    }
-
-    // Otherwise, temporarily mark as safe b/c a node cannot keep itself live (and this prevents
-    // the recursion from getting stuck in an infinite loop).
-    visitedPlusSafetyResult[check] = true;
-
-    // Check if it's safe according to both the def tree and use graph.
-    // Note: Every symbol must have a def node but ModuleOp and TemplateOp symbols may not have a
-    // use node since they are not "terminal" symbols (i.e. they are not referred to directly).
-    if (collectSafeToErase(defTree.lookupNode(check))) {
-      const auto *useNode = useGraph.lookupNode(check);
-      assert(useNode || (llvm::isa<ModuleOp, TemplateOp>(check.getOperation())));
-      if (!useNode || collectSafeToErase(useNode)) {
-        return true;
-      }
-    }
-
-    // Otherwise, revert the safety decision and return it.
-    visitedPlusSafetyResult[check] = false;
-    return false;
-  }
-
-  /// A def tree node is safe if it has no parent or its parent's SymbolOp is safe.
-  bool collectSafeToErase(const SymbolDefTreeNode *check) {
-    assert(check); // pre-condition
-    if (const SymbolDefTreeNode *p = check->getParent()) {
-      if (SymbolOpInterface checkOp = p->getOp()) { // safe if parent is root
-        return collectSafeToErase(checkOp);
-      }
-    }
-    return true;
-  }
-
-  /// A use graph node is safe if it has no predecessors (i.e., users) or all have safe SymbolOp.
-  bool collectSafeToErase(const SymbolUseGraphNode *check) {
-    assert(check); // pre-condition
-    for (const SymbolUseGraphNode *p : check->predecessorIter()) {
-      if (SymbolOpInterface checkOp = cachedLookup(p)) { // safe if via IncludeOp
-        if (!collectSafeToErase(checkOp)) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-
-  /// Find the SymbolOpInterface for the given graph node, utilizing a cache for repeat lookups.
-  /// Returns `nullptr` if the node is loaded via an IncludeOp. A symbol loaded from an included
-  /// file is not subject to removal by this pass. Further, it cannot serve as an anchor/root for a
-  /// symbol that is defined in the current file because it can neither define nor use such symbols.
-  SymbolOpInterface cachedLookup(const SymbolUseGraphNode *node) {
-    assert(node && "must provide a node"); // pre-condition
-    // Check for cached result
-    auto fromCache = lookupCache.find(node);
-    if (fromCache != lookupCache.end()) {
-      return fromCache->second;
-    }
-    // Otherwise, perform lookup and cache
-    auto lookupRes = node->lookupSymbol(tables);
-    assert(succeeded(lookupRes) && "graph contains node with invalid path");
-    assert(lookupRes->get() != nullptr && "lookup must return an Operation");
-    // If loaded via an IncludeOp it's not in the current AST anyway so ignore.
-    // NOTE: The SymbolUseGraph does contain nodes for struct parameters which cannot cast to
-    // SymbolOpInterface. However, those will always be leaf nodes in the SymbolUseGraph and
-    // therefore will not be traversed by this analysis so directly casting is fine.
-    SymbolOpInterface actualRes =
-        lookupRes->viaInclude() ? nullptr : llvm::cast<SymbolOpInterface>(lookupRes->get());
-    // Cache and return
-    lookupCache[node] = actualRes;
-    assert((!actualRes == lookupRes->viaInclude()) && "not found iff included"); // post-condition
-    return actualRes;
   }
 };
 
@@ -2871,7 +2705,7 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
     // "top root" and they also do not indicate a root module so there could be ambiguity. This is a
     // broader problem in the FlatteningPass itself so let's just assume, for now, that these are
     // paths from the "top root". See [LLZK-286].
-    Step6_Cleanup::FromEraseSet cleaner(
+    FromEraseSet cleaner(
         rootMod, getAnalysis<SymbolDefTree>(), getAnalysis<SymbolUseGraph>(),
         tracker.getInstantiatedDefinitionNames()
     );
@@ -2903,8 +2737,7 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
   LogicalResult eraseUnreachableFromConcreteDefinitions(ModuleOp rootMod) {
     SmallVector<SymbolOpInterface> roots;
     rootMod.walk([&roots](Operation *op) {
-      if (Step6_Cleanup::FromKeepSet::isErasableDefinition(op) &&
-          !Step6_Cleanup::FromKeepSet::hasTemplateSymbolBindings(op)) {
+      if (isErasableDefinition(op) && !Step6_Cleanup::FromKeepSet::hasTemplateSymbolBindings(op)) {
         roots.push_back(llvm::cast<SymbolOpInterface>(op));
       }
     });
