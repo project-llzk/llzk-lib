@@ -138,6 +138,25 @@ using namespace llzk::polymorphic;
 
 namespace {
 
+/// Copy discardable attributes from `src` to `dst`.
+template <typename OpTy> static OpTy preserveDiscardableAttrs(Operation *src, OpTy dst) {
+  dst->setDiscardableAttrs(src->getDiscardableAttrDictionary());
+  return dst;
+}
+
+/// Copy discardable attributes from `src` to `dst` while omitting one internal attr.
+template <typename OpTy>
+static OpTy preserveDiscardableAttrsExcept(Operation *src, OpTy dst, StringRef excludedAttr) {
+  SmallVector<NamedAttribute> attrs;
+  for (NamedAttribute attr : src->getDiscardableAttrDictionary().getValue()) {
+    if (attr.getName().getValue() != excludedAttr) {
+      attrs.push_back(attr);
+    }
+  }
+  dst->setDiscardableAttrs(DictionaryAttr::get(src->getContext(), attrs));
+  return dst;
+}
+
 /// Path of nested POD record names from the original member to a scalar leaf record.
 struct RecordChain {
   SmallVector<StringAttr> nameList;
@@ -1330,19 +1349,21 @@ inferCommonArrayInstantiation(ArrayRef<Value> values, ArrayInstantiationInfo &re
 }
 
 /// Create an `array.write` or `array.insert` for one concrete element or subarray.
-static void
+static Operation *
 genArrayWrite(OpBuilder &bldr, Location loc, Value arrayRef, ValueRange indices, Value value) {
   ArrayType arrTy = llvm::cast<ArrayType>(arrayRef.getType());
   Type selectedType = arrTy.getSelectionType(indices.size());
-  ArrayAccessOpInterface::genWrite(
-      bldr, loc, arrayRef, indices, castValueToTypeIfNeeded(bldr, loc, value, selectedType)
-  );
+  Value convertedValue = castValueToTypeIfNeeded(bldr, loc, value, selectedType);
+  if (llvm::isa<ArrayType>(selectedType)) {
+    return bldr.create<InsertArrayOp>(loc, arrayRef, indices, convertedValue);
+  }
+  return bldr.create<WriteArrayOp>(loc, arrayRef, indices, convertedValue);
 }
 
-inline static void
+inline static Operation *
 genArrayWrite(OpBuilder &bldr, Location loc, Value arrayRef, ArrayAttr index, Value value) {
   SmallVector<Value> indices = ArrayAccessOpInterface::genIndexConstants(bldr, loc, index);
-  genArrayWrite(bldr, loc, arrayRef, indices, value);
+  return genArrayWrite(bldr, loc, arrayRef, indices, value);
 }
 
 /// Collect all directly available converted components of an aggregate array-of-POD value.
@@ -2014,7 +2035,7 @@ class NondetToNewPod : public OpConversionPattern<NonDetOp> {
       NonDetOp nondetOp, OpAdaptor, ConversionPatternRewriter &rewriter
   ) const override {
     if (auto pt = dyn_cast<PodType>(nondetOp.getType())) {
-      rewriter.replaceOpWithNewOp<NewPodOp>(nondetOp, pt);
+      preserveDiscardableAttrs(nondetOp, rewriter.replaceOpWithNewOp<NewPodOp>(nondetOp, pt));
       return success();
     }
     return failure();
@@ -2069,6 +2090,7 @@ static void flattenPodMemberIntoLeaves(
         originalMember.getLoc(), name, ty, !id.syntheticShapeCarrier && originalMember.getSignal(),
         !id.syntheticShapeCarrier && originalMember.getColumn()
     );
+    preserveDiscardableAttrs(originalMember, newMember);
     newMember.setPublicAttr(originalMember.hasPublicAttr());
     localRepMapRef[id] = std::make_pair(structSymbolTable.insert(newMember), ty);
   });
@@ -2148,6 +2170,7 @@ public:
       MemberDefOp newMember = rewriter.create<MemberDefOp>(
           op.getLoc(), name, splitType, op.getSignal(), op.getColumn()
       );
+      preserveDiscardableAttrs(op, newMember);
       newMember.setPublicAttr(op.hasPublicAttr());
       localRepMapRef[id] = std::make_pair(structSymbolTable.insert(newMember), splitType);
     }
@@ -2157,6 +2180,7 @@ public:
           getSplitPodArrayShapeMemberName(op.getContext(), op.getSymNameAttr());
       MemberDefOp carrierMember =
           rewriter.create<MemberDefOp>(op.getLoc(), carrierName, carrierTy, false, op.getColumn());
+      preserveDiscardableAttrs(op, carrierMember);
       carrierMember.setPublicAttr(op.hasPublicAttr());
       localRepMapRef[RecordChain()] =
           std::make_pair(structSymbolTable.insert(carrierMember), carrierTy);
@@ -2231,8 +2255,10 @@ public:
     SmallVector<Type> splitTypes;
     splitPodArrayTypeTo(op.getType(), splitTypes);
     if (splitTypes.empty()) {
-      rewriter.replaceOpWithNewOp<NonDetOp>(
-          op, getPodArrayShapeCarrierType(llvm::cast<ArrayType>(op.getType()))
+      preserveDiscardableAttrs(
+          op, rewriter.replaceOpWithNewOp<NonDetOp>(
+                  op, getPodArrayShapeCarrierType(llvm::cast<ArrayType>(op.getType()))
+              )
       );
       return;
     }
@@ -2240,12 +2266,14 @@ public:
     ArrayType arrTy = llvm::cast<ArrayType>(op.getType());
     replacements.reserve(splitTypes.size() + (needsPodArrayShapeCarrier(arrTy) ? 1 : 0));
     for (Type splitType : splitTypes) {
-      replacements.push_back(rewriter.create<NonDetOp>(op.getLoc(), splitType));
+      replacements.push_back(
+          preserveDiscardableAttrs(op, rewriter.create<NonDetOp>(op.getLoc(), splitType))
+      );
     }
     if (needsPodArrayShapeCarrier(arrTy)) {
-      replacements.push_back(
-          rewriter.create<NonDetOp>(op.getLoc(), getPodArrayShapeCarrierType(arrTy))
-      );
+      replacements.push_back(preserveDiscardableAttrs(
+          op, rewriter.create<NonDetOp>(op.getLoc(), getPodArrayShapeCarrierType(arrTy))
+      ));
     }
     rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
   }
@@ -2280,7 +2308,7 @@ public:
     if (splitTypes.empty()) {
       ArrayType carrierTy = getPodArrayShapeCarrierType(arrTy);
       if (adaptor.getMapOperands().empty()) {
-        rewriter.replaceOpWithNewOp<CreateArrayOp>(op, carrierTy);
+        preserveDiscardableAttrs(op, rewriter.replaceOpWithNewOp<CreateArrayOp>(op, carrierTy));
         return success();
       }
 
@@ -2294,8 +2322,10 @@ public:
       for (const SmallVector<Value> &values : mapOperandStorage) {
         mapOperands.push_back(values);
       }
-      rewriter.replaceOpWithNewOp<CreateArrayOp>(
-          op, carrierTy, mapOperands, op.getNumDimsPerMapAttr()
+      preserveDiscardableAttrs(
+          op, rewriter.replaceOpWithNewOp<CreateArrayOp>(
+                  op, carrierTy, mapOperands, op.getNumDimsPerMapAttr()
+              )
       );
       return success();
     }
@@ -2308,15 +2338,19 @@ public:
         for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
           ArrayType preciseSplitType = llvm::cast<ArrayType>(splitType);
           ArrayType storageSplitType = getSplitPodArrayStorageType(arrTy, id.nameList);
-          Value splitArray = rewriter.create<CreateArrayOp>(op.getLoc(), storageSplitType);
+          CreateArrayOp splitArrayOp =
+              rewriter.create<CreateArrayOp>(op.getLoc(), storageSplitType);
+          preserveDiscardableAttrs(op, splitArrayOp);
+          Value splitArray = splitArrayOp;
           replacements.push_back(
               castValueToTypeIfNeeded(rewriter, op.getLoc(), splitArray, preciseSplitType)
           );
         }
         if (needsPodArrayShapeCarrier(arrTy)) {
-          replacements.push_back(
-              materializeArrayLengthCarrier(op.getResult(), arrTy, op.getLoc(), rewriter)
-          );
+          Value shapeCarrier =
+              materializeArrayLengthCarrier(op.getResult(), arrTy, op.getLoc(), rewriter);
+          preserveDiscardableAttrs(op, shapeCarrier.getDefiningOp());
+          replacements.push_back(shapeCarrier);
         }
         rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
         return success();
@@ -2363,9 +2397,11 @@ public:
             for (const SmallVector<Value> &values : instantiationInfo.mapOperandStorage) {
               mapOperands.push_back(values);
             }
-            splitArray = rewriter.create<CreateArrayOp>(
+            CreateArrayOp splitArrayOp = rewriter.create<CreateArrayOp>(
                 op.getLoc(), materializedType, mapOperands, instantiationInfo.numDimsPerMap
             );
+            preserveDiscardableAttrs(op, splitArrayOp);
+            splitArray = splitArrayOp;
             break;
           }
           case CommonArrayInstantiationStatus::unavailable:
@@ -2375,6 +2411,7 @@ public:
 
         if (!splitArray) {
           splitArray = createWritableArrayValue(rewriter, op.getLoc(), materializedType);
+          preserveDiscardableAttrs(op, splitArray.getDefiningOp());
         }
 
         for (auto [index, leafValue] : llvm::zip_equal(*elementIndices, leafValues)) {
@@ -2398,9 +2435,11 @@ public:
       for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
         ArrayType preciseSplitType = llvm::cast<ArrayType>(splitType);
         ArrayType storageSplitType = getSplitPodArrayStorageType(arrTy, id.nameList);
-        Value splitArray = rewriter.create<CreateArrayOp>(
+        CreateArrayOp splitArrayOp = rewriter.create<CreateArrayOp>(
             op.getLoc(), storageSplitType, mapOperands, numDimsPerMap
         );
+        preserveDiscardableAttrs(op, splitArrayOp);
+        Value splitArray = splitArrayOp;
         replacements.push_back(
             castValueToTypeIfNeeded(rewriter, op.getLoc(), splitArray, preciseSplitType)
         );
@@ -2408,9 +2447,10 @@ public:
     }
 
     if (needsPodArrayShapeCarrier(arrTy)) {
-      replacements.push_back(
-          materializeArrayLengthCarrier(op.getResult(), arrTy, op.getLoc(), rewriter)
-      );
+      Value shapeCarrier =
+          materializeArrayLengthCarrier(op.getResult(), arrTy, op.getLoc(), rewriter);
+      preserveDiscardableAttrs(op, shapeCarrier.getDefiningOp());
+      replacements.push_back(shapeCarrier);
     }
 
     rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
@@ -2439,12 +2479,13 @@ public:
     SmallVector<Type> splitTypes;
     splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
     if (splitTypes.empty()) {
-      rewriter.replaceOpWithNewOp<NewPodOp>(op, podTy);
+      preserveDiscardableAttrs(op, rewriter.replaceOpWithNewOp<NewPodOp>(op, podTy));
       return success();
     }
 
     SmallVector<Value> indices = flattenConvertedValues(adaptor.getIndices());
     NewPodOp pod = rewriter.create<NewPodOp>(op.getLoc(), podTy);
+    preserveDiscardableAttrs(op, pod);
     VirtualPodLeafMap leafValues;
     auto splitArrRefs = adaptor.getArrRef().take_front(splitIds.size());
     for (auto [id, splitType, splitArrRange] :
@@ -2452,6 +2493,7 @@ public:
       Value leafValue = ArrayAccessOpInterface::genRead(
           rewriter, op.getLoc(), getSingleConvertedValue(splitArrRange), indices
       );
+      preserveDiscardableAttrs(op, leafValue.getDefiningOp());
       leafValues[id] = tagRaggedNestedLeafValue(
           rewriter, op.getLoc(), leafValue, getRaggedNestedLeafAttrName(arrTy, splitType)
       );
@@ -2499,8 +2541,10 @@ public:
     for (auto [id, splitArrRange, splitType] :
          llvm::zip_equal(splitIds, splitArrRefs, splitTypes)) {
       Value leafValue = genReadAlongPath(rewriter, op.getLoc(), podValue, id);
-      genArrayWrite(
-          rewriter, op.getLoc(), getSingleConvertedValue(splitArrRange), indices, leafValue
+      preserveDiscardableAttrs(
+          op, genArrayWrite(
+                  rewriter, op.getLoc(), getSingleConvertedValue(splitArrRange), indices, leafValue
+              )
       );
     }
     rewriter.eraseOp(op);
@@ -2733,12 +2777,13 @@ public:
             op, "expected one shape carrier for zero-leaf array-of-pod cast"
         );
       }
-      rewriter.replaceOp(
-          op,
-          castValueToTypeIfNeeded(
-              rewriter, op.getLoc(), splitInputs.front(), getPodArrayShapeCarrierType(resultArrTy)
-          )
+      Value replacement = castValueToTypeIfNeeded(
+          rewriter, op.getLoc(), splitInputs.front(), getPodArrayShapeCarrierType(resultArrTy)
       );
+      if (replacement != splitInputs.front()) {
+        preserveDiscardableAttrs(op, replacement.getDefiningOp());
+      }
+      rewriter.replaceOp(op, replacement);
       return success();
     }
     if (splitInputLeaves.size() != resultSplitTypes.size()) {
@@ -2752,18 +2797,25 @@ public:
         resultSplitTypes.size() + (needsPodArrayShapeCarrier(resultArrTy) ? 1 : 0)
     );
     for (auto [splitInput, resultSplitType] : llvm::zip_equal(splitInputLeaves, resultSplitTypes)) {
-      replacements.push_back(
-          castValueToTypeIfNeeded(rewriter, op.getLoc(), splitInput, resultSplitType)
-      );
+      Value replacement =
+          castValueToTypeIfNeeded(rewriter, op.getLoc(), splitInput, resultSplitType);
+      if (replacement != splitInput) {
+        preserveDiscardableAttrs(op, replacement.getDefiningOp());
+      }
+      replacements.push_back(replacement);
     }
     if (needsPodArrayShapeCarrier(resultArrTy)) {
       Value carrier = getConvertedPodArrayShapeCarrierIfPresent(inputArrTy, splitInputs);
       if (!carrier) {
         carrier = materializeArrayLengthCarrier(op.getInput(), inputArrTy, op.getLoc(), rewriter);
       }
-      replacements.push_back(castValueToTypeIfNeeded(
+      Value replacement = castValueToTypeIfNeeded(
           rewriter, op.getLoc(), carrier, getPodArrayShapeCarrierType(resultArrTy)
-      ));
+      );
+      if (replacement != carrier) {
+        preserveDiscardableAttrs(op, replacement.getDefiningOp());
+      }
+      replacements.push_back(replacement);
     }
 
     rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
@@ -2793,7 +2845,9 @@ public:
           op.getLoc(), operand, convertedValues, newOperands, rewriter
       );
     }
-    rewriter.replaceOpWithNewOp<ReturnOp>(op, ValueRange(newOperands));
+    preserveDiscardableAttrs(
+        op, rewriter.replaceOpWithNewOp<ReturnOp>(op, ValueRange(newOperands))
+    );
     return success();
   }
 };
@@ -3010,7 +3064,9 @@ public:
         );
         Value lhsLen = rewriter.create<ArrayLengthOp>(op.getLoc(), lhsShapeSource, dimVal);
         Value rhsLen = rewriter.create<ArrayLengthOp>(op.getLoc(), rhsShapeSource, dimVal);
-        rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhsLen, rhsLen);
+        preserveDiscardableAttrs(
+            op, rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhsLen, rhsLen)
+        );
       }
     }
 
@@ -3042,7 +3098,9 @@ public:
     }
 
     for (auto [lhs, rhs] : llvm::zip_equal(lhsLeaves, rhsLeaves)) {
-      rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhs, rhs);
+      preserveDiscardableAttrs(
+          op, rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhs, rhs)
+      );
     }
     rewriter.eraseOp(op);
     return success();
@@ -3275,7 +3333,9 @@ public:
         );
         Value lhsLen = rewriter.create<ArrayLengthOp>(loc, selectedShapeSource, dimVal);
         Value rhsLen = rewriter.create<ArrayLengthOp>(loc, rhsShapeSource, dimVal);
-        rewriter.create<constrain::EmitEqualityOp>(loc, lhsLen, rhsLen);
+        preserveDiscardableAttrs(
+            op, rewriter.create<constrain::EmitEqualityOp>(loc, lhsLen, rhsLen)
+        );
       }
     }
 
@@ -3288,7 +3348,9 @@ public:
                 : rewriter.create<ExtractArrayOp>(
                       loc, getPodArrayShapeCarrierType(rhsArrTy), shapeCarrier, selectedIndices
                   );
-        rewriter.create<constrain::EmitEqualityOp>(loc, selectedShape, rhsShapeCarrier);
+        preserveDiscardableAttrs(
+            op, rewriter.create<constrain::EmitEqualityOp>(loc, selectedShape, rhsShapeCarrier)
+        );
       }
       rewriter.eraseOp(op);
       return success();
@@ -3305,7 +3367,9 @@ public:
         selectedLhs =
             rewriter.create<ReadArrayOp>(loc, rhsLeaf.getType(), lhsLeaf, selectedIndices);
       }
-      rewriter.create<constrain::EmitEqualityOp>(loc, selectedLhs, rhsLeaf);
+      preserveDiscardableAttrs(
+          op, rewriter.create<constrain::EmitEqualityOp>(loc, selectedLhs, rhsLeaf)
+      );
     }
 
     rewriter.eraseOp(op);
@@ -3375,13 +3439,16 @@ public:
       auto deferred = rewriter.create<ArrayLengthOp>(
           op.getLoc(), op.getArrRef(), getSingleConvertedValue(adaptor.getDim())
       );
+      preserveDiscardableAttrs(op, deferred);
       deferred->setAttr(DEFERRED_POD_ARRAY_LENGTH_ATTR, UnitAttr::get(op.getContext()));
       rewriter.replaceOp(op, deferred.getResult());
       return success();
     }
     Value arrRef = selectArrayLengthShapeSource(op, adaptor.getArrRef(), rewriter);
-    rewriter.replaceOpWithNewOp<ArrayLengthOp>(
-        op, arrRef, getSingleConvertedValue(adaptor.getDim())
+    preserveDiscardableAttrs(
+        op, rewriter.replaceOpWithNewOp<ArrayLengthOp>(
+                op, arrRef, getSingleConvertedValue(adaptor.getDim())
+            )
     );
     return success();
   }
@@ -3511,7 +3578,10 @@ public:
       shapeSource = materializeArrayLengthCarrier(op.getArrRef(), arrTy, op.getLoc(), rewriter);
     }
 
-    rewriter.replaceOpWithNewOp<ArrayLengthOp>(op, shapeSource, op.getDim());
+    preserveDiscardableAttrsExcept(
+        op, rewriter.replaceOpWithNewOp<ArrayLengthOp>(op, shapeSource, op.getDim()),
+        DEFERRED_POD_ARRAY_LENGTH_ATTR
+    );
     return success();
   }
 };
@@ -3534,9 +3604,12 @@ public:
     splitPodArrayTypeTo(op.getResult().getType(), splitResultTypes);
     if (splitResultTypes.empty()) {
       ArrayType resultTy = llvm::cast<ArrayType>(op.getResult().getType());
-      rewriter.replaceOpWithNewOp<ExtractArrayOp>(
-          op, getPodArrayShapeCarrierType(resultTy), getSingleConvertedValue(adaptor.getArrRef()),
-          flattenConvertedValues(adaptor.getIndices())
+      preserveDiscardableAttrs(
+          op, rewriter.replaceOpWithNewOp<ExtractArrayOp>(
+                  op, getPodArrayShapeCarrierType(resultTy),
+                  getSingleConvertedValue(adaptor.getArrRef()),
+                  flattenConvertedValues(adaptor.getIndices())
+              )
       );
       return success();
     }
@@ -3547,15 +3620,19 @@ public:
     replacements.reserve(splitResultTypes.size() + (needsPodArrayShapeCarrier(resultTy) ? 1 : 0));
     auto splitArrRefs = adaptor.getArrRef().take_front(splitResultTypes.size());
     for (auto [splitArrRange, splitResultType] : llvm::zip_equal(splitArrRefs, splitResultTypes)) {
-      replacements.push_back(rewriter.create<ExtractArrayOp>(
-          op.getLoc(), llvm::cast<ArrayType>(splitResultType),
-          getSingleConvertedValue(splitArrRange), indices
+      replacements.push_back(preserveDiscardableAttrs(
+          op, rewriter.create<ExtractArrayOp>(
+                  op.getLoc(), llvm::cast<ArrayType>(splitResultType),
+                  getSingleConvertedValue(splitArrRange), indices
+              )
       ));
     }
     if (needsPodArrayShapeCarrier(resultTy)) {
-      replacements.push_back(materializeExtractedPodArrayShapeCarrier(
+      Value shapeCarrier = materializeExtractedPodArrayShapeCarrier(
           op, resultTy, op.getArrRef(), adaptor.getArrRef(), indices, rewriter
-      ));
+      );
+      preserveDiscardableAttrs(op, shapeCarrier.getDefiningOp());
+      replacements.push_back(shapeCarrier);
     }
 
     rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
@@ -3578,9 +3655,12 @@ public:
     }
 
     if (hasZeroLeafPodArraySplit(llvm::cast<ArrayType>(op.getRvalue().getType()))) {
-      rewriter.create<InsertArrayOp>(
-          op.getLoc(), getSingleConvertedValue(adaptor.getArrRef()),
-          flattenConvertedValues(adaptor.getIndices()), getSingleConvertedValue(adaptor.getRvalue())
+      preserveDiscardableAttrs(
+          op, rewriter.create<InsertArrayOp>(
+                  op.getLoc(), getSingleConvertedValue(adaptor.getArrRef()),
+                  flattenConvertedValues(adaptor.getIndices()),
+                  getSingleConvertedValue(adaptor.getRvalue())
+              )
       );
       rewriter.eraseOp(op);
       return success();
@@ -3593,9 +3673,11 @@ public:
     auto splitArrRefs = adaptor.getArrRef().take_front(leafCount);
     auto splitRvalues = adaptor.getRvalue().take_front(leafCount);
     for (auto [splitArrRange, splitRvalueRange] : llvm::zip_equal(splitArrRefs, splitRvalues)) {
-      rewriter.create<InsertArrayOp>(
-          op.getLoc(), getSingleConvertedValue(splitArrRange), indices,
-          getSingleConvertedValue(splitRvalueRange)
+      preserveDiscardableAttrs(
+          op, rewriter.create<InsertArrayOp>(
+                  op.getLoc(), getSingleConvertedValue(splitArrRange), indices,
+                  getSingleConvertedValue(splitRvalueRange)
+              )
       );
     }
     if (needsPodArrayShapeCarrier(destArrTy)) {
@@ -3613,7 +3695,9 @@ public:
             materializeArrayLengthCarrier(op.getRvalue(), rvalueTy, op.getLoc(), rewriter);
       }
 
-      rewriter.create<InsertArrayOp>(op.getLoc(), destCarrier, indices, rvalueCarrier);
+      preserveDiscardableAttrs(
+          op, rewriter.create<InsertArrayOp>(op.getLoc(), destCarrier, indices, rvalueCarrier)
+      );
     }
 
     rewriter.eraseOp(op);
@@ -3654,9 +3738,12 @@ public:
     splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
     if (splitTypes.empty()) {
       const MemberInfo &carrierMember = idToMember.at(RecordChain());
-      rewriter.create<MemberWriteOp>(
-          op.getLoc(), getSingleConvertedValue(adaptor.getComponent()),
-          FlatSymbolRefAttr::get(carrierMember.first), getSingleConvertedValue(adaptor.getVal())
+      preserveDiscardableAttrs(
+          op,
+          rewriter.create<MemberWriteOp>(
+              op.getLoc(), getSingleConvertedValue(adaptor.getComponent()),
+              FlatSymbolRefAttr::get(carrierMember.first), getSingleConvertedValue(adaptor.getVal())
+          )
       );
       rewriter.eraseOp(op);
       return success();
@@ -3665,9 +3752,11 @@ public:
     auto splitVals = adaptor.getVal().take_front(splitIds.size());
     for (auto [id, splitValRange] : llvm::zip_equal(splitIds, splitVals)) {
       const MemberInfo &newMember = idToMember.at(id);
-      rewriter.create<MemberWriteOp>(
-          op.getLoc(), getSingleConvertedValue(adaptor.getComponent()),
-          FlatSymbolRefAttr::get(newMember.first), getSingleConvertedValue(splitValRange)
+      preserveDiscardableAttrs(
+          op, rewriter.create<MemberWriteOp>(
+                  op.getLoc(), getSingleConvertedValue(adaptor.getComponent()),
+                  FlatSymbolRefAttr::get(newMember.first), getSingleConvertedValue(splitValRange)
+              )
       );
     }
     if (needsPodArrayShapeCarrier(arrTy)) {
@@ -3676,10 +3765,12 @@ public:
         carrier = materializeArrayLengthCarrier(op.getVal(), arrTy, op.getLoc(), rewriter);
       }
       const MemberInfo &carrierMember = idToMember.at(RecordChain());
-      rewriter.create<MemberWriteOp>(
-          op.getLoc(), getSingleConvertedValue(adaptor.getComponent()),
-          FlatSymbolRefAttr::get(carrierMember.first),
-          castValueToTypeIfNeeded(rewriter, op.getLoc(), carrier, carrierMember.second)
+      preserveDiscardableAttrs(
+          op, rewriter.create<MemberWriteOp>(
+                  op.getLoc(), getSingleConvertedValue(adaptor.getComponent()),
+                  FlatSymbolRefAttr::get(carrierMember.first),
+                  castValueToTypeIfNeeded(rewriter, op.getLoc(), carrier, carrierMember.second)
+              )
       );
     }
     rewriter.eraseOp(op);
@@ -3739,9 +3830,12 @@ public:
     }
     if (splitTypes.empty()) {
       const MemberInfo &carrierMember = idToMember.at(RecordChain());
-      Value carrierRead = rewriter.create<MemberReadOp>(
-          op.getLoc(), carrierMember.second, getSingleConvertedValue(adaptor.getComponent()),
-          carrierMember.first, op.getTableOffset().value_or(nullptr), mapOperands, numDimsPerMap
+      Value carrierRead = preserveDiscardableAttrs(
+          op,
+          rewriter.create<MemberReadOp>(
+              op.getLoc(), carrierMember.second, getSingleConvertedValue(adaptor.getComponent()),
+              carrierMember.first, op.getTableOffset().value_or(nullptr), mapOperands, numDimsPerMap
+          )
       );
       rewriter.replaceOpWithMultiple(op, {ValueRange {carrierRead}});
       return success();
@@ -3750,16 +3844,21 @@ public:
     replacements.reserve(splitIds.size() + (needsPodArrayShapeCarrier(arrTy) ? 1 : 0));
     for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
       const MemberInfo &newMember = idToMember.at(id);
-      replacements.push_back(rewriter.create<MemberReadOp>(
-          op.getLoc(), splitType, getSingleConvertedValue(adaptor.getComponent()), newMember.first,
-          op.getTableOffset().value_or(nullptr), mapOperands, numDimsPerMap
+      replacements.push_back(preserveDiscardableAttrs(
+          op, rewriter.create<MemberReadOp>(
+                  op.getLoc(), splitType, getSingleConvertedValue(adaptor.getComponent()),
+                  newMember.first, op.getTableOffset().value_or(nullptr), mapOperands, numDimsPerMap
+              )
       ));
     }
     if (needsPodArrayShapeCarrier(arrTy)) {
       const MemberInfo &carrierMember = idToMember.at(RecordChain());
-      replacements.push_back(rewriter.create<MemberReadOp>(
-          op.getLoc(), carrierMember.second, getSingleConvertedValue(adaptor.getComponent()),
-          carrierMember.first, op.getTableOffset().value_or(nullptr), mapOperands, numDimsPerMap
+      replacements.push_back(preserveDiscardableAttrs(
+          op,
+          rewriter.create<MemberReadOp>(
+              op.getLoc(), carrierMember.second, getSingleConvertedValue(adaptor.getComponent()),
+              carrierMember.first, op.getTableOffset().value_or(nullptr), mapOperands, numDimsPerMap
+          )
       ));
     }
     rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
@@ -3955,6 +4054,7 @@ public:
     );
 
     Value rebuiltArray = createWritableArrayValue(rewriter, op.getLoc(), arrTy);
+    preserveDiscardableAttrs(op, rebuiltArray.getDefiningOp());
     for (auto [index, leafValue] : llvm::zip_equal(*elementIndices, leafElements)) {
       genArrayWrite(rewriter, op.getLoc(), rebuiltArray, index, leafValue);
     }
@@ -4190,8 +4290,11 @@ public:
       Value scalarValue = virtualLeafValues
                               ? virtualLeafValues->at(id)
                               : genReadAlongPath(rewriter, op.getLoc(), op.getVal(), id);
-      rewriter.create<MemberWriteOp>(
-          op.getLoc(), adaptor.getComponent(), FlatSymbolRefAttr::get(newMember.first), scalarValue
+      preserveDiscardableAttrs(
+          op, rewriter.create<MemberWriteOp>(
+                  op.getLoc(), adaptor.getComponent(), FlatSymbolRefAttr::get(newMember.first),
+                  scalarValue
+              )
       );
     }
     rewriter.eraseOp(op);
@@ -4229,8 +4332,10 @@ public:
 
     VirtualPodLeafMap leafValues;
     for (const auto &[id, newMember] : idToMember) {
-      leafValues[id] = rewriter.create<MemberReadOp>(
-          op.getLoc(), newMember.second, adaptor.getComponent(), newMember.first
+      leafValues[id] = preserveDiscardableAttrs(
+          op, rewriter.create<MemberReadOp>(
+                  op.getLoc(), newMember.second, adaptor.getComponent(), newMember.first
+              )
       );
     }
 
@@ -4564,6 +4669,7 @@ public:
     VirtualPodLeafMap leafValues;
     for (auto [id, splitType, leafArray] : llvm::zip_equal(splitIds, splitTypes, splitLeafArrays)) {
       Value leafValue = ArrayAccessOpInterface::genRead(rewriter, op.getLoc(), leafArray, indices);
+      preserveDiscardableAttrs(op, leafValue.getDefiningOp());
       leafValues[id] = tagRaggedNestedLeafValue(
           rewriter, op.getLoc(), leafValue, getRaggedNestedLeafAttrName(arrTy, splitType)
       );
@@ -4656,7 +4762,9 @@ static LogicalResult splitVirtualPodEmitEquality(
     if (failed(rejectRaggedNestedLeafEquality(op, lhsLeaf, rhsLeaf))) {
       return failure();
     }
-    rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhsLeaf, rhsLeaf);
+    preserveDiscardableAttrs(
+        op, rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhsLeaf, rhsLeaf)
+    );
   }
   rewriter.eraseOp(op);
   return success();
@@ -5621,7 +5729,7 @@ moveBranchWithoutLiftedWrites(Block *srcBlock, Block &destBlock, ArrayRef<IfWrit
 /// per tracked record.
 static void appendYield(
     OpBuilder &bldr, Location loc, Block &block, ValueRange priorYieldValues,
-    ArrayRef<IfWriteSlot> slots, bool isThenBlock
+    ArrayRef<IfWriteSlot> slots, bool isThenBlock, scf::YieldOp originalYield = nullptr
 ) {
   SmallVector<Value> yieldValues = llvm::to_vector(priorYieldValues);
   llvm::append_range(yieldValues, llvm::map_range(slots, [isThenBlock](const IfWriteSlot &slot) {
@@ -5630,7 +5738,10 @@ static void appendYield(
   }));
 
   bldr.setInsertionPointToEnd(&block);
-  bldr.create<scf::YieldOp>(loc, yieldValues);
+  auto newYield = bldr.create<scf::YieldOp>(loc, yieldValues);
+  if (originalYield) {
+    preserveDiscardableAttrs(originalYield, newYield);
+  }
 }
 
 /// One POD record whose value is carried across an SCF loop boundary as an SSA scalar.
@@ -5828,15 +5939,15 @@ public:
     SmallVector<Type> resultTypes = llvm::to_vector(ifOp.getResultTypes());
     llvm::append_range(resultTypes, llvm::map_range(slots, [](auto slot) { return slot.type; }));
 
+    scf::YieldOp thenYieldOp = getYieldOp(thenBlock);
     SmallVector<Value> originalThenYields;
     if (!ifOp.getResults().empty()) {
-      scf::YieldOp thenYieldOp = getYieldOp(thenBlock);
       originalThenYields.append(thenYieldOp.getOperands().begin(), thenYieldOp.getOperands().end());
     }
 
+    scf::YieldOp elseYieldOp = elseBlock ? getYieldOp(*elseBlock) : nullptr;
     SmallVector<Value> originalElseYields;
     if (elseBlock && !ifOp.getResults().empty()) {
-      scf::YieldOp elseYieldOp = getYieldOp(*elseBlock);
       originalElseYields.append(elseYieldOp.getOperands().begin(), elseYieldOp.getOperands().end());
     }
 
@@ -5849,8 +5960,12 @@ public:
 
     moveBranchWithoutLiftedWrites(&thenBlock, newThenBlock, slots);
     moveBranchWithoutLiftedWrites(elseBlock, newElseBlock, slots);
-    appendYield(rewriter, ifOp.getLoc(), newThenBlock, originalThenYields, slots, true);
-    appendYield(rewriter, ifOp.getLoc(), newElseBlock, originalElseYields, slots, false);
+    appendYield(
+        rewriter, ifOp.getLoc(), newThenBlock, originalThenYields, slots, true, thenYieldOp
+    );
+    appendYield(
+        rewriter, ifOp.getLoc(), newElseBlock, originalElseYields, slots, false, elseYieldOp
+    );
 
     rewriter.setInsertionPointAfter(newIf);
     unsigned originalResultCount = ifOp.getNumResults();
@@ -5916,7 +6031,9 @@ public:
           return mapping.lookupOrDefault(operand);
         });
         llvm::append_range(yieldValues, slotValues);
-        rewriter.create<scf::YieldOp>(yieldOp.getLoc(), yieldValues);
+        preserveDiscardableAttrs(
+            yieldOp, rewriter.create<scf::YieldOp>(yieldOp.getLoc(), yieldValues)
+        );
         return true;
       }
       return false;
@@ -5994,9 +6111,12 @@ public:
           return beforeMapping.lookupOrDefault(a);
         });
         llvm::append_range(conditionArgs, beforeSlotValues);
-        rewriter.create<scf::ConditionOp>(
-            conditionOp.getLoc(), beforeMapping.lookupOrDefault(conditionOp.getCondition()),
-            conditionArgs
+        preserveDiscardableAttrs(
+            conditionOp,
+            rewriter.create<scf::ConditionOp>(
+                conditionOp.getLoc(), beforeMapping.lookupOrDefault(conditionOp.getCondition()),
+                conditionArgs
+            )
         );
         return true;
       }
@@ -6028,7 +6148,9 @@ public:
           return afterMapping.lookupOrDefault(v);
         });
         llvm::append_range(yieldValues, afterSlotValues);
-        rewriter.create<scf::YieldOp>(yieldOp.getLoc(), yieldValues);
+        preserveDiscardableAttrs(
+            yieldOp, rewriter.create<scf::YieldOp>(yieldOp.getLoc(), yieldValues)
+        );
         return true;
       }
       return false;
@@ -6083,7 +6205,9 @@ public:
       if (failed(rejectRaggedNestedLeafEquality(op, lhsLeaf, rhsLeaf))) {
         return failure();
       }
-      rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhsLeaf, rhsLeaf);
+      preserveDiscardableAttrs(
+          op, rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhsLeaf, rhsLeaf)
+      );
     }
     rewriter.eraseOp(op);
     return success();
