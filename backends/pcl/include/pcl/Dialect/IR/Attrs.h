@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h" // IWYU pragma: keep
+
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinAttributeInterfaces.h>
 #include <mlir/IR/DialectImplementation.h>
