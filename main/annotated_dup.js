@@ -727,7 +727,10 @@ var annotated_dup =
           [ "RequireComputeOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1RequireComputeOpGenericAdaptorBase.html", "classllzk_1_1verif_1_1detail_1_1RequireComputeOpGenericAdaptorBase" ],
           [ "RequireConstrainOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1RequireConstrainOpGenericAdaptorBase.html", "classllzk_1_1verif_1_1detail_1_1RequireConstrainOpGenericAdaptorBase" ],
           [ "StepOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1StepOpGenericAdaptorBase.html", "classllzk_1_1verif_1_1detail_1_1StepOpGenericAdaptorBase" ],
-          [ "StepYieldOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1StepYieldOpGenericAdaptorBase.html", "classllzk_1_1verif_1_1detail_1_1StepYieldOpGenericAdaptorBase" ]
+          [ "StepYieldOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1StepYieldOpGenericAdaptorBase.html", "classllzk_1_1verif_1_1detail_1_1StepYieldOpGenericAdaptorBase" ],
+          [ "VerifAssertOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1VerifAssertOpGenericAdaptorBase.html", "classllzk_1_1verif_1_1detail_1_1VerifAssertOpGenericAdaptorBase" ],
+          [ "VerifProveOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1VerifProveOpGenericAdaptorBase.html", "classllzk_1_1verif_1_1detail_1_1VerifProveOpGenericAdaptorBase" ],
+          [ "VerifSMTProveOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1VerifSMTProveOpGenericAdaptorBase.html", "classllzk_1_1verif_1_1detail_1_1VerifSMTProveOpGenericAdaptorBase" ]
         ] ],
         [ "ConditionOpInterface", "classllzk_1_1verif_1_1ConditionOpInterface.html", "classllzk_1_1verif_1_1ConditionOpInterface" ],
         [ "ContractEndOp", "classllzk_1_1verif_1_1ContractEndOp.html", "classllzk_1_1verif_1_1ContractEndOp" ],
@@ -774,7 +777,16 @@ var annotated_dup =
         [ "StepYieldOp", "classllzk_1_1verif_1_1StepYieldOp.html", "classllzk_1_1verif_1_1StepYieldOp" ],
         [ "StepYieldOpAdaptor", "classllzk_1_1verif_1_1StepYieldOpAdaptor.html", "classllzk_1_1verif_1_1StepYieldOpAdaptor" ],
         [ "StepYieldOpGenericAdaptor", "classllzk_1_1verif_1_1StepYieldOpGenericAdaptor.html", "classllzk_1_1verif_1_1StepYieldOpGenericAdaptor" ],
-        [ "VerifDialect", "classllzk_1_1verif_1_1VerifDialect.html", "classllzk_1_1verif_1_1VerifDialect" ]
+        [ "VerifAssertOp", "classllzk_1_1verif_1_1VerifAssertOp.html", "classllzk_1_1verif_1_1VerifAssertOp" ],
+        [ "VerifAssertOpAdaptor", "classllzk_1_1verif_1_1VerifAssertOpAdaptor.html", "classllzk_1_1verif_1_1VerifAssertOpAdaptor" ],
+        [ "VerifAssertOpGenericAdaptor", "classllzk_1_1verif_1_1VerifAssertOpGenericAdaptor.html", "classllzk_1_1verif_1_1VerifAssertOpGenericAdaptor" ],
+        [ "VerifDialect", "classllzk_1_1verif_1_1VerifDialect.html", "classllzk_1_1verif_1_1VerifDialect" ],
+        [ "VerifProveOp", "classllzk_1_1verif_1_1VerifProveOp.html", "classllzk_1_1verif_1_1VerifProveOp" ],
+        [ "VerifProveOpAdaptor", "classllzk_1_1verif_1_1VerifProveOpAdaptor.html", "classllzk_1_1verif_1_1VerifProveOpAdaptor" ],
+        [ "VerifProveOpGenericAdaptor", "classllzk_1_1verif_1_1VerifProveOpGenericAdaptor.html", "classllzk_1_1verif_1_1VerifProveOpGenericAdaptor" ],
+        [ "VerifSMTProveOp", "classllzk_1_1verif_1_1VerifSMTProveOp.html", "classllzk_1_1verif_1_1VerifSMTProveOp" ],
+        [ "VerifSMTProveOpAdaptor", "classllzk_1_1verif_1_1VerifSMTProveOpAdaptor.html", "classllzk_1_1verif_1_1VerifSMTProveOpAdaptor" ],
+        [ "VerifSMTProveOpGenericAdaptor", "classllzk_1_1verif_1_1VerifSMTProveOpGenericAdaptor.html", "classllzk_1_1verif_1_1VerifSMTProveOpGenericAdaptor" ]
       ] ],
       [ "witgen", "namespacellzk_1_1witgen.html", [
         [ "ArrayValue", "structllzk_1_1witgen_1_1ArrayValue.html", "structllzk_1_1witgen_1_1ArrayValue" ],
@@ -1027,8 +1039,11 @@ var annotated_dup =
     [ "UnifiableCastOpBuildFuncHelper", "structUnifiableCastOpBuildFuncHelper.html", "structUnifiableCastOpBuildFuncHelper" ],
     [ "UnsignedIntDivFeltOpBuildFuncHelper", "structUnsignedIntDivFeltOpBuildFuncHelper.html", "structUnsignedIntDivFeltOpBuildFuncHelper" ],
     [ "UnsignedModFeltOpBuildFuncHelper", "structUnsignedModFeltOpBuildFuncHelper.html", "structUnsignedModFeltOpBuildFuncHelper" ],
+    [ "VerifAssertOpBuildFuncHelper", "structVerifAssertOpBuildFuncHelper.html", "structVerifAssertOpBuildFuncHelper" ],
     [ "VerifDialectLinkTests", "classVerifDialectLinkTests.html", null ],
     [ "VerifOperationLinkTests", "classVerifOperationLinkTests.html", null ],
+    [ "VerifProveOpBuildFuncHelper", "structVerifProveOpBuildFuncHelper.html", "structVerifProveOpBuildFuncHelper" ],
+    [ "VerifSMTProveOpBuildFuncHelper", "structVerifSMTProveOpBuildFuncHelper.html", "structVerifSMTProveOpBuildFuncHelper" ],
     [ "WriteArrayOpBuildFuncHelper", "structWriteArrayOpBuildFuncHelper.html", "structWriteArrayOpBuildFuncHelper" ],
     [ "WritePodOpBuildFuncHelper", "structWritePodOpBuildFuncHelper.html", "structWritePodOpBuildFuncHelper" ],
     [ "XorBoolOpBuildFuncHelper", "structXorBoolOpBuildFuncHelper.html", "structXorBoolOpBuildFuncHelper" ],

@@ -54,5 +54,17 @@ var Verif_2IR_2Ops_8h_8inc =
     [ "llzk::verif::detail::StepYieldOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1StepYieldOpGenericAdaptorBase.html", "classllzk_1_1verif_1_1detail_1_1StepYieldOpGenericAdaptorBase" ],
     [ "llzk::verif::StepYieldOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1StepYieldOpGenericAdaptor.html", "classllzk_1_1verif_1_1StepYieldOpGenericAdaptor" ],
     [ "llzk::verif::StepYieldOpAdaptor", "classllzk_1_1verif_1_1StepYieldOpAdaptor.html", "classllzk_1_1verif_1_1StepYieldOpAdaptor" ],
-    [ "llzk::verif::StepYieldOp", "classllzk_1_1verif_1_1StepYieldOp.html", "classllzk_1_1verif_1_1StepYieldOp" ]
+    [ "llzk::verif::StepYieldOp", "classllzk_1_1verif_1_1StepYieldOp.html", "classllzk_1_1verif_1_1StepYieldOp" ],
+    [ "llzk::verif::detail::VerifAssertOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1VerifAssertOpGenericAdaptorBase.html", "classllzk_1_1verif_1_1detail_1_1VerifAssertOpGenericAdaptorBase" ],
+    [ "llzk::verif::VerifAssertOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1VerifAssertOpGenericAdaptor.html", "classllzk_1_1verif_1_1VerifAssertOpGenericAdaptor" ],
+    [ "llzk::verif::VerifAssertOpAdaptor", "classllzk_1_1verif_1_1VerifAssertOpAdaptor.html", "classllzk_1_1verif_1_1VerifAssertOpAdaptor" ],
+    [ "llzk::verif::VerifAssertOp", "classllzk_1_1verif_1_1VerifAssertOp.html", "classllzk_1_1verif_1_1VerifAssertOp" ],
+    [ "llzk::verif::detail::VerifProveOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1VerifProveOpGenericAdaptorBase.html", "classllzk_1_1verif_1_1detail_1_1VerifProveOpGenericAdaptorBase" ],
+    [ "llzk::verif::VerifProveOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1VerifProveOpGenericAdaptor.html", "classllzk_1_1verif_1_1VerifProveOpGenericAdaptor" ],
+    [ "llzk::verif::VerifProveOpAdaptor", "classllzk_1_1verif_1_1VerifProveOpAdaptor.html", "classllzk_1_1verif_1_1VerifProveOpAdaptor" ],
+    [ "llzk::verif::VerifProveOp", "classllzk_1_1verif_1_1VerifProveOp.html", "classllzk_1_1verif_1_1VerifProveOp" ],
+    [ "llzk::verif::detail::VerifSMTProveOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1VerifSMTProveOpGenericAdaptorBase.html", "classllzk_1_1verif_1_1detail_1_1VerifSMTProveOpGenericAdaptorBase" ],
+    [ "llzk::verif::VerifSMTProveOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1VerifSMTProveOpGenericAdaptor.html", "classllzk_1_1verif_1_1VerifSMTProveOpGenericAdaptor" ],
+    [ "llzk::verif::VerifSMTProveOpAdaptor", "classllzk_1_1verif_1_1VerifSMTProveOpAdaptor.html", "classllzk_1_1verif_1_1VerifSMTProveOpAdaptor" ],
+    [ "llzk::verif::VerifSMTProveOp", "classllzk_1_1verif_1_1VerifSMTProveOp.html", "classllzk_1_1verif_1_1VerifSMTProveOp" ]
 ];

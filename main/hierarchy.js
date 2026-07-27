@@ -1180,7 +1180,10 @@ var hierarchy =
       [ "llzk::verif::RequireComputeOp", "classllzk_1_1verif_1_1RequireComputeOp.html", null ],
       [ "llzk::verif::RequireConstrainOp", "classllzk_1_1verif_1_1RequireConstrainOp.html", null ],
       [ "llzk::verif::StepOp", "classllzk_1_1verif_1_1StepOp.html", null ],
-      [ "llzk::verif::StepYieldOp", "classllzk_1_1verif_1_1StepYieldOp.html", null ]
+      [ "llzk::verif::StepYieldOp", "classllzk_1_1verif_1_1StepYieldOp.html", null ],
+      [ "llzk::verif::VerifAssertOp", "classllzk_1_1verif_1_1VerifAssertOp.html", null ],
+      [ "llzk::verif::VerifProveOp", "classllzk_1_1verif_1_1VerifProveOp.html", null ],
+      [ "llzk::verif::VerifSMTProveOp", "classllzk_1_1verif_1_1VerifSMTProveOp.html", null ]
     ] ],
     [ "mlir::OpConversionPattern", null, [
       [ "llzk::SplitAggregateInMemberRefOp< ImplClass, MemberRefOpClass, GenHeaderType, IdType >", "classllzk_1_1SplitAggregateInMemberRefOp.html", null ]
@@ -1585,6 +1588,9 @@ var hierarchy =
       [ "UnifiableCastOpBuildFuncHelper", "structUnifiableCastOpBuildFuncHelper.html", null ],
       [ "UnsignedIntDivFeltOpBuildFuncHelper", "structUnsignedIntDivFeltOpBuildFuncHelper.html", null ],
       [ "UnsignedModFeltOpBuildFuncHelper", "structUnsignedModFeltOpBuildFuncHelper.html", null ],
+      [ "VerifAssertOpBuildFuncHelper", "structVerifAssertOpBuildFuncHelper.html", null ],
+      [ "VerifProveOpBuildFuncHelper", "structVerifProveOpBuildFuncHelper.html", null ],
+      [ "VerifSMTProveOpBuildFuncHelper", "structVerifSMTProveOpBuildFuncHelper.html", null ],
       [ "WriteArrayOpBuildFuncHelper", "structWriteArrayOpBuildFuncHelper.html", null ],
       [ "WritePodOpBuildFuncHelper", "structWritePodOpBuildFuncHelper.html", null ],
       [ "XorBoolOpBuildFuncHelper", "structXorBoolOpBuildFuncHelper.html", null ],
@@ -1701,6 +1707,27 @@ var hierarchy =
     ] ],
     [ "llzk::UnusedDeclarationEliminationPassOptions", "structllzk_1_1UnusedDeclarationEliminationPassOptions.html", null ],
     [ "llzk::ValueLess", "structllzk_1_1ValueLess.html", null ],
+    [ "llzk::verif::detail::VerifAssertOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1VerifAssertOpGenericAdaptorBase.html", [
+      [ "llzk::verif::VerifAssertOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1verif_1_1VerifAssertOpGenericAdaptor.html", null ],
+      [ "llzk::verif::VerifAssertOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1verif_1_1VerifAssertOpGenericAdaptor.html", [
+        [ "llzk::verif::VerifAssertOpAdaptor", "classllzk_1_1verif_1_1VerifAssertOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::verif::VerifAssertOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1VerifAssertOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::verif::detail::VerifProveOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1VerifProveOpGenericAdaptorBase.html", [
+      [ "llzk::verif::VerifProveOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1verif_1_1VerifProveOpGenericAdaptor.html", null ],
+      [ "llzk::verif::VerifProveOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1verif_1_1VerifProveOpGenericAdaptor.html", [
+        [ "llzk::verif::VerifProveOpAdaptor", "classllzk_1_1verif_1_1VerifProveOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::verif::VerifProveOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1VerifProveOpGenericAdaptor.html", null ]
+    ] ],
+    [ "llzk::verif::detail::VerifSMTProveOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1VerifSMTProveOpGenericAdaptorBase.html", [
+      [ "llzk::verif::VerifSMTProveOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1verif_1_1VerifSMTProveOpGenericAdaptor.html", null ],
+      [ "llzk::verif::VerifSMTProveOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1verif_1_1VerifSMTProveOpGenericAdaptor.html", [
+        [ "llzk::verif::VerifSMTProveOpAdaptor", "classllzk_1_1verif_1_1VerifSMTProveOpAdaptor.html", null ]
+      ] ],
+      [ "llzk::verif::VerifSMTProveOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1VerifSMTProveOpGenericAdaptor.html", null ]
+    ] ],
     [ "llzk::VerifySizesForMultiAffineOps< OperandSegmentIndex >", "structllzk_1_1VerifySizesForMultiAffineOps.html", null ],
     [ "llzk::polymorphic::WildcardArraySpecializationPassOptions", "structllzk_1_1polymorphic_1_1WildcardArraySpecializationPassOptions.html", null ],
     [ "llzk::witgen::WitgenOptions", "structllzk_1_1witgen_1_1WitgenOptions.html", null ],

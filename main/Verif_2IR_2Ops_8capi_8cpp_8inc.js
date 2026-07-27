@@ -13,6 +13,9 @@ var Verif_2IR_2Ops_8capi_8cpp_8inc =
     [ "llzkOperationIsA_Verif_RequireConstrainOp", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#a29ae4856e0ad450c044cbb91f40ce9e9", null ],
     [ "llzkOperationIsA_Verif_StepOp", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#ac438a20932cca455ae08cef33cc201bd", null ],
     [ "llzkOperationIsA_Verif_StepYieldOp", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#a631558de8b4f860c88b07e58df081d0d", null ],
+    [ "llzkOperationIsA_Verif_VerifAssertOp", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#ad40809ed58af0688fdc66657bc97dde7", null ],
+    [ "llzkOperationIsA_Verif_VerifProveOp", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#ad85338415fd8287ec649f0314a12edf8", null ],
+    [ "llzkOperationIsA_Verif_VerifSMTProveOp", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#a34d1ff356080148ceb3ec09dae849c3c", null ],
     [ "llzkVerif_ContractEndOpBuild", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#a37b35012cfcb46e0542b25f84c104bf2", null ],
     [ "llzkVerif_ContractOpGetArgAttrs", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#a8b545ed65cc02ee15c181b881b2d02cb", null ],
     [ "llzkVerif_ContractOpGetBody", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#a24bfedfb62beff85ad5a2b6955dc714b", null ],
@@ -80,5 +83,14 @@ var Verif_2IR_2Ops_8capi_8cpp_8inc =
     [ "llzkVerif_StepOpGetRegion", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#a56160a63cae4eed41fe5617fe6bb9c3b", null ],
     [ "llzkVerif_StepYieldOpBuild", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#aa3cef042c27536e89ac01798b93f89c4", null ],
     [ "llzkVerif_StepYieldOpGetValue", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#a4649eb6d851d6cbee1340acd21bb3a84", null ],
-    [ "llzkVerif_StepYieldOpSetValue", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#a06d6f1aedcee252238c4b3e53d884358", null ]
+    [ "llzkVerif_StepYieldOpSetValue", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#a06d6f1aedcee252238c4b3e53d884358", null ],
+    [ "llzkVerif_VerifAssertOpBuild", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#ae6accfeb62938436c8226eb6ff49f4fd", null ],
+    [ "llzkVerif_VerifAssertOpGetCondition", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#a7159186147a0f6eb8874d5c75847d6eb", null ],
+    [ "llzkVerif_VerifAssertOpSetCondition", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#a0ae31df4086a930d0b7cb7289cdb91ca", null ],
+    [ "llzkVerif_VerifProveOpBuild", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#a46c4253c28661bd89f8b9e6047df15a0", null ],
+    [ "llzkVerif_VerifProveOpGetCondition", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#a1226c090708d579dfecf20bbe3d39562", null ],
+    [ "llzkVerif_VerifProveOpSetCondition", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#a13a00ddcbf3002cc20fefd8785793b6b", null ],
+    [ "llzkVerif_VerifSMTProveOpBuild", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#a48f915becbbc4b7ea4c9eae443db96a9", null ],
+    [ "llzkVerif_VerifSMTProveOpGetCondition", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#a2352135113878057aa936712a4222818", null ],
+    [ "llzkVerif_VerifSMTProveOpSetCondition", "Verif_2IR_2Ops_8capi_8cpp_8inc.html#a7a81f5fee7c12cb1522dd85961f5b857", null ]
 ];
