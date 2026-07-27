@@ -147,8 +147,9 @@ template <typename OpTy> static OpTy preserveDiscardableAttrs(Operation *src, Op
 /// Copy discardable attributes from `src` to `dst` while omitting one internal attr.
 template <typename OpTy>
 static OpTy preserveDiscardableAttrsExcept(Operation *src, OpTy dst, StringRef excludedAttr) {
+  auto original = src->getDiscardableAttrDictionary();
   SmallVector<NamedAttribute> attrs;
-  for (NamedAttribute attr : src->getDiscardableAttrDictionary().getValue()) {
+  for (NamedAttribute attr : original.getValue()) {
     if (attr.getName().getValue() != excludedAttr) {
       attrs.push_back(attr);
     }
