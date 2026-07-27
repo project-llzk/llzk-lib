@@ -66,7 +66,7 @@ class SexpCtx {
 
 public:
   template <typename T> Sexp atom(T val) {
-// This is a know GCC issue: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=109224
+// This is a known GCC issue: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=109224
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmismatched-new-delete"
     return Sexp(new (allocator) detail::Atom<T>(val));
