@@ -13,5 +13,10 @@
 #include <mlir/Support/LogicalResult.h>
 
 namespace pcl {
-mlir::LogicalResult moduleToPcl(mlir::ModuleOp mod, llvm::raw_ostream &os);
+  /// Configuration parameters for the PCL to Lisp translation.
+struct PCLTargetConfig {
+  bool compressedLines = false;
+};
+
+mlir::LogicalResult moduleToPcl(mlir::ModuleOp mod, llvm::raw_ostream &os, PCLTargetConfig cfg = {});
 }

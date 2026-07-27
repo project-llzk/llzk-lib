@@ -94,6 +94,7 @@ def PCL_NegOp : PCL_Op<"neg", [Pure, SameOperandsAndResultType, InsideFunc]> {
   let results = (outs PCL_FieldType:$res);
   let assemblyFormat = "$val attr-dict";
   let hasFolder = 1;
+  let hasCanonicalizer = 1;
 }
 
 // -----------------------------------------------------------------------------

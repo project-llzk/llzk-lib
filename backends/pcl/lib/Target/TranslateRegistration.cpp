@@ -18,6 +18,10 @@
 using namespace mlir;
 
 void pcl::registerPclTranslation() {
+  static llvm::cl::opt<bool> compressedLines(
+      "lisp-compressed-lines", llvm::cl::desc("Avoids printing empty lines"), llvm::cl::init(false)
+  );
+
   mlir::TranslateFromMLIRRegistration reg(
       "pcl-to-lisp", "translate from PCL IR to PCL lisp",
       [](Operation *op, raw_ostream &output) -> LogicalResult {
@@ -25,7 +29,7 @@ void pcl::registerPclTranslation() {
     if (!modOp) {
       return op->emitOpError() << "expected builtin.module as top level operation";
     }
-    return pcl::moduleToPcl(modOp, output);
+    return pcl::moduleToPcl(modOp, output, {.compressedLines = compressedLines});
   }, [](DialectRegistry &registry) {
     registry.insert<
         // clang-format off

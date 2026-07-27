@@ -53,11 +53,15 @@ template <typename Op> std::optional<PrimeAttr> getFieldPrime(Op &op) {
   return attr;
 }
 
+/// Used in the `isIdentity` and `isZero` callbacks for identifing if the queried value
+/// is the LHS or the RHS of the operation.
+enum class Side : std::uint8_t { Lhs, Rhs };
+
 /// Folds a binary operation.
 ///
 /// The helper is generic over the operation based on a set of callbacks:
 /// - A callback that defines the actual operation
-/// - A callback that queries if the given value is the identy under that operation (i.e. 1 for
+/// - A callback that queries if the given value is the identity under that operation (i.e. 1 for
 /// multiplication or 0 for addition).
 /// - A callback that queries if the given value "cancels out" the operation (i.e. 0 for
 /// multiplication or false for conjunction).
@@ -65,7 +69,7 @@ template <typename Op> std::optional<PrimeAttr> getFieldPrime(Op &op) {
 template <typename T, typename Op>
 OpFoldResult foldBinaryOp(
     Op &op, typename Op::FoldAdaptor adaptor, llvm::function_ref<T(T, T)> opFn,
-    llvm::function_ref<bool(T)> isIdentity, llvm::function_ref<bool(T)> isZero,
+    llvm::function_ref<bool(T, Side)> isIdentity, llvm::function_ref<bool(T, Side)> isZero,
     llvm::function_ref<OpFoldResult(T)> factory = nullptr
 ) {
   auto factoryFn = [factory](auto value) -> OpFoldResult {
@@ -89,19 +93,19 @@ OpFoldResult foldBinaryOp(
   }
 
   // If either side is "zero", then the operation is canceled out and return the "zero" attribute.
-  if (lhs && isZero(lhs)) {
+  if (lhs && isZero(lhs, Side::Lhs)) {
     return factoryFn(lhs);
   }
-  if (rhs && isZero(rhs)) {
+  if (rhs && isZero(rhs, Side::Rhs)) {
     return factoryFn(rhs);
   }
   // If either side is the identity, return the other side.
   // If the other side is a constant, return the attribute representing it.
   // Otherwise, return the value of the operand.
-  if (lhs && isIdentity(lhs)) {
+  if (lhs && isIdentity(lhs, Side::Lhs)) {
     return attrOrValue(rhs, op.getRhs());
   }
-  if (rhs && isIdentity(rhs)) {
+  if (rhs && isIdentity(rhs, Side::Rhs)) {
     return attrOrValue(lhs, op.getLhs());
   }
   // If both are constants but none matched the identity or "zero" predicates, perform the
@@ -120,8 +124,8 @@ OpFoldResult foldBinaryOp(
 template <typename Op, typename Fn>
 OpFoldResult tryFoldBinaryFeltOp(
     Op &op, typename Op::FoldAdaptor adaptor, Fn opFn,
-    llvm::function_ref<bool(const APInt &)> isIdentity,
-    llvm::function_ref<bool(const APInt &)> isZero
+    llvm::function_ref<bool(const APInt &, Side)> isIdentity,
+    llvm::function_ref<bool(const APInt &, Side)> isZero
 ) {
   auto prime = getFieldPrime(op);
   if (!prime) {
@@ -129,22 +133,14 @@ OpFoldResult tryFoldBinaryFeltOp(
   }
 
   return foldBinaryOp<FeltAttr>(op, adaptor, [&prime, opFn](FeltAttr lhs, FeltAttr rhs) {
-    lhs = prime->reduce(lhs);
-    rhs = prime->reduce(rhs);
-    auto max = std::max(
-                   {lhs.getValue().getBitWidth(), rhs.getValue().getBitWidth(),
-                    prime->getValue().getBitWidth()}
-               ) +
-               1;
-    auto lhsValue = lhs.getValue().zext(max);
-    auto rhsValue = rhs.getValue().zext(max);
-    auto primeValue = prime->getValue().zext(max);
-
-    return FeltAttr::get(lhs.getContext(), opFn(lhsValue, rhsValue, primeValue));
-  }, [&prime, isIdentity](FeltAttr value) {
-    return isIdentity(prime->reduce(value).getValue());
-  }, [&prime, isZero](FeltAttr value) {
-    return isZero(prime->reduce(value).getValue());
+    return FeltAttr::get(
+        lhs.getContext(),
+        opFn(prime->reduce(lhs).getValue(), prime->reduce(rhs).getValue(), prime->getValue())
+    );
+  }, [&prime, isIdentity](FeltAttr value, auto side) {
+    return isIdentity(prime->reduce(value).getValue(), side);
+  }, [&prime, isZero](FeltAttr value, auto side) {
+    return isZero(prime->reduce(value).getValue(), side);
   }, [&prime](auto value) { return prime->reduce(value); });
 }
 
@@ -167,6 +163,64 @@ OpFoldResult foldCmpOp(Op &op, typename Op::FoldAdaptor adaptor, Fn opFn) {
   return pcl::BoolAttr::get(op->getContext(), opFn(lhs.getValue(), rhs.getValue()));
 }
 
+/// Helper for doing unsigned addition on field elements represented by `APInt`s.
+///
+/// Adjusts the bit width to the correct size before adding. The caller is
+/// responsible of wrapping the value back into the field if it's intended to
+/// continue representing a field element.
+static APInt safeAdd(const APInt &lhs, const APInt &rhs) {
+  auto w = std::max({lhs.getBitWidth(), rhs.getBitWidth()}) + 1;
+  auto lhsExt = lhs.zext(w);
+  auto rhsExt = rhs.zext(w);
+  return lhsExt + rhsExt;
+}
+
+/// Helper for doing unsigned subtraction on field elements represented by `APInt`s.
+///
+/// Adjusts the bit width to the correct size before subtracting. The caller is
+/// responsible of wrapping the value back into the field if it's intended to
+/// continue representing a field element.
+static APInt safeSub(const APInt &lhs, const APInt &rhs) {
+  auto w = std::max({lhs.getBitWidth(), rhs.getBitWidth()}) + 1;
+  auto lhsExt = lhs.zext(w);
+  auto rhsExt = rhs.zext(w);
+  return lhsExt - rhsExt;
+}
+
+/// Helper for doing unsigned multiplication on field elements represented by `APInt`s.
+///
+/// Adjusts the bit width to the correct size before multiplying. The caller is
+/// responsible of wrapping the value back into the field if it's intended to
+/// continue representing a field element.
+static APInt safeMul(const APInt &lhs, const APInt &rhs) {
+  /// Add an extra +1 just to be safe.
+  auto w = lhs.getBitWidth() + rhs.getBitWidth() + 1;
+  auto lhsExt = lhs.zext(w);
+  auto rhsExt = rhs.zext(w);
+  return lhsExt * rhsExt;
+}
+
+/// Pattern for folding "double negations". It is generalized to any pattern
+/// in the form `(op (op X))`.
+///
+/// The pattern is only applied if both ops have 1 operand.
+template <typename Op> struct FoldDoubleNeg : public OpRewritePattern<Op> {
+  using OpRewritePattern<Op>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(Op op, PatternRewriter &rewriter) const override {
+    if (op->getNumOperands() != 1) {
+      return failure();
+    }
+    auto defOp = mlir::dyn_cast_if_present<Op>(op->getOperand(0).getDefiningOp());
+    if (!defOp || defOp->getNumOperands() != 1) {
+      return failure();
+    }
+    rewriter.replaceOp(op, ValueRange(defOp->getOperand(0)));
+
+    return success();
+  }
+};
+
 } // namespace
 
 //===----------------------------------------------------------------------===//
@@ -178,9 +232,11 @@ OpFoldResult foldCmpOp(Op &op, typename Op::FoldAdaptor adaptor, Fn opFn) {
 //===----------------------------------------------------------------------===//
 
 OpFoldResult AddOp::fold(FoldAdaptor adaptor) {
-  return tryFoldBinaryFeltOp(*this, adaptor, [](auto lhs, const auto &rhs, const auto &) {
-    return std::move(lhs) + rhs;
-  }, [](const auto &value) { return value.isZero(); }, [](const auto &) { return false; });
+  return tryFoldBinaryFeltOp(*this, adaptor, [](const auto &lhs, const auto &rhs, const auto &) {
+    return safeAdd(lhs, rhs);
+  }, [](const auto &value, auto) { return value.isZero(); }, [](const auto &, auto) {
+    return false;
+  });
 }
 
 //===----------------------------------------------------------------------===//
@@ -233,12 +289,8 @@ private:
     if (!feltAttr) {
       return failure();
     }
-    auto value = prime.reduce(feltAttr).getValue();
-    auto max = std::max({value.getBitWidth(), prime.getBitWidth()});
-    auto primeValue = prime.getValue().zext(max);
-    value = value.zext(max);
-    auto diff = primeValue - value;
-    if (!diff.isOne()) {
+    // If p - v != 1, ignore this case.
+    if (!safeSub(prime.getValue(), prime.reduce(feltAttr).getValue()).isOne()) {
       return failure();
     }
 
@@ -257,8 +309,10 @@ private:
 
 OpFoldResult MulOp::fold(FoldAdaptor adaptor) {
   return tryFoldBinaryFeltOp(*this, adaptor, [](const auto &lhs, const auto &rhs, const auto &) {
-    return lhs * rhs;
-  }, [](auto &value) { return value.isOne(); }, [](auto &value) { return value.isZero(); });
+    return safeMul(lhs, rhs);
+  }, [](auto &value, auto) { return value.isOne(); }, [](auto &value, auto) {
+    return value.isZero();
+  });
 }
 
 void MulOp::getCanonicalizationPatterns(RewritePatternSet &patterns, MLIRContext *context) {
@@ -278,8 +332,11 @@ OpFoldResult NegOp::fold(FoldAdaptor adaptor) {
   if (!attr) {
     return nullptr;
   }
-  auto negated = attr.getValue() * -1;
-  return prime->reduce(attr.getValue() * -1);
+  return prime->reduce(-attr.getValue());
+}
+
+void NegOp::getCanonicalizationPatterns(RewritePatternSet &patterns, MLIRContext *context) {
+  patterns.add<FoldDoubleNeg<NegOp>>(context);
 }
 
 //===----------------------------------------------------------------------===//
@@ -320,8 +377,14 @@ void SubOp::getCanonicalizationPatterns(RewritePatternSet &patterns, MLIRContext
 OpFoldResult SubOp::fold(FoldAdaptor adaptor) {
   return tryFoldBinaryFeltOp(
       *this, adaptor, [](const auto &lhs, const auto &rhs, const auto &prime) {
-    return lhs + (prime - rhs);
-  }, [](auto &) { return false; }, [](auto &) { return false; }
+    // (lhs - rhs) mod p == (lhs + (p - rhs)) mod p iff 0 <= lhs < p and 0 <= rhs < p.
+    // The `tryFoldBinaryFeltOp` helper ensures `lhs` and `rhs` are inside the field, so the
+    // assumption above is safe.
+    return safeAdd(lhs, safeSub(prime, rhs));
+  }, [](auto &value, auto side) {
+    // lhs - 0 = lhs
+    return side == Side::Rhs && value.isZero();
+  }, [](auto &, auto) { return false; }
   );
 }
 
@@ -341,10 +404,11 @@ struct FoldedEq {
 
 /// Folds the following cases to simplify the IR.
 ///
-/// - `(= 1 X)` => `X`
-/// - `(= X 1)` => `X`
-/// - `(= 0 X)` => `(not X)`
-/// - `(= X 0)` => `(not X)`
+/// - `(= 1 (asfelt X))` => `X`
+/// - `(= (asfelt X) 1)` => `X`
+/// - `(= 0 (asfelt X))` => `(not X)`
+/// - `(= (asfelt X) 0)` => `(not X)`
+/// Assuming `X` is of type `!pcl.bool`
 struct FoldEqBoolean : public OpRewritePattern<CmpEqOp> {
   using OpRewritePattern<CmpEqOp>::OpRewritePattern;
 
@@ -398,6 +462,134 @@ private:
     return failure();
   }
 };
+
+/// Folds `(= (- X) (- Y))` into `(= X Y)`
+struct FoldEqOfNegations : public OpRewritePattern<CmpEqOp> {
+  using OpRewritePattern<CmpEqOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(CmpEqOp op, PatternRewriter &rewriter) const override {
+    auto lhsNeg = mlir::dyn_cast_if_present<NegOp>(op.getLhs().getDefiningOp());
+    auto rhsNeg = mlir::dyn_cast_if_present<NegOp>(op.getRhs().getDefiningOp());
+
+    if (!lhsNeg || !rhsNeg) {
+      return failure();
+    }
+
+    rewriter.replaceOpWithNewOp<CmpEqOp>(op, lhsNeg.getVal(), rhsNeg.getVal());
+    return success();
+  }
+};
+
+/// Folds `(= 0 (+ X Y))` into `(= X (- Y))`.
+///
+/// When picking which side to move to the other side the pattern gives priority to
+/// negation ops.
+///
+/// This pattern helps simplifying constraints generated for some constraint systems
+/// that are asserted to be equal to 0.
+///
+/// For example, the constraint `X * Y = Z` is represented as `X * Y - Z = 0`. This pattern
+/// rewrites it to an equality with terms in both sides.
+struct FoldEqOfZeroAndSum : public OpRewritePattern<CmpEqOp> {
+  using OpRewritePattern<CmpEqOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(CmpEqOp op, PatternRewriter &rewriter) const override {
+    auto addOp = matchAssertion(op);
+    if (!addOp) {
+      return failure();
+    }
+    auto [X, Y] = pickOperands(addOp, rewriter);
+    rewriter.replaceOpWithNewOp<CmpEqOp>(op, X, Y);
+    return success();
+  }
+
+private:
+  /// Picks the operands of the add op `X` and `Y` for creating
+  /// the new eq operation as `(= X Y)`
+  std::pair<Value, Value> pickOperands(AddOp op, PatternRewriter &rewriter) const {
+    auto X = op.getLhs();
+    auto Y = op.getRhs();
+    auto Xop = mlir::dyn_cast_if_present<NegOp>(X.getDefiningOp());
+    auto Yop = mlir::dyn_cast_if_present<NegOp>(Y.getDefiningOp());
+    if (Xop) {
+      return {Xop.getVal(), Y};
+    }
+    if (Yop) {
+      return {X, Yop.getVal()};
+    }
+
+    auto negOp = rewriter.create<NegOp>(op.getLoc(), Y);
+    return {X, negOp};
+  }
+
+  /// Matches the assertion to a pattern.
+  AddOp matchAssertion(CmpEqOp op) const {
+    auto lhsMatch = matchAssertionImpl(op.getLhs(), op.getRhs());
+    if (!lhsMatch) {
+      return lhsMatch;
+    }
+
+    return matchAssertionImpl(op.getRhs(), op.getLhs());
+  }
+
+  /// Simpler pattern that assumes only LHS can be the constant.
+  AddOp matchAssertionImpl(Value lhs, Value rhs) const {
+    Attribute attr;
+
+    if (!matchPattern(lhs, m_Constant(&attr))) {
+      return AddOp();
+    }
+    auto feltAttr = mlir::dyn_cast_if_present<FeltAttr>(attr);
+    if (!feltAttr || !feltAttr.getValue().isZero()) {
+      return AddOp();
+    }
+
+    return mlir::dyn_cast_if_present<AddOp>(rhs.getDefiningOp());
+  }
+};
+
+/// Folds `(= 0 (- X Y))` into `(= X Y)`.
+///
+/// The goal of this pattern is similar to `FoldEqOfZeroAndSum` but applied to subtractions.
+struct FoldEqOfZeroAndSub : public OpRewritePattern<CmpEqOp> {
+  using OpRewritePattern<CmpEqOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(CmpEqOp op, PatternRewriter &rewriter) const override {
+    auto subOp = matchAssertion(op);
+    if (!subOp) {
+      return failure();
+    }
+    rewriter.replaceOpWithNewOp<CmpEqOp>(op, subOp.getLhs(), subOp.getRhs());
+    return success();
+  }
+
+private:
+  /// Matches the assertion to a pattern.
+  SubOp matchAssertion(CmpEqOp op) const {
+    auto lhsMatch = matchAssertionImpl(op.getLhs(), op.getRhs());
+    if (!lhsMatch) {
+      return lhsMatch;
+    }
+
+    return matchAssertionImpl(op.getRhs(), op.getLhs());
+  }
+
+  /// Simpler pattern that assumes only LHS can be the constant.
+  SubOp matchAssertionImpl(Value lhs, Value rhs) const {
+    Attribute attr;
+
+    if (!matchPattern(lhs, m_Constant(&attr))) {
+      return SubOp();
+    }
+    auto feltAttr = mlir::dyn_cast_if_present<FeltAttr>(attr);
+    if (!feltAttr || !feltAttr.getValue().isZero()) {
+      return SubOp();
+    }
+
+    return mlir::dyn_cast_if_present<SubOp>(rhs.getDefiningOp());
+  }
+};
+
 } // namespace
 
 //===----------------------------------------------------------------------===//
@@ -409,7 +601,7 @@ OpFoldResult CmpEqOp::fold(FoldAdaptor adaptor) {
 }
 
 void CmpEqOp::getCanonicalizationPatterns(RewritePatternSet &patterns, MLIRContext *context) {
-  patterns.add<FoldEqBoolean>(context);
+  patterns.add<FoldEqBoolean, FoldEqOfNegations, FoldEqOfZeroAndSum, FoldEqOfZeroAndSub>(context);
 }
 
 //===----------------------------------------------------------------------===//
@@ -455,7 +647,9 @@ OpFoldResult CmpGeOp::fold(FoldAdaptor adaptor) {
 OpFoldResult AndOp::fold(FoldAdaptor adaptor) {
   return foldBinaryOp<BoolAttr>(*this, adaptor, [](auto lhs, auto rhs) {
     return BoolAttr::get(lhs.getContext(), lhs.getValue() && rhs.getValue());
-  }, [](auto value) { return value.getValue(); }, [](auto value) { return !value.getValue(); });
+  }, [](auto value, auto) { return value.getValue(); }, [](auto value, auto) {
+    return !value.getValue();
+  });
 }
 
 //===----------------------------------------------------------------------===//
@@ -464,16 +658,16 @@ OpFoldResult AndOp::fold(FoldAdaptor adaptor) {
 
 /// If the boolean is constant, fold the op into a constant 1 or 0.
 OpFoldResult AsFeltOp::fold(FoldAdaptor adaptor) {
-  auto prime = getFieldPrime(*this);
-  if (!prime) {
-    return nullptr;
-  }
   auto attr = mlir::dyn_cast_if_present<BoolAttr>(adaptor.getVal());
   if (!attr) {
     return nullptr;
   }
-
-  return FeltAttr::get(getContext(), APInt(prime->getBitWidth(), attr.getValue() ? 1 : 0));
+  auto prime = getFieldPrime(*this);
+  // If the prime is not available use BW=2. Once the prime is available other folding operations
+  // will take care of adjusting the width.
+  return FeltAttr::get(
+      getContext(), APInt(prime ? prime->getBitWidth() : 2, attr.getValue() ? 1 : 0)
+  );
 }
 
 //===----------------------------------------------------------------------===//
@@ -503,7 +697,7 @@ OpFoldResult FalseOp::fold(FoldAdaptor) { return BoolAttr::get(getContext(), fal
 OpFoldResult IffOp::fold(FoldAdaptor adaptor) {
   return foldBinaryOp<BoolAttr>(*this, adaptor, [](auto lhs, auto rhs) {
     return BoolAttr::get(lhs.getContext(), lhs.getValue() == rhs.getValue());
-  }, [](auto) { return false; }, [](auto) { return false; });
+  }, [](auto, auto) { return false; }, [](auto, auto) { return false; });
 }
 
 //===----------------------------------------------------------------------===//
@@ -513,28 +707,15 @@ OpFoldResult IffOp::fold(FoldAdaptor adaptor) {
 OpFoldResult ImpliesOp::fold(FoldAdaptor adaptor) {
   return foldBinaryOp<BoolAttr>(*this, adaptor, [](auto lhs, auto rhs) {
     return BoolAttr::get(lhs.getContext(), !lhs.getValue() || rhs.getValue());
-  }, [](auto) { return false; }, [](auto) { return false; });
+  }, [](auto value, auto side) {
+    // p -> T = T
+    return value.getValue() && side == Side::Rhs;
+  }, [](auto, auto) { return false; });
 }
 
 //===----------------------------------------------------------------------===//
 // NotOp
 //===----------------------------------------------------------------------===//
-
-namespace {
-struct FoldDoubleNeg : public OpRewritePattern<NotOp> {
-  using OpRewritePattern<NotOp>::OpRewritePattern;
-
-  LogicalResult matchAndRewrite(NotOp op, PatternRewriter &rewriter) const override {
-    if (!mlir::isa_and_present<NotOp>(op.getCond().getDefiningOp())) {
-      return failure();
-    }
-    auto cond = mlir::cast<NotOp>(op.getCond().getDefiningOp());
-    rewriter.replaceOp(op, cond.getCond());
-
-    return success();
-  }
-};
-} // namespace
 
 OpFoldResult NotOp::fold(FoldAdaptor adaptor) {
   auto attr = mlir::dyn_cast_if_present<BoolAttr>(adaptor.getCond());
@@ -546,7 +727,7 @@ OpFoldResult NotOp::fold(FoldAdaptor adaptor) {
 }
 
 void NotOp::getCanonicalizationPatterns(RewritePatternSet &patterns, MLIRContext *context) {
-  patterns.add<FoldDoubleNeg>(context);
+  patterns.add<FoldDoubleNeg<NotOp>>(context);
 }
 
 //===----------------------------------------------------------------------===//
@@ -556,7 +737,9 @@ void NotOp::getCanonicalizationPatterns(RewritePatternSet &patterns, MLIRContext
 OpFoldResult OrOp::fold(FoldAdaptor adaptor) {
   return foldBinaryOp<BoolAttr>(*this, adaptor, [](auto lhs, auto rhs) {
     return BoolAttr::get(lhs.getContext(), lhs.getValue() || rhs.getValue());
-  }, [](auto value) { return !value.getValue(); }, [](auto value) { return value.getValue(); });
+  }, [](auto value, auto) { return !value.getValue(); }, [](auto value, auto) {
+    return value.getValue();
+  });
 }
 
 //===----------------------------------------------------------------------===//

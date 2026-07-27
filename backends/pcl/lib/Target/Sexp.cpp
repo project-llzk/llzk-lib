@@ -1,8 +1,8 @@
 //===-- Sexp.cpp ------------------------------------------------*- C++ -*-===//
 //
-// Part of the PCL Project, under the Apache License v2.0.
+// Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
-// Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
@@ -36,6 +36,7 @@ Sexp Sexp::withSquareBrackets() {
 }
 
 Sexp SexpCtx::sexp(llvm::ArrayRef<Sexp> elements) {
+static_assert(sizeof(Sexp) == sizeof(detail::SexpElt *));
   detail::SexpElt **buf = allocator.Allocate<detail::SexpElt *>(elements.size());
   memcpy(
       reinterpret_cast<void *>(buf), elements.data(), elements.size() * sizeof(detail::SexpElt *)

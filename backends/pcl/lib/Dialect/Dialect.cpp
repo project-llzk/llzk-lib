@@ -16,8 +16,6 @@
 
 #include <mlir/IR/DialectImplementation.h>
 
-#include <llvm/Support/Debug.h>
-
 #include <algorithm>
 
 // TableGen'd implementation files
@@ -95,14 +93,32 @@ mlir::Operation *PCLDialect::materializeConstant(
 // PrimeAttr
 //===----------------------------------------------------------------------===//
 
-FeltAttr PrimeAttr::reduce(FeltAttr attr) {
-  auto max = std::max({getValue().getBitWidth(), attr.getValue().getBitWidth()}) + 1;
-  auto pExt = getValue().zext(max);
-  // The incoming value could be negative so we need to sign-extend.
-  auto vExt = attr.getValue().sext(max);
-  auto value = vExt.srem(pExt);
-  if (value.isNegative()) {
-    value += pExt;
+namespace {
+/// Implementation of the reduce operation that assumes the inputs have the same bit width.
+static llvm::APInt reduceImpl(const llvm::APInt &value, const llvm::APInt &prime) {
+  auto reduced = value.srem(prime);
+  if (reduced.isNegative()) {
+    reduced += prime;
   }
-  return FeltAttr::get(getContext(), value);
+  return reduced;
+}
+} // namespace
+
+FeltAttr PrimeAttr::reduce(FeltAttr attr) {
+  auto P = getValue();
+  auto V = attr.getValue();
+
+  // Fast path for equal widths.
+  if (V.getBitWidth() == P.getBitWidth()) {
+    auto X_p = reduceImpl(V, P);
+    assert(X_p.getBitWidth() == P.getBitWidth());
+    return FeltAttr::get(getContext(), X_p);
+  }
+  auto mw = std::max({P.getBitWidth(), V.getBitWidth()}) + 1;
+  // The incoming value could be negative so we need to sign-extend.
+  auto X_m = reduceImpl(V.sext(mw), P.zext(mw));
+  // Truncate the reduced value to the prime's bit width.
+  auto X_p = X_m.trunc(P.getBitWidth());
+  assert(llvm::APInt::isSameValue(X_m, X_p));
+  return FeltAttr::get(getContext(), X_p);
 }

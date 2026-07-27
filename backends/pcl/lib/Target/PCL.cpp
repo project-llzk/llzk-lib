@@ -1,8 +1,8 @@
 //===-- PCL.cpp -------------------------------------------------*- C++ -*-===//
 //
-// Part of the PCL Project, under the Apache License v2.0.
+// Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
-// Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
@@ -18,6 +18,7 @@
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Value.h>
 #include <mlir/IR/ValueRange.h>
+#include <mlir/Support/LLVM.h>
 #include <mlir/Support/LogicalResult.h>
 
 #include <llvm/ADT/SmallVectorExtras.h>
@@ -83,13 +84,29 @@ class ModuleEmitter {
     }
   }
 
-  void epilogue(pcl::Sexps &S) {
+  LogicalResult epilogue(pcl::Sexps &S) {
     if (auto ret = dyn_cast_or_null<func::ReturnOp>(func.getBody().front().getTerminator())) {
       for (Value v : ret.getOperands()) {
-        S.push({S.atom("output"), S.atom(ns.get(v, "out"))});
+        // Map the output to either a previously assigned map (i.e. from a `pcl.var` op) or to
+        // "outN" by default.
+        auto name = ns.get(v, "out");
+        // If the value does not come from a non-op source (i.e. arguments), `pcl.var`, or
+        // `func.call` then we need to emit `(assert (= outN {emitFormula(v)}))`. Otherwise that
+        // slice gets lost in translation. The conversion pass avoids generating IR like this but,
+        // as a precaution, we handle it here.
+        auto *defOp = v.getDefiningOp();
+        if (defOp && !mlir::isa<pcl::VarOp, func::CallOp>(defOp)) {
+          auto vSexp = emitFormula(v, S);
+          if (failed(vSexp)) {
+            return failure();
+          }
+          S.push({S.atom("assert"), S.sexp({S.atom("="), S.atom(name), *vSexp})});
+        }
+        S.push({S.atom("output"), S.atom(name)});
       }
     }
     S.push(S.sexp({S.atom("end-module")}));
+    return success();
   }
 
   template <typename Op>
@@ -154,8 +171,11 @@ class ModuleEmitter {
         .Case<pcl::NegOp>([this, &S](auto op) { return emitUnaryExpr("-", op.getVal(), S); })
         .Case<pcl::AsFeltOp>([this, &S](auto op) { return emitFormula(op.getVal(), S); })
         .Case<pcl::VarOp>([this, &S](auto op) { return S.atom(ns.get(op)); })
-        .Case<pcl::ConstOp>([&S](auto op) {
-      return S.atom(op.getValue());
+        .Case<pcl::ConstOp>([&S](auto op) { return S.atom(op.getValueAPInt()); })
+        .Case<func::CallOp>([this, &S, v](auto) {
+      // If we encounter a call we need to emit the value as a variable,
+      // since we preload all the call outputs into the environment.
+      return emitVar(v, S);
     }).Default([v](auto op) {
       return op->emitOpError() << ", value " << v << " could not be emitted";
     });
@@ -178,9 +198,9 @@ class ModuleEmitter {
         .Case<pcl::IffOp>([this, &S](auto op) { return emitBinaryFormula("<=>", op, S); })
         .Case<pcl::NotOp>([this, &S](auto op) { return emitUnaryFormula("!", op.getCond(), S); })
         .Case<pcl::DetOp>([this, &S](auto op) { return emitUnaryExpr("det", op.getExpr(), S); })
-        .Case<pcl::TrueOp>([&S](auto) { return S.sexp({S.atom<unsigned>(1)}); })
+        .Case<pcl::TrueOp>([&S](auto) { return S.atom<unsigned>(1); })
         .Case<pcl::FalseOp>([&S](auto) {
-      return S.sexp({S.atom<unsigned>(0)});
+      return S.atom<unsigned>(0);
     }).Default([this, &S, v](auto) { return emitExpr(v, S); });
   }
 
@@ -233,7 +253,7 @@ class ModuleEmitter {
         }
         auto outputsExpr = S.sexp(outputs).withSquareBrackets();
         auto inputsExpr = S.sexp(inputs).withSquareBrackets();
-        S.push({outputsExpr, S.atom(callOp.getCallee()), inputsExpr});
+        S.push({S.atom("call"), outputsExpr, S.atom(callOp.getCallee()), inputsExpr});
         return success();
       }).Default([](auto) { return success(); })
           )) {
@@ -254,7 +274,7 @@ class ModuleEmitter {
     unsigned callNo = 0;
     func.walk([this, &callNo](func::CallOp callOp) {
       for (auto [n, v] : llvm::enumerate(callOp.getResults())) {
-        std::string name = (callOp.getCallee() + "_" + Twine(callNo) + "_" + Twine(n)).str();
+        std::string name = (callOp.getCallee() + "_call" + Twine(callNo) + "_out" + Twine(n)).str();
         ns.set(v, name);
       }
       callNo++;
@@ -270,7 +290,9 @@ public:
     if (failed(body(S))) {
       return failure();
     }
-    epilogue(S);
+    if (failed(epilogue(S))) {
+      return failure();
+    }
 
     return success();
   }
@@ -286,7 +308,7 @@ void nl(raw_ostream &os) { os << '\n'; }
 
 } // namespace
 
-LogicalResult pcl::moduleToPcl(ModuleOp mod, raw_ostream &os) {
+LogicalResult pcl::moduleToPcl(ModuleOp mod, raw_ostream &os, PCLTargetConfig config) {
   pcl::Sexps S;
 
   if (failed(prologue(mod, S))) {
@@ -294,14 +316,18 @@ LogicalResult pcl::moduleToPcl(ModuleOp mod, raw_ostream &os) {
   }
 
   S.dump(os);
-  nl(os);
+  if (!config.compressedLines) {
+    nl(os);
+  }
 
-  for (auto emitter : findModules(mod)) {
+  for (auto &emitter : findModules(mod)) {
     if (failed(emitter.emit(S))) {
       return failure();
     }
     S.dump(os);
-    nl(os);
+    if (!config.compressedLines) {
+      nl(os);
+    }
   }
 
   return success();
