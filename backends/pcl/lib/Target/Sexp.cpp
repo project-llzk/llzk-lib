@@ -36,7 +36,7 @@ Sexp Sexp::withSquareBrackets() {
 }
 
 Sexp SexpCtx::sexp(llvm::ArrayRef<Sexp> elements) {
-static_assert(sizeof(Sexp) == sizeof(detail::SexpElt *));
+  static_assert(sizeof(Sexp) == sizeof(detail::SexpElt *));
   detail::SexpElt **buf = allocator.Allocate<detail::SexpElt *>(elements.size());
   memcpy(
       reinterpret_cast<void *>(buf), elements.data(), elements.size() * sizeof(detail::SexpElt *)
