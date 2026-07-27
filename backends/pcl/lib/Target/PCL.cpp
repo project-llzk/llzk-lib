@@ -160,11 +160,11 @@ class ModuleEmitter {
   }
 
   FailureOr<pcl::Sexp> emitExpr(Value v, pcl::Sexps &S) {
-    auto *op = v.getDefiningOp();
-    if (!op) {
+    auto *defOp = v.getDefiningOp();
+    if (!defOp) {
       return emitVar(v, S);
     }
-    return llvm::TypeSwitch<Operation *, FailureOr<pcl::Sexp>>(op)
+    return llvm::TypeSwitch<Operation *, FailureOr<pcl::Sexp>>(defOp)
         .Case<pcl::AddOp>([this, &S](auto op) { return emitBinaryExpr("+", op, S); })
         .Case<pcl::MulOp>([this, &S](auto op) { return emitBinaryExpr("*", op, S); })
         .Case<pcl::SubOp>([this, &S](auto op) { return emitBinaryExpr("-", op, S); })
@@ -182,11 +182,11 @@ class ModuleEmitter {
   }
 
   FailureOr<pcl::Sexp> emitFormula(Value v, pcl::Sexps &S) {
-    auto *op = v.getDefiningOp();
-    if (!op) {
+    auto *defOp = v.getDefiningOp();
+    if (!defOp) {
       return emitVar(v, S);
     }
-    return llvm::TypeSwitch<Operation *, FailureOr<pcl::Sexp>>(op)
+    return llvm::TypeSwitch<Operation *, FailureOr<pcl::Sexp>>(defOp)
         .Case<pcl::CmpEqOp>([this, &S](auto op) { return emitBinaryExpr("=", op, S); })
         .Case<pcl::CmpLtOp>([this, &S](auto op) { return emitBinaryExpr("<", op, S); })
         .Case<pcl::CmpLeOp>([this, &S](auto op) { return emitBinaryExpr("<=", op, S); })
