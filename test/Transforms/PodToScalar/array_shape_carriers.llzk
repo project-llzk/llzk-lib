@@ -151,6 +151,37 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
+!InnerCarrierAttrs = !pod.type<[@vals: !array.type<3 x !felt.type>]>
+!OuterCarrierAttrs = !pod.type<[@items: !array.type<? x !InnerCarrierAttrs>]>
+module attributes {llzk.lang} {
+  struct.def @NestedCarrierAttrs {
+    struct.member @m : !OuterCarrierAttrs {column, signal}
+
+    function.def @compute() -> !struct.type<@NestedCarrierAttrs> {
+      %self = struct.new : !struct.type<@NestedCarrierAttrs>
+      function.return %self : !struct.type<@NestedCarrierAttrs>
+    }
+
+    function.def @constrain(%self: !struct.type<@NestedCarrierAttrs>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @NestedCarrierAttrs {
+// CHECK-NEXT:      struct.member @m_items_vals : !array.type<?,3 x !felt.type> {column, signal}
+// CHECK-NEXT:      struct.member @m_items_shape : !array.type<? x none>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@NestedCarrierAttrs> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[NESTED_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@NestedCarrierAttrs>
+// CHECK-NEXT:        function.return %[[NESTED_SELF]] : !struct.type<@NestedCarrierAttrs>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[NESTED_ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@NestedCarrierAttrs>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
 !Elem = !pod.type<[@__llzk_pod_array_shape: !array.type<2 x index>]>
 !Outer = !pod.type<[@items: !array.type<? x !Elem>]>
 module attributes {llzk.lang} {

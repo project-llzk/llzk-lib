@@ -2009,7 +2009,8 @@ static void flattenPodMemberIntoLeaves(
     StringAttr name =
         id.getFlattenedMemberName(originalMember.getContext(), originalMember.getSymNameAttr());
     MemberDefOp newMember = rewriter.create<MemberDefOp>(
-        originalMember.getLoc(), name, ty, originalMember.getSignal(), originalMember.getColumn()
+        originalMember.getLoc(), name, ty, !id.syntheticShapeCarrier && originalMember.getSignal(),
+        !id.syntheticShapeCarrier && originalMember.getColumn()
     );
     newMember.setPublicAttr(originalMember.hasPublicAttr());
     localRepMapRef[id] = std::make_pair(structSymbolTable.insert(newMember), ty);
