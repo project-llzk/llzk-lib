@@ -160,7 +160,8 @@ inline mlir::ArrayAttr replicateFunctionNameAttrsAsNeeded(
 ///
 /// This helper forwards both template parameters and affine-map instantiation operands from the
 /// original call while allowing callers to replace the result types and SSA operands that the new
-/// call should use.
+/// call should use. Discardable attributes from the original call are copied so pass-local metadata
+/// remains attached to rebuilt calls.
 inline function::CallOp createCallPreservingInstantiationOperands(
     mlir::Location loc, mlir::TypeRange newResultTypes, function::CallOp oldCall,
     llvm::ArrayRef<mlir::ValueRange> mapOperands, mlir::ValueRange argOperands,
@@ -171,16 +172,20 @@ inline function::CallOp createCallPreservingInstantiationOperands(
     templateParams.append(templateParamsAttr.begin(), templateParamsAttr.end());
   }
 
+  function::CallOp newCall;
   if (oldCall.getMapOperands().empty()) {
-    return rewriter.create<function::CallOp>(
+    newCall = rewriter.create<function::CallOp>(
         loc, newResultTypes, oldCall.getCalleeAttr(), argOperands, templateParams
+    );
+  } else {
+    newCall = rewriter.create<function::CallOp>(
+        loc, newResultTypes, oldCall.getCalleeAttr(), mapOperands, oldCall.getNumDimsPerMapAttr(),
+        argOperands, templateParams
     );
   }
 
-  return rewriter.create<function::CallOp>(
-      loc, newResultTypes, oldCall.getCalleeAttr(), mapOperands, oldCall.getNumDimsPerMapAttr(),
-      argOperands, templateParams
-  );
+  newCall->setDiscardableAttrs(oldCall->getDiscardableAttrDictionary());
+  return newCall;
 }
 
 /// Replace any AffineMap-backed array dimensions within `type` with wildcard `?` dims.

@@ -170,6 +170,7 @@ module attributes {llzk.lang} {
 
   function.def @main(%arg: !PodArray) -> !PodArray {
     %res = function.call @id_array_of_pod(%arg) : (!PodArray) -> !PodArray
+        {product_source = "compute"}
     function.return %res : !PodArray
   }
 }
@@ -178,7 +179,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_0]] : !array.type<2 x index>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @main(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>) -> !array.type<2 x index> {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @id_array_of_pod(%[[VAL_1]]) : (!array.type<2 x index>) -> !array.type<2 x index>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @id_array_of_pod(%[[VAL_1]]) : (!array.type<2 x index>) -> !array.type<2 x index> {product_source = "compute"}
 // CHECK-NEXT:      function.return %[[VAL_2]] : !array.type<2 x index>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
