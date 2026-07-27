@@ -139,12 +139,53 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @ColumnCarrier {
 // CHECK-NEXT:      struct.member @m_vals : !array.type<?,3 x !felt.type> {column}
-// CHECK-NEXT:      struct.member @m_shape : !array.type<? x none>
+// CHECK-NEXT:      struct.member @m_shape : !array.type<? x none> {column}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@ColumnCarrier> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[COL_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ColumnCarrier>
 // CHECK-NEXT:        function.return %[[COL_SELF]] : !struct.type<@ColumnCarrier>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[COL_ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@ColumnCarrier>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+#offset = affine_map<()[s0] -> (s0 - 1)>
+!OffsetElem = !pod.type<[@x: !felt.type, @y: !felt.type]>
+module attributes {llzk.lang} {
+  struct.def @OffsetColumnCarrier {
+    struct.member @m : !array.type<? x !OffsetElem> {column}
+
+    function.def @compute(%idx: index) -> !struct.type<@OffsetColumnCarrier> {
+      %self = struct.new : !struct.type<@OffsetColumnCarrier>
+      function.return %self : !struct.type<@OffsetColumnCarrier>
+    }
+
+    function.def @constrain(%self: !struct.type<@OffsetColumnCarrier>, %idx: index) {
+      %arr = struct.readm %self[@m] {()[%idx]} :
+          !struct.type<@OffsetColumnCarrier>, !array.type<? x !OffsetElem>
+          {tableOffset = #offset}
+      %len = array.len %arr, %idx : !array.type<? x !OffsetElem>
+      constrain.eq %len, %idx : index, index
+      function.return
+    }
+  }
+}
+// CHECK: #[[$OFFSET:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0 - 1)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @OffsetColumnCarrier {
+// CHECK-NEXT:      struct.member @m_x : !array.type<? x !felt.type> {column}
+// CHECK-NEXT:      struct.member @m_y : !array.type<? x !felt.type> {column}
+// CHECK-NEXT:      struct.member @m_shape : !array.type<? x none> {column}
+// CHECK-NEXT:      function.def @compute(%[[COMPUTE_IDX:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@OffsetColumnCarrier> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@OffsetColumnCarrier>
+// CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@OffsetColumnCarrier>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@OffsetColumnCarrier>, %[[IDX:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[SHAPE:[0-9a-zA-Z_\.]+]] = struct.readm %[[ARG]][@m_shape] {(){{\[}}%[[IDX]]]} : <@OffsetColumnCarrier>, !array.type<? x none> {tableOffset = #[[$OFFSET]]}
+// CHECK-NEXT:        %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SHAPE]], %[[IDX]] : <? x none>
+// CHECK-NEXT:        constrain.eq %[[LEN]], %[[IDX]] : index, index
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

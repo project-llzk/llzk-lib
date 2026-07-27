@@ -2137,7 +2137,6 @@ public:
       rewriter.modifyOpInPlace(op, [&]() {
         op.setType(carrierTy);
         op.removeSignalAttr();
-        op.removeColumnAttr();
       });
       localRepMapRef[RecordChain()] = std::make_pair(op.getSymNameAttr(), carrierTy);
       return;
@@ -2156,7 +2155,8 @@ public:
       ArrayType carrierTy = getPodArrayShapeCarrierType(arrTy);
       StringAttr carrierName =
           getSplitPodArrayShapeMemberName(op.getContext(), op.getSymNameAttr());
-      MemberDefOp carrierMember = rewriter.create<MemberDefOp>(op.getLoc(), carrierName, carrierTy);
+      MemberDefOp carrierMember =
+          rewriter.create<MemberDefOp>(op.getLoc(), carrierName, carrierTy, false, op.getColumn());
       carrierMember.setPublicAttr(op.hasPublicAttr());
       localRepMapRef[RecordChain()] =
           std::make_pair(structSymbolTable.insert(carrierMember), carrierTy);
