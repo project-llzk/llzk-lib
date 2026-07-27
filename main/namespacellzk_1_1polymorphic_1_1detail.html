@@ -114,8 +114,12 @@ $(function(){initNavTree('namespacellzk_1_1polymorphic_1_1detail.html','',''); }
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:ApplyMapOpGenericAdaptorBase" id="r_ApplyMapOpGenericAdaptorBase"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase.html">ApplyMapOpGenericAdaptorBase</a></td></tr>
+<tr class="memitem:CleanupBase" id="r_CleanupBase"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html">CleanupBase</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shared state for post-instantiation cleanup helpers.  <a href="classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html#details">More...</a><br /></td></tr>
 <tr class="memitem:ConstReadOpGenericAdaptorBase" id="r_ConstReadOpGenericAdaptorBase"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase.html">ConstReadOpGenericAdaptorBase</a></td></tr>
 <tr class="memitem:EmptyLegalityCheckCallback" id="r_EmptyLegalityCheckCallback"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback.html">EmptyLegalityCheckCallback</a></td></tr>
+<tr class="memitem:FromEraseSet" id="r_FromEraseSet"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet.html">FromEraseSet</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes parameterized definitions whose instantiated replacements now cover every remaining use.  <a href="classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet.html#details">More...</a><br /></td></tr>
 <tr class="memitem:InstantiationLayout" id="r_InstantiationLayout"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html">InstantiationLayout</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Groups the information needed after concrete parameters have been chosen to decide how to name a new instantiated template and how to rewrite the remaining argument list at the use site.  <a href="structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html#details">More...</a><br /></td></tr>
 <tr class="memitem:LegalityCheckCallback" id="r_LegalityCheckCallback"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html">LegalityCheckCallback</a></td></tr>
@@ -132,6 +136,8 @@ Classes</h2></td></tr>
 Functions</h2></td></tr>
 <tr class="memitem:afa4db6a4baedb109176585c4bfc46e48" id="r_afa4db6a4baedb109176585c4bfc46e48"><td class="memItemLeft" align="right" valign="top">mlir::ConversionTarget&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afa4db6a4baedb109176585c4bfc46e48">newBaseTarget</a> (mlir::MLIRContext *ctx)</td></tr>
 <tr class="memdesc:afa4db6a4baedb109176585c4bfc46e48"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new <span class="tt">ConversionTarget</span> allowing all LLZK-required dialects.  <br /></td></tr>
+<tr class="memitem:aea1b21a65533d5e3fb2063434628d565" id="r_aea1b21a65533d5e3fb2063434628d565"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aea1b21a65533d5e3fb2063434628d565">isErasableDefinition</a> (mlir::Operation *op)</td></tr>
+<tr class="memdesc:aea1b21a65533d5e3fb2063434628d565"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff <span class="tt">op</span> is a cleanup candidate.  <br /></td></tr>
 <tr class="memitem:afea25c760e69980cdc91a16b373bc182" id="r_afea25c760e69980cdc91a16b373bc182"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1array_1_1ArrayType.html">array::ArrayType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afea25c760e69980cdc91a16b373bc182">flattenInstantiatedArrayType</a> (<a class="el" href="classllzk_1_1array_1_1ArrayType.html">array::ArrayType</a> inputTy, mlir::Type convertedElemTy)</td></tr>
 <tr class="memdesc:afea25c760e69980cdc91a16b373bc182"><td class="mdescLeft">&#160;</td><td class="mdescRight">Merge nested array dimensions produced by replacing an array element type.  <br /></td></tr>
 <tr class="memitem:a0201e1ef6ecd6cb698f4241014159708" id="r_a0201e1ef6ecd6cb698f4241014159708"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1component_1_1StructType.html">component::StructType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0201e1ef6ecd6cb698f4241014159708">getStructTypeWithParams</a> (mlir::SymbolRefAttr nameRef, mlir::ArrayAttr params)</td></tr>
@@ -183,7 +189,7 @@ Functions</h2></td></tr>
 <p>Derive the instantiated template name and the remaining explicit parameters that should stay on the rewritten use site. </p>
 <p>Partially-instantiated names contain the <span class="tt"><a class="el" href="classllzk_1_1BuildShortTypeString.html" title="Note: If any symbol refs in an input Type/Attribute use any of the special characters that this class...">BuildShortTypeString</a></span> placeholder character at the position of each non-concrete parameter. </p>
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00094">94</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00145">145</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
 
 </div>
 </div>
@@ -209,7 +215,7 @@ Functions</h2></td></tr>
 <p>Merge nested array dimensions produced by replacing an array element type. </p>
 <p>If <span class="tt">array&lt;4 x !poly.tvar&lt;@T&gt;&gt;</span> is rewritten with <span class="tt">@T -&gt; array&lt;8 x index&gt;</span>, the canonical aggregate shape should become <span class="tt">array&lt;4,8 x index&gt;</span> rather than an array whose element type is another array because the latter is not allowed in LLZK IR. </p>
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8cpp_source.html#l00040">40</a> of file <a class="el" href="SharedImpl_8cpp_source.html">SharedImpl.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8cpp_source.html#l00189">189</a> of file <a class="el" href="SharedImpl_8cpp_source.html">SharedImpl.cpp</a>.</p>
 
 </div>
 </div>
@@ -242,7 +248,7 @@ Functions</h2></td></tr>
 
 <p>Build a struct type while representing an empty parameter list as absent. </p>
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00070">70</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00121">121</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
 
 </div>
 </div>
@@ -280,7 +286,28 @@ Functions</h2></td></tr>
 
 <p>Build a struct type while representing an empty parameter list as absent. </p>
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00076">76</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00127">127</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+
+</div>
+</div>
+<a id="aea1b21a65533d5e3fb2063434628d565" name="aea1b21a65533d5e3fb2063434628d565"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aea1b21a65533d5e3fb2063434628d565">&#9670;&#160;</a></span>isErasableDefinition()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::polymorphic::detail::isErasableDefinition </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return <span class="tt">true</span> iff <span class="tt">op</span> is a cleanup candidate. </p>
+
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8cpp_source.html#l00051">51</a> of file <a class="el" href="SharedImpl_8cpp_source.html">SharedImpl.cpp</a>.</p>
 
 </div>
 </div>
@@ -301,7 +328,7 @@ Functions</h2></td></tr>
 
 <p>Return a new <span class="tt">ConversionTarget</span> allowing all LLZK-required dialects. </p>
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8cpp_source.html#l00028">28</a> of file <a class="el" href="SharedImpl_8cpp_source.html">SharedImpl.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8cpp_source.html#l00033">33</a> of file <a class="el" href="SharedImpl_8cpp_source.html">SharedImpl.cpp</a>.</p>
 
 </div>
 </div>
@@ -334,7 +361,7 @@ template&lt;typename... AdditionalOpClasses, typename... AdditionalChecks&gt; </
 <p>Return a new <span class="tt">ConversionTarget</span> allowing all LLZK-required dialects and defining Op legality based on the given <span class="tt">TypeConverter</span> for Ops listed in both members of <span class="tt">OpClassesWithStructTypes</span> and in <span class="tt">AdditionalOpClasses</span>. </p>
 <p>Additional legality checks can be included for certain ops that will run along with the default check. For an op to be considered legal all checks (default plus additional checks if any) must return true. </p>
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00150">150</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00201">201</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
 
 </div>
 </div>
@@ -372,7 +399,7 @@ template&lt;typename... AdditionalOpClasses, typename... AdditionalChecks&gt; </
 <p>Return a new <span class="tt">ConversionTarget</span> allowing all LLZK-required dialects and defining Op legality based on the given <span class="tt">TypeConverter</span> for Ops listed in both members of <span class="tt">OpClassesWithStructTypes</span> and in <span class="tt">AdditionalOpClasses</span>. </p>
 <p>Additional legality checks can be included for certain ops that will run along with the default check. For an op to be considered legal all checks (default plus additional checks if any) must return true. </p>
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00166">166</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00217">217</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
 
 </div>
 </div>

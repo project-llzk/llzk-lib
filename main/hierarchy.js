@@ -348,6 +348,9 @@ var hierarchy =
       [ "llzk::smt::CheckOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1CheckOpGenericAdaptor.html", null ]
     ] ],
     [ "ClangLexerContext", "classClangLexerContext.html", null ],
+    [ "llzk::polymorphic::detail::CleanupBase", "classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html", [
+      [ "llzk::polymorphic::detail::FromEraseSet", "classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet.html", null ]
+    ] ],
     [ "llzk::boolean::detail::CmpOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1CmpOpGenericAdaptorBase.html", [
       [ "llzk::boolean::CmpOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1boolean_1_1CmpOpGenericAdaptor.html", null ],
       [ "llzk::boolean::CmpOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1boolean_1_1CmpOpGenericAdaptor.html", [

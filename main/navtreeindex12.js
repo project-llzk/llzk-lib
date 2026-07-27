@@ -36,9 +36,10 @@ var NAVTREEINDEX12 =
 "SMT_8td.html":[13,0,2,0,2,13,0,0],
 "SMT_8td_source.html":[13,0,2,0,2,13,0,0],
 "SharedImpl_8cpp.html":[13,0,3,3,10,1,2],
+"SharedImpl_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d":[13,0,3,3,10,1,2,0],
 "SharedImpl_8cpp_source.html":[13,0,3,3,10,1,2],
 "SharedImpl_8h.html":[13,0,3,3,10,1,3],
-"SharedImpl_8h.html#ad78e062f62e0d6e453941fb4ca843e4d":[13,0,3,3,10,1,3,3],
+"SharedImpl_8h.html#ad78e062f62e0d6e453941fb4ca843e4d":[13,0,3,3,10,1,3,5],
 "SharedImpl_8h_source.html":[13,0,3,3,10,1,3],
 "Shared_2OpTraits_8td.html":[13,0,2,0,2,12,5],
 "Shared_2OpTraits_8td_source.html":[13,0,2,0,2,12,5],
@@ -248,6 +249,5 @@ var NAVTREEINDEX12 =
 "Struct_2IR_2Ops_8capi_8h_8inc.html#a7accb27f9416658c70191bbc657e0bff":[13,0,0,0,0,2,15,0,6,28],
 "Struct_2IR_2Ops_8capi_8h_8inc.html#a7c5c658e702a28c2449e6cd07649571d":[13,0,0,0,0,2,15,0,6,42],
 "Struct_2IR_2Ops_8capi_8h_8inc.html#a82d5ed0af24bc33aff5b6f72bf9d416d":[13,0,0,0,0,2,15,0,6,38],
-"Struct_2IR_2Ops_8capi_8h_8inc.html#a861006ca4ec7e5a24c761541a5a28919":[13,0,0,0,0,2,15,0,6,17],
-"Struct_2IR_2Ops_8capi_8h_8inc.html#a8954ffe819bfc1dd346bdeb9c3b0c442":[13,0,0,0,0,2,15,0,6,20]
+"Struct_2IR_2Ops_8capi_8h_8inc.html#a861006ca4ec7e5a24c761541a5a28919":[13,0,0,0,0,2,15,0,6,17]
 };

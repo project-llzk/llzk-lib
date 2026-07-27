@@ -115,7 +115,9 @@ $(function(){initNavTree('SharedImpl_8h.html','',''); });
 
 <p>Common private implementation for poly dialect passes.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &quot;<a class="el" href="Array_2IR_2Ops_8h_source.html">llzk/Dialect/Array/IR/Ops.h</a>&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="SymbolDefTree_8h_source.html">llzk/Analysis/SymbolDefTree.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="SymbolUseGraph_8h_source.html">llzk/Analysis/SymbolUseGraph.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Array_2IR_2Ops_8h_source.html">llzk/Dialect/Array/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Constrain_2IR_2Ops_8h_source.html">llzk/Dialect/Constrain/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Function_2IR_2Ops_8h_source.html">llzk/Dialect/Function/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Global_2IR_2Ops_8h_source.html">llzk/Dialect/Global/IR/Ops.h</a>&quot;</code><br />
@@ -132,14 +134,17 @@ $(function(){initNavTree('SharedImpl_8h.html','',''); });
 <code>#include &lt;mlir/IR/MLIRContext.h&gt;</code><br />
 <code>#include &lt;mlir/IR/Operation.h&gt;</code><br />
 <code>#include &lt;mlir/IR/PatternMatch.h&gt;</code><br />
+<code>#include &lt;mlir/IR/SymbolTable.h&gt;</code><br />
 <code>#include &lt;mlir/Transforms/DialectConversion.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/DenseMap.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/DenseSet.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/STLExtras.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/SmallVector.h&gt;</code><br />
 <code>#include &lt;llvm/Support/Debug.h&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for SharedImpl.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="SharedImpl_8h__incl.svg" width="4280" height="780"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="SharedImpl_8h__incl.svg" width="4690" height="780"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
@@ -151,6 +156,10 @@ This graph shows which files directly or indirectly include this file:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
+<tr class="memitem:llzk_3A_3Apolymorphic_3A_3Adetail_3A_3ACleanupBase" id="r_llzk_3A_3Apolymorphic_3A_3Adetail_3A_3ACleanupBase"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html">llzk::polymorphic::detail::CleanupBase</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shared state for post-instantiation cleanup helpers.  <a href="classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html#details">More...</a><br /></td></tr>
+<tr class="memitem:llzk_3A_3Apolymorphic_3A_3Adetail_3A_3AFromEraseSet" id="r_llzk_3A_3Apolymorphic_3A_3Adetail_3A_3AFromEraseSet"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet.html">llzk::polymorphic::detail::FromEraseSet</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes parameterized definitions whose instantiated replacements now cover every remaining use.  <a href="classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet.html#details">More...</a><br /></td></tr>
 <tr class="memitem:llzk_3A_3Apolymorphic_3A_3Adetail_3A_3AInstantiationLayout" id="r_llzk_3A_3Apolymorphic_3A_3Adetail_3A_3AInstantiationLayout"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html">llzk::polymorphic::detail::InstantiationLayout</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Groups the information needed after concrete parameters have been chosen to decide how to name a new instantiated template and how to rewrite the remaining argument list at the use site.  <a href="structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html#details">More...</a><br /></td></tr>
 <tr class="memitem:llzk_3A_3Apolymorphic_3A_3Adetail_3A_3ALegalityCheckCallback" id="r_llzk_3A_3Apolymorphic_3A_3Adetail_3A_3ALegalityCheckCallback"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html">llzk::polymorphic::detail::LegalityCheckCallback</a></td></tr>
@@ -170,6 +179,8 @@ Macros</h2></td></tr>
 Functions</h2></td></tr>
 <tr class="memitem:afa4db6a4baedb109176585c4bfc46e48" id="r_afa4db6a4baedb109176585c4bfc46e48"><td class="memItemLeft" align="right" valign="top">mlir::ConversionTarget&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#afa4db6a4baedb109176585c4bfc46e48">llzk::polymorphic::detail::newBaseTarget</a> (mlir::MLIRContext *ctx)</td></tr>
 <tr class="memdesc:afa4db6a4baedb109176585c4bfc46e48"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new <span class="tt">ConversionTarget</span> allowing all LLZK-required dialects.  <br /></td></tr>
+<tr class="memitem:aea1b21a65533d5e3fb2063434628d565" id="r_aea1b21a65533d5e3fb2063434628d565"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#aea1b21a65533d5e3fb2063434628d565">llzk::polymorphic::detail::isErasableDefinition</a> (mlir::Operation *op)</td></tr>
+<tr class="memdesc:aea1b21a65533d5e3fb2063434628d565"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff <span class="tt">op</span> is a cleanup candidate.  <br /></td></tr>
 <tr class="memitem:afea25c760e69980cdc91a16b373bc182" id="r_afea25c760e69980cdc91a16b373bc182"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1array_1_1ArrayType.html">array::ArrayType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#afea25c760e69980cdc91a16b373bc182">llzk::polymorphic::detail::flattenInstantiatedArrayType</a> (<a class="el" href="classllzk_1_1array_1_1ArrayType.html">array::ArrayType</a> inputTy, mlir::Type convertedElemTy)</td></tr>
 <tr class="memdesc:afea25c760e69980cdc91a16b373bc182"><td class="mdescLeft">&#160;</td><td class="mdescRight">Merge nested array dimensions produced by replacing an array element type.  <br /></td></tr>
 <tr class="memitem:a0201e1ef6ecd6cb698f4241014159708" id="r_a0201e1ef6ecd6cb698f4241014159708"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1component_1_1StructType.html">component::StructType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic_1_1detail.html#a0201e1ef6ecd6cb698f4241014159708">llzk::polymorphic::detail::getStructTypeWithParams</a> (mlir::SymbolRefAttr nameRef, mlir::ArrayAttr params)</td></tr>
@@ -202,7 +213,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00041">41</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00046">46</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
 
 </div>
 </div>

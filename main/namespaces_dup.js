@@ -2,7 +2,6 @@ var namespaces_dup =
 [
     [ "CastRefinement", "namespaceCastRefinement.html", null ],
     [ "clang", "namespaceclang.html", null ],
-    [ "Cleanup", "namespaceCleanup.html", null ],
     [ "llvm", "namespacellvm.html", "namespacellvm" ],
     [ "llzk", "namespacellzk.html", "namespacellzk" ],
     [ "mlir", "namespacemlir.html", "namespacemlir" ],

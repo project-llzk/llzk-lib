@@ -50,5 +50,6 @@ var searchData=
   ['usage_47',['Usage',['../tools.html#basic-usage',1,'Basic Usage'],['../tools.html#basic-usage-1',1,'Basic Usage']]],
   ['use_48',['use',['../LICENSE_8txt.html#a6617cfb55e132d069e64bdfdbea31e1c',1,'use:&#160;LICENSE.txt'],['../LICENSE_8txt.html#a6617cfb55e132d069e64bdfdbea31e1c',1,'use:&#160;LICENSE.txt'],['../LICENSE_8txt.html#a6617cfb55e132d069e64bdfdbea31e1c',1,'use:&#160;LICENSE.txt']]],
   ['use_20graph_49',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-symbol-use-graph&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-symbol-use-graph',1,'']]],
-  ['utils_2eh_50',['Utils.h',['../Utils_8h.html',1,'']]]
+  ['usegraph_50',['useGraph',['../classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html#a9917693ce299f7029e67fd2d1a09dfd5',1,'llzk::polymorphic::detail::CleanupBase']]],
+  ['utils_2eh_51',['Utils.h',['../Utils_8h.html',1,'']]]
 ];

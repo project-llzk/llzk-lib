@@ -382,8 +382,10 @@ var annotated_dup =
       [ "polymorphic", "namespacellzk_1_1polymorphic.html", [
         [ "detail", "namespacellzk_1_1polymorphic_1_1detail.html", [
           [ "ApplyMapOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1ApplyMapOpGenericAdaptorBase" ],
+          [ "CleanupBase", "classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html", "classllzk_1_1polymorphic_1_1detail_1_1CleanupBase" ],
           [ "ConstReadOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase" ],
           [ "EmptyLegalityCheckCallback", "classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback.html", "classllzk_1_1polymorphic_1_1detail_1_1EmptyLegalityCheckCallback" ],
+          [ "FromEraseSet", "classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet.html", "classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet" ],
           [ "InstantiationLayout", "structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html", "structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout" ],
           [ "LegalityCheckCallback", "classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html", "classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback" ],
           [ "TemplateExprOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1TemplateExprOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1TemplateExprOpGenericAdaptorBase" ],
