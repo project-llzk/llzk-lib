@@ -1220,6 +1220,24 @@ inline static SmallVector<Value> flattenConvertedValues(RangeOfRanges ranges) {
   return values;
 }
 
+/// Own flattened converted values and expose stable `ValueRange` views over them.
+struct FlattenedConvertedValueRangeStorage {
+  SmallVector<SmallVector<Value>> storage;
+  SmallVector<ValueRange> ranges;
+
+  template <typename RangeOfRanges>
+  explicit FlattenedConvertedValueRangeStorage(RangeOfRanges valueRanges) {
+    storage.reserve(valueRanges.size());
+    ranges.reserve(valueRanges.size());
+    for (ArrayRef<ValueRange> valueRangeGroup : valueRanges) {
+      storage.push_back(flattenConvertedValues(valueRangeGroup));
+    }
+    for (const SmallVector<Value> &values : storage) {
+      ranges.push_back(values);
+    }
+  }
+};
+
 /// Return `true` iff the inputs are the same size and each value type in `values` unifies
 /// with the corresponding `types` entry.
 template <typename ValueRangeLike>
@@ -1238,6 +1256,21 @@ static ArrayType getSplitPodArrayStorageType(ArrayType arrTy, ArrayRef<StringAtt
   auto elemPodTy = llvm::cast<PodType>(arrTy.getElementType());
   Type leafType = getFlattenedTypeAlongPath(elemPodTy, recordChain);
   return flattenArrayElementType(arrTy, replaceAffineMapArrayDimsWithWildcards(leafType));
+}
+
+/// Create one storage-backed split POD-array leaf and cast it to the precise split type.
+static Value createSplitPodArrayReplacement(
+    Operation *src, Location loc, ArrayType originalArrTy, const RecordChain &id,
+    ArrayType preciseSplitType, ConversionPatternRewriter &rewriter,
+    ArrayRef<ValueRange> mapOperands = {}, DenseI32ArrayAttr numDimsPerMap = nullptr
+) {
+  ArrayType storageSplitType = getSplitPodArrayStorageType(originalArrTy, id.nameList);
+  CreateArrayOp splitArrayOp =
+      mapOperands.empty()
+          ? rewriter.create<CreateArrayOp>(loc, storageSplitType)
+          : rewriter.create<CreateArrayOp>(loc, storageSplitType, mapOperands, numDimsPerMap);
+  preserveDiscardableAttrs(src, splitArrayOp);
+  return castValueToTypeIfNeeded(rewriter, loc, splitArrayOp, preciseSplitType);
 }
 
 /// Create an array value that callers can fully initialize via explicit writes or inserts.
@@ -1861,6 +1894,37 @@ static void collectWholePodEqualityOperandLeaves(
   );
 }
 
+/// Rewrite a whole-POD equality into one equality per flattened leaf.
+static LogicalResult splitWholePodEmitEquality(
+    constrain::EmitEqualityOp op, RewriterBase &rewriter,
+    CompatiblePodLeafMaterializationMap &materializedLeaves, Operation *userOp = nullptr,
+    const VirtualPodValueMap *virtualPods = nullptr
+) {
+  PodType podTy = getWholePodEqualityType(op);
+  assert(podTy && "expected a whole-POD equality to expose a concrete POD side");
+
+  SmallVector<Value> lhsLeaves;
+  SmallVector<Value> rhsLeaves;
+  collectWholePodEqualityOperandLeaves(
+      op.getLoc(), op.getLhs(), podTy, lhsLeaves, rewriter, materializedLeaves, userOp, virtualPods
+  );
+  collectWholePodEqualityOperandLeaves(
+      op.getLoc(), op.getRhs(), podTy, rhsLeaves, rewriter, materializedLeaves, userOp, virtualPods
+  );
+
+  assert(lhsLeaves.size() == rhsLeaves.size() && "POD equality leaves must stay aligned");
+  for (auto [lhsLeaf, rhsLeaf] : llvm::zip_equal(lhsLeaves, rhsLeaves)) {
+    if (failed(rejectRaggedNestedLeafEquality(op, lhsLeaf, rhsLeaf))) {
+      return failure();
+    }
+    preserveDiscardableAttrs(
+        op, rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhsLeaf, rhsLeaf)
+    );
+  }
+  rewriter.eraseOp(op);
+  return success();
+}
+
 /// Create a POD-typed placeholder for virtual leaf storage tracked in `leafValues`.
 ///
 /// PODs that embed affine-map-parameterized arrays cannot always be represented by a bare
@@ -2313,19 +2377,10 @@ public:
         return success();
       }
 
-      SmallVector<SmallVector<Value>> mapOperandStorage;
-      SmallVector<ValueRange> mapOperands;
-      mapOperandStorage.reserve(adaptor.getMapOperands().size());
-      mapOperands.reserve(adaptor.getMapOperands().size());
-      for (ArrayRef<ValueRange> mapOperandGroup : adaptor.getMapOperands()) {
-        mapOperandStorage.push_back(flattenConvertedValues(mapOperandGroup));
-      }
-      for (const SmallVector<Value> &values : mapOperandStorage) {
-        mapOperands.push_back(values);
-      }
+      FlattenedConvertedValueRangeStorage mapOperands(adaptor.getMapOperands());
       preserveDiscardableAttrs(
           op, rewriter.replaceOpWithNewOp<CreateArrayOp>(
-                  op, carrierTy, mapOperands, op.getNumDimsPerMapAttr()
+                  op, carrierTy, mapOperands.ranges, op.getNumDimsPerMapAttr()
               )
       );
       return success();
@@ -2338,13 +2393,8 @@ public:
       if (adaptor.getElements().empty()) {
         for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
           ArrayType preciseSplitType = llvm::cast<ArrayType>(splitType);
-          ArrayType storageSplitType = getSplitPodArrayStorageType(arrTy, id.nameList);
-          CreateArrayOp splitArrayOp =
-              rewriter.create<CreateArrayOp>(op.getLoc(), storageSplitType);
-          preserveDiscardableAttrs(op, splitArrayOp);
-          Value splitArray = splitArrayOp;
           replacements.push_back(
-              castValueToTypeIfNeeded(rewriter, op.getLoc(), splitArray, preciseSplitType)
+              createSplitPodArrayReplacement(op, op.getLoc(), arrTy, id, preciseSplitType, rewriter)
           );
         }
         if (needsPodArrayShapeCarrier(arrTy)) {
@@ -2423,27 +2473,13 @@ public:
         );
       }
     } else {
-      SmallVector<SmallVector<Value>> mapOperandStorage;
-      SmallVector<ValueRange> mapOperands;
-      mapOperandStorage.reserve(adaptor.getMapOperands().size());
-      mapOperands.reserve(adaptor.getMapOperands().size());
-      for (ArrayRef<ValueRange> mapOperandGroup : adaptor.getMapOperands()) {
-        mapOperandStorage.push_back(flattenConvertedValues(mapOperandGroup));
-      }
-      for (const SmallVector<Value> &values : mapOperandStorage) {
-        mapOperands.push_back(values);
-      }
+      FlattenedConvertedValueRangeStorage mapOperands(adaptor.getMapOperands());
       for (auto [id, splitType] : llvm::zip_equal(splitIds, splitTypes)) {
         ArrayType preciseSplitType = llvm::cast<ArrayType>(splitType);
-        ArrayType storageSplitType = getSplitPodArrayStorageType(arrTy, id.nameList);
-        CreateArrayOp splitArrayOp = rewriter.create<CreateArrayOp>(
-            op.getLoc(), storageSplitType, mapOperands, numDimsPerMap
-        );
-        preserveDiscardableAttrs(op, splitArrayOp);
-        Value splitArray = splitArrayOp;
-        replacements.push_back(
-            castValueToTypeIfNeeded(rewriter, op.getLoc(), splitArray, preciseSplitType)
-        );
+        replacements.push_back(createSplitPodArrayReplacement(
+            op, op.getLoc(), arrTy, id, preciseSplitType, rewriter, mapOperands.ranges,
+            numDimsPerMap
+        ));
       }
     }
 
@@ -2876,16 +2912,7 @@ public:
       return rewriter.notifyMatchFailure(op, "failed to convert array-of-pod call results");
     }
 
-    SmallVector<SmallVector<Value>> mapOperandStorage;
-    SmallVector<ValueRange> mapOperands;
-    mapOperandStorage.reserve(adaptor.getMapOperands().size());
-    mapOperands.reserve(adaptor.getMapOperands().size());
-    for (ArrayRef<ValueRange> mapOperandGroup : adaptor.getMapOperands()) {
-      mapOperandStorage.push_back(flattenConvertedValues(mapOperandGroup));
-    }
-    for (const SmallVector<Value> &values : mapOperandStorage) {
-      mapOperands.push_back(values);
-    }
+    FlattenedConvertedValueRangeStorage mapOperands(adaptor.getMapOperands());
 
     SmallVector<Value> newArgOperands;
     for (auto [operand, convertedValues] :
@@ -2895,7 +2922,7 @@ public:
       );
     }
     CallOp newCall = createCallPreservingInstantiationOperands(
-        op.getLoc(), newResultTypes, op, mapOperands, newArgOperands, rewriter
+        op.getLoc(), newResultTypes, op, mapOperands.ranges, newArgOperands, rewriter
     );
 
     SmallVector<SmallVector<Value>> replacementStorage;
@@ -4744,31 +4771,9 @@ public:
 static LogicalResult splitVirtualPodEmitEquality(
     constrain::EmitEqualityOp op, RewriterBase &rewriter, Step3Resolver &resolver
 ) {
-  PodType podTy = getWholePodEqualityType(op);
-  assert(podTy && "expected a whole-POD equality to expose a concrete POD side");
-
-  SmallVector<Value> lhsLeaves;
-  SmallVector<Value> rhsLeaves;
-  collectWholePodEqualityOperandLeaves(
-      op.getLoc(), op.getLhs(), podTy, lhsLeaves, rewriter, resolver.materializedLeaves,
-      op.getOperation(), &resolver.virtualPods
+  return splitWholePodEmitEquality(
+      op, rewriter, resolver.materializedLeaves, op.getOperation(), &resolver.virtualPods
   );
-  collectWholePodEqualityOperandLeaves(
-      op.getLoc(), op.getRhs(), podTy, rhsLeaves, rewriter, resolver.materializedLeaves,
-      op.getOperation(), &resolver.virtualPods
-  );
-
-  assert(lhsLeaves.size() == rhsLeaves.size() && "POD equality leaves must stay aligned");
-  for (auto [lhsLeaf, rhsLeaf] : llvm::zip_equal(lhsLeaves, rhsLeaves)) {
-    if (failed(rejectRaggedNestedLeafEquality(op, lhsLeaf, rhsLeaf))) {
-      return failure();
-    }
-    preserveDiscardableAttrs(
-        op, rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhsLeaf, rhsLeaf)
-    );
-  }
-  rewriter.eraseOp(op);
-  return success();
 }
 
 /// Rewrite same-block whole-POD equalities that appear before a tracked virtual `pod.write`.
@@ -5902,6 +5907,55 @@ static void cloneLoopBodyWithLiftedPodSlots(
   }
 }
 
+/// Append one incoming value per lifted loop slot, optionally extending result types in lockstep.
+static void appendIncomingLoopSlotValues(
+    PatternRewriter &rewriter, Location loc, ArrayRef<LoopPodSlot> slots,
+    SmallVectorImpl<Value> &values, SmallVectorImpl<Type> *resultTypes = nullptr
+) {
+  for (const LoopPodSlot &slot : slots) {
+    values.push_back(genRead(rewriter, loc, slot.podRef, slot.recordName).getResult());
+    if (resultTypes) {
+      resultTypes->push_back(slot.type);
+    }
+  }
+}
+
+/// Return the lifted slot arguments appended after the original loop block arguments.
+template <typename ValueRangeLike>
+static SmallVector<Value>
+collectTrailingLoopSlotValues(ValueRangeLike values, size_t base, size_t slotCount) {
+  SmallVector<Value> slotValues;
+  slotValues.reserve(slotCount);
+  for (size_t idx = 0; idx < slotCount; ++idx) {
+    slotValues.push_back(values[llzk::checkedCast<unsigned>(base + idx)]);
+  }
+  return slotValues;
+}
+
+/// Remap existing terminator operands and append the current lifted slot values.
+static SmallVector<Value>
+remapValuesAndAppendLoopSlots(ValueRange values, IRMapping &mapping, ValueRange slotValues) {
+  SmallVector<Value> remappedValues = llvm::map_to_vector(values, [&mapping](Value value) {
+    return mapping.lookupOrDefault(value);
+  });
+  llvm::append_range(remappedValues, slotValues);
+  return remappedValues;
+}
+
+/// Write lifted slot results back to their original POD records after a replacement loop.
+template <typename GetResultFn>
+static void writeBackLoopSlotResults(
+    PatternRewriter &rewriter, Location loc, ArrayRef<LoopPodSlot> slots,
+    unsigned originalResultCount, GetResultFn &&getResult
+) {
+  for (auto [idx, slot] : llvm::enumerate(slots)) {
+    genWrite(
+        rewriter, loc, slot.podRef, slot.recordName,
+        getResult(originalResultCount + llzk::checkedCast<unsigned>(idx))
+    );
+  }
+}
+
 /// Lift direct branch-local writes out of `scf.if` as yielded values, then write those values in
 /// the parent block. Existing `scf.if` results are preserved as a prefix of the new result list,
 /// which gives mem2reg parent-block pod writes instead of nested-region writes.
@@ -6000,9 +6054,7 @@ public:
 
     SmallVector<Value> newInitArgs = llvm::to_vector(forOp.getInitArgs());
     rewriter.setInsertionPoint(forOp);
-    for (const LoopPodSlot &slot : slots) {
-      newInitArgs.push_back(genRead(rewriter, loc, slot.podRef, slot.recordName).getResult());
-    }
+    appendIncomingLoopSlotValues(rewriter, loc, slots, newInitArgs);
 
     auto newFor = rewriter.create<scf::ForOp>(
         loc, forOp.getLowerBound(), forOp.getUpperBound(), forOp.getStep(), newInitArgs
@@ -6018,20 +6070,15 @@ public:
       mapping.map(oldArg, newFor.getRegionIterArg(idx));
     }
 
-    SmallVector<Value> slotValues = llvm::map_to_vector(
-        llvm::seq<size_t>(0, slots.size()),
-        [base = static_cast<size_t>(forOp.getNumRegionIterArgs()), &newFor](size_t idx) -> Value {
-      return newFor.getRegionIterArg(llzk::checkedCast<unsigned>(base + idx));
-    }
+    SmallVector<Value> slotValues = collectTrailingLoopSlotValues(
+        newFor.getRegionIterArgs(), forOp.getNumRegionIterArgs(), slots.size()
     );
 
     rewriter.setInsertionPointToEnd(&newBody);
     cloneLoopBodyWithLiftedPodSlots(body, rewriter, mapping, slots, slotValues, [&](Operation &op) {
       if (auto yieldOp = dyn_cast<scf::YieldOp>(&op)) {
-        auto yieldValues = llvm::map_to_vector(yieldOp.getOperands(), [&mapping](Value operand) {
-          return mapping.lookupOrDefault(operand);
-        });
-        llvm::append_range(yieldValues, slotValues);
+        SmallVector<Value> yieldValues =
+            remapValuesAndAppendLoopSlots(yieldOp.getOperands(), mapping, slotValues);
         preserveDiscardableAttrs(
             yieldOp, rewriter.create<scf::YieldOp>(yieldOp.getLoc(), yieldValues)
         );
@@ -6041,11 +6088,10 @@ public:
     });
 
     rewriter.setInsertionPointAfter(newFor);
-    for (auto [idx, slot] : llvm::enumerate(slots)) {
-      genWrite(
-          rewriter, loc, slot.podRef, slot.recordName, newFor.getResult(forOp.getNumResults() + idx)
-      );
-    }
+    writeBackLoopSlotResults(
+        rewriter, loc, slots, forOp.getNumResults(),
+        [&newFor](unsigned resultIdx) { return newFor.getResult(resultIdx); }
+    );
 
     rewriter.replaceOp(forOp, newFor.getResults().take_front(forOp.getNumResults()));
     return success();
@@ -6075,10 +6121,7 @@ public:
     SmallVector<Value> newInits = llvm::to_vector(whileOp.getInits());
     SmallVector<Type> newResultTypes = llvm::to_vector(whileOp.getResultTypes());
     rewriter.setInsertionPoint(whileOp);
-    for (const LoopPodSlot &slot : slots) {
-      newInits.push_back(genRead(rewriter, loc, slot.podRef, slot.recordName).getResult());
-      newResultTypes.push_back(slot.type);
-    }
+    appendIncomingLoopSlotValues(rewriter, loc, slots, newInits, &newResultTypes);
 
     auto newWhile = rewriter.create<scf::WhileOp>(loc, newResultTypes, newInits, nullptr, nullptr);
     newWhile->setAttrs(whileOp->getAttrs());
@@ -6096,11 +6139,8 @@ public:
       beforeMapping.map(oldArg, newArg);
     }
 
-    SmallVector<Value> beforeSlotValues = llvm::map_to_vector(
-        llvm::seq<size_t>(0, slots.size()),
-        [base = whileOp.getBeforeArguments().size(), &newWhile](size_t idx) -> Value {
-      return newWhile.getBeforeArguments()[llzk::checkedCast<unsigned>(base + idx)];
-    }
+    SmallVector<Value> beforeSlotValues = collectTrailingLoopSlotValues(
+        newWhile.getBeforeArguments(), whileOp.getBeforeArguments().size(), slots.size()
     );
 
     rewriter.setInsertionPointToEnd(&newBeforeBody);
@@ -6108,10 +6148,7 @@ public:
         beforeBody, rewriter, beforeMapping, slots, beforeSlotValues, [&](Operation &op) {
       if (auto conditionOp = dyn_cast<scf::ConditionOp>(&op)) {
         SmallVector<Value> conditionArgs =
-            llvm::map_to_vector(conditionOp.getArgs(), [&beforeMapping](Value a) {
-          return beforeMapping.lookupOrDefault(a);
-        });
-        llvm::append_range(conditionArgs, beforeSlotValues);
+            remapValuesAndAppendLoopSlots(conditionOp.getArgs(), beforeMapping, beforeSlotValues);
         preserveDiscardableAttrs(
             conditionOp,
             rewriter.create<scf::ConditionOp>(
@@ -6133,11 +6170,8 @@ public:
       afterMapping.map(oldArg, newArg);
     }
 
-    SmallVector<Value> afterSlotValues = llvm::map_to_vector(
-        llvm::seq<size_t>(0, slots.size()),
-        [base = whileOp.getAfterArguments().size(), &newWhile](size_t idx) -> Value {
-      return newWhile.getAfterArguments()[llzk::checkedCast<unsigned>(base + idx)];
-    }
+    SmallVector<Value> afterSlotValues = collectTrailingLoopSlotValues(
+        newWhile.getAfterArguments(), whileOp.getAfterArguments().size(), slots.size()
     );
 
     rewriter.setInsertionPointToEnd(&newAfterBody);
@@ -6145,10 +6179,7 @@ public:
         afterBody, rewriter, afterMapping, slots, afterSlotValues, [&](Operation &op) {
       if (auto yieldOp = dyn_cast<scf::YieldOp>(&op)) {
         SmallVector<Value> yieldValues =
-            llvm::map_to_vector(yieldOp.getOperands(), [&afterMapping](Value v) {
-          return afterMapping.lookupOrDefault(v);
-        });
-        llvm::append_range(yieldValues, afterSlotValues);
+            remapValuesAndAppendLoopSlots(yieldOp.getOperands(), afterMapping, afterSlotValues);
         preserveDiscardableAttrs(
             yieldOp, rewriter.create<scf::YieldOp>(yieldOp.getLoc(), yieldValues)
         );
@@ -6159,12 +6190,10 @@ public:
     );
 
     rewriter.setInsertionPointAfter(newWhile);
-    for (auto [idx, slot] : llvm::enumerate(slots)) {
-      genWrite(
-          rewriter, loc, slot.podRef, slot.recordName,
-          newWhile.getResult(whileOp.getNumResults() + idx)
-      );
-    }
+    writeBackLoopSlotResults(
+        rewriter, loc, slots, whileOp.getNumResults(),
+        [&newWhile](unsigned resultIdx) { return newWhile.getResult(resultIdx); }
+    );
 
     rewriter.replaceOp(whileOp, newWhile.getResults().take_front(whileOp.getNumResults()));
     return success();
@@ -6192,26 +6221,7 @@ public:
       return failure();
     }
 
-    SmallVector<Value> lhsLeaves;
-    SmallVector<Value> rhsLeaves;
-    collectWholePodEqualityOperandLeaves(
-        op.getLoc(), op.getLhs(), podTy, lhsLeaves, rewriter, materializedLeaves
-    );
-    collectWholePodEqualityOperandLeaves(
-        op.getLoc(), op.getRhs(), podTy, rhsLeaves, rewriter, materializedLeaves
-    );
-
-    assert(lhsLeaves.size() == rhsLeaves.size() && "POD equality leaves must stay aligned");
-    for (auto [lhsLeaf, rhsLeaf] : llvm::zip_equal(lhsLeaves, rhsLeaves)) {
-      if (failed(rejectRaggedNestedLeafEquality(op, lhsLeaf, rhsLeaf))) {
-        return failure();
-      }
-      preserveDiscardableAttrs(
-          op, rewriter.create<constrain::EmitEqualityOp>(op.getLoc(), lhsLeaf, rhsLeaf)
-      );
-    }
-    rewriter.eraseOp(op);
-    return success();
+    return splitWholePodEmitEquality(op, rewriter, materializedLeaves);
   }
 };
 
@@ -6415,6 +6425,20 @@ static LogicalResult rejectRaggedNestedLeafBoundaryCrossings(ModuleOp modOp) {
   return failure(result.wasInterrupted());
 }
 
+/// Reject tagged ragged nested leaf arrays in every operation family that cannot preserve shape.
+static LogicalResult rejectRemainingRaggedNestedLeafUses(ModuleOp modOp) {
+  if (failed(rejectRaggedNestedLeafArrayLengths(modOp))) {
+    return failure();
+  }
+  if (failed(rejectRaggedNestedLeafArrayEqualities(modOp))) {
+    return failure();
+  }
+  if (failed(rejectRaggedNestedLeafArrayContainments(modOp))) {
+    return failure();
+  }
+  return rejectRaggedNestedLeafBoundaryCrossings(modOp);
+}
+
 /// Pass driver for the full POD-to-scalar lowering pipeline described above.
 class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
   using Base = PodToScalarPassBase<PassImpl>;
@@ -6512,19 +6536,7 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
         module.dump();
       });
 
-      if (failed(rejectRaggedNestedLeafArrayLengths(module))) {
-        signalPassFailure();
-        return;
-      }
-      if (failed(rejectRaggedNestedLeafArrayEqualities(module))) {
-        signalPassFailure();
-        return;
-      }
-      if (failed(rejectRaggedNestedLeafArrayContainments(module))) {
-        signalPassFailure();
-        return;
-      }
-      if (failed(rejectRaggedNestedLeafBoundaryCrossings(module))) {
+      if (failed(rejectRemainingRaggedNestedLeafUses(module))) {
         signalPassFailure();
         return;
       }
@@ -6546,19 +6558,7 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
         module.dump();
       });
 
-      if (failed(rejectRaggedNestedLeafArrayLengths(module))) {
-        signalPassFailure();
-        return;
-      }
-      if (failed(rejectRaggedNestedLeafArrayEqualities(module))) {
-        signalPassFailure();
-        return;
-      }
-      if (failed(rejectRaggedNestedLeafArrayContainments(module))) {
-        signalPassFailure();
-        return;
-      }
-      if (failed(rejectRaggedNestedLeafBoundaryCrossings(module))) {
+      if (failed(rejectRemainingRaggedNestedLeafUses(module))) {
         signalPassFailure();
         return;
       }
