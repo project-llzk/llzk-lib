@@ -600,6 +600,25 @@ static LogicalResult rejectRaggedNestedLeafContainment(constrain::EmitContainmen
                              "without per-element shape witnesses";
 }
 
+/// Reject a tagged ragged leaf before crossing a boundary that would lose defining-op provenance.
+template <typename ValueRangeLike>
+static LogicalResult
+rejectRaggedNestedLeafBoundaryCrossing(Operation *op, ValueRangeLike values, StringRef boundary) {
+  StringRef raggedKind;
+  for (Value value : values) {
+    raggedKind = getTaggedRaggedNestedLeafKind(value);
+    if (!raggedKind.empty()) {
+      break;
+    }
+  }
+  if (raggedKind.empty()) {
+    return success();
+  }
+  return op->emitOpError() << "cannot pass nested " << raggedKind << " array leaf " << boundary
+                           << " after reading an array-of-POD element without per-element shape "
+                              "witnesses";
+}
+
 /// Strip compatibility casts introduced while threading POD-derived array values through rewrites.
 static Value peelUnifiableCasts(Value value) {
   while (auto cast = value.getDefiningOp<UnifiableCastOp>()) {
@@ -6196,6 +6215,45 @@ static LogicalResult rejectRaggedNestedLeafArrayContainments(ModuleOp modOp) {
   return failure(result.wasInterrupted());
 }
 
+/// Reject tagged ragged nested leaf arrays before function or SCF boundaries strip the tag source.
+static LogicalResult rejectRaggedNestedLeafBoundaryCrossings(ModuleOp modOp) {
+  WalkResult result = modOp.walk([](Operation *op) {
+    LogicalResult check = TypeSwitch<Operation *, LogicalResult>(op)
+                              .Case<CallOp>([](CallOp callOp) {
+      return rejectRaggedNestedLeafBoundaryCrossing(
+          callOp.getOperation(), callOp.getArgOperands(), "across a function call"
+      );
+    })
+                              .Case<ReturnOp>([](ReturnOp returnOp) {
+      return rejectRaggedNestedLeafBoundaryCrossing(
+          returnOp.getOperation(), returnOp.getOperands(), "across a function return"
+      );
+    })
+                              .Case<scf::ForOp>([](scf::ForOp forOp) {
+      return rejectRaggedNestedLeafBoundaryCrossing(
+          forOp.getOperation(), forOp.getInitArgs(), "into an scf.for region"
+      );
+    })
+                              .Case<scf::WhileOp>([](scf::WhileOp whileOp) {
+      return rejectRaggedNestedLeafBoundaryCrossing(
+          whileOp.getOperation(), whileOp.getInits(), "into an scf.while region"
+      );
+    })
+                              .Case<scf::ConditionOp>([](scf::ConditionOp conditionOp) {
+      return rejectRaggedNestedLeafBoundaryCrossing(
+          conditionOp.getOperation(), conditionOp.getArgs(), "across an scf.condition boundary"
+      );
+    })
+                              .Case<scf::YieldOp>([](scf::YieldOp yieldOp) {
+      return rejectRaggedNestedLeafBoundaryCrossing(
+          yieldOp.getOperation(), yieldOp.getOperands(), "across an scf.yield boundary"
+      );
+    }).Default([](Operation *) { return success(); });
+    return failed(check) ? WalkResult::interrupt() : WalkResult::advance();
+  });
+  return failure(result.wasInterrupted());
+}
+
 /// Pass driver for the full POD-to-scalar lowering pipeline described above.
 class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
   using Base = PodToScalarPassBase<PassImpl>;
@@ -6305,6 +6363,10 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
         signalPassFailure();
         return;
       }
+      if (failed(rejectRaggedNestedLeafBoundaryCrossings(module))) {
+        signalPassFailure();
+        return;
+      }
 
       if (failed(step4(module))) {
         return signalPassFailure();
@@ -6332,6 +6394,10 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
         return;
       }
       if (failed(rejectRaggedNestedLeafArrayContainments(module))) {
+        signalPassFailure();
+        return;
+      }
+      if (failed(rejectRaggedNestedLeafBoundaryCrossings(module))) {
         signalPassFailure();
         return;
       }
