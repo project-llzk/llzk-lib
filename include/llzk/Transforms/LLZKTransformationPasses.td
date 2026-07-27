@@ -16,10 +16,10 @@ def RedundantReadAndWriteEliminationPass
     : LLZKPass<"llzk-duplicate-read-write-elim"> {
   let summary = "Remove redundant reads and writes";
   let description = [{
-    Remove redundant or unnecessary reads and writes to struct members and
-    arrays, and redundant reads from globals and RAM.
-    Global writes and RAM stores update stateful-read facts, but redundant
-    global/RAM write removal is left to follow-up alias-aware overwrite handling.
+    Remove redundant or unnecessary reads and writes to struct members, arrays,
+    globals, and RAM. Global writes are removed when they are overwritten or
+    write an already-known value. RAM stores require the same translated address
+    SSA value.
 
     Struct-member accesses match only when the base, member, table offset,
     affine map metadata, and translated affine operands match. Omitted
@@ -124,6 +124,25 @@ def EnforceNoMemberOverwritePass : LLZKPass<"llzk-enforce-no-overwrite"> {
       attempt to perform any repairs (e.g. SSA-ifying overwritten struct
       members, or default-initializing unwritten members). This pass
       overapproximates conditionals, and can result in false positives.
+  }];
+}
+
+def InlineFreeFunctionsPass : LLZKPass<"llzk-inline-free-functions"> {
+  let summary = "Inline calls to free functions";
+  let description = [{
+    Inlines `function.call` operations inside `function.def` bodies when the
+    target is a free `function.def` directly inside the pass's root
+    `builtin.module`. Calls to functions in nested or included modules, and
+    calls outside `function.def` bodies, are left unchanged. After inlining,
+    root free functions that have no remaining symbol uses anywhere in the
+    module are erased. This cleanup applies to every non-external root free
+    function, regardless of its symbol visibility or whether any call to it
+    was inlined.
+
+    Inlining is best effort: free functions that participate in a call
+    cycle are skipped (inlining one would re-materialize its calls
+    forever). If inlining a callee fails, its remaining calls are left in
+    place with a warning while processing continues with other callees.
   }];
 }
 

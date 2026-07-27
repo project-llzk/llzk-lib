@@ -319,11 +319,25 @@ private:
 using ValueMap = DenseMap<mlir::Value, std::shared_ptr<ReferenceNode>>;
 
 /// Known values at a program point, split between tree-shaped value state and
-/// flat stateful-memory read facts.
+/// flat stateful global/RAM facts.
 struct KnownState {
   ValueMap values;
   DenseMap<SymbolRefAttr, Value> globals;
   DenseMap<ReferenceID, Value> ram;
+  // Unlike `ram`, only exact translated address values justify store removal.
+  DenseMap<Value, Value> ramExact;
+};
+
+/// Writes eligible for removal only while traversing their containing block.
+/// Candidates never cross CFG or nested-region boundaries.
+struct BlockWriteCandidates {
+  DenseMap<SymbolRefAttr, Operation *> globals;
+  DenseMap<Value, Operation *> ram;
+
+  void clear() {
+    globals.clear();
+    ram.clear();
+  }
 };
 
 /// Intersects tree-shaped value facts by retaining only common subtrees.
@@ -355,7 +369,7 @@ intersectValueLookup(const DenseMap<KeyT, Value> &lhs, const DenseMap<KeyT, Valu
 KnownState intersect(const KnownState &lhs, const KnownState &rhs) {
   return {
       intersectValueMap(lhs.values, rhs.values), intersectValueLookup(lhs.globals, rhs.globals),
-      intersectValueLookup(lhs.ram, rhs.ram)
+      intersectValueLookup(lhs.ram, rhs.ram), intersectValueLookup(lhs.ramExact, rhs.ramExact)
   };
 }
 
@@ -372,7 +386,7 @@ ValueMap cloneValueMap(const ValueMap &orig) {
 /// Deep copy the KnownState for exclusive branches/regions so tree updates do
 /// not mutate the incoming state.
 KnownState cloneKnownState(const KnownState &orig) {
-  return {cloneValueMap(orig.values), orig.globals, orig.ram};
+  return {cloneValueMap(orig.values), orig.globals, orig.ram, orig.ramExact};
 }
 
 class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<PassImpl> {
@@ -541,6 +555,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       Block &b, KnownState &&state, DenseMap<Value, Value> &replacementMap,
       SmallVector<Value> &readVals, SmallVector<Operation *> &redundantWrites
   ) {
+    BlockWriteCandidates writeCandidates;
     for (Operation &op : b) {
       // Some operations have regions (e.g., scf.if). These regions must be
       // traversed and the resulting state(s) are intersected for the final
@@ -555,6 +570,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
         if (isa<scf::ForOp, scf::WhileOp>(op)) {
           regionEntryState.globals.clear();
           regionEntryState.ram.clear();
+          regionEntryState.ramExact.clear();
         }
         SmallVector<KnownState> regionStates;
         for (Region &region : op.getRegions()) {
@@ -568,7 +584,8 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
         }
         if (regionStates.empty()) {
           // Region-bearing ops with no bodies still need their own effects handled.
-          runOperation(&op, state, replacementMap, readVals, redundantWrites);
+          runOperation(&op, state, replacementMap, readVals, redundantWrites, writeCandidates);
+          writeCandidates.clear();
           continue;
         }
 
@@ -582,10 +599,12 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
         // region traversal.
         finalState.globals = intersectValueLookup(parentState.globals, finalState.globals);
         finalState.ram = intersectValueLookup(parentState.ram, finalState.ram);
+        finalState.ramExact = intersectValueLookup(parentState.ramExact, finalState.ramExact);
         state = std::move(finalState);
+        writeCandidates.clear();
         continue;
       }
-      runOperation(&op, state, replacementMap, readVals, redundantWrites);
+      runOperation(&op, state, replacementMap, readVals, redundantWrites, writeCandidates);
     }
     return std::move(state);
   }
@@ -599,7 +618,8 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
   /// @param redundantWrites A mutable list of all writes that are considered redundant
   void runOperation(
       Operation *op, KnownState &state, DenseMap<Value, Value> &replacementMap,
-      SmallVector<Value> &readVals, SmallVector<Operation *> &redundantWrites
+      SmallVector<Value> &readVals, SmallVector<Operation *> &redundantWrites,
+      BlockWriteCandidates &writeCandidates
   ) {
     // Uses the replacement map to look up values to simplify later replacement.
     // This avoids having a daisy chain of "replace B with A", "replace C with B",
@@ -623,11 +643,14 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
         [&]<typename KeyT>(Value resVal, DenseMap<KeyT, Value> &knownValues, const KeyT &key) {
       if (auto it = knownValues.find(key); it != knownValues.end()) {
         replacementMap[resVal] = it->second;
+        readVals.push_back(resVal);
+        return true;
       } else {
         knownValues[key] = resVal;
         state.values[resVal] = ReferenceNode::create(resVal, resVal);
       }
       readVals.push_back(resVal);
+      return false;
     };
 
     // An omitted table offset denotes the current row.
@@ -739,16 +762,49 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
 
     // global ops
     if (auto readGlobal = dyn_cast<global::GlobalReadOp>(op)) {
-      doStatefulRead(readGlobal.getVal(), state.globals, readGlobal.getNameRef());
+      const auto name = readGlobal.getNameRef();
+      if (!doStatefulRead(readGlobal.getVal(), state.globals, name)) {
+        writeCandidates.globals.erase(name);
+      }
     } else if (auto writeGlobal = dyn_cast<global::GlobalWriteOp>(op)) {
-      state.globals[writeGlobal.getNameRef()] = translate(writeGlobal.getVal());
+      const auto name = writeGlobal.getNameRef();
+      Value value = translate(writeGlobal.getVal());
+      if (auto known = state.globals.find(name);
+          known != state.globals.end() && known->second == value) {
+        redundantWrites.push_back(writeGlobal.getOperation());
+      } else {
+        if (auto previous = writeCandidates.globals.find(name);
+            previous != writeCandidates.globals.end()) {
+          redundantWrites.push_back(previous->second);
+        }
+        state.globals[name] = value;
+        writeCandidates.globals[name] = writeGlobal.getOperation();
+      }
     }
     // RAM ops
     else if (auto load = dyn_cast<ram::LoadOp>(op)) {
-      doStatefulRead(load.getVal(), state.ram, ReferenceID(translate(load.getAddr())));
+      Value address = translate(load.getAddr());
+      if (!doStatefulRead(load.getVal(), state.ram, ReferenceID(address))) {
+        writeCandidates.ram.clear();
+      }
+      state.ramExact[address] = translate(load.getVal());
     } else if (auto store = dyn_cast<ram::StoreOp>(op)) {
-      state.ram.clear();
-      state.ram[ReferenceID(translate(store.getAddr()))] = translate(store.getVal());
+      Value address = translate(store.getAddr());
+      Value value = translate(store.getVal());
+      if (auto known = state.ramExact.find(address);
+          known != state.ramExact.end() && known->second == value) {
+        redundantWrites.push_back(store.getOperation());
+      } else {
+        if (auto previous = writeCandidates.ram.find(address);
+            previous != writeCandidates.ram.end()) {
+          redundantWrites.push_back(previous->second);
+        }
+        writeCandidates.ram[address] = store.getOperation();
+        state.ram.clear();
+        state.ramExact.clear();
+        state.ram[ReferenceID(address)] = value;
+        state.ramExact[address] = value;
+      }
     }
     // struct ops
     else if (auto newStruct = dyn_cast<CreateStructOp>(op)) {
@@ -852,6 +908,12 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     } else if (hasUnknownOrNonReadEffect(op)) {
       state.globals.clear();
       state.ram.clear();
+      state.ramExact.clear();
+      writeCandidates.clear();
+    } else if (hasReadEffect(op)) {
+      // A read does not invalidate known values, but it can observe a pending
+      // write and therefore prevents removing that write as overwritten.
+      writeCandidates.clear();
     }
   }
 };

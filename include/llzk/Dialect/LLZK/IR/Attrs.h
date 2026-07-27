@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
 
 #include <mlir/IR/Attributes.h>

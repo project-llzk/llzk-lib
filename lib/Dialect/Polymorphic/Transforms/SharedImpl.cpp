@@ -23,6 +23,8 @@
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 
+#include <llvm/ADT/SmallVector.h>
+
 mlir::ConversionTarget llzk::polymorphic::detail::newBaseTarget(mlir::MLIRContext *ctx) {
   mlir::ConversionTarget target(*ctx);
   target.addLegalDialect<
@@ -33,4 +35,15 @@ mlir::ConversionTarget llzk::polymorphic::detail::newBaseTarget(mlir::MLIRContex
       llzk::string::StringDialect, mlir::arith::ArithDialect, mlir::scf::SCFDialect>();
   target.addLegalOp<mlir::ModuleOp>();
   return target;
+}
+
+llzk::array::ArrayType llzk::polymorphic::detail::flattenInstantiatedArrayType(
+    llzk::array::ArrayType inputTy, mlir::Type convertedElemTy
+) {
+  llvm::SmallVector<mlir::Attribute> mergedDims(inputTy.getDimensionSizes());
+  while (auto nestedArrTy = llvm::dyn_cast<llzk::array::ArrayType>(convertedElemTy)) {
+    llvm::append_range(mergedDims, nestedArrTy.getDimensionSizes());
+    convertedElemTy = nestedArrTy.getElementType();
+  }
+  return llzk::array::ArrayType::get(convertedElemTy, mergedDims);
 }

@@ -49,6 +49,7 @@ Notes:
 
 # Manual Build Setup
 
+Note that the manual build instructions may be out of date; if you encounter issues, look at the build options as configured in Nix.
 LLZK requires the following to be installed:
 
 * CMake 3.18 or newer
@@ -94,8 +95,6 @@ cmake ../llvm -GNinja -DCMAKE_BUILD_TYPE=Release \
   -DLLVM_BUILD_TESTS=off \
   -DLLVM_TARGETS_TO_BUILD=host \
   -DCMAKE_INSTALL_PREFIX="$INSTALL_ROOT" \
-  -DLLVM_BUILD_LLVM_DYLIB=on \
-  -DLLVM_LINK_LLVM_DYLIB=on \
   -DLLVM_ENABLE_RTTI=on \
   -DLLVM_ENABLE_EH=on \
   -DLLVM_ENABLE_ASSERTIONS=on \

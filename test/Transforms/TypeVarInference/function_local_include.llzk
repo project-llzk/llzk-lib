@@ -1,0 +1,60 @@
+// RUN: llzk-opt -split-input-file -llzk-infer-tvar %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  poly.template @TFunctionLocalInclude {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @f(%arg: !poly.tvar<@T>) {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      function.return
+    }
+
+    function.def @g(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      function.return %arg : !poly.tvar<@T>
+    }
+
+    function.def @wrapper_target(%arg: index) {
+      function.return
+    }
+
+    verif.contract @Base for @TFunctionLocalInclude::@f (%arg: !poly.tvar<@T>) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+
+    verif.contract @Wrapper for @TFunctionLocalInclude::@wrapper_target (%arg: index) {
+      verif.include @TFunctionLocalInclude::@Base<[index]>(%arg) : (index) -> ()
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TFunctionLocalInclude_i {
+// CHECK-NEXT:      function.def @f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Base for @TFunctionLocalInclude_i::@f (%[[VAL_1:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        verif.ensure_compute %[[VAL_2]]
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TFunctionLocalInclude {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @f(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_3]] : (!poly.tvar<@T>) -> index
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @g(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !poly.tvar<@T> {
+// CHECK-NEXT:        function.return %[[VAL_5]] : !poly.tvar<@T>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @wrapper_target(%[[VAL_6:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Base for @TFunctionLocalInclude::@f (%[[VAL_7:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        verif.ensure_compute %[[VAL_8]]
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Wrapper for @TFunctionLocalInclude::@wrapper_target (%[[VAL_9:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:        verif.include @TFunctionLocalInclude_i::@Base(%[[VAL_9]]) : (index) -> ()
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

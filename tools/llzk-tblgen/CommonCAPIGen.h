@@ -177,9 +177,12 @@ inline bool isCppLanguageConstruct(mlir::StringRef methodName) {
 
 /// @brief Check if a C++ type is APInt
 /// @param cppType The C++ type string to check
-/// @return true if the type is APInt, llvm::APInt, or ::llvm::APInt
+/// @return true if the type is an APInt or LLZK's numeric APInt storage key
 inline bool isAPIntType(mlir::StringRef cppType) {
   cppType.consume_front("::");
+  if (cppType == "llzk::APIntValue") {
+    return true;
+  }
   cppType.consume_front("llvm::") || cppType.consume_front("mlir::");
   return cppType == "APInt";
 }

@@ -111,6 +111,35 @@ bool isValidArrayType(mlir::Type type);
 /// - `StructType` with parameters if `allowStructParams==false`
 bool isConcreteType(mlir::Type type, bool allowStructParams = true);
 
+/// Return `false` if the type contains a `TypeVarType`.
+///
+/// This is weaker than `isConcreteType`: array dimensions may be symbols or affine maps, and
+/// parameterized struct types may use nested type attributes or direct affine-map parameters.
+/// Direct symbol references remain invalid as struct type parameters because they still require
+/// template instantiation.
+bool isTypeVarFreeType(mlir::Type type);
+
+/// Concreteness classification for an argument to a parameterized struct type.
+enum class AttrConcreteness : std::uint8_t {
+  NonConcrete,
+  Concrete,
+  Wildcard,
+};
+
+/// Classify `attr` as an argument for a parameterized struct type.
+///
+/// `TypeAttr` values are concrete when their nested type is concrete according
+/// to `isConcreteType`. Integer attributes are concrete unless they are the
+/// dynamic-size sentinel, which is classified as `Wildcard`. Felt constants are
+/// always concrete. Symbol references and affine maps remain non-concrete
+/// because they require further instantiation.
+AttrConcreteness classifyAttrConcreteness(mlir::Attribute attr, bool allowStructParams = true);
+
+/// Return `true` if `attr` is a concrete argument for a parameterized struct type.
+inline bool isConcreteStructParamAttr(mlir::Attribute attr, bool allowStructParams = true) {
+  return classifyAttrConcreteness(attr, allowStructParams) == AttrConcreteness::Concrete;
+}
+
 inline mlir::LogicalResult checkValidType(EmitErrorFn emitError, mlir::Type type) {
   if (!isValidType(type)) {
     return emitError() << "expected a valid LLZK type but found " << type;
