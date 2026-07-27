@@ -586,6 +586,20 @@ rejectRaggedNestedLeafEquality(constrain::EmitEqualityOp op, Value lhsLeaf, Valu
                              "per-element shape witnesses";
 }
 
+/// Reject leaf containment whose nested array shape was not selected with the leaf value.
+static LogicalResult rejectRaggedNestedLeafContainment(constrain::EmitContainmentOp op) {
+  StringRef raggedKind = getTaggedRaggedNestedLeafKind(op.getLhs());
+  if (raggedKind.empty()) {
+    raggedKind = getTaggedRaggedNestedLeafKind(op.getRhs());
+  }
+  if (raggedKind.empty()) {
+    return success();
+  }
+  return op.emitOpError() << "cannot lower nested " << raggedKind
+                          << " array leaf containment after reading an array-of-POD element "
+                             "without per-element shape witnesses";
+}
+
 /// Strip compatibility casts introduced while threading POD-derived array values through rewrites.
 static Value peelUnifiableCasts(Value value) {
   while (auto cast = value.getDefiningOp<UnifiableCastOp>()) {
@@ -3017,7 +3031,9 @@ public:
         materializedLeaves(materializedLeafMap) {}
 
   static bool legal(constrain::EmitContainmentOp op) {
-    return !containsSplittablePodArrayType(op->getOperandTypes());
+    return !containsSplittablePodArrayType(op->getOperandTypes()) &&
+           getTaggedRaggedNestedLeafKind(op.getLhs()).empty() &&
+           getTaggedRaggedNestedLeafKind(op.getRhs()).empty();
   }
 
   /// Return the split scalar or leaf-array values representing one containment operand.
@@ -3061,6 +3077,10 @@ public:
   LogicalResult matchAndRewrite(
       constrain::EmitContainmentOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
+    if (failed(rejectRaggedNestedLeafContainment(op))) {
+      return failure();
+    }
+
     if (legal(op)) {
       return failure();
     }
@@ -6165,6 +6185,17 @@ static LogicalResult rejectRaggedNestedLeafArrayEqualities(ModuleOp modOp) {
   return failure(result.wasInterrupted());
 }
 
+/// Reject any `constrain.in` that still contains a tagged ragged nested leaf array.
+static LogicalResult rejectRaggedNestedLeafArrayContainments(ModuleOp modOp) {
+  WalkResult result = modOp.walk([](constrain::EmitContainmentOp op) {
+    if (succeeded(rejectRaggedNestedLeafContainment(op))) {
+      return WalkResult::advance();
+    }
+    return WalkResult::interrupt();
+  });
+  return failure(result.wasInterrupted());
+}
+
 /// Pass driver for the full POD-to-scalar lowering pipeline described above.
 class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
   using Base = PodToScalarPassBase<PassImpl>;
@@ -6270,6 +6301,10 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
         signalPassFailure();
         return;
       }
+      if (failed(rejectRaggedNestedLeafArrayContainments(module))) {
+        signalPassFailure();
+        return;
+      }
 
       if (failed(step4(module))) {
         return signalPassFailure();
@@ -6293,6 +6328,10 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
         return;
       }
       if (failed(rejectRaggedNestedLeafArrayEqualities(module))) {
+        signalPassFailure();
+        return;
+      }
+      if (failed(rejectRaggedNestedLeafArrayContainments(module))) {
         signalPassFailure();
         return;
       }
