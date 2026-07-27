@@ -65,7 +65,13 @@ class SexpCtx {
   llvm::BumpPtrAllocator allocator;
 
 public:
-  template <typename T> Sexp atom(T val) { return Sexp(new (allocator) detail::Atom<T>(val)); }
+  template <typename T> Sexp atom(T val) {
+// This is a know GCC issue: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=109224
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmismatched-new-delete"
+    return Sexp(new (allocator) detail::Atom<T>(val));
+#pragma GCC diagnostic pop
+  }
 
   Sexp sexp(llvm::ArrayRef<Sexp> elements);
 };

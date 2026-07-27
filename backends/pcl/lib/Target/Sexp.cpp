@@ -41,7 +41,11 @@ Sexp SexpCtx::sexp(llvm::ArrayRef<Sexp> elements) {
   memcpy(
       reinterpret_cast<void *>(buf), elements.data(), elements.size() * sizeof(detail::SexpElt *)
   );
+// This is a know GCC issue: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=109224
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmismatched-new-delete"
   return Sexp(new (allocator) detail::List(llvm::ArrayRef(buf, elements.size())));
+#pragma GCC diagnostic pop
 }
 } // namespace pcl
 
