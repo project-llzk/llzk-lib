@@ -103,6 +103,35 @@ module attributes {llzk.lang} {
 !Inner = !pod.type<[@vals: !array.type<? x index>]>
 !OuterArr = !array.type<2 x !Inner>
 module attributes {llzk.lang} {
+  function.def @ragged_dynamic_array_of_pod_eq(
+      %lhs: !OuterArr, %rhs: !OuterArr
+  ) attributes {function.allow_constraint} {
+    // expected-error@+2 {{'constrain.eq' op cannot lower nested dynamic array leaf equality for array-of-POD without per-element shape witnesses}}
+    // expected-error@+1 {{failed to legalize operation 'constrain.eq'}}
+    constrain.eq %lhs, %rhs : !OuterArr
+    function.return
+  }
+}
+// -----
+
+#map = affine_map<()[s0] -> (s0 + 1)>
+!Inner = !pod.type<[@vals: !array.type<#map x index>]>
+!OuterArr = !array.type<2 x !Inner>
+module attributes {llzk.lang} {
+  function.def @ragged_affine_array_of_pod_eq(
+      %lhs: !OuterArr, %rhs: !OuterArr
+  ) attributes {function.allow_constraint} {
+    // expected-error@+2 {{'constrain.eq' op cannot lower nested affine array leaf equality for array-of-POD without per-element shape witnesses}}
+    // expected-error@+1 {{failed to legalize operation 'constrain.eq'}}
+    constrain.eq %lhs, %rhs : !OuterArr
+    function.return
+  }
+}
+// -----
+
+!Inner = !pod.type<[@vals: !array.type<? x index>]>
+!OuterArr = !array.type<2 x !Inner>
+module attributes {llzk.lang} {
   function.def @ragged_dynamic_containment(
       %items: !OuterArr, %needle: index, %i: index
   ) attributes {function.allow_constraint} {

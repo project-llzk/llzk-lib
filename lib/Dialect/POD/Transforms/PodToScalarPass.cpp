@@ -535,6 +535,30 @@ static StringRef getRaggedNestedLeafAttrName(ArrayType arrTy, Type splitType) {
   return {};
 }
 
+/// Return the kind of nested ragged leaf represented by one split array-of-POD leaf.
+static StringRef getRaggedNestedLeafKind(ArrayType arrTy, Type splitType) {
+  StringRef attrName = getRaggedNestedLeafAttrName(arrTy, splitType);
+  if (attrName == RAGGED_DYNAMIC_NESTED_LEAF_ATTR) {
+    return "dynamic";
+  }
+  if (attrName == RAGGED_AFFINE_NESTED_LEAF_ATTR) {
+    return "affine";
+  }
+  return {};
+}
+
+/// Return the kind of nested ragged leaf represented by any split array-of-POD leaf.
+static StringRef getRaggedNestedLeafKind(ArrayType arrTy) {
+  SmallVector<Type> splitTypes;
+  splitPodArrayTypeTo(arrTy, splitTypes);
+  for (Type splitType : splitTypes) {
+    if (StringRef raggedKind = getRaggedNestedLeafKind(arrTy, splitType); !raggedKind.empty()) {
+      return raggedKind;
+    }
+  }
+  return {};
+}
+
 /// Wrap `value` in a tagged no-op cast so later shape-sensitive rewrites can diagnose it.
 static Value
 tagRaggedNestedLeafValue(OpBuilder &bldr, Location loc, Value value, StringRef attrName) {
@@ -2930,6 +2954,15 @@ public:
 
     ArrayType lhsTy = splittablePodArray(op.getLhs().getType());
     ArrayType rhsTy = splittablePodArray(op.getRhs().getType());
+    StringRef raggedKind = lhsTy ? getRaggedNestedLeafKind(lhsTy) : StringRef {};
+    if (raggedKind.empty() && rhsTy) {
+      raggedKind = getRaggedNestedLeafKind(rhsTy);
+    }
+    if (!raggedKind.empty()) {
+      return op.emitOpError()
+             << "cannot lower nested " << raggedKind
+             << " array leaf equality for array-of-POD without per-element shape witnesses";
+    }
 
     bool lhsNeedsShapeCheck = lhsTy && needsPodArrayShapeCarrier(lhsTy);
     bool rhsNeedsShapeCheck = rhsTy && needsPodArrayShapeCarrier(rhsTy);
