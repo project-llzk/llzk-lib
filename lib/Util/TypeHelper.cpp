@@ -101,9 +101,6 @@ void BuildShortTypeString::appendSymRef(SymbolRefAttr sa) {
 }
 
 BuildShortTypeString &BuildShortTypeString::append(Type type) {
-  size_t position = ret.size();
-  (void)position; // tell compiler it's intentionally unused in builds without assertions
-
   struct Impl : LLZKTypeSwitch<Impl, void> {
     BuildShortTypeString &outer;
     Impl(BuildShortTypeString &outerRef) : outer(outerRef) {}
@@ -144,11 +141,6 @@ BuildShortTypeString &BuildShortTypeString::append(Type type) {
     }
   };
   Impl(*this).match(type);
-
-  assert(
-      ret.find(PLACEHOLDER, position) == std::string::npos &&
-      "formatting a Type should not produce the 'PLACEHOLDER' char"
-  );
   return *this;
 }
 
@@ -158,9 +150,6 @@ BuildShortTypeString &BuildShortTypeString::append(Attribute a) {
     ss << PLACEHOLDER;
     return *this;
   }
-
-  size_t position = ret.size();
-  (void)position; // tell compiler it's intentionally unused in builds without assertions
 
   // Adapted from AsmPrinter::Impl::printAttributeImpl()
   if (auto ia = llvm::dyn_cast<IntegerAttr>(a)) {
@@ -184,10 +173,6 @@ BuildShortTypeString &BuildShortTypeString::append(Attribute a) {
     // All valid/legal cases must be covered above
     assertValidAttrForParamOfType(a);
   }
-  assert(
-      ret.find(PLACEHOLDER, position) == std::string::npos &&
-      "formatting a non-null Attribute should not produce the 'PLACEHOLDER' char"
-  );
   return *this;
 }
 

@@ -1,0 +1,29 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
+// XFAIL:*
+
+#id = affine_map<(i)->(i)>
+module attributes {llzk.lang, llzk.main = !struct.type<@"A_\1A_B_\1A_C_\1A_D_\1A_E_\1A_F"::@Zip<[!felt.type, !felt.type, 4]>>} {
+  poly.template @"A_\1A_B_\1A_C_\1A_D_\1A_E_\1A_F" {
+    poly.param @Lhs
+    poly.param @Rhs
+    poly.param @N
+
+    struct.def @Zip {
+      struct.member @"$array" : !array.type<#id x !felt.type>
+
+      function.def @compute() -> !struct.type<@"A_\1A_B_\1A_C_\1A_D_\1A_E_\1A_F"::@Zip<[@Lhs, @Rhs, @N]>> {
+        %self = struct.new : !struct.type<@"A_\1A_B_\1A_C_\1A_D_\1A_E_\1A_F"::@Zip<[@Lhs, @Rhs, @N]>>
+        %1 = poly.read_const @N : index
+        %array = array.new{(%1)[]} : !array.type<#id x !felt.type>
+        struct.writem %self[@"$array"] = %array : !struct.type<@"A_\1A_B_\1A_C_\1A_D_\1A_E_\1A_F"::@Zip<[@Lhs, @Rhs, @N]>>, !array.type<#id x !felt.type>
+        function.return %self : !struct.type<@"A_\1A_B_\1A_C_\1A_D_\1A_E_\1A_F"::@Zip<[@Lhs, @Rhs, @N]>>
+      }
+
+      function.def @constrain(%arg0: !struct.type<@"A_\1A_B_\1A_C_\1A_D_\1A_E_\1A_F"::@Zip<[@Lhs, @Rhs, @N]>>) {
+        %1 = poly.read_const @N : index
+        %array = array.new{(%1)[]} : <#id x !felt.type>
+        function.return
+      }
+    }
+  }
+}

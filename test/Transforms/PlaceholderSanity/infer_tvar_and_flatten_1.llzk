@@ -1,0 +1,59 @@
+// RUN: llzk-opt -split-input-file -llzk-infer-tvar -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+// TESTS: Ensures the placeholder `\1A` character added by one pass is properly interpreted by a later pass.
+// The `llzk-infer-tvar` pass converts the call to `function.call @"T_\1A_i"::@compute<[89]>() : () -> index`,
+// replacing the `@Ty` type parameter with `index`. Then, the `llzk-flatten` pass will replace the `\1A`
+// placeholder with the constant `89`. The same output is expected when ONLY the `llzk-flatten` pass runs.
+module attributes {llzk.lang} {
+  poly.template @A {
+    poly.param @Num
+    poly.param @Ty : !poly.tvar<@Ty>
+
+    function.def @compute() -> !poly.tvar<@Ty> {
+      %0 = poly.read_const @Num : !poly.tvar<@Ty>
+      function.return %0 : !poly.tvar<@Ty>
+    }
+  }
+
+  function.def @main() -> index {
+    %0 = function.call @A::@compute<[89, index]>() : () -> index
+    function.return %0 : index
+  }
+}
+// CHECK-LABEL: function.def @A_89_i_compute() -> index {
+// CHECK-NEXT:    %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 89 : index
+// CHECK-NEXT:    function.return %[[VAL_0]] : index
+// CHECK-NEXT:  }
+// CHECK-LABEL: function.def @main() -> index {
+// CHECK-NEXT:    %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @A_89_i_compute() : () -> index
+// CHECK-NEXT:    function.return %[[VAL_2]] : index
+// CHECK-NEXT:  }
+// -----
+
+// Similar to above but the type parameter is first.
+module attributes {llzk.lang} {
+  poly.template @B {
+    poly.param @A : !poly.tvar<@A>
+    poly.param @N
+
+    function.def @with_const(%arg: !poly.tvar<@A>) -> !poly.tvar<@A> {
+      %n = poly.read_const @N : index
+      function.return %arg : !poly.tvar<@A>
+    }
+  }
+
+  function.def @call_with_const(%arg: !felt.type) -> !felt.type {
+    %0 = function.call @B::@with_const<[!felt.type, 7]>(%arg) : (!felt.type) -> !felt.type
+    function.return %0 : !felt.type
+  }
+}
+// CHECK-LABEL: function.def @B_f_7_with_const(
+// CHECK-SAME: %[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:    function.return %[[VAL_0]] : !felt.type
+// CHECK-NEXT:  }
+// CHECK-LABEL: function.def @call_with_const(
+// CHECK-SAME: %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:    %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @B_f_7_with_const(%[[VAL_1]]) : (!felt.type) -> !felt.type
+// CHECK-NEXT:    function.return %[[VAL_2]] : !felt.type
+// CHECK-NEXT:  }

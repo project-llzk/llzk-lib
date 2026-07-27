@@ -1190,7 +1190,7 @@ private:
   /// Convert struct parameters and instantiate the struct if all parameters are concrete.
   StructType convertStructType(StructType structTy) {
     ArrayAttr params = structTy.getParams();
-    if (!params) {
+    if (isNullOrEmpty(params)) {
       return structTy;
     }
 
@@ -2877,12 +2877,23 @@ static FailureOr<ArrayAttr> materializeResidualFunctionTvarWildcards(
       continue;
     }
 
-    FailureOr<Attribute> inferredAttr =
-        getInferredRhsTemplateArg(callableOp, targetOp, *unifyResult, paramName, "wildcard");
-    if (failed(inferredAttr)) {
-      return failure();
+    auto inferredIt = unifyResult->find({FlatSymbolRefAttr::get(paramName), Side::RHS});
+    if (inferredIt == unifyResult->end()) {
+      auto proofIt = info.functionReplacements.find(targetOp.getOperation());
+      if (proofIt == info.functionReplacements.end()) {
+        continue;
+      }
+      auto replacementIt = proofIt->second.find(paramName);
+      if (replacementIt == proofIt->second.end()) {
+        continue;
+      }
+      params[*index] = TypeAttr::get(replacementIt->second.type);
+      continue;
     }
-    params[*index] = *inferredAttr;
+    if (!inferredIt->second) {
+      return emitConflictingInferredTypes(callableOp, targetOp, paramName);
+    }
+    params[*index] = inferredIt->second;
   }
   return ArrayAttr::get(callableOp.getContext(), params);
 }
@@ -3161,9 +3172,7 @@ static FailureOr<bool> updateCallableTemplateParamsFor(
       modified = true;
     }
 
-    if (resolveTemplateSymbolArgs) {
-      updateCallableResultTypesIfNeeded(callableOp, *converter, modified);
-    }
+    updateCallableResultTypesIfNeeded(callableOp, *converter, modified);
   });
   if (failedConversion) {
     return failure();
