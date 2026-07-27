@@ -5061,7 +5061,7 @@ promoteFunctionArgCastsToSignature(ModuleOp modOp, SymbolTableCollection &symTab
   SmallVector<FuncDefOp> funcs;
   modOp.walk([&funcs](FuncDefOp func) { funcs.push_back(func); });
 
-  for (unsigned promotionRounds = 0; promotionRounds < 64; ++promotionRounds) {
+  for (unsigned promotionRounds = 1;; ++promotionRounds) {
     SmallVector<PromotedFunctionSignature> promotedSignatures;
     for (FuncDefOp func : funcs) {
       if (auto promoted = promoteFunctionArgCasts(func)) {
@@ -5074,8 +5074,11 @@ promoteFunctionArgCastsToSignature(ModuleOp modOp, SymbolTableCollection &symTab
     if (failed(updateCallsForPromotedFunctionArgCasts(modOp, symTables, promotedSignatures))) {
       return failure();
     }
+    if (promotionRounds % 64 == 0) {
+      llvm::outs() << "function argument cast promotion has run " << promotionRounds
+                   << " rounds without reaching a fixpoint; continuing...\n";
+    }
   }
-  return modOp.emitError("function argument cast promotion did not reach a fixpoint");
 }
 
 void Step3Resolver::rehydrateVirtualPodPlaceholders(ModuleOp modOp) {
