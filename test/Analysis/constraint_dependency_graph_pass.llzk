@@ -1322,8 +1322,8 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @PodInitializedRoot ConstraintDependencyGraph {
-// CHECK-NEXT:     { %self.out, %pod.value }
+// CHECK-NEXT:     { %self.out, %arg1 }
 // CHECK-NEXT: }
 // INTRA-LABEL: @PodInitializedRoot ConstraintDependencyGraph {
-// INTRA-NEXT:     { %self.out, %pod.value }
+// INTRA-NEXT:     { %self.out, %arg1 }
 // INTRA-NEXT: }

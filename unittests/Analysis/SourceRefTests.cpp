@@ -10,8 +10,10 @@
 #include "../LLZKTestBase.h"
 #include "../LLZKTestUtils.h"
 
+#include "llzk/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Analysis/SourceRef.h"
 #include "llzk/Analysis/SourceRefLattice.h"
+#include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
@@ -274,6 +276,477 @@ TEST_F(SourceRefTests, PodRecordsAndMembersRemainDistinct) {
   EXPECT_FALSE(memberRef.overlaps(arbitraryPodRef));
 }
 
+TEST_F(SourceRefTests, StorageDependenciesAreSeparateFromAddressIdentity) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @StorageDependencies {
+    struct.member @storage : !pod.type<[@value: !felt.type, @missing: !felt.type]>
+
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type)
+        -> !struct.type<@StorageDependencies> {
+      %self = struct.new : !struct.type<@StorageDependencies>
+      %storage = pod.new { @value = %initial }
+          : !pod.type<[@value: !felt.type, @missing: !felt.type]>
+      pod.write %storage[@value] = %replacement
+          : !pod.type<[@value: !felt.type, @missing: !felt.type]>, !felt.type
+      %written = pod.read %storage[@value]
+          : !pod.type<[@value: !felt.type, @missing: !felt.type]>, !felt.type
+
+      %other = pod.new { @value = %written }
+          : !pod.type<[@value: !felt.type, @missing: !felt.type]>
+      %transitive = pod.read %other[@value]
+          : !pod.type<[@value: !felt.type, @missing: !felt.type]>, !felt.type
+      %unwritten = pod.read %storage[@missing]
+          : !pod.type<[@value: !felt.type, @missing: !felt.type]>, !felt.type
+
+      %conditional = pod.new { @value = %initial }
+          : !pod.type<[@value: !felt.type, @missing: !felt.type]>
+      %true = arith.constant true
+      scf.if %true {
+        pod.write %conditional[@value] = %replacement
+            : !pod.type<[@value: !felt.type, @missing: !felt.type]>, !felt.type
+      }
+      %maybe = pod.read %conditional[@value]
+          : !pod.type<[@value: !felt.type, @missing: !felt.type]>, !felt.type
+
+      %cycleA = pod.new : !pod.type<[@value: !felt.type, @missing: !felt.type]>
+      %cycleB = pod.new : !pod.type<[@value: !felt.type, @missing: !felt.type]>
+      %cycleBValue = pod.read %cycleB[@value]
+          : !pod.type<[@value: !felt.type, @missing: !felt.type]>, !felt.type
+      pod.write %cycleA[@value] = %cycleBValue
+          : !pod.type<[@value: !felt.type, @missing: !felt.type]>, !felt.type
+      %cycleAValue = pod.read %cycleA[@value]
+          : !pod.type<[@value: !felt.type, @missing: !felt.type]>, !felt.type
+      pod.write %cycleB[@value] = %cycleAValue
+          : !pod.type<[@value: !felt.type, @missing: !felt.type]>, !felt.type
+      %cycle = pod.read %cycleA[@value]
+          : !pod.type<[@value: !felt.type, @missing: !felt.type]>, !felt.type
+
+      struct.writem %self[@storage] = %storage
+          : !struct.type<@StorageDependencies>,
+            !pod.type<[@value: !felt.type, @missing: !felt.type]>
+      function.return %self : !struct.type<@StorageDependencies>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@StorageDependencies>,
+        %initial: !felt.type,
+        %replacement: !felt.type
+    ) {
+      %storage = struct.readm %self[@storage]
+          : !struct.type<@StorageDependencies>,
+            !pod.type<[@value: !felt.type, @missing: !felt.type]>
+      %value = pod.read %storage[@value]
+          : !pod.type<[@value: !felt.type, @missing: !felt.type]>, !felt.type
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto constrainFn = structDef.getConstrainFuncOp();
+  auto storageMember = *structDef.getOps<MemberDefOp>().begin();
+
+  llvm::SmallVector<pod::NewPodOp> pods;
+  llvm::SmallVector<pod::ReadPodOp> reads;
+  computeFn.walk([&](pod::NewPodOp op) { pods.push_back(op); });
+  computeFn.walk([&](pod::ReadPodOp op) { reads.push_back(op); });
+  ASSERT_EQ(pods.size(), 5U);
+  ASSERT_EQ(reads.size(), 7U);
+  pod::ReadPodOp constrainRead;
+  constrainFn.walk([&](pod::ReadPodOp op) { constrainRead = op; });
+  ASSERT_TRUE(constrainRead);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  analysis.ensureAnalysisRun(am);
+  DataFlowSolver &solver = analysis.getSolver();
+
+  SourceRef constrainStorageValue(
+      mlir::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain()),
+      {SourceRefIndex(storageMember), SourceRefIndex(StringAttr::get(&ctx, "value"))}
+  );
+  EXPECT_EQ(
+      SourceRefAnalysis::getDependencyState(solver, constrainRead.getResult()).foldToScalar(),
+      SourceRefSet({constrainStorageValue})
+  );
+
+  auto valueName = StringAttr::get(&ctx, "value");
+  auto missingName = StringAttr::get(&ctx, "missing");
+  SourceRef storageValue(mlir::cast<OpResult>(pods[0].getResult()), {SourceRefIndex(valueName)});
+  SourceRef storageMissing(
+      mlir::cast<OpResult>(pods[0].getResult()), {SourceRefIndex(missingName)}
+  );
+  SourceRef otherValue(mlir::cast<OpResult>(pods[1].getResult()), {SourceRefIndex(valueName)});
+
+  auto rawWritten = SourceRefAnalysis::getValueState(solver, reads[0].getResult());
+  ASSERT_TRUE(rawWritten.isSingleValue());
+  EXPECT_EQ(rawWritten.getSingleValue(), storageValue);
+  auto writtenDependencies =
+      SourceRefAnalysis::getDependencyState(solver, reads[0].getResult()).foldToScalar();
+  EXPECT_EQ(writtenDependencies, SourceRefSet({SourceRef(computeFn.getArgument(1))}));
+
+  auto rawTransitive = SourceRefAnalysis::getValueState(solver, reads[1].getResult());
+  ASSERT_TRUE(rawTransitive.isSingleValue());
+  EXPECT_EQ(rawTransitive.getSingleValue(), otherValue);
+  auto transitiveDependencies =
+      SourceRefAnalysis::getDependencyState(solver, reads[1].getResult()).foldToScalar();
+  EXPECT_EQ(transitiveDependencies, SourceRefSet({SourceRef(computeFn.getArgument(1))}));
+
+  auto rawUnwritten = SourceRefAnalysis::getValueState(solver, reads[2].getResult());
+  ASSERT_TRUE(rawUnwritten.isSingleValue());
+  EXPECT_EQ(rawUnwritten.getSingleValue(), storageMissing);
+  auto unwrittenDependencies =
+      SourceRefAnalysis::getDependencyState(solver, reads[2].getResult()).foldToScalar();
+  EXPECT_EQ(unwrittenDependencies, SourceRefSet({storageMissing}));
+
+  auto maybeDependencies =
+      SourceRefAnalysis::getDependencyState(solver, reads[3].getResult()).foldToScalar();
+  EXPECT_TRUE(maybeDependencies.contains(SourceRef(computeFn.getArgument(0))));
+  EXPECT_TRUE(maybeDependencies.contains(SourceRef(computeFn.getArgument(1))));
+
+  auto cycleDependencies =
+      SourceRefAnalysis::getDependencyState(solver, reads[6].getResult()).foldToScalar();
+  EXPECT_FALSE(cycleDependencies.empty());
+}
+
+TEST_F(SourceRefTests, ConditionalStorageWritePreservesNondeterministicAlternative) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @NondeterministicStorage {
+    function.def @compute(%replacement: !felt.type) -> !struct.type<@NondeterministicStorage> {
+      %self = struct.new : !struct.type<@NondeterministicStorage>
+      %unknown = llzk.nondet : !felt.type
+      %storage = pod.new { @value = %unknown } : !pod.type<[@value: !felt.type]>
+      %true = arith.constant true
+      scf.if %true {
+        pod.write %storage[@value] = %replacement
+            : !pod.type<[@value: !felt.type]>, !felt.type
+      }
+      %read = pod.read %storage[@value]
+          : !pod.type<[@value: !felt.type]>, !felt.type
+      function.return %self : !struct.type<@NondeterministicStorage>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@NondeterministicStorage>, %replacement: !felt.type
+    ) {
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto nondet = *computeFn.getOps<NonDetOp>().begin();
+  auto read = *computeFn.getOps<pod::ReadPodOp>().begin();
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  analysis.ensureAnalysisRun(am);
+  DataFlowSolver &solver = analysis.getSolver();
+
+  SourceRefSet dependencies =
+      SourceRefAnalysis::getDependencyState(solver, read.getResult()).foldToScalar();
+  EXPECT_TRUE(dependencies.contains(SourceRef(mlir::cast<OpResult>(nondet.getResult()))));
+  EXPECT_TRUE(dependencies.contains(SourceRef(computeFn.getArgument(0))));
+}
+
+TEST_F(SourceRefTests, DefiniteStorageWritesFollowProgramOrderAfterSolverRevisit) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @OrderedStorage {
+    function.def @compute(
+        %earlier: !felt.type, %alternative: !felt.type, %final: !felt.type
+    ) -> !struct.type<@OrderedStorage> {
+      %self = struct.new : !struct.type<@OrderedStorage>
+      %storage = pod.new : !pod.type<[@value: !felt.type]>
+      %true = arith.constant true
+      %selected = scf.if %true -> (!felt.type) {
+        scf.yield %earlier : !felt.type
+      } else {
+        scf.yield %alternative : !felt.type
+      }
+      pod.write %storage[@value] = %selected
+          : !pod.type<[@value: !felt.type]>, !felt.type
+      pod.write %storage[@value] = %final
+          : !pod.type<[@value: !felt.type]>, !felt.type
+      %read = pod.read %storage[@value]
+          : !pod.type<[@value: !felt.type]>, !felt.type
+      function.return %self : !struct.type<@OrderedStorage>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@OrderedStorage>, %earlier: !felt.type,
+        %alternative: !felt.type, %final: !felt.type
+    ) {
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto read = *computeFn.getOps<pod::ReadPodOp>().begin();
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  analysis.ensureAnalysisRun(am);
+  DataFlowSolver &solver = analysis.getSolver();
+
+  EXPECT_EQ(
+      SourceRefAnalysis::getDependencyState(solver, read.getResult()).foldToScalar(),
+      SourceRefSet({SourceRef(computeFn.getArgument(2))})
+  );
+}
+
+TEST_F(SourceRefTests, AggregatePodInitializerRebasesNestedRecordDependencies) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @NestedPodStorage {
+    function.def @compute(%left: !felt.type, %right: !felt.type)
+        -> !struct.type<@NestedPodStorage> {
+      %self = struct.new : !struct.type<@NestedPodStorage>
+      %inner = pod.new { @left = %left, @right = %right }
+          : !pod.type<[@left: !felt.type, @right: !felt.type]>
+      %outer = pod.new { @nested = %inner }
+          : !pod.type<[@nested: !pod.type<[@left: !felt.type, @right: !felt.type]>]>
+      %nested = pod.read %outer[@nested]
+          : !pod.type<[@nested: !pod.type<[@left: !felt.type, @right: !felt.type]>]>,
+            !pod.type<[@left: !felt.type, @right: !felt.type]>
+      %read = pod.read %nested[@left]
+          : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+      function.return %self : !struct.type<@NestedPodStorage>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@NestedPodStorage>, %left: !felt.type, %right: !felt.type
+    ) {
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto reads = llvm::to_vector(computeFn.getOps<pod::ReadPodOp>());
+  ASSERT_EQ(reads.size(), 2U);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  analysis.ensureAnalysisRun(am);
+  DataFlowSolver &solver = analysis.getSolver();
+
+  EXPECT_EQ(
+      SourceRefAnalysis::getDependencyState(solver, reads[1].getResult()).foldToScalar(),
+      SourceRefSet({SourceRef(computeFn.getArgument(0))})
+  );
+}
+
+TEST_F(SourceRefTests, StorageReadsResolveAtTheirProgramPoint) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @ReadBeforeWrite {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type)
+        -> !struct.type<@ReadBeforeWrite> {
+      %self = struct.new : !struct.type<@ReadBeforeWrite>
+      %storage = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %before = pod.read %storage[@value]
+          : !pod.type<[@value: !felt.type]>, !felt.type
+      pod.write %storage[@value] = %replacement
+          : !pod.type<[@value: !felt.type]>, !felt.type
+      function.return %self : !struct.type<@ReadBeforeWrite>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@ReadBeforeWrite>, %initial: !felt.type,
+        %replacement: !felt.type
+    ) {
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto read = *computeFn.getOps<pod::ReadPodOp>().begin();
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  analysis.ensureAnalysisRun(am);
+
+  EXPECT_EQ(
+      SourceRefAnalysis::getDependencyState(analysis.getSolver(), read.getResult()).foldToScalar(),
+      SourceRefSet({SourceRef(computeFn.getArgument(0))})
+  );
+}
+
+TEST_F(SourceRefTests, StorageDependenciesTranslateAcrossFunctionReturns) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  function.def @load(%input: !felt.type) -> !felt.type {
+    %storage = pod.new { @value = %input } : !pod.type<[@value: !felt.type]>
+    %read = pod.read %storage[@value]
+        : !pod.type<[@value: !felt.type]>, !felt.type
+    function.return %read : !felt.type
+  }
+
+  struct.def @CallStorage {
+    function.def @compute(%input: !felt.type) -> !struct.type<@CallStorage> {
+      %self = struct.new : !struct.type<@CallStorage>
+      %loaded = function.call @load(%input) : (!felt.type) -> !felt.type
+      function.return %self : !struct.type<@CallStorage>
+    }
+
+    function.def @constrain(%self: !struct.type<@CallStorage>, %input: !felt.type) {
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto call = *computeFn.getOps<function::CallOp>().begin();
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  analysis.ensureAnalysisRun(am);
+
+  EXPECT_EQ(
+      SourceRefAnalysis::getDependencyState(analysis.getSolver(), call.getResult(0)).foldToScalar(),
+      SourceRefSet({SourceRef(computeFn.getArgument(0))})
+  );
+}
+
+TEST_F(SourceRefTests, StorageDependenciesTranslateIntoNestedConstrainCalls) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @Child {
+    function.def @compute(%input: !felt.type) -> !struct.type<@Child> {
+      %self = struct.new : !struct.type<@Child>
+      function.return %self : !struct.type<@Child>
+    }
+
+    function.def @constrain(%self: !struct.type<@Child>, %input: !felt.type) {
+      %zero = felt.const 0
+      constrain.eq %input, %zero : !felt.type, !felt.type
+      function.return
+    }
+  }
+
+  struct.def @Parent {
+    struct.member @child : !struct.type<@Child>
+
+    function.def @compute(%input: !felt.type) -> !struct.type<@Parent> {
+      %self = struct.new : !struct.type<@Parent>
+      %child = function.call @Child::@compute(%input)
+          : (!felt.type) -> !struct.type<@Child>
+      struct.writem %self[@child] = %child
+          : !struct.type<@Parent>, !struct.type<@Child>
+      function.return %self : !struct.type<@Parent>
+    }
+
+    function.def @constrain(%self: !struct.type<@Parent>, %input: !felt.type) {
+      %child = struct.readm %self[@child]
+          : !struct.type<@Parent>, !struct.type<@Child>
+      %storage = pod.new { @value = %input } : !pod.type<[@value: !felt.type]>
+      %read = pod.read %storage[@value]
+          : !pod.type<[@value: !felt.type]>, !felt.type
+      function.call @Child::@constrain(%child, %read)
+          : (!struct.type<@Child>, !felt.type) -> ()
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structs = llvm::to_vector(mod->getOps<StructDefOp>());
+  ASSERT_EQ(structs.size(), 2U);
+  auto childConstrain = structs[0].getConstrainFuncOp();
+  auto parentConstrain = structs[1].getConstrainFuncOp();
+  auto zero = *childConstrain.getOps<felt::FeltConstantOp>().begin();
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  analysis.ensureAnalysisRun(am);
+
+  SourceRef parentInput(parentConstrain.getArgument(1));
+  SourceRef zeroRef(zero);
+  EXPECT_TRUE(analysis.getResult(structs[1]).getConstrainingValues(parentInput).contains(zeroRef));
+}
+
+TEST_F(SourceRefTests, ArrayPodInitializerRebasesElementDependencies) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @ArrayPodStorage {
+    function.def @compute(%left: !felt.type, %right: !felt.type)
+        -> !struct.type<@ArrayPodStorage> {
+      %self = struct.new : !struct.type<@ArrayPodStorage>
+      %values = array.new %left, %right : !array.type<2 x !felt.type>
+      %storage = pod.new { @values = %values }
+          : !pod.type<[@values: !array.type<2 x !felt.type>]>
+      %stored = pod.read %storage[@values]
+          : !pod.type<[@values: !array.type<2 x !felt.type>]>,
+            !array.type<2 x !felt.type>
+      %c0 = arith.constant 0 : index
+      %read = array.read %stored[%c0] : !array.type<2 x !felt.type>, !felt.type
+      function.return %self : !struct.type<@ArrayPodStorage>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@ArrayPodStorage>, %left: !felt.type, %right: !felt.type
+    ) {
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto read = *computeFn.getOps<array::ReadArrayOp>().begin();
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  analysis.ensureAnalysisRun(am);
+
+  EXPECT_EQ(
+      SourceRefAnalysis::getDependencyState(analysis.getSolver(), read.getResult()).foldToScalar(),
+      SourceRefSet({SourceRef(computeFn.getArgument(0))})
+  );
+}
+
 TEST_F(SourceRefTests, ComputeSelfRebasesToConstrainSelfWithoutChangingPath) {
   auto mod = parseSourceString<ModuleOp>(kModule, ParserConfig(&ctx));
   ASSERT_TRUE(mod);
@@ -353,6 +826,7 @@ module attributes {llzk.lang} {
   ASSERT_TRUE(succeeded(ref));
   EXPECT_TRUE(ref->isRooted());
   EXPECT_FALSE(ref->isTemplateConstant());
+  EXPECT_TRUE(ref->isImmutableGlobal());
 }
 
 TEST_F(SourceRefTests, ScfBlockArgumentsUseUnnamedFallback) {
