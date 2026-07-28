@@ -239,6 +239,7 @@ public:
     return isConstant() &&
            llvm::isa_and_present<mlir::arith::ConstantIndexOp>(value.getDefiningOp());
   }
+  /// Return whether this reference originates from a template constant read.
   bool isTemplateConstant() const {
     return isConstant() && llvm::isa_and_present<polymorphic::ConstReadOp>(value.getDefiningOp());
   }
@@ -255,6 +256,7 @@ public:
   }
 
   bool isRooted() const { return !constant; }
+
   bool isBlockArgument() const { return isRooted() && llvm::isa<mlir::BlockArgument>(value); }
   mlir::FailureOr<mlir::Value> getRoot() const {
     if (isRooted()) {
@@ -326,6 +328,15 @@ public:
   /// Return true when both references select overlapping storage at the same path depth.
   bool overlaps(const SourceRef &rhs) const;
 
+  /// Return a copy with ranged array indices narrowed by concrete indices from `rhs`.
+  ///
+  /// Array indices are paired by dimension order; member and POD-record path components are
+  /// ignored when pairing dimensions. A range is replaced only when the corresponding component
+  /// in `rhs` is a concrete index contained in that range. Other path components remain unchanged.
+  /// For example, narrowing `%self.out[0:4].values[0:8]` with `%arg0[2][5]` produces
+  /// `%self.out[2].values[5]`.
+  SourceRef narrowRanges(const SourceRef &rhs) const;
+
   /// @brief If `prefix` is a valid prefix of this reference, return the suffix that
   /// remains after removing the prefix. I.e., `this` = `prefix` + `suffix`
   /// @param prefix
@@ -378,6 +389,8 @@ public:
   }
   llvm::ArrayRef<SourceRefIndex> getPath() const { return path; }
 
+  /// Print this reference using source-style names. The first argument of a
+  /// struct constrain function is printed as `%self`.
   void print(mlir::raw_ostream &os) const;
   void dump() const { print(llvm::errs()); }
 

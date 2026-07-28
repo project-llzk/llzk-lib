@@ -125,7 +125,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    %self.sig in Entire ( Unreduced:[ 0, 2013265920 ] )
 // CHECK-NEXT:  }
 // CHECK: constrain {
-// CHECK-NEXT:    %arg0.sig in Entire ( Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:    %self.sig in Entire ( Unreduced:[ 0, 2013265920 ] )
 // CHECK-NEXT:  }
 
 // -----
@@ -172,8 +172,8 @@ module @Comparators attributes {llzk.lang = "llzk"} {
 // CHECK-NEXT:    %self.inv in Entire ( Unreduced:[ 0, 2013265920 ] )
 // CHECK-NEXT:  }
 // CHECK-NEXT:  constrain {
-// CHECK-NEXT:    %arg0.out in Entire ( Unreduced:[ 0, 2013265920 ] )
-// CHECK-NEXT:    %arg0.inv in Entire ( Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:    %self.out in Entire ( Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:    %self.inv in Entire ( Unreduced:[ 0, 2013265920 ] )
 // CHECK-NEXT:    %arg1 in Entire ( Unreduced:[ 0, 2013265920 ] )
 // CHECK-NEXT:  }
 

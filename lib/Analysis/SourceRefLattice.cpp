@@ -13,6 +13,7 @@
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Util/Hash.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -48,6 +49,19 @@ mlir::ChangeResult SourceRefLatticeValue::insert(const SourceRef &rhs) {
   }
 }
 
+mlir::ChangeResult SourceRefLatticeValue::remove(const SourceRef &ref) {
+  if (isScalar()) {
+    return getScalarValue().erase(ref) != 0 ? mlir::ChangeResult::Change
+                                            : mlir::ChangeResult::NoChange;
+  }
+
+  mlir::ChangeResult changed = mlir::ChangeResult::NoChange;
+  for (auto &element : getArrayValue()) {
+    changed |= element->remove(ref);
+  }
+  return changed;
+}
+
 std::pair<SourceRefLatticeValue, mlir::ChangeResult>
 SourceRefLatticeValue::translate(const TranslationMap &translation) const {
   auto newVal = *this;
@@ -62,6 +76,75 @@ SourceRefLatticeValue::translate(const TranslationMap &translation) const {
     }
   }
   return {newVal, res};
+}
+
+std::pair<SourceRefLatticeValue, mlir::ChangeResult>
+SourceRefLatticeValue::replacePrefixes(const TranslationMap &translation) const {
+  auto newVal = *this;
+  auto res = mlir::ChangeResult::NoChange;
+  if (newVal.isScalar()) {
+    res = newVal.replacePrefixesScalar(translation);
+  } else {
+    for (auto &elem : newVal.getArrayValue()) {
+      auto [newElem, elemRes] = elem->replacePrefixes(translation);
+      *elem = std::move(newElem);
+      res |= elemRes;
+    }
+  }
+  return {newVal, res};
+}
+
+mlir::ChangeResult SourceRefLatticeValue::write(
+    const std::vector<SourceRefIndex> &indices, const SourceRefLatticeValue &rhs,
+    bool joinWithExisting
+) {
+  ensure(isArray(), "SourceRef array write requires an array-shaped value");
+  ensure(indices.size() <= getNumArrayDims(), "invalid SourceRef array write indices");
+
+  std::vector<size_t> selected {0};
+  bool hasRangedIndex = false;
+  for (unsigned dimIdx = 0; dimIdx < indices.size(); ++dimIdx) {
+    const SourceRefIndex &idx = indices[dimIdx];
+    const int64_t dim = getArrayDim(dimIdx);
+    std::vector<size_t> next;
+    if (idx.isIndex()) {
+      const int64_t indexValue(idx.getIndex());
+      for (size_t prefix : selected) {
+        next.push_back(prefix * dim + indexValue);
+      }
+    } else {
+      ensure(idx.isIndexRange(), "wrong type of index for SourceRef array write");
+      hasRangedIndex = true;
+      auto [low, high] = idx.getIndexRange();
+      const int64_t lowValue(low), highValue(high);
+      for (int64_t indexValue = lowValue; indexValue < highValue; ++indexValue) {
+        for (size_t prefix : selected) {
+          next.push_back(prefix * dim + indexValue);
+        }
+      }
+    }
+    selected = std::move(next);
+  }
+
+  size_t chunkSize = 1;
+  for (size_t dimIdx = indices.size(); dimIdx < getNumArrayDims(); ++dimIdx) {
+    chunkSize *= getArrayDim(dimIdx);
+  }
+  ensure(
+      (chunkSize == 1 && rhs.isScalar()) || (rhs.isArray() && rhs.getArraySize() == chunkSize),
+      "SourceRef array write value shape does not match selected storage"
+  );
+
+  ChangeResult changed = ChangeResult::NoChange;
+  const bool join = joinWithExisting || hasRangedIndex || selected.size() > 1;
+  for (size_t chunkStart : selected) {
+    for (size_t offset = 0; offset < chunkSize; ++offset) {
+      SourceRefLatticeValue &dest = getElemFlatIdx(chunkStart * chunkSize + offset);
+      const SourceRefLatticeValue &source = rhs.isScalar() ? rhs : rhs.getElemFlatIdx(offset);
+      changed |= join ? dest.update(source) : dest.setValue(source);
+    }
+  }
+  return changed;
 }
 
 mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
@@ -133,7 +216,7 @@ SourceRefLatticeValue::extract(const std::vector<SourceRefIndex> &indices) const
       SourceRefLatticeValue extractedVal(newArrayDims);
       for (auto chunkStart : currIdxs) {
         for (size_t i = 0; i < chunkSz; i++) {
-          (void)extractedVal.getElemFlatIdx(i).update(getElemFlatIdx(chunkStart + i));
+          (void)extractedVal.getElemFlatIdx(i).update(getElemFlatIdx(chunkStart * chunkSz + i));
         }
       }
       return std::make_pair(extractedVal, mlir::ChangeResult::Change);
@@ -179,6 +262,34 @@ mlir::ChangeResult SourceRefLatticeValue::translateScalar(const TranslationMap &
     }
   }
   return res;
+}
+
+mlir::ChangeResult SourceRefLatticeValue::replacePrefixesScalar(const TranslationMap &translation) {
+  const ScalarTy current = getScalarValue();
+  ScalarTy replaced;
+  for (const SourceRef &currentRef : current) {
+    bool matched = false;
+    for (const auto &[prefix, replacementVal] : translation) {
+      if (!currentRef.isValidPrefix(prefix)) {
+        continue;
+      }
+      matched = true;
+      for (const SourceRef &replacementPrefix : replacementVal.foldToScalar()) {
+        auto translated = currentRef.translate(prefix, replacementPrefix);
+        if (succeeded(translated)) {
+          replaced.insert(*translated);
+        }
+      }
+    }
+    if (!matched) {
+      replaced.insert(currentRef);
+    }
+  }
+  if (replaced == current) {
+    return ChangeResult::NoChange;
+  }
+  getValue() = std::move(replaced);
+  return ChangeResult::Change;
 }
 
 mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
@@ -235,6 +346,8 @@ mlir::FailureOr<SourceRef> SourceRefLattice::getSourceRef(mlir::Value val) {
       return SourceRef(structNew);
     } else if (auto nonDet = llvm::dyn_cast<NonDetOp>(defOp)) {
       return SourceRef(nonDet);
+    } else if (llvm::isa<global::GlobalReadOp>(defOp)) {
+      return SourceRef(llvm::cast<mlir::OpResult>(val));
     } else if (auto createArray = llvm::dyn_cast<CreateArrayOp>(defOp)) {
       return SourceRef(createArray->getResult(0));
     } else if (auto newPod = llvm::dyn_cast<NewPodOp>(defOp)) {
@@ -259,7 +372,18 @@ SourceRefLatticeValue SourceRefLattice::getDefaultValue(SourceRefLattice::ValueT
 }
 
 ChangeResult SourceRefLattice::join(const AbstractSparseLattice &rhs) {
-  return value.update(static_cast<const SourceRefLattice &>(rhs).value);
+  const auto &rhsValue = static_cast<const SourceRefLattice &>(rhs).value;
+  // Region-branch block arguments and results start with an empty scalar state (bottom) so their
+  // identity can come from incoming values. Do not let a join with bottom fold an array to a
+  // scalar, regardless of which side was initialized first. Preserving the shape is necessary
+  // for element-sensitive reads after an scf.for/scf.while join.
+  if (rhsValue.isScalar() && rhsValue.getScalarValue().empty()) {
+    return ChangeResult::NoChange;
+  }
+  if (value.isScalar() && value.getScalarValue().empty()) {
+    return value.setValue(rhsValue);
+  }
+  return value.update(rhsValue);
 }
 
 ChangeResult SourceRefLattice::meet(const AbstractSparseLattice & /*rhs*/) {

@@ -385,12 +385,50 @@ bool SourceRef::isValidPrefix(const SourceRef &prefix) const {
 }
 
 bool SourceRef::overlaps(const SourceRef &rhs) const {
-  if (isConstant() || rhs.isConstant() || value != rhs.value || path.size() != rhs.path.size()) {
+  auto getSelfStruct = [](const SourceRef &ref) -> StructDefOp {
+    if (ref.isCreateStructOp()) {
+      return ref.value.getDefiningOp()->getParentOfType<StructDefOp>();
+    }
+    auto blockArg = ref.getBlockArgument();
+    if (failed(blockArg) || blockArg->getArgNumber() != 0) {
+      return nullptr;
+    }
+    auto func = dyn_cast_if_present<FuncDefOp>(blockArg->getOwner()->getParentOp());
+    return func && func.isStructConstrain() ? func->getParentOfType<StructDefOp>() : nullptr;
+  };
+  bool sameRoot = value == rhs.value;
+  if (!sameRoot) {
+    StructDefOp lhsStruct = getSelfStruct(*this);
+    StructDefOp rhsStruct = getSelfStruct(rhs);
+    sameRoot = lhsStruct && lhsStruct == rhsStruct;
+  }
+  if (isConstant() || rhs.isConstant() || !sameRoot || path.size() != rhs.path.size()) {
     return false;
   }
   return llvm::all_of(llvm::zip(path, rhs.path), [](const auto &indices) {
     return std::get<0>(indices).overlaps(std::get<1>(indices));
   });
+}
+
+SourceRef SourceRef::narrowRanges(const SourceRef &rhs) const {
+  llvm::SmallVector<SourceRefIndex> selections;
+  llvm::copy_if(rhs.getPath(), std::back_inserter(selections), [](const SourceRefIndex &index) {
+    return index.isIndex() || index.isIndexRange();
+  });
+
+  SourceRef result = *this;
+  size_t dimension = 0;
+  for (SourceRefIndex &index : result.getPathMut()) {
+    if (!index.isIndex() && !index.isIndexRange()) {
+      continue;
+    }
+    if (dimension < selections.size() && index.isIndexRange() && selections[dimension].isIndex() &&
+        index.overlaps(selections[dimension])) {
+      index = selections[dimension];
+    }
+    ++dimension;
+  }
+  return result;
 }
 
 FailureOr<SourceRef::Path> SourceRef::getSuffix(const SourceRef &prefix) const {
@@ -564,11 +602,20 @@ void SourceRef::print(raw_ostream &os) const {
     } else if (isBlockArgument()) {
       auto blockArg = *getBlockArgument();
       auto funcOp = llvm::dyn_cast<FuncDefOp>(blockArg.getOwner()->getParentOp());
-      auto argName = funcOp ? funcOp.getArgNameAttr(blockArg.getArgNumber()) : nullptr;
-      if (argName) {
-        os << argName->getValue();
+      // The first argument of a struct constrain function is its self value,
+      // matching the struct value returned by the corresponding compute function.
+      if (funcOp && funcOp.isStructConstrain() && blockArg.getArgNumber() == 0) {
+        os << "%self";
       } else {
-        os << "%arg" << *getInputNum();
+        std::optional<StringAttr> argName;
+        if (funcOp) {
+          argName = funcOp.getArgNameAttr(blockArg.getArgNumber());
+        }
+        if (argName) {
+          os << argName->getValue();
+        } else {
+          os << "%arg" << *getInputNum();
+        }
       }
     } else if (isNonDetOp()) {
       os << '<' << *getNonDetOp() << '>';

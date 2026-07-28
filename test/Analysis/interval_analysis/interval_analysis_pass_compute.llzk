@@ -457,7 +457,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:         %self.bit in TypeA:[ 0, 1 ]
 // CHECK-NEXT:     }
 // CHECK-NEXT:     constrain {
-// CHECK-NEXT:         %arg0.bit in TypeA:[ 0, 1 ]
+// CHECK-NEXT:         %self.bit in TypeA:[ 0, 1 ]
 // CHECK-NEXT:         %arg1 in Entire
 // CHECK-NEXT:     }
 // CHECK-NEXT: }
