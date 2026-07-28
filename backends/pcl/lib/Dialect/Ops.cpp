@@ -328,7 +328,7 @@ OpFoldResult NegOp::fold(FoldAdaptor adaptor) {
   if (!prime) {
     return nullptr;
   }
-  auto attr = mlir::dyn_cast_if_present<FeltAttr>(adaptor.getVal());
+  auto attr = mlir::dyn_cast_if_present<FeltAttr>(adaptor.getValue());
   if (!attr) {
     return nullptr;
   }
@@ -448,15 +448,15 @@ private:
     }
 
     if (auto boolAttr = mlir::dyn_cast_if_present<pcl::BoolAttr>(attr)) {
-      return FoldedEq {.value = rhsAsBool.getVal(), .constValue = boolAttr.getValue()};
+      return FoldedEq {.value = rhsAsBool.getValue(), .constValue = boolAttr.getValue()};
     }
 
     if (auto feltAttr = mlir::dyn_cast_if_present<FeltAttr>(attr)) {
       if (feltAttr.getValue().isZero()) {
-        return FoldedEq {.value = rhsAsBool.getVal(), .constValue = false};
+        return FoldedEq {.value = rhsAsBool.getValue(), .constValue = false};
       }
       if (feltAttr.getValue().isOne()) {
-        return FoldedEq {.value = rhsAsBool.getVal(), .constValue = true};
+        return FoldedEq {.value = rhsAsBool.getValue(), .constValue = true};
       }
     }
     return failure();
@@ -475,7 +475,7 @@ struct FoldEqOfNegations : public OpRewritePattern<CmpEqOp> {
       return failure();
     }
 
-    rewriter.replaceOpWithNewOp<CmpEqOp>(op, lhsNeg.getVal(), rhsNeg.getVal());
+    rewriter.replaceOpWithNewOp<CmpEqOp>(op, lhsNeg.getValue(), rhsNeg.getValue());
     return success();
   }
 };
@@ -512,10 +512,10 @@ private:
     auto Xop = mlir::dyn_cast_if_present<NegOp>(X.getDefiningOp());
     auto Yop = mlir::dyn_cast_if_present<NegOp>(Y.getDefiningOp());
     if (Xop) {
-      return {Xop.getVal(), Y};
+      return {Xop.getValue(), Y};
     }
     if (Yop) {
-      return {X, Yop.getVal()};
+      return {X, Yop.getValue()};
     }
 
     auto negOp = rewriter.create<NegOp>(op.getLoc(), Y);
@@ -658,7 +658,7 @@ OpFoldResult AndOp::fold(FoldAdaptor adaptor) {
 
 /// If the boolean is constant, fold the op into a constant 1 or 0.
 OpFoldResult AsFeltOp::fold(FoldAdaptor adaptor) {
-  auto attr = mlir::dyn_cast_if_present<BoolAttr>(adaptor.getVal());
+  auto attr = mlir::dyn_cast_if_present<BoolAttr>(adaptor.getValue());
   if (!attr) {
     return nullptr;
   }
@@ -677,7 +677,7 @@ OpFoldResult AsFeltOp::fold(FoldAdaptor adaptor) {
 /// Fold the det operation if the operand is constant, since it's going to be
 /// deterministic by definition.
 OpFoldResult DetOp::fold(FoldAdaptor adaptor) {
-  auto attr = mlir::dyn_cast_if_present<FeltAttr>(adaptor.getExpr());
+  auto attr = mlir::dyn_cast_if_present<FeltAttr>(adaptor.getValue());
   if (!attr) {
     return nullptr;
   }
@@ -707,10 +707,10 @@ OpFoldResult IffOp::fold(FoldAdaptor adaptor) {
 OpFoldResult ImpliesOp::fold(FoldAdaptor adaptor) {
   return foldBinaryOp<BoolAttr>(*this, adaptor, [](auto lhs, auto rhs) {
     return BoolAttr::get(lhs.getContext(), !lhs.getValue() || rhs.getValue());
-  }, [](auto value, auto side) {
+  }, [](auto, auto) { return false; }, [](auto value, auto side) {
     // p -> T = T
     return value.getValue() && side == Side::Rhs;
-  }, [](auto, auto) { return false; });
+  });
 }
 
 //===----------------------------------------------------------------------===//
@@ -718,7 +718,7 @@ OpFoldResult ImpliesOp::fold(FoldAdaptor adaptor) {
 //===----------------------------------------------------------------------===//
 
 OpFoldResult NotOp::fold(FoldAdaptor adaptor) {
-  auto attr = mlir::dyn_cast_if_present<BoolAttr>(adaptor.getCond());
+  auto attr = mlir::dyn_cast_if_present<BoolAttr>(adaptor.getValue());
   if (!attr) {
     return nullptr;
   }

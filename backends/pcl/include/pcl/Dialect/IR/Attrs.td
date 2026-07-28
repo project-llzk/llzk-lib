@@ -16,22 +16,10 @@ include "llzk/Dialect/LLZK/IR/AttributeHelper.td"
 
 def FeltAttr : AttrDef<PCLDialect, "Felt"> {
   let summary = "Field element represented as an arbitrary precision integer";
-  let cppClassName = "FeltAttr";
   let mnemonic = "felt";
   let parameters = (ins APIntParameter<"felt constant value">:$value);
 
   let assemblyFormat = "$value";
-
-  // let builders = [AttrBuilder<(ins "const ::llvm::APInt &":$v), [{
-  //     return $_get(context,
-  //     ::mlir::IntegerAttr::get(::mlir::IntegerType::get(context,
-  //     v.getBitWidth()), v));
-  //   }]>,
-  //                 AttrBuilder<(ins "const ::llvm::APSInt &":$v), [{
-  //     return $_get(context,
-  //     ::mlir::IntegerAttr::get(::mlir::IntegerType::get(context,
-  //     v.getBitWidth()), v));
-  //   }]>];
 }
 
 def PrimeAttr : AttrDef<PCLDialect, "Prime"> {
@@ -58,7 +46,6 @@ def PrimeAttr : AttrDef<PCLDialect, "Prime"> {
 
 def PCLBoolAttr : AttrDef<PCLDialect, "Bool"> {
   let mnemonic = "bool";
-  let cppClassName = "BoolAttr";
   let summary = "boolean value";
   let parameters = (ins "bool":$value);
   let assemblyFormat = "`<` $value `>`";

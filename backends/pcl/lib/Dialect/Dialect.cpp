@@ -106,7 +106,7 @@ static llvm::APInt reduceImpl(const llvm::APInt &value, const llvm::APInt &prime
 
 FeltAttr PrimeAttr::reduce(FeltAttr attr) {
   auto P = getValue();
-  auto V = attr.getValue();
+  const auto &V = attr.getValue();
 
   // Fast path for equal widths.
   if (V.getBitWidth() == P.getBitWidth()) {
