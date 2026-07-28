@@ -525,7 +525,7 @@ private:
   /// Matches the assertion to a pattern.
   AddOp matchAssertion(CmpEqOp op) const {
     auto lhsMatch = matchAssertionImpl(op.getLhs(), op.getRhs());
-    if (!lhsMatch) {
+    if (lhsMatch) {
       return lhsMatch;
     }
 
@@ -567,7 +567,7 @@ private:
   /// Matches the assertion to a pattern.
   SubOp matchAssertion(CmpEqOp op) const {
     auto lhsMatch = matchAssertionImpl(op.getLhs(), op.getRhs());
-    if (!lhsMatch) {
+    if (lhsMatch) {
       return lhsMatch;
     }
 

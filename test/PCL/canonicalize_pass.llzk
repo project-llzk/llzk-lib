@@ -1172,7 +1172,7 @@ module attributes {pcl.prime = #pcl.prime<7>} {
 // -----
 
 module attributes {pcl.prime = #pcl.prime<7>} {
-  func.func @fold_eq_0_and_sum() {
+  func.func @fold_eq_lhs_0_and_sum() {
     %a = pcl.var "a" false
     %b = pcl.var "b" false
     %0 = pcl.add %a, %b 
@@ -1184,12 +1184,138 @@ module attributes {pcl.prime = #pcl.prime<7>} {
 }
 
 // CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<7>} {
-// CHECK-NEXT:    func.func @fold_eq_0_and_sum() {
+// CHECK-NEXT:    func.func @fold_eq_lhs_0_and_sum() {
 // CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.var "a" false
 // CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "b" false
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.neg %[[VAL_1]]
 // CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_0]], %[[VAL_2]]
 // CHECK-NEXT:      pcl.assert %[[VAL_3]]
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {pcl.prime = #pcl.prime<7>} {
+  func.func @fold_eq_rhs_0_and_sum() {
+    %a = pcl.var "a" false
+    %b = pcl.var "b" false
+    %0 = pcl.add %a, %b 
+    %1 = pcl.const 0
+    %2 = pcl.eq %0, %1
+    pcl.assert %2
+    return
+  }
+}
+
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<7>} {
+// CHECK-NEXT:    func.func @fold_eq_rhs_0_and_sum() {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.var "a" false
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "b" false
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.neg %[[VAL_1]]
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_0]], %[[VAL_2]]
+// CHECK-NEXT:      pcl.assert %[[VAL_3]]
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {pcl.prime = #pcl.prime<7>} {
+  func.func @fold_eq_lhs_0_and_sum_rhs_neg() {
+    %a = pcl.var "a" false
+    %b = pcl.var "b" false
+    %n = pcl.neg %b
+    %0 = pcl.add %a, %n 
+    %1 = pcl.const 0
+    %2 = pcl.eq %1, %0
+    pcl.assert %2
+    return
+  }
+}
+
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<7>} {
+// CHECK-NEXT:    func.func @fold_eq_lhs_0_and_sum_rhs_neg() {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.var "a" false
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "b" false
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_0]], %[[VAL_1]]
+// CHECK-NEXT:      pcl.assert %[[VAL_2]]
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {pcl.prime = #pcl.prime<7>} {
+  func.func @fold_eq_rhs_0_and_sum_rhs_neg() {
+    %a = pcl.var "a" false
+    %b = pcl.var "b" false
+    %n = pcl.neg %b
+    %0 = pcl.add %a, %n 
+    %1 = pcl.const 0
+    %2 = pcl.eq %0, %1
+    pcl.assert %2
+    return
+  }
+}
+
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<7>} {
+// CHECK-NEXT:    func.func @fold_eq_rhs_0_and_sum_rhs_neg() {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.var "a" false
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "b" false
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_0]], %[[VAL_1]]
+// CHECK-NEXT:      pcl.assert %[[VAL_2]]
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+
+// -----
+
+module attributes {pcl.prime = #pcl.prime<7>} {
+  func.func @fold_eq_lhs_0_and_sum_lhs_neg() {
+    %a = pcl.var "a" false
+    %n = pcl.neg %a
+    %b = pcl.var "b" false
+    %0 = pcl.add %n, %b 
+    %1 = pcl.const 0
+    %2 = pcl.eq %1, %0
+    pcl.assert %2
+    return
+  }
+}
+
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<7>} {
+// CHECK-NEXT:    func.func @fold_eq_lhs_0_and_sum_lhs_neg() {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.var "a" false
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "b" false
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_0]], %[[VAL_1]]
+// CHECK-NEXT:      pcl.assert %[[VAL_2]]
+// CHECK-NEXT:      return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {pcl.prime = #pcl.prime<7>} {
+  func.func @fold_eq_rhs_0_and_sum_lhs_neg() {
+    %a = pcl.var "a" false
+    %n = pcl.neg %a
+    %b = pcl.var "b" false
+    %0 = pcl.add %n, %b 
+    %1 = pcl.const 0
+    %2 = pcl.eq %0, %1
+    pcl.assert %2
+    return
+  }
+}
+
+// CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<7>} {
+// CHECK-NEXT:    func.func @fold_eq_rhs_0_and_sum_lhs_neg() {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.var "a" false
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "b" false
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_0]], %[[VAL_1]]
+// CHECK-NEXT:      pcl.assert %[[VAL_2]]
 // CHECK-NEXT:      return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
