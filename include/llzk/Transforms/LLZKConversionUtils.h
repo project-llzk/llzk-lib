@@ -15,6 +15,7 @@
 
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Dialect/Verif/IR/Ops.h"
 #include "llzk/Util/Concepts.h"
 
 #include <mlir/IR/PatternMatch.h>
@@ -183,6 +184,28 @@ inline function::CallOp createCallPreservingInstantiationOperands(
   );
 }
 
+/// Rebuild a `verif.include` while preserving explicit instantiation state from `oldInclude`.
+inline verif::IncludeOp createIncludePreservingInstantiationOperands(
+    mlir::Location loc, verif::IncludeOp oldInclude, llvm::ArrayRef<mlir::ValueRange> mapOperands,
+    mlir::ValueRange argOperands, mlir::ConversionPatternRewriter &rewriter
+) {
+  llvm::SmallVector<mlir::Attribute> templateParams;
+  if (mlir::ArrayAttr templateParamsAttr = oldInclude.getTemplateParamsAttr()) {
+    templateParams.append(templateParamsAttr.begin(), templateParamsAttr.end());
+  }
+
+  if (mapOperands.empty()) {
+    return rewriter.create<verif::IncludeOp>(
+        loc, oldInclude.getCalleeAttr(), argOperands, templateParams
+    );
+  }
+
+  return rewriter.create<verif::IncludeOp>(
+      loc, oldInclude.getCalleeAttr(), mapOperands, oldInclude.getNumDimsPerMapAttr(), argOperands,
+      templateParams
+  );
+}
+
 /// General helper for converting a `FuncDefOp` by changing its input and/or result types and the
 /// associated attributes for those types.
 class FunctionTypeConverter {
@@ -201,7 +224,7 @@ protected:
 public:
   virtual ~FunctionTypeConverter() = default;
 
-  void convert(function::FuncDefOp op, mlir::RewriterBase &rewriter) {
+  template <typename FunctionLikeOp> void convert(FunctionLikeOp op, mlir::RewriterBase &rewriter) {
     // Update in/out types of the function
     mlir::FunctionType oldTy = op.getFunctionType();
     llvm::SmallVector<mlir::Type> newInputs = convertInputs(oldTy.getInputs());
@@ -214,7 +237,12 @@ public:
     }
 
     // Pre-condition: arg/result count equals corresponding attribute count
-    assert(!op.getResAttrsAttr() || op.getResAttrsAttr().size() == op.getNumResults());
+    if constexpr (requires(FunctionLikeOp op_) {
+                    op_.getResAttrsAttr();
+                    op_.getNumResults();
+                  }) {
+      assert(!op.getResAttrsAttr() || op.getResAttrsAttr().size() == op.getNumResults());
+    }
     assert(!op.getArgAttrsAttr() || op.getArgAttrsAttr().size() == op.getNumArguments());
     rewriter.modifyOpInPlace(op, [&]() {
       op.setFunctionType(newTy);
@@ -223,12 +251,22 @@ public:
       if (mlir::ArrayAttr newArgAttrs = convertInputAttrs(op.getArgAttrsAttr(), newInputs)) {
         op.setArgAttrsAttr(newArgAttrs);
       }
-      if (mlir::ArrayAttr newResAttrs = convertResultAttrs(op.getResAttrsAttr(), newResults)) {
-        op.setResAttrsAttr(newResAttrs);
+      if constexpr (requires(FunctionLikeOp op_, mlir::ArrayAttr attrs) {
+                      op_.getResAttrsAttr();
+                      op_.setResAttrsAttr(attrs);
+                    }) {
+        if (mlir::ArrayAttr newResAttrs = convertResultAttrs(op.getResAttrsAttr(), newResults)) {
+          op.setResAttrsAttr(newResAttrs);
+        }
       }
     });
     // Post-condition: arg/result count equals corresponding attribute count
-    assert(!op.getResAttrsAttr() || op.getResAttrsAttr().size() == op.getNumResults());
+    if constexpr (requires(FunctionLikeOp op_) {
+                    op_.getResAttrsAttr();
+                    op_.getNumResults();
+                  }) {
+      assert(!op.getResAttrsAttr() || op.getResAttrsAttr().size() == op.getNumResults());
+    }
     assert(!op.getArgAttrsAttr() || op.getArgAttrsAttr().size() == op.getNumArguments());
 
     // If the function has a body, ensure the entry block arguments match the function inputs.

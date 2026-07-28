@@ -1,0 +1,150 @@
+// RUN: llzk-opt --llzk-scalar-verif-to-smt %s -split-input-file | FileCheck %s
+
+module attributes {llzk.lang} {
+  struct.def @Pair {
+    struct.member @lhs : !felt.type {llzk.pub}
+    struct.member @rhs : !felt.type {llzk.pub}
+
+    function.def @compute(%lhs: !felt.type, %rhs: !felt.type) -> !struct.type<@Pair> {
+      %self = struct.new : !struct.type<@Pair>
+      struct.writem %self[@lhs] = %lhs : !struct.type<@Pair>, !felt.type
+      struct.writem %self[@rhs] = %rhs : !struct.type<@Pair>, !felt.type
+      function.return %self : !struct.type<@Pair>
+    }
+
+    function.def @constrain(%self: !struct.type<@Pair>, %lhs: !felt.type, %rhs: !felt.type) {
+      function.return
+    }
+  }
+
+  function.def @pick_second(%pair: !struct.type<@Pair>, %x: !felt.type) -> (!felt.type {function.res_name = "ret_value"}) {
+    %rhs = struct.readm %pair[@rhs] : !struct.type<@Pair>, !felt.type
+    function.return %rhs : !felt.type
+  }
+
+  verif.contract @CheckSecond for @pick_second (%pair: !struct.type<@Pair>, %x: !felt.type, %ret_value: !felt.type {function.res_name = "ret_value"}) {
+    %true = arith.constant true
+    verif.require_compute %true
+  }
+}
+
+// CHECK-LABEL: func.func @smt_pick_second(
+// CHECK-SAME: %[[LHS:[0-9A-Za-z_\.]+]]: !smt.int, %[[RHS:[0-9A-Za-z_\.]+]]: !smt.int, %[[X:[0-9A-Za-z_\.]+]]: !smt.int
+// CHECK: return %[[RHS]] : !smt.int
+// CHECK-LABEL: func.func @smt_verif_CheckSecond_target(
+// CHECK-SAME: %[[ARG0:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG2:[0-9A-Za-z_\.]+]]: !smt.int, %[[RET:[0-9A-Za-z_\.]+]]: !smt.int
+// CHECK: %[[CALL:[0-9A-Za-z_\.]+]] = call @smt_pick_second(%[[ARG0]], %[[ARG1]], %[[ARG2]]) : (!smt.int, !smt.int, !smt.int) -> !smt.int
+// CHECK: %[[EQ:[0-9A-Za-z_\.]+]] = smt.eq %[[CALL]], %[[RET]] : !smt.int
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Pair {
+    struct.member @lhs : i1 {llzk.pub}
+    struct.member @rhs : i1 {llzk.pub}
+
+    function.def @compute(%lhs: i1, %rhs: i1) -> !struct.type<@Pair> {
+      %self = struct.new : !struct.type<@Pair>
+      struct.writem %self[@lhs] = %lhs : !struct.type<@Pair>, i1
+      struct.writem %self[@rhs] = %rhs : !struct.type<@Pair>, i1
+      function.return %self : !struct.type<@Pair>
+    }
+
+    function.def @constrain(%self: !struct.type<@Pair>, %lhs: i1, %rhs: i1) {
+      function.return
+    }
+  }
+
+  function.def @leaf(%pair: !struct.type<@Pair>) {
+    function.return
+  }
+
+  function.def @wrapper(%pair: !struct.type<@Pair>) {
+    function.return
+  }
+
+  verif.contract @Leaf for @leaf (%pair: !struct.type<@Pair>) {
+    %true = arith.constant true
+    verif.require_compute %true
+  }
+
+  verif.contract @Wrapper for @wrapper (%pair: !struct.type<@Pair>) {
+    verif.include @Leaf(%pair) : (!struct.type<@Pair>) -> ()
+  }
+}
+
+// CHECK-LABEL: func.func @smt_verif_Wrapper_compute_include_0(
+// CHECK-SAME: %[[INC0:[0-9A-Za-z_\.]+]]: !smt.bool, %[[INC1:[0-9A-Za-z_\.]+]]: !smt.bool
+// CHECK: call @smt_verif_Leaf_compute_entry(%[[INC0]], %[[INC1]]) : (!smt.bool, !smt.bool) -> ()
+// CHECK-LABEL: func.func @smt_verif_Wrapper_compute_entry(
+// CHECK-SAME: %[[SELF0:[0-9A-Za-z_\.]+]]: !smt.bool, %[[SELF1:[0-9A-Za-z_\.]+]]: !smt.bool
+// CHECK: call @smt_verif_Wrapper_compute_include_0(%[[SELF0]], %[[SELF1]]) : (!smt.bool, !smt.bool) -> ()
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Inner {
+    struct.member @x : !felt.type {llzk.pub}
+    struct.member @y : !felt.type {llzk.pub}
+
+    function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@Inner> {
+      %self = struct.new : !struct.type<@Inner>
+      struct.writem %self[@x] = %x : !struct.type<@Inner>, !felt.type
+      struct.writem %self[@y] = %y : !struct.type<@Inner>, !felt.type
+      function.return %self : !struct.type<@Inner>
+    }
+
+    function.def @constrain(%self: !struct.type<@Inner>, %x: !felt.type, %y: !felt.type) {
+      %self_x = struct.readm %self[@x] : !struct.type<@Inner>, !felt.type
+      %self_y = struct.readm %self[@y] : !struct.type<@Inner>, !felt.type
+      constrain.eq %self_x, %x : !felt.type, !felt.type
+      constrain.eq %self_y, %y : !felt.type, !felt.type
+      function.return
+    }
+  }
+
+  struct.def @Outer {
+    struct.member @inner : !struct.type<@Inner>
+
+    function.def @compute(%inner: !struct.type<@Inner>) -> !struct.type<@Outer> {
+      %self = struct.new : !struct.type<@Outer>
+      struct.writem %self[@inner] = %inner : !struct.type<@Outer>, !struct.type<@Inner>
+      function.return %self : !struct.type<@Outer>
+    }
+
+    function.def @constrain(%self: !struct.type<@Outer>, %inner: !struct.type<@Inner>) {
+      %self_inner = struct.readm %self[@inner] : !struct.type<@Outer>, !struct.type<@Inner>
+      %self_x = struct.readm %self_inner[@x] : !struct.type<@Inner>, !felt.type
+      %self_y = struct.readm %self_inner[@y] : !struct.type<@Inner>, !felt.type
+      %arg_x = struct.readm %inner[@x] : !struct.type<@Inner>, !felt.type
+      %arg_y = struct.readm %inner[@y] : !struct.type<@Inner>, !felt.type
+      constrain.eq %self_x, %arg_x : !felt.type, !felt.type
+      constrain.eq %self_y, %arg_y : !felt.type, !felt.type
+      function.return
+    }
+  }
+
+  verif.contract @CheckOuter for @Outer (%self: !struct.type<@Outer>, %inner: !struct.type<@Inner>) {
+    %true = arith.constant true
+    verif.require_compute %true
+    verif.ensure_constrain %true
+  }
+}
+
+// CHECK-LABEL: func.func @smt_Outer_compute(
+// CHECK-SAME: %[[IN_X:[0-9A-Za-z_\.]+]]: !smt.int, %[[IN_Y:[0-9A-Za-z_\.]+]]: !smt.int
+// CHECK: return %[[IN_X]], %[[IN_Y]] : !smt.int, !smt.int
+// CHECK-LABEL: func.func @smt_Outer_constrain(
+// CHECK-SAME: %[[SELF_X:[0-9A-Za-z_\.]+]]: !smt.int, %[[SELF_Y:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG_X:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG_Y:[0-9A-Za-z_\.]+]]: !smt.int
+// CHECK: %[[EQ_X:[0-9A-Za-z_\.]+]] = smt.eq %[[SELF_X]], %[[ARG_X]] : !smt.int
+// CHECK: %[[EQ_Y:[0-9A-Za-z_\.]+]] = smt.eq %[[SELF_Y]], %[[ARG_Y]] : !smt.int
+// CHECK: %[[AND:[0-9A-Za-z_\.]+]] = smt.and %[[EQ_X]], %[[EQ_Y]]
+// CHECK: return %[[AND]] : !smt.bool
+// CHECK-LABEL: func.func @smt_verif_CheckOuter_compute_target(
+// CHECK-SAME: %[[OUT_X:[0-9A-Za-z_\.]+]]: !smt.int, %[[OUT_Y:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG0:[0-9A-Za-z_\.]+]]: !smt.int, %[[ARG1:[0-9A-Za-z_\.]+]]: !smt.int
+// CHECK: %[[CALL_X:[0-9A-Za-z_\.]+]]:2 = call @smt_Outer_compute(%[[ARG0]], %[[ARG1]]) : (!smt.int, !smt.int) -> (!smt.int, !smt.int)
+// CHECK: %[[CMP_X:[0-9A-Za-z_\.]+]] = smt.eq %[[CALL_X]]#0, %[[OUT_X]] : !smt.int
+// CHECK: %[[CMP_Y:[0-9A-Za-z_\.]+]] = smt.eq %[[CALL_X]]#1, %[[OUT_Y]] : !smt.int
+// CHECK-LABEL: func.func @smt_verif_CheckOuter_constrain_target(
+// CHECK-SAME: %[[SELF0:[0-9A-Za-z_\.]+]]: !smt.int, %[[SELF1:[0-9A-Za-z_\.]+]]: !smt.int, %[[INNER0:[0-9A-Za-z_\.]+]]: !smt.int, %[[INNER1:[0-9A-Za-z_\.]+]]: !smt.int
+// CHECK: %[[CBOOL:[0-9A-Za-z_\.]+]] = call @smt_Outer_constrain(%[[SELF0]], %[[SELF1]], %[[INNER0]], %[[INNER1]]) : (!smt.int, !smt.int, !smt.int, !smt.int) -> !smt.bool

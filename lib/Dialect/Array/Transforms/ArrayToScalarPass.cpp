@@ -80,6 +80,8 @@
 #include "llzk/Dialect/RAM/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Dialect/Verif/IR/Dialect.h"
+#include "llzk/Dialect/Verif/IR/Ops.h"
 #include "llzk/Transforms/LLZKConversionUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Transforms/SpecializedMemoryPasses.h"
@@ -107,6 +109,7 @@ using namespace llzk;
 using namespace llzk::array;
 using namespace llzk::component;
 using namespace llzk::function;
+using namespace llzk::verif;
 
 #define DEBUG_TYPE "llzk-array-to-scalar"
 
@@ -306,6 +309,90 @@ void processInputOperands(
   });
 }
 
+/// Shared signature-conversion logic for array-bearing function-like ops.
+///
+/// This helper is used for both `function.def` and `verif.contract`, which share the same
+/// rewrite shape: split array-typed arguments/results into scalar leaves, expand any associated
+/// arg/result name attributes via `FunctionTypeConverter`, and then rebuild the entry block so the
+/// original aggregate argument still exists locally for the body. The body-local reconstruction
+/// keeps subsequent rewrites simple because users inside the region can continue to reason in terms
+/// of the original array value while only the function boundary becomes scalarized.
+template <typename FunctionLikeOp>
+class SplitArrayInFunctionLikeOpImpl : public FunctionTypeConverter {
+  SmallVector<size_t> originalInputIdxToSize, originalResultIdxToSize;
+  SplitFunctionNameInfo inputNameInfo;
+  SplitFunctionNameInfo resultNameInfo;
+
+  static constexpr bool supportsResultAttrs() {
+    return requires(FunctionLikeOp op, ArrayAttr attrs) {
+      op.getResAttrsAttr();
+      op.setResAttrsAttr(attrs);
+    };
+  }
+
+protected:
+  SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) override {
+    return splitArrayType(origTypes, &originalInputIdxToSize);
+  }
+  SmallVector<Type> convertResults(ArrayRef<Type> origTypes) override {
+    return splitArrayType(origTypes, &originalResultIdxToSize);
+  }
+  ArrayAttr convertInputAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
+    return replicateFunctionNameAttrsAsNeeded(
+        origAttrs, originalInputIdxToSize, newTypes, ARG_NAME_ATTR_NAME,
+        inputNameInfo.originalNames, inputNameInfo.existingNames, inputNameInfo.splitNameSuffixes
+    );
+  }
+  ArrayAttr convertResultAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
+    if constexpr (!supportsResultAttrs()) {
+      return nullptr;
+    }
+    return replicateFunctionNameAttrsAsNeeded(
+        origAttrs, originalResultIdxToSize, newTypes, RES_NAME_ATTR_NAME,
+        resultNameInfo.originalNames, resultNameInfo.existingNames, resultNameInfo.splitNameSuffixes
+    );
+  }
+
+  void processBlockArgs(Block &entryBlock, RewriterBase &rewriter) override {
+    OpBuilder::InsertionGuard guard(rewriter);
+    rewriter.setInsertionPointToStart(&entryBlock);
+
+    for (unsigned i = 0; i < entryBlock.getNumArguments();) {
+      Value oldV = entryBlock.getArgument(i);
+      if (ArrayType at = splittableArray(oldV.getType())) {
+        Location loc = oldV.getLoc();
+        auto newArray = rewriter.create<CreateArrayOp>(loc, at);
+        rewriter.replaceAllUsesWith(oldV, newArray);
+        entryBlock.eraseArgument(i);
+        std::optional<SmallVector<ArrayAttr>> allIndices = at.getSubelementIndices();
+        assert(allIndices && "static-shape arrays must provide subelement indices");
+        assert(std::cmp_equal(allIndices->size(), at.getNumElements()));
+        for (ArrayAttr subIdx : *allIndices) {
+          BlockArgument newArg = entryBlock.insertArgument(i, at.getElementType(), loc);
+          genWrite(loc, newArray, subIdx, newArg, rewriter);
+          ++i;
+        }
+      } else {
+        ++i;
+      }
+    }
+  }
+
+public:
+  explicit SplitArrayInFunctionLikeOpImpl(FunctionLikeOp op) {
+    inputNameInfo = collectSplitFunctionNameInfo(op.getArgumentTypes(), [&op](unsigned i) {
+      return op.getArgNameAttr(i);
+    }, getSplitArrayIndexSuffixes);
+    if constexpr (supportsResultAttrs()) {
+      ArrayAttr resultAttrs = op.getAllResultAttrs();
+      resultNameInfo =
+          collectSplitFunctionNameInfo(op.getResultTypes(), [&resultAttrs](unsigned i) {
+        return getAttrAtIndexWithName(resultAttrs, i, RES_NAME_ATTR_NAME);
+      }, getSplitArrayIndexSuffixes);
+    }
+  }
+};
+
 namespace {
 
 enum Direction : std::uint8_t {
@@ -441,79 +528,24 @@ public:
   LogicalResult match(FuncDefOp op) const override { return failure(legal(op)); }
 
   void rewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
-    // Update in/out types of the function to replace arrays with scalars
-    class Impl : public FunctionTypeConverter {
-      SmallVector<size_t> originalInputIdxToSize, originalResultIdxToSize;
-      SplitFunctionNameInfo inputNameInfo;
-      SplitFunctionNameInfo resultNameInfo;
+    SplitArrayInFunctionLikeOpImpl<FuncDefOp>(op).convert(op, rewriter);
+  }
+};
 
-    protected:
-      SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) override {
-        return splitArrayType(origTypes, &originalInputIdxToSize);
-      }
-      SmallVector<Type> convertResults(ArrayRef<Type> origTypes) override {
-        return splitArrayType(origTypes, &originalResultIdxToSize);
-      }
-      ArrayAttr convertInputAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
-        return replicateFunctionNameAttrsAsNeeded(
-            origAttrs, originalInputIdxToSize, newTypes, ARG_NAME_ATTR_NAME,
-            inputNameInfo.originalNames, inputNameInfo.existingNames,
-            inputNameInfo.splitNameSuffixes
-        );
-      }
-      ArrayAttr convertResultAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
-        return replicateFunctionNameAttrsAsNeeded(
-            origAttrs, originalResultIdxToSize, newTypes, RES_NAME_ATTR_NAME,
-            resultNameInfo.originalNames, resultNameInfo.existingNames,
-            resultNameInfo.splitNameSuffixes
-        );
-      }
+/// Rewrite array-typed contract signatures to pass one scalar per array element instead.
+class SplitArrayInContractOp : public OpConversionPattern<ContractOp> {
+public:
+  using OpConversionPattern<ContractOp>::OpConversionPattern;
 
-      /// For each argument to the Block that has a splittable ArrayType, replace it with the
-      /// necessary number of scalar arguments, generate a CreateArrayOp, and generate writes from
-      /// the new block scalar arguments to the new array. All users of the original block argument
-      /// are updated to target the result of the CreateArrayOp.
-      void processBlockArgs(Block &entryBlock, RewriterBase &rewriter) override {
-        OpBuilder::InsertionGuard guard(rewriter);
-        rewriter.setInsertionPointToStart(&entryBlock);
+  inline static bool legal(ContractOp op) {
+    return !containsSplittableArrayType(op.getArgumentTypes()) &&
+           !containsSplittableArrayType(op.getResultTypes());
+  }
 
-        for (unsigned i = 0; i < entryBlock.getNumArguments();) {
-          Value oldV = entryBlock.getArgument(i);
-          if (ArrayType at = splittableArray(oldV.getType())) {
-            Location loc = oldV.getLoc();
-            // Generate `CreateArrayOp` and replace uses of the argument with it.
-            auto newArray = rewriter.create<CreateArrayOp>(loc, at);
-            rewriter.replaceAllUsesWith(oldV, newArray);
-            // Remove the argument from the block
-            entryBlock.eraseArgument(i);
-            // For all indices in the ArrayType (i.e., the element count), generate a new block
-            // argument and a write of that argument to the new array.
-            std::optional<SmallVector<ArrayAttr>> allIndices = at.getSubelementIndices();
-            assert(allIndices); // follows from legal() check
-            assert(std::cmp_equal(allIndices->size(), at.getNumElements()));
-            for (ArrayAttr subIdx : allIndices.value()) {
-              BlockArgument newArg = entryBlock.insertArgument(i, at.getElementType(), loc);
-              genWrite(loc, newArray, subIdx, newArg, rewriter);
-              ++i;
-            }
-          } else {
-            ++i;
-          }
-        }
-      }
+  LogicalResult match(ContractOp op) const override { return failure(legal(op)); }
 
-    public:
-      Impl(FuncDefOp op) {
-        ArrayAttr resultAttrs = op.getAllResultAttrs();
-        inputNameInfo = collectSplitFunctionNameInfo(op.getArgumentTypes(), [&](unsigned i) {
-          return op.getArgNameAttr(i);
-        }, getSplitArrayIndexSuffixes);
-        resultNameInfo = collectSplitFunctionNameInfo(op.getResultTypes(), [&](unsigned i) {
-          return getAttrAtIndexWithName(resultAttrs, i, RES_NAME_ATTR_NAME);
-        }, getSplitArrayIndexSuffixes);
-      }
-    };
-    Impl(op).convert(op, rewriter);
+  void rewrite(ContractOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    SplitArrayInFunctionLikeOpImpl<ContractOp>(op).convert(op, rewriter);
   }
 };
 
@@ -548,9 +580,35 @@ public:
   void rewrite(CallOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
     // Create new CallOp with split results first so, then process its inputs to split types
     CallOp newCall = newCallOpWithSplitResults(op, adaptor, rewriter);
+    rewriter.setInsertionPoint(newCall);
     processInputOperands(
         newCall.getArgOperands(), newCall.getArgOperandsMutable(), newCall, rewriter
     );
+  }
+};
+
+/// Rewrite included-contract calls whose arguments contain arrays to use flattened scalar
+/// signatures.
+class SplitArrayInIncludeOp : public OpConversionPattern<IncludeOp> {
+public:
+  using OpConversionPattern<IncludeOp>::OpConversionPattern;
+
+  inline static bool legal(IncludeOp op) {
+    return !containsSplittableArrayType(op.getArgOperands().getTypes());
+  }
+
+  LogicalResult match(IncludeOp op) const override { return failure(legal(op)); }
+
+  void
+  rewrite(IncludeOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+    IncludeOp newInclude = createIncludePreservingInstantiationOperands(
+        op.getLoc(), op, adaptor.getMapOperands(), adaptor.getArgOperands(), rewriter
+    );
+    rewriter.setInsertionPoint(newInclude);
+    processInputOperands(
+        newInclude.getArgOperands(), newInclude.getArgOperandsMutable(), newInclude, rewriter
+    );
+    rewriter.eraseOp(op);
   }
 };
 
@@ -708,8 +766,8 @@ static void baseTargetSetup(ConversionTarget &target) {
       LLZKDialect, array::ArrayDialect, boolean::BoolDialect, cast::CastDialect,
       constrain::ConstrainDialect, component::StructDialect, felt::FeltDialect,
       function::FunctionDialect, global::GlobalDialect, include::IncludeDialect, pod::PODDialect,
-      polymorphic::PolymorphicDialect, ram::RAMDialect, string::StringDialect, arith::ArithDialect,
-      scf::SCFDialect>();
+      polymorphic::PolymorphicDialect, ram::RAMDialect, string::StringDialect, verif::VerifDialect,
+      arith::ArithDialect, scf::SCFDialect>();
   target.addLegalOp<ModuleOp>();
 }
 
@@ -770,8 +828,10 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
       SplitInsertArrayOp,
       SplitExtractArrayOp,
       SplitArrayInFuncDefOp,
+      SplitArrayInContractOp,
       SplitArrayInReturnOp,
       SplitArrayInCallOp,
+      SplitArrayInIncludeOp,
       ReplaceKnownArrayLengthOp
       // clang-format on
       >(ctx);
@@ -789,8 +849,10 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   target.addDynamicallyLegalOp<InsertArrayOp>(SplitInsertArrayOp::legal);
   target.addDynamicallyLegalOp<ExtractArrayOp>(SplitExtractArrayOp::legal);
   target.addDynamicallyLegalOp<FuncDefOp>(SplitArrayInFuncDefOp::legal);
+  target.addDynamicallyLegalOp<ContractOp>(SplitArrayInContractOp::legal);
   target.addDynamicallyLegalOp<ReturnOp>(SplitArrayInReturnOp::legal);
   target.addDynamicallyLegalOp<CallOp>(SplitArrayInCallOp::legal);
+  target.addDynamicallyLegalOp<IncludeOp>(SplitArrayInIncludeOp::legal);
   target.addDynamicallyLegalOp<ArrayLengthOp>(ReplaceKnownArrayLengthOp::legal);
   target.addDynamicallyLegalOp<MemberWriteOp>(SplitArrayInMemberWriteOp::legal);
   target.addDynamicallyLegalOp<MemberReadOp>(SplitArrayInMemberReadOp::legal);

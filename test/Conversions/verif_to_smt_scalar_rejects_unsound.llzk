@@ -1,0 +1,97 @@
+// RUN: llzk-opt --llzk-scalar-verif-to-smt %s -split-input-file -verify-diagnostics
+
+module attributes {llzk.lang} {
+  struct.def @Loopy {
+    struct.member @value : !felt.type
+
+    function.def @compute() -> !struct.type<@Loopy> {
+      %self = struct.new : !struct.type<@Loopy>
+      %zero = felt.const 0
+      struct.writem %self[@value] = %zero : !struct.type<@Loopy>, !felt.type
+      function.return %self : !struct.type<@Loopy>
+    }
+
+    function.def @constrain(%self: !struct.type<@Loopy>) {
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      // expected-error@+1 {{verif-to-smt requires struct constrain bodies without loops or successor-based control flow; run `llzk-flatten` or another control-flow lowering pass first}}
+      scf.for %i = %c0 to %c1 step %c1 {
+        %zero = felt.const 0
+        constrain.eq %zero, %zero : !felt.type, !felt.type
+      }
+      function.return
+    }
+  }
+
+  verif.contract @CheckLoopy for @Loopy (%self: !struct.type<@Loopy>) {
+    %ok = arith.constant true
+    verif.ensure_constrain %ok
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @leaf(%gate: i1) {
+    function.return
+  }
+
+  function.def @wrapper(%gate: i1) {
+    function.return
+  }
+
+  verif.contract @Leaf for @leaf (%gate: i1) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+
+  verif.contract @Wrapper for @wrapper (%gate: i1) {
+    scf.if %gate {
+      // expected-error@+1 {{verif-to-smt does not yet support guarded verif.include operations}}
+      verif.include @Leaf(%gate) : (i1) -> ()
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Branchy {
+    struct.member @value : !felt.type
+
+    // expected-error@+1 {{verif-to-smt requires compute writes to the returned component to be unguarded}}
+    function.def @compute(%x: !felt.type, %gate: i1) -> !struct.type<@Branchy> {
+      %self = struct.new : !struct.type<@Branchy>
+      scf.if %gate {
+        struct.writem %self[@value] = %x : !struct.type<@Branchy>, !felt.type
+      }
+      function.return %self : !struct.type<@Branchy>
+    }
+
+    function.def @constrain(%self: !struct.type<@Branchy>, %x: !felt.type, %gate: i1) {
+      function.return
+    }
+  }
+
+  verif.contract @CheckBranchy for @Branchy (
+      %self: !struct.type<@Branchy>, %x: !felt.type, %gate: i1
+  ) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  // expected-error@+1 {{verif-to-smt does not support free-function targets with `function.allow_constraint`; only struct `@constrain` lowering is supported}}
+  function.def @emit_eq(%x: !felt.type, %y: !felt.type) -> !felt.type attributes {function.allow_constraint} {
+    constrain.eq %x, %y : !felt.type, !felt.type
+    function.return %x : !felt.type
+  }
+
+  verif.contract @CheckEmitEq for @emit_eq (%x: !felt.type, %y: !felt.type, %ret: !felt.type) {
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
