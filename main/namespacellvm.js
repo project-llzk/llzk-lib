@@ -1,6 +1,7 @@
 var namespacellvm =
 [
     [ "cl", "namespacellvm_1_1cl.html", "namespacellvm_1_1cl" ],
+    [ "DenseMapInfo< CompatiblePodLeafMaterializationKey >", "structllvm_1_1DenseMapInfo_3_01CompatiblePodLeafMaterializationKey_01_4.html", null ],
     [ "DenseMapInfo< llzk::ExpressionValue >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1ExpressionValue_01_4.html", null ],
     [ "DenseMapInfo< llzk::Side >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4.html", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4" ],
     [ "DenseMapInfo< llzk::SourceRef >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1SourceRef_01_4.html", null ],

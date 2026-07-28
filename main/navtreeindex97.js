@@ -1,5 +1,18 @@
 var NAVTREEINDEX97 =
 {
+"tools.html#autotoc_md-llzk-print-symbol-def-tree":[3,0,0,0,5],
+"tools.html#autotoc_md-llzk-print-symbol-use-graph":[3,0,0,0,6],
+"tools.html#autotoc_md-llzk-remove-unused-discardable-allocations":[3,0,0,1,7],
+"tools.html#autotoc_md-llzk-specialize-wildcard-arrays":[3,0,0,3,3],
+"tools.html#autotoc_md-llzk-unused-declaration-elim":[3,0,0,1,8],
+"tools.html#autotoc_md-llzk-validate-member-writes":[3,0,0,4,0],
+"tools.html#autotoc_md-llzk-while-to-for":[3,0,0,1,9],
+"tools.html#general-transformation-passes":[3,0,0,1],
+"tools.html#llzk-lsp-server":[3,4],
+"tools.html#llzk-opt":[3,0],
+"tools.html#llzk-smt-check":[3,3],
+"tools.html#llzk-translate":[3,1],
+"tools.html#llzk-witgen":[3,2],
 "tools.html#options":[3,0,0,0,0,0],
 "tools.html#options-1":[3,0,0,0,1,0],
 "tools.html#options-10":[3,0,0,1,8,0],

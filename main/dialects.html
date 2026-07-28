@@ -1311,6 +1311,7 @@ ArrayType</h3>
 </div><!-- fragment --><p>Array type with a ranked shape and homogeneous element type. It can only be instantiated with the following element types:</p><ul>
 <li>Any LLZK type other than an ArrayType (i.e., arrays cannot be nested)</li>
 <li>IndexType</li>
+<li>NoneType for shape-only arrays with no element payload</li>
 <li>Unsigned integers of 1 bit (aka booleans)</li>
 </ul>
 <p>The dimensions of the array are specified using a list of attributes, one per dimension. Each attribute must be one of the following:</p><ul>

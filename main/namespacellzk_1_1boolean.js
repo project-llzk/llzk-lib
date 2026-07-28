@@ -40,7 +40,7 @@ var namespacellzk_1_1boolean =
     ] ],
     [ "createLowerBoolQuantifiersPass", "namespacellzk_1_1boolean.html#a622bf63bc0609e519a40c49bad6b408c", null ],
     [ "getMaxEnumValForFeltCmpPredicate", "namespacellzk_1_1boolean.html#ad4cba17dc8c37746f8d293f81c79bbdd", null ],
-    [ "getQuantifierOpDomainIterType", "namespacellzk_1_1boolean.html#a83746658a6bab3f77b74e522f9ec02d8", null ],
+    [ "getQuantifierOpDomainIterType", "namespacellzk_1_1boolean.html#a99a0427a1e68d0f9f14f18dc346bf2ff", null ],
     [ "registerLowerBoolQuantifiersPass", "namespacellzk_1_1boolean.html#aa4b351ea115cc4dafa807b3d75aca519", null ],
     [ "registerLowerBoolQuantifiersPassPass", "namespacellzk_1_1boolean.html#a6107845865354e714d2e4a679d72795f", null ],
     [ "registerTransformationPasses", "namespacellzk_1_1boolean.html#aa2f4457c4fe537de91b6ef2172347134", null ],

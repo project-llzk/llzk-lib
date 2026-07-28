@@ -7,6 +7,7 @@ var annotated_dup =
         [ "parser< llzk::NestedPassOptions< CreatePass > >", "classllvm_1_1cl_1_1parser_3_01llzk_1_1NestedPassOptions_3_01CreatePass_01_4_01_4.html", "classllvm_1_1cl_1_1parser_3_01llzk_1_1NestedPassOptions_3_01CreatePass_01_4_01_4" ],
         [ "parser< llzk::NestedPipelineOptions< PipelineOptionsT > >", "classllvm_1_1cl_1_1parser_3_01llzk_1_1NestedPipelineOptions_3_01PipelineOptionsT_01_4_01_4.html", "classllvm_1_1cl_1_1parser_3_01llzk_1_1NestedPipelineOptions_3_01PipelineOptionsT_01_4_01_4" ]
       ] ],
+      [ "DenseMapInfo< CompatiblePodLeafMaterializationKey >", "structllvm_1_1DenseMapInfo_3_01CompatiblePodLeafMaterializationKey_01_4.html", null ],
       [ "DenseMapInfo< llzk::ExpressionValue >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1ExpressionValue_01_4.html", null ],
       [ "DenseMapInfo< llzk::Side >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4.html", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4" ],
       [ "DenseMapInfo< llzk::SourceRef >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1SourceRef_01_4.html", null ],

@@ -543,6 +543,7 @@ var hierarchy =
       [ "llzk::verif::detail::CallableSummaryKeyInfo", "structllzk_1_1verif_1_1detail_1_1CallableSummaryKeyInfo.html", null ],
       [ "llzk::verif::detail::IncludedContractSummaryKeyInfo", "structllzk_1_1verif_1_1detail_1_1IncludedContractSummaryKeyInfo.html", null ]
     ] ],
+    [ "llvm::DenseMapInfo< CompatiblePodLeafMaterializationKey >", "structllvm_1_1DenseMapInfo_3_01CompatiblePodLeafMaterializationKey_01_4.html", null ],
     [ "llvm::DenseMapInfo< llzk::ExpressionValue >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1ExpressionValue_01_4.html", null ],
     [ "llvm::DenseMapInfo< llzk::Side >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4.html", null ],
     [ "llvm::DenseMapInfo< llzk::SourceRef >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1SourceRef_01_4.html", null ],

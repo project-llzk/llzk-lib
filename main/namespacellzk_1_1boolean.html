@@ -174,8 +174,8 @@ Functions</h2></td></tr>
 <tr class="memitem:a18163ecc0ef14f8969b6b3eb8c7b3a91 template"><td class="memItemLeft" align="right" valign="top">::std::optional&lt; EnumType &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a18163ecc0ef14f8969b6b3eb8c7b3a91">symbolizeEnum</a> (::llvm::StringRef)</td></tr>
 <tr class="memitem:acc8dc868f96cb91673383cf88ff6b70b" id="r_acc8dc868f96cb91673383cf88ff6b70b"><td class="memItemLeft" align="right" valign="top">template&lt;&gt; </td></tr>
 <tr class="memitem:acc8dc868f96cb91673383cf88ff6b70b template"><td class="memItemLeft" align="right" valign="top">inline ::std::optional&lt; <a class="el" href="#aa2a08eb552270cddaf816ec7c01afd37">FeltCmpPredicate</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acc8dc868f96cb91673383cf88ff6b70b">symbolizeEnum&lt; FeltCmpPredicate &gt;</a> (::llvm::StringRef str)</td></tr>
-<tr class="memitem:a83746658a6bab3f77b74e522f9ec02d8" id="r_a83746658a6bab3f77b74e522f9ec02d8"><td class="memItemLeft" align="right" valign="top">mlir::Type&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a83746658a6bab3f77b74e522f9ec02d8">getQuantifierOpDomainIterType</a> (<a class="el" href="classllzk_1_1array_1_1ArrayType.html">llzk::array::ArrayType</a> arr)</td></tr>
-<tr class="memdesc:a83746658a6bab3f77b74e522f9ec02d8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extracts the type used for a quantifier op block argument.  <br /></td></tr>
+<tr class="memitem:a99a0427a1e68d0f9f14f18dc346bf2ff" id="r_a99a0427a1e68d0f9f14f18dc346bf2ff"><td class="memItemLeft" align="right" valign="top">mlir::Type&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a99a0427a1e68d0f9f14f18dc346bf2ff">getQuantifierOpDomainIterType</a> (<a class="el" href="classllzk_1_1array_1_1ArrayType.html">llzk::array::ArrayType</a> arr)</td></tr>
+<tr class="memdesc:a99a0427a1e68d0f9f14f18dc346bf2ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extracts the type used for a quantifier op block argument.  <br /></td></tr>
 <tr class="memitem:aa4b351ea115cc4dafa807b3d75aca519" id="r_aa4b351ea115cc4dafa807b3d75aca519"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa4b351ea115cc4dafa807b3d75aca519">registerLowerBoolQuantifiersPass</a> ()</td></tr>
 <tr class="memitem:a6107845865354e714d2e4a679d72795f" id="r_a6107845865354e714d2e4a679d72795f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6107845865354e714d2e4a679d72795f">registerLowerBoolQuantifiersPassPass</a> ()</td></tr>
 <tr class="memitem:aa2f4457c4fe537de91b6ef2172347134" id="r_aa2f4457c4fe537de91b6ef2172347134"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa2f4457c4fe537de91b6ef2172347134">registerTransformationPasses</a> ()</td></tr>
@@ -261,25 +261,33 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a83746658a6bab3f77b74e522f9ec02d8" name="a83746658a6bab3f77b74e522f9ec02d8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a83746658a6bab3f77b74e522f9ec02d8">&#9670;&#160;</a></span>getQuantifierOpDomainIterType()</h2>
+<a id="a99a0427a1e68d0f9f14f18dc346bf2ff" name="a99a0427a1e68d0f9f14f18dc346bf2ff"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a99a0427a1e68d0f9f14f18dc346bf2ff">&#9670;&#160;</a></span>getQuantifierOpDomainIterType()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">Type llzk::boolean::getQuantifierOpDomainIterType </td>
+          <td class="memname">mlir::Type llzk::boolean::getQuantifierOpDomainIterType </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classllzk_1_1array_1_1ArrayType.html">llzk::array::ArrayType</a></td>          <td class="paramname"><span class="paramname"><em>arr</em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 <p>Extracts the type used for a quantifier op block argument. </p>
 <p>If the array has only one dimension, returns the element type. Otherwise, returns an array type with the first dimension removed. </p>
 
-<p class="definition">Definition at line <a class="el" href="Bool_2IR_2Ops_8cpp_source.html#l00291">291</a> of file <a class="el" href="Bool_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Utils_8h_source.html#l00020">20</a> of file <a class="el" href="Utils_8h_source.html">Utils.h</a>.</p>
 
 </div>
 </div>

@@ -19,6 +19,7 @@ var TypeHelper_8h =
     [ "llzk::checkValidType", "namespacellzk.html#ae30042843555f938699fed6daf364eac", null ],
     [ "llzk::classifyAttrConcreteness", "namespacellzk.html#af6e26e61350d513b129fd1541e233f2d", null ],
     [ "llzk::computeEmitEqCardinality", "namespacellzk.html#a01267bf6363cdd14607bb650e8c2f435", null ],
+    [ "llzk::flattenArrayElementType", "namespacellzk.html#a8d71b7f05664611d543dea1c65829205", null ],
     [ "llzk::forceIntAttrType", "namespacellzk.html#af747df5c204799e7abbc73f7bfe34376", null ],
     [ "llzk::forceIntAttrTypes", "namespacellzk.html#addd241b1e4627ad4ccde996cefb6cd1f", null ],
     [ "llzk::forceIntType", "namespacellzk.html#a3243df5ce2b09cb3dfbe2195e8f9aac9", null ],

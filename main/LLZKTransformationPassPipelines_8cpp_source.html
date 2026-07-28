@@ -154,13 +154,13 @@ $(function(){initNavTree('LLZKTransformationPassPipelines_8cpp_source.html','','
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  }</div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  pm.addPass(<a class="code hl_function" href="namespacellzk_1_1polymorphic.html#ab875e94fd92641f81305cf2406f52c7b">polymorphic::createFlatteningPass</a>(flattening));</div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="comment">// Run array-to-scalar first because it can split arrays within a pod</span></div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="comment">// but pod-to-scalar cannot split pods within an array.</span></div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keywordflow">if</span> (arrayToScalar) {</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    pm.addPass(<a class="code hl_function" href="namespacellzk_1_1array.html#a525e7ad6c9e222da9a66726555b1175e">array::createArrayToScalarPass</a>());</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="comment">// Run pod-to-scalar first because it is able to split `pod.type` used as array element type</span></div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="comment">// (into parallel arrays) so it should be able to fully remove all `pod.type` usages.</span></div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keywordflow">if</span> (podToScalar) {</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    pm.addPass(<a class="code hl_function" href="namespacellzk_1_1pod.html#ab25c802e1f0d853138922fd9b3e746ba">pod::createPodToScalarPass</a>());</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  }</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keywordflow">if</span> (podToScalar) {</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    pm.addPass(<a class="code hl_function" href="namespacellzk_1_1pod.html#ab25c802e1f0d853138922fd9b3e746ba">pod::createPodToScalarPass</a>());</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keywordflow">if</span> (arrayToScalar) {</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    pm.addPass(<a class="code hl_function" href="namespacellzk_1_1array.html#a525e7ad6c9e222da9a66726555b1175e">array::createArrayToScalarPass</a>());</div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  }</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="comment">// Canonicalize to remove known-condition `scf.if` regions so struct inlining</span></div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="comment">// can link &quot;@compute&quot; calls to struct members.</span></div>

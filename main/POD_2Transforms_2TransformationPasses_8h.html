@@ -111,12 +111,19 @@ $(function(){initNavTree('POD_2Transforms_2TransformationPasses_8h.html','','');
   <div class="headertitle"><div class="title">TransformationPasses.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="PassBase_8h_source.html">llzk/Pass/PassBase.h</a>&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="POD_2IR_2Ops_8h_source.html">llzk/Dialect/POD/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="PassBase_8h_source.html">llzk/Pass/PassBase.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Walk_8h_source.html">llzk/Util/Walk.h</a>&quot;</code><br />
+<code>#include &lt;mlir/Dialect/SCF/IR/SCF.h&gt;</code><br />
+<code>#include &lt;mlir/IR/Operation.h&gt;</code><br />
+<code>#include &lt;mlir/IR/ValueRange.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/STLExtras.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/SmallVector.h&gt;</code><br />
 <code>#include &quot;<a class="el" href="POD_2Transforms_2TransformationPasses_8h_8inc_source.html">llzk/Dialect/POD/Transforms/TransformationPasses.h.inc</a>&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for TransformationPasses.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="POD_2Transforms_2TransformationPasses_8h__incl.svg" width="2423" height="351"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="POD_2Transforms_2TransformationPasses_8h__incl.svg" width="5860" height="519"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
@@ -130,6 +137,7 @@ This graph shows which files directly or indirectly include this file:</div>
 Namespaces</h2></td></tr>
 <tr class="memitem:llzk" id="r_llzk"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html">llzk</a></td></tr>
 <tr class="memitem:llzk_3A_3Apod" id="r_llzk_3A_3Apod"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1pod.html">llzk::pod</a></td></tr>
+<tr class="memitem:llzk_3A_3Apod_3A_3Adetail" id="r_llzk_3A_3Apod_3A_3Adetail"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1pod_1_1detail.html">llzk::pod::detail</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-define-members" class="groupheader"><a id="define-members" name="define-members"></a>
 Macros</h2></td></tr>
@@ -139,6 +147,10 @@ Macros</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:a8824df4e829a1327cab73f9a0bc839ef" id="r_a8824df4e829a1327cab73f9a0bc839ef"><td class="memItemLeft" align="right" valign="top">mlir::Operation *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1pod_1_1detail.html#a8824df4e829a1327cab73f9a0bc839ef">llzk::pod::detail::findNearestLoopCarriedPodAccess</a> (<a class="el" href="classllzk_1_1pod_1_1ReadPodOp.html">ReadPodOp</a> readOp)</td></tr>
+<tr class="memdesc:a8824df4e829a1327cab73f9a0bc839ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the nearest enclosing SCF loop that carries writes to the same external POD record.  <br /></td></tr>
+<tr class="memitem:a5d772667317f97b782ffe2ad186f0219" id="r_a5d772667317f97b782ffe2ad186f0219"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1pod_1_1detail.html#a5d772667317f97b782ffe2ad186f0219">llzk::pod::detail::appendValuesWithExactTypes</a> (mlir::ValueRange values, mlir::TypeRange expectedTypes, llvm::SmallVectorImpl&lt; mlir::Value &gt; &amp;output)</td></tr>
+<tr class="memdesc:a5d772667317f97b782ffe2ad186f0219"><td class="mdescLeft">&#160;</td><td class="mdescRight">Append <span class="tt">values</span> only when every entry exactly matches the corresponding expected type.  <br /></td></tr>
 <tr class="memitem:ab25c802e1f0d853138922fd9b3e746ba" id="r_ab25c802e1f0d853138922fd9b3e746ba"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1pod.html#ab25c802e1f0d853138922fd9b3e746ba">llzk::pod::createPodToScalarPass</a> ()</td></tr>
 <tr class="memitem:a25f356eb31fa5349f0fd65df9d0474cc" id="r_a25f356eb31fa5349f0fd65df9d0474cc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1pod.html#a25f356eb31fa5349f0fd65df9d0474cc">llzk::pod::registerPodToScalarPass</a> ()</td></tr>
 <tr class="memitem:a2eab0ac33ecf46e7f87c2921fdc485c4" id="r_a2eab0ac33ecf46e7f87c2921fdc485c4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1pod.html#a2eab0ac33ecf46e7f87c2921fdc485c4">llzk::pod::registerPodToScalarPassPass</a> ()</td></tr>
@@ -157,7 +169,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html#l00016">16</a> of file <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html#l00086">86</a> of file <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>
@@ -189,7 +201,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html#l00017">17</a> of file <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html#l00087">87</a> of file <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
 
 </div>
 </div>

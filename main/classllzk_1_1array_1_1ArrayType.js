@@ -4,6 +4,7 @@ var classllzk_1_1array_1_1ArrayType =
     [ "cloneWith", "classllzk_1_1array_1_1ArrayType.html#a4518414d27c955e3d06fbb54f7d57d5c", null ],
     [ "getDimensionSizes", "classllzk_1_1array_1_1ArrayType.html#af6d5e1bc90e76922fbbe2ab883f8f868", null ],
     [ "getElementType", "classllzk_1_1array_1_1ArrayType.html#a9a35f9b638432e52628aa367e5706edd", null ],
+    [ "getSelectionType", "classllzk_1_1array_1_1ArrayType.html#aa358d2b691b7308ec90d81f18a8b1576", null ],
     [ "getShape", "classllzk_1_1array_1_1ArrayType.html#a401a54aad2370f4631286aa698acb449", null ],
     [ "getSubelementIndexMap", "classllzk_1_1array_1_1ArrayType.html#aa1624b823a4f78f80db3d91a575ffbdc", null ],
     [ "getSubelementIndices", "classllzk_1_1array_1_1ArrayType.html#a999b3ec47e1826bff1ecd0c8edd60fa3", null ],

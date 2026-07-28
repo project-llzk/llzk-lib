@@ -6,6 +6,7 @@ var TypeHelper_8cpp =
     [ "llzk::assertValidAttrForParamOfType", "namespacellzk.html#a06f8a74431f12f0298cc7033691f84ec", null ],
     [ "llzk::classifyAttrConcreteness", "namespacellzk.html#a5b7b247b9d299875ee108f15066493e7", null ],
     [ "llzk::computeEmitEqCardinality", "namespacellzk.html#a1b91475e8b41cc2d6a7d4716274d324f", null ],
+    [ "llzk::flattenArrayElementType", "namespacellzk.html#a7994d85e179a47d200ef7e0e80c79df2", null ],
     [ "llzk::forceIntAttrType", "namespacellzk.html#a1575048cc6105ca9b8d50d99ef654562", null ],
     [ "llzk::forceIntAttrTypes", "namespacellzk.html#a57632163fc64aabdf3ee27eaec6cea72", null ],
     [ "llzk::forceIntType", "namespacellzk.html#a4347ca404454b983d3c978e268aca917", null ],

@@ -274,6 +274,8 @@ var namespacellzk =
     [ "ensure", "namespacellzk.html#a43a1a0bc20c43606f2cd2aa67022fdac", null ],
     [ "fallbackUnaryOp", "namespacellzk.html#a2176aa1303939b2957b8385543246aea", null ],
     [ "feltDiv", "namespacellzk.html#af49a31336d658a9fdf7604b99a5d9b8b", null ],
+    [ "flattenArrayElementType", "namespacellzk.html#a8d71b7f05664611d543dea1c65829205", null ],
+    [ "flattenArrayElementType", "namespacellzk.html#a7994d85e179a47d200ef7e0e80c79df2", null ],
     [ "forceIntAttrType", "namespacellzk.html#a1575048cc6105ca9b8d50d99ef654562", null ],
     [ "forceIntAttrType", "namespacellzk.html#af747df5c204799e7abbc73f7bfe34376", null ],
     [ "forceIntAttrTypes", "namespacellzk.html#a57632163fc64aabdf3ee27eaec6cea72", null ],

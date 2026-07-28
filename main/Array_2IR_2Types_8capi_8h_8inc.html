@@ -140,6 +140,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:a0e0129c06cfd309d72381314779caae6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get element at index from 'shape' parameter from a <a class="el" href="classllzk_1_1array_1_1ArrayType.html">llzk::array::ArrayType</a> Type.  <br /></td></tr>
 <tr class="memitem:a763889831c9ce33b17543eb62b66f5f4" id="r_a763889831c9ce33b17543eb62b66f5f4"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a763889831c9ce33b17543eb62b66f5f4">llzkArray_ArrayTypeHasRank</a> (MlirType inp)</td></tr>
 <tr class="memdesc:a763889831c9ce33b17543eb62b66f5f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns if this type is ranked, i.e., it has a known number of dimensions.  <br /></td></tr>
+<tr class="memitem:ade0d3e05577e51e7a93ec3144c0c0860" id="r_ade0d3e05577e51e7a93ec3144c0c0860"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED MlirType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ade0d3e05577e51e7a93ec3144c0c0860">llzkArray_ArrayTypeGetSelectionType</a> (MlirType inp, size_t numIndices)</td></tr>
+<tr class="memdesc:ade0d3e05577e51e7a93ec3144c0c0860"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the type produced by selecting/removing <span class="tt">numIndices</span> leading dimensions.  <br /></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
 <a id="a70e6a549264361187fe2b5c9bc183855" name="a70e6a549264361187fe2b5c9bc183855"></a>
@@ -206,6 +208,32 @@ Functions</h2></td></tr>
 <p>Get 'elementType' parameter from a <a class="el" href="classllzk_1_1array_1_1ArrayType.html">llzk::array::ArrayType</a> Type. </p>
 
 <p class="definition">Definition at line <a class="el" href="Array_2IR_2Types_8capi_8cpp_8inc_source.html#l00023">23</a> of file <a class="el" href="Array_2IR_2Types_8capi_8cpp_8inc_source.html">Types.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ade0d3e05577e51e7a93ec3144c0c0860" name="ade0d3e05577e51e7a93ec3144c0c0860"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ade0d3e05577e51e7a93ec3144c0c0860">&#9670;&#160;</a></span>llzkArray_ArrayTypeGetSelectionType()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MLIR_CAPI_EXPORTED MlirType llzkArray_ArrayTypeGetSelectionType </td>
+          <td>(</td>
+          <td class="paramtype">MlirType</td>          <td class="paramname"><span class="paramname"><em>inp</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t</td>          <td class="paramname"><span class="paramname"><em>numIndices</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the type produced by selecting/removing <span class="tt">numIndices</span> leading dimensions. </p>
+<p>Returns itself if <span class="tt">numIndices</span> is 0. Returns the element type if <span class="tt">numIndices</span> equals the rank of this type. Asserts if <span class="tt">numIndices</span> is greater than the rank of this type. </p>
+
+<p class="definition">Definition at line <a class="el" href="Array_2IR_2Types_8capi_8cpp_8inc_source.html#l00051">51</a> of file <a class="el" href="Array_2IR_2Types_8capi_8cpp_8inc_source.html">Types.capi.cpp.inc</a>.</p>
 
 </div>
 </div>

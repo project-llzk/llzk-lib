@@ -116,9 +116,14 @@ $(function(){initNavTree('PodToScalarPass_8cpp.html','',''); });
 <p>This file implements the <span class="tt">-llzk-pod-to-scalar</span> pass.  
 <a href="#details">More...</a></p>
 <div class="textblock"><code>#include &quot;<a class="el" href="Array_2IR_2Dialect_8h_source.html">llzk/Dialect/Array/IR/Dialect.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Array_2IR_2Ops_8h_source.html">llzk/Dialect/Array/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Array_2IR_2Types_8h_source.html">llzk/Dialect/Array/IR/Types.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Bool_2IR_2Dialect_8h_source.html">llzk/Dialect/Bool/IR/Dialect.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Bool_2IR_2Ops_8h_source.html">llzk/Dialect/Bool/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Bool_2Transforms_2TransformationPasses_8h_source.html">llzk/Dialect/Bool/Transforms/TransformationPasses.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Cast_2IR_2Dialect_8h_source.html">llzk/Dialect/Cast/IR/Dialect.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Constrain_2IR_2Dialect_8h_source.html">llzk/Dialect/Constrain/IR/Dialect.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Constrain_2IR_2Ops_8h_source.html">llzk/Dialect/Constrain/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Felt_2IR_2Dialect_8h_source.html">llzk/Dialect/Felt/IR/Dialect.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Function_2IR_2Dialect_8h_source.html">llzk/Dialect/Function/IR/Dialect.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Function_2IR_2Ops_8h_source.html">llzk/Dialect/Function/IR/Ops.h</a>&quot;</code><br />
@@ -130,6 +135,8 @@ $(function(){initNavTree('PodToScalarPass_8cpp.html','',''); });
 <code>#include &quot;<a class="el" href="POD_2IR_2Types_8h_source.html">llzk/Dialect/POD/IR/Types.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html">llzk/Dialect/POD/Transforms/TransformationPasses.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Polymorphic_2IR_2Dialect_8h_source.html">llzk/Dialect/Polymorphic/IR/Dialect.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Polymorphic_2IR_2Ops_8h_source.html">llzk/Dialect/Polymorphic/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Polymorphic_2Transforms_2TransformationPasses_8h_source.html">llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="RAM_2IR_2Dialect_8h_source.html">llzk/Dialect/RAM/IR/Dialect.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="String_2IR_2Dialect_8h_source.html">llzk/Dialect/String/IR/Dialect.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Struct_2IR_2Ops_8h_source.html">llzk/Dialect/Struct/IR/Ops.h</a>&quot;</code><br />
@@ -137,20 +144,27 @@ $(function(){initNavTree('PodToScalarPass_8cpp.html','',''); });
 <code>#include &quot;<a class="el" href="LLZKTransformationPasses_8h_source.html">llzk/Transforms/LLZKTransformationPasses.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="SpecializedMemoryPasses_8h_source.html">llzk/Transforms/SpecializedMemoryPasses.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Concepts_8h_source.html">llzk/Util/Concepts.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="TypeHelper_8h_source.html">llzk/Util/TypeHelper.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Walk_8h_source.html">llzk/Util/Walk.h</a>&quot;</code><br />
 <code>#include &lt;mlir/Dialect/SCF/IR/SCF.h&gt;</code><br />
+<code>#include &lt;mlir/Dialect/SCF/Transforms/Patterns.h&gt;</code><br />
 <code>#include &lt;mlir/Pass/PassManager.h&gt;</code><br />
 <code>#include &lt;mlir/Transforms/DialectConversion.h&gt;</code><br />
 <code>#include &lt;mlir/Transforms/GreedyPatternRewriteDriver.h&gt;</code><br />
 <code>#include &lt;mlir/Transforms/Passes.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/DenseMapInfo.h&gt;</code><br />
 <code>#include &lt;llvm/ADT/STLExtras.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/TypeSwitch.h&gt;</code><br />
 <code>#include &lt;llvm/Support/Debug.h&gt;</code><br />
+<code>#include &lt;llvm/Support/raw_ostream.h&gt;</code><br />
+<code>#include &lt;functional&gt;</code><br />
+<code>#include &lt;limits&gt;</code><br />
+<code>#include &lt;optional&gt;</code><br />
 <code>#include &quot;<a class="el" href="POD_2Transforms_2TransformationPasses_8h_8inc_source.html">llzk/Dialect/POD/Transforms/TransformationPasses.h.inc</a>&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for PodToScalarPass.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="PodToScalarPass_8cpp__incl.svg" width="4331" height="687"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="PodToScalarPass_8cpp__incl.svg" width="5654" height="595"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="PodToScalarPass_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -159,6 +173,7 @@ Include dependency graph for PodToScalarPass.cpp:</div>
 Classes</h2></td></tr>
 <tr class="memitem:llzk_3A_3Apod_3A_3Aimpl_3A_3APodToScalarPassBase_3C_20DerivedT_20_3E" id="r_llzk_3A_3Apod_3A_3Aimpl_3A_3APodToScalarPassBase_3C_20DerivedT_20_3E"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1pod_1_1impl_1_1PodToScalarPassBase.html">llzk::pod::impl::PodToScalarPassBase&lt; DerivedT &gt;</a></td></tr>
 <tr class="memitem:llvm_3A_3ADenseMapInfo_3C_20RecordChain_20_3E" id="r_llvm_3A_3ADenseMapInfo_3C_20RecordChain_20_3E"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllvm_1_1DenseMapInfo_3_01RecordChain_01_4.html">llvm::DenseMapInfo&lt; RecordChain &gt;</a></td></tr>
+<tr class="memitem:llvm_3A_3ADenseMapInfo_3C_20CompatiblePodLeafMaterializationKey_20_3E" id="r_llvm_3A_3ADenseMapInfo_3C_20CompatiblePodLeafMaterializationKey_20_3E"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllvm_1_1DenseMapInfo_3_01CompatiblePodLeafMaterializationKey_01_4.html">llvm::DenseMapInfo&lt; CompatiblePodLeafMaterializationKey &gt;</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
 Namespaces</h2></td></tr>
@@ -181,22 +196,24 @@ Functions</h2></td></tr>
 <div class="textblock"><p>This file implements the <span class="tt">-llzk-pod-to-scalar</span> pass. </p>
 <p>The steps of this transformation are as follows:</p>
 <ol type="1">
-<li>Scan to find <span class="tt">llzk.nondet</span> ops that allocate uninitialized pods and replace them with an equivalent <span class="tt">pod.new</span></li>
-<li>Run a dialect conversion that replaces <span class="tt"><a class="el" href="classllzk_1_1pod_1_1PodType.html">PodType</a></span> struct members with one scalar member per record and remembers how each original member was split.</li>
+<li>Run preparatory lowering passes, then rewrite pod-typed <span class="tt">llzk.nondet</span> ops into <span class="tt">pod.new</span> so later stages only need to reason about POD storage through POD dialect operations.</li>
+<li>Run a dialect conversion that replaces pod-typed struct members with one scalar member per POD record, replaces array-typed struct members whose element type is a POD with one parallel array member per POD record, and remembers how each original member was split for the later rewriting steps.</li>
+<li>Run a dialect conversion that splits arrays whose element type is a POD into parallel arrays in <span class="tt">llzk.nondet</span>, <span class="tt">array.*</span>, <span class="tt">constrain.eq</span>, <span class="tt">constrain.in</span>, <span class="tt">struct.readm</span>, <span class="tt">struct.writem</span>, <span class="tt">function.def</span>, <span class="tt">function.call</span>, and <span class="tt">function.return</span>.</li>
 <li>Run a dialect conversion that does the following:<ul>
-<li>Replace <span class="tt"><a class="el" href="classllzk_1_1component_1_1MemberReadOp.html">MemberReadOp</a></span> and <span class="tt"><a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a></span> targeting the members that were split in step 1 so they instead perform scalar reads and writes from the new members. The transformation is local to the current op. Therefore, when replacing the <span class="tt"><a class="el" href="classllzk_1_1component_1_1MemberReadOp.html">MemberReadOp</a></span> a new pod is created locally and all uses of the <span class="tt"><a class="el" href="classllzk_1_1component_1_1MemberReadOp.html">MemberReadOp</a></span> are replaced with the new pod Value, then each scalar member read is followed by scalar write into the new pod. Similarly, when replacing a <span class="tt"><a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a></span>, each element in the pod operand needs a scalar read from the pod followed by a scalar write to the new member. Making only local changes keeps this step simple and later steps will optimize.</li>
+<li>Replace <span class="tt"><a class="el" href="classllzk_1_1component_1_1MemberReadOp.html">MemberReadOp</a></span> and <span class="tt"><a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a></span> targeting the pod-typed struct members split in step 1 so they instead perform reads and writes on the new scalar members. Reads and writes are tracked through virtual POD placeholders so the conversion can keep propagating scalar leaves instead of re-introducing aggregate POD storage.</li>
 <li>Remove optional initialization from <span class="tt"><a class="el" href="classllzk_1_1pod_1_1NewPodOp.html">NewPodOp</a></span> and instead insert a list of <span class="tt"><a class="el" href="classllzk_1_1pod_1_1WritePodOp.html">WritePodOp</a></span> immediately following.</li>
-<li>Split pods to scalars in <span class="tt"><a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a></span>, <span class="tt"><a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a></span>, and <span class="tt"><a class="el" href="classllzk_1_1function_1_1ReturnOp.html">ReturnOp</a></span> and insert the necessary create/read/write ops so the changes are as local as possible (just as described for <span class="tt"><a class="el" href="classllzk_1_1component_1_1MemberReadOp.html">MemberReadOp</a></span> and <span class="tt"><a class="el" href="classllzk_1_1component_1_1MemberWriteOp.html">MemberWriteOp</a></span>)</li>
+<li>Split remaining direct POD values to scalars in <span class="tt"><a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a></span>, <span class="tt"><a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a></span>, and <span class="tt"><a class="el" href="classllzk_1_1function_1_1ReturnOp.html">ReturnOp</a></span>. When a rewritten op still needs POD contents locally, keep them in the same virtual placeholder form for as long as possible and only materialize concrete <span class="tt">pod.write</span> operations as a fallback for unresolved uses.</li>
 </ul>
 </li>
 <li>Promote pod reads and writes out of <span class="tt">scf.if</span>, <span class="tt">scf.for</span>, and <span class="tt">scf.while</span> regions when the access can be modeled as an SSA value flowing through the region boundary. This puts the pod accesses that mem2reg must eliminate into a parent block or loop-carried value.</li>
-<li>Run MLIR "sroa" pass to split each pod with <span class="tt">N</span> records into <span class="tt">N</span> pods with 1 record each (to prepare for the "mem2reg" pass because its API cannot split memory by itself).</li>
-<li>Run MLIR "mem2reg" pass to convert all single-record pod allocations and accesses into SSA values.</li>
-<li>Remove pod allocations that become unread after memory promotion, then remove SSA values made dead by that cleanup.</li>
+<li>Run MLIR "sroa" pass to split remaining POD allocations into single-record POD allocations (to prepare for the "mem2reg" pass because its API cannot split memory by itself).</li>
+<li>Run MLIR "mem2reg" pass to convert all single-record POD allocations and accesses into SSA values.</li>
+<li>Remove POD allocations that become unread after memory promotion, then remove SSA values made dead by that cleanup.</li>
 </ol>
-<p>** Steps 4-6 are rerun while nested POD types are still being exposed, until a fixpoint.</p>
+<p>Steps 5-7 are rerun while nested POD types are still being exposed, until a fixpoint.</p>
 <p>Note: This transformation imposes a "last write wins" semantics on pod records. If different/configurable semantics are added in the future, some additional transformation would be necessary before/during this pass so that multiple writes to the same record can be handled properly while they still exist.</p>
-<p>Note: This transformation will introduce a <span class="tt">nondet</span> op when there exists a read from a pod record that was not earlier written to. </p>
+<p>Note: This transformation will introduce a <span class="tt">nondet</span> op when there exists a read from a pod record that was not earlier written to.</p>
+<p>Terminology: A "virtual POD" is a POD-typed placeholder whose contents are represented by SSA values for each flattened leaf record rather than by explicit <span class="tt">pod.write</span> operations on an aggregate POD object. The pass uses virtual PODs to keep propagating scalar leaves through rewrites for as long as possible because that avoids re-introducing aggregate POD storage that later stages would need to split or promote again. Concrete POD storage is materialized only when some remaining use cannot be resolved from those leaf values directly. </p>
 
 <p class="definition">Definition in file <a class="el" href="PodToScalarPass_8cpp_source.html">PodToScalarPass.cpp</a>.</p>
 </div><a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
@@ -212,7 +229,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="PodToScalarPass_8cpp_source.html#l00110">110</a> of file <a class="el" href="PodToScalarPass_8cpp_source.html">PodToScalarPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PodToScalarPass_8cpp_source.html#l00137">137</a> of file <a class="el" href="PodToScalarPass_8cpp_source.html">PodToScalarPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -228,7 +245,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="PodToScalarPass_8cpp_source.html#l00100">100</a> of file <a class="el" href="PodToScalarPass_8cpp_source.html">PodToScalarPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="PodToScalarPass_8cpp_source.html#l00125">125</a> of file <a class="el" href="PodToScalarPass_8cpp_source.html">PodToScalarPass.cpp</a>.</p>
 
 </div>
 </div>

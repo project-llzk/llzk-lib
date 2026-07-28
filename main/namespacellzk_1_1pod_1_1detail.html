@@ -105,7 +105,8 @@ $(function(){initNavTree('namespacellzk_1_1pod_1_1detail.html','',''); });
 
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Classes</a>  </div>
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">llzk::pod::detail Namespace Reference</div></div>
 </div><!--header-->
 <div class="contents">
@@ -120,7 +121,84 @@ Classes</h2></td></tr>
 <tr class="memitem:PodTypeStorage" id="r_PodTypeStorage"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1pod_1_1detail_1_1PodTypeStorage.html">PodTypeStorage</a></td></tr>
 <tr class="memitem:ReadPodOpGenericAdaptorBase" id="r_ReadPodOpGenericAdaptorBase"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1pod_1_1detail_1_1ReadPodOpGenericAdaptorBase.html">ReadPodOpGenericAdaptorBase</a></td></tr>
 <tr class="memitem:WritePodOpGenericAdaptorBase" id="r_WritePodOpGenericAdaptorBase"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1pod_1_1detail_1_1WritePodOpGenericAdaptorBase.html">WritePodOpGenericAdaptorBase</a></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:a8824df4e829a1327cab73f9a0bc839ef" id="r_a8824df4e829a1327cab73f9a0bc839ef"><td class="memItemLeft" align="right" valign="top">mlir::Operation *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8824df4e829a1327cab73f9a0bc839ef">findNearestLoopCarriedPodAccess</a> (<a class="el" href="classllzk_1_1pod_1_1ReadPodOp.html">ReadPodOp</a> readOp)</td></tr>
+<tr class="memdesc:a8824df4e829a1327cab73f9a0bc839ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the nearest enclosing SCF loop that carries writes to the same external POD record.  <br /></td></tr>
+<tr class="memitem:a5d772667317f97b782ffe2ad186f0219" id="r_a5d772667317f97b782ffe2ad186f0219"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5d772667317f97b782ffe2ad186f0219">appendValuesWithExactTypes</a> (mlir::ValueRange values, mlir::TypeRange expectedTypes, llvm::SmallVectorImpl&lt; mlir::Value &gt; &amp;output)</td></tr>
+<tr class="memdesc:a5d772667317f97b782ffe2ad186f0219"><td class="mdescLeft">&#160;</td><td class="mdescRight">Append <span class="tt">values</span> only when every entry exactly matches the corresponding expected type.  <br /></td></tr>
 </table>
+<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+<a id="a5d772667317f97b782ffe2ad186f0219" name="a5d772667317f97b782ffe2ad186f0219"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5d772667317f97b782ffe2ad186f0219">&#9670;&#160;</a></span>appendValuesWithExactTypes()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::pod::detail::appendValuesWithExactTypes </td>
+          <td>(</td>
+          <td class="paramtype">mlir::ValueRange</td>          <td class="paramname"><span class="paramname"><em>values</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::TypeRange</td>          <td class="paramname"><span class="paramname"><em>expectedTypes</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::SmallVectorImpl&lt; mlir::Value &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>output</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Append <span class="tt">values</span> only when every entry exactly matches the corresponding expected type. </p>
+<p>On failure, <span class="tt">output</span> is left unchanged. POD-to-scalar uses this to avoid leaking partially collected split-array state into later fallback paths. </p>
+
+<p class="definition">Definition at line <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html#l00063">63</a> of file <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+
+</div>
+</div>
+<a id="a8824df4e829a1327cab73f9a0bc839ef" name="a8824df4e829a1327cab73f9a0bc839ef"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8824df4e829a1327cab73f9a0bc839ef">&#9670;&#160;</a></span>findNearestLoopCarriedPodAccess()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::Operation * llzk::pod::detail::findNearestLoopCarriedPodAccess </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1pod_1_1ReadPodOp.html">ReadPodOp</a></td>          <td class="paramname"><span class="paramname"><em>readOp</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Return the nearest enclosing SCF loop that carries writes to the same external POD record. </p>
+<p>This is used by POD-to-scalar lowering to decide when synthetic split-array backing for a fresh array-of-POD field read must be hoisted out of the loop body so writes remain visible to later iterations. </p>
+
+<p class="definition">Definition at line <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html#l00032">32</a> of file <a class="el" href="POD_2Transforms_2TransformationPasses_8h_source.html">TransformationPasses.h</a>.</p>
+
+</div>
+</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

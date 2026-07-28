@@ -124,11 +124,19 @@ $(function(){initNavTree('POD_2Transforms_2TransformationPasses_8td_source.html'
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>def PodToScalarPass : LLZKPass&lt;&quot;llzk-pod-to-scalar&quot;&gt; {</div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>  let summary = &quot;Replace PODs with scalar values&quot;;</div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>  let description = [{</div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>    Replace `pod.type` values with the proper number of scalar values</div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>  }];</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>}</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>#endif // LLZK_POD_TRANSFORMATION_PASSES_TD</div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>    Scalarize `pod.type` values by splitting POD-typed struct members into</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>    multiple scalar members, splitting POD-typed array elements into parallel</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>    arrays, then rewriting affected member accesses plus function signatures,</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>    calls, and returns, and finally running POD-specific SROA + mem2reg cleanup</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>    so the remaining POD storage is promoted to SSA values.</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span> </div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>    If it is necessary to scalarize both PODs and arrays, run this pass before</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>    running the `-llzk-array-to-scalar` pass because that pass will not scalarize</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>    array types that are within a POD type.</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>  }];</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>}</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span> </div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>#endif // LLZK_POD_TRANSFORMATION_PASSES_TD</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

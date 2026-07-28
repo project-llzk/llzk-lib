@@ -139,7 +139,7 @@ Functions</h2></td></tr>
 <tr class="memitem:a6e6d8dfbbdd7ccafd249e03738fdf62e" id="r_a6e6d8dfbbdd7ccafd249e03738fdf62e"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6e6d8dfbbdd7ccafd249e03738fdf62e">llzkIsValidConstReadType</a> (MlirType type)</td></tr>
 <tr class="memdesc:a6e6d8dfbbdd7ccafd249e03738fdf62e"><td class="mdescLeft">&#160;</td><td class="mdescRight">valid types: {I1, Index, FeltType, TypeVarType}  <br /></td></tr>
 <tr class="memitem:a8a790bf80a0e0c3741ec481310eda8ef" id="r_a8a790bf80a0e0c3741ec481310eda8ef"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8a790bf80a0e0c3741ec481310eda8ef">llzkIsValidArrayElemType</a> (MlirType type)</td></tr>
-<tr class="memdesc:a8a790bf80a0e0c3741ec481310eda8ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">valid types: isValidType() - {ArrayType}  <br /></td></tr>
+<tr class="memdesc:a8a790bf80a0e0c3741ec481310eda8ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">valid types: isValidType() - {ArrayType}, plus <span class="tt">NoneType</span> for shape-only arrays  <br /></td></tr>
 <tr class="memitem:a3d52525a16fecc20c7171116e1e6bb38" id="r_a3d52525a16fecc20c7171116e1e6bb38"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3d52525a16fecc20c7171116e1e6bb38">llzkIsValidArrayType</a> (MlirType type)</td></tr>
 <tr class="memdesc:a3d52525a16fecc20c7171116e1e6bb38"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if the type is a LLZK Array and it also contains a valid LLZK type.  <br /></td></tr>
 <tr class="memitem:ae633e9c9bd4592f3e0fa1b0076061cea" id="r_ae633e9c9bd4592f3e0fa1b0076061cea"><td class="memItemLeft" align="right" valign="top">MLIR_CAPI_EXPORTED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae633e9c9bd4592f3e0fa1b0076061cea">llzkIsConcreteType</a> (MlirType type, bool allowStructParams)</td></tr>
@@ -334,7 +334,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>valid types: isValidType() - {ArrayType} </p>
+<p>valid types: isValidType() - {ArrayType}, plus <span class="tt">NoneType</span> for shape-only arrays </p>
 
 <p class="definition">Definition at line <a class="el" href="Typing_8cpp_source.html#l00038">38</a> of file <a class="el" href="Typing_8cpp_source.html">Typing.cpp</a>.</p>
 

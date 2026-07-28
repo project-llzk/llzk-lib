@@ -1,5 +1,12 @@
 var NAVTREEINDEX82 =
 {
+"dialects.html#attributes-10":[7,5,0,1,0],
+"dialects.html#attributes-11":[7,6,0,0,0],
+"dialects.html#attributes-12":[7,6,0,1,0],
+"dialects.html#attributes-13":[7,6,0,2,0],
+"dialects.html#attributes-14":[7,7,0,0,0],
+"dialects.html#attributes-15":[7,8,1],
+"dialects.html#attributes-16":[7,9,0,0,0],
 "dialects.html#attributes-17":[7,9,0,1,0],
 "dialects.html#attributes-18":[7,9,0,2,0],
 "dialects.html#attributes-19":[7,9,1],
@@ -242,12 +249,5 @@ var NAVTREEINDEX82 =
 "dir_1a25ec519b6c1121408b67cc33ce3f15.html":[13,0,3,3],
 "dir_1af0ae7a8f4fcaffe5681d325dc74e64.html":[13,0,3,3,9],
 "dir_1c45e0468e85d64cc0db703544d53718.html":[13,0,3,6],
-"dir_1c8a2835c281e03f797d0c9fdebdeaa8.html":[13,0,4,0,0],
-"dir_1e5b4eebdaf2bb2c3355e29510ce7a58.html":[13,0,0,0,0,2,6],
-"dir_207a151d30dc6e082def58f9c31218d5.html":[13,0,0,0,0,3],
-"dir_2148bc142ca0808e18c26f0611e99d79.html":[13,0,2,0,2,4],
-"dir_21552e93769c0cfe1662f9cbaf5bc6dc.html":[13,0,2,0,2,2],
-"dir_21f7a74b6c5f1eb2415984ada0252316.html":[13,0,2,0,1],
-"dir_22dab5f5d42fbb54e1e17c6b88d05e38.html":[13,0,3,3,14,0],
-"dir_2333218f17efae3e90b6d759a11695c8.html":[13,0,3,2]
+"dir_1c8a2835c281e03f797d0c9fdebdeaa8.html":[13,0,4,0,0]
 };

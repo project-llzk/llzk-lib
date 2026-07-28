@@ -7,5 +7,7 @@ var namespacellzk_1_1pod_1_1detail =
     [ "PodRefOpInterfaceTrait", "structllzk_1_1pod_1_1detail_1_1PodRefOpInterfaceTrait.html", null ],
     [ "PodTypeStorage", "structllzk_1_1pod_1_1detail_1_1PodTypeStorage.html", "structllzk_1_1pod_1_1detail_1_1PodTypeStorage" ],
     [ "ReadPodOpGenericAdaptorBase", "classllzk_1_1pod_1_1detail_1_1ReadPodOpGenericAdaptorBase.html", "classllzk_1_1pod_1_1detail_1_1ReadPodOpGenericAdaptorBase" ],
-    [ "WritePodOpGenericAdaptorBase", "classllzk_1_1pod_1_1detail_1_1WritePodOpGenericAdaptorBase.html", "classllzk_1_1pod_1_1detail_1_1WritePodOpGenericAdaptorBase" ]
+    [ "WritePodOpGenericAdaptorBase", "classllzk_1_1pod_1_1detail_1_1WritePodOpGenericAdaptorBase.html", "classllzk_1_1pod_1_1detail_1_1WritePodOpGenericAdaptorBase" ],
+    [ "appendValuesWithExactTypes", "namespacellzk_1_1pod_1_1detail.html#a5d772667317f97b782ffe2ad186f0219", null ],
+    [ "findNearestLoopCarriedPodAccess", "namespacellzk_1_1pod_1_1detail.html#a8824df4e829a1327cab73f9a0bc839ef", null ]
 ];

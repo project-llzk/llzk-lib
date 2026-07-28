@@ -189,10 +189,32 @@ $(function(){initNavTree('Array_2IR_2OpInterfaces_8td_source.html','',''); });
 <div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>    ::mlir::DeletionKind rewire(const ::mlir::DestructurableMemorySlot &amp;slot,</div>
 <div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>            ::llvm::DenseMap&lt;::mlir::Attribute, ::mlir::MemorySlot&gt; &amp;subslots,</div>
 <div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>            ::mlir::OpBuilder &amp;builder, const ::mlir::DataLayout &amp;dataLayout);</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  }];</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>}</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>#endif // LLZK_ARRAY_OP_INTERFACES</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span> </div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    /// Generate `arith.constant` indices for one static array element position.</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>    static ::llvm::SmallVector&lt;::mlir::Value&gt;</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>    genIndexConstants(::mlir::OpBuilder &amp;bldr, ::mlir::Location loc, ::mlir::ArrayAttr index);</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span> </div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    /// Create an `array.read` or `array.extract` for one concrete element or subarray.</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>    static ::mlir::Value</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>    genRead(::mlir::OpBuilder &amp;bldr, ::mlir::Location loc, ::mlir::Value arrayRef,</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>            ::mlir::ValueRange indices);</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    /// Create an `array.read` or `array.extract` for one concrete element or subarray.</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    static ::mlir::Value</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>    genRead(::mlir::OpBuilder &amp;bldr, ::mlir::Location loc, ::mlir::Value arrayRef,</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>            ::mlir::ArrayAttr index);</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    /// Create an `array.write` or `array.insert` for one concrete element or subarray.</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    static void genWrite(::mlir::OpBuilder &amp;bldr, ::mlir::Location loc, ::mlir::Value arrayRef,</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>            ::mlir::ValueRange indices, ::mlir::Value value);</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span> </div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    /// Create an `array.write` or `array.insert` for one concrete element or subarray.</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    static void genWrite(::mlir::OpBuilder &amp;bldr, ::mlir::Location loc, ::mlir::Value arrayRef,</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>            ::mlir::ArrayAttr index, ::mlir::Value value);</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  }];</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>}</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span> </div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>#endif // LLZK_ARRAY_OP_INTERFACES</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->
