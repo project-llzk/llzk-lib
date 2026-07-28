@@ -139,7 +139,8 @@ def PCL_CmpGeOp : PCLCmpBase<"ge"> { let summary = "lhs >= rhs"; }
 // Boolean constants
 // -----------------------------------------------------------------------------
 
-class PCL_ConstBoolOp<string mnemonic> : PCL_Op<mnemonic, [Pure, InsideFunc, ConstantLike]> {
+class PCL_ConstBoolOp<string mnemonic>
+    : PCL_Op<mnemonic, [Pure, InsideFunc, ConstantLike]> {
   let summary = "constant "#mnemonic#" value";
   let results = (outs PCL_BoolType:$res);
   let assemblyFormat = "attr-dict";
