@@ -243,6 +243,8 @@ public:
   bool isTemplateConstant() const {
     return isConstant() && llvm::isa_and_present<polymorphic::ConstReadOp>(value.getDefiningOp());
   }
+  /// Return whether this reference originates from a read of an immutable global.
+  bool isImmutableGlobal() const;
 
   bool isConstant() const { return constant; }
   bool isConstantInt() const { return isConstantFelt() || isConstantIndex(); }

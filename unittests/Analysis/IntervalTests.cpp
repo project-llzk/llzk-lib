@@ -601,6 +601,32 @@ module attributes {llzk.lang} {
 }
 )mlir";
 
+  static constexpr auto kInitializedPodStorageModule = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @PodStorage {
+    struct.member @storage : !pod.type<[@initialized: !felt.type, @written: !felt.type]>
+    function.def @compute() -> !struct.type<@PodStorage> {
+      %self = struct.new : !struct.type<@PodStorage>
+      %five = felt.const 5
+      %seven = felt.const 7
+      %storage = pod.new { @initialized = %five }
+          : !pod.type<[@initialized: !felt.type, @written: !felt.type]>
+      pod.write %storage[@written] = %seven
+          : !pod.type<[@initialized: !felt.type, @written: !felt.type]>, !felt.type
+      %read = pod.read %storage[@initialized]
+          : !pod.type<[@initialized: !felt.type, @written: !felt.type]>, !felt.type
+      struct.writem %self[@storage] = %storage
+          : !struct.type<@PodStorage>,
+            !pod.type<[@initialized: !felt.type, @written: !felt.type]>
+      function.return %self : !struct.type<@PodStorage>
+    }
+    function.def @constrain(%self: !struct.type<@PodStorage>) {
+      function.return
+    }
+  }
+}
+)mlir";
+
   OwningOpRef<ModuleOp> parseModule(llvm::StringRef source) {
     auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
     EXPECT_TRUE(mod);
@@ -705,6 +731,39 @@ TEST_F(IntervalAnalysisAPITests, ComputeIntervalsTrackArrayNewStoredIntoMember) 
   auto expected = Interval::TypeA(field, field.felt(5), field.felt(6));
   ASSERT_TRUE(checkCond(expected, out1It->second, expected == out1It->second))
       << buildStringViaPrint(*out1Ref) << " -> " << buildStringViaPrint(out1It->second);
+}
+
+TEST_F(IntervalAnalysisAPITests, InitializedPodIntervalsSurviveAggregateMemberAssignment) {
+  auto mod = parseModule(kInitializedPodStorageModule);
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  ASSERT_TRUE(computeFn);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ModuleIntervalAnalysis analysis(mod->getOperation());
+  const Field &field = Field::getField("babybear");
+  analysis.setField(field);
+  analysis.runAnalysis(am);
+
+  MemberDefOp storageMember = *structDef.getOps<MemberDefOp>().begin();
+  SourceRef storageRef(
+      mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()),
+      {SourceRefIndex(storageMember), SourceRefIndex(StringAttr::get(&ctx, "initialized"))}
+  );
+  const auto &intervals = analysis.getResult(structDef).getComputeIntervals();
+  auto intervalIt = intervals.find(storageRef);
+  ASSERT_NE(intervalIt, intervals.end());
+  EXPECT_EQ(intervalIt->second, Interval::Degenerate(field, field.felt(5)));
+
+  SourceRef writtenRef(
+      mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()),
+      {SourceRefIndex(storageMember), SourceRefIndex(StringAttr::get(&ctx, "written"))}
+  );
+  auto writtenIt = intervals.find(writtenRef);
+  ASSERT_NE(writtenIt, intervals.end());
+  EXPECT_EQ(writtenIt->second, Interval::Degenerate(field, field.felt(7)));
 }
 
 TEST_F(IntervalAnalysisAPITests, UnreducedIntervalsDisabledByDefault) {
