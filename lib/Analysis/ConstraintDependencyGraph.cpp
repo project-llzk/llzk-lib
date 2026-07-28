@@ -103,6 +103,86 @@ std::optional<std::pair<APInt, APInt>> getStaticLoopIndexRange(Value index) {
   return std::pair(lower.getValueAPInt(), upper.getValueAPInt());
 }
 
+llvm::SmallVector<std::pair<uint64_t, uint64_t>>
+getAggregateAlternativeOrdinals(const SourceRef &ref) {
+  llvm::SmallVector<std::pair<uint64_t, uint64_t>> result;
+  auto root = ref.getRoot();
+  if (failed(root)) {
+    return result;
+  }
+  Type currentType = root->getType();
+  for (const SourceRefIndex &index : ref.getPath()) {
+    if (index.isMember()) {
+      currentType = index.getMember().getType();
+      continue;
+    }
+    if (index.isPodRecord()) {
+      auto podType = llvm::dyn_cast<PodType>(currentType);
+      if (!podType) {
+        continue;
+      }
+      auto records = podType.getRecords();
+      for (auto [ordinal, record] : llvm::enumerate(records)) {
+        if (record.getName() == index.getPodRecordNameAttr()) {
+          result.emplace_back(ordinal, records.size());
+          currentType = record.getType();
+          break;
+        }
+      }
+      continue;
+    }
+    if (index.isIndex() || index.isIndexRange()) {
+      if (auto arrayType = llvm::dyn_cast<ArrayType>(currentType)) {
+        currentType = arrayType.getElementType();
+      }
+    }
+  }
+  return result;
+}
+
+bool isCompatibleIndexedAlternative(const SourceRef &candidate, const SourceRef &selection) {
+  llvm::SmallVector<std::pair<uint64_t, uint64_t>> selectedIndices;
+  auto root = selection.getRoot();
+  if (failed(root)) {
+    return true;
+  }
+  Type currentType = root->getType();
+  for (const SourceRefIndex &index : selection.getPath()) {
+    if (index.isMember()) {
+      currentType = index.getMember().getType();
+      continue;
+    }
+    if (index.isPodRecord()) {
+      if (auto podType = llvm::dyn_cast<PodType>(currentType)) {
+        for (auto record : podType.getRecords()) {
+          if (record.getName() == index.getPodRecordNameAttr()) {
+            currentType = record.getType();
+            break;
+          }
+        }
+      }
+      continue;
+    }
+    if (auto arrayType = llvm::dyn_cast<ArrayType>(currentType)) {
+      if (index.isIndex()) {
+        selectedIndices.emplace_back(
+            static_cast<uint64_t>(static_cast<int64_t>(index.getIndex())), arrayType.getDimSize(0)
+        );
+      }
+      currentType = arrayType.getElementType();
+    }
+  }
+
+  for (auto [ordinal, alternativeCount] : getAggregateAlternativeOrdinals(candidate)) {
+    for (auto [selected, dimensionSize] : selectedIndices) {
+      if (alternativeCount == dimensionSize && ordinal != selected) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 SourceRefLatticeValue createShapedArrayValue(Value rootValue, ArrayType arrayTy) {
   SourceRefLatticeValue result(arrayTy.getShape());
   ArrayIndexGen indexGen = ArrayIndexGen::from(arrayTy);
@@ -1105,6 +1185,9 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
         signalSets.unionSets(leader, *mit);
       }
     }
+    for (const auto &[source, targets] : translatedCDG.dependencyEdges) {
+      dependencyEdges[source].insert(targets.begin(), targets.end());
+    }
     // And update the constant sets
     for (auto &[ref, constSet] : translatedCDG.constantSets) {
       constantSets[ref].insert(constSet.begin(), constSet.end());
@@ -1135,6 +1218,13 @@ void ConstraintDependencyGraph::walkConstrainOp(
 
   // Compute a transitive closure over the signals.
   if (!signalUsages.empty()) {
+    for (const SourceRef &lhs : signalUsages) {
+      for (const SourceRef &rhs : signalUsages) {
+        if (lhs != rhs) {
+          dependencyEdges[lhs].insert(rhs);
+        }
+      }
+    }
     auto it = signalUsages.begin();
     auto leader = signalSets.getOrInsertLeaderValue(*it);
     for (it++; it != signalUsages.end(); it++) {
@@ -1229,6 +1319,27 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
     }
   }
 
+  for (const auto &[source, targets] : dependencyEdges) {
+    auto translatedSources = translate(source);
+    if (failed(translatedSources)) {
+      continue;
+    }
+    for (const SourceRef &target : targets) {
+      auto translatedTargets = translate(target);
+      if (failed(translatedTargets)) {
+        continue;
+      }
+      for (const SourceRef &translatedSource : *translatedSources) {
+        for (const SourceRef &translatedTarget : *translatedTargets) {
+          if (!translatedSource.isConstant() && !translatedTarget.isConstant() &&
+              translatedSource != translatedTarget) {
+            res.dependencyEdges[translatedSource].insert(translatedTarget);
+          }
+        }
+      }
+    }
+  }
+
   // Translate ref2Val as well
   for (const auto &[ref, vals] : ref2Val) {
     auto translationRes = translate(ref);
@@ -1244,27 +1355,52 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
 
 SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &ref) const {
   SourceRefSet res;
-  auto currRef = mlir::FailureOr<SourceRef>(ref);
-  while (mlir::succeeded(currRef)) {
-    // A dynamic access is represented by a half-open range. Match every concrete element and
-    // range that overlaps the queried path, as well as exact references.
-    for (auto candidate = signalSets.begin(); candidate != signalSets.end(); ++candidate) {
-      const SourceRef &candidateRef = candidate->getData();
-      if (!candidateRef.overlaps(*currRef)) {
-        continue;
+  SourceRefSet visited;
+  llvm::SmallVector<SourceRef> worklist = {ref};
+
+  // Overlapping aggregate ranges can bridge otherwise distinct equivalence sets. Follow those
+  // bridges transitively so that, for example, `out[2] == child.out[2]` and a child constraint on
+  // `child.out[0:N]` connect `out[2]` to the child's inputs.
+  while (!worklist.empty()) {
+    auto currRef = mlir::FailureOr<SourceRef>(worklist.pop_back_val());
+    while (mlir::succeeded(currRef)) {
+      if (!visited.insert(*currRef).second) {
+        break;
       }
-      for (auto it = signalSets.findLeader(candidate); it != signalSets.member_end(); ++it) {
-        if (!it->overlaps(ref)) {
-          res.insert(*it);
+
+      for (const auto &[source, targets] : dependencyEdges) {
+        if (!source.overlaps(*currRef) || !isCompatibleIndexedAlternative(source, ref)) {
+          continue;
+        }
+        if (auto constIt = constantSets.find(source); constIt != constantSets.end()) {
+          res.insert(constIt->second.begin(), constIt->second.end());
+        }
+        for (const SourceRef &target : targets) {
+          if (!isCompatibleIndexedAlternative(target, ref)) {
+            continue;
+          }
+          SourceRef narrowed = target.narrowRanges(*currRef);
+          if (!visited.contains(narrowed)) {
+            worklist.push_back(narrowed);
+          }
+          if (!narrowed.overlaps(ref)) {
+            res.insert(narrowed);
+          }
+          auto constIt = constantSets.find(target);
+          if (constIt != constantSets.end()) {
+            res.insert(constIt->second.begin(), constIt->second.end());
+          }
         }
       }
-      auto constIt = constantSets.find(candidateRef);
-      if (constIt != constantSets.end()) {
-        res.insert(constIt->second.begin(), constIt->second.end());
+      for (const auto &[constantSource, constants] : constantSets) {
+        if (constantSource.overlaps(*currRef) &&
+            isCompatibleIndexedAlternative(constantSource, ref)) {
+          res.insert(constants.begin(), constants.end());
+        }
       }
+      // Constraints on an aggregate also constrain its scalar descendants.
+      currRef = currRef->getParentPrefix();
     }
-    // Go to parent
-    currRef = currRef->getParentPrefix();
   }
   return res;
 }
