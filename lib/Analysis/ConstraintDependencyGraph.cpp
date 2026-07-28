@@ -12,7 +12,10 @@
 #include "llzk/Analysis/SourceRefLattice.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
+#include "llzk/Dialect/Bool/IR/Ops.h"
+#include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
+#include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Util/Hash.h"
@@ -36,6 +39,7 @@ using namespace mlir;
 namespace llzk {
 
 using namespace array;
+using namespace cast;
 using namespace component;
 using namespace constrain;
 using namespace function;
@@ -52,6 +56,69 @@ bool isInMaybeSkippedScfRegion(Operation *op) {
     }
   }
   return false;
+}
+
+std::optional<std::pair<APInt, APInt>> getStaticLoopIndexRange(Value index) {
+  if (auto toIndex = index.getDefiningOp<FeltToIndexOp>()) {
+    index = toIndex.getValue();
+  }
+  auto blockArg = llvm::dyn_cast<BlockArgument>(index);
+  if (!blockArg) {
+    return std::nullopt;
+  }
+
+  if (auto forOp = llvm::dyn_cast<scf::ForOp>(blockArg.getOwner()->getParentOp())) {
+    if (blockArg != forOp.getInductionVar()) {
+      return std::nullopt;
+    }
+    auto lower = forOp.getLowerBound().getDefiningOp<arith::ConstantIndexOp>();
+    auto upper = forOp.getUpperBound().getDefiningOp<arith::ConstantIndexOp>();
+    if (lower && upper) {
+      return std::pair(APInt(64, lower.value()), APInt(64, upper.value()));
+    }
+    return std::nullopt;
+  }
+
+  auto whileOp = llvm::dyn_cast<scf::WhileOp>(blockArg.getOwner()->getParentOp());
+  if (!whileOp || blockArg.getOwner() != &whileOp.getAfter().front()) {
+    return std::nullopt;
+  }
+  unsigned argumentNumber = blockArg.getArgNumber();
+  if (argumentNumber >= whileOp.getBeforeArguments().size() ||
+      argumentNumber >= whileOp.getInits().size()) {
+    return std::nullopt;
+  }
+
+  auto lower = whileOp.getInits()[argumentNumber].getDefiningOp<felt::FeltConstantOp>();
+  auto cmp = whileOp.getConditionOp().getCondition().getDefiningOp<boolean::CmpOp>();
+  Value beforeArgument = whileOp.getBeforeArguments()[argumentNumber];
+  if (!lower || !cmp || cmp.getPredicate() != boolean::FeltCmpPredicate::LT ||
+      cmp.getLhs() != beforeArgument) {
+    return std::nullopt;
+  }
+  auto upper = cmp.getRhs().getDefiningOp<felt::FeltConstantOp>();
+  if (!upper) {
+    return std::nullopt;
+  }
+  return std::pair(lower.getValueAPInt(), upper.getValueAPInt());
+}
+
+SourceRefLatticeValue createShapedArrayValue(Value rootValue, ArrayType arrayTy) {
+  SourceRefLatticeValue result(arrayTy.getShape());
+  ArrayIndexGen indexGen = ArrayIndexGen::from(arrayTy);
+  SourceRef root = *SourceRefLattice::getSourceRef(rootValue);
+  for (size_t i = 0; i < result.getArraySize(); ++i) {
+    auto indices = indexGen.delinearize(i, rootValue.getContext());
+    ensure(indices.has_value(), "could not delinearize aggregate array element index");
+    SourceRef element = root;
+    for (Attribute attr : *indices) {
+      auto child = element.createChild(SourceRefIndex(llvm::cast<IntegerAttr>(attr).getValue()));
+      ensure(succeeded(child), "could not create aggregate array element SourceRef");
+      element = *child;
+    }
+    (void)result.getElemFlatIdx(i).setValue(SourceRefLatticeValue(element));
+  }
+  return result;
 }
 
 } // namespace
@@ -80,6 +147,14 @@ public:
   /// Resolve known storage writes transitively, preserving unwritten and cyclic addresses.
   SourceRefLatticeValue
   resolveDependencies(const SourceRefLatticeValue &addresses, Operation *before) const;
+
+  /// Materialize compact nondeterministic aggregates from their storage dependencies.
+  SourceRefLatticeValue
+  resolveValueDependencies(mlir::Value value, const SourceRefLatticeValue &fallback) const;
+
+  /// Materialize compact nondeterministic aggregates from their final storage dependencies.
+  SourceRefLatticeValue
+  resolveValueDependencies(mlir::Value value, const SourceRefLatticeValue &fallback) const;
 
   /// Record a storage write for later dependency queries.
   void recordStorageWrite(
@@ -142,11 +217,7 @@ SourceRefLatticeValue SourceRefAnalysis::getDependencyState(DataFlowSolver &solv
     top = top->getParentOp();
   }
   if (const auto *state = solver.lookupState<StorageState>(solver.getProgramPointBefore(top))) {
-    Operation *before = val.getDefiningOp();
-    if (before == nullptr) {
-      before = val.getParentBlock()->getParentOp();
-    }
-    return state->resolveDependencies(value, before);
+    return state->resolveValueDependencies(val, value);
   }
   return value;
 }
@@ -158,6 +229,46 @@ SourceRefAnalysis::StorageState *SourceRefAnalysis::getStorageState(Operation *o
   auto *state = getOrCreate<StorageState>(getProgramPointBefore(op));
   state->setTop(op);
   return state;
+}
+
+SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveValueDependencies(
+    Value value, const SourceRefLatticeValue &fallback
+) const {
+  auto result = llvm::dyn_cast<OpResult>(value);
+  auto nondet = result ? result.getDefiningOp<NonDetOp>() : NonDetOp();
+  auto arrayTy = nondet ? llvm::dyn_cast<ArrayType>(value.getType()) : ArrayType();
+  Operation *before = nullptr;
+  if (Operation *defOp = value.getDefiningOp()) {
+    auto memberAccess = llvm::dyn_cast<MemberRefOpInterface>(defOp);
+    auto podAccess = llvm::dyn_cast<PodAccessOpInterface>(defOp);
+    if ((memberAccess && memberAccess.isRead()) || (podAccess && podAccess.isRead()) ||
+        llvm::isa<ReadArrayOp, ExtractArrayOp>(defOp)) {
+      before = defOp;
+    }
+  }
+  constexpr size_t maxPreciselyResolvedElements = 64;
+  if (!arrayTy || !arrayTy.hasStaticShape() ||
+      std::cmp_greater(arrayTy.getNumElements(), maxPreciselyResolvedElements)) {
+    return resolveDependencies(fallback, before);
+  }
+  // Aggregate allocations model storage populated by following operations, so their dependencies
+  // intentionally use the complete write history. Storage reads use their defining operation as
+  // the cutoff above.
+  SourceRefLatticeValue resolved =
+      resolveDependencies(createShapedArrayValue(value, arrayTy), before);
+  for (size_t i = 0; i < resolved.getArraySize(); ++i) {
+    SourceRefLatticeValue &element = resolved.getElemFlatIdx(i);
+    SourceRefSet refs = element.foldToScalar();
+    if (llvm::any_of(refs, [](const SourceRef &ref) { return !ref.isConstant(); })) {
+      for (const SourceRef &ref : refs) {
+        auto constant = ref.getConstantValue();
+        if (succeeded(constant) && *constant == 0) {
+          (void)element.remove(ref);
+        }
+      }
+    }
+  }
+  return resolved;
 }
 
 SourceRefLatticeValue SourceRefAnalysis::StorageState::canonicalize(
@@ -491,6 +602,8 @@ SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
 
         if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstant()) {
           indices.emplace_back(*idxVals.getSingleValue().getConstantValue());
+        } else if (auto bounds = getStaticLoopIndexRange(idxOperand)) {
+          indices.emplace_back(bounds->first, bounds->second);
         } else {
           auto arrayType = llvm::dyn_cast<ArrayType>(array.getType());
           auto lower = APInt::getZero(64);
@@ -517,7 +630,8 @@ void SourceRefAnalysis::setToEntryState(Lattice *lattice) {
   if (auto value = llvm::dyn_cast_if_present<Value>(lattice->getAnchor())) {
     if (auto arg = llvm::dyn_cast<BlockArgument>(value)) {
       Operation *parent = arg.getOwner()->getParentOp();
-      if (llvm::isa_and_present<RegionBranchOpInterface>(parent) &&
+      if (parent && !llvm::isa<FunctionOpInterface>(parent) &&
+          llvm::isa<RegionBranchOpInterface>(parent) &&
           llvm::isa<ArrayType, StructType, PodType>(value.getType())) {
         // Region-branch arguments are aliases of their incoming aggregate storage. Giving them a
         // fresh root would make loop-carried writes unstable and would discard that identity.
@@ -589,11 +703,21 @@ LogicalResult SourceRefAnalysis::visitOperation(
   }
 
   if (auto arrayAccessOp = llvm::dyn_cast<ArrayAccessOpInterface>(op)) {
-    if (llvm::isa<WriteArrayOp, InsertArrayOp>(arrayAccessOp)) {
-      SourceRefLatticeValue writeTargets = arraySubdivisionOpUpdate(arrayAccessOp, operandVals);
+    if (llvm::isa<WriteArrayOp, InsertArrayOp>(op)) {
+      auto *arrayLattice = getLatticeElement(arrayAccessOp.getArrRef());
+      SourceRefLatticeValue updatedArray = arrayLattice->getValue();
       Value rvalue = op->getOperands().back();
       SourceRefLatticeValue writeValue = operandVals.at(rvalue)->getValue();
       const bool mayBeSkipped = isInMaybeSkippedScfRegion(op);
+      std::vector<SourceRefIndex> indices;
+      SourceRefLatticeValue writeTargets =
+          arraySubdivisionOpUpdate(arrayAccessOp, operandVals, &indices);
+      if (updatedArray.isArray()) {
+        ChangeResult changed = updatedArray.write(indices, writeValue, mayBeSkipped);
+        if (changed == ChangeResult::Change) {
+          propagateIfChanged(arrayLattice, arrayLattice->setValue(updatedArray));
+        }
+      }
       getStorageState(op)->recordStorageWrite(
           op, /*writeIndex=*/0, writeTargets, writeValue, mayBeSkipped
       );
@@ -602,8 +726,7 @@ LogicalResult SourceRefAnalysis::visitOperation(
             op, /*aliasIndex=*/0, writeValue, writeTargets, mayBeSkipped
         );
       }
-    }
-    if (!results.empty()) {
+    } else if (!results.empty()) {
       auto newVals = arraySubdivisionOpUpdate(arrayAccessOp, operandVals);
       propagateIfChanged(results.front(), results.front()->setValue(newVals));
     }
@@ -614,10 +737,18 @@ LogicalResult SourceRefAnalysis::visitOperation(
     auto createArrayRes = createArray.getResult();
     const auto &elements = createArray.getElements();
     if (elements.empty()) {
-      propagateIfChanged(
-          results.front(),
-          results.front()->setValue(SourceRef(llvm::cast<OpResult>(createArrayRes)))
-      );
+      ArrayType arrayTy = createArray.getType();
+      if (arrayTy.hasStaticShape()) {
+        propagateIfChanged(
+            results.front(),
+            results.front()->setValue(createShapedArrayValue(createArrayRes, arrayTy))
+        );
+      } else {
+        propagateIfChanged(
+            results.front(),
+            results.front()->setValue(SourceRef(llvm::cast<OpResult>(createArrayRes)))
+        );
+      }
       return success();
     }
 
@@ -747,7 +878,8 @@ ChangeResult SourceRefAnalysis::fallbackOpUpdate(
 }
 
 SourceRefLatticeValue SourceRefAnalysis::arraySubdivisionOpUpdate(
-    ArrayAccessOpInterface arrayAccessOp, const OperandValues &operandVals
+    ArrayAccessOpInterface arrayAccessOp, const OperandValues &operandVals,
+    std::vector<SourceRefIndex> *resolvedIndices
 ) {
   auto array = arrayAccessOp.getArrRef();
   auto it = operandVals.find(array);
@@ -763,6 +895,8 @@ SourceRefLatticeValue SourceRefAnalysis::arraySubdivisionOpUpdate(
 
     if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstant()) {
       indices.emplace_back(*idxVals.getSingleValue().getConstantValue());
+    } else if (auto bounds = getStaticLoopIndexRange(idxOperand)) {
+      indices.emplace_back(bounds->first, bounds->second);
     } else {
       auto arrayType = llvm::dyn_cast<ArrayType>(array.getType());
       auto lower = APInt::getZero(64);
@@ -772,8 +906,20 @@ SourceRefLatticeValue SourceRefAnalysis::arraySubdivisionOpUpdate(
     }
   }
 
+  if (resolvedIndices != nullptr) {
+    *resolvedIndices = indices;
+    // Write-like operations only need the selected indices before updating the base lattice. Do
+    // not try to extract the old value: uninitialized or partially shaped aggregate storage may
+    // not yet support that read, while the subsequent write can still initialize it.
+    return SourceRefLatticeValue();
+  }
   auto newValsRes = currVals.extract(indices);
-  ensure(succeeded(newValsRes), "could not create SourceRef child for array access");
+  if (failed(newValsRes)) {
+    // Aggregate storage may conservatively fold to a scalar dependency set after control-flow or
+    // alias joins. In that case an element read depends on the whole folded value; retaining those
+    // dependencies is safer than manufacturing an ill-typed child path (and avoids a fatal error).
+    return currVals;
+  }
   auto [newVals, _] = *newValsRes;
   if (llvm::isa<ReadArrayOp, WriteArrayOp>(arrayAccessOp)) {
     ensure(newVals.isScalar(), "array read/write must produce a scalar value");

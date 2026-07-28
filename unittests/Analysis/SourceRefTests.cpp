@@ -353,10 +353,13 @@ module attributes {llzk.lang} {
 
   llvm::SmallVector<pod::NewPodOp> pods;
   llvm::SmallVector<pod::ReadPodOp> reads;
+  component::MemberWriteOp storageWrite;
   computeFn.walk([&](pod::NewPodOp op) { pods.push_back(op); });
   computeFn.walk([&](pod::ReadPodOp op) { reads.push_back(op); });
+  computeFn.walk([&](component::MemberWriteOp op) { storageWrite = op; });
   ASSERT_EQ(pods.size(), 5U);
   ASSERT_EQ(reads.size(), 7U);
+  ASSERT_TRUE(storageWrite);
   pod::ReadPodOp constrainRead;
   constrainFn.walk([&](pod::ReadPodOp op) { constrainRead = op; });
   ASSERT_TRUE(constrainRead);
@@ -366,6 +369,13 @@ module attributes {llzk.lang} {
   ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
   analysis.ensureAnalysisRun(am);
   DataFlowSolver &solver = analysis.getSolver();
+
+  auto writeTarget = SourceRefAnalysis::getWriteTargetState(solver, storageWrite);
+  ASSERT_TRUE(succeeded(writeTarget));
+  SourceRef expectedWriteTarget(
+      mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()), {SourceRefIndex(storageMember)}
+  );
+  EXPECT_EQ(writeTarget->foldToScalar(), SourceRefSet({expectedWriteTarget}));
 
   SourceRef constrainStorageValue(
       mlir::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain()),

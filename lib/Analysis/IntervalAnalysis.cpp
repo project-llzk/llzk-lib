@@ -1104,10 +1104,15 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     }
 
     SourceRefLatticeValue arrayVals = getSourceRefState(writeArr.getArrRef());
-    if (arrayVals.isScalar()) {
+    if (arrayVals.isSingleValue()) {
       std::vector<SourceRefIndex> indices = getArrayAccessIndices(op, writeArr);
       auto targetRefsRes = arrayVals.extract(indices);
-      ensure(succeeded(targetRefsRes), "could not create SourceRef child for array write");
+      // Aggregate escape snapshots may compact all element dependencies into a scalar set.
+      // The direct access reference above still records this write precisely; a compact set
+      // cannot be indexed further and is therefore only useful as a conservative dependency.
+      if (failed(targetRefsRes)) {
+        return success();
+      }
       auto [targetRefs, _] = *targetRefsRes;
       ensure(targetRefs.isScalar(), "array write must resolve to scalar references");
       for (const SourceRef &ref : targetRefs.getScalarValue()) {

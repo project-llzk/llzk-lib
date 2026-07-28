@@ -19,6 +19,7 @@
 #include "llzk/Util/StreamHelper.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Parser/Parser.h>
 
 #include <gtest/gtest.h>
@@ -601,6 +602,53 @@ module attributes {llzk.lang} {
 }
 )mlir";
 
+  static constexpr auto kScfCarriedPodArrayModule = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @ScfCarriedPodArray {
+    struct.member @out : !felt.type {llzk.pub, signal}
+
+    function.def @compute() -> !struct.type<@ScfCarriedPodArray>
+        attributes {function.allow_non_native_field_ops, function.allow_witness} {
+      %self = struct.new : <@ScfCarriedPodArray>
+      %three = felt.const 3
+      %nine = felt.const 9
+      %left = pod.new { @value = %three } : !pod.type<[@value: !felt.type]>
+      %right = pod.new { @value = %nine } : !pod.type<[@value: !felt.type]>
+      %pods = array.new %left, %right : <2 x !pod.type<[@value: !felt.type]>>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %loop:2 = scf.while (%i = %c0, %state = %pods)
+          : (index, !array.type<2 x !pod.type<[@value: !felt.type]>>)
+          -> (index, !array.type<2 x !pod.type<[@value: !felt.type]>>) {
+        %lt = arith.cmpi slt, %i, %c1 : index
+        %eq = arith.cmpi eq, %i, %c0 : index
+        %cond = bool.and %lt, %eq
+        scf.condition(%cond) %i, %state
+            : index, !array.type<2 x !pod.type<[@value: !felt.type]>>
+      } do {
+      ^bb0(%i: index, %state: !array.type<2 x !pod.type<[@value: !felt.type]>>):
+        %pod = array.read %state[%c0]
+            : <2 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
+        %value = pod.read %pod[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+        %next = arith.addi %i, %c1 : index
+        scf.yield %next, %state
+            : index, !array.type<2 x !pod.type<[@value: !felt.type]>>
+      }
+      %resultPod = array.read %loop#1[%c0]
+          : <2 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
+      %result = pod.read %resultPod[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      struct.writem %self[@out] = %result : <@ScfCarriedPodArray>, !felt.type
+      function.return %self : !struct.type<@ScfCarriedPodArray>
+    }
+
+    function.def @constrain(%self: !struct.type<@ScfCarriedPodArray>)
+        attributes {function.allow_constraint} {
+      function.return
+    }
+  }
+}
+)mlir";
+
   static constexpr auto kInitializedPodStorageModule = R"mlir(
 module attributes {llzk.lang} {
   struct.def @PodStorage {
@@ -731,6 +779,57 @@ TEST_F(IntervalAnalysisAPITests, ComputeIntervalsTrackArrayNewStoredIntoMember) 
   auto expected = Interval::TypeA(field, field.felt(5), field.felt(6));
   ASSERT_TRUE(checkCond(expected, out1It->second, expected == out1It->second))
       << buildStringViaPrint(*out1Ref) << " -> " << buildStringViaPrint(out1It->second);
+}
+
+TEST_F(IntervalAnalysisAPITests, ScfWhilePreservesCarriedPodArraySourceRefs) {
+  auto mod = parseModule(kScfCarriedPodArrayModule);
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  ASSERT_TRUE(computeFn != nullptr);
+
+  scf::WhileOp whileOp;
+  array::ReadArrayOp resultRead;
+  pod::ReadPodOp resultPodRead;
+  computeFn.walk([&](scf::WhileOp candidate) { whileOp = candidate; });
+  ASSERT_TRUE(whileOp != nullptr);
+  computeFn.walk([&](array::ReadArrayOp candidateArrayRead) {
+    if (candidateArrayRead.getArrRef() == whileOp.getResult(1)) {
+      resultRead = candidateArrayRead;
+    }
+  });
+  ASSERT_TRUE(resultRead != nullptr);
+  computeFn.walk([&](pod::ReadPodOp candidatePodRead) {
+    if (candidatePodRead.getPodRef() == resultRead.getResult()) {
+      resultPodRead = candidatePodRead;
+    }
+  });
+  ASSERT_TRUE(resultPodRead != nullptr);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ModuleIntervalAnalysis analysis(mod->getOperation());
+  const Field &field = Field::getField("babybear");
+  analysis.setField(field);
+  analysis.runAnalysis(am);
+
+  SourceRefLatticeValue carried =
+      SourceRefAnalysis::getValueState(analysis.getSolver(), whileOp.getResult(1));
+  ASSERT_TRUE(carried.isArray());
+  ASSERT_EQ(carried.getArraySize(), 2U);
+
+  SourceRefLatticeValue readState =
+      SourceRefAnalysis::getValueState(analysis.getSolver(), resultRead.getResult());
+  ASSERT_TRUE(readState.isSingleValue());
+  SourceRefLatticeValue scalarState =
+      SourceRefAnalysis::getValueState(analysis.getSolver(), resultPodRead.getResult());
+  ASSERT_TRUE(scalarState.isSingleValue());
+
+  const IntervalAnalysisLattice *resultLattice = lookupLattice(analysis, resultPodRead.getResult());
+  ASSERT_NE(resultLattice, nullptr);
+  const Interval &resultInterval = resultLattice->getValue().getScalarValue().getInterval();
+  // Loop-carried values are deliberately widened, but the post-loop query must remain usable.
+  EXPECT_TRUE(resultInterval.isEntire());
 }
 
 TEST_F(IntervalAnalysisAPITests, InitializedPodIntervalsSurviveAggregateMemberAssignment) {
