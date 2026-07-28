@@ -14,10 +14,13 @@
 #include "llzk/Dialect/Felt/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Dialect.h"
+#include "llzk/Dialect/Include/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/IR/Dialect.h"
+#include "llzk/Dialect/POD/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
+#include "llzk/Dialect/RAM/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
-#include "llzk/Dialect/Undef/IR/Dialect.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 
 #include <mlir/Dialect/ControlFlow/IR/ControlFlowOps.h>
@@ -29,9 +32,13 @@ using namespace llzk;
 namespace {
 
 template <typename InlinerImpl, typename DialectImpl, typename... RequiredDialects>
+// Suppress false positive from `clang-tidy`
+// NOLINTNEXTLINE(bugprone-crtp-constructor-accessibility)
 struct BaseInlinerInterface : public DialectInlinerInterface {
+protected:
   using DialectInlinerInterface::DialectInlinerInterface;
 
+public:
   static void registrationHook(MLIRContext *ctx, DialectImpl *dialect) {
     dialect->template addInterfaces<InlinerImpl>();
     if constexpr (sizeof...(RequiredDialects) != 0) {
@@ -95,13 +102,17 @@ void registerInliningExtensions(DialectRegistry &registry) {
   registry.addExtension(FuncInlinerInterface::registrationHook);
   registry.addExtension(FullyLegalForInlining<component::StructDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<constrain::ConstrainDialect>::registrationHook);
-  registry.addExtension(FullyLegalForInlining<undef::UndefDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<string::StringDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<polymorphic::PolymorphicDialect>::registrationHook);
+  registry.addExtension(FullyLegalForInlining<ram::RAMDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<felt::FeltDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<global::GlobalDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<boolean::BoolDialect>::registrationHook);
   registry.addExtension(FullyLegalForInlining<array::ArrayDialect>::registrationHook);
+  registry.addExtension(FullyLegalForInlining<cast::CastDialect>::registrationHook);
+  registry.addExtension(FullyLegalForInlining<include::IncludeDialect>::registrationHook);
+  registry.addExtension(FullyLegalForInlining<llzk::LLZKDialect>::registrationHook);
+  registry.addExtension(FullyLegalForInlining<pod::PODDialect>::registrationHook);
 }
 
 } // namespace llzk

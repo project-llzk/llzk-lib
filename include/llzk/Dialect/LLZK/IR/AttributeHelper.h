@@ -14,6 +14,9 @@
 #include <mlir/IR/DialectImplementation.h>
 
 #include <llvm/ADT/APInt.h>
+#include <llvm/ADT/Hashing.h>
+
+#include <utility>
 
 template <> struct mlir::FieldParser<llvm::APInt> {
   static mlir::FailureOr<llvm::APInt> parse(mlir::AsmParser &parser) {
@@ -29,6 +32,36 @@ template <> struct mlir::FieldParser<llvm::APInt> {
 };
 
 namespace llzk {
+
+/// Storage key for APInts whose numeric value is independent of bit width.
+class APIntValue {
+public:
+  APIntValue(llvm::APInt apInt) : value(std::move(apInt)) {}
+
+  const llvm::APInt &getValue() const { return value; }
+  operator const llvm::APInt &() const { return value; }
+
+  friend bool operator==(const APIntValue &lhs, const APIntValue &rhs) {
+    return llvm::APInt::isSameValue(lhs.value, rhs.value);
+  }
+
+  friend llvm::hash_code hash_value(const APIntValue &key) {
+    unsigned activeBits = key.value.getActiveBits();
+    llvm::APInt canonical = key.value.trunc(activeBits == 0 ? 1 : activeBits);
+    return llvm::hash_value(canonical);
+  }
+
+private:
+  llvm::APInt value;
+};
+
+inline mlir::FailureOr<APIntValue> parseAPIntValue(mlir::AsmParser &parser) {
+  mlir::FailureOr<llvm::APInt> value = mlir::FieldParser<llvm::APInt>::parse(parser);
+  if (mlir::failed(value)) {
+    return mlir::failure();
+  }
+  return APIntValue(std::move(*value));
+}
 
 inline llvm::APInt toAPInt(int64_t i) { return llvm::APInt(64, i); }
 inline int64_t fromAPInt(const llvm::APInt &i) { return i.getSExtValue(); }

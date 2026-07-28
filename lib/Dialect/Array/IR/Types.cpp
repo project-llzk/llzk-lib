@@ -7,8 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/IR/Types.h"
+
+#include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Util/TypeHelper.h"
 
@@ -57,7 +58,8 @@ LogicalResult computeShapeFromDims(
 }
 
 ParseResult parseDerivedShape(
-    AsmParser &parser, SmallVector<int64_t> &shape, SmallVector<Attribute> dimensionSizes
+    AsmParser &parser, SmallVector<int64_t> &shape,
+    SmallVector<Attribute> dimensionSizes // NOLINT(performance-unnecessary-value-param)
 ) {
   // This is not actually parsing. It's computing the derived
   //  `shape` from the `dimensionSizes` attributes.
@@ -72,7 +74,7 @@ void printDerivedShape(AsmPrinter &, ArrayRef<int64_t>, ArrayRef<Attribute>) {
 
 LogicalResult ArrayType::verify(
     function_ref<InFlightDiagnostic()> emitError, Type elementType,
-    ArrayRef<Attribute> dimensionSizes, ArrayRef<int64_t> shape
+    ArrayRef<Attribute> dimensionSizes, ArrayRef<int64_t> /*shape*/
 ) {
   return verifyArrayType(wrapNonNullableInFlightDiagnostic(emitError), elementType, dimensionSizes);
 }
@@ -138,6 +140,18 @@ Type ArrayType::getTypeAtIndex(Attribute index) const {
   }
   // If that's successful, the destructured type is the size-1 array of the element type.
   return createArrayOfSizeOne(getElementType());
+}
+
+Type ArrayType::getSelectionType(size_t numIndices) const {
+  if (numIndices == 0) {
+    return *this;
+  }
+  auto dims = getDimensionSizes();
+  if (numIndices >= dims.size()) {
+    ensure(numIndices == dims.size(), "cannot index more array dimensions than exist in the type");
+    return getElementType();
+  }
+  return ArrayType::get(getElementType(), dims.drop_front(numIndices));
 }
 
 ParseResult parseAttrVec(AsmParser &parser, SmallVector<Attribute> &value) {

@@ -16,6 +16,7 @@
 #define LLZK_FUNC_OPS
 
 include "llzk/Dialect/Function/IR/Dialect.td"
+include "llzk/Dialect/Verif/IR/OpInterfaces.td"
 include "llzk/Dialect/Shared/OpTraits.td"
 include "llzk/Dialect/Shared/Types.td"
 
@@ -36,46 +37,64 @@ class FunctionDialectOp<string mnemonic, list<Trait> traits = []>
 
 def FuncDefOp
     : FunctionDialectOp<
-          "def",
-          [ParentOneOf<["::mlir::ModuleOp", "::llzk::component::StructDefOp"]>,
-           DeclareOpInterfaceMethods<SymbolUserOpInterface>, AffineScope,
-           AutomaticAllocationScope, FunctionOpInterface, IsolatedFromAbove]> {
+          "def", [ParentOneOf<["::mlir::ModuleOp",
+                               "::llzk::component::StructDefOp",
+                               "::llzk::polymorphic::TemplateOp"]>,
+                  DeclareOpInterfaceMethods<SymbolUserOpInterface>, AffineScope,
+                  AutomaticAllocationScope, FunctionOpInterface,
+                  IsolatedFromAbove, ContractTarget]> {
   // NOTE: Cannot have SymbolTable trait because that would cause global
   // functions without a body to produce "Operations with a 'SymbolTable' must
   // have exactly one block"
   let summary = "An operation with a name containing a single `SSACFG` region";
   let description = [{
     Operations within the function cannot implicitly capture values defined
-    outside of the function, i.e., Functions are `IsolatedFromAbove`. All
-    external references must use function arguments or attributes that establish
-    a symbolic connection (e.g. symbols referenced by name via a string
-    attribute like SymbolRefAttr). An external function declaration (used when
-    referring to a function declared in some other module) has no body. While
-    the MLIR textual form provides a nice inline syntax for function arguments,
-    they are internally represented as “block arguments” to the first block in
-    the region.
+    outside of the function, i.e., functions are `IsolatedFromAbove`. All
+    external references must use function arguments (which are passed by value)
+    or reference external members or globals by symbol name.
 
-    Only dialect attribute names may be specified in the attribute dictionaries
-    for function arguments, results, or the function itself.
+    Functions appearing within a `struct.def` have specific semantics and must
+    be named `compute`, `constrain`, or `product`. Functions appearing at the
+    module level (i.e. not within a `struct.def`) have no name restrictions and
+    their body may be elided to denote an external function declaration.
 
-    Modules and struct definitions are not allowed to be nested within functions.
+    Modules and `struct.def` ops are not allowed to be nested within functions.
+
+    Function arguments may carry an optional `function.arg_name` attribute to
+    preserve the source-level argument name independently from the printed SSA
+    block argument name. The value must be a non-empty, untyped `StringAttr`,
+    and all attached `function.arg_name` values must be unique within the
+    function. Typed string attributes such as `"x" : i1` are rejected. The
+    attribute is only valid on function arguments.
+    Argument-splitting transforms preserve this metadata by deriving unique
+    names for generated arguments, such as `input[0]` for array elements or
+    `self.member` for struct members.
+
+    Function results may similarly carry an optional `function.res_name`
+    attribute. The value must be a non-empty, untyped `StringAttr`, all attached
+    result names must be unique within the function, and the attribute is only
+    valid on function results.
 
     Example:
 
     ```llzk
     // External function definitions.
     function.def private @abort()
-    function.def private @scribble(!array.type<5 x !felt.type>, !struct.type<@Hello>) -> i1
+    function.def private @scribble(
+      !array.type<5 x !felt.type> {function.arg_name = "input"},
+      !struct.type<@Hello> {function.arg_name = "state"}) -> i1
 
     // A function that returns its argument twice:
-    function.def @count(%x: !felt.type) -> (!felt.type, !felt.type) {
-      return %x, %x: !felt.type, !felt.type
+    function.def @count(%x: !felt.type {function.arg_name = "x"})
+        -> (!felt.type {function.res_name = "first"},
+            !felt.type {function.res_name = "second"}) {
+      function.return %x, %x: !felt.type, !felt.type
     }
 
     // Function definition within a component
     struct.def @NonZero {
-      function.def @compute(%a: !felt.type) { return }
-      function.def @constrain(%a: !felt.type) { return }
+      function.def @compute(%a: !felt.type {function.arg_name = "a"}) { function.return }
+      function.def @constrain(%a: !felt.type {function.arg_name = "a"}) { function.return }
     }
     ```
   }];
@@ -89,6 +108,8 @@ def FuncDefOp
   //    ```llzk
   //    // Argument attribute
   //    function.def private @example_fn_arg(%x: i1 {llzk.pub})
+  //    function.def private @example_fn_arg_name(%x: i1 {function.arg_name =
+  //    "x"})
   //
   //    // Result attribute
   //    function.def @example_fn_result() -> (i1 {dialectName.attrName = 0 :
@@ -150,33 +171,57 @@ def FuncDefOp
     /// Add (resp. remove) the `allow_witness` attribute to (resp. from) the function def.
     void setAllowWitnessAttr(bool newValue = true);
 
+    /// Return `true` iff the function def has the `allow_non_native_field_ops` attribute.
+    inline bool hasAllowNonNativeFieldOpsAttr() {
+      return getOperation()->hasAttr(llzk::function::AllowNonNativeFieldOpsAttr::name);
+    }
+
+    /// Add (resp. remove) the `allow_non_native_field_ops` attribute to (resp. from) the function def.
+    void setAllowNonNativeFieldOpsAttr(bool newValue = true);
+
     /// Return `true` iff the argument at the given index has `pub` attribute.
     bool hasArgPublicAttr(unsigned index);
 
-    //===------------------------------------------------------------------===//
-    // FunctionOpInterface Methods
-    //===------------------------------------------------------------------===//
+    /// Return `true` iff the argument at the given index has a `function.arg_name` attribute.
+    bool hasArgName(unsigned index);
 
+    /// Return the `function.arg_name` attribute for the argument at the given index.
+    ::std::optional<::mlir::StringAttr> getArgNameAttr(unsigned index);
+
+    /// Set the `function.arg_name` attribute for the argument at the given index.
+    void setArgNameAttr(unsigned index, const ::mlir::StringAttr &attr);
+
+    /// Set the `function.arg_name` attribute for the argument at the given index from a string.
+    void setArgName(unsigned index, ::llvm::StringRef name);
+
+    /// Return `true` iff the result at the given index has a `function.res_name` attribute.
+    bool hasResName(unsigned index);
+
+    /// Return the `function.res_name` attribute for the result at the given index.
+    ::std::optional<::mlir::StringAttr> getResNameAttr(unsigned index);
+
+    /// Set the `function.res_name` attribute for the result at the given index.
+    void setResNameAttr(unsigned index, const ::mlir::StringAttr &attr);
+
+    /// Set the `function.res_name` attribute for the result at the given index from a string.
+    void setResName(unsigned index, ::llvm::StringRef name);
+
+    /// Required by FunctionOpInterface.
     /// Returns the region on the current operation that is callable. This may
     /// return null in the case of an external callable object, e.g. an external
     /// function.
     ::mlir::Region *getCallableRegion() { return isExternal() ? nullptr : &getBody(); }
 
+    /// Required by FunctionOpInterface.
     /// Returns the argument types of this function.
     ::llvm::ArrayRef<::mlir::Type> getArgumentTypes() { return getFunctionType().getInputs(); }
 
+    /// Required by FunctionOpInterface.
     /// Returns the result types of this function.
     ::llvm::ArrayRef<::mlir::Type> getResultTypes() { return getFunctionType().getResults(); }
 
-    //===------------------------------------------------------------------===//
-    // SymbolOpInterface Methods
-    //===------------------------------------------------------------------===//
-
+    /// Required by SymbolOpInterface.
     bool isDeclaration() { return isExternal(); }
-
-    //===------------------------------------------------------------------===//
-    // Utility Methods
-    //===------------------------------------------------------------------===//
 
     /// Return the full name for this function from the root module, including
     /// all surrounding symbol table names (i.e., modules and structs).
@@ -295,11 +340,26 @@ def CallOp : FunctionDialectOp<
     #M = affine_map<(i)[] -> (5*i+1)>
     %r = function.call @A::@compute(%x){(%i)} : (!felt.type) -> !struct.type<@A<[#M]>>
     ```
+
+    When the call targets a free function within a `poly.template` region, the optional
+    template parameter list can be used to instantiate all `poly.param` symbols within
+    the template. If all `poly.param` symbols are used within the function signature,
+    this can be elided. Otherwise, it is required to instantiate the function. The `?`
+    wildcard can be used for any `poly.param` with a `poly.tvar` type restriction, even
+    those that cannot be inferred from the function signature. The wildcard allows for
+    inference of the type within the function body itself during the flattening pass
+    but may fail if the type cannot be inferred from the function body.
   }];
 
   // See `VerifySizesForMultiAffineOps` for more explanation of these arguments.
-  let arguments = (ins SymbolRefAttr:$callee,
+  let arguments = (ins
+      // Call target function reference.
+      SymbolRefAttr:$callee,
+      // List of arguments to call the target function.
       Variadic<AnyLLZKType>:$argOperands,
+      // List of parameters to instantiate all `poly.param` symbols when the
+      // callee is a free function inside a `poly.template` region.
+      OptionalAttr<ArrayAttr>:$templateParams,
       // List of AffineMap operand groups where each group provides the
       // arguments to instantiate the next (left-to-right) AffineMap used as a
       // struct parameter in the result StructType.
@@ -312,64 +372,115 @@ def CallOp : FunctionDialectOp<
       DenseI32ArrayAttr:$mapOpGroupSizes);
   let results = (outs Variadic<AnyLLZKType>);
 
+  let assemblyFormat = [{
+    $callee
+    ( `<` custom<TemplateParams>($templateParams)^ `>` )?
+    `` `(` $argOperands `)`
+    ( `{` custom<MultiDimAndSymbolList>($mapOperands, $numDimsPerMap)^ `}` )?
+    `:` functional-type($argOperands, results)
+    custom<AttrDictWithWarnings>(attr-dict, prop-dict)
+  }];
+
+  let useCustomPropertiesEncoding = 1;
+
+  // NOTE: In CreateArrayOp, the `verify()` function is declared in order to
+  // call `verifyAffineMapInstantiations()`. However, in this op that check must
+  // happen within `verifySymbolUses()` instead because the target FuncDefOp
+  // must be resolved to determine if a target function named
+  // "compute"/"constrain" is defined within a StructDefOp or within a ModuleOp
+  // because the verification differs for those cases.
+
   // Define builders manually so inference of operand layout attributes is not
   // circumvented.
   let skipDefaultBuilders = 1;
   let builders =
       [OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
            "::mlir::SymbolRefAttr":$callee,
-           CArg<"::mlir::ValueRange", "{}">:$argOperands)>,
+           CArg<"::mlir::ValueRange", "{}">:$argOperands,
+           CArg<"::llvm::ArrayRef<::mlir::Attribute>", "{}">:$templateParams)>,
        OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
            "::mlir::SymbolRefAttr":$callee,
            "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
            "::mlir::DenseI32ArrayAttr":$numDimsPerMap,
-           CArg<"::mlir::ValueRange", "{}">:$argOperands)>,
+           CArg<"::mlir::ValueRange", "{}">:$argOperands,
+           CArg<"::llvm::ArrayRef<::mlir::Attribute>", "{}">:$templateParams)>,
        OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
                      "::mlir::SymbolRefAttr":$callee,
                      "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
                      "::llvm::ArrayRef<int32_t>":$numDimsPerMap,
-                     CArg<"::mlir::ValueRange", "{}">:$argOperands),
+                     CArg<"::mlir::ValueRange", "{}">:$argOperands,
+                     CArg<"::llvm::ArrayRef<::mlir::Attribute>",
+                          "{}">:$templateParams),
                  [{
                     build($_builder, $_state, resultTypes, callee, mapOperands,
-                          $_builder.getDenseI32ArrayAttr(numDimsPerMap), argOperands);
+                          $_builder.getDenseI32ArrayAttr(numDimsPerMap),
+                          argOperands, templateParams);
                   }]>,
        OpBuilder<(ins "::llzk::function::FuncDefOp":$callee,
-                     CArg<"::mlir::ValueRange", "{}">:$argOperands),
+                     CArg<"::mlir::ValueRange", "{}">:$argOperands,
+                     CArg<"::llvm::ArrayRef<::mlir::Attribute>",
+                          "{}">:$templateParams),
                  [{
                     build($_builder, $_state, callee.getResultTypes(),
-                          callee.getFullyQualifiedName(false), argOperands);
+                          callee.getFullyQualifiedName(false),
+                          argOperands, templateParams);
                   }]>,
        OpBuilder<(ins "::llzk::function::FuncDefOp":$callee,
                      "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
                      "::mlir::DenseI32ArrayAttr":$numDimsPerMap,
-                     CArg<"::mlir::ValueRange", "{}">:$argOperands),
+                     CArg<"::mlir::ValueRange", "{}">:$argOperands,
+                     CArg<"::llvm::ArrayRef<::mlir::Attribute>",
+                          "{}">:$templateParams),
                  [{
                     build($_builder, $_state, callee.getResultTypes(),
-                          callee.getFullyQualifiedName(false), mapOperands, numDimsPerMap, argOperands);
+                          callee.getFullyQualifiedName(false), mapOperands, numDimsPerMap,
+                          argOperands, templateParams);
                   }]>,
        OpBuilder<(ins "::llzk::function::FuncDefOp":$callee,
                      "::llvm::ArrayRef<::mlir::ValueRange>":$mapOperands,
                      "::llvm::ArrayRef<int32_t>":$numDimsPerMap,
-                     CArg<"::mlir::ValueRange", "{}">:$argOperands),
+                     CArg<"::mlir::ValueRange", "{}">:$argOperands,
+                     CArg<"::llvm::ArrayRef<::mlir::Attribute>",
+                          "{}">:$templateParams),
                  [{
                     build($_builder, $_state, callee, mapOperands,
-                          $_builder.getDenseI32ArrayAttr(numDimsPerMap), argOperands);
+                          $_builder.getDenseI32ArrayAttr(numDimsPerMap),
+                          argOperands, templateParams);
                   }]>];
 
   let extraClassDeclaration = [{
-    ::mlir::FunctionType getCalleeType();
+    /// Required by CallOpInterface
+    ::mlir::Operation *resolveCallableInTable(::mlir::SymbolTableCollection *symbolTable);
 
-    /// Return `true` iff the callee function name is `FUNC_NAME_COMPUTE` (this 
+    /// Required by CallOpInterface
+    ::mlir::Operation *resolveCallable();
+
+    /// Return the FunctionType inferred from the arg operands and result types of this CallOp.
+    /// This is not necessarily the same as the callee's FunctionType but should unify with it
+    /// or else IR verification will fail.
+    ::mlir::FunctionType getTypeSignature();
+
+    /// Attempt type unfication between the inferred FunctionType from this CallOp (as LHS) and
+    /// the given FunctionType (as RHS). If successful, return a UnificationMap containing the
+    /// unifications that were made. Otherwise, return failure.
+    ::mlir::FailureOr<UnificationMap> unifyTypeSignature(::mlir::FunctionType other);
+
+    /// Return `true` iff the callee function name is `FUNC_NAME_COMPUTE` (this
     /// does not check if the callee function is located within a StructDefOp).
     inline bool calleeIsCompute() {
       return FUNC_NAME_COMPUTE == getCallee().getLeafReference();
     }
 
-    /// Return `true` iff the callee function can contain witness generation code 
+    /// Return `true` iff the callee function name is `FUNC_NAME_PRODUCT` (this
+    /// does not check if the callee function is located within a StructDefOp).
+    inline bool calleeIsProduct() {
+      return FUNC_NAME_PRODUCT == getCallee().getLeafReference();
+    }
+
+    /// Return `true` iff the callee function can contain witness generation code
     /// (this does not check if the callee function is located within a StructDefOp)
     inline bool calleeContainsWitnessGen() {
-      return FUNC_NAME_COMPUTE == getCallee().getLeafReference() ||
-             FUNC_NAME_PRODUCT == getCallee().getLeafReference();
+      return calleeIsCompute() || calleeIsProduct();
     }
 
     /// Return `true` iff the callee function name is `FUNC_NAME_CONSTRAIN` (this
@@ -378,6 +489,9 @@ def CallOp : FunctionDialectOp<
 
     /// Return `true` iff the callee function name is `FUNC_NAME_COMPUTE` within a StructDefOp.
     bool calleeIsStructCompute();
+
+    /// Return `true` iff the callee function name is `FUNC_NAME_PRODUCT` within a StructDefOp.
+    bool calleeIsStructProduct();
 
     /// Return `true` iff the callee function name is `FUNC_NAME_CONSTRAIN` within a StructDefOp.
     bool calleeIsStructConstrain();
@@ -403,21 +517,36 @@ def CallOp : FunctionDialectOp<
     /// Allocate consecutive storage of the ValueRange instances in the parameter
     /// so it can be passed to the builders as an `ArrayRef<ValueRange>`.
     static ::llvm::SmallVector<::mlir::ValueRange> toVectorOfValueRange(::mlir::OperandRangeRange);
-  }];
 
-  let assemblyFormat = [{
-    $callee `(` $argOperands `)`
-    ( `{` custom<MultiDimAndSymbolList>($mapOperands, $numDimsPerMap)^ `}` )?
-    `:` functional-type($argOperands, results)
-    custom<AttrDictWithWarnings>(attr-dict, prop-dict)
-  }];
+    /// Check type compatibility of the given template parameter value from this `CallOp` against
+    /// the declared type on the given `TemplateParamOp` (if any).
+    ::mlir::LogicalResult verifyTemplateParamCompatibility(
+      ::mlir::Attribute paramFromCallOp, ::llzk::polymorphic::TemplateParamOp targetParam
+    );
 
-  // NOTE: In CreateArrayOp, the `verify()` function is declared in order to
-  // call `verifyAffineMapInstantiations()`. However, in this op that check must
-  // happen within `verifySymbolUses()` instead because the target FuncDefOp
-  // must be resolved to determine if a target function named
-  // "compute"/"constrain" is defined within a StructDefOp or within a ModuleOp
-  // because the verification differs for those cases.
+    /// Check type compatibility of each template parameter value provided in this `CallOp` against
+    /// the declared type on each `TemplateParamOp` (if any).
+    ///
+    /// Pre-condition assertions:
+    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`
+    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`
+    ::mlir::LogicalResult verifyTemplateParamCompatibility(
+        ::llvm::iterator_range<::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs
+    );
+
+    /// Verify that each template parameter value provided in this `CallOp` is consistent with
+    /// the value inferred for the target `TemplateParamOp` in the given `UnificationMap`. The
+    /// `UnificationMap` is expected to contain the unification results of this `CallOp` against
+    /// the target function type signature.
+    ///
+    /// Pre-condition assertions:
+    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`
+    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`
+    ::mlir::LogicalResult verifyTemplateParamsMatchInferred(
+        ::llvm::iterator_range<::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs,
+        const UnificationMap &unifications
+    );
+  }];
 }
 
 #endif // LLZK_FUNC_OPS

@@ -1,0 +1,46 @@
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @TestRoundTrip {
+    function.def @compute() -> !struct.type<@TestRoundTrip> {
+      %c0 = arith.constant 0 : index
+      %v = felt.const 42
+      ram.store %c0, %v : !felt.type
+      %loaded = ram.load %c0 : !felt.type
+      %self = struct.new : !struct.type<@TestRoundTrip>
+      function.return %self : !struct.type<@TestRoundTrip>
+    }
+    function.def @constrain(%self: !struct.type<@TestRoundTrip>) { function.return }
+  }
+}
+// CHECK-LABEL: struct.def @TestRoundTrip {
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@TestRoundTrip> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[V:[0-9a-zA-Z_\.]+]] = felt.const  42
+// CHECK-NEXT:      ram.store %[[C0]], %[[V]] : !felt.type
+// CHECK-NEXT:      %[[LOADED:[0-9a-zA-Z_\.]+]] = ram.load %[[C0]] : !felt.type
+// CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@TestRoundTrip>
+// CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@TestRoundTrip>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain(%[[ARG0:[0-9a-zA-Z_\.]+]]: !struct.type<@TestRoundTrip>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @TestRoundTrip() -> !felt.type attributes {function.allow_witness} {
+    %c0 = arith.constant 0 : index
+    %v = felt.const 42
+    ram.store %c0, %v : !felt.type
+    %loaded = ram.load %c0 : !felt.type
+    function.return %loaded : !felt.type
+  }
+}
+// CHECK-LABEL: function.def @TestRoundTrip() -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:    %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:    %[[V:[0-9a-zA-Z_\.]+]] = felt.const  42
+// CHECK-NEXT:    ram.store %[[C0]], %[[V]] : !felt.type
+// CHECK-NEXT:    %[[LOADED:[0-9a-zA-Z_\.]+]] = ram.load %[[C0]] : !felt.type
+// CHECK-NEXT:    function.return %[[LOADED]] : !felt.type
+// CHECK-NEXT:  }

@@ -21,6 +21,7 @@
 #include <mlir/IR/Operation.h>
 #include <mlir/IR/OwningOpRef.h>
 
+#include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringRef.h>
 
 #include <variant>
@@ -40,30 +41,36 @@ public:
 
   SymbolLookupResultUntyped(const SymbolLookupResultUntyped &other)
       : op(other.op), managedResources(other.managedResources),
-        includeSymNameStack(other.includeSymNameStack) {}
+        includeSymNameStack(other.includeSymNameStack), namespaceStack(other.namespaceStack) {}
   template <typename T> SymbolLookupResultUntyped(const SymbolLookupResult<T> &other);
 
   SymbolLookupResultUntyped &operator=(const SymbolLookupResultUntyped &other) {
+    if (this == &other) {
+      return *this;
+    }
     this->op = other.op;
     this->managedResources = other.managedResources;
     this->includeSymNameStack = other.includeSymNameStack;
+    this->namespaceStack = other.namespaceStack;
     return *this;
   }
   template <typename T> SymbolLookupResultUntyped &operator=(const SymbolLookupResult<T> &other);
 
-  SymbolLookupResultUntyped(SymbolLookupResultUntyped &&other)
+  SymbolLookupResultUntyped(SymbolLookupResultUntyped &&other) noexcept
       : op(other.op), managedResources(std::move(other.managedResources)),
-        includeSymNameStack(std::move(other.includeSymNameStack)) {
+        includeSymNameStack(std::move(other.includeSymNameStack)),
+        namespaceStack(std::move(other.namespaceStack)) {
     other.op = nullptr;
   }
   template <typename T> SymbolLookupResultUntyped(SymbolLookupResult<T> &&other);
 
-  SymbolLookupResultUntyped &operator=(SymbolLookupResultUntyped &&other) {
+  SymbolLookupResultUntyped &operator=(SymbolLookupResultUntyped &&other) noexcept {
     if (this != &other) {
       this->op = other.op;
       other.op = nullptr;
       this->managedResources = std::move(other.managedResources);
       this->includeSymNameStack = std::move(other.includeSymNameStack);
+      this->namespaceStack = std::move(other.namespaceStack);
     }
     return *this;
   }
@@ -82,6 +89,10 @@ public:
   /// Return the stack of symbol names from the IncludeOp that were traversed to load this result.
   std::vector<llvm::StringRef> getIncludeSymNames() const { return includeSymNameStack; }
 
+  /// Return the stack of symbol names from either IncludeOp or ModuleOp that were traversed to load
+  /// this result.
+  llvm::ArrayRef<llvm::StringRef> getNamespace() const { return namespaceStack; }
+
   /// Return 'true' if at least one IncludeOp was traversed to load this result.
   bool viaInclude() const { return !includeSymNameStack.empty(); }
 
@@ -93,11 +104,20 @@ public:
     }
   }
 
+  /// True iff the symbol is managed (i.e., loaded via an IncludeOp).
+  bool isManaged() const { return managedResources != nullptr; }
+
   /// Adds a pointer to the set of resources the result has to manage the lifetime of.
   void manage(mlir::OwningOpRef<mlir::ModuleOp> &&ptr, mlir::SymbolTableCollection &&tables);
 
   /// Adds the symbol name from the IncludeOp that caused the module to be loaded.
   void trackIncludeAsName(llvm::StringRef includeOpSymName);
+
+  /// Adds the symbol name from an IncludeOp or ModuleOp where the op is contained.
+  void pushNamespace(llvm::StringRef symName);
+
+  /// Adds the given namespace to the beginning of this result's namespace.
+  void prependNamespace(llvm::ArrayRef<llvm::StringRef> ns);
 
   bool operator==(const SymbolLookupResultUntyped &rhs) const { return op == rhs.op; }
 
@@ -108,6 +128,9 @@ private:
   ManagedResources managedResources;
   /// Stack of symbol names from the IncludeOp that were traversed in order to load the Operation.
   std::vector<llvm::StringRef> includeSymNameStack;
+  /// Stack of symbol names from the IncludeOp or ModuleOp that were traversed in order to load the
+  /// Operation.
+  std::vector<llvm::StringRef> namespaceStack;
 
   friend class Within;
 };
@@ -129,10 +152,20 @@ public:
   /// Return the stack of symbol names from the IncludeOp that were traversed to load this result.
   std::vector<llvm::StringRef> getIncludeSymNames() const { return inner.getIncludeSymNames(); }
 
+  /// Return the stack of symbol names from either IncludeOp or ModuleOp that were traversed to load
+  /// this result.
+  llvm::ArrayRef<llvm::StringRef> getNamespace() const { return inner.getNamespace(); }
+
+  /// Adds the given namespace to the beginning of this result's namespace.
+  void prependNamespace(llvm::ArrayRef<llvm::StringRef> ns) { inner.prependNamespace(ns); }
+
   /// Return 'true' if at least one IncludeOp was traversed to load this result.
   bool viaInclude() const { return inner.viaInclude(); }
 
   bool operator==(const SymbolLookupResult<T> &rhs) const { return inner == rhs.inner; }
+
+  /// Return 'true' if the inner resource is managed (i.e., loaded via an IncludeOp).
+  bool isManaged() const { return inner.isManaged(); }
 
 private:
   SymbolLookupResultUntyped inner;
@@ -220,8 +253,14 @@ inline mlir::FailureOr<SymbolLookupResult<T>> lookupSymbolIn(
   SymbolLookupResult<T> ret(std::move(*found));
   if (!ret) {
     if (reportMissing) {
-      return origin->emitError() << "symbol \"" << symbol << "\" references a '" << op->getName()
-                                 << "' but expected a '" << T::getOperationName() << '\'';
+      auto diag = origin->emitError() << "symbol \"" << symbol << "\" references a '"
+                                      << op->getName() << "' but expected ";
+      if constexpr (requires { T::getOperationName(); }) {
+        diag << "a '" << T::getOperationName() << '\'';
+      } else {
+        diag << "a symbol with the requested interface";
+      }
+      return diag;
     } else {
       return mlir::failure();
     }

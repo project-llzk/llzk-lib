@@ -52,20 +52,19 @@ def SaveDotGraphOption
 
 def CallGraphPrinterPass : LLZKPass<"llzk-print-call-graph"> {
   let summary = "Print the LLZK module's call graph.";
-  let constructor = "llzk::createCallGraphPrinterPass(llvm::errs())";
+  let options = [OutputStreamOption];
 }
 
 def CallGraphSCCsPrinterPass : LLZKPass<"llzk-print-call-graph-sccs"> {
   let summary = "Print the SCCs from the LLZK module's call graph.";
-  let constructor = "llzk::createCallGraphSCCsPrinterPass(llvm::errs())";
+  let options = [OutputStreamOption];
 }
 
 def ConstraintDependencyGraphPrinterPass
     : LLZKPass<"llzk-print-constraint-dependency-graphs"> {
   let summary = "Print constraint dependency graph for all LLZK structs.";
-  let constructor =
-      "llzk::createConstraintDependencyGraphPrinterPass(llvm::errs())";
-  let options = [Option<"runIntraprocedural", "intraprocedural", "bool",
+  let options = [OutputStreamOption,
+                 Option<"runIntraprocedural", "intraprocedural", "bool",
                         /* default */ "false",
                         "Whether to run the analysis intra-procedurally only "
                         "(default is false).">];
@@ -73,11 +72,16 @@ def ConstraintDependencyGraphPrinterPass
 
 def IntervalAnalysisPrinterPass : LLZKPass<"llzk-print-interval-analysis"> {
   let summary = "Print interval analysis results for all LLZK structs.";
-  let constructor = "llzk::createIntervalAnalysisPrinterPass(llvm::errs())";
   let options =
-      [Option<"fieldName", "field", "std::string", /* default */ "\"bn128\"",
-              "The field to use for interval analysis. Supported fields: "
-              "bn128/bn254, babybear, goldilocks, mersenne31">,
+      [OutputStreamOption,
+       Option<"fieldName", "field", "std::string", /* default */ "\"\"",
+              "The field to use for interval analysis. If supplied, this "
+              "always overrides the module's detected field. If omitted, the "
+              "pass first tries to detect a single field from the enclosing "
+              "module's felt usage "
+              "and otherwise falls back to bn128. Supported fields: "
+              "bn128/bn254, babybear, goldilocks, grumpkin, koalabear, "
+              "mersenne31">,
        Option<"propagateInputConstraints", "propagate-input-constraints",
               "bool", /* default */ "false",
               "Whether to propagate constraints on inputs from @constrain to "
@@ -93,19 +97,34 @@ def IntervalAnalysisPrinterPass : LLZKPass<"llzk-print-interval-analysis"> {
               /* default */ "false",
               "Whether to print compute function intervals (default only "
               "prints constrain function intervals).">,
+       Option<"printUnreducedIntervals", "print-unreduced-intervals", "bool",
+              /* default */ "false",
+              "Whether to print tracked unreduced intervals alongside reduced "
+              "interval summaries.">,
+       Option<"printSSAIntervals", "print-ssa-intervals", "bool",
+              /* default */ "false",
+              "Whether to print per-SSA intervals for function arguments and "
+              "scalar op results.">,
   ];
 }
 
 def SymbolDefTreePrinterPass : LLZKPass<"llzk-print-symbol-def-tree"> {
   let summary = "Print symbol definition tree.";
-  let constructor = "llzk::createSymbolDefTreePrinterPass()";
   let options = [OutputStreamOption, SaveDotGraphOption];
 }
 
 def SymbolUseGraphPrinterPass : LLZKPass<"llzk-print-symbol-use-graph"> {
   let summary = "Print symbol use graph.";
-  let constructor = "llzk::createSymbolUseGraphPrinterPass()";
   let options = [OutputStreamOption, SaveDotGraphOption];
+}
+
+def PredecessorPrinterPass : LLZKPass<"llzk-print-predecessors"> {
+  let summary = "Print the predecessors of all operations.";
+  let options = [OutputStreamOption,
+                 Option<"preRunRequiredAnalyses", "prerun", "bool",
+                        /* default */ "false",
+                        "Whether to pre-run the required dataflow analyses "
+                        "(e.g., liveness analysis).">];
 }
 
 #endif // LLZK_ANALYSIS_TD

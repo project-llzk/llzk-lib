@@ -1,0 +1,291 @@
+## v2.1.2 - 2026-06-18
+### Added
+- `--llzk-remove-unused-discardable-allocations` for removing unread discardable allocations and their dead stores.
+- `Destructurable*Interface` and `Promotable*Interface` to pod ops/types
+- `PodRefOpInterface` and `PodAccessOpInterface` for ops that reference or access pods
+- `llzk-pod-to-scalar` pass to destructure pod type values into scalar SSA values
+- `llzk-specialize-wildcard-arrays` pass to refine array types with wildcard dimensions
+- `--check-output` option for `llzk-witgen`
+- AI coding agent instructions file
+
+### Changed
+- Allow non-native field ops in `verif.contract`
+- Apply `llzk-flatten` cleanup option to free functions, not just structs
+- `verif.contract` now rejects preconditions (`verif.require_*`) derived from struct members or function return values
+- `verif.contract` for the `llzk.main` struct now rejects direct `verif.require_*` ops as well
+
+### Fixed
+- Added `scf.if` handling for `llzk-witgen --backend=execution-engine`
+- Emit all R1CS-lowering auxiliary members with the exact type of the materialized expression
+- Emit polynomial-lowering auxiliary members with the exact type of the materialized expression
+- Emit synthesized zero R1CS linear-combination constants with a printable integer width
+- Handle wildcard `CallOp` template parameters in the flattening pass.
+- Implement missing felt ops for `llzk-witgen`
+- Lower high-degree `felt.add`, `felt.sub`, and `felt.neg` equality roots and nonlinear struct constrain call arguments in the poly-lowering pass
+- Prevent `--cse` from merging distinct `array.new` allocations or `pod.new` allocations.
+- Reject polynomial and R1CS lowering on non-straight-line constrain bodies instead of materializing component-scope auxiliaries inside control flow
+- Update SourceRefAnalysis to handle `scf.while`, `verif.contract`, and `verif.include`
+- Array and pod scalarization passes now use the RDV pass wrapper with bug fix
+## v2.1.1 - 2026-06-04
+### Fixed
+- Fixed prime field definitions
+- Fixed execution-engine backend handling for circom-compiled LLZK IR
+- CAPI:
+  - Properly reconstruct insertion point when restoring
+## v2.1.0 - 2026-06-04
+### Added
+- Getters and builders for `TemplateParamOp` and `TemplateExprOp` in `TemplateBuilder`
+- Wildcard '?' option for template parameters to function.call
+- `function.arg_name` attribute for tracking source function argument names
+- Verifier support for `function.res_name` result attributes
+- Convenience accessors for `FeltConstantOp` values
+- Overflow semantics attribute to `cast.toindex` and `cast.tofelt` ops
+- `AlwaysSpeculatable` trait on `llzk.nondet` op
+- `Pure` trait on `poly.read_const` op
+- `SpecializedSROA` and `SpecializedMem2Reg` passes (to run the builtin passes on specific allocation ops only)
+- `toDynamicAPInt(size_t)` helper function
+- `llzk-while-to-for` pass converting while loops to for loops when possible
+- `llzk-witgen` tool
+- Canonicalization for `cast.tofelt(arith.constant n)`
+- Canonicalization for `cast.toindex` ops of constant felts
+- Canonicalization for `llzk.nondet` op to remove it when its result is not used
+- Lowering from LLZK to SMT dialect
+- An optimized SMT encoding for non-native theories like QF_NIA (and eventually QF_BV)
+- `ram` dialect with `ram.load` and `ram.store` ops for witness-generation memory
+- `verif` dialect:
+  - `verif.contract` for defining specs on structs and functions
+  - `verif.include` to invoke contracts from within contracts
+  - `verif.require_compute` and `verif.require_constrain` for encoding preconditions
+  - `verif.ensure_compute` and `verif.ensure_constrain` for encoding postconditions
+- Configuration:
+  - field: the prime field to use for the lowering
+- CAPI:
+  - `llzkSymbolTableInsert` to support inserting a child symbol op with automatic renaming to avoid name collisions
+  - `llzkFunction_CallOpBuildWithTemplateParams`
+  - `llzkFunction_CallOpBuildToCalleeWithTemplateParams`
+  - Methods for working with `MlirOpBuilder`
+
+### Changed
+- Changed the `SourceRefAnalysis` to be a sparse analysis instead of a dense analysis
+- Document `felt.shl` and `felt.shr` semantics
+- Relax `NotFieldNative` trait verification to allow non-native field ops in `poly.expr` parents
+- Interval Analysis:
+  - Propagate intervals through concrete subcomponent constrain calls
+  - Track unreduced intervals
+  - Support `smod`
+- `array-to-scalar` pass:
+  - Allow `cast` as legal dialect
+  - Replace `llzk.nondet` array allocation with `array.new`
+  - Use `SpecializedSROA` and `SpecializedMem2Reg` passes instead of the builtin ones
+
+### Fixed
+- The `llzk.main` attribute was not always verified
+- Avoid assertion failure in `ArrayIndexGen::linearize` and `ArrayIndexGen::checkAndConvert` for constant integer indices larger than int64_t max
+- Avoid unnecessary narrowing to `int` in `Field::reduce()`
+- Felt constant used as parameter to `StructType` was incorrectly treated as invalid
+- Fixed R1CS lowering for quadratic-equals-linear constraints so the emitted constraint preserves the linear side's sign.
+- Fixed `DynamicAPInt` shift operations with shift amounts larger than 64 bits
+- Fixed `llzk-duplicate-op-elim` so it does not merge distinct `llzk.nondet` witness values.
+- Handle function calls via a template parameter in `llzk-flatten`
+- Fixed incorrect behavior in `pod.new` constructor that accepts both record initialization operands and map operands.
+- Update legalization for new dialects/types/ops in `drop-empty-templates` pass
+- `toDynamicAPInt(APSInt)` incorrectly produced negative results for values larger than MAX(int64_t) and up to 64 bits
+- Allow prover-side recursion outside the `@constrain`-reachable slice in the `inline-structs` pass
+- Assertion failure in `remove-dead-values` pass when there are empty `else` regions
+- Exclude `pod.type` from valid types for `poly.read_const` op
+- Invalid FileCheck lines generated by generate-test-checks.py
+- Outdated documentation in TypeHelper
+- Interval Analysis:
+  - Imprecision during member writes of array values
+  - Handling of storage writes under control-dependent regions
+  - Handling of `mod` operations
+- `array-to-scalar` pass:
+  - Correct switched {column} and {signal} attributes in unwrapped members
+  - Bounds-check constant `array.len` dimensions before `array-to-scalar` lowering
+  - Scalarize array reads inside branches when a matching array write dominates the branch
+- `llzk-tblgen`:
+  - Bug in enum C API tests for non-uppercase enum case symbols
+  - Bug that generated a specific type instead of general Type/Attribute class
+  - Bug involving non-variadic offsets when there are variadic operands
+  - Bug where the generated getter/setter for a variadic operand was using the wrong offset when there are multiple variadic operands
+  - Bug where generated setter did not handle `VariadicOfVariadic` operand groups correctly
+- CAPI:
+  - Correct behavior in `llzkPod_NewPodOpBuildWithMapOperands` constructor
+
+### Removed
+- '`Pure` trait from `poly.expr` operation (allows dead value removal to be used on `poly.expr`)'
+## v2.0.0 - 2026-04-10
+### Added
+- 'Interval analysis support for `arith.select`, `arith.xori`, `felt.uintdiv`, `felt.sintdiv`, and `felt.bit_or`'
+- 'Interval analysis support for `array.new`, including empty-array roots and explicit element initializers'
+- 'Interval analysis support for `array.write` so later `array.read` operations can reuse written intervals'
+- 'Support for `bool` dialect operators to `pcl` boolean ops'
+- '`--llzk-enforce-no-overwrite` pass to detect possible struct member overwrites and possible uninstantiated struct members'
+- '`CallOp::unifyTypeSignature()` method'
+- '`podTypesUnify()` and `functionTypesUnify()` functions in `TypeHelper`'
+- '`poly.template`, `poly.param`, and `poly.expr` ops'
+- 'Folding implementation for `bool` and `felt` operations'
+- Functions to query symbol uses within types
+- Automatic IR migration from version 1.x.x to 2.0.0
+- CAPI:
+  - '`llzkStruct_StructDefOpGetTemplateParamOpNames`'
+  - '`llzkStruct_StructDefOpGetNumTemplateParamOpNames`'
+  - '`llzkStruct_StructDefOpGetTemplateExprOpNames`'
+  - '`llzkStruct_StructDefOpGetNumTemplateExprOpNames`'
+  - '`llzkOperationIsA_Poly_TemplateOp`'
+  - '`llzkPoly_TemplateOpBuild`'
+  - '`llzkPoly_TemplateOpGetSymName`'
+  - '`llzkPoly_TemplateOpSetSymName`'
+  - '`llzkPoly_TemplateOpGetBody`'
+  - '`llzkPoly_TemplateOpGetBodyRegion`'
+  - '`llzkPoly_TemplateOpHasConstParamOps`'
+  - '`llzkPoly_TemplateOpNumConstParamOps`'
+  - '`llzkPoly_TemplateOpGetConstParamNames`'
+  - '`llzkPoly_TemplateOpHasConstParamNamed`'
+  - '`llzkPoly_TemplateOpHasConstExprOps`'
+  - '`llzkPoly_TemplateOpNumConstExprOps`'
+  - '`llzkPoly_TemplateOpGetConstExprNames`'
+  - '`llzkPoly_TemplateOpHasConstExprNamed`'
+  - '`llzkOperationIsA_Poly_TemplateExprOp`'
+  - '`llzkPoly_TemplateExprOpBuild`'
+  - '`llzkPoly_TemplateExprOpGetSymName`'
+  - '`llzkPoly_TemplateExprOpSetSymName`'
+  - '`llzkPoly_TemplateExprOpGetInitializerRegion`'
+  - '`llzkPoly_TemplateExprOpGetType`'
+  - '`llzkOperationIsA_Poly_TemplateParamOp`'
+  - '`llzkPoly_TemplateParamOpBuild`'
+  - '`llzkPoly_TemplateParamOpGetSymName`'
+  - '`llzkPoly_TemplateParamOpSetSymName`'
+  - '`llzkPoly_TemplateParamOpGetTypeOpt`'
+  - '`llzkPoly_TemplateParamOpSetTypeOpt`'
+  - '`llzkOperationIsA_Poly_YieldOp`'
+  - '`llzkPoly_YieldOpBuild`'
+  - '`llzkPoly_YieldOpGetVal`'
+  - '`llzkPoly_YieldOpSetVal`'
+  - '`llzkFelt_FeltTypeGetFromRef`'
+  - '`llzkFelt_FeltConstAttrGetInField` (use in place of old `llzkFelt_FeltConstAttrGet`)'
+  - '`llzkFelt_FeltConstAttrGetWithBitsInField` (use in place of old `llzkFelt_FeltConstAttrGetWithBits`)'
+  - '`llzkFelt_FeltConstAttrGetFromStringInField` (use in place of old `llzkFelt_FeltConstAttrGetFromString`)'
+  - '`llzkFelt_FeltConstAttrGetFromPartsInField` (use in place of old `llzkFelt_FeltConstAttrGetFromParts`)'
+
+### Changed
+- Augment SourceRef API
+- Changed field detection logic in IntervalAnalysis
+- Clarify `felt.div` in documentation and interval analysis
+- FeltConstAttr now directly stores the FeltType rather than field name as a StringAttr
+- 'FeltConstAttr syntax changed from `felt.const N <FIELD_NAME>` to `felt.const N : !felt.type<FIELD_NAME>`'
+- Rename `CallOp::getCalleeType()` method to `CallOp::getTypeSignature()` to clarify it's not computed from the callee
+- Rename `llzk-drop-empty-params` pass to `llzk-drop-empty-templates` and adapt it to new `poly.template` op
+- Replace constant parameters on `struct.def` with `poly.template` plus `poly.param` ops
+- Subcomponent members (i.e., `struct.member`s of `struct.type`) can no longer be marked as `signal`
+- Update `ModuleBuilder` to support `poly.template` and nested module building
+- Updated `--llzk-validate-member-writes` pass to correctly handle control flow
+- Refactor `llzk::getParentOfType()` to return nullable pointer instead of FailureOr and also check for null input
+- Version number updated to 2.0.0
+- CAPI:
+  - '`llzkStruct_StructDefOpBuild` no longer has `MlirAttribute` parameter'
+  - Replaced `llzkStruct_StructDefOpHasConstParamsAttr` with `llzkStruct_StructDefOpHasTemplateSymbolBindings`
+  - Renamed `llzkStruct_MemberReadOpBuildWithConstParamDistance` to `llzkStruct_MemberReadOpBuildWithTemplateSymbolDistance`
+  - Changed last parameter of `llzkFelt_FeltConstAttrGet` from `MlirIdentifier` to `MlirType`
+  - Changed last parameter of `llzkFelt_FeltConstAttrGetWithBits` from `MlirIdentifier` to `MlirType`
+  - Changed last parameter of `llzkFelt_FeltConstAttrGetFromString` from `MlirIdentifier` to `MlirType`
+  - Changed last parameter of `llzkFelt_FeltConstAttrGetFromParts` from `MlirIdentifier` to `MlirType`
+  - Rename `llzkFunction_CallOpGetCalleeType` to `llzkFunction_CallOpGetTypeSignature`
+
+### Fixed
+- Bugs causing product program alignment to crash on the circom benchmarks
+- Don't build PCL unit tests when PCL is disabled
+- Fixed nondeterministic output bug in interval analysis
+- Fixed translation of `bool.cmp ne` op to PCL
+- Handle `llzk.nondet` ops in `llzk-to-pcl`
+- Header files of backends are now installed in the final `include` directory
+- Interval analysis lookup bug
+- Remove `ConstantLike` and `Pure` traits from `llzk.nondet`
+- Support `llzk.nondet` op in SourceRef, Interval lattices
+- Treat external `function.call` results as SourceRef roots so accesses through external-call returned values remain trackable in SourceRef-based analyses
+- Updated `signal` attribute documentation
+- Duplicate symbols sometimes caused assertion failure instead of producing an error diagnostic
+- Fix bug that allowed parameterized callee to target a function other than a struct function
+- Lower benefit of `GeneralTypeReplacePattern` and similar default patterns to 0 to avoid possible ordering bug, specifically on `FuncDefOp` with pattern from `populateFunctionOpInterfaceTypeConversionPattern()`
+- Missing nullptr check in `pod.new` type verifier
+
+### Removed
+- '`computeReachable()` and `constrainReachable()` functions from ModuleBuilder'
+- meaningless `add_dependencies` from cmake config files
+- CAPI:
+  - '`llzkStruct_StructDefOpGetConstParams`'
+  - '`llzkStruct_StructDefOpSetConstParams`'
+  - '`llzkStruct_StructDefOpHasParamName` - use proper `llzkPoly_TemplateOp*` instead'
+## v1.1.5 - 2026-03-05
+### Fixed
+- ensure versioned doc pages are stored in version-specific folders on gh-pages branch
+
+## v1.1.4 - 2026-03-05
+### Fixed
+- ensure versioned doc pages are stored in version-specific folders on gh-pages branch
+
+## v1.1.3 - 2026-03-05
+### Changed
+- CI:
+  - support required checks on the repo
+  - add test result comments to PRs
+  - remove job timeouts
+
+### Fixed
+- documentation github pages deployment failed on release commits
+
+## v1.1.2 - 2026-03-04
+### Fixed
+- a couple more issues with setting the version number properly
+## v1.1.1 - 2026-03-04
+### Fixed
+- properly update version number
+
+## v1.1.0 - 2026-03-03
+### Added
+- CAPI:
+  - Added function that generates the PCL lisp representation of a circuit.
+### Fixed
+- Release workflow
+## v1.0.0 - 2026-03-02
+### Added
+- LLZK IR:
+  - core dialects
+  - common helper classes and functions for working with LLZK IR
+  - unit tests and lit tests
+  - documentation pages
+- Passes:
+  - Analysis:
+    - "`llzk-print-call-graph` - Print the call graph"
+    - "`llzk-print-call-graph-sccs` - Print Strongly Connected Components in the call graph"
+    - "`llzk-print-constraint-dependency-graphs` - Print constraint dependency graph for all LLZK structs"
+    - "`llzk-print-interval-analysis` - Print interval analysis results for all LLZK structs"
+    - "`llzk-print-symbol-def-tree` - Print symbol definition tree"
+    - "`llzk-print-symbol-use-graph` - Print symbol use graph"
+    - "`llzk-print-predecessors` - Print the predecessors of all operations"
+  - Transformation:
+    - "`llzk-array-to-scalar` - Replace arrays with scalar values"
+    - "`llzk-inline-includes` - Replace all IncludeOp with contents of the referenced file"
+    - "`llzk-drop-empty-params` - Remove empty struct parameter lists"
+    - "`llzk-flatten` - Flatten structs (i.e. replace parameterized with instantiated) and unroll loops"
+    - "`llzk-duplicate-read-write-elim` - Remove redundant reads and writes"
+    - "`llzk-duplicate-op-elim` - Remove redundant arith operations"
+    - "`llzk-unused-declaration-elim` - Remove unused member and struct declarations"
+    - "`llzk-poly-lowering-pass` - Lowers the degree of all polynomial equations to a specified maximum"
+    - "`llzk-inline-structs` - Inline nested structs (i.e., subcomponents)"
+    - "`llzk-compute-constrain-to-product` - Replace @compute/@constrain with @product function"
+    - "`llzk-fuse-product-loops` - Fuse matching witness/constraint loops in a @product function"
+  - Conversion:
+    - "`llzk-to-pcl` - Rewrite constraints to be compatible with PCL constraints"
+    - "`llzk-r1cs-lowering` - Rewrite constraints to be compatible with R1CS constraints"
+    - "`convert-llzk-to-zklean` - Convert LLZK structs and constraints to ZKLean IR"
+    - "`convert-zklean-to-llzk` - Convert ZKLean IR back to LLZK structs and constraints"
+    - "`zklean-pretty-print` - Pretty-print zkLean dialect IR as Lean code"
+  - Validation:
+    - "`llzk-validate-member-writes` - Detect multiple and missing writes to the same member of a component"
+- llzk-tblgen tool that generates C API for llzk library and linking unit tests for it
+- CAPI for LLZK IR and passes
+- Backends:
+  - r1cs
+  - zklean
+  - pcl

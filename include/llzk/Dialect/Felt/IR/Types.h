@@ -10,6 +10,7 @@
 #pragma once
 
 #include "llzk/Dialect/Felt/IR/Dialect.h"
+#include "llzk/Util/Field.h"
 
 // Include TableGen'd declarations
 #define GET_TYPEDEF_CLASSES

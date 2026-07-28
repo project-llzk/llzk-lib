@@ -3,6 +3,7 @@
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
 // Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 // Adapted from mlir/include/mlir/Dialect/Func/IR/FuncOps.td
@@ -20,10 +21,12 @@ include "llzk/Dialect/Struct/IR/Dialect.td"
 include "llzk/Dialect/Struct/IR/OpInterfaces.td"
 include "llzk/Dialect/Struct/IR/Types.td"
 include "llzk/Dialect/Shared/OpTraits.td"
+include "llzk/Dialect/Verif/IR/OpInterfaces.td"
 
 include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/RegionKindInterface.td"
 include "mlir/IR/SymbolInterfaces.td"
+include "mlir/Interfaces/SideEffectInterfaces.td"
 
 class StructDialectOp<string mnemonic, list<Trait> traits = []>
     : Op<StructDialect, mnemonic, traits>;
@@ -39,15 +42,15 @@ def SetFuncAllowAttrs : NativeOpTrait<"SetFuncAllowAttrs">, StructuralOpTrait {
 //===------------------------------------------------------------------===//
 
 def LLZK_StructDefOp
-    : StructDialectOp<
-          "def", [HasParent<"::mlir::ModuleOp">, Symbol, SymbolTable,
-                  IsolatedFromAbove, SetFuncAllowAttrs,
-                  DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-                  NoRegionArguments]#GraphRegionNoTerminator.traits> {
+    : StructDialectOp<"def", [ParentOneOf<["::mlir::ModuleOp",
+                                           "::llzk::polymorphic::TemplateOp"]>,
+                              Symbol, LLZKSymbolTable, IsolatedFromAbove,
+                              SetFuncAllowAttrs, NoRegionArguments,
+                              ContractTarget]#GraphRegionNoTerminator.traits> {
   let summary = "circuit component definition";
   let description = [{
       This operation describes a component in a circuit. It can contain any number
-      of fields that hold inputs, outputs, intermediate values, and subcomponents
+      of members that hold inputs, outputs, intermediate values, and subcomponents
       of the defined component. It also contains a `compute()` function that holds
       the witness generation code for the component and a `constrain()` function
       that holds that constraint generation code for the component.
@@ -56,12 +59,12 @@ def LLZK_StructDefOp
 
       ```llzk
       struct.def @ComponentA {
-        field @f1 : !array.type<5 x index>
-        field @f2 : !felt.type {llzk.pub}
+        member @f1 : !array.type<5 x index>
+        member @f2 : !felt.type {llzk.pub}
 
         function.def @compute(%p: !felt.type) -> !struct.type<@ComponentA> {
           %self = struct.new : !struct.type<@ComponentA>
-          // initialize all fields of `%self` here
+          // initialize all members of `%self` here
           return %self : !struct.type<@ComponentA>
         }
 
@@ -71,39 +74,75 @@ def LLZK_StructDefOp
         }
       }
       ```
+
+      The optional `llzk.main = !struct.type<...>` attribute on the top-level module in an
+      LLZK IR program expresses the main entry point of the circuit as a concrete instantiation
+      of a specific struct. For example, `llzk.main = !struct.type<@Top<[52,12]>>` or
+      `llzk.main = !struct.type<@Main<[i1, !felt.type, 256]>>`.
+      This struct has additional restrictions:
+      1. The parameter types of its functions (besides the required "self" parameter) can
+         only be `!felt.type` or `!array.type<.. x !felt.type>`.
+      2. All inputs to the main struct are signals, even though they are not marked with
+         the `{signal}` attribute (as the `{signal}` attribute is not used on function arguments).
+         Input signals may be public (given the `{llzk.pub}` attribute) or private (by default).
+      3. All public members of the main struct are also signals (representing public output signals),
+         and can also only be `!felt.type` or `!array.type<.. x !felt.type>`.
+
+      Example of a `Main` component:
+
+      ```llzk
+      module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
+        struct.def @Main {
+          member @out : !felt.type {llzk.pub, signal} // public output signal
+          member @out2 : !felt.type {llzk.pub} // also a public output signal, implicitly
+          member @intermediate : !struct.type<@OtherStruct> // an intermediate value, not a signal, can be any LLZK type
+          // %p is a private input signal
+          function.def @compute(%p: !felt.type) -> !struct.type<@Main> {
+            // ...
+          }
+          // %self is not a signal, but again, %p is a private input signal
+          function.def @constrain(%self: !struct.type<@Main>, %p: !felt.type) {
+            // ...
+          }
+        }
+      }
+      ```
   }];
 
-  // Note: `$const_params` contains symbol definitions that do not use the
-  // standard SymbolTable mechanism. Instead hasParamNamed() can be used to
-  // check if a certain FlatSymbolRefAttr is a parameter in the function.
-  let arguments = (ins SymbolNameAttr:$sym_name,
-      OptionalAttr<FlatSymbolRefArrayAttr>:$const_params);
+  let arguments = (ins SymbolNameAttr:$sym_name);
 
   let regions = (region SizedRegion<1>:$bodyRegion);
 
-  let assemblyFormat = [{
-    $sym_name (`<` $const_params^ `>`)? $bodyRegion attr-dict
-  }];
+  let assemblyFormat = [{ $sym_name $bodyRegion attr-dict }];
+
+  let useCustomPropertiesEncoding = 1;
 
   let extraClassDeclaration = [{
     /// Gets the StructType representing this struct. If the `constParams` to use in
-    /// the type are not given, the StructType will use `this->getConstParamsAttr()`.
+    /// the type are not given, the StructType will use `this->getParams()`.
     StructType getType(::std::optional<::mlir::ArrayAttr> constParams = {});
     inline StructType getType(::std::optional<::mlir::ArrayAttr> constParams = {}) const {
       return const_cast<StructDefOp*>(this)->getType(constParams);
     }
 
-    /// Gets the FieldDefOp that defines the field in this
+    /// Gets the MemberDefOp that defines the member in this
     /// structure with the given name, if present.
-    FieldDefOp getFieldDef(::mlir::StringAttr fieldName);
+    MemberDefOp getMemberDef(::mlir::StringAttr memberName);
 
-    /// Get all FieldDefOp in this structure.
-    ::std::vector<FieldDefOp> getFieldDefs();
+    /// Get all MemberDefOp in this structure.
+    ::std::vector<MemberDefOp> getMemberDefs();
 
-    /// Returns wether the struct defines fields marked as columns.
+    /// Returns whether the struct defines members marked as columns.
     ::mlir::LogicalResult hasColumns() {
-      return ::mlir::success(::llvm::any_of(getFieldDefs(), [](FieldDefOp fdOp) {
-        return fdOp.getColumn();
+      return ::mlir::success(::llvm::any_of(getMemberDefs(), [](MemberDefOp memberOp) {
+        return memberOp.getColumn();
+      }));
+    }
+
+    /// Returns whether the struct defines members marked as signals.
+    ::mlir::LogicalResult hasSignals() {
+      return ::mlir::success(::llvm::any_of(getMemberDefs(), [](MemberDefOp memberOp) {
+        return memberOp.getSignal();
       }));
     }
 
@@ -113,96 +152,121 @@ def LLZK_StructDefOp
     /// Gets the FuncDefOp that defines the constrain function in this structure, if present, or `nullptr` otherwise.
     ::llzk::function::FuncDefOp getConstrainFuncOp();
 
-    /// Gets the FuncDefOp that defines the compute function in this structure, if present, or the product function otherwise.
-    ::llzk::function::FuncDefOp getComputeOrProductFuncOp();
-
-    /// Gets the FuncDefOp that defines the constrain function in this structure, if present, or the product function otherwise.
-    ::llzk::function::FuncDefOp getConstrainOrProductFuncOp();
+    /// Gets the FuncDefOp that defines the product function in this structure, if present, or `nullptr` otherwise
+    ::llzk::function::FuncDefOp getProductFuncOp();
 
     /// Returns `true` iff this structure defines compute and constrain functions.
     bool hasComputeConstrain() { return lookupSymbol(FUNC_NAME_COMPUTE) != nullptr && lookupSymbol(FUNC_NAME_CONSTRAIN) != nullptr; }
 
-    /// Generate header string, in the same format as the assemblyFormat
+    /// Generate header string, in the same format as the assemblyFormat.
     ::std::string getHeaderString();
 
-    /// Return `false` iff `getConstParamsAttr()` returns `nullptr`
-    bool hasConstParamsAttr() { return getProperties().const_params != nullptr; };
+    /// Return `true` iff the `struct.def` appears within a `poly.template` that defines
+    /// constant parameters and/or expressions.
+    bool hasTemplateSymbolBindings();
 
-    /// Return `true` iff this StructDefOp has a parameter with the given name
-    bool hasParamNamed(::mlir::StringAttr find);
-    inline bool hasParamNamed(::mlir::FlatSymbolRefAttr find) {
-      return hasParamNamed(find.getRootReference());
-    }
+    /// If this `struct.def` is within a `poly.template`, return names of all `poly.param`
+    /// within the `poly.template` in the order they are defined. Otherwise, return empty.
+    /// The names are returned as `FlatSymbolRefAttr` but the more general `Attribute` type
+    /// is used in the return type since that's usually what's needed.
+    ::llvm::SmallVector<::mlir::Attribute> getTemplateParamOpNames();
 
-    //===------------------------------------------------------------------===//
-    // Utility Methods
-    //===------------------------------------------------------------------===//
+    /// If this `struct.def` is within a `poly.template`, return names of all `poly.expr`
+    /// within the `poly.template` in the order they are defined. Otherwise, return empty.
+    /// The names are returned as `FlatSymbolRefAttr` but the more general `Attribute` type
+    /// is used in the return type since that's usually what's needed.
+    ::llvm::SmallVector<::mlir::Attribute> getTemplateExprOpNames();
 
     /// Return the full name for this struct from the root module, including
     /// any surrounding module scopes.
     ::mlir::SymbolRefAttr getFullyQualifiedName();
 
-    /// Return `true` iff this StructDefOp is named "Main".
+    /// Return `true` iff this `struct.def` is the main struct. See `llzk::MAIN_ATTR_NAME`.
     bool isMainComponent();
   }];
 
   let hasRegionVerifier = 1;
 }
 
-def LLZK_FieldDefOp
+def LLZK_MemberDefOp
     : StructDialectOp<
-          "field", [HasParent<"::llzk::component::StructDefOp">,
-                    DeclareOpInterfaceMethods<SymbolUserOpInterface>, Symbol]> {
-  let summary = "struct field definition";
+          "member", [HasParent<"::llzk::component::StructDefOp">,
+                     DeclareOpInterfaceMethods<SymbolUserOpInterface>,
+                     Symbol]> {
+  let summary = "struct member definition";
   let description = [{
-    This operation describes a field in a struct/component.
+    This operation describes a member in a struct/component.
 
     Example:
 
     ```llzk
-    struct.field @f1 : !felt.type
-    struct.field @f2 : !felt.type {llzk.pub}
+    struct.member @f1 : !felt.type
+    struct.member @f2 : !felt.type {llzk.pub}
+    struct.member @col1 : !felt.type {column}
+    struct.member @sig1 : !felt.type {signal}
+    struct.member @colsig1 : !felt.type {column, signal}
+    struct.member @pubcol : !felt.type {llzk.pub, column}
     ```
+
+    - Members marked with the `{llzk.pub}` attribute are considered public
+      and represent outputs of their defining struct/component.
+    - Members marked with the `{column}` attribute can be read/written with
+      table offsets using the `readm` and `writem` operations.
+    - Members marked with the `{signal}` attribute are constraint variables that
+      are stored in the witness; non-signal values are intermediate expressions.
+
+    Further restrictions on the `signal` attribute:
+    - It is only used on struct members, since they represent storage locations.
+      It is not used to mark struct inputs, as struct may be passed signal or non-signal
+      (i.e., intermediate expression) values.
+    - Only !felt.type or simple aggregates of !felt.type (i.e., !array.type and !pod.type)
+      may be marked as signals.
   }];
 
   let arguments = (ins SymbolNameAttr:$sym_name, TypeAttrOf<AnyLLZKType>:$type,
-      UnitAttr:$column);
+      UnitAttr:$column, UnitAttr:$signal);
 
   // Define builders manually to avoid the default ones that have extra
   // TypeRange parameters that must always be empty.
   let skipDefaultBuilders = 1;
   let builders =
       [OpBuilder<(ins "::mlir::StringAttr":$sym_name, "::mlir::TypeAttr":$type,
-           CArg<"bool", "false">:$isColumn)>,
+           CArg<"bool", "false">:$isSignal, CArg<"bool", "false">:$isColumn)>,
        OpBuilder<(ins "::llvm::StringRef":$sym_name, "::mlir::Type":$type,
-           CArg<"bool", "false">:$isColumn)>,
+           CArg<"bool", "false">:$isSignal, CArg<"bool", "false">:$isColumn)>,
        OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
            "::mlir::ValueRange":$operands,
            "::llvm::ArrayRef<::mlir::NamedAttribute>":$attributes,
-           CArg<"bool", "false">:$isColumn)>,
+           CArg<"bool", "false">:$isSignal, CArg<"bool", "false">:$isColumn)>,
        // Simpler version since 'resultTypes' and 'operands' must be empty
        OpBuilder<
            (ins "::llvm::ArrayRef<::mlir::NamedAttribute>":$attributes,
+               CArg<"bool", "false">:$isSignal,
                CArg<"bool", "false">:$isColumn),
-           [{ build($_builder, $_state, {}, {}, attributes, isColumn); }]>];
+           [{ build($_builder, $_state, {}, {}, attributes, isSignal, isColumn); }]>];
 
   let assemblyFormat = [{ $sym_name `:` $type attr-dict }];
 
   let extraClassDeclaration = [{
+    /// Returns whether this member is a public output.
     inline bool hasPublicAttr() { return getOperation()->hasAttr(llzk::PublicAttr::name); }
+
+    /// Adds or removes the unit `llzk.pub` attribute according to `newValue`.
     void setPublicAttr(bool newValue = true);
   }];
+
+  let hasVerifier = 1;
 }
 
-class FieldRefOpBase<string mnemonic, list<Trait> traits = []>
+class MemberRefOpBase<string mnemonic, list<Trait> traits = []>
     : StructDialectOp<
-          mnemonic, traits#[DeclareOpInterfaceMethods<FieldRefOpInterface>,
+          mnemonic, traits#[DeclareOpInterfaceMethods<MemberRefOpInterface>,
                             DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
   bit isRead = ?; // read(1) vs write(0) ops
   let extraClassDeclaration = [{
-    /// Gets the definition for the `field` referenced in this op.
-    inline ::mlir::FailureOr<SymbolLookupResult<FieldDefOp>> getFieldDefOp(::mlir::SymbolTableCollection &tables) {
-      return ::llvm::cast<FieldRefOpInterface>(getOperation()).getFieldDefOp(tables);
+    /// Gets the definition for the `member` referenced in this op.
+    inline ::mlir::FailureOr<SymbolLookupResult<MemberDefOp>> getMemberDefOp(::mlir::SymbolTableCollection &tables) {
+      return ::llvm::cast<MemberRefOpInterface>(getOperation()).getMemberDefOp(tables);
     }
   }];
   let extraClassDefinition = [{
@@ -213,11 +277,12 @@ class FieldRefOpBase<string mnemonic, list<Trait> traits = []>
   }];
 }
 
-def LLZK_FieldReadOp
-    : FieldRefOpBase<"readf", [VerifySizesForMultiAffineOps<1>]> {
-  let summary = "read value of a struct field";
+def LLZK_MemberReadOp
+    : MemberRefOpBase<"readm", [VerifySizesForMultiAffineOps<1>,
+                                MemoryEffects<[MemRead]>]> {
+  let summary = "read value of a struct member";
   let description = [{
-    This operation reads the value of a named field in a struct/component.
+    This operation reads the value of a named member in a struct/component.
 
     A struct can read its own members regardless of whether they are marked as
     public (i.e., with the `llzk.pub` attribute) or private (members without the
@@ -227,13 +292,13 @@ def LLZK_FieldReadOp
     The value can be read from the signals table, in which case it can be
     offset by a constant value. A negative value represents reading a value
     backwards and a positive value represents reading a value forward.
-    Only fields marked as columns can be read in this manner.
+    Only members marked as columns can be read in this manner.
   }];
   let isRead = 1;
 
   // See `VerifySizesForMultiAffineOps` for more explanation of these arguments.
   let arguments = (ins LLZK_StructType:$component,
-      FlatSymbolRefAttr:$field_name,
+      FlatSymbolRefAttr:$member_name,
       OptionalAttr<AnyAttrOf<[SymbolRefAttr, IndexAttr,
                               AffineMapAttr]>>:$tableOffset,
       // List of AffineMap operand groups where each group provides the
@@ -253,28 +318,28 @@ def LLZK_FieldReadOp
   let skipDefaultBuilders = 1;
   let builders =
       [OpBuilder<(ins "::mlir::Type":$resultType, "::mlir::Value":$component,
-           "::mlir::StringAttr":$field)>,
+           "::mlir::StringAttr":$member)>,
        OpBuilder<(ins "::mlir::Type":$resultType, "::mlir::Value":$component,
-           "::mlir::StringAttr":$field, "::mlir::Attribute":$dist,
+           "::mlir::StringAttr":$member, "::mlir::Attribute":$dist,
            "::mlir::ValueRange":$mapOperands,
            "std::optional<int32_t>":$numDims)>,
        OpBuilder<(ins "::mlir::Type":$resultType, "::mlir::Value":$component,
-                     "::mlir::StringAttr":$field,
+                     "::mlir::StringAttr":$member,
                      "::mlir::SymbolRefAttr":$dist),
                  [{
-              build($_builder, $_state, resultType, component, field, dist, ::mlir::ValueRange(), std::nullopt);
+              build($_builder, $_state, resultType, component, member, dist, ::mlir::ValueRange(), std::nullopt);
            }]>,
        OpBuilder<(ins "::mlir::Type":$resultType, "::mlir::Value":$component,
-                     "::mlir::StringAttr":$field, "::mlir::IntegerAttr":$dist),
+                     "::mlir::StringAttr":$member, "::mlir::IntegerAttr":$dist),
                  [{
-              build($_builder, $_state, resultType, component, field, dist, ::mlir::ValueRange(), std::nullopt);
+              build($_builder, $_state, resultType, component, member, dist, ::mlir::ValueRange(), std::nullopt);
            }]>,
        OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
            "::mlir::ValueRange":$operands,
            "::mlir::ArrayRef<::mlir::NamedAttribute>":$attrs)>];
 
   let assemblyFormat = [{
-    $component `[` $field_name `]`
+    $component `[` $member_name `]`
     ( `{` custom<MultiDimAndSymbolList>($mapOperands, $numDimsPerMap)^ `}` )?
     `:` type($component) `,` type($val)
     attr-dict
@@ -283,10 +348,11 @@ def LLZK_FieldReadOp
   let hasVerifier = 1;
 }
 
-def LLZK_FieldWriteOp : FieldRefOpBase<"writef", [WitnessGen]> {
-  let summary = "write value to a struct field";
+def LLZK_MemberWriteOp
+    : MemberRefOpBase<"writem", [WitnessGen, MemoryEffects<[MemWrite]>]> {
+  let summary = "write value to a struct member";
   let description = [{
-    This operation writes a value to a named field in a struct/component.
+    This operation writes a value to a named member in a struct/component.
 
     A struct can write its own members. However, writing members of other components
     is not allowed.
@@ -294,10 +360,10 @@ def LLZK_FieldWriteOp : FieldRefOpBase<"writef", [WitnessGen]> {
   let isRead = 0;
 
   let arguments = (ins LLZK_StructType:$component,
-      FlatSymbolRefAttr:$field_name, AnyLLZKType:$val);
+      FlatSymbolRefAttr:$member_name, AnyLLZKType:$val);
 
   let assemblyFormat = [{
-    $component `[` $field_name `]` `=` $val `:` type($component) `,` type($val) attr-dict
+    $component `[` $member_name `]` `=` $val `:` type($component) `,` type($val) attr-dict
   }];
 }
 

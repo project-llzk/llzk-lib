@@ -11,42 +11,15 @@
 
 #include "llzk/Config/Config.h"
 #include "llzk/Pass/PassBase.h"
-#include "llzk/Transforms/Parsers.h"
 
-#include <llvm/ADT/APInt.h>
-#include <llvm/Support/CommandLine.h>
+#include <llvm/ADT/StringRef.h>
 
 namespace llzk {
 
-std::unique_ptr<mlir::Pass> createComputeConstrainToProductPass();
-
-std::unique_ptr<mlir::Pass> createFlatteningPass();
-
-std::unique_ptr<mlir::Pass> createRedundantReadAndWriteEliminationPass();
-
-std::unique_ptr<mlir::Pass> createRedundantOperationEliminationPass();
-
-std::unique_ptr<mlir::Pass> createUnusedDeclarationEliminationPass();
-
-std::unique_ptr<mlir::Pass> createArrayToScalarPass();
-
-std::unique_ptr<mlir::Pass> createPolyLoweringPass();
-
-std::unique_ptr<mlir::Pass> createPolyLoweringPass(unsigned maxDegree);
-
-std::unique_ptr<mlir::Pass> createInlineStructsPass();
-
-std::unique_ptr<mlir::Pass> createR1CSLoweringPass();
-
-#if LLZK_WITH_PCL
-std::unique_ptr<mlir::Pass> createPCLLoweringPass();
-#endif // LLZK_WITH_PCL
-
-void registerTransformationPassPipelines();
-
 void registerInliningExtensions(mlir::DialectRegistry &registry);
 
+#define GEN_PASS_DECL
 #define GEN_PASS_REGISTRATION
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 
-}; // namespace llzk
+} // namespace llzk

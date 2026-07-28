@@ -7,25 +7,17 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk-c/Dialect/Global.h"
+
 #include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/Global/IR/Dialect.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 
-#include "llzk-c/Dialect/Global.h"
-
 #include <mlir/CAPI/Registration.h>
 
-using namespace mlir;
 using namespace llzk::global;
 
+// Include the generated CAPI
+#include "llzk/Dialect/Global/IR/Ops.capi.cpp.inc"
+
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Global, llzk__global, GlobalDialect)
-
-//===----------------------------------------------------------------------===//
-// GlobalDefOp
-//===----------------------------------------------------------------------===//
-
-bool llzkOperationIsAGlobalDefOp(MlirOperation op) { return llvm::isa<GlobalDefOp>(unwrap(op)); }
-
-bool llzkGlobalDefOpGetIsConstant(MlirOperation op) {
-  return unwrap_cast<GlobalDefOp>(op).isConstant();
-}

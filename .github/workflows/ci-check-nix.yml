@@ -1,19 +1,18 @@
-name: Check nix
+name: Nix check
 on:
   push:
     branches: [ main ]
   pull_request:
 
 jobs:
-  build:
+  run:
     strategy:
       matrix:
         cmakeBuildType: [debug, release]
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
       # v37.1.0
@@ -26,10 +25,22 @@ jobs:
           git config --global 'url.https://api@github.com/'.insteadOf 'https://github.com/'
           git config --global 'url.https://ssh@github.com/'.insteadOf 'ssh://git@github.com/'
           git config --global 'url.https://git@github.com/'.insteadOf 'git@github.com:'
-       # v16
-      - uses: cachix/cachix-action@0fc020193b5a1fa3ac4575aa3a7d3aa6a35435ad
+      - uses: cachix/cachix-action@v17
         with:
           name: veridise-public
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
       - name: Build and check install (${{ matrix.cmakeBuildType }})
         run: nix --print-build-logs build '.#checks.x86_64-linux.llzk-installcheck-${{ matrix.cmakeBuildType }}'
+
+  # WARNING: do not change this job name. It is a required status check for PRs to `main`.
+  nix-check-result:
+    needs: run
+    runs-on: ubuntu-24.04
+    if: ${{ !cancelled() }}
+    steps:
+      - name: Verify nix-check passed
+        run: |
+          if [[ "${{ needs.run.result }}" != "success" ]]; then
+            echo "nix-check failed or was cancelled"
+            exit 1
+          fi

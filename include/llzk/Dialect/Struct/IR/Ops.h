@@ -11,8 +11,10 @@
 
 #include "llzk/Dialect/Function/IR/OpTraits.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
+#include "llzk/Dialect/Verif/IR/OpInterfaces.h"
 
 namespace llzk {
 
@@ -21,6 +23,8 @@ namespace component {
 /// Only valid/implemented for StructDefOp. Sets the proper `AllowConstraintAttr` and
 /// `AllowWitnessAttr` on the functions defined within the StructDefOp.
 template <typename TypeClass>
+// Suppress false positive from `clang-tidy`
+// NOLINTNEXTLINE(bugprone-crtp-constructor-accessibility)
 class SetFuncAllowAttrs : public mlir::OpTrait::TraitBase<TypeClass, SetFuncAllowAttrs> {
 public:
   static mlir::LogicalResult verifyTrait(mlir::Operation *op);

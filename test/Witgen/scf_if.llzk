@@ -1,0 +1,90 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
+// RUN: llzk-witgen %t/test-no-else.llzk --inputs %t/input-no-else.json | FileCheck %s --check-prefix=NOELSE
+// RUN: llzk-witgen %t/test-no-else.llzk --inputs %t/input-no-else.json --backend=execution-engine | FileCheck %s --check-prefix=NOELSE
+
+//--- test.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %cond = arith.constant true
+      %c3 = arith.constant 3 : index
+      %c7 = arith.constant 7 : index
+      %c1 = arith.constant 1 : index
+      %c2 = arith.constant 2 : index
+
+      %selected = scf.if %cond -> (index) {
+        scf.yield %c3 : index
+      } else {
+        scf.yield %c7 : index
+      }
+
+      %adjusted = scf.if %cond -> (index) {
+        %sum = arith.addi %selected, %c1 : index
+        scf.yield %sum : index
+      } else {
+        %sum = arith.addi %selected, %c2 : index
+        scf.yield %sum : index
+      }
+
+      scf.if %cond {
+        %extra = arith.addi %adjusted, %c1 : index
+        %out_true = cast.tofelt %extra : index, !felt.type<"babybear">
+        struct.writem %self[@out] = %out_true : !struct.type<@Main>, !felt.type<"babybear">
+      } else {
+        %out_false = cast.tofelt %adjusted : index, !felt.type<"babybear">
+        struct.writem %self[@out] = %out_false : !struct.type<@Main>, !felt.type<"babybear">
+      }
+
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// CHECK: {
+// CHECK-NEXT:   "out": "5"
+// CHECK-NEXT: }
+
+//--- input.json
+{}
+
+//--- test-no-else.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %cond = arith.constant false
+      %c4 = arith.constant 4 : index
+      %c1 = arith.constant 1 : index
+      %c0 = arith.constant 0 : index
+      %base = arith.addi %c4, %c1 : index
+      scf.if %cond {
+        %bump = arith.divsi %c1, %c0 : index
+        %out_true = cast.tofelt %bump : index, !felt.type<"babybear">
+        struct.writem %self[@out] = %out_true : !struct.type<@Main>, !felt.type<"babybear">
+      }
+      %out = cast.tofelt %base : index, !felt.type<"babybear">
+      struct.writem %self[@out] = %out : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// NOELSE: {
+// NOELSE-NEXT:   "out": "5"
+// NOELSE-NEXT: }
+
+//--- input-no-else.json
+{}

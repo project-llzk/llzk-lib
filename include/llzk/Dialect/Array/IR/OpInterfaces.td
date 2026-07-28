@@ -80,6 +80,28 @@ def ArrayAccessOpInterface
     ::mlir::DeletionKind rewire(const ::mlir::DestructurableMemorySlot &slot,
             ::llvm::DenseMap<::mlir::Attribute, ::mlir::MemorySlot> &subslots,
             ::mlir::OpBuilder &builder, const ::mlir::DataLayout &dataLayout);
+
+    /// Generate `arith.constant` indices for one static array element position.
+    static ::llvm::SmallVector<::mlir::Value>
+    genIndexConstants(::mlir::OpBuilder &bldr, ::mlir::Location loc, ::mlir::ArrayAttr index);
+
+    /// Create an `array.read` or `array.extract` for one concrete element or subarray.
+    static ::mlir::Value
+    genRead(::mlir::OpBuilder &bldr, ::mlir::Location loc, ::mlir::Value arrayRef,
+            ::mlir::ValueRange indices);
+
+    /// Create an `array.read` or `array.extract` for one concrete element or subarray.
+    static ::mlir::Value
+    genRead(::mlir::OpBuilder &bldr, ::mlir::Location loc, ::mlir::Value arrayRef,
+            ::mlir::ArrayAttr index);
+
+    /// Create an `array.write` or `array.insert` for one concrete element or subarray.
+    static void genWrite(::mlir::OpBuilder &bldr, ::mlir::Location loc, ::mlir::Value arrayRef,
+            ::mlir::ValueRange indices, ::mlir::Value value);
+
+    /// Create an `array.write` or `array.insert` for one concrete element or subarray.
+    static void genWrite(::mlir::OpBuilder &bldr, ::mlir::Location loc, ::mlir::Value arrayRef,
+            ::mlir::ArrayAttr index, ::mlir::Value value);
   }];
 }
 

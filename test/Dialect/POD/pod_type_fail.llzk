@@ -1,0 +1,78 @@
+// RUN: llzk-opt %s -split-input-file -verify-diagnostics
+
+function.def @same_record_name_different_types(%0: !pod.type<[@x: !felt.type]>) -> !pod.type<[@x: !string.type]> {
+  // expected-error@+1 {{'poly.unifiable_cast' op input type '!pod.type<[@x: !felt.type]>' and output type '!pod.type<[@x: !string.type]>' are not unifiable}}
+  %1 = poly.unifiable_cast %0 : (!pod.type<[@x: !felt.type]>) -> !pod.type<[@x: !string.type]>
+  function.return %1 : !pod.type<[@x: !string.type]>
+}
+
+// -----
+
+function.def @same_record_type_different_names(%0: !pod.type<[@x: !felt.type]>) -> !pod.type<[@y: !felt.type]> {
+  // expected-error@+1 {{'poly.unifiable_cast' op input type '!pod.type<[@x: !felt.type]>' and output type '!pod.type<[@y: !felt.type]>' are not unifiable}}
+  %1 = poly.unifiable_cast %0 : (!pod.type<[@x: !felt.type]>) -> !pod.type<[@y: !felt.type]>
+  function.return %1 : !pod.type<[@y: !felt.type]>
+}
+
+// -----
+
+function.def @same_records_different_order(%0: !pod.type<[@x: !felt.type, @y: !felt.type]>) -> !pod.type<[@y: !felt.type, @x: !felt.type]> {
+  // expected-error@+1 {{'poly.unifiable_cast' op input type '!pod.type<[@x: !felt.type, @y: !felt.type]>' and output type '!pod.type<[@y: !felt.type, @x: !felt.type]>' are not unifiable}}
+  %1 = poly.unifiable_cast %0 : (!pod.type<[@x: !felt.type, @y: !felt.type]>) -> !pod.type<[@y: !felt.type, @x: !felt.type]>
+  function.return %1 : !pod.type<[@y: !felt.type, @x: !felt.type]>
+}
+
+
+// -----
+
+function.def @different_number_records(%0: !pod.type<[@x: !felt.type]>) -> !pod.type<[@y: !felt.type, @x: !felt.type]> {
+  // expected-error@+1 {{'poly.unifiable_cast' op input type '!pod.type<[@x: !felt.type]>' and output type '!pod.type<[@y: !felt.type, @x: !felt.type]>' are not unifiable}}
+  %1 = poly.unifiable_cast %0 : (!pod.type<[@x: !felt.type]>) -> !pod.type<[@y: !felt.type, @x: !felt.type]>
+  function.return %1 : !pod.type<[@y: !felt.type, @x: !felt.type]>
+}
+
+// -----
+
+module attributes { llzk.lang} {
+  struct.def @ConstraintPod {
+    function.def @compute(
+        %0: !pod.type<[@n: !felt.type]>,
+        %1: !pod.type<[@n: !array.type<5 x !felt.type>]>
+    ) -> !struct.type<@ConstraintPod> {
+      %self = struct.new : !struct.type<@ConstraintPod>
+      function.return %self : !struct.type<@ConstraintPod>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ConstraintPod>,
+        %0: !pod.type<[@n: !felt.type]>,
+        %1: !pod.type<[@n: !array.type<5 x !felt.type>]>
+    )  {
+      // expected-error@+1 {{'constrain.eq' op failed to verify that rhs type matches with lhs type}}
+      constrain.eq %0, %1 : !pod.type<[@n: !felt.type]>, !pod.type<[@n: !array.type<5 x !felt.type>]>
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes { llzk.lang} {
+  struct.def @ConstraintPod {
+    function.def @compute(
+        %0: !pod.type<[@n: !string.type]>,
+        %1: !pod.type<[@n: !string.type]>
+    ) -> !struct.type<@ConstraintPod> {
+      %self = struct.new : !struct.type<@ConstraintPod>
+      function.return %self : !struct.type<@ConstraintPod>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ConstraintPod>,
+        %0: !pod.type<[@n: !string.type]>,
+        %1: !pod.type<[@n: !string.type]>
+    )  {
+      // expected-error@+1 {{'constrain.eq' op operand #0 must be any LLZK type, excluding struct and string types, but got '!pod.type<[@n: !string.type]>'}}
+      constrain.eq %0, %1 : !pod.type<[@n: !string.type]>
+      function.return
+    }
+  }
+}

@@ -1,0 +1,72 @@
+// RUN: llzk-opt --llzk-compute-constrain-to-product='root-struct=IsZero_0' --llzk-to-smt-no-cf='field=babybear' %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang, llzk.main = !struct.type<@TIsZero_0::@IsZero_0>} {
+  poly.template @TIsZero_0 {
+    struct.def @IsZero_0 {
+      struct.member @out : !felt.type {llzk.pub}
+      struct.member @inv : !felt.type
+      function.def @compute(%arg0: !felt.type) -> !struct.type<@TIsZero_0::@IsZero_0> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+        %self = struct.new : <@TIsZero_0::@IsZero_0>
+        %0 = felt.inv %arg0 : !felt.type
+        struct.writem %self[@inv] = %0 : <@TIsZero_0::@IsZero_0>, !felt.type
+        %1 = felt.neg %arg0 : !felt.type
+        %2 = felt.mul %1, %0 : !felt.type, !felt.type
+        %felt_const_1 = felt.const  1
+        %3 = felt.add %2, %felt_const_1 : !felt.type, !felt.type
+        struct.writem %self[@out] = %3 : <@TIsZero_0::@IsZero_0>, !felt.type
+        function.return %self : !struct.type<@TIsZero_0::@IsZero_0>
+      }
+      function.def @constrain(%arg0: !struct.type<@TIsZero_0::@IsZero_0>, %arg1: !felt.type) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+        %0 = struct.readm %arg0[@out] : <@TIsZero_0::@IsZero_0>, !felt.type
+        %1 = struct.readm %arg0[@inv] : <@TIsZero_0::@IsZero_0>, !felt.type
+        %felt_const_0 = felt.const  0
+        %2 = bool.cmp ne(%arg1, %felt_const_0)
+        scf.if %2 {
+        } else {
+        }
+        %3 = felt.neg %arg1 : !felt.type
+        %4 = felt.mul %3, %1 : !felt.type, !felt.type
+        %felt_const_1 = felt.const  1
+        %5 = felt.add %4, %felt_const_1 : !felt.type, !felt.type
+        constrain.eq %0, %5 : !felt.type, !felt.type
+        %6 = felt.mul %arg1, %0 : !felt.type, !felt.type
+        %felt_const_0_0 = felt.const  0
+        constrain.eq %6, %felt_const_0_0 : !felt.type, !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK: func.func @smt_IsZero_0(%[[IN:[0-9a-zA-Z_\.]+]]: !smt.int) {
+// CHECK-DAG: %[[OUTC:[0-9a-zA-Z_\.]+]] = smt.declare_fun "out_c" : !smt.int
+// CHECK-DAG: %[[OUTW:[0-9a-zA-Z_\.]+]] = smt.declare_fun "out_w" : !smt.int
+// CHECK: %[[OUTW_LO:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[OUTW]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[OUTW_HI:[0-9a-zA-Z_\.]+]] = smt.int.cmp le %[[OUTW]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: smt.assert %[[OUTW_LO]]
+// CHECK: smt.assert %[[OUTW_HI]]
+// CHECK-DAG: %[[INVC:[0-9a-zA-Z_\.]+]] = smt.declare_fun "inv_c" : !smt.int
+// CHECK-DAG: %[[INVW:[0-9a-zA-Z_\.]+]] = smt.declare_fun "inv_w" : !smt.int
+// CHECK: %[[INVSYM:[0-9a-zA-Z_\.]+]] = smt.declare_fun "inv" : !smt.int
+// CHECK: %[[INV_LO:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[INVSYM]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[INV_HI:[0-9a-zA-Z_\.]+]] = smt.int.cmp le %[[INVSYM]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: smt.assert %[[INV_LO]]
+// CHECK: smt.assert %[[INV_HI]]
+// CHECK: %[[ONE:[0-9a-zA-Z_\.]+]] = smt.int.constant 1
+// CHECK: %[[PROD:[0-9a-zA-Z_\.]+]] = smt.int.mul %[[IN]], %[[INVSYM]]
+// CHECK: %[[DIFF:[0-9a-zA-Z_\.]+]] = smt.int.sub %[[PROD]], %[[ONE]]
+// CHECK: %[[MODP:[0-9a-zA-Z_\.]+]] = smt.int.mod %[[DIFF]], %{{[0-9a-zA-Z_\.]+}}
+// CHECK: %[[PROD_EQ_ONE:[0-9a-zA-Z_\.]+]] = smt.eq %[[MODP]], %{{[0-9a-zA-Z_\.]+}} : !smt.int
+// CHECK: %[[OPERAND_ZERO:[0-9a-zA-Z_\.]+]] = smt.eq %[[IN]], %{{[0-9a-zA-Z_\.]+}} : !smt.int
+// CHECK: %[[INV_ZERO:[0-9a-zA-Z_\.]+]] = smt.eq %[[INVSYM]], %{{[0-9a-zA-Z_\.]+}} : !smt.int
+// CHECK: %[[INV_CONSTRAINT:[0-9a-zA-Z_\.]+]] = smt.ite %[[OPERAND_ZERO]], %[[INV_ZERO]], %[[PROD_EQ_ONE]] : !smt.bool
+// CHECK: smt.assert %[[INV_CONSTRAINT]]
+// CHECK: %[[INV_ASSIGN:[0-9a-zA-Z_\.]+]] = smt.eq %[[INVW]], %[[INVSYM]] : !smt.int
+// CHECK: smt.assert %[[INV_ASSIGN]]
+// CHECK: smt.int.mod
+// CHECK: %[[ZERO_PROD_EQ:[0-9a-zA-Z_\.]+]] = smt.eq %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !smt.int
+// CHECK: smt.assert %[[ZERO_PROD_EQ]]
+// CHECK-NOT: smt.declare_fun "felt_inv_q"
+// CHECK-NOT: smt.declare_fun "member_write_q"
+// CHECK-NOT: smt.declare_fun "constrain_eq_q"

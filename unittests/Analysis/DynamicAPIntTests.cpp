@@ -7,17 +7,19 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "../LLZKTestUtils.h"
+
+#include <cstdint>
 #include <gtest/gtest.h>
 #include <string>
-
-#include "../LLZKTestUtils.h"
 
 using namespace llvm;
 using namespace llzk;
 using namespace std;
 
+static DynamicAPInt goldilocks = toDynamicAPInt("18446744069414584321");
 static DynamicAPInt bn254 =
-    toDynamicAPInt("21888242871839275222246405745257275088696311157297823662689037894645226208583");
+    toDynamicAPInt("21888242871839275222246405745257275088548364400416034343698204186575808495617");
 
 static void extendAPSInts(APSInt &a, APSInt &b) {
   unsigned maxBitwidth = max(a.getBitWidth(), b.getBitWidth());
@@ -32,14 +34,26 @@ static void extendAPSInts(APSInt &a, APSInt &b) {
 struct DynamicAPIntUnaryTest : public testing::TestWithParam<DynamicAPInt> {
   static const std::vector<DynamicAPInt> &TestingValues() {
     static std::vector<DynamicAPInt> vals = {
-        DynamicAPInt(-1), DynamicAPInt(0), DynamicAPInt(1234), bn254, -1 * bn254,
+        DynamicAPInt(-1),
+        DynamicAPInt(0),
+        DynamicAPInt(1),
+        DynamicAPInt(1234),
+        DynamicAPInt(std::numeric_limits<int64_t>::min()),
+        DynamicAPInt(std::numeric_limits<int64_t>::max()),
+        DynamicAPInt(2013265921), // babybear
+        DynamicAPInt(2147483647), // mersenne31
+        DynamicAPInt(2130706433), // koalabear
+        goldilocks,
+        -1 * goldilocks,
+        bn254,
+        -1 * bn254,
     };
     return vals;
   }
 };
 
 TEST_P(DynamicAPIntUnaryTest, Conversions) {
-  DynamicAPInt p = GetParam();
+  const DynamicAPInt &p = GetParam();
   DynamicAPInt convert = toDynamicAPInt(toAPSInt(p));
   ASSERT_EQ(p, convert);
 }
@@ -47,6 +61,65 @@ TEST_P(DynamicAPIntUnaryTest, Conversions) {
 INSTANTIATE_TEST_SUITE_P(
     , DynamicAPIntUnaryTest, testing::ValuesIn(DynamicAPIntUnaryTest::TestingValues())
 );
+
+struct DynamicAPIntStringTest : public testing::TestWithParam<std::string> {
+  static const std::vector<std::string> &TestingValues() {
+    static std::vector<std::string> vals = {
+        std::to_string(std::numeric_limits<int64_t>::min()),
+        std::to_string(std::numeric_limits<int64_t>::max()),
+        "2013265921",           // babybear
+        "2147483647",           // mersenne31
+        "2130706433",           // koalabear
+        "18446744069414584321", // goldilocks
+        "21888242871839275222246405745257275088548364400416034343698204186575808495617", // bn254
+        "0",
+    };
+    return vals;
+  }
+};
+
+TEST_P(DynamicAPIntStringTest, Strings) {
+  const std::string &p = GetParam();
+  APSInt input = APSInt(p);
+  APSInt output = toAPSInt(toDynamicAPInt(p));
+  // `toAPSInt()` always produces signed values so ensure signedness matches
+  output.setIsUnsigned(input.isUnsigned());
+  ASSERT_TRUE(APSInt::isSameValue(input, output));
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    , DynamicAPIntStringTest, testing::ValuesIn(DynamicAPIntStringTest::TestingValues())
+);
+
+// Verify that size_t values above INT64_MAX are not mis-converted to negative.
+// SIZE_MAX has its MSB set; if the APSInt wrapper incorrectly interpreted the value
+// as signed, it would yield -1 instead of 18446744073709551615 (on 64-bit systems).
+TEST(DynamicAPIntSizeTTest, SizeMax1) {
+  DynamicAPInt a = toDynamicAPInt(SIZE_MAX);
+
+  std::string buffer;
+  llvm::raw_string_ostream(buffer) << a;
+
+  ASSERT_EQ(buffer, std::to_string(SIZE_MAX));
+}
+
+TEST(DynamicAPIntSizeTTest, SizeMax2) {
+  APSInt a = toAPSInt(toDynamicAPInt(SIZE_MAX));
+
+  std::string buffer;
+  llvm::raw_string_ostream(buffer) << a;
+
+  ASSERT_EQ(buffer, std::to_string(SIZE_MAX));
+}
+
+TEST(DynamicAPIntSizeTTest, SizeMax3) {
+  APInt a = toAPInt(toDynamicAPInt(SIZE_MAX), sizeof(size_t) * CHAR_BIT);
+
+  std::string buffer;
+  llvm::raw_string_ostream(buffer) << a;
+
+  ASSERT_EQ(buffer, std::to_string(SIZE_MAX));
+}
 
 //===----------------------------------------------------------------------===//
 // Test bitwise AND, OR, XOR operations
@@ -106,10 +179,8 @@ INSTANTIATE_TEST_SUITE_P(
 struct DynamicAPIntShiftTest : public testing::TestWithParam<std::pair<DynamicAPInt, unsigned>> {
   static const std::vector<std::pair<DynamicAPInt, unsigned>> &TestingValues() {
     static std::vector<std::pair<DynamicAPInt, unsigned>> vals = {
-        {DynamicAPInt(-1), 0},
-        {bn254, 0},
-        {bn254, 32},
-        {DynamicAPInt(100), 32},
+        {DynamicAPInt(-1), 0},    {bn254, 0}, {bn254, 32}, {bn254, 100}, {DynamicAPInt(100), 32},
+        {DynamicAPInt(100), 100},
     };
     return vals;
   }
@@ -127,7 +198,10 @@ TEST_P(DynamicAPIntShiftTest, ShiftLeft) {
 TEST_P(DynamicAPIntShiftTest, ShiftRight) {
   auto [a, b] = GetParam();
   // Equivalent to APSInt operator
-  ASSERT_EQ(a >> toDynamicAPInt(APSInt::get(b)), toDynamicAPInt(toAPSInt(a) >> b));
+  APSInt base = toAPSInt(a);
+  base = base.extend(max(base.getBitWidth(), b));
+
+  ASSERT_EQ(a >> toDynamicAPInt(APSInt::get(b)), toDynamicAPInt(base >> b));
 }
 
 INSTANTIATE_TEST_SUITE_P(

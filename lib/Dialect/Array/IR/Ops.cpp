@@ -8,9 +8,11 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
-#include "llzk/Dialect/Undef/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Util/BuilderHelper.h"
+#include "llzk/Util/Compare.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
@@ -18,6 +20,7 @@
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Diagnostics.h>
+#include <mlir/IR/Matchers.h>
 #include <mlir/IR/OwningOpRef.h>
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/IR/ValueRange.h>
@@ -25,6 +28,8 @@
 
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/Twine.h>
+
+#include <optional>
 
 // TableGen'd implementation files
 #include "llzk/Dialect/Array/IR/OpInterfaces.cpp.inc"
@@ -49,7 +54,7 @@ void CreateArrayOp::build(
   // This builds CreateArrayOp from a list of elements. In that case, the dimensions of the array
   // type cannot be defined via an affine map which means there are no affine map operands.
   affineMapHelpers::buildInstantiationAttrsEmpty<CreateArrayOp>(
-      odsBuilder, odsState, static_cast<int32_t>(elements.size())
+      odsBuilder, odsState, llzk::checkedCast<int32_t>(elements.size())
   );
 }
 
@@ -79,7 +84,7 @@ llvm::SmallVector<Type> CreateArrayOp::resultTypeToElementsTypes(Type resultType
 }
 
 ParseResult CreateArrayOp::parseInferredArrayType(
-    OpAsmParser &parser, llvm::SmallVector<Type, 1> &elementsTypes,
+    OpAsmParser & /*parser*/, llvm::SmallVector<Type, 1> &elementsTypes,
     ArrayRef<OpAsmParser::UnresolvedOperand> elements, Type resultType
 ) {
   assert(elementsTypes.size() == 0); // it was not yet initialized
@@ -183,7 +188,7 @@ SmallVector<MemorySlot> CreateArrayOp::getPromotableSlots() {
 
 /// Required by PromotableAllocationOpInterface / mem2reg pass
 Value CreateArrayOp::getDefaultValue(const MemorySlot &slot, OpBuilder &builder) {
-  return builder.create<undef::UndefOp>(getLoc(), slot.elemType);
+  return builder.create<llzk::NonDetOp>(getLoc(), slot.elemType);
 }
 
 /// Required by PromotableAllocationOpInterface / mem2reg pass
@@ -216,6 +221,59 @@ ArrayAttr ArrayAccessOpInterface::indexOperandsToAttributeArray() {
     }
   }
   return nullptr;
+}
+
+/// Generate `arith.constant` indices for one static array element position.
+SmallVector<Value>
+ArrayAccessOpInterface::genIndexConstants(OpBuilder &bldr, Location loc, ArrayAttr index) {
+  SmallVector<Value> indices;
+  indices.reserve(index.size());
+  for (Attribute attr : index) {
+    // Note: array index must be an integer attribute.
+    indices.push_back(bldr.create<arith::ConstantOp>(loc, llvm::cast<IntegerAttr>(attr)));
+  }
+  return indices;
+}
+
+/// Create an `array.read` or `array.extract` for one concrete element or subarray.
+Value ArrayAccessOpInterface::genRead(
+    OpBuilder &bldr, Location loc, Value arrayRef, ValueRange indices
+) {
+  ArrayType arrTy = llvm::cast<ArrayType>(arrayRef.getType());
+  Type selectedType = arrTy.getSelectionType(indices.size());
+  if (llvm::isa<ArrayType>(selectedType)) {
+    return bldr.create<ExtractArrayOp>(loc, selectedType, arrayRef, indices);
+  }
+  return bldr.create<ReadArrayOp>(loc, selectedType, arrayRef, indices);
+}
+
+/// Create an `array.read` or `array.extract` for one concrete element or subarray.
+Value ArrayAccessOpInterface::genRead(
+    OpBuilder &bldr, Location loc, Value arrayRef, ArrayAttr index
+) {
+  SmallVector<Value> indices = genIndexConstants(bldr, loc, index);
+  return genRead(bldr, loc, arrayRef, indices);
+}
+
+/// Create an `array.write` or `array.insert` for one concrete element or subarray.
+void ArrayAccessOpInterface::genWrite(
+    OpBuilder &bldr, Location loc, Value arrayRef, ValueRange indices, Value value
+) {
+  ArrayType arrTy = llvm::cast<ArrayType>(arrayRef.getType());
+  Type selectedType = arrTy.getSelectionType(indices.size());
+  if (llvm::isa<ArrayType>(selectedType)) {
+    bldr.create<InsertArrayOp>(loc, arrayRef, indices, value);
+    return;
+  }
+  bldr.create<WriteArrayOp>(loc, arrayRef, indices, value);
+}
+
+/// Create an `array.write` or `array.insert` for one concrete element or subarray.
+void ArrayAccessOpInterface::genWrite(
+    OpBuilder &bldr, Location loc, Value arrayRef, ArrayAttr index, Value value
+) {
+  SmallVector<Value> indices = genIndexConstants(bldr, loc, index);
+  genWrite(bldr, loc, arrayRef, indices, value);
 }
 
 /// Required by DestructurableAllocationOpInterface / SROA pass
@@ -288,6 +346,14 @@ ensureNumIndicesMatchDims(ArrayType ty, size_t numIndices, const OwningEmitError
   return success();
 }
 
+LogicalResult
+verifyScalarArrayAccess(ArrayType ty, size_t numIndices, const OwningEmitErrorFn &errFn) {
+  if (llvm::isa<NoneType>(ty.getElementType())) {
+    return errFn().append("cannot access a scalar element from array with none element type");
+  }
+  return ensureNumIndicesMatchDims(ty, numIndices, errFn);
+}
+
 } // namespace
 
 LogicalResult ReadArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
@@ -296,7 +362,7 @@ LogicalResult ReadArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
 }
 
 LogicalResult ReadArrayOp::inferReturnTypes(
-    MLIRContext *context, std::optional<Location> location, ReadArrayOpAdaptor adaptor,
+    MLIRContext * /*context*/, std::optional<Location> /*location*/, ReadArrayOpAdaptor adaptor,
     llvm::SmallVectorImpl<Type> &inferredReturnTypes
 ) {
   inferredReturnTypes.resize(1);
@@ -311,14 +377,13 @@ bool ReadArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
 }
 
 LogicalResult ReadArrayOp::verify() {
-  // Ensure the number of indices used match the shape of the array exactly.
-  return ensureNumIndicesMatchDims(getArrRefType(), getIndices().size(), getEmitOpErrFn(this));
+  return verifyScalarArrayAccess(getArrRefType(), getIndices().size(), getEmitOpErrFn(this));
 }
 
 /// Required by PromotableMemOpInterface / mem2reg pass
 bool ReadArrayOp::canUsesBeRemoved(
     const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
-    SmallVectorImpl<OpOperand *> &newBlockingUses, const DataLayout & /*datalayout*/
+    SmallVectorImpl<OpOperand *> & /*newBlockingUses*/, const DataLayout & /*datalayout*/
 ) {
   if (blockingUses.size() != 1) {
     return false;
@@ -330,7 +395,7 @@ bool ReadArrayOp::canUsesBeRemoved(
 
 /// Required by PromotableMemOpInterface / mem2reg pass
 DeletionKind ReadArrayOp::removeBlockingUses(
-    const MemorySlot & /*slot*/, const SmallPtrSetImpl<OpOperand *> &blockingUses,
+    const MemorySlot & /*slot*/, const SmallPtrSetImpl<OpOperand *> & /*blockingUses*/,
     OpBuilder & /*builder*/, Value reachingDefinition, const DataLayout & /*dataLayout*/
 ) {
   // `canUsesBeRemoved` checked this blocking use must be the loaded `slot.ptr`
@@ -350,14 +415,13 @@ LogicalResult WriteArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
 }
 
 LogicalResult WriteArrayOp::verify() {
-  // Ensure the number of indices used match the shape of the array exactly.
-  return ensureNumIndicesMatchDims(getArrRefType(), getIndices().size(), getEmitOpErrFn(this));
+  return verifyScalarArrayAccess(getArrRefType(), getIndices().size(), getEmitOpErrFn(this));
 }
 
 /// Required by PromotableMemOpInterface / mem2reg pass
 bool WriteArrayOp::canUsesBeRemoved(
     const MemorySlot &slot, const SmallPtrSetImpl<OpOperand *> &blockingUses,
-    SmallVectorImpl<OpOperand *> &newBlockingUses, const DataLayout & /*datalayout*/
+    SmallVectorImpl<OpOperand *> & /*newBlockingUses*/, const DataLayout & /*datalayout*/
 ) {
   if (blockingUses.size() != 1) {
     return false;
@@ -384,17 +448,16 @@ LogicalResult ExtractArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
 }
 
 LogicalResult ExtractArrayOp::inferReturnTypes(
-    MLIRContext *context, std::optional<Location> location, ExtractArrayOpAdaptor adaptor,
+    MLIRContext * /*context*/, std::optional<Location> location, ExtractArrayOpAdaptor adaptor,
     llvm::SmallVectorImpl<Type> &inferredReturnTypes
 ) {
   size_t numToSkip = adaptor.getIndices().size();
   Type arrRefType = adaptor.getArrRef().getType();
   assert(llvm::isa<ArrayType>(arrRefType)); // per ODS spec of ExtractArrayOp
   ArrayType arrRefArrType = llvm::cast<ArrayType>(arrRefType);
-  ArrayRef<Attribute> arrRefDimSizes = arrRefArrType.getDimensionSizes();
 
   // Check for invalid cases
-  auto compare = numToSkip <=> arrRefDimSizes.size();
+  auto compare = numToSkip <=> arrRefArrType.getDimensionSizes().size();
   if (compare == 0) {
     return mlir::emitOptionalError(
         location, '\'', ExtractArrayOp::getOperationName(),
@@ -410,8 +473,7 @@ LogicalResult ExtractArrayOp::inferReturnTypes(
 
   // Generate and store reduced array type
   inferredReturnTypes.resize(1);
-  inferredReturnTypes[0] =
-      ArrayType::get(arrRefArrType.getElementType(), arrRefDimSizes.drop_front(numToSkip));
+  inferredReturnTypes[0] = arrRefArrType.getSelectionType(numToSkip);
   return success();
 }
 
@@ -467,7 +529,39 @@ LogicalResult InsertArrayOp::verify() {
 
 LogicalResult ArrayLengthOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, *this, getArrRefType());
+  if (failed(verifyTypeResolution(tables, *this, getArrRefType()))) {
+    return failure();
+  }
+
+  auto dimValue = getDim();
+  llvm::APInt dim;
+  if (!matchPattern(dimValue, m_ConstantInt(&dim))) {
+    return success();
+  }
+
+  std::optional<int64_t> idxOpt = dim.trySExtValue();
+  if (!idxOpt || *idxOpt < 0) {
+    auto diag = emitOpError("dimension must be a non-negative 64-bit integer");
+    if (!llvm::isa<UnknownLoc>(dimValue.getLoc())) {
+      diag.attachNote(dimValue.getLoc()).append("dimension defined here");
+    }
+    return diag;
+  }
+  size_t idx = checkedCast<size_t>(*idxOpt);
+  size_t rank = getArrRefType().getDimensionSizes().size();
+  if (idx >= rank) {
+    InFlightDiagnostic diag = emitOpError().append(
+        "dimension index ", idx, " is not valid for array with ", rank, " dimensions"
+    );
+    if (!llvm::isa<UnknownLoc>(getArrRef().getLoc())) {
+      diag.attachNote(getArrRef().getLoc()).append("array defined here");
+    }
+    if (!llvm::isa<UnknownLoc>(dimValue.getLoc())) {
+      diag.attachNote(dimValue.getLoc()).append("dimension defined here");
+    }
+    return diag;
+  }
+  return success();
 }
 
 } // namespace llzk::array

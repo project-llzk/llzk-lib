@@ -1,15 +1,15 @@
-// RUN: llzk-opt -split-input-file -llzk-validate-field-writes -verify-diagnostics %s
+// RUN: llzk-opt -split-input-file -llzk-validate-member-writes -verify-diagnostics %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @MultipleWrites {
-    struct.field @f : !felt.type
+    struct.member @f : !felt.type
 
     function.def @compute(%1: !felt.type) -> !struct.type<@MultipleWrites> {
       %self = struct.new : !struct.type<@MultipleWrites>
-      // expected-note@+1 {{earlier write here}}
-      struct.writef %self[@f] = %1 : !struct.type<@MultipleWrites>, !felt.type
-      // expected-warning@+1 {{found multiple writes to 'struct.field' named "@f"}}
-      struct.writef %self[@f] = %1 : !struct.type<@MultipleWrites>, !felt.type
+      // expected-note@+1 {{previously written to here}}
+      struct.writem %self[@f] = %1 : !struct.type<@MultipleWrites>, !felt.type
+      // expected-warning@+1 {{may overwrite 'struct.member' "@f"}}
+      struct.writem %self[@f] = %1 : !struct.type<@MultipleWrites>, !felt.type
       function.return %self : !struct.type<@MultipleWrites>
     }
 
@@ -17,17 +17,17 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @MissingWrite {
-    struct.field @a : index
-    struct.field @b : index
-    struct.field @c : index
+    struct.member @a : index
+    // expected-warning@+1 {{member may not be written to}}
+    struct.member @b : index
+    struct.member @c : index
 
-    // expected-warning@+1 {{'function.def' op "@compute" missing write to 'struct.field' named "@b"}}
     function.def @compute(%1: index) -> !struct.type<@MissingWrite> {
       %self = struct.new : !struct.type<@MissingWrite>
-      struct.writef %self[@a] = %1 : !struct.type<@MissingWrite>, index
-      struct.writef %self[@c] = %1 : !struct.type<@MissingWrite>, index
+      struct.writem %self[@a] = %1 : !struct.type<@MissingWrite>, index
+      struct.writem %self[@c] = %1 : !struct.type<@MissingWrite>, index
       function.return %self : !struct.type<@MissingWrite>
     }
 
@@ -35,15 +35,15 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @NoWrites {
-    struct.field @a : !felt.type
-    struct.field @b : !felt.type
-    struct.field @c : !felt.type
+    // expected-warning@+1 {{member may not be written to}}
+    struct.member @a : !felt.type
+    // expected-warning@+1 {{member may not be written to}}
+    struct.member @b : !felt.type
+    // expected-warning@+1 {{member may not be written to}}
+    struct.member @c : !felt.type
 
-    // expected-warning@+3 {{'function.def' op "@compute" missing write to 'struct.field' named "@a"}}
-    // expected-warning@+2 {{'function.def' op "@compute" missing write to 'struct.field' named "@b"}}
-    // expected-warning@+1 {{'function.def' op "@compute" missing write to 'struct.field' named "@c"}}
     function.def @compute() -> !struct.type<@NoWrites> {
       %self = struct.new : !struct.type<@NoWrites>
       function.return %self : !struct.type<@NoWrites>
@@ -51,4 +51,79 @@ module attributes {veridise.lang = "llzk"} {
 
     function.def @constrain(%self: !struct.type<@NoWrites>)  { function.return }
   }
+}
+// -----
+module attributes {llzk.lang} {
+    struct.def @A {
+        struct.member @foo : !felt.type
+        function.def @product(%a: !felt.type, %b: i1) -> !struct.type<@A> {
+            %self = struct.new : <@A>
+            
+            scf.if %b {
+                // expected-note@+1 {{previously written to here}}
+                struct.writem %self[@foo] = %a : <@A>, !felt.type    
+            }
+            
+            // expected-warning@+1 {{may overwrite 'struct.member' "@foo"}}
+            struct.writem %self[@foo] = %a : <@A>, !felt.type
+            function.return %self : !struct.type<@A>
+        }
+    }
+}
+// -----
+module attributes {llzk.lang} {
+    struct.def @A {
+        struct.member @foo : !felt.type
+        function.def @product(%a: !felt.type, %b: i1) -> !struct.type<@A> {
+            %self = struct.new : <@A>
+            
+            scf.if %b {
+                struct.writem %self[@foo] = %a : <@A>, !felt.type    
+            } else {
+                // expected-note@+1 {{previously written to here}}
+                struct.writem %self[@foo] = %a : <@A>, !felt.type    
+            }
+            
+            // expected-warning@+1 {{may overwrite 'struct.member' "@foo"}}
+            struct.writem %self[@foo] = %a : <@A>, !felt.type
+            function.return %self : !struct.type<@A>
+        }
+    }
+}
+// -----
+module attributes {llzk.lang} {
+    struct.def @A {
+        struct.member @foo : !felt.type
+        // expected-warning@+1 {{member may not be written to}}
+        struct.member @bar : !felt.type
+        // expected-warning@+1 {{member may not be written to}}
+        struct.member @baz : !felt.type
+        // expected-warning@+1 {{member may not be written to}}
+        struct.member @wuz : !felt.type
+        function.def @product(%x: !felt.type, %y: !felt.type, %b: i1) -> !struct.type<@A> {
+            %self = struct.new : <@A>
+
+            scf.if %b {
+                struct.writem %self[@foo] = %x : <@A>, !felt.type  
+                scf.yield  
+            } else {
+                // expected-note@+1 {{previously written to here}}
+                struct.writem %self[@foo] = %y : <@A>, !felt.type    
+                scf.yield
+            }
+
+            scf.if %b {
+                struct.writem %self[@baz] = %x : <@A>, !felt.type
+                scf.yield
+            }
+
+            scf.if %b {
+                // expected-warning@+1 {{may overwrite 'struct.member' "@foo"}}
+                struct.writem %self[@foo] = %x : <@A>, !felt.type
+                scf.yield
+            }
+
+            function.return %self : !struct.type<@A>
+        }
+    }
 }

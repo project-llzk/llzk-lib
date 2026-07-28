@@ -1,0 +1,77 @@
+// RUN: llzk-opt -split-input-file --llzk-lower-bool-quantifiers %s | FileCheck --enable-var-scope %s
+
+function.def @lower_forall_1d(%a: !array.type<5 x index>) -> i1 attributes {function.allow_non_native_field_ops} {
+  %ok = bool.forall %e in %a : !array.type<5 x index> {
+    %c0 = arith.constant 0 : index
+    %cmp = arith.cmpi eq, %e, %c0 : index
+    bool.yield %cmp
+  }
+  function.return %ok : i1
+}
+// CHECK-LABEL: module {
+// CHECK-NEXT:    function.def @lower_forall_1d(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<5 x index>) -> i1 attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_0]], %[[VAL_3]] : <5 x index>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_6:[0-9a-zA-Z_\.]+]] = %[[VAL_3]] to %[[VAL_4]] step %[[VAL_2]] iter_args(%[[VAL_7:[0-9a-zA-Z_\.]+]] = %[[VAL_1]]) -> (i1) {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_6]]] : <5 x index>, index
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_8]], %[[VAL_3]] : index
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = bool.and %[[VAL_7]], %[[VAL_9]] : i1, i1
+// CHECK-NEXT:        scf.yield %[[VAL_10]] : i1
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_5]] : i1
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+function.def @lower_exists_1d(%a: !array.type<5 x index>) -> i1 attributes {function.allow_non_native_field_ops} {
+  %ok = bool.exists %e in %a : !array.type<5 x index> {
+    %c0 = arith.constant 0 : index
+    %cmp = arith.cmpi eq, %e, %c0 : index
+    bool.yield %cmp
+  }
+  function.return %ok : i1
+}
+// CHECK-LABEL: module {
+// CHECK-NEXT:    function.def @lower_exists_1d(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<5 x index>) -> i1 attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant false
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_0]], %[[VAL_3]] : <5 x index>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_6:[0-9a-zA-Z_\.]+]] = %[[VAL_3]] to %[[VAL_4]] step %[[VAL_2]] iter_args(%[[VAL_7:[0-9a-zA-Z_\.]+]] = %[[VAL_1]]) -> (i1) {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_6]]] : <5 x index>, index
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_8]], %[[VAL_3]] : index
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = bool.or %[[VAL_7]], %[[VAL_9]] : i1, i1
+// CHECK-NEXT:        scf.yield %[[VAL_10]] : i1
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_5]] : i1
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+function.def @lower_forall_2d(%a: !array.type<5,3 x index>) -> i1 attributes {function.allow_non_native_field_ops} {
+  %ok = bool.forall %row in %a : !array.type<5,3 x index> {
+    %c0 = arith.constant 0 : index
+    %elt = array.read %row[%c0] : !array.type<3 x index>, index
+    %cmp = arith.cmpi eq, %elt, %c0 : index
+    bool.yield %cmp
+  }
+  function.return %ok : i1
+}
+// CHECK-LABEL: module {
+// CHECK-NEXT:    function.def @lower_forall_2d(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<5,3 x index>) -> i1 attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_0]], %[[VAL_3]] : <5,3 x index>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_6:[0-9a-zA-Z_\.]+]] = %[[VAL_3]] to %[[VAL_4]] step %[[VAL_2]] iter_args(%[[VAL_7:[0-9a-zA-Z_\.]+]] = %[[VAL_1]]) -> (i1) {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_6]]] : <5,3 x index>
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_8]]{{\[}}%[[VAL_3]]] : <3 x index>, index
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_9]], %[[VAL_3]] : index
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = bool.and %[[VAL_7]], %[[VAL_10]] : i1, i1
+// CHECK-NEXT:        scf.yield %[[VAL_11]] : i1
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_5]] : i1
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

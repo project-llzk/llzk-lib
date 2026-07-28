@@ -8,16 +8,18 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/ConstraintDependencyGraph.h"
-#include "llzk/Analysis/DenseAnalysis.h"
+
 #include "llzk/Analysis/SourceRefLattice.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Util/Hash.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/TypeHelper.h"
 
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
+#include <mlir/Analysis/DataFlow/DenseAnalysis.h>
 #include <mlir/IR/Value.h>
 
 #include <llvm/Support/Debug.h>
@@ -35,251 +37,299 @@ using namespace array;
 using namespace component;
 using namespace constrain;
 using namespace function;
+using namespace pod;
 
 /* SourceRefAnalysis */
 
-void SourceRefAnalysis::visitCallControlFlowTransfer(
-    mlir::CallOpInterface call, dataflow::CallControlFlowAction action,
-    const SourceRefLattice &before, SourceRefLattice *after
-) {
-  LLVM_DEBUG(llvm::dbgs() << "SourceRefAnalysis::visitCallControlFlowTransfer: " << call << '\n');
-  auto fnOpRes = resolveCallable<FuncDefOp>(tables, call);
-  ensure(succeeded(fnOpRes), "could not resolve called function");
+const SourceRefAnalysis::Lattice *SourceRefAnalysis::getLattice(DataFlowSolver &solver, Value val) {
+  return solver.lookupState<Lattice>(val);
+}
 
-  LLVM_DEBUG({
-    llvm::dbgs().indent(4) << "parent op is ";
-    if (auto s = call->getParentOfType<StructDefOp>()) {
-      llvm::dbgs() << s.getName();
-    } else if (auto p = call->getParentOfType<FuncDefOp>()) {
-      llvm::dbgs() << p.getName();
-    } else {
-      llvm::dbgs() << "<UNKNOWN PARENT TYPE>";
-    }
-    llvm::dbgs() << '\n';
-  });
-
-  /// `action == CallControlFlowAction::Enter` indicates that:
-  ///   - `before` is the state before the call operation;
-  ///   - `after` is the state at the beginning of the callee entry block;
-  if (action == dataflow::CallControlFlowAction::EnterCallee) {
-    // We skip updating the incoming lattice for function calls,
-    // as SourceRefs are relative to the containing function/struct, so we don't need to pollute
-    // the callee with the callers values.
-    // This also avoids a non-convergence scenario, as calling a
-    // function from other contexts can cause the lattice values to oscillate and constantly
-    // change (thus looping infinitely).
-
-    setToEntryState(after);
+SourceRefLatticeValue SourceRefAnalysis::getValueState(DataFlowSolver &solver, Value val) {
+  if (const auto *state = getLattice(solver, val)) {
+    return state->getValue();
   }
-  /// `action == CallControlFlowAction::Exit` indicates that:
-  ///   - `before` is the state at the end of a callee exit block;
-  ///   - `after` is the state after the call operation.
-  else if (action == dataflow::CallControlFlowAction::ExitCallee) {
-    // Get the argument values of the lattice by getting the state as it would
-    // have been for the callsite.
-    const SourceRefLattice *beforeCall = getLattice(getProgramPointBefore(call));
-    ensure(beforeCall, "could not get prior lattice");
+  return SourceRefLattice::getDefaultValue(val);
+}
 
-    // Translate argument values based on the operands given at the call site.
-    std::unordered_map<SourceRef, SourceRefLatticeValue, SourceRef::Hash> translation;
-    auto funcOpRes = resolveCallable<FuncDefOp>(tables, call);
-    ensure(mlir::succeeded(funcOpRes), "could not lookup called function");
-    auto funcOp = funcOpRes->get();
+mlir::FailureOr<SourceRefLatticeValue>
+SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
+  llvm::SmallDenseMap<Value, SourceRefLatticeValue, 4> operandVals;
+  for (Value operand : op->getOperands()) {
+    operandVals[operand] = getValueState(solver, operand);
+  }
 
-    auto callOp = llvm::dyn_cast<CallOp>(call.getOperation());
-    ensure(callOp, "call is not a CallOp");
+  SymbolTableCollection tables;
+  if (auto memberRefOp = llvm::dyn_cast<MemberRefOpInterface>(op)) {
+    if (!memberRefOp.isRead()) {
+      auto memberOpRes = memberRefOp.getMemberDefOp(tables);
+      ensure(succeeded(memberOpRes), "could not find member write");
+      auto componentIt = operandVals.find(memberRefOp.getComponent());
+      ensure(componentIt != operandVals.end(), "missing component lattice for member write");
+      auto memberValsRes = componentIt->second.referenceMember(memberOpRes.value());
+      ensure(succeeded(memberValsRes), "could not create SourceRef child for member write");
+      return memberValsRes->first;
+    }
+  }
 
-    for (unsigned i = 0; i < funcOp.getNumArguments(); i++) {
-      SourceRef key(funcOp.getArgument(i));
-      // Look up the lattice that defines the operand value first, but default
-      // to the beforeCall if the operand is not defined by an operand.
-      const SourceRefLattice *operandLattice = beforeCall;
-      Value operand = callOp.getOperand(i);
-      if (Operation *defOp = operand.getDefiningOp()) {
-        operandLattice = getLattice(getProgramPointAfter(defOp));
+  if (auto podAccessOp = llvm::dyn_cast<PodAccessOpInterface>(op)) {
+    if (!podAccessOp.isRead()) {
+      auto podIt = operandVals.find(podAccessOp.getPodRef());
+      ensure(podIt != operandVals.end(), "missing pod lattice for pod write");
+      auto podValsRes = podIt->second.referencePodRecord(podAccessOp.getRecordNameAttr());
+      ensure(succeeded(podValsRes), "could not create SourceRef child for pod write");
+      return podValsRes->first;
+    }
+  }
+
+  if (auto arrayAccessOp = llvm::dyn_cast<ArrayAccessOpInterface>(op)) {
+    if (llvm::isa<WriteArrayOp, InsertArrayOp>(arrayAccessOp)) {
+      auto array = arrayAccessOp.getArrRef();
+      auto it = operandVals.find(array);
+      ensure(it != operandVals.end(), "improperly constructed operandVals map");
+      const auto &currVals = it->second;
+
+      std::vector<SourceRefIndex> indices;
+      for (size_t i = 0; i < arrayAccessOp.getIndices().size(); ++i) {
+        auto idxOperand = arrayAccessOp.getIndices()[i];
+        auto idxIt = operandVals.find(idxOperand);
+        ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
+        const auto &idxVals = idxIt->second;
+
+        if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstant()) {
+          indices.emplace_back(*idxVals.getSingleValue().getConstantValue());
+        } else {
+          auto arrayType = llvm::dyn_cast<ArrayType>(array.getType());
+          auto lower = APInt::getZero(64);
+          assert(i <= std::numeric_limits<unsigned>::max() && "index too large");
+          APInt upper(64, arrayType.getDimSize(static_cast<unsigned>(i)));
+          indices.emplace_back(lower, upper);
+        }
       }
 
-      translation[key] = operandLattice->getOrDefault(operand);
+      auto newValsRes = currVals.extract(indices);
+      ensure(succeeded(newValsRes), "could not create SourceRef child for array access");
+      auto [newVals, _] = *newValsRes;
+      if (llvm::isa<WriteArrayOp>(arrayAccessOp)) {
+        ensure(newVals.isScalar(), "array write must produce a scalar value");
+      }
+      return newVals;
     }
-
-    // The lattice at the return is the translated return values
-    mlir::ChangeResult updated = mlir::ChangeResult::NoChange;
-    for (unsigned i = 0; i < callOp.getNumResults(); i++) {
-      auto retVal = before.getReturnValue(i);
-      auto [translatedVal, _] = retVal.translate(translation);
-      updated |= after->setValue(callOp->getResult(i), translatedVal);
-    }
-    propagateIfChanged(after, updated);
   }
-  /// `action == CallControlFlowAction::External` indicates that:
-  ///   - `before` is the state before the call operation.
-  ///   - `after` is the state after the call operation, since there is no callee
-  ///      body to enter into.
-  else if (action == mlir::dataflow::CallControlFlowAction::ExternalCallee) {
-    // For external calls, we propagate what information we already have from
-    // before the call to after the call, since the external call won't invalidate
-    // any of that information. It also, conservatively, makes no assumptions about
-    // external calls and their computation, so CDG edges will not be computed over
-    // input arguments to external functions.
-    join(after, before);
+
+  return mlir::failure();
+}
+
+void SourceRefAnalysis::setToEntryState(Lattice *lattice) {
+  if (auto value = llvm::dyn_cast_if_present<Value>(lattice->getAnchor())) {
+    if (auto arg = llvm::dyn_cast<BlockArgument>(value)) {
+      Operation *parent = arg.getOwner()->getParentOp();
+      if (parent && llvm::isa<RegionBranchOpInterface>(parent) &&
+          llvm::isa<ArrayType, StructType, PodType>(value.getType())) {
+        // Region-branch arguments are aliases of their incoming aggregate storage. Giving them a
+        // fresh root would make loop-carried writes unstable and would discard that identity.
+        (void)lattice->setValue(SourceRefLatticeValue());
+        return;
+      }
+    }
+    (void)lattice->setValue(SourceRefLattice::getDefaultValue(value));
   }
 }
 
-mlir::LogicalResult SourceRefAnalysis::visitOperation(
-    mlir::Operation *op, const SourceRefLattice &before, SourceRefLattice *after
+LogicalResult SourceRefAnalysis::visitOperation(
+    Operation *op, ArrayRef<const Lattice *> operands, ArrayRef<Lattice *> results
 ) {
   LLVM_DEBUG(llvm::dbgs() << "SourceRefAnalysis::visitOperation: " << *op << '\n');
-  // Collect the references that are made by the operands to `op`.
-  SourceRefLattice::ValueMap operandVals;
-  for (OpOperand &operand : op->getOpOperands()) {
-    const SourceRefLattice *prior = &before;
-    // Lookup the lattice for the operand, if it is op defined.
-    Value operandVal = operand.get();
-    if (Operation *defOp = operandVal.getDefiningOp()) {
-      prior = getLattice(getProgramPointAfter(defOp));
-    }
-    // Get the value (if there was a defining operation), or the default value.
-    operandVals[operandVal] = prior->getOrDefault(operandVal);
+
+  DenseMap<Value, const Lattice *> operandVals;
+  for (auto [operand, lattice] : llvm::zip(op->getOperands(), operands)) {
+    operandVals[operand] = lattice;
   }
 
-  // Add operand values, if not already added. Ensures that the default value
-  // of a SourceRef (the source of the ref) is visible in the lattice.
-  ChangeResult res = after->setValues(operandVals);
-
-  // We will now join the the operand refs based on the type of operand.
-  if (auto fieldRefOp = llvm::dyn_cast<FieldRefOpInterface>(op)) {
-    // The operand is indexed into by the FieldDefOp.
-    auto fieldOpRes = fieldRefOp.getFieldDefOp(tables);
-    ensure(mlir::succeeded(fieldOpRes), "could not find field read");
-
-    SourceRefLattice::ValueTy fieldRefRes;
-    if (fieldRefOp.isRead()) {
-      fieldRefRes = fieldRefOp.getVal();
-    } else {
-      fieldRefRes = fieldRefOp;
+  if (auto memberRefOp = llvm::dyn_cast<MemberRefOpInterface>(op)) {
+    auto memberOpRes = memberRefOp.getMemberDefOp(tables);
+    ensure(succeeded(memberOpRes), "could not find member read");
+    auto memberValsRes =
+        operandVals.at(memberRefOp.getComponent())->getValue().referenceMember(memberOpRes.value());
+    ensure(succeeded(memberValsRes), "could not create SourceRef child for member reference");
+    if (memberRefOp.isRead()) {
+      auto [memberVals, _] = *memberValsRes;
+      propagateIfChanged(results.front(), results.front()->setValue(memberVals));
     }
+    return success();
+  }
 
-    const auto &ops = operandVals.at(fieldRefOp.getComponent());
-    auto [fieldVals, _] = ops.referenceField(fieldOpRes.value());
-
-    res |= after->setValue(fieldRefRes, fieldVals);
-  } else if (auto arrayAccessOp = llvm::dyn_cast<ArrayAccessOpInterface>(op)) {
-    // Covers read/write/extract/insert array ops
-    arraySubdivisionOpUpdate(arrayAccessOp, operandVals, before, after);
-  } else if (auto createArray = llvm::dyn_cast<CreateArrayOp>(op)) {
-    // Create an array using the operand values, if they exist.
-    // Currently, the new array must either be fully initialized or uninitialized.
-    SourceRefLatticeValue newArrayVal(createArray.getType().getShape());
-    // If the array is statically initialized, iterate through all operands and initialize the array
-    // value.
-    const auto &elements = createArray.getElements();
-    if (!elements.empty()) {
-      for (unsigned i = 0; i < elements.size(); i++) {
-        auto currentOp = elements[i];
-        auto &opVals = operandVals[currentOp];
-        (void)newArrayVal.getElemFlatIdx(i).setValue(opVals);
-      }
+  if (auto podAccessOp = llvm::dyn_cast<PodAccessOpInterface>(op)) {
+    auto podValsRes = operandVals.at(podAccessOp.getPodRef())
+                          ->getValue()
+                          .referencePodRecord(podAccessOp.getRecordNameAttr());
+    ensure(succeeded(podValsRes), "could not create SourceRef child for pod reference");
+    if (podAccessOp.isRead()) {
+      auto [podVals, _] = *podValsRes;
+      propagateIfChanged(results.front(), results.front()->setValue(podVals));
     }
+    return success();
+  }
 
+  if (auto arrayAccessOp = llvm::dyn_cast<ArrayAccessOpInterface>(op)) {
+    if (!results.empty()) {
+      auto newVals = arraySubdivisionOpUpdate(arrayAccessOp, operandVals);
+      propagateIfChanged(results.front(), results.front()->setValue(newVals));
+    }
+    return success();
+  }
+
+  if (auto createArray = llvm::dyn_cast<CreateArrayOp>(op)) {
     auto createArrayRes = createArray.getResult();
+    const auto &elements = createArray.getElements();
+    if (elements.empty()) {
+      propagateIfChanged(
+          results.front(),
+          results.front()->setValue(SourceRef(llvm::cast<OpResult>(createArrayRes)))
+      );
+      return success();
+    }
 
-    res |= after->setValue(createArrayRes, newArrayVal);
-  } else if (auto structNewOp = llvm::dyn_cast<CreateStructOp>(op)) {
-    auto newOpRes = structNewOp.getResult();
-    auto newStructValue = before.getOrDefault(newOpRes);
-    res |= after->setValue(newOpRes, newStructValue);
-  } else {
-    // Standard union of operands into the results value.
-    // TODO: Could perform constant computation/propagation here for, e.g., arithmetic
-    // over constants, but such analysis may be better suited for a dedicated pass.
-    res |= fallbackOpUpdate(op, operandVals, before, after);
+    SourceRefLatticeValue newArrayVal(createArray.getType().getShape());
+    for (size_t i = 0; i < elements.size(); i++) {
+      (void)newArrayVal.getElemFlatIdx(i).setValue(operandVals.at(elements[i])->getValue());
+    }
+    propagateIfChanged(results.front(), results.front()->setValue(newArrayVal));
+    return success();
   }
 
-  propagateIfChanged(after, res);
-  LLVM_DEBUG(llvm::dbgs().indent(4) << "lattice is of size " << after->size() << '\n');
+  if (auto newPod = llvm::dyn_cast<NewPodOp>(op)) {
+    auto newPodValue = SourceRefLattice::getDefaultValue(newPod.getResult());
+    propagateIfChanged(results.front(), results.front()->setValue(newPodValue));
+    return success();
+  }
+
+  if (auto structNewOp = llvm::dyn_cast<CreateStructOp>(op)) {
+    auto newStructValue = SourceRefLattice::getDefaultValue(structNewOp.getResult());
+    propagateIfChanged(results.front(), results.front()->setValue(newStructValue));
+    return success();
+  }
+
+  auto updated = fallbackOpUpdate(op, operandVals, results);
+  for (Lattice *result : results) {
+    propagateIfChanged(result, updated);
+  }
   return success();
 }
 
-// Perform a standard union of operands into the results value.
-mlir::ChangeResult SourceRefAnalysis::fallbackOpUpdate(
-    mlir::Operation *op, const SourceRefLattice::ValueMap &operandVals,
-    const SourceRefLattice &before, SourceRefLattice *after
+void SourceRefAnalysis::visitExternalCall(
+    CallOpInterface call, ArrayRef<const Lattice *> operandLattices,
+    ArrayRef<Lattice *> resultLattices
 ) {
-  auto updated = mlir::ChangeResult::NoChange;
-  for (auto res : op->getResults()) {
-    auto cur = before.getOrDefault(res);
-
-    for (auto &[_, opVal] : operandVals) {
-      (void)cur.update(opVal);
+  auto callable = dyn_cast_if_present<CallableOpInterface>(call.resolveCallable());
+  if (!callable || !callable.getCallableRegion()) {
+    // Call is truly external
+    for (auto [result, lattice] : llvm::zip(call->getResults(), resultLattices)) {
+      auto resultRef = SourceRefLattice::getSourceRef(result);
+      ensure(succeeded(resultRef), "could not create external call SourceRef");
+      propagateIfChanged(lattice, lattice->setValue(*resultRef));
     }
-    updated |= after->setValue(res, cur);
+    return;
+  }
+  if (resultLattices.empty()) {
+    // `verif.include` and other no-result call-like ops still need to be
+    // treated as valid callable edges, but there are no results to
+    // translate back to the caller.
+    return;
+  }
+  // Call is to a defined function with a body, but it's treated as external so we
+  // can translate the results based on the arguments.
+  auto funcOpRes = resolveCallable<FuncDefOp>(tables, call);
+  ensure(succeeded(funcOpRes), "could not lookup called function");
+  auto funcOp = funcOpRes->get();
+
+  const auto *predecessors = getOrCreateFor<mlir::dataflow::PredecessorState>(
+      getProgramPointAfter(call), getProgramPointAfter(call)
+  );
+  // If not all return sites are known, then conservatively assume we can't
+  // reason about the data-flow.
+  if (!predecessors->allPredecessorsKnown()) {
+    setAllToEntryStates(resultLattices);
+    return;
+  }
+  const auto returnSites = predecessors->getKnownPredecessors();
+
+  std::unordered_map<SourceRef, SourceRefLatticeValue, SourceRef::Hash> translation;
+  for (unsigned i = 0; i < funcOp.getNumArguments(); i++) {
+    translation[SourceRef(funcOp.getArgument(i))] =
+        static_cast<const Lattice *>(operandLattices[i])->getValue();
+  }
+
+  for (auto [result, resultLattice] : llvm::zip(call->getResults(), resultLattices)) {
+    (void)result;
+    SourceRefLatticeValue combined;
+    unsigned resultNum = llvm::cast<OpResult>(result).getResultNumber();
+    for (Operation *returnSite : returnSites) {
+      auto retVal = static_cast<const Lattice *>(getLatticeElementFor(
+                                                     getProgramPointAfter(call.getOperation()),
+                                                     returnSite->getOperand(resultNum)
+                                                 ))
+                        ->getValue();
+      auto [translatedVal, _] = retVal.translate(translation);
+      (void)combined.update(translatedVal);
+    }
+    propagateIfChanged(resultLattice, static_cast<Lattice *>(resultLattice)->setValue(combined));
+  }
+}
+
+ChangeResult SourceRefAnalysis::fallbackOpUpdate(
+    Operation *op, const OperandValues &operandVals, ArrayRef<Lattice *> results
+) {
+  auto updated = ChangeResult::NoChange;
+  for (auto [res, lattice] : llvm::zip(op->getResults(), results)) {
+    auto cur = SourceRefLattice::getDefaultValue(res);
+    for (const auto &[_, opVal] : operandVals) {
+      (void)cur.update(opVal->getValue());
+    }
+    updated |= lattice->setValue(cur);
   }
   return updated;
 }
 
-// Perform the update for either a readarr op or an extractarr op, which
-// operate very similarly: index into the first operand using a variable number
-// of provided indices.
-void SourceRefAnalysis::arraySubdivisionOpUpdate(
-    ArrayAccessOpInterface arrayAccessOp, const SourceRefLattice::ValueMap &operandVals,
-    const SourceRefLattice & /*before*/, SourceRefLattice *after
+SourceRefLatticeValue SourceRefAnalysis::arraySubdivisionOpUpdate(
+    ArrayAccessOpInterface arrayAccessOp, const OperandValues &operandVals
 ) {
-  // We index the first operand by all remaining indices.
-  SourceRefLattice::ValueTy res;
-  if (llvm::isa<ReadArrayOp, ExtractArrayOp>(arrayAccessOp)) {
-    res = arrayAccessOp->getResult(0);
-  } else {
-    res = arrayAccessOp;
-  }
-
   auto array = arrayAccessOp.getArrRef();
   auto it = operandVals.find(array);
   ensure(it != operandVals.end(), "improperly constructed operandVals map");
-  auto currVals = it->second;
+  const auto &currVals = it->second->getValue();
 
   std::vector<SourceRefIndex> indices;
-
-  for (unsigned i = 0; i < arrayAccessOp.getIndices().size(); ++i) {
+  for (size_t i = 0; i < arrayAccessOp.getIndices().size(); ++i) {
     auto idxOperand = arrayAccessOp.getIndices()[i];
     auto idxIt = operandVals.find(idxOperand);
     ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
-    auto &idxVals = idxIt->second;
+    const auto &idxVals = idxIt->second->getValue();
 
-    // Note: we allow constant values regardless of if they are felt or index,
-    // as if they were felt, there would need to be a cast to index, and if it
-    // was missing, there would be a semantic check failure. So we accept either
-    // so we don't have to track the cast ourselves.
     if (idxVals.isSingleValue() && idxVals.getSingleValue().isConstant()) {
-      SourceRefIndex idx(idxVals.getSingleValue().getConstantValue());
-      indices.push_back(idx);
+      indices.emplace_back(*idxVals.getSingleValue().getConstantValue());
     } else {
-      // Otherwise, assume any range is valid.
       auto arrayType = llvm::dyn_cast<ArrayType>(array.getType());
-      auto lower = mlir::APInt::getZero(64);
-      mlir::APInt upper(64, arrayType.getDimSize(i));
-      auto idxRange = SourceRefIndex(lower, upper);
-      indices.push_back(idxRange);
+      auto lower = APInt::getZero(64);
+      assert(i <= std::numeric_limits<unsigned>::max() && "index too large");
+      APInt upper(64, arrayType.getDimSize(static_cast<unsigned>(i)));
+      indices.emplace_back(lower, upper);
     }
   }
 
-  auto [newVals, _] = currVals.extract(indices);
-
+  auto newValsRes = currVals.extract(indices);
+  ensure(succeeded(newValsRes), "could not create SourceRef child for array access");
+  auto [newVals, _] = *newValsRes;
   if (llvm::isa<ReadArrayOp, WriteArrayOp>(arrayAccessOp)) {
     ensure(newVals.isScalar(), "array read/write must produce a scalar value");
   }
-  // an extract operation may yield a "scalar" value if not all dimensions of
-  // the source array are instantiated; for example, if extracting an array from
-  // an input arg, the current value is a "scalar" with an array type, and extracting
-  // from that yields another single value with indices. For example: extracting [0][1]
-  // from { arg1 } yields { arg1[0][1] }.
-
-  propagateIfChanged(after, after->setValue(res, newVals));
+  return newVals;
 }
 
 /* ConstraintDependencyGraph */
 
-mlir::FailureOr<ConstraintDependencyGraph> ConstraintDependencyGraph::compute(
-    mlir::ModuleOp m, StructDefOp s, mlir::DataFlowSolver &solver, mlir::AnalysisManager &am,
+FailureOr<ConstraintDependencyGraph> ConstraintDependencyGraph::compute(
+    ModuleOp m, StructDefOp s, DataFlowSolver &solver, AnalysisManager &am,
     const CDGAnalysisContext &ctx
 ) {
   ConstraintDependencyGraph cdg(m, s, ctx);
@@ -314,7 +364,7 @@ void ConstraintDependencyGraph::print(llvm::raw_ostream &os) const {
     }
   }
   // Add the constants in separately.
-  for (auto &[ref, constSet] : constantSets) {
+  for (const auto &[ref, constSet] : constantSets) {
     if (constSet.empty()) {
       continue;
     }
@@ -365,13 +415,26 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
   // - Union all constraints from the analysis
   // This requires iterating over all of the emit operations
   constrainFnOp.walk([this, &solver](Operation *op) {
-    ProgramPoint *pp = solver.getProgramPointAfter(op);
-    const auto *refLattice = solver.lookupState<SourceRefLattice>(pp);
-    // aggregate the ref2Val map across operations, as some may have nested
-    // regions and blocks that aren't propagated to the function terminator
-    if (refLattice) {
-      for (auto &[ref, vals] : refLattice->getRef2Val()) {
-        ref2Val[ref].insert(vals.begin(), vals.end());
+    if (!dataflow::isOperationLive(solver, op)) {
+      return;
+    }
+
+    for (Value operand : op->getOperands()) {
+      auto operandRefs = SourceRefAnalysis::getValueState(solver, operand).foldToScalar();
+      for (const SourceRef &ref : operandRefs) {
+        ref2Val[ref].insert(operand);
+      }
+    }
+    for (Value result : op->getResults()) {
+      auto resultRefs = SourceRefAnalysis::getValueState(solver, result).foldToScalar();
+      for (const SourceRef &ref : resultRefs) {
+        ref2Val[ref].insert(result);
+      }
+    }
+    auto writeTargetState = SourceRefAnalysis::getWriteTargetState(solver, op);
+    if (succeeded(writeTargetState)) {
+      for (const SourceRef &ref : writeTargetState->foldToScalar()) {
+        ref2Val[ref].insert(op);
       }
     }
     if (isa<EmitEqualityOp, EmitContainmentOp>(op)) {
@@ -387,6 +450,9 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
    * add them to the transitive closures.
    */
   auto fnCallWalker = [this, &solver, &am](CallOp fnCall) mutable {
+    if (!dataflow::isOperationLive(solver, fnCall.getOperation())) {
+      return;
+    }
     auto res = resolveCallable<FuncDefOp>(tables, fnCall);
     ensure(mlir::succeeded(res), "could not resolve constrain call");
 
@@ -398,24 +464,11 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     auto calledStruct = fn.getOperation()->getParentOfType<StructDefOp>();
     SourceRefRemappings translations;
 
-    ProgramPoint *pp = solver.getProgramPointAfter(fnCall.getOperation());
-    auto *afterCallLattice = solver.lookupState<SourceRefLattice>(pp);
-    ensure(afterCallLattice, "could not find lattice for call operation");
-
     // Map fn parameters to args in the call op
     for (unsigned i = 0; i < fn.getNumArguments(); i++) {
       SourceRef prefix(fn.getArgument(i));
-      // Look up the lattice that defines the operand value first, but default
-      // to the afterCallLattice if the operand is not defined by an operand.
-      const SourceRefLattice *operandLattice = afterCallLattice;
       Value operand = fnCall.getOperand(i);
-      if (Operation *defOp = operand.getDefiningOp()) {
-        ProgramPoint *defPoint = solver.getProgramPointAfter(defOp);
-        operandLattice = solver.lookupState<SourceRefLattice>(defPoint);
-      }
-      ensure(operandLattice, "could not find lattice for call operand");
-
-      SourceRefLatticeValue val = operandLattice->getOrDefault(operand);
+      SourceRefLatticeValue val = SourceRefAnalysis::getValueState(solver, operand);
       translations.push_back({prefix, val});
     }
     auto &childAnalysis =
@@ -460,13 +513,9 @@ void ConstraintDependencyGraph::walkConstrainOp(
 ) {
   std::vector<SourceRef> signalUsages, constUsages;
 
-  ProgramPoint *pp = solver.getProgramPointAfter(emitOp);
-  const SourceRefLattice *refLattice = solver.lookupState<SourceRefLattice>(pp);
-  ensure(refLattice, "missing lattice for constrain op");
-
   for (auto operand : emitOp->getOperands()) {
-    auto latticeVal = refLattice->getOrDefault(operand);
-    for (auto &ref : latticeVal.foldToScalar()) {
+    auto latticeVal = SourceRefAnalysis::getValueState(solver, operand);
+    for (const auto &ref : latticeVal.foldToScalar()) {
       if (ref.isConstant()) {
         constUsages.push_back(ref);
       } else {
@@ -507,11 +556,13 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
             mlir::succeeded(suffix), "failure is nonsensical, we already checked for valid prefix"
         );
 
-        auto [resolvedVals, _] = vals.extract(suffix.value());
+        auto resolvedValsRes = vals.extract(suffix.value());
+        ensure(succeeded(resolvedValsRes), "could not create SourceRef child while resolving refs");
+        auto [resolvedVals, _] = *resolvedValsRes;
         auto folded = resolvedVals.foldToScalar();
         refs.insert(refs.end(), folded.begin(), folded.end());
       } else {
-        for (auto &replacement : vals.getScalarValue()) {
+        for (const auto &replacement : vals.getScalarValue()) {
           auto translated = elem.translate(prefix, replacement);
           if (mlir::succeeded(translated)) {
             refs.push_back(translated.value());
@@ -536,7 +587,7 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
       if (mlir::failed(member)) {
         continue;
       }
-      for (auto &ref : *member) {
+      for (const auto &ref : *member) {
         if (ref.isConstant()) {
           translatedConsts.push_back(ref);
         } else {
@@ -545,7 +596,7 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
       }
       // Also add the constants from the original CDG
       if (auto it = constantSets.find(*mit); it != constantSets.end()) {
-        auto &origConstSet = it->second;
+        const auto &origConstSet = it->second;
         translatedConsts.insert(translatedConsts.end(), origConstSet.begin(), origConstSet.end());
       }
     }
@@ -570,7 +621,7 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
   }
 
   // Translate ref2Val as well
-  for (auto &[ref, vals] : ref2Val) {
+  for (const auto &[ref, vals] : ref2Val) {
     auto translationRes = translate(ref);
     if (succeeded(translationRes)) {
       for (const auto &translatedRef : *translationRes) {
@@ -586,16 +637,22 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
   SourceRefSet res;
   auto currRef = mlir::FailureOr<SourceRef>(ref);
   while (mlir::succeeded(currRef)) {
-    // Add signals
-    for (auto it = signalSets.findLeader(*currRef); it != signalSets.member_end(); it++) {
-      if (currRef.value() != *it) {
-        res.insert(*it);
+    // A dynamic access is represented by a half-open range. Match every concrete element and
+    // range that overlaps the queried path, as well as exact references.
+    for (auto candidate = signalSets.begin(); candidate != signalSets.end(); ++candidate) {
+      const SourceRef &candidateRef = candidate->getData();
+      if (!candidateRef.overlaps(*currRef)) {
+        continue;
       }
-    }
-    // Add constants
-    auto constIt = constantSets.find(*currRef);
-    if (constIt != constantSets.end()) {
-      res.insert(constIt->second.begin(), constIt->second.end());
+      for (auto it = signalSets.findLeader(candidate); it != signalSets.member_end(); ++it) {
+        if (!it->overlaps(ref)) {
+          res.insert(*it);
+        }
+      }
+      auto constIt = constantSets.find(candidateRef);
+      if (constIt != constantSets.end()) {
+        res.insert(constIt->second.begin(), constIt->second.end());
+      }
     }
     // Go to parent
     currRef = currRef->getParentPrefix();

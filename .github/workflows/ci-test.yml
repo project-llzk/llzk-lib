@@ -1,11 +1,11 @@
-name: Run Tests
+name: Tests
 on:
   push:
     branches: [ main ]
   pull_request:
 
 jobs:
-  build:
+  run:
     strategy:
       matrix:
         compiler:
@@ -16,10 +16,9 @@ jobs:
             derivation: '.#debugClangCov'
             report: clang-report.xml
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
       # v37.1.0
@@ -32,8 +31,7 @@ jobs:
           git config --global 'url.https://api@github.com/'.insteadOf 'https://github.com/'
           git config --global 'url.https://ssh@github.com/'.insteadOf 'ssh://git@github.com/'
           git config --global 'url.https://git@github.com/'.insteadOf 'git@github.com:'
-      # v16
-      - uses: cachix/cachix-action@0fc020193b5a1fa3ac4575aa3a7d3aa6a35435ad
+      - uses: cachix/cachix-action@v17
         with:
           name: veridise-public
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
@@ -41,24 +39,25 @@ jobs:
         run: "nix --print-build-logs build '${{ matrix.compiler.derivation }}'"
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "Test results (${{ matrix.compiler.name }})"
           path: "result/artifacts/${{ matrix.compiler.report }}"
 
+  # WARNING: do not change this job name. It is a required status check for PRs to `main`.
   publish-tests:
-    name: "Publish test results"
-    needs: build
+    needs: run
     runs-on: ubuntu-24.04
-    if: always()
+    if: ${{ !cancelled() }}
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: artifacts
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always()
         with:
           files: artifacts/**/*.xml
-          comment_mode: failures
+          comment_mode: always
+          action_fail: true
+          action_fail_on_inconclusive: true

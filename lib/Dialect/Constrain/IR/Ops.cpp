@@ -7,8 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
+
+#include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Function/IR/OpTraits.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Util/BuilderHelper.h"
@@ -60,9 +61,7 @@ LogicalResult EmitContainmentOp::verify() {
   Type elemTy = arrType.getElementType();
   if (!isValidEmitEqType(elemTy)) {
     return errFn().append(
-        "element type must be any LLZK type, excluding non-Signal struct and string types, but "
-        "got ",
-        elemTy
+        "element type must be any LLZK type, excluding struct and string types, but got ", elemTy
     );
   }
   return success();

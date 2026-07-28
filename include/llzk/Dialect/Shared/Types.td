@@ -18,11 +18,12 @@ def AnyLLZKType : Type<CPred<"::llzk::isValidType($_self)">,
 def GlobalDefType : Type<CPred<"::llzk::isValidGlobalType($_self)">,
                          "any LLZK type except non-constant types">;
 
-def EmitEqType
-    : Type<CPred<"::llzk::isValidEmitEqType($_self)">,
-           "any LLZK type, excluding non-Signal struct and string types">;
+def EmitEqType : Type<CPred<"::llzk::isValidEmitEqType($_self)">,
+                      "any LLZK type, excluding struct and string types">;
 
 def ConstReadType : Type<CPred<"::llzk::isValidConstReadType($_self)">,
                          "integral, felt, or typevar type">;
+
+def AnyLLZKIntType : AnyTypeOf<[I1, Index]>;
 
 #endif // LLZK_SHARED_TYPES

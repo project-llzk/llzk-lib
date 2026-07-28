@@ -1,0 +1,43 @@
+// RUN: llzk-opt -split-input-file --canonicalize -llzk-array-to-scalar %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @A {
+    struct.member @foo : !array.type<2 x !felt.type>
+    function.def @product(%inp : !array.type<2 x !felt.type>)  -> !struct.type<@A> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : <@A>
+      %fc0 = felt.const 0
+      %fc1 = felt.const 1
+
+      %foo = array.new : !array.type<2 x !felt.type>
+
+      %c0 = cast.toindex %fc0 : !felt.type
+      %c1 = cast.toindex %fc1 : !felt.type
+
+      %x = array.read %inp[%c0] : !array.type<2 x !felt.type>, !felt.type
+      %y = array.read %inp[%c1] : !array.type<2 x !felt.type>, !felt.type
+
+      %a = felt.add %x, %y : !felt.type
+      %b = felt.sub %x, %y
+
+      array.write %foo[%c0] = %a : !array.type<2 x !felt.type>, !felt.type
+      array.write %foo[%c1] = %b : !array.type<2 x !felt.type>, !felt.type
+
+      struct.writem %self[@foo] = %foo : <@A>, !array.type<2 x !felt.type>
+
+      function.return %self : !struct.type<@A>
+    }
+  }
+}
+
+// CHECK-LABEL:    struct.def @A {
+// CHECK-NEXT:      struct.member @foo_0 : !felt.type
+// CHECK-NEXT:      struct.member @foo_1 : !felt.type
+// CHECK-NEXT:      function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@A> attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@A>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.sub %[[VAL_0]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-DAG:         struct.writem %[[VAL_2]][@foo_1] = %[[VAL_4]] : <@A>, !felt.type
+// CHECK-DAG:         struct.writem %[[VAL_2]][@foo_0] = %[[VAL_3]] : <@A>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@A>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }

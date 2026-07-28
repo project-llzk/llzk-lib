@@ -32,7 +32,7 @@ private:
     DefaultAndFailInFlightDiagnostic(mlir::InFlightDiagnostic &&base)
         : mlir::InFlightDiagnostic(std::move(base)) {}
 
-    DefaultAndFailInFlightDiagnostic(DefaultAndFailInFlightDiagnostic &&other)
+    DefaultAndFailInFlightDiagnostic(DefaultAndFailInFlightDiagnostic &&other) noexcept
         : mlir::InFlightDiagnostic(std::move(other)) {}
 
     ~DefaultAndFailInFlightDiagnostic() {
@@ -69,6 +69,13 @@ public:
   /// immediately after reporting the error; likely only useful in custom type builders.
   explicit InFlightDiagnosticWrapper(const mlir::Location &loc)
       : InFlightDiagnosticWrapper(loc.getContext()) {}
+
+  /// Construct a silent diagnostic that does nothing when appended to or reported.
+  static InFlightDiagnosticWrapper createSilent(mlir::MLIRContext *ctx) {
+    mlir::InFlightDiagnostic d = mlir::emitRemark(mlir::UnknownLoc::get(ctx));
+    d.abandon();
+    return InFlightDiagnosticWrapper(std::move(d));
+  }
 
   /// Stream operator for new diagnostic arguments.
   template <typename Arg> InFlightDiagnosticWrapper &operator<<(Arg &&arg) & {

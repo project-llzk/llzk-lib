@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
+
 #include "llzk/Util/TypeHelper.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
@@ -45,7 +46,7 @@ template <typename TypeOfIndex> inline std::optional<int64_t> toI64(TypeOfIndex 
   if (!mlir::matchPattern(index, mlir::m_ConstantInt(&idxAP))) {
     return std::nullopt;
   }
-  return llzk::fromAPInt(idxAP);
+  return idxAP.trySExtValue();
 }
 
 template <typename OutType> struct CheckAndConvert {
@@ -61,7 +62,7 @@ template <> struct CheckAndConvert<int64_t> {
   template <typename InType> static std::optional<int64_t> from(InType index, int64_t dimSize) {
     if (auto idxVal = toI64<InType>(index)) {
       if (isInRange(*idxVal, dimSize)) {
-        return *idxVal;
+        return idxVal;
       }
     }
     return std::nullopt;

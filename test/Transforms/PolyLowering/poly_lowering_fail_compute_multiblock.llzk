@@ -1,0 +1,21 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-poly-lowering-pass="max-degree=2" -verify-diagnostics %s
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @ComputeMultiBlockAuxScope {
+    // expected-error@+1 {{poly lowering expects a straight-line compute body; run `llzk-flatten` or another control-flow lowering pass first}}
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ComputeMultiBlockAuxScope> {
+      %entry_self = struct.new : !struct.type<@ComputeMultiBlockAuxScope>
+      function.return %entry_self : !struct.type<@ComputeMultiBlockAuxScope>
+    ^late:
+      %late_self = struct.new : !struct.type<@ComputeMultiBlockAuxScope>
+      function.return %late_self : !struct.type<@ComputeMultiBlockAuxScope>
+    }
+
+    function.def @constrain(%self: !struct.type<@ComputeMultiBlockAuxScope>, %a: !felt.type, %b: !felt.type) {
+      %ab = felt.mul %a, %b : !felt.type, !felt.type
+      %cube = felt.mul %ab, %a : !felt.type, !felt.type
+      constrain.eq %cube, %a : !felt.type
+      function.return
+    }
+  }
+}

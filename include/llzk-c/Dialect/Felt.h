@@ -18,43 +18,113 @@
 #ifndef LLZK_C_DIALECT_FELT_H
 #define LLZK_C_DIALECT_FELT_H
 
-#include "llzk-c/Support.h"
-
 #include <mlir-c/IR.h>
+
+// Include the generated CAPI
+#include "llzk/Dialect/Felt/IR/Attrs.capi.h.inc"
+#include "llzk/Dialect/Felt/IR/Ops.capi.h.inc"
+#include "llzk/Dialect/Felt/IR/Types.capi.h.inc"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/// Get reference to the LLZK `felt` dialect.
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Felt, llzk__felt);
 
-/// Creates a llzk::felt::FeltConstAttr.
-MLIR_CAPI_EXPORTED MlirAttribute llzkFeltConstAttrGet(MlirContext context, int64_t value);
+//===----------------------------------------------------------------------===//
+// FeltConstAttr
+//===----------------------------------------------------------------------===//
 
-/// Creates a llzk::felt::FeltConstAttr with a set bit length.
+/// Creates a llzk::felt::FeltConstAttr with the given value in the specified field.
 MLIR_CAPI_EXPORTED MlirAttribute
-llzkFeltConstAttrGetWithBits(MlirContext ctx, unsigned numBits, int64_t value);
+llzkFelt_FeltConstAttrGetInField(MlirContext ctx, int64_t value, MlirStringRef fieldName);
 
-/// Creates a llzk::felt::FeltConstAttr from a base-10 representation of a number.
+/// Creates a llzk::felt::FeltConstAttr with the given value in an unspecified field.
 MLIR_CAPI_EXPORTED MlirAttribute
-llzkFeltConstAttrGetFromString(MlirContext context, unsigned numBits, MlirStringRef str);
+llzkFelt_FeltConstAttrGetUnspecified(MlirContext ctx, int64_t value);
 
-/// Creates a llzk::felt::FeltConstAttr from an array of big-integer parts in LSB order.
-MLIR_CAPI_EXPORTED MlirAttribute llzkFeltConstAttrGetFromParts(
-    MlirContext context, unsigned numBits, const uint64_t *parts, intptr_t nParts
+/// Creates a llzk::felt::FeltConstAttr with a set bit length and value in the specified field.
+/// The provided `MlirType` must be a llzk::felt::FeltType.
+MLIR_CAPI_EXPORTED MlirAttribute
+llzkFelt_FeltConstAttrGetWithBits(MlirContext ctx, unsigned numBits, int64_t value, MlirType type);
+
+/// Creates a llzk::felt::FeltConstAttr with a set bit length and value in the specified field.
+MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetWithBitsInField(
+    MlirContext ctx, unsigned numBits, int64_t value, MlirStringRef fieldName
 );
 
-/// Returns true if the attribute is a FeltConstAttr.
-LLZK_DECLARE_ATTR_ISA(FeltConstAttr);
+/// Creates a llzk::felt::FeltConstAttr with a set bit length and value in an unspecified field.
+MLIR_CAPI_EXPORTED MlirAttribute
+llzkFelt_FeltConstAttrGetWithBitsUnspecified(MlirContext ctx, unsigned numBits, int64_t value);
 
-/// Creates a llzk::felt::FeltType.
-MLIR_CAPI_EXPORTED MlirType llzkFeltTypeGet(MlirContext context);
+/// Creates a llzk::felt::FeltConstAttr from a base-10 representation of a number
+/// in the specified field.
+/// The provided `MlirType` must be a llzk::felt::FeltType.
+MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromString(
+    MlirContext ctx, unsigned numBits, MlirStringRef str, MlirType type
+);
 
-/// Returns true if the type is a FeltType.
-LLZK_DECLARE_TYPE_ISA(FeltType);
+/// Creates a llzk::felt::FeltConstAttr from a base-10 representation of a number
+/// in the specified field.
+MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromStringInField(
+    MlirContext ctx, unsigned numBits, MlirStringRef str, MlirStringRef fieldName
+);
+
+/// Creates a llzk::felt::FeltConstAttr from a base-10 representation of a number
+/// in an unspecified field.
+MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromStringUnspecified(
+    MlirContext ctx, unsigned numBits, MlirStringRef str
+);
+
+/// Creates a llzk::felt::FeltConstAttr from an array of big-integer parts in LSB order
+/// in the specified field.
+/// The provided `MlirType` must be a llzk::felt::FeltType.
+MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromParts(
+    MlirContext ctx, unsigned numBits, const uint64_t *parts, intptr_t nParts, MlirType type
+);
+
+/// Creates a llzk::felt::FeltConstAttr from an array of big-integer parts in LSB order
+/// in the specified field.
+MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromPartsInField(
+    MlirContext ctx, unsigned numBits, const uint64_t *parts, intptr_t nParts,
+    MlirStringRef fieldName
+);
+
+/// Creates a llzk::felt::FeltConstAttr from an array of big-integer parts in LSB order
+/// in an unspecified field.
+MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FeltConstAttrGetFromPartsUnspecified(
+    MlirContext ctx, unsigned numBits, const uint64_t *parts, intptr_t nParts
+);
+
+//===----------------------------------------------------------------------===//
+// FieldSpecAttr
+//===----------------------------------------------------------------------===//
+
+/// Creates a llzk::felt::FieldSpecAttr from a base-10 representation of the prime.
+MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FieldSpecAttrGetFromString(
+    MlirContext ctx, MlirIdentifier fieldName, unsigned numBits, MlirStringRef primeStr
+);
+
+/// Creates a llzk::felt::FieldSpecAttr from an array of big-integer parts in LSB order representing
+/// the prime.
+MLIR_CAPI_EXPORTED MlirAttribute llzkFelt_FieldSpecAttrGetFromParts(
+    MlirContext ctx, MlirIdentifier fieldName, unsigned numBits, const uint64_t *parts,
+    intptr_t nParts
+);
+
+//===----------------------------------------------------------------------===//
+// FeltType
+//===----------------------------------------------------------------------===//
+
+/// Creates a llzk::felt::FeltType with an unspecified field.
+MLIR_CAPI_EXPORTED MlirType llzkFelt_FeltTypeGetUnspecified(MlirContext ctx);
+
+/// Create a llzk::felt::FeltType Type with the given parameters.
+MLIR_CAPI_EXPORTED MlirType llzkFelt_FeltTypeGetFromRef(MlirContext ctx, MlirStringRef fieldName);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif // LLZK_C_DIALECT_FELT_H

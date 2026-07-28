@@ -30,7 +30,7 @@ class SymbolUseGraphNode {
   mlir::ModuleOp symbolPathRoot;
   mlir::SymbolRefAttr symbolPath;
   OpSet opsThatUseTheSymbol;
-  bool isStructConstParam;
+  bool isTemplateSymBinding;
 
   /* Tree structure. The SymbolUseGraph owns the nodes so just pointers here. */
   /// Predecessor: Symbol that uses the current Symbol with its defining Operation.
@@ -39,13 +39,14 @@ class SymbolUseGraphNode {
   mlir::SetVector<SymbolUseGraphNode *> successors;
 
   SymbolUseGraphNode(mlir::ModuleOp pathRoot, mlir::SymbolRefAttr path)
-      : symbolPathRoot(pathRoot), symbolPath(path), isStructConstParam(false) {
+      : symbolPathRoot(pathRoot), symbolPath(path), isTemplateSymBinding(false) {
     assert(pathRoot && "'pathRoot' cannot be nullptr");
     assert(path && "'path' cannot be nullptr");
   }
 
   /// Used only for creating the artificial root/head and tail nodes in the graph.
-  SymbolUseGraphNode() : symbolPathRoot(nullptr), symbolPath(nullptr), isStructConstParam(false) {}
+  SymbolUseGraphNode()
+      : symbolPathRoot(nullptr), symbolPath(nullptr), isTemplateSymBinding(false) {}
 
   /// Return 'false' iff the given node is an artificial node created for the graph head/tail.
   static bool isRealNodeImpl(const SymbolUseGraphNode *node) { return node->symbolPath != nullptr; }
@@ -73,8 +74,8 @@ public:
   /// The set of operations that use the symbol.
   const OpSet &getUserOps() const { return opsThatUseTheSymbol; }
 
-  /// Return `true` iff the symbol is a struct constant parameter name.
-  bool isStructParam() const { return isStructConstParam; }
+  /// Return `true` iff the symbol is a defined by a `TemplateSymbolBindingOpInterface`.
+  bool isTemplateSymbolBinding() const { return isTemplateSymBinding; }
 
   /// Return true if this node has any predecessors.
   bool hasPredecessor() const {
@@ -113,7 +114,7 @@ public:
   /// Print the node in a human readable format.
   std::string toString(bool showLocations = false) const;
   void print(
-      llvm::raw_ostream &os, bool showLocations = false, std::string locationLinePrefix = ""
+      llvm::raw_ostream &os, bool showLocations = false, const std::string &locationLinePrefix = ""
   ) const;
 };
 
@@ -161,14 +162,15 @@ class SymbolUseGraph {
   );
 
   SymbolUseGraphNode *getSymbolUserNode(const mlir::SymbolTable::SymbolUse &u);
-  void buildGraph(mlir::SymbolOpInterface symbolOp);
+  void buildGraph(mlir::Operation *symbolTableOp);
 
   // Friend declarations for the specializations of GraphTraits
   friend struct llvm::GraphTraits<const llzk::SymbolUseGraph *>;
   friend struct llvm::GraphTraits<llvm::Inverse<const llzk::SymbolUseGraph *>>;
 
 public:
-  SymbolUseGraph(mlir::SymbolOpInterface rootSymbolOp);
+  /// Build a use graph rooted at an operation with the `SymbolTable` trait.
+  SymbolUseGraph(mlir::Operation *rootSymbolTableOp);
 
   /// Return the existing node for the symbol reference relative to the given module, else nullptr.
   const SymbolUseGraphNode *lookupNode(mlir::ModuleOp pathRoot, mlir::SymbolRefAttr path) const;

@@ -1,0 +1,36 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
+
+//--- test.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %c1 = arith.constant 1 : index
+      %c0 = arith.constant 0 : index
+      %res = scf.while (%i = %c1) : (index) -> !felt.type<"babybear"> {
+        %cond = arith.cmpi sgt, %i, %c0 : index
+        %as_felt = cast.tofelt %i : index, !felt.type<"babybear">
+        scf.condition(%cond) %as_felt : !felt.type<"babybear">
+      } do {
+      ^bb0(%unused: !felt.type<"babybear">):
+        scf.yield %c0 : index
+      }
+      struct.writem %self[@out] = %res : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// CHECK: {
+// CHECK-NEXT:   "out": "0"
+// CHECK-NEXT: }
+
+//--- input.json
+{}

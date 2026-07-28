@@ -1,0 +1,109 @@
+// REQUIRES: with-pcl
+// RUN: llzk-opt -split-input-file -llzk-to-pcl -canonicalize %s | llzk-translate -split-input-file -pcl-to-lisp -lisp-compressed-lines | FileCheck --enable-var-scope %s
+
+// COM: These test the whole pipeline from LLZK to PCL in lisp form.
+
+!F = !felt.type<"babybear">
+module attributes {llzk.lang = "test"} {
+  struct.def @Foo {
+    struct.member @bar : !F {llzk.pub}
+    struct.member @baz : !F 
+    function.def @compute(%arg0: !F) -> !struct.type<@Foo> attributes {function.allow_witness} {
+      %self = struct.new : <@Foo>
+      function.return %self : !struct.type<@Foo>
+    }
+    function.def @constrain(%self: !struct.type<@Foo>, %arg0: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %c256 = felt.const  256 : !F
+      %c0 = felt.const 0 : !F
+      %c1 = felt.const 1 : !F
+      %0 = felt.neg %c256 : !F
+      %1 = struct.readm %self[@baz] : <@Foo>, !F
+      %2 = felt.mul %arg0, %1 : !F, !F
+      %3 = felt.add %0, %2 : !F, !F
+      constrain.eq %c0, %3 : !F, !F
+      %4 = struct.readm %self[@bar] : <@Foo>, !F
+      %5 = felt.sub %1, %c1 : !F, !F 
+      %6 = felt.mul %1, %5 : !F, !F 
+      constrain.eq %c0, %6 : !F, !F
+      %7 = felt.sub %4, %c1 : !F, !F
+      %8 = felt.sub %7, %6 : !F, !F 
+      constrain.eq %c0, %8 : !F, !F
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: (prime-number 2013265921)
+// CHECK-NEXT: (begin-module Foo)
+// CHECK-NEXT: (input in0)
+// CHECK-NEXT: (assert (= (* in0 baz) 256))
+// CHECK-NEXT: (assert (= (* baz (- baz 1)) 0))
+// CHECK-NEXT: (assert (= (- bar 1) (* baz (- baz 1))))
+// CHECK-NEXT: (output bar)
+// CHECK-NEXT: (end-module)
+
+// -----
+
+!F = !felt.type<"babybear">
+module attributes {llzk.lang = "test"} {
+  struct.def @Baz {
+    struct.member @x : !F {llzk.pub}
+    function.def @compute(%arg0: !F)  -> !struct.type<@Baz> attributes {function.allow_witness} {
+      %self = struct.new : <@Baz>
+      function.return %self : !struct.type<@Baz>
+    }
+    function.def @constrain(%self: !struct.type<@Baz>, %arg0: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %c0 = felt.const 0 : !F
+      %1 = struct.readm %self[@x] : <@Baz>, !F
+      %2 = felt.sub %1, %arg0 : !F, !F 
+      constrain.eq %c0, %2 : !F, !F
+      function.return
+    }
+
+  }
+  struct.def @Foo {
+    struct.member @bar : !F {llzk.pub}
+    struct.member @baz : !struct.type<@Baz> 
+    function.def @compute(%arg0: !F) -> !struct.type<@Foo> attributes {function.allow_witness} {
+      %self = struct.new : <@Foo>
+      function.return %self : !struct.type<@Foo>
+    }
+    function.def @constrain(%self: !struct.type<@Foo>, %arg0: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %c256 = felt.const  256 : !F
+      %c0 = felt.const 0 : !F
+      %c1 = felt.const 1 : !F
+      %0 = felt.neg %c256 : !F
+      %baz = struct.readm %self[@baz] : <@Foo>, !struct.type<@Baz>
+      function.call @Baz::@constrain(%baz, %arg0) : (!struct.type<@Baz>, !F) -> ()
+      %1 = struct.readm %baz[@x] : <@Baz>, !F
+      %2 = felt.mul %arg0, %1 : !F, !F
+      %3 = felt.add %0, %2 : !F, !F
+      constrain.eq %c0, %3 : !F, !F
+      %4 = struct.readm %self[@bar] : <@Foo>, !F
+      %5 = felt.sub %1, %c1 : !F, !F 
+      %6 = felt.mul %1, %5 : !F, !F 
+      constrain.eq %c0, %6 : !F, !F
+      %7 = felt.sub %4, %c1 : !F, !F
+      %8 = felt.sub %7, %6 : !F, !F 
+      constrain.eq %c0, %8 : !F, !F
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: (prime-number 2013265921)
+// CHECK-NEXT: (begin-module Baz)
+// CHECK-NEXT: (input in0)
+// CHECK-NEXT: (assert (= x in0))
+// CHECK-NEXT: (output x)
+// CHECK-NEXT: (end-module)
+// CHECK-NEXT: (begin-module Foo)
+// CHECK-NEXT: (input in0)
+// CHECK-NEXT: (call [Baz_call0_out0] Baz [in0])
+// CHECK-NEXT: (assert (= baz.x Baz_call0_out0))
+// CHECK-NEXT: (assert (= (* in0 baz.x) 256))
+// CHECK-NEXT: (assert (= (* baz.x (- baz.x 1)) 0))
+// CHECK-NEXT: (assert (= (- bar 1) (* baz.x (- baz.x 1))))
+// CHECK-NEXT: (output bar)
+// CHECK-NEXT: (end-module)
+

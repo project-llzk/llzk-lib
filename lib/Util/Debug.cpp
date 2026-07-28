@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Util/Debug.h"
+
 #include "llzk/Util/StreamHelper.h"
 
 using namespace mlir;
@@ -19,7 +20,7 @@ void dumpSymbolTableWalk(Operation *symbolTableOp) {
   std::string output; // buffer to avoid multi-threaded mess
   llvm::raw_string_ostream oss(output);
   oss << "Dumping symbol walk (self = [" << symbolTableOp << "]): \n";
-  auto walkFn = [&](Operation *op, bool allUsesVisible) {
+  auto walkFn = [&](Operation *op, bool /*allUsesVisible*/) {
     oss << "  found op [" << op << "] " << op->getName() << " named "
         << op->getAttrOfType<StringAttr>(SymbolTable::getSymbolAttrName()) << '\n';
   };
@@ -31,10 +32,10 @@ void dumpSymbolTable(llvm::raw_ostream &stream, SymbolTable &symTab, unsigned in
   indent *= 2;
   stream.indent(indent) << "Dumping SymbolTable [" << &symTab << "]: \n";
   auto *rawSymbolTablePtr = reinterpret_cast<char *>(&symTab);
-  auto *privateFieldPtr =
+  auto *privateMemberPtr =
       reinterpret_cast<llvm::DenseMap<Attribute, Operation *> *>(rawSymbolTablePtr + 8);
   indent += 2;
-  for (llvm::detail::DenseMapPair<Attribute, Operation *> &p : *privateFieldPtr) {
+  for (llvm::detail::DenseMapPair<Attribute, Operation *> &p : *privateMemberPtr) {
     Operation *op = p.second;
     stream.indent(indent) << p.first << " -> [" << op << "] " << op->getName() << '\n';
   }
@@ -50,14 +51,14 @@ void dumpSymbolTable(SymbolTable &symTab) {
 void dumpSymbolTables(llvm::raw_ostream &stream, SymbolTableCollection &tables) {
   stream << "Dumping SymbolTableCollection [" << &tables << "]: \n";
   auto *rawObjectPtr = reinterpret_cast<char *>(&tables);
-  auto *privateFieldPtr =
+  auto *privateMemberPtr =
       reinterpret_cast<llvm::DenseMap<Operation *, std::unique_ptr<SymbolTable>> *>(
           rawObjectPtr + 0
       );
   for (llvm::detail::DenseMapPair<Operation *, std::unique_ptr<SymbolTable>> &p :
-       *privateFieldPtr) {
+       *privateMemberPtr) {
     stream << "  [" << p.first << "] " << p.first->getName() << " -> " << '\n';
-    dumpSymbolTable(stream, *p.second.get(), 2);
+    dumpSymbolTable(stream, *p.second, 2);
   }
 }
 

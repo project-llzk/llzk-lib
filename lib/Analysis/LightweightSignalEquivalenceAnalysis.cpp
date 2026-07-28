@@ -1,4 +1,4 @@
-//===- LightweightSignalEquivalenceAnalysis.cpp ---------------------------===//
+//===- LightweightSignalEquivalenceAnalysis.cpp -----------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -18,6 +18,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/LightweightSignalEquivalenceAnalysis.h"
+
 #include "llzk/Dialect/Struct/IR/Ops.h"
 
 #include <llvm/Support/Debug.h>
@@ -35,10 +36,10 @@ Value replaceReadWithWrite(Value v) {
   if (!v.getDefiningOp()) {
     return v;
   }
-  if (auto read = dyn_cast<FieldReadOp>(v.getDefiningOp())) {
+  if (auto read = dyn_cast<MemberReadOp>(v.getDefiningOp())) {
     // Traverse backwards through the block until we find a write
     for (Operation *cur = read; cur != nullptr; cur = cur->getPrevNode()) {
-      if (auto write = dyn_cast<FieldWriteOp>(cur)) {
+      if (auto write = dyn_cast<MemberWriteOp>(cur)) {
         // Return the written value
         return write.getVal();
       }
@@ -50,7 +51,7 @@ Value replaceReadWithWrite(Value v) {
 bool LightweightSignalEquivalenceAnalysis::areSignalsEquivalent(Value v1, Value v2) {
   v1 = replaceReadWithWrite(v1);
   v2 = replaceReadWithWrite(v2);
-  LLVM_DEBUG(llvm::outs() << "Asking for equivalence between " << v1 << " and " << v2 << "\n");
+  LLVM_DEBUG(llvm::outs() << "Asking for equivalence between " << v1 << " and " << v2 << '\n');
   if (equivalentSignals.isEquivalent(v1, v2)) {
     return true;
   }

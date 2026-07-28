@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "llzk/Util/Compare.h"
+
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/OpImplementation.h>
 #include <mlir/IR/Operation.h>
@@ -90,8 +92,7 @@ inline typename OpClass::Properties &buildInstantiationAttrs(
   mlir::SmallVector<int32_t> rangeSegments;
   for (mlir::ValueRange r : mapOperands) {
     odsState.addOperands(r);
-    assert(std::cmp_less_equal(r.size(), std::numeric_limits<int32_t>::max()));
-    int32_t s = static_cast<int32_t>(r.size());
+    int32_t s = llzk::checkedCast<int32_t>(r.size());
     rangeSegments.push_back(s);
     mapOpsSegmentSize += s;
   }
@@ -115,8 +116,7 @@ inline void buildInstantiationAttrsNoSegments(
   mlir::SmallVector<int32_t> rangeSegments;
   for (mlir::ValueRange r : mapOperands) {
     odsState.addOperands(r);
-    assert(std::cmp_less_equal(r.size(), std::numeric_limits<int32_t>::max()));
-    int32_t s = static_cast<int32_t>(r.size());
+    int32_t s = llzk::checkedCast<int32_t>(r.size());
     rangeSegments.push_back(s);
   }
   typename OpClass::Properties &props = odsState.getOrAddProperties<typename OpClass::Properties>();

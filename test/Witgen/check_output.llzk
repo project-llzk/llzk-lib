@@ -1,0 +1,97 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --check-output %t/expected.json | FileCheck %s --check-prefix=SUCCESS
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine --check-output %t/expected.json | FileCheck %s --check-prefix=SUCCESS
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --output-scope=full-witness --check-output %t/expected-full.json | FileCheck %s --check-prefix=SUCCESS
+// RUN: not llzk-witgen %t/test.llzk --inputs %t/input.json --check-output %t/mismatch-value.json 2>&1 | FileCheck %s --check-prefix=VALUE
+// RUN: not llzk-witgen %t/test.llzk --inputs %t/input.json --check-output %t/mismatch-missing.json 2>&1 | FileCheck %s --check-prefix=MISSING
+// RUN: not llzk-witgen %t/test.llzk --inputs %t/input.json --check-output %t/mismatch-extra.json 2>&1 | FileCheck %s --check-prefix=EXTRA
+// RUN: not llzk-witgen %t/test.llzk --inputs %t/input.json --check-output %t/invalid.json 2>&1 | FileCheck %s --check-prefix=INVALID
+// RUN: not llzk-witgen %t/array.llzk --inputs %t/array-input.json --check-output %t/array-mismatch.json 2>&1 | FileCheck %s --check-prefix=ARRAY
+
+//--- test.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @sum : !felt.type<"babybear"> {llzk.pub}
+    struct.member @secret : !felt.type<"babybear"> {signal}
+    function.def @compute(
+      %lhs: !felt.type<"babybear"> {function.arg_name = "lhs"},
+      %rhs: !felt.type<"babybear"> {function.arg_name = "rhs"}
+    ) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %sum = felt.add %lhs, %rhs : !felt.type<"babybear">, !felt.type<"babybear">
+      struct.writem %self[@sum] = %sum : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@secret] = %lhs : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(
+      %self: !struct.type<@Main>, %lhs: !felt.type<"babybear">, %rhs: !felt.type<"babybear">
+    ) {
+      function.return
+    }
+  }
+}
+
+// SUCCESS: output matched expected JSON
+// SUCCESS-NOT: {
+
+// VALUE: llzk-witgen output mismatch:
+// VALUE-NEXT: $.sum: value mismatch: expected "8", got "9"
+
+// MISSING: llzk-witgen output mismatch:
+// MISSING-NEXT: $.secret: missing key
+
+// EXTRA: llzk-witgen output mismatch:
+// EXTRA-NEXT: $.extra: missing key
+
+// ARRAY: llzk-witgen output mismatch:
+// ARRAY-NEXT: $.values: array length mismatch: expected 1, got 2
+
+// INVALID: failed to parse expected JSON output:
+
+//--- input.json
+{"lhs": 4, "rhs": 5}
+
+//--- expected.json
+{"sum": "9"}
+
+//--- expected-full.json
+{"inputs": {"lhs": "4", "rhs": "5"}, "signals": {"secret": "4", "sum": "9"}}
+
+//--- mismatch-value.json
+{"sum": "8"}
+
+//--- mismatch-missing.json
+{"sum": "9", "secret": "4"}
+
+//--- mismatch-extra.json
+{"sum": "9", "extra": "1"}
+
+//--- invalid.json
+{"sum":
+
+//--- array.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@ArrayMain>} {
+  struct.def @ArrayMain {
+    struct.member @values : !array.type<2 x !felt.type<"babybear">> {llzk.pub}
+    function.def @compute(
+      %values: !array.type<2 x !felt.type<"babybear">> {function.arg_name = "values"}
+    ) -> !struct.type<@ArrayMain> {
+      %self = struct.new : !struct.type<@ArrayMain>
+      struct.writem %self[@values] = %values : !struct.type<@ArrayMain>, !array.type<2 x !felt.type<"babybear">>
+      function.return %self : !struct.type<@ArrayMain>
+    }
+    function.def @constrain(
+      %self: !struct.type<@ArrayMain>, %values: !array.type<2 x !felt.type<"babybear">>
+    ) {
+      function.return
+    }
+  }
+}
+
+//--- array-input.json
+{"values": [4, 5]}
+
+//--- array-mismatch.json
+{"values": ["4"]}

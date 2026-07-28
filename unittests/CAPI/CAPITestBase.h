@@ -9,19 +9,30 @@
 
 #pragma once
 
+#include "llzk-c/Builder.h"
 #include "llzk-c/InitDialects.h"
+
+#include "llzk/CAPI/Builder.h"
+#include "llzk/CAPI/Support.h"
+#include "llzk/Dialect/Bool/IR/Attrs.h"
+#include "llzk/Dialect/Felt/IR/Ops.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
+#include "llzk/Dialect/SMT/IR/SMTOps.h"
+#include "llzk/Dialect/Shared/Builders.h"
+#include "llzk/Dialect/Shared/OpHelpers.h"
 
 #include <mlir-c/BuiltinAttributes.h>
 #include <mlir-c/BuiltinTypes.h>
 #include <mlir-c/IR.h>
 #include <mlir-c/RegisterEverything.h>
 
+#include <mlir/CAPI/Wrap.h>
+#include <mlir/Dialect/Arith/IR/Arith.h>
+
 #include <gtest/gtest.h>
 
 class CAPITest : public ::testing::Test {
 protected:
-  MlirContext context;
-
   CAPITest() : context(mlirContextCreate()) {
     auto registry = mlirDialectRegistryCreate();
     mlirRegisterAllDialects(registry);
@@ -33,16 +44,24 @@ protected:
 
   ~CAPITest() override { mlirContextDestroy(context); }
 
+public:
+  MlirContext context;
+
   /// Helper to get IndexType
   inline MlirType createIndexType() const { return mlirIndexTypeGet(context); }
 
   /// Helper to create a simple IntegerAttr with IndexType
-  inline MlirAttribute createIndexAttribute() const {
-    return mlirIntegerAttrGet(createIndexType(), 0);
+  inline MlirAttribute createIndexAttribute(int64_t value) const {
+    return mlirIntegerAttrGet(createIndexType(), value);
   }
 
+  /// Helper to create a simple IntegerAttr with IndexType and value 0
+  /// Note: This no-parameter overload must exist because `llzk-tblgen` generates
+  /// code that calls `createIndex[Type/Attribute/Operation]` without parameters.
+  inline MlirAttribute createIndexAttribute() const { return createIndexAttribute(0); }
+
   // Helper to create a simple test operation: `arith.constant 0 : index`
-  MlirOperation createIndexOperation() {
+  MlirOperation createIndexOperation() const {
     MlirType indexType = createIndexType();
     MlirOperationState op_state = mlirOperationStateGet(
         mlirStringRefCreateFromCString("arith.constant"), mlirLocationUnknownGet(context)
@@ -55,5 +74,147 @@ protected:
     mlirOperationStateAddAttributes(&op_state, 1, &attr);
 
     return mlirOperationCreate(&op_state);
+  }
+
+  /// Get FeltType, using C++ API to avoid indirectly testing other LLZK C API functions
+  /// within the tests.
+  static llzk::felt::FeltType cppGetFeltType(MlirOpBuilder builder) {
+    return unwrap(builder)->getType<llzk::felt::FeltType>();
+  }
+
+  /// Get FeltType for the specified field, using C++ API to avoid indirectly testing other
+  /// LLZK C API functions within the tests.
+  static llzk::felt::FeltType cppGetFeltType(MlirOpBuilder builder, mlir::StringRef fieldName) {
+    return unwrap(builder)->getType<llzk::felt::FeltType>(fieldName);
+  }
+
+  /// Get FeltType for the specified field, using C++ API to avoid indirectly testing other
+  /// LLZK C API functions within the tests.
+  inline llzk::felt::FeltType cppGetFeltType(mlir::StringRef fieldName) const {
+    return llzk::felt::FeltType::get(unwrap(context), fieldName);
+  }
+
+  /// Build a boolean constant value, using C++ API to avoid indirectly testing other
+  ///  LLZK C API functions within the tests.
+  static mlir::Value cppGenBoolConstant(MlirOpBuilder builder, MlirLocation location) {
+    mlir::OpBuilder *cppBuilder = unwrap(builder);
+    return cppBuilder->create<mlir::arith::ConstantOp>(
+        unwrap(location), cppBuilder->getAttr<mlir::BoolAttr>(true)
+    );
+  }
+
+  /// Build an SMT boolean constant value, using C++ API to avoid indirectly testing other
+  ///  LLZK C API functions within the tests.
+  static mlir::Value cppGenSMTBoolConstant(MlirOpBuilder builder, MlirLocation location) {
+    mlir::OpBuilder *cppBuilder = unwrap(builder);
+    return cppBuilder->create<llzk::smt::BoolConstantOp>(
+        unwrap(location), cppBuilder->getAttr<mlir::BoolAttr>(true)
+    );
+  }
+
+  /// Build a felt constant value, using C++ API to avoid indirectly testing other
+  ///  LLZK C API functions within the tests.
+  static mlir::Value cppGenFeltConstant(MlirOpBuilder builder, MlirLocation location) {
+    mlir::OpBuilder *cppBuilder = unwrap(builder);
+    return cppBuilder->create<llzk::felt::FeltConstantOp>(
+        unwrap(location), cppBuilder->getAttr<llzk::felt::FeltConstAttr>(llvm::APInt())
+    );
+  }
+
+  /// Generate a new `ModuleOp` using C++ API to avoid indirectly testing other LLZK C API functions
+  /// within the tests and set the insertion point of the builder to the body of the new `ModuleOp`.
+  mlir::OwningOpRef<mlir::ModuleOp>
+  cppNewModuleAndSetInsertionPoint(MlirOpBuilder builder, MlirLocation location) const {
+    mlir::MLIRContext *cppCtx = unwrap(context);
+    mlir::Location cppLoc = unwrap(location);
+    mlir::OwningOpRef<mlir::ModuleOp> newModule = llzk::createLLZKModule(cppCtx, cppLoc);
+    unwrap(builder)->setInsertionPointToStart(newModule->getBody());
+    return newModule;
+  }
+
+  /// Build a struct, using C++ API to avoid indirectly testing other LLZK C API functions
+  /// within the tests, and set the insertion point within the function body indicated by
+  /// the FunctionKind parameter.
+  mlir::OwningOpRef<mlir::ModuleOp> cppGenStructAndSetInsertionPoint(
+      MlirOpBuilder builder, MlirLocation location, llzk::function::FunctionKind kind
+  ) const {
+    assert(kind != llzk::function::FunctionKind::Free && "supports only struct functions");
+    auto newModule = this->cppNewModuleAndSetInsertionPoint(builder, location);
+    llzk::ModuleBuilder cppBldr(newModule.get());
+    const auto *name = "TestStruct";
+    mlir::FailureOr<llzk::function::FuncDefOp> res = mlir::failure();
+    if (kind == llzk::function::FunctionKind::StructProduct) {
+      res = cppBldr.insertProductStruct(name).getProductFn(name);
+    } else {
+      cppBldr.insertFullStruct(name);
+      if (kind == llzk::function::FunctionKind::StructCompute) {
+        res = cppBldr.getComputeFn(name);
+      } else {
+        res = cppBldr.getConstrainFn(name);
+      }
+    }
+    assert(mlir::succeeded(res) && "failed to build proper struct function");
+    unwrap(builder)->setInsertionPointToStart(&res.value().getBody().emplaceBlock());
+    return newModule;
+  }
+
+  /// Generate a new `ModuleOp` containing a free (non-struct) `FuncDefOp` with an empty
+  /// signature, using C++ API to avoid indirectly testing other LLZK C API functions within
+  /// the tests, and set the insertion point to the start of the function body.
+  mlir::OwningOpRef<mlir::ModuleOp>
+  cppGenFreeFuncAndSetInsertionPoint(MlirOpBuilder builder, MlirLocation location) const {
+    auto newModule = this->cppNewModuleAndSetInsertionPoint(builder, location);
+    llzk::ModuleBuilder cppBldr(newModule.get());
+    const auto *name = "func_name";
+    cppBldr.insertFreeFunc(
+        name, mlir::FunctionType::get(unwrap(context), mlir::TypeRange {}, mlir::TypeRange {}),
+        unwrap(location)
+    );
+    auto func = cppBldr.getFreeFunc(name);
+    assert(
+        mlir::succeeded(func) && "Failed to retrieve the function just inserted into the module"
+    );
+    unwrap(builder)->setInsertionPointToStart(&func->getBody().emplaceBlock());
+    return newModule;
+  }
+
+  /// If the insertion point of the builder is within a `FuncDefOp`, set the
+  /// 'allow_non_native_field_ops' attribute to avoid the following type of errors:
+  ///
+  /// error: op only valid within a 'function.def' with 'function.allow_non_native_field_ops'
+  ///
+  /// Assertion failure if the insertion point of the builder is NOT within a `FuncDefOp`.
+  void setAllowNonNativeFieldOpsAttrOnFuncDef(MlirOpBuilder builder) const {
+    auto parent = llzk::getSelfOrParentOfType<llzk::function::FuncDefOp>(
+        unwrap(builder)->getInsertionBlock()->getParentOp()
+    );
+    assert(parent);
+    parent.setAllowNonNativeFieldOpsAttr();
+  }
+};
+
+/// @brief
+/// @tparam GTestBaseClass must be a subclass of `CAPITest`
+template <typename GTestBaseClass> struct TestAnyBuildFuncHelper {
+  virtual ~TestAnyBuildFuncHelper() = default;
+
+  virtual bool callIsA(MlirOperation builtOp) = 0;
+  virtual MlirOperation callBuild(const GTestBaseClass &, MlirOpBuilder, MlirLocation) = 0;
+  virtual void doOtherChecks(MlirOperation builtOp) {}
+
+  void run(const GTestBaseClass &testClass) {
+    MlirOpBuilder builder = mlirOpBuilderCreate(testClass.context);
+    MlirLocation location = mlirLocationUnknownGet(testClass.context);
+
+    MlirOperation op = callBuild(testClass, builder, location);
+
+    EXPECT_NE(op.ptr, (void *)NULL);
+    EXPECT_TRUE(mlirOperationVerify(op));
+    EXPECT_TRUE(callIsA(op));
+
+    doOtherChecks(op);
+
+    mlirOperationDestroy(op);
+    mlirOpBuilderDestroy(builder);
   }
 };

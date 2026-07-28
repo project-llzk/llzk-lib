@@ -1,0 +1,168 @@
+// REQUIRES: with-pcl
+// RUN: llzk-opt -split-input-file -llzk-to-pcl -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+!F = !felt.type<"babybear">
+!A = !struct.type<@A>
+!B = !struct.type<@B>
+module attributes {llzk.lang} {
+  struct.def @B {
+    struct.member @foo : !F {llzk.pub}
+    function.def @compute(%0: !F) -> !B attributes {function.allow_witness} {
+      %self = struct.new : !B
+      function.return %self : !B
+    }
+    function.def @constrain(%self: !B, %0: !F) attributes {function.allow_constraint} {
+      %1 = struct.readm %self[@foo] : !B, !F 
+      constrain.eq %1, %0 : !F, !F
+      function.return
+    }
+  }
+  struct.def @A {
+    struct.member @b1 : !B
+    struct.member @b2 : !B
+    struct.member @b3 : !B
+    struct.member @out1 : !F {llzk.pub}
+    struct.member @out2 : !F {llzk.pub}
+    struct.member @out3 : !F {llzk.pub}
+    function.def @compute(%a: !F, %b: !F, %c: !F) -> !A attributes {function.allow_witness} {
+      %self = struct.new : !A
+      function.return %self : !A
+    }
+    function.def @constrain(%self: !A, %a: !F, %b: !F, %c: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %b1 = struct.readm %self[@b1] : !A, !B
+      function.call @B::@constrain(%b1, %a) : (!B, !F) -> ()
+      %b2 = struct.readm %self[@b2] : !A, !B
+      function.call @B::@constrain(%b2, %b) : (!B, !F) -> ()
+      %b3 = struct.readm %self[@b3] : !A, !B
+      function.call @B::@constrain(%b3, %c) : (!B, !F) -> ()
+      %out1 = struct.readm %self[@out1] : !A, !F
+      %b1_foo = struct.readm %b1[@foo] : !B, !F
+      constrain.eq %out1, %b1_foo : !F, !F
+      %out2 = struct.readm %self[@out2] : !A, !F
+      %b2_foo = struct.readm %b2[@foo] : !B, !F
+      constrain.eq %out2, %b2_foo : !F, !F
+      %out3 = struct.readm %self[@out3] : !A, !F
+      %b3_foo = struct.readm %b3[@foo] : !B, !F
+      constrain.eq %out3, %b3_foo : !F, !F
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL:   func.func @B(
+// CHECK-SAME:        %[[ARG_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> !pcl.felt {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.var "foo" true
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_0]], %[[ARG_0]]
+// CHECK-NEXT:      pcl.assert %[[VAL_1]]
+// CHECK-NEXT:      return %[[VAL_0]] : !pcl.felt
+// CHECK-NEXT:    }
+// CHECK-LABEL:   func.func @A(
+// CHECK-SAME:        %[[ARG_0:[0-9a-zA-Z_\.]+]]: !pcl.felt, %[[ARG_1:[0-9a-zA-Z_\.]+]]: !pcl.felt, %[[ARG_2:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> (!pcl.felt, !pcl.felt, !pcl.felt) {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = call @B(%[[ARG_0]]) : (!pcl.felt) -> !pcl.felt
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "b1.foo" false 
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_1]], %[[VAL_0]]
+// CHECK-NEXT:      pcl.assert %[[VAL_2]]
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = call @B(%[[ARG_1]]) : (!pcl.felt) -> !pcl.felt
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pcl.var "b2.foo" false 
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_4]], %[[VAL_3]]
+// CHECK-NEXT:      pcl.assert %[[VAL_5]]
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = call @B(%[[ARG_2]]) : (!pcl.felt) -> !pcl.felt
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = pcl.var "b3.foo" false 
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_7]], %[[VAL_6]]
+// CHECK-NEXT:      pcl.assert %[[VAL_8]]
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = pcl.var "out1" true 
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_9]], %[[VAL_1]]
+// CHECK-NEXT:      pcl.assert %[[VAL_10]]
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = pcl.var "out2" true 
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_11]], %[[VAL_4]]
+// CHECK-NEXT:      pcl.assert %[[VAL_12]]
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = pcl.var "out3" true 
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_13]], %[[VAL_7]]
+// CHECK-NEXT:      pcl.assert %[[VAL_14]]
+// CHECK-NEXT:      return %[[VAL_9]], %[[VAL_11]], %[[VAL_13]] : !pcl.felt, !pcl.felt, !pcl.felt
+// CHECK-NEXT:    }
+
+// ----- 
+
+!F = !felt.type<"babybear">
+!A = !struct.type<@A>
+!B = !struct.type<@C::@B>
+module attributes {llzk.lang} {
+  module @C {
+    struct.def @B {
+      struct.member @foo : !F {llzk.pub}
+      function.def @compute(%0: !F) -> !B attributes {function.allow_witness} {
+        %self = struct.new : !B
+        function.return %self : !B
+      }
+      function.def @constrain(%self: !B, %0: !F) attributes {function.allow_constraint} {
+        %1 = struct.readm %self[@foo] : !B, !F 
+        constrain.eq %1, %0 : !F, !F
+        function.return
+      }
+    }
+  }
+  struct.def @A {
+    struct.member @b1 : !B
+    struct.member @b2 : !B
+    struct.member @b3 : !B
+    struct.member @out1 : !F {llzk.pub}
+    struct.member @out2 : !F {llzk.pub}
+    struct.member @out3 : !F {llzk.pub}
+    function.def @compute(%a: !F, %b: !F, %c: !F) -> !A attributes {function.allow_witness} {
+      %self = struct.new : !A
+      function.return %self : !A
+    }
+    function.def @constrain(%self: !A, %a: !F, %b: !F, %c: !F) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %b1 = struct.readm %self[@b1] : !A, !B
+      function.call @C::@B::@constrain(%b1, %a) : (!B, !F) -> ()
+      %b2 = struct.readm %self[@b2] : !A, !B
+      function.call @C::@B::@constrain(%b2, %b) : (!B, !F) -> ()
+      %b3 = struct.readm %self[@b3] : !A, !B
+      function.call @C::@B::@constrain(%b3, %c) : (!B, !F) -> ()
+      %out1 = struct.readm %self[@out1] : !A, !F
+      %b1_foo = struct.readm %b1[@foo] : !B, !F
+      constrain.eq %out1, %b1_foo : !F, !F
+      %out2 = struct.readm %self[@out2] : !A, !F
+      %b2_foo = struct.readm %b2[@foo] : !B, !F
+      constrain.eq %out2, %b2_foo : !F, !F
+      %out3 = struct.readm %self[@out3] : !A, !F
+      %b3_foo = struct.readm %b3[@foo] : !B, !F
+      constrain.eq %out3, %b3_foo : !F, !F
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL:   func.func @"C::B"(
+// CHECK-SAME:        %[[ARG_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> !pcl.felt {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.var "foo" true
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_0]], %[[ARG_0]]
+// CHECK-NEXT:      pcl.assert %[[VAL_1]]
+// CHECK-NEXT:      return %[[VAL_0]] : !pcl.felt
+// CHECK-NEXT:    }
+// CHECK-LABEL:   func.func @A(
+// CHECK-SAME:        %[[ARG_0:[0-9a-zA-Z_\.]+]]: !pcl.felt, %[[ARG_1:[0-9a-zA-Z_\.]+]]: !pcl.felt, %[[ARG_2:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> (!pcl.felt, !pcl.felt, !pcl.felt) {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = call @"C::B"(%[[ARG_0]]) : (!pcl.felt) -> !pcl.felt
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "b1.foo" false 
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_1]], %[[VAL_0]]
+// CHECK-NEXT:      pcl.assert %[[VAL_2]]
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = call @"C::B"(%[[ARG_1]]) : (!pcl.felt) -> !pcl.felt
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pcl.var "b2.foo" false 
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_4]], %[[VAL_3]]
+// CHECK-NEXT:      pcl.assert %[[VAL_5]]
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = call @"C::B"(%[[ARG_2]]) : (!pcl.felt) -> !pcl.felt
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = pcl.var "b3.foo" false 
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_7]], %[[VAL_6]]
+// CHECK-NEXT:      pcl.assert %[[VAL_8]]
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = pcl.var "out1" true 
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_9]], %[[VAL_1]]
+// CHECK-NEXT:      pcl.assert %[[VAL_10]]
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = pcl.var "out2" true 
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_11]], %[[VAL_4]]
+// CHECK-NEXT:      pcl.assert %[[VAL_12]]
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = pcl.var "out3" true 
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_13]], %[[VAL_7]]
+// CHECK-NEXT:      pcl.assert %[[VAL_14]]
+// CHECK-NEXT:      return %[[VAL_9]], %[[VAL_11]], %[[VAL_13]] : !pcl.felt, !pcl.felt, !pcl.felt
+// CHECK-NEXT:    }

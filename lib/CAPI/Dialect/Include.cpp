@@ -7,27 +7,34 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk-c/Dialect/Include.h"
+
+#include "llzk/CAPI/Builder.h"
+#include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
 #include "llzk/Dialect/Include/IR/Ops.h"
 #include "llzk/Dialect/Include/Transforms/InlineIncludesPass.h"
 
-#include "llzk-c/Dialect/Include.h"
+#include <mlir-c/Pass.h>
 
 #include <mlir/CAPI/Pass.h>
 #include <mlir/CAPI/Registration.h>
 #include <mlir/CAPI/Wrap.h>
 
-#include <mlir-c/Pass.h>
-
 using namespace llzk::include;
 
-static void registerLLZKIncludeTransformationPasses() { registerTransformationPasses(); }
+static inline void registerLLZKIncludeTransformationPasses() { registerTransformationPasses(); }
 
-// Include impl for transformation passes
+// Include the generated CAPI
+#include "llzk/Dialect/Include/IR/Ops.capi.cpp.inc"
 #include "llzk/Dialect/Include/Transforms/InlineIncludesPass.capi.cpp.inc"
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Include, llzk__include, IncludeDialect)
 
-MlirOperation llzkIncludeOpCreate(MlirLocation location, MlirStringRef name, MlirStringRef path) {
-  return wrap(IncludeOp::create(unwrap(location), unwrap(name), unwrap(path)));
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
+    Include, IncludeOp, InferredContext, MlirStringRef name, MlirStringRef path
+) {
+  return mlirOpBuilderInsert(
+      builder, wrap(llzk::create<IncludeOp>(builder, location, unwrap(name), unwrap(path)))
+  );
 }

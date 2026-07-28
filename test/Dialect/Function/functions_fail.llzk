@@ -1,16 +1,16 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
-// expected-error@+1 {{'function.def' op expected a valid LLZK type but found 'f32'}}
-function.def private @fail_01(f32)
+// expected-error@+1 {{'function.def' op expected a valid LLZK type but found 'i32'}}
+function.def private @fail_01(i32)
 // -----
-// expected-error@+1 {{'function.def' op expected a valid LLZK type but found 'f32'}}
-function.def private @fail_02(i1) -> f32
+// expected-error@+1 {{'function.def' op expected a valid LLZK type but found 'i32'}}
+function.def private @fail_02(i1) -> i32
 // -----
-// expected-error@+1 {{'function.def' op expected a valid LLZK type but found 'f32'}}
-function.def private @fail_03(i1) -> (f32, f32)
+// expected-error@+1 {{'function.def' op expected a valid LLZK type but found 'i32'}}
+function.def private @fail_03(i1) -> (i32, i32)
 // -----
-// expected-error@+1 {{'function.def' op expected a valid LLZK type but found 'f32'}}
-function.def private @fail_04(i1, index, f32)
+// expected-error@+1 {{'function.def' op expected a valid LLZK type but found 'i32'}}
+function.def private @fail_04(i1, index, i32)
 // -----
 // expected-error@+1 {{'function.def' op expected a valid LLZK type but found 'none'}}
 function.def @fail_05(%x: i1) -> none {
@@ -22,15 +22,51 @@ function.def @fail_06(%x: (i1) -> i32) -> index {
   function.return
 }
 // -----
+// expected-error@+1 {{'function.def' op 'function.arg_name' on argument 0 must be a string attribute}}
+function.def private @bad_arg_name_non_string(%x: i1 {function.arg_name = 7 : i64})
+// -----
+// expected-error@+1 {{'function.def' op 'function.arg_name' on argument 0 must not be empty}}
+function.def private @bad_arg_name_empty(%x: i1 {function.arg_name = ""})
+// -----
+// expected-error@+1 {{'function.def' op 'function.arg_name' on argument 0 must not have an explicit type}}
+function.def private @bad_arg_name_typed_string(%x: i1 {function.arg_name = "x" : i1})
+// -----
+// expected-error@+1 {{'function.def' op duplicate 'function.arg_name' value "x" on argument 1}}
+function.def private @bad_arg_name_duplicate(%x: i1 {function.arg_name = "x"}, %y: index {function.arg_name = "x"})
+// -----
+// expected-error@+1 {{'function.def' op 'function.arg_name' is only valid on function arguments}}
+function.def private @bad_arg_name_function_attr(i1) attributes {function.arg_name = "x"}
+// -----
+// expected-error@+1 {{'function.def' op 'function.arg_name' is only valid on function arguments but found on result 0}}
+function.def private @bad_arg_name_result_attr() -> (i1 {function.arg_name = "out"})
+// -----
+// expected-error@+1 {{'function.def' op 'function.res_name' on result 0 must be a string attribute}}
+function.def private @bad_res_name_non_string() -> (i1 {function.res_name = 7 : i64})
+// -----
+// expected-error@+1 {{'function.def' op 'function.res_name' on result 0 must not be empty}}
+function.def private @bad_res_name_empty() -> (i1 {function.res_name = ""})
+// -----
+// expected-error@+1 {{'function.def' op 'function.res_name' on result 0 must not have an explicit type}}
+function.def private @bad_res_name_typed_string() -> (i1 {function.res_name = "out" : i1})
+// -----
+// expected-error@+1 {{'function.def' op duplicate 'function.res_name' value "out" on result 1}}
+function.def private @bad_res_name_duplicate() -> (i1 {function.res_name = "out"}, index {function.res_name = "out"})
+// -----
+// expected-error@+1 {{'function.def' op 'function.res_name' is only valid on function results}}
+function.def private @bad_res_name_function_attr() -> i1 attributes {function.res_name = "out"}
+// -----
+// expected-error@+1 {{'function.def' op 'function.res_name' is only valid on function results but found on argument 0}}
+function.def private @bad_res_name_arg_attr(%x: i1 {function.res_name = "in"})
+// -----
 function.def @fail_07() {
-  // expected-error@+1 {{'function.def' op expects parent op to be one of 'builtin.module, struct.def'}}
+  // expected-error@+1 {{'function.def' op expects parent op to be one of 'builtin.module, struct.def, poly.template'}}
   function.def @inner() {
     function.return
   }
   function.return
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @user() {
     // expected-error@+2 {{'function.call' op references unknown symbol "@missing_fn"}}
     // expected-error@+1 {{expected 'function.def' named "@missing_fn"}}
@@ -41,14 +77,14 @@ module attributes {veridise.lang = "llzk"} {
 // -----
 module { // expected-note {{unnamed 'builtin.module' here}}
   function.def @user() {
-    // expected-error@+2 {{'function.call' op has ancestor 'builtin.module' without "veridise.lang" attribute or a name}}
+    // expected-error@+2 {{'function.call' op has ancestor 'builtin.module' without "llzk.lang" attribute or a name}}
     // expected-error@+1 {{expected 'function.def' named "@missing_fn"}}
     function.call @missing_fn() : () -> ()
     function.return
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+2 {{'function.def' op references unknown symbol "@WasNotDefined"}}
   // expected-error@+1 {{could not find 'struct.def' named "@WasNotDefined"}}
   function.def @constrain(%p: !struct.type<@WasNotDefined>) {
@@ -57,14 +93,14 @@ module attributes {veridise.lang = "llzk"} {
 }
 // -----
 module { // expected-note {{unnamed 'builtin.module' here}}
-  // expected-error@+2 {{'function.def' op has ancestor 'builtin.module' without "veridise.lang" attribute or a name}}
+  // expected-error@+2 {{'function.def' op has ancestor 'builtin.module' without "llzk.lang" attribute or a name}}
   // expected-error@+1 {{could not find 'struct.def' named "@MissingComponent"}}
   function.def @constrain(%p: !struct.type<@MissingComponent>) {
     function.return
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+2 {{'function.def' op references unknown symbol "@WasNotDefined"}}
   // expected-error@+1 {{could not find 'struct.def' named "@WasNotDefined"}}
   function.def @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1, %7: !struct.type<@WasNotDefined>) {
@@ -72,19 +108,19 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+2 {{'function.def' op references unknown symbol "@WasNotDefined"}}
   // expected-error@+1 {{could not find 'struct.def' named "@WasNotDefined"}}
   function.def private @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1) -> !struct.type<@WasNotDefined>
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+2 {{'function.def' op references unknown symbol "@WasNotDefined"}}
   // expected-error@+1 {{could not find 'struct.def' named "@WasNotDefined"}}
   function.def private @f(%0: i1, %1: i1, %2: i1, %3: i1, %4: i1, %5: i1, %6: i1) -> (!felt.type, i1, !struct.type<@WasNotDefined>)
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+8 {{'function.def' op references unknown symbol "@A"}}
   // expected-error@+7 {{could not find 'struct.def' named "@A"}}
   // expected-error@+6 {{'function.def' op references unknown symbol "@B"}}
@@ -96,7 +132,7 @@ module attributes {veridise.lang = "llzk"} {
   function.def private @f(%1: !struct.type<@A>, %7: !struct.type<@B>) -> (!struct.type<@C>, !struct.type<@D>)
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @identity(%x: index) -> (index) { // expected-note {{callee defined here}}
     function.return %x : index
   }
@@ -107,7 +143,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @identity(%x: index) -> (index) {
     function.return %x : index
   }
@@ -118,7 +154,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @split(%x: index) -> (index, index) { // expected-note {{callee defined here}}
     %0 = arith.constant 1 : index
     function.return %x, %0 : index, index
@@ -130,7 +166,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @split(%x: index) -> (index, index) {
     %0 = arith.constant 1 : index
     function.return %x, %0 : index, index
@@ -142,7 +178,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA1 {
     function.def @compute() -> !struct.type<@ComponentA1> { // expected-note {{callee defined here}}
       %self = struct.new : !struct.type<@ComponentA1>
@@ -163,7 +199,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentB1 {
     function.def @compute() -> !struct.type<@ComponentB1> {
       %self = struct.new : !struct.type<@ComponentB1>

@@ -5,7 +5,7 @@ module {}
 //CHECK-NEXT: }
 // -----
 
-module attributes {veridise.lang = "llzk"} {}
-//CHECK:      module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {}
+//CHECK:      module attributes {llzk.lang} {
 //CHECK-NEXT: }
 // -----

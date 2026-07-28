@@ -18,8 +18,6 @@
 #ifndef LLZK_C_DIALECT_POLYMORPHIC_H
 #define LLZK_C_DIALECT_POLYMORPHIC_H
 
-#include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.capi.h.inc"
-
 #include "llzk-c/Support.h"
 
 #include <mlir-c/AffineExpr.h>
@@ -27,10 +25,16 @@
 #include <mlir-c/IR.h>
 #include <mlir-c/Support.h>
 
+// Include the generated CAPI
+#include "llzk/Dialect/Polymorphic/IR/Ops.capi.h.inc"
+#include "llzk/Dialect/Polymorphic/IR/Types.capi.h.inc"
+#include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.capi.h.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/// Get reference to the LLZK `poly` dialect.
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Polymorphic, llzk__polymorphic);
 
 //===----------------------------------------------------------------------===//
@@ -38,61 +42,86 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Polymorphic, llzk__polymorphic);
 //===----------------------------------------------------------------------===//
 
 /// Creates a llzk::polymorphic::TypeVarType.
-MLIR_CAPI_EXPORTED MlirType llzkTypeVarTypeGet(MlirContext context, MlirStringRef value);
-
-/// Returns true if the type is a TypeVarType.
-LLZK_DECLARE_TYPE_ISA(TypeVarType);
+MLIR_CAPI_EXPORTED MlirType
+llzkPoly_TypeVarTypeGetFromStringRef(MlirContext context, MlirStringRef value);
 
 /// Creates a llzk::polymorphic::TypeVarType from either a StringAttr or a FlatSymbolRefAttr.
-MLIR_CAPI_EXPORTED MlirType llzkTypeVarTypeGetFromAttr(MlirContext context, MlirAttribute value);
+MLIR_CAPI_EXPORTED MlirType llzkPoly_TypeVarTypeGetFromAttr(MlirAttribute value);
 
-/// Returns the var name of the TypeVarType as a StringRef.
-MLIR_CAPI_EXPORTED MlirStringRef llzkTypeVarTypeGetNameRef(MlirType type);
+//===------------------------------------------------------------------===//
+// TemplateOp
+//===------------------------------------------------------------------===//
 
-/// Returns the var name of the TypeVarType as a FlatSymbolRefAttr.
-MLIR_CAPI_EXPORTED MlirAttribute llzkTypeVarTypeGetName(MlirType type);
+/// Returns the single body Block within the TemplateOp's Region.
+MLIR_CAPI_EXPORTED MlirBlock llzkPoly_TemplateOpGetBody(MlirOperation op);
+
+/// Returns true if the TemplateOp has any TemplateParamOp children.
+MLIR_CAPI_EXPORTED bool llzkPoly_TemplateOpHasConstParamOps(MlirOperation op);
+
+/// Returns the number of TemplateParamOp children in the TemplateOp.
+MLIR_CAPI_EXPORTED intptr_t llzkPoly_TemplateOpNumConstParamOps(MlirOperation op);
+
+/// Writes into the destination buffer the names of all TemplateParamOp children
+/// as FlatSymbolRefAttr attributes, in definition order.
+/// The buffer must be preallocated and the caller is responsible for its lifetime.
+/// See `llzkPoly_TemplateOpNumConstParamOps`.
+MLIR_CAPI_EXPORTED void llzkPoly_TemplateOpGetConstParamNames(MlirOperation op, MlirAttribute *dst);
+
+/// Returns true if the TemplateOp has a TemplateParamOp with the given name.
+MLIR_CAPI_EXPORTED bool llzkPoly_TemplateOpHasConstParamNamed(MlirOperation op, MlirStringRef find);
+
+/// Returns true if the TemplateOp has any TemplateExprOp children.
+MLIR_CAPI_EXPORTED bool llzkPoly_TemplateOpHasConstExprOps(MlirOperation op);
+
+/// Returns the number of TemplateExprOp children in the TemplateOp.
+MLIR_CAPI_EXPORTED intptr_t llzkPoly_TemplateOpNumConstExprOps(MlirOperation op);
+
+/// Writes into the destination buffer the names of all TemplateExprOp children
+/// as FlatSymbolRefAttr attributes, in definition order.
+/// The buffer must be preallocated and the caller is responsible for its lifetime.
+/// See `llzkPoly_TemplateOpNumConstExprOps`.
+MLIR_CAPI_EXPORTED void llzkPoly_TemplateOpGetConstExprNames(MlirOperation op, MlirAttribute *dst);
+
+/// Returns true if the TemplateOp has a TemplateExprOp with the given name.
+MLIR_CAPI_EXPORTED bool llzkPoly_TemplateOpHasConstExprNamed(MlirOperation op, MlirStringRef find);
 
 //===----------------------------------------------------------------------===//
 // ApplyMapOp
 //===----------------------------------------------------------------------===//
 
 /// Creates an ApplyMapOp with the given attribute that has to be of type AffineMapAttr.
-LLZK_DECLARE_OP_BUILD_METHOD(ApplyMapOp, MlirAttribute affineMapAttr, MlirValueRange operands);
+LLZK_DECLARE_OP_BUILD_METHOD(
+    Poly, ApplyMapOp, MlirAttribute affineMapAttr, MlirValueRange operands
+);
 
 /// Creates an ApplyMapOp with the given affine map.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    ApplyMapOp, WithAffineMap, MlirAffineMap affineMap, MlirValueRange operands
+    Poly, ApplyMapOp, WithAffineMap, MlirAffineMap affineMap, MlirValueRange operands
 );
 
 /// Creates an ApplyMapOp with the given affine expression.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    ApplyMapOp, WithAffineExpr, MlirAffineExpr affineExpr, MlirValueRange operands
+    Poly, ApplyMapOp, WithAffineExpr, MlirAffineExpr affineExpr, MlirValueRange operands
 );
 
-/// Returns true if the op is an ApplyMapOp.
-LLZK_DECLARE_OP_ISA(ApplyMapOp);
-
-/// Returns the affine map associated with the op.
-MLIR_CAPI_EXPORTED MlirAffineMap llzkApplyMapOpGetAffineMap(MlirOperation op);
-
 /// Returns the number of operands that correspond to dimensions in the affine map.
-MLIR_CAPI_EXPORTED intptr_t llzkApplyMapOpGetNumDimOperands(MlirOperation op);
+MLIR_CAPI_EXPORTED intptr_t llzkPoly_ApplyMapOpGetNumDimOperands(MlirOperation op);
 
 /// Writes into the destination buffer the operands that correspond to dimensions in the affine map.
 /// The buffer needs to be preallocated first with the necessary amount and the caller is
-/// responsible of its lifetime. See `llzkApplyMapOpGetNumDimOperands`.
-MLIR_CAPI_EXPORTED void llzkApplyMapOpGetDimOperands(MlirOperation op, MlirValue *dst);
+/// responsible of its lifetime. See `llzkPoly_ApplyMapOpGetNumDimOperands`.
+MLIR_CAPI_EXPORTED void llzkPoly_ApplyMapOpGetDimOperands(MlirOperation op, MlirValue *dst);
 
 /// Returns the number of operands that correspond to symbols in the affine map.
-MLIR_CAPI_EXPORTED intptr_t llzkApplyMapOpGetNumSymbolOperands(MlirOperation op);
+MLIR_CAPI_EXPORTED intptr_t llzkPoly_ApplyMapOpGetNumSymbolOperands(MlirOperation op);
 
 /// Writes into the destination buffer the operands that correspond to symbols in the affine map.
 /// The buffer needs to be preallocated first with the necessary amount and the caller is
-/// responsible of its lifetime. See `llzkApplyMapOpGetNumSymbolOperands`.
-MLIR_CAPI_EXPORTED void llzkApplyMapOpGetSymbolOperands(MlirOperation op, MlirValue *dst);
+/// responsible of its lifetime. See `llzkPoly_ApplyMapOpGetNumSymbolOperands`.
+MLIR_CAPI_EXPORTED void llzkPoly_ApplyMapOpGetSymbolOperands(MlirOperation op, MlirValue *dst);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif // LLZK_C_DIALECT_POLYMORPHIC_H

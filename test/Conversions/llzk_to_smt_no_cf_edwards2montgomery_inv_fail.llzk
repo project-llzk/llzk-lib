@@ -1,0 +1,64 @@
+// RUN: not llzk-opt --llzk-compute-constrain-to-product='root-struct=Edwards2Montgomery' --llzk-to-smt-no-cf='field=babybear' %s 2>&1 | FileCheck %s
+
+module attributes {llzk.lang, llzk.main = !struct.type<@TEdwards2Montgomery::@Edwards2Montgomery<[]>>} {
+  poly.template @TDiv {
+    struct.def @Div {
+      struct.member @"$super" : !felt.type {llzk.pub}
+      struct.member @reciprocal : !felt.type
+
+      function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@TDiv::@Div<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+        %self = struct.new : <@TDiv::@Div<[]>>
+        %0 = felt.inv %arg1 : !felt.type
+        struct.writem %self[@reciprocal] = %0 : <@TDiv::@Div<[]>>, !felt.type
+        %1 = struct.readm %self[@reciprocal] : <@TDiv::@Div<[]>>, !felt.type
+        %2 = felt.mul %1, %arg0 : !felt.type, !felt.type
+        struct.writem %self[@"$super"] = %2 : <@TDiv::@Div<[]>>, !felt.type
+        function.return %self : !struct.type<@TDiv::@Div<[]>>
+      }
+
+      function.def @constrain(%arg0: !struct.type<@TDiv::@Div<[]>>, %arg1: !felt.type, %arg2: !felt.type) attributes {function.allow_constraint} {
+        %felt_const_1 = felt.const  1
+        %0 = struct.readm %arg0[@reciprocal] : <@TDiv::@Div<[]>>, !felt.type
+        %1 = felt.mul %0, %arg2 : !felt.type, !felt.type
+        constrain.eq %1, %felt_const_1 : !felt.type, !felt.type
+        function.return
+      }
+    }
+  }
+
+  poly.template @TEdwards2Montgomery {
+    struct.def @Edwards2Montgomery {
+      struct.member @v : !struct.type<@TDiv::@Div<[]>>
+
+      function.def @compute(%arg0: !array.type<2 x !felt.type>) -> !struct.type<@TEdwards2Montgomery::@Edwards2Montgomery<[]>> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+        %felt_const_0 = felt.const  0
+        %felt_const_1 = felt.const  1
+        %self = struct.new : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>
+        %0 = cast.toindex %felt_const_1
+        %1 = array.read %arg0[%0] : <2 x !felt.type>, !felt.type
+        %2 = felt.add %1, %felt_const_1 : !felt.type, !felt.type
+        %3 = cast.toindex %felt_const_1
+        %4 = array.read %arg0[%3] : <2 x !felt.type>, !felt.type
+        %5 = felt.sub %felt_const_1, %4 : !felt.type, !felt.type
+        %6 = function.call @TDiv::@Div::@compute(%2, %5) : (!felt.type, !felt.type) -> !struct.type<@TDiv::@Div<[]>>
+        struct.writem %self[@v] = %6 : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !struct.type<@TDiv::@Div<[]>>
+        function.return %self : !struct.type<@TEdwards2Montgomery::@Edwards2Montgomery<[]>>
+      }
+
+      function.def @constrain(%arg0: !struct.type<@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, %arg1: !array.type<2 x !felt.type>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
+        %felt_const_1 = felt.const  1
+        %0 = cast.toindex %felt_const_1
+        %1 = array.read %arg1[%0] : <2 x !felt.type>, !felt.type
+        %2 = felt.add %1, %felt_const_1 : !felt.type, !felt.type
+        %3 = cast.toindex %felt_const_1
+        %4 = array.read %arg1[%3] : <2 x !felt.type>, !felt.type
+        %5 = felt.sub %felt_const_1, %4 : !felt.type, !felt.type
+        %6 = struct.readm %arg0[@v] : <@TEdwards2Montgomery::@Edwards2Montgomery<[]>>, !struct.type<@TDiv::@Div<[]>>
+        function.call @TDiv::@Div::@constrain(%6, %2, %5) : (!struct.type<@TDiv::@Div<[]>>, !felt.type, !felt.type) -> ()
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK: error: SMT lowering currently only supports felt-valued struct.writem

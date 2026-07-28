@@ -1,14 +1,13 @@
 // RUN: llzk-opt -I %input_dir -split-input-file -verify-diagnostics %s
 
-// -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @MissingInstantiations {
     function.def @compute(%n: index) -> !struct.type<@MissingInstantiations> {
       %self = struct.new : !struct.type<@MissingInstantiations>
       // expected-error@+1 {{'function.call' op map instantiation group count (0) does not match the number of affine map instantiations (1) required by the type}}
-      %x = function.call @Lib::@D1::@compute() : () -> !struct.type<@Lib::@D1<[affine_map<(i)->(i)>]>>
+      %x = function.call @Lib::@TD1::@D1::@compute() : () -> !struct.type<@Lib::@TD1::@D1<[affine_map<(i)->(i)>]>>
       function.return %self : !struct.type<@MissingInstantiations>
     }
 
@@ -16,14 +15,14 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @EmptyInstantiations {
     function.def @compute(%n: index) -> !struct.type<@EmptyInstantiations> {
       %self = struct.new : !struct.type<@EmptyInstantiations>
       // expected-error@+1 {{expected '(' in operand list}}
-      %x = function.call @Lib::@D1::@compute(){} : () -> !struct.type<@Lib::@D1<[affine_map<(i)->(i)>]>>
+      %x = function.call @Lib::@TD1::@D1::@compute(){} : () -> !struct.type<@Lib::@TD1::@D1<[affine_map<(i)->(i)>]>>
       function.return %self : !struct.type<@EmptyInstantiations>
     }
 
@@ -31,14 +30,14 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @TooFewInstantiations {
     function.def @compute(%n: index) -> !struct.type<@TooFewInstantiations> {
       %self = struct.new : !struct.type<@TooFewInstantiations>
       // expected-error@+1 {{'function.call' op map instantiation group count (1) does not match the number of affine map instantiations (2) required by the type}}
-      %x = function.call @Lib::@D2::@compute(){(%n)[]} : () -> !struct.type<@Lib::@D2<[affine_map<(i)->(i)>, affine_map<(i)->(i)>]>>
+      %x = function.call @Lib::@TD2::@D2::@compute(){(%n)[]} : () -> !struct.type<@Lib::@TD2::@D2<[affine_map<(i)->(i)>, affine_map<(i)->(i)>]>>
       function.return %self : !struct.type<@TooFewInstantiations>
     }
 
@@ -46,14 +45,14 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @TooManyInstantiations {
     function.def @compute(%n: index) -> !struct.type<@TooManyInstantiations> {
       %self = struct.new : !struct.type<@TooManyInstantiations>
       // expected-error@+1 {{'function.call' op map instantiation group count (2) does not match the number of affine map instantiations (1) required by the type}}
-      %x = function.call @Lib::@D1::@compute(){(%n)[], ()[%n]} : () -> !struct.type<@Lib::@D1<[affine_map<(i)->(i)>]>>
+      %x = function.call @Lib::@TD1::@D1::@compute(){(%n)[], ()[%n]} : () -> !struct.type<@Lib::@TD1::@D1<[affine_map<(i)->(i)>]>>
       function.return %self : !struct.type<@TooManyInstantiations>
     }
 
@@ -61,14 +60,14 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @TooFewDimensions {
     function.def @compute(%n: index) -> !struct.type<@TooFewDimensions> {
       %self = struct.new : !struct.type<@TooFewDimensions>
       // expected-error@+1 {{'function.call' op instantiation of map 0 expected 1 but found 0 dimension values in ()}}
-      %x = function.call @Lib::@D1::@compute(){()[%n]} : () -> !struct.type<@Lib::@D1<[affine_map<(i)->(i)>]>>
+      %x = function.call @Lib::@TD1::@D1::@compute(){()[%n]} : () -> !struct.type<@Lib::@TD1::@D1<[affine_map<(i)->(i)>]>>
       function.return %self : !struct.type<@TooFewDimensions>
     }
 
@@ -76,14 +75,14 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @TooManyDimensions {
     function.def @compute(%a: index, %b: index) -> !struct.type<@TooManyDimensions> {
       %self = struct.new : !struct.type<@TooManyDimensions>
       // expected-error@+1 {{'function.call' op instantiation of map 0 expected 1 but found 2 dimension values in ()}}
-      %x = function.call @Lib::@D1::@compute(){ (%a,%b)[] } : () -> !struct.type<@Lib::@D1<[affine_map<(i)->(i)>]>>
+      %x = function.call @Lib::@TD1::@D1::@compute(){ (%a,%b)[] } : () -> !struct.type<@Lib::@TD1::@D1<[affine_map<(i)->(i)>]>>
       function.return %self : !struct.type<@TooManyDimensions>
     }
 
@@ -91,14 +90,14 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @TooFewSymbols {
     function.def @compute(%n: index) -> !struct.type<@TooFewSymbols> {
       %self = struct.new : !struct.type<@TooFewSymbols>
       // expected-error@+1 {{'function.call' op instantiation of map 0 expected 1 but found 0 symbol values in []}}
-      %x = function.call @Lib::@D1::@compute(){(%n)[]} : () -> !struct.type<@Lib::@D1<[affine_map<(i)[k] -> (5*i+k)>]>>
+      %x = function.call @Lib::@TD1::@D1::@compute(){(%n)[]} : () -> !struct.type<@Lib::@TD1::@D1<[affine_map<(i)[k] -> (5*i+k)>]>>
       function.return %self : !struct.type<@TooFewSymbols>
     }
 
@@ -106,14 +105,14 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @TooManySymbols {
     function.def @compute(%a: index, %b: index, %c: index) -> !struct.type<@TooManySymbols> {
       %self = struct.new : !struct.type<@TooManySymbols>
       // expected-error@+1 {{'function.call' op instantiation of map 0 expected 1 but found 2 symbol values in []}}
-      %x = function.call @Lib::@D1::@compute(){ (%a)[%b, %c] } : () -> !struct.type<@Lib::@D1<[affine_map<(i)[k] -> (5*i+k)>]>>
+      %x = function.call @Lib::@TD1::@D1::@compute(){ (%a)[%b, %c] } : () -> !struct.type<@Lib::@TD1::@D1<[affine_map<(i)[k] -> (5*i+k)>]>>
       function.return %self : !struct.type<@TooManySymbols>
     }
 
@@ -121,23 +120,27 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
-  struct.def @CallUnknownConstrainWithMapInit<[@S]> {
-    function.def @compute(%0: !poly.tvar<@S>) -> !struct.type<@CallUnknownConstrainWithMapInit<[@S]>> {
-      %self = struct.new : !struct.type<@CallUnknownConstrainWithMapInit<[@S]>>
-      function.return %self : !struct.type<@CallUnknownConstrainWithMapInit<[@S]>>
-    }
+module attributes {llzk.lang} {
+  poly.template @TCallUnknownConstrainWithMapInit {
+    poly.param @S
 
-    function.def @constrain(%self: !struct.type<@CallUnknownConstrainWithMapInit<[@S]>>, %0: !poly.tvar<@S>) {
-      %i = arith.constant 28 : index
-      // expected-error@+1 {{'function.call' op can only have affine map instantiations when targeting a "@compute" function}}
-      function.call @S::@constrain(%0){ (%i) } : (!poly.tvar<@S>) -> ()
-      function.return
+    struct.def @CallUnknownConstrainWithMapInit {
+      function.def @compute(%0: !poly.tvar<@S>) -> !struct.type<@TCallUnknownConstrainWithMapInit::@CallUnknownConstrainWithMapInit<[@S]>> {
+        %self = struct.new : !struct.type<@TCallUnknownConstrainWithMapInit::@CallUnknownConstrainWithMapInit<[@S]>>
+        function.return %self : !struct.type<@TCallUnknownConstrainWithMapInit::@CallUnknownConstrainWithMapInit<[@S]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCallUnknownConstrainWithMapInit::@CallUnknownConstrainWithMapInit<[@S]>>, %0: !poly.tvar<@S>) {
+        %i = arith.constant 28 : index
+        // expected-error@+1 {{'function.call' op can only have affine map instantiations when targeting a "@compute" function}}
+        function.call @S::@constrain(%0){ (%i) } : (!poly.tvar<@S>) -> ()
+        function.return
+      }
     }
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @CallKnownConstrainWithMapInit {
@@ -155,7 +158,7 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @global_id(%0: index) -> index {
     function.return %0 : index
   }
@@ -174,14 +177,14 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @TooFewResults {
     function.def @compute(%a: index, %b: index, %c: index) -> !struct.type<@TooManySymbols> {
       %self = struct.new : !struct.type<@TooManySymbols>
       // expected-error@+1 {{AffineMapAttr must yield a single result, but found 0 results}}
-      %x = function.call @Lib::@D1::@compute(){ (%a)[%b, %c] } : () -> !struct.type<@Lib::@D1<[affine_map<(i)[k, j] -> ()>]>>
+      %x = function.call @Lib::@TD1::@D1::@compute(){ (%a)[%b, %c] } : () -> !struct.type<@Lib::@TD1::@D1<[affine_map<(i)[k, j] -> ()>]>>
       function.return %self : !struct.type<@TooManySymbols>
     }
 
@@ -190,14 +193,14 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   include.from "Inputs/header_11.llzk" as @Lib
 
   struct.def @TooManyResults {
     function.def @compute(%a: index, %b: index, %c: index) -> !struct.type<@TooManySymbols> {
       %self = struct.new : !struct.type<@TooManySymbols>
       // expected-error@+1 {{AffineMapAttr must yield a single result, but found 5 results}}
-      %x = function.call @Lib::@D1::@compute(){ (%a)[%b, %c] } : () -> !struct.type<@Lib::@D1<[affine_map<(i)[k, j] -> (5*i+k, j, i, k, 7)>]>>
+      %x = function.call @Lib::@TD1::@D1::@compute(){ (%a)[%b, %c] } : () -> !struct.type<@Lib::@TD1::@D1<[affine_map<(i)[k, j] -> (5*i+k, j, i, k, 7)>]>>
       function.return %self : !struct.type<@TooManySymbols>
     }
 

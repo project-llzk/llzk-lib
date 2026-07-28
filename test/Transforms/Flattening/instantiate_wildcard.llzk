@@ -1,0 +1,252 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  poly.template @FRT {
+    poly.param @T_return : !poly.tvar<@T_return>
+    function.def @free_ret() -> !poly.tvar<@T_return> {
+      %0 = felt.const  0 : <"bn128">
+      %1 = poly.unifiable_cast %0 : (!felt.type<"bn128">) -> !poly.tvar<@T_return>
+      function.return %1 : !poly.tvar<@T_return>
+    }
+  }
+
+  poly.template @synth {
+    poly.param @T_return : !poly.tvar<@T_return>
+    function.def @synth() {
+      %0 = function.call @FRT::@free_ret() : () -> !poly.tvar<@T_return>
+      function.return
+    }
+  }
+
+  poly.template @ComponentC {
+    struct.def @ComponentC {
+      function.def @compute() -> !struct.type<@ComponentC::@ComponentC<[]>> {
+        %self = struct.new : !struct.type<@ComponentC::@ComponentC<[]>>
+        function.call @synth::@synth<[?]>() : () -> ()
+        function.return %self : !struct.type<@ComponentC::@ComponentC<[]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@ComponentC::@ComponentC<[]>>) { function.return }
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @FRT_f_free_ret() -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (!felt.type<"bn128">) -> !felt.type<"bn128">
+// CHECK-NEXT:      function.return %[[VAL_1]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @synth_f_synth() {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @FRT_f_free_ret() : () -> !felt.type<"bn128">
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    module @ComponentC {
+// CHECK-NEXT:      struct.def @ComponentC {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@ComponentC::@ComponentC> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentC::@ComponentC>
+// CHECK-NEXT:          function.call @synth_f_synth() : () -> ()
+// CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@ComponentC::@ComponentC>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentC::@ComponentC>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang = "circom", llzk.main = !struct.type<@CallDiffTypeTest::@CallDiffTypeTest<[]>>} {
+  poly.template @T {
+    poly.param @T_arg0 : !poly.tvar<@T_arg0>
+    poly.param @T_return : !poly.tvar<@T_return>
+    function.def @peel2ranks(%arg0: !poly.tvar<@T_arg0> {function.arg_name = "a"}) -> !poly.tvar<@T_return> attributes {function.allow_non_native_field_ops} {
+      %felt_const_0 = felt.const  0 : <"bn128">
+      %0 = cast.toindex %felt_const_0 : !felt.type<"bn128">
+      %felt_const_0_0 = felt.const  0 : <"bn128">
+      %1 = cast.toindex %felt_const_0_0 : !felt.type<"bn128">
+      %2 = poly.unifiable_cast %arg0 : (!poly.tvar<@T_arg0>) -> !array.type<?,? x !poly.tvar<@"$e">>
+      %3 = array.read %2[%0, %1] : <?,? x !poly.tvar<@"$e">>, !poly.tvar<@"$e">
+      %4 = poly.unifiable_cast %3 : (!poly.tvar<@"$e">) -> !poly.tvar<@T_return>
+      function.return %4 : !poly.tvar<@T_return>
+    }
+    poly.param @"$e" : !poly.tvar<@"$e">
+  }
+  poly.template @CallDiffTypeTest {
+    struct.def @CallDiffTypeTest {
+      struct.member @outA : !array.type<5 x !felt.type<"bn128">> {llzk.pub}
+      struct.member @outB : !felt.type<"bn128"> {llzk.pub}
+      function.def @compute(
+              %arg0: !array.type<10,5,5 x !felt.type<"bn128">>,
+              %arg1: !array.type<10,5 x !felt.type<"bn128">>)
+              -> !struct.type<@CallDiffTypeTest::@CallDiffTypeTest<[]>>
+              attributes {function.allow_non_native_field_ops} {
+        %self = struct.new : <@CallDiffTypeTest::@CallDiffTypeTest<[]>>
+        %0 = function.call @T::@peel2ranks<[?, ?, ?]>(%arg0) : (!array.type<10,5,5 x !felt.type<"bn128">>) -> !array.type<5 x !felt.type<"bn128">>
+        struct.writem %self[@outA] = %0 : <@CallDiffTypeTest::@CallDiffTypeTest<[]>>, !array.type<5 x !felt.type<"bn128">>
+        %1 = function.call @T::@peel2ranks<[?, ?, ?]>(%arg1) : (!array.type<10,5 x !felt.type<"bn128">>) -> !felt.type<"bn128">
+        struct.writem %self[@outB] = %1 : <@CallDiffTypeTest::@CallDiffTypeTest<[]>>, !felt.type<"bn128">
+        function.return %self : !struct.type<@CallDiffTypeTest::@CallDiffTypeTest<[]>>
+      }
+      function.def @constrain(
+              %arg0: !struct.type<@CallDiffTypeTest::@CallDiffTypeTest<[]>>,
+              %arg1: !array.type<10,5,5 x !felt.type<"bn128">>,
+              %arg2: !array.type<10,5 x !felt.type<"bn128">>)
+              attributes {function.allow_non_native_field_ops} {
+        %0 = struct.readm %arg0[@outA] : <@CallDiffTypeTest::@CallDiffTypeTest<[]>>, !array.type<5 x !felt.type<"bn128">>
+        %1 = struct.readm %arg0[@outB] : <@CallDiffTypeTest::@CallDiffTypeTest<[]>>, !felt.type<"bn128">
+        %2 = function.call @T::@peel2ranks<[?, ?, ?]>(%arg1) : (!array.type<10,5,5 x !felt.type<"bn128">>) -> !array.type<5 x !felt.type<"bn128">>
+        constrain.eq %0, %2 : !array.type<5 x !felt.type<"bn128">>, !array.type<5 x !felt.type<"bn128">>
+        %3 = function.call @T::@peel2ranks<[?, ?, ?]>(%arg2) : (!array.type<10,5 x !felt.type<"bn128">>) -> !felt.type<"bn128">
+        constrain.eq %1, %3 : !felt.type<"bn128">, !felt.type<"bn128">
+        function.return
+      }
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang = "circom", llzk.main = !struct.type<@CallDiffTypeTest::@CallDiffTypeTest<[]>>} {
+// CHECK-NEXT:    function.def @"T_!a<f:10_5_5>_!a<f:5>_!a<f:5>_peel2ranks"(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<10,5,5 x !felt.type<"bn128">> {function.arg_name = "a"}) -> !array.type<5 x !felt.type<"bn128">> attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_1]] : !felt.type<"bn128">
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_1]] : !felt.type<"bn128">
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (!array.type<10,5,5 x !felt.type<"bn128">>) -> !array.type<?,?,5 x !felt.type<"bn128">>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_4]]{{\[}}%[[VAL_2]], %[[VAL_3]]] : <?,?,5 x !felt.type<"bn128">>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_5]] : (!array.type<5 x !felt.type<"bn128">>) -> !array.type<5 x !felt.type<"bn128">>
+// CHECK-NEXT:      function.return %[[VAL_6]] : !array.type<5 x !felt.type<"bn128">>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @"T_!a<f:10_5>_f_f_peel2ranks"(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !array.type<10,5 x !felt.type<"bn128">> {function.arg_name = "a"}) -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_8]] : !felt.type<"bn128">
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_8]] : !felt.type<"bn128">
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_7]] : (!array.type<10,5 x !felt.type<"bn128">>) -> !array.type<?,? x !felt.type<"bn128">>
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_11]]{{\[}}%[[VAL_9]], %[[VAL_10]]] : <?,? x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_12]] : (!felt.type<"bn128">) -> !felt.type<"bn128">
+// CHECK-NEXT:      function.return %[[VAL_13]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    module @CallDiffTypeTest {
+// CHECK-NEXT:      struct.def @CallDiffTypeTest {
+// CHECK-NEXT:        struct.member @outA : !array.type<5 x !felt.type<"bn128">> {llzk.pub}
+// CHECK-NEXT:        struct.member @outB : !felt.type<"bn128"> {llzk.pub}
+// CHECK-NEXT:        function.def @compute(%[[VAL_14:[0-9a-zA-Z_\.]+]]: !array.type<10,5,5 x !felt.type<"bn128">>, %[[VAL_15:[0-9a-zA-Z_\.]+]]: !array.type<10,5 x !felt.type<"bn128">>) -> !struct.type<@CallDiffTypeTest::@CallDiffTypeTest> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_16:[0-9a-zA-Z_\.]+]] = struct.new : <@CallDiffTypeTest::@CallDiffTypeTest>
+// CHECK-NEXT:          %[[VAL_17:[0-9a-zA-Z_\.]+]] = function.call @"T_!a<f:10_5_5>_!a<f:5>_!a<f:5>_peel2ranks"(%[[VAL_14]]) : (!array.type<10,5,5 x !felt.type<"bn128">>) -> !array.type<5 x !felt.type<"bn128">>
+// CHECK-NEXT:          struct.writem %[[VAL_16]][@outA] = %[[VAL_17]] : <@CallDiffTypeTest::@CallDiffTypeTest>, !array.type<5 x !felt.type<"bn128">>
+// CHECK-NEXT:          %[[VAL_18:[0-9a-zA-Z_\.]+]] = function.call @"T_!a<f:10_5>_f_f_peel2ranks"(%[[VAL_15]]) : (!array.type<10,5 x !felt.type<"bn128">>) -> !felt.type<"bn128">
+// CHECK-NEXT:          struct.writem %[[VAL_16]][@outB] = %[[VAL_18]] : <@CallDiffTypeTest::@CallDiffTypeTest>, !felt.type<"bn128">
+// CHECK-NEXT:          function.return %[[VAL_16]] : !struct.type<@CallDiffTypeTest::@CallDiffTypeTest>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_19:[0-9a-zA-Z_\.]+]]: !struct.type<@CallDiffTypeTest::@CallDiffTypeTest>, %[[VAL_20:[0-9a-zA-Z_\.]+]]: !array.type<10,5,5 x !felt.type<"bn128">>, %[[VAL_21:[0-9a-zA-Z_\.]+]]: !array.type<10,5 x !felt.type<"bn128">>) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+// CHECK-NEXT:          %[[VAL_22:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_19]][@outA] : <@CallDiffTypeTest::@CallDiffTypeTest>, !array.type<5 x !felt.type<"bn128">>
+// CHECK-NEXT:          %[[VAL_23:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_19]][@outB] : <@CallDiffTypeTest::@CallDiffTypeTest>, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_24:[0-9a-zA-Z_\.]+]] = function.call @"T_!a<f:10_5_5>_!a<f:5>_!a<f:5>_peel2ranks"(%[[VAL_20]]) : (!array.type<10,5,5 x !felt.type<"bn128">>) -> !array.type<5 x !felt.type<"bn128">>
+// CHECK-NEXT:          constrain.eq %[[VAL_22]], %[[VAL_24]] : !array.type<5 x !felt.type<"bn128">>, !array.type<5 x !felt.type<"bn128">>
+// CHECK-NEXT:          %[[VAL_25:[0-9a-zA-Z_\.]+]] = function.call @"T_!a<f:10_5>_f_f_peel2ranks"(%[[VAL_21]]) : (!array.type<10,5 x !felt.type<"bn128">>) -> !felt.type<"bn128">
+// CHECK-NEXT:          constrain.eq %[[VAL_23]], %[[VAL_25]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @LaterConcrete {
+    poly.param @A : !poly.tvar<@A>
+    poly.param @B : !poly.tvar<@B>
+
+    function.def @bridge(%arg0: !poly.tvar<@B>) {
+      %0 = poly.unifiable_cast %arg0 : (!poly.tvar<@B>) -> !poly.tvar<@A>
+      function.return
+    }
+  }
+
+  poly.template @UseLaterConcrete {
+    struct.def @UseLaterConcrete {
+      function.def @compute(%arg0: !felt.type<"bn128">) -> !struct.type<@UseLaterConcrete::@UseLaterConcrete<[]>> {
+        %self = struct.new : !struct.type<@UseLaterConcrete::@UseLaterConcrete<[]>>
+        function.call @LaterConcrete::@bridge<[?, !felt.type<"bn128">]>(%arg0) : (!felt.type<"bn128">) -> ()
+        function.return %self : !struct.type<@UseLaterConcrete::@UseLaterConcrete<[]>>
+      }
+
+      function.def @constrain(
+          %self: !struct.type<@UseLaterConcrete::@UseLaterConcrete<[]>>,
+          %arg0: !felt.type<"bn128">) {
+        function.call @LaterConcrete::@bridge<[?, !felt.type<"bn128">]>(%arg0) : (!felt.type<"bn128">) -> ()
+        function.return
+      }
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @LaterConcrete_f_f_bridge(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    module @UseLaterConcrete {
+// CHECK-NEXT:      struct.def @UseLaterConcrete {
+// CHECK-NEXT:        function.def @compute(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !struct.type<@UseLaterConcrete::@UseLaterConcrete> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@UseLaterConcrete::@UseLaterConcrete>
+// CHECK-NEXT:          function.call @LaterConcrete_f_f_bridge(%[[VAL_1]]) : (!felt.type<"bn128">) -> ()
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@UseLaterConcrete::@UseLaterConcrete>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@UseLaterConcrete::@UseLaterConcrete>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.call @LaterConcrete_f_f_bridge(%[[VAL_4]]) : (!felt.type<"bn128">) -> ()
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @CallOuterExplicitReturn {
+    function.def @compute(%arg0: !felt.type<"bn128">) -> !struct.type<@CallOuterExplicitReturn> {
+      %self = struct.new : !struct.type<@CallOuterExplicitReturn>
+      function.call @OuterExplicitReturn::@wrap<[?]>(%arg0) : (!felt.type<"bn128">) -> ()
+      function.return %self : !struct.type<@CallOuterExplicitReturn>
+    }
+
+    function.def @constrain(%self: !struct.type<@CallOuterExplicitReturn>, %arg0: !felt.type<"bn128">) {
+      function.call @OuterExplicitReturn::@wrap<[?]>(%arg0) : (!felt.type<"bn128">) -> ()
+      function.return
+    }
+  }
+
+  poly.template @InnerExplicitReturn {
+    poly.param @Ret : !poly.tvar<@Ret>
+    poly.param @Arg : !poly.tvar<@Arg>
+
+    function.def @ret(%arg0: !poly.tvar<@Arg>) -> !poly.tvar<@Ret> {
+      %0 = poly.unifiable_cast %arg0 : (!poly.tvar<@Arg>) -> !poly.tvar<@Ret>
+      function.return %0 : !poly.tvar<@Ret>
+    }
+  }
+
+  poly.template @OuterExplicitReturn {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @wrap(%arg0: !felt.type<"bn128">) {
+      %0 = function.call @InnerExplicitReturn::@ret<[!felt.type<"bn128">, ?]>(%arg0) : (!felt.type<"bn128">) -> !poly.tvar<@T>
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @CallOuterExplicitReturn {
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !struct.type<@CallOuterExplicitReturn> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@CallOuterExplicitReturn>
+// CHECK-NEXT:        function.call @OuterExplicitReturn_f_wrap(%[[VAL_0]]) : (!felt.type<"bn128">) -> ()
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@CallOuterExplicitReturn>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@CallOuterExplicitReturn>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.call @OuterExplicitReturn_f_wrap(%[[VAL_3]]) : (!felt.type<"bn128">) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @InnerExplicitReturn_f_f_ret(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_4]] : (!felt.type<"bn128">) -> !felt.type<"bn128">
+// CHECK-NEXT:      function.return %[[VAL_5]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @OuterExplicitReturn_f_wrap(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) {
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @InnerExplicitReturn_f_f_ret(%[[VAL_6]]) : (!felt.type<"bn128">) -> !felt.type<"bn128">
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

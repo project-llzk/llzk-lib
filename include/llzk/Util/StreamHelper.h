@@ -32,7 +32,8 @@ public:
   filtered_raw_ostream(llvm::raw_ostream &os, std::function<bool(char)> filter)
       : underlyingStream(os), filterFunc(std::move(filter)) {}
 
-  ~filtered_raw_ostream() override { flush(); }
+  // Moved to a separate file to avoid a weak vtable error.
+  ~filtered_raw_ostream() override;
 };
 
 /// Generate a string by calling the given `appendFn` with an `llvm::raw_ostream &` as the

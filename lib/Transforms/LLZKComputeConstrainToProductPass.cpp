@@ -12,14 +12,18 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Transforms/LLZKComputeConstrainToProductPass.h"
+
 #include "llzk/Analysis/LightweightSignalEquivalenceAnalysis.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Dialect/Struct/Transforms/InlineStructsPass.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/IR/Builders.h>
+#include <mlir/IR/SymbolTable.h>
 #include <mlir/Transforms/InliningUtils.h>
 
 #include <llvm/Support/Debug.h>
@@ -28,104 +32,32 @@
 #include <ranges>
 
 namespace llzk {
-#define GEN_PASS_DECL_COMPUTECONSTRAINTOPRODUCTPASS
 #define GEN_PASS_DEF_COMPUTECONSTRAINTOPRODUCTPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
 
 #define DEBUG_TYPE "llzk-compute-constrain-to-product-pass"
 
+using namespace mlir;
+using namespace llzk;
 using namespace llzk::component;
 using namespace llzk::function;
-using namespace mlir;
 
-using std::make_unique;
+FuncDefOp ProductAligner::alignFuncs(StructDefOp root, FuncDefOp compute, FuncDefOp constrain) {
 
-namespace llzk {
-
-bool isValidRoot(StructDefOp root) {
-  FuncDefOp computeFunc = root.getComputeFuncOp();
-  FuncDefOp constrainFunc = root.getConstrainFuncOp();
-
-  if (!computeFunc || !constrainFunc) {
-    root->emitError() << "no " << FUNC_NAME_COMPUTE << "/" << FUNC_NAME_CONSTRAIN << " to align";
-    return false;
+  if (auto prod = root.getProductFuncOp()) {
+    return prod;
   }
 
-  /// TODO: If root::@compute and root::@constrain are called anywhere else, this is not a valid
-  /// root to start aligning from (issue #241)
-
-  return true;
-}
-
-class ComputeConstrainToProductPass
-    : public llzk::impl::ComputeConstrainToProductPassBase<ComputeConstrainToProductPass> {
-
-  std::vector<StructDefOp> alignedStructs;
-
-  // Given a @product function body, try to match up calls to @A::@compute and @A::@constrain for
-  // every sub-struct @A and replace them with a call to @A::@product
-  LogicalResult alignCalls(
-      FuncDefOp product, SymbolTableCollection &tables,
-      LightweightSignalEquivalenceAnalysis &equivalence
-  );
-
-  // Given a StructDefOp @root, replace the @root::@compute and @root::@constrain functions with a
-  // @root::@product
-  FuncDefOp alignFuncs(
-      StructDefOp root, FuncDefOp compute, FuncDefOp constrain, SymbolTableCollection &tables,
-      LightweightSignalEquivalenceAnalysis &equivalence
-  );
-
-public:
-  void runOnOperation() override {
-    ModuleOp mod = getOperation();
-    StructDefOp root;
-
-    SymbolTableCollection tables;
-    LightweightSignalEquivalenceAnalysis equivalence {
-        getAnalysis<LightweightSignalEquivalenceAnalysis>()
-    };
-
-    // Find the indicated root struct and make sure its a valid place to start aligning
-    mod.walk([&root, this](StructDefOp structDef) {
-      if (structDef.getSymName() == rootStruct) {
-        root = structDef;
-      }
-    });
-    if (!isValidRoot(root)) {
-      signalPassFailure();
-      return;
-    }
-
-    // Try aligning the root functions
-    if (!alignFuncs(
-            root, root.getComputeFuncOp(), root.getConstrainFuncOp(), tables, equivalence
-        )) {
-      signalPassFailure();
-      return;
-    }
-
-    for (auto s : alignedStructs) {
-      s.getComputeFuncOp()->erase();
-      s.getConstrainFuncOp()->erase();
-    }
-  }
-};
-
-FuncDefOp ComputeConstrainToProductPass::alignFuncs(
-    StructDefOp root, FuncDefOp compute, FuncDefOp constrain, SymbolTableCollection &tables,
-    LightweightSignalEquivalenceAnalysis &equivalence
-) {
   OpBuilder funcBuilder(compute);
 
   // Add compute/constrain attributes
   compute.walk([&funcBuilder](Operation *op) {
-    op->setAttr("product_source", funcBuilder.getStringAttr(FUNC_NAME_COMPUTE));
+    op->setAttr(PRODUCT_SOURCE, funcBuilder.getStringAttr(FUNC_NAME_COMPUTE));
   });
 
   constrain.walk([&funcBuilder](Operation *op) {
-    op->setAttr("product_source", funcBuilder.getStringAttr(FUNC_NAME_CONSTRAIN));
+    op->setAttr(PRODUCT_SOURCE, funcBuilder.getStringAttr(FUNC_NAME_CONSTRAIN));
   });
 
   // Create an empty @product func...
@@ -133,8 +65,13 @@ FuncDefOp ComputeConstrainToProductPass::alignFuncs(
       funcBuilder.getFusedLoc({compute.getLoc(), constrain.getLoc()}), FUNC_NAME_PRODUCT,
       compute.getFunctionType()
   );
+  productFunc->setAttr(DERIVED_ATTR_NAME, UnitAttr::get(funcBuilder.getContext()));
   Block *entryBlock = productFunc.addEntryBlock();
   funcBuilder.setInsertionPointToStart(entryBlock);
+
+  productFunc.setAllowNonNativeFieldOpsAttr(
+      compute.hasAllowNonNativeFieldOpsAttr() || constrain.hasAllowNonNativeFieldOpsAttr()
+  );
 
   // ...with the right arguments
   llvm::SmallVector<Value> args {productFunc.getArguments()};
@@ -148,11 +85,11 @@ FuncDefOp ComputeConstrainToProductPass::alignFuncs(
   // ..and inline them
   InlinerInterface inliner(productFunc.getContext());
   if (failed(inlineCall(inliner, computeCall, compute, &compute.getBody(), true))) {
-    root->emitError() << "failed to inline " << FUNC_NAME_COMPUTE;
+    root->emitError().append("failed to inline ", FUNC_NAME_COMPUTE).report();
     return nullptr;
   }
   if (failed(inlineCall(inliner, constrainCall, constrain, &constrain.getBody(), true))) {
-    root->emitError() << "failed to inline " << FUNC_NAME_CONSTRAIN;
+    root->emitError().append("failed to inline ", FUNC_NAME_CONSTRAIN).report();
     return nullptr;
   }
   computeCall->erase();
@@ -162,16 +99,13 @@ FuncDefOp ComputeConstrainToProductPass::alignFuncs(
   alignedStructs.push_back(root);
 
   // Make sure we can align sub-calls to @compute and @constrain
-  if (failed(alignCalls(productFunc, tables, equivalence))) {
+  if (failed(alignCalls(productFunc))) {
     return nullptr;
   }
   return productFunc;
 }
 
-LogicalResult ComputeConstrainToProductPass::alignCalls(
-    FuncDefOp product, SymbolTableCollection &tables,
-    LightweightSignalEquivalenceAnalysis &equivalence
-) {
+LogicalResult ProductAligner::alignCalls(FuncDefOp product) {
   // Gather up all the remaining calls to @compute and @constrain
   llvm::SetVector<CallOp> computeCalls, constrainCalls;
   product.walk([&](CallOp callOp) {
@@ -191,13 +125,16 @@ LogicalResult ComputeConstrainToProductPass::alignCalls(
       llvm::outs() << "Asking for equivalence between calls\n"
                    << compute << "\nand\n"
                    << constrain << "\n\n";
-      llvm::outs() << "In block:\n\n" << *compute->getBlock() << "\n";
+      llvm::outs() << "In block:\n\n" << *compute->getBlock() << '\n';
     });
 
     auto computeStruct = getPrefixAsSymbolRefAttr(compute.getCallee());
     auto constrainStruct = getPrefixAsSymbolRefAttr(constrain.getCallee());
     if (computeStruct != constrainStruct) {
       return false;
+    }
+    if (compute.getNumOperands() == 0) {
+      return true;
     }
     for (unsigned i = 0, e = compute->getNumOperands() - 1; i < e; i++) {
       if (!equivalence.areSignalsEquivalent(compute->getOperand(i), constrain->getOperand(i + 1))) {
@@ -221,20 +158,22 @@ LogicalResult ComputeConstrainToProductPass::alignCalls(
     }
   }
 
-  // TODO: If unaligned calls remain, fully inline their structs and continue instead of failing
   if (!computeCalls.empty() && constrainCalls.empty()) {
-    product->emitError() << "failed to align some @" << FUNC_NAME_COMPUTE << " and @"
-                         << FUNC_NAME_CONSTRAIN;
-    return failure();
+    product.emitWarning()
+        .append("failed to align some @", FUNC_NAME_COMPUTE, " and @", FUNC_NAME_CONSTRAIN)
+        .report();
   }
 
   for (auto [compute, constrain] : alignedCalls) {
     // If @A::@compute matches @A::@constrain, recursively align the functions in @A...
-    auto newRoot = compute.getCalleeTarget(tables)->get()->getParentOfType<StructDefOp>();
+    auto calleeTgt = compute.getCalleeTarget(tables);
+    if (failed(calleeTgt)) {
+      return failure();
+    }
+    auto newRoot = calleeTgt->get()->getParentOfType<StructDefOp>();
     assert(newRoot);
-    FuncDefOp newProduct = alignFuncs(
-        newRoot, newRoot.getComputeFuncOp(), newRoot.getConstrainFuncOp(), tables, equivalence
-    );
+    FuncDefOp newProduct =
+        alignFuncs(newRoot, newRoot.getComputeFuncOp(), newRoot.getConstrainFuncOp());
     if (!newProduct) {
       return failure();
     }
@@ -246,15 +185,76 @@ LogicalResult ComputeConstrainToProductPass::alignCalls(
         compute.getOperands()
     );
     compute->replaceAllUsesWith(newCall.getResults());
-    compute->erase();
-    constrain->erase();
   }
 
   return success();
 }
 
-std::unique_ptr<mlir::Pass> createComputeConstrainToProductPass() {
-  return make_unique<ComputeConstrainToProductPass>();
+namespace {
+
+bool isValidRoot(StructDefOp root) {
+  FuncDefOp computeFunc = root.getComputeFuncOp();
+  FuncDefOp constrainFunc = root.getConstrainFuncOp();
+
+  if (!computeFunc || !constrainFunc) {
+    root->emitError()
+        .append("no ", FUNC_NAME_COMPUTE, "/", FUNC_NAME_CONSTRAIN, " to align")
+        .report();
+    return false;
+  }
+
+  /// TODO: If root::@compute and root::@constrain are called anywhere else, this is not a valid
+  /// root to start aligning from (issue #241)
+
+  return true;
 }
 
-} // namespace llzk
+LogicalResult alignStartingAt(
+    component::StructDefOp root, SymbolTableCollection &tables,
+    LightweightSignalEquivalenceAnalysis &equivalence
+) {
+  if (!isValidRoot(root)) {
+    return failure();
+  }
+
+  ProductAligner aligner {tables, equivalence};
+  if (!aligner.alignFuncs(root, root.getComputeFuncOp(), root.getConstrainFuncOp())) {
+    return failure();
+  }
+
+  return success();
+}
+
+class PassImpl : public llzk::impl::ComputeConstrainToProductPassBase<PassImpl> {
+  using Base = ComputeConstrainToProductPassBase<PassImpl>;
+  using Base::Base;
+
+  void runOnOperation() override {
+    ModuleOp mod = getOperation();
+    StructDefOp root;
+
+    SymbolTableCollection tables;
+    LightweightSignalEquivalenceAnalysis equivalence {
+        getAnalysis<LightweightSignalEquivalenceAnalysis>()
+    };
+
+    // Find the indicated root struct and make sure its a valid place to start aligning
+    mod.walk([&root, this](StructDefOp structDef) {
+      if (structDef.getSymName() == rootStruct) {
+        root = structDef;
+      }
+    });
+
+    if (!root) {
+      mod.emitError().append("could not find root struct \"", rootStruct, "\"").report();
+      signalPassFailure();
+      return;
+    }
+
+    if (failed(alignStartingAt(root, tables, equivalence))) {
+      signalPassFailure();
+    }
+  }
+};
+
+} // namespace

@@ -7,8 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Config/Config.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
+
+#include "llzk/Config/Config.h"
 
 #include <mlir/Support/LLVM.h>
 

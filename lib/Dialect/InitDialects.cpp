@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/InitDialects.h"
+
 #include "llzk/Dialect/Array/IR/Dialect.h"
 #include "llzk/Dialect/Bool/IR/Dialect.h"
 #include "llzk/Dialect/Cast/IR/Dialect.h"
@@ -15,12 +17,14 @@
 #include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/Global/IR/Dialect.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
-#include "llzk/Dialect/InitDialects.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
+#include "llzk/Dialect/POD/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
+#include "llzk/Dialect/RAM/IR/Dialect.h"
+#include "llzk/Dialect/SMT/IR/SMTDialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
-#include "llzk/Dialect/Undef/IR/Dialect.h"
+#include "llzk/Dialect/Verif/IR/Dialect.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
@@ -40,15 +44,19 @@ void registerAllDialects(mlir::DialectRegistry &registry) {
       llzk::felt::FeltDialect,
       llzk::function::FunctionDialect,
       llzk::global::GlobalDialect,
+      llzk::ram::RAMDialect,
       llzk::include::IncludeDialect,
       llzk::string::StringDialect,
+      llzk::pod::PODDialect,
       llzk::polymorphic::PolymorphicDialect,
-      llzk::undef::UndefDialect,
+      llzk::smt::SMTDialect,
+      llzk::verif::VerifDialect,
       mlir::arith::ArithDialect,
       mlir::scf::SCFDialect
       // clang-format on
       >();
 
   registerInliningExtensions(registry);
+  verif::registerExtensions(registry);
 }
 } // namespace llzk

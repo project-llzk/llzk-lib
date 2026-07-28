@@ -38,15 +38,16 @@ class CallGraphAnalysis {
 public:
   CallGraphAnalysis(mlir::Operation *op);
 
-  llzk::CallGraph &getCallGraph() { return *cg.get(); }
-  const llzk::CallGraph &getCallGraph() const { return *cg.get(); }
+  llzk::CallGraph &getCallGraph() { return *cg; }
+  const llzk::CallGraph &getCallGraph() const { return *cg; }
 };
 
 /// Lazily-constructed reachability analysis.
 class CallGraphReachabilityAnalysis {
 
   // Maps function -> callees
-  using CalleeMapTy = mlir::DenseMap<function::FuncDefOp, mlir::DenseSet<function::FuncDefOp>>;
+  using CalleeMapTy =
+      mlir::DenseMap<mlir::CallableOpInterface, mlir::DenseSet<mlir::CallableOpInterface>>;
 
   mutable CalleeMapTy reachabilityMap;
 
@@ -60,12 +61,12 @@ public:
   }
 
   /// Returns whether B is reachable from A.
-  bool isReachable(function::FuncDefOp &A, function::FuncDefOp &B) const;
+  bool isReachable(mlir::CallableOpInterface A, mlir::CallableOpInterface B) const;
 
   const llzk::CallGraph &getCallGraph() const { return callGraph.get(); }
 
 private:
-  inline bool isReachableCached(function::FuncDefOp &A, function::FuncDefOp &B) const {
+  inline bool isReachableCached(mlir::CallableOpInterface A, mlir::CallableOpInterface B) const {
     auto it = reachabilityMap.find(A);
     return it != reachabilityMap.end() && it->second.find(B) != it->second.end();
   }

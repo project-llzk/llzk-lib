@@ -12,6 +12,7 @@
 #include <mlir/IR/Operation.h>
 
 #include <concepts>
+#include <utility>
 
 namespace llzk {
 
@@ -76,5 +77,10 @@ template <NamedOpComparable Op> struct NamedOpLocationLess {
     return lhs.getName().compare(rhs.getName()) < 0;
   }
 };
+
+template <typename T, typename U> constexpr T checkedCast(U u) noexcept {
+  assert(std::in_range<T>(u) && "lossy conversion");
+  return static_cast<T>(u);
+}
 
 } // namespace llzk

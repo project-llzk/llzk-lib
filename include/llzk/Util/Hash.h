@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include <mlir/IR/Operation.h>
+
 #include <functional>
 
 namespace llzk {

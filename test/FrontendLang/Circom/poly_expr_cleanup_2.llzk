@@ -1,0 +1,62 @@
+// RUN: llzk-opt -split-input-file --pass-pipeline='any(remove-dead-values)' %s 2>&1 | FileCheck --enable-var-scope %s
+
+// This one results in an empty "else" region after running the LLVM 20 hotfix
+// `remove-dead-values` pass which necessitates the post-pass cleanup step.
+module attributes {llzk.lang = "circom"} {
+  poly.template @T {
+    poly.param @N
+    poly.expr @UnusedIfResult_HitsDeadValueRemovalBug {
+      %felt_const_1 = felt.const  1 : <"bn128">
+      %felt_const_6 = felt.const  6 : <"bn128">
+      %felt_const_675 = felt.const  675 : <"bn128">
+      %felt_const_123 = felt.const  123 : <"bn128">
+      %felt_const_0 = felt.const  0 : <"bn128">
+      %felt_const_12 = felt.const  12 : <"bn128">
+      %0 = poly.read_const @N : !felt.type<"bn128">
+      %array = array.new %felt_const_123, %felt_const_675 : <2 x !felt.type<"bn128">>
+      %1 = felt.add %0, %felt_const_6 : !felt.type<"bn128">, !felt.type<"bn128">
+      %2 = cast.toindex %felt_const_1 : !felt.type<"bn128">
+      array.write %array[%2] = %1 : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+      %3 = bool.cmp gt(%0, %felt_const_12) : !felt.type<"bn128">, !felt.type<"bn128">
+      %4 = scf.if %3 -> (!felt.type<"bn128">) {
+        %5 = cast.toindex %felt_const_0 : !felt.type<"bn128">
+        %6 = array.read %array[%5] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+        %7 = cast.toindex %felt_const_1 : !felt.type<"bn128">
+        %8 = array.read %array[%7] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+        %9 = felt.add %6, %8 : !felt.type<"bn128">, !felt.type<"bn128">
+        scf.yield %9 : !felt.type<"bn128">
+      } else {
+        scf.yield %felt_const_0 : !felt.type<"bn128">
+      }
+      %5 = poly.read_const @N : !felt.type<"bn128">
+      poly.yield %5 : !felt.type<"bn128">
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang = "circom"} {
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.expr @UnusedIfResult_HitsDeadValueRemovalBug {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  6 : <"bn128">
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  675 : <"bn128">
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  123 : <"bn128">
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = felt.const  12 : <"bn128">
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_3]], %[[VAL_2]] : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_6]], %[[VAL_1]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_0]] : !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_7]]{{\[}}%[[VAL_9]]] = %[[VAL_8]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = bool.cmp gt(%[[VAL_6]], %[[VAL_5]]) : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        scf.if %[[VAL_10]] {
+// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_4]] : !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_11]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_0]] : !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_13]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        }
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type<"bn128">
+// CHECK-NEXT:        poly.yield %[[VAL_15]] : !felt.type<"bn128">
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

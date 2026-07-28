@@ -151,9 +151,10 @@ public:
   /// @note Derived classes may also use the `Analysis(mlir::Operation*, mlir::AnalysisManager&)`
   /// constructor that is allowed by classes that are constructed using the
   /// `AnalysisManager::getAnalysis<Analysis>()` method.
-  ModuleAnalysis(mlir::Operation *op) {
+  ModuleAnalysis(mlir::Operation *op, const mlir::DataFlowConfig &config = mlir::DataFlowConfig())
+      : solver(config) {
     if (modOp = llvm::dyn_cast<mlir::ModuleOp>(op); !modOp) {
-      auto error_message = "ModuleAnalysis expects provided op to be an mlir::ModuleOp!";
+      const auto *error_message = "ModuleAnalysis expects provided op to be an mlir::ModuleOp!";
       op->emitError(error_message).report();
       llvm::report_fatal_error(error_message);
     }
@@ -212,7 +213,8 @@ protected:
   /// in the `ModuleOp` that is being subjected to this analysis.
   /// @param am The module's analysis manager.
   void constructChildAnalyses(mlir::AnalysisManager &am) {
-    dataflow::markAllOpsAsLive(solver, modOp);
+    auto init = dataflow::loadAndRunRequiredAnalyses(solver, modOp);
+    ensure(init.succeeded(), "solver failed to run on module!");
 
     // The analysis is run at the module level so that lattices are computed
     // for global functions as well.
@@ -221,6 +223,10 @@ protected:
     ensure(res.succeeded(), "solver failed to run on module!");
 
     const Context &ctx = getContext();
+    // Force construction of empty results here so `getCurrentResults()` on
+    // a module with no inner structs returns no results rather than an assertion
+    // failure.
+    results[ctx] = {};
     modOp.walk([this, &am, &ctx](component::StructDefOp s) mutable {
       auto &childAnalysis = am.getChildAnalysis<StructAnalysisTy>(s);
       // Don't re-run the analysis if we already have the results.
@@ -229,7 +235,7 @@ protected:
         mlir::LogicalResult childAnalysisRes = childAnalysis.runAnalysis(solver, am, ctx);
 
         if (mlir::failed(childAnalysisRes)) {
-          auto error_message = "StructAnalysis failed to run for " + mlir::Twine(s.getName());
+          auto error_message = "StructAnalysis failed to run for " + s.getName();
           s->emitError(error_message).report();
           llvm::report_fatal_error(error_message);
         }

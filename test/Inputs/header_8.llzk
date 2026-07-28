@@ -1,6 +1,6 @@
 // Imported via `include_pass.llzk`
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @libC {
     struct.def @StructC {
       function.def @compute() -> !struct.type<@libC::@StructC> {

@@ -9,8 +9,19 @@
 
 #pragma once
 
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/Dialect/Struct/IR/Types.h"
+
 #include <mlir/IR/Attributes.h>
+#include <mlir/IR/BuiltinOps.h>
 
 // Include TableGen'd declarations
 #define GET_ATTRDEF_CLASSES
 #include "llzk/Dialect/LLZK/IR/Attrs.h.inc"
+
+namespace llzk {
+
+mlir::FailureOr<component::StructType>
+getTypeFromLlzkMainAttr(mlir::ModuleOp op, mlir::Attribute attr);
+
+}

@@ -1,0 +1,47 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --output-scope=full-witness | FileCheck %s --check-prefix=FULL
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine --output-scope=full-witness | FileCheck %s --check-prefix=FULL
+
+//--- test.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @sum : !felt.type<"babybear"> {llzk.pub}
+    struct.member @secret : !felt.type<"babybear"> {signal}
+    function.def @compute(
+      %lhs: !felt.type<"babybear"> {function.arg_name = "lhs"},
+      %rhs: !felt.type<"babybear"> {function.arg_name = "rhs"}
+    ) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %sum = felt.add %lhs, %rhs : !felt.type<"babybear">, !felt.type<"babybear">
+      struct.writem %self[@sum] = %sum : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@secret] = %lhs : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(
+      %self: !struct.type<@Main>, %lhs: !felt.type<"babybear">, %rhs: !felt.type<"babybear">
+    ) {
+      function.return
+    }
+  }
+}
+
+// CHECK: {
+// CHECK-NEXT:   "sum": "9"
+// CHECK-NEXT: }
+
+// FULL: {
+// FULL-NEXT:   "inputs": {
+// FULL-NEXT:     "lhs": "4",
+// FULL-NEXT:     "rhs": "5"
+// FULL-NEXT:   },
+// FULL-NEXT:   "signals": {
+// FULL-NEXT:     "secret": "4",
+// FULL-NEXT:     "sum": "9"
+// FULL-NEXT:   }
+// FULL-NEXT: }
+
+//--- input.json
+{"lhs": 4, "rhs": 5}

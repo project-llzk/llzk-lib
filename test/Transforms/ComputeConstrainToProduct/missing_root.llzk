@@ -1,0 +1,4 @@
+// RUN: llzk-opt --llzk-compute-constrain-to-product="root-struct=Missing" -verify-diagnostics %s
+
+// expected-error@+1 {{could not find root struct "Missing"}}
+module attributes {llzk.lang} {}

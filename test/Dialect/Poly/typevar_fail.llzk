@@ -1,49 +1,49 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+2 {{expected attribute value}}
   // expected-error@+1 {{failed to parse TypeVarType parameter 'nameRef' which is to be a `::mlir::FlatSymbolRefAttr`}}
   function.def private @p(%x: !poly.tvar<>)
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{expected '<'}}
   function.def private @q(%x: !poly.tvar)
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+2 {{invalid kind of attribute specified}}
   // expected-error@+1 {{failed to parse TypeVarType parameter 'nameRef' which is to be a `::mlir::FlatSymbolRefAttr`}}
   function.def private @r(%x: !poly.tvar<5>)
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+2 {{invalid kind of attribute specified}}
   // expected-error@+1 {{failed to parse TypeVarType parameter 'nameRef' which is to be a `::mlir::FlatSymbolRefAttr`}}
   function.def private @s(%x: !poly.tvar<index>)
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+2 {{invalid kind of attribute specified}}
   // expected-error@+1 {{failed to parse TypeVarType parameter 'nameRef' which is to be a `::mlir::FlatSymbolRefAttr`}}
   function.def private @t(%x: !poly.tvar<!poly.tvar<index>>)
 }
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   // expected-error@+1 {{'function.def' op references unknown symbol "@A"}}
   function.def private @u(%x: !poly.tvar<@A>)
 }
 
 // -----
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   struct.def @ComponentA {
-    // expected-error@+1 {{'struct.field' op references unknown symbol "@T"}}
-    struct.field @f3 : !poly.tvar<@T>
+    // expected-error@+1 {{'struct.member' op references unknown symbol "@T"}}
+    struct.member @f3 : !poly.tvar<@T>
 
     function.def @compute() -> !struct.type<@ComponentA> {
       %self = struct.new : !struct.type<@ComponentA>
@@ -55,14 +55,18 @@ module attributes {veridise.lang = "llzk"} {
 }
 
 // -----
-module attributes {veridise.lang = "llzk"} {
-  struct.def @ComponentB1<[@T]> {
-    function.def @compute() -> !struct.type<@ComponentB1<[@T]>> {
-      %self = struct.new : !struct.type<@ComponentB1<[@T]>>
-      function.return %self : !struct.type<@ComponentB1<[@T]>>
-    }
+module attributes {llzk.lang} {
+  poly.template @TComponentB1 {
+    poly.param @T
 
-    function.def @constrain(%self: !struct.type<@ComponentB1<[@T]>>) { function.return }
+    struct.def @ComponentB1 {
+      function.def @compute() -> !struct.type<@TComponentB1::@ComponentB1<[@T]>> {
+        %self = struct.new : !struct.type<@TComponentB1::@ComponentB1<[@T]>>
+        function.return %self : !struct.type<@TComponentB1::@ComponentB1<[@T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TComponentB1::@ComponentB1<[@T]>>) { function.return }
+    }
   }
 
   struct.def @ComponentB2 {
@@ -70,40 +74,48 @@ module attributes {veridise.lang = "llzk"} {
     //  "!poly.tvar<@X>" is redundant. Just "@X" for the parameter would be equivalent.
     //
     // expected-error@+1 {{'function.def' op references unknown symbol "@X"}}
-    function.def @compute(%0: !struct.type<@ComponentB1<[!poly.tvar<@X>]>>) -> !struct.type<@ComponentB2> {
+    function.def @compute(%0: !struct.type<@TComponentB1::@ComponentB1<[!poly.tvar<@X>]>>) -> !struct.type<@ComponentB2> {
       %self = struct.new : !struct.type<@ComponentB2>
       function.return %self : !struct.type<@ComponentB2>
     }
 
-    function.def @constrain(%self: !struct.type<@ComponentB2>, %0: !struct.type<@ComponentB1<[!poly.tvar<@X>]>>) { function.return }
+    function.def @constrain(%self: !struct.type<@ComponentB2>, %0: !struct.type<@TComponentB1::@ComponentB1<[!poly.tvar<@X>]>>) { function.return }
   }
 }
 // -----
 
 // TypeVarType in CreateArrayOp (`array.new`), non-exact match via unification of `tvar`
 // See description of LLZK_CreateArrayOp for full explanation of why this fails.
-module attributes {veridise.lang = "llzk"} {
-  struct.def @ComponentC1<[@T]> {
-    function.def @compute() -> !struct.type<@ComponentC1<[@T]>> {
-      %self = struct.new : !struct.type<@ComponentC1<[@T]>>
-      function.return %self : !struct.type<@ComponentC1<[@T]>>
+module attributes {llzk.lang} {
+  poly.template @TComponentC1 {
+    poly.param @T
+
+    struct.def @ComponentC1 {
+      function.def @compute() -> !struct.type<@TComponentC1::@ComponentC1<[@T]>> {
+        %self = struct.new : !struct.type<@TComponentC1::@ComponentC1<[@T]>>
+        function.return %self : !struct.type<@TComponentC1::@ComponentC1<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@TComponentC1::@ComponentC1<[@T]>>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@ComponentC1<[@T]>>) { function.return }
   }
 
-  struct.def @ComponentC2<[@T]> {
-    struct.field @f : !array.type<2 x !poly.tvar<@T>>
+  poly.template @TComponentC2 {
+    poly.param @T
 
-    function.def @compute() -> !struct.type<@ComponentC2<[@T]>> {
-      %self = struct.new : !struct.type<@ComponentC2<[@T]>>
-      %a1 = function.call @ComponentC1::@compute() : () -> !struct.type<@ComponentC1<[5]>> // expected-note {{prior use here}}
-      %a2 = function.call @ComponentC1::@compute() : () -> !struct.type<@ComponentC1<[7]>>
-      // expected-error@+1 {{use of value '%a1' expects different type than prior uses: '!poly.tvar<@T>' vs '!struct.type<@ComponentC1<[5]>>'}}
-      %arr = array.new %a1, %a2 : !array.type<2 x !poly.tvar<@T>>
-      struct.writef %self[@f] = %arr : !struct.type<@ComponentC2<[@T]>>, !array.type<2 x !poly.tvar<@T>>
-      function.return %self : !struct.type<@ComponentC2<[@T]>>
+    struct.def @ComponentC2 {
+      struct.member @f : !array.type<2 x !poly.tvar<@T>>
+
+      function.def @compute() -> !struct.type<@TComponentC2::@ComponentC2<[@T]>> {
+        %self = struct.new : !struct.type<@TComponentC2::@ComponentC2<[@T]>>
+        %a1 = function.call @TComponentC1::@ComponentC1::@compute() : () -> !struct.type<@TComponentC1::@ComponentC1<[5]>> // expected-note {{prior use here}}
+        %a2 = function.call @TComponentC1::@ComponentC1::@compute() : () -> !struct.type<@TComponentC1::@ComponentC1<[7]>>
+        // expected-error@+1 {{use of value '%a1' expects different type than prior uses: '!poly.tvar<@T>' vs '!struct.type<@TComponentC1::@ComponentC1<[5]>>'}}
+        %arr = array.new %a1, %a2 : !array.type<2 x !poly.tvar<@T>>
+        struct.writem %self[@f] = %arr : !struct.type<@TComponentC2::@ComponentC2<[@T]>>, !array.type<2 x !poly.tvar<@T>>
+        function.return %self : !struct.type<@TComponentC2::@ComponentC2<[@T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TComponentC2::@ComponentC2<[@T]>>) { function.return }
     }
-
-    function.def @constrain(%self: !struct.type<@ComponentC2<[@T]>>) { function.return }
   }
 }

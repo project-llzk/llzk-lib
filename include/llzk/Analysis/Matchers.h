@@ -49,13 +49,14 @@ auto m_CommutativeOp(LhsMatcher lhs, RhsMatcher rhs) {
 }
 
 /// @brief Matches and optionally captures a SourceRef base value, which is either
-/// a field read or a block argument (i.e., an input to a @constrain or @compute function).
+/// a member read or a block argument (i.e., an input to a @constrain or @compute function).
 struct RefValueCapture {
   mlir::Value *what;
   RefValueCapture(mlir::Value *capture) : what(capture) {}
 
   bool match(mlir::Value v) {
-    if (isa<mlir::BlockArgument>(v) || isa_and_present<component::FieldReadOp>(v.getDefiningOp())) {
+    if (isa<mlir::BlockArgument>(v) ||
+        isa_and_present<component::MemberReadOp>(v.getDefiningOp())) {
       if (what) {
         *what = v;
       }
@@ -65,9 +66,9 @@ struct RefValueCapture {
   }
 };
 
-auto m_RefValue() { return RefValueCapture(nullptr); }
+inline RefValueCapture m_RefValue() { return RefValueCapture(nullptr); }
 
-auto m_RefValue(mlir::Value *capture) { return RefValueCapture(capture); }
+inline RefValueCapture m_RefValue(mlir::Value *capture) { return RefValueCapture(capture); }
 
 /// @brief Matches and optionally captures a felt constant.
 struct ConstantCapture {
@@ -85,8 +86,10 @@ struct ConstantCapture {
   }
 };
 
-auto m_Constant() { return ConstantCapture(nullptr); }
+inline ConstantCapture m_Constant() { return ConstantCapture(nullptr); }
 
-auto m_Constant(felt::FeltConstantOp *capture) { return ConstantCapture(capture); }
+inline ConstantCapture m_Constant(felt::FeltConstantOp *capture) {
+  return ConstantCapture(capture);
+}
 
 } // namespace llzk

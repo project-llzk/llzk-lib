@@ -1,6 +1,0 @@
-added:
-  - FlatteningPass 'cleanup' option to specify how aggressively structs should be removed
-  - SymbolDefTree analysis - node for each Symbol where the parent is the defining SymbolTable
-  - SymbolUseGraph analysis - node for each Symbol/SymbolRefAttr where predecessors are Symbol Ops that *use* the Symbol within
-fixed:
-  - Improve cleanup step of FlatteningPass 

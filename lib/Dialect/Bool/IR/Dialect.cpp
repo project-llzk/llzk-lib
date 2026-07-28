@@ -8,10 +8,15 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Bool/IR/Dialect.h"
+
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/IR/Builders.h>
+#include <mlir/IR/BuiltinAttributes.h>
+#include <mlir/IR/BuiltinTypes.h>
 #include <mlir/IR/DialectImplementation.h>
 
 #include <llvm/ADT/TypeSwitch.h>
@@ -27,6 +32,18 @@
 // BoolDialect
 //===------------------------------------------------------------------===//
 
+mlir::Operation *llzk::boolean::BoolDialect::materializeConstant(
+    mlir::OpBuilder &builder, mlir::Attribute value, mlir::Type type, mlir::Location loc
+) {
+  // Materialize i1 constants (results of folded bool and cmp ops) as
+  // arith.constant ops, which is already used alongside this dialect.
+  if (llvm::isa<mlir::IntegerAttr>(value) && llvm::isa<mlir::IntegerType>(type) &&
+      llvm::cast<mlir::IntegerType>(type).isInteger(1)) {
+    return builder.create<mlir::arith::ConstantOp>(loc, llvm::cast<mlir::IntegerAttr>(value));
+  }
+  return nullptr;
+}
+
 auto llzk::boolean::BoolDialect::initialize() -> void {
   // clang-format off
   addOperations<
@@ -34,6 +51,8 @@ auto llzk::boolean::BoolDialect::initialize() -> void {
     #include "llzk/Dialect/Bool/IR/Ops.cpp.inc"
   >();
 
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addAttributes<
     #define GET_ATTRDEF_LIST
     #include "llzk/Dialect/Bool/IR/Attrs.cpp.inc"

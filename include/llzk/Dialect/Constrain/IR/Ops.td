@@ -35,8 +35,7 @@ def EmitEqualityOp
 ]> {
   let summary = "emit an equality constraint";
   let description = [{
-    Emits an equality constraint between lhs and rhs. For the built-in Signal
-    struct, the constraint is performed on the Signal's inner `@reg` felt field.
+    Emits an equality constraint between lhs and rhs.
   }];
 
   let arguments = (ins EmitEqType:$lhs, EmitEqType:$rhs);

@@ -66,3 +66,10 @@ function.def @read_too_many_indices() -> index {
   %x = array.read %r[%1,%0,%2,%0] : !array.type<2,4,3 x index>, index
   function.return %x : index
 }
+
+// -----
+
+function.def @read_none_element_array(%shape: !array.type<? x none>, %i: index) {
+  // expected-error@+1 {{'array.read' op cannot access a scalar element from array with none element type}}
+  %x = array.read %shape[%i] : !array.type<? x none>, none
+}

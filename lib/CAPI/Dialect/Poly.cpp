@@ -7,14 +7,17 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk-c/Dialect/Poly.h"
+
 #include "llzk/CAPI/Builder.h"
 #include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
+#include "llzk/Util/Compare.h"
 
-#include "llzk-c/Dialect/Poly.h"
+#include <mlir-c/Pass.h>
 
 #include <mlir/CAPI/AffineExpr.h>
 #include <mlir/CAPI/AffineMap.h>
@@ -24,15 +27,15 @@
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/Support/LLVM.h>
 
-#include <mlir-c/Pass.h>
-
 using namespace mlir;
 using namespace llzk;
 using namespace llzk::polymorphic;
 
-static void registerLLZKPolymorphicTransformationPasses() { registerTransformationPasses(); }
+static inline void registerLLZKPolymorphicTransformationPasses() { registerTransformationPasses(); }
 
-// Include impl for transformation passes
+// Include the generated CAPI
+#include "llzk/Dialect/Polymorphic/IR/Ops.capi.cpp.inc"
+#include "llzk/Dialect/Polymorphic/IR/Types.capi.cpp.inc"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.capi.cpp.inc"
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Polymorphic, llzk__polymorphic, PolymorphicDialect)
@@ -41,13 +44,11 @@ MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Polymorphic, llzk__polymorphic, Polymorphi
 // TypeVarType
 //===----------------------------------------------------------------------===//
 
-MlirType llzkTypeVarTypeGet(MlirContext ctx, MlirStringRef name) {
+MlirType llzkPoly_TypeVarTypeGetFromStringRef(MlirContext ctx, MlirStringRef name) {
   return wrap(TypeVarType::get(FlatSymbolRefAttr::get(StringAttr::get(unwrap(ctx), unwrap(name)))));
 }
 
-bool llzkTypeIsATypeVarType(MlirType type) { return llvm::isa<TypeVarType>(unwrap(type)); }
-
-MlirType llzkTypeVarTypeGetFromAttr(MlirContext /*ctx*/, MlirAttribute attrWrapper) {
+MlirType llzkPoly_TypeVarTypeGetFromAttr(MlirAttribute attrWrapper) {
   auto attr = unwrap(attrWrapper);
   if (auto sym = llvm::dyn_cast<FlatSymbolRefAttr>(attr)) {
     return wrap(TypeVarType::get(sym));
@@ -55,93 +56,130 @@ MlirType llzkTypeVarTypeGetFromAttr(MlirContext /*ctx*/, MlirAttribute attrWrapp
   return wrap(TypeVarType::get(FlatSymbolRefAttr::get(llvm::cast<StringAttr>(attr))));
 }
 
-MlirStringRef llzkTypeVarTypeGetNameRef(MlirType type) {
-  return wrap(llvm::cast<TypeVarType>(unwrap(type)).getRefName());
+//===----------------------------------------------------------------------===//
+// TemplateOp
+//===----------------------------------------------------------------------===//
+
+static inline TemplateOp asTemplateOp(MlirOperation op) { return unwrap_cast<TemplateOp>(op); }
+
+static inline void copyAttrs(SmallVector<Attribute> attrs, MlirAttribute *dst) {
+  for (auto [n, attr] : llvm::enumerate(attrs)) {
+    dst[n] = wrap(attr);
+  }
 }
 
-MlirAttribute llzkTypeVarTypeGetName(MlirType type) {
-  return wrap(llvm::cast<TypeVarType>(unwrap(type)).getNameRef());
+MlirBlock llzkPoly_TemplateOpGetBody(MlirOperation op) { return wrap(asTemplateOp(op).getBody()); }
+
+bool llzkPoly_TemplateOpHasConstParamOps(MlirOperation op) {
+  return asTemplateOp(op).hasConstOps<TemplateParamOp>();
+}
+
+intptr_t llzkPoly_TemplateOpNumConstParamOps(MlirOperation op) {
+  return llzk::checkedCast<intptr_t>(asTemplateOp(op).numConstOps<TemplateParamOp>());
+}
+
+void llzkPoly_TemplateOpGetConstParamNames(MlirOperation op, MlirAttribute *dst) {
+  copyAttrs(asTemplateOp(op).getConstNames<TemplateParamOp>(), dst);
+}
+
+bool llzkPoly_TemplateOpHasConstParamNamed(MlirOperation op, MlirStringRef find) {
+  return asTemplateOp(op).hasConstNamed<TemplateParamOp>(unwrap(find));
+}
+
+bool llzkPoly_TemplateOpHasConstExprOps(MlirOperation op) {
+  return asTemplateOp(op).hasConstOps<TemplateExprOp>();
+}
+
+intptr_t llzkPoly_TemplateOpNumConstExprOps(MlirOperation op) {
+  return llzk::checkedCast<intptr_t>(asTemplateOp(op).numConstOps<TemplateExprOp>());
+}
+
+void llzkPoly_TemplateOpGetConstExprNames(MlirOperation op, MlirAttribute *dst) {
+  copyAttrs(asTemplateOp(op).getConstNames<TemplateExprOp>(), dst);
+}
+
+bool llzkPoly_TemplateOpHasConstExprNamed(MlirOperation op, MlirStringRef find) {
+  return asTemplateOp(op).hasConstNamed<TemplateExprOp>(unwrap(find));
 }
 
 //===----------------------------------------------------------------------===//
 // ApplyMapOp
 //===----------------------------------------------------------------------===//
 
-LLZK_DEFINE_OP_BUILD_METHOD(ApplyMapOp, MlirAttribute map, MlirValueRange mapOperands) {
+LLZK_DEFINE_OP_BUILD_METHOD(Poly, ApplyMapOp, MlirAttribute map, MlirValueRange mapOperands) {
   SmallVector<Value> mapOperandsSto;
-  return wrap(
-      create<ApplyMapOp>(
-          builder, location, llvm::cast<AffineMapAttr>(unwrap(map)),
-          ValueRange(unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto))
-      )
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<ApplyMapOp>(
+                       builder, location, llvm::cast<AffineMapAttr>(unwrap(map)),
+                       ValueRange(unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto))
+                   )
+               )
   );
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    ApplyMapOp, WithAffineMap, MlirAffineMap map, MlirValueRange mapOperands
+    Poly, ApplyMapOp, WithAffineMap, MlirAffineMap map, MlirValueRange mapOperands
 ) {
   SmallVector<Value> mapOperandsSto;
-  return wrap(
-      create<ApplyMapOp>(
-          builder, location, unwrap(map),
-          ValueRange(unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto))
-      )
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<ApplyMapOp>(
+                       builder, location, unwrap(map),
+                       ValueRange(unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto))
+                   )
+               )
   );
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    ApplyMapOp, WithAffineExpr, MlirAffineExpr expr, MlirValueRange mapOperands
+    Poly, ApplyMapOp, WithAffineExpr, MlirAffineExpr expr, MlirValueRange mapOperands
 ) {
   SmallVector<Value> mapOperandsSto;
-  return wrap(
-      create<ApplyMapOp>(
-          builder, location, unwrap(expr),
-          ValueRange(unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto))
-      )
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<ApplyMapOp>(
+                       builder, location, unwrap(expr),
+                       ValueRange(unwrapList(mapOperands.size, mapOperands.values, mapOperandsSto))
+                   )
+               )
   );
 }
 
-bool llzkOperationIsAApplyMapOp(MlirOperation op) { return llvm::isa<ApplyMapOp>(unwrap(op)); }
-
-/// Returns the affine map associated with the op.
-MlirAffineMap llzkApplyMapOpGetAffineMap(MlirOperation op) {
-  return wrap(unwrap_cast<ApplyMapOp>(op).getAffineMap());
-}
-
-static ValueRange dimOperands(MlirOperation op) {
+static inline ValueRange dimOperands(MlirOperation op) {
   return unwrap_cast<ApplyMapOp>(op).getDimOperands();
 }
 
-static ValueRange symbolOperands(MlirOperation op) {
+static inline ValueRange symbolOperands(MlirOperation op) {
   return unwrap_cast<ApplyMapOp>(op).getSymbolOperands();
 }
 
-static void copyValues(ValueRange in, MlirValue *out) {
+static inline void copyValues(ValueRange in, MlirValue *out) {
   for (auto [n, value] : llvm::enumerate(in)) {
     out[n] = wrap(value);
   }
 }
 
 /// Returns the number of operands that correspond to dimensions in the affine map.
-intptr_t llzkApplyMapOpGetNumDimOperands(MlirOperation op) {
-  return static_cast<intptr_t>(dimOperands(op).size());
+intptr_t llzkPoly_ApplyMapOpGetNumDimOperands(MlirOperation op) {
+  return llzk::checkedCast<intptr_t>(dimOperands(op).size());
 }
 
 /// Writes into the destination buffer the operands that correspond to dimensions in the affine map.
 /// The buffer needs to be preallocated first with the necessary amount and the caller is
-/// responsible of its lifetime. See `llzkApplyMapOpGetNumDimOperands`.
-void llzkApplyMapOpGetDimOperands(MlirOperation op, MlirValue *dst) {
+/// responsible of its lifetime. See `llzkPoly_ApplyMapOpGetNumDimOperands`.
+void llzkPoly_ApplyMapOpGetDimOperands(MlirOperation op, MlirValue *dst) {
   copyValues(dimOperands(op), dst);
 }
 
 /// Returns the number of operands that correspond to symbols in the affine map.
-intptr_t llzkApplyMapOpGetNumSymbolOperands(MlirOperation op) {
-  return static_cast<intptr_t>(symbolOperands(op).size());
+intptr_t llzkPoly_ApplyMapOpGetNumSymbolOperands(MlirOperation op) {
+  return llzk::checkedCast<intptr_t>(symbolOperands(op).size());
 }
 
 /// Writes into the destination buffer the operands that correspond to symbols in the affine map.
 /// The buffer needs to be preallocated first with the necessary amount and the caller is
-/// responsible of its lifetime. See `llzkApplyMapOpGetNumSymbolOperands`.
-void llzkApplyMapOpGetSymbolOperands(MlirOperation op, MlirValue *dst) {
+/// responsible of its lifetime. See `llzkPoly_ApplyMapOpGetNumSymbolOperands`.
+void llzkPoly_ApplyMapOpGetSymbolOperands(MlirOperation op, MlirValue *dst) {
   copyValues(symbolOperands(op), dst);
 }

@@ -213,11 +213,13 @@ static inline std::string getDocumentation(
 
       // Trim whitespace
       if (!comment.empty()) {
+        std::string newDoc("/// ");
+        newDoc += comment;
         if (!documentation.empty()) {
-          documentation = comment.str() + " " + documentation;
-        } else {
-          documentation = comment.str();
+          newDoc += '\n';
+          newDoc += documentation;
         }
+        documentation = std::move(newDoc);
       }
     } else if (!curr.is(tok::unknown)) {
       // Stop looking backwards when we hit a non-comment, non-whitespace token
@@ -240,7 +242,7 @@ static inline std::string getDocumentation(
 //===----------------------------------------------------------------------===//
 
 /// Access level tracking for C++ class declarations
-enum class AccessLevel { Public, Private, Protected };
+enum class AccessLevel : std::uint8_t { Public, Private, Protected };
 
 /// Track the current access level (public, private, protected) in a C++ class declaration.
 /// Updates the access level when encountering access specifiers like "public:", "private:", etc.
@@ -795,4 +797,20 @@ std::string mapCppTypeToCapiType(StringRef cppType) {
 
   // Otherwise assume it's a type where the C name is a direct translation from the C++ name.
   return toPascalCase(cppType);
+}
+
+// Map C API type to corresponding basic (not dialect-defined) C++ type (for `unwrapList()` calls)
+std::optional<std::string> mapCapiTypeToBasicCppType(StringRef capiType) {
+  if (capiType == "MlirValue") {
+    return "Value";
+  } else if (capiType == "MlirType") {
+    return "Type";
+  } else if (capiType == "MlirAttribute") {
+    return "Attribute";
+  } else if (capiType == "MlirNamedAttribute") {
+    return "NamedAttribute";
+  } else if (capiType == "MlirStringRef") {
+    return "StringRef";
+  }
+  return std::nullopt;
 }

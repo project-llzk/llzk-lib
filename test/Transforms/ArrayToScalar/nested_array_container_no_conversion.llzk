@@ -1,0 +1,30 @@
+// RUN: llzk-opt -llzk-array-to-scalar %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  function.def @identity_nested_array_in_pod(%p: !pod.type<[@arr: !array.type<2 x index>]>) -> !pod.type<[@arr: !array.type<2 x index>]> {
+    function.return %p : !pod.type<[@arr: !array.type<2 x index>]>
+  }
+
+  function.def @producer_nested_array_in_pod() -> !pod.type<[@arr: !array.type<2 x index>]> {
+    %v = llzk.nondet : !pod.type<[@arr: !array.type<2 x index>]>
+    function.return %v : !pod.type<[@arr: !array.type<2 x index>]>
+  }
+
+  function.def @roundtrip_nested_array_in_pod() -> !pod.type<[@arr: !array.type<2 x index>]> {
+    %v = function.call @producer_nested_array_in_pod() : () -> !pod.type<[@arr: !array.type<2 x index>]>
+    function.return %v : !pod.type<[@arr: !array.type<2 x index>]>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK:      function.def @identity_nested_array_in_pod(%[[P:[0-9a-zA-Z_\.]+]]: !pod.type<[@arr: !array.type<2 x index>]>) -> !pod.type<[@arr: !array.type<2 x index>]> {
+// CHECK-NEXT:   function.return %[[P]] : !pod.type<[@arr: !array.type<2 x index>]>
+// CHECK-NEXT: }
+// CHECK:      function.def @producer_nested_array_in_pod() -> !pod.type<[@arr: !array.type<2 x index>]> {
+// CHECK-NEXT:   %[[V:[0-9a-zA-Z_\.]+]] = llzk.nondet : !pod.type<[@arr: !array.type<2 x index>]>
+// CHECK-NEXT:   function.return %[[V]] : !pod.type<[@arr: !array.type<2 x index>]>
+// CHECK-NEXT: }
+// CHECK:      function.def @roundtrip_nested_array_in_pod() -> !pod.type<[@arr: !array.type<2 x index>]> {
+// CHECK-NEXT:   %[[R:[0-9a-zA-Z_\.]+]] = function.call @producer_nested_array_in_pod() : () -> !pod.type<[@arr: !array.type<2 x index>]>
+// CHECK-NEXT:   function.return %[[R]] : !pod.type<[@arr: !array.type<2 x index>]>
+// CHECK-NEXT: }
+// CHECK:      }

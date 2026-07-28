@@ -4,9 +4,9 @@ function.def @no_args() -> index {
   %x = poly.applymap() affine_map<() -> (12)>
   function.return %x : index
 }
-// CHECK: #[[$ATTR_0:.+]] = affine_map<() -> (12)>
+// CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<() -> (12)>
 // CHECK-LABEL: function.def @no_args() -> index {
-// CHECK-NEXT:    %[[V_0:[0-9a-zA-Z_\.]+]] = poly.applymap () #[[$ATTR_0]]
+// CHECK-NEXT:    %[[V_0:[0-9a-zA-Z_\.]+]] = poly.applymap () #[[$M0]]
 // CHECK-NEXT:    function.return %[[V_0]] : index
 // CHECK-NEXT:  }
 // -----

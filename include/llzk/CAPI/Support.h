@@ -16,19 +16,44 @@
 
 #include "llzk-c/Support.h"
 
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+
+#include <mlir-c/IR.h>
+
 #include <mlir/CAPI/IR.h>
 #include <mlir/IR/OperationSupport.h>
 #include <mlir/IR/ValueRange.h>
 
-#include <mlir-c/IR.h>
+#define LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(dialect, op, suffix, ...)                               \
+  MlirOperation llzk##dialect##_##op##Build##suffix(                                               \
+      MlirOpBuilder builder, MlirLocation location, __VA_ARGS__                                    \
+  )
+#define LLZK_DEFINE_OP_BUILD_METHOD(dialect, op, ...)                                              \
+  LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(dialect, op, , __VA_ARGS__)
 
-#define LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(op, suffix, ...)                                        \
-  MlirOperation llzk##op##Build##suffix(MlirOpBuilder builder, MlirLocation location, __VA_ARGS__)
-#define LLZK_DEFINE_OP_BUILD_METHOD(op, ...) LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(op, , __VA_ARGS__)
+//===----------------------------------------------------------------------===//
+// Custom wrap/unwrap functions for C API types
+//===----------------------------------------------------------------------===//
+
+static inline int64_t wrap(const llvm::APInt &cpp) { return llzk::fromAPInt(cpp); }
+
+static inline llvm::APInt unwrap(int64_t c) { return llzk::toAPInt(c); }
+
+static inline MlirNamedAttribute wrap(mlir::NamedAttribute attr) {
+  return MlirNamedAttribute {wrap(attr.getName()), wrap(attr.getValue())};
+}
+
+static inline mlir::NamedAttribute unwrap(MlirNamedAttribute attr) {
+  return mlir::NamedAttribute(unwrap(attr.name), unwrap(attr.attribute));
+}
 
 namespace mlir {
-template <typename To> auto unwrap_cast(auto &from) { return cast<To>(unwrap(from)); }
+template <typename To> inline auto unwrap_cast(auto &from) { return cast<To>(unwrap(from)); }
 } // namespace mlir
+
+//===----------------------------------------------------------------------===//
+// Other helpers
+//===----------------------------------------------------------------------===//
 
 constexpr int DEFAULT_ELTS = 5;
 

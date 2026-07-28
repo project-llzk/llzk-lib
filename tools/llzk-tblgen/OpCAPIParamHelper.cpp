@@ -9,11 +9,11 @@
 
 #include "OpCAPIParamHelper.h"
 
+#include "CommonCAPIGen.h"
+
 #include <mlir/TableGen/Operator.h>
 
 #include <llvm/Support/FormatVariadic.h>
-
-#include "CommonCAPIGen.h"
 
 std::string GenStringFromOpPieces::gen(const mlir::tblgen::Operator &op) {
   std::string params;

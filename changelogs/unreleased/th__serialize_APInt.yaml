@@ -1,0 +1,2 @@
+changed:
+  - "Improve performance of APInt serialization (in FeltConstAttr, etc.) by directly encoding the representation instead of printing a string"

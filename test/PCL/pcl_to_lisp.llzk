@@ -1,0 +1,91 @@
+// REQUIRES: with-pcl
+// RUN: llzk-translate -split-input-file -pcl-to-lisp -lisp-compressed-lines %s | FileCheck --enable-var-scope %s
+
+module attributes {pcl.prime = #pcl.prime<7>} {
+  func.func @add() -> !pcl.felt {
+    %0 = pcl.const 5
+    %1 = pcl.const 1 
+    %2 = pcl.add %0, %1
+    %3 = pcl.var "x" true
+    %4 = pcl.eq %2, %3
+    pcl.assert %4
+    return %3 : !pcl.felt
+  }
+}
+
+// CHECK-LABEL: (prime-number 7)
+// CHECK-NEXT: (begin-module add)
+// CHECK-NEXT: (assert (= (+ 5 1) x))
+// CHECK-NEXT: (output x)
+// CHECK-NEXT: (end-module)
+
+// -----
+
+module attributes {pcl.prime = #pcl.prime<7>} {
+  func.func @true() {
+    %0 = pcl.true
+    pcl.assert %0
+    return 
+  }
+}
+
+// CHECK-LABEL: (prime-number 7)
+// CHECK-NEXT: (begin-module true)
+// CHECK-NEXT: (assert 1)
+// CHECK-NEXT: (end-module)
+
+// -----
+
+!F = !pcl.felt
+module attributes {pcl.prime = #pcl.prime<7>} {
+  func.func @A(%arg0: !F) -> !F {
+    %0 = pcl.const 5
+    %1 = pcl.mul %arg0, %0 
+    %2 = pcl.var "x" true
+    %3 = pcl.eq %1, %2
+    pcl.assert %3
+    return %2 : !F
+  }
+  func.func @B(%arg0: !F) -> !F {
+    %0 = pcl.var "y" true 
+    %1 = call @A(%arg0) : (!F) -> !F 
+    %2 = pcl.eq %0, %1 
+    pcl.assert %2
+    return %0 : !F
+  }
+}
+
+// CHECK-LABEL: (prime-number 7)
+// CHECK-NEXT: (begin-module A)
+// CHECK-NEXT: (input in0)
+// CHECK-NEXT: (assert (= (* in0 5) x))
+// CHECK-NEXT: (output x)
+// CHECK-NEXT: (end-module)
+// CHECK-NEXT: (begin-module B)
+// CHECK-NEXT: (input in0)
+// CHECK-NEXT: (call [A_call0_out0] A [in0])
+// CHECK-NEXT: (assert (= y A_call0_out0))
+// CHECK-NEXT: (output y)
+// CHECK-NEXT: (end-module)
+
+// -----
+
+module attributes {pcl.prime = #pcl.prime<7>} {
+  func.func @non_var_output(%arg0: !pcl.felt) -> !pcl.felt {
+    %0 = pcl.const 5
+    %1 = pcl.add %0, %arg0
+    %2 = pcl.var "x" false
+    %3 = pcl.eq %1, %2
+    pcl.assert %3
+    %4 = pcl.add %0, %2
+    return %4 : !pcl.felt
+  }
+}
+
+// CHECK-LABEL: (prime-number 7)
+// CHECK-NEXT: (begin-module non_var_output)
+// CHECK-NEXT: (input in0)
+// CHECK-NEXT: (assert (= (+ 5 in0) x))
+// CHECK-NEXT: (assert (= out1 (+ 5 x)))
+// CHECK-NEXT: (output out1)
+// CHECK-NEXT: (end-module)

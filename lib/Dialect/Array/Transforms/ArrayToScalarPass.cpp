@@ -12,18 +12,21 @@
 ///
 /// The steps of this transformation are as follows:
 ///
-/// 1. Run a dialect conversion that replaces `ArrayType` fields with `N` scalar fields.
+/// 0. Scan to find `llzk.nondet` ops that allocate uninitialized arrays and replace them with
+///    an equivalent `array.new`
+///
+/// 1. Run a dialect conversion that replaces `ArrayType` struct members with `N` scalar members.
 ///
 /// 2. Run a dialect conversion that does the following:
 ///
-///    - Replace `FieldReadOp` and `FieldWriteOp` targeting the fields that were split in step 1 so
-///      they instead perform scalar reads and writes from the new fields. The transformation is
-///      local to the current op. Therefore, when replacing the `FieldReadOp` a new array is created
-///      locally and all uses of the `FieldReadOp` are replaced with the new array Value, then each
-///      scalar field read is followed by scalar write into the new array. Similarly, when replacing
-///      a `FieldWriteOp`, each element in the array operand needs a scalar read from the array
-///      followed by a scalar write to the new field. Making only local changes keeps this step
-///      simple and later steps will optimize.
+///    - Replace `MemberReadOp` and `MemberWriteOp` targeting the members that were split in step 1
+///      so they instead perform scalar reads and writes from the new members. The transformation is
+///      local to the current op. Therefore, when replacing the `MemberReadOp` a new array is
+///      created locally and all uses of the `MemberReadOp` are replaced with the new array Value,
+///      then each scalar member read is followed by scalar write into the new array. Similarly,
+///      when replacing a `MemberWriteOp`, each element in the array operand needs a scalar read
+///      from the array followed by a scalar write to the new member. Making only local changes
+///      keeps this step simple and later steps will optimize.
 ///
 ///    - Replace `ArrayLengthOp` with the constant size of the selected dimension.
 ///
@@ -34,40 +37,65 @@
 ///
 ///    - Split arrays to scalars in `FuncDefOp`, `CallOp`, and `ReturnOp` and insert the necessary
 ///      create/read/write ops so the changes are as local as possible (just as described for
-///      `FieldReadOp` and `FieldWriteOp`)
+///      `MemberReadOp` and `MemberWriteOp`)
 ///
-/// 3. Run MLIR "sroa" pass to split each array with linear size `N` into `N` arrays of size 1 (to
-///    prepare for "mem2reg" pass because it's API does not allow for indexing to split aggregates).
+/// 3. Replace branch-local reads (in `scf.if`) with the value written by a same-index write op that
+///    dominates the parent `scf.if` (because the passes below cannot handle that case).
 ///
-/// 4. Run MLIR "mem2reg" pass to convert all of the size 1 array allocation and access into SSA
+/// 4. Run MLIR "sroa" pass to split each array with linear size `N` into `N` arrays of size 1
+///    (to prepare for "mem2reg" pass because its API cannot deal with splitting up memory).
+///
+/// 5. Run MLIR "mem2reg" pass to convert all of the size 1 array allocation and access into SSA
 ///    values. This pass also runs several standard optimizations so the final result is condensed.
+///
+/// 6. Remove array allocations that become unread after memory promotion, then remove SSA values
+///    made dead by that cleanup.
 ///
 /// Note: This transformation imposes a "last write wins" semantics on array elements. If
 /// different/configurable semantics are added in the future, some additional transformation would
 /// be necessary before/during this pass so that multiple writes to the same index can be handled
 /// properly while they still exist.
 ///
-/// Note: This transformation will introduce an undef op when there exists a read from an array
+/// Note: This transformation will introduce a `nondet` op when there exists a read from an array
 /// index that was not earlier written to.
 ///
 //===----------------------------------------------------------------------===//
 
+#include "llzk/Dialect/Array/IR/Dialect.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Array/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
+#include "llzk/Dialect/Bool/IR/Dialect.h"
+#include "llzk/Dialect/Cast/IR/Dialect.h"
 #include "llzk/Dialect/Constrain/IR/Dialect.h"
 #include "llzk/Dialect/Felt/IR/Dialect.h"
+#include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/IR/Dialect.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Dialect.h"
+#include "llzk/Dialect/Polymorphic/IR/Dialect.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
+#include "llzk/Dialect/RAM/IR/Dialect.h"
+#include "llzk/Dialect/String/IR/Dialect.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKConversionUtils.h"
+#include "llzk/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Transforms/SpecializedMemoryPasses.h"
+#include "llzk/Util/Compare.h"
 #include "llzk/Util/Concepts.h"
 
+#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Transforms/DialectConversion.h>
 #include <mlir/Transforms/Passes.h>
 
 #include <llvm/Support/Debug.h>
+
+#include <optional>
 
 // Include the generated base pass class definitions.
 namespace llzk::array {
@@ -80,13 +108,16 @@ using namespace llzk;
 using namespace llzk::array;
 using namespace llzk::component;
 using namespace llzk::function;
+using namespace llzk::polymorphic;
 
 #define DEBUG_TYPE "llzk-array-to-scalar"
 
 namespace {
 
 /// If the given ArrayType can be split into scalars, return it, otherwise nullptr.
-inline ArrayType splittableArray(ArrayType at) { return at.hasStaticShape() ? at : nullptr; }
+inline ArrayType splittableArray(ArrayType at) {
+  return at.hasStaticShape() && !llvm::isa<NoneType>(at.getElementType()) ? at : nullptr;
+}
 
 /// If the given Type is an ArrayType that can be split into scalars, return it, otherwise nullptr.
 inline ArrayType splittableArray(Type t) {
@@ -97,18 +128,21 @@ inline ArrayType splittableArray(Type t) {
   }
 }
 
-/// Return `true` iff the given type is or contains an ArrayType that can be split into scalars.
-inline bool containsSplittableArrayType(Type t) {
-  return t
-      .walk([](ArrayType a) {
-    return splittableArray(a) ? WalkResult::interrupt() : WalkResult::skip();
-  }).wasInterrupted();
+/// Return `true` iff the given range contains any top-level ArrayType that can be split into
+/// scalars.
+inline bool containsSplittableArrayType(ArrayRef<Type> types) {
+  for (Type t : types) {
+    if (splittableArray(t)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /// Return `true` iff the given range contains any ArrayType that can be split into scalars.
 template <typename T> bool containsSplittableArrayType(ValueTypeRange<T> types) {
   for (Type t : types) {
-    if (containsSplittableArrayType(t)) {
+    if (splittableArray(t)) {
       return true;
     }
   }
@@ -119,10 +153,7 @@ template <typename T> bool containsSplittableArrayType(ValueTypeRange<T> types) 
 /// the scalar types that result from splitting the ArrayType. Otherwise, just push the `Type`.
 size_t splitArrayTypeTo(Type t, SmallVector<Type> &collect) {
   if (ArrayType at = splittableArray(t)) {
-    int64_t n = at.getNumElements();
-    assert(n >= 0);
-    assert(std::cmp_less_equal(n, std::numeric_limits<size_t>::max()));
-    size_t size = n;
+    size_t size = llzk::checkedCast<size_t>(at.getNumElements());
     collect.append(size, at.getElementType());
     return size;
   } else {
@@ -154,28 +185,33 @@ splitArrayType(TypeCollection types, SmallVector<size_t> *originalIdxToSize = nu
   return collect;
 }
 
-/// Generate `arith::ConstantOp` at the current position of the `rewriter` for each int attribute in
-/// the ArrayAttr.
-SmallVector<Value> genIndexConstants(ArrayAttr index, Location loc, RewriterBase &rewriter) {
-  SmallVector<Value> operands;
-  for (Attribute a : index) {
-    // ASSERT: Attributes are index constants, created by ArrayType::getSubelementIndices().
-    IntegerAttr ia = llvm::dyn_cast<IntegerAttr>(a);
-    assert(ia && ia.getType().isIndex());
-    operands.push_back(rewriter.create<arith::ConstantOp>(loc, ia));
+/// Return the suffix for one split scalar element of an array, using its multidimensional index.
+static std::string formatSplitArrayIndexSuffix(ArrayAttr index) {
+  std::string suffix;
+  llvm::raw_string_ostream os(suffix);
+  for (Attribute attr : index) {
+    os << '[';
+    attr.print(os, true);
+    os << ']';
   }
-  return operands;
+  return suffix;
 }
 
-inline WriteArrayOp
-genWrite(Location loc, Value baseArrayOp, ArrayAttr index, Value init, RewriterBase &rewriter) {
-  SmallVector<Value> readOperands = genIndexConstants(index, loc, rewriter);
-  return rewriter.create<WriteArrayOp>(loc, baseArrayOp, ValueRange(readOperands), init);
+/// Return the suffixes to append to a function arg/result name when splitting the given type.
+static SmallVector<std::string> getSplitArrayIndexSuffixes(Type type) {
+  SmallVector<std::string> suffixes;
+  if (ArrayType at = splittableArray(type)) {
+    std::optional<SmallVector<ArrayAttr>> indices = at.getSubelementIndices();
+    assert(indices.has_value() && "static-shape arrays must provide subelement indices");
+    suffixes.reserve(indices->size());
+    for (ArrayAttr index : *indices) {
+      suffixes.push_back(formatSplitArrayIndexSuffix(index));
+    }
+  }
+  return suffixes;
 }
 
-/// Replace the given CallOp with a new one where any ArrayType in the results are split into their
-/// scalar elements. Also, after the CallOp, generate a CreateArrayOp for each ArrayType result and
-/// generate writes from the corresponding scalar result values to the new array.
+/// Rebuild a call with split scalar results, then reconstruct array-typed results locally.
 CallOp newCallOpWithSplitResults(
     CallOp oldCall, CallOp::Adaptor adaptor, ConversionPatternRewriter &rewriter
 ) {
@@ -183,9 +219,9 @@ CallOp newCallOpWithSplitResults(
   rewriter.setInsertionPointAfter(oldCall);
 
   Operation::result_range oldResults = oldCall.getResults();
-  CallOp newCall = rewriter.create<CallOp>(
-      oldCall.getLoc(), splitArrayType(oldResults.getTypes()), oldCall.getCallee(),
-      adaptor.getArgOperands()
+  CallOp newCall = createCallPreservingInstantiationOperands(
+      oldCall.getLoc(), splitArrayType(oldResults.getTypes()), oldCall, adaptor.getMapOperands(),
+      adaptor.getArgOperands(), rewriter
   );
 
   auto newResults = newCall.getResults().begin();
@@ -202,10 +238,11 @@ CallOp newCallOpWithSplitResults(
       assert(allIndices); // follows from legal() check
       assert(std::cmp_equal(allIndices->size(), at.getNumElements()));
       for (ArrayAttr subIdx : allIndices.value()) {
-        genWrite(loc, newArray, subIdx, *newResults, rewriter);
+        ArrayAccessOpInterface::genWrite(rewriter, loc, newArray, subIdx, *newResults);
         newResults++;
       }
     } else {
+      rewriter.replaceAllUsesWith(oldVal, *newResults);
       newResults++;
     }
   }
@@ -215,14 +252,8 @@ CallOp newCallOpWithSplitResults(
   return newCall;
 }
 
-inline ReadArrayOp
-genRead(Location loc, Value baseArrayOp, ArrayAttr index, ConversionPatternRewriter &rewriter) {
-  SmallVector<Value> readOperands = genIndexConstants(index, loc, rewriter);
-  return rewriter.create<ReadArrayOp>(loc, baseArrayOp, ValueRange(readOperands));
-}
-
-// If the operand has ArrayType, add N reads from the array to the `newOperands` list otherwise add
-// the original operand to the list.
+/// If the operand has ArrayType, add N reads from the array to `newOperands`; otherwise add the
+/// original operand unchanged.
 void processInputOperand(
     Location loc, Value operand, SmallVector<Value> &newOperands,
     ConversionPatternRewriter &rewriter
@@ -231,14 +262,14 @@ void processInputOperand(
     std::optional<SmallVector<ArrayAttr>> indices = at.getSubelementIndices();
     assert(indices.has_value() && "passed earlier hasStaticShape() check");
     for (ArrayAttr index : indices.value()) {
-      newOperands.push_back(genRead(loc, operand, index, rewriter));
+      newOperands.push_back(ArrayAccessOpInterface::genRead(rewriter, loc, operand, index));
     }
   } else {
     newOperands.push_back(operand);
   }
 }
 
-// For each operand with ArrayType, add N reads from the array and use those N values instead.
+/// Replace each array operand with its scalar element reads in `outputOpRef`.
 void processInputOperands(
     ValueRange operands, MutableOperandRange outputOpRef, Operation *op,
     ConversionPatternRewriter &rewriter
@@ -287,17 +318,18 @@ inline void rewriteImpl(
     ArrayAttr fullIndex = ArrayAttr::get(ctx, joined);
 
     if constexpr (dir == Direction::SMALL_TO_LARGE) {
-      auto init = genRead(loc, smallArr, indexingTail, rewriter);
-      genWrite(loc, largeArr, fullIndex, init, rewriter);
+      auto init = ArrayAccessOpInterface::genRead(rewriter, loc, smallArr, indexingTail);
+      ArrayAccessOpInterface::genWrite(rewriter, loc, largeArr, fullIndex, init);
     } else if constexpr (dir == Direction::LARGE_TO_SMALL) {
-      auto init = genRead(loc, largeArr, fullIndex, rewriter);
-      genWrite(loc, smallArr, indexingTail, init, rewriter);
+      auto init = ArrayAccessOpInterface::genRead(rewriter, loc, largeArr, fullIndex);
+      ArrayAccessOpInterface::genWrite(rewriter, loc, smallArr, indexingTail, init);
     }
   }
 }
 
 } // namespace
 
+/// Rewrite `array.insert` of a splittable subarray into element-wise scalar writes.
 class SplitInsertArrayOp : public OpConversionPattern<InsertArrayOp> {
 public:
   using OpConversionPattern<InsertArrayOp>::OpConversionPattern;
@@ -319,6 +351,7 @@ public:
   }
 };
 
+/// Rewrite `array.extract` of a splittable subarray into element-wise scalar reads.
 class SplitExtractArrayOp : public OpConversionPattern<ExtractArrayOp> {
 public:
   using OpConversionPattern<ExtractArrayOp>::OpConversionPattern;
@@ -342,6 +375,7 @@ public:
   }
 };
 
+/// Split inline `array.new` element initializers into explicit `array.write` operations.
 class SplitInitFromCreateArrayOp : public OpConversionPattern<CreateArrayOp> {
 public:
   using OpConversionPattern<CreateArrayOp>::OpConversionPattern;
@@ -360,9 +394,8 @@ public:
     ArrayIndexGen idxGen = ArrayIndexGen::from(op.getType());
     for (auto [i, init] : llvm::enumerate(adaptor.getElements())) {
       // Convert the linear index 'i' into a multi-dim index
-      assert(std::cmp_less_equal(i, std::numeric_limits<int64_t>::max()));
       std::optional<SmallVector<Value>> multiDimIdxVals =
-          idxGen.delinearize(static_cast<int64_t>(i), loc, rewriter);
+          idxGen.delinearize(llzk::checkedCast<int64_t>(i), loc, rewriter);
       // ASSERT: CreateArrayOp verifier ensures the number of elements provided matches the full
       // linear array size so delinearization of `i` will not fail.
       assert(multiDimIdxVals.has_value());
@@ -372,32 +405,14 @@ public:
   }
 };
 
+/// Rewrite array-typed function signatures to pass one scalar per array element instead.
 class SplitArrayInFuncDefOp : public OpConversionPattern<FuncDefOp> {
 public:
   using OpConversionPattern<FuncDefOp>::OpConversionPattern;
 
   inline static bool legal(FuncDefOp op) {
-    return !containsSplittableArrayType(op.getFunctionType());
-  }
-
-  // Create a new ArrayAttr like the one given but with repetitions of the elements according to the
-  // mapping defined by `originalIdxToSize`. In other words, if `originalIdxToSize[i] = n`, then `n`
-  // copies of `origAttrs[i]` are appended in its place.
-  static ArrayAttr replicateAttributesAsNeeded(
-      ArrayAttr origAttrs, const SmallVector<size_t> &originalIdxToSize,
-      const SmallVector<Type> &newTypes
-  ) {
-    if (origAttrs) {
-      assert(originalIdxToSize.size() == origAttrs.size());
-      if (originalIdxToSize.size() != newTypes.size()) {
-        SmallVector<Attribute> newArgAttrs;
-        for (auto [i, s] : llvm::enumerate(originalIdxToSize)) {
-          newArgAttrs.append(s, origAttrs[i]);
-        }
-        return ArrayAttr::get(origAttrs.getContext(), newArgAttrs);
-      }
-    }
-    return nullptr;
+    return !containsSplittableArrayType(op.getArgumentTypes()) &&
+           !containsSplittableArrayType(op.getResultTypes());
   }
 
   LogicalResult match(FuncDefOp op) const override { return failure(legal(op)); }
@@ -406,6 +421,8 @@ public:
     // Update in/out types of the function to replace arrays with scalars
     class Impl : public FunctionTypeConverter {
       SmallVector<size_t> originalInputIdxToSize, originalResultIdxToSize;
+      SplitFunctionNameInfo inputNameInfo;
+      SplitFunctionNameInfo resultNameInfo;
 
     protected:
       SmallVector<Type> convertInputs(ArrayRef<Type> origTypes) override {
@@ -415,10 +432,18 @@ public:
         return splitArrayType(origTypes, &originalResultIdxToSize);
       }
       ArrayAttr convertInputAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
-        return replicateAttributesAsNeeded(origAttrs, originalInputIdxToSize, newTypes);
+        return replicateFunctionNameAttrsAsNeeded(
+            origAttrs, originalInputIdxToSize, newTypes, ARG_NAME_ATTR_NAME,
+            inputNameInfo.originalNames, inputNameInfo.existingNames,
+            inputNameInfo.splitNameSuffixes
+        );
       }
       ArrayAttr convertResultAttrs(ArrayAttr origAttrs, SmallVector<Type> newTypes) override {
-        return replicateAttributesAsNeeded(origAttrs, originalResultIdxToSize, newTypes);
+        return replicateFunctionNameAttrsAsNeeded(
+            origAttrs, originalResultIdxToSize, newTypes, RES_NAME_ATTR_NAME,
+            resultNameInfo.originalNames, resultNameInfo.existingNames,
+            resultNameInfo.splitNameSuffixes
+        );
       }
 
       /// For each argument to the Block that has a splittable ArrayType, replace it with the
@@ -445,7 +470,7 @@ public:
             assert(std::cmp_equal(allIndices->size(), at.getNumElements()));
             for (ArrayAttr subIdx : allIndices.value()) {
               BlockArgument newArg = entryBlock.insertArgument(i, at.getElementType(), loc);
-              genWrite(loc, newArray, subIdx, newArg, rewriter);
+              ArrayAccessOpInterface::genWrite(rewriter, loc, newArray, subIdx, newArg);
               ++i;
             }
           } else {
@@ -453,11 +478,23 @@ public:
           }
         }
       }
+
+    public:
+      Impl(FuncDefOp op) {
+        ArrayAttr resultAttrs = op.getAllResultAttrs();
+        inputNameInfo = collectSplitFunctionNameInfo(op.getArgumentTypes(), [&](unsigned i) {
+          return op.getArgNameAttr(i);
+        }, getSplitArrayIndexSuffixes);
+        resultNameInfo = collectSplitFunctionNameInfo(op.getResultTypes(), [&](unsigned i) {
+          return getAttrAtIndexWithName(resultAttrs, i, RES_NAME_ATTR_NAME);
+        }, getSplitArrayIndexSuffixes);
+      }
     };
-    Impl().convert(op, rewriter);
+    Impl(op).convert(op, rewriter);
   }
 };
 
+/// Rewrite `function.return` to flatten any array operands into scalar element values.
 class SplitArrayInReturnOp : public OpConversionPattern<ReturnOp> {
 public:
   using OpConversionPattern<ReturnOp>::OpConversionPattern;
@@ -473,6 +510,7 @@ public:
   }
 };
 
+/// Rewrite calls whose arguments or results contain arrays to use flattened scalar signatures.
 class SplitArrayInCallOp : public OpConversionPattern<CallOp> {
 public:
   using OpConversionPattern<CallOp>::OpConversionPattern;
@@ -485,8 +523,6 @@ public:
   LogicalResult match(CallOp op) const override { return failure(legal(op)); }
 
   void rewrite(CallOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
-    assert(isNullOrEmpty(op.getMapOpGroupSizesAttr()) && "structs must be previously flattened");
-
     // Create new CallOp with split results first so, then process its inputs to split types
     CallOp newCall = newCallOpWithSplitResults(op, adaptor, rewriter);
     processInputOperands(
@@ -495,18 +531,26 @@ public:
   }
 };
 
+/// Replace `array.length` with a constant when the selected dimension size is statically known.
 class ReplaceKnownArrayLengthOp : public OpConversionPattern<ArrayLengthOp> {
 public:
   using OpConversionPattern<ArrayLengthOp>::OpConversionPattern;
 
   /// If 'dimIdx' is constant and that dimension of the ArrayType has static size, return it.
   static std::optional<llvm::APInt> getDimSizeIfKnown(Value dimIdx, ArrayType baseArrType) {
-    if (splittableArray(baseArrType)) {
+    if (baseArrType.hasStaticShape()) {
       llvm::APInt idxAP;
       if (mlir::matchPattern(dimIdx, mlir::m_ConstantInt(&idxAP))) {
-        uint64_t idx64 = idxAP.getZExtValue();
-        assert(std::cmp_less_equal(idx64, std::numeric_limits<size_t>::max()));
-        Attribute dimSizeAttr = baseArrType.getDimensionSizes()[static_cast<size_t>(idx64)];
+        std::optional<int64_t> signedIdx = idxAP.trySExtValue();
+        if (!signedIdx || *signedIdx < 0) {
+          return std::nullopt;
+        }
+        size_t idx = llzk::checkedCast<size_t>(*signedIdx);
+        ArrayRef<Attribute> dimSizes = baseArrType.getDimensionSizes();
+        if (idx >= dimSizes.size()) {
+          return std::nullopt;
+        }
+        Attribute dimSizeAttr = dimSizes[idx];
         if (mlir::matchPattern(dimSizeAttr, mlir::m_ConstantInt(&idxAP))) {
           return idxAP;
         }
@@ -532,31 +576,32 @@ public:
   }
 };
 
-/// field name and type
-using FieldInfo = std::pair<StringAttr, Type>;
-/// ArrayAttr index -> scalar field info
-using LocalFieldReplacementMap = DenseMap<ArrayAttr, FieldInfo>;
-/// struct -> array-type field name -> LocalFieldReplacementMap
-using FieldReplacementMap = DenseMap<StructDefOp, DenseMap<StringAttr, LocalFieldReplacementMap>>;
+/// member name and type
+using MemberInfo = std::pair<StringAttr, Type>;
+/// original multi-dimensional index -> scalar member info
+using LocalMemberReplacementMap = DenseMap<ArrayAttr, MemberInfo>;
+/// struct -> original array-type member name -> LocalMemberReplacementMap
+using MemberReplacementMap = DenseMap<StructDefOp, DenseMap<StringAttr, LocalMemberReplacementMap>>;
 
-class SplitArrayInFieldDefOp : public OpConversionPattern<FieldDefOp> {
+/// Split an array-typed struct member definition into one scalar member per array element.
+class SplitArrayInMemberDefOp : public OpConversionPattern<MemberDefOp> {
   SymbolTableCollection &tables;
-  FieldReplacementMap &repMapRef;
+  MemberReplacementMap &repMapRef;
 
 public:
-  SplitArrayInFieldDefOp(
-      MLIRContext *ctx, SymbolTableCollection &symTables, FieldReplacementMap &fieldRepMap
+  SplitArrayInMemberDefOp(
+      MLIRContext *ctx, SymbolTableCollection &symTables, MemberReplacementMap &memberRepMap
   )
-      : OpConversionPattern<FieldDefOp>(ctx), tables(symTables), repMapRef(fieldRepMap) {}
+      : OpConversionPattern<MemberDefOp>(ctx), tables(symTables), repMapRef(memberRepMap) {}
 
-  inline static bool legal(FieldDefOp op) { return !containsSplittableArrayType(op.getType()); }
+  inline static bool legal(MemberDefOp op) { return !containsSplittableArrayType(op.getType()); }
 
-  LogicalResult match(FieldDefOp op) const override { return failure(legal(op)); }
+  LogicalResult match(MemberDefOp op) const override { return failure(legal(op)); }
 
-  void rewrite(FieldDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+  void rewrite(MemberDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
     StructDefOp inStruct = op->getParentOfType<StructDefOp>();
     assert(inStruct);
-    LocalFieldReplacementMap &localRepMapRef = repMapRef[inStruct][op.getSymNameAttr()];
+    LocalMemberReplacementMap &localRepMapRef = repMapRef[inStruct][op.getSymNameAttr()];
 
     ArrayType arrTy = dyn_cast<ArrayType>(op.getType());
     assert(arrTy); // follows from legal() check
@@ -566,158 +611,140 @@ public:
 
     SymbolTable &structSymbolTable = tables.getSymbolTable(inStruct);
     for (ArrayAttr idx : subIdxs.value()) {
-      // Create scalar version of the field
-      FieldDefOp newField =
-          rewriter.create<FieldDefOp>(op.getLoc(), op.getSymNameAttr(), elemTy, op.getColumn());
-      newField.setPublicAttr(op.hasPublicAttr());
+      // Create scalar version of the member
+      MemberDefOp newMember = rewriter.create<MemberDefOp>(
+          op.getLoc(), op.getSymNameAttr(), elemTy, op.getSignal(), op.getColumn()
+      );
+      newMember.setPublicAttr(op.hasPublicAttr());
       // Use SymbolTable to give it a unique name and store to the replacement map
-      localRepMapRef[idx] = std::make_pair(structSymbolTable.insert(newField), elemTy);
+      localRepMapRef[idx] = std::make_pair(structSymbolTable.insert(newMember), elemTy);
     }
     rewriter.eraseOp(op);
   }
 };
 
-/// Common implementation for handling `FieldWriteOp` and `FieldReadOp`.
-///
-/// @tparam ImplClass         the concrete subclass
-/// @tparam FieldRefOpClass   the concrete op class
-/// @tparam GenHeaderType     return type of `genHeader()`, used to pass data to `forIndex()`
-template <
-    typename ImplClass, HasInterface<FieldRefOpInterface> FieldRefOpClass, typename GenHeaderType>
-class SplitArrayInFieldRefOp : public OpConversionPattern<FieldRefOpClass> {
-  SymbolTableCollection &tables;
-  const FieldReplacementMap &repMapRef;
-
-  // static check to ensure the functions are implemented in all subclasses
-  inline static void ensureImplementedAtCompile() {
-    static_assert(
-        sizeof(FieldRefOpClass) == 0, "SplitArrayInFieldRefOp not implemented for requested type."
-    );
-  }
-
-protected:
-  using OpAdaptor = typename FieldRefOpClass::Adaptor;
-
-  /// Executed at the start of `rewrite()` to (optionally) generate anything that should be before
-  /// the element-wise operations that will be added by `forIndex()`.
-  static GenHeaderType genHeader(FieldRefOpClass, ConversionPatternRewriter &) {
-    ensureImplementedAtCompile();
-    llvm_unreachable("must have concrete instantiation");
-  }
-
-  /// Executed for each multi-dimensional array index in the ArrayType of the original field to
-  /// generate the element-wise scalar operations on the new scalar fields.
-  static void
-  forIndex(Location, GenHeaderType, ArrayAttr, FieldInfo, OpAdaptor, ConversionPatternRewriter &) {
-    ensureImplementedAtCompile();
-    llvm_unreachable("must have concrete instantiation");
-  }
-
+/// Rewrite a write to an array-typed struct member into writes to the corresponding scalar leaves.
+class SplitArrayInMemberWriteOp : public SplitAggregateInMemberRefOp<
+                                      SplitArrayInMemberWriteOp, MemberWriteOp, void *, ArrayAttr> {
 public:
-  SplitArrayInFieldRefOp(
-      MLIRContext *ctx, SymbolTableCollection &symTables, const FieldReplacementMap &fieldRepMap
-  )
-      : OpConversionPattern<FieldRefOpClass>(ctx), tables(symTables), repMapRef(fieldRepMap) {}
+  using SplitAggregateInMemberRefOp<
+      SplitArrayInMemberWriteOp, MemberWriteOp, void *, ArrayAttr>::SplitAggregateInMemberRefOp;
 
-  static bool legal(FieldRefOpClass) {
-    ensureImplementedAtCompile();
-    llvm_unreachable("must have concrete instantiation");
-    return false;
+  static bool legal(MemberWriteOp op) {
+    return !containsSplittableArrayType(op.getVal().getType());
   }
 
-  LogicalResult match(FieldRefOpClass op) const override { return failure(ImplClass::legal(op)); }
+  static void *genHeader(MemberWriteOp, ConversionPatternRewriter &) { return nullptr; }
 
-  void rewrite(
-      FieldRefOpClass op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
-  ) const override {
-    StructType tgtStructTy = llvm::cast<FieldRefOpInterface>(op.getOperation()).getStructType();
-    assert(tgtStructTy);
-    auto tgtStructDef = tgtStructTy.getDefinition(tables, op);
-    assert(succeeded(tgtStructDef));
-
-    GenHeaderType prefixResult = ImplClass::genHeader(op, rewriter);
-
-    const LocalFieldReplacementMap &idxToName =
-        repMapRef.at(tgtStructDef->get()).at(op.getFieldNameAttr().getAttr());
-    // Split the array field write into a series of read array + write scalar field
-    for (auto [idx, newField] : idxToName) {
-      ImplClass::forIndex(op.getLoc(), prefixResult, idx, newField, adaptor, rewriter);
-    }
-    rewriter.eraseOp(op);
-  }
-};
-
-class SplitArrayInFieldWriteOp
-    : public SplitArrayInFieldRefOp<SplitArrayInFieldWriteOp, FieldWriteOp, void *> {
-public:
-  using SplitArrayInFieldRefOp<
-      SplitArrayInFieldWriteOp, FieldWriteOp, void *>::SplitArrayInFieldRefOp;
-
-  static bool legal(FieldWriteOp op) { return !containsSplittableArrayType(op.getVal().getType()); }
-
-  static void *genHeader(FieldWriteOp, ConversionPatternRewriter &) { return nullptr; }
-
-  static void forIndex(
-      Location loc, void *, ArrayAttr idx, FieldInfo newField, OpAdaptor adaptor,
+  static void forId(
+      Location loc, void *, ArrayAttr idx, MemberInfo newMember, OpAdaptor adaptor,
       ConversionPatternRewriter &rewriter
   ) {
-    ReadArrayOp scalarRead = genRead(loc, adaptor.getVal(), idx, rewriter);
-    rewriter.create<FieldWriteOp>(
-        loc, adaptor.getComponent(), FlatSymbolRefAttr::get(newField.first), scalarRead
+    Value scalarRead = ArrayAccessOpInterface::genRead(rewriter, loc, adaptor.getVal(), idx);
+    rewriter.create<MemberWriteOp>(
+        loc, adaptor.getComponent(), FlatSymbolRefAttr::get(newMember.first), scalarRead
     );
   }
 };
 
-class SplitArrayInFieldReadOp
-    : public SplitArrayInFieldRefOp<SplitArrayInFieldReadOp, FieldReadOp, CreateArrayOp> {
+/// Rewrite a read from an array-typed struct member into reads from the corresponding scalar
+/// leaves followed by local array reconstruction.
+class SplitArrayInMemberReadOp
+    : public SplitAggregateInMemberRefOp<
+          SplitArrayInMemberReadOp, MemberReadOp, CreateArrayOp, ArrayAttr> {
 public:
-  using SplitArrayInFieldRefOp<
-      SplitArrayInFieldReadOp, FieldReadOp, CreateArrayOp>::SplitArrayInFieldRefOp;
+  using SplitAggregateInMemberRefOp<
+      SplitArrayInMemberReadOp, MemberReadOp, CreateArrayOp,
+      ArrayAttr>::SplitAggregateInMemberRefOp;
 
-  static bool legal(FieldReadOp op) {
+  static bool legal(MemberReadOp op) {
     return !containsSplittableArrayType(op.getResult().getType());
   }
 
-  static CreateArrayOp genHeader(FieldReadOp op, ConversionPatternRewriter &rewriter) {
+  static CreateArrayOp genHeader(MemberReadOp op, ConversionPatternRewriter &rewriter) {
     CreateArrayOp newArray =
         rewriter.create<CreateArrayOp>(op.getLoc(), llvm::cast<ArrayType>(op.getType()));
     rewriter.replaceAllUsesWith(op, newArray);
     return newArray;
   }
 
-  static void forIndex(
-      Location loc, CreateArrayOp newArray, ArrayAttr idx, FieldInfo newField, OpAdaptor adaptor,
+  static void forId(
+      Location loc, CreateArrayOp newArray, ArrayAttr idx, MemberInfo newMember, OpAdaptor adaptor,
       ConversionPatternRewriter &rewriter
   ) {
-    FieldReadOp scalarRead =
-        rewriter.create<FieldReadOp>(loc, newField.second, adaptor.getComponent(), newField.first);
-    genWrite(loc, newArray, idx, scalarRead, rewriter);
+    MemberReadOp scalarRead = rewriter.create<MemberReadOp>(
+        loc, newMember.second, adaptor.getComponent(), newMember.first
+    );
+    ArrayAccessOpInterface::genWrite(rewriter, loc, newArray, idx, scalarRead);
   }
 };
 
-LogicalResult
-step1(ModuleOp modOp, SymbolTableCollection &symTables, FieldReplacementMap &fieldRepMap) {
+/// Register the dialects and operations that remain legal across the conversion-based stages.
+static void baseTargetSetup(ConversionTarget &target) {
+  target.addLegalDialect<
+      LLZKDialect, array::ArrayDialect, boolean::BoolDialect, cast::CastDialect,
+      constrain::ConstrainDialect, component::StructDialect, felt::FeltDialect,
+      function::FunctionDialect, global::GlobalDialect, include::IncludeDialect, pod::PODDialect,
+      polymorphic::PolymorphicDialect, ram::RAMDialect, string::StringDialect, arith::ArithDialect,
+      scf::SCFDialect>();
+  target.addLegalOp<ModuleOp>();
+}
+
+/// Rewrite array-typed `llzk.nondet` allocations into explicit `array.new` allocations.
+class NondetToNewArray : public OpConversionPattern<NonDetOp> {
+  using OpConversionPattern<NonDetOp>::OpConversionPattern;
+  LogicalResult matchAndRewrite(
+      NonDetOp nondetOp, OpAdaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (auto at = dyn_cast<ArrayType>(nondetOp.getType())) {
+      auto wildcardTy = llvm::cast<ArrayType>(replaceAffineMapArrayDimsWithWildcards(at));
+      auto newArray = rewriter.create<CreateArrayOp>(nondetOp.getLoc(), wildcardTy);
+      if (wildcardTy == at) {
+        rewriter.replaceOp(nondetOp, newArray);
+      } else {
+        auto cast = rewriter.create<UnifiableCastOp>(nondetOp.getLoc(), at, newArray);
+        rewriter.replaceOp(nondetOp, cast.getResult());
+      }
+      return success();
+    }
+    return failure();
+  }
+};
+
+/// Prepare the module by replacing `llzk.nondet` array allocation ops with `array.new`.
+static LogicalResult step0(ModuleOp modOp) {
+  MLIRContext *ctx = modOp.getContext();
+  RewritePatternSet patterns {ctx};
+  patterns.add<NondetToNewArray>(ctx);
+  ConversionTarget target {*ctx};
+
+  baseTargetSetup(target);
+  target.addDynamicallyLegalOp<NonDetOp>([](NonDetOp op) { return !isa<ArrayType>(op.getType()); });
+
+  return applyFullConversion(modOp, target, std::move(patterns));
+}
+
+/// Replace `ArrayType` struct members with `N` scalar members.
+static LogicalResult
+step1(ModuleOp modOp, SymbolTableCollection &symTables, MemberReplacementMap &memberRepMap) {
   MLIRContext *ctx = modOp.getContext();
 
   RewritePatternSet patterns(ctx);
 
-  patterns.add<SplitArrayInFieldDefOp>(ctx, symTables, fieldRepMap);
+  patterns.add<SplitArrayInMemberDefOp>(ctx, symTables, memberRepMap);
 
   ConversionTarget target(*ctx);
-  target.addLegalDialect<
-      LLZKDialect, array::ArrayDialect, boolean::BoolDialect, felt::FeltDialect,
-      function::FunctionDialect, global::GlobalDialect, include::IncludeDialect,
-      component::StructDialect, constrain::ConstrainDialect, arith::ArithDialect,
-      scf::SCFDialect>();
-  target.addLegalOp<ModuleOp>();
-  target.addDynamicallyLegalOp<FieldDefOp>(SplitArrayInFieldDefOp::legal);
+  baseTargetSetup(target);
+  target.addDynamicallyLegalOp<MemberDefOp>(SplitArrayInMemberDefOp::legal);
 
-  LLVM_DEBUG(llvm::dbgs() << "Begin step 1: split array fields\n";);
+  LLVM_DEBUG(llvm::dbgs() << "Begin step 1: split array-type members\n";);
   return applyFullConversion(modOp, target, std::move(patterns));
 }
 
-LogicalResult
-step2(ModuleOp modOp, SymbolTableCollection &symTables, const FieldReplacementMap &fieldRepMap) {
+/// Special handling to split arrays in struct member refs and function signatures, desugar ranged
+/// array access ops to scalar access ops, and replace `ArrayLengthOp` with the known size.
+static LogicalResult
+step2(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementMap &memberRepMap) {
   MLIRContext *ctx = modOp.getContext();
 
   RewritePatternSet patterns(ctx);
@@ -735,18 +762,13 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const FieldReplacementMa
 
   patterns.add<
       // clang-format off
-      SplitArrayInFieldWriteOp,
-      SplitArrayInFieldReadOp
+      SplitArrayInMemberWriteOp,
+      SplitArrayInMemberReadOp
       // clang-format on
-      >(ctx, symTables, fieldRepMap);
+      >(ctx, symTables, memberRepMap);
 
   ConversionTarget target(*ctx);
-  target.addLegalDialect<
-      LLZKDialect, array::ArrayDialect, boolean::BoolDialect, component::StructDialect,
-      constrain::ConstrainDialect, felt::FeltDialect, function::FunctionDialect,
-      global::GlobalDialect, include::IncludeDialect, undef::UndefDialect, arith::ArithDialect,
-      scf::SCFDialect>();
-  target.addLegalOp<ModuleOp>();
+  baseTargetSetup(target);
   target.addDynamicallyLegalOp<CreateArrayOp>(SplitInitFromCreateArrayOp::legal);
   target.addDynamicallyLegalOp<InsertArrayOp>(SplitInsertArrayOp::legal);
   target.addDynamicallyLegalOp<ExtractArrayOp>(SplitExtractArrayOp::legal);
@@ -754,56 +776,184 @@ step2(ModuleOp modOp, SymbolTableCollection &symTables, const FieldReplacementMa
   target.addDynamicallyLegalOp<ReturnOp>(SplitArrayInReturnOp::legal);
   target.addDynamicallyLegalOp<CallOp>(SplitArrayInCallOp::legal);
   target.addDynamicallyLegalOp<ArrayLengthOp>(ReplaceKnownArrayLengthOp::legal);
-  target.addDynamicallyLegalOp<FieldWriteOp>(SplitArrayInFieldWriteOp::legal);
-  target.addDynamicallyLegalOp<FieldReadOp>(SplitArrayInFieldReadOp::legal);
+  target.addDynamicallyLegalOp<MemberWriteOp>(SplitArrayInMemberWriteOp::legal);
+  target.addDynamicallyLegalOp<MemberReadOp>(SplitArrayInMemberReadOp::legal);
 
   LLVM_DEBUG(llvm::dbgs() << "Begin step 2: update/split other array ops\n";);
   return applyFullConversion(modOp, target, std::move(patterns));
 }
 
-LogicalResult splitArrayCreateInit(ModuleOp modOp) {
-  SymbolTableCollection symTables;
-  FieldReplacementMap fieldRepMap;
-
-  // This is divided into 2 steps to simplify the implementation for field-related ops. The issue is
-  // that the conversions for field read/write expect the mapping of array index to field name+type
-  // to already be populated for the referenced field (although this could be computed on demand if
-  // desired but it complicates the implementation a bit).
-  if (failed(step1(modOp, symTables, fieldRepMap))) {
-    return failure();
-  }
-  LLVM_DEBUG({
-    llvm::dbgs() << "After step 1:\n";
-    modOp.dump();
-  });
-  if (failed(step2(modOp, symTables, fieldRepMap))) {
-    return failure();
-  }
-  LLVM_DEBUG({
-    llvm::dbgs() << "After step 2:\n";
-    modOp.dump();
-  });
-  return success();
+/// Return a static index attribute for an array access, or null if any index is dynamic.
+inline static ArrayAttr getIndexAsAttr(ArrayAccessOpInterface op) {
+  return op.indexOperandsToAttributeArray();
 }
 
-class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayToScalarPass> {
+/// Return whether `writeOp` may update `index`.
+static bool mayWriteToIndex(WriteArrayOp writeOp, ArrayAttr index) {
+  ArrayAttr writeIndex = getIndexAsAttr(writeOp);
+  return !writeIndex || writeIndex == index;
+}
+
+/// Return whether the read is preceded by a write to the same array and index within its block.
+static bool hasEarlierWriteInBlock(ReadArrayOp readOp, ArrayAttr readIndex) {
+  Value arrRef = readOp.getArrRef();
+  for (Operation &op : *readOp->getBlock()) {
+    if (&op == readOp.getOperation()) {
+      return false;
+    }
+
+    if (auto writeOp = dyn_cast<WriteArrayOp>(&op)) {
+      if (writeOp.getArrRef() == arrRef && mayWriteToIndex(writeOp, readIndex)) {
+        return true;
+      }
+      continue;
+    }
+
+    // Writes nested inside earlier operations may conditionally clobber the read's value.
+    if (op.walk([arrRef, readIndex](WriteArrayOp writeOp) {
+      if (writeOp.getArrRef() == arrRef && mayWriteToIndex(writeOp, readIndex)) {
+        return WalkResult::interrupt();
+      }
+      return WalkResult::advance();
+    }).wasInterrupted()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/// Find a statically indexed write before the parent `scf.if` that can be forwarded to `readOp`.
+static std::optional<WriteArrayOp> findPrecedingWriteForIfRead(ReadArrayOp readOp) {
+  ArrayAttr readIndex = getIndexAsAttr(readOp);
+  if (!readIndex) {
+    return std::nullopt;
+  }
+
+  // Only handle reads that are direct children of an `scf.if` branch.
+  auto ifOp = readOp->getParentOfType<scf::IfOp>();
+  if (!ifOp || readOp->getBlock()->getParentOp() != ifOp.getOperation()) {
+    return std::nullopt;
+  }
+  if (hasEarlierWriteInBlock(readOp, readIndex)) {
+    return std::nullopt;
+  }
+
+  Block *ifBlock = ifOp->getBlock();
+  if (!ifBlock) {
+    return std::nullopt;
+  }
+
+  Value arrRef = readOp.getArrRef();
+  WriteArrayOp replacement;
+  for (Operation &op : *ifBlock) {
+    if (&op == ifOp.getOperation()) {
+      break;
+    }
+
+    if (auto writeOp = dyn_cast<WriteArrayOp>(&op)) {
+      if (writeOp.getArrRef() != arrRef) {
+        continue;
+      }
+
+      if (mayWriteToIndex(writeOp, readIndex)) {
+        ArrayAttr writeIndex = getIndexAsAttr(writeOp);
+        replacement = writeIndex == readIndex ? writeOp : WriteArrayOp();
+      }
+      continue;
+    }
+
+    // A nested write before the `scf.if` may overwrite the current candidate.
+    if (op.walk([arrRef, readIndex, &replacement](WriteArrayOp writeOp) {
+      if (writeOp.getArrRef() == arrRef && mayWriteToIndex(writeOp, readIndex)) {
+        replacement = WriteArrayOp();
+        return WalkResult::interrupt();
+      }
+      return WalkResult::advance();
+    }).wasInterrupted()) {
+      continue;
+    }
+  }
+
+  return replacement ? std::make_optional(replacement) : std::nullopt;
+}
+
+/// Replace branch-local reads (in `scf.if`) with the value written by a same-index
+/// write op that dominates the parent `scf.if`.
+static void step3(ModuleOp modOp) {
+  SmallVector<std::pair<ReadArrayOp, Value>> replacements;
+  modOp.walk([&replacements](ReadArrayOp readOp) {
+    if (std::optional<WriteArrayOp> writeOp = findPrecedingWriteForIfRead(readOp)) {
+      replacements.emplace_back(readOp, writeOp->getRvalue());
+    }
+  });
+
+  for (auto [readOp, value] : replacements) {
+    readOp.getResult().replaceAllUsesWith(value);
+    readOp.erase();
+  }
+}
+
+/// Pass driver for the full array-to-scalar lowering pipeline described above.
+class PassImpl : public llzk::array::impl::ArrayToScalarPassBase<PassImpl> {
+  using Base = ArrayToScalarPassBase<PassImpl>;
+  using Base::Base;
+
   void runOnOperation() override {
     ModuleOp module = getOperation();
-    // Separate array initialization from creation by removing the initialization list from
-    // CreateArrayOp and inserting the corresponding WriteArrayOp following it.
-    if (failed(splitArrayCreateInit(module))) {
-      signalPassFailure();
-      return;
+
+    if (failed(step0(module))) {
+      return signalPassFailure();
     }
+    LLVM_DEBUG({
+      llvm::dbgs() << "After step 0:\n";
+      module.dump();
+    });
+
+    {
+      // This is divided into 2 steps to simplify the implementation for member-related ops. The
+      // issue is that the conversions for member read/write expect the mapping of array index to
+      // member name+type to already be populated for the referenced member (although this could be
+      // computed on demand if desired but it complicates the implementation a bit).
+      SymbolTableCollection symTables;
+      MemberReplacementMap memberRepMap;
+      if (failed(step1(module, symTables, memberRepMap))) {
+        return signalPassFailure();
+      }
+      LLVM_DEBUG({
+        llvm::dbgs() << "After step 1:\n";
+        module.dump();
+      });
+
+      if (failed(step2(module, symTables, memberRepMap))) {
+        return signalPassFailure();
+      }
+      LLVM_DEBUG({
+        llvm::dbgs() << "After step 2:\n";
+        module.dump();
+      });
+    }
+
+    step3(module);
+    LLVM_DEBUG({
+      llvm::dbgs() << "After step 3:\n";
+      module.dump();
+    });
+
     OpPassManager nestedPM(ModuleOp::getOperationName());
-    // Use SROA (Destructurable* interfaces) to split each array with linear size N into N arrays of
-    // size 1. This is necessary because the mem2reg pass cannot deal with indexing and splitting up
-    // memory, i.e., it can only convert scalar memory access into SSA values.
-    nestedPM.addPass(createSROA());
-    // The mem2reg pass converts all of the size 1 array allocation and access into SSA values.
-    nestedPM.addPass(createMem2Reg());
-    // Cleanup SSA values made dead by the transformations
-    nestedPM.addPass(createRemoveDeadValuesPass());
+    // Use SROA (Destructurable* interfaces) to split each array with linear size `N` into `N`
+    // arrays of size 1. This is necessary because the mem2reg pass cannot deal with indexing
+    // and splitting up memory, i.e., it can only convert scalar memory access into SSA values.
+    nestedPM.addPass(createSpecializedSROAPass<CreateArrayOp>());
+    // The mem2reg pass converts all of the size-1 array allocation and access into SSA values.
+    nestedPM.addPass(createSpecializedMem2RegPass<CreateArrayOp>());
+    // Cleanup allocations made dead by memory promotion.
+    nestedPM.addPass(createRemoveUnusedDiscardableAllocationsPass(
+        RemoveUnusedDiscardableAllocationsPassOptions {
+            .allocatorOpName = CreateArrayOp::getOperationName().str()
+        }
+    ));
+    // Cleanup SSA values made dead by removing allocations and writes.
+    nestedPM.addPass(createRemoveDeadValuesWorkaroundPass());
     if (failed(runPipeline(nestedPM, module))) {
       signalPassFailure();
       return;
@@ -816,7 +966,3 @@ class ArrayToScalarPass : public llzk::array::impl::ArrayToScalarPassBase<ArrayT
 };
 
 } // namespace
-
-std::unique_ptr<Pass> llzk::array::createArrayToScalarPass() {
-  return std::make_unique<ArrayToScalarPass>();
-};

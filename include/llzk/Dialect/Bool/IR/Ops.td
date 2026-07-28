@@ -13,6 +13,7 @@
 include "llzk/Dialect/Bool/IR/Dialect.td"
 include "llzk/Dialect/Bool/IR/Attrs.td"
 include "llzk/Dialect/Felt/IR/Types.td"
+include "llzk/Dialect/Array/IR/Types.td"
 include "llzk/Dialect/Function/IR/OpTraits.td"
 include "llzk/Dialect/Shared/OpsBase.td"
 
@@ -20,6 +21,7 @@ include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/OpBase.td"
 include "mlir/IR/SymbolInterfaces.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
+include "mlir/Interfaces/ControlFlowInterfaces.td"
 
 //===------------------------------------------------------------------===//
 // Op Classes
@@ -30,44 +32,58 @@ class BoolDialectOp<string mnemonic, list<Trait> traits = []>
 
 class BoolBinaryOpBase<string mnemonic, Type resultType,
                        list<Trait> traits = []>
-    : BinaryOpBase<BoolDialect, mnemonic, resultType, traits>;
+    : BinaryOpBase<BoolDialect, mnemonic, resultType, traits> {
+  let hasFolder = 1;
+}
 
 class BoolUnaryOpBase<string mnemonic, Type resultType, list<Trait> traits = []>
-    : UnaryOpBase<BoolDialect, mnemonic, resultType, traits>;
+    : UnaryOpBase<BoolDialect, mnemonic, resultType, traits> {
+  let hasFolder = 1;
+}
 
 //===------------------------------------------------------------------===//
 // Boolean operators
 //===------------------------------------------------------------------===//
 
-def LLZK_AndBoolOp : BoolBinaryOpBase<"and", I1, [WitnessGen, Commutative]> {
+def LLZK_AndBoolOp
+    : BoolBinaryOpBase<"and", I1, [NotFieldNative, Commutative]> {
   let summary = "logical AND operator";
   let description = [{
     This operation computes the logical AND (i.e., conjunction) of two `i1` (i.e., boolean)
     values as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
+
+    If used in a constraint expression, this operation can be converted to `a*b` on felt operands.
   }];
 }
 
-def LLZK_OrBoolOp : BoolBinaryOpBase<"or", I1, [WitnessGen, Commutative]> {
+def LLZK_OrBoolOp : BoolBinaryOpBase<"or", I1, [NotFieldNative, Commutative]> {
   let summary = "logical OR operator";
   let description = [{
     This operation computes the logical OR (i.e., disjunction) of two `i1` (i.e., boolean)
     values as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
+
+    If used in a constraint expression, this operation can be converted to `a+b - a*b` on felt operands.
   }];
 }
 
-def LLZK_XorBoolOp : BoolBinaryOpBase<"xor", I1, [WitnessGen, Commutative]> {
+def LLZK_XorBoolOp
+    : BoolBinaryOpBase<"xor", I1, [NotFieldNative, Commutative]> {
   let summary = "logical XOR operator";
   let description = [{
     This operation computes the logical XOR (i.e., exclusive disjunction) of two `i1` (i.e., boolean)
     values as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
+
+    If used in a constraint expression, this operation can be converted to `a+b - 2*a*b` on felt operands.
   }];
 }
 
-def LLZK_NotBoolOp : BoolUnaryOpBase<"not", I1, [WitnessGen]> {
+def LLZK_NotBoolOp : BoolUnaryOpBase<"not", I1, [NotFieldNative]> {
   let summary = "logical NOT operator";
   let description = [{
     This operation computes the logical NOT (i.e., negation) of an `i1` (i.e., boolean)
     value as an `i1` value. The result is `1` if the operation is true and `0` otherwise.
+
+    If used in a constraint expression, this operation can be converted to `1+a - 2*a` on felt operands.
   }];
 }
 
@@ -105,7 +121,9 @@ def LLZK_AssertOp
 }
 
 // Match format of Index comparisons (for now)
-def LLZK_CmpOp : BoolDialectOp<"cmp", [Pure]> {
+def LLZK_CmpOp
+    : NaryOpBase<BoolDialect, "cmp",
+                 LLZK_FeltType.builderCall, [Pure, TypesUnify<"lhs", "rhs">]> {
   let summary = "compare field element values";
   let description = [{
     This operation takes two field element values and compares them according to the
@@ -135,13 +153,65 @@ def LLZK_CmpOp : BoolDialectOp<"cmp", [Pure]> {
 
     // Not equal comparison.
     %2 = bool.cmp ne(%a, %b)
+
+    // Not equal comparison for felts in a specified field
+    %3 = bool.cmp ne(%c, %d) : !felt.type<"babybear">, !felt.type<"babybear">
     ```
   }];
 
   let arguments = (ins LLZK_CmpPredicateAttr:$predicate, LLZK_FeltType:$lhs,
       LLZK_FeltType:$rhs);
   let results = (outs I1:$result);
-  let assemblyFormat = [{ `` $predicate `(` $lhs `,` $rhs `)` attr-dict }];
+  let assemblyFormat = [{
+    `` $predicate `(` $lhs `,` $rhs `)`
+    `` custom<InferredOrParsedType>(type($lhs), "true")
+    `` custom<InferredOrParsedType>(type($rhs), "false") attr-dict
+  }];
+  let hasFolder = 1;
+}
+
+class QuantifierOp<string mnemonic, string cond, list<Trait> traits = []>
+    : BoolDialectOp<mnemonic, traits#[NotFieldNative, Pure, SingleBlock]> {
+  let summary = mnemonic#" quantifier operation";
+  let description = [{
+    This operation applies a predicate to each element of the given sort. 
+    Returns true iff the predicate is true for }]#cond#[{ of the sort.
+
+    Only LLZK arrays are supported as the sort type at the moment.
+
+    Example:
+    ```
+    %c10 = felt.const  10
+    %0 = array.new %a, %b, %c : !array.type<3 x !felt.type>
+    %1 = bool.}]#mnemonic#[{ %e in %0 !array.type<3 x !felt.type> {
+      %2 = bool.cmp lt(%e, %c10)
+      bool.yield %2
+    }
+    ```
+  }];
+
+  let arguments = (ins LLZK_ArrayType:$sort);
+  let results = (outs I1:$result);
+  let regions = (region SizedRegion<1>:$region);
+
+  let hasCustomAssemblyFormat = 1;
+  let hasVerifier = 1;
+}
+
+def ForAllOp : QuantifierOp<"forall", "all elements"> {}
+
+def ExistsOp : QuantifierOp<"exists", "at least one element"> {}
+
+def YieldOp : BoolDialectOp<"yield", [NotFieldNative, Terminator, ReturnLike,
+                                      ParentOneOf<["ForAllOp", "ExistsOp"]>]> {
+  let summary = "boolean yield operation";
+  let description = [{
+    This terminator operation yields the boolean value of the predicate inside the body of 
+    `bool.forall` and `bool.exists` operations.
+  }];
+
+  let arguments = (ins I1:$value);
+  let assemblyFormat = "$value attr-dict";
 }
 
 #endif // LLZK_BOOLEAN_OPS

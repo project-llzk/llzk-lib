@@ -13,9 +13,8 @@
 
 namespace llzk {
 
-std::unique_ptr<mlir::Pass> createFieldWriteValidatorPass();
-
+#define GEN_PASS_DECL
 #define GEN_PASS_REGISTRATION
 #include "llzk/Validators/LLZKValidationPasses.h.inc"
 
-}; // namespace llzk
+} // namespace llzk

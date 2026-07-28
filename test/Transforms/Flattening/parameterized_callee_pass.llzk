@@ -1,0 +1,153 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @P {
+    function.def @compute() -> !struct.type<@P> {
+      %self = struct.new : !struct.type<@P>
+      function.return %self : !struct.type<@P>
+    }
+
+    function.def @constrain(%self: !struct.type<@P>) {
+      function.return
+    }
+  }
+
+  struct.def @Q {
+    function.def @compute() -> !struct.type<@Q> {
+      %self = struct.new : !struct.type<@Q>
+      function.return %self : !struct.type<@Q>
+    }
+
+    function.def @constrain(%self: !struct.type<@Q>) {
+      function.return
+    }
+  }
+
+  poly.template @TU {
+    poly.param @S
+
+    struct.def @unknown_call_target {
+      function.def @compute() -> !struct.type<@TU::@unknown_call_target<[@S]>> {
+        %self = struct.new : !struct.type<@TU::@unknown_call_target<[@S]>>
+        %s = function.call @S::@compute() : () -> !poly.tvar<@S>
+        function.return %self : !struct.type<@TU::@unknown_call_target<[@S]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TU::@unknown_call_target<[@S]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %p = function.call @TU::@unknown_call_target::@compute() : () -> !struct.type<@TU::@unknown_call_target<[!struct.type<@P>]>>
+      %q = function.call @TU::@unknown_call_target::@compute() : () -> !struct.type<@TU::@unknown_call_target<[!struct.type<@Q>]>>
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: struct.def @"TU_!s<@P>_unknown_call_target" {
+// CHECK:        function.call @P::@compute() : () -> !struct.type<@P>
+// CHECK-NOT:    @S::@compute
+//
+// CHECK-LABEL: struct.def @"TU_!s<@Q>_unknown_call_target" {
+// CHECK:        function.call @Q::@compute() : () -> !struct.type<@Q>
+// CHECK-NOT:    @S::@compute
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @P {
+    function.def @compute() -> !struct.type<@P> {
+      %self = struct.new : !struct.type<@P>
+      function.return %self : !struct.type<@P>
+    }
+
+    function.def @constrain(%self: !struct.type<@P>) {
+      function.return
+    }
+  }
+
+  struct.def @Q {
+    function.def @compute() -> !struct.type<@Q> {
+      %self = struct.new : !struct.type<@Q>
+      function.return %self : !struct.type<@Q>
+    }
+
+    function.def @constrain(%self: !struct.type<@Q>) {
+      function.return
+    }
+  }
+
+  poly.template @TF {
+    poly.param @S
+
+    function.def @make() -> !poly.tvar<@S> attributes {function.allow_witness} {
+      %s = function.call @S::@compute() : () -> !poly.tvar<@S>
+      function.return %s : !poly.tvar<@S>
+    }
+  }
+
+  struct.def @Main {
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %p = function.call @TF::@make() : () -> !struct.type<@P>
+      %q = function.call @TF::@make() : () -> !struct.type<@Q>
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: function.def @"TF_!s<@P>_make"() -> !struct.type<@P> attributes {function.allow_witness} {
+// CHECK:        function.call @P::@compute() : () -> !struct.type<@P>
+//
+// CHECK-LABEL: function.def @"TF_!s<@Q>_make"() -> !struct.type<@Q> attributes {function.allow_witness} {
+// CHECK:        function.call @Q::@compute() : () -> !struct.type<@Q>
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @P {
+    function.def @compute() -> !struct.type<@P> {
+      %self = struct.new : !struct.type<@P>
+      function.return %self : !struct.type<@P>
+    }
+
+    function.def @constrain(%self: !struct.type<@P>) {
+      function.return
+    }
+  }
+
+  poly.template @TPF {
+    poly.param @S
+    poly.param @T
+
+    function.def @make(%value: !poly.tvar<@T>) -> !poly.tvar<@S> attributes {function.allow_witness} {
+      %s = function.call @S::@compute() : () -> !poly.tvar<@S>
+      function.return %s : !poly.tvar<@S>
+    }
+  }
+
+  poly.template @Outer {
+    poly.param @T
+
+    function.def @use(%value: !poly.tvar<@T>) -> !struct.type<@P> attributes {function.allow_witness} {
+      %p = function.call @TPF::@make(%value) : (!poly.tvar<@T>) -> !struct.type<@P>
+      function.return %p : !struct.type<@P>
+    }
+  }
+}
+// CHECK-LABEL: poly.template @"TPF_!s<@P>_\1A" {
+// CHECK:        function.def @make(%{{[0-9a-zA-Z_\.]+}}: !poly.tvar<@T>) -> !struct.type<@P> attributes {function.allow_witness} {
+// CHECK:          function.call @P::@compute() : () -> !struct.type<@P>
+// CHECK-NOT:      @S::@compute
+// CHECK:          function.return

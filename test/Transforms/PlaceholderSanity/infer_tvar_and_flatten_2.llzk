@@ -1,0 +1,75 @@
+// RUN: llzk-opt -split-input-file -llzk-infer-tvar -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  poly.template @TBoxForWildcardName {
+    poly.param @N
+    poly.param @T : !poly.tvar<@T>
+
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@T>
+
+      function.def @product(%arg: !poly.tvar<@T>) -> !struct.type<@TBoxForWildcardName::@Box<[@N, @T]>> attributes {function.allow_witness} {
+        %self = struct.new : !struct.type<@TBoxForWildcardName::@Box<[@N, @T]>>
+        struct.writem %self[@value] = %arg : !struct.type<@TBoxForWildcardName::@Box<[@N, @T]>>, !poly.tvar<@T>
+        function.return %self : !struct.type<@TBoxForWildcardName::@Box<[@N, @T]>>
+      }
+    }
+  }
+
+  poly.template @X {
+    poly.param @Y
+    struct.def @WildcardNameTarget {
+      function.def @compute(%arg: !array.type<? x !struct.type<@TBoxForWildcardName::@Box<[7, index]>>>) -> !struct.type<@X::@WildcardNameTarget<[@Y]>> {
+        %self = struct.new : !struct.type<@X::@WildcardNameTarget<[@Y]>>
+        function.return %self : !struct.type<@X::@WildcardNameTarget<[@Y]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@X::@WildcardNameTarget<[@Y]>>, %arg: !array.type<? x !struct.type<@TBoxForWildcardName::@Box<[7, index]>>>) {
+        function.return
+      }
+    }
+  }
+
+  function.def @call_box_array(%arg: !array.type<1 x !struct.type<@TBoxForWildcardName::@Box<[7, index]>>>) -> index attributes {function.allow_witness} {
+    %0 = function.call @X::@WildcardNameTarget::@compute(%arg) :
+        (!array.type<1 x !struct.type<@TBoxForWildcardName::@Box<[7, index]>>>) -> !struct.type<@X::@WildcardNameTarget<[99]>>
+    %one = arith.constant 1 : index
+    function.return %one : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @TBoxForWildcardName_7_i_Box {
+// CHECK-NEXT:      struct.member @value : index
+// CHECK-NEXT:      function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@TBoxForWildcardName_7_i_Box> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TBoxForWildcardName_7_i_Box>
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@value] = %[[VAL_0]] : <@TBoxForWildcardName_7_i_Box>, index
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@TBoxForWildcardName_7_i_Box>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TBoxForWildcardName {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        struct.member @value : !poly.tvar<@T>
+// CHECK-NEXT:        function.def @product(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !struct.type<@TBoxForWildcardName::@Box<[@N, @T]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@TBoxForWildcardName::@Box<[@N, @T]>>
+// CHECK-NEXT:          struct.writem %[[VAL_3]][@value] = %[[VAL_2]] : <@TBoxForWildcardName::@Box<[@N, @T]>>, !poly.tvar<@T>
+// CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@TBoxForWildcardName::@Box<[@N, @T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @X_99_WildcardNameTarget {
+// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !array.type<? x !struct.type<@TBoxForWildcardName_7_i_Box>>) -> !struct.type<@X_99_WildcardNameTarget> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@X_99_WildcardNameTarget>
+// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@X_99_WildcardNameTarget>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@X_99_WildcardNameTarget>, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !array.type<? x !struct.type<@TBoxForWildcardName_7_i_Box>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_box_array(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !array.type<1 x !struct.type<@TBoxForWildcardName_7_i_Box>>) -> index attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @X_99_WildcardNameTarget::@compute(%[[VAL_8]]) : (!array.type<1 x !struct.type<@TBoxForWildcardName_7_i_Box>>) -> !struct.type<@X_99_WildcardNameTarget>
+// CHECK-NEXT:      function.return %[[VAL_9]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

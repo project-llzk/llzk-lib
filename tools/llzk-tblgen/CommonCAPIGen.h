@@ -118,8 +118,8 @@ inline bool isIntegerType(mlir::StringRef type) {
     if (type == "max" || type == "ptr") {
       return true;
     }
-    // Optional "_fast" or "_least" and finally bit width to cover the rest
-    type.consume_back("_fast") || type.consume_back("_least");
+    // Optional "_fast" or "_least" followed by bit width to cover the rest
+    type.consume_front("_fast") || type.consume_front("_least");
     if (type == "8" || type == "16" || type == "32" || type == "64") {
       return true;
     }
@@ -177,9 +177,12 @@ inline bool isCppLanguageConstruct(mlir::StringRef methodName) {
 
 /// @brief Check if a C++ type is APInt
 /// @param cppType The C++ type string to check
-/// @return true if the type is APInt, llvm::APInt, or ::llvm::APInt
+/// @return true if the type is an APInt or LLZK's numeric APInt storage key
 inline bool isAPIntType(mlir::StringRef cppType) {
   cppType.consume_front("::");
+  if (cppType == "llzk::APIntValue") {
+    return true;
+  }
   cppType.consume_front("llvm::") || cppType.consume_front("mlir::");
   return cppType == "APInt";
 }
@@ -262,7 +265,7 @@ struct ExtraMethod {
   std::string returnType;
   /// The name of the method
   std::string methodName;
-  /// Documentation comment (if any)
+  /// Properly escaped documentation comment (if any)
   std::string documentation;
   /// Whether the method is const-qualified
   bool isConst = false;
@@ -319,6 +322,13 @@ std::optional<std::string> tryCppTypeToCapiType(mlir::StringRef cppType);
 /// Use extractArrayRefElementType() first and then use this on the result.
 std::string mapCppTypeToCapiType(mlir::StringRef cppType);
 
+/// @brief Map C API type to corresponding basic (not dialect-defined) C++ type
+/// @param capiType The C API type to map
+/// @return The corresponding C++ type string if convertible, std::nullopt otherwise
+///
+/// @note The parameter to this function should be something returned from `tryCppTypeToCapiType()`.
+std::optional<std::string> mapCapiTypeToBasicCppType(mlir::StringRef capiType);
+
 /// @brief Base class for C API generators
 struct Generator {
   Generator(std::string_view recordKind, llvm::raw_ostream &outputStream)
@@ -329,8 +339,8 @@ struct Generator {
   /// @param d Pointer to the dialect definition
   /// @param cppClassName The C++ class name of the entity being generated
   virtual void
-  setDialectAndClassName(const mlir::tblgen::Dialect *d, mlir::StringRef cppClassName) {
-    this->dialect = d;
+  setNamespaceAndClassName(const mlir::tblgen::Dialect &d, mlir::StringRef cppClassName) {
+    this->dialectNamespace = d.getCppNamespace();
     this->className = cppClassName;
   }
 
@@ -353,14 +363,14 @@ protected:
   std::string kind;
   llvm::raw_ostream &os;
   std::string dialectNameCapitalized;
-  const mlir::tblgen::Dialect *dialect;
+  mlir::StringRef dialectNamespace;
   mlir::StringRef className;
 };
 
 /// @brief Generator for common C header file elements
 struct HeaderGenerator : public Generator {
   using Generator::Generator;
-  virtual ~HeaderGenerator() = default;
+  ~HeaderGenerator() override = default;
 
   virtual void genPrologue() const {
     os << R"(
@@ -383,22 +393,22 @@ extern "C" {
 
   virtual void genIsADecl() const {
     static constexpr char fmt[] = R"(
-/* Returns true if the {1} is a {4}::{3}. */
-MLIR_CAPI_EXPORTED bool {0}{1}IsA{2}{3}(Mlir{1});
+/// Returns true if the {1} is a {4}::{3}.
+MLIR_CAPI_EXPORTED bool {0}{1}IsA_{2}_{3}(Mlir{1});
 )";
-    assert(dialect && "Dialect must be set");
+    assert(!dialectNamespace.empty() && "Dialect must be set");
     os << llvm::formatv(
         fmt,
-        FunctionPrefix,            // {0}
-        kind,                      // {1}
-        dialectNameCapitalized,    // {2}
-        className,                 // {3}
-        dialect->getCppNamespace() // {4}
+        FunctionPrefix,         // {0}
+        kind,                   // {1}
+        dialectNameCapitalized, // {2}
+        className,              // {3}
+        dialectNamespace        // {4}
     );
   }
 
   /// @brief Generate declaration for an extra method from an `extraClassDeclaration`
-  virtual void genExtraMethod(const ExtraMethod &method) const override {
+  void genExtraMethod(const ExtraMethod &method) const override {
     // Convert return type to C API type, skip if it can't be converted
     std::optional<std::string> capiReturnTypeOpt = tryCppTypeToCapiType(method.returnType);
     if (!capiReturnTypeOpt.has_value()) {
@@ -418,17 +428,18 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA{2}{3}(Mlir{1});
         warnSkippedNoConversion(method.methodName, param.type);
         return;
       }
-      std::string capiParamType = capiParamTypeOpt.value();
+      const std::string &capiParamType = capiParamTypeOpt.value();
       paramListStream << ", " << capiParamType << ' ' << param.name;
     }
 
     // Generate declaration
-    std::string docComment =
-        method.documentation.empty() ? method.methodName : method.documentation;
-
-    os << llvm::formatv("\n/* {0} */\n", docComment);
+    if (method.documentation.empty()) {
+      os << llvm::formatv("\n/// {0}\n", method.methodName);
+    } else {
+      os << llvm::formatv("\n{0}\n", method.documentation);
+    }
     os << llvm::formatv(
-        "MLIR_CAPI_EXPORTED {0} {1}{2}{3}{4}({5});\n",
+        "MLIR_CAPI_EXPORTED {0} {1}{2}_{3}{4}({5});\n",
         capiReturnType,                  // {0}
         FunctionPrefix,                  // {1}
         dialectNameCapitalized,          // {2}
@@ -442,11 +453,13 @@ MLIR_CAPI_EXPORTED bool {0}{1}IsA{2}{3}(Mlir{1});
 /// @brief Generator for common C implementation file elements
 struct ImplementationGenerator : public Generator {
   using Generator::Generator;
-  virtual ~ImplementationGenerator() = default;
+  ~ImplementationGenerator() override = default;
+
+  virtual void genPrologue() const {}
 
   virtual void genIsAImpl() const {
     static constexpr char fmt[] = R"(
-bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
+bool {0}{1}IsA_{2}_{3}(Mlir{1} inp) {{
   return llvm::isa<{3}>(unwrap(inp));
 }
 )";
@@ -455,7 +468,7 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
   }
 
   /// @brief Generate implementation for an extra method from an `extraClassDeclaration`
-  virtual void genExtraMethod(const ExtraMethod &method) const override {
+  void genExtraMethod(const ExtraMethod &method) const override {
     // Convert return type to C API type, skip if it can't be converted
     std::optional<std::string> capiReturnTypeOpt = tryCppTypeToCapiType(method.returnType);
     if (!capiReturnTypeOpt.has_value()) {
@@ -499,7 +512,7 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
         warnSkippedNoConversion(method.methodName, param.type);
         return;
       }
-      std::string capiParamType = capiParamTypeOpt.value();
+      const std::string &capiParamType = capiParamTypeOpt.value();
       paramListStream << ", " << capiParamType << ' ' << param.name;
     }
 
@@ -536,7 +549,7 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
     // Generate implementation
     os << '\n';
     os << llvm::formatv(
-        "{0} {1}{2}{3}{4}({5}) {{\n",
+        "{0} {1}{2}_{3}{4}({5}) {{\n",
         capiReturnType,                  // {0}
         FunctionPrefix,                  // {1}
         dialectNameCapitalized,          // {2}
@@ -559,7 +572,7 @@ bool {0}{1}IsA{2}{3}(Mlir{1} inp) {{
 /// @brief Generator for common test implementation file elements
 struct TestGenerator : public Generator {
   using Generator::Generator;
-  virtual ~TestGenerator() = default;
+  ~TestGenerator() override = default;
 
   /// @brief Generate the test class prologue
   virtual void genTestClassPrologue() const {
@@ -570,13 +583,13 @@ struct TestGenerator : public Generator {
   /// @brief Generate IsA test for a class
   virtual void genIsATest() const {
     static constexpr char fmt[] = R"(
-// This test ensures {0}{1}IsA{2}{3} links properly.
-TEST_F({2}{1}LinkTests, IsA_{2}{3}) {{
+/// This test ensures {0}{1}IsA_{2}_{3} links properly.
+TEST_F({2}{1}LinkTests, IsA_{2}_{3}) {{
   auto test{1} = createIndex{1}();
-  
+
   // This will always return false since `createIndex*` returns an MLIR builtin
-  EXPECT_FALSE({0}{1}IsA{2}{3}(test{1}));
-  
+  EXPECT_FALSE({0}{1}IsA_{2}_{3}(test{1}));
+
   {4}(test{1});
 }
 )";
@@ -592,7 +605,7 @@ TEST_F({2}{1}LinkTests, IsA_{2}{3}) {{
   }
 
   /// @brief Generate test for an extra method from extraClassDeclaration
-  virtual void genExtraMethod(const ExtraMethod &method) const override {
+  void genExtraMethod(const ExtraMethod &method) const override {
     // Convert return type to C API type, skip if it can't be converted
     std::optional<std::string> capiReturnTypeOpt = tryCppTypeToCapiType(method.returnType);
     if (!capiReturnTypeOpt.has_value()) {
@@ -613,7 +626,7 @@ TEST_F({2}{1}LinkTests, IsA_{2}{3}) {{
         warnSkippedNoConversion(method.methodName, param.type);
         return;
       }
-      std::string capiParamType = capiParamTypeOpt.value();
+      const std::string &capiParamType = capiParamTypeOpt.value();
       std::string name = param.name;
 
       // Generate dummy value creation for each parameter
@@ -638,15 +651,15 @@ TEST_F({2}{1}LinkTests, IsA_{2}{3}) {{
     }
 
     static constexpr char fmt[] = R"(
-// This test ensures {0}{2}{3}{4} links properly.
+/// This test ensures {0}{2}_{3}{4} links properly.
 TEST_F({2}{1}LinkTests, {0}_{3}_{4}) {{
   auto test{1} = createIndex{1}();
-  
-  if ({0}{1}IsA{2}{3}(test{1})) {{
+
+  if ({0}{1}IsA_{2}_{3}(test{1})) {{
 {5}
-    (void){0}{2}{3}{4}(test{1}{6});
+    (void){0}{2}_{3}{4}(test{1}{6});
   }
-  
+
   {7}(test{1});
 }
 )";

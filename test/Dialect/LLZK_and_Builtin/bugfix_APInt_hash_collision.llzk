@@ -1,6 +1,6 @@
 // RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   function.def @hash_collision_requires_custom_equality_check() {
     %felt_const_49151 = felt.const 49151
     %felt_const_16 = felt.const 16

@@ -14,10 +14,8 @@
 
 namespace llzk::polymorphic {
 
-std::unique_ptr<mlir::Pass> createEmptyParamListRemoval();
-std::unique_ptr<mlir::Pass> createFlatteningPass();
-
+#define GEN_PASS_DECL
 #define GEN_PASS_REGISTRATION
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h.inc"
 
-}; // namespace llzk::polymorphic
+} // namespace llzk::polymorphic

@@ -7,5 +7,4 @@ mlir_tablegen(InlineIncludesPass.capi.cpp.inc -gen-pass-capi-impl --prefix LLZKI
 llzk_add_mlir_doc(InlineIncludesPassDocGen passes/InlineIncludesPass.md -gen-pass-doc)
 
 add_public_tablegen_target(InlineIncludesPassIncGen)
-add_dependencies(mlir-headers InlineIncludesPassIncGen)
 add_dependencies(LLZKDialectHeaders InlineIncludesPassIncGen)

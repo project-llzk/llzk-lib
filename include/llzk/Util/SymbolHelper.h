@@ -13,6 +13,8 @@
 
 #include <mlir/Interfaces/CallInterfaces.h>
 
+#include <cassert>
+#include <optional>
 #include <ranges>
 
 namespace llzk {
@@ -20,12 +22,15 @@ namespace llzk {
 namespace component {
 class StructType;
 class StructDefOp;
-class FieldDefOp;
+class MemberDefOp;
 } // namespace component
 
 namespace function {
 class FuncDefOp;
 } // namespace function
+namespace polymorphic {
+class TemplateOp;
+} // namespace polymorphic
 
 llvm::SmallVector<mlir::StringRef> getNames(mlir::SymbolRefAttr ref);
 llvm::SmallVector<mlir::FlatSymbolRefAttr> getPieces(mlir::SymbolRefAttr ref);
@@ -47,7 +52,7 @@ inline mlir::SymbolRefAttr asSymbolRefAttr(llvm::ArrayRef<mlir::FlatSymbolRefAtt
 }
 
 /// Build a SymbolRefAttr from the list of pieces.
-inline mlir::SymbolRefAttr asSymbolRefAttr(std::vector<mlir::FlatSymbolRefAttr> path) {
+inline mlir::SymbolRefAttr asSymbolRefAttr(const std::vector<mlir::FlatSymbolRefAttr> &path) {
   return asSymbolRefAttr(llvm::ArrayRef<mlir::FlatSymbolRefAttr>(path));
 }
 
@@ -93,9 +98,22 @@ getPathFromRoot(mlir::SymbolOpInterface to, mlir::ModuleOp *foundRoot = nullptr)
 mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromRoot(component::StructDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 mlir::FailureOr<mlir::SymbolRefAttr>
-getPathFromRoot(component::FieldDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
+getPathFromRoot(component::MemberDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromRoot(function::FuncDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
+
+/// Return the full name for this symbol from the root module, including any surrounding symbol
+/// table names. If `requireParent` is false and the symbol is not nested in any operation, return
+/// its flat symbol name directly.
+inline mlir::SymbolRefAttr
+getFullyQualifiedName(mlir::SymbolOpInterface symbol, bool requireParent = true) {
+  if (!requireParent && symbol.getOperation()->getParentOp() == nullptr) {
+    return mlir::SymbolRefAttr::get(symbol.getOperation());
+  }
+  mlir::FailureOr<mlir::SymbolRefAttr> res = getPathFromRoot(symbol);
+  assert(mlir::succeeded(res));
+  return res.value();
+}
 
 /// @brief With include statements, there may be root modules nested within
 /// other root modules. This function resolves the topmost root module.
@@ -105,9 +123,22 @@ getPathFromTopRoot(mlir::SymbolOpInterface to, mlir::ModuleOp *foundRoot = nullp
 mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromTopRoot(component::StructDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 mlir::FailureOr<mlir::SymbolRefAttr>
-getPathFromTopRoot(component::FieldDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
+getPathFromTopRoot(component::MemberDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromTopRoot(function::FuncDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
+
+/// @brief Lookup the `StructType` of the main instance.
+///
+/// This is specified by a `TypeAttr` on the top-level module with the key `LLZK_MAIN_ATTR_NAME`
+/// and is optional, in which case the result will be `success(nullptr)`.
+mlir::FailureOr<llzk::component::StructType> getMainInstanceType(mlir::Operation *lookupFrom);
+
+/// @brief Lookup the `StructDefOp` of the main instance.
+///
+/// This is specified by a `TypeAttr` on the top-level module with the key `LLZK_MAIN_ATTR_NAME`
+/// and is optional, in which case the result will be `success(nullptr)`.
+mlir::FailureOr<SymbolLookupResult<llzk::component::StructDefOp>>
+getMainInstanceDef(mlir::SymbolTableCollection &symbolTable, mlir::Operation *lookupFrom);
 
 /// @brief Based on mlir::CallOpInterface::resolveCallable, but using LLZK lookup helpers
 /// @tparam T the type of symbol being resolved (e.g., function::FuncDefOp)
@@ -136,23 +167,63 @@ resolveCallable(mlir::SymbolTableCollection &symbolTable, mlir::CallOpInterface 
   return lookupTopLevelSymbol<T>(symbolTable, symbolRef, call.getOperation());
 }
 
+/// Resolve a callable without emitting a diagnostic for missing top-level symbols.
+///
+/// Use this when an unresolved call should make an analysis conservatively skip the call instead of
+/// reporting a verifier-style symbol error.
+template <typename T>
+inline mlir::FailureOr<SymbolLookupResult<T>>
+resolveCallableSilently(mlir::SymbolTableCollection &symbolTable, mlir::CallOpInterface call) {
+  mlir::CallInterfaceCallable callable = call.getCallableForCallee();
+  if (auto symbolVal = llvm::dyn_cast<mlir::Value>(callable)) {
+    SymbolLookupResult<T> result(symbolVal.getDefiningOp());
+    if (!result) {
+      return mlir::failure();
+    }
+    return result;
+  }
+
+  auto symbolRef = llvm::cast<mlir::SymbolRefAttr>(callable);
+  if (mlir::Operation *op = symbolTable.lookupNearestSymbolFrom(call.getOperation(), symbolRef)) {
+    SymbolLookupResult<T> result(op);
+    if (!result) {
+      return mlir::failure();
+    }
+    return result;
+  }
+  return lookupTopLevelSymbol<T>(
+      symbolTable, symbolRef, call.getOperation(), /*reportMissing=*/false
+  );
+}
+
 template <typename T>
 inline mlir::FailureOr<SymbolLookupResult<T>> resolveCallable(mlir::CallOpInterface call) {
   mlir::SymbolTableCollection symbolTable;
   return resolveCallable<T>(symbolTable, call);
 }
 
+/// Return the template scope that should be used to resolve flat constant
+/// references from the given origin. For ops nested in a `verif.contract`
+/// targeting a templated symbol, this is the target's template even when the
+/// contract is physically nested elsewhere. Otherwise this is the nearest
+/// physical `poly.template`, if any.
+mlir::FailureOr<polymorphic::TemplateOp>
+getConstResolutionTemplate(mlir::SymbolTableCollection &tables, mlir::Operation *origin);
+
 /// Ensure that the given symbol (that is used as a parameter of the given type) can be resolved.
+/// If `requiredParamType` is provided, any resolved template symbol must have exactly that type.
 mlir::LogicalResult verifyParamOfType(
     mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr param, mlir::Type structOrArrayType,
-    mlir::Operation *origin
+    mlir::Operation *origin, std::optional<mlir::Type> requiredParamType = std::nullopt
 );
 
 /// Ensure that any symbols that appear within the given attributes (that are parameters of the
-/// given type) can be resolved.
+/// given type) can be resolved. If `requiredParamType` is provided, any resolved template symbols
+/// must have exactly that type.
 mlir::LogicalResult verifyParamsOfType(
     mlir::SymbolTableCollection &tables, mlir::ArrayRef<mlir::Attribute> tyParams,
-    mlir::Type structOrArrayType, mlir::Operation *origin
+    mlir::Type structOrArrayType, mlir::Operation *origin,
+    std::optional<mlir::Type> requiredParamType = std::nullopt
 );
 
 /// Ensure that all symbols used within the type can be resolved.

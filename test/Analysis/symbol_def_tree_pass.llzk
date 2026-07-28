@@ -1,10 +1,10 @@
 // RUN: llzk-opt -split-input-file --pass-pipeline='builtin.module(llzk-print-symbol-def-tree{stream=outs})' %s | FileCheck --enable-var-scope %s
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   global.def @g : !struct.type<@HasUse>
 
   struct.def @HasUse {
-    struct.field @f1 : i1
+    struct.member @f1 : i1
     function.def @compute() -> !struct.type<@HasUse> {
       %self = struct.new : !struct.type<@HasUse>
       function.return %self : !struct.type<@HasUse>
@@ -14,14 +14,18 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 
-  struct.def @NoUse<[@T]> {
-    struct.field @f2 : !poly.tvar<@T>
-    function.def @compute() -> !struct.type<@NoUse<[@T]>> {
-      %self = struct.new : !struct.type<@NoUse<[@T]>>
-      function.return %self : !struct.type<@NoUse<[@T]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@NoUse<[@T]>>) {
-      function.return
+  poly.template @TNoUse {
+    poly.param @T
+
+    struct.def @NoUse {
+      struct.member @f2 : !poly.tvar<@T>
+      function.def @compute() -> !struct.type<@TNoUse::@NoUse<[@T]>> {
+        %self = struct.new : !struct.type<@TNoUse::@NoUse<[@T]>>
+        function.return %self : !struct.type<@TNoUse::@NoUse<[@T]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TNoUse::@NoUse<[@T]>>) {
+        function.return
+      }
     }
   }
 }
@@ -32,15 +36,19 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R03]]] 'struct.def' named "HasUse"
 //CHECK-NEXT:  --- Children : [0x[[R05:[0-9a-f]+]], 0x[[R06:[0-9a-f]+]], 0x[[R07:[0-9a-f]+]]]
-//CHECK-NEXT:  - Node : [0x[[R05]]] 'struct.field' named "f1"
+//CHECK-NEXT:  - Node : [0x[[R05]]] 'struct.member' named "f1"
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R06]]] 'function.def' named "compute"
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R07]]] 'function.def' named "constrain"
 //CHECK-NEXT:  --- Children : []
-//CHECK-NEXT:  - Node : [0x[[R04]]] 'struct.def' named "NoUse"
+//CHECK-NEXT:  - Node : [0x[[R04]]] 'poly.template' named "TNoUse"
+//CHECK-NEXT:  --- Children : [0x[[R11:[0-9a-f]+]], 0x[[R12:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R11]]] 'poly.param' named "T"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R12]]] 'struct.def' named "NoUse"
 //CHECK-NEXT:  --- Children : [0x[[R08:[0-9a-f]+]], 0x[[R09:[0-9a-f]+]], 0x[[R10:[0-9a-f]+]]]
-//CHECK-NEXT:  - Node : [0x[[R08]]] 'struct.field' named "f2"
+//CHECK-NEXT:  - Node : [0x[[R08]]] 'struct.member' named "f2"
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R09]]] 'function.def' named "compute"
 //CHECK-NEXT:  --- Children : []
@@ -49,25 +57,29 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  -----------------------
 // -----
 
-module attributes {veridise.lang = "llzk"} {
-  global.def @a : !struct.type<@StructsWithinNestedModule::@HasUse<[i1]>>
+module attributes {llzk.lang} {
+  global.def @a : !struct.type<@StructsWithinNestedModule::@THasUse::@HasUse<[i1]>>
   global.def @b : !felt.type
 
   module @StructsWithinNestedModule {
-    struct.def @HasUse<[@T]> {
-      struct.field @f1 : !poly.tvar<@T>
-      function.def @compute() -> !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>> {
-        %self = struct.new : !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>>
-        function.return %self : !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>>
-      }
-      function.def @constrain(%arg0: !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>>) {
-        function.return
+    poly.template @THasUse {
+      poly.param @T
+
+      struct.def @HasUse {
+        struct.member @f1 : !poly.tvar<@T>
+        function.def @compute() -> !struct.type<@StructsWithinNestedModule::@THasUse::@HasUse<[@T]>> {
+          %self = struct.new : !struct.type<@StructsWithinNestedModule::@THasUse::@HasUse<[@T]>>
+          function.return %self : !struct.type<@StructsWithinNestedModule::@THasUse::@HasUse<[@T]>>
+        }
+        function.def @constrain(%arg0: !struct.type<@StructsWithinNestedModule::@THasUse::@HasUse<[@T]>>) {
+          function.return
+        }
       }
     }
 
     struct.def @NoUse {
-      struct.field @f2 : i1
-      struct.field @f3 : !felt.type
+      struct.member @f2 : i1
+      struct.member @f3 : !felt.type
       function.def @compute() -> !struct.type<@StructsWithinNestedModule::@NoUse> {
         %self = struct.new : !struct.type<@StructsWithinNestedModule::@NoUse>
         function.return %self : !struct.type<@StructsWithinNestedModule::@NoUse>
@@ -86,10 +98,14 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  - Node : [0x[[R03]]] 'global.def' named "b"
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R04]]] 'builtin.module' named "StructsWithinNestedModule"
-//CHECK-NEXT:  --- Children : [0x[[R05:[0-9a-f]+]], 0x[[R06:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Children : [0x[[R14:[0-9a-f]+]], 0x[[R06:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R14]]] 'poly.template' named "THasUse"
+//CHECK-NEXT:  --- Children : [0x[[R15:[0-9a-f]+]], 0x[[R05:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R15]]] 'poly.param' named "T"
+//CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R05]]] 'struct.def' named "HasUse"
 //CHECK-NEXT:  --- Children : [0x[[R07:[0-9a-f]+]], 0x[[R08:[0-9a-f]+]], 0x[[R09:[0-9a-f]+]]]
-//CHECK-NEXT:  - Node : [0x[[R07]]] 'struct.field' named "f1"
+//CHECK-NEXT:  - Node : [0x[[R07]]] 'struct.member' named "f1"
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R08]]] 'function.def' named "compute"
 //CHECK-NEXT:  --- Children : []
@@ -97,9 +113,9 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R06]]] 'struct.def' named "NoUse"
 //CHECK-NEXT:  --- Children : [0x[[R10:[0-9a-f]+]], 0x[[R11:[0-9a-f]+]], 0x[[R12:[0-9a-f]+]], 0x[[R13:[0-9a-f]+]]]
-//CHECK-NEXT:  - Node : [0x[[R10]]] 'struct.field' named "f2"
+//CHECK-NEXT:  - Node : [0x[[R10]]] 'struct.member' named "f2"
 //CHECK-NEXT:  --- Children : []
-//CHECK-NEXT:  - Node : [0x[[R11]]] 'struct.field' named "f3"
+//CHECK-NEXT:  - Node : [0x[[R11]]] 'struct.member' named "f3"
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R12]]] 'function.def' named "compute"
 //CHECK-NEXT:  --- Children : []
@@ -108,28 +124,32 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  -----------------------
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @GlobalsWithinNestedModule {
-    global.def @a : !struct.type<@HasUse<[!felt.type]>>
+    global.def @a : !struct.type<@THasUse::@HasUse<[!felt.type]>>
     module @NestedAgain {
-      global.def @a : !struct.type<@HasUse<[!felt.type]>>
+      global.def @a : !struct.type<@THasUse::@HasUse<[!felt.type]>>
       module @NestedEvenMore {
-        global.def @a : !struct.type<@HasUse<[!felt.type]>>
+        global.def @a : !struct.type<@THasUse::@HasUse<[!felt.type]>>
       }
-      global.def @b : !struct.type<@HasUse<[i1]>>
+      global.def @b : !struct.type<@THasUse::@HasUse<[i1]>>
       module @SiblingNesting {
-        global.def @a : !struct.type<@HasUse<[!string.type]>>
+        global.def @a : !struct.type<@THasUse::@HasUse<[!string.type]>>
       }
     }
   }
 
-  struct.def @HasUse<[@T]> {
-    function.def @compute() -> !struct.type<@HasUse<[@T]>> {
-      %self = struct.new : !struct.type<@HasUse<[@T]>>
-      function.return %self : !struct.type<@HasUse<[@T]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@HasUse<[@T]>>) {
-      function.return
+  poly.template @THasUse {
+    poly.param @T
+
+    struct.def @HasUse {
+      function.def @compute() -> !struct.type<@THasUse::@HasUse<[@T]>> {
+        %self = struct.new : !struct.type<@THasUse::@HasUse<[@T]>>
+        function.return %self : !struct.type<@THasUse::@HasUse<[@T]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@THasUse::@HasUse<[@T]>>) {
+        function.return
+      }
     }
   }
 
@@ -145,7 +165,7 @@ module attributes {veridise.lang = "llzk"} {
 }
 //CHECK-LABEL: ---- SymbolDefTree ----
 //CHECK-NEXT:  - Node : [0x[[R00:[0-9a-f]+]]] 'builtin.module' without a name
-//CHECK-NEXT:  --- Children : [0x[[R01:[0-9a-f]+]], 0x[[R02:[0-9a-f]+]], 0x[[R03:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Children : [0x[[R01:[0-9a-f]+]], 0x[[R18:[0-9a-f]+]], 0x[[R03:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R01]]] 'builtin.module' named "GlobalsWithinNestedModule"
 //CHECK-NEXT:  --- Children : [0x[[R07:[0-9a-f]+]], 0x[[R04:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R07]]] 'global.def' named "a"
@@ -164,6 +184,10 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  --- Children : [0x[[R13:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R13]]] 'global.def' named "a"
 //CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R18]]] 'poly.template' named "THasUse"
+//CHECK-NEXT:  --- Children : [0x[[R19:[0-9a-f]+]], 0x[[R02:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R19]]] 'poly.param' named "T"
+//CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R02]]] 'struct.def' named "HasUse"
 //CHECK-NEXT:  --- Children : [0x[[R14:[0-9a-f]+]], 0x[[R15:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R14]]] 'function.def' named "compute"
@@ -179,11 +203,11 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  -----------------------
 // -----
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.lang} {
   module @FreeFuncModule {
     module @Level2A {
       module @Level3 {
-        function.def @struct_param(%a: !struct.type<@StructModule::@MoreNested::@HasUse<[!felt.type]>>) -> !felt.type {
+        function.def @struct_param(%a: !struct.type<@StructModule::@MoreNested::@THasUse::@HasUse<[!felt.type]>>) -> !felt.type {
           %b = felt.const 42
           function.return %b: !felt.type
         }
@@ -191,7 +215,7 @@ module attributes {veridise.lang = "llzk"} {
     }
     module @Level2B {
       module @Level3 {
-        function.def @struct_param(%a: !struct.type<@StructModule::@MoreNested::@HasUse<[!felt.type]>>) -> !felt.type {
+        function.def @struct_param(%a: !struct.type<@StructModule::@MoreNested::@THasUse::@HasUse<[!felt.type]>>) -> !felt.type {
           %b = felt.const 42
           function.return %b: !felt.type
         }
@@ -201,13 +225,17 @@ module attributes {veridise.lang = "llzk"} {
 
   module @StructModule {
     module @MoreNested {
-      struct.def @HasUse<[@T]> {
-        function.def @compute() -> !struct.type<@StructModule::@MoreNested::@HasUse<[@T]>> {
-          %self = struct.new : !struct.type<@StructModule::@MoreNested::@HasUse<[@T]>>
-          function.return %self : !struct.type<@StructModule::@MoreNested::@HasUse<[@T]>>
-        }
-        function.def @constrain(%arg0: !struct.type<@StructModule::@MoreNested::@HasUse<[@T]>>) {
-          function.return
+      poly.template @THasUse {
+        poly.param @T
+
+        struct.def @HasUse {
+          function.def @compute() -> !struct.type<@StructModule::@MoreNested::@THasUse::@HasUse<[@T]>> {
+            %self = struct.new : !struct.type<@StructModule::@MoreNested::@THasUse::@HasUse<[@T]>>
+            function.return %self : !struct.type<@StructModule::@MoreNested::@THasUse::@HasUse<[@T]>>
+          }
+          function.def @constrain(%arg0: !struct.type<@StructModule::@MoreNested::@THasUse::@HasUse<[@T]>>) {
+            function.return
+          }
         }
       }
 
@@ -243,7 +271,11 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  - Node : [0x[[R02]]] 'builtin.module' named "StructModule"
 //CHECK-NEXT:  --- Children : [0x[[R12:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R12]]] 'builtin.module' named "MoreNested"
-//CHECK-NEXT:  --- Children : [0x[[R13:[0-9a-f]+]], 0x[[R14:[0-9a-f]+]]]
+//CHECK-NEXT:  --- Children : [0x[[R20:[0-9a-f]+]], 0x[[R14:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R20]]] 'poly.template' named "THasUse"
+//CHECK-NEXT:  --- Children : [0x[[R21:[0-9a-f]+]], 0x[[R13:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R21]]] 'poly.param' named "T"
+//CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R13]]] 'struct.def' named "HasUse"
 //CHECK-NEXT:  --- Children : [0x[[R15:[0-9a-f]+]], 0x[[R16:[0-9a-f]+]]]
 //CHECK-NEXT:  - Node : [0x[[R15]]] 'function.def' named "compute"
@@ -255,5 +287,51 @@ module attributes {veridise.lang = "llzk"} {
 //CHECK-NEXT:  - Node : [0x[[R17]]] 'function.def' named "compute"
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  - Node : [0x[[R18]]] 'function.def' named "constrain"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  -----------------------
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @MyTemplate {
+    poly.param @A
+    poly.param @B
+    poly.expr @C {
+      %a = poly.read_const @A : !felt.type
+      %b = poly.read_const @B : !felt.type
+      %c = felt.add %a, %b
+      poly.yield %c : !felt.type
+    }
+
+    struct.def @MyStruct {
+      function.def @compute() -> !struct.type<@MyTemplate::@MyStruct<[@A, @B]>> {
+        %self = struct.new : !struct.type<@MyTemplate::@MyStruct<[@A, @B]>>
+        function.return %self : !struct.type<@MyTemplate::@MyStruct<[@A, @B]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@MyTemplate::@MyStruct<[@A, @B]>>) {
+        function.return
+      }
+    }
+
+    function.def private @MyFunc () -> !felt.type
+  }
+}
+//CHECK-LABEL: ---- SymbolDefTree ----
+//CHECK-NEXT:  - Node : [0x[[R00:[0-9a-f]+]]] 'builtin.module' without a name
+//CHECK-NEXT:  --- Children : [0x[[R01:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R01]]] 'poly.template' named "MyTemplate"
+//CHECK-NEXT:  --- Children : [0x[[R02:[0-9a-f]+]], 0x[[R03:[0-9a-f]+]], 0x[[R04:[0-9a-f]+]], 0x[[R05:[0-9a-f]+]], 0x[[R08:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R02]]] 'poly.param' named "A"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R03]]] 'poly.param' named "B"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R04]]] 'poly.expr' named "C"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R05]]] 'struct.def' named "MyStruct"
+//CHECK-NEXT:  --- Children : [0x[[R06:[0-9a-f]+]], 0x[[R07:[0-9a-f]+]]]
+//CHECK-NEXT:  - Node : [0x[[R06]]] 'function.def' named "compute"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R07]]] 'function.def' named "constrain"
+//CHECK-NEXT:  --- Children : []
+//CHECK-NEXT:  - Node : [0x[[R08]]] 'function.def' named "MyFunc"
 //CHECK-NEXT:  --- Children : []
 //CHECK-NEXT:  -----------------------

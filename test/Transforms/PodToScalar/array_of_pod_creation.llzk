@@ -1,0 +1,106 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+#outer = affine_map<()[s0] -> (s0)>
+#inner = affine_map<()[s0] -> (s0 + 1)>
+!Elem = !pod.type<[@vals: !array.type<#inner x index>]>
+!ElemArray = !array.type<#outer x !Elem>
+module attributes {llzk.lang} {
+  function.def @uninitialized(%n: index) -> !ElemArray {
+    // The affine map initializer here is for the `#outer` map in `!ElemArray`, not the `#inner` map in `!Elem`.
+    // The `#inner` map can only be initialized via an `array.new` that is then written to the pod which is not
+    // present in this example. Thus, when `pod-to-scalar` combines the arrays to create a single, 2-D array,
+    // the second dimension size must be `?` because no affine instantiation exists to provide as an affine
+    // instantiation. However, the return value itself is unchanged so a `unifiable_cast` is used to convert.
+    %arr = array.new{()[%n]} : !ElemArray
+    function.return %arr : !ElemArray
+  }
+}
+// CHECK: #[[$M1:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+// CHECK: #[[$M2:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0 + 1)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @uninitialized(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> (!array.type<#[[$M1]],#[[$M2]] x index>, !array.type<#[[$M1]] x none>) {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = array.new{(){{\[}}%[[VAL_0]]]} : <#[[$M1]],? x index>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_1]] : (!array.type<#[[$M1]],? x index>) -> !array.type<#[[$M1]],#[[$M2]] x index>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new{(){{\[}}%[[VAL_0]]]} : <#[[$M1]] x none>
+// CHECK-NEXT:      function.return %[[VAL_2]], %[[VAL_3]] : !array.type<#[[$M1]],#[[$M2]] x index>, !array.type<#[[$M1]] x none>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+#inner = affine_map<()[s0] -> (s0 + 1)>
+!Leaf = !array.type<#inner x index>
+!Elem = !pod.type<[@vals: !Leaf]>
+!ElemArray = !array.type<2 x !Elem>
+module attributes {llzk.lang} {
+  function.def @materialized(%n: index) -> !ElemArray {
+    %vals0 = array.new{()[%n]} : !Leaf
+    %vals1 = array.new{()[%n]} : !Leaf
+    %lhs = pod.new()[%n] : !Elem
+    pod.write %lhs[@vals] = %vals0 : !Elem, !Leaf
+    %rhs = pod.new()[%n] : !Elem
+    pod.write %rhs[@vals] = %vals1 : !Elem, !Leaf
+    %arr = array.new %lhs, %rhs : !ElemArray
+    function.return %arr : !ElemArray
+  }
+}
+// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0 + 1)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @materialized(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !array.type<2,#[[$M]] x index> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = array.new{(){{\[}}%[[VAL_0]]]} : <#[[$M]] x index>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.new{(){{\[}}%[[VAL_0]]]} : <#[[$M]] x index>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new{(){{\[}}%[[VAL_0]]]} : <2,#[[$M]] x index>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.insert %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_1]] : <2,#[[$M]] x index>, <#[[$M]] x index>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.insert %[[VAL_3]]{{\[}}%[[VAL_5]]] = %[[VAL_2]] : <2,#[[$M]] x index>, <#[[$M]] x index>
+// CHECK-NEXT:      function.return %[[VAL_3]] : !array.type<2,#[[$M]] x index>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+#inner = affine_map<()[s0] -> (s0 + 1)>
+!Leaf = !array.type<#inner x index>
+!Elem = !pod.type<[@vals: !Leaf]>
+!ElemArray = !array.type<2 x !Elem>
+!Outer = !pod.type<[@items: !ElemArray]>
+module attributes {llzk.lang} {
+  function.def @sink(%arr: !ElemArray) {
+    function.return
+  }
+
+  function.def @source(%p: !Outer) {
+    %items = pod.read %p[@items] : !Outer, !ElemArray
+    function.call @sink(%items) : (!ElemArray) -> ()
+    function.return
+  }
+}
+// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0 + 1)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @sink(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2,#[[$M]] x index>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @source(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2,#[[$M]] x index>) {
+// CHECK-NEXT:      function.call @sink(%[[VAL_1]]) : (!array.type<2,#[[$M]] x index>) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+#inner = affine_map<()[s0] -> (s0 + 1)>
+!InnerArr = !array.type<#inner x index>
+!Elem = !pod.type<[@vals: !InnerArr]>
+!ElemArray = !array.type<2 x !Elem>
+module attributes {llzk.lang} {
+  function.def @conflict(%m: index, %n: index) -> !ElemArray {
+    %vals0 = array.new{()[%m]} : !InnerArr
+    %vals1 = array.new{()[%n]} : !InnerArr
+    %lhs = pod.new()[%m] : !Elem
+    pod.write %lhs[@vals] = %vals0 : !Elem, !InnerArr
+    %rhs = pod.new()[%n] : !Elem
+    pod.write %rhs[@vals] = %vals1 : !Elem, !InnerArr
+    // expected-error@+2 {{'array.new' op with POD elements having conflicting affine map instantiations cannot be promoted to higher dimensional array}}
+    // expected-error@+1 {{failed to legalize operation 'array.new'}}
+    %arr = array.new %lhs, %rhs : !ElemArray
+    function.return %arr : !ElemArray
+  }
+}

@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// This file defines the `-llzk-validate-field-writes` pass.
+/// This file defines the `-llzk-validate-member-writes` pass.
 ///
 //===----------------------------------------------------------------------===//
 
@@ -17,11 +17,17 @@
 
 include "llzk/Pass/PassBase.td"
 
-def FieldWriteValidatorPass
-    : LLZKPass<"llzk-validate-field-writes", "::llzk::component::StructDefOp"> {
+def MemberWriteValidatorPass : LLZKPass<"llzk-validate-member-writes",
+                                        "::llzk::component::StructDefOp"> {
   let summary =
-      "Detect multiple and missing writes to the same field of a component.";
-  let constructor = "llzk::createFieldWriteValidatorPass()";
+      "Detect multiple and missing writes to the same member of a component.";
+  let description = [{
+      Detect multiple and missing writes to the same member of a component.
+
+      Note that this is overapproximate (i.e., some writes may erroneously
+      be flagged as overwrites, and some members may erroneously be marked
+      unwritten).
+  }];
 }
 
 #endif // LLZK_VALIDATION_PASSES_TD

@@ -1,0 +1,40 @@
+// RUN: llzk-opt --llzk-compute-constrain-to-product %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @Main {
+    struct.member @foo : !felt.type
+    function.def @compute(%a: !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      struct.writem %self[@foo] = %a : !struct.type<@Main>, !felt.type
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %a: !felt.type) {
+      %foo = struct.readm %self[@foo] : !struct.type<@Main>, !felt.type
+      constrain.eq %foo, %a : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      struct.member @foo : !felt.type
+// CHECK-NEXT:      function.def @product(%[[INPUT:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Main> attributes {function.allow_constraint, function.allow_witness, llzk.derived} {
+// CHECK-NEXT:        %[[PRODUCT_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Main> {product_source = "compute"}
+// CHECK-NEXT:        struct.writem %[[PRODUCT_SELF]][@foo] = %[[INPUT]] : <@Main>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:        %[[PRODUCT_FOO:[0-9a-zA-Z_\.]+]] = struct.readm %[[PRODUCT_SELF]][@foo] : <@Main>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:        constrain.eq %[[PRODUCT_FOO]], %[[INPUT]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:        function.return %[[PRODUCT_SELF]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @compute(%[[COMPUTE_INPUT:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Main> attributes {function.allow_witness, product_source = "compute"} {
+// CHECK-NEXT:        %[[COMPUTE_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Main> {product_source = "compute"}
+// CHECK-NEXT:        struct.writem %[[COMPUTE_SELF]][@foo] = %[[COMPUTE_INPUT]] : <@Main>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:        function.return {product_source = "compute"} %[[COMPUTE_SELF]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[CONSTRAIN_SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[CONSTRAIN_INPUT:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint, product_source = "constrain"} {
+// CHECK-NEXT:        %[[CONSTRAIN_FOO:[0-9a-zA-Z_\.]+]] = struct.readm %[[CONSTRAIN_SELF]][@foo] : <@Main>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:        constrain.eq %[[CONSTRAIN_FOO]], %[[CONSTRAIN_INPUT]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:        function.return {product_source = "constrain"}
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

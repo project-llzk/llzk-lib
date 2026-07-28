@@ -12,11 +12,14 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/Include/IR/Ops.h"
 #include "llzk/Dialect/Include/Transforms/InlineIncludesPass.h"
+
+#include "llzk/Dialect/Include/IR/Ops.h"
 #include "llzk/Dialect/Include/Util/IncludeHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
+
+#include <llvm/Support/LogicalResult.h>
 
 // Include the generated base pass class definitions.
 namespace llzk::include {
@@ -35,7 +38,10 @@ inline bool contains(IncludeStack &stack, StringRef &&loc) {
   return std::find_if(stack.begin(), stack.end(), path_match) != stack.end();
 }
 
-class InlineIncludesPass : public llzk::include::impl::InlineIncludesPassBase<InlineIncludesPass> {
+class PassImpl : public llzk::include::impl::InlineIncludesPassBase<PassImpl> {
+  using Base = InlineIncludesPassBase<PassImpl>;
+  using Base::Base;
+
   void runOnOperation() override {
     std::vector<std::pair<ModuleOp, IncludeStack>> currLevel = {
         std::make_pair(getOperation(), IncludeStack())
@@ -56,7 +62,8 @@ class InlineIncludesPass : public llzk::include::impl::InlineIncludesPassBase<In
             includeStack.push_back(std::make_pair(incOp.getPath(), incOp.getLoc()));
             FailureOr<ModuleOp> result = incOp.inlineAndErase();
             if (succeeded(result)) {
-              ModuleOp newMod = std::move(result.value());
+              ModuleOp newMod = result.value();
+              assert(succeeded(newMod.verify()) && "newMod must pass verification");
               nextLevel.push_back(make_pair(newMod, includeStack));
             }
           }
@@ -67,12 +74,12 @@ class InlineIncludesPass : public llzk::include::impl::InlineIncludesPassBase<In
       currLevel = nextLevel;
     } while (!currLevel.empty());
 
+    if (failed(getOperation().verify())) {
+      signalPassFailure();
+      return;
+    }
     markAllAnalysesPreserved();
   }
 };
 
 } // namespace
-
-std::unique_ptr<mlir::Pass> llzk::include::createInlineIncludesPass() {
-  return std::make_unique<InlineIncludesPass>();
-};

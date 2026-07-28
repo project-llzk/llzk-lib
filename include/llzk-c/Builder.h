@@ -24,22 +24,31 @@ extern "C" {
 
 #define DEFINE_C_API_STRUCT(name, storage)                                                         \
   struct name {                                                                                    \
+    /* raw pointer to C++ object */                                                                \
     storage *ptr;                                                                                  \
   };                                                                                               \
   typedef struct name name
 
+/// Wrapper around an `mlir::OpBuilder` instance.
 DEFINE_C_API_STRUCT(MlirOpBuilder, void);
+/// Wrapper around an `mlir::OpBuilder::Listener` instance.
 DEFINE_C_API_STRUCT(MlirOpBuilderListener, void);
 
 #undef DEFINE_C_API_STRUCT
 
+/// Current insertion point of an `mlir::OpBuilder` instance represented as a
+/// block and an operation within that block.
 struct MlirOpBuilderInsertPoint {
+  /// The block that the builder is inserting into.
   MlirBlock block;
+  /// The operation that the builder is inserting before.
   MlirOperation point;
 };
 typedef struct MlirOpBuilderInsertPoint MlirOpBuilderInsertPoint;
 
+/// Callback type for listening to operation insertions in an `mlir::OpBuilder`.
 typedef void (*MlirNotifyOperationInserted)(MlirOperation, MlirOpBuilderInsertPoint, void *);
+/// Callback type for listening to block insertions in an `mlir::OpBuilder`.
 typedef void (*MlirNotifyBlockInserted)(MlirBlock, MlirRegion, MlirBlock, void *);
 
 //===----------------------------------------------------------------------===//
@@ -50,7 +59,9 @@ typedef void (*MlirNotifyBlockInserted)(MlirBlock, MlirRegion, MlirBlock, void *
 // to op build methods that we expose. More methods can be added as the need for them arises.
 
 #define DECLARE_SUFFIX_OP_BUILDER_CREATE_FN(suffix, ...)                                           \
+  /* Create a new builder with the given context */                                                \
   MLIR_CAPI_EXPORTED MlirOpBuilder mlirOpBuilderCreate##suffix(__VA_ARGS__);                       \
+  /* Create a new builder with the given context and listener */                                   \
   MLIR_CAPI_EXPORTED MlirOpBuilder mlirOpBuilderCreate##suffix##WithListener(                      \
       __VA_ARGS__, MlirOpBuilderListener                                                           \
   );
@@ -69,6 +80,31 @@ MLIR_CAPI_EXPORTED MlirContext mlirOpBuilderGetContext(MlirOpBuilder builder);
 /// Sets the insertion point to the beginning of the given block.
 MLIR_CAPI_EXPORTED void
 mlirOpBuilderSetInsertionPointToStart(MlirOpBuilder builder, MlirBlock block);
+
+/// Sets the insertion point to the end of the given block.
+MLIR_CAPI_EXPORTED void mlirOpBuilderSetInsertionPointToEnd(MlirOpBuilder builder, MlirBlock block);
+
+/// Sets the insertion point right before the given operation.
+MLIR_CAPI_EXPORTED void
+mlirOpBuilderSetInsertionPoint(MlirOpBuilder builder, MlirOperation operation);
+
+/// Sets the insertion point right after the given operation.
+MLIR_CAPI_EXPORTED void
+mlirOpBuilderSetInsertionPointAfter(MlirOpBuilder builder, MlirOperation operation);
+
+/// Sets the insertion point right after the given value is defined.
+MLIR_CAPI_EXPORTED void
+mlirOpBuilderSetInsertionPointAfterValue(MlirOpBuilder builder, MlirValue value);
+
+/// Return a saved insertion point.
+MLIR_CAPI_EXPORTED MlirOpBuilderInsertPoint mlirOpBuilderSaveInsertionPoint(MlirOpBuilder builder);
+
+/// Restore the insert point to a previously saved point.
+MLIR_CAPI_EXPORTED void
+mlirOpBuilderRestoreInsertionPoint(MlirOpBuilder builder, MlirOpBuilderInsertPoint ip);
+
+/// Reset the insertion point to no location.
+MLIR_CAPI_EXPORTED void mlirOpBuilderClearInsertionPoint(MlirOpBuilder builder);
 
 /// Returns the current insertion point in the builder.
 MLIR_CAPI_EXPORTED MlirOperation mlirOpBuilderGetInsertionPoint(MlirOpBuilder builder);
@@ -96,4 +132,4 @@ MLIR_CAPI_EXPORTED void mlirOpBuilderListenerDestroy(MlirOpBuilderListener liste
 }
 #endif
 
-#endif
+#endif // LLZK_C_BUILDER_H

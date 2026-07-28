@@ -1,0 +1,150 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+!Pair = !pod.type<[@x: index, @y: index]>
+module attributes {llzk.lang} {
+  function.def @nondet_metadata() -> !array.type<4 x !Pair> {
+    %arr = llzk.nondet : !array.type<4 x !Pair> {product_source = "nondet"}
+    function.return %arr : !array.type<4 x !Pair>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @nondet_metadata() -> (!array.type<4 x index>, !array.type<4 x index>) {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<4 x index> {product_source = "nondet"}
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<4 x index> {product_source = "nondet"}
+// CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_1]] : !array.type<4 x index>, !array.type<4 x index>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: index]>
+!PairRow = !array.type<3 x !Pair>
+!PairMatrix = !array.type<2,3 x !Pair>
+module attributes {llzk.lang} {
+  function.def @array_access_metadata(%src: !PairMatrix, %dst: !PairMatrix, %i: index, %j: index) -> !Pair {
+    %row = array.extract %src[%i] : !PairMatrix {product_source = "extract"}
+    array.insert %dst[%j] = %row : !PairMatrix, !PairRow {product_source = "insert"}
+    %elem = array.read %dst[%i, %j] : !PairMatrix, !Pair {product_source = "read"}
+    array.write %dst[%j, %i] = %elem : !PairMatrix, !Pair {product_source = "write"}
+    function.return {product_source = "return"} %elem : !Pair
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @array_access_metadata(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2,3 x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2,3 x index>, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<2,3 x index>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<2,3 x index>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: index, %[[VAL_5:[0-9a-zA-Z_\.]+]]: index) -> (index, index) {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_4]]] : <2,3 x index> {product_source = "extract"}
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_1]]{{\[}}%[[VAL_4]]] : <2,3 x index> {product_source = "extract"}
+// CHECK-NEXT:      array.insert %[[VAL_2]]{{\[}}%[[VAL_5]]] = %[[VAL_6]] : <2,3 x index>, <3 x index> {product_source = "insert"}
+// CHECK-NEXT:      array.insert %[[VAL_3]]{{\[}}%[[VAL_5]]] = %[[VAL_7]] : <2,3 x index>, <3 x index> {product_source = "insert"}
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_2]]{{\[}}%[[VAL_4]], %[[VAL_5]]] : <2,3 x index>, index {product_source = "read"}
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_4]], %[[VAL_5]]] : <2,3 x index>, index {product_source = "read"}
+// CHECK-NEXT:      array.write %[[VAL_2]]{{\[}}%[[VAL_5]], %[[VAL_4]]] = %[[VAL_8]] : <2,3 x index>, index {product_source = "write"}
+// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_5]], %[[VAL_4]]] = %[[VAL_9]] : <2,3 x index>, index {product_source = "write"}
+// CHECK-NEXT:      function.return {product_source = "return"} %[[VAL_8]], %[[VAL_9]] : index, index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: index]>
+module attributes {llzk.lang} {
+  function.def @array_len_metadata(%arr: !array.type<? x !Pair>, %dim: index) -> index {
+    %len = array.len %arr, %dim : !array.type<? x !Pair> {product_source = "len"}
+    function.return %len : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @array_len_metadata(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<? x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<? x index>, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<? x none>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_2]], %[[VAL_3]] : <? x none> {product_source = "len"}
+// CHECK-NEXT:      function.return %[[VAL_4]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: index]>
+module attributes {llzk.lang} {
+  function.def @constraint_metadata(%lhs: !Pair, %rhs: !Pair, %arr: !array.type<2 x !Pair>) attributes {function.allow_constraint} {
+    constrain.eq %lhs, %rhs : !Pair, !Pair {product_source = "eq"}
+    constrain.in %arr, %lhs : !array.type<2 x !Pair>, !Pair {product_source = "in"}
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @constraint_metadata(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      constrain.eq %[[VAL_0]], %[[VAL_2]] : index, index {product_source = "eq"}
+// CHECK-NEXT:      constrain.eq %[[VAL_1]], %[[VAL_3]] : index, index {product_source = "eq"}
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_4]], %[[VAL_9]] : <2 x index>
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = arith.cmpi sge, %[[VAL_8]], %[[VAL_6]] : index
+// CHECK-NEXT:      constrain.eq %[[VAL_11]], %[[VAL_7]] : i1, i1
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = arith.cmpi slt, %[[VAL_8]], %[[VAL_10]] : index
+// CHECK-NEXT:      constrain.eq %[[VAL_12]], %[[VAL_7]] : i1, i1
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_8]]] : <2 x index>, index
+// CHECK-NEXT:      constrain.eq %[[VAL_13]], %[[VAL_0]] : index, index {product_source = "in"}
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_8]]] : <2 x index>, index
+// CHECK-NEXT:      constrain.eq %[[VAL_14]], %[[VAL_1]] : index, index {product_source = "in"}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: index]>
+module attributes {llzk.lang} {
+  struct.def @Box {
+    struct.member @items : !array.type<2 x !Pair> {product_source = "member"}
+    struct.member @copy : !array.type<2 x !Pair> {product_source = "member"}
+
+    function.def @compute(%val: !array.type<2 x !Pair>) -> !struct.type<@Box> {
+      %self = struct.new : !struct.type<@Box>
+      struct.writem %self[@items] = %val : !struct.type<@Box>, !array.type<2 x !Pair> {product_source = "seed"}
+      %items = struct.readm %self[@items] : !struct.type<@Box>, !array.type<2 x !Pair> {product_source = "readm"}
+      struct.writem %self[@copy] = %items : !struct.type<@Box>, !array.type<2 x !Pair> {product_source = "writem"}
+      function.return %self : !struct.type<@Box>
+    }
+
+    function.def @constrain(%self: !struct.type<@Box>, %val: !array.type<2 x !Pair>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Box {
+// CHECK-NEXT:      struct.member @items_x : !array.type<2 x index> {product_source = "member"}
+// CHECK-NEXT:      struct.member @items_y : !array.type<2 x index> {product_source = "member"}
+// CHECK-NEXT:      struct.member @copy_x : !array.type<2 x index> {product_source = "member"}
+// CHECK-NEXT:      struct.member @copy_y : !array.type<2 x index> {product_source = "member"}
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>) -> !struct.type<@Box> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Box>
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@items_x] = %[[VAL_0]] : <@Box>, !array.type<2 x index> {product_source = "seed"}
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@items_y] = %[[VAL_1]] : <@Box>, !array.type<2 x index> {product_source = "seed"}
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@items_x] : <@Box>, !array.type<2 x index> {product_source = "readm"}
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@items_y] : <@Box>, !array.type<2 x index> {product_source = "readm"}
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@copy_x] = %[[VAL_3]] : <@Box>, !array.type<2 x index> {product_source = "writem"}
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@copy_y] = %[[VAL_4]] : <@Box>, !array.type<2 x index> {product_source = "writem"}
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@Box>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@Box>, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>, %[[VAL_7:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+#metadata_len = affine_map<()[s0] -> (s0)>
+!MetadataPair = !pod.type<[@x: index, @y: index]>
+!MetadataPairArray = !array.type<#metadata_len x !MetadataPair>
+module attributes {llzk.lang} {
+  function.def @metadata_on_mapped_array_new(%n: index) -> !MetadataPairArray {
+    %arr = array.new{()[%n]} : !MetadataPairArray {product_source = "compute"}
+    function.return %arr : !MetadataPairArray
+  }
+}
+// CHECK: #[[$METADATA_LEN:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @metadata_on_mapped_array_new(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> (!array.type<#[[$METADATA_LEN]] x index>, !array.type<#[[$METADATA_LEN]] x index>, !array.type<#[[$METADATA_LEN]] x none>) {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = array.new{(){{\[}}%[[VAL_0]]]} : <#[[$METADATA_LEN]] x index>  {product_source = "compute"}
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.new{(){{\[}}%[[VAL_0]]]} : <#[[$METADATA_LEN]] x index>  {product_source = "compute"}
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new{(){{\[}}%[[VAL_0]]]} : <#[[$METADATA_LEN]] x none>  {product_source = "compute"}
+// CHECK-NEXT:      function.return %[[VAL_1]], %[[VAL_2]], %[[VAL_3]] : !array.type<#[[$METADATA_LEN]] x index>, !array.type<#[[$METADATA_LEN]] x index>, !array.type<#[[$METADATA_LEN]] x none>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

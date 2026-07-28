@@ -1,0 +1,61 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --output-scope=full-witness | FileCheck %s --check-prefix=FULL
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine --output-scope=full-witness | FileCheck %s --check-prefix=FULL
+
+//--- test.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !array.type<3 x !felt.type<"babybear">> {llzk.pub}
+    function.def @compute(
+      %input: !array.type<3 x !felt.type<"babybear">> {function.arg_name = "input"}
+    ) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %c2 = arith.constant 2 : index
+      %a0 = array.read %input[%c0] : !array.type<3 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %a1 = array.read %input[%c1] : !array.type<3 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %a2 = array.read %input[%c2] : !array.type<3 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %cmp = bool.cmp lt(%a0, %a1) : !felt.type<"babybear">, !felt.type<"babybear">
+      bool.assert %cmp, "input[0] must be less than input[1]"
+      %sum = felt.add %a0, %a2 : !felt.type<"babybear">, !felt.type<"babybear">
+      %out = array.new %a0, %a1, %sum : !array.type<3 x !felt.type<"babybear">>
+      struct.writem %self[@out] = %out : !struct.type<@Main>, !array.type<3 x !felt.type<"babybear">>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %input: !array.type<3 x !felt.type<"babybear">>) {
+      function.return
+    }
+  }
+}
+
+// CHECK: {
+// CHECK-NEXT:   "out": [
+// CHECK-NEXT:     "2",
+// CHECK-NEXT:     "5",
+// CHECK-NEXT:     "9"
+// CHECK-NEXT:   ]
+// CHECK-NEXT: }
+
+// FULL: {
+// FULL-NEXT:   "inputs": {
+// FULL-NEXT:     "input": [
+// FULL-NEXT:       "2",
+// FULL-NEXT:       "5",
+// FULL-NEXT:       "7"
+// FULL-NEXT:     ]
+// FULL-NEXT:   },
+// FULL-NEXT:   "signals": {
+// FULL-NEXT:     "out": [
+// FULL-NEXT:       "2",
+// FULL-NEXT:       "5",
+// FULL-NEXT:       "9"
+// FULL-NEXT:     ]
+// FULL-NEXT:   }
+// FULL-NEXT: }
+
+//--- input.json
+{"input": [2, 5, 7]}

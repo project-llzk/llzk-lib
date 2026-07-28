@@ -4,8 +4,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLZK_TRANSFORMS_LOWERING_UTILS_H
-#define LLZK_TRANSFORMS_LOWERING_UTILS_H
+#pragma once
 
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
@@ -13,6 +12,7 @@
 
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/Types.h>
 #include <mlir/IR/Value.h>
 #include <mlir/Support/LogicalResult.h>
 
@@ -21,19 +21,31 @@
 namespace llzk {
 
 struct AuxAssignment {
-  std::string auxFieldName;
+  std::string auxMemberName;
   mlir::Value computedValue;
 };
 
+/// Rebuilds a straight-line constrain-side felt expression in `computeFunc`.
+/// Block arguments are mapped by constrain entry-block position: argument 0 to
+/// compute `%self`, and later arguments to compute inputs.
+/// Returns null after emitting a diagnostic when an expression root cannot be
+/// rebuilt safely in compute.
 mlir::Value rebuildExprInCompute(
     mlir::Value val, function::FuncDefOp computeFunc, mlir::OpBuilder &builder,
     llvm::DenseMap<mlir::Value, mlir::Value> &memo
 );
 
 mlir::LogicalResult
-checkForAuxFieldConflicts(component::StructDefOp structDef, llvm::StringRef auxPrefix);
+checkForAuxMemberConflicts(component::StructDefOp structDef, llvm::StringRef auxPrefix);
 
-component::FieldDefOp addAuxField(component::StructDefOp structDef, llvm::StringRef name);
+/// Rejects control flow under `func`; auxiliary materialization assumes control
+/// flow has already been flattened or otherwise lowered away. The region check
+/// catches multi-block function bodies before the operation walk rejects nested
+/// regions or successor-bearing operations.
+mlir::LogicalResult checkFuncBodyIsStraightLine(function::FuncDefOp func, llvm::StringRef passName);
+
+component::MemberDefOp
+addAuxMember(component::StructDefOp structDef, llvm::StringRef name, mlir::Type type);
 
 unsigned getFeltDegree(mlir::Value val, llvm::DenseMap<mlir::Value, unsigned> &memo);
 
@@ -54,5 +66,3 @@ unsigned getFeltDegree(mlir::Value val, llvm::DenseMap<mlir::Value, unsigned> &m
 void replaceSubsequentUsesWith(mlir::Value oldVal, mlir::Value newVal, mlir::Operation *afterOp);
 
 } // namespace llzk
-
-#endif // LLZK_TRANSFORMS_LOWERING_UTILS_H

@@ -7,9 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Util/TypeHelper.h"
-
 #include "llzk-c/Typing.h"
+
+#include "llzk/Util/TypeHelper.h"
 
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Support.h>
@@ -42,8 +42,6 @@ bool llzkIsValidArrayType(MlirType type) { return isValidArrayType(unwrap(type))
 bool llzkIsConcreteType(MlirType type, bool allowStructParams) {
   return isConcreteType(unwrap(type), allowStructParams);
 }
-
-bool llzkIsSignalType(MlirType type) { return isSignalType(unwrap(type)); }
 
 bool llzkHasAffineMapAttr(MlirType type) { return hasAffineMapAttr(unwrap(type)); }
 

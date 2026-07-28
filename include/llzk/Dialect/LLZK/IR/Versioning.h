@@ -9,7 +9,15 @@
 
 #include <mlir/Bytecode/BytecodeImplementation.h>
 
+#include <llvm/ADT/APInt.h>
+
+#include <limits>
+
 namespace llzk {
+
+/// Temporary attribute name used during v1→v2 bytecode upgrade to carry the old
+/// `const_params` value from `StructDefOp::readProperties` to `upgradeFromVersion`.
+static constexpr auto kV1ConstParamsAttr = "llzk.v1_const_params";
 
 struct LLZKDialectVersion : public mlir::DialectVersion {
   static const LLZKDialectVersion &CurrentVersion();
@@ -30,6 +38,25 @@ struct LLZKDialectVersion : public mlir::DialectVersion {
 
   uint64_t majorVersion, minorVersion, patchVersion;
 };
+
+/// Write an APInt with its bit width, so the bytecode reader can use MLIR's
+/// native APInt payload encoding instead of falling back to decimal assembly.
+inline void writeAPInt(mlir::DialectBytecodeWriter &writer, const llvm::APInt &value) {
+  writer.writeVarInt(value.getBitWidth());
+  writer.writeAPIntWithKnownWidth(value);
+}
+
+/// Read an APInt written by `writeAPInt`.
+inline mlir::FailureOr<llvm::APInt> readAPInt(mlir::DialectBytecodeReader &reader) {
+  uint64_t bitWidth;
+  if (mlir::failed(reader.readVarInt(bitWidth))) {
+    return mlir::failure();
+  }
+  if (bitWidth > std::numeric_limits<unsigned>::max()) {
+    return reader.emitError("APInt bit width too large");
+  }
+  return reader.readAPIntWithKnownWidth(static_cast<unsigned>(bitWidth));
+}
 
 /// @brief This implements the bytecode interface for the LLZK dialect.
 template <typename DialectTy>
@@ -60,31 +87,34 @@ struct LLZKDialectBytecodeInterface : public mlir::BytecodeDialectInterface {
     return std::make_unique<LLZKDialectVersion>(std::move(*versionOr));
   }
 
-  /// Hook invoked after parsing completed, if a version directive was present
-  /// and included an entry for the current dialect. This hook offers the
-  /// opportunity to the dialect to visit the IR and upgrades constructs emitted
-  /// by the version of the dialect corresponding to the provided version.
-  mlir::LogicalResult upgradeFromVersion(
-      mlir::Operation *topLevelOp, const mlir::DialectVersion &version
-  ) const override {
+  /// Hook invoked for each custom dialect after parsing is completed if a version directive was
+  /// present and included an entry for the current dialect. This hook offers the opportunity for
+  /// the dialect to visit the IR and upgrade constructs emitted by the provided version of the
+  /// dialect to the current version.
+  mlir::LogicalResult
+  upgradeFromVersion(mlir::Operation *rootOp, const mlir::DialectVersion &version) const final {
     const auto &requested = static_cast<const LLZKDialectVersion &>(version);
     const auto &current = LLZKDialectVersion::CurrentVersion();
     if (requested == current) {
-      // No work to do, versions match.
-      return mlir::success();
+      return mlir::success(); // versions match, nothing to do
     }
     if (requested > current) {
-      return topLevelOp->emitError().append(
+      return rootOp->emitError().append(
           "Cannot upgrade from current version ", current.str(), " to future version ",
           requested.str()
       );
     }
-    // NOTE: This is the point at which upgrade functionality should be added
-    // for backwards compatibility.
-    return topLevelOp->emitWarning().append(
-        "LLZK version ", requested.str(), " is older than current version ", current.str(),
-        " and no upgrade methods have been implemented. Proceed with caution."
-    );
+    return upgradeFromVersion(rootOp, current, requested);
+  }
+
+  virtual mlir::LogicalResult upgradeFromVersion(
+      mlir::Operation * /*rootOp*/, const LLZKDialectVersion &current,
+      const LLZKDialectVersion &requested
+  ) const {
+    assert(requested < current && "pre-condition of upgradeFromVersion not met");
+    // Default implementation does nothing. Dialects that have breaking changes between versions
+    // should override this method to perform the necessary upgrade transformations.
+    return mlir::success();
   }
 };
 

@@ -1,0 +1,7 @@
+changed:
+  - CAPI:
+    - llzkFunction_FuncDefOpCreateWithAttrsAndArgAttrs -> llzkFunction_FuncDefOpBuildWithAttrsAndArgAttrs
+    - llzkFunction_FuncDefOpCreateWithAttrs -> llzkFunction_FuncDefOpBuildWithAttrs
+    - llzkFunction_FuncDefOpCreateWithArgAttrs -> llzkFunction_FuncDefOpBuildWithArgAttrs
+    - llzkFunction_FuncDefOpCreateWithoutAttrs -> llzkFunction_FuncDefOpBuildWithoutAttrs
+    - llzkInclude_IncludeOpCreateInferredContext -> llzkInclude_IncludeOpBuildInferredContext

@@ -23,14 +23,18 @@ class LLZKDialectAttr<string name, string attrMnemonic, list<Trait> traits = []>
 }
 
 def LLZK_PublicAttr : LLZKDialectAttr<"Public", "pub"> {
-  let summary = "A unit attribute to mark a type as public";
+  let summary = "A unit attribute to mark an input/output as public";
   let description = [{
+    This attribute is used on parameters of `compute()` and `constrain()` functions
+    within a `struct.def` to denote the public inputs of the circuit and on
+    `struct.member` ops to denote public output of the circuit.
+
     Examples:
 
     ```llzk
-    struct.field @field_name : !felt.type {llzk.pub}
+    struct.member @member_name : !felt.type {llzk.pub}
 
-    function.def @func_name(%0: !felt.type {llzk.pub})
+    function.def @compute(%0: !felt.type {llzk.pub})
     ```
   }];
 }
@@ -56,6 +60,13 @@ def LLZK_LoopBoundsAttr : LLZKDialectAttr<"LoopBounds", "loopbounds"> {
       (ins APIntParameter<"Loop variable lower bound (inclusive)">:$lower,
           APIntParameter<"Loop variable upper bound (exclusive)">:$upper,
           APIntParameter<"Loop variable step/increment">:$step);
+
+  let builders = [AttrBuilder<
+      (ins "::llvm::APInt":$lower, "::llvm::APInt":$upper,
+          "::llvm::APInt":$step),
+      [{ return $_get(context, ::llzk::APIntValue(std::move(lower)),
+          ::llzk::APIntValue(std::move(upper)),
+          ::llzk::APIntValue(std::move(step))); }]>];
 
   let assemblyFormat = "`<` $lower `to` $upper `step` $step `>`";
 }

@@ -1,0 +1,175 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json | FileCheck %s
+// COM: Known flattening pass issue: https://github.com/project-llzk/llzk-lib/issues/456
+// COM: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
+
+//--- test.llzk
+
+!Vec4 = !pod.type<[@p: !array.type<4 x !felt.type<"babybear">>]>
+!SumInputs = !pod.type<[@vec: !Vec4, @c: !felt.type<"babybear">]>
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Sum4 {
+    struct.member @sum : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(%vec: !Vec4, %c: !felt.type<"babybear">) -> !struct.type<@Sum4> {
+      %self = struct.new : !struct.type<@Sum4>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %c4 = arith.constant 4 : index
+      %sum = scf.for %i = %c0 to %c4 step %c1
+          iter_args(%acc = %c) -> (!felt.type<"babybear">) {
+        %arr = pod.read %vec[@p] : !Vec4, !array.type<4 x !felt.type<"babybear">>
+        %v = array.read %arr[%i] : !array.type<4 x !felt.type<"babybear">>, !felt.type<"babybear">
+        %next = felt.add %acc, %v : !felt.type<"babybear">, !felt.type<"babybear">
+        scf.yield %next : !felt.type<"babybear">
+      }
+      struct.writem %self[@sum] = %sum : !struct.type<@Sum4>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Sum4>
+    }
+    function.def @constrain(%self: !struct.type<@Sum4>, %vec: !Vec4, %c: !felt.type<"babybear">) {
+      function.return
+    }
+  }
+
+  struct.def @Sum3 {
+    struct.member @sum : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(%vec: !Vec4, %c: !felt.type<"babybear">) -> !struct.type<@Sum3> {
+      %self = struct.new : !struct.type<@Sum3>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %c3 = arith.constant 3 : index
+      %sum = scf.for %i = %c0 to %c3 step %c1
+          iter_args(%acc = %c) -> (!felt.type<"babybear">) {
+        %arr = pod.read %vec[@p] : !Vec4, !array.type<4 x !felt.type<"babybear">>
+        %v = array.read %arr[%i] : !array.type<4 x !felt.type<"babybear">>, !felt.type<"babybear">
+        %next = felt.add %acc, %v : !felt.type<"babybear">, !felt.type<"babybear">
+        scf.yield %next : !felt.type<"babybear">
+      }
+      struct.writem %self[@sum] = %sum : !struct.type<@Sum3>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Sum3>
+    }
+    function.def @constrain(%self: !struct.type<@Sum3>, %vec: !Vec4, %c: !felt.type<"babybear">) {
+      function.return
+    }
+  }
+
+  struct.def @Main {
+    struct.member @out : !array.type<2 x !felt.type<"babybear">> {llzk.pub}
+    function.def @compute(
+      %x: !array.type<7 x !felt.type<"babybear">> {function.arg_name = "x"}
+    ) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %inputs = array.new : !array.type<2 x !SumInputs>
+      %out = array.new : !array.type<2 x !felt.type<"babybear">>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %c2 = arith.constant 2 : index
+      %c3 = arith.constant 3 : index
+      %c4 = arith.constant 4 : index
+      %zero = felt.const 0 <"babybear">
+      %one = felt.const 1 <"babybear">
+
+      %init0 = pod.new { @c = %zero } : !SumInputs
+      array.write %inputs[%c0] = %init0 : !array.type<2 x !SumInputs>, !SumInputs
+      %init1 = pod.new { @c = %one } : !SumInputs
+      array.write %inputs[%c1] = %init1 : !array.type<2 x !SumInputs>, !SumInputs
+
+      %in0a = array.read %inputs[%c0] : !array.type<2 x !SumInputs>, !SumInputs
+      %vec0a = pod.read %in0a[@vec] : !SumInputs, !Vec4
+      %arr0a = pod.read %vec0a[@p] : !Vec4, !array.type<4 x !felt.type<"babybear">>
+      %x0 = array.read %x[%c0] : !array.type<7 x !felt.type<"babybear">>, !felt.type<"babybear">
+      array.write %arr0a[%c0] = %x0 : !array.type<4 x !felt.type<"babybear">>, !felt.type<"babybear">
+      pod.write %vec0a[@p] = %arr0a : !Vec4, !array.type<4 x !felt.type<"babybear">>
+      pod.write %in0a[@vec] = %vec0a : !SumInputs, !Vec4
+      array.write %inputs[%c0] = %in0a : !array.type<2 x !SumInputs>, !SumInputs
+
+      %in0b = array.read %inputs[%c0] : !array.type<2 x !SumInputs>, !SumInputs
+      %vec0b = pod.read %in0b[@vec] : !SumInputs, !Vec4
+      %arr0b = pod.read %vec0b[@p] : !Vec4, !array.type<4 x !felt.type<"babybear">>
+      %x1 = array.read %x[%c1] : !array.type<7 x !felt.type<"babybear">>, !felt.type<"babybear">
+      array.write %arr0b[%c1] = %x1 : !array.type<4 x !felt.type<"babybear">>, !felt.type<"babybear">
+      pod.write %vec0b[@p] = %arr0b : !Vec4, !array.type<4 x !felt.type<"babybear">>
+      pod.write %in0b[@vec] = %vec0b : !SumInputs, !Vec4
+      array.write %inputs[%c0] = %in0b : !array.type<2 x !SumInputs>, !SumInputs
+
+      %in0c = array.read %inputs[%c0] : !array.type<2 x !SumInputs>, !SumInputs
+      %vec0c = pod.read %in0c[@vec] : !SumInputs, !Vec4
+      %arr0c = pod.read %vec0c[@p] : !Vec4, !array.type<4 x !felt.type<"babybear">>
+      %x2 = array.read %x[%c2] : !array.type<7 x !felt.type<"babybear">>, !felt.type<"babybear">
+      array.write %arr0c[%c2] = %x2 : !array.type<4 x !felt.type<"babybear">>, !felt.type<"babybear">
+      pod.write %vec0c[@p] = %arr0c : !Vec4, !array.type<4 x !felt.type<"babybear">>
+      pod.write %in0c[@vec] = %vec0c : !SumInputs, !Vec4
+      array.write %inputs[%c0] = %in0c : !array.type<2 x !SumInputs>, !SumInputs
+
+      %in0d = array.read %inputs[%c0] : !array.type<2 x !SumInputs>, !SumInputs
+      %vec0d = pod.read %in0d[@vec] : !SumInputs, !Vec4
+      %arr0d = pod.read %vec0d[@p] : !Vec4, !array.type<4 x !felt.type<"babybear">>
+      %x3 = array.read %x[%c3] : !array.type<7 x !felt.type<"babybear">>, !felt.type<"babybear">
+      array.write %arr0d[%c3] = %x3 : !array.type<4 x !felt.type<"babybear">>, !felt.type<"babybear">
+      pod.write %vec0d[@p] = %arr0d : !Vec4, !array.type<4 x !felt.type<"babybear">>
+      pod.write %in0d[@vec] = %vec0d : !SumInputs, !Vec4
+      array.write %inputs[%c0] = %in0d : !array.type<2 x !SumInputs>, !SumInputs
+
+      %in1a = array.read %inputs[%c1] : !array.type<2 x !SumInputs>, !SumInputs
+      %vec1a = pod.read %in1a[@vec] : !SumInputs, !Vec4
+      %arr1a = pod.read %vec1a[@p] : !Vec4, !array.type<4 x !felt.type<"babybear">>
+      %x4 = array.read %x[%c4] : !array.type<7 x !felt.type<"babybear">>, !felt.type<"babybear">
+      array.write %arr1a[%c0] = %x4 : !array.type<4 x !felt.type<"babybear">>, !felt.type<"babybear">
+      pod.write %vec1a[@p] = %arr1a : !Vec4, !array.type<4 x !felt.type<"babybear">>
+      pod.write %in1a[@vec] = %vec1a : !SumInputs, !Vec4
+      array.write %inputs[%c1] = %in1a : !array.type<2 x !SumInputs>, !SumInputs
+
+      %in1b = array.read %inputs[%c1] : !array.type<2 x !SumInputs>, !SumInputs
+      %vec1b = pod.read %in1b[@vec] : !SumInputs, !Vec4
+      %arr1b = pod.read %vec1b[@p] : !Vec4, !array.type<4 x !felt.type<"babybear">>
+      %x5idx = arith.addi %c4, %c1 : index
+      %x5val = array.read %x[%x5idx] : !array.type<7 x !felt.type<"babybear">>, !felt.type<"babybear">
+      array.write %arr1b[%c1] = %x5val : !array.type<4 x !felt.type<"babybear">>, !felt.type<"babybear">
+      pod.write %vec1b[@p] = %arr1b : !Vec4, !array.type<4 x !felt.type<"babybear">>
+      pod.write %in1b[@vec] = %vec1b : !SumInputs, !Vec4
+      array.write %inputs[%c1] = %in1b : !array.type<2 x !SumInputs>, !SumInputs
+
+      %in1c = array.read %inputs[%c1] : !array.type<2 x !SumInputs>, !SumInputs
+      %vec1c = pod.read %in1c[@vec] : !SumInputs, !Vec4
+      %arr1c = pod.read %vec1c[@p] : !Vec4, !array.type<4 x !felt.type<"babybear">>
+      %x6idx = arith.addi %c4, %c2 : index
+      %x6val = array.read %x[%x6idx] : !array.type<7 x !felt.type<"babybear">>, !felt.type<"babybear">
+      array.write %arr1c[%c2] = %x6val : !array.type<4 x !felt.type<"babybear">>, !felt.type<"babybear">
+      pod.write %vec1c[@p] = %arr1c : !Vec4, !array.type<4 x !felt.type<"babybear">>
+      pod.write %in1c[@vec] = %vec1c : !SumInputs, !Vec4
+      array.write %inputs[%c1] = %in1c : !array.type<2 x !SumInputs>, !SumInputs
+
+      %sum4Inputs = array.read %inputs[%c0] : !array.type<2 x !SumInputs>, !SumInputs
+      %sum4Vec = pod.read %sum4Inputs[@vec] : !SumInputs, !Vec4
+      %sum4C = pod.read %sum4Inputs[@c] : !SumInputs, !felt.type<"babybear">
+      %sum4 = function.call @Sum4::@compute(%sum4Vec, %sum4C)
+          : (!Vec4, !felt.type<"babybear">) -> !struct.type<@Sum4>
+      %sum4Out = struct.readm %sum4[@sum] : !struct.type<@Sum4>, !felt.type<"babybear">
+      array.write %out[%c0] = %sum4Out : !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+
+      %sum3Inputs = array.read %inputs[%c1] : !array.type<2 x !SumInputs>, !SumInputs
+      %sum3Vec = pod.read %sum3Inputs[@vec] : !SumInputs, !Vec4
+      %sum3C = pod.read %sum3Inputs[@c] : !SumInputs, !felt.type<"babybear">
+      %sum3 = function.call @Sum3::@compute(%sum3Vec, %sum3C)
+          : (!Vec4, !felt.type<"babybear">) -> !struct.type<@Sum3>
+      %sum3Out = struct.readm %sum3[@sum] : !struct.type<@Sum3>, !felt.type<"babybear">
+      array.write %out[%c1] = %sum3Out : !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+
+      struct.writem %self[@out] = %out : !struct.type<@Main>, !array.type<2 x !felt.type<"babybear">>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %x: !array.type<7 x !felt.type<"babybear">>) {
+      function.return
+    }
+  }
+}
+
+// CHECK: {
+// CHECK-NEXT:   "out": [
+// CHECK-NEXT:     "10",
+// CHECK-NEXT:     "19"
+// CHECK-NEXT:   ]
+// CHECK-NEXT: }
+
+//--- input.json
+{"x": [1, 2, 3, 4, 5, 6, 7]}

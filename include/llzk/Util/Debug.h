@@ -42,6 +42,8 @@ struct Appender {
   void append(const mlir::OpOperand &a);
   void append(const mlir::NamedAttribute &a);
   void append(const mlir::SymbolTable::SymbolUse &a);
+  // Adding StringRef explicitly so strings are not printed via appendList.
+  void append(const llvm::StringRef a);
   template <typename T> void append(const std::optional<T> &a);
   template <typename Any> void append(const Any &value);
   template <typename A, typename B> void append(const std::pair<A, B> &a);
@@ -59,7 +61,7 @@ void Appender::append(const mlir::MemorySlot &a) {
 [[maybe_unused]]
 void Appender::append(const mlir::DestructurableMemorySlot &a) {
   stream << "ptr: " << a.ptr << "; type: " << a.elemType << "; subelementTypes:\n";
-  for (auto &p : a.subelementTypes) {
+  for (const auto &p : a.subelementTypes) {
     stream.indent(2);
     append(p);
     stream << '\n';
@@ -79,6 +81,11 @@ void Appender::append(const mlir::NamedAttribute &a) {
 [[maybe_unused]]
 void Appender::append(const mlir::SymbolTable::SymbolUse &a) {
   stream << a.getUser()->getName();
+}
+
+[[maybe_unused]]
+void Appender::append(const llvm::StringRef a) {
+  stream << a;
 }
 
 template <typename T>

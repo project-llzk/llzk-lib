@@ -1,0 +1,55 @@
+// RUN: llzk-opt -split-input-file -llzk-r1cs-lowering -verify-diagnostics %s
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @R1CSLoopAuxScope {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%a: !felt.type) -> !struct.type<@R1CSLoopAuxScope> {
+      %self = struct.new : !struct.type<@R1CSLoopAuxScope>
+      struct.writem %self[@out] = %a : !struct.type<@R1CSLoopAuxScope>, !felt.type
+      function.return %self : !struct.type<@R1CSLoopAuxScope>
+    }
+
+    function.def @constrain(%self: !struct.type<@R1CSLoopAuxScope>, %a: !felt.type) {
+      %lb = arith.constant 0 : index
+      %ub = arith.constant 2 : index
+      %step = arith.constant 1 : index
+      %one = felt.const 1 : !felt.type
+
+      // expected-error@+1 {{R1CS lowering expects a straight-line constrain body; run `llzk-flatten` or another control-flow lowering pass first}}
+      %res = scf.for %iv = %lb to %ub step %step iter_args(%acc = %a) -> !felt.type {
+        %dynamic_sq = felt.mul %acc, %acc : !felt.type, !felt.type
+        %component_sq = felt.mul %a, %a : !felt.type, !felt.type
+        constrain.eq %dynamic_sq, %component_sq : !felt.type
+        %next = felt.add %acc, %one : !felt.type, !felt.type
+        scf.yield %next : !felt.type
+      }
+
+      function.return
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @R1CSBranchAuxScope {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%a: !felt.type, %cond: i1) -> !struct.type<@R1CSBranchAuxScope> {
+      %self = struct.new : !struct.type<@R1CSBranchAuxScope>
+      struct.writem %self[@out] = %a : !struct.type<@R1CSBranchAuxScope>, !felt.type
+      function.return %self : !struct.type<@R1CSBranchAuxScope>
+    }
+
+    function.def @constrain(%self: !struct.type<@R1CSBranchAuxScope>, %a: !felt.type, %cond: i1) {
+      // expected-error@+1 {{R1CS lowering expects a straight-line constrain body; run `llzk-flatten` or another control-flow lowering pass first}}
+      scf.if %cond {
+        %dynamic_sq = felt.mul %a, %a : !felt.type, !felt.type
+        constrain.eq %dynamic_sq, %dynamic_sq : !felt.type
+      }
+
+      function.return
+    }
+  }
+}

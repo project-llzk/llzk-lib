@@ -22,11 +22,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1765385817,
-        "narHash": "sha256-eqfdZp/VGnC1HVBmujpTwI76nSrQhfnwpXacmR+g02s=",
+        "lastModified": 1778767410,
+        "narHash": "sha256-1BPcnOfruj+hudFV9JJ2ieio21h3cWT9VTOr0scMzU8=",
         "owner": "project-llzk",
         "repo": "llzk-nix-pkgs",
-        "rev": "e78d7afcba4898b37a7629fb7f8b097f136103b7",
+        "rev": "aab16d7fa4a4d498f1dab9a8ea95b4e571b50b44",
         "type": "github"
       },
       "original": {
@@ -51,37 +51,6 @@
         "type": "github"
       }
     },
-    "pcl-mlir-pkg": {
-      "inputs": {
-        "flake-utils": [
-          "llzk-pkgs",
-          "flake-utils"
-        ],
-        "nixpkgs": [
-          "llzk-pkgs",
-          "nixpkgs"
-        ],
-        "release-helpers": [
-          "release-helpers"
-        ],
-        "shared-pkgs": [
-          "llzk-pkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1762369885,
-        "narHash": "sha256-j7aARWOa10cranctQ39cfEELMlEAeZsRrJIGKPJ5o88=",
-        "owner": "Veridise",
-        "repo": "pcl-mlir",
-        "rev": "a82620c4dabf6e51ceda66bba2abb19f7f74ac7d",
-        "type": "github"
-      },
-      "original": {
-        "owner": "Veridise",
-        "repo": "pcl-mlir",
-        "type": "github"
-      }
-    },
     "release-helpers": {
       "inputs": {
         "flake-utils": [
@@ -94,11 +63,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1747068965,
-        "narHash": "sha256-px7s7IVHnR3SiShc7FKCUiL6vfqew5AM6jnkH7qO03I=",
+        "lastModified": 1780590591,
+        "narHash": "sha256-nvEp8MipNTJbXjy7enB51FryvJln1Dnwg7Gydkli2ds=",
         "owner": "project-llzk",
         "repo": "open-source-release-helpers",
-        "rev": "c3d1ab6082cc62b167927d074f2836f290b9e3b7",
+        "rev": "b25a037ac3f7ae824b4cd403d651e6c3878d03cf",
         "type": "github"
       },
       "original": {
@@ -118,7 +87,6 @@
           "llzk-pkgs",
           "nixpkgs"
         ],
-        "pcl-mlir-pkg": "pcl-mlir-pkg",
         "release-helpers": "release-helpers"
       }
     }

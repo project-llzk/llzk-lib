@@ -7,13 +7,18 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llzk-c/Dialect/Function.h"
+
+#include "llzk-c/Support.h"
+
 #include "llzk/CAPI/Builder.h"
 #include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 
-#include "llzk-c/Dialect/Function.h"
-#include "llzk-c/Support.h"
+#include <mlir-c/BuiltinAttributes.h>
+#include <mlir-c/IR.h>
+#include <mlir-c/Pass.h>
 
 #include <mlir/CAPI/IR.h>
 #include <mlir/CAPI/Pass.h>
@@ -22,30 +27,26 @@
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinAttributes.h>
 
-#include <mlir-c/IR.h>
-#include <mlir-c/Pass.h>
-
 #include <llvm/ADT/SmallVectorExtras.h>
 
 using namespace mlir;
 using namespace llzk;
 using namespace llzk::function;
 
-MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Function, llzk__function, FunctionDialect)
+// Include the generated CAPI
+#include "llzk/Dialect/Function/IR/Attrs.capi.cpp.inc"
+#include "llzk/Dialect/Function/IR/Ops.capi.cpp.inc"
 
-static NamedAttribute unwrap(MlirNamedAttribute attr) {
-  return NamedAttribute(unwrap(attr.name), unwrap(attr.attribute));
-}
+MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Function, llzk__function, FunctionDialect)
 
 //===----------------------------------------------------------------------===//
 // FuncDefOp
 //===----------------------------------------------------------------------===//
 
-/// Creates a FuncDefOp with the given attributes and argument attributes. Each argument attribute
-/// has to be a DictionaryAttr.
-MlirOperation llzkFuncDefOpCreateWithAttrsAndArgAttrs(
-    MlirLocation location, MlirStringRef name, MlirType funcType, intptr_t numAttrs,
-    MlirNamedAttribute const *attrs, intptr_t numArgAttrs, MlirAttribute const *argAttrs
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
+    Function, FuncDefOp, WithAttrsAndArgAttrs, MlirStringRef name, MlirType funcType,
+    intptr_t numAttrs, MlirNamedAttribute const *attrs, intptr_t numArgAttrs,
+    MlirAttribute const *argAttrs
 ) {
   SmallVector<NamedAttribute> attrsSto;
   SmallVector<Attribute> argAttrsSto;
@@ -53,75 +54,66 @@ MlirOperation llzkFuncDefOpCreateWithAttrsAndArgAttrs(
       llvm::map_to_vector(unwrapList(numArgAttrs, argAttrs, argAttrsSto), [](auto attr) {
     return llvm::cast<DictionaryAttr>(attr);
   });
-  return wrap(
-      FuncDefOp::create(
-          unwrap(location), unwrap(name), llvm::cast<FunctionType>(unwrap(funcType)),
-          unwrapList(numAttrs, attrs, attrsSto), unwrappedArgAttrs
-      )
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<FuncDefOp>(
+                       builder, location, unwrap(name), llvm::cast<FunctionType>(unwrap(funcType)),
+                       unwrapList(numAttrs, attrs, attrsSto), unwrappedArgAttrs
+                   )
+               )
   );
 }
 
-bool llzkOperationIsAFuncDefOp(MlirOperation op) { return llvm::isa<FuncDefOp>(unwrap(op)); }
-
-bool llzkFuncDefOpGetHasAllowConstraintAttr(MlirOperation op) {
-  return unwrap_cast<FuncDefOp>(op).hasAllowConstraintAttr();
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
+    Function, FuncDefOp, WithAttrs, MlirStringRef name, MlirType funcType, intptr_t numAttrs,
+    MlirNamedAttribute const *attrs
+) {
+  return llzkFunction_FuncDefOpBuildWithAttrsAndArgAttrs(
+      builder, location, name, funcType, numAttrs, attrs, /*numArgAttrs=*/0, /*argAttrs=*/NULL
+  );
 }
 
-void llzkFuncDefOpSetAllowConstraintAttr(MlirOperation op, bool value) {
-  unwrap_cast<FuncDefOp>(op).setAllowConstraintAttr(value);
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
+    Function, FuncDefOp, WithArgAttrs, MlirStringRef name, MlirType funcType, intptr_t numArgAttrs,
+    MlirAttribute const *argAttrs
+) {
+  return llzkFunction_FuncDefOpBuildWithAttrsAndArgAttrs(
+      builder, location, name, funcType, /*numAttrs=*/0, /*attrs=*/NULL, numArgAttrs, argAttrs
+  );
 }
 
-bool llzkFuncDefOpGetHasAllowWitnessAttr(MlirOperation op) {
-  return unwrap_cast<FuncDefOp>(op).hasAllowWitnessAttr();
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
+    Function, FuncDefOp, WithoutAttrs, MlirStringRef name, MlirType funcType
+) {
+  return llzkFunction_FuncDefOpBuildWithAttrs(
+      builder, location, name, funcType, /*numAttrs=*/0, /*attrs=*/NULL
+  );
 }
 
-void llzkFuncDefOpSetAllowWitnessAttr(MlirOperation op, bool value) {
-  unwrap_cast<FuncDefOp>(op).setAllowWitnessAttr(value);
+MlirAttribute llzkFunction_FuncDefOpGetArgNameAttr(MlirOperation op, unsigned index) {
+  std::optional<StringAttr> argNameAttr = llvm::cast<FuncDefOp>(unwrap(op)).getArgNameAttr(index);
+  return wrap(argNameAttr ? Attribute(*argNameAttr) : Attribute());
 }
 
-bool llzkFuncDefOpGetHasArgIsPub(MlirOperation op, unsigned argNo) {
-  return unwrap_cast<FuncDefOp>(op).hasArgPublicAttr(argNo);
+void llzkFunction_FuncDefOpSetArgNameAttr(MlirOperation op, unsigned index, MlirAttribute attr) {
+  llvm::cast<FuncDefOp>(unwrap(op)).setArgNameAttr(index, llvm::cast<StringAttr>(unwrap(attr)));
 }
 
-MlirAttribute llzkFuncDefOpGetFullyQualifiedName(MlirOperation op) {
-  return wrap(unwrap_cast<FuncDefOp>(op).getFullyQualifiedName());
+void llzkFunction_FuncDefOpSetArgName(MlirOperation op, unsigned index, MlirStringRef name) {
+  llvm::cast<FuncDefOp>(unwrap(op)).setArgName(index, unwrap(name));
 }
 
-bool llzkFuncDefOpGetNameIsCompute(MlirOperation op) {
-  return unwrap_cast<FuncDefOp>(op).nameIsCompute();
+MlirAttribute llzkFunction_FuncDefOpGetResNameAttr(MlirOperation op, unsigned index) {
+  std::optional<StringAttr> resNameAttr = llvm::cast<FuncDefOp>(unwrap(op)).getResNameAttr(index);
+  return wrap(resNameAttr ? Attribute(*resNameAttr) : Attribute());
 }
 
-bool llzkFuncDefOpGetNameIsConstrain(MlirOperation op) {
-  return unwrap_cast<FuncDefOp>(op).nameIsConstrain();
+void llzkFunction_FuncDefOpSetResNameAttr(MlirOperation op, unsigned index, MlirAttribute attr) {
+  llvm::cast<FuncDefOp>(unwrap(op)).setResNameAttr(index, llvm::cast<StringAttr>(unwrap(attr)));
 }
 
-bool llzkFuncDefOpGetIsInStruct(MlirOperation op) {
-  return unwrap_cast<FuncDefOp>(op).isInStruct();
-}
-
-bool llzkFuncDefOpGetIsStructCompute(MlirOperation op) {
-  return unwrap_cast<FuncDefOp>(op).isStructCompute();
-}
-
-bool llzkFuncDefOpGetIsStructConstrain(MlirOperation op) {
-  return unwrap_cast<FuncDefOp>(op).isStructConstrain();
-}
-
-/// Return the "self" value (i.e. the return value) from the function (which must be
-/// named `FUNC_NAME_COMPUTE`).
-MlirValue llzkFuncDefOpGetSelfValueFromCompute(MlirOperation op) {
-  return wrap(unwrap_cast<FuncDefOp>(op).getSelfValueFromCompute());
-}
-
-/// Return the "self" value (i.e. the first parameter) from the function (which must be
-/// named `FUNC_NAME_CONSTRAIN`).
-MlirValue llzkFuncDefOpGetSelfValueFromConstrain(MlirOperation op) {
-  return wrap(unwrap_cast<FuncDefOp>(op).getSelfValueFromConstrain());
-}
-
-/// Assuming the function is the compute function returns its StructType result.
-MlirType llzkFuncDefOpGetSingleResultTypeOfCompute(MlirOperation op) {
-  return wrap(unwrap_cast<FuncDefOp>(op).getSingleResultTypeOfCompute());
+void llzkFunction_FuncDefOpSetResName(MlirOperation op, unsigned index, MlirStringRef name) {
+  llvm::cast<FuncDefOp>(unwrap(op)).setResName(index, unwrap(name));
 }
 
 //===----------------------------------------------------------------------===//
@@ -135,98 +127,108 @@ static auto unwrapDims(MlirAttribute attr) { return llvm::cast<DenseI32ArrayAttr
 static auto unwrapName(MlirAttribute attr) { return llvm::cast<SymbolRefAttr>(unwrap(attr)); }
 
 LLZK_DEFINE_OP_BUILD_METHOD(
-    CallOp, intptr_t numResults, MlirType const *results, MlirAttribute name, intptr_t numOperands,
+    Function, CallOp, intptr_t numResults, MlirType const *results, MlirAttribute name,
+    intptr_t numOperands, MlirValue const *operands
+) {
+  SmallVector<Type> resultsSto;
+  SmallVector<Value> operandsSto;
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<CallOp>(
+                       builder, location, unwrapList(numResults, results, resultsSto),
+                       unwrapName(name), unwrapList(numOperands, operands, operandsSto)
+                   )
+               )
+  );
+}
+
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
+    Function, CallOp, ToCallee, MlirOperation callee, intptr_t numOperands,
     MlirValue const *operands
 ) {
-  SmallVector<Type> resultsSto;
   SmallVector<Value> operandsSto;
-  return wrap(
-      create<CallOp>(
-          builder, location, unwrapList(numResults, results, resultsSto), unwrapName(name),
-          unwrapList(numOperands, operands, operandsSto)
-      )
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<CallOp>(
+                       builder, location, unwrapCallee(callee),
+                       unwrapList(numOperands, operands, operandsSto)
+                   )
+               )
   );
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    CallOp, ToCallee, MlirOperation callee, intptr_t numOperands, MlirValue const *operands
+    Function, CallOp, WithMapOperands, intptr_t numResults, MlirType const *results,
+    MlirAttribute name, LlzkAffineMapOperandsBuilder mapOperands, intptr_t numArgOperands,
+    MlirValue const *argOperands
 ) {
-  SmallVector<Value> operandsSto;
-  return wrap(
-      create<CallOp>(
-          builder, location, unwrapCallee(callee), unwrapList(numOperands, operands, operandsSto)
-      )
+  SmallVector<Type> resultsSto;
+  SmallVector<Value> argOperandsSto;
+  MapOperandsHelper<> mapOperandsHelper(mapOperands.nMapOperands, mapOperands.mapOperands);
+  auto numDimsPerMap =
+      llzkAffineMapOperandsBuilderGetDimsPerMapAttr(mapOperands, mlirLocationGetContext(location));
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<CallOp>(
+                       builder, location, unwrapList(numResults, results, resultsSto),
+                       unwrapName(name), *mapOperandsHelper, unwrapDims(numDimsPerMap),
+                       unwrapList(numArgOperands, argOperands, argOperandsSto)
+                   )
+               )
   );
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    CallOp, WithMapOperands, intptr_t numResults, MlirType const *results, MlirAttribute name,
+    Function, CallOp, ToCalleeWithMapOperands, MlirOperation callee,
     LlzkAffineMapOperandsBuilder mapOperands, intptr_t numArgOperands, MlirValue const *argOperands
 ) {
-  SmallVector<Type> resultsSto;
   SmallVector<Value> argOperandsSto;
   MapOperandsHelper<> mapOperandsHelper(mapOperands.nMapOperands, mapOperands.mapOperands);
   auto numDimsPerMap =
       llzkAffineMapOperandsBuilderGetDimsPerMapAttr(mapOperands, mlirLocationGetContext(location));
-  return wrap(
-      create<CallOp>(
-          builder, location, unwrapList(numResults, results, resultsSto), unwrapName(name),
-          *mapOperandsHelper, unwrapDims(numDimsPerMap),
-          unwrapList(numArgOperands, argOperands, argOperandsSto)
+  return mlirOpBuilderInsert(
+      builder,
+      wrap(
+          create<CallOp>(
+              builder, location, unwrapCallee(callee), *mapOperandsHelper,
+              unwrapDims(numDimsPerMap), unwrapList(numArgOperands, argOperands, argOperandsSto)
+          )
       )
   );
 }
 
 LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
-    CallOp, ToCalleeWithMapOperands, MlirOperation callee, LlzkAffineMapOperandsBuilder mapOperands,
+    Function, CallOp, WithTemplateParams, intptr_t numResults, MlirType const *results,
+    MlirAttribute name, intptr_t numTemplateParams, MlirAttribute const *templateParams,
     intptr_t numArgOperands, MlirValue const *argOperands
 ) {
+  SmallVector<Type> resultsSto;
   SmallVector<Value> argOperandsSto;
-  MapOperandsHelper<> mapOperandsHelper(mapOperands.nMapOperands, mapOperands.mapOperands);
-  auto numDimsPerMap =
-      llzkAffineMapOperandsBuilderGetDimsPerMapAttr(mapOperands, mlirLocationGetContext(location));
-  return wrap(
-      create<CallOp>(
-          builder, location, unwrapCallee(callee), *mapOperandsHelper, unwrapDims(numDimsPerMap),
-          unwrapList(numArgOperands, argOperands, argOperandsSto)
-      )
+  SmallVector<Attribute> templateParamsSto;
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<CallOp>(
+                       builder, location, unwrapList(numResults, results, resultsSto),
+                       unwrapName(name), unwrapList(numArgOperands, argOperands, argOperandsSto),
+                       unwrapList(numTemplateParams, templateParams, templateParamsSto)
+                   )
+               )
   );
 }
 
-bool llzkOperationIsACallOp(MlirOperation op) { return llvm::isa<CallOp>(unwrap(op)); }
-
-MlirType llzkCallOpGetCalleeType(MlirOperation op) {
-  return wrap(unwrap_cast<CallOp>(op).getCalleeType());
-}
-
-bool llzkCallOpGetCalleeIsCompute(MlirOperation op) {
-  return unwrap_cast<CallOp>(op).calleeIsCompute();
-}
-
-bool llzkCallOpGetCalleeIsConstrain(MlirOperation op) {
-  return unwrap_cast<CallOp>(op).calleeIsConstrain();
-}
-
-bool llzkCallOpGetCalleeIsStructCompute(MlirOperation op) {
-  return unwrap_cast<CallOp>(op).calleeIsStructCompute();
-}
-
-bool llzkCallOpGetCalleeIsStructConstrain(MlirOperation op) {
-  return unwrap_cast<CallOp>(op).calleeIsStructConstrain();
-}
-
-/// Return the "self" value (i.e. the return value) from the callee function (which must be
-/// named `FUNC_NAME_COMPUTE`).
-MlirValue llzkCallOpGetSelfValueFromCompute(MlirOperation op) {
-  return wrap(unwrap_cast<CallOp>(op).getSelfValueFromCompute());
-}
-
-/// Return the "self" value (i.e. the first parameter) from the callee function (which must be
-/// named `FUNC_NAME_CONSTRAIN`).
-MlirValue llzkCallOpGetSelfValueFromConstrain(MlirOperation op) {
-  return wrap(unwrap_cast<CallOp>(op).getSelfValueFromConstrain());
-}
-
-MlirType llzkCallOpGetSingleResultTypeOfCompute(MlirOperation op) {
-  return wrap(unwrap_cast<CallOp>(op).getSingleResultTypeOfCompute());
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
+    Function, CallOp, ToCalleeWithTemplateParams, MlirOperation callee, intptr_t numTemplateParams,
+    MlirAttribute const *templateParams, intptr_t numArgOperands, MlirValue const *argOperands
+) {
+  SmallVector<Value> argOperandsSto;
+  SmallVector<Attribute> templateParamsSto;
+  return mlirOpBuilderInsert(
+      builder, wrap(
+                   create<CallOp>(
+                       builder, location, unwrapCallee(callee),
+                       unwrapList(numArgOperands, argOperands, argOperandsSto),
+                       unwrapList(numTemplateParams, templateParams, templateParamsSto)
+                   )
+               )
+  );
 }

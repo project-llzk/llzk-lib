@@ -8,8 +8,11 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/Intervals.h"
+
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/ErrorHelper.h"
+
+#include <llvm/ADT/SmallVector.h>
 
 using namespace mlir;
 
@@ -150,6 +153,82 @@ const Field &checkFields(const Interval &lhs, const Interval &rhs) {
   );
   return lhs.getField();
 }
+
+namespace {
+
+llvm::SmallVector<UnreducedInterval, 2> getUnsignedCanonicalParts(const Interval &iv) {
+  const Field &f = iv.getField();
+  llvm::SmallVector<UnreducedInterval, 2> parts;
+  if (iv.isEmpty()) {
+    return parts;
+  }
+  if (iv.isEntire()) {
+    parts.emplace_back(f.zero(), f.maxVal());
+    return parts;
+  }
+  if (iv.isTypeF()) {
+    parts.emplace_back(iv.lhs(), f.maxVal());
+    parts.emplace_back(f.zero(), iv.rhs());
+    return parts;
+  }
+
+  parts.emplace_back(iv.lhs(), iv.rhs());
+  return parts;
+}
+
+llvm::SmallVector<UnreducedInterval, 2> getSignedCanonicalParts(const Interval &iv) {
+  const Field &f = iv.getField();
+  llvm::SmallVector<UnreducedInterval, 2> parts;
+  if (iv.isEmpty()) {
+    return parts;
+  }
+  if (iv.isEntire()) {
+    parts.emplace_back(f.half() - f.prime(), f.half() - f.one());
+    return parts;
+  }
+  if (iv.isDegenerate()) {
+    DynamicAPInt v = iv.lhs();
+    if (v < f.half()) {
+      parts.emplace_back(v, v);
+    } else {
+      parts.emplace_back(v - f.prime(), v - f.prime());
+    }
+    return parts;
+  }
+  if (iv.isTypeA()) {
+    parts.emplace_back(iv.lhs(), iv.rhs());
+    return parts;
+  }
+  if (iv.isTypeB()) {
+    parts.emplace_back(iv.lhs() - f.prime(), iv.rhs() - f.prime());
+    return parts;
+  }
+  if (iv.isTypeC()) {
+    parts.emplace_back(f.half() - f.prime(), iv.rhs() - f.prime());
+    parts.emplace_back(iv.lhs(), f.half() - f.one());
+    return parts;
+  }
+
+  ensure(iv.isTypeF(), "expected TypeF interval");
+  parts.emplace_back(iv.lhs() - f.prime(), iv.rhs());
+  return parts;
+}
+
+bool containsZero(const UnreducedInterval &iv) { return iv.getLHS() <= 0 && iv.getRHS() >= 0; }
+
+llvm::DynamicAPInt absSigned(const llvm::DynamicAPInt &v) { return v < 0 ? -v : v; }
+
+Interval joinDivisionPiece(
+    const Field &f, const Interval &acc, const llvm::DynamicAPInt &q0, const llvm::DynamicAPInt &q1,
+    const llvm::DynamicAPInt &q2, const llvm::DynamicAPInt &q3
+) {
+  DynamicAPInt minQ = std::min({q0, q1, q2, q3});
+  DynamicAPInt maxQ = std::max({q0, q1, q2, q3});
+  Interval piece = UnreducedInterval(minQ, maxQ).reduce(f);
+  return acc.join(piece);
+}
+
+} // namespace
 
 UnreducedInterval Interval::toUnreduced() const {
   if (isEmpty()) {
@@ -406,20 +485,144 @@ Interval operator*(const Interval &lhs, const Interval &rhs) {
   return (lhs.firstUnreduced() * rhs.firstUnreduced()).reduce(f);
 }
 
-FailureOr<Interval> operator/(const Interval &lhs, const Interval &rhs) {
+FailureOr<Interval> feltDiv(const Interval &lhs, const Interval &rhs) {
   const Field &f = checkFields(lhs, rhs);
-  if (rhs.width() > f.one()) {
-    return Interval::Entire(f);
+  if (lhs.isEmpty() || rhs.isEmpty()) {
+    return success(Interval::Empty(f));
   }
-  if (rhs.a == 0) {
+  if (!rhs.isDegenerate() || rhs.lhs() == f.zero()) {
+    // Supporting arbitrary divisor intervals would require enumerating every
+    // possible divisor, inverting each value, and joining the products, which
+    // is too expensive. So, we return a failure in the non-degenerate case
+    // and in the divide-by-zero case.
     return failure();
   }
-  return success(UnreducedInterval(lhs.a / rhs.a, lhs.b / rhs.a).reduce(f));
+  return success(lhs * Interval::Degenerate(f, f.inv(rhs.lhs())));
+}
+
+FailureOr<Interval> unsignedIntDiv(const Interval &lhs, const Interval &rhs) {
+  const Field &f = checkFields(lhs, rhs);
+  if (lhs.isEmpty() || rhs.isEmpty()) {
+    return success(Interval::Empty(f));
+  }
+
+  llvm::SmallVector<UnreducedInterval, 2> lhsParts = getUnsignedCanonicalParts(lhs);
+  llvm::SmallVector<UnreducedInterval, 2> rhsParts = getUnsignedCanonicalParts(rhs);
+  for (const UnreducedInterval &rhsPart : rhsParts) {
+    if (rhsPart.getLHS() == f.zero()) {
+      return failure();
+    }
+  }
+
+  Interval result = Interval::Empty(f);
+  for (const UnreducedInterval &lhsPart : lhsParts) {
+    for (const UnreducedInterval &rhsPart : rhsParts) {
+      result = joinDivisionPiece(
+          f, result, lhsPart.getLHS() / rhsPart.getRHS(), lhsPart.getLHS() / rhsPart.getLHS(),
+          lhsPart.getRHS() / rhsPart.getRHS(), lhsPart.getRHS() / rhsPart.getLHS()
+      );
+    }
+  }
+  return success(result);
+}
+
+FailureOr<Interval> signedIntDiv(const Interval &lhs, const Interval &rhs) {
+  const Field &f = checkFields(lhs, rhs);
+  if (lhs.isEmpty() || rhs.isEmpty()) {
+    return success(Interval::Empty(f));
+  }
+
+  llvm::SmallVector<UnreducedInterval, 2> lhsParts = getSignedCanonicalParts(lhs);
+  llvm::SmallVector<UnreducedInterval, 2> rhsParts = getSignedCanonicalParts(rhs);
+  for (const UnreducedInterval &rhsPart : rhsParts) {
+    if (containsZero(rhsPart)) {
+      return failure();
+    }
+  }
+
+  Interval result = Interval::Empty(f);
+  for (const UnreducedInterval &lhsPart : lhsParts) {
+    for (const UnreducedInterval &rhsPart : rhsParts) {
+      result = joinDivisionPiece(
+          f, result, lhsPart.getLHS() / rhsPart.getLHS(), lhsPart.getLHS() / rhsPart.getRHS(),
+          lhsPart.getRHS() / rhsPart.getLHS(), lhsPart.getRHS() / rhsPart.getRHS()
+      );
+    }
+  }
+  return success(result);
+}
+
+Interval signedMod(const Interval &lhs, const Interval &rhs) {
+  const Field &f = checkFields(lhs, rhs);
+  if (lhs.isEmpty() || rhs.isEmpty()) {
+    return Interval::Empty(f);
+  }
+
+  llvm::SmallVector<UnreducedInterval, 2> lhsParts = getSignedCanonicalParts(lhs);
+  llvm::SmallVector<UnreducedInterval, 2> rhsParts = getSignedCanonicalParts(rhs);
+  Interval result = Interval::Empty(f);
+
+  for (const UnreducedInterval &lhsPart : lhsParts) {
+    for (const UnreducedInterval &rhsPart : rhsParts) {
+      if (containsZero(rhsPart)) {
+        return Interval::Entire(f);
+      }
+
+      if (lhsPart.getLHS() == lhsPart.getRHS() && rhsPart.getLHS() == rhsPart.getRHS()) {
+        auto rem = lhsPart.getLHS() % rhsPart.getLHS();
+        result = result.join(UnreducedInterval(rem, rem).reduce(f));
+        continue;
+      }
+
+      llvm::DynamicAPInt maxAbsDivisor =
+          std::max(absSigned(rhsPart.getLHS()), absSigned(rhsPart.getRHS()));
+      if (maxAbsDivisor == 0) {
+        return Interval::Entire(f);
+      }
+
+      llvm::DynamicAPInt maxAbsRemainder = maxAbsDivisor - 1;
+      llvm::DynamicAPInt low = lhsPart.getLHS() < 0 ? std::max(lhsPart.getLHS(), -maxAbsRemainder)
+                                                    : llvm::DynamicAPInt(0);
+      llvm::DynamicAPInt high = lhsPart.getRHS() > 0 ? std::min(lhsPart.getRHS(), maxAbsRemainder)
+                                                     : llvm::DynamicAPInt(0);
+      result = result.join(UnreducedInterval(low, high).reduce(f));
+    }
+  }
+
+  return result;
 }
 
 Interval operator%(const Interval &lhs, const Interval &rhs) {
   const Field &f = checkFields(lhs, rhs);
-  return UnreducedInterval(f.zero(), rhs.b).reduce(f);
+  if (lhs.isEmpty() || rhs.isEmpty()) {
+    return Interval::Empty(f);
+  }
+
+  if (lhs.isDegenerate() && rhs.isDegenerate() && rhs.a != f.zero()) {
+    return Interval::Degenerate(f, lhs.a % rhs.a);
+  }
+
+  if (rhs.isDegenerate()) {
+    if (rhs.a == f.zero()) {
+      return Interval::Entire(f);
+    }
+    return UnreducedInterval(f.zero(), rhs.a - f.one()).reduce(f);
+  }
+
+  // For any interval modulus, the result is bounded by the largest value of
+  // the interval.
+  // Since TypeF wraps around, the interval is just Entire since the max value
+  // would be the prime field's max value.
+  if (rhs.isTypeF() || rhs.isEntire()) {
+    return Interval::Entire(f);
+  }
+  // Any possible division by zero also yields Entire
+  Interval zeroInt = Interval::Degenerate(f, f.zero());
+  if (rhs.intersect(zeroInt) == zeroInt) {
+    return Interval::Entire(f);
+  }
+
+  return UnreducedInterval(f.zero(), rhs.b - f.one()).reduce(f);
 }
 
 Interval operator&(const Interval &lhs, const Interval &rhs) {
@@ -433,6 +636,42 @@ Interval operator&(const Interval &lhs, const Interval &rhs) {
     return UnreducedInterval(f.zero(), lhs.a).reduce(f);
   } else if (rhs.isDegenerate()) {
     return UnreducedInterval(f.zero(), rhs.a).reduce(f);
+  }
+  return Interval::Entire(f);
+}
+
+Interval operator|(const Interval &lhs, const Interval &rhs) {
+  const Field &f = checkFields(lhs, rhs);
+  if (lhs.isEmpty() || rhs.isEmpty()) {
+    return Interval::Empty(f);
+  }
+  auto zeroInterval = Interval::Degenerate(f, f.zero());
+  if (lhs == zeroInterval) {
+    return rhs;
+  }
+  if (rhs == zeroInterval) {
+    return lhs;
+  }
+  if (lhs.isDegenerate() && rhs.isDegenerate()) {
+    return Interval::Degenerate(f, f.reduce(lhs.a | rhs.a));
+  }
+  return Interval::Entire(f);
+}
+
+Interval operator^(const Interval &lhs, const Interval &rhs) {
+  const Field &f = checkFields(lhs, rhs);
+  if (lhs.isEmpty() || rhs.isEmpty()) {
+    return Interval::Empty(f);
+  }
+  auto zeroInterval = Interval::Degenerate(f, f.zero());
+  if (lhs == zeroInterval) {
+    return rhs;
+  }
+  if (rhs == zeroInterval) {
+    return lhs;
+  }
+  if (lhs.isDegenerate() && rhs.isDegenerate()) {
+    return Interval::Degenerate(f, f.reduce(lhs.a ^ rhs.a));
   }
   return Interval::Entire(f);
 }

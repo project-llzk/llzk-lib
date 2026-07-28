@@ -11,6 +11,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "tools/config.h"
+
 #include "llzk/Dialect/InitDialects.h"
 
 #include <mlir/IR/DialectRegistry.h>
@@ -18,8 +20,6 @@
 #include <mlir/Tools/mlir-lsp-server/MlirLspServerMain.h>
 
 #include <llvm/Support/PrettyStackTrace.h>
-
-#include "tools/config.h"
 
 int main(int argc, char **argv) {
   mlir::DialectRegistry registry;

@@ -9,7 +9,9 @@
 
 #include "llzk/Analysis/AnalysisUtil.h"
 
+#include <mlir/Analysis/DataFlow/ConstantPropagationAnalysis.h>
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
+#include <mlir/IR/Operation.h>
 
 using namespace mlir;
 
@@ -17,16 +19,25 @@ using Executable = mlir::dataflow::Executable;
 
 namespace llzk::dataflow {
 
-void markAllOpsAsLive(DataFlowSolver &solver, Operation *top) {
-  for (Region &region : top->getRegions()) {
-    for (Block &block : region) {
-      ProgramPoint *point = solver.getProgramPointBefore(&block);
-      (void)solver.getOrCreateState<Executable>(point)->setToLive();
-      for (Operation &oper : block) {
-        markAllOpsAsLive(solver, &oper);
-      }
-    }
+void loadRequiredAnalyses(DataFlowSolver &solver) {
+  solver.load<mlir::dataflow::SparseConstantPropagation>();
+  solver.load<mlir::dataflow::DeadCodeAnalysis>();
+}
+
+LogicalResult loadAndRunRequiredAnalyses(DataFlowSolver &solver, Operation *op) {
+  loadRequiredAnalyses(solver);
+  return solver.initializeAndRun(op);
+}
+
+bool isOperationLive(DataFlowSolver &solver, Operation *op) {
+  if (!op->getBlock()) {
+    return true;
   }
+  if (const auto *exec =
+          solver.lookupState<Executable>(solver.getProgramPointBefore(op->getBlock()))) {
+    return exec->isLive();
+  }
+  return true;
 }
 
 } // namespace llzk::dataflow

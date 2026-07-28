@@ -1,4 +1,4 @@
-{ stdenv, lib, cmake, ninja, mlir_pkg, llzk_pkg, pcl_pkg }:
+{ stdenv, lib, cmake, ninja, mlir_pkg, llzk_pkg }:
 
 let
   buildTypeStr = lib.toLower (mlir_pkg.cmakeBuildType or "release");
@@ -9,7 +9,7 @@ stdenv.mkDerivation {
 
   src = lib.cleanSource ./.;
 
-  buildInputs = [ mlir_pkg llzk_pkg pcl_pkg ];
+  buildInputs = [ mlir_pkg llzk_pkg ];
   nativeBuildInputs = [ cmake ninja ];
 
   installPhase = ''touch "$out"'';

@@ -7,13 +7,13 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "../LLZKTestBase.h"
+
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 
 #include <gtest/gtest.h>
-
-#include "../LLZKTestBase.h"
 
 using namespace llzk;
 using namespace mlir;
@@ -115,8 +115,7 @@ TEST_F(TypeTests, testStructTypeIsConcreteWithParams) {
 TEST_F(TypeTests, testShortString) {
   OpBuilder bldr(&ctx);
   EXPECT_EQ("b", BuildShortTypeString::from(bldr.getIntegerType(1)));
-  EXPECT_EQ("i39", BuildShortTypeString::from(bldr.getIntegerType(39)));
-  EXPECT_EQ("k", BuildShortTypeString::from(bldr.getIndexType()));
+  EXPECT_EQ("i", BuildShortTypeString::from(bldr.getIndexType()));
   EXPECT_EQ(
       "!t<@A>", BuildShortTypeString::from(TypeVarType::get(FlatSymbolRefAttr::get(&ctx, "A")))
   );

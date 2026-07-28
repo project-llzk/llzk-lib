@@ -1,0 +1,43 @@
+// RUN: llzk-opt %s -verify-diagnostics -split-input-file | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+	function.def private @func() attributes {function.allow_non_native_field_ops} {
+		%f0 = felt.const 0
+
+		// Make sure all these parse correctly
+		%c0 = cast.toindex %f0 : !felt.type
+		%c1 = cast.toindex sat %f0 : !felt.type
+		%c2 = cast.toindex trunc %f0 : !felt.type
+		%c3 = cast.toindex wrap %f0 : !felt.type
+
+		// Make sure all these parse correctly
+		%g0 = cast.tofelt %c0 : index
+		%g1 = cast.tofelt sat %c1 : index
+		%g2 = cast.tofelt trunc %c2 : index
+		%g3 = cast.tofelt wrap %c3 : index
+
+		// Make sure the default is `assert` (so not printed)
+		%d0 = cast.toindex assert %g0 : !felt.type
+		%h0 = cast.tofelt assert %d0  : index
+
+		function.return
+	}
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def private @func() attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_0]] : !felt.type
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = cast.toindex sat %[[VAL_0]] : !felt.type
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = cast.toindex trunc %[[VAL_0]] : !felt.type
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = cast.toindex wrap %[[VAL_0]] : !felt.type
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_1]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = cast.tofelt sat %[[VAL_2]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = cast.tofelt trunc %[[VAL_3]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = cast.tofelt wrap %[[VAL_4]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_5]] : !felt.type
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_9]] : index, !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----

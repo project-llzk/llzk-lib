@@ -7,8 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
+
+#include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/String/IR/Types.h"
 #include "llzk/Util/BuilderHelper.h"
@@ -43,7 +44,7 @@ ParseResult GlobalDefOp::parseGlobalInitialValue(
   Type specifiedType = typeAttr.getValue();
 
   // Special case for parsing LLZK FeltType to match format of FeltConstantOp.
-  // Not actually necessary but the default format is verbose. ex: "#llzk<felt.const 35>"
+  // Not actually necessary but the default format is verbose. ex: "#felt<const 35>"
   if (isa<FeltType>(specifiedType)) {
     FeltConstAttr feltConstAttr;
     if (parser.parseCustomAttributeWithFallback<FeltConstAttr>(feltConstAttr)) {
@@ -60,12 +61,12 @@ ParseResult GlobalDefOp::parseGlobalInitialValue(
 }
 
 void GlobalDefOp::printGlobalInitialValue(
-    OpAsmPrinter &p, GlobalDefOp /*op*/, Attribute initialValue, TypeAttr typeAttr
+    OpAsmPrinter &p, GlobalDefOp /*op*/, Attribute initialValue, TypeAttr /*typeAttr*/
 ) {
   if (initialValue) {
     p << " = ";
     // Special case for LLZK FeltType to match format of FeltConstantOp.
-    // Not actually necessary but the default format is verbose. ex: "#llzk<felt.const 35>"
+    // Not actually necessary but the default format is verbose. ex: "#felt<const 35>"
     if (FeltConstAttr feltConstAttr = llvm::dyn_cast<FeltConstAttr>(initialValue)) {
       p.printStrippedAttrOrType<FeltConstAttr>(feltConstAttr);
     } else {
@@ -85,7 +86,7 @@ inline InFlightDiagnosticWrapper reportMismatch(
     EmitErrorFn errFn, Type rootType, const Twine &aspect, const Twine &expected, const Twine &found
 ) {
   return errFn().append(
-      "with type ", rootType, " expected ", expected, " ", aspect, " but found ", found
+      "with type ", rootType, " expected ", expected, ' ', aspect, " but found ", found
   );
 }
 

@@ -1,0 +1,20 @@
+// RUN: llzk-opt %s -split-input-file -verify-diagnostics
+
+function.def @write_pod(%pod: !pod.type<[@n: index]>, %value: index)  {
+  // expected-error@+1 {{record 'y' was not found in plain-old-data type}}
+  pod.write %pod[@y] = %value : !pod.type<[@n: index]>, index
+}
+
+// -----
+
+function.def @write_pod(%pod: !pod.type<[@n: index]>, %value: !felt.type)  {
+  // expected-error@+1 {{type of source value and type of record do not match ('!felt.type' != 'index')}}
+  pod.write %pod[@n] = %value : !pod.type<[@n: index]>, !felt.type
+}
+
+// -----
+
+function.def @write_pod(%pod: !felt.type, %value: !felt.type) {
+  // expected-error@+1 {{custom op 'pod.write' invalid kind of Type specified}}
+  pod.write %pod[@n] = %value : !felt.type, !felt.type
+}

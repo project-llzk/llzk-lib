@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+
 #include "llzk/Util/TypeHelper.h"
 
 using namespace mlir;

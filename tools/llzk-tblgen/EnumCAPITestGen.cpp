@@ -20,6 +20,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "CommonCAPIGen.h"
+
 #include <mlir/TableGen/Attribute.h>
 #include <mlir/TableGen/GenInfo.h>
 
@@ -28,8 +30,6 @@
 #include <llvm/Support/FormatVariadic.h>
 #include <llvm/TableGen/Record.h>
 #include <llvm/TableGen/TableGenBackend.h>
-
-#include "CommonCAPIGen.h"
 
 using namespace mlir;
 using namespace mlir::tblgen;
@@ -45,7 +45,7 @@ struct EnumTestGenerator : public TestGenerator {
   /// @param outputStream The output stream for generated code
   EnumTestGenerator(llvm::raw_ostream &outputStream) : TestGenerator("Enum", outputStream) {}
 
-  virtual void genExtraMethod(const ExtraMethod &method) const override {
+  void genExtraMethod(const ExtraMethod & /*method*/) const override {
     llvm_unreachable("Enums cannot have extra methods");
   }
 
@@ -54,12 +54,12 @@ struct EnumTestGenerator : public TestGenerator {
   /// @param firstCaseValue The first enum case value
   void genEnumUsageTest(StringRef cEnumName, StringRef firstCaseValue) const {
     static constexpr char fmt[] = R"(
-// This test ensures the {1} enum compiles and links properly.
+/// This test ensures the {1} enum compiles and links properly.
 TEST_F({0}EnumLinkTests, Enum_{1}_Usage) {{
   // We create a variable and check that enum values can be assigned.
   {1} enumValue = {2};
   (void)enumValue;
-  
+
   // Verify we can compare enum values
   EXPECT_EQ(enumValue, {2});
 }
@@ -72,11 +72,11 @@ TEST_F({0}EnumLinkTests, Enum_{1}_Usage) {{
   /// @param firstCaseValue The first enum case value
   void genWrapUnwrapTest(StringRef cEnumName, StringRef firstCaseValue) const {
     static constexpr char fmt[] = R"(
-// This test ensures wrap/unwrap functions for {1} compile and link.
+/// This test ensures wrap/unwrap functions for {1} compile and link.
 TEST_F({0}EnumLinkTests, Enum_{1}_WrapUnwrap) {{
   // We use the first enum case value for testing.
   {1} cValue = {2};
-  
+
   // Test that wrap and unwrap are inverses (at compile/link time)
   // The actual C++ type doesn't exist in test context, so we just
   // verify the functions exist and link.
@@ -105,8 +105,8 @@ TEST_F({0}EnumLinkTests, Enum_{1}_WrapUnwrap) {{
                             toPascalCase(enumInfo.getEnumClassName());
 
     // Get first enum case for testing
-    std::string firstCase = enumCases[0].getSymbol().upper();
-    std::string firstCaseValue = llvm::formatv("{0}_{1}", cEnumName, firstCase).str();
+    std::string firstCaseValue =
+        llvm::formatv("{0}_{1}", cEnumName, enumCases[0].getSymbol()).str();
 
     // Generate enum usage test
     this->genEnumUsageTest(cEnumName, firstCaseValue);

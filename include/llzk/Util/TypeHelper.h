@@ -28,6 +28,9 @@ class StructType;
 namespace array {
 class ArrayType;
 } // namespace array
+namespace pod {
+class PodType;
+} // namespace pod
 
 /// Note: If any symbol refs in an input Type/Attribute use any of the special characters that this
 /// class generates, they are not escaped. That means these string representations are not safe to
@@ -77,11 +80,11 @@ public:
 // of this function should be updated.
 void assertValidAttrForParamOfType(mlir::Attribute attr);
 
-/// valid types: {IntegerType, Index, String, FeltType, StructType, ArrayType, TypeVarType}
+/// valid types: {I1, Index, String, FeltType, StructType, ArrayType, TypeVarType, PodType}
 bool isValidType(mlir::Type type);
 
 /// valid types: {FeltType, StructType (with columns), ArrayType (that contains a valid column
-/// type)}
+/// type), TypeVarType, PodType}
 bool isValidColumnType(
     mlir::Type type, mlir::SymbolTableCollection &symbolTable, mlir::Operation *op
 );
@@ -92,17 +95,50 @@ bool isValidGlobalType(mlir::Type type);
 /// valid types: isValidType() - {String, StructType} (excluded via any type parameter nesting)
 bool isValidEmitEqType(mlir::Type type);
 
-/// valid types: {IntegerType, Index, FeltType, TypeVarType}
+/// valid types: {I1, Index, FeltType, TypeVarType}
 bool isValidConstReadType(mlir::Type type);
 
-/// valid types: isValidType() - {ArrayType}
+/// valid types: isValidType() - {ArrayType}, plus `NoneType` for shape-only arrays
 bool isValidArrayElemType(mlir::Type type);
 
 /// Checks if the type is a LLZK Array and it also contains a valid LLZK type.
 bool isValidArrayType(mlir::Type type);
 
-/// Return `false` iff the type contains any `TypeVarType`
+/// Return `false` if the type contains any of the following:
+/// - `TypeVarType`
+/// - `SymbolRefAttr`
+/// - `AffineMapAttr`
+/// - `StructType` with parameters if `allowStructParams==false`
 bool isConcreteType(mlir::Type type, bool allowStructParams = true);
+
+/// Return `false` if the type contains a `TypeVarType`.
+///
+/// This is weaker than `isConcreteType`: array dimensions may be symbols or affine maps, and
+/// parameterized struct types may use nested type attributes or direct affine-map parameters.
+/// Direct symbol references remain invalid as struct type parameters because they still require
+/// template instantiation.
+bool isTypeVarFreeType(mlir::Type type);
+
+/// Concreteness classification for an argument to a parameterized struct type.
+enum class AttrConcreteness : std::uint8_t {
+  NonConcrete,
+  Concrete,
+  Wildcard,
+};
+
+/// Classify `attr` as an argument for a parameterized struct type.
+///
+/// `TypeAttr` values are concrete when their nested type is concrete according
+/// to `isConcreteType`. Integer attributes are concrete unless they are the
+/// dynamic-size sentinel, which is classified as `Wildcard`. Felt constants are
+/// always concrete. Symbol references and affine maps remain non-concrete
+/// because they require further instantiation.
+AttrConcreteness classifyAttrConcreteness(mlir::Attribute attr, bool allowStructParams = true);
+
+/// Return `true` if `attr` is a concrete argument for a parameterized struct type.
+inline bool isConcreteStructParamAttr(mlir::Attribute attr, bool allowStructParams = true) {
+  return classifyAttrConcreteness(attr, allowStructParams) == AttrConcreteness::Concrete;
+}
 
 inline mlir::LogicalResult checkValidType(EmitErrorFn emitError, mlir::Type type) {
   if (!isValidType(type)) {
@@ -111,12 +147,6 @@ inline mlir::LogicalResult checkValidType(EmitErrorFn emitError, mlir::Type type
     return mlir::success();
   }
 }
-
-/// Return `true` iff the given type is a StructType referencing the `COMPONENT_NAME_SIGNAL` struct.
-bool isSignalType(mlir::Type type);
-
-/// Return `true` iff the given StructType is referencing the `COMPONENT_NAME_SIGNAL` struct.
-bool isSignalType(component::StructType sType);
 
 /// @brief Return `true` iff the given type contains an AffineMapAttr.
 bool hasAffineMapAttr(mlir::Type type);
@@ -170,6 +200,14 @@ namespace llzk {
 
 bool isDynamic(mlir::IntegerAttr intAttr);
 
+/// Flatten any array-valued element type into the dimensions of `outerArrTy`.
+///
+/// This is used when an LLZK array logically resolves to a higher-rank array even though array
+/// element types cannot themselves be arrays. The returned type keeps `outerArrTy`'s leading
+/// dimensions, appends any nested dimensions from `elementType`, and uses the innermost non-array
+/// element type as the final element type.
+array::ArrayType flattenArrayElementType(array::ArrayType outerArrTy, mlir::Type elementType);
+
 /// Compute the cardinality (i.e. number of scalar constraints) for an EmitEqualityOp type since the
 /// op can be used to constrain two same-size arrays.
 uint64_t computeEmitEqCardinality(mlir::Type type);
@@ -185,42 +223,56 @@ uint64_t computeEmitEqCardinality(mlir::Type type);
 using UnificationMap = mlir::DenseMap<std::pair<mlir::SymbolRefAttr, Side>, mlir::Attribute>;
 
 /// Return `true` iff the two ArrayRef instances containing StructType or ArrayType parameters
-/// are equivalent or could be equivalent after full instantiation of struct parameters.
+/// are equivalent or could be equivalent after full instantiation of template parameters.
 bool typeParamsUnify(
     const mlir::ArrayRef<mlir::Attribute> &lhsParams,
     const mlir::ArrayRef<mlir::Attribute> &rhsParams, UnificationMap *unifications = nullptr
 );
 
 /// Return `true` iff the two ArrayAttr instances containing StructType or ArrayType parameters
-/// are equivalent or could be equivalent after full instantiation of struct parameters.
+/// are equivalent or could be equivalent after full instantiation of template parameters.
 bool typeParamsUnify(
     const mlir::ArrayAttr &lhsParams, const mlir::ArrayAttr &rhsParams,
     UnificationMap *unifications = nullptr
 );
 
 /// Return `true` iff the two ArrayType instances are equivalent or could be equivalent after full
-/// instantiation of struct parameters.
+/// instantiation of template parameters.
 bool arrayTypesUnify(
     array::ArrayType lhs, array::ArrayType rhs,
     mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}, UnificationMap *unifications = nullptr
 );
 
 /// Return `true` iff the two StructType instances are equivalent or could be equivalent after full
-/// instantiation of struct parameters.
+/// instantiation of template parameters.
 bool structTypesUnify(
     component::StructType lhs, component::StructType rhs,
     mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}, UnificationMap *unifications = nullptr
 );
 
+/// Return `true` iff the two PodType instances are equivalent or could be equivalent after full
+/// instantiation of template parameters.
+bool podTypesUnify(
+    pod::PodType lhs, pod::PodType rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},
+    UnificationMap *unifications = nullptr
+);
+
+/// Return `true` iff the two FunctionType instances are equivalent or could be equivalent after
+/// full instantiation of template parameters.
+bool functionTypesUnify(
+    mlir::FunctionType lhs, mlir::FunctionType rhs,
+    mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}, UnificationMap *unifications = nullptr
+);
+
 /// Return `true` iff the two Type instances are equivalent or could be equivalent after full
-/// instantiation of struct parameters (if applicable within the given types).
+/// instantiation of template parameters (if applicable within the given types).
 bool typesUnify(
     mlir::Type lhs, mlir::Type rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},
     UnificationMap *unifications = nullptr
 );
 
 /// Return `true` iff the two lists of Type instances are equivalent or could be equivalent after
-/// full instantiation of struct parameters (if applicable within the given types).
+/// full instantiation of template parameters (if applicable within the given types).
 template <typename Iter1, typename Iter2>
 inline bool typeListsUnify(
     Iter1 lhs, Iter2 rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},
@@ -303,5 +355,14 @@ mlir::LogicalResult verifySubArrayType(
 mlir::LogicalResult verifySubArrayOrElementType(
     EmitErrorFn emitError, array::ArrayType arrayType, mlir::Type subArrayOrElemType
 );
+
+/// Return true if the given type is a `FeltType` or a "simple" aggregate (i.e., `ArrayType` or
+/// `PodType`, not `StructType`) composed only of `FeltType` or nested `FeltType` aggregates.
+bool isFeltOrSimpleFeltAggregate(mlir::Type ty);
+
+/// Return true if the given type is valid for signals (input arguments or outputs)
+/// of the main entry struct. Only plain `FeltType`s and `ArrayType`s with `FeltType` elements
+/// are allowed.
+bool isValidMainSignalType(mlir::Type pType);
 
 } // namespace llzk

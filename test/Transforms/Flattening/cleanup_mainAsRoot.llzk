@@ -1,19 +1,19 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics --pass-pipeline='builtin.module(llzk-flatten{cleanup=main-as-root})' %s | FileCheck --enable-var-scope %s
 
-// TEST: With "cleanup=main-as-root", all structs reachable from the "Main" struct are preserved.
-// If there is no "Main" struct, all structs are removed (except those that have a reference from
-// a global def or from a free function since those are not subject to removal during this pass).
+// TEST: With "cleanup=main-as-root", all structs and free functions reachable from the main
+// struct are preserved. If there is no main struct, all cleanup-candidate definitions are removed
+// except those that have a reference from a global def.
 
-module attributes {veridise.lang = "llzk"} {
+module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
   global.def @g : !struct.type<@HasUseFromGlobal>
 
   function.def @free(%a: !struct.type<@HasUseFromFreeFunc>) {
     function.return
   }
 
-  // always preserved
+  // always preserved because of "llzk.main = !struct.type<@Main>"
   struct.def @Main {
-    struct.field @f : !struct.type<@HasUseFromMain>
+    struct.member @f : !struct.type<@HasUseFromMain>
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
@@ -45,7 +45,7 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 
-  // preserved
+  // removed
   struct.def @HasUseFromFreeFunc {
     function.def @compute() -> !struct.type<@HasUseFromFreeFunc> {
       %self = struct.new : !struct.type<@HasUseFromFreeFunc>
@@ -57,34 +57,38 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   // removed
-  struct.def @NoUse<[@T]> {
-    function.def @compute() -> !struct.type<@NoUse<[@T]>> {
-      %self = struct.new : !struct.type<@NoUse<[@T]>>
-      function.return %self : !struct.type<@NoUse<[@T]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@NoUse<[@T]>>) {
-      function.return
+  poly.template @TNoUse {
+    poly.param @T
+
+    struct.def @NoUse {
+      function.def @compute() -> !struct.type<@TNoUse::@NoUse<[@T]>> {
+        %self = struct.new : !struct.type<@TNoUse::@NoUse<[@T]>>
+        function.return %self : !struct.type<@TNoUse::@NoUse<[@T]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TNoUse::@NoUse<[@T]>>) {
+        function.return
+      }
     }
   }
 }
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {
 // CHECK:     struct.def @Main {
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {
 // CHECK:     struct.def @HasUseFromGlobal {
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {
 // CHECK:     struct.def @HasUseFromMain {
-// CHECK-NOT: struct.def @NoUse<[@T]> {
-// CHECK:     struct.def @HasUseFromFreeFunc {
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: struct.def @HasUseFromFreeFunc {
+// CHECK-NOT: function.def @free
+// CHECK-NOT: poly.template @TNoUse {
 // -----
 
-// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "Main" struct may remove all structs!}}
-module attributes {veridise.lang = "llzk"} {
+// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all cleanup-candidate definitions!}}
+module attributes {llzk.lang} {
   global.def @g : !struct.type<@HasUse>
 
   // preserved
   struct.def @HasUse {
-    struct.field @f1 : i1
+    struct.member @f1 : i1
     function.def @compute() -> !struct.type<@HasUse> {
       %self = struct.new : !struct.type<@HasUse>
       function.return %self : !struct.type<@HasUse>
@@ -95,45 +99,53 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   // removed
-  struct.def @NoUse<[@T]> {
-    struct.field @f2 : !poly.tvar<@T>
-    function.def @compute() -> !struct.type<@NoUse<[@T]>> {
-      %self = struct.new : !struct.type<@NoUse<[@T]>>
-      function.return %self : !struct.type<@NoUse<[@T]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@NoUse<[@T]>>) {
-      function.return
+  poly.template @TNoUse {
+    poly.param @T
+
+    struct.def @NoUse {
+      struct.member @f2 : !poly.tvar<@T>
+      function.def @compute() -> !struct.type<@TNoUse::@NoUse<[@T]>> {
+        %self = struct.new : !struct.type<@TNoUse::@NoUse<[@T]>>
+        function.return %self : !struct.type<@TNoUse::@NoUse<[@T]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TNoUse::@NoUse<[@T]>>) {
+        function.return
+      }
     }
   }
 }
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {
 // CHECK:     global.def @g
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {
 // CHECK:     struct.def @HasUse {
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {
 // -----
 
-// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "Main" struct may remove all structs!}}
-module attributes {veridise.lang = "llzk"} {
-  global.def @a : !struct.type<@StructsWithinNestedModule::@HasUse<[i1]>>
+// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all cleanup-candidate definitions!}}
+module attributes {llzk.lang} {
+  global.def @a : !struct.type<@StructsWithinNestedModule::@THasUse::@HasUse<[i1]>>
 
   module @StructsWithinNestedModule {
     // preserved instantiated version
-    struct.def @HasUse<[@T]> {
-      struct.field @f1 : !poly.tvar<@T>
-      function.def @compute() -> !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>> {
-        %self = struct.new : !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>>
-        function.return %self : !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>>
-      }
-      function.def @constrain(%arg0: !struct.type<@StructsWithinNestedModule::@HasUse<[@T]>>) {
-        function.return
+    poly.template @THasUse {
+      poly.param @T
+
+      struct.def @HasUse {
+        struct.member @f1 : !poly.tvar<@T>
+        function.def @compute() -> !struct.type<@StructsWithinNestedModule::@THasUse::@HasUse<[@T]>> {
+          %self = struct.new : !struct.type<@StructsWithinNestedModule::@THasUse::@HasUse<[@T]>>
+          function.return %self : !struct.type<@StructsWithinNestedModule::@THasUse::@HasUse<[@T]>>
+        }
+        function.def @constrain(%arg0: !struct.type<@StructsWithinNestedModule::@THasUse::@HasUse<[@T]>>) {
+          function.return
+        }
       }
     }
 
     // removed
     struct.def @NoUse {
-      struct.field @f2 : i1
-      struct.field @f3 : !felt.type
+      struct.member @f2 : i1
+      struct.member @f3 : !felt.type
       function.def @compute() -> !struct.type<@StructsWithinNestedModule::@NoUse> {
         %self = struct.new : !struct.type<@StructsWithinNestedModule::@NoUse>
         function.return %self : !struct.type<@StructsWithinNestedModule::@NoUse>
@@ -147,26 +159,30 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK:       global.def @a
 // CHECK-LABEL: module @StructsWithinNestedModule
 // CHECK-NOT:   struct.def @NoUse {
-// CHECK-NOT:   struct.def @HasUse<[@T]> {
-// CHECK:       struct.def @HasUse_b {
+// CHECK-NOT:   poly.template @THasUse {
+// CHECK:       struct.def @THasUse_b_HasUse {
 // CHECK-NOT:   struct.def @NoUse {
-// CHECK-NOT:   struct.def @HasUse<[@T]> {
+// CHECK-NOT:   poly.template @THasUse {
 // -----
 
-// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "Main" struct may remove all structs!}}
-module attributes {veridise.lang = "llzk"} {
+// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all cleanup-candidate definitions!}}
+module attributes {llzk.lang} {
   module @GlobalWithinNestedModule {
-    global.def @a : !struct.type<@HasUse<[!felt.type]>>
+    global.def @a : !struct.type<@THasUse::@HasUse<[!felt.type]>>
   }
 
   // preserved instantiated version
-  struct.def @HasUse<[@T]> {
-    function.def @compute() -> !struct.type<@HasUse<[@T]>> {
-      %self = struct.new : !struct.type<@HasUse<[@T]>>
-      function.return %self : !struct.type<@HasUse<[@T]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@HasUse<[@T]>>) {
-      function.return
+  poly.template @THasUse {
+    poly.param @T
+
+    struct.def @HasUse {
+      function.def @compute() -> !struct.type<@THasUse::@HasUse<[@T]>> {
+        %self = struct.new : !struct.type<@THasUse::@HasUse<[@T]>>
+        function.return %self : !struct.type<@THasUse::@HasUse<[@T]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@THasUse::@HasUse<[@T]>>) {
+        function.return
+      }
     }
   }
 
@@ -182,33 +198,38 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // CHECK-NOT: struct.def @NoUse {
-// CHECK-NOT: struct.def @HasUse<[@T]> {
+// CHECK-NOT: poly.template @THasUse {
 // CHECK:     global.def @a
 // CHECK-NOT: struct.def @NoUse {
-// CHECK-NOT: struct.def @HasUse<[@T]> {
-// CHECK:     struct.def @HasUse_f {
+// CHECK-NOT: poly.template @THasUse {
+// CHECK:     struct.def @THasUse_f_HasUse {
 // CHECK-NOT: struct.def @NoUse {
-// CHECK-NOT: struct.def @HasUse<[@T]> {
+// CHECK-NOT: poly.template @THasUse {
 // -----
 
-// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "Main" struct may remove all structs!}}
-module attributes {veridise.lang = "llzk"} {
+// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all cleanup-candidate definitions!}}
+module attributes {llzk.lang} {
   module @FreeFuncInModule {
-    function.def @struct_param(%a: !struct.type<@DefsInDifferentModule::@HasUse<[!felt.type]>>) -> !felt.type {
+    // removed
+    function.def @struct_param(%a: !struct.type<@DefsInDifferentModule::@THasUse::@HasUse<[!felt.type]>>) -> !felt.type {
       %b = felt.const 42
       function.return %b: !felt.type
     }
   }
 
   module @DefsInDifferentModule {
-    // preserved instantiated version
-    struct.def @HasUse<[@T]> {
-      function.def @compute() -> !struct.type<@DefsInDifferentModule::@HasUse<[@T]>> {
-        %self = struct.new : !struct.type<@DefsInDifferentModule::@HasUse<[@T]>>
-        function.return %self : !struct.type<@DefsInDifferentModule::@HasUse<[@T]>>
-      }
-      function.def @constrain(%arg0: !struct.type<@DefsInDifferentModule::@HasUse<[@T]>>) {
-        function.return
+    // removed
+    poly.template @THasUse {
+      poly.param @T
+
+      struct.def @HasUse {
+        function.def @compute() -> !struct.type<@DefsInDifferentModule::@THasUse::@HasUse<[@T]>> {
+          %self = struct.new : !struct.type<@DefsInDifferentModule::@THasUse::@HasUse<[@T]>>
+          function.return %self : !struct.type<@DefsInDifferentModule::@THasUse::@HasUse<[@T]>>
+        }
+        function.def @constrain(%arg0: !struct.type<@DefsInDifferentModule::@THasUse::@HasUse<[@T]>>) {
+          function.return
+        }
       }
     }
 
@@ -224,40 +245,39 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
-// CHECK-LABEL: module @FreeFuncInModule
-// CHECK:       function.def @struct_param
-// CHECK-LABEL: module @DefsInDifferentModule
-// CHECK-NOT:   struct.def @NoUse {
-// CHECK-NOT:   struct.def @HasUse<[@T]> {
-// CHECK:       struct.def @HasUse_f {
-// CHECK-NOT:   struct.def @NoUse {
-// CHECK-NOT:   struct.def @HasUse<[@T]> {
+// CHECK-NOT:   function.def @struct_param
+// CHECK-NOT:   poly.template @THasUse
+// CHECK-NOT:   struct.def @NoUse
 // -----
 
-// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "Main" struct may remove all structs!}}
-module attributes {veridise.lang = "llzk"} {
+// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all cleanup-candidate definitions!}}
+module attributes {llzk.lang} {
   module @GlobalsWithinNestedModule {
-    global.def @a : !struct.type<@HasUse<[!felt.type]>>
+    global.def @a : !struct.type<@THasUse::@HasUse<[!felt.type]>>
     module @NestedAgain {
-      global.def @a : !struct.type<@HasUse<[!felt.type]>>
+      global.def @a : !struct.type<@THasUse::@HasUse<[!felt.type]>>
       module @NestedEvenMore {
-        global.def @a : !struct.type<@HasUse<[!felt.type]>>
+        global.def @a : !struct.type<@THasUse::@HasUse<[!felt.type]>>
       }
-      global.def @b : !struct.type<@HasUse<[i1]>>
+      global.def @b : !struct.type<@THasUse::@HasUse<[i1]>>
       module @SiblingNesting {
-        global.def @a : !struct.type<@HasUse<[!string.type]>>
+        global.def @a : !struct.type<@THasUse::@HasUse<[!string.type]>>
       }
     }
   }
 
   // preserved instantiated version
-  struct.def @HasUse<[@T]> {
-    function.def @compute() -> !struct.type<@HasUse<[@T]>> {
-      %self = struct.new : !struct.type<@HasUse<[@T]>>
-      function.return %self : !struct.type<@HasUse<[@T]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@HasUse<[@T]>>) {
-      function.return
+  poly.template @THasUse {
+    poly.param @T
+
+    struct.def @HasUse {
+      function.def @compute() -> !struct.type<@THasUse::@HasUse<[@T]>> {
+        %self = struct.new : !struct.type<@THasUse::@HasUse<[@T]>>
+        function.return %self : !struct.type<@THasUse::@HasUse<[@T]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@THasUse::@HasUse<[@T]>>) {
+        function.return
+      }
     }
   }
 
@@ -273,24 +293,25 @@ module attributes {veridise.lang = "llzk"} {
   }
 }
 // CHECK-NOT: struct.def @NoUse {
-// CHECK-NOT: struct.def @HasUse<[@T]> {
-// CHECK:     struct.def @HasUse_f {
+// CHECK-NOT: poly.template @THasUse {
+// CHECK:     struct.def @THasUse_f_HasUse {
 // CHECK-NOT: struct.def @NoUse {
-// CHECK-NOT: struct.def @HasUse<[@T]> {
-// CHECK:     struct.def @HasUse_b {
+// CHECK-NOT: poly.template @THasUse {
+// CHECK:     struct.def @THasUse_b_HasUse {
 // CHECK-NOT: struct.def @NoUse {
-// CHECK-NOT: struct.def @HasUse<[@T]> {
-// CHECK:     struct.def @HasUse_s {
+// CHECK-NOT: poly.template @THasUse {
+// CHECK:     struct.def @THasUse_s_HasUse {
 // CHECK-NOT: struct.def @NoUse {
-// CHECK-NOT: struct.def @HasUse<[@T]> {
+// CHECK-NOT: poly.template @THasUse {
 // -----
 
-// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "Main" struct may remove all structs!}}
-module attributes {veridise.lang = "llzk"} {
+// expected-warning@+1 {{using option 'cleanup=main-as-root' with no "llzk.main" attribute on the top-level module may remove all cleanup-candidate definitions!}}
+module attributes {llzk.lang} {
   module @FreeFuncModule {
     module @Level2A {
       module @Level3 {
-        function.def @struct_param(%a: !struct.type<@StructModule::@MoreNested::@HasUse<[!felt.type]>>) -> !felt.type {
+        // removed
+        function.def @struct_param(%a: !struct.type<@StructModule::@MoreNested::@THasUse::@HasUse<[!felt.type]>>) -> !felt.type {
           %b = felt.const 42
           function.return %b: !felt.type
         }
@@ -298,7 +319,8 @@ module attributes {veridise.lang = "llzk"} {
     }
     module @Level2B {
       module @Level3 {
-        function.def @struct_param(%a: !struct.type<@StructModule::@MoreNested::@HasUse<[!felt.type]>>) -> !felt.type {
+        // removed
+        function.def @struct_param(%a: !struct.type<@StructModule::@MoreNested::@THasUse::@HasUse<[!felt.type]>>) -> !felt.type {
           %b = felt.const 42
           function.return %b: !felt.type
         }
@@ -308,14 +330,18 @@ module attributes {veridise.lang = "llzk"} {
 
   module @StructModule {
     module @MoreNested {
-      // preserved instantiated version
-      struct.def @HasUse<[@T]> {
-        function.def @compute() -> !struct.type<@StructModule::@MoreNested::@HasUse<[@T]>> {
-          %self = struct.new : !struct.type<@StructModule::@MoreNested::@HasUse<[@T]>>
-          function.return %self : !struct.type<@StructModule::@MoreNested::@HasUse<[@T]>>
-        }
-        function.def @constrain(%arg0: !struct.type<@StructModule::@MoreNested::@HasUse<[@T]>>) {
-          function.return
+      // removed
+      poly.template @THasUse {
+        poly.param @T
+
+        struct.def @HasUse {
+          function.def @compute() -> !struct.type<@StructModule::@MoreNested::@THasUse::@HasUse<[@T]>> {
+            %self = struct.new : !struct.type<@StructModule::@MoreNested::@THasUse::@HasUse<[@T]>>
+            function.return %self : !struct.type<@StructModule::@MoreNested::@THasUse::@HasUse<[@T]>>
+          }
+          function.def @constrain(%arg0: !struct.type<@StructModule::@MoreNested::@THasUse::@HasUse<[@T]>>) {
+            function.return
+          }
         }
       }
 
@@ -332,65 +358,62 @@ module attributes {veridise.lang = "llzk"} {
     }
   }
 }
-// CHECK-LABEL: module @FreeFuncModule
-// CHECK:       function.def @struct_param
-// CHECK:       function.def @struct_param
-// CHECK-LABEL: module @StructModule
-// CHECK-LABEL: module @MoreNested
-// CHECK-NOT:   struct.def @NoUse {
-// CHECK-NOT:   struct.def @HasUse<[@T]> {
-// CHECK:       struct.def @HasUse_f {
-// CHECK-NOT:   struct.def @NoUse {
-// CHECK-NOT:   struct.def @HasUse<[@T]> {
+// CHECK-NOT:   function.def @struct_param
+// CHECK-NOT:   poly.template @THasUse
+// CHECK-NOT:   struct.def @NoUse
 // -----
 
-module attributes {veridise.lang = "llzk"} {
-  global.def @gvar : !struct.type<@Component06<[4]>>
+module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
+  global.def @gvar : !struct.type<@TComponent06::@Component06<[4]>>
 
   // preserved instantiated version
-  struct.def @Component06<[@Z]> {
-    function.def @compute() -> !struct.type<@Component06<[@Z]>> {
-      %self = struct.new : !struct.type<@Component06<[@Z]>>
-      function.return %self : !struct.type<@Component06<[@Z]>>
+  poly.template @TComponent06 {
+    poly.param @Z
+
+    struct.def @Component06 {
+      function.def @compute() -> !struct.type<@TComponent06::@Component06<[@Z]>> {
+        %self = struct.new : !struct.type<@TComponent06::@Component06<[@Z]>>
+        function.return %self : !struct.type<@TComponent06::@Component06<[@Z]>>
+      }
+      function.def @constrain(%self: !struct.type<@TComponent06::@Component06<[@Z]>>) { function.return }
     }
-    function.def @constrain(%self: !struct.type<@Component06<[@Z]>>) { function.return }
   }
 
-  // always preserved
+  // always preserved because of "llzk.main = !struct.type<@Main>"
   struct.def @Main {
     function.def @compute() -> !struct.type<@Main> {
-      %s = function.call @Component06::@compute() : () -> !struct.type<@Component06<[4]>>
-      global.write @gvar = %s : !struct.type<@Component06<[4]>>
+      %s = function.call @TComponent06::@Component06::@compute() : () -> !struct.type<@TComponent06::@Component06<[4]>>
+      global.write @gvar = %s : !struct.type<@TComponent06::@Component06<[4]>>
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
     }
     function.def @constrain(%self: !struct.type<@Main>) {
-      %s = global.read @gvar : !struct.type<@Component06<[4]>>
+      %s = global.read @gvar : !struct.type<@TComponent06::@Component06<[4]>>
       function.return
     }
   }
 }
-// CHECK-NOT: struct.def @Component06<[@Z]> {
+// CHECK-NOT: poly.template @TComponent06 {
 // CHECK:     global.def @gvar
-// CHECK-NOT: struct.def @Component06<[@Z]> {
-// CHECK:     struct.def @Component06_4 {
-// CHECK-NOT: struct.def @Component06<[@Z]> {
+// CHECK-NOT: poly.template @TComponent06 {
+// CHECK:     struct.def @TComponent06_4_Component06 {
+// CHECK-NOT: poly.template @TComponent06 {
 // CHECK:     struct.def @Main {
-// CHECK-NOT: struct.def @Component06<[@Z]> {
+// CHECK-NOT: poly.template @TComponent06 {
 // -----
 
-module attributes {veridise.lang = "llzk"} {
-  // always preserved
+module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
+  // always preserved because of "llzk.main = !struct.type<@Main>"
   struct.def @Main {
-    struct.field @f : !struct.type<@M1::@S>
+    struct.member @f : !struct.type<@M1::@S>
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       %0 = function.call @M1::@S::@compute() : () -> !struct.type<@M1::@S>
-      struct.writef %self[@f] = %0 : !struct.type<@Main>, !struct.type<@M1::@S>
+      struct.writem %self[@f] = %0 : !struct.type<@Main>, !struct.type<@M1::@S>
       function.return %self : !struct.type<@Main>
     }
     function.def @constrain(%self: !struct.type<@Main>) {
-       %0 = struct.readf %self[@f] : !struct.type<@Main>, !struct.type<@M1::@S>
+       %0 = struct.readm %self[@f] : !struct.type<@Main>, !struct.type<@M1::@S>
       function.return
     }
   }
@@ -398,15 +421,15 @@ module attributes {veridise.lang = "llzk"} {
   module @M1 {
     // preserved
     struct.def @S {
-      struct.field @f : !struct.type<@M1::@T>
+      struct.member @f : !struct.type<@M1::@T>
       function.def @compute() -> !struct.type<@M1::@S> {
         %self = struct.new : !struct.type<@M1::@S>
         %0 = function.call @M1::@T::@compute() : () -> !struct.type<@M1::@T>
-        struct.writef %self[@f] = %0 : !struct.type<@M1::@S>, !struct.type<@M1::@T>
+        struct.writem %self[@f] = %0 : !struct.type<@M1::@S>, !struct.type<@M1::@T>
         function.return %self : !struct.type<@M1::@S>
       }
       function.def @constrain(%self: !struct.type<@M1::@S>) {
-        %0 = struct.readf %self[@f] : !struct.type<@M1::@S>, !struct.type<@M1::@T>
+        %0 = struct.readm %self[@f] : !struct.type<@M1::@S>, !struct.type<@M1::@T>
         function.return
       }
     }
@@ -429,16 +452,16 @@ module attributes {veridise.lang = "llzk"} {
     // always preserved
     function.def @free() -> index {
       %0 = global.read @M1::@gvar : !struct.type<@M1::@X>
-      %1 = struct.readf %0[@f] : !struct.type<@M1::@X>, index
+      %1 = struct.readm %0[@f] : !struct.type<@M1::@X>, index
       function.return %1: index
     }
 
     // preserved
     struct.def @X {
-      struct.field @f : index {llzk.pub}
+      struct.member @f : index {llzk.pub}
       function.def @compute(%a: index) -> !struct.type<@M1::@X> {
         %self = struct.new : !struct.type<@M1::@X>
-        struct.writef %self[@f] = %a : !struct.type<@M1::@X>, index
+        struct.writem %self[@f] = %a : !struct.type<@M1::@X>, index
         function.return %self : !struct.type<@M1::@X>
       }
       function.def @constrain(%arg0: !struct.type<@M1::@X>, %a: index) {
@@ -451,15 +474,15 @@ module attributes {veridise.lang = "llzk"} {
   module @M2 {
     // removed
     struct.def @S {
-      struct.field @f : !struct.type<@M2::@T>
+      struct.member @f : !struct.type<@M2::@T>
       function.def @compute() -> !struct.type<@M2::@S> {
         %self = struct.new : !struct.type<@M2::@S>
         %0 = function.call @M2::@T::@compute() : () -> !struct.type<@M2::@T>
-        struct.writef %self[@f] = %0 : !struct.type<@M2::@S>, !struct.type<@M2::@T>
+        struct.writem %self[@f] = %0 : !struct.type<@M2::@S>, !struct.type<@M2::@T>
         function.return %self : !struct.type<@M2::@S>
       }
       function.def @constrain(%self: !struct.type<@M2::@S>) {
-        %0 = struct.readf %self[@f] : !struct.type<@M2::@S>, !struct.type<@M2::@T>
+        %0 = struct.readm %self[@f] : !struct.type<@M2::@S>, !struct.type<@M2::@T>
         function.return
       }
     }
@@ -488,10 +511,10 @@ module attributes {veridise.lang = "llzk"} {
 // CHECK-NOT:   struct.def @T {
 // -----
 
-module attributes {veridise.lang = "llzk"} {
-  // always preserved
+module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
+  // always preserved because of "llzk.main = !struct.type<@Main>"
   struct.def @Main {
-    struct.field @f : !struct.type<@DirectUseFromMain>
+    struct.member @f : !struct.type<@DirectUseFromMain>
     function.def @compute() -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
       function.return %self : !struct.type<@Main>
@@ -503,7 +526,7 @@ module attributes {veridise.lang = "llzk"} {
 
   // preserved
   struct.def @DirectUseFromMain {
-    struct.field @f : !struct.type<@TransitiveUseFromMain>
+    struct.member @f : !struct.type<@TransitiveUseFromMain>
     function.def @compute() -> !struct.type<@DirectUseFromMain> {
       %self = struct.new : !struct.type<@DirectUseFromMain>
       function.return %self : !struct.type<@DirectUseFromMain>
@@ -525,20 +548,24 @@ module attributes {veridise.lang = "llzk"} {
   }
 
   // removed
-  struct.def @NoUse<[@T]> {
-    function.def @compute() -> !struct.type<@NoUse<[@T]>> {
-      %self = struct.new : !struct.type<@NoUse<[@T]>>
-      function.return %self : !struct.type<@NoUse<[@T]>>
-    }
-    function.def @constrain(%arg0: !struct.type<@NoUse<[@T]>>) {
-      function.return
+  poly.template @TNoUse {
+    poly.param @T
+
+    struct.def @NoUse {
+      function.def @compute() -> !struct.type<@TNoUse::@NoUse<[@T]>> {
+        %self = struct.new : !struct.type<@TNoUse::@NoUse<[@T]>>
+        function.return %self : !struct.type<@TNoUse::@NoUse<[@T]>>
+      }
+      function.def @constrain(%arg0: !struct.type<@TNoUse::@NoUse<[@T]>>) {
+        function.return
+      }
     }
   }
 }
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {
 // CHECK:     struct.def @Main {
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {
 // CHECK:     struct.def @DirectUseFromMain {
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {
 // CHECK:     struct.def @TransitiveUseFromMain {
-// CHECK-NOT: struct.def @NoUse<[@T]> {
+// CHECK-NOT: poly.template @TNoUse {

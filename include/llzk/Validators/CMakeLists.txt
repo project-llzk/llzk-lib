@@ -7,5 +7,4 @@ mlir_tablegen(LLZKValidationPasses.capi.cpp.inc -gen-pass-capi-impl --prefix LLZ
 llzk_add_mlir_doc(LLZKValidationPassesDocGen passes/LLZKValidationPasses.md -gen-pass-doc)
 
 add_public_tablegen_target(LLZKValidationIncGen)
-add_dependencies(mlir-headers LLZKValidationIncGen)
 add_dependencies(LLZKDialectHeaders LLZKValidationIncGen)

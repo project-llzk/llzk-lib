@@ -19,6 +19,7 @@ def LLZKDialect : Dialect {
   let cppNamespace = "::llzk";
 
   let useDefaultAttributePrinterParser = true;
+  let hasOperationAttrVerify = 1;
 }
 
 #endif // LLZK_DIALECT

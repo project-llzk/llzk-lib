@@ -10,8 +10,10 @@
 #pragma once
 
 #include "llzk/Dialect/Function/IR/Attrs.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Dialect/Verif/IR/OpInterfaces.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/SymbolHelper.h"
 
@@ -21,12 +23,19 @@
 #include <mlir/Interfaces/FunctionInterfaces.h>
 
 #include <cstdint>
+#include <optional>
 
 // Include TableGen'd declarations
 #define GET_OP_CLASSES
 #include "llzk/Dialect/Function/IR/Ops.h.inc"
 
 namespace llzk::function {
+
+/// Attribute name for source-level function argument names.
+constexpr char ARG_NAME_ATTR_NAME[] = "function.arg_name";
+
+/// Attribute name for source-level function result names.
+constexpr char RES_NAME_ATTR_NAME[] = "function.res_name";
 
 /// @brief Kinds of functions in LLZK.
 enum class FunctionKind : std::uint8_t {

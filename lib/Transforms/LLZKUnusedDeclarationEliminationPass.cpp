@@ -18,14 +18,13 @@
 #include "llzk/Util/SymbolLookup.h"
 
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/SymbolTable.h>
 
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Debug.h>
 
 // Include the generated base pass class definitions.
 namespace llzk {
-// the *DECL* macro is required when a pass has options to declare the option struct
-#define GEN_PASS_DECL_UNUSEDDECLARATIONELIMINATIONPASS
 #define GEN_PASS_DEF_UNUSEDDECLARATIONELIMINATIONPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
@@ -38,16 +37,11 @@ using namespace llzk::component;
 
 namespace {
 
-/// @brief Get the fully-qualified field symbol.
-SymbolRefAttr getFullFieldSymbol(FieldRefOpInterface op) {
-  SymbolRefAttr structSym = op.getStructType().getNameRef(); // this is fully qualified
-  return appendLeaf(structSym, op.getFieldNameAttr());
-}
+class PassImpl : public llzk::impl::UnusedDeclarationEliminationPassBase<PassImpl> {
+  using Base = UnusedDeclarationEliminationPassBase<PassImpl>;
+  using Base::Base;
 
-class UnusedDeclarationEliminationPass
-    : public llzk::impl::UnusedDeclarationEliminationPassBase<UnusedDeclarationEliminationPass> {
-
-  /// @brief Shared context between the operations in this pass (field removal, struct removal)
+  /// @brief Shared context between the operations in this pass (member removal, struct removal)
   /// that doesn't need to be persisted after the pass completes.
   struct PassContext {
     DenseMap<SymbolRefAttr, StructDefOp> symbolToStruct;
@@ -72,66 +66,93 @@ class UnusedDeclarationEliminationPass
 
   void runOnOperation() override {
     PassContext ctx = PassContext::populate(getOperation());
-    // First, remove unused fields. This may allow more structs to be removed,
-    // if their final remaining uses are as types for unused fields.
-    removeUnusedFields(ctx);
+    // First, remove unused members. This may allow more structs to be removed,
+    // if their final remaining uses are as types for unused members.
+    if (failed(removeUnusedMembers(ctx))) {
+      signalPassFailure();
+      return;
+    }
 
     // Last, remove unused structs if configured
     if (removeStructs) {
       removeUnusedStructs(ctx);
+      removeEmptyModules();
     }
   }
 
-  /// @brief Removes unused fields.
-  /// A field is unused if it is never read from (only written to).
-  /// @param structDef
-  void removeUnusedFields(PassContext &ctx) {
+  /// @brief Removes unused members.
+  /// A member is unused if it is never read from (only written to).
+  /// @param ctx
+  /// @return failure if a read/write member reference cannot be resolved.
+  LogicalResult removeUnusedMembers(PassContext &ctx) {
     ModuleOp modOp = getOperation();
 
-    // Map fully-qualified field symbols -> field ops
-    DenseMap<SymbolRefAttr, FieldDefOp> fields;
-    for (auto &[structDef, structSym] : ctx.structToSymbol) {
-      structDef.walk([&](FieldDefOp field) {
-        // We don't consider public fields in the Main component for removal,
-        // as these are output values and removing them would result in modifying
-        // the overall circuit interface.
-        if (!structDef.isMainComponent() || !field.hasPublicAttr()) {
-          SymbolRefAttr fieldSym =
-              appendLeaf(structSym, FlatSymbolRefAttr::get(field.getSymNameAttr()));
-          fields[fieldSym] = field;
+    SymbolTableCollection symbolTables;
+
+    // Candidate members are tracked by resolved definitions instead of by the
+    // symbol text used at each read/write site, which may be relative.
+    DenseSet<MemberDefOp> members;
+    for (const auto &entry : ctx.structToSymbol) {
+      StructDefOp structDef = entry.first;
+      bool notMain = !structDef.isMainComponent();
+      structDef.walk([notMain, &members](MemberDefOp member) {
+        // We don't consider public members in the Main component for removal, as these are output
+        // values and removing them would result in modifying the overall circuit interface.
+        if (notMain || !member.hasPublicAttr()) {
+          members.insert(member);
         }
       });
     }
 
-    // Remove all fields that are read.
-    modOp.walk([&](FieldReadOp readf) {
-      SymbolRefAttr readFieldSym = getFullFieldSymbol(readf);
-      fields.erase(readFieldSym);
-    });
+    // Remove all members that are read.
+    WalkResult readWalk = modOp.walk([&](MemberReadOp readm) {
+      FailureOr<SymbolLookupResult<MemberDefOp>> memberDef = readm.getMemberDefOp(symbolTables);
+      if (failed(memberDef)) {
+        return WalkResult::interrupt();
+      }
 
-    // Remove all writes that reference the remaining fields, as these writes
-    // are now known to only update write-only fields.
-    modOp.walk([&](FieldWriteOp writef) {
-      SymbolRefAttr writtenField = getFullFieldSymbol(writef);
-      if (fields.contains(writtenField)) {
-        // We need not check the users of a writef, since it produces no results.
+      members.erase(memberDef->get());
+      return WalkResult::advance();
+    });
+    if (readWalk.wasInterrupted()) {
+      return failure();
+    }
+
+    // Remove all writes that reference the remaining members, as these writes
+    // are now known to only update write-only members.
+    WalkResult writeWalk = modOp.walk([&](MemberWriteOp writem) {
+      FailureOr<SymbolLookupResult<MemberDefOp>> memberDef = writem.getMemberDefOp(symbolTables);
+      if (failed(memberDef)) {
+        return WalkResult::interrupt();
+      }
+
+      MemberDefOp writtenMember = memberDef->get();
+      if (members.contains(writtenMember)) {
+        // We need not check the users of a writem, since it produces no results.
         LLVM_DEBUG(
-            llvm::dbgs() << "Removing write " << writef << " to write-only field " << writtenField
+            llvm::dbgs() << "Removing write " << writem << " to write-only member " << writtenMember
                          << '\n'
         );
-        writef.erase();
+        writem.erase();
       }
-    });
 
-    // Finally, erase the remaining fields.
-    for (auto &[_, fieldDef] : fields) {
-      LLVM_DEBUG(llvm::dbgs() << "Removing field " << fieldDef << '\n');
-      fieldDef->erase();
+      return WalkResult::advance();
+    });
+    if (writeWalk.wasInterrupted()) {
+      return failure();
     }
+
+    // Finally, erase the remaining members.
+    for (MemberDefOp memberDef : members) {
+      LLVM_DEBUG(llvm::dbgs() << "Removing member " << memberDef << '\n');
+      memberDef->erase();
+    }
+
+    return success();
   }
 
   /// @brief Remove unused structs by looking for any uses of the struct's fully-qualified
-  /// symbol. This catches any uses, such as field declarations of the struct's type
+  /// symbol. This catches any uses, such as member declarations of the struct's type
   /// or calls to any of the struct's methods.
   /// @param ctx
   void removeUnusedStructs(PassContext &ctx) {
@@ -186,7 +207,9 @@ class UnusedDeclarationEliminationPass
 
       // Check attributes
       for (const auto &namedAttr : op->getAttrs()) {
-        namedAttr.getValue().walk([&](TypeAttr typeAttr) { tryAddUse(typeAttr.getValue()); });
+        namedAttr.getValue().walk([&tryAddUse](TypeAttr typeAttr) {
+          tryAddUse(typeAttr.getValue());
+        });
       }
 
       return WalkResult::advance();
@@ -194,7 +217,7 @@ class UnusedDeclarationEliminationPass
 
     SmallVector<StructDefOp> unusedStructs;
 
-    auto updateUnusedStructs = [&]() {
+    auto updateUnusedStructs = [&usedBy, &unusedStructs]() {
       for (auto &[structDef, users] : usedBy) {
         if (users.empty() && !structDef.isMainComponent()) {
           unusedStructs.push_back(structDef);
@@ -226,10 +249,27 @@ class UnusedDeclarationEliminationPass
       }
     }
   }
+
+  /// @brief Remove nested `module` ops with empty body.
+  void removeEmptyModules() {
+    SmallVector<ModuleOp> emptyModules;
+
+    ModuleOp rootModOp = getOperation();
+    rootModOp.walk<WalkOrder::PostOrder>([&](ModuleOp modOp) {
+      if (modOp == rootModOp) {
+        return;
+      }
+      Region &region = modOp.getBodyRegion();
+      if (region.empty() || region.front().empty()) { // module has `SingleBlock` trait
+        emptyModules.push_back(modOp);
+      }
+    });
+
+    for (ModuleOp modOp : emptyModules) {
+      LLVM_DEBUG(llvm::dbgs() << "Removing empty module " << modOp.getName() << '\n');
+      modOp->erase();
+    }
+  }
 };
 
 } // namespace
-
-std::unique_ptr<mlir::Pass> llzk::createUnusedDeclarationEliminationPass() {
-  return std::make_unique<UnusedDeclarationEliminationPass>();
-};
