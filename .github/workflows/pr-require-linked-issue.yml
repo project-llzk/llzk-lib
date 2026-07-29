@@ -64,8 +64,13 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
+          echo "Installed repository access:"
           gh api /installation/repositories \
-            --jq '.repositories[] | select(.full_name == "${{ github.repository }}") | .permissions'
+            --jq '.repositories[] | select(.full_name == "${{ github.repository }}") | .full_name'
+
+          echo "Can list issue comments:"
+          gh api /repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
+            --jq 'length'
 
       - name: Comment when no issue is linked
         if: steps.linked-issue.outputs.has-linked-issue != 'true'
