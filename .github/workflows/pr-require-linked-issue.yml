@@ -1,94 +1,25 @@
-name: Require linked issue
+name: Check for linked issue
 
 on:
   pull_request:
     types: [opened, reopened, ready_for_review]
 
 permissions:
-  contents: read
+  pull-requests: read
+  issues: read
 
 jobs:
   check-linked-issue:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out repository metadata
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.repository.default_branch }}
-          persist-credentials: false
-
-      # This token allows the workflow to check membership in
-      # the team listed by CODEOWNERS and to comment on PRs.
-      - name: Generate issue triage token
-        id: app-token
-        uses: actions/create-github-app-token@v3
-        with:
-          client-id: ${{ secrets.ISSUE_TRIAGE_APP_CLIENT_ID }}
-          private-key: ${{ secrets.ISSUE_TRIAGE_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-issues: write
-          permission-members: read
-          permission-pull-requests: read
-
-      - name: Comment when no issue is linked
+      - name: Check for linked issue
+        id: linked-issue
         uses: actions/github-script@v9
         with:
-          github-token: ${{ steps.app-token.outputs.token }}
+          github-token: ${{ github.token }}
           script: |
-            const { owner, repo } = context.repo;
-            const marker = "<!-- require-linked-issue -->";
             const pr = context.payload.pull_request;
-
-            /*
-            const fs = require("fs");
-            const codeowners = fs.readFileSync(".github/CODEOWNERS", "utf8");
-            const codeOwnerTeams = [
-              ...new Set(
-                codeowners
-                  .split(/\r?\n/)
-                  .map(line => line.trim())
-                  .filter(line => line && !line.startsWith("#"))
-                  .flatMap(line => {
-                    const ownerTokens = [];
-                    for (const token of line.split(/\s+/).slice(1)) {
-                      if (token.startsWith("#")) {
-                        break;
-                      }
-                      ownerTokens.push(token);
-                    }
-                    return ownerTokens;
-                  })
-                  .filter(owner => /^@[^/\s]+\/[^/\s]+$/.test(owner))
-              ),
-            ];
-
-            for (const codeOwnerTeam of codeOwnerTeams) {
-              const [teamOrg, teamSlug] = codeOwnerTeam.slice(1).split("/");
-
-              try {
-                const membership =
-                  await github.rest.teams.getMembershipForUserInOrg({
-                    org: teamOrg,
-                    team_slug: teamSlug,
-                    username: pr.user.login,
-                  });
-
-                if (membership.data.state === "active") {
-                  core.info(
-                    `${pr.user.login} is a member of ${codeOwnerTeam}; skipping linked issue reminder.`
-                  );
-                  return;
-                }
-              } catch (error) {
-                if (error.status === 404) {
-                  continue;
-                }
-                throw error;
-              }
-            }
-            */
 
             const result = await github.graphql(
               `
@@ -108,9 +39,54 @@ jobs:
             const hasLinkedIssue =
               result.node.closingIssuesReferences.totalCount > 0;
 
+            core.setOutput("has-linked-issue", hasLinkedIssue ? "true" : "false");
+
             if (hasLinkedIssue) {
               core.info("The pull request has a linked issue.");
-              return;
+            }
+
+      # This token allows the workflow to check core developer membership and
+      # to comment on PRs.
+      - name: Generate issue triage token
+        if: steps.linked-issue.outputs.has-linked-issue != 'true'
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.ISSUE_TRIAGE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.ISSUE_TRIAGE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-issues: write
+          permission-members: read
+
+      - name: Comment when no issue is linked
+        if: steps.linked-issue.outputs.has-linked-issue != 'true'
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const marker = "<!-- check-linked-issue -->";
+            const pr = context.payload.pull_request;
+
+            const coreTeam = "project-llzk/core-devs";
+            try {
+              const membership = await github.rest.teams.getMembershipForUserInOrg({
+                org: "project-llzk",
+                team_slug: "core-devs",
+                username: pr.user.login,
+              });
+
+              if (membership.data.state === "active") {
+                core.info(
+                  `${pr.user.login} is a member of ${coreTeam}; skipping linked issue reminder.`
+                );
+                return;
+              }
+            } catch (error) {
+              if (error.status !== 404) {
+                throw error;
+              }
             }
 
             // Avoid posting the same warning more than once.
