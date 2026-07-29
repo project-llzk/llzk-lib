@@ -769,7 +769,7 @@ $(function(){initNavTree('LLZKPolyLoweringPass_8cpp_source.html','',''); });
 <div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span>        }</div>
 <div class="line"><a id="l00670" name="l00670"></a><span class="lineno">  670</span>        assert(allIndices-&gt;size() == elementOperands.size() &amp;&amp; <span class="stringliteral">&quot;array.new verifier mismatch&quot;</span>);</div>
 <div class="line"><a id="l00671" name="l00671"></a><span class="lineno">  671</span> </div>
-<div class="line"><a id="l00672" name="l00672"></a><span class="lineno">  672</span>        <span class="keyword">auto</span> indexIt = allIndices-&gt;begin();</div>
+<div class="line"><a id="l00672" name="l00672"></a><span class="lineno">  672</span>        <span class="keyword">auto</span> *indexIt = allIndices-&gt;begin();</div>
 <div class="line"><a id="l00673" name="l00673"></a><span class="lineno">  673</span>        <span class="keywordflow">for</span> (OpOperand &amp;elementOperand : elementOperands) {</div>
 <div class="line"><a id="l00674" name="l00674"></a><span class="lineno">  674</span>          ArrayAttr index = *indexIt++;</div>
 <div class="line"><a id="l00675" name="l00675"></a><span class="lineno">  675</span>          <span class="keywordflow">if</span> (indexStartsWith(index, viewPrefix)) {</div>
