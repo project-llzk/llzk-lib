@@ -79,14 +79,12 @@ jobs:
                 username: pr.user.login,
               });
 
-              /*
               if (membership.data.state === "active") {
                 core.info(
                   `${pr.user.login} is a member of ${coreTeam}; skipping linked issue reminder.`
                 );
                 return;
               }
-              */
             } catch (error) {
               core.warning(
                 `Unable to check ${coreTeam} membership for ${pr.user.login} (status: ${error.status ?? "unknown"}). Proceeding as non-member.`
