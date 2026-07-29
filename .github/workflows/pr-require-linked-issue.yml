@@ -86,9 +86,9 @@ jobs:
                 return;
               }
             } catch (error) {
-              if (error.status !== 404) {
-                throw error;
-              }
+              core.warning(
+                `Unable to check ${coreTeam} membership for ${pr.user.login} (status: ${error.status ?? "unknown"}). Proceeding as non-member.`
+              );
             }
 
             // Avoid posting the same warning more than once.
