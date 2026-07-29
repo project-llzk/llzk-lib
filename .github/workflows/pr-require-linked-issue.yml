@@ -69,11 +69,13 @@ jobs:
             const marker = "<!-- check-linked-issue -->";
             const pr = context.payload.pull_request;
 
-            const coreTeam = "project-llzk/core-devs";
+            const org = context.repo.owner;
+            const teamSlug = "core-devs";
+            const coreTeam = `${org}/${teamSlug}`;
             try {
               const membership = await github.rest.teams.getMembershipForUserInOrg({
-                org: "project-llzk",
-                team_slug: "core-devs",
+                org,
+                team_slug: teamSlug,
                 username: pr.user.login,
               });
 
