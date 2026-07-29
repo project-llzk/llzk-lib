@@ -56,7 +56,7 @@ jobs:
           private-key: ${{ secrets.ISSUE_TRIAGE_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.event.repository.name }}
-          permission-issues: write
+          permission-pull-requests: write
           permission-members: read
 
       - name: Show issue triage token permissions
