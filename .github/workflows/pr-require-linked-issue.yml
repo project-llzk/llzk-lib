@@ -41,6 +41,7 @@ jobs:
             const marker = "<!-- require-linked-issue -->";
             const pr = context.payload.pull_request;
 
+            /*
             const fs = require("fs");
             const codeowners = fs.readFileSync(".github/CODEOWNERS", "utf8");
             const codeOwnerTeams = [
@@ -87,6 +88,7 @@ jobs:
                 throw error;
               }
             }
+            */
 
             const result = await github.graphql(
               `
