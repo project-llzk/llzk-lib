@@ -20,4 +20,4 @@ struct PCLTargetConfig {
 
 mlir::LogicalResult
 moduleToPcl(mlir::ModuleOp mod, llvm::raw_ostream &os, PCLTargetConfig cfg = {});
-}
+} // namespace pcl

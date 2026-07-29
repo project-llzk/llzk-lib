@@ -1152,7 +1152,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
         if (!elementRefs.isSingleValue()) {
           continue;
         }
-        auto maybeIndices = indexGen.delinearize(i, op->getContext());
+        auto maybeIndices = indexGen.delinearize(llzk::checkedCast<int64_t>(i), op->getContext());
         ensure(maybeIndices.has_value(), "could not delinearize aggregate array.new index");
         SourceRef elementTarget = arrayRoot;
         for (Attribute attr : *maybeIndices) {

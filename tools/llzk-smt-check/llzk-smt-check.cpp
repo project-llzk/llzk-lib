@@ -35,7 +35,7 @@ using namespace llvm;
 
 namespace {
 
-enum class SatResult { Sat, Unsat, Unknown };
+enum class SatResult : std::uint8_t { Sat, Unsat, Unknown };
 
 struct StageExpectation {
   std::string rootName;
@@ -62,7 +62,11 @@ struct TempFileCleanup {
 
   ~TempFileCleanup() {
     for (const SmallString<128> &path : paths) {
-      (void)sys::fs::remove(path);
+      std::error_code ec = sys::fs::remove(path);
+      if (ec && ec != std::errc::no_such_file_or_directory) {
+        errs() << "llzk-smt-check: failed to remove temporary file '" << path
+               << "': " << ec.message() << '\n';
+      }
     }
   }
 };
@@ -375,7 +379,7 @@ void printSolverFailure(const SolverInvocationResult &invocation) {
 
 } // namespace
 
-int main(int argc, char **argv) {
+static int runMain(int argc, char **argv) {
   sys::PrintStackTraceOnErrorSignal(StringRef());
   setBugReportMsg(
       "PLEASE submit a bug report to " BUG_REPORT_URL
@@ -486,4 +490,15 @@ int main(int argc, char **argv) {
   }
 
   return EXIT_SUCCESS;
+}
+
+int main(int argc, char **argv) noexcept {
+  try {
+    return runMain(argc, argv);
+  } catch (const std::exception &ex) {
+    errs() << "llzk-smt-check: unhandled exception: " << ex.what() << '\n';
+  } catch (...) {
+    errs() << "llzk-smt-check: unhandled non-standard exception\n";
+  }
+  return EXIT_FAILURE;
 }

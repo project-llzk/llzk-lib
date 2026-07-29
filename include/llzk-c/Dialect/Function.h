@@ -43,20 +43,20 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Function, llzk__function);
 /// Builds a FuncDefOp with the given attributes and argument attributes. Each argument attribute
 /// must be a DictionaryAttr.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    Function, FuncDefOp, WithAttrsAndArgAttrs, MlirStringRef name, MlirType type, intptr_t nAttrs,
-    MlirNamedAttribute const *attrs, intptr_t nArgAttrs, MlirAttribute const *argAttrs
+    Function, FuncDefOp, WithAttrsAndArgAttrs, MlirStringRef name, MlirType type, intptr_t numAttrs,
+    MlirNamedAttribute const *attrs, intptr_t numArgAttrs, MlirAttribute const *argAttrs
 );
 
 /// Builds a FuncDefOp with the given attributes.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    Function, FuncDefOp, WithAttrs, MlirStringRef name, MlirType type, intptr_t nAttrs,
+    Function, FuncDefOp, WithAttrs, MlirStringRef name, MlirType type, intptr_t numAttrs,
     MlirNamedAttribute const *attrs
 );
 
 /// Builds a FuncDefOp with the given argument attributes. Each argument attribute must be a
 /// DictionaryAttr.
 LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
-    Function, FuncDefOp, WithArgAttrs, MlirStringRef name, MlirType type, intptr_t nArgAttrs,
+    Function, FuncDefOp, WithArgAttrs, MlirStringRef name, MlirType type, intptr_t numArgAttrs,
     MlirAttribute const *argAttrs
 );
 

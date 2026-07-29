@@ -1226,7 +1226,7 @@ struct FlattenedConvertedValueRangeStorage {
   SmallVector<ValueRange> ranges;
 
   template <typename RangeOfRanges>
-  explicit FlattenedConvertedValueRangeStorage(RangeOfRanges valueRanges) {
+  explicit FlattenedConvertedValueRangeStorage(const RangeOfRanges &valueRanges) {
     storage.reserve(valueRanges.size());
     ranges.reserve(valueRanges.size());
     for (ArrayRef<ValueRange> valueRangeGroup : valueRanges) {
@@ -4985,7 +4985,7 @@ struct PromotedFunctionSignature {
 
 static const PromotedFunctionArgCast *
 findPromotedArgCast(ArrayRef<PromotedFunctionArgCast> argCasts, unsigned argIndex) {
-  auto it = llvm::find_if(argCasts, [argIndex](const PromotedFunctionArgCast &argCast) {
+  const auto *it = llvm::find_if(argCasts, [argIndex](const PromotedFunctionArgCast &argCast) {
     return argCast.argIndex == argIndex;
   });
   return it == argCasts.end() ? nullptr : &*it;

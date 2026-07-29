@@ -669,7 +669,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
         }
         assert(allIndices->size() == elementOperands.size() && "array.new verifier mismatch");
 
-        auto indexIt = allIndices->begin();
+        auto *indexIt = allIndices->begin();
         for (OpOperand &elementOperand : elementOperands) {
           ArrayAttr index = *indexIt++;
           if (indexStartsWith(index, viewPrefix)) {

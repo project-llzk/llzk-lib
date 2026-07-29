@@ -28,7 +28,7 @@ public:
 /// An atom is a reference to an object that can be printed.
 template <typename T> class Atom : public SexpElt {
   T val;
-  explicit Atom(T VAL) : val(VAL) {};
+  explicit Atom(T VAL) : val(std::move(VAL)) {};
   friend SexpCtx;
 
 public:
@@ -69,7 +69,7 @@ public:
 // This is a known GCC issue: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=109224
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmismatched-new-delete"
-    return Sexp(new (allocator) detail::Atom<T>(val));
+    return Sexp(new (allocator) detail::Atom<T>(std::move(val)));
 #pragma GCC diagnostic pop
   }
 
@@ -90,7 +90,7 @@ public:
   /// Creates a new atomic s-expression.
   ///
   /// Doesn't add it to the list of pending expressions.
-  template <typename T> Sexp atom(T val) { return ctx.atom(val); }
+  template <typename T> Sexp atom(T val) { return ctx.atom(std::move(val)); }
 
   /// Creates a new s-expression.
   ///

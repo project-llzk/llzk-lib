@@ -577,8 +577,8 @@ void SourceRef::print(raw_ostream &os) const {
       auto callResult = llvm::cast<OpResult>(value);
       auto callee = resolveCallable<FuncDefOp>(callOp);
       if (succeeded(callee)) {
-        auto calleeFunc = llvm::dyn_cast_if_present<FuncDefOp>((*callee).get());
-        if (shouldPrintNamedCallResult(callOp, callResult, calleeFunc)) {
+        FuncDefOp calleeFunc = (*callee).get();
+        if (calleeFunc && shouldPrintNamedCallResult(callOp, callResult, calleeFunc)) {
           auto resName = *calleeFunc.getResNameAttr(callResult.getResultNumber());
           os << resName.getValue();
         } else {

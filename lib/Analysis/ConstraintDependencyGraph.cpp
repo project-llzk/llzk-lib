@@ -124,7 +124,7 @@ void SourceRefAnalysis::setToEntryState(Lattice *lattice) {
   if (auto value = llvm::dyn_cast_if_present<Value>(lattice->getAnchor())) {
     if (auto arg = llvm::dyn_cast<BlockArgument>(value)) {
       Operation *parent = arg.getOwner()->getParentOp();
-      if (parent && llvm::isa<RegionBranchOpInterface>(parent) &&
+      if (llvm::isa_and_present<RegionBranchOpInterface>(parent) &&
           llvm::isa<ArrayType, StructType, PodType>(value.getType())) {
         // Region-branch arguments are aliases of their incoming aggregate storage. Giving them a
         // fresh root would make loop-carried writes unstable and would discard that identity.

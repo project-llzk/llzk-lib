@@ -183,7 +183,7 @@ static void printSetInfoValue(llvm::raw_ostream &os, Attribute value) {
 }
 
 /// Lowering mode for a helper `func.func` referenced from the script root.
-enum class HelperMode {
+enum class HelperMode : std::uint8_t {
   PureFunction,
   InlineScript,
 };
@@ -1389,7 +1389,7 @@ private:
         {smt::BVCmpPredicate::ult, "bvult"}, {smt::BVCmpPredicate::ule, "bvule"},
         {smt::BVCmpPredicate::ugt, "bvugt"}, {smt::BVCmpPredicate::uge, "bvuge"},
     };
-    auto it = llvm::find_if(predicateSpellings, [pred = cmpOp.getPred()](const auto &entry) {
+    const auto *it = llvm::find_if(predicateSpellings, [pred = cmpOp.getPred()](const auto &entry) {
       return entry.first == pred;
     });
     assert(it != std::end(predicateSpellings) && "unhandled BVCmpPredicate");

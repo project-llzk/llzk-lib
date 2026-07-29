@@ -28,20 +28,24 @@
 #include "pcl/Dialect/IR/Types.cpp.inc"
 
 void pcl::PCLDialect::initialize() {
+  // clang-format off
   addOperations<
-#define GET_OP_LIST
-#include "pcl/Dialect/IR/Ops.cpp.inc"
-      >();
+    #define GET_OP_LIST
+    #include "pcl/Dialect/IR/Ops.cpp.inc"
+  >();
 
   addTypes<
-#define GET_TYPEDEF_LIST
-#include "pcl/Dialect/IR/Types.cpp.inc"
-      >();
+    #define GET_TYPEDEF_LIST
+    #include "pcl/Dialect/IR/Types.cpp.inc"
+  >();
 
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addAttributes<
-#define GET_ATTRDEF_LIST
-#include "pcl/Dialect/IR/Attrs.cpp.inc"
-      >();
+    #define GET_ATTRDEF_LIST
+    #include "pcl/Dialect/IR/Attrs.cpp.inc"
+  >();
+  // clang-format on
 }
 
 using namespace pcl;
