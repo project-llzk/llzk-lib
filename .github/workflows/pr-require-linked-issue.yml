@@ -59,14 +59,6 @@ jobs:
           permission-pull-requests: write
           permission-members: read
 
-      - name: Show issue triage token permissions
-        if: steps.linked-issue.outputs.has-linked-issue != 'true'
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          gh api /installation/repositories \
-            --jq '.repositories[] | select(.full_name == "${{ github.repository }}") | .permissions'
-
       - name: Comment when no issue is linked
         if: steps.linked-issue.outputs.has-linked-issue != 'true'
         uses: actions/github-script@v9
