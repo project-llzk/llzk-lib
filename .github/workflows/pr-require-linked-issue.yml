@@ -77,12 +77,12 @@ jobs:
                 username: pr.user.login,
               });
 
-              if (membership.data.state === "active") {
-                core.info(
-                  `${pr.user.login} is a member of ${coreTeam}; skipping linked issue reminder.`
-                );
-                return;
-              }
+              # if (membership.data.state === "active") {
+              #   core.info(
+              #     `${pr.user.login} is a member of ${coreTeam}; skipping linked issue reminder.`
+              #   );
+              #   return;
+              # }
             } catch (error) {
               if (error.status !== 404) {
                 throw error;
