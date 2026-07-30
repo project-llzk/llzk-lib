@@ -1,0 +1,95 @@
+// RUN: llzk-opt -llzk-flatten %s | FileCheck --enable-var-scope %s
+
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column, llzk.pub}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Holder {
+    struct.member @items : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
+
+    function.def @compute(%idx: index) -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %items = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+      array.write %items[%c0] = %item0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+      array.write %items[%c1] = %item1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+      struct.writem %self[@items] = %items : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+      function.return %self : !struct.type<@Holder>
+    }
+
+    function.def @constrain(%self: !struct.type<@Holder>, %idx: index) {
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %prev_items = struct.readm %self[@items] : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {tableOffset = -1 : index}
+      %prev_item = array.read %prev_items[%c1] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+      %affine_items = struct.readm %self[@items] {()[%idx]} : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {tableOffset = affine_map<()[s0] -> (s0 - 1)>}
+      %affine_item = array.read %affine_items[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+      %prev_value = struct.readm %prev_item[@value] : !struct.type<@TCell::@Cell<[1]>>, !felt.type
+      %affine_value = struct.readm %affine_item[@value] : !struct.type<@TCell::@Cell<[0]>>, !felt.type
+      constrain.eq %prev_value, %affine_value : !felt.type, !felt.type
+      function.return
+    }
+  }
+}
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0 - 1)>
+//
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @TCell_0_Cell {
+// CHECK-NEXT:      struct.member @value : !felt.type {column, llzk.pub}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_0_Cell> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TCell_0_Cell>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TCell_0_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @TCell_1_Cell {
+// CHECK-NEXT:      struct.member @value : !felt.type {column, llzk.pub}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_1_Cell> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TCell_1_Cell>
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@TCell_1_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Holder {
+// CHECK-NEXT:      struct.member @items_0 : !struct.type<@TCell_0_Cell> {column}
+// CHECK-NEXT:      struct.member @items_1 : !struct.type<@TCell_1_Cell> {column}
+// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        struct.writem %[[VAL_5]][@items_0] = %[[VAL_6]] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        struct.writem %[[VAL_5]][@items_1] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@Holder>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_8]][@items_1] : <@Holder>, !struct.type<@TCell_1_Cell> {tableOffset = -1 : index}
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_8]][@items_0] {(){{\[}}%[[VAL_9]]]} : <@Holder>, !struct.type<@TCell_0_Cell> {tableOffset = #[[$ATTR_0]]}
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_10]][@value] : <@TCell_1_Cell>, !felt.type
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_11]][@value] : <@TCell_0_Cell>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_12]], %[[VAL_13]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
