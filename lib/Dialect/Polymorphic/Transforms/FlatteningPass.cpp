@@ -2044,6 +2044,365 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
 } // namespace Step4_InstantiateAffineMaps
 
+namespace Step5_ScalarizeHeterogeneousArrays {
+
+/// Information about a local array allocation that can be replaced with the values written into its
+/// statically-known elements.
+///
+/// This pass only scalarizes arrays after loop unrolling and affine-map instantiation have exposed
+/// all element indices and value types. The candidate array must have exactly one write for every
+/// static element index, and all direct reads/member writes must happen after every element has
+/// been written. Those restrictions avoid imposing a new memory semantics for partially
+/// initialized arrays, repeated writes, dynamic indices, or branch-sensitive updates.
+struct ScalarizedArrayInfo {
+  /// The array allocation being removed.
+  CreateArrayOp createOp;
+  /// All static element indices in the array type, in the ArrayType's canonical order.
+  SmallVector<ArrayAttr> indices;
+  /// The SSA value written at each element index.
+  DenseMap<ArrayAttr, Value> valueByIndex;
+  /// The type of the value written at each element index.
+  DenseMap<ArrayAttr, Type> typeByIndex;
+  /// The write operation that defines each element index, used for dominance-like ordering checks.
+  DenseMap<ArrayAttr, Operation *> writeOpByIndex;
+  /// Direct writes to the local allocation.
+  SmallVector<WriteArrayOp> writes;
+  /// Direct reads from the local allocation.
+  SmallVector<ReadArrayOp> reads;
+  /// Direct writes that store the whole local allocation into a struct member.
+  SmallVector<MemberWriteOp> memberWrites;
+};
+
+/// Scalar member name and type.
+using MemberInfo = std::pair<StringAttr, Type>;
+
+/// Replacement scalar members for one array-typed member.
+struct SplitMemberInfo {
+  /// Static element indices that were split out of the original array-typed member.
+  SmallVector<ArrayAttr> indices;
+  /// Replacement scalar member for each static element index.
+  DenseMap<ArrayAttr, MemberInfo> memberByIndex;
+};
+
+/// Replace all uses of `oldValue` without asking MLIR to enforce SSA type equality.
+///
+/// This is intentionally narrower than `replaceAllUsesWith()`: the whole purpose of this step is to
+/// remove pseudo-homogeneous array values whose original element type no longer describes the
+/// concrete value stored at each index. The caller must have already proven that every rewritten
+/// use observes the value at a single static index, so replacing that use with the index-specific
+/// value is type-correct for the consuming operation after the rewrite.
+static void replaceAllUsesIgnoringType(Value oldValue, Value newValue) {
+  for (OpOperand &use : llvm::make_early_inc_range(oldValue.getUses())) {
+    use.set(newValue);
+  }
+}
+
+/// Return true if `def` is in the same block as `user` and appears before it.
+static bool strictlyBefore(Operation *def, Operation *user) {
+  return def->getBlock() == user->getBlock() && def->isBeforeInBlock(user);
+}
+
+/// Return true if all writes for the scalarized allocation are available before `user`.
+///
+/// The rewrite currently handles straight-line local array construction. Requiring every write to
+/// be in the same block and before the consuming read/member write keeps the replacement local and
+/// avoids changing behavior for arrays updated through control flow.
+inline static bool allWritesAvailableAt(const ScalarizedArrayInfo &info, Operation *user) {
+  return llvm::all_of(info.writeOpByIndex, [user](const auto &entry) {
+    return strictlyBefore(entry.second, user);
+  });
+}
+
+/// Convert array access operands to a static index attribute, if possible.
+inline static ArrayAttr getIndexAsAttr(ArrayAccessOpInterface op) {
+  return op.indexOperandsToAttributeArray();
+}
+
+/// Return true iff the candidate array stores at least two non-unifying concrete element types.
+///
+/// Homogeneous arrays should continue through the normal type-propagation path. This step exists
+/// specifically for pseudo-homogeneous arrays, such as arrays whose element is a templated struct
+/// with an affine-map parameter that becomes a different concrete struct at each unrolled index.
+static bool hasMultipleIncompatibleElementTypes(const ScalarizedArrayInfo &info) {
+  Type firstType = nullptr;
+  for (ArrayAttr idx : info.indices) {
+    Type nextType = info.typeByIndex.lookup(idx);
+    if (!nextType) {
+      return false;
+    }
+    if (!firstType) {
+      firstType = nextType;
+      continue;
+    }
+    if (!typesUnify(firstType, nextType)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/// Collect scalarization information for `op` if it is a safe heterogeneous-array candidate.
+///
+/// A candidate must:
+/// - have a static shape and a real element type,
+/// - have only direct reads, direct writes, and whole-array struct member writes as users,
+/// - use only static array indices,
+/// - have exactly one write for every static element index,
+/// - have all reads/member writes after every element write, and
+/// - store multiple incompatible element types.
+static FailureOr<ScalarizedArrayInfo> getScalarizedArrayInfo(CreateArrayOp op) {
+  ArrayType arrTy = op.getType();
+  if (!arrTy.hasStaticShape() || llvm::isa<NoneType>(arrTy.getElementType())) {
+    return failure();
+  }
+
+  std::optional<SmallVector<ArrayAttr>> maybeIndices = arrTy.getSubelementIndices();
+  if (!maybeIndices) {
+    return failure();
+  }
+
+  ScalarizedArrayInfo info;
+  info.createOp = op;
+  info.indices = std::move(*maybeIndices);
+  Value arrayValue = op.getResult();
+
+  for (Operation *user : arrayValue.getUsers()) {
+    if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
+      if (writeOp.getArrRef() != arrayValue) {
+        return failure();
+      }
+      ArrayAttr idx = getIndexAsAttr(writeOp);
+      if (!idx) {
+        return failure();
+      }
+      if (info.valueByIndex.contains(idx)) {
+        return failure();
+      }
+      info.valueByIndex[idx] = writeOp.getRvalue();
+      info.typeByIndex[idx] = writeOp.getRvalue().getType();
+      info.writeOpByIndex[idx] = writeOp.getOperation();
+      info.writes.push_back(writeOp);
+      continue;
+    }
+    if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
+      if (readOp.getArrRef() != arrayValue) {
+        return failure();
+      }
+      ArrayAttr idx = getIndexAsAttr(readOp);
+      if (!idx) {
+        return failure();
+      }
+      info.reads.push_back(readOp);
+      continue;
+    }
+    if (auto memberWriteOp = llvm::dyn_cast<MemberWriteOp>(user)) {
+      if (memberWriteOp.getVal() != arrayValue) {
+        return failure();
+      }
+      info.memberWrites.push_back(memberWriteOp);
+      continue;
+    }
+    return failure();
+  }
+
+  for (ArrayAttr idx : info.indices) {
+    if (!info.valueByIndex.contains(idx)) {
+      return failure();
+    }
+  }
+  for (ReadArrayOp readOp : info.reads) {
+    ArrayAttr idx = getIndexAsAttr(readOp);
+    if (!info.valueByIndex.contains(idx) || !allWritesAvailableAt(info, readOp)) {
+      return failure();
+    }
+  }
+  for (MemberWriteOp memberWriteOp : info.memberWrites) {
+    if (!allWritesAvailableAt(info, memberWriteOp)) {
+      return failure();
+    }
+  }
+  if (!hasMultipleIncompatibleElementTypes(info)) {
+    return failure();
+  }
+  return info;
+}
+
+/// Create scalar replacement members for `member`, or return the replacements already created.
+///
+/// The replacement members preserve the original member's public/signal/column metadata and rely on
+/// the containing struct's symbol table to make each generated name unique.
+static SplitMemberInfo &getOrCreateSplitMemberInfo(
+    MemberDefOp member, const ScalarizedArrayInfo &arrayInfo,
+    DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers, SymbolTableCollection &tables,
+    PatternRewriter &rewriter
+) {
+  auto existing = splitMembers.find(member);
+  if (existing != splitMembers.end()) {
+    return existing->second;
+  }
+
+  SplitMemberInfo &splitInfo = splitMembers[member];
+  splitInfo.indices = arrayInfo.indices;
+
+  StructDefOp parentStruct = getParentOfType<StructDefOp>(member);
+  assert(parentStruct && "MemberDefOp parent is always StructDefOp");
+  SymbolTable &structSymbols = tables.getSymbolTable(parentStruct);
+
+  OpBuilder::InsertionGuard guard(rewriter);
+  rewriter.setInsertionPoint(member);
+  for (ArrayAttr idx : arrayInfo.indices) {
+    Type scalarType = arrayInfo.typeByIndex.lookup(idx);
+    MemberDefOp newMember = rewriter.create<MemberDefOp>(
+        member.getLoc(), member.getSymNameAttr(), scalarType, member.getSignal(), member.getColumn()
+    );
+    newMember.setPublicAttr(member.hasPublicAttr());
+    StringAttr actualName = structSymbols.insert(newMember);
+    splitInfo.memberByIndex[idx] = std::make_pair(actualName, scalarType);
+  }
+  return splitInfo;
+}
+
+/// Rewrite one local heterogeneous array allocation into its index-specific scalar values.
+///
+/// Direct array reads are replaced with the value written at the requested static index.
+/// Whole-array member writes are expanded into one scalar member write per index, creating
+/// replacement members as needed. Once all consumers are rewritten, the original array writes and
+/// allocation are erased.
+static LogicalResult rewriteLocalArray(
+    ScalarizedArrayInfo &info, DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers,
+    SymbolTableCollection &tables, PatternRewriter &rewriter
+) {
+  for (ReadArrayOp readOp : llvm::make_early_inc_range(info.reads)) {
+    ArrayAttr idx = getIndexAsAttr(readOp);
+    replaceAllUsesIgnoringType(readOp.getResult(), info.valueByIndex.lookup(idx));
+    rewriter.eraseOp(readOp);
+  }
+
+  for (MemberWriteOp memberWriteOp : llvm::make_early_inc_range(info.memberWrites)) {
+    auto memberDef = memberWriteOp.getMemberDefOp(tables);
+    if (failed(memberDef)) {
+      return failure();
+    }
+    SplitMemberInfo &splitInfo =
+        getOrCreateSplitMemberInfo(memberDef->get(), info, splitMembers, tables, rewriter);
+
+    rewriter.setInsertionPoint(memberWriteOp);
+    for (ArrayAttr idx : info.indices) {
+      MemberInfo memberInfo = splitInfo.memberByIndex.lookup(idx);
+      rewriter.create<MemberWriteOp>(
+          memberWriteOp.getLoc(), memberWriteOp.getComponent(),
+          FlatSymbolRefAttr::get(memberInfo.first), info.valueByIndex.lookup(idx)
+      );
+    }
+    rewriter.eraseOp(memberWriteOp);
+  }
+
+  for (WriteArrayOp writeOp : llvm::make_early_inc_range(info.writes)) {
+    rewriter.eraseOp(writeOp);
+  }
+  if (info.createOp.getResult().use_empty()) {
+    rewriter.eraseOp(info.createOp);
+  }
+  return success();
+}
+
+/// Rewrite reads from array-typed members that were split by `rewriteLocalArray()`.
+///
+/// The only supported use of the original whole-array member read is a static `array.read`.
+/// Supporting arbitrary uses would require reconstructing a pseudo-homogeneous array value, which
+/// is exactly the invalid representation this step removes.
+static LogicalResult rewriteSplitMemberReads(
+    ModuleOp modOp, DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers,
+    SymbolTableCollection &tables, PatternRewriter &rewriter
+) {
+  for (MemberReadOp memberReadOp : walkCollect<MemberReadOp>(modOp)) {
+    auto memberDef = memberReadOp.getMemberDefOp(tables);
+    if (failed(memberDef)) {
+      return failure();
+    }
+    auto splitIt = splitMembers.find(memberDef->get());
+    if (splitIt == splitMembers.end()) {
+      continue;
+    }
+
+    SmallVector<ReadArrayOp> arrayReads;
+    for (Operation *user : memberReadOp.getResult().getUsers()) {
+      auto readOp = llvm::dyn_cast<ReadArrayOp>(user);
+      if (!readOp || readOp.getArrRef() != memberReadOp.getResult() || !getIndexAsAttr(readOp)) {
+        return failure();
+      }
+      arrayReads.push_back(readOp);
+    }
+
+    for (ReadArrayOp readOp : llvm::make_early_inc_range(arrayReads)) {
+      ArrayAttr idx = getIndexAsAttr(readOp);
+      MemberInfo memberInfo = splitIt->second.memberByIndex.lookup(idx);
+      if (!memberInfo.first) {
+        return failure();
+      }
+      rewriter.setInsertionPoint(readOp);
+      auto scalarRead = rewriter.create<MemberReadOp>(
+          readOp.getLoc(), memberInfo.second, memberReadOp.getComponent(), memberInfo.first
+      );
+      replaceAllUsesIgnoringType(readOp.getResult(), scalarRead.getResult());
+      rewriter.eraseOp(readOp);
+    }
+    if (memberReadOp.getResult().use_empty()) {
+      rewriter.eraseOp(memberReadOp);
+    }
+  }
+  return success();
+}
+
+/// Erase original array-typed members after all symbol uses have been redirected.
+static void eraseUnusedOriginalMembers(
+    DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers, PatternRewriter &rewriter
+) {
+  for (const auto &[member, _] : splitMembers) {
+    StructDefOp parentStruct = getParentOfType<StructDefOp>(member);
+    assert(parentStruct && "MemberDefOp parent is always StructDefOp");
+    auto uses = llzk::getSymbolUses(member, parentStruct);
+    if (uses && uses->empty()) {
+      rewriter.eraseOp(member);
+    }
+  }
+}
+
+/// Scalarize all safe pseudo-homogeneous arrays exposed in the current flattening iteration.
+///
+/// Running this before general type propagation prevents the propagation step from choosing one
+/// concrete element type for an array that semantically contains a different concrete type at each
+/// static index.
+LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
+  SmallVector<ScalarizedArrayInfo, 2> arraysToScalarize;
+  modOp.walk([&arraysToScalarize](CreateArrayOp op) {
+    FailureOr<ScalarizedArrayInfo> info = getScalarizedArrayInfo(op);
+    if (succeeded(info)) {
+      arraysToScalarize.push_back(*info);
+    }
+  });
+  if (arraysToScalarize.empty()) {
+    return success();
+  }
+
+  PatternRewriter rewriter(modOp.getContext());
+  SymbolTableCollection tables;
+  DenseMap<MemberDefOp, SplitMemberInfo> splitMembers;
+  for (ScalarizedArrayInfo &info : arraysToScalarize) {
+    if (failed(rewriteLocalArray(info, splitMembers, tables, rewriter))) {
+      return failure();
+    }
+  }
+  if (failed(rewriteSplitMemberReads(modOp, splitMembers, tables, rewriter))) {
+    return failure();
+  }
+  eraseUnusedOriginalMembers(splitMembers, rewriter);
+  tracker.updateModifiedFlag(true);
+  return success();
+}
+
+} // namespace Step5_ScalarizeHeterogeneousArrays
+
 namespace Step5_PropagateTypes {
 
 /// Update the array element type by looking at the values stored into it from uses.
@@ -2639,6 +2998,13 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
       // Instantiate affine_map parameters of StructType and ArrayType.
       if (failed(Step4_InstantiateAffineMaps::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while instantiating `affine_map` parameters\n";
+        return failure();
+      }
+
+      // Split static arrays whose affine-map element type instantiates to different concrete
+      // element types at different indices.
+      if (failed(Step5_ScalarizeHeterogeneousArrays::run(modOp, tracker))) {
+        llvm::errs() << DEBUG_TYPE << " failed while scalarizing heterogeneous arrays\n";
         return failure();
       }
 
