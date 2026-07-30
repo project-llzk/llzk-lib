@@ -608,9 +608,9 @@ void SourceRef::print(raw_ostream &os) const {
     } else if (isBlockArgument()) {
       auto blockArg = *getBlockArgument();
       auto funcOp = llvm::dyn_cast<FuncDefOp>(blockArg.getOwner()->getParentOp());
-      // The first argument of a struct constrain function is its self value,
-      // matching the struct value returned by the corresponding compute function.
-      if (funcOp && funcOp.isStructConstrain() && blockArg.getArgNumber() == 0) {
+      // The entry self argument of a struct constrain function matches the struct value
+      // returned by the corresponding compute function.
+      if (funcOp && funcOp.isStructConstrain() && funcOp.getSelfValueFromConstrain() == blockArg) {
         os << "%self";
       } else {
         std::optional<StringAttr> argName;

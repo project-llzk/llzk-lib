@@ -308,7 +308,7 @@ TEST_F(SourceRefTests, ComputeSelfRebasesToConstrainSelfWithoutChangingPath) {
   EXPECT_TRUE(mismatchedTranslation->getPath().front().isPodRecord());
 }
 
-TEST_F(SourceRefTests, ConstrainSelfPrintsAsSelf) {
+TEST_F(SourceRefTests, OnlyConstrainEntryArgumentPrintsAsSelf) {
   auto mod = parseSourceString<ModuleOp>(kModule, ParserConfig(&ctx));
   ASSERT_TRUE(mod);
   auto structDef = *mod->getOps<StructDefOp>().begin();
@@ -316,9 +316,20 @@ TEST_F(SourceRefTests, ConstrainSelfPrintsAsSelf) {
   auto storage = *structDef.getOps<MemberDefOp>().begin();
   auto constrainSelf = mlir::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain());
 
+  auto *successor = new Block();
+  constrainFn.getBody().push_back(successor);
+  auto successorArg = successor->addArgument(constrainSelf.getType(), loc);
+  OpBuilder builder(&ctx);
+  builder.setInsertionPointToEnd(successor);
+  builder.create<llzk::function::ReturnOp>(loc);
+
   EXPECT_EQ(buildStringViaPrint(SourceRef(constrainSelf)), "%self");
   EXPECT_EQ(
       buildStringViaPrint(SourceRef(constrainSelf, {SourceRefIndex(storage)})), "%self.storage"
+  );
+  EXPECT_EQ(buildStringViaPrint(SourceRef(successorArg)), "%arg0");
+  EXPECT_EQ(
+      buildStringViaPrint(SourceRef(successorArg, {SourceRefIndex(storage)})), "%arg0.storage"
   );
 }
 

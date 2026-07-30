@@ -389,7 +389,7 @@ public:
   }
   llvm::ArrayRef<SourceRefIndex> getPath() const { return path; }
 
-  /// Print this reference using source-style names. The first argument of a
+  /// Print this reference using source-style names. The entry self argument of a
   /// struct constrain function is printed as `%self`.
   void print(mlir::raw_ostream &os) const;
   void dump() const { print(llvm::errs()); }
