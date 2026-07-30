@@ -2262,6 +2262,24 @@ static SplitMemberInfo &getOrCreateSplitMemberInfo(
   return splitInfo;
 }
 
+/// Refresh cached element values from their still-live writes.
+///
+/// Candidates are collected before any rewrites run, so one candidate can cache a read result from
+/// another candidate. Rewriting the upstream candidate updates the downstream write operands and
+/// erases the reads; re-reading the write operands here keeps this candidate from using dangling
+/// values.
+static LogicalResult refreshValuesFromWrites(ScalarizedArrayInfo &info) {
+  for (WriteArrayOp writeOp : info.writes) {
+    ArrayAttr idx = getIndexAsAttr(writeOp);
+    if (!idx || !info.valueByIndex.contains(idx)) {
+      return failure();
+    }
+    info.valueByIndex[idx] = writeOp.getRvalue();
+    info.typeByIndex[idx] = writeOp.getRvalue().getType();
+  }
+  return success();
+}
+
 /// Rewrite one local heterogeneous array allocation into its index-specific scalar values.
 ///
 /// Direct array reads are replaced with the value written at the requested static index.
@@ -2272,6 +2290,10 @@ static LogicalResult rewriteLocalArray(
     ScalarizedArrayInfo &info, DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers,
     SymbolTableCollection &tables, PatternRewriter &rewriter
 ) {
+  if (failed(refreshValuesFromWrites(info))) {
+    return failure();
+  }
+
   for (ReadArrayOp readOp : llvm::make_early_inc_range(info.reads)) {
     ArrayAttr idx = getIndexAsAttr(readOp);
     replaceAllUsesIgnoringType(readOp.getResult(), info.valueByIndex.lookup(idx));
