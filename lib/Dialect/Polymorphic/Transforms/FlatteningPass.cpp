@@ -2341,8 +2341,15 @@ static LogicalResult rewriteSplitMemberReads(
         return failure();
       }
       rewriter.setInsertionPoint(readOp);
+      ValueRange mapOperands;
+      std::optional<int32_t> numDims;
+      if (!memberReadOp.getMapOperands().empty()) {
+        mapOperands = memberReadOp.getMapOperands().front();
+        numDims = memberReadOp.getNumDimsPerMap().front();
+      }
       auto scalarRead = rewriter.create<MemberReadOp>(
-          readOp.getLoc(), memberInfo.second, memberReadOp.getComponent(), memberInfo.first
+          readOp.getLoc(), memberInfo.second, memberReadOp.getComponent(), memberInfo.first,
+          memberReadOp.getTableOffset().value_or(Attribute {}), mapOperands, numDims
       );
       replaceAllUsesIgnoringType(readOp.getResult(), scalarRead.getResult());
       rewriter.eraseOp(readOp);
