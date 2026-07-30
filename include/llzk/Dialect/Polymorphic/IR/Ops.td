@@ -334,6 +334,7 @@ def LLZK_ApplyMapOp : PolymorphicDialectOp<"applymap", [Pure]> {
   }];
 
   let hasVerifier = 1;
+  let hasFolder = 1;
 
   let extraClassDeclaration = [{
     /// Returns the affine map to be applied by this operation.

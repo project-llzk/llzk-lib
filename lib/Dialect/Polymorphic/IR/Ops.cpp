@@ -213,6 +213,25 @@ LogicalResult ApplyMapOp::verify() {
   return success();
 }
 
+OpFoldResult ApplyMapOp::fold(FoldAdaptor adaptor) {
+  SmallVector<Attribute> operands;
+  operands.reserve(adaptor.getMapOperands().size());
+  for (Attribute attr : adaptor.getMapOperands()) {
+    if (!attr) {
+      return {};
+    }
+    operands.push_back(attr);
+  }
+
+  SmallVector<Attribute> result;
+  bool hasPoison = false;
+  auto folded = getMap().constantFold(operands, result, &hasPoison);
+  if (failed(folded) || hasPoison || result.size() != 1) {
+    return {};
+  }
+  return result.front();
+}
+
 //===------------------------------------------------------------------===//
 // UnifiableCastOp
 //===------------------------------------------------------------------===//

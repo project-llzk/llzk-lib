@@ -20,6 +20,7 @@ def PolymorphicDialect : Dialect {
   let cppNamespace = "::llzk::polymorphic";
 
   let useDefaultTypePrinterParser = true;
+  let hasConstantMaterializer = 1;
 }
 
 #endif // LLZK_POLYMORPHIC_DIALECT

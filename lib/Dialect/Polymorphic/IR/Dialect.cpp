@@ -13,7 +13,10 @@
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/IR/Builders.h>
+#include <mlir/IR/BuiltinAttributes.h>
+#include <mlir/IR/BuiltinTypes.h>
 #include <mlir/IR/DialectImplementation.h>
 
 #include <llvm/ADT/TypeSwitch.h>
@@ -27,6 +30,17 @@
 //===------------------------------------------------------------------===//
 // PolymorphicDialect
 //===------------------------------------------------------------------===//
+
+mlir::Operation *llzk::polymorphic::PolymorphicDialect::materializeConstant(
+    mlir::OpBuilder &builder, mlir::Attribute value, mlir::Type type, mlir::Location loc
+) {
+  if (llvm::isa<mlir::IndexType, mlir::IntegerType>(type)) {
+    if (auto intAttr = llvm::dyn_cast<mlir::IntegerAttr>(value)) {
+      return builder.create<mlir::arith::ConstantOp>(loc, intAttr);
+    }
+  }
+  return nullptr;
+}
 
 auto llzk::polymorphic::PolymorphicDialect::initialize() -> void {
   // clang-format off
