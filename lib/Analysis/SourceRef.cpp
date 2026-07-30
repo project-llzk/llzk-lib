@@ -394,11 +394,13 @@ bool SourceRef::overlaps(const SourceRef &rhs) const {
       return func->getParentOfType<StructDefOp>();
     }
     auto blockArg = ref.getBlockArgument();
-    if (failed(blockArg) || blockArg->getArgNumber() != 0) {
+    if (failed(blockArg)) {
       return nullptr;
     }
     auto func = dyn_cast_if_present<FuncDefOp>(blockArg->getOwner()->getParentOp());
-    return func && func.isStructConstrain() ? func->getParentOfType<StructDefOp>() : nullptr;
+    return func && func.isStructConstrain() && func.getSelfValueFromConstrain() == *blockArg
+               ? func->getParentOfType<StructDefOp>()
+               : nullptr;
   };
   bool sameRoot = value == rhs.value;
   if (!sameRoot) {

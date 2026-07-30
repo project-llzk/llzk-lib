@@ -213,6 +213,36 @@ TEST_F(SourceRefTests, OnlyReturnedComputeStructOverlapsConstrainSelf) {
   EXPECT_FALSE(constrainMember.overlaps(temporaryMember));
 }
 
+TEST_F(SourceRefTests, OnlyConstrainEntryArgumentOverlapsComputeSelf) {
+  auto mod = parseSourceString<ModuleOp>(kModule, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto constrainFn = structDef.getConstrainFuncOp();
+  auto storage = *structDef.getOps<MemberDefOp>().begin();
+  auto constrainSelf = mlir::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain());
+
+  auto *successor = new Block();
+  constrainFn.getBody().push_back(successor);
+  auto successorArg = successor->addArgument(constrainSelf.getType(), loc);
+  OpBuilder builder(&ctx);
+  builder.setInsertionPointToEnd(successor);
+  builder.create<llzk::function::ReturnOp>(loc);
+
+  SourceRef computeMember(
+      mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()), {SourceRefIndex(storage)}
+  );
+  SourceRef constrainMember(constrainSelf, {SourceRefIndex(storage)});
+  SourceRef successorMember(successorArg, {SourceRefIndex(storage)});
+
+  EXPECT_TRUE(computeMember.overlaps(constrainMember));
+  EXPECT_TRUE(constrainMember.overlaps(computeMember));
+  EXPECT_FALSE(successorMember.overlaps(computeMember));
+  EXPECT_FALSE(computeMember.overlaps(successorMember));
+  EXPECT_FALSE(successorMember.overlaps(constrainMember));
+  EXPECT_FALSE(constrainMember.overlaps(successorMember));
+}
+
 TEST_F(SourceRefTests, PodRecordsAndMembersRemainDistinct) {
   auto mod = parseSourceString<ModuleOp>(kModule, ParserConfig(&ctx));
   ASSERT_TRUE(mod);
