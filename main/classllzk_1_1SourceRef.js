@@ -44,6 +44,7 @@ var classllzk_1_1SourceRef =
     [ "isTemplateConstant", "classllzk_1_1SourceRef.html#ad1a505582f321bc0cb663b98624bd80c", null ],
     [ "isTypeVarVal", "classllzk_1_1SourceRef.html#ad43b66180fc1fdd2bd51e41a7c4843c5", null ],
     [ "isValidPrefix", "classllzk_1_1SourceRef.html#a5a16d57e6a81bd4547806bfdda713dd2", null ],
+    [ "narrowRanges", "classllzk_1_1SourceRef.html#a8460b0d5befa4d50f32a21e642fb8caa", null ],
     [ "operator!=", "classllzk_1_1SourceRef.html#ad9d10ff217fe7ffc7c372933464eafe0", null ],
     [ "operator<=>", "classllzk_1_1SourceRef.html#a60c9310b627dd2223dbdad0d951bd40a", null ],
     [ "operator==", "classllzk_1_1SourceRef.html#a38f4c7d6b01daf6563cdfcaedbdc3256", null ],

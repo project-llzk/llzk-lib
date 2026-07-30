@@ -228,6 +228,7 @@ Classes</h2></td></tr>
 <tr class="memitem:ModuleIntervalAnalysis" id="r_ModuleIntervalAnalysis"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1ModuleIntervalAnalysis.html">ModuleIntervalAnalysis</a></td></tr>
 <tr class="memitem:ModuleLikeBuilder" id="r_ModuleLikeBuilder"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1ModuleLikeBuilder.html">ModuleLikeBuilder</a></td></tr>
 <tr class="memitem:NamedOpLocationLess" id="r_NamedOpLocationLess"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1NamedOpLocationLess.html">NamedOpLocationLess</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Order named operations by source location, using the symbol name to break ties or when source locations cannot be compared.  <a href="structllzk_1_1NamedOpLocationLess.html#details">More...</a><br /></td></tr>
 <tr class="memitem:NestedPassOptions" id="r_NestedPassOptions"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1NestedPassOptions.html">NestedPassOptions</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stores textual options for a constituent pass after validating them against that pass' native MLIR option parser.  <a href="structllzk_1_1NestedPassOptions.html#details">More...</a><br /></td></tr>
 <tr class="memitem:NestedPipelineOptions" id="r_NestedPipelineOptions"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1NestedPipelineOptions.html">NestedPipelineOptions</a></td></tr>
@@ -679,6 +680,7 @@ Functions</h2></td></tr>
 <tr class="memitem:ae84de17f3956dc25edb6816991ded1ef template"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae84de17f3956dc25edb6816991ded1ef">addTemplateParams</a> (mlir::OpBuilder &amp;odsBuilder, typename OpClass::Properties &amp;props, llvm::ArrayRef&lt; mlir::Attribute &gt; templateParams)</td></tr>
 <tr class="memitem:afb284386fff71ad94c74a27f050076b8" id="r_afb284386fff71ad94c74a27f050076b8"><td class="memTemplParams" colspan="2">template&lt;OpComparable Op&gt; </td></tr>
 <tr class="memitem:afb284386fff71ad94c74a27f050076b8 template"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afb284386fff71ad94c74a27f050076b8">isLocationLess</a> (const Op &amp;l, const Op &amp;r)</td></tr>
+<tr class="memdesc:afb284386fff71ad94c74a27f050076b8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compare the source locations of two operations.  <br /></td></tr>
 <tr class="memitem:a60ca7c6c3ae1d404296cec5b7fdf2237" id="r_a60ca7c6c3ae1d404296cec5b7fdf2237"><td class="memTemplParams" colspan="2">template&lt;typename T, typename U&gt; </td></tr>
 <tr class="memitem:a60ca7c6c3ae1d404296cec5b7fdf2237 template"><td class="memItemLeft" align="right" valign="top">constexpr T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a60ca7c6c3ae1d404296cec5b7fdf2237">checkedCast</a> (U u) noexcept</td></tr>
 <tr class="memitem:a7d838b81c2874e5ce443ff1de91839d3" id="r_a7d838b81c2874e5ce443ff1de91839d3"><td class="memItemLeft" align="right" valign="top">llvm::DynamicAPInt&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7d838b81c2874e5ce443ff1de91839d3">operator&amp;</a> (const llvm::DynamicAPInt &amp;lhs, const llvm::DynamicAPInt &amp;rhs)</td></tr>
@@ -2397,7 +2399,7 @@ template&lt;typename T, typename U&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Compare_8h_source.html#l00081">81</a> of file <a class="el" href="Compare_8h_source.html">Compare.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Compare_8h_source.html#l00094">94</a> of file <a class="el" href="Compare_8h_source.html">Compare.h</a>.</p>
 
 </div>
 </div>
@@ -4046,7 +4048,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00469">469</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00513">513</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -4079,7 +4081,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00428">428</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00472">472</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -4112,7 +4114,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00442">442</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00486">486</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -5995,7 +5997,10 @@ template&lt;OpComparable Op&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Compare_8h_source.html#l00049">49</a> of file <a class="el" href="Compare_8h_source.html">Compare.h</a>.</p>
+<p>Compare the source locations of two operations. </p>
+<p>Returns failure unless both operations have <span class="tt">FileLineColLoc</span> locations. A successful <span class="tt">false</span> result means only that <span class="tt">l</span> is not before <span class="tt">r</span>; the locations may be equal. This comparison is therefore not a total order. </p>
+
+<p class="definition">Definition at line <a class="el" href="Compare_8h_source.html#l00054">54</a> of file <a class="el" href="Compare_8h_source.html">Compare.h</a>.</p>
 
 </div>
 </div>
@@ -7441,7 +7446,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00217">217</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRefLattice_8cpp_source.html#l00331">331</a> of file <a class="el" href="SourceRefLattice_8cpp_source.html">SourceRefLattice.cpp</a>.</p>
 
 </div>
 </div>
@@ -7464,7 +7469,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00639">639</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00692">692</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>
@@ -7487,7 +7492,7 @@ template&lt;typename... AdditionalOpClasses&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00651">651</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SourceRef_8cpp_source.html#l00704">704</a> of file <a class="el" href="SourceRef_8cpp_source.html">SourceRef.cpp</a>.</p>
 
 </div>
 </div>

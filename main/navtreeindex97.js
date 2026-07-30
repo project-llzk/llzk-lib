@@ -1,5 +1,17 @@
 var NAVTREEINDEX97 =
 {
+"tools.html#autotoc_md-llzk-duplicate-read-write-elim":[3,0,0,1,2],
+"tools.html#autotoc_md-llzk-enforce-no-overwrite":[3,0,0,1,3],
+"tools.html#autotoc_md-llzk-flatten":[3,0,0,3,1],
+"tools.html#autotoc_md-llzk-fuse-product-loops":[3,0,0,1,4],
+"tools.html#autotoc_md-llzk-infer-tvar":[3,0,0,3,2],
+"tools.html#autotoc_md-llzk-inline-free-functions":[3,0,0,1,5],
+"tools.html#autotoc_md-llzk-poly-lowering-pass":[3,0,0,1,6],
+"tools.html#autotoc_md-llzk-print-call-graph":[3,0,0,0,0],
+"tools.html#autotoc_md-llzk-print-call-graph-sccs":[3,0,0,0,1],
+"tools.html#autotoc_md-llzk-print-constraint-dependency-graphs":[3,0,0,0,2],
+"tools.html#autotoc_md-llzk-print-interval-analysis":[3,0,0,0,3],
+"tools.html#autotoc_md-llzk-print-predecessors":[3,0,0,0,4],
 "tools.html#autotoc_md-llzk-print-symbol-def-tree":[3,0,0,0,5],
 "tools.html#autotoc_md-llzk-print-symbol-use-graph":[3,0,0,0,6],
 "tools.html#autotoc_md-llzk-remove-unused-discardable-allocations":[3,0,0,1,7],
