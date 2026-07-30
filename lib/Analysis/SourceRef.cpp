@@ -386,8 +386,12 @@ bool SourceRef::isValidPrefix(const SourceRef &prefix) const {
 
 bool SourceRef::overlaps(const SourceRef &rhs) const {
   auto getSelfStruct = [](const SourceRef &ref) -> StructDefOp {
-    if (ref.isCreateStructOp()) {
-      return ref.value.getDefiningOp()->getParentOfType<StructDefOp>();
+    if (auto createOp = dyn_cast_if_present<CreateStructOp>(ref.value.getDefiningOp())) {
+      auto func = createOp->getParentOfType<FuncDefOp>();
+      if (!func || !func.isStructCompute() || func.getSelfValueFromCompute() != ref.value) {
+        return nullptr;
+      }
+      return func->getParentOfType<StructDefOp>();
     }
     auto blockArg = ref.getBlockArgument();
     if (failed(blockArg) || blockArg->getArgNumber() != 0) {

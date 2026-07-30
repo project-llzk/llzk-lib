@@ -126,12 +126,15 @@ mlir::ChangeResult SourceRefLatticeValue::write(
     selected = std::move(next);
   }
 
+  ArrayRef<int64_t> selectedShape(getArrayShape());
+  selectedShape = selectedShape.drop_front(indices.size());
   size_t chunkSize = 1;
-  for (size_t dimIdx = indices.size(); dimIdx < getNumArrayDims(); ++dimIdx) {
-    chunkSize *= getArrayDim(dimIdx);
+  for (int64_t dim : selectedShape) {
+    chunkSize *= static_cast<size_t>(dim);
   }
   ensure(
-      (chunkSize == 1 && rhs.isScalar()) || (rhs.isArray() && rhs.getArraySize() == chunkSize),
+      (selectedShape.empty() && rhs.isScalar()) ||
+          (rhs.isArray() && ArrayRef<int64_t>(rhs.getArrayShape()) == selectedShape),
       "SourceRef array write value shape does not match selected storage"
   );
 

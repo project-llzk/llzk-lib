@@ -39,6 +39,7 @@ module attributes {llzk.lang} {
 
     function.def @compute() -> !struct.type<@SourceRefs> {
       %self = struct.new : !struct.type<@SourceRefs>
+      %temporary = struct.new : !struct.type<@SourceRefs>
       %pod = pod.new : !pod.type<[@storage: !felt.type]>
       function.return %self : !struct.type<@SourceRefs>
     }
@@ -169,6 +170,47 @@ TEST_F(SourceRefTests, LatticeWritesPointsSubarraysAndRanges) {
     ASSERT_TRUE(succeeded(ranged));
     EXPECT_TRUE(ranged->first.getScalarValue().contains(constrainRoot));
   }
+
+  SourceRefLatticeValue tensor(llvm::ArrayRef<int64_t>({2, 2, 3}));
+  SourceRefLatticeValue matrixSlice(llvm::ArrayRef<int64_t>({2, 3}));
+  EXPECT_EQ(
+      matrixSlice.getElemFlatIdx(0).setValue(SourceRefLatticeValue(computeRoot)),
+      ChangeResult::Change
+  );
+  EXPECT_EQ(tensor.write({SourceRefIndex(APInt(64, 1))}, matrixSlice), ChangeResult::Change);
+
+  SourceRefLatticeValue transposedSlice(llvm::ArrayRef<int64_t>({3, 2}));
+  EXPECT_DEATH(
+      (void)tensor.write({SourceRefIndex(APInt(64, 0))}, transposedSlice),
+      "SourceRef array write value shape does not match selected storage"
+  );
+}
+
+TEST_F(SourceRefTests, OnlyReturnedComputeStructOverlapsConstrainSelf) {
+  auto mod = parseSourceString<ModuleOp>(kModule, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto constrainFn = structDef.getConstrainFuncOp();
+  auto storage = *structDef.getOps<MemberDefOp>().begin();
+  auto allocations = llvm::to_vector(computeFn.getOps<CreateStructOp>());
+  ASSERT_EQ(allocations.size(), 2);
+
+  Value returnedSelf = computeFn.getSelfValueFromCompute();
+  CreateStructOp temporary =
+      allocations[0].getResult() == returnedSelf ? allocations[1] : allocations[0];
+  auto constrainSelf = mlir::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain());
+
+  SourceRef computeMember(mlir::cast<OpResult>(returnedSelf), {SourceRefIndex(storage)});
+  SourceRef temporaryMember(mlir::cast<OpResult>(temporary.getResult()), {SourceRefIndex(storage)});
+  SourceRef constrainMember(constrainSelf, {SourceRefIndex(storage)});
+
+  EXPECT_TRUE(computeMember.overlaps(constrainMember));
+  EXPECT_TRUE(constrainMember.overlaps(computeMember));
+  EXPECT_FALSE(temporaryMember.overlaps(computeMember));
+  EXPECT_FALSE(computeMember.overlaps(temporaryMember));
+  EXPECT_FALSE(temporaryMember.overlaps(constrainMember));
+  EXPECT_FALSE(constrainMember.overlaps(temporaryMember));
 }
 
 TEST_F(SourceRefTests, PodRecordsAndMembersRemainDistinct) {
