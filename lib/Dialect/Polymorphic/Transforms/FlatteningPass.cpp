@@ -2287,12 +2287,14 @@ static LogicalResult rewriteLocalArray(
         getOrCreateSplitMemberInfo(memberDef->get(), info, splitMembers, tables, rewriter);
 
     rewriter.setInsertionPoint(memberWriteOp);
+    DictionaryAttr discardableAttrs = memberWriteOp->getDiscardableAttrDictionary();
     for (ArrayAttr idx : info.indices) {
       MemberInfo memberInfo = splitInfo.memberByIndex.lookup(idx);
-      rewriter.create<MemberWriteOp>(
+      MemberWriteOp scalarWrite = rewriter.create<MemberWriteOp>(
           memberWriteOp.getLoc(), memberWriteOp.getComponent(),
           FlatSymbolRefAttr::get(memberInfo.first), info.valueByIndex.lookup(idx)
       );
+      scalarWrite->setDiscardableAttrs(discardableAttrs);
     }
     rewriter.eraseOp(memberWriteOp);
   }
