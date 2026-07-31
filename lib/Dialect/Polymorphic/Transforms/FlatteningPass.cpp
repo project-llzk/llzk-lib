@@ -2119,25 +2119,24 @@ inline static ArrayAttr getIndexAsAttr(ArrayAccessOpInterface op) {
   return op.indexOperandsToAttributeArray();
 }
 
-/// Return true iff the candidate array stores at least two non-unifying concrete element types.
+/// Return true iff the candidate array stores at least two non-unifying element types.
 ///
 /// Homogeneous arrays should continue through the normal type-propagation path. This step exists
 /// specifically for pseudo-homogeneous arrays, such as arrays whose element is a templated struct
 /// with an affine-map parameter that becomes a different concrete struct at each unrolled index.
 static bool hasMultipleIncompatibleElementTypes(const ScalarizedArrayInfo &info) {
-  Type firstType = nullptr;
+  SmallVector<Type> previousTypes;
   for (ArrayAttr idx : info.indices) {
     Type nextType = info.typeByIndex.lookup(idx);
     if (!nextType) {
       return false;
     }
-    if (!firstType) {
-      firstType = nextType;
-      continue;
+    for (Type previousType : previousTypes) {
+      if (!typesUnify(previousType, nextType)) {
+        return true;
+      }
     }
-    if (!typesUnify(firstType, nextType)) {
-      return true;
-    }
+    previousTypes.push_back(nextType);
   }
   return false;
 }
