@@ -11,6 +11,7 @@
 
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/String/IR/Types.h"
 #include "llzk/Transforms/LLZKLoweringUtils.h"
 #include "llzk/Util/Compare.h"
@@ -189,6 +190,16 @@ bool SourceRefIndex::overlaps(const SourceRefIndex &rhs) const {
 }
 
 /* SourceRef */
+
+bool SourceRef::isImmutableGlobal() const {
+  auto read = llvm::dyn_cast_if_present<global::GlobalReadOp>(value.getDefiningOp());
+  if (!read) {
+    return false;
+  }
+  SymbolTableCollection tables;
+  auto globalDef = read.getGlobalDefOp(tables);
+  return succeeded(globalDef) && globalDef->get().isConstant();
+}
 
 SourceRef::SortCategory SourceRef::getSortCategory() const {
   if (isBlockArgument()) {
