@@ -1,5 +1,9 @@
 var NAVTREEINDEX82 =
 {
+"contribution-guide.html#make-changes":[5,1,1],
+"contribution-guide.html#pull-request":[5,1,3],
+"contribution-guide.html#pull-request-review":[5,1,3,1],
+"contribution-guide.html#solve-an-issue":[5,1,0,1],
 "contribution-guide.html#your-pr-is-merged":[5,1,4],
 "dialects.html":[7],
 "dialects.html#array-dialect":[7,0],
@@ -245,9 +249,5 @@ var NAVTREEINDEX82 =
 "dialects.html#types-6":[7,12,1],
 "dialects.html#typevartype":[7,10,1,0],
 "dir_006f948be47a2a3cfc802ecb2004dee0.html":[13,0,2,0,6],
-"dir_014d0f5a4c28e696e617f500599cae9b.html":[13,0,4,2],
-"dir_04f2ecc425faf0d475a3caf484e551f3.html":[13,0,1,0],
-"dir_0505d867013fed46ab4974dca6496acd.html":[13,0,3,3,2],
-"dir_05b91ed94f40fdcd8268de9e6257a11f.html":[13,0,3,3,15,1],
-"dir_063a08054a035126ec5a159f0d2c2b0e.html":[13,0,0,0,0,2,13,0]
+"dir_014d0f5a4c28e696e617f500599cae9b.html":[13,0,4,2]
 };

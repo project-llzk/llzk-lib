@@ -4,6 +4,7 @@ var classllzk_1_1polymorphic_1_1ApplyMapOp =
     [ "FoldAdaptor", "classllzk_1_1polymorphic_1_1ApplyMapOp.html#a4b49a7a1b2df2fa47a1f245affac84fa", null ],
     [ "GenericAdaptor", "classllzk_1_1polymorphic_1_1ApplyMapOp.html#aa713cd75467206d55bfc1fbaeaa2eeac", null ],
     [ "Properties", "classllzk_1_1polymorphic_1_1ApplyMapOp.html#a6525cd413b4c898a1b4bad425684da9b", null ],
+    [ "fold", "classllzk_1_1polymorphic_1_1ApplyMapOp.html#a3fc86001755dc7bf9b1992fac5d7f92a", null ],
     [ "getAffineMap", "classllzk_1_1polymorphic_1_1ApplyMapOp.html#ad83d184760f72d2c75436210a68fdf76", null ],
     [ "getAffineValueMap", "classllzk_1_1polymorphic_1_1ApplyMapOp.html#a2126edc484a4d2c9791a265d64a6e2c7", null ],
     [ "getAttributeNames", "classllzk_1_1polymorphic_1_1ApplyMapOp.html#a9b735e643cc0b80f8e23108857249596", null ],
