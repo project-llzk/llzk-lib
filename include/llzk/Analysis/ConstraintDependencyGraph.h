@@ -76,8 +76,10 @@ protected:
   // Create the references for either an array.read op or an array.extract op, which
   // operate very similarly: index into the first operand using a variable number
   // of provided indices.
-  static SourceRefLatticeValue
-  arraySubdivisionOpUpdate(array::ArrayAccessOpInterface op, const OperandValues &operandVals);
+  static SourceRefLatticeValue arraySubdivisionOpUpdate(
+      array::ArrayAccessOpInterface op, const OperandValues &operandVals,
+      std::vector<SourceRefIndex> *resolvedIndices = nullptr
+  );
 
 private:
   class StorageState;
