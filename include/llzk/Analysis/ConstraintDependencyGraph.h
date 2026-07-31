@@ -185,14 +185,15 @@ public:
 
   ConstraintDependencyGraph(const ConstraintDependencyGraph &other)
       : mod(other.mod), structDef(other.structDef), ctx(other.ctx), signalSets(other.signalSets),
-        dependencyEdges(other.dependencyEdges), constantSets(other.constantSets),
-        ref2Val(other.ref2Val), tables() {}
+        directAliases(other.directAliases), dependencyEdges(other.dependencyEdges),
+        constantSets(other.constantSets), ref2Val(other.ref2Val), tables() {}
 
   ConstraintDependencyGraph &operator=(const ConstraintDependencyGraph &other) {
     mod = other.mod;
     structDef = other.structDef;
     ctx = other.ctx;
     signalSets = other.signalSets;
+    directAliases = other.directAliases;
     dependencyEdges = other.dependencyEdges;
     constantSets = other.constantSets;
     ref2Val = other.ref2Val;
@@ -209,6 +210,9 @@ private:
 
   // Transitive closure only over signals.
   llvm::EquivalenceClasses<SourceRef> signalSets;
+  // Exact two-value equalities are tracked separately so query results can prefer logical inputs
+  // over compiler-generated aggregate storage paths.
+  llvm::EquivalenceClasses<SourceRef> directAliases;
   // Pairwise dependency edges retain the origin of relationships that an equivalence-class
   // closure would otherwise erase, especially for control-flow-selected aggregate alternatives.
   std::unordered_map<SourceRef, SourceRefSet, SourceRef::Hash> dependencyEdges;
