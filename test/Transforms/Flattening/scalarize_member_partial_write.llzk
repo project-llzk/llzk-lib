@@ -34,18 +34,16 @@ module attributes {llzk.lang} {
         array.write %local[%c1] = %item1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
         struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
       } else {
-        %fallback = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-        struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        %c0 = arith.constant 0 : index
+        %partial = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+        array.write %partial[%c0] = %item0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+        struct.writem %self[@items] = %partial : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
       }
       function.return %self : !struct.type<@Holder>
     }
 
     function.def @constrain(%self: !struct.type<@Holder>, %cond: i1) {
-      %c0 = arith.constant 0 : index
-      %items = struct.readm %self[@items] : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-      %item = array.read %items[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-      %value = struct.readm %item[@value] : !struct.type<@TCell::@Cell<[0]>>, !felt.type
-      constrain.eq %value, %value : !felt.type, !felt.type
       function.return
     }
   }
@@ -82,7 +80,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:          struct.writem %[[VAL_5]][@items_0] = %[[VAL_6]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_5]][@items_1] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:        } else {
-// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_5]][@items_0] = %[[VAL_8]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_5]][@items_1] = %[[VAL_9]] : <@Holder>, !struct.type<@TCell_1_Cell>
@@ -90,9 +88,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@Holder>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !struct.type<@Holder>, %[[VAL_11:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_10]][@items_0] : <@Holder>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_12]][@value] : <@TCell_0_Cell>, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_13]], %[[VAL_13]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

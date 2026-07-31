@@ -21,6 +21,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
@@ -2385,13 +2386,180 @@ static LogicalResult rewriteSplitMemberReads(
   return success();
 }
 
-/// Verify that all writes to any split member are covered by scalarization candidates.
+/// Return the local array allocation stored by `memberWriteOp`, if it has a static shape.
+static FailureOr<CreateArrayOp> getStaticLocalArrayCreate(MemberWriteOp memberWriteOp) {
+  auto createOp = memberWriteOp.getVal().getDefiningOp<CreateArrayOp>();
+  if (!createOp) {
+    return failure();
+  }
+  ArrayType arrTy = createOp.getType();
+  if (!arrTy.hasStaticShape() || llvm::isa<NoneType>(arrTy.getElementType())) {
+    return failure();
+  }
+  return createOp;
+}
+
+/// Verify that `createOp` can be expanded while splitting `member`.
+///
+/// Static writes update the local value map, static reads consume it, and missing indices are
+/// materialized as shared `llzk.nondet` values. Other users would observe or escape the array in a
+/// way this local scalarization cannot preserve.
+static LogicalResult verifyExpandableLocalArrayUsers(
+    CreateArrayOp createOp, MemberDefOp member, SymbolTableCollection &tables
+) {
+  Value arrayValue = createOp.getResult();
+  for (Operation *user : createOp.getResult().getUsers()) {
+    if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
+      if (writeOp.getArrRef() != arrayValue || writeOp->getBlock() != createOp->getBlock() ||
+          !getIndexAsAttr(writeOp)) {
+        return failure();
+      }
+      continue;
+    }
+    if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
+      if (readOp.getArrRef() != arrayValue || readOp->getBlock() != createOp->getBlock() ||
+          !getIndexAsAttr(readOp)) {
+        return failure();
+      }
+      continue;
+    }
+    if (auto userWriteOp = llvm::dyn_cast<MemberWriteOp>(user)) {
+      auto memberDef = userWriteOp.getMemberDefOp(tables);
+      if (userWriteOp.getVal() == arrayValue && succeeded(memberDef) &&
+          memberDef->get() == member && userWriteOp->getBlock() == createOp->getBlock()) {
+        continue;
+      }
+    }
+    return failure();
+  }
+  return success();
+}
+
+/// Return the value for `idx`, creating and caching a nondeterministic value if the local array
+/// element has not been written.
+static Value getOrCreateScalarizedLocalArrayValue(
+    DenseMap<ArrayAttr, Value> &valueByIndex, ArrayAttr idx, Type type, Location loc,
+    PatternRewriter &rewriter
+) {
+  Value scalarValue = valueByIndex.lookup(idx);
+  if (!scalarValue) {
+    scalarValue = rewriter.create<NonDetOp>(loc, type).getResult();
+    valueByIndex[idx] = scalarValue;
+  }
+  return scalarValue;
+}
+
+/// Rewrite one expandable local array allocation in block order.
+static LogicalResult rewriteExpandableLocalArray(
+    CreateArrayOp createOp, const SplitMemberInfo &splitInfo, PatternRewriter &rewriter
+) {
+  SmallVector<Operation *> users(
+      createOp.getResult().getUsers().begin(), createOp.getResult().getUsers().end()
+  );
+  llvm::sort(users, [](Operation *lhs, Operation *rhs) { return lhs->isBeforeInBlock(rhs); });
+
+  DenseMap<ArrayAttr, Value> valueByIndex;
+  SmallVector<WriteArrayOp> writesToErase;
+  for (Operation *user : users) {
+    if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
+      valueByIndex[getIndexAsAttr(writeOp)] = writeOp.getRvalue();
+      writesToErase.push_back(writeOp);
+      continue;
+    }
+
+    if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
+      ArrayAttr idx = getIndexAsAttr(readOp);
+      MemberInfo memberInfo = splitInfo.memberByIndex.lookup(idx);
+      if (!memberInfo.first) {
+        return failure();
+      }
+      rewriter.setInsertionPoint(readOp);
+      Value scalarValue = getOrCreateScalarizedLocalArrayValue(
+          valueByIndex, idx, memberInfo.second, readOp.getLoc(), rewriter
+      );
+      replaceAllUsesIgnoringType(readOp.getResult(), scalarValue);
+      rewriter.eraseOp(readOp);
+      continue;
+    }
+
+    auto memberWriteOp = llvm::dyn_cast<MemberWriteOp>(user);
+    if (!memberWriteOp) {
+      return failure();
+    }
+
+    rewriter.setInsertionPoint(memberWriteOp);
+    DictionaryAttr discardableAttrs = memberWriteOp->getDiscardableAttrDictionary();
+    for (ArrayAttr idx : splitInfo.indices) {
+      MemberInfo memberInfo = splitInfo.memberByIndex.lookup(idx);
+      Value scalarValue = getOrCreateScalarizedLocalArrayValue(
+          valueByIndex, idx, memberInfo.second, memberWriteOp.getLoc(), rewriter
+      );
+      MemberWriteOp scalarWrite = rewriter.create<MemberWriteOp>(
+          memberWriteOp.getLoc(), memberWriteOp.getComponent(),
+          FlatSymbolRefAttr::get(memberInfo.first), scalarValue
+      );
+      scalarWrite->setDiscardableAttrs(discardableAttrs);
+    }
+    rewriter.eraseOp(memberWriteOp);
+  }
+
+  for (WriteArrayOp writeOp : llvm::make_early_inc_range(writesToErase)) {
+    rewriter.eraseOp(writeOp);
+  }
+  if (createOp.getResult().use_empty()) {
+    rewriter.eraseOp(createOp);
+  }
+  return success();
+}
+
+/// Rewrite remaining expandable whole-array writes to split members.
+static LogicalResult rewriteExpandableMemberWrites(
+    DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers, SymbolTableCollection &tables,
+    PatternRewriter &rewriter
+) {
+  for (const auto &[member, splitInfo] : splitMembers) {
+    StructDefOp parentStruct = getParentOfType<StructDefOp>(member);
+    assert(parentStruct && "MemberDefOp parent is always StructDefOp");
+
+    auto uses = llzk::getSymbolUses(member, parentStruct);
+    if (!uses) {
+      return failure();
+    }
+
+    SmallVector<CreateArrayOp> createsToExpand;
+    DenseSet<CreateArrayOp> seenCreates;
+    for (SymbolTable::SymbolUse symUse : uses.value()) {
+      auto memberWriteOp = llvm::dyn_cast<MemberWriteOp>(symUse.getUser());
+      if (!memberWriteOp) {
+        continue;
+      }
+      auto memberDef = memberWriteOp.getMemberDefOp(tables);
+      FailureOr<CreateArrayOp> maybeCreateOp = getStaticLocalArrayCreate(memberWriteOp);
+      if (succeeded(memberDef) && memberDef->get() == member && succeeded(maybeCreateOp) &&
+          !seenCreates.contains(*maybeCreateOp)) {
+        createsToExpand.push_back(*maybeCreateOp);
+        seenCreates.insert(*maybeCreateOp);
+      }
+    }
+
+    for (CreateArrayOp createOp : createsToExpand) {
+      if (failed(verifyExpandableLocalArrayUsers(createOp, member, tables))) {
+        return failure();
+      }
+      if (failed(rewriteExpandableLocalArray(createOp, splitInfo, rewriter))) {
+        return failure();
+      }
+    }
+  }
+  return success();
+}
+
+/// Verify that all writes to any split member are either candidate or otherwise expandable.
 ///
 /// Splitting a member is global: after replacement, every read of the original array-typed member
 /// is redirected to the split scalar members. That is only sound when every write to that member
-/// can also be expanded; otherwise a remaining whole-array write would still target the original
-/// member while later reads observe unrelated split fields.
-static LogicalResult verifySplitMemberWritesFullyCovered(
+/// can also be expanded.
+static LogicalResult verifySplitMemberWritesExpandable(
     ArrayRef<ScalarizedArrayInfo> arraysToScalarize, SymbolTableCollection &tables
 ) {
   DenseMap<MemberDefOp, DenseSet<Operation *>> candidateWritesByMember;
@@ -2419,7 +2587,12 @@ static LogicalResult verifySplitMemberWritesFullyCovered(
 
     for (SymbolTable::SymbolUse symUse : uses.value()) {
       auto writeOp = llvm::dyn_cast<MemberWriteOp>(symUse.getUser());
-      if (writeOp && !candidateWrites.contains(writeOp.getOperation())) {
+      if (!writeOp || candidateWrites.contains(writeOp.getOperation())) {
+        continue;
+      }
+      FailureOr<CreateArrayOp> maybeCreateOp = getStaticLocalArrayCreate(writeOp);
+      if (failed(maybeCreateOp) ||
+          failed(verifyExpandableLocalArrayUsers(*maybeCreateOp, member, tables))) {
         InFlightDiagnostic diag = member.emitError(
             "cannot split heterogeneous array member because not every write to it can be "
             "scalarized"
@@ -2466,7 +2639,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
   PatternRewriter rewriter(modOp.getContext());
   SymbolTableCollection tables;
-  if (failed(verifySplitMemberWritesFullyCovered(arraysToScalarize, tables))) {
+  if (failed(verifySplitMemberWritesExpandable(arraysToScalarize, tables))) {
     return failure();
   }
 
@@ -2475,6 +2648,9 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
     if (failed(rewriteLocalArray(info, splitMembers, tables, rewriter))) {
       return failure();
     }
+  }
+  if (failed(rewriteExpandableMemberWrites(splitMembers, tables, rewriter))) {
+    return failure();
   }
   if (failed(rewriteSplitMemberReads(modOp, splitMembers, tables, rewriter))) {
     return failure();
