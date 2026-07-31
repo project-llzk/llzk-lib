@@ -2385,6 +2385,54 @@ static LogicalResult rewriteSplitMemberReads(
   return success();
 }
 
+/// Verify that all writes to any split member are covered by scalarization candidates.
+///
+/// Splitting a member is global: after replacement, every read of the original array-typed member
+/// is redirected to the split scalar members. That is only sound when every write to that member
+/// can also be expanded; otherwise a remaining whole-array write would still target the original
+/// member while later reads observe unrelated split fields.
+static LogicalResult verifySplitMemberWritesFullyCovered(
+    ArrayRef<ScalarizedArrayInfo> arraysToScalarize, SymbolTableCollection &tables
+) {
+  DenseMap<MemberDefOp, DenseSet<Operation *>> candidateWritesByMember;
+  for (const ScalarizedArrayInfo &info : arraysToScalarize) {
+    for (MemberWriteOp memberWriteOp : info.memberWrites) {
+      auto memberDef = memberWriteOp.getMemberDefOp(tables);
+      if (succeeded(memberDef)) {
+        candidateWritesByMember[memberDef->get()].insert(memberWriteOp.getOperation());
+      }
+    }
+  }
+
+  for (const auto &entry : candidateWritesByMember) {
+    MemberDefOp member = entry.first;
+    const DenseSet<Operation *> &candidateWrites = entry.second;
+    StructDefOp parentStruct = getParentOfType<StructDefOp>(member);
+    assert(parentStruct && "MemberDefOp parent is always StructDefOp");
+
+    auto uses = llzk::getSymbolUses(member, parentStruct);
+    if (!uses) {
+      return member.emitError(
+          "cannot split heterogeneous array member because its symbol uses could not be inspected"
+      );
+    }
+
+    for (SymbolTable::SymbolUse symUse : uses.value()) {
+      auto writeOp = llvm::dyn_cast<MemberWriteOp>(symUse.getUser());
+      if (writeOp && !candidateWrites.contains(writeOp.getOperation())) {
+        InFlightDiagnostic diag = member.emitError(
+            "cannot split heterogeneous array member because not every write to it can be "
+            "scalarized"
+        );
+        diag.attachNote(writeOp.getLoc()) << "whole-array write is not backed by a scalarization "
+                                             "candidate";
+        return diag;
+      }
+    }
+  }
+  return success();
+}
+
 /// Erase original array-typed members after all symbol uses have been redirected.
 static void eraseUnusedOriginalMembers(
     DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers, PatternRewriter &rewriter
@@ -2418,6 +2466,10 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
   PatternRewriter rewriter(modOp.getContext());
   SymbolTableCollection tables;
+  if (failed(verifySplitMemberWritesFullyCovered(arraysToScalarize, tables))) {
+    return failure();
+  }
+
   DenseMap<MemberDefOp, SplitMemberInfo> splitMembers;
   for (ScalarizedArrayInfo &info : arraysToScalarize) {
     if (failed(rewriteLocalArray(info, splitMembers, tables, rewriter))) {
