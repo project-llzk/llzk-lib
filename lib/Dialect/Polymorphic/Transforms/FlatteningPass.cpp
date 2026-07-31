@@ -2359,24 +2359,34 @@ static LogicalResult rewriteSplitMemberReads(
       arrayReads.push_back(readOp);
     }
 
-    for (ReadArrayOp readOp : llvm::make_early_inc_range(arrayReads)) {
+    ValueRange mapOperands;
+    std::optional<int32_t> numDims;
+    if (!memberReadOp.getMapOperands().empty()) {
+      mapOperands = memberReadOp.getMapOperands().front();
+      numDims = memberReadOp.getNumDimsPerMap().front();
+    }
+
+    DenseMap<ArrayAttr, Value> scalarValueByIndex;
+    rewriter.setInsertionPoint(memberReadOp);
+    for (ReadArrayOp readOp : arrayReads) {
       ArrayAttr idx = getIndexAsAttr(readOp);
       MemberInfo memberInfo = splitIt->second.memberByIndex.lookup(idx);
       if (!memberInfo.first) {
         return failure();
       }
-      rewriter.setInsertionPoint(readOp);
-      ValueRange mapOperands;
-      std::optional<int32_t> numDims;
-      if (!memberReadOp.getMapOperands().empty()) {
-        mapOperands = memberReadOp.getMapOperands().front();
-        numDims = memberReadOp.getNumDimsPerMap().front();
+      if (scalarValueByIndex.contains(idx)) {
+        continue;
       }
       auto scalarRead = rewriter.create<MemberReadOp>(
-          readOp.getLoc(), memberInfo.second, memberReadOp.getComponent(), memberInfo.first,
+          memberReadOp.getLoc(), memberInfo.second, memberReadOp.getComponent(), memberInfo.first,
           memberReadOp.getTableOffset().value_or(Attribute {}), mapOperands, numDims
       );
-      replaceAllUsesIgnoringType(readOp.getResult(), scalarRead.getResult());
+      scalarValueByIndex[idx] = scalarRead.getResult();
+    }
+
+    for (ReadArrayOp readOp : llvm::make_early_inc_range(arrayReads)) {
+      ArrayAttr idx = getIndexAsAttr(readOp);
+      replaceAllUsesIgnoringType(readOp.getResult(), scalarValueByIndex.lookup(idx));
       rewriter.eraseOp(readOp);
     }
     if (memberReadOp.getResult().use_empty()) {

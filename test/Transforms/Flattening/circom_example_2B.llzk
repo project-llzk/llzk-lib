@@ -396,34 +396,31 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@TComputeValue
 // CHECK-NEXT:        %[[VAL_154:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
 // CHECK-NEXT:        %[[VAL_155:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:        %[[VAL_156:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:        %[[VAL_157:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_152]][@ws_0] : <@TComputeValue_3_ComputeValue>, !struct.type<@TGetSum_1_GetSum>
-// CHECK-NEXT:        %[[VAL_158:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_153]]{{\[}}%[[VAL_155]]] : <3 x !felt.type>, !felt.type
-// CHECK-NEXT:        %[[VAL_159:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_152]][@arrs_3] : <@TComputeValue_3_ComputeValue>, !struct.type<@TVarArray_1_f_VarArray>
-// CHECK-NEXT:        %[[VAL_160:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_159]][@val] : <@TVarArray_1_f_VarArray>, !array.type<1 x !felt.type>
-// CHECK-NEXT:        function.call @TGetSum_1_GetSum::@constrain(%[[VAL_157]], %[[VAL_160]]) : (!struct.type<@TGetSum_1_GetSum>, !array.type<1 x !felt.type>) -> ()
-// CHECK-NEXT:        %[[VAL_161:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_152]][@ws_1] : <@TComputeValue_3_ComputeValue>, !struct.type<@TGetSum_6_GetSum>
-// CHECK-NEXT:        %[[VAL_162:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_153]]{{\[}}%[[VAL_156]]] : <3 x !felt.type>, !felt.type
-// CHECK-NEXT:        %[[VAL_163:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_152]][@arrs_4] : <@TComputeValue_3_ComputeValue>, !struct.type<@TVarArray_6_f_VarArray>
-// CHECK-NEXT:        %[[VAL_164:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_163]][@val] : <@TVarArray_6_f_VarArray>, !array.type<6 x !felt.type>
-// CHECK-NEXT:        function.call @TGetSum_6_GetSum::@constrain(%[[VAL_161]], %[[VAL_164]]) : (!struct.type<@TGetSum_6_GetSum>, !array.type<6 x !felt.type>) -> ()
-// CHECK-NEXT:        %[[VAL_165:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_152]][@ws_2] : <@TComputeValue_3_ComputeValue>, !struct.type<@TGetSum_11_GetSum>
-// CHECK-NEXT:        %[[VAL_166:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_153]]{{\[}}%[[VAL_154]]] : <3 x !felt.type>, !felt.type
-// CHECK-NEXT:        %[[VAL_167:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_152]][@arrs_5] : <@TComputeValue_3_ComputeValue>, !struct.type<@TVarArray_11_f_VarArray>
-// CHECK-NEXT:        %[[VAL_168:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_167]][@val] : <@TVarArray_11_f_VarArray>, !array.type<11 x !felt.type>
-// CHECK-NEXT:        function.call @TGetSum_11_GetSum::@constrain(%[[VAL_165]], %[[VAL_168]]) : (!struct.type<@TGetSum_11_GetSum>, !array.type<11 x !felt.type>) -> ()
+// CHECK-NEXT:        %[[VAL_157:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_152]][@ws_2] : <@TComputeValue_3_ComputeValue>, !struct.type<@TGetSum_11_GetSum>
+// CHECK-NEXT:        %[[VAL_158:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_152]][@ws_1] : <@TComputeValue_3_ComputeValue>, !struct.type<@TGetSum_6_GetSum>
+// CHECK-NEXT:        %[[VAL_159:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_152]][@ws_0] : <@TComputeValue_3_ComputeValue>, !struct.type<@TGetSum_1_GetSum>
+// CHECK-NEXT:        %[[VAL_160:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_152]][@arrs_5] : <@TComputeValue_3_ComputeValue>, !struct.type<@TVarArray_11_f_VarArray>
+// CHECK-NEXT:        %[[VAL_161:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_152]][@arrs_4] : <@TComputeValue_3_ComputeValue>, !struct.type<@TVarArray_6_f_VarArray>
+// CHECK-NEXT:        %[[VAL_162:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_152]][@arrs_3] : <@TComputeValue_3_ComputeValue>, !struct.type<@TVarArray_1_f_VarArray>
+// CHECK-NEXT:        %[[VAL_163:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_153]]{{\[}}%[[VAL_155]]] : <3 x !felt.type>, !felt.type
+// CHECK-NEXT:        %[[VAL_164:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_162]][@val] : <@TVarArray_1_f_VarArray>, !array.type<1 x !felt.type>
+// CHECK-NEXT:        function.call @TGetSum_1_GetSum::@constrain(%[[VAL_159]], %[[VAL_164]]) : (!struct.type<@TGetSum_1_GetSum>, !array.type<1 x !felt.type>) -> ()
+// CHECK-NEXT:        %[[VAL_165:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_153]]{{\[}}%[[VAL_156]]] : <3 x !felt.type>, !felt.type
+// CHECK-NEXT:        %[[VAL_166:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_161]][@val] : <@TVarArray_6_f_VarArray>, !array.type<6 x !felt.type>
+// CHECK-NEXT:        function.call @TGetSum_6_GetSum::@constrain(%[[VAL_158]], %[[VAL_166]]) : (!struct.type<@TGetSum_6_GetSum>, !array.type<6 x !felt.type>) -> ()
+// CHECK-NEXT:        %[[VAL_167:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_153]]{{\[}}%[[VAL_154]]] : <3 x !felt.type>, !felt.type
+// CHECK-NEXT:        %[[VAL_168:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_160]][@val] : <@TVarArray_11_f_VarArray>, !array.type<11 x !felt.type>
+// CHECK-NEXT:        function.call @TGetSum_11_GetSum::@constrain(%[[VAL_157]], %[[VAL_168]]) : (!struct.type<@TGetSum_11_GetSum>, !array.type<11 x !felt.type>) -> ()
 // CHECK-NEXT:        %[[VAL_169:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_152]][@ret] : <@TComputeValue_3_ComputeValue>, !array.type<3 x !felt.type>
 // CHECK-NEXT:        %[[VAL_170:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_169]]{{\[}}%[[VAL_155]]] : <3 x !felt.type>, !felt.type
-// CHECK-NEXT:        %[[VAL_171:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_152]][@ws_0] : <@TComputeValue_3_ComputeValue>, !struct.type<@TGetSum_1_GetSum>
-// CHECK-NEXT:        %[[VAL_172:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_171]][@out] : <@TGetSum_1_GetSum>, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_170]], %[[VAL_172]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_173:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_169]]{{\[}}%[[VAL_156]]] : <3 x !felt.type>, !felt.type
-// CHECK-NEXT:        %[[VAL_174:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_152]][@ws_1] : <@TComputeValue_3_ComputeValue>, !struct.type<@TGetSum_6_GetSum>
-// CHECK-NEXT:        %[[VAL_175:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_174]][@out] : <@TGetSum_6_GetSum>, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_173]], %[[VAL_175]] : !felt.type, !felt.type
-// CHECK-NEXT:        %[[VAL_176:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_169]]{{\[}}%[[VAL_154]]] : <3 x !felt.type>, !felt.type
-// CHECK-NEXT:        %[[VAL_177:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_152]][@ws_2] : <@TComputeValue_3_ComputeValue>, !struct.type<@TGetSum_11_GetSum>
-// CHECK-NEXT:        %[[VAL_178:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_177]][@out] : <@TGetSum_11_GetSum>, !felt.type
-// CHECK-NEXT:        constrain.eq %[[VAL_176]], %[[VAL_178]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_171:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_159]][@out] : <@TGetSum_1_GetSum>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_170]], %[[VAL_171]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_172:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_169]]{{\[}}%[[VAL_156]]] : <3 x !felt.type>, !felt.type
+// CHECK-NEXT:        %[[VAL_173:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_158]][@out] : <@TGetSum_6_GetSum>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_172]], %[[VAL_173]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_174:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_169]]{{\[}}%[[VAL_154]]] : <3 x !felt.type>, !felt.type
+// CHECK-NEXT:        %[[VAL_175:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_157]][@out] : <@TGetSum_11_GetSum>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_174]], %[[VAL_175]] : !felt.type, !felt.type
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
