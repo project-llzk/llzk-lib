@@ -2621,7 +2621,7 @@ static FailureOr<Value> getOrCreateScalarizedLocalArrayValue(
 static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
     CreateArrayOp createOp,
     const DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
-    SymbolTableCollection &tables
+    SymbolTableCollection &tables, StringRef arrayDescription = "an expandable array"
 ) {
   ArrayType arrTy = createOp.getType();
   std::optional<SmallVector<ArrayAttr>> maybeIndices = arrTy.getSubelementIndices();
@@ -2675,10 +2675,9 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
         }
         Type existingType = existing->second.first;
         if (!typesUnify(existingType, targetType)) {
-          InFlightDiagnostic diag = createOp.emitError(
-              "cannot split heterogeneous array member because an expandable array reuses one SSA "
-              "value for incompatible scalar member types"
-          );
+          InFlightDiagnostic diag =
+              createOp.emitError("cannot split heterogeneous array member because ")
+              << arrayDescription << " reuses one SSA value for incompatible scalar member types";
           diag.attachNote(existing->second.second)
               << "unwritten index " << idx << " is materialized for scalar member type "
               << existingType;
@@ -2697,10 +2696,9 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
       }
       Type existingType = existing->second.first;
       if (!typesUnify(existingType, targetType)) {
-        InFlightDiagnostic diag = createOp.emitError(
-            "cannot split heterogeneous array member because an expandable array reuses one SSA "
-            "value for incompatible scalar member types"
-        );
+        InFlightDiagnostic diag =
+            createOp.emitError("cannot split heterogeneous array member because ")
+            << arrayDescription << " reuses one SSA value for incompatible scalar member types";
         diag.attachNote(existing->second.second)
             << "value is used for scalar member type " << existingType;
         diag.attachNote(memberWriteOp.getLoc())
@@ -2913,6 +2911,15 @@ static LogicalResult verifySplitMemberWritesExpandable(
   DenseSet<MemberDefOp> splitMemberSet;
   for (const auto &entry : candidateWritesByMember) {
     splitMemberSet.insert(entry.first);
+  }
+
+  for (const ScalarizedArrayInfo &info : arraysToScalarize) {
+    auto verifyNoIncompatibleShares = verifyNoSharedValuesForIncompatibleSplitTypes(
+        info.createOp, splitTypesByMember, tables, "a scalarization candidate"
+    );
+    if (failed(verifyNoIncompatibleShares)) {
+      return failure();
+    }
   }
 
   for (const auto &entry : candidateWritesByMember) {

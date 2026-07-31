@@ -1,0 +1,69 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s
+
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @THolder {
+    poly.param @Shared : !poly.tvar<@Shared>
+
+    struct.def @Holder {
+      struct.member @items : !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>> {column}
+
+      function.def @compute(%cond: i1, %shared: !poly.tvar<@Shared>) -> !struct.type<@THolder::@Holder<[@Shared]>> {
+        %self = struct.new : !struct.type<@THolder::@Holder<[@Shared]>>
+        scf.if %cond {
+          %c0 = arith.constant 0 : index
+          %c1 = arith.constant 1 : index
+          %c2 = arith.constant 2 : index
+          %c3 = arith.constant 3 : index
+          %local = array.new : !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>>
+          %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+          %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+          %item2 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[2]>>
+          %item3 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[3]>>
+          array.write %local[%c0] = %item0 : !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+          array.write %local[%c1] = %item1 : !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+          array.write %local[%c2] = %item2 : !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[2]>>
+          array.write %local[%c3] = %item3 : !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[3]>>
+          struct.writem %self[@items] = %local : !struct.type<@THolder::@Holder<[@Shared]>>, !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>>
+        } else {
+          %c0 = arith.constant 0 : index
+          %c1 = arith.constant 1 : index
+          %c2 = arith.constant 2 : index
+          %c3 = arith.constant 3 : index
+          %fallback = array.new : !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>> // expected-error {{cannot split heterogeneous array member because a scalarization candidate reuses one SSA value for incompatible scalar member types}}
+          %item2 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[2]>>
+          %item3 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[3]>>
+          array.write %fallback[%c0] = %shared : !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>>, !poly.tvar<@Shared>
+          array.write %fallback[%c1] = %shared : !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>>, !poly.tvar<@Shared>
+          array.write %fallback[%c2] = %item2 : !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[2]>>
+          array.write %fallback[%c3] = %item3 : !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[3]>>
+          // expected-note@+2 {{value is used for scalar member type}}
+          // expected-note@+1 {{same value is also used for scalar member type}}
+          struct.writem %self[@items] = %fallback : !struct.type<@THolder::@Holder<[@Shared]>>, !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>>
+        }
+        function.return %self : !struct.type<@THolder::@Holder<[@Shared]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@THolder::@Holder<[@Shared]>>, %cond: i1, %shared: !poly.tvar<@Shared>) {
+        function.return
+      }
+    }
+  }
+}
