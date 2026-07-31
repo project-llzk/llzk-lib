@@ -2368,6 +2368,7 @@ static LogicalResult rewriteSplitMemberReads(
 
     DenseMap<ArrayAttr, Value> scalarValueByIndex;
     rewriter.setInsertionPoint(memberReadOp);
+    DictionaryAttr discardableAttrs = memberReadOp->getDiscardableAttrDictionary();
     for (ReadArrayOp readOp : arrayReads) {
       ArrayAttr idx = getIndexAsAttr(readOp);
       MemberInfo memberInfo = splitIt->second.memberByIndex.lookup(idx);
@@ -2381,6 +2382,7 @@ static LogicalResult rewriteSplitMemberReads(
           memberReadOp.getLoc(), memberInfo.second, memberReadOp.getComponent(), memberInfo.first,
           memberReadOp.getTableOffset().value_or(Attribute {}), mapOperands, numDims
       );
+      scalarRead->setDiscardableAttrs(discardableAttrs);
       scalarValueByIndex[idx] = scalarRead.getResult();
     }
 
