@@ -2481,8 +2481,9 @@ static FailureOr<Value> getOrCreateScalarizedLocalArrayValue(
 ///
 /// Later type propagation may refine the value operand of each scalar member write. If two writes
 /// keep the same SSA value, refining one write also refines the other because MLIR values carry one
-/// global type. Missing values are materialized as fresh `llzk.nondet` values during rewriting, so
-/// only values already present in `valueByIndex` need this aliasing check.
+/// global type. Missing values are materialized as fresh `llzk.nondet` values during rewriting and
+/// then cached by index, so the check tracks those pending materializations until an `array.write`
+/// overwrites the index.
 static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
     CreateArrayOp createOp,
     const DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
@@ -2510,9 +2511,13 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
   );
   llvm::sort(users, [](Operation *lhs, Operation *rhs) { return lhs->isBeforeInBlock(rhs); });
 
+  DenseMap<Value, std::pair<Type, Location>> firstUseByValue;
+  DenseMap<ArrayAttr, std::pair<Type, Location>> firstMaterializedUseByIndex;
   for (Operation *user : users) {
     if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
-      valueByIndex[getIndexAsAttr(writeOp)] = writeOp.getRvalue();
+      ArrayAttr idx = getIndexAsAttr(writeOp);
+      valueByIndex[idx] = writeOp.getRvalue();
+      firstMaterializedUseByIndex.erase(idx);
       continue;
     }
     if (llvm::isa<ReadArrayOp>(user)) {
@@ -2532,10 +2537,29 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
       continue;
     }
 
-    DenseMap<Value, std::pair<Type, Location>> firstUseByValue;
     for (const auto &[idx, targetType] : splitIt->second) {
       Value scalarValue = valueByIndex.lookup(idx);
       if (!scalarValue) {
+        auto existing = firstMaterializedUseByIndex.find(idx);
+        if (existing == firstMaterializedUseByIndex.end()) {
+          firstMaterializedUseByIndex.try_emplace(
+              idx, std::make_pair(targetType, memberWriteOp.getLoc())
+          );
+          continue;
+        }
+        Type existingType = existing->second.first;
+        if (!typesUnify(existingType, targetType)) {
+          InFlightDiagnostic diag = createOp.emitError(
+              "cannot split heterogeneous array member because an expandable array reuses one SSA "
+              "value for incompatible scalar member types"
+          );
+          diag.attachNote(existing->second.second)
+              << "unwritten index " << idx << " is materialized for scalar member type "
+              << existingType;
+          diag.attachNote(memberWriteOp.getLoc())
+              << "same index is also materialized for scalar member type " << targetType;
+          return diag;
+        }
         continue;
       }
       auto existing = firstUseByValue.find(scalarValue);
