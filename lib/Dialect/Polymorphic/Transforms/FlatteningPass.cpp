@@ -2584,6 +2584,64 @@ static LogicalResult verifyExpandableLocalArrayUsers(
   return success();
 }
 
+/// Verify that every split-member write fed by `createOp` has the same static index set as the
+/// local array allocation.
+///
+/// `rewriteExpandableLocalArray()` emits one scalar write per target split index. If the source
+/// allocation has extra indices, those values would be dropped; if it has missing indices, fresh
+/// nondeterministic values would be materialized. Either changes the whole-array write semantics.
+static LogicalResult verifyExpandableLocalArraySplitIndices(
+    CreateArrayOp createOp,
+    const DenseMap<MemberDefOp, SmallVector<ArrayAttr>> &splitIndicesByMember,
+    const DenseMap<MemberDefOp, Operation *> *splitIndexOpsByMember, SymbolTableCollection &tables
+) {
+  ArrayType arrTy = createOp.getType();
+  std::optional<SmallVector<ArrayAttr>> maybeIndices = arrTy.getSubelementIndices();
+  if (!maybeIndices) {
+    return failure();
+  }
+  ArrayRef<ArrayAttr> indices = *maybeIndices;
+  Value arrayValue = createOp.getResult();
+
+  for (Operation *user : arrayValue.getUsers()) {
+    auto memberWriteOp = llvm::dyn_cast<MemberWriteOp>(user);
+    if (!memberWriteOp || memberWriteOp.getVal() != arrayValue) {
+      continue;
+    }
+    auto memberDef = memberWriteOp.getMemberDefOp(tables);
+    if (failed(memberDef)) {
+      return failure();
+    }
+    MemberDefOp member = memberDef->get();
+    auto splitIt = splitIndicesByMember.find(member);
+    if (splitIt == splitIndicesByMember.end()) {
+      continue;
+    }
+    ArrayRef<ArrayAttr> splitIndices = splitIt->second;
+    if (haveSameIndexSet(indices, splitIndices)) {
+      continue;
+    }
+
+    InFlightDiagnostic diag = member.emitError(
+        "cannot split heterogeneous array member because expandable whole-array write uses "
+        "different index set"
+    );
+    if (splitIndexOpsByMember) {
+      diag.attachNote(splitIndexOpsByMember->lookup(member)->getLoc())
+          << "candidate establishes " << splitIndices.size() << " split member indices";
+    }
+    Diagnostic &note = diag.attachNote(memberWriteOp.getLoc())
+                       << "expandable whole-array write has " << indices.size() << " array indices";
+    if (ArrayAttr extraIndex = findIndexMissingFrom(indices, splitIndices)) {
+      note << ", including extra index " << extraIndex;
+    } else if (ArrayAttr missingIndex = findIndexMissingFrom(splitIndices, indices)) {
+      note << ", missing index " << missingIndex;
+    }
+    return diag;
+  }
+  return success();
+}
+
 /// Return the value for `idx` at `type`, creating and caching a nondeterministic value if the local
 /// array element has not been written.
 ///
@@ -2799,8 +2857,10 @@ static LogicalResult rewriteExpandableMemberWrites(
     PatternRewriter &rewriter, const ConversionTracker &tracker
 ) {
   DenseSet<MemberDefOp> splitMemberSet;
+  DenseMap<MemberDefOp, SmallVector<ArrayAttr>> splitIndicesByMember;
   for (const auto &entry : splitMembers) {
     splitMemberSet.insert(entry.first);
+    splitIndicesByMember[entry.first] = entry.second.indices;
   }
 
   for (const auto &entry : splitMembers) {
@@ -2831,6 +2891,12 @@ static LogicalResult rewriteExpandableMemberWrites(
 
     for (CreateArrayOp createOp : createsToExpand) {
       if (failed(verifyExpandableLocalArrayUsers(createOp, splitMemberSet, tables))) {
+        return failure();
+      }
+      auto res = verifyExpandableLocalArraySplitIndices(
+          createOp, splitIndicesByMember, /*splitIndexOpsByMember=*/nullptr, tables
+      );
+      if (failed(res)) {
         return failure();
       }
       if (failed(rewriteExpandableLocalArray(createOp, splitMembers, tables, rewriter, tracker))) {
@@ -2950,6 +3016,12 @@ static LogicalResult verifySplitMemberWritesExpandable(
         diag.attachNote(writeOp.getLoc()) << "whole-array write is not backed by a scalarization "
                                              "candidate";
         return diag;
+      }
+      auto res = verifyExpandableLocalArraySplitIndices(
+          *maybeCreateOp, splitIndicesByMember, &splitIndexOpsByMember, tables
+      );
+      if (failed(res)) {
+        return failure();
       }
       auto verifyNoIncompatibleShares =
           verifyNoSharedValuesForIncompatibleSplitTypes(*maybeCreateOp, splitTypesByMember, tables);
