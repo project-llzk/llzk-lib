@@ -2085,6 +2085,22 @@ struct SplitMemberInfo {
   DenseMap<ArrayAttr, MemberInfo> memberByIndex;
 };
 
+/// Return true iff `lhs` and `rhs` contain the same array indices.
+static bool haveSameIndexSet(ArrayRef<ArrayAttr> lhs, ArrayRef<ArrayAttr> rhs) {
+  if (lhs.size() != rhs.size()) {
+    return false;
+  }
+  DenseSet<ArrayAttr> rhsSet(rhs.begin(), rhs.end());
+  return llvm::all_of(lhs, [&rhsSet](ArrayAttr idx) { return rhsSet.contains(idx); });
+}
+
+/// Return the first index in `lhs` that is not present in `rhs`.
+static ArrayAttr findIndexMissingFrom(ArrayRef<ArrayAttr> lhs, ArrayRef<ArrayAttr> rhs) {
+  DenseSet<ArrayAttr> rhsSet(rhs.begin(), rhs.end());
+  auto missingIt = llvm::find_if(lhs, [&rhsSet](ArrayAttr idx) { return !rhsSet.contains(idx); });
+  return missingIt == lhs.end() ? ArrayAttr() : *missingIt;
+}
+
 /// Replace all uses of `oldValue` without asking MLIR to enforce SSA type equality.
 ///
 /// This is intentionally narrower than `replaceAllUsesWith()`: the whole purpose of this step is to
@@ -2313,6 +2329,9 @@ static LogicalResult rewriteLocalArray(
     DictionaryAttr discardableAttrs = memberWriteOp->getDiscardableAttrDictionary();
     for (ArrayAttr idx : info.indices) {
       MemberInfo memberInfo = splitInfo.memberByIndex.lookup(idx);
+      if (!memberInfo.first) {
+        return failure();
+      }
       MemberWriteOp scalarWrite = rewriter.create<MemberWriteOp>(
           memberWriteOp.getLoc(), memberWriteOp.getComponent(),
           FlatSymbolRefAttr::get(memberInfo.first), info.valueByIndex.lookup(idx)
@@ -2733,6 +2752,8 @@ static LogicalResult verifySplitMemberWritesExpandable(
     ArrayRef<ScalarizedArrayInfo> arraysToScalarize, SymbolTableCollection &tables
 ) {
   DenseMap<MemberDefOp, DenseSet<Operation *>> candidateWritesByMember;
+  DenseMap<MemberDefOp, SmallVector<ArrayAttr>> splitIndicesByMember;
+  DenseMap<MemberDefOp, Operation *> splitIndexOpsByMember;
   DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> splitTypesByMember;
   DenseMap<MemberDefOp, DenseMap<ArrayAttr, Operation *>> splitTypeOpsByMember;
   for (const ScalarizedArrayInfo &info : arraysToScalarize) {
@@ -2741,6 +2762,27 @@ static LogicalResult verifySplitMemberWritesExpandable(
       if (succeeded(memberDef)) {
         MemberDefOp member = memberDef->get();
         candidateWritesByMember[member].insert(memberWriteOp.getOperation());
+        auto [indicesIt, inserted] = splitIndicesByMember.try_emplace(member, info.indices);
+        if (inserted) {
+          splitIndexOpsByMember[member] = memberWriteOp.getOperation();
+        } else if (!haveSameIndexSet(indicesIt->second, info.indices)) {
+          InFlightDiagnostic diag = member.emitError(
+              "cannot split heterogeneous array member because candidate writes use different "
+              "index sets"
+          );
+          diag.attachNote(splitIndexOpsByMember.lookup(member)->getLoc())
+              << "candidate establishes " << indicesIt->second.size() << " split member indices";
+          Diagnostic &note = diag.attachNote(memberWriteOp.getLoc())
+                             << "conflicting candidate has " << info.indices.size()
+                             << " split member indices";
+          if (ArrayAttr extraIndex = findIndexMissingFrom(info.indices, indicesIt->second)) {
+            note << ", including extra index " << extraIndex;
+          } else if (ArrayAttr missingIndex =
+                         findIndexMissingFrom(indicesIt->second, info.indices)) {
+            note << ", missing index " << missingIndex;
+          }
+          return diag;
+        }
         DenseMap<ArrayAttr, Type> &splitTypes = splitTypesByMember[member];
         DenseMap<ArrayAttr, Operation *> &splitTypeOps = splitTypeOpsByMember[member];
         for (ArrayAttr idx : info.indices) {
