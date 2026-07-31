@@ -20,7 +20,7 @@ module attributes {llzk.lang} {
   }
 
   struct.def @Holder {
-    struct.member @items : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
+    struct.member @items : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column, product_source = "member"}
 
     function.def @compute(%idx: index) -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
@@ -73,8 +73,8 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @Holder {
-// CHECK-NEXT:      struct.member @items_0 : !struct.type<@TCell_0_Cell> {column}
-// CHECK-NEXT:      struct.member @items_1 : !struct.type<@TCell_1_Cell> {column}
+// CHECK-NEXT:      struct.member @items_0 : !struct.type<@TCell_0_Cell> {column, product_source = "member"}
+// CHECK-NEXT:      struct.member @items_1 : !struct.type<@TCell_1_Cell> {column, product_source = "member"}
 // CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@Holder> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
 // CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>

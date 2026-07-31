@@ -2230,8 +2230,8 @@ static FailureOr<ScalarizedArrayInfo> getScalarizedArrayInfo(CreateArrayOp op) {
 
 /// Create scalar replacement members for `member`, or return the replacements already created.
 ///
-/// The replacement members preserve the original member's public/signal/column metadata and rely on
-/// the containing struct's symbol table to make each generated name unique.
+/// The replacement members preserve the original member's public/signal/column and discardable
+/// metadata, and rely on the containing struct's symbol table to make each generated name unique.
 static SplitMemberInfo &getOrCreateSplitMemberInfo(
     MemberDefOp member, const ScalarizedArrayInfo &arrayInfo,
     DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers, SymbolTableCollection &tables,
@@ -2257,6 +2257,7 @@ static SplitMemberInfo &getOrCreateSplitMemberInfo(
         member.getLoc(), member.getSymNameAttr(), scalarType, member.getSignal(), member.getColumn()
     );
     newMember.setPublicAttr(member.hasPublicAttr());
+    newMember->setDiscardableAttrs(member->getDiscardableAttrDictionary());
     StringAttr actualName = structSymbols.insert(newMember);
     splitInfo.memberByIndex[idx] = std::make_pair(actualName, scalarType);
   }
