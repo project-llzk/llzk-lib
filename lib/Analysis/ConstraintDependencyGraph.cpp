@@ -90,7 +90,7 @@ public:
   /// Rebase an allocation/call result to the aggregate storage receiving it.
   void recordAggregateAlias(
       Operation *op, size_t aliasIndex, const SourceRefLatticeValue &source,
-      const SourceRefLatticeValue &target
+      const SourceRefLatticeValue &target, bool mayBeSkipped = false
   );
 
   void print(raw_ostream &os) const override { os << "SourceRefAnalysis::StorageState"; }
@@ -105,6 +105,7 @@ private:
   struct AggregateAlias {
     SourceRefLatticeValue source;
     SourceRefLatticeValue target;
+    bool mayBeSkipped;
   };
 
   /// Apply all known aggregate-storage aliases to a lattice value.
@@ -179,6 +180,33 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveDependencies(
   const TranslationMap aliases = materializeAggregateAliases(before);
   const llvm::DenseMap<SourceRef, SourceRefLatticeValue> storedValues =
       materializeStoredValues(before, aliases);
+  std::function<
+      SourceRefLatticeValue(const SourceRefLatticeValue &, const SourceRef &, const SourceRef &)>
+      projectChild = [&](const SourceRefLatticeValue &value, const SourceRef &storedAddress,
+                         const SourceRef &readAddress) {
+    if (!readAddress.isValidPrefix(storedAddress)) {
+      return value;
+    }
+    if (value.isArray()) {
+      SourceRefLatticeValue result(value.getArrayShape());
+      for (size_t i = 0; i < value.getArraySize(); ++i) {
+        (void)result.getElemFlatIdx(i).setValue(
+            projectChild(value.getElemFlatIdx(i), storedAddress, readAddress)
+        );
+      }
+      return result;
+    }
+
+    SourceRefLatticeValue result;
+    for (const SourceRef &ref : value.getScalarValue()) {
+      if (auto translated = readAddress.translate(storedAddress, ref); succeeded(translated)) {
+        (void)result.insert(*translated);
+      } else {
+        (void)result.insert(ref);
+      }
+    }
+    return result;
+  };
   llvm::DenseSet<SourceRef> active;
   std::function<SourceRefLatticeValue(const SourceRefLatticeValue &)> resolve =
       [&](const SourceRefLatticeValue &input) {
@@ -194,7 +222,9 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveDependencies(
     SourceRefLatticeValue result;
     for (const SourceRef &address : addressValue.getScalarValue()) {
       if (!active.insert(address).second) {
-        (void)result.insert(address);
+        if (addressValue.isSingleValue()) {
+          (void)result.insert(address);
+        }
         continue;
       }
 
@@ -204,11 +234,11 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveDependencies(
         auto storedRoot = storedAddress.getRoot();
         auto addressRoot = address.getRoot();
         if (failed(storedRoot) || failed(addressRoot) || *storedRoot != *addressRoot ||
-            !storedAddress.overlaps(address)) {
+            (!storedAddress.overlaps(address) && !address.isValidPrefix(storedAddress))) {
           continue;
         }
         foundWrite = true;
-        (void)writtenValues.update(storedValue);
+        (void)writtenValues.update(projectChild(storedValue, storedAddress, address));
       }
       if (foundWrite) {
         SourceRefLatticeValue resolvedValues = resolve(writtenValues);
@@ -287,8 +317,16 @@ SourceRefAnalysis::StorageState::materializeStoredValues(
       }
       return;
     }
-    if (canonicalValue.isSingleValue() && canonicalValue.getSingleValue() == address) {
-      return;
+    if (canonicalValue.isScalar() && canonicalValue.getScalarValue().contains(address)) {
+      const bool hasPriorContents = llvm::any_of(storedValues, [&](const auto &entry) {
+        return entry.first == address || entry.first.isValidPrefix(address);
+      });
+      if (hasPriorContents || canonicalValue.isSingleValue()) {
+        (void)canonicalValue.getScalarValue().erase(address);
+        if (canonicalValue.getScalarValue().empty()) {
+          return;
+        }
+      }
     }
     applyWrite(address, canonicalValue, maySkip);
   };
@@ -313,10 +351,10 @@ SourceRefAnalysis::StorageState::materializeStoredValues(
 
 void SourceRefAnalysis::StorageState::recordAggregateAlias(
     Operation *op, size_t aliasIndex, const SourceRefLatticeValue &source,
-    const SourceRefLatticeValue &target
+    const SourceRefLatticeValue &target, bool mayBeSkipped
 ) {
   auto &aliases = aggregateAliases[op];
-  AggregateAlias alias {source, target};
+  AggregateAlias alias {source, target, mayBeSkipped};
   if (aliasIndex == aliases.size()) {
     aliases.push_back(std::move(alias));
     return;
@@ -346,8 +384,9 @@ SourceRefAnalysis::StorageState::materializeAggregateAliases(Operation *before) 
     return target;
   };
 
-  std::function<void(const SourceRefLatticeValue &, const SourceRefLatticeValue &)> addAlias =
-      [&](const SourceRefLatticeValue &source, const SourceRefLatticeValue &target) {
+  std::function<void(const SourceRefLatticeValue &, const SourceRefLatticeValue &, bool)> addAlias =
+      [&](const SourceRefLatticeValue &source, const SourceRefLatticeValue &target,
+          bool mayBeSkipped) {
     SourceRefLatticeValue canonicalSource = canonicalize(source, aliases);
     SourceRefLatticeValue canonicalTarget = canonicalize(target, aliases);
     if (canonicalSource.isArray() && canonicalTarget.isSingleValue()) {
@@ -360,7 +399,7 @@ SourceRefAnalysis::StorageState::materializeAggregateAliases(Operation *before) 
       for (size_t i = 0; i < canonicalSource.getArraySize(); ++i) {
         addAlias(
             canonicalSource.getElemFlatIdx(i),
-            SourceRefLatticeValue(getArrayElementTarget(targetRoot, i))
+            SourceRefLatticeValue(getArrayElementTarget(targetRoot, i)), mayBeSkipped
         );
       }
       return;
@@ -383,7 +422,11 @@ SourceRefAnalysis::StorageState::materializeAggregateAliases(Operation *before) 
       if (defOp == nullptr || !llvm::isa<CallOp, NewPodOp, CreateArrayOp, NonDetOp>(defOp)) {
         continue;
       }
-      aliases[sourceRef] = canonicalTarget;
+      SourceRefLatticeValue aliasTargets = canonicalTarget;
+      if (mayBeSkipped) {
+        (void)aliasTargets.insert(sourceRef);
+      }
+      aliases[sourceRef] = std::move(aliasTargets);
     }
   };
 
@@ -394,7 +437,7 @@ SourceRefAnalysis::StorageState::materializeAggregateAliases(Operation *before) 
     auto events = aggregateAliases.find(op);
     if (events != aggregateAliases.end()) {
       for (const AggregateAlias &event : events->second) {
-        addAlias(event.source, event.target);
+        addAlias(event.source, event.target, event.mayBeSkipped);
       }
     }
     return WalkResult::advance();
@@ -508,10 +551,13 @@ LogicalResult SourceRefAnalysis::visitOperation(
       auto writeOp = llvm::cast<MemberWriteOp>(op);
       SourceRefLatticeValue writeValue = operandVals.at(writeOp.getVal())->getValue();
       if (llvm::isa<ArrayType, StructType, PodType>(writeOp.getVal().getType())) {
+        const bool mayBeSkipped = isInMaybeSkippedScfRegion(op);
         getStorageState(op)->recordStorageWrite(
-            op, /*writeIndex=*/0, memberVals, writeValue, isInMaybeSkippedScfRegion(op)
+            op, /*writeIndex=*/0, memberVals, writeValue, mayBeSkipped
         );
-        getStorageState(op)->recordAggregateAlias(op, /*aliasIndex=*/0, writeValue, memberVals);
+        getStorageState(op)->recordAggregateAlias(
+            op, /*aliasIndex=*/0, writeValue, memberVals, mayBeSkipped
+        );
       }
     }
     return success();
@@ -529,17 +575,34 @@ LogicalResult SourceRefAnalysis::visitOperation(
       auto [podVals, _] = *podValsRes;
       auto writeOp = llvm::cast<WritePodOp>(op);
       SourceRefLatticeValue writeValue = operandVals.at(writeOp.getValue())->getValue();
+      const bool mayBeSkipped = isInMaybeSkippedScfRegion(op);
       getStorageState(op)->recordStorageWrite(
-          op, /*writeIndex=*/0, podVals, writeValue, isInMaybeSkippedScfRegion(op)
+          op, /*writeIndex=*/0, podVals, writeValue, mayBeSkipped
       );
       if (llvm::isa<ArrayType, StructType, PodType>(writeOp.getValue().getType())) {
-        getStorageState(op)->recordAggregateAlias(op, /*aliasIndex=*/0, writeValue, podVals);
+        getStorageState(op)->recordAggregateAlias(
+            op, /*aliasIndex=*/0, writeValue, podVals, mayBeSkipped
+        );
       }
     }
     return success();
   }
 
   if (auto arrayAccessOp = llvm::dyn_cast<ArrayAccessOpInterface>(op)) {
+    if (llvm::isa<WriteArrayOp, InsertArrayOp>(arrayAccessOp)) {
+      SourceRefLatticeValue writeTargets = arraySubdivisionOpUpdate(arrayAccessOp, operandVals);
+      Value rvalue = op->getOperands().back();
+      SourceRefLatticeValue writeValue = operandVals.at(rvalue)->getValue();
+      const bool mayBeSkipped = isInMaybeSkippedScfRegion(op);
+      getStorageState(op)->recordStorageWrite(
+          op, /*writeIndex=*/0, writeTargets, writeValue, mayBeSkipped
+      );
+      if (llvm::isa<ArrayType, StructType, PodType>(rvalue.getType())) {
+        getStorageState(op)->recordAggregateAlias(
+            op, /*aliasIndex=*/0, writeValue, writeTargets, mayBeSkipped
+        );
+      }
+    }
     if (!results.empty()) {
       auto newVals = arraySubdivisionOpUpdate(arrayAccessOp, operandVals);
       propagateIfChanged(results.front(), results.front()->setValue(newVals));
@@ -577,9 +640,10 @@ LogicalResult SourceRefAnalysis::visitOperation(
       SourceRefLatticeValue recordValue = operands[idx]->getValue();
       StorageState *state = getStorageState(op);
       SourceRefLatticeValue recordAddress(*recordRef);
-      state->recordStorageWrite(op, idx, recordAddress, recordValue, /*mayBeSkipped=*/false);
+      const bool mayBeSkipped = isInMaybeSkippedScfRegion(op);
+      state->recordStorageWrite(op, idx, recordAddress, recordValue, mayBeSkipped);
       if (llvm::isa<ArrayType, StructType, PodType>(record.value.getType())) {
-        state->recordAggregateAlias(op, idx, recordValue, recordAddress);
+        state->recordAggregateAlias(op, idx, recordValue, recordAddress, mayBeSkipped);
       }
     }
     return success();
