@@ -1088,3 +1088,63 @@ module attributes {llzk.lang} {
   SourceRef afterArg(whileOp.getAfter().front().getArgument(0));
   EXPECT_EQ(buildStringViaPrint(afterArg), "%arg0");
 }
+
+TEST_F(SourceRefTests, ConstraintQueriesNarrowStaticLoopRangesPerElement) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @LoopRanges {
+    struct.member @out : !array.type<3 x !felt.type> {llzk.pub, signal}
+
+    function.def @compute(%in: !array.type<3 x !felt.type>)
+        -> !struct.type<@LoopRanges> {
+      %self = struct.new : !struct.type<@LoopRanges>
+      %storage = array.new : !array.type<3 x !felt.type>
+      struct.writem %self[@out] = %storage
+          : !struct.type<@LoopRanges>, !array.type<3 x !felt.type>
+      function.return %self : !struct.type<@LoopRanges>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@LoopRanges>,
+        %in: !array.type<3 x !felt.type>) {
+      %out = struct.readm %self[@out]
+          : !struct.type<@LoopRanges>, !array.type<3 x !felt.type>
+      %c0 = arith.constant 0 : index
+      %c2 = arith.constant 2 : index
+      %c1 = arith.constant 1 : index
+      scf.for %i = %c0 to %c2 step %c1 {
+        %lhs = array.read %out[%i] : !array.type<3 x !felt.type>, !felt.type
+        %rhs = array.read %in[%i] : !array.type<3 x !felt.type>, !felt.type
+        constrain.eq %lhs, %rhs : !felt.type
+      }
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto constrainFn = structDef.getConstrainFuncOp();
+  auto outMember = *structDef.getOps<MemberDefOp>().begin();
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  analysis.ensureAnalysisRun(am);
+  const ConstraintDependencyGraph &graph = analysis.getResult(structDef);
+
+  for (uint64_t index = 0; index < 2; ++index) {
+    SourceRef output(
+        constrainFn.getArgument(0), {SourceRefIndex(outMember), SourceRefIndex(APInt(64, index))}
+    );
+    SourceRef input(constrainFn.getArgument(1), {SourceRefIndex(APInt(64, index))});
+    EXPECT_TRUE(graph.getConstrainingValues(output).contains(input));
+  }
+
+  SourceRef omitted(
+      constrainFn.getArgument(0), {SourceRefIndex(outMember), SourceRefIndex(APInt(64, 2))}
+  );
+  EXPECT_TRUE(graph.getConstrainingValues(omitted).empty());
+}
