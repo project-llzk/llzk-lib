@@ -186,6 +186,7 @@ public:
   ConstraintDependencyGraph(const ConstraintDependencyGraph &other)
       : mod(other.mod), structDef(other.structDef), ctx(other.ctx), signalSets(other.signalSets),
         directAliases(other.directAliases), dependencyEdges(other.dependencyEdges),
+        conditionalDependencyEdges(other.conditionalDependencyEdges),
         constantSets(other.constantSets), ref2Val(other.ref2Val), tables() {}
 
   ConstraintDependencyGraph &operator=(const ConstraintDependencyGraph &other) {
@@ -195,6 +196,7 @@ public:
     signalSets = other.signalSets;
     directAliases = other.directAliases;
     dependencyEdges = other.dependencyEdges;
+    conditionalDependencyEdges = other.conditionalDependencyEdges;
     constantSets = other.constantSets;
     ref2Val = other.ref2Val;
     return *this;
@@ -216,6 +218,9 @@ private:
   // Pairwise dependency edges retain the origin of relationships that an equivalence-class
   // closure would otherwise erase, especially for control-flow-selected aggregate alternatives.
   std::unordered_map<SourceRef, SourceRefSet, SourceRef::Hash> dependencyEdges;
+  // Dependencies recovered from empty conditional markers are weaker than emitted constraints.
+  // Queries use them only when the selected output is itself constrained to both boolean values.
+  std::unordered_map<SourceRef, SourceRefSet, SourceRef::Hash> conditionalDependencyEdges;
   // A simple set mapping of constants, as we do not want to compute a transitive closure over
   // constants.
   std::unordered_map<SourceRef, SourceRefSet, SourceRef::Hash> constantSets;

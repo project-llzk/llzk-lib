@@ -784,10 +784,19 @@ IntervalDataFlowAnalysis::getRefUnreducedInterval(const SourceRef &ref) {
 
 ExpressionValue IntervalDataFlowAnalysis::getRefValue(const SourceRef &ref, Value val) {
   if (auto it = writeResults.find(ref); it != writeResults.end()) {
+    if (isBooleanType(val.getType())) {
+      return refineReducedInterval(
+          it->second, it->second.getInterval().intersect(Interval::Boolean(field.get()))
+      );
+    }
     return it->second;
   }
+  Interval refInterval = getRefInterval(ref);
+  if (isBooleanType(val.getType())) {
+    refInterval = refInterval.intersect(Interval::Boolean(field.get()));
+  }
   return createUnknownValue(val)
-      .withInterval(getRefInterval(ref))
+      .withInterval(refInterval)
       .withOptionalUnreducedInterval(getRefUnreducedInterval(ref));
 }
 
@@ -879,6 +888,9 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
         } else {
           joinedUnreduced = mergeUnreducedIntervals(joinedUnreduced, refUnreduced);
         }
+      }
+      if (isBooleanType(value.getType())) {
+        joinedInterval = joinedInterval.intersect(Interval::Boolean(field.get()));
       }
       ExpressionValue anyVal = createUnknownValue(value)
                                    .withInterval(joinedInterval)

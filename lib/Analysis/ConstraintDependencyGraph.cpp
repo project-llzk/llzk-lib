@@ -292,11 +292,7 @@ public:
   SourceRefLatticeValue
   resolveDependencies(const SourceRefLatticeValue &addresses, Operation *before) const;
 
-  /// Materialize compact nondeterministic aggregates from their storage dependencies.
-  SourceRefLatticeValue
-  resolveValueDependencies(mlir::Value value, const SourceRefLatticeValue &fallback) const;
-
-  /// Materialize compact nondeterministic aggregates from their final storage dependencies.
+  /// Resolve a value at its program point, materializing nondeterministic aggregate elements.
   SourceRefLatticeValue
   resolveValueDependencies(mlir::Value value, const SourceRefLatticeValue &fallback) const;
 
@@ -483,10 +479,30 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveDependencies(
     }
     return result;
   };
+  auto narrowWrittenRanges = [](const SourceRefLatticeValue &value, const SourceRef &address) {
+    std::function<SourceRefLatticeValue(const SourceRefLatticeValue &)> narrow =
+        [&](const SourceRefLatticeValue &current) {
+      if (current.isArray()) {
+        SourceRefLatticeValue result(current.getArrayShape());
+        for (size_t i = 0; i < current.getArraySize(); ++i) {
+          (void)result.getElemFlatIdx(i).setValue(narrow(current.getElemFlatIdx(i)));
+        }
+        return result;
+      }
+
+      SourceRefLatticeValue result;
+      for (const SourceRef &ref : current.getScalarValue()) {
+        (void)result.insert(ref.narrowRanges(address));
+      }
+      return result;
+    };
+    return narrow(value);
+  };
   llvm::DenseSet<SourceRef> active;
   std::function<SourceRefLatticeValue(const SourceRefLatticeValue &)> resolve =
       [&](const SourceRefLatticeValue &input) {
     SourceRefLatticeValue addressValue = canonicalize(input, aliases);
+    SourceRefSet inputRefs = input.foldToScalar();
     if (addressValue.isArray()) {
       SourceRefLatticeValue result(addressValue.getArrayShape());
       for (size_t i = 0; i < addressValue.getArraySize(); ++i) {
@@ -498,10 +514,27 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveDependencies(
     SourceRefLatticeValue result;
     for (const SourceRef &address : addressValue.getScalarValue()) {
       if (!active.insert(address).second) {
-        if (addressValue.isSingleValue()) {
+        if (addressValue.isSingleValue() || inputRefs.contains(address)) {
           (void)result.insert(address);
         }
         continue;
+      }
+
+      if (llvm::isa<StructType, PodType>(address.getType())) {
+        auto root = address.getRoot();
+        ensure(succeeded(root), "aggregate dependency must have a rooted SourceRef");
+        auto mod = root->getParentRegion()->getParentOfType<ModuleOp>();
+        SymbolTableCollection queryTables;
+        auto children = address.getAllChildren(queryTables, mod);
+        if (!children.empty()) {
+          SourceRefLatticeValue childAddresses;
+          for (const SourceRef &child : children) {
+            (void)childAddresses.insert(child);
+          }
+          (void)result.update(resolve(childAddresses));
+          active.erase(address);
+          continue;
+        }
       }
 
       bool foundWrite = false;
@@ -514,7 +547,13 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveDependencies(
           continue;
         }
         foundWrite = true;
-        (void)writtenValues.update(projectChild(storedValue, storedAddress, address));
+        SourceRefLatticeValue projectedValue = projectChild(storedValue, storedAddress, address);
+        bool rangeWrite = llvm::any_of(storedAddress.getPath(), [](const SourceRefIndex &index) {
+          return index.isIndexRange();
+        });
+        (void)writtenValues.update(
+            rangeWrite ? narrowWrittenRanges(projectedValue, address) : projectedValue
+        );
       }
       if (foundWrite) {
         SourceRefLatticeValue resolvedValues = resolve(writtenValues);
@@ -875,21 +914,24 @@ LogicalResult SourceRefAnalysis::visitOperation(
       SourceRefLatticeValue writeValue = operandVals.at(rvalue)->getValue();
       const bool mayBeSkipped = isInMaybeSkippedScfRegion(op);
       std::vector<SourceRefIndex> indices;
-      SourceRefLatticeValue writeTargets =
-          arraySubdivisionOpUpdate(arrayAccessOp, operandVals, &indices);
+      (void)arraySubdivisionOpUpdate(arrayAccessOp, operandVals, &indices);
       if (updatedArray.isArray()) {
         ChangeResult changed = updatedArray.write(indices, writeValue, mayBeSkipped);
         if (changed == ChangeResult::Change) {
           propagateIfChanged(arrayLattice, arrayLattice->setValue(updatedArray));
         }
-      }
-      getStorageState(op)->recordStorageWrite(
-          op, /*writeIndex=*/0, writeTargets, writeValue, mayBeSkipped
-      );
-      if (llvm::isa<ArrayType, StructType, PodType>(rvalue.getType())) {
-        getStorageState(op)->recordAggregateAlias(
-            op, /*aliasIndex=*/0, writeValue, writeTargets, mayBeSkipped
+      } else {
+        auto targets = updatedArray.extract(indices);
+        ensure(succeeded(targets), "could not create SourceRef child for array write");
+        SourceRefLatticeValue writeTargets = targets->first;
+        getStorageState(op)->recordStorageWrite(
+            op, /*writeIndex=*/0, writeTargets, writeValue, mayBeSkipped
         );
+        if (llvm::isa<ArrayType, StructType, PodType>(rvalue.getType())) {
+          getStorageState(op)->recordAggregateAlias(
+              op, /*aliasIndex=*/0, writeValue, writeTargets, mayBeSkipped
+          );
+        }
       }
     } else if (!results.empty()) {
       auto newVals = arraySubdivisionOpUpdate(arrayAccessOp, operandVals);
@@ -1273,6 +1315,9 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     for (const auto &[source, targets] : translatedCDG.dependencyEdges) {
       dependencyEdges[source].insert(targets.begin(), targets.end());
     }
+    for (const auto &[source, targets] : translatedCDG.conditionalDependencyEdges) {
+      conditionalDependencyEdges[source].insert(targets.begin(), targets.end());
+    }
     auto &translatedAliases = translatedCDG.directAliases;
     for (auto leaderIt = translatedAliases.begin(); leaderIt != translatedAliases.end();
          ++leaderIt) {
@@ -1301,7 +1346,35 @@ void ConstraintDependencyGraph::walkConstrainOp(
     mlir::DataFlowSolver &solver, mlir::Operation *emitOp
 ) {
   std::vector<SourceRef> signalUsages, constUsages;
+  std::vector<SourceRef> conditionalUsages;
   llvm::SmallVector<SourceRefSet, 2> operandSignals;
+
+  // Some frontends preserve a witness-only conditional in @constrain as an empty scf.if marker.
+  // Associate that marker's condition with the next emitted constraint in the block.
+  for (Operation *previous = emitOp->getPrevNode(); previous != nullptr;
+       previous = previous->getPrevNode()) {
+    if (llvm::isa<EmitEqualityOp, EmitContainmentOp>(previous)) {
+      break;
+    }
+    auto ifOp = llvm::dyn_cast<scf::IfOp>(previous);
+    if (!ifOp) {
+      continue;
+    }
+    auto hasOnlyTerminator = [](Region &region) {
+      return region.hasOneBlock() && region.front().without_terminator().empty();
+    };
+    if (!hasOnlyTerminator(ifOp.getThenRegion()) || !hasOnlyTerminator(ifOp.getElseRegion())) {
+      continue;
+    }
+    for (const SourceRef &conditionRef :
+         SourceRefAnalysis::getDependencyState(solver, ifOp.getCondition()).foldToScalar()) {
+      if (conditionRef.isConstant() || conditionRef.isTemplateConstant()) {
+        constUsages.push_back(conditionRef);
+      } else if (!conditionRef.isBlockArgument() || *conditionRef.getInputNum() == 0) {
+        conditionalUsages.push_back(conditionRef);
+      }
+    }
+  }
 
   for (auto operand : emitOp->getOperands()) {
     auto latticeVal = SourceRefAnalysis::getDependencyState(solver, operand);
@@ -1349,6 +1422,14 @@ void ConstraintDependencyGraph::walkConstrainOp(
     auto leader = signalSets.getOrInsertLeaderValue(*it);
     for (it++; it != signalUsages.end(); it++) {
       signalSets.unionSets(leader, *it);
+    }
+  }
+  for (const SourceRef &conditionRef : conditionalUsages) {
+    for (const SourceRef &signalRef : signalUsages) {
+      if (conditionRef != signalRef) {
+        conditionalDependencyEdges[conditionRef].insert(signalRef);
+        conditionalDependencyEdges[signalRef].insert(conditionRef);
+      }
     }
   }
   // Also update constant references for each value.
@@ -1486,6 +1567,27 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
     }
   }
 
+  for (const auto &[source, targets] : conditionalDependencyEdges) {
+    auto translatedSources = translate(source);
+    if (failed(translatedSources)) {
+      continue;
+    }
+    for (const SourceRef &target : targets) {
+      auto translatedTargets = translate(target);
+      if (failed(translatedTargets)) {
+        continue;
+      }
+      for (const SourceRef &translatedSource : *translatedSources) {
+        for (const SourceRef &translatedTarget : *translatedTargets) {
+          if (!translatedSource.isConstant() && !translatedTarget.isConstant() &&
+              translatedSource != translatedTarget) {
+            res.conditionalDependencyEdges[translatedSource].insert(translatedTarget);
+          }
+        }
+      }
+    }
+  }
+
   // Translate ref2Val as well
   for (const auto &[ref, vals] : ref2Val) {
     auto translationRes = translate(ref);
@@ -1503,6 +1605,20 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
   SourceRefSet res;
   SourceRefSet visited;
   llvm::SmallVector<SourceRef> worklist = {ref};
+  bool hasBooleanZero = false;
+  bool hasBooleanOne = false;
+  for (const auto &[source, constants] : constantSets) {
+    if (!source.overlaps(ref)) {
+      continue;
+    }
+    for (const SourceRef &constant : constants) {
+      auto value = constant.getConstantValue();
+      hasBooleanZero |= succeeded(value) && *value == 0;
+      hasBooleanOne |= succeeded(value) && *value == 1;
+    }
+  }
+  const bool followConditionalDependencies = hasBooleanZero && hasBooleanOne;
+  const bool includeDescendants = llvm::isa<ArrayType, StructType, PodType>(ref.getType());
 
   // Overlapping aggregate ranges can bridge otherwise distinct equivalence sets. Follow those
   // bridges transitively so that, for example, `out[2] == child.out[2]` and a child constraint on
@@ -1515,7 +1631,9 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
       }
 
       for (const auto &[source, targets] : dependencyEdges) {
-        if (!source.overlaps(*currRef) || !isCompatibleIndexedAlternative(source, ref)) {
+        if ((!source.overlaps(*currRef) && !(includeDescendants && source.isValidPrefix(*currRef))
+            ) ||
+            !isCompatibleIndexedAlternative(source, ref)) {
           continue;
         }
         if (auto constIt = constantSets.find(source); constIt != constantSets.end()) {
@@ -1538,29 +1656,63 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
           }
         }
       }
+      if (followConditionalDependencies) {
+        for (const auto &[source, targets] : conditionalDependencyEdges) {
+          if ((!source.overlaps(*currRef) && !(includeDescendants && source.isValidPrefix(*currRef))
+              ) ||
+              !isCompatibleIndexedAlternative(source, ref)) {
+            continue;
+          }
+          for (const SourceRef &target : targets) {
+            if (!isCompatibleIndexedAlternative(target, ref)) {
+              continue;
+            }
+            SourceRef narrowed = target.narrowRanges(*currRef);
+            if (!visited.contains(narrowed)) {
+              worklist.push_back(narrowed);
+            }
+            if (!narrowed.overlaps(ref)) {
+              res.insert(narrowed);
+            }
+          }
+        }
+      }
       for (const auto &[constantSource, constants] : constantSets) {
-        if (constantSource.overlaps(*currRef) &&
+        if ((constantSource.overlaps(*currRef) ||
+             (includeDescendants && constantSource.isValidPrefix(*currRef))) &&
             isCompatibleIndexedAlternative(constantSource, ref)) {
           res.insert(constants.begin(), constants.end());
         }
       }
       // Constraints on an aggregate also constrain its scalar descendants.
-      currRef = currRef->getParentPrefix();
+      auto parent = currRef->getParentPrefix();
+      if (includeDescendants && succeeded(parent) && ref.isValidPrefix(*parent) && *parent != ref) {
+        currRef = failure();
+      } else {
+        currRef = parent;
+      }
     }
   }
 
   DenseMap<SourceRef, SourceRef> preferredAliases;
-  auto rankAlias = [](const SourceRef &candidate) {
+  auto root = ref.getRoot();
+  StructDefOp queriedStruct =
+      succeeded(root) ? root->getParentRegion()->getParentOfType<StructDefOp>() : nullptr;
+  auto rankAlias = [queriedStruct](const SourceRef &candidate) {
     if (candidate.isBlockArgument() && *candidate.getInputNum() > 0) {
-      return 0;
+      auto candidateRoot = candidate.getRoot();
+      auto candidateStruct = succeeded(candidateRoot)
+                                 ? candidateRoot->getParentRegion()->getParentOfType<StructDefOp>()
+                                 : nullptr;
+      return candidateStruct == queriedStruct ? 0 : 1;
     }
     if (candidate.isCreateStructOp()) {
-      return 1;
-    }
-    if (candidate.isBlockArgument()) {
       return 2;
     }
-    return 3;
+    if (candidate.isBlockArgument()) {
+      return 3;
+    }
+    return 4;
   };
   for (auto leaderIt = directAliases.begin(); leaderIt != directAliases.end(); ++leaderIt) {
     if (!leaderIt->isLeader()) {
@@ -1616,19 +1768,62 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
         return index.isMember() && llvm::isa<StructType>(index.getMember().getType());
       });
     };
+    const bool queryIsPodStorage = llvm::isa<PodType>(ref.getType());
+    const bool hasLogicalComponentPath =
+        !queryIsPodStorage && llvm::any_of(normalized, isLogicalComponentPath);
     SourceRefSet terminalDependencies;
     llvm::copy_if(
         normalized, std::inserter(terminalDependencies, terminalDependencies.end()),
         [&](const SourceRef &resultRef) {
-      return resultRef.isConstant() ||
-             (resultRef.isBlockArgument() && *resultRef.getInputNum() > 0) ||
-             isLogicalComponentPath(resultRef);
+      if (resultRef.isConstant() || (isLogicalComponentPath(resultRef) && !queryIsPodStorage)) {
+        return true;
+      }
+      if (!resultRef.isBlockArgument() || *resultRef.getInputNum() == 0) {
+        return false;
+      }
+      return !hasLogicalComponentPath || llvm::none_of(resultRef.getPath(), [](const auto &index) {
+        return index.isIndexRange();
+      });
     }
     );
     normalized = std::move(terminalDependencies);
   }
 
-  return normalized;
+  auto isStrictRangeSubset = [](const SourceRef &candidate, const SourceRef &other) {
+    auto candidateRoot = candidate.getRoot();
+    auto otherRoot = other.getRoot();
+    if (failed(candidateRoot) || failed(otherRoot) || *candidateRoot != *otherRoot ||
+        candidate.getPath().size() != other.getPath().size()) {
+      return false;
+    }
+
+    bool isStrict = false;
+    for (auto [candidateIndex, otherIndex] : llvm::zip(candidate.getPath(), other.getPath())) {
+      if (candidateIndex == otherIndex) {
+        continue;
+      }
+      if (!candidateIndex.isIndexRange() || !otherIndex.isIndexRange()) {
+        return false;
+      }
+      auto [candidateLower, candidateUpper] = candidateIndex.getIndexRange();
+      auto [otherLower, otherUpper] = otherIndex.getIndexRange();
+      if (candidateLower < otherLower || candidateUpper > otherUpper) {
+        return false;
+      }
+      isStrict = true;
+    }
+    return isStrict;
+  };
+  SourceRefSet minimalRanges;
+  llvm::copy_if(
+      normalized, std::inserter(minimalRanges, minimalRanges.end()),
+      [&](const SourceRef &candidate) {
+    return llvm::none_of(normalized, [&](const SourceRef &other) {
+      return isStrictRangeSubset(candidate, other);
+    });
+  }
+  );
+  return minimalRanges;
 }
 
 /* ConstraintDependencyGraphStructAnalysis */
