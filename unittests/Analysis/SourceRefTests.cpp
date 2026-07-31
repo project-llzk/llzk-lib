@@ -747,6 +747,220 @@ module attributes {llzk.lang} {
   );
 }
 
+TEST_F(SourceRefTests, ArrayMutationsUpdateStorageDependencies) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @ArrayMutations {
+    function.def @compute(%uninitializedValue: !felt.type, %initial: !felt.type,
+                          %replacement: !felt.type) -> !struct.type<@ArrayMutations> {
+      %self = struct.new : !struct.type<@ArrayMutations>
+      %c0 = arith.constant 0 : index
+      %uninitialized = array.new : !array.type<1 x !felt.type>
+      array.write %uninitialized[%c0] = %uninitializedValue
+          : !array.type<1 x !felt.type>, !felt.type
+      %readUninitialized = array.read %uninitialized[%c0]
+          : !array.type<1 x !felt.type>, !felt.type
+      %initialized = array.new %initial : !array.type<1 x !felt.type>
+      array.write %initialized[%c0] = %replacement
+          : !array.type<1 x !felt.type>, !felt.type
+      %readOverwritten = array.read %initialized[%c0]
+          : !array.type<1 x !felt.type>, !felt.type
+      function.return %self : !struct.type<@ArrayMutations>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@ArrayMutations>, %uninitializedValue: !felt.type,
+        %initial: !felt.type, %replacement: !felt.type
+    ) {
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto reads = llvm::to_vector(computeFn.getOps<array::ReadArrayOp>());
+  ASSERT_EQ(reads.size(), 2U);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  analysis.ensureAnalysisRun(am);
+  DataFlowSolver &solver = analysis.getSolver();
+
+  EXPECT_EQ(
+      SourceRefAnalysis::getDependencyState(solver, reads[0].getResult()).foldToScalar(),
+      SourceRefSet({SourceRef(computeFn.getArgument(0))})
+  );
+  EXPECT_EQ(
+      SourceRefAnalysis::getDependencyState(solver, reads[1].getResult()).foldToScalar(),
+      SourceRefSet({SourceRef(computeFn.getArgument(2))})
+  );
+}
+
+TEST_F(SourceRefTests, ConditionalAggregateAliasPreservesBothAlternatives) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @ConditionalAggregateAlias {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type)
+        -> !struct.type<@ConditionalAggregateAlias> {
+      %self = struct.new : !struct.type<@ConditionalAggregateAlias>
+      %first = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %storage = pod.new { @nested = %first }
+          : !pod.type<[@nested: !pod.type<[@value: !felt.type]>]>
+      %condition = arith.constant true
+      scf.if %condition {
+        %second = pod.new { @value = %replacement } : !pod.type<[@value: !felt.type]>
+        pod.write %storage[@nested] = %second
+            : !pod.type<[@nested: !pod.type<[@value: !felt.type]>]>,
+              !pod.type<[@value: !felt.type]>
+      }
+      %nested = pod.read %storage[@nested]
+          : !pod.type<[@nested: !pod.type<[@value: !felt.type]>]>,
+            !pod.type<[@value: !felt.type]>
+      %read = pod.read %nested[@value]
+          : !pod.type<[@value: !felt.type]>, !felt.type
+      function.return %self : !struct.type<@ConditionalAggregateAlias>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@ConditionalAggregateAlias>, %initial: !felt.type,
+        %replacement: !felt.type
+    ) {
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto reads = llvm::to_vector(computeFn.getOps<pod::ReadPodOp>());
+  ASSERT_EQ(reads.size(), 2U);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  analysis.ensureAnalysisRun(am);
+
+  EXPECT_EQ(
+      SourceRefAnalysis::getDependencyState(analysis.getSolver(), reads[1].getResult())
+          .foldToScalar(),
+      SourceRefSet({SourceRef(computeFn.getArgument(0)), SourceRef(computeFn.getArgument(1))})
+  );
+}
+
+TEST_F(SourceRefTests, AggregateArgumentInitializerPreservesChildPath) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @AggregateArgumentInitializer {
+    function.def @compute(%source: !pod.type<[@left: !felt.type, @right: !felt.type]>)
+        -> !struct.type<@AggregateArgumentInitializer> {
+      %self = struct.new : !struct.type<@AggregateArgumentInitializer>
+      %storage = pod.new { @nested = %source }
+          : !pod.type<[@nested: !pod.type<[@left: !felt.type, @right: !felt.type]>]>
+      %nested = pod.read %storage[@nested]
+          : !pod.type<[@nested: !pod.type<[@left: !felt.type, @right: !felt.type]>]>,
+            !pod.type<[@left: !felt.type, @right: !felt.type]>
+      %read = pod.read %nested[@left]
+          : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+      function.return %self : !struct.type<@AggregateArgumentInitializer>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@AggregateArgumentInitializer>,
+        %source: !pod.type<[@left: !felt.type, @right: !felt.type]>
+    ) {
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto reads = llvm::to_vector(computeFn.getOps<pod::ReadPodOp>());
+  ASSERT_EQ(reads.size(), 2U);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  analysis.ensureAnalysisRun(am);
+
+  SourceRef expected(
+      mlir::cast<BlockArgument>(computeFn.getArgument(0)),
+      {SourceRefIndex(StringAttr::get(&ctx, "left"))}
+  );
+  EXPECT_EQ(
+      SourceRefAnalysis::getDependencyState(analysis.getSolver(), reads[1].getResult())
+          .foldToScalar(),
+      SourceRefSet({expected})
+  );
+}
+
+TEST_F(SourceRefTests, AggregateStructMemberInitializerPreservesChildPath) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @AggregateStructMemberInitializer {
+    struct.member @source : !pod.type<[@left: !felt.type, @right: !felt.type]>
+
+    function.def @compute(%left: !felt.type, %right: !felt.type)
+        -> !struct.type<@AggregateStructMemberInitializer> {
+      %self = struct.new : !struct.type<@AggregateStructMemberInitializer>
+      %source = pod.new { @left = %left, @right = %right }
+          : !pod.type<[@left: !felt.type, @right: !felt.type]>
+      struct.writem %self[@source] = %source
+          : !struct.type<@AggregateStructMemberInitializer>,
+            !pod.type<[@left: !felt.type, @right: !felt.type]>
+      %member = struct.readm %self[@source]
+          : !struct.type<@AggregateStructMemberInitializer>,
+            !pod.type<[@left: !felt.type, @right: !felt.type]>
+      %storage = pod.new { @nested = %member }
+          : !pod.type<[@nested: !pod.type<[@left: !felt.type, @right: !felt.type]>]>
+      %nested = pod.read %storage[@nested]
+          : !pod.type<[@nested: !pod.type<[@left: !felt.type, @right: !felt.type]>]>,
+            !pod.type<[@left: !felt.type, @right: !felt.type]>
+      %read = pod.read %nested[@left]
+          : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+      function.return %self : !struct.type<@AggregateStructMemberInitializer>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@AggregateStructMemberInitializer>, %left: !felt.type,
+        %right: !felt.type
+    ) {
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto reads = llvm::to_vector(computeFn.getOps<pod::ReadPodOp>());
+  ASSERT_EQ(reads.size(), 2U);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  analysis.ensureAnalysisRun(am);
+
+  EXPECT_EQ(
+      SourceRefAnalysis::getDependencyState(analysis.getSolver(), reads[1].getResult())
+          .foldToScalar(),
+      SourceRefSet({SourceRef(computeFn.getArgument(0))})
+  );
+}
+
 TEST_F(SourceRefTests, ComputeSelfRebasesToConstrainSelfWithoutChangingPath) {
   auto mod = parseSourceString<ModuleOp>(kModule, ParserConfig(&ctx));
   ASSERT_TRUE(mod);
