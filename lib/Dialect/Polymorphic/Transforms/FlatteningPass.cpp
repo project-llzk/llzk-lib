@@ -2711,6 +2711,7 @@ static LogicalResult verifySplitMemberWritesExpandable(
 ) {
   DenseMap<MemberDefOp, DenseSet<Operation *>> candidateWritesByMember;
   DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> splitTypesByMember;
+  DenseMap<MemberDefOp, DenseMap<ArrayAttr, Operation *>> splitTypeOpsByMember;
   for (const ScalarizedArrayInfo &info : arraysToScalarize) {
     for (MemberWriteOp memberWriteOp : info.memberWrites) {
       auto memberDef = memberWriteOp.getMemberDefOp(tables);
@@ -2718,8 +2719,28 @@ static LogicalResult verifySplitMemberWritesExpandable(
         MemberDefOp member = memberDef->get();
         candidateWritesByMember[member].insert(memberWriteOp.getOperation());
         DenseMap<ArrayAttr, Type> &splitTypes = splitTypesByMember[member];
+        DenseMap<ArrayAttr, Operation *> &splitTypeOps = splitTypeOpsByMember[member];
         for (ArrayAttr idx : info.indices) {
-          splitTypes[idx] = info.typeByIndex.lookup(idx);
+          Type candidateType = info.typeByIndex.lookup(idx);
+          auto existing = splitTypes.find(idx);
+          if (existing == splitTypes.end()) {
+            splitTypes[idx] = candidateType;
+            splitTypeOps[idx] = memberWriteOp.getOperation();
+            continue;
+          }
+          Type existingType = existing->second;
+          if (!typesUnify(existingType, candidateType)) {
+            InFlightDiagnostic diag = member.emitError(
+                "cannot split heterogeneous array member because candidate writes require "
+                "incompatible scalar member types"
+            );
+            diag.attachNote(splitTypeOps.lookup(idx)->getLoc())
+                << "candidate writes index " << idx << " with scalar member type " << existingType;
+            diag.attachNote(memberWriteOp.getLoc())
+                << "conflicting candidate writes the same index with scalar member type "
+                << candidateType;
+            return diag;
+          }
         }
       }
     }
