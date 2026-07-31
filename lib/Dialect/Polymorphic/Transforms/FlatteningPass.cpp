@@ -84,6 +84,8 @@ using namespace llzk::polymorphic::detail;
 
 namespace {
 
+/// Emit diagnostics that were collected while converting a cloned body, rebasing placeholder notes
+/// onto the call site that triggered the clone.
 static void reportDelayedDiagnostics(CallOp caller, SmallVector<Diagnostic> &&diagnostics) {
   DiagnosticEngine &engine = caller.getContext()->getDiagEngine();
   for (Diagnostic &diag : diagnostics) {
@@ -114,10 +116,16 @@ class ConversionTracker {
   DenseMap<StructType, SmallVector<Diagnostic>> delayedDiagnostics;
 
 public:
+  /// Return whether the current flattening iteration has changed the IR.
   bool isModified() const { return modified; }
+
+  /// Clear the per-iteration modification flag before starting the next iteration.
   void resetModifiedFlag() { modified = false; }
+
+  /// Merge the modification status from one rewrite step into the iteration state.
   void updateModifiedFlag(bool currStepModified) { modified |= currStepModified; }
 
+  /// Record a struct instantiation from the original use-site type to its cloned replacement type.
   void recordInstantiation(StructType oldType, StructType newType) {
     assert(!isNullOrEmpty(oldType.getParams()) && "cannot instantiate with no params");
 
@@ -162,6 +170,7 @@ public:
     return instantiatedNames;
   }
 
+  /// Emit diagnostics delayed until a compute call has been rewritten to the instantiated type.
   void reportDelayedDiagnostics(StructType newType, CallOp caller) {
     auto res = delayedDiagnostics.find(newType);
     if (res != delayedDiagnostics.end()) {
@@ -174,6 +183,7 @@ public:
     }
   }
 
+  /// Return the mutable diagnostic queue associated with `newType`.
   SmallVector<Diagnostic> &delayedDiagnosticSet(StructType newType) {
     return delayedDiagnostics[newType];
   }
@@ -214,6 +224,7 @@ public:
     return false;
   }
 
+  /// Check whether every corresponding pair in `oldTypes` and `newTypes` is a legal conversion.
   template <typename T, typename U>
   inline bool areLegalConversions(T oldTypes, U newTypes, const char *patName) const {
     return llvm::all_of(
@@ -224,11 +235,14 @@ public:
   }
 };
 
+/// Base conversion pattern for ops that reference template symbols by attribute and rewrite only
+/// when that symbol has a concrete instantiation value of one of `HandledAttrs`.
 template <typename Impl, typename Op, typename... HandledAttrs>
 class SymbolUserHelper : public OpConversionPattern<Op> {
 private:
   const DenseMap<Attribute, Attribute> &paramNameToValue;
 
+  /// Construct the CRTP helper with the template binding map used for symbol lookups.
   SymbolUserHelper(
       TypeConverter &converter, MLIRContext *ctx, unsigned patternBenefit,
       const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
@@ -239,14 +253,17 @@ private:
 public:
   using OpAdaptor = typename mlir::OpConversionPattern<Op>::OpAdaptor;
 
+  /// Return the attribute on `op` that should be looked up in the instantiation map.
   virtual Attribute getNameAttr(Op) const = 0;
 
+  /// Report a type-specific fallback diagnostic for instantiated values not handled by `Impl`.
   virtual LogicalResult handleDefaultRewrite(
       Attribute, Op op, OpAdaptor, ConversionPatternRewriter &, Attribute a
   ) const {
     return op->emitOpError().append("expected value with type ", op.getType(), " but found ", a);
   }
 
+  /// Dispatch an instantiated symbol value to the concrete `Impl::handleRewrite` overload.
   LogicalResult
   matchAndRewrite(Op op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
     LLVM_DEBUG(llvm::dbgs() << "[SymbolUserHelper] op: " << op << '\n');
@@ -270,6 +287,8 @@ public:
   friend Impl;
 };
 
+/// Rewrite `poly.const_read` uses in cloned bodies to concrete constants when their referenced
+/// template parameter has been instantiated.
 class ClonedBodyConstReadOpPattern
     : public SymbolUserHelper<
           ClonedBodyConstReadOpPattern, ConstReadOp, IntegerAttr, FeltConstAttr> {
@@ -279,6 +298,8 @@ class ClonedBodyConstReadOpPattern
       SymbolUserHelper<ClonedBodyConstReadOpPattern, ConstReadOp, IntegerAttr, FeltConstAttr>;
 
 public:
+  /// Construct the const-read conversion pattern and collect delayed diagnostics in
+  /// `instantiationDiagnostics`.
   ClonedBodyConstReadOpPattern(
       TypeConverter &converter, MLIRContext *ctx,
       const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue,
@@ -288,8 +309,11 @@ public:
       : super(converter, ctx, /*patternBenefit=*/1, paramNameToInstantiatedValue),
         diagnostics(instantiationDiagnostics) {}
 
+  /// Use the referenced constant symbol as the lookup key.
   Attribute getNameAttr(ConstReadOp op) const override { return op.getConstNameAttr(); }
 
+  /// Replace an integer-backed template value with the constant op matching the converted result
+  /// type.
   LogicalResult handleRewrite(
       Attribute sym, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, IntegerAttr a
   ) const {
@@ -336,6 +360,7 @@ public:
     return op->emitOpError().append("unexpected result type ", newResTy);
   }
 
+  /// Replace an already-felt template value with a felt constant.
   LogicalResult handleRewrite(
       Attribute, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, FeltConstAttr a
   ) const {
@@ -349,8 +374,10 @@ public:
 struct MatchFailureListener : public RewriterBase::Listener {
   bool hadFailure = false;
 
+  /// Destroy the listener through the MLIR listener base class.
   ~MatchFailureListener() override {}
 
+  /// Convert match failures into reported diagnostics and remember that the pass must fail.
   void notifyMatchFailure(Location loc, function_ref<void(Diagnostic &)> reasonCallback) override {
     hadFailure = true;
 
@@ -360,6 +387,8 @@ struct MatchFailureListener : public RewriterBase::Listener {
   }
 };
 
+/// Apply a greedy rewrite set, record whether it changed the module, and fail if any pattern
+/// reported a hard match failure through `MatchFailureListener`.
 static LogicalResult
 applyAndFoldGreedily(ModuleOp modOp, ConversionTracker &tracker, RewritePatternSet &&patterns) {
   bool currStepModified = false;
@@ -378,6 +407,63 @@ template <bool AllowStructParams = true> bool isConcreteAttr(Attribute a) {
   return classifyAttrConcreteness(a, AllowStructParams) == AttrConcreteness::Concrete;
 }
 
+/// Helper for applying template-parameter substitutions to attributes embedded in types.
+class TemplateParamSubstitutions {
+  const DenseMap<Attribute, Attribute> &paramNameToValue;
+
+public:
+  /// Store the template-parameter binding map used by all substitution helpers.
+  explicit TemplateParamSubstitutions(const DenseMap<Attribute, Attribute> &bindings)
+      : paramNameToValue(bindings) {}
+
+  /// Return the bound value for `a` when present, otherwise return `a` unchanged.
+  Attribute lookupOrSelf(Attribute a) const {
+    auto res = paramNameToValue.find(a);
+    return (res != paramNameToValue.end()) ? res->second : a;
+  }
+
+  /// Return true iff `nameAttr` has a concrete binding.
+  bool contains(Attribute nameAttr) const { return paramNameToValue.contains(nameAttr); }
+
+  /// Replace a type variable with a concrete type binding when the binding is usable here.
+  Type convertTypeVarBinding(TypeVarType inputTy) const {
+    if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(lookupOrSelf(inputTy.getNameRef()))) {
+      Type convertedType = tyAttr.getValue();
+      if (isConcreteType(convertedType)) {
+        return convertedType;
+      }
+    }
+    return inputTy;
+  }
+
+  /// Substitute attributes, recursively converting nested `TypeAttr` payloads through `converter`.
+  SmallVector<Attribute> convertAttrs(
+      const TypeConverter &converter, ArrayRef<Attribute> attrs, bool *changed = nullptr
+  ) const {
+    SmallVector<Attribute> updated;
+    bool anyChanged = false;
+    for (Attribute attr : attrs) {
+      Attribute converted = attr;
+      if (TypeAttr tyAttr = dyn_cast<TypeAttr>(attr)) {
+        Type newTy = converter.convertType(tyAttr.getValue());
+        if (newTy != tyAttr.getValue()) {
+          converted = TypeAttr::get(newTy);
+        }
+      } else {
+        converted = lookupOrSelf(attr);
+      }
+      anyChanged |= (converted != attr);
+      updated.push_back(converted);
+    }
+    if (changed) {
+      *changed = anyChanged;
+    }
+    return updated;
+  }
+};
+
+/// Replace a callee rooted at a template parameter with the concrete struct callee named by that
+/// parameter's instantiated type.
 static SymbolRefAttr
 convertCalleeSymRefs(SymbolRefAttr callee, const DenseMap<Attribute, Attribute> &paramNameToValue) {
   auto it = paramNameToValue.find(FlatSymbolRefAttr::get(callee.getRootReference()));
@@ -400,6 +486,7 @@ convertCalleeSymRefs(SymbolRefAttr callee, const DenseMap<Attribute, Attribute> 
   return asSymbolRefAttr(newPieces);
 }
 
+/// Rewrite all nested calls in `op` whose callee root names a concretized template parameter.
 static void
 convertCalleesInPlace(Operation *op, const DenseMap<Attribute, Attribute> &paramNameToValue) {
   op->walk([&paramNameToValue](CallOp callOp) {
@@ -407,6 +494,7 @@ convertCalleesInPlace(Operation *op, const DenseMap<Attribute, Attribute> &param
   });
 }
 
+/// Return true iff `op` calls a single-nested symbol rooted at a parameter of its parent template.
 static bool calleeReferencesTemplateParam(CallOp op) {
   SymbolRefAttr callee = op.getCalleeAttr();
   if (!callee || callee.getNestedReferences().size() != 1) {
@@ -503,6 +591,7 @@ evaluateTemplateExprs(TemplateOp templateOp, DenseMap<Attribute, Attribute> &par
   );
 }
 
+/// Return true iff `op` no longer has a symbolic member table offset.
 static inline bool tableOffsetIsntSymbol(MemberReadOp op) {
   return !llvm::isa_and_present<SymbolRefAttr>(op.getTableOffset().value_or(nullptr));
 }
@@ -514,6 +603,7 @@ class ClonedMemberReadOpPattern
   using super = SymbolUserHelper<ClonedMemberReadOpPattern, MemberReadOp, IntegerAttr>;
 
 public:
+  /// Construct the member-read conversion pattern for the active instantiation map.
   ClonedMemberReadOpPattern(
       TypeConverter &converter, MLIRContext *ctx,
       const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
@@ -521,10 +611,12 @@ public:
       // benefit>0 so this applies instead of GeneralTypeReplacePattern<MemberReadOp>
       : super(converter, ctx, /*patternBenefit=*/1, paramNameToInstantiatedValue) {}
 
+  /// Use the table-offset attribute as the lookup key.
   Attribute getNameAttr(MemberReadOp op) const override {
     return op.getTableOffset().value_or(nullptr);
   }
 
+  /// Replace a symbolic table offset with the concrete index value.
   LogicalResult handleRewrite(
       Attribute, MemberReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, IntegerAttr a
   ) const {
@@ -535,6 +627,7 @@ public:
     return success();
   }
 
+  /// Emit a diagnostic for concrete template bindings that cannot index member tables.
   LogicalResult handleDefaultRewrite(
       Attribute, MemberReadOp op, OpAdaptor, ConversionPatternRewriter &, Attribute a
   ) const override {
@@ -543,6 +636,7 @@ public:
     );
   }
 
+  /// Rewrite only member reads whose table offset is still a symbol.
   LogicalResult matchAndRewrite(
       MemberReadOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
@@ -568,21 +662,18 @@ class StructCloner {
   class MappedTypeConverter : public TypeConverter {
     StructType origTy;
     StructType newTy;
-    const DenseMap<Attribute, Attribute> &paramNameToValue;
-
-    inline Attribute convertIfPossible(Attribute a) const {
-      auto res = this->paramNameToValue.find(a);
-      return (res != this->paramNameToValue.end()) ? res->second : a;
-    }
+    TemplateParamSubstitutions substitutions;
 
   public:
+    /// Build a converter for a cloned struct body, replacing `originalType` with `newType` and
+    /// substituting any concretized template parameters.
     MappedTypeConverter(
         StructType originalType, StructType newType,
         /// Instantiated values for the parameter names in `originalType`
         const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
     )
         : TypeConverter(), origTy(originalType), newTy(newType),
-          paramNameToValue(paramNameToInstantiatedValue) {
+          substitutions(paramNameToInstantiatedValue) {
 
       addConversion([](Type inputTy) { return inputTy; });
 
@@ -595,14 +686,8 @@ class StructCloner {
         }
         // Check for replacement of parameter symbol names with concrete values
         if (ArrayAttr inputTyParams = inputTy.getParams()) {
-          SmallVector<Attribute> updated;
-          for (Attribute a : inputTyParams) {
-            if (TypeAttr ta = dyn_cast<TypeAttr>(a)) {
-              updated.push_back(TypeAttr::get(this->convertType(ta.getValue())));
-            } else {
-              updated.push_back(convertIfPossible(a));
-            }
-          }
+          SmallVector<Attribute> updated =
+              substitutions.convertAttrs(*this, inputTyParams.getValue());
           return getStructTypeWithParams(inputTy.getNameRef(), inputTy.getContext(), updated);
         }
         // Otherwise, return the type unchanged
@@ -613,10 +698,7 @@ class StructCloner {
         // Check for replacement of parameter symbol names with concrete values
         ArrayRef<Attribute> dimSizes = inputTy.getDimensionSizes();
         if (!dimSizes.empty()) {
-          SmallVector<Attribute> updated;
-          for (Attribute a : dimSizes) {
-            updated.push_back(convertIfPossible(a));
-          }
+          SmallVector<Attribute> updated = substitutions.convertAttrs(*this, dimSizes);
           return ArrayType::get(this->convertType(inputTy.getElementType()), updated);
         }
         // Otherwise, return the type unchanged
@@ -624,21 +706,14 @@ class StructCloner {
       });
 
       addConversion([this](TypeVarType inputTy) -> Type {
-        // Check for replacement of parameter symbol name with a concrete type
-        if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(convertIfPossible(inputTy.getNameRef()))) {
-          Type convertedType = tyAttr.getValue();
-          // Use the new type unless it contains a TypeVarType because a TypeVarType from a
-          // different struct references a parameter name from that other struct, not from the
-          // current struct so the reference would be invalid.
-          if (isConcreteType(convertedType)) {
-            return convertedType;
-          }
-        }
-        return inputTy;
+        // Keep unresolved type variables from other templates because they reference names that
+        // are not valid in the current struct.
+        return substitutions.convertTypeVarBinding(inputTy);
       });
     }
   };
 
+  /// Clone `typeAtCaller` if at least one of its parameters is concrete at the current use site.
   FailureOr<StructType> genClone(StructType typeAtCaller, ArrayRef<Attribute> typeAtCallerParams) {
     LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   attempting clone of " << typeAtCaller << '\n');
     // Find the StructDefOp for the original StructType
@@ -796,9 +871,11 @@ class StructCloner {
   }
 
 public:
+  /// Construct a cloner rooted at `root` and reporting modifications through `tracker`.
   StructCloner(ConversionTracker &tracker, ModuleOp root)
       : tracker_(tracker), rootMod(root), symTables() {}
 
+  /// Create a full or partial instantiated clone for `orig`, if `orig` has concrete parameters.
   FailureOr<StructType> createInstantiatedClone(StructType orig) {
     LLVM_DEBUG(llvm::dbgs() << "[StructCloner] orig: " << orig << '\n');
     if (ArrayAttr params = orig.getParams()) {
@@ -808,8 +885,10 @@ public:
     return failure();
   }
 
+  /// Re-enable diagnostics when a referenced struct definition cannot be found.
   void enableReportMissing() { reportMissing = true; }
 
+  /// Temporarily suppress missing-symbol diagnostics during speculative legality checks.
   void disableReportMissing() { reportMissing = false; }
 };
 
@@ -822,6 +901,7 @@ class ParameterizedStructUseTypeConverter : public TypeConverter {
   friend DisableReportMissing;
 
 public:
+  /// Build a type converter that instantiates parameterized struct uses on demand.
   ParameterizedStructUseTypeConverter(ConversionTracker &tracker, ModuleOp root)
       : TypeConverter(), tracker_(tracker), cloner(tracker, root) {
 
@@ -858,14 +938,19 @@ public:
   }
 };
 
+/// Rewrite calls to struct `compute`/`constrain` functions after their struct types have been
+/// instantiated.
 class CallStructFuncPattern : public OpConversionPattern<CallOp> {
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the call rewrite pattern using the active type converter and tracker.
   CallStructFuncPattern(TypeConverter &converter, MLIRContext *ctx, ConversionTracker &tracker)
       // benefit>0 so this applies instead of CallOpClassReplacePattern
       : OpConversionPattern<CallOp>(converter, ctx, /*benefit=*/1), tracker_(tracker) {}
 
+  /// Replace a call with converted result types and, when needed, a callee rooted at the
+  /// instantiated struct type.
   LogicalResult matchAndRewrite(
       CallOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter
   ) const override {
@@ -909,13 +994,15 @@ public:
   }
 };
 
-// This one ensures MemberDefOp types are converted even if there are no reads/writes to them.
+/// Ensure `struct.member` types are converted even if no read/write pattern visits them.
 class MemberDefOpPattern : public OpConversionPattern<MemberDefOp> {
 public:
+  /// Construct the member definition conversion pattern.
   MemberDefOpPattern(TypeConverter &converter, MLIRContext *ctx, ConversionTracker &)
       // benefit>0 so this applies instead of GeneralTypeReplacePattern<MemberDefOp>
       : OpConversionPattern<MemberDefOp>(converter, ctx, /*benefit=*/1) {}
 
+  /// Update the member definition type when the active type converter changes it.
   LogicalResult matchAndRewrite(
       MemberDefOp op, OpAdaptor /*adapter*/, ConversionPatternRewriter &rewriter
   ) const override {
@@ -937,13 +1024,17 @@ class DisableReportMissing : public LegalityCheckCallback {
   ParameterizedStructUseTypeConverter &tyConv;
 
 public:
+  /// Tie the callback to the converter whose cloner should suppress lookup diagnostics.
   explicit DisableReportMissing(ParameterizedStructUseTypeConverter &tc) : tyConv(tc) {}
 
+  /// Suppress missing-symbol diagnostics before a speculative legality check begins.
   void checkStarted() override { tyConv.cloner.disableReportMissing(); }
 
+  /// Re-enable missing-symbol diagnostics after the speculative legality check finishes.
   void checkEnded(bool) override { tyConv.cloner.enableReportMissing(); }
 };
 
+/// Run struct instantiation and call/member rewrites for the current module.
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
   ParameterizedStructUseTypeConverter tyConv(tracker, modOp);
@@ -987,37 +1078,23 @@ namespace Step2_InstantiateFunctions {
 /// ArrayType/StructType parameters with their concrete values determined by unification.
 class FuncInstTypeConverter : public TypeConverter {
   DenseMap<Attribute, Attribute> paramNameToValue;
-
-  Attribute convertIfPossible(Attribute a) const {
-    auto res = paramNameToValue.find(a);
-    return (res != paramNameToValue.end()) ? res->second : a;
-  }
+  TemplateParamSubstitutions substitutions;
 
 public:
+  /// Build the function-instantiation type converter from concrete template bindings.
   explicit FuncInstTypeConverter(DenseMap<Attribute, Attribute> paramNameToConcrete)
-      : TypeConverter(), paramNameToValue(std::move(paramNameToConcrete)) {
+      : TypeConverter(), paramNameToValue(std::move(paramNameToConcrete)),
+        substitutions(paramNameToValue) {
     addConversion([](Type t) { return t; });
 
     addConversion([this](TypeVarType inputTy) -> Type {
-      if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(convertIfPossible(inputTy.getNameRef()))) {
-        Type convertedType = tyAttr.getValue();
-        if (isConcreteType(convertedType)) {
-          return convertedType;
-        }
-      }
-      return inputTy;
+      return substitutions.convertTypeVarBinding(inputTy);
     });
 
     addConversion([this](ArrayType inputTy) {
-      SmallVector<Attribute> updated;
       bool changed = false;
-      for (Attribute a : inputTy.getDimensionSizes()) {
-        Attribute converted = convertIfPossible(a);
-        updated.push_back(converted);
-        if (converted != a) {
-          changed = true;
-        }
-      }
+      SmallVector<Attribute> updated =
+          substitutions.convertAttrs(*this, inputTy.getDimensionSizes(), &changed);
       Type newElemTy = this->convertType(inputTy.getElementType());
       if (!changed && newElemTy == inputTy.getElementType()) {
         return inputTy;
@@ -1029,26 +1106,9 @@ public:
 
     addConversion([this](StructType inputTy) -> StructType {
       if (ArrayAttr params = inputTy.getParams()) {
-        SmallVector<Attribute> updated;
         bool changed = false;
-        for (Attribute a : params) {
-          if (TypeAttr ta = dyn_cast<TypeAttr>(a)) {
-            Type newTy = this->convertType(ta.getValue());
-            if (newTy != ta.getValue()) {
-              updated.push_back(TypeAttr::get(newTy));
-              changed = true;
-              continue;
-            }
-          } else {
-            Attribute converted = convertIfPossible(a);
-            if (converted != a) {
-              updated.push_back(converted);
-              changed = true;
-              continue;
-            }
-          }
-          updated.push_back(a);
-        }
+        SmallVector<Attribute> updated =
+            substitutions.convertAttrs(*this, params.getValue(), &changed);
         if (changed) {
           return getStructTypeWithParams(inputTy.getNameRef(), inputTy.getContext(), updated);
         }
@@ -1057,6 +1117,7 @@ public:
     });
   }
 
+  /// Convert an attribute that may contain a type or a direct template-parameter reference.
   Attribute convertAttr(Attribute attr) const {
     if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
       Type convertedTy = convertType(tyAttr.getValue());
@@ -1064,10 +1125,13 @@ public:
         return TypeAttr::get(convertedTy);
       }
     }
-    return convertIfPossible(attr);
+    return substitutions.lookupOrSelf(attr);
   }
 
-  bool containsParam(Attribute nameAttr) const { return paramNameToValue.contains(nameAttr); }
+  /// Return true iff the given template parameter has a concrete binding in this converter.
+  bool containsParam(Attribute nameAttr) const { return substitutions.contains(nameAttr); }
+
+  /// Return the underlying template-parameter binding map.
   const DenseMap<Attribute, Attribute> &getParamMap() const { return paramNameToValue; }
 };
 
@@ -1104,11 +1168,13 @@ class WildcardTypeBodyInferer final {
   SmallVector<std::pair<Operation *, FlatSymbolRefAttr>> activeInferences_;
 
 public:
+  /// Construct a body inferer over the current symbol tables and known concrete bindings.
   WildcardTypeBodyInferer(
       SymbolTableCollection &symTables, const DenseMap<Attribute, Attribute> &paramNameToConcrete
   )
       : symTables_(symTables), paramNameToConcrete_(paramNameToConcrete) {}
 
+  /// Search `func` for a concrete value that can resolve `paramName`.
   std::optional<Attribute> infer(FuncDefOp func, FlatSymbolRefAttr paramName) {
     if (llvm::any_of(activeInferences_, [&](const auto &e) {
       return e.first == func.getOperation() && e.second == paramName;
@@ -1205,6 +1271,7 @@ public:
   }
 
 private:
+  /// Infer a nested callee parameter value from the nested call's explicit template arguments.
   std::optional<Attribute> inferFromExplicitNestedCallParams(
       CallOp nestedCall, TemplateOp nestedTemplate, FlatSymbolRefAttr nestedParamName,
       const FuncInstTypeConverter &tyConv
@@ -1233,6 +1300,7 @@ class ClonedBodyArrayReadOpPattern final : public OpConversionPattern<ReadArrayO
 public:
   using OpConversionPattern<ReadArrayOp>::OpConversionPattern;
 
+  /// Replace a scalar element read with an array extract when conversion makes the result an array.
   LogicalResult matchAndRewrite(
       ReadArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
@@ -1253,6 +1321,7 @@ class ClonedBodyArrayWriteOpPattern final : public OpConversionPattern<WriteArra
 public:
   using OpConversionPattern<WriteArrayOp>::OpConversionPattern;
 
+  /// Replace a scalar element write with an array insert when conversion makes the value an array.
   LogicalResult matchAndRewrite(
       WriteArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
@@ -1267,7 +1336,7 @@ public:
 };
 
 /// Use `FuncInstTypeConverter` to apply the given substitutions from instantiation and verify
-/// that `CallOp` in the converted function are valid for their respective targets (we can emit a
+/// that `CallOp`s in the converted function are valid for their respective targets (we can emit a
 /// more helpful error at this point rather than discovering it later when verifying the module).
 static LogicalResult applyBodyConversions(
     CallOp op, FuncDefOp newFunc, const DenseMap<Attribute, Attribute> &paramNameToConcrete
@@ -1303,9 +1372,11 @@ class InstantiateFuncAtCallOp final : public OpRewritePattern<CallOp> {
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the function-instantiation pattern.
   InstantiateFuncAtCallOp(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern<CallOp>(ctx), tracker_(tracker) {}
 
+  /// Instantiate the target function or template at a call site and rewrite the callee reference.
   LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
     LLVM_DEBUG(llvm::dbgs() << "[InstantiateFuncAtCallOp] op: " << op << '\n');
 
@@ -1653,6 +1724,7 @@ private:
   }
 };
 
+/// Run function instantiation patterns once over the module.
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
   RewritePatternSet patterns(ctx);
@@ -1672,6 +1744,7 @@ class LoopUnrollPattern : public OpRewritePattern<OpClass> {
 public:
   using OpRewritePattern<OpClass>::OpRewritePattern;
 
+  /// Fully unroll loop-like ops whose trip count is statically known.
   LogicalResult matchAndRewrite(OpClass loopOp, PatternRewriter &rewriter) const override {
     if (auto maybeConstant = getConstantTripCount(loopOp)) {
       uint64_t tripCount = *maybeConstant;
@@ -1700,6 +1773,7 @@ private:
   }
 };
 
+/// Run loop unrolling for supported loop dialects.
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
   RewritePatternSet patterns(ctx);
@@ -1712,8 +1786,10 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
 namespace Step4_InstantiateAffineMaps {
 
-// Adapted from `mlir::getConstantIntValues()` but that one failed in CI for an unknown reason. This
-// version uses a basic loop instead of llvm::map_to_vector().
+/// Return constant integer values for all fold results, if every fold result is constant.
+///
+/// Adapted from `mlir::getConstantIntValues()` but that one failed in CI for an unknown reason.
+/// This version uses a basic loop instead of llvm::map_to_vector().
 std::optional<SmallVector<int64_t>> getConstantIntValues(ArrayRef<OpFoldResult> ofrs) {
   SmallVector<int64_t> res;
   for (OpFoldResult ofr : ofrs) {
@@ -1726,25 +1802,36 @@ std::optional<SmallVector<int64_t>> getConstantIntValues(ArrayRef<OpFoldResult> 
   return res;
 }
 
+/// Folds affine-map parameters using the map operands supplied at an instantiation site.
 struct AffineMapFolder {
+  /// Inputs that describe affine-map operands and the parameter list being folded.
   struct Input {
+    /// Operand groups corresponding to affine-map parameters.
     OperandRangeRange mapOpGroups;
+    /// Number of dimensions in each operand group.
     DenseI32ArrayAttr dimsPerGroup;
+    /// Parameter list containing affine maps and non-map attributes.
     ArrayRef<Attribute> paramsOfStructTy;
   };
 
+  /// Outputs after replacing foldable affine-map parameters with concrete attributes.
   struct Output {
+    /// Operand groups for affine maps that could not be folded.
     SmallVector<SmallVector<Value>> mapOpGroups;
+    /// Dimension counts corresponding to remaining map operand groups.
     SmallVector<int32_t> dimsPerGroup;
+    /// Parameter list with folded values substituted where possible.
     SmallVector<Attribute> paramsOfStructTy;
   };
 
+  /// Convert owned output operand groups into `ValueRange` views for op builders.
   static inline SmallVector<ValueRange> getConvertedMapOpGroups(Output out) {
     return llvm::map_to_vector(out.mapOpGroups, [](const SmallVector<Value> &grp) {
       return ValueRange(grp);
     });
   }
 
+  /// Fold any affine-map attributes in `in.paramsOfStructTy` whose operands are all constants.
   static LogicalResult
   fold(PatternRewriter &rewriter, const Input &in, Output &out, Operation *op, const char *aspect) {
     if (in.mapOpGroups.empty()) {
@@ -1812,7 +1899,7 @@ struct AffineMapFolder {
         out.mapOpGroups.emplace_back(currMapOps);
         out.dimsPerGroup.push_back(in.dimsPerGroup[idx - 1]); // idx was already incremented
       }
-      // If not affine and foldable, preserve the original
+      // If not affine, preserve the original.
       out.paramsOfStructTy.push_back(sizeAttr);
     }
     assert(idx == in.mapOpGroups.size() && "all affine_map not processed");
@@ -1831,9 +1918,11 @@ class InstantiateAtCreateArrayOp final : public OpRewritePattern<CreateArrayOp> 
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the array-creation affine-map instantiation pattern.
   InstantiateAtCreateArrayOp(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx), tracker_(tracker) {}
 
+  /// Rewrite `array.new` when affine-map dimensions can be folded to concrete sizes.
   LogicalResult matchAndRewrite(CreateArrayOp op, PatternRewriter &rewriter) const override {
     ArrayType oldResultType = op.getType();
 
@@ -1869,9 +1958,11 @@ class InstantiateAtCallOpCompute final : public OpRewritePattern<CallOp> {
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the struct-compute call result instantiation pattern.
   InstantiateAtCallOpCompute(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx), tracker_(tracker) {}
 
+  /// Refine the result type of calls to struct `compute` functions when parameters become known.
   LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
     if (!op.calleeIsStructCompute()) {
       // this pattern only applies when the callee is "compute()" within a struct
@@ -2032,6 +2123,7 @@ private:
   }
 };
 
+/// Run affine-map and target-type instantiation over arrays and struct `compute` calls.
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
   RewritePatternSet patterns(ctx);
@@ -2097,8 +2189,8 @@ static bool haveSameIndexSet(ArrayRef<ArrayAttr> lhs, ArrayRef<ArrayAttr> rhs) {
 /// Return the first index in `lhs` that is not present in `rhs`.
 static ArrayAttr findIndexMissingFrom(ArrayRef<ArrayAttr> lhs, ArrayRef<ArrayAttr> rhs) {
   DenseSet<ArrayAttr> rhsSet(rhs.begin(), rhs.end());
-  auto missingIt = llvm::find_if(lhs, [&rhsSet](ArrayAttr idx) { return !rhsSet.contains(idx); });
-  return missingIt == lhs.end() ? ArrayAttr() : *missingIt;
+  const auto *it = llvm::find_if(lhs, [&rhsSet](ArrayAttr idx) { return !rhsSet.contains(idx); });
+  return it == lhs.end() ? ArrayAttr() : *it;
 }
 
 /// Replace all uses of `oldValue` without asking MLIR to enforce SSA type equality.
@@ -2119,6 +2211,13 @@ static bool strictlyBefore(Operation *def, Operation *user) {
   return def->getBlock() == user->getBlock() && def->isBeforeInBlock(user);
 }
 
+/// Return all direct users of `value`, sorted by their order in the containing block.
+static SmallVector<Operation *> getUsersInBlockOrder(Value value) {
+  SmallVector<Operation *> users(value.getUsers().begin(), value.getUsers().end());
+  llvm::sort(users, [](Operation *lhs, Operation *rhs) { return lhs->isBeforeInBlock(rhs); });
+  return users;
+}
+
 /// Return true if all writes for the scalarized allocation are available before `user`.
 ///
 /// The rewrite currently handles straight-line local array construction. Requiring every write to
@@ -2133,6 +2232,23 @@ inline static bool allWritesAvailableAt(const ScalarizedArrayInfo &info, Operati
 /// Convert array access operands to a static index attribute, if possible.
 inline static ArrayAttr getIndexAsAttr(ArrayAccessOpInterface op) {
   return op.indexOperandsToAttributeArray();
+}
+
+/// Seed the scalar value map from the explicit elements of a statically-shaped `array.new`.
+static LogicalResult seedValuesFromArrayElements(
+    CreateArrayOp createOp, ArrayRef<ArrayAttr> indices, DenseMap<ArrayAttr, Value> &valueByIndex
+) {
+  Operation::operand_range elements = createOp.getElements();
+  if (elements.empty()) {
+    return success();
+  }
+  if (elements.size() != indices.size()) {
+    return failure();
+  }
+  for (auto [idx, value] : llvm::zip_equal(indices, elements)) {
+    valueByIndex[idx] = value;
+  }
+  return success();
 }
 
 /// Return true iff the candidate array stores at least two non-unifying element types.
@@ -2515,19 +2631,11 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
   ArrayRef<ArrayAttr> indices = *maybeIndices;
 
   DenseMap<ArrayAttr, Value> valueByIndex;
-  if (!createOp.getElements().empty()) {
-    if (createOp.getElements().size() != indices.size()) {
-      return failure();
-    }
-    for (auto [idx, value] : llvm::zip_equal(indices, createOp.getElements())) {
-      valueByIndex[idx] = value;
-    }
+  if (failed(seedValuesFromArrayElements(createOp, indices, valueByIndex))) {
+    return failure();
   }
 
-  SmallVector<Operation *> users(
-      createOp.getResult().getUsers().begin(), createOp.getResult().getUsers().end()
-  );
-  llvm::sort(users, [](Operation *lhs, Operation *rhs) { return lhs->isBeforeInBlock(rhs); });
+  SmallVector<Operation *> users = getUsersInBlockOrder(createOp.getResult());
 
   DenseMap<Value, std::pair<Type, Location>> firstUseByValue;
   DenseMap<ArrayAttr, std::pair<Type, Location>> firstMaterializedUseByIndex;
@@ -2609,10 +2717,7 @@ static LogicalResult rewriteExpandableLocalArray(
     CreateArrayOp createOp, const DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers,
     SymbolTableCollection &tables, PatternRewriter &rewriter, const ConversionTracker &tracker
 ) {
-  SmallVector<Operation *> users(
-      createOp.getResult().getUsers().begin(), createOp.getResult().getUsers().end()
-  );
-  llvm::sort(users, [](Operation *lhs, Operation *rhs) { return lhs->isBeforeInBlock(rhs); });
+  SmallVector<Operation *> users = getUsersInBlockOrder(createOp.getResult());
 
   ArrayType arrTy = createOp.getType();
   std::optional<SmallVector<ArrayAttr>> maybeIndices = arrTy.getSubelementIndices();
@@ -2622,13 +2727,8 @@ static LogicalResult rewriteExpandableLocalArray(
   ArrayRef<ArrayAttr> indices = *maybeIndices;
 
   DenseMap<ArrayAttr, Value> valueByIndex;
-  if (!createOp.getElements().empty()) {
-    if (createOp.getElements().size() != indices.size()) {
-      return failure();
-    }
-    for (auto [idx, value] : llvm::zip_equal(indices, createOp.getElements())) {
-      valueByIndex[idx] = value;
-    }
+  if (failed(seedValuesFromArrayElements(createOp, indices, valueByIndex))) {
+    return failure();
   }
   SmallVector<WriteArrayOp> writesToErase;
   for (Operation *user : users) {
@@ -2910,16 +3010,18 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
 } // namespace Step5_ScalarizeHeterogeneousArrays
 
-namespace Step5_PropagateTypes {
+namespace Step6_PropagateTypes {
 
 /// Update the array element type by looking at the values stored into it from uses.
 class UpdateNewArrayElemFromWrite final : public OpRewritePattern<CreateArrayOp> {
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the create-array element-type propagation pattern.
   UpdateNewArrayElemFromWrite(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
+  /// Update an `array.new` result element type from compatible writes into the array.
   LogicalResult matchAndRewrite(CreateArrayOp op, PatternRewriter &rewriter) const override {
     Value createResult = op.getResult();
     ArrayType createResultType = dyn_cast<ArrayType>(createResult.getType());
@@ -2969,6 +3071,8 @@ public:
 
 namespace {
 
+/// Update the array reference type on an array access op to match a scalar element type observed
+/// through that access.
 LogicalResult updateArrayElemFromArrAccessOp(
     ArrayAccessOpInterface op, Type scalarElemTy, ConversionTracker &tracker,
     PatternRewriter &rewriter
@@ -2995,9 +3099,11 @@ class UpdateArrayElemFromArrWrite final : public OpRewritePattern<WriteArrayOp> 
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the array-write based element-type propagation pattern.
   UpdateArrayElemFromArrWrite(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
+  /// Update the referenced array type from the write value type.
   LogicalResult matchAndRewrite(WriteArrayOp op, PatternRewriter &rewriter) const override {
     return updateArrayElemFromArrAccessOp(op, op.getRvalue().getType(), tracker_, rewriter);
   }
@@ -3007,9 +3113,11 @@ class UpdateArrayElemFromArrRead final : public OpRewritePattern<ReadArrayOp> {
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the array-read based element-type propagation pattern.
   UpdateArrayElemFromArrRead(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
+  /// Update the referenced array type from the read result type.
   LogicalResult matchAndRewrite(ReadArrayOp op, PatternRewriter &rewriter) const override {
     return updateArrayElemFromArrAccessOp(op, op.getResult().getType(), tracker_, rewriter);
   }
@@ -3020,9 +3128,11 @@ class UpdateMemberDefTypeFromWrite final : public OpRewritePattern<MemberDefOp> 
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the member-definition propagation pattern.
   UpdateMemberDefTypeFromWrite(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
+  /// Update a member definition type from compatible writes to that member.
   LogicalResult matchAndRewrite(MemberDefOp op, PatternRewriter &rewriter) const override {
     // Find all uses of the member symbol name within its parent struct.
     StructDefOp parentRes = getParentOfType<StructDefOp>(op);
@@ -3087,6 +3197,7 @@ public:
 
 namespace {
 
+/// Move all regions out of `op` so it can be recreated with updated result types.
 SmallVector<std::unique_ptr<Region>> moveRegions(Operation *op) {
   SmallVector<std::unique_ptr<Region>> newRegions;
   for (Region &region : op->getRegions()) {
@@ -3105,9 +3216,11 @@ class UpdateInferredResultTypes final : public OpTraitRewritePattern<OpTrait::In
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the inferred-result propagation pattern.
   UpdateInferredResultTypes(MLIRContext *ctx, ConversionTracker &tracker)
       : OpTraitRewritePattern(ctx, 6), tracker_(tracker) {}
 
+  /// Re-infer result types and recreate the op when the inferred types are more concrete.
   LogicalResult matchAndRewrite(Operation *op, PatternRewriter &rewriter) const override {
     SmallVector<Type, 1> inferredResultTypes;
     InferTypeOpInterface retTypeFn = llvm::cast<InferTypeOpInterface>(op);
@@ -3145,9 +3258,11 @@ class UpdateFuncTypeFromReturn final : public OpRewritePattern<FuncDefOp> {
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the function-return based type propagation pattern.
   UpdateFuncTypeFromReturn(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
+  /// Update a function type from its terminator operand types.
   LogicalResult matchAndRewrite(FuncDefOp op, PatternRewriter &rewriter) const override {
     Region &body = op.getFunctionBody();
     if (body.empty()) {
@@ -3186,9 +3301,11 @@ class UpdateFreeFuncCallOpTypes final : public OpRewritePattern<CallOp> {
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the free-function call result propagation pattern.
   UpdateFreeFuncCallOpTypes(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
+  /// Rewrite a call to a free function when the target function result types were refined.
   LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
     if (calleeReferencesTemplateParam(op)) {
       return failure();
@@ -3223,6 +3340,7 @@ public:
 
 namespace {
 
+/// Update a member read/write value type from the referenced member definition.
 LogicalResult updateMemberRefValFromMemberDef(
     MemberRefOpInterface op, ConversionTracker &tracker, PatternRewriter &rewriter
 ) {
@@ -3251,9 +3369,11 @@ class UpdateMemberReadValFromDef final : public OpRewritePattern<MemberReadOp> {
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the member-read value propagation pattern.
   UpdateMemberReadValFromDef(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
+  /// Update a member read result type from its referenced member definition.
   LogicalResult matchAndRewrite(MemberReadOp op, PatternRewriter &rewriter) const override {
     return updateMemberRefValFromMemberDef(op, tracker_, rewriter);
   }
@@ -3264,14 +3384,17 @@ class UpdateMemberWriteValFromDef final : public OpRewritePattern<MemberWriteOp>
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the member-write value propagation pattern.
   UpdateMemberWriteValFromDef(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
+  /// Update a member write operand type from its referenced member definition.
   LogicalResult matchAndRewrite(MemberWriteOp op, PatternRewriter &rewriter) const override {
     return updateMemberRefValFromMemberDef(op, tracker_, rewriter);
   }
 };
 
+/// Run all type-propagation patterns to a local fixpoint for the current iteration.
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
   RewritePatternSet patterns(ctx);
@@ -3293,10 +3416,11 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
   return applyAndFoldGreedily(modOp, tracker, std::move(patterns));
 }
-} // namespace Step5_PropagateTypes
+} // namespace Step6_PropagateTypes
 
-namespace Step6_Cleanup {
+namespace Step7_Cleanup {
 
+/// Cleanup strategy that preserves symbols reachable from an explicit keep set plus globals.
 struct FromKeepSet : public CleanupBase {
   using CleanupBase::CleanupBase;
 
@@ -3405,7 +3529,7 @@ struct FromKeepSet : public CleanupBase {
   }
 };
 
-} // namespace Step6_Cleanup
+} // namespace Step7_Cleanup
 
 class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
   using Base = FlatteningPassBase<PassImpl>;
@@ -3417,6 +3541,7 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
     return m == FlatteningCleanupMode::Unspecified ? FlatteningCleanupMode::Preimage : m;
   }
 
+  /// Run the pass on the current module and signal failure if any flattening step fails.
   void runOnOperation() override {
     ModuleOp modOp = getOperation();
     if (failed(runOn(modOp))) {
@@ -3431,6 +3556,7 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
     }
   }
 
+  /// Execute the full flattening pipeline until it reaches a fixpoint or the iteration limit.
   inline LogicalResult runOn(ModuleOp modOp) {
     FlatteningCleanupMode effectiveCleanupMode = getEffectiveCleanupMode();
     // If the cleanup mode is set to remove anything not reachable from the main struct, do an
@@ -3482,6 +3608,11 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
         llvm::errs() << DEBUG_TYPE << " failed while instantiating structs in templates\n";
         return failure();
       }
+
+      LLVM_DEBUG({
+        llvm::dbgs() << "[FlatteningPass(count=" << loopCount
+                     << ")] Running step 2: function instantiation\n";
+      });
       // Instantiate calls to templated functions.
       if (failed(Step2_InstantiateFunctions::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while instantiating functions in templates\n";
@@ -3490,7 +3621,7 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
 
       LLVM_DEBUG({
         llvm::dbgs() << "[FlatteningPass(count=" << loopCount
-                     << ")] Running step 2: loop unrolling\n";
+                     << ")] Running step 3: loop unrolling\n";
       });
       // Unroll loops with known iterations.
       if (failed(Step3_Unroll::run(modOp, tracker))) {
@@ -3500,7 +3631,7 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
 
       LLVM_DEBUG({
         llvm::dbgs() << "[FlatteningPass(count=" << loopCount
-                     << ")] Running step 3: affine maps instantiation\n";
+                     << ")] Running step 4: affine maps instantiation\n";
       });
       // Instantiate affine_map parameters of StructType and ArrayType.
       if (failed(Step4_InstantiateAffineMaps::run(modOp, tracker))) {
@@ -3510,6 +3641,10 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
 
       // Split static arrays whose affine-map element type instantiates to different concrete
       // element types at different indices.
+      LLVM_DEBUG({
+        llvm::dbgs() << "[FlatteningPass(count=" << loopCount
+                     << ")] Running step 5: heterogeneous array scalarization\n";
+      });
       if (failed(Step5_ScalarizeHeterogeneousArrays::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while scalarizing heterogeneous arrays\n";
         return failure();
@@ -3517,10 +3652,10 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
 
       LLVM_DEBUG({
         llvm::dbgs() << "[FlatteningPass(count=" << loopCount
-                     << ")] Running step 4: type propagation\n";
+                     << ")] Running step 6: type propagation\n";
       });
       // Propagate updated types using the semantics of various ops.
-      if (failed(Step5_PropagateTypes::run(modOp, tracker))) {
+      if (failed(Step6_PropagateTypes::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while propagating instantiated types\n";
         return failure();
       }
@@ -3551,10 +3686,10 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
     return runPipeline(allocationCleanup, modOp);
   }
 
-  // Perform cleanup according to the 'cleanupMode' option.
+  /// Perform cleanup according to the effective `cleanupMode` option.
   LogicalResult cleanupSwitch(ModuleOp modOp, const ConversionTracker &tracker) {
     FlatteningCleanupMode effectiveCleanupMode = getEffectiveCleanupMode();
-    LLVM_DEBUG({ llvm::dbgs() << "[FlatteningPass] Running step 5: cleanup "; });
+    LLVM_DEBUG({ llvm::dbgs() << "[FlatteningPass] Running step 7: cleanup "; });
     switch (effectiveCleanupMode) {
     case FlatteningCleanupMode::MainAsRoot:
       LLVM_DEBUG(llvm::dbgs() << "(main as root mode)\n");
@@ -3565,14 +3700,16 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
     case FlatteningCleanupMode::Preimage:
       LLVM_DEBUG(llvm::dbgs() << "(preimage mode)\n");
       return erasePreimageOfInstantiations(modOp, tracker);
-    case FlatteningCleanupMode::Unspecified:
-    default:
+    case FlatteningCleanupMode::Disabled:
       LLVM_DEBUG(llvm::dbgs() << "(disabled)\n");
       return success();
+    case FlatteningCleanupMode::Unspecified:
+      llvm_unreachable("`getEffectiveCleanupMode()` cannot give `Unspecified`");
     }
+    llvm_unreachable("unknown cleanup mode");
   }
 
-  // Erase parameterized definitions that were replaced with concrete instantiations.
+  /// Erase parameterized definitions that were replaced with concrete instantiations.
   LogicalResult erasePreimageOfInstantiations(ModuleOp rootMod, const ConversionTracker &tracker) {
     // TODO: The names from getInstantiatedDefinitionNames() are NOT guaranteed to be paths from the
     // "top root" and they also do not indicate a root module so there could be ambiguity. This is a
@@ -3607,22 +3744,24 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
     return res;
   }
 
+  /// Erase cleanup candidates that are unreachable from any concrete definition or global.
   LogicalResult eraseUnreachableFromConcreteDefinitions(ModuleOp rootMod) {
     SmallVector<SymbolOpInterface> roots;
     rootMod.walk([&roots](Operation *op) {
-      if (isErasableDefinition(op) && !Step6_Cleanup::FromKeepSet::hasTemplateSymbolBindings(op)) {
+      if (isErasableDefinition(op) && !Step7_Cleanup::FromKeepSet::hasTemplateSymbolBindings(op)) {
         roots.push_back(llvm::cast<SymbolOpInterface>(op));
       }
     });
 
-    Step6_Cleanup::FromKeepSet cleaner(
+    Step7_Cleanup::FromKeepSet cleaner(
         rootMod, getAnalysis<SymbolDefTree>(), getAnalysis<SymbolUseGraph>()
     );
     return cleaner.eraseUnreachableFrom(roots);
   }
 
+  /// Erase cleanup candidates that are unreachable from the `llzk.main` struct or globals.
   LogicalResult eraseUnreachableFromMainStruct(ModuleOp rootMod, bool emitWarning = true) {
-    Step6_Cleanup::FromKeepSet cleaner(
+    Step7_Cleanup::FromKeepSet cleaner(
         rootMod, getAnalysis<SymbolDefTree>(), getAnalysis<SymbolUseGraph>()
     );
     FailureOr<SymbolLookupResult<StructDefOp>> mainOpt =
