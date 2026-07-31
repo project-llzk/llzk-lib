@@ -2459,6 +2459,14 @@ static LogicalResult rewriteExpandableLocalArray(
   llvm::sort(users, [](Operation *lhs, Operation *rhs) { return lhs->isBeforeInBlock(rhs); });
 
   DenseMap<ArrayAttr, Value> valueByIndex;
+  if (!createOp.getElements().empty()) {
+    if (createOp.getElements().size() != splitInfo.indices.size()) {
+      return failure();
+    }
+    for (auto [idx, value] : llvm::zip_equal(splitInfo.indices, createOp.getElements())) {
+      valueByIndex[idx] = value;
+    }
+  }
   SmallVector<WriteArrayOp> writesToErase;
   for (Operation *user : users) {
     if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
