@@ -38,7 +38,7 @@ module attributes {llzk.lang} {
         struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
       } else {
         %init = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
-        %fallback = array.new %init, %init, %init : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>> // expected-error {{cannot split heterogeneous array member because an expandable array reuses one SSA value for incompatible scalar member types}}
+        %fallback = array.new %init, %init, %init : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>> // expected-error {{cannot split heterogeneous array member because a scalarization candidate reuses one SSA value for incompatible scalar member types}}
         // expected-note@+2 {{value is used for scalar member type}}
         // expected-note@+1 {{same value is also used for scalar member type}}
         struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>

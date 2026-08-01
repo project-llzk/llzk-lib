@@ -2139,24 +2139,26 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
 namespace Step5_ScalarizeHeterogeneousArrays {
 
-/// Information about a local array allocation that can be replaced with the values written into its
+/// Information about a local array allocation that can be replaced with the final values of its
 /// statically-known elements.
 ///
 /// This pass only scalarizes arrays after loop unrolling and affine-map instantiation have exposed
-/// all element indices and value types. The candidate array must have exactly one write for every
-/// static element index, and all direct reads/member writes must happen after every element has
-/// been written. Those restrictions avoid imposing a new memory semantics for partially
-/// initialized arrays, repeated writes, dynamic indices, or branch-sensitive updates.
+/// all element indices and value types. The candidate array must have either an initializer value
+/// or exactly one write for every static element index, and all direct reads/member writes must
+/// happen after every explicit element write. Those restrictions avoid imposing a new memory
+/// semantics for partially initialized arrays, repeated writes, dynamic indices, or
+/// branch-sensitive updates.
 struct ScalarizedArrayInfo {
   /// The array allocation being removed.
   CreateArrayOp createOp;
   /// All static element indices in the array type, in the ArrayType's canonical order.
   SmallVector<ArrayAttr> indices;
-  /// The SSA value written at each element index.
+  /// The final SSA value at each element index, from either the initializer or a later write.
   DenseMap<ArrayAttr, Value> valueByIndex;
-  /// The type of the value written at each element index.
+  /// The type of the final value at each element index.
   DenseMap<ArrayAttr, Type> typeByIndex;
-  /// The write operation that defines each element index, used for dominance-like ordering checks.
+  /// The write operation that overwrites each element index, used for dominance-like ordering
+  /// checks. Indices defined only by the array initializer have no entry.
   DenseMap<ArrayAttr, Operation *> writeOpByIndex;
   /// Direct writes to the local allocation.
   SmallVector<WriteArrayOp> writes;
@@ -2234,9 +2236,105 @@ inline static ArrayAttr getIndexAsAttr(ArrayAccessOpInterface op) {
   return op.indexOperandsToAttributeArray();
 }
 
-/// Seed the scalar value map from the explicit elements of a statically-shaped `array.new`.
+static Type
+specializeTypeForArrayIndex(Type type, ArrayAttr idx, const ConversionTracker *tracker = nullptr);
+
+/// Fold an affine-map attribute against the static array index, if the map only depends on that
+/// index.
+static Attribute
+specializeAttrForArrayIndex(Attribute attr, ArrayAttr idx, const ConversionTracker *tracker) {
+  if (!attr) {
+    return attr;
+  }
+  if (auto mapAttr = llvm::dyn_cast<AffineMapAttr>(attr)) {
+    AffineMap map = mapAttr.getAffineMap();
+    if (idx.size() != map.getNumDims() + map.getNumSymbols()) {
+      return attr;
+    }
+    SmallVector<Attribute> operands;
+    operands.reserve(idx.size());
+    for (Attribute idxPart : idx.getValue()) {
+      auto intAttr = llvm::dyn_cast<IntegerAttr>(idxPart);
+      if (!intAttr) {
+        return attr;
+      }
+      operands.push_back(intAttr);
+    }
+
+    SmallVector<Attribute> result;
+    bool hasPoison = false;
+    if (failed(map.constantFold(operands, result, &hasPoison)) || hasPoison || result.size() != 1) {
+      return attr;
+    }
+    return result.front();
+  }
+  if (auto typeAttr = llvm::dyn_cast<TypeAttr>(attr)) {
+    Type specialized = specializeTypeForArrayIndex(typeAttr.getValue(), idx, tracker);
+    return specialized == typeAttr.getValue() ? attr : TypeAttr::get(specialized);
+  }
+  if (auto arrayAttr = llvm::dyn_cast<ArrayAttr>(attr)) {
+    MLIRContext *ctx = attr.getContext();
+    SmallVector<Attribute> specializedAttrs;
+    bool changed = false;
+    for (Attribute nested : arrayAttr.getValue()) {
+      Attribute specialized = specializeAttrForArrayIndex(nested, idx, tracker);
+      specializedAttrs.push_back(specialized);
+      changed |= specialized != nested;
+    }
+    return changed ? ArrayAttr::get(ctx, specializedAttrs) : attr;
+  }
+  return attr;
+}
+
+/// Specialize affine-map parameters nested in `type` for the given static array index.
+static Type
+specializeTypeForArrayIndex(Type type, ArrayAttr idx, const ConversionTracker *tracker) {
+  if (auto structTy = llvm::dyn_cast<StructType>(type)) {
+    ArrayAttr params = structTy.getParams();
+    if (!params) {
+      return type;
+    }
+    SmallVector<Attribute> specializedParams;
+    bool changed = false;
+    for (Attribute param : params.getValue()) {
+      Attribute specialized = specializeAttrForArrayIndex(param, idx, tracker);
+      specializedParams.push_back(specialized);
+      changed |= specialized != param;
+    }
+    if (!changed) {
+      return type;
+    }
+    Type specialized = StructType::get(
+        structTy.getNameRef(), ArrayAttr::get(type.getContext(), specializedParams)
+    );
+    if (tracker) {
+      if (auto structInstantiation =
+              tracker->getInstantiation(llvm::cast<StructType>(specialized))) {
+        return *structInstantiation;
+      }
+    }
+    return specialized;
+  }
+  if (auto arrayTy = llvm::dyn_cast<ArrayType>(type)) {
+    SmallVector<Attribute> specializedDims;
+    bool dimsChanged = false;
+    for (Attribute dim : arrayTy.getDimensionSizes()) {
+      Attribute specialized = specializeAttrForArrayIndex(dim, idx, tracker);
+      specializedDims.push_back(specialized);
+      dimsChanged |= specialized != dim;
+    }
+    Type specializedElem = specializeTypeForArrayIndex(arrayTy.getElementType(), idx, tracker);
+    return (dimsChanged || specializedElem != arrayTy.getElementType())
+               ? ArrayType::get(specializedElem, specializedDims)
+               : type;
+  }
+  return type;
+}
+
+/// Seed the scalar value/type maps from the explicit elements of a statically-shaped `array.new`.
 static LogicalResult seedValuesFromArrayElements(
-    CreateArrayOp createOp, ArrayRef<ArrayAttr> indices, DenseMap<ArrayAttr, Value> &valueByIndex
+    CreateArrayOp createOp, ArrayRef<ArrayAttr> indices, DenseMap<ArrayAttr, Value> &valueByIndex,
+    DenseMap<ArrayAttr, Type> *typeByIndex = nullptr, const ConversionTracker *tracker = nullptr
 ) {
   Operation::operand_range elements = createOp.getElements();
   if (elements.empty()) {
@@ -2247,6 +2345,16 @@ static LogicalResult seedValuesFromArrayElements(
   }
   for (auto [idx, value] : llvm::zip_equal(indices, elements)) {
     valueByIndex[idx] = value;
+    if (typeByIndex) {
+      Type specializedType =
+          specializeTypeForArrayIndex(createOp.getType().getElementType(), idx, tracker);
+      bool canUseSpecializedType =
+          typesUnify(value.getType(), specializedType) ||
+          (tracker && tracker->isLegalConversion(
+                          value.getType(), specializedType, "seedValuesFromArrayElements"
+                      ));
+      (*typeByIndex)[idx] = canUseSpecializedType ? specializedType : value.getType();
+    }
   }
   return success();
 }
@@ -2279,10 +2387,11 @@ static bool hasMultipleIncompatibleElementTypes(const ScalarizedArrayInfo &info)
 /// - have a static shape and a real element type,
 /// - have only direct reads, direct writes, and whole-array struct member writes as users,
 /// - use only static array indices,
-/// - have exactly one write for every static element index,
-/// - have all reads/member writes after every element write, and
+/// - have an initializer or exactly one write for every static element index,
+/// - have all reads/member writes after every explicit element write, and
 /// - store multiple incompatible element types.
-static FailureOr<ScalarizedArrayInfo> getScalarizedArrayInfo(CreateArrayOp op) {
+static FailureOr<ScalarizedArrayInfo>
+getScalarizedArrayInfo(CreateArrayOp op, const ConversionTracker &tracker) {
   ArrayType arrTy = op.getType();
   if (!arrTy.hasStaticShape() || llvm::isa<NoneType>(arrTy.getElementType())) {
     return failure();
@@ -2296,6 +2405,11 @@ static FailureOr<ScalarizedArrayInfo> getScalarizedArrayInfo(CreateArrayOp op) {
   ScalarizedArrayInfo info;
   info.createOp = op;
   info.indices = std::move(*maybeIndices);
+  if (failed(seedValuesFromArrayElements(
+          op, info.indices, info.valueByIndex, &info.typeByIndex, &tracker
+      ))) {
+    return failure();
+  }
   Value arrayValue = op.getResult();
 
   for (Operation *user : arrayValue.getUsers()) {
@@ -2307,7 +2421,7 @@ static FailureOr<ScalarizedArrayInfo> getScalarizedArrayInfo(CreateArrayOp op) {
       if (!idx) {
         return failure();
       }
-      if (info.valueByIndex.contains(idx)) {
+      if (info.writeOpByIndex.contains(idx)) {
         return failure();
       }
       info.valueByIndex[idx] = writeOp.getRvalue();
@@ -3054,8 +3168,8 @@ static void eraseUnusedOriginalMembers(
 /// static index.
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   SmallVector<ScalarizedArrayInfo, 2> arraysToScalarize;
-  modOp.walk([&arraysToScalarize](CreateArrayOp op) {
-    FailureOr<ScalarizedArrayInfo> info = getScalarizedArrayInfo(op);
+  modOp.walk([&arraysToScalarize, &tracker](CreateArrayOp op) {
+    FailureOr<ScalarizedArrayInfo> info = getScalarizedArrayInfo(op, tracker);
     if (succeeded(info)) {
       arraysToScalarize.push_back(*info);
     }

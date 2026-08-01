@@ -21,7 +21,7 @@ module attributes {llzk.lang} {
 
   struct.def @Holder {
     struct.member @left : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
-    struct.member @right : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
+    struct.member @right : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column} // expected-error {{cannot split heterogeneous array member because candidate writes require incompatible scalar member types}}
 
     function.def @compute(%cond: i1) -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
@@ -40,15 +40,13 @@ module attributes {llzk.lang} {
         %right1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
         array.write %right[%c0] = %right0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
         array.write %right[%c1] = %right1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-        struct.writem %self[@right] = %right : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        struct.writem %self[@right] = %right : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> // expected-note {{candidate writes index}}
       } else {
         %init0 = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
         %init1 = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
-        %fallback = array.new %init0, %init1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> // expected-error {{cannot split heterogeneous array member because an expandable array reuses one SSA value for incompatible scalar member types}}
-        // expected-note@+1 {{value is used for scalar member type}}
+        %fallback = array.new %init0, %init1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
         struct.writem %self[@left] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-        // expected-note@+1 {{same value is also used for scalar member type}}
-        struct.writem %self[@right] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+        struct.writem %self[@right] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> // expected-note {{conflicting candidate writes the same index}}
       }
       function.return %self : !struct.type<@Holder>
     }
