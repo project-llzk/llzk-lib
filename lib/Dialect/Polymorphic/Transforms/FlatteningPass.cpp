@@ -2795,6 +2795,29 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
     const DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
     SymbolTableCollection &tables, StringRef arrayDescription = "an expandable array"
 ) {
+  if (splitTypesByMember.empty()) {
+    return success();
+  }
+
+  bool targetsSplitMember = false;
+  for (Operation *user : createOp.getResult().getUsers()) {
+    auto memberWriteOp = llvm::dyn_cast<MemberWriteOp>(user);
+    if (!memberWriteOp || memberWriteOp.getVal() != createOp.getResult()) {
+      continue;
+    }
+    auto memberDef = memberWriteOp.getMemberDefOp(tables);
+    if (failed(memberDef)) {
+      return failure();
+    }
+    if (splitTypesByMember.contains(memberDef->get())) {
+      targetsSplitMember = true;
+      break;
+    }
+  }
+  if (!targetsSplitMember) {
+    return success();
+  }
+
   ArrayType arrTy = createOp.getType();
   std::optional<SmallVector<ArrayAttr>> maybeIndices = arrTy.getSubelementIndices();
   if (!maybeIndices) {
