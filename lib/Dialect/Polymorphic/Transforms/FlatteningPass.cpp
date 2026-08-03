@@ -2768,28 +2768,136 @@ static SplitMemberInfo &getOrCreateSplitMemberInfo(
   return splitInfo;
 }
 
+/// Value and type cached for one scalarized array index.
+struct CachedScalarizedValue {
+  /// SSA value currently known to provide this scalarized index.
+  Value value;
+  /// Type that the scalarized index must use when splitting member writes.
+  Type type;
+};
+
+/// Return the cached scalar value for `value` when it is a static read from another candidate.
+static std::optional<CachedScalarizedValue> getCandidateReadReplacement(
+    Value value, const DenseMap<Operation *, ScalarizedArrayInfo *> *candidateInfoByCreateOp
+) {
+  if (!candidateInfoByCreateOp) {
+    return std::nullopt;
+  }
+  auto readOp = value.getDefiningOp<ReadArrayOp>();
+  if (!readOp) {
+    return std::nullopt;
+  }
+  auto createOp = readOp.getArrRef().getDefiningOp<CreateArrayOp>();
+  if (!createOp) {
+    return std::nullopt;
+  }
+  auto infoIt = candidateInfoByCreateOp->find(createOp.getOperation());
+  if (infoIt == candidateInfoByCreateOp->end()) {
+    return std::nullopt;
+  }
+  ArrayAttr idx = getIndexAsAttr(readOp);
+  if (!idx) {
+    return std::nullopt;
+  }
+
+  ScalarizedArrayInfo *info = infoIt->second;
+  Value replacement = info->valueByIndex.lookup(idx);
+  Type replacementType = info->typeByIndex.lookup(idx);
+  if (!replacement || !replacementType) {
+    return std::nullopt;
+  }
+  return CachedScalarizedValue {replacement, replacementType};
+}
+
 /// Refresh cached element values from their still-live array operands.
 ///
 /// Candidates are collected before any rewrites run, so one candidate can cache a read result from
 /// another candidate. Rewriting the upstream candidate updates the downstream write operands and
 /// initializer operands and erases the reads; re-reading the operands here keeps this candidate
 /// from using dangling values.
-static LogicalResult
-refreshValuesFromArrayOperands(ScalarizedArrayInfo &info, const ConversionTracker &tracker) {
-  if (failed(seedValuesFromArrayElements(
-          info.createOp, info.indices, info.valueByIndex, &info.typeByIndex, &tracker
-      ))) {
+static LogicalResult refreshValuesFromArrayOperands(
+    ScalarizedArrayInfo &info, const ConversionTracker &tracker,
+    const DenseMap<Operation *, ScalarizedArrayInfo *> *candidateInfoByCreateOp = nullptr,
+    bool *changed = nullptr
+) {
+  DenseMap<ArrayAttr, Value> oldValueByIndex;
+  DenseMap<ArrayAttr, Type> oldTypeByIndex;
+  if (changed) {
+    oldValueByIndex = info.valueByIndex;
+    oldTypeByIndex = info.typeByIndex;
+  }
+
+  auto setCachedValue = [&](ArrayAttr idx, Value value, Type fallbackType) {
+    if (std::optional<CachedScalarizedValue> replacement =
+            getCandidateReadReplacement(value, candidateInfoByCreateOp)) {
+      value = replacement->value;
+      fallbackType = replacement->type;
+    }
+    info.valueByIndex[idx] = value;
+    info.typeByIndex[idx] = fallbackType;
+  };
+
+  Operation::operand_range elements = info.createOp.getElements();
+  if (!elements.empty() && elements.size() != info.indices.size()) {
     return failure();
   }
+  if (!elements.empty()) {
+    for (auto [idx, value] : llvm::zip_equal(info.indices, elements)) {
+      Type specializedType =
+          specializeTypeForArrayIndex(info.createOp.getType().getElementType(), idx, &tracker);
+      bool canUseSpecializedType =
+          typesUnify(value.getType(), specializedType) ||
+          tracker.isLegalConversion(
+              value.getType(), specializedType, "refreshValuesFromArrayOperands"
+          );
+      setCachedValue(idx, value, canUseSpecializedType ? specializedType : value.getType());
+    }
+  }
+
   for (WriteArrayOp writeOp : info.writes) {
     ArrayAttr idx = getIndexAsAttr(writeOp);
     if (!idx || !info.valueByIndex.contains(idx)) {
       return failure();
     }
-    info.valueByIndex[idx] = writeOp.getRvalue();
-    info.typeByIndex[idx] = writeOp.getRvalue().getType();
+    setCachedValue(idx, writeOp.getRvalue(), writeOp.getRvalue().getType());
+  }
+  if (changed) {
+    for (ArrayAttr idx : info.indices) {
+      if (oldValueByIndex.lookup(idx) != info.valueByIndex.lookup(idx) ||
+          oldTypeByIndex.lookup(idx) != info.typeByIndex.lookup(idx)) {
+        *changed = true;
+        break;
+      }
+    }
   }
   return success();
+}
+
+/// Refresh all collected candidates through candidate-to-candidate static reads.
+static LogicalResult refreshValuesFromDependentCandidates(
+    MutableArrayRef<ScalarizedArrayInfo> arraysToScalarize,
+    DenseMap<Operation *, ScalarizedArrayInfo *> &candidateInfoByCreateOp,
+    const ConversionTracker &tracker
+) {
+  candidateInfoByCreateOp.clear();
+  for (ScalarizedArrayInfo &info : arraysToScalarize) {
+    candidateInfoByCreateOp[info.createOp.getOperation()] = &info;
+  }
+
+  for (unsigned iteration = 0; iteration <= arraysToScalarize.size(); ++iteration) {
+    bool changed = false;
+    for (ScalarizedArrayInfo &info : arraysToScalarize) {
+      if (failed(
+              refreshValuesFromArrayOperands(info, tracker, &candidateInfoByCreateOp, &changed)
+          )) {
+        return failure();
+      }
+    }
+    if (!changed) {
+      return success();
+    }
+  }
+  return failure();
 }
 
 /// Rewrite one local heterogeneous array allocation into its index-specific scalar values.
@@ -2801,9 +2909,10 @@ refreshValuesFromArrayOperands(ScalarizedArrayInfo &info, const ConversionTracke
 static LogicalResult rewriteLocalArray(
     ScalarizedArrayInfo &info, DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers,
     const DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
-    SymbolTableCollection &tables, PatternRewriter &rewriter, const ConversionTracker &tracker
+    SymbolTableCollection &tables, PatternRewriter &rewriter, const ConversionTracker &tracker,
+    const DenseMap<Operation *, ScalarizedArrayInfo *> *candidateInfoByCreateOp
 ) {
-  if (failed(refreshValuesFromArrayOperands(info, tracker))) {
+  if (failed(refreshValuesFromArrayOperands(info, tracker, candidateInfoByCreateOp))) {
     return failure();
   }
 
@@ -3651,6 +3760,12 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
   PatternRewriter rewriter(modOp.getContext());
   SymbolTableCollection tables;
+  DenseMap<Operation *, ScalarizedArrayInfo *> candidateInfoByCreateOp;
+  if (failed(
+          refreshValuesFromDependentCandidates(arraysToScalarize, candidateInfoByCreateOp, tracker)
+      )) {
+    return failure();
+  }
   if (failed(verifySplitMemberWritesExpandable(arraysToScalarize, tables, tracker))) {
     return failure();
   }
@@ -3662,9 +3777,10 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
   DenseMap<MemberDefOp, SplitMemberInfo> splitMembers;
   for (ScalarizedArrayInfo &info : arraysToScalarize) {
-    if (failed(
-            rewriteLocalArray(info, splitMembers, splitTypesByMember, tables, rewriter, tracker)
-        )) {
+    if (failed(rewriteLocalArray(
+            info, splitMembers, splitTypesByMember, tables, rewriter, tracker,
+            &candidateInfoByCreateOp
+        ))) {
       return failure();
     }
   }
