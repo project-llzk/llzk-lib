@@ -436,6 +436,120 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @ArrayWriteRead {
+    function.def @compute(%x: !felt.type) -> !struct.type<@ArrayWriteRead> {
+      %self = struct.new : !struct.type<@ArrayWriteRead>
+      function.return %self : !struct.type<@ArrayWriteRead>
+    }
+
+    function.def @constrain(%self: !struct.type<@ArrayWriteRead>, %x: !felt.type) {
+      %array = array.new : !array.type<2 x !felt.type>
+      %idx = arith.constant 1 : index
+      array.write %array[%idx] = %x : !array.type<2 x !felt.type>, !felt.type
+      %elem = array.read %array[%idx] : !array.type<2 x !felt.type>, !felt.type
+      %seven = felt.const 7
+      constrain.eq %elem, %seven : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArrayWriteRead ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, <felt.const: 7> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @ArrayWriteRead ConstraintDependencyGraph {
+// INTRA-NEXT:     { %arg1, <felt.const: 7> }
+// INTRA-NEXT: }
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArrayOverwriteRead {
+    function.def @compute(%old: !felt.type, %new: !felt.type) -> !struct.type<@ArrayOverwriteRead> {
+      %self = struct.new : !struct.type<@ArrayOverwriteRead>
+      function.return %self : !struct.type<@ArrayOverwriteRead>
+    }
+
+    function.def @constrain(%self: !struct.type<@ArrayOverwriteRead>, %old: !felt.type, %new: !felt.type) {
+      %array = array.new %old, %old : !array.type<2 x !felt.type>
+      %idx = arith.constant 1 : index
+      array.write %array[%idx] = %new : !array.type<2 x !felt.type>, !felt.type
+      %elem = array.read %array[%idx] : !array.type<2 x !felt.type>, !felt.type
+      %seven = felt.const 7
+      constrain.eq %elem, %seven : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArrayOverwriteRead ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg2, <felt.const: 7> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @ArrayOverwriteRead ConstraintDependencyGraph {
+// INTRA-NEXT:     { %arg2, <felt.const: 7> }
+// INTRA-NEXT: }
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArrayInsertRead {
+    function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@ArrayInsertRead> {
+      %self = struct.new : !struct.type<@ArrayInsertRead>
+      function.return %self : !struct.type<@ArrayInsertRead>
+    }
+
+    function.def @constrain(%self: !struct.type<@ArrayInsertRead>, %x: !felt.type, %y: !felt.type) {
+      %matrix = array.new : !array.type<2,2 x !felt.type>
+      %row = array.new %x, %y : !array.type<2 x !felt.type>
+      %row_idx = arith.constant 1 : index
+      %col_idx = arith.constant 0 : index
+      array.insert %matrix[%row_idx] = %row : !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type>
+      %elem = array.read %matrix[%row_idx, %col_idx] : !array.type<2,2 x !felt.type>, !felt.type
+      %seven = felt.const 7
+      constrain.eq %elem, %seven : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArrayInsertRead ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, <felt.const: 7> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @ArrayInsertRead ConstraintDependencyGraph {
+// INTRA-NEXT:     { %arg1, <felt.const: 7> }
+// INTRA-NEXT: }
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArrayOverwriteAliasProbe {
+    function.def @compute(%old: !felt.type, %new: !felt.type) -> !struct.type<@ArrayOverwriteAliasProbe> {
+      %self = struct.new : !struct.type<@ArrayOverwriteAliasProbe>
+      function.return %self : !struct.type<@ArrayOverwriteAliasProbe>
+    }
+
+    function.def @constrain(%self: !struct.type<@ArrayOverwriteAliasProbe>, %old: !felt.type, %new: !felt.type) {
+      %array = array.new %old, %old : !array.type<2 x !felt.type>
+      %idx = arith.constant 1 : index
+      array.write %array[%idx] = %new : !array.type<2 x !felt.type>, !felt.type
+      %elem = array.read %array[%idx] : !array.type<2 x !felt.type>, !felt.type
+      %seven = felt.const 7
+      %eleven = felt.const 11
+      constrain.eq %elem, %seven : !felt.type
+      constrain.eq %old, %eleven : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArrayOverwriteAliasProbe ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, <felt.const: 11> },
+// CHECK-NEXT:     { %arg2, <felt.const: 7> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @ArrayOverwriteAliasProbe ConstraintDependencyGraph {
+// INTRA-NEXT:     { %arg1, <felt.const: 11> },
+// INTRA-NEXT:     { %arg2, <felt.const: 7> }
+// INTRA-NEXT: }
+// -----
+
+module attributes {llzk.lang} {
 
   struct.def @ConstConstraints {
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ConstConstraints> {

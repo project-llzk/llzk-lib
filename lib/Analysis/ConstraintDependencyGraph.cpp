@@ -136,16 +136,21 @@ SourceRefLatticeValue SourceRefAnalysis::getValueState(DataFlowSolver &solver, V
 }
 
 SourceRefLatticeValue SourceRefAnalysis::getDependencyState(DataFlowSolver &solver, Value val) {
+  Operation *before = val.getDefiningOp();
+  if (before == nullptr) {
+    before = val.getParentBlock()->getParentOp();
+  }
+  return getDependencyState(solver, val, before);
+}
+
+SourceRefLatticeValue
+SourceRefAnalysis::getDependencyState(DataFlowSolver &solver, Value val, Operation *before) {
   SourceRefLatticeValue value = getValueState(solver, val);
-  Operation *top = val.getParentRegion()->getParentOp();
+  Operation *top = before;
   while (top->getParentOp() != nullptr) {
     top = top->getParentOp();
   }
   if (const auto *state = solver.lookupState<StorageState>(solver.getProgramPointBefore(top))) {
-    Operation *before = val.getDefiningOp();
-    if (before == nullptr) {
-      before = val.getParentBlock()->getParentOp();
-    }
     return state->resolveDependencies(value, before);
   }
   return value;
@@ -292,8 +297,8 @@ SourceRefAnalysis::StorageState::materializeStoredValues(
     return address;
   };
 
-  auto applyWrite = [&](const SourceRef &address, const SourceRefLatticeValue &value,
-                        bool maySkip) {
+  auto applyWrite =
+      [&storedValues](const SourceRef &address, const SourceRefLatticeValue &value, bool maySkip) {
     auto [it, inserted] = storedValues.try_emplace(address, value);
     if (!inserted) {
       if (maySkip) {
@@ -318,7 +323,7 @@ SourceRefAnalysis::StorageState::materializeStoredValues(
       return;
     }
     if (canonicalValue.isScalar() && canonicalValue.getScalarValue().contains(address)) {
-      const bool hasPriorContents = llvm::any_of(storedValues, [&](const auto &entry) {
+      const bool hasPriorContents = llvm::any_of(storedValues, [&address](const auto &entry) {
         return entry.first == address || entry.first.isValidPrefix(address);
       });
       if (hasPriorContents || canonicalValue.isSingleValue()) {
@@ -339,10 +344,25 @@ SourceRefAnalysis::StorageState::materializeStoredValues(
     if (writes == storageWrites.end()) {
       return WalkResult::advance();
     }
-    for (const StorageWrite &write : writes->second) {
-      for (const SourceRef &address : canonicalize(write.addresses, aliases).foldToScalar()) {
-        materializeWrite(address, write.value, write.mayBeSkipped);
+    std::function<void(const SourceRefLatticeValue &, const SourceRefLatticeValue &, bool)>
+        materializeAddressedWrite = [&](const SourceRefLatticeValue &addresses,
+                                        const SourceRefLatticeValue &value, bool maySkip) {
+      SourceRefLatticeValue canonicalAddresses = canonicalize(addresses, aliases);
+      if (canonicalAddresses.isArray() && value.isArray() &&
+          canonicalAddresses.getArraySize() == value.getArraySize()) {
+        for (size_t i = 0; i < canonicalAddresses.getArraySize(); ++i) {
+          materializeAddressedWrite(
+              canonicalAddresses.getElemFlatIdx(i), value.getElemFlatIdx(i), maySkip
+          );
+        }
+        return;
       }
+      for (const SourceRef &address : canonicalAddresses.foldToScalar()) {
+        materializeWrite(address, value, maySkip);
+      }
+    };
+    for (const StorageWrite &write : writes->second) {
+      materializeAddressedWrite(write.addresses, write.value, write.mayBeSkipped);
     }
     return WalkResult::advance();
   });
@@ -612,20 +632,50 @@ LogicalResult SourceRefAnalysis::visitOperation(
 
   if (auto createArray = llvm::dyn_cast<CreateArrayOp>(op)) {
     auto createArrayRes = createArray.getResult();
+    SourceRef arrayRoot(llvm::cast<OpResult>(createArrayRes));
+    auto arrayType = createArray.getType();
+    auto getArrayElementAddress = [&](size_t flatIndex) {
+      ArrayIndexGen indexGen = ArrayIndexGen::from(arrayType);
+      auto indices = indexGen.delinearize(checkedCast<int64_t>(flatIndex), op->getContext());
+      ensure(indices.has_value(), "could not delinearize array element");
+      SourceRef address = arrayRoot;
+      for (Attribute attr : *indices) {
+        auto child = address.createChild(SourceRefIndex(llvm::cast<IntegerAttr>(attr).getValue()));
+        ensure(succeeded(child), "could not create array element SourceRef");
+        address = *child;
+      }
+      return address;
+    };
+
+    if (arrayType.hasStaticShape()) {
+      SourceRefLatticeValue newArrayValue(arrayType.getShape());
+      for (size_t i = 0; i < static_cast<size_t>(arrayType.getNumElements()); ++i) {
+        (void)newArrayValue.getElemFlatIdx(i).setValue(
+            SourceRefLatticeValue(getArrayElementAddress(i))
+        );
+      }
+      propagateIfChanged(results.front(), results.front()->setValue(newArrayValue));
+    } else {
+      SourceRefLatticeValue newArrayValue(arrayRoot);
+      propagateIfChanged(results.front(), results.front()->setValue(newArrayValue));
+    }
+
     const auto &elements = createArray.getElements();
     if (elements.empty()) {
-      propagateIfChanged(
-          results.front(),
-          results.front()->setValue(SourceRef(llvm::cast<OpResult>(createArrayRes)))
-      );
       return success();
     }
 
-    SourceRefLatticeValue newArrayVal(createArray.getType().getShape());
+    const bool mayBeSkipped = isInMaybeSkippedScfRegion(op);
+    StorageState *state = getStorageState(op);
     for (size_t i = 0; i < elements.size(); i++) {
-      (void)newArrayVal.getElemFlatIdx(i).setValue(operandVals.at(elements[i])->getValue());
+      SourceRef elementAddress = getArrayElementAddress(i);
+      SourceRefLatticeValue elementAddressValue(elementAddress);
+      SourceRefLatticeValue elementValue = operandVals.at(elements[i])->getValue();
+      state->recordStorageWrite(op, i, elementAddressValue, elementValue, mayBeSkipped);
+      if (llvm::isa<ArrayType, StructType, PodType>(elements[i].getType())) {
+        state->recordAggregateAlias(op, i, elementValue, elementAddressValue, mayBeSkipped);
+      }
     }
-    propagateIfChanged(results.front(), results.front()->setValue(newArrayVal));
     return success();
   }
 
@@ -929,9 +979,14 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     for (unsigned i = 0; i < fn.getNumArguments(); i++) {
       SourceRef prefix(fn.getArgument(i));
       Value operand = fnCall.getOperand(i);
-      SourceRefLatticeValue val = llvm::isa<ArrayType, StructType, PodType>(operand.getType())
-                                      ? SourceRefAnalysis::getValueState(solver, operand)
-                                      : SourceRefAnalysis::getDependencyState(solver, operand);
+      SourceRefLatticeValue val;
+      if (llvm::isa<ArrayType>(operand.getType())) {
+        val = SourceRefAnalysis::getDependencyState(solver, operand, fnCall.getOperation());
+      } else if (llvm::isa<StructType, PodType>(operand.getType())) {
+        val = SourceRefAnalysis::getValueState(solver, operand);
+      } else {
+        val = SourceRefAnalysis::getDependencyState(solver, operand);
+      }
       translations.push_back({prefix, val});
     }
     auto &childAnalysis =

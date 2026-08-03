@@ -50,6 +50,10 @@ public:
   /// Unwritten storage remains represented by its address.
   static SourceRefLatticeValue getDependencyState(mlir::DataFlowSolver &solver, mlir::Value val);
 
+  /// Return the logical dependencies of `val` as observed before `before`.
+  static SourceRefLatticeValue
+  getDependencyState(mlir::DataFlowSolver &solver, mlir::Value val, mlir::Operation *before);
+
   static mlir::FailureOr<SourceRefLatticeValue>
   getWriteTargetState(mlir::DataFlowSolver &solver, mlir::Operation *op);
 
