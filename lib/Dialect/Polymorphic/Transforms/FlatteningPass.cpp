@@ -44,6 +44,7 @@
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/BuiltinTypes.h>
+#include <mlir/IR/Dominance.h>
 #include <mlir/Interfaces/InferTypeOpInterface.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Support/LLVM.h>
@@ -2255,6 +2256,29 @@ static bool hasDirectArrayWrites(CreateArrayOp createOp) {
   });
 }
 
+/// Return true iff `createOp` provides an initializer value for every static array element.
+static bool hasFullInitializer(CreateArrayOp createOp, ArrayRef<ArrayAttr> indices) {
+  Operation::operand_range elements = createOp.getElements();
+  return !elements.empty() && elements.size() == indices.size();
+}
+
+/// Return true iff all element values are immutable initializer operands.
+static bool isInitializerOnlyLocalArray(CreateArrayOp createOp, ArrayRef<ArrayAttr> indices) {
+  return hasFullInitializer(createOp, indices) && !hasDirectArrayWrites(createOp);
+}
+
+/// Return true iff the array allocation and every initializer value dominate `user`.
+static bool initializerValuesDominateUse(
+    CreateArrayOp createOp, Operation *user, const DominanceInfo &domInfo
+) {
+  if (!domInfo.dominates(createOp.getResult(), user)) {
+    return false;
+  }
+  return llvm::all_of(createOp.getElements(), [user, &domInfo](Value element) {
+    return domInfo.dominates(element, user);
+  });
+}
+
 /// Return true if all writes for the scalarized allocation are available before `user`.
 ///
 /// The rewrite currently handles straight-line local array construction. Requiring every write to
@@ -3152,9 +3176,15 @@ static FailureOr<CreateArrayOp> getStaticLocalArrayCreate(MemberWriteOp memberWr
 /// way this local scalarization cannot preserve.
 static LogicalResult verifyExpandableLocalArrayUsers(
     CreateArrayOp createOp, const DenseSet<MemberDefOp> &splitMemberSet,
-    SymbolTableCollection &tables
+    SymbolTableCollection &tables, const DominanceInfo &domInfo
 ) {
   Value arrayValue = createOp.getResult();
+  ArrayType arrTy = createOp.getType();
+  std::optional<SmallVector<ArrayAttr>> maybeIndices = arrTy.getSubelementIndices();
+  if (!maybeIndices) {
+    return failure();
+  }
+  bool allowCrossBlockMemberWrites = isInitializerOnlyLocalArray(createOp, *maybeIndices);
   for (Operation *user : createOp.getResult().getUsers()) {
     if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
       if (writeOp.getArrRef() != arrayValue || writeOp->getBlock() != createOp->getBlock() ||
@@ -3173,9 +3203,14 @@ static LogicalResult verifyExpandableLocalArrayUsers(
     if (auto userWriteOp = llvm::dyn_cast<MemberWriteOp>(user)) {
       auto memberDef = userWriteOp.getMemberDefOp(tables);
       if (userWriteOp.getVal() == arrayValue && succeeded(memberDef) &&
-          splitMemberSet.contains(memberDef->get()) &&
-          userWriteOp->getBlock() == createOp->getBlock()) {
-        continue;
+          splitMemberSet.contains(memberDef->get())) {
+        if (userWriteOp->getBlock() == createOp->getBlock()) {
+          continue;
+        }
+        if (allowCrossBlockMemberWrites &&
+            initializerValuesDominateUse(createOp, userWriteOp, domInfo)) {
+          continue;
+        }
       }
     }
     return failure();
@@ -3249,11 +3284,18 @@ static LogicalResult verifyExpandableLocalArraySplitIndices(
 static FailureOr<Value> getOrCreateScalarizedLocalArrayValue(
     DenseMap<ArrayAttr, Value> &valueByIndex, DenseSet<Value> &generatedMaterializations,
     ArrayAttr idx, Type type, Location loc, PatternRewriter &rewriter,
-    const ConversionTracker &tracker
+    const ConversionTracker &tracker, Operation *materializationPoint = nullptr
 ) {
+  auto createNonDet = [&](Type nondetType) {
+    OpBuilder::InsertionGuard guard(rewriter);
+    if (materializationPoint) {
+      rewriter.setInsertionPointAfter(materializationPoint);
+    }
+    return rewriter.create<NonDetOp>(loc, nondetType).getResult();
+  };
   Value scalarValue = valueByIndex.lookup(idx);
   if (!scalarValue) {
-    scalarValue = rewriter.create<NonDetOp>(loc, type).getResult();
+    scalarValue = createNonDet(type);
     valueByIndex[idx] = scalarValue;
     generatedMaterializations.insert(scalarValue);
   }
@@ -3278,7 +3320,7 @@ static FailureOr<Value> getOrCreateScalarizedLocalArrayValue(
     return scalarValue;
   }
   if (scalarValue.getDefiningOp<NonDetOp>()) {
-    scalarValue = rewriter.create<NonDetOp>(loc, *commonType).getResult();
+    scalarValue = createNonDet(*commonType);
     valueByIndex[idx] = scalarValue;
     generatedMaterializations.insert(scalarValue);
   }
@@ -3471,18 +3513,25 @@ static LogicalResult rewriteExpandableLocalArray(
     CreateArrayOp createOp, const DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers,
     SymbolTableCollection &tables, PatternRewriter &rewriter, const ConversionTracker &tracker
 ) {
-  FailureOr<SmallVector<Operation *>> maybeUsers = getUsersInBlockOrder(createOp.getResult());
-  if (failed(maybeUsers)) {
-    return failure();
-  }
-  SmallVector<Operation *> users = std::move(*maybeUsers);
-
   ArrayType arrTy = createOp.getType();
   std::optional<SmallVector<ArrayAttr>> maybeIndices = arrTy.getSubelementIndices();
   if (!maybeIndices) {
     return failure();
   }
   ArrayRef<ArrayAttr> indices = *maybeIndices;
+
+  FailureOr<SmallVector<Operation *>> maybeUsers = getUsersInBlockOrder(createOp.getResult());
+  Operation *materializationPoint = nullptr;
+  SmallVector<Operation *> users;
+  if (succeeded(maybeUsers)) {
+    users = std::move(*maybeUsers);
+  } else {
+    if (!isInitializerOnlyLocalArray(createOp, indices)) {
+      return failure();
+    }
+    users.assign(createOp.getResult().user_begin(), createOp.getResult().user_end());
+    materializationPoint = createOp.getOperation();
+  }
 
   DenseMap<ArrayAttr, Value> valueByIndex;
   if (failed(seedValuesFromArrayElements(createOp, indices, valueByIndex))) {
@@ -3502,7 +3551,7 @@ static LogicalResult rewriteExpandableLocalArray(
       rewriter.setInsertionPoint(readOp);
       FailureOr<Value> scalarValue = getOrCreateScalarizedLocalArrayValue(
           valueByIndex, generatedMaterializations, idx, readOp.getResult().getType(),
-          readOp.getLoc(), rewriter, tracker
+          readOp.getLoc(), rewriter, tracker, materializationPoint
       );
       if (failed(scalarValue)) {
         return failure();
@@ -3533,7 +3582,7 @@ static LogicalResult rewriteExpandableLocalArray(
       MemberInfo memberInfo = splitInfo.memberByIndex.lookup(idx);
       FailureOr<Value> scalarValue = getOrCreateScalarizedLocalArrayValue(
           valueByIndex, generatedMaterializations, idx, memberInfo.second, memberWriteOp.getLoc(),
-          rewriter, tracker
+          rewriter, tracker, materializationPoint
       );
       if (failed(scalarValue)) {
         return failure();
@@ -3595,7 +3644,8 @@ static LogicalResult rewriteExpandableMemberWrites(
     }
 
     for (CreateArrayOp createOp : createsToExpand) {
-      if (failed(verifyExpandableLocalArrayUsers(createOp, splitMemberSet, tables))) {
+      DominanceInfo domInfo;
+      if (failed(verifyExpandableLocalArrayUsers(createOp, splitMemberSet, tables, domInfo))) {
         return failure();
       }
       auto res = verifyExpandableLocalArraySplitIndices(
@@ -3671,6 +3721,7 @@ static LogicalResult verifySplitMemberWritesExpandable(
   for (const auto &entry : candidateWritesByMember) {
     splitMemberSet.insert(entry.first);
   }
+  DominanceInfo domInfo;
 
   for (const ScalarizedArrayInfo &info : arraysToScalarize) {
     auto verifyNoIncompatibleShares = verifyNoSharedValuesForIncompatibleSplitTypes(
@@ -3700,8 +3751,9 @@ static LogicalResult verifySplitMemberWritesExpandable(
         continue;
       }
       FailureOr<CreateArrayOp> maybeCreateOp = getStaticLocalArrayCreate(writeOp);
-      if (failed(maybeCreateOp) ||
-          failed(verifyExpandableLocalArrayUsers(*maybeCreateOp, splitMemberSet, tables))) {
+      if (failed(maybeCreateOp) || failed(verifyExpandableLocalArrayUsers(
+                                       *maybeCreateOp, splitMemberSet, tables, domInfo
+                                   ))) {
         InFlightDiagnostic diag = member.emitError(
             "cannot split heterogeneous array member because not every write to it can be "
             "scalarized"
