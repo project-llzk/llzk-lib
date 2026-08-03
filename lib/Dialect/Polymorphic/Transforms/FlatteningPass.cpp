@@ -1035,6 +1035,28 @@ public:
   }
 };
 
+/// Convert nondeterministic result types when a shared witness is refined to an instantiated type.
+class NonDetOpPattern : public OpConversionPattern<NonDetOp> {
+public:
+  /// Construct the nondeterministic value conversion pattern.
+  NonDetOpPattern(TypeConverter &converter, MLIRContext *ctx)
+      : OpConversionPattern<NonDetOp>(converter, ctx, /*benefit=*/1) {}
+
+  /// Rebuild the op with the converted result type.
+  LogicalResult
+  matchAndRewrite(NonDetOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    Type newType = getTypeConverter()->convertType(op.getType());
+    if (!newType) {
+      return op->emitError("Could not convert Op result type.");
+    }
+    if (newType == op.getType()) {
+      return failure();
+    }
+    replaceOpWithNewOp<NonDetOp>(rewriter, op, newType);
+    return success();
+  }
+};
+
 /// Disables reporting of missing struct symbols during legality checks to avoid showing error
 /// diagnostics that are not actually errors.
 class DisableReportMissing : public LegalityCheckCallback {
@@ -1057,8 +1079,12 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   ParameterizedStructUseTypeConverter tyConv(tracker, modOp);
   DisableReportMissing drm(tyConv);
   ConversionTarget target = newConverterDefinedTargetWithCallback<>(tyConv, ctx, drm);
+  target.addDynamicallyLegalOp<NonDetOp>([&tyConv](Operation *op) {
+    return defaultLegalityCheck(tyConv, op);
+  });
   RewritePatternSet patterns = newGeneralRewritePatternSet(tyConv, ctx, target);
   patterns.add<CallStructFuncPattern, MemberDefOpPattern>(tyConv, ctx, tracker);
+  patterns.add<NonDetOpPattern>(tyConv, ctx);
   return applyPartialConversion(modOp, target, std::move(patterns));
 }
 
@@ -2527,10 +2553,12 @@ static FailureOr<Type> getCommonRefinedType(Type lhs, Type rhs, const Conversion
     if (lhsStruct.getNameRef() != rhsStruct.getNameRef()) {
       std::optional<StructType> lhsPreimage = tracker.getPreimage(lhsStruct);
       std::optional<StructType> rhsPreimage = tracker.getPreimage(rhsStruct);
-      if (!lhsPreimage || !rhsPreimage) {
+      if (!lhsPreimage && !rhsPreimage) {
         return failure();
       }
-      auto commonPreimage = getCommonRefinedType(*lhsPreimage, *rhsPreimage, tracker);
+      auto commonPreimage = getCommonRefinedType(
+          lhsPreimage.value_or(lhsStruct), rhsPreimage.value_or(rhsStruct), tracker
+      );
       if (failed(commonPreimage)) {
         return failure();
       }
@@ -4065,7 +4093,11 @@ public:
       return failure(); // nothing changed
     }
     if (!tracker_.isLegalConversion(op.getType(), newType, "UpdateMemberDefTypeFromWrite")) {
-      return failure();
+      auto commonType =
+          Step5_ScalarizeHeterogeneousArrays::getCommonRefinedType(op.getType(), newType, tracker_);
+      if (failed(commonType) || *commonType != newType) {
+        return failure();
+      }
     }
     rewriter.modifyOpInPlace(op, [&op, &newType]() { op.setType(newType); });
     LLVM_DEBUG(llvm::dbgs() << "[UpdateMemberDefTypeFromWrite] updated type of " << op << '\n');
@@ -4276,16 +4308,31 @@ static bool allUsesAreMemberWrites(Value value) {
 
 /// Return a shared typed nondeterministic replacement for member writes that reuse `value`.
 static FailureOr<Value> materializeValueForMemberWrite(
-    Location loc, Value value, Type type, PatternRewriter &rewriter,
-    DenseMap<std::pair<Value, Type>, Value> &typedNondetReplacements
+    Location loc, Value value, Type type, PatternRewriter &rewriter, ConversionTracker &tracker,
+    DenseMap<Value, Value> &typedNondetReplacements
 ) {
+  auto cachedReplacement = typedNondetReplacements.find(value);
+  if (cachedReplacement != typedNondetReplacements.end()) {
+    Value replacement = cachedReplacement->second;
+    FailureOr<Type> commonType = Step5_ScalarizeHeterogeneousArrays::getCommonRefinedType(
+        replacement.getType(), type, tracker
+    );
+    if (failed(commonType)) {
+      return failure();
+    }
+    if (*commonType != replacement.getType()) {
+      NonDetOp replacementNondetOp = replacement.getDefiningOp<NonDetOp>();
+      if (!replacementNondetOp) {
+        return failure();
+      }
+      rewriter.modifyOpInPlace(replacementNondetOp, [&replacement, &commonType]() {
+        replacement.setType(*commonType);
+      });
+    }
+    return replacement;
+  }
   if (value.getType() == type) {
     return value;
-  }
-  auto cacheKey = std::make_pair(value, type);
-  auto cachedReplacement = typedNondetReplacements.find(cacheKey);
-  if (cachedReplacement != typedNondetReplacements.end()) {
-    return cachedReplacement->second;
   }
 
   NonDetOp nondetOp = value.getDefiningOp<NonDetOp>();
@@ -4296,26 +4343,17 @@ static FailureOr<Value> materializeValueForMemberWrite(
   OpBuilder::InsertionGuard guard(rewriter);
   rewriter.setInsertionPointAfter(nondetOp);
   Value replacement = rewriter.create<NonDetOp>(loc, type).getResult();
-  typedNondetReplacements.try_emplace(cacheKey, replacement);
+  typedNondetReplacements.try_emplace(value, replacement);
   return replacement;
 }
 
 /// Erase an original nondeterministic value after all member writes have moved to replacements.
 static void eraseUnusedNondetDef(
-    Value value, PatternRewriter &rewriter,
-    DenseMap<std::pair<Value, Type>, Value> &typedNondetReplacements
+    Value value, PatternRewriter &rewriter, DenseMap<Value, Value> &typedNondetReplacements
 ) {
   if (value.use_empty()) {
     if (NonDetOp nondetOp = value.getDefiningOp<NonDetOp>()) {
-      SmallVector<std::pair<Value, Type>> cacheKeysToErase;
-      for (const auto &entry : typedNondetReplacements) {
-        if (entry.first.first == value) {
-          cacheKeysToErase.push_back(entry.first);
-        }
-      }
-      for (const auto &cacheKey : cacheKeysToErase) {
-        typedNondetReplacements.erase(cacheKey);
-      }
+      typedNondetReplacements.erase(value);
       rewriter.eraseOp(nondetOp);
     }
   }
@@ -4355,7 +4393,7 @@ public:
 /// Update the type of MemberWriteOp value based on updated types from MemberDefOp.
 class UpdateMemberWriteValFromDef final : public OpRewritePattern<MemberWriteOp> {
   ConversionTracker &tracker_;
-  mutable DenseMap<std::pair<Value, Type>, Value> typedNondetReplacements_;
+  mutable DenseMap<Value, Value> typedNondetReplacements_;
 
 public:
   /// Construct the member-write value propagation pattern.
@@ -4373,15 +4411,16 @@ public:
     Value oldValue = op.getVal();
     Type oldValueType = oldValue.getType();
     Type newValueType = def->get().getType();
-    if (oldValueType == newValueType ||
-        !tracker_.isLegalConversion(oldValueType, newValueType, "UpdateMemberWriteValFromDef")) {
-      return failure();
-    }
-
-    auto cachedReplacement = typedNondetReplacements_.find(std::make_pair(oldValue, newValueType));
+    auto cachedReplacement = typedNondetReplacements_.find(oldValue);
     if (cachedReplacement != typedNondetReplacements_.end()) {
-      rewriter.modifyOpInPlace(op, [&op, &cachedReplacement]() {
-        op.getValMutable().assign(cachedReplacement->second);
+      FailureOr<Value> convertedValue = materializeValueForMemberWrite(
+          op.getLoc(), oldValue, newValueType, rewriter, tracker_, typedNondetReplacements_
+      );
+      if (failed(convertedValue)) {
+        return failure();
+      }
+      rewriter.modifyOpInPlace(op, [&op, &convertedValue]() {
+        op.getValMutable().assign(*convertedValue);
       });
       eraseUnusedNondetDef(oldValue, rewriter, typedNondetReplacements_);
       LLVM_DEBUG(
@@ -4389,6 +4428,11 @@ public:
                        << '\n'
       );
       return success();
+    }
+
+    if (oldValueType == newValueType ||
+        !tracker_.isLegalConversion(oldValueType, newValueType, "UpdateMemberWriteValFromDef")) {
+      return failure();
     }
 
     if (!hasUsesOutside(oldValue, op.getOperation())) {
@@ -4402,7 +4446,7 @@ public:
     }
 
     FailureOr<Value> convertedValue = materializeValueForMemberWrite(
-        op.getLoc(), oldValue, newValueType, rewriter, typedNondetReplacements_
+        op.getLoc(), oldValue, newValueType, rewriter, tracker_, typedNondetReplacements_
     );
     if (failed(convertedValue)) {
       return failure();
