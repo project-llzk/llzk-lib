@@ -2509,13 +2509,19 @@ static SplitMemberInfo &getOrCreateSplitMemberInfo(
   return splitInfo;
 }
 
-/// Refresh cached element values from their still-live writes.
+/// Refresh cached element values from their still-live array operands.
 ///
 /// Candidates are collected before any rewrites run, so one candidate can cache a read result from
 /// another candidate. Rewriting the upstream candidate updates the downstream write operands and
-/// erases the reads; re-reading the write operands here keeps this candidate from using dangling
-/// values.
-static LogicalResult refreshValuesFromWrites(ScalarizedArrayInfo &info) {
+/// initializer operands and erases the reads; re-reading the operands here keeps this candidate
+/// from using dangling values.
+static LogicalResult
+refreshValuesFromArrayOperands(ScalarizedArrayInfo &info, const ConversionTracker &tracker) {
+  if (failed(seedValuesFromArrayElements(
+          info.createOp, info.indices, info.valueByIndex, &info.typeByIndex, &tracker
+      ))) {
+    return failure();
+  }
   for (WriteArrayOp writeOp : info.writes) {
     ArrayAttr idx = getIndexAsAttr(writeOp);
     if (!idx || !info.valueByIndex.contains(idx)) {
@@ -2535,9 +2541,9 @@ static LogicalResult refreshValuesFromWrites(ScalarizedArrayInfo &info) {
 /// allocation are erased.
 static LogicalResult rewriteLocalArray(
     ScalarizedArrayInfo &info, DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers,
-    SymbolTableCollection &tables, PatternRewriter &rewriter
+    SymbolTableCollection &tables, PatternRewriter &rewriter, const ConversionTracker &tracker
 ) {
-  if (failed(refreshValuesFromWrites(info))) {
+  if (failed(refreshValuesFromArrayOperands(info, tracker))) {
     return failure();
   }
 
@@ -3209,7 +3215,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
   DenseMap<MemberDefOp, SplitMemberInfo> splitMembers;
   for (ScalarizedArrayInfo &info : arraysToScalarize) {
-    if (failed(rewriteLocalArray(info, splitMembers, tables, rewriter))) {
+    if (failed(rewriteLocalArray(info, splitMembers, tables, rewriter, tracker))) {
       return failure();
     }
   }
