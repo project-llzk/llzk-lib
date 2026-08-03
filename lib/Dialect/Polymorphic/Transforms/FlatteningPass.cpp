@@ -58,8 +58,10 @@
 #include <llvm/ADT/DepthFirstIterator.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Debug.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include <cstdint>
 
@@ -104,7 +106,7 @@ static void reportDelayedDiagnostics(CallOp caller, SmallVector<Diagnostic> &&di
 
 class ConversionTracker {
   /// Tracks if some step performed a modification of the code such that another pass should be run.
-  bool modified;
+  bool modified = false;
   /// Maps original remote (i.e., use site) type to new remote type.
   /// Note: The keys are always parameterized StructType and the values are no-parameter StructType.
   DenseMap<StructType, StructType> structInstantiations;
@@ -385,7 +387,7 @@ struct MatchFailureListener : public RewriterBase::Listener {
   bool hadFailure = false;
 
   /// Destroy the listener through the MLIR listener base class.
-  ~MatchFailureListener() override {}
+  ~MatchFailureListener() override = default;
 
   /// Convert match failures into reported diagnostics and remember that the pass must fail.
   void notifyMatchFailure(Location loc, function_ref<void(Diagnostic &)> reasonCallback) override {
@@ -465,7 +467,7 @@ public:
       anyChanged |= (converted != attr);
       updated.push_back(converted);
     }
-    if (changed) {
+    if (changed != nullptr) {
       *changed = anyChanged;
     }
     return updated;
@@ -804,6 +806,7 @@ class StructCloner {
     // Clone the original struct.
     StructDefOp newStruct = origStruct.clone();
     convertCalleesInPlace(newStruct, paramNameToConcrete);
+    Operation *insertedCloneRoot = nullptr;
     if (remainingNames.empty()) { // FULL INSTANTIATION CASE
       // Set name of the new struct by prepending its name with instantiated template name.
       newStruct.setSymName(
@@ -812,6 +815,7 @@ class StructCloner {
       // Insert 'newStruct' into the parent ModuleOp of the original TemplateOp. Use the
       // `SymbolTable::insert()` function so that the name will be made unique if necessary.
       symTables.getSymbolTable(parentModule).insert(newStruct, Block::iterator(parentTemplate));
+      insertedCloneRoot = newStruct.getOperation();
       // Drop the old template name from the list.
       typeAtCallerSymPieces.pop_back();
     } else { // PARTIAL INSTANTIATION CASE
@@ -835,6 +839,7 @@ class StructCloner {
       // `SymbolTable::insert()` function so that the name will be made unique if necessary.
       symTables.getSymbolTable(newTemplate).insert(newStruct);
       symTables.getSymbolTable(parentModule).insert(newTemplate, Block::iterator(parentTemplate));
+      insertedCloneRoot = newTemplate.getOperation();
 
       // Replace the old template name in the list with the new one (get template name after
       // symbol table insertion since it may be modified to make it unique).
@@ -870,11 +875,13 @@ class StructCloner {
 
     RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
     patterns.add<ClonedBodyConstReadOpPattern>(
-        tyConv, ctx, paramNameToConcrete, tracker_.delayedDiagnosticSet(newLocalType)
+        tyConv, ctx, paramNameToConcrete, tracker_.delayedDiagnosticSet(newRemoteType)
     );
     patterns.add<ClonedMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
     if (failed(applyFullConversion(newStruct, target, std::move(patterns)))) {
       LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   instantiating body of struct failed \n");
+      assert(insertedCloneRoot && "clone root must have been inserted before body conversion");
+      insertedCloneRoot->erase();
       return failure();
     }
     return newRemoteType;
@@ -1146,7 +1153,7 @@ public:
 };
 
 /// Return the callee-side unification-derived value for a template parameter, if any.
-inline static std::optional<Attribute>
+static inline std::optional<Attribute>
 inferUnifiedParam(const UnificationMap &unifyResult, SymbolRefAttr paramName) {
   auto it = unifyResult.find({paramName, Side::RHS});
   return (it == unifyResult.end()) ? std::nullopt : std::make_optional(it->second);
@@ -1154,7 +1161,7 @@ inferUnifiedParam(const UnificationMap &unifyResult, SymbolRefAttr paramName) {
 
 /// Emit the match failure used when an inferred instantiation violates a template parameter's
 /// declared type restriction.
-inline static LogicalResult failIncompatibleInferredParam(
+static inline LogicalResult failIncompatibleInferredParam(
     CallOp op, PatternRewriter &rewriter, FlatSymbolRefAttr paramName, TemplateParamOp paramOp
 ) {
   LLVM_DEBUG(
@@ -1380,6 +1387,7 @@ static LogicalResult applyBodyConversions(
 
 class InstantiateFuncAtCallOp final : public OpRewritePattern<CallOp> {
   ConversionTracker &tracker_;
+  mutable llvm::StringMap<SymbolRefAttr> fullInstantiationCache_;
 
 public:
   /// Construct the function-instantiation pattern.
@@ -1456,7 +1464,7 @@ public:
         layout.remainingNames.empty()
             ? instantiateFully(
                   op, rewriter, symTables, callTgt, parentTemplate, parentModule,
-                  layout.templateNameWithAttrs, paramNameToConcrete
+                  layout.templateNameWithAttrs, paramNameToConcrete, fullInstantiationCache_
               )
             : instantiatePartially(
                   op, rewriter, symTables, callTgt, parentTemplate, parentModule, layout,
@@ -1554,12 +1562,12 @@ private:
     // instantiation is valid, except for the size check because that cannot change.
     assert((callParams.size() == llvm::range_size(realParams)) && "per CallOpVerifier");
     if (failed(op.verifyTemplateParamCompatibility(realParams))) {
-      return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+      return rewriter.notifyMatchFailure(op, [](Diagnostic &diag) {
         diag.append("incompatible with specified param type(s)");
       });
     }
     if (failed(op.verifyTemplateParamsMatchInferred(realParams, unifyResult))) {
-      return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+      return rewriter.notifyMatchFailure(op, [](Diagnostic &diag) {
         diag.append("incompatible with inferred param value(s)");
       });
     }
@@ -1617,38 +1625,41 @@ private:
   static FailureOr<SymbolRefAttr> instantiateFully(
       CallOp op, PatternRewriter &rewriter, SymbolTableCollection &symTables, FuncDefOp callTgt,
       TemplateOp parentTemplate, ModuleOp parentModule, StringRef templateNameWithAttrs,
-      const DenseMap<Attribute, Attribute> &paramNameToConcrete
+      const DenseMap<Attribute, Attribute> &paramNameToConcrete,
+      llvm::StringMap<SymbolRefAttr> &fullInstantiationCache
   ) {
-    MLIRContext *ctx = op.getContext();
-    std::string newFuncName =
-        (mlir::Twine(templateNameWithAttrs) + "_" + callTgt.getSymName()).str();
-    StringRef actualNewFuncName = newFuncName;
-    if (!symTables.getSymbolTable(parentModule).lookup(newFuncName)) {
-      FuncDefOp newFunc = callTgt.clone();
-      newFunc.setSymName(newFuncName);
-      convertCalleesInPlace(newFunc, paramNameToConcrete);
-      // Insert before the TemplateOp; symbol table may adjust the name to ensure uniqueness.
-      symTables.getSymbolTable(parentModule).insert(newFunc, Block::iterator(parentTemplate));
-      actualNewFuncName = newFunc.getSymName();
-      LLVM_DEBUG(
-          llvm::dbgs() << "[InstantiateFuncAtCallOp]  created full instantiation function: "
-                       << actualNewFuncName << '\n'
-      );
-      if (failed(applyBodyConversions(op, newFunc, paramNameToConcrete))) {
-        LLVM_DEBUG(
-            llvm::dbgs() << "[InstantiateFuncAtCallOp]   body conversion failed for "
-                         << actualNewFuncName << '\n'
-        );
-        newFunc->erase();
-        return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
-          diag.append("failure while creating instantiated function '", actualNewFuncName, '\'');
-        });
-      }
-    } else {
+    std::string cacheKey;
+    llvm::raw_string_ostream(cacheKey) << op.getCalleeAttr() << '|' << templateNameWithAttrs;
+    if (auto cached = fullInstantiationCache.find(cacheKey);
+        cached != fullInstantiationCache.end()) {
       LLVM_DEBUG(
           llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing full instantiation function: "
+                       << cached->second << '\n'
+      );
+      return cached->second;
+    }
+
+    std::string newFuncName;
+    llvm::raw_string_ostream(newFuncName) << templateNameWithAttrs << '_' << callTgt.getSymName();
+    FuncDefOp newFunc = callTgt.clone();
+    newFunc.setSymName(newFuncName);
+    convertCalleesInPlace(newFunc, paramNameToConcrete);
+    // Insert before the TemplateOp; symbol table may adjust the name to avoid existing symbols.
+    symTables.getSymbolTable(parentModule).insert(newFunc, Block::iterator(parentTemplate));
+    StringRef actualNewFuncName = newFunc.getSymName();
+    LLVM_DEBUG(
+        llvm::dbgs() << "[InstantiateFuncAtCallOp]  created full instantiation function: "
+                     << actualNewFuncName << '\n'
+    );
+    if (failed(applyBodyConversions(op, newFunc, paramNameToConcrete))) {
+      LLVM_DEBUG(
+          llvm::dbgs() << "[InstantiateFuncAtCallOp]   body conversion failed for "
                        << actualNewFuncName << '\n'
       );
+      newFunc->erase();
+      return rewriter.notifyMatchFailure(op, [&actualNewFuncName](Diagnostic &diag) {
+        diag.append("failure while creating instantiated function '", actualNewFuncName, '\'');
+      });
     }
 
     // Callee: drop template & original function names, add the new module-level function name.
@@ -1658,8 +1669,12 @@ private:
     assert(symPieces.size() >= 2 && "callee must include at least template and function names");
     symPieces.pop_back(); // remove original function name
     symPieces.pop_back(); // remove template name
-    symPieces.push_back(FlatSymbolRefAttr::get(StringAttr::get(ctx, actualNewFuncName)));
-    return asSymbolRefAttr(symPieces);
+    symPieces.push_back(
+        FlatSymbolRefAttr::get(StringAttr::get(op.getContext(), actualNewFuncName))
+    );
+    SymbolRefAttr newCalleeAttr = asSymbolRefAttr(symPieces);
+    fullInstantiationCache[cacheKey] = newCalleeAttr;
+    return newCalleeAttr;
   }
 
   /// Create or reuse a partially-instantiated template that preserves the remaining non-concrete
@@ -1705,7 +1720,7 @@ private:
                          << '\n'
         );
         newTemplate->erase();
-        return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+        return rewriter.notifyMatchFailure(op, [&newFuncName](Diagnostic &diag) {
           diag.append("failure while creating instantiated function '", newFuncName, '\'');
         });
       }
@@ -1835,7 +1850,7 @@ struct AffineMapFolder {
   };
 
   /// Convert owned output operand groups into `ValueRange` views for op builders.
-  static inline SmallVector<ValueRange> getConvertedMapOpGroups(Output out) {
+  static inline SmallVector<ValueRange> getConvertedMapOpGroups(const Output &out) {
     return llvm::map_to_vector(out.mapOpGroups, [](const SmallVector<Value> &grp) {
       return ValueRange(grp);
     });
@@ -2212,7 +2227,7 @@ static ArrayAttr findIndexMissingFrom(ArrayRef<ArrayAttr> lhs, ArrayRef<ArrayAtt
 /// concrete value stored at each index. The caller must have already proven that every rewritten
 /// use observes the value at a single static index, so replacing that use with the index-specific
 /// value is type-correct for the consuming operation after the rewrite.
-static void replaceAllUsesIgnoringType(Value oldValue, Value newValue) {
+static inline void replaceAllUsesIgnoringType(Value oldValue, Value newValue) {
   for (OpOperand &use : llvm::make_early_inc_range(oldValue.getUses())) {
     use.set(newValue);
   }
@@ -2220,7 +2235,7 @@ static void replaceAllUsesIgnoringType(Value oldValue, Value newValue) {
 
 /// Return true iff replacing `readOp` with a value of `replacementType` preserves the read result's
 /// type refinement.
-static bool canReplaceReadResultWithType(
+static inline bool canReplaceReadResultWithType(
     ReadArrayOp readOp, Type replacementType, const ConversionTracker &tracker, const char *patName
 ) {
   Type readResultType = readOp.getResult().getType();
@@ -2229,7 +2244,7 @@ static bool canReplaceReadResultWithType(
 }
 
 /// Return true if `def` is in the same block as `user` and appears before it.
-static bool strictlyBefore(Operation *def, Operation *user) {
+static inline bool strictlyBefore(Operation *def, Operation *user) {
   return def->getBlock() == user->getBlock() && def->isBeforeInBlock(user);
 }
 
@@ -2248,7 +2263,7 @@ static FailureOr<SmallVector<Operation *>> getUsersInBlockOrder(Value value) {
 }
 
 /// Return true iff `createOp` has direct element writes whose order can update stored values.
-static bool hasDirectArrayWrites(CreateArrayOp createOp) {
+static inline bool hasDirectArrayWrites(CreateArrayOp createOp) {
   Value arrayValue = createOp.getResult();
   return llvm::any_of(arrayValue.getUsers(), [arrayValue](Operation *user) {
     auto writeOp = llvm::dyn_cast<WriteArrayOp>(user);
@@ -2257,18 +2272,19 @@ static bool hasDirectArrayWrites(CreateArrayOp createOp) {
 }
 
 /// Return true iff `createOp` provides an initializer value for every static array element.
-static bool hasFullInitializer(CreateArrayOp createOp, ArrayRef<ArrayAttr> indices) {
+static inline bool hasFullInitializer(CreateArrayOp createOp, ArrayRef<ArrayAttr> indices) {
   Operation::operand_range elements = createOp.getElements();
   return !elements.empty() && elements.size() == indices.size();
 }
 
 /// Return true iff all element values are immutable initializer operands.
-static bool isInitializerOnlyLocalArray(CreateArrayOp createOp, ArrayRef<ArrayAttr> indices) {
+static inline bool
+isInitializerOnlyLocalArray(CreateArrayOp createOp, ArrayRef<ArrayAttr> indices) {
   return hasFullInitializer(createOp, indices) && !hasDirectArrayWrites(createOp);
 }
 
 /// Return true iff the array allocation and every initializer value dominate `user`.
-static bool initializerValuesDominateUse(
+static inline bool initializerValuesDominateUse(
     CreateArrayOp createOp, Operation *user, const DominanceInfo &domInfo
 ) {
   if (!domInfo.dominates(createOp.getResult(), user)) {
@@ -2284,14 +2300,14 @@ static bool initializerValuesDominateUse(
 /// The rewrite currently handles straight-line local array construction. Requiring every write to
 /// be in the same block and before the consuming read/member write keeps the replacement local and
 /// avoids changing behavior for arrays updated through control flow.
-inline static bool allWritesAvailableAt(const ScalarizedArrayInfo &info, Operation *user) {
+static inline bool allWritesAvailableAt(const ScalarizedArrayInfo &info, Operation *user) {
   return llvm::all_of(info.writeOpByIndex, [user](const auto &entry) {
     return strictlyBefore(entry.second, user);
   });
 }
 
 /// Convert array access operands to a static index attribute, if possible.
-inline static ArrayAttr getIndexAsAttr(ArrayAccessOpInterface op) {
+static inline ArrayAttr getIndexAsAttr(ArrayAccessOpInterface op) {
   return op.indexOperandsToAttributeArray();
 }
 
@@ -2846,7 +2862,7 @@ static LogicalResult refreshValuesFromArrayOperands(
 ) {
   DenseMap<ArrayAttr, Value> oldValueByIndex;
   DenseMap<ArrayAttr, Type> oldTypeByIndex;
-  if (changed) {
+  if (changed != nullptr) {
     oldValueByIndex = info.valueByIndex;
     oldTypeByIndex = info.typeByIndex;
   }
@@ -2885,7 +2901,7 @@ static LogicalResult refreshValuesFromArrayOperands(
     }
     setCachedValue(idx, writeOp.getRvalue(), writeOp.getRvalue().getType());
   }
-  if (changed) {
+  if (changed != nullptr) {
     for (ArrayAttr idx : info.indices) {
       if (oldValueByIndex.lookup(idx) != info.valueByIndex.lookup(idx) ||
           oldTypeByIndex.lookup(idx) != info.typeByIndex.lookup(idx)) {
@@ -2924,6 +2940,32 @@ static LogicalResult refreshValuesFromDependentCandidates(
   return failure();
 }
 
+/// Emit one scalar `struct.writem` per split index for a whole-array member write.
+template <typename GetScalarValueFn>
+static LogicalResult emitScalarMemberWrites(
+    MemberWriteOp memberWriteOp, const SplitMemberInfo &splitInfo, PatternRewriter &rewriter,
+    GetScalarValueFn getScalarValue
+) {
+  rewriter.setInsertionPoint(memberWriteOp);
+  DictionaryAttr discardableAttrs = memberWriteOp->getDiscardableAttrDictionary();
+  for (ArrayAttr idx : splitInfo.indices) {
+    MemberInfo memberInfo = splitInfo.memberByIndex.lookup(idx);
+    if (!memberInfo.first) {
+      return failure();
+    }
+    FailureOr<Value> scalarValue = getScalarValue(idx, memberInfo.second);
+    if (failed(scalarValue)) {
+      return failure();
+    }
+    MemberWriteOp scalarWrite = rewriter.create<MemberWriteOp>(
+        memberWriteOp.getLoc(), memberWriteOp.getComponent(),
+        FlatSymbolRefAttr::get(memberInfo.first), *scalarValue
+    );
+    scalarWrite->setDiscardableAttrs(discardableAttrs);
+  }
+  return success();
+}
+
 /// Rewrite one local heterogeneous array allocation into its index-specific scalar values.
 ///
 /// Direct array reads are replaced with the value written at the requested static index.
@@ -2960,18 +3002,15 @@ static LogicalResult rewriteLocalArray(
         memberDef->get(), info, splitTypesByMember, splitMembers, tables, rewriter
     );
 
-    rewriter.setInsertionPoint(memberWriteOp);
-    DictionaryAttr discardableAttrs = memberWriteOp->getDiscardableAttrDictionary();
-    for (ArrayAttr idx : info.indices) {
-      MemberInfo memberInfo = splitInfo.memberByIndex.lookup(idx);
-      if (!memberInfo.first) {
+    auto getScalarValue = [&info](ArrayAttr idx, Type) -> FailureOr<Value> {
+      Value scalarValue = info.valueByIndex.lookup(idx);
+      if (!scalarValue) {
         return failure();
       }
-      MemberWriteOp scalarWrite = rewriter.create<MemberWriteOp>(
-          memberWriteOp.getLoc(), memberWriteOp.getComponent(),
-          FlatSymbolRefAttr::get(memberInfo.first), info.valueByIndex.lookup(idx)
-      );
-      scalarWrite->setDiscardableAttrs(discardableAttrs);
+      return scalarValue;
+    };
+    if (failed(emitScalarMemberWrites(memberWriteOp, splitInfo, rewriter, getScalarValue))) {
+      return failure();
     }
     rewriter.eraseOp(memberWriteOp);
   }
@@ -3405,7 +3444,7 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
 
   DenseMap<Value, std::pair<Type, Location>> firstUseByValue;
   DenseMap<ArrayAttr, PendingMaterializationUse> firstMaterializedUseByIndex;
-  auto valueCompatibleWithTargetType = [&](Value scalarValue, Type targetType) {
+  auto valueCompatibleWithTargetType = [&tracker](Value scalarValue, Type targetType) {
     return canUseScalarizedValueAsType(
         scalarValue.getType(), targetType, tracker, "verifyNoSharedValuesForIncompatibleSplitTypes"
     );
@@ -3576,22 +3615,14 @@ static LogicalResult rewriteExpandableLocalArray(
     }
     const SplitMemberInfo &splitInfo = splitIt->second;
 
-    rewriter.setInsertionPoint(memberWriteOp);
-    DictionaryAttr discardableAttrs = memberWriteOp->getDiscardableAttrDictionary();
-    for (ArrayAttr idx : splitInfo.indices) {
-      MemberInfo memberInfo = splitInfo.memberByIndex.lookup(idx);
-      FailureOr<Value> scalarValue = getOrCreateScalarizedLocalArrayValue(
-          valueByIndex, generatedMaterializations, idx, memberInfo.second, memberWriteOp.getLoc(),
-          rewriter, tracker, materializationPoint
+    auto getScalarValue = [&](ArrayAttr idx, Type type) {
+      return getOrCreateScalarizedLocalArrayValue(
+          valueByIndex, generatedMaterializations, idx, type, memberWriteOp.getLoc(), rewriter,
+          tracker, materializationPoint
       );
-      if (failed(scalarValue)) {
-        return failure();
-      }
-      MemberWriteOp scalarWrite = rewriter.create<MemberWriteOp>(
-          memberWriteOp.getLoc(), memberWriteOp.getComponent(),
-          FlatSymbolRefAttr::get(memberInfo.first), *scalarValue
-      );
-      scalarWrite->setDiscardableAttrs(discardableAttrs);
+    };
+    if (failed(emitScalarMemberWrites(memberWriteOp, splitInfo, rewriter, getScalarValue))) {
+      return failure();
     }
     rewriter.eraseOp(memberWriteOp);
   }
