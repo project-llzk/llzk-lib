@@ -2966,7 +2966,8 @@ static FailureOr<Value> getOrCreateScalarizedLocalArrayValue(
 static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
     CreateArrayOp createOp,
     const DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
-    SymbolTableCollection &tables, StringRef arrayDescription = "an expandable array"
+    SymbolTableCollection &tables, const ConversionTracker &tracker,
+    StringRef arrayDescription = "an expandable array"
 ) {
   if (splitTypesByMember.empty()) {
     return success();
@@ -3030,6 +3031,12 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
 
   DenseMap<Value, std::pair<Type, Location>> firstUseByValue;
   DenseMap<ArrayAttr, PendingMaterializationUse> firstMaterializedUseByIndex;
+  auto valueCompatibleWithTargetType = [&](Value scalarValue, Type targetType) {
+    return scalarValue.getType() == targetType || typesUnify(scalarValue.getType(), targetType) ||
+           tracker.isLegalConversion(
+               scalarValue.getType(), targetType, "verifyNoSharedValuesForIncompatibleSplitTypes"
+           );
+  };
   auto noteMaterializedUse = [&](ArrayAttr idx, Type targetType, Location loc,
                                  StringRef description) -> LogicalResult {
     auto existing = firstMaterializedUseByIndex.find(idx);
@@ -3094,6 +3101,16 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
         continue;
       }
       auto existing = firstUseByValue.find(scalarValue);
+      if (!valueCompatibleWithTargetType(scalarValue, targetType)) {
+        InFlightDiagnostic diag =
+            createOp.emitError("cannot split heterogeneous array member because ")
+            << arrayDescription << " stores a scalar value with an incompatible split-member type";
+        diag.attachNote(scalarValue.getLoc())
+            << "array index " << idx << " stores value type " << scalarValue.getType();
+        diag.attachNote(memberWriteOp.getLoc())
+            << "same index is written to scalar member type " << targetType;
+        return diag;
+      }
       if (existing == firstUseByValue.end()) {
         firstUseByValue.try_emplace(
             scalarValue, std::make_pair(targetType, memberWriteOp.getLoc())
@@ -3321,7 +3338,7 @@ static LogicalResult verifySplitMemberWritesExpandable(
 
   for (const ScalarizedArrayInfo &info : arraysToScalarize) {
     auto verifyNoIncompatibleShares = verifyNoSharedValuesForIncompatibleSplitTypes(
-        info.createOp, splitTypesByMember, tables, "a scalarization candidate"
+        info.createOp, splitTypesByMember, tables, tracker, "a scalarization candidate"
     );
     if (failed(verifyNoIncompatibleShares)) {
       return failure();
@@ -3363,8 +3380,9 @@ static LogicalResult verifySplitMemberWritesExpandable(
       if (failed(res)) {
         return failure();
       }
-      auto verifyNoIncompatibleShares =
-          verifyNoSharedValuesForIncompatibleSplitTypes(*maybeCreateOp, splitTypesByMember, tables);
+      auto verifyNoIncompatibleShares = verifyNoSharedValuesForIncompatibleSplitTypes(
+          *maybeCreateOp, splitTypesByMember, tables, tracker
+      );
       if (failed(verifyNoIncompatibleShares)) {
         return failure();
       }
