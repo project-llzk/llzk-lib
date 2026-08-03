@@ -1654,8 +1654,13 @@ private:
       const DenseMap<Attribute, Attribute> &paramNameToConcrete,
       llvm::StringMap<SymbolRefAttr> &fullInstantiationCache
   ) {
+    FailureOr<SymbolRefAttr> calleePath = getPathFromTopRoot(callTgt);
+    if (failed(calleePath)) {
+      return failure();
+    }
+
     std::string cacheKey;
-    llvm::raw_string_ostream(cacheKey) << op.getCalleeAttr() << '|' << templateNameWithAttrs;
+    llvm::raw_string_ostream(cacheKey) << *calleePath << '|' << templateNameWithAttrs;
     if (auto cached = fullInstantiationCache.find(cacheKey);
         cached != fullInstantiationCache.end()) {
       LLVM_DEBUG(
