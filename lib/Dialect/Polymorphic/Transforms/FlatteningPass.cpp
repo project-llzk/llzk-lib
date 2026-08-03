@@ -2224,10 +2224,26 @@ static bool strictlyBefore(Operation *def, Operation *user) {
 }
 
 /// Return all direct users of `value`, sorted by their order in the containing block.
-static SmallVector<Operation *> getUsersInBlockOrder(Value value) {
+static FailureOr<SmallVector<Operation *>> getUsersInBlockOrder(Value value) {
   SmallVector<Operation *> users(value.getUsers().begin(), value.getUsers().end());
+  if (users.empty()) {
+    return users;
+  }
+  Block *block = users.front()->getBlock();
+  if (!llvm::all_of(users, [block](Operation *user) { return user->getBlock() == block; })) {
+    return failure();
+  }
   llvm::sort(users, [](Operation *lhs, Operation *rhs) { return lhs->isBeforeInBlock(rhs); });
   return users;
+}
+
+/// Return true iff `createOp` has direct element writes whose order can update stored values.
+static bool hasDirectArrayWrites(CreateArrayOp createOp) {
+  Value arrayValue = createOp.getResult();
+  return llvm::any_of(arrayValue.getUsers(), [arrayValue](Operation *user) {
+    auto writeOp = llvm::dyn_cast<WriteArrayOp>(user);
+    return writeOp && writeOp.getArrRef() == arrayValue;
+  });
 }
 
 /// Return true if all writes for the scalarized allocation are available before `user`.
@@ -2922,7 +2938,16 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
     return failure();
   }
 
-  SmallVector<Operation *> users = getUsersInBlockOrder(createOp.getResult());
+  FailureOr<SmallVector<Operation *>> maybeUsers = getUsersInBlockOrder(createOp.getResult());
+  SmallVector<Operation *> users;
+  if (succeeded(maybeUsers)) {
+    users = std::move(*maybeUsers);
+  } else {
+    if (hasDirectArrayWrites(createOp)) {
+      return failure();
+    }
+    users.assign(createOp.getResult().user_begin(), createOp.getResult().user_end());
+  }
 
   DenseMap<Value, std::pair<Type, Location>> firstUseByValue;
   DenseMap<ArrayAttr, std::pair<Type, Location>> firstMaterializedUseByIndex;
@@ -3002,7 +3027,11 @@ static LogicalResult rewriteExpandableLocalArray(
     CreateArrayOp createOp, const DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers,
     SymbolTableCollection &tables, PatternRewriter &rewriter, const ConversionTracker &tracker
 ) {
-  SmallVector<Operation *> users = getUsersInBlockOrder(createOp.getResult());
+  FailureOr<SmallVector<Operation *>> maybeUsers = getUsersInBlockOrder(createOp.getResult());
+  if (failed(maybeUsers)) {
+    return failure();
+  }
+  SmallVector<Operation *> users = std::move(*maybeUsers);
 
   ArrayType arrTy = createOp.getType();
   std::optional<SmallVector<ArrayAttr>> maybeIndices = arrTy.getSubelementIndices();
