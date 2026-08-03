@@ -155,6 +155,15 @@ public:
     return std::nullopt;
   }
 
+  /// Return the original parameterized type that produced the given instantiated type, if any.
+  std::optional<StructType> getPreimage(StructType newType) const {
+    auto cachedResult = reverseInstantiations.find(newType);
+    if (cachedResult != reverseInstantiations.end()) {
+      return cachedResult->second;
+    }
+    return std::nullopt;
+  }
+
   /// Record that the given free function was instantiated.
   void recordInstantiation(SymbolRefAttr funcName) {
     funcInstantiations.insert(funcName);
@@ -2407,6 +2416,165 @@ static bool hasMultipleIncompatibleElementTypes(const ScalarizedArrayInfo &info)
   return false;
 }
 
+static FailureOr<Type> getCommonRefinedType(Type lhs, Type rhs, const ConversionTracker &tracker);
+
+/// Return the common refinement of two matching type parameters, if it can be represented directly.
+static FailureOr<Attribute> getCommonRefinedParamAttr(
+    Attribute lhs, Attribute rhs, const ConversionTracker &tracker, bool unifyDynamicSize = false
+) {
+  assertValidAttrForParamOfType(lhs);
+  assertValidAttrForParamOfType(rhs);
+  if (lhs == rhs) {
+    return lhs;
+  }
+
+  if (auto lhsAffine = llvm::dyn_cast<AffineMapAttr>(lhs)) {
+    if (auto rhsInt = llvm::dyn_cast<IntegerAttr>(rhs)) {
+      if (!isDynamic(rhsInt)) {
+        return rhs;
+      }
+    }
+  }
+  if (auto rhsAffine = llvm::dyn_cast<AffineMapAttr>(rhs)) {
+    if (auto lhsInt = llvm::dyn_cast<IntegerAttr>(lhs)) {
+      if (!isDynamic(lhsInt)) {
+        return lhs;
+      }
+    }
+  }
+
+  if (unifyDynamicSize) {
+    auto dynamicInt = [](Attribute attr) -> IntegerAttr {
+      auto intAttr = llvm::dyn_cast<IntegerAttr>(attr);
+      return intAttr && isDynamic(intAttr) ? intAttr : nullptr;
+    };
+    if (dynamicInt(lhs) && llvm::isa_and_present<IntegerAttr, SymbolRefAttr, AffineMapAttr>(rhs)) {
+      return rhs;
+    }
+    if (dynamicInt(rhs) && llvm::isa_and_present<IntegerAttr, SymbolRefAttr, AffineMapAttr>(lhs)) {
+      return lhs;
+    }
+  }
+
+  auto lhsTy = llvm::dyn_cast<TypeAttr>(lhs);
+  auto rhsTy = llvm::dyn_cast<TypeAttr>(rhs);
+  if (lhsTy && rhsTy) {
+    auto commonType = getCommonRefinedType(lhsTy.getValue(), rhsTy.getValue(), tracker);
+    if (succeeded(commonType)) {
+      return TypeAttr::get(*commonType);
+    }
+  }
+  return failure();
+}
+
+/// Return the common refinement of two unifying types, if this pass can name it safely.
+static FailureOr<Type> getCommonRefinedType(Type lhs, Type rhs, const ConversionTracker &tracker) {
+  if (lhs == rhs) {
+    return lhs;
+  }
+  if (tracker.isLegalConversion(lhs, rhs, "getCommonRefinedType")) {
+    return rhs;
+  }
+  if (tracker.isLegalConversion(rhs, lhs, "getCommonRefinedType")) {
+    return lhs;
+  }
+
+  if (auto lhsStruct = llvm::dyn_cast<StructType>(lhs)) {
+    auto rhsStruct = llvm::dyn_cast<StructType>(rhs);
+    if (!rhsStruct) {
+      return failure();
+    }
+    if (lhsStruct.getNameRef() != rhsStruct.getNameRef()) {
+      std::optional<StructType> lhsPreimage = tracker.getPreimage(lhsStruct);
+      std::optional<StructType> rhsPreimage = tracker.getPreimage(rhsStruct);
+      if (!lhsPreimage || !rhsPreimage) {
+        return failure();
+      }
+      auto commonPreimage = getCommonRefinedType(*lhsPreimage, *rhsPreimage, tracker);
+      if (failed(commonPreimage)) {
+        return failure();
+      }
+      if (auto commonStruct = llvm::dyn_cast<StructType>(*commonPreimage)) {
+        if (std::optional<StructType> instantiatedCommon = tracker.getInstantiation(commonStruct)) {
+          return *instantiatedCommon;
+        }
+      }
+      return *commonPreimage;
+    }
+
+    ArrayAttr lhsParams = lhsStruct.getParams();
+    ArrayAttr rhsParams = rhsStruct.getParams();
+    ArrayRef<Attribute> emptyParams;
+    ArrayRef<Attribute> lhsValues = lhsParams ? lhsParams.getValue() : emptyParams;
+    ArrayRef<Attribute> rhsValues = rhsParams ? rhsParams.getValue() : emptyParams;
+    if (lhsValues.size() != rhsValues.size()) {
+      return failure();
+    }
+
+    SmallVector<Attribute> commonParams;
+    for (auto [lhsParam, rhsParam] : llvm::zip_equal(lhsValues, rhsValues)) {
+      auto commonParam = getCommonRefinedParamAttr(lhsParam, rhsParam, tracker);
+      if (failed(commonParam)) {
+        return failure();
+      }
+      commonParams.push_back(*commonParam);
+    }
+    StructType commonStruct =
+        commonParams.empty()
+            ? StructType::get(lhsStruct.getNameRef())
+            : StructType::get(
+                  lhsStruct.getNameRef(), ArrayAttr::get(lhs.getContext(), commonParams)
+              );
+    if (std::optional<StructType> instantiatedCommon = tracker.getInstantiation(commonStruct)) {
+      return *instantiatedCommon;
+    }
+    return commonStruct;
+  }
+
+  if (auto lhsArray = llvm::dyn_cast<ArrayType>(lhs)) {
+    auto rhsArray = llvm::dyn_cast<ArrayType>(rhs);
+    if (!rhsArray) {
+      return failure();
+    }
+
+    auto commonElement =
+        getCommonRefinedType(lhsArray.getElementType(), rhsArray.getElementType(), tracker);
+    if (failed(commonElement)) {
+      return failure();
+    }
+    ArrayRef<Attribute> lhsDims = lhsArray.getDimensionSizes();
+    ArrayRef<Attribute> rhsDims = rhsArray.getDimensionSizes();
+    if (lhsDims.size() != rhsDims.size()) {
+      return failure();
+    }
+
+    SmallVector<Attribute> commonDims;
+    for (auto [lhsDim, rhsDim] : llvm::zip_equal(lhsDims, rhsDims)) {
+      auto commonDim =
+          getCommonRefinedParamAttr(lhsDim, rhsDim, tracker, /*unifyDynamicSize=*/true);
+      if (failed(commonDim)) {
+        return failure();
+      }
+      commonDims.push_back(*commonDim);
+    }
+    return ArrayType::get(*commonElement, commonDims);
+  }
+
+  return failure();
+}
+
+/// Return true iff a value of `sourceType` can be used where `targetType` is requested after
+/// scalarization has retained the common refinement.
+static bool canUseScalarizedValueAsType(
+    Type sourceType, Type targetType, const ConversionTracker &tracker, const char *patName
+) {
+  if (sourceType == targetType || tracker.isLegalConversion(sourceType, targetType, patName)) {
+    return true;
+  }
+  auto commonType = getCommonRefinedType(sourceType, targetType, tracker);
+  return succeeded(commonType) && *commonType == targetType;
+}
+
 /// Merge one candidate scalar type into the split type map, keeping the most concrete refinement.
 static LogicalResult mergeSplitCandidateType(
     MemberDefOp member, ArrayAttr idx, Type candidateType, Operation *candidateOp,
@@ -2434,7 +2602,16 @@ static LogicalResult mergeSplitCandidateType(
     return success();
   }
   if (tracker.isLegalConversion(candidateType, existingType, "mergeSplitCandidateType") ||
-      typesUnify(existingType, candidateType)) {
+      existingType == candidateType) {
+    return success();
+  }
+
+  auto commonType = getCommonRefinedType(existingType, candidateType, tracker);
+  if (succeeded(commonType)) {
+    existing->second = *commonType;
+    if (splitTypeOps) {
+      (*splitTypeOps)[idx] = candidateOp;
+    }
     return success();
   }
 
@@ -2972,9 +3149,8 @@ static FailureOr<Value> getOrCreateScalarizedLocalArrayValue(
   if (scalarValue.getType() == type) {
     return scalarValue;
   }
-  if (!typesUnify(scalarValue.getType(), type) &&
-      !tracker.isLegalConversion(
-          scalarValue.getType(), type, "getOrCreateScalarizedLocalArrayValue"
+  if (!canUseScalarizedValueAsType(
+          scalarValue.getType(), type, tracker, "getOrCreateScalarizedLocalArrayValue"
       )) {
     return failure();
   }
@@ -3064,10 +3240,9 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
   DenseMap<Value, std::pair<Type, Location>> firstUseByValue;
   DenseMap<ArrayAttr, PendingMaterializationUse> firstMaterializedUseByIndex;
   auto valueCompatibleWithTargetType = [&](Value scalarValue, Type targetType) {
-    return scalarValue.getType() == targetType || typesUnify(scalarValue.getType(), targetType) ||
-           tracker.isLegalConversion(
-               scalarValue.getType(), targetType, "verifyNoSharedValuesForIncompatibleSplitTypes"
-           );
+    return canUseScalarizedValueAsType(
+        scalarValue.getType(), targetType, tracker, "verifyNoSharedValuesForIncompatibleSplitTypes"
+    );
   };
   auto noteMaterializedUse = [&](ArrayAttr idx, Type targetType, Location loc,
                                  StringRef description) -> LogicalResult {
@@ -3633,7 +3808,15 @@ public:
             // A->B is a legal conversion (i.e., more concrete unification), then it is safe to use
             // type B with the assumption that the write with type A will be updated by another
             // pattern to also use type B.
-            if (!tracker_.isLegalConversion(writeToType, newType, "UpdateMemberDefTypeFromWrite")) {
+            auto commonType = Step5_ScalarizeHeterogeneousArrays::getCommonRefinedType(
+                newType, writeToType, tracker_
+            );
+            if (succeeded(commonType)) {
+              newType = *commonType;
+              newTypeLoc = writeOp.getLoc();
+            } else if (!tracker_.isLegalConversion(
+                           writeToType, newType, "UpdateMemberDefTypeFromWrite"
+                       )) {
               if (tracker_.isLegalConversion(
                       newType, writeToType, "UpdateMemberDefTypeFromWrite"
                   )) {
@@ -3828,7 +4011,9 @@ LogicalResult updateMemberRefValFromMemberDef(
   Type oldResultType = op.getVal().getType();
   Type newResultType = def->get().getType();
   if (oldResultType == newResultType ||
-      !tracker.isLegalConversion(oldResultType, newResultType, "updateMemberRefValFromMemberDef")) {
+      !Step5_ScalarizeHeterogeneousArrays::canUseScalarizedValueAsType(
+          oldResultType, newResultType, tracker, "updateMemberRefValFromMemberDef"
+      )) {
     return failure();
   }
   rewriter.modifyOpInPlace(op, [&op, &newResultType]() { op.getVal().setType(newResultType); });
@@ -3935,7 +4120,9 @@ public:
     Type resultType = result.getType();
     if (inputType == resultType || typesUnify(inputType, resultType) ||
         !allUsesAreMemberWrites(result) ||
-        !tracker_.isLegalConversion(resultType, inputType, "UpdateUnifiableCastResultFromInput")) {
+        !Step5_ScalarizeHeterogeneousArrays::canUseScalarizedValueAsType(
+            resultType, inputType, tracker_, "UpdateUnifiableCastResultFromInput"
+        )) {
       return failure();
     }
     rewriter.modifyOpInPlace(op, [&result, &inputType]() { result.setType(inputType); });
