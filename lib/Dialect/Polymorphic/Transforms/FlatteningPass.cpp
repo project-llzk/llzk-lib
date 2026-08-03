@@ -3771,16 +3771,51 @@ static bool allUsesAreMemberWrites(Value value) {
   });
 }
 
-/// Return a typed nondeterministic value for a single member write without retagging the source.
-static FailureOr<Value>
-materializeValueForMemberWrite(Location loc, Value value, Type type, PatternRewriter &rewriter) {
+/// Return a shared typed nondeterministic replacement for member writes that reuse `value`.
+static FailureOr<Value> materializeValueForMemberWrite(
+    Location loc, Value value, Type type, PatternRewriter &rewriter,
+    DenseMap<std::pair<Value, Type>, Value> &typedNondetReplacements
+) {
   if (value.getType() == type) {
     return value;
   }
-  if (!value.getDefiningOp<NonDetOp>()) {
+  auto cacheKey = std::make_pair(value, type);
+  auto cachedReplacement = typedNondetReplacements.find(cacheKey);
+  if (cachedReplacement != typedNondetReplacements.end()) {
+    return cachedReplacement->second;
+  }
+
+  NonDetOp nondetOp = value.getDefiningOp<NonDetOp>();
+  if (!nondetOp) {
     return failure();
   }
-  return rewriter.create<NonDetOp>(loc, type).getResult();
+
+  OpBuilder::InsertionGuard guard(rewriter);
+  rewriter.setInsertionPointAfter(nondetOp);
+  Value replacement = rewriter.create<NonDetOp>(loc, type).getResult();
+  typedNondetReplacements.try_emplace(cacheKey, replacement);
+  return replacement;
+}
+
+/// Erase an original nondeterministic value after all member writes have moved to replacements.
+static void eraseUnusedNondetDef(
+    Value value, PatternRewriter &rewriter,
+    DenseMap<std::pair<Value, Type>, Value> &typedNondetReplacements
+) {
+  if (value.use_empty()) {
+    if (NonDetOp nondetOp = value.getDefiningOp<NonDetOp>()) {
+      SmallVector<std::pair<Value, Type>> cacheKeysToErase;
+      for (const auto &entry : typedNondetReplacements) {
+        if (entry.first.first == value) {
+          cacheKeysToErase.push_back(entry.first);
+        }
+      }
+      for (const auto &cacheKey : cacheKeysToErase) {
+        typedNondetReplacements.erase(cacheKey);
+      }
+      rewriter.eraseOp(nondetOp);
+    }
+  }
 }
 
 } // namespace
@@ -3815,6 +3850,7 @@ public:
 /// Update the type of MemberWriteOp value based on updated types from MemberDefOp.
 class UpdateMemberWriteValFromDef final : public OpRewritePattern<MemberWriteOp> {
   ConversionTracker &tracker_;
+  mutable DenseMap<std::pair<Value, Type>, Value> typedNondetReplacements_;
 
 public:
   /// Construct the member-write value propagation pattern.
@@ -3837,6 +3873,19 @@ public:
       return failure();
     }
 
+    auto cachedReplacement = typedNondetReplacements_.find(std::make_pair(oldValue, newValueType));
+    if (cachedReplacement != typedNondetReplacements_.end()) {
+      rewriter.modifyOpInPlace(op, [&op, &cachedReplacement]() {
+        op.getValMutable().assign(cachedReplacement->second);
+      });
+      eraseUnusedNondetDef(oldValue, rewriter, typedNondetReplacements_);
+      LLVM_DEBUG(
+          llvm::dbgs() << "[UpdateMemberWriteValFromDef] reused materialized value type for " << op
+                       << '\n'
+      );
+      return success();
+    }
+
     if (!hasUsesOutside(oldValue, op.getOperation())) {
       rewriter.modifyOpInPlace(op, [&oldValue, &newValueType]() {
         oldValue.setType(newValueType);
@@ -3847,15 +3896,16 @@ public:
       return success();
     }
 
-    rewriter.setInsertionPoint(op);
-    FailureOr<Value> convertedValue =
-        materializeValueForMemberWrite(op.getLoc(), oldValue, newValueType, rewriter);
+    FailureOr<Value> convertedValue = materializeValueForMemberWrite(
+        op.getLoc(), oldValue, newValueType, rewriter, typedNondetReplacements_
+    );
     if (failed(convertedValue)) {
       return failure();
     }
     rewriter.modifyOpInPlace(op, [&op, &convertedValue]() {
       op.getValMutable().assign(*convertedValue);
     });
+    eraseUnusedNondetDef(oldValue, rewriter, typedNondetReplacements_);
     LLVM_DEBUG(
         llvm::dbgs() << "[UpdateMemberWriteValFromDef] materialized value type for " << op << '\n'
     );
