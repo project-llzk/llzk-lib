@@ -1445,6 +1445,110 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @BlockArgumentAggregatePair {
+    struct.member @lhs : !felt.type {llzk.pub}
+    struct.member @rhs : !felt.type {llzk.pub}
+
+    function.def @compute(%lhs: !felt.type, %rhs: !felt.type) -> !struct.type<@BlockArgumentAggregatePair> {
+      %self = struct.new : !struct.type<@BlockArgumentAggregatePair>
+      struct.writem %self[@lhs] = %lhs : !struct.type<@BlockArgumentAggregatePair>, !felt.type
+      struct.writem %self[@rhs] = %rhs : !struct.type<@BlockArgumentAggregatePair>, !felt.type
+      function.return %self : !struct.type<@BlockArgumentAggregatePair>
+    }
+
+    function.def @constrain(%self: !struct.type<@BlockArgumentAggregatePair>, %lhs: !felt.type, %rhs: !felt.type) {
+      function.return
+    }
+  }
+
+  struct.def @PodBlockArgumentAggregateChild {
+    function.def @compute(%pair: !struct.type<@BlockArgumentAggregatePair>, %expected: !felt.type) -> !struct.type<@PodBlockArgumentAggregateChild> {
+      %self = struct.new : !struct.type<@PodBlockArgumentAggregateChild>
+      function.return %self : !struct.type<@PodBlockArgumentAggregateChild>
+    }
+
+    function.def @constrain(%self: !struct.type<@PodBlockArgumentAggregateChild>, %pair: !struct.type<@BlockArgumentAggregatePair>, %expected: !felt.type) {
+      %pod = pod.new { @payload = %pair } : !pod.type<[@payload: !struct.type<@BlockArgumentAggregatePair>]>
+      %payload = pod.read %pod[@payload] : !pod.type<[@payload: !struct.type<@BlockArgumentAggregatePair>]>, !struct.type<@BlockArgumentAggregatePair>
+      %lhs = struct.readm %payload[@lhs] : !struct.type<@BlockArgumentAggregatePair>, !felt.type
+      %rhs = struct.readm %pair[@rhs] : !struct.type<@BlockArgumentAggregatePair>, !felt.type
+      %eleven = felt.const 11
+      constrain.eq %lhs, %expected : !felt.type
+      constrain.eq %rhs, %eleven : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @BlockArgumentAggregatePair ConstraintDependencyGraph { }
+// CHECK-NEXT: @PodBlockArgumentAggregateChild ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1.lhs, %arg2 },
+// CHECK-NEXT:     { %arg1.rhs, <felt.const: 11> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @BlockArgumentAggregatePair ConstraintDependencyGraph { }
+// INTRA-NEXT: @PodBlockArgumentAggregateChild ConstraintDependencyGraph {
+// INTRA-NEXT:     { %arg1.lhs, %arg2 },
+// INTRA-NEXT:     { %arg1.rhs, <felt.const: 11> }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @StructNewMemberAggregatePair {
+    struct.member @lhs : !felt.type {llzk.pub}
+    struct.member @rhs : !felt.type {llzk.pub}
+
+    function.def @compute(%lhs: !felt.type, %rhs: !felt.type) -> !struct.type<@StructNewMemberAggregatePair> {
+      %self = struct.new : !struct.type<@StructNewMemberAggregatePair>
+      struct.writem %self[@lhs] = %lhs : !struct.type<@StructNewMemberAggregatePair>, !felt.type
+      struct.writem %self[@rhs] = %rhs : !struct.type<@StructNewMemberAggregatePair>, !felt.type
+      function.return %self : !struct.type<@StructNewMemberAggregatePair>
+    }
+
+    function.def @constrain(%self: !struct.type<@StructNewMemberAggregatePair>, %lhs: !felt.type, %rhs: !felt.type) {
+      function.return
+    }
+  }
+
+  struct.def @PodStructNewMemberAggregateChild {
+    struct.member @source : !struct.type<@StructNewMemberAggregatePair>
+    struct.member @pod : !pod.type<[@payload: !struct.type<@StructNewMemberAggregatePair>]>
+
+    function.def @compute(%expected: !felt.type) -> !struct.type<@PodStructNewMemberAggregateChild> {
+      %self = struct.new : !struct.type<@PodStructNewMemberAggregateChild>
+      %source = struct.readm %self[@source] : !struct.type<@PodStructNewMemberAggregateChild>, !struct.type<@StructNewMemberAggregatePair>
+      %pod = pod.new { @payload = %source } : !pod.type<[@payload: !struct.type<@StructNewMemberAggregatePair>]>
+      struct.writem %self[@pod] = %pod : !struct.type<@PodStructNewMemberAggregateChild>, !pod.type<[@payload: !struct.type<@StructNewMemberAggregatePair>]>
+      function.return %self : !struct.type<@PodStructNewMemberAggregateChild>
+    }
+
+    function.def @constrain(%self: !struct.type<@PodStructNewMemberAggregateChild>, %expected: !felt.type) {
+      %pod = struct.readm %self[@pod] : !struct.type<@PodStructNewMemberAggregateChild>, !pod.type<[@payload: !struct.type<@StructNewMemberAggregatePair>]>
+      %payload = pod.read %pod[@payload] : !pod.type<[@payload: !struct.type<@StructNewMemberAggregatePair>]>, !struct.type<@StructNewMemberAggregatePair>
+      %lhs = struct.readm %payload[@lhs] : !struct.type<@StructNewMemberAggregatePair>, !felt.type
+      %rhs = struct.readm %payload[@rhs] : !struct.type<@StructNewMemberAggregatePair>, !felt.type
+      %eleven = felt.const 11
+      constrain.eq %lhs, %expected : !felt.type
+      constrain.eq %rhs, %eleven : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @StructNewMemberAggregatePair ConstraintDependencyGraph { }
+// CHECK-NEXT: @PodStructNewMemberAggregateChild ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.pod.payload.lhs, %arg1 },
+// CHECK-NEXT:     { %self.pod.payload.rhs, <felt.const: 11> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @StructNewMemberAggregatePair ConstraintDependencyGraph { }
+// INTRA-NEXT: @PodStructNewMemberAggregateChild ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.pod.payload.lhs, %arg1 },
+// INTRA-NEXT:     { %self.pod.payload.rhs, <felt.const: 11> }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
   struct.def @ConditionalPodAggregateAlias {
     struct.member @out : !felt.type {llzk.pub}
 
