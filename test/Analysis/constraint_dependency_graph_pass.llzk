@@ -1441,3 +1441,74 @@ module attributes {llzk.lang} {
 // INTRA-LABEL: @PodInitializedRoot ConstraintDependencyGraph {
 // INTRA-NEXT:     { %self.out, %arg1 }
 // INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ConditionalPodAggregateAlias {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%old: !felt.type, %new: !felt.type, %cond: i1) -> !struct.type<@ConditionalPodAggregateAlias> {
+      %self = struct.new : !struct.type<@ConditionalPodAggregateAlias>
+      function.return %self : !struct.type<@ConditionalPodAggregateAlias>
+    }
+
+    function.def @constrain(%self: !struct.type<@ConditionalPodAggregateAlias>, %old: !felt.type, %new: !felt.type, %cond: i1) {
+      %expected = struct.readm %self[@out] : !struct.type<@ConditionalPodAggregateAlias>, !felt.type
+      %c0 = arith.constant 0 : index
+      %old_arr = array.new %old : !array.type<1 x !felt.type>
+      %pod = pod.new { @items = %old_arr } : !pod.type<[@items: !array.type<1 x !felt.type>]>
+      %new_arr = array.new %new : !array.type<1 x !felt.type>
+      scf.if %cond {
+        pod.write %pod[@items] = %new_arr : !pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+      }
+      %items = pod.read %pod[@items] : !pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+      %actual = array.read %items[%c0] : !array.type<1 x !felt.type>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ConditionalPodAggregateAlias ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg1, %arg2 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @ConditionalPodAggregateAlias ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg1, %arg2 }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @LoopPodAggregateAlias {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%old: !felt.type, %new: !felt.type, %ub: index) -> !struct.type<@LoopPodAggregateAlias> {
+      %self = struct.new : !struct.type<@LoopPodAggregateAlias>
+      function.return %self : !struct.type<@LoopPodAggregateAlias>
+    }
+
+    function.def @constrain(%self: !struct.type<@LoopPodAggregateAlias>, %old: !felt.type, %new: !felt.type, %ub: index) {
+      %expected = struct.readm %self[@out] : !struct.type<@LoopPodAggregateAlias>, !felt.type
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %old_arr = array.new %old : !array.type<1 x !felt.type>
+      %pod = pod.new { @items = %old_arr } : !pod.type<[@items: !array.type<1 x !felt.type>]>
+      scf.for %i = %c0 to %ub step %c1 {
+        %new_arr = array.new %new : !array.type<1 x !felt.type>
+        pod.write %pod[@items] = %new_arr : !pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+      }
+      %items = pod.read %pod[@items] : !pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+      %actual = array.read %items[%c0] : !array.type<1 x !felt.type>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @LoopPodAggregateAlias ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg1, %arg2 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @LoopPodAggregateAlias ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg1, %arg2 }
+// INTRA-NEXT: }
