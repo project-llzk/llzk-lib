@@ -2208,6 +2208,16 @@ static void replaceAllUsesIgnoringType(Value oldValue, Value newValue) {
   }
 }
 
+/// Return true iff replacing `readOp` with a value of `replacementType` preserves the read result's
+/// type refinement.
+static bool canReplaceReadResultWithType(
+    ReadArrayOp readOp, Type replacementType, const ConversionTracker &tracker, const char *patName
+) {
+  Type readResultType = readOp.getResult().getType();
+  return readResultType == replacementType ||
+         tracker.isLegalConversion(readResultType, replacementType, patName);
+}
+
 /// Return true if `def` is in the same block as `user` and appears before it.
 static bool strictlyBefore(Operation *def, Operation *user) {
   return def->getBlock() == user->getBlock() && def->isBeforeInBlock(user);
@@ -2461,6 +2471,11 @@ getScalarizedArrayInfo(CreateArrayOp op, const ConversionTracker &tracker) {
     if (!info.valueByIndex.contains(idx) || !allWritesAvailableAt(info, readOp)) {
       return failure();
     }
+    if (!canReplaceReadResultWithType(
+            readOp, info.typeByIndex.lookup(idx), tracker, "getScalarizedArrayInfo"
+        )) {
+      return failure();
+    }
   }
   for (MemberWriteOp memberWriteOp : info.memberWrites) {
     if (!allWritesAvailableAt(info, memberWriteOp)) {
@@ -2549,6 +2564,11 @@ static LogicalResult rewriteLocalArray(
 
   for (ReadArrayOp readOp : llvm::make_early_inc_range(info.reads)) {
     ArrayAttr idx = getIndexAsAttr(readOp);
+    if (!canReplaceReadResultWithType(
+            readOp, info.typeByIndex.lookup(idx), tracker, "rewriteLocalArray"
+        )) {
+      return failure();
+    }
     replaceAllUsesIgnoringType(readOp.getResult(), info.valueByIndex.lookup(idx));
     rewriter.eraseOp(readOp);
   }
@@ -2593,7 +2613,7 @@ static LogicalResult rewriteLocalArray(
 /// is exactly the invalid representation this step removes.
 static LogicalResult rewriteSplitMemberReads(
     ModuleOp modOp, DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers,
-    SymbolTableCollection &tables, PatternRewriter &rewriter
+    SymbolTableCollection &tables, PatternRewriter &rewriter, const ConversionTracker &tracker
 ) {
   for (MemberReadOp memberReadOp : walkCollect<MemberReadOp>(modOp)) {
     auto memberDef = memberReadOp.getMemberDefOp(tables);
@@ -2630,6 +2650,11 @@ static LogicalResult rewriteSplitMemberReads(
       if (!memberInfo.first) {
         return failure();
       }
+      if (!canReplaceReadResultWithType(
+              readOp, memberInfo.second, tracker, "rewriteSplitMemberReads"
+          )) {
+        return failure();
+      }
       if (scalarValueByIndex.contains(idx)) {
         continue;
       }
@@ -2648,6 +2673,67 @@ static LogicalResult rewriteSplitMemberReads(
     }
     if (memberReadOp.getResult().use_empty()) {
       rewriter.eraseOp(memberReadOp);
+    }
+  }
+  return success();
+}
+
+/// Reconstruct the scalar member type map established by the collected candidates.
+static LogicalResult collectSplitTypesByMember(
+    ArrayRef<ScalarizedArrayInfo> arraysToScalarize, SymbolTableCollection &tables,
+    DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember
+) {
+  for (const ScalarizedArrayInfo &info : arraysToScalarize) {
+    for (MemberWriteOp memberWriteOp : info.memberWrites) {
+      auto memberDef = memberWriteOp.getMemberDefOp(tables);
+      if (failed(memberDef)) {
+        return failure();
+      }
+      DenseMap<ArrayAttr, Type> &splitTypes = splitTypesByMember[memberDef->get()];
+      for (ArrayAttr idx : info.indices) {
+        splitTypes.try_emplace(idx, info.typeByIndex.lookup(idx));
+      }
+    }
+  }
+  return success();
+}
+
+/// Verify reads of array-typed members before their defining members are split.
+static LogicalResult verifySplitMemberReadsRewritable(
+    const DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
+    SymbolTableCollection &tables, const ConversionTracker &tracker
+) {
+  for (const auto &[member, splitTypes] : splitTypesByMember) {
+    StructDefOp parentStruct = getParentOfType<StructDefOp>(member);
+    assert(parentStruct && "MemberDefOp parent is always StructDefOp");
+
+    auto uses = llzk::getSymbolUses(member, parentStruct);
+    if (!uses) {
+      return failure();
+    }
+    for (SymbolTable::SymbolUse symUse : uses.value()) {
+      auto memberReadOp = llvm::dyn_cast<MemberReadOp>(symUse.getUser());
+      if (!memberReadOp) {
+        continue;
+      }
+      auto memberDef = memberReadOp.getMemberDefOp(tables);
+      if (failed(memberDef) || memberDef->get() != member) {
+        return failure();
+      }
+      for (Operation *user : memberReadOp.getResult().getUsers()) {
+        auto readOp = llvm::dyn_cast<ReadArrayOp>(user);
+        ArrayAttr idx = readOp ? getIndexAsAttr(readOp) : ArrayAttr();
+        if (!readOp || readOp.getArrRef() != memberReadOp.getResult() || !idx) {
+          return failure();
+        }
+        Type replacementType = splitTypes.lookup(idx);
+        if (!replacementType ||
+            !canReplaceReadResultWithType(
+                readOp, replacementType, tracker, "verifySplitMemberReadsRewritable"
+            )) {
+          return failure();
+        }
+      }
     }
   }
   return success();
@@ -3212,6 +3298,11 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   if (failed(verifySplitMemberWritesExpandable(arraysToScalarize, tables))) {
     return failure();
   }
+  DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> splitTypesByMember;
+  if (failed(collectSplitTypesByMember(arraysToScalarize, tables, splitTypesByMember)) ||
+      failed(verifySplitMemberReadsRewritable(splitTypesByMember, tables, tracker))) {
+    return failure();
+  }
 
   DenseMap<MemberDefOp, SplitMemberInfo> splitMembers;
   for (ScalarizedArrayInfo &info : arraysToScalarize) {
@@ -3222,7 +3313,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   if (failed(rewriteExpandableMemberWrites(splitMembers, tables, rewriter, tracker))) {
     return failure();
   }
-  if (failed(rewriteSplitMemberReads(modOp, splitMembers, tables, rewriter))) {
+  if (failed(rewriteSplitMemberReads(modOp, splitMembers, tables, rewriter, tracker))) {
     return failure();
   }
   eraseUnusedOriginalMembers(splitMembers, rewriter);
