@@ -3138,25 +3138,40 @@ static LogicalResult verifyExpandableLocalArraySplitIndices(
 /// The caller must have already rejected initialized expandable arrays that store the same SSA
 /// value into indices requiring incompatible split-member types.
 static FailureOr<Value> getOrCreateScalarizedLocalArrayValue(
-    DenseMap<ArrayAttr, Value> &valueByIndex, ArrayAttr idx, Type type, Location loc,
-    PatternRewriter &rewriter, const ConversionTracker &tracker
+    DenseMap<ArrayAttr, Value> &valueByIndex, DenseSet<Value> &generatedMaterializations,
+    ArrayAttr idx, Type type, Location loc, PatternRewriter &rewriter,
+    const ConversionTracker &tracker
 ) {
   Value scalarValue = valueByIndex.lookup(idx);
   if (!scalarValue) {
     scalarValue = rewriter.create<NonDetOp>(loc, type).getResult();
     valueByIndex[idx] = scalarValue;
+    generatedMaterializations.insert(scalarValue);
   }
   if (scalarValue.getType() == type) {
     return scalarValue;
   }
-  if (!canUseScalarizedValueAsType(
-          scalarValue.getType(), type, tracker, "getOrCreateScalarizedLocalArrayValue"
-      )) {
+  FailureOr<Type> commonType = getCommonRefinedType(scalarValue.getType(), type, tracker);
+  if (failed(commonType)) {
     return failure();
   }
+  if (*commonType == scalarValue.getType()) {
+    return scalarValue;
+  }
+  if (generatedMaterializations.contains(scalarValue)) {
+    NonDetOp nondetOp = scalarValue.getDefiningOp<NonDetOp>();
+    if (!nondetOp) {
+      return failure();
+    }
+    rewriter.modifyOpInPlace(nondetOp, [&scalarValue, &commonType]() {
+      scalarValue.setType(*commonType);
+    });
+    return scalarValue;
+  }
   if (scalarValue.getDefiningOp<NonDetOp>()) {
-    scalarValue = rewriter.create<NonDetOp>(loc, type).getResult();
+    scalarValue = rewriter.create<NonDetOp>(loc, *commonType).getResult();
     valueByIndex[idx] = scalarValue;
+    generatedMaterializations.insert(scalarValue);
   }
   return scalarValue;
 }
@@ -3254,7 +3269,8 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
       return success();
     }
     Type existingType = existing->second.type;
-    if (!typesUnify(existingType, targetType)) {
+    FailureOr<Type> commonType = getCommonRefinedType(existingType, targetType, tracker);
+    if (failed(commonType)) {
       InFlightDiagnostic diag =
           createOp.emitError("cannot split heterogeneous array member because ")
           << arrayDescription << " reuses one SSA value for incompatible scalar member types";
@@ -3264,6 +3280,7 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
                            << targetType;
       return diag;
     }
+    existing->second.type = *commonType;
     return success();
   };
   for (Operation *user : users) {
@@ -3362,6 +3379,7 @@ static LogicalResult rewriteExpandableLocalArray(
   if (failed(seedValuesFromArrayElements(createOp, indices, valueByIndex))) {
     return failure();
   }
+  DenseSet<Value> generatedMaterializations;
   SmallVector<WriteArrayOp> writesToErase;
   for (Operation *user : users) {
     if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
@@ -3374,7 +3392,8 @@ static LogicalResult rewriteExpandableLocalArray(
       ArrayAttr idx = getIndexAsAttr(readOp);
       rewriter.setInsertionPoint(readOp);
       FailureOr<Value> scalarValue = getOrCreateScalarizedLocalArrayValue(
-          valueByIndex, idx, readOp.getResult().getType(), readOp.getLoc(), rewriter, tracker
+          valueByIndex, generatedMaterializations, idx, readOp.getResult().getType(),
+          readOp.getLoc(), rewriter, tracker
       );
       if (failed(scalarValue)) {
         return failure();
@@ -3404,7 +3423,8 @@ static LogicalResult rewriteExpandableLocalArray(
     for (ArrayAttr idx : splitInfo.indices) {
       MemberInfo memberInfo = splitInfo.memberByIndex.lookup(idx);
       FailureOr<Value> scalarValue = getOrCreateScalarizedLocalArrayValue(
-          valueByIndex, idx, memberInfo.second, memberWriteOp.getLoc(), rewriter, tracker
+          valueByIndex, generatedMaterializations, idx, memberInfo.second, memberWriteOp.getLoc(),
+          rewriter, tracker
       );
       if (failed(scalarValue)) {
         return failure();
