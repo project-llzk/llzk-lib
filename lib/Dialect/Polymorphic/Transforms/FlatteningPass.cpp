@@ -2407,6 +2407,50 @@ static bool hasMultipleIncompatibleElementTypes(const ScalarizedArrayInfo &info)
   return false;
 }
 
+/// Merge one candidate scalar type into the split type map, keeping the most concrete refinement.
+static LogicalResult mergeSplitCandidateType(
+    MemberDefOp member, ArrayAttr idx, Type candidateType, Operation *candidateOp,
+    DenseMap<ArrayAttr, Type> &splitTypes, DenseMap<ArrayAttr, Operation *> *splitTypeOps,
+    const ConversionTracker &tracker
+) {
+  auto existing = splitTypes.find(idx);
+  if (existing == splitTypes.end()) {
+    splitTypes[idx] = candidateType;
+    if (splitTypeOps) {
+      (*splitTypeOps)[idx] = candidateOp;
+    }
+    return success();
+  }
+
+  Type existingType = existing->second;
+  if (existingType == candidateType) {
+    return success();
+  }
+  if (tracker.isLegalConversion(existingType, candidateType, "mergeSplitCandidateType")) {
+    existing->second = candidateType;
+    if (splitTypeOps) {
+      (*splitTypeOps)[idx] = candidateOp;
+    }
+    return success();
+  }
+  if (tracker.isLegalConversion(candidateType, existingType, "mergeSplitCandidateType") ||
+      typesUnify(existingType, candidateType)) {
+    return success();
+  }
+
+  InFlightDiagnostic diag = member.emitError(
+      "cannot split heterogeneous array member because candidate writes require incompatible "
+      "scalar member types"
+  );
+  if (splitTypeOps) {
+    diag.attachNote(splitTypeOps->lookup(idx)->getLoc())
+        << "candidate writes index " << idx << " with scalar member type " << existingType;
+    diag.attachNote(candidateOp->getLoc())
+        << "conflicting candidate writes the same index with scalar member type " << candidateType;
+  }
+  return diag;
+}
+
 /// Collect scalarization information for `op` if it is a safe heterogeneous-array candidate.
 ///
 /// A candidate must:
@@ -2510,6 +2554,7 @@ getScalarizedArrayInfo(CreateArrayOp op, const ConversionTracker &tracker) {
 /// metadata, and rely on the containing struct's symbol table to make each generated name unique.
 static SplitMemberInfo &getOrCreateSplitMemberInfo(
     MemberDefOp member, const ScalarizedArrayInfo &arrayInfo,
+    const DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
     DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers, SymbolTableCollection &tables,
     PatternRewriter &rewriter
 ) {
@@ -2527,8 +2572,14 @@ static SplitMemberInfo &getOrCreateSplitMemberInfo(
 
   OpBuilder::InsertionGuard guard(rewriter);
   rewriter.setInsertionPoint(member);
+  auto splitTypesIt = splitTypesByMember.find(member);
   for (ArrayAttr idx : arrayInfo.indices) {
     Type scalarType = arrayInfo.typeByIndex.lookup(idx);
+    if (splitTypesIt != splitTypesByMember.end()) {
+      if (Type refinedType = splitTypesIt->second.lookup(idx)) {
+        scalarType = refinedType;
+      }
+    }
     MemberDefOp newMember = rewriter.create<MemberDefOp>(
         member.getLoc(), member.getSymNameAttr(), scalarType, member.getSignal(), member.getColumn()
     );
@@ -2572,6 +2623,7 @@ refreshValuesFromArrayOperands(ScalarizedArrayInfo &info, const ConversionTracke
 /// allocation are erased.
 static LogicalResult rewriteLocalArray(
     ScalarizedArrayInfo &info, DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers,
+    const DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
     SymbolTableCollection &tables, PatternRewriter &rewriter, const ConversionTracker &tracker
 ) {
   if (failed(refreshValuesFromArrayOperands(info, tracker))) {
@@ -2594,8 +2646,9 @@ static LogicalResult rewriteLocalArray(
     if (failed(memberDef)) {
       return failure();
     }
-    SplitMemberInfo &splitInfo =
-        getOrCreateSplitMemberInfo(memberDef->get(), info, splitMembers, tables, rewriter);
+    SplitMemberInfo &splitInfo = getOrCreateSplitMemberInfo(
+        memberDef->get(), info, splitTypesByMember, splitMembers, tables, rewriter
+    );
 
     rewriter.setInsertionPoint(memberWriteOp);
     DictionaryAttr discardableAttrs = memberWriteOp->getDiscardableAttrDictionary();
@@ -2697,7 +2750,8 @@ static LogicalResult rewriteSplitMemberReads(
 /// Reconstruct the scalar member type map established by the collected candidates.
 static LogicalResult collectSplitTypesByMember(
     ArrayRef<ScalarizedArrayInfo> arraysToScalarize, SymbolTableCollection &tables,
-    DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember
+    DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
+    const ConversionTracker &tracker
 ) {
   for (const ScalarizedArrayInfo &info : arraysToScalarize) {
     for (MemberWriteOp memberWriteOp : info.memberWrites) {
@@ -2707,7 +2761,12 @@ static LogicalResult collectSplitTypesByMember(
       }
       DenseMap<ArrayAttr, Type> &splitTypes = splitTypesByMember[memberDef->get()];
       for (ArrayAttr idx : info.indices) {
-        splitTypes.try_emplace(idx, info.typeByIndex.lookup(idx));
+        if (failed(mergeSplitCandidateType(
+                memberDef->get(), idx, info.typeByIndex.lookup(idx), memberWriteOp.getOperation(),
+                splitTypes, nullptr, tracker
+            ))) {
+          return failure();
+        }
       }
     }
   }
@@ -3206,7 +3265,8 @@ static LogicalResult rewriteExpandableMemberWrites(
 /// is redirected to the split scalar members. That is only sound when every write to that member
 /// can also be expanded.
 static LogicalResult verifySplitMemberWritesExpandable(
-    ArrayRef<ScalarizedArrayInfo> arraysToScalarize, SymbolTableCollection &tables
+    ArrayRef<ScalarizedArrayInfo> arraysToScalarize, SymbolTableCollection &tables,
+    const ConversionTracker &tracker
 ) {
   DenseMap<MemberDefOp, DenseSet<Operation *>> candidateWritesByMember;
   DenseMap<MemberDefOp, SmallVector<ArrayAttr>> splitIndicesByMember;
@@ -3244,24 +3304,11 @@ static LogicalResult verifySplitMemberWritesExpandable(
         DenseMap<ArrayAttr, Operation *> &splitTypeOps = splitTypeOpsByMember[member];
         for (ArrayAttr idx : info.indices) {
           Type candidateType = info.typeByIndex.lookup(idx);
-          auto existing = splitTypes.find(idx);
-          if (existing == splitTypes.end()) {
-            splitTypes[idx] = candidateType;
-            splitTypeOps[idx] = memberWriteOp.getOperation();
-            continue;
-          }
-          Type existingType = existing->second;
-          if (!typesUnify(existingType, candidateType)) {
-            InFlightDiagnostic diag = member.emitError(
-                "cannot split heterogeneous array member because candidate writes require "
-                "incompatible scalar member types"
-            );
-            diag.attachNote(splitTypeOps.lookup(idx)->getLoc())
-                << "candidate writes index " << idx << " with scalar member type " << existingType;
-            diag.attachNote(memberWriteOp.getLoc())
-                << "conflicting candidate writes the same index with scalar member type "
-                << candidateType;
-            return diag;
+          if (failed(mergeSplitCandidateType(
+                  member, idx, candidateType, memberWriteOp.getOperation(), splitTypes,
+                  &splitTypeOps, tracker
+              ))) {
+            return failure();
           }
         }
       }
@@ -3359,18 +3406,20 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
   PatternRewriter rewriter(modOp.getContext());
   SymbolTableCollection tables;
-  if (failed(verifySplitMemberWritesExpandable(arraysToScalarize, tables))) {
+  if (failed(verifySplitMemberWritesExpandable(arraysToScalarize, tables, tracker))) {
     return failure();
   }
   DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> splitTypesByMember;
-  if (failed(collectSplitTypesByMember(arraysToScalarize, tables, splitTypesByMember)) ||
+  if (failed(collectSplitTypesByMember(arraysToScalarize, tables, splitTypesByMember, tracker)) ||
       failed(verifySplitMemberReadsRewritable(splitTypesByMember, tables, tracker))) {
     return failure();
   }
 
   DenseMap<MemberDefOp, SplitMemberInfo> splitMembers;
   for (ScalarizedArrayInfo &info : arraysToScalarize) {
-    if (failed(rewriteLocalArray(info, splitMembers, tables, rewriter, tracker))) {
+    if (failed(
+            rewriteLocalArray(info, splitMembers, splitTypesByMember, tables, rewriter, tracker)
+        )) {
       return failure();
     }
   }
