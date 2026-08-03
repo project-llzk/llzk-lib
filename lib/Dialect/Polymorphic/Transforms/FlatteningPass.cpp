@@ -2773,42 +2773,74 @@ static LogicalResult collectSplitTypesByMember(
   return success();
 }
 
+/// Verify one read of an array-typed member before the defining member is split.
+static LogicalResult verifySplitMemberReadRewritable(
+    MemberReadOp memberReadOp, MemberDefOp member, const DenseMap<ArrayAttr, Type> &splitTypes,
+    const ConversionTracker &tracker
+) {
+  for (Operation *user : memberReadOp.getResult().getUsers()) {
+    auto readOp = llvm::dyn_cast<ReadArrayOp>(user);
+    if (!readOp || readOp.getArrRef() != memberReadOp.getResult()) {
+      InFlightDiagnostic diag = memberReadOp.emitError(
+          "cannot split heterogeneous array member because a whole-array read has an "
+          "unsupported use"
+      );
+      diag.attachNote(member.getLoc()) << "split member defined here";
+      diag.attachNote(user->getLoc()) << "unsupported use is here";
+      return diag;
+    }
+
+    ArrayAttr idx = getIndexAsAttr(readOp);
+    if (!idx) {
+      InFlightDiagnostic diag = readOp.emitError(
+          "cannot split heterogeneous array member because a read of it uses a dynamic array index"
+      );
+      diag.attachNote(member.getLoc()) << "split member defined here";
+      return diag;
+    }
+
+    Type replacementType = splitTypes.lookup(idx);
+    if (!replacementType) {
+      InFlightDiagnostic diag = readOp.emitError(
+          "cannot split heterogeneous array member because a read of it uses an array index "
+          "that is not written by any scalarization candidate"
+      );
+      diag.attachNote(member.getLoc()) << "split member defined here";
+      return diag;
+    }
+
+    if (!canReplaceReadResultWithType(
+            readOp, replacementType, tracker, "verifySplitMemberReadsRewritable"
+        )) {
+      InFlightDiagnostic diag = readOp.emitError(
+          "cannot split heterogeneous array member because a read result type is incompatible "
+          "with the split scalar member type"
+      );
+      diag.attachNote(member.getLoc()) << "split member defined here";
+      return diag;
+    }
+  }
+  return success();
+}
+
 /// Verify reads of array-typed members before their defining members are split.
 static LogicalResult verifySplitMemberReadsRewritable(
-    const DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
+    ModuleOp modOp, const DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
     SymbolTableCollection &tables, const ConversionTracker &tracker
 ) {
-  for (const auto &[member, splitTypes] : splitTypesByMember) {
-    StructDefOp parentStruct = getParentOfType<StructDefOp>(member);
-    assert(parentStruct && "MemberDefOp parent is always StructDefOp");
-
-    auto uses = llzk::getSymbolUses(member, parentStruct);
-    if (!uses) {
+  for (MemberReadOp memberReadOp : walkCollect<MemberReadOp>(modOp)) {
+    auto memberDef = memberReadOp.getMemberDefOp(tables);
+    if (failed(memberDef)) {
       return failure();
     }
-    for (SymbolTable::SymbolUse symUse : uses.value()) {
-      auto memberReadOp = llvm::dyn_cast<MemberReadOp>(symUse.getUser());
-      if (!memberReadOp) {
-        continue;
-      }
-      auto memberDef = memberReadOp.getMemberDefOp(tables);
-      if (failed(memberDef) || memberDef->get() != member) {
-        return failure();
-      }
-      for (Operation *user : memberReadOp.getResult().getUsers()) {
-        auto readOp = llvm::dyn_cast<ReadArrayOp>(user);
-        ArrayAttr idx = readOp ? getIndexAsAttr(readOp) : ArrayAttr();
-        if (!readOp || readOp.getArrRef() != memberReadOp.getResult() || !idx) {
-          return failure();
-        }
-        Type replacementType = splitTypes.lookup(idx);
-        if (!replacementType ||
-            !canReplaceReadResultWithType(
-                readOp, replacementType, tracker, "verifySplitMemberReadsRewritable"
-            )) {
-          return failure();
-        }
-      }
+    auto splitIt = splitTypesByMember.find(memberDef->get());
+    if (splitIt == splitTypesByMember.end()) {
+      continue;
+    }
+    if (failed(verifySplitMemberReadRewritable(
+            memberReadOp, memberDef->get(), splitIt->second, tracker
+        ))) {
+      return failure();
     }
   }
   return success();
@@ -3429,7 +3461,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   }
   DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> splitTypesByMember;
   if (failed(collectSplitTypesByMember(arraysToScalarize, tables, splitTypesByMember, tracker)) ||
-      failed(verifySplitMemberReadsRewritable(splitTypesByMember, tables, tracker))) {
+      failed(verifySplitMemberReadsRewritable(modOp, splitTypesByMember, tables, tracker))) {
     return failure();
   }
 
