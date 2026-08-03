@@ -2887,6 +2887,10 @@ static FailureOr<Value> getOrCreateScalarizedLocalArrayValue(
       )) {
     return failure();
   }
+  if (scalarValue.getDefiningOp<NonDetOp>()) {
+    scalarValue = rewriter.create<NonDetOp>(loc, type).getResult();
+    valueByIndex[idx] = scalarValue;
+  }
   return scalarValue;
 }
 
@@ -3721,6 +3725,62 @@ public:
   }
 };
 
+namespace {
+
+/// Return whether `value` is used by any operation other than `user`.
+static bool hasUsesOutside(Value value, Operation *user) {
+  return llvm::any_of(value.getUses(), [user](OpOperand &use) { return use.getOwner() != user; });
+}
+
+/// Return whether every use of `value` is a member-write value operand.
+static bool allUsesAreMemberWrites(Value value) {
+  return !value.use_empty() && llvm::all_of(value.getUses(), [](OpOperand &use) {
+    auto writeOp = llvm::dyn_cast<MemberWriteOp>(use.getOwner());
+    return writeOp && writeOp.getVal() == use.get();
+  });
+}
+
+/// Return a typed nondeterministic value for a single member write without retagging the source.
+static FailureOr<Value>
+materializeValueForMemberWrite(Location loc, Value value, Type type, PatternRewriter &rewriter) {
+  if (value.getType() == type) {
+    return value;
+  }
+  if (!value.getDefiningOp<NonDetOp>()) {
+    return failure();
+  }
+  return rewriter.create<NonDetOp>(loc, type).getResult();
+}
+
+} // namespace
+
+/// Update stale `poly.unifiable_cast` result types after their input has been instantiated.
+class UpdateUnifiableCastResultFromInput final : public OpRewritePattern<UnifiableCastOp> {
+  ConversionTracker &tracker_;
+
+public:
+  /// Construct the unifiable-cast result propagation pattern.
+  UpdateUnifiableCastResultFromInput(MLIRContext *ctx, ConversionTracker &tracker)
+      : OpRewritePattern(ctx, 3), tracker_(tracker) {}
+
+  /// Retag a cast result when all remaining uses can observe the same instantiated type.
+  LogicalResult matchAndRewrite(UnifiableCastOp op, PatternRewriter &rewriter) const override {
+    Type inputType = op.getInput().getType();
+    Value result = op.getResult();
+    Type resultType = result.getType();
+    if (inputType == resultType || typesUnify(inputType, resultType) ||
+        !allUsesAreMemberWrites(result) ||
+        !tracker_.isLegalConversion(resultType, inputType, "UpdateUnifiableCastResultFromInput")) {
+      return failure();
+    }
+    rewriter.modifyOpInPlace(op, [&result, &inputType]() { result.setType(inputType); });
+    LLVM_DEBUG(
+        llvm::dbgs() << "[UpdateUnifiableCastResultFromInput] updated result type in " << op << '\n'
+    );
+    return success();
+  }
+};
+
 /// Update the type of MemberWriteOp value based on updated types from MemberDefOp.
 class UpdateMemberWriteValFromDef final : public OpRewritePattern<MemberWriteOp> {
   ConversionTracker &tracker_;
@@ -3732,7 +3792,43 @@ public:
 
   /// Update a member write operand type from its referenced member definition.
   LogicalResult matchAndRewrite(MemberWriteOp op, PatternRewriter &rewriter) const override {
-    return updateMemberRefValFromMemberDef(op, tracker_, rewriter);
+    SymbolTableCollection tables;
+    auto def = op.getMemberDefOp(tables);
+    if (failed(def)) {
+      return failure();
+    }
+
+    Value oldValue = op.getVal();
+    Type oldValueType = oldValue.getType();
+    Type newValueType = def->get().getType();
+    if (oldValueType == newValueType ||
+        !tracker_.isLegalConversion(oldValueType, newValueType, "UpdateMemberWriteValFromDef")) {
+      return failure();
+    }
+
+    if (!hasUsesOutside(oldValue, op.getOperation())) {
+      rewriter.modifyOpInPlace(op, [&oldValue, &newValueType]() {
+        oldValue.setType(newValueType);
+      });
+      LLVM_DEBUG(
+          llvm::dbgs() << "[UpdateMemberWriteValFromDef] updated value type in " << op << '\n'
+      );
+      return success();
+    }
+
+    rewriter.setInsertionPoint(op);
+    FailureOr<Value> convertedValue =
+        materializeValueForMemberWrite(op.getLoc(), oldValue, newValueType, rewriter);
+    if (failed(convertedValue)) {
+      return failure();
+    }
+    rewriter.modifyOpInPlace(op, [&op, &convertedValue]() {
+      op.getValMutable().assign(*convertedValue);
+    });
+    LLVM_DEBUG(
+        llvm::dbgs() << "[UpdateMemberWriteValFromDef] materialized value type for " << op << '\n'
+    );
+    return success();
   }
 };
 
@@ -3746,14 +3842,15 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
       //  benefit = 6
       UpdateInferredResultTypes, // OpTrait::InferTypeOpAdaptor (ReadArrayOp, ExtractArrayOp)
       //  benefit = 3
-      UpdateFreeFuncCallOpTypes,    // CallOp, targeting non-struct functions
-      UpdateFuncTypeFromReturn,     // FuncDefOp
-      UpdateNewArrayElemFromWrite,  // CreateArrayOp
-      UpdateArrayElemFromArrRead,   // ReadArrayOp
-      UpdateArrayElemFromArrWrite,  // WriteArrayOp
-      UpdateMemberDefTypeFromWrite, // MemberDefOp
-      UpdateMemberReadValFromDef,   // MemberReadOp
-      UpdateMemberWriteValFromDef   // MemberWriteOp
+      UpdateFreeFuncCallOpTypes,          // CallOp, targeting non-struct functions
+      UpdateFuncTypeFromReturn,           // FuncDefOp
+      UpdateNewArrayElemFromWrite,        // CreateArrayOp
+      UpdateArrayElemFromArrRead,         // ReadArrayOp
+      UpdateArrayElemFromArrWrite,        // WriteArrayOp
+      UpdateMemberDefTypeFromWrite,       // MemberDefOp
+      UpdateMemberReadValFromDef,         // MemberReadOp
+      UpdateUnifiableCastResultFromInput, // UnifiableCastOp
+      UpdateMemberWriteValFromDef         // MemberWriteOp
       >(ctx, tracker);
 
   return applyAndFoldGreedily(modOp, tracker, std::move(patterns));
