@@ -924,7 +924,8 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       continue;
     }
 
-    auto resolvedValue = resolveRefStateValue(val, refSet);
+    auto resolvedValue =
+        resolveRefStateValue(val, SourceRefAnalysis::getDependencyState(_dataflowSolver, val));
     if (!resolvedValue.has_value()) {
       // We still return success so we can return overapproximated and partial
       // results to the user.
@@ -942,7 +943,9 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
   if (isReadOp(op) && op->getNumResults() == 1) {
     Value resultVal = op->getResult(0);
     if (!llvm::isa<ArrayType, StructType, pod::PodType>(resultVal.getType())) {
-      auto resolvedValue = resolveRefStateValue(resultVal, getSourceRefState(resultVal));
+      auto resolvedValue = resolveRefStateValue(
+          resultVal, SourceRefAnalysis::getDependencyState(_dataflowSolver, resultVal)
+      );
       if (resolvedValue.has_value()) {
         propagateIfChanged(results[0], results[0]->setValue(*resolvedValue));
       }
