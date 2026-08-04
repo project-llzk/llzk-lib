@@ -119,14 +119,54 @@ $(function(){initNavTree('structllzk_1_1polymorphic_1_1detail_1_1InstantiationLa
 <tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:ab0677cddfdc8fc11f629999bf97d3432" id="r_ab0677cddfdc8fc11f629999bf97d3432"><td class="memItemLeft" align="right" valign="top">mlir::SmallVector&lt; mlir::Attribute &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab0677cddfdc8fc11f629999bf97d3432">remainingNames</a></td></tr>
+<tr class="memitem:afaf9d519419fc41bdfdbb7d23922fda1" id="r_afaf9d519419fc41bdfdbb7d23922fda1"><td class="memItemLeft" align="right" valign="top">mlir::ArrayAttr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afaf9d519419fc41bdfdbb7d23922fda1">concreteParamKey</a></td></tr>
+<tr class="memdesc:afaf9d519419fc41bdfdbb7d23922fda1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ordered [parameter-name, concrete-value, ...] entries for exact partial-function reuse.  <br /></td></tr>
 <tr class="memitem:a65456921b57398e3844ac01ca8a280f2" id="r_a65456921b57398e3844ac01ca8a280f2"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a65456921b57398e3844ac01ca8a280f2">templateNameWithAttrs</a></td></tr>
 <tr class="memitem:a9491bdaec16e6ae1bf5ddba0c95acf45" id="r_a9491bdaec16e6ae1bf5ddba0c95acf45"><td class="memItemLeft" align="right" valign="top">mlir::ArrayAttr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9491bdaec16e6ae1bf5ddba0c95acf45">rewrittenCallParams</a></td></tr>
+<tr class="memitem:a3eb9a65fe5ca2f6c368827dc335b1e8f" id="r_a3eb9a65fe5ca2f6c368827dc335b1e8f"><td class="memItemLeft" align="right" valign="top">mlir::ArrayAttr&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3eb9a65fe5ca2f6c368827dc335b1e8f">namePattern</a></td></tr>
+<tr class="memdesc:a3eb9a65fe5ca2f6c368827dc335b1e8f"><td class="mdescLeft">&#160;</td><td class="mdescRight">The refined literal chunks; fully concrete generated templates clear this state.  <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Groups the information needed after concrete parameters have been chosen to decide how to name a new instantiated template and how to rewrite the remaining argument list at the use site. </p>
 
 <p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00136">136</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
 </div><a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+<a id="afaf9d519419fc41bdfdbb7d23922fda1" name="afaf9d519419fc41bdfdbb7d23922fda1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afaf9d519419fc41bdfdbb7d23922fda1">&#9670;&#160;</a></span>concreteParamKey</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::ArrayAttr llzk::polymorphic::detail::InstantiationLayout::concreteParamKey</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Ordered [parameter-name, concrete-value, ...] entries for exact partial-function reuse. </p>
+
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00139">139</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+
+</div>
+</div>
+<a id="a3eb9a65fe5ca2f6c368827dc335b1e8f" name="a3eb9a65fe5ca2f6c368827dc335b1e8f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3eb9a65fe5ca2f6c368827dc335b1e8f">&#9670;&#160;</a></span>namePattern</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::ArrayAttr llzk::polymorphic::detail::InstantiationLayout::namePattern</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The refined literal chunks; fully concrete generated templates clear this state. </p>
+
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00143">143</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+
+</div>
+</div>
 <a id="ab0677cddfdc8fc11f629999bf97d3432" name="ab0677cddfdc8fc11f629999bf97d3432"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab0677cddfdc8fc11f629999bf97d3432">&#9670;&#160;</a></span>remainingNames</h2>
 
@@ -155,7 +195,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00139">139</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00141">141</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
 
 </div>
 </div>
@@ -171,7 +211,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00138">138</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8h_source.html#l00140">140</a> of file <a class="el" href="SharedImpl_8h_source.html">SharedImpl.h</a>.</p>
 
 </div>
 </div>

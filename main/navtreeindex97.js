@@ -1,5 +1,14 @@
 var NAVTREEINDEX97 =
 {
+"syntax.html#pseudo-homogeneous":[4,1,0],
+"syntax.html#semantic-rules":[4,2],
+"syntax.html#syntax-1":[4,0],
+"syntax.html#translation-guidelines":[4,3],
+"syntax.html#types":[4,1],
+"todo.html":[9],
+"tools.html":[3],
+"tools.html#analysis-passes":[3,0,0,0],
+"tools.html#array-dialect-transformation-passes":[3,0,0,2],
 "tools.html#autotoc_md-llzk-array-to-scalar":[3,0,0,2,0],
 "tools.html#autotoc_md-llzk-compute-constrain-to-product":[3,0,0,1,0],
 "tools.html#autotoc_md-llzk-drop-empty-templates":[3,0,0,3,0],

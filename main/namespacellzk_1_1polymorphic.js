@@ -61,5 +61,6 @@ var namespacellzk_1_1polymorphic =
     [ "symbolizeFlatteningCleanupMode", "namespacellzk_1_1polymorphic.html#abad4e40d06d8eaa25861af6730fdcd0d", null ],
     [ "symbolizeFlatteningCleanupMode", "namespacellzk_1_1polymorphic.html#acbd04ca89ed16b1ed06964eccc3ac071", null ],
     [ "verifyInTemplate", "namespacellzk_1_1polymorphic.html#ae1ebee7870d5849df2129690ed3fd0ed", null ],
-    [ "verifyInTemplate", "namespacellzk_1_1polymorphic.html#acc78f558f10c87ee61ca2699793ebbb1", null ]
+    [ "verifyInTemplate", "namespacellzk_1_1polymorphic.html#acc78f558f10c87ee61ca2699793ebbb1", null ],
+    [ "TEMPLATE_NAME_PATTERN_ATTR", "namespacellzk_1_1polymorphic.html#a2045a62eb26847c2d5aff0add2a3b938", null ]
 ];

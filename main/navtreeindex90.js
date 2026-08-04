@@ -1,5 +1,10 @@
 var NAVTREEINDEX90 =
 {
+"structllvm_1_1DenseMapInfo_3_1_1llzk_1_1polymorphic_1_1FlatteningCleanupMode_01_4.html":[12,0,0,11],
+"structllvm_1_1DenseMapInfo_3_1_1llzk_1_1polymorphic_1_1FlatteningCleanupMode_01_4.html#a165479d46c6901941a9d30ab61bba548":[10,0,2,11,0],
+"structllvm_1_1DenseMapInfo_3_1_1llzk_1_1polymorphic_1_1FlatteningCleanupMode_01_4.html#a165479d46c6901941a9d30ab61bba548":[12,0,0,11,0],
+"structllvm_1_1DenseMapInfo_3_1_1llzk_1_1smt_1_1BVCmpPredicate_01_4.html":[10,0,2,12],
+"structllvm_1_1DenseMapInfo_3_1_1llzk_1_1smt_1_1BVCmpPredicate_01_4.html":[12,0,0,12],
 "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1smt_1_1BVCmpPredicate_01_4.html#af5b6c3ba556d836a88adb35d4deacaa8":[10,0,2,12,0],
 "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1smt_1_1BVCmpPredicate_01_4.html#af5b6c3ba556d836a88adb35d4deacaa8":[12,0,0,12,0],
 "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1smt_1_1IntPredicate_01_4.html":[10,0,2,13],
@@ -244,10 +249,5 @@ var NAVTREEINDEX90 =
 "structllzk_1_1LocationComparator.html":[12,0,1,64],
 "structllzk_1_1LocationComparator.html#ae0149d8b8f2749f6ed2dd15d7704b2b0":[10,0,3,67,0],
 "structllzk_1_1LocationComparator.html#ae0149d8b8f2749f6ed2dd15d7704b2b0":[12,0,1,64,0],
-"structllzk_1_1NamedOpLocationLess.html":[10,0,3,74],
-"structllzk_1_1NamedOpLocationLess.html":[12,0,1,71],
-"structllzk_1_1NamedOpLocationLess.html#adc662f2d7220e9a62f345e78242fc4a5":[10,0,3,74,0],
-"structllzk_1_1NamedOpLocationLess.html#adc662f2d7220e9a62f345e78242fc4a5":[12,0,1,71,0],
-"structllzk_1_1NestedPassOptions.html":[10,0,3,75],
-"structllzk_1_1NestedPassOptions.html":[12,0,1,72]
+"structllzk_1_1NamedOpLocationLess.html":[10,0,3,74]
 };

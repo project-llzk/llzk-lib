@@ -109,7 +109,8 @@ $(function(){initNavTree('namespacellzk_1_1polymorphic.html','',''); });
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#concepts">Concepts</a> &#124;
 <a href="#enum-members">Enumerations</a> &#124;
-<a href="#func-members">Functions</a>  </div>
+<a href="#func-members">Functions</a> &#124;
+<a href="#var-members">Variables</a>  </div>
   <div class="headertitle"><div class="title">llzk::polymorphic Namespace Reference</div></div>
 </div><!--header-->
 <div class="contents">
@@ -196,6 +197,11 @@ Functions</h2></td></tr>
 <tr class="memitem:ad65d2782d8402b08fab510fc1b60b844" id="r_ad65d2782d8402b08fab510fc1b60b844"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad65d2782d8402b08fab510fc1b60b844">registerWildcardArraySpecializationPass</a> ()</td></tr>
 <tr class="memitem:afef387130f95becad67e7e438d377142" id="r_afef387130f95becad67e7e438d377142"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afef387130f95becad67e7e438d377142">registerWildcardArraySpecializationPassPass</a> ()</td></tr>
 <tr class="memitem:ac756baa8d3f96f499ebf79ef4c91d018" id="r_ac756baa8d3f96f499ebf79ef4c91d018"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac756baa8d3f96f499ebf79ef4c91d018">registerTransformationPasses</a> ()</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
+Variables</h2></td></tr>
+<tr class="memitem:a2045a62eb26847c2d5aff0add2a3b938" id="r_a2045a62eb26847c2d5aff0add2a3b938"><td class="memItemLeft" align="right" valign="top">constexpr llvm::StringLiteral&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2045a62eb26847c2d5aff0add2a3b938">TEMPLATE_NAME_PATTERN_ATTR</a> = &quot;poly.name_pattern&quot;</td></tr>
+<tr class="memdesc:a2045a62eb26847c2d5aff0add2a3b938"><td class="mdescLeft">&#160;</td><td class="mdescRight">Metadata carried across transformation passes preserving the literal chunks of a partially-instantiated template's logical name.  <br /></td></tr>
 </table>
 <a name="doc-enum-members" id="doc-enum-members"></a><h2 id="header-doc-enum-members" class="groupheader">Enumeration Type Documentation</h2>
 <a id="a60784cd30ddfef02461e8b7b80e910c9" name="a60784cd30ddfef02461e8b7b80e910c9"></a>
@@ -806,6 +812,34 @@ template&lt;&gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_source.html#l00036">36</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+
+</div>
+</div>
+<a name="doc-var-members" id="doc-var-members"></a><h2 id="header-doc-var-members" class="groupheader">Variable Documentation</h2>
+<a id="a2045a62eb26847c2d5aff0add2a3b938" name="a2045a62eb26847c2d5aff0add2a3b938"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2045a62eb26847c2d5aff0add2a3b938">&#9670;&#160;</a></span>TEMPLATE_NAME_PATTERN_ATTR</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::StringLiteral llzk::polymorphic::TEMPLATE_NAME_PATTERN_ATTR = &quot;poly.name_pattern&quot;</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Metadata carried across transformation passes preserving the literal chunks of a partially-instantiated template's logical name. </p>
+<p>When present, the attribute has P+1 StringAttr chunks around the P current template parameters. The gap between chunks <span class="tt">i</span> and <span class="tt">i+1</span> represents current parameter <span class="tt">i</span>. The chunks are literal data; later transforms never recover semantic positions from the physical symbol name. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_source.html#l00034">34</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_source.html">Ops.h</a>.</p>
 
 </div>
 </div>

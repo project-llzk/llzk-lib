@@ -1,5 +1,7 @@
 var NAVTREEINDEX82 =
 {
+"contribution-guide.html#getting-started":[5,1],
+"contribution-guide.html#issues":[5,1,0],
 "contribution-guide.html#make-changes":[5,1,1],
 "contribution-guide.html#pull-request":[5,1,3],
 "contribution-guide.html#pull-request-review":[5,1,3,1],
@@ -247,7 +249,5 @@ var NAVTREEINDEX82 =
 "dialects.html#types-4":[7,10,1],
 "dialects.html#types-5":[7,11,1],
 "dialects.html#types-6":[7,12,1],
-"dialects.html#typevartype":[7,10,1,0],
-"dir_006f948be47a2a3cfc802ecb2004dee0.html":[13,0,2,0,6],
-"dir_014d0f5a4c28e696e617f500599cae9b.html":[13,0,4,2]
+"dialects.html#typevartype":[7,10,1,0]
 };

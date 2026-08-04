@@ -147,6 +147,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a717beda1ad6483759f16fa67a71d1a23" id="r_a717beda1ad6483759f16fa67a71d1a23"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a717beda1ad6483759f16fa67a71d1a23">setSymName</a> (::llvm::StringRef attrValue)</td></tr>
 <tr class="memitem:a615d182c7a66c4a458668727ba18728c" id="r_a615d182c7a66c4a458668727ba18728c"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a615d182c7a66c4a458668727ba18728c">verifyInvariantsImpl</a> ()</td></tr>
 <tr class="memitem:ac656748a8733b05b5fb44c20d11d9bd9" id="r_ac656748a8733b05b5fb44c20d11d9bd9"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac656748a8733b05b5fb44c20d11d9bd9">verifyInvariants</a> ()</td></tr>
+<tr class="memitem:a655085478cc1b9b778cfca849cca0cd9" id="r_a655085478cc1b9b778cfca849cca0cd9"><td class="memItemLeft" align="right" valign="top">::llvm::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a655085478cc1b9b778cfca849cca0cd9">verify</a> ()</td></tr>
+<tr class="memdesc:a655085478cc1b9b778cfca849cca0cd9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Verify the optional transform-carried name pattern against current parameters.  <br /></td></tr>
 <tr class="memitem:a36408ba98fec2f558b9b475f1b6e5ae2" id="r_a36408ba98fec2f558b9b475f1b6e5ae2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a36408ba98fec2f558b9b475f1b6e5ae2">print</a> (::mlir::OpAsmPrinter &amp;_odsPrinter)</td></tr>
 <tr class="memitem:ae9ac3bb92ea0481754582f6fdb2b1885" id="r_ae9ac3bb92ea0481754582f6fdb2b1885"><td class="memTemplParams" colspan="2">template&lt;TemplateSymbolBindingOp OpT&gt; </td></tr>
 <tr class="memitem:ae9ac3bb92ea0481754582f6fdb2b1885 template"><td class="memItemLeft" align="right" valign="top">inline ::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt; OpT &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae9ac3bb92ea0481754582f6fdb2b1885">getConstOps</a> ()</td></tr>
@@ -577,7 +579,7 @@ template&lt;TemplateSymbolBindingOp OpT&gt; </div>
 
 <p>Return the op of type <span class="tt">OpT</span> with the given name within the body region if it exists, else <span class="tt">nullptr</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00984">984</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00985">985</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -608,7 +610,7 @@ template&lt;TemplateSymbolBindingOp OpT&gt; </div>
 
 <p>Return the op of type <span class="tt">OpT</span> with the given name within the body region if it exists, else <span class="tt">nullptr</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00978">978</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00979">979</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -639,7 +641,7 @@ template&lt;TemplateSymbolBindingOp OpT&gt; </div>
 
 <p>Return the op of type <span class="tt">OpT</span> with the given name within the body region if it exists, else <span class="tt">nullptr</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00970">970</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00971">971</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -671,7 +673,7 @@ template&lt;TemplateSymbolBindingOp OpT&gt; </div>
 <p>Return the names of all ops of type <span class="tt">OpT</span> within the body region in the order they are defined. </p>
 <p>The names are returned as <span class="tt">FlatSymbolRefAttr</span> but the more general <span class="tt">Attribute</span> type is used in the return type since that's usually what's needed. </p>
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00942">942</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00943">943</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -703,7 +705,7 @@ template&lt;TemplateSymbolBindingOp OpT&gt; </div>
 <p>Return ops of type <span class="tt">OpT</span> within the body region. </p>
 <p>Ops are returned in the order they are defined in the IR. </p>
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00922">922</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00923">923</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1036,7 +1038,7 @@ template&lt;TemplateSymbolBindingOp OpT&gt; </div>
 
 <p>Return <span class="tt">true</span> if there is an op of type <span class="tt">OpT</span> with the given name within the body region. </p>
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00964">964</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00965">965</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1067,7 +1069,7 @@ template&lt;TemplateSymbolBindingOp OpT&gt; </div>
 
 <p>Return <span class="tt">true</span> if there is an op of type <span class="tt">OpT</span> with the given name within the body region. </p>
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00958">958</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00959">959</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1098,7 +1100,7 @@ template&lt;TemplateSymbolBindingOp OpT&gt; </div>
 
 <p>Return <span class="tt">true</span> if there is an op of type <span class="tt">OpT</span> with the given name within the body region. </p>
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00950">950</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00951">951</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1129,7 +1131,7 @@ template&lt;TemplateSymbolBindingOp OpT&gt; </div>
 
 <p>Return <span class="tt">true</span> if there are ops of type <span class="tt">OpT</span> within the body region. </p>
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00928">928</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00929">929</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1160,7 +1162,7 @@ template&lt;TemplateSymbolBindingOp OpT&gt; </div>
 
 <p>Return the number of ops of type <span class="tt">OpT</span> within the body region. </p>
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00934">934</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00935">935</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -1191,7 +1193,7 @@ template&lt;TemplateSymbolBindingOp OpT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01132">1132</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01134">1134</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1246,7 +1248,7 @@ template&lt;TemplateSymbolBindingOp OpT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01157">1157</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html#l01159">1159</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -1399,6 +1401,28 @@ template&lt;TemplateSymbolBindingOp OpT&gt; </div>
 
 </div>
 </div>
+<a id="a655085478cc1b9b778cfca849cca0cd9" name="a655085478cc1b9b778cfca849cca0cd9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a655085478cc1b9b778cfca849cca0cd9">&#9670;&#160;</a></span>verify()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">LogicalResult llzk::polymorphic::TemplateOp::verify </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Verify the optional transform-carried name pattern against current parameters. </p>
+<p>The pattern is generic discardable metadata, so this owner boundary is the one place that prevents malformed cardinality or element types from reaching refinement passes. </p>
+
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8cpp_source.html#l00048">48</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+
+</div>
+</div>
 <a id="a199589130dd361271a3ac712701285c0" name="a199589130dd361271a3ac712701285c0"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a199589130dd361271a3ac712701285c0">&#9670;&#160;</a></span>verifyInherentAttrs()</h2>
 
@@ -1494,6 +1518,7 @@ template&lt;TemplateSymbolBindingOp OpT&gt; </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>build/include/llzk/Dialect/Polymorphic/IR/<a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a></li>
+<li>lib/Dialect/Polymorphic/IR/<a class="el" href="Polymorphic_2IR_2Ops_8cpp_source.html">Ops.cpp</a></li>
 <li>build/include/llzk/Dialect/Polymorphic/IR/<a class="el" href="Polymorphic_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a></li>
 </ul>
 </div><!-- contents -->

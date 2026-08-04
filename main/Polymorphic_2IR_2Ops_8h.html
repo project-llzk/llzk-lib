@@ -108,7 +108,8 @@ $(function(){initNavTree('Polymorphic_2IR_2Ops_8h.html','',''); });
 <a href="#namespaces">Namespaces</a> &#124;
 <a href="#concepts">Concepts</a> &#124;
 <a href="#define-members">Macros</a> &#124;
-<a href="#func-members">Functions</a>  </div>
+<a href="#func-members">Functions</a> &#124;
+<a href="#var-members">Variables</a>  </div>
   <div class="headertitle"><div class="title">Ops.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
@@ -118,12 +119,13 @@ $(function(){initNavTree('Polymorphic_2IR_2Ops_8h.html','',''); });
 <code>#include &lt;mlir/Dialect/Affine/IR/AffineValueMap.h&gt;</code><br />
 <code>#include &lt;mlir/Interfaces/ControlFlowInterfaces.h&gt;</code><br />
 <code>#include &lt;mlir/Interfaces/InferTypeOpInterface.h&gt;</code><br />
+<code>#include &lt;llvm/ADT/StringRef.h&gt;</code><br />
 <code>#include &quot;<a class="el" href="Polymorphic_2IR_2OpInterfaces_8h_8inc_source.html">llzk/Dialect/Polymorphic/IR/OpInterfaces.h.inc</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Polymorphic_2IR_2Ops_8h_8inc_source.html">llzk/Dialect/Polymorphic/IR/Ops.h.inc</a>&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for Ops.h:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Polymorphic_2IR_2Ops_8h__incl.svg" width="3475" height="410"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="Polymorphic_2IR_2Ops_8h__incl.svg" width="4390" height="410"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
@@ -152,6 +154,11 @@ Functions</h2></td></tr>
 <tr class="memdesc:abfc0e81b570f916984553856b44142ed"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return true iff the given Operation is nested somewhere within a <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a>.  <br /></td></tr>
 <tr class="memitem:ae1ebee7870d5849df2129690ed3fd0ed" id="r_ae1ebee7870d5849df2129690ed3fd0ed"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic.html#ae1ebee7870d5849df2129690ed3fd0ed">llzk::polymorphic::verifyInTemplate</a> (mlir::Operation *op)</td></tr>
 <tr class="memdesc:ae1ebee7870d5849df2129690ed3fd0ed"><td class="mdescLeft">&#160;</td><td class="mdescRight">If the given Operation is nested somewhere within a <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a>, return a success result containing that <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a>.  <br /></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
+Variables</h2></td></tr>
+<tr class="memitem:a2045a62eb26847c2d5aff0add2a3b938" id="r_a2045a62eb26847c2d5aff0add2a3b938"><td class="memItemLeft" align="right" valign="top">constexpr llvm::StringLiteral&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1polymorphic.html#a2045a62eb26847c2d5aff0add2a3b938">llzk::polymorphic::TEMPLATE_NAME_PATTERN_ATTR</a> = &quot;poly.name_pattern&quot;</td></tr>
+<tr class="memdesc:a2045a62eb26847c2d5aff0add2a3b938"><td class="mdescLeft">&#160;</td><td class="mdescRight">Metadata carried across transformation passes preserving the literal chunks of a partially-instantiated template's logical name.  <br /></td></tr>
 </table>
 <a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
 <a id="a52c883a38e577b8b12282ff70c95a16d" name="a52c883a38e577b8b12282ff70c95a16d"></a>
@@ -166,7 +173,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_source.html#l00032">32</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_source.html">Ops.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Polymorphic_2IR_2Ops_8h_source.html#l00043">43</a> of file <a class="el" href="Polymorphic_2IR_2Ops_8h_source.html">Ops.h</a>.</p>
 
 </div>
 </div>

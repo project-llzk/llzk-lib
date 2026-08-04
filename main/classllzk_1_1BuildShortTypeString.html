@@ -120,51 +120,19 @@ $(function(){initNavTree('classllzk_1_1BuildShortTypeString.html','','classllzk_
 Static Public Member Functions</h2></td></tr>
 <tr class="memitem:abb427a0381a116f61564a9fbd1824d43" id="r_abb427a0381a116f61564a9fbd1824d43"><td class="memItemLeft" align="right" valign="top">static std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abb427a0381a116f61564a9fbd1824d43">from</a> (mlir::Type type)</td></tr>
 <tr class="memdesc:abb427a0381a116f61564a9fbd1824d43"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a brief string representation of the given LLZK type.  <br /></td></tr>
+<tr class="memitem:a023172ee9d5e7cc1a4efc3e224278ad6" id="r_a023172ee9d5e7cc1a4efc3e224278ad6"><td class="memItemLeft" align="right" valign="top">static std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a023172ee9d5e7cc1a4efc3e224278ad6">from</a> (mlir::Attribute attr)</td></tr>
+<tr class="memdesc:a023172ee9d5e7cc1a4efc3e224278ad6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a brief string representation of one LLZK type parameter attribute.  <br /></td></tr>
 <tr class="memitem:a18ef535cbc8751b53410362ca753c02d" id="r_a18ef535cbc8751b53410362ca753c02d"><td class="memItemLeft" align="right" valign="top">static std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a18ef535cbc8751b53410362ca753c02d">from</a> (mlir::ArrayRef&lt; mlir::Attribute &gt; attrs)</td></tr>
 <tr class="memdesc:a18ef535cbc8751b53410362ca753c02d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a brief string representation of the attribute list from a parameterized type.  <br /></td></tr>
-<tr class="memitem:aa895d8069135f63dc10b9c3ddb93a55e" id="r_aa895d8069135f63dc10b9c3ddb93a55e"><td class="memItemLeft" align="right" valign="top">static std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa895d8069135f63dc10b9c3ddb93a55e">from</a> (const std::string &amp;base, mlir::ArrayRef&lt; mlir::Attribute &gt; attrs)</td></tr>
-<tr class="memdesc:aa895d8069135f63dc10b9c3ddb93a55e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Take an existing name prefix/base that contains N&gt;=0 <span class="tt">PLACEHOLDER</span> character(s) and the Attribute list (size&gt;=N) from a parameterized type.  <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Note: If any symbol refs in an input Type/Attribute use any of the special characters that this class generates, they are not escaped. </p>
-<p>That means these string representations are not safe to reverse back into a Type. It's only intended to produce a unique name for instantiated structs that may give some hint when debugging regarding the original struct name and the params used. </p>
+<p>That means these string representations are not safe to reverse back into a Type. They are intended only to produce compact, recognizable names for instantiated symbols. </p>
 
 <p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00039">39</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="aa895d8069135f63dc10b9c3ddb93a55e" name="aa895d8069135f63dc10b9c3ddb93a55e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa895d8069135f63dc10b9c3ddb93a55e">&#9670;&#160;</a></span>from() <span class="overload">[1/3]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::string llzk::BuildShortTypeString::from </td>
-          <td>(</td>
-          <td class="paramtype">const std::string &amp;</td>          <td class="paramname"><span class="paramname"><em>base</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">mlir::ArrayRef&lt; mlir::Attribute &gt;</td>          <td class="paramname"><span class="paramname"><em>attrs</em></span>&#160;)</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Take an existing name prefix/base that contains N&gt;=0 <span class="tt">PLACEHOLDER</span> character(s) and the Attribute list (size&gt;=N) from a parameterized type. </p>
-<p>The first N elements in the list are formatted and used to replace the <span class="tt">PLACEHOLDER</span> character(s) in the base string. The remaining Attribute elements, if any, are formatted and appended to the end. Occurrences of <span class="tt">nullptr</span> in the Attribute list are formatted as the <span class="tt">PLACEHOLDER</span> character itself to allow for partial instantiation of a parameterized type, preserving the location of attributes that were not available in an earlier instantiation so they can be added by a later instantiation. </p>
-
-</div>
-</div>
 <a id="a18ef535cbc8751b53410362ca753c02d" name="a18ef535cbc8751b53410362ca753c02d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a18ef535cbc8751b53410362ca753c02d">&#9670;&#160;</a></span>from() <span class="overload">[2/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a18ef535cbc8751b53410362ca753c02d">&#9670;&#160;</a></span>from() <span class="overload">[1/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -187,9 +155,38 @@ Static Public Member Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Return a brief string representation of the attribute list from a parameterized type. </p>
-<p>Occurrences of <span class="tt">nullptr</span> are represented with a <span class="tt">PLACEHOLDER</span> character. </p>
+<p>All attributes must be non-null. </p>
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00061">61</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00064">64</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+
+</div>
+</div>
+<a id="a023172ee9d5e7cc1a4efc3e224278ad6" name="a023172ee9d5e7cc1a4efc3e224278ad6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a023172ee9d5e7cc1a4efc3e224278ad6">&#9670;&#160;</a></span>from() <span class="overload">[2/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string llzk::BuildShortTypeString::from </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Attribute</td>          <td class="paramname"><span class="paramname"><em>attr</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Return a brief string representation of one LLZK type parameter attribute. </p>
+
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00058">58</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
 
 </div>
 </div>
@@ -218,7 +215,7 @@ Static Public Member Functions</h2></td></tr>
 
 <p>Return a brief string representation of the given LLZK type. </p>
 
-<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00055">55</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="TypeHelper_8h_source.html#l00053">53</a> of file <a class="el" href="TypeHelper_8h_source.html">TypeHelper.h</a>.</p>
 
 </div>
 </div>
