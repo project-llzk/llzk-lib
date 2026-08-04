@@ -3066,6 +3066,46 @@ static LogicalResult refreshValuesFromDependentCandidates(
   return failure();
 }
 
+/// Return the value that should replace `readOp` after scalarization.
+///
+/// The cached scalar value can be less concrete than `info.typeByIndex` for inline initializers,
+/// so materialize a cast when a concrete consumer needs the refined per-index type.
+static FailureOr<Value> buildReadReplacementValue(
+    ReadArrayOp readOp, const ScalarizedArrayInfo &info, PatternRewriter &rewriter,
+    const ConversionTracker &tracker
+) {
+  ArrayAttr idx = getIndexAsAttr(readOp);
+  if (!idx) {
+    return failure();
+  }
+  Value replacementValue = info.valueByIndex.lookup(idx);
+  Type replacementType = info.typeByIndex.lookup(idx);
+  if (!replacementValue || !replacementType) {
+    return failure();
+  }
+  if (!canUseScalarizedValueAsType(
+          replacementValue.getType(), replacementType, tracker, "buildReadReplacementValue"
+      )) {
+    return failure();
+  }
+  if (replacementValue.getType() == replacementType) {
+    return replacementValue;
+  }
+
+  OpBuilder::InsertionGuard guard(rewriter);
+  rewriter.setInsertionPoint(readOp);
+  if (replacementValue.getDefiningOp<NonDetOp>()) {
+    // A generic nondet initializer can be specialized per read index without changing program
+    // semantics because each index already denotes an unconstrained value.
+    return rewriter.create<NonDetOp>(readOp.getLoc(), replacementType).getResult();
+  }
+  if (!typesUnify(replacementValue.getType(), replacementType)) {
+    return failure();
+  }
+  return rewriter.create<UnifiableCastOp>(readOp.getLoc(), replacementType, replacementValue)
+      .getResult();
+}
+
 /// Emit one scalar `struct.writem` per split index for a whole-array member write.
 template <typename GetScalarValueFn>
 static LogicalResult emitScalarMemberWrites(
@@ -3115,7 +3155,11 @@ static LogicalResult rewriteLocalArray(
         )) {
       return failure();
     }
-    replaceAllUsesIgnoringType(readOp.getResult(), info.valueByIndex.lookup(idx));
+    FailureOr<Value> replacementValue = buildReadReplacementValue(readOp, info, rewriter, tracker);
+    if (failed(replacementValue)) {
+      return failure();
+    }
+    replaceAllUsesIgnoringType(readOp.getResult(), *replacementValue);
     rewriter.eraseOp(readOp);
   }
 

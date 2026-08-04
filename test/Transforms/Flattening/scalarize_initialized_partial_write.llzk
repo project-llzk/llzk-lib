@@ -102,9 +102,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.member @last : !struct.type<@TCell_2_Cell> {column}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @TCell_2_Cell::@compute() : () -> !struct.type<@TCell_2_Cell>
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_8]][@first] = %[[VAL_10]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_8]][@middle] = %[[VAL_9]] : <@Holder>, !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_8]][@last] = %[[VAL_11]] : <@Holder>, !struct.type<@TCell_2_Cell>
