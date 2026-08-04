@@ -38,7 +38,6 @@
 #include <string>
 
 namespace r1cs {
-#define GEN_PASS_DECL_R1CSBINARYEXPORTPASS
 #define GEN_PASS_DEF_R1CSBINARYEXPORTPASS
 #include "r1cs/Transforms/TransformationPasses.h.inc"
 } // namespace r1cs

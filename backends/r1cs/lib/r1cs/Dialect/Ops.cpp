@@ -79,7 +79,7 @@ void CircuitDefOp::print(OpAsmPrinter &p) {
   Block &entry = getBody().front();
   bool hasAttrs = getArgAttrs().has_value();
 
-  if (!entry.empty()) {
+  if (entry.getNumArguments() != 0) {
     p << " inputs (";
     auto dictAttr = getArgAttrs().value_or(DictionaryAttr::get(getContext()));
     llvm::interleaveComma(entry.getArguments(), p, [&](BlockArgument arg) {
@@ -88,14 +88,15 @@ void CircuitDefOp::print(OpAsmPrinter &p) {
 
       if (hasAttrs) {
         if (auto attr = dictAttr.get(std::to_string(arg.getArgNumber()))) {
-          p << " {";
+          p << " {" << PublicAttr::getMnemonic() << " = ";
           p.printAttribute(attr);
           p << '}';
         }
       }
     });
-    p << ") ";
+    p << ')';
   }
+  p << ' ';
   p.printRegion(getBody(), /*printEntryBlockArgs=*/false);
 }
 

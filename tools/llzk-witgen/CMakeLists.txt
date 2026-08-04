@@ -10,6 +10,7 @@ target_sources(
     WitgenLowering.cpp
     WitgenDriver.cpp
     WitgenUtils.cpp
+    Wtns.cpp
 )
 target_include_directories(LLZKWitgenTool PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(
@@ -49,6 +50,7 @@ target_link_libraries(
     MLIRTargetLLVMIRExport
     MLIRTransforms
     MLIRUBToLLVM
+    R1CSTransforms
     mlir_c_runner_utils
 )
 llzk_target_add_mlir_link_settings(LLZKWitgenTool)

@@ -38,10 +38,10 @@ module attributes {llzk.lang, llzk.main = !struct.type<@MulOut>} {
 }
 
 // CHECK-LABEL:   r1cs.circuit @MulOut inputs (
-// CHECK-SAME:                                  %[[A:[0-9a-zA-Z_\.]+]]: !r1cs.signal {#r1cs.pub},
+// CHECK-SAME:                                  %[[A:[0-9a-zA-Z_\.]+]]: !r1cs.signal {pub = #r1cs.pub},
 // CHECK-SAME:                                  %[[B:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
-// CHECK:           %[[LHS_OUT:[0-9a-zA-Z_\.]+]] = r1cs.def 0 : !r1cs.signal {pub = #r1cs.pub}
-// CHECK:           %[[RHS_OUT:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK:           %[[LHS_OUT:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK:           %[[RHS_OUT:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal {pub = #r1cs.pub}
 // CHECK:           %[[A_LIN:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[A]] : !r1cs.signal to !r1cs.linear
 // CHECK:           %[[B_LIN:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[B]] : !r1cs.signal to !r1cs.linear
 // CHECK:           %[[LHS_LIN:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[LHS_OUT]] : !r1cs.signal to !r1cs.linear

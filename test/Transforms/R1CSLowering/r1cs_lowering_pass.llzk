@@ -1,4 +1,5 @@
 // RUN: llzk-opt -split-input-file -llzk-full-r1cs-lowering -verify-diagnostics %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-full-r1cs-lowering %s | r1cs-opt -o /dev/null
 
 module attributes {llzk.lang, llzk.main = !struct.type<@CmpConstraint>} {
   // lowers constraints to be at most degree 2 polynomials
@@ -23,12 +24,12 @@ module attributes {llzk.lang, llzk.main = !struct.type<@CmpConstraint>} {
 }
 
 // CHECK-LABEL:   r1cs.circuit @CmpConstraint inputs (
-// CHECK-SAME:                                        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal {#r1cs.pub},
+// CHECK-SAME:                                        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal {pub = #r1cs.pub},
 // CHECK-SAME:                                        %[[VAL_1:[0-9a-zA-Z_\.]+]]: !r1cs.signal,
 // CHECK-SAME:                                        %[[VAL_2:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
-// CHECK-DAG:           %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.def 0 : !r1cs.signal {pub = #r1cs.pub}
-// CHECK-DAG:           %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal
-// CHECK-DAG:           %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal
+// CHECK-DAG:           %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-DAG:           %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal
+// CHECK-DAG:           %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.def 3 : !r1cs.signal
 // CHECK-DAG:           %[[VAL_6:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
 // CHECK-DAG:           %[[VAL_7:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_2]] : !r1cs.signal to !r1cs.linear
 // CHECK-DAG:           %[[VAL_8:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_4]] : !r1cs.signal to !r1cs.linear
@@ -70,12 +71,12 @@ module attributes {llzk.lang, llzk.main = !struct.type<@CmpConstraint>} {
 }
 
 // CHECK-LABEL:   r1cs.circuit @CmpConstraint inputs (
-// CHECK-SAME:                                        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal {#r1cs.pub},
+// CHECK-SAME:                                        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal {pub = #r1cs.pub},
 // CHECK-SAME:                                        %[[VAL_1:[0-9a-zA-Z_\.]+]]: !r1cs.signal,
 // CHECK-SAME:                                        %[[VAL_2:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
-// CHECK-DAG:           %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.def 0 : !r1cs.signal {pub = #r1cs.pub}
-// CHECK-DAG:           %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal
-// CHECK-DAG:           %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal
+// CHECK-DAG:           %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-DAG:           %[[VAL_4:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal
+// CHECK-DAG:           %[[VAL_5:[0-9a-zA-Z_\.]+]] = r1cs.def 3 : !r1cs.signal
 // CHECK-DAG:           %[[VAL_6:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_1]] : !r1cs.signal to !r1cs.linear
 // CHECK-DAG:           %[[VAL_7:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_2]] : !r1cs.signal to !r1cs.linear
 // CHECK-DAG:           %[[VAL_8:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[VAL_4]] : !r1cs.signal to !r1cs.linear
@@ -112,10 +113,10 @@ module attributes {llzk.lang, llzk.main = !struct.type<@SelfReadAux>} {
   }
 }
 
-// CHECK-LABEL:   r1cs.circuit @SelfReadAux inputs () {
-// CHECK-DAG:       %[[IN:[0-9a-zA-Z_\.]+]] = r1cs.def 0 : !r1cs.signal {pub = #r1cs.pub}
-// CHECK-DAG:       %[[OUT:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
-// CHECK-DAG:       %[[AUX:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal
+// CHECK-LABEL:   r1cs.circuit @SelfReadAux {
+// CHECK-DAG:       %[[IN:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-DAG:       %[[OUT:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-DAG:       %[[AUX:[0-9a-zA-Z_\.]+]] = r1cs.def 3 : !r1cs.signal
 // CHECK-DAG:       %[[IN_LIN:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[IN]] : !r1cs.signal to !r1cs.linear
 // CHECK-DAG:       %[[AUX_LIN:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[AUX]] : !r1cs.signal to !r1cs.linear
 // CHECK-DAG:       r1cs.constrain %[[IN_LIN]], %[[IN_LIN]], %[[AUX_LIN]] : !r1cs.linear

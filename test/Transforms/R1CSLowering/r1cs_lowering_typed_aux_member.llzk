@@ -32,7 +32,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@TypedR1CSAux>} {
 }
 
 // CHECK-LABEL: r1cs.circuit @TypedR1CSAux inputs
-// CHECK-SAME:  %{{[0-9a-zA-Z_\.]+}}: !r1cs.signal {#r1cs.pub}
+// CHECK-SAME:  %{{[0-9a-zA-Z_\.]+}}: !r1cs.signal {pub = #r1cs.pub}
 // CHECK-SAME:  %{{[0-9a-zA-Z_\.]+}}: !r1cs.signal
 // CHECK-SAME:  %{{[0-9a-zA-Z_\.]+}}: !r1cs.signal
 // CHECK:       r1cs.constrain

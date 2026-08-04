@@ -9,6 +9,7 @@
 
 #include "JSON.h"
 #include "WitgenDriver.h"
+#include "Wtns.h"
 #include "tools/config.h"
 
 #include "llzk/Dialect/Array/IR/Dialect.h"
@@ -77,6 +78,8 @@ static llvm::cl::opt<bool>
     DumpJITLLVM("dump-jit-llvm", llvm::cl::desc("Print the post-LLVM JIT module"));
 static llvm::cl::opt<std::string>
     CheckOutputFilename("check-output", llvm::cl::desc("JSON file with expected witgen output"));
+static llvm::cl::opt<std::string>
+    WtnsOutputFilename("output-wtns", llvm::cl::desc("Write a snarkjs-compatible .wtns file"));
 
 /// Execute the llzk-witgen command-line tool.
 int main(int argc, char **argv) {
@@ -166,11 +169,37 @@ int main(int argc, char **argv) {
   options.inlineIncludes = true;
   options.dumpJITCore = DumpJITCore;
   options.dumpJITLLVM = DumpJITLLVM;
+  if (WtnsOutputFilename.getNumOccurrences() > 0) {
+    if (OutputScopeName.getNumOccurrences() > 0 && OutputScopeName != "full-witness") {
+      llvm::errs() << "--output-wtns conflicts with --output-scope=" << OutputScopeName
+                   << "; use --output-scope=full-witness\n";
+      return EXIT_FAILURE;
+    }
+    // WTNS contains every R1CS wire, so retain inputs and non-public signals
+    // instead of asking the backend for its usual public-output-only JSON.
+    options.outputScope = llzk::witgen::OutputScope::FullWitness;
+  }
 
   auto result = llzk::witgen::runWitgen(*moduleOp, *parsed, options);
   if (!result) {
     llvm::errs() << "llzk-witgen error: " << llvm::toString(result.takeError()) << '\n';
     return EXIT_FAILURE;
+  }
+
+  if (WtnsOutputFilename.getNumOccurrences() > 0) {
+    // The WTNS header records the field modulus and element width. Re-read the
+    // unique field from the preprocessed module so the header and generated
+    // values necessarily describe the same field.
+    llzk::FieldSet fields;
+    if (failed(llzk::collectFields(moduleOp->getOperation(), fields)) || fields.size() != 1) {
+      llvm::errs() << "llzk-witgen error: .wtns output requires exactly one field\n";
+      return EXIT_FAILURE;
+    }
+    const llzk::Field &field = (*fields.begin()).get();
+    if (auto error = llzk::witgen::writeWtns(*moduleOp, *result, field, WtnsOutputFilename)) {
+      llvm::errs() << "llzk-witgen error: " << llvm::toString(std::move(error)) << '\n';
+      return EXIT_FAILURE;
+    }
   }
 
   if (CheckOutputFilename.getNumOccurrences() > 0) {

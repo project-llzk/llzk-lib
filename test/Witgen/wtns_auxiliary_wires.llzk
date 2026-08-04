@@ -1,0 +1,33 @@
+// RUN: split-file %s %t
+// RUN: not llzk-witgen %t/test.llzk --inputs %t/input.json --output-wtns %t/witness.wtns 2>&1 | FileCheck %s
+// RUN: not llzk-witgen %t/test.llzk --inputs %t/input.json --output-wtns %t/witness.wtns --output-scope=public 2>&1 | FileCheck %s --check-prefix=SCOPE
+
+//--- test.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    function.def @compute(
+      %input: !felt.type<"babybear"> {function.arg_name = "input"}
+    ) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      struct.writem %self[@out] = %input : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(
+      %self: !struct.type<@Main>, %input: !felt.type<"babybear">
+    ) {
+      %out = struct.readm %self[@out] : !struct.type<@Main>, !felt.type<"babybear">
+      %lhs = felt.mul %input, %input : !felt.type<"babybear">, !felt.type<"babybear">
+      %rhs = felt.mul %out, %out : !felt.type<"babybear">, !felt.type<"babybear">
+      constrain.eq %lhs, %rhs : !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+
+// CHECK: llzk-witgen error: cannot emit .wtns: R1CS lowering produces 4 wires but llzk-witgen collected 3; synthesized R1CS auxiliary wires are not yet supported
+// SCOPE: --output-wtns conflicts with --output-scope=public; use --output-scope=full-witness
+
+//--- input.json
+{"input": 4}

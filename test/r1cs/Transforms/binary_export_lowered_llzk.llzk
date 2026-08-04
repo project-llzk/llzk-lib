@@ -1,0 +1,25 @@
+// RUN: llzk-opt -llzk-full-r1cs-lowering %s -o %t.mlir
+// RUN: r1cs-opt --r1cs-export-binary='output-file=%t.r1cs prime=2013265921' %t.mlir -o /dev/null
+// RUN: test -s %t.r1cs
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type {llzk.pub}
+    function.def @compute(
+      %input: !felt.type
+    ) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %squared = felt.mul %input, %input
+      struct.writem %self[@out] = %squared : !struct.type<@Main>, !felt.type
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(
+      %self: !struct.type<@Main>, %input: !felt.type {llzk.pub}
+    ) {
+      %out = struct.readm %self[@out] : !struct.type<@Main>, !felt.type
+      %squared = felt.mul %input, %input
+      constrain.eq %out, %squared : !felt.type
+      function.return
+    }
+  }
+}
