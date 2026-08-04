@@ -23,6 +23,7 @@
 #include "llzk/Util/SymbolTableLLZK.h"
 
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/BuiltinTypes.h>
 #include <mlir/IR/Operation.h>
 
 #include <llvm/ADT/TypeSwitch.h>
@@ -209,6 +210,28 @@ public:
   }
 };
 
+LogicalResult verifyTemplateSymbolType(
+    TemplateSymbolBindingOpInterface binding, SymbolRefAttr param, Type parameterizedType,
+    Operation *origin, std::optional<Type> requiredParamType
+) {
+  if (requiredParamType) {
+    std::optional<Type> actualType = binding.getTypeOpt();
+    if (!actualType) {
+      return origin->emitError().append(
+          "ref \"", param, "\" in type ", parameterizedType, " refers to a '", binding->getName(),
+          "' that must have type ", *requiredParamType
+      );
+    }
+    if (*actualType != *requiredParamType) {
+      return origin->emitError().append(
+          "ref \"", param, "\" in type ", parameterizedType, " refers to a '", binding->getName(),
+          "' with type ", *actualType, " but expected ", *requiredParamType
+      );
+    }
+  }
+  return success();
+}
+
 } // namespace
 
 llvm::SmallVector<StringRef> getNames(SymbolRefAttr ref) {
@@ -365,7 +388,8 @@ FailureOr<TemplateOp> getConstResolutionTemplate(SymbolTableCollection &tables, 
 }
 
 LogicalResult verifyParamOfType(
-    SymbolTableCollection &tables, SymbolRefAttr param, Type parameterizedType, Operation *origin
+    SymbolTableCollection &tables, SymbolRefAttr param, Type parameterizedType, Operation *origin,
+    std::optional<Type> requiredParamType
 ) {
   // Most often, StructType and ArrayType SymbolRefAttr parameters will be defined as parameters of
   // the template that the current Operation is nested within. These are always flat references
@@ -376,9 +400,11 @@ LogicalResult verifyParamOfType(
       return failure(); // getConstResolutionTemplate() failure cases emit a sufficient error
                         // message
     }
-    if (*parent &&
-        parent->hasConstNamed<TemplateSymbolBindingOpInterface>(param.getRootReference())) {
-      return success();
+    if (*parent) {
+      if (auto b =
+              parent->getConstNamed<TemplateSymbolBindingOpInterface>(param.getRootReference())) {
+        return verifyTemplateSymbolType(b, param, parameterizedType, origin, requiredParamType);
+      }
     }
   }
   // Otherwise, see if the symbol can be found via lookup from the `origin` Operation.
@@ -397,7 +423,7 @@ LogicalResult verifyParamOfType(
 
 LogicalResult verifyParamsOfType(
     SymbolTableCollection &tables, ArrayRef<Attribute> tyParams, Type parameterizedType,
-    Operation *origin
+    Operation *origin, std::optional<Type> requiredParamType
 ) {
   // Rather than immediately returning on failure, we check all params and aggregate to provide as
   // many errors are possible in a single verifier run.
@@ -409,7 +435,8 @@ LogicalResult verifyParamsOfType(
     LLVM_DEBUG({ llvm::dbgs() << "[verifyParamOfType]   checking attribute " << attr << '\n'; });
     assertValidAttrForParamOfType(attr);
     if (SymbolRefAttr symRefParam = llvm::dyn_cast<SymbolRefAttr>(attr)) {
-      if (failed(verifyParamOfType(tables, symRefParam, parameterizedType, origin))) {
+      auto r = verifyParamOfType(tables, symRefParam, parameterizedType, origin, requiredParamType);
+      if (failed(r)) {
         LLVM_DEBUG({
           llvm::dbgs() << "[verifyParamOfType]     failed to verify symbol attribute\n";
         });
@@ -458,7 +485,10 @@ LogicalResult verifyTypeResolution(SymbolTableCollection &tables, Operation *ori
   if (StructType sTy = llvm::dyn_cast<StructType>(ty)) {
     return verifyStructTypeResolution(tables, sTy, origin);
   } else if (ArrayType aTy = llvm::dyn_cast<ArrayType>(ty)) {
-    if (failed(verifyParamsOfType(tables, aTy.getDimensionSizes(), aTy, origin))) {
+    auto r = verifyParamsOfType(
+        tables, aTy.getDimensionSizes(), aTy, origin, IndexType::get(aTy.getContext())
+    );
+    if (failed(r)) {
       return failure();
     }
     return verifyTypeResolution(tables, origin, aTy.getElementType());

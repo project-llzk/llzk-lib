@@ -16,6 +16,7 @@
 #include "llzk/Analysis/IntervalAnalysis.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/SymbolHelper.h"
 
@@ -27,31 +28,29 @@
 #include <llvm/Support/ErrorHandling.h>
 
 namespace llzk {
+#define GEN_PASS_DEF_INTERVALANALYSISPRINTERPASS
+#include "llzk/Analysis/AnalysisPasses.h.inc"
+} // namespace llzk
 
 #define DEBUG_TYPE "llzk-interval-analysis-pass"
 
-#define GEN_PASS_DECL_INTERVALANALYSISPRINTERPASS
-#define GEN_PASS_DEF_INTERVALANALYSISPRINTERPASS
-#include "llzk/Analysis/AnalysisPasses.h.inc"
+using namespace mlir;
+using namespace llzk;
+using namespace llzk::component;
+using namespace llzk::function;
 
-using namespace component;
-using namespace function;
+namespace {
 
-class IntervalAnalysisPrinterPass
-    : public impl::IntervalAnalysisPrinterPassBase<IntervalAnalysisPrinterPass> {
-  llvm::raw_ostream &os;
+class PassImpl : public llzk::impl::IntervalAnalysisPrinterPassBase<PassImpl> {
+  using Base = IntervalAnalysisPrinterPassBase<PassImpl>;
+  using Base::Base;
 
-public:
-  explicit IntervalAnalysisPrinterPass(llvm::raw_ostream &ostream)
-      : impl::IntervalAnalysisPrinterPassBase<IntervalAnalysisPrinterPass>(), os(ostream) {}
-
-protected:
   void runOnOperation() override {
     markAllAnalysesPreserved();
 
     // Suppress false positive from `clang-tidy`
     // NOLINTNEXTLINE(clang-analyzer-core.NonNullParamChecker)
-    auto modOp = llvm::dyn_cast<mlir::ModuleOp>(getOperation());
+    auto modOp = llvm::dyn_cast<ModuleOp>(getOperation());
     if (!modOp) {
       constexpr const char *msg = "IntervalAnalysisPrinterPass error: should be run on ModuleOp!";
       getOperation()->emitError(msg).report();
@@ -62,7 +61,7 @@ protected:
     FieldRef selectedField = Field::getField("bn128");
     if (!fieldName.empty()) {
       auto fieldLookupRes = Field::tryGetField(fieldName.c_str());
-      if (mlir::failed(fieldLookupRes)) {
+      if (failed(fieldLookupRes)) {
         modOp->emitError()
             .append(
                 "IntervalAnalysisPrinterPass error: unknown field \"", fieldName, "\" specified"
@@ -97,11 +96,10 @@ protected:
     mia.setTrackUnreducedIntervals(printUnreducedIntervals);
     auto am = getAnalysisManager();
     mia.ensureAnalysisRun(am);
-    mlir::AsmState asmState(modOp);
+    AsmState asmState(modOp);
 
-    auto printValueInterval = [this, &asmState,
-                               &mia](mlir::raw_ostream &out, int indent, mlir::Value value) {
-      if (llvm::isa<llzk::array::ArrayType, StructType>(value.getType())) {
+    auto printValueInterval = [this, &asmState, &mia](raw_ostream &out, int indent, Value value) {
+      if (llvm::isa<llzk::array::ArrayType, StructType, llzk::pod::PodType>(value.getType())) {
         return;
       }
       const auto *lattice = mia.getSolver().lookupState<IntervalAnalysisLattice>(value);
@@ -112,7 +110,7 @@ protected:
       out << '\n';
       out.indent(indent);
       value.printAsOperand(out, asmState);
-      if (auto opResult = llvm::dyn_cast<mlir::OpResult>(value)) {
+      if (auto opResult = llvm::dyn_cast<OpResult>(value)) {
         out << " [" << opResult.getOwner()->getName().getStringRef() << "]";
       }
       out << " in " << expr.getInterval();
@@ -122,21 +120,21 @@ protected:
     };
 
     auto printFunctionSSAIntervals =
-        [&printValueInterval](mlir::raw_ostream &out, FuncDefOp fn, llvm::StringRef fnName) {
+        [&printValueInterval](raw_ostream &out, FuncDefOp fn, llvm::StringRef fnName) {
       if (!fn) {
         return;
       }
 
       out << '\n';
       out.indent(4) << fnName << " {";
-      for (mlir::BlockArgument arg : fn.getArguments()) {
+      for (BlockArgument arg : fn.getArguments()) {
         printValueInterval(out, 8, arg);
       }
-      fn.walk([&](mlir::Operation *op) {
+      fn.walk([&](Operation *op) {
         if (op == fn.getOperation()) {
           return;
         }
-        for (mlir::Value result : op->getResults()) {
+        for (Value result : op->getResults()) {
           printValueInterval(out, 8, result);
         }
       });
@@ -144,12 +142,13 @@ protected:
       out.indent(4) << '}';
     };
 
+    auto &os = llzk::toStream(outputStream);
     for (const auto &[s, si] : mia.getCurrentResults()) {
       auto &structDef = const_cast<StructDefOp &>(s);
       auto fullName = getPathFromTopRoot(structDef);
       ensure(
-          mlir::succeeded(fullName),
-          "could not resolve fully qualified name of struct " + mlir::Twine(structDef.getName())
+          succeeded(fullName),
+          "could not resolve fully qualified name of struct " + Twine(structDef.getName())
       );
       os << fullName.value() << ' ';
       si.get().print(os, printSolverConstraints, printComputeIntervals, printUnreducedIntervals);
@@ -169,9 +168,4 @@ protected:
   }
 };
 
-std::unique_ptr<mlir::Pass>
-createIntervalAnalysisPrinterPass(llvm::raw_ostream &os = llvm::errs()) {
-  return std::make_unique<IntervalAnalysisPrinterPass>(os);
-}
-
-} // namespace llzk
+} // namespace

@@ -65,7 +65,7 @@ module attributes {llzk.lang = "zirgen"} {
   poly.template @TFoo {
     poly.param @N
     poly.param @P
-    poly.param @Aff$0
+    poly.param @Aff$0 : index
 
     struct.def @Foo {
       struct.member @"$super" : !struct.type<@Component<[]>>
@@ -99,7 +99,7 @@ module attributes {llzk.lang = "zirgen"} {
   poly.template @TBar {
     poly.param @N
     poly.param @P
-    poly.param @Aff$0
+    poly.param @Aff$0 : index
 
     struct.def @Bar {
       struct.member @"$super" : !struct.type<@Component<[]>>
@@ -209,7 +209,6 @@ module attributes {llzk.lang = "zirgen"} {
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@TFoo_4_3_7_Foo>
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = function.call @Div::@compute(%[[V2]], %[[V1]]) : (!felt.type, !felt.type) -> !struct.type<@Div>
 // CHECK-NEXT:      struct.writem %[[V3]][@"$temp"] = %[[V4]] : <@TFoo_4_3_7_Foo>, !struct.type<@Div>
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@"$temp"] : <@TFoo_4_3_7_Foo>, !struct.type<@Div>
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = function.call @Component::@compute() : () -> !struct.type<@Component>
 // CHECK-NEXT:      struct.writem %[[V3]][@"$temp_0"] = %[[V6]] : <@TFoo_4_3_7_Foo>, !struct.type<@Component>
 // CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@"$temp_0"] : <@TFoo_4_3_7_Foo>, !struct.type<@Component>
@@ -238,10 +237,8 @@ module attributes {llzk.lang = "zirgen"} {
 // CHECK-NEXT:      %[[V3:[0-9a-zA-Z_\.]+]] = struct.new : <@TBar_4_3_7_Bar>
 // CHECK-NEXT:      %[[V4:[0-9a-zA-Z_\.]+]] = function.call @Div::@compute(%[[V2]], %[[V1]]) : (!felt.type, !felt.type) -> !struct.type<@Div>
 // CHECK-NEXT:      struct.writem %[[V3]][@"$temp"] = %[[V4]] : <@TBar_4_3_7_Bar>, !struct.type<@Div>
-// CHECK-NEXT:      %[[V5:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@"$temp"] : <@TBar_4_3_7_Bar>, !struct.type<@Div>
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = function.call @TFoo_4_3_7_Foo::@compute(%[[V0]]) : (!array.type<7 x !felt.type>) -> !struct.type<@TFoo_4_3_7_Foo>
 // CHECK-NEXT:      struct.writem %[[V3]][@"$temp_0"] = %[[V6]] : <@TBar_4_3_7_Bar>, !struct.type<@TFoo_4_3_7_Foo>
-// CHECK-NEXT:      %[[V7:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@"$temp_0"] : <@TBar_4_3_7_Bar>, !struct.type<@TFoo_4_3_7_Foo>
 // CHECK-NEXT:      %[[V8:[0-9a-zA-Z_\.]+]] = function.call @Component::@compute() : () -> !struct.type<@Component>
 // CHECK-NEXT:      struct.writem %[[V3]][@"$temp_1"] = %[[V8]] : <@TBar_4_3_7_Bar>, !struct.type<@Component>
 // CHECK-NEXT:      %[[V9:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@"$temp_1"] : <@TBar_4_3_7_Bar>, !struct.type<@Component>

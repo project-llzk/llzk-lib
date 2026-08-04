@@ -9,6 +9,7 @@
 
 #include "llzk-c/Dialect/Include.h"
 
+#include "llzk/CAPI/Builder.h"
 #include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/Include/IR/Dialect.h"
 #include "llzk/Dialect/Include/IR/Ops.h"
@@ -22,7 +23,7 @@
 
 using namespace llzk::include;
 
-static void registerLLZKIncludeTransformationPasses() { registerTransformationPasses(); }
+static inline void registerLLZKIncludeTransformationPasses() { registerTransformationPasses(); }
 
 // Include the generated CAPI
 #include "llzk/Dialect/Include/IR/Ops.capi.cpp.inc"
@@ -30,8 +31,10 @@ static void registerLLZKIncludeTransformationPasses() { registerTransformationPa
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Include, llzk__include, IncludeDialect)
 
-MlirOperation llzkInclude_IncludeOpCreateInferredContext(
-    MlirLocation location, MlirStringRef name, MlirStringRef path
+LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
+    Include, IncludeOp, InferredContext, MlirStringRef name, MlirStringRef path
 ) {
-  return wrap(IncludeOp::create(unwrap(location), unwrap(name), unwrap(path)));
+  return mlirOpBuilderInsert(
+      builder, wrap(llzk::create<IncludeOp>(builder, location, unwrap(name), unwrap(path)))
+  );
 }

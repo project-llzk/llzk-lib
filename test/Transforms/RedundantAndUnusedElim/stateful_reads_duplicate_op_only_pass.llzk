@@ -1,0 +1,45 @@
+// RUN: llzk-opt -split-input-file -llzk-duplicate-op-elim %s 2>&1 | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  global.def @g : !felt.type = 1
+
+  function.def @global_write_barrier(%new: !felt.type) -> !felt.type
+      attributes {function.allow_witness} {
+    %before = global.read @g : !felt.type
+    global.write @g = %new : !felt.type
+    %after = global.read @g : !felt.type
+    %sum = felt.add %before, %after : !felt.type, !felt.type
+    function.return %sum : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def @g : !felt.type =  1
+// CHECK-NEXT:    function.def @global_write_barrier(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = global.read @g : !felt.type
+// CHECK-NEXT:      global.write @g = %[[VAL_0]] : !felt.type
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = global.read @g : !felt.type
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_1]], %[[VAL_2]] : !felt.type, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_3]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @ram_store_barrier(%addr: index, %new: !felt.type) -> !felt.type
+      attributes {function.allow_witness} {
+    %before = ram.load %addr : !felt.type
+    ram.store %addr, %new : !felt.type
+    %after = ram.load %addr : !felt.type
+    %sum = felt.add %before, %after : !felt.type, !felt.type
+    function.return %sum : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @ram_store_barrier(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = ram.load %[[VAL_0]] : !felt.type
+// CHECK-NEXT:      ram.store %[[VAL_0]], %[[VAL_1]] : !felt.type
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = ram.load %[[VAL_0]] : !felt.type
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_2]], %[[VAL_3]] : !felt.type, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_4]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -1,0 +1,18 @@
+// RUN: llzk-opt %s | FileCheck %s
+
+module {
+  smt.solver () : () -> () {
+    smt.set_info ":llzk-stage" "pre"
+    smt.set_info ":status" sat
+    smt.set_info ":payload" (:alpha (beta 7 true "x"))
+    smt.yield
+  }
+}
+
+// CHECK:      module {
+// CHECK-NEXT:   smt.solver() : () -> () {
+// CHECK-NEXT:     smt.set_info ":llzk-stage" "pre"
+// CHECK-NEXT:     smt.set_info ":status" sat
+// CHECK-NEXT:     smt.set_info ":payload" (:alpha (beta 7 true "x"))
+// CHECK-NEXT:   }
+// CHECK-NEXT: }

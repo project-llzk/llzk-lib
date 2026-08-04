@@ -119,6 +119,19 @@ static LogicalResult verifyArgOrResNameAttrs(
   }
   return success();
 }
+
+static std::optional<StringAttr>
+getFunctionNameAttrAtIndex(ArrayAttr attrs, unsigned index, StringRef attrName) {
+  if (!attrs || index >= attrs.size()) {
+    return std::nullopt;
+  }
+  if (auto dictAttr = llvm::dyn_cast<DictionaryAttr>(attrs[index])) {
+    if (auto nameAttr = llvm::dyn_cast_if_present<StringAttr>(dictAttr.get(attrName))) {
+      return nameAttr;
+    }
+  }
+  return std::nullopt;
+}
 } // namespace
 
 //===----------------------------------------------------------------------===//
@@ -295,13 +308,7 @@ bool FuncDefOp::hasArgPublicAttr(unsigned index) {
 bool FuncDefOp::hasArgName(unsigned index) { return static_cast<bool>(getArgNameAttr(index)); }
 
 std::optional<StringAttr> FuncDefOp::getArgNameAttr(unsigned index) {
-  if (index >= getNumArguments()) {
-    return std::nullopt;
-  }
-  if (StringAttr attr = getArgAttrOfType<StringAttr>(index, ARG_NAME_ATTR_NAME)) {
-    return attr;
-  }
-  return std::nullopt;
+  return getFunctionNameAttrAtIndex(getAllArgAttrs(), index, ARG_NAME_ATTR_NAME);
 }
 
 void FuncDefOp::setArgNameAttr(unsigned index, const StringAttr &attr) {
@@ -311,6 +318,21 @@ void FuncDefOp::setArgNameAttr(unsigned index, const StringAttr &attr) {
 
 void FuncDefOp::setArgName(unsigned index, StringRef name) {
   setArgNameAttr(index, StringAttr::get(getContext(), name));
+}
+
+bool FuncDefOp::hasResName(unsigned index) { return static_cast<bool>(getResNameAttr(index)); }
+
+std::optional<StringAttr> FuncDefOp::getResNameAttr(unsigned index) {
+  return getFunctionNameAttrAtIndex(getAllResultAttrs(), index, RES_NAME_ATTR_NAME);
+}
+
+void FuncDefOp::setResNameAttr(unsigned index, const StringAttr &attr) {
+  assert(index < getNumResults() && "result index out of range");
+  setResultAttr(index, RES_NAME_ATTR_NAME, attr);
+}
+
+void FuncDefOp::setResName(unsigned index, StringRef name) {
+  setResNameAttr(index, StringAttr::get(getContext(), name));
 }
 
 LogicalResult FuncDefOp::verify() {
@@ -445,13 +467,7 @@ LogicalResult FuncDefOp::verifySymbolUses(SymbolTableCollection &tables) {
 }
 
 SymbolRefAttr FuncDefOp::getFullyQualifiedName(bool requireParent) {
-  // If the parent is not present and not required, just return the symbol name
-  if (!requireParent && getOperation()->getParentOp() == nullptr) {
-    return SymbolRefAttr::get(getOperation());
-  }
-  auto res = getPathFromRoot(*this);
-  assert(succeeded(res));
-  return res.value();
+  return llzk::getFullyQualifiedName(*this, requireParent);
 }
 
 Value FuncDefOp::getSelfValueFromCompute() {
@@ -552,7 +568,7 @@ LogicalResult CallOp::readProperties(DialectBytecodeReader &reader, OperationSta
   return success();
 }
 
-// Same as tablegen would generate to serialize version 2 IR.
+// Same as tablegen would generate to serialize current version IR.
 void CallOp::writeProperties(DialectBytecodeWriter &writer) {
   auto &prop = getProperties();
   writer.writeAttribute(prop.callee);
@@ -624,9 +640,28 @@ CallOp::verifyTemplateParamCompatibility(Attribute paramFromCallOp, TemplatePara
     }
   }
   if (std::optional<Type> declaredType = targetParam.getTypeOpt()) {
-    // Note: `declaredType` is restricted by `isValidConstReadType()`
     bool compatible = false;
-    if (llvm::isa<TypeVarType>(*declaredType)) {
+    if (auto sym = llvm::dyn_cast<SymbolRefAttr>(paramFromCallOp)) {
+      if (sym.getNestedReferences().empty()) {
+        SymbolTableCollection tables;
+        FailureOr<TemplateOp> parentTemplate = getConstResolutionTemplate(tables, *this);
+        if (failed(parentTemplate)) {
+          return failure();
+        }
+        if (TemplateOp p = *parentTemplate) {
+          auto binding = p.getConstNamed<TemplateSymbolBindingOpInterface>(sym.getRootReference());
+          if (binding) {
+            // Once we know it references a template symbol binding, assume it's compatible unless
+            // the optional type is present and doesn't unify with the declared type.
+            if (std::optional<Type> actualType = binding.getTypeOpt()) {
+              compatible = typesUnify(*actualType, *declaredType);
+            } else {
+              compatible = true;
+            }
+          }
+        }
+      }
+    } else if (llvm::isa<TypeVarType>(*declaredType)) {
       compatible = llvm::isa<TypeAttr>(paramFromCallOp);
     } else if (llvm::isa<FeltType>(*declaredType)) {
       compatible = llvm::isa<FeltConstAttr, IntegerAttr>(paramFromCallOp) &&
@@ -638,6 +673,7 @@ CallOp::verifyTemplateParamCompatibility(Attribute paramFromCallOp, TemplatePara
       compatible = llvm::isa<IntegerAttr>(paramFromCallOp) &&
                    isValidConstReadType(llvm::cast<TypedAttr>(paramFromCallOp).getType());
     } else {
+      // Note: `declaredType` is restricted by `isValidConstReadType()`
       llvm_unreachable("inconsistent with `isValidConstReadType()`");
     }
     if (!compatible) {
@@ -1139,6 +1175,12 @@ bool calleeIsStructFunctionImpl(
 bool CallOp::calleeIsStructCompute() {
   return calleeIsStructFunctionImpl(FUNC_NAME_COMPUTE, getCallee(), [this]() {
     return this->getSingleResultTypeOfCompute();
+  });
+}
+
+bool CallOp::calleeIsStructProduct() {
+  return calleeIsStructFunctionImpl(FUNC_NAME_PRODUCT, getCallee(), [this]() {
+    return this->getSingleResultTypeOfWitnessGen();
   });
 }
 

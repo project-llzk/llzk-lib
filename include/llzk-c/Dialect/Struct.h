@@ -29,6 +29,7 @@
 // Include the generated CAPI
 #include "llzk/Dialect/Struct/IR/Ops.capi.h.inc"
 #include "llzk/Dialect/Struct/IR/Types.capi.h.inc"
+#include "llzk/Dialect/Struct/Transforms/TransformationPasses.capi.h.inc"
 
 #ifdef __cplusplus
 extern "C" {
@@ -135,6 +136,40 @@ llzkStruct_StructDefOpGetTemplateExprOpNames(MlirOperation op, MlirAttribute *ds
 
 /// Returns the number of `poly.expr` operations defined within this template.
 MLIR_CAPI_EXPORTED intptr_t llzkStruct_StructDefOpGetNumTemplateExprOpNames(MlirOperation op);
+
+//===----------------------------------------------------------------------===//
+// MemberDefOp
+//===----------------------------------------------------------------------===//
+
+/// Creates a MemberDefOp.
+LLZK_DECLARE_OP_BUILD_METHOD(
+    Struct, MemberDefOp, MlirStringRef name, MlirType type, bool isSignal, bool isColumn
+);
+
+/// Creates a MemberDefOp using a StringAttr name and TypeAttr type.
+LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
+    Struct, MemberDefOp, WithAttrs, MlirAttribute name, MlirAttribute type, bool isSignal,
+    bool isColumn
+);
+
+/// Creates a MemberDefOp using a raw attribute list. The attributes must include `sym_name` and
+/// `type`.
+LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
+    Struct, MemberDefOp, WithNamedAttrs, intptr_t numAttrs, MlirNamedAttribute const *attrs,
+    bool isSignal, bool isColumn
+);
+
+/// Returns whether this member supports offset table accesses.
+MLIR_CAPI_EXPORTED bool llzkStruct_MemberDefOpGetColumnValue(MlirOperation op);
+
+/// Adds or removes the unit `column` attribute according to `newValue`.
+MLIR_CAPI_EXPORTED void llzkStruct_MemberDefOpSetColumnValue(MlirOperation op, bool newValue);
+
+/// Returns whether this member is stored as a witness signal.
+MLIR_CAPI_EXPORTED bool llzkStruct_MemberDefOpGetSignalValue(MlirOperation op);
+
+/// Adds or removes the unit `signal` attribute according to `newValue`.
+MLIR_CAPI_EXPORTED void llzkStruct_MemberDefOpSetSignalValue(MlirOperation op, bool newValue);
 
 //===----------------------------------------------------------------------===//
 // MemberReadOp

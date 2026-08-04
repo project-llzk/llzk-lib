@@ -76,3 +76,11 @@ function.def @write_too_many_indices() {
   // expected-error@+1 {{'array.write' op has too many indexed dimensions: expected 3 but found 4}}
   array.write %r[%1,%0,%1,%0] = %0 : !array.type<2,4,3 x index>, index
 }
+
+// -----
+
+function.def @write_none_element_array(%shape: !array.type<? x none>, %i: index) {
+  %x = builtin.unrealized_conversion_cast %i : index to none
+  // expected-error@+1 {{'array.write' op cannot access a scalar element from array with none element type}}
+  array.write %shape[%i] = %x : !array.type<? x none>, none
+}

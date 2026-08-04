@@ -43,7 +43,6 @@ module attributes {llzk.lang = "zirgen"} {
 // CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Reg> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Reg>
 // CHECK-NEXT:        struct.writem %[[VAL_1]][@"reg:!s<@NondetReg>+inner"] = %[[VAL_0]] : <@Reg>, !felt.type
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@"reg:!s<@NondetReg>+inner"] : <@Reg>, !felt.type
 // CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Reg>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Reg>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {

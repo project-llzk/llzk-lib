@@ -9,29 +9,39 @@
 
 #include "llzk/Dialect/Verif/IR/Ops.h"
 
+#include "llzk/Analysis/AnalysisUtil.h"
+#include "llzk/Analysis/ConstraintDependencyGraph.h"
+#include "llzk/Analysis/SourceRef.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
+#include "llzk/Dialect/Verif/Util/ForbiddenPreconditionInfluence.h"
 #include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolTableLLZK.h"
+#include "llzk/Util/Walk.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Dialect/Utils/IndexingUtils.h>
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Diagnostics.h>
-#include <mlir/IR/OwningOpRef.h>
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/IR/ValueRange.h>
 #include <mlir/Interfaces/FunctionImplementation.h>
+#include <mlir/Support/LLVM.h>
 #include <mlir/Support/LogicalResult.h>
 
 #include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/SmallVectorExtras.h>
 #include <llvm/ADT/Twine.h>
+
+#include <memory>
 
 // TableGen'd implementation files
 #include "llzk/Dialect/Verif/IR/OpInterfaces.cpp.inc"
@@ -58,6 +68,10 @@ bool isValidTarget(Operation *op) {
   }
   // Only other supported target currently is a struct
   return isa<StructDefOp>(op);
+}
+
+inline bool hasConflictingUnifications(const llzk::UnificationMap &unifications) {
+  return llvm::any_of(unifications, [](const auto &entry) { return !entry.second; });
 }
 
 struct TargetTypeInfo {
@@ -105,15 +119,16 @@ FailureOr<TargetTypeInfo> getTargetTypeInfo(Operation *op) {
     };
   }
   if (auto structOp = dyn_cast<StructDefOp>(op)) {
-    if (structOp.hasComputeConstrain()) {
-      auto fnOp = structOp.getConstrainFuncOp();
+    if (FuncDefOp fnOp = structOp.getConstrainFuncOp(); fnOp && structOp.getComputeFuncOp()) {
       return TargetTypeInfo {
           .funcType = fnOp.getFunctionType(),
           .argAttrs = fnOp.getArgAttrsAttr(),
       };
     } else {
       FuncDefOp productFn = structOp.getProductFuncOp();
-      assert(productFn);
+      if (!productFn) {
+        return failure();
+      }
       // Augment the product function signature to accept the self argument.
       FunctionType fnTy = productFn.getFunctionType();
       ArrayRef<Type> curInputs = fnTy.getInputs();
@@ -145,6 +160,153 @@ FailureOr<TargetTypeInfo> getTargetTypeInfo(Operation *op) {
   return failure();
 }
 
+enum class ForbiddenRequireConditionKind : uint8_t {
+  StructMember,
+  FunctionReturn,
+};
+
+/// Classified failure for a single direct verif.require_* condition.
+struct ForbiddenRequireCondition {
+  ForbiddenRequireConditionKind kind;
+  llvm::SmallSetVector<Location, 2> sourceLocs;
+};
+
+/// One failing precondition reached through a verif.include, together with the
+/// classified forbidden source kind and any representative source locations.
+struct ForbiddenIncludedPrecondition {
+  std::optional<Location> calleePreconditionLoc = std::nullopt;
+  ForbiddenRequireConditionKind kind;
+  llvm::SmallSetVector<Location, 2> sourceLocs;
+};
+
+/// Aggregate of all nested precondition failures caused by one include site.
+struct ForbiddenIncludedPreconditions {
+  IncludeOp includeOp;
+  llvm::SmallVector<ForbiddenIncludedPrecondition> failures;
+};
+
+std::optional<ForbiddenRequireCondition> classifyForbiddenConditionProvenance(
+    ModuleOp module, PreconditionOpInterface preCondOp, ContractOp contract
+) {
+  ForbiddenPreconditionInfluenceInfo influence =
+      analyzeForbiddenPreconditionOpInfluenceInfo(module, contract, preCondOp);
+  if (hasInfluence(influence.influence, ForbiddenPreconditionInfluence::StructMember)) {
+    return ForbiddenRequireCondition {
+        .kind = ForbiddenRequireConditionKind::StructMember,
+        .sourceLocs = influence.structMemberLocs,
+    };
+  }
+  if (hasInfluence(influence.influence, ForbiddenPreconditionInfluence::FunctionReturn)) {
+    return ForbiddenRequireCondition {
+        .kind = ForbiddenRequireConditionKind::FunctionReturn,
+        .sourceLocs = {},
+    };
+  }
+  return std::nullopt;
+}
+
+std::optional<ForbiddenIncludedPreconditions>
+classifyForbiddenIncludedPrecondition(ModuleOp module, IncludeOp includeOp) {
+  SymbolTableCollection tables;
+  auto calleeTarget = includeOp.getCalleeTarget(tables);
+  if (failed(calleeTarget)) {
+    return std::nullopt;
+  }
+  ContractOp parentContract = includeOp->getParentOfType<ContractOp>();
+  auto summary = analyzeForbiddenIncludedOpSummary(module, parentContract, includeOp);
+  if (!summary) {
+    return std::nullopt;
+  }
+
+  ForbiddenIncludedPreconditions result {.includeOp = includeOp, .failures = {}};
+  for (const auto &failure : summary.failures) {
+    if (hasInfluence(
+            failure.influenceInfo.influence, ForbiddenPreconditionInfluence::StructMember
+        )) {
+      result.failures.push_back(
+          ForbiddenIncludedPrecondition {
+              .calleePreconditionLoc = failure.preconditionLoc,
+              .kind = ForbiddenRequireConditionKind::StructMember,
+              .sourceLocs = failure.influenceInfo.structMemberLocs,
+          }
+      );
+      continue;
+    }
+    if (hasInfluence(
+            failure.influenceInfo.influence, ForbiddenPreconditionInfluence::FunctionReturn
+        )) {
+      result.failures.push_back(
+          ForbiddenIncludedPrecondition {
+              .calleePreconditionLoc = failure.preconditionLoc,
+              .kind = ForbiddenRequireConditionKind::FunctionReturn,
+              .sourceLocs = {},
+          }
+      );
+    }
+  }
+  return result.failures.empty() ? std::nullopt
+                                 : std::optional<ForbiddenIncludedPreconditions>(result);
+}
+
+// Map a classified restriction failure to the verifier diagnostic emitted on
+// the offending require op.
+LogicalResult emitForbiddenPrecondition(
+    PreconditionOpInterface preCondOp, ForbiddenRequireConditionKind kind,
+    llvm::ArrayRef<Location> sourceLocs = {}
+) {
+  switch (kind) {
+  case ForbiddenRequireConditionKind::StructMember: {
+    InFlightDiagnostic diag =
+        preCondOp->emitOpError("condition cannot be derived from a struct member value");
+    for (auto sourceLoc : sourceLocs) {
+      diag.attachNote(sourceLoc) << "forbidden struct member value originates here";
+    }
+    return diag;
+  }
+  case ForbiddenRequireConditionKind::FunctionReturn: {
+    return preCondOp->emitOpError("condition cannot be derived from a function return value");
+  }
+  }
+  llvm_unreachable("unknown forbidden require condition kind");
+}
+
+LogicalResult emitForbiddenIncludedPreconditions(
+    IncludeOp includeOp, llvm::ArrayRef<ForbiddenIncludedPrecondition> failures
+) {
+  bool sawStructMember = false;
+  bool sawFunctionReturn = false;
+  for (const ForbiddenIncludedPrecondition &failure : failures) {
+    sawStructMember |= failure.kind == ForbiddenRequireConditionKind::StructMember;
+    sawFunctionReturn |= failure.kind == ForbiddenRequireConditionKind::FunctionReturn;
+  }
+
+  InFlightDiagnostic diag = [&]() -> InFlightDiagnostic {
+    if (sawStructMember && sawFunctionReturn) {
+      return includeOp.emitOpError(
+          "includes preconditions whose conditions cannot be derived from forbidden sources"
+      );
+    }
+    if (sawStructMember) {
+      return includeOp.emitOpError(
+          "includes preconditions whose conditions cannot be derived from a struct member value"
+      );
+    }
+    return includeOp.emitOpError(
+        "includes preconditions whose conditions cannot be derived from a function return value"
+    );
+  }();
+
+  for (const ForbiddenIncludedPrecondition &failure : failures) {
+    if (failure.calleePreconditionLoc) {
+      diag.attachNote(failure.calleePreconditionLoc) << "included precondition triggered here";
+    }
+    for (Location sourceLoc : failure.sourceLocs) {
+      diag.attachNote(sourceLoc) << "forbidden struct member value originates here";
+    }
+  }
+  return diag;
+}
+
 } // namespace
 
 namespace llzk::verif {
@@ -153,9 +315,21 @@ namespace llzk::verif {
 // ContractOp
 //===------------------------------------------------------------------===//
 
+void ContractOp::initializeEmptyBody(
+    OpBuilder &builder, OperationState &state, FunctionType functionType
+) {
+  Region *body = state.addRegion();
+  auto *entryBlock = new Block();
+
+  SmallVector<Location> argLocs(functionType.getNumInputs(), state.location);
+  entryBlock->addArguments(functionType.getInputs(), argLocs);
+  body->push_back(entryBlock);
+
+  ContractOp::ensureTerminator(*body, builder, state.location);
+}
+
 void ContractOp::build(
-    ::mlir::OpBuilder &odsBuilder, ::mlir::OperationState &odsState, ::llvm::StringRef name,
-    llvm::StringRef target
+    OpBuilder &odsBuilder, OperationState &odsState, StringRef name, llvm::StringRef target
 ) {
   build(odsBuilder, odsState, name, SymbolRefAttr::get(odsBuilder.getContext(), target));
 }
@@ -216,12 +390,7 @@ void ContractOp::setArgName(unsigned index, llvm::StringRef name) {
 }
 
 SymbolRefAttr ContractOp::getFullyQualifiedName(bool requireParent) {
-  if (!requireParent && getOperation()->getParentOp() == nullptr) {
-    return SymbolRefAttr::get(getOperation());
-  }
-  auto res = getPathFromRoot(*this);
-  assert(succeeded(res));
-  return res.value();
+  return llzk::getFullyQualifiedName(*this, requireParent);
 }
 
 LogicalResult ContractOp::verifySymbolUses(SymbolTableCollection &tables) {
@@ -251,15 +420,39 @@ LogicalResult ContractOp::verifySymbolUses(SymbolTableCollection &tables) {
         .attachNote(targetOp->getLoc())
         .append("target defined here");
   }
+  if (auto contractParentTemplate = getParentOfType<TemplateOp>(*this)) {
+    auto targetParentTemplate = getParentOfType<TemplateOp>(targetOp);
+    if (targetParentTemplate != contractParentTemplate) {
+      InFlightDiagnostic diag = emitOpError().append(
+          "contract nested in template \"@", contractParentTemplate.getSymName(),
+          "\" must target a symbol in the same template"
+      );
+      if (targetParentTemplate) {
+        diag.attachNote(targetParentTemplate.getLoc()).append("target template defined here");
+      } else {
+        diag.attachNote(targetOp->getLoc()).append("target defined here");
+      }
+      return diag;
+    }
+  }
   FailureOr<TargetTypeInfo> targetInfoRes = getTargetTypeInfo(targetOp);
   if (failed(targetInfoRes)) {
+    // The struct verifier reports malformed struct bodies; avoid cascading diagnostics here.
+    // Returning failure() would actually cause the expected diagnostic from the first failure
+    // to be suppressed, so we return success() to avoid that.
+    if (isa<StructDefOp>(targetOp)) {
+      return success();
+    }
     return emitOpError()
         .append("unsupported target type \"", targetOp->getName(), "\"")
         .attachNote(targetOp->getLoc())
         .append("target defined here");
   }
   TargetTypeInfo &targetInfo = *targetInfoRes;
-  if (targetInfo.funcType != contractTy) {
+  UnificationMap unifications;
+  bool unifies =
+      functionTypesUnify(contractTy, targetInfo.funcType, targetRes->getNamespace(), &unifications);
+  if (!unifies || hasConflictingUnifications(unifications)) {
     return emitOpError()
         .append("contract type does not match target type")
         .attachNote(targetOp->getLoc())
@@ -382,6 +575,8 @@ ParseResult ContractOp::parse(OpAsmParser &parser, OperationState &result) {
     return parser.emitError(loc, "expected non-empty contract body");
   }
 
+  ContractOp::ensureTerminator(*body, parser.getBuilder(), result.location);
+
   return success();
 }
 
@@ -408,7 +603,7 @@ void ContractOp::print(OpAsmPrinter &p) {
   p << ' ';
   p.printRegion(
       body, /*printEntryBlockArgs=*/false,
-      /*printBlockTerminators=*/true
+      /*printBlockTerminators=*/false
   );
 }
 
@@ -466,6 +661,42 @@ LogicalResult ContractOp::verify() {
   return failure(res.wasInterrupted());
 }
 
+LogicalResult ContractOp::verifyRegions() {
+  // Verify precondition restrictions in the region verifier so that ops contained
+  // within the contract are verified before these checks. This avoids segfaults
+  // when there are malformed inner ops and instead allows appropriate inner diagnostics
+  // to be generated first. In sum, we can rest assured that the ops we traverse and
+  // analyze here have already been verified.
+
+  SmallVector<PreconditionOpInterface> preconditionOps =
+      walkCollect<PreconditionOpInterface>(*this);
+  SmallVector<IncludeOp> includeOps = walkCollect<IncludeOp>(*this);
+  if (preconditionOps.empty() && includeOps.empty()) {
+    return success();
+  }
+
+  ModuleOp module = getOperation()->getParentOfType<ModuleOp>();
+  if (!module) {
+    return emitOpError("must have a parent module to analyze condition provenance");
+  }
+
+  for (PreconditionOpInterface preCond : preconditionOps) {
+    if (auto forbidden = classifyForbiddenConditionProvenance(module, preCond, *this)) {
+      return emitForbiddenPrecondition(
+          preCond, forbidden->kind, forbidden->sourceLocs.getArrayRef()
+      );
+    }
+  }
+
+  for (IncludeOp includeOp : includeOps) {
+    if (auto forbidden = classifyForbiddenIncludedPrecondition(module, includeOp)) {
+      return emitForbiddenIncludedPreconditions(forbidden->includeOp, forbidden->failures);
+    }
+  }
+
+  return success();
+}
+
 FailureOr<SymbolLookupResult<StructDefOp>>
 ContractOp::getStructTarget(SymbolTableCollection &tables) {
   return lookupTopLevelSymbol<StructDefOp>(
@@ -475,6 +706,13 @@ ContractOp::getStructTarget(SymbolTableCollection &tables) {
 
 FailureOr<SymbolLookupResult<FuncDefOp>> ContractOp::getFuncTarget(SymbolTableCollection &tables) {
   return lookupTopLevelSymbol<FuncDefOp>(
+      tables, getTarget(), getParentOfType<ModuleOp>(getOperation()), /*reportMissing*/ false
+  );
+}
+
+FailureOr<SymbolLookupResult<ContractTargetOpInterface>>
+ContractOp::getTargetOp(SymbolTableCollection &tables) {
+  return lookupTopLevelSymbol<ContractTargetOpInterface>(
       tables, getTarget(), getParentOfType<ModuleOp>(getOperation()), /*reportMissing*/ false
   );
 }
@@ -592,8 +830,10 @@ LogicalResult IncludeOp::verifyTemplateParamsMatchInferred(
 
   for (auto [paramOp, attr] : llvm::zip_equal(targetParamDefs, callParams.getValue())) {
     // Skip wildcards (`?` / kDynamic) - their value will be resolved by a later inference pass.
-    if (isDynamic(llvm::dyn_cast<IntegerAttr>(attr))) {
-      continue;
+    if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
+      if (isDynamic(intAttr)) {
+        continue;
+      }
     }
     auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::RHS});
     if (it != unifications.end() && !typeParamsUnify({attr}, {it->second})) {
@@ -859,6 +1099,163 @@ Operation *IncludeOp::resolveCallableInTable(SymbolTableCollection *symbolTable)
 Operation *IncludeOp::resolveCallable() {
   SymbolTableCollection tables;
   return resolveCallableInTable(&tables);
+}
+
+//===------------------------------------------------------------------===//
+// InvariantOp
+//===------------------------------------------------------------------===//
+
+void InvariantOp::build(
+    OpBuilder &odsBuilder, OperationState &odsState, StringRef loop_name,
+    ArrayRef<Type> loop_arg_types, ArrayRef<Location> loop_arg_locs
+) {
+  odsState.getOrAddProperties<InvariantOp::Properties>().loop_name =
+      odsBuilder.getStringAttr(loop_name);
+  odsState.getOrAddProperties<InvariantOp::Properties>().loop_arg_types =
+      odsBuilder.getTypeArrayAttr(loop_arg_types);
+  auto region = std::make_unique<Region>();
+  auto &block = region->emplaceBlock();
+  block.addArguments(loop_arg_types, loop_arg_locs);
+  odsState.regions.push_back(std::move(region));
+}
+
+namespace {
+static LogicalResult verifyArgTypes(InvariantTargetOpInterface target, InvariantOp *op) {
+  auto targetArgTypes = target.getArgumentTypes();
+  auto declaredTypes = op->getLoopArgTypes().getValue();
+  auto bodyArgTypes = op->getBody()->getArgumentTypes();
+
+  if (targetArgTypes.size() != declaredTypes.size()) {
+    return op->emitOpError() << "target has " << targetArgTypes.size()
+                             << " arguments but invariant declared " << declaredTypes.size();
+  }
+  if (bodyArgTypes.size() != declaredTypes.size()) {
+    return op->emitOpError() << "invariant body has " << targetArgTypes.size()
+                             << " arguments but declared " << declaredTypes.size();
+  }
+
+  bool failed = false;
+  for (auto [n, types] :
+       llvm::enumerate(llvm::zip_equal(targetArgTypes, bodyArgTypes, declaredTypes))) {
+    auto [targetType, bodyArgType, declaredType] = types;
+
+    if (targetType != mlir::cast<TypeAttr>(declaredType).getValue()) {
+      failed = true;
+      op->emitOpError() << "target argument #" << n << " expected type " << targetType
+                        << " but invariant declared type " << declaredType;
+    }
+    if (bodyArgType != mlir::cast<TypeAttr>(declaredType).getValue()) {
+      failed = true;
+      op->emitOpError() << "invariant argument #" << n << " expected type " << targetType
+                        << " but invariant declared type " << declaredType;
+    }
+  }
+
+  return failure(failed);
+}
+} // namespace
+
+LogicalResult InvariantOp::verify() {
+  auto invariantTarget = getTarget();
+  if (failed(invariantTarget)) {
+    return failure();
+  }
+
+  return verifyArgTypes(*invariantTarget, this);
+}
+
+ParseResult InvariantOp::parse(OpAsmParser &parser, OperationState &result) {
+  if (failed(parser.parseKeyword("for"))) {
+    return failure();
+  }
+
+  // Parse the loop label as a symbol.
+  StringAttr loopNameAttr;
+  if (parser.parseSymbolName(loopNameAttr)) {
+    return failure();
+  }
+  result.getOrAddProperties<InvariantOp::Properties>().loop_name = loopNameAttr;
+
+  // Parse the function signature.
+  bool isVariadic = false;
+  SmallVector<OpAsmParser::Argument> entryArgs;
+  SmallVector<DictionaryAttr> resultAttrs;
+  SmallVector<Type> resultTypes;
+
+  if (function_interface_impl::parseFunctionSignature(
+          parser, /*allowVariadic*/ false, entryArgs, isVariadic, resultTypes, resultAttrs
+      )) {
+    return failure();
+  }
+  assert(isVariadic == false);
+  // There should be no return types or attributes.
+  if (!resultTypes.empty() || !resultAttrs.empty()) {
+    return failure();
+  }
+
+  SmallVector<Type> argTypes = llvm::map_to_vector(entryArgs, [](auto arg) { return arg.type; });
+  result.getOrAddProperties<InvariantOp::Properties>().loop_arg_types =
+      parser.getBuilder().getTypeArrayAttr(argTypes);
+
+  auto *body = result.addRegion();
+  SMLoc loc = parser.getCurrentLocation();
+  if (parser.parseRegion(
+          *body, entryArgs,
+          /*enableNameShadowing=*/false
+      )) {
+    return failure();
+  }
+
+  if (body->empty()) {
+    return parser.emitError(loc, "expected non-empty invariant body");
+  }
+
+  return success();
+}
+
+void InvariantOp::print(OpAsmPrinter &p) {
+  // Print the name of the invariants's target.
+  p << " for ";
+  p.printSymbolName(getLoopName());
+  p << "(";
+  llvm::interleave(getBody()->getArguments(), [&p](auto arg) {
+    p.printRegionArgument(arg);
+  }, [&p]() { p << ", "; });
+  p << ") ";
+  // Print the body.
+  Region &body = getRegion();
+  p.printRegion(
+      body, /*printEntryBlockArgs=*/false,
+      /*printBlockTerminators=*/true
+  );
+}
+
+ContractOp InvariantOp::getParentContract() {
+  return this->getOperation()->getParentOfType<ContractOp>();
+}
+
+FailureOr<InvariantTargetOpInterface> InvariantOp::getTarget() {
+  auto target = getParentContract().getTargetOp();
+  if (failed(target)) {
+    return failure();
+  }
+  SmallVector<InvariantTargetOpInterface> matches;
+  for (auto invariantTarget : target->get().getLoops()) {
+    auto targetLabel = invariantTarget.getLabel();
+    if (succeeded(targetLabel) && *targetLabel == getLoopName()) {
+      matches.push_back(invariantTarget);
+    }
+  }
+
+  if (matches.size() == 0) {
+    return emitOpError() << "no invariant target with label \"" << getLoopName()
+                         << "\" found in contract target " << target->get().getNameAttr();
+  }
+  if (matches.size() > 1) {
+    return emitOpError() << "ambiguous label \"" << getLoopName() << "\" matched " << matches.size()
+                         << " invariant targets in contract target " << target->get().getNameAttr();
+  }
+  return matches[0];
 }
 
 } // namespace llzk::verif

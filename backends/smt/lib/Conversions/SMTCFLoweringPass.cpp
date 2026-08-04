@@ -33,10 +33,17 @@ namespace smt {
 #define GEN_PASS_DEF_SMTCFLOWERINGPASS
 #include "smt/Conversions/ConversionPasses.h.inc"
 } // namespace smt
+} // namespace llzk
+
+namespace {
 
 using namespace mlir;
+using namespace llzk;
 
-class SMTCFLoweringPass : public smt::impl::SMTCFLoweringPassBase<SMTCFLoweringPass> {
+class PassImpl : public llzk::smt::impl::SMTCFLoweringPassBase<PassImpl> {
+  using Base = SMTCFLoweringPassBase<PassImpl>;
+  using Base::Base;
+
   // The condition of the ifOp might be an `unrealized_conversion_cast` from some !smt.bool
   // to an i1, so we need to see through that
   Value getCondition(scf::IfOp ifOp) {
@@ -157,11 +164,4 @@ public:
   }
 };
 
-namespace smt {
-
-std::unique_ptr<mlir::Pass> createSMTCFLoweringPass() {
-  return std::make_unique<SMTCFLoweringPass>();
-}
-
-} // namespace smt
-} // namespace llzk
+} // namespace

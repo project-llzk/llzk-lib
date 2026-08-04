@@ -1,0 +1,237 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s
+
+// COM: Regression test: reading one POD element from an array-of-POD whose POD contains an array leaf
+// COM: is intentionally rejected when that leaf needs shape information for `array.len` or whole-POD
+// COM: equality. After POD-to-scalar flattens the outer array, an `array.read` selects only the leaf
+// COM: values for one element. It does not also select a matching per-element shape witness for a
+// COM: nested dynamic or affine leaf, so lowering shape-sensitive uses would have to invent or reuse
+// COM: shape information that may belong to a different element. Keep this unsupported until the
+// COM: lowering can thread the selected element's shape witness alongside the selected leaf value.
+// COM: A future implementation should split an additional nested shape-carrier leaf, e.g. an
+// COM: array-of-none parallel to the flattened payload, and select that carrier with the same
+// COM: indices used by `array.read` before rewriting `array.len`.
+
+!Inner = !pod.type<[@vals: !array.type<? x index>]>
+!OuterArr = !array.type<2 x !Inner>
+module attributes {llzk.lang} {
+  function.def @ragged_dynamic_len(%items: !OuterArr, %i: index) -> index {
+    %item = array.read %items[%i] : !OuterArr, !Inner
+    %vals = pod.read %item[@vals] : !Inner, !array.type<? x index>
+    %c0 = arith.constant 0 : index
+    // expected-error@+1 {{'array.len' op cannot lower nested dynamic array leaf length after reading an array-of-POD element without per-element shape witnesses}}
+    %len = array.len %vals, %c0 : !array.type<? x index>
+    function.return %len : index
+  }
+}
+// -----
+
+!Inner = !pod.type<[@vals: !array.type<? x index>]>
+!OuterArr = !array.type<2 x !Inner>
+module attributes {llzk.lang} {
+  function.def @ragged_dynamic_len_after_unifiable_cast(%items: !OuterArr, %i: index) -> index {
+    %item = array.read %items[%i] : !OuterArr, !Inner
+    %vals = pod.read %item[@vals] : !Inner, !array.type<? x index>
+    %cast = poly.unifiable_cast %vals : (!array.type<? x index>) -> !array.type<? x index>
+    %c0 = arith.constant 0 : index
+    // expected-error@+1 {{'array.len' op cannot lower nested dynamic array leaf length after reading an array-of-POD element without per-element shape witnesses}}
+    %len = array.len %cast, %c0 : !array.type<? x index>
+    function.return %len : index
+  }
+}
+// -----
+
+#map = affine_map<()[s0] -> (s0 + 1)>
+!Inner = !pod.type<[@vals: !array.type<#map x index>]>
+!OuterArr = !array.type<2 x !Inner>
+module attributes {llzk.lang} {
+  function.def @ragged_affine_len(%items: !OuterArr, %i: index) -> index {
+    %item = array.read %items[%i] : !OuterArr, !Inner
+    %vals = pod.read %item[@vals] : !Inner, !array.type<#map x index>
+    %c0 = arith.constant 0 : index
+    // expected-error@+1 {{'array.len' op cannot lower nested affine array leaf length after reading an array-of-POD element without per-element shape witnesses}}
+    %len = array.len %vals, %c0 : !array.type<#map x index>
+    function.return %len : index
+  }
+}
+// -----
+
+#map = affine_map<()[s0] -> (s0 + 1)>
+!Inner = !pod.type<[@vals: !array.type<#map x index>]>
+!OuterArr = !array.type<2 x !Inner>
+module attributes {llzk.lang} {
+  function.def @ragged_affine_len_after_unifiable_cast(%items: !OuterArr, %i: index) -> index {
+    %item = array.read %items[%i] : !OuterArr, !Inner
+    %vals = pod.read %item[@vals] : !Inner, !array.type<#map x index>
+    %cast = poly.unifiable_cast %vals : (!array.type<#map x index>) -> !array.type<#map x index>
+    %c0 = arith.constant 0 : index
+    // expected-error@+1 {{'array.len' op cannot lower nested affine array leaf length after reading an array-of-POD element without per-element shape witnesses}}
+    %len = array.len %cast, %c0 : !array.type<#map x index>
+    function.return %len : index
+  }
+}
+// -----
+
+!Inner = !pod.type<[@vals: !array.type<? x index>]>
+!OuterArr = !array.type<2 x !Inner>
+module attributes {llzk.lang} {
+  function.def @ragged_dynamic_whole_pod_eq(
+      %items: !OuterArr, %other: !Inner, %i: index
+  ) attributes {function.allow_constraint} {
+    %item = array.read %items[%i] : !OuterArr, !Inner
+    // expected-error@+1 {{'constrain.eq' op cannot lower nested dynamic array leaf equality after reading an array-of-POD element without per-element shape witnesses}}
+    constrain.eq %item, %other : !Inner
+    function.return
+  }
+}
+// -----
+
+#map = affine_map<()[s0] -> (s0 + 1)>
+!Inner = !pod.type<[@vals: !array.type<#map x index>]>
+!OuterArr = !array.type<2 x !Inner>
+module attributes {llzk.lang} {
+  function.def @ragged_affine_whole_pod_eq(
+      %items: !OuterArr, %other: !Inner, %i: index
+  ) attributes {function.allow_constraint} {
+    %item = array.read %items[%i] : !OuterArr, !Inner
+    // expected-error@+1 {{'constrain.eq' op cannot lower nested affine array leaf equality after reading an array-of-POD element without per-element shape witnesses}}
+    constrain.eq %item, %other : !Inner
+    function.return
+  }
+}
+// -----
+
+!Inner = !pod.type<[@vals: !array.type<? x index>]>
+!OuterArr = !array.type<2 x !Inner>
+module attributes {llzk.lang} {
+  function.def @ragged_dynamic_array_of_pod_eq(
+      %lhs: !OuterArr, %rhs: !OuterArr
+  ) attributes {function.allow_constraint} {
+    // expected-error@+2 {{'constrain.eq' op cannot lower nested dynamic array leaf equality for array-of-POD without per-element shape witnesses}}
+    // expected-error@+1 {{failed to legalize operation 'constrain.eq'}}
+    constrain.eq %lhs, %rhs : !OuterArr
+    function.return
+  }
+}
+// -----
+
+#map = affine_map<()[s0] -> (s0 + 1)>
+!Inner = !pod.type<[@vals: !array.type<#map x index>]>
+!OuterArr = !array.type<2 x !Inner>
+module attributes {llzk.lang} {
+  function.def @ragged_affine_array_of_pod_eq(
+      %lhs: !OuterArr, %rhs: !OuterArr
+  ) attributes {function.allow_constraint} {
+    // expected-error@+2 {{'constrain.eq' op cannot lower nested affine array leaf equality for array-of-POD without per-element shape witnesses}}
+    // expected-error@+1 {{failed to legalize operation 'constrain.eq'}}
+    constrain.eq %lhs, %rhs : !OuterArr
+    function.return
+  }
+}
+// -----
+
+!Inner = !pod.type<[@vals: !array.type<? x index>]>
+!OuterArr = !array.type<2 x !Inner>
+module attributes {llzk.lang} {
+  function.def @ragged_dynamic_containment(
+      %items: !OuterArr, %needle: index, %i: index
+  ) attributes {function.allow_constraint} {
+    %item = array.read %items[%i] : !OuterArr, !Inner
+    %vals = pod.read %item[@vals] : !Inner, !array.type<? x index>
+    // expected-error@+1 {{'constrain.in' op cannot lower nested dynamic array leaf containment after reading an array-of-POD element without per-element shape witnesses}}
+    constrain.in %vals, %needle : !array.type<? x index>, index
+    function.return
+  }
+}
+// -----
+
+#map = affine_map<()[s0] -> (s0 + 1)>
+!Inner = !pod.type<[@vals: !array.type<#map x index>]>
+!OuterArr = !array.type<2 x !Inner>
+module attributes {llzk.lang} {
+  function.def @ragged_affine_containment(
+      %items: !OuterArr, %needle: index, %i: index
+  ) attributes {function.allow_constraint} {
+    %item = array.read %items[%i] : !OuterArr, !Inner
+    %vals = pod.read %item[@vals] : !Inner, !array.type<#map x index>
+    // expected-error@+1 {{'constrain.in' op cannot lower nested affine array leaf containment after reading an array-of-POD element without per-element shape witnesses}}
+    constrain.in %vals, %needle : !array.type<#map x index>, index
+    function.return
+  }
+}
+// -----
+
+!Inner = !pod.type<[@vals: !array.type<? x index>]>
+!OuterArr = !array.type<2 x !Inner>
+module attributes {llzk.lang} {
+  function.def @uses_len_after_call(%vals: !array.type<? x index>) -> index {
+    %c0 = arith.constant 0 : index
+    %len = array.len %vals, %c0 : !array.type<? x index>
+    function.return %len : index
+  }
+  function.def @ragged_dynamic_call_arg(%items: !OuterArr, %i: index) -> index {
+    %item = array.read %items[%i] : !OuterArr, !Inner
+    %vals = pod.read %item[@vals] : !Inner, !array.type<? x index>
+    // expected-error@+1 {{'function.call' op cannot pass nested dynamic array leaf across a function call after reading an array-of-POD element without per-element shape witnesses}}
+    %len = function.call @uses_len_after_call(%vals) : (!array.type<? x index>) -> index
+    function.return %len : index
+  }
+}
+// -----
+
+!Inner = !pod.type<[@vals: !array.type<? x index>]>
+!OuterArr = !array.type<2 x !Inner>
+module attributes {llzk.lang} {
+  function.def @returns_ragged_dynamic_leaf(%items: !OuterArr, %i: index) -> !array.type<? x index> {
+    %item = array.read %items[%i] : !OuterArr, !Inner
+    %vals = pod.read %item[@vals] : !Inner, !array.type<? x index>
+    // expected-error@+1 {{'function.return' op cannot pass nested dynamic array leaf across a function return after reading an array-of-POD element without per-element shape witnesses}}
+    function.return %vals : !array.type<? x index>
+  }
+  function.def @ragged_dynamic_return_result(%items: !OuterArr, %i: index) -> index {
+    %vals = function.call @returns_ragged_dynamic_leaf(%items, %i) : (!OuterArr, index) -> !array.type<? x index>
+    %c0 = arith.constant 0 : index
+    %len = array.len %vals, %c0 : !array.type<? x index>
+    function.return %len : index
+  }
+}
+// -----
+
+#map = affine_map<()[s0] -> (s0 + 1)>
+!Inner = !pod.type<[@vals: !array.type<#map x index>]>
+!OuterArr = !array.type<2 x !Inner>
+module attributes {llzk.lang} {
+  function.def @ragged_affine_scf_yield(
+      %items: !OuterArr, %fallback: !array.type<#map x index>, %i: index, %cond: i1
+  ) attributes {function.allow_constraint} {
+    %item = array.read %items[%i] : !OuterArr, !Inner
+    %vals = pod.read %item[@vals] : !Inner, !array.type<#map x index>
+    %selected = scf.if %cond -> (!array.type<#map x index>) {
+      // expected-error@+1 {{'scf.yield' op cannot pass nested affine array leaf across an scf.yield boundary after reading an array-of-POD element without per-element shape witnesses}}
+      scf.yield %vals : !array.type<#map x index>
+    } else {
+      scf.yield %fallback : !array.type<#map x index>
+    }
+    constrain.eq %selected, %fallback : !array.type<#map x index>
+    function.return
+  }
+}
+// -----
+
+!Inner = !pod.type<[@vals: !array.type<? x index>]>
+!OuterArr = !array.type<2 x !Inner>
+module attributes {llzk.lang} {
+  function.def @ragged_dynamic_for_iter(
+      %items: !OuterArr, %i: index, %lb: index, %ub: index, %step: index
+  ) -> index {
+    %item = array.read %items[%i] : !OuterArr, !Inner
+    %vals = pod.read %item[@vals] : !Inner, !array.type<? x index>
+    // expected-error@+1 {{'scf.for' op cannot pass nested dynamic array leaf into an scf.for region after reading an array-of-POD element without per-element shape witnesses}}
+    %carried = scf.for %iv = %lb to %ub step %step
+        iter_args(%acc = %vals) -> (!array.type<? x index>) {
+      scf.yield %acc : !array.type<? x index>
+    }
+    %c0 = arith.constant 0 : index
+    %len = array.len %carried, %c0 : !array.type<? x index>
+    function.return %len : index
+  }
+}

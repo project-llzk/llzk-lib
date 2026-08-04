@@ -19,8 +19,156 @@
 #include "llzk/Dialect/Include/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Dialect.h"
+#include "llzk/Dialect/RAM/IR/Dialect.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
+#include "llzk/Util/SymbolLookup.h"
+
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/SmallVector.h>
+#include <llvm/Support/Debug.h>
+
+#define DEBUG_TYPE "poly-dialect-shared"
+
+namespace {
+
+/// Presentation-only separator for rendered open gaps; it is never parsed back from sym_name.
+constexpr char OPEN_SLOT_MARKER = '\x1A';
+
+} // namespace
+
+namespace llzk::polymorphic::detail {
+
+mlir::FailureOr<InstantiationLayout> buildInstantiationLayout(
+    TemplateOp parentTemplate, mlir::ArrayAttr callParams,
+    const llvm::DenseMap<mlir::Attribute, mlir::Attribute> &paramNameToConcrete
+) {
+  mlir::MLIRContext *ctx = parentTemplate.getContext();
+  mlir::SmallVector<mlir::Attribute> paramNames = parentTemplate.getConstNames<TemplateParamOp>();
+  mlir::SmallVector<mlir::StringAttr> sourceChunks;
+
+  if (mlir::Attribute rawPattern = parentTemplate->getDiscardableAttr(TEMPLATE_NAME_PATTERN_ATTR)) {
+    auto pattern = llvm::dyn_cast<mlir::ArrayAttr>(rawPattern);
+    if (!pattern) {
+      return parentTemplate.emitOpError()
+             << "expected '" << TEMPLATE_NAME_PATTERN_ATTR << "' to be an ArrayAttr";
+    }
+    if (pattern.size() != paramNames.size() + 1) {
+      return parentTemplate.emitOpError()
+             << "expected '" << TEMPLATE_NAME_PATTERN_ATTR << "' to contain "
+             << paramNames.size() + 1 << " literal chunk(s) for " << paramNames.size()
+             << " template parameter(s), but found " << pattern.size();
+    }
+    for (auto [index, chunk] : llvm::enumerate(pattern)) {
+      auto stringChunk = llvm::dyn_cast<mlir::StringAttr>(chunk);
+      if (!stringChunk) {
+        return parentTemplate.emitOpError() << "expected '" << TEMPLATE_NAME_PATTERN_ATTR
+                                            << "' element " << index << " to be a StringAttr";
+      }
+      sourceChunks.push_back(stringChunk);
+    }
+  } else {
+    std::string firstChunk = parentTemplate.getSymName().str();
+    if (!paramNames.empty()) {
+      firstChunk.push_back('_');
+    }
+    sourceChunks.push_back(mlir::StringAttr::get(ctx, firstChunk));
+    for (size_t i = 1; i < paramNames.size(); ++i) {
+      sourceChunks.push_back(mlir::StringAttr::get(ctx, "_"));
+    }
+    if (!paramNames.empty()) {
+      sourceChunks.push_back(mlir::StringAttr::get(ctx, ""));
+    }
+  }
+
+  mlir::SmallVector<mlir::Attribute> remainingNames;
+  mlir::SmallVector<mlir::Attribute> concreteKeyEntries;
+  for (mlir::Attribute paramName : paramNames) {
+    auto concreteIt = paramNameToConcrete.find(paramName);
+    if (concreteIt == paramNameToConcrete.end() || !concreteIt->second) {
+      remainingNames.push_back(paramName);
+      continue;
+    }
+
+    concreteKeyEntries.push_back(paramName);
+    concreteKeyEntries.push_back(concreteIt->second);
+  }
+
+  mlir::ArrayAttr rewrittenCallParams = nullptr;
+  if (!isNullOrEmpty(callParams) && !remainingNames.empty()) {
+    assert(callParams.size() == paramNames.size() && "template parameter arity already verified");
+    mlir::SmallVector<mlir::Attribute> remainingCallParams;
+    for (auto [paramName, attr] : llvm::zip_equal(paramNames, callParams.getValue())) {
+      auto concreteIt = paramNameToConcrete.find(paramName);
+      if (concreteIt == paramNameToConcrete.end() || !concreteIt->second) {
+        remainingCallParams.push_back(attr);
+      }
+    }
+    rewrittenCallParams = mlir::ArrayAttr::get(ctx, remainingCallParams);
+  }
+
+  // Refine chunks in parameter order. A concrete gap is absorbed into the current literal chunk;
+  // an open gap starts the next chunk. This preserves empty chunks and therefore exact P+1 shape.
+  mlir::SmallVector<std::string> refinedChunkValues;
+  refinedChunkValues.push_back(sourceChunks.front().getValue().str());
+  for (size_t i = 0; i < paramNames.size(); ++i) {
+    auto concreteIt = paramNameToConcrete.find(paramNames[i]);
+    if (concreteIt != paramNameToConcrete.end() && concreteIt->second) {
+      mlir::Attribute binding = concreteIt->second;
+      refinedChunkValues.back() += BuildShortTypeString::from(binding);
+      refinedChunkValues.back() += sourceChunks[i + 1].getValue().str();
+    } else {
+      refinedChunkValues.push_back(sourceChunks[i + 1].getValue().str());
+    }
+  }
+  assert(
+      refinedChunkValues.size() == remainingNames.size() + 1 &&
+      "every unbound parameter creates one remaining gap"
+  );
+
+  std::string renderedName;
+  for (auto [index, chunk] : llvm::enumerate(refinedChunkValues)) {
+    if (index != 0) {
+      renderedName.push_back(OPEN_SLOT_MARKER);
+    }
+    renderedName += chunk;
+  }
+
+  mlir::SmallVector<mlir::Attribute> refinedPattern;
+  refinedPattern.reserve(refinedChunkValues.size());
+  for (const std::string &chunk : refinedChunkValues) {
+    refinedPattern.push_back(mlir::StringAttr::get(ctx, chunk));
+  }
+
+  return InstantiationLayout {
+      std::move(remainingNames),
+      mlir::ArrayAttr::get(ctx, concreteKeyEntries),
+      std::move(renderedName),
+      rewrittenCallParams,
+      mlir::ArrayAttr::get(ctx, refinedPattern),
+  };
+}
+
+void setInstantiationNamePattern(TemplateOp templateOp, mlir::ArrayAttr namePattern) {
+  if (namePattern) {
+    templateOp->setDiscardableAttr(TEMPLATE_NAME_PATTERN_ATTR, namePattern);
+  } else {
+    templateOp->removeDiscardableAttr(TEMPLATE_NAME_PATTERN_ATTR);
+  }
+}
+
+std::string buildOpaqueInstantiationName(
+    llvm::StringRef baseName, llvm::ArrayRef<mlir::Attribute> concreteAttrs
+) {
+  std::string result = baseName.str();
+  if (!concreteAttrs.empty()) {
+    result.push_back('_');
+    result += BuildShortTypeString::from(concreteAttrs);
+  }
+  return result;
+}
+
+} // namespace llzk::polymorphic::detail
 
 mlir::ConversionTarget llzk::polymorphic::detail::newBaseTarget(mlir::MLIRContext *ctx) {
   mlir::ConversionTarget target(*ctx);
@@ -28,8 +176,165 @@ mlir::ConversionTarget llzk::polymorphic::detail::newBaseTarget(mlir::MLIRContex
       llzk::LLZKDialect, llzk::array::ArrayDialect, llzk::boolean::BoolDialect,
       llzk::cast::CastDialect, llzk::component::StructDialect, llzk::constrain::ConstrainDialect,
       llzk::felt::FeltDialect, llzk::function::FunctionDialect, llzk::global::GlobalDialect,
-      llzk::include::IncludeDialect, llzk::polymorphic::PolymorphicDialect,
+      llzk::include::IncludeDialect, llzk::polymorphic::PolymorphicDialect, llzk::ram::RAMDialect,
       llzk::string::StringDialect, mlir::arith::ArithDialect, mlir::scf::SCFDialect>();
   target.addLegalOp<mlir::ModuleOp>();
   return target;
 }
+
+llzk::polymorphic::detail::CleanupBase::CleanupBase(
+    mlir::ModuleOp root, const llzk::SymbolDefTree &symDefTree,
+    const llzk::SymbolUseGraph &symUseGraph
+)
+    : rootMod(root), defTree(symDefTree), useGraph(symUseGraph) {}
+
+bool llzk::polymorphic::detail::isErasableDefinition(mlir::Operation *op) {
+  if (llvm::isa<llzk::component::StructDefOp>(op)) {
+    return true;
+  }
+  if (llzk::function::FuncDefOp fdef = llvm::dyn_cast<llzk::function::FuncDefOp>(op)) {
+    return !fdef.isInStruct();
+  }
+  return false;
+}
+
+llzk::polymorphic::detail::FromEraseSet::FromEraseSet(
+    mlir::ModuleOp root, const llzk::SymbolDefTree &symDefTree,
+    const llzk::SymbolUseGraph &symUseGraph, llvm::DenseSet<mlir::SymbolRefAttr> &&tryToErasePaths
+)
+    : CleanupBase(root, symDefTree, symUseGraph) {
+  // Convert the set of paths targeted for erasure into a set of cleanup-candidate definitions.
+  for (mlir::SymbolRefAttr path : tryToErasePaths) {
+    LLVM_DEBUG(llvm::dbgs() << "[FromEraseSet] path to erase: " << path << '\n';);
+    mlir::Operation *lookupFrom = rootMod.getOperation();
+    auto res = lookupSymbolIn(tables, path, Within(), lookupFrom);
+    assert(mlir::succeeded(res) && "inputs must be valid symbol references");
+    assert(isErasableDefinition(res->get()) && "inputs must be cleanup candidates");
+    if (!res->viaInclude()) { // do not remove if it's from another source file
+      mlir::SymbolOpInterface op = llvm::cast<mlir::SymbolOpInterface>(res->get());
+      LLVM_DEBUG(llvm::dbgs() << "[FromEraseSet]   added op to the erase set: " << op << '\n';);
+      tryToErase.insert(op);
+    } else {
+      LLVM_DEBUG(
+          llvm::dbgs() << "[FromEraseSet]   ignored op because it comes from an include: "
+                       << res->get() << '\n';
+      );
+    }
+  }
+}
+
+mlir::LogicalResult llzk::polymorphic::detail::FromEraseSet::eraseUnusedDefinitions() {
+  // Collect the subset of 'tryToErase' that has no remaining uses.
+  for (mlir::SymbolOpInterface sym : tryToErase) {
+    collectSafeToErase(sym);
+  }
+  // The `visitedPlusSafetyResult` may contain child FuncDefOp within an erased StructDefOp, so
+  // reduce the map to only top-level erase targets before erasing in a separate loop.
+  for (auto &it : llvm::make_early_inc_range(visitedPlusSafetyResult)) {
+    if (!it.second || !tryToErase.contains(it.first)) {
+      visitedPlusSafetyResult.erase(it.first);
+    }
+  }
+  for (auto &[sym, _] : visitedPlusSafetyResult) {
+    LLVM_DEBUG(llvm::dbgs() << "[EraseIfUnused] removing: " << sym.getNameAttr() << '\n');
+    sym.erase();
+  }
+  return mlir::success();
+}
+
+bool llzk::polymorphic::detail::FromEraseSet::collectSafeToErase(mlir::SymbolOpInterface check) {
+  assert(check); // pre-condition
+
+  // If previously visited, return the safety result.
+  auto visited = visitedPlusSafetyResult.find(check);
+  if (visited != visitedPlusSafetyResult.end()) {
+    return visited->second;
+  }
+
+  // If it's an erasable definition that is not in `tryToErase` then it cannot be erased.
+  if (isErasableDefinition(check.getOperation()) && !tryToErase.contains(check)) {
+    visitedPlusSafetyResult[check] = false;
+    return false;
+  }
+
+  // Otherwise, temporarily mark as safe b/c a node cannot keep itself live (and this prevents
+  // the recursion from getting stuck in an infinite loop).
+  visitedPlusSafetyResult[check] = true;
+
+  // Check if it's safe according to both the def tree and use graph.
+  // Note: Every symbol must have a def node, but symbols with no references do not have use
+  // nodes. Those are safe from the use-graph perspective.
+  if (collectSafeToErase(defTree.lookupNode(check))) {
+    const auto *useNode = useGraph.lookupNode(check);
+    if (!useNode || collectSafeToErase(useNode)) {
+      return true;
+    }
+  }
+
+  // Otherwise, revert the safety decision and return it.
+  visitedPlusSafetyResult[check] = false;
+  return false;
+}
+
+bool llzk::polymorphic::detail::FromEraseSet::collectSafeToErase(
+    const llzk::SymbolDefTreeNode *check
+) {
+  assert(check); // pre-condition
+  if (const llzk::SymbolDefTreeNode *p = check->getParent()) {
+    if (mlir::SymbolOpInterface checkOp = p->getOp()) { // safe if parent is root
+      return collectSafeToErase(checkOp);
+    }
+  }
+  return true;
+}
+
+bool llzk::polymorphic::detail::FromEraseSet::collectSafeToErase(
+    const llzk::SymbolUseGraphNode *check
+) {
+  assert(check); // pre-condition
+  for (const llzk::SymbolUseGraphNode *p : check->predecessorIter()) {
+    if (mlir::SymbolOpInterface checkOp = cachedLookup(p)) { // safe if via IncludeOp
+      if (!collectSafeToErase(checkOp)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+mlir::SymbolOpInterface
+llzk::polymorphic::detail::FromEraseSet::cachedLookup(const llzk::SymbolUseGraphNode *node) {
+  assert(node && "must provide a node"); // pre-condition
+  // Check for cached result
+  auto fromCache = lookupCache.find(node);
+  if (fromCache != lookupCache.end()) {
+    return fromCache->second;
+  }
+  // Otherwise, perform lookup and cache
+  auto lookupRes = node->lookupSymbol(tables);
+  assert(mlir::succeeded(lookupRes) && "graph contains node with invalid path");
+  assert(lookupRes->get() != nullptr && "lookup must return an Operation");
+  // If loaded via an IncludeOp it's not in the current AST anyway so ignore.
+  // NOTE: The SymbolUseGraph does contain nodes for struct parameters which cannot cast to
+  // SymbolOpInterface. However, those will always be leaf nodes in the SymbolUseGraph and
+  // therefore will not be traversed by this analysis so directly casting is fine.
+  mlir::SymbolOpInterface actualRes =
+      lookupRes->viaInclude() ? nullptr : llvm::cast<mlir::SymbolOpInterface>(lookupRes->get());
+  // Cache and return
+  lookupCache[node] = actualRes;
+  assert((!actualRes == lookupRes->viaInclude()) && "not found iff included"); // post-condition
+  return actualRes;
+}
+
+llzk::array::ArrayType llzk::polymorphic::detail::flattenInstantiatedArrayType(
+    llzk::array::ArrayType inputTy, mlir::Type convertedElemTy
+) {
+  llvm::SmallVector<mlir::Attribute> mergedDims(inputTy.getDimensionSizes());
+  while (auto nestedArrTy = llvm::dyn_cast<llzk::array::ArrayType>(convertedElemTy)) {
+    llvm::append_range(mergedDims, nestedArrTy.getDimensionSizes());
+    convertedElemTy = nestedArrTy.getElementType();
+  }
+  return llzk::array::ArrayType::get(convertedElemTy, mergedDims);
+}
+
+#undef DEBUG_TYPE

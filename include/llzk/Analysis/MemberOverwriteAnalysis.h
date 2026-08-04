@@ -149,4 +149,4 @@ public:
   void setToEntryState(MemberOverwriteLattice *lattice) override { lattice->entry(); }
 };
 
-}; // namespace llzk
+} // namespace llzk

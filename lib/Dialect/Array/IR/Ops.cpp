@@ -223,6 +223,59 @@ ArrayAttr ArrayAccessOpInterface::indexOperandsToAttributeArray() {
   return nullptr;
 }
 
+/// Generate `arith.constant` indices for one static array element position.
+SmallVector<Value>
+ArrayAccessOpInterface::genIndexConstants(OpBuilder &bldr, Location loc, ArrayAttr index) {
+  SmallVector<Value> indices;
+  indices.reserve(index.size());
+  for (Attribute attr : index) {
+    // Note: array index must be an integer attribute.
+    indices.push_back(bldr.create<arith::ConstantOp>(loc, llvm::cast<IntegerAttr>(attr)));
+  }
+  return indices;
+}
+
+/// Create an `array.read` or `array.extract` for one concrete element or subarray.
+Value ArrayAccessOpInterface::genRead(
+    OpBuilder &bldr, Location loc, Value arrayRef, ValueRange indices
+) {
+  ArrayType arrTy = llvm::cast<ArrayType>(arrayRef.getType());
+  Type selectedType = arrTy.getSelectionType(indices.size());
+  if (llvm::isa<ArrayType>(selectedType)) {
+    return bldr.create<ExtractArrayOp>(loc, selectedType, arrayRef, indices);
+  }
+  return bldr.create<ReadArrayOp>(loc, selectedType, arrayRef, indices);
+}
+
+/// Create an `array.read` or `array.extract` for one concrete element or subarray.
+Value ArrayAccessOpInterface::genRead(
+    OpBuilder &bldr, Location loc, Value arrayRef, ArrayAttr index
+) {
+  SmallVector<Value> indices = genIndexConstants(bldr, loc, index);
+  return genRead(bldr, loc, arrayRef, indices);
+}
+
+/// Create an `array.write` or `array.insert` for one concrete element or subarray.
+void ArrayAccessOpInterface::genWrite(
+    OpBuilder &bldr, Location loc, Value arrayRef, ValueRange indices, Value value
+) {
+  ArrayType arrTy = llvm::cast<ArrayType>(arrayRef.getType());
+  Type selectedType = arrTy.getSelectionType(indices.size());
+  if (llvm::isa<ArrayType>(selectedType)) {
+    bldr.create<InsertArrayOp>(loc, arrayRef, indices, value);
+    return;
+  }
+  bldr.create<WriteArrayOp>(loc, arrayRef, indices, value);
+}
+
+/// Create an `array.write` or `array.insert` for one concrete element or subarray.
+void ArrayAccessOpInterface::genWrite(
+    OpBuilder &bldr, Location loc, Value arrayRef, ArrayAttr index, Value value
+) {
+  SmallVector<Value> indices = genIndexConstants(bldr, loc, index);
+  genWrite(bldr, loc, arrayRef, indices, value);
+}
+
 /// Required by DestructurableAllocationOpInterface / SROA pass
 bool ArrayAccessOpInterface::canRewire(
     const DestructurableMemorySlot &slot, SmallPtrSetImpl<Attribute> &usedIndices,
@@ -293,6 +346,14 @@ ensureNumIndicesMatchDims(ArrayType ty, size_t numIndices, const OwningEmitError
   return success();
 }
 
+LogicalResult
+verifyScalarArrayAccess(ArrayType ty, size_t numIndices, const OwningEmitErrorFn &errFn) {
+  if (llvm::isa<NoneType>(ty.getElementType())) {
+    return errFn().append("cannot access a scalar element from array with none element type");
+  }
+  return ensureNumIndicesMatchDims(ty, numIndices, errFn);
+}
+
 } // namespace
 
 LogicalResult ReadArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
@@ -316,8 +377,7 @@ bool ReadArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
 }
 
 LogicalResult ReadArrayOp::verify() {
-  // Ensure the number of indices used match the shape of the array exactly.
-  return ensureNumIndicesMatchDims(getArrRefType(), getIndices().size(), getEmitOpErrFn(this));
+  return verifyScalarArrayAccess(getArrRefType(), getIndices().size(), getEmitOpErrFn(this));
 }
 
 /// Required by PromotableMemOpInterface / mem2reg pass
@@ -355,8 +415,7 @@ LogicalResult WriteArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
 }
 
 LogicalResult WriteArrayOp::verify() {
-  // Ensure the number of indices used match the shape of the array exactly.
-  return ensureNumIndicesMatchDims(getArrRefType(), getIndices().size(), getEmitOpErrFn(this));
+  return verifyScalarArrayAccess(getArrRefType(), getIndices().size(), getEmitOpErrFn(this));
 }
 
 /// Required by PromotableMemOpInterface / mem2reg pass
@@ -396,10 +455,9 @@ LogicalResult ExtractArrayOp::inferReturnTypes(
   Type arrRefType = adaptor.getArrRef().getType();
   assert(llvm::isa<ArrayType>(arrRefType)); // per ODS spec of ExtractArrayOp
   ArrayType arrRefArrType = llvm::cast<ArrayType>(arrRefType);
-  ArrayRef<Attribute> arrRefDimSizes = arrRefArrType.getDimensionSizes();
 
   // Check for invalid cases
-  auto compare = numToSkip <=> arrRefDimSizes.size();
+  auto compare = numToSkip <=> arrRefArrType.getDimensionSizes().size();
   if (compare == 0) {
     return mlir::emitOptionalError(
         location, '\'', ExtractArrayOp::getOperationName(),
@@ -415,8 +473,7 @@ LogicalResult ExtractArrayOp::inferReturnTypes(
 
   // Generate and store reduced array type
   inferredReturnTypes.resize(1);
-  inferredReturnTypes[0] =
-      ArrayType::get(arrRefArrType.getElementType(), arrRefDimSizes.drop_front(numToSkip));
+  inferredReturnTypes[0] = arrRefArrType.getSelectionType(numToSkip);
   return success();
 }
 

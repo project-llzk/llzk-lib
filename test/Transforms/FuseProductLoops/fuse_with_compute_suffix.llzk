@@ -1,0 +1,66 @@
+// RUN: llzk-opt --llzk-compute-constrain-to-product="root-struct=A" --llzk-fuse-product-loops %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang = "llzk"} {
+    poly.template @TA {
+      poly.param @N : index
+
+      struct.def @A {
+          struct.member @arr : !array.type<@N x !felt.type>
+
+          function.def @compute(%inp: !array.type<@N x !felt.type>) -> !struct.type<@TA::@A<[@N]>> {
+              %self = struct.new : <@TA::@A<[@N]>>
+
+              %N = poly.read_const @N : index
+              %c0 = arith.constant 0 : index
+              %c1 = arith.constant 1 : index
+
+              %arr = array.new : !array.type<@N x !felt.type>
+              %inp0 = array.read %inp[%c0] : !array.type<@N x !felt.type>, !felt.type
+              array.write %arr[%c0] = %inp0 : !array.type<@N x !felt.type>, !felt.type
+
+              scf.for %i = %c1 to %N step %c1 {
+                  %inp_i = array.read %inp[%i] : !array.type<@N x !felt.type>, !felt.type
+                  %prev_i = arith.subi %i, %c1 : index
+                  %prev = array.read %arr[%prev_i] : !array.type<@N x !felt.type>, !felt.type
+                  %sum = felt.add %inp_i, %prev : !felt.type
+                  array.write %arr[%i] = %sum : !array.type<@N x !felt.type>, !felt.type
+                  scf.yield
+              }
+
+              struct.writem %self[@arr] = %arr : !struct.type<@TA::@A<[@N]>>, !array.type<@N x !felt.type>
+              function.return %self : !struct.type<@TA::@A<[@N]>>
+          }
+
+          function.def @constrain(%self : !struct.type<@TA::@A<[@N]>>, %inp: !array.type<@N x !felt.type>) {
+              %N = poly.read_const @N : index
+              %c0 = arith.constant 0 : index
+              %c1 = arith.constant 1 : index
+
+              %arr = struct.readm %self[@arr] : !struct.type<@TA::@A<[@N]>>, !array.type<@N x !felt.type>
+              %inp0 = array.read %inp[%c0] : !array.type<@N x !felt.type>, !felt.type
+              %arr0 = array.read %arr[%c0] : !array.type<@N x !felt.type>, !felt.type
+              constrain.eq %arr0, %inp0 : !felt.type
+
+              scf.for %i = %c1 to %N step %c1 {
+                  %inp_i = array.read %inp[%i] : !array.type<@N x !felt.type>, !felt.type
+                  %prev_i = arith.subi %i, %c1 : index
+                  %prev = array.read %arr[%prev_i] : !array.type<@N x !felt.type>, !felt.type
+                  %sum = felt.add %inp_i, %prev : !felt.type
+                  %arr_i = array.read %arr[%i] : !array.type<@N x !felt.type>, !felt.type
+                  constrain.eq %arr_i, %sum : !felt.type
+                  scf.yield
+              }
+
+              function.return
+          }
+      }
+    }
+}
+
+// CHECK: %[[ARR:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF:[0-9a-zA-Z_\.]+]][@arr]
+// CHECK-NEXT: %[[INP0:[0-9a-zA-Z_\.]+]] = array.read %[[INPUT:[0-9a-zA-Z_\.]+]]{{\[}}%[[C0:[0-9a-zA-Z_\.]+]]]
+// CHECK-NEXT: %[[ARR0:[0-9a-zA-Z_\.]+]] = array.read %[[ARR]]{{\[}}%[[C0]]]
+// CHECK-NEXT: constrain.eq %[[ARR0]], %[[INP0]]
+// CHECK-NEXT: scf.for
+// CHECK: } {product_source = "fused"}
+// CHECK-NEXT: struct.writem %[[SELF]][@arr] = %[[COMP_ARR:[0-9a-zA-Z_\.]+]] : {{.*}} {product_source = "compute"}

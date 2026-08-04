@@ -148,8 +148,9 @@ public:
   }
 };
 
-class EmptyTemplateRemovalPass
-    : public llzk::polymorphic::impl::EmptyTemplateRemovalPassBase<EmptyTemplateRemovalPass> {
+class PassImpl : public llzk::polymorphic::impl::EmptyTemplateRemovalPassBase<PassImpl> {
+  using Base = EmptyTemplateRemovalPassBase<PassImpl>;
+  using Base::Base;
 
   void runOnOperation() override {
     ModuleOp modOp = getOperation();
@@ -171,7 +172,3 @@ class EmptyTemplateRemovalPass
 };
 
 } // namespace
-
-std::unique_ptr<Pass> llzk::polymorphic::createEmptyTemplateRemoval() {
-  return std::make_unique<EmptyTemplateRemovalPass>();
-};

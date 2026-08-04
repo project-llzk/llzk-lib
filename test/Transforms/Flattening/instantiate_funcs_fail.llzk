@@ -3,7 +3,7 @@
 // Tests: attempt to instantiate with incompatible types via `poly.tvar` (no template params on CallOp)
 module attributes {llzk.lang} {
   poly.template @template_a1 {
-    poly.param @N
+    poly.param @N : index
     function.def @f(%inp: !array.type<8,@N x !felt.type>) -> !felt.type {
       %c0 = arith.constant 0 : index
       %2 = array.read %inp[%c0, %c0] : !array.type<8,@N x !felt.type>, !felt.type
@@ -41,7 +41,7 @@ module attributes {llzk.lang} {
 // Tests: attempt to instantiate with incompatible types via `poly.tvar` (with template params on CallOp)
 module attributes {llzk.lang} {
   poly.template @template_b1 {
-    poly.param @N
+    poly.param @N : index
     function.def @f(%inp: !array.type<8,@N x !felt.type>) -> !felt.type {
       %c0 = arith.constant 0 : index
       %2 = array.read %inp[%c0, %c0] : !array.type<8,@N x !felt.type>, !felt.type

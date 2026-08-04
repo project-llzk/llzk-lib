@@ -46,7 +46,7 @@ MLIR_CAPI_EXPORTED bool llzkIsValidEmitEqType(MlirType type);
 /// valid types: {I1, Index, FeltType, TypeVarType}
 MLIR_CAPI_EXPORTED bool llzkIsValidConstReadType(MlirType type);
 
-/// valid types: isValidType() - {ArrayType}
+/// valid types: isValidType() - {ArrayType}, plus `NoneType` for shape-only arrays
 MLIR_CAPI_EXPORTED bool llzkIsValidArrayElemType(MlirType type);
 
 /// Checks if the type is a LLZK Array and it also contains a valid LLZK type.

@@ -544,7 +544,7 @@ module attributes {llzk.lang} {
 // TypeVarType in EmitContainmentOp, non-exact match via unification of `tvar`
 module attributes {llzk.lang} {
   poly.template @TComponentF1 {
-    poly.param @C
+    poly.param @C : index
     poly.param @T
 
     struct.def @ComponentF1 {
@@ -560,7 +560,7 @@ module attributes {llzk.lang} {
   }
 
   poly.template @TComponentF2 {
-    poly.param @C
+    poly.param @C : index
     poly.param @X
     poly.param @Y
 
@@ -578,7 +578,7 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TComponentF1 {
-// CHECK-NEXT:      poly.param @C
+// CHECK-NEXT:      poly.param @C : index
 // CHECK-NEXT:      poly.param @T
 // CHECK-NEXT:      struct.def @ComponentF1 {
 // CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<@C x !poly.tvar<@T>>) -> !struct.type<@TComponentF1::@ComponentF1<[@C, @T]>> attributes {function.allow_witness} {
@@ -592,7 +592,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TComponentF2 {
-// CHECK-NEXT:      poly.param @C
+// CHECK-NEXT:      poly.param @C : index
 // CHECK-NEXT:      poly.param @X
 // CHECK-NEXT:      poly.param @Y
 // CHECK-NEXT:      struct.def @ComponentF2 {
@@ -724,7 +724,7 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   poly.template @TComponentG {
-    poly.param @S
+    poly.param @S : index
     poly.param @T
 
     struct.def @ComponentG {
@@ -761,7 +761,7 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TComponentG {
-// CHECK-NEXT:      poly.param @S
+// CHECK-NEXT:      poly.param @S : index
 // CHECK-NEXT:      poly.param @T
 // CHECK-NEXT:      struct.def @ComponentG {
 // CHECK-NEXT:        struct.member @f : !array.type<@S x !poly.tvar<@T>>

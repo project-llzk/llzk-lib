@@ -43,6 +43,26 @@ available in `mlir-opt` are not available in `llzk-opt`.
 
 \include{doc,raise=1} build/doc/mlir/passes/LLZKValidationPasses.md
 
+# llzk-translate {#llzk-translate}
+
+`llzk-translate` is a version of the `mlir-translate` tool. Includes translations for backends 
+specific to LLZK along with translations available in upstream MLIR (i.e. LLVM or C++).
+`llzk-translate -h` will show a list of all available flags and options.
+
+The tool expects that the IR has already been converted to the backend's dialect IR. For example:
+
+```sh 
+llzk-opt <input.llzk> --llzk-to-pcl | llzk-translate --pcl-to-lisp
+```
+
+#### LLZK-Specific Options
+
+```
+--pcl-to-lisp           Translates from PCL IR to PCL lisp
+--smt-to-smtlib         Translates from SMT to SMTLIB
+--zklean-to-lean        Translates from zkLean dialects IR to Lean code
+```
+
 # llzk-witgen {#llzk-witgen}
 
 `llzk-witgen` executes LLZK witness-generation logic for the concrete main
@@ -129,6 +149,64 @@ witness generation concrete and executable:
 
 Template parameters and affine instantiations are therefore supported only when
 they can be fully resolved by the preprocessing pipeline before execution.
+
+# llzk-smt-check {#llzk-smt-check}
+
+`llzk-smt-check` runs an external SMT solver on an SMT-LIB 2 script and reports
+the result of each `check-sat` stage. It is intended to consume the staged
+SMT-LIB emitted by `llzk-opt --smt-to-smtlib`, including explicit metadata
+produced from `smt.set_info` ops such as `(set-info :llzk-stage "pre")` and
+`(set-info :status unsat)`.
+
+#### Basic Usage
+
+```sh
+llzk-smt-check input.smt2
+llzk-opt --smt-to-smtlib -o /dev/null input.llzk | llzk-smt-check -
+```
+
+`--smt-to-smtlib` exports the unique top-level `smt.solver` directly contained
+in the root `builtin.module`. Module-scope `func.func` definitions are treated
+as helpers that may be called from within that solver body. Exported scripts
+preserve any `smt.set_logic` operation in that solver and otherwise begin with
+the conservative fallback `(set-logic ALL)`. Any staged metadata consumed by
+`llzk-smt-check` must be introduced explicitly in the SMT dialect IR using
+`smt.set_info`, for example:
+
+```mlir
+smt.set_info ":llzk-root" "CheckGate"
+smt.set_info ":llzk-stage" "pre"
+smt.set_info ":status" unsat
+```
+
+`smt.check` lowers only to a bare `(check-sat)`. Because SMT-LIB scripts cannot
+branch on `check-sat` results internally, `--smt-to-smtlib` accepts only
+`smt.check` operations whose `sat`, `unknown`, and `unsat` regions are empty.
+Result-dependent script behavior would need a higher-level driver format outside
+SMT-LIB.
+
+#### LLZK-Specific Options
+
+```
+--solver-binary=<path>      SMT solver executable to run (default: z3)
+--quiet                     Suppress per-stage summaries and rely on exit status
+--dump-raw-output           Print raw solver stdout after the stage summaries
+```
+
+#### Behavior
+
+- The tool reads SMT-LIB from a file or stdin.
+- `set-info :status <sat|unsat|unknown>` provides the expected result for the
+  subsequent `check-sat`.
+- `set-info :llzk-stage "<name>"` and `set-info :llzk-root "<name>"` provide
+  LLZK-specific stage and root labels for the subsequent summaries.
+- When expected-result annotations are present, every reported solver result
+  must match the expected `sat`, `unsat`, or `unknown` result for the tool to
+  succeed.
+- Without annotations, the tool still executes the script and labels checks as
+  `check[0]`, `check[1]`, and so on.
+- Any solver launch failure, malformed output, result-count mismatch, or stage
+  mismatch causes a non-zero exit status.
 
 # llzk-lsp-server
 

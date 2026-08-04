@@ -148,6 +148,28 @@ def SetLogicOp : SMTOp<"set_logic", [HasParent<"smt::SolverOp">, ]> {
   let assemblyFormat = "$logic attr-dict";
 }
 
+def SetInfoOp : SMTOp<"set_info", []> {
+  let summary = "attach SMT-LIB set-info metadata to the script";
+  let description = [{
+    This operation models SMT-LIB's `(set-info ...)` command directly. It is a
+    generic script-level metadata mechanism and can be used for standardized
+    keys such as `:status` as well as tool-specific keys such as
+    `:llzk-stage`.
+
+    Example:
+    ```mlir
+    smt.set_info ":llzk-stage" "pre"
+    smt.set_info ":status" sat
+    smt.set_info ":notes" ("phase1" ok :custom)
+    ```
+  }];
+
+  let arguments = (ins KeywordAttr:$key, AnyAttr:$value);
+
+  let hasCustomAssemblyFormat = 1;
+  let hasVerifier = 1;
+}
+
 def AssertOp : SMTOp<"assert", []> {
   let summary = "assert that a boolean expression holds";
   let arguments = (ins BoolType:$input);

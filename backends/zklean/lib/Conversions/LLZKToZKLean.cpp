@@ -6,6 +6,23 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
+///
+/// \file
+/// LLZK -> ZKLean conversion overview:
+/// - `createConvertLLZKToZKLeanPass` constructs `ConvertLLZKToZKLeanPass`.
+/// - `ConvertLLZKToZKLeanPass::runOnOperation` creates the `ZKLean` module,
+///   copies relevant attrs, calls `convertModule`, and replaces the module body.
+/// - `convertModule` builds `LLZKToZKLeanState`, emits structs via
+///   `emitZKLeanStructDefs`, then walks `llzk::function::FuncDefOp` and delegates
+///   each to `convertFunction`.
+/// - `convertFunction` filters with `shouldConvertFunc`, instantiates
+///   `FunctionConverter`, runs `collectBlockOps`, and relies on
+///   `FunctionConverter::convertOperation` before `FunctionConverter::finalize`
+///   closes the new function.
+/// - `mapStructType`, `mapValue`, and `mapLeanValue` handle type and SSA mapping
+///   between LLZK values and ZKLean/ZKExpr values.
+///
+//===----------------------------------------------------------------------===//
 
 #include "zklean/Conversions/Passes.h"
 #include "zklean/Dialect/ZKBuilder/IR/ZKBuilderOps.h"
@@ -29,26 +46,12 @@
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseSet.h>
 
-// LLZK -> ZKLean conversion overview:
-// - `createConvertLLZKToZKLeanPass` constructs `ConvertLLZKToZKLeanPass`.
-// - `ConvertLLZKToZKLeanPass::runOnOperation` creates the `ZKLean` module,
-//   copies relevant attrs, calls `convertModule`, and replaces the module body.
-// - `convertModule` builds `LLZKToZKLeanState`, emits structs via
-//   `emitZKLeanStructDefs`, then walks `llzk::function::FuncDefOp` and delegates
-//   each to `convertFunction`.
-// - `convertFunction` filters with `shouldConvertFunc`, instantiates
-//   `FunctionConverter`, runs `collectBlockOps`, and relies on
-//   `FunctionConverter::convertOperation` before `FunctionConverter::finalize`
-//   closes the new function.
-// - `mapStructType`, `mapValue`, and `mapLeanValue` handle type and SSA mapping
-//   between LLZK values and ZKLean/ZKExpr values.
-using namespace mlir;
-
 namespace zklean {
-#define GEN_PASS_DECL_CONVERTLLZKTOZKLEANPASS
 #define GEN_PASS_DEF_CONVERTLLZKTOZKLEANPASS
 #include "zklean/Conversions/ConversionPasses.h.inc"
 } // namespace zklean
+
+using namespace mlir;
 
 namespace {
 
@@ -430,9 +433,10 @@ static LogicalResult convertModule(ModuleOp source, ModuleOp dest) {
 
 // Pass wrapper that appends a converted ZKLean module to the source.
 // Delegates all conversion logic to `convertModule`.
-class ConvertLLZKToZKLeanPass
-    : public zklean::impl::ConvertLLZKToZKLeanPassBase<ConvertLLZKToZKLeanPass> {
-public:
+class PassImpl : public zklean::impl::ConvertLLZKToZKLeanPassBase<PassImpl> {
+  using Base = ConvertLLZKToZKLeanPassBase<PassImpl>;
+  using Base::Base;
+
   // Replace the current `ModuleOp` with a ZKLean module.
   // Emits a new ModuleOp when possible; otherwise rewrites in-place.
   void runOnOperation() override {
@@ -463,13 +467,3 @@ public:
 };
 
 } // namespace
-
-namespace zklean {
-
-// Pass factory for `ConvertLLZKToZKLeanPass`.
-// Used by pass registration and external callers.
-std::unique_ptr<Pass> createConvertLLZKToZKLeanPass() {
-  return std::make_unique<ConvertLLZKToZKLeanPass>();
-}
-
-} // namespace zklean

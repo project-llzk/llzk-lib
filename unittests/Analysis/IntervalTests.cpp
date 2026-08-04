@@ -14,7 +14,6 @@
 #include "llzk/Analysis/Intervals.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
-#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/StreamHelper.h"

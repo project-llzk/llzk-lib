@@ -34,7 +34,7 @@ module attributes {llzk.lang = "zirgen"} {
   poly.template @TUnpack {
     poly.param @N
     poly.param @P
-    poly.param @Aff
+    poly.param @Aff : index
 
     struct.def @Unpack {
       struct.member @f: !struct.type<@TBar::@Bar<[#mapAdd]>>

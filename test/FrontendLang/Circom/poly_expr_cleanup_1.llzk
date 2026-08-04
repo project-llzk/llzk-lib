@@ -161,8 +161,11 @@ module attributes {llzk.lang = "circom"} {
 // CHECK-NEXT:    poly.template @T {
 // CHECK-NEXT:      poly.param @N
 // CHECK-NEXT:      poly.expr @UnusedIfResult {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type<"bn128">
-// CHECK-NEXT:        poly.yield %[[VAL_0]] : !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const 123 : <"bn128">
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const 675 : <"bn128">
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_0]], %[[VAL_1]] : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type<"bn128">
+// CHECK-NEXT:        poly.yield %[[VAL_3]] : !felt.type<"bn128">
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -257,8 +260,11 @@ module attributes {llzk.lang = "circom"} {
 // CHECK-NEXT:    poly.template @T {
 // CHECK-NEXT:      poly.param @N
 // CHECK-NEXT:      poly.expr @UnusedIfResult_HitsDeadValueRemovalBug {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type<"bn128">
-// CHECK-NEXT:        poly.yield %[[VAL_0]] : !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const 123 : <"bn128">
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const 675 : <"bn128">
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_0]], %[[VAL_1]] : <2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type<"bn128">
+// CHECK-NEXT:        poly.yield %[[VAL_3]] : !felt.type<"bn128">
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

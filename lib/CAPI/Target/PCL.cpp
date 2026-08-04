@@ -20,7 +20,7 @@
 
 #include "llzk-c/Target/PCL.h"
 
-#include <pcl/Export/Printer.h>
+#include <pcl/Target/PCL.h>
 
 #include <mlir/CAPI/Support.h>
 #include <mlir/CAPI/Utils.h>
@@ -28,8 +28,8 @@
 MlirLogicalResult
 llzkTranslateModuleToPCL(MlirOperation module, MlirStringCallback callback, void *userData) {
   mlir::detail::CallbackOstream stream(callback, userData);
-  auto op = unwrap_cast<ModuleOp>(module);
-  return wrap(pcl::exportPCL(op, stream));
+  auto op = mlir::unwrap_cast<mlir::ModuleOp>(module);
+  return wrap(pcl::moduleToPcl(op, stream));
 }
 
 #else

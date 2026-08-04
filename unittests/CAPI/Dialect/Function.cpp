@@ -11,9 +11,13 @@
 
 #include "../CAPITestBase.h"
 
+#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Util/Compare.h"
 
 #include <mlir-c/BuiltinAttributes.h>
+
+#include <mlir/CAPI/Wrap.h>
+#include <mlir/Parser/Parser.h>
 
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/SmallVector.h>
@@ -37,11 +41,18 @@ static MlirOperation create_func_def_op(
     llvm::ArrayRef<MlirAttribute> arg_attrs
 ) {
   auto location = mlirLocationUnknownGet(ctx);
-  return llzkFunction_FuncDefOpCreateWithAttrsAndArgAttrs(
-      location, mlirStringRefCreateFromCString(name), type,
+  MlirModule module = mlirModuleCreateEmpty(location);
+  MlirOpBuilder builder = mlirOpBuilderCreate(ctx);
+  mlirOpBuilderSetInsertionPointToStart(builder, mlirModuleGetBody(module));
+  MlirOperation op = llzkFunction_FuncDefOpBuildWithAttrsAndArgAttrs(
+      builder, location, mlirStringRefCreateFromCString(name), type,
       llzk::checkedCast<intptr_t>(attrs.size()), attrs.data(),
       llzk::checkedCast<intptr_t>(arg_attrs.size()), arg_attrs.data()
   );
+  mlirOperationRemoveFromParent(op);
+  mlirOpBuilderDestroy(builder);
+  mlirModuleDestroy(module);
+  return op;
 }
 
 static MlirOperation create_module_with_owned_op(MlirContext ctx, MlirOperation op) {
@@ -70,6 +81,13 @@ static MlirStringRef to_mlir_string_ref(llvm::StringRef value) {
 static MlirNamedAttribute create_arg_name_named_attr(MlirContext ctx, llvm::StringRef value) {
   return mlirNamedAttributeGet(
       mlirIdentifierGet(ctx, mlirStringRefCreateFromCString("function.arg_name")),
+      mlirStringAttrGet(ctx, to_mlir_string_ref(value))
+  );
+}
+
+static MlirNamedAttribute create_res_name_named_attr(MlirContext ctx, llvm::StringRef value) {
+  return mlirNamedAttributeGet(
+      mlirIdentifierGet(ctx, mlirStringRefCreateFromCString("function.res_name")),
       mlirStringAttrGet(ctx, to_mlir_string_ref(value))
   );
 }
@@ -130,7 +148,7 @@ struct FuncDialectTest : public CAPITest {
   }
 };
 
-TEST_F(FuncDialectTest, llzk_func_def_op_create_with_attrs_and_arg_attrs) {
+TEST_F(FuncDialectTest, llzk_func_def_op_build_with_attrs_and_arg_attrs) {
   MlirType in_types[] = {createIndexType()};
   auto in_attrs = empty_arg_attrs<1>(context);
   auto op = create_func_def_op(
@@ -208,11 +226,11 @@ TEST_F(FuncDialectTest, llzk_func_def_op_get_arg_name_attr) {
   );
   MlirOperation module = create_module_with_owned_op(context, op);
 
-  EXPECT_TRUE(llzkFunction_FuncDefOpHasArgNameAttr(op, 0));
+  EXPECT_TRUE(llzkFunction_FuncDefOpHasArgName(op, 0));
   expect_string_attr_value(llzkFunction_FuncDefOpGetArgNameAttr(op, 0), "input 0");
-  EXPECT_FALSE(llzkFunction_FuncDefOpHasArgNameAttr(op, 1));
+  EXPECT_FALSE(llzkFunction_FuncDefOpHasArgName(op, 1));
   EXPECT_TRUE(mlirAttributeIsNull(llzkFunction_FuncDefOpGetArgNameAttr(op, 1)));
-  EXPECT_FALSE(llzkFunction_FuncDefOpHasArgNameAttr(op, 2));
+  EXPECT_FALSE(llzkFunction_FuncDefOpHasArgName(op, 2));
   EXPECT_TRUE(mlirAttributeIsNull(llzkFunction_FuncDefOpGetArgNameAttr(op, 2)));
   EXPECT_TRUE(mlirOperationVerify(op));
 
@@ -230,17 +248,67 @@ TEST_F(FuncDialectTest, llzk_func_def_op_set_arg_name_attr) {
   );
   MlirOperation module = create_module_with_owned_op(context, op);
 
-  EXPECT_FALSE(llzkFunction_FuncDefOpHasArgNameAttr(op, 0));
-  EXPECT_FALSE(llzkFunction_FuncDefOpHasArgNameAttr(op, 1));
+  EXPECT_FALSE(llzkFunction_FuncDefOpHasArgName(op, 0));
+  EXPECT_FALSE(llzkFunction_FuncDefOpHasArgName(op, 1));
 
   llzkFunction_FuncDefOpSetArgName(op, 0, to_mlir_string_ref("x"));
   MlirAttribute arg1Name = mlirStringAttrGet(context, to_mlir_string_ref("a/b"));
   llzkFunction_FuncDefOpSetArgNameAttr(op, 1, arg1Name);
 
-  EXPECT_TRUE(llzkFunction_FuncDefOpHasArgNameAttr(op, 0));
+  EXPECT_TRUE(llzkFunction_FuncDefOpHasArgName(op, 0));
   expect_string_attr_value(llzkFunction_FuncDefOpGetArgNameAttr(op, 0), "x");
-  EXPECT_TRUE(llzkFunction_FuncDefOpHasArgNameAttr(op, 1));
+  EXPECT_TRUE(llzkFunction_FuncDefOpHasArgName(op, 1));
   expect_string_attr_value(llzkFunction_FuncDefOpGetArgNameAttr(op, 1), "a/b");
+  EXPECT_TRUE(mlirOperationVerify(op));
+
+  mlirOperationDestroy(module);
+}
+
+TEST_F(FuncDialectTest, llzk_func_def_op_get_res_name_attr) {
+  auto module = mlir::parseSourceString<mlir::ModuleOp>(
+      R"mlir(
+        module {
+          function.def private @foo() -> (index {function.res_name = "out"}, index)
+        }
+      )mlir",
+      mlir::ParserConfig(unwrap(context))
+  );
+  ASSERT_TRUE(module);
+
+  auto func = module->lookupSymbol<llzk::function::FuncDefOp>("foo");
+  ASSERT_TRUE(func);
+  MlirOperation op = wrap(func.getOperation());
+
+  EXPECT_TRUE(llzkFunction_FuncDefOpHasResName(op, 0));
+  expect_string_attr_value(llzkFunction_FuncDefOpGetResNameAttr(op, 0), "out");
+  EXPECT_FALSE(llzkFunction_FuncDefOpHasResName(op, 1));
+  EXPECT_TRUE(mlirAttributeIsNull(llzkFunction_FuncDefOpGetResNameAttr(op, 1)));
+  EXPECT_FALSE(llzkFunction_FuncDefOpHasResName(op, 2));
+  EXPECT_TRUE(mlirAttributeIsNull(llzkFunction_FuncDefOpGetResNameAttr(op, 2)));
+  EXPECT_TRUE(mlirOperationVerify(op));
+}
+
+TEST_F(FuncDialectTest, llzk_func_def_op_set_res_name_attr) {
+  MlirType out_types[] = {createIndexType(), createIndexType()};
+  MlirNamedAttribute attrs[] = {create_private_visibility_attr(context)};
+  auto op = create_func_def_op(
+      context, "foo",
+      create_func_type(context, llvm::ArrayRef<MlirType>(), llvm::ArrayRef(out_types, 2)),
+      llvm::ArrayRef(attrs, 1), llvm::ArrayRef<MlirAttribute>()
+  );
+  MlirOperation module = create_module_with_owned_op(context, op);
+
+  EXPECT_FALSE(llzkFunction_FuncDefOpHasResName(op, 0));
+  EXPECT_FALSE(llzkFunction_FuncDefOpHasResName(op, 1));
+
+  llzkFunction_FuncDefOpSetResName(op, 0, to_mlir_string_ref("out"));
+  MlirAttribute res1Name = create_res_name_named_attr(context, "a/b").attribute;
+  llzkFunction_FuncDefOpSetResNameAttr(op, 1, res1Name);
+
+  EXPECT_TRUE(llzkFunction_FuncDefOpHasResName(op, 0));
+  expect_string_attr_value(llzkFunction_FuncDefOpGetResNameAttr(op, 0), "out");
+  EXPECT_TRUE(llzkFunction_FuncDefOpHasResName(op, 1));
+  expect_string_attr_value(llzkFunction_FuncDefOpGetResNameAttr(op, 1), "a/b");
   EXPECT_TRUE(mlirOperationVerify(op));
 
   mlirOperationDestroy(module);
@@ -265,9 +333,11 @@ TEST_F(FuncDialectTest, llzk_func_def_op_get_fully_qualified_name) {
 
 false_pred_test(llzk_func_def_op_name_is_compute, llzkFunction_FuncDefOpNameIsCompute);
 false_pred_test(llzk_func_def_op_name_is_constrain, llzkFunction_FuncDefOpNameIsConstrain);
+false_pred_test(llzk_func_def_op_name_is_product, llzkFunction_FuncDefOpNameIsProduct);
 false_pred_test(llzk_func_def_op_is_in_struct, llzkFunction_FuncDefOpIsInStruct);
 false_pred_test(llzk_func_def_op_is_struct_compute, llzkFunction_FuncDefOpIsStructCompute);
 false_pred_test(llzk_func_def_op_is_struct_constrain, llzkFunction_FuncDefOpIsStructConstrain);
+false_pred_test(llzk_func_def_op_is_struct_product, llzkFunction_FuncDefOpIsStructProduct);
 
 struct CallOpBuildFuncHelper : public TestAnyBuildFuncHelper<FuncDialectTest> {
   bool callIsA(MlirOperation op) override { return llzkOperationIsA_Function_CallOp(op); }
@@ -470,12 +540,40 @@ TEST_F(FuncDialectTest, llzk_call_op_get_callee_type) {
 call_pred_test(test_llzk_operation_is_a_call_op_pass, llzkOperationIsA_Function_CallOp, true);
 call_pred_test(test_llzk_call_op_callee_is_compute, llzkFunction_CallOpCalleeIsCompute, false);
 call_pred_test(test_llzk_call_op_callee_is_constrain, llzkFunction_CallOpCalleeIsConstrain, false);
+call_pred_test(test_llzk_call_op_callee_is_product, llzkFunction_CallOpCalleeIsProduct, false);
 call_pred_test(
     test_llzk_call_op_callee_is_struct_compute, llzkFunction_CallOpCalleeIsStructCompute, false
 );
 call_pred_test(
     test_llzk_call_op_callee_is_struct_constrain, llzkFunction_CallOpCalleeIsStructConstrain, false
 );
+call_pred_test(
+    test_llzk_call_op_callee_is_struct_product, llzkFunction_CallOpCalleeIsStructProduct, false
+);
+
+TEST_F(FuncDialectTest, llzk_call_op_callee_is_product_positive) {
+  auto builder = mlirOpBuilderCreate(context);
+  auto location = mlirLocationUnknownGet(context);
+  auto parentModule = cppGenStructAndSetInsertionPoint(
+      builder, location, llzk::function::FunctionKind::StructProduct
+  );
+  (void)parentModule;
+  auto *parentOp = unwrap(builder)->getInsertionBlock()->getParentOp();
+  auto callee = llvm::cast<llzk::function::FuncDefOp>(parentOp);
+
+  MlirOperation call =
+      llzkFunction_CallOpBuildToCallee(builder, location, wrap(callee), 0, (const MlirValue *)NULL);
+
+  EXPECT_TRUE(llzkFunction_CallOpCalleeIsProduct(call));
+  EXPECT_TRUE(llzkFunction_CallOpCalleeIsStructProduct(call));
+  EXPECT_FALSE(llzkFunction_CallOpCalleeIsCompute(call));
+  EXPECT_FALSE(llzkFunction_CallOpCalleeIsConstrain(call));
+  EXPECT_FALSE(llzkFunction_CallOpCalleeIsStructCompute(call));
+  EXPECT_FALSE(llzkFunction_CallOpCalleeIsStructConstrain(call));
+
+  mlirOperationDestroy(call);
+  mlirOpBuilderDestroy(builder);
+}
 
 //===----------------------------------------------------------------------===//
 // CallOp operand getter tests (mixed argOperands + mapOperands)

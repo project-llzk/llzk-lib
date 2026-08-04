@@ -12,10 +12,12 @@
 
 include "llzk/Dialect/Verif/IR/Dialect.td"
 include "llzk/Dialect/Verif/IR/OpInterfaces.td"
+include "llzk/Dialect/SMT/IR/SMTTypes.td"
 include "mlir/Interfaces/CallInterfaces.td"
 include "mlir/Interfaces/FunctionInterfaces.td"
 include "llzk/Dialect/Shared/OpTraits.td"
 include "llzk/Dialect/Shared/Types.td"
+include "llzk/Dialect/Felt/IR/Types.td"
 
 include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/OpBase.td"
@@ -25,9 +27,7 @@ class VerifDialectOp<string mnemonic, list<Trait> traits = []>
     : Op<VerifDialect, mnemonic, traits>;
 
 class ConditionOp<string mnemonic, list<Trait> traits = []>
-    : VerifDialectOp<mnemonic,
-                     traits#[ConditionOpInterface,
-                             HasAncestor<"::llzk::verif::ContractOp">]> {
+    : VerifDialectOp<mnemonic, traits#[ConditionOpInterface]> {
 
   let arguments = (ins I1:$condition);
   let results = (outs);
@@ -45,12 +45,46 @@ class ConditionOp<string mnemonic, list<Trait> traits = []>
   }];
 }
 
+class ContractConditionOp<string mnemonic, list<Trait> traits = []>
+    : ConditionOp<mnemonic, traits#[HasAncestor<"::llzk::verif::ContractOp">]>;
+
+//===------------------------------------------------------------------===//
+// Struct verification condition operations
+//===------------------------------------------------------------------===//
+
+def VerifAssertOp : ConditionOp<"assert", []> {
+  let summary = "An assertion in the target of a contract, derived from one of "
+                "the contract's specifications";
+  let description = summary;
+}
+
+def VerifProveOp : ConditionOp<"prove", []> {
+  let summary = "A proof obligation in the target of a contract, derived from"
+                "one of the contract's specifications";
+  let description = summary;
+}
+
+def VerifSMTProveOp : Op<VerifDialect, "smt_prove", []> {
+  let arguments = (ins BoolType:$condition);
+  let summary = "A lowered proof obligation over an SMT expression";
+  let assemblyFormat = [{ $condition attr-dict }];
+}
+
 //===------------------------------------------------------------------===//
 // Precondition operations
 //===------------------------------------------------------------------===//
 
 class RequireOpBase<string mnemonic, list<Trait> traits = []>
-    : ConditionOp<mnemonic, traits#[PreconditionOpInterface]>;
+    : ContractConditionOp<mnemonic, traits#[PreconditionOpInterface]> {
+  let description = [{
+    Base of an operation that encodes a precondition.
+
+    Preconditions:
+    - May not depend on values transitively derived from struct member reads
+    or from function return values.
+    - May not be present on the `llzk.main` entry struct.
+  }];
+}
 
 def RequireComputeOp : RequireOpBase<"require_compute"> {
   let summary = "witness computation precondition";
@@ -65,7 +99,7 @@ def RequireConstrainOp : RequireOpBase<"require_constrain"> {
 //===------------------------------------------------------------------===//
 
 class EnsureOpBase<string mnemonic, list<Trait> traits = []>
-    : ConditionOp<mnemonic, traits#[PostconditionOpInterface]>;
+    : ContractConditionOp<mnemonic, traits#[PostconditionOpInterface]>;
 
 def EnsureComputeOp : EnsureOpBase<"ensure_compute"> {
   let summary = "witness computation postcondition";
@@ -81,11 +115,12 @@ def EnsureConstrainOp : EnsureOpBase<"ensure_constrain"> {
 
 def ContractOp
     : VerifDialectOp<
-          "contract", [ParentOneOf<["::mlir::ModuleOp",
-                                    "::llzk::polymorphic::TemplateOp"]>,
-                       DeclareOpInterfaceMethods<SymbolUserOpInterface>,
-                       AffineScope, AutomaticAllocationScope,
-                       FunctionOpInterface, NoTerminator, IsolatedFromAbove]> {
+          "contract",
+          [ParentOneOf<["::mlir::ModuleOp", "::llzk::polymorphic::TemplateOp"]>,
+           DeclareOpInterfaceMethods<SymbolUserOpInterface>, AffineScope,
+           AutomaticAllocationScope, FunctionOpInterface,
+           SingleBlockImplicitTerminator<"::llzk::verif::ContractEndOp">,
+           IsolatedFromAbove]> {
   let summary = "defines a specification contract for a given symbol";
   let description = [{
     A specification contract for a given function or struct in the circuit.
@@ -102,10 +137,13 @@ def ContractOp
     return values are appended to the end of the contract's argument list.
 
     Contracts may not directly target struct functions; they must target the structs themselves.
+    Contracts targeting the module's `llzk.main` struct may contain `verif.require_compute`
+    or `verif.require_constrain` operations. A circuit whose main-level contract contains such
+    preconditions is valid only for inputs that satisfy them.
 
-    For templated targets (i.e., functions or structs within a `poly.template`),
-    the contract body may reference the target template's parameters and
-    expressions even if the contract is physically nested elsewhere.
+    For templated targets (i.e., functions or structs within a `poly.template`), the contract
+    body may reference the target template's parameters and expressions. If a contract is nested
+    inside a `poly.template`, then the target must be in that same template.
 
     Examples:
 
@@ -137,9 +175,60 @@ def ContractOp
 
   let hasCustomAssemblyFormat = 1;
   let hasVerifier = 1;
+  let hasRegionVerifier = 1;
 
-  // Builder that infers all information from the target.
-  let builders = [OpBuilder<(ins "::llvm::StringRef":$name,
+  // Define builders manually so builder-created contracts always contain a
+  // complete single-block body with the implicit `verif.contract_end`.
+  let skipDefaultBuilders = 1;
+  let builders = [OpBuilder<(ins "::mlir::StringAttr":$sym_name,
+                                "::mlir::SymbolRefAttr":$target,
+                                "::mlir::TypeAttr":$function_type,
+                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs),
+                            [{
+        build($_builder, $_state, ::mlir::TypeRange {}, sym_name, target, function_type, arg_attrs);
+      }]>,
+                  OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
+                                "::mlir::StringAttr":$sym_name,
+                                "::mlir::SymbolRefAttr":$target,
+                                "::mlir::TypeAttr":$function_type,
+                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs),
+                            [{
+        $_state.getOrAddProperties<Properties>().sym_name = sym_name;
+        $_state.getOrAddProperties<Properties>().target = target;
+        $_state.getOrAddProperties<Properties>().function_type = function_type;
+        if (arg_attrs) {
+          $_state.getOrAddProperties<Properties>().arg_attrs = arg_attrs;
+        }
+        initializeEmptyBody(
+            $_builder, $_state, ::mlir::cast<::mlir::FunctionType>(function_type.getValue())
+        );
+        assert(resultTypes.size() == 0u && "mismatched number of results");
+        $_state.addTypes(resultTypes);
+      }]>,
+                  OpBuilder<(ins "::llvm::StringRef":$sym_name,
+                                "::mlir::SymbolRefAttr":$target,
+                                "::mlir::FunctionType":$function_type,
+                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs),
+                            [{
+        build($_builder, $_state, ::mlir::TypeRange {}, sym_name, target, function_type, arg_attrs);
+      }]>,
+                  OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
+                                "::llvm::StringRef":$sym_name,
+                                "::mlir::SymbolRefAttr":$target,
+                                "::mlir::FunctionType":$function_type,
+                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs),
+                            [{
+        $_state.getOrAddProperties<Properties>().sym_name = $_builder.getStringAttr(sym_name);
+        $_state.getOrAddProperties<Properties>().target = target;
+        $_state.getOrAddProperties<Properties>().function_type = ::mlir::TypeAttr::get(function_type);
+        if (arg_attrs) {
+          $_state.getOrAddProperties<Properties>().arg_attrs = arg_attrs;
+        }
+        initializeEmptyBody($_builder, $_state, function_type);
+        assert(resultTypes.size() == 0u && "mismatched number of results");
+        $_state.addTypes(resultTypes);
+      }]>,
+                  OpBuilder<(ins "::llvm::StringRef":$name,
                       "llvm::StringRef":$target)>,
                   OpBuilder<(ins "::llvm::StringRef":$name,
                       "::mlir::SymbolRefAttr":$target)>];
@@ -223,7 +312,44 @@ def ContractOp
       ::mlir::SymbolTableCollection tables;
       return getFuncTarget(tables);
     }
+
+    /// Return the operation that this contract targets, or failure if it does not
+    /// target an operation that implements the `ContractTarget` op interface or is not found.
+    ::mlir::FailureOr<SymbolLookupResult<::llzk::verif::ContractTargetOpInterface>> getTargetOp(::mlir::SymbolTableCollection &tables);
+
+    ::mlir::FailureOr<SymbolLookupResult<::llzk::verif::ContractTargetOpInterface>> getTargetOp() {
+      ::mlir::SymbolTableCollection tables;
+      return getTargetOp(tables);
+    }
+
+  private:
+    /// Populate a builder-created contract body with one entry block matching
+    /// the function signature and insert the implicit `verif.contract_end`.
+    static void initializeEmptyBody(
+        ::mlir::OpBuilder &builder, ::mlir::OperationState &state,
+        ::mlir::FunctionType functionType
+    );
   }];
+}
+
+//===------------------------------------------------------------------===//
+// ContractEndOp
+//===------------------------------------------------------------------===//
+
+def ContractEndOp
+    : VerifDialectOp<"contract_end", [Pure, Terminator,
+                                      HasParent<"::llzk::verif::ContractOp">]> {
+  let summary = "terminates a verif.contract body";
+  let description = [{
+    Implicit terminator for `verif.contract` regions. This operation is inserted
+    automatically by the parser and omitted by the custom printer so contract
+    syntax remains terminator-free.
+
+    A terminator is expected by certain MLIR utilities (e.g., the data-flow analysis
+    framework), which is why this op is added.
+  }];
+
+  let assemblyFormat = "attr-dict";
 }
 
 //===------------------------------------------------------------------===//
@@ -388,6 +514,170 @@ def IncludeOp
         const UnificationMap &unifications
     );
   }];
+}
+
+//===------------------------------------------------------------------===//
+// InvariantOp
+//===------------------------------------------------------------------===//
+
+def InvariantOp
+    : VerifDialectOp<"invariant", [HasAncestor<"::llzk::verif::ContractOp">,
+                                   NoTerminator, SingleBlock]> {
+
+  let summary = "loop invariant definition operation";
+  let description = [{
+    Defines an invariant for a loop inside the target of a contract.
+
+    The targeted loop op must implement the `InvariantTargetOpInterface`.
+    This interface is already implemented by the `scf.while` and `scf.for`
+    operations. The loop name is defined on either of those ops with a
+    string attribute named `loop_label`.
+
+    The arguments of the body must match those declared by the target op.
+    In the case of `scf.for` the control values must also be block arguments
+    in the following order: lower bound, induction variable, upper bound, and stride.
+
+    Example:
+    ```
+    module attributes {llzk.lang} {
+      struct.def @Top {
+        function.def @compute() -> !struct.type<@Top> {
+          %self = struct.new : !struct.type<@Top>
+          %c0 = arith.constant 0 : index
+          %c10 = arith.constant 10 : index
+          %c1 = arith.constant 1  : index
+          %0 = felt.const  5
+          %1 = scf.for %iv = %c0 to %c10 step %c1 iter_args(%2 = %0) -> !felt.type {
+            scf.yield %2 : !felt.type
+          } {loop_label = "loopA"}
+          function.return %self : !struct.type<@Top>
+        }
+        function.def @constrain(%self: !struct.type<@Top>)  {
+          function.return
+        }
+      }
+
+      verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
+        verif.invariant for @loopA(%lb: index, %iv: index, %ub: index, %step: index, %extra: !felt.type) {
+          %true = arith.constant  true
+          verif.require_compute %true
+        }
+      }
+    }
+    ```
+  }];
+
+  let arguments = (ins StrAttr:$loop_name, TypeArrayAttr:$loop_arg_types);
+
+  let regions = (region SizedRegion<1>:$region);
+
+  let skipDefaultBuilders = 1;
+  let builders = [OpBuilder<(ins "::mlir::StringRef":$loop_name,
+      CArg<"::llvm::ArrayRef<::mlir::Type>", "{}">:$loop_arg_types,
+      CArg<"::llvm::ArrayRef<::mlir::Location>", "{}">:$loop_arg_locs)>];
+
+  let hasCustomAssemblyFormat = 1;
+  let hasVerifier = 1;
+
+  let extraClassDeclaration = [{
+    /// Returns the contract operation that contains this invariant.
+    ::llzk::verif::ContractOp getParentContract();
+    /// Returns the loop target.
+    ::mlir::FailureOr<::llzk::verif::InvariantTargetOpInterface> getTarget();
+  }];
+}
+
+//===------------------------------------------------------------------===//
+// Invariant inner ops
+//===------------------------------------------------------------------===//
+
+class InvariantInnerOp<string mnemonic, list<Trait> traits = []>
+    : VerifDialectOp<
+          mnemonic,
+          traits#[HasAncestor<"::llzk::verif::InvariantOp">,
+                  DeclareOpInterfaceMethods<MemoryEffectsOpInterface>]> {
+
+  let summary = mnemonic#" value operation";
+  let description = [{
+    Indicates that a value }]#mnemonic#[{ on each iteration of the loop.
+
+    This declares the `MemoryEffectsOpInterface`, which, like the `cf.assert` (MLIR `cf` dialect)
+    and `bool.assert` (LLZK `bool` dialect) ops, adds a MemWrite affect to model program termination.
+  }];
+
+  let arguments = (ins LLZK_FeltType:$value);
+
+  let extraClassDefinition = [{
+    // This side effect models "program termination". Based on
+    // https://github.com/llvm/llvm-project/blob/f325e4b2d836d6e65a4d0cf3efc6b0996ccf3765/mlir/lib/Dialect/ControlFlow/IR/ControlFlowOps.cpp#L92-L97
+    void $cppClass::getEffects(
+        ::mlir::SmallVectorImpl<::mlir::SideEffects::EffectInstance<::mlir::MemoryEffects::Effect>> &effects
+    ) {
+      effects.emplace_back(::mlir::MemoryEffects::Write::get());
+    }
+  }];
+
+  let assemblyFormat = "$value attr-dict";
+}
+
+def IncreasesOp : InvariantInnerOp<"increases"> {}
+
+def DecreasesOp : InvariantInnerOp<"decreases"> {}
+
+def StepOp : VerifDialectOp<
+                 "step", [HasAncestor<"::llzk::verif::InvariantOp">,
+                          DeclareOpInterfaceMethods<MemoryEffectsOpInterface>,
+                          NoRegionArguments, SingleBlock]> {
+  let summary = "step predicate operation";
+  let description = [{
+    Defines a predicate that must be satisfied between iterations of the loop.
+
+    The predicate can access the value in the previous iteration by using the `verif.old` operation.
+
+    Declares the `MemoryEffectsOpInterface`, which, like the `cf.assert` (MLIR `cf` dialect)
+    and `bool.assert` (LLZK `bool` dialect) ops, adds a MemWrite affect to model program termination.
+  }];
+
+  let regions = (region SizedRegion<1>:$region);
+
+  let extraClassDefinition = [{
+    // This side effect models "program termination". Based on
+    // https://github.com/llvm/llvm-project/blob/f325e4b2d836d6e65a4d0cf3efc6b0996ccf3765/mlir/lib/Dialect/ControlFlow/IR/ControlFlowOps.cpp#L92-L97
+    void $cppClass::getEffects(
+        ::mlir::SmallVectorImpl<::mlir::SideEffects::EffectInstance<::mlir::MemoryEffects::Effect>> &effects
+    ) {
+      effects.emplace_back(::mlir::MemoryEffects::Write::get());
+    }
+  }];
+
+  let assemblyFormat = "$region attr-dict";
+}
+
+def StepYieldOp
+    : VerifDialectOp<"step.yield", [HasParent<"StepOp">, Terminator]> {
+  let summary = "step yield operation";
+  let description = [{
+    Terminator operation for `verif.step` blocks. Takes the boolean value carrying the predicate's result.
+  }];
+
+  let arguments = (ins I1:$value);
+
+  let assemblyFormat = "$value attr-dict";
+}
+
+def OldOp : VerifDialectOp<"old", [Pure, HasAncestor<"::llzk::verif::StepOp">,
+                                   AllTypesMatch<["value", "result"]>]> {
+  let summary = "old operation";
+  let description = [{
+    This operation allows accessing the value of an expression in the previous iteration of the loop.
+
+    In can only be used within the body of a `verif.step` operation.
+  }];
+
+  let arguments = (ins AnyLLZKType:$value);
+  let results = (outs AnyLLZKType:$result);
+
+  let assemblyFormat = "$value `:` type($result) attr-dict";
 }
 
 #endif // LLZK_VERIF_OPS

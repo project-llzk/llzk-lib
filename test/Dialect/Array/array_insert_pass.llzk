@@ -158,8 +158,8 @@ function.def @more_dimensions(%a: i1, %b: i1, %c: i1, %d: i1, %e: i1, %f: i1) {
 
 module attributes {llzk.lang} {
   poly.template @TUnificationInDims {
-    poly.param @A
-    poly.param @B
+    poly.param @A : index
+    poly.param @B : index
 
     struct.def @UnificationInDims {
       function.def @compute(%a: !array.type<@A x i1>, %b: !array.type<@B x i1>) -> !struct.type<@TUnificationInDims::@UnificationInDims<[@A, @B]>> {
@@ -177,8 +177,8 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TUnificationInDims {
-// CHECK-NEXT:      poly.param @A
-// CHECK-NEXT:      poly.param @B
+// CHECK-NEXT:      poly.param @A : index
+// CHECK-NEXT:      poly.param @B : index
 // CHECK-NEXT:      struct.def @UnificationInDims {
 // CHECK-NEXT:        function.def @compute(
 // CHECK-SAME:                  %[[V_0:[0-9a-zA-Z_\.]+]]: !array.type<@A x i1>,

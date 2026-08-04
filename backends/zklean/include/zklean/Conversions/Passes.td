@@ -29,7 +29,6 @@ def ConvertLLZKToZKLeanPass
                            "llzk::zkexpr::ZKExprDialect",
                            "llzk::zkbuilder::ZKBuilderDialect",
                            "llzk::zkleanlean::ZKLeanLeanDialect"];
-  let constructor = "zklean::createConvertLLZKToZKLeanPass()";
 }
 
 def ConvertZKLeanToLLZKPass
@@ -53,7 +52,6 @@ def ConvertZKLeanToLLZKPass
                            "llzk::zkexpr::ZKExprDialect",
                            "llzk::zkbuilder::ZKBuilderDialect",
                            "llzk::zkleanlean::ZKLeanLeanDialect"];
-  let constructor = "zklean::createConvertZKLeanToLLZKPass()";
 }
 
 #endif // ZKLEAN_CONVERSION_PASSES_TD

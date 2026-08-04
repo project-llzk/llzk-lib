@@ -49,6 +49,7 @@ Notes:
 
 # Manual Build Setup
 
+Note that the manual build instructions may be out of date; if you encounter issues, look at the build options as configured in Nix.
 LLZK requires the following to be installed:
 
 * CMake 3.18 or newer
@@ -94,8 +95,6 @@ cmake ../llvm -GNinja -DCMAKE_BUILD_TYPE=Release \
   -DLLVM_BUILD_TESTS=off \
   -DLLVM_TARGETS_TO_BUILD=host \
   -DCMAKE_INSTALL_PREFIX="$INSTALL_ROOT" \
-  -DLLVM_BUILD_LLVM_DYLIB=on \
-  -DLLVM_LINK_LLVM_DYLIB=on \
   -DLLVM_ENABLE_RTTI=on \
   -DLLVM_ENABLE_EH=on \
   -DLLVM_ENABLE_ASSERTIONS=on \
@@ -147,7 +146,6 @@ you can run the following commands:
   ``clang-format -i $(find include lib tools backends unittests -name '*.h' -o -name '*.cpp' -o -name '*.td' -type f)``
 * Run clang-tidy on C++ files:
   ``clang-tidy -p build/compile_commands.json $(find include/llzk lib tools backends unittests -name '*.h' -o -name '*.cpp' -type f)``
-  * Note that due to bugs in clang-tidy, this may segfault if running on all files.
 
 The build configuration will automatically export `compile_commands.json`, so
 LSP servers such as `clangd` should be able to pick up helpful IDE information

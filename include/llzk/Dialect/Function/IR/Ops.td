@@ -16,6 +16,7 @@
 #define LLZK_FUNC_OPS
 
 include "llzk/Dialect/Function/IR/Dialect.td"
+include "llzk/Dialect/Verif/IR/OpInterfaces.td"
 include "llzk/Dialect/Shared/OpTraits.td"
 include "llzk/Dialect/Shared/Types.td"
 
@@ -36,11 +37,12 @@ class FunctionDialectOp<string mnemonic, list<Trait> traits = []>
 
 def FuncDefOp
     : FunctionDialectOp<
-          "def",
-          [ParentOneOf<["::mlir::ModuleOp", "::llzk::component::StructDefOp",
-                        "::llzk::polymorphic::TemplateOp"]>,
-           DeclareOpInterfaceMethods<SymbolUserOpInterface>, AffineScope,
-           AutomaticAllocationScope, FunctionOpInterface, IsolatedFromAbove]> {
+          "def", [ParentOneOf<["::mlir::ModuleOp",
+                               "::llzk::component::StructDefOp",
+                               "::llzk::polymorphic::TemplateOp"]>,
+                  DeclareOpInterfaceMethods<SymbolUserOpInterface>, AffineScope,
+                  AutomaticAllocationScope, FunctionOpInterface,
+                  IsolatedFromAbove, ContractTarget]> {
   // NOTE: Cannot have SymbolTable trait because that would cause global
   // functions without a body to produce "Operations with a 'SymbolTable' must
   // have exactly one block"
@@ -191,6 +193,18 @@ def FuncDefOp
 
     /// Set the `function.arg_name` attribute for the argument at the given index from a string.
     void setArgName(unsigned index, ::llvm::StringRef name);
+
+    /// Return `true` iff the result at the given index has a `function.res_name` attribute.
+    bool hasResName(unsigned index);
+
+    /// Return the `function.res_name` attribute for the result at the given index.
+    ::std::optional<::mlir::StringAttr> getResNameAttr(unsigned index);
+
+    /// Set the `function.res_name` attribute for the result at the given index.
+    void setResNameAttr(unsigned index, const ::mlir::StringAttr &attr);
+
+    /// Set the `function.res_name` attribute for the result at the given index from a string.
+    void setResName(unsigned index, ::llvm::StringRef name);
 
     /// Required by FunctionOpInterface.
     /// Returns the region on the current operation that is callable. This may
@@ -457,11 +471,16 @@ def CallOp : FunctionDialectOp<
       return FUNC_NAME_COMPUTE == getCallee().getLeafReference();
     }
 
+    /// Return `true` iff the callee function name is `FUNC_NAME_PRODUCT` (this
+    /// does not check if the callee function is located within a StructDefOp).
+    inline bool calleeIsProduct() {
+      return FUNC_NAME_PRODUCT == getCallee().getLeafReference();
+    }
+
     /// Return `true` iff the callee function can contain witness generation code
     /// (this does not check if the callee function is located within a StructDefOp)
     inline bool calleeContainsWitnessGen() {
-      return FUNC_NAME_COMPUTE == getCallee().getLeafReference() ||
-             FUNC_NAME_PRODUCT == getCallee().getLeafReference();
+      return calleeIsCompute() || calleeIsProduct();
     }
 
     /// Return `true` iff the callee function name is `FUNC_NAME_CONSTRAIN` (this
@@ -470,6 +489,9 @@ def CallOp : FunctionDialectOp<
 
     /// Return `true` iff the callee function name is `FUNC_NAME_COMPUTE` within a StructDefOp.
     bool calleeIsStructCompute();
+
+    /// Return `true` iff the callee function name is `FUNC_NAME_PRODUCT` within a StructDefOp.
+    bool calleeIsStructProduct();
 
     /// Return `true` iff the callee function name is `FUNC_NAME_CONSTRAIN` within a StructDefOp.
     bool calleeIsStructConstrain();

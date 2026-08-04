@@ -14,13 +14,17 @@
 
 #pragma once
 
+#include "llzk/Analysis/SymbolDefTree.h"
+#include "llzk/Analysis/SymbolUseGraph.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Shared/TypeConversionPatterns.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Util/TypeHelper.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
@@ -30,13 +34,14 @@
 #include <mlir/IR/MLIRContext.h>
 #include <mlir/IR/Operation.h>
 #include <mlir/IR/PatternMatch.h>
+#include <mlir/IR/SymbolTable.h>
 #include <mlir/Transforms/DialectConversion.h>
 
+#include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Debug.h>
-
-#include <tuple>
 
 #define DEBUG_TYPE "poly-dialect-shared"
 
@@ -57,6 +62,103 @@ template <typename Check> inline bool runCheck(mlir::Operation *op, Check check)
 
 /// Return a new `ConversionTarget` allowing all LLZK-required dialects.
 mlir::ConversionTarget newBaseTarget(mlir::MLIRContext *ctx);
+
+/// Shared state for post-instantiation cleanup helpers.
+class CleanupBase {
+public:
+  mlir::SymbolTableCollection tables;
+
+  CleanupBase(
+      mlir::ModuleOp root, const SymbolDefTree &symDefTree, const SymbolUseGraph &symUseGraph
+  );
+
+protected:
+  mlir::ModuleOp rootMod;
+  const SymbolDefTree &defTree;
+  const SymbolUseGraph &useGraph;
+};
+
+/// Return `true` iff `op` is a cleanup candidate.
+bool isErasableDefinition(mlir::Operation *op);
+
+/// Removes parameterized definitions whose instantiated replacements now cover
+/// every remaining use.
+class FromEraseSet : public CleanupBase {
+public:
+  /// Note: paths in `tryToErase` should be relative to `root`.
+  FromEraseSet(
+      mlir::ModuleOp root, const SymbolDefTree &symDefTree, const SymbolUseGraph &symUseGraph,
+      llvm::DenseSet<mlir::SymbolRefAttr> &&tryToErasePaths
+  );
+
+  mlir::LogicalResult eraseUnusedDefinitions();
+
+  const llvm::DenseSet<mlir::SymbolOpInterface> &getTryToEraseSet() const { return tryToErase; }
+
+private:
+  /// The initial set of definitions that this should try to erase (if there are no other uses).
+  llvm::DenseSet<mlir::SymbolOpInterface> tryToErase;
+  /// Track visited nodes to avoid cycles and map if they were determined safe to remove or not.
+  llvm::DenseMap<mlir::SymbolOpInterface, bool> visitedPlusSafetyResult;
+  /// Cache results of 'lookup()' for performance.
+  llvm::DenseMap<const SymbolUseGraphNode *, mlir::SymbolOpInterface> lookupCache;
+
+  bool collectSafeToErase(mlir::SymbolOpInterface check);
+  bool collectSafeToErase(const SymbolDefTreeNode *check);
+  bool collectSafeToErase(const SymbolUseGraphNode *check);
+  mlir::SymbolOpInterface cachedLookup(const SymbolUseGraphNode *node);
+};
+
+/// Merge nested array dimensions produced by replacing an array element type.
+///
+/// If `array<4 x !poly.tvar<@T>>` is rewritten with `@T -> array<8 x index>`, the canonical
+/// aggregate shape should become `array<4,8 x index>` rather than an array whose element type
+/// is another array because the latter is not allowed in LLZK IR.
+array::ArrayType flattenInstantiatedArrayType(array::ArrayType inputTy, mlir::Type convertedElemTy);
+
+/// Build a struct type while representing an empty parameter list as absent.
+inline component::StructType
+getStructTypeWithParams(mlir::SymbolRefAttr nameRef, mlir::ArrayAttr params) {
+  return params && !params.empty() ? component::StructType::get(nameRef, params)
+                                   : component::StructType::get(nameRef);
+}
+
+/// Build a struct type while representing an empty parameter list as absent.
+inline component::StructType getStructTypeWithParams(
+    mlir::SymbolRefAttr nameRef, mlir::MLIRContext *ctx, mlir::ArrayRef<mlir::Attribute> params
+) {
+  return params.empty() ? component::StructType::get(nameRef)
+                        : component::StructType::get(nameRef, mlir::ArrayAttr::get(ctx, params));
+}
+
+/// Groups the information needed after concrete parameters have been chosen to decide how to name
+/// a new instantiated template and how to rewrite the remaining argument list at the use site.
+struct InstantiationLayout {
+  mlir::SmallVector<mlir::Attribute> remainingNames;
+  /// Ordered [parameter-name, concrete-value, ...] entries for exact partial-function reuse.
+  mlir::ArrayAttr concreteParamKey;
+  std::string templateNameWithAttrs;
+  mlir::ArrayAttr rewrittenCallParams;
+  /// The refined literal chunks; fully concrete generated templates clear this state.
+  mlir::ArrayAttr namePattern;
+};
+
+/// Derive the instantiated template name, remaining explicit parameters, and refined literal
+/// pattern. A malformed pattern is rejected even though TemplateOp verification normally runs
+/// before a transform; this keeps the owner boundary safe for programmatically built IR too.
+mlir::FailureOr<InstantiationLayout> buildInstantiationLayout(
+    TemplateOp parentTemplate, mlir::ArrayAttr callParams,
+    const llvm::DenseMap<mlir::Attribute, mlir::Attribute> &paramNameToConcrete
+);
+
+/// Clear inherited pattern state from a fully concrete template, or attach refined chunks before a
+/// partial template is inserted into a symbol table.
+void setInstantiationNamePattern(TemplateOp templateOp, mlir::ArrayAttr namePattern);
+
+/// Append concrete attributes to an opaque physical base name without interpreting its bytes.
+std::string buildOpaqueInstantiationName(
+    llvm::StringRef baseName, llvm::ArrayRef<mlir::Attribute> concreteAttrs
+);
 
 class LegalityCheckCallback {
 public:

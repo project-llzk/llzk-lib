@@ -30,4 +30,28 @@ function.def @f_not2(%a: !array.type<4 x !felt.type>) -> i1 attributes {function
   // expected-error@+1 {{'bool.not' op operand #0 must be 1-bit signless integer or type variable, but got '!array.type<4 x !felt.type>'}}
   %c = bool.not %a : !array.type<4 x !felt.type>
   function.return %c: i1
+}// -----
+
+function.def @f_forall(%a: !array.type<5 x index>) -> i1 attributes {function.allow_non_native_field_ops} {
+  // expected-error@+1 {{'bool.forall' op expects element type '!felt.type' but sort has element type 'index'}}
+  %c = bool.forall %e: !felt.type in %a: !array.type<5 x index> {
+    %c0 = arith.constant 0 : index
+    %1 = cast.toindex %e
+    %0 = arith.cmpi eq, %1, %c0 : index
+    bool.yield %0
+  }
+  function.return %c: i1
+}
+
+// -----
+
+function.def @f_exists(%a: !array.type<5 x index>) -> i1 attributes {function.allow_non_native_field_ops} {
+  // expected-error@+1 {{'bool.exists' op expects element type '!felt.type' but sort has element type 'index'}}
+  %c = bool.exists %e: !felt.type in %a: !array.type<5 x index> {
+    %c0 = arith.constant 0 : index
+    %1 = cast.toindex %e
+    %0 = arith.cmpi eq, %1, %c0 : index
+    bool.yield %0
+  }
+  function.return %c: i1
 }

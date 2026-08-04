@@ -11,16 +11,6 @@
         flake-utils.follows = "llzk-pkgs/flake-utils";
       };
     };
-
-    pcl-mlir-pkg = {
-      url = "github:Veridise/pcl-mlir";
-      inputs = {
-        shared-pkgs.follows = "llzk-pkgs";
-        nixpkgs.follows = "llzk-pkgs/nixpkgs";
-        flake-utils.follows = "llzk-pkgs/flake-utils";
-        release-helpers.follows = "release-helpers";
-      };
-    };
   };
 
   # Custom colored bash prompt
@@ -32,7 +22,6 @@
       nixpkgs,
       flake-utils,
       llzk-pkgs,
-      pcl-mlir-pkg,
       release-helpers,
     }:
     {
@@ -66,13 +55,11 @@
           llzk = final.callPackage ./nix/llzk.nix {
             clang = final.llzk-llvmPackages.clang-unwrapped;
             mlir_pkg = final.mlir;
-            pcl_pkg = final.pcl-mlir;
           };
           llzk-debug =
             (final.callPackage ./nix/llzk.nix {
               clang = final.llzk-llvmPackages-debug.clang-unwrapped;
               mlir_pkg = final.mlir-debug;
-              pcl_pkg = final.pcl-mlir-debug;
               cmakeBuildType = "Debug";
             }).overrideAttrs
               (attrs: {
@@ -191,8 +178,7 @@
 
           devShellBaseWithDefault = pkgs: final.devShellBase pkgs final.llzk-debug;
         };
-        # So downstream users don't need to apply the pcl-mlir-pkg overlay directly
-        overlays.default = nixpkgs.lib.composeExtensions pcl-mlir-pkg.overlays.default self.overlays.llzk;
+        overlays.default = self.overlays.llzk;
     }
     // (flake-utils.lib.eachDefaultSystem (
       system:
@@ -213,7 +199,6 @@
           # Copy the packages from imported overlays.
           inherit (pkgs) llzk llzk-debug;
           inherit (pkgs) mlir mlir-debug;
-          inherit (pkgs) pcl-mlir pcl-mlir-debug;
           inherit (pkgs) changelogCreator;
           inherit (pkgs) mlir-with-python llzk-with-python;
           # Prevent use of libllvm and llvm from nixpkgs, which will have
@@ -231,12 +216,10 @@
           llzk-installcheck-release = pkgs.callPackage ./nix/llzk-installcheck {
             mlir_pkg = pkgs.mlir;
             llzk_pkg = pkgs.llzk;
-            pcl_pkg = pkgs.pcl-mlir;
           };
           llzk-installcheck-debug = pkgs.callPackage ./nix/llzk-installcheck {
             mlir_pkg = pkgs.mlir-debug;
             llzk_pkg = pkgs.llzk-debug;
-            pcl_pkg = pkgs.pcl-mlir-debug;
           };
         };
 

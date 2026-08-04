@@ -22,13 +22,12 @@ def MemberWriteValidatorPass : LLZKPass<"llzk-validate-member-writes",
   let summary =
       "Detect multiple and missing writes to the same member of a component.";
   let description = [{
-      Detect multiple and missing writes to the same member of a component. 
-      
-      Note that this is overapproximate (i.e., some writes may erroneously 
-      be flagged as overwrites, and some members may erroneously be marked 
+      Detect multiple and missing writes to the same member of a component.
+
+      Note that this is overapproximate (i.e., some writes may erroneously
+      be flagged as overwrites, and some members may erroneously be marked
       unwritten).
   }];
-  let constructor = "llzk::createMemberWriteValidatorPass()";
 }
 
 #endif // LLZK_VALIDATION_PASSES_TD

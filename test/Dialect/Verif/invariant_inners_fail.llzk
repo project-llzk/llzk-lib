@@ -1,0 +1,101 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  struct.def @Top {
+    function.def @compute() -> !struct.type<@Top> {
+      %self = struct.new : !struct.type<@Top>
+      function.return %self : !struct.type<@Top>
+    }
+    function.def @constrain(%self: !struct.type<@Top>)  {
+      function.return
+    }
+  }
+
+  verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
+    // expected-error@+1 {{'verif.step' op must have an ancestor of type 'verif.invariant'}}
+    verif.step {
+      %2 = arith.constant true  
+      verif.step.yield %2
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Top {
+    function.def @compute() -> !struct.type<@Top> {
+      %self = struct.new : !struct.type<@Top>
+      function.return %self : !struct.type<@Top>
+    }
+    function.def @constrain(%self: !struct.type<@Top>)  {
+      function.return
+    }
+  }
+
+  verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
+    %0 = felt.const 1 
+    // expected-error@+1 {{'verif.increases' op must have an ancestor of type 'verif.invariant'}}
+    verif.increases %0
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Top {
+    function.def @compute() -> !struct.type<@Top> {
+      %self = struct.new : !struct.type<@Top>
+      function.return %self : !struct.type<@Top>
+    }
+    function.def @constrain(%self: !struct.type<@Top>)  {
+      function.return
+    }
+  }
+
+  verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
+    %0 = felt.const 1 
+    // expected-error@+1 {{'verif.decreases' op must have an ancestor of type 'verif.invariant'}}
+    verif.decreases %0
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Top {
+    function.def @compute() -> !struct.type<@Top> {
+      %self = struct.new : !struct.type<@Top>
+      function.return %self : !struct.type<@Top>
+    }
+    function.def @constrain(%self: !struct.type<@Top>)  {
+      function.return
+    }
+  }
+
+  verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
+    %0 = felt.const 1 
+    // expected-error@+1 {{'verif.old' op must have an ancestor of type 'verif.step'}}
+    %1 = verif.old %0 : !felt.type
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Top {
+    function.def @compute() -> !struct.type<@Top> {
+      %self = struct.new : !struct.type<@Top>
+      function.return %self : !struct.type<@Top>
+    }
+    function.def @constrain(%self: !struct.type<@Top>)  {
+      function.return
+    }
+  }
+
+  verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
+    %2 = arith.constant true  
+    // expected-error@+1 {{'verif.step.yield' op expects parent op 'verif.step'}}
+    verif.step.yield %2
+  }
+}

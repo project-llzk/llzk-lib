@@ -1,0 +1,101 @@
+// RUN: llzk-opt -verify-each -llzk-unused-declaration-elim %s | FileCheck %s
+// Regression for #562: nested component roots must not let live member references
+// lose their resolved member declarations during unused declaration elimination.
+
+module attributes {llzk.lang, llzk.main = !struct.type<@std::@C1>} {
+  module @std attributes {llzk.lang = "zirgen"} {
+    module @std attributes {llzk.lang = "zirgen"} {
+      module @risc0 {
+        struct.def @ValU32 {
+          struct.member @low : !felt.type {llzk.pub}
+          struct.member @high : !felt.type {llzk.pub}
+          function.def @compute(%arg0 : !felt.type, %arg1 : !felt.type) -> !struct.type<@risc0::@ValU32> attributes {function.allow_witness} {
+            %self = struct.new : !struct.type<@risc0::@ValU32>
+            struct.writem %self[@low] = %arg0 : !struct.type<@risc0::@ValU32>, !felt.type
+            struct.writem %self[@high] = %arg1 : !struct.type<@risc0::@ValU32>, !felt.type
+            function.return %self : !struct.type<@risc0::@ValU32>
+          }
+          function.def @constrain(%arg0 : !struct.type<@risc0::@ValU32>, %arg1 : !felt.type, %arg2 : !felt.type) attributes {function.allow_constraint} {
+            function.return
+          }
+        }
+        struct.def @Reg {
+          struct.member @reg : !felt.type {llzk.pub}
+          function.def @compute(%arg0 : !felt.type) -> !struct.type<@risc0::@Reg> attributes {function.allow_witness} {
+            %self = struct.new : !struct.type<@risc0::@Reg>
+            struct.writem %self[@reg] = %arg0 : !struct.type<@risc0::@Reg>, !felt.type
+            function.return %self : !struct.type<@risc0::@Reg>
+          }
+          function.def @constrain(%arg0 : !struct.type<@risc0::@Reg>, %arg1 : !felt.type) attributes {function.allow_constraint} {
+            %0 = struct.readm %arg0[@reg] : !struct.type<@risc0::@Reg>, !felt.type
+            constrain.eq %arg1, %0 : !felt.type, !felt.type
+            function.return
+          }
+        }
+      }
+    }
+    struct.def @C1 {
+      struct.member @z : !struct.type<@std::@risc0::@Reg> {llzk.pub}
+      function.def @compute(%arg0 : !felt.type, %arg1 : !felt.type) -> !struct.type<@C1> attributes {function.allow_witness} {
+        %self = struct.new : !struct.type<@C1>
+        %sum = felt.add %arg0, %arg1 : !felt.type, !felt.type
+        %reg = function.call @std::@risc0::@Reg::@compute(%sum) : (!felt.type) -> !struct.type<@std::@risc0::@Reg>
+        struct.writem %self[@z] = %reg : !struct.type<@C1>, !struct.type<@std::@risc0::@Reg>
+        function.return %self : !struct.type<@C1>
+      }
+      function.def @constrain(%arg0 : !struct.type<@C1>, %arg1 : !felt.type, %arg2 : !felt.type) attributes {function.allow_constraint} {
+        %z = struct.readm %arg0[@z] : !struct.type<@C1>, !struct.type<@std::@risc0::@Reg>
+        %sum = felt.add %arg1, %arg2 : !felt.type, !felt.type
+        function.call @std::@risc0::@Reg::@constrain(%z, %sum) : (!struct.type<@std::@risc0::@Reg>, !felt.type) -> ()
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@std::@C1>} {
+// CHECK-NEXT:  module @std attributes {llzk.lang = "zirgen"} {
+// CHECK-NEXT:    module @std attributes {llzk.lang = "zirgen"} {
+// CHECK-NEXT:      module @risc0 {
+// CHECK-NEXT:        struct.def @ValU32 {
+// CHECK-NEXT:          function.def @compute(%[[VAL_0:.*]]: !felt.type, %[[VAL_1:.*]]: !felt.type) -> !struct.type<@risc0::@ValU32> attributes {function.allow_witness} {
+// CHECK-NEXT:            %[[VAL_2:.*]] = struct.new : <@risc0::@ValU32>
+// CHECK-NEXT:            function.return %[[VAL_2]] : !struct.type<@risc0::@ValU32>
+// CHECK-NEXT:          }
+// CHECK-NEXT:          function.def @constrain(%[[VAL_3:.*]]: !struct.type<@risc0::@ValU32>, %[[VAL_4:.*]]: !felt.type, %[[VAL_5:.*]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:            function.return
+// CHECK-NEXT:          }
+// CHECK-NEXT:        }
+// CHECK-NEXT:        struct.def @Reg {
+// CHECK-NEXT:          struct.member @reg : !felt.type {llzk.pub}
+// CHECK-NEXT:          function.def @compute(%[[VAL_6:.*]]: !felt.type) -> !struct.type<@risc0::@Reg> attributes {function.allow_witness} {
+// CHECK-NEXT:            %[[VAL_7:.*]] = struct.new : <@risc0::@Reg>
+// CHECK-NEXT:            struct.writem %[[VAL_7]][@reg] = %[[VAL_6]] : <@risc0::@Reg>, !felt.type
+// CHECK-NEXT:            function.return %[[VAL_7]] : !struct.type<@risc0::@Reg>
+// CHECK-NEXT:          }
+// CHECK-NEXT:          function.def @constrain(%[[VAL_8:.*]]: !struct.type<@risc0::@Reg>, %[[VAL_9:.*]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:            %[[VAL_10:.*]] = struct.readm %[[VAL_8]][@reg] : <@risc0::@Reg>, !felt.type
+// CHECK-NEXT:            constrain.eq %[[VAL_9]], %[[VAL_10]] : !felt.type, !felt.type
+// CHECK-NEXT:            function.return
+// CHECK-NEXT:          }
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @C1 {
+// CHECK-NEXT:      struct.member @z : !struct.type<@std::@risc0::@Reg> {llzk.pub}
+// CHECK-NEXT:      function.def @compute(%[[VAL_11:.*]]: !felt.type, %[[VAL_12:.*]]: !felt.type) -> !struct.type<@C1> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_13:.*]] = struct.new : <@C1>
+// CHECK-NEXT:        %[[VAL_14:.*]] = felt.add %[[VAL_11]], %[[VAL_12]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_15:.*]] = function.call @std::@risc0::@Reg::@compute(%[[VAL_14]]) : (!felt.type) -> !struct.type<@std::@risc0::@Reg>
+// CHECK-NEXT:        struct.writem %[[VAL_13]][@z] = %[[VAL_15]] : <@C1>, !struct.type<@std::@risc0::@Reg>
+// CHECK-NEXT:        function.return %[[VAL_13]] : !struct.type<@C1>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_16:.*]]: !struct.type<@C1>, %[[VAL_17:.*]]: !felt.type, %[[VAL_18:.*]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_19:.*]] = struct.readm %[[VAL_16]][@z] : <@C1>, !struct.type<@std::@risc0::@Reg>
+// CHECK-NEXT:        %[[VAL_20:.*]] = felt.add %[[VAL_17]], %[[VAL_18]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.call @std::@risc0::@Reg::@constrain(%[[VAL_19]], %[[VAL_20]]) : (!struct.type<@std::@risc0::@Reg>, !felt.type) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK-NEXT:}

@@ -1,0 +1,39 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-poly-lowering-pass="max-degree=2" --verify-each %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @TypedAux {
+    struct.member @out : !felt.type<"babybear">
+
+    function.def @compute(
+      %a: !felt.type<"babybear">,
+      %b: !felt.type<"babybear">,
+      %c: !felt.type<"babybear">
+    ) -> !struct.type<@TypedAux> {
+      %self = struct.new : !struct.type<@TypedAux>
+      function.return %self : !struct.type<@TypedAux>
+    }
+
+    function.def @constrain(
+      %self: !struct.type<@TypedAux>,
+      %a: !felt.type<"babybear">,
+      %b: !felt.type<"babybear">,
+      %c: !felt.type<"babybear">
+    ) {
+      %ab = felt.mul %a, %b : !felt.type<"babybear">, !felt.type<"babybear">
+      %abc = felt.mul %ab, %c : !felt.type<"babybear">, !felt.type<"babybear">
+      %out = struct.readm %self[@out] : !struct.type<@TypedAux>, !felt.type<"babybear">
+      constrain.eq %out, %abc : !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @TypedAux
+// CHECK-LABEL: function.def @compute
+// CHECK:       %[[AB:.*]] = felt.mul %{{.*}}, %{{.*}} : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK:       struct.writem %{{.*}}[@__llzk_poly_lowering_pass_aux_member_0] = %[[AB]] : <@TypedAux>, !felt.type<"babybear">
+// CHECK-LABEL: function.def @constrain
+// CHECK:       %[[AB_CONSTRAIN:.*]] = felt.mul %{{.*}}, %{{.*}} : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK:       %[[AUX:.*]] = struct.readm %{{.*}}[@__llzk_poly_lowering_pass_aux_member_0] : <@TypedAux>, !felt.type<"babybear">
+// CHECK:       constrain.eq %[[AUX]], %[[AB_CONSTRAIN]] : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK:       struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type<"babybear">

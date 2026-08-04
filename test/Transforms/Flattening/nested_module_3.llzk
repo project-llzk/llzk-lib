@@ -3,7 +3,7 @@
 module attributes {llzk.main = !struct.type<@TMain::@Main<[]>>, llzk.lang} {
   module @Bar attributes {llzk.lang} {
     poly.template @TFoo {
-      poly.param @N
+      poly.param @N : index
 
       struct.def @Foo {
         struct.member @x : !array.type<@N x !felt.type>

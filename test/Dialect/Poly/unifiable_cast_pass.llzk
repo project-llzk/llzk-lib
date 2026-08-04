@@ -6,7 +6,7 @@ module attributes { llzk.lang } {
   poly.template @TA {
     poly.param @X
     poly.param @Y
-    poly.param @N
+    poly.param @N : index
 
     struct.def @A {
       function.def @compute(%0: !array.type<@N x !felt.type>) -> !struct.type<@TA::@A<[@X, @Y, @N]>> {
@@ -21,7 +21,7 @@ module attributes { llzk.lang } {
   poly.template @TB {
     poly.param @X
     poly.param @Y
-    poly.param @N
+    poly.param @N : index
 
     struct.def @B {
       struct.member @a : !struct.type<@TA::@A<[@X, @Y, #map]>>
@@ -49,7 +49,7 @@ module attributes { llzk.lang } {
 // CHECK-NEXT:    poly.template @TA {
 // CHECK-NEXT:      poly.param @X
 // CHECK-NEXT:      poly.param @Y
-// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.param @N : index
 // CHECK-NEXT:      struct.def @A {
 // CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) -> !struct.type<@TA::@A<[@X, @Y, @N]>> attributes {function.allow_witness} {
 // CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TA::@A<[@X, @Y, @N]>>
@@ -63,7 +63,7 @@ module attributes { llzk.lang } {
 // CHECK-NEXT:    poly.template @TB {
 // CHECK-NEXT:      poly.param @X
 // CHECK-NEXT:      poly.param @Y
-// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.param @N : index
 // CHECK-NEXT:      struct.def @B {
 // CHECK-NEXT:        struct.member @a : !struct.type<@TA::@A<[@X, @Y, #[[$M0]]]>>
 // CHECK-NEXT:        function.def @compute(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) -> !struct.type<@TB::@B<[@X, @Y, @N]>> attributes {function.allow_witness} {
@@ -132,7 +132,7 @@ module attributes {llzk.lang} {
     }
   }
   poly.template @TTester {
-    poly.param @S0
+    poly.param @S0 : index
     poly.param @S1
 
     struct.def @Tester {
@@ -225,7 +225,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TTester {
-// CHECK-NEXT:      poly.param @S0
+// CHECK-NEXT:      poly.param @S0 : index
 // CHECK-NEXT:      poly.param @S1
 // CHECK-NEXT:      struct.def @Tester {
 // CHECK-NEXT:        function.def @compute(

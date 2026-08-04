@@ -1,0 +1,174 @@
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @Top {
+    function.def @compute() -> !struct.type<@Top> {
+      %self = struct.new : !struct.type<@Top>
+      %c0 = arith.constant 0 : index 
+      %c10 = arith.constant 10 : index 
+      %c1 = arith.constant 1  : index 
+      scf.for %iv = %c0 to %c10 step %c1 {
+        scf.yield
+      } {loop_label = "loopA"}
+
+      function.return %self : !struct.type<@Top>
+    }
+    function.def @constrain(%self: !struct.type<@Top>)  {
+      function.return
+    }
+  }
+
+  verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
+    verif.invariant for @loopA(%lb: index, %iv: index, %ub: index, %step: index) {
+      %0 = cast.tofelt %iv : index
+      verif.increases %0
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Top {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Top> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Top>
+// CHECK-NEXT:        %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index 
+// CHECK-NEXT:        %[[C10:[0-9a-zA-Z_\.]+]] = arith.constant 10 : index 
+// CHECK-NEXT:        %[[C1:[0-9a-zA-Z_\.]+]] = arith.constant 1  : index 
+// CHECK-NEXT:        scf.for %[[IV:[0-9a-zA-Z_\.]+]] = %[[C0]] to %[[C10]] step %[[C1]] {
+// CHECK-NEXT:        } {loop_label = "loopA"}
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Top>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Top>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @Foo for @Top (%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Top>) {
+// CHECK-NEXT:      verif.invariant for @loopA(
+// CHECK-SAME:           %[[VAL_3:[0-9a-zA-Z_\.]+]]: index, 
+// CHECK-SAME:           %[[VAL_4:[0-9a-zA-Z_\.]+]]: index, 
+// CHECK-SAME:           %[[VAL_5:[0-9a-zA-Z_\.]+]]: index, 
+// CHECK-SAME:           %[[VAL_6:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_4]] : index
+// CHECK-NEXT:        verif.increases %[[VAL_7]]
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Top {
+    function.def @compute() -> !struct.type<@Top> {
+      %self = struct.new : !struct.type<@Top>
+      %c0 = arith.constant 0 : index 
+      %c10 = arith.constant 10 : index 
+      %c1 = arith.constant 1  : index 
+      scf.for %iv = %c0 to %c10 step %c1 {
+        scf.yield
+      } {loop_label = "loopA"}
+
+      function.return %self : !struct.type<@Top>
+    }
+    function.def @constrain(%self: !struct.type<@Top>)  {
+      function.return
+    }
+  }
+
+  verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
+    verif.invariant for @loopA(%lb: index, %iv: index, %ub: index, %step: index) {
+      %0 = arith.subi %ub, %iv : index
+      %1 = cast.tofelt %0 : index
+      verif.decreases %1
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Top {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Top> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Top>
+// CHECK-NEXT:        %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index 
+// CHECK-NEXT:        %[[C10:[0-9a-zA-Z_\.]+]] = arith.constant 10 : index 
+// CHECK-NEXT:        %[[C1:[0-9a-zA-Z_\.]+]] = arith.constant 1  : index 
+// CHECK-NEXT:        scf.for %[[IV:[0-9a-zA-Z_\.]+]] = %[[C0]] to %[[C10]] step %[[C1]] {
+// CHECK-NEXT:        } {loop_label = "loopA"}
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Top>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Top>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @Foo for @Top (%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Top>) {
+// CHECK-NEXT:      verif.invariant for @loopA(
+// CHECK-SAME:           %[[VAL_3:[0-9a-zA-Z_\.]+]]: index, 
+// CHECK-SAME:           %[[VAL_4:[0-9a-zA-Z_\.]+]]: index, 
+// CHECK-SAME:           %[[VAL_5:[0-9a-zA-Z_\.]+]]: index, 
+// CHECK-SAME:           %[[VAL_6:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_5]], %[[VAL_4]] : index
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_7]] : index
+// CHECK-NEXT:        verif.decreases %[[VAL_8]]
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Top {
+    function.def @compute() -> !struct.type<@Top> {
+      %self = struct.new : !struct.type<@Top>
+      %c0 = arith.constant 0 : index 
+      %c10 = arith.constant 10 : index 
+      %c1 = arith.constant 1  : index 
+      scf.for %iv = %c0 to %c10 step %c1 {
+        scf.yield
+      } {loop_label = "loopA"}
+
+      function.return %self : !struct.type<@Top>
+    }
+    function.def @constrain(%self: !struct.type<@Top>)  {
+      function.return
+    }
+  }
+
+  verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
+    verif.invariant for @loopA(%lb: index, %iv: index, %ub: index, %step: index) {
+      verif.step {
+        %0 = verif.old %iv : index
+        %1 = arith.subi %iv, %0 : index
+        %2 = arith.cmpi eq, %1, %step : index  
+        verif.step.yield %2
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Top {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Top> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Top>
+// CHECK-NEXT:        %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index 
+// CHECK-NEXT:        %[[C10:[0-9a-zA-Z_\.]+]] = arith.constant 10 : index 
+// CHECK-NEXT:        %[[C1:[0-9a-zA-Z_\.]+]] = arith.constant 1  : index 
+// CHECK-NEXT:        scf.for %[[IV:[0-9a-zA-Z_\.]+]] = %[[C0]] to %[[C10]] step %[[C1]] {
+// CHECK-NEXT:        } {loop_label = "loopA"}
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Top>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Top>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @Foo for @Top (%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Top>) {
+// CHECK-NEXT:      verif.invariant for @loopA(
+// CHECK-SAME:           %[[VAL_3:[0-9a-zA-Z_\.]+]]: index, 
+// CHECK-SAME:           %[[VAL_4:[0-9a-zA-Z_\.]+]]: index, 
+// CHECK-SAME:           %[[VAL_5:[0-9a-zA-Z_\.]+]]: index, 
+// CHECK-SAME:           %[[VAL_6:[0-9a-zA-Z_\.]+]]: index) {
+// CHECK-NEXT:        verif.step {
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = verif.old %[[VAL_4]] : index
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_4]], %[[VAL_7]] : index
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_8]], %[[VAL_6]] : index
+// CHECK-NEXT:          verif.step.yield %[[VAL_9]]
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

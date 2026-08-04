@@ -7,19 +7,20 @@
 
 module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   poly.template @TFAddN {
-    poly.param @N
+    poly.param @N : index
 
     function.def @f(%inp: !array.type<@N x !felt.type<"babybear">>) -> !felt.type<"babybear"> {
       %c0 = arith.constant 0 : index
       %v = array.read %inp[%c0] : !array.type<@N x !felt.type<"babybear">>, !felt.type<"babybear">
-      %n = poly.read_const @N : !felt.type<"babybear">
-      %sum = felt.add %v, %n : !felt.type<"babybear">, !felt.type<"babybear">
+      %n = poly.read_const @N : index
+      %nf = cast.tofelt %n : index, !felt.type<"babybear">
+      %sum = felt.add %v, %nf : !felt.type<"babybear">, !felt.type<"babybear">
       function.return %sum : !felt.type<"babybear">
     }
   }
 
   poly.template @TFForward {
-    poly.param @N
+    poly.param @N : index
 
     function.def @g(%inp: !array.type<@N x !felt.type<"babybear">>) -> !felt.type<"babybear"> {
       %base = function.call @TFAddN::@f(%inp)

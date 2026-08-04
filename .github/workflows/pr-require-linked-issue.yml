@@ -1,0 +1,130 @@
+name: Check for linked issue
+
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review]
+
+permissions:
+  pull-requests: read
+  issues: read
+
+jobs:
+  check-linked-issue:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check for linked issue
+        id: linked-issue
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const pr = context.payload.pull_request;
+
+            const result = await github.graphql(
+              `
+                query ($prId: ID!) {
+                  node(id: $prId) {
+                    ... on PullRequest {
+                      closingIssuesReferences(first: 1) {
+                        totalCount
+                      }
+                    }
+                  }
+                }
+              `,
+              { prId: pr.node_id }
+            );
+
+            const hasLinkedIssue =
+              result.node.closingIssuesReferences.totalCount > 0;
+
+            core.setOutput("has-linked-issue", hasLinkedIssue ? "true" : "false");
+
+            if (hasLinkedIssue) {
+              core.info("The pull request has a linked issue.");
+            }
+
+      # This token allows the workflow to check core developer membership and
+      # to comment on PRs.
+      - name: Generate issue triage token
+        if: steps.linked-issue.outputs.has-linked-issue != 'true'
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.ISSUE_TRIAGE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.ISSUE_TRIAGE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-pull-requests: write
+          permission-members: read
+
+      - name: Comment when no issue is linked
+        if: steps.linked-issue.outputs.has-linked-issue != 'true'
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const marker = "<!-- check-linked-issue -->";
+            const pr = context.payload.pull_request;
+
+            const org = context.repo.owner;
+            const teamSlug = "core-devs";
+            const coreTeam = `${org}/${teamSlug}`;
+            try {
+              const membership = await github.rest.teams.getMembershipForUserInOrg({
+                org,
+                team_slug: teamSlug,
+                username: pr.user.login,
+              });
+
+              if (membership.data.state === "active") {
+                core.info(
+                  `${pr.user.login} is a member of ${coreTeam}; skipping linked issue reminder.`
+                );
+                return;
+              }
+            } catch (error) {
+              core.warning(
+                `Unable to check ${coreTeam} membership for ${pr.user.login} (status: ${error.status ?? "unknown"}). Proceeding as non-member.`
+              );
+            }
+
+            // Avoid posting the same warning more than once.
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              {
+                owner,
+                repo,
+                issue_number: pr.number,
+                per_page: 100,
+              }
+            );
+
+            const alreadyCommented = comments.some(
+              comment =>
+                comment.user?.type === "Bot" &&
+                comment.body?.includes(marker)
+            );
+
+            if (alreadyCommented) {
+              core.info("The warning comment already exists.");
+              return;
+            }
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: pr.number,
+              body: [
+                marker,
+                "This pull request is not linked to an issue.",
+                "",
+                "Please link the relevant issue using the **Development** section in the sidebar, or add a closing reference such as:",
+                "",
+                "```",
+                "Closes #123",
+                "```",
+              ].join("\n"),
+            });

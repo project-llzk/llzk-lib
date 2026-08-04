@@ -167,7 +167,6 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-NEXT:        %[[V5:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
 // CHECK-NEXT:        %[[V6:[0-9a-zA-Z_\.]+]] = arith.constant true
 // CHECK-NEXT:        %[[V7:[0-9a-zA-Z_\.]+]] = string.new "Hello World"
-// CHECK-NEXT:        %[[V8:[0-9a-zA-Z_\.]+]] = struct.readm %[[V4]][@"f1:!s<@Component2B>+f1"] : <@Main>, !string.type
 // CHECK-NEXT:        %[[V9:[0-9a-zA-Z_\.]+]] = struct.readm %[[V4]][@"f2:!s<@Component2A>+f1"] : <@Main>, index
 // CHECK-NEXT:        constrain.eq %[[V5]], %[[V9]] : index, index
 // CHECK-NEXT:        %[[V10:[0-9a-zA-Z_\.]+]] = struct.readm %[[V4]][@"f2:!s<@Component2A>+f2"] : <@Main>, i1
@@ -587,7 +586,6 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-NEXT:        function.return %[[V1]] : !struct.type<@Main>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[V3:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[V4:[0-9a-zA-Z_\.]+]] = struct.readm %[[V3]][@f2] : <@Main>, !struct.type<@Component7A>
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -655,7 +653,6 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-NEXT:        function.return %[[V0]] : !struct.type<@Main>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[V2:[0-9a-zA-Z_\.]+]] = struct.readm %[[V1]][@f2] : <@Main>, !struct.type<@Component8A>
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

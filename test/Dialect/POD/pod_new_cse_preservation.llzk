@@ -1,0 +1,36 @@
+// RUN: llzk-opt --pass-pipeline='builtin.module(cse, canonicalize)' %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @Main {
+    struct.member @out : index {llzk.pub}
+    function.def @compute(
+      %a: index {function.arg_name = "a"},
+      %b: index {function.arg_name = "b"}
+    ) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %i = arith.constant 0 : index
+      %x = pod.new : !pod.type<[@n: index]>
+      %y = pod.new : !pod.type<[@n: index]>
+      pod.write %x[@n] = %a : !pod.type<[@n: index]>, index
+      %r = pod.read %y[@n] : !pod.type<[@n: index]>, index
+      struct.writem %self[@out] = %r : !struct.type<@Main>, index
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(
+      %self: !struct.type<@Main>,
+      %a: index,
+      %b: index
+    ) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: function.def @compute(
+// CHECK-SAME:    %[[A:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    %[[B:[0-9a-zA-Z_\.]+]]: index
+// CHECK:         %[[X:[0-9a-zA-Z_\.]+]] = pod.new : <[@n: index]>
+// CHECK:         %[[Y:[0-9a-zA-Z_\.]+]] = pod.new : <[@n: index]>
+// CHECK:         pod.write %[[X]][@n] = %[[A]]
+// CHECK:         %[[R:[0-9a-zA-Z_\.]+]] = pod.read %[[Y]][@n]
+// CHECK:         struct.writem {{.*}}[@out] = %[[R]]

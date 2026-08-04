@@ -50,7 +50,7 @@ TEST_F(CAPITest, llzk_felt_const_attr_get_with_bits) {
   auto cxx_attr = llvm::dyn_cast<llzk::felt::FeltConstAttr>(unwrap(attr));
   EXPECT_TRUE(cxx_attr);
   EXPECT_EQ(cxx_attr.getFieldName(), ty.getFieldName());
-  auto value = cxx_attr.getValue();
+  const auto &value = cxx_attr.getValue();
   EXPECT_EQ(value.getBitWidth(), BITS);
   EXPECT_EQ(value.getZExtValue(), 2147483647);
 }
@@ -63,7 +63,7 @@ TEST_F(CAPITest, llzk_felt_const_attr_get_with_bits_in_field) {
   auto cxx_attr = llvm::dyn_cast<llzk::felt::FeltConstAttr>(unwrap(attr));
   EXPECT_TRUE(cxx_attr);
   EXPECT_EQ(cxx_attr.getFieldName().getValue(), fieldName.data);
-  auto value = cxx_attr.getValue();
+  const auto &value = cxx_attr.getValue();
   EXPECT_EQ(value.getBitWidth(), BITS);
   EXPECT_EQ(value.getZExtValue(), 0);
 }
@@ -75,7 +75,7 @@ TEST_F(CAPITest, llzk_felt_const_attr_get_with_bits_unspecified) {
   auto cxx_attr = llvm::dyn_cast<llzk::felt::FeltConstAttr>(unwrap(attr));
   EXPECT_TRUE(cxx_attr);
   EXPECT_EQ(cxx_attr.getFieldName(), nullptr);
-  auto value = cxx_attr.getValue();
+  const auto &value = cxx_attr.getValue();
   EXPECT_EQ(value.getBitWidth(), BITS);
   EXPECT_EQ(value.getZExtValue(), 0);
 }

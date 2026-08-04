@@ -13,6 +13,8 @@
 
 #include <mlir/Interfaces/CallInterfaces.h>
 
+#include <cassert>
+#include <optional>
 #include <ranges>
 
 namespace llzk {
@@ -99,6 +101,19 @@ mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromRoot(component::MemberDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
 mlir::FailureOr<mlir::SymbolRefAttr>
 getPathFromRoot(function::FuncDefOp &to, mlir::ModuleOp *foundRoot = nullptr);
+
+/// Return the full name for this symbol from the root module, including any surrounding symbol
+/// table names. If `requireParent` is false and the symbol is not nested in any operation, return
+/// its flat symbol name directly.
+inline mlir::SymbolRefAttr
+getFullyQualifiedName(mlir::SymbolOpInterface symbol, bool requireParent = true) {
+  if (!requireParent && symbol.getOperation()->getParentOp() == nullptr) {
+    return mlir::SymbolRefAttr::get(symbol.getOperation());
+  }
+  mlir::FailureOr<mlir::SymbolRefAttr> res = getPathFromRoot(symbol);
+  assert(mlir::succeeded(res));
+  return res.value();
+}
 
 /// @brief With include statements, there may be root modules nested within
 /// other root modules. This function resolves the topmost root module.
@@ -196,16 +211,19 @@ mlir::FailureOr<polymorphic::TemplateOp>
 getConstResolutionTemplate(mlir::SymbolTableCollection &tables, mlir::Operation *origin);
 
 /// Ensure that the given symbol (that is used as a parameter of the given type) can be resolved.
+/// If `requiredParamType` is provided, any resolved template symbol must have exactly that type.
 mlir::LogicalResult verifyParamOfType(
     mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr param, mlir::Type structOrArrayType,
-    mlir::Operation *origin
+    mlir::Operation *origin, std::optional<mlir::Type> requiredParamType = std::nullopt
 );
 
 /// Ensure that any symbols that appear within the given attributes (that are parameters of the
-/// given type) can be resolved.
+/// given type) can be resolved. If `requiredParamType` is provided, any resolved template symbols
+/// must have exactly that type.
 mlir::LogicalResult verifyParamsOfType(
     mlir::SymbolTableCollection &tables, mlir::ArrayRef<mlir::Attribute> tyParams,
-    mlir::Type structOrArrayType, mlir::Operation *origin
+    mlir::Type structOrArrayType, mlir::Operation *origin,
+    std::optional<mlir::Type> requiredParamType = std::nullopt
 );
 
 /// Ensure that all symbols used within the type can be resolved.

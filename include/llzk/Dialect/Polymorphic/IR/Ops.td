@@ -57,10 +57,20 @@ def LLZK_TemplateOp
     ```
 
     The order of `poly.param` definitions in the template body determines the order that
-    template parameters must be listed in the parameter list of a `struct.type` refering
+    template parameters must be listed in the parameter list of a `struct.type` referring
     to a struct nested within the template. In the example above, the type of `@StructName`
     is `!struct.type<@TemplateName::@StructName<[@N, @T]>>`.
+
+    Transform passes may attach the discardable generic attribute `poly.name_pattern` to a partial
+    template with `P` current `poly.param` operations. Its value is an `ArrayAttr` of `P + 1`
+    literal `StringAttr` chunks; gap `i`, between chunks `i` and `i + 1`, corresponds to current
+    parameter `i`. The chunks are carried as structured metadata and are never recovered by
+    interpreting `sym_name`; without the attribute, every byte of the current `sym_name` is opaque
+    source or legacy text. When a transform closes the final gap, it removes the attribute rather
+    than retaining a terminal one-chunk state.
   }];
+
+  let hasVerifier = 1;
 
   let arguments = (ins SymbolNameAttr:$sym_name);
 
@@ -225,13 +235,12 @@ def LLZK_YieldOp
 def LLZK_ConstReadOp
     : PolymorphicDialectOp<"read_const", [Pure, DeclareOpInterfaceMethods<
                                                     SymbolUserOpInterface>]> {
-  let summary = "read value of a struct parameter";
+  let summary = "read value of a template parameter";
   let description = [{
-    This operation reads the value from the named constant parameter of
-    the struct/component in which this op appears. The op itself puts
-    some restriction on the type of this value, but leaves it to a later
-    type-checking pass to ensure the struct parameters are instantiated
-    with types matching the uses of the parameter within the struct.
+    This operation reads the value from the named constant parameter of the template
+    in which this op appears. The op itself puts a type restriction on the value,
+    but leaves it to a later type-checking pass to ensure the template parameters are
+    instantiated with types matching the uses of the parameter within the template.
 
     Examples:
     ```llzk
@@ -335,6 +344,7 @@ def LLZK_ApplyMapOp : PolymorphicDialectOp<"applymap", [Pure]> {
   }];
 
   let hasVerifier = 1;
+  let hasFolder = 1;
 
   let extraClassDeclaration = [{
     /// Returns the affine map to be applied by this operation.

@@ -103,7 +103,7 @@ protected:
 /// This test ensures `{0}{1}{2}Build()` successfully builds an `Operation`
 /// of the correct type that passes verification. It relies on a manual implemenation
 /// of `{2}BuildFuncHelper::callBuild()` that calls `{0}{1}{2}Build()`.
-TEST_F(CAPITest, {2}_build_pass) { {2}BuildFuncHelper::get()->run(*this); }
+TEST_F(CAPITest, {1}_{2}_build_pass) { {2}BuildFuncHelper::get()->run(*this); }
 )";
 
     assert(!className.empty() && "className must be set");

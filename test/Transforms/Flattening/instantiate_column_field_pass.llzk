@@ -41,7 +41,6 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: struct.def @ComponentA2 {
 // CHECK-NEXT:    function.def @compute(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentA1_f_ComponentA1>) -> !struct.type<@ComponentA2> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA2>
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@f1] : <@TComponentA1_f_ComponentA1>, !felt.type {tableOffset = -1 : index}
 // CHECK-NEXT:      function.return %[[VAL_3]] : !struct.type<@ComponentA2>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA2>, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentA1_f_ComponentA1>) attributes {function.allow_constraint} {
@@ -103,7 +102,6 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: struct.def @"TComponentA2_-1_ComponentA2" {
 // CHECK-NEXT:    function.def @compute(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) -> !struct.type<@"TComponentA2_-1_ComponentA2"> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@"TComponentA2_-1_ComponentA2">
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@f1] : <@ComponentA1>, !felt.type {tableOffset = -1 : index}
 // CHECK-NEXT:      function.return %[[VAL_3]] : !struct.type<@"TComponentA2_-1_ComponentA2">
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@"TComponentA2_-1_ComponentA2">, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
@@ -177,7 +175,6 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: struct.def @TComponentA2_3_ComponentA2 {
 // CHECK-NEXT:    function.def @compute(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) -> !struct.type<@TComponentA2_3_ComponentA2> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponentA2_3_ComponentA2>
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@f1] : <@ComponentA1>, !felt.type {tableOffset = 3 : index}
 // CHECK-NEXT:      function.return %[[VAL_3]] : !struct.type<@TComponentA2_3_ComponentA2>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentA2_3_ComponentA2>, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
@@ -255,7 +252,6 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: struct.def @"TComponentA2_-1_f_ComponentA2" {
 // CHECK-NEXT:    function.def @compute(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentA1_f_ComponentA1>) -> !struct.type<@"TComponentA2_-1_f_ComponentA2"> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@"TComponentA2_-1_f_ComponentA2">
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@f1] : <@TComponentA1_f_ComponentA1>, !felt.type {tableOffset = -1 : index}
 // CHECK-NEXT:      function.return %[[VAL_3]] : !struct.type<@"TComponentA2_-1_f_ComponentA2">
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@"TComponentA2_-1_f_ComponentA2">, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentA1_f_ComponentA1>) attributes {function.allow_constraint} {

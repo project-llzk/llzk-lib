@@ -214,7 +214,7 @@ module attributes {llzk.lang} {
   }
 
   poly.template @TComponent02 {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @Component02 {
       struct.member @g : !array.type<@N x !struct.type<@Component01>>

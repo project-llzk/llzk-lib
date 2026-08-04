@@ -1,0 +1,659 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @eq_array_pod(
+      %lhs: !array.type<2 x !Pair>, %rhs: !array.type<2 x !Pair>
+  ) attributes {function.allow_constraint} {
+    constrain.eq %lhs, %rhs : !array.type<2 x !Pair>
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @eq_array_pod(
+// CHECK-SAME:    %[[LHS_X:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>,
+// CHECK-SAME:    %[[LHS_Y:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>,
+// CHECK-SAME:    %[[RHS_X:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>,
+// CHECK-SAME:    %[[RHS_Y:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      constrain.eq %[[LHS_X]], %[[RHS_X]] : !array.type<2 x index>, !array.type<2 x index>
+// CHECK-NEXT:      constrain.eq %[[LHS_Y]], %[[RHS_Y]] : !array.type<2 x !felt.type>, !array.type<2 x !felt.type>
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!LeafArrayPod = !pod.type<[@vals: !array.type<3 x index>]>
+module attributes {llzk.lang} {
+  function.def @contains_dynamic_subarray_with_shape_carrier(
+      %arr: !array.type<2,? x !LeafArrayPod>, %sub: !array.type<? x !LeafArrayPod>
+  ) attributes {function.allow_constraint} {
+    constrain.in %arr, %sub : !array.type<2,? x !LeafArrayPod>, !array.type<? x !LeafArrayPod>
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @contains_dynamic_subarray_with_shape_carrier(
+// CHECK-SAME:    %[[ARR_VALS:[0-9a-zA-Z_\.]+]]: !array.type<2,?,3 x index>,
+// CHECK-SAME:    %[[ARR_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<2,? x none>,
+// CHECK-SAME:    %[[SUB_VALS:[0-9a-zA-Z_\.]+]]: !array.type<?,3 x index>,
+// CHECK-SAME:    %[[SUB_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<? x none>
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[TRUE:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      %[[IDX:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
+// CHECK-NEXT:      %[[DIM0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_SHAPE]], %[[DIM0]] : <2,? x none>
+// CHECK-NEXT:      %[[GE0:[0-9a-zA-Z_\.]+]] = arith.cmpi sge, %[[IDX]], %[[C0]] : index
+// CHECK-NEXT:      constrain.eq %[[GE0]], %[[TRUE]] : i1, i1
+// CHECK-NEXT:      %[[LT_LEN:[0-9a-zA-Z_\.]+]] = arith.cmpi slt, %[[IDX]], %[[LEN]] : index
+// CHECK-NEXT:      constrain.eq %[[LT_LEN]], %[[TRUE]] : i1, i1
+// CHECK-NEXT:      %[[SEL_SHAPE:[0-9a-zA-Z_\.]+]] = array.extract %[[ARR_SHAPE]]{{\[}}%[[IDX]]] : <2,? x none>
+// CHECK-NEXT:      %[[SEL_DIM0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[SEL_LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SEL_SHAPE]], %[[SEL_DIM0]] : <? x none>
+// CHECK-NEXT:      %[[RHS_LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SUB_SHAPE]], %[[SEL_DIM0]] : <? x none>
+// CHECK-NEXT:      constrain.eq %[[SEL_LEN]], %[[RHS_LEN]] : index, index
+// CHECK-NEXT:      %[[SEL_VALS:[0-9a-zA-Z_\.]+]] = array.extract %[[ARR_VALS]]{{\[}}%[[IDX]]] : <2,?,3 x index>
+// CHECK-NEXT:      constrain.eq %[[SEL_VALS]], %[[SUB_VALS]] : !array.type<?,3 x index>, !array.type<?,3 x index>
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Empty = !pod.type<[]>
+module attributes {llzk.lang} {
+  function.def @contains_empty_subarray(
+      %arr: !array.type<2,3 x !Empty>, %sub: !array.type<3 x !Empty>
+  ) attributes {function.allow_constraint} {
+    constrain.in %arr, %sub : !array.type<2,3 x !Empty>, !array.type<3 x !Empty>
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @contains_empty_subarray(
+// CHECK-SAME:    %[[ARR_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<2,3 x none>,
+// CHECK-SAME:    %[[SUB_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<3 x none>
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[TRUE:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      %[[IDX:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
+// CHECK-NEXT:      %[[DIM0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_SHAPE]], %[[DIM0]] : <2,3 x none>
+// CHECK-NEXT:      %[[GE0:[0-9a-zA-Z_\.]+]] = arith.cmpi sge, %[[IDX]], %[[C0]] : index
+// CHECK-NEXT:      constrain.eq %[[GE0]], %[[TRUE]] : i1, i1
+// CHECK-NEXT:      %[[LT_LEN:[0-9a-zA-Z_\.]+]] = arith.cmpi slt, %[[IDX]], %[[LEN]] : index
+// CHECK-NEXT:      constrain.eq %[[LT_LEN]], %[[TRUE]] : i1, i1
+// CHECK-NEXT:      %[[SEL_SHAPE:[0-9a-zA-Z_\.]+]] = array.extract %[[ARR_SHAPE]]{{\[}}%[[IDX]]] : <2,3 x none>
+// CHECK-NEXT:      %[[SEL_DIM0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[SEL_LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SEL_SHAPE]], %[[SEL_DIM0]] : <3 x none>
+// CHECK-NEXT:      %[[RHS_LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SUB_SHAPE]], %[[SEL_DIM0]] : <3 x none>
+// CHECK-NEXT:      constrain.eq %[[SEL_LEN]], %[[RHS_LEN]] : index, index
+// CHECK-NEXT:      %[[SEL_SHAPE_EQ:[0-9a-zA-Z_\.]+]] = array.extract %[[ARR_SHAPE]]{{\[}}%[[IDX]]] : <2,3 x none>
+// CHECK-NEXT:      constrain.eq %[[SEL_SHAPE_EQ]], %[[SUB_SHAPE]] : !array.type<3 x none>, !array.type<3 x none>
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Empty = !pod.type<[]>
+module attributes {llzk.lang} {
+  function.def @contains_dynamic_empty_subarray(
+      %arr: !array.type<2,? x !Empty>, %sub: !array.type<? x !Empty>
+  ) attributes {function.allow_constraint} {
+    constrain.in %arr, %sub : !array.type<2,? x !Empty>, !array.type<? x !Empty>
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @contains_dynamic_empty_subarray(
+// CHECK-SAME:    %[[ARR_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<2,? x none>,
+// CHECK-SAME:    %[[SUB_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<? x none>
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[TRUE:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      %[[IDX:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
+// CHECK-NEXT:      %[[DIM0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_SHAPE]], %[[DIM0]] : <2,? x none>
+// CHECK-NEXT:      %[[GE0:[0-9a-zA-Z_\.]+]] = arith.cmpi sge, %[[IDX]], %[[C0]] : index
+// CHECK-NEXT:      constrain.eq %[[GE0]], %[[TRUE]] : i1, i1
+// CHECK-NEXT:      %[[LT_LEN:[0-9a-zA-Z_\.]+]] = arith.cmpi slt, %[[IDX]], %[[LEN]] : index
+// CHECK-NEXT:      constrain.eq %[[LT_LEN]], %[[TRUE]] : i1, i1
+// CHECK-NEXT:      %[[SEL_SHAPE:[0-9a-zA-Z_\.]+]] = array.extract %[[ARR_SHAPE]]{{\[}}%[[IDX]]] : <2,? x none>
+// CHECK-NEXT:      %[[SEL_DIM0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[SEL_LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SEL_SHAPE]], %[[SEL_DIM0]] : <? x none>
+// CHECK-NEXT:      %[[RHS_LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SUB_SHAPE]], %[[SEL_DIM0]] : <? x none>
+// CHECK-NEXT:      constrain.eq %[[SEL_LEN]], %[[RHS_LEN]] : index, index
+// CHECK-NEXT:      %[[SEL_SHAPE_EQ:[0-9a-zA-Z_\.]+]] = array.extract %[[ARR_SHAPE]]{{\[}}%[[IDX]]] : <2,? x none>
+// CHECK-NEXT:      constrain.eq %[[SEL_SHAPE_EQ]], %[[SUB_SHAPE]] : !array.type<? x none>, !array.type<? x none>
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @eq_array_pod_mixed_shape_reversed(
+      %lhs: !array.type<2 x !Pair>, %rhs: !array.type<? x !Pair>
+  ) attributes {function.allow_constraint} {
+    constrain.eq %lhs, %rhs : !array.type<2 x !Pair>, !array.type<? x !Pair>
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @eq_array_pod_mixed_shape_reversed(
+// CHECK-SAME:    %[[LHS_X:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>,
+// CHECK-SAME:    %[[LHS_Y:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>,
+// CHECK-SAME:    %[[RHS_X:[0-9a-zA-Z_\.]+]]: !array.type<? x index>,
+// CHECK-SAME:    %[[RHS_Y:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type>,
+// CHECK-SAME:    %[[RHS_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<? x none>
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[LHS_LEN:[0-9a-zA-Z_\.]+]] = array.len %[[LHS_X]], %[[C0]] : <2 x index>
+// CHECK-NEXT:      %[[RHS_LEN:[0-9a-zA-Z_\.]+]] = array.len %[[RHS_SHAPE]], %[[C0]] : <? x none>
+// CHECK-NEXT:      constrain.eq %[[LHS_LEN]], %[[RHS_LEN]] : index, index
+// CHECK-NEXT:      constrain.eq %[[LHS_X]], %[[RHS_X]] : !array.type<2 x index>, !array.type<? x index>
+// CHECK-NEXT:      constrain.eq %[[LHS_Y]], %[[RHS_Y]] : !array.type<2 x !felt.type>, !array.type<? x !felt.type>
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @contains_pod(
+      %arr: !array.type<2 x !Pair>, %elem: !Pair
+  ) attributes {function.allow_constraint} {
+    constrain.in %arr, %elem : !array.type<2 x !Pair>, !Pair
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @contains_pod(
+// CHECK-SAME:    %[[ARR_X:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>,
+// CHECK-SAME:    %[[ARR_Y:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>,
+// CHECK-SAME:    %[[ELEM_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:    %[[ELEM_Y:[0-9a-zA-Z_\.]+]]: !felt.type
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[TRUE:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      %[[IDX:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
+// CHECK-NEXT:      %[[DIM0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_X]], %[[DIM0]] : <2 x index>
+// CHECK-NEXT:      %[[GE0:[0-9a-zA-Z_\.]+]] = arith.cmpi sge, %[[IDX]], %[[C0]] : index
+// CHECK-NEXT:      constrain.eq %[[GE0]], %[[TRUE]] : i1, i1
+// CHECK-NEXT:      %[[LT_LEN:[0-9a-zA-Z_\.]+]] = arith.cmpi slt, %[[IDX]], %[[LEN]] : index
+// CHECK-NEXT:      constrain.eq %[[LT_LEN]], %[[TRUE]] : i1, i1
+// CHECK-NEXT:      %[[SEL_X:[0-9a-zA-Z_\.]+]] = array.read %[[ARR_X]]{{\[}}%[[IDX]]] : <2 x index>, index
+// CHECK-NEXT:      constrain.eq %[[SEL_X]], %[[ELEM_X]] : index, index
+// CHECK-NEXT:      %[[SEL_Y:[0-9a-zA-Z_\.]+]] = array.read %[[ARR_Y]]{{\[}}%[[IDX]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[SEL_Y]], %[[ELEM_Y]] : !felt.type, !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @contains_subarray(
+      %arr: !array.type<2,2 x !Pair>, %sub: !array.type<2 x !Pair>
+  ) attributes {function.allow_constraint} {
+    constrain.in %arr, %sub : !array.type<2,2 x !Pair>, !array.type<2 x !Pair>
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @contains_subarray(
+// CHECK-SAME:    %[[ARR_X:[0-9a-zA-Z_\.]+]]: !array.type<2,2 x index>,
+// CHECK-SAME:    %[[ARR_Y:[0-9a-zA-Z_\.]+]]: !array.type<2,2 x !felt.type>,
+// CHECK-SAME:    %[[SUB_X:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>,
+// CHECK-SAME:    %[[SUB_Y:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[TRUE:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      %[[IDX:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
+// CHECK-NEXT:      %[[DIM0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_X]], %[[DIM0]] : <2,2 x index>
+// CHECK-NEXT:      %[[GE0:[0-9a-zA-Z_\.]+]] = arith.cmpi sge, %[[IDX]], %[[C0]] : index
+// CHECK-NEXT:      constrain.eq %[[GE0]], %[[TRUE]] : i1, i1
+// CHECK-NEXT:      %[[LT_LEN:[0-9a-zA-Z_\.]+]] = arith.cmpi slt, %[[IDX]], %[[LEN]] : index
+// CHECK-NEXT:      constrain.eq %[[LT_LEN]], %[[TRUE]] : i1, i1
+// CHECK-NEXT:      %[[SEL_X:[0-9a-zA-Z_\.]+]] = array.extract %[[ARR_X]]{{\[}}%[[IDX]]] : <2,2 x index>
+// CHECK-NEXT:      constrain.eq %[[SEL_X]], %[[SUB_X]] : !array.type<2 x index>, !array.type<2 x index>
+// CHECK-NEXT:      %[[SEL_Y:[0-9a-zA-Z_\.]+]] = array.extract %[[ARR_Y]]{{\[}}%[[IDX]]] : <2,2 x !felt.type>
+// CHECK-NEXT:      constrain.eq %[[SEL_Y]], %[[SUB_Y]] : !array.type<2 x !felt.type>, !array.type<2 x !felt.type>
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Single = !pod.type<[@x: index]>
+module attributes {llzk.lang} {
+  function.def @arg_case(%p: !Single, %new: index) -> index {
+    pod.write %p[@x] = %new : !Single, index
+    %x = pod.read %p[@x] : !Single, index
+    function.return %x : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @arg_case(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      function.return %[[VAL_1]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Single = !pod.type<[@x: index]>
+module attributes {llzk.lang} {
+  function.def @mk(%old: index) -> !Single {
+    %p = pod.new : !Single
+    pod.write %p[@x] = %old : !Single, index
+    function.return %p : !Single
+  }
+
+  function.def @call_case(%old: index, %new: index) -> index {
+    %p = function.call @mk(%old) : (index) -> !Single
+    pod.write %p[@x] = %new : !Single, index
+    %x = pod.read %p[@x] : !Single, index
+    function.return %x : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @mk(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_case(%[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @mk(%[[VAL_1]]) : (index) -> index
+// CHECK-NEXT:      function.return %[[VAL_2]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Single = !pod.type<[@x: index]>
+module attributes {llzk.lang} {
+  struct.def @Box {
+    struct.member @p : !Single
+    struct.member @p_x : i1
+    struct.member @out : index
+
+    function.def @compute(%old: index, %new: index) -> !struct.type<@Box> {
+      %self = struct.new : !struct.type<@Box>
+      %p = pod.new : !Single
+      pod.write %p[@x] = %old : !Single, index
+      struct.writem %self[@p] = %p : !struct.type<@Box>, !Single
+      %loaded = struct.readm %self[@p] : !struct.type<@Box>, !Single
+      pod.write %loaded[@x] = %new : !Single, index
+      %x = pod.read %loaded[@x] : !Single, index
+      struct.writem %self[@out] = %x : !struct.type<@Box>, index
+      function.return %self : !struct.type<@Box>
+    }
+
+    function.def @constrain(%self: !struct.type<@Box>, %old: index, %new: index) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Box {
+// CHECK-NEXT:      struct.member @p_x_0 : index
+// CHECK-NEXT:      struct.member @p_x : i1
+// CHECK-NEXT:      struct.member @out : index
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@Box> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Box>
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@p_x_0] = %[[VAL_0]] : <@Box>, index
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@out] = %[[VAL_1]] : <@Box>, index
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@Box>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Box>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: index, %[[VAL_6:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  poly.template @EqArrayPodAndTypeVar {
+    poly.param @T : !poly.tvar<@T>
+    function.def @constrain(
+        %lhs: !array.type<2 x !Pair>, %rhs: !poly.tvar<@T>
+    ) attributes {function.allow_constraint} {
+      constrain.eq %lhs, %rhs : !array.type<2 x !Pair>, !poly.tvar<@T>
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @EqArrayPodAndTypeVar {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @constrain(
+// CHECK-SAME:         %[[LHS_X:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>,
+// CHECK-SAME:         %[[LHS_Y:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>,
+// CHECK-SAME:         %[[RHS_X:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>,
+// CHECK-SAME:         %[[RHS_Y:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        constrain.eq %[[LHS_X]], %[[RHS_X]] : !array.type<2 x index>, !array.type<2 x index>
+// CHECK-NEXT:        constrain.eq %[[LHS_Y]], %[[RHS_Y]] : !array.type<2 x !felt.type>, !array.type<2 x !felt.type>
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  poly.template @ContainArrayPodAndTypeVar {
+    poly.param @E : !poly.tvar<@E>
+    function.def @constrain(
+        %arr: !array.type<2 x !Pair>, %elem: !poly.tvar<@E>
+    ) attributes {function.allow_constraint} {
+      constrain.in %arr, %elem : !array.type<2 x !Pair>, !poly.tvar<@E>
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @ContainArrayPodAndTypeVar {
+// CHECK-NEXT:      poly.param @E : !poly.tvar<@E>
+// CHECK-NEXT:      function.def @constrain(
+// CHECK-SAME:         %[[ARR_X:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>,
+// CHECK-SAME:         %[[ARR_Y:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>,
+// CHECK-SAME:         %[[ELEM_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:         %[[ELEM_Y:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[TRUE:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        %[[IDX:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
+// CHECK-NEXT:        %[[DIM0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_X]], %[[DIM0]] : <2 x index>
+// CHECK-NEXT:        %[[GE0:[0-9a-zA-Z_\.]+]] = arith.cmpi sge, %[[IDX]], %[[C0]] : index
+// CHECK-NEXT:        constrain.eq %[[GE0]], %[[TRUE]] : i1, i1
+// CHECK-NEXT:        %[[LT_LEN:[0-9a-zA-Z_\.]+]] = arith.cmpi slt, %[[IDX]], %[[LEN]] : index
+// CHECK-NEXT:        constrain.eq %[[LT_LEN]], %[[TRUE]] : i1, i1
+// CHECK-NEXT:        %[[SEL_X:[0-9a-zA-Z_\.]+]] = array.read %[[ARR_X]]{{\[}}%[[IDX]]] : <2 x index>, index
+// CHECK-NEXT:        constrain.eq %[[SEL_X]], %[[ELEM_X]] : index, index
+// CHECK-NEXT:        %[[SEL_Y:[0-9a-zA-Z_\.]+]] = array.read %[[ARR_Y]]{{\[}}%[[IDX]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[SEL_Y]], %[[ELEM_Y]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: index]>
+module attributes {llzk.lang} {
+  function.def @direct_eq_before_later_write(
+      %lhs: !Pair, %rhs: !Pair, %new: index
+  ) attributes {function.allow_constraint} {
+    constrain.eq %lhs, %rhs : !Pair
+    pod.write %lhs[@y] = %new : !Pair, index
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @direct_eq_before_later_write(
+// CHECK-SAME:        %[[LHS_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[LHS_Y:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[RHS_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[RHS_Y:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[NEW:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      constrain.eq %[[LHS_X]], %[[RHS_X]] : index, index
+// CHECK-NEXT:      constrain.eq %[[LHS_Y]], %[[RHS_Y]] : index, index
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: index]>
+module attributes {llzk.lang} {
+  function.def @nested_eq_before_later_write(
+      %cond: i1, %lhs: !Pair, %rhs: !Pair, %new: index
+  ) attributes {function.allow_constraint} {
+    scf.if %cond {
+      constrain.eq %lhs, %rhs : !Pair
+    }
+    pod.write %lhs[@y] = %new : !Pair, index
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @nested_eq_before_later_write(
+// CHECK-SAME:        %[[COND:[0-9a-zA-Z_\.]+]]: i1,
+// CHECK-SAME:        %[[LHS_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[LHS_Y:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[RHS_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[RHS_Y:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[NEW:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      scf.if %[[COND]] {
+// CHECK-NEXT:        constrain.eq %[[LHS_X]], %[[RHS_X]] : index, index
+// CHECK-NEXT:        constrain.eq %[[LHS_Y]], %[[RHS_Y]] : index, index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: index]>
+module attributes {llzk.lang} {
+  function.def @make_pair(%x: index, %y: index) -> !Pair {
+    %p = pod.new { @x = %x, @y = %y } : !Pair
+    function.return %p : !Pair
+  }
+
+  function.def @call_result_eq_before_later_write(
+      %rhs: !Pair, %a: index, %b: index, %new: index
+  ) attributes {function.allow_constraint} {
+    %lhs = function.call @make_pair(%a, %b) : (index, index) -> !Pair
+    constrain.eq %lhs, %rhs : !Pair
+    pod.write %lhs[@y] = %new : !Pair, index
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @make_pair(%[[X:[0-9a-zA-Z_\.]+]]: index, %[[Y:[0-9a-zA-Z_\.]+]]: index) -> (index, index) {
+// CHECK-NEXT:      function.return %[[X]], %[[Y]] : index, index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_result_eq_before_later_write(
+// CHECK-SAME:        %[[RHS_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[RHS_Y:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[A:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[B:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[NEW:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[CALL:[0-9a-zA-Z_\.]+]]:2 = function.call @make_pair(%[[A]], %[[B]]) : (index, index) -> (index, index)
+// CHECK-NEXT:      constrain.eq %[[CALL]]#0, %[[RHS_X]] : index, index
+// CHECK-NEXT:      constrain.eq %[[CALL]]#1, %[[RHS_Y]] : index, index
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Single = !pod.type<[@x: index]>
+module attributes {llzk.lang} {
+  function.def @whole_use_after_computed_write(
+      %lhs: !Single, %rhs: !Single, %a: index, %b: index
+  ) attributes {function.allow_constraint} {
+    %sum = arith.addi %a, %b : index
+    pod.write %lhs[@x] = %sum : !Single, index
+    constrain.eq %lhs, %rhs : !Single
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @whole_use_after_computed_write(
+// CHECK-SAME:        %[[UNUSED:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[RHS:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[A:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[B:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[SUM:[0-9a-zA-Z_\.]+]] = arith.addi %[[A]], %[[B]] : index
+// CHECK-NEXT:      constrain.eq %[[SUM]], %[[RHS]] : index, index
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+#inner = affine_map<()[s0] -> (s0 + 1)>
+!Leaf = !array.type<#inner x index>
+!Pair = !pod.type<[@vals: !Leaf, @tag: index]>
+module attributes {llzk.lang} {
+  function.def @whole_use_after_scalar_write(
+      %lhs: !Pair, %rhs: !Pair, %new: index
+  ) attributes {function.allow_constraint} {
+    pod.write %lhs[@tag] = %new : !Pair, index
+    constrain.eq %lhs, %rhs : !Pair
+    function.return
+  }
+}
+// CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0 + 1)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @whole_use_after_scalar_write(
+// CHECK-SAME:        %[[LHS_VALS:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>,
+// CHECK-SAME:        %[[LHS_TAG:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[RHS_VALS:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M]] x index>,
+// CHECK-SAME:        %[[RHS_TAG:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:        %[[NEW:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    ) attributes {function.allow_constraint} {
+// CHECK-NEXT:      constrain.eq %[[LHS_VALS]], %[[RHS_VALS]] : !array.type<#[[$M]] x index>, !array.type<#[[$M]] x index>
+// CHECK-NEXT:      constrain.eq %[[NEW]], %[[RHS_TAG]] : index, index
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  poly.template @EqPodAndTypeVar {
+    poly.param @T : !poly.tvar<@T>
+    function.def @constrain(
+        %lhs: !Pair, %rhs: !Pair, %t: !poly.tvar<@T>
+    ) attributes {function.allow_constraint} {
+      constrain.eq %lhs, %t : !Pair, !poly.tvar<@T>
+      constrain.eq %t, %rhs : !poly.tvar<@T>, !Pair
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @EqPodAndTypeVar {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @constrain(
+// CHECK-SAME:       %[[LHS_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:       %[[LHS_Y:[0-9a-zA-Z_\.]+]]: !felt.type,
+// CHECK-SAME:       %[[RHS_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:       %[[RHS_Y:[0-9a-zA-Z_\.]+]]: !felt.type,
+// CHECK-SAME:       %[[TVAR_X:[0-9a-zA-Z_\.]+]]: index,
+// CHECK-SAME:       %[[TVAR_Y:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        constrain.eq %[[LHS_X]], %[[TVAR_X]] : index, index
+// CHECK-NEXT:        constrain.eq %[[LHS_Y]], %[[TVAR_Y]] : !felt.type, !felt.type
+// CHECK-NEXT:        constrain.eq %[[TVAR_X]], %[[RHS_X]] : index, index
+// CHECK-NEXT:        constrain.eq %[[TVAR_Y]], %[[RHS_Y]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  poly.template @EqDynamicArrayPodAndTypeVar {
+    poly.param @T : !poly.tvar<@T>
+    function.def @constrain(
+        %lhs: !array.type<? x !Pair>, %rhs: !poly.tvar<@T>
+    ) attributes {function.allow_constraint} {
+      constrain.eq %lhs, %rhs : !array.type<? x !Pair>, !poly.tvar<@T>
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @EqDynamicArrayPodAndTypeVar {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @constrain(
+// CHECK-SAME:          %[[LHS_X:[0-9a-zA-Z_\.]+]]: !array.type<? x index>,
+// CHECK-SAME:          %[[LHS_Y:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type>,
+// CHECK-SAME:          %[[LHS_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<? x none>,
+// CHECK-SAME:          %[[RHS_X:[0-9a-zA-Z_\.]+]]: !array.type<? x index>,
+// CHECK-SAME:          %[[RHS_Y:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type>,
+// CHECK-SAME:          %[[RHS_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<? x none>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[LHS_LEN:[0-9a-zA-Z_\.]+]] = array.len %[[LHS_SHAPE]], %[[C0]] : <? x none>
+// CHECK-NEXT:        %[[RHS_LEN:[0-9a-zA-Z_\.]+]] = array.len %[[RHS_SHAPE]], %[[C0]] : <? x none>
+// CHECK-NEXT:        constrain.eq %[[LHS_LEN]], %[[RHS_LEN]] : index, index
+// CHECK-NEXT:        constrain.eq %[[LHS_X]], %[[RHS_X]] : !array.type<? x index>, !array.type<? x index>
+// CHECK-NEXT:        constrain.eq %[[LHS_Y]], %[[RHS_Y]] : !array.type<? x !felt.type>, !array.type<? x !felt.type>
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Empty = !pod.type<[]>
+module attributes {llzk.lang} {
+  poly.template @EqEmptyArrayPodAndTypeVar {
+    poly.param @T : !poly.tvar<@T>
+    function.def @constrain(
+        %lhs: !array.type<? x !Empty>, %rhs: !poly.tvar<@T>
+    ) attributes {function.allow_constraint} {
+      constrain.eq %lhs, %rhs : !array.type<? x !Empty>, !poly.tvar<@T>
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @EqEmptyArrayPodAndTypeVar {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @constrain(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<? x none>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_1]] : (!poly.tvar<@T>) -> !array.type<? x none>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_0]], %[[VAL_3]] : <? x none>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_2]], %[[VAL_3]] : <? x none>
+// CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_5]] : index, index
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+!Pair = !pod.type<[@x: index, @y: !felt.type]>
+module attributes {llzk.lang} {
+  poly.template @ContainGenericArrayAndPodSubarray {
+    poly.param @T : !poly.tvar<@T>
+    function.def @constrain(
+        %table: !array.type<2,? x !poly.tvar<@T>>, %row: !array.type<? x !Pair>
+    ) attributes {function.allow_constraint} {
+      constrain.in %table, %row : !array.type<2,? x !poly.tvar<@T>>, !array.type<? x !Pair>
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @ContainGenericArrayAndPodSubarray {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @constrain(
+// CHECK-SAME:          %[[TABLE_X:[0-9a-zA-Z_\.]+]]: !array.type<2,? x index>,
+// CHECK-SAME:          %[[TABLE_Y:[0-9a-zA-Z_\.]+]]: !array.type<2,? x !felt.type>,
+// CHECK-SAME:          %[[TABLE_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<2,? x none>,
+// CHECK-SAME:          %[[ROW_X:[0-9a-zA-Z_\.]+]]: !array.type<? x index>,
+// CHECK-SAME:          %[[ROW_Y:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type>,
+// CHECK-SAME:          %[[ROW_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<? x none>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[TRUE:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        %[[IDX:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
+// CHECK-NEXT:        %[[DIM0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[TABLE_SHAPE]], %[[DIM0]] : <2,? x none>
+// CHECK-NEXT:        %[[GE0:[0-9a-zA-Z_\.]+]] = arith.cmpi sge, %[[IDX]], %[[C0]] : index
+// CHECK-NEXT:        constrain.eq %[[GE0]], %[[TRUE]] : i1, i1
+// CHECK-NEXT:        %[[LT_LEN:[0-9a-zA-Z_\.]+]] = arith.cmpi slt, %[[IDX]], %[[LEN]] : index
+// CHECK-NEXT:        constrain.eq %[[LT_LEN]], %[[TRUE]] : i1, i1
+// CHECK-NEXT:        %[[TABLE_ROW_SHAPE:[0-9a-zA-Z_\.]+]] = array.extract %[[TABLE_SHAPE]]{{\[}}%[[IDX]]] : <2,? x none>
+// CHECK-NEXT:        %[[ROW_DIM0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[TABLE_ROW_LEN:[0-9a-zA-Z_\.]+]] = array.len %[[TABLE_ROW_SHAPE]], %[[ROW_DIM0]] : <? x none>
+// CHECK-NEXT:        %[[ROW_LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ROW_SHAPE]], %[[ROW_DIM0]] : <? x none>
+// CHECK-NEXT:        constrain.eq %[[TABLE_ROW_LEN]], %[[ROW_LEN]] : index, index
+// CHECK-NEXT:        %[[TABLE_ROW_X:[0-9a-zA-Z_\.]+]] = array.extract %[[TABLE_X]]{{\[}}%[[IDX]]] : <2,? x index>
+// CHECK-NEXT:        constrain.eq %[[TABLE_ROW_X]], %[[ROW_X]] : !array.type<? x index>, !array.type<? x index>
+// CHECK-NEXT:        %[[TABLE_ROW_Y:[0-9a-zA-Z_\.]+]] = array.extract %[[TABLE_Y]]{{\[}}%[[IDX]]] : <2,? x !felt.type>
+// CHECK-NEXT:        constrain.eq %[[TABLE_ROW_Y]], %[[ROW_Y]] : !array.type<? x !felt.type>, !array.type<? x !felt.type>
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -1,0 +1,56 @@
+// RUN: llzk-opt -split-input-file -llzk-infer-tvar %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  poly.template @TOwnedStructTypeSiteParamRelation {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @U : !poly.tvar<@U>
+
+    poly.expr @Proof {
+      %index = arith.constant 42 : index
+      %t = poly.unifiable_cast %index : (index) -> !poly.tvar<@T>
+      poly.yield %index : index
+    }
+
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@T>
+
+      function.def @product(%arg: !poly.tvar<@T>) -> !struct.type<@TOwnedStructTypeSiteParamRelation::@Box<[@T, @U]>> attributes {function.allow_constraint, function.allow_witness} {
+        %self = struct.new : <@TOwnedStructTypeSiteParamRelation::@Box<[@T, @U]>>
+        struct.writem %self[@value] = %arg : <@TOwnedStructTypeSiteParamRelation::@Box<[@T, @U]>>, !poly.tvar<@T>
+        function.return %self : !struct.type<@TOwnedStructTypeSiteParamRelation::@Box<[@T, @U]>>
+      }
+    }
+
+    struct.def @Holder {
+      struct.member @box : !struct.type<@TOwnedStructTypeSiteParamRelation::@Box<[@U, @U]>>
+
+      function.def @product() -> !struct.type<@TOwnedStructTypeSiteParamRelation::@Holder<[@T, @U]>> {
+        %self = struct.new : <@TOwnedStructTypeSiteParamRelation::@Holder<[@T, @U]>>
+        function.return %self : !struct.type<@TOwnedStructTypeSiteParamRelation::@Holder<[@T, @U]>>
+      }
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TOwnedStructTypeSiteParamRelation {
+// CHECK-NEXT:      poly.expr @Proof {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK-NEXT:        poly.yield %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        struct.member @value : index
+// CHECK-NEXT:        function.def @product(%[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@TOwnedStructTypeSiteParamRelation::@Box> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TOwnedStructTypeSiteParamRelation::@Box>
+// CHECK-NEXT:          struct.writem %[[VAL_2]][@value] = %[[VAL_1]] : <@TOwnedStructTypeSiteParamRelation::@Box>, index
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@TOwnedStructTypeSiteParamRelation::@Box>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @box : !struct.type<@TOwnedStructTypeSiteParamRelation::@Box>
+// CHECK-NEXT:        function.def @product() -> !struct.type<@TOwnedStructTypeSiteParamRelation::@Holder> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@TOwnedStructTypeSiteParamRelation::@Holder>
+// CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@TOwnedStructTypeSiteParamRelation::@Holder>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

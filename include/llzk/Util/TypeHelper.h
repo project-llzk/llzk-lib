@@ -34,11 +34,9 @@ class PodType;
 
 /// Note: If any symbol refs in an input Type/Attribute use any of the special characters that this
 /// class generates, they are not escaped. That means these string representations are not safe to
-/// reverse back into a Type. It's only intended to produce a unique name for instantiated structs
-/// that may give some hint when debugging regarding the original struct name and the params used.
+/// reverse back into a Type. They are intended only to produce compact, recognizable names for
+/// instantiated symbols.
 class BuildShortTypeString {
-  static constexpr char PLACEHOLDER = '\x1A';
-
   std::string ret;
   llvm::raw_string_ostream ss;
 
@@ -56,20 +54,16 @@ public:
     return BuildShortTypeString().append(type).ret;
   }
 
+  /// Return a brief string representation of one LLZK type parameter attribute.
+  static inline std::string from(mlir::Attribute attr) {
+    return BuildShortTypeString().append(attr).ret;
+  }
+
   /// Return a brief string representation of the attribute list from a parameterized type.
-  /// Occurrences of `nullptr` are represented with a `PLACEHOLDER` character.
+  /// All attributes must be non-null.
   static inline std::string from(mlir::ArrayRef<mlir::Attribute> attrs) {
     return BuildShortTypeString().append(attrs).ret;
   }
-
-  /// Take an existing name prefix/base that contains N>=0 `PLACEHOLDER` character(s) and the
-  /// Attribute list (size>=N) from a parameterized type. The first N elements in the list are
-  /// formatted and used to replace the `PLACEHOLDER` character(s) in the base string. The remaining
-  /// Attribute elements, if any, are formatted and appended to the end. Occurrences of `nullptr` in
-  /// the Attribute list are formatted as the `PLACEHOLDER` character itself to allow for partial
-  /// instantiation of a parameterized type, preserving the location of attributes that were not
-  /// available in an earlier instantiation so they can be added by a later instantiation.
-  static std::string from(const std::string &base, mlir::ArrayRef<mlir::Attribute> attrs);
 };
 
 // This function asserts that the given Attribute kind is legal within the LLZK types that can
@@ -98,7 +92,7 @@ bool isValidEmitEqType(mlir::Type type);
 /// valid types: {I1, Index, FeltType, TypeVarType}
 bool isValidConstReadType(mlir::Type type);
 
-/// valid types: isValidType() - {ArrayType}
+/// valid types: isValidType() - {ArrayType}, plus `NoneType` for shape-only arrays
 bool isValidArrayElemType(mlir::Type type);
 
 /// Checks if the type is a LLZK Array and it also contains a valid LLZK type.
@@ -110,6 +104,35 @@ bool isValidArrayType(mlir::Type type);
 /// - `AffineMapAttr`
 /// - `StructType` with parameters if `allowStructParams==false`
 bool isConcreteType(mlir::Type type, bool allowStructParams = true);
+
+/// Return `false` if the type contains a `TypeVarType`.
+///
+/// This is weaker than `isConcreteType`: array dimensions may be symbols or affine maps, and
+/// parameterized struct types may use nested type attributes or direct affine-map parameters.
+/// Direct symbol references remain invalid as struct type parameters because they still require
+/// template instantiation.
+bool isTypeVarFreeType(mlir::Type type);
+
+/// Concreteness classification for an argument to a parameterized struct type.
+enum class AttrConcreteness : std::uint8_t {
+  NonConcrete,
+  Concrete,
+  Wildcard,
+};
+
+/// Classify `attr` as an argument for a parameterized struct type.
+///
+/// `TypeAttr` values are concrete when their nested type is concrete according
+/// to `isConcreteType`. Integer attributes are concrete unless they are the
+/// dynamic-size sentinel, which is classified as `Wildcard`. Felt constants are
+/// always concrete. Symbol references and affine maps remain non-concrete
+/// because they require further instantiation.
+AttrConcreteness classifyAttrConcreteness(mlir::Attribute attr, bool allowStructParams = true);
+
+/// Return `true` if `attr` is a concrete argument for a parameterized struct type.
+inline bool isConcreteStructParamAttr(mlir::Attribute attr, bool allowStructParams = true) {
+  return classifyAttrConcreteness(attr, allowStructParams) == AttrConcreteness::Concrete;
+}
 
 inline mlir::LogicalResult checkValidType(EmitErrorFn emitError, mlir::Type type) {
   if (!isValidType(type)) {
@@ -170,6 +193,14 @@ template <> struct DenseMapInfo<llzk::Side> {
 namespace llzk {
 
 bool isDynamic(mlir::IntegerAttr intAttr);
+
+/// Flatten any array-valued element type into the dimensions of `outerArrTy`.
+///
+/// This is used when an LLZK array logically resolves to a higher-rank array even though array
+/// element types cannot themselves be arrays. The returned type keeps `outerArrTy`'s leading
+/// dimensions, appends any nested dimensions from `elementType`, and uses the innermost non-array
+/// element type as the final element type.
+array::ArrayType flattenArrayElementType(array::ArrayType outerArrTy, mlir::Type elementType);
 
 /// Compute the cardinality (i.e. number of scalar constraints) for an EmitEqualityOp type since the
 /// op can be used to constrain two same-size arrays.

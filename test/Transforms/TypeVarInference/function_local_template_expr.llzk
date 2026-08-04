@@ -1,0 +1,55 @@
+// RUN: llzk-opt -split-input-file -llzk-infer-tvar %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  poly.template @TFunctionLocalExpr {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @N
+
+    poly.expr @Expr {
+      %unused = poly.read_const @N : !poly.tvar<@T>
+      %n = poly.read_const @N : index
+      poly.yield %n : index
+    }
+
+    function.def @with_expr(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      %expr = poly.read_const @Expr : index
+      function.return %arg : !poly.tvar<@T>
+    }
+  }
+
+  function.def @call_with_expr(%arg: !felt.type) -> !felt.type {
+    %0 = function.call @TFunctionLocalExpr::@with_expr<[!felt.type, 7]>(%arg) : (!felt.type) -> !felt.type
+    function.return %0 : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @"TFunctionLocalExpr_f_\1A" {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.expr @Expr {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !felt.type
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:        poly.yield %[[VAL_1]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @with_expr(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.read_const @Expr : index
+// CHECK-NEXT:        function.return %[[VAL_2]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TFunctionLocalExpr {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.expr @Expr {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.read_const @N : !poly.tvar<@T>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:        poly.yield %[[VAL_5]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @with_expr(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !poly.tvar<@T> {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = poly.read_const @Expr : index
+// CHECK-NEXT:        function.return %[[VAL_6]] : !poly.tvar<@T>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_with_expr(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @"TFunctionLocalExpr_f_\1A"::@with_expr<[7]>(%[[VAL_8]]) : (!felt.type) -> !felt.type
+// CHECK-NEXT:      function.return %[[VAL_9]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

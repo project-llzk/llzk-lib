@@ -48,8 +48,8 @@ module attributes {llzk.lang} {
 // -----
 module attributes {llzk.lang} {
   poly.template @TComponent02 {
-    poly.param @A
-    poly.param @B
+    poly.param @A : index
+    poly.param @B : index
 
     struct.def @Component02 {
       // expected-error@+1 {{Cannot update type of 'struct.member' because there are multiple 'struct.writem' with different value types}}

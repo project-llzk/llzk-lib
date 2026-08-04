@@ -11,12 +11,14 @@
 
 #include "llzk/Dialect/POD/IR/Dialect.h"
 #include "llzk/Dialect/POD/IR/Types.h"
+#include "llzk/Dialect/Shared/DiscardableAllocationOpInterfaces.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/OpImplementation.h>
 #include <mlir/IR/Value.h>
 #include <mlir/Interfaces/MemorySlotInterfaces.h>
+#include <mlir/Interfaces/SideEffectInterfaces.h>
 
 // Include TableGen'd declarations
 #include "llzk/Dialect/POD/IR/OpInterfaces.h.inc"
@@ -30,7 +32,7 @@ namespace llzk::pod {
 mlir::SmallVector<RecordValue>
 getInitializedRecordValues(mlir::ValueRange initialValues, mlir::ArrayAttr initializedRecords);
 
-mlir::ParseResult parseRecordName(mlir::AsmParser &parser, mlir::FlatSymbolRefAttr &name);
-void printRecordName(mlir::AsmPrinter &printer, mlir::Operation *, mlir::FlatSymbolRefAttr name);
+mlir::ParseResult parseRecordName(mlir::AsmParser &parser, mlir::StringAttr &name);
+void printRecordName(mlir::AsmPrinter &printer, mlir::Operation *, mlir::StringAttr name);
 
 } // namespace llzk::pod

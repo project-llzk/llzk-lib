@@ -15,21 +15,26 @@
 
 #include "r1cs/Dialect/IR/Dialect.h"
 #include "r1cs/DialectRegistration.h"
+#include "r1cs/Transforms/TransformationPassPipelines.h"
 #include "r1cs/Transforms/TransformationPasses.h"
 #include "smt/Conversions/ConversionPasses.h"
 #include "tools/config.h"
 #include "zklean/Conversions/Passes.h"
 #include "zklean/DialectRegistration.h"
-#include "zklean/Transforms/ZKLeanPasses.h"
 
 #include "llzk/Analysis/AnalysisPasses.h"
 #include "llzk/Config/Config.h"
 #include "llzk/Dialect/Array/Transforms/TransformationPasses.h"
+#include "llzk/Dialect/Bool/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Include/Transforms/InlineIncludesPass.h"
 #include "llzk/Dialect/Include/Util/IncludeHelper.h"
 #include "llzk/Dialect/InitDialects.h"
+#include "llzk/Dialect/POD/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
+#include "llzk/Dialect/Struct/Transforms/TransformationPasses.h"
+#include "llzk/Transforms/LLZKTransformationPassPipelines.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Transforms/SpecializedMemoryPasses.h"
 #include "llzk/Validators/LLZKValidationPasses.h"
 
 #include <mlir/Dialect/Func/Extensions/InlinerExtension.h>
@@ -47,11 +52,9 @@
 #include <llvm/Support/Signals.h>
 
 #if LLZK_WITH_PCL
-#include "pcl-conv/Transforms/TransformationPasses.h"
-
-#include <pcl/Dialect/IR/Dialect.h>
-#include <pcl/InitAllDialects.h>
-#include <pcl/Transforms/PCLTransformationPasses.h>
+#include "pcl/Conversion/ConversionPasses.h"
+#include "pcl/Dialect/IR/Dialect.h"
+#include "pcl/DialectRegistration.h"
 #endif // LLZK_WITH_PCL
 
 static llvm::cl::list<std::string> IncludeDirs(
@@ -67,53 +70,6 @@ static llvm::cl::opt<bool>
 /// encounters an `scf.if` op with an empty else region.
 namespace mlir_hotfix {
 
-class RemoveDeadValuesWorkaroundPass
-    : public mlir::PassWrapper<RemoveDeadValuesWorkaroundPass, mlir::OperationPass<>> {
-public:
-  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(RemoveDeadValuesWorkaroundPass)
-
-  llvm::StringRef getArgument() const override { return "remove-dead-values"; }
-  llvm::StringRef getDescription() const override { return "Remove dead values"; }
-
-  void runOnOperation() final {
-    // pre-pass: add trivial block to empty "else" regions of scf.if ops
-    getOperation()->walk([](mlir::scf::IfOp ifOp) {
-      if (ifOp.getElseRegion().empty()) {
-        mlir::Block &elseBlock = ifOp.getElseRegion().emplaceBlock();
-        mlir::OpBuilder builder(ifOp.getContext());
-        builder.setInsertionPointToEnd(&elseBlock);
-        builder.create<mlir::scf::YieldOp>(ifOp.getLoc());
-      }
-    });
-
-    mlir::OpPassManager pm(getOperation()->getName().getStringRef());
-    pm.addPass(mlir::createRemoveDeadValuesPass());
-    if (mlir::failed(runPipeline(pm, getOperation()))) {
-      signalPassFailure();
-    }
-
-    // post-pass: cleanup trival "else" blocks that remain after the pass
-    getOperation()->walk([](mlir::scf::IfOp ifOp) {
-      if (ifOp.getResults().empty()) {
-        mlir::Region &elseRegion = ifOp.getElseRegion();
-        if (!llvm::hasSingleElement(elseRegion)) {
-          return;
-        }
-        mlir::Block &elseBlock = elseRegion.front();
-        if (!llvm::hasSingleElement(elseBlock)) {
-          return;
-        }
-        if (!llvm::isa<mlir::scf::YieldOp>(elseBlock.front())) {
-          return;
-        }
-        elseRegion.dropAllReferences();
-        elseBlock.clear();
-        elseRegion.getBlocks().clear();
-      }
-    });
-  }
-};
-
 inline static void registerTransformsPasses() {
   mlir::registerCSE();
   mlir::registerCanonicalizer();
@@ -127,9 +83,7 @@ inline static void registerTransformsPasses() {
   mlir::registerMem2Reg();
   mlir::registerPrintIRPass();
   mlir::registerPrintOpStats();
-  mlir::registerPass([]() -> std::unique_ptr<mlir::Pass> {
-    return std::make_unique<RemoveDeadValuesWorkaroundPass>();
-  });
+  mlir::registerPass(llzk::createRemoveDeadValuesWorkaroundPass);
   mlir::registerSCCP();
   mlir::registerSROA();
   mlir::registerStripDebugInfo();
@@ -167,20 +121,21 @@ int main(int argc, char **argv) {
   llzk::registerValidationPasses();
   llzk::registerAnalysisPasses();
   llzk::registerTransformationPasses();
+  llzk::component::registerTransformationPasses();
   llzk::array::registerTransformationPasses();
+  llzk::boolean::registerTransformationPasses();
   llzk::include::registerTransformationPasses();
   llzk::polymorphic::registerTransformationPasses();
+  llzk::pod::registerTransformationPasses();
   r1cs::registerTransformationPasses();
   zklean::registerConversionPasses();
-  zklean::registerZKLeanPasses();
 #if LLZK_WITH_PCL
-  pcl::registerTransformationPasses();
-  pcl::conversion::registerPCLTransformationPasses();
+  pcl::registerPCLConversionPasses();
 #endif // LLZK_WITH_PCL
+  llzk::smt::registerConversionPasses();
 
   llzk::registerTransformationPassPipelines();
   r1cs::registerTransformationPassPipelines();
-  llzk::smt::registerConversionPasses();
 
   // Register and parse command line options.
   std::string inputFilename, outputFilename;

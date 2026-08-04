@@ -15,14 +15,19 @@
 #include "llzk/Dialect/Include/IR/Dialect.capi.test.cpp.inc"
 #include "llzk/Dialect/Include/IR/Ops.capi.test.cpp.inc"
 
-TEST_F(CAPITest, llzk_include_op_create) {
+TEST_F(CAPITest, llzk_include_op_build_inferred_context) {
   auto location = mlirLocationUnknownGet(context);
-  auto op = llzkInclude_IncludeOpCreateInferredContext(
-      location, mlirStringRefCreateFromCString("test"), mlirStringRefCreateFromCString("test.mlir")
+  MlirModule module = mlirModuleCreateEmpty(location);
+  MlirOpBuilder builder = mlirOpBuilderCreate(context);
+  mlirOpBuilderSetInsertionPointToStart(builder, mlirModuleGetBody(module));
+  auto op = llzkInclude_IncludeOpBuildInferredContext(
+      builder, location, mlirStringRefCreateFromCString("test"),
+      mlirStringRefCreateFromCString("test.mlir")
   );
 
   EXPECT_NE(op.ptr, (void *)NULL);
-  mlirOperationDestroy(op);
+  mlirOpBuilderDestroy(builder);
+  mlirModuleDestroy(module);
 }
 
 // Implementation for `IncludeOp_build_pass` test

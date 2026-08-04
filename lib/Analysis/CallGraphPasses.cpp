@@ -21,57 +21,48 @@
 #include "llzk/Analysis/AnalysisPasses.h"
 #include "llzk/Analysis/CallGraphAnalyses.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Util/SymbolHelper.h"
 
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/ErrorHandling.h>
 
 namespace llzk {
-
 #define GEN_PASS_DEF_CALLGRAPHPRINTERPASS
 #define GEN_PASS_DEF_CALLGRAPHSCCSPRINTERPASS
 #include "llzk/Analysis/AnalysisPasses.h.inc"
+} // namespace llzk
 
-class CallGraphPrinterPass : public impl::CallGraphPrinterPassBase<CallGraphPrinterPass> {
-  llvm::raw_ostream &os;
+namespace {
 
-public:
-  explicit CallGraphPrinterPass(llvm::raw_ostream &ostream)
-      : impl::CallGraphPrinterPassBase<CallGraphPrinterPass>(), os(ostream) {}
+class PassImpl : public llzk::impl::CallGraphPrinterPassBase<PassImpl> {
+  using Base = CallGraphPrinterPassBase<PassImpl>;
+  using Base::Base;
 
-protected:
   void runOnOperation() override {
     markAllAnalysesPreserved();
 
-    auto &cga = getAnalysis<CallGraphAnalysis>();
-    cga.getCallGraph().print(os);
+    auto &cga = getAnalysis<llzk::CallGraphAnalysis>();
+    cga.getCallGraph().print(llzk::toStream(outputStream));
   }
 };
 
-std::unique_ptr<mlir::Pass> createCallGraphPrinterPass(llvm::raw_ostream &os = llvm::errs()) {
-  return std::make_unique<CallGraphPrinterPass>(os);
-}
+class SCCPassImpl : public llzk::impl::CallGraphSCCsPrinterPassBase<SCCPassImpl> {
+  using Base = CallGraphSCCsPrinterPassBase<SCCPassImpl>;
+  using Base::Base;
 
-class CallGraphSCCsPrinterPass
-    : public impl::CallGraphSCCsPrinterPassBase<CallGraphSCCsPrinterPass> {
-  llvm::raw_ostream &os;
-
-public:
-  explicit CallGraphSCCsPrinterPass(llvm::raw_ostream &ostream)
-      : impl::CallGraphSCCsPrinterPassBase<CallGraphSCCsPrinterPass>(), os(ostream) {}
-
-protected:
   void runOnOperation() override {
     markAllAnalysesPreserved();
 
-    auto &CG = getAnalysis<CallGraphAnalysis>();
+    auto &os = llzk::toStream(outputStream);
+    auto &CG = getAnalysis<llzk::CallGraphAnalysis>();
     unsigned sccNum = 0;
     os << "SCCs for the program in PostOrder:";
     for (auto SCCI = llvm::scc_begin<const llzk::CallGraph *>(&CG.getCallGraph()); !SCCI.isAtEnd();
          ++SCCI) {
-      const std::vector<const CallGraphNode *> &nextSCC = *SCCI;
+      const std::vector<const llzk::CallGraphNode *> &nextSCC = *SCCI;
       os << "\nSCC #" << ++sccNum << ": ";
       bool First = true;
-      for (const CallGraphNode *CGN : nextSCC) {
+      for (const llzk::CallGraphNode *CGN : nextSCC) {
         if (First) {
           First = false;
         } else {
@@ -80,7 +71,10 @@ protected:
         if (CGN->isExternal()) {
           os << "external node";
         } else {
-          os << CGN->getCalledFunction().getFullyQualifiedName();
+          mlir::CallableOpInterface calledFn = CGN->getCalledFunction();
+          auto calledSym = llvm::dyn_cast<mlir::SymbolOpInterface>(calledFn.getOperation());
+          assert(calledSym && "call graph nodes must refer to callable symbols");
+          os << llzk::getFullyQualifiedName(calledSym);
         }
       }
 
@@ -92,8 +86,4 @@ protected:
   }
 };
 
-std::unique_ptr<mlir::Pass> createCallGraphSCCsPrinterPass(llvm::raw_ostream &os = llvm::errs()) {
-  return std::make_unique<CallGraphSCCsPrinterPass>(os);
-}
-
-} // namespace llzk
+} // namespace

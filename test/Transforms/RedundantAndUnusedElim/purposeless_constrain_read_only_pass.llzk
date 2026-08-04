@@ -1,0 +1,55 @@
+// RUN: llzk-opt -split-input-file -llzk-duplicate-op-elim %s 2>&1 | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @ReadOnlyCallee {
+    struct.member @cell : !felt.type
+
+    function.def @compute() -> !struct.type<@ReadOnlyCallee> {
+      %self = struct.new : !struct.type<@ReadOnlyCallee>
+      function.return %self : !struct.type<@ReadOnlyCallee>
+    }
+
+    function.def @constrain(%self: !struct.type<@ReadOnlyCallee>) {
+      %cell = struct.readm %self[@cell] : !struct.type<@ReadOnlyCallee>, !felt.type
+      function.return
+    }
+  }
+
+  struct.def @ReadOnlyCaller {
+    struct.member @child : !struct.type<@ReadOnlyCallee>
+
+    function.def @compute() -> !struct.type<@ReadOnlyCaller> {
+      %self = struct.new : !struct.type<@ReadOnlyCaller>
+      function.return %self : !struct.type<@ReadOnlyCaller>
+    }
+
+    function.def @constrain(%self: !struct.type<@ReadOnlyCaller>) {
+      %child = struct.readm %self[@child] : !struct.type<@ReadOnlyCaller>, !struct.type<@ReadOnlyCallee>
+      function.call @ReadOnlyCallee::@constrain(%child) : (!struct.type<@ReadOnlyCallee>) -> ()
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @ReadOnlyCallee {
+// CHECK-NEXT:      struct.member @cell : !felt.type
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@ReadOnlyCallee> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@ReadOnlyCallee>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@ReadOnlyCallee>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@ReadOnlyCallee>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@cell] : <@ReadOnlyCallee>, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @ReadOnlyCaller {
+// CHECK-NEXT:      struct.member @child : !struct.type<@ReadOnlyCallee>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@ReadOnlyCaller> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@ReadOnlyCaller>
+// CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@ReadOnlyCaller>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@ReadOnlyCaller>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

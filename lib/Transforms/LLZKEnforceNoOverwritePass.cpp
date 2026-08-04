@@ -25,27 +25,22 @@
 #include <memory>
 
 namespace llzk {
-#define GEN_PASS_DECL_ENFORCENOMEMBEROVERWRITEPASS
 #define GEN_PASS_DEF_ENFORCENOMEMBEROVERWRITEPASS
 #include "llzk/Transforms/LLZKTransformationPasses.h.inc"
 } // namespace llzk
 
 #define DEBUG_TYPE "llzk-enforce-no-overwrites-pass"
 
-using std::make_unique;
+namespace {
 
-using namespace mlir;
+using namespace llzk;
 
-namespace llzk {
-
-using namespace function;
-using namespace component;
-
-class EnforceNoMemberOverwritePass
-    : public llzk::impl::EnforceNoMemberOverwritePassBase<EnforceNoMemberOverwritePass> {
+class PassImpl : public llzk::impl::EnforceNoMemberOverwritePassBase<PassImpl> {
+  using Base = EnforceNoMemberOverwritePassBase<PassImpl>;
+  using Base::Base;
 
   void runOnOperation() override {
-    getOperation()->walk([this](StructDefOp structDef) {
+    getOperation()->walk([this](component::StructDefOp structDef) {
       auto result = analyzeStruct(structDef);
       if (failed(result)) {
         signalPassFailure();
@@ -65,7 +60,4 @@ class EnforceNoMemberOverwritePass
   }
 };
 
-std::unique_ptr<mlir::Pass> createNoOverwritesPass() {
-  return make_unique<EnforceNoMemberOverwritePass>();
-}
-} // namespace llzk
+} // namespace

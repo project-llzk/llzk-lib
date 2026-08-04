@@ -19,45 +19,40 @@
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/ErrorHandling.h>
 
-using namespace mlir;
-
 namespace llzk {
-
-using namespace component;
-
-#define GEN_PASS_DECL_CONSTRAINTDEPENDENCYGRAPHPRINTERPASS
 #define GEN_PASS_DEF_CONSTRAINTDEPENDENCYGRAPHPRINTERPASS
 #include "llzk/Analysis/AnalysisPasses.h.inc"
+} // namespace llzk
 
-class ConstraintDependencyGraphPrinterPass
-    : public impl::ConstraintDependencyGraphPrinterPassBase<ConstraintDependencyGraphPrinterPass> {
-  llvm::raw_ostream &os;
+using namespace mlir;
 
-public:
-  explicit ConstraintDependencyGraphPrinterPass(llvm::raw_ostream &ostream)
-      : impl::ConstraintDependencyGraphPrinterPassBase<ConstraintDependencyGraphPrinterPass>(),
-        os(ostream) {}
+namespace {
 
-protected:
+class PassImpl : public llzk::impl::ConstraintDependencyGraphPrinterPassBase<PassImpl> {
+  using Base = ConstraintDependencyGraphPrinterPassBase<PassImpl>;
+  using Base::Base;
+
   void runOnOperation() override {
     markAllAnalysesPreserved();
 
-    if (!llvm::isa<mlir::ModuleOp>(getOperation())) {
+    if (!llvm::isa<ModuleOp>(getOperation())) {
       const char *msg = "ConstraintDependencyGraphPrinterPass error: should be run on ModuleOp!";
       getOperation()->emitError(msg).report();
       llvm::report_fatal_error(msg);
     }
 
-    auto &cs = getAnalysis<ConstraintDependencyGraphModuleAnalysis>();
+    auto &cs = getAnalysis<llzk::ConstraintDependencyGraphModuleAnalysis>();
     cs.setIntraprocedural(runIntraprocedural);
     auto am = getAnalysisManager();
     cs.ensureAnalysisRun(am);
+
+    auto &os = llzk::toStream(outputStream);
     for (const auto &[s, cdg] : cs.getCurrentResults()) {
-      auto &structDef = const_cast<StructDefOp &>(s);
-      FailureOr<SymbolRefAttr> fullName = getPathFromTopRoot(structDef);
-      ensure(
-          mlir::succeeded(fullName),
-          "could not resolve fully qualified name of struct " + mlir::Twine(structDef.getName())
+      auto &structDef = const_cast<llzk::component::StructDefOp &>(s);
+      FailureOr<SymbolRefAttr> fullName = llzk::getPathFromTopRoot(structDef);
+      llzk::ensure(
+          succeeded(fullName),
+          "could not resolve fully qualified name of struct " + Twine(structDef.getName())
       );
       os << fullName.value() << ' ';
       cdg.get().print(os);
@@ -65,9 +60,4 @@ protected:
   }
 };
 
-std::unique_ptr<mlir::Pass>
-createConstraintDependencyGraphPrinterPass(llvm::raw_ostream &os = llvm::errs()) {
-  return std::make_unique<ConstraintDependencyGraphPrinterPass>(os);
-}
-
-} // namespace llzk
+} // namespace

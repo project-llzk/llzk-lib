@@ -22,6 +22,25 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  function.def @dead_new_and_write() -> index {
+    %0 = arith.constant 0 : index
+    %value = arith.constant 7 : index
+    %ret = arith.constant 42 : index
+
+    %r = array.new : !array.type<1 x index>
+    array.write %r[%0] = %value : !array.type<1 x index>, index
+    function.return %ret : index
+  }
+}
+// CHECK-LABEL: function.def @dead_new_and_write() -> index {
+// CHECK-NOT:    array.new
+// CHECK-NOT:    array.write
+// CHECK:        %[[V:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK-NEXT:   function.return %[[V]] : index
+// CHECK-NEXT: }
+// -----
+
+module attributes {llzk.lang} {
   function.def @multiple_read_and_write() -> !felt.type {
     %0 = arith.constant 0 : index
     %1 = arith.constant 1 : index
@@ -143,6 +162,119 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
 // CHECK-NEXT:    function.return %[[V0]] : index
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @single_element_arg(%a: !array.type<1 x index>) -> index {
+    %0 = arith.constant 0 : index
+    %z = array.read %a[%0] : !array.type<1 x index>, index
+    function.return %z : index
+  }
+}
+// CHECK-LABEL: function.def @single_element_arg(
+// CHECK-SAME:           %[[V0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:    function.return %[[V0]] : index
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def @shape_identity(%shape: !array.type<4 x none>) -> !array.type<4 x none> {
+    function.return %shape : !array.type<4 x none>
+  }
+
+  function.def @shape_passthrough() -> !array.type<4 x none> {
+    %shape = llzk.nondet : !array.type<4 x none>
+    %result = function.call @shape_identity(%shape) : (!array.type<4 x none>) -> !array.type<4 x none>
+    function.return %result : !array.type<4 x none>
+  }
+}
+// CHECK-LABEL: function.def @shape_identity(
+// CHECK-SAME:              %[[SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<4 x none>) -> !array.type<4 x none> {
+// CHECK-NEXT:    function.return %[[SHAPE]] : !array.type<4 x none>
+// CHECK-NEXT:  }
+// CHECK-LABEL: function.def @shape_passthrough() -> !array.type<4 x none> {
+// CHECK-NEXT:    %[[SHAPE:[0-9a-zA-Z_\.]+]] = array.new  : <4 x none>
+// CHECK-NEXT:    %[[RESULT:[0-9a-zA-Z_\.]+]] = function.call @shape_identity(%[[SHAPE]]) : (!array.type<4 x none>) -> !array.type<4 x none>
+// CHECK-NEXT:    function.return %[[RESULT]] : !array.type<4 x none>
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @TFree {
+    poly.param @A
+
+    function.def @make() -> !array.type<2 x index> {
+      %0 = arith.constant 0 : index
+      %a = poly.read_const @A : index
+      %arr = array.new %a, %0 : !array.type<2 x index>
+      function.return %arr : !array.type<2 x index>
+    }
+  }
+
+  function.def @main() -> index {
+    %arr = function.call @TFree::@make<[7]>() : () -> !array.type<2 x index>
+    %0 = arith.constant 0 : index
+    %res = array.read %arr[%0] : !array.type<2 x index>, index
+    function.return %res : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TFree {
+// CHECK-NEXT:      poly.param @A
+// CHECK-NEXT:      function.def @make() -> (index, index) {
+// CHECK-NEXT:        %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[V1:[0-9a-zA-Z_\.]+]] = poly.read_const @A : index
+// CHECK-NEXT:        function.return %[[V1]], %[[V0]] : index, index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main() -> index {
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]]:2 = function.call @TFree::@make<[7]>() : () -> (index, index)
+// CHECK-NEXT:      function.return %[[V2]]#0 : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+#sum = affine_map<()[s0, s1] -> (s0 + s1)>
+module attributes {llzk.lang} {
+  poly.template @TBox {
+    poly.param @A
+
+    struct.def @Box {
+      struct.member @out : index {llzk.pub}
+
+      function.def @compute(%arr: !array.type<2 x index>) -> !struct.type<@TBox::@Box<[@A]>> {
+        %self = struct.new : !struct.type<@TBox::@Box<[@A]>>
+        %0 = arith.constant 0 : index
+        %x = array.read %arr[%0] : !array.type<2 x index>, index
+        struct.writem %self[@out] = %x : !struct.type<@TBox::@Box<[@A]>>, index
+        function.return %self : !struct.type<@TBox::@Box<[@A]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TBox::@Box<[@A]>>, %arr: !array.type<2 x index>) {
+        function.return
+      }
+    }
+  }
+
+  function.def @main(%x: index, %y: index) -> index attributes {function.allow_witness} {
+    %arr = array.new %x, %y : !array.type<2 x index>
+    %c2 = arith.constant 2 : index
+    %c3 = arith.constant 3 : index
+    %box = function.call @TBox::@Box::@compute(%arr){()[%c2, %c3]}
+        : (!array.type<2 x index>) -> !struct.type<@TBox::@Box<[#sum]>>
+    %out = struct.readm %box[@out] : !struct.type<@TBox::@Box<[#sum]>>, index
+    function.return %out : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK:          function.def @main(%[[V0:[0-9a-zA-Z_\.]+]]: index, %[[V1:[0-9a-zA-Z_\.]+]]: index) -> index attributes {function.allow_witness} {
+// CHECK-NEXT:       %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:       %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// CHECK-NEXT:       %[[V4:[0-9a-zA-Z_\.]+]] = function.call @TBox::@Box::@compute(%[[V0]], %[[V1]]) {(){{\[}}%[[V2]], %[[V3]]]} : (index, index) -> !struct.type<@TBox::@Box<[{{.*}}]>>
+// CHECK-NEXT:       %[[V5:[0-9a-zA-Z_\.]+]] = struct.readm %[[V4]][@out] : <@TBox::@Box<[{{.*}}]>>, index
+// CHECK-NEXT:       function.return %[[V5]] : index
+// CHECK-NEXT:     }
+// CHECK-NEXT:   }
 // -----
 
 module attributes {llzk.lang} {
@@ -589,7 +721,7 @@ module attributes {llzk.lang} {
 // MemberDef and MemberRead w/ non-static shape (i.e., cannot be flattened to scalars)
 module attributes {llzk.lang} {
   poly.template @TComponentB2 {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @ComponentB2 {
       function.def @compute(%p: !struct.type<@TComponentB1::@ComponentB1<[@N]>>) -> !struct.type<@TComponentB2::@ComponentB2<[@N]>> {
@@ -605,7 +737,7 @@ module attributes {llzk.lang} {
   }
 
   poly.template @TComponentB1 {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @ComponentB1 {
       struct.member @f1 : !array.type<4,@N x !felt.type> {llzk.pub}
@@ -619,7 +751,7 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: poly.template @TComponentB2 {
-// CHECK-NEXT:    poly.param @N
+// CHECK-NEXT:    poly.param @N : index
 // CHECK-NEXT:    struct.def @ComponentB2 {
 // CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentB1::@ComponentB1<[@N]>>) -> !struct.type<@TComponentB2::@ComponentB2<[@N]>> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponentB2::@ComponentB2<[@N]>>
@@ -633,7 +765,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 //
 // CHECK-LABEL: poly.template @TComponentB1 {
-// CHECK-NEXT:    poly.param @N
+// CHECK-NEXT:    poly.param @N : index
 // CHECK-NEXT:    struct.def @ComponentB1 {
 // CHECK-NEXT:      struct.member @f1 : !array.type<4,@N x !felt.type> {llzk.pub}
 // CHECK-NEXT:      function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentB1::@ComponentB1<[@N]>>) attributes {function.allow_constraint} {
@@ -650,7 +782,7 @@ module attributes {llzk.lang} {
 // Func and CallOp w/ non-static shape (i.e., cannot be flattened to scalars)
 module attributes {llzk.lang} {
   poly.template @TComponentC1 {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @ComponentC1 {
       function.def @compute(%p: !array.type<@N x !felt.type>) -> !struct.type<@TComponentC1::@ComponentC1<[@N]>> {
@@ -665,7 +797,7 @@ module attributes {llzk.lang} {
   }
 
   poly.template @TComponentC2 {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @ComponentC2 {
       struct.member @f1 : !struct.type<@TComponentC1::@ComponentC1<[@N]>>
@@ -685,7 +817,7 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TComponentC1 {
-// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.param @N : index
 // CHECK-NEXT:      struct.def @ComponentC1 {
 // CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) -> !struct.type<@TComponentC1::@ComponentC1<[@N]>> attributes {function.allow_witness} {
 // CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponentC1::@ComponentC1<[@N]>>
@@ -697,7 +829,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @TComponentC2 {
-// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.param @N : index
 // CHECK-NEXT:      struct.def @ComponentC2 {
 // CHECK-NEXT:        struct.member @f1 : !struct.type<@TComponentC1::@ComponentC1<[@N]>>
 // CHECK-NEXT:        function.def @compute(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) -> !struct.type<@TComponentC2::@ComponentC2<[@N]>> attributes {function.allow_witness} {
@@ -738,9 +870,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.member @arr_3 : !felt.type {llzk.pub}
 // CHECK-NEXT:    struct.member @arr_4 : !felt.type {llzk.pub}
 // CHECK-NEXT:    struct.member @arr_5 : !felt.type {llzk.pub}
-// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[0]", llzk.pub}, %[[V1:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[1]", llzk.pub},
-// CHECK-SAME:    %[[V2:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[2]", llzk.pub}, %[[V3:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[3]", llzk.pub},
-// CHECK-SAME:    %[[V4:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[4]", llzk.pub}, %[[V5:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[5]", llzk.pub})
+// CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[0][0]", llzk.pub}, %[[V1:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[0][1]", llzk.pub},
+// CHECK-SAME:    %[[V2:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[0][2]", llzk.pub}, %[[V3:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[1][0]", llzk.pub},
+// CHECK-SAME:    %[[V4:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[1][1]", llzk.pub}, %[[V5:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "a[1][2]", llzk.pub})
 // CHECK-SAME:    -> !struct.type<@ArrayMembersAndParamsWithPubModifier> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V6:[0-9a-zA-Z_\.]+]] = struct.new : <@ArrayMembersAndParamsWithPubModifier>
 // CHECK-DAG:       struct.writem %[[V6]][@arr_2] = %[[V2]] : <@ArrayMembersAndParamsWithPubModifier>, !felt.type
@@ -751,10 +883,10 @@ module attributes {llzk.lang} {
 // CHECK-DAG:       struct.writem %[[V6]][@arr_5] = %[[V5]] : <@ArrayMembersAndParamsWithPubModifier>, !felt.type
 // CHECK-NEXT:      function.return %[[V6]] : !struct.type<@ArrayMembersAndParamsWithPubModifier>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !struct.type<@ArrayMembersAndParamsWithPubModifier>, %[[V8:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[0]", llzk.pub},
-// CHECK-SAME:    %[[V9:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[1]", llzk.pub}, %[[V10:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[2]", llzk.pub},
-// CHECK-SAME:    %[[V11:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[3]", llzk.pub}, %[[V12:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[4]", llzk.pub},
-// CHECK-SAME:    %[[V13:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[5]", llzk.pub}) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[V7:[0-9a-zA-Z_\.]+]]: !struct.type<@ArrayMembersAndParamsWithPubModifier>, %[[V8:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[0][0]", llzk.pub},
+// CHECK-SAME:    %[[V9:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[0][1]", llzk.pub}, %[[V10:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[0][2]", llzk.pub},
+// CHECK-SAME:    %[[V11:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[1][0]", llzk.pub}, %[[V12:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[1][1]", llzk.pub},
+// CHECK-SAME:    %[[V13:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[1][2]", llzk.pub}) attributes {function.allow_constraint} {
 // CHECK-DAG:       %[[V14:[0-9a-zA-Z_\.]+]] = struct.readm %[[V7]][@arr_2] : <@ArrayMembersAndParamsWithPubModifier>, !felt.type
 // CHECK-DAG:       %[[V15:[0-9a-zA-Z_\.]+]] = struct.readm %[[V7]][@arr_3] : <@ArrayMembersAndParamsWithPubModifier>, !felt.type
 // CHECK-DAG:       %[[V16:[0-9a-zA-Z_\.]+]] = struct.readm %[[V7]][@arr_4] : <@ArrayMembersAndParamsWithPubModifier>, !felt.type
@@ -764,6 +896,19 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  function.def private @named_array_signature(
+      !array.type<2,2 x !felt.type> {function.arg_name = "input"})
+      -> (!array.type<2,2 x !felt.type> {function.res_name = "output"})
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def private @named_array_signature(!felt.type {function.arg_name = "input[0][0]"},
+// CHECK-SAME:    !felt.type {function.arg_name = "input[0][1]"}, !felt.type {function.arg_name = "input[1][0]"},
+// CHECK-SAME:    !felt.type {function.arg_name = "input[1][1]"}) -> (!felt.type {function.res_name = "output[0][0]"},
+// CHECK-SAME:    !felt.type {function.res_name = "output[0][1]"}, !felt.type {function.res_name = "output[1][0]"},
+// CHECK-SAME:    !felt.type {function.res_name = "output[1][1]"})
 // -----
 
 module attributes {llzk.lang} {

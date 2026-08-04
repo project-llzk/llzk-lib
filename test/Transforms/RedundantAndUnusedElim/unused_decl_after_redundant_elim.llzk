@@ -1,0 +1,71 @@
+// RUN: llzk-opt -llzk-unused-declaration-elim -llzk-duplicate-read-write-elim -llzk-duplicate-op-elim %s 2>&1 | FileCheck %s --check-prefix BASE
+// RUN: llzk-opt -llzk-unused-declaration-elim -llzk-duplicate-read-write-elim -llzk-duplicate-op-elim -llzk-unused-declaration-elim %s 2>&1 | FileCheck %s --check-prefix EXTRA
+
+// TESTS: running `-llzk-unused-declaration-elim` after the duplicate removal passes can elminate something that could not be eliminated before.
+module attributes {llzk.lang} {
+  struct.def @A {
+    function.def @compute() -> !struct.type<@A> {
+      %self = struct.new : !struct.type<@A>
+      function.return %self : !struct.type<@A>
+    }
+    function.def @constrain(%self : !struct.type<@A>) {
+      function.return
+    }
+  }
+
+  struct.def @B {
+    struct.member @a : !struct.type<@A>
+    function.def @compute() -> !struct.type<@B> {
+      %self = struct.new : !struct.type<@B>
+      function.return %self : !struct.type<@B>
+    }
+    function.def @constrain(%self : !struct.type<@B>) {
+      %a = struct.readm %self[@a] : !struct.type<@B>, !struct.type<@A>
+      function.call @A::@constrain(%a) : (!struct.type<@A>) -> ()
+      function.return
+    }
+  }
+}
+// BASE-LABEL: module attributes {llzk.lang} {
+// BASE-NEXT:    struct.def @A {
+// BASE-NEXT:      function.def @compute() -> !struct.type<@A> attributes {function.allow_witness} {
+// BASE-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@A>
+// BASE-NEXT:        function.return %[[VAL_0]] : !struct.type<@A>
+// BASE-NEXT:      }
+// BASE-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@A>) attributes {function.allow_constraint} {
+// BASE-NEXT:        function.return
+// BASE-NEXT:      }
+// BASE-NEXT:    }
+// BASE-NEXT:    struct.def @B {
+// BASE-NEXT:      struct.member @a : !struct.type<@A>
+// BASE-NEXT:      function.def @compute() -> !struct.type<@B> attributes {function.allow_witness} {
+// BASE-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@B>
+// BASE-NEXT:        function.return %[[VAL_2]] : !struct.type<@B>
+// BASE-NEXT:      }
+// BASE-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@B>) attributes {function.allow_constraint} {
+// BASE-NEXT:        function.return
+// BASE-NEXT:      }
+// BASE-NEXT:    }
+// BASE-NEXT:  }
+
+// EXTRA-LABEL: module attributes {llzk.lang} {
+// EXTRA-NEXT:    struct.def @A {
+// EXTRA-NEXT:      function.def @compute() -> !struct.type<@A> attributes {function.allow_witness} {
+// EXTRA-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@A>
+// EXTRA-NEXT:        function.return %[[VAL_0]] : !struct.type<@A>
+// EXTRA-NEXT:      }
+// EXTRA-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@A>) attributes {function.allow_constraint} {
+// EXTRA-NEXT:        function.return
+// EXTRA-NEXT:      }
+// EXTRA-NEXT:    }
+// EXTRA-NEXT:    struct.def @B {
+// COM: REMOVED:    struct.member @a : !struct.type<@A>
+// EXTRA-NEXT:      function.def @compute() -> !struct.type<@B> attributes {function.allow_witness} {
+// EXTRA-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@B>
+// EXTRA-NEXT:        function.return %[[VAL_2]] : !struct.type<@B>
+// EXTRA-NEXT:      }
+// EXTRA-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@B>) attributes {function.allow_constraint} {
+// EXTRA-NEXT:        function.return
+// EXTRA-NEXT:      }
+// EXTRA-NEXT:    }
+// EXTRA-NEXT:  }

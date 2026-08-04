@@ -15,14 +15,13 @@ include "llzk/Pass/PassBase.td"
 def SMTLoweringPass : LLZKPass<"llzk-to-smt-no-cf"> {
   let summary = "Lowers non-control flow LLZK ops to SMTLIB";
   let description = [{
-    Lowers felt and array operations to their equivalents in 
-    the theory of integers and arrays, and generates 
-    assertions for struct member writes and constraints. This 
-    pass preserves control flow, and should be used in 
-    conjuction with the -llzk-to-smt-cf-only pass, or as 
+    Lowers felt and array operations to their equivalents in
+    the theory of integers and arrays, and generates
+    assertions for struct member writes and constraints. This
+    pass preserves control flow, and should be used in
+    conjuction with the -llzk-to-smt-cf-only pass, or as
     part of the -llzk-to-smt pass pipeline.
   }];
-  let constructor = "smt::createSMTLoweringPass()";
   let options = [Option<"fieldName", "field", "std::string",
                         /* default */ "\"\"",
                         "Prime field name to use for SMT lowering. "
@@ -37,7 +36,6 @@ def SMTNaiveLoweringPass : LLZKPass<"llzk-to-smt-no-cf-naive"> {
     unoptimized encoding strategy, preserving explicit modulo reductions
     instead of exploiting interval-analysis results.
   }];
-  let constructor = "smt::createSMTNaiveLoweringPass()";
   let options = [Option<"fieldName", "field", "std::string",
                         /* default */ "\"\"",
                         "Prime field name to use for SMT lowering. "
@@ -47,13 +45,12 @@ def SMTNaiveLoweringPass : LLZKPass<"llzk-to-smt-no-cf-naive"> {
 def SMTCFLoweringPass : LLZKPass<"llzk-to-smt-cf-only"> {
   let summary = "Lowers control-flow LLZK ops to SMTLIB";
   let description = [{
-    Lowers scf.if by putting branching conditions into the 
-    antecedents of implications inside asserts, and guarding 
-    yielded values with smt.ite. This pass should come after 
-    the -llzk-to-smt-no-cf pass, or be used as part of the 
+    Lowers scf.if by putting branching conditions into the
+    antecedents of implications inside asserts, and guarding
+    yielded values with smt.ite. This pass should come after
+    the -llzk-to-smt-no-cf pass, or be used as part of the
     -llzk-to-smt pass pipeline.
   }];
-  let constructor = "smt::createSMTCFLoweringPass()";
 }
 
 #endif // SMT_CONVERSIONPASSES_TD

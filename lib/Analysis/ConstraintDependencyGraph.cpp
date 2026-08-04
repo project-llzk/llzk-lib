@@ -13,6 +13,7 @@
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Util/Hash.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/TypeHelper.h"
@@ -36,6 +37,7 @@ using namespace array;
 using namespace component;
 using namespace constrain;
 using namespace function;
+using namespace pod;
 
 /* SourceRefAnalysis */
 
@@ -67,6 +69,16 @@ SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
       auto memberValsRes = componentIt->second.referenceMember(memberOpRes.value());
       ensure(succeeded(memberValsRes), "could not create SourceRef child for member write");
       return memberValsRes->first;
+    }
+  }
+
+  if (auto podAccessOp = llvm::dyn_cast<PodAccessOpInterface>(op)) {
+    if (!podAccessOp.isRead()) {
+      auto podIt = operandVals.find(podAccessOp.getPodRef());
+      ensure(podIt != operandVals.end(), "missing pod lattice for pod write");
+      auto podValsRes = podIt->second.referencePodRecord(podAccessOp.getRecordNameAttr());
+      ensure(succeeded(podValsRes), "could not create SourceRef child for pod write");
+      return podValsRes->first;
     }
   }
 
@@ -110,6 +122,16 @@ SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
 
 void SourceRefAnalysis::setToEntryState(Lattice *lattice) {
   if (auto value = llvm::dyn_cast_if_present<Value>(lattice->getAnchor())) {
+    if (auto arg = llvm::dyn_cast<BlockArgument>(value)) {
+      Operation *parent = arg.getOwner()->getParentOp();
+      if (llvm::isa_and_present<RegionBranchOpInterface>(parent) &&
+          llvm::isa<ArrayType, StructType, PodType>(value.getType())) {
+        // Region-branch arguments are aliases of their incoming aggregate storage. Giving them a
+        // fresh root would make loop-carried writes unstable and would discard that identity.
+        (void)lattice->setValue(SourceRefLatticeValue());
+        return;
+      }
+    }
     (void)lattice->setValue(SourceRefLattice::getDefaultValue(value));
   }
 }
@@ -133,6 +155,18 @@ LogicalResult SourceRefAnalysis::visitOperation(
     if (memberRefOp.isRead()) {
       auto [memberVals, _] = *memberValsRes;
       propagateIfChanged(results.front(), results.front()->setValue(memberVals));
+    }
+    return success();
+  }
+
+  if (auto podAccessOp = llvm::dyn_cast<PodAccessOpInterface>(op)) {
+    auto podValsRes = operandVals.at(podAccessOp.getPodRef())
+                          ->getValue()
+                          .referencePodRecord(podAccessOp.getRecordNameAttr());
+    ensure(succeeded(podValsRes), "could not create SourceRef child for pod reference");
+    if (podAccessOp.isRead()) {
+      auto [podVals, _] = *podValsRes;
+      propagateIfChanged(results.front(), results.front()->setValue(podVals));
     }
     return success();
   }
@@ -164,6 +198,12 @@ LogicalResult SourceRefAnalysis::visitOperation(
     return success();
   }
 
+  if (auto newPod = llvm::dyn_cast<NewPodOp>(op)) {
+    auto newPodValue = SourceRefLattice::getDefaultValue(newPod.getResult());
+    propagateIfChanged(results.front(), results.front()->setValue(newPodValue));
+    return success();
+  }
+
   if (auto structNewOp = llvm::dyn_cast<CreateStructOp>(op)) {
     auto newStructValue = SourceRefLattice::getDefaultValue(structNewOp.getResult());
     propagateIfChanged(results.front(), results.front()->setValue(newStructValue));
@@ -189,6 +229,12 @@ void SourceRefAnalysis::visitExternalCall(
       ensure(succeeded(resultRef), "could not create external call SourceRef");
       propagateIfChanged(lattice, lattice->setValue(*resultRef));
     }
+    return;
+  }
+  if (resultLattices.empty()) {
+    // `verif.include` and other no-result call-like ops still need to be
+    // treated as valid callable edges, but there are no results to
+    // translate back to the caller.
     return;
   }
   // Call is to a defined function with a body, but it's treated as external so we
@@ -591,16 +637,22 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
   SourceRefSet res;
   auto currRef = mlir::FailureOr<SourceRef>(ref);
   while (mlir::succeeded(currRef)) {
-    // Add signals
-    for (auto it = signalSets.findLeader(*currRef); it != signalSets.member_end(); it++) {
-      if (currRef.value() != *it) {
-        res.insert(*it);
+    // A dynamic access is represented by a half-open range. Match every concrete element and
+    // range that overlaps the queried path, as well as exact references.
+    for (auto candidate = signalSets.begin(); candidate != signalSets.end(); ++candidate) {
+      const SourceRef &candidateRef = candidate->getData();
+      if (!candidateRef.overlaps(*currRef)) {
+        continue;
       }
-    }
-    // Add constants
-    auto constIt = constantSets.find(*currRef);
-    if (constIt != constantSets.end()) {
-      res.insert(constIt->second.begin(), constIt->second.end());
+      for (auto it = signalSets.findLeader(candidate); it != signalSets.member_end(); ++it) {
+        if (!it->overlaps(ref)) {
+          res.insert(*it);
+        }
+      }
+      auto constIt = constantSets.find(candidateRef);
+      if (constIt != constantSets.end()) {
+        res.insert(constIt->second.begin(), constIt->second.end());
+      }
     }
     // Go to parent
     currRef = currRef->getParentPrefix();

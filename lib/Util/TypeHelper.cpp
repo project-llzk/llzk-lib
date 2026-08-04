@@ -64,9 +64,12 @@ template <typename Derived, typename ResultType> struct LLZKTypeSwitch {
         .template Case<ArrayType>([this](auto t) {
       return static_cast<Derived *>(this)->caseArray(t);
     })
-        .template Case<PodType>([this](auto t) { return static_cast<Derived *>(this)->casePod(t); })
         .template Case<StructType>([this](auto t) {
       return static_cast<Derived *>(this)->caseStruct(t);
+    }).template Case<PodType>([this](auto t) {
+      return static_cast<Derived *>(this)->casePod(t);
+    }).template Case<NoneType>([this](auto t) {
+      return static_cast<Derived *>(this)->caseNone(t);
     }).Default([this](Type t) {
       if (t.isSignlessInteger(1)) {
         return static_cast<Derived *>(this)->caseBool(cast<IntegerType>(t));
@@ -98,14 +101,12 @@ void BuildShortTypeString::appendSymRef(SymbolRefAttr sa) {
 }
 
 BuildShortTypeString &BuildShortTypeString::append(Type type) {
-  size_t position = ret.size();
-  (void)position; // tell compiler it's intentionally unused in builds without assertions
-
   struct Impl : LLZKTypeSwitch<Impl, void> {
     BuildShortTypeString &outer;
     Impl(BuildShortTypeString &outerRef) : outer(outerRef) {}
 
     void caseInvalid(Type) { outer.ss << "!INVALID"; }
+    void caseNone(NoneType) { outer.ss << 'n'; }
     void caseBool(IntegerType) { outer.ss << 'b'; }
     void caseIndex(IndexType) { outer.ss << 'i'; }
     void caseFelt(FeltType) { outer.ss << 'f'; }
@@ -140,29 +141,27 @@ BuildShortTypeString &BuildShortTypeString::append(Type type) {
     }
   };
   Impl(*this).match(type);
-
-  assert(
-      ret.find(PLACEHOLDER, position) == std::string::npos &&
-      "formatting a Type should not produce the 'PLACEHOLDER' char"
-  );
   return *this;
 }
 
 BuildShortTypeString &BuildShortTypeString::append(Attribute a) {
-  // Special case for inserting the `PLACEHOLDER`
-  if (a == nullptr) {
-    ss << PLACEHOLDER;
-    return *this;
-  }
-
-  size_t position = ret.size();
-  (void)position; // tell compiler it's intentionally unused in builds without assertions
+  assert(a && "BuildShortTypeString requires non-null attributes");
 
   // Adapted from AsmPrinter::Impl::printAttributeImpl()
   if (auto ia = llvm::dyn_cast<IntegerAttr>(a)) {
     Type ty = ia.getType();
     bool isUnsigned = ty.isUnsignedInteger() || ty.isSignlessInteger(1);
     ia.getValue().print(ss, !isUnsigned);
+  } else if (auto fa = llvm::dyn_cast<FeltConstAttr>(a)) {
+    ss << "f<";
+    fa.getValue().print(ss, false);
+    if (StringAttr fieldName = fa.getFieldName()) {
+      // The byte length prevents field delimiters from colliding with adjacent parameters. For
+      // example, `a>_f<36:b` followed by 37 and `a` followed by `b>_f<37` would otherwise render
+      // the same concatenated short string.
+      ss << ':' << fieldName.getValue().size() << ':' << fieldName.getValue();
+    }
+    ss << '>';
   } else if (auto sra = llvm::dyn_cast<SymbolRefAttr>(a)) {
     appendSymRef(sra);
   } else if (auto ta = llvm::dyn_cast<TypeAttr>(a)) {
@@ -180,46 +179,12 @@ BuildShortTypeString &BuildShortTypeString::append(Attribute a) {
     // All valid/legal cases must be covered above
     assertValidAttrForParamOfType(a);
   }
-  assert(
-      ret.find(PLACEHOLDER, position) == std::string::npos &&
-      "formatting a non-null Attribute should not produce the 'PLACEHOLDER' char"
-  );
   return *this;
 }
 
 BuildShortTypeString &BuildShortTypeString::append(ArrayRef<Attribute> attrs) {
   llvm::interleave(attrs, ss, [this](Attribute a) { append(a); }, "_");
   return *this;
-}
-
-std::string BuildShortTypeString::from(const std::string &base, ArrayRef<Attribute> attrs) {
-  BuildShortTypeString bldr;
-
-  bldr.ret.reserve(base.size() + attrs.size()); // reserve minimum space required
-
-  // First handle replacements of PLACEHOLDER
-  const auto *END = attrs.end();
-  const auto *IT = attrs.begin();
-  {
-    size_t start = 0;
-    for (size_t pos; (pos = base.find(PLACEHOLDER, start)) != std::string::npos; start = pos + 1) {
-      // Append original up to the PLACEHOLDER
-      bldr.ret.append(base, start, pos - start);
-      // Append the formatted Attribute
-      assert(IT != END && "must have an Attribute for every 'PLACEHOLDER' char");
-      bldr.append(*IT++);
-    }
-    // Append remaining suffix of the original
-    bldr.ret.append(base, start, base.size() - start);
-  }
-
-  // Append any remaining Attributes
-  if (IT != END) {
-    bldr.ss << '_';
-    bldr.append(ArrayRef(IT, END));
-  }
-
-  return bldr.ret;
 }
 
 namespace {
@@ -320,6 +285,7 @@ class AllowedTypes {
   bool no_int : 1 = false;
   bool no_struct_params : 1 = false;
   bool must_be_column : 1 = false;
+  bool type_var_free : 1 = false;
 
   ColumnCheckData columnCheck;
 
@@ -376,6 +342,12 @@ public:
     return *this;
   }
 
+  constexpr AllowedTypes &typeVarFree() {
+    no_var = true;
+    type_var_free = true;
+    return *this;
+  }
+
   constexpr AllowedTypes &onlyInt() {
     no_int = false;
     return noFelt().noString().noStruct().noArray().noPod().noVar();
@@ -406,7 +378,7 @@ public:
       if (!ArrayDimensionTypes::matches(a)) {
         ArrayDimensionTypes::reportInvalid(emitError, a, "Array dimension");
         success = false;
-      } else if (no_var && !llvm::isa_and_present<IntegerAttr>(a)) {
+      } else if (no_var && !type_var_free && !llvm::isa_and_present<IntegerAttr>(a)) {
         TypeList<IntegerAttr>::reportInvalid(emitError, a, "Concrete array dimension");
         success = false;
       } else if (failed(verifyAffineMapAttrType(emitError, a))) {
@@ -419,8 +391,9 @@ public:
   }
 
   bool isValidArrayElemTypeImpl(Type type) {
-    // ArrayType element can be any valid type sans ArrayType itself.
-    return !llvm::isa<ArrayType>(type) && isValidTypeImpl(type);
+    // ArrayType element can be any valid type sans ArrayType itself. Additionally, `NoneType`
+    // is permitted for shape-only arrays that carry no element payload.
+    return llvm::isa<NoneType>(type) || (!llvm::isa<ArrayType>(type) && isValidTypeImpl(type));
   }
 
   bool isValidArrayTypeImpl(
@@ -477,7 +450,12 @@ public:
           }
           success = false;
         }
-      } else if (no_var && !llvm::isa<IntegerAttr, FeltConstAttr>(p)) {
+      } else if (type_var_free && llvm::isa<SymbolRefAttr>(p)) {
+        TypeList<IntegerAttr, FeltConstAttr, TypeAttr, AffineMapAttr>::reportInvalid(
+            emitError, p, "Type-variable-free struct parameter"
+        );
+        success = false;
+      } else if (no_var && !type_var_free && !llvm::isa<IntegerAttr, FeltConstAttr>(p)) {
         TypeList<IntegerAttr>::reportInvalid(emitError, p, "Concrete struct parameter");
         success = false;
       } else if (failed(verifyAffineMapAttrType(emitError, p))) {
@@ -521,6 +499,7 @@ bool AllowedTypes::isValidTypeImpl(Type type) {
       }
       return !outer.no_struct && outer.areValidStructTypeParams(t.getParams());
     }
+    bool caseNone(NoneType) { return false; }
     bool caseInvalid(Type) { return false; }
   };
   return Impl(*this).match(type);
@@ -553,25 +532,48 @@ bool isConcreteType(Type type, bool allowStructParams) {
   return AllowedTypes().noVar().noStructParams(!allowStructParams).isValidTypeImpl(type);
 }
 
+bool isTypeVarFreeType(Type type) { return AllowedTypes().typeVarFree().isValidTypeImpl(type); }
+
+AttrConcreteness classifyAttrConcreteness(Attribute attr, bool allowStructParams) {
+  if (auto tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
+    return isConcreteType(tyAttr.getValue(), allowStructParams) ? AttrConcreteness::Concrete
+                                                                : AttrConcreteness::NonConcrete;
+  }
+  if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
+    return isDynamic(intAttr) ? AttrConcreteness::Wildcard : AttrConcreteness::Concrete;
+  }
+  return llvm::isa<FeltConstAttr>(attr) ? AttrConcreteness::Concrete
+                                        : AttrConcreteness::NonConcrete;
+}
+
 bool hasAffineMapAttr(Type type) {
-  bool encountered = false;
-  type.walk([&](AffineMapAttr) {
-    encountered = true;
-    return WalkResult::interrupt();
-  });
-  return encountered;
+  return type.walk([](AffineMapAttr) { return WalkResult::interrupt(); }).wasInterrupted();
 }
 
 bool isDynamic(IntegerAttr intAttr) { return ShapedType::isDynamic(fromAPInt(intAttr.getValue())); }
 
+ArrayType flattenArrayElementType(ArrayType outerArrTy, Type elementType) {
+  SmallVector<Attribute> mergedDims(outerArrTy.getDimensionSizes());
+  while (ArrayType nestedArrTy = llvm::dyn_cast<ArrayType>(elementType)) {
+    llvm::append_range(mergedDims, nestedArrTy.getDimensionSizes());
+    elementType = nestedArrTy.getElementType();
+  }
+  return ArrayType::get(elementType, mergedDims);
+}
+
 uint64_t computeEmitEqCardinality(Type type) {
   struct Impl : LLZKTypeSwitch<Impl, uint64_t> {
+    uint64_t caseNone(NoneType) { return 0; }
     uint64_t caseBool(IntegerType) { return 1; }
     uint64_t caseIndex(IndexType) { return 1; }
     uint64_t caseFelt(FeltType) { return 1; }
     uint64_t caseArray(ArrayType t) {
+      uint64_t elementCardinality = computeEmitEqCardinality(t.getElementType());
+      if (elementCardinality == 0) {
+        return 0;
+      }
       int64_t n = t.getNumElements();
-      return llzk::checkedCast<uint64_t>(n) * computeEmitEqCardinality(t.getElementType());
+      return llzk::checkedCast<uint64_t>(n) * elementCardinality;
     }
     uint64_t caseStruct(StructType) { llvm_unreachable("not a valid EmitEq type"); }
     uint64_t casePod(PodType t) {

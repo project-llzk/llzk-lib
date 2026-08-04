@@ -1,0 +1,102 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-poly-lowering-pass="max-degree=2" --verify-each %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  struct.def @TableOffsetAux {
+    struct.member @x : !felt.type {column}
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%x: !felt.type) -> !struct.type<@TableOffsetAux> {
+      %self = struct.new : !struct.type<@TableOffsetAux>
+      struct.writem %self[@x] = %x : !struct.type<@TableOffsetAux>, !felt.type
+      function.return %self : !struct.type<@TableOffsetAux>
+    }
+
+    function.def @constrain(%self: !struct.type<@TableOffsetAux>, %x: !felt.type) {
+      %prev = struct.readm %self[@x] : !struct.type<@TableOffsetAux>, !felt.type {tableOffset = -1 : index}
+      %sq = felt.mul %prev, %prev : !felt.type, !felt.type
+      %fourth = felt.mul %sq, %sq : !felt.type, !felt.type
+      %out = struct.readm %self[@out] : !struct.type<@TableOffsetAux>, !felt.type
+      constrain.eq %out, %fourth : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @TableOffsetAux {
+// CHECK-NEXT:      struct.member @x : !felt.type {column}
+// CHECK-NEXT:      struct.member @out : !felt.type {llzk.pub}
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@TableOffsetAux> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TableOffsetAux>
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@x] = %[[VAL_0]] : <@TableOffsetAux>, !felt.type
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@x] : <@TableOffsetAux>, !felt.type {tableOffset = -1 : index}
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_2]], %[[VAL_2]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@__llzk_poly_lowering_pass_aux_member_0] = %[[VAL_3]] : <@TableOffsetAux>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@TableOffsetAux>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@TableOffsetAux>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@x] : <@TableOffsetAux>, !felt.type {tableOffset = -1 : index}
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_6]], %[[VAL_6]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@__llzk_poly_lowering_pass_aux_member_0] : <@TableOffsetAux>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_8]], %[[VAL_7]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_8]], %[[VAL_8]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@out] : <@TableOffsetAux>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_10]], %[[VAL_9]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @AffineOffsetAux {
+    struct.member @x : !felt.type {column}
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%x: !felt.type) -> !struct.type<@AffineOffsetAux> {
+      %self = struct.new : !struct.type<@AffineOffsetAux>
+      struct.writem %self[@x] = %x : !struct.type<@AffineOffsetAux>, !felt.type
+      function.return %self : !struct.type<@AffineOffsetAux>
+    }
+
+    function.def @constrain(%self: !struct.type<@AffineOffsetAux>, %x: !felt.type) {
+      %idx = arith.constant 2 : index
+      %prev = struct.readm %self[@x] {()[%idx]} : !struct.type<@AffineOffsetAux>, !felt.type {tableOffset = affine_map<()[s0] -> (s0 - 1)>}
+      %sq = felt.mul %prev, %prev : !felt.type, !felt.type
+      %fourth = felt.mul %sq, %sq : !felt.type, !felt.type
+      %out = struct.readm %self[@out] : !struct.type<@AffineOffsetAux>, !felt.type
+      constrain.eq %out, %fourth : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-DAG:    #map = affine_map<()[s0] -> (s0 - 1)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @AffineOffsetAux {
+// CHECK-NEXT:      struct.member @x : !felt.type {column}
+// CHECK-NEXT:      struct.member @out : !felt.type {llzk.pub}
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@AffineOffsetAux> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@AffineOffsetAux>
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@x] = %[[VAL_0]] : <@AffineOffsetAux>, !felt.type
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@x] {(){{\[}}%[[VAL_2]]]} : <@AffineOffsetAux>, !felt.type {tableOffset = #map}
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_3]], %[[VAL_3]] : !felt.type, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@__llzk_poly_lowering_pass_aux_member_0] = %[[VAL_4]] : <@AffineOffsetAux>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@AffineOffsetAux>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@AffineOffsetAux>, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_5]][@x] {(){{\[}}%[[VAL_7]]]} : <@AffineOffsetAux>, !felt.type {tableOffset = #map}
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_8]], %[[VAL_8]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_5]][@__llzk_poly_lowering_pass_aux_member_0] : <@AffineOffsetAux>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_10]], %[[VAL_9]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_10]], %[[VAL_10]] : !felt.type, !felt.type
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_5]][@out] : <@AffineOffsetAux>, !felt.type
+// CHECK-NEXT:        constrain.eq %[[VAL_12]], %[[VAL_11]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.member @__llzk_poly_lowering_pass_aux_member_0 : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

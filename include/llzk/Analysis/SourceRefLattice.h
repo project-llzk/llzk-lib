@@ -56,15 +56,36 @@ public:
     return *getScalarValue().begin();
   }
 
+  /// Return the dimensions of this array-shaped value.
+  using Base::getArrayShape;
+
   /// @brief Directly insert the ref into this value. If this is a scalar value,
   /// insert the ref into the value's set. If this is an array value, the array
   /// is folded into a single scalar, then the ref is inserted.
   mlir::ChangeResult insert(const SourceRef &rhs);
 
-  /// @brief For the refs contained in this value, translate them given the `translation`
-  /// map and return the transformed value.
+  /// @brief Remove `ref` from this value's reference set or, for an array, from every element.
+  mlir::ChangeResult remove(const SourceRef &ref);
+
+  /// @brief Translate contained references using `translation` and return the transformed value.
+  ///
+  /// References that do not match a prefix in `translation` are discarded.
   std::pair<SourceRefLatticeValue, mlir::ChangeResult>
   translate(const TranslationMap &translation) const;
+
+  /// @brief Replace matching SourceRef prefixes and leave unmatched references unchanged.
+  std::pair<SourceRefLatticeValue, mlir::ChangeResult>
+  replacePrefixes(const TranslationMap &translation) const;
+
+  /// @brief Update the element or subarray selected by `indices`.
+  ///
+  /// When `joinWithExisting` is true, the selected values are conservatively joined with `rhs`;
+  /// otherwise they are replaced. A ranged index always joins because any individual selected
+  /// element may retain its old value.
+  mlir::ChangeResult write(
+      const std::vector<SourceRefIndex> &indices, const SourceRefLatticeValue &rhs,
+      bool joinWithExisting = false
+  );
 
   /// @brief Add the given `memberRef` to the `SourceRef`s contained within this value.
   /// For example, if `memberRef` is a member reference `@foo` and this value represents `%self`,
@@ -75,6 +96,12 @@ public:
   mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
   referenceMember(SymbolLookupResult<component::MemberDefOp> memberRef) const;
 
+  /// @brief Add the given pod `recordName` to the `SourceRef`s contained within this value.
+  /// For example, if `recordName` is `@foo` and this value represents `%pod`, the new value will
+  /// represent `%pod[@foo]`.
+  mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
+  referencePodRecord(mlir::StringAttr recordName) const;
+
   /// @brief Perform an array.extract or array.read operation, depending on how many indices
   /// are provided.
   mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
@@ -84,6 +111,9 @@ protected:
   /// @brief Translate this value using the translation map, assuming this value
   /// is a scalar.
   mlir::ChangeResult translateScalar(const TranslationMap &translation);
+
+  /// @brief Replace matching prefixes in a scalar value without dropping unmatched references.
+  mlir::ChangeResult replacePrefixesScalar(const TranslationMap &translation);
 
   /// @brief Perform a recursive transformation over all elements of this value and
   /// return a new value with the modifications.

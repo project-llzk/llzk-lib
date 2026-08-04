@@ -10,13 +10,12 @@
 #include "llzk-c/Target/PCL.h"
 
 #include "../CAPITestBase.h"
+#include "pcl/Dialect/IR/Attrs.h"
+#include "pcl/Dialect/IR/Ops.h"
+#include "pcl/Dialect/IR/Types.h"
+#include "pcl/DialectRegistration.h"
 
 #include "llzk/Config/Config.h"
-
-#include <pcl/Dialect/IR/Attrs.h>
-#include <pcl/Dialect/IR/Ops.h>
-#include <pcl/Dialect/IR/Types.h>
-#include <pcl/InitAllDialects.h>
 
 #include <mlir-c/IR.h>
 
@@ -34,7 +33,7 @@ constexpr unsigned SEVEN = 7;
 
 constexpr std::string_view EXPECTED_PCL_MODULE_1 =
     // clang-format off
-    "(prime-number 7)\n"
+    "(prime-number 7)\n\n"
     "(begin-module A)\n"
     "(input in0)\n"
     "(assert (= in0 out))\n"
@@ -57,7 +56,7 @@ TEST_F(CAPITest, exportPclModule) {
   auto module = builder.create<mlir::ModuleOp>(builder.getUnknownLoc());
   module->setDiscardableAttr(
       builder.getStringAttr("pcl.prime"),
-      pcl::PrimeAttr::get(ctx, builder.getIntegerAttr(builder.getIntegerType(4), SEVEN))
+      pcl::PrimeAttr::get(ctx, llvm::APInt(/*numBits=*/4, /*val=*/SEVEN))
   );
   {
     mlir::OpBuilder::InsertionGuard guard(builder);

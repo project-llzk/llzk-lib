@@ -57,5 +57,6 @@ void registerAllDialects(mlir::DialectRegistry &registry) {
       >();
 
   registerInliningExtensions(registry);
+  verif::registerExtensions(registry);
 }
 } // namespace llzk

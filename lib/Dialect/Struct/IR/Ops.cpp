@@ -172,10 +172,12 @@ StructType StructDefOp::getType(std::optional<ArrayAttr> constParams) {
   }
   // Check if there is an enclosing `TemplateOp` defining parameters, else there are none.
   if (TemplateOp parent = getParentOfType<TemplateOp>(*this)) {
-    return StructType::get(pathRes.value(), parent.getConstNames<TemplateParamOp>());
-  } else {
-    return StructType::get(pathRes.value());
+    auto params = parent.getConstNames<TemplateParamOp>();
+    if (!params.empty()) {
+      return StructType::get(pathRes.value(), params);
+    }
   }
+  return StructType::get(pathRes.value());
 }
 
 std::string StructDefOp::getHeaderString() {
@@ -215,11 +217,7 @@ SmallVector<Attribute> StructDefOp::getTemplateExprOpNames() {
   }
 }
 
-SymbolRefAttr StructDefOp::getFullyQualifiedName() {
-  auto res = getPathFromRoot(*this);
-  assert(succeeded(res));
-  return res.value();
-}
+SymbolRefAttr StructDefOp::getFullyQualifiedName() { return llzk::getFullyQualifiedName(*this); }
 
 namespace {
 
@@ -513,7 +511,7 @@ LogicalResult StructDefOp::readProperties(DialectBytecodeReader &reader, Operati
   return reader.readAttribute(prop.sym_name);
 }
 
-// Same as tablegen would generate to serialize version 2 IR.
+// Same as tablegen would generate to serialize current version IR.
 void StructDefOp::writeProperties(DialectBytecodeWriter &writer) {
   auto &prop = getProperties();
   writer.writeAttribute(prop.sym_name);

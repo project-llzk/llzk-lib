@@ -14,6 +14,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
@@ -45,6 +46,7 @@ class SourceRefIndex {
 public:
   explicit SourceRefIndex(component::MemberDefOp f) : index(f) {}
   explicit SourceRefIndex(SymbolLookupResult<component::MemberDefOp> f) : index(f) {}
+  explicit SourceRefIndex(mlir::StringAttr recordName) : index(recordName) {}
   explicit SourceRefIndex(const llvm::DynamicAPInt &i) : index(i) {}
   explicit SourceRefIndex(const llvm::APInt &i) : index(toDynamicAPInt(i)) {}
   explicit SourceRefIndex(int64_t i) : index(llvm::DynamicAPInt(i)) {}
@@ -63,6 +65,13 @@ public:
     }
     return std::get<SymbolLookupResult<component::MemberDefOp>>(index).get();
   }
+
+  bool isPodRecord() const { return std::holds_alternative<mlir::StringAttr>(index); }
+  mlir::StringAttr getPodRecordNameAttr() const {
+    ensure(isPodRecord(), "SourceRefIndex: pod record requested but not contained");
+    return std::get<mlir::StringAttr>(index);
+  }
+  llvm::StringRef getPodRecordName() const { return getPodRecordNameAttr().getValue(); }
 
   bool isIndex() const { return std::holds_alternative<llvm::DynamicAPInt>(index); }
   llvm::DynamicAPInt getIndex() const {
@@ -91,6 +100,10 @@ public:
     return index == rhs.index;
   }
 
+  /// Return true when these path components select any common storage.
+  /// Index ranges are half-open.
+  bool overlaps(const SourceRefIndex &rhs) const;
+
   std::strong_ordering operator<=>(const SourceRefIndex &rhs) const;
 
   struct Hash {
@@ -103,12 +116,13 @@ private:
   /// Either:
   /// 1. A member within a struct (possibly as a SymbolLookupResult to be cautious of external
   /// module scopes)
-  /// 2. An index into an array
-  /// 3. A half-open range of indices into an array, for when we're unsure about a specific index
+  /// 2. A record within a pod
+  /// 3. An index into an array
+  /// 4. A half-open range of indices into an array, for when we're unsure about a specific index
   /// Likely, this will be from [0, size) at this point.
   std::variant<
-      component::MemberDefOp, SymbolLookupResult<component::MemberDefOp>, llvm::DynamicAPInt,
-      IndexRange>
+      component::MemberDefOp, SymbolLookupResult<component::MemberDefOp>, mlir::StringAttr,
+      llvm::DynamicAPInt, IndexRange>
       index;
 };
 
@@ -225,6 +239,7 @@ public:
     return isConstant() &&
            llvm::isa_and_present<mlir::arith::ConstantIndexOp>(value.getDefiningOp());
   }
+  /// Return whether this reference originates from a template constant read.
   bool isTemplateConstant() const {
     return isConstant() && llvm::isa_and_present<polymorphic::ConstReadOp>(value.getDefiningOp());
   }
@@ -241,6 +256,7 @@ public:
   }
 
   bool isRooted() const { return !constant; }
+
   bool isBlockArgument() const { return isRooted() && llvm::isa<mlir::BlockArgument>(value); }
   mlir::FailureOr<mlir::Value> getRoot() const {
     if (isRooted()) {
@@ -309,6 +325,18 @@ public:
   /// @brief Returns true iff `prefix` is a valid prefix of this reference.
   bool isValidPrefix(const SourceRef &prefix) const;
 
+  /// Return true when both references select overlapping storage at the same path depth.
+  bool overlaps(const SourceRef &rhs) const;
+
+  /// Return a copy with ranged array indices narrowed by concrete indices from `rhs`.
+  ///
+  /// Array indices are paired by dimension order; member and POD-record path components are
+  /// ignored when pairing dimensions. A range is replaced only when the corresponding component
+  /// in `rhs` is a concrete index contained in that range. Other path components remain unchanged.
+  /// For example, narrowing `%self.out[0:4].values[0:8]` with `%arg0[2][5]` produces
+  /// `%self.out[2].values[5]`.
+  SourceRef narrowRanges(const SourceRef &rhs) const;
+
   /// @brief If `prefix` is a valid prefix of this reference, return the suffix that
   /// remains after removing the prefix. I.e., `this` = `prefix` + `suffix`
   /// @param prefix
@@ -361,6 +389,8 @@ public:
   }
   llvm::ArrayRef<SourceRefIndex> getPath() const { return path; }
 
+  /// Print this reference using source-style names. The entry self argument of a
+  /// struct constrain function is printed as `%self`.
   void print(mlir::raw_ostream &os) const;
   void dump() const { print(llvm::errs()); }
 

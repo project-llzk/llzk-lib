@@ -21,6 +21,8 @@
 
 #include <llvm/ADT/TypeSwitch.h>
 
+#include <limits>
+
 // TableGen'd implementation files
 #include "llzk/Dialect/Felt/IR/Dialect.cpp.inc"
 
@@ -30,6 +32,77 @@
 #include "llzk/Dialect/Felt/IR/Attrs.cpp.inc"
 
 using namespace mlir;
+
+namespace {
+
+/// Denotes which dialect attribute is serialized.
+enum class FeltAttrEncoding : uint8_t {
+  FeltConst = 0,
+  FieldSpec = 1,
+};
+
+struct FeltDialectBytecodeInterface
+    : public llzk::LLZKDialectBytecodeInterface<llzk::felt::FeltDialect> {
+  using llzk::LLZKDialectBytecodeInterface<llzk::felt::FeltDialect>::LLZKDialectBytecodeInterface;
+
+  Attribute readAttribute(DialectBytecodeReader &reader) const final {
+    uint64_t encoding;
+    if (failed(reader.readVarInt(encoding))) {
+      return {};
+    }
+    if (encoding > std::numeric_limits<uint8_t>::max()) {
+      reader.emitError() << "unknown felt attribute encoding: " << encoding;
+      return {};
+    }
+
+    switch (static_cast<FeltAttrEncoding>(encoding)) {
+    case FeltAttrEncoding::FeltConst: {
+      FailureOr<APInt> value = llzk::readAPInt(reader);
+      llzk::felt::FeltType type;
+      if (failed(value) || failed(reader.readType(type))) {
+        return {};
+      }
+      return llzk::felt::FeltConstAttr::get(getContext(), *value, type);
+    }
+    case FeltAttrEncoding::FieldSpec: {
+      StringAttr fieldName;
+      if (failed(reader.readAttribute(fieldName))) {
+        return {};
+      }
+      FailureOr<APInt> prime = llzk::readAPInt(reader);
+      if (failed(prime)) {
+        return {};
+      }
+
+      llzk::Field::addField(fieldName.getValue(), *prime, [&reader]() {
+        return llzk::InFlightDiagnosticWrapper(reader.emitError());
+      });
+      return llzk::felt::FieldSpecAttr::get(getContext(), fieldName, *prime);
+    }
+    }
+
+    reader.emitError() << "unknown felt attribute encoding: " << encoding;
+    return {};
+  }
+
+  LogicalResult writeAttribute(Attribute attr, DialectBytecodeWriter &writer) const final {
+    if (auto feltConst = dyn_cast<llzk::felt::FeltConstAttr>(attr)) {
+      writer.writeVarInt(static_cast<uint64_t>(FeltAttrEncoding::FeltConst));
+      llzk::writeAPInt(writer, feltConst.getValue());
+      writer.writeType(feltConst.getType());
+      return success();
+    }
+    if (auto fieldSpec = dyn_cast<llzk::felt::FieldSpecAttr>(attr)) {
+      writer.writeVarInt(static_cast<uint64_t>(FeltAttrEncoding::FieldSpec));
+      writer.writeAttribute(fieldSpec.getFieldName());
+      llzk::writeAPInt(writer, fieldSpec.getPrime());
+      return success();
+    }
+    return failure();
+  }
+};
+
+} // namespace
 
 namespace llzk::felt {
 
@@ -208,7 +281,7 @@ auto FeltDialect::initialize() -> void {
     #include "llzk/Dialect/Felt/IR/Attrs.cpp.inc"
   >();
   // clang-format on
-  addInterfaces<LLZKDialectBytecodeInterface<FeltDialect>>();
+  addInterfaces<FeltDialectBytecodeInterface>();
 }
 
 } // namespace llzk::felt

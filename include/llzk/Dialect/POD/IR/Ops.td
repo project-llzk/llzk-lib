@@ -14,6 +14,7 @@ include "llzk/Dialect/POD/IR/Dialect.td"
 include "llzk/Dialect/POD/IR/OpInterfaces.td"
 include "llzk/Dialect/POD/IR/Types.td"
 include "llzk/Dialect/Shared/OpTraits.td"
+include "llzk/Dialect/Shared/DiscardableAllocationOpInterfaces.td"
 
 include "mlir/IR/OpBase.td"
 include "mlir/IR/OpAsmInterface.td"
@@ -39,7 +40,9 @@ class ScalarPODAccessOp<string mnemonic, bit isRead, list<Trait> traits = []>
     : PODAccessOpBase<
           mnemonic,
           traits#[DeclareOpInterfaceMethods<DestructurableAccessorOpInterface>,
-                  DeclareOpInterfaceMethods<PromotableMemOpInterface>]> {
+                  DeclareOpInterfaceMethods<PromotableMemOpInterface>,
+                  DeclareOpInterfaceMethods<
+                      DiscardableAllocationAccessorOpInterface>]> {
   let extraClassDefinition = [{
     /// Required by DestructurableAllocationOpInterface / SROA pass
     bool $cppClass::canRewire(const ::mlir::DestructurableMemorySlot &slot,
@@ -105,17 +108,35 @@ class ScalarPODAccessOp<string mnemonic, bit isRead, list<Trait> traits = []>
     bool $cppClass::isRead() {
       return }]#!if(isRead, "true", "false")#[{;
     }
+
+    /// Required by DiscardableAllocationAccessorOpInterface / unused allocation cleanup.
+    bool $cppClass::loadsFromDiscardableAllocation(::mlir::Value ptr) {
+      return }]#!if(isRead, "getPodRef() == ptr", "false")#[{;
+    }
+
+    /// Required by DiscardableAllocationAccessorOpInterface / unused allocation cleanup.
+    bool $cppClass::storesToDiscardableAllocation(::mlir::Value ptr) {
+      return }]#!if(isRead, "false",
+                    "getPodRef() == ptr && getValue() != ptr")#[{;
+    }
+
+    /// Required by DiscardableAllocationAccessorOpInterface / unused allocation cleanup.
+    bool $cppClass::canEraseAsDeadStoreTo(::mlir::Value ptr, const ::mlir::DataLayout &) {
+      return }]#!if(isRead, "false",
+                    "getPodRef() == ptr && getValue() != ptr")#[{;
+    }
   }];
 }
 
 def LLZK_NewPodOp
     : PODDialectOp<
-          "new",
-          [Pure, AttrSizedOperandSegments, VerifySizesForMultiAffineOps<1>,
-           DeclareOpInterfaceMethods<PromotableAllocationOpInterface>,
-           DeclareOpInterfaceMethods<DestructurableAllocationOpInterface>,
-           DeclareOpInterfaceMethods<
-               OpAsmOpInterface, ["getAsmResultNames"]>]> {
+          "new", [MemoryEffects<[MemAlloc<DiscardableAllocationResource>]>,
+                  AttrSizedOperandSegments, VerifySizesForMultiAffineOps<1>,
+                  DeclareOpInterfaceMethods<PromotableAllocationOpInterface>,
+                  DeclareOpInterfaceMethods<
+                      DestructurableAllocationOpInterface>,
+                  DeclareOpInterfaceMethods<
+                      OpAsmOpInterface, ["getAsmResultNames"]>]> {
   let summary = "create a new plain-old-data struct";
   let description = [{
     Creates a new, uninitialized, pod instance. Optionally, the user can pass a list of record names and values
@@ -218,11 +239,12 @@ def LLZK_ReadPodOp : ScalarPODAccessOp<"read", 1> {
   }];
 
   let arguments = (ins Arg<LLZK_PODType, "the pod to read from">:$pod_ref,
-      FlatSymbolRefAttr:$record_name);
+      StrAttr:$record_name);
   let results = (outs AnyLLZKType:$result);
   let assemblyFormat = [{
     $pod_ref `[` custom<RecordName>($record_name) `]` `:` type($pod_ref) `,` type($result) attr-dict
   }];
+  let useCustomPropertiesEncoding = 1;
   let hasVerifier = 1;
 }
 
@@ -243,11 +265,12 @@ def LLZK_WritePodOp : ScalarPODAccessOp<"write", 0> {
   }];
 
   let arguments = (ins Arg<LLZK_PODType, "the pod to write into">:$pod_ref,
-      FlatSymbolRefAttr:$record_name, AnyLLZKType:$value);
+      StrAttr:$record_name, AnyLLZKType:$value);
 
   let assemblyFormat = [{
     $pod_ref `[` custom<RecordName>($record_name) `]` `=` $value `:` type($pod_ref) `,` type($value) attr-dict
   }];
+  let useCustomPropertiesEncoding = 1;
   let hasVerifier = 1;
 }
 

@@ -2001,7 +2001,7 @@ module attributes {llzk.lang = "zirgen"} {
     }
   }
   poly.template @TPegs {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @Pegs {
       struct.member @"$super" : !array.type<@N x !struct.type<@TReg::@Reg<[]>>> {llzk.pub}
@@ -2221,7 +2221,7 @@ module attributes {llzk.lang = "zirgen"} {
   }
   poly.template @TCheckBounds {
     poly.param @COLORS
-    poly.param @PEGS
+    poly.param @PEGS : index
 
     struct.def @CheckBounds {
       struct.member @"$super" : !array.type<@PEGS x !struct.type<@block$_1<[]>>> {llzk.pub}
@@ -2425,7 +2425,7 @@ module attributes {llzk.lang = "zirgen"} {
     }
   }
   poly.template @TGenerateCodeHash {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @GenerateCodeHash {
       struct.member @"$super" : !struct.type<@TCodeHash::@CodeHash<[]>> {llzk.pub}
@@ -2467,7 +2467,8 @@ module attributes {llzk.lang = "zirgen"} {
         %felt_const_1 = felt.const 1
         %felt_const_0_0 = felt.const 0
         %self = struct.new : !struct.type<@TGenerateCodeHash::@GenerateCodeHash<[@N]>>
-        %0 = poly.read_const @N : !felt.type
+        %00 = poly.read_const @N : index
+        %0 = cast.tofelt %00 : index, !felt.type
         %array = array.new %felt_const_0_0, %felt_const_1, %felt_const_2, %felt_const_3, %felt_const_4, %felt_const_5, %felt_const_6, %felt_const_7, %felt_const_8, %felt_const_9, %felt_const_10, %felt_const_11, %felt_const_12, %felt_const_13, %felt_const_14, %felt_const_15, %felt_const_16, %felt_const_17, %felt_const_18, %felt_const_19, %felt_const_20, %felt_const_21, %felt_const_22, %felt_const_23 : <24 x !felt.type>
         %array_1 = array.new  : <24 x !felt.type>
         scf.for %arg2 = %c0 to %c24 step %c1 {
@@ -2611,7 +2612,8 @@ module attributes {llzk.lang = "zirgen"} {
         %felt_const_2 = felt.const 2
         %felt_const_1 = felt.const 1
         %felt_const_0_0 = felt.const 0
-        %0 = poly.read_const @N : !felt.type
+        %00 = poly.read_const @N : index
+        %0 = cast.tofelt %00 : index, !felt.type
         %array = array.new %felt_const_0_0, %felt_const_1, %felt_const_2, %felt_const_3, %felt_const_4, %felt_const_5, %felt_const_6, %felt_const_7, %felt_const_8, %felt_const_9, %felt_const_10, %felt_const_11, %felt_const_12, %felt_const_13, %felt_const_14, %felt_const_15, %felt_const_16, %felt_const_17, %felt_const_18, %felt_const_19, %felt_const_20, %felt_const_21, %felt_const_22, %felt_const_23 : <24 x !felt.type>
         %array_1 = array.new  : <24 x !felt.type>
         scf.for %arg3 = %c0 to %c24 step %c1 {
@@ -2816,7 +2818,7 @@ module attributes {llzk.lang = "zirgen"} {
     }
   }
   poly.template @TCountColors {
-    poly.param @N
+    poly.param @N : index
 
     struct.def @CountColors {
       struct.member @"$super" : !felt.type {llzk.pub}
@@ -2953,7 +2955,7 @@ module attributes {llzk.lang = "zirgen"} {
   poly.template @TZip {
     poly.param @Lhs
     poly.param @Rhs
-    poly.param @N
+    poly.param @N : index
 
     struct.def @Zip {
       struct.member @"$super" : !array.type<#map x !struct.type<@TPair::@Pair<[!poly.tvar<@Lhs>, !poly.tvar<@Rhs>]>>> {llzk.pub}
@@ -2962,7 +2964,6 @@ module attributes {llzk.lang = "zirgen"} {
         %c0 = arith.constant 0 : index
         %c1 = arith.constant 1 : index
         %self = struct.new : !struct.type<@TZip::@Zip<[@Lhs, @Rhs, @N]>>
-        %0 = poly.read_const @N : !felt.type
         %1 = poly.read_const @N : index
         %array = array.new{()[%1]} : <#map x !felt.type>
         %2 = poly.read_const @N : index
@@ -2990,7 +2991,6 @@ module attributes {llzk.lang = "zirgen"} {
       function.def @constrain(%arg0: !struct.type<@TZip::@Zip<[@Lhs, @Rhs, @N]>>, %arg1: !array.type<@N x !poly.tvar<@Lhs>>, %arg2: !array.type<@N x !poly.tvar<@Rhs>>) attributes {function.allow_non_native_field_ops, function.allow_constraint} {
         %c0 = arith.constant 0 : index
         %c1 = arith.constant 1 : index
-        %0 = poly.read_const @N : !felt.type
         %1 = poly.read_const @N : index
         %array = array.new{()[%1]} : <#map x !felt.type>
         %2 = poly.read_const @N : index
@@ -3019,7 +3019,7 @@ module attributes {llzk.lang = "zirgen"} {
   }
   poly.template @TAssertArrsEq {
     poly.param @T
-    poly.param @N
+    poly.param @N : index
 
     struct.def @AssertArrsEq {
       struct.member @"$super" : !array.type<#map x !struct.type<@TComponent::@Component<[]>>> {llzk.pub}
@@ -3095,7 +3095,7 @@ module attributes {llzk.lang = "zirgen"} {
   }
   poly.template @TMakeGuess {
     poly.param @COLORS
-    poly.param @PEGS
+    poly.param @PEGS : index
 
     struct.def @MakeGuess {
       struct.member @"$super" : !struct.type<@TGuess::@Guess<[]>> {llzk.pub}

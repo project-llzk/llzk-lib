@@ -10,8 +10,10 @@
 #include "../LLZKTestBase.h"
 
 #include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
+#include "llzk/Util/Field.h"
 
 #include <gtest/gtest.h>
 
@@ -116,6 +118,16 @@ TEST_F(TypeTests, testShortString) {
   OpBuilder bldr(&ctx);
   EXPECT_EQ("b", BuildShortTypeString::from(bldr.getIntegerType(1)));
   EXPECT_EQ("i", BuildShortTypeString::from(bldr.getIndexType()));
+  EXPECT_EQ("f<35>", BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::APInt(6, 35))));
+  EXPECT_EQ("f<35>", BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::APInt(7, 35))));
+  EXPECT_EQ(
+      "f<35:5:bn128>",
+      BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::APInt(6, 35), "bn128"))
+  );
+  EXPECT_EQ(
+      "f<35:5:bn128>",
+      BuildShortTypeString::from(FeltConstAttr::get(&ctx, llvm::APInt(7, 35), "bn128"))
+  );
   EXPECT_EQ(
       "!t<@A>", BuildShortTypeString::from(TypeVarType::get(FlatSymbolRefAttr::get(&ctx, "A")))
   );
@@ -157,7 +169,7 @@ TEST_F(TypeTests, testShortString) {
     );
   }
 
-  // No protection/escaping of special characters in the original name
+  // Display delimiters remain readable; this representation is intentionally not reversible.
   EXPECT_EQ(
       "!s<@S1_!a<>>",
       BuildShortTypeString::from(StructType::get(FlatSymbolRefAttr::get(&ctx, "S1_!a<>")))
@@ -184,63 +196,43 @@ TEST_F(TypeTests, testShortString) {
   }
 }
 
-TEST_F(TypeTests, testShortStringWithPartials) {
-  auto symA = FlatSymbolRefAttr::get(&ctx, "A");
-  auto symB = FlatSymbolRefAttr::get(&ctx, "B");
-  auto symC = FlatSymbolRefAttr::get(&ctx, "C");
-  auto symD = FlatSymbolRefAttr::get(&ctx, "D");
-  auto symE = FlatSymbolRefAttr::get(&ctx, "E");
-  auto symF = FlatSymbolRefAttr::get(&ctx, "F");
-  auto symG = FlatSymbolRefAttr::get(&ctx, "G");
-  auto symH = FlatSymbolRefAttr::get(&ctx, "H");
-  auto symJ = FlatSymbolRefAttr::get(&ctx, "J");
-  auto symK = FlatSymbolRefAttr::get(&ctx, "K");
+TEST_F(TypeTests, testShortStringDistinguishesDelimitedFeltFieldNames) {
+  static constexpr llvm::StringLiteral fieldA("a>_f<36:b");
+  static constexpr llvm::StringLiteral fieldB("a");
+  static constexpr llvm::StringLiteral fieldC("b>_f<37");
+  static constexpr llvm::StringLiteral prime("101");
+  [[maybe_unused]] static const bool fieldsRegistered = [] {
+    Field::addField(fieldA, prime, nullptr);
+    Field::addField(fieldB, prime, nullptr);
+    Field::addField(fieldC, prime, nullptr);
+    return true;
+  }();
 
-  std::string v1 = BuildShortTypeString::from(
-      "prefix", ArrayRef<Attribute> {
-                    nullptr, symA, nullptr, nullptr, symB, nullptr, nullptr, nullptr, symC, nullptr
-                }
+  auto felt = [&](uint64_t value, llvm::StringRef field) {
+    return FeltConstAttr::get(&ctx, llvm::APInt(7, value), field);
+  };
+  FeltConstAttr unspecified = FeltConstAttr::get(&ctx, llvm::APInt(7, 37));
+
+  std::string first = BuildShortTypeString::from(
+      ArrayAttr::get(&ctx, ArrayRef<Attribute> {felt(35, fieldA), unspecified})
   );
-  EXPECT_EQ("prefix_\x1A_@A_\x1A_\x1A_@B_\x1A_\x1A_\x1A_@C_\x1A", v1);
-
-  std::string v2 = BuildShortTypeString::from(
-      v1, ArrayRef<Attribute> {nullptr, nullptr, symD, nullptr, symE, symF, nullptr}
+  std::string second = BuildShortTypeString::from(
+      ArrayAttr::get(&ctx, ArrayRef<Attribute> {felt(35, fieldB), felt(36, fieldC)})
   );
-  EXPECT_EQ("prefix_\x1A_@A_\x1A_@D_@B_\x1A_@E_@F_@C_\x1A", v2);
 
-  std::string v3 =
-      BuildShortTypeString::from(v2, ArrayRef<Attribute> {symG, nullptr, nullptr, symH});
-  EXPECT_EQ("prefix_@G_@A_\x1A_@D_@B_\x1A_@E_@F_@C_@H", v3);
-
-  std::string v4 = BuildShortTypeString::from(v3, ArrayRef<Attribute> {symJ, symK});
-  EXPECT_EQ("prefix_@G_@A_@J_@D_@B_@K_@E_@F_@C_@H", v4);
+  EXPECT_NE(first, second);
 }
 
-TEST_F(TypeTests, testShortStringWithPartials_withExtensions) {
-  auto symA = FlatSymbolRefAttr::get(&ctx, "A");
-  auto symB = FlatSymbolRefAttr::get(&ctx, "B");
-  auto symC = FlatSymbolRefAttr::get(&ctx, "C");
-  auto symD = FlatSymbolRefAttr::get(&ctx, "D");
-  auto symE = FlatSymbolRefAttr::get(&ctx, "E");
-  auto symF = FlatSymbolRefAttr::get(&ctx, "F");
-  auto symG = FlatSymbolRefAttr::get(&ctx, "G");
-  auto symH = FlatSymbolRefAttr::get(&ctx, "H");
-  auto symJ = FlatSymbolRefAttr::get(&ctx, "J");
-  auto symK = FlatSymbolRefAttr::get(&ctx, "K");
+TEST_F(TypeTests, testShortStringPreservesReservedNestedSymbolBytes) {
+  constexpr char withReservedByte[] = {'S', '\x1A'};
+  llvm::StringRef reservedByteName(withReservedByte, sizeof(withReservedByte));
 
-  std::string v1 = BuildShortTypeString::from(
-      "prefix", ArrayRef<Attribute> {nullptr, symA, nullptr, nullptr, symB}
-  );
-  EXPECT_EQ("prefix_\x1A_@A_\x1A_\x1A_@B", v1);
+  auto shortString = [&](llvm::StringRef symbol) {
+    return BuildShortTypeString::from(
+        TypeAttr::get(StructType::get(FlatSymbolRefAttr::get(&ctx, symbol)))
+    );
+  };
 
-  std::string v2 =
-      BuildShortTypeString::from(v1, ArrayRef<Attribute> {nullptr, nullptr, symC, nullptr, symD});
-  EXPECT_EQ("prefix_\x1A_@A_\x1A_@C_@B_\x1A_@D", v2);
-
-  std::string v3 =
-      BuildShortTypeString::from(v2, ArrayRef<Attribute> {symE, nullptr, nullptr, symF});
-  EXPECT_EQ("prefix_@E_@A_\x1A_@C_@B_\x1A_@D_@F", v3);
-
-  std::string v4 = BuildShortTypeString::from(v3, ArrayRef<Attribute> {symG, symH, symJ, symK});
-  EXPECT_EQ("prefix_@E_@A_@G_@C_@B_@H_@D_@F_@J_@K", v4);
+  EXPECT_EQ("!s<@S\x1A>", shortString(reservedByteName));
+  EXPECT_EQ("!s<@S%1A>", shortString("S%1A"));
 }

@@ -6,7 +6,7 @@
 module attributes {llzk.lang} {
   // pre-defined
   poly.template @TVarArray {
-    poly.param @N
+    poly.param @N : index
     poly.param @T
 
     struct.def @VarArray {
@@ -70,7 +70,7 @@ module attributes {llzk.lang} {
 //
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TVarArray {
-// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.param @N : index
 // CHECK-NEXT:      poly.param @T
 // CHECK-NEXT:      struct.def @VarArray {
 // CHECK-NEXT:        struct.member @val : !array.type<@N x !poly.tvar<@T>>

@@ -20,7 +20,7 @@
 module attributes {llzk.lang = "zirgen"} {
   poly.template @THead {
     poly.param @T
-    poly.param @N
+    poly.param @N : index
 
     struct.def @Head {
       struct.member @"$super" : !poly.tvar<@T> {llzk.pub}
@@ -143,7 +143,7 @@ module attributes {llzk.lang = "zirgen"} {
 
 // CHECK-LABEL: poly.template @THead {
 // CHECK-NEXT:    poly.param @T
-// CHECK-NEXT:    poly.param @N
+// CHECK-NEXT:    poly.param @N : index
 // CHECK-NEXT:    struct.def @Head {
 // CHECK-NEXT:      struct.member @"$super" : !poly.tvar<@T> {llzk.pub}
 // CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@THead::@Head<[@T, @N]>> attributes {function.allow_witness} {

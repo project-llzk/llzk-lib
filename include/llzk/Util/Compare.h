@@ -46,6 +46,11 @@ struct LocationComparator {
   }
 };
 
+/// Compare the source locations of two operations.
+///
+/// Returns failure unless both operations have `FileLineColLoc` locations. A successful `false`
+/// result means only that `l` is not before `r`; the locations may be equal. This comparison is
+/// therefore not a total order.
 template <OpComparable Op> mlir::FailureOr<bool> isLocationLess(const Op &l, const Op &r) {
   mlir::Location lhsLoc = l->getLoc(), rhsLoc = r->getLoc();
   // We cannot make judgments on unknown locations.
@@ -65,11 +70,19 @@ template <OpComparable Op> struct OpLocationLess {
   bool operator()(const Op &l, const Op &r) const { return isLocationLess(l, r).value_or(false); }
 };
 
+/// Order named operations by source location, using the symbol name to break ties or when source
+/// locations cannot be compared.
 template <NamedOpComparable Op> struct NamedOpLocationLess {
   bool operator()(const Op &l, const Op &r) const {
     auto res = isLocationLess(l, r);
-    if (mlir::succeeded(res)) {
-      return res.value();
+    auto reverseRes = isLocationLess(r, l);
+    // A successful false result may mean either equal locations or that the operands are reversed.
+    // Check both directions before using the symbol name as the deterministic tie-breaker.
+    if (mlir::succeeded(res) && res.value()) {
+      return true;
+    }
+    if (mlir::succeeded(reverseRes) && reverseRes.value()) {
+      return false;
     }
 
     Op &lhs = const_cast<Op &>(l);

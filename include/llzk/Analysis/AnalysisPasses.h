@@ -14,20 +14,7 @@
 
 namespace llzk {
 
-std::unique_ptr<mlir::Pass> createCallGraphPrinterPass(llvm::raw_ostream &os);
-
-std::unique_ptr<mlir::Pass> createCallGraphSCCsPrinterPass(llvm::raw_ostream &os);
-
-std::unique_ptr<mlir::Pass> createConstraintDependencyGraphPrinterPass(llvm::raw_ostream &os);
-
-std::unique_ptr<mlir::Pass> createIntervalAnalysisPrinterPass(llvm::raw_ostream &os);
-
-std::unique_ptr<mlir::Pass> createSymbolDefTreePrinterPass();
-
-std::unique_ptr<mlir::Pass> createSymbolUseGraphPrinterPass();
-
-std::unique_ptr<mlir::Pass> createPredecessorPrinterPass();
-
+#define GEN_PASS_DECL
 #define GEN_PASS_REGISTRATION
 #include "llzk/Analysis/AnalysisPasses.h.inc"
 

@@ -22,6 +22,41 @@
 #include "llzk/Dialect/Cast/IR/Enums.capi.test.cpp.inc"
 #include "llzk/Dialect/Cast/IR/Ops.capi.test.cpp.inc"
 
+namespace {
+
+void countInsertedOps(MlirOperation, MlirOpBuilderInsertPoint, void *userData) {
+  ++*static_cast<unsigned *>(userData);
+}
+
+void ignoreInsertedBlocks(MlirBlock, MlirRegion, MlirBlock, void *) {}
+
+} // namespace
+
+TEST_F(CAPITest, llzk_int_to_felt_op_build_with_type_inserts_with_builder) {
+  unsigned insertions = 0;
+  MlirOpBuilderListener listener =
+      mlirOpBuilderListenerCreate(countInsertedOps, ignoreInsertedBlocks, &insertions);
+  MlirOpBuilder builder = mlirOpBuilderCreateWithListener(context, listener);
+  MlirLocation location = mlirLocationUnknownGet(context);
+  MlirModule module = mlirModuleCreateEmpty(location);
+  MlirBlock block = mlirModuleGetBody(module);
+  MlirOperation input = createIndexOperation();
+  mlirBlockAppendOwnedOperation(block, input);
+  mlirOpBuilderSetInsertionPointToEnd(builder, block);
+
+  MlirOperation op = llzkCast_IntToFeltOpBuildWithType(
+      builder, location, wrap(cppGetFeltType(builder)), mlirOperationGetResult(input, 0)
+  );
+
+  EXPECT_NE(op.ptr, (void *)NULL);
+  EXPECT_EQ(insertions, 1u);
+  EXPECT_TRUE(mlirOperationEqual(mlirOperationGetNextInBlock(input), op));
+
+  mlirModuleDestroy(module);
+  mlirOpBuilderDestroy(builder);
+  mlirOpBuilderListenerDestroy(listener);
+}
+
 // Implementation for `IntToFeltOp_build_pass` test
 std::unique_ptr<IntToFeltOpBuildFuncHelper> IntToFeltOpBuildFuncHelper::get() {
   struct Impl : public IntToFeltOpBuildFuncHelper {

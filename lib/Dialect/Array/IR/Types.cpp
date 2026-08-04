@@ -142,6 +142,18 @@ Type ArrayType::getTypeAtIndex(Attribute index) const {
   return createArrayOfSizeOne(getElementType());
 }
 
+Type ArrayType::getSelectionType(size_t numIndices) const {
+  if (numIndices == 0) {
+    return *this;
+  }
+  auto dims = getDimensionSizes();
+  if (numIndices >= dims.size()) {
+    ensure(numIndices == dims.size(), "cannot index more array dimensions than exist in the type");
+    return getElementType();
+  }
+  return ArrayType::get(getElementType(), dims.drop_front(numIndices));
+}
+
 ParseResult parseAttrVec(AsmParser &parser, SmallVector<Attribute> &value) {
   SmallVector<Attribute> attrs;
   auto parseElement = [&parser, &value]() -> ParseResult {
