@@ -218,8 +218,8 @@ public:
     auto [it, inserted] = fullFuncInstantiationCache.try_emplace(key, instantiatedPath);
     (void)inserted; // tell compiler it's intentionally unused in release builds
     assert(
-        inserted || it->second == instantiatedPath &&
-                        "cache key collision with a different full function instantiation"
+        (inserted || it->second == instantiatedPath) &&
+        "cache key collision with a different full function instantiation"
     );
   }
 
