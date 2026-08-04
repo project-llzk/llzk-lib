@@ -117,6 +117,10 @@ class ConversionTracker {
   /// Maps new remote type (i.e., the values in 'structInstantiations') to a list of Diagnostic
   /// to report at the location(s) of the compute() that causes the instantiation to the StructType.
   DenseMap<StructType, SmallVector<Diagnostic>> delayedDiagnostics;
+  /// Caches full function instantiations by `<original-callee-path>|<instantiated-template-name>`.
+  /// This cache must outlive individual rewrite pattern instances because flattening re-runs
+  /// Step 2 across fixpoint iterations.
+  llvm::StringMap<SymbolRefAttr> fullFuncInstantiationCache;
 
 public:
   /// Return whether the current flattening iteration has changed the IR.
@@ -198,6 +202,25 @@ public:
   /// Return the mutable diagnostic queue associated with `newType`.
   SmallVector<Diagnostic> &delayedDiagnosticSet(StructType newType) {
     return delayedDiagnostics[newType];
+  }
+
+  /// Return the cached fully-instantiated function path for `key`, if present.
+  std::optional<SymbolRefAttr> getFullFuncInstantiation(StringRef key) const {
+    auto cachedResult = fullFuncInstantiationCache.find(key);
+    if (cachedResult != fullFuncInstantiationCache.end()) {
+      return cachedResult->second;
+    }
+    return std::nullopt;
+  }
+
+  /// Remember the fully-instantiated function path for `key`.
+  void recordFullFuncInstantiation(StringRef key, SymbolRefAttr instantiatedPath) {
+    auto [it, inserted] = fullFuncInstantiationCache.try_emplace(key, instantiatedPath);
+    (void)inserted; // tell compiler it's intentionally unused in release builds
+    assert(
+        inserted || it->second == instantiatedPath &&
+                        "cache key collision with a different full function instantiation"
+    );
   }
 
   /// Check if the type conversion is legal, i.e., the new type unifies with and is more concrete
@@ -1413,7 +1436,6 @@ static LogicalResult applyBodyConversions(
 
 class InstantiateFuncAtCallOp final : public OpRewritePattern<CallOp> {
   ConversionTracker &tracker_;
-  mutable llvm::StringMap<SymbolRefAttr> fullInstantiationCache_;
 
 public:
   /// Construct the function-instantiation pattern.
@@ -1489,7 +1511,7 @@ public:
         layout.remainingNames.empty()
             ? instantiateFully(
                   op, rewriter, symTables, callTgt, parentTemplate, parentModule,
-                  layout.templateNameWithAttrs, paramNameToConcrete, fullInstantiationCache_
+                  layout.templateNameWithAttrs, paramNameToConcrete, tracker_
               )
             : instantiatePartially(
                   op, rewriter, symTables, callTgt, parentTemplate, parentModule, layout,
@@ -1663,28 +1685,33 @@ private:
     return asSymbolRefAttr(symPieces);
   }
 
+  /// Build the cache key for fully-instantiated function clones.
+  static std::string
+  buildFullInstantiationCacheKey(SymbolRefAttr calleePath, StringRef templateNameWithAttrs) {
+    std::string cacheKey;
+    llvm::raw_string_ostream(cacheKey) << calleePath << '|' << templateNameWithAttrs;
+    return cacheKey;
+  }
+
   /// Create or reuse a fully-instantiated clone in the parent module and return the rewritten
   /// module-level callee reference.
   static FailureOr<SymbolRefAttr> instantiateFully(
       CallOp op, PatternRewriter &rewriter, SymbolTableCollection &symTables, FuncDefOp callTgt,
       TemplateOp parentTemplate, ModuleOp parentModule, StringRef templateNameWithAttrs,
-      const DenseMap<Attribute, Attribute> &paramNameToConcrete,
-      llvm::StringMap<SymbolRefAttr> &fullInstantiationCache
+      const DenseMap<Attribute, Attribute> &paramNameToConcrete, ConversionTracker &tracker
   ) {
     FailureOr<SymbolRefAttr> calleePath = getPathFromTopRoot(callTgt);
     if (failed(calleePath)) {
       return failure();
     }
 
-    std::string cacheKey;
-    llvm::raw_string_ostream(cacheKey) << *calleePath << '|' << templateNameWithAttrs;
-    if (auto cached = fullInstantiationCache.find(cacheKey);
-        cached != fullInstantiationCache.end()) {
+    std::string cacheKey = buildFullInstantiationCacheKey(*calleePath, templateNameWithAttrs);
+    if (auto cachedPath = tracker.getFullFuncInstantiation(cacheKey)) {
       LLVM_DEBUG(
           llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing full instantiation function: "
-                       << cached->second << '\n'
+                       << *cachedPath << '\n'
       );
-      return buildFullInstantiationCalleeForCall(op, getPieces(cached->second).back());
+      return buildFullInstantiationCalleeForCall(op, getPieces(*cachedPath).back());
     }
 
     std::string newFuncName;
@@ -1714,7 +1741,7 @@ private:
     if (failed(newCalleeAttr)) {
       return failure();
     }
-    fullInstantiationCache[cacheKey] = *newCalleeAttr;
+    tracker.recordFullFuncInstantiation(cacheKey, *newCalleeAttr);
     return buildFullInstantiationCalleeForCall(
         op, FlatSymbolRefAttr::get(newFunc.getSymNameAttr())
     );
