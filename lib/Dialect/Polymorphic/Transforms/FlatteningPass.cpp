@@ -1485,7 +1485,6 @@ public:
     ModuleOp parentModule = getParentOfType<ModuleOp>(parentTemplate);
     assert(parentModule && "TemplateOp must be nested in a ModuleOp");
 
-    SymbolRefAttr originalCalleeAttr = op.getCalleeAttr();
     FailureOr<SymbolRefAttr> newCalleeAttr =
         layout.remainingNames.empty()
             ? instantiateFully(
@@ -1500,7 +1499,11 @@ public:
       return failure();
     }
 
-    tracker_.recordInstantiation(originalCalleeAttr);
+    FailureOr<SymbolRefAttr> originalCalleePath = getPathFromTopRoot(callTgt);
+    if (failed(originalCalleePath)) {
+      return failure();
+    }
+    tracker_.recordInstantiation(*originalCalleePath);
 
     // Update the CallOp to point to the instantiated function and mark the module as modified.
     rewriter.modifyOpInPlace(op, [&op, &newCalleeAttr, &layout]() {
@@ -1646,6 +1649,20 @@ private:
     return success();
   }
 
+  /// Return the full-instantiation callee spelling that is valid at this call site.
+  static SymbolRefAttr
+  buildFullInstantiationCalleeForCall(CallOp op, FlatSymbolRefAttr newFuncName) {
+    // Callee: drop template & original function names, add the new module-level function name.
+    // Original: @[prefix...]::@TemplateName::@funcName
+    // New:      @[prefix...]::@newFuncName
+    SmallVector<FlatSymbolRefAttr> symPieces = getPieces(op.getCalleeAttr());
+    assert(symPieces.size() >= 2 && "callee must include at least template and function names");
+    symPieces.pop_back(); // remove original function name
+    symPieces.pop_back(); // remove template name
+    symPieces.push_back(newFuncName);
+    return asSymbolRefAttr(symPieces);
+  }
+
   /// Create or reuse a fully-instantiated clone in the parent module and return the rewritten
   /// module-level callee reference.
   static FailureOr<SymbolRefAttr> instantiateFully(
@@ -1667,7 +1684,7 @@ private:
           llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing full instantiation function: "
                        << cached->second << '\n'
       );
-      return cached->second;
+      return buildFullInstantiationCalleeForCall(op, getPieces(cached->second).back());
     }
 
     std::string newFuncName;
@@ -1693,19 +1710,14 @@ private:
       });
     }
 
-    // Callee: drop template & original function names, add the new module-level function name.
-    // Original: @[prefix...]::@TemplateName::@funcName
-    // New:      @[prefix...]::@newFuncName
-    SmallVector<FlatSymbolRefAttr> symPieces = getPieces(op.getCalleeAttr());
-    assert(symPieces.size() >= 2 && "callee must include at least template and function names");
-    symPieces.pop_back(); // remove original function name
-    symPieces.pop_back(); // remove template name
-    symPieces.push_back(
-        FlatSymbolRefAttr::get(StringAttr::get(op.getContext(), actualNewFuncName))
+    FailureOr<SymbolRefAttr> newCalleeAttr = getPathFromTopRoot(newFunc);
+    if (failed(newCalleeAttr)) {
+      return failure();
+    }
+    fullInstantiationCache[cacheKey] = *newCalleeAttr;
+    return buildFullInstantiationCalleeForCall(
+        op, FlatSymbolRefAttr::get(newFunc.getSymNameAttr())
     );
-    SymbolRefAttr newCalleeAttr = asSymbolRefAttr(symPieces);
-    fullInstantiationCache[cacheKey] = newCalleeAttr;
-    return newCalleeAttr;
   }
 
   /// Create or reuse a partially-instantiated template that preserves the remaining non-concrete
