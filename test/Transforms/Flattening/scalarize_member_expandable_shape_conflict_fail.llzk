@@ -20,7 +20,8 @@ module attributes {llzk.lang} {
   }
 
   struct.def @Holder {
-    struct.member @items : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>> {column} // expected-error {{cannot split heterogeneous array member because expandable whole-array write uses different index set}}
+    // expected-error@+1 {{cannot split heterogeneous array member because expandable whole-array write uses different index set}}
+    struct.member @items : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>> {column}
 
     function.def @compute(%cond: i1) -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
@@ -72,7 +73,8 @@ module attributes {llzk.lang} {
   }
 
   struct.def @Holder {
-    struct.member @items : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>> {column} // expected-error {{cannot split heterogeneous array member because expandable whole-array write uses different index set}}
+    // expected-error@+1 {{cannot split heterogeneous array member because expandable whole-array write uses different index set}}
+    struct.member @items : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>> {column}
 
     function.def @compute(%cond: i1) -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>

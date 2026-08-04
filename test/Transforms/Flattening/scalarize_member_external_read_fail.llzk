@@ -41,7 +41,8 @@ module attributes {llzk.lang} {
   }
 
   function.def @bad(%holder: !struct.type<@Holder>) -> !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {
-    %items = struct.readm %holder[@items] : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> // expected-error {{cannot split heterogeneous array member because a whole-array read has an unsupported use}}
+    // expected-error@+1 {{cannot split heterogeneous array member because a whole-array read has an unsupported use}}
+    %items = struct.readm %holder[@items] : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
     function.return %items : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> // expected-note {{unsupported use is here}}
   }
 }
@@ -92,7 +93,8 @@ module attributes {llzk.lang} {
     function.def @compute(%holder: !struct.type<@Holder>, %idx: index) -> !struct.type<@Consumer> {
       %self = struct.new : !struct.type<@Consumer>
       %items = struct.readm %holder[@items] : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-      %item = array.read %items[%idx] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>> // expected-error {{cannot split heterogeneous array member because a read of it uses a dynamic array index}}
+      // expected-error@+1 {{cannot split heterogeneous array member because a read of it uses a dynamic array index}}
+      %item = array.read %items[%idx] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
       function.return %self : !struct.type<@Consumer>
     }
 
@@ -147,7 +149,8 @@ module attributes {llzk.lang} {
   function.def @bad(%holder: !struct.type<@Holder>) {
     %c0 = arith.constant 0 : index
     %items = struct.readm %holder[@items] : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-    %item = array.read %items[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>> // expected-error {{cannot split heterogeneous array member because a read result type is incompatible with the split scalar member type}}
+    // expected-error@+1 {{cannot split heterogeneous array member because a read result type is incompatible with the split scalar member type}}
+    %item = array.read %items[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
     function.return
   }
 }

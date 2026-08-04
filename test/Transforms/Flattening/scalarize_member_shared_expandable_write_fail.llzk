@@ -21,7 +21,8 @@ module attributes {llzk.lang} {
 
   struct.def @Holder {
     struct.member @left : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
-    struct.member @right : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column} // expected-error {{cannot split heterogeneous array member because candidate writes require incompatible scalar member types}}
+    // expected-error@+1 {{cannot split heterogeneous array member because candidate writes require incompatible scalar member types}}
+    struct.member @right : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
 
     function.def @compute(%cond: i1) -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
@@ -95,7 +96,8 @@ module attributes {llzk.lang} {
       } else {
         %c0 = arith.constant 0 : index
         %c1 = arith.constant 1 : index
-        %fallback = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> // expected-error {{cannot split heterogeneous array member because an expandable array stores a scalar value with an incompatible split-member type}}
+        // expected-error@+1 {{cannot split heterogeneous array member because an expandable array stores a scalar value with an incompatible split-member type}}
+        %fallback = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
         %wrong0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>> // expected-note {{array index [0 : index] stores value type}}
         %ok1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
         array.write %fallback[%c0] = %wrong0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
@@ -156,7 +158,8 @@ module attributes {llzk.lang} {
         array.write %right[%c1] = %right1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
         struct.writem %self[@right] = %right : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
       } else {
-        %fallback = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> // expected-error {{cannot split heterogeneous array member because an expandable array reuses one SSA value for incompatible scalar member types}}
+        // expected-error@+1 {{cannot split heterogeneous array member because an expandable array reuses one SSA value for incompatible scalar member types}}
+        %fallback = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
         // expected-note@+1 {{unwritten index}}
         struct.writem %self[@left] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
         // expected-note@+1 {{same index is also materialized for scalar member type}}

@@ -20,7 +20,8 @@ module attributes {llzk.lang} {
   }
 
   struct.def @Holder {
-    struct.member @items : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>> {column, llzk.pub} // expected-error {{cannot split heterogeneous array member because candidate writes use different index sets}}
+    // expected-error@+1 {{cannot split heterogeneous array member because candidate writes use different index sets}}
+    struct.member @items : !array.type<#id x !struct.type<@TCell::@Cell<[#id]>>> {column, llzk.pub}
 
     function.def @compute(%cond: i1) -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>

@@ -47,7 +47,8 @@ module attributes {llzk.lang} {
           %c1 = arith.constant 1 : index
           %c2 = arith.constant 2 : index
           %c3 = arith.constant 3 : index
-          %fallback = array.new : !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>> // expected-error {{cannot split heterogeneous array member because a scalarization candidate reuses one SSA value for incompatible scalar member types}}
+          // expected-error@+1 {{cannot split heterogeneous array member because a scalarization candidate reuses one SSA value for incompatible scalar member types}}
+          %fallback = array.new : !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>>
           %item2 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[2]>>
           %item3 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[3]>>
           array.write %fallback[%c0] = %shared : !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>>, !poly.tvar<@Shared>
