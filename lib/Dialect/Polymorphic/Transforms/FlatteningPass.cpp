@@ -3473,18 +3473,21 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
     users.assign(createOp.getResult().user_begin(), createOp.getResult().user_end());
   }
 
-  /// First consumer that forced an unwritten array index to be materialized at a concrete type.
+  /// First consumer that forced an array index to be materialized at a concrete type.
   ///
-  /// Rewriting creates and caches one `llzk.nondet` per unwritten index. Recording the first
-  /// requested type lets verification reject a later read or split-member write that would need the
-  /// same cached value at an incompatible type.
+  /// Rewriting creates and caches one `llzk.nondet` per unwritten index. It also caches the
+  /// refined type of a read from a stored `llzk.nondet` value. Recording the first requested type
+  /// lets verification reject a later read or split-member write that would need the same cached
+  /// value at an incompatible type.
   struct PendingMaterializationUse {
-    /// Concrete type requested for an unwritten index before a write defines that index.
+    /// Concrete type requested for an index before a write defines a new value there.
     Type type;
     /// Operation location used to explain the first pending materialization request.
     Location loc;
     /// Short diagnostic phrase naming the consumer kind that requested `type`.
     StringRef description;
+    /// Diagnostic phrase naming whether this was an unwritten or already-stored index.
+    StringRef indexDescription;
   };
 
   DenseMap<Value, std::pair<Type, Location>> firstUseByValue;
@@ -3495,11 +3498,12 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
     );
   };
   auto noteMaterializedUse = [&](ArrayAttr idx, Type targetType, Location loc,
-                                 StringRef description) -> LogicalResult {
+                                 StringRef description,
+                                 StringRef indexDescription) -> LogicalResult {
     auto existing = firstMaterializedUseByIndex.find(idx);
     if (existing == firstMaterializedUseByIndex.end()) {
       firstMaterializedUseByIndex.try_emplace(
-          idx, PendingMaterializationUse {targetType, loc, description}
+          idx, PendingMaterializationUse {targetType, loc, description, indexDescription}
       );
       return success();
     }
@@ -3509,9 +3513,10 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
       InFlightDiagnostic diag =
           createOp.emitError("cannot split heterogeneous array member because ")
           << arrayDescription << " reuses one SSA value for incompatible scalar member types";
-      diag.attachNote(existing->second.loc) << "unwritten index " << idx << " is materialized for "
-                                            << existing->second.description << " " << existingType;
-      diag.attachNote(loc) << "same index is also materialized for " << description << " "
+      diag.attachNote(existing->second.loc)
+          << existing->second.indexDescription << ' ' << idx << " is materialized for "
+          << existing->second.description << ' ' << existingType;
+      diag.attachNote(loc) << "same index is also materialized for " << description << ' '
                            << targetType;
       return diag;
     }
@@ -3527,11 +3532,28 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
     }
     if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
       ArrayAttr idx = getIndexAsAttr(readOp);
-      if (!valueByIndex.lookup(idx) &&
-          failed(noteMaterializedUse(
-              idx, readOp.getResult().getType(), readOp.getLoc(), "read result type"
-          ))) {
-        return failure();
+      Type readType = readOp.getResult().getType();
+      if (Value scalarValue = valueByIndex.lookup(idx)) {
+        if (failed(getCommonRefinedType(scalarValue.getType(), readType, tracker))) {
+          InFlightDiagnostic diag =
+              createOp.emitError("cannot split heterogeneous array member because ")
+              << arrayDescription << " stores a scalar value with an incompatible read result type";
+          diag.attachNote(scalarValue.getLoc())
+              << "array index " << idx << " stores value type " << scalarValue.getType();
+          diag.attachNote(readOp.getLoc()) << "same index is read as " << readType;
+          return diag;
+        }
+        if (failed(noteMaterializedUse(
+                idx, readType, readOp.getLoc(), "read result type", "array index"
+            ))) {
+          return failure();
+        }
+      } else {
+        if (failed(noteMaterializedUse(
+                idx, readType, readOp.getLoc(), "read result type", "unwritten index"
+            ))) {
+          return failure();
+        }
       }
       continue;
     }
@@ -3552,9 +3574,9 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
     for (const auto &[idx, targetType] : splitIt->second) {
       Value scalarValue = valueByIndex.lookup(idx);
       if (!scalarValue) {
-        if (failed(
-                noteMaterializedUse(idx, targetType, memberWriteOp.getLoc(), "scalar member type")
-            )) {
+        if (failed(noteMaterializedUse(
+                idx, targetType, memberWriteOp.getLoc(), "scalar member type", "unwritten index"
+            ))) {
           return failure();
         }
         continue;
@@ -3569,6 +3591,11 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
         diag.attachNote(memberWriteOp.getLoc())
             << "same index is written to scalar member type " << targetType;
         return diag;
+      }
+      if (failed(noteMaterializedUse(
+              idx, targetType, memberWriteOp.getLoc(), "scalar member type", "array index"
+          ))) {
+        return failure();
       }
       if (existing == firstUseByValue.end()) {
         firstUseByValue.try_emplace(
