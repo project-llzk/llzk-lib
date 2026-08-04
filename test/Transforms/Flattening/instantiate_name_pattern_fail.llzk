@@ -1,0 +1,67 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  // The verifier rejects a pattern whose outer value is not an array of literal chunks.
+  // expected-error@+1 {{expected 'poly.name_pattern' to be an ArrayAttr}}
+  poly.template @T {
+    poly.param @N : index
+    function.def @compute() -> index {
+      %n = poly.read_const @N : index
+      function.return %n : index
+    }
+  } {poly.name_pattern = "T_"}
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  // The verifier rejects non-literal chunks rather than assigning them slot meaning.
+  // expected-error@+1 {{expected 'poly.name_pattern' element 1 to be a StringAttr}}
+  poly.template @T {
+    poly.param @N : index
+    function.def @compute() -> index {
+      %n = poly.read_const @N : index
+      function.return %n : index
+    }
+  } {poly.name_pattern = ["T_", 42 : i64]}
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  // A one-parameter template needs two literal chunks: one before and one after the parameter.
+  // expected-error@+1 {{expected 'poly.name_pattern' to contain 2 literal chunk(s) for 1 template parameter(s), but found 1}}
+  poly.template @T {
+    poly.param @N : index
+    function.def @compute() -> index {
+      %n = poly.read_const @N : index
+      function.return %n : index
+    }
+  } {poly.name_pattern = ["T_"]}
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  // expected-error@+1 {{expected 'poly.name_pattern' to contain 2 literal chunk(s) for 1 template parameter(s), but found 3}}
+  poly.template @T {
+    poly.param @N : index
+    function.def @compute() -> index {
+      %n = poly.read_const @N : index
+      function.return %n : index
+    }
+  } {poly.name_pattern = ["T_", "", "extra"]}
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  // A parameterless template has one literal chunk and no parameter gaps.
+  // expected-error@+1 {{expected 'poly.name_pattern' to contain 1 literal chunk(s) for 0 template parameter(s), but found 2}}
+  poly.template @T {
+    function.def @compute() -> index {
+      %value = arith.constant 0 : index
+      function.return %value : index
+    }
+  } {poly.name_pattern = ["T_", ""]}
+}

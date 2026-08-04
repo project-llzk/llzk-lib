@@ -534,9 +534,10 @@ static SymbolRefAttr replaceLeafReference(SymbolRefAttr symRef, StringRef newLea
   return asSymbolRefAttr(pieces);
 }
 
+/// Append a wildcard specialization suffix without interpreting any byte of the source base.
 static std::string
 buildWildcardSpecializationName(StringRef baseName, const WildcardArraySpecializationInfo &info) {
-  return BuildShortTypeString::from(baseName.str(), info.getConcreteTypeAttrs());
+  return buildOpaqueInstantiationName(baseName, info.getConcreteTypeAttrs());
 }
 
 /// Retargets calls nested inside a specialized struct body to the corresponding

@@ -145,17 +145,23 @@ BuildShortTypeString &BuildShortTypeString::append(Type type) {
 }
 
 BuildShortTypeString &BuildShortTypeString::append(Attribute a) {
-  // Special case for inserting the `PLACEHOLDER`
-  if (a == nullptr) {
-    ss << PLACEHOLDER;
-    return *this;
-  }
+  assert(a && "BuildShortTypeString requires non-null attributes");
 
   // Adapted from AsmPrinter::Impl::printAttributeImpl()
   if (auto ia = llvm::dyn_cast<IntegerAttr>(a)) {
     Type ty = ia.getType();
     bool isUnsigned = ty.isUnsignedInteger() || ty.isSignlessInteger(1);
     ia.getValue().print(ss, !isUnsigned);
+  } else if (auto fa = llvm::dyn_cast<FeltConstAttr>(a)) {
+    ss << "f<";
+    fa.getValue().print(ss, false);
+    if (StringAttr fieldName = fa.getFieldName()) {
+      // The byte length prevents field delimiters from colliding with adjacent parameters. For
+      // example, `a>_f<36:b` followed by 37 and `a` followed by `b>_f<37` would otherwise render
+      // the same concatenated short string.
+      ss << ':' << fieldName.getValue().size() << ':' << fieldName.getValue();
+    }
+    ss << '>';
   } else if (auto sra = llvm::dyn_cast<SymbolRefAttr>(a)) {
     appendSymRef(sra);
   } else if (auto ta = llvm::dyn_cast<TypeAttr>(a)) {
@@ -179,36 +185,6 @@ BuildShortTypeString &BuildShortTypeString::append(Attribute a) {
 BuildShortTypeString &BuildShortTypeString::append(ArrayRef<Attribute> attrs) {
   llvm::interleave(attrs, ss, [this](Attribute a) { append(a); }, "_");
   return *this;
-}
-
-std::string BuildShortTypeString::from(const std::string &base, ArrayRef<Attribute> attrs) {
-  BuildShortTypeString bldr;
-
-  bldr.ret.reserve(base.size() + attrs.size()); // reserve minimum space required
-
-  // First handle replacements of PLACEHOLDER
-  const auto *END = attrs.end();
-  const auto *IT = attrs.begin();
-  {
-    size_t start = 0;
-    for (size_t pos; (pos = base.find(PLACEHOLDER, start)) != std::string::npos; start = pos + 1) {
-      // Append original up to the PLACEHOLDER
-      bldr.ret.append(base, start, pos - start);
-      // Append the formatted Attribute
-      assert(IT != END && "must have an Attribute for every 'PLACEHOLDER' char");
-      bldr.append(*IT++);
-    }
-    // Append remaining suffix of the original
-    bldr.ret.append(base, start, base.size() - start);
-  }
-
-  // Append any remaining Attributes
-  if (IT != END) {
-    bldr.ss << '_';
-    bldr.append(ArrayRef(IT, END));
-  }
-
-  return bldr.ret;
 }
 
 namespace {

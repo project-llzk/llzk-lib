@@ -105,6 +105,16 @@ static void reportDelayedDiagnostics(CallOp caller, SmallVector<Diagnostic> &&di
 }
 
 class ConversionTracker {
+  /// Published result of one successful partial-function conversion.
+  ///
+  /// The source operation and concrete key live in the surrounding map; these names are only the
+  /// post-insertion symbol path needed to retarget a later exact cache hit.
+  struct PartialFuncInstantiation {
+    ArrayAttr concreteParamKey;
+    StringAttr templateName;
+    StringAttr functionName;
+  };
+
   /// Tracks if some step performed a modification of the code such that another pass should be run.
   bool modified = false;
   /// Maps original remote (i.e., use site) type to new remote type.
@@ -114,6 +124,9 @@ class ConversionTracker {
   DenseMap<StructType, StructType> reverseInstantiations;
   /// Tracks original free function definitions for which instantiated clones were created.
   DenseSet<SymbolRefAttr> funcInstantiations;
+  /// Successful partial functions keyed by their source operation and exact concrete bindings.
+  /// The rendered symbol names are only values; they are never used as cache identity.
+  DenseMap<Operation *, SmallVector<PartialFuncInstantiation>> partialFuncInstantiations;
   /// Maps new remote type (i.e., the values in 'structInstantiations') to a list of Diagnostic
   /// to report at the location(s) of the compute() that causes the instantiation to the StructType.
   DenseMap<StructType, SmallVector<Diagnostic>> delayedDiagnostics;
@@ -176,6 +189,46 @@ public:
     funcInstantiations.insert(funcName);
     modified = true;
   }
+
+  /// Return the successfully converted partial function for this exact source/key pair, if any.
+  std::optional<SymbolRefAttr>
+  lookupPartialFuncInstantiation(FuncDefOp sourceFunc, ArrayAttr concreteParamKey) const {
+    auto found = partialFuncInstantiations.find(sourceFunc.getOperation());
+    if (found == partialFuncInstantiations.end()) {
+      return std::nullopt;
+    }
+    for (const PartialFuncInstantiation &candidate : found->second) {
+      if (candidate.concreteParamKey == concreteParamKey) {
+        SmallVector<FlatSymbolRefAttr> calleeSuffix {
+            FlatSymbolRefAttr::get(candidate.templateName),
+            FlatSymbolRefAttr::get(candidate.functionName),
+        };
+        return asSymbolRefAttr(calleeSuffix);
+      }
+    }
+    return std::nullopt;
+  }
+
+  /// Publish a successful partial conversion after insertion and body conversion have completed.
+  void recordPartialFuncInstantiation(
+      FuncDefOp sourceFunc, ArrayAttr concreteParamKey, TemplateOp templateOp, FuncDefOp functionOp
+  ) {
+    assert(
+        !lookupPartialFuncInstantiation(sourceFunc, concreteParamKey).has_value() &&
+        "partial function instantiation already cached"
+    );
+    partialFuncInstantiations[sourceFunc.getOperation()].push_back(
+        PartialFuncInstantiation {
+            concreteParamKey,
+            templateOp.getSymNameAttr(),
+            functionOp.getSymNameAttr(),
+        }
+    );
+  }
+
+  /// No partial-function cache entry is read after cleanup starts; release its operation names at
+  /// that boundary so the tracker does not retain stale handles while cleanup erases templates.
+  void clearPartialFuncInstantiations() { partialFuncInstantiations.clear(); }
 
   /// Collect the fully-qualified names of all structs and free functions that were instantiated.
   DenseSet<SymbolRefAttr> getInstantiatedDefinitionNames() const {
@@ -763,18 +816,16 @@ class StructCloner {
     StructDefOp origStruct = r->get();
     StructType typeAtDef = origStruct.getType();
     MLIRContext *ctx = origStruct.getContext();
+    TemplateOp parentTemplate = getParentOfType<TemplateOp>(origStruct);
+    assert(parentTemplate && "parameterized struct must be nested in a TemplateOp");
+    ModuleOp parentModule = getParentOfType<ModuleOp>(parentTemplate);
+    assert(parentModule && "TemplateOp must be nested in a ModuleOp");
 
     // Map of StructDefOp parameter name to concrete Attribute at the current instantiation site.
     DenseMap<Attribute, Attribute> paramNameToConcrete;
-    // List of concrete Attributes from the struct instantiation with `nullptr` at any positions
-    // where the original attribute from the current instantiation site was not concrete. This is
-    // used for generating the new struct name. See `BuildShortTypeString::from()`.
-    SmallVector<Attribute> attrsForInstantiatedNameSuffix;
-    // List of template const param names that must be preserved because they
-    // were not assigned concrete values at the current instantiation site.
-    SmallVector<Attribute> remainingNames;
     // Reduced from `typeAtCallerParams` to contain only the non-concrete Attributes.
     ArrayAttr reducedCallerParams = nullptr;
+    SmallVector<Attribute> nonConcreteParams;
     {
       ArrayAttr paramNames = typeAtDef.getParams();
 
@@ -782,45 +833,37 @@ class StructCloner {
       assert(!isNullOrEmpty(paramNames));
       assert(paramNames.size() == typeAtCallerParams.size());
 
-      SmallVector<Attribute> nonConcreteParams;
       for (size_t i = 0, e = paramNames.size(); i < e; ++i) {
         Attribute next = typeAtCallerParams[i];
         if (isConcreteAttr<false>(next)) {
           paramNameToConcrete[paramNames[i]] = next;
-          attrsForInstantiatedNameSuffix.push_back(next);
         } else {
-          remainingNames.push_back(paramNames[i]);
           nonConcreteParams.push_back(next);
-          attrsForInstantiatedNameSuffix.push_back(nullptr);
         }
       }
       // post-conditions
-      assert(remainingNames.size() == nonConcreteParams.size());
-      assert(attrsForInstantiatedNameSuffix.size() == paramNames.size());
-      assert(remainingNames.size() + paramNameToConcrete.size() == paramNames.size());
+      assert(nonConcreteParams.size() + paramNameToConcrete.size() == paramNames.size());
 
       if (paramNameToConcrete.empty()) {
         LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   skip: no concrete params \n");
         return failure();
       }
-      if (!remainingNames.empty()) {
+      if (!nonConcreteParams.empty()) {
         reducedCallerParams = ArrayAttr::get(ctx, nonConcreteParams);
       }
     }
 
+    FailureOr<InstantiationLayout> layoutResult =
+        buildInstantiationLayout(parentTemplate, ArrayAttr(), paramNameToConcrete);
+    if (failed(layoutResult)) {
+      return failure();
+    }
+    InstantiationLayout layout = std::move(*layoutResult);
+    assert(layout.remainingNames.size() == nonConcreteParams.size());
+
     // This list will be used to build the new remote/external type.
     SmallVector<FlatSymbolRefAttr> typeAtCallerSymPieces = getPieces(typeAtCaller.getNameRef());
     typeAtCallerSymPieces.pop_back(); // drop struct name
-    // Name of template with instantiated parameter values.
-    std::string templateNameWithAttrs = BuildShortTypeString::from(
-        typeAtCallerSymPieces.back().getValue().str(), attrsForInstantiatedNameSuffix
-    );
-
-    // Get parent refs
-    TemplateOp parentTemplate = getParentOfType<TemplateOp>(origStruct);
-    assert(parentTemplate && "parameterized struct must be nested in a TemplateOp");
-    ModuleOp parentModule = getParentOfType<ModuleOp>(parentTemplate);
-    assert(parentModule && "TemplateOp must be nested in a ModuleOp");
 
     // Evaluate any poly.expr symbols whose param dependencies are now concrete; add them to the
     // map so ClonedBodyConstReadOpPattern can replace uses of those symbols too.
@@ -830,10 +873,10 @@ class StructCloner {
     StructDefOp newStruct = origStruct.clone();
     convertCalleesInPlace(newStruct, paramNameToConcrete);
     Operation *insertedCloneRoot = nullptr;
-    if (remainingNames.empty()) { // FULL INSTANTIATION CASE
+    if (layout.remainingNames.empty()) { // FULL INSTANTIATION CASE
       // Set name of the new struct by prepending its name with instantiated template name.
       newStruct.setSymName(
-          (templateNameWithAttrs + mlir::Twine('_') + newStruct.getSymName()).str()
+          (layout.templateNameWithAttrs + mlir::Twine('_') + newStruct.getSymName()).str()
       );
       // Insert 'newStruct' into the parent ModuleOp of the original TemplateOp. Use the
       // `SymbolTable::insert()` function so that the name will be made unique if necessary.
@@ -844,12 +887,13 @@ class StructCloner {
     } else { // PARTIAL INSTANTIATION CASE
       // Clone the template and set instantiated name.
       TemplateOp newTemplate = parentTemplate.cloneWithoutRegions();
-      newTemplate.setSymName(templateNameWithAttrs);
+      newTemplate.setSymName(layout.templateNameWithAttrs);
+      setInstantiationNamePattern(newTemplate, layout.namePattern);
       assert(newTemplate->getNumRegions() > 0 && "region exists"); // it just doesn't have a block
       newTemplate.getBodyRegion().emplaceBlock();
 
       // Clone preserved const param/expr ops.
-      for (Attribute name : remainingNames) {
+      for (Attribute name : layout.remainingNames) {
         FlatSymbolRefAttr nameSym = llvm::dyn_cast<FlatSymbolRefAttr>(name);
         assert(nameSym && "expected FlatSymbolRefAttr");
 
@@ -1502,8 +1546,12 @@ public:
 
     evaluateTemplateExprs(parentTemplate, paramNameToConcrete);
 
-    InstantiationLayout layout =
+    FailureOr<InstantiationLayout> layoutResult =
         buildInstantiationLayout(parentTemplate, op.getTemplateParamsAttr(), paramNameToConcrete);
+    if (failed(layoutResult)) {
+      return failure();
+    }
+    InstantiationLayout layout = std::move(*layoutResult);
     ModuleOp parentModule = getParentOfType<ModuleOp>(parentTemplate);
     assert(parentModule && "TemplateOp must be nested in a ModuleOp");
 
@@ -1515,7 +1563,7 @@ public:
               )
             : instantiatePartially(
                   op, rewriter, symTables, callTgt, parentTemplate, parentModule, layout,
-                  paramNameToConcrete
+                  paramNameToConcrete, tracker_
               );
     if (failed(newCalleeAttr)) {
       return failure();
@@ -1749,73 +1797,79 @@ private:
 
   /// Create or reuse a partially-instantiated template that preserves the remaining non-concrete
   /// parameters and return the rewritten nested callee reference.
-  /// New template name encodes the concrete values and uses placeholder chars for the rest,
-  /// e.g., "TemplateName_8_\x1A" where \x1A marks the position of a non-concrete param.
+  /// Reuse is keyed by the source function and exact ordered concrete bindings. The rendered name
+  /// is only a preferred symbol name and may be changed by SymbolTable insertion.
   static FailureOr<SymbolRefAttr> instantiatePartially(
       CallOp op, PatternRewriter &rewriter, SymbolTableCollection &symTables, FuncDefOp callTgt,
       TemplateOp parentTemplate, ModuleOp parentModule, const InstantiationLayout &layout,
-      const DenseMap<Attribute, Attribute> &paramNameToConcrete
+      const DenseMap<Attribute, Attribute> &paramNameToConcrete, ConversionTracker &tracker
   ) {
-    TemplateOp newTemplate;
-    if (Operation *existing =
-            symTables.getSymbolTable(parentModule).lookup(layout.templateNameWithAttrs)) {
-      newTemplate = llvm::dyn_cast<TemplateOp>(existing);
+    if (auto cached = tracker.lookupPartialFuncInstantiation(callTgt, layout.concreteParamKey)) {
+      SmallVector<FlatSymbolRefAttr> symPieces = getPieces(op.getCalleeAttr());
+      SmallVector<FlatSymbolRefAttr> cachedSuffix = getPieces(*cached);
+      assert(symPieces.size() >= 2 && "callee must include at least template and function names");
+      assert(cachedSuffix.size() == 2 && "cached callee suffix must contain template and function");
+      symPieces.pop_back();
+      symPieces.pop_back();
+      symPieces.push_back(cachedSuffix[0]);
+      symPieces.push_back(cachedSuffix[1]);
+      SymbolRefAttr cachedCallee = asSymbolRefAttr(symPieces);
+      LLVM_DEBUG(
+          llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing partial instantiation: "
+                       << cachedCallee << '\n'
+      );
+      return cachedCallee;
     }
-    if (!newTemplate) {
-      newTemplate = parentTemplate.cloneWithoutRegions();
-      newTemplate.setSymName(layout.templateNameWithAttrs);
-      assert(newTemplate->getNumRegions() > 0 && "region exists");
-      newTemplate.getBodyRegion().emplaceBlock();
+    TemplateOp newTemplate = parentTemplate.cloneWithoutRegions();
+    newTemplate.setSymName(layout.templateNameWithAttrs);
+    setInstantiationNamePattern(newTemplate, layout.namePattern);
+    assert(newTemplate->getNumRegions() > 0 && "region exists");
+    newTemplate.getBodyRegion().emplaceBlock();
 
-      Block &newTemplateBody = newTemplate.getBodyRegion().front();
-      for (Attribute name : layout.remainingNames) {
-        FlatSymbolRefAttr nameSym = llvm::cast<FlatSymbolRefAttr>(name);
-        Operation *paramOp = symTables.getSymbolTable(parentTemplate).lookup(nameSym.getAttr());
-        assert(paramOp && "symbol must exist");
-        newTemplateBody.push_back(paramOp->clone());
-      }
-
-      // Clone and partially convert the function (concretize only the concrete params).
-      FuncDefOp newFunc = callTgt.clone();
-      convertCalleesInPlace(newFunc, paramNameToConcrete);
-
-      // Insert before body conversion so nested concrete callees verify from the root module. Use
-      // the `SymbolTable::insert()` function so that the name will be made unique if necessary.
-      symTables.getSymbolTable(newTemplate).insert(newFunc);
-      symTables.getSymbolTable(parentModule).insert(newTemplate, Block::iterator(parentTemplate));
-      if (failed(applyBodyConversions(op, newFunc, paramNameToConcrete))) {
-        StringRef newFuncName = newFunc.getSymName();
-        LLVM_DEBUG(
-            llvm::dbgs() << "[InstantiateFuncAtCallOp]   body conversion failed for " << newFuncName
-                         << '\n'
-        );
-        newTemplate->erase();
-        return rewriter.notifyMatchFailure(op, [&newFuncName](Diagnostic &diag) {
-          diag.append("failure while creating instantiated function '", newFuncName, '\'');
-        });
-      }
-
-      LLVM_DEBUG(
-          llvm::dbgs() << "[InstantiateFuncAtCallOp]  created partial instantiation template: "
-                       << newTemplate.getSymName() << '\n'
-      );
-    } else {
-      LLVM_DEBUG(
-          llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing partial instantiation template: "
-                       << newTemplate.getSymName() << '\n'
-      );
+    Block &newTemplateBody = newTemplate.getBodyRegion().front();
+    for (Attribute name : layout.remainingNames) {
+      FlatSymbolRefAttr nameSym = llvm::cast<FlatSymbolRefAttr>(name);
+      Operation *paramOp = symTables.getSymbolTable(parentTemplate).lookup(nameSym.getAttr());
+      assert(paramOp && "symbol must exist");
+      newTemplateBody.push_back(paramOp->clone());
     }
 
-    // Callee: replace old template name with new template name, keep the function name.
-    // Original: @[prefix...]::@TemplateName::@funcName
-    // New:      @[prefix...]::@newTemplateName::@funcName
+    // Clone and partially convert the function (concretize only the concrete params).
+    FuncDefOp newFunc = callTgt.clone();
+    convertCalleesInPlace(newFunc, paramNameToConcrete);
+
+    // Insert before body conversion so nested concrete callees verify from the root module. Use
+    // SymbolTable::insert() so both physical symbol names are unique if necessary.
+    symTables.getSymbolTable(newTemplate).insert(newFunc);
+    symTables.getSymbolTable(parentModule).insert(newTemplate, Block::iterator(parentTemplate));
+    if (failed(applyBodyConversions(op, newFunc, paramNameToConcrete))) {
+      std::string newFuncName = newFunc.getSymName().str();
+      LLVM_DEBUG(
+          llvm::dbgs() << "[InstantiateFuncAtCallOp]   body conversion failed for " << newFuncName
+                       << '\n'
+      );
+      newTemplate->erase();
+      return rewriter.notifyMatchFailure(op, [&newFuncName](Diagnostic &diag) {
+        diag.append("failure while creating instantiated function '", newFuncName, '\'');
+      });
+    }
+
+    // Use the post-insertion names. The preferred template name may have collided.
     SmallVector<FlatSymbolRefAttr> symPieces = getPieces(op.getCalleeAttr());
     assert(symPieces.size() >= 2 && "callee must include at least template and function names");
-    symPieces.pop_back(); // remove original function name (will be re-appended)
+    symPieces.pop_back();
     symPieces.pop_back(); // remove original template name
     symPieces.push_back(FlatSymbolRefAttr::get(newTemplate.getSymNameAttr()));
-    symPieces.push_back(FlatSymbolRefAttr::get(callTgt.getSymNameAttr()));
-    return asSymbolRefAttr(symPieces);
+    symPieces.push_back(FlatSymbolRefAttr::get(newFunc.getSymNameAttr()));
+    SymbolRefAttr newCallee = asSymbolRefAttr(symPieces);
+
+    LLVM_DEBUG(
+        llvm::dbgs() << "[InstantiateFuncAtCallOp]  created partial instantiation: " << newCallee
+                     << '\n'
+    );
+    // Publish only after insertion and body conversion have succeeded.
+    tracker.recordPartialFuncInstantiation(callTgt, layout.concreteParamKey, newTemplate, newFunc);
+    return newCallee;
   }
 };
 
@@ -4807,6 +4861,8 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
         llvm::dbgs() << "=====================================================================\n";
       });
     } while (tracker.isModified());
+
+    tracker.clearPartialFuncInstantiations();
 
     // Run user-selected cleanup first.
     if (failed(cleanupSwitch(modOp, tracker))) {

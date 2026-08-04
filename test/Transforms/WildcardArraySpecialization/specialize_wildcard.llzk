@@ -63,74 +63,75 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  // Wildcard specialization appends its suffix without interpreting marker bytes in the base.
   // expected-warning@+1 {{Parameterized definition still has uses!}}
-  function.def @head(%arr: !array.type<? x !felt.type>) -> !felt.type {
+  function.def @"h\1Aead"(%arr: !array.type<? x !felt.type>) -> !felt.type {
     %cast = poly.unifiable_cast %arr : (!array.type<? x !felt.type>) -> !array.type<? x !felt.type>
     %zero = felt.const  0
     function.return %zero : !felt.type
   }
 
-  function.def private @head$$extern(%msg: !string.type, %arr: !array.type<? x !felt.type>) -> !felt.type attributes {extern}
+  function.def private @"h\1Aead$$extern"(%msg: !string.type, %arr: !array.type<? x !felt.type>) -> !felt.type attributes {extern}
 
   function.def @call_one_a(%arr: !array.type<1 x !felt.type>) -> !felt.type {
-    %0 = function.call @head(%arr) : (!array.type<1 x !felt.type>) -> !felt.type
+    %0 = function.call @"h\1Aead"(%arr) : (!array.type<1 x !felt.type>) -> !felt.type
     function.return %0 : !felt.type
   }
 
   function.def @call_one_b(%arr: !array.type<1 x !felt.type>) -> !felt.type {
-    %0 = function.call @head(%arr) : (!array.type<1 x !felt.type>) -> !felt.type
+    %0 = function.call @"h\1Aead"(%arr) : (!array.type<1 x !felt.type>) -> !felt.type
     function.return %0 : !felt.type
   }
 
   function.def @call_two(%arr: !array.type<2 x !felt.type>) -> !felt.type {
-    %0 = function.call @head(%arr) : (!array.type<2 x !felt.type>) -> !felt.type
+    %0 = function.call @"h\1Aead"(%arr) : (!array.type<2 x !felt.type>) -> !felt.type
     function.return %0 : !felt.type
   }
 
   function.def @call_unknown(%arr: !array.type<? x !felt.type>) -> !felt.type {
-    %0 = function.call @head(%arr) : (!array.type<? x !felt.type>) -> !felt.type
+    %0 = function.call @"h\1Aead"(%arr) : (!array.type<? x !felt.type>) -> !felt.type
     function.return %0 : !felt.type
   }
 
   function.def @call_one_extern(%arr: !array.type<1 x !felt.type>) -> !felt.type {
     %msg = string.new "extern: "
-    %0 = function.call @head$$extern(%msg, %arr) : (!string.type, !array.type<1 x !felt.type>) -> !felt.type
+    %0 = function.call @"h\1Aead$$extern"(%msg, %arr) : (!string.type, !array.type<1 x !felt.type>) -> !felt.type
     function.return %0 : !felt.type
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @"head_!a<f:1>"(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type>) -> !felt.type {
+// CHECK-NEXT:    function.def @"h\1Aead_!a<f:1>"(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type>) -> !felt.type {
 // CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  0
 // CHECK-NEXT:      function.return %[[VAL_1]] : !felt.type
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @"head_!a<f:2>"(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>) -> !felt.type {
+// CHECK-NEXT:    function.def @"h\1Aead_!a<f:2>"(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>) -> !felt.type {
 // CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  0
 // CHECK-NEXT:      function.return %[[VAL_3]] : !felt.type
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @head(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type>) -> !felt.type {
+// CHECK-NEXT:    function.def @"h\1Aead"(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type>) -> !felt.type {
 // CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = felt.const  0
 // CHECK-NEXT:      function.return %[[VAL_5]] : !felt.type
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def private @"head$$extern_!a<f:1>"(!string.type, !array.type<1 x !felt.type>) -> !felt.type attributes {extern}
+// CHECK-NEXT:    function.def private @"h\1Aead$$extern_!a<f:1>"(!string.type, !array.type<1 x !felt.type>) -> !felt.type attributes {extern}
 // CHECK-NEXT:    function.def @call_one_a(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type>) -> !felt.type {
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @"head_!a<f:1>"(%[[VAL_6]]) : (!array.type<1 x !felt.type>) -> !felt.type
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @"h\1Aead_!a<f:1>"(%[[VAL_6]]) : (!array.type<1 x !felt.type>) -> !felt.type
 // CHECK-NEXT:      function.return %[[VAL_7]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @call_one_b(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type>) -> !felt.type {
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @"head_!a<f:1>"(%[[VAL_8]]) : (!array.type<1 x !felt.type>) -> !felt.type
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @"h\1Aead_!a<f:1>"(%[[VAL_8]]) : (!array.type<1 x !felt.type>) -> !felt.type
 // CHECK-NEXT:      function.return %[[VAL_9]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @call_two(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>) -> !felt.type {
-// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @"head_!a<f:2>"(%[[VAL_10]]) : (!array.type<2 x !felt.type>) -> !felt.type
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @"h\1Aead_!a<f:2>"(%[[VAL_10]]) : (!array.type<2 x !felt.type>) -> !felt.type
 // CHECK-NEXT:      function.return %[[VAL_11]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @call_unknown(%[[VAL_12:[0-9a-zA-Z_\.]+]]: !array.type<? x !felt.type>) -> !felt.type {
-// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = function.call @head(%[[VAL_12]]) : (!array.type<? x !felt.type>) -> !felt.type
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = function.call @"h\1Aead"(%[[VAL_12]]) : (!array.type<? x !felt.type>) -> !felt.type
 // CHECK-NEXT:      function.return %[[VAL_13]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @call_one_extern(%[[VAL_14:[0-9a-zA-Z_\.]+]]: !array.type<1 x !felt.type>) -> !felt.type {
 // CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = string.new "extern: "
-// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = function.call @"head$$extern_!a<f:1>"(%[[VAL_15]], %[[VAL_14]]) : (!string.type, !array.type<1 x !felt.type>) -> !felt.type
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = function.call @"h\1Aead$$extern_!a<f:1>"(%[[VAL_15]], %[[VAL_14]]) : (!string.type, !array.type<1 x !felt.type>) -> !felt.type
 // CHECK-NEXT:      function.return %[[VAL_16]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

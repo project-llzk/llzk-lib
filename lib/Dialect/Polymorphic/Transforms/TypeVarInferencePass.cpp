@@ -1005,7 +1005,12 @@ static FailureOr<TemplateOp> getOrCreateSpecializedTemplateClone(
     SymbolTableCollection &tables, llvm::StringMap<StringAttr> &templateClones,
     InstantiationLayout &layout
 ) {
-  layout = buildInstantiationLayout(parentTemplate, callParams, paramNameToConcrete);
+  FailureOr<InstantiationLayout> layoutResult =
+      buildInstantiationLayout(parentTemplate, callParams, paramNameToConcrete);
+  if (failed(layoutResult)) {
+    return failure();
+  }
+  layout = std::move(*layoutResult);
   std::string cacheKey = buildSpecializedTemplateCloneCacheKey(
       parentTemplate.getSymName(), oldParamOrder, paramNameToConcrete
   );
@@ -1027,6 +1032,9 @@ static FailureOr<TemplateOp> getOrCreateSpecializedTemplateClone(
 
   TemplateOp newTemplate = parentTemplate.cloneWithoutRegions();
   newTemplate.setSymName(layout.templateNameWithAttrs);
+  setInstantiationNamePattern(
+      newTemplate, layout.remainingNames.empty() ? ArrayAttr() : layout.namePattern
+  );
   assert(newTemplate->getNumRegions() > 0 && "region exists");
   newTemplate.getBodyRegion().emplaceBlock();
   Block &newTemplateBody = newTemplate.getBodyRegion().front();
@@ -3080,17 +3088,38 @@ static FailureOr<SymbolRefAttr> getOrCreateSpecializedContractClone(
   );
 }
 
-/// Erase `poly.param` definitions whose type variables were fully resolved.
+/// Plan and publish the refined name pattern while erasing resolved `poly.param` definitions.
 ///
-/// The erase happens after body and call-site rewrites so symbol uses in types
-/// and template parameter lists have already been removed.
-static void removeResolvedParams(TemplateInferenceInfo &info) {
+/// Planning happens before mutation, while the original parameter order still identifies every
+/// gap. The old pattern is cleared before erasure and the target chunks are attached immediately
+/// afterward, so the template is valid at the next observable pass boundary.
+static LogicalResult removeResolvedParams(TemplateInferenceInfo &info) {
+  if (info.replacements.empty()) {
+    return success();
+  }
+
+  DenseMap<StringAttr, Type> replacements;
+  for (const auto &entry : info.replacements) {
+    replacements.try_emplace(entry.first, entry.second.type);
+  }
+  DenseMap<Attribute, Attribute> paramNameToConcrete = buildParamNameToConcrete(replacements);
+  FailureOr<InstantiationLayout> layout =
+      buildInstantiationLayout(info.templateOp, ArrayAttr(), paramNameToConcrete);
+  if (failed(layout)) {
+    return failure();
+  }
+
+  setInstantiationNamePattern(info.templateOp, ArrayAttr());
   for (auto paramOp : llvm::make_early_inc_range(info.templateOp.getConstOps<TemplateParamOp>())) {
     auto name = paramOp.getSymNameAttr();
     if (info.replacements.contains(name)) {
       paramOp.erase();
     }
   }
+  setInstantiationNamePattern(
+      info.templateOp, layout->remainingNames.empty() ? ArrayAttr() : layout->namePattern
+  );
+  return success();
 }
 
 /// Verify that a wildcard call/include still matches its target after type-variable inference.
@@ -4087,7 +4116,10 @@ private:
     // the original order, but before concrete struct instantiation verifies
     // rewritten owned-struct arities.
     for (TemplateInferenceInfo *info : rewrites) {
-      removeResolvedParams(*info);
+      if (failed(removeResolvedParams(*info))) {
+        signalPassFailure();
+        return;
+      }
     }
 
     if (failed(instantiateConcreteStructUses(module))) {

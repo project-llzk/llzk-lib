@@ -39,7 +39,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.def @id(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<@N x index>) -> !array.type<@N x index> {
 // CHECK-NEXT:        function.return %[[VAL_0]] : !array.type<@N x index>
 // CHECK-NEXT:      }
-// CHECK-NEXT:    }
+// CHECK-NEXT:    } {poly.name_pattern = ["InferSymbolArrayDim_", "_!a<i:@N>"]}
 // CHECK-NEXT:  }
 // -----
 

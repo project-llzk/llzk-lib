@@ -30,6 +30,146 @@
 
 #define DEBUG_TYPE "poly-dialect-shared"
 
+namespace {
+
+/// Presentation-only separator for rendered open gaps; it is never parsed back from sym_name.
+constexpr char OPEN_SLOT_MARKER = '\x1A';
+
+} // namespace
+
+namespace llzk::polymorphic::detail {
+
+mlir::FailureOr<InstantiationLayout> buildInstantiationLayout(
+    TemplateOp parentTemplate, mlir::ArrayAttr callParams,
+    const llvm::DenseMap<mlir::Attribute, mlir::Attribute> &paramNameToConcrete
+) {
+  mlir::MLIRContext *ctx = parentTemplate.getContext();
+  mlir::SmallVector<mlir::Attribute> paramNames = parentTemplate.getConstNames<TemplateParamOp>();
+  mlir::SmallVector<mlir::StringAttr> sourceChunks;
+
+  if (mlir::Attribute rawPattern = parentTemplate->getDiscardableAttr(TEMPLATE_NAME_PATTERN_ATTR)) {
+    auto pattern = llvm::dyn_cast<mlir::ArrayAttr>(rawPattern);
+    if (!pattern) {
+      return parentTemplate.emitOpError()
+             << "expected '" << TEMPLATE_NAME_PATTERN_ATTR << "' to be an ArrayAttr";
+    }
+    if (pattern.size() != paramNames.size() + 1) {
+      return parentTemplate.emitOpError()
+             << "expected '" << TEMPLATE_NAME_PATTERN_ATTR << "' to contain "
+             << paramNames.size() + 1 << " literal chunk(s) for " << paramNames.size()
+             << " template parameter(s), but found " << pattern.size();
+    }
+    for (auto [index, chunk] : llvm::enumerate(pattern)) {
+      auto stringChunk = llvm::dyn_cast<mlir::StringAttr>(chunk);
+      if (!stringChunk) {
+        return parentTemplate.emitOpError() << "expected '" << TEMPLATE_NAME_PATTERN_ATTR
+                                            << "' element " << index << " to be a StringAttr";
+      }
+      sourceChunks.push_back(stringChunk);
+    }
+  } else {
+    std::string firstChunk = parentTemplate.getSymName().str();
+    if (!paramNames.empty()) {
+      firstChunk.push_back('_');
+    }
+    sourceChunks.push_back(mlir::StringAttr::get(ctx, firstChunk));
+    for (size_t i = 1; i < paramNames.size(); ++i) {
+      sourceChunks.push_back(mlir::StringAttr::get(ctx, "_"));
+    }
+    if (!paramNames.empty()) {
+      sourceChunks.push_back(mlir::StringAttr::get(ctx, ""));
+    }
+  }
+
+  mlir::SmallVector<mlir::Attribute> remainingNames;
+  mlir::SmallVector<mlir::Attribute> concreteKeyEntries;
+  for (mlir::Attribute paramName : paramNames) {
+    auto concreteIt = paramNameToConcrete.find(paramName);
+    if (concreteIt == paramNameToConcrete.end() || !concreteIt->second) {
+      remainingNames.push_back(paramName);
+      continue;
+    }
+
+    concreteKeyEntries.push_back(paramName);
+    concreteKeyEntries.push_back(concreteIt->second);
+  }
+
+  mlir::ArrayAttr rewrittenCallParams = nullptr;
+  if (!isNullOrEmpty(callParams) && !remainingNames.empty()) {
+    assert(callParams.size() == paramNames.size() && "template parameter arity already verified");
+    mlir::SmallVector<mlir::Attribute> remainingCallParams;
+    for (auto [paramName, attr] : llvm::zip_equal(paramNames, callParams.getValue())) {
+      auto concreteIt = paramNameToConcrete.find(paramName);
+      if (concreteIt == paramNameToConcrete.end() || !concreteIt->second) {
+        remainingCallParams.push_back(attr);
+      }
+    }
+    rewrittenCallParams = mlir::ArrayAttr::get(ctx, remainingCallParams);
+  }
+
+  // Refine chunks in parameter order. A concrete gap is absorbed into the current literal chunk;
+  // an open gap starts the next chunk. This preserves empty chunks and therefore exact P+1 shape.
+  mlir::SmallVector<std::string> refinedChunkValues;
+  refinedChunkValues.push_back(sourceChunks.front().getValue().str());
+  for (size_t i = 0; i < paramNames.size(); ++i) {
+    auto concreteIt = paramNameToConcrete.find(paramNames[i]);
+    if (concreteIt != paramNameToConcrete.end() && concreteIt->second) {
+      mlir::Attribute binding = concreteIt->second;
+      refinedChunkValues.back() += BuildShortTypeString::from(binding);
+      refinedChunkValues.back() += sourceChunks[i + 1].getValue().str();
+    } else {
+      refinedChunkValues.push_back(sourceChunks[i + 1].getValue().str());
+    }
+  }
+  assert(
+      refinedChunkValues.size() == remainingNames.size() + 1 &&
+      "every unbound parameter creates one remaining gap"
+  );
+
+  std::string renderedName;
+  for (auto [index, chunk] : llvm::enumerate(refinedChunkValues)) {
+    if (index != 0) {
+      renderedName.push_back(OPEN_SLOT_MARKER);
+    }
+    renderedName += chunk;
+  }
+
+  mlir::SmallVector<mlir::Attribute> refinedPattern;
+  refinedPattern.reserve(refinedChunkValues.size());
+  for (const std::string &chunk : refinedChunkValues) {
+    refinedPattern.push_back(mlir::StringAttr::get(ctx, chunk));
+  }
+
+  return InstantiationLayout {
+      std::move(remainingNames),
+      mlir::ArrayAttr::get(ctx, concreteKeyEntries),
+      std::move(renderedName),
+      rewrittenCallParams,
+      mlir::ArrayAttr::get(ctx, refinedPattern),
+  };
+}
+
+void setInstantiationNamePattern(TemplateOp templateOp, mlir::ArrayAttr namePattern) {
+  if (namePattern) {
+    templateOp->setDiscardableAttr(TEMPLATE_NAME_PATTERN_ATTR, namePattern);
+  } else {
+    templateOp->removeDiscardableAttr(TEMPLATE_NAME_PATTERN_ATTR);
+  }
+}
+
+std::string buildOpaqueInstantiationName(
+    llvm::StringRef baseName, llvm::ArrayRef<mlir::Attribute> concreteAttrs
+) {
+  std::string result = baseName.str();
+  if (!concreteAttrs.empty()) {
+    result.push_back('_');
+    result += BuildShortTypeString::from(concreteAttrs);
+  }
+  return result;
+}
+
+} // namespace llzk::polymorphic::detail
+
 mlir::ConversionTarget llzk::polymorphic::detail::newBaseTarget(mlir::MLIRContext *ctx) {
   mlir::ConversionTarget target(*ctx);
   target.addLegalDialect<

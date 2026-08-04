@@ -34,11 +34,9 @@ class PodType;
 
 /// Note: If any symbol refs in an input Type/Attribute use any of the special characters that this
 /// class generates, they are not escaped. That means these string representations are not safe to
-/// reverse back into a Type. It's only intended to produce a unique name for instantiated structs
-/// that may give some hint when debugging regarding the original struct name and the params used.
+/// reverse back into a Type. They are intended only to produce compact, recognizable names for
+/// instantiated symbols.
 class BuildShortTypeString {
-  static constexpr char PLACEHOLDER = '\x1A';
-
   std::string ret;
   llvm::raw_string_ostream ss;
 
@@ -56,20 +54,16 @@ public:
     return BuildShortTypeString().append(type).ret;
   }
 
+  /// Return a brief string representation of one LLZK type parameter attribute.
+  static inline std::string from(mlir::Attribute attr) {
+    return BuildShortTypeString().append(attr).ret;
+  }
+
   /// Return a brief string representation of the attribute list from a parameterized type.
-  /// Occurrences of `nullptr` are represented with a `PLACEHOLDER` character.
+  /// All attributes must be non-null.
   static inline std::string from(mlir::ArrayRef<mlir::Attribute> attrs) {
     return BuildShortTypeString().append(attrs).ret;
   }
-
-  /// Take an existing name prefix/base that contains N>=0 `PLACEHOLDER` character(s) and the
-  /// Attribute list (size>=N) from a parameterized type. The first N elements in the list are
-  /// formatted and used to replace the `PLACEHOLDER` character(s) in the base string. The remaining
-  /// Attribute elements, if any, are formatted and appended to the end. Occurrences of `nullptr` in
-  /// the Attribute list are formatted as the `PLACEHOLDER` character itself to allow for partial
-  /// instantiation of a parameterized type, preserving the location of attributes that were not
-  /// available in an earlier instantiation so they can be added by a later instantiation.
-  static std::string from(const std::string &base, mlir::ArrayRef<mlir::Attribute> attrs);
 };
 
 // This function asserts that the given Attribute kind is legal within the LLZK types that can

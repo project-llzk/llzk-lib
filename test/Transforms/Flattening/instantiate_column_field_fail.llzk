@@ -84,7 +84,7 @@ module attributes {llzk.lang} {
   }
 
   function.def @main(%data: !struct.type<@Data>) -> !felt.type<"bn128"> {
-    // expected-error@+1 {{failure while creating instantiated function 'OffsetTemplate__read'}}
+    // expected-error@+1 {{failure while creating instantiated function 'OffsetTemplate_f<35:5:bn128>_read'}}
     %value = function.call @OffsetTemplate::@read<[#felt<const 35 : !felt.type<"bn128">>]>(%data) : (!struct.type<@Data>) -> !felt.type<"bn128">
     function.return %value : !felt.type<"bn128">
   }

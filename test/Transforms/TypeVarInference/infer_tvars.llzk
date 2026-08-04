@@ -1,6 +1,7 @@
 // RUN: llzk-opt -split-input-file -llzk-infer-tvar -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 module attributes {llzk.lang} {
+  // A template with a live parameter retains its complete two-chunk pattern.
   poly.template @TIdentity {
     poly.param @T : !poly.tvar<@T>
 
@@ -8,7 +9,7 @@ module attributes {llzk.lang} {
       %cast = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> !array.type<4 x index>
       function.return %cast : !array.type<4 x index>
     }
-  }
+  } {poly.name_pattern = ["TIdentity_", ""]}
 
   function.def @call_id(%arg: !array.type<4 x index>) -> !array.type<4 x index> {
     %0 = function.call @TIdentity::@id<[!array.type<4 x index>]>(%arg) : (!array.type<4 x index>) -> !array.type<4 x index>
@@ -25,6 +26,49 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @TIdentity::@id(%[[VAL_1]]) : (!array.type<4 x index>) -> !array.type<4 x index>
 // CHECK-NEXT:      function.return %[[VAL_2]] : !array.type<4 x index>
 // CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  // A successful in-place inference retains the residual gap with its refined literals.
+  poly.template @Physical {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @N : index
+    function.def @compute(%arg: !poly.tvar<@T>) -> index {
+      %index = poly.unifiable_cast %arg : (!poly.tvar<@T>) -> index
+      %n = poly.read_const @N : index
+      function.return %n : index
+    }
+  } {poly.name_pattern = ["Logical_", "_tail", ""]}
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @Physical {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:        function.return %[[VAL_1]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["Logical_i_tail", ""]}
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  // With no replacement, the valid pattern is transported unchanged.
+  poly.template @NoInference {
+    poly.param @T : !poly.tvar<@T>
+    function.def @id(%arg: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      function.return %arg : !poly.tvar<@T>
+    }
+  } {poly.name_pattern = ["No_", ""]}
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @NoInference {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @id(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> !poly.tvar<@T> {
+// CHECK-NEXT:        function.return %[[VAL_0]] : !poly.tvar<@T>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["No_", ""]}
 // CHECK-NEXT:  }
 // -----
 
@@ -468,7 +512,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.def @keep_b(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !poly.tvar<@B>) -> !poly.tvar<@B> {
 // CHECK-NEXT:        function.return %[[VAL_4]] : !poly.tvar<@B>
 // CHECK-NEXT:      }
-// CHECK-NEXT:    }
+// CHECK-NEXT:    } {poly.name_pattern = ["TTrimmedTarget_i_", ""]}
 // CHECK-NEXT:    poly.template @TTrimmedCaller {
 // CHECK-NEXT:      function.def @forward(%[[VAL_5:[0-9a-zA-Z_\.]+]]: index) -> index {
 // CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @TTrimmedTarget_i_i::@local_b(%[[VAL_5]]) : (index) -> index
@@ -1166,7 +1210,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @"TNestedReplacement_!s<@TNestedReplacementBox::@Box_@U>_i"::@id(%[[VAL_8]], %[[VAL_9]]) : (!struct.type<@TNestedReplacementBox_i::@Box>, index) -> !struct.type<@TNestedReplacementBox_i::@Box>
 // CHECK-NEXT:        function.return %[[VAL_10]] : !struct.type<@TNestedReplacementBox_i::@Box>
 // CHECK-NEXT:      }
-// CHECK-NEXT:    }
+// CHECK-NEXT:    } {poly.name_pattern = ["TNestedReplacement_", "_i"]}
 // CHECK-NEXT:  }
 // -----
 
@@ -1238,7 +1282,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @Num : index
 // CHECK-NEXT:        function.return %[[VAL_0]] : index
 // CHECK-NEXT:      }
-// CHECK-NEXT:    }
+// CHECK-NEXT:    } {poly.name_pattern = ["T_", "_i"]}
 // CHECK-NEXT:    poly.template @T {
 // CHECK-NEXT:      poly.param @Num
 // CHECK-NEXT:      poly.param @Ty : !poly.tvar<@Ty>
@@ -1340,7 +1384,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
 // CHECK-NEXT:        function.return %[[VAL_0]] : !felt.type
 // CHECK-NEXT:      }
-// CHECK-NEXT:    }
+// CHECK-NEXT:    } {poly.name_pattern = ["TFunctionCloneNonTypeParam_f_", ""]}
 // CHECK-NEXT:    poly.template @TFunctionCloneNonTypeParam {
 // CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
 // CHECK-NEXT:      poly.param @N
@@ -1509,7 +1553,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.def @force(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
 // CHECK-NEXT:        function.return %[[VAL_0]] : index
 // CHECK-NEXT:      }
-// CHECK-NEXT:    }
+// CHECK-NEXT:    } {poly.name_pattern = ["TFunctionLocalFeltConstStructParam_i_", ""]}
 // CHECK-NEXT:    poly.template @"TFunctionLocalFeltConstStructParam_i_\1A_0" {
 // CHECK-NEXT:      poly.param @C
 // CHECK-NEXT:      struct.def @Box {
@@ -1520,7 +1564,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@"TFunctionLocalFeltConstStructParam_i_\1A_0"::@Box<[@C]>>
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
-// CHECK-NEXT:    }
+// CHECK-NEXT:    } {poly.name_pattern = ["TFunctionLocalFeltConstStructParam_i_", ""]}
 // CHECK-NEXT:    poly.template @TFunctionLocalFeltConstStructParam {
 // CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
 // CHECK-NEXT:      poly.param @C
@@ -1723,7 +1767,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @M : !felt.type
 // CHECK-NEXT:        function.return %[[VAL_1]] : !felt.type
 // CHECK-NEXT:      }
-// CHECK-NEXT:    }
+// CHECK-NEXT:    } {poly.name_pattern = ["T1_f_", ""]}
 // CHECK-NEXT:    function.def @call_compute() -> !felt.type {
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @T1::@compute<[7]>() : () -> !felt.type
 // CHECK-NEXT:      function.return %[[VAL_2]] : !felt.type

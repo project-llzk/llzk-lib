@@ -1,0 +1,330 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten=cleanup=disabled %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  // Every marker byte belongs to the source spelling, not to an open parameter slot.
+  poly.template @"T\1A\1A\1A\1A\1A\1A" {
+    poly.param @A : index
+    poly.param @B : index
+    poly.param @C : index
+    function.def @compute() -> index {
+      %n = poly.read_const @A : index
+      function.return %n : index
+    }
+  }
+
+  function.def @main() -> index {
+    %got = function.call @"T\1A\1A\1A\1A\1A\1A"::@compute<[35, 89, 7]>() : () -> index
+    function.return %got : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @"T\1A\1A\1A\1A\1A\1A_35_89_7_compute"() -> index {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 35 : index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @"T\1A\1A\1A\1A\1A\1A" {
+// CHECK-NEXT:      poly.param @A : index
+// CHECK-NEXT:      poly.param @B : index
+// CHECK-NEXT:      poly.param @C : index
+// CHECK-NEXT:      function.def @compute() -> index {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @A : index
+// CHECK-NEXT:        function.return %[[VAL_1]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main() -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @"T\1A\1A\1A\1A\1A\1A_35_89_7_compute"() : () -> index
+// CHECK-NEXT:      function.return %[[VAL_2]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  // A full instantiation renders concrete values in parameter order.
+  poly.template @T {
+    poly.param @A : index
+    poly.param @B : index
+    function.def @compute() -> index {
+      %a = poly.read_const @A : index
+      function.return %a : index
+    }
+  }
+
+  function.def @main() -> index {
+    %got = function.call @T::@compute<[89, 13]>() : () -> index
+    function.return %got : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @T_89_13_compute() -> index {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 89 : index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @A : index
+// CHECK-NEXT:      poly.param @B : index
+// CHECK-NEXT:      function.def @compute() -> index {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @A : index
+// CHECK-NEXT:        function.return %[[VAL_1]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main() -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @T_89_13_compute() : () -> index
+// CHECK-NEXT:      function.return %[[VAL_2]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  // A previously partial template is refined from `poly.name_pattern` chunks, not from its
+  // The name of a partially instantiated template is refined from `poly.name_pattern` chunks,
+  // not from its physical name.
+  poly.template @"T_89_\1A" {
+    poly.param @B : index
+    function.def @compute() -> index {
+      %b = poly.read_const @B : index
+      function.return %b : index
+    }
+  } {poly.name_pattern = ["T_89_", ""]}
+
+  function.def @main() -> index {
+    %got = function.call @"T_89_\1A"::@compute<[13]>() : () -> index
+    function.return %got : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @T_89_13_compute() -> index {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 13 : index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @"T_89_\1A" {
+// CHECK-NEXT:      poly.param @B : index
+// CHECK-NEXT:      function.def @compute() -> index {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @B : index
+// CHECK-NEXT:        function.return %[[VAL_1]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["T_89_", ""]}
+// CHECK-NEXT:    function.def @main() -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @T_89_13_compute() : () -> index
+// CHECK-NEXT:      function.return %[[VAL_2]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @"S\1A" {
+    function.def @compute() -> !struct.type<@"S\1A"> {
+      %self = struct.new : <@"S\1A">
+      function.return %self : !struct.type<@"S\1A">
+    }
+    function.def @constrain(%self: !struct.type<@"S\1A">) {
+      function.return
+    }
+  }
+
+  poly.template @T {
+    poly.param @Concrete : !poly.tvar<@Concrete>
+    poly.param @Remaining : !poly.tvar<@Remaining>
+    function.def @compute() -> index {
+      %value = arith.constant 7 : index
+      function.return %value : index
+    }
+  }
+
+  function.def @main() -> index {
+    %got = function.call @T::@compute<[!struct.type<@"S\1A">, ?]>() : () -> index
+    function.return %got : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @"S\1A" {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@"S\1A"> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@"S\1A">
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@"S\1A">
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@"S\1A">) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @"T_!s<@S\1A>_\1A" {
+// CHECK-NEXT:      poly.param @Remaining : !poly.tvar<@Remaining>
+// CHECK-NEXT:      function.def @compute() -> index {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:        function.return %[[VAL_2]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["T_!s<@S\1A>_", ""]}
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @Concrete : !poly.tvar<@Concrete>
+// CHECK-NEXT:      poly.param @Remaining : !poly.tvar<@Remaining>
+// CHECK-NEXT:      function.def @compute() -> index {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:        function.return %[[VAL_3]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main() -> index {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @"T_!s<@S\1A>_\1A"::@compute<[?]>() : () -> index
+// CHECK-NEXT:      function.return %[[VAL_4]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {
+  llzk.fields = [
+    #felt.field<"x\1A", 101>,
+    #felt.field<"x%1A", 101>
+  ],
+  llzk.lang
+} {
+  poly.template @T {
+    poly.param @N : !felt.type
+
+    function.def @value() -> index {
+      %value = arith.constant 7 : index
+      function.return %value : index
+    }
+  }
+
+  function.def @main() -> index {
+    %first = function.call @T::@value<[#felt<const 35 : !felt.type<"x\1A">>]>() : () -> index
+    %second = function.call @T::@value<[#felt<const 35 : !felt.type<"x%1A">>]>() : () -> index
+    function.return %second : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.fields = [#felt.field<"x\1A", 101>, #felt.field<"x%1A", 101>], llzk.lang} {
+// CHECK-NEXT:    function.def @"T_f<35:2:x\1A>_value"() -> index {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @"T_f<35:4:x%1A>_value"() -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:      function.return %[[VAL_1]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @N : !felt.type
+// CHECK-NEXT:      function.def @value() -> index {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:        function.return %[[VAL_2]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main() -> index {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @"T_f<35:2:x\1A>_value"() : () -> index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @"T_f<35:4:x%1A>_value"() : () -> index
+// CHECK-NEXT:      function.return %[[VAL_4]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  // A marker byte inside a stored literal chunk remains literal during refinement.
+  poly.template @physical_name {
+    poly.param @N : index
+    function.def @compute() -> index {
+      %n = poly.read_const @N : index
+      function.return %n : index
+    }
+  } {poly.name_pattern = ["Logical\1A_", "_tail"]}
+
+  function.def @main() -> index {
+    %got = function.call @physical_name::@compute<[89]>() : () -> index
+    function.return %got : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @"Logical\1A_89_tail_compute"() -> index {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 89 : index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @physical_name {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      function.def @compute() -> index {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:        function.return %[[VAL_1]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["Logical\1A_", "_tail"]}
+// CHECK-NEXT:    function.def @main() -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @"Logical\1A_89_tail_compute"() : () -> index
+// CHECK-NEXT:      function.return %[[VAL_2]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  // Repeated exact requests reuse the converted member, while a colliding source shell is renamed.
+  poly.template @"T_35_\1A" {
+    poly.param @Other : index
+    function.def @occupied() -> index {
+      %zero = arith.constant 0 : index
+      function.return %zero : index
+    }
+  }
+
+  poly.template @T {
+    poly.param @A : index
+    poly.param @B : !poly.tvar<@B>
+    function.def @compute() -> index {
+      %a = poly.read_const @A : index
+      function.return %a : index
+    }
+    function.def @other() {
+      function.return
+    }
+  }
+
+  function.def @main() -> index {
+    %first = function.call @T::@compute<[35, ?]>() : () -> index
+    %second = function.call @T::@compute<[35, ?]>() : () -> index
+    function.call @T::@other<[35, ?]>() : () -> ()
+    function.return %second : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @"T_35_\1A" {
+// CHECK-NEXT:      poly.param @Other : index
+// CHECK-NEXT:      function.def @occupied() -> index {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        function.return %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @"T_35_\1A_0" {
+// CHECK-NEXT:      poly.param @B : !poly.tvar<@B>
+// CHECK-NEXT:      function.def @compute() -> index {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 35 : index
+// CHECK-NEXT:        function.return %[[VAL_1]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["T_35_", ""]}
+// CHECK-NEXT:    poly.template @"T_35_\1A_1" {
+// CHECK-NEXT:      poly.param @B : !poly.tvar<@B>
+// CHECK-NEXT:      function.def @other() {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["T_35_", ""]}
+// CHECK-NEXT:    poly.template @T {
+// CHECK-NEXT:      poly.param @A : index
+// CHECK-NEXT:      poly.param @B : !poly.tvar<@B>
+// CHECK-NEXT:      function.def @compute() -> index {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.read_const @A : index
+// CHECK-NEXT:        function.return %[[VAL_2]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @other() {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main() -> index {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @"T_35_\1A_0"::@compute<[?]>() : () -> index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @"T_35_\1A_0"::@compute<[?]>() : () -> index
+// CHECK-NEXT:      function.call @"T_35_\1A_1"::@other<[?]>() : () -> ()
+// CHECK-NEXT:      function.return %[[VAL_4]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
