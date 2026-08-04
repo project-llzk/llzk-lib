@@ -1,0 +1,60 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/is_zero.llzk --inputs %t/input.json --output-scope=full-witness --output-wtns %t/is_zero.wtns | FileCheck %s --check-prefix=WITNESS
+// RUN: llzk-opt -llzk-full-r1cs-lowering %t/is_zero.llzk -o %t/is_zero.r1cs.mlir
+// RUN: r1cs-opt --r1cs-export-binary='output-file=%t/is_zero.r1cs prime=2013265921' %t/is_zero.r1cs.mlir -o /dev/null
+// RUN: od -An -v -t x1 %t/is_zero.wtns | tr -d ' \n' | FileCheck %s --check-prefix=WTNS
+// RUN: od -An -v -t x1 %t/is_zero.r1cs | tr -d ' \n' | FileCheck %s --check-prefix=R1CS
+
+// WITNESS:      "inputs": {
+// WITNESS-NEXT:   "input": "4"
+// WITNESS:      "signals": {
+// WITNESS-NEXT:   "inv": "1509949441",
+// WITNESS-NEXT:   "out": "0"
+
+// The encodings below fix the shared wire order to [one, out, input, inv].
+// Decoded, the R1CS contains input * inv = 1 - out and input * out = 0.
+// WTNS: 77746e730200000002000000010000001000000000000000080000000100007800000000040000000200000020000000000000000100000000000000000000000000000004000000000000000100005a00000000
+// R1CS: 723163730100000003000000010000002800000000000000080000000100007800000000040000000100000001000000000000000400000000000000020000000200000060000000000000000100000002000000000000780000000001000000030000000100000000000000020000000000000000000078000000000100000001000000000000000100000002000000010000000000000001000000010000000100000000000000000000000300000020000000000000000000000000000000010000000000000003000000000000000200000000000000
+
+//--- is_zero.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@IsZero>} {
+  struct.def @IsZero {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    struct.member @inv : !felt.type<"babybear"> {signal}
+
+    function.def @compute(
+      %input: !felt.type<"babybear"> {function.arg_name = "input"}
+    ) -> !struct.type<@IsZero> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@IsZero>
+      %one = felt.const 1 : !felt.type<"babybear">
+      %inv = felt.inv %input : !felt.type<"babybear">
+      struct.writem %self[@inv] = %inv : !struct.type<@IsZero>, !felt.type<"babybear">
+      %negInput = felt.neg %input : !felt.type<"babybear">
+      %product = felt.mul %negInput, %inv : !felt.type<"babybear">, !felt.type<"babybear">
+      %out = felt.add %product, %one : !felt.type<"babybear">, !felt.type<"babybear">
+      struct.writem %self[@out] = %out : !struct.type<@IsZero>, !felt.type<"babybear">
+      function.return %self : !struct.type<@IsZero>
+    }
+
+    function.def @constrain(
+      %self: !struct.type<@IsZero>,
+      %input: !felt.type<"babybear"> {llzk.pub}
+    ) {
+      %zero = felt.const 0 : !felt.type<"babybear">
+      %one = felt.const 1 : !felt.type<"babybear">
+      %out = struct.readm %self[@out] : !struct.type<@IsZero>, !felt.type<"babybear">
+      %inv = struct.readm %self[@inv] : !struct.type<@IsZero>, !felt.type<"babybear">
+      %negInput = felt.neg %input : !felt.type<"babybear">
+      %product = felt.mul %negInput, %inv : !felt.type<"babybear">, !felt.type<"babybear">
+      %expectedOut = felt.add %product, %one : !felt.type<"babybear">, !felt.type<"babybear">
+      constrain.eq %out, %expectedOut : !felt.type<"babybear">
+      %zeroProduct = felt.mul %input, %out : !felt.type<"babybear">, !felt.type<"babybear">
+      constrain.eq %zeroProduct, %zero : !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+
+//--- input.json
+{"input": 4}

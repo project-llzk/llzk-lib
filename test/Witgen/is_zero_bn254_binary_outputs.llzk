@@ -1,0 +1,59 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/is_zero.llzk --inputs %t/input.json --output-scope=full-witness --output-wtns %t/is_zero.wtns | FileCheck %s --check-prefix=WITNESS
+// RUN: llzk-opt -llzk-full-r1cs-lowering %t/is_zero.llzk -o %t/is_zero.r1cs.mlir
+// RUN: r1cs-opt --r1cs-export-binary='output-file=%t/is_zero.r1cs prime=21888242871839275222246405745257275088548364400416034343698204186575808495617' %t/is_zero.r1cs.mlir -o /dev/null
+// RUN: od -An -v -t x1 %t/is_zero.wtns | tr -d ' \n' | FileCheck %s --check-prefix=WTNS
+// RUN: od -An -v -t x1 %t/is_zero.r1cs | tr -d ' \n' | FileCheck %s --check-prefix=R1CS
+
+// WITNESS:      "inputs": {
+// WITNESS-NEXT:   "input": "4"
+// WITNESS:      "signals": {
+// WITNESS-NEXT:   "inv": "16416182153879456416684804308942956316411273300312025757773653139931856371713",
+// WITNESS-NEXT:   "out": "0"
+
+// The encodings below fix the shared wire order to [one, out, input, inv].
+// Decoded, the R1CS contains input * inv = 1 - out and input * out = 0.
+// WTNS: 77746e73020000000200000001000000280000000000000020000000010000f093f5e1439170b97948e833285d588181b64550b829a031e1724e643004000000020000008000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000010000f42e78e9f26c144b5b36ee26de450221e148343c4a1f38e528d63a4b24
+// R1CS: 72316373010000000300000001000000400000000000000020000000010000f093f5e1439170b97948e833285d588181b64550b829a031e1724e64300400000001000000010000000000000004000000000000000200000002000000f0000000000000000100000002000000000000f093f5e1439170b97948e833285d588181b64550b829a031e1724e6430010000000300000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000f093f5e1439170b97948e833285d588181b64550b829a031e1724e64300100000001000000000000000000000000000000000000000000000000000000000000000100000002000000010000000000000000000000000000000000000000000000000000000000000001000000010000000100000000000000000000000000000000000000000000000000000000000000000000000300000020000000000000000000000000000000010000000000000003000000000000000200000000000000
+
+//--- is_zero.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@IsZero>} {
+  struct.def @IsZero {
+    struct.member @out : !felt.type<"bn254"> {llzk.pub}
+    struct.member @inv : !felt.type<"bn254"> {signal}
+
+    function.def @compute(
+      %input: !felt.type<"bn254"> {function.arg_name = "input"}
+    ) -> !struct.type<@IsZero> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@IsZero>
+      %one = felt.const 1 : !felt.type<"bn254">
+      %inv = felt.inv %input : !felt.type<"bn254">
+      struct.writem %self[@inv] = %inv : !struct.type<@IsZero>, !felt.type<"bn254">
+      %negInput = felt.neg %input : !felt.type<"bn254">
+      %product = felt.mul %negInput, %inv : !felt.type<"bn254">, !felt.type<"bn254">
+      %out = felt.add %product, %one : !felt.type<"bn254">, !felt.type<"bn254">
+      struct.writem %self[@out] = %out : !struct.type<@IsZero>, !felt.type<"bn254">
+      function.return %self : !struct.type<@IsZero>
+    }
+
+    function.def @constrain(
+      %self: !struct.type<@IsZero>, %input: !felt.type<"bn254"> {llzk.pub}
+    ) {
+      %zero = felt.const 0 : !felt.type<"bn254">
+      %one = felt.const 1 : !felt.type<"bn254">
+      %out = struct.readm %self[@out] : !struct.type<@IsZero>, !felt.type<"bn254">
+      %inv = struct.readm %self[@inv] : !struct.type<@IsZero>, !felt.type<"bn254">
+      %negInput = felt.neg %input : !felt.type<"bn254">
+      %product = felt.mul %negInput, %inv : !felt.type<"bn254">, !felt.type<"bn254">
+      %expectedOut = felt.add %product, %one : !felt.type<"bn254">, !felt.type<"bn254">
+      constrain.eq %out, %expectedOut : !felt.type<"bn254">
+      %zeroProduct = felt.mul %input, %out : !felt.type<"bn254">, !felt.type<"bn254">
+      constrain.eq %zeroProduct, %zero : !felt.type<"bn254">
+      function.return
+    }
+  }
+}
+
+//--- input.json
+{"input": 4}
