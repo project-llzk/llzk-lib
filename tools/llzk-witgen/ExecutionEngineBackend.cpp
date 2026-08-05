@@ -316,7 +316,7 @@ static llvm::Expected<OwningOpRef<ModuleOp>> buildExecutionEngineModule(
   OwningOpRef<ModuleOp> cloned = cast<ModuleOp>(moduleOp->clone());
   PassManager pm(cloned->getContext());
   pm.addPass(createLowerComputeToCorePass(options));
-  pm.addPass(createCreateWitgenEntryPass(outputScope == OutputScope::FullWitness));
+  pm.addPass(createCreateWitgenEntryPass(outputScope));
   if (failed(pm.run(*cloned))) {
     return makeError("failed to lower LLZK compute IR to execution-engine core dialects");
   }

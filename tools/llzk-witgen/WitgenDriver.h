@@ -34,6 +34,7 @@ enum class Backend : std::uint8_t {
 enum class OutputScope : std::uint8_t {
   Public,
   FullWitness,
+  R1CSWitness,
 };
 
 /// Configure one `llzk-witgen` execution.

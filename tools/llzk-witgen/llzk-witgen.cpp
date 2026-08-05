@@ -175,9 +175,8 @@ int main(int argc, char **argv) {
                    << "; use --output-scope=full-witness\n";
       return EXIT_FAILURE;
     }
-    // WTNS contains every R1CS wire, so retain inputs and non-public signals
-    // instead of asking the backend for its usual public-output-only JSON.
-    options.outputScope = llzk::witgen::OutputScope::FullWitness;
+    // WTNS contains every R1CS wire, including ordinary private felt members.
+    options.outputScope = llzk::witgen::OutputScope::R1CSWitness;
   }
 
   auto result = llzk::witgen::runWitgen(*moduleOp, *parsed, options);

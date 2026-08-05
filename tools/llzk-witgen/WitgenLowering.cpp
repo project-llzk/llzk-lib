@@ -2108,8 +2108,8 @@ class CreateWitgenEntryPass : public PassWrapper<CreateWitgenEntryPass, Operatio
 public:
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(CreateWitgenEntryPass)
 
-  /// Build the pass for either public-only or full-witness emission.
-  explicit CreateWitgenEntryPass(bool fullWitness = false) : emitFullWitness(fullWitness) {}
+  /// Build the pass for the requested witness-output scope.
+  explicit CreateWitgenEntryPass(OutputScope newOutputScope) : outputScope(newOutputScope) {}
 
   /// Run the pass over one module.
   StringRef getArgument() const final { return "llzk-create-witgen-entry"; }
@@ -2145,10 +2145,8 @@ public:
       return;
     }
 
-    auto outputs = collectOutputBindings(
-        mainDef->get(), tables, computeFunc.getOperation(),
-        emitFullWitness ? OutputScope::FullWitness : OutputScope::Public
-    );
+    auto outputs =
+        collectOutputBindings(mainDef->get(), tables, computeFunc.getOperation(), outputScope);
     if (failed(outputs)) {
       signalPassFailure();
       return;
@@ -2330,7 +2328,7 @@ public:
   }
 
 private:
-  bool emitFullWitness;
+  OutputScope outputScope;
 };
 
 } // namespace
@@ -2351,8 +2349,8 @@ std::unique_ptr<Pass> createLowerComputeToCorePass(const WitgenOptions &options)
   return std::make_unique<LowerComputeToCorePass>(options);
 }
 
-std::unique_ptr<Pass> createCreateWitgenEntryPass(bool emitFullWitness) {
-  return std::make_unique<CreateWitgenEntryPass>(emitFullWitness);
+std::unique_ptr<Pass> createCreateWitgenEntryPass(OutputScope outputScope) {
+  return std::make_unique<CreateWitgenEntryPass>(outputScope);
 }
 
 } // namespace llzk::witgen
