@@ -1532,10 +1532,10 @@ public:
 
     // Maps template parameter symbols to the instantiation value at the call site.
     DenseMap<Attribute, Attribute> paramNameToConcrete;
-    if (failed(collectConcreteTemplateParams(
-            op, rewriter, symTables, callTgt, parentTemplate, unifyResult.value(),
-            paramNameToConcrete
-        ))) {
+    auto collectRes = collectConcreteTemplateParams(
+        op, rewriter, symTables, callTgt, parentTemplate, unifyResult.value(), paramNameToConcrete
+    );
+    if (failed(collectRes)) {
       return failure();
     }
 
@@ -2818,9 +2818,9 @@ getScalarizedArrayInfo(CreateArrayOp op, const ConversionTracker &tracker) {
   ScalarizedArrayInfo info;
   info.createOp = op;
   info.indices = std::move(*maybeIndices);
-  if (failed(seedValuesFromArrayElements(
-          op, info.indices, info.valueByIndex, &info.typeByIndex, &tracker
-      ))) {
+  auto seedRes =
+      seedValuesFromArrayElements(op, info.indices, info.valueByIndex, &info.typeByIndex, &tracker);
+  if (failed(seedRes)) {
     return failure();
   }
   Value arrayValue = op.getResult();
@@ -3053,9 +3053,8 @@ static LogicalResult refreshValuesFromDependentCandidates(
   for (unsigned iteration = 0; iteration <= arraysToScalarize.size(); ++iteration) {
     bool changed = false;
     for (ScalarizedArrayInfo &info : arraysToScalarize) {
-      if (failed(
-              refreshValuesFromArrayOperands(info, tracker, &candidateInfoByCreateOp, &changed)
-          )) {
+      auto res = refreshValuesFromArrayOperands(info, tracker, &candidateInfoByCreateOp, &changed);
+      if (failed(res)) {
         return failure();
       }
     }
@@ -3280,10 +3279,11 @@ static LogicalResult collectSplitTypesByMember(
       }
       DenseMap<ArrayAttr, Type> &splitTypes = splitTypesByMember[memberDef->get()];
       for (ArrayAttr idx : info.indices) {
-        if (failed(mergeSplitCandidateType(
-                memberDef->get(), idx, info.typeByIndex.lookup(idx), memberWriteOp.getOperation(),
-                splitTypes, nullptr, tracker
-            ))) {
+        auto res = mergeSplitCandidateType(
+            memberDef->get(), idx, info.typeByIndex.lookup(idx), memberWriteOp.getOperation(),
+            splitTypes, nullptr, tracker
+        );
+        if (failed(res)) {
           return failure();
         }
       }
@@ -3356,9 +3356,9 @@ static LogicalResult verifySplitMemberReadsRewritable(
     if (splitIt == splitTypesByMember.end()) {
       continue;
     }
-    if (failed(verifySplitMemberReadRewritable(
-            memberReadOp, memberDef->get(), splitIt->second, tracker
-        ))) {
+    auto verifyRes =
+        verifySplitMemberReadRewritable(memberReadOp, memberDef->get(), splitIt->second, tracker);
+    if (failed(verifyRes)) {
       return failure();
     }
   }
@@ -3668,15 +3668,16 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
           diag.attachNote(readOp.getLoc()) << "same index is read as " << readType;
           return diag;
         }
-        if (failed(noteMaterializedUse(
-                idx, readType, readOp.getLoc(), "read result type", "array index"
-            ))) {
+        auto res =
+            noteMaterializedUse(idx, readType, readOp.getLoc(), "read result type", "array index");
+        if (failed(res)) {
           return failure();
         }
       } else {
-        if (failed(noteMaterializedUse(
-                idx, readType, readOp.getLoc(), "read result type", "unwritten index"
-            ))) {
+        auto res = noteMaterializedUse(
+            idx, readType, readOp.getLoc(), "read result type", "unwritten index"
+        );
+        if (failed(res)) {
           return failure();
         }
       }
@@ -3699,9 +3700,10 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
     for (const auto &[idx, targetType] : splitIt->second) {
       Value scalarValue = valueByIndex.lookup(idx);
       if (!scalarValue) {
-        if (failed(noteMaterializedUse(
-                idx, targetType, memberWriteOp.getLoc(), "scalar member type", "unwritten index"
-            ))) {
+        auto res = noteMaterializedUse(
+            idx, targetType, memberWriteOp.getLoc(), "scalar member type", "unwritten index"
+        );
+        if (failed(res)) {
           return failure();
         }
         continue;
@@ -3717,9 +3719,10 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
             << "same index is written to scalar member type " << targetType;
         return diag;
       }
-      if (failed(noteMaterializedUse(
-              idx, targetType, memberWriteOp.getLoc(), "scalar member type", "array index"
-          ))) {
+      auto res = noteMaterializedUse(
+          idx, targetType, memberWriteOp.getLoc(), "scalar member type", "array index"
+      );
+      if (failed(res)) {
         return failure();
       }
       if (existing == firstUseByValue.end()) {
@@ -3935,10 +3938,11 @@ static LogicalResult verifySplitMemberWritesExpandable(
         DenseMap<ArrayAttr, Operation *> &splitTypeOps = splitTypeOpsByMember[member];
         for (ArrayAttr idx : info.indices) {
           Type candidateType = info.typeByIndex.lookup(idx);
-          if (failed(mergeSplitCandidateType(
-                  member, idx, candidateType, memberWriteOp.getOperation(), splitTypes,
-                  &splitTypeOps, tracker
-              ))) {
+          auto res = mergeSplitCandidateType(
+              member, idx, candidateType, memberWriteOp.getOperation(), splitTypes, &splitTypeOps,
+              tracker
+          );
+          if (failed(res)) {
             return failure();
           }
         }
@@ -3990,10 +3994,10 @@ static LogicalResult verifySplitMemberWritesExpandable(
                                              "candidate";
         return diag;
       }
-      auto res = verifyExpandableLocalArraySplitIndices(
+      auto verifyExpandable = verifyExpandableLocalArraySplitIndices(
           *maybeCreateOp, splitIndicesByMember, &splitIndexOpsByMember, tables
       );
-      if (failed(res)) {
+      if (failed(verifyExpandable)) {
         return failure();
       }
       auto verifyNoIncompatibleShares = verifyNoSharedValuesForIncompatibleSplitTypes(
@@ -4041,9 +4045,9 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   PatternRewriter rewriter(modOp.getContext());
   SymbolTableCollection tables;
   DenseMap<Operation *, ScalarizedArrayInfo *> candidateInfoByCreateOp;
-  if (failed(
-          refreshValuesFromDependentCandidates(arraysToScalarize, candidateInfoByCreateOp, tracker)
-      )) {
+  auto refreshRes =
+      refreshValuesFromDependentCandidates(arraysToScalarize, candidateInfoByCreateOp, tracker);
+  if (failed(refreshRes)) {
     return failure();
   }
   if (failed(verifySplitMemberWritesExpandable(arraysToScalarize, tables, tracker))) {
@@ -4057,10 +4061,10 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
   DenseMap<MemberDefOp, SplitMemberInfo> splitMembers;
   for (ScalarizedArrayInfo &info : arraysToScalarize) {
-    if (failed(rewriteLocalArray(
-            info, splitMembers, splitTypesByMember, tables, rewriter, tracker,
-            &candidateInfoByCreateOp
-        ))) {
+    auto rewriteRes = rewriteLocalArray(
+        info, splitMembers, splitTypesByMember, tables, rewriter, tracker, &candidateInfoByCreateOp
+    );
+    if (failed(rewriteRes)) {
       return failure();
     }
   }
