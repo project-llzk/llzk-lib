@@ -1,4 +1,4 @@
-// RUN: not r1cs-opt --r1cs-export-binary='output-file=%t.bin prime=17' %s -o /dev/null 2>&1 | FileCheck %s
+// RUN: not llzk-translate --r1cs-to-binary --r1cs-prime=17 %s -o %t.bin 2>&1 | FileCheck %s
 
 // CHECK: error: 'builtin.unrealized_conversion_cast' op cannot be exported as a .r1cs linear combination; expected one of r1cs.to_linear, r1cs.const, r1cs.add, r1cs.mul_const, or r1cs.neg
 

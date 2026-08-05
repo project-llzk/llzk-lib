@@ -1,8 +1,8 @@
-// RUN: not r1cs-opt --r1cs-export-binary='output-file=%t.bin prime=17' %s -o /dev/null 2>&1 | FileCheck %s --check-prefix=AMBIGUOUS
-// RUN: r1cs-opt --r1cs-export-binary='output-file=%t.selected.bin prime=17 circuit-name=@Second' %s -o /dev/null
+// RUN: not llzk-translate --r1cs-to-binary --r1cs-prime=17 %s -o %t.bin 2>&1 | FileCheck %s --check-prefix=AMBIGUOUS
+// RUN: llzk-translate --r1cs-to-binary --r1cs-prime=17 --r1cs-circuit-name=@Second %s -o %t.selected.bin
 // RUN: test -f %t.selected.bin
 
-// AMBIGUOUS: error: 'builtin.module' op contains multiple r1cs.circuit ops; specify 'circuit-name' (available: @First @Second)
+// AMBIGUOUS: error: 'builtin.module' op contains multiple r1cs.circuit ops; specify '--r1cs-circuit-name' (available: @First @Second)
 
 module attributes {llzk.lang = "r1cs"} {
   r1cs.circuit @First inputs (%arg0: !r1cs.signal) {

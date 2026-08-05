@@ -88,9 +88,11 @@ void CircuitDefOp::print(OpAsmPrinter &p) {
 
       if (hasAttrs) {
         if (auto attr = dictAttr.get(std::to_string(arg.getArgNumber()))) {
-          p << " {" << PublicAttr::getMnemonic() << " = ";
-          p.printAttribute(attr);
-          p << '}';
+          if (auto pubAttr = dyn_cast<PublicAttr>(attr)) {
+            p << " {" << PublicAttr::getMnemonic() << " = ";
+            p.printAttribute(pubAttr);
+            p << '}';
+          }
         }
       }
     });

@@ -1,26 +1,26 @@
-//===-- R1CSBinaryExportPass.cpp -------------------------------*- C++ -*-===//
+//===-- R1CSBinary.cpp - R1CS binary serialization --------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
-// Copyright 2026 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
 ///
 /// \file
-/// This file implements the `-r1cs-export-binary` pass.
+/// This file implements binary .r1cs serialization.
 ///
 //===----------------------------------------------------------------------===//
 
+#include "r1cs/Target/R1CSBinary.h"
+
 #include "r1cs/Dialect/IR/Ops.h"
-#include "r1cs/Transforms/TransformationPasses.h"
 
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/SymbolTable.h>
-#include <mlir/Support/FileUtilities.h>
 
 #include <llvm/ADT/APInt.h>
 #include <llvm/ADT/BitVector.h>
@@ -30,17 +30,11 @@
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/Support/Endian.h>
-#include <llvm/Support/ToolOutputFile.h>
 
 #include <algorithm>
 #include <cstdint>
 #include <limits>
 #include <string>
-
-namespace r1cs {
-#define GEN_PASS_DEF_R1CSBINARYEXPORTPASS
-#include "r1cs/Transforms/TransformationPasses.h.inc"
-} // namespace r1cs
 
 using namespace mlir;
 
@@ -73,13 +67,14 @@ static FailureOr<r1cs::CircuitDefOp> selectCircuit(ModuleOp moduleOp, StringRef 
     return moduleOp.emitOpError() << "does not contain an r1cs.circuit to export";
   }
   if (circuits.size() > 1) {
-    auto diag = moduleOp.emitOpError("contains multiple r1cs.circuit ops; specify 'circuit-name'");
+    auto diag =
+        moduleOp.emitOpError("contains multiple r1cs.circuit ops; specify '--r1cs-circuit-name'");
     diag << " (available:";
     for (auto circuit : circuits) {
       diag << " @" << circuit.getSymName();
     }
     diag << ')';
-    return failure();
+    return diag;
   }
 
   return circuits.front();
@@ -87,10 +82,11 @@ static FailureOr<r1cs::CircuitDefOp> selectCircuit(ModuleOp moduleOp, StringRef 
 
 static FailureOr<llvm::APInt> parsePrime(ModuleOp moduleOp, StringRef primeText) {
   if (primeText.empty()) {
-    return moduleOp.emitOpError() << "R1CS binary export requires a non-empty 'prime' option";
+    return moduleOp.emitOpError()
+           << "R1CS binary export requires a non-empty '--r1cs-prime' option";
   }
   if (!llvm::all_of(primeText, llvm::isDigit)) {
-    return moduleOp.emitOpError() << "'prime' must be a base-10 integer";
+    return moduleOp.emitOpError() << "'--r1cs-prime' must be a base-10 integer";
   }
 
   // `APInt` requires a bit width up front when parsing from decimal text. Four
@@ -101,7 +97,7 @@ static FailureOr<llvm::APInt> parsePrime(ModuleOp moduleOp, StringRef primeText)
   unsigned activeBits = std::max(1u, tmp.getActiveBits());
   llvm::APInt prime = tmp.zextOrTrunc(activeBits);
   if (prime.ule(1)) {
-    return moduleOp.emitOpError() << "'prime' must be greater than 1";
+    return moduleOp.emitOpError() << "'--r1cs-prime' must be greater than 1";
   }
 
   return prime;
@@ -442,9 +438,9 @@ private:
       Operation *defOp = value.getDefiningOp();
       if (!defOp) {
         failedLinearValues.insert(value);
-        user->emitOpError() << "cannot export block-defined !r1cs.linear values; expected linear "
-                               "expressions built from r1cs.{to_linear,const,add,mul_const,neg}";
-        return failure();
+        return user->emitOpError()
+               << "cannot export block-defined !r1cs.linear values; expected linear "
+                  "expressions built from r1cs.{to_linear,const,add,mul_const,neg}";
       }
 
       if (auto toLinear = dyn_cast<r1cs::ToLinearOp>(defOp)) {
@@ -452,9 +448,8 @@ private:
         auto wireIt = model.wireIdsBySignal.find(toLinear.getInput());
         if (wireIt == model.wireIdsBySignal.end()) {
           failedLinearValues.insert(value);
-          toLinear.emitOpError()
-              << "references a signal that is not a circuit input or r1cs.def result";
-          return failure();
+          return toLinear.emitOpError()
+                 << "references a signal that is not a circuit input or r1cs.def result";
         }
 
         addReducedTerm(accumulator, wireIt->second, llvm::DynamicAPInt(1));
@@ -488,9 +483,9 @@ private:
         }
 
         failedLinearValues.insert(value);
-        defOp->emitOpError() << "cannot be exported as a .r1cs linear combination; expected one of "
-                                "r1cs.to_linear, r1cs.const, r1cs.add, r1cs.mul_const, or r1cs.neg";
-        return failure();
+        return defOp->emitOpError()
+               << "cannot be exported as a .r1cs linear combination; expected one of "
+                  "r1cs.to_linear, r1cs.const, r1cs.add, r1cs.mul_const, or r1cs.neg";
       }
 
       LinearAccumulator accumulator;
@@ -637,61 +632,33 @@ static FailureOr<BinaryBuffer> serializeExportedCircuit(
   return fileBuffer;
 }
 
-struct R1CSBinaryExportPass : public r1cs::impl::R1CSBinaryExportPassBase<R1CSBinaryExportPass> {
-  void runOnOperation() override {
-    ModuleOp moduleOp = getOperation();
-
-    if (outputFilename.empty() || outputFilename == "-") {
-      moduleOp.emitOpError() << "R1CS binary export requires a non-empty 'output-file'";
-      signalPassFailure();
-      return;
-    }
-
-    FailureOr<r1cs::CircuitDefOp> selectedCircuit = selectCircuit(moduleOp, circuitName);
-    if (failed(selectedCircuit)) {
-      signalPassFailure();
-      return;
-    }
-
-    FailureOr<llvm::APInt> parsedPrime = parsePrime(moduleOp, prime);
-    if (failed(parsedPrime)) {
-      signalPassFailure();
-      return;
-    }
-
-    CircuitExportModelBuilder modelBuilder(*selectedCircuit, *parsedPrime);
-    FailureOr<ExportedCircuit> exportedCircuit = modelBuilder.build();
-    if (failed(exportedCircuit)) {
-      signalPassFailure();
-      return;
-    }
-
-    FailureOr<BinaryBuffer> binary =
-        serializeExportedCircuit(*selectedCircuit, *parsedPrime, *exportedCircuit);
-    if (failed(binary)) {
-      signalPassFailure();
-      return;
-    }
-
-    std::unique_ptr<llvm::ToolOutputFile> outputFile = openOutputFile(outputFilename);
-    if (!outputFile) {
-      signalPassFailure();
-      return;
-    }
-
-    outputFile->os().write(binary->bytes().data(), llzk::checkedCast<size_t>(binary->size()));
-    outputFile->os().flush();
-    if (outputFile->os().has_error()) {
-      moduleOp.emitOpError() << "failed to write " << outputFilename;
-      signalPassFailure();
-      return;
-    }
-    outputFile->keep();
-  }
-};
-
 } // namespace
 
-std::unique_ptr<Pass> r1cs::createR1CSBinaryExportPass() {
-  return std::make_unique<R1CSBinaryExportPass>();
+LogicalResult r1cs::exportR1CSBinary(
+    ModuleOp moduleOp, llvm::raw_ostream &output, StringRef prime, StringRef circuitName
+) {
+  FailureOr<r1cs::CircuitDefOp> selectedCircuit = selectCircuit(moduleOp, circuitName);
+  if (failed(selectedCircuit)) {
+    return failure();
+  }
+
+  FailureOr<llvm::APInt> parsedPrime = parsePrime(moduleOp, prime);
+  if (failed(parsedPrime)) {
+    return failure();
+  }
+
+  CircuitExportModelBuilder modelBuilder(*selectedCircuit, *parsedPrime);
+  FailureOr<ExportedCircuit> exportedCircuit = modelBuilder.build();
+  if (failed(exportedCircuit)) {
+    return failure();
+  }
+
+  FailureOr<BinaryBuffer> binary =
+      serializeExportedCircuit(*selectedCircuit, *parsedPrime, *exportedCircuit);
+  if (failed(binary)) {
+    return failure();
+  }
+
+  output.write(binary->bytes().data(), llzk::checkedCast<size_t>(binary->size()));
+  return success();
 }

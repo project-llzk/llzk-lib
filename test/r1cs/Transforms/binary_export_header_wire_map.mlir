@@ -1,4 +1,4 @@
-// RUN: r1cs-opt --r1cs-export-binary='output-file=%t.bin prime=17' %s -o /dev/null
+// RUN: llzk-translate --r1cs-to-binary --r1cs-prime=17 %s -o %t.bin
 // RUN: dd if=%t.bin bs=1 skip=24 count=40 2>/dev/null | od -An -v -t x1 | tr -d ' \n' | FileCheck %s --check-prefix=HEADER
 // RUN: tail -c 40 %t.bin | od -An -v -t x1 | tr -d ' \n' | FileCheck %s --check-prefix=WIREMAP
 

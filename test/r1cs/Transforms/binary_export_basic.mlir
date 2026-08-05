@@ -1,4 +1,4 @@
-// RUN: r1cs-opt --r1cs-export-binary='output-file=%t.bin prime=17' %s -o /dev/null
+// RUN: llzk-translate --r1cs-to-binary --r1cs-prime=17 %s -o %t.bin
 // RUN: test -f %t.bin
 // RUN: od -An -v -t x1 %t.bin | tr -d ' \n' | FileCheck %s --check-prefix=HEX
 
