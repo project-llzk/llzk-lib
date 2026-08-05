@@ -14,6 +14,7 @@ target_link_libraries(
     LLVMHeaders
     MLIRHeaders
   PRIVATE
+    LLZKAnalysis
     LLZKTransforms)
 llzk_target_add_mlir_link_settings(LLZKPolymorphicDialect)
 
