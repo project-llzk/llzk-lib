@@ -16,6 +16,7 @@
 
 #include "r1cs/Dialect/IR/Ops.h"
 
+#include "llzk/Util/BinaryBuffer.h"
 #include "llzk/Util/Compare.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 
@@ -29,7 +30,6 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringExtras.h>
-#include <llvm/Support/Endian.h>
 
 #include <algorithm>
 #include <cstdint>
@@ -37,6 +37,7 @@
 #include <string>
 
 using namespace mlir;
+using llzk::BinaryBuffer;
 
 namespace {
 
@@ -102,35 +103,6 @@ static FailureOr<llvm::APInt> parsePrime(ModuleOp moduleOp, StringRef primeText)
 
   return prime;
 }
-
-class BinaryBuffer {
-public:
-  void writeU32(uint32_t value) { writeInteger(value); }
-
-  void writeU64(uint64_t value) { writeInteger(value); }
-
-  void writeBytes(ArrayRef<char> bytes) { buffer.append(bytes.begin(), bytes.end()); }
-
-  void writeFieldElement(uint32_t fieldSizeBytes, const llvm::DynamicAPInt &value) {
-    llvm::APInt fieldValue = llzk::toExactWidthAPInt(value, fieldSizeBytes * CHAR_BIT);
-    for (uint32_t byteIndex = 0; byteIndex < fieldSizeBytes; ++byteIndex) {
-      buffer.push_back(static_cast<char>(fieldValue.extractBitsAsZExtValue(8, byteIndex * 8)));
-    }
-  }
-
-  uint64_t size() const { return llzk::checkedCast<uint64_t>(buffer.size()); }
-
-  ArrayRef<char> bytes() const { return buffer; }
-
-private:
-  template <typename T> void writeInteger(T value) {
-    char bytes[sizeof(T)];
-    llvm::support::endian::write<T, llvm::endianness::little>(bytes, value);
-    writeBytes(bytes);
-  }
-
-  SmallVector<char> buffer;
-};
 
 enum class ExportWireClass {
   ConstantOne,
@@ -278,8 +250,7 @@ private:
     for (auto signalDef : entryBlock.getOps<r1cs::SignalDefOp>()) {
       uint32_t label = signalDef.getLabel();
       if (label == 0) {
-        signalDef.emitOpError() << "label 0 is reserved for the implicit one wire in .r1cs";
-        return failure();
+        return signalDef.emitOpError() << "label 0 is reserved for the implicit one wire in .r1cs";
       }
 
       nextFreshLabel = std::max(nextFreshLabel, static_cast<uint64_t>(label) + 1);

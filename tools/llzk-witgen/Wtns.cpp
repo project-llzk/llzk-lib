@@ -1,4 +1,11 @@
-//===-- Wtns.cpp - snarkjs-compatible witness output -----------*- C++ -*-===//
+//===-- Wtns.cpp - snarkjs-compatible witness output ------------*- C++ -*-===//
+//
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2026 Project LLZK
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
 
 #include "Wtns.h"
 
@@ -8,6 +15,7 @@
 #include "r1cs/Transforms/TransformationPassPipelines.h"
 
 #include "llzk/Dialect/Felt/IR/Types.h"
+#include "llzk/Util/BinaryBuffer.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
@@ -16,7 +24,6 @@
 
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringExtras.h>
-#include <llvm/Support/Endian.h>
 #include <llvm/Support/ToolOutputFile.h>
 
 #include <climits>
@@ -35,31 +42,6 @@ constexpr uint32_t WTNS_HEADER_SECTION = 1;
 constexpr uint32_t WTNS_VALUES_SECTION = 2;
 constexpr uint32_t WTNS_FIELD_LIMB_BITS = 64;
 constexpr uint32_t WTNS_FIELD_LIMB_BYTES = WTNS_FIELD_LIMB_BITS / CHAR_BIT;
-
-class BinaryBuffer {
-public:
-  void writeU32(uint32_t value) { writeInteger(value); }
-  void writeU64(uint64_t value) { writeInteger(value); }
-  void writeBytes(ArrayRef<char> bytes) { bytes_.append(bytes.begin(), bytes.end()); }
-
-  void writeFieldElement(uint32_t size, const llvm::DynamicAPInt &value) {
-    llvm::APInt exact = toExactWidthAPInt(value, size * CHAR_BIT);
-    for (uint32_t i = 0; i < size; ++i) {
-      bytes_.push_back(static_cast<char>(exact.extractBitsAsZExtValue(8, i * 8)));
-    }
-  }
-
-  uint64_t size() const { return bytes_.size(); }
-  ArrayRef<char> bytes() const { return bytes_; }
-
-private:
-  template <typename T> void writeInteger(T value) {
-    char raw[sizeof(T)];
-    llvm::support::endian::write<T, llvm::endianness::little>(raw, value);
-    writeBytes(raw);
-  }
-  SmallVector<char> bytes_;
-};
 
 void appendSection(BinaryBuffer &file, uint32_t type, const BinaryBuffer &section) {
   file.writeU32(type);
