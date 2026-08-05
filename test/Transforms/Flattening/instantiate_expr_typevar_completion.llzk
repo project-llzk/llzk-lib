@@ -109,7 +109,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Direct>} {
     }
   }
 }
-// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Direct>} {
 // CHECK: struct.def @InnerStruct_35_i_7_Value
 // CHECK: arith.constant 42 : index
 
@@ -166,6 +166,6 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     }
   }
 }
-// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 // CHECK: struct.def @InnerStructDeferred_35_i_7_Value
 // CHECK: arith.constant 42 : index
