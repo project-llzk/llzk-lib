@@ -1882,6 +1882,8 @@ private:
       });
     }
 
+    ::reportDelayedDiagnostics(op, std::move(deferredExprDiagnostics));
+
     // Use the post-insertion names. The preferred template name may have collided.
     SmallVector<FlatSymbolRefAttr> symPieces = getPieces(op.getCalleeAttr());
     assert(symPieces.size() >= 2 && "callee must include at least template and function names");
