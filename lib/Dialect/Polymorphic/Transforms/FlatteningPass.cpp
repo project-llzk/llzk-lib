@@ -882,7 +882,7 @@ class StructCloner {
       return failure();
     }
     SmallVector<TemplateExprOp> deferredExprs = std::move(*exprEvaluation);
-    if (remainingNames.empty() && !deferredExprs.empty()) {
+    if (layout.remainingNames.empty() && !deferredExprs.empty()) {
       deferredExprs.front().emitOpError(
           "cannot complete instantiation while a template expression remains deferred"
       );
