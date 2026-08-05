@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file -llzk-flatten %s | tee /dev/stderr | FileCheck %s; false
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck %s
 
 // A fully concrete type-variable expression is normalized before direct evaluation.
 module attributes {llzk.lang} {
@@ -25,9 +25,15 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK: function.def @InnerDirect_35_i_7_value() -> index
-// CHECK: arith.constant 42 : index
-// CHECK: function.call @InnerDirect_35_i_7_value() : () -> index
+// CHECK-NEXT:    function.def @InnerDirect_35_i_7_value() -> index {
+// CHECK-NEXT:      %c42 = arith.constant 42 : index
+// CHECK-NEXT:      function.return %c42 : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main() -> index {
+// CHECK-NEXT:      %0 = function.call @InnerDirect_35_i_7_value() : () -> index
+// CHECK-NEXT:      function.return %0 : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 
 // -----
 
@@ -65,9 +71,19 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK: function.def @InnerPartial_35_i_7_value() -> index
-// CHECK: arith.constant 42 : index
-// CHECK: function.call @InnerPartial_35_i_7_value() : () -> index
+// CHECK-NEXT:    function.def @InnerPartial_35_i_7_value() -> index {
+// CHECK-NEXT:      %c42 = arith.constant 42 : index
+// CHECK-NEXT:      function.return %c42 : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Bridge_7_value() -> index {
+// CHECK-NEXT:      %0 = function.call @InnerPartial_35_i_7_value() : () -> index
+// CHECK-NEXT:      function.return %0 : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main() -> index {
+// CHECK-NEXT:      %0 = function.call @Bridge_7_value() : () -> index
+// CHECK-NEXT:      function.return %0 : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 
 // -----
 
@@ -110,8 +126,29 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Direct>} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Direct>} {
-// CHECK: struct.def @InnerStruct_35_i_7_Value
-// CHECK: arith.constant 42 : index
+// CHECK-NEXT:    struct.def @InnerStruct_35_i_7_Value {
+// CHECK-NEXT:      struct.member @result : index
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@InnerStruct_35_i_7_Value> attributes {function.allow_witness} {
+// CHECK-NEXT:        %c42 = arith.constant 42 : index
+// CHECK-NEXT:        %self = struct.new : <@InnerStruct_35_i_7_Value>
+// CHECK-NEXT:        struct.writem %self[@result] = %c42 : <@InnerStruct_35_i_7_Value>, index
+// CHECK-NEXT:        function.return %self : !struct.type<@InnerStruct_35_i_7_Value>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%arg0: !struct.type<@InnerStruct_35_i_7_Value>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Direct {
+// CHECK-NEXT:      struct.member @value : !struct.type<@InnerStruct_35_i_7_Value>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Direct> attributes {function.allow_witness} {
+// CHECK-NEXT:        %self = struct.new : <@Direct>
+// CHECK-NEXT:        function.return %self : !struct.type<@Direct>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%arg0: !struct.type<@Direct>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
 
 // -----
 
@@ -167,5 +204,57 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
-// CHECK: struct.def @InnerStructDeferred_35_i_7_Value
-// CHECK: arith.constant 42 : index
+// CHECK-NEXT:    poly.template @"InnerStructDeferred_35_i_\1A" {
+// CHECK-NEXT:      poly.param @M : index
+// CHECK-NEXT:      poly.expr @Sum {
+// CHECK-NEXT:        %c35 = arith.constant 35 : index
+// CHECK-NEXT:        %0 = poly.read_const @M : index
+// CHECK-NEXT:        %1 = arith.addi %0, %c35 : index
+// CHECK-NEXT:        poly.yield %1 : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @Value {
+// CHECK-NEXT:        struct.member @result : index
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@"InnerStructDeferred_35_i_\1A"::@Value<[@M]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %0 = poly.read_const @Sum : index
+// CHECK-NEXT:          %self = struct.new : <@"InnerStructDeferred_35_i_\1A"::@Value<[@M]>>
+// CHECK-NEXT:          struct.writem %self[@result] = %0 : <@"InnerStructDeferred_35_i_\1A"::@Value<[@M]>>, index
+// CHECK-NEXT:          function.return %self : !struct.type<@"InnerStructDeferred_35_i_\1A"::@Value<[@M]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%arg0: !struct.type<@"InnerStructDeferred_35_i_\1A"::@Value<[@M]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["InnerStructDeferred_35_i_", ""]}
+// CHECK-NEXT:    struct.def @InnerStructDeferred_35_i_7_Value {
+// CHECK-NEXT:      struct.member @result : index
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@InnerStructDeferred_35_i_7_Value> attributes {function.allow_witness} {
+// CHECK-NEXT:        %c42 = arith.constant 42 : index
+// CHECK-NEXT:        %self = struct.new : <@InnerStructDeferred_35_i_7_Value>
+// CHECK-NEXT:        struct.writem %self[@result] = %c42 : <@InnerStructDeferred_35_i_7_Value>, index
+// CHECK-NEXT:        function.return %self : !struct.type<@InnerStructDeferred_35_i_7_Value>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%arg0: !struct.type<@InnerStructDeferred_35_i_7_Value>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @StructBridge_7_Wrapper {
+// CHECK-NEXT:      struct.member @value : !struct.type<@InnerStructDeferred_35_i_7_Value>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@StructBridge_7_Wrapper> attributes {function.allow_witness} {
+// CHECK-NEXT:        %self = struct.new : <@StructBridge_7_Wrapper>
+// CHECK-NEXT:        function.return %self : !struct.type<@StructBridge_7_Wrapper>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%arg0: !struct.type<@StructBridge_7_Wrapper>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      struct.member @value : !struct.type<@StructBridge_7_Wrapper>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %self = struct.new : <@Main>
+// CHECK-NEXT:        function.return %self : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%arg0: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
