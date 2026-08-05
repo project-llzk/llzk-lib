@@ -28,6 +28,7 @@
 #include <llvm/Support/raw_ostream.h>
 
 using namespace mlir;
+
 namespace {
 
 /// Environment for keeping track of the mapping between MLIR values and variable names.

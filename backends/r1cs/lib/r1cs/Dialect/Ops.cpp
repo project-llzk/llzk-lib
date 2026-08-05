@@ -18,6 +18,7 @@
 #include "r1cs/Dialect/IR/Ops.cpp.inc"
 
 using namespace mlir;
+
 namespace r1cs {
 
 ParseResult CircuitDefOp::parse(OpAsmParser &parser, OperationState &result) {
