@@ -82,7 +82,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Outer::@Wrapper<[7]>>} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
-// CHECK-NEXT:    }
+// CHECK-NEXT:    } {poly.name_pattern = ["Inner_5_", ""]}
 // CHECK-NEXT:    struct.def @Outer_7_Wrapper {
 // CHECK-NEXT:      struct.member @value : !struct.type<@Inner_5_7_Value>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Outer_7_Wrapper> attributes {function.allow_witness} {
@@ -202,7 +202,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.read_const @NestedM : index
 // CHECK-NEXT:        function.return %[[VAL_2]] : index
 // CHECK-NEXT:      }
-// CHECK-NEXT:    }
+// CHECK-NEXT:    } {poly.name_pattern = ["Inner_5_", ""]}
 // CHECK-NEXT:    poly.template @Outer {
 // CHECK-NEXT:      poly.param @M : index
 // CHECK-NEXT:      function.def @value() -> index {
@@ -258,7 +258,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.read_const @NPlusM : index
 // CHECK-NEXT:        function.return %[[VAL_4]] : index
 // CHECK-NEXT:      }
-// CHECK-NEXT:    }
+// CHECK-NEXT:    } {poly.name_pattern = ["InnerFunc_5_", ""]}
 // CHECK-NEXT:    poly.template @OuterFunc {
 // CHECK-NEXT:      poly.param @M : index
 // CHECK-NEXT:      function.def @value(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<5,@M x !felt.type>) -> index {
@@ -328,7 +328,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
-// CHECK-NEXT:    }
+// CHECK-NEXT:    } {poly.name_pattern = ["Inner_35_i_", ""]}
 // CHECK-NEXT:    poly.template @Outer {
 // CHECK-NEXT:      poly.param @M : index
 // CHECK-NEXT:      struct.def @Wrapper {
@@ -387,7 +387,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.read_const @Sum : index
 // CHECK-NEXT:        function.return %[[VAL_4]] : index
 // CHECK-NEXT:      }
-// CHECK-NEXT:    }
+// CHECK-NEXT:    } {poly.name_pattern = ["Inner_35_i_", ""]}
 // CHECK-NEXT:    poly.template @Outer {
 // CHECK-NEXT:      poly.param @M : index
 // CHECK-NEXT:      function.def @value() -> index {
