@@ -117,63 +117,65 @@ $(function(){initNavTree('llzk-translate_8cpp_source.html','',''); });
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="comment">//===----------------------------------------------------------------------===//</span></div>
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span> </div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &quot;smt/Target/TranslateRegistration.h&quot;</span></div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &quot;<a class="code" href="config_8h.html">tools/config.h</a>&quot;</span></div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &quot;zklean/Target/TranslateRegistration.h&quot;</span></div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span> </div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &quot;<a class="code" href="Config_8h.html">llzk/Config/Config.h</a>&quot;</span></div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &lt;mlir/Dialect/Func/Extensions/InlinerExtension.h&gt;</span></div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &lt;mlir/Dialect/Func/IR/FuncOps.h&gt;</span></div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &lt;mlir/Dialect/SCF/IR/SCF.h&gt;</span></div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;mlir/IR/DialectRegistry.h&gt;</span></div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;mlir/InitAllTranslations.h&gt;</span></div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &lt;mlir/Pass/PassManager.h&gt;</span></div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#include &lt;mlir/Pass/PassRegistry.h&gt;</span></div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#include &lt;mlir/Tools/mlir-translate/MlirTranslateMain.h&gt;</span></div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="preprocessor">#include &lt;mlir/Transforms/Passes.h&gt;</span></div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="preprocessor">#include &lt;llvm/ADT/StringRef.h&gt;</span></div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="preprocessor">#include &lt;llvm/Support/CommandLine.h&gt;</span></div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="preprocessor">#include &lt;llvm/Support/PrettyStackTrace.h&gt;</span></div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="preprocessor">#include &lt;llvm/Support/Signals.h&gt;</span></div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="preprocessor">#if LLZK_WITH_PCL</span></div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="preprocessor">#include &quot;pcl/Target/TranslateRegistration.h&quot;</span></div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="preprocessor">#endif </span><span class="comment">// LLZK_WITH_PCL</span></div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a>;</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
-<div class="foldopen" id="foldopen00043" data-start="{" data-end="}">
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno"><a class="line" href="llzk-translate_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">   43</a></span><span class="keywordtype">int</span> <a class="code hl_function" href="llzk-translate_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">main</a>(<span class="keywordtype">int</span> argc, <span class="keywordtype">char</span> **argv) {</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  llvm::sys::PrintStackTraceOnErrorSignal(llvm::StringRef());</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  llvm::setBugReportMsg(</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>      <span class="stringliteral">&quot;PLEASE submit a bug report to &quot;</span> <a class="code hl_define" href="config_8h.html#adf7c7c6700e3090f8c0024c209c3c519">BUG_REPORT_URL</a></div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>      <span class="stringliteral">&quot; and include the crash backtrace, relevant LLZK files,&quot;</span></div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>      <span class="stringliteral">&quot; and associated run script(s).\n&quot;</span></div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  );</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  llvm::cl::AddExtraVersionPrinter([](llvm::raw_ostream &amp;os) {</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    os &lt;&lt; <span class="stringliteral">&quot;\nLLZK (&quot;</span> <a class="code hl_define" href="Config_8h.html#ac05a0b9f98215f6b276fa6213d9b7f25">LLZK_URL</a> <span class="stringliteral">&quot;):\n  LLZK version &quot;</span> <a class="code hl_define" href="Config_8h.html#a83ba6712352d7370cac749fa22c2e803">LLZK_VERSION_STRING</a> <span class="stringliteral">&quot;\n&quot;</span>;</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  });</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="comment">// Register all MLIR translations</span></div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  mlir::registerAllTranslations();</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  smt::registerSmtTranslation();</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  zklean::registerZKLeanTranslation();</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span><span class="preprocessor">#if LLZK_WITH_PCL</span></div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  pcl::registerPclTranslation();</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  <span class="comment">// Run &#39;mlir-translate&#39;</span></div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keywordflow">return</span> failed(mlir::mlirTranslateMain(argc, argv, <span class="stringliteral">&quot;LLZK Translation tool&quot;</span>));</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>}</div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &quot;r1cs/Target/TranslateRegistration.h&quot;</span></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &quot;smt/Target/TranslateRegistration.h&quot;</span></div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &quot;<a class="code" href="config_8h.html">tools/config.h</a>&quot;</span></div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &quot;zklean/Target/TranslateRegistration.h&quot;</span></div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span> </div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &quot;<a class="code" href="Config_8h.html">llzk/Config/Config.h</a>&quot;</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &lt;mlir/Dialect/Func/Extensions/InlinerExtension.h&gt;</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &lt;mlir/Dialect/Func/IR/FuncOps.h&gt;</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;mlir/Dialect/SCF/IR/SCF.h&gt;</span></div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;mlir/IR/DialectRegistry.h&gt;</span></div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &lt;mlir/InitAllTranslations.h&gt;</span></div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#include &lt;mlir/Pass/PassManager.h&gt;</span></div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#include &lt;mlir/Pass/PassRegistry.h&gt;</span></div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="preprocessor">#include &lt;mlir/Tools/mlir-translate/MlirTranslateMain.h&gt;</span></div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="preprocessor">#include &lt;mlir/Transforms/Passes.h&gt;</span></div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span> </div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="preprocessor">#include &lt;llvm/ADT/StringRef.h&gt;</span></div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="preprocessor">#include &lt;llvm/Support/CommandLine.h&gt;</span></div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="preprocessor">#include &lt;llvm/Support/PrettyStackTrace.h&gt;</span></div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="preprocessor">#include &lt;llvm/Support/Signals.h&gt;</span></div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="preprocessor">#if LLZK_WITH_PCL</span></div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="preprocessor">#include &quot;pcl/Target/TranslateRegistration.h&quot;</span></div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="preprocessor">#endif </span><span class="comment">// LLZK_WITH_PCL</span></div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a>;</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
+<div class="foldopen" id="foldopen00044" data-start="{" data-end="}">
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno"><a class="line" href="llzk-translate_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">   44</a></span><span class="keywordtype">int</span> <a class="code hl_function" href="llzk-translate_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">main</a>(<span class="keywordtype">int</span> argc, <span class="keywordtype">char</span> **argv) {</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  llvm::sys::PrintStackTraceOnErrorSignal(llvm::StringRef());</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  llvm::setBugReportMsg(</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>      <span class="stringliteral">&quot;PLEASE submit a bug report to &quot;</span> <a class="code hl_define" href="config_8h.html#adf7c7c6700e3090f8c0024c209c3c519">BUG_REPORT_URL</a></div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>      <span class="stringliteral">&quot; and include the crash backtrace, relevant LLZK files,&quot;</span></div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>      <span class="stringliteral">&quot; and associated run script(s).\n&quot;</span></div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  );</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  llvm::cl::AddExtraVersionPrinter([](llvm::raw_ostream &amp;os) {</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    os &lt;&lt; <span class="stringliteral">&quot;\nLLZK (&quot;</span> <a class="code hl_define" href="Config_8h.html#ac05a0b9f98215f6b276fa6213d9b7f25">LLZK_URL</a> <span class="stringliteral">&quot;):\n  LLZK version &quot;</span> <a class="code hl_define" href="Config_8h.html#a83ba6712352d7370cac749fa22c2e803">LLZK_VERSION_STRING</a> <span class="stringliteral">&quot;\n&quot;</span>;</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  });</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="comment">// Register all MLIR translations</span></div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  mlir::registerAllTranslations();</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  r1cs::registerR1CSTranslation();</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  smt::registerSmtTranslation();</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  zklean::registerZKLeanTranslation();</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span><span class="preprocessor">#if LLZK_WITH_PCL</span></div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  pcl::registerPclTranslation();</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="comment">// Run &#39;mlir-translate&#39;</span></div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <span class="keywordflow">return</span> failed(mlir::mlirTranslateMain(argc, argv, <span class="stringliteral">&quot;LLZK Translation tool&quot;</span>));</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>}</div>
 </div>
 <div class="ttc" id="aConfig_8h_html"><div class="ttname"><a href="Config_8h.html">Config.h</a></div></div>
 <div class="ttc" id="aConfig_8h_html_a83ba6712352d7370cac749fa22c2e803"><div class="ttname"><a href="Config_8h.html#a83ba6712352d7370cac749fa22c2e803">LLZK_VERSION_STRING</a></div><div class="ttdeci">#define LLZK_VERSION_STRING</div><div class="ttdef"><b>Definition</b> <a href="Config_8h_source.html#l00012">Config.h:12</a></div></div>
 <div class="ttc" id="aConfig_8h_html_ac05a0b9f98215f6b276fa6213d9b7f25"><div class="ttname"><a href="Config_8h.html#ac05a0b9f98215f6b276fa6213d9b7f25">LLZK_URL</a></div><div class="ttdeci">#define LLZK_URL</div><div class="ttdef"><b>Definition</b> <a href="Config_8h_source.html#l00017">Config.h:17</a></div></div>
 <div class="ttc" id="aconfig_8h_html"><div class="ttname"><a href="config_8h.html">config.h</a></div></div>
 <div class="ttc" id="aconfig_8h_html_adf7c7c6700e3090f8c0024c209c3c519"><div class="ttname"><a href="config_8h.html#adf7c7c6700e3090f8c0024c209c3c519">BUG_REPORT_URL</a></div><div class="ttdeci">#define BUG_REPORT_URL</div><div class="ttdef"><b>Definition</b> <a href="config_8h_source.html#l00015">config.h:15</a></div></div>
-<div class="ttc" id="allzk-translate_8cpp_html_a3c04138a5bfe5d72780bb7e82a18e627"><div class="ttname"><a href="llzk-translate_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">main</a></div><div class="ttdeci">int main(int argc, char **argv)</div><div class="ttdef"><b>Definition</b> <a href="#l00043">llzk-translate.cpp:43</a></div></div>
+<div class="ttc" id="allzk-translate_8cpp_html_a3c04138a5bfe5d72780bb7e82a18e627"><div class="ttname"><a href="llzk-translate_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">main</a></div><div class="ttdeci">int main(int argc, char **argv)</div><div class="ttdef"><b>Definition</b> <a href="#l00044">llzk-translate.cpp:44</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->

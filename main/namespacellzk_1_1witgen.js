@@ -19,7 +19,8 @@ var namespacellzk_1_1witgen =
     ] ],
     [ "OutputScope", "namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302", [
       [ "Public", "namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302a3d067bedfe2f4677470dd6ccf64d05ed", null ],
-      [ "FullWitness", "namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302a62a6762e934b411a4f450cf83904840e", null ]
+      [ "FullWitness", "namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302a62a6762e934b411a4f450cf83904840e", null ],
+      [ "R1CSWitness", "namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302a9c6942f9868958398f70c5d531984834", null ]
     ] ],
     [ "SerializationMode", "namespacellzk_1_1witgen.html#a8cd5417f84c7eb752e95255499c25f8c", [
       [ "PublicOutputsOnly", "namespacellzk_1_1witgen.html#a8cd5417f84c7eb752e95255499c25f8ca9567ec8d56b5f8bd0aef29382fae4944", null ],
@@ -48,7 +49,7 @@ var namespacellzk_1_1witgen =
     [ "collectInputBindings", "namespacellzk_1_1witgen.html#a1f06d3a4be9069abde9e602783b8e0d8", null ],
     [ "collectOutputBindings", "namespacellzk_1_1witgen.html#a1f308b7ff71b3e5edf1d0b3a951a1c6c", null ],
     [ "collectOutputBindings", "namespacellzk_1_1witgen.html#a2e561645b067a0b8f299c6ab3b4b83a1", null ],
-    [ "createCreateWitgenEntryPass", "namespacellzk_1_1witgen.html#a3013ddc88e96d029adc582aa7768f9e7", null ],
+    [ "createCreateWitgenEntryPass", "namespacellzk_1_1witgen.html#ab1bc86944277a3278d4f122fa674cd65", null ],
     [ "createLowerComputeToCorePass", "namespacellzk_1_1witgen.html#a747dfbc22c0d99c8ed996ca89174a4b7", null ],
     [ "defaultValue", "namespacellzk_1_1witgen.html#a544dda15824548fc112bb32b3de076ed", null ],
     [ "defaultValue", "namespacellzk_1_1witgen.html#a83496c6a52d46c8e2d6c9d8a636322b6", null ],
@@ -72,5 +73,7 @@ var namespacellzk_1_1witgen =
     [ "runWithExecutionEngine", "namespacellzk_1_1witgen.html#a04f85f7f45e538c01bc807e3ec7333b1", null ],
     [ "runWithExecutionEngine", "namespacellzk_1_1witgen.html#a01f474d1128de407d485f90bd60e3be3", null ],
     [ "serializeJSONValue", "namespacellzk_1_1witgen.html#ab2f7ce26617ba7407a527d8f64a3624c", null ],
-    [ "serializeJSONValue", "namespacellzk_1_1witgen.html#a2ed6fa11171cff0889d0eb4ae4e03925", null ]
+    [ "serializeJSONValue", "namespacellzk_1_1witgen.html#a2ed6fa11171cff0889d0eb4ae4e03925", null ],
+    [ "writeWtns", "namespacellzk_1_1witgen.html#a71b918ef505d17c0a0360ebb345570f4", null ],
+    [ "writeWtns", "namespacellzk_1_1witgen.html#a6988710fba042bff85b32be0abd33da2", null ]
 ];

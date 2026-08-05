@@ -8,7 +8,8 @@ var WitgenDriver_8h =
     ] ],
     [ "llzk::witgen::OutputScope", "namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302", [
       [ "llzk::witgen::OutputScope::Public", "namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302a3d067bedfe2f4677470dd6ccf64d05ed", null ],
-      [ "llzk::witgen::OutputScope::FullWitness", "namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302a62a6762e934b411a4f450cf83904840e", null ]
+      [ "llzk::witgen::OutputScope::FullWitness", "namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302a62a6762e934b411a4f450cf83904840e", null ],
+      [ "llzk::witgen::OutputScope::R1CSWitness", "namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302a9c6942f9868958398f70c5d531984834", null ]
     ] ],
     [ "llzk::witgen::runWitgen", "namespacellzk_1_1witgen.html#a8eb5255011e8ef4fab788987bed59c30", null ]
 ];

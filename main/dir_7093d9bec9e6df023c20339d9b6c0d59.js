@@ -2,6 +2,7 @@ var dir_7093d9bec9e6df023c20339d9b6c0d59 =
 [
     [ "AffineHelper.h", "AffineHelper_8h.html", "AffineHelper_8h" ],
     [ "AlignmentHelper.h", "AlignmentHelper_8h.html", "AlignmentHelper_8h" ],
+    [ "BinaryBuffer.h", "BinaryBuffer_8h.html", "BinaryBuffer_8h" ],
     [ "BuilderHelper.h", "BuilderHelper_8h.html", "BuilderHelper_8h" ],
     [ "Compare.h", "Compare_8h.html", "Compare_8h" ],
     [ "Concepts.h", "Concepts_8h.html", "Concepts_8h" ],

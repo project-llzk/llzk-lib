@@ -162,6 +162,7 @@ Enumerations</h2></td></tr>
 <tr class="memdesc:aec3ee3b863e273df6fdd3ad67a571bcc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Select the execution backend used by <span class="tt">llzk-witgen</span>.  <a href="#aec3ee3b863e273df6fdd3ad67a571bcc">More...</a><br /></td></tr>
 <tr class="memitem:a29c680065c055e8861ad94f8714a3302" id="r_a29c680065c055e8861ad94f8714a3302"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a29c680065c055e8861ad94f8714a3302">OutputScope</a> : std::uint8_t { <a class="el" href="#a29c680065c055e8861ad94f8714a3302a3d067bedfe2f4677470dd6ccf64d05ed">Public</a>
 , <a class="el" href="#a29c680065c055e8861ad94f8714a3302a62a6762e934b411a4f450cf83904840e">FullWitness</a>
+, <a class="el" href="#a29c680065c055e8861ad94f8714a3302a9c6942f9868958398f70c5d531984834">R1CSWitness</a>
  }</td></tr>
 <tr class="memdesc:a29c680065c055e8861ad94f8714a3302"><td class="mdescLeft">&#160;</td><td class="mdescRight">Select the JSON scope emitted by <span class="tt">llzk-witgen</span>.  <a href="#a29c680065c055e8861ad94f8714a3302">More...</a><br /></td></tr>
 </table><table class="memberdecls">
@@ -216,8 +217,8 @@ Functions</h2></td></tr>
 <tr class="memitem:a5ed33053e410e63d1fd689fa9b4cf23b" id="r_a5ed33053e410e63d1fd689fa9b4cf23b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5ed33053e410e63d1fd689fa9b4cf23b">addWitgenPreparePipeline</a> (OpPassManager &amp;pm, const <a class="el" href="structllzk_1_1witgen_1_1WitgenOptions.html">WitgenOptions</a> &amp;)</td></tr>
 <tr class="memitem:a747dfbc22c0d99c8ed996ca89174a4b7" id="r_a747dfbc22c0d99c8ed996ca89174a4b7"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a747dfbc22c0d99c8ed996ca89174a4b7">createLowerComputeToCorePass</a> (const <a class="el" href="structllzk_1_1witgen_1_1WitgenOptions.html">WitgenOptions</a> &amp;options)</td></tr>
 <tr class="memdesc:a747dfbc22c0d99c8ed996ca89174a4b7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create the pass that lowers supported LLZK compute IR into core MLIR dialects suitable for LLVM lowering.  <br /></td></tr>
-<tr class="memitem:a3013ddc88e96d029adc582aa7768f9e7" id="r_a3013ddc88e96d029adc582aa7768f9e7"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3013ddc88e96d029adc582aa7768f9e7">createCreateWitgenEntryPass</a> (bool emitFullWitness)</td></tr>
-<tr class="memdesc:a3013ddc88e96d029adc582aa7768f9e7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create the pass that synthesizes the stable llzk-witgen JIT entry wrapper.  <br /></td></tr>
+<tr class="memitem:ab1bc86944277a3278d4f122fa674cd65" id="r_ab1bc86944277a3278d4f122fa674cd65"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab1bc86944277a3278d4f122fa674cd65">createCreateWitgenEntryPass</a> (<a class="el" href="#a29c680065c055e8861ad94f8714a3302">OutputScope</a> outputScope)</td></tr>
+<tr class="memdesc:ab1bc86944277a3278d4f122fa674cd65"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create the pass that synthesizes the stable llzk-witgen JIT entry wrapper.  <br /></td></tr>
 <tr class="memitem:a054fb616e9cdd12d136efb6b37449d24" id="r_a054fb616e9cdd12d136efb6b37449d24"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a054fb616e9cdd12d136efb6b37449d24">addWitgenPreparePipeline</a> (mlir::OpPassManager &amp;pm, const <a class="el" href="structllzk_1_1witgen_1_1WitgenOptions.html">WitgenOptions</a> &amp;options)</td></tr>
 <tr class="memdesc:a054fb616e9cdd12d136efb6b37449d24"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add the preprocessing pipeline required before witgen backend execution.  <br /></td></tr>
 <tr class="memitem:aaf2a9e39090cf207cbfa15acb8096c1a" id="r_aaf2a9e39090cf207cbfa15acb8096c1a"><td class="memItemLeft" align="right" valign="top">llvm::Expected&lt; size_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aaf2a9e39090cf207cbfa15acb8096c1a">checkedDynamicAPIntToSize</a> (const llvm::DynamicAPInt &amp;value, llvm::StringRef context)</td></tr>
@@ -251,6 +252,9 @@ Functions</h2></td></tr>
 <tr class="memdesc:a1f308b7ff71b3e5edf1d0b3a951a1c6c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collect the selected output bindings for the requested scope.  <br /></td></tr>
 <tr class="memitem:abde194ee10905bdf691214c71da09953" id="r_abde194ee10905bdf691214c71da09953"><td class="memItemLeft" align="right" valign="top">llvm::json::Value&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abde194ee10905bdf691214c71da09953">buildSignalsJSONObject</a> (llvm::ArrayRef&lt; <a class="el" href="structllzk_1_1witgen_1_1OutputBinding.html">OutputBinding</a> &gt; bindings, llvm::ArrayRef&lt; llvm::json::Value &gt; serializedLeaves)</td></tr>
 <tr class="memdesc:abde194ee10905bdf691214c71da09953"><td class="mdescLeft">&#160;</td><td class="mdescRight">Assemble a nested JSON object from selected witness leaves.  <br /></td></tr>
+<tr class="memitem:a6988710fba042bff85b32be0abd33da2" id="r_a6988710fba042bff85b32be0abd33da2"><td class="memItemLeft" align="right" valign="top">llvm::Error&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6988710fba042bff85b32be0abd33da2">writeWtns</a> (ModuleOp moduleOp, const llvm::json::Value &amp;fullWitness, const <a class="el" href="classllzk_1_1Field.html">Field</a> &amp;field, StringRef outputFilename)</td></tr>
+<tr class="memitem:a71b918ef505d17c0a0360ebb345570f4" id="r_a71b918ef505d17c0a0360ebb345570f4"><td class="memItemLeft" align="right" valign="top">llvm::Error&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a71b918ef505d17c0a0360ebb345570f4">writeWtns</a> (mlir::ModuleOp moduleOp, const llvm::json::Value &amp;fullWitness, const <a class="el" href="classllzk_1_1Field.html">Field</a> &amp;field, llvm::StringRef outputFilename)</td></tr>
+<tr class="memdesc:a71b918ef505d17c0a0360ebb345570f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write a snarkjs-compatible WTNS v2 file from a full-witness JSON result.  <br /></td></tr>
 </table>
 <a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Typedef Documentation</h2>
 <a id="a907fa4fd459ee8b21d97027b29c51ade" name="a907fa4fd459ee8b21d97027b29c51ade"></a>
@@ -383,8 +387,12 @@ Functions</h2></td></tr>
 
 <p>Select the JSON scope emitted by <span class="tt">llzk-witgen</span>. </p>
 <table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a29c680065c055e8861ad94f8714a3302a3d067bedfe2f4677470dd6ccf64d05ed" name="a29c680065c055e8861ad94f8714a3302a3d067bedfe2f4677470dd6ccf64d05ed"></a>Public&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a29c680065c055e8861ad94f8714a3302a62a6762e934b411a4f450cf83904840e" name="a29c680065c055e8861ad94f8714a3302a62a6762e934b411a4f450cf83904840e"></a>FullWitness&#160;</td><td class="fielddoc"></td></tr>
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a29c680065c055e8861ad94f8714a3302a3d067bedfe2f4677470dd6ccf64d05ed" name="a29c680065c055e8861ad94f8714a3302a3d067bedfe2f4677470dd6ccf64d05ed"></a>Public&#160;</td><td class="fielddoc"><p>Emit only public outputs. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a29c680065c055e8861ad94f8714a3302a62a6762e934b411a4f450cf83904840e" name="a29c680065c055e8861ad94f8714a3302a62a6762e934b411a4f450cf83904840e"></a>FullWitness&#160;</td><td class="fielddoc"><p>Emit inputs plus public outputs and members marked as witness signals. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a29c680065c055e8861ad94f8714a3302a9c6942f9868958398f70c5d531984834" name="a29c680065c055e8861ad94f8714a3302a9c6942f9868958398f70c5d531984834"></a>R1CSWitness&#160;</td><td class="fielddoc"><p>Emit inputs plus every scalar main member needed to construct an R1CS witness. </p>
+</td></tr>
 </table>
 
 <p class="definition">Definition at line <a class="el" href="WitgenDriver_8h_source.html#l00034">34</a> of file <a class="el" href="WitgenDriver_8h_source.html">WitgenDriver.h</a>.</p>
@@ -495,7 +503,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="WitgenLowering_8cpp_source.html#l02338">2338</a> of file <a class="el" href="WitgenLowering_8cpp_source.html">WitgenLowering.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WitgenLowering_8cpp_source.html#l02336">2336</a> of file <a class="el" href="WitgenLowering_8cpp_source.html">WitgenLowering.cpp</a>.</p>
 
 </div>
 </div>
@@ -720,7 +728,7 @@ Functions</h2></td></tr>
 
 <p>Assemble a nested JSON object from selected witness leaves. </p>
 
-<p class="definition">Definition at line <a class="el" href="WitnessSelection_8cpp_source.html#l00190">190</a> of file <a class="el" href="WitnessSelection_8cpp_source.html">WitnessSelection.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WitnessSelection_8cpp_source.html#l00197">197</a> of file <a class="el" href="WitnessSelection_8cpp_source.html">WitnessSelection.cpp</a>.</p>
 
 </div>
 </div>
@@ -843,7 +851,7 @@ template&lt;typename T, typename U&gt; </div>
 
 <p>Collect stable JSON bindings for the main compute inputs. </p>
 
-<p class="definition">Definition at line <a class="el" href="WitnessSelection_8cpp_source.html#l00152">152</a> of file <a class="el" href="WitnessSelection_8cpp_source.html">WitnessSelection.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WitnessSelection_8cpp_source.html#l00157">157</a> of file <a class="el" href="WitnessSelection_8cpp_source.html">WitnessSelection.cpp</a>.</p>
 
 </div>
 </div>
@@ -911,12 +919,12 @@ template&lt;typename T, typename U&gt; </div>
 
 <p>Collect the selected output bindings for the requested scope. </p>
 
-<p class="definition">Definition at line <a class="el" href="WitnessSelection_8cpp_source.html#l00168">168</a> of file <a class="el" href="WitnessSelection_8cpp_source.html">WitnessSelection.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WitnessSelection_8cpp_source.html#l00173">173</a> of file <a class="el" href="WitnessSelection_8cpp_source.html">WitnessSelection.cpp</a>.</p>
 
 </div>
 </div>
-<a id="a3013ddc88e96d029adc582aa7768f9e7" name="a3013ddc88e96d029adc582aa7768f9e7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3013ddc88e96d029adc582aa7768f9e7">&#9670;&#160;</a></span>createCreateWitgenEntryPass()</h2>
+<a id="ab1bc86944277a3278d4f122fa674cd65" name="ab1bc86944277a3278d4f122fa674cd65"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab1bc86944277a3278d4f122fa674cd65">&#9670;&#160;</a></span>createCreateWitgenEntryPass()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -924,7 +932,7 @@ template&lt;typename T, typename U&gt; </div>
         <tr>
           <td class="memname">std::unique_ptr&lt; mlir::Pass &gt; llzk::witgen::createCreateWitgenEntryPass </td>
           <td>(</td>
-          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>emitFullWitness</em></span></td><td>)</td>
+          <td class="paramtype"><a class="el" href="#a29c680065c055e8861ad94f8714a3302">OutputScope</a></td>          <td class="paramname"><span class="paramname"><em>outputScope</em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -932,7 +940,7 @@ template&lt;typename T, typename U&gt; </div>
 
 <p>Create the pass that synthesizes the stable llzk-witgen JIT entry wrapper. </p>
 
-<p class="definition">Definition at line <a class="el" href="WitgenLowering_8cpp_source.html#l02354">2354</a> of file <a class="el" href="WitgenLowering_8cpp_source.html">WitgenLowering.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WitgenLowering_8cpp_source.html#l02352">2352</a> of file <a class="el" href="WitgenLowering_8cpp_source.html">WitgenLowering.cpp</a>.</p>
 
 </div>
 </div>
@@ -953,7 +961,7 @@ template&lt;typename T, typename U&gt; </div>
 
 <p>Create the pass that lowers supported LLZK compute IR into core MLIR dialects suitable for LLVM lowering. </p>
 
-<p class="definition">Definition at line <a class="el" href="WitgenLowering_8cpp_source.html#l02350">2350</a> of file <a class="el" href="WitgenLowering_8cpp_source.html">WitgenLowering.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WitgenLowering_8cpp_source.html#l02348">2348</a> of file <a class="el" href="WitgenLowering_8cpp_source.html">WitgenLowering.cpp</a>.</p>
 
 </div>
 </div>
@@ -1300,7 +1308,7 @@ template&lt;typename T, typename U&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the member is considered a witness signal. </p>
 
-<p class="definition">Definition at line <a class="el" href="WitnessSelection_8cpp_source.html#l00147">147</a> of file <a class="el" href="WitnessSelection_8cpp_source.html">WitnessSelection.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WitnessSelection_8cpp_source.html#l00152">152</a> of file <a class="el" href="WitnessSelection_8cpp_source.html">WitnessSelection.cpp</a>.</p>
 
 </div>
 </div>
@@ -1518,7 +1526,7 @@ template&lt;typename T, typename U&gt; </div>
 
 <p>Run include preprocessing, field validation, and backend execution. </p>
 
-<p class="definition">Definition at line <a class="el" href="WitgenDriver_8cpp_source.html#l00202">202</a> of file <a class="el" href="WitgenDriver_8cpp_source.html">WitgenDriver.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="WitgenDriver_8cpp_source.html#l00201">201</a> of file <a class="el" href="WitgenDriver_8cpp_source.html">WitgenDriver.cpp</a>.</p>
 
 </div>
 </div>
@@ -1675,6 +1683,73 @@ template&lt;typename T, typename U&gt; </div>
 <p>Serialize a supported LLZK runtime value into JSON. </p>
 
 <p class="definition">Definition at line <a class="el" href="JSON_8cpp_source.html#l00300">300</a> of file <a class="el" href="JSON_8cpp_source.html">JSON.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a71b918ef505d17c0a0360ebb345570f4" name="a71b918ef505d17c0a0360ebb345570f4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a71b918ef505d17c0a0360ebb345570f4">&#9670;&#160;</a></span>writeWtns() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::Error llzk::witgen::writeWtns </td>
+          <td>(</td>
+          <td class="paramtype">mlir::ModuleOp</td>          <td class="paramname"><span class="paramname"><em>moduleOp</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const llvm::json::Value &amp;</td>          <td class="paramname"><span class="paramname"><em>fullWitness</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1Field.html">Field</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>field</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::StringRef</td>          <td class="paramname"><span class="paramname"><em>outputFilename</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Write a snarkjs-compatible WTNS v2 file from a full-witness JSON result. </p>
+<p>Values use the same wire order as LLZK's R1CS lowering and binary exporter. See <span class="tt"><a class="el" href="10__wtns__format_8md.html">doc/doxygen/10_wtns_format.md</a></span> for the file schema and ordering contract. </p>
+
+</div>
+</div>
+<a id="a6988710fba042bff85b32be0abd33da2" name="a6988710fba042bff85b32be0abd33da2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6988710fba042bff85b32be0abd33da2">&#9670;&#160;</a></span>writeWtns() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::Error llzk::witgen::writeWtns </td>
+          <td>(</td>
+          <td class="paramtype">ModuleOp</td>          <td class="paramname"><span class="paramname"><em>moduleOp</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const llvm::json::Value &amp;</td>          <td class="paramname"><span class="paramname"><em>fullWitness</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classllzk_1_1Field.html">Field</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>field</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">StringRef</td>          <td class="paramname"><span class="paramname"><em>outputFilename</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Wtns_8cpp_source.html#l00222">222</a> of file <a class="el" href="Wtns_8cpp_source.html">Wtns.cpp</a>.</p>
 
 </div>
 </div>

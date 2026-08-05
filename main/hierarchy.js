@@ -139,6 +139,7 @@ var hierarchy =
       [ "llvm::cl::NestedOptionsParserBase< OptionsT >", "classllvm_1_1cl_1_1NestedOptionsParserBase.html", null ],
       [ "llvm::cl::parser< APInt >", "classllvm_1_1cl_1_1parser_3_01APInt_01_4.html", null ]
     ] ],
+    [ "llzk::BinaryBuffer", "classllzk_1_1BinaryBuffer.html", null ],
     [ "llzk::smt::detail::BoolConstantOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1BoolConstantOpGenericAdaptorBase.html", [
       [ "llzk::smt::BoolConstantOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1BoolConstantOpGenericAdaptor.html", null ],
       [ "llzk::smt::BoolConstantOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1BoolConstantOpGenericAdaptor.html", [

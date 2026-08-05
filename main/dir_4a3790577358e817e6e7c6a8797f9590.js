@@ -17,5 +17,7 @@ var dir_4a3790577358e817e6e7c6a8797f9590 =
     [ "WitgenUtils.cpp", "WitgenUtils_8cpp.html", "WitgenUtils_8cpp" ],
     [ "WitgenUtils.h", "WitgenUtils_8h.html", "WitgenUtils_8h" ],
     [ "WitnessSelection.cpp", "WitnessSelection_8cpp.html", "WitnessSelection_8cpp" ],
-    [ "WitnessSelection.h", "WitnessSelection_8h.html", "WitnessSelection_8h" ]
+    [ "WitnessSelection.h", "WitnessSelection_8h.html", "WitnessSelection_8h" ],
+    [ "Wtns.cpp", "Wtns_8cpp.html", "Wtns_8cpp" ],
+    [ "Wtns.h", "Wtns_8h.html", "Wtns_8h" ]
 ];

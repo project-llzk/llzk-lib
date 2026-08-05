@@ -803,6 +803,7 @@ var annotated_dup =
       [ "APIntValue", "classllzk_1_1APIntValue.html", "classllzk_1_1APIntValue" ],
       [ "AuxAssignment", "structllzk_1_1AuxAssignment.html", "structllzk_1_1AuxAssignment" ],
       [ "BaseBuilder", "classllzk_1_1BaseBuilder.html", "classllzk_1_1BaseBuilder" ],
+      [ "BinaryBuffer", "classllzk_1_1BinaryBuffer.html", "classllzk_1_1BinaryBuffer" ],
       [ "BuildShortTypeString", "classllzk_1_1BuildShortTypeString.html", null ],
       [ "CallGraph", "classllzk_1_1CallGraph.html", "classllzk_1_1CallGraph" ],
       [ "CallGraphAnalysis", "classllzk_1_1CallGraphAnalysis.html", "classllzk_1_1CallGraphAnalysis" ],
