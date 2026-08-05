@@ -85,7 +85,7 @@ var searchData=
   ['eqopgenericadaptor_3c_3a_3amlir_3a_3avaluerange_20_3e_82',['EqOpGenericAdaptor&lt;::mlir::ValueRange &gt;',['../classllzk_1_1smt_1_1EqOpGenericAdaptor.html',1,'llzk::smt']]],
   ['eqopgenericadaptorbase_83',['EqOpGenericAdaptorBase',['../classllzk_1_1smt_1_1detail_1_1EqOpGenericAdaptorBase.html',1,'llzk::smt::detail::EqOpGenericAdaptorBase'],['../classllzk_1_1smt_1_1detail_1_1EqOpGenericAdaptorBase.html#ab1c58b5e4bb51711692f9597869e66c0',1,'llzk::smt::detail::EqOpGenericAdaptorBase::EqOpGenericAdaptorBase(::mlir::DictionaryAttr attrs={}, const ::mlir::EmptyProperties &amp;properties={}, ::mlir::RegionRange regions={})'],['../classllzk_1_1smt_1_1detail_1_1EqOpGenericAdaptorBase.html#afdd5d95466b6850239d22be27e80a636',1,'llzk::smt::detail::EqOpGenericAdaptorBase::EqOpGenericAdaptorBase(::mlir::Operation *op)']]],
   ['erasenode_84',['eraseNode',['../classllzk_1_1CallGraph.html#aa614617dbc4290c50237ddfacf3f5da2',1,'llzk::CallGraph']]],
-  ['eraseunuseddefinitions_85',['eraseUnusedDefinitions',['../classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet.html#a38b75bf6c5360551b29563fdbb0999a2',1,'llzk::polymorphic::detail::FromEraseSet']]],
+  ['eraseunuseddefinitions_85',['eraseUnusedDefinitions',['../classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet.html#a2fdf4fde3f10a8c688089f500db59660',1,'llzk::polymorphic::detail::FromEraseSet']]],
   ['errorhelper_2eh_86',['ErrorHelper.h',['../ErrorHelper_8h.html',1,'']]],
   ['errors_2eh_87',['Errors.h',['../Errors_8h.html',1,'']]],
   ['errs_88',['Errs',['../namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ae9ee3f615e1fc88e4ae0293db27987f1',1,'llzk']]],

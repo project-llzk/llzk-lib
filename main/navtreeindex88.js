@@ -1,5 +1,8 @@
 var NAVTREEINDEX88 =
 {
+"namespacellzk_1_1witgen.html#a8eb5255011e8ef4fab788987bed59c30":[10,0,3,21,54],
+"namespacellzk_1_1witgen.html#a907fa4fd459ee8b21d97027b29c51ade":[10,0,3,21,9],
+"namespacellzk_1_1witgen.html#a9133fd240db34d3237708cd2a796838a":[10,0,3,21,51],
 "namespacellzk_1_1witgen.html#a9e65c5d0cf5e310f8d4401ccc05e44a8":[10,0,3,21,10],
 "namespacellzk_1_1witgen.html#aab018786c76841f1f6d748c9bb7820bd":[10,0,3,21,22],
 "namespacellzk_1_1witgen.html#aaf2a9e39090cf207cbfa15acb8096c1a":[10,0,3,21,30],
@@ -246,8 +249,5 @@ var NAVTREEINDEX88 =
 "structInsertArrayOpBuildFuncHelper.html#ae1a6e6ddd3e7e1f6e84e778aaa096830":[12,0,63,1],
 "structIntToFeltOpBuildFuncHelper.html":[12,0,64],
 "structIntToFeltOpBuildFuncHelper.html#abf491c0d669d7644c6c86a386aff39bf":[12,0,64,0],
-"structIntToFeltOpBuildFuncHelper.html#ae14554c7abb4d83bc990367ed910b384":[12,0,64,1],
-"structInvFeltOpBuildFuncHelper.html":[12,0,65],
-"structInvFeltOpBuildFuncHelper.html#a99b5c7fdf7fff00c33fa80e42a3a03ac":[12,0,65,1],
-"structInvFeltOpBuildFuncHelper.html#aa930ca4f6a0429383b05e14c649f045f":[12,0,65,0]
+"structIntToFeltOpBuildFuncHelper.html#ae14554c7abb4d83bc990367ed910b384":[12,0,64,1]
 };

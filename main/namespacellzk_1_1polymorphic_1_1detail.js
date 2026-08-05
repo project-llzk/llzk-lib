@@ -15,14 +15,17 @@ var namespacellzk_1_1polymorphic_1_1detail =
     [ "TypeVarTypeStorage", "structllzk_1_1polymorphic_1_1detail_1_1TypeVarTypeStorage.html", "structllzk_1_1polymorphic_1_1detail_1_1TypeVarTypeStorage" ],
     [ "UnifiableCastOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1UnifiableCastOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1UnifiableCastOpGenericAdaptorBase" ],
     [ "YieldOpGenericAdaptorBase", "classllzk_1_1polymorphic_1_1detail_1_1YieldOpGenericAdaptorBase.html", "classllzk_1_1polymorphic_1_1detail_1_1YieldOpGenericAdaptorBase" ],
+    [ "buildInstantiationLayout", "namespacellzk_1_1polymorphic_1_1detail.html#a5ffc185c7897fb342829c777267f42d1", null ],
     [ "buildInstantiationLayout", "namespacellzk_1_1polymorphic_1_1detail.html#aed0c25bf5a5e332d2f6ff0efa14bb1a2", null ],
     [ "buildOpaqueInstantiationName", "namespacellzk_1_1polymorphic_1_1detail.html#aa2c080b1b59715494eafe735b1081aec", null ],
-    [ "flattenInstantiatedArrayType", "namespacellzk_1_1polymorphic_1_1detail.html#afea25c760e69980cdc91a16b373bc182", null ],
+    [ "buildOpaqueInstantiationName", "namespacellzk_1_1polymorphic_1_1detail.html#ade671d44eee1680030eb0f2324060457", null ],
+    [ "flattenInstantiatedArrayType", "namespacellzk_1_1polymorphic_1_1detail.html#a9b23024ca9118c9b8962644e682cbd51", null ],
     [ "getStructTypeWithParams", "namespacellzk_1_1polymorphic_1_1detail.html#a0201e1ef6ecd6cb698f4241014159708", null ],
     [ "getStructTypeWithParams", "namespacellzk_1_1polymorphic_1_1detail.html#ab757bbb96d42abba8120944b70a39f67", null ],
     [ "isErasableDefinition", "namespacellzk_1_1polymorphic_1_1detail.html#aea1b21a65533d5e3fb2063434628d565", null ],
     [ "newBaseTarget", "namespacellzk_1_1polymorphic_1_1detail.html#afa4db6a4baedb109176585c4bfc46e48", null ],
     [ "newConverterDefinedTarget", "namespacellzk_1_1polymorphic_1_1detail.html#a49b3116406d5104fcf8b37bed9f1f386", null ],
     [ "newConverterDefinedTargetWithCallback", "namespacellzk_1_1polymorphic_1_1detail.html#a07f9f8f9a4106a59ae12e59ab7241dc6", null ],
+    [ "setInstantiationNamePattern", "namespacellzk_1_1polymorphic_1_1detail.html#ad3400673bd26d76f297ba9baeadc2405", null ],
     [ "setInstantiationNamePattern", "namespacellzk_1_1polymorphic_1_1detail.html#ab2bf16cb4ac588e93613cd47c10b4215", null ]
 ];

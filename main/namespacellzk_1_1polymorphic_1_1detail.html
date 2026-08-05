@@ -134,22 +134,25 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:a5ffc185c7897fb342829c777267f42d1" id="r_a5ffc185c7897fb342829c777267f42d1"><td class="memItemLeft" align="right" valign="top">FailureOr&lt; <a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html">InstantiationLayout</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5ffc185c7897fb342829c777267f42d1">buildInstantiationLayout</a> (<a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> parentTemplate, ArrayAttr callParams, const DenseMap&lt; Attribute, Attribute &gt; &amp;paramNameToConcrete)</td></tr>
+<tr class="memitem:ad3400673bd26d76f297ba9baeadc2405" id="r_ad3400673bd26d76f297ba9baeadc2405"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad3400673bd26d76f297ba9baeadc2405">setInstantiationNamePattern</a> (<a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> templateOp, ArrayAttr namePattern)</td></tr>
+<tr class="memitem:ade671d44eee1680030eb0f2324060457" id="r_ade671d44eee1680030eb0f2324060457"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ade671d44eee1680030eb0f2324060457">buildOpaqueInstantiationName</a> (StringRef baseName, ArrayRef&lt; Attribute &gt; concreteAttrs)</td></tr>
+<tr class="memitem:afa4db6a4baedb109176585c4bfc46e48" id="r_afa4db6a4baedb109176585c4bfc46e48"><td class="memItemLeft" align="right" valign="top">mlir::ConversionTarget&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afa4db6a4baedb109176585c4bfc46e48">newBaseTarget</a> (mlir::MLIRContext *ctx)</td></tr>
+<tr class="memdesc:afa4db6a4baedb109176585c4bfc46e48"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new <span class="tt">ConversionTarget</span> allowing all LLZK-required dialects.  <br /></td></tr>
+<tr class="memitem:aea1b21a65533d5e3fb2063434628d565" id="r_aea1b21a65533d5e3fb2063434628d565"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aea1b21a65533d5e3fb2063434628d565">isErasableDefinition</a> (mlir::Operation *op)</td></tr>
+<tr class="memdesc:aea1b21a65533d5e3fb2063434628d565"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff <span class="tt">op</span> is a cleanup candidate.  <br /></td></tr>
+<tr class="memitem:a9b23024ca9118c9b8962644e682cbd51" id="r_a9b23024ca9118c9b8962644e682cbd51"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1array_1_1ArrayType.html">array::ArrayType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9b23024ca9118c9b8962644e682cbd51">flattenInstantiatedArrayType</a> (<a class="el" href="classllzk_1_1array_1_1ArrayType.html">array::ArrayType</a> inputTy, mlir::Type convertedElemTy)</td></tr>
+<tr class="memdesc:a9b23024ca9118c9b8962644e682cbd51"><td class="mdescLeft">&#160;</td><td class="mdescRight">Merge nested array dimensions produced by replacing an array element type.  <br /></td></tr>
+<tr class="memitem:a0201e1ef6ecd6cb698f4241014159708" id="r_a0201e1ef6ecd6cb698f4241014159708"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1component_1_1StructType.html">component::StructType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0201e1ef6ecd6cb698f4241014159708">getStructTypeWithParams</a> (mlir::SymbolRefAttr nameRef, mlir::ArrayAttr params)</td></tr>
+<tr class="memdesc:a0201e1ef6ecd6cb698f4241014159708"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a struct type while representing an empty parameter list as absent.  <br /></td></tr>
+<tr class="memitem:ab757bbb96d42abba8120944b70a39f67" id="r_ab757bbb96d42abba8120944b70a39f67"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1component_1_1StructType.html">component::StructType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab757bbb96d42abba8120944b70a39f67">getStructTypeWithParams</a> (mlir::SymbolRefAttr nameRef, mlir::MLIRContext *ctx, mlir::ArrayRef&lt; mlir::Attribute &gt; params)</td></tr>
+<tr class="memdesc:ab757bbb96d42abba8120944b70a39f67"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a struct type while representing an empty parameter list as absent.  <br /></td></tr>
 <tr class="memitem:aed0c25bf5a5e332d2f6ff0efa14bb1a2" id="r_aed0c25bf5a5e332d2f6ff0efa14bb1a2"><td class="memItemLeft" align="right" valign="top">mlir::FailureOr&lt; <a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html">InstantiationLayout</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aed0c25bf5a5e332d2f6ff0efa14bb1a2">buildInstantiationLayout</a> (<a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> parentTemplate, mlir::ArrayAttr callParams, const llvm::DenseMap&lt; mlir::Attribute, mlir::Attribute &gt; &amp;paramNameToConcrete)</td></tr>
 <tr class="memdesc:aed0c25bf5a5e332d2f6ff0efa14bb1a2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Derive the instantiated template name, remaining explicit parameters, and refined literal pattern.  <br /></td></tr>
 <tr class="memitem:ab2bf16cb4ac588e93613cd47c10b4215" id="r_ab2bf16cb4ac588e93613cd47c10b4215"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab2bf16cb4ac588e93613cd47c10b4215">setInstantiationNamePattern</a> (<a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> templateOp, mlir::ArrayAttr namePattern)</td></tr>
 <tr class="memdesc:ab2bf16cb4ac588e93613cd47c10b4215"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clear inherited pattern state from a fully concrete template, or attach refined chunks before a partial template is inserted into a symbol table.  <br /></td></tr>
 <tr class="memitem:aa2c080b1b59715494eafe735b1081aec" id="r_aa2c080b1b59715494eafe735b1081aec"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa2c080b1b59715494eafe735b1081aec">buildOpaqueInstantiationName</a> (llvm::StringRef baseName, llvm::ArrayRef&lt; mlir::Attribute &gt; concreteAttrs)</td></tr>
 <tr class="memdesc:aa2c080b1b59715494eafe735b1081aec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Append concrete attributes to an opaque physical base name without interpreting its bytes.  <br /></td></tr>
-<tr class="memitem:afa4db6a4baedb109176585c4bfc46e48" id="r_afa4db6a4baedb109176585c4bfc46e48"><td class="memItemLeft" align="right" valign="top">mlir::ConversionTarget&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afa4db6a4baedb109176585c4bfc46e48">newBaseTarget</a> (mlir::MLIRContext *ctx)</td></tr>
-<tr class="memdesc:afa4db6a4baedb109176585c4bfc46e48"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new <span class="tt">ConversionTarget</span> allowing all LLZK-required dialects.  <br /></td></tr>
-<tr class="memitem:aea1b21a65533d5e3fb2063434628d565" id="r_aea1b21a65533d5e3fb2063434628d565"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aea1b21a65533d5e3fb2063434628d565">isErasableDefinition</a> (mlir::Operation *op)</td></tr>
-<tr class="memdesc:aea1b21a65533d5e3fb2063434628d565"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return <span class="tt">true</span> iff <span class="tt">op</span> is a cleanup candidate.  <br /></td></tr>
-<tr class="memitem:afea25c760e69980cdc91a16b373bc182" id="r_afea25c760e69980cdc91a16b373bc182"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1array_1_1ArrayType.html">array::ArrayType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afea25c760e69980cdc91a16b373bc182">flattenInstantiatedArrayType</a> (<a class="el" href="classllzk_1_1array_1_1ArrayType.html">array::ArrayType</a> inputTy, mlir::Type convertedElemTy)</td></tr>
-<tr class="memdesc:afea25c760e69980cdc91a16b373bc182"><td class="mdescLeft">&#160;</td><td class="mdescRight">Merge nested array dimensions produced by replacing an array element type.  <br /></td></tr>
-<tr class="memitem:a0201e1ef6ecd6cb698f4241014159708" id="r_a0201e1ef6ecd6cb698f4241014159708"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1component_1_1StructType.html">component::StructType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0201e1ef6ecd6cb698f4241014159708">getStructTypeWithParams</a> (mlir::SymbolRefAttr nameRef, mlir::ArrayAttr params)</td></tr>
-<tr class="memdesc:a0201e1ef6ecd6cb698f4241014159708"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a struct type while representing an empty parameter list as absent.  <br /></td></tr>
-<tr class="memitem:ab757bbb96d42abba8120944b70a39f67" id="r_ab757bbb96d42abba8120944b70a39f67"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllzk_1_1component_1_1StructType.html">component::StructType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab757bbb96d42abba8120944b70a39f67">getStructTypeWithParams</a> (mlir::SymbolRefAttr nameRef, mlir::MLIRContext *ctx, mlir::ArrayRef&lt; mlir::Attribute &gt; params)</td></tr>
-<tr class="memdesc:ab757bbb96d42abba8120944b70a39f67"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a struct type while representing an empty parameter list as absent.  <br /></td></tr>
 <tr class="memitem:a49b3116406d5104fcf8b37bed9f1f386" id="r_a49b3116406d5104fcf8b37bed9f1f386"><td class="memTemplParams" colspan="2">template&lt;typename... AdditionalOpClasses, typename... AdditionalChecks&gt; </td></tr>
 <tr class="memitem:a49b3116406d5104fcf8b37bed9f1f386 template"><td class="memItemLeft" align="right" valign="top">mlir::ConversionTarget&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a49b3116406d5104fcf8b37bed9f1f386">newConverterDefinedTarget</a> (mlir::TypeConverter &amp;tyConv, mlir::MLIRContext *ctx, AdditionalChecks &amp;&amp;...checks)</td></tr>
 <tr class="memdesc:a49b3116406d5104fcf8b37bed9f1f386"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new <span class="tt">ConversionTarget</span> allowing all LLZK-required dialects and defining Op legality based on the given <span class="tt">TypeConverter</span> for Ops listed in both members of <span class="tt">OpClassesWithStructTypes</span> and in <span class="tt">AdditionalOpClasses</span>.  <br /></td></tr>
@@ -158,8 +161,36 @@ Functions</h2></td></tr>
 <tr class="memdesc:a07f9f8f9a4106a59ae12e59ab7241dc6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new <span class="tt">ConversionTarget</span> allowing all LLZK-required dialects and defining Op legality based on the given <span class="tt">TypeConverter</span> for Ops listed in both members of <span class="tt">OpClassesWithStructTypes</span> and in <span class="tt">AdditionalOpClasses</span>.  <br /></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+<a id="a5ffc185c7897fb342829c777267f42d1" name="a5ffc185c7897fb342829c777267f42d1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5ffc185c7897fb342829c777267f42d1">&#9670;&#160;</a></span>buildInstantiationLayout() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">FailureOr&lt; <a class="el" href="structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html">InstantiationLayout</a> &gt; llzk::polymorphic::detail::buildInstantiationLayout </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a></td>          <td class="paramname"><span class="paramname"><em>parentTemplate</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">ArrayAttr</td>          <td class="paramname"><span class="paramname"><em>callParams</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const DenseMap&lt; Attribute, Attribute &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>paramNameToConcrete</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8cpp_source.html#l00045">45</a> of file <a class="el" href="SharedImpl_8cpp_source.html">SharedImpl.cpp</a>.</p>
+
+</div>
+</div>
 <a id="aed0c25bf5a5e332d2f6ff0efa14bb1a2" name="aed0c25bf5a5e332d2f6ff0efa14bb1a2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aed0c25bf5a5e332d2f6ff0efa14bb1a2">&#9670;&#160;</a></span>buildInstantiationLayout()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#aed0c25bf5a5e332d2f6ff0efa14bb1a2">&#9670;&#160;</a></span>buildInstantiationLayout() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -185,12 +216,10 @@ Functions</h2></td></tr>
 <p>Derive the instantiated template name, remaining explicit parameters, and refined literal pattern. </p>
 <p>A malformed pattern is rejected even though <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> verification normally runs before a transform; this keeps the owner boundary safe for programmatically built IR too. </p>
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8cpp_source.html#l00042">42</a> of file <a class="el" href="SharedImpl_8cpp_source.html">SharedImpl.cpp</a>.</p>
-
 </div>
 </div>
 <a id="aa2c080b1b59715494eafe735b1081aec" name="aa2c080b1b59715494eafe735b1081aec"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa2c080b1b59715494eafe735b1081aec">&#9670;&#160;</a></span>buildOpaqueInstantiationName()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#aa2c080b1b59715494eafe735b1081aec">&#9670;&#160;</a></span>buildOpaqueInstantiationName() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -210,18 +239,39 @@ Functions</h2></td></tr>
 
 <p>Append concrete attributes to an opaque physical base name without interpreting its bytes. </p>
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8cpp_source.html#l00160">160</a> of file <a class="el" href="SharedImpl_8cpp_source.html">SharedImpl.cpp</a>.</p>
-
 </div>
 </div>
-<a id="afea25c760e69980cdc91a16b373bc182" name="afea25c760e69980cdc91a16b373bc182"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afea25c760e69980cdc91a16b373bc182">&#9670;&#160;</a></span>flattenInstantiatedArrayType()</h2>
+<a id="ade671d44eee1680030eb0f2324060457" name="ade671d44eee1680030eb0f2324060457"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ade671d44eee1680030eb0f2324060457">&#9670;&#160;</a></span>buildOpaqueInstantiationName() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classllzk_1_1array_1_1ArrayType.html">llzk::array::ArrayType</a> llzk::polymorphic::detail::flattenInstantiatedArrayType </td>
+          <td class="memname">std::string llzk::polymorphic::detail::buildOpaqueInstantiationName </td>
+          <td>(</td>
+          <td class="paramtype">StringRef</td>          <td class="paramname"><span class="paramname"><em>baseName</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">ArrayRef&lt; Attribute &gt;</td>          <td class="paramname"><span class="paramname"><em>concreteAttrs</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8cpp_source.html#l00160">160</a> of file <a class="el" href="SharedImpl_8cpp_source.html">SharedImpl.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a9b23024ca9118c9b8962644e682cbd51" name="a9b23024ca9118c9b8962644e682cbd51"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9b23024ca9118c9b8962644e682cbd51">&#9670;&#160;</a></span>flattenInstantiatedArrayType()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classllzk_1_1array_1_1ArrayType.html">array::ArrayType</a> llzk::polymorphic::detail::flattenInstantiatedArrayType </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classllzk_1_1array_1_1ArrayType.html">array::ArrayType</a></td>          <td class="paramname"><span class="paramname"><em>inputTy</em></span>, </td>
         </tr>
@@ -235,8 +285,6 @@ Functions</h2></td></tr>
 
 <p>Merge nested array dimensions produced by replacing an array element type. </p>
 <p>If <span class="tt">array&lt;4 x !poly.tvar&lt;@T&gt;&gt;</span> is rewritten with <span class="tt">@T -&gt; array&lt;8 x index&gt;</span>, the canonical aggregate shape should become <span class="tt">array&lt;4,8 x index&gt;</span> rather than an array whose element type is another array because the latter is not allowed in LLZK IR. </p>
-
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8cpp_source.html#l00329">329</a> of file <a class="el" href="SharedImpl_8cpp_source.html">SharedImpl.cpp</a>.</p>
 
 </div>
 </div>
@@ -328,8 +376,6 @@ Functions</h2></td></tr>
 
 <p>Return <span class="tt">true</span> iff <span class="tt">op</span> is a cleanup candidate. </p>
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8cpp_source.html#l00191">191</a> of file <a class="el" href="SharedImpl_8cpp_source.html">SharedImpl.cpp</a>.</p>
-
 </div>
 </div>
 <a id="afa4db6a4baedb109176585c4bfc46e48" name="afa4db6a4baedb109176585c4bfc46e48"></a>
@@ -348,8 +394,6 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Return a new <span class="tt">ConversionTarget</span> allowing all LLZK-required dialects. </p>
-
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8cpp_source.html#l00173">173</a> of file <a class="el" href="SharedImpl_8cpp_source.html">SharedImpl.cpp</a>.</p>
 
 </div>
 </div>
@@ -424,8 +468,31 @@ template&lt;typename... AdditionalOpClasses, typename... AdditionalChecks&gt; </
 
 </div>
 </div>
+<a id="ad3400673bd26d76f297ba9baeadc2405" name="ad3400673bd26d76f297ba9baeadc2405"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad3400673bd26d76f297ba9baeadc2405">&#9670;&#160;</a></span>setInstantiationNamePattern() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzk::polymorphic::detail::setInstantiationNamePattern </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a></td>          <td class="paramname"><span class="paramname"><em>templateOp</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">ArrayAttr</td>          <td class="paramname"><span class="paramname"><em>namePattern</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8cpp_source.html#l00152">152</a> of file <a class="el" href="SharedImpl_8cpp_source.html">SharedImpl.cpp</a>.</p>
+
+</div>
+</div>
 <a id="ab2bf16cb4ac588e93613cd47c10b4215" name="ab2bf16cb4ac588e93613cd47c10b4215"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab2bf16cb4ac588e93613cd47c10b4215">&#9670;&#160;</a></span>setInstantiationNamePattern()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ab2bf16cb4ac588e93613cd47c10b4215">&#9670;&#160;</a></span>setInstantiationNamePattern() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -444,8 +511,6 @@ template&lt;typename... AdditionalOpClasses, typename... AdditionalChecks&gt; </
 </div><div class="memdoc">
 
 <p>Clear inherited pattern state from a fully concrete template, or attach refined chunks before a partial template is inserted into a symbol table. </p>
-
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8cpp_source.html#l00152">152</a> of file <a class="el" href="SharedImpl_8cpp_source.html">SharedImpl.cpp</a>.</p>
 
 </div>
 </div>

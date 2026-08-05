@@ -130,7 +130,7 @@ Collaboration diagram for llzk::polymorphic::detail::FromEraseSet:</div>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:aa36580e5888f6d2ac3561180a454d181" id="r_aa36580e5888f6d2ac3561180a454d181"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa36580e5888f6d2ac3561180a454d181">FromEraseSet</a> (mlir::ModuleOp root, const <a class="el" href="classllzk_1_1SymbolDefTree.html">SymbolDefTree</a> &amp;symDefTree, const <a class="el" href="classllzk_1_1SymbolUseGraph.html">SymbolUseGraph</a> &amp;symUseGraph, llvm::DenseSet&lt; mlir::SymbolRefAttr &gt; &amp;&amp;tryToErasePaths)</td></tr>
 <tr class="memdesc:aa36580e5888f6d2ac3561180a454d181"><td class="mdescLeft">&#160;</td><td class="mdescRight">Note: paths in <span class="tt">tryToErase</span> should be relative to <span class="tt">root</span>.  <br /></td></tr>
-<tr class="memitem:a38b75bf6c5360551b29563fdbb0999a2" id="r_a38b75bf6c5360551b29563fdbb0999a2"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a38b75bf6c5360551b29563fdbb0999a2">eraseUnusedDefinitions</a> ()</td></tr>
+<tr class="memitem:a2fdf4fde3f10a8c688089f500db59660" id="r_a2fdf4fde3f10a8c688089f500db59660"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2fdf4fde3f10a8c688089f500db59660">eraseUnusedDefinitions</a> ()</td></tr>
 <tr class="memitem:a465dd9fe696e8541e6e16782eb5bd7fc" id="r_a465dd9fe696e8541e6e16782eb5bd7fc"><td class="memItemLeft" align="right" valign="top">const llvm::DenseSet&lt; mlir::SymbolOpInterface &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a465dd9fe696e8541e6e16782eb5bd7fc">getTryToEraseSet</a> () const</td></tr>
 <tr class="inherit_header pub_methods_classllzk_1_1polymorphic_1_1detail_1_1CleanupBase"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pub_methods_classllzk_1_1polymorphic_1_1detail_1_1CleanupBase')"><span class="dynarrow"><span class="arrowhead closed"></span></span>Public Member Functions inherited from <a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html">llzk::polymorphic::detail::CleanupBase</a></td></tr>
 <tr class="memitem:af5f5945f08247b73a4dce85524aefeaa inherit pub_methods_classllzk_1_1polymorphic_1_1detail_1_1CleanupBase" id="r_af5f5945f08247b73a4dce85524aefeaa"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html#af5f5945f08247b73a4dce85524aefeaa">CleanupBase</a> (mlir::ModuleOp root, const <a class="el" href="classllzk_1_1SymbolDefTree.html">SymbolDefTree</a> &amp;symDefTree, const <a class="el" href="classllzk_1_1SymbolUseGraph.html">SymbolUseGraph</a> &amp;symUseGraph)</td></tr>
@@ -180,19 +180,19 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Note: paths in <span class="tt">tryToErase</span> should be relative to <span class="tt">root</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8cpp_source.html#l00201">201</a> of file <a class="el" href="SharedImpl_8cpp_source.html">SharedImpl.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8cpp_source.html#l00198">198</a> of file <a class="el" href="SharedImpl_8cpp_source.html">SharedImpl.cpp</a>.</p>
 
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="a38b75bf6c5360551b29563fdbb0999a2" name="a38b75bf6c5360551b29563fdbb0999a2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a38b75bf6c5360551b29563fdbb0999a2">&#9670;&#160;</a></span>eraseUnusedDefinitions()</h2>
+<a id="a2fdf4fde3f10a8c688089f500db59660" name="a2fdf4fde3f10a8c688089f500db59660"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2fdf4fde3f10a8c688089f500db59660">&#9670;&#160;</a></span>eraseUnusedDefinitions()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">mlir::LogicalResult llzk::polymorphic::detail::FromEraseSet::eraseUnusedDefinitions </td>
+          <td class="memname">LogicalResult llzk::polymorphic::detail::FromEraseSet::eraseUnusedDefinitions </td>
           <td>(</td>
           <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
           <td></td>
@@ -200,7 +200,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SharedImpl_8cpp_source.html#l00226">226</a> of file <a class="el" href="SharedImpl_8cpp_source.html">SharedImpl.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SharedImpl_8cpp_source.html#l00223">223</a> of file <a class="el" href="SharedImpl_8cpp_source.html">SharedImpl.cpp</a>.</p>
 
 </div>
 </div>
