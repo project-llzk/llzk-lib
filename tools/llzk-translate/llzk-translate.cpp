@@ -13,6 +13,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "r1cs/Target/TranslateRegistration.h"
 #include "smt/Target/TranslateRegistration.h"
 #include "tools/config.h"
 #include "zklean/Target/TranslateRegistration.h"
@@ -53,6 +54,7 @@ int main(int argc, char **argv) {
 
   // Register all MLIR translations
   mlir::registerAllTranslations();
+  r1cs::registerR1CSTranslation();
   smt::registerSmtTranslation();
   zklean::registerZKLeanTranslation();
 #if LLZK_WITH_PCL

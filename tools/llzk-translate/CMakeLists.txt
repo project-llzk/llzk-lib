@@ -8,6 +8,7 @@ target_link_libraries(
     MLIRTranslateLib
     LLZKDialectHeaders
     MLIRIR
+    R1CSTarget
     SMTTarget
     ZKLeanTarget
     ${translation_libs}
