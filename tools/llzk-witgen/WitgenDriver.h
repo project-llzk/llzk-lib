@@ -32,8 +32,11 @@ enum class Backend : std::uint8_t {
 
 /// Select the JSON scope emitted by `llzk-witgen`.
 enum class OutputScope : std::uint8_t {
+  /// Emit only public outputs.
   Public,
+  /// Emit inputs plus public outputs and members marked as witness signals.
   FullWitness,
+  /// Emit inputs plus every scalar main member needed to construct an R1CS witness.
   R1CSWitness,
 };
 

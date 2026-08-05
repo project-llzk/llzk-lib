@@ -1,6 +1,7 @@
 // RUN: split-file %s %t
 // RUN: not llzk-witgen %t/test.llzk --inputs %t/input.json --output-wtns %t/witness.wtns 2>&1 | FileCheck %s
 // RUN: not llzk-witgen %t/test.llzk --inputs %t/input.json --output-wtns %t/witness.wtns --output-scope=public 2>&1 | FileCheck %s --check-prefix=SCOPE
+// RUN: not llzk-witgen %t/test.llzk --inputs %t/input.json --output-wtns - 2>&1 | FileCheck %s --check-prefix=STDOUT
 
 //--- test.llzk
 
@@ -28,6 +29,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
 // CHECK: llzk-witgen error: cannot emit .wtns: R1CS lowering produces 4 wires but llzk-witgen collected 3; synthesized R1CS auxiliary wires are not yet supported
 // SCOPE: --output-wtns conflicts with --output-scope=public; use --output-scope=full-witness
+// STDOUT: --output-wtns does not support stdout; specify an output file
 
 //--- input.json
 {"input": 4}

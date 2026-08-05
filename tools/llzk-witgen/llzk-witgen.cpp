@@ -170,6 +170,10 @@ int main(int argc, char **argv) {
   options.dumpJITCore = DumpJITCore;
   options.dumpJITLLVM = DumpJITLLVM;
   if (WtnsOutputFilename.getNumOccurrences() > 0) {
+    if (WtnsOutputFilename == "-") {
+      llvm::errs() << "--output-wtns does not support stdout; specify an output file\n";
+      return EXIT_FAILURE;
+    }
     if (OutputScopeName.getNumOccurrences() > 0 && OutputScopeName != "full-witness") {
       llvm::errs() << "--output-wtns conflicts with --output-scope=" << OutputScopeName
                    << "; use --output-scope=full-witness\n";
