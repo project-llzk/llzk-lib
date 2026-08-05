@@ -12,6 +12,10 @@ target_link_libraries(r1cs-opt PRIVATE
   LLZKValidators
   LLZKTransforms
   R1CSTransforms
+  # Keep pass providers after LLZKPODTransforms for one-pass static linkers.
+  LLZKPODTransforms
+  LLZKPolymorphicDialect
+  LLZKBoolDialect
 )
 llzk_target_add_mlir_link_settings(r1cs-opt)
 set_target_properties(r1cs-opt PROPERTIES RUNTIME_OUTPUT_DIRECTORY
