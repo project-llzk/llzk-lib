@@ -667,22 +667,43 @@ static bool targetMayUseTemplateExpr(Operation *target, TemplateExprOp exprOp) {
 /// concrete param values, adding results to the map and returning the expressions that must remain
 /// available for a later partial instantiation.
 static FailureOr<SmallVector<TemplateExprOp>> evaluateTemplateExprs(
-    TemplateOp templateOp, Operation *target, DenseMap<Attribute, Attribute> &paramNameToConcrete
+    TemplateOp templateOp, Operation *target, DenseMap<Attribute, Attribute> &paramNameToConcrete,
+    SmallVector<Diagnostic> &deferredExprDiagnostics
 ) {
   LLVM_DEBUG(
       llvm::dbgs() << "[evaluateTemplateExprs] before: " << debug::toStringList(paramNameToConcrete)
                    << '\n'
   );
   SmallVector<TemplateExprOp> deferredExprs;
+  auto destroyDeferredExprs = [&]() {
+    for (TemplateExprOp exprOp : deferredExprs) {
+      exprOp->destroy();
+    }
+    deferredExprs.clear();
+  };
   for (TemplateExprOp exprOp : templateOp.getConstOps<TemplateExprOp>()) {
     if (!targetMayUseTemplateExpr(target, exprOp)) {
       continue;
     }
-    FailureOr<std::optional<Attribute>> result = evaluateExpr(exprOp, paramNameToConcrete);
+    // Evaluation and preservation must observe the same concrete type substitutions. In
+    // particular, a type-variable binding can make an otherwise non-foldable cast an identity
+    // cast, so folding the original expression would be route-dependent.
+    FailureOr<std::optional<TemplateExprOp>> normalizedExpr =
+        cloneDeferredExpr(exprOp, paramNameToConcrete, deferredExprDiagnostics);
+    if (failed(normalizedExpr) || !normalizedExpr->has_value()) {
+      destroyDeferredExprs();
+      return failure();
+    }
+    TemplateExprOp normalizedExprOp = **normalizedExpr;
+    FailureOr<std::optional<Attribute>> result =
+        evaluateExpr(normalizedExprOp, paramNameToConcrete);
     if (failed(result)) {
+      normalizedExprOp->destroy();
+      destroyDeferredExprs();
       return failure();
     }
     if (*result) {
+      normalizedExprOp->destroy();
       Attribute value = result->value();
       auto exprNameAttr = FlatSymbolRefAttr::get(exprOp.getSymNameAttr());
       paramNameToConcrete.try_emplace(exprNameAttr, value);
@@ -691,7 +712,9 @@ static FailureOr<SmallVector<TemplateExprOp>> evaluateTemplateExprs(
                        << " evaluated to " << value << '\n'
       );
     } else {
-      deferredExprs.push_back(exprOp);
+      // Keep the normalized detached clone. The caller transfers it into the reduced template,
+      // so later specialization starts from the same representation that was just evaluated.
+      deferredExprs.push_back(normalizedExprOp);
     }
   }
   LLVM_DEBUG(
@@ -876,8 +899,11 @@ class StructCloner {
 
     // Evaluate any poly.expr symbols whose param dependencies are now concrete; add them to the
     // map so ClonedBodyConstReadOpPattern can replace uses of those symbols too.
+    SmallVector<Diagnostic> deferredExprDiagnostics;
     FailureOr<SmallVector<TemplateExprOp>> exprEvaluation =
-        evaluateTemplateExprs(parentTemplate, origStruct.getOperation(), paramNameToConcrete);
+        evaluateTemplateExprs(
+            parentTemplate, origStruct.getOperation(), paramNameToConcrete, deferredExprDiagnostics
+        );
     if (failed(exprEvaluation)) {
       return failure();
     }
@@ -886,13 +912,15 @@ class StructCloner {
       deferredExprs.front().emitOpError(
           "cannot complete instantiation while a template expression remains deferred"
       );
+      for (TemplateExprOp exprOp : deferredExprs) {
+        exprOp->destroy();
+      }
       return failure();
     }
 
     // Clone the original struct.
     StructDefOp newStruct = origStruct.clone();
     convertCalleesInPlace(newStruct, paramNameToConcrete);
-    SmallVector<Diagnostic> deferredExprDiagnostics;
     if (layout.remainingNames.empty()) { // FULL INSTANTIATION CASE
       // Set name of the new struct by prepending its name with instantiated template name.
       newStruct.setSymName(
@@ -921,14 +949,7 @@ class StructCloner {
         newTemplate.insert(newTemplate.begin(), symOp->clone());
       }
       for (TemplateExprOp exprOp : deferredExprs) {
-        FailureOr<std::optional<TemplateExprOp>> clonedExpr =
-            cloneDeferredExpr(exprOp, paramNameToConcrete, deferredExprDiagnostics);
-        if (failed(clonedExpr) || !clonedExpr->has_value()) {
-          newTemplate->destroy();
-          newStruct->destroy();
-          return failure();
-        }
-        newTemplate.getBodyRegion().front().push_back(**clonedExpr);
+        newTemplate.getBodyRegion().front().push_back(exprOp.getOperation());
       }
 
       // Insert the struct into the template and the template into the module. Use the
@@ -1524,8 +1545,11 @@ public:
       return failure();
     }
 
+    SmallVector<Diagnostic> deferredExprDiagnostics;
     FailureOr<SmallVector<TemplateExprOp>> exprEvaluation =
-        evaluateTemplateExprs(parentTemplate, callTgt.getOperation(), paramNameToConcrete);
+        evaluateTemplateExprs(
+            parentTemplate, callTgt.getOperation(), paramNameToConcrete, deferredExprDiagnostics
+        );
     if (failed(exprEvaluation)) {
       return failure();
     }
@@ -1534,6 +1558,9 @@ public:
     FailureOr<InstantiationLayout> layoutResult =
         buildInstantiationLayout(parentTemplate, op.getTemplateParamsAttr(), paramNameToConcrete);
     if (failed(layoutResult)) {
+      for (TemplateExprOp exprOp : deferredExprs) {
+        exprOp->destroy();
+      }
       return failure();
     }
     InstantiationLayout layout = std::move(*layoutResult);
@@ -1545,6 +1572,9 @@ public:
       deferredExprs.front().emitOpError(
           "cannot complete instantiation while a template expression remains deferred"
       );
+      for (TemplateExprOp exprOp : deferredExprs) {
+        exprOp->destroy();
+      }
       return failure();
     }
     FailureOr<SymbolRefAttr> newCalleeAttr =
@@ -1556,10 +1586,14 @@ public:
               )
             : instantiatePartially(
                   op, rewriter, symTables, callTgt, parentTemplate, parentModule, layout,
-                  paramNameToConcrete, tracker_, deferredExprs
+                  paramNameToConcrete, tracker_, deferredExprs, deferredExprDiagnostics
               );
     if (failed(newCalleeAttr)) {
       return failure();
+    }
+
+    if (layout.remainingNames.empty()) {
+      ::reportDelayedDiagnostics(op, std::move(deferredExprDiagnostics));
     }
 
     tracker_.recordInstantiation(originalCalleeAttr);
@@ -1772,7 +1806,7 @@ private:
       CallOp op, PatternRewriter &rewriter, SymbolTableCollection &symTables, FuncDefOp callTgt,
       TemplateOp parentTemplate, ModuleOp parentModule, const InstantiationLayout &layout,
       const DenseMap<Attribute, Attribute> &paramNameToConcrete, ConversionTracker &tracker,
-      ArrayRef<TemplateExprOp> deferredExprs
+      ArrayRef<TemplateExprOp> deferredExprs, SmallVector<Diagnostic> &deferredExprDiagnostics
   ) {
     if (auto cached = tracker.lookupPartialFuncInstantiation(callTgt, layout.concreteParamKey)) {
       SmallVector<FlatSymbolRefAttr> symPieces = getPieces(op.getCalleeAttr());
@@ -1788,6 +1822,10 @@ private:
           llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing partial instantiation: "
                        << cachedCallee << '\n'
       );
+      for (TemplateExprOp exprOp : deferredExprs) {
+        exprOp->destroy();
+      }
+      ::reportDelayedDiagnostics(op, std::move(deferredExprDiagnostics));
       return cachedCallee;
     }
     TemplateOp newTemplate = parentTemplate.cloneWithoutRegions();
@@ -1803,15 +1841,8 @@ private:
       assert(paramOp && "symbol must exist");
       newTemplateBody.push_back(paramOp->clone());
     }
-    SmallVector<Diagnostic> deferredExprDiagnostics;
     for (TemplateExprOp exprOp : deferredExprs) {
-      FailureOr<std::optional<TemplateExprOp>> clonedExpr =
-          cloneDeferredExpr(exprOp, paramNameToConcrete, deferredExprDiagnostics);
-      if (failed(clonedExpr) || !clonedExpr->has_value()) {
-        newTemplate->destroy();
-        return failure();
-      }
-      newTemplateBody.push_back(**clonedExpr);
+      newTemplateBody.push_back(exprOp.getOperation());
     }
 
     // Clone and partially convert the function (concretize only the concrete params).
@@ -1833,8 +1864,6 @@ private:
         diag.append("failure while creating instantiated function '", newFuncName, '\'');
       });
     }
-
-    ::reportDelayedDiagnostics(op, std::move(deferredExprDiagnostics));
 
     // Use the post-insertion names. The preferred template name may have collided.
     SmallVector<FlatSymbolRefAttr> symPieces = getPieces(op.getCalleeAttr());

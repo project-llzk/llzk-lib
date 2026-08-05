@@ -286,6 +286,7 @@ def LLZK_UnifiableCastOp : PolymorphicDialectOp<"unifiable_cast", [Pure]> {
   }];
 
   let hasVerifier = 1;
+  let hasFolder = 1;
 }
 
 def LLZK_ApplyMapOp : PolymorphicDialectOp<"applymap", [Pure]> {
