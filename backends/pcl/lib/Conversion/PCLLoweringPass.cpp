@@ -46,6 +46,7 @@
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/Func/IR/FuncOps.h>
+#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/BuiltinAttributes.h>
@@ -64,6 +65,7 @@
 #include <llvm/ADT/APInt.h>
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseMapInfo.h>
+#include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/EquivalenceClasses.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/SmallVectorExtras.h>
@@ -94,7 +96,7 @@ using namespace llzk::component;
 namespace {
 
 /// Returns a flat representation of the fully qualified name of the struct.
-static std::string flatStructName(StructDefOp op) {
+template <typename Op> static std::string flatStructName(Op op) {
   auto fqn = op.getFullyQualifiedName();
   std::string name;
   llvm::raw_string_ostream o(name);
@@ -394,7 +396,7 @@ template <typename T, typename Fn> SmallVector<T> mapOutputMembers(StructDefOp o
   return out;
 }
 
-/// Converts `function.return` ops into pcl return ops.
+/// Converts `function.return` ops inside `@constrain` functions into func return ops.
 struct ConvertReturnOp : public OpConversionPattern<ReturnOp> {
   using OpConversionPattern<ReturnOp>::OpConversionPattern;
 
@@ -402,13 +404,29 @@ struct ConvertReturnOp : public OpConversionPattern<ReturnOp> {
   matchAndRewrite(ReturnOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
     auto structDefOp = op->getParentOfType<StructDefOp>();
     if (!structDefOp) {
-      return op->emitOpError() << "must have a struct op parent";
+      return failure();
     }
     auto values = mapOutputMembers<Value>(structDefOp, [&rewriter](MemberDefOp memberDef) {
       return rewriter.create<pcl::VarOp>(memberDef.getLoc(), memberDef.getName(), /*public=*/true);
     });
 
     rewriter.replaceOpWithNewOp<func::ReturnOp>(op, values);
+    return success();
+  }
+};
+
+/// Converts `function.return` ops inside free functions into func return ops.
+struct ConvertFreeFuncReturnOp : public OpConversionPattern<ReturnOp> {
+  using OpConversionPattern<ReturnOp>::OpConversionPattern;
+
+  LogicalResult
+  matchAndRewrite(ReturnOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+    auto structDefOp = op->getParentOfType<StructDefOp>();
+    if (structDefOp) {
+      return failure();
+    }
+
+    rewriter.replaceOpWithNewOp<func::ReturnOp>(op, adaptor.getOperands());
     return success();
   }
 };
@@ -435,8 +453,70 @@ public:
   }
 };
 
+/// Base class for patterns that copy the body of a function.
+template <typename Op, typename Impl> struct BodyCopier {
+private:
+  BodyCopier() = default;
+
+public:
+  LogicalResult copyBody(Op op, ConversionPatternRewriter &rewriter) const {
+    FailureOr<FuncDefOp> srcFuncOp = static_cast<const Impl *>(this)->getFuncOp(op);
+    if (failed(srcFuncOp)) {
+      return failure();
+    }
+
+    unsigned baseOffset = static_cast<const Impl *>(this)->baseOffset();
+
+    SmallVector<Type> inputs(
+        srcFuncOp->getNumArguments() - baseOffset, pcl::FeltType::get(rewriter.getContext())
+    );
+    SmallVector<Type> outputs = static_cast<const Impl *>(this)->outputTypes(op);
+
+    auto funcOp = func::FuncOp::create(
+        op.getLoc(), flatStructName(op), rewriter.getFunctionType(inputs, outputs)
+    );
+    funcOp.addEntryBlock();
+    IRMapping mapping;
+    for (auto arg : srcFuncOp->getArguments().take_front(baseOffset)) {
+      mapping.map(arg, Value());
+    }
+    for (auto [srcArg, dstArg] :
+         llvm::zip_equal(srcFuncOp->getArguments().drop_front(baseOffset), funcOp.getArguments())) {
+      auto argType = srcArg.getType();
+      if (!llvm::isa<FeltType>(argType)) {
+        return srcFuncOp->emitError() << "function's args are expected to be felts. Found "
+                                      << argType << "for arg #: " << srcArg.getArgNumber();
+      }
+      mapping.map(srcArg, dstArg);
+    }
+
+    if (!srcFuncOp->getBody().hasOneBlock()) {
+      return srcFuncOp->emitError(
+          "llzk-to-pcl conversion assumes the constrain function body has 1 block"
+      );
+    }
+    rewriter.cloneRegionBefore(
+        srcFuncOp->getRegion(), funcOp.getRegion(), funcOp.getRegion().end(), mapping
+    );
+    rewriter.mergeBlocks(&funcOp.getRegion().back(), &funcOp.getRegion().front());
+
+    rewriter.eraseOp(op);
+    {
+      OpBuilder::InsertionGuard guard(rewriter);
+      rewriter.setInsertionPointToEnd(
+          &static_cast<const Impl *>(this)->getRoot()->getRegion(0).front()
+      );
+      rewriter.insert(funcOp);
+    }
+
+    return success();
+  }
+  friend Impl;
+};
+
 /// Converts `struct.def` ops into pcl modules (represented with `func.def` ops).
-class ConvertStructDefOp : public OpConversionPattern<StructDefOp> {
+class ConvertStructDefOp : public OpConversionPattern<StructDefOp>,
+                           public BodyCopier<StructDefOp, ConvertStructDefOp> {
   ModuleOp root;
 
 public:
@@ -447,56 +527,67 @@ public:
   )
       : OpConversionPattern(tc, context, patBenefit), root(rootMod) {}
 
-  LogicalResult
-  matchAndRewrite(StructDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+  FailureOr<FuncDefOp> getFuncOp(StructDefOp op) const {
     auto constrainFuncOp = op.getConstrainFuncOp();
     if (!constrainFuncOp) {
       return op.emitOpError() << "must have a @" << FUNC_NAME_CONSTRAIN
                               << " function for converting to pcl";
     }
+    return constrainFuncOp;
+  }
 
-    SmallVector<Type> inputs(
-        constrainFuncOp.getNumArguments() - 1, pcl::FeltType::get(rewriter.getContext())
-    );
+  unsigned int baseOffset() const { return 1; }
 
-    auto outputs = mapOutputMembers<Type>(op, [ctx = rewriter.getContext()](MemberDefOp) {
+  llvm::SmallVector<Type> outputTypes(StructDefOp op) const {
+    return mapOutputMembers<Type>(op, [ctx = op.getContext()](MemberDefOp) {
       return pcl::FeltType::get(ctx);
     });
+  }
 
-    auto funcOp = func::FuncOp::create(
-        op.getLoc(), flatStructName(op), rewriter.getFunctionType(inputs, outputs)
+  ModuleOp getRoot() const { return root; }
+
+  LogicalResult
+  matchAndRewrite(StructDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    return copyBody(op, rewriter);
+  }
+};
+
+class ConvertFreeFunction : public OpConversionPattern<FuncDefOp>,
+                            public BodyCopier<FuncDefOp, ConvertFreeFunction> {
+  llvm::DenseSet<FuncDefOp> &funcs;
+  ModuleOp root;
+
+public:
+  ConvertFreeFunction(
+      MLIRContext *context, llvm::DenseSet<FuncDefOp> &usedFreeFunctions, ModuleOp rootOp,
+      PatternBenefit patBenefit = 1
+  )
+      : OpConversionPattern(context, patBenefit), funcs(usedFreeFunctions), root(rootOp) {}
+  ConvertFreeFunction(
+      const TypeConverter &tc, MLIRContext *context, llvm::DenseSet<FuncDefOp> &usedFreeFunctions,
+      ModuleOp rootOp, PatternBenefit patBenefit = 1
+  )
+      : OpConversionPattern(tc, context, patBenefit), funcs(usedFreeFunctions), root(rootOp) {}
+
+  FailureOr<FuncDefOp> getFuncOp(FuncDefOp op) const { return op; }
+
+  unsigned int baseOffset() const { return 0; }
+
+  llvm::SmallVector<Type> outputTypes(FuncDefOp op) const {
+    return llvm::SmallVector<Type>(
+        op.getFunctionType().getNumResults(), pcl::FeltType::get(op.getContext())
     );
-    funcOp.addEntryBlock();
-    IRMapping mapping;
-    mapping.map(constrainFuncOp.getArgument(0), Value());
-    for (auto [srcArg, dstArg] :
-         llvm::zip_equal(constrainFuncOp.getArguments().drop_front(), funcOp.getArguments())) {
-      auto argType = srcArg.getType();
-      if (!llvm::isa<FeltType>(argType)) {
-        return constrainFuncOp.emitError()
-               << "Constrain function's args are expected to be felts. Found " << argType
-               << "for arg #: " << srcArg.getArgNumber();
-      }
-      mapping.map(srcArg, dstArg);
-    }
+  }
 
-    if (!constrainFuncOp.getBody().hasOneBlock()) {
-      return constrainFuncOp.emitError(
-          "llzk-to-pcl conversion assumes the constrain function body has 1 block"
-      );
-    }
-    rewriter.cloneRegionBefore(
-        constrainFuncOp.getRegion(), funcOp.getRegion(), funcOp.getRegion().end(), mapping
-    );
-    rewriter.mergeBlocks(&funcOp.getRegion().back(), &funcOp.getRegion().front());
+  ModuleOp getRoot() const { return root; }
 
-    rewriter.eraseOp(op);
-    {
-      OpBuilder::InsertionGuard guard(rewriter);
-      rewriter.setInsertionPointToEnd(&root->getRegion(0).front());
-      rewriter.insert(funcOp);
+  LogicalResult
+  matchAndRewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    // Don't convert functions outside the set.
+    if (!funcs.contains(op)) {
+      return failure();
     }
-    return success();
+    return copyBody(op, rewriter);
   }
 };
 
@@ -545,12 +636,8 @@ struct ConvertConstrainCall : public OpConversionPattern<CallOp> {
   ) const override {
     SymbolTableCollection tables;
     auto callee = op.getCalleeTarget(tables);
-    if (failed(callee)) {
-      return failure();
-    }
-
-    if (!callee->get().isStructConstrain()) {
-      // We only care about constrain functions.
+    // We only care about constrain functions.
+    if (failed(callee) || !callee->get().isStructConstrain()) {
       return failure();
     }
 
@@ -590,6 +677,56 @@ struct ConvertConstrainCall : public OpConversionPattern<CallOp> {
   }
 };
 
+/// Converts calls to free functions. Only `function.call` ops inside functions that need to be
+/// converted are marked illegal, so the pattern only needs to check if the callee is not a contrain
+/// call.
+struct ConvertFreeFunctionCall : public OpConversionPattern<CallOp> {
+  using OpConversionPattern<CallOp>::OpConversionPattern;
+
+  LogicalResult matchAndRewrite(
+      CallOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    SymbolTableCollection tables;
+    auto callee = op.getCalleeTarget(tables);
+    if (failed(callee) || callee->get().isStructConstrain()) {
+      return failure();
+    }
+
+    SmallVector<Type> resultTypes(op.getNumResults(), pcl::FeltType::get(getContext()));
+    auto calleeName = flatStructName(callee->get());
+    rewriter.replaceOpWithNewOp<func::CallOp>(
+        op, calleeName, TypeRange(resultTypes), adaptor.getArgOperands()
+    );
+    return success();
+  }
+};
+
+class RemoveFreeFunction : public OpConversionPattern<FuncDefOp> {
+  llvm::DenseSet<FuncDefOp> &funcs;
+
+public:
+  RemoveFreeFunction(
+      MLIRContext *context, llvm::DenseSet<FuncDefOp> &usedFreeFunctions,
+      PatternBenefit patBenefit = 1
+  )
+      : OpConversionPattern(context, patBenefit), funcs(usedFreeFunctions) {}
+  RemoveFreeFunction(
+      const TypeConverter &tc, MLIRContext *context, llvm::DenseSet<FuncDefOp> &usedFreeFunctions,
+      PatternBenefit patBenefit = 1
+  )
+      : OpConversionPattern(tc, context, patBenefit), funcs(usedFreeFunctions) {}
+  LogicalResult
+  matchAndRewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    // Remove any op that is NOT in the set.
+    if (funcs.contains(op)) {
+      return failure();
+    }
+
+    rewriter.eraseOp(op);
+    return success();
+  }
+};
+
 /// Populates the set with the patterns used in step 1 of the conversion.
 static void populateStep1ConversionPatterns(
     const TypeConverter &tc, RewritePatternSet &patterns, MLIRContext *ctx, NonDetOpNames &names
@@ -615,7 +752,9 @@ static void populateStep1ConversionPatterns(
       ConvertSelfMemberReadOpOfSubcmp,
       ConvertSubcmpMemberReadOp,
       ConvertReturnOp,
-      ConvertConstrainCall
+      ConvertFreeFuncReturnOp,
+      ConvertConstrainCall,
+      ConvertFreeFunctionCall
       // clang-format on
       >(tc, ctx);
   patterns.add<ConvertNonDetOp>(tc, ctx, names);
@@ -623,9 +762,12 @@ static void populateStep1ConversionPatterns(
 
 /// Populates the set with the patterns used in step 2 of the conversion.
 static void populateStep2ConversionPatterns(
-    const TypeConverter &tc, RewritePatternSet &patterns, MLIRContext *ctx, ModuleOp root
+    const TypeConverter &tc, RewritePatternSet &patterns, MLIRContext *ctx, ModuleOp root,
+    llvm::DenseSet<FuncDefOp> &usedFreeFunctions
 ) {
   patterns.add<ConvertStructDefOp>(tc, ctx, root);
+  patterns.add<RemoveFreeFunction>(tc, ctx, usedFreeFunctions);
+  patterns.add<ConvertFreeFunction>(tc, ctx, usedFreeFunctions, root);
 }
 
 /// Populates the set with the patterns used in step 3 of the conversion.
@@ -640,11 +782,18 @@ static void populateStep3ConversionPatterns(
 ///
 /// An operation is legal in Step 1 if its located outside the
 /// `constrain` function of a struct.
-static bool isStep1LegalOp(Operation *op) {
+static bool isStep1LegalOp(Operation *op, llvm::DenseSet<FuncDefOp> &usedFreeFunctions) {
   auto structDefOp = op->getParentOfType<StructDefOp>();
   if (!structDefOp) {
-    // Legal because is not within a struct definition.
-    return true;
+    auto funcDefOp = op->getParentOfType<FuncDefOp>();
+    if (!funcDefOp) {
+      // Legal because is not within a struct nor a free function definition.
+      return true;
+    }
+
+    // If the op is inside a free function, check if the function is in the set.
+    // If the function is in the set, then the op is illegal.
+    return !usedFreeFunctions.contains(funcDefOp);
   }
   auto funcDefOp = op->getParentOfType<FuncDefOp>();
   if (!funcDefOp) {
@@ -656,17 +805,22 @@ static bool isStep1LegalOp(Operation *op) {
 }
 
 /// Populates the conversion target with the legallity expected of step 1 of the conversion.
-static void populateStep1ConversionTarget(ConversionTarget &target, NonDetOpNames &names) {
+static void populateStep1ConversionTarget(
+    ConversionTarget &target, NonDetOpNames &names, llvm::DenseSet<FuncDefOp> &usedFreeFunctions
+) {
   target.addLegalDialect<pcl::PCLDialect, func::FuncDialect>();
   target.addLegalOp<ModuleOp, UnrealizedConversionCastOp>();
   target.addDynamicallyLegalDialect<
       BoolDialect, FeltDialect, CastDialect, arith::ArithDialect, ConstrainDialect,
       array::ArrayDialect, global::GlobalDialect, include::IncludeDialect, pod::PODDialect,
       polymorphic::PolymorphicDialect, ram::RAMDialect, smt::SMTDialect, string::StringDialect,
-      verif::VerifDialect, LLZKDialect, StructDialect, FunctionDialect>(isStep1LegalOp);
+      verif::VerifDialect, LLZKDialect, StructDialect, FunctionDialect, scf::SCFDialect>(
+      [&usedFreeFunctions](Operation *op) { return isStep1LegalOp(op, usedFreeFunctions); }
+  );
+  target.addLegalOp<FuncDefOp>();
 
-  target.addDynamicallyLegalOp<NonDetOp>([&names](NonDetOp op) {
-    return isStep1LegalOp(op) && names.find(op) == names.end();
+  target.addDynamicallyLegalOp<NonDetOp>([&names, &usedFreeFunctions](NonDetOp op) {
+    return isStep1LegalOp(op, usedFreeFunctions) && names.find(op) == names.end();
   });
 }
 
@@ -674,10 +828,10 @@ static void populateStep1ConversionTarget(ConversionTarget &target, NonDetOpName
 static void populateStep2ConversionTarget(ConversionTarget &target) {
   target.addLegalDialect<pcl::PCLDialect>();
   target.addLegalOp<ModuleOp, func::FuncOp, func::CallOp, func::ReturnOp>();
-  target.addIllegalOp<StructDefOp>();
+  target.addIllegalOp<StructDefOp, FuncDefOp>();
 }
 
-/// Populates the conversion target with the legalluty expected of step 3 of the conversion.
+/// Populates the conversion target with the legallity expected of step 3 of the conversion.
 static void populateStep3ConversionTarget(
     ConversionTarget &target, DupVarsReplacements &replacements, ModuleOp root
 ) {
@@ -888,28 +1042,72 @@ class PassImpl : public pcl::impl::PCLLoweringPassBase<PassImpl> {
     return replacements;
   }
 
+  /// Collects the call-graph from the constrain functions (excluding the `@constrain` functions
+  /// themselves). Since we only care if a given `function.def` is part of the graph or not we
+  /// return the set of vertices.
+  llvm::DenseSet<FuncDefOp> collectConstrainCallGraph() {
+    llvm::SmallVector<FuncDefOp> WL;
+    llvm::DenseSet<FuncDefOp> funcs;
+    mlir::SymbolTableCollection tables;
+
+    // Fill the worklist with the initial set of functions.
+    getOperation()->walk([&WL, &funcs, &tables](StructDefOp structOp) {
+      auto f = structOp.getConstrainFuncOp();
+      if (!f) {
+        return;
+      }
+
+      f.walk([&WL, &funcs, &tables](CallOp callOp) {
+        auto callee = callOp.getCalleeTarget(tables);
+        // Ignore it if the lookup failed, is a @constrain function, or is already in the set.
+        if (failed(callee) || callee->get().isStructConstrain() || funcs.contains(callee->get())) {
+          return;
+        }
+        funcs.insert(callee->get());
+        WL.push_back(callee->get());
+      });
+    });
+
+    // Complete the graph using the worklist.
+    while (!WL.empty()) {
+      auto next = WL[WL.size() - 1];
+      WL.pop_back();
+
+      next.walk([&WL, &funcs, &tables](CallOp op) {
+        auto callee = op.getCalleeTarget(tables);
+        if (failed(callee) || funcs.contains(callee->get())) {
+          return;
+        }
+        funcs.insert(callee->get());
+        WL.push_back(callee->get());
+      });
+    }
+
+    return funcs;
+  }
+
   /// Step 1 converts the body of each struct to PCL operations.
   ///
   /// This conversion is performed before moving the body to a function because
   /// that way the IR can access information about the members of the struct.
-  LogicalResult runStep1() {
+  LogicalResult runStep1(llvm::DenseSet<FuncDefOp> &usedFreeFunctions) {
     auto nonDetNames = collectNonDetOpNames();
     ConversionTarget target(getContext());
     RewritePatternSet patterns(&getContext());
     PCLTypeConverter tc;
     populateStep1ConversionPatterns(tc, patterns, &getContext(), nonDetNames);
-    populateStep1ConversionTarget(target, nonDetNames);
+    populateStep1ConversionTarget(target, nonDetNames, usedFreeFunctions);
 
     return applyFullConversion(getOperation(), target, std::move(patterns));
   }
 
   /// Step 2 converts the struct to a function, moving the contents of the @constrain function
   /// into the body of the new function.
-  LogicalResult runStep2() {
+  LogicalResult runStep2(llvm::DenseSet<FuncDefOp> &usedFreeFunctions) {
     ConversionTarget target(getContext());
     RewritePatternSet patterns(&getContext());
     PCLTypeConverter tc;
-    populateStep2ConversionPatterns(tc, patterns, &getContext(), getOperation());
+    populateStep2ConversionPatterns(tc, patterns, &getContext(), getOperation(), usedFreeFunctions);
     populateStep2ConversionTarget(target);
 
     return applyFullConversion(getOperation(), target, std::move(patterns));
@@ -948,13 +1146,14 @@ class PassImpl : public pcl::impl::PCLLoweringPassBase<PassImpl> {
       signalPassFailure();
       return;
     }
+    auto usedFreeFunctions = collectConstrainCallGraph();
 
-    if (failed(runStep1())) {
+    if (failed(runStep1(usedFreeFunctions))) {
       signalPassFailure();
       return;
     }
 
-    if (failed(runStep2())) {
+    if (failed(runStep2(usedFreeFunctions))) {
       signalPassFailure();
       return;
     }

@@ -12,7 +12,7 @@ module attributes {llzk.lang} {
       function.return %self : !struct.type<@ComponentA2>
     }
 
-    // expected-error@+1 {{Constrain function's args are expected to be felts. Found '!struct.type<@ComponentA1>'for arg #: 1}}
+    // expected-error@+1 {{function's args are expected to be felts. Found '!struct.type<@ComponentA1>'for arg #: 1}}
     function.def @constrain(%self: !struct.type<@ComponentA2>, %p: !struct.type<@ComponentA1>) {
       function.return
     }

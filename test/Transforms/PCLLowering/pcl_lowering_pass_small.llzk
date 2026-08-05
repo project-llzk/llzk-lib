@@ -82,3 +82,86 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      pcl.assert %[[VAL_3]]
 // CHECK-NEXT:      return 
 // CHECK-NEXT:    }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Lt {
+    function.def @compute(%in: !felt.type<"koalabear">) -> !struct.type<@Lt> {
+      %self = struct.new : <@Lt>
+      function.return %self : !struct.type<@Lt>
+    }
+    function.def @constrain(%self: !struct.type<@Lt>, %in: !felt.type<"koalabear">) {
+      %felt_const_1 = felt.const 1 : !felt.type<"koalabear">
+      %felt_const_65536 = felt.const 65536 : !felt.type<"koalabear">
+      %0 = bool.cmp lt(%in, %felt_const_65536) : !felt.type<"koalabear">, !felt.type<"koalabear">
+      %1 = cast.tofelt %0 : i1, !felt.type<"koalabear">
+      constrain.eq %1, %felt_const_1 : !felt.type<"koalabear">, !felt.type<"koalabear">
+      function.return
+    }
+  }
+  function.def @foo(%arg0: !felt.type<"koalabear">) -> !felt.type<"koalabear"> {
+    %true = arith.constant  1 : i1
+    %0 = scf.if %true -> (!felt.type<"koalabear">) {
+      %1 = felt.mul %arg0, %arg0 : !felt.type<"koalabear">, !felt.type<"koalabear">
+      scf.yield %1 : !felt.type<"koalabear">
+    } else {
+      scf.yield %arg0 : !felt.type<"koalabear">
+    }
+    function.return %0 : !felt.type<"koalabear">
+  }
+}
+
+// CHECK-LABEL:   func.func @Lt(
+// CHECK-SAME:        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) {
+// CHECK-NEXT:      %[[CONST_1:[0-9a-zA-Z_\.]+]] = pcl.const 1
+// CHECK-NEXT:      %[[CONST_65536:[0-9a-zA-Z_\.]+]] = pcl.const 65536
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.lt %[[VAL_0]], %[[CONST_65536]]
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_1]]
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_2]], %[[CONST_1]]
+// CHECK-NEXT:      pcl.assert %[[VAL_3]]
+// CHECK-NEXT:      return 
+// CHECK-NEXT:    }
+// COM: Check that @foo is not lowered.
+// CHECK-NOT:  @foo
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @Lt {
+    function.def @compute(%in: !felt.type<"koalabear">) -> !struct.type<@Lt> {
+      %self = struct.new : <@Lt>
+      function.return %self : !struct.type<@Lt>
+    }
+    function.def @constrain(%self: !struct.type<@Lt>, %in: !felt.type<"koalabear">) {
+      %felt_const_1 = felt.const 1 : !felt.type<"koalabear">
+      %felt_const_65536 = felt.const 65536 : !felt.type<"koalabear">
+      %inx2 = function.call @bar(%in) : (!felt.type<"koalabear">) -> !felt.type<"koalabear">
+      %0 = bool.cmp lt(%inx2, %felt_const_65536) : !felt.type<"koalabear">, !felt.type<"koalabear">
+      %1 = cast.tofelt %0 : i1, !felt.type<"koalabear">
+      constrain.eq %1, %felt_const_1 : !felt.type<"koalabear">, !felt.type<"koalabear">
+      function.return
+    }
+  }
+  function.def @bar(%arg0: !felt.type<"koalabear">) -> !felt.type<"koalabear"> {
+      %0 = felt.mul %arg0, %arg0 : !felt.type<"koalabear">, !felt.type<"koalabear">
+    function.return %0 : !felt.type<"koalabear">
+  }
+}
+
+// CHECK-LABEL:   func.func @Lt(
+// CHECK-SAME:        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) {
+// CHECK-NEXT:      %[[CONST_1:[0-9a-zA-Z_\.]+]] = pcl.const 1
+// CHECK-NEXT:      %[[CONST_65536:[0-9a-zA-Z_\.]+]] = pcl.const 65536
+// CHECK-NEXT:      %[[VAL_0x2:[0-9a-zA-Z_\.]+]] = call @bar(%[[VAL_0]]) : (!pcl.felt) -> !pcl.felt
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.lt %[[VAL_0x2]], %[[CONST_65536]]
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_1]]
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_2]], %[[CONST_1]]
+// CHECK-NEXT:      pcl.assert %[[VAL_3]]
+// CHECK-NEXT:      return 
+// CHECK-NEXT:    }
+// CHECK-LABEL:  func.func @bar(
+// CHECK-SAME:        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> !pcl.felt {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.mul %[[VAL_0]], %[[VAL_0]]
+// CHECK-NEXT:      return %[[VAL_1]] : !pcl.felt
+// CHECK-NEXT:    }
