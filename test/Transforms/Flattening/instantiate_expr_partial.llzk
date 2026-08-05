@@ -314,17 +314,16 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      poly.param @M : index
 // CHECK-NEXT:      poly.expr @Sum {
 // CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 35 : index
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (index) -> index
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.read_const @M : index
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_2]], %[[VAL_1]] : index
-// CHECK-NEXT:        poly.yield %[[VAL_3]] : index
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @M : index
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_1]], %[[VAL_0]] : index
+// CHECK-NEXT:        poly.yield %[[VAL_2]] : index
 // CHECK-NEXT:      }
 // CHECK-NEXT:      struct.def @Value {
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@"Inner_35_i_\1A"::@Value<[@M]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@"Inner_35_i_\1A"::@Value<[@M]>>
-// CHECK-NEXT:          function.return %[[VAL_4]] : !struct.type<@"Inner_35_i_\1A"::@Value<[@M]>>
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@"Inner_35_i_\1A"::@Value<[@M]>>
+// CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@"Inner_35_i_\1A"::@Value<[@M]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@"Inner_35_i_\1A"::@Value<[@M]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@"Inner_35_i_\1A"::@Value<[@M]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -378,21 +377,20 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      poly.param @M : index
 // CHECK-NEXT:      poly.expr @Sum {
 // CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 35 : index
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (index) -> index
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.read_const @M : index
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_2]], %[[VAL_1]] : index
-// CHECK-NEXT:        poly.yield %[[VAL_3]] : index
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @M : index
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_1]], %[[VAL_0]] : index
+// CHECK-NEXT:        poly.yield %[[VAL_2]] : index
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @value() -> index {
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.read_const @Sum : index
-// CHECK-NEXT:        function.return %[[VAL_4]] : index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.read_const @Sum : index
+// CHECK-NEXT:        function.return %[[VAL_3]] : index
 // CHECK-NEXT:      }
 // CHECK-NEXT:    } {poly.name_pattern = ["Inner_35_i_", ""]}
 // CHECK-NEXT:    poly.template @Outer {
 // CHECK-NEXT:      poly.param @M : index
 // CHECK-NEXT:      function.def @value() -> index {
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @"Inner_35_i_\1A"::@value<[@M]>() : () -> index
-// CHECK-NEXT:        function.return %[[VAL_5]] : index
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @"Inner_35_i_\1A"::@value<[@M]>() : () -> index
+// CHECK-NEXT:        function.return %[[VAL_4]] : index
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
