@@ -560,8 +560,27 @@ convertCalleeSymRefs(SymbolRefAttr callee, const DenseMap<Attribute, Attribute> 
 
 static void
 convertCalleesInPlace(Operation *op, const DenseMap<Attribute, Attribute> &paramNameToValue) {
-  op->walk([&paramNameToValue](CallOp callOp) {
+  // A cloned function may become module-level, so symbolic template arguments on nested calls
+  // must be materialized before verification loses the enclosing template scope.
+  TemplateParamTypeConverter tyConv(paramNameToValue);
+  op->walk([&paramNameToValue, &tyConv](CallOp callOp) {
     callOp.setCalleeAttr(convertCalleeSymRefs(callOp.getCalleeAttr(), paramNameToValue));
+
+    ArrayAttr templateParams = callOp.getTemplateParamsAttr();
+    if (!templateParams) {
+      return;
+    }
+    SmallVector<Attribute> convertedParams;
+    convertedParams.reserve(templateParams.size());
+    bool changed = false;
+    for (Attribute param : templateParams) {
+      Attribute converted = tyConv.convertAttr(param);
+      convertedParams.push_back(converted);
+      changed |= converted != param;
+    }
+    if (changed) {
+      callOp.setTemplateParamsAttr(ArrayAttr::get(callOp.getContext(), convertedParams));
+    }
   });
 }
 
