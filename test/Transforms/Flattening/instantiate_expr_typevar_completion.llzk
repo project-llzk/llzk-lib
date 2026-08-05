@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file -llzk-flatten %s | tee /dev/stderr | FileCheck %s
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | tee /dev/stderr | FileCheck %s; false
 
 // A fully concrete type-variable expression is normalized before direct evaluation.
 module attributes {llzk.lang} {
