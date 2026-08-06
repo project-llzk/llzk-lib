@@ -1,7 +1,15 @@
 //===-- LLZKLoweringUtils.h -------------------------------------*- C++ -*-===//
 //
-// Shared utilities for lowering passes in the LLZK project.
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2026 Project LLZK
+// SPDX-License-Identifier: Apache-2.0
 //
+//===----------------------------------------------------------------------===//
+///
+/// \file
+/// Shared utility function implementations for LLZK lowering passes.
+///
 //===----------------------------------------------------------------------===//
 
 #pragma once
