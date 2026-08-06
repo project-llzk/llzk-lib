@@ -31,10 +31,12 @@
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/Support/Debug.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include <deque>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 
 // Include the generated base pass class definitions.
 namespace llzk {
@@ -71,6 +73,17 @@ enum class AuxAssignmentVisitState : uint8_t {
   Unvisited,
   Visiting,
   Done,
+};
+
+class DegreeComputationError : public std::runtime_error {
+public:
+  DegreeComputationError(Location errorLoc, std::string message)
+      : std::runtime_error(std::move(message)), loc(errorLoc) {}
+
+  Location getLoc() const { return loc; }
+
+private:
+  Location loc;
 };
 
 class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
@@ -222,8 +235,18 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       if (auto neg = llvm::dyn_cast<NegFeltOp>(defOp)) {
         return memo[val] = getDegree(neg.getOperand(), memo);
       }
+      if (auto call = llvm::dyn_cast<CallOp>(defOp)) {
+        std::string message;
+        llvm::raw_string_ostream(message)
+            << "Encountered '" << CallOp::getOperationName()
+            << "' in degree computation. Try running '-llzk-inline-free-functions' first.";
+        throw DegreeComputationError(val.getLoc(), std::move(message));
+      }
     }
-    llvm_unreachable("Unhandled Felt SSA value in degree computation");
+
+    std::string message;
+    llvm::raw_string_ostream(message) << "Unhandled value in degree computation: " << val;
+    throw DegreeComputationError(val.getLoc(), std::move(message));
   }
 
   Value lowerExpression(
@@ -1014,48 +1037,54 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     }
 
     auto moduleRes = moduleOp.walk([this](StructDefOp structDef) -> WalkResult {
-      if (failed(checkForAuxMemberConflicts(structDef, AUXILIARY_MEMBER_PREFIX))) {
-        return WalkResult::interrupt();
-      }
+      try {
+        if (failed(checkForAuxMemberConflicts(structDef, AUXILIARY_MEMBER_PREFIX))) {
+          return WalkResult::interrupt();
+        }
 
-      FuncDefOp constrainFunc = structDef.getConstrainFuncOp();
-      if (!constrainFunc) {
-        return structDef.emitOpError() << '"' << structDef.getName() << "\" doesn't have a \"@"
-                                       << FUNC_NAME_CONSTRAIN << "\" function";
-      }
+        FuncDefOp constrainFunc = structDef.getConstrainFuncOp();
+        if (!constrainFunc) {
+          return structDef.emitOpError() << '"' << structDef.getName() << "\" doesn't have a \"@"
+                                         << FUNC_NAME_CONSTRAIN << "\" function";
+        }
 
-      if (failed(checkFuncBodyIsStraightLine(constrainFunc, "poly lowering"))) {
-        return WalkResult::interrupt();
-      }
+        if (failed(checkFuncBodyIsStraightLine(constrainFunc, "poly lowering"))) {
+          return WalkResult::interrupt();
+        }
 
-      FuncDefOp computeFunc = structDef.getComputeFuncOp();
-      if (!computeFunc) {
-        return structDef.emitOpError() << '"' << structDef.getName() << "\" doesn't have a \"@"
-                                       << FUNC_NAME_COMPUTE << "\" function";
-      }
+        FuncDefOp computeFunc = structDef.getComputeFuncOp();
+        if (!computeFunc) {
+          return structDef.emitOpError() << '"' << structDef.getName() << "\" doesn't have a \"@"
+                                         << FUNC_NAME_COMPUTE << "\" function";
+        }
 
-      if (failed(checkFuncBodyIsStraightLine(computeFunc, "poly lowering"))) {
-        return WalkResult::interrupt();
-      }
+        if (failed(checkFuncBodyIsStraightLine(computeFunc, "poly lowering"))) {
+          return WalkResult::interrupt();
+        }
 
-      SmallVector<AuxAssignment> auxAssignments;
-      if (failed(lowerInConstrain(structDef, constrainFunc, auxAssignments))) {
-        return WalkResult::interrupt();
-      }
+        SmallVector<AuxAssignment> auxAssignments;
+        if (failed(lowerInConstrain(structDef, constrainFunc, auxAssignments))) {
+          return WalkResult::interrupt();
+        }
 
-      if (failed(checkEqualityDegrees(constrainFunc))) {
-        return WalkResult::interrupt();
-      }
+        if (failed(checkEqualityDegrees(constrainFunc))) {
+          return WalkResult::interrupt();
+        }
 
-      if (failed(checkContainmentRhsDegrees(constrainFunc))) {
-        return WalkResult::interrupt();
-      }
+        if (failed(checkContainmentRhsDegrees(constrainFunc))) {
+          return WalkResult::interrupt();
+        }
 
-      if (failed(checkStructConstrainCallArguments(constrainFunc))) {
-        return WalkResult::interrupt();
-      }
+        if (failed(checkStructConstrainCallArguments(constrainFunc))) {
+          return WalkResult::interrupt();
+        }
 
-      if (failed(rebuildInCompute(computeFunc, auxAssignments))) {
+        if (failed(rebuildInCompute(computeFunc, auxAssignments))) {
+          return WalkResult::interrupt();
+        }
+
+      } catch (const DegreeComputationError &err) {
+        mlir::emitError(err.getLoc()) << err.what();
         return WalkResult::interrupt();
       }
 
