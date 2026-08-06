@@ -33,6 +33,7 @@
 #define DEBUG_TYPE "pcl-to-lisp"
 
 using namespace mlir;
+
 namespace {
 
 /// Environment for keeping track of the mapping between MLIR values and variable names.

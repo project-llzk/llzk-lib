@@ -25,7 +25,7 @@ module attributes {llzk.lang = "r1cs"} {
 }
 
 // CHECK-LABEL:   r1cs.circuit @CmpConstraint inputs (
-// CHECK-SAME:                                        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal {#r1cs.pub},
+// CHECK-SAME:                                        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !r1cs.signal {pub = #r1cs.pub},
 // CHECK-SAME:                                        %[[VAL_1:[0-9a-zA-Z_\.]+]]: !r1cs.signal,
 // CHECK-SAME:                                        %[[VAL_2:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
 // CHECK:           %[[VAL_3:[0-9a-zA-Z_\.]+]] = r1cs.def 0 : !r1cs.signal {pub = #r1cs.pub}

@@ -158,13 +158,10 @@ namespace {
 /// elimination until they become known and can be eliminated when redundant operations
 /// are performed.
 ///
-/// A node may have "constant identifiers" as children (member refs, constant indices)
-/// or a single non-constant child index (just an mlir::Value), as the dynamic
-/// index may or may not alias any constant identifiers. If a dynamic index is
-/// added, the user should clear the prior known children to prevent accidental aliasing.
-///
-/// Does not allow mixing of constant and non-constant child indices, as we
-/// do not know if they alias.
+/// Children may represent constant access components (member refs, constant indices)
+/// or dynamic SSA values. Dynamic children may alias constant siblings, so array
+/// writes clear all children for a dynamic index and only dynamic siblings for a
+/// constant index.
 class ReferenceNode {
 public:
   template <typename IdType> static std::shared_ptr<ReferenceNode> create(IdType id, Value v) {
@@ -179,6 +176,7 @@ public:
     ReferenceNode copy(identifier, storedValue);
     copy.updateLastWrite(lastWrite);
     if (withChildren) {
+      copy.dynamicChildCount = dynamicChildCount;
       for (const auto &[id, child] : children) {
         copy.children[id] = child->clone(withChildren);
       }
@@ -191,6 +189,9 @@ public:
   createChild(IdType id, Value storedVal, const std::shared_ptr<ReferenceNode> &valTree = nullptr) {
     std::shared_ptr<ReferenceNode> child = create(id, storedVal);
     child->setCurrentValue(storedVal, valTree);
+    if (child->identifier.isValue() && children.find(child->identifier) == children.end()) {
+      ++dynamicChildCount;
+    }
     children[child->identifier] = child;
     return child;
   }
@@ -233,21 +234,50 @@ public:
       // Overwrite our current set of children with new children, since we overwrote
       // the stored value.
       children = valTree->children;
+      dynamicChildCount = valTree->dynamicChildCount;
     }
   }
 
-  void invalidateChildren() { children.clear(); }
+  void invalidateChildren() {
+    children.clear();
+    dynamicChildCount = 0;
+  }
 
-  bool invalidateNonIntegerOffsetChildren() {
+  /// @brief Remove dynamic-index children before descending through a constant index.
+  ///
+  /// A constant-index write can alias an existing dynamic-index child, but not a
+  /// different constant-index child.
+  void invalidateDynamicChildren() {
+    if (dynamicChildCount == 0) {
+      return;
+    }
     SmallVector<ReferenceID> invalidChildren;
     for (const auto &[id, _] : children) {
-      if (!id.isAttribute() || !isa<IntegerAttr>(id.getAttribute())) {
+      if (id.isValue()) {
         invalidChildren.push_back(id);
       }
     }
     for (const ReferenceID &id : invalidChildren) {
       children.erase(id);
     }
+    dynamicChildCount = 0;
+  }
+
+  bool invalidateNonIntegerOffsetChildren() {
+    SmallVector<ReferenceID> invalidChildren;
+    size_t invalidDynamicChildCount = 0;
+    for (const auto &[id, _] : children) {
+      if (!id.isAttribute() || !isa<IntegerAttr>(id.getAttribute())) {
+        invalidChildren.push_back(id);
+        if (id.isValue()) {
+          ++invalidDynamicChildCount;
+        }
+      }
+    }
+    for (const ReferenceID &id : invalidChildren) {
+      children.erase(id);
+    }
+    dynamicChildCount -= invalidDynamicChildCount;
     return !invalidChildren.empty();
   }
 
@@ -299,6 +329,9 @@ public:
         auto &rhsChild = it->second;
         if (auto gcs = greatestCommonSubtree(lhsChild, rhsChild)) {
           res->children[id] = gcs;
+          if (id.isValue()) {
+            ++res->dynamicChildCount;
+          }
         }
       }
     }
@@ -310,10 +343,14 @@ private:
   mlir::Value storedValue;
   Operation *lastWrite;
   DenseMap<ReferenceID, std::shared_ptr<ReferenceNode>> children;
+  // Number of direct dynamic children. Keep it synchronized with every children
+  // mutation so constant-only invalidation remains independent of child fanout.
+  size_t dynamicChildCount;
 
   template <typename IdType>
   ReferenceNode(IdType id, Value initialVal)
-      : identifier(std::move(id)), storedValue(initialVal), lastWrite(nullptr), children() {}
+      : identifier(std::move(id)), storedValue(initialVal), lastWrite(nullptr), children(),
+        dynamicChildCount(0) {}
 };
 
 using ValueMap = DenseMap<mlir::Value, std::shared_ptr<ReferenceNode>>;
@@ -718,11 +755,9 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       readVals.push_back(resVal);
     };
 
-    // Write a scalar value (for writearr) or a subarray value (for insertarr)
-    // to an array. The unique part of this operation relative to others is that
-    // we may receive a variable index (i.e., not a constant). In this case, we
-    // invalidate adjacent subtree state because the variable index may alias
-    // another element.
+    // Handle array.write (scalar) and array.insert (subarray) with one or more
+    // indices. Dynamic indices may alias any sibling; constant indices only
+    // invalidate dynamic-index siblings.
     auto doArrayWriteLike = [&]<HasInterface<ArrayAccessOpInterface> OpClass>(OpClass writearr) {
       std::shared_ptr<ReferenceNode> currValTree = tryGetValTree(translate(writearr.getArrRef()));
       if (currValTree == nullptr) {
@@ -733,9 +768,11 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
 
       for (Value origIdx : writearr.getIndices()) {
         Value idxVal = translate(origIdx);
-        // This write will invalidate all children, since it may reference
-        // any number of them.
-        if (ReferenceID(idxVal).isValue()) {
+        // A dynamic index may alias any sibling. A constant index only aliases
+        // a dynamic sibling, so preserve unrelated constant-index facts.
+        if (ReferenceID(idxVal).isConst()) {
+          currValTree->invalidateDynamicChildren();
+        } else {
           LLVM_DEBUG(llvm::dbgs() << writearr.getOperationName() << ": invalidate alias\n");
           currValTree->invalidateChildren();
         }

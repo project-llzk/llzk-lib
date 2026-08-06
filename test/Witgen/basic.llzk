@@ -3,6 +3,8 @@
 // RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
 // RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --output-scope=full-witness | FileCheck %s --check-prefix=FULL
 // RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine --output-scope=full-witness | FileCheck %s --check-prefix=FULL
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --output-wtns %t/witness.wtns > /dev/null
+// RUN: od -An -v -t x1 %t/witness.wtns | tr -d ' \n' | FileCheck %s --check-prefix=WTNS
 
 //--- test.llzk
 
@@ -23,6 +25,11 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
     function.def @constrain(
       %self: !struct.type<@Main>, %lhs: !felt.type<"babybear">, %rhs: !felt.type<"babybear">
     ) {
+      %sum = struct.readm %self[@sum] : !struct.type<@Main>, !felt.type<"babybear">
+      %secret = struct.readm %self[@secret] : !struct.type<@Main>, !felt.type<"babybear">
+      %expected = felt.add %lhs, %rhs : !felt.type<"babybear">, !felt.type<"babybear">
+      constrain.eq %sum, %expected : !felt.type<"babybear">
+      constrain.eq %secret, %lhs : !felt.type<"babybear">
       function.return
     }
   }
@@ -42,6 +49,8 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 // FULL-NEXT:     "sum": "9"
 // FULL-NEXT:   }
 // FULL-NEXT: }
+
+// WTNS: 77746e7302000000020000000100000010000000000000000800000001000078000000000500000002000000280000000000000001000000000000000900000000000000040000000000000005000000000000000400000000000000
 
 //--- input.json
 {"lhs": 4, "rhs": 5}

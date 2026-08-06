@@ -1,0 +1,2 @@
+fixed:
+  - Avoid stale array-read reuse when a constant-index write may alias an earlier dynamic-index write.
