@@ -273,21 +273,23 @@ class ModuleEmitter {
     if (!defOp) {
       return emitVar(v, S);
     }
-    return C.map(v, llvm::TypeSwitch<Operation *, FailureOr<pcl::Sexp>>(defOp)
-        .Case<pcl::AddOp>([this, &S](auto op) { return emitBinaryExpr("+", op, S); })
-        .Case<pcl::MulOp>([this, &S](auto op) { return emitBinaryExpr("*", op, S); })
-        .Case<pcl::SubOp>([this, &S](auto op) { return emitBinaryExpr("-", op, S); })
-        .Case<pcl::NegOp>([this, &S](auto op) { return emitUnaryExpr("-", op, S); })
-        .Case<pcl::AsFeltOp>([this, &S](auto op) { return emitFormula(op.getValue(), S); })
-        .Case<pcl::VarOp>([this, &S](auto op) { return S.atom(ns.get(op)); })
-        .Case<pcl::ConstOp>([&S](auto op) { return S.atom(op.getValueAPInt()); })
-        .Case<func::CallOp>([this, &S, v](auto) {
+    return C.map(
+        v, llvm::TypeSwitch<Operation *, FailureOr<pcl::Sexp>>(defOp)
+               .Case<pcl::AddOp>([this, &S](auto op) { return emitBinaryExpr("+", op, S); })
+               .Case<pcl::MulOp>([this, &S](auto op) { return emitBinaryExpr("*", op, S); })
+               .Case<pcl::SubOp>([this, &S](auto op) { return emitBinaryExpr("-", op, S); })
+               .Case<pcl::NegOp>([this, &S](auto op) { return emitUnaryExpr("-", op, S); })
+               .Case<pcl::AsFeltOp>([this, &S](auto op) { return emitFormula(op.getValue(), S); })
+               .Case<pcl::VarOp>([this, &S](auto op) { return S.atom(ns.get(op)); })
+               .Case<pcl::ConstOp>([&S](auto op) { return S.atom(op.getValueAPInt()); })
+               .Case<func::CallOp>([this, &S, v](auto) {
       // If we encounter a call we need to emit the value as a variable,
       // since we preload all the call outputs into the environment.
       return emitVar(v, S);
     }).Default([v](auto op) {
       return op->emitOpError() << ", value " << v << " could not be emitted";
-    }));
+    })
+    );
   }
 
   /// Emits the s-expressions for the given formula represented by the value.
@@ -299,22 +301,24 @@ class ModuleEmitter {
     if (!defOp) {
       return emitVar(v, S);
     }
-    return C.map(v, llvm::TypeSwitch<Operation *, FailureOr<pcl::Sexp>>(defOp)
-        .Case<pcl::CmpEqOp>([this, &S](auto op) { return emitBinaryExpr("=", op, S); })
-        .Case<pcl::CmpLtOp>([this, &S](auto op) { return emitBinaryExpr("<", op, S); })
-        .Case<pcl::CmpLeOp>([this, &S](auto op) { return emitBinaryExpr("<=", op, S); })
-        .Case<pcl::CmpGtOp>([this, &S](auto op) { return emitBinaryExpr(">", op, S); })
-        .Case<pcl::CmpGeOp>([this, &S](auto op) { return emitBinaryExpr(">=", op, S); })
-        .Case<pcl::AndOp>([this, &S](auto op) { return emitBinaryFormula("&&", op, S); })
-        .Case<pcl::OrOp>([this, &S](auto op) { return emitBinaryFormula("||", op, S); })
-        .Case<pcl::ImpliesOp>([this, &S](auto op) { return emitBinaryFormula("=>", op, S); })
-        .Case<pcl::IffOp>([this, &S](auto op) { return emitBinaryFormula("<=>", op, S); })
-        .Case<pcl::NotOp>([this, &S](auto op) { return emitUnaryFormula("!", op, S); })
-        .Case<pcl::DetOp>([this, &S](auto op) { return emitUnaryExpr("det", op, S); })
-        .Case<pcl::TrueOp>([&S](auto) { return S.atom<unsigned>(1); })
-        .Case<pcl::FalseOp>([&S](auto) {
+    return C.map(
+        v, llvm::TypeSwitch<Operation *, FailureOr<pcl::Sexp>>(defOp)
+               .Case<pcl::CmpEqOp>([this, &S](auto op) { return emitBinaryExpr("=", op, S); })
+               .Case<pcl::CmpLtOp>([this, &S](auto op) { return emitBinaryExpr("<", op, S); })
+               .Case<pcl::CmpLeOp>([this, &S](auto op) { return emitBinaryExpr("<=", op, S); })
+               .Case<pcl::CmpGtOp>([this, &S](auto op) { return emitBinaryExpr(">", op, S); })
+               .Case<pcl::CmpGeOp>([this, &S](auto op) { return emitBinaryExpr(">=", op, S); })
+               .Case<pcl::AndOp>([this, &S](auto op) { return emitBinaryFormula("&&", op, S); })
+               .Case<pcl::OrOp>([this, &S](auto op) { return emitBinaryFormula("||", op, S); })
+               .Case<pcl::ImpliesOp>([this, &S](auto op) { return emitBinaryFormula("=>", op, S); })
+               .Case<pcl::IffOp>([this, &S](auto op) { return emitBinaryFormula("<=>", op, S); })
+               .Case<pcl::NotOp>([this, &S](auto op) { return emitUnaryFormula("!", op, S); })
+               .Case<pcl::DetOp>([this, &S](auto op) { return emitUnaryExpr("det", op, S); })
+               .Case<pcl::TrueOp>([&S](auto) { return S.atom<unsigned>(1); })
+               .Case<pcl::FalseOp>([&S](auto) {
       return S.atom<unsigned>(0);
-    }).Default([this, &S, v](auto) { return emitExpr(v, S); }));
+    }).Default([this, &S, v](auto) { return emitExpr(v, S); })
+    );
   }
 
   /// Emits the body of the module.
