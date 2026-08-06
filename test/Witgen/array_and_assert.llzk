@@ -3,6 +3,7 @@
 // RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine | FileCheck %s
 // RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --output-scope=full-witness | FileCheck %s --check-prefix=FULL
 // RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine --output-scope=full-witness | FileCheck %s --check-prefix=FULL
+// RUN: not llzk-witgen %t/test.llzk --inputs %t/input.json --output-wtns %t/witness.wtns 2>&1 | FileCheck %s --check-prefix=WTNS-ERROR
 
 //--- test.llzk
 
@@ -56,6 +57,8 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 // FULL-NEXT:     ]
 // FULL-NEXT:   }
 // FULL-NEXT: }
+
+// WTNS-ERROR: llzk-witgen error: .wtns output currently requires scalar felt main members
 
 //--- input.json
 {"input": [2, 5, 7]}

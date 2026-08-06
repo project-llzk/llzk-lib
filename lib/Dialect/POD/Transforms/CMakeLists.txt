@@ -16,7 +16,9 @@ target_link_libraries(
          LLVMHeaders
          MLIRHeaders
          LLZKDialect
-         LLZKArrayDialect)
+         LLZKArrayDialect
+  PRIVATE LLZKBoolDialect
+          LLZKPolymorphicDialect)
 llzk_target_add_mlir_link_settings(LLZKPODTransforms)
 
 install(TARGETS LLZKPODTransforms EXPORT LLZKTargets)

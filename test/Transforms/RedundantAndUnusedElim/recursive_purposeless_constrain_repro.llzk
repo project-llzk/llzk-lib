@@ -1,0 +1,109 @@
+// RUN: llzk-opt -llzk-duplicate-op-elim %s 2>&1 | FileCheck %s
+
+// Mutually recursive constrain calls are valid in LLZK. The pass must complete
+// without classifying either call as purposeless.
+module attributes {llzk.lang} {
+  struct.def @CycleA {
+    function.def @compute(%other: !struct.type<@CycleB>) -> !struct.type<@CycleA> {
+      %self = struct.new : !struct.type<@CycleA>
+      function.return %self : !struct.type<@CycleA>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@CycleA>, %other: !struct.type<@CycleB>
+    ) {
+      function.call @CycleB::@constrain(%other, %self) :
+          (!struct.type<@CycleB>, !struct.type<@CycleA>) -> ()
+      function.return
+    }
+  }
+
+  struct.def @CycleB {
+    function.def @compute(%other: !struct.type<@CycleA>) -> !struct.type<@CycleB> {
+      %self = struct.new : !struct.type<@CycleB>
+      function.return %self : !struct.type<@CycleB>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@CycleB>, %other: !struct.type<@CycleA>
+    ) {
+      function.call @CycleA::@constrain(%other, %self) :
+          (!struct.type<@CycleA>, !struct.type<@CycleB>) -> ()
+      function.return
+    }
+  }
+
+  // An acyclic effect-free constrain call is removable because its callee has
+  // no nested call or effectful operation. Repeating the same call verifies
+  // that separate call sites remain independently removable.
+  struct.def @ReadOnlyCallee {
+    function.def @compute() -> !struct.type<@ReadOnlyCallee> {
+      %self = struct.new : !struct.type<@ReadOnlyCallee>
+      function.return %self : !struct.type<@ReadOnlyCallee>
+    }
+
+    function.def @constrain(%self: !struct.type<@ReadOnlyCallee>) {
+      function.return
+    }
+  }
+
+  struct.def @ReadOnlyCaller {
+    function.def @compute(%callee: !struct.type<@ReadOnlyCallee>) -> !struct.type<@ReadOnlyCaller> {
+      %self = struct.new : !struct.type<@ReadOnlyCaller>
+      function.return %self : !struct.type<@ReadOnlyCaller>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@ReadOnlyCaller>, %callee: !struct.type<@ReadOnlyCallee>
+    ) {
+      function.call @ReadOnlyCallee::@constrain(%callee) :
+          (!struct.type<@ReadOnlyCallee>) -> ()
+      function.call @ReadOnlyCallee::@constrain(%callee) :
+          (!struct.type<@ReadOnlyCallee>) -> ()
+      function.return
+    }
+  }
+}
+
+// The complete emitted module is checked so the cycle-retention assertion does
+// not hide unrelated output changes.
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @CycleA {
+// CHECK-NEXT:      function.def @compute(%[[CA_COMPUTE_OTHER:[0-9a-zA-Z_\.]+]]: !struct.type<@CycleB>) -> !struct.type<@CycleA> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[CA_COMPUTE_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@CycleA>
+// CHECK-NEXT:        function.return %[[CA_COMPUTE_SELF]] : !struct.type<@CycleA>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[CA_SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@CycleA>, %[[CA_OTHER:[0-9a-zA-Z_\.]+]]: !struct.type<@CycleB>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.call @CycleB::@constrain(%[[CA_OTHER]], %[[CA_SELF]]) : (!struct.type<@CycleB>, !struct.type<@CycleA>) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @CycleB {
+// CHECK-NEXT:      function.def @compute(%[[CB_COMPUTE_OTHER:[0-9a-zA-Z_\.]+]]: !struct.type<@CycleA>) -> !struct.type<@CycleB> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[CB_COMPUTE_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@CycleB>
+// CHECK-NEXT:        function.return %[[CB_COMPUTE_SELF]] : !struct.type<@CycleB>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[CB_SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@CycleB>, %[[CB_OTHER:[0-9a-zA-Z_\.]+]]: !struct.type<@CycleA>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.call @CycleA::@constrain(%[[CB_OTHER]], %[[CB_SELF]]) : (!struct.type<@CycleA>, !struct.type<@CycleB>) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @ReadOnlyCallee {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@ReadOnlyCallee> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[ROC_COMPUTE_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ReadOnlyCallee>
+// CHECK-NEXT:        function.return %[[ROC_COMPUTE_SELF]] : !struct.type<@ReadOnlyCallee>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[ROC_SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ReadOnlyCallee>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @ReadOnlyCaller {
+// CHECK-NEXT:      function.def @compute(%[[ROC_CALLER_COMPUTE_CALLEE:[0-9a-zA-Z_\.]+]]: !struct.type<@ReadOnlyCallee>) -> !struct.type<@ReadOnlyCaller> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[ROC_CALLER_COMPUTE_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ReadOnlyCaller>
+// CHECK-NEXT:        function.return %[[ROC_CALLER_COMPUTE_SELF]] : !struct.type<@ReadOnlyCaller>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[ROC_CALLER_SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@ReadOnlyCaller>, %[[ROC_CALLER_CALLEE:[0-9a-zA-Z_\.]+]]: !struct.type<@ReadOnlyCallee>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

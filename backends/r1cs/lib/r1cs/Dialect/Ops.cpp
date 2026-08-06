@@ -18,6 +18,7 @@
 #include "r1cs/Dialect/IR/Ops.cpp.inc"
 
 using namespace mlir;
+
 namespace r1cs {
 
 ParseResult CircuitDefOp::parse(OpAsmParser &parser, OperationState &result) {
@@ -79,7 +80,7 @@ void CircuitDefOp::print(OpAsmPrinter &p) {
   Block &entry = getBody().front();
   bool hasAttrs = getArgAttrs().has_value();
 
-  if (!entry.empty()) {
+  if (entry.getNumArguments() != 0) {
     p << " inputs (";
     auto dictAttr = getArgAttrs().value_or(DictionaryAttr::get(getContext()));
     llvm::interleaveComma(entry.getArguments(), p, [&](BlockArgument arg) {
@@ -88,14 +89,17 @@ void CircuitDefOp::print(OpAsmPrinter &p) {
 
       if (hasAttrs) {
         if (auto attr = dictAttr.get(std::to_string(arg.getArgNumber()))) {
-          p << " {";
-          p.printAttribute(attr);
-          p << '}';
+          if (auto pubAttr = dyn_cast<PublicAttr>(attr)) {
+            p << " {" << PublicAttr::getMnemonic() << " = ";
+            p.printAttribute(pubAttr);
+            p << '}';
+          }
         }
       }
     });
-    p << ") ";
+    p << ')';
   }
+  p << ' ';
   p.printRegion(getBody(), /*printEntryBlockArgs=*/false);
 }
 

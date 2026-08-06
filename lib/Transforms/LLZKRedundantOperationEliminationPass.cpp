@@ -183,7 +183,13 @@ class PassImpl : public llzk::impl::RedundantOperationEliminationPassBase<PassIm
     }
   }
 
-  bool isPurposelessConstrainFunc(SymbolTableCollection &symbolTables, FuncDefOp fn) {
+  /// Classify \p fn as removable when it is a struct constrain function without
+  /// explicit constraints or unknown/mutating effects. The active set tracks
+  /// only the current call path, so a repeated function identifies a cycle
+  /// while an acyclic callee can still be classified normally.
+  bool isPurposelessConstrainFunc(
+      SymbolTableCollection &symbolTables, FuncDefOp fn, DenseSet<Operation *> &activeFunctions
+  ) {
     if (!fn.isStructConstrain()) {
       return false;
     }
@@ -192,6 +198,11 @@ class PassImpl : public llzk::impl::RedundantOperationEliminationPassBase<PassIm
     // ram.store. The WitnessGen verifier enforces that boundary unless the
     // callee is explicitly marked allow_witness.
     if (fn.hasAllowWitnessAttr()) {
+      return false;
+    }
+    if (!activeFunctions.insert(fn.getOperation()).second) {
+      // A recursive call path cannot be proven purposeless; retain the call
+      // conservatively.
       return false;
     }
 
@@ -204,7 +215,7 @@ class PassImpl : public llzk::impl::RedundantOperationEliminationPassBase<PassIm
         res = false;
         return WalkResult::interrupt();
       } else if (auto callOp = dyn_cast<CallOp>(op)) {
-        if (!callsPurposelessConstrainFunc(symbolTables, callOp)) {
+        if (!callsPurposelessConstrainFunc(symbolTables, callOp, activeFunctions)) {
           res = false;
           return WalkResult::interrupt();
         }
@@ -221,12 +232,17 @@ class PassImpl : public llzk::impl::RedundantOperationEliminationPassBase<PassIm
       }
       return WalkResult::advance();
     });
+    activeFunctions.erase(fn.getOperation());
     return res;
   }
 
-  bool callsPurposelessConstrainFunc(SymbolTableCollection &symbolTables, CallOp call) {
+  /// Resolve and classify a direct constrain call; unresolved calls are retained.
+  bool callsPurposelessConstrainFunc(
+      SymbolTableCollection &symbolTables, CallOp call, DenseSet<Operation *> &activeFunctions
+  ) {
     auto callLookup = resolveCallable<FuncDefOp>(symbolTables, call);
-    return succeeded(callLookup) && isPurposelessConstrainFunc(symbolTables, callLookup->get());
+    return succeeded(callLookup) &&
+           isPurposelessConstrainFunc(symbolTables, callLookup->get(), activeFunctions);
   }
 
   void runOnFunc(SymbolTableCollection &symbolTables, CallableOpInterface callable) {
@@ -242,10 +258,12 @@ class PassImpl : public llzk::impl::RedundantOperationEliminationPassBase<PassIm
         return true;
       }
 
-      if (auto callOp = dyn_cast<CallOp>(op);
-          callOp && callsPurposelessConstrainFunc(symbolTables, callOp)) {
-        redundantOps.push_back(op);
-        return true;
+      if (auto callOp = dyn_cast<CallOp>(op)) {
+        DenseSet<Operation *> activeFunctions;
+        if (callsPurposelessConstrainFunc(symbolTables, callOp, activeFunctions)) {
+          redundantOps.push_back(op);
+          return true;
+        }
       }
       return false;
     };

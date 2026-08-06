@@ -22,6 +22,7 @@
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Transforms/LLZKLoweringUtils.h"
+#include "llzk/Util/Constants.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
@@ -628,7 +629,9 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
     // Step 4: For every struct member we a) create a signaldefop and b) add that signal to our
     // outputs
     DenseMap<StringRef, Value> memberSignalMap;
-    uint32_t signalDefCntr = 0;
+    // Label 0 belongs to the implicit constant-one wire in the binary R1CS
+    // format. Keep source signal labels compatible with binary export.
+    uint32_t signalDefCntr = 1;
     for (auto member : structDef.getMemberDefs()) {
       r1cs::PublicAttr pubAttr;
       if (member.hasPublicAttr()) {

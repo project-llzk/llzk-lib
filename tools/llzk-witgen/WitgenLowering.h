@@ -11,18 +11,20 @@
 
 #include <mlir/Pass/Pass.h>
 
+#include <cstdint>
 #include <memory>
 
 namespace llzk::witgen {
 
 struct WitgenOptions;
+enum class OutputScope : std::uint8_t;
 
 /// Create the pass that lowers supported LLZK compute IR into core MLIR
 /// dialects suitable for LLVM lowering.
 std::unique_ptr<mlir::Pass> createLowerComputeToCorePass(const WitgenOptions &options);
 
 /// Create the pass that synthesizes the stable llzk-witgen JIT entry wrapper.
-std::unique_ptr<mlir::Pass> createCreateWitgenEntryPass(bool emitFullWitness);
+std::unique_ptr<mlir::Pass> createCreateWitgenEntryPass(OutputScope outputScope);
 
 /// Add the preprocessing pipeline required before witgen backend execution.
 void addWitgenPreparePipeline(mlir::OpPassManager &pm, const WitgenOptions &options);

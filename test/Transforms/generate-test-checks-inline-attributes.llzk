@@ -1,0 +1,17 @@
+// RUN: split-file %s %t
+// RUN: python3 %S/../../scripts/generate-test-checks.py %t/inline-attributes.llzk | FileCheck %s --check-prefix=SCRIPT
+
+//--- inline-attributes.llzk
+#felt = affine_map<(d0) -> (d0)>
+module attributes {llzk.named = #felt, llzk.fields = [#felt.field<"x", 101>], llzk.main = !struct.type<@Main<[#felt<const 7 : !felt.type<"x">>]>], llzk.dollar_opaque = #felt$ext<const 7>, llzk.dollar_marker = #felt$ext.marker, llzk.marker = #foo.marker, llzk.lang} {
+}
+
+//--- checks
+// The registered #felt alias is replaced only when the complete token is #felt.
+// Tokens continuing with '.', '$', or an inline body, plus unregistered
+// bodyless attributes, remain literal.
+// SCRIPT: // CHECK:
+// SCRIPT-SAME: ATTR_0:
+// SCRIPT: // CHECK-LABEL: module attributes {llzk.named =
+// SCRIPT-SAME: ATTR_0]], llzk.fields = [#felt{{\.}}field<"x", 101>], llzk.main = !struct.type<@Main<[#felt<const 7 : !felt.type<"x">>]>], llzk.dollar_opaque = #felt{{\$}}ext<const 7>, llzk.dollar_marker = #felt{{\$}}ext.marker, llzk.marker = #foo{{\.}}marker, llzk.lang} {
+// SCRIPT-NEXT: // CHECK-NEXT:  }

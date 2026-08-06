@@ -147,9 +147,8 @@ llvm::Expected<llvm::json::Value> Interpreter::runMainFromJSON(const llvm::json:
     return inputsJSON.takeError();
   }
 
-  auto outputBindings = collectOutputBindings(
-      mainDef->get(), tables, computeFunc.getOperation(), OutputScope::FullWitness
-  );
+  auto outputBindings =
+      collectOutputBindings(mainDef->get(), tables, computeFunc.getOperation(), outputScope);
   if (failed(outputBindings)) {
     return makeError("failed to select full witness signals");
   }

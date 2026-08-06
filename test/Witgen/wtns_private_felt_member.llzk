@@ -1,0 +1,44 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --output-wtns %t/interpreter.wtns | FileCheck %s
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input.json --backend=execution-engine --output-wtns %t/jit.wtns | FileCheck %s
+// RUN: cmp %t/interpreter.wtns %t/jit.wtns
+// RUN: od -An -v -t x1 %t/interpreter.wtns | tr -d ' \n' | FileCheck %s --check-prefix=WTNS
+
+// CHECK:      "signals": {
+// CHECK-NEXT:   "ordinary": "16",
+// CHECK-NEXT:   "out": "16"
+
+// The private @ordinary member has no {signal} attribute, but R1CS lowering
+// assigns it a wire. The WTNS must therefore contain [one, out, input, ordinary].
+// WTNS: 77746e730200000002000000010000001000000000000000080000000100007800000000040000000200000020000000000000000100000000000000100000000000000004000000000000001000000000000000
+
+//--- test.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @out : !felt.type<"babybear"> {llzk.pub}
+    struct.member @ordinary : !felt.type<"babybear">
+
+    function.def @compute(
+      %input: !felt.type<"babybear"> {function.arg_name = "input"}
+    ) -> !struct.type<@Main> attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@Main>
+      %square = felt.mul %input, %input : !felt.type<"babybear">, !felt.type<"babybear">
+      struct.writem %self[@out] = %square : !struct.type<@Main>, !felt.type<"babybear">
+      struct.writem %self[@ordinary] = %square : !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(
+      %self: !struct.type<@Main>, %input: !felt.type<"babybear">
+    ) {
+      %out = struct.readm %self[@out] : !struct.type<@Main>, !felt.type<"babybear">
+      %ordinary = struct.readm %self[@ordinary] : !struct.type<@Main>, !felt.type<"babybear">
+      constrain.eq %out, %ordinary : !felt.type<"babybear">
+      function.return
+    }
+  }
+}
+
+//--- input.json
+{"input": 4}
