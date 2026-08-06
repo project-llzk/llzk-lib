@@ -419,7 +419,23 @@ public:
   LogicalResult handleRewrite(
       Attribute, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, FeltConstAttr a
   ) const {
-    replaceOpWithNewOp<FeltConstantOp>(rewriter, op, a);
+    Type origResTy = op.getType();
+    Type newResTy = getTypeConverter()->convertType(origResTy);
+    FeltType feltType = llvm::dyn_cast_or_null<FeltType>(newResTy);
+    if (!feltType) {
+      return op->emitOpError().append(
+          "expected a concrete felt result type after conversion, but found ",
+          newResTy ? newResTy : origResTy
+      );
+    }
+
+    FailureOr<FeltConstAttr> materialized = a.materializeAs(feltType);
+    if (failed(materialized)) {
+      return op->emitOpError().append(
+          "felt constant ", a, " is incompatible with converted result type ", feltType
+      );
+    }
+    replaceOpWithNewOp<FeltConstantOp>(rewriter, op, *materialized);
     return success();
   }
 };
