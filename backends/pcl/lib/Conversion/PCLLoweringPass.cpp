@@ -96,7 +96,7 @@ using namespace llzk::component;
 namespace {
 
 /// Returns a flat representation of the fully qualified name of the struct.
-template <typename Op> static std::string flatStructName(Op op) {
+template <typename Op> static std::string flatFullyQualifiedName(Op op) {
   auto fqn = op.getFullyQualifiedName();
   std::string name;
   llvm::raw_string_ostream o(name);
@@ -419,10 +419,10 @@ struct ConvertReturnOp : public OpConversionPattern<ReturnOp> {
 struct ConvertFreeFuncReturnOp : public OpConversionPattern<ReturnOp> {
   using OpConversionPattern<ReturnOp>::OpConversionPattern;
 
-  LogicalResult
-  matchAndRewrite(ReturnOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
-    auto structDefOp = op->getParentOfType<StructDefOp>();
-    if (structDefOp) {
+  LogicalResult matchAndRewrite(
+      ReturnOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (op->getParentOfType<StructDefOp>()) {
       return failure();
     }
 
@@ -473,7 +473,7 @@ public:
     SmallVector<Type> outputs = static_cast<const Impl *>(this)->outputTypes(op);
 
     auto funcOp = func::FuncOp::create(
-        op.getLoc(), flatStructName(op), rewriter.getFunctionType(inputs, outputs)
+        op.getLoc(), flatFullyQualifiedName(op), rewriter.getFunctionType(inputs, outputs)
     );
     funcOp.addEntryBlock();
     IRMapping mapping;
@@ -660,7 +660,7 @@ struct ConvertConstrainCall : public OpConversionPattern<CallOp> {
       return memberDefOp.hasPublicAttr();
     });
     SmallVector<Type> resultTypes(publicMembers.size(), pcl::FeltType::get(getContext()));
-    auto calleeName = flatStructName(defOp->get());
+    auto calleeName = flatFullyQualifiedName(defOp->get());
     auto call = rewriter.create<func::CallOp>(
         op.getLoc(), calleeName, TypeRange(resultTypes), adaptor.getArgOperands().drop_front()
     );
@@ -693,7 +693,7 @@ struct ConvertFreeFunctionCall : public OpConversionPattern<CallOp> {
     }
 
     SmallVector<Type> resultTypes(op.getNumResults(), pcl::FeltType::get(getContext()));
-    auto calleeName = flatStructName(callee->get());
+    auto calleeName = flatFullyQualifiedName(callee->get());
     rewriter.replaceOpWithNewOp<func::CallOp>(
         op, calleeName, TypeRange(resultTypes), adaptor.getArgOperands()
     );
@@ -701,6 +701,7 @@ struct ConvertFreeFunctionCall : public OpConversionPattern<CallOp> {
   }
 };
 
+/// Removes any `function.def` operation that is not in the given set of used free functions.
 class RemoveFreeFunction : public OpConversionPattern<FuncDefOp> {
   llvm::DenseSet<FuncDefOp> &funcs;
 
@@ -783,25 +784,25 @@ static void populateStep3ConversionPatterns(
 /// An operation is legal in Step 1 if its located outside the
 /// `constrain` function of a struct.
 static bool isStep1LegalOp(Operation *op, llvm::DenseSet<FuncDefOp> &usedFreeFunctions) {
-  auto structDefOp = op->getParentOfType<StructDefOp>();
-  if (!structDefOp) {
+  if (auto structDefOp = op->getParentOfType<StructDefOp>()) {
     auto funcDefOp = op->getParentOfType<FuncDefOp>();
     if (!funcDefOp) {
-      // Legal because is not within a struct nor a free function definition.
+      // Legal because is not within a function definition.
       return true;
     }
-
-    // If the op is inside a free function, check if the function is in the set.
-    // If the function is in the set, then the op is illegal.
-    return !usedFreeFunctions.contains(funcDefOp);
+    // Legal if the containing function definition is not the struct's constrain function.
+    return structDefOp.getConstrainFuncOp() != funcDefOp;
   }
+
   auto funcDefOp = op->getParentOfType<FuncDefOp>();
   if (!funcDefOp) {
-    // Legal because is not within a function definition.
+    // Legal because is not within a struct nor a free function definition.
     return true;
   }
-  // Legal if the containing function definition is not the struct's constrain function.
-  return structDefOp.getConstrainFuncOp() != funcDefOp;
+
+  // If the op is inside a free function, check if the function is in the set.
+  // If the function is in the set, then the op is illegal.
+  return !usedFreeFunctions.contains(funcDefOp);
 }
 
 /// Populates the conversion target with the legallity expected of step 1 of the conversion.
@@ -831,7 +832,7 @@ static void populateStep2ConversionTarget(ConversionTarget &target) {
   target.addIllegalOp<StructDefOp, FuncDefOp>();
 }
 
-/// Populates the conversion target with the legallity expected of step 3 of the conversion.
+/// Populates the conversion target with the legality expected of step 3 of the conversion.
 static void populateStep3ConversionTarget(
     ConversionTarget &target, DupVarsReplacements &replacements, ModuleOp root
 ) {
@@ -1070,7 +1071,7 @@ class PassImpl : public pcl::impl::PCLLoweringPassBase<PassImpl> {
 
     // Complete the graph using the worklist.
     while (!WL.empty()) {
-      auto next = WL[WL.size() - 1];
+      auto next = WL.back();
       WL.pop_back();
 
       next.walk([&WL, &funcs, &tables](CallOp op) {
