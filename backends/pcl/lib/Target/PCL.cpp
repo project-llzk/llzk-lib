@@ -21,6 +21,8 @@
 #include <mlir/Support/LLVM.h>
 #include <mlir/Support/LogicalResult.h>
 
+#include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVectorExtras.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/TypeSwitch.h>
@@ -84,10 +86,48 @@ LogicalResult prologue(ModuleOp mod, pcl::Sexps &S) {
   return success();
 }
 
+/// Maps values to s-expressions to avoid generating duplicates.
+class SexpCache {
+  llvm::DenseMap<Value, pcl::Sexp> cache;
+
+public:
+  /// If the s-expression is a success, map it to the value.
+  ///
+  /// Returns the s-expression intact to faciliate using this method
+  /// as a pass-through.
+  FailureOr<pcl::Sexp> map(Value v, FailureOr<pcl::Sexp> s) {
+    if (succeeded(s)) {
+      cache.insert({v, *s});
+    }
+    return s;
+  }
+
+  /// Tries to get the s-expression representing the given value.
+  ///
+  /// Returns failure if it's not present.
+  FailureOr<pcl::Sexp> get(Value v) {
+    auto it = cache.find(v);
+    if (it == cache.end()) {
+      return failure();
+    }
+    return it->second;
+  }
+};
+
+/// Macro for querying the s-expressions cache, returning if present.
+#define TRY_CACHE(v)                                                                               \
+  {                                                                                                \
+    auto _cached_sexp = C.get(v);                                                                  \
+    if (succeeded(_cached_sexp)) {                                                                 \
+      return _cached_sexp;                                                                         \
+    }                                                                                              \
+  }
+
 /// Handles emission of the s-expressions representing a PCL module by a `func.func` operation.
 class ModuleEmitter {
   NameState ns;
   func::FuncOp func;
+  SexpCache C;
 
   /// Helper for getting the inputs of the module.
   ArrayRef<BlockArgument> inputs() { return func.getBody().front().getArguments(); }
@@ -179,7 +219,8 @@ class ModuleEmitter {
   }
 
   /// Helper for emitting an unary expression's s-expressions.
-  template<typename Op> FailureOr<pcl::Sexp> emitUnaryExpr(llvm::StringLiteral sym, Op op, pcl::Sexps &S) {
+  template <typename Op>
+  FailureOr<pcl::Sexp> emitUnaryExpr(llvm::StringLiteral sym, Op op, pcl::Sexps &S) {
     auto vs = emitExpr(op.getValue(), S);
     if (failed(vs)) {
       return failure();
@@ -202,8 +243,9 @@ class ModuleEmitter {
   }
 
   /// Helper for emitting an unary formula's s-expressions.
-  FailureOr<pcl::Sexp> emitUnaryFormula(llvm::StringLiteral sym, Value v, pcl::Sexps &S) {
-    auto vs = emitFormula(v, S);
+  template <typename Op>
+  FailureOr<pcl::Sexp> emitUnaryFormula(llvm::StringLiteral sym, Op op, pcl::Sexps &S) {
+    auto vs = emitFormula(op.getValue(), S);
     if (failed(vs)) {
       return failure();
     }
@@ -214,27 +256,28 @@ class ModuleEmitter {
   ///
   /// The value must have a mapping in the environment to an existing name.
   FailureOr<pcl::Sexp> emitVar(Value v, pcl::Sexps &S) {
+    TRY_CACHE(v);
     auto name = ns.getOrFail(v);
     if (failed(name)) {
       return func->emitOpError() << ", value " << v << " could not be emitted";
     }
-    return S.atom(*name);
+    return C.map(v, S.atom(*name));
   }
 
   /// Emits the s-expressions for the given expression represented by the value.
   FailureOr<pcl::Sexp> emitExpr(Value v, pcl::Sexps &S) {
-
+    TRY_CACHE(v);
     LLVM_DEBUG({ llvm::dbgs() << "[ModuleEmitter] Emitting expression for value " << v << '\n'; });
     auto *defOp = v.getDefiningOp();
     if (!defOp) {
       return emitVar(v, S);
     }
-    return llvm::TypeSwitch<Operation *, FailureOr<pcl::Sexp>>(defOp)
+    return C.map(v, llvm::TypeSwitch<Operation *, FailureOr<pcl::Sexp>>(defOp)
         .Case<pcl::AddOp>([this, &S](auto op) { return emitBinaryExpr("+", op, S); })
         .Case<pcl::MulOp>([this, &S](auto op) { return emitBinaryExpr("*", op, S); })
         .Case<pcl::SubOp>([this, &S](auto op) { return emitBinaryExpr("-", op, S); })
         .Case<pcl::NegOp>([this, &S](auto op) { return emitUnaryExpr("-", op, S); })
-        .Case<pcl::AsFeltOp>([this, &S](auto op) { return emitFormula(op, S); })
+        .Case<pcl::AsFeltOp>([this, &S](auto op) { return emitFormula(op.getValue(), S); })
         .Case<pcl::VarOp>([this, &S](auto op) { return S.atom(ns.get(op)); })
         .Case<pcl::ConstOp>([&S](auto op) { return S.atom(op.getValueAPInt()); })
         .Case<func::CallOp>([this, &S, v](auto) {
@@ -243,17 +286,19 @@ class ModuleEmitter {
       return emitVar(v, S);
     }).Default([v](auto op) {
       return op->emitOpError() << ", value " << v << " could not be emitted";
-    });
+    }));
   }
 
   /// Emits the s-expressions for the given formula represented by the value.
   FailureOr<pcl::Sexp> emitFormula(Value v, pcl::Sexps &S) {
+    TRY_CACHE(v);
     LLVM_DEBUG({ llvm::dbgs() << "[ModuleEmitter] Emitting formula for value " << v << '\n'; });
+
     auto *defOp = v.getDefiningOp();
     if (!defOp) {
       return emitVar(v, S);
     }
-    return llvm::TypeSwitch<Operation *, FailureOr<pcl::Sexp>>(defOp)
+    return C.map(v, llvm::TypeSwitch<Operation *, FailureOr<pcl::Sexp>>(defOp)
         .Case<pcl::CmpEqOp>([this, &S](auto op) { return emitBinaryExpr("=", op, S); })
         .Case<pcl::CmpLtOp>([this, &S](auto op) { return emitBinaryExpr("<", op, S); })
         .Case<pcl::CmpLeOp>([this, &S](auto op) { return emitBinaryExpr("<=", op, S); })
@@ -268,7 +313,7 @@ class ModuleEmitter {
         .Case<pcl::TrueOp>([&S](auto) { return S.atom<unsigned>(1); })
         .Case<pcl::FalseOp>([&S](auto) {
       return S.atom<unsigned>(0);
-    }).Default([this, &S, v](auto) { return emitExpr(v, S); });
+    }).Default([this, &S, v](auto) { return emitExpr(v, S); }));
   }
 
   /// Emits the body of the module.
