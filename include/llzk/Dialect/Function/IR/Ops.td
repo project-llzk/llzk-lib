@@ -496,6 +496,11 @@ def CallOp : FunctionDialectOp<
     /// Return `true` iff the callee function name is `FUNC_NAME_CONSTRAIN` within a StructDefOp.
     bool calleeIsStructConstrain();
 
+    /// Return `true` iff the callee function is within a StructDefOp.
+    inline bool calleeIsInStruct() {
+      return calleeIsStructCompute() || calleeIsStructConstrain() || calleeIsStructProduct();
+    }
+
     /// Return the "self" value (i.e. the return value) from the callee function (which must be
     /// named `FUNC_NAME_COMPUTE`).
     ::mlir::Value getSelfValueFromCompute();
