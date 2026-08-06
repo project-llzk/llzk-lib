@@ -25,7 +25,10 @@
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Allocator.h>
+#include <llvm/Support/Debug.h>
 #include <llvm/Support/raw_ostream.h>
+
+#define DEBUG_TYPE "pcl-to-lisp"
 
 using namespace mlir;
 namespace {
@@ -39,10 +42,13 @@ struct NameState {
   ///
   /// If the name is not already in the environment creates one using the given prefix.
   std::string get(Value v, const std::string &prefix = "v") {
+    LLVM_DEBUG({ llvm::dbgs() << "[NameState] querying value " << v << "... "; });
     if (auto it = names.find(v); it != names.end()) {
+      LLVM_DEBUG({ llvm::dbgs() << "Found: " << it->second << '\n'; });
       return it->second;
     }
     std::string s = prefix + std::to_string(nextId++);
+    LLVM_DEBUG({ llvm::dbgs() << "Created: " << s << '\n'; });
     names[v] = s;
     return s;
   }
@@ -59,7 +65,12 @@ struct NameState {
   /// Sets the name of the given value.
   ///
   /// If the value already had a mapping, it is overriden.
-  void set(Value v, std::string name) { names[v] = std::move(name); }
+  void set(Value v, std::string name) {
+    LLVM_DEBUG({
+      llvm::dbgs() << "[NameState] Mapping value " << v << " to name \"" << name << "\"\n";
+    });
+    names[v] = std::move(name);
+  }
 };
 
 /// Emits the s-expressions for the beginning of the PCL file.
@@ -94,6 +105,7 @@ class ModuleEmitter {
   /// The prologue comprises the `(begin-module ...)` declaration followed by
   /// the input declarations.
   void prologue(pcl::Sexps &S) {
+    LLVM_DEBUG({ llvm::dbgs() << "[ModuleEmitter] Emitting prologue\n"; });
     S.push({S.atom("begin-module"), S.atom(func.getSymName())});
     for (auto arg : inputs()) {
       S.push({S.atom("input"), S.atom(ns.get(arg, "in"))});
@@ -127,6 +139,7 @@ class ModuleEmitter {
   /// (end-module)                ; Close the module.
   /// ```
   LogicalResult epilogue(pcl::Sexps &S) {
+    LLVM_DEBUG({ llvm::dbgs() << "[ModuleEmitter] Emitting epilogue\n"; });
     if (auto ret = dyn_cast_or_null<func::ReturnOp>(func.getBody().front().getTerminator())) {
       for (Value v : ret.getOperands()) {
         // Map the output to either a previously assigned map (i.e. from a `pcl.var` op) or to
@@ -166,8 +179,8 @@ class ModuleEmitter {
   }
 
   /// Helper for emitting an unary expression's s-expressions.
-  FailureOr<pcl::Sexp> emitUnaryExpr(llvm::StringLiteral sym, Value v, pcl::Sexps &S) {
-    auto vs = emitExpr(v, S);
+  template<typename Op> FailureOr<pcl::Sexp> emitUnaryExpr(llvm::StringLiteral sym, Op op, pcl::Sexps &S) {
+    auto vs = emitExpr(op.getValue(), S);
     if (failed(vs)) {
       return failure();
     }
@@ -210,6 +223,8 @@ class ModuleEmitter {
 
   /// Emits the s-expressions for the given expression represented by the value.
   FailureOr<pcl::Sexp> emitExpr(Value v, pcl::Sexps &S) {
+
+    LLVM_DEBUG({ llvm::dbgs() << "[ModuleEmitter] Emitting expression for value " << v << '\n'; });
     auto *defOp = v.getDefiningOp();
     if (!defOp) {
       return emitVar(v, S);
@@ -233,6 +248,7 @@ class ModuleEmitter {
 
   /// Emits the s-expressions for the given formula represented by the value.
   FailureOr<pcl::Sexp> emitFormula(Value v, pcl::Sexps &S) {
+    LLVM_DEBUG({ llvm::dbgs() << "[ModuleEmitter] Emitting formula for value " << v << '\n'; });
     auto *defOp = v.getDefiningOp();
     if (!defOp) {
       return emitVar(v, S);
@@ -264,6 +280,9 @@ class ModuleEmitter {
       if (failed(
               llvm::TypeSwitch<Operation *, LogicalResult>(op)
                   .Case<pcl::AssertOp>([this, &S](auto assertOp) {
+        LLVM_DEBUG({
+          llvm::dbgs() << "[ModuleEmitter] Emitting assert statement " << assertOp << '\n';
+        });
         auto cond = emitFormula(assertOp.getCond(), S);
         if (failed(cond)) {
           return failure();
@@ -272,6 +291,9 @@ class ModuleEmitter {
         return success();
       })
                   .Case<pcl::PostOp>([this, &S](auto postOp) {
+        LLVM_DEBUG({
+          llvm::dbgs() << "[ModuleEmitter] Emitting post-condition statement " << postOp << '\n';
+        });
         auto cond = emitFormula(postOp.getCond(), S);
         if (failed(cond)) {
           return failure();
@@ -280,6 +302,10 @@ class ModuleEmitter {
         return success();
       })
                   .Case<pcl::AssumeDeterministicOp>([this, &S](auto assumeOp) {
+        LLVM_DEBUG({
+          llvm::dbgs() << "[ModuleEmitter] Emitting assume-deterministic statement " << assumeOp
+                       << '\n';
+        });
         auto expr = emitExpr(assumeOp.getV(), S);
         if (failed(expr)) {
           return failure();
@@ -288,6 +314,9 @@ class ModuleEmitter {
         return success();
       })
                   .Case<func::CallOp>([this, &S](auto callOp) {
+        LLVM_DEBUG({
+          llvm::dbgs() << "[ModuleEmitter] Emitting call statement " << callOp << '\n';
+        });
         SmallVector<pcl::Sexp> outputs, inputs;
         outputs.reserve(callOp.getResults().size());
         inputs.reserve(callOp.getOperands().size());
@@ -380,7 +409,10 @@ public:
 
 /// Locates all the `func.func` ops in the MLIR module that represent a PCL module.
 static SmallVector<ModuleEmitter> findModules(ModuleOp op) {
-  return llvm::map_to_vector(op.getOps<func::FuncOp>(), [](auto f) { return ModuleEmitter(f); });
+  return llvm::map_to_vector(op.getOps<func::FuncOp>(), [](auto f) {
+    LLVM_DEBUG({ llvm::dbgs() << "Emitting function " << f.getSymName() << '\n'; });
+    return ModuleEmitter(f);
+  });
 }
 
 static void nl(raw_ostream &os, const pcl::PCLTargetConfig &config) {
