@@ -2787,9 +2787,9 @@ static LogicalResult mergeSplitCandidateType(
   );
   if (splitTypeOps) {
     diag.attachNote(splitTypeOps->lookup(idx)->getLoc())
-        << "candidate writes index " << idx << " with scalar member type " << existingType;
+        << "candidate writes index " << idx << " with type " << existingType;
     diag.attachNote(candidateOp->getLoc())
-        << "conflicting candidate writes the same index with scalar member type " << candidateType;
+        << "conflicting candidate writes the same index with type " << candidateType;
   }
   return diag;
 }

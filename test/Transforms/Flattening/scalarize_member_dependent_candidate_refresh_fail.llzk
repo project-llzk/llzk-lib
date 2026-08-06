@@ -46,7 +46,7 @@ module attributes {llzk.lang} {
       array.write %from_source[%c0] = %read0 : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
       array.write %from_source[%c1] = %from_source1 : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
       array.write %from_source[%c2] = %from_source2 : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-      // expected-note@+1 {{candidate writes index [0 : index] with scalar member type}}
+      // expected-note@+1 {{candidate writes index [0 : index] with type '!struct.type<@TCell_0_Cell>'}}
       struct.writem %self[@items] = %from_source : !struct.type<@Holder>, !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
 
       scf.if %cond {
@@ -57,7 +57,7 @@ module attributes {llzk.lang} {
         array.write %concrete[%c0] = %concrete0 : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
         array.write %concrete[%c1] = %concrete1 : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
         array.write %concrete[%c2] = %concrete2 : !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-        // expected-note@+1 {{conflicting candidate writes the same index with scalar member type}}
+        // expected-note@+1 {{conflicting candidate writes the same index with type '!struct.type<@TCell_1_Cell>'}}
         struct.writem %self[@items] = %concrete : !struct.type<@Holder>, !array.type<3 x !struct.type<@TCell::@Cell<[#id]>>>
       }
 

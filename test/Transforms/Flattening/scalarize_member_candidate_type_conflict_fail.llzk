@@ -33,7 +33,7 @@ module attributes {llzk.lang} {
         %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
         array.write %local[%c0] = %item0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
         array.write %local[%c1] = %item1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-        // expected-note@+1 {{candidate writes index [0 : index] with scalar member type}}
+        // expected-note@+1 {{candidate writes index [0 : index] with type '!struct.type<@TCell_0_Cell>'}}
         struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
       } else {
         %c0 = arith.constant 0 : index
@@ -43,7 +43,7 @@ module attributes {llzk.lang} {
         %swapped1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
         array.write %fallback[%c0] = %swapped0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
         array.write %fallback[%c1] = %swapped1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-        // expected-note@+1 {{conflicting candidate writes the same index with scalar member type}}
+        // expected-note@+1 {{conflicting candidate writes the same index with type '!struct.type<@TCell_1_Cell>'}}
         struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
       }
       function.return %self : !struct.type<@Holder>
