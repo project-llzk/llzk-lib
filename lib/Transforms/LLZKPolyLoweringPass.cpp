@@ -77,8 +77,8 @@ enum class AuxAssignmentVisitState : uint8_t {
 
 class DegreeComputationError : public std::runtime_error {
 public:
-  DegreeComputationError(Location errorLoc, std::string message)
-      : std::runtime_error(std::move(message)), loc(errorLoc) {}
+  DegreeComputationError(Location errorLoc, const std::string &message)
+      : std::runtime_error(message), loc(errorLoc) {}
 
   Location getLoc() const { return loc; }
 
@@ -240,13 +240,13 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
         llvm::raw_string_ostream(message)
             << "Encountered '" << CallOp::getOperationName()
             << "' in degree computation. Try running '-llzk-inline-free-functions' first.";
-        throw DegreeComputationError(val.getLoc(), std::move(message));
+        throw DegreeComputationError(val.getLoc(), message);
       }
     }
 
     std::string message;
     llvm::raw_string_ostream(message) << "Unhandled value in degree computation: " << val;
-    throw DegreeComputationError(val.getLoc(), std::move(message));
+    throw DegreeComputationError(val.getLoc(), message);
   }
 
   Value lowerExpression(
