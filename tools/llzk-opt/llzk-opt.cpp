@@ -53,6 +53,7 @@
 
 #if LLZK_WITH_PCL
 #include "pcl/Conversion/ConversionPasses.h"
+#include "pcl/Transforms/TransformationPasses.h"
 #include "pcl/Dialect/IR/Dialect.h"
 #include "pcl/DialectRegistration.h"
 #endif // LLZK_WITH_PCL
@@ -131,6 +132,7 @@ int main(int argc, char **argv) {
   zklean::registerConversionPasses();
 #if LLZK_WITH_PCL
   pcl::registerPCLConversionPasses();
+  pcl::registerTransformationPasses();
 #endif // LLZK_WITH_PCL
   llzk::smt::registerConversionPasses();
 
