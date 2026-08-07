@@ -291,6 +291,11 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
       return it->second;
     }
 
+    // Use an insertion guard to restore the builder's insertion point after this function.
+    // This avoids invalid references that could occur in the caller after executing this
+    // function since `handleAddOrSub` sets the insertion point to an op that it may erase.
+    OpBuilder::InsertionGuard guard(builder);
+
     SmallVector<Value, 16> postOrder;
     getPostOrder(root, postOrder);
 
@@ -713,7 +718,6 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
 
         // If both sides are degree 2, isolate one side
         if (degLhs == 2 && degRhs == 2) {
-          builder.setInsertionPoint(eqOp);
           std::string auxName = R1CS_AUXILIARY_MEMBER_PREFIX + std::to_string(auxCounter++);
           MemberDefOp auxMember = addAuxMember(structDef, auxName, lhs.getType());
           Value aux = builder.create<MemberReadOp>(
