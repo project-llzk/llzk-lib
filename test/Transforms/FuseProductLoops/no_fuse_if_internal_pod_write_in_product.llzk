@@ -1,0 +1,58 @@
+// RUN: llzk-opt --llzk-fuse-product-loops %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @A {
+    struct.member @foo : !felt.type
+
+    function.def @product(%b: i1) -> !struct.type<@A> {
+      %self = struct.new : <@A>
+      %pod = pod.new : !pod.type<[@n: !felt.type]>
+
+      %0 = scf.if %b -> !felt.type {
+        %zero = felt.const 0
+        scf.yield %zero : !felt.type
+      } else {
+        %one = felt.const 1
+        scf.yield %one : !felt.type
+      } {product_source = "compute"}
+
+      struct.writem %self[@foo] = %0 : <@A>, !felt.type
+
+      scf.if %b {
+        %two = felt.const 2
+        pod.write %pod[@n] = %two : !pod.type<[@n: !felt.type]>, !felt.type
+      } else {
+        %three = felt.const 3
+        pod.write %pod[@n] = %three : !pod.type<[@n: !felt.type]>, !felt.type
+      } {product_source = "constrain"}
+
+      function.return %self : !struct.type<@A>
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang = "llzk"} {
+// CHECK-NEXT:    struct.def @A {
+// CHECK-NEXT:      struct.member @foo : !felt.type
+// CHECK-NEXT:      function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@A> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@A>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = pod.new : <[@n: !felt.type]>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_0]] -> (!felt.type) {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:          scf.yield %[[VAL_4]] : !felt.type
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:          scf.yield %[[VAL_5]] : !felt.type
+// CHECK-NEXT:        } {product_source = "compute"}
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@foo] = %[[VAL_3]] : <@A>, !felt.type
+// CHECK-NEXT:        scf.if %[[VAL_0]] {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:          pod.write %[[VAL_2]][@n] = %[[VAL_6]] : <[@n: !felt.type]>, !felt.type
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = felt.const  3
+// CHECK-NEXT:          pod.write %[[VAL_2]][@n] = %[[VAL_7]] : <[@n: !felt.type]>, !felt.type
+// CHECK-NEXT:        } {product_source = "constrain"}
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@A>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

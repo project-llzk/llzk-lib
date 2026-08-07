@@ -112,8 +112,20 @@ def ComputeConstrainToProductPass
 }
 
 def FuseProductLoopsPass : LLZKPass<"llzk-fuse-product-loops"> {
-  let summary = "Fuse matching witness/constraint loops in a @product function";
-  let description = summary;
+  let summary =
+      "Fuse matching witness/constraint control flow in a @product function";
+  let description = [{
+    Fuses unambiguous compute/constrain sibling `scf.for` loops with matching trip counts and
+    sibling `scf.if` ops with the same SSA condition, same else structure, and a resultless
+    constrain side.
+
+    For `scf.if`, fusion is skipped if the moved constrain branch reads or writes storage, calls
+    functions (including witness functions), may trap, or has unknown effects. Constraint movement
+    is limited to `constrain.eq`, `constrain.in`, `llzk.nondet`, supported structured control flow,
+    and operations that MLIR proves pure. All attributes other than `product_source` must match
+    on the paired `scf.if` operations and corresponding terminators; matching attributes are
+    preserved on the fused operations.
+  }];
 }
 
 def EnforceNoMemberOverwritePass : LLZKPass<"llzk-enforce-no-overwrite"> {

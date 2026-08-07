@@ -1,0 +1,61 @@
+// RUN: llzk-opt --llzk-fuse-product-loops %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @A {
+    struct.member @foo : !felt.type
+
+    function.def @product(%condition: i1, %value: !felt.type) -> !struct.type<@A> {
+      %self = struct.new : <@A>
+      %c0_compute = arith.constant 0 : index
+      %c2_compute = arith.constant 2 : index
+      %c1_compute = arith.constant 1 : index
+
+      scf.for %i = %c0_compute to %c2_compute step %c1_compute {
+        scf.if %condition {
+          %zero = felt.const 0
+        } else {
+          %one = felt.const 1
+        } {product_source = "compute"}
+      } {product_source = "compute"}
+
+      %c0_constrain = arith.constant 0 : index
+      %c2_constrain = arith.constant 2 : index
+      %c1_constrain = arith.constant 1 : index
+
+      scf.for %i = %c0_constrain to %c2_constrain step %c1_constrain {
+        scf.if %condition {
+          constrain.eq %value, %value : !felt.type
+        } else {
+          constrain.eq %value, %value : !felt.type
+        } {product_source = "constrain"}
+      } {product_source = "constrain"}
+
+      function.return %self : !struct.type<@A>
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang = "llzk"} {
+// CHECK-NEXT:    struct.def @A {
+// CHECK-NEXT:      struct.member @foo : !felt.type
+// CHECK-NEXT:      function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@A> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@A>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        scf.for %[[VAL_9:[0-9a-zA-Z_\.]+]] = %[[VAL_6]] to %[[VAL_7]] step %[[VAL_8]] {
+// CHECK-NEXT:          scf.if %[[VAL_0]] {
+// CHECK-NEXT:            %[[VAL_10:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:            constrain.eq %[[VAL_1]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:          } else {
+// CHECK-NEXT:            %[[VAL_11:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:            constrain.eq %[[VAL_1]], %[[VAL_1]] : !felt.type, !felt.type
+// CHECK-NEXT:          } {product_source = "fused"}
+// CHECK-NEXT:        } {product_source = "fused"}
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@A>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

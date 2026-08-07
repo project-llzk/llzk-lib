@@ -1,0 +1,92 @@
+// RUN: llzk-opt --llzk-compute-constrain-to-product="root-struct=A" --llzk-fuse-product-loops %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @A {
+    struct.member @foo : !felt.type {llzk.pub}
+
+    function.def @compute(%b: i1) -> !struct.type<@A> {
+      %self = struct.new : <@A>
+
+      %0 = scf.if %b -> !felt.type {
+        %a = felt.const 0
+        scf.yield %a : !felt.type
+      } else {
+        %a = felt.const 1
+        scf.yield %a : !felt.type
+      }
+
+      struct.writem %self[@foo] = %0 : <@A>, !felt.type
+      function.return %self : !struct.type<@A>
+    }
+
+    function.def @constrain(%self: !struct.type<@A>, %b: i1) {
+      scf.if %b {
+        %zero = felt.const 0
+        function.call @check_foo(%self, %zero) : (!struct.type<@A>, !felt.type) -> ()
+      } else {
+        %one = felt.const 1
+        function.call @check_foo(%self, %one) : (!struct.type<@A>, !felt.type) -> ()
+      }
+
+      function.return
+    }
+  }
+
+  function.def @check_foo(%self: !struct.type<@A>, %expected: !felt.type) attributes {function.allow_constraint} {
+    %foo = struct.readm %self[@foo] : <@A>, !felt.type
+    constrain.eq %foo, %expected : !felt.type
+    function.return
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang = "llzk"} {
+// CHECK-NEXT:    struct.def @A {
+// CHECK-NEXT:      struct.member @foo : !felt.type {llzk.pub}
+// CHECK-NEXT:      function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@A> attributes {function.allow_constraint, function.allow_witness, llzk.derived} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@A> {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_0]] -> (!felt.type) {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  0 {product_source = "compute"}
+// CHECK-NEXT:          scf.yield {product_source = "compute"} %[[VAL_3]] : !felt.type
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  1 {product_source = "compute"}
+// CHECK-NEXT:          scf.yield {product_source = "compute"} %[[VAL_4]] : !felt.type
+// CHECK-NEXT:        } {product_source = "compute"}
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@foo] = %[[VAL_2]] : <@A>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:        scf.if %[[VAL_0]] {
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = felt.const  0 {product_source = "constrain"}
+// CHECK-NEXT:          function.call @check_foo(%[[VAL_1]], %[[VAL_5]]) : (!struct.type<@A>, !felt.type) -> ()  {product_source = "constrain"}
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = felt.const  1 {product_source = "constrain"}
+// CHECK-NEXT:          function.call @check_foo(%[[VAL_1]], %[[VAL_6]]) : (!struct.type<@A>, !felt.type) -> ()  {product_source = "constrain"}
+// CHECK-NEXT:        } {product_source = "constrain"}
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@A>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @compute(%[[VAL_7:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@A> attributes {function.allow_witness, product_source = "compute"} {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.new : <@A> {product_source = "compute"}
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_7]] -> (!felt.type) {
+// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_\.]+]] = felt.const  0 {product_source = "compute"}
+// CHECK-NEXT:          scf.yield {product_source = "compute"} %[[VAL_10]] : !felt.type
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = felt.const  1 {product_source = "compute"}
+// CHECK-NEXT:          scf.yield {product_source = "compute"} %[[VAL_11]] : !felt.type
+// CHECK-NEXT:        } {product_source = "compute"}
+// CHECK-NEXT:        struct.writem %[[VAL_8]][@foo] = %[[VAL_9]] : <@A>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:        function.return {product_source = "compute"} %[[VAL_8]] : !struct.type<@A>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_12:[0-9a-zA-Z_\.]+]]: !struct.type<@A>, %[[VAL_13:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint, product_source = "constrain"} {
+// CHECK-NEXT:        scf.if %[[VAL_13]] {
+// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_\.]+]] = felt.const  0 {product_source = "constrain"}
+// CHECK-NEXT:          function.call @check_foo(%[[VAL_12]], %[[VAL_14]]) : (!struct.type<@A>, !felt.type) -> ()  {product_source = "constrain"}
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          %[[VAL_15:[0-9a-zA-Z_\.]+]] = felt.const  1 {product_source = "constrain"}
+// CHECK-NEXT:          function.call @check_foo(%[[VAL_12]], %[[VAL_15]]) : (!struct.type<@A>, !felt.type) -> ()  {product_source = "constrain"}
+// CHECK-NEXT:        } {product_source = "constrain"}
+// CHECK-NEXT:        function.return {product_source = "constrain"}
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @check_foo(%[[VAL_16:[0-9a-zA-Z_\.]+]]: !struct.type<@A>, %[[VAL_17:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      %[[VAL_18:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_16]][@foo] : <@A>, !felt.type
+// CHECK-NEXT:      constrain.eq %[[VAL_18]], %[[VAL_17]] : !felt.type, !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

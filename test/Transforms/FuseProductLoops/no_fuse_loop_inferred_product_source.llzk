@@ -1,0 +1,47 @@
+// RUN: llzk-opt --llzk-fuse-product-loops %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @A {
+    struct.member @foo : !felt.type
+
+    function.def @product(%a: !felt.type) -> !struct.type<@A> {
+      %self = struct.new : <@A>
+      %c0 = arith.constant 0 : index
+      %c2 = arith.constant 2 : index
+      %c1 = arith.constant 1 : index
+
+      scf.for %i = %c0 to %c2 step %c1 {
+        %val = felt.const 0 {product_source = "compute"}
+        struct.writem %self[@foo] = %val : <@A>, !felt.type {product_source = "compute"}
+      }
+
+      scf.for %i = %c0 to %c2 step %c1 {
+        %expected = felt.const 0 {product_source = "constrain"}
+        constrain.eq %a, %expected : !felt.type {product_source = "constrain"}
+      }
+
+      function.return %self : !struct.type<@A>
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang = "llzk"} {
+// CHECK-NEXT:    struct.def @A {
+// CHECK-NEXT:      struct.member @foo : !felt.type
+// CHECK-NEXT:      function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@A> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@A>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        scf.for %[[VAL_5:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_4]] {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = felt.const  0 {product_source = "compute"}
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@foo] = %[[VAL_6]] : <@A>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:        }
+// CHECK-NEXT:        scf.for %[[VAL_7:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_3]] step %[[VAL_4]] {
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = felt.const  0 {product_source = "constrain"}
+// CHECK-NEXT:          constrain.eq %[[VAL_0]], %[[VAL_8]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@A>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

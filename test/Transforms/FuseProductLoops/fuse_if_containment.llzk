@@ -1,0 +1,51 @@
+// RUN: llzk-opt --llzk-fuse-product-loops %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @A {
+    struct.member @foo : !felt.type
+
+    function.def @product(
+        %condition: i1, %table: !array.type<2 x !felt.type>, %value: !felt.type
+    ) -> !struct.type<@A> {
+      %self = struct.new : <@A>
+
+      %computed = scf.if %condition -> !felt.type {
+        %zero = felt.const 0
+        scf.yield %zero : !felt.type
+      } else {
+        %one = felt.const 1
+        scf.yield %one : !felt.type
+      } {product_source = "compute"}
+
+      struct.writem %self[@foo] = %computed : <@A>, !felt.type
+
+      scf.if %condition {
+        constrain.in %table, %value : !array.type<2 x !felt.type>, !felt.type
+      } else {
+        constrain.in %table, %value : !array.type<2 x !felt.type>, !felt.type
+      } {product_source = "constrain"}
+
+      function.return %self : !struct.type<@A>
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang = "llzk"} {
+// CHECK-NEXT:    struct.def @A {
+// CHECK-NEXT:      struct.member @foo : !felt.type
+// CHECK-NEXT:      function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>, %[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@A> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@A>
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_0]] -> (!felt.type) {
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:          constrain.in %[[VAL_1]], %[[VAL_2]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:          scf.yield %[[VAL_5]] : !felt.type
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:          constrain.in %[[VAL_1]], %[[VAL_2]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:          scf.yield %[[VAL_6]] : !felt.type
+// CHECK-NEXT:        } {product_source = "fused"}
+// CHECK-NEXT:        struct.writem %[[VAL_3]][@foo] = %[[VAL_4]] : <@A>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@A>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -1,0 +1,246 @@
+// RUN: llzk-opt --llzk-fuse-product-loops %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @A {
+    struct.member @foo : !felt.type
+
+    // A nested scf.if is safe when its contents are individually movable.
+    function.def @product(%condition: i1, %value: !felt.type) -> !struct.type<@A> attributes {function.allow_constraint, function.allow_witness} {
+      %self = struct.new : <@A>
+
+      %computed = scf.if %condition -> !felt.type {
+        %zero = felt.const 0
+        scf.yield %zero : !felt.type
+      } else {
+        %one = felt.const 1
+        scf.yield %one : !felt.type
+      } {product_source = "compute"}
+
+      struct.writem %self[@foo] = %computed : <@A>, !felt.type
+
+      scf.if %condition {
+        scf.if %condition {
+          constrain.eq %value, %value : !felt.type
+        } else {
+          constrain.eq %value, %value : !felt.type
+        }
+      } else {
+        scf.if %condition {
+          constrain.eq %value, %value : !felt.type
+        } else {
+          constrain.eq %value, %value : !felt.type
+        }
+      } {product_source = "constrain"}
+
+      function.return %self : !struct.type<@A>
+    }
+  }
+
+  struct.def @B {
+    struct.member @foo : !felt.type
+
+    // A trapping operation inside the nested scf.if must still block movement.
+    function.def @product(%condition: i1, %value: !felt.type, %lhs: index, %divisor: index) -> !struct.type<@B> attributes {function.allow_constraint, function.allow_witness} {
+      %self = struct.new : <@B>
+
+      %computed = scf.if %condition -> !felt.type {
+        %zero = felt.const 0
+        scf.yield %zero : !felt.type
+      } else {
+        %one = felt.const 1
+        scf.yield %one : !felt.type
+      } {product_source = "compute"}
+
+      struct.writem %self[@foo] = %computed : <@B>, !felt.type
+
+      scf.if %condition {
+        scf.if %condition {
+          %quotient = arith.divui %lhs, %divisor : index
+        } else {
+          %quotient = arith.divui %lhs, %divisor : index
+        }
+      } else {
+        scf.if %condition {
+          %quotient = arith.divui %lhs, %divisor : index
+        } else {
+          %quotient = arith.divui %lhs, %divisor : index
+        }
+      } {product_source = "constrain"}
+
+      function.return %self : !struct.type<@B>
+    }
+  }
+
+  struct.def @C {
+    struct.member @foo : !felt.type
+
+    // A unit-step scf.for is recursively speculatable and may move when its body is safe.
+    function.def @product(%condition: i1, %value: !felt.type) -> !struct.type<@C> attributes {function.allow_constraint, function.allow_witness} {
+      %self = struct.new : <@C>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+
+      %computed = scf.if %condition -> !felt.type {
+        %zero = felt.const 0
+        scf.yield %zero : !felt.type
+      } else {
+        %one = felt.const 1
+        scf.yield %one : !felt.type
+      } {product_source = "compute"}
+
+      struct.writem %self[@foo] = %computed : <@C>, !felt.type
+
+      scf.if %condition {
+        scf.for %i = %c0 to %c1 step %c1 {
+          constrain.eq %value, %value : !felt.type
+        }
+      } else {
+        scf.for %i = %c0 to %c1 step %c1 {
+          constrain.eq %value, %value : !felt.type
+        }
+      } {product_source = "constrain"}
+
+      function.return %self : !struct.type<@C>
+    }
+  }
+
+  struct.def @D {
+    struct.member @foo : !felt.type
+
+    // A step other than one makes scf.for potentially non-terminating and blocks movement.
+    function.def @product(%condition: i1, %value: !felt.type) -> !struct.type<@D> attributes {function.allow_constraint, function.allow_witness} {
+      %self = struct.new : <@D>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %c2 = arith.constant 2 : index
+
+      %computed = scf.if %condition -> !felt.type {
+        %zero = felt.const 0
+        scf.yield %zero : !felt.type
+      } else {
+        %one = felt.const 1
+        scf.yield %one : !felt.type
+      } {product_source = "compute"}
+
+      struct.writem %self[@foo] = %computed : <@D>, !felt.type
+
+      scf.if %condition {
+        scf.for %i = %c0 to %c1 step %c2 {
+          constrain.eq %value, %value : !felt.type
+        }
+      } else {
+        scf.for %i = %c0 to %c1 step %c2 {
+          constrain.eq %value, %value : !felt.type
+        }
+      } {product_source = "constrain"}
+
+      function.return %self : !struct.type<@D>
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang = "llzk"} {
+// CHECK-NEXT:    struct.def @A {
+// CHECK-NEXT:      struct.member @foo : !felt.type
+// CHECK-NEXT:      function.def @product(%[[SAFE_IF_CONDITION:[0-9a-zA-Z_\.]+]]: i1, %[[SAFE_IF_VALUE:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@A> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:        %[[SAFE_IF_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@A>
+// CHECK-NEXT:        %[[SAFE_IF_COMPUTED:[0-9a-zA-Z_\.]+]] = scf.if %[[SAFE_IF_CONDITION]] -> (!felt.type) {
+// CHECK-NEXT:          %[[SAFE_IF_ZERO:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:          scf.if %[[SAFE_IF_CONDITION]] {
+// CHECK-NEXT:            constrain.eq %[[SAFE_IF_VALUE]], %[[SAFE_IF_VALUE]] : !felt.type, !felt.type
+// CHECK-NEXT:          } else {
+// CHECK-NEXT:            constrain.eq %[[SAFE_IF_VALUE]], %[[SAFE_IF_VALUE]] : !felt.type, !felt.type
+// CHECK-NEXT:          }
+// CHECK-NEXT:          scf.yield %[[SAFE_IF_ZERO]] : !felt.type
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          %[[SAFE_IF_ONE:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:          scf.if %[[SAFE_IF_CONDITION]] {
+// CHECK-NEXT:            constrain.eq %[[SAFE_IF_VALUE]], %[[SAFE_IF_VALUE]] : !felt.type, !felt.type
+// CHECK-NEXT:          } else {
+// CHECK-NEXT:            constrain.eq %[[SAFE_IF_VALUE]], %[[SAFE_IF_VALUE]] : !felt.type, !felt.type
+// CHECK-NEXT:          }
+// CHECK-NEXT:          scf.yield %[[SAFE_IF_ONE]] : !felt.type
+// CHECK-NEXT:        } {product_source = "fused"}
+// CHECK-NEXT:        struct.writem %[[SAFE_IF_SELF]][@foo] = %[[SAFE_IF_COMPUTED]] : <@A>, !felt.type
+// CHECK-NEXT:        function.return %[[SAFE_IF_SELF]] : !struct.type<@A>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @B {
+// CHECK-NEXT:      struct.member @foo : !felt.type
+// CHECK-NEXT:      function.def @product(%[[UNSAFE_IF_CONDITION:[0-9a-zA-Z_\.]+]]: i1, %[[UNSAFE_IF_VALUE:[0-9a-zA-Z_\.]+]]: !felt.type, %[[UNSAFE_IF_LHS:[0-9a-zA-Z_\.]+]]: index, %[[UNSAFE_IF_DIVISOR:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@B> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:        %[[UNSAFE_IF_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@B>
+// CHECK-NEXT:        %[[UNSAFE_IF_COMPUTED:[0-9a-zA-Z_\.]+]] = scf.if %[[UNSAFE_IF_CONDITION]] -> (!felt.type) {
+// CHECK-NEXT:          %[[UNSAFE_IF_ZERO:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:          scf.yield %[[UNSAFE_IF_ZERO]] : !felt.type
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          %[[UNSAFE_IF_ONE:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:          scf.yield %[[UNSAFE_IF_ONE]] : !felt.type
+// CHECK-NEXT:        } {product_source = "compute"}
+// CHECK-NEXT:        struct.writem %[[UNSAFE_IF_SELF]][@foo] = %[[UNSAFE_IF_COMPUTED]] : <@B>, !felt.type
+// CHECK-NEXT:        scf.if %[[UNSAFE_IF_CONDITION]] {
+// CHECK-NEXT:          scf.if %[[UNSAFE_IF_CONDITION]] {
+// CHECK-NEXT:            %[[UNSAFE_IF_THEN_QUOTIENT:[0-9a-zA-Z_\.]+]] = arith.divui %[[UNSAFE_IF_LHS]], %[[UNSAFE_IF_DIVISOR]] : index
+// CHECK-NEXT:          } else {
+// CHECK-NEXT:            %[[UNSAFE_IF_THEN_QUOTIENT_ELSE:[0-9a-zA-Z_\.]+]] = arith.divui %[[UNSAFE_IF_LHS]], %[[UNSAFE_IF_DIVISOR]] : index
+// CHECK-NEXT:          }
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          scf.if %[[UNSAFE_IF_CONDITION]] {
+// CHECK-NEXT:            %[[UNSAFE_IF_ELSE_QUOTIENT:[0-9a-zA-Z_\.]+]] = arith.divui %[[UNSAFE_IF_LHS]], %[[UNSAFE_IF_DIVISOR]] : index
+// CHECK-NEXT:          } else {
+// CHECK-NEXT:            %[[UNSAFE_IF_ELSE_QUOTIENT_ELSE:[0-9a-zA-Z_\.]+]] = arith.divui %[[UNSAFE_IF_LHS]], %[[UNSAFE_IF_DIVISOR]] : index
+// CHECK-NEXT:          }
+// CHECK-NEXT:        } {product_source = "constrain"}
+// CHECK-NEXT:        function.return %[[UNSAFE_IF_SELF]] : !struct.type<@B>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @C {
+// CHECK-NEXT:      struct.member @foo : !felt.type
+// CHECK-NEXT:      function.def @product(%[[SAFE_FOR_CONDITION:[0-9a-zA-Z_\.]+]]: i1, %[[SAFE_FOR_VALUE:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@C> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:        %[[SAFE_FOR_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@C>
+// CHECK-NEXT:        %[[SAFE_FOR_C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[SAFE_FOR_C1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[SAFE_FOR_COMPUTED:[0-9a-zA-Z_\.]+]] = scf.if %[[SAFE_FOR_CONDITION]] -> (!felt.type) {
+// CHECK-NEXT:          %[[SAFE_FOR_ZERO:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:          scf.for %[[SAFE_FOR_THEN_IV:[0-9a-zA-Z_\.]+]] = %[[SAFE_FOR_C0]] to %[[SAFE_FOR_C1]] step %[[SAFE_FOR_C1]] {
+// CHECK-NEXT:            constrain.eq %[[SAFE_FOR_VALUE]], %[[SAFE_FOR_VALUE]] : !felt.type, !felt.type
+// CHECK-NEXT:          }
+// CHECK-NEXT:          scf.yield %[[SAFE_FOR_ZERO]] : !felt.type
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          %[[SAFE_FOR_ONE:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:          scf.for %[[SAFE_FOR_ELSE_IV:[0-9a-zA-Z_\.]+]] = %[[SAFE_FOR_C0]] to %[[SAFE_FOR_C1]] step %[[SAFE_FOR_C1]] {
+// CHECK-NEXT:            constrain.eq %[[SAFE_FOR_VALUE]], %[[SAFE_FOR_VALUE]] : !felt.type, !felt.type
+// CHECK-NEXT:          }
+// CHECK-NEXT:          scf.yield %[[SAFE_FOR_ONE]] : !felt.type
+// CHECK-NEXT:        } {product_source = "fused"}
+// CHECK-NEXT:        struct.writem %[[SAFE_FOR_SELF]][@foo] = %[[SAFE_FOR_COMPUTED]] : <@C>, !felt.type
+// CHECK-NEXT:        function.return %[[SAFE_FOR_SELF]] : !struct.type<@C>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @D {
+// CHECK-NEXT:      struct.member @foo : !felt.type
+// CHECK-NEXT:      function.def @product(%[[UNSAFE_FOR_CONDITION:[0-9a-zA-Z_\.]+]]: i1, %[[UNSAFE_FOR_VALUE:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@D> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:        %[[UNSAFE_FOR_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@D>
+// CHECK-NEXT:        %[[UNSAFE_FOR_C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[UNSAFE_FOR_C1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[UNSAFE_FOR_C2:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:        %[[UNSAFE_FOR_COMPUTED:[0-9a-zA-Z_\.]+]] = scf.if %[[UNSAFE_FOR_CONDITION]] -> (!felt.type) {
+// CHECK-NEXT:          %[[UNSAFE_FOR_ZERO:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:          scf.yield %[[UNSAFE_FOR_ZERO]] : !felt.type
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          %[[UNSAFE_FOR_ONE:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:          scf.yield %[[UNSAFE_FOR_ONE]] : !felt.type
+// CHECK-NEXT:        } {product_source = "compute"}
+// CHECK-NEXT:        struct.writem %[[UNSAFE_FOR_SELF]][@foo] = %[[UNSAFE_FOR_COMPUTED]] : <@D>, !felt.type
+// CHECK-NEXT:        scf.if %[[UNSAFE_FOR_CONDITION]] {
+// CHECK-NEXT:          scf.for %[[UNSAFE_FOR_THEN_IV:[0-9a-zA-Z_\.]+]] = %[[UNSAFE_FOR_C0]] to %[[UNSAFE_FOR_C1]] step %[[UNSAFE_FOR_C2]] {
+// CHECK-NEXT:            constrain.eq %[[UNSAFE_FOR_VALUE]], %[[UNSAFE_FOR_VALUE]] : !felt.type, !felt.type
+// CHECK-NEXT:          }
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          scf.for %[[UNSAFE_FOR_ELSE_IV:[0-9a-zA-Z_\.]+]] = %[[UNSAFE_FOR_C0]] to %[[UNSAFE_FOR_C1]] step %[[UNSAFE_FOR_C2]] {
+// CHECK-NEXT:            constrain.eq %[[UNSAFE_FOR_VALUE]], %[[UNSAFE_FOR_VALUE]] : !felt.type, !felt.type
+// CHECK-NEXT:          }
+// CHECK-NEXT:        } {product_source = "constrain"}
+// CHECK-NEXT:        function.return %[[UNSAFE_FOR_SELF]] : !struct.type<@D>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

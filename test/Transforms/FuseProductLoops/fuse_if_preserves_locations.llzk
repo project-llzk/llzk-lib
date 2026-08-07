@@ -1,0 +1,78 @@
+// RUN: llzk-opt --llzk-fuse-product-loops -mlir-print-debuginfo %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @A {
+    struct.member @foo : !felt.type
+
+    function.def @product(%condition: i1) -> !struct.type<@A> {
+      %self = struct.new : <@A>
+
+      %computed = scf.if %condition -> !felt.type {
+        %zero = felt.const 0
+        scf.yield %zero : !felt.type loc("compute-then-yield")
+      } else {
+        %one = felt.const 1
+        scf.yield %one : !felt.type loc("compute-else-yield")
+      } {product_source = "compute"} loc("compute-if")
+
+      struct.writem %self[@foo] = %computed : <@A>, !felt.type
+
+      scf.if %condition {
+        %expected = felt.const 0
+        constrain.eq %computed, %expected : !felt.type
+        scf.yield loc("constrain-then-yield")
+      } else {
+        %expected = felt.const 1
+        constrain.eq %computed, %expected : !felt.type
+        scf.yield loc("constrain-else-yield")
+      } {product_source = "constrain"} loc("constrain-if")
+
+      function.return %self : !struct.type<@A>
+    }
+  }
+}
+
+// CHECK:      #loc{{[0-9]+}} = loc("{{.*}}fuse_if_preserves_locations.llzk":7:27)
+// CHECK-NEXT: module attributes {llzk.lang = "llzk"} {
+// CHECK-NEXT:    struct.def @A {
+// CHECK-NEXT:      struct.member @foo : !felt.type loc(#loc[[MEMBER_LOC:[0-9]+]])
+// CHECK-NEXT:      function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1 loc("{{.*}}fuse_if_preserves_locations.llzk":7:27)) -> !struct.type<@A> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@A> loc(#loc[[NEW_LOC:[0-9]+]])
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_0]] -> (!felt.type) {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  0 loc(#loc[[COMPUTE_THEN_CONST_LOC:[0-9]+]])
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  0 loc(#loc[[CONSTRAIN_THEN_CONST_LOC:[0-9]+]])
+// CHECK-NEXT:          constrain.eq %[[VAL_3]], %[[VAL_4]] : !felt.type, !felt.type loc(#loc[[CONSTRAIN_THEN_EQ_LOC:[0-9]+]])
+// CHECK-NEXT:          scf.yield %[[VAL_3]] : !felt.type loc(#loc[[FUSED_THEN_YIELD_LOC:[0-9]+]])
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = felt.const  1 loc(#loc[[COMPUTE_ELSE_CONST_LOC:[0-9]+]])
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = felt.const  1 loc(#loc[[CONSTRAIN_ELSE_CONST_LOC:[0-9]+]])
+// CHECK-NEXT:          constrain.eq %[[VAL_5]], %[[VAL_6]] : !felt.type, !felt.type loc(#loc[[CONSTRAIN_ELSE_EQ_LOC:[0-9]+]])
+// CHECK-NEXT:          scf.yield %[[VAL_5]] : !felt.type loc(#loc[[FUSED_ELSE_YIELD_LOC:[0-9]+]])
+// CHECK-NEXT:        } {product_source = "fused"} loc(#loc[[FUSED_IF_LOC:[0-9]+]])
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@foo] = %[[VAL_2]] : <@A>, !felt.type loc(#loc[[WRITEM_LOC:[0-9]+]])
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@A> loc(#loc[[RETURN_LOC:[0-9]+]])
+// CHECK-NEXT:      } loc(#loc[[FUNCTION_LOC:[0-9]+]])
+// CHECK-NEXT:    } loc(#loc[[STRUCT_LOC:[0-9]+]])
+// CHECK-NEXT:  } loc(#loc[[MODULE_LOC:[0-9]*]])
+// CHECK-NEXT: #loc[[MODULE_LOC]] = loc("{{.*}}fuse_if_preserves_locations.llzk":3:1)
+// CHECK-NEXT: #loc[[STRUCT_LOC]] = loc("{{.*}}fuse_if_preserves_locations.llzk":4:3)
+// CHECK-NEXT: #loc[[MEMBER_LOC]] = loc("{{.*}}fuse_if_preserves_locations.llzk":5:5)
+// CHECK-NEXT: #loc[[FUNCTION_LOC]] = loc("{{.*}}fuse_if_preserves_locations.llzk":7:5)
+// CHECK-NEXT: #loc[[NEW_LOC]] = loc("{{.*}}fuse_if_preserves_locations.llzk":8:15)
+// CHECK-NEXT: #loc[[COMPUTE_IF_LOC:[0-9]+]] = loc("compute-if")
+// CHECK-NEXT: #loc[[CONSTRAIN_IF_LOC:[0-9]+]] = loc("constrain-if")
+// CHECK-NEXT: #loc[[COMPUTE_THEN_CONST_LOC]] = loc("{{.*}}fuse_if_preserves_locations.llzk":11:17)
+// CHECK-NEXT: #loc[[CONSTRAIN_THEN_CONST_LOC]] = loc("{{.*}}fuse_if_preserves_locations.llzk":21:21)
+// CHECK-NEXT: #loc[[CONSTRAIN_THEN_EQ_LOC]] = loc("{{.*}}fuse_if_preserves_locations.llzk":22:9)
+// CHECK-NEXT: #loc[[COMPUTE_THEN_YIELD_LOC_SOURCE:[0-9]+]] = loc("compute-then-yield")
+// CHECK-NEXT: #loc[[CONSTRAIN_THEN_YIELD_LOC:[0-9]+]] = loc("constrain-then-yield")
+// CHECK-NEXT: #loc[[COMPUTE_ELSE_CONST_LOC]] = loc("{{.*}}fuse_if_preserves_locations.llzk":14:16)
+// CHECK-NEXT: #loc[[CONSTRAIN_ELSE_CONST_LOC]] = loc("{{.*}}fuse_if_preserves_locations.llzk":25:21)
+// CHECK-NEXT: #loc[[CONSTRAIN_ELSE_EQ_LOC]] = loc("{{.*}}fuse_if_preserves_locations.llzk":26:9)
+// CHECK-NEXT: #loc[[COMPUTE_ELSE_YIELD_LOC_SOURCE:[0-9]+]] = loc("compute-else-yield")
+// CHECK-NEXT: #loc[[CONSTRAIN_ELSE_YIELD_LOC:[0-9]+]] = loc("constrain-else-yield")
+// CHECK-NEXT: #loc[[WRITEM_LOC]] = loc("{{.*}}fuse_if_preserves_locations.llzk":18:7)
+// CHECK-NEXT: #loc[[RETURN_LOC]] = loc("{{.*}}fuse_if_preserves_locations.llzk":30:7)
+// CHECK-NEXT: #loc[[FUSED_IF_LOC]] = loc(fused[#loc[[COMPUTE_IF_LOC]], #loc[[CONSTRAIN_IF_LOC]]])
+// CHECK-NEXT: #loc[[FUSED_THEN_YIELD_LOC]] = loc(fused[#loc[[COMPUTE_THEN_YIELD_LOC_SOURCE]], #loc[[CONSTRAIN_THEN_YIELD_LOC]]])
+// CHECK-NEXT: #loc[[FUSED_ELSE_YIELD_LOC]] = loc(fused[#loc[[COMPUTE_ELSE_YIELD_LOC_SOURCE]], #loc[[CONSTRAIN_ELSE_YIELD_LOC]]])
