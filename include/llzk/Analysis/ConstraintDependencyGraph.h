@@ -41,7 +41,19 @@ public:
   using Base::SparseForwardDataFlowAnalysis;
 
   static const Lattice *getLattice(mlir::DataFlowSolver &solver, mlir::Value val);
+
+  /// Return the storage references represented by `val` without replacing them with values
+  /// written to those locations.
   static SourceRefLatticeValue getValueState(mlir::DataFlowSolver &solver, mlir::Value val);
+
+  /// Return the logical dependencies of `val` by following known storage writes transitively.
+  /// Unwritten storage remains represented by its address.
+  static SourceRefLatticeValue getDependencyState(mlir::DataFlowSolver &solver, mlir::Value val);
+
+  /// Return the logical dependencies of `val` as observed before `before`.
+  static SourceRefLatticeValue
+  getDependencyState(mlir::DataFlowSolver &solver, mlir::Value val, mlir::Operation *before);
+
   static mlir::FailureOr<SourceRefLatticeValue>
   getWriteTargetState(mlir::DataFlowSolver &solver, mlir::Operation *op);
 
@@ -72,6 +84,9 @@ protected:
   arraySubdivisionOpUpdate(array::ArrayAccessOpInterface op, const OperandValues &operandVals);
 
 private:
+  class StorageState;
+  StorageState *getStorageState(mlir::Operation *op);
+
   mlir::SymbolTableCollection tables;
 };
 
