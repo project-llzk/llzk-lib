@@ -99,6 +99,9 @@ static void reportDelayedDiagnostics(CallOp caller, SmallVector<Diagnostic> &&di
 }
 
 class ConversionTracker {
+  /// Exact specialization identity: source definition plus ordered concrete parameter bindings.
+  using FuncInstantiationKey = std::pair<Operation *, ArrayAttr>;
+
   /// Published result of one successful partial-function conversion.
   ///
   /// The source operation and concrete key live in the surrounding map; these names are only the
@@ -118,6 +121,10 @@ class ConversionTracker {
   DenseMap<StructType, StructType> reverseInstantiations;
   /// Tracks original free function definitions for which instantiated clones were created.
   DenseSet<SymbolRefAttr> funcInstantiations;
+  /// Full function specializations are keyed by source definition and exact concrete bindings.
+  /// Generated symbol spelling is only a value because user symbols can collide with it.
+  /// These caches are queried during instantiation, before cleanup can erase source definitions.
+  DenseMap<FuncInstantiationKey, StringAttr> fullFuncInstantiations;
   /// Successful partial functions keyed by their source operation and exact concrete bindings.
   /// The rendered symbol names are only values; they are never used as cache identity.
   DenseMap<Operation *, SmallVector<PartialFuncInstantiation>> partialFuncInstantiations;
@@ -165,6 +172,23 @@ public:
     modified = true;
   }
 
+  /// Return the post-insertion symbol name for this source function and exact concrete bindings.
+  std::optional<StringAttr>
+  getFullFuncInstantiation(FuncDefOp sourceFunc, ArrayAttr concreteParams) const {
+    auto it = fullFuncInstantiations.find({sourceFunc.getOperation(), concreteParams});
+    return it == fullFuncInstantiations.end() ? std::nullopt : std::make_optional(it->second);
+  }
+
+  /// Record a successful full specialization using its post-insertion symbol name.
+  void recordFullFuncInstantiation(
+      FuncDefOp sourceFunc, ArrayAttr concreteParams, StringAttr instantiatedName
+  ) {
+    [[maybe_unused]] auto [it, inserted] = fullFuncInstantiations.try_emplace(
+        {sourceFunc.getOperation(), concreteParams}, instantiatedName
+    );
+    assert((inserted || it->second == instantiatedName) && "instantiation identity is stable");
+  }
+
   /// Return the successfully converted partial function for this exact source/key pair, if any.
   std::optional<SymbolRefAttr>
   lookupPartialFuncInstantiation(FuncDefOp sourceFunc, ArrayAttr concreteParamKey) const {
@@ -201,9 +225,13 @@ public:
     );
   }
 
-  /// No partial-function cache entry is read after cleanup starts; release its operation names at
-  /// that boundary so the tracker does not retain stale handles while cleanup erases templates.
-  void clearPartialFuncInstantiations() { partialFuncInstantiations.clear(); }
+  /// No function-instantiation cache entry is read after cleanup starts; release its operation
+  /// names at that boundary so the tracker does not retain stale handles while cleanup erases
+  /// templates.
+  void clearFuncInstantiations() {
+    fullFuncInstantiations.clear();
+    partialFuncInstantiations.clear();
+  }
 
   /// Collect the fully-qualified names of all structs and free functions that were instantiated.
   DenseSet<SymbolRefAttr> getInstantiatedDefinitionNames() const {
@@ -391,10 +419,104 @@ public:
   LogicalResult handleRewrite(
       Attribute, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, FeltConstAttr a
   ) const {
-    replaceOpWithNewOp<FeltConstantOp>(rewriter, op, a);
+    Type origResTy = op.getType();
+    Type newResTy = getTypeConverter()->convertType(origResTy);
+    FeltType feltType = llvm::dyn_cast_or_null<FeltType>(newResTy);
+    if (!feltType) {
+      return op->emitOpError().append(
+          "expected a concrete felt result type after conversion, but found ",
+          newResTy ? newResTy : origResTy
+      );
+    }
+
+    FailureOr<FeltConstAttr> materialized = a.materializeAs(feltType);
+    if (failed(materialized)) {
+      return op->emitOpError().append(
+          "felt constant ", a, " is incompatible with converted result type ", feltType
+      );
+    }
+    replaceOpWithNewOp<FeltConstantOp>(rewriter, op, *materialized);
     return success();
   }
 };
+
+/// Converts template type variables whose bindings became concrete. More specialized converters
+/// extend this for compound types, while deferred expressions need this common scalar behavior.
+class TemplateParamTypeConverter : public TypeConverter {
+  const DenseMap<Attribute, Attribute> &paramNameToValue;
+
+protected:
+  Attribute convertIfPossible(Attribute attr) const {
+    auto res = paramNameToValue.find(attr);
+    return (res != paramNameToValue.end()) ? res->second : attr;
+  }
+
+public:
+  explicit TemplateParamTypeConverter(const DenseMap<Attribute, Attribute> &paramNameToConcrete)
+      : TypeConverter(), paramNameToValue(paramNameToConcrete) {
+    addConversion([](Type type) { return type; });
+    addConversion([this](TypeVarType inputTy) -> Type {
+      if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(convertIfPossible(inputTy.getNameRef()))) {
+        Type convertedType = tyAttr.getValue();
+        if (isConcreteType(convertedType)) {
+          return convertedType;
+        }
+      }
+      return inputTy;
+    });
+  }
+
+  Attribute convertAttr(Attribute attr) const {
+    if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
+      Type convertedTy = convertType(tyAttr.getValue());
+      if (convertedTy != tyAttr.getValue()) {
+        return TypeAttr::get(convertedTy);
+      }
+    }
+    return convertIfPossible(attr);
+  }
+
+  bool containsParam(Attribute nameAttr) const { return paramNameToValue.contains(nameAttr); }
+  const DenseMap<Attribute, Attribute> &getParamMap() const { return paramNameToValue; }
+};
+
+/// Clone a deferred template expression and materialize parameters that became concrete. The
+/// reduced template preserves neither their symbols nor type variables, so both value reads and
+/// operation types must be converted before the expression is retained for later instantiation.
+/// An empty result defers the whole partial instantiation when a concrete value's type is not yet
+/// known; removing that value before it can be materialized would lose a required binding.
+static FailureOr<std::optional<TemplateExprOp>> cloneDeferredExpr(
+    TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramNameToConcrete,
+    SmallVector<Diagnostic> &diagnostics
+) {
+  MLIRContext *ctx = exprOp.getContext();
+  TemplateParamTypeConverter tyConv(paramNameToConcrete);
+  WalkResult blocked = exprOp.walk([&](ConstReadOp readOp) {
+    if (!paramNameToConcrete.contains(readOp.getConstNameAttr())) {
+      return WalkResult::advance();
+    }
+    Type convertedType = tyConv.convertType(readOp.getType());
+    return (!convertedType || !isConcreteType(convertedType)) ? WalkResult::interrupt()
+                                                              : WalkResult::advance();
+  });
+  if (blocked.wasInterrupted()) {
+    return std::optional<TemplateExprOp>();
+  }
+
+  TemplateExprOp clonedExpr = llvm::cast<TemplateExprOp>(exprOp->clone());
+  ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx);
+  target.addDynamicallyLegalOp<ConstReadOp>([&](ConstReadOp op) {
+    return !paramNameToConcrete.contains(op.getConstNameAttr()) && defaultLegalityCheck(tyConv, op);
+  });
+
+  RewritePatternSet patterns = newGeneralRewritePatternSet<>(tyConv, ctx, target);
+  patterns.add<ClonedBodyConstReadOpPattern>(tyConv, ctx, paramNameToConcrete, diagnostics);
+  if (failed(applyFullConversion(clonedExpr, target, std::move(patterns)))) {
+    clonedExpr->destroy();
+    return failure();
+  }
+  return std::make_optional(clonedExpr);
+}
 
 /// Patterns can use this listener and call notifyMatchFailure(..) for failures where the entire
 /// pass must fail, i.e., where instantiation would introduce an illegal type conversion.
@@ -454,8 +576,27 @@ convertCalleeSymRefs(SymbolRefAttr callee, const DenseMap<Attribute, Attribute> 
 
 static void
 convertCalleesInPlace(Operation *op, const DenseMap<Attribute, Attribute> &paramNameToValue) {
-  op->walk([&paramNameToValue](CallOp callOp) {
+  // A cloned function may become module-level, so symbolic template arguments on nested calls
+  // must be materialized before verification loses the enclosing template scope.
+  TemplateParamTypeConverter tyConv(paramNameToValue);
+  op->walk([&paramNameToValue, &tyConv](CallOp callOp) {
     callOp.setCalleeAttr(convertCalleeSymRefs(callOp.getCalleeAttr(), paramNameToValue));
+
+    ArrayAttr templateParams = callOp.getTemplateParamsAttr();
+    if (!templateParams) {
+      return;
+    }
+    SmallVector<Attribute> convertedParams;
+    convertedParams.reserve(templateParams.size());
+    bool changed = false;
+    for (Attribute param : templateParams) {
+      Attribute converted = tyConv.convertAttr(param);
+      convertedParams.push_back(converted);
+      changed |= converted != param;
+    }
+    if (changed) {
+      callOp.setTemplateParamsAttr(ArrayAttr::get(callOp.getContext(), convertedParams));
+    }
   });
 }
 
@@ -471,24 +612,36 @@ static bool calleeReferencesTemplateParam(CallOp op) {
   return parentTemplate.hasConstNamed<TemplateParamOp>(callee.getRootReference());
 }
 
-/// Attempt to evaluate the concrete result of a single `TemplateExprOp` expression given
-/// the currently-known concrete param values in `paramNameToConcrete`. Returns the result
-/// attribute if all referenced params are concrete and all operations in the body can be
-/// constant-folded; otherwise returns `std::nullopt`.
-static std::optional<Attribute>
+/// Evaluate a single template expression. An unresolved parameter defers evaluation; malformed,
+/// incompatible, or non-foldable concrete expressions are semantic errors.
+static FailureOr<std::optional<Attribute>>
 evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramNameToConcrete) {
+  // Deferral depends on the expression's complete parameter set, not operation order. Do not
+  // diagnose a non-foldable prefix while a later read still requires partial instantiation.
+  WalkResult unresolvedParam = exprOp.walk([&](ConstReadOp op) {
+    return paramNameToConcrete.contains(op.getConstNameAttr()) ? WalkResult::advance()
+                                                               : WalkResult::interrupt();
+  });
+  if (unresolvedParam.wasInterrupted()) {
+    return std::optional<Attribute>();
+  }
+
   // Map from SSA value in the expr body to its concrete Attribute.
   DenseMap<Value, Attribute> valueMap;
   for (Operation &bodyOp : exprOp.getInitializerRegion().front()) {
     if (auto yieldOp = llvm::dyn_cast<YieldOp>(bodyOp)) {
       auto it = valueMap.find(yieldOp.getVal());
-      return it != valueMap.end() ? std::make_optional(it->second) : std::nullopt;
+      if (it != valueMap.end()) {
+        return std::make_optional(it->second);
+      }
+      yieldOp.emitOpError("cannot evaluate yielded value as a concrete template constant");
+      return failure();
     }
 
     if (auto constReadOp = llvm::dyn_cast<ConstReadOp>(bodyOp)) {
       auto it = paramNameToConcrete.find(constReadOp.getConstNameAttr());
       if (it == paramNameToConcrete.end()) {
-        return std::nullopt; // a referenced param is not concrete
+        return std::optional<Attribute>();
       }
       // If the attribute type is `FeltType` but it's stored as an IntegerAttr, promote to
       // a `FeltConstAttr`.
@@ -508,51 +661,102 @@ evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramN
     for (Value operand : bodyOp.getOperands()) {
       auto it = valueMap.find(operand);
       if (it == valueMap.end()) {
-        return std::nullopt; // operand not known as a constant
+        bodyOp.emitOpError("cannot evaluate operand as a concrete template constant");
+        return failure();
       }
       operandAttrs.push_back(it->second);
     }
 
     // Try constant folding.
     SmallVector<OpFoldResult> foldResults;
-    if (succeeded(bodyOp.fold(operandAttrs, foldResults)) &&
-        foldResults.size() == bodyOp.getNumResults()) {
-      for (auto [result, fr] : llvm::zip_equal(bodyOp.getResults(), foldResults)) {
-        if (Attribute a = llvm::dyn_cast<Attribute>(fr)) {
-          valueMap[result] = a;
-        } else {
-          return std::nullopt;
-        }
+    if (failed(bodyOp.fold(operandAttrs, foldResults)) ||
+        foldResults.size() != bodyOp.getNumResults()) {
+      bodyOp.emitOpError("cannot fold concrete template expression");
+      return failure();
+    }
+    for (auto [result, fr] : llvm::zip_equal(bodyOp.getResults(), foldResults)) {
+      if (Attribute a = llvm::dyn_cast<Attribute>(fr)) {
+        valueMap[result] = a;
+      } else {
+        bodyOp.emitOpError("template expression fold did not produce a constant attribute");
+        return failure();
       }
     }
   }
-  return std::nullopt; // no YieldOp found (shouldn't happen in a valid expr)
+  exprOp.emitOpError("initializer has no yield operation");
+  return failure();
 }
 
-/// Evaluate all `TemplateExprOp`s in `templateOp` that can be computed from the currently-known
-/// concrete param values in `paramNameToConcrete`, and add their results to the map.
-/// Exprs whose operands are not all concrete are silently skipped (partial instantiation).
-static void
-evaluateTemplateExprs(TemplateOp templateOp, DenseMap<Attribute, Attribute> &paramNameToConcrete) {
+/// Return whether `target` may use `exprOp`. Symbol-use analysis stops at symbol-table boundaries,
+/// so inspect target regions separately. An unknown result is conservatively treated as a use.
+static bool targetMayUseTemplateExpr(Operation *target, TemplateExprOp exprOp) {
+  if (!symbolKnownUseEmpty(exprOp.getOperation(), target)) {
+    return true;
+  }
+  return llvm::any_of(target->getRegions(), [&](Region &region) {
+    return !symbolKnownUseEmpty(exprOp.getOperation(), &region);
+  });
+}
+
+/// Evaluate the `TemplateExprOp`s used by `target` that can be computed from the currently-known
+/// concrete param values, adding results to the map and returning the expressions that must remain
+/// available for a later partial instantiation.
+static FailureOr<SmallVector<TemplateExprOp>> evaluateTemplateExprs(
+    TemplateOp templateOp, Operation *target, DenseMap<Attribute, Attribute> &paramNameToConcrete,
+    SmallVector<Diagnostic> &deferredExprDiagnostics
+) {
   LLVM_DEBUG(
       llvm::dbgs() << "[evaluateTemplateExprs] before: " << debug::toStringList(paramNameToConcrete)
                    << '\n'
   );
+  SmallVector<TemplateExprOp> deferredExprs;
+  auto destroyDeferredExprs = [&]() {
+    for (TemplateExprOp exprOp : deferredExprs) {
+      exprOp->destroy();
+    }
+    deferredExprs.clear();
+  };
   for (TemplateExprOp exprOp : templateOp.getConstOps<TemplateExprOp>()) {
-    std::optional<Attribute> result = evaluateExpr(exprOp, paramNameToConcrete);
-    if (result.has_value()) {
+    if (!targetMayUseTemplateExpr(target, exprOp)) {
+      continue;
+    }
+    // Evaluation and preservation must observe the same concrete type substitutions. In
+    // particular, a type-variable binding can make an otherwise non-foldable cast an identity
+    // cast, so folding the original expression would be route-dependent.
+    FailureOr<std::optional<TemplateExprOp>> normalizedExpr =
+        cloneDeferredExpr(exprOp, paramNameToConcrete, deferredExprDiagnostics);
+    if (failed(normalizedExpr) || !normalizedExpr->has_value()) {
+      destroyDeferredExprs();
+      return failure();
+    }
+    TemplateExprOp normalizedExprOp = **normalizedExpr;
+    FailureOr<std::optional<Attribute>> result =
+        evaluateExpr(normalizedExprOp, paramNameToConcrete);
+    if (failed(result)) {
+      normalizedExprOp->destroy();
+      destroyDeferredExprs();
+      return failure();
+    }
+    if (*result) {
+      normalizedExprOp->destroy();
+      Attribute value = result->value();
       auto exprNameAttr = FlatSymbolRefAttr::get(exprOp.getSymNameAttr());
-      paramNameToConcrete.try_emplace(exprNameAttr, *result);
+      paramNameToConcrete.try_emplace(exprNameAttr, value);
       LLVM_DEBUG(
           llvm::dbgs() << "[evaluateTemplateExprs] expr @" << exprOp.getSymName()
-                       << " evaluated to " << *result << '\n'
+                       << " evaluated to " << value << '\n'
       );
+    } else {
+      // Keep the normalized detached clone. The caller transfers it into the reduced template,
+      // so later specialization starts from the same representation that was just evaluated.
+      deferredExprs.push_back(normalizedExprOp);
     }
   }
   LLVM_DEBUG(
       llvm::dbgs() << "[evaluateTemplateExprs] after: " << debug::toStringList(paramNameToConcrete)
                    << '\n'
   );
+  return deferredExprs;
 }
 
 static inline bool tableOffsetIsntSymbol(MemberReadOp op) {
@@ -617,15 +821,9 @@ class StructCloner {
   SymbolTableCollection symTables;
   bool reportMissing = true;
 
-  class MappedTypeConverter : public TypeConverter {
+  class MappedTypeConverter : public TemplateParamTypeConverter {
     StructType origTy;
     StructType newTy;
-    const DenseMap<Attribute, Attribute> &paramNameToValue;
-
-    inline Attribute convertIfPossible(Attribute a) const {
-      auto res = this->paramNameToValue.find(a);
-      return (res != this->paramNameToValue.end()) ? res->second : a;
-    }
 
   public:
     MappedTypeConverter(
@@ -633,10 +831,8 @@ class StructCloner {
         /// Instantiated values for the parameter names in `originalType`
         const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
     )
-        : TypeConverter(), origTy(originalType), newTy(newType),
-          paramNameToValue(paramNameToInstantiatedValue) {
-
-      addConversion([](Type inputTy) { return inputTy; });
+        : TemplateParamTypeConverter(paramNameToInstantiatedValue), origTy(originalType),
+          newTy(newType) {
 
       addConversion([this](StructType inputTy) {
         LLVM_DEBUG(llvm::dbgs() << "[MappedTypeConverter] convert " << inputTy << '\n');
@@ -649,11 +845,7 @@ class StructCloner {
         if (ArrayAttr inputTyParams = inputTy.getParams()) {
           SmallVector<Attribute> updated;
           for (Attribute a : inputTyParams) {
-            if (TypeAttr ta = dyn_cast<TypeAttr>(a)) {
-              updated.push_back(TypeAttr::get(this->convertType(ta.getValue())));
-            } else {
-              updated.push_back(convertIfPossible(a));
-            }
+            updated.push_back(convertAttr(a));
           }
           return getStructTypeWithParams(inputTy.getNameRef(), inputTy.getContext(), updated);
         }
@@ -672,20 +864,6 @@ class StructCloner {
           return ArrayType::get(this->convertType(inputTy.getElementType()), updated);
         }
         // Otherwise, return the type unchanged
-        return inputTy;
-      });
-
-      addConversion([this](TypeVarType inputTy) -> Type {
-        // Check for replacement of parameter symbol name with a concrete type
-        if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(convertIfPossible(inputTy.getNameRef()))) {
-          Type convertedType = tyAttr.getValue();
-          // Use the new type unless it contains a TypeVarType because a TypeVarType from a
-          // different struct references a parameter name from that other struct, not from the
-          // current struct so the reference would be invalid.
-          if (isConcreteType(convertedType)) {
-            return convertedType;
-          }
-        }
         return inputTy;
       });
     }
@@ -756,11 +934,29 @@ class StructCloner {
 
     // Evaluate any poly.expr symbols whose param dependencies are now concrete; add them to the
     // map so ClonedBodyConstReadOpPattern can replace uses of those symbols too.
-    evaluateTemplateExprs(parentTemplate, paramNameToConcrete);
+    SmallVector<Diagnostic> deferredExprDiagnostics;
+    FailureOr<SmallVector<TemplateExprOp>> exprEvaluation = evaluateTemplateExprs(
+        parentTemplate, origStruct.getOperation(), paramNameToConcrete, deferredExprDiagnostics
+    );
+    if (failed(exprEvaluation)) {
+      return failure();
+    }
+    SmallVector<TemplateExprOp> deferredExprs = std::move(*exprEvaluation);
+    if (layout.remainingNames.empty() && !deferredExprs.empty()) {
+      deferredExprs.front().emitOpError(
+          "cannot complete instantiation while a template expression remains deferred"
+      );
+      for (TemplateExprOp exprOp : deferredExprs) {
+        exprOp->destroy();
+      }
+      return failure();
+    }
 
     // Clone the original struct.
     StructDefOp newStruct = origStruct.clone();
     convertCalleesInPlace(newStruct, paramNameToConcrete);
+    // Keep the inserted owner so a failed body conversion cannot publish a partial clone.
+    Operation *insertedOwner = nullptr;
     if (layout.remainingNames.empty()) { // FULL INSTANTIATION CASE
       // Set name of the new struct by prepending its name with instantiated template name.
       newStruct.setSymName(
@@ -769,6 +965,7 @@ class StructCloner {
       // Insert 'newStruct' into the parent ModuleOp of the original TemplateOp. Use the
       // `SymbolTable::insert()` function so that the name will be made unique if necessary.
       symTables.getSymbolTable(parentModule).insert(newStruct, Block::iterator(parentTemplate));
+      insertedOwner = newStruct.getOperation();
       // Drop the old template name from the list.
       typeAtCallerSymPieces.pop_back();
     } else { // PARTIAL INSTANTIATION CASE
@@ -788,11 +985,16 @@ class StructCloner {
         assert(symOp && "symbol must exist");
         newTemplate.insert(newTemplate.begin(), symOp->clone());
       }
+      for (TemplateExprOp exprOp : deferredExprs) {
+        newTemplate.getBodyRegion().front().push_back(exprOp.getOperation());
+      }
 
-      // Insert the struct into the template and the template into the module. Use the
-      // `SymbolTable::insert()` function so that the name will be made unique if necessary.
-      symTables.getSymbolTable(newTemplate).insert(newStruct);
+      // Insert the struct into the detached template with a local table. The long-lived
+      // collection must not cache a table for a prospective owner that may be erased on failure.
+      SymbolTable newTemplateSymbols(newTemplate);
+      newTemplateSymbols.insert(newStruct);
       symTables.getSymbolTable(parentModule).insert(newTemplate, Block::iterator(parentTemplate));
+      insertedOwner = newTemplate.getOperation();
 
       // Replace the old template name in the list with the new one (get template name after
       // symbol table insertion since it may be modified to make it unique).
@@ -815,6 +1017,8 @@ class StructCloner {
       llvm::dbgs() << "[StructCloner]   cloned remote type: " << newRemoteType << '\n';
     });
 
+    SmallVector<Diagnostic> conversionDiagnostics;
+
     // Within the new struct, replace all references to the original StructType (i.e., the
     // locally-parameterized version) with the new locally-parameterized StructType,
     // and replace all uses of the removed struct parameters with the concrete values.
@@ -828,12 +1032,28 @@ class StructCloner {
 
     RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
     patterns.add<ClonedBodyConstReadOpPattern>(
-        tyConv, ctx, paramNameToConcrete, tracker_.delayedDiagnosticSet(newLocalType)
+        tyConv, ctx, paramNameToConcrete, conversionDiagnostics
     );
     patterns.add<ClonedMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
     if (failed(applyFullConversion(newStruct, target, std::move(patterns)))) {
       LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   instantiating body of struct failed \n");
+      // Erase the published owner through its parent table so the block and its symbol-table entry
+      // are removed together. A partial template's detached table is local and has already died.
+      symTables.getSymbolTable(parentModule).erase(insertedOwner);
       return failure();
+    }
+
+    // Publish diagnostics only after the generated owner has passed conversion.
+    if (!deferredExprDiagnostics.empty() || !conversionDiagnostics.empty()) {
+      SmallVector<Diagnostic> &diagnostics = tracker_.delayedDiagnosticSet(newLocalType);
+      diagnostics.append(
+          std::make_move_iterator(deferredExprDiagnostics.begin()),
+          std::make_move_iterator(deferredExprDiagnostics.end())
+      );
+      diagnostics.append(
+          std::make_move_iterator(conversionDiagnostics.begin()),
+          std::make_move_iterator(conversionDiagnostics.end())
+      );
     }
     return newRemoteType;
   }
@@ -1028,28 +1248,10 @@ namespace Step2_InstantiateFunctions {
 
 /// TypeConverter for function instantiation that replaces TypeVarType and symbolic
 /// ArrayType/StructType parameters with their concrete values determined by unification.
-class FuncInstTypeConverter : public TypeConverter {
-  DenseMap<Attribute, Attribute> paramNameToValue;
-
-  Attribute convertIfPossible(Attribute a) const {
-    auto res = paramNameToValue.find(a);
-    return (res != paramNameToValue.end()) ? res->second : a;
-  }
-
+class FuncInstTypeConverter : public TemplateParamTypeConverter {
 public:
-  explicit FuncInstTypeConverter(DenseMap<Attribute, Attribute> paramNameToConcrete)
-      : TypeConverter(), paramNameToValue(std::move(paramNameToConcrete)) {
-    addConversion([](Type t) { return t; });
-
-    addConversion([this](TypeVarType inputTy) -> Type {
-      if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(convertIfPossible(inputTy.getNameRef()))) {
-        Type convertedType = tyAttr.getValue();
-        if (isConcreteType(convertedType)) {
-          return convertedType;
-        }
-      }
-      return inputTy;
-    });
+  explicit FuncInstTypeConverter(const DenseMap<Attribute, Attribute> &paramNameToConcrete)
+      : TemplateParamTypeConverter(paramNameToConcrete) {
 
     addConversion([this](ArrayType inputTy) {
       SmallVector<Attribute> updated;
@@ -1099,19 +1301,6 @@ public:
       return inputTy;
     });
   }
-
-  Attribute convertAttr(Attribute attr) const {
-    if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
-      Type convertedTy = convertType(tyAttr.getValue());
-      if (convertedTy != tyAttr.getValue()) {
-        return TypeAttr::get(convertedTy);
-      }
-    }
-    return convertIfPossible(attr);
-  }
-
-  bool containsParam(Attribute nameAttr) const { return paramNameToValue.contains(nameAttr); }
-  const DenseMap<Attribute, Attribute> &getParamMap() const { return paramNameToValue; }
 };
 
 /// Return the callee-side unification-derived value for a template parameter, if any.
@@ -1406,11 +1595,21 @@ public:
       return failure();
     }
 
-    evaluateTemplateExprs(parentTemplate, paramNameToConcrete);
+    SmallVector<Diagnostic> deferredExprDiagnostics;
+    FailureOr<SmallVector<TemplateExprOp>> exprEvaluation = evaluateTemplateExprs(
+        parentTemplate, callTgt.getOperation(), paramNameToConcrete, deferredExprDiagnostics
+    );
+    if (failed(exprEvaluation)) {
+      return failure();
+    }
+    SmallVector<TemplateExprOp> deferredExprs = std::move(*exprEvaluation);
 
     FailureOr<InstantiationLayout> layoutResult =
         buildInstantiationLayout(parentTemplate, op.getTemplateParamsAttr(), paramNameToConcrete);
     if (failed(layoutResult)) {
+      for (TemplateExprOp exprOp : deferredExprs) {
+        exprOp->destroy();
+      }
       return failure();
     }
     InstantiationLayout layout = std::move(*layoutResult);
@@ -1418,18 +1617,32 @@ public:
     assert(parentModule && "TemplateOp must be nested in a ModuleOp");
 
     SymbolRefAttr originalCalleeAttr = op.getCalleeAttr();
+    if (layout.remainingNames.empty() && !deferredExprs.empty()) {
+      deferredExprs.front().emitOpError(
+          "cannot complete instantiation while a template expression remains deferred"
+      );
+      for (TemplateExprOp exprOp : deferredExprs) {
+        exprOp->destroy();
+      }
+      return failure();
+    }
     FailureOr<SymbolRefAttr> newCalleeAttr =
         layout.remainingNames.empty()
             ? instantiateFully(
                   op, rewriter, symTables, callTgt, parentTemplate, parentModule,
-                  layout.templateNameWithAttrs, paramNameToConcrete
+                  layout.templateNameWithAttrs, layout.concreteParamKey, paramNameToConcrete,
+                  tracker_
               )
             : instantiatePartially(
                   op, rewriter, symTables, callTgt, parentTemplate, parentModule, layout,
-                  paramNameToConcrete, tracker_
+                  paramNameToConcrete, tracker_, deferredExprs, deferredExprDiagnostics
               );
     if (failed(newCalleeAttr)) {
       return failure();
+    }
+
+    if (layout.remainingNames.empty()) {
+      ::reportDelayedDiagnostics(op, std::move(deferredExprDiagnostics));
     }
 
     tracker_.recordInstantiation(originalCalleeAttr);
@@ -1579,17 +1792,27 @@ private:
   }
 
   /// Create or reuse a fully-instantiated clone in the parent module and return the rewritten
-  /// module-level callee reference.
+  /// module-level callee reference. Reuse is keyed by the source function and exact ordered
+  /// concrete bindings; the rendered template name is only a preferred symbol name and may be
+  /// changed by SymbolTable insertion.
   static FailureOr<SymbolRefAttr> instantiateFully(
       CallOp op, PatternRewriter &rewriter, SymbolTableCollection &symTables, FuncDefOp callTgt,
       TemplateOp parentTemplate, ModuleOp parentModule, StringRef templateNameWithAttrs,
-      const DenseMap<Attribute, Attribute> &paramNameToConcrete
+      ArrayAttr concreteParamKey, const DenseMap<Attribute, Attribute> &paramNameToConcrete,
+      ConversionTracker &tracker
   ) {
     MLIRContext *ctx = op.getContext();
     std::string newFuncName =
         (mlir::Twine(templateNameWithAttrs) + "_" + callTgt.getSymName()).str();
     StringRef actualNewFuncName = newFuncName;
-    if (!symTables.getSymbolTable(parentModule).lookup(newFuncName)) {
+    if (std::optional<StringAttr> cached =
+            tracker.getFullFuncInstantiation(callTgt, concreteParamKey)) {
+      actualNewFuncName = cached->getValue();
+      LLVM_DEBUG(
+          llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing full instantiation function: "
+                       << actualNewFuncName << '\n'
+      );
+    } else {
       FuncDefOp newFunc = callTgt.clone();
       newFunc.setSymName(newFuncName);
       convertCalleesInPlace(newFunc, paramNameToConcrete);
@@ -1610,11 +1833,7 @@ private:
           diag.append("failure while creating instantiated function '", actualNewFuncName, '\'');
         });
       }
-    } else {
-      LLVM_DEBUG(
-          llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing full instantiation function: "
-                       << actualNewFuncName << '\n'
-      );
+      tracker.recordFullFuncInstantiation(callTgt, concreteParamKey, newFunc.getSymNameAttr());
     }
 
     // Callee: drop template & original function names, add the new module-level function name.
@@ -1635,7 +1854,8 @@ private:
   static FailureOr<SymbolRefAttr> instantiatePartially(
       CallOp op, PatternRewriter &rewriter, SymbolTableCollection &symTables, FuncDefOp callTgt,
       TemplateOp parentTemplate, ModuleOp parentModule, const InstantiationLayout &layout,
-      const DenseMap<Attribute, Attribute> &paramNameToConcrete, ConversionTracker &tracker
+      const DenseMap<Attribute, Attribute> &paramNameToConcrete, ConversionTracker &tracker,
+      ArrayRef<TemplateExprOp> deferredExprs, SmallVector<Diagnostic> &deferredExprDiagnostics
   ) {
     if (auto cached = tracker.lookupPartialFuncInstantiation(callTgt, layout.concreteParamKey)) {
       SmallVector<FlatSymbolRefAttr> symPieces = getPieces(op.getCalleeAttr());
@@ -1651,6 +1871,10 @@ private:
           llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing partial instantiation: "
                        << cachedCallee << '\n'
       );
+      for (TemplateExprOp exprOp : deferredExprs) {
+        exprOp->destroy();
+      }
+      ::reportDelayedDiagnostics(op, std::move(deferredExprDiagnostics));
       return cachedCallee;
     }
     TemplateOp newTemplate = parentTemplate.cloneWithoutRegions();
@@ -1665,6 +1889,9 @@ private:
       Operation *paramOp = symTables.getSymbolTable(parentTemplate).lookup(nameSym.getAttr());
       assert(paramOp && "symbol must exist");
       newTemplateBody.push_back(paramOp->clone());
+    }
+    for (TemplateExprOp exprOp : deferredExprs) {
+      newTemplateBody.push_back(exprOp.getOperation());
     }
 
     // Clone and partially convert the function (concretize only the concrete params).
@@ -1686,6 +1913,8 @@ private:
         diag.append("failure while creating instantiated function '", newFuncName, '\'');
       });
     }
+
+    ::reportDelayedDiagnostics(op, std::move(deferredExprDiagnostics));
 
     // Use the post-insertion names. The preferred template name may have collided.
     SmallVector<FlatSymbolRefAttr> symPieces = getPieces(op.getCalleeAttr());
@@ -2714,7 +2943,7 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
       });
     } while (tracker.isModified());
 
-    tracker.clearPartialFuncInstantiations();
+    tracker.clearFuncInstantiations();
 
     // Run user-selected cleanup first.
     if (failed(cleanupSwitch(modOp, tracker))) {

@@ -1,0 +1,48 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten=cleanup=disabled %s | FileCheck %s
+
+// Ordered bindings are part of specialization identity: swapping them changes the result.
+module attributes {llzk.lang} {
+  poly.template @Ordered {
+    poly.param @A : index
+    poly.param @B : index
+
+    function.def @compute() -> index {
+      %a = poly.read_const @A : index
+      function.return %a : index
+    }
+  }
+
+  function.def @main() -> index {
+    %first = function.call @Ordered::@compute<[1, 2]>() : () -> index
+    %first_again = function.call @Ordered::@compute<[1, 2]>() : () -> index
+    %second = function.call @Ordered::@compute<[2, 1]>() : () -> index
+    %second_again = function.call @Ordered::@compute<[2, 1]>() : () -> index
+    function.return %second_again : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @Ordered_1_2_compute() -> index {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Ordered_2_1_compute() -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      function.return %[[VAL_1]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Ordered {
+// CHECK-NEXT:      poly.param @A : index
+// CHECK-NEXT:      poly.param @B : index
+// CHECK-NEXT:      function.def @compute() -> index {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.read_const @A : index
+// CHECK-NEXT:        function.return %[[VAL_2]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main() -> index {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @Ordered_1_2_compute() : () -> index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @Ordered_1_2_compute() : () -> index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @Ordered_2_1_compute() : () -> index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @Ordered_2_1_compute() : () -> index
+// CHECK-NEXT:      function.return %[[VAL_6]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

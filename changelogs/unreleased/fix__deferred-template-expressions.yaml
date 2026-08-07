@@ -1,0 +1,3 @@
+fixed:
+  - Preserve used template expressions during partial specialization without blocking unrelated targets
+  - Normalize concrete template expression types before folding or deferring them
