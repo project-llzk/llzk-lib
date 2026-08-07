@@ -989,9 +989,10 @@ class StructCloner {
         newTemplate.getBodyRegion().front().push_back(exprOp.getOperation());
       }
 
-      // Insert the struct into the template and the template into the module. Use the
-      // `SymbolTable::insert()` function so that the name will be made unique if necessary.
-      symTables.getSymbolTable(newTemplate).insert(newStruct);
+      // Insert the struct into the detached template with a local table. The long-lived
+      // collection must not cache a table for a prospective owner that may be erased on failure.
+      SymbolTable newTemplateSymbols(newTemplate);
+      newTemplateSymbols.insert(newStruct);
       symTables.getSymbolTable(parentModule).insert(newTemplate, Block::iterator(parentTemplate));
       insertedOwner = newTemplate.getOperation();
 
@@ -1036,8 +1037,8 @@ class StructCloner {
     patterns.add<ClonedMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
     if (failed(applyFullConversion(newStruct, target, std::move(patterns)))) {
       LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   instantiating body of struct failed \n");
-      // Both full structs and partial templates were inserted into the parent module's symbol
-      // table; erase through it so the block and its symbol-table entry are removed together.
+      // Erase the published owner through its parent table so the block and its symbol-table entry
+      // are removed together. A partial template's detached table is local and has already died.
       symTables.getSymbolTable(parentModule).erase(insertedOwner);
       return failure();
     }
