@@ -2,27 +2,28 @@
 
 module attributes {llzk.lang} {
   poly.template @BrokenStruct {
-    poly.param @Offset
+    poly.param @Num
 
     struct.def @Value {
       struct.member @value : !felt.type<"bn128"> {column, llzk.pub}
 
-      function.def @compute() -> !struct.type<@BrokenStruct::@Value<[@Offset]>> {
-        %self = struct.new : !struct.type<@BrokenStruct::@Value<[@Offset]>>
-        // expected-error@+2 {{'struct.readm' op table offset requires an integer template value}}
-        // expected-error@+1 {{failed to legalize operation 'struct.readm'}}
-        %value = struct.readm %self[@value] : !struct.type<@BrokenStruct::@Value<[@Offset]>>, !felt.type<"bn128"> {tableOffset = @Offset}
-        function.return %self : !struct.type<@BrokenStruct::@Value<[@Offset]>>
+      function.def @compute() -> !struct.type<@BrokenStruct::@Value<[@Num]>> {
+        // expected-error@+2 {{felt constant}}
+        // expected-error@+1 {{failed to legalize operation 'poly.read_const'}}
+        %value = poly.read_const @Num : !felt.type<"bn128">
+        %self = struct.new : !struct.type<@BrokenStruct::@Value<[@Num]>>
+        struct.writem %self[@value] = %value : !struct.type<@BrokenStruct::@Value<[@Num]>>, !felt.type<"bn128">
+        function.return %self : !struct.type<@BrokenStruct::@Value<[@Num]>>
       }
 
-      function.def @constrain(%self: !struct.type<@BrokenStruct::@Value<[@Offset]>>) {
+      function.def @constrain(%self: !struct.type<@BrokenStruct::@Value<[@Num]>>) {
         function.return
       }
     }
   }
 
   struct.def @Use {
-    struct.member @inner : !struct.type<@BrokenStruct::@Value<[#felt<const 35 : !felt.type<"bn128">>]>>
+    struct.member @inner : !struct.type<@BrokenStruct::@Value<[#felt<const 35 : !felt.type<"babybear">>]>>
 
     function.def @compute() -> !struct.type<@Use> {
       %self = struct.new : !struct.type<@Use>
@@ -37,5 +38,5 @@ module attributes {llzk.lang} {
 
 // A failed generated-struct conversion must not leave its inserted owner in the module.
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NOT: BrokenStruct_f<35:5:bn128>
+// CHECK-NOT: BrokenStruct_f<
 // CHECK: struct.def @Use {
