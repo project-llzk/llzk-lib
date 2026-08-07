@@ -1,0 +1,73 @@
+// RUN: llzk-opt -I %S -split-input-file -llzk-poly-lowering-pass="max-degree=2" -verify-diagnostics %s
+// RUN: llzk-opt -I %S -split-input-file -llzk-inline-free-functions -llzk-poly-lowering-pass="max-degree=2" %s | FileCheck %s
+
+!F = !felt.type<"bn254">
+module attributes {llzk.lang = "ACIR", llzk.main = !struct.type<@Circuit0>} {
+  function.def @id4(%arg0: !F, %arg1: !F, %arg2: !F, %arg3: !F) -> (!F, !F, !F, !F) {
+    function.return %arg0, %arg1, %arg2, %arg3 : !F, !F, !F, !F
+  }
+  struct.def @Circuit0 {
+    struct.member @w1025 : !F
+    struct.member @w1026 : !F
+    struct.member @w1027 : !F
+    struct.member @w1028 : !F
+    struct.member @w1029 : !F
+    struct.member @w1030 : !F
+    struct.member @w1031 : !F
+    struct.member @w1032 : !F
+
+    function.def @compute() -> !struct.type<@Circuit0> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+      %self = struct.new : <@Circuit0>
+      function.return %self : !struct.type<@Circuit0>
+    }
+
+    function.def @constrain(%arg0: !struct.type<@Circuit0>) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %0 = struct.readm %arg0[@w1025] : <@Circuit0>, !F
+      %1 = struct.readm %arg0[@w1026] : <@Circuit0>, !F
+      %2 = struct.readm %arg0[@w1027] : <@Circuit0>, !F
+      %3 = struct.readm %arg0[@w1028] : <@Circuit0>, !F
+      // expected-error@+1 {{Encountered 'function.call' in degree computation. Try running '-llzk-inline-free-functions' first.}}
+      %4:4 = function.call @id4(%0, %1, %2, %3) : (!F, !F, !F, !F) -> (!F, !F, !F, !F)
+      %5 = struct.readm %arg0[@w1029] : <@Circuit0>, !F
+      constrain.eq %5, %4#0 : !F, !F
+      %6 = struct.readm %arg0[@w1030] : <@Circuit0>, !F
+      constrain.eq %6, %4#1 : !F, !F
+      %7 = struct.readm %arg0[@w1031] : <@Circuit0>, !F
+      constrain.eq %7, %4#2 : !F, !F
+      %8 = struct.readm %arg0[@w1032] : <@Circuit0>, !F
+      constrain.eq %8, %4#3 : !F, !F
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang = "ACIR", llzk.main = !struct.type<@Circuit0>} {
+// CHECK-NEXT:    struct.def @Circuit0 {
+// CHECK-NEXT:      struct.member @w1025 : !felt.type<"bn254">
+// CHECK-NEXT:      struct.member @w1026 : !felt.type<"bn254">
+// CHECK-NEXT:      struct.member @w1027 : !felt.type<"bn254">
+// CHECK-NEXT:      struct.member @w1028 : !felt.type<"bn254">
+// CHECK-NEXT:      struct.member @w1029 : !felt.type<"bn254">
+// CHECK-NEXT:      struct.member @w1030 : !felt.type<"bn254">
+// CHECK-NEXT:      struct.member @w1031 : !felt.type<"bn254">
+// CHECK-NEXT:      struct.member @w1032 : !felt.type<"bn254">
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Circuit0> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Circuit0>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Circuit0>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Circuit0>) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@w1025] : <@Circuit0>, !felt.type<"bn254">
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@w1026] : <@Circuit0>, !felt.type<"bn254">
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@w1027] : <@Circuit0>, !felt.type<"bn254">
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@w1028] : <@Circuit0>, !felt.type<"bn254">
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@w1029] : <@Circuit0>, !felt.type<"bn254">
+// CHECK-NEXT:        constrain.eq %[[VAL_6]], %[[VAL_2]] : !felt.type<"bn254">, !felt.type<"bn254">
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@w1030] : <@Circuit0>, !felt.type<"bn254">
+// CHECK-NEXT:        constrain.eq %[[VAL_7]], %[[VAL_3]] : !felt.type<"bn254">, !felt.type<"bn254">
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@w1031] : <@Circuit0>, !felt.type<"bn254">
+// CHECK-NEXT:        constrain.eq %[[VAL_8]], %[[VAL_4]] : !felt.type<"bn254">, !felt.type<"bn254">
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@w1032] : <@Circuit0>, !felt.type<"bn254">
+// CHECK-NEXT:        constrain.eq %[[VAL_9]], %[[VAL_5]] : !felt.type<"bn254">, !felt.type<"bn254">
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
