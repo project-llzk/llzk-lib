@@ -8,7 +8,8 @@ module attributes {llzk.lang} {
     poly.param @Ty : !poly.tvar<@Ty>
     poly.expr @Value {
       %num = poly.read_const @Num : !poly.tvar<@Ty>
-      poly.yield %num : !poly.tvar<@Ty>
+      %value = poly.unifiable_cast %num : (!poly.tvar<@Ty>) -> !felt.type<"bn128">
+      poly.yield %value : !felt.type<"bn128">
     }
     function.def @value() -> !felt.type<"bn128"> {
       %value = poly.read_const @Value : !felt.type<"bn128">
@@ -40,13 +41,12 @@ module attributes {llzk.lang} {
   poly.template @FeltPartial {
     poly.param @Num
     poly.param @Ty : !poly.tvar<@Ty>
-    poly.param @M : index
+    poly.param @M : !felt.type<"bn128">
     poly.expr @Sum {
       %num = poly.read_const @Num : !poly.tvar<@Ty>
       %num_felt = poly.unifiable_cast %num : (!poly.tvar<@Ty>) -> !felt.type<"bn128">
-      %m = poly.read_const @M : index
-      %m_felt = cast.tofelt %m : index, !felt.type<"bn128">
-      %sum = felt.add %num_felt, %m_felt : !felt.type<"bn128">, !felt.type<"bn128">
+      %m = poly.read_const @M : !felt.type<"bn128">
+      %sum = felt.add %num_felt, %m : !felt.type<"bn128">, !felt.type<"bn128">
       poly.yield %sum : !felt.type<"bn128">
     }
     function.def @value() -> !felt.type<"bn128"> {
@@ -56,7 +56,7 @@ module attributes {llzk.lang} {
   }
 
   poly.template @Bridge {
-    poly.param @M : index
+    poly.param @M : !felt.type<"bn128">
     function.def @value() -> !felt.type<"bn128"> {
       %sum = function.call @FeltPartial::@value<[#felt<const 35>, !felt.type<"bn128">, @M]>() : () -> !felt.type<"bn128">
       function.return %sum : !felt.type<"bn128">
@@ -64,7 +64,7 @@ module attributes {llzk.lang} {
   }
 
   function.def @main() -> !felt.type<"bn128"> {
-    %value = function.call @Bridge::@value<[7]>() : () -> !felt.type<"bn128">
+    %value = function.call @Bridge::@value<[#felt<const 7>]>() : () -> !felt.type<"bn128">
     function.return %value : !felt.type<"bn128">
   }
 }
@@ -90,14 +90,15 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
   poly.template @FeltStruct {
     poly.param @Num
     poly.param @Ty : !poly.tvar<@Ty>
-    poly.expr @Value {
+    poly.expr @ValueExpr {
       %num = poly.read_const @Num : !poly.tvar<@Ty>
-      poly.yield %num : !poly.tvar<@Ty>
+      %value = poly.unifiable_cast %num : (!poly.tvar<@Ty>) -> !felt.type<"bn128">
+      poly.yield %value : !felt.type<"bn128">
     }
     struct.def @Value {
       struct.member @result : !felt.type<"bn128">
       function.def @compute() -> !struct.type<@FeltStruct::@Value<[@Num, @Ty]>> {
-        %value = poly.read_const @Value : !felt.type<"bn128">
+        %value = poly.read_const @ValueExpr : !felt.type<"bn128">
         %self = struct.new : !struct.type<@FeltStruct::@Value<[@Num, @Ty]>>
         struct.writem %self[@result] = %value : !struct.type<@FeltStruct::@Value<[@Num, @Ty]>>, !felt.type<"bn128">
         function.return %self : !struct.type<@FeltStruct::@Value<[@Num, @Ty]>>
