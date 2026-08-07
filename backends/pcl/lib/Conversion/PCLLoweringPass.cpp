@@ -716,6 +716,7 @@ public:
       PatternBenefit patBenefit = 1
   )
       : OpConversionPattern(tc, context, patBenefit), funcs(usedFreeFunctions) {}
+
   LogicalResult
   matchAndRewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
     // Remove any op that is NOT in the set.
