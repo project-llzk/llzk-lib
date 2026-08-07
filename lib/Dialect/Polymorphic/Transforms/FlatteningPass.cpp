@@ -955,6 +955,8 @@ class StructCloner {
     // Clone the original struct.
     StructDefOp newStruct = origStruct.clone();
     convertCalleesInPlace(newStruct, paramNameToConcrete);
+    // Keep the inserted owner so a failed body conversion cannot publish a partial clone.
+    Operation *insertedOwner = nullptr;
     if (layout.remainingNames.empty()) { // FULL INSTANTIATION CASE
       // Set name of the new struct by prepending its name with instantiated template name.
       newStruct.setSymName(
@@ -963,6 +965,7 @@ class StructCloner {
       // Insert 'newStruct' into the parent ModuleOp of the original TemplateOp. Use the
       // `SymbolTable::insert()` function so that the name will be made unique if necessary.
       symTables.getSymbolTable(parentModule).insert(newStruct, Block::iterator(parentTemplate));
+      insertedOwner = newStruct.getOperation();
       // Drop the old template name from the list.
       typeAtCallerSymPieces.pop_back();
     } else { // PARTIAL INSTANTIATION CASE
@@ -990,6 +993,7 @@ class StructCloner {
       // `SymbolTable::insert()` function so that the name will be made unique if necessary.
       symTables.getSymbolTable(newTemplate).insert(newStruct);
       symTables.getSymbolTable(parentModule).insert(newTemplate, Block::iterator(parentTemplate));
+      insertedOwner = newTemplate.getOperation();
 
       // Replace the old template name in the list with the new one (get template name after
       // symbol table insertion since it may be modified to make it unique).
@@ -999,13 +1003,6 @@ class StructCloner {
     // Retrieve the new type AFTER inserting since the struct name may be appended to make
     // it unique and use the remaining non-concrete parameters from the original type.
     StructType newLocalType = newStruct.getType(reducedCallerParams);
-    if (!deferredExprDiagnostics.empty()) {
-      SmallVector<Diagnostic> &diagnostics = tracker_.delayedDiagnosticSet(newLocalType);
-      diagnostics.append(
-          std::make_move_iterator(deferredExprDiagnostics.begin()),
-          std::make_move_iterator(deferredExprDiagnostics.end())
-      );
-    }
     typeAtCallerSymPieces.push_back(
         FlatSymbolRefAttr::get(newLocalType.getNameRef().getLeafReference())
     );
@@ -1018,6 +1015,8 @@ class StructCloner {
       llvm::dbgs() << "[StructCloner]   cloned local type: " << newLocalType << '\n';
       llvm::dbgs() << "[StructCloner]   cloned remote type: " << newRemoteType << '\n';
     });
+
+    SmallVector<Diagnostic> conversionDiagnostics;
 
     // Within the new struct, replace all references to the original StructType (i.e., the
     // locally-parameterized version) with the new locally-parameterized StructType,
@@ -1032,12 +1031,28 @@ class StructCloner {
 
     RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
     patterns.add<ClonedBodyConstReadOpPattern>(
-        tyConv, ctx, paramNameToConcrete, tracker_.delayedDiagnosticSet(newLocalType)
+        tyConv, ctx, paramNameToConcrete, conversionDiagnostics
     );
     patterns.add<ClonedMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
     if (failed(applyFullConversion(newStruct, target, std::move(patterns)))) {
       LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   instantiating body of struct failed \n");
+      // Both full structs and partial templates were inserted into the parent module's symbol
+      // table; erase through it so the block and its symbol-table entry are removed together.
+      symTables.getSymbolTable(parentModule).erase(insertedOwner);
       return failure();
+    }
+
+    // Publish diagnostics only after the generated owner has passed conversion.
+    if (!deferredExprDiagnostics.empty() || !conversionDiagnostics.empty()) {
+      SmallVector<Diagnostic> &diagnostics = tracker_.delayedDiagnosticSet(newLocalType);
+      diagnostics.append(
+          std::make_move_iterator(deferredExprDiagnostics.begin()),
+          std::make_move_iterator(deferredExprDiagnostics.end())
+      );
+      diagnostics.append(
+          std::make_move_iterator(conversionDiagnostics.begin()),
+          std::make_move_iterator(conversionDiagnostics.end())
+      );
     }
     return newRemoteType;
   }

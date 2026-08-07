@@ -1,0 +1,41 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s 2>&1 | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  poly.template @BrokenStruct {
+    poly.param @Offset
+
+    struct.def @Value {
+      struct.member @value : !felt.type<"bn128"> {column, llzk.pub}
+
+      function.def @compute() -> !struct.type<@BrokenStruct::@Value<[@Offset]>> {
+        %self = struct.new : !struct.type<@BrokenStruct::@Value<[@Offset]>>
+        // expected-error@+2 {{'struct.readm' op table offset requires an integer template value}}
+        // expected-error@+1 {{failed to legalize operation 'struct.readm'}}
+        %value = struct.readm %self[@value] : !struct.type<@BrokenStruct::@Value<[@Offset]>>, !felt.type<"bn128"> {tableOffset = @Offset}
+        function.return %self : !struct.type<@BrokenStruct::@Value<[@Offset]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@BrokenStruct::@Value<[@Offset]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Use {
+    struct.member @inner : !struct.type<@BrokenStruct::@Value<[#felt<const 35 : !felt.type<"bn128">>]>>
+
+    function.def @compute() -> !struct.type<@Use> {
+      %self = struct.new : !struct.type<@Use>
+      function.return %self : !struct.type<@Use>
+    }
+
+    function.def @constrain(%self: !struct.type<@Use>) {
+      function.return
+    }
+  }
+}
+
+// A failed generated-struct conversion must not leave its inserted owner in the module.
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NOT: BrokenStruct_f<35:5:bn128>
+// CHECK: struct.def @Use {
