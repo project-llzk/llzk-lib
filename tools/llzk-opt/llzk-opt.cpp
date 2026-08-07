@@ -53,9 +53,9 @@
 
 #if LLZK_WITH_PCL
 #include "pcl/Conversion/ConversionPasses.h"
-#include "pcl/Transforms/TransformationPasses.h"
 #include "pcl/Dialect/IR/Dialect.h"
 #include "pcl/DialectRegistration.h"
+#include "pcl/Transforms/TransformationPasses.h"
 #endif // LLZK_WITH_PCL
 
 static llvm::cl::list<std::string> IncludeDirs(

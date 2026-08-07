@@ -10,7 +10,6 @@
 #ifndef PCL_TRANSFORMATION_PASSES_TD
 #define PCL_TRANSFORMATION_PASSES_TD
 
-
 include "mlir/Pass/PassBase.td"
 
 class PCLPass<string passArg, string operation = "::mlir::ModuleOp">
@@ -23,7 +22,8 @@ class PCLPass<string passArg, string operation = "::mlir::ModuleOp">
   ];
 }
 
-def TrimExprSizePass : PCLPass<"pcl-trim-expression-size", "::mlir::func::FuncOp"> {
+def TrimExprSizePass
+    : PCLPass<"pcl-trim-expression-size", "::mlir::func::FuncOp"> {
   let summary = "Trims the size of expressions by introducing intermediates";
   let description = [{
     Trims the size of expressions by introducing intermediate bindings. This transformation 
@@ -92,9 +92,8 @@ def TrimExprSizePass : PCLPass<"pcl-trim-expression-size", "::mlir::func::FuncOp
     ```
   }];
 
-  let options = [
-    Option<"maxSize", "max-size", "unsigned", /*default=*/"10",
-           "The maximum size expressions are allowed to have">,
+  let options = [Option<"maxSize", "max-size", "unsigned", /*default=*/"10",
+                        "The maximum size expressions are allowed to have">,
   ];
 }
 
