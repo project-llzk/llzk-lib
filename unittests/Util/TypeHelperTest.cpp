@@ -28,6 +28,7 @@ using namespace llzk::array;
 using namespace llzk::component;
 using namespace llzk::felt;
 using namespace llzk::pod;
+using namespace llzk::polymorphic;
 
 class TypeHelperTests : public LLZKTest {
 protected:
