@@ -94,23 +94,6 @@ TEST_F(TypeHelperTests, test_functionTypesUnify_Pass) {
   ASSERT_TRUE(functionTypesUnify(a, b));
 }
 
-TEST_F(TypeHelperTests, test_functionTypesUnify_EqualSymbolTracking) {
-  FlatSymbolRefAttr param = FlatSymbolRefAttr::get(&ctx, "F");
-  StructType actual =
-      StructType::get(FlatSymbolRefAttr::get(&ctx, "Box"), ArrayRef<Attribute> {param});
-  FunctionType type = FunctionType::get(&ctx, {actual}, {});
-
-  UnificationMap defaultUnifications;
-  ASSERT_TRUE(functionTypesUnify(type, type, {}, &defaultUnifications));
-  EXPECT_TRUE(defaultUnifications.empty());
-
-  UnificationMap trackedUnifications;
-  ASSERT_TRUE(functionTypesUnify(type, type, {}, &trackedUnifications, true));
-  auto it = trackedUnifications.find({param, Side::RHS});
-  ASSERT_NE(it, trackedUnifications.end());
-  EXPECT_EQ(it->second, param);
-}
-
 TEST_F(TypeHelperTests, test_functionTypesUnify_Input_Fail) {
   IndexType tyIndex = IndexType::get(&ctx);
   FunctionType a = FunctionType::get(&ctx, {IntegerType::get(&ctx, 8)}, {tyIndex});

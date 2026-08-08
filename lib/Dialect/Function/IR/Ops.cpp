@@ -71,6 +71,28 @@ verifyTypeResolution(SymbolTableCollection &tables, Operation *origin, FunctionT
   );
 }
 
+/// Record same-spelling symbols that structural type equality can hide from the generic unifier.
+/// The target symbol is kept as the map key while the value is resolved in the caller scope by
+/// `verifyTemplateParamCompatibility`; this is a scoped witness, not a claim that the bindings are
+/// semantically identical.
+static void recordEqualSymbolInferenceWitnesses(
+    FunctionType actualType, FunctionType targetType, UnificationMap &unifications
+) {
+  llvm::SmallDenseSet<SymbolRefAttr> actualSymbols;
+  llzk::getSymbolsUsedIn(actualType.getInputs(), actualSymbols);
+  llzk::getSymbolsUsedIn(actualType.getResults(), actualSymbols);
+
+  llvm::SmallDenseSet<SymbolRefAttr> targetSymbols;
+  llzk::getSymbolsUsedIn(targetType.getInputs(), targetSymbols);
+  llzk::getSymbolsUsedIn(targetType.getResults(), targetSymbols);
+
+  for (SymbolRefAttr targetSymbol : targetSymbols) {
+    if (actualSymbols.contains(targetSymbol)) {
+      unifications.try_emplace({targetSymbol, Side::RHS}, targetSymbol);
+    }
+  }
+}
+
 /// Verify the name attributes on function arguments or results.
 /// ownAttrName/ownLabel describe the attribute valid on this side (e.g. RES_NAME_ATTR_NAME /
 /// "result"), while crossAttrName/crossLabel describe the attribute that belongs on the other
@@ -888,12 +910,12 @@ struct KnownTargetVerifier : public CallOpVerifier {
         });
         if (allParamsReferenced) {
           UnificationMap unifications;
-          if (!functionTypesUnify(
-                  callOp->getTypeSignature(), tgtType, {}, &unifications,
-                  /*trackEqualSymbolRefs=*/true
-              )) {
+          if (!functionTypesUnify(callOp->getTypeSignature(), tgtType, {}, &unifications)) {
             return failure();
           }
+          recordEqualSymbolInferenceWitnesses(
+              callOp->getTypeSignature(), tgtType, unifications
+          );
           return callOp->verifyTemplateParamsMatchInferred(realParams, unifications);
         }
         // Tested in call_with_template_params_fail.llzk

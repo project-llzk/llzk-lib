@@ -606,19 +606,14 @@ using AffineInstantiations = DenseMap<std::pair<AffineMapAttr, Side>, IntegerAtt
 struct UnifierImpl {
   ArrayRef<StringRef> rhsRevPrefix;
   UnificationMap *unifications;
-  bool trackEqualSymbolRefs;
   AffineInstantiations *affineToIntTracker;
   // This optional function can be used to provide an exception to the standard unification
   // rules and return a true/success result when it otherwise may not.
   llvm::function_ref<bool(Type oldTy, Type newTy)> overrideSuccess;
 
-  UnifierImpl(
-      UnificationMap *unificationMap, ArrayRef<StringRef> rhsReversePrefix = {},
-      bool trackEqualSymbolRefsFlag = false
-  )
+  UnifierImpl(UnificationMap *unificationMap, ArrayRef<StringRef> rhsReversePrefix = {})
       : rhsRevPrefix(rhsReversePrefix), unifications(unificationMap),
-        trackEqualSymbolRefs(trackEqualSymbolRefsFlag), affineToIntTracker(nullptr),
-        overrideSuccess(nullptr) {}
+        affineToIntTracker(nullptr), overrideSuccess(nullptr) {}
 
   UnifierImpl &trackAffineToInt(AffineInstantiations *tracker) {
     this->affineToIntTracker = tracker;
@@ -724,9 +719,6 @@ struct UnifierImpl {
 
   bool typesUnify(Type lhs, Type rhs) {
     if (lhs == rhs) {
-      if (trackEqualSymbolRefs) {
-        lhs.walk([this](SymbolRefAttr symRef) { trackEqualSymbolRef(symRef); });
-      }
       return true;
     }
     if (overrideSuccess && overrideSuccess(lhs, rhs)) {
@@ -757,16 +749,7 @@ struct UnifierImpl {
   }
 
 private:
-  /// Preserve a target-side symbolic occurrence that structural equality would otherwise hide.
-  /// The value is only a witness: verifier callers resolve it in the actual caller scope before
-  /// checking a target restriction.
-  void trackEqualSymbolRef(SymbolRefAttr symRef) {
-    if (unifications) {
-      unifications->try_emplace({symRef, Side::RHS}, symRef);
-    }
-  }
-
-  /// Refine an equal-symbol witness with a concrete or forwarded mapping, while retaining the
+  /// Refine a symbolic forwarding mapping with a concrete or forwarded value, while retaining the
   /// existing null value for genuinely conflicting repeated inference.
   void trackSymbolMapping(Side side, SymbolRefAttr symRef, Attribute attr) {
     auto key = std::make_pair(symRef, side);
@@ -842,11 +825,6 @@ private:
     assertValidAttrForParamOfType(rhsAttr);
     // Straightforward equality check.
     if (lhsAttr == rhsAttr) {
-      if (trackEqualSymbolRefs) {
-        if (SymbolRefAttr symRef = llvm::dyn_cast<SymbolRefAttr>(rhsAttr)) {
-          trackEqualSymbolRef(symRef);
-        }
-      }
       return true;
     }
     // AffineMapAttr can unify with IntegerAttr (other than kDynamic) because struct parameter
@@ -871,11 +849,6 @@ private:
     // a more involved value analysis is required to check if they are actually the same value.
     if (SymbolRefAttr lhsSymRef = llvm::dyn_cast<SymbolRefAttr>(lhsAttr)) {
       track(Side::LHS, lhsSymRef, rhsAttr);
-      if (trackEqualSymbolRefs) {
-        if (SymbolRefAttr rhsSymRef = llvm::dyn_cast<SymbolRefAttr>(rhsAttr)) {
-          trackSymbolMapping(Side::RHS, rhsSymRef, lhsSymRef);
-        }
-      }
       return true;
     }
     if (SymbolRefAttr rhsSymRef = llvm::dyn_cast<SymbolRefAttr>(rhsAttr)) {
@@ -959,10 +932,9 @@ bool podTypesUnify(
 
 bool functionTypesUnify(
     FunctionType lhs, FunctionType rhs, ArrayRef<StringRef> rhsReversePrefix,
-    UnificationMap *unifications, bool trackEqualSymbolRefs
+    UnificationMap *unifications
 ) {
-  return UnifierImpl(unifications, rhsReversePrefix, trackEqualSymbolRefs)
-      .functionTypesUnify(lhs, rhs);
+  return UnifierImpl(unifications, rhsReversePrefix).functionTypesUnify(lhs, rhs);
 }
 
 bool typesUnify(
