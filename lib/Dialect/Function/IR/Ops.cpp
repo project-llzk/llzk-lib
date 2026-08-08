@@ -913,9 +913,7 @@ struct KnownTargetVerifier : public CallOpVerifier {
           if (!functionTypesUnify(callOp->getTypeSignature(), tgtType, {}, &unifications)) {
             return failure();
           }
-          recordEqualSymbolInferenceWitnesses(
-              callOp->getTypeSignature(), tgtType, unifications
-          );
+          recordEqualSymbolInferenceWitnesses(callOp->getTypeSignature(), tgtType, unifications);
           return callOp->verifyTemplateParamsMatchInferred(realParams, unifications);
         }
         // Tested in call_with_template_params_fail.llzk

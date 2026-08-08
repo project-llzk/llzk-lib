@@ -612,8 +612,8 @@ struct UnifierImpl {
   llvm::function_ref<bool(Type oldTy, Type newTy)> overrideSuccess;
 
   UnifierImpl(UnificationMap *unificationMap, ArrayRef<StringRef> rhsReversePrefix = {})
-      : rhsRevPrefix(rhsReversePrefix), unifications(unificationMap),
-        affineToIntTracker(nullptr), overrideSuccess(nullptr) {}
+      : rhsRevPrefix(rhsReversePrefix), unifications(unificationMap), affineToIntTracker(nullptr),
+        overrideSuccess(nullptr) {}
 
   UnifierImpl &trackAffineToInt(AffineInstantiations *tracker) {
     this->affineToIntTracker = tracker;

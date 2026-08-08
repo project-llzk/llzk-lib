@@ -988,9 +988,7 @@ struct KnownTargetVerifier : public IncludeOpVerifier {
           if (!functionTypesUnify(includeOp->getTypeSignature(), tgtType, {}, &unifications)) {
             return failure();
           }
-          recordEqualSymbolInferenceWitnesses(
-              includeOp->getTypeSignature(), tgtType, unifications
-          );
+          recordEqualSymbolInferenceWitnesses(includeOp->getTypeSignature(), tgtType, unifications);
           return includeOp->verifyTemplateParamsMatchInferred(realParams, unifications);
         }
         return includeOp->emitOpError().append(
