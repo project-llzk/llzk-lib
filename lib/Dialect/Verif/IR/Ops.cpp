@@ -847,6 +847,11 @@ LogicalResult IncludeOp::verifyTemplateParamsMatchInferred(
         continue;
       }
       if (!it->second) {
+        if (std::optional<Type> declaredType = paramOp.getTypeOpt();
+            declaredType && llvm::isa<TypeVarType>(*declaredType)) {
+          // TypeVarInference emits the detailed conflicting-type diagnostic for this case.
+          continue;
+        }
         return this->emitOpError().append(
             "cannot infer template instantiation value for parameter \"@", paramOp.getName(),
             "\" from contract type signature"

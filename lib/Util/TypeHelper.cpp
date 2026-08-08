@@ -871,6 +871,11 @@ private:
     // a more involved value analysis is required to check if they are actually the same value.
     if (SymbolRefAttr lhsSymRef = llvm::dyn_cast<SymbolRefAttr>(lhsAttr)) {
       track(Side::LHS, lhsSymRef, rhsAttr);
+      if (trackEqualSymbolRefs) {
+        if (SymbolRefAttr rhsSymRef = llvm::dyn_cast<SymbolRefAttr>(rhsAttr)) {
+          trackSymbolMapping(Side::RHS, rhsSymRef, lhsSymRef);
+        }
+      }
       return true;
     }
     if (SymbolRefAttr rhsSymRef = llvm::dyn_cast<SymbolRefAttr>(rhsAttr)) {

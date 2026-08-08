@@ -230,7 +230,7 @@ module attributes {llzk.lang} {
     }
 
     verif.contract @Wrapper for @SpecTemplate::@token () {
-      // expected-error@+1 {{'verif.include' op must provide template instantiation parameters when calling "@Base" because not all template parameters of "@SpecTemplate" appear in the function type signature}}
+      // expected-error@+1 {{'verif.include' op must provide template instantiation parameters when calling "@Base" because not all template parameters of "@SpecTemplate" appear in the contract type signature}}
       verif.include @SpecTemplate::@Base() : () -> ()
     }
   }
