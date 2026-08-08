@@ -15,12 +15,14 @@
 
 #include "llzk/Dialect/Function/IR/Ops.h"
 
+#include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
+#include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
@@ -71,26 +73,133 @@ verifyTypeResolution(SymbolTableCollection &tables, Operation *origin, FunctionT
   );
 }
 
-/// Record same-spelling symbols that structural type equality can hide from the generic unifier.
-/// The target symbol is kept as the map key while the value is resolved in the caller scope by
-/// `verifyTemplateParamCompatibility`; this is a scoped witness, not a claim that the bindings are
-/// semantically identical.
-static void recordEqualSymbolInferenceWitnesses(
-    FunctionType actualType, FunctionType targetType, UnificationMap &unifications
+/// Preserve target-to-actual parameter occurrences that the generic unifier cannot expose after
+/// an equal-type fast path. The target key is retained, while a symbolic value is resolved in the
+/// caller scope by `verifyTemplateParamCompatibility`; this is a scoped witness, not semantic
+/// identity between the two bindings.
+static void recordInferenceWitnesses(
+    FunctionType actualType, FunctionType targetType, ArrayRef<FlatSymbolRefAttr> targetParams,
+    UnificationMap &unifications
 ) {
-  llvm::SmallDenseSet<SymbolRefAttr> actualSymbols;
-  llzk::getSymbolsUsedIn(actualType.getInputs(), actualSymbols);
-  llzk::getSymbolsUsedIn(actualType.getResults(), actualSymbols);
+  auto findTargetParam = [&](SymbolRefAttr symbol) -> FlatSymbolRefAttr {
+    for (FlatSymbolRefAttr targetParam : targetParams) {
+      if (symbol == targetParam || symbol.getRootReference() == targetParam.getRootReference()) {
+        return targetParam;
+      }
+    }
+    return {};
+  };
 
-  llvm::SmallDenseSet<SymbolRefAttr> targetSymbols;
-  llzk::getSymbolsUsedIn(targetType.getInputs(), targetSymbols);
-  llzk::getSymbolsUsedIn(targetType.getResults(), targetSymbols);
+  auto recordMapping = [&](FlatSymbolRefAttr targetParam, Attribute actualValue) {
+    auto key = std::make_pair(targetParam, Side::RHS);
+    auto it = unifications.find(key);
+    if (it == unifications.end()) {
+      unifications.try_emplace(key, actualValue);
+    } else if (it->second && it->second != actualValue) {
+      it->second = nullptr;
+    }
+  };
 
-  for (SymbolRefAttr targetSymbol : targetSymbols) {
-    if (actualSymbols.contains(targetSymbol)) {
-      unifications.try_emplace({targetSymbol, Side::RHS}, targetSymbol);
+  // The generic unifier records symbolic forwarding in both directions. Normalize the reverse
+  // direction to the declared target parameter before the verifier consumes the map.
+  SmallVector<std::pair<FlatSymbolRefAttr, Attribute>> forwarded;
+  for (const auto &entry : unifications) {
+    if (entry.first.second != Side::LHS) {
+      continue;
+    }
+    if (auto targetSymbol = dyn_cast<SymbolRefAttr>(entry.second)) {
+      if (FlatSymbolRefAttr targetParam = findTargetParam(targetSymbol)) {
+        forwarded.emplace_back(targetParam, entry.first.first);
+      }
     }
   }
+  for (auto [targetParam, actualValue] : forwarded) {
+    recordMapping(targetParam, actualValue);
+  }
+
+  llvm::function_ref<void(Attribute, Attribute)> recordAttrs;
+  llvm::function_ref<void(Type, Type)> recordTypes;
+  recordAttrs = [&](Attribute actualAttr, Attribute targetAttr) {
+    if (auto targetSymbol = dyn_cast<SymbolRefAttr>(targetAttr)) {
+      if (FlatSymbolRefAttr targetParam = findTargetParam(targetSymbol)) {
+        recordMapping(targetParam, actualAttr);
+      }
+      return;
+    }
+    auto actualTypeAttr = dyn_cast<TypeAttr>(actualAttr);
+    auto targetTypeAttr = dyn_cast<TypeAttr>(targetAttr);
+    if (actualTypeAttr && targetTypeAttr) {
+      recordTypes(actualTypeAttr.getValue(), targetTypeAttr.getValue());
+    }
+  };
+  recordTypes = [&](Type actual, Type target) {
+    if (auto targetTvar = dyn_cast<TypeVarType>(target)) {
+      if (FlatSymbolRefAttr targetParam = findTargetParam(targetTvar.getNameRef())) {
+        Attribute actualValue = isa<TypeVarType>(actual) ? cast<TypeVarType>(actual).getNameRef()
+                                                         : TypeAttr::get(actual);
+        recordMapping(targetParam, actualValue);
+      }
+      return;
+    }
+
+    if (auto actualStruct = dyn_cast<StructType>(actual)) {
+      if (auto targetStruct = dyn_cast<StructType>(target);
+          targetStruct && actualStruct.getNameRef() == targetStruct.getNameRef()) {
+        auto actualParams = actualStruct.getParams();
+        auto targetParamsInType = targetStruct.getParams();
+        if (actualParams && targetParamsInType &&
+            actualParams.size() == targetParamsInType.size()) {
+          for (auto [actualAttr, targetAttr] :
+               llvm::zip_equal(actualParams.getValue(), targetParamsInType.getValue())) {
+            recordAttrs(actualAttr, targetAttr);
+          }
+        }
+      }
+      return;
+    }
+    if (auto actualArray = dyn_cast<llzk::array::ArrayType>(actual)) {
+      if (auto targetArray = dyn_cast<llzk::array::ArrayType>(target)) {
+        recordTypes(actualArray.getElementType(), targetArray.getElementType());
+        if (actualArray.getDimensionSizes().size() == targetArray.getDimensionSizes().size()) {
+          for (auto [actualAttr, targetAttr] :
+               llvm::zip_equal(actualArray.getDimensionSizes(), targetArray.getDimensionSizes())) {
+            recordAttrs(actualAttr, targetAttr);
+          }
+        }
+      }
+      return;
+    }
+    if (auto actualPod = dyn_cast<llzk::pod::PodType>(actual)) {
+      if (auto targetPod = dyn_cast<llzk::pod::PodType>(target);
+          targetPod && actualPod.getRecords().size() == targetPod.getRecords().size()) {
+        for (auto [actualRecord, targetRecord] :
+             llvm::zip_equal(actualPod.getRecords(), targetPod.getRecords())) {
+          if (actualRecord.getName() == targetRecord.getName()) {
+            recordTypes(actualRecord.getType(), targetRecord.getType());
+          }
+        }
+      }
+      return;
+    }
+    if (auto actualFunction = dyn_cast<FunctionType>(actual)) {
+      if (auto targetFunction = dyn_cast<FunctionType>(target)) {
+        if (actualFunction.getInputs().size() == targetFunction.getInputs().size()) {
+          for (auto [actualInput, targetInput] :
+               llvm::zip_equal(actualFunction.getInputs(), targetFunction.getInputs())) {
+            recordTypes(actualInput, targetInput);
+          }
+        }
+        if (actualFunction.getResults().size() == targetFunction.getResults().size()) {
+          for (auto [actualResult, targetResult] :
+               llvm::zip_equal(actualFunction.getResults(), targetFunction.getResults())) {
+            recordTypes(actualResult, targetResult);
+          }
+        }
+      }
+    }
+  };
+
+  recordTypes(actualType, targetType);
 }
 
 /// Verify the name attributes on function arguments or results.
@@ -913,7 +1022,12 @@ struct KnownTargetVerifier : public CallOpVerifier {
           if (!functionTypesUnify(callOp->getTypeSignature(), tgtType, {}, &unifications)) {
             return failure();
           }
-          recordEqualSymbolInferenceWitnesses(callOp->getTypeSignature(), tgtType, unifications);
+          SmallVector<FlatSymbolRefAttr> targetParams;
+          targetParams.reserve(llvm::range_size(realParams));
+          for (TemplateParamOp paramOp : realParams) {
+            targetParams.push_back(FlatSymbolRefAttr::get(paramOp.getSymNameAttr()));
+          }
+          recordInferenceWitnesses(callOp->getTypeSignature(), tgtType, targetParams, unifications);
           return callOp->verifyTemplateParamsMatchInferred(realParams, unifications);
         }
         // Tested in call_with_template_params_fail.llzk
