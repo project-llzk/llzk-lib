@@ -40,6 +40,7 @@
 
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/MapVector.h>
+#include <llvm/Support/raw_ostream.h>
 
 // TableGen'd implementation files
 #define GET_OP_CLASSES
@@ -835,6 +836,14 @@ LogicalResult CallOp::verifyTemplateParamsMatchInferred(
   ArrayAttr callParams = this->getTemplateParamsAttr();
   if (isNullOrEmpty(callParams)) {
     for (TemplateParamOp paramOp : targetParamDefs) {
+      if (paramOp.getName() == "T" || paramOp.getName() == "F") {
+        llvm::errs() << "[debug omitted call] param=" << paramOp.getName()
+                     << " map-size=" << unifications.size() << '\n';
+        for (const auto &entry : unifications) {
+          llvm::errs() << "  key=" << entry.first.first << ", side=" << entry.first.second
+                       << ", value=" << entry.second << '\n';
+        }
+      }
       auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getSymNameAttr()), Side::RHS});
       if (it == unifications.end()) {
         // No inferred value means the signature did not expose this parameter to this call.

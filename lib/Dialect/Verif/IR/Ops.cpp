@@ -44,6 +44,7 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVectorExtras.h>
 #include <llvm/ADT/Twine.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include <memory>
 
@@ -975,6 +976,14 @@ LogicalResult IncludeOp::verifyTemplateParamsMatchInferred(
   ArrayAttr callParams = this->getTemplateParamsAttr();
   if (isNullOrEmpty(callParams)) {
     for (TemplateParamOp paramOp : targetParamDefs) {
+      if (paramOp.getName() == "T" || paramOp.getName() == "F") {
+        llvm::errs() << "[debug omitted include] param=" << paramOp.getName()
+                     << " map-size=" << unifications.size() << '\n';
+        for (const auto &entry : unifications) {
+          llvm::errs() << "  key=" << entry.first.first << ", side=" << entry.first.second
+                       << ", value=" << entry.second << '\n';
+        }
+      }
       auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getSymNameAttr()), Side::RHS});
       if (it == unifications.end()) {
         // No inferred value means the signature did not expose this parameter to this include.
