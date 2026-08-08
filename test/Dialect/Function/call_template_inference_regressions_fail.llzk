@@ -1,0 +1,89 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @TypeTarget {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@T]>>) {
+      function.return
+    }
+  }
+
+  poly.template @IndexCaller {
+    poly.param @N : index
+
+    function.def @caller(%value: !struct.type<@BoxTemplate::@Box<[@N]>>) {
+      // Omitted inference must validate a value binding against a type-only restriction.
+      // expected-error@+1 {{'function.call' op instantiation value '@N' is not compatible with parameter "@T" type restriction '!poly.tvar<@T>'}}
+      function.call @TypeTarget::@accept(%value) :
+          (!struct.type<@BoxTemplate::@Box<[@N]>>) -> ()
+      function.return
+    }
+  }
+
+  poly.template @SameTypeNameCaller {
+    poly.param @T : index
+
+    function.def @caller(%value: !struct.type<@BoxTemplate::@Box<[@T]>>) {
+      // Equal spelling does not make this caller binding type-valued.
+      // expected-error@+1 {{'function.call' op instantiation value '@T' is not compatible with parameter "@T" type restriction '!poly.tvar<@T>'}}
+      function.call @TypeTarget::@accept(%value) :
+          (!struct.type<@BoxTemplate::@Box<[@T]>>) -> ()
+      function.return
+    }
+  }
+
+  poly.template @SameNameTarget {
+    poly.param @F : !felt.type<"bn128">
+
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+      function.return
+    }
+  }
+
+  poly.template @SameNameCaller {
+    poly.param @F : !felt.type<"goldilocks">
+
+    function.def @caller(%value: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+      // Equal textual symbols still refer to distinct scoped bindings.
+      // expected-error@+1 {{'function.call' op instantiation value '@F' is not compatible with parameter "@F" type restriction '!felt.type<"bn128">'}}
+      function.call @SameNameTarget::@accept(%value) :
+          (!struct.type<@BoxTemplate::@Box<[@F]>>) -> ()
+      function.return
+    }
+  }
+
+  poly.template @RepeatedTarget {
+    poly.param @N : index
+
+    function.def @accept(
+        %lhs: !array.type<@N x index>, %rhs: !array.type<@N x index>
+    ) {
+      function.return
+    }
+  }
+
+  function.def @repeatedCaller(
+      %lhs: !array.type<4 x index>, %rhs: !array.type<8 x index>
+  ) {
+    // A null conflict entry must be diagnosed, not passed to attribute unification.
+    // expected-error@+1 {{'function.call' op cannot infer a unique template instantiation value for parameter "@N" from function type signature}}
+    function.call @RepeatedTarget::@accept<[4]>(%lhs, %rhs) :
+        (!array.type<4 x index>, !array.type<8 x index>) -> ()
+    function.return
+  }
+}

@@ -1,0 +1,135 @@
+// RUN: llzk-opt -split-input-file %s
+
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @TypeTarget {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@T]>>) {
+      function.return
+    }
+
+    verif.contract @Base for @TypeTarget::@accept (
+        %value: !struct.type<@BoxTemplate::@Box<[@T]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  poly.template @TypeCaller {
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @caller(%value: !struct.type<@BoxTemplate::@Box<[@U]>>) {
+      function.return
+    }
+
+    verif.contract @Included for @TypeCaller::@caller (
+        %value: !struct.type<@BoxTemplate::@Box<[@U]>>
+    ) {
+      verif.include @TypeTarget::@Base(%value) :
+          (!struct.type<@BoxTemplate::@Box<[@U]>>) -> ()
+    }
+  }
+
+  poly.template @SameTypeNameCaller {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @caller(%value: !struct.type<@BoxTemplate::@Box<[@T]>>) {
+      function.return
+    }
+
+    verif.contract @Included for @SameTypeNameCaller::@caller (
+        %value: !struct.type<@BoxTemplate::@Box<[@T]>>
+    ) {
+      verif.include @TypeTarget::@Base(%value) :
+          (!struct.type<@BoxTemplate::@Box<[@T]>>) -> ()
+    }
+  }
+
+  function.def @concreteCaller(
+      %value: !struct.type<@BoxTemplate::@Box<[!felt.type]>>
+  ) {
+    function.return
+  }
+
+  verif.contract @ConcreteIncluded for @concreteCaller (
+      %value: !struct.type<@BoxTemplate::@Box<[!felt.type]>>
+  ) {
+    verif.include @TypeTarget::@Base(%value) :
+        (!struct.type<@BoxTemplate::@Box<[!felt.type]>>) -> ()
+  }
+
+  poly.template @SameNameTarget {
+    poly.param @F : !felt.type<"bn128">
+
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+      function.return
+    }
+
+    verif.contract @Base for @SameNameTarget::@accept (
+        %value: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  poly.template @SameNameCaller {
+    poly.param @F : !felt.type<"bn128">
+
+    function.def @caller(%value: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+      function.return
+    }
+
+    verif.contract @Included for @SameNameCaller::@caller (
+        %value: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      verif.include @SameNameTarget::@Base(%value) :
+          (!struct.type<@BoxTemplate::@Box<[@F]>>) -> ()
+    }
+  }
+
+  poly.template @RepeatedTarget {
+    poly.param @N : index
+
+    function.def @accept(
+        %lhs: !array.type<@N x index>, %rhs: !array.type<@N x index>
+    ) {
+      function.return
+    }
+
+    verif.contract @Base for @RepeatedTarget::@accept (
+        %lhs: !array.type<@N x index>, %rhs: !array.type<@N x index>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  function.def @repeatedCaller(
+      %lhs: !array.type<4 x index>, %rhs: !array.type<4 x index>
+  ) {
+    function.return
+  }
+
+  verif.contract @RepeatedIncluded for @repeatedCaller (
+      %lhs: !array.type<4 x index>, %rhs: !array.type<4 x index>
+  ) {
+    verif.include @RepeatedTarget::@Base(%lhs, %rhs) :
+        (!array.type<4 x index>, !array.type<4 x index>) -> ()
+  }
+}

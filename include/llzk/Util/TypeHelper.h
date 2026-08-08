@@ -254,10 +254,13 @@ bool podTypesUnify(
 );
 
 /// Return `true` iff the two FunctionType instances are equivalent or could be equivalent after
-/// full instantiation of template parameters.
+/// full instantiation of template parameters. When `trackEqualSymbolRefs` is true, symbol
+/// references at equal positions are recorded in `unifications` as low-priority witnesses; the
+/// default preserves the existing unification behavior.
 bool functionTypesUnify(
     mlir::FunctionType lhs, mlir::FunctionType rhs,
-    mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}, UnificationMap *unifications = nullptr
+    mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}, UnificationMap *unifications = nullptr,
+    bool trackEqualSymbolRefs = false
 );
 
 /// Return `true` iff the two Type instances are equivalent or could be equivalent after full

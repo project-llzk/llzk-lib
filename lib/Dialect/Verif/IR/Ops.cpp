@@ -841,10 +841,6 @@ LogicalResult IncludeOp::verifyTemplateParamsMatchInferred(
   ArrayAttr callParams = this->getTemplateParamsAttr();
   if (isNullOrEmpty(callParams)) {
     for (TemplateParamOp paramOp : targetParamDefs) {
-      if (std::optional<Type> declaredType = paramOp.getTypeOpt();
-          declaredType && llvm::isa<TypeVarType>(*declaredType)) {
-        continue;
-      }
       auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::RHS});
       if (it == unifications.end()) {
         // No inferred value means the signature did not expose this parameter to this include.
@@ -873,15 +869,21 @@ LogicalResult IncludeOp::verifyTemplateParamsMatchInferred(
       }
     }
     auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::RHS});
-    if (it != unifications.end() && it->second &&
+    if (it != unifications.end() && !it->second) {
+      return this->emitOpError().append(
+          "cannot infer a unique template instantiation value for parameter \"@",
+          paramOp.getName(), "\" from contract type signature"
+      );
+    }
+    if (it != unifications.end() &&
         failed(verifyTemplateParamCompatibility(it->second, paramOp))) {
       return failure();
     }
-    if (it != unifications.end() &&
+    if (it != unifications.end() && it->second &&
         !templateParamValuesUnify(attr, it->second, paramOp.getTypeOpt())) {
       return this->emitOpError().append(
           "template instantiation value '", attr, "' for parameter \"@", paramOp.getName(),
-          "\" conflicts with value '", it->second, "' inferred from function type signature"
+          "\" conflicts with value '", it->second, "' inferred from contract type signature"
       );
     }
   }
@@ -935,14 +937,14 @@ struct KnownTargetVerifier : public IncludeOpVerifier {
   LogicalResult verifyTemplateParams() override {
     Operation *tgtOp = tgt.getOperation();
     if (TemplateOp tgtOpParent = getParentOfType<TemplateOp>(tgtOp)) {
-      // When the target function is a free function within a TemplateOp, the IncludeOp may have
+      // When the target contract is within a TemplateOp, the IncludeOp may have
       // template parameter instantiations that must be checked against the template parameters.
-      // - If the function type signature references all template parameters, then the parameter
+      // - If the contract type signature references all template parameters, then the parameter
       //   instantiation list on the IncludeOp is optional, otherwise it's required.
       // - If present, the instantiation list must provide a value for every template parameter
       //   and the value must be type-compatible with the parameter's declared type (if any).
-      // - If present, the instantiation list must result in a function type signature that can
-      //   be unified with the IncludeOp's operand and result types.
+      // - If present, the instantiation list must result in a contract type signature that can
+      //   be unified with the IncludeOp's operand types.
       auto realParams = tgtOpParent.getConstOps<TemplateParamOp>();
       ArrayAttr callParams = includeOp->getTemplateParamsAttr();
 
@@ -956,16 +958,19 @@ struct KnownTargetVerifier : public IncludeOpVerifier {
           return referencedInSignature.contains(FlatSymbolRefAttr::get(p.getNameAttr()));
         });
         if (allParamsReferenced) {
-          FailureOr<UnificationMap> unifyResult = includeOp->unifyTypeSignature(tgtType);
-          if (failed(unifyResult)) {
+          UnificationMap unifications;
+          if (!functionTypesUnify(
+                  includeOp->getTypeSignature(), tgtType, {}, &unifications,
+                  /*trackEqualSymbolRefs=*/true
+              )) {
             return failure();
           }
-          return includeOp->verifyTemplateParamsMatchInferred(realParams, unifyResult.value());
+          return includeOp->verifyTemplateParamsMatchInferred(realParams, unifications);
         }
         return includeOp->emitOpError().append(
             "must provide template instantiation parameters when calling \"@", tgt.getSymName(),
             "\" because not all template parameters of \"@", tgtOpParent.getSymName(),
-            "\" appear in the function type signature"
+            "\" appear in the contract type signature"
         );
       }
 
@@ -991,7 +996,7 @@ struct KnownTargetVerifier : public IncludeOpVerifier {
       }
 
       // Check that the provided instantiation values are consistent with what type unification
-      // of the target function types against the call's operand and result types would determine.
+      // of the target contract type against the IncludeOp's operand types would determine.
       FailureOr<UnificationMap> unifyResult = includeOp->unifyTypeSignature(tgtType);
       // This is already checked by `verifyInputs()`, but `verifyTemplateParams()` is called
       // even if `verifyInputs()` fails for error aggregation, so we still need to return

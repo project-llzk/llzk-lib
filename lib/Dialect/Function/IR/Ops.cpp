@@ -701,10 +701,6 @@ LogicalResult CallOp::verifyTemplateParamsMatchInferred(
   ArrayAttr callParams = this->getTemplateParamsAttr();
   if (isNullOrEmpty(callParams)) {
     for (TemplateParamOp paramOp : targetParamDefs) {
-      if (std::optional<Type> declaredType = paramOp.getTypeOpt();
-          declaredType && llvm::isa<TypeVarType>(*declaredType)) {
-        continue;
-      }
       auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::RHS});
       if (it == unifications.end()) {
         // No inferred value means the signature did not expose this parameter to this call.
@@ -733,11 +729,17 @@ LogicalResult CallOp::verifyTemplateParamsMatchInferred(
       }
     }
     auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::RHS});
-    if (it != unifications.end() && it->second &&
+    if (it != unifications.end() && !it->second) {
+      return this->emitOpError().append(
+          "cannot infer a unique template instantiation value for parameter \"@",
+          paramOp.getName(), "\" from function type signature"
+      );
+    }
+    if (it != unifications.end() &&
         failed(verifyTemplateParamCompatibility(it->second, paramOp))) {
       return failure();
     }
-    if (it != unifications.end() &&
+    if (it != unifications.end() && it->second &&
         !templateParamValuesUnify(attr, it->second, paramOp.getTypeOpt())) {
       // Tested in call_with_template_params_fail.llzk
       return this->emitOpError().append(
@@ -881,11 +883,14 @@ struct KnownTargetVerifier : public CallOpVerifier {
           return referencedInSignature.contains(FlatSymbolRefAttr::get(p.getNameAttr()));
         });
         if (allParamsReferenced) {
-          FailureOr<UnificationMap> unifyResult = callOp->unifyTypeSignature(tgtType);
-          if (failed(unifyResult)) {
+          UnificationMap unifications;
+          if (!functionTypesUnify(
+                  callOp->getTypeSignature(), tgtType, {}, &unifications,
+                  /*trackEqualSymbolRefs=*/true
+              )) {
             return failure();
           }
-          return callOp->verifyTemplateParamsMatchInferred(realParams, unifyResult.value());
+          return callOp->verifyTemplateParamsMatchInferred(realParams, unifications);
         }
         // Tested in call_with_template_params_fail.llzk
         return callOp->emitOpError().append(

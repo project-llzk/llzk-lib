@@ -1,0 +1,130 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @TypeTarget {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@T]>>) {
+      function.return
+    }
+
+    verif.contract @Base for @TypeTarget::@accept (
+        %value: !struct.type<@BoxTemplate::@Box<[@T]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  poly.template @IndexCaller {
+    poly.param @N : index
+
+    function.def @caller(%value: !struct.type<@BoxTemplate::@Box<[@N]>>) {
+      function.return
+    }
+
+    verif.contract @Included for @IndexCaller::@caller (
+        %value: !struct.type<@BoxTemplate::@Box<[@N]>>
+    ) {
+      // Omitted inference must validate a value binding against a type-only restriction.
+      // expected-error@+1 {{'verif.include' op instantiation value '@N' is not compatible with parameter "@T" type restriction '!poly.tvar<@T>'}}
+      verif.include @TypeTarget::@Base(%value) :
+          (!struct.type<@BoxTemplate::@Box<[@N]>>) -> ()
+    }
+  }
+
+  poly.template @SameTypeNameCaller {
+    poly.param @T : index
+
+    function.def @caller(%value: !struct.type<@BoxTemplate::@Box<[@T]>>) {
+      function.return
+    }
+
+    verif.contract @Included for @SameTypeNameCaller::@caller (
+        %value: !struct.type<@BoxTemplate::@Box<[@T]>>
+    ) {
+      // Equal spelling does not make this caller binding type-valued.
+      // expected-error@+1 {{'verif.include' op instantiation value '@T' is not compatible with parameter "@T" type restriction '!poly.tvar<@T>'}}
+      verif.include @TypeTarget::@Base(%value) :
+          (!struct.type<@BoxTemplate::@Box<[@T]>>) -> ()
+    }
+  }
+
+  poly.template @SameNameTarget {
+    poly.param @F : !felt.type<"bn128">
+
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+      function.return
+    }
+
+    verif.contract @Base for @SameNameTarget::@accept (
+        %value: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  poly.template @SameNameCaller {
+    poly.param @F : !felt.type<"goldilocks">
+
+    function.def @caller(%value: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+      function.return
+    }
+
+    verif.contract @Included for @SameNameCaller::@caller (
+        %value: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      // Equal textual symbols still refer to distinct scoped bindings.
+      // expected-error@+1 {{'verif.include' op instantiation value '@F' is not compatible with parameter "@F" type restriction '!felt.type<"bn128">'}}
+      verif.include @SameNameTarget::@Base(%value) :
+          (!struct.type<@BoxTemplate::@Box<[@F]>>) -> ()
+    }
+  }
+
+  poly.template @RepeatedTarget {
+    poly.param @N : index
+
+    function.def @accept(
+        %lhs: !array.type<@N x index>, %rhs: !array.type<@N x index>
+    ) {
+      function.return
+    }
+
+    verif.contract @Base for @RepeatedTarget::@accept (
+        %lhs: !array.type<@N x index>, %rhs: !array.type<@N x index>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  function.def @repeatedCaller(
+      %lhs: !array.type<4 x index>, %rhs: !array.type<8 x index>
+  ) {
+    function.return
+  }
+
+  verif.contract @RepeatedIncluded for @repeatedCaller (
+      %lhs: !array.type<4 x index>, %rhs: !array.type<8 x index>
+  ) {
+    // A null conflict entry must be diagnosed, not passed to attribute unification.
+    // expected-error@+1 {{'verif.include' op cannot infer a unique template instantiation value for parameter "@N" from contract type signature}}
+    verif.include @RepeatedTarget::@Base<[4]>(%lhs, %rhs) :
+        (!array.type<4 x index>, !array.type<8 x index>) -> ()
+  }
+}

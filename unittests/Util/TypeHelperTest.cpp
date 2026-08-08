@@ -14,6 +14,7 @@
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
+#include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
 
@@ -92,6 +93,24 @@ TEST_F(TypeHelperTests, test_functionTypesUnify_Pass) {
   ASSERT_TRUE(functionTypesUnify(a, b));
 }
 
+TEST_F(TypeHelperTests, test_functionTypesUnify_EqualSymbolTracking) {
+  FlatSymbolRefAttr param = FlatSymbolRefAttr::get(&ctx, "F");
+  StructType actual = StructType::get(
+      FlatSymbolRefAttr::get(&ctx, "Box"), ArrayRef<Attribute> {param}
+  );
+  FunctionType type = FunctionType::get(&ctx, {actual}, {});
+
+  UnificationMap defaultUnifications;
+  ASSERT_TRUE(functionTypesUnify(type, type, {}, &defaultUnifications));
+  EXPECT_TRUE(defaultUnifications.empty());
+
+  UnificationMap trackedUnifications;
+  ASSERT_TRUE(functionTypesUnify(type, type, {}, &trackedUnifications, true));
+  auto it = trackedUnifications.find({param, Side::RHS});
+  ASSERT_NE(it, trackedUnifications.end());
+  EXPECT_EQ(it->second, param);
+}
+
 TEST_F(TypeHelperTests, test_functionTypesUnify_Input_Fail) {
   IndexType tyIndex = IndexType::get(&ctx);
   FunctionType a = FunctionType::get(&ctx, {IntegerType::get(&ctx, 8)}, {tyIndex});
@@ -118,6 +137,11 @@ TEST_F(TypeHelperTests, test_templateParamTypeCompatibility_feltFields) {
   ASSERT_FALSE(isTemplateParamTypeCompatible(goldilocks, bn128));
   ASSERT_FALSE(isTemplateParamTypeCompatible(IndexType::get(&ctx), bn128));
   ASSERT_FALSE(isTemplateParamTypeCompatible(std::nullopt, bn128));
+
+  TypeVarType typeOnly = TypeVarType::get(FlatSymbolRefAttr::get(&ctx, "T"));
+  EXPECT_TRUE(isTemplateParamTypeCompatible(typeOnly, typeOnly));
+  EXPECT_FALSE(isTemplateParamTypeCompatible(IndexType::get(&ctx), typeOnly));
+  EXPECT_FALSE(isTemplateParamTypeCompatible(std::optional<Type> {}, typeOnly));
 }
 
 TEST_F(TypeHelperTests, test_templateParamValuesUnify_feltRepresentations) {
