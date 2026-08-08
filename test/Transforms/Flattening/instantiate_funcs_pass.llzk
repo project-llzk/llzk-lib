@@ -356,3 +356,51 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    %[[VAL_16:[0-9a-zA-Z_\.]+]] = function.call @T_89_i_compute() : () -> index
 // CHECK-NEXT:    function.return %[[VAL_16]] : index
 // CHECK-NEXT:  }
+// -----
+
+// Reusing a full instantiation across different call-site spellings must keep each rewritten
+// callee valid from its caller scope.
+module attributes {llzk.lang} {
+  module @lib attributes {llzk.lang} {
+    poly.template @T {
+      poly.param @N : index
+
+      function.def @f(%inp: !array.type<@N x !felt.type>) -> !felt.type {
+        %c0 = arith.constant 0 : index
+        %r = array.read %inp[%c0] : !array.type<@N x !felt.type>, !felt.type
+        function.return %r : !felt.type
+      }
+    }
+
+    function.def @local(%inp: !array.type<4 x !felt.type>) -> !felt.type {
+      %r = function.call @T::@f(%inp) : (!array.type<4 x !felt.type>) -> !felt.type
+      function.return %r : !felt.type
+    }
+  }
+
+  module @sibling {
+    function.def @remote(%inp: !array.type<4 x !felt.type>) -> !felt.type {
+      %r = function.call @lib::@T::@f(%inp) : (!array.type<4 x !felt.type>) -> !felt.type
+      function.return %r : !felt.type
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    module @lib attributes {llzk.lang} {
+// CHECK-NEXT:      function.def @T_4_f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>) -> !felt.type {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_1]]] : <4 x !felt.type>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_2]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @local(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>) -> !felt.type {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @T_4_f(%[[VAL_3]]) : (!array.type<4 x !felt.type>) -> !felt.type
+// CHECK-NEXT:        function.return %[[VAL_4]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    module @sibling {
+// CHECK-NEXT:      function.def @remote(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>) -> !felt.type {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @lib::@T_4_f(%[[VAL_5]]) : (!array.type<4 x !felt.type>) -> !felt.type
+// CHECK-NEXT:        function.return %[[VAL_6]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

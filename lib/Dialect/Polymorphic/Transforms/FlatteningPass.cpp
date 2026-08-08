@@ -21,6 +21,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
@@ -43,6 +44,7 @@
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/BuiltinTypes.h>
+#include <mlir/IR/Dominance.h>
 #include <mlir/Interfaces/InferTypeOpInterface.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Support/LLVM.h>
@@ -56,8 +58,10 @@
 #include <llvm/ADT/DepthFirstIterator.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Debug.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include <cstdint>
 
@@ -83,6 +87,8 @@ using namespace llzk::polymorphic::detail;
 
 namespace {
 
+/// Emit diagnostics that were collected while converting a cloned body, rebasing placeholder notes
+/// onto the call site that triggered the clone.
 static void reportDelayedDiagnostics(CallOp caller, SmallVector<Diagnostic> &&diagnostics) {
   DiagnosticEngine &engine = caller.getContext()->getDiagEngine();
   for (Diagnostic &diag : diagnostics) {
@@ -110,7 +116,7 @@ class ConversionTracker {
   };
 
   /// Tracks if some step performed a modification of the code such that another pass should be run.
-  bool modified;
+  bool modified = false;
   /// Maps original remote (i.e., use site) type to new remote type.
   /// Note: The keys are always parameterized StructType and the values are no-parameter StructType.
   DenseMap<StructType, StructType> structInstantiations;
@@ -124,12 +130,22 @@ class ConversionTracker {
   /// Maps new remote type (i.e., the values in 'structInstantiations') to a list of Diagnostic
   /// to report at the location(s) of the compute() that causes the instantiation to the StructType.
   DenseMap<StructType, SmallVector<Diagnostic>> delayedDiagnostics;
+  /// Caches full function instantiations by `<original-callee-path>|<instantiated-template-name>`.
+  /// This cache must outlive individual rewrite pattern instances because flattening re-runs
+  /// Step 2 across fixpoint iterations.
+  llvm::StringMap<SymbolRefAttr> fullFuncInstantiationCache;
 
 public:
+  /// Return whether the current flattening iteration has changed the IR.
   bool isModified() const { return modified; }
+
+  /// Clear the per-iteration modification flag before starting the next iteration.
   void resetModifiedFlag() { modified = false; }
+
+  /// Merge the modification status from one rewrite step into the iteration state.
   void updateModifiedFlag(bool currStepModified) { modified |= currStepModified; }
 
+  /// Record a struct instantiation from the original use-site type to its cloned replacement type.
   void recordInstantiation(StructType oldType, StructType newType) {
     assert(!isNullOrEmpty(oldType.getParams()) && "cannot instantiate with no params");
 
@@ -154,6 +170,15 @@ public:
   std::optional<StructType> getInstantiation(StructType oldType) const {
     auto cachedResult = structInstantiations.find(oldType);
     if (cachedResult != structInstantiations.end()) {
+      return cachedResult->second;
+    }
+    return std::nullopt;
+  }
+
+  /// Return the original parameterized type that produced the given instantiated type, if any.
+  std::optional<StructType> getPreimage(StructType newType) const {
+    auto cachedResult = reverseInstantiations.find(newType);
+    if (cachedResult != reverseInstantiations.end()) {
       return cachedResult->second;
     }
     return std::nullopt;
@@ -214,6 +239,7 @@ public:
     return instantiatedNames;
   }
 
+  /// Emit diagnostics delayed until a compute call has been rewritten to the instantiated type.
   void reportDelayedDiagnostics(StructType newType, CallOp caller) {
     auto res = delayedDiagnostics.find(newType);
     if (res != delayedDiagnostics.end()) {
@@ -226,8 +252,28 @@ public:
     }
   }
 
+  /// Return the mutable diagnostic queue associated with `newType`.
   SmallVector<Diagnostic> &delayedDiagnosticSet(StructType newType) {
     return delayedDiagnostics[newType];
+  }
+
+  /// Return the cached fully-instantiated function path for `key`, if present.
+  std::optional<SymbolRefAttr> getFullFuncInstantiation(StringRef key) const {
+    auto cachedResult = fullFuncInstantiationCache.find(key);
+    if (cachedResult != fullFuncInstantiationCache.end()) {
+      return cachedResult->second;
+    }
+    return std::nullopt;
+  }
+
+  /// Remember the fully-instantiated function path for `key`.
+  void recordFullFuncInstantiation(StringRef key, SymbolRefAttr instantiatedPath) {
+    auto [it, inserted] = fullFuncInstantiationCache.try_emplace(key, instantiatedPath);
+    (void)inserted; // tell compiler it's intentionally unused in release builds
+    assert(
+        (inserted || it->second == instantiatedPath) &&
+        "cache key collision with a different full function instantiation"
+    );
   }
 
   /// Check if the type conversion is legal, i.e., the new type unifies with and is more concrete
@@ -266,6 +312,7 @@ public:
     return false;
   }
 
+  /// Check whether every corresponding pair in `oldTypes` and `newTypes` is a legal conversion.
   template <typename T, typename U>
   inline bool areLegalConversions(T oldTypes, U newTypes, const char *patName) const {
     return llvm::all_of(
@@ -276,11 +323,14 @@ public:
   }
 };
 
+/// Base conversion pattern for ops that reference template symbols by attribute and rewrite only
+/// when that symbol has a concrete instantiation value of one of `HandledAttrs`.
 template <typename Impl, typename Op, typename... HandledAttrs>
 class SymbolUserHelper : public OpConversionPattern<Op> {
 private:
   const DenseMap<Attribute, Attribute> &paramNameToValue;
 
+  /// Construct the CRTP helper with the template binding map used for symbol lookups.
   SymbolUserHelper(
       TypeConverter &converter, MLIRContext *ctx, unsigned patternBenefit,
       const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
@@ -291,14 +341,17 @@ private:
 public:
   using OpAdaptor = typename mlir::OpConversionPattern<Op>::OpAdaptor;
 
+  /// Return the attribute on `op` that should be looked up in the instantiation map.
   virtual Attribute getNameAttr(Op) const = 0;
 
+  /// Report a type-specific fallback diagnostic for instantiated values not handled by `Impl`.
   virtual LogicalResult handleDefaultRewrite(
       Attribute, Op op, OpAdaptor, ConversionPatternRewriter &, Attribute a
   ) const {
     return op->emitOpError().append("expected value with type ", op.getType(), " but found ", a);
   }
 
+  /// Dispatch an instantiated symbol value to the concrete `Impl::handleRewrite` overload.
   LogicalResult
   matchAndRewrite(Op op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
     LLVM_DEBUG(llvm::dbgs() << "[SymbolUserHelper] op: " << op << '\n');
@@ -322,6 +375,8 @@ public:
   friend Impl;
 };
 
+/// Rewrite `poly.const_read` uses in cloned bodies to concrete constants when their referenced
+/// template parameter has been instantiated.
 class ClonedBodyConstReadOpPattern
     : public SymbolUserHelper<
           ClonedBodyConstReadOpPattern, ConstReadOp, IntegerAttr, FeltConstAttr> {
@@ -331,6 +386,8 @@ class ClonedBodyConstReadOpPattern
       SymbolUserHelper<ClonedBodyConstReadOpPattern, ConstReadOp, IntegerAttr, FeltConstAttr>;
 
 public:
+  /// Construct the const-read conversion pattern and collect delayed diagnostics in
+  /// `instantiationDiagnostics`.
   ClonedBodyConstReadOpPattern(
       TypeConverter &converter, MLIRContext *ctx,
       const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue,
@@ -340,8 +397,11 @@ public:
       : super(converter, ctx, /*patternBenefit=*/1, paramNameToInstantiatedValue),
         diagnostics(instantiationDiagnostics) {}
 
+  /// Use the referenced constant symbol as the lookup key.
   Attribute getNameAttr(ConstReadOp op) const override { return op.getConstNameAttr(); }
 
+  /// Replace an integer-backed template value with the constant op matching the converted result
+  /// type.
   LogicalResult handleRewrite(
       Attribute sym, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, IntegerAttr a
   ) const {
@@ -388,6 +448,7 @@ public:
     return op->emitOpError().append("unexpected result type ", newResTy);
   }
 
+  /// Replace an already-felt template value with a felt constant.
   LogicalResult handleRewrite(
       Attribute, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, FeltConstAttr a
   ) const {
@@ -401,8 +462,10 @@ public:
 struct MatchFailureListener : public RewriterBase::Listener {
   bool hadFailure = false;
 
-  ~MatchFailureListener() override {}
+  /// Destroy the listener through the MLIR listener base class.
+  ~MatchFailureListener() override = default;
 
+  /// Convert match failures into reported diagnostics and remember that the pass must fail.
   void notifyMatchFailure(Location loc, function_ref<void(Diagnostic &)> reasonCallback) override {
     hadFailure = true;
 
@@ -412,6 +475,8 @@ struct MatchFailureListener : public RewriterBase::Listener {
   }
 };
 
+/// Apply a greedy rewrite set, record whether it changed the module, and fail if any pattern
+/// reported a hard match failure through `MatchFailureListener`.
 static LogicalResult
 applyAndFoldGreedily(ModuleOp modOp, ConversionTracker &tracker, RewritePatternSet &&patterns) {
   bool currStepModified = false;
@@ -430,6 +495,63 @@ template <bool AllowStructParams = true> bool isConcreteAttr(Attribute a) {
   return classifyAttrConcreteness(a, AllowStructParams) == AttrConcreteness::Concrete;
 }
 
+/// Helper for applying template-parameter substitutions to attributes embedded in types.
+class TemplateParamSubstitutions {
+  const DenseMap<Attribute, Attribute> &paramNameToValue;
+
+public:
+  /// Store the template-parameter binding map used by all substitution helpers.
+  explicit TemplateParamSubstitutions(const DenseMap<Attribute, Attribute> &bindings)
+      : paramNameToValue(bindings) {}
+
+  /// Return the bound value for `a` when present, otherwise return `a` unchanged.
+  Attribute lookupOrSelf(Attribute a) const {
+    auto res = paramNameToValue.find(a);
+    return (res != paramNameToValue.end()) ? res->second : a;
+  }
+
+  /// Return true iff `nameAttr` has a concrete binding.
+  bool contains(Attribute nameAttr) const { return paramNameToValue.contains(nameAttr); }
+
+  /// Replace a type variable with a concrete type binding when the binding is usable here.
+  Type convertTypeVarBinding(TypeVarType inputTy) const {
+    if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(lookupOrSelf(inputTy.getNameRef()))) {
+      Type convertedType = tyAttr.getValue();
+      if (isConcreteType(convertedType)) {
+        return convertedType;
+      }
+    }
+    return inputTy;
+  }
+
+  /// Substitute attributes, recursively converting nested `TypeAttr` payloads through `converter`.
+  SmallVector<Attribute> convertAttrs(
+      const TypeConverter &converter, ArrayRef<Attribute> attrs, bool *changed = nullptr
+  ) const {
+    SmallVector<Attribute> updated;
+    bool anyChanged = false;
+    for (Attribute attr : attrs) {
+      Attribute converted = attr;
+      if (TypeAttr tyAttr = dyn_cast<TypeAttr>(attr)) {
+        Type newTy = converter.convertType(tyAttr.getValue());
+        if (newTy != tyAttr.getValue()) {
+          converted = TypeAttr::get(newTy);
+        }
+      } else {
+        converted = lookupOrSelf(attr);
+      }
+      anyChanged |= (converted != attr);
+      updated.push_back(converted);
+    }
+    if (changed != nullptr) {
+      *changed = anyChanged;
+    }
+    return updated;
+  }
+};
+
+/// Replace a callee rooted at a template parameter with the concrete struct callee named by that
+/// parameter's instantiated type.
 static SymbolRefAttr
 convertCalleeSymRefs(SymbolRefAttr callee, const DenseMap<Attribute, Attribute> &paramNameToValue) {
   auto it = paramNameToValue.find(FlatSymbolRefAttr::get(callee.getRootReference()));
@@ -452,6 +574,7 @@ convertCalleeSymRefs(SymbolRefAttr callee, const DenseMap<Attribute, Attribute> 
   return asSymbolRefAttr(newPieces);
 }
 
+/// Rewrite all nested calls in `op` whose callee root names a concretized template parameter.
 static void
 convertCalleesInPlace(Operation *op, const DenseMap<Attribute, Attribute> &paramNameToValue) {
   op->walk([&paramNameToValue](CallOp callOp) {
@@ -459,6 +582,7 @@ convertCalleesInPlace(Operation *op, const DenseMap<Attribute, Attribute> &param
   });
 }
 
+/// Return true iff `op` calls a single-nested symbol rooted at a parameter of its parent template.
 static bool calleeReferencesTemplateParam(CallOp op) {
   SymbolRefAttr callee = op.getCalleeAttr();
   if (!callee || callee.getNestedReferences().size() != 1) {
@@ -555,6 +679,7 @@ evaluateTemplateExprs(TemplateOp templateOp, DenseMap<Attribute, Attribute> &par
   );
 }
 
+/// Return true iff `op` no longer has a symbolic member table offset.
 static inline bool tableOffsetIsntSymbol(MemberReadOp op) {
   return !llvm::isa_and_present<SymbolRefAttr>(op.getTableOffset().value_or(nullptr));
 }
@@ -566,6 +691,7 @@ class ClonedMemberReadOpPattern
   using super = SymbolUserHelper<ClonedMemberReadOpPattern, MemberReadOp, IntegerAttr>;
 
 public:
+  /// Construct the member-read conversion pattern for the active instantiation map.
   ClonedMemberReadOpPattern(
       TypeConverter &converter, MLIRContext *ctx,
       const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
@@ -573,10 +699,12 @@ public:
       // benefit>0 so this applies instead of GeneralTypeReplacePattern<MemberReadOp>
       : super(converter, ctx, /*patternBenefit=*/1, paramNameToInstantiatedValue) {}
 
+  /// Use the table-offset attribute as the lookup key.
   Attribute getNameAttr(MemberReadOp op) const override {
     return op.getTableOffset().value_or(nullptr);
   }
 
+  /// Replace a symbolic table offset with the concrete index value.
   LogicalResult handleRewrite(
       Attribute, MemberReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, IntegerAttr a
   ) const {
@@ -587,6 +715,7 @@ public:
     return success();
   }
 
+  /// Emit a diagnostic for concrete template bindings that cannot index member tables.
   LogicalResult handleDefaultRewrite(
       Attribute, MemberReadOp op, OpAdaptor, ConversionPatternRewriter &, Attribute a
   ) const override {
@@ -595,6 +724,7 @@ public:
     );
   }
 
+  /// Rewrite only member reads whose table offset is still a symbol.
   LogicalResult matchAndRewrite(
       MemberReadOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
@@ -620,21 +750,18 @@ class StructCloner {
   class MappedTypeConverter : public TypeConverter {
     StructType origTy;
     StructType newTy;
-    const DenseMap<Attribute, Attribute> &paramNameToValue;
-
-    inline Attribute convertIfPossible(Attribute a) const {
-      auto res = this->paramNameToValue.find(a);
-      return (res != this->paramNameToValue.end()) ? res->second : a;
-    }
+    TemplateParamSubstitutions substitutions;
 
   public:
+    /// Build a converter for a cloned struct body, replacing `originalType` with `newType` and
+    /// substituting any concretized template parameters.
     MappedTypeConverter(
         StructType originalType, StructType newType,
         /// Instantiated values for the parameter names in `originalType`
         const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
     )
         : TypeConverter(), origTy(originalType), newTy(newType),
-          paramNameToValue(paramNameToInstantiatedValue) {
+          substitutions(paramNameToInstantiatedValue) {
 
       addConversion([](Type inputTy) { return inputTy; });
 
@@ -647,14 +774,8 @@ class StructCloner {
         }
         // Check for replacement of parameter symbol names with concrete values
         if (ArrayAttr inputTyParams = inputTy.getParams()) {
-          SmallVector<Attribute> updated;
-          for (Attribute a : inputTyParams) {
-            if (TypeAttr ta = dyn_cast<TypeAttr>(a)) {
-              updated.push_back(TypeAttr::get(this->convertType(ta.getValue())));
-            } else {
-              updated.push_back(convertIfPossible(a));
-            }
-          }
+          SmallVector<Attribute> updated =
+              substitutions.convertAttrs(*this, inputTyParams.getValue());
           return getStructTypeWithParams(inputTy.getNameRef(), inputTy.getContext(), updated);
         }
         // Otherwise, return the type unchanged
@@ -665,10 +786,7 @@ class StructCloner {
         // Check for replacement of parameter symbol names with concrete values
         ArrayRef<Attribute> dimSizes = inputTy.getDimensionSizes();
         if (!dimSizes.empty()) {
-          SmallVector<Attribute> updated;
-          for (Attribute a : dimSizes) {
-            updated.push_back(convertIfPossible(a));
-          }
+          SmallVector<Attribute> updated = substitutions.convertAttrs(*this, dimSizes);
           return ArrayType::get(this->convertType(inputTy.getElementType()), updated);
         }
         // Otherwise, return the type unchanged
@@ -676,21 +794,14 @@ class StructCloner {
       });
 
       addConversion([this](TypeVarType inputTy) -> Type {
-        // Check for replacement of parameter symbol name with a concrete type
-        if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(convertIfPossible(inputTy.getNameRef()))) {
-          Type convertedType = tyAttr.getValue();
-          // Use the new type unless it contains a TypeVarType because a TypeVarType from a
-          // different struct references a parameter name from that other struct, not from the
-          // current struct so the reference would be invalid.
-          if (isConcreteType(convertedType)) {
-            return convertedType;
-          }
-        }
-        return inputTy;
+        // Keep unresolved type variables from other templates because they reference names that
+        // are not valid in the current struct.
+        return substitutions.convertTypeVarBinding(inputTy);
       });
     }
   };
 
+  /// Clone `typeAtCaller` if at least one of its parameters is concrete at the current use site.
   FailureOr<StructType> genClone(StructType typeAtCaller, ArrayRef<Attribute> typeAtCallerParams) {
     LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   attempting clone of " << typeAtCaller << '\n');
     // Find the StructDefOp for the original StructType
@@ -761,6 +872,7 @@ class StructCloner {
     // Clone the original struct.
     StructDefOp newStruct = origStruct.clone();
     convertCalleesInPlace(newStruct, paramNameToConcrete);
+    Operation *insertedCloneRoot = nullptr;
     if (layout.remainingNames.empty()) { // FULL INSTANTIATION CASE
       // Set name of the new struct by prepending its name with instantiated template name.
       newStruct.setSymName(
@@ -769,6 +881,7 @@ class StructCloner {
       // Insert 'newStruct' into the parent ModuleOp of the original TemplateOp. Use the
       // `SymbolTable::insert()` function so that the name will be made unique if necessary.
       symTables.getSymbolTable(parentModule).insert(newStruct, Block::iterator(parentTemplate));
+      insertedCloneRoot = newStruct.getOperation();
       // Drop the old template name from the list.
       typeAtCallerSymPieces.pop_back();
     } else { // PARTIAL INSTANTIATION CASE
@@ -793,6 +906,7 @@ class StructCloner {
       // `SymbolTable::insert()` function so that the name will be made unique if necessary.
       symTables.getSymbolTable(newTemplate).insert(newStruct);
       symTables.getSymbolTable(parentModule).insert(newTemplate, Block::iterator(parentTemplate));
+      insertedCloneRoot = newTemplate.getOperation();
 
       // Replace the old template name in the list with the new one (get template name after
       // symbol table insertion since it may be modified to make it unique).
@@ -828,20 +942,24 @@ class StructCloner {
 
     RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
     patterns.add<ClonedBodyConstReadOpPattern>(
-        tyConv, ctx, paramNameToConcrete, tracker_.delayedDiagnosticSet(newLocalType)
+        tyConv, ctx, paramNameToConcrete, tracker_.delayedDiagnosticSet(newRemoteType)
     );
     patterns.add<ClonedMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
     if (failed(applyFullConversion(newStruct, target, std::move(patterns)))) {
       LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   instantiating body of struct failed \n");
+      assert(insertedCloneRoot && "clone root must have been inserted before body conversion");
+      insertedCloneRoot->erase();
       return failure();
     }
     return newRemoteType;
   }
 
 public:
+  /// Construct a cloner rooted at `root` and reporting modifications through `tracker`.
   StructCloner(ConversionTracker &tracker, ModuleOp root)
       : tracker_(tracker), rootMod(root), symTables() {}
 
+  /// Create a full or partial instantiated clone for `orig`, if `orig` has concrete parameters.
   FailureOr<StructType> createInstantiatedClone(StructType orig) {
     LLVM_DEBUG(llvm::dbgs() << "[StructCloner] orig: " << orig << '\n');
     if (ArrayAttr params = orig.getParams()) {
@@ -851,8 +969,10 @@ public:
     return failure();
   }
 
+  /// Re-enable diagnostics when a referenced struct definition cannot be found.
   void enableReportMissing() { reportMissing = true; }
 
+  /// Temporarily suppress missing-symbol diagnostics during speculative legality checks.
   void disableReportMissing() { reportMissing = false; }
 };
 
@@ -865,6 +985,7 @@ class ParameterizedStructUseTypeConverter : public TypeConverter {
   friend DisableReportMissing;
 
 public:
+  /// Build a type converter that instantiates parameterized struct uses on demand.
   ParameterizedStructUseTypeConverter(ConversionTracker &tracker, ModuleOp root)
       : TypeConverter(), tracker_(tracker), cloner(tracker, root) {
 
@@ -901,14 +1022,19 @@ public:
   }
 };
 
+/// Rewrite calls to struct `compute`/`constrain` functions after their struct types have been
+/// instantiated.
 class CallStructFuncPattern : public OpConversionPattern<CallOp> {
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the call rewrite pattern using the active type converter and tracker.
   CallStructFuncPattern(TypeConverter &converter, MLIRContext *ctx, ConversionTracker &tracker)
       // benefit>0 so this applies instead of CallOpClassReplacePattern
       : OpConversionPattern<CallOp>(converter, ctx, /*benefit=*/1), tracker_(tracker) {}
 
+  /// Replace a call with converted result types and, when needed, a callee rooted at the
+  /// instantiated struct type.
   LogicalResult matchAndRewrite(
       CallOp op, OpAdaptor adapter, ConversionPatternRewriter &rewriter
   ) const override {
@@ -952,13 +1078,15 @@ public:
   }
 };
 
-// This one ensures MemberDefOp types are converted even if there are no reads/writes to them.
+/// Ensure `struct.member` types are converted even if no read/write pattern visits them.
 class MemberDefOpPattern : public OpConversionPattern<MemberDefOp> {
 public:
+  /// Construct the member definition conversion pattern.
   MemberDefOpPattern(TypeConverter &converter, MLIRContext *ctx, ConversionTracker &)
       // benefit>0 so this applies instead of GeneralTypeReplacePattern<MemberDefOp>
       : OpConversionPattern<MemberDefOp>(converter, ctx, /*benefit=*/1) {}
 
+  /// Update the member definition type when the active type converter changes it.
   LogicalResult matchAndRewrite(
       MemberDefOp op, OpAdaptor /*adapter*/, ConversionPatternRewriter &rewriter
   ) const override {
@@ -974,26 +1102,56 @@ public:
   }
 };
 
+/// Convert nondeterministic result types when a shared witness is refined to an instantiated type.
+class NonDetOpPattern : public OpConversionPattern<NonDetOp> {
+public:
+  /// Construct the nondeterministic value conversion pattern.
+  NonDetOpPattern(TypeConverter &converter, MLIRContext *ctx)
+      : OpConversionPattern<NonDetOp>(converter, ctx, /*benefit=*/1) {}
+
+  /// Rebuild the op with the converted result type.
+  LogicalResult
+  matchAndRewrite(NonDetOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    Type newType = getTypeConverter()->convertType(op.getType());
+    if (!newType) {
+      return op->emitError("Could not convert Op result type.");
+    }
+    if (newType == op.getType()) {
+      return failure();
+    }
+    replaceOpWithNewOp<NonDetOp>(rewriter, op, newType);
+    return success();
+  }
+};
+
 /// Disables reporting of missing struct symbols during legality checks to avoid showing error
 /// diagnostics that are not actually errors.
 class DisableReportMissing : public LegalityCheckCallback {
   ParameterizedStructUseTypeConverter &tyConv;
 
 public:
+  /// Tie the callback to the converter whose cloner should suppress lookup diagnostics.
   explicit DisableReportMissing(ParameterizedStructUseTypeConverter &tc) : tyConv(tc) {}
 
+  /// Suppress missing-symbol diagnostics before a speculative legality check begins.
   void checkStarted() override { tyConv.cloner.disableReportMissing(); }
 
+  /// Re-enable missing-symbol diagnostics after the speculative legality check finishes.
   void checkEnded(bool) override { tyConv.cloner.enableReportMissing(); }
 };
 
+/// Run struct instantiation and call/member rewrites for the current module.
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
   ParameterizedStructUseTypeConverter tyConv(tracker, modOp);
   DisableReportMissing drm(tyConv);
   ConversionTarget target = newConverterDefinedTargetWithCallback<>(tyConv, ctx, drm);
+  target.addDynamicallyLegalOp<NonDetOp>([&tyConv](Operation *op) {
+    return defaultLegalityCheck(tyConv, op);
+  });
   RewritePatternSet patterns = newGeneralRewritePatternSet(tyConv, ctx, target);
   patterns.add<CallStructFuncPattern, MemberDefOpPattern>(tyConv, ctx, tracker);
+  patterns.add<NonDetOpPattern>(tyConv, ctx);
   return applyPartialConversion(modOp, target, std::move(patterns));
 }
 
@@ -1030,37 +1188,23 @@ namespace Step2_InstantiateFunctions {
 /// ArrayType/StructType parameters with their concrete values determined by unification.
 class FuncInstTypeConverter : public TypeConverter {
   DenseMap<Attribute, Attribute> paramNameToValue;
-
-  Attribute convertIfPossible(Attribute a) const {
-    auto res = paramNameToValue.find(a);
-    return (res != paramNameToValue.end()) ? res->second : a;
-  }
+  TemplateParamSubstitutions substitutions;
 
 public:
+  /// Build the function-instantiation type converter from concrete template bindings.
   explicit FuncInstTypeConverter(DenseMap<Attribute, Attribute> paramNameToConcrete)
-      : TypeConverter(), paramNameToValue(std::move(paramNameToConcrete)) {
+      : TypeConverter(), paramNameToValue(std::move(paramNameToConcrete)),
+        substitutions(paramNameToValue) {
     addConversion([](Type t) { return t; });
 
     addConversion([this](TypeVarType inputTy) -> Type {
-      if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(convertIfPossible(inputTy.getNameRef()))) {
-        Type convertedType = tyAttr.getValue();
-        if (isConcreteType(convertedType)) {
-          return convertedType;
-        }
-      }
-      return inputTy;
+      return substitutions.convertTypeVarBinding(inputTy);
     });
 
     addConversion([this](ArrayType inputTy) {
-      SmallVector<Attribute> updated;
       bool changed = false;
-      for (Attribute a : inputTy.getDimensionSizes()) {
-        Attribute converted = convertIfPossible(a);
-        updated.push_back(converted);
-        if (converted != a) {
-          changed = true;
-        }
-      }
+      SmallVector<Attribute> updated =
+          substitutions.convertAttrs(*this, inputTy.getDimensionSizes(), &changed);
       Type newElemTy = this->convertType(inputTy.getElementType());
       if (!changed && newElemTy == inputTy.getElementType()) {
         return inputTy;
@@ -1072,26 +1216,9 @@ public:
 
     addConversion([this](StructType inputTy) -> StructType {
       if (ArrayAttr params = inputTy.getParams()) {
-        SmallVector<Attribute> updated;
         bool changed = false;
-        for (Attribute a : params) {
-          if (TypeAttr ta = dyn_cast<TypeAttr>(a)) {
-            Type newTy = this->convertType(ta.getValue());
-            if (newTy != ta.getValue()) {
-              updated.push_back(TypeAttr::get(newTy));
-              changed = true;
-              continue;
-            }
-          } else {
-            Attribute converted = convertIfPossible(a);
-            if (converted != a) {
-              updated.push_back(converted);
-              changed = true;
-              continue;
-            }
-          }
-          updated.push_back(a);
-        }
+        SmallVector<Attribute> updated =
+            substitutions.convertAttrs(*this, params.getValue(), &changed);
         if (changed) {
           return getStructTypeWithParams(inputTy.getNameRef(), inputTy.getContext(), updated);
         }
@@ -1100,6 +1227,7 @@ public:
     });
   }
 
+  /// Convert an attribute that may contain a type or a direct template-parameter reference.
   Attribute convertAttr(Attribute attr) const {
     if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(attr)) {
       Type convertedTy = convertType(tyAttr.getValue());
@@ -1107,15 +1235,18 @@ public:
         return TypeAttr::get(convertedTy);
       }
     }
-    return convertIfPossible(attr);
+    return substitutions.lookupOrSelf(attr);
   }
 
-  bool containsParam(Attribute nameAttr) const { return paramNameToValue.contains(nameAttr); }
+  /// Return true iff the given template parameter has a concrete binding in this converter.
+  bool containsParam(Attribute nameAttr) const { return substitutions.contains(nameAttr); }
+
+  /// Return the underlying template-parameter binding map.
   const DenseMap<Attribute, Attribute> &getParamMap() const { return paramNameToValue; }
 };
 
 /// Return the callee-side unification-derived value for a template parameter, if any.
-inline static std::optional<Attribute>
+static inline std::optional<Attribute>
 inferUnifiedParam(const UnificationMap &unifyResult, SymbolRefAttr paramName) {
   auto it = unifyResult.find({paramName, Side::RHS});
   return (it == unifyResult.end()) ? std::nullopt : std::make_optional(it->second);
@@ -1123,7 +1254,7 @@ inferUnifiedParam(const UnificationMap &unifyResult, SymbolRefAttr paramName) {
 
 /// Emit the match failure used when an inferred instantiation violates a template parameter's
 /// declared type restriction.
-inline static LogicalResult failIncompatibleInferredParam(
+static inline LogicalResult failIncompatibleInferredParam(
     CallOp op, PatternRewriter &rewriter, FlatSymbolRefAttr paramName, TemplateParamOp paramOp
 ) {
   LLVM_DEBUG(
@@ -1147,11 +1278,13 @@ class WildcardTypeBodyInferer final {
   SmallVector<std::pair<Operation *, FlatSymbolRefAttr>> activeInferences_;
 
 public:
+  /// Construct a body inferer over the current symbol tables and known concrete bindings.
   WildcardTypeBodyInferer(
       SymbolTableCollection &symTables, const DenseMap<Attribute, Attribute> &paramNameToConcrete
   )
       : symTables_(symTables), paramNameToConcrete_(paramNameToConcrete) {}
 
+  /// Search `func` for a concrete value that can resolve `paramName`.
   std::optional<Attribute> infer(FuncDefOp func, FlatSymbolRefAttr paramName) {
     if (llvm::any_of(activeInferences_, [&](const auto &e) {
       return e.first == func.getOperation() && e.second == paramName;
@@ -1248,6 +1381,7 @@ public:
   }
 
 private:
+  /// Infer a nested callee parameter value from the nested call's explicit template arguments.
   std::optional<Attribute> inferFromExplicitNestedCallParams(
       CallOp nestedCall, TemplateOp nestedTemplate, FlatSymbolRefAttr nestedParamName,
       const FuncInstTypeConverter &tyConv
@@ -1276,6 +1410,7 @@ class ClonedBodyArrayReadOpPattern final : public OpConversionPattern<ReadArrayO
 public:
   using OpConversionPattern<ReadArrayOp>::OpConversionPattern;
 
+  /// Replace a scalar element read with an array extract when conversion makes the result an array.
   LogicalResult matchAndRewrite(
       ReadArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
@@ -1296,6 +1431,7 @@ class ClonedBodyArrayWriteOpPattern final : public OpConversionPattern<WriteArra
 public:
   using OpConversionPattern<WriteArrayOp>::OpConversionPattern;
 
+  /// Replace a scalar element write with an array insert when conversion makes the value an array.
   LogicalResult matchAndRewrite(
       WriteArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
@@ -1310,7 +1446,7 @@ public:
 };
 
 /// Use `FuncInstTypeConverter` to apply the given substitutions from instantiation and verify
-/// that `CallOp` in the converted function are valid for their respective targets (we can emit a
+/// that `CallOp`s in the converted function are valid for their respective targets (we can emit a
 /// more helpful error at this point rather than discovering it later when verifying the module).
 static LogicalResult applyBodyConversions(
     CallOp op, FuncDefOp newFunc, const DenseMap<Attribute, Attribute> &paramNameToConcrete
@@ -1346,9 +1482,11 @@ class InstantiateFuncAtCallOp final : public OpRewritePattern<CallOp> {
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the function-instantiation pattern.
   InstantiateFuncAtCallOp(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern<CallOp>(ctx), tracker_(tracker) {}
 
+  /// Instantiate the target function or template at a call site and rewrite the callee reference.
   LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
     LLVM_DEBUG(llvm::dbgs() << "[InstantiateFuncAtCallOp] op: " << op << '\n');
 
@@ -1394,10 +1532,10 @@ public:
 
     // Maps template parameter symbols to the instantiation value at the call site.
     DenseMap<Attribute, Attribute> paramNameToConcrete;
-    if (failed(collectConcreteTemplateParams(
-            op, rewriter, symTables, callTgt, parentTemplate, unifyResult.value(),
-            paramNameToConcrete
-        ))) {
+    auto collectRes = collectConcreteTemplateParams(
+        op, rewriter, symTables, callTgt, parentTemplate, unifyResult.value(), paramNameToConcrete
+    );
+    if (failed(collectRes)) {
       return failure();
     }
 
@@ -1417,12 +1555,11 @@ public:
     ModuleOp parentModule = getParentOfType<ModuleOp>(parentTemplate);
     assert(parentModule && "TemplateOp must be nested in a ModuleOp");
 
-    SymbolRefAttr originalCalleeAttr = op.getCalleeAttr();
     FailureOr<SymbolRefAttr> newCalleeAttr =
         layout.remainingNames.empty()
             ? instantiateFully(
                   op, rewriter, symTables, callTgt, parentTemplate, parentModule,
-                  layout.templateNameWithAttrs, paramNameToConcrete
+                  layout.templateNameWithAttrs, paramNameToConcrete, tracker_
               )
             : instantiatePartially(
                   op, rewriter, symTables, callTgt, parentTemplate, parentModule, layout,
@@ -1432,7 +1569,11 @@ public:
       return failure();
     }
 
-    tracker_.recordInstantiation(originalCalleeAttr);
+    FailureOr<SymbolRefAttr> originalCalleePath = getPathFromTopRoot(callTgt);
+    if (failed(originalCalleePath)) {
+      return failure();
+    }
+    tracker_.recordInstantiation(*originalCalleePath);
 
     // Update the CallOp to point to the instantiated function and mark the module as modified.
     rewriter.modifyOpInPlace(op, [&op, &newCalleeAttr, &layout]() {
@@ -1520,12 +1661,12 @@ private:
     // instantiation is valid, except for the size check because that cannot change.
     assert((callParams.size() == llvm::range_size(realParams)) && "per CallOpVerifier");
     if (failed(op.verifyTemplateParamCompatibility(realParams))) {
-      return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+      return rewriter.notifyMatchFailure(op, [](Diagnostic &diag) {
         diag.append("incompatible with specified param type(s)");
       });
     }
     if (failed(op.verifyTemplateParamsMatchInferred(realParams, unifyResult))) {
-      return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+      return rewriter.notifyMatchFailure(op, [](Diagnostic &diag) {
         diag.append("incompatible with inferred param value(s)");
       });
     }
@@ -1578,45 +1719,9 @@ private:
     return success();
   }
 
-  /// Create or reuse a fully-instantiated clone in the parent module and return the rewritten
-  /// module-level callee reference.
-  static FailureOr<SymbolRefAttr> instantiateFully(
-      CallOp op, PatternRewriter &rewriter, SymbolTableCollection &symTables, FuncDefOp callTgt,
-      TemplateOp parentTemplate, ModuleOp parentModule, StringRef templateNameWithAttrs,
-      const DenseMap<Attribute, Attribute> &paramNameToConcrete
-  ) {
-    MLIRContext *ctx = op.getContext();
-    std::string newFuncName =
-        (mlir::Twine(templateNameWithAttrs) + "_" + callTgt.getSymName()).str();
-    StringRef actualNewFuncName = newFuncName;
-    if (!symTables.getSymbolTable(parentModule).lookup(newFuncName)) {
-      FuncDefOp newFunc = callTgt.clone();
-      newFunc.setSymName(newFuncName);
-      convertCalleesInPlace(newFunc, paramNameToConcrete);
-      // Insert before the TemplateOp; symbol table may adjust the name to ensure uniqueness.
-      symTables.getSymbolTable(parentModule).insert(newFunc, Block::iterator(parentTemplate));
-      actualNewFuncName = newFunc.getSymName();
-      LLVM_DEBUG(
-          llvm::dbgs() << "[InstantiateFuncAtCallOp]  created full instantiation function: "
-                       << actualNewFuncName << '\n'
-      );
-      if (failed(applyBodyConversions(op, newFunc, paramNameToConcrete))) {
-        LLVM_DEBUG(
-            llvm::dbgs() << "[InstantiateFuncAtCallOp]   body conversion failed for "
-                         << actualNewFuncName << '\n'
-        );
-        newFunc->erase();
-        return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
-          diag.append("failure while creating instantiated function '", actualNewFuncName, '\'');
-        });
-      }
-    } else {
-      LLVM_DEBUG(
-          llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing full instantiation function: "
-                       << actualNewFuncName << '\n'
-      );
-    }
-
+  /// Return the full-instantiation callee spelling that is valid at this call site.
+  static SymbolRefAttr
+  buildFullInstantiationCalleeForCall(CallOp op, FlatSymbolRefAttr newFuncName) {
     // Callee: drop template & original function names, add the new module-level function name.
     // Original: @[prefix...]::@TemplateName::@funcName
     // New:      @[prefix...]::@newFuncName
@@ -1624,8 +1729,70 @@ private:
     assert(symPieces.size() >= 2 && "callee must include at least template and function names");
     symPieces.pop_back(); // remove original function name
     symPieces.pop_back(); // remove template name
-    symPieces.push_back(FlatSymbolRefAttr::get(StringAttr::get(ctx, actualNewFuncName)));
+    symPieces.push_back(newFuncName);
     return asSymbolRefAttr(symPieces);
+  }
+
+  /// Build the cache key for fully-instantiated function clones.
+  static std::string
+  buildFullInstantiationCacheKey(SymbolRefAttr calleePath, StringRef templateNameWithAttrs) {
+    std::string cacheKey;
+    llvm::raw_string_ostream(cacheKey) << calleePath << '|' << templateNameWithAttrs;
+    return cacheKey;
+  }
+
+  /// Create or reuse a fully-instantiated clone in the parent module and return the rewritten
+  /// module-level callee reference.
+  static FailureOr<SymbolRefAttr> instantiateFully(
+      CallOp op, PatternRewriter &rewriter, SymbolTableCollection &symTables, FuncDefOp callTgt,
+      TemplateOp parentTemplate, ModuleOp parentModule, StringRef templateNameWithAttrs,
+      const DenseMap<Attribute, Attribute> &paramNameToConcrete, ConversionTracker &tracker
+  ) {
+    FailureOr<SymbolRefAttr> calleePath = getPathFromTopRoot(callTgt);
+    if (failed(calleePath)) {
+      return failure();
+    }
+
+    std::string cacheKey = buildFullInstantiationCacheKey(*calleePath, templateNameWithAttrs);
+    if (auto cachedPath = tracker.getFullFuncInstantiation(cacheKey)) {
+      LLVM_DEBUG(
+          llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing full instantiation function: "
+                       << *cachedPath << '\n'
+      );
+      return buildFullInstantiationCalleeForCall(op, getPieces(*cachedPath).back());
+    }
+
+    std::string newFuncName;
+    llvm::raw_string_ostream(newFuncName) << templateNameWithAttrs << '_' << callTgt.getSymName();
+    FuncDefOp newFunc = callTgt.clone();
+    newFunc.setSymName(newFuncName);
+    convertCalleesInPlace(newFunc, paramNameToConcrete);
+    // Insert before the TemplateOp; symbol table may adjust the name to avoid existing symbols.
+    symTables.getSymbolTable(parentModule).insert(newFunc, Block::iterator(parentTemplate));
+    StringRef actualNewFuncName = newFunc.getSymName();
+    LLVM_DEBUG(
+        llvm::dbgs() << "[InstantiateFuncAtCallOp]  created full instantiation function: "
+                     << actualNewFuncName << '\n'
+    );
+    if (failed(applyBodyConversions(op, newFunc, paramNameToConcrete))) {
+      LLVM_DEBUG(
+          llvm::dbgs() << "[InstantiateFuncAtCallOp]   body conversion failed for "
+                       << actualNewFuncName << '\n'
+      );
+      newFunc->erase();
+      return rewriter.notifyMatchFailure(op, [&actualNewFuncName](Diagnostic &diag) {
+        diag.append("failure while creating instantiated function '", actualNewFuncName, '\'');
+      });
+    }
+
+    FailureOr<SymbolRefAttr> newCalleeAttr = getPathFromTopRoot(newFunc);
+    if (failed(newCalleeAttr)) {
+      return failure();
+    }
+    tracker.recordFullFuncInstantiation(cacheKey, *newCalleeAttr);
+    return buildFullInstantiationCalleeForCall(
+        op, FlatSymbolRefAttr::get(newFunc.getSymNameAttr())
+    );
   }
 
   /// Create or reuse a partially-instantiated template that preserves the remaining non-concrete
@@ -1682,7 +1849,7 @@ private:
                        << '\n'
       );
       newTemplate->erase();
-      return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+      return rewriter.notifyMatchFailure(op, [&newFuncName](Diagnostic &diag) {
         diag.append("failure while creating instantiated function '", newFuncName, '\'');
       });
     }
@@ -1706,6 +1873,7 @@ private:
   }
 };
 
+/// Run function instantiation patterns once over the module.
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
   RewritePatternSet patterns(ctx);
@@ -1725,6 +1893,7 @@ class LoopUnrollPattern : public OpRewritePattern<OpClass> {
 public:
   using OpRewritePattern<OpClass>::OpRewritePattern;
 
+  /// Fully unroll loop-like ops whose trip count is statically known.
   LogicalResult matchAndRewrite(OpClass loopOp, PatternRewriter &rewriter) const override {
     if (auto maybeConstant = getConstantTripCount(loopOp)) {
       uint64_t tripCount = *maybeConstant;
@@ -1753,6 +1922,7 @@ private:
   }
 };
 
+/// Run loop unrolling for supported loop dialects.
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
   RewritePatternSet patterns(ctx);
@@ -1765,8 +1935,10 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
 namespace Step4_InstantiateAffineMaps {
 
-// Adapted from `mlir::getConstantIntValues()` but that one failed in CI for an unknown reason. This
-// version uses a basic loop instead of llvm::map_to_vector().
+/// Return constant integer values for all fold results, if every fold result is constant.
+///
+/// Adapted from `mlir::getConstantIntValues()` but that one failed in CI for an unknown reason.
+/// This version uses a basic loop instead of llvm::map_to_vector().
 std::optional<SmallVector<int64_t>> getConstantIntValues(ArrayRef<OpFoldResult> ofrs) {
   SmallVector<int64_t> res;
   for (OpFoldResult ofr : ofrs) {
@@ -1779,25 +1951,36 @@ std::optional<SmallVector<int64_t>> getConstantIntValues(ArrayRef<OpFoldResult> 
   return res;
 }
 
+/// Folds affine-map parameters using the map operands supplied at an instantiation site.
 struct AffineMapFolder {
+  /// Inputs that describe affine-map operands and the parameter list being folded.
   struct Input {
+    /// Operand groups corresponding to affine-map parameters.
     OperandRangeRange mapOpGroups;
+    /// Number of dimensions in each operand group.
     DenseI32ArrayAttr dimsPerGroup;
+    /// Parameter list containing affine maps and non-map attributes.
     ArrayRef<Attribute> paramsOfStructTy;
   };
 
+  /// Outputs after replacing foldable affine-map parameters with concrete attributes.
   struct Output {
+    /// Operand groups for affine maps that could not be folded.
     SmallVector<SmallVector<Value>> mapOpGroups;
+    /// Dimension counts corresponding to remaining map operand groups.
     SmallVector<int32_t> dimsPerGroup;
+    /// Parameter list with folded values substituted where possible.
     SmallVector<Attribute> paramsOfStructTy;
   };
 
-  static inline SmallVector<ValueRange> getConvertedMapOpGroups(Output out) {
+  /// Convert owned output operand groups into `ValueRange` views for op builders.
+  static inline SmallVector<ValueRange> getConvertedMapOpGroups(const Output &out) {
     return llvm::map_to_vector(out.mapOpGroups, [](const SmallVector<Value> &grp) {
       return ValueRange(grp);
     });
   }
 
+  /// Fold any affine-map attributes in `in.paramsOfStructTy` whose operands are all constants.
   static LogicalResult
   fold(PatternRewriter &rewriter, const Input &in, Output &out, Operation *op, const char *aspect) {
     if (in.mapOpGroups.empty()) {
@@ -1865,7 +2048,7 @@ struct AffineMapFolder {
         out.mapOpGroups.emplace_back(currMapOps);
         out.dimsPerGroup.push_back(in.dimsPerGroup[idx - 1]); // idx was already incremented
       }
-      // If not affine and foldable, preserve the original
+      // If not affine, preserve the original.
       out.paramsOfStructTy.push_back(sizeAttr);
     }
     assert(idx == in.mapOpGroups.size() && "all affine_map not processed");
@@ -1884,9 +2067,11 @@ class InstantiateAtCreateArrayOp final : public OpRewritePattern<CreateArrayOp> 
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the array-creation affine-map instantiation pattern.
   InstantiateAtCreateArrayOp(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx), tracker_(tracker) {}
 
+  /// Rewrite `array.new` when affine-map dimensions can be folded to concrete sizes.
   LogicalResult matchAndRewrite(CreateArrayOp op, PatternRewriter &rewriter) const override {
     ArrayType oldResultType = op.getType();
 
@@ -1922,9 +2107,11 @@ class InstantiateAtCallOpCompute final : public OpRewritePattern<CallOp> {
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the struct-compute call result instantiation pattern.
   InstantiateAtCallOpCompute(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx), tracker_(tracker) {}
 
+  /// Refine the result type of calls to struct `compute` functions when parameters become known.
   LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
     if (!op.calleeIsStructCompute()) {
       // this pattern only applies when the callee is "compute()" within a struct
@@ -2085,6 +2272,7 @@ private:
   }
 };
 
+/// Run affine-map and target-type instantiation over arrays and struct `compute` calls.
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
   RewritePatternSet patterns(ctx);
@@ -2098,16 +2286,1813 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
 } // namespace Step4_InstantiateAffineMaps
 
-namespace Step5_PropagateTypes {
+namespace Step5_ScalarizeHeterogeneousArrays {
+
+/// Information about a local array allocation that can be replaced with the final values of its
+/// statically-known elements.
+///
+/// This pass only scalarizes arrays after loop unrolling and affine-map instantiation have exposed
+/// all element indices and value types. The candidate array must have either an initializer value
+/// or exactly one write for every static element index, and all direct reads/member writes must
+/// happen after every explicit element write. Those restrictions avoid imposing a new memory
+/// semantics for partially initialized arrays, repeated writes, dynamic indices, or
+/// branch-sensitive updates.
+struct ScalarizedArrayInfo {
+  /// The array allocation being removed.
+  CreateArrayOp createOp;
+  /// All static element indices in the array type, in the ArrayType's canonical order.
+  SmallVector<ArrayAttr> indices;
+  /// The final SSA value at each element index, from either the initializer or a later write.
+  DenseMap<ArrayAttr, Value> valueByIndex;
+  /// The type of the final value at each element index.
+  DenseMap<ArrayAttr, Type> typeByIndex;
+  /// The write operation that overwrites each element index, used for dominance-like ordering
+  /// checks. Indices defined only by the array initializer have no entry.
+  DenseMap<ArrayAttr, Operation *> writeOpByIndex;
+  /// Direct writes to the local allocation.
+  SmallVector<WriteArrayOp> writes;
+  /// Direct reads from the local allocation.
+  SmallVector<ReadArrayOp> reads;
+  /// Direct writes that store the whole local allocation into a struct member.
+  SmallVector<MemberWriteOp> memberWrites;
+};
+
+/// Scalar member name and type.
+using MemberInfo = std::pair<StringAttr, Type>;
+
+/// Replacement scalar members for one array-typed member.
+struct SplitMemberInfo {
+  /// Static element indices that were split out of the original array-typed member.
+  SmallVector<ArrayAttr> indices;
+  /// Replacement scalar member for each static element index.
+  DenseMap<ArrayAttr, MemberInfo> memberByIndex;
+};
+
+/// Return true iff `lhs` and `rhs` contain the same array indices.
+static bool haveSameIndexSet(ArrayRef<ArrayAttr> lhs, ArrayRef<ArrayAttr> rhs) {
+  if (lhs.size() != rhs.size()) {
+    return false;
+  }
+  DenseSet<ArrayAttr> rhsSet(rhs.begin(), rhs.end());
+  return llvm::all_of(lhs, [&rhsSet](ArrayAttr idx) { return rhsSet.contains(idx); });
+}
+
+/// Return the first index in `lhs` that is not present in `rhs`.
+static ArrayAttr findIndexMissingFrom(ArrayRef<ArrayAttr> lhs, ArrayRef<ArrayAttr> rhs) {
+  DenseSet<ArrayAttr> rhsSet(rhs.begin(), rhs.end());
+  const auto *it = llvm::find_if(lhs, [&rhsSet](ArrayAttr idx) { return !rhsSet.contains(idx); });
+  return it == lhs.end() ? ArrayAttr() : *it;
+}
+
+/// Replace all uses of `oldValue` without asking MLIR to enforce SSA type equality.
+///
+/// This is intentionally narrower than `replaceAllUsesWith()`: the whole purpose of this step is to
+/// remove pseudo-homogeneous array values whose original element type no longer describes the
+/// concrete value stored at each index. The caller must have already proven that every rewritten
+/// use observes the value at a single static index, so replacing that use with the index-specific
+/// value is type-correct for the consuming operation after the rewrite.
+static inline void replaceAllUsesIgnoringType(Value oldValue, Value newValue) {
+  for (OpOperand &use : llvm::make_early_inc_range(oldValue.getUses())) {
+    use.set(newValue);
+  }
+}
+
+/// Return true iff replacing `readOp` with a value of `replacementType` preserves the read result's
+/// type refinement.
+static inline bool canReplaceReadResultWithType(
+    ReadArrayOp readOp, Type replacementType, const ConversionTracker &tracker, const char *patName
+) {
+  Type readResultType = readOp.getResult().getType();
+  return readResultType == replacementType ||
+         tracker.isLegalConversion(readResultType, replacementType, patName);
+}
+
+/// Return true if `def` is in the same block as `user` and appears before it.
+static inline bool strictlyBefore(Operation *def, Operation *user) {
+  return def->getBlock() == user->getBlock() && def->isBeforeInBlock(user);
+}
+
+/// Return all direct users of `value`, sorted by their order in the containing block.
+static FailureOr<SmallVector<Operation *>> getUsersInBlockOrder(Value value) {
+  SmallVector<Operation *> users(value.getUsers().begin(), value.getUsers().end());
+  if (users.empty()) {
+    return users;
+  }
+  Block *block = users.front()->getBlock();
+  if (!llvm::all_of(users, [block](Operation *user) { return user->getBlock() == block; })) {
+    return failure();
+  }
+  llvm::sort(users, [](Operation *lhs, Operation *rhs) { return lhs->isBeforeInBlock(rhs); });
+  return users;
+}
+
+/// Return true iff `createOp` has direct element writes whose order can update stored values.
+static inline bool hasDirectArrayWrites(CreateArrayOp createOp) {
+  Value arrayValue = createOp.getResult();
+  return llvm::any_of(arrayValue.getUsers(), [arrayValue](Operation *user) {
+    auto writeOp = llvm::dyn_cast<WriteArrayOp>(user);
+    return writeOp && writeOp.getArrRef() == arrayValue;
+  });
+}
+
+/// Return true iff `createOp` provides an initializer value for every static array element.
+static inline bool hasFullInitializer(CreateArrayOp createOp, ArrayRef<ArrayAttr> indices) {
+  Operation::operand_range elements = createOp.getElements();
+  return !elements.empty() && elements.size() == indices.size();
+}
+
+/// Return true iff all element values are immutable initializer operands.
+static inline bool
+isInitializerOnlyLocalArray(CreateArrayOp createOp, ArrayRef<ArrayAttr> indices) {
+  return hasFullInitializer(createOp, indices) && !hasDirectArrayWrites(createOp);
+}
+
+/// Return true iff the array allocation and every initializer value dominate `user`.
+static inline bool initializerValuesDominateUse(
+    CreateArrayOp createOp, Operation *user, const DominanceInfo &domInfo
+) {
+  if (!domInfo.dominates(createOp.getResult(), user)) {
+    return false;
+  }
+  return llvm::all_of(createOp.getElements(), [user, &domInfo](Value element) {
+    return domInfo.dominates(element, user);
+  });
+}
+
+/// Return true if all writes for the scalarized allocation are available before `user`.
+///
+/// The rewrite currently handles straight-line local array construction. Requiring every write to
+/// be in the same block and before the consuming read/member write keeps the replacement local and
+/// avoids changing behavior for arrays updated through control flow.
+static inline bool allWritesAvailableAt(const ScalarizedArrayInfo &info, Operation *user) {
+  return llvm::all_of(info.writeOpByIndex, [user](const auto &entry) {
+    return strictlyBefore(entry.second, user);
+  });
+}
+
+/// Convert array access operands to a static index attribute, if possible.
+static inline ArrayAttr getIndexAsAttr(ArrayAccessOpInterface op) {
+  return op.indexOperandsToAttributeArray();
+}
+
+static Type
+specializeTypeForArrayIndex(Type type, ArrayAttr idx, const ConversionTracker *tracker = nullptr);
+
+/// Fold an affine-map attribute against the static array index, if the map only depends on that
+/// index.
+static Attribute
+specializeAttrForArrayIndex(Attribute attr, ArrayAttr idx, const ConversionTracker *tracker) {
+  if (!attr) {
+    return attr;
+  }
+  if (auto mapAttr = llvm::dyn_cast<AffineMapAttr>(attr)) {
+    AffineMap map = mapAttr.getAffineMap();
+    if (idx.size() != map.getNumDims() + map.getNumSymbols()) {
+      return attr;
+    }
+    SmallVector<Attribute> operands;
+    operands.reserve(idx.size());
+    for (Attribute idxPart : idx.getValue()) {
+      auto intAttr = llvm::dyn_cast<IntegerAttr>(idxPart);
+      if (!intAttr) {
+        return attr;
+      }
+      operands.push_back(intAttr);
+    }
+
+    SmallVector<Attribute> result;
+    bool hasPoison = false;
+    if (failed(map.constantFold(operands, result, &hasPoison)) || hasPoison || result.size() != 1) {
+      return attr;
+    }
+    return result.front();
+  }
+  if (auto typeAttr = llvm::dyn_cast<TypeAttr>(attr)) {
+    Type specialized = specializeTypeForArrayIndex(typeAttr.getValue(), idx, tracker);
+    return specialized == typeAttr.getValue() ? attr : TypeAttr::get(specialized);
+  }
+  if (auto arrayAttr = llvm::dyn_cast<ArrayAttr>(attr)) {
+    MLIRContext *ctx = attr.getContext();
+    SmallVector<Attribute> specializedAttrs;
+    bool changed = false;
+    for (Attribute nested : arrayAttr.getValue()) {
+      Attribute specialized = specializeAttrForArrayIndex(nested, idx, tracker);
+      specializedAttrs.push_back(specialized);
+      changed |= specialized != nested;
+    }
+    return changed ? ArrayAttr::get(ctx, specializedAttrs) : attr;
+  }
+  return attr;
+}
+
+/// Specialize affine-map parameters nested in `type` for the given static array index.
+static Type
+specializeTypeForArrayIndex(Type type, ArrayAttr idx, const ConversionTracker *tracker) {
+  if (auto structTy = llvm::dyn_cast<StructType>(type)) {
+    ArrayAttr params = structTy.getParams();
+    if (!params) {
+      return type;
+    }
+    SmallVector<Attribute> specializedParams;
+    bool changed = false;
+    for (Attribute param : params.getValue()) {
+      Attribute specialized = specializeAttrForArrayIndex(param, idx, tracker);
+      specializedParams.push_back(specialized);
+      changed |= specialized != param;
+    }
+    if (!changed) {
+      return type;
+    }
+    Type specialized = StructType::get(
+        structTy.getNameRef(), ArrayAttr::get(type.getContext(), specializedParams)
+    );
+    if (tracker) {
+      if (auto structInstantiation =
+              tracker->getInstantiation(llvm::cast<StructType>(specialized))) {
+        return *structInstantiation;
+      }
+    }
+    return specialized;
+  }
+  if (auto arrayTy = llvm::dyn_cast<ArrayType>(type)) {
+    SmallVector<Attribute> specializedDims;
+    bool dimsChanged = false;
+    for (Attribute dim : arrayTy.getDimensionSizes()) {
+      Attribute specialized = specializeAttrForArrayIndex(dim, idx, tracker);
+      specializedDims.push_back(specialized);
+      dimsChanged |= specialized != dim;
+    }
+    Type specializedElem = specializeTypeForArrayIndex(arrayTy.getElementType(), idx, tracker);
+    return (dimsChanged || specializedElem != arrayTy.getElementType())
+               ? ArrayType::get(specializedElem, specializedDims)
+               : type;
+  }
+  return type;
+}
+
+/// Seed the scalar value/type maps from the explicit elements of a statically-shaped `array.new`.
+static LogicalResult seedValuesFromArrayElements(
+    CreateArrayOp createOp, ArrayRef<ArrayAttr> indices, DenseMap<ArrayAttr, Value> &valueByIndex,
+    DenseMap<ArrayAttr, Type> *typeByIndex = nullptr, const ConversionTracker *tracker = nullptr
+) {
+  Operation::operand_range elements = createOp.getElements();
+  if (elements.empty()) {
+    return success();
+  }
+  if (elements.size() != indices.size()) {
+    return failure();
+  }
+  for (auto [idx, value] : llvm::zip_equal(indices, elements)) {
+    valueByIndex[idx] = value;
+    if (typeByIndex) {
+      Type specializedType =
+          specializeTypeForArrayIndex(createOp.getType().getElementType(), idx, tracker);
+      bool canUseSpecializedType =
+          typesUnify(value.getType(), specializedType) ||
+          (tracker && tracker->isLegalConversion(
+                          value.getType(), specializedType, "seedValuesFromArrayElements"
+                      ));
+      (*typeByIndex)[idx] = canUseSpecializedType ? specializedType : value.getType();
+    }
+  }
+  return success();
+}
+
+/// Return true iff the candidate array stores at least two non-unifying element types.
+///
+/// Homogeneous arrays should continue through the normal type-propagation path. This step exists
+/// specifically for pseudo-homogeneous arrays, such as arrays whose element is a templated struct
+/// with an affine-map parameter that becomes a different concrete struct at each unrolled index.
+static bool hasMultipleIncompatibleElementTypes(const ScalarizedArrayInfo &info) {
+  SmallVector<Type> previousTypes;
+  for (ArrayAttr idx : info.indices) {
+    Type nextType = info.typeByIndex.lookup(idx);
+    if (!nextType) {
+      return false;
+    }
+    for (Type previousType : previousTypes) {
+      if (!typesUnify(previousType, nextType)) {
+        return true;
+      }
+    }
+    previousTypes.push_back(nextType);
+  }
+  return false;
+}
+
+static FailureOr<Type> getCommonRefinedType(Type lhs, Type rhs, const ConversionTracker &tracker);
+
+/// Return the common refinement of two matching type parameters, if it can be represented directly.
+static FailureOr<Attribute> getCommonRefinedParamAttr(
+    Attribute lhs, Attribute rhs, const ConversionTracker &tracker, bool unifyDynamicSize = false
+) {
+  assertValidAttrForParamOfType(lhs);
+  assertValidAttrForParamOfType(rhs);
+  if (lhs == rhs) {
+    return lhs;
+  }
+
+  if (auto lhsAffine = llvm::dyn_cast<AffineMapAttr>(lhs)) {
+    if (auto rhsInt = llvm::dyn_cast<IntegerAttr>(rhs)) {
+      if (!isDynamic(rhsInt)) {
+        return rhs;
+      }
+    }
+  }
+  if (auto rhsAffine = llvm::dyn_cast<AffineMapAttr>(rhs)) {
+    if (auto lhsInt = llvm::dyn_cast<IntegerAttr>(lhs)) {
+      if (!isDynamic(lhsInt)) {
+        return lhs;
+      }
+    }
+  }
+
+  if (unifyDynamicSize) {
+    auto dynamicInt = [](Attribute attr) -> IntegerAttr {
+      auto intAttr = llvm::dyn_cast<IntegerAttr>(attr);
+      return intAttr && isDynamic(intAttr) ? intAttr : nullptr;
+    };
+    if (dynamicInt(lhs) && llvm::isa_and_present<IntegerAttr, SymbolRefAttr, AffineMapAttr>(rhs)) {
+      return rhs;
+    }
+    if (dynamicInt(rhs) && llvm::isa_and_present<IntegerAttr, SymbolRefAttr, AffineMapAttr>(lhs)) {
+      return lhs;
+    }
+  }
+
+  auto lhsTy = llvm::dyn_cast<TypeAttr>(lhs);
+  auto rhsTy = llvm::dyn_cast<TypeAttr>(rhs);
+  if (lhsTy && rhsTy) {
+    auto commonType = getCommonRefinedType(lhsTy.getValue(), rhsTy.getValue(), tracker);
+    if (succeeded(commonType)) {
+      return TypeAttr::get(*commonType);
+    }
+  }
+  return failure();
+}
+
+/// Return the common refinement of two unifying types, if this pass can name it safely.
+static FailureOr<Type> getCommonRefinedType(Type lhs, Type rhs, const ConversionTracker &tracker) {
+  if (lhs == rhs) {
+    return lhs;
+  }
+  if (tracker.isLegalConversion(lhs, rhs, "getCommonRefinedType")) {
+    return rhs;
+  }
+  if (tracker.isLegalConversion(rhs, lhs, "getCommonRefinedType")) {
+    return lhs;
+  }
+
+  if (auto lhsStruct = llvm::dyn_cast<StructType>(lhs)) {
+    auto rhsStruct = llvm::dyn_cast<StructType>(rhs);
+    if (!rhsStruct) {
+      return failure();
+    }
+    if (lhsStruct.getNameRef() != rhsStruct.getNameRef()) {
+      std::optional<StructType> lhsPreimage = tracker.getPreimage(lhsStruct);
+      std::optional<StructType> rhsPreimage = tracker.getPreimage(rhsStruct);
+      if (!lhsPreimage && !rhsPreimage) {
+        return failure();
+      }
+      auto commonPreimage = getCommonRefinedType(
+          lhsPreimage.value_or(lhsStruct), rhsPreimage.value_or(rhsStruct), tracker
+      );
+      if (failed(commonPreimage)) {
+        return failure();
+      }
+      if (auto commonStruct = llvm::dyn_cast<StructType>(*commonPreimage)) {
+        if (std::optional<StructType> instantiatedCommon = tracker.getInstantiation(commonStruct)) {
+          return *instantiatedCommon;
+        }
+      }
+      return *commonPreimage;
+    }
+
+    ArrayAttr lhsParams = lhsStruct.getParams();
+    ArrayAttr rhsParams = rhsStruct.getParams();
+    ArrayRef<Attribute> emptyParams;
+    ArrayRef<Attribute> lhsValues = lhsParams ? lhsParams.getValue() : emptyParams;
+    ArrayRef<Attribute> rhsValues = rhsParams ? rhsParams.getValue() : emptyParams;
+    if (lhsValues.size() != rhsValues.size()) {
+      return failure();
+    }
+
+    SmallVector<Attribute> commonParams;
+    for (auto [lhsParam, rhsParam] : llvm::zip_equal(lhsValues, rhsValues)) {
+      auto commonParam = getCommonRefinedParamAttr(lhsParam, rhsParam, tracker);
+      if (failed(commonParam)) {
+        return failure();
+      }
+      commonParams.push_back(*commonParam);
+    }
+    StructType commonStruct =
+        commonParams.empty()
+            ? StructType::get(lhsStruct.getNameRef())
+            : StructType::get(
+                  lhsStruct.getNameRef(), ArrayAttr::get(lhs.getContext(), commonParams)
+              );
+    if (std::optional<StructType> instantiatedCommon = tracker.getInstantiation(commonStruct)) {
+      return *instantiatedCommon;
+    }
+    return commonStruct;
+  }
+
+  if (auto lhsArray = llvm::dyn_cast<ArrayType>(lhs)) {
+    auto rhsArray = llvm::dyn_cast<ArrayType>(rhs);
+    if (!rhsArray) {
+      return failure();
+    }
+
+    auto commonElement =
+        getCommonRefinedType(lhsArray.getElementType(), rhsArray.getElementType(), tracker);
+    if (failed(commonElement)) {
+      return failure();
+    }
+    ArrayRef<Attribute> lhsDims = lhsArray.getDimensionSizes();
+    ArrayRef<Attribute> rhsDims = rhsArray.getDimensionSizes();
+    if (lhsDims.size() != rhsDims.size()) {
+      return failure();
+    }
+
+    SmallVector<Attribute> commonDims;
+    for (auto [lhsDim, rhsDim] : llvm::zip_equal(lhsDims, rhsDims)) {
+      auto commonDim =
+          getCommonRefinedParamAttr(lhsDim, rhsDim, tracker, /*unifyDynamicSize=*/true);
+      if (failed(commonDim)) {
+        return failure();
+      }
+      commonDims.push_back(*commonDim);
+    }
+    return ArrayType::get(*commonElement, commonDims);
+  }
+
+  return failure();
+}
+
+/// Return true iff a value of `sourceType` can be used where `targetType` is requested after
+/// scalarization has retained the common refinement.
+static bool canUseScalarizedValueAsType(
+    Type sourceType, Type targetType, const ConversionTracker &tracker, const char *patName
+) {
+  if (sourceType == targetType || tracker.isLegalConversion(sourceType, targetType, patName)) {
+    return true;
+  }
+  auto commonType = getCommonRefinedType(sourceType, targetType, tracker);
+  return succeeded(commonType) && *commonType == targetType;
+}
+
+/// Merge one candidate scalar type into the split type map, keeping the most concrete refinement.
+static LogicalResult mergeSplitCandidateType(
+    MemberDefOp member, ArrayAttr idx, Type candidateType, Operation *candidateOp,
+    DenseMap<ArrayAttr, Type> &splitTypes, DenseMap<ArrayAttr, Operation *> *splitTypeOps,
+    const ConversionTracker &tracker
+) {
+  auto existing = splitTypes.find(idx);
+  if (existing == splitTypes.end()) {
+    splitTypes[idx] = candidateType;
+    if (splitTypeOps) {
+      (*splitTypeOps)[idx] = candidateOp;
+    }
+    return success();
+  }
+
+  Type existingType = existing->second;
+  if (existingType == candidateType) {
+    return success();
+  }
+  if (tracker.isLegalConversion(existingType, candidateType, "mergeSplitCandidateType")) {
+    existing->second = candidateType;
+    if (splitTypeOps) {
+      (*splitTypeOps)[idx] = candidateOp;
+    }
+    return success();
+  }
+  if (tracker.isLegalConversion(candidateType, existingType, "mergeSplitCandidateType") ||
+      existingType == candidateType) {
+    return success();
+  }
+
+  auto commonType = getCommonRefinedType(existingType, candidateType, tracker);
+  if (succeeded(commonType)) {
+    existing->second = *commonType;
+    if (splitTypeOps) {
+      (*splitTypeOps)[idx] = candidateOp;
+    }
+    return success();
+  }
+
+  InFlightDiagnostic diag = member.emitError(
+      "cannot split heterogeneous array member because candidate writes require incompatible "
+      "scalar member types"
+  );
+  if (splitTypeOps) {
+    diag.attachNote(splitTypeOps->lookup(idx)->getLoc())
+        << "candidate writes index " << idx << " with type " << existingType;
+    diag.attachNote(candidateOp->getLoc())
+        << "conflicting candidate writes the same index with type " << candidateType;
+  }
+  return diag;
+}
+
+/// Collect scalarization information for `op` if it is a safe heterogeneous-array candidate.
+///
+/// A candidate must:
+/// - have a static shape and a real element type,
+/// - have only direct reads, direct writes, and whole-array struct member writes as users,
+/// - use only static array indices,
+/// - have an initializer or exactly one write for every static element index,
+/// - have all reads/member writes after every explicit element write, and
+/// - store multiple incompatible element types.
+static FailureOr<ScalarizedArrayInfo>
+getScalarizedArrayInfo(CreateArrayOp op, const ConversionTracker &tracker) {
+  ArrayType arrTy = op.getType();
+  if (!arrTy.hasStaticShape() || llvm::isa<NoneType>(arrTy.getElementType())) {
+    return failure();
+  }
+
+  std::optional<SmallVector<ArrayAttr>> maybeIndices = arrTy.getSubelementIndices();
+  if (!maybeIndices) {
+    return failure();
+  }
+
+  ScalarizedArrayInfo info;
+  info.createOp = op;
+  info.indices = std::move(*maybeIndices);
+  auto seedRes =
+      seedValuesFromArrayElements(op, info.indices, info.valueByIndex, &info.typeByIndex, &tracker);
+  if (failed(seedRes)) {
+    return failure();
+  }
+  Value arrayValue = op.getResult();
+
+  for (Operation *user : arrayValue.getUsers()) {
+    if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
+      if (writeOp.getArrRef() != arrayValue) {
+        return failure();
+      }
+      ArrayAttr idx = getIndexAsAttr(writeOp);
+      if (!idx) {
+        return failure();
+      }
+      if (info.writeOpByIndex.contains(idx)) {
+        return failure();
+      }
+      info.valueByIndex[idx] = writeOp.getRvalue();
+      info.typeByIndex[idx] = writeOp.getRvalue().getType();
+      info.writeOpByIndex[idx] = writeOp.getOperation();
+      info.writes.push_back(writeOp);
+      continue;
+    }
+    if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
+      if (readOp.getArrRef() != arrayValue) {
+        return failure();
+      }
+      ArrayAttr idx = getIndexAsAttr(readOp);
+      if (!idx) {
+        return failure();
+      }
+      info.reads.push_back(readOp);
+      continue;
+    }
+    if (auto memberWriteOp = llvm::dyn_cast<MemberWriteOp>(user)) {
+      if (memberWriteOp.getVal() != arrayValue) {
+        return failure();
+      }
+      info.memberWrites.push_back(memberWriteOp);
+      continue;
+    }
+    return failure();
+  }
+
+  for (ArrayAttr idx : info.indices) {
+    if (!info.valueByIndex.contains(idx)) {
+      return failure();
+    }
+  }
+  for (ReadArrayOp readOp : info.reads) {
+    ArrayAttr idx = getIndexAsAttr(readOp);
+    if (!info.valueByIndex.contains(idx) || !allWritesAvailableAt(info, readOp)) {
+      return failure();
+    }
+    if (!canReplaceReadResultWithType(
+            readOp, info.typeByIndex.lookup(idx), tracker, "getScalarizedArrayInfo"
+        )) {
+      return failure();
+    }
+  }
+  for (MemberWriteOp memberWriteOp : info.memberWrites) {
+    if (!allWritesAvailableAt(info, memberWriteOp)) {
+      return failure();
+    }
+  }
+  if (!hasMultipleIncompatibleElementTypes(info)) {
+    return failure();
+  }
+  return info;
+}
+
+/// Create scalar replacement members for `member`, or return the replacements already created.
+///
+/// The replacement members preserve the original member's public/signal/column and discardable
+/// metadata, and rely on the containing struct's symbol table to make each generated name unique.
+static SplitMemberInfo &getOrCreateSplitMemberInfo(
+    MemberDefOp member, const ScalarizedArrayInfo &arrayInfo,
+    const DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
+    DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers, SymbolTableCollection &tables,
+    PatternRewriter &rewriter
+) {
+  auto existing = splitMembers.find(member);
+  if (existing != splitMembers.end()) {
+    return existing->second;
+  }
+
+  SplitMemberInfo &splitInfo = splitMembers[member];
+  splitInfo.indices = arrayInfo.indices;
+
+  StructDefOp parentStruct = getParentOfType<StructDefOp>(member);
+  assert(parentStruct && "MemberDefOp parent is always StructDefOp");
+  SymbolTable &structSymbols = tables.getSymbolTable(parentStruct);
+
+  OpBuilder::InsertionGuard guard(rewriter);
+  rewriter.setInsertionPoint(member);
+  auto splitTypesIt = splitTypesByMember.find(member);
+  for (ArrayAttr idx : arrayInfo.indices) {
+    Type scalarType = arrayInfo.typeByIndex.lookup(idx);
+    if (splitTypesIt != splitTypesByMember.end()) {
+      if (Type refinedType = splitTypesIt->second.lookup(idx)) {
+        scalarType = refinedType;
+      }
+    }
+    MemberDefOp newMember = rewriter.create<MemberDefOp>(
+        member.getLoc(), member.getSymNameAttr(), scalarType, member.getSignal(), member.getColumn()
+    );
+    newMember.setPublicAttr(member.hasPublicAttr());
+    newMember->setDiscardableAttrs(member->getDiscardableAttrDictionary());
+    StringAttr actualName = structSymbols.insert(newMember);
+    splitInfo.memberByIndex[idx] = std::make_pair(actualName, scalarType);
+  }
+  return splitInfo;
+}
+
+/// Value and type cached for one scalarized array index.
+struct CachedScalarizedValue {
+  /// SSA value currently known to provide this scalarized index.
+  Value value;
+  /// Type that the scalarized index must use when splitting member writes.
+  Type type;
+};
+
+/// Return the cached scalar value for `value` when it is a static read from another candidate.
+static std::optional<CachedScalarizedValue> getCandidateReadReplacement(
+    Value value, const DenseMap<Operation *, ScalarizedArrayInfo *> *candidateInfoByCreateOp
+) {
+  if (!candidateInfoByCreateOp) {
+    return std::nullopt;
+  }
+  auto readOp = value.getDefiningOp<ReadArrayOp>();
+  if (!readOp) {
+    return std::nullopt;
+  }
+  auto createOp = readOp.getArrRef().getDefiningOp<CreateArrayOp>();
+  if (!createOp) {
+    return std::nullopt;
+  }
+  auto infoIt = candidateInfoByCreateOp->find(createOp.getOperation());
+  if (infoIt == candidateInfoByCreateOp->end()) {
+    return std::nullopt;
+  }
+  ArrayAttr idx = getIndexAsAttr(readOp);
+  if (!idx) {
+    return std::nullopt;
+  }
+
+  ScalarizedArrayInfo *info = infoIt->second;
+  Value replacement = info->valueByIndex.lookup(idx);
+  Type replacementType = info->typeByIndex.lookup(idx);
+  if (!replacement || !replacementType) {
+    return std::nullopt;
+  }
+  return CachedScalarizedValue {replacement, replacementType};
+}
+
+/// Refresh cached element values from their still-live array operands.
+///
+/// Candidates are collected before any rewrites run, so one candidate can cache a read result from
+/// another candidate. Rewriting the upstream candidate updates the downstream write operands and
+/// initializer operands and erases the reads; re-reading the operands here keeps this candidate
+/// from using dangling values.
+static LogicalResult refreshValuesFromArrayOperands(
+    ScalarizedArrayInfo &info, const ConversionTracker &tracker,
+    const DenseMap<Operation *, ScalarizedArrayInfo *> *candidateInfoByCreateOp = nullptr,
+    bool *changed = nullptr
+) {
+  DenseMap<ArrayAttr, Value> oldValueByIndex;
+  DenseMap<ArrayAttr, Type> oldTypeByIndex;
+  if (changed != nullptr) {
+    oldValueByIndex = info.valueByIndex;
+    oldTypeByIndex = info.typeByIndex;
+  }
+
+  auto setCachedValue = [&](ArrayAttr idx, Value value, Type fallbackType) {
+    if (std::optional<CachedScalarizedValue> replacement =
+            getCandidateReadReplacement(value, candidateInfoByCreateOp)) {
+      value = replacement->value;
+      fallbackType = replacement->type;
+    }
+    info.valueByIndex[idx] = value;
+    info.typeByIndex[idx] = fallbackType;
+  };
+
+  Operation::operand_range elements = info.createOp.getElements();
+  if (!elements.empty() && elements.size() != info.indices.size()) {
+    return failure();
+  }
+  if (!elements.empty()) {
+    for (auto [idx, value] : llvm::zip_equal(info.indices, elements)) {
+      Type specializedType =
+          specializeTypeForArrayIndex(info.createOp.getType().getElementType(), idx, &tracker);
+      bool canUseSpecializedType =
+          typesUnify(value.getType(), specializedType) ||
+          tracker.isLegalConversion(
+              value.getType(), specializedType, "refreshValuesFromArrayOperands"
+          );
+      setCachedValue(idx, value, canUseSpecializedType ? specializedType : value.getType());
+    }
+  }
+
+  for (WriteArrayOp writeOp : info.writes) {
+    ArrayAttr idx = getIndexAsAttr(writeOp);
+    if (!idx || !info.valueByIndex.contains(idx)) {
+      return failure();
+    }
+    setCachedValue(idx, writeOp.getRvalue(), writeOp.getRvalue().getType());
+  }
+  if (changed != nullptr) {
+    for (ArrayAttr idx : info.indices) {
+      if (oldValueByIndex.lookup(idx) != info.valueByIndex.lookup(idx) ||
+          oldTypeByIndex.lookup(idx) != info.typeByIndex.lookup(idx)) {
+        *changed = true;
+        break;
+      }
+    }
+  }
+  return success();
+}
+
+/// Refresh all collected candidates through candidate-to-candidate static reads.
+static LogicalResult refreshValuesFromDependentCandidates(
+    MutableArrayRef<ScalarizedArrayInfo> arraysToScalarize,
+    DenseMap<Operation *, ScalarizedArrayInfo *> &candidateInfoByCreateOp,
+    const ConversionTracker &tracker
+) {
+  candidateInfoByCreateOp.clear();
+  for (ScalarizedArrayInfo &info : arraysToScalarize) {
+    candidateInfoByCreateOp[info.createOp.getOperation()] = &info;
+  }
+
+  for (unsigned iteration = 0; iteration <= arraysToScalarize.size(); ++iteration) {
+    bool changed = false;
+    for (ScalarizedArrayInfo &info : arraysToScalarize) {
+      auto res = refreshValuesFromArrayOperands(info, tracker, &candidateInfoByCreateOp, &changed);
+      if (failed(res)) {
+        return failure();
+      }
+    }
+    if (!changed) {
+      return success();
+    }
+  }
+  return failure();
+}
+
+/// Return the value that should replace `readOp` after scalarization.
+///
+/// The cached scalar value can be less concrete than `info.typeByIndex` for inline initializers,
+/// so materialize a cast when a concrete consumer needs the refined per-index type.
+static FailureOr<Value> buildReadReplacementValue(
+    ReadArrayOp readOp, const ScalarizedArrayInfo &info, PatternRewriter &rewriter,
+    const ConversionTracker &tracker
+) {
+  ArrayAttr idx = getIndexAsAttr(readOp);
+  if (!idx) {
+    return failure();
+  }
+  Value replacementValue = info.valueByIndex.lookup(idx);
+  Type replacementType = info.typeByIndex.lookup(idx);
+  if (!replacementValue || !replacementType) {
+    return failure();
+  }
+  if (!canUseScalarizedValueAsType(
+          replacementValue.getType(), replacementType, tracker, "buildReadReplacementValue"
+      )) {
+    return failure();
+  }
+  if (replacementValue.getType() == replacementType) {
+    return replacementValue;
+  }
+
+  OpBuilder::InsertionGuard guard(rewriter);
+  rewriter.setInsertionPoint(readOp);
+  if (replacementValue.getDefiningOp<NonDetOp>()) {
+    // A generic nondet initializer can be specialized per read index without changing program
+    // semantics because each index already denotes an unconstrained value.
+    return rewriter.create<NonDetOp>(readOp.getLoc(), replacementType).getResult();
+  }
+  if (!typesUnify(replacementValue.getType(), replacementType)) {
+    return failure();
+  }
+  return rewriter.create<UnifiableCastOp>(readOp.getLoc(), replacementType, replacementValue)
+      .getResult();
+}
+
+/// Emit one scalar `struct.writem` per split index for a whole-array member write.
+template <typename GetScalarValueFn>
+static LogicalResult emitScalarMemberWrites(
+    MemberWriteOp memberWriteOp, const SplitMemberInfo &splitInfo, PatternRewriter &rewriter,
+    GetScalarValueFn getScalarValue
+) {
+  rewriter.setInsertionPoint(memberWriteOp);
+  DictionaryAttr discardableAttrs = memberWriteOp->getDiscardableAttrDictionary();
+  for (ArrayAttr idx : splitInfo.indices) {
+    MemberInfo memberInfo = splitInfo.memberByIndex.lookup(idx);
+    if (!memberInfo.first) {
+      return failure();
+    }
+    FailureOr<Value> scalarValue = getScalarValue(idx, memberInfo.second);
+    if (failed(scalarValue)) {
+      return failure();
+    }
+    MemberWriteOp scalarWrite = rewriter.create<MemberWriteOp>(
+        memberWriteOp.getLoc(), memberWriteOp.getComponent(),
+        FlatSymbolRefAttr::get(memberInfo.first), *scalarValue
+    );
+    scalarWrite->setDiscardableAttrs(discardableAttrs);
+  }
+  return success();
+}
+
+/// Rewrite one local heterogeneous array allocation into its index-specific scalar values.
+///
+/// Direct array reads are replaced with the value written at the requested static index.
+/// Whole-array member writes are expanded into one scalar member write per index, creating
+/// replacement members as needed. Once all consumers are rewritten, the original array writes and
+/// allocation are erased.
+static LogicalResult rewriteLocalArray(
+    ScalarizedArrayInfo &info, DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers,
+    const DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
+    SymbolTableCollection &tables, PatternRewriter &rewriter, const ConversionTracker &tracker,
+    const DenseMap<Operation *, ScalarizedArrayInfo *> *candidateInfoByCreateOp
+) {
+  if (failed(refreshValuesFromArrayOperands(info, tracker, candidateInfoByCreateOp))) {
+    return failure();
+  }
+
+  for (ReadArrayOp readOp : llvm::make_early_inc_range(info.reads)) {
+    ArrayAttr idx = getIndexAsAttr(readOp);
+    if (!canReplaceReadResultWithType(
+            readOp, info.typeByIndex.lookup(idx), tracker, "rewriteLocalArray"
+        )) {
+      return failure();
+    }
+    FailureOr<Value> replacementValue = buildReadReplacementValue(readOp, info, rewriter, tracker);
+    if (failed(replacementValue)) {
+      return failure();
+    }
+    replaceAllUsesIgnoringType(readOp.getResult(), *replacementValue);
+    rewriter.eraseOp(readOp);
+  }
+
+  for (MemberWriteOp memberWriteOp : llvm::make_early_inc_range(info.memberWrites)) {
+    auto memberDef = memberWriteOp.getMemberDefOp(tables);
+    if (failed(memberDef)) {
+      return failure();
+    }
+    SplitMemberInfo &splitInfo = getOrCreateSplitMemberInfo(
+        memberDef->get(), info, splitTypesByMember, splitMembers, tables, rewriter
+    );
+
+    auto getScalarValue = [&info](ArrayAttr idx, Type) -> FailureOr<Value> {
+      Value scalarValue = info.valueByIndex.lookup(idx);
+      if (!scalarValue) {
+        return failure();
+      }
+      return scalarValue;
+    };
+    if (failed(emitScalarMemberWrites(memberWriteOp, splitInfo, rewriter, getScalarValue))) {
+      return failure();
+    }
+    rewriter.eraseOp(memberWriteOp);
+  }
+
+  for (WriteArrayOp writeOp : llvm::make_early_inc_range(info.writes)) {
+    rewriter.eraseOp(writeOp);
+  }
+  if (info.createOp.getResult().use_empty()) {
+    rewriter.eraseOp(info.createOp);
+  }
+  return success();
+}
+
+/// Rewrite reads from array-typed members that were split by `rewriteLocalArray()`.
+///
+/// The only supported use of the original whole-array member read is a static `array.read`.
+/// Supporting arbitrary uses would require reconstructing a pseudo-homogeneous array value, which
+/// is exactly the invalid representation this step removes.
+static LogicalResult rewriteSplitMemberReads(
+    ModuleOp modOp, DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers,
+    SymbolTableCollection &tables, PatternRewriter &rewriter, const ConversionTracker &tracker
+) {
+  for (MemberReadOp memberReadOp : walkCollect<MemberReadOp>(modOp)) {
+    auto memberDef = memberReadOp.getMemberDefOp(tables);
+    if (failed(memberDef)) {
+      return failure();
+    }
+    auto splitIt = splitMembers.find(memberDef->get());
+    if (splitIt == splitMembers.end()) {
+      continue;
+    }
+
+    SmallVector<ReadArrayOp> arrayReads;
+    for (Operation *user : memberReadOp.getResult().getUsers()) {
+      auto readOp = llvm::dyn_cast<ReadArrayOp>(user);
+      if (!readOp || readOp.getArrRef() != memberReadOp.getResult() || !getIndexAsAttr(readOp)) {
+        return failure();
+      }
+      arrayReads.push_back(readOp);
+    }
+
+    ValueRange mapOperands;
+    std::optional<int32_t> numDims;
+    if (!memberReadOp.getMapOperands().empty()) {
+      mapOperands = memberReadOp.getMapOperands().front();
+      numDims = memberReadOp.getNumDimsPerMap().front();
+    }
+
+    DenseMap<ArrayAttr, Value> scalarValueByIndex;
+    rewriter.setInsertionPoint(memberReadOp);
+    DictionaryAttr discardableAttrs = memberReadOp->getDiscardableAttrDictionary();
+    for (ReadArrayOp readOp : arrayReads) {
+      ArrayAttr idx = getIndexAsAttr(readOp);
+      MemberInfo memberInfo = splitIt->second.memberByIndex.lookup(idx);
+      if (!memberInfo.first) {
+        return failure();
+      }
+      if (!canReplaceReadResultWithType(
+              readOp, memberInfo.second, tracker, "rewriteSplitMemberReads"
+          )) {
+        return failure();
+      }
+      if (scalarValueByIndex.contains(idx)) {
+        continue;
+      }
+      auto scalarRead = rewriter.create<MemberReadOp>(
+          memberReadOp.getLoc(), memberInfo.second, memberReadOp.getComponent(), memberInfo.first,
+          memberReadOp.getTableOffset().value_or(Attribute {}), mapOperands, numDims
+      );
+      scalarRead->setDiscardableAttrs(discardableAttrs);
+      scalarValueByIndex[idx] = scalarRead.getResult();
+    }
+
+    for (ReadArrayOp readOp : llvm::make_early_inc_range(arrayReads)) {
+      ArrayAttr idx = getIndexAsAttr(readOp);
+      replaceAllUsesIgnoringType(readOp.getResult(), scalarValueByIndex.lookup(idx));
+      rewriter.eraseOp(readOp);
+    }
+    if (memberReadOp.getResult().use_empty()) {
+      rewriter.eraseOp(memberReadOp);
+    }
+  }
+  return success();
+}
+
+/// Reconstruct the scalar member type map established by the collected candidates.
+static LogicalResult collectSplitTypesByMember(
+    ArrayRef<ScalarizedArrayInfo> arraysToScalarize, SymbolTableCollection &tables,
+    DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
+    const ConversionTracker &tracker
+) {
+  for (const ScalarizedArrayInfo &info : arraysToScalarize) {
+    for (MemberWriteOp memberWriteOp : info.memberWrites) {
+      auto memberDef = memberWriteOp.getMemberDefOp(tables);
+      if (failed(memberDef)) {
+        return failure();
+      }
+      DenseMap<ArrayAttr, Type> &splitTypes = splitTypesByMember[memberDef->get()];
+      for (ArrayAttr idx : info.indices) {
+        auto res = mergeSplitCandidateType(
+            memberDef->get(), idx, info.typeByIndex.lookup(idx), memberWriteOp.getOperation(),
+            splitTypes, nullptr, tracker
+        );
+        if (failed(res)) {
+          return failure();
+        }
+      }
+    }
+  }
+  return success();
+}
+
+/// Verify one read of an array-typed member before the defining member is split.
+static LogicalResult verifySplitMemberReadRewritable(
+    MemberReadOp memberReadOp, MemberDefOp member, const DenseMap<ArrayAttr, Type> &splitTypes,
+    const ConversionTracker &tracker
+) {
+  for (Operation *user : memberReadOp.getResult().getUsers()) {
+    auto readOp = llvm::dyn_cast<ReadArrayOp>(user);
+    if (!readOp || readOp.getArrRef() != memberReadOp.getResult()) {
+      InFlightDiagnostic diag = memberReadOp.emitError(
+          "cannot split heterogeneous array member because a whole-array read has an "
+          "unsupported use"
+      );
+      diag.attachNote(member.getLoc()) << "split member defined here";
+      diag.attachNote(user->getLoc()) << "unsupported use is here";
+      return diag;
+    }
+
+    ArrayAttr idx = getIndexAsAttr(readOp);
+    if (!idx) {
+      InFlightDiagnostic diag = readOp.emitError(
+          "cannot split heterogeneous array member because a read of it uses a dynamic array index"
+      );
+      diag.attachNote(member.getLoc()) << "split member defined here";
+      return diag;
+    }
+
+    Type replacementType = splitTypes.lookup(idx);
+    if (!replacementType) {
+      InFlightDiagnostic diag = readOp.emitError(
+          "cannot split heterogeneous array member because a read of it uses an array index "
+          "that is not written by any scalarization candidate"
+      );
+      diag.attachNote(member.getLoc()) << "split member defined here";
+      return diag;
+    }
+
+    if (!canReplaceReadResultWithType(
+            readOp, replacementType, tracker, "verifySplitMemberReadsRewritable"
+        )) {
+      InFlightDiagnostic diag = readOp.emitError(
+          "cannot split heterogeneous array member because a read result type is incompatible "
+          "with the split scalar member type"
+      );
+      diag.attachNote(member.getLoc()) << "split member defined here";
+      return diag;
+    }
+  }
+  return success();
+}
+
+/// Verify reads of array-typed members before their defining members are split.
+static LogicalResult verifySplitMemberReadsRewritable(
+    ModuleOp modOp, const DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
+    SymbolTableCollection &tables, const ConversionTracker &tracker
+) {
+  for (MemberReadOp memberReadOp : walkCollect<MemberReadOp>(modOp)) {
+    auto memberDef = memberReadOp.getMemberDefOp(tables);
+    if (failed(memberDef)) {
+      return failure();
+    }
+    auto splitIt = splitTypesByMember.find(memberDef->get());
+    if (splitIt == splitTypesByMember.end()) {
+      continue;
+    }
+    auto verifyRes =
+        verifySplitMemberReadRewritable(memberReadOp, memberDef->get(), splitIt->second, tracker);
+    if (failed(verifyRes)) {
+      return failure();
+    }
+  }
+  return success();
+}
+
+/// Return the local array allocation stored by `memberWriteOp`, if it has a static shape.
+static FailureOr<CreateArrayOp> getStaticLocalArrayCreate(MemberWriteOp memberWriteOp) {
+  auto createOp = memberWriteOp.getVal().getDefiningOp<CreateArrayOp>();
+  if (!createOp) {
+    return failure();
+  }
+  ArrayType arrTy = createOp.getType();
+  if (!arrTy.hasStaticShape() || llvm::isa<NoneType>(arrTy.getElementType())) {
+    return failure();
+  }
+  return createOp;
+}
+
+/// Verify that `createOp` can be expanded while splitting one or more members.
+///
+/// Static writes update the local value map, static reads consume it, and missing indices are
+/// materialized as shared `llzk.nondet` values. Other users would observe or escape the array in a
+/// way this local scalarization cannot preserve.
+static LogicalResult verifyExpandableLocalArrayUsers(
+    CreateArrayOp createOp, const DenseSet<MemberDefOp> &splitMemberSet,
+    SymbolTableCollection &tables, const DominanceInfo &domInfo
+) {
+  Value arrayValue = createOp.getResult();
+  ArrayType arrTy = createOp.getType();
+  std::optional<SmallVector<ArrayAttr>> maybeIndices = arrTy.getSubelementIndices();
+  if (!maybeIndices) {
+    return failure();
+  }
+  bool allowCrossBlockMemberWrites = isInitializerOnlyLocalArray(createOp, *maybeIndices);
+  for (Operation *user : createOp.getResult().getUsers()) {
+    if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
+      if (writeOp.getArrRef() != arrayValue || writeOp->getBlock() != createOp->getBlock() ||
+          !getIndexAsAttr(writeOp)) {
+        return failure();
+      }
+      continue;
+    }
+    if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
+      if (readOp.getArrRef() != arrayValue || readOp->getBlock() != createOp->getBlock() ||
+          !getIndexAsAttr(readOp)) {
+        return failure();
+      }
+      continue;
+    }
+    if (auto userWriteOp = llvm::dyn_cast<MemberWriteOp>(user)) {
+      auto memberDef = userWriteOp.getMemberDefOp(tables);
+      if (userWriteOp.getVal() == arrayValue && succeeded(memberDef) &&
+          splitMemberSet.contains(memberDef->get())) {
+        if (userWriteOp->getBlock() == createOp->getBlock()) {
+          continue;
+        }
+        if (allowCrossBlockMemberWrites &&
+            initializerValuesDominateUse(createOp, userWriteOp, domInfo)) {
+          continue;
+        }
+      }
+    }
+    return failure();
+  }
+  return success();
+}
+
+/// Verify that every split-member write fed by `createOp` has the same static index set as the
+/// local array allocation.
+///
+/// `rewriteExpandableLocalArray()` emits one scalar write per target split index. If the source
+/// allocation has extra indices, those values would be dropped; if it has missing indices, fresh
+/// nondeterministic values would be materialized. Either changes the whole-array write semantics.
+static LogicalResult verifyExpandableLocalArraySplitIndices(
+    CreateArrayOp createOp,
+    const DenseMap<MemberDefOp, SmallVector<ArrayAttr>> &splitIndicesByMember,
+    const DenseMap<MemberDefOp, Operation *> *splitIndexOpsByMember, SymbolTableCollection &tables
+) {
+  ArrayType arrTy = createOp.getType();
+  std::optional<SmallVector<ArrayAttr>> maybeIndices = arrTy.getSubelementIndices();
+  if (!maybeIndices) {
+    return failure();
+  }
+  ArrayRef<ArrayAttr> indices = *maybeIndices;
+  Value arrayValue = createOp.getResult();
+
+  for (Operation *user : arrayValue.getUsers()) {
+    auto memberWriteOp = llvm::dyn_cast<MemberWriteOp>(user);
+    if (!memberWriteOp || memberWriteOp.getVal() != arrayValue) {
+      continue;
+    }
+    auto memberDef = memberWriteOp.getMemberDefOp(tables);
+    if (failed(memberDef)) {
+      return failure();
+    }
+    MemberDefOp member = memberDef->get();
+    auto splitIt = splitIndicesByMember.find(member);
+    if (splitIt == splitIndicesByMember.end()) {
+      continue;
+    }
+    ArrayRef<ArrayAttr> splitIndices = splitIt->second;
+    if (haveSameIndexSet(indices, splitIndices)) {
+      continue;
+    }
+
+    InFlightDiagnostic diag = member.emitError(
+        "cannot split heterogeneous array member because expandable whole-array write uses "
+        "different index set"
+    );
+    if (splitIndexOpsByMember) {
+      diag.attachNote(splitIndexOpsByMember->lookup(member)->getLoc())
+          << "candidate establishes " << splitIndices.size() << " split member indices";
+    }
+    Diagnostic &note = diag.attachNote(memberWriteOp.getLoc())
+                       << "expandable whole-array write has " << indices.size() << " array indices";
+    if (ArrayAttr extraIndex = findIndexMissingFrom(indices, splitIndices)) {
+      note << ", including extra index " << extraIndex;
+    } else if (ArrayAttr missingIndex = findIndexMissingFrom(splitIndices, indices)) {
+      note << ", missing index " << missingIndex;
+    }
+    return diag;
+  }
+  return success();
+}
+
+/// Return the value for `idx` at `type`, creating and caching a nondeterministic value if the local
+/// array element has not been written.
+///
+/// The caller must have already rejected initialized expandable arrays that store the same SSA
+/// value into indices requiring incompatible split-member types.
+static FailureOr<Value> getOrCreateScalarizedLocalArrayValue(
+    DenseMap<ArrayAttr, Value> &valueByIndex, DenseSet<Value> &generatedMaterializations,
+    ArrayAttr idx, Type type, Location loc, PatternRewriter &rewriter,
+    const ConversionTracker &tracker, Operation *materializationPoint = nullptr
+) {
+  auto createNonDet = [&](Type nondetType) {
+    OpBuilder::InsertionGuard guard(rewriter);
+    if (materializationPoint) {
+      rewriter.setInsertionPointAfter(materializationPoint);
+    }
+    return rewriter.create<NonDetOp>(loc, nondetType).getResult();
+  };
+  Value scalarValue = valueByIndex.lookup(idx);
+  if (!scalarValue) {
+    scalarValue = createNonDet(type);
+    valueByIndex[idx] = scalarValue;
+    generatedMaterializations.insert(scalarValue);
+  }
+  if (scalarValue.getType() == type) {
+    return scalarValue;
+  }
+  FailureOr<Type> commonType = getCommonRefinedType(scalarValue.getType(), type, tracker);
+  if (failed(commonType)) {
+    return failure();
+  }
+  if (*commonType == scalarValue.getType()) {
+    return scalarValue;
+  }
+  if (generatedMaterializations.contains(scalarValue)) {
+    NonDetOp nondetOp = scalarValue.getDefiningOp<NonDetOp>();
+    if (!nondetOp) {
+      return failure();
+    }
+    rewriter.modifyOpInPlace(nondetOp, [&scalarValue, &commonType]() {
+      scalarValue.setType(*commonType);
+    });
+    return scalarValue;
+  }
+  if (scalarValue.getDefiningOp<NonDetOp>()) {
+    scalarValue = createNonDet(*commonType);
+    valueByIndex[idx] = scalarValue;
+    generatedMaterializations.insert(scalarValue);
+  }
+  return scalarValue;
+}
+
+/// Reject expandable arrays that would store one SSA value into several split scalar members with
+/// incompatible concrete types.
+///
+/// Later type propagation may refine the value operand of each scalar member write. If two writes
+/// keep the same SSA value, refining one write also refines the other because MLIR values carry one
+/// global type. Missing values are materialized as fresh `llzk.nondet` values during rewriting and
+/// then cached by index, so the check tracks those pending materializations until an `array.write`
+/// overwrites the index. Static reads of unwritten indices participate in the same pending
+/// materialization state because the rewrite caches their result-typed `llzk.nondet` value for
+/// later scalar member writes at that index.
+static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
+    CreateArrayOp createOp,
+    const DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
+    SymbolTableCollection &tables, const ConversionTracker &tracker,
+    StringRef arrayDescription = "an expandable array"
+) {
+  if (splitTypesByMember.empty()) {
+    return success();
+  }
+
+  bool targetsSplitMember = false;
+  for (Operation *user : createOp.getResult().getUsers()) {
+    auto memberWriteOp = llvm::dyn_cast<MemberWriteOp>(user);
+    if (!memberWriteOp || memberWriteOp.getVal() != createOp.getResult()) {
+      continue;
+    }
+    auto memberDef = memberWriteOp.getMemberDefOp(tables);
+    if (failed(memberDef)) {
+      return failure();
+    }
+    if (splitTypesByMember.contains(memberDef->get())) {
+      targetsSplitMember = true;
+      break;
+    }
+  }
+  if (!targetsSplitMember) {
+    return success();
+  }
+
+  ArrayType arrTy = createOp.getType();
+  std::optional<SmallVector<ArrayAttr>> maybeIndices = arrTy.getSubelementIndices();
+  if (!maybeIndices) {
+    return failure();
+  }
+  ArrayRef<ArrayAttr> indices = *maybeIndices;
+
+  DenseMap<ArrayAttr, Value> valueByIndex;
+  if (failed(seedValuesFromArrayElements(createOp, indices, valueByIndex))) {
+    return failure();
+  }
+
+  FailureOr<SmallVector<Operation *>> maybeUsers = getUsersInBlockOrder(createOp.getResult());
+  SmallVector<Operation *> users;
+  if (succeeded(maybeUsers)) {
+    users = std::move(*maybeUsers);
+  } else {
+    if (hasDirectArrayWrites(createOp)) {
+      return failure();
+    }
+    users.assign(createOp.getResult().user_begin(), createOp.getResult().user_end());
+  }
+
+  /// First consumer that forced an array index to be materialized at a concrete type.
+  ///
+  /// Rewriting creates and caches one `llzk.nondet` per unwritten index. It also caches the
+  /// refined type of a read from a stored `llzk.nondet` value. Recording the first requested type
+  /// lets verification reject a later read or split-member write that would need the same cached
+  /// value at an incompatible type.
+  struct PendingMaterializationUse {
+    /// Concrete type requested for an index before a write defines a new value there.
+    Type type;
+    /// Operation location used to explain the first pending materialization request.
+    Location loc;
+    /// Short diagnostic phrase naming the consumer kind that requested `type`.
+    StringRef description;
+    /// Diagnostic phrase naming whether this was an unwritten or already-stored index.
+    StringRef indexDescription;
+  };
+
+  DenseMap<Value, std::pair<Type, Location>> firstUseByValue;
+  DenseMap<ArrayAttr, PendingMaterializationUse> firstMaterializedUseByIndex;
+  auto valueCompatibleWithTargetType = [&tracker](Value scalarValue, Type targetType) {
+    return canUseScalarizedValueAsType(
+        scalarValue.getType(), targetType, tracker, "verifyNoSharedValuesForIncompatibleSplitTypes"
+    );
+  };
+  auto noteMaterializedUse = [&](ArrayAttr idx, Type targetType, Location loc,
+                                 StringRef description,
+                                 StringRef indexDescription) -> LogicalResult {
+    auto existing = firstMaterializedUseByIndex.find(idx);
+    if (existing == firstMaterializedUseByIndex.end()) {
+      firstMaterializedUseByIndex.try_emplace(
+          idx, PendingMaterializationUse {targetType, loc, description, indexDescription}
+      );
+      return success();
+    }
+    Type existingType = existing->second.type;
+    FailureOr<Type> commonType = getCommonRefinedType(existingType, targetType, tracker);
+    if (failed(commonType)) {
+      InFlightDiagnostic diag =
+          createOp.emitError("cannot split heterogeneous array member because ")
+          << arrayDescription << " reuses one SSA value for incompatible scalar member types";
+      diag.attachNote(existing->second.loc)
+          << existing->second.indexDescription << ' ' << idx << " is materialized for "
+          << existing->second.description << ' ' << existingType;
+      diag.attachNote(loc) << "same index is also materialized for " << description << ' '
+                           << targetType;
+      return diag;
+    }
+    existing->second.type = *commonType;
+    return success();
+  };
+  for (Operation *user : users) {
+    if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
+      ArrayAttr idx = getIndexAsAttr(writeOp);
+      valueByIndex[idx] = writeOp.getRvalue();
+      firstMaterializedUseByIndex.erase(idx);
+      continue;
+    }
+    if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
+      ArrayAttr idx = getIndexAsAttr(readOp);
+      Type readType = readOp.getResult().getType();
+      if (Value scalarValue = valueByIndex.lookup(idx)) {
+        if (failed(getCommonRefinedType(scalarValue.getType(), readType, tracker))) {
+          InFlightDiagnostic diag =
+              createOp.emitError("cannot split heterogeneous array member because ")
+              << arrayDescription << " stores a scalar value with an incompatible read result type";
+          diag.attachNote(scalarValue.getLoc())
+              << "array index " << idx << " stores value type " << scalarValue.getType();
+          diag.attachNote(readOp.getLoc()) << "same index is read as " << readType;
+          return diag;
+        }
+        auto res =
+            noteMaterializedUse(idx, readType, readOp.getLoc(), "read result type", "array index");
+        if (failed(res)) {
+          return failure();
+        }
+      } else {
+        auto res = noteMaterializedUse(
+            idx, readType, readOp.getLoc(), "read result type", "unwritten index"
+        );
+        if (failed(res)) {
+          return failure();
+        }
+      }
+      continue;
+    }
+
+    auto memberWriteOp = llvm::dyn_cast<MemberWriteOp>(user);
+    if (!memberWriteOp) {
+      continue;
+    }
+    auto memberDef = memberWriteOp.getMemberDefOp(tables);
+    if (failed(memberDef)) {
+      return failure();
+    }
+    auto splitIt = splitTypesByMember.find(memberDef->get());
+    if (splitIt == splitTypesByMember.end()) {
+      continue;
+    }
+
+    for (const auto &[idx, targetType] : splitIt->second) {
+      Value scalarValue = valueByIndex.lookup(idx);
+      if (!scalarValue) {
+        auto res = noteMaterializedUse(
+            idx, targetType, memberWriteOp.getLoc(), "scalar member type", "unwritten index"
+        );
+        if (failed(res)) {
+          return failure();
+        }
+        continue;
+      }
+      auto existing = firstUseByValue.find(scalarValue);
+      if (!valueCompatibleWithTargetType(scalarValue, targetType)) {
+        InFlightDiagnostic diag =
+            createOp.emitError("cannot split heterogeneous array member because ")
+            << arrayDescription << " stores a scalar value with an incompatible split-member type";
+        diag.attachNote(scalarValue.getLoc())
+            << "array index " << idx << " stores value type " << scalarValue.getType();
+        diag.attachNote(memberWriteOp.getLoc())
+            << "same index is written to scalar member type " << targetType;
+        return diag;
+      }
+      auto res = noteMaterializedUse(
+          idx, targetType, memberWriteOp.getLoc(), "scalar member type", "array index"
+      );
+      if (failed(res)) {
+        return failure();
+      }
+      if (existing == firstUseByValue.end()) {
+        firstUseByValue.try_emplace(
+            scalarValue, std::make_pair(targetType, memberWriteOp.getLoc())
+        );
+        continue;
+      }
+      Type existingType = existing->second.first;
+      if (!typesUnify(existingType, targetType)) {
+        InFlightDiagnostic diag =
+            createOp.emitError("cannot split heterogeneous array member because ")
+            << arrayDescription << " reuses one SSA value for incompatible scalar member types";
+        diag.attachNote(existing->second.second)
+            << "value is used for scalar member type " << existingType;
+        diag.attachNote(memberWriteOp.getLoc())
+            << "same value is also used for scalar member type " << targetType;
+        return diag;
+      }
+    }
+  }
+  return success();
+}
+
+/// Rewrite one expandable local array allocation in block order.
+static LogicalResult rewriteExpandableLocalArray(
+    CreateArrayOp createOp, const DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers,
+    SymbolTableCollection &tables, PatternRewriter &rewriter, const ConversionTracker &tracker
+) {
+  ArrayType arrTy = createOp.getType();
+  std::optional<SmallVector<ArrayAttr>> maybeIndices = arrTy.getSubelementIndices();
+  if (!maybeIndices) {
+    return failure();
+  }
+  ArrayRef<ArrayAttr> indices = *maybeIndices;
+
+  FailureOr<SmallVector<Operation *>> maybeUsers = getUsersInBlockOrder(createOp.getResult());
+  Operation *materializationPoint = nullptr;
+  SmallVector<Operation *> users;
+  if (succeeded(maybeUsers)) {
+    users = std::move(*maybeUsers);
+  } else {
+    if (!isInitializerOnlyLocalArray(createOp, indices)) {
+      return failure();
+    }
+    users.assign(createOp.getResult().user_begin(), createOp.getResult().user_end());
+    materializationPoint = createOp.getOperation();
+  }
+
+  DenseMap<ArrayAttr, Value> valueByIndex;
+  if (failed(seedValuesFromArrayElements(createOp, indices, valueByIndex))) {
+    return failure();
+  }
+  DenseSet<Value> generatedMaterializations;
+  SmallVector<WriteArrayOp> writesToErase;
+  for (Operation *user : users) {
+    if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
+      valueByIndex[getIndexAsAttr(writeOp)] = writeOp.getRvalue();
+      writesToErase.push_back(writeOp);
+      continue;
+    }
+
+    if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
+      ArrayAttr idx = getIndexAsAttr(readOp);
+      rewriter.setInsertionPoint(readOp);
+      FailureOr<Value> scalarValue = getOrCreateScalarizedLocalArrayValue(
+          valueByIndex, generatedMaterializations, idx, readOp.getResult().getType(),
+          readOp.getLoc(), rewriter, tracker, materializationPoint
+      );
+      if (failed(scalarValue)) {
+        return failure();
+      }
+      replaceAllUsesIgnoringType(readOp.getResult(), *scalarValue);
+      rewriter.eraseOp(readOp);
+      continue;
+    }
+
+    auto memberWriteOp = llvm::dyn_cast<MemberWriteOp>(user);
+    if (!memberWriteOp) {
+      return failure();
+    }
+
+    auto memberDef = memberWriteOp.getMemberDefOp(tables);
+    if (failed(memberDef)) {
+      return failure();
+    }
+    auto splitIt = splitMembers.find(memberDef->get());
+    if (splitIt == splitMembers.end()) {
+      return failure();
+    }
+    const SplitMemberInfo &splitInfo = splitIt->second;
+
+    auto getScalarValue = [&](ArrayAttr idx, Type type) {
+      return getOrCreateScalarizedLocalArrayValue(
+          valueByIndex, generatedMaterializations, idx, type, memberWriteOp.getLoc(), rewriter,
+          tracker, materializationPoint
+      );
+    };
+    if (failed(emitScalarMemberWrites(memberWriteOp, splitInfo, rewriter, getScalarValue))) {
+      return failure();
+    }
+    rewriter.eraseOp(memberWriteOp);
+  }
+
+  for (WriteArrayOp writeOp : llvm::make_early_inc_range(writesToErase)) {
+    rewriter.eraseOp(writeOp);
+  }
+  if (createOp.getResult().use_empty()) {
+    rewriter.eraseOp(createOp);
+  }
+  return success();
+}
+
+/// Rewrite remaining expandable whole-array writes to split members.
+static LogicalResult rewriteExpandableMemberWrites(
+    DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers, SymbolTableCollection &tables,
+    PatternRewriter &rewriter, const ConversionTracker &tracker
+) {
+  DenseSet<MemberDefOp> splitMemberSet;
+  DenseMap<MemberDefOp, SmallVector<ArrayAttr>> splitIndicesByMember;
+  for (const auto &entry : splitMembers) {
+    splitMemberSet.insert(entry.first);
+    splitIndicesByMember[entry.first] = entry.second.indices;
+  }
+
+  for (const auto &entry : splitMembers) {
+    MemberDefOp member = entry.first;
+    StructDefOp parentStruct = getParentOfType<StructDefOp>(member);
+    assert(parentStruct && "MemberDefOp parent is always StructDefOp");
+
+    auto uses = llzk::getSymbolUses(member, parentStruct);
+    if (!uses) {
+      return failure();
+    }
+
+    SmallVector<CreateArrayOp> createsToExpand;
+    DenseSet<CreateArrayOp> seenCreates;
+    for (SymbolTable::SymbolUse symUse : uses.value()) {
+      auto memberWriteOp = llvm::dyn_cast<MemberWriteOp>(symUse.getUser());
+      if (!memberWriteOp) {
+        continue;
+      }
+      auto memberDef = memberWriteOp.getMemberDefOp(tables);
+      FailureOr<CreateArrayOp> maybeCreateOp = getStaticLocalArrayCreate(memberWriteOp);
+      if (succeeded(memberDef) && memberDef->get() == member && succeeded(maybeCreateOp) &&
+          !seenCreates.contains(*maybeCreateOp)) {
+        createsToExpand.push_back(*maybeCreateOp);
+        seenCreates.insert(*maybeCreateOp);
+      }
+    }
+
+    for (CreateArrayOp createOp : createsToExpand) {
+      DominanceInfo domInfo;
+      if (failed(verifyExpandableLocalArrayUsers(createOp, splitMemberSet, tables, domInfo))) {
+        return failure();
+      }
+      auto res = verifyExpandableLocalArraySplitIndices(
+          createOp, splitIndicesByMember, /*splitIndexOpsByMember=*/nullptr, tables
+      );
+      if (failed(res)) {
+        return failure();
+      }
+      if (failed(rewriteExpandableLocalArray(createOp, splitMembers, tables, rewriter, tracker))) {
+        return failure();
+      }
+    }
+  }
+  return success();
+}
+
+/// Verify that all writes to any split member are either candidate or otherwise expandable.
+///
+/// Splitting a member is global: after replacement, every read of the original array-typed member
+/// is redirected to the split scalar members. That is only sound when every write to that member
+/// can also be expanded.
+static LogicalResult verifySplitMemberWritesExpandable(
+    ArrayRef<ScalarizedArrayInfo> arraysToScalarize, SymbolTableCollection &tables,
+    const ConversionTracker &tracker
+) {
+  DenseMap<MemberDefOp, DenseSet<Operation *>> candidateWritesByMember;
+  DenseMap<MemberDefOp, SmallVector<ArrayAttr>> splitIndicesByMember;
+  DenseMap<MemberDefOp, Operation *> splitIndexOpsByMember;
+  DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> splitTypesByMember;
+  DenseMap<MemberDefOp, DenseMap<ArrayAttr, Operation *>> splitTypeOpsByMember;
+  for (const ScalarizedArrayInfo &info : arraysToScalarize) {
+    for (MemberWriteOp memberWriteOp : info.memberWrites) {
+      auto memberDef = memberWriteOp.getMemberDefOp(tables);
+      if (succeeded(memberDef)) {
+        MemberDefOp member = memberDef->get();
+        candidateWritesByMember[member].insert(memberWriteOp.getOperation());
+        auto [indicesIt, inserted] = splitIndicesByMember.try_emplace(member, info.indices);
+        if (inserted) {
+          splitIndexOpsByMember[member] = memberWriteOp.getOperation();
+        } else if (!haveSameIndexSet(indicesIt->second, info.indices)) {
+          InFlightDiagnostic diag = member.emitError(
+              "cannot split heterogeneous array member because candidate writes use different "
+              "index sets"
+          );
+          diag.attachNote(splitIndexOpsByMember.lookup(member)->getLoc())
+              << "candidate establishes " << indicesIt->second.size() << " split member indices";
+          Diagnostic &note = diag.attachNote(memberWriteOp.getLoc())
+                             << "conflicting candidate has " << info.indices.size()
+                             << " split member indices";
+          if (ArrayAttr extraIndex = findIndexMissingFrom(info.indices, indicesIt->second)) {
+            note << ", including extra index " << extraIndex;
+          } else if (ArrayAttr missingIndex =
+                         findIndexMissingFrom(indicesIt->second, info.indices)) {
+            note << ", missing index " << missingIndex;
+          }
+          return diag;
+        }
+        DenseMap<ArrayAttr, Type> &splitTypes = splitTypesByMember[member];
+        DenseMap<ArrayAttr, Operation *> &splitTypeOps = splitTypeOpsByMember[member];
+        for (ArrayAttr idx : info.indices) {
+          Type candidateType = info.typeByIndex.lookup(idx);
+          auto res = mergeSplitCandidateType(
+              member, idx, candidateType, memberWriteOp.getOperation(), splitTypes, &splitTypeOps,
+              tracker
+          );
+          if (failed(res)) {
+            return failure();
+          }
+        }
+      }
+    }
+  }
+  DenseSet<MemberDefOp> splitMemberSet;
+  for (const auto &entry : candidateWritesByMember) {
+    splitMemberSet.insert(entry.first);
+  }
+  DominanceInfo domInfo;
+
+  for (const ScalarizedArrayInfo &info : arraysToScalarize) {
+    auto verifyNoIncompatibleShares = verifyNoSharedValuesForIncompatibleSplitTypes(
+        info.createOp, splitTypesByMember, tables, tracker, "a scalarization candidate"
+    );
+    if (failed(verifyNoIncompatibleShares)) {
+      return failure();
+    }
+  }
+
+  for (const auto &entry : candidateWritesByMember) {
+    MemberDefOp member = entry.first;
+    const DenseSet<Operation *> &candidateWrites = entry.second;
+    StructDefOp parentStruct = getParentOfType<StructDefOp>(member);
+    assert(parentStruct && "MemberDefOp parent is always StructDefOp");
+
+    auto uses = llzk::getSymbolUses(member, parentStruct);
+    if (!uses) {
+      return member.emitError(
+          "cannot split heterogeneous array member because its symbol uses could not be inspected"
+      );
+    }
+
+    for (SymbolTable::SymbolUse symUse : uses.value()) {
+      auto writeOp = llvm::dyn_cast<MemberWriteOp>(symUse.getUser());
+      if (!writeOp || candidateWrites.contains(writeOp.getOperation())) {
+        continue;
+      }
+      FailureOr<CreateArrayOp> maybeCreateOp = getStaticLocalArrayCreate(writeOp);
+      if (failed(maybeCreateOp) || failed(verifyExpandableLocalArrayUsers(
+                                       *maybeCreateOp, splitMemberSet, tables, domInfo
+                                   ))) {
+        InFlightDiagnostic diag = member.emitError(
+            "cannot split heterogeneous array member because not every write to it can be "
+            "scalarized"
+        );
+        diag.attachNote(writeOp.getLoc()) << "whole-array write is not backed by a scalarization "
+                                             "candidate";
+        return diag;
+      }
+      auto verifyExpandable = verifyExpandableLocalArraySplitIndices(
+          *maybeCreateOp, splitIndicesByMember, &splitIndexOpsByMember, tables
+      );
+      if (failed(verifyExpandable)) {
+        return failure();
+      }
+      auto verifyNoIncompatibleShares = verifyNoSharedValuesForIncompatibleSplitTypes(
+          *maybeCreateOp, splitTypesByMember, tables, tracker
+      );
+      if (failed(verifyNoIncompatibleShares)) {
+        return failure();
+      }
+    }
+  }
+  return success();
+}
+
+/// Erase original array-typed members after all symbol uses have been redirected.
+static void eraseUnusedOriginalMembers(
+    DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers, PatternRewriter &rewriter
+) {
+  for (const auto &[member, _] : splitMembers) {
+    StructDefOp parentStruct = getParentOfType<StructDefOp>(member);
+    assert(parentStruct && "MemberDefOp parent is always StructDefOp");
+    auto uses = llzk::getSymbolUses(member, parentStruct);
+    if (uses && uses->empty()) {
+      rewriter.eraseOp(member);
+    }
+  }
+}
+
+/// Scalarize all safe pseudo-homogeneous arrays exposed in the current flattening iteration.
+///
+/// Running this before general type propagation prevents the propagation step from choosing one
+/// concrete element type for an array that semantically contains a different concrete type at each
+/// static index.
+LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
+  SmallVector<ScalarizedArrayInfo, 2> arraysToScalarize;
+  modOp.walk([&arraysToScalarize, &tracker](CreateArrayOp op) {
+    FailureOr<ScalarizedArrayInfo> info = getScalarizedArrayInfo(op, tracker);
+    if (succeeded(info)) {
+      arraysToScalarize.push_back(*info);
+    }
+  });
+  if (arraysToScalarize.empty()) {
+    return success();
+  }
+
+  PatternRewriter rewriter(modOp.getContext());
+  SymbolTableCollection tables;
+  DenseMap<Operation *, ScalarizedArrayInfo *> candidateInfoByCreateOp;
+  auto refreshRes =
+      refreshValuesFromDependentCandidates(arraysToScalarize, candidateInfoByCreateOp, tracker);
+  if (failed(refreshRes)) {
+    return failure();
+  }
+  if (failed(verifySplitMemberWritesExpandable(arraysToScalarize, tables, tracker))) {
+    return failure();
+  }
+  DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> splitTypesByMember;
+  if (failed(collectSplitTypesByMember(arraysToScalarize, tables, splitTypesByMember, tracker)) ||
+      failed(verifySplitMemberReadsRewritable(modOp, splitTypesByMember, tables, tracker))) {
+    return failure();
+  }
+
+  DenseMap<MemberDefOp, SplitMemberInfo> splitMembers;
+  for (ScalarizedArrayInfo &info : arraysToScalarize) {
+    auto rewriteRes = rewriteLocalArray(
+        info, splitMembers, splitTypesByMember, tables, rewriter, tracker, &candidateInfoByCreateOp
+    );
+    if (failed(rewriteRes)) {
+      return failure();
+    }
+  }
+  if (failed(rewriteExpandableMemberWrites(splitMembers, tables, rewriter, tracker))) {
+    return failure();
+  }
+  if (failed(rewriteSplitMemberReads(modOp, splitMembers, tables, rewriter, tracker))) {
+    return failure();
+  }
+  eraseUnusedOriginalMembers(splitMembers, rewriter);
+  tracker.updateModifiedFlag(true);
+  return success();
+}
+
+} // namespace Step5_ScalarizeHeterogeneousArrays
+
+namespace Step6_PropagateTypes {
 
 /// Update the array element type by looking at the values stored into it from uses.
 class UpdateNewArrayElemFromWrite final : public OpRewritePattern<CreateArrayOp> {
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the create-array element-type propagation pattern.
   UpdateNewArrayElemFromWrite(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
+  /// Update an `array.new` result element type from compatible writes into the array.
   LogicalResult matchAndRewrite(CreateArrayOp op, PatternRewriter &rewriter) const override {
     Value createResult = op.getResult();
     ArrayType createResultType = dyn_cast<ArrayType>(createResult.getType());
@@ -2157,6 +4142,8 @@ public:
 
 namespace {
 
+/// Update the array reference type on an array access op to match a scalar element type observed
+/// through that access.
 LogicalResult updateArrayElemFromArrAccessOp(
     ArrayAccessOpInterface op, Type scalarElemTy, ConversionTracker &tracker,
     PatternRewriter &rewriter
@@ -2183,9 +4170,11 @@ class UpdateArrayElemFromArrWrite final : public OpRewritePattern<WriteArrayOp> 
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the array-write based element-type propagation pattern.
   UpdateArrayElemFromArrWrite(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
+  /// Update the referenced array type from the write value type.
   LogicalResult matchAndRewrite(WriteArrayOp op, PatternRewriter &rewriter) const override {
     return updateArrayElemFromArrAccessOp(op, op.getRvalue().getType(), tracker_, rewriter);
   }
@@ -2195,9 +4184,11 @@ class UpdateArrayElemFromArrRead final : public OpRewritePattern<ReadArrayOp> {
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the array-read based element-type propagation pattern.
   UpdateArrayElemFromArrRead(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
+  /// Update the referenced array type from the read result type.
   LogicalResult matchAndRewrite(ReadArrayOp op, PatternRewriter &rewriter) const override {
     return updateArrayElemFromArrAccessOp(op, op.getResult().getType(), tracker_, rewriter);
   }
@@ -2208,9 +4199,11 @@ class UpdateMemberDefTypeFromWrite final : public OpRewritePattern<MemberDefOp> 
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the member-definition propagation pattern.
   UpdateMemberDefTypeFromWrite(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
+  /// Update a member definition type from compatible writes to that member.
   LogicalResult matchAndRewrite(MemberDefOp op, PatternRewriter &rewriter) const override {
     // Find all uses of the member symbol name within its parent struct.
     StructDefOp parentRes = getParentOfType<StructDefOp>(op);
@@ -2235,7 +4228,15 @@ public:
             // A->B is a legal conversion (i.e., more concrete unification), then it is safe to use
             // type B with the assumption that the write with type A will be updated by another
             // pattern to also use type B.
-            if (!tracker_.isLegalConversion(writeToType, newType, "UpdateMemberDefTypeFromWrite")) {
+            auto commonType = Step5_ScalarizeHeterogeneousArrays::getCommonRefinedType(
+                newType, writeToType, tracker_
+            );
+            if (succeeded(commonType)) {
+              newType = *commonType;
+              newTypeLoc = writeOp.getLoc();
+            } else if (!tracker_.isLegalConversion(
+                           writeToType, newType, "UpdateMemberDefTypeFromWrite"
+                       )) {
               if (tracker_.isLegalConversion(
                       newType, writeToType, "UpdateMemberDefTypeFromWrite"
                   )) {
@@ -2265,7 +4266,11 @@ public:
       return failure(); // nothing changed
     }
     if (!tracker_.isLegalConversion(op.getType(), newType, "UpdateMemberDefTypeFromWrite")) {
-      return failure();
+      auto commonType =
+          Step5_ScalarizeHeterogeneousArrays::getCommonRefinedType(op.getType(), newType, tracker_);
+      if (failed(commonType) || *commonType != newType) {
+        return failure();
+      }
     }
     rewriter.modifyOpInPlace(op, [&op, &newType]() { op.setType(newType); });
     LLVM_DEBUG(llvm::dbgs() << "[UpdateMemberDefTypeFromWrite] updated type of " << op << '\n');
@@ -2275,6 +4280,7 @@ public:
 
 namespace {
 
+/// Move all regions out of `op` so it can be recreated with updated result types.
 SmallVector<std::unique_ptr<Region>> moveRegions(Operation *op) {
   SmallVector<std::unique_ptr<Region>> newRegions;
   for (Region &region : op->getRegions()) {
@@ -2293,9 +4299,11 @@ class UpdateInferredResultTypes final : public OpTraitRewritePattern<OpTrait::In
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the inferred-result propagation pattern.
   UpdateInferredResultTypes(MLIRContext *ctx, ConversionTracker &tracker)
       : OpTraitRewritePattern(ctx, 6), tracker_(tracker) {}
 
+  /// Re-infer result types and recreate the op when the inferred types are more concrete.
   LogicalResult matchAndRewrite(Operation *op, PatternRewriter &rewriter) const override {
     SmallVector<Type, 1> inferredResultTypes;
     InferTypeOpInterface retTypeFn = llvm::cast<InferTypeOpInterface>(op);
@@ -2333,9 +4341,11 @@ class UpdateFuncTypeFromReturn final : public OpRewritePattern<FuncDefOp> {
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the function-return based type propagation pattern.
   UpdateFuncTypeFromReturn(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
+  /// Update a function type from its terminator operand types.
   LogicalResult matchAndRewrite(FuncDefOp op, PatternRewriter &rewriter) const override {
     Region &body = op.getFunctionBody();
     if (body.empty()) {
@@ -2374,9 +4384,11 @@ class UpdateFreeFuncCallOpTypes final : public OpRewritePattern<CallOp> {
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the free-function call result propagation pattern.
   UpdateFreeFuncCallOpTypes(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
+  /// Rewrite a call to a free function when the target function result types were refined.
   LogicalResult matchAndRewrite(CallOp op, PatternRewriter &rewriter) const override {
     if (calleeReferencesTemplateParam(op)) {
       return failure();
@@ -2411,6 +4423,7 @@ public:
 
 namespace {
 
+/// Update a member read/write value type from the referenced member definition.
 LogicalResult updateMemberRefValFromMemberDef(
     MemberRefOpInterface op, ConversionTracker &tracker, PatternRewriter &rewriter
 ) {
@@ -2422,7 +4435,9 @@ LogicalResult updateMemberRefValFromMemberDef(
   Type oldResultType = op.getVal().getType();
   Type newResultType = def->get().getType();
   if (oldResultType == newResultType ||
-      !tracker.isLegalConversion(oldResultType, newResultType, "updateMemberRefValFromMemberDef")) {
+      !Step5_ScalarizeHeterogeneousArrays::canUseScalarizedValueAsType(
+          oldResultType, newResultType, tracker, "updateMemberRefValFromMemberDef"
+      )) {
     return failure();
   }
   rewriter.modifyOpInPlace(op, [&op, &newResultType]() { op.getVal().setType(newResultType); });
@@ -2439,27 +4454,188 @@ class UpdateMemberReadValFromDef final : public OpRewritePattern<MemberReadOp> {
   ConversionTracker &tracker_;
 
 public:
+  /// Construct the member-read value propagation pattern.
   UpdateMemberReadValFromDef(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
+  /// Update a member read result type from its referenced member definition.
   LogicalResult matchAndRewrite(MemberReadOp op, PatternRewriter &rewriter) const override {
     return updateMemberRefValFromMemberDef(op, tracker_, rewriter);
+  }
+};
+
+namespace {
+
+/// Return whether `value` is used by any operation other than `user`.
+static bool hasUsesOutside(Value value, Operation *user) {
+  return llvm::any_of(value.getUses(), [user](OpOperand &use) { return use.getOwner() != user; });
+}
+
+/// Return whether every use of `value` is a member-write value operand.
+static bool allUsesAreMemberWrites(Value value) {
+  return !value.use_empty() && llvm::all_of(value.getUses(), [](OpOperand &use) {
+    auto writeOp = llvm::dyn_cast<MemberWriteOp>(use.getOwner());
+    return writeOp && writeOp.getVal() == use.get();
+  });
+}
+
+/// Return a shared typed nondeterministic replacement for member writes that reuse `value`.
+static FailureOr<Value> materializeValueForMemberWrite(
+    Location loc, Value value, Type type, PatternRewriter &rewriter, ConversionTracker &tracker,
+    DenseMap<Value, Value> &typedNondetReplacements
+) {
+  auto cachedReplacement = typedNondetReplacements.find(value);
+  if (cachedReplacement != typedNondetReplacements.end()) {
+    Value replacement = cachedReplacement->second;
+    FailureOr<Type> commonType = Step5_ScalarizeHeterogeneousArrays::getCommonRefinedType(
+        replacement.getType(), type, tracker
+    );
+    if (failed(commonType)) {
+      return failure();
+    }
+    if (*commonType != replacement.getType()) {
+      NonDetOp replacementNondetOp = replacement.getDefiningOp<NonDetOp>();
+      if (!replacementNondetOp) {
+        return failure();
+      }
+      rewriter.modifyOpInPlace(replacementNondetOp, [&replacement, &commonType]() {
+        replacement.setType(*commonType);
+      });
+    }
+    return replacement;
+  }
+  if (value.getType() == type) {
+    return value;
+  }
+
+  NonDetOp nondetOp = value.getDefiningOp<NonDetOp>();
+  if (!nondetOp) {
+    return failure();
+  }
+
+  OpBuilder::InsertionGuard guard(rewriter);
+  rewriter.setInsertionPointAfter(nondetOp);
+  Value replacement = rewriter.create<NonDetOp>(loc, type).getResult();
+  typedNondetReplacements.try_emplace(value, replacement);
+  return replacement;
+}
+
+/// Erase an original nondeterministic value after all member writes have moved to replacements.
+static void eraseUnusedNondetDef(
+    Value value, PatternRewriter &rewriter, DenseMap<Value, Value> &typedNondetReplacements
+) {
+  if (value.use_empty()) {
+    if (NonDetOp nondetOp = value.getDefiningOp<NonDetOp>()) {
+      typedNondetReplacements.erase(value);
+      rewriter.eraseOp(nondetOp);
+    }
+  }
+}
+
+} // namespace
+
+/// Update stale `poly.unifiable_cast` result types after their input has been instantiated.
+class UpdateUnifiableCastResultFromInput final : public OpRewritePattern<UnifiableCastOp> {
+  ConversionTracker &tracker_;
+
+public:
+  /// Construct the unifiable-cast result propagation pattern.
+  UpdateUnifiableCastResultFromInput(MLIRContext *ctx, ConversionTracker &tracker)
+      : OpRewritePattern(ctx, 3), tracker_(tracker) {}
+
+  /// Retag a cast result when all remaining uses can observe the same instantiated type.
+  LogicalResult matchAndRewrite(UnifiableCastOp op, PatternRewriter &rewriter) const override {
+    Type inputType = op.getInput().getType();
+    Value result = op.getResult();
+    Type resultType = result.getType();
+    if (inputType == resultType || typesUnify(inputType, resultType) ||
+        !allUsesAreMemberWrites(result) ||
+        !Step5_ScalarizeHeterogeneousArrays::canUseScalarizedValueAsType(
+            resultType, inputType, tracker_, "UpdateUnifiableCastResultFromInput"
+        )) {
+      return failure();
+    }
+    rewriter.modifyOpInPlace(op, [&result, &inputType]() { result.setType(inputType); });
+    LLVM_DEBUG(
+        llvm::dbgs() << "[UpdateUnifiableCastResultFromInput] updated result type in " << op << '\n'
+    );
+    return success();
   }
 };
 
 /// Update the type of MemberWriteOp value based on updated types from MemberDefOp.
 class UpdateMemberWriteValFromDef final : public OpRewritePattern<MemberWriteOp> {
   ConversionTracker &tracker_;
+  mutable DenseMap<Value, Value> typedNondetReplacements_;
 
 public:
+  /// Construct the member-write value propagation pattern.
   UpdateMemberWriteValFromDef(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
+  /// Update a member write operand type from its referenced member definition.
   LogicalResult matchAndRewrite(MemberWriteOp op, PatternRewriter &rewriter) const override {
-    return updateMemberRefValFromMemberDef(op, tracker_, rewriter);
+    SymbolTableCollection tables;
+    auto def = op.getMemberDefOp(tables);
+    if (failed(def)) {
+      return failure();
+    }
+
+    Value oldValue = op.getVal();
+    Type oldValueType = oldValue.getType();
+    Type newValueType = def->get().getType();
+    auto cachedReplacement = typedNondetReplacements_.find(oldValue);
+    if (cachedReplacement != typedNondetReplacements_.end()) {
+      FailureOr<Value> convertedValue = materializeValueForMemberWrite(
+          op.getLoc(), oldValue, newValueType, rewriter, tracker_, typedNondetReplacements_
+      );
+      if (failed(convertedValue)) {
+        return failure();
+      }
+      rewriter.modifyOpInPlace(op, [&op, &convertedValue]() {
+        op.getValMutable().assign(*convertedValue);
+      });
+      eraseUnusedNondetDef(oldValue, rewriter, typedNondetReplacements_);
+      LLVM_DEBUG(
+          llvm::dbgs() << "[UpdateMemberWriteValFromDef] reused materialized value type for " << op
+                       << '\n'
+      );
+      return success();
+    }
+
+    if (oldValueType == newValueType ||
+        !tracker_.isLegalConversion(oldValueType, newValueType, "UpdateMemberWriteValFromDef")) {
+      return failure();
+    }
+
+    if (!hasUsesOutside(oldValue, op.getOperation())) {
+      rewriter.modifyOpInPlace(op, [&oldValue, &newValueType]() {
+        oldValue.setType(newValueType);
+      });
+      LLVM_DEBUG(
+          llvm::dbgs() << "[UpdateMemberWriteValFromDef] updated value type in " << op << '\n'
+      );
+      return success();
+    }
+
+    FailureOr<Value> convertedValue = materializeValueForMemberWrite(
+        op.getLoc(), oldValue, newValueType, rewriter, tracker_, typedNondetReplacements_
+    );
+    if (failed(convertedValue)) {
+      return failure();
+    }
+    rewriter.modifyOpInPlace(op, [&op, &convertedValue]() {
+      op.getValMutable().assign(*convertedValue);
+    });
+    eraseUnusedNondetDef(oldValue, rewriter, typedNondetReplacements_);
+    LLVM_DEBUG(
+        llvm::dbgs() << "[UpdateMemberWriteValFromDef] materialized value type for " << op << '\n'
+    );
+    return success();
   }
 };
 
+/// Run all type-propagation patterns to a local fixpoint for the current iteration.
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
   RewritePatternSet patterns(ctx);
@@ -2469,22 +4645,24 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
       //  benefit = 6
       UpdateInferredResultTypes, // OpTrait::InferTypeOpAdaptor (ReadArrayOp, ExtractArrayOp)
       //  benefit = 3
-      UpdateFreeFuncCallOpTypes,    // CallOp, targeting non-struct functions
-      UpdateFuncTypeFromReturn,     // FuncDefOp
-      UpdateNewArrayElemFromWrite,  // CreateArrayOp
-      UpdateArrayElemFromArrRead,   // ReadArrayOp
-      UpdateArrayElemFromArrWrite,  // WriteArrayOp
-      UpdateMemberDefTypeFromWrite, // MemberDefOp
-      UpdateMemberReadValFromDef,   // MemberReadOp
-      UpdateMemberWriteValFromDef   // MemberWriteOp
+      UpdateFreeFuncCallOpTypes,          // CallOp, targeting non-struct functions
+      UpdateFuncTypeFromReturn,           // FuncDefOp
+      UpdateNewArrayElemFromWrite,        // CreateArrayOp
+      UpdateArrayElemFromArrRead,         // ReadArrayOp
+      UpdateArrayElemFromArrWrite,        // WriteArrayOp
+      UpdateMemberDefTypeFromWrite,       // MemberDefOp
+      UpdateMemberReadValFromDef,         // MemberReadOp
+      UpdateUnifiableCastResultFromInput, // UnifiableCastOp
+      UpdateMemberWriteValFromDef         // MemberWriteOp
       >(ctx, tracker);
 
   return applyAndFoldGreedily(modOp, tracker, std::move(patterns));
 }
-} // namespace Step5_PropagateTypes
+} // namespace Step6_PropagateTypes
 
-namespace Step6_Cleanup {
+namespace Step7_Cleanup {
 
+/// Cleanup strategy that preserves symbols reachable from an explicit keep set plus globals.
 struct FromKeepSet : public CleanupBase {
   using CleanupBase::CleanupBase;
 
@@ -2593,7 +4771,7 @@ struct FromKeepSet : public CleanupBase {
   }
 };
 
-} // namespace Step6_Cleanup
+} // namespace Step7_Cleanup
 
 class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
   using Base = FlatteningPassBase<PassImpl>;
@@ -2605,6 +4783,7 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
     return m == FlatteningCleanupMode::Unspecified ? FlatteningCleanupMode::Preimage : m;
   }
 
+  /// Run the pass on the current module and signal failure if any flattening step fails.
   void runOnOperation() override {
     ModuleOp modOp = getOperation();
     if (failed(runOn(modOp))) {
@@ -2619,6 +4798,7 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
     }
   }
 
+  /// Execute the full flattening pipeline until it reaches a fixpoint or the iteration limit.
   inline LogicalResult runOn(ModuleOp modOp) {
     FlatteningCleanupMode effectiveCleanupMode = getEffectiveCleanupMode();
     // If the cleanup mode is set to remove anything not reachable from the main struct, do an
@@ -2670,6 +4850,11 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
         llvm::errs() << DEBUG_TYPE << " failed while instantiating structs in templates\n";
         return failure();
       }
+
+      LLVM_DEBUG({
+        llvm::dbgs() << "[FlatteningPass(count=" << loopCount
+                     << ")] Running step 2: function instantiation\n";
+      });
       // Instantiate calls to templated functions.
       if (failed(Step2_InstantiateFunctions::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while instantiating functions in templates\n";
@@ -2678,7 +4863,7 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
 
       LLVM_DEBUG({
         llvm::dbgs() << "[FlatteningPass(count=" << loopCount
-                     << ")] Running step 2: loop unrolling\n";
+                     << ")] Running step 3: loop unrolling\n";
       });
       // Unroll loops with known iterations.
       if (failed(Step3_Unroll::run(modOp, tracker))) {
@@ -2688,7 +4873,7 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
 
       LLVM_DEBUG({
         llvm::dbgs() << "[FlatteningPass(count=" << loopCount
-                     << ")] Running step 3: affine maps instantiation\n";
+                     << ")] Running step 4: affine maps instantiation\n";
       });
       // Instantiate affine_map parameters of StructType and ArrayType.
       if (failed(Step4_InstantiateAffineMaps::run(modOp, tracker))) {
@@ -2696,12 +4881,23 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
         return failure();
       }
 
+      // Split static arrays whose affine-map element type instantiates to different concrete
+      // element types at different indices.
       LLVM_DEBUG({
         llvm::dbgs() << "[FlatteningPass(count=" << loopCount
-                     << ")] Running step 4: type propagation\n";
+                     << ")] Running step 5: heterogeneous array scalarization\n";
+      });
+      if (failed(Step5_ScalarizeHeterogeneousArrays::run(modOp, tracker))) {
+        llvm::errs() << DEBUG_TYPE << " failed while scalarizing heterogeneous arrays\n";
+        return failure();
+      }
+
+      LLVM_DEBUG({
+        llvm::dbgs() << "[FlatteningPass(count=" << loopCount
+                     << ")] Running step 6: type propagation\n";
       });
       // Propagate updated types using the semantics of various ops.
-      if (failed(Step5_PropagateTypes::run(modOp, tracker))) {
+      if (failed(Step6_PropagateTypes::run(modOp, tracker))) {
         llvm::errs() << DEBUG_TYPE << " failed while propagating instantiated types\n";
         return failure();
       }
@@ -2734,10 +4930,10 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
     return runPipeline(allocationCleanup, modOp);
   }
 
-  // Perform cleanup according to the 'cleanupMode' option.
+  /// Perform cleanup according to the effective `cleanupMode` option.
   LogicalResult cleanupSwitch(ModuleOp modOp, const ConversionTracker &tracker) {
     FlatteningCleanupMode effectiveCleanupMode = getEffectiveCleanupMode();
-    LLVM_DEBUG({ llvm::dbgs() << "[FlatteningPass] Running step 5: cleanup "; });
+    LLVM_DEBUG({ llvm::dbgs() << "[FlatteningPass] Running step 7: cleanup "; });
     switch (effectiveCleanupMode) {
     case FlatteningCleanupMode::MainAsRoot:
       LLVM_DEBUG(llvm::dbgs() << "(main as root mode)\n");
@@ -2748,14 +4944,16 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
     case FlatteningCleanupMode::Preimage:
       LLVM_DEBUG(llvm::dbgs() << "(preimage mode)\n");
       return erasePreimageOfInstantiations(modOp, tracker);
-    case FlatteningCleanupMode::Unspecified:
-    default:
+    case FlatteningCleanupMode::Disabled:
       LLVM_DEBUG(llvm::dbgs() << "(disabled)\n");
       return success();
+    case FlatteningCleanupMode::Unspecified:
+      llvm_unreachable("`getEffectiveCleanupMode()` cannot give `Unspecified`");
     }
+    llvm_unreachable("unknown cleanup mode");
   }
 
-  // Erase parameterized definitions that were replaced with concrete instantiations.
+  /// Erase parameterized definitions that were replaced with concrete instantiations.
   LogicalResult erasePreimageOfInstantiations(ModuleOp rootMod, const ConversionTracker &tracker) {
     // TODO: The names from getInstantiatedDefinitionNames() are NOT guaranteed to be paths from the
     // "top root" and they also do not indicate a root module so there could be ambiguity. This is a
@@ -2790,22 +4988,24 @@ class PassImpl : public llzk::polymorphic::impl::FlatteningPassBase<PassImpl> {
     return res;
   }
 
+  /// Erase cleanup candidates that are unreachable from any concrete definition or global.
   LogicalResult eraseUnreachableFromConcreteDefinitions(ModuleOp rootMod) {
     SmallVector<SymbolOpInterface> roots;
     rootMod.walk([&roots](Operation *op) {
-      if (isErasableDefinition(op) && !Step6_Cleanup::FromKeepSet::hasTemplateSymbolBindings(op)) {
+      if (isErasableDefinition(op) && !Step7_Cleanup::FromKeepSet::hasTemplateSymbolBindings(op)) {
         roots.push_back(llvm::cast<SymbolOpInterface>(op));
       }
     });
 
-    Step6_Cleanup::FromKeepSet cleaner(
+    Step7_Cleanup::FromKeepSet cleaner(
         rootMod, getAnalysis<SymbolDefTree>(), getAnalysis<SymbolUseGraph>()
     );
     return cleaner.eraseUnreachableFrom(roots);
   }
 
+  /// Erase cleanup candidates that are unreachable from the `llzk.main` struct or globals.
   LogicalResult eraseUnreachableFromMainStruct(ModuleOp rootMod, bool emitWarning = true) {
-    Step6_Cleanup::FromKeepSet cleaner(
+    Step7_Cleanup::FromKeepSet cleaner(
         rootMod, getAnalysis<SymbolDefTree>(), getAnalysis<SymbolUseGraph>()
     );
     FailureOr<SymbolLookupResult<StructDefOp>> mainOpt =

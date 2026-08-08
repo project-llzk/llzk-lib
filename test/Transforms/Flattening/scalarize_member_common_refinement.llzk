@@ -1,0 +1,135 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TPair {
+    poly.param @A : index
+    poly.param @B : index
+
+    struct.def @Pair {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TPair::@Pair<[@A, @B]>> {
+        %self = struct.new : !struct.type<@TPair::@Pair<[@A, @B]>>
+        function.return %self : !struct.type<@TPair::@Pair<[@A, @B]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TPair::@Pair<[@A, @B]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Holder {
+    struct.member @items : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>> {column}
+    struct.member @first : !struct.type<@TPair::@Pair<[0, 0]>> {column}
+
+    function.def @compute(%cond: i1) -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+
+      scf.if %cond {
+        %local = array.new : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
+        %item0 = function.call @TPair::@Pair::@compute() : () -> !struct.type<@TPair::@Pair<[0, 0]>>
+        %partial0 = poly.unifiable_cast %item0 : (!struct.type<@TPair::@Pair<[0, 0]>>) -> !struct.type<@TPair::@Pair<[#id, 0]>>
+        %item1 = function.call @TPair::@Pair::@compute() : () -> !struct.type<@TPair::@Pair<[1, 1]>>
+        array.write %local[%c0] = %partial0 : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>, !struct.type<@TPair::@Pair<[#id, 0]>>
+        array.write %local[%c1] = %item1 : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>, !struct.type<@TPair::@Pair<[1, 1]>>
+        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
+      } else {
+        %local = array.new : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
+        %item0 = function.call @TPair::@Pair::@compute() : () -> !struct.type<@TPair::@Pair<[0, 0]>>
+        %partial0 = poly.unifiable_cast %item0 : (!struct.type<@TPair::@Pair<[0, 0]>>) -> !struct.type<@TPair::@Pair<[0, #id]>>
+        %item1 = function.call @TPair::@Pair::@compute() : () -> !struct.type<@TPair::@Pair<[1, 1]>>
+        array.write %local[%c0] = %partial0 : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>, !struct.type<@TPair::@Pair<[0, #id]>>
+        array.write %local[%c1] = %item1 : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>, !struct.type<@TPair::@Pair<[1, 1]>>
+        struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
+      }
+
+      %items = struct.readm %self[@items] : !struct.type<@Holder>, !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
+      %first = array.read %items[%c0] : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>, !struct.type<@TPair::@Pair<[0, 0]>>
+      struct.writem %self[@first] = %first : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[0, 0]>>
+      function.return %self : !struct.type<@Holder>
+    }
+
+    function.def @constrain(%self: !struct.type<@Holder>, %cond: i1) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @TPair_0_0_Pair {
+// CHECK-NEXT:      struct.member @value : !felt.type {column}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TPair_0_0_Pair> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TPair_0_0_Pair>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TPair_0_0_Pair>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TPair_0_0_Pair>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @TPair_1_1_Pair {
+// CHECK-NEXT:      struct.member @value : !felt.type {column}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TPair_1_1_Pair> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TPair_1_1_Pair>
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@TPair_1_1_Pair>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@TPair_1_1_Pair>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @"TPair_\1A_0" {
+// CHECK-NEXT:      poly.param @A : index
+// CHECK-NEXT:      struct.def @Pair {
+// CHECK-NEXT:        struct.member @value : !felt.type {column}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@"TPair_\1A_0"::@Pair<[@A]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@"TPair_\1A_0"::@Pair<[@A]>>
+// CHECK-NEXT:          function.return %[[VAL_4]] : !struct.type<@"TPair_\1A_0"::@Pair<[@A]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@"TPair_\1A_0"::@Pair<[@A]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @"TPair_0_\1A" {
+// CHECK-NEXT:      poly.param @B : index
+// CHECK-NEXT:      struct.def @Pair {
+// CHECK-NEXT:        struct.member @value : !felt.type {column}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@"TPair_0_\1A"::@Pair<[@B]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@"TPair_0_\1A"::@Pair<[@B]>>
+// CHECK-NEXT:          function.return %[[VAL_6]] : !struct.type<@"TPair_0_\1A"::@Pair<[@B]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@"TPair_0_\1A"::@Pair<[@B]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Holder {
+// CHECK-NEXT:      struct.member @items_0 : !struct.type<@TPair_0_0_Pair> {column}
+// CHECK-NEXT:      struct.member @items_1 : !struct.type<@TPair_1_1_Pair> {column}
+// CHECK-NEXT:      struct.member @first : !struct.type<@TPair_0_0_Pair> {column}
+// CHECK-NEXT:      function.def @compute(%[[VAL_8:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        scf.if %[[VAL_8]] {
+// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @TPair_0_0_Pair::@compute() : () -> !struct.type<@TPair_0_0_Pair>
+// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_10]] : (!struct.type<@TPair_0_0_Pair>) -> !struct.type<@TPair_0_0_Pair>
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @TPair_1_1_Pair::@compute() : () -> !struct.type<@TPair_1_1_Pair>
+// CHECK-NEXT:          struct.writem %[[VAL_9]][@items_0] = %[[VAL_11]] : <@Holder>, !struct.type<@TPair_0_0_Pair>
+// CHECK-NEXT:          struct.writem %[[VAL_9]][@items_1] = %[[VAL_12]] : <@Holder>, !struct.type<@TPair_1_1_Pair>
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_\.]+]] = function.call @TPair_0_0_Pair::@compute() : () -> !struct.type<@TPair_0_0_Pair>
+// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_13]] : (!struct.type<@TPair_0_0_Pair>) -> !struct.type<@TPair_0_0_Pair>
+// CHECK-NEXT:          %[[VAL_15:[0-9a-zA-Z_\.]+]] = function.call @TPair_1_1_Pair::@compute() : () -> !struct.type<@TPair_1_1_Pair>
+// CHECK-NEXT:          struct.writem %[[VAL_9]][@items_0] = %[[VAL_14]] : <@Holder>, !struct.type<@TPair_0_0_Pair>
+// CHECK-NEXT:          struct.writem %[[VAL_9]][@items_1] = %[[VAL_15]] : <@Holder>, !struct.type<@TPair_1_1_Pair>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_9]][@items_0] : <@Holder>, !struct.type<@TPair_0_0_Pair>
+// CHECK-NEXT:        struct.writem %[[VAL_9]][@first] = %[[VAL_16]] : <@Holder>, !struct.type<@TPair_0_0_Pair>
+// CHECK-NEXT:        function.return %[[VAL_9]] : !struct.type<@Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_17:[0-9a-zA-Z_\.]+]]: !struct.type<@Holder>, %[[VAL_18:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

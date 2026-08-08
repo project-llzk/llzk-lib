@@ -1,0 +1,40 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s
+
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    // expected-warning@+1 {{Parameterized definition still has uses!}}
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  function.def @use_inline_read_only_init() attributes {function.allow_witness} {
+    %c0 = arith.constant 0 : index
+
+    // Build an inline initializer whose stored SSA values stay generic while each element type
+    // specializes per static index during scalarization.
+    %generic0 = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+    %generic1 = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+    %local = array.new %generic0, %generic1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+
+    // Regression: if scalarization replaces this read with %generic0 directly, the write below is
+    // ill-typed. The replacement must preserve the concrete index-specialized type.
+    %picked = array.read %local[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+    %sink = array.new : !array.type<1 x !struct.type<@TCell::@Cell<[0]>>>
+    array.write %sink[%c0] = %picked : !array.type<1 x !struct.type<@TCell::@Cell<[0]>>>, !struct.type<@TCell::@Cell<[0]>>
+
+    function.return
+  }
+}
