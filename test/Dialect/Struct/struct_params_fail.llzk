@@ -675,3 +675,108 @@ module attributes {llzk.lang} {
     }
   }
 }
+
+// -----
+
+// A concrete felt value must satisfy the declared field restriction even if the parameter is not
+// read by the instantiated body.
+// expected-error@+1 {{instantiation value '#felt<const 35 : <"goldilocks">> : !felt.type<"goldilocks">' is not compatible with parameter "@N" type restriction '!felt.type<"bn128">'}}
+module attributes {llzk.lang, llzk.main = !struct.type<@T::@S<[#felt<const 35 : !felt.type<"goldilocks">>]>>} {
+  poly.template @T {
+    poly.param @N : !felt.type<"bn128">
+
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : <@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) {
+        function.return
+      }
+    }
+  }
+}
+
+// -----
+
+// A TypeAttr cannot instantiate a felt value parameter.
+// expected-error@+1 {{is not compatible with parameter "@N" type restriction '!felt.type<"bn128">'}}
+module attributes {llzk.lang, llzk.main = !struct.type<@T::@S<[index]>>} {
+  poly.template @T {
+    poly.param @N : !felt.type<"bn128">
+
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : !struct.type<@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// An IntegerAttr cannot instantiate a type-variable parameter.
+// expected-error@+1 {{is not compatible with parameter "@Ty" type restriction '!poly.tvar<@Ty>'}}
+module attributes {llzk.lang, llzk.main = !struct.type<@T::@S<[35]>>} {
+  poly.template @T {
+    poly.param @Ty : !poly.tvar<@Ty>
+
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@Ty]>> {
+        %self = struct.new : !struct.type<@T::@S<[@Ty]>>
+        function.return %self : !struct.type<@T::@S<[@Ty]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@Ty]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// A TypeAttr cannot instantiate an index parameter.
+// expected-error@+1 {{is not compatible with parameter "@N" type restriction 'index'}}
+module attributes {llzk.lang, llzk.main = !struct.type<@T::@S<[!felt.type]>>} {
+  poly.template @T {
+    poly.param @N : index
+
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : !struct.type<@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+#map = affine_map<(i) -> (i)>
+// An affine map is deferred only for an integer-like restriction, not a felt restriction.
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @N : !felt.type<"bn128">
+
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : !struct.type<@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) { function.return }
+    }
+  }
+
+  struct.def @Use {
+    // expected-error@+1 {{is not compatible with parameter "@N" type restriction '!felt.type<"bn128">'}}
+    struct.member @value : !struct.type<@T::@S<[#map]>>
+
+    function.def @compute() -> !struct.type<@Use> {
+      %self = struct.new : !struct.type<@Use>
+      function.return %self : !struct.type<@Use>
+    }
+    function.def @constrain(%self: !struct.type<@Use>) { function.return }
+  }
+}

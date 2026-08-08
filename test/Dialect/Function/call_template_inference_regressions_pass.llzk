@@ -1,0 +1,89 @@
+// RUN: llzk-opt -split-input-file %s
+
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @TypeTarget {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@T]>>) {
+      function.return
+    }
+  }
+
+  poly.template @TypeCaller {
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @caller(%value: !struct.type<@BoxTemplate::@Box<[@U]>>) {
+      function.call @TypeTarget::@accept(%value) :
+          (!struct.type<@BoxTemplate::@Box<[@U]>>) -> ()
+      function.return
+    }
+  }
+
+  poly.template @SameTypeNameCaller {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @caller(%value: !struct.type<@BoxTemplate::@Box<[@T]>>) {
+      function.call @TypeTarget::@accept(%value) :
+          (!struct.type<@BoxTemplate::@Box<[@T]>>) -> ()
+      function.return
+    }
+  }
+
+  function.def @concreteCaller(
+      %value: !struct.type<@BoxTemplate::@Box<[!felt.type]>>
+  ) {
+    function.call @TypeTarget::@accept(%value) :
+        (!struct.type<@BoxTemplate::@Box<[!felt.type]>>) -> ()
+    function.return
+  }
+
+  poly.template @SameNameTarget {
+    poly.param @F : !felt.type<"bn128">
+
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+      function.return
+    }
+  }
+
+  poly.template @SameNameCaller {
+    poly.param @F : !felt.type<"bn128">
+
+    function.def @caller(%value: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+      function.call @SameNameTarget::@accept(%value) :
+          (!struct.type<@BoxTemplate::@Box<[@F]>>) -> ()
+      function.return
+    }
+  }
+
+  poly.template @RepeatedTarget {
+    poly.param @N : index
+
+    function.def @accept(
+        %lhs: !array.type<@N x index>, %rhs: !array.type<@N x index>
+    ) {
+      function.return
+    }
+  }
+
+  function.def @repeatedCaller(
+      %lhs: !array.type<4 x index>, %rhs: !array.type<4 x index>
+  ) {
+    function.call @RepeatedTarget::@accept(%lhs, %rhs) :
+        (!array.type<4 x index>, !array.type<4 x index>) -> ()
+    function.return
+  }
+}

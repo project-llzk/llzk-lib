@@ -256,7 +256,7 @@ module attributes {llzk.lang} {
     poly.param @N : index
 
     function.def @forward(%arg: !felt.type) -> !felt.type {
-      // expected-error@+1 {{explicit template argument for inferred parameter @T must match inferred type '!felt.type', but found @N}}
+      // expected-error@+1 {{'function.call' op instantiation value '@N' is not compatible with parameter "@T" type restriction '!poly.tvar<@T>'}}
       %0 = function.call @TExplicitForeignSymbolConflictCallee::@f<[@N]>(%arg) : (!felt.type) -> !felt.type
       function.return %0 : !felt.type
     }

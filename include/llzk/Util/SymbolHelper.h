@@ -211,7 +211,7 @@ mlir::FailureOr<polymorphic::TemplateOp>
 getConstResolutionTemplate(mlir::SymbolTableCollection &tables, mlir::Operation *origin);
 
 /// Ensure that the given symbol (that is used as a parameter of the given type) can be resolved.
-/// If `requiredParamType` is provided, any resolved template symbol must have exactly that type.
+/// If `requiredParamType` is provided, any resolved template symbol must satisfy that restriction.
 mlir::LogicalResult verifyParamOfType(
     mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr param, mlir::Type structOrArrayType,
     mlir::Operation *origin, std::optional<mlir::Type> requiredParamType = std::nullopt
@@ -219,7 +219,7 @@ mlir::LogicalResult verifyParamOfType(
 
 /// Ensure that any symbols that appear within the given attributes (that are parameters of the
 /// given type) can be resolved. If `requiredParamType` is provided, any resolved template symbols
-/// must have exactly that type.
+/// must satisfy that restriction.
 mlir::LogicalResult verifyParamsOfType(
     mlir::SymbolTableCollection &tables, mlir::ArrayRef<mlir::Attribute> tyParams,
     mlir::Type structOrArrayType, mlir::Operation *origin,

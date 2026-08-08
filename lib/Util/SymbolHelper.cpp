@@ -21,6 +21,7 @@
 #include "llzk/Dialect/Verif/IR/Ops.h"
 #include "llzk/Util/SymbolLookup.h"
 #include "llzk/Util/SymbolTableLLZK.h"
+#include "llzk/Util/TypeHelper.h"
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/BuiltinTypes.h>
@@ -216,13 +217,13 @@ LogicalResult verifyTemplateSymbolType(
 ) {
   if (requiredParamType) {
     std::optional<Type> actualType = binding.getTypeOpt();
-    if (!actualType) {
-      return origin->emitError().append(
-          "ref \"", param, "\" in type ", parameterizedType, " refers to a '", binding->getName(),
-          "' that must have type ", *requiredParamType
-      );
-    }
-    if (*actualType != *requiredParamType) {
+    if (!isTemplateParamTypeCompatible(actualType, *requiredParamType)) {
+      if (!actualType) {
+        return origin->emitError().append(
+            "ref \"", param, "\" in type ", parameterizedType, " refers to a '", binding->getName(),
+            "' that must have type ", *requiredParamType
+        );
+      }
       return origin->emitError().append(
           "ref \"", param, "\" in type ", parameterizedType, " refers to a '", binding->getName(),
           "' with type ", *actualType, " but expected ", *requiredParamType
@@ -413,10 +414,16 @@ LogicalResult verifyParamOfType(
     return failure(); // lookupTopLevelSymbol() already emits a sufficient error message
   }
   Operation *foundOp = lookupRes->get();
-  if (!llvm::isa<GlobalDefOp>(foundOp)) {
+  auto global = llvm::dyn_cast<GlobalDefOp>(foundOp);
+  if (!global) {
     return origin->emitError() << "ref \"" << param << "\" in type " << parameterizedType
                                << " refers to a '" << foundOp->getName()
                                << "' which is not allowed";
+  }
+  if (requiredParamType && !isTemplateParamTypeCompatible(global.getType(), *requiredParamType)) {
+    return origin->emitError() << "ref \"" << param << "\" in type " << parameterizedType
+                               << " refers to a global with type " << global.getType()
+                               << " but expected type " << *requiredParamType;
   }
   return success();
 }
@@ -476,6 +483,17 @@ verifyStructTypeResolution(SymbolTableCollection &tables, StructType ty, Operati
   if (ArrayAttr tyParams = ty.getParams()) {
     if (failed(verifyParamsOfType(tables, tyParams.getValue(), ty, origin))) {
       return failure(); // verifyParamsOfType() already emits a sufficient error message
+    }
+    if (TemplateOp parent = getParentOfType<TemplateOp>(defForType.getOperation())) {
+      for (auto [paramOp, value] :
+           llvm::zip_equal(parent.getConstOps<TemplateParamOp>(), tyParams.getValue())) {
+        std::optional<Type> restriction = paramOp.getTypeOpt();
+        if (auto symbolValue = llvm::dyn_cast<SymbolRefAttr>(value);
+            symbolValue && restriction &&
+            failed(verifyParamOfType(tables, symbolValue, ty, origin, restriction))) {
+          return failure();
+        }
+      }
     }
   }
   return defForType;

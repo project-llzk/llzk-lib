@@ -12,9 +12,12 @@
 #include "llzk/Analysis/AnalysisUtil.h"
 #include "llzk/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Analysis/SourceRef.h"
+#include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
+#include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Verif/Util/ForbiddenPreconditionInfluence.h"
 #include "llzk/Util/BuilderHelper.h"
@@ -22,6 +25,7 @@
 #include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolTableLLZK.h"
+#include "llzk/Util/TypeHelper.h"
 #include "llzk/Util/Walk.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
@@ -40,6 +44,7 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVectorExtras.h>
 #include <llvm/ADT/Twine.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include <memory>
 
@@ -72,6 +77,138 @@ bool isValidTarget(Operation *op) {
 
 inline bool hasConflictingUnifications(const llzk::UnificationMap &unifications) {
   return llvm::any_of(unifications, [](const auto &entry) { return !entry.second; });
+}
+
+/// Preserve target-to-actual parameter occurrences that the generic unifier cannot expose after
+/// an equal-type fast path. The target key is retained, while a symbolic value is resolved in the
+/// include scope by `verifyTemplateParamCompatibility`; this is a scoped witness, not semantic
+/// identity between the two bindings.
+static void recordInferenceWitnesses(
+    FunctionType actualType, FunctionType targetType, ArrayRef<FlatSymbolRefAttr> targetParams,
+    llzk::UnificationMap &unifications
+) {
+  auto findTargetParam = [&](SymbolRefAttr symbol) -> FlatSymbolRefAttr {
+    for (FlatSymbolRefAttr targetParam : targetParams) {
+      if (symbol == targetParam || symbol.getRootReference() == targetParam.getRootReference()) {
+        return targetParam;
+      }
+    }
+    return {};
+  };
+
+  auto recordMapping = [&](FlatSymbolRefAttr targetParam, Attribute actualValue) {
+    auto key = std::make_pair(targetParam, llzk::Side::RHS);
+    auto it = unifications.find(key);
+    if (it == unifications.end()) {
+      unifications.try_emplace(key, actualValue);
+    } else if (it->second && it->second != actualValue) {
+      it->second = nullptr;
+    }
+  };
+
+  // The generic unifier records symbolic forwarding in both directions. Normalize the reverse
+  // direction to the declared target parameter before the verifier consumes the map.
+  SmallVector<std::pair<FlatSymbolRefAttr, Attribute>> forwarded;
+  for (const auto &entry : unifications) {
+    if (entry.first.second != llzk::Side::LHS) {
+      continue;
+    }
+    if (auto targetSymbol = dyn_cast<SymbolRefAttr>(entry.second)) {
+      if (FlatSymbolRefAttr targetParam = findTargetParam(targetSymbol)) {
+        forwarded.emplace_back(targetParam, entry.first.first);
+      }
+    }
+  }
+  for (auto [targetParam, actualValue] : forwarded) {
+    recordMapping(targetParam, actualValue);
+  }
+
+  auto recordTypes = [&](auto &&self, Type actual, Type target) -> void {
+    auto recordAttrs = [&](Attribute actualAttr, Attribute targetAttr) {
+      if (auto targetSymbol = dyn_cast<SymbolRefAttr>(targetAttr)) {
+        if (FlatSymbolRefAttr targetParam = findTargetParam(targetSymbol)) {
+          recordMapping(targetParam, actualAttr);
+        }
+        return;
+      }
+      auto actualTypeAttr = dyn_cast<TypeAttr>(actualAttr);
+      auto targetTypeAttr = dyn_cast<TypeAttr>(targetAttr);
+      if (actualTypeAttr && targetTypeAttr) {
+        self(self, actualTypeAttr.getValue(), targetTypeAttr.getValue());
+      }
+    };
+
+    if (auto targetTvar = dyn_cast<TypeVarType>(target)) {
+      if (FlatSymbolRefAttr targetParam = findTargetParam(targetTvar.getNameRef())) {
+        Attribute actualValue;
+        if (auto actualTvar = dyn_cast<TypeVarType>(actual)) {
+          actualValue = actualTvar.getNameRef();
+        } else {
+          actualValue = TypeAttr::get(actual);
+        }
+        recordMapping(targetParam, actualValue);
+      }
+      return;
+    }
+
+    if (auto actualStruct = dyn_cast<StructType>(actual)) {
+      if (auto targetStruct = dyn_cast<StructType>(target);
+          targetStruct && actualStruct.getNameRef() == targetStruct.getNameRef()) {
+        auto actualParams = actualStruct.getParams();
+        auto targetParamsInType = targetStruct.getParams();
+        if (actualParams && targetParamsInType &&
+            actualParams.size() == targetParamsInType.size()) {
+          for (auto [actualAttr, targetAttr] :
+               llvm::zip_equal(actualParams.getValue(), targetParamsInType.getValue())) {
+            recordAttrs(actualAttr, targetAttr);
+          }
+        }
+      }
+      return;
+    }
+    if (auto actualArray = dyn_cast<llzk::array::ArrayType>(actual)) {
+      if (auto targetArray = dyn_cast<llzk::array::ArrayType>(target)) {
+        self(self, actualArray.getElementType(), targetArray.getElementType());
+        if (actualArray.getDimensionSizes().size() == targetArray.getDimensionSizes().size()) {
+          for (auto [actualAttr, targetAttr] :
+               llvm::zip_equal(actualArray.getDimensionSizes(), targetArray.getDimensionSizes())) {
+            recordAttrs(actualAttr, targetAttr);
+          }
+        }
+      }
+      return;
+    }
+    if (auto actualPod = dyn_cast<llzk::pod::PodType>(actual)) {
+      if (auto targetPod = dyn_cast<llzk::pod::PodType>(target);
+          targetPod && actualPod.getRecords().size() == targetPod.getRecords().size()) {
+        for (auto [actualRecord, targetRecord] :
+             llvm::zip_equal(actualPod.getRecords(), targetPod.getRecords())) {
+          if (actualRecord.getName() == targetRecord.getName()) {
+            self(self, actualRecord.getType(), targetRecord.getType());
+          }
+        }
+      }
+      return;
+    }
+    if (auto actualFunction = dyn_cast<FunctionType>(actual)) {
+      if (auto targetFunction = dyn_cast<FunctionType>(target)) {
+        if (actualFunction.getInputs().size() == targetFunction.getInputs().size()) {
+          for (auto [actualInput, targetInput] :
+               llvm::zip_equal(actualFunction.getInputs(), targetFunction.getInputs())) {
+            self(self, actualInput, targetInput);
+          }
+        }
+        if (actualFunction.getResults().size() == targetFunction.getResults().size()) {
+          for (auto [actualResult, targetResult] :
+               llvm::zip_equal(actualFunction.getResults(), targetFunction.getResults())) {
+            self(self, actualResult, targetResult);
+          }
+        }
+      }
+    }
+  };
+
+  recordTypes(recordTypes, actualType, targetType);
 }
 
 struct TargetTypeInfo {
@@ -781,19 +918,31 @@ LogicalResult IncludeOp::verifyTemplateParamCompatibility(
   if (std::optional<Type> declaredType = targetParam.getTypeOpt()) {
     // Note: `declaredType` is restricted by `isValidConstReadType()`
     bool compatible = false;
-    if (llvm::isa<TypeVarType>(*declaredType)) {
-      compatible = llvm::isa<TypeAttr>(paramFromIncludeOp);
-    } else if (llvm::isa<FeltType>(*declaredType)) {
-      compatible = llvm::isa<FeltConstAttr, IntegerAttr>(paramFromIncludeOp) &&
-                   isValidConstReadType(llvm::cast<TypedAttr>(paramFromIncludeOp).getType());
-    } else if (llvm::isa<IndexType, IntegerType>(*declaredType)) {
-      // Note: Just like struct type instantiation, there is no restriction on passing a
-      // larger value to an `i1`. The flattening pass will treat 0 as false and any other
-      // value as true (but give a warning if it's not 1).
-      compatible = llvm::isa<IntegerAttr>(paramFromIncludeOp) &&
-                   isValidConstReadType(llvm::cast<TypedAttr>(paramFromIncludeOp).getType());
+    if (auto sym = llvm::dyn_cast<SymbolRefAttr>(paramFromIncludeOp)) {
+      bool resolvedLocal = false;
+      if (sym.getNestedReferences().empty()) {
+        SymbolTableCollection tables;
+        FailureOr<TemplateOp> parentTemplate = getConstResolutionTemplate(tables, *this);
+        if (failed(parentTemplate)) {
+          return failure();
+        }
+        if (TemplateOp p = *parentTemplate) {
+          auto binding = p.getConstNamed<TemplateSymbolBindingOpInterface>(sym.getRootReference());
+          if (binding) {
+            resolvedLocal = true;
+            compatible = isTemplateParamTypeCompatible(binding.getTypeOpt(), *declaredType);
+          }
+        }
+      }
+      if (!resolvedLocal) {
+        SymbolTableCollection tables;
+        if (auto global = lookupTopLevelSymbol<global::GlobalDefOp>(tables, sym, *this, false);
+            succeeded(global)) {
+          compatible = isTemplateParamTypeCompatible(global->get().getType(), *declaredType);
+        }
+      }
     } else {
-      llvm_unreachable("inconsistent with `isValidConstReadType()`");
+      compatible = succeeded(materializeTemplateParamValue(paramFromIncludeOp, declaredType));
     }
     if (!compatible) {
       return this->emitOpError().append(
@@ -825,6 +974,36 @@ LogicalResult IncludeOp::verifyTemplateParamsMatchInferred(
     const UnificationMap &unifications
 ) {
   ArrayAttr callParams = this->getTemplateParamsAttr();
+  if (isNullOrEmpty(callParams)) {
+    llvm::errs() << "[debug include omitted verifier] map-size=" << unifications.size() << '\n';
+    for (TemplateParamOp paramOp : targetParamDefs) {
+      llvm::errs() << "[debug omitted include] param=" << paramOp.getName() << '\n';
+      for (const auto &entry : unifications) {
+        llvm::errs() << "  key=" << entry.first.first << ", side=" << entry.first.second
+                     << ", value=" << entry.second << '\n';
+      }
+      auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getSymNameAttr()), Side::RHS});
+      if (it == unifications.end()) {
+        // No inferred value means the signature did not expose this parameter to this include.
+        continue;
+      }
+      if (!it->second) {
+        if (std::optional<Type> declaredType = paramOp.getTypeOpt();
+            declaredType && llvm::isa<TypeVarType>(*declaredType)) {
+          // TypeVarInference emits the detailed conflicting-type diagnostic for this case.
+          continue;
+        }
+        return this->emitOpError().append(
+            "cannot infer template instantiation value for parameter \"@", paramOp.getName(),
+            "\" from contract type signature"
+        );
+      }
+      if (failed(verifyTemplateParamCompatibility(it->second, paramOp))) {
+        return failure();
+      }
+    }
+    return success();
+  }
   assert(!isNullOrEmpty(callParams) && "pre-condition");
   assert((callParams.size() == llvm::range_size(targetParamDefs)) && "pre-condition");
 
@@ -835,11 +1014,21 @@ LogicalResult IncludeOp::verifyTemplateParamsMatchInferred(
         continue;
       }
     }
-    auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::RHS});
-    if (it != unifications.end() && !typeParamsUnify({attr}, {it->second})) {
+    auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getSymNameAttr()), Side::RHS});
+    if (it != unifications.end() && !it->second) {
+      return this->emitOpError().append(
+          "cannot infer a unique template instantiation value for parameter \"@", paramOp.getName(),
+          "\" from contract type signature"
+      );
+    }
+    if (it != unifications.end() && failed(verifyTemplateParamCompatibility(it->second, paramOp))) {
+      return failure();
+    }
+    if (it != unifications.end() && it->second &&
+        !templateParamValuesUnify(attr, it->second, paramOp.getTypeOpt())) {
       return this->emitOpError().append(
           "template instantiation value '", attr, "' for parameter \"@", paramOp.getName(),
-          "\" conflicts with value '", it->second, "' inferred from function type signature"
+          "\" conflicts with value '", it->second, "' inferred from contract type signature"
       );
     }
   }
@@ -893,33 +1082,45 @@ struct KnownTargetVerifier : public IncludeOpVerifier {
   LogicalResult verifyTemplateParams() override {
     Operation *tgtOp = tgt.getOperation();
     if (TemplateOp tgtOpParent = getParentOfType<TemplateOp>(tgtOp)) {
-      // When the target function is a free function within a TemplateOp, the IncludeOp may have
+      // When the target contract is within a TemplateOp, the IncludeOp may have
       // template parameter instantiations that must be checked against the template parameters.
-      // - If the function type signature references all template parameters, then the parameter
+      // - If the contract type signature references all template parameters, then the parameter
       //   instantiation list on the IncludeOp is optional, otherwise it's required.
       // - If present, the instantiation list must provide a value for every template parameter
       //   and the value must be type-compatible with the parameter's declared type (if any).
-      // - If present, the instantiation list must result in a function type signature that can
-      //   be unified with the IncludeOp's operand and result types.
+      // - If present, the instantiation list must result in a contract type signature that can
+      //   be unified with the IncludeOp's operand types.
       auto realParams = tgtOpParent.getConstOps<TemplateParamOp>();
       ArrayAttr callParams = includeOp->getTemplateParamsAttr();
 
-      // When there is no instantiation list, just ensure that it's not required.
+      // When every parameter appears in the signature, infer and validate omitted arguments.
       if (isNullOrEmpty(callParams)) {
         llvm::SmallDenseSet<SymbolRefAttr> referencedInSignature;
         llzk::getSymbolsUsedIn(tgtType.getInputs(), referencedInSignature);
         llzk::getSymbolsUsedIn(tgtType.getResults(), referencedInSignature);
 
         bool allParamsReferenced = llvm::all_of(realParams, [&](TemplateParamOp p) {
-          return referencedInSignature.contains(FlatSymbolRefAttr::get(p.getNameAttr()));
+          return referencedInSignature.contains(FlatSymbolRefAttr::get(p.getSymNameAttr()));
         });
         if (allParamsReferenced) {
-          return success();
+          UnificationMap unifications;
+          if (!functionTypesUnify(includeOp->getTypeSignature(), tgtType, {}, &unifications)) {
+            return failure();
+          }
+          SmallVector<FlatSymbolRefAttr> targetParams;
+          targetParams.reserve(llvm::range_size(realParams));
+          for (TemplateParamOp paramOp : realParams) {
+            targetParams.push_back(FlatSymbolRefAttr::get(paramOp.getSymNameAttr()));
+          }
+          recordInferenceWitnesses(
+              includeOp->getTypeSignature(), tgtType, targetParams, unifications
+          );
+          return includeOp->verifyTemplateParamsMatchInferred(realParams, unifications);
         }
         return includeOp->emitOpError().append(
             "must provide template instantiation parameters when calling \"@", tgt.getSymName(),
             "\" because not all template parameters of \"@", tgtOpParent.getSymName(),
-            "\" appear in the function type signature"
+            "\" appear in the contract type signature"
         );
       }
 
@@ -945,7 +1146,7 @@ struct KnownTargetVerifier : public IncludeOpVerifier {
       }
 
       // Check that the provided instantiation values are consistent with what type unification
-      // of the target function types against the call's operand and result types would determine.
+      // of the target contract type against the IncludeOp's operand types would determine.
       FailureOr<UnificationMap> unifyResult = includeOp->unifyTypeSignature(tgtType);
       // This is already checked by `verifyInputs()`, but `verifyTemplateParams()` is called
       // even if `verifyInputs()` fails for error aggregation, so we still need to return

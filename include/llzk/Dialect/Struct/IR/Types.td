@@ -31,6 +31,7 @@ def LLZK_StructType : StructDialectType<"Struct", "type"> {
     the type must contain a list of attributes that instantiate the template
     parameters, one per parameter. Each attribute must be one of the following:
       - IntegerAttr (with IndexType), specifying a fixed parameter value
+      - FeltConstAttr, specifying a fixed finite-field parameter value
       - SymbolRefAttr, specifying a parameter value defined by a struct parameter
         or global constant
       - AffineMapAttr, for an array of struct elements whose template parameters
@@ -41,8 +42,8 @@ def LLZK_StructType : StructDialectType<"Struct", "type"> {
     // Type for struct `A` with no parameters.
     !struct.type<@A>
 
-    // Type for struct `B` with IntegerAttr and SymbolRefAttr parameters.
-    !struct.type<@B<[5, @C]>>
+    // Type for struct `B` with IntegerAttr, FeltConstAttr, and SymbolRefAttr parameters.
+    !struct.type<@B<[5, #felt<const 35>, @C]>>
 
     // Type for struct `C` with TypeAttr and IntegerAttr parameters.
     !struct.type<@C<[!felt.type, 24]>>

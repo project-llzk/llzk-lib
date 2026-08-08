@@ -12,7 +12,10 @@
 #include "../LLZKTestBase.h"
 
 #include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/Felt/IR/Attrs.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/POD/IR/Types.h"
+#include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
 
 #include <mlir/IR/BuiltinTypeInterfaces.h>
@@ -23,7 +26,9 @@ using namespace mlir;
 using namespace llzk;
 using namespace llzk::array;
 using namespace llzk::component;
+using namespace llzk::felt;
 using namespace llzk::pod;
+using namespace llzk::polymorphic;
 
 class TypeHelperTests : public LLZKTest {
 protected:
@@ -101,6 +106,43 @@ TEST_F(TypeHelperTests, test_functionTypesUnify_Output_Fail) {
   FunctionType a = FunctionType::get(&ctx, {tyIndex}, {IntegerType::get(&ctx, 8)});
   FunctionType b = FunctionType::get(&ctx, {tyIndex}, {tyIndex});
   ASSERT_FALSE(functionTypesUnify(a, b));
+}
+
+TEST_F(TypeHelperTests, test_templateParamTypeCompatibility_feltFields) {
+  FeltType fieldless = FeltType::get(&ctx);
+  FeltType bn128 = FeltType::get(&ctx, "bn128");
+  FeltType goldilocks = FeltType::get(&ctx, "goldilocks");
+
+  ASSERT_TRUE(isTemplateParamTypeCompatible(bn128, fieldless));
+  ASSERT_TRUE(isTemplateParamTypeCompatible(fieldless, fieldless));
+  ASSERT_FALSE(isTemplateParamTypeCompatible(fieldless, bn128));
+  ASSERT_TRUE(isTemplateParamTypeCompatible(bn128, bn128));
+  ASSERT_FALSE(isTemplateParamTypeCompatible(goldilocks, bn128));
+  ASSERT_FALSE(isTemplateParamTypeCompatible(IndexType::get(&ctx), bn128));
+  ASSERT_FALSE(isTemplateParamTypeCompatible(std::nullopt, bn128));
+
+  TypeVarType typeOnly = TypeVarType::get(FlatSymbolRefAttr::get(&ctx, "T"));
+  EXPECT_TRUE(isTemplateParamTypeCompatible(typeOnly, typeOnly));
+  EXPECT_FALSE(isTemplateParamTypeCompatible(IndexType::get(&ctx), typeOnly));
+  EXPECT_FALSE(isTemplateParamTypeCompatible(std::optional<Type> {}, typeOnly));
+}
+
+TEST_F(TypeHelperTests, test_templateParamValuesUnify_feltRepresentations) {
+  FeltType fieldless = FeltType::get(&ctx);
+  FeltType bn128 = FeltType::get(&ctx, "bn128");
+  FeltType goldilocks = FeltType::get(&ctx, "goldilocks");
+  FeltConstAttr unspecified = FeltConstAttr::get(&ctx, APInt(8, 35), fieldless);
+  FeltConstAttr fielded = FeltConstAttr::get(&ctx, APInt(8, 35), bn128);
+  FeltConstAttr differentValue = FeltConstAttr::get(&ctx, APInt(8, 36), bn128);
+  FeltConstAttr differentField = FeltConstAttr::get(&ctx, APInt(8, 35), goldilocks);
+  IntegerAttr integer = IntegerAttr::get(IndexType::get(&ctx), 35);
+
+  EXPECT_TRUE(templateParamValuesUnify(unspecified, fielded, fieldless));
+  EXPECT_TRUE(templateParamValuesUnify(unspecified, fielded, bn128));
+  EXPECT_TRUE(templateParamValuesUnify(integer, fielded, bn128));
+  EXPECT_TRUE(templateParamValuesUnify(fielded, integer, bn128));
+  EXPECT_FALSE(templateParamValuesUnify(differentValue, fielded, bn128));
+  EXPECT_FALSE(templateParamValuesUnify(differentField, fielded, fieldless));
 }
 
 TEST_F(TypeHelperTests, test_forceIntToIndexType_fromI1) {

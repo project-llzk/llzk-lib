@@ -219,6 +219,199 @@ module attributes {llzk.lang} {
   ASSERT_TRUE(verify(includes.front(), true));
 }
 
+TEST_F(VerifDialectTests, TemplateIncludeAcceptsFieldedLocalSymbolForFieldlessRestriction) {
+  constexpr StringLiteral source = R"mlir(
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Target {
+    poly.param @F : !felt.type
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+      function.return
+    }
+    verif.contract @Base for @Target::@accept (
+        %value: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  poly.template @Caller {
+    poly.param @G : !felt.type<"bn128">
+    function.def @caller(%value: !struct.type<@BoxTemplate::@Box<[@G]>>) {
+      function.return
+    }
+    verif.contract @Wrapper for @Caller::@caller (
+        %value: !struct.type<@BoxTemplate::@Box<[@G]>>
+    ) {
+      verif.include @Target::@Base<[@G]>(%value) :
+          (!struct.type<@BoxTemplate::@Box<[@G]>>) -> ()
+      verif.include @Target::@Base(%value) :
+          (!struct.type<@BoxTemplate::@Box<[@G]>>) -> ()
+    }
+  }
+}
+)mlir";
+
+  auto parsed = parseModule(source);
+  auto includes = findOps<IncludeOp>(*parsed);
+
+  ASSERT_EQ(includes.size(), 2u);
+  ASSERT_TRUE(succeeded(mlir::verify(parsed.get())));
+  EXPECT_TRUE(verify(includes[0], true));
+  EXPECT_TRUE(verify(includes[1], true));
+}
+
+TEST_F(VerifDialectTests, IncludeFeltRestrictionNormalizesEquivalentConstants) {
+  constexpr StringLiteral source = R"mlir(
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Target {
+    poly.param @F : !felt.type<"bn128">
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+      function.return
+    }
+    verif.contract @Base for @Target::@accept (
+        %value: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  poly.template @Caller {
+    function.def @caller(
+        %value: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>
+    ) {
+      function.return
+    }
+    verif.contract @Wrapper for @Caller::@caller (
+        %value: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>
+    ) {
+      verif.include @Target::@Base<[#felt<const 35>]>(%value) :
+          (!struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>) -> ()
+      verif.include @Target::@Base<[35]>(%value) :
+          (!struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>) -> ()
+    }
+  }
+}
+)mlir";
+
+  auto parsed = parseModule(source);
+  auto includes = findOps<IncludeOp>(*parsed);
+
+  ASSERT_EQ(includes.size(), 2u);
+  ASSERT_TRUE(succeeded(mlir::verify(parsed.get())));
+  EXPECT_TRUE(verify(includes[0], true));
+  EXPECT_TRUE(verify(includes[1], true));
+}
+
+TEST_F(VerifDialectTests, TemplateIncludeRejectsIncompatibleLocalSymbols) {
+  constexpr StringLiteral source = R"mlir(
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Target {
+    poly.param @F : !felt.type<"bn128">
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+      function.return
+    }
+    verif.contract @Base for @Target::@accept (
+        %value: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  poly.template @FieldlessCaller {
+    poly.param @G : !felt.type
+    function.def @caller(%value: !struct.type<@BoxTemplate::@Box<[@G]>>) {
+      function.return
+    }
+    verif.contract @Wrapper for @FieldlessCaller::@caller (
+        %value: !struct.type<@BoxTemplate::@Box<[@G]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  poly.template @MismatchedCaller {
+    poly.param @G : !felt.type<"goldilocks">
+    function.def @caller(%value: !struct.type<@BoxTemplate::@Box<[@G]>>) {
+      function.return
+    }
+    verif.contract @Wrapper for @MismatchedCaller::@caller (
+        %value: !struct.type<@BoxTemplate::@Box<[@G]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+}
+)mlir";
+
+  auto parsed = parseModule(source);
+  ASSERT_TRUE(parsed);
+  ASSERT_TRUE(succeeded(mlir::verify(parsed.get())));
+
+  auto callee = SymbolRefAttr::get(
+      &ctx, "Target", ArrayRef<FlatSymbolRefAttr> {FlatSymbolRefAttr::get(&ctx, "Base")}
+  );
+  auto param = FlatSymbolRefAttr::get(&ctx, "G");
+  SmallVector<IncludeOp> includes;
+  parsed->walk([&](ContractOp contract) {
+    if (contract.getSymName() != "Wrapper") {
+      return;
+    }
+    Block &body = contract.getBody().front();
+    OpBuilder builder(&body, body.getTerminator()->getIterator());
+    includes.push_back(builder.create<IncludeOp>(
+        loc, callee, ValueRange {body.getArgument(0)}, ArrayRef<Attribute> {param}
+    ));
+  });
+
+  ASSERT_EQ(includes.size(), 2u);
+  EXPECT_FALSE(verify(includes[0], true));
+  EXPECT_FALSE(verify(includes[1], true));
+}
+
 TEST_F(VerifDialectTests, ContractOutsideTemplateCanReadTargetFunctionTemplateConstants) {
   constexpr StringLiteral source = R"mlir(
 module attributes {llzk.lang} {

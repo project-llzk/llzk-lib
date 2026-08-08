@@ -1,0 +1,249 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+// A mismatched field is rejected for a local symbolic argument.
+module attributes {llzk.lang} {
+  poly.template @Target {
+    poly.param @F : !felt.type<"bn128">
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Target::@S<[@F]>> {
+        %self = struct.new : <@Target::@S<[@F]>>
+        function.return %self : !struct.type<@Target::@S<[@F]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@S<[@F]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Caller {
+    poly.param @G : !felt.type<"goldilocks">
+    // expected-error@+1 {{ref "@G" in type '!struct.type<@Target::@S<[@G]>>' refers to a 'poly.param' with type '!felt.type<"goldilocks">' but expected '!felt.type<"bn128">'}}
+    function.def @useLocal(%value: !struct.type<@Target::@S<[@G]>>) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// A value-valued qualified global cannot satisfy a type-only restriction.
+module attributes {llzk.lang} {
+  poly.template @Target {
+    poly.param @T : !poly.tvar<@T>
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Target::@S<[@T]>> {
+        %self = struct.new : <@Target::@S<[@T]>>
+        function.return %self : !struct.type<@Target::@S<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@S<[@T]>>) {
+        function.return
+      }
+    }
+  }
+  module @globals {
+    global.def const @Index : index = 35
+  }
+  // expected-error@+1 {{ref "@globals::@Index" in type '!struct.type<@Target::@S<[@globals::@Index]>>' refers to a global with type 'index' but expected type '!poly.tvar<@T>'}}
+  function.def @useIndex(%value: !struct.type<@Target::@S<[@globals::@Index]>>) {
+    function.return
+  }
+}
+
+// -----
+
+// A felt-valued qualified global cannot satisfy a type-only restriction.
+module attributes {llzk.lang} {
+  poly.template @Target {
+    poly.param @T : !poly.tvar<@T>
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Target::@S<[@T]>> {
+        %self = struct.new : <@Target::@S<[@T]>>
+        function.return %self : !struct.type<@Target::@S<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@S<[@T]>>) {
+        function.return
+      }
+    }
+  }
+  module @globals {
+    global.def const @Felt : !felt.type<"bn128"> = 35
+  }
+  // expected-error@+1 {{ref "@globals::@Felt" in type '!struct.type<@Target::@S<[@globals::@Felt]>>' refers to a global with type '!felt.type<"bn128">' but expected type '!poly.tvar<@T>'}}
+  function.def @useFelt(%value: !struct.type<@Target::@S<[@globals::@Felt]>>) {
+    function.return
+  }
+}
+
+// -----
+
+// A value-valued local parameter cannot satisfy a type-only restriction.
+module attributes {llzk.lang} {
+  poly.template @Target {
+    poly.param @T : !poly.tvar<@T>
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Target::@S<[@T]>> {
+        %self = struct.new : <@Target::@S<[@T]>>
+        function.return %self : !struct.type<@Target::@S<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@S<[@T]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @IndexCaller {
+    poly.param @N : index
+    // expected-error@+1 {{ref "@N" in type '!struct.type<@Target::@S<[@N]>>' refers to a 'poly.param' with type 'index' but expected '!poly.tvar<@T>'}}
+    function.def @useType(%value: !struct.type<@Target::@S<[@N]>>) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// A type-only local parameter cannot satisfy a value-valued index restriction.
+module attributes {llzk.lang} {
+  poly.template @Target {
+    poly.param @N : index
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Target::@S<[@N]>> {
+        %self = struct.new : <@Target::@S<[@N]>>
+        function.return %self : !struct.type<@Target::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@S<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @TypeCaller {
+    poly.param @T : !poly.tvar<@T>
+    // expected-error@+1 {{ref "@T" in type '!struct.type<@Target::@S<[@T]>>' refers to a 'poly.param' with type '!poly.tvar<@T>' but expected 'index'}}
+    function.def @useIndex(%value: !struct.type<@Target::@S<[@T]>>) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// An unrestricted local parameter does not establish a type-only argument kind.
+module attributes {llzk.lang} {
+  poly.template @Target {
+    poly.param @T : !poly.tvar<@T>
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Target::@S<[@T]>> {
+        %self = struct.new : <@Target::@S<[@T]>>
+        function.return %self : !struct.type<@Target::@S<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@S<[@T]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @UnrestrictedCaller {
+    poly.param @U
+    // expected-error@+1 {{ref "@U" in type '!struct.type<@Target::@S<[@U]>>' refers to a 'poly.param' that must have type '!poly.tvar<@T>'}}
+    function.def @useType(%value: !struct.type<@Target::@S<[@U]>>) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// A mismatched field is rejected for a qualified global argument.
+module attributes {llzk.lang} {
+  poly.template @Target {
+    poly.param @F : !felt.type<"bn128">
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Target::@S<[@F]>> {
+        %self = struct.new : <@Target::@S<[@F]>>
+        function.return %self : !struct.type<@Target::@S<[@F]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@S<[@F]>>) {
+        function.return
+      }
+    }
+  }
+  module @globals {
+    global.def const @G : !felt.type<"goldilocks"> = 35
+  }
+  // expected-error@+1 {{ref "@globals::@G" in type '!struct.type<@Target::@S<[@globals::@G]>>' refers to a global with type '!felt.type<"goldilocks">' but expected type '!felt.type<"bn128">'}}
+  function.def @useGlobal(%value: !struct.type<@Target::@S<[@globals::@G]>>) {
+    function.return
+  }
+}
+
+// -----
+
+// A non-felt qualified global is rejected for an index restriction.
+module attributes {llzk.lang} {
+  poly.template @Target {
+    poly.param @N : index
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Target::@S<[@N]>> {
+        %self = struct.new : <@Target::@S<[@N]>>
+        function.return %self : !struct.type<@Target::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@S<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  module @globals {
+    global.def const @G : !felt.type = 35
+  }
+  // expected-error@+1 {{ref "@globals::@G" in type '!struct.type<@Target::@S<[@globals::@G]>>' refers to a global with type '!felt.type' but expected type 'index'}}
+  function.def @useGlobal(%value: !struct.type<@Target::@S<[@globals::@G]>>) {
+    function.return
+  }
+}
+
+// -----
+
+// A fieldless symbolic restriction cannot establish a fielded target restriction.
+module attributes {llzk.lang} {
+  poly.template @Target {
+    poly.param @F : !felt.type<"bn128">
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Target::@S<[@F]>> {
+        %self = struct.new : <@Target::@S<[@F]>>
+        function.return %self : !struct.type<@Target::@S<[@F]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@S<[@F]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Caller {
+    poly.param @G : !felt.type
+    // expected-error@+1 {{ref "@G" in type '!struct.type<@Target::@S<[@G]>>' refers to a 'poly.param' with type '!felt.type' but expected '!felt.type<"bn128">'}}
+    function.def @useLocal(%value: !struct.type<@Target::@S<[@G]>>) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// A fieldless qualified global restriction cannot establish a fielded target restriction.
+module attributes {llzk.lang} {
+  poly.template @Target {
+    poly.param @F : !felt.type<"bn128">
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Target::@S<[@F]>> {
+        %self = struct.new : <@Target::@S<[@F]>>
+        function.return %self : !struct.type<@Target::@S<[@F]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@S<[@F]>>) {
+        function.return
+      }
+    }
+  }
+  module @globals {
+    global.def const @G : !felt.type = 35
+  }
+  // expected-error@+1 {{ref "@globals::@G" in type '!struct.type<@Target::@S<[@globals::@G]>>' refers to a global with type '!felt.type' but expected type '!felt.type<"bn128">'}}
+  function.def @useGlobal(%value: !struct.type<@Target::@S<[@globals::@G]>>) {
+    function.return
+  }
+}
