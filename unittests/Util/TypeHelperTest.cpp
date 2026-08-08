@@ -14,8 +14,8 @@
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
-#include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/POD/IR/Types.h"
+#include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
 
 #include <mlir/IR/BuiltinTypeInterfaces.h>
@@ -95,9 +95,8 @@ TEST_F(TypeHelperTests, test_functionTypesUnify_Pass) {
 
 TEST_F(TypeHelperTests, test_functionTypesUnify_EqualSymbolTracking) {
   FlatSymbolRefAttr param = FlatSymbolRefAttr::get(&ctx, "F");
-  StructType actual = StructType::get(
-      FlatSymbolRefAttr::get(&ctx, "Box"), ArrayRef<Attribute> {param}
-  );
+  StructType actual =
+      StructType::get(FlatSymbolRefAttr::get(&ctx, "Box"), ArrayRef<Attribute> {param});
   FunctionType type = FunctionType::get(&ctx, {actual}, {});
 
   UnificationMap defaultUnifications;
