@@ -122,26 +122,29 @@ static void recordInferenceWitnesses(
     recordMapping(targetParam, actualValue);
   }
 
-  llvm::function_ref<void(Attribute, Attribute)> recordAttrs;
-  llvm::function_ref<void(Type, Type)> recordTypes;
-  recordAttrs = [&](Attribute actualAttr, Attribute targetAttr) {
-    if (auto targetSymbol = dyn_cast<SymbolRefAttr>(targetAttr)) {
-      if (FlatSymbolRefAttr targetParam = findTargetParam(targetSymbol)) {
-        recordMapping(targetParam, actualAttr);
+  auto recordTypes = [&](auto &&self, Type actual, Type target) -> void {
+    auto recordAttrs = [&](Attribute actualAttr, Attribute targetAttr) {
+      if (auto targetSymbol = dyn_cast<SymbolRefAttr>(targetAttr)) {
+        if (FlatSymbolRefAttr targetParam = findTargetParam(targetSymbol)) {
+          recordMapping(targetParam, actualAttr);
+        }
+        return;
       }
-      return;
-    }
-    auto actualTypeAttr = dyn_cast<TypeAttr>(actualAttr);
-    auto targetTypeAttr = dyn_cast<TypeAttr>(targetAttr);
-    if (actualTypeAttr && targetTypeAttr) {
-      recordTypes(actualTypeAttr.getValue(), targetTypeAttr.getValue());
-    }
-  };
-  recordTypes = [&](Type actual, Type target) {
+      auto actualTypeAttr = dyn_cast<TypeAttr>(actualAttr);
+      auto targetTypeAttr = dyn_cast<TypeAttr>(targetAttr);
+      if (actualTypeAttr && targetTypeAttr) {
+        self(self, actualTypeAttr.getValue(), targetTypeAttr.getValue());
+      }
+    };
+
     if (auto targetTvar = dyn_cast<TypeVarType>(target)) {
       if (FlatSymbolRefAttr targetParam = findTargetParam(targetTvar.getNameRef())) {
-        Attribute actualValue = isa<TypeVarType>(actual) ? cast<TypeVarType>(actual).getNameRef()
-                                                         : TypeAttr::get(actual);
+        Attribute actualValue;
+        if (auto actualTvar = dyn_cast<TypeVarType>(actual)) {
+          actualValue = actualTvar.getNameRef();
+        } else {
+          actualValue = TypeAttr::get(actual);
+        }
         recordMapping(targetParam, actualValue);
       }
       return;
@@ -164,7 +167,7 @@ static void recordInferenceWitnesses(
     }
     if (auto actualArray = dyn_cast<llzk::array::ArrayType>(actual)) {
       if (auto targetArray = dyn_cast<llzk::array::ArrayType>(target)) {
-        recordTypes(actualArray.getElementType(), targetArray.getElementType());
+        self(self, actualArray.getElementType(), targetArray.getElementType());
         if (actualArray.getDimensionSizes().size() == targetArray.getDimensionSizes().size()) {
           for (auto [actualAttr, targetAttr] :
                llvm::zip_equal(actualArray.getDimensionSizes(), targetArray.getDimensionSizes())) {
@@ -180,7 +183,7 @@ static void recordInferenceWitnesses(
         for (auto [actualRecord, targetRecord] :
              llvm::zip_equal(actualPod.getRecords(), targetPod.getRecords())) {
           if (actualRecord.getName() == targetRecord.getName()) {
-            recordTypes(actualRecord.getType(), targetRecord.getType());
+            self(self, actualRecord.getType(), targetRecord.getType());
           }
         }
       }
@@ -191,20 +194,20 @@ static void recordInferenceWitnesses(
         if (actualFunction.getInputs().size() == targetFunction.getInputs().size()) {
           for (auto [actualInput, targetInput] :
                llvm::zip_equal(actualFunction.getInputs(), targetFunction.getInputs())) {
-            recordTypes(actualInput, targetInput);
+            self(self, actualInput, targetInput);
           }
         }
         if (actualFunction.getResults().size() == targetFunction.getResults().size()) {
           for (auto [actualResult, targetResult] :
                llvm::zip_equal(actualFunction.getResults(), targetFunction.getResults())) {
-            recordTypes(actualResult, targetResult);
+            self(self, actualResult, targetResult);
           }
         }
       }
     }
   };
 
-  recordTypes(actualType, targetType);
+  recordTypes(recordTypes, actualType, targetType);
 }
 
 struct TargetTypeInfo {
