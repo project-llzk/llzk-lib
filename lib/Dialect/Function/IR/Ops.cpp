@@ -835,14 +835,12 @@ LogicalResult CallOp::verifyTemplateParamsMatchInferred(
 ) {
   ArrayAttr callParams = this->getTemplateParamsAttr();
   if (isNullOrEmpty(callParams)) {
+    llvm::errs() << "[debug call omitted verifier] map-size=" << unifications.size() << '\n';
     for (TemplateParamOp paramOp : targetParamDefs) {
-      if (paramOp.getName() == "T" || paramOp.getName() == "F") {
-        llvm::errs() << "[debug omitted call] param=" << paramOp.getName()
-                     << " map-size=" << unifications.size() << '\n';
-        for (const auto &entry : unifications) {
-          llvm::errs() << "  key=" << entry.first.first << ", side=" << entry.first.second
-                       << ", value=" << entry.second << '\n';
-        }
+      llvm::errs() << "[debug omitted call] param=" << paramOp.getName() << '\n';
+      for (const auto &entry : unifications) {
+        llvm::errs() << "  key=" << entry.first.first << ", side=" << entry.first.second
+                     << ", value=" << entry.second << '\n';
       }
       auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getSymNameAttr()), Side::RHS});
       if (it == unifications.end()) {
