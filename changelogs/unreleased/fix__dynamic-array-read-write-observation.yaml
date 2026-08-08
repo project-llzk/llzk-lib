@@ -1,0 +1,2 @@
+fixed:
+  - Fix redundant read/write elimination removing an earlier array write that a later array read or extract may observe through an alias.

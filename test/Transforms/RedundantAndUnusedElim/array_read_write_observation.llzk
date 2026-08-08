@@ -1,0 +1,767 @@
+// RUN: llzk-opt -split-input-file -llzk-duplicate-read-write-elim %s 2>&1 | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  // A live dynamic read may observe the first constant-index write.
+  function.def @live_dynamic_read_preserves_prior_constant_write(
+      %idx: index
+  ) -> !felt.type {
+    %zero = felt.const 0
+    %one = felt.const 1
+    %two = felt.const 2
+    %arr = array.new %zero, %zero : !array.type<2 x !felt.type>
+    %i0 = arith.constant 0 : index
+    array.write %arr[%i0] = %one : !array.type<2 x !felt.type>, !felt.type
+    %observed = array.read %arr[%idx] : !array.type<2 x !felt.type>, !felt.type
+    array.write %arr[%i0] = %two : !array.type<2 x !felt.type>, !felt.type
+    function.return %observed : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @live_dynamic_read_preserves_prior_constant_write(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_1]], %[[VAL_1]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_4]]{{\[}}%[[VAL_5]]] = %[[VAL_2]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_0]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      array.write %[[VAL_4]]{{\[}}%[[VAL_5]]] = %[[VAL_3]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_6]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+module attributes {llzk.lang} {
+  // A non-entering while loop cannot invalidate a pre-loop write.
+  function.def @zero_trip_while_preserves_pre_loop_write(
+      %idx: index
+  ) -> !felt.type {
+    %zero = felt.const 0
+    %one = felt.const 1
+    %two = felt.const 2
+    %arr = array.new %zero, %zero : !array.type<2 x !felt.type>
+    %i0 = arith.constant 0 : index
+    %false = arith.constant false
+    array.write %arr[%i0] = %one : !array.type<2 x !felt.type>, !felt.type
+    scf.while (%iv = %i0) : (index) -> index {
+      scf.condition(%false) %iv : index
+    } do {
+    ^bb0(%body_iv: index):
+      array.write %arr[%i0] = %two : !array.type<2 x !felt.type>, !felt.type
+      scf.yield %body_iv : index
+    }
+    %observed = array.read %arr[%idx] : !array.type<2 x !felt.type>, !felt.type
+    function.return %observed : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @zero_trip_while_preserves_pre_loop_write(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_1]], %[[VAL_1]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant false
+// CHECK-NEXT:      array.write %[[VAL_4]]{{\[}}%[[VAL_5]]] = %[[VAL_2]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = scf.while (%[[VAL_8:[0-9a-zA-Z_\.]+]] = %[[VAL_5]]) : (index) -> index {
+// CHECK-NEXT:        scf.condition(%[[VAL_6]]) %[[VAL_8]] : index
+// CHECK-NEXT:      } do {
+// CHECK-NEXT:      ^bb0(%[[VAL_9:[0-9a-zA-Z_\.]+]]: index):
+// CHECK-NEXT:        array.write %[[VAL_4]]{{\[}}%[[VAL_5]]] = %[[VAL_3]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        scf.yield %[[VAL_9]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_0]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_10]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+module attributes {llzk.lang} {
+  // A zero-trip loop cannot invalidate a pre-loop write because its body may not execute.
+  function.def @zero_trip_loop_preserves_pre_loop_write(
+      %trip_count: index, %idx: index
+  ) -> !felt.type {
+    %zero = felt.const 0
+    %one = felt.const 1
+    %two = felt.const 2
+    %arr = array.new %zero, %zero : !array.type<2 x !felt.type>
+    %i0 = arith.constant 0 : index
+    %step = arith.constant 1 : index
+    array.write %arr[%i0] = %one : !array.type<2 x !felt.type>, !felt.type
+    scf.for %iv = %i0 to %trip_count step %step {
+      array.write %arr[%i0] = %two : !array.type<2 x !felt.type>, !felt.type
+    }
+    %observed = array.read %arr[%idx] : !array.type<2 x !felt.type>, !felt.type
+    function.return %observed : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @zero_trip_loop_preserves_pre_loop_write(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_2]], %[[VAL_2]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_5]]{{\[}}%[[VAL_6]]] = %[[VAL_3]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      scf.for %[[VAL_8:[0-9a-zA-Z_\.]+]] = %[[VAL_6]] to %[[VAL_0]] step %[[VAL_7]] {
+// CHECK-NEXT:        array.write %[[VAL_5]]{{\[}}%[[VAL_6]]] = %[[VAL_4]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_1]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_9]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+module attributes {llzk.lang} {
+  // A read replaced by a known SSA value is not a runtime observation.
+  function.def @known_read_does_not_block_overwrite_elimination() -> !felt.type {
+    %zero = felt.const 0
+    %one = felt.const 1
+    %two = felt.const 2
+    %arr = array.new %zero, %zero : !array.type<2 x !felt.type>
+    %i0 = arith.constant 0 : index
+    array.write %arr[%i0] = %one : !array.type<2 x !felt.type>, !felt.type
+    %observed = array.read %arr[%i0] : !array.type<2 x !felt.type>, !felt.type
+    array.write %arr[%i0] = %two : !array.type<2 x !felt.type>, !felt.type
+    function.return %observed : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @known_read_does_not_block_overwrite_elimination() -> !felt.type {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_0]], %[[VAL_0]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_2]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_1]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+module attributes {llzk.lang} {
+  // [row,0] cannot observe [0,1], so the disjoint overwrite remains removable.
+  function.def @dynamic_read_preserves_disjoint_suffix_elimination(
+      %row: index
+  ) -> !felt.type {
+    %one = felt.const 1
+    %two = felt.const 2
+    %matrix = array.new : !array.type<2,2 x !felt.type>
+    %i0 = arith.constant 0 : index
+    %i1 = arith.constant 1 : index
+    array.write %matrix[%i0, %i1] = %one :
+        !array.type<2,2 x !felt.type>, !felt.type
+    %observed = array.read %matrix[%row, %i0] :
+        !array.type<2,2 x !felt.type>, !felt.type
+    array.write %matrix[%i0, %i1] = %two :
+        !array.type<2,2 x !felt.type>, !felt.type
+    function.return %observed : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @dynamic_read_preserves_disjoint_suffix_elimination(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new  : <2,2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_0]], %[[VAL_4]]] : <2,2 x !felt.type>, !felt.type
+// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_4]], %[[VAL_5]]] = %[[VAL_2]] : <2,2 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_6]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+module attributes {llzk.lang} {
+  // A constant read may observe a descendant shared through a dynamic alias.
+  function.def @constant_read_observes_dynamic_aggregate_alias(
+      %insert_idx: index
+  ) -> !felt.type {
+    %one = felt.const 1
+    %two = felt.const 2
+    %row = array.new : !array.type<2 x !felt.type>
+    %matrix = array.new : !array.type<2,2 x !felt.type>
+    %i0 = arith.constant 0 : index
+    array.write %row[%i0] = %one : !array.type<2 x !felt.type>, !felt.type
+    array.insert %matrix[%insert_idx] = %row :
+        !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type>
+    %observed = array.read %matrix[%i0, %i0] :
+        !array.type<2,2 x !felt.type>, !felt.type
+    array.write %row[%i0] = %two : !array.type<2 x !felt.type>, !felt.type
+    function.return %observed : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @constant_read_observes_dynamic_aggregate_alias(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.new  : <2,2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_5]]] = %[[VAL_1]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      array.insert %[[VAL_4]]{{\[}}%[[VAL_0]]] = %[[VAL_3]] : <2,2 x !felt.type>, <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_5]], %[[VAL_5]]] : <2,2 x !felt.type>, !felt.type
+// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_5]]] = %[[VAL_2]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_6]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+module attributes {llzk.lang} {
+  // A distinct dynamic read may equal the dynamic alias index at runtime.
+  function.def @distinct_dynamic_read_observes_dynamic_aggregate_alias(
+      %insert_idx: index, %read_idx: index
+  ) -> !felt.type {
+    %one = felt.const 1
+    %two = felt.const 2
+    %row = array.new : !array.type<2 x !felt.type>
+    %matrix = array.new : !array.type<2,2 x !felt.type>
+    %i0 = arith.constant 0 : index
+    array.write %row[%i0] = %one : !array.type<2 x !felt.type>, !felt.type
+    array.insert %matrix[%insert_idx] = %row :
+        !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type>
+    %observed = array.read %matrix[%read_idx, %i0] :
+        !array.type<2,2 x !felt.type>, !felt.type
+    array.write %row[%i0] = %two : !array.type<2 x !felt.type>, !felt.type
+    function.return %observed : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @distinct_dynamic_read_observes_dynamic_aggregate_alias(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.new  : <2,2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_4]]{{\[}}%[[VAL_6]]] = %[[VAL_2]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      array.insert %[[VAL_5]]{{\[}}%[[VAL_0]]] = %[[VAL_4]] : <2,2 x !felt.type>, <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_1]], %[[VAL_6]]] : <2,2 x !felt.type>, !felt.type
+// CHECK-NEXT:      array.write %[[VAL_4]]{{\[}}%[[VAL_6]]] = %[[VAL_3]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_7]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+#offset_map = affine_map<()[s0] -> (s0)>
+module attributes {llzk.lang} {
+  // Clearing a symbolic table-offset child must invalidate shared aggregate candidates.
+  struct.def @AggregateTableOffsetAlias {
+    struct.member @cell : !array.type<2 x !felt.type> {column}
+    struct.member @seen : !felt.type
+
+    function.def @compute(
+        %offset_idx: index, %insert_idx: index, %read_idx: index
+    ) -> !struct.type<@AggregateTableOffsetAlias> {
+      %self = struct.new : !struct.type<@AggregateTableOffsetAlias>
+      %one = felt.const 1
+      %two = felt.const 2
+      %replacement = array.new : !array.type<2 x !felt.type>
+      %aliases = array.new : !array.type<2,2 x !felt.type>
+      %i0 = arith.constant 0 : index
+      %offset = struct.readm %self[@cell] {()[%offset_idx]} :
+          !struct.type<@AggregateTableOffsetAlias>, !array.type<2 x !felt.type> {
+            tableOffset = #offset_map
+          }
+      array.write %offset[%i0] = %one : !array.type<2 x !felt.type>, !felt.type
+      array.insert %aliases[%insert_idx] = %offset :
+          !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type>
+      struct.writem %self[@cell] = %replacement :
+          !struct.type<@AggregateTableOffsetAlias>, !array.type<2 x !felt.type>
+      %read_row = struct.readm %self[@cell] {()[%read_idx]} :
+          !struct.type<@AggregateTableOffsetAlias>, !array.type<2 x !felt.type> {
+            tableOffset = #offset_map
+          }
+      %observed = array.read %read_row[%i0] :
+          !array.type<2 x !felt.type>, !felt.type
+      array.write %offset[%i0] = %two : !array.type<2 x !felt.type>, !felt.type
+      struct.writem %self[@seen] = %observed :
+          !struct.type<@AggregateTableOffsetAlias>, !felt.type
+      function.return %self : !struct.type<@AggregateTableOffsetAlias>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@AggregateTableOffsetAlias>, %offset_idx: index,
+        %insert_idx: index, %read_idx: index
+    ) { function.return }
+  }
+}
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @AggregateTableOffsetAlias {
+// CHECK-NEXT:      struct.member @cell : !array.type<2 x !felt.type> {column}
+// CHECK-NEXT:      struct.member @seen : !felt.type
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@AggregateTableOffsetAlias> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@AggregateTableOffsetAlias>
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.new  : <2,2 x !felt.type>
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@cell] {(){{\[}}%[[VAL_0]]]} : <@AggregateTableOffsetAlias>, !array.type<2 x !felt.type> {tableOffset = #[[$ATTR_0]]}
+// CHECK-NEXT:        array.write %[[VAL_9]]{{\[}}%[[VAL_8]]] = %[[VAL_4]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        array.insert %[[VAL_7]]{{\[}}%[[VAL_1]]] = %[[VAL_9]] : <2,2 x !felt.type>, <2 x !felt.type>
+// CHECK-NEXT:        struct.writem %[[VAL_3]][@cell] = %[[VAL_6]] : <@AggregateTableOffsetAlias>, !array.type<2 x !felt.type>
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@cell] {(){{\[}}%[[VAL_2]]]} : <@AggregateTableOffsetAlias>, !array.type<2 x !felt.type> {tableOffset = #[[$ATTR_0]]}
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_10]]{{\[}}%[[VAL_8]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        array.write %[[VAL_9]]{{\[}}%[[VAL_8]]] = %[[VAL_5]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_3]][@seen] = %[[VAL_11]] : <@AggregateTableOffsetAlias>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@AggregateTableOffsetAlias>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_12:[0-9a-zA-Z_\.]+]]: !struct.type<@AggregateTableOffsetAlias>, %[[VAL_13:[0-9a-zA-Z_\.]+]]: index, %[[VAL_14:[0-9a-zA-Z_\.]+]]: index, %[[VAL_15:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+module attributes {llzk.lang} {
+  // A live read through an untracked region result may still alias the source array.
+  function.def @scf_result_array_alias_preserves_prior_write(
+      %idx: index, %cond: i1
+  ) -> !felt.type {
+    %zero = felt.const 0
+    %one = felt.const 1
+    %two = felt.const 2
+    %arr = array.new %zero, %zero : !array.type<2 x !felt.type>
+    %alias = scf.if %cond -> (!array.type<2 x !felt.type>) {
+      scf.yield %arr : !array.type<2 x !felt.type>
+    } else {
+      scf.yield %arr : !array.type<2 x !felt.type>
+    }
+    %i0 = arith.constant 0 : index
+    array.write %arr[%i0] = %one : !array.type<2 x !felt.type>, !felt.type
+    %observed = array.read %alias[%idx] : !array.type<2 x !felt.type>, !felt.type
+    array.write %arr[%i0] = %two : !array.type<2 x !felt.type>, !felt.type
+    function.return %observed : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @scf_result_array_alias_preserves_prior_write(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_2]], %[[VAL_2]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_1]] -> (!array.type<2 x !felt.type>) {
+// CHECK-NEXT:        scf.yield %[[VAL_5]] : !array.type<2 x !felt.type>
+// CHECK-NEXT:      } else {
+// CHECK-NEXT:        scf.yield %[[VAL_5]] : !array.type<2 x !felt.type>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_5]]{{\[}}%[[VAL_7]]] = %[[VAL_3]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_0]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      array.write %[[VAL_5]]{{\[}}%[[VAL_7]]] = %[[VAL_4]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_8]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+module attributes {llzk.lang} {
+  // An unknown array write must invalidate known facts for every possible alias.
+  function.def @scf_result_array_write_invalidates_prior_fact(
+      %cond: i1
+  ) -> !felt.type {
+    %zero = felt.const 0
+    %one = felt.const 1
+    %two = felt.const 2
+    %arr = array.new %zero, %zero : !array.type<2 x !felt.type>
+    %alias = scf.if %cond -> (!array.type<2 x !felt.type>) {
+      scf.yield %arr : !array.type<2 x !felt.type>
+    } else {
+      scf.yield %arr : !array.type<2 x !felt.type>
+    }
+    %i0 = arith.constant 0 : index
+    array.write %arr[%i0] = %one : !array.type<2 x !felt.type>, !felt.type
+    array.write %alias[%i0] = %two : !array.type<2 x !felt.type>, !felt.type
+    %observed = array.read %arr[%i0] : !array.type<2 x !felt.type>, !felt.type
+    function.return %observed : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @scf_result_array_write_invalidates_prior_fact(%[[VAL_0:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_1]], %[[VAL_1]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_0]] -> (!array.type<2 x !felt.type>) {
+// CHECK-NEXT:        scf.yield %[[VAL_4]] : !array.type<2 x !felt.type>
+// CHECK-NEXT:      } else {
+// CHECK-NEXT:        scf.yield %[[VAL_4]] : !array.type<2 x !felt.type>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_4]]{{\[}}%[[VAL_6]]] = %[[VAL_2]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      array.write %[[VAL_5]]{{\[}}%[[VAL_6]]] = %[[VAL_3]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_6]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_7]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+module attributes {llzk.lang} {
+  struct.def @PostRegionElement {
+    struct.member @value : !felt.type
+    struct.member @result : !felt.type
+
+    // Aggregate aliases must remain shared after cloning and CFG intersection.
+    function.def @compute(%idx: index, %cond: i1) -> !struct.type<@PostRegionElement> {
+      %self = struct.new : !struct.type<@PostRegionElement>
+      %zero = felt.const 0
+      %one = felt.const 1
+      %two = felt.const 2
+      struct.writem %self[@value] = %zero : !struct.type<@PostRegionElement>, !felt.type
+      %arr = array.new %self, %self : !array.type<2 x !struct.type<@PostRegionElement>>
+      scf.if %cond {
+      } else {
+      }
+      struct.writem %self[@value] = %one : !struct.type<@PostRegionElement>, !felt.type
+      %selected = array.read %arr[%idx] :
+          !array.type<2 x !struct.type<@PostRegionElement>>,
+          !struct.type<@PostRegionElement>
+      %observed = struct.readm %selected[@value] :
+          !struct.type<@PostRegionElement>, !felt.type
+      struct.writem %self[@value] = %two : !struct.type<@PostRegionElement>, !felt.type
+      struct.writem %self[@result] = %observed : !struct.type<@PostRegionElement>, !felt.type
+      function.return %self : !struct.type<@PostRegionElement>
+    }
+    function.def @constrain(
+        %self: !struct.type<@PostRegionElement>, %idx: index, %cond: i1
+    ) { function.return }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @PostRegionElement {
+// CHECK-NEXT:      struct.member @value : !felt.type
+// CHECK-NEXT:      struct.member @result : !felt.type
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@PostRegionElement> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@PostRegionElement>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@value] = %[[VAL_3]] : <@PostRegionElement>, !felt.type
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_2]], %[[VAL_2]] : <2 x !struct.type<@PostRegionElement>>
+// CHECK-NEXT:        scf.if %[[VAL_1]] {
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:        }
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@value] = %[[VAL_4]] : <@PostRegionElement>, !felt.type
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_0]]] : <2 x !struct.type<@PostRegionElement>>, !struct.type<@PostRegionElement>
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_7]][@value] : <@PostRegionElement>, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@value] = %[[VAL_5]] : <@PostRegionElement>, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@result] = %[[VAL_8]] : <@PostRegionElement>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@PostRegionElement>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@PostRegionElement>, %[[VAL_10:[0-9a-zA-Z_\.]+]]: index, %[[VAL_11:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+module attributes {llzk.lang} {
+  // An unresolved read with no users is erased and must not fence a later overwrite.
+  function.def @dead_dynamic_read_does_not_block_overwrite_elimination(
+      %idx: index
+  ) -> !felt.type {
+    %zero = felt.const 0
+    %one = felt.const 1
+    %two = felt.const 2
+    %arr = array.new %zero, %zero : !array.type<2 x !felt.type>
+    %i0 = arith.constant 0 : index
+    array.write %arr[%i0] = %one : !array.type<2 x !felt.type>, !felt.type
+    %dead = array.read %arr[%idx] : !array.type<2 x !felt.type>, !felt.type
+    array.write %arr[%i0] = %two : !array.type<2 x !felt.type>, !felt.type
+    function.return %two : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @dead_dynamic_read_does_not_block_overwrite_elimination(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_1]], %[[VAL_1]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_4]]{{\[}}%[[VAL_5]]] = %[[VAL_3]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_3]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+module attributes {llzk.lang} {
+  // Detaching a dynamic aggregate alias must clear candidates shared with its source.
+  function.def @dynamic_alias_detached_by_constant_write_preserves_source_candidate(
+      %idx: index
+  ) -> !felt.type {
+    %one = felt.const 1
+    %two = felt.const 2
+    %row = array.new : !array.type<2 x !felt.type>
+    %matrix = array.new : !array.type<2,2 x !felt.type>
+    %i0 = arith.constant 0 : index
+    %i1 = arith.constant 1 : index
+    array.write %row[%i0] = %one : !array.type<2 x !felt.type>, !felt.type
+    array.insert %matrix[%idx] = %row :
+        !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type>
+    array.write %matrix[%i1, %i1] = %two :
+        !array.type<2,2 x !felt.type>, !felt.type
+    %observed = array.read %matrix[%i0, %i0] :
+        !array.type<2,2 x !felt.type>, !felt.type
+    array.write %row[%i0] = %two : !array.type<2 x !felt.type>, !felt.type
+    function.return %observed : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @dynamic_alias_detached_by_constant_write_preserves_source_candidate(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.new  : <2,2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_5]]] = %[[VAL_1]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      array.insert %[[VAL_4]]{{\[}}%[[VAL_0]]] = %[[VAL_3]] : <2,2 x !felt.type>, <2 x !felt.type>
+// CHECK-NEXT:      array.write %[[VAL_4]]{{\[}}%[[VAL_6]], %[[VAL_6]]] = %[[VAL_2]] : <2,2 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_5]], %[[VAL_5]]] : <2,2 x !felt.type>, !felt.type
+// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_5]]] = %[[VAL_2]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_7]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+module attributes {llzk.lang} {
+  // Detaching a constant aggregate alias must clear candidates shared with its source.
+  function.def @constant_alias_detached_by_dynamic_write_preserves_source_candidate(
+      %idx: index
+  ) -> !felt.type {
+    %one = felt.const 1
+    %two = felt.const 2
+    %row = array.new : !array.type<2 x !felt.type>
+    %matrix = array.new : !array.type<2,2 x !felt.type>
+    %i0 = arith.constant 0 : index
+    %i1 = arith.constant 1 : index
+    array.write %row[%i0] = %one : !array.type<2 x !felt.type>, !felt.type
+    array.insert %matrix[%i0] = %row :
+        !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type>
+    array.write %matrix[%idx, %i1] = %two :
+        !array.type<2,2 x !felt.type>, !felt.type
+    %observed = array.read %matrix[%i0, %i0] :
+        !array.type<2,2 x !felt.type>, !felt.type
+    array.write %row[%i0] = %two : !array.type<2 x !felt.type>, !felt.type
+    function.return %observed : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @constant_alias_detached_by_dynamic_write_preserves_source_candidate(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.new  : <2,2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_5]]] = %[[VAL_1]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      array.insert %[[VAL_4]]{{\[}}%[[VAL_5]]] = %[[VAL_3]] : <2,2 x !felt.type>, <2 x !felt.type>
+// CHECK-NEXT:      array.write %[[VAL_4]]{{\[}}%[[VAL_0]], %[[VAL_6]]] = %[[VAL_2]] : <2,2 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_5]], %[[VAL_5]]] : <2,2 x !felt.type>, !felt.type
+// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_5]]] = %[[VAL_2]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_7]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+module attributes {llzk.lang} {
+  // The scalar read may observe a value supplied by the earlier row insert.
+  function.def @dynamic_suffix_read_preserves_prior_insert(
+      %col: index
+  ) -> !felt.type {
+    %one = felt.const 1
+    %two = felt.const 2
+    %first_row = array.new %one, %one : !array.type<2 x !felt.type>
+    %second_row = array.new %two, %two : !array.type<2 x !felt.type>
+    %matrix = array.new : !array.type<2,2 x !felt.type>
+    %i0 = arith.constant 0 : index
+    array.insert %matrix[%i0] = %first_row :
+        !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type>
+    %observed = array.read %matrix[%i0, %col] :
+        !array.type<2,2 x !felt.type>, !felt.type
+    array.insert %matrix[%i0] = %second_row :
+        !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type>
+    function.return %observed : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @dynamic_suffix_read_preserves_prior_insert(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_1]], %[[VAL_1]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_2]], %[[VAL_2]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.new  : <2,2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.insert %[[VAL_5]]{{\[}}%[[VAL_6]]] = %[[VAL_3]] : <2,2 x !felt.type>, <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_6]], %[[VAL_0]]] : <2,2 x !felt.type>, !felt.type
+// CHECK-NEXT:      array.insert %[[VAL_5]]{{\[}}%[[VAL_6]]] = %[[VAL_4]] : <2,2 x !felt.type>, <2 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_7]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+module attributes {llzk.lang} {
+  // Extracting a row observes tracked writes in the selected subtree.
+  function.def @dynamic_extract_preserves_prior_descendant_write(
+      %row: index
+  ) -> !array.type<2 x !felt.type> {
+    %one = felt.const 1
+    %two = felt.const 2
+    %matrix = array.new : !array.type<2,2 x !felt.type>
+    %i0 = arith.constant 0 : index
+    array.write %matrix[%i0, %i0] = %one :
+        !array.type<2,2 x !felt.type>, !felt.type
+    %observed = array.extract %matrix[%row] : !array.type<2,2 x !felt.type>
+    array.write %matrix[%i0, %i0] = %two :
+        !array.type<2,2 x !felt.type>, !felt.type
+    function.return %observed : !array.type<2 x !felt.type>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @dynamic_extract_preserves_prior_descendant_write(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !array.type<2 x !felt.type> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new  : <2,2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_4]], %[[VAL_4]]] = %[[VAL_1]] : <2,2 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_3]]{{\[}}%[[VAL_0]]] : <2,2 x !felt.type>
+// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_4]], %[[VAL_4]]] = %[[VAL_2]] : <2,2 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_5]] : !array.type<2 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+module attributes {llzk.lang} {
+  struct.def @Element {
+    struct.member @value : !felt.type
+    struct.member @result : !felt.type
+    // array.read can return an aggregate, so the selected member subtree is live.
+    function.def @compute(%idx: index) -> !struct.type<@Element> {
+      %self = struct.new : !struct.type<@Element>
+      %one = felt.const 1
+      %two = felt.const 2
+      struct.writem %self[@value] = %one : !struct.type<@Element>, !felt.type
+      %arr = array.new %self, %self : !array.type<2 x !struct.type<@Element>>
+      %selected = array.read %arr[%idx] :
+          !array.type<2 x !struct.type<@Element>>, !struct.type<@Element>
+      %observed = struct.readm %selected[@value] :
+          !struct.type<@Element>, !felt.type
+      struct.writem %self[@value] = %two : !struct.type<@Element>, !felt.type
+      struct.writem %self[@result] = %observed : !struct.type<@Element>, !felt.type
+      function.return %self : !struct.type<@Element>
+    }
+    function.def @constrain(%self: !struct.type<@Element>, %idx: index) { function.return }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Element {
+// CHECK-NEXT:      struct.member @value : !felt.type
+// CHECK-NEXT:      struct.member @result : !felt.type
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@Element> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Element>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@value] = %[[VAL_2]] : <@Element>, !felt.type
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_1]], %[[VAL_1]] : <2 x !struct.type<@Element>>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_4]]{{\[}}%[[VAL_0]]] : <2 x !struct.type<@Element>>, !struct.type<@Element>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_5]][@value] : <@Element>, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@value] = %[[VAL_3]] : <@Element>, !felt.type
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@result] = %[[VAL_6]] : <@Element>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Element>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@Element>, %[[VAL_8:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+module attributes {llzk.lang} {
+  // A write in one branch cannot delete a pre-branch write observed by the
+  // opposite branch.
+  function.def @opposite_branch_read_preserves_prior_write(
+      %idx: index, %cond: i1
+  ) -> !felt.type {
+    %zero = felt.const 0
+    %one = felt.const 1
+    %two = felt.const 2
+    %arr = array.new %zero, %zero : !array.type<2 x !felt.type>
+    %i0 = arith.constant 0 : index
+    array.write %arr[%i0] = %one : !array.type<2 x !felt.type>, !felt.type
+    %observed = scf.if %cond -> !felt.type {
+      array.write %arr[%i0] = %two : !array.type<2 x !felt.type>, !felt.type
+      scf.yield %two : !felt.type
+    } else {
+      %branch_observed = array.read %arr[%idx] :
+          !array.type<2 x !felt.type>, !felt.type
+      scf.yield %branch_observed : !felt.type
+    }
+    function.return %observed : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @opposite_branch_read_preserves_prior_write(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_2]], %[[VAL_2]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_5]]{{\[}}%[[VAL_6]]] = %[[VAL_3]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_1]] -> (!felt.type) {
+// CHECK-NEXT:        array.write %[[VAL_5]]{{\[}}%[[VAL_6]]] = %[[VAL_4]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        scf.yield %[[VAL_4]] : !felt.type
+// CHECK-NEXT:      } else {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_0]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        scf.yield %[[VAL_8]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_7]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+module attributes {llzk.lang} {
+  struct.def @BranchElement {
+    struct.member @value : !felt.type
+    struct.member @result : !felt.type
+    // A write in one branch cannot delete a pre-branch write observed through
+    // the opposite branch.
+    function.def @compute(
+        %idx: index, %cond: i1
+    ) -> !struct.type<@BranchElement> {
+      %self = struct.new : !struct.type<@BranchElement>
+      %one = felt.const 1
+      %two = felt.const 2
+      struct.writem %self[@value] = %one :
+          !struct.type<@BranchElement>, !felt.type
+      %arr = array.new %self, %self :
+          !array.type<2 x !struct.type<@BranchElement>>
+      %observed = scf.if %cond -> !felt.type {
+        struct.writem %self[@value] = %two :
+            !struct.type<@BranchElement>, !felt.type
+        scf.yield %two : !felt.type
+      } else {
+        %selected = array.read %arr[%idx] :
+            !array.type<2 x !struct.type<@BranchElement>>,
+            !struct.type<@BranchElement>
+        %branch_observed = struct.readm %selected[@value] :
+            !struct.type<@BranchElement>, !felt.type
+        scf.yield %branch_observed : !felt.type
+      }
+      struct.writem %self[@result] = %observed :
+          !struct.type<@BranchElement>, !felt.type
+      function.return %self : !struct.type<@BranchElement>
+    }
+    function.def @constrain(
+        %self: !struct.type<@BranchElement>, %idx: index, %cond: i1
+    ) { function.return }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @BranchElement {
+// CHECK-NEXT:      struct.member @value : !felt.type
+// CHECK-NEXT:      struct.member @result : !felt.type
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@BranchElement> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@BranchElement>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@value] = %[[VAL_3]] : <@BranchElement>, !felt.type
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_2]], %[[VAL_2]] : <2 x !struct.type<@BranchElement>>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_1]] -> (!felt.type) {
+// CHECK-NEXT:          struct.writem %[[VAL_2]][@value] = %[[VAL_4]] : <@BranchElement>, !felt.type
+// CHECK-NEXT:          scf.yield %[[VAL_4]] : !felt.type
+// CHECK-NEXT:        } else {
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_0]]] : <2 x !struct.type<@BranchElement>>, !struct.type<@BranchElement>
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_7]][@value] : <@BranchElement>, !felt.type
+// CHECK-NEXT:          scf.yield %[[VAL_8]] : !felt.type
+// CHECK-NEXT:        }
+// CHECK-NEXT:        struct.writem %[[VAL_2]][@result] = %[[VAL_6]] : <@BranchElement>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@BranchElement>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@BranchElement>, %[[VAL_10:[0-9a-zA-Z_\.]+]]: index, %[[VAL_11:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
