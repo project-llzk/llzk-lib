@@ -841,7 +841,7 @@ LogicalResult IncludeOp::verifyTemplateParamsMatchInferred(
   ArrayAttr callParams = this->getTemplateParamsAttr();
   if (isNullOrEmpty(callParams)) {
     for (TemplateParamOp paramOp : targetParamDefs) {
-      auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::RHS});
+      auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getSymNameAttr()), Side::RHS});
       if (it == unifications.end()) {
         // No inferred value means the signature did not expose this parameter to this include.
         continue;
@@ -873,7 +873,7 @@ LogicalResult IncludeOp::verifyTemplateParamsMatchInferred(
         continue;
       }
     }
-    auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::RHS});
+    auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getSymNameAttr()), Side::RHS});
     if (it != unifications.end() && !it->second) {
       return this->emitOpError().append(
           "cannot infer a unique template instantiation value for parameter \"@", paramOp.getName(),
@@ -959,7 +959,7 @@ struct KnownTargetVerifier : public IncludeOpVerifier {
         llzk::getSymbolsUsedIn(tgtType.getResults(), referencedInSignature);
 
         bool allParamsReferenced = llvm::all_of(realParams, [&](TemplateParamOp p) {
-          return referencedInSignature.contains(FlatSymbolRefAttr::get(p.getNameAttr()));
+          return referencedInSignature.contains(FlatSymbolRefAttr::get(p.getSymNameAttr()));
         });
         if (allParamsReferenced) {
           UnificationMap unifications;
