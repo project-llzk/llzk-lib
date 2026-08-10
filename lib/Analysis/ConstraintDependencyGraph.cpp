@@ -42,7 +42,8 @@ using namespace function;
 using namespace pod;
 
 namespace {
-bool isInMaybeSkippedScfRegion(Operation *op) {
+
+static bool isInMaybeSkippedScfRegion(Operation *op) {
   for (Operation *parent = op->getParentOp(); parent != nullptr; parent = parent->getParentOp()) {
     if (llvm::isa<FuncDefOp>(parent)) {
       return false;
@@ -52,6 +53,26 @@ bool isInMaybeSkippedScfRegion(Operation *op) {
     }
   }
   return false;
+}
+
+static inline bool hasRangeIndex(const SourceRef &ref) {
+  return llvm::any_of(ref.getPath(), [](const SourceRefIndex &index) {
+    return index.isIndexRange();
+  });
+}
+
+static bool isNonSingletonArrayWriteTarget(const SourceRefLatticeValue &writeTargets) {
+  if (writeTargets.isArray()) {
+    return llvm::any_of(
+        llvm::seq<size_t>(0, writeTargets.getArraySize()), [&writeTargets](size_t i) {
+      return isNonSingletonArrayWriteTarget(writeTargets.getElemFlatIdx(i));
+    }
+    );
+  }
+  return !writeTargets.isSingleValue() ||
+         llvm::any_of(writeTargets.getScalarValue(), [](const SourceRef &ref) {
+    return hasRangeIndex(ref);
+  });
 }
 
 } // namespace
@@ -189,7 +210,7 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveDependencies(
       SourceRefLatticeValue(const SourceRefLatticeValue &, const SourceRef &, const SourceRef &)>
       projectChild = [&](const SourceRefLatticeValue &value, const SourceRef &storedAddress,
                          const SourceRef &readAddress) {
-    if (!readAddress.isValidPrefix(storedAddress)) {
+    if (!readAddress.isValidPrefix(storedAddress) && !readAddress.overlaps(storedAddress)) {
       return value;
     }
     if (value.isArray()) {
@@ -204,7 +225,10 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveDependencies(
 
     SourceRefLatticeValue result;
     for (const SourceRef &ref : value.getScalarValue()) {
-      if (auto translated = readAddress.translate(storedAddress, ref); succeeded(translated)) {
+      if (ref == storedAddress && hasRangeIndex(ref)) {
+        (void)result.insert(ref.narrowRanges(readAddress));
+      } else if (auto translated = readAddress.translate(storedAddress, ref);
+                 succeeded(translated)) {
         (void)result.insert(*translated);
       } else {
         (void)result.insert(ref);
@@ -234,6 +258,7 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveDependencies(
       }
 
       bool foundWrite = false;
+      bool preservesAddress = false;
       SourceRefLatticeValue writtenValues;
       for (const auto &[storedAddress, storedValue] : storedValues) {
         auto storedRoot = storedAddress.getRoot();
@@ -243,11 +268,18 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveDependencies(
           continue;
         }
         foundWrite = true;
-        (void)writtenValues.update(projectChild(storedValue, storedAddress, address));
+        SourceRefLatticeValue projectedValue = projectChild(storedValue, storedAddress, address);
+        if (hasRangeIndex(storedAddress) && storedAddress.overlaps(address)) {
+          preservesAddress |= projectedValue.remove(address) == ChangeResult::Change;
+        }
+        (void)writtenValues.update(projectedValue);
       }
       if (foundWrite) {
         SourceRefLatticeValue resolvedValues = resolve(writtenValues);
         (void)result.update(resolvedValues);
+        if (preservesAddress) {
+          (void)result.insert(address);
+        }
       }
       if (!foundWrite) {
         (void)result.insert(address);
@@ -300,6 +332,9 @@ SourceRefAnalysis::StorageState::materializeStoredValues(
   auto applyWrite =
       [&storedValues](const SourceRef &address, const SourceRefLatticeValue &value, bool maySkip) {
     auto [it, inserted] = storedValues.try_emplace(address, value);
+    if (inserted && maySkip) {
+      (void)it->second.insert(address);
+    }
     if (!inserted) {
       if (maySkip) {
         (void)it->second.update(value);
@@ -613,7 +648,8 @@ LogicalResult SourceRefAnalysis::visitOperation(
       SourceRefLatticeValue writeTargets = arraySubdivisionOpUpdate(arrayAccessOp, operandVals);
       Value rvalue = op->getOperands().back();
       SourceRefLatticeValue writeValue = operandVals.at(rvalue)->getValue();
-      const bool mayBeSkipped = isInMaybeSkippedScfRegion(op);
+      const bool mayBeSkipped =
+          isInMaybeSkippedScfRegion(op) || isNonSingletonArrayWriteTarget(writeTargets);
       getStorageState(op)->recordStorageWrite(
           op, /*writeIndex=*/0, writeTargets, writeValue, mayBeSkipped
       );

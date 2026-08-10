@@ -801,6 +801,114 @@ module attributes {llzk.lang} {
   );
 }
 
+TEST_F(SourceRefTests, DynamicArrayWritesPreserveEarlierStorageDependencies) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @DynamicArrayWrites {
+    function.def @compute(
+        %storage: !array.type<2 x !felt.type>, %i: index, %j: index,
+        %first: !felt.type, %second: !felt.type
+    ) -> !struct.type<@DynamicArrayWrites> {
+      %self = struct.new : !struct.type<@DynamicArrayWrites>
+      %c0 = arith.constant 0 : index
+      array.write %storage[%i] = %first
+          : !array.type<2 x !felt.type>, !felt.type
+      array.write %storage[%j] = %second
+          : !array.type<2 x !felt.type>, !felt.type
+      %read = array.read %storage[%c0]
+          : !array.type<2 x !felt.type>, !felt.type
+      function.return %self : !struct.type<@DynamicArrayWrites>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@DynamicArrayWrites>, %storage: !array.type<2 x !felt.type>,
+        %i: index, %j: index, %first: !felt.type, %second: !felt.type
+    ) {
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto read = *computeFn.getOps<array::ReadArrayOp>().begin();
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  analysis.ensureAnalysisRun(am);
+
+  SourceRef originalElement(
+      mlir::cast<BlockArgument>(computeFn.getArgument(0)), {SourceRefIndex(APInt(64, 0))}
+  );
+  EXPECT_EQ(
+      SourceRefAnalysis::getDependencyState(analysis.getSolver(), read.getResult()).foldToScalar(),
+      SourceRefSet(
+          {originalElement, SourceRef(computeFn.getArgument(3)),
+           SourceRef(computeFn.getArgument(4))}
+      )
+  );
+}
+
+TEST_F(SourceRefTests, DynamicArrayInsertsPreserveEarlierStorageDependencies) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @DynamicArrayInserts {
+    function.def @compute(
+        %i: index, %j: index, %initial00: !felt.type, %initial01: !felt.type,
+        %initial10: !felt.type, %initial11: !felt.type, %first0: !felt.type,
+        %first1: !felt.type, %second0: !felt.type, %second1: !felt.type
+    ) -> !struct.type<@DynamicArrayInserts> {
+      %self = struct.new : !struct.type<@DynamicArrayInserts>
+      %c0 = arith.constant 0 : index
+      %storage = array.new %initial00, %initial01, %initial10, %initial11
+          : !array.type<2,2 x !felt.type>
+      %first = array.new %first0, %first1 : !array.type<2 x !felt.type>
+      %second = array.new %second0, %second1 : !array.type<2 x !felt.type>
+      array.insert %storage[%i] = %first
+          : !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type>
+      array.insert %storage[%j] = %second
+          : !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type>
+      %read = array.read %storage[%c0, %c0]
+          : !array.type<2,2 x !felt.type>, !felt.type
+      function.return %self : !struct.type<@DynamicArrayInserts>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@DynamicArrayInserts>, %i: index, %j: index,
+        %initial00: !felt.type, %initial01: !felt.type, %initial10: !felt.type,
+        %initial11: !felt.type, %first0: !felt.type, %first1: !felt.type,
+        %second0: !felt.type, %second1: !felt.type
+    ) {
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto read = *computeFn.getOps<array::ReadArrayOp>().begin();
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  analysis.ensureAnalysisRun(am);
+
+  EXPECT_EQ(
+      SourceRefAnalysis::getDependencyState(analysis.getSolver(), read.getResult()).foldToScalar(),
+      SourceRefSet(
+          {SourceRef(computeFn.getArgument(2)), SourceRef(computeFn.getArgument(6)),
+           SourceRef(computeFn.getArgument(8))}
+      )
+  );
+}
+
 TEST_F(SourceRefTests, ConditionalAggregateAliasPreservesBothAlternatives) {
   static constexpr auto source = R"mlir(
 module attributes {llzk.lang} {
