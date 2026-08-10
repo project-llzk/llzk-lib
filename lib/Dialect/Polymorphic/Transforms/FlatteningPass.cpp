@@ -3217,12 +3217,16 @@ static FailureOr<Value> getOrCreateScalarizedLocalArrayValue(
     ArrayAttr idx, Type type, Location loc, PatternRewriter &rewriter,
     const ConversionTracker &tracker, Operation *materializationPoint = nullptr
 ) {
-  auto createNonDet = [&](Type nondetType) {
+  auto createNonDet = [&](Type nondetType, NonDetOp sourceNondet = nullptr) {
     OpBuilder::InsertionGuard guard(rewriter);
     if (materializationPoint) {
       rewriter.setInsertionPointAfter(materializationPoint);
     }
-    return rewriter.create<NonDetOp>(loc, nondetType).getResult();
+    NonDetOp nondet = rewriter.create<NonDetOp>(loc, nondetType);
+    if (sourceNondet) {
+      nondet->setDiscardableAttrs(sourceNondet->getDiscardableAttrDictionary());
+    }
+    return nondet.getResult();
   };
   Value scalarValue = valueByIndex.lookup(idx);
   if (!scalarValue) {
@@ -3250,8 +3254,8 @@ static FailureOr<Value> getOrCreateScalarizedLocalArrayValue(
     });
     return scalarValue;
   }
-  if (scalarValue.getDefiningOp<NonDetOp>()) {
-    scalarValue = createNonDet(*commonType);
+  if (NonDetOp sourceNondet = scalarValue.getDefiningOp<NonDetOp>()) {
+    scalarValue = createNonDet(*commonType, sourceNondet);
     valueByIndex[idx] = scalarValue;
     generatedMaterializations.insert(scalarValue);
   }

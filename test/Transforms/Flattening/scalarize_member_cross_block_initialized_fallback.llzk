@@ -25,7 +25,7 @@ module attributes {llzk.lang} {
 
     function.def @compute(%cond: i1) -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
-      %init0 = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+      %init0 = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>> {product_source = "init0"}
       %init1 = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
       %fallback = array.new %init0, %init1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
       scf.if %cond {
@@ -85,7 +85,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.member @right_3 : !struct.type<@TCell_1_Cell> {column}
 // CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_\.]+]]: i1) -> !struct.type<@Holder> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
-// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_0_Cell> {product_source = "init0"}
 // CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:        scf.if %[[VAL_4]] {
 // CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
