@@ -4542,6 +4542,22 @@ public:
         return failure();
       }
     }
+
+    // Do not commit a write-derived refinement that an existing read cannot adopt. In particular,
+    // two complementary writes can have a common refinement even when a read independently
+    // unified with the original, more generic member type is incompatible with that refinement.
+    if (auto memberUsers = llzk::getSymbolUses(op, parentRes)) {
+      for (SymbolTable::SymbolUse symUse : memberUsers.value()) {
+        if (MemberReadOp readOp = llvm::dyn_cast<MemberReadOp>(symUse.getUser())) {
+          bool res = Step5_ScalarizeHeterogeneousArrays::canUseScalarizedValueAsType(
+              readOp.getVal().getType(), newType, tracker_, "UpdateMemberDefTypeFromWrite"
+          );
+          if (!res) {
+            return failure();
+          }
+        }
+      }
+    }
     rewriter.modifyOpInPlace(op, [&op, &newType]() { op.setType(newType); });
     LLVM_DEBUG(llvm::dbgs() << "[UpdateMemberDefTypeFromWrite] updated type of " << op << '\n');
     return success();
