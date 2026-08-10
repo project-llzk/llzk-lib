@@ -3128,6 +3128,60 @@ static LogicalResult collectSharedNondetSpecializationTypes(
   return success();
 }
 
+/// Materialize each refined witness once and redirect compatible external observations to it.
+///
+/// A static array read determines the concrete type of its source witness. Struct constraint calls
+/// observing that source can use the same concrete witness after their callee is redirected to the
+/// corresponding instantiated struct definition.
+static LogicalResult materializeSharedNondetSpecializations(
+    const ScalarizedArrayInfo &info, const DenseMap<Value, Type> &specializedTypeByNondet,
+    PatternRewriter &rewriter, DenseMap<Value, Value> &specializedNondetBySource
+) {
+  DenseMap<Value, SmallVector<CallOp>> externalCallsBySource;
+  for (const auto &[source, type] : specializedTypeByNondet) {
+    for (OpOperand &use : source.getUses()) {
+      if (use.getOwner() == info.createOp) {
+        continue;
+      }
+      auto call = llvm::dyn_cast<CallOp>(use.getOwner());
+      if (!call || !call.calleeIsStructConstrain() || use.getOperandNumber() != 0 ||
+          !llvm::isa<StructType>(type)) {
+        InFlightDiagnostic diag = info.createOp->emitError(
+            "cannot scalarize array because a generic nondeterministic initializer has an "
+            "unsupported external use"
+        );
+        diag.attachNote(use.getOwner()->getLoc()) << "source witness is also used here";
+        return diag;
+      }
+      externalCallsBySource[source].push_back(call);
+    }
+  }
+
+  for (const auto &[source, type] : specializedTypeByNondet) {
+    NonDetOp sourceNondet = source.getDefiningOp<NonDetOp>();
+    assert(sourceNondet && "specialization map only contains nondeterministic values");
+    OpBuilder::InsertionGuard guard(rewriter);
+    rewriter.setInsertionPointAfter(info.createOp);
+    NonDetOp specializedNondet = rewriter.create<NonDetOp>(sourceNondet.getLoc(), type);
+    specializedNondet->setDiscardableAttrs(sourceNondet->getDiscardableAttrDictionary());
+    Value specializedValue = specializedNondet.getResult();
+    specializedNondetBySource[source] = specializedValue;
+
+    for (CallOp call : externalCallsBySource.lookup(source)) {
+      SmallVector<Value> args(call.getArgOperands());
+      args[0] = specializedValue;
+      StructType structType = llvm::cast<StructType>(type);
+      SymbolRefAttr callee =
+          appendLeaf(structType.getNameRef(), call.getCalleeAttr().getLeafReference());
+      replaceOpWithNewOp<CallOp>(
+          rewriter, call, call.getResultTypes(), callee,
+          CallOp::toVectorOfValueRange(call.getMapOperands()), call.getNumDimsPerMapAttr(), args
+      );
+    }
+  }
+  return success();
+}
+
 /// Return the value that should replace `readOp` after scalarization.
 ///
 /// The cached scalar value can be less concrete than `info.typeByIndex` for inline initializers,
@@ -3284,6 +3338,11 @@ static LogicalResult rewriteLocalArray(
     return failure();
   }
   DenseMap<Value, Value> specializedNondetBySource;
+  if (failed(materializeSharedNondetSpecializations(
+          info, specializedTypeByNondet, rewriter, specializedNondetBySource
+      ))) {
+    return failure();
+  }
   for (ReadArrayOp readOp : llvm::make_early_inc_range(info.reads)) {
     ArrayAttr idx = getIndexAsAttr(readOp);
     if (!canReplaceReadResultWithType(
