@@ -21,7 +21,7 @@ module attributes {llzk.lang} {
 
   function.def @shared_initializer_sibling_reads(%cond: i1) attributes {function.allow_witness, function.allow_constraint} {
     %c0 = arith.constant 0 : index
-    %generic = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+    %generic = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>> {product_source = "generic"}
     %local = array.new %generic, %generic : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
     scf.if %cond {
       %then = array.read %local[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
@@ -60,8 +60,8 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @shared_initializer_sibling_reads(%[[VAL_4:[0-9a-zA-Z_\.]+]]: i1) attributes {function.allow_constraint, function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>> {product_source = "generic"}
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_0_Cell> {product_source = "generic"}
 // CHECK-NEXT:      scf.if %[[VAL_4]] {
 // CHECK-NEXT:        function.call @TCell_0_Cell::@constrain(%[[VAL_6]]) : (!struct.type<@TCell_0_Cell>) -> ()
 // CHECK-NEXT:      } else {

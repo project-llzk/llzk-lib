@@ -3210,7 +3210,7 @@ static FailureOr<Value> buildReadReplacementValue(
   }
 
   OpBuilder::InsertionGuard guard(rewriter);
-  if (replacementValue.getDefiningOp<NonDetOp>()) {
+  if (NonDetOp sourceNondet = replacementValue.getDefiningOp<NonDetOp>()) {
     // Preserve sharing between every index initialized from the same generic witness.
     if (Value cachedNondet = specializedNondetBySource.lookup(replacementValue)) {
       return cachedNondet;
@@ -3222,10 +3222,10 @@ static FailureOr<Value> buildReadReplacementValue(
     // The shared witness may be read from sibling regions. Materialize it after the array
     // initializer, which dominates every valid use of the array, rather than at the first read.
     rewriter.setInsertionPointAfter(info.createOp);
-    Value specializedNondet =
-        rewriter.create<NonDetOp>(readOp.getLoc(), specializedType).getResult();
+    NonDetOp specializedNondet = rewriter.create<NonDetOp>(readOp.getLoc(), specializedType);
+    specializedNondet->setDiscardableAttrs(sourceNondet->getDiscardableAttrDictionary());
     specializedNondetBySource[replacementValue] = specializedNondet;
-    return specializedNondet;
+    return specializedNondet.getResult();
   }
   rewriter.setInsertionPoint(readOp);
   if (!typesUnify(replacementValue.getType(), replacementType)) {
