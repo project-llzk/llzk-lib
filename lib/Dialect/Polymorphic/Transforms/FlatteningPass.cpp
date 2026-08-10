@@ -3965,6 +3965,55 @@ static LogicalResult rewriteExpandableLocalArray(
   if (failed(seedValuesFromArrayElements(createOp, indices, valueByIndex))) {
     return failure();
   }
+
+  // Plan the most concrete type each read's stored value will need for a later split-member write
+  // before rewriting reads. A read whose declared result is still generic can otherwise be
+  // replaced by a stored generic nondet, and a later member write would create a second, refined
+  // nondet for the same original array element. An intervening array write breaks that sharing,
+  // so collect the requirements in reverse block order and clear them at each array write.
+  DenseMap<Operation *, Type> splitWriteTypeByRead;
+  DenseMap<ArrayAttr, Type> splitWriteTypeByIndex;
+  for (Operation *user : llvm::reverse(users)) {
+    if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
+      if (Type splitWriteType = splitWriteTypeByIndex.lookup(getIndexAsAttr(readOp))) {
+        splitWriteTypeByRead[readOp.getOperation()] = splitWriteType;
+      }
+      continue;
+    }
+    if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
+      splitWriteTypeByIndex.erase(getIndexAsAttr(writeOp));
+      continue;
+    }
+    auto memberWriteOp = llvm::dyn_cast<MemberWriteOp>(user);
+    if (!memberWriteOp) {
+      continue;
+    }
+    auto memberDef = memberWriteOp.getMemberDefOp(tables);
+    if (failed(memberDef)) {
+      return failure();
+    }
+    auto splitIt = splitMembers.find(memberDef->get());
+    if (splitIt == splitMembers.end()) {
+      return failure();
+    }
+    for (ArrayAttr idx : splitIt->second.indices) {
+      MemberInfo memberInfo = splitIt->second.memberByIndex.lookup(idx);
+      if (!memberInfo.first) {
+        return failure();
+      }
+      auto existing = splitWriteTypeByIndex.find(idx);
+      if (existing == splitWriteTypeByIndex.end()) {
+        splitWriteTypeByIndex.try_emplace(idx, memberInfo.second);
+        continue;
+      }
+      FailureOr<Type> commonType =
+          getCommonRefinedType(existing->second, memberInfo.second, tracker);
+      if (failed(commonType)) {
+        return failure();
+      }
+      existing->second = *commonType;
+    }
+  }
   DenseSet<Value> generatedMaterializations;
   SmallVector<WriteArrayOp> writesToErase;
   for (Operation *user : users) {
@@ -3976,10 +4025,18 @@ static LogicalResult rewriteExpandableLocalArray(
 
     if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
       ArrayAttr idx = getIndexAsAttr(readOp);
+      Type requestedType = readOp.getResult().getType();
+      if (Type splitWriteType = splitWriteTypeByRead.lookup(readOp.getOperation())) {
+        FailureOr<Type> commonType = getCommonRefinedType(requestedType, splitWriteType, tracker);
+        if (failed(commonType)) {
+          return failure();
+        }
+        requestedType = *commonType;
+      }
       rewriter.setInsertionPoint(readOp);
       FailureOr<Value> scalarValue = getOrCreateScalarizedLocalArrayValue(
-          valueByIndex, generatedMaterializations, idx, readOp.getResult().getType(),
-          readOp.getLoc(), rewriter, tracker, materializationPoint
+          valueByIndex, generatedMaterializations, idx, requestedType, readOp.getLoc(), rewriter,
+          tracker, materializationPoint
       );
       if (failed(scalarValue)) {
         return failure();
