@@ -39,6 +39,7 @@
 #include "llzk/Transforms/LLZKLoweringUtils.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/Field.h"
+#include "llzk/Util/SymbolLookup.h"
 
 #include <pcl/Dialect/IR/Dialect.h>
 #include <pcl/Dialect/IR/Ops.h>
@@ -67,19 +68,22 @@
 #include <llvm/ADT/DenseMapInfo.h>
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/EquivalenceClasses.h>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/SmallVectorExtras.h>
 #include <llvm/ADT/StringSet.h>
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Debug.h>
+#include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/LogicalResult.h>
 
 #include <cstdint>
+#include <memory>
 #include <optional>
 
 // Include the generated base pass class definitions.
 namespace pcl {
-#define GEN_PASS_DECL_PCLLOWERINGPASS
+
 #define GEN_PASS_DEF_PCLLOWERINGPASS
 #include "pcl/Conversion/ConversionPasses.h.inc"
 } // namespace pcl
@@ -108,6 +112,116 @@ template <typename Op> static std::string flatFullyQualifiedName(Op op) {
   }
 
   return name;
+}
+
+/// Set of free functions that are used by the `@constrain` functions in the circuit.
+///
+/// Functions are matched by their FQN. This means that a function op with identical FQN
+/// to one already inserted in the set will be reported as being already in the set. This is done
+/// for handling the analysis step of the stubbed mode, where the IR is cloned to avoid destructive
+/// actions affecting the original IR.
+///
+/// For that reason, this mapping is missing the U in CRUD and we only insert during creation.
+class UsedFreeFunctions {
+  using M = llvm::DenseMap<Attribute, FuncDefOp>;
+
+  /// Maps the FQN to the operation representing it.
+  M funcs;
+
+  /// Inserts the function into the mapping.
+  void insert(FuncDefOp op) { funcs.insert({op.getFullyQualifiedName(), op}); }
+
+  /// Convenience method for the construction of the mapping.
+  void insertCallees(
+      llvm::SmallVectorImpl<FuncDefOp> &WL, mlir::SymbolTableCollection &tables, FuncDefOp f,
+      llvm::function_ref<bool(FuncDefOp)> P = nullptr
+  ) {
+    f.walk([&WL, this, &tables, P](CallOp callOp) {
+      auto calleeLookup = callOp.getCalleeTarget(tables);
+      if (failed(calleeLookup)) {
+        return;
+      }
+
+      auto callee = calleeLookup->get();
+      // If function already in set, or predicate is true (if available), skip the op.
+      if (contains(callee) || (P && P(callee))) {
+        return;
+      }
+
+      insert(callee);
+      WL.push_back(callee);
+    });
+  }
+
+public:
+  /// Collects the call-graph from the constrain functions (excluding the `@constrain` functions
+  /// themselves). Since we only care if a given `function.def` is part of the graph or not we
+  /// return the set of vertices.
+  UsedFreeFunctions(ModuleOp op) {
+    llvm::SmallVector<FuncDefOp> WL;
+    mlir::SymbolTableCollection tables;
+
+    // Fill the worklist with the initial set of functions.
+    op->walk([&WL, this, &tables](StructDefOp structOp) {
+      if (auto f = structOp.getConstrainFuncOp()) {
+        insertCallees(WL, tables, f, [](FuncDefOp callee) { return callee.isStructConstrain(); });
+      }
+    });
+
+    // Complete the graph using the worklist.
+    while (!WL.empty()) {
+      auto next = WL.back();
+      WL.pop_back();
+      insertCallees(WL, tables, next);
+    }
+  }
+
+  /// Returns whether the function is in the set or not.
+  bool contains(FuncDefOp op) const { return funcs.contains(op.getFullyQualifiedName()); }
+
+  /// Removes the function from the mapping.
+  ///
+  /// As a safety precaution, is only erased if the given function is equal to the
+  /// one mapped by the FQN.
+  void erase(FuncDefOp op) {
+    auto fqn = op.getFullyQualifiedName();
+    if (auto mappedOp = funcs[fqn]; mappedOp == op) {
+      funcs.erase(fqn);
+    }
+  }
+
+  class iterator {
+    using It = M::iterator;
+    It iter;
+
+  public:
+    using difference_type = It::difference_type;
+    using value_type = FuncDefOp;
+    using pointer = value_type *;
+    using reference = value_type &;
+    using iterator_category = It::iterator_category;
+
+    iterator() = default;
+    iterator(It I) : iter(I) {}
+
+    reference operator*() { return iter->getSecond(); }
+
+    iterator &operator++() {
+      ++iter;
+      return *this;
+    }
+
+    iterator operator++(int) { return iterator(iter++); }
+
+    friend bool operator!=(const iterator &LHS, const iterator &RHS);
+  };
+
+  iterator begin() { return iterator(funcs.begin()); }
+  iterator end() { return iterator(funcs.end()); }
+};
+
+bool operator!=(const UsedFreeFunctions::iterator &LHS, const UsedFreeFunctions::iterator &RHS) {
+  return LHS.iter != RHS.iter;
 }
 
 template <typename Op> class ConstantOpValue {};
@@ -554,17 +668,17 @@ public:
 
 class ConvertFreeFunction : public OpConversionPattern<FuncDefOp>,
                             public BodyCopier<FuncDefOp, ConvertFreeFunction> {
-  llvm::DenseSet<FuncDefOp> &funcs;
+  UsedFreeFunctions &funcs;
   ModuleOp root;
 
 public:
   ConvertFreeFunction(
-      MLIRContext *context, llvm::DenseSet<FuncDefOp> &usedFreeFunctions, ModuleOp rootOp,
+      MLIRContext *context, UsedFreeFunctions &usedFreeFunctions, ModuleOp rootOp,
       PatternBenefit patBenefit = 1
   )
       : OpConversionPattern(context, patBenefit), funcs(usedFreeFunctions), root(rootOp) {}
   ConvertFreeFunction(
-      const TypeConverter &tc, MLIRContext *context, llvm::DenseSet<FuncDefOp> &usedFreeFunctions,
+      const TypeConverter &tc, MLIRContext *context, UsedFreeFunctions &usedFreeFunctions,
       ModuleOp rootOp, PatternBenefit patBenefit = 1
   )
       : OpConversionPattern(tc, context, patBenefit), funcs(usedFreeFunctions), root(rootOp) {}
@@ -588,6 +702,74 @@ public:
       return failure();
     }
     return copyBody(op, rewriter);
+  }
+};
+
+class ConvertFreeFunctionIntoStub : public OpConversionPattern<FuncDefOp> {
+  llvm::DenseSet<FuncDefOp> &stubs;
+  ModuleOp root;
+
+public:
+  ConvertFreeFunctionIntoStub(
+      MLIRContext *context, llvm::DenseSet<FuncDefOp> &stubFunctions, ModuleOp rootOp,
+      PatternBenefit patBenefit = 1
+  )
+      : OpConversionPattern(context, patBenefit), stubs(stubFunctions), root(rootOp) {}
+  ConvertFreeFunctionIntoStub(
+      const TypeConverter &tc, MLIRContext *context, llvm::DenseSet<FuncDefOp> &stubFunctions,
+      ModuleOp rootOp, PatternBenefit patBenefit = 1
+  )
+      : OpConversionPattern(tc, context, patBenefit), stubs(stubFunctions), root(rootOp) {}
+
+  FailureOr<FuncDefOp> getFuncOp(FuncDefOp op) const { return op; }
+
+  unsigned int baseOffset() const { return 0; }
+
+  llvm::SmallVector<Type> outputTypes(FuncDefOp op) const {
+    return llvm::SmallVector<Type>(
+        op.getFunctionType().getNumResults(), pcl::FeltType::get(op.getContext())
+    );
+  }
+
+  ModuleOp getRoot() const { return root; }
+
+  LogicalResult
+  matchAndRewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    // Don't convert functions outside the set.
+    if (!stubs.contains(op)) {
+      return failure();
+    }
+
+    SmallVector<Type> inputs(op.getNumArguments(), pcl::FeltType::get(rewriter.getContext()));
+    SmallVector<Type> outputs = llvm::SmallVector<Type>(
+        op.getFunctionType().getNumResults(), pcl::FeltType::get(op.getContext())
+    );
+
+    auto funcOp = func::FuncOp::create(
+        op.getLoc(), flatFullyQualifiedName(op), rewriter.getFunctionType(inputs, outputs)
+    );
+    auto *body = funcOp.addEntryBlock();
+    {
+      OpBuilder::InsertionGuard guard(rewriter);
+      rewriter.setInsertionPointToStart(body);
+      auto outputValues = llvm::map_to_vector(
+          llvm::enumerate(op.getFunctionType().getResults()),
+          [&rewriter, loc = op.getLoc()](auto p) -> Value {
+        auto [n, _] = p;
+        return rewriter.create<pcl::VarOp>(loc, ("out" + Twine(n)).str(), /*isOutput=*/true);
+      }
+      );
+      rewriter.create<func::ReturnOp>(op.getLoc(), outputValues);
+    }
+
+    rewriter.eraseOp(op);
+    {
+      OpBuilder::InsertionGuard guard(rewriter);
+      rewriter.setInsertionPointToEnd(&root->getRegion(0).front());
+      rewriter.insert(funcOp);
+    }
+
+    return success();
   }
 };
 
@@ -703,16 +885,15 @@ struct ConvertFreeFunctionCall : public OpConversionPattern<CallOp> {
 
 /// Removes any `function.def` operation that is not in the given set of used free functions.
 class RemoveFreeFunction : public OpConversionPattern<FuncDefOp> {
-  llvm::DenseSet<FuncDefOp> &funcs;
+  UsedFreeFunctions &funcs;
 
 public:
   RemoveFreeFunction(
-      MLIRContext *context, llvm::DenseSet<FuncDefOp> &usedFreeFunctions,
-      PatternBenefit patBenefit = 1
+      MLIRContext *context, UsedFreeFunctions &usedFreeFunctions, PatternBenefit patBenefit = 1
   )
       : OpConversionPattern(context, patBenefit), funcs(usedFreeFunctions) {}
   RemoveFreeFunction(
-      const TypeConverter &tc, MLIRContext *context, llvm::DenseSet<FuncDefOp> &usedFreeFunctions,
+      const TypeConverter &tc, MLIRContext *context, UsedFreeFunctions &usedFreeFunctions,
       PatternBenefit patBenefit = 1
   )
       : OpConversionPattern(tc, context, patBenefit), funcs(usedFreeFunctions) {}
@@ -728,121 +909,6 @@ public:
     return success();
   }
 };
-
-/// Populates the set with the patterns used in step 1 of the conversion.
-static void populateStep1ConversionPatterns(
-    const TypeConverter &tc, RewritePatternSet &patterns, MLIRContext *ctx, NonDetOpNames &names
-) {
-  patterns.add<
-      // clang-format off
-      ConvertConstantOp<FeltConstantOp>,
-      ConvertConstantOp<arith::ConstantOp>,
-      ConvertBinaryOp<AddFeltOp, pcl::AddOp>,
-      ConvertBinaryOp<SubFeltOp, pcl::SubOp>,
-      ConvertBinaryOp<MulFeltOp, pcl::MulOp>,
-      ConvertUnaryOp<NegFeltOp, pcl::NegOp>,
-      ConvertBinaryOp<AndBoolOp, pcl::AndOp>,
-      ConvertBinaryOp<OrBoolOp, pcl::OrOp>,
-      ConvertUnaryOp<NotBoolOp, pcl::NotOp>,
-      ConvertBoolXorOp,
-      RemoveIntToFeltOp,
-      ConvertCmpOp,
-      ConvertEmitEqualityOp,
-      // This pattern is currently disabled because asserts may represent predicates that are not actually part of the constraint system.
-      // ConvertAssertOp,
-      ConvertSelfMemberReadOpOfFelt,
-      ConvertSelfMemberReadOpOfSubcmp,
-      ConvertSubcmpMemberReadOp,
-      ConvertReturnOp,
-      ConvertFreeFuncReturnOp,
-      ConvertConstrainCall,
-      ConvertFreeFunctionCall
-      // clang-format on
-      >(tc, ctx);
-  patterns.add<ConvertNonDetOp>(tc, ctx, names);
-}
-
-/// Populates the set with the patterns used in step 2 of the conversion.
-static void populateStep2ConversionPatterns(
-    const TypeConverter &tc, RewritePatternSet &patterns, MLIRContext *ctx, ModuleOp root,
-    llvm::DenseSet<FuncDefOp> &usedFreeFunctions
-) {
-  patterns.add<ConvertStructDefOp>(tc, ctx, root);
-  patterns.add<RemoveFreeFunction>(tc, ctx, usedFreeFunctions);
-  patterns.add<ConvertFreeFunction>(tc, ctx, usedFreeFunctions, root);
-}
-
-/// Populates the set with the patterns used in step 3 of the conversion.
-static void populateStep3ConversionPatterns(
-    RewritePatternSet &patterns, MLIRContext *context, DupVarsReplacements &replacements
-) {
-  patterns.add<RemoveDuplicateVarOp>(context, replacements);
-  patterns.add<RemoveModuleOp>(context);
-}
-
-/// Returns true if the operation is legal wrt step 1.
-///
-/// An operation is legal in Step 1 if its located outside the
-/// `constrain` function of a struct.
-static bool isStep1LegalOp(Operation *op, llvm::DenseSet<FuncDefOp> &usedFreeFunctions) {
-  if (auto structDefOp = op->getParentOfType<StructDefOp>()) {
-    auto funcDefOp = op->getParentOfType<FuncDefOp>();
-    if (!funcDefOp) {
-      // Legal because is not within a function definition.
-      return true;
-    }
-    // Legal if the containing function definition is not the struct's constrain function.
-    return structDefOp.getConstrainFuncOp() != funcDefOp;
-  }
-
-  auto funcDefOp = op->getParentOfType<FuncDefOp>();
-  if (!funcDefOp) {
-    // Legal because is not within a struct nor a free function definition.
-    return true;
-  }
-
-  // If the op is inside a free function, check if the function is in the set.
-  // If the function is in the set, then the op is illegal.
-  return !usedFreeFunctions.contains(funcDefOp);
-}
-
-/// Populates the conversion target with the legallity expected of step 1 of the conversion.
-static void populateStep1ConversionTarget(
-    ConversionTarget &target, NonDetOpNames &names, llvm::DenseSet<FuncDefOp> &usedFreeFunctions
-) {
-  target.addLegalDialect<pcl::PCLDialect, func::FuncDialect>();
-  target.addLegalOp<ModuleOp, UnrealizedConversionCastOp>();
-  target.addDynamicallyLegalDialect<
-      BoolDialect, FeltDialect, CastDialect, arith::ArithDialect, ConstrainDialect,
-      array::ArrayDialect, global::GlobalDialect, include::IncludeDialect, pod::PODDialect,
-      polymorphic::PolymorphicDialect, ram::RAMDialect, smt::SMTDialect, string::StringDialect,
-      verif::VerifDialect, LLZKDialect, StructDialect, FunctionDialect, scf::SCFDialect>(
-      [&usedFreeFunctions](Operation *op) { return isStep1LegalOp(op, usedFreeFunctions); }
-  );
-  target.addLegalOp<FuncDefOp>();
-
-  target.addDynamicallyLegalOp<NonDetOp>([&names, &usedFreeFunctions](NonDetOp op) {
-    return isStep1LegalOp(op, usedFreeFunctions) && names.find(op) == names.end();
-  });
-}
-
-/// Populates the conversion target with the legallity expected of step 2 of the conversion.
-static void populateStep2ConversionTarget(ConversionTarget &target) {
-  target.addLegalDialect<pcl::PCLDialect>();
-  target.addLegalOp<ModuleOp, func::FuncOp, func::CallOp, func::ReturnOp>();
-  target.addIllegalOp<StructDefOp, FuncDefOp>();
-}
-
-/// Populates the conversion target with the legality expected of step 3 of the conversion.
-static void populateStep3ConversionTarget(
-    ConversionTarget &target, DupVarsReplacements &replacements, ModuleOp root
-) {
-  target.addLegalDialect<pcl::PCLDialect, func::FuncDialect>();
-  target.addDynamicallyLegalOp<pcl::VarOp>([&replacements](pcl::VarOp op) {
-    return replacements.find(op) == replacements.end();
-  });
-  target.addDynamicallyLegalOp<ModuleOp>([root](ModuleOp op) { return op == root; });
-}
 
 /// Type converter from LLZK types to PCL.
 struct PCLTypeConverter : public TypeConverter {
@@ -926,6 +992,307 @@ struct PCLTypeConverter : public TypeConverter {
   }
 };
 
+/// Base class for lowering modes.
+class BaseMode {
+  ModuleOp module;
+  NonDetOpNames names;
+  UsedFreeFunctions usedFreeFunctions;
+
+protected:
+  MLIRContext &getContext() { return *module.getContext(); }
+
+  ModuleOp getOperation() { return module; }
+
+  UsedFreeFunctions &getUsedFreeFunctions() { return usedFreeFunctions; }
+
+  /// Returns true if the operation is legal wrt step 1.
+  ///
+  /// An operation is legal in Step 1 if its located outside the
+  /// `constrain` function of a struct or a used free function.
+  bool isStep1LegalOp(Operation *op) {
+    if (auto structDefOp = op->getParentOfType<StructDefOp>()) {
+      auto funcDefOp = op->getParentOfType<FuncDefOp>();
+      // Legal if either:
+      //  - Not within a function definition.
+      //  - The containing function definition is not the struct's constrain function.
+      return !funcDefOp || structDefOp.getConstrainFuncOp() != funcDefOp;
+    }
+
+    auto funcDefOp = op->getParentOfType<FuncDefOp>();
+    // Legal if:
+    //  - Not within a free function definition.
+    //  - The free function is not in the set of used free functions.
+    return !funcDefOp || !usedFreeFunctions.contains(funcDefOp);
+  }
+
+  void populateStep1ConversionPatterns(const TypeConverter &tc, RewritePatternSet &patterns) {
+    patterns.add<
+        // clang-format off
+        ConvertConstantOp<FeltConstantOp>,
+        ConvertConstantOp<arith::ConstantOp>,
+        ConvertBinaryOp<AddFeltOp, pcl::AddOp>,
+        ConvertBinaryOp<SubFeltOp, pcl::SubOp>,
+        ConvertBinaryOp<MulFeltOp, pcl::MulOp>,
+        ConvertUnaryOp<NegFeltOp, pcl::NegOp>,
+        ConvertBinaryOp<AndBoolOp, pcl::AndOp>,
+        ConvertBinaryOp<OrBoolOp, pcl::OrOp>,
+        ConvertUnaryOp<NotBoolOp, pcl::NotOp>,
+        ConvertBoolXorOp,
+        RemoveIntToFeltOp,
+        ConvertCmpOp,
+        ConvertEmitEqualityOp,
+        // This pattern is currently disabled because asserts may represent predicates that are not actually part of the constraint system.
+        // ConvertAssertOp,
+        ConvertSelfMemberReadOpOfFelt,
+        ConvertSelfMemberReadOpOfSubcmp,
+        ConvertSubcmpMemberReadOp,
+        ConvertReturnOp,
+        ConvertFreeFuncReturnOp,
+        ConvertConstrainCall,
+        ConvertFreeFunctionCall
+        // clang-format on
+        >(tc, &getContext());
+    patterns.add<ConvertNonDetOp>(tc, &getContext(), names);
+  }
+
+  void populateStep1ConversionTarget(ConversionTarget &target) {
+    target.addLegalDialect<pcl::PCLDialect, func::FuncDialect>();
+    target.addLegalOp<ModuleOp, UnrealizedConversionCastOp>();
+    target.addDynamicallyLegalDialect<
+        BoolDialect, FeltDialect, CastDialect, arith::ArithDialect, ConstrainDialect,
+        array::ArrayDialect, global::GlobalDialect, include::IncludeDialect, pod::PODDialect,
+        polymorphic::PolymorphicDialect, ram::RAMDialect, smt::SMTDialect, string::StringDialect,
+        verif::VerifDialect, LLZKDialect, StructDialect, FunctionDialect, scf::SCFDialect>(
+        [this](Operation *op) { return isStep1LegalOp(op); }
+    );
+    target.addLegalOp<FuncDefOp>();
+
+    target.addDynamicallyLegalOp<NonDetOp>([this](NonDetOp op) {
+      return isStep1LegalOp(op) && names.find(op) == names.end();
+    });
+  }
+
+  virtual void
+  populateStep2ConversionPatterns(const TypeConverter &tc, RewritePatternSet &patterns) = 0;
+
+  void populateStep2ConversionTarget(ConversionTarget &target) {
+    target.addLegalDialect<pcl::PCLDialect>();
+    target.addLegalOp<ModuleOp, func::FuncOp, func::CallOp, func::ReturnOp>();
+    target.addIllegalOp<StructDefOp, FuncDefOp>();
+  }
+
+  /// Populates the set with the patterns used in step 3 of the conversion.
+  void
+  populateStep3ConversionPatterns(RewritePatternSet &patterns, DupVarsReplacements &replacements) {
+    patterns.add<RemoveDuplicateVarOp>(&getContext(), replacements);
+    patterns.add<RemoveModuleOp>(&getContext());
+  }
+
+  /// Populates the conversion target with the legality expected of step 3 of the conversion.
+  void populateStep3ConversionTarget(ConversionTarget &target, DupVarsReplacements &replacements) {
+    target.addLegalDialect<pcl::PCLDialect, func::FuncDialect>();
+    target.addDynamicallyLegalOp<pcl::VarOp>([&replacements](pcl::VarOp op) {
+      return replacements.find(op) == replacements.end();
+    });
+    target.addDynamicallyLegalOp<ModuleOp>([this](ModuleOp op) { return op == getOperation(); });
+  }
+
+  /// Collects all the `llzk.nondet` ops that need to be replaced.
+  ///
+  /// Only `llzk.nondet` ops of type `!felt.type` are considered.
+  void collectNonDetOpNames() {
+    uint64_t count = 0;
+    llvm::StringSet<> usedNames;
+
+    getOperation()->walk([&usedNames](MemberDefOp op) { usedNames.insert(op.getSymName()); });
+
+    getOperation()->walk([&count, this, &usedNames](NonDetOp op) {
+      if (!mlir::isa<FeltType>(op.getType())) {
+        return;
+      }
+      StringRef nameRef;
+      SmallVector<char, 25> nameSto;
+      do {
+        nameSto.clear();
+        Twine name = "_nondet_internal_var__" + Twine(count);
+        nameRef = name.toStringRef(nameSto);
+        count++;
+      } while (usedNames.contains(nameRef));
+      names.insert({op, StringAttr::get(&getContext(), nameRef)});
+    });
+  }
+
+  /// Step 1 converts the body of each struct to PCL operations.
+  ///
+  /// This conversion is performed before moving the body to a function because
+  /// that way the IR can access information about the members of the struct.
+  virtual LogicalResult runStep1() = 0;
+
+  /// Step 2 converts the struct to a function, moving the contents of the @constrain function
+  /// into the body of the new function.
+  LogicalResult runStep2() {
+    ConversionTarget target(getContext());
+    RewritePatternSet patterns(&getContext());
+    PCLTypeConverter tc;
+    populateStep2ConversionPatterns(tc, patterns);
+    populateStep2ConversionTarget(target);
+
+    return applyFullConversion(getOperation(), target, std::move(patterns));
+  }
+
+  /// Step 3 cleans up the IR removing unnecessary ops that may be left over by the previous steps.
+  ///
+  /// The cleanup operations are:
+  ///
+  /// - The conversion process may generate multiple copies of the same variable. This is fine since
+  /// `VarOp` implements `Pure`. However, for cleaniness we remove these duplicates now, replacing
+  /// all extra instances with the value that dominates everyone else.
+  ///
+  /// - Remove empty non-root module ops.
+  LogicalResult runStep3() {
+    DupVarsReplacements replacements = collectDupVarsReplacements();
+
+    ConversionTarget target(getContext());
+    RewritePatternSet patterns(&getContext());
+    populateStep3ConversionPatterns(patterns, replacements);
+    populateStep3ConversionTarget(target, replacements);
+
+    return applyFullConversion(getOperation(), target, std::move(patterns));
+  }
+
+  /// Collects all the vars that need to be replaced.
+  DupVarsReplacements collectDupVarsReplacements() {
+    DupVarsReplacements replacements;
+    getOperation()->walk([&replacements](func::FuncOp fn) {
+      DominanceInfo dom(fn);
+      llvm::StringMap<llvm::SmallVector<pcl::VarOp, 1>> varsByName;
+      fn->walk([&varsByName](pcl::VarOp var) { varsByName[var.getName()].push_back(var); });
+
+      for (auto &[_, vars] : varsByName) {
+        if (vars.empty()) {
+          continue;
+        }
+        std::stable_sort(vars.begin(), vars.end(), [&dom](pcl::VarOp lhs, pcl::VarOp rhs) {
+          return dom.dominates(lhs.getOperation(), rhs);
+        });
+        auto fst = vars[0];
+        for (auto other : ArrayRef(vars).drop_front()) {
+          replacements[other] = fst;
+        }
+      }
+    });
+    return replacements;
+  }
+
+public:
+  BaseMode(ModuleOp op) : module(op), usedFreeFunctions(op) { collectNonDetOpNames(); }
+
+  virtual ~BaseMode() = default;
+
+  LogicalResult lower() {
+    return failure(failed(runStep1()) || failed(runStep2()) || failed(runStep3()));
+  }
+};
+
+/// Full lowering mode.
+struct FullLoweringMode : public BaseMode {
+  using BaseMode::BaseMode;
+
+  /// Step 1 converts the body of each struct to PCL operations.
+  ///
+  /// This conversion is performed before moving the body to a function because
+  /// that way the IR can access information about the members of the struct.
+  LogicalResult runStep1() override {
+    ConversionTarget target(getContext());
+    RewritePatternSet patterns(&getContext());
+    PCLTypeConverter tc;
+    populateStep1ConversionPatterns(tc, patterns);
+    populateStep1ConversionTarget(target);
+
+    return applyFullConversion(getOperation(), target, std::move(patterns));
+  }
+
+  void
+  populateStep2ConversionPatterns(const TypeConverter &tc, RewritePatternSet &patterns) override {
+    patterns.add<ConvertStructDefOp>(tc, &getContext(), getOperation());
+    patterns.add<RemoveFreeFunction>(tc, &getContext(), getUsedFreeFunctions());
+    patterns.add<ConvertFreeFunction>(tc, &getContext(), getUsedFreeFunctions(), getOperation());
+  }
+};
+
+/// Stubbed lowering mode.
+struct StubbedLoweringMode : public BaseMode {
+  using BaseMode::BaseMode;
+
+private:
+  llvm::DenseSet<Operation *> legalizableOps;
+  llvm::DenseSet<FuncDefOp> stubs;
+
+  /// Run step 1 in analysis mode. Running the conversion this way will note
+  /// all the ops that will be converted if the conversion is actually applied.
+  LogicalResult analize() {
+    ConversionTarget target(getContext());
+    RewritePatternSet patterns(&getContext());
+    PCLTypeConverter tc;
+    populateStep1ConversionPatterns(tc, patterns);
+    populateStep1ConversionTarget(target);
+
+    return applyAnalysisConversion(
+        getOperation(), target, std::move(patterns), {.legalizableOps = &legalizableOps}
+    );
+  }
+
+  /// Checks what operations inside the used free functions are not in the legalizableOps set.
+  /// If any, the free function is removed from the set and marked as a stub.
+  /// Functions marked as stubs are lowered as such in step 2.
+  void checkAnalisysResult() {
+    for (auto funcOp : getUsedFreeFunctions()) {
+      funcOp->walk([&funcOp, this](Operation *op) {
+        // If the op is not in the set of ops that would get converted,
+        // mark the op as a stub and stop the search.
+        if (!legalizableOps.contains(op)) {
+          stubs.insert(funcOp);
+          return WalkResult::interrupt();
+        }
+        return WalkResult::advance();
+      });
+    }
+
+    // Remove all the stubs from the used functions set.
+    for (auto stub : stubs) {
+      getUsedFreeFunctions().erase(stub);
+    }
+  }
+
+  /// Step 1 converts the body of each struct to PCL operations.
+  ///
+  /// This conversion is performed before moving the body to a function because
+  /// that way the IR can access information about the members of the struct.
+  LogicalResult runStep1() override {
+    if (failed(analize())) {
+      return failure();
+    }
+    checkAnalisysResult();
+
+    // After the analysis, do the conversion as normal.
+    ConversionTarget target(getContext());
+    RewritePatternSet patterns(&getContext());
+    PCLTypeConverter tc;
+    populateStep1ConversionPatterns(tc, patterns);
+    populateStep1ConversionTarget(target);
+
+    return applyFullConversion(getOperation(), target, std::move(patterns));
+  }
+
+  void
+  populateStep2ConversionPatterns(const TypeConverter &tc, RewritePatternSet &patterns) override {
+    patterns.add<ConvertStructDefOp>(tc, &getContext(), getOperation());
+    patterns.add<RemoveFreeFunction>(tc, &getContext(), getUsedFreeFunctions());
+    patterns.add<ConvertFreeFunction>(tc, &getContext(), getUsedFreeFunctions(), getOperation());
+    patterns.add<ConvertFreeFunctionIntoStub>(tc, &getContext(), stubs, getOperation());
+  }
+};
+
 class PassImpl : public pcl::impl::PCLLoweringPassBase<PassImpl> {
   using Base = PCLLoweringPassBase<PassImpl>;
   using Base::Base;
@@ -989,183 +1356,27 @@ class PassImpl : public pcl::impl::PCLLoweringPassBase<PassImpl> {
     return toAPSInt(selectedField.get().prime());
   }
 
-  /// Collects all the member names that are already in use.
-  llvm::StringSet<> collectUsedNames() {
-    llvm::StringSet<> names;
-    getOperation()->walk([&names](MemberDefOp op) { names.insert(op.getSymName()); });
-    return names;
-  }
-
-  /// Collects all the `llzk.nondet` ops that need to be replaced.
-  ///
-  /// Only `llzk.nondet` ops of type `!felt.type` are considered.
-  NonDetOpNames collectNonDetOpNames() {
-    uint64_t count = 0;
-    auto usedNames = collectUsedNames();
-    NonDetOpNames names;
-    getOperation()->walk([&count, &names, &usedNames, this](NonDetOp op) {
-      if (!mlir::isa<FeltType>(op.getType())) {
-        return;
-      }
-      StringRef nameRef;
-      SmallVector<char, 25> nameSto;
-      do {
-        nameSto.clear();
-        Twine name = "_nondet_internal_var__" + Twine(count);
-        nameRef = name.toStringRef(nameSto);
-        count++;
-      } while (usedNames.contains(nameRef));
-      names.insert({op, StringAttr::get(&getContext(), nameRef)});
-    });
-    return names;
-  }
-
-  /// Collects all the vars that need to be replaced.
-  DupVarsReplacements collectDupVarsReplacements() {
-    DupVarsReplacements replacements;
-    getOperation()->walk([&replacements](func::FuncOp fn) {
-      DominanceInfo dom(fn);
-      llvm::StringMap<llvm::SmallVector<pcl::VarOp, 1>> varsByName;
-      fn->walk([&varsByName](pcl::VarOp var) { varsByName[var.getName()].push_back(var); });
-
-      for (auto &[_, vars] : varsByName) {
-        if (vars.empty()) {
-          continue;
-        }
-        std::stable_sort(vars.begin(), vars.end(), [&dom](pcl::VarOp lhs, pcl::VarOp rhs) {
-          return dom.dominates(lhs.getOperation(), rhs);
-        });
-        auto fst = vars[0];
-        for (auto other : ArrayRef(vars).drop_front()) {
-          replacements[other] = fst;
-        }
-      }
-    });
-    return replacements;
-  }
-
-  /// Collects the call-graph from the constrain functions (excluding the `@constrain` functions
-  /// themselves). Since we only care if a given `function.def` is part of the graph or not we
-  /// return the set of vertices.
-  llvm::DenseSet<FuncDefOp> collectConstrainCallGraph() {
-    llvm::SmallVector<FuncDefOp> WL;
-    llvm::DenseSet<FuncDefOp> funcs;
-    mlir::SymbolTableCollection tables;
-
-    // Fill the worklist with the initial set of functions.
-    getOperation()->walk([&WL, &funcs, &tables](StructDefOp structOp) {
-      auto f = structOp.getConstrainFuncOp();
-      if (!f) {
-        return;
-      }
-
-      f.walk([&WL, &funcs, &tables](CallOp callOp) {
-        auto callee = callOp.getCalleeTarget(tables);
-        // Ignore it if the lookup failed, is a @constrain function, or is already in the set.
-        if (failed(callee) || callee->get().isStructConstrain() || funcs.contains(callee->get())) {
-          return;
-        }
-        funcs.insert(callee->get());
-        WL.push_back(callee->get());
-      });
-    });
-
-    // Complete the graph using the worklist.
-    while (!WL.empty()) {
-      auto next = WL.back();
-      WL.pop_back();
-
-      next.walk([&WL, &funcs, &tables](CallOp op) {
-        auto callee = op.getCalleeTarget(tables);
-        if (failed(callee) || funcs.contains(callee->get())) {
-          return;
-        }
-        funcs.insert(callee->get());
-        WL.push_back(callee->get());
-      });
+  std::unique_ptr<BaseMode> createMode() {
+    switch (mode.getValue()) {
+    case pcl::LlzkToPclMode::Full:
+      return std::make_unique<FullLoweringMode>(getOperation());
+    case pcl::LlzkToPclMode::Stubbed:
+      return std::make_unique<StubbedLoweringMode>(getOperation());
     }
-
-    return funcs;
-  }
-
-  /// Step 1 converts the body of each struct to PCL operations.
-  ///
-  /// This conversion is performed before moving the body to a function because
-  /// that way the IR can access information about the members of the struct.
-  LogicalResult runStep1(llvm::DenseSet<FuncDefOp> &usedFreeFunctions) {
-    auto nonDetNames = collectNonDetOpNames();
-    ConversionTarget target(getContext());
-    RewritePatternSet patterns(&getContext());
-    PCLTypeConverter tc;
-    populateStep1ConversionPatterns(tc, patterns, &getContext(), nonDetNames);
-    populateStep1ConversionTarget(target, nonDetNames, usedFreeFunctions);
-
-    return applyFullConversion(getOperation(), target, std::move(patterns));
-  }
-
-  /// Step 2 converts the struct to a function, moving the contents of the @constrain function
-  /// into the body of the new function.
-  LogicalResult runStep2(llvm::DenseSet<FuncDefOp> &usedFreeFunctions) {
-    ConversionTarget target(getContext());
-    RewritePatternSet patterns(&getContext());
-    PCLTypeConverter tc;
-    populateStep2ConversionPatterns(tc, patterns, &getContext(), getOperation(), usedFreeFunctions);
-    populateStep2ConversionTarget(target);
-
-    return applyFullConversion(getOperation(), target, std::move(patterns));
-  }
-
-  /// Step 3 cleans up the IR removing unnecessary ops that may be left over by the previous steps.
-  ///
-  /// The cleanup operations are:
-  ///
-  /// - The conversion process may generate multiple copies of the same variable. This is fine since
-  /// `VarOp` implements `Pure`. However, for cleaniness we remove these duplicates now, replacing
-  /// all extra instances with the value that dominates everyone else.
-  ///
-  /// - Remove empty non-root module ops.
-  LogicalResult runStep3() {
-    DupVarsReplacements replacements = collectDupVarsReplacements();
-
-    ConversionTarget target(getContext());
-    RewritePatternSet patterns(&getContext());
-    populateStep3ConversionPatterns(patterns, &getContext(), replacements);
-    populateStep3ConversionTarget(target, replacements, getOperation());
-
-    return applyFullConversion(getOperation(), target, std::move(patterns));
+    llvm_unreachable("only two lowering modes");
   }
 
   void runOnOperation() override {
     // check PCLDialect is loaded.
     assert(getContext().getLoadedDialect<pcl::PCLDialect>() && "PCL dialect not loaded");
     auto prime = selectPrime();
-    if (failed(prime)) {
+    if (failed(prime) || failed(validateStructs())) {
       signalPassFailure();
       return;
     }
+    auto modeInstance = createMode();
 
-    if (failed(validateStructs())) {
-      signalPassFailure();
-      return;
-    }
-    auto usedFreeFunctions = collectConstrainCallGraph();
-
-    if (failed(runStep1(usedFreeFunctions))) {
-      signalPassFailure();
-      return;
-    }
-
-    if (failed(runStep2(usedFreeFunctions))) {
-      signalPassFailure();
-      return;
-    }
-
-    if (failed(runStep3())) {
-      signalPassFailure();
-      return;
-    }
-
-    if (failed(setPrime(*prime))) {
+    if (failed(modeInstance->lower()) || failed(setPrime(*prime))) {
       signalPassFailure();
       return;
     }
