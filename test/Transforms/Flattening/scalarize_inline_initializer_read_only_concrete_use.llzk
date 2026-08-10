@@ -1,4 +1,4 @@
-// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 #id = affine_map<(i) -> (i)>
 module attributes {llzk.lang} {
@@ -20,6 +20,13 @@ module attributes {llzk.lang} {
     }
   }
 
+  poly.template @Any {
+    poly.param @T : !poly.tvar<@T>
+    function.def @f(%a: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      function.return %a : !poly.tvar<@T>
+    }
+  }
+
   function.def @use_inline_read_only_init() attributes {function.allow_witness} {
     %c0 = arith.constant 0 : index
 
@@ -35,6 +42,48 @@ module attributes {llzk.lang} {
     %sink = array.new : !array.type<1 x !struct.type<@TCell::@Cell<[0]>>>
     array.write %sink[%c0] = %picked : !array.type<1 x !struct.type<@TCell::@Cell<[0]>>>, !struct.type<@TCell::@Cell<[0]>>
 
+    function.call @Any::@f(%sink) : (!array.type<1 x !struct.type<@TCell::@Cell<[0]>>>) -> !array.type<1 x !struct.type<@TCell::@Cell<[0]>>>
+
     function.return
   }
 }
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
+//
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @TCell_0_Cell {
+// CHECK-NEXT:      struct.member @value : !felt.type {column}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_0_Cell> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TCell_0_Cell>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TCell_0_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TCell {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      struct.def @Cell {
+// CHECK-NEXT:        struct.member @value : !felt.type {column}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TCell::@Cell<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@TCell::@Cell<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@TCell::@Cell<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @"Any_!a<!s<@TCell_0_Cell>:1>_f"(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !array.type<1 x !struct.type<@TCell_0_Cell>>) -> !array.type<1 x !struct.type<@TCell_0_Cell>> {
+// CHECK-NEXT:      function.return %[[VAL_4]] : !array.type<1 x !struct.type<@TCell_0_Cell>>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @use_inline_read_only_init() attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.new  : <1 x !struct.type<@TCell_0_Cell>>
+// CHECK-NEXT:      array.write %[[VAL_9]]{{\[}}%[[VAL_5]]] = %[[VAL_8]] : <1 x !struct.type<@TCell_0_Cell>>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @"Any_!a<!s<@TCell_0_Cell>:1>_f"(%[[VAL_9]]) : (!array.type<1 x !struct.type<@TCell_0_Cell>>) -> !array.type<1 x !struct.type<@TCell_0_Cell>>
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
