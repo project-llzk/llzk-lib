@@ -3112,27 +3112,27 @@ static LogicalResult verifyRefreshedCandidateReads(
 
 /// Collect the common specialized type required for each shared nondeterministic initializer.
 ///
-/// An inline initializer can store the same generic witness at multiple array indices.  Replacing
-/// each read with a separate typed witness would lose that sharing, so all observed indices using
-/// one source witness must agree on a common refinement.
+/// An inline initializer can store the same generic witness at multiple array indices. Replacing
+/// each read or split-member write with a separate typed witness would lose that sharing, so all
+/// observed indices using one source witness must agree on a common refinement. In particular,
+/// include merged split-member types: another candidate can refine a member even when this
+/// candidate's local read remains generic.
 static LogicalResult collectSharedNondetSpecializationTypes(
     const ScalarizedArrayInfo &info, const ConversionTracker &tracker,
-    DenseMap<Value, Type> &specializedTypeByNondet
+    const DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
+    SymbolTableCollection &tables, DenseMap<Value, Type> &specializedTypeByNondet
 ) {
-  DenseMap<Value, std::pair<ArrayAttr, Location>> firstReadByNondet;
-  for (ReadArrayOp readOp : info.reads) {
-    ArrayAttr idx = getIndexAsAttr(readOp);
-    Value value = info.valueByIndex.lookup(idx);
-    Type type = info.typeByIndex.lookup(idx);
+  DenseMap<Value, std::pair<ArrayAttr, Location>> firstUseByNondet;
+  DenseSet<ArrayAttr> readIndices;
+  auto collectType = [&](Value value, Type type, ArrayAttr idx, Location loc) -> LogicalResult {
     if (!value || !type || value.getType() == type || !value.getDefiningOp<NonDetOp>()) {
-      continue;
+      return success();
     }
-
     auto existing = specializedTypeByNondet.find(value);
     if (existing == specializedTypeByNondet.end()) {
       specializedTypeByNondet.try_emplace(value, type);
-      firstReadByNondet.try_emplace(value, std::make_pair(idx, readOp.getLoc()));
-      continue;
+      firstUseByNondet.try_emplace(value, std::make_pair(idx, loc));
+      return success();
     }
     FailureOr<Type> commonType = getCommonRefinedType(existing->second, type, tracker);
     if (failed(commonType)) {
@@ -3140,16 +3140,40 @@ static LogicalResult collectSharedNondetSpecializationTypes(
           "cannot scalarize array because a shared nondeterministic initializer requires "
           "incompatible specialized types"
       );
-      auto firstRead = firstReadByNondet.find(value);
-      assert(firstRead != firstReadByNondet.end() && "first read must be recorded");
-      diag.attachNote(firstRead->second.second)
-          << "array index " << firstRead->second.first << " is read with specialized type "
+      auto firstUse = firstUseByNondet.find(value);
+      assert(firstUse != firstUseByNondet.end() && "first use must be recorded");
+      diag.attachNote(firstUse->second.second)
+          << "array index " << firstUse->second.first << " is read with specialized type "
           << existing->second;
-      diag.attachNote(readOp.getLoc())
-          << "array index " << idx << " is read with specialized type " << type;
+      diag.attachNote(loc) << "array index " << idx << " is read with specialized type " << type;
       return diag;
     }
     existing->second = *commonType;
+    return success();
+  };
+  for (ReadArrayOp readOp : info.reads) {
+    ArrayAttr idx = getIndexAsAttr(readOp);
+    readIndices.insert(idx);
+    auto res = collectType(
+        info.valueByIndex.lookup(idx), info.typeByIndex.lookup(idx), idx, readOp.getLoc()
+    );
+    if (failed(res)) {
+      return failure();
+    }
+  }
+  for (MemberWriteOp memberWriteOp : info.memberWrites) {
+    auto memberDef = memberWriteOp.getMemberDefOp(tables);
+    if (failed(memberDef)) {
+      return failure();
+    }
+    for (const auto &[idx, type] : splitTypesByMember.lookup(memberDef->get())) {
+      if (!readIndices.contains(idx)) {
+        continue;
+      }
+      if (failed(collectType(info.valueByIndex.lookup(idx), type, idx, memberWriteOp.getLoc()))) {
+        return failure();
+      }
+    }
   }
   return success();
 }
@@ -3248,6 +3272,13 @@ static FailureOr<Value> buildReadReplacementValue(
           replacementValue.getType(), replacementType, tracker, "buildReadReplacementValue"
       )) {
     return failure();
+  }
+  if (replacementValue.getDefiningOp<NonDetOp>()) {
+    // A generic read can require the shared witness refinement solely because another candidate
+    // contributes a concrete type for the same split-member index.
+    if (Value cachedNondet = specializedNondetBySource.lookup(replacementValue)) {
+      return cachedNondet;
+    }
   }
   if (replacementValue.getType() == replacementType) {
     return replacementValue;
@@ -3378,7 +3409,9 @@ static LogicalResult rewriteLocalArray(
   }
 
   DenseMap<Value, Type> specializedTypeByNondet;
-  if (failed(collectSharedNondetSpecializationTypes(info, tracker, specializedTypeByNondet))) {
+  if (failed(collectSharedNondetSpecializationTypes(
+          info, tracker, splitTypesByMember, tables, specializedTypeByNondet
+      ))) {
     return failure();
   }
   DenseMap<Value, Value> specializedNondetBySource;
@@ -4333,20 +4366,24 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   if (failed(verifySplitMemberWritesExpandable(arraysToScalarize, tables, tracker))) {
     return failure();
   }
+  auto collectRes = collectSplitTypesByMember(
+      arraysToScalarize, tables, splitIndicesByMember, splitTypesByMember, tracker
+  );
+  if (failed(collectRes) ||
+      failed(verifySplitMemberReadsRewritable(modOp, splitTypesByMember, tables, tracker))) {
+    return failure();
+  }
   for (const ScalarizedArrayInfo &info : arraysToScalarize) {
     DenseMap<Value, Type> specializedTypeByNondet;
-    if (failed(collectSharedNondetSpecializationTypes(info, tracker, specializedTypeByNondet))) {
+    auto res = collectSharedNondetSpecializationTypes(
+        info, tracker, splitTypesByMember, tables, specializedTypeByNondet
+    );
+    if (failed(res)) {
       return failure();
     }
     if (failed(verifySharedNondetSpecializationExternalUses(info, specializedTypeByNondet))) {
       return failure();
     }
-  }
-  if (failed(collectSplitTypesByMember(
-          arraysToScalarize, tables, splitIndicesByMember, splitTypesByMember, tracker
-      )) ||
-      failed(verifySplitMemberReadsRewritable(modOp, splitTypesByMember, tables, tracker))) {
-    return failure();
   }
 
   DenseMap<MemberDefOp, SplitMemberInfo> splitMembers;
