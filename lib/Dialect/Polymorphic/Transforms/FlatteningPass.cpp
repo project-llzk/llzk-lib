@@ -3090,7 +3090,7 @@ static LogicalResult refreshValuesFromDependentCandidates(
 /// so materialize a cast when a concrete consumer needs the refined per-index type.
 static FailureOr<Value> buildReadReplacementValue(
     ReadArrayOp readOp, const ScalarizedArrayInfo &info, PatternRewriter &rewriter,
-    const ConversionTracker &tracker
+    const ConversionTracker &tracker, DenseMap<ArrayAttr, Value> &specializedNondetByIndex
 ) {
   ArrayAttr idx = getIndexAsAttr(readOp);
   if (!idx) {
@@ -3113,9 +3113,15 @@ static FailureOr<Value> buildReadReplacementValue(
   OpBuilder::InsertionGuard guard(rewriter);
   rewriter.setInsertionPoint(readOp);
   if (replacementValue.getDefiningOp<NonDetOp>()) {
-    // A generic nondet initializer can be specialized per read index without changing program
-    // semantics because each index already denotes an unconstrained value.
-    return rewriter.create<NonDetOp>(readOp.getLoc(), replacementType).getResult();
+    // A generic nondet initializer can be specialized per stored index, but repeated reads of
+    // that index must continue to observe the same witness.
+    if (Value cachedNondet = specializedNondetByIndex.lookup(idx)) {
+      return cachedNondet;
+    }
+    Value specializedNondet =
+        rewriter.create<NonDetOp>(readOp.getLoc(), replacementType).getResult();
+    specializedNondetByIndex[idx] = specializedNondet;
+    return specializedNondet;
   }
   if (!typesUnify(replacementValue.getType(), replacementType)) {
     return failure();
@@ -3218,6 +3224,7 @@ static LogicalResult rewriteLocalArray(
     return failure();
   }
 
+  DenseMap<ArrayAttr, Value> specializedNondetByIndex;
   for (ReadArrayOp readOp : llvm::make_early_inc_range(info.reads)) {
     ArrayAttr idx = getIndexAsAttr(readOp);
     if (!canReplaceReadResultWithType(
@@ -3225,7 +3232,8 @@ static LogicalResult rewriteLocalArray(
         )) {
       return failure();
     }
-    FailureOr<Value> replacementValue = buildReadReplacementValue(readOp, info, rewriter, tracker);
+    FailureOr<Value> replacementValue =
+        buildReadReplacementValue(readOp, info, rewriter, tracker, specializedNondetByIndex);
     if (failed(replacementValue)) {
       return failure();
     }

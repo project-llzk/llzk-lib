@@ -29,6 +29,7 @@ module attributes {llzk.lang} {
 
   function.def @use_inline_read_only_init() attributes {function.allow_witness} {
     %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
 
     // Build an inline initializer whose stored SSA values stay generic while each element type
     // specializes per static index during scalarization.
@@ -36,13 +37,16 @@ module attributes {llzk.lang} {
     %generic1 = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
     %local = array.new %generic0, %generic1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
 
-    // Regression: if scalarization replaces this read with %generic0 directly, the write below is
-    // ill-typed. The replacement must preserve the concrete index-specialized type.
-    %picked = array.read %local[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-    %sink = array.new : !array.type<1 x !struct.type<@TCell::@Cell<[0]>>>
-    array.write %sink[%c0] = %picked : !array.type<1 x !struct.type<@TCell::@Cell<[0]>>>, !struct.type<@TCell::@Cell<[0]>>
+    // Regression: if scalarization replaces these reads with %generic0 directly, the writes below are
+    // ill-typed. If it creates one specialized nondet per read, the original equality between repeated
+    // reads of %local[%c0] is lost. Both reads must use one concrete index-specialized replacement value.
+    %picked0 = array.read %local[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+    %picked1 = array.read %local[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+    %sink = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[0]>>>
+    array.write %sink[%c0] = %picked0 : !array.type<2 x !struct.type<@TCell::@Cell<[0]>>>, !struct.type<@TCell::@Cell<[0]>>
+    array.write %sink[%c1] = %picked1 : !array.type<2 x !struct.type<@TCell::@Cell<[0]>>>, !struct.type<@TCell::@Cell<[0]>>
 
-    function.call @Any::@f(%sink) : (!array.type<1 x !struct.type<@TCell::@Cell<[0]>>>) -> !array.type<1 x !struct.type<@TCell::@Cell<[0]>>>
+    function.call @Any::@f(%sink) : (!array.type<2 x !struct.type<@TCell::@Cell<[0]>>>) -> !array.type<2 x !struct.type<@TCell::@Cell<[0]>>>
 
     function.return
   }
@@ -73,17 +77,19 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @"Any_!a<!s<@TCell_0_Cell>:1>_f"(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !array.type<1 x !struct.type<@TCell_0_Cell>>) -> !array.type<1 x !struct.type<@TCell_0_Cell>> {
-// CHECK-NEXT:      function.return %[[VAL_4]] : !array.type<1 x !struct.type<@TCell_0_Cell>>
+// CHECK-NEXT:    function.def @"Any_!a<!s<@TCell_0_Cell>:2>_f"(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !array.type<2 x !struct.type<@TCell_0_Cell>>) -> !array.type<2 x !struct.type<@TCell_0_Cell>> {
+// CHECK-NEXT:      function.return %[[VAL_4]] : !array.type<2 x !struct.type<@TCell_0_Cell>>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @use_inline_read_only_init() attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.new  : <1 x !struct.type<@TCell_0_Cell>>
-// CHECK-NEXT:      array.write %[[VAL_9]]{{\[}}%[[VAL_5]]] = %[[VAL_8]] : <1 x !struct.type<@TCell_0_Cell>>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @"Any_!a<!s<@TCell_0_Cell>:1>_f"(%[[VAL_9]]) : (!array.type<1 x !struct.type<@TCell_0_Cell>>) -> !array.type<1 x !struct.type<@TCell_0_Cell>>
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !struct.type<@TCell_0_Cell>>
+// CHECK-NEXT:      array.write %[[VAL_10]]{{\[}}%[[VAL_5]]] = %[[VAL_9]] : <2 x !struct.type<@TCell_0_Cell>>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:      array.write %[[VAL_10]]{{\[}}%[[VAL_6]]] = %[[VAL_9]] : <2 x !struct.type<@TCell_0_Cell>>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @"Any_!a<!s<@TCell_0_Cell>:2>_f"(%[[VAL_10]]) : (!array.type<2 x !struct.type<@TCell_0_Cell>>) -> !array.type<2 x !struct.type<@TCell_0_Cell>>
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
