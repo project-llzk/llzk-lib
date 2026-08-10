@@ -326,6 +326,7 @@ void SourceRefAnalysis::StorageState::recordCalleeStorageWrites(
     CallOpInterface call, FuncDefOp callee, const TranslationMap &translation
 ) {
   llvm::SmallVector<StorageWrite> translatedWrites;
+  const bool callMayBeSkipped = isInMaybeSkippedScfRegion(call.getOperation());
   callee.walk([&](Operation *op) {
     auto writes = storageWrites.find(op);
     if (writes == storageWrites.end()) {
@@ -347,10 +348,12 @@ void SourceRefAnalysis::StorageState::recordCalleeStorageWrites(
       // Unlike addresses, values may legitimately include constants. Keep such
       // sources while replacing every reference rooted in a callee argument.
       auto [value, _] = resolvedValue.replacePrefixes(translation);
-      translatedWrites.push_back(
-          {std::move(addresses), std::move(value), write.mayBeSkipped,
-           write.seedUnwrittenAlternative}
-      );
+      translatedWrites.push_back({
+          std::move(addresses),
+          std::move(value),
+          write.mayBeSkipped || callMayBeSkipped,
+          write.seedUnwrittenAlternative || callMayBeSkipped,
+      });
     }
   });
 

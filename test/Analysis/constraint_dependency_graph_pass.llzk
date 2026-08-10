@@ -460,6 +460,85 @@ module attributes {llzk.lang} {
 // INTRA-LABEL: @ArrayWriteRead ConstraintDependencyGraph {
 // INTRA-NEXT:     { %arg1, <felt.const: 7> }
 // INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @overwrite_called_element(%array: !array.type<1 x !felt.type>, %value: !felt.type) {
+    %idx = arith.constant 0 : index
+    array.write %array[%idx] = %value : !array.type<1 x !felt.type>, !felt.type
+    function.return
+  }
+
+  struct.def @ConditionalCallStorageEffects {
+    struct.member @if_out : !felt.type {llzk.pub}
+
+    function.def @compute(%old: !felt.type, %new: !felt.type, %cond: i1) -> !struct.type<@ConditionalCallStorageEffects> {
+      %self = struct.new : !struct.type<@ConditionalCallStorageEffects>
+      function.return %self : !struct.type<@ConditionalCallStorageEffects>
+    }
+
+    function.def @constrain(%self: !struct.type<@ConditionalCallStorageEffects>, %old: !felt.type, %new: !felt.type, %cond: i1) {
+      %if_expected = struct.readm %self[@if_out] : !struct.type<@ConditionalCallStorageEffects>, !felt.type
+      %idx = arith.constant 0 : index
+
+      %if_array = array.new %old : !array.type<1 x !felt.type>
+      scf.if %cond {
+        function.call @overwrite_called_element(%if_array, %new) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      }
+      %if_actual = array.read %if_array[%idx] : !array.type<1 x !felt.type>, !felt.type
+      constrain.eq %if_expected, %if_actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ConditionalCallStorageEffects ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.if_out, %arg1, %arg2 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @ConditionalCallStorageEffects ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.if_out, %arg1, %arg2 }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @overwrite_called_element(%array: !array.type<1 x !felt.type>, %value: !felt.type) {
+    %idx = arith.constant 0 : index
+    array.write %array[%idx] = %value : !array.type<1 x !felt.type>, !felt.type
+    function.return
+  }
+
+  struct.def @LoopCallStorageEffects {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%old: !felt.type, %new: !felt.type, %ub: index) -> !struct.type<@LoopCallStorageEffects> {
+      %self = struct.new : !struct.type<@LoopCallStorageEffects>
+      function.return %self : !struct.type<@LoopCallStorageEffects>
+    }
+
+    function.def @constrain(%self: !struct.type<@LoopCallStorageEffects>, %old: !felt.type, %new: !felt.type, %ub: index) {
+      %expected = struct.readm %self[@out] : !struct.type<@LoopCallStorageEffects>, !felt.type
+      %idx = arith.constant 0 : index
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %array = array.new %old : !array.type<1 x !felt.type>
+      scf.for %i = %c0 to %ub step %c1 {
+        function.call @overwrite_called_element(%array, %new) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      }
+      %actual = array.read %array[%idx] : !array.type<1 x !felt.type>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @LoopCallStorageEffects ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg1, %arg2 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @LoopCallStorageEffects ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg1, %arg2 }
+// INTRA-NEXT: }
 // -----
 
 module attributes {llzk.lang} {
