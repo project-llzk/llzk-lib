@@ -105,7 +105,8 @@ public:
   /// Record a storage write for later dependency queries.
   void recordStorageWrite(
       Operation *op, size_t writeIndex, const SourceRefLatticeValue &addresses,
-      const SourceRefLatticeValue &value, bool mayBeSkipped = false
+      const SourceRefLatticeValue &value, bool mayBeSkipped = false,
+      bool seedUnwrittenAlternative = false
   );
 
   /// Rebase an allocation/call result to the aggregate storage receiving it.
@@ -126,12 +127,18 @@ private:
     SourceRefLatticeValue addresses;
     SourceRefLatticeValue value;
     bool mayBeSkipped;
+    bool seedUnwrittenAlternative;
   };
 
   struct AggregateAlias {
     SourceRefLatticeValue source;
     SourceRefLatticeValue target;
     bool mayBeSkipped;
+  };
+
+  struct MaterializedStorage {
+    llvm::DenseMap<SourceRef, SourceRefLatticeValue> values;
+    llvm::DenseSet<SourceRef> skippedFirstWrites;
   };
 
   /// Apply all known aggregate-storage aliases to a lattice value.
@@ -145,7 +152,7 @@ private:
   void applyAggregateAliases(Operation *op, TranslationMap &aliases) const;
 
   /// Materialize storage contents at `before` by replaying earlier writes in IR order.
-  llvm::DenseMap<SourceRef, SourceRefLatticeValue> materializeStoredValues(Operation *before) const;
+  MaterializedStorage materializeStoredValues(Operation *before) const;
 
   Operation *top = nullptr;
   llvm::DenseMap<Operation *, llvm::SmallVector<StorageWrite>> storageWrites;
@@ -211,8 +218,8 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveDependencies(
     const SourceRefLatticeValue &addresses, Operation *before
 ) const {
   const TranslationMap aliases = materializeAggregateAliases(before);
-  const llvm::DenseMap<SourceRef, SourceRefLatticeValue> storedValues =
-      materializeStoredValues(before);
+  const MaterializedStorage storage = materializeStoredValues(before);
+  const auto &storedValues = storage.values;
   std::function<
       SourceRefLatticeValue(const SourceRefLatticeValue &, const SourceRef &, const SourceRef &)>
       projectChild = [&](const SourceRefLatticeValue &value, const SourceRef &storedAddress,
@@ -258,7 +265,9 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveDependencies(
     SourceRefLatticeValue result;
     for (const SourceRef &address : addressValue.getScalarValue()) {
       if (!active.insert(address).second) {
-        if (addressValue.isSingleValue()) {
+        if (addressValue.isSingleValue() || storage.skippedFirstWrites.contains(address)) {
+          // A skipped first write includes its destination as the unwritten alternative. Preserve
+          // that alternative even when the write value contributes other dependencies.
           (void)result.insert(address);
         }
         continue;
@@ -301,10 +310,10 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveDependencies(
 
 void SourceRefAnalysis::StorageState::recordStorageWrite(
     Operation *op, size_t writeIndex, const SourceRefLatticeValue &addresses,
-    const SourceRefLatticeValue &value, bool mayBeSkipped
+    const SourceRefLatticeValue &value, bool mayBeSkipped, bool seedUnwrittenAlternative
 ) {
   auto &writes = storageWrites[op];
-  StorageWrite write {addresses, value, mayBeSkipped};
+  StorageWrite write {addresses, value, mayBeSkipped, seedUnwrittenAlternative};
   if (writeIndex == writes.size()) {
     writes.push_back(std::move(write));
     return;
@@ -333,7 +342,10 @@ void SourceRefAnalysis::StorageState::recordCalleeStorageWrites(
       // Unlike addresses, values may legitimately include constants. Keep such
       // sources while replacing every reference rooted in a callee argument.
       auto [value, _] = write.value.replacePrefixes(translation);
-      translatedWrites.push_back({std::move(addresses), std::move(value), write.mayBeSkipped});
+      translatedWrites.push_back(
+          {std::move(addresses), std::move(value), write.mayBeSkipped,
+           write.seedUnwrittenAlternative}
+      );
     }
   });
 
@@ -343,12 +355,13 @@ void SourceRefAnalysis::StorageState::recordCalleeStorageWrites(
   storageWrites[call.getOperation()] = std::move(translatedWrites);
 }
 
-llvm::DenseMap<SourceRef, SourceRefLatticeValue>
+SourceRefAnalysis::StorageState::MaterializedStorage
 SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) const {
   ensure(top != nullptr, "storage state must be associated with a top-level operation");
 
   TranslationMap aliases;
-  llvm::DenseMap<SourceRef, SourceRefLatticeValue> storedValues;
+  MaterializedStorage storage;
+  auto &storedValues = storage.values;
 
   auto getArrayElementAddress = [](const SourceRef &root, size_t flatIndex) {
     auto arrayType = llvm::dyn_cast<ArrayType>(root.getType());
@@ -366,11 +379,19 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
     return address;
   };
 
-  auto applyWrite =
-      [&storedValues](const SourceRef &address, const SourceRefLatticeValue &value, bool maySkip) {
-    auto [it, inserted] = storedValues.try_emplace(address, value);
-    if (inserted && maySkip) {
-      (void)it->second.insert(address);
+  auto applyWrite = [&storage, &storedValues](
+                        const SourceRef &address, const SourceRefLatticeValue &value, bool maySkip,
+                        bool seedUnwrittenAlternative
+                    ) {
+    // A skipped first write can leave the storage unwritten. Seed the stored state with both
+    // alternatives so reads retain the address dependency along that path.
+    SourceRefLatticeValue initialValue = value;
+    if (seedUnwrittenAlternative) {
+      (void)initialValue.insert(address);
+    }
+    auto [it, inserted] = storedValues.try_emplace(address, std::move(initialValue));
+    if (inserted && seedUnwrittenAlternative) {
+      storage.skippedFirstWrites.insert(address);
     }
     if (!inserted) {
       if (maySkip) {
@@ -381,15 +402,17 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
     }
   };
 
-  std::function<void(const SourceRef &, const SourceRefLatticeValue &, bool)> materializeWrite =
-      [&](const SourceRef &address, const SourceRefLatticeValue &value, bool maySkip) {
+  std::function<void(const SourceRef &, const SourceRefLatticeValue &, bool, bool)>
+      materializeWrite = [&](const SourceRef &address, const SourceRefLatticeValue &value,
+                             bool maySkip, bool seedUnwrittenAlternative) {
     SourceRefLatticeValue canonicalValue = canonicalize(value, aliases);
     auto arrayType = llvm::dyn_cast<ArrayType>(address.getType());
     if (canonicalValue.isArray() && arrayType && arrayType.hasStaticShape() &&
         std::cmp_equal(canonicalValue.getArraySize(), arrayType.getNumElements())) {
       for (size_t i = 0; i < canonicalValue.getArraySize(); ++i) {
         materializeWrite(
-            getArrayElementAddress(address, i), canonicalValue.getElemFlatIdx(i), maySkip
+            getArrayElementAddress(address, i), canonicalValue.getElemFlatIdx(i), maySkip,
+            seedUnwrittenAlternative
         );
       }
       return;
@@ -405,7 +428,7 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
         }
       }
     }
-    applyWrite(address, canonicalValue, maySkip);
+    applyWrite(address, canonicalValue, maySkip, seedUnwrittenAlternative);
   };
 
   (void)top->walk([&](Operation *op) {
@@ -440,7 +463,10 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
         for (const SourceRef &target : targets.foldToScalar()) {
           auto rebasedAddress = address.translate(source, target);
           if (succeeded(rebasedAddress)) {
-            materializeWrite(*rebasedAddress, value, mayBeSkipped);
+            materializeWrite(
+                *rebasedAddress, value, mayBeSkipped,
+                /*seedUnwrittenAlternative=*/false
+            );
           }
         }
       }
@@ -450,29 +476,33 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
     if (writes == storageWrites.end()) {
       return WalkResult::advance();
     }
-    std::function<void(const SourceRefLatticeValue &, const SourceRefLatticeValue &, bool)>
+    std::function<void(const SourceRefLatticeValue &, const SourceRefLatticeValue &, bool, bool)>
         materializeAddressedWrite = [&](const SourceRefLatticeValue &addresses,
-                                        const SourceRefLatticeValue &value, bool maySkip) {
+                                        const SourceRefLatticeValue &value, bool maySkip,
+                                        bool seedUnwrittenAlternative) {
       SourceRefLatticeValue canonicalAddresses = canonicalize(addresses, aliases);
       if (canonicalAddresses.isArray() && value.isArray() &&
           canonicalAddresses.getArraySize() == value.getArraySize()) {
         for (size_t i = 0; i < canonicalAddresses.getArraySize(); ++i) {
           materializeAddressedWrite(
-              canonicalAddresses.getElemFlatIdx(i), value.getElemFlatIdx(i), maySkip
+              canonicalAddresses.getElemFlatIdx(i), value.getElemFlatIdx(i), maySkip,
+              seedUnwrittenAlternative
           );
         }
         return;
       }
       for (const SourceRef &address : canonicalAddresses.foldToScalar()) {
-        materializeWrite(address, value, maySkip);
+        materializeWrite(address, value, maySkip, seedUnwrittenAlternative);
       }
     };
     for (const StorageWrite &write : writes->second) {
-      materializeAddressedWrite(write.addresses, write.value, write.mayBeSkipped);
+      materializeAddressedWrite(
+          write.addresses, write.value, write.mayBeSkipped, write.seedUnwrittenAlternative
+      );
     }
     return WalkResult::advance();
   });
-  return storedValues;
+  return storage;
 }
 
 void SourceRefAnalysis::StorageState::recordAggregateAlias(
@@ -685,7 +715,8 @@ LogicalResult SourceRefAnalysis::visitOperation(
       if (llvm::isa<ArrayType, StructType, PodType>(writeOp.getVal().getType())) {
         const bool mayBeSkipped = isInMaybeSkippedScfRegion(op);
         getStorageState(op)->recordStorageWrite(
-            op, /*writeIndex=*/0, memberVals, writeValue, mayBeSkipped
+            op, /*writeIndex=*/0, memberVals, writeValue, mayBeSkipped,
+            /*seedUnwrittenAlternative=*/mayBeSkipped
         );
         getStorageState(op)->recordAggregateAlias(
             op, /*aliasIndex=*/0, writeValue, memberVals, mayBeSkipped
@@ -709,7 +740,8 @@ LogicalResult SourceRefAnalysis::visitOperation(
       SourceRefLatticeValue writeValue = operandVals.at(writeOp.getValue())->getValue();
       const bool mayBeSkipped = isInMaybeSkippedScfRegion(op);
       getStorageState(op)->recordStorageWrite(
-          op, /*writeIndex=*/0, podVals, writeValue, mayBeSkipped
+          op, /*writeIndex=*/0, podVals, writeValue, mayBeSkipped,
+          /*seedUnwrittenAlternative=*/mayBeSkipped
       );
       if (llvm::isa<ArrayType, StructType, PodType>(writeOp.getValue().getType())) {
         getStorageState(op)->recordAggregateAlias(
@@ -728,7 +760,8 @@ LogicalResult SourceRefAnalysis::visitOperation(
       const bool mayBeSkipped =
           isInMaybeSkippedScfRegion(op) || isNonSingletonArrayWriteTarget(writeTargets);
       getStorageState(op)->recordStorageWrite(
-          op, /*writeIndex=*/0, writeTargets, writeValue, mayBeSkipped
+          op, /*writeIndex=*/0, writeTargets, writeValue, mayBeSkipped,
+          /*seedUnwrittenAlternative=*/mayBeSkipped
       );
       if (llvm::isa<ArrayType, StructType, PodType>(rvalue.getType())) {
         getStorageState(op)->recordAggregateAlias(

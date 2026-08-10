@@ -851,6 +851,71 @@ module attributes {llzk.lang} {
   );
 }
 
+TEST_F(SourceRefTests, SkippedFirstStorageWritesPreserveUnwrittenDependencies) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @SkippedFirstStorageWrites {
+    function.def @compute(%podValue: !felt.type, %arrayValue: !felt.type)
+        -> !struct.type<@SkippedFirstStorageWrites> {
+      %self = struct.new : !struct.type<@SkippedFirstStorageWrites>
+      %pod = pod.new : !pod.type<[@value: !felt.type]>
+      %array = array.new : !array.type<1 x !felt.type>
+      %c0 = arith.constant 0 : index
+      %condition = arith.constant true
+      scf.if %condition {
+        pod.write %pod[@value] = %podValue
+            : !pod.type<[@value: !felt.type]>, !felt.type
+        array.write %array[%c0] = %arrayValue
+            : !array.type<1 x !felt.type>, !felt.type
+      }
+      %podRead = pod.read %pod[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %arrayRead = array.read %array[%c0] : !array.type<1 x !felt.type>, !felt.type
+      function.return %self : !struct.type<@SkippedFirstStorageWrites>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@SkippedFirstStorageWrites>, %podValue: !felt.type,
+        %arrayValue: !felt.type
+    ) {
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto pod = *computeFn.getOps<pod::NewPodOp>().begin();
+  auto array = *computeFn.getOps<array::CreateArrayOp>().begin();
+  llvm::SmallVector<pod::ReadPodOp> podReads;
+  llvm::SmallVector<array::ReadArrayOp> arrayReads;
+  computeFn.walk([&](pod::ReadPodOp op) { podReads.push_back(op); });
+  computeFn.walk([&](array::ReadArrayOp op) { arrayReads.push_back(op); });
+  ASSERT_EQ(podReads.size(), 1U);
+  ASSERT_EQ(arrayReads.size(), 1U);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  analysis.ensureAnalysisRun(am);
+  DataFlowSolver &solver = analysis.getSolver();
+
+  SourceRef podAddress(
+      mlir::cast<OpResult>(pod.getResult()), {SourceRefIndex(StringAttr::get(&ctx, "value"))}
+  );
+  SourceRef arrayAddress(mlir::cast<OpResult>(array.getResult()), {SourceRefIndex(APInt(64, 0))});
+  EXPECT_EQ(
+      SourceRefAnalysis::getDependencyState(solver, podReads.front().getResult()).foldToScalar(),
+      SourceRefSet({podAddress, SourceRef(computeFn.getArgument(0))})
+  );
+  EXPECT_EQ(
+      SourceRefAnalysis::getDependencyState(solver, arrayReads.front().getResult()).foldToScalar(),
+      SourceRefSet({arrayAddress, SourceRef(computeFn.getArgument(1))})
+  );
+}
+
 TEST_F(SourceRefTests, DynamicArrayWritesPreserveEarlierStorageDependencies) {
   static constexpr auto source = R"mlir(
 module attributes {llzk.lang} {
