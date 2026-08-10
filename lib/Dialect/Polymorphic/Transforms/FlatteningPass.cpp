@@ -3309,9 +3309,13 @@ static LogicalResult rewriteLocalArray(
 
     DenseSet<Value> generatedMaterializations;
     Location memberWriteLoc = memberWriteOp.getLoc();
-    auto getScalarValue = [&info, &generatedMaterializations, memberWriteLoc, &rewriter,
-                           &tracker](ArrayAttr idx, Type type) -> FailureOr<Value> {
+    auto getScalarValue = [&](ArrayAttr idx, Type type) -> FailureOr<Value> {
       if (Value scalarValue = info.valueByIndex.lookup(idx)) {
+        // Reads of a generic initializer materialize one refined witness. Reuse it for the
+        // corresponding split-member write so both uses retain the original array equality.
+        if (Value specializedNondet = specializedNondetBySource.lookup(scalarValue)) {
+          return specializedNondet;
+        }
         return scalarValue;
       }
       return getOrCreateScalarizedLocalArrayValue(
