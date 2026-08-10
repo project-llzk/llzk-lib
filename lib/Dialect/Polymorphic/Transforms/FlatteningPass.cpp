@@ -3084,6 +3084,32 @@ static LogicalResult refreshValuesFromDependentCandidates(
   return failure();
 }
 
+/// Verify that refreshing dependent candidates did not invalidate a direct read replacement.
+///
+/// A candidate can cache a generic read from another candidate as the value for one of its
+/// indices. Refreshing the cache replaces that generic value and type with the upstream
+/// candidate's concrete scalar value. Recheck all local reads before any candidates are rewritten
+/// so an incompatible replacement cannot fail after earlier candidates have been erased.
+static LogicalResult verifyRefreshedCandidateReads(
+    ArrayRef<ScalarizedArrayInfo> arraysToScalarize, const ConversionTracker &tracker
+) {
+  for (const ScalarizedArrayInfo &info : arraysToScalarize) {
+    for (ReadArrayOp readOp : info.reads) {
+      ArrayAttr idx = getIndexAsAttr(readOp);
+      if (!idx) {
+        return failure();
+      }
+      bool canReplace = canReplaceReadResultWithType(
+          readOp, info.typeByIndex.lookup(idx), tracker, "verifyRefreshedCandidateReads"
+      );
+      if (!canReplace) {
+        return failure();
+      }
+    }
+  }
+  return success();
+}
+
 /// Collect the common specialized type required for each shared nondeterministic initializer.
 ///
 /// An inline initializer can store the same generic witness at multiple array indices.  Replacing
@@ -4281,6 +4307,9 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   auto refreshRes =
       refreshValuesFromDependentCandidates(arraysToScalarize, candidateInfoByCreateOp, tracker);
   if (failed(refreshRes)) {
+    return failure();
+  }
+  if (failed(verifyRefreshedCandidateReads(arraysToScalarize, tracker))) {
     return failure();
   }
   if (failed(verifySplitMemberWritesExpandable(arraysToScalarize, tables, tracker))) {
