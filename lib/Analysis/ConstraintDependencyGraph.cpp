@@ -136,9 +136,11 @@ private:
   /// Materialize aliases established before `before` in program order.
   TranslationMap materializeAggregateAliases(Operation *before) const;
 
+  /// Apply aggregate aliases recorded for `op` to `aliases`.
+  void applyAggregateAliases(Operation *op, TranslationMap &aliases) const;
+
   /// Materialize storage contents at `before` by replaying earlier writes in IR order.
-  llvm::DenseMap<SourceRef, SourceRefLatticeValue>
-  materializeStoredValues(Operation *before, const TranslationMap &aliases) const;
+  llvm::DenseMap<SourceRef, SourceRefLatticeValue> materializeStoredValues(Operation *before) const;
 
   Operation *top = nullptr;
   llvm::DenseMap<Operation *, llvm::SmallVector<StorageWrite>> storageWrites;
@@ -205,7 +207,7 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveDependencies(
 ) const {
   const TranslationMap aliases = materializeAggregateAliases(before);
   const llvm::DenseMap<SourceRef, SourceRefLatticeValue> storedValues =
-      materializeStoredValues(before, aliases);
+      materializeStoredValues(before);
   std::function<
       SourceRefLatticeValue(const SourceRefLatticeValue &, const SourceRef &, const SourceRef &)>
       projectChild = [&](const SourceRefLatticeValue &value, const SourceRef &storedAddress,
@@ -307,11 +309,11 @@ void SourceRefAnalysis::StorageState::recordStorageWrite(
 }
 
 llvm::DenseMap<SourceRef, SourceRefLatticeValue>
-SourceRefAnalysis::StorageState::materializeStoredValues(
-    Operation *before, const TranslationMap &aliases
-) const {
-  llvm::DenseMap<SourceRef, SourceRefLatticeValue> storedValues;
+SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) const {
   ensure(top != nullptr, "storage state must be associated with a top-level operation");
+
+  TranslationMap aliases;
+  llvm::DenseMap<SourceRef, SourceRefLatticeValue> storedValues;
 
   auto getArrayElementAddress = [](const SourceRef &root, size_t flatIndex) {
     auto arrayType = llvm::dyn_cast<ArrayType>(root.getType());
@@ -375,6 +377,40 @@ SourceRefAnalysis::StorageState::materializeStoredValues(
     if (op == before) {
       return WalkResult::interrupt();
     }
+
+    llvm::DenseSet<SourceRef> priorAliasSources;
+    for (const auto &[source, _] : aliases) {
+      priorAliasSources.insert(source);
+    }
+    applyAggregateAliases(op, aliases);
+
+    // An aggregate assignment transfers the source's current contents to its new storage
+    // location. Rebase only aliases introduced by this operation: applying the complete alias
+    // map here would incorrectly move older writes in response to later assignments.
+    llvm::SmallVector<std::pair<SourceRef, SourceRefLatticeValue>> newAliases;
+    for (const auto &[source, targets] : aliases) {
+      if (!priorAliasSources.contains(source)) {
+        newAliases.emplace_back(source, targets);
+      }
+    }
+    for (const auto &[source, targets] : newAliases) {
+      const bool mayBeSkipped = targets.isScalar() && targets.getScalarValue().contains(source);
+      llvm::SmallVector<std::pair<SourceRef, SourceRefLatticeValue>> sourceContents;
+      for (const auto &[address, value] : storedValues) {
+        if (address.isValidPrefix(source)) {
+          sourceContents.emplace_back(address, value);
+        }
+      }
+      for (const auto &[address, value] : sourceContents) {
+        for (const SourceRef &target : targets.foldToScalar()) {
+          auto rebasedAddress = address.translate(source, target);
+          if (succeeded(rebasedAddress)) {
+            materializeWrite(*rebasedAddress, value, mayBeSkipped);
+          }
+        }
+      }
+    }
+
     auto writes = storageWrites.find(op);
     if (writes == storageWrites.end()) {
       return WalkResult::advance();
@@ -420,9 +456,22 @@ void SourceRefAnalysis::StorageState::recordAggregateAlias(
 
 TranslationMap
 SourceRefAnalysis::StorageState::materializeAggregateAliases(Operation *before) const {
-  TranslationMap aliases;
   ensure(top != nullptr, "storage state must be associated with a top-level operation");
 
+  TranslationMap aliases;
+  (void)top->walk([&](Operation *op) {
+    if (op == before) {
+      return WalkResult::interrupt();
+    }
+    applyAggregateAliases(op, aliases);
+    return WalkResult::advance();
+  });
+  return aliases;
+}
+
+void SourceRefAnalysis::StorageState::applyAggregateAliases(
+    Operation *op, TranslationMap &aliases
+) const {
   auto getArrayElementTarget = [](const SourceRef &root, size_t flatIndex) {
     auto arrayType = llvm::dyn_cast<ArrayType>(root.getType());
     ensure(arrayType && arrayType.hasStaticShape(), "array alias target requires static shape");
@@ -485,19 +534,12 @@ SourceRefAnalysis::StorageState::materializeAggregateAliases(Operation *before) 
     }
   };
 
-  (void)top->walk([&](Operation *op) {
-    if (op == before) {
-      return WalkResult::interrupt();
+  auto events = aggregateAliases.find(op);
+  if (events != aggregateAliases.end()) {
+    for (const AggregateAlias &event : events->second) {
+      addAlias(event.source, event.target, event.mayBeSkipped);
     }
-    auto events = aggregateAliases.find(op);
-    if (events != aggregateAliases.end()) {
-      for (const AggregateAlias &event : events->second) {
-        addAlias(event.source, event.target, event.mayBeSkipped);
-      }
-    }
-    return WalkResult::advance();
-  });
-  return aliases;
+  }
 }
 
 mlir::FailureOr<SourceRefLatticeValue>

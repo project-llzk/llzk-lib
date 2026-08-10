@@ -560,6 +560,56 @@ module attributes {llzk.lang} {
   );
 }
 
+TEST_F(SourceRefTests, AggregateAliasesRebaseStorageOnlyFromTheirAssignmentPoint) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @OrderedAggregateAliases {
+    function.def @compute(%aValue: !felt.type, %bValue: !felt.type)
+        -> !struct.type<@OrderedAggregateAliases> {
+      %self = struct.new : !struct.type<@OrderedAggregateAliases>
+      %b = pod.new { @value = %bValue } : !pod.type<[@value: !felt.type]>
+      %a = pod.new { @value = %aValue } : !pod.type<[@value: !felt.type]>
+      %holder = pod.new { @nested = %a }
+          : !pod.type<[@nested: !pod.type<[@value: !felt.type]>]>
+      pod.write %holder[@nested] = %b
+          : !pod.type<[@nested: !pod.type<[@value: !felt.type]>]>,
+            !pod.type<[@value: !felt.type]>
+      %nested = pod.read %holder[@nested]
+          : !pod.type<[@nested: !pod.type<[@value: !felt.type]>]>,
+            !pod.type<[@value: !felt.type]>
+      %read = pod.read %nested[@value]
+          : !pod.type<[@value: !felt.type]>, !felt.type
+      function.return %self : !struct.type<@OrderedAggregateAliases>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@OrderedAggregateAliases>, %aValue: !felt.type, %bValue: !felt.type
+    ) {
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto reads = llvm::to_vector(computeFn.getOps<pod::ReadPodOp>());
+  ASSERT_EQ(reads.size(), 2U);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  analysis.ensureAnalysisRun(am);
+
+  EXPECT_EQ(
+      SourceRefAnalysis::getDependencyState(analysis.getSolver(), reads[1].getResult())
+          .foldToScalar(),
+      SourceRefSet({SourceRef(computeFn.getArgument(1))})
+  );
+}
+
 TEST_F(SourceRefTests, StorageReadsResolveAtTheirProgramPoint) {
   static constexpr auto source = R"mlir(
 module attributes {llzk.lang} {
