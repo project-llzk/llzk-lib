@@ -11,7 +11,10 @@
 
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/Support/Allocator.h>
+#include <llvm/Support/Debug.h>
 #include <llvm/Support/raw_ostream.h>
+
+#define DEBUG_TYPE "sexp"
 
 namespace pcl {
 class SexpCtx;
@@ -69,6 +72,7 @@ public:
 // This is a known GCC issue: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=109224
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmismatched-new-delete"
+    LLVM_DEBUG({ llvm::dbgs() << "[Sexp] Creating atom with value: " << val << '\n'; });
     return Sexp(new (allocator) detail::Atom<T>(std::move(val)));
 #pragma GCC diagnostic pop
   }
@@ -114,4 +118,7 @@ public:
 
 } // namespace pcl
 
-llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const pcl::Sexp &sexp);
+namespace llvm {
+raw_ostream &operator<<(raw_ostream &os, const pcl::Sexp &sexp);
+}
+#undef DEBUG_TYPE

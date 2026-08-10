@@ -9,6 +9,10 @@
 
 #include "Sexp.h"
 
+#include <llvm/ADT/STLExtras.h>
+
+#define DEBUG_TYPE "sexp"
+
 namespace pcl {
 
 namespace detail {
@@ -36,6 +40,12 @@ Sexp Sexp::withSquareBrackets() {
 }
 
 Sexp SexpCtx::sexp(llvm::ArrayRef<Sexp> elements) {
+  LLVM_DEBUG({
+    llvm::dbgs() << "[Sexp] Creating s-expression with elements: ";
+    llvm::interleaveComma(elements, llvm::dbgs());
+    llvm::dbgs() << '\n';
+  });
+
   static_assert(sizeof(Sexp) == sizeof(detail::SexpElt *));
   detail::SexpElt **buf = allocator.Allocate<detail::SexpElt *>(elements.size());
   memcpy(
@@ -49,7 +59,7 @@ Sexp SexpCtx::sexp(llvm::ArrayRef<Sexp> elements) {
 }
 } // namespace pcl
 
-llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const pcl::Sexp &sexp) {
+llvm::raw_ostream &llvm::operator<<(llvm::raw_ostream &os, const pcl::Sexp &sexp) {
   sexp.print(os);
   return os;
 }

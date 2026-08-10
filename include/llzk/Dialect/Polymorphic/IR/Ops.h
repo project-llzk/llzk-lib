@@ -37,7 +37,7 @@ template <typename OpT>
 concept TemplateSymbolBindingOp =
     std::is_same_v<OpT, TemplateSymbolBindingOpInterface> ||
     std::is_base_of_v<TemplateSymbolBindingOpInterface::Trait<OpT>, OpT>;
-}
+} // namespace llzk::polymorphic
 
 // Include TableGen'd declarations
 #define GET_OP_CLASSES
