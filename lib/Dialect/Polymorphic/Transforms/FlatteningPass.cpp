@@ -3649,6 +3649,32 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
         scalarValue.getType(), targetType, tracker, "verifyNoSharedValuesForIncompatibleSplitTypes"
     );
   };
+  auto verifyExternalMemberWriteUses = [&](Value scalarValue, ArrayAttr idx, Type targetType,
+                                           Location targetLoc) -> LogicalResult {
+    for (OpOperand &use : scalarValue.getUses()) {
+      auto externalWrite = llvm::dyn_cast<MemberWriteOp>(use.getOwner());
+      if (!externalWrite || externalWrite.getVal() != use.get()) {
+        continue;
+      }
+      auto memberDef = externalWrite.getMemberDefOp(tables);
+      if (failed(memberDef)) {
+        return failure();
+      }
+      Type externalType = memberDef->get().getType();
+      if (succeeded(getCommonRefinedType(externalType, targetType, tracker))) {
+        continue;
+      }
+
+      InFlightDiagnostic diag =
+          createOp.emitError("cannot split heterogeneous array member because ")
+          << arrayDescription << " reuses one SSA value for incompatible scalar member types";
+      diag.attachNote(externalWrite.getLoc()) << "value is used for member type " << externalType;
+      diag.attachNote(targetLoc) << "same value is also used for array index " << idx
+                                 << " scalar member type " << targetType;
+      return diag;
+    }
+    return success();
+  };
   auto noteMaterializedUse = [&](ArrayAttr idx, Type targetType, Location loc,
                                  StringRef description,
                                  StringRef indexDescription) -> LogicalResult {
@@ -3746,10 +3772,15 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
             << "same index is written to scalar member type " << targetType;
         return diag;
       }
-      auto res = noteMaterializedUse(
+      auto verifyWritesRes =
+          verifyExternalMemberWriteUses(scalarValue, idx, targetType, memberWriteOp.getLoc());
+      if (failed(verifyWritesRes)) {
+        return failure();
+      }
+      auto noteMaterializedUseRes = noteMaterializedUse(
           idx, targetType, memberWriteOp.getLoc(), "scalar member type", "array index"
       );
-      if (failed(res)) {
+      if (failed(noteMaterializedUseRes)) {
         return failure();
       }
       if (existing == firstUseByValue.end()) {
