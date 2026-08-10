@@ -3154,16 +3154,10 @@ static LogicalResult collectSharedNondetSpecializationTypes(
   return success();
 }
 
-/// Materialize each refined witness once and redirect compatible external observations to it.
-///
-/// A static array read determines the concrete type of its source witness. Struct constraint calls
-/// observing that source can use the same concrete witness after their callee is redirected to the
-/// corresponding instantiated struct definition.
-static LogicalResult materializeSharedNondetSpecializations(
-    const ScalarizedArrayInfo &info, const DenseMap<Value, Type> &specializedTypeByNondet,
-    PatternRewriter &rewriter, DenseMap<Value, Value> &specializedNondetBySource
+/// Verify that each shared witness can be specialized without changing external observations.
+static LogicalResult verifySharedNondetSpecializationExternalUses(
+    const ScalarizedArrayInfo &info, const DenseMap<Value, Type> &specializedTypeByNondet
 ) {
-  DenseMap<Value, SmallVector<CallOp>> externalCallsBySource;
   for (const auto &[source, type] : specializedTypeByNondet) {
     for (OpOperand &use : source.getUses()) {
       if (use.getOwner() == info.createOp) {
@@ -3179,7 +3173,31 @@ static LogicalResult materializeSharedNondetSpecializations(
         diag.attachNote(use.getOwner()->getLoc()) << "source witness is also used here";
         return diag;
       }
-      externalCallsBySource[source].push_back(call);
+    }
+  }
+  return success();
+}
+
+/// Materialize each refined witness once and redirect compatible external observations to it.
+///
+/// A static array read determines the concrete type of its source witness. Struct constraint calls
+/// observing that source can use the same concrete witness after their callee is redirected to the
+/// corresponding instantiated struct definition.
+static LogicalResult materializeSharedNondetSpecializations(
+    const ScalarizedArrayInfo &info, const DenseMap<Value, Type> &specializedTypeByNondet,
+    PatternRewriter &rewriter, DenseMap<Value, Value> &specializedNondetBySource
+) {
+  if (failed(verifySharedNondetSpecializationExternalUses(info, specializedTypeByNondet))) {
+    return failure();
+  }
+
+  DenseMap<Value, SmallVector<CallOp>> externalCallsBySource;
+  for (const auto &[source, _] : specializedTypeByNondet) {
+    for (OpOperand &use : source.getUses()) {
+      if (use.getOwner() == info.createOp) {
+        continue;
+      }
+      externalCallsBySource[source].push_back(llvm::cast<CallOp>(use.getOwner()));
     }
   }
 
@@ -4318,6 +4336,9 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   for (const ScalarizedArrayInfo &info : arraysToScalarize) {
     DenseMap<Value, Type> specializedTypeByNondet;
     if (failed(collectSharedNondetSpecializationTypes(info, tracker, specializedTypeByNondet))) {
+      return failure();
+    }
+    if (failed(verifySharedNondetSpecializationExternalUses(info, specializedTypeByNondet))) {
       return failure();
     }
   }
