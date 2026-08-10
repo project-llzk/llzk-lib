@@ -1584,6 +1584,50 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  function.def @overwrite_element(%array: !array.type<1 x !felt.type>, %value: !felt.type) {
+    %idx = arith.constant 0 : index
+    array.write %array[%idx] = %value : !array.type<1 x !felt.type>, !felt.type
+    function.return
+  }
+
+  struct.def @CallSiteStorageEffects {
+    function.def @compute(%old: !felt.type, %first: !felt.type, %second: !felt.type) -> !struct.type<@CallSiteStorageEffects> {
+      %self = struct.new : !struct.type<@CallSiteStorageEffects>
+      function.return %self : !struct.type<@CallSiteStorageEffects>
+    }
+
+    function.def @constrain(%self: !struct.type<@CallSiteStorageEffects>, %old: !felt.type, %first: !felt.type, %second: !felt.type) {
+      %array = array.new %old : !array.type<1 x !felt.type>
+      %idx = arith.constant 0 : index
+      %before = array.read %array[%idx] : !array.type<1 x !felt.type>, !felt.type
+      %old_expected = felt.const 1
+      constrain.eq %before, %old_expected : !felt.type
+      function.call @overwrite_element(%array, %first) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      %after_first = array.read %array[%idx] : !array.type<1 x !felt.type>, !felt.type
+      %first_expected = felt.const 2
+      constrain.eq %after_first, %first_expected : !felt.type
+      function.call @overwrite_element(%array, %second) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      %after_second = array.read %array[%idx] : !array.type<1 x !felt.type>, !felt.type
+      %second_expected = felt.const 3
+      constrain.eq %after_second, %second_expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @CallSiteStorageEffects ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, <felt.const: 1> },
+// CHECK-NEXT:     { %arg2, <felt.const: 2> },
+// CHECK-NEXT:     { %arg3, <felt.const: 3> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @CallSiteStorageEffects ConstraintDependencyGraph {
+// INTRA-NEXT:     { %arg1, <felt.const: 1> },
+// INTRA-NEXT:     { %arg2, <felt.const: 2> },
+// INTRA-NEXT:     { %arg3, <felt.const: 3> }
+// INTRA-NEXT: }
+// -----
+
+module attributes {llzk.lang} {
   struct.def @LoopPodAggregateAlias {
     struct.member @out : !felt.type {llzk.pub}
 

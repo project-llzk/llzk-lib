@@ -114,6 +114,11 @@ public:
       const SourceRefLatticeValue &target, bool mayBeSkipped = false
   );
 
+  /// Record the storage writes a defined callee applies at a particular call site.
+  void recordCalleeStorageWrites(
+      CallOpInterface call, FuncDefOp callee, const TranslationMap &translation
+  );
+
   void print(raw_ostream &os) const override { os << "SourceRefAnalysis::StorageState"; }
 
 private:
@@ -306,6 +311,36 @@ void SourceRefAnalysis::StorageState::recordStorageWrite(
   }
   ensure(writeIndex < writes.size(), "storage writes must be recorded in stable operation order");
   writes[writeIndex] = std::move(write);
+}
+
+void SourceRefAnalysis::StorageState::recordCalleeStorageWrites(
+    CallOpInterface call, FuncDefOp callee, const TranslationMap &translation
+) {
+  llvm::SmallVector<StorageWrite> translatedWrites;
+  callee.walk([&](Operation *op) {
+    auto writes = storageWrites.find(op);
+    if (writes == storageWrites.end()) {
+      return;
+    }
+    for (const StorageWrite &write : writes->second) {
+      // A write whose address is not rooted in a callee argument is local to the
+      // callee. `translate` drops those addresses, while retaining only effects
+      // visible to its caller.
+      auto [addresses, addressChange] = write.addresses.translate(translation);
+      if (addressChange == ChangeResult::NoChange || addresses.foldToScalar().empty()) {
+        continue;
+      }
+      // Unlike addresses, values may legitimately include constants. Keep such
+      // sources while replacing every reference rooted in a callee argument.
+      auto [value, _] = write.value.replacePrefixes(translation);
+      translatedWrites.push_back({std::move(addresses), std::move(value), write.mayBeSkipped});
+    }
+  });
+
+  // Recompute the complete summary on every solver revisit. This prevents
+  // duplicate events and lets operand lattice refinements update the call-site
+  // translation without changing its position in program order.
+  storageWrites[call.getOperation()] = std::move(translatedWrites);
 }
 
 llvm::DenseMap<SourceRef, SourceRefLatticeValue>
@@ -805,17 +840,45 @@ void SourceRefAnalysis::visitExternalCall(
     }
     return;
   }
-  if (resultLattices.empty()) {
-    // `verif.include` and other no-result call-like ops still need to be
-    // treated as valid callable edges, but there are no results to
-    // translate back to the caller.
-    return;
-  }
   // Call is to a defined function with a body, but it's treated as external so we
   // can translate the results based on the arguments.
   auto funcOpRes = resolveCallable<FuncDefOp>(tables, call);
   ensure(succeeded(funcOpRes), "could not lookup called function");
-  auto funcOp = funcOpRes->get();
+  FuncDefOp funcOp = funcOpRes->get();
+
+  std::unordered_map<SourceRef, SourceRefLatticeValue, SourceRef::Hash> translation;
+  TranslationMap storageTranslation;
+  for (unsigned i = 0; i < funcOp.getNumArguments(); i++) {
+    SourceRefLatticeValue argumentValue =
+        static_cast<const Lattice *>(operandLattices[i])->getValue();
+    const bool isAggregate =
+        llvm::isa<ArrayType, StructType, PodType>(call->getOperand(i).getType());
+    if (!isAggregate) {
+      argumentValue = getStorageState(call.getOperation())
+                          ->resolveDependencies(argumentValue, call.getOperation());
+    }
+    SourceRef argumentRef(funcOp.getArgument(i));
+    translation[argumentRef] = argumentValue;
+    // Aggregate value lattices are shaped by their elements. Storage effects,
+    // however, need the aggregate root so a callee selection is appended only
+    // once (e.g. `%arg[0]`, never `%arg[0][0]`).
+    if (isAggregate) {
+      auto storageArgumentRef = SourceRefLattice::getSourceRef(call->getOperand(i));
+      if (succeeded(storageArgumentRef)) {
+        storageTranslation[argumentRef] = SourceRefLatticeValue(*storageArgumentRef);
+      }
+    } else {
+      storageTranslation[argumentRef] = argumentValue;
+    }
+  }
+  getStorageState(call.getOperation())->recordCalleeStorageWrites(call, funcOp, storageTranslation);
+
+  if (resultLattices.empty()) {
+    // No-result calls can still mutate aggregate arguments. Their translated
+    // storage effects have been recorded above, but there are no result values
+    // to translate back to the caller.
+    return;
+  }
 
   const auto *predecessors = getOrCreateFor<mlir::dataflow::PredecessorState>(
       getProgramPointAfter(call), getProgramPointAfter(call)
@@ -827,17 +890,6 @@ void SourceRefAnalysis::visitExternalCall(
     return;
   }
   const auto returnSites = predecessors->getKnownPredecessors();
-
-  std::unordered_map<SourceRef, SourceRefLatticeValue, SourceRef::Hash> translation;
-  for (unsigned i = 0; i < funcOp.getNumArguments(); i++) {
-    SourceRefLatticeValue argumentValue =
-        static_cast<const Lattice *>(operandLattices[i])->getValue();
-    if (!llvm::isa<ArrayType, StructType, PodType>(call->getOperand(i).getType())) {
-      argumentValue = getStorageState(call.getOperation())
-                          ->resolveDependencies(argumentValue, call.getOperation());
-    }
-    translation[SourceRef(funcOp.getArgument(i))] = argumentValue;
-  }
 
   for (auto [result, resultLattice] : llvm::zip(call->getResults(), resultLattices)) {
     (void)result;
