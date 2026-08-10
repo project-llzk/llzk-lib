@@ -2344,6 +2344,16 @@ static ArrayAttr findIndexMissingFrom(ArrayRef<ArrayAttr> lhs, ArrayRef<ArrayAtt
   return it == lhs.end() ? ArrayAttr() : *it;
 }
 
+/// Append indices from `source` that are not already present in `target`.
+static void appendMissingIndices(SmallVector<ArrayAttr> &target, ArrayRef<ArrayAttr> source) {
+  DenseSet<ArrayAttr> targetSet(target.begin(), target.end());
+  for (ArrayAttr idx : source) {
+    if (targetSet.insert(idx).second) {
+      target.push_back(idx);
+    }
+  }
+}
+
 /// Replace all uses of `oldValue` without asking MLIR to enforce SSA type equality.
 ///
 /// This is intentionally narrower than `replaceAllUsesWith()`: the whole purpose of this step is to
@@ -2896,10 +2906,11 @@ getScalarizedArrayInfo(CreateArrayOp op, const ConversionTracker &tracker) {
 /// The replacement members preserve the original member's public/signal/column and discardable
 /// metadata, and rely on the containing struct's symbol table to make each generated name unique.
 static SplitMemberInfo &getOrCreateSplitMemberInfo(
-    MemberDefOp member, const ScalarizedArrayInfo &arrayInfo,
+    MemberDefOp member, ScalarizedArrayInfo &arrayInfo,
     const DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
+    const DenseMap<MemberDefOp, SmallVector<ArrayAttr>> &splitIndicesByMember,
     DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers, SymbolTableCollection &tables,
-    PatternRewriter &rewriter
+    PatternRewriter &rewriter, const ConversionTracker &tracker
 ) {
   auto existing = splitMembers.find(member);
   if (existing != splitMembers.end()) {
@@ -2907,7 +2918,11 @@ static SplitMemberInfo &getOrCreateSplitMemberInfo(
   }
 
   SplitMemberInfo &splitInfo = splitMembers[member];
-  splitInfo.indices = arrayInfo.indices;
+  if (auto indicesIt = splitIndicesByMember.find(member); indicesIt != splitIndicesByMember.end()) {
+    splitInfo.indices = indicesIt->second;
+  } else {
+    splitInfo.indices = arrayInfo.indices;
+  }
 
   StructDefOp parentStruct = getParentOfType<StructDefOp>(member);
   assert(parentStruct && "MemberDefOp parent is always StructDefOp");
@@ -2916,12 +2931,16 @@ static SplitMemberInfo &getOrCreateSplitMemberInfo(
   OpBuilder::InsertionGuard guard(rewriter);
   rewriter.setInsertionPoint(member);
   auto splitTypesIt = splitTypesByMember.find(member);
-  for (ArrayAttr idx : arrayInfo.indices) {
+  for (ArrayAttr idx : splitInfo.indices) {
     Type scalarType = arrayInfo.typeByIndex.lookup(idx);
     if (splitTypesIt != splitTypesByMember.end()) {
       if (Type refinedType = splitTypesIt->second.lookup(idx)) {
         scalarType = refinedType;
       }
+    }
+    if (!scalarType) {
+      scalarType =
+          specializeTypeForArrayIndex(arrayInfo.createOp.getType().getElementType(), idx, &tracker);
     }
     MemberDefOp newMember = rewriter.create<MemberDefOp>(
         member.getLoc(), member.getSymNameAttr(), scalarType, member.getSignal(), member.getColumn()
@@ -3131,6 +3150,57 @@ static LogicalResult emitScalarMemberWrites(
   return success();
 }
 
+/// Return the value for `idx` at `type`, creating and caching a nondeterministic value if the
+/// local array element has not been written.
+///
+/// The caller must have already rejected initialized expandable arrays that store the same SSA
+/// value into indices requiring incompatible split-member types.
+static FailureOr<Value> getOrCreateScalarizedLocalArrayValue(
+    DenseMap<ArrayAttr, Value> &valueByIndex, DenseSet<Value> &generatedMaterializations,
+    ArrayAttr idx, Type type, Location loc, PatternRewriter &rewriter,
+    const ConversionTracker &tracker, Operation *materializationPoint = nullptr
+) {
+  auto createNonDet = [&](Type nondetType) {
+    OpBuilder::InsertionGuard guard(rewriter);
+    if (materializationPoint) {
+      rewriter.setInsertionPointAfter(materializationPoint);
+    }
+    return rewriter.create<NonDetOp>(loc, nondetType).getResult();
+  };
+  Value scalarValue = valueByIndex.lookup(idx);
+  if (!scalarValue) {
+    scalarValue = createNonDet(type);
+    valueByIndex[idx] = scalarValue;
+    generatedMaterializations.insert(scalarValue);
+  }
+  if (scalarValue.getType() == type) {
+    return scalarValue;
+  }
+  FailureOr<Type> commonType = getCommonRefinedType(scalarValue.getType(), type, tracker);
+  if (failed(commonType)) {
+    return failure();
+  }
+  if (*commonType == scalarValue.getType()) {
+    return scalarValue;
+  }
+  if (generatedMaterializations.contains(scalarValue)) {
+    NonDetOp nondetOp = scalarValue.getDefiningOp<NonDetOp>();
+    if (!nondetOp) {
+      return failure();
+    }
+    rewriter.modifyOpInPlace(nondetOp, [&scalarValue, &commonType]() {
+      scalarValue.setType(*commonType);
+    });
+    return scalarValue;
+  }
+  if (scalarValue.getDefiningOp<NonDetOp>()) {
+    scalarValue = createNonDet(*commonType);
+    valueByIndex[idx] = scalarValue;
+    generatedMaterializations.insert(scalarValue);
+  }
+  return scalarValue;
+}
+
 /// Rewrite one local heterogeneous array allocation into its index-specific scalar values.
 ///
 /// Direct array reads are replaced with the value written at the requested static index.
@@ -3140,6 +3210,7 @@ static LogicalResult emitScalarMemberWrites(
 static LogicalResult rewriteLocalArray(
     ScalarizedArrayInfo &info, DenseMap<MemberDefOp, SplitMemberInfo> &splitMembers,
     const DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
+    const DenseMap<MemberDefOp, SmallVector<ArrayAttr>> &splitIndicesByMember,
     SymbolTableCollection &tables, PatternRewriter &rewriter, const ConversionTracker &tracker,
     const DenseMap<Operation *, ScalarizedArrayInfo *> *candidateInfoByCreateOp
 ) {
@@ -3168,15 +3239,20 @@ static LogicalResult rewriteLocalArray(
       return failure();
     }
     SplitMemberInfo &splitInfo = getOrCreateSplitMemberInfo(
-        memberDef->get(), info, splitTypesByMember, splitMembers, tables, rewriter
+        memberDef->get(), info, splitTypesByMember, splitIndicesByMember, splitMembers, tables,
+        rewriter, tracker
     );
 
-    auto getScalarValue = [&info](ArrayAttr idx, Type) -> FailureOr<Value> {
-      Value scalarValue = info.valueByIndex.lookup(idx);
-      if (!scalarValue) {
-        return failure();
+    DenseSet<Value> generatedMaterializations;
+    Location memberWriteLoc = memberWriteOp.getLoc();
+    auto getScalarValue = [&info, &generatedMaterializations, memberWriteLoc, &rewriter,
+                           &tracker](ArrayAttr idx, Type type) -> FailureOr<Value> {
+      if (Value scalarValue = info.valueByIndex.lookup(idx)) {
+        return scalarValue;
       }
-      return scalarValue;
+      return getOrCreateScalarizedLocalArrayValue(
+          info.valueByIndex, generatedMaterializations, idx, type, memberWriteLoc, rewriter, tracker
+      );
     };
     if (failed(emitScalarMemberWrites(memberWriteOp, splitInfo, rewriter, getScalarValue))) {
       return failure();
@@ -3268,6 +3344,7 @@ static LogicalResult rewriteSplitMemberReads(
 /// Reconstruct the scalar member type map established by the collected candidates.
 static LogicalResult collectSplitTypesByMember(
     ArrayRef<ScalarizedArrayInfo> arraysToScalarize, SymbolTableCollection &tables,
+    DenseMap<MemberDefOp, SmallVector<ArrayAttr>> &splitIndicesByMember,
     DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
     const ConversionTracker &tracker
 ) {
@@ -3277,11 +3354,13 @@ static LogicalResult collectSplitTypesByMember(
       if (failed(memberDef)) {
         return failure();
       }
-      DenseMap<ArrayAttr, Type> &splitTypes = splitTypesByMember[memberDef->get()];
+      MemberDefOp member = memberDef->get();
+      appendMissingIndices(splitIndicesByMember[member], info.indices);
+      DenseMap<ArrayAttr, Type> &splitTypes = splitTypesByMember[member];
       for (ArrayAttr idx : info.indices) {
         auto res = mergeSplitCandidateType(
-            memberDef->get(), idx, info.typeByIndex.lookup(idx), memberWriteOp.getOperation(),
-            splitTypes, nullptr, tracker
+            member, idx, info.typeByIndex.lookup(idx), memberWriteOp.getOperation(), splitTypes,
+            nullptr, tracker
         );
         if (failed(res)) {
           return failure();
@@ -3484,58 +3563,6 @@ static LogicalResult verifyExpandableLocalArraySplitIndices(
   }
   return success();
 }
-
-/// Return the value for `idx` at `type`, creating and caching a nondeterministic value if the local
-/// array element has not been written.
-///
-/// The caller must have already rejected initialized expandable arrays that store the same SSA
-/// value into indices requiring incompatible split-member types.
-static FailureOr<Value> getOrCreateScalarizedLocalArrayValue(
-    DenseMap<ArrayAttr, Value> &valueByIndex, DenseSet<Value> &generatedMaterializations,
-    ArrayAttr idx, Type type, Location loc, PatternRewriter &rewriter,
-    const ConversionTracker &tracker, Operation *materializationPoint = nullptr
-) {
-  auto createNonDet = [&](Type nondetType) {
-    OpBuilder::InsertionGuard guard(rewriter);
-    if (materializationPoint) {
-      rewriter.setInsertionPointAfter(materializationPoint);
-    }
-    return rewriter.create<NonDetOp>(loc, nondetType).getResult();
-  };
-  Value scalarValue = valueByIndex.lookup(idx);
-  if (!scalarValue) {
-    scalarValue = createNonDet(type);
-    valueByIndex[idx] = scalarValue;
-    generatedMaterializations.insert(scalarValue);
-  }
-  if (scalarValue.getType() == type) {
-    return scalarValue;
-  }
-  FailureOr<Type> commonType = getCommonRefinedType(scalarValue.getType(), type, tracker);
-  if (failed(commonType)) {
-    return failure();
-  }
-  if (*commonType == scalarValue.getType()) {
-    return scalarValue;
-  }
-  if (generatedMaterializations.contains(scalarValue)) {
-    NonDetOp nondetOp = scalarValue.getDefiningOp<NonDetOp>();
-    if (!nondetOp) {
-      return failure();
-    }
-    rewriter.modifyOpInPlace(nondetOp, [&scalarValue, &commonType]() {
-      scalarValue.setType(*commonType);
-    });
-    return scalarValue;
-  }
-  if (scalarValue.getDefiningOp<NonDetOp>()) {
-    scalarValue = createNonDet(*commonType);
-    valueByIndex[idx] = scalarValue;
-    generatedMaterializations.insert(scalarValue);
-  }
-  return scalarValue;
-}
-
 /// Reject expandable arrays that would store one SSA value into several split scalar members with
 /// incompatible concrete types.
 ///
@@ -3917,22 +3944,7 @@ static LogicalResult verifySplitMemberWritesExpandable(
         if (inserted) {
           splitIndexOpsByMember[member] = memberWriteOp.getOperation();
         } else if (!haveSameIndexSet(indicesIt->second, info.indices)) {
-          InFlightDiagnostic diag = member.emitError(
-              "cannot split heterogeneous array member because candidate writes use different "
-              "index sets"
-          );
-          diag.attachNote(splitIndexOpsByMember.lookup(member)->getLoc())
-              << "candidate establishes " << indicesIt->second.size() << " split member indices";
-          Diagnostic &note = diag.attachNote(memberWriteOp.getLoc())
-                             << "conflicting candidate has " << info.indices.size()
-                             << " split member indices";
-          if (ArrayAttr extraIndex = findIndexMissingFrom(info.indices, indicesIt->second)) {
-            note << ", including extra index " << extraIndex;
-          } else if (ArrayAttr missingIndex =
-                         findIndexMissingFrom(indicesIt->second, info.indices)) {
-            note << ", missing index " << missingIndex;
-          }
-          return diag;
+          appendMissingIndices(indicesIt->second, info.indices);
         }
         DenseMap<ArrayAttr, Type> &splitTypes = splitTypesByMember[member];
         DenseMap<ArrayAttr, Operation *> &splitTypeOps = splitTypeOpsByMember[member];
@@ -4044,6 +4056,8 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
   PatternRewriter rewriter(modOp.getContext());
   SymbolTableCollection tables;
+  DenseMap<MemberDefOp, SmallVector<ArrayAttr>> splitIndicesByMember;
+  DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> splitTypesByMember;
   DenseMap<Operation *, ScalarizedArrayInfo *> candidateInfoByCreateOp;
   auto refreshRes =
       refreshValuesFromDependentCandidates(arraysToScalarize, candidateInfoByCreateOp, tracker);
@@ -4053,8 +4067,9 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   if (failed(verifySplitMemberWritesExpandable(arraysToScalarize, tables, tracker))) {
     return failure();
   }
-  DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> splitTypesByMember;
-  if (failed(collectSplitTypesByMember(arraysToScalarize, tables, splitTypesByMember, tracker)) ||
+  if (failed(collectSplitTypesByMember(
+          arraysToScalarize, tables, splitIndicesByMember, splitTypesByMember, tracker
+      )) ||
       failed(verifySplitMemberReadsRewritable(modOp, splitTypesByMember, tables, tracker))) {
     return failure();
   }
@@ -4062,7 +4077,8 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   DenseMap<MemberDefOp, SplitMemberInfo> splitMembers;
   for (ScalarizedArrayInfo &info : arraysToScalarize) {
     auto rewriteRes = rewriteLocalArray(
-        info, splitMembers, splitTypesByMember, tables, rewriter, tracker, &candidateInfoByCreateOp
+        info, splitMembers, splitTypesByMember, splitIndicesByMember, tables, rewriter, tracker,
+        &candidateInfoByCreateOp
     );
     if (failed(rewriteRes)) {
       return failure();
