@@ -1660,3 +1660,37 @@ module attributes {llzk.lang} {
 // INTRA-LABEL: @LoopPodAggregateAlias ConstraintDependencyGraph {
 // INTRA-NEXT:     { %self.out, %arg1, %arg2 }
 // INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @write_pod_record_from_local(%destination: !pod.type<[@value: !felt.type]>, %source: !felt.type) {
+    %local = pod.new { @value = %source } : !pod.type<[@value: !felt.type]>
+    %value = pod.read %local[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+    pod.write %destination[@value] = %value : !pod.type<[@value: !felt.type]>, !felt.type
+    function.return
+  }
+
+  struct.def @CallSitePodWriteFromLocalStorage {
+    function.def @compute(%source: !felt.type) -> !struct.type<@CallSitePodWriteFromLocalStorage> {
+      %self = struct.new : !struct.type<@CallSitePodWriteFromLocalStorage>
+      function.return %self : !struct.type<@CallSitePodWriteFromLocalStorage>
+    }
+
+    function.def @constrain(%self: !struct.type<@CallSitePodWriteFromLocalStorage>, %source: !felt.type) {
+      %pod = pod.new : !pod.type<[@value: !felt.type]>
+      function.call @write_pod_record_from_local(%pod, %source) : (!pod.type<[@value: !felt.type]>, !felt.type) -> ()
+      %actual = pod.read %pod[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %expected = felt.const 7
+      constrain.eq %actual, %expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @CallSitePodWriteFromLocalStorage ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, <felt.const: 7> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @CallSitePodWriteFromLocalStorage ConstraintDependencyGraph {
+// INTRA-NEXT:     { %arg1, <felt.const: 7> }
+// INTRA-NEXT: }

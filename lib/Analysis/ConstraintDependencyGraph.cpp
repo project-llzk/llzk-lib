@@ -339,9 +339,14 @@ void SourceRefAnalysis::StorageState::recordCalleeStorageWrites(
       if (addressChange == ChangeResult::NoChange || addresses.foldToScalar().empty()) {
         continue;
       }
+      // Resolve storage-backed values at the callee write point before translating its arguments.
+      // For example, a value read from a locally-created POD is initially rooted in that POD, but
+      // resolves to the argument used to initialize the record. `replacePrefixes` alone cannot
+      // translate that callee-local root.
+      SourceRefLatticeValue resolvedValue = resolveDependencies(write.value, op);
       // Unlike addresses, values may legitimately include constants. Keep such
       // sources while replacing every reference rooted in a callee argument.
-      auto [value, _] = write.value.replacePrefixes(translation);
+      auto [value, _] = resolvedValue.replacePrefixes(translation);
       translatedWrites.push_back(
           {std::move(addresses), std::move(value), write.mayBeSkipped,
            write.seedUnwrittenAlternative}
