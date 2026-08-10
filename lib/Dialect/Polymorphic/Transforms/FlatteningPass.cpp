@@ -4570,7 +4570,9 @@ static FailureOr<Value> materializeValueForMemberWrite(
 
   OpBuilder::InsertionGuard guard(rewriter);
   rewriter.setInsertionPointAfter(nondetOp);
-  Value replacement = rewriter.create<NonDetOp>(loc, type).getResult();
+  auto clonedNondet = rewriter.create<NonDetOp>(loc, type);
+  clonedNondet->setDiscardableAttrs(nondetOp->getDiscardableAttrDictionary());
+  Value replacement = clonedNondet.getResult();
   typedNondetReplacements.try_emplace(value, replacement);
   return replacement;
 }
