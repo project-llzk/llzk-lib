@@ -4878,6 +4878,15 @@ static void eraseUnusedNondetDef(
   }
 }
 
+/// Replace a member-write value and remove an obsolete nondeterministic definition if applicable.
+static inline void replaceMemberWriteValue(
+    MemberWriteOp op, Value originalValue, Value replacement, PatternRewriter &rewriter,
+    DenseMap<Value, Value> &typedNondetReplacements
+) {
+  rewriter.modifyOpInPlace(op, [&op, replacement]() { op.getValMutable().assign(replacement); });
+  eraseUnusedNondetDef(originalValue, rewriter, typedNondetReplacements);
+}
+
 } // namespace
 
 /// Update stale `poly.unifiable_cast` result types after their input has been instantiated.
@@ -4928,7 +4937,6 @@ public:
     }
 
     Value oldValue = op.getVal();
-    Type oldValueType = oldValue.getType();
     Type newValueType = def->get().getType();
     auto cachedReplacement = typedNondetReplacements_.find(oldValue);
     if (cachedReplacement != typedNondetReplacements_.end()) {
@@ -4938,10 +4946,7 @@ public:
       if (failed(convertedValue)) {
         return failure();
       }
-      rewriter.modifyOpInPlace(op, [&op, &convertedValue]() {
-        op.getValMutable().assign(*convertedValue);
-      });
-      eraseUnusedNondetDef(oldValue, rewriter, typedNondetReplacements_);
+      replaceMemberWriteValue(op, oldValue, *convertedValue, rewriter, typedNondetReplacements_);
       LLVM_DEBUG(
           llvm::dbgs() << "[UpdateMemberWriteValFromDef] reused materialized value type for " << op
                        << '\n'
@@ -4949,6 +4954,7 @@ public:
       return success();
     }
 
+    Type oldValueType = oldValue.getType();
     if (oldValueType == newValueType ||
         !tracker_.isLegalConversion(oldValueType, newValueType, "UpdateMemberWriteValFromDef")) {
       return failure();
@@ -4970,10 +4976,7 @@ public:
     if (failed(convertedValue)) {
       return failure();
     }
-    rewriter.modifyOpInPlace(op, [&op, &convertedValue]() {
-      op.getValMutable().assign(*convertedValue);
-    });
-    eraseUnusedNondetDef(oldValue, rewriter, typedNondetReplacements_);
+    replaceMemberWriteValue(op, oldValue, *convertedValue, rewriter, typedNondetReplacements_);
     LLVM_DEBUG(
         llvm::dbgs() << "[UpdateMemberWriteValFromDef] materialized value type for " << op << '\n'
     );
