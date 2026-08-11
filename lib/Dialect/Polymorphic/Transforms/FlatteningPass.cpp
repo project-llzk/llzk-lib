@@ -3851,8 +3851,8 @@ static LogicalResult verifyExpandableLocalArraySplitIndices(
   }
   return success();
 }
-/// Reject expandable arrays that would store one SSA value into several split scalar members with
-/// incompatible concrete types.
+/// Reject expandable arrays that would store one SSA value into several split scalar members that
+/// cannot share one materialized value.
 ///
 /// Later type propagation may refine the value operand of each scalar member write. If two writes
 /// keep the same SSA value, refining one write also refines the other because MLIR values carry one
@@ -3918,7 +3918,9 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
   /// Rewriting creates and caches one `llzk.nondet` per unwritten index. It also caches the
   /// refined type of a read from a stored `llzk.nondet` value. Recording the first requested type
   /// lets verification reject a later read or split-member write that would need the same cached
-  /// value at an incompatible type.
+  /// value at an incompatible type. A stored `llzk.nondet` can be materialized at a common
+  /// refinement, as can a `poly.unifiable_cast` whose input can supply that refinement. Other
+  /// non-nondeterministic stored values cannot serve distinct split-member types.
   struct PendingMaterializationUse {
     /// Concrete type requested for an index before a write defines a new value there.
     Type type;
@@ -4078,7 +4080,8 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
         continue;
       }
       Type existingType = existing->second.first;
-      if (!typesUnify(existingType, targetType)) {
+      FailureOr<Type> commonType = getCommonRefinedType(existingType, targetType, tracker);
+      if (failed(commonType)) {
         InFlightDiagnostic diag =
             createOp.emitError("cannot split heterogeneous array member because ")
             << arrayDescription << " reuses one SSA value for incompatible scalar member types";
@@ -4088,6 +4091,27 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
             << "same value is also used for scalar member type " << targetType;
         return diag;
       }
+      bool canMaterializeCommonType;
+      if (UnifiableCastOp castOp = scalarValue.getDefiningOp<UnifiableCastOp>()) {
+        canMaterializeCommonType = canUseScalarizedValueAsType(
+            castOp.getInput().getType(), *commonType, tracker,
+            "verifyNoSharedValuesForIncompatibleSplitTypes"
+        );
+      } else {
+        canMaterializeCommonType = scalarValue.getDefiningOp<NonDetOp>();
+      }
+      if (*commonType != scalarValue.getType() && !canMaterializeCommonType) {
+        InFlightDiagnostic diag =
+            createOp.emitError("cannot split heterogeneous array member because ")
+            << arrayDescription
+            << " reuses a non-nondeterministic SSA value for distinct scalar member types";
+        diag.attachNote(existing->second.second)
+            << "value is used for scalar member type " << existingType;
+        diag.attachNote(memberWriteOp.getLoc())
+            << "same value is also used for scalar member type " << targetType;
+        return diag;
+      }
+      existing->second.first = *commonType;
     }
   }
   return success();

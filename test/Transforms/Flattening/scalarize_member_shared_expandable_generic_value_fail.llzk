@@ -1,0 +1,67 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
+
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TPair {
+    poly.param @A : index
+    poly.param @B : index
+
+    struct.def @Pair {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TPair::@Pair<[@A, @B]>> {
+        %self = struct.new : !struct.type<@TPair::@Pair<[@A, @B]>>
+        function.return %self : !struct.type<@TPair::@Pair<[@A, @B]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TPair::@Pair<[@A, @B]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Holder {
+    struct.member @seed : !struct.type<@TPair::@Pair<[#id, #id]>> {column}
+    struct.member @left : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>> {column}
+    struct.member @right : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>> {column}
+
+    function.def @compute(%cond: i1) -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      scf.if %cond {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %left = array.new : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
+        %left0 = llzk.nondet : !struct.type<@TPair::@Pair<[#id, 0]>>
+        %left1 = llzk.nondet : !struct.type<@TPair::@Pair<[1, 1]>>
+        array.write %left[%c0] = %left0 : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>, !struct.type<@TPair::@Pair<[#id, 0]>>
+        array.write %left[%c1] = %left1 : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>, !struct.type<@TPair::@Pair<[1, 1]>>
+        struct.writem %self[@left] = %left : !struct.type<@Holder>, !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
+
+        %right = array.new : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
+        %right0 = llzk.nondet : !struct.type<@TPair::@Pair<[0, #id]>>
+        %right1 = llzk.nondet : !struct.type<@TPair::@Pair<[1, 1]>>
+        array.write %right[%c0] = %right0 : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>, !struct.type<@TPair::@Pair<[0, #id]>>
+        array.write %right[%c1] = %right1 : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>, !struct.type<@TPair::@Pair<[1, 1]>>
+        struct.writem %self[@right] = %right : !struct.type<@Holder>, !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
+      } else {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %shared = struct.readm %self[@seed] : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[#id, #id]>>
+        // expected-error@+1 {{cannot split heterogeneous array member because a scalarization candidate reuses a non-nondeterministic SSA value for distinct scalar member types}}
+        %fallback = array.new : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
+        array.write %fallback[%c0] = %shared : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>, !struct.type<@TPair::@Pair<[#id, #id]>>
+        %fallback1 = llzk.nondet : !struct.type<@TPair::@Pair<[1, 1]>>
+        array.write %fallback[%c1] = %fallback1 : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>, !struct.type<@TPair::@Pair<[1, 1]>>
+        // expected-note@+1 {{value is used for scalar member type}}
+        struct.writem %self[@left] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
+        // expected-note@+1 {{same value is also used for scalar member type}}
+        struct.writem %self[@right] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
+      }
+      function.return %self : !struct.type<@Holder>
+    }
+
+    function.def @constrain(%self: !struct.type<@Holder>, %cond: i1) {
+      function.return
+    }
+  }
+}
