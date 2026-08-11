@@ -1986,6 +1986,75 @@ module attributes {llzk.lang} {
 
 // -----
 
+// A nested constrain function selects a POD record. Its caller must resolve a
+// whole-POD argument through call-site storage rather than retaining the local
+// POD address as the dependency root.
+module attributes {llzk.lang} {
+  struct.def @PodValueCheck {
+    function.def @compute(%pod: !pod.type<[@value: !felt.type]>) -> !struct.type<@PodValueCheck> {
+      %self = struct.new : !struct.type<@PodValueCheck>
+      function.return %self : !struct.type<@PodValueCheck>
+    }
+
+    function.def @constrain(%self: !struct.type<@PodValueCheck>, %pod: !pod.type<[@value: !felt.type]>) {
+      %value = pod.read %pod[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %expected = felt.const 7
+      constrain.eq %value, %expected : !felt.type
+      function.return
+    }
+  }
+
+  struct.def @NestedPodInitialized {
+    struct.member @child : !struct.type<@PodValueCheck>
+
+    function.def @compute(%input: !felt.type) -> !struct.type<@NestedPodInitialized> {
+      %self = struct.new : !struct.type<@NestedPodInitialized>
+      function.return %self : !struct.type<@NestedPodInitialized>
+    }
+
+    function.def @constrain(%self: !struct.type<@NestedPodInitialized>, %input: !felt.type) {
+      %child = struct.readm %self[@child] : !struct.type<@NestedPodInitialized>, !struct.type<@PodValueCheck>
+      %pod = pod.new { @value = %input } : !pod.type<[@value: !felt.type]>
+      function.call @PodValueCheck::@constrain(%child, %pod) : (!struct.type<@PodValueCheck>, !pod.type<[@value: !felt.type]>) -> ()
+      function.return
+    }
+  }
+
+  struct.def @NestedPodOverwritten {
+    struct.member @child : !struct.type<@PodValueCheck>
+
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type) -> !struct.type<@NestedPodOverwritten> {
+      %self = struct.new : !struct.type<@NestedPodOverwritten>
+      function.return %self : !struct.type<@NestedPodOverwritten>
+    }
+
+    function.def @constrain(%self: !struct.type<@NestedPodOverwritten>, %initial: !felt.type, %replacement: !felt.type) {
+      %child = struct.readm %self[@child] : !struct.type<@NestedPodOverwritten>, !struct.type<@PodValueCheck>
+      %pod = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      pod.write %pod[@value] = %replacement : !pod.type<[@value: !felt.type]>, !felt.type
+      function.call @PodValueCheck::@constrain(%child, %pod) : (!struct.type<@PodValueCheck>, !pod.type<[@value: !felt.type]>) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @PodValueCheck ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1.value, <felt.const: 7> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @NestedPodInitialized ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, <felt.const: 7> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @NestedPodOverwritten ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg2, <felt.const: 7> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @PodValueCheck ConstraintDependencyGraph {
+// INTRA-NEXT:     { %arg1.value, <felt.const: 7> }
+// INTRA-NEXT: }
+// INTRA-NEXT: @NestedPodInitialized ConstraintDependencyGraph { }
+// INTRA-NEXT: @NestedPodOverwritten ConstraintDependencyGraph { }
+
+// -----
+
 // A resultless verif.include resolves to a defined verif.contract body. It is
 // callable, but is not a function call whose storage effects can be translated.
 module attributes {llzk.lang} {

@@ -292,15 +292,20 @@ SourceRefLatticeValue SourceRefAnalysis::getDependencyState(DataFlowSolver &solv
 
 SourceRefLatticeValue
 SourceRefAnalysis::getDependencyState(DataFlowSolver &solver, Value val, Operation *before) {
-  SourceRefLatticeValue value = getValueState(solver, val);
+  return getDependencyState(solver, getValueState(solver, val), before);
+}
+
+SourceRefLatticeValue SourceRefAnalysis::getDependencyState(
+    DataFlowSolver &solver, const SourceRefLatticeValue &refs, Operation *before
+) {
   Operation *top = before;
   while (top->getParentOp() != nullptr) {
     top = top->getParentOp();
   }
   if (const auto *state = solver.lookupState<StorageState>(solver.getProgramPointBefore(top))) {
-    return state->resolveDependencies(value, before);
+    return state->resolveDependencies(refs, before);
   }
-  return value;
+  return refs;
 }
 
 SourceRefAnalysis::StorageState *SourceRefAnalysis::getStorageState(Operation *op) {
@@ -1385,6 +1390,10 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
       if (llvm::isa<ArrayType>(operand.getType())) {
         val = SourceRefAnalysis::getDependencyState(solver, operand, fnCall.getOperation());
       } else if (llvm::isa<StructType, PodType>(operand.getType())) {
+        // Aggregate arguments retain their storage identity until a child path
+        // is translated below. That complete reference is then resolved at the
+        // call site, so a POD record maps to its stored value rather than its
+        // local storage address.
         val = SourceRefAnalysis::getValueState(solver, operand);
       } else {
         val = SourceRefAnalysis::getDependencyState(solver, operand);
@@ -1399,7 +1408,11 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
           "could not construct CDG for child struct"
       );
     }
-    auto translatedCDG = childAnalysis.getResult(ctx).translate(translations);
+    auto translatedCDG = childAnalysis.getResult(ctx).translate(
+        translations, [&solver, call = fnCall.getOperation()](const SourceRef &ref) {
+      return SourceRefAnalysis::getDependencyState(solver, SourceRefLatticeValue(ref), call);
+    }
+    );
     // Update the refMap with the translation
     const auto &translatedRef2Val = translatedCDG.getRef2Val();
     ref2Val.insert(translatedRef2Val.begin(), translatedRef2Val.end());
@@ -1458,12 +1471,23 @@ void ConstraintDependencyGraph::walkConstrainOp(
   }
 }
 
-ConstraintDependencyGraph
-ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
+ConstraintDependencyGraph ConstraintDependencyGraph::translate(
+    SourceRefRemappings translation,
+    const std::function<SourceRefLatticeValue(const SourceRef &)> &resolve
+) const {
   ConstraintDependencyGraph res(mod, structDef, ctx);
-  auto translate =
-      [&translation](const SourceRef &elem) -> mlir::FailureOr<std::vector<SourceRef>> {
+  auto translate = [&translation,
+                    &resolve](const SourceRef &elem) -> mlir::FailureOr<std::vector<SourceRef>> {
     std::vector<SourceRef> refs;
+    auto appendRef = [&](const SourceRef &ref) {
+      if (!resolve) {
+        refs.push_back(ref);
+        return;
+      }
+      SourceRefLatticeValue resolved = resolve(ref);
+      auto folded = resolved.foldToScalar();
+      refs.insert(refs.end(), folded.begin(), folded.end());
+    };
     for (auto &[prefix, vals] : translation) {
       if (!elem.isValidPrefix(prefix)) {
         continue;
@@ -1480,12 +1504,14 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
         ensure(succeeded(resolvedValsRes), "could not create SourceRef child while resolving refs");
         auto [resolvedVals, _] = *resolvedValsRes;
         auto folded = resolvedVals.foldToScalar();
-        refs.insert(refs.end(), folded.begin(), folded.end());
+        for (const SourceRef &ref : folded) {
+          appendRef(ref);
+        }
       } else {
         for (const auto &replacement : vals.getScalarValue()) {
           auto translated = elem.translate(prefix, replacement);
           if (mlir::succeeded(translated)) {
-            refs.push_back(translated.value());
+            appendRef(translated.value());
           }
         }
       }
