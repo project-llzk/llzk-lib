@@ -104,7 +104,7 @@ module attributes {llzk.lang} {
 // CHECK-DAG:           %[[VAL_8:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
 // CHECK-DAG:           %[[VAL_10:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
 // CHECK-DAG:           %[[VAL_11:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
-// CHECK:               struct.writem %[[VAL_5]][@second] = %[[VAL_10]] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          struct.writem %[[VAL_5]][@second] = %[[VAL_10]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_5]][@items_0] = %[[VAL_10]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_5]][@items_1] = %[[VAL_11]] : <@Holder>, !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:        }

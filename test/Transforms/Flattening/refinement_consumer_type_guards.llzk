@@ -1,4 +1,4 @@
-// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s | FileCheck %s
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck %s
 
 module attributes {llzk.lang} {
   function.def @consume3x3(%value: !array.type<3,3 x !felt.type>) {
