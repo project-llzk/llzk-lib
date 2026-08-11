@@ -521,9 +521,10 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
     }
   };
 
-  std::function<void(const SourceRef &, const SourceRefLatticeValue &, bool, bool)>
+  std::function<void(const SourceRef &, const SourceRefLatticeValue &, bool, bool, bool)>
       materializeWrite = [&](const SourceRef &address, const SourceRefLatticeValue &value,
-                             bool maySkip, bool seedUnwrittenAlternative) {
+                             bool maySkip, bool seedUnwrittenAlternative,
+                             bool resolveSelfReference) {
     SourceRefLatticeValue canonicalValue = canonicalize(value, aliases);
     auto arrayType = llvm::dyn_cast<ArrayType>(address.getType());
     if (canonicalValue.isArray() && arrayType && arrayType.hasStaticShape() &&
@@ -531,19 +532,27 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
       for (size_t i = 0; i < canonicalValue.getArraySize(); ++i) {
         materializeWrite(
             getArrayElementAddress(address, i), canonicalValue.getElemFlatIdx(i), maySkip,
-            seedUnwrittenAlternative
+            seedUnwrittenAlternative, resolveSelfReference
         );
       }
       return;
     }
     if (canonicalValue.isScalar() && canonicalValue.getScalarValue().contains(address)) {
-      const bool hasPriorContents = llvm::any_of(storedValues, [&address](const auto &entry) {
-        return entry.first == address || entry.first.isValidPrefix(address);
-      });
-      if (hasPriorContents || canonicalValue.isSingleValue()) {
+      if (auto preWrite = storedValues.find(address);
+          resolveSelfReference && preWrite != storedValues.end()) {
+        // The self-reference denotes the value read before this write. Substitute the
+        // materialized pre-write contents so a read-modify-write retains those dependencies.
         (void)canonicalValue.getScalarValue().erase(address);
-        if (canonicalValue.getScalarValue().empty()) {
-          return;
+        (void)canonicalValue.update(preWrite->second);
+      } else {
+        const bool hasPriorContents = llvm::any_of(storedValues, [&address](const auto &entry) {
+          return entry.first.isValidPrefix(address);
+        });
+        if (hasPriorContents || canonicalValue.isSingleValue()) {
+          (void)canonicalValue.getScalarValue().erase(address);
+          if (canonicalValue.getScalarValue().empty()) {
+            return;
+          }
         }
       }
     }
@@ -584,7 +593,8 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
           if (succeeded(rebasedAddress)) {
             materializeWrite(
                 *rebasedAddress, value, mayBeSkipped,
-                /*seedUnwrittenAlternative=*/false
+                /*seedUnwrittenAlternative=*/false,
+                /*resolveSelfReference=*/false
             );
           }
         }
@@ -611,7 +621,10 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
         return;
       }
       for (const SourceRef &address : canonicalAddresses.foldToScalar()) {
-        materializeWrite(address, value, maySkip, seedUnwrittenAlternative);
+        materializeWrite(
+            address, value, maySkip, seedUnwrittenAlternative,
+            /*resolveSelfReference=*/true
+        );
       }
     };
     for (const StorageWrite &write : writes->second) {

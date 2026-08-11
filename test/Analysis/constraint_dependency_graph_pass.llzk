@@ -1582,6 +1582,39 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @PodReadModifyWrite {
+    function.def @compute(%initial: !felt.type, %x: !felt.type) -> !struct.type<@PodReadModifyWrite> {
+      %self = struct.new : !struct.type<@PodReadModifyWrite>
+      function.return %self : !struct.type<@PodReadModifyWrite>
+    }
+
+    function.def @constrain(%self: !struct.type<@PodReadModifyWrite>, %initial: !felt.type, %x: !felt.type) {
+      %pod = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %previous = pod.read %pod[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %next = felt.add %previous, %x
+      pod.write %pod[@value] = %next : !pod.type<[@value: !felt.type]>, !felt.type
+      %actual = pod.read %pod[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %actual, %zero : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @PodReadModifyWrite ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, %arg2 },
+// CHECK-NEXT:     { %arg1, <felt.const: 0> },
+// CHECK-NEXT:     { %arg2, <felt.const: 0> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @PodReadModifyWrite ConstraintDependencyGraph {
+// INTRA-NEXT:     { %arg1, %arg2 },
+// INTRA-NEXT:     { %arg1, <felt.const: 0> },
+// INTRA-NEXT:     { %arg2, <felt.const: 0> }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
   struct.def @BlockArgumentAggregatePair {
     struct.member @lhs : !felt.type {llzk.pub}
     struct.member @rhs : !felt.type {llzk.pub}
