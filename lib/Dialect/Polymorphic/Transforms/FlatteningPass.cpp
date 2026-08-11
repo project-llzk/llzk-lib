@@ -3816,7 +3816,8 @@ static LogicalResult rewriteSplitMemberReads(
       // Preserve provenance and other discardable metadata from the static array read that this
       // scalar member read replaces. Per-read metadata takes precedence over metadata inherited
       // from the whole-array member read.
-      for (NamedAttribute attr : readOp->getDiscardableAttrDictionary().getValue()) {
+      auto attrs = readOp->getDiscardableAttrDictionary();
+      for (NamedAttribute attr : attrs.getValue()) {
         scalarRead->setDiscardableAttr(attr.getName(), attr.getValue());
       }
     }
