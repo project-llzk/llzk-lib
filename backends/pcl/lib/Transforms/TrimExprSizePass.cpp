@@ -7,12 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "pcl/Dialect/IR/Dialect.h"
 #include "pcl/Dialect/IR/Ops.h"
 #include "pcl/Transforms/TransformationPasses.h"
 
 #include <mlir/IR/Builders.h>
+#include <mlir/Dialect/Func/IR/FuncOps.h>
 
 #include <llvm/ADT/APInt.h>
 #include <llvm/ADT/DenseMap.h>
@@ -109,11 +109,9 @@ class PassImpl : public pcl::impl::TrimExprSizePassBase<PassImpl> {
         auto cmpEqOp = builder.create<pcl::CmpEqOp>(loc, varOp, zeroOp);
         auto notOp = builder.create<pcl::NotOp>(loc, cmpEqOp);
         cut->replaceAllUsesWith(notOp);
+        cutOpResult = builder.create<pcl::AsFeltOp>(loc, cutOpResult);
       } else {
         cut->replaceAllUsesWith(varOp);
-      }
-      if (isa<pcl::BoolType>(cutOpResult.getType())) {
-        cutOpResult = builder.create<pcl::AsFeltOp>(loc, cutOpResult);
       }
       auto cmpEqOp = builder.create<pcl::CmpEqOp>(loc, varOp, cutOpResult);
       builder.create<pcl::AssertOp>(loc, cmpEqOp);
