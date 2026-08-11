@@ -1,5 +1,10 @@
 var NAVTREEINDEX88 =
 {
+"namespacellzk_1_1witgen.html#a24298067aefc53e7983c2ca181ed571e":[11,0,3,21,42],
+"namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302":[11,0,3,21,14],
+"namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302a3d067bedfe2f4677470dd6ccf64d05ed":[11,0,3,21,14,0],
+"namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302a62a6762e934b411a4f450cf83904840e":[11,0,3,21,14,1],
+"namespacellzk_1_1witgen.html#a29c680065c055e8861ad94f8714a3302a9c6942f9868958398f70c5d531984834":[11,0,3,21,14,2],
 "namespacellzk_1_1witgen.html#a2a297899048424f61646743a958e925b":[11,0,3,21,40],
 "namespacellzk_1_1witgen.html#a2e3ef8d1d0fbb426f70f6f6bfe1f54c0":[11,0,3,21,23],
 "namespacellzk_1_1witgen.html#a2e561645b067a0b8f299c6ab3b4b83a1":[11,0,3,21,34],
@@ -244,10 +249,5 @@ var NAVTREEINDEX88 =
 "structGenerator.html#ae08ac0d490ed19be36ac349a90eae656":[13,0,50,8],
 "structGlobalDefOpBuildFuncHelper.html":[13,0,52],
 "structGlobalDefOpBuildFuncHelper.html#a12a1784c50b66c81e972fb4a081f6d58":[13,0,52,1],
-"structGlobalDefOpBuildFuncHelper.html#ab72eaa9b2f839b17b3d0b7c12c53758d":[13,0,52,0],
-"structGlobalReadOpBuildFuncHelper.html":[13,0,55],
-"structGlobalReadOpBuildFuncHelper.html#a56019653e244a2a47958f0a712b38427":[13,0,55,1],
-"structGlobalReadOpBuildFuncHelper.html#ab811a487871e6fff5609dbf89364a373":[13,0,55,0],
-"structGlobalWriteOpBuildFuncHelper.html":[13,0,56],
-"structGlobalWriteOpBuildFuncHelper.html#a9f961e8a444708cc97e98393983930ed":[13,0,56,0]
+"structGlobalDefOpBuildFuncHelper.html#ab72eaa9b2f839b17b3d0b7c12c53758d":[13,0,52,0]
 };

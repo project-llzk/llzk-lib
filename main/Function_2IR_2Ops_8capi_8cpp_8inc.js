@@ -3,6 +3,7 @@ var Function_2IR_2Ops_8capi_8cpp_8inc =
     [ "llzkFunction_CallOpCalleeContainsWitnessGen", "Function_2IR_2Ops_8capi_8cpp_8inc.html#a75cc35d2b0939974e4f40cc65419f1e8", null ],
     [ "llzkFunction_CallOpCalleeIsCompute", "Function_2IR_2Ops_8capi_8cpp_8inc.html#a241967cea25659ab98a57157656ec4ff", null ],
     [ "llzkFunction_CallOpCalleeIsConstrain", "Function_2IR_2Ops_8capi_8cpp_8inc.html#af8ac981b4d0361dfea568176b83d9dc5", null ],
+    [ "llzkFunction_CallOpCalleeIsInStruct", "Function_2IR_2Ops_8capi_8cpp_8inc.html#a855f50b1bc065d414a3c4f9a5939716d", null ],
     [ "llzkFunction_CallOpCalleeIsProduct", "Function_2IR_2Ops_8capi_8cpp_8inc.html#acf2de9368f7f3fa78b7213fc6d78d5fd", null ],
     [ "llzkFunction_CallOpCalleeIsStructCompute", "Function_2IR_2Ops_8capi_8cpp_8inc.html#ad7b05c263e3f31045b8130ecb89438ef", null ],
     [ "llzkFunction_CallOpCalleeIsStructConstrain", "Function_2IR_2Ops_8capi_8cpp_8inc.html#a1a80e7b710b895d909f76cbeb21e4750", null ],

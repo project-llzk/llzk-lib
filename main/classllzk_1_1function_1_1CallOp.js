@@ -7,6 +7,7 @@ var classllzk_1_1function_1_1CallOp =
     [ "calleeContainsWitnessGen", "classllzk_1_1function_1_1CallOp.html#a05145e02179c2adcd1a7a600fb52a905", null ],
     [ "calleeIsCompute", "classllzk_1_1function_1_1CallOp.html#a8034dd675e6ac66b71fbe02910ea02ab", null ],
     [ "calleeIsConstrain", "classllzk_1_1function_1_1CallOp.html#a413e1d4eb5a62953b86e59bfddf4de75", null ],
+    [ "calleeIsInStruct", "classllzk_1_1function_1_1CallOp.html#a2f0f026857d3c1ec23279bca2f596ab8", null ],
     [ "calleeIsProduct", "classllzk_1_1function_1_1CallOp.html#a4ccdea0c39d6bb7e47aeeff2b7c377b7", null ],
     [ "calleeIsStructCompute", "classllzk_1_1function_1_1CallOp.html#a3d5497b458dab3daed12a8caec656159", null ],
     [ "calleeIsStructConstrain", "classllzk_1_1function_1_1CallOp.html#a0ebb0aaf38174e75e358f4c30bbc3249", null ],

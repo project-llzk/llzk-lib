@@ -605,60 +605,65 @@ $(function(){initNavTree('Function_2IR_2Ops_8td_source.html','',''); });
 <div class="line"><a id="l00496" name="l00496"></a><span class="lineno">  496</span>    /// Return `true` iff the callee function name is `FUNC_NAME_CONSTRAIN` within a StructDefOp.</div>
 <div class="line"><a id="l00497" name="l00497"></a><span class="lineno">  497</span>    bool calleeIsStructConstrain();</div>
 <div class="line"><a id="l00498" name="l00498"></a><span class="lineno">  498</span> </div>
-<div class="line"><a id="l00499" name="l00499"></a><span class="lineno">  499</span>    /// Return the &quot;self&quot; value (i.e. the return value) from the callee function (which must be</div>
-<div class="line"><a id="l00500" name="l00500"></a><span class="lineno">  500</span>    /// named `FUNC_NAME_COMPUTE`).</div>
-<div class="line"><a id="l00501" name="l00501"></a><span class="lineno">  501</span>    ::mlir::Value getSelfValueFromCompute();</div>
-<div class="line"><a id="l00502" name="l00502"></a><span class="lineno">  502</span> </div>
-<div class="line"><a id="l00503" name="l00503"></a><span class="lineno">  503</span>    /// Return the &quot;self&quot; value (i.e. the first parameter) from the callee function (which must be</div>
-<div class="line"><a id="l00504" name="l00504"></a><span class="lineno">  504</span>    /// named `FUNC_NAME_CONSTRAIN`).</div>
-<div class="line"><a id="l00505" name="l00505"></a><span class="lineno">  505</span>    ::mlir::Value getSelfValueFromConstrain();</div>
-<div class="line"><a id="l00506" name="l00506"></a><span class="lineno">  506</span> </div>
-<div class="line"><a id="l00507" name="l00507"></a><span class="lineno">  507</span>    /// Resolve and return the target FuncDefOp for this CallOp.</div>
-<div class="line"><a id="l00508" name="l00508"></a><span class="lineno">  508</span>    ::mlir::FailureOr&lt;::llzk::SymbolLookupResult&lt;::llzk::function::FuncDefOp&gt;&gt;</div>
-<div class="line"><a id="l00509" name="l00509"></a><span class="lineno">  509</span>    getCalleeTarget(::mlir::SymbolTableCollection &amp;tables);</div>
-<div class="line"><a id="l00510" name="l00510"></a><span class="lineno">  510</span> </div>
-<div class="line"><a id="l00511" name="l00511"></a><span class="lineno">  511</span>    /// Assuming the callee is `FUNC_NAME_COMPUTE`, return the single StructType result.</div>
-<div class="line"><a id="l00512" name="l00512"></a><span class="lineno">  512</span>    ::llzk::component::StructType getSingleResultTypeOfCompute();</div>
-<div class="line"><a id="l00513" name="l00513"></a><span class="lineno">  513</span> </div>
-<div class="line"><a id="l00514" name="l00514"></a><span class="lineno">  514</span>    /// Assuming the callee contains witness generation code, return the single StructType result.</div>
-<div class="line"><a id="l00515" name="l00515"></a><span class="lineno">  515</span>    ::llzk::component::StructType getSingleResultTypeOfWitnessGen();</div>
-<div class="line"><a id="l00516" name="l00516"></a><span class="lineno">  516</span> </div>
-<div class="line"><a id="l00517" name="l00517"></a><span class="lineno">  517</span>    /// Allocate consecutive storage of the ValueRange instances in the parameter</div>
-<div class="line"><a id="l00518" name="l00518"></a><span class="lineno">  518</span>    /// so it can be passed to the builders as an `ArrayRef&lt;ValueRange&gt;`.</div>
-<div class="line"><a id="l00519" name="l00519"></a><span class="lineno">  519</span>    static ::llvm::SmallVector&lt;::mlir::ValueRange&gt; toVectorOfValueRange(::mlir::OperandRangeRange);</div>
-<div class="line"><a id="l00520" name="l00520"></a><span class="lineno">  520</span> </div>
-<div class="line"><a id="l00521" name="l00521"></a><span class="lineno">  521</span>    /// Check type compatibility of the given template parameter value from this `CallOp` against</div>
-<div class="line"><a id="l00522" name="l00522"></a><span class="lineno">  522</span>    /// the declared type on the given `TemplateParamOp` (if any).</div>
-<div class="line"><a id="l00523" name="l00523"></a><span class="lineno">  523</span>    ::mlir::LogicalResult verifyTemplateParamCompatibility(</div>
-<div class="line"><a id="l00524" name="l00524"></a><span class="lineno">  524</span>      ::mlir::Attribute paramFromCallOp, ::llzk::polymorphic::TemplateParamOp targetParam</div>
-<div class="line"><a id="l00525" name="l00525"></a><span class="lineno">  525</span>    );</div>
-<div class="line"><a id="l00526" name="l00526"></a><span class="lineno">  526</span> </div>
-<div class="line"><a id="l00527" name="l00527"></a><span class="lineno">  527</span>    /// Check type compatibility of each template parameter value provided in this `CallOp` against</div>
-<div class="line"><a id="l00528" name="l00528"></a><span class="lineno">  528</span>    /// the declared type on each `TemplateParamOp` (if any).</div>
-<div class="line"><a id="l00529" name="l00529"></a><span class="lineno">  529</span>    ///</div>
-<div class="line"><a id="l00530" name="l00530"></a><span class="lineno">  530</span>    /// Pre-condition assertions:</div>
-<div class="line"><a id="l00531" name="l00531"></a><span class="lineno">  531</span>    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`</div>
-<div class="line"><a id="l00532" name="l00532"></a><span class="lineno">  532</span>    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`</div>
-<div class="line"><a id="l00533" name="l00533"></a><span class="lineno">  533</span>    ::mlir::LogicalResult verifyTemplateParamCompatibility(</div>
-<div class="line"><a id="l00534" name="l00534"></a><span class="lineno">  534</span>        ::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;::llzk::polymorphic::TemplateParamOp&gt;&gt; targetParamDefs</div>
-<div class="line"><a id="l00535" name="l00535"></a><span class="lineno">  535</span>    );</div>
-<div class="line"><a id="l00536" name="l00536"></a><span class="lineno">  536</span> </div>
-<div class="line"><a id="l00537" name="l00537"></a><span class="lineno">  537</span>    /// Verify that each template parameter value provided in this `CallOp` is consistent with</div>
-<div class="line"><a id="l00538" name="l00538"></a><span class="lineno">  538</span>    /// the value inferred for the target `TemplateParamOp` in the given `UnificationMap`. The</div>
-<div class="line"><a id="l00539" name="l00539"></a><span class="lineno">  539</span>    /// `UnificationMap` is expected to contain the unification results of this `CallOp` against</div>
-<div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span>    /// the target function type signature.</div>
-<div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span>    ///</div>
-<div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span>    /// Pre-condition assertions:</div>
-<div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span>    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`</div>
-<div class="line"><a id="l00544" name="l00544"></a><span class="lineno">  544</span>    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`</div>
-<div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>    ::mlir::LogicalResult verifyTemplateParamsMatchInferred(</div>
-<div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span>        ::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;::llzk::polymorphic::TemplateParamOp&gt;&gt; targetParamDefs,</div>
-<div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>        const UnificationMap &amp;unifications</div>
-<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span>    );</div>
-<div class="line"><a id="l00549" name="l00549"></a><span class="lineno">  549</span>  }];</div>
-<div class="line"><a id="l00550" name="l00550"></a><span class="lineno">  550</span>}</div>
-<div class="line"><a id="l00551" name="l00551"></a><span class="lineno">  551</span> </div>
-<div class="line"><a id="l00552" name="l00552"></a><span class="lineno">  552</span>#endif // LLZK_FUNC_OPS</div>
+<div class="line"><a id="l00499" name="l00499"></a><span class="lineno">  499</span>    /// Return `true` iff the callee function is within a StructDefOp.</div>
+<div class="line"><a id="l00500" name="l00500"></a><span class="lineno">  500</span>    inline bool calleeIsInStruct() {</div>
+<div class="line"><a id="l00501" name="l00501"></a><span class="lineno">  501</span>      return calleeIsStructCompute() || calleeIsStructConstrain() || calleeIsStructProduct();</div>
+<div class="line"><a id="l00502" name="l00502"></a><span class="lineno">  502</span>    }</div>
+<div class="line"><a id="l00503" name="l00503"></a><span class="lineno">  503</span> </div>
+<div class="line"><a id="l00504" name="l00504"></a><span class="lineno">  504</span>    /// Return the &quot;self&quot; value (i.e. the return value) from the callee function (which must be</div>
+<div class="line"><a id="l00505" name="l00505"></a><span class="lineno">  505</span>    /// named `FUNC_NAME_COMPUTE`).</div>
+<div class="line"><a id="l00506" name="l00506"></a><span class="lineno">  506</span>    ::mlir::Value getSelfValueFromCompute();</div>
+<div class="line"><a id="l00507" name="l00507"></a><span class="lineno">  507</span> </div>
+<div class="line"><a id="l00508" name="l00508"></a><span class="lineno">  508</span>    /// Return the &quot;self&quot; value (i.e. the first parameter) from the callee function (which must be</div>
+<div class="line"><a id="l00509" name="l00509"></a><span class="lineno">  509</span>    /// named `FUNC_NAME_CONSTRAIN`).</div>
+<div class="line"><a id="l00510" name="l00510"></a><span class="lineno">  510</span>    ::mlir::Value getSelfValueFromConstrain();</div>
+<div class="line"><a id="l00511" name="l00511"></a><span class="lineno">  511</span> </div>
+<div class="line"><a id="l00512" name="l00512"></a><span class="lineno">  512</span>    /// Resolve and return the target FuncDefOp for this CallOp.</div>
+<div class="line"><a id="l00513" name="l00513"></a><span class="lineno">  513</span>    ::mlir::FailureOr&lt;::llzk::SymbolLookupResult&lt;::llzk::function::FuncDefOp&gt;&gt;</div>
+<div class="line"><a id="l00514" name="l00514"></a><span class="lineno">  514</span>    getCalleeTarget(::mlir::SymbolTableCollection &amp;tables);</div>
+<div class="line"><a id="l00515" name="l00515"></a><span class="lineno">  515</span> </div>
+<div class="line"><a id="l00516" name="l00516"></a><span class="lineno">  516</span>    /// Assuming the callee is `FUNC_NAME_COMPUTE`, return the single StructType result.</div>
+<div class="line"><a id="l00517" name="l00517"></a><span class="lineno">  517</span>    ::llzk::component::StructType getSingleResultTypeOfCompute();</div>
+<div class="line"><a id="l00518" name="l00518"></a><span class="lineno">  518</span> </div>
+<div class="line"><a id="l00519" name="l00519"></a><span class="lineno">  519</span>    /// Assuming the callee contains witness generation code, return the single StructType result.</div>
+<div class="line"><a id="l00520" name="l00520"></a><span class="lineno">  520</span>    ::llzk::component::StructType getSingleResultTypeOfWitnessGen();</div>
+<div class="line"><a id="l00521" name="l00521"></a><span class="lineno">  521</span> </div>
+<div class="line"><a id="l00522" name="l00522"></a><span class="lineno">  522</span>    /// Allocate consecutive storage of the ValueRange instances in the parameter</div>
+<div class="line"><a id="l00523" name="l00523"></a><span class="lineno">  523</span>    /// so it can be passed to the builders as an `ArrayRef&lt;ValueRange&gt;`.</div>
+<div class="line"><a id="l00524" name="l00524"></a><span class="lineno">  524</span>    static ::llvm::SmallVector&lt;::mlir::ValueRange&gt; toVectorOfValueRange(::mlir::OperandRangeRange);</div>
+<div class="line"><a id="l00525" name="l00525"></a><span class="lineno">  525</span> </div>
+<div class="line"><a id="l00526" name="l00526"></a><span class="lineno">  526</span>    /// Check type compatibility of the given template parameter value from this `CallOp` against</div>
+<div class="line"><a id="l00527" name="l00527"></a><span class="lineno">  527</span>    /// the declared type on the given `TemplateParamOp` (if any).</div>
+<div class="line"><a id="l00528" name="l00528"></a><span class="lineno">  528</span>    ::mlir::LogicalResult verifyTemplateParamCompatibility(</div>
+<div class="line"><a id="l00529" name="l00529"></a><span class="lineno">  529</span>      ::mlir::Attribute paramFromCallOp, ::llzk::polymorphic::TemplateParamOp targetParam</div>
+<div class="line"><a id="l00530" name="l00530"></a><span class="lineno">  530</span>    );</div>
+<div class="line"><a id="l00531" name="l00531"></a><span class="lineno">  531</span> </div>
+<div class="line"><a id="l00532" name="l00532"></a><span class="lineno">  532</span>    /// Check type compatibility of each template parameter value provided in this `CallOp` against</div>
+<div class="line"><a id="l00533" name="l00533"></a><span class="lineno">  533</span>    /// the declared type on each `TemplateParamOp` (if any).</div>
+<div class="line"><a id="l00534" name="l00534"></a><span class="lineno">  534</span>    ///</div>
+<div class="line"><a id="l00535" name="l00535"></a><span class="lineno">  535</span>    /// Pre-condition assertions:</div>
+<div class="line"><a id="l00536" name="l00536"></a><span class="lineno">  536</span>    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`</div>
+<div class="line"><a id="l00537" name="l00537"></a><span class="lineno">  537</span>    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`</div>
+<div class="line"><a id="l00538" name="l00538"></a><span class="lineno">  538</span>    ::mlir::LogicalResult verifyTemplateParamCompatibility(</div>
+<div class="line"><a id="l00539" name="l00539"></a><span class="lineno">  539</span>        ::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;::llzk::polymorphic::TemplateParamOp&gt;&gt; targetParamDefs</div>
+<div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span>    );</div>
+<div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span> </div>
+<div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span>    /// Verify that each template parameter value provided in this `CallOp` is consistent with</div>
+<div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span>    /// the value inferred for the target `TemplateParamOp` in the given `UnificationMap`. The</div>
+<div class="line"><a id="l00544" name="l00544"></a><span class="lineno">  544</span>    /// `UnificationMap` is expected to contain the unification results of this `CallOp` against</div>
+<div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>    /// the target function type signature.</div>
+<div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span>    ///</div>
+<div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>    /// Pre-condition assertions:</div>
+<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span>    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`</div>
+<div class="line"><a id="l00549" name="l00549"></a><span class="lineno">  549</span>    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`</div>
+<div class="line"><a id="l00550" name="l00550"></a><span class="lineno">  550</span>    ::mlir::LogicalResult verifyTemplateParamsMatchInferred(</div>
+<div class="line"><a id="l00551" name="l00551"></a><span class="lineno">  551</span>        ::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;::llzk::polymorphic::TemplateParamOp&gt;&gt; targetParamDefs,</div>
+<div class="line"><a id="l00552" name="l00552"></a><span class="lineno">  552</span>        const UnificationMap &amp;unifications</div>
+<div class="line"><a id="l00553" name="l00553"></a><span class="lineno">  553</span>    );</div>
+<div class="line"><a id="l00554" name="l00554"></a><span class="lineno">  554</span>  }];</div>
+<div class="line"><a id="l00555" name="l00555"></a><span class="lineno">  555</span>}</div>
+<div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span> </div>
+<div class="line"><a id="l00557" name="l00557"></a><span class="lineno">  557</span>#endif // LLZK_FUNC_OPS</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->
