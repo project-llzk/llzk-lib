@@ -464,6 +464,64 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  function.def @overwrite_first(%array: !array.type<1 x !felt.type>, %value: !felt.type) {
+    %idx = arith.constant 0 : index
+    array.write %array[%idx] = %value : !array.type<1 x !felt.type>, !felt.type
+    function.return
+  }
+
+  struct.def @AggregateReadCallStorageEffects {
+    struct.member @array_out : !felt.type {llzk.pub}
+    struct.member @pod_out : !felt.type {llzk.pub}
+    struct.member @member_out : !felt.type {llzk.pub}
+    struct.member @items : !array.type<1 x !felt.type>
+
+    function.def @compute(%old: !felt.type, %new: !felt.type) -> !struct.type<@AggregateReadCallStorageEffects> {
+      %self = struct.new : !struct.type<@AggregateReadCallStorageEffects>
+      function.return %self : !struct.type<@AggregateReadCallStorageEffects>
+    }
+
+    function.def @constrain(%self: !struct.type<@AggregateReadCallStorageEffects>, %old: !felt.type, %new: !felt.type) {
+      %array_expected = struct.readm %self[@array_out] : !struct.type<@AggregateReadCallStorageEffects>, !felt.type
+      %pod_expected = struct.readm %self[@pod_out] : !struct.type<@AggregateReadCallStorageEffects>, !felt.type
+      %member_expected = struct.readm %self[@member_out] : !struct.type<@AggregateReadCallStorageEffects>, !felt.type
+      %outer_idx = arith.constant 1 : index
+      %inner_idx = arith.constant 0 : index
+
+      %matrix = array.new %old, %old : !array.type<2,1 x !felt.type>
+      %row = array.extract %matrix[%outer_idx] : !array.type<2,1 x !felt.type>
+      function.call @overwrite_first(%row, %new) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      %array_actual = array.read %matrix[%outer_idx, %inner_idx] : !array.type<2,1 x !felt.type>, !felt.type
+
+      %pod = pod.new { @items = %row } : !pod.type<[@items: !array.type<1 x !felt.type>]>
+      %pod_items = pod.read %pod[@items] : !pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+      function.call @overwrite_first(%pod_items, %new) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      %pod_actual_items = pod.read %pod[@items] : !pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+      %pod_actual = array.read %pod_actual_items[%inner_idx] : !array.type<1 x !felt.type>, !felt.type
+
+      %member_items = struct.readm %self[@items] : !struct.type<@AggregateReadCallStorageEffects>, !array.type<1 x !felt.type>
+      function.call @overwrite_first(%member_items, %new) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      %member_actual_items = struct.readm %self[@items] : !struct.type<@AggregateReadCallStorageEffects>, !array.type<1 x !felt.type>
+      %member_actual = array.read %member_actual_items[%inner_idx] : !array.type<1 x !felt.type>, !felt.type
+
+      constrain.eq %array_expected, %array_actual : !felt.type
+      constrain.eq %pod_expected, %pod_actual : !felt.type
+      constrain.eq %member_expected, %member_actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @AggregateReadCallStorageEffects ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.array_out, %self.pod_out, %self.member_out, %arg2 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @AggregateReadCallStorageEffects ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.array_out, %self.pod_out, %self.member_out, %arg2 }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
   function.def @overwrite_called_element(%array: !array.type<1 x !felt.type>, %value: !felt.type) {
     %idx = arith.constant 0 : index
     array.write %array[%idx] = %value : !array.type<1 x !felt.type>, !felt.type

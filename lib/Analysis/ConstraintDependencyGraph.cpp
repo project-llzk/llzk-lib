@@ -1007,6 +1007,36 @@ void SourceRefAnalysis::visitExternalCall(
       auto storageArgumentRef = SourceRefLattice::getSourceRef(call->getOperand(i));
       if (succeeded(storageArgumentRef)) {
         storageTranslation[argumentRef] = SourceRefLatticeValue(*storageArgumentRef);
+      } else if (argumentValue.isScalar()) {
+        // Reads of aggregate POD records or struct members are not rooted
+        // constructors. Their raw lattice nevertheless names the selected
+        // aggregate, so use it as the storage translation.
+        storageTranslation[argumentRef] = argumentValue;
+      } else if (auto arrayType = llvm::dyn_cast<ArrayType>(call->getOperand(i).getType())) {
+        // An array.extract of an array-shaped value has one lattice element per
+        // selected leaf. Recover the selected subarray address by removing the
+        // dimensions belonging to the argument type from every leaf. This keeps
+        // the extract path while avoiding a duplicated callee index during
+        // translation (e.g. `%matrix[1]` + callee `[0]`, not `%matrix[1][0][0]`).
+        SourceRefLatticeValue storageArgumentValue;
+        for (const SourceRef &leaf : argumentValue.foldToScalar()) {
+          SourceRef selectedAggregate = leaf;
+          bool recovered = true;
+          for (int64_t dim = 0; dim < arrayType.getRank(); ++dim) {
+            auto parent = selectedAggregate.getParentPrefix();
+            if (failed(parent)) {
+              recovered = false;
+              break;
+            }
+            selectedAggregate = *parent;
+          }
+          if (recovered) {
+            (void)storageArgumentValue.insert(selectedAggregate);
+          }
+        }
+        if (!storageArgumentValue.foldToScalar().empty()) {
+          storageTranslation[argumentRef] = std::move(storageArgumentValue);
+        }
       }
     } else {
       storageTranslation[argumentRef] = argumentValue;
