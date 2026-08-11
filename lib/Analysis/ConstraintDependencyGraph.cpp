@@ -984,11 +984,16 @@ void SourceRefAnalysis::visitExternalCall(
   // Call is to a defined function with a body, but it's treated as external so we
   // can translate the results based on the arguments.
   auto funcOpRes = resolveCallable<FuncDefOp>(tables, call);
-  ensure(succeeded(funcOpRes), "could not lookup called function");
-  FuncDefOp funcOp = funcOpRes->get();
+  if (failed(funcOpRes) || !*funcOpRes) {
+    // Other callable operations, such as verif.contract, can have a body
+    // without defining function storage effects to translate. In particular,
+    // resultless calls have no value lattice to update either.
+    return;
+  }
 
   std::unordered_map<SourceRef, SourceRefLatticeValue, SourceRef::Hash> translation;
   TranslationMap storageTranslation;
+  FuncDefOp funcOp = funcOpRes->get();
   for (unsigned i = 0; i < funcOp.getNumArguments(); i++) {
     SourceRefLatticeValue argumentValue =
         static_cast<const Lattice *>(operandLattices[i])->getValue();

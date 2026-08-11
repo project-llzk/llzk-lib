@@ -1831,3 +1831,39 @@ module attributes {llzk.lang} {
 // INTRA-LABEL: @CallSitePodWriteFromLocalStorage ConstraintDependencyGraph {
 // INTRA-NEXT:     { %arg1, <felt.const: 7> }
 // INTRA-NEXT: }
+
+// -----
+
+// A resultless verif.include resolves to a defined verif.contract body. It is
+// callable, but is not a function call whose storage effects can be translated.
+module attributes {llzk.lang} {
+  function.def @included(%gate: i1) {
+    function.return
+  }
+
+  function.def @including(%gate: i1) {
+    function.return
+  }
+
+  verif.contract @Included for @included (%gate: i1) {
+    verif.require_compute %gate
+  }
+
+  verif.contract @Including for @including (%gate: i1) {
+    verif.include @Included(%gate) : (i1) -> ()
+  }
+
+  struct.def @ResultlessInclude {
+    function.def @compute(%gate: i1) -> !struct.type<@ResultlessInclude> {
+      %self = struct.new : !struct.type<@ResultlessInclude>
+      function.return %self : !struct.type<@ResultlessInclude>
+    }
+
+    function.def @constrain(%self: !struct.type<@ResultlessInclude>, %gate: i1) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ResultlessInclude ConstraintDependencyGraph { }
+// INTRA-LABEL: @ResultlessInclude ConstraintDependencyGraph { }
