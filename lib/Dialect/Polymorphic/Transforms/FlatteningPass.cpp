@@ -1545,7 +1545,7 @@ static LogicalResult applyBodyConversions(
   return failure(res.wasInterrupted());
 }
 
-/// Copy the unresolved template expressions read by `newFunc` into its partially-instantiated
+/// Copy unresolved template expressions referenced by `newFunc` into its partially-instantiated
 /// parent template. Reads of concrete parameters within the copied expressions are materialized so
 /// the new template contains no references to parameters that it does not preserve.
 static LogicalResult copyReferencedTemplateExprs(
@@ -1553,11 +1553,28 @@ static LogicalResult copyReferencedTemplateExprs(
     const DenseMap<Attribute, Attribute> &paramNameToConcrete
 ) {
   DenseSet<StringAttr> referencedExprNames;
-  newFunc.walk([&](ConstReadOp readOp) {
-    FlatSymbolRefAttr name = readOp.getConstNameAttr();
+  auto collectExprRef = [&referencedExprNames, &paramNameToConcrete](FlatSymbolRefAttr name) {
     if (!paramNameToConcrete.contains(name)) {
       referencedExprNames.insert(name.getAttr());
     }
+  };
+
+  // Expression references can occur in a function signature, in type-bearing operands/results,
+  // or in arbitrary attributes as well as in poly.read_const operations. In particular, a
+  // signature-only reference must keep its defining expression in a partial template even if the
+  // function body does not read that expression.
+  newFunc.walk([&](Operation *nestedOp) {
+    auto collectTypeRefs = [&collectExprRef](Type type) { type.walk(collectExprRef); };
+    for (Type type : nestedOp->getOperandTypes()) {
+      collectTypeRefs(type);
+    }
+    for (Type type : nestedOp->getResultTypes()) {
+      collectTypeRefs(type);
+    }
+    nestedOp->getAttrDictionary().walk(collectExprRef);
+  });
+  newFunc.walk([&collectExprRef](ConstReadOp readOp) {
+    collectExprRef(readOp.getConstNameAttr());
   });
 
   for (TemplateExprOp expr : parentTemplate.getConstOps<TemplateExprOp>()) {
