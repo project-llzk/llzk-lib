@@ -98,9 +98,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:          struct.writem %[[VAL_7]][@items_1] = %[[VAL_9]] : <@Holder>, !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_7]][@items_2] = %[[VAL_10]] : <@Holder>, !struct.type<@TCell_2_Cell>
 // CHECK-NEXT:        } else {
+// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @TCell_2_Cell::@compute() : () -> !struct.type<@TCell_2_Cell>
-// CHECK-DAG:           %[[VAL_12:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
-// CHECK-DAG:           %[[VAL_13:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_7]][@items_0] = %[[VAL_13]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_7]][@items_1] = %[[VAL_12]] : <@Holder>, !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:          struct.writem %[[VAL_7]][@items_2] = %[[VAL_11]] : <@Holder>, !struct.type<@TCell_2_Cell>

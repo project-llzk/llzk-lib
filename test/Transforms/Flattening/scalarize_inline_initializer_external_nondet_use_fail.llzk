@@ -23,12 +23,14 @@ module attributes {llzk.lang} {
       attributes {function.allow_witness, function.allow_constraint} {
     %c0 = arith.constant 0 : index
     %generic = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
+    // This accepted external observation precedes the candidate array. Its replacement must be
+    // materialized where it dominates this call as well as the later scalarized read.
+    function.call @TCell::@Cell::@constrain(%generic) : (!struct.type<@TCell::@Cell<[#id]>>) -> ()
     %other = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
 
     // One SSA witness is observed both as the generic initializer and through a concrete array
     // read. Scalarization must retain that sharing after specializing the witness.
     %local = array.new %generic, %other : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-    function.call @TCell::@Cell::@constrain(%generic) : (!struct.type<@TCell::@Cell<[#id]>>) -> ()
     %concrete = array.read %local[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
     function.call @TCell::@Cell::@constrain(%concrete) : (!struct.type<@TCell::@Cell<[0]>>) -> ()
     function.return
@@ -62,10 +64,10 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @shared_initializer_external_use() attributes {function.allow_constraint, function.allow_witness} {
 // CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:      function.call @TCell_0_Cell::@constrain(%[[VAL_6]]) : (!struct.type<@TCell_0_Cell>) -> ()
-// CHECK-NEXT:      function.call @TCell_0_Cell::@constrain(%[[VAL_6]]) : (!struct.type<@TCell_0_Cell>) -> ()
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:      function.call @TCell_0_Cell::@constrain(%[[VAL_5]]) : (!struct.type<@TCell_0_Cell>) -> ()
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:      function.call @TCell_0_Cell::@constrain(%[[VAL_5]]) : (!struct.type<@TCell_0_Cell>) -> ()
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

@@ -3300,7 +3300,10 @@ static LogicalResult materializeSharedNondetSpecializations(
     NonDetOp sourceNondet = source.getDefiningOp<NonDetOp>();
     assert(sourceNondet && "specialization map only contains nondeterministic values");
     OpBuilder::InsertionGuard guard(rewriter);
-    rewriter.setInsertionPointAfter(info.createOp);
+    // The external constraint can precede the array initializer. The source witness dominates
+    // every one of its original uses, so materializing directly after it preserves SSA dominance
+    // for both those external calls and the scalarized array reads.
+    rewriter.setInsertionPointAfter(sourceNondet);
     NonDetOp specializedNondet = rewriter.create<NonDetOp>(sourceNondet.getLoc(), type);
     specializedNondet->setDiscardableAttrs(sourceNondet->getDiscardableAttrDictionary());
     Value specializedValue = specializedNondet.getResult();
@@ -3365,9 +3368,9 @@ static FailureOr<Value> buildReadReplacementValue(
     if (!specializedType) {
       return failure();
     }
-    // The shared witness may be read from sibling regions. Materialize it after the array
-    // initializer, which dominates every valid use of the array, rather than at the first read.
-    rewriter.setInsertionPointAfter(info.createOp);
+    // The source witness dominates every original use, including external constraints that can
+    // precede the array initializer. Materialize directly after it rather than at the first read.
+    rewriter.setInsertionPointAfter(sourceNondet);
     NonDetOp specializedNondet = rewriter.create<NonDetOp>(readOp.getLoc(), specializedType);
     specializedNondet->setDiscardableAttrs(sourceNondet->getDiscardableAttrDictionary());
     specializedNondetBySource[replacementValue] = specializedNondet;
