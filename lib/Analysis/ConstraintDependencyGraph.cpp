@@ -61,6 +61,60 @@ static inline bool hasRangeIndex(const SourceRef &ref) {
   });
 }
 
+/// Return `ref` with one path component replaced, preserving the suffix after it.
+static FailureOr<SourceRef>
+replacePathIndex(const SourceRef &ref, size_t index, const SourceRefIndex &replacement) {
+  ensure(index < ref.getPath().size(), "SourceRef path index is out of bounds");
+  SourceRef result = ref;
+  for (size_t i = index; i < ref.getPath().size(); ++i) {
+    auto parent = result.getParentPrefix();
+    ensure(succeeded(parent), "could not get SourceRef parent while replacing path index");
+    result = *parent;
+  }
+  auto child = result.createChild(replacement);
+  ensure(succeeded(child), "could not create SourceRef replacement path index");
+  result = *child;
+  for (const SourceRefIndex &suffix : ref.getPath().drop_front(index + 1)) {
+    child = result.createChild(suffix);
+    ensure(succeeded(child), "could not restore SourceRef suffix after replacing path index");
+    result = *child;
+  }
+  return result;
+}
+
+/// Return the portions of a ranged address not covered by an overlapping point address.
+///
+/// The result is a disjoint set of range "slabs": each ranged dimension is split around the
+/// point after earlier ranged dimensions have been fixed to it. This preserves every address in
+/// `rangeAddress` except `pointAddress` without retaining an entry that overlaps the point.
+static llvm::SmallVector<SourceRef>
+subtractPointFromRange(const SourceRef &rangeAddress, const SourceRef &pointAddress) {
+  ensure(rangeAddress.overlaps(pointAddress), "point must overlap range before subtraction");
+  ensure(!hasRangeIndex(pointAddress), "range subtraction requires a point address");
+
+  llvm::SmallVector<SourceRef> result;
+  const auto rangePath = rangeAddress.getPath();
+  const auto pointPath = pointAddress.getPath();
+  ensure(rangePath.size() == pointPath.size(), "overlapping SourceRefs must have matching paths");
+  const SourceRef narrowed = rangeAddress.narrowRanges(pointAddress);
+  for (auto [index, rangeIndex] : llvm::enumerate(rangePath)) {
+    if (!rangeIndex.isIndexRange()) {
+      continue;
+    }
+    ensure(pointPath[index].isIndex(), "point address must use concrete array indices");
+    const auto [low, high] = rangeIndex.getIndexRange();
+    const auto point = pointPath[index].getIndex();
+    if (low < point) {
+      result.push_back(*replacePathIndex(narrowed, index, SourceRefIndex({low, point})));
+    }
+    const llvm::DynamicAPInt afterPoint = point + 1;
+    if (afterPoint < high) {
+      result.push_back(*replacePathIndex(narrowed, index, SourceRefIndex({afterPoint, high})));
+    }
+  }
+  return result;
+}
+
 static bool isNonSingletonArrayWriteTarget(const SourceRefLatticeValue &writeTargets) {
   if (writeTargets.isArray()) {
     return llvm::any_of(
@@ -410,6 +464,49 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
     }
   };
 
+  auto invalidateOverlappingRanges = [&storage, &storedValues](const SourceRef &address) {
+    // A definite point write supersedes an earlier weak range write at that point. Keep the
+    // portions of the range that can still affect other reads, but remove its overlap with this
+    // address so dependency resolution does not join stale values at the overwritten element.
+    struct RangeReplacement {
+      SourceRef address;
+      SourceRefLatticeValue value;
+      bool wasSkippedFirstWrite;
+    };
+    llvm::SmallVector<RangeReplacement> replacements;
+    llvm::SmallVector<SourceRef> erasedAddresses;
+    for (const auto &[storedAddress, storedValue] : storedValues) {
+      if (!hasRangeIndex(storedAddress) || !storedAddress.overlaps(address)) {
+        continue;
+      }
+      erasedAddresses.push_back(storedAddress);
+      for (const SourceRef &residual : subtractPointFromRange(storedAddress, address)) {
+        // A weak write may carry its destination as the unwritten alternative. Rebase that
+        // alternative to the residual range too; otherwise a later read would retain the
+        // original, still-overlapping range through the value rather than the map key.
+        auto [residualValue, _] = storedValue.replacePrefixes(
+            TranslationMap {{storedAddress, SourceRefLatticeValue(residual)}}
+        );
+        replacements.push_back(
+            {residual, std::move(residualValue), storage.skippedFirstWrites.contains(storedAddress)}
+        );
+      }
+    }
+    for (const SourceRef &erasedAddress : erasedAddresses) {
+      storage.skippedFirstWrites.erase(erasedAddress);
+      storedValues.erase(erasedAddress);
+    }
+    for (const RangeReplacement &replacement : replacements) {
+      auto [it, inserted] = storedValues.try_emplace(replacement.address, replacement.value);
+      if (!inserted) {
+        (void)it->second.update(replacement.value);
+      }
+      if (replacement.wasSkippedFirstWrite) {
+        storage.skippedFirstWrites.insert(replacement.address);
+      }
+    }
+  };
+
   std::function<void(const SourceRef &, const SourceRefLatticeValue &, bool, bool)>
       materializeWrite = [&](const SourceRef &address, const SourceRefLatticeValue &value,
                              bool maySkip, bool seedUnwrittenAlternative) {
@@ -435,6 +532,9 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
           return;
         }
       }
+    }
+    if (!maySkip && !hasRangeIndex(address)) {
+      invalidateOverlappingRanges(address);
     }
     applyWrite(address, canonicalValue, maySkip, seedUnwrittenAlternative);
   };
