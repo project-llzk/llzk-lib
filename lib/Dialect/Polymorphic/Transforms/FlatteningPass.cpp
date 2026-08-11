@@ -2498,13 +2498,13 @@ static inline bool canReplaceReadResultWithType(
          tracker.isLegalConversion(readResultType, replacementType, patName);
 }
 
-/// Return true iff direct member writes using `readOp` accept `replacementType`.
+/// Return true iff direct typed consumers of `readOp` accept `replacementType`.
 ///
 /// Scalarizing a pseudo-homogeneous array can replace a generic read result with the concrete
 /// value stored at its static index.  Checking the read result alone is insufficient: two
 /// different concrete types can both unify with that generic result, while a consumer may require
-/// only one of them. Member writes have a separately declared target type, so their requirement
-/// must be checked before the type-ignoring replacement below.
+/// only one of them. Typed consumers with separately declared requirements must be checked before
+/// the type-ignoring replacement below.
 static LogicalResult canReplaceReadUsersWithType(
     ReadArrayOp readOp, Type replacementType, SymbolTableCollection &tables
 ) {
@@ -2531,6 +2531,28 @@ static LogicalResult canReplaceReadUsersWithType(
         diag.attachNote(memberWrite.getLoc())
             << "member write requires " << memberType << ", but this read is replaced with "
             << replacementType;
+        return diag;
+      }
+      continue;
+    }
+    if (CallOp call = llvm::dyn_cast<CallOp>(user)) {
+      unsigned argIdx = use.getOperandNumber() - call.getArgOperands().getBeginOperandIndex();
+      if (argIdx >= call.getArgOperands().size()) {
+        return failure();
+      }
+      auto callee = call.getCalleeTarget(tables);
+      if (failed(callee)) {
+        return failure();
+      }
+      Type paramType = callee->get().getFunctionType().getInput(argIdx);
+      if (isConcreteType(paramType, /*allowStructParams=*/false) &&
+          !typesUnify(replacementType, paramType, callee->getNamespace())) {
+        InFlightDiagnostic diag = readOp.emitError(
+            "cannot scalarize heterogeneous array read because its index-specific value type is "
+            "incompatible with a function call"
+        );
+        diag.attachNote(call.getLoc()) << "call argument requires " << paramType
+                                       << ", but this read is replaced with " << replacementType;
         return diag;
       }
     }
