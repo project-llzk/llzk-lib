@@ -2447,6 +2447,46 @@ static inline bool canReplaceReadResultWithType(
          tracker.isLegalConversion(readResultType, replacementType, patName);
 }
 
+/// Return true iff direct member writes using `readOp` accept `replacementType`.
+///
+/// Scalarizing a pseudo-homogeneous array can replace a generic read result with the concrete
+/// value stored at its static index.  Checking the read result alone is insufficient: two
+/// different concrete types can both unify with that generic result, while a consumer may require
+/// only one of them. Member writes have a separately declared target type, so their requirement
+/// must be checked before the type-ignoring replacement below.
+static LogicalResult canReplaceReadUsersWithType(
+    ReadArrayOp readOp, Type replacementType, SymbolTableCollection &tables
+) {
+  Value result = readOp.getResult();
+  for (OpOperand &use : result.getUses()) {
+    Operation *user = use.getOwner();
+    if (MemberWriteOp memberWrite = llvm::dyn_cast<MemberWriteOp>(user)) {
+      if (memberWrite.getVal() != result) {
+        return failure();
+      }
+      auto memberDef = memberWrite.getMemberDefOp(tables);
+      if (failed(memberDef)) {
+        return failure();
+      }
+      Type memberType = memberDef->get().getType();
+      // A parameterized member will be refined by the normal propagation patterns. Only a
+      // concrete member independently constrains which index-specific value is valid here.
+      if (isConcreteType(memberType, /*allowStructParams=*/false) &&
+          !typesUnify(replacementType, memberType)) {
+        InFlightDiagnostic diag = readOp.emitError(
+            "cannot scalarize heterogeneous array read because its index-specific value type is "
+            "incompatible with a member write"
+        );
+        diag.attachNote(memberWrite.getLoc())
+            << "member write requires " << memberType << ", but this read is replaced with "
+            << replacementType;
+        return diag;
+      }
+    }
+  }
+  return success();
+}
+
 /// Return true if `def` is in the same block as `user` and appears before it.
 static inline bool strictlyBefore(Operation *def, Operation *user) {
   return def->getBlock() == user->getBlock() && def->isBeforeInBlock(user);
@@ -3506,6 +3546,9 @@ static LogicalResult rewriteLocalArray(
         )) {
       return failure();
     }
+    if (failed(canReplaceReadUsersWithType(readOp, info.typeByIndex.lookup(idx), tables))) {
+      return failure();
+    }
     FailureOr<Value> replacementValue = buildReadReplacementValue(
         readOp, info, rewriter, tracker, specializedTypeByNondet, specializedNondetBySource
     );
@@ -3608,6 +3651,9 @@ static LogicalResult rewriteSplitMemberReads(
       if (!canReplaceReadResultWithType(
               readOp, memberInfo.second, tracker, "rewriteSplitMemberReads"
           )) {
+        return failure();
+      }
+      if (failed(canReplaceReadUsersWithType(readOp, memberInfo.second, tables))) {
         return failure();
       }
       if (scalarValueByIndex.contains(idx)) {
@@ -4224,6 +4270,9 @@ static LogicalResult rewriteExpandableLocalArray(
           tracker, materializationPoint
       );
       if (failed(scalarValue)) {
+        return failure();
+      }
+      if (failed(canReplaceReadUsersWithType(readOp, scalarValue->getType(), tables))) {
         return failure();
       }
       replaceAllUsesIgnoringType(readOp.getResult(), *scalarValue);
