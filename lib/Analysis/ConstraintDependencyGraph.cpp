@@ -96,20 +96,30 @@ subtractPointFromRange(const SourceRef &rangeAddress, const SourceRef &pointAddr
   const auto rangePath = rangeAddress.getPath();
   const auto pointPath = pointAddress.getPath();
   ensure(rangePath.size() == pointPath.size(), "overlapping SourceRefs must have matching paths");
-  const SourceRef narrowed = rangeAddress.narrowRanges(pointAddress);
   for (auto [index, rangeIndex] : llvm::enumerate(rangePath)) {
     if (!rangeIndex.isIndexRange()) {
       continue;
     }
     ensure(pointPath[index].isIndex(), "point address must use concrete array indices");
+
+    // Partition in lexicographic dimension order. Earlier ranged dimensions have already
+    // excluded their point, while later dimensions must retain their full ranges; narrowing
+    // every dimension to the point would omit residual cells such as [1, 1] when subtracting
+    // [0, 0] from [0, 2) x [0, 2).
+    SourceRef slab = rangeAddress;
+    for (size_t earlier = 0; earlier < index; ++earlier) {
+      if (rangePath[earlier].isIndexRange()) {
+        slab = *replacePathIndex(slab, earlier, pointPath[earlier]);
+      }
+    }
     const auto [low, high] = rangeIndex.getIndexRange();
     const auto point = pointPath[index].getIndex();
     if (low < point) {
-      result.push_back(*replacePathIndex(narrowed, index, SourceRefIndex({low, point})));
+      result.push_back(*replacePathIndex(slab, index, SourceRefIndex({low, point})));
     }
     const llvm::DynamicAPInt afterPoint = point + 1;
     if (afterPoint < high) {
-      result.push_back(*replacePathIndex(narrowed, index, SourceRefIndex({afterPoint, high})));
+      result.push_back(*replacePathIndex(slab, index, SourceRefIndex({afterPoint, high})));
     }
   }
   return result;

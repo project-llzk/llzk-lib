@@ -1028,6 +1028,58 @@ module attributes {llzk.lang} {
   );
 }
 
+TEST_F(SourceRefTests, DefiniteMatrixWritePreservesDynamicWriteOutsideOverwrittenPoint) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @DefiniteMatrixWritePreservesDynamicWrite {
+    function.def @compute(
+        %initial00: !felt.type, %initial01: !felt.type, %initial10: !felt.type,
+        %initial11: !felt.type, %i: index, %j: index, %dynamic: !felt.type,
+        %replacement: !felt.type
+    ) -> !struct.type<@DefiniteMatrixWritePreservesDynamicWrite> {
+      %self = struct.new : !struct.type<@DefiniteMatrixWritePreservesDynamicWrite>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %storage = array.new %initial00, %initial01, %initial10, %initial11
+          : !array.type<2,2 x !felt.type>
+      array.write %storage[%i, %j] = %dynamic
+          : !array.type<2,2 x !felt.type>, !felt.type
+      array.write %storage[%c0, %c0] = %replacement
+          : !array.type<2,2 x !felt.type>, !felt.type
+      %remaining = array.read %storage[%c1, %c1]
+          : !array.type<2,2 x !felt.type>, !felt.type
+      function.return %self : !struct.type<@DefiniteMatrixWritePreservesDynamicWrite>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@DefiniteMatrixWritePreservesDynamicWrite>,
+        %initial00: !felt.type, %initial01: !felt.type, %initial10: !felt.type,
+        %initial11: !felt.type, %i: index, %j: index, %dynamic: !felt.type,
+        %replacement: !felt.type
+    ) {
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto read = *computeFn.getOps<array::ReadArrayOp>().begin();
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  analysis.ensureAnalysisRun(am);
+
+  EXPECT_EQ(
+      SourceRefAnalysis::getDependencyState(analysis.getSolver(), read.getResult()).foldToScalar(),
+      SourceRefSet({SourceRef(computeFn.getArgument(3)), SourceRef(computeFn.getArgument(6))})
+  );
+}
+
 TEST_F(SourceRefTests, DynamicArrayInsertsPreserveEarlierStorageDependencies) {
   static constexpr auto source = R"mlir(
 module attributes {llzk.lang} {
