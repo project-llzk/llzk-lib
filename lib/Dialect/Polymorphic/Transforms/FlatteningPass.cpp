@@ -3802,15 +3802,23 @@ static LogicalResult rewriteSplitMemberReads(
       if (failed(canReplaceReadUsersWithType(readOp, memberInfo.second, tables))) {
         return failure();
       }
-      if (scalarValueByIndex.contains(idx)) {
-        continue;
+      MemberReadOp scalarRead;
+      if (auto scalarIt = scalarValueByIndex.find(idx); scalarIt != scalarValueByIndex.end()) {
+        scalarRead = llvm::cast<MemberReadOp>(scalarIt->second.getDefiningOp());
+      } else {
+        scalarRead = rewriter.create<MemberReadOp>(
+            memberReadOp.getLoc(), memberInfo.second, memberReadOp.getComponent(), memberInfo.first,
+            memberReadOp.getTableOffset().value_or(Attribute {}), mapOperands, numDims
+        );
+        scalarRead->setDiscardableAttrs(discardableAttrs);
+        scalarValueByIndex[idx] = scalarRead.getResult();
       }
-      auto scalarRead = rewriter.create<MemberReadOp>(
-          memberReadOp.getLoc(), memberInfo.second, memberReadOp.getComponent(), memberInfo.first,
-          memberReadOp.getTableOffset().value_or(Attribute {}), mapOperands, numDims
-      );
-      scalarRead->setDiscardableAttrs(discardableAttrs);
-      scalarValueByIndex[idx] = scalarRead.getResult();
+      // Preserve provenance and other discardable metadata from the static array read that this
+      // scalar member read replaces. Per-read metadata takes precedence over metadata inherited
+      // from the whole-array member read.
+      for (NamedAttribute attr : readOp->getDiscardableAttrDictionary().getValue()) {
+        scalarRead->setDiscardableAttr(attr.getName(), attr.getValue());
+      }
     }
 
     for (ReadArrayOp readOp : llvm::make_early_inc_range(arrayReads)) {

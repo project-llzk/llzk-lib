@@ -35,7 +35,7 @@ module attributes {llzk.lang} {
       array.write %initial[%c1] = %initial1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
       struct.writem %self[@items] = %initial : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
 
-      %snapshot = struct.readm %self[@items] : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+      %snapshot = struct.readm %self[@items] : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {product_source = "whole", whole_source = "whole"}
 
       %replacement = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
       %replacement0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
@@ -44,7 +44,7 @@ module attributes {llzk.lang} {
       array.write %replacement[%c1] = %replacement1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
       struct.writem %self[@items] = %replacement : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
 
-      %old0 = array.read %snapshot[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+      %old0 = array.read %snapshot[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>> {product_source = "read"}
       struct.writem %self[@first] = %old0 : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
       function.return %self : !struct.type<@Holder>
     }
@@ -85,7 +85,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@items_0] = %[[VAL_5]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@items_1] = %[[VAL_6]] : <@Holder>, !struct.type<@TCell_1_Cell>
-// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@items_0] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@items_0] : <@Holder>, !struct.type<@TCell_0_Cell> {product_source = "read", whole_source = "whole"}
 // CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@items_0] = %[[VAL_8]] : <@Holder>, !struct.type<@TCell_0_Cell>
