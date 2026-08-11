@@ -55,6 +55,7 @@
 #include "pcl/Conversion/ConversionPasses.h"
 #include "pcl/Dialect/IR/Dialect.h"
 #include "pcl/DialectRegistration.h"
+#include "pcl/Transforms/TransformationPasses.h"
 #endif // LLZK_WITH_PCL
 
 static llvm::cl::list<std::string> IncludeDirs(
@@ -131,6 +132,7 @@ int main(int argc, char **argv) {
   zklean::registerConversionPasses();
 #if LLZK_WITH_PCL
   pcl::registerPCLConversionPasses();
+  pcl::registerTransformationPasses();
 #endif // LLZK_WITH_PCL
   llzk::smt::registerConversionPasses();
 
