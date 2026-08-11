@@ -67,6 +67,55 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
+// Nested type parameters are scoped to their own template, even when they have the same
+// names as concrete parameters in the enclosing template.
+module attributes {llzk.lang} {
+  poly.template @NestedScopeInner {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @f(%arg: !poly.tvar<@U>) -> !poly.tvar<@U> {
+      %cast = poly.unifiable_cast %arg : (!poly.tvar<@U>) -> !poly.tvar<@T>
+      function.return %arg : !poly.tvar<@U>
+    }
+  }
+
+  poly.template @NestedScopeOuter {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @g(%arg: !poly.tvar<@U>) -> !poly.tvar<@U> {
+      %call = function.call @NestedScopeInner::@f<[?, @U]>(%arg) : (!poly.tvar<@U>) -> !poly.tvar<@U>
+      function.return %call : !poly.tvar<@U>
+    }
+  }
+
+  poly.template @NestedScopeCaller {
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @call(%arg: !poly.tvar<@U>) -> !poly.tvar<@U> {
+      %call = function.call @NestedScopeOuter::@g<[index, ?]>(%arg) : (!poly.tvar<@U>) -> !poly.tvar<@U>
+      function.return %call : !poly.tvar<@U>
+    }
+  }
+}
+// CHECK-LABEL: poly.template @"NestedScopeOuter_i_\1A" {
+// CHECK-NEXT:    poly.param @U : !poly.tvar<@U>
+// CHECK-NEXT:    function.def @g(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !poly.tvar<@U>) -> !poly.tvar<@U> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @NestedScopeInner::@f<[?, @U]>(%[[VAL_0]]) : (!poly.tvar<@U>) -> !poly.tvar<@U>
+// CHECK-NEXT:      function.return %[[VAL_1]] : !poly.tvar<@U>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: poly.template @NestedScopeCaller {
+// CHECK-NEXT:    poly.param @U : !poly.tvar<@U>
+// CHECK-NEXT:    function.def @call(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !poly.tvar<@U>) -> !poly.tvar<@U> {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @"NestedScopeOuter_i_\1A"::@g<[?]>(%[[VAL_2]]) : (!poly.tvar<@U>) -> !poly.tvar<@U>
+// CHECK-NEXT:      function.return %[[VAL_3]] : !poly.tvar<@U>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
 // Test transitive instantiation of functions. Also different instantiations of the same function.
 module attributes {llzk.lang} {
   poly.template @template_g1 {

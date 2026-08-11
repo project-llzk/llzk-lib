@@ -1304,6 +1304,15 @@ public:
 
   /// Search `func` for a concrete value that can resolve `paramName`.
   std::optional<Attribute> infer(FuncDefOp func, FlatSymbolRefAttr paramName) {
+    return infer(func, paramName, paramNameToConcrete_);
+  }
+
+private:
+  /// Search `func` using concrete bindings expressed in that function's template scope.
+  std::optional<Attribute> infer(
+      FuncDefOp func, FlatSymbolRefAttr paramName,
+      const DenseMap<Attribute, Attribute> &paramNameToConcrete
+  ) {
     if (llvm::any_of(activeInferences_, [&](const auto &e) {
       return e.first == func.getOperation() && e.second == paramName;
     })) {
@@ -1311,7 +1320,7 @@ public:
     }
     activeInferences_.emplace_back(func.getOperation(), paramName);
 
-    FuncInstTypeConverter tyConv((paramNameToConcrete_));
+    FuncInstTypeConverter tyConv(paramNameToConcrete);
     std::optional<Attribute> inferred;
     bool ambiguous = false;
 
@@ -1381,7 +1390,9 @@ public:
           }
           continue;
         }
-        if (std::optional<Attribute> candidate = infer(nestedTgt, nestedTvar.getNameRef())) {
+        DenseMap<Attribute, Attribute> nestedParamNameToConcrete =
+            getNestedConcreteBindings(nestedCall, nestedTgt, nestedTemplate, tyConv);
+        if (auto candidate = infer(nestedTgt, nestedTvar.getNameRef(), nestedParamNameToConcrete)) {
           WalkResult candidateResult = noteCandidate(*candidate);
           if (candidateResult.wasInterrupted()) {
             return candidateResult;
@@ -1398,7 +1409,45 @@ public:
     return inferred;
   }
 
-private:
+  /// Map concrete bindings for a nested callee into the nested template's parameter scope.
+  ///
+  /// The current converter's keys name parameters of the enclosing template. Reusing it while
+  /// walking a nested callee would therefore incorrectly bind same-named nested parameters.
+  static DenseMap<Attribute, Attribute> getNestedConcreteBindings(
+      CallOp nestedCall, FuncDefOp nestedTgt, TemplateOp nestedTemplate,
+      const FuncInstTypeConverter &enclosingTyConv
+  ) {
+    DenseMap<Attribute, Attribute> bindings;
+    auto nestedParams = nestedTemplate.getConstOps<TemplateParamOp>();
+    ArrayAttr callParams = nestedCall.getTemplateParamsAttr();
+
+    if (!isNullOrEmpty(callParams)) {
+      for (auto [paramOp, arg] : llvm::zip_equal(nestedParams, callParams.getValue())) {
+        Attribute value = enclosingTyConv.convertAttr(arg);
+        if (isConcreteAttr(value)) {
+          bindings[FlatSymbolRefAttr::get(paramOp.getSymNameAttr())] = value;
+        }
+      }
+      return bindings;
+    }
+
+    FailureOr<UnificationMap> unifyResult =
+        nestedCall.unifyTypeSignature(nestedTgt.getFunctionType());
+    if (failed(unifyResult)) {
+      return bindings;
+    }
+    for (TemplateParamOp paramOp : nestedParams) {
+      auto paramName = FlatSymbolRefAttr::get(paramOp.getSymNameAttr());
+      if (std::optional<Attribute> value = inferUnifiedParam(*unifyResult, paramName)) {
+        Attribute convertedValue = enclosingTyConv.convertAttr(*value);
+        if (isConcreteAttr(convertedValue)) {
+          bindings[paramName] = convertedValue;
+        }
+      }
+    }
+    return bindings;
+  }
+
   /// Infer a nested callee parameter value from the nested call's explicit template arguments.
   std::optional<Attribute> inferFromExplicitNestedCallParams(
       CallOp nestedCall, TemplateOp nestedTemplate, FlatSymbolRefAttr nestedParamName,
