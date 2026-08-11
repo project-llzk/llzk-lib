@@ -1,0 +1,7 @@
+// RUN: llzk-opt -I %input_dir -llzk-inline-includes -llzk-print-interval-analysis="field=babybear propagate-input-constraints" %s 2>&1 | FileCheck %s
+
+// COM: Regression test for convergence of the interval analysis.
+module attributes {llzk.lang} {
+  include.from "FrontendLang/Zirgen/Inputs/zir_example_loops.llzk" as @zir_loops
+}
+// CHECK: @zir_loops
