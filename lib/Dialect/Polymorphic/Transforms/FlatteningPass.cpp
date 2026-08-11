@@ -3444,7 +3444,10 @@ static LogicalResult verifySharedNondetSpecializationExternalUses(
 
       SmallVector<Type> argTypes(call.getArgOperands().getTypes());
       argTypes.front() = type;
-      if (target->get().getArgumentTypes() != ArrayRef<Type>(argTypes)) {
+      // Match the namespace-aware compatibility check performed by the CallOp verifier. The
+      // retargeted callee can accept a still-generic companion argument even when it is not
+      // exactly equal to the newly instantiated parameter type.
+      if (!typeListsUnify(argTypes, target->get().getArgumentTypes(), target->getNamespace())) {
         InFlightDiagnostic diag = info.createOp->emitError(
             "cannot scalarize array because specializing a generic nondeterministic initializer "
             "would make an external constraint call incompatible with its retargeted callee"
