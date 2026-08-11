@@ -3315,10 +3315,11 @@ static LogicalResult materializeSharedNondetSpecializations(
       StructType structType = llvm::cast<StructType>(type);
       SymbolRefAttr callee =
           appendLeaf(structType.getNameRef(), call.getCalleeAttr().getLeafReference());
-      replaceOpWithNewOp<CallOp>(
+      CallOp newCall = replaceOpWithNewOp<CallOp>(
           rewriter, call, call.getResultTypes(), callee,
           CallOp::toVectorOfValueRange(call.getMapOperands()), call.getNumDimsPerMapAttr(), args
       );
+      newCall->setDiscardableAttrs(call->getDiscardableAttrDictionary());
     }
   }
   return success();

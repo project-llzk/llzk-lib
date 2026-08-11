@@ -41,7 +41,7 @@ module attributes {llzk.lang} {
     %shared = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>> {product_source = "shared"}
     %other = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
     %fallback = array.new %shared, %other : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-    function.call @TCell::@Cell::@constrain(%shared) : (!struct.type<@TCell::@Cell<[#id]>>) -> ()
+    function.call @TCell::@Cell::@constrain(%shared) : (!struct.type<@TCell::@Cell<[#id]>>) -> () {product_source = "shared"}
     struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
     function.return %self : !struct.type<@Holder>
     }
@@ -79,7 +79,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@items_1] = %[[VAL_6]] : <@Holder>, !struct.type<@TCell_1_Cell>
 // CHECK-DAG:         %[[VAL_7:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
 // CHECK-DAG:         %[[VAL_8:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_0_Cell> {product_source = "shared"}
-// CHECK-DAG:         function.call @TCell_0_Cell::@constrain(%[[VAL_8]]) : (!struct.type<@TCell_0_Cell>) -> ()
+// CHECK-DAG:         function.call @TCell_0_Cell::@constrain(%[[VAL_8]]) : (!struct.type<@TCell_0_Cell>) -> () {product_source = "shared"}
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@items_0] = %[[VAL_8]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@items_1] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@Holder>
