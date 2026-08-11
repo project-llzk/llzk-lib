@@ -1,0 +1,51 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s | FileCheck %s
+
+module attributes {llzk.lang} {
+  function.def @consume3x3(%value: !array.type<3,3 x !felt.type>) {
+    function.return
+  }
+
+  struct.def @Holder {
+    struct.member @items : !array.type<?,? x !felt.type> {column}
+
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %source = array.new : !array.type<2,2 x !felt.type>
+      %first = poly.unifiable_cast %source : (!array.type<2,2 x !felt.type>) -> !array.type<2,? x !felt.type>
+      %second = poly.unifiable_cast %source : (!array.type<2,2 x !felt.type>) -> !array.type<?,2 x !felt.type>
+      // The complementary writes refine @items to 2 x 2.
+      struct.writem %self[@items] = %first : !struct.type<@Holder>, !array.type<2,? x !felt.type>
+      struct.writem %self[@items] = %second : !struct.type<@Holder>, !array.type<?,2 x !felt.type>
+      // This generic read instead feeds a call whose declared parameter requires 3 x 3.
+      %read = struct.readm %self[@items] : !struct.type<@Holder>, !array.type<?,? x !felt.type>
+      function.call @consume3x3(%read) : (!array.type<?,? x !felt.type>) -> ()
+      function.return %self : !struct.type<@Holder>
+    }
+
+    function.def @constrain(%self: !struct.type<@Holder>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @consume3x3(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<3,3 x !felt.type>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Holder {
+// CHECK-NEXT:      struct.member @items : !array.type<?,? x !felt.type> {column}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.new  : <2,2 x !felt.type>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_2]] : (!array.type<2,2 x !felt.type>) -> !array.type<?,? x !felt.type>
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_2]] : (!array.type<2,2 x !felt.type>) -> !array.type<?,? x !felt.type>
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@items] = %[[VAL_3]] : <@Holder>, !array.type<?,? x !felt.type>
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@items] = %[[VAL_4]] : <@Holder>, !array.type<?,? x !felt.type>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@items] : <@Holder>, !array.type<?,? x !felt.type>
+// CHECK-NEXT:        function.call @consume3x3(%[[VAL_5]]) : (!array.type<?,? x !felt.type>) -> ()
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

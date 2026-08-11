@@ -2934,6 +2934,56 @@ static bool canUseScalarizedValueAsType(
   return succeeded(commonType) && *commonType == targetType;
 }
 
+/// Return true iff typed consumers of a member read can use its refined result type.
+///
+/// A generic read result may unify both with the proposed member type and with a different
+/// concrete type required by a consumer.  Updating the read in that situation would make the
+/// consuming operation invalid, so the member definition must remain generic.
+static bool canRefineMemberReadUsersToType(
+    MemberReadOp readOp, Type refinedType, SymbolTableCollection &tables,
+    const ConversionTracker &tracker
+) {
+  Value result = readOp.getVal();
+  for (OpOperand &use : result.getUses()) {
+    Operation *user = use.getOwner();
+    if (MemberWriteOp memberWrite = llvm::dyn_cast<MemberWriteOp>(user)) {
+      if (memberWrite.getVal() != result) {
+        return false;
+      }
+      auto memberDef = memberWrite.getMemberDefOp(tables);
+      if (failed(memberDef)) {
+        return false;
+      }
+      Type memberType = memberDef->get().getType();
+      if (isConcreteType(memberType, /*allowStructParams=*/false) &&
+          !canUseScalarizedValueAsType(
+              refinedType, memberType, tracker, "UpdateMemberDefTypeFromWrite"
+          )) {
+        return false;
+      }
+      continue;
+    }
+    if (CallOp call = llvm::dyn_cast<CallOp>(user)) {
+      unsigned argIdx = use.getOperandNumber() - call.getArgOperands().getBeginOperandIndex();
+      if (argIdx >= call.getArgOperands().size()) {
+        return false;
+      }
+      auto callee = call.getCalleeTarget(tables);
+      if (failed(callee)) {
+        return false;
+      }
+      Type paramType = callee->get().getFunctionType().getInput(argIdx);
+      if (isConcreteType(paramType, /*allowStructParams=*/false) &&
+          !canUseScalarizedValueAsType(
+              refinedType, paramType, tracker, "UpdateMemberDefTypeFromWrite"
+          )) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 /// Merge one candidate scalar type into the split type map, keeping the most concrete refinement.
 static LogicalResult mergeSplitCandidateType(
     MemberDefOp member, ArrayAttr idx, Type candidateType, Operation *candidateOp,
@@ -4879,16 +4929,23 @@ public:
       }
     }
 
-    // Do not commit a write-derived refinement that an existing read cannot adopt. In particular,
-    // two complementary writes can have a common refinement even when a read independently
-    // unified with the original, more generic member type is incompatible with that refinement.
+    // Do not commit a write-derived refinement that an existing read or one of its typed consumers
+    // cannot adopt. In particular, two complementary writes can have a common refinement even
+    // when a generic read is independently consumed as an incompatible concrete type.
     if (auto memberUsers = llzk::getSymbolUses(op, parentRes)) {
+      SymbolTableCollection tables;
       for (SymbolTable::SymbolUse symUse : memberUsers.value()) {
         if (MemberReadOp readOp = llvm::dyn_cast<MemberReadOp>(symUse.getUser())) {
-          bool res = Step5_ScalarizeHeterogeneousArrays::canUseScalarizedValueAsType(
+          bool canUse = Step5_ScalarizeHeterogeneousArrays::canUseScalarizedValueAsType(
               readOp.getVal().getType(), newType, tracker_, "UpdateMemberDefTypeFromWrite"
           );
-          if (!res) {
+          if (!canUse) {
+            return failure();
+          }
+          bool canRefine = Step5_ScalarizeHeterogeneousArrays::canRefineMemberReadUsersToType(
+              readOp, newType, tables, tracker_
+          );
+          if (!canRefine) {
             return failure();
           }
         }
