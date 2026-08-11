@@ -163,9 +163,10 @@ module attributes {llzk.lang} {
       } else {
         // expected-error@+1 {{cannot split heterogeneous array member because an expandable array reuses one SSA value for incompatible scalar member types}}
         %fallback = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-        // expected-note@+1 {{unwritten index [0 : index] is materialized for scalar member type '!struct.type<@TCell_0_Cell>'}}
+        // It's not deterministic which index is materialized first, so we have to accept either in the notes.
+        // expected-note-re@+1 {{unwritten index [{{[01]}} : index] is materialized for scalar member type '!struct.type<@TCell_{{[01]}}_Cell>'}}
         struct.writem %self[@left] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-        // expected-note@+1 {{same index is also materialized for scalar member type '!struct.type<@TCell_1_Cell>'}}
+        // expected-note-re@+1 {{same index is also materialized for scalar member type '!struct.type<@TCell_{{[01]}}_Cell>'}}
         struct.writem %self[@right] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
       }
       function.return %self : !struct.type<@Holder>
