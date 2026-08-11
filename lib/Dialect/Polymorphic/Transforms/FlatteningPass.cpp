@@ -1135,7 +1135,9 @@ public:
     if (newType == op.getType()) {
       return failure();
     }
-    replaceOpWithNewOp<NonDetOp>(rewriter, op, newType);
+    NonDetOp newOp = rewriter.create<NonDetOp>(op.getLoc(), newType);
+    newOp->setDiscardableAttrs(op->getDiscardableAttrDictionary());
+    rewriter.replaceOp(op, newOp.getResult());
     return success();
   }
 };
