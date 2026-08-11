@@ -237,6 +237,52 @@ SourceRefLatticeValue SourceRefAnalysis::getValueState(DataFlowSolver &solver, V
 }
 
 SourceRefLatticeValue SourceRefAnalysis::getDependencyState(DataFlowSolver &solver, Value val) {
+  // Region-branch result lattices merge the references carried by their exiting regions, but a
+  // storage-backed yielded value must be resolved at the region terminator rather than before
+  // the enclosing operation. Resolving it before the region branch would omit writes performed
+  // earlier in the region. Repetitive region branches retain the existing loop-carried model.
+  if (auto result = llvm::dyn_cast<OpResult>(val)) {
+    auto regionBranch = llvm::dyn_cast<RegionBranchOpInterface>(result.getOwner());
+    if (regionBranch && !regionBranch.hasLoop()) {
+      SourceRefLatticeValue yieldedDependencies;
+      bool foundYield = false;
+      const unsigned resultNumber = result.getResultNumber();
+      for (Region &region : regionBranch->getRegions()) {
+        SmallVector<RegionSuccessor> successors;
+        regionBranch.getSuccessorRegions(RegionBranchPoint(&region), successors);
+        const bool exitsToParent = llvm::any_of(successors, [](const RegionSuccessor &successor) {
+          return successor.isParent();
+        });
+        if (!exitsToParent) {
+          continue;
+        }
+        for (Block &block : region) {
+          Operation *terminator = block.getTerminator();
+          if (terminator == nullptr) {
+            continue;
+          }
+          auto resolveYieldedOperand = [&](ValueRange yieldedOperands) {
+            if (resultNumber >= yieldedOperands.size()) {
+              return;
+            }
+            (void)yieldedDependencies.update(
+                getDependencyState(solver, yieldedOperands[resultNumber], terminator)
+            );
+            foundYield = true;
+          };
+          if (auto branch = llvm::dyn_cast<RegionBranchTerminatorOpInterface>(terminator)) {
+            resolveYieldedOperand(branch.getSuccessorOperands(RegionBranchPoint::parent()));
+          } else if (terminator->hasTrait<OpTrait::ReturnLike>()) {
+            resolveYieldedOperand(terminator->getOperands());
+          }
+        }
+      }
+      if (foundYield) {
+        return yieldedDependencies;
+      }
+    }
+  }
+
   Operation *before = val.getDefiningOp();
   if (before == nullptr) {
     before = val.getParentBlock()->getParentOp();

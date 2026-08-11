@@ -561,6 +561,42 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @IfYieldedStorageRead {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%old: !felt.type, %new: !felt.type, %cond: i1) -> !struct.type<@IfYieldedStorageRead> {
+      %self = struct.new : !struct.type<@IfYieldedStorageRead>
+      function.return %self : !struct.type<@IfYieldedStorageRead>
+    }
+
+    function.def @constrain(%self: !struct.type<@IfYieldedStorageRead>, %old: !felt.type, %new: !felt.type, %cond: i1) {
+      %expected = struct.readm %self[@out] : !struct.type<@IfYieldedStorageRead>, !felt.type
+      %idx = arith.constant 0 : index
+      %array = array.new %old : !array.type<1 x !felt.type>
+      %actual = scf.if %cond -> !felt.type {
+        array.write %array[%idx] = %new : !array.type<1 x !felt.type>, !felt.type
+        %written = array.read %array[%idx] : !array.type<1 x !felt.type>, !felt.type
+        scf.yield %written : !felt.type
+      } else {
+        %unwritten = array.read %array[%idx] : !array.type<1 x !felt.type>, !felt.type
+        scf.yield %unwritten : !felt.type
+      }
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @IfYieldedStorageRead ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg1, %arg2 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @IfYieldedStorageRead ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg1, %arg2 }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
   function.def @overwrite_called_element(%array: !array.type<1 x !felt.type>, %value: !felt.type) {
     %idx = arith.constant 0 : index
     array.write %array[%idx] = %value : !array.type<1 x !felt.type>, !felt.type
