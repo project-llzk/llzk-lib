@@ -1760,6 +1760,50 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  function.def @overwrite_selected_pod(%pod: !pod.type<[@value: !felt.type]>, %new: !felt.type) {
+    pod.write %pod[@value] = %new : !pod.type<[@value: !felt.type]>, !felt.type
+    function.return
+  }
+
+  struct.def @CallMergedPodWriteStorageEffects {
+    struct.member @first : !felt.type {llzk.pub}
+    struct.member @second : !felt.type {llzk.pub}
+
+    function.def @compute(%old_first: !felt.type, %old_second: !felt.type, %new: !felt.type, %cond: i1) -> !struct.type<@CallMergedPodWriteStorageEffects> {
+      %self = struct.new : !struct.type<@CallMergedPodWriteStorageEffects>
+      function.return %self : !struct.type<@CallMergedPodWriteStorageEffects>
+    }
+
+    function.def @constrain(%self: !struct.type<@CallMergedPodWriteStorageEffects>, %old_first: !felt.type, %old_second: !felt.type, %new: !felt.type, %cond: i1) {
+      %expected_first = struct.readm %self[@first] : !struct.type<@CallMergedPodWriteStorageEffects>, !felt.type
+      %expected_second = struct.readm %self[@second] : !struct.type<@CallMergedPodWriteStorageEffects>, !felt.type
+      %first = pod.new { @value = %old_first } : !pod.type<[@value: !felt.type]>
+      %second = pod.new { @value = %old_second } : !pod.type<[@value: !felt.type]>
+      %selected = scf.if %cond -> !pod.type<[@value: !felt.type]> {
+        scf.yield %first : !pod.type<[@value: !felt.type]>
+      } else {
+        scf.yield %second : !pod.type<[@value: !felt.type]>
+      }
+      function.call @overwrite_selected_pod(%selected, %new) : (!pod.type<[@value: !felt.type]>, !felt.type) -> ()
+      %first_value = pod.read %first[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %second_value = pod.read %second[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      constrain.eq %expected_first, %first_value : !felt.type
+      constrain.eq %expected_second, %second_value : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @CallMergedPodWriteStorageEffects ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.first, %self.second, %arg1, %arg2, %arg3 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @CallMergedPodWriteStorageEffects ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.first, %self.second, %arg1, %arg2, %arg3 }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
   function.def @overwrite_element(%array: !array.type<1 x !felt.type>, %value: !felt.type) {
     %idx = arith.constant 0 : index
     array.write %array[%idx] = %value : !array.type<1 x !felt.type>, !felt.type

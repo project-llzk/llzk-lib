@@ -412,11 +412,13 @@ void SourceRefAnalysis::StorageState::recordCalleeStorageWrites(
       // Unlike addresses, values may legitimately include constants. Keep such
       // sources while replacing every reference rooted in a callee argument.
       auto [value, _] = resolvedValue.replacePrefixes(translation);
+      const bool translatedWriteMayBeSkipped =
+          callMayBeSkipped || isNonSingletonArrayWriteTarget(addresses);
       translatedWrites.push_back({
           std::move(addresses),
           std::move(value),
-          write.mayBeSkipped || callMayBeSkipped,
-          write.seedUnwrittenAlternative || callMayBeSkipped,
+          write.mayBeSkipped || translatedWriteMayBeSkipped,
+          write.seedUnwrittenAlternative || translatedWriteMayBeSkipped,
       });
     }
   });
