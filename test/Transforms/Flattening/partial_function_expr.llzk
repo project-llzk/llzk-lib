@@ -1,0 +1,54 @@
+// RUN: llzk-opt -llzk-flatten %s | FileCheck --enable-var-scope %s
+
+// A partial function instantiation must retain expressions that read the remaining parameters.
+module attributes {llzk.lang} {
+  poly.template @Callee {
+    poly.param @A : index
+    poly.param @B : index
+    poly.expr @Length {
+      %a = poly.read_const @A : index
+      %b = poly.read_const @B : index
+      %length = arith.addi %a, %b : index
+      poly.yield %length : index
+    }
+
+    function.def @f(%input: !array.type<@A,@B x !felt.type>) -> !felt.type {
+      %zero = arith.constant 0 : index
+      %length = poly.read_const @Length : index
+      %result = array.read %input[%zero, %zero] : !array.type<@A,@B x !felt.type>, !felt.type
+      function.return %result : !felt.type
+    }
+  }
+
+  poly.template @Caller {
+    poly.param @N : index
+
+    function.def @g(%input: !array.type<8,@N x !felt.type>) -> !felt.type {
+      %result = function.call @Callee::@f(%input) : (!array.type<8,@N x !felt.type>) -> !felt.type
+      function.return %result : !felt.type
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @"Callee_8_\1A" {
+// CHECK-NEXT:      poly.param @B : index
+// CHECK-NEXT:      poly.expr @Length {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 8 : index
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @B : index
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_1]], %[[VAL_0]] : index
+// CHECK-NEXT:        poly.yield %[[VAL_2]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @f(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<8,@B x !felt.type>) -> !felt.type {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_4]], %[[VAL_4]]] : <8,@B x !felt.type>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_5]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["Callee_8_", ""]}
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      function.def @g(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<8,@N x !felt.type>) -> !felt.type {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @"Callee_8_\1A"::@f(%[[VAL_6]]) : (!array.type<8,@N x !felt.type>) -> !felt.type
+// CHECK-NEXT:        function.return %[[VAL_7]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

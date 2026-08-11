@@ -1494,6 +1494,66 @@ static LogicalResult applyBodyConversions(
   return failure(res.wasInterrupted());
 }
 
+/// Copy the unresolved template expressions read by `newFunc` into its partially-instantiated
+/// parent template. Reads of concrete parameters within the copied expressions are materialized so
+/// the new template contains no references to parameters that it does not preserve.
+static LogicalResult copyReferencedTemplateExprs(
+    TemplateOp parentTemplate, Block &newTemplateBody, FuncDefOp newFunc,
+    const DenseMap<Attribute, Attribute> &paramNameToConcrete
+) {
+  DenseSet<StringAttr> referencedExprNames;
+  newFunc.walk([&](ConstReadOp readOp) {
+    FlatSymbolRefAttr name = readOp.getConstNameAttr();
+    if (!paramNameToConcrete.contains(name)) {
+      referencedExprNames.insert(name.getAttr());
+    }
+  });
+
+  for (TemplateExprOp expr : parentTemplate.getConstOps<TemplateExprOp>()) {
+    if (!referencedExprNames.contains(expr.getSymNameAttr())) {
+      continue;
+    }
+
+    auto clonedExpr = llvm::cast<TemplateExprOp>(expr->clone());
+    SmallVector<ConstReadOp> concreteReads;
+    clonedExpr.walk([&](ConstReadOp readOp) {
+      if (paramNameToConcrete.contains(readOp.getConstNameAttr())) {
+        concreteReads.push_back(readOp);
+      }
+    });
+    for (ConstReadOp readOp : concreteReads) {
+      Attribute value = paramNameToConcrete.lookup(readOp.getConstNameAttr());
+      OpBuilder builder(readOp);
+      Operation *replacement = nullptr;
+      if (IntegerAttr integer = llvm::dyn_cast<IntegerAttr>(value)) {
+        if (FeltType type = llvm::dyn_cast<FeltType>(readOp.getType())) {
+          replacement = builder.create<FeltConstantOp>(
+              readOp.getLoc(), FeltConstAttr::get(readOp.getContext(), integer.getValue(), type)
+          );
+        } else if (llvm::isa<IndexType>(readOp.getType())) {
+          replacement = builder.create<arith::ConstantIndexOp>(
+              readOp.getLoc(), fromAPInt(integer.getValue())
+          );
+        } else if (readOp.getType().isSignlessInteger(1)) {
+          replacement = builder.create<arith::ConstantIntOp>(
+              readOp.getLoc(), integer.getValue().isZero() ? 0 : 1, readOp.getType()
+          );
+        }
+      } else if (FeltConstAttr felt = llvm::dyn_cast<FeltConstAttr>(value)) {
+        replacement = builder.create<FeltConstantOp>(readOp.getLoc(), felt);
+      }
+      if (!replacement) {
+        clonedExpr->erase();
+        return failure();
+      }
+      readOp.replaceAllUsesWith(replacement);
+      readOp.erase();
+    }
+    newTemplateBody.push_back(clonedExpr);
+  }
+  return success();
+}
+
 class InstantiateFuncAtCallOp final : public OpRewritePattern<CallOp> {
   ConversionTracker &tracker_;
 
@@ -1840,6 +1900,13 @@ private:
     // Clone and partially convert the function (concretize only the concrete params).
     FuncDefOp newFunc = callTgt.clone();
     convertCalleesInPlace(newFunc, paramNameToConcrete);
+    auto copyRes =
+        copyReferencedTemplateExprs(parentTemplate, newTemplateBody, newFunc, paramNameToConcrete);
+    if (failed(copyRes)) {
+      newFunc->erase();
+      newTemplate->erase();
+      return rewriter.notifyMatchFailure(op, "failure while copying template expressions");
+    }
 
     // Insert before body conversion so nested concrete callees verify from the root module. Use
     // SymbolTable::insert() so both physical symbol names are unique if necessary.
