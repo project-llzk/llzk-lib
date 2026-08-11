@@ -11,8 +11,8 @@
 #include "pcl/Dialect/IR/Ops.h"
 #include "pcl/Transforms/TransformationPasses.h"
 
-#include <mlir/IR/Builders.h>
 #include <mlir/Dialect/Func/IR/FuncOps.h>
+#include <mlir/IR/Builders.h>
 
 #include <llvm/ADT/APInt.h>
 #include <llvm/ADT/DenseMap.h>
