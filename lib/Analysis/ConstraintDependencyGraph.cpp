@@ -87,12 +87,12 @@ replacePathIndex(const SourceRef &ref, size_t index, const SourceRefIndex &repla
 /// The result is a disjoint set of range "slabs": each ranged dimension is split around the
 /// point after earlier ranged dimensions have been fixed to it. This preserves every address in
 /// `rangeAddress` except `pointAddress` without retaining an entry that overlaps the point.
-static llvm::SmallVector<SourceRef>
+static SmallVector<SourceRef>
 subtractPointFromRange(const SourceRef &rangeAddress, const SourceRef &pointAddress) {
   ensure(rangeAddress.overlaps(pointAddress), "point must overlap range before subtraction");
   ensure(!hasRangeIndex(pointAddress), "range subtraction requires a point address");
 
-  llvm::SmallVector<SourceRef> result;
+  SmallVector<SourceRef> result;
   const auto rangePath = rangeAddress.getPath();
   const auto pointPath = pointAddress.getPath();
   ensure(rangePath.size() == pointPath.size(), "overlapping SourceRefs must have matching paths");
@@ -117,7 +117,7 @@ subtractPointFromRange(const SourceRef &rangeAddress, const SourceRef &pointAddr
     if (low < point) {
       result.push_back(*replacePathIndex(slab, index, SourceRefIndex({low, point})));
     }
-    const llvm::DynamicAPInt afterPoint = point + 1;
+    const DynamicAPInt afterPoint = point + 1;
     if (afterPoint < high) {
       result.push_back(*replacePathIndex(slab, index, SourceRefIndex({afterPoint, high})));
     }
@@ -201,8 +201,8 @@ private:
   };
 
   struct MaterializedStorage {
-    llvm::DenseMap<SourceRef, SourceRefLatticeValue> values;
-    llvm::DenseSet<SourceRef> skippedFirstWrites;
+    DenseMap<SourceRef, SourceRefLatticeValue> values;
+    DenseSet<SourceRef> skippedFirstWrites;
   };
 
   /// Apply all known aggregate-storage aliases to a lattice value.
@@ -221,8 +221,8 @@ private:
   MaterializedStorage materializeStoredValues(Operation *before) const;
 
   Operation *top = nullptr;
-  llvm::DenseMap<Operation *, llvm::SmallVector<StorageWrite>> storageWrites;
-  llvm::DenseMap<Operation *, llvm::SmallVector<AggregateAlias>> aggregateAliases;
+  DenseMap<Operation *, SmallVector<StorageWrite>> storageWrites;
+  DenseMap<Operation *, SmallVector<AggregateAlias>> aggregateAliases;
 };
 
 const SourceRefAnalysis::Lattice *SourceRefAnalysis::getLattice(DataFlowSolver &solver, Value val) {
@@ -367,7 +367,7 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveDependencies(
     }
     return result;
   };
-  llvm::DenseSet<SourceRef> active;
+  DenseSet<SourceRef> active;
   std::function<SourceRefLatticeValue(const SourceRefLatticeValue &)> resolve =
       [&](const SourceRefLatticeValue &input) {
     SourceRefLatticeValue addressValue = canonicalize(input, aliases);
@@ -442,7 +442,7 @@ void SourceRefAnalysis::StorageState::recordStorageWrite(
 void SourceRefAnalysis::StorageState::recordCalleeStorageWrites(
     CallOpInterface call, FuncDefOp callee, const TranslationMap &translation
 ) {
-  llvm::SmallVector<StorageWrite> translatedWrites;
+  SmallVector<StorageWrite> translatedWrites;
   const bool callMayBeSkipped = isInMaybeSkippedScfRegion(call.getOperation());
   callee.walk([&](Operation *op) {
     auto writes = storageWrites.find(op);
@@ -538,8 +538,8 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
       SourceRefLatticeValue value;
       bool wasSkippedFirstWrite;
     };
-    llvm::SmallVector<RangeReplacement> replacements;
-    llvm::SmallVector<SourceRef> erasedAddresses;
+    SmallVector<RangeReplacement> replacements;
+    SmallVector<SourceRef> erasedAddresses;
     for (const auto &[storedAddress, storedValue] : storedValues) {
       if (!hasRangeIndex(storedAddress) || !storedAddress.overlaps(address)) {
         continue;
@@ -614,7 +614,7 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
   };
 
   auto materializeOperation = [&](Operation *op, bool forceMayBeSkipped) {
-    llvm::DenseSet<SourceRef> priorAliasSources;
+    DenseSet<SourceRef> priorAliasSources;
     for (const auto &[source, _] : aliases) {
       priorAliasSources.insert(source);
     }
@@ -623,7 +623,7 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
     // An aggregate assignment transfers the source's current contents to its new storage
     // location. Rebase only aliases introduced by this operation: applying the complete alias
     // map here would incorrectly move older writes in response to later assignments.
-    llvm::SmallVector<std::pair<SourceRef, SourceRefLatticeValue>> newAliases;
+    SmallVector<std::pair<SourceRef, SourceRefLatticeValue>> newAliases;
     for (const auto &[source, targets] : aliases) {
       if (!priorAliasSources.contains(source)) {
         newAliases.emplace_back(source, targets);
@@ -632,7 +632,7 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
     for (const auto &[source, targets] : newAliases) {
       const bool mayBeSkipped =
           forceMayBeSkipped || (targets.isScalar() && targets.getScalarValue().contains(source));
-      llvm::SmallVector<std::pair<SourceRef, SourceRefLatticeValue>> sourceContents;
+      SmallVector<std::pair<SourceRef, SourceRefLatticeValue>> sourceContents;
       for (const auto &[address, value] : storedValues) {
         if (address.isValidPrefix(source)) {
           sourceContents.emplace_back(address, value);
@@ -813,7 +813,7 @@ void SourceRefAnalysis::StorageState::applyAggregateAliases(
   }
 }
 
-mlir::FailureOr<SourceRefLatticeValue>
+FailureOr<SourceRefLatticeValue>
 SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
   llvm::SmallDenseMap<Value, SourceRefLatticeValue, 4> operandVals;
   for (Value operand : op->getOperands()) {
@@ -878,7 +878,7 @@ SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
     }
   }
 
-  return mlir::failure();
+  return failure();
 }
 
 void SourceRefAnalysis::setToEntryState(Lattice *lattice) {
@@ -1246,7 +1246,7 @@ FailureOr<ConstraintDependencyGraph> ConstraintDependencyGraph::compute(
 ) {
   ConstraintDependencyGraph cdg(m, s, ctx);
   if (cdg.computeConstraints(solver, am).failed()) {
-    return mlir::failure();
+    return failure();
   }
   return cdg;
 }
@@ -1308,14 +1308,13 @@ void ConstraintDependencyGraph::print(llvm::raw_ostream &os) const {
   os << "}\n";
 }
 
-mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
-    mlir::DataFlowSolver &solver, mlir::AnalysisManager &am
-) {
+LogicalResult
+ConstraintDependencyGraph::computeConstraints(DataFlowSolver &solver, AnalysisManager &am) {
   // Fetch the constrain function. This is a required feature for all LLZK structs.
   FuncDefOp constrainFnOp = structDef.getConstrainFuncOp();
   ensure(
       constrainFnOp,
-      "malformed struct " + mlir::Twine(structDef.getName()) + " must define a constrain function"
+      "malformed struct " + Twine(structDef.getName()) + " must define a constrain function"
   );
 
   /**
@@ -1372,7 +1371,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
       return;
     }
     auto res = resolveCallable<FuncDefOp>(tables, fnCall);
-    ensure(mlir::succeeded(res), "could not resolve constrain call");
+    ensure(succeeded(res), "could not resolve constrain call");
 
     auto fn = res->get();
     if (!fn.isStructConstrain()) {
@@ -1404,7 +1403,7 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
         am.getChildAnalysis<ConstraintDependencyGraphStructAnalysis>(calledStruct);
     if (!childAnalysis.constructed(ctx)) {
       ensure(
-          mlir::succeeded(childAnalysis.runAnalysis(solver, am, {.runIntraprocedural = false})),
+          succeeded(childAnalysis.runAnalysis(solver, am, {.runIntraprocedural = false})),
           "could not construct CDG for child struct"
       );
     }
@@ -1438,12 +1437,10 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     constrainFnOp.walk(fnCallWalker);
   }
 
-  return mlir::success();
+  return success();
 }
 
-void ConstraintDependencyGraph::walkConstrainOp(
-    mlir::DataFlowSolver &solver, mlir::Operation *emitOp
-) {
+void ConstraintDependencyGraph::walkConstrainOp(DataFlowSolver &solver, Operation *emitOp) {
   std::vector<SourceRef> signalUsages, constUsages;
 
   for (auto operand : emitOp->getOperands()) {
@@ -1477,7 +1474,7 @@ ConstraintDependencyGraph ConstraintDependencyGraph::translate(
 ) const {
   ConstraintDependencyGraph res(mod, structDef, ctx);
   auto translate = [&translation,
-                    &resolve](const SourceRef &elem) -> mlir::FailureOr<std::vector<SourceRef>> {
+                    &resolve](const SourceRef &elem) -> FailureOr<std::vector<SourceRef>> {
     std::vector<SourceRef> refs;
     auto appendRef = [&](const SourceRef &ref) {
       if (!resolve) {
@@ -1496,9 +1493,7 @@ ConstraintDependencyGraph ConstraintDependencyGraph::translate(
       if (vals.isArray()) {
         // Try to index into the array
         auto suffix = elem.getSuffix(prefix);
-        ensure(
-            mlir::succeeded(suffix), "failure is nonsensical, we already checked for valid prefix"
-        );
+        ensure(succeeded(suffix), "failure is nonsensical, we already checked for valid prefix");
 
         auto resolvedValsRes = vals.extract(suffix.value());
         ensure(succeeded(resolvedValsRes), "could not create SourceRef child while resolving refs");
@@ -1510,14 +1505,14 @@ ConstraintDependencyGraph ConstraintDependencyGraph::translate(
       } else {
         for (const auto &replacement : vals.getScalarValue()) {
           auto translated = elem.translate(prefix, replacement);
-          if (mlir::succeeded(translated)) {
+          if (succeeded(translated)) {
             appendRef(translated.value());
           }
         }
       }
     }
     if (refs.empty()) {
-      return mlir::failure();
+      return failure();
     }
     return refs;
   };
@@ -1530,7 +1525,7 @@ ConstraintDependencyGraph ConstraintDependencyGraph::translate(
     std::vector<SourceRef> translatedSignals, translatedConsts;
     for (auto mit = signalSets.member_begin(leaderIt); mit != signalSets.member_end(); mit++) {
       auto member = translate(*mit);
-      if (mlir::failed(member)) {
+      if (failed(member)) {
         continue;
       }
       for (const auto &ref : *member) {
@@ -1581,8 +1576,8 @@ ConstraintDependencyGraph ConstraintDependencyGraph::translate(
 
 SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &ref) const {
   SourceRefSet res;
-  auto currRef = mlir::FailureOr<SourceRef>(ref);
-  while (mlir::succeeded(currRef)) {
+  auto currRef = FailureOr<SourceRef>(ref);
+  while (succeeded(currRef)) {
     // A dynamic access is represented by a half-open range. Match every concrete element and
     // range that overlaps the queried path, as well as exact references.
     for (auto candidate = signalSets.begin(); candidate != signalSets.end(); ++candidate) {
@@ -1608,18 +1603,17 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
 
 /* ConstraintDependencyGraphStructAnalysis */
 
-mlir::LogicalResult ConstraintDependencyGraphStructAnalysis::runAnalysis(
-    mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager,
-    const CDGAnalysisContext &ctx
+LogicalResult ConstraintDependencyGraphStructAnalysis::runAnalysis(
+    DataFlowSolver &solver, AnalysisManager &moduleAnalysisManager, const CDGAnalysisContext &ctx
 ) {
   auto result = ConstraintDependencyGraph::compute(
       getModule(), getStruct(), solver, moduleAnalysisManager, ctx
   );
-  if (mlir::failed(result)) {
-    return mlir::failure();
+  if (failed(result)) {
+    return failure();
   }
   setResult(ctx, std::move(*result));
-  return mlir::success();
+  return success();
 }
 
 } // namespace llzk
