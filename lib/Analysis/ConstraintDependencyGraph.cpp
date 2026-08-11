@@ -213,7 +213,9 @@ private:
   TranslationMap materializeAggregateAliases(Operation *before) const;
 
   /// Apply aggregate aliases recorded for `op` to `aliases`.
-  void applyAggregateAliases(Operation *op, TranslationMap &aliases) const;
+  void applyAggregateAliases(
+      Operation *op, TranslationMap &aliases, bool forceMayBeSkipped = false
+  ) const;
 
   /// Materialize storage contents at `before` by replaying earlier writes in IR order.
   MaterializedStorage materializeStoredValues(Operation *before) const;
@@ -551,16 +553,12 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
     applyWrite(address, canonicalValue, maySkip, seedUnwrittenAlternative);
   };
 
-  (void)top->walk([&](Operation *op) {
-    if (op == before) {
-      return WalkResult::interrupt();
-    }
-
+  auto materializeOperation = [&](Operation *op, bool forceMayBeSkipped) {
     llvm::DenseSet<SourceRef> priorAliasSources;
     for (const auto &[source, _] : aliases) {
       priorAliasSources.insert(source);
     }
-    applyAggregateAliases(op, aliases);
+    applyAggregateAliases(op, aliases, forceMayBeSkipped);
 
     // An aggregate assignment transfers the source's current contents to its new storage
     // location. Rebase only aliases introduced by this operation: applying the complete alias
@@ -572,7 +570,8 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
       }
     }
     for (const auto &[source, targets] : newAliases) {
-      const bool mayBeSkipped = targets.isScalar() && targets.getScalarValue().contains(source);
+      const bool mayBeSkipped =
+          forceMayBeSkipped || (targets.isScalar() && targets.getScalarValue().contains(source));
       llvm::SmallVector<std::pair<SourceRef, SourceRefLatticeValue>> sourceContents;
       for (const auto &[address, value] : storedValues) {
         if (address.isValidPrefix(source)) {
@@ -594,7 +593,7 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
 
     auto writes = storageWrites.find(op);
     if (writes == storageWrites.end()) {
-      return WalkResult::advance();
+      return;
     }
     std::function<void(const SourceRefLatticeValue &, const SourceRefLatticeValue &, bool, bool)>
         materializeAddressedWrite = [&](const SourceRefLatticeValue &addresses,
@@ -617,11 +616,34 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
     };
     for (const StorageWrite &write : writes->second) {
       materializeAddressedWrite(
-          write.addresses, write.value, write.mayBeSkipped, write.seedUnwrittenAlternative
+          write.addresses, write.value, forceMayBeSkipped || write.mayBeSkipped,
+          forceMayBeSkipped || write.seedUnwrittenAlternative
       );
     }
+  };
+
+  (void)top->walk([&](Operation *op) {
+    if (op == before) {
+      return WalkResult::interrupt();
+    }
+    materializeOperation(op, /*forceMayBeSkipped=*/false);
     return WalkResult::advance();
   });
+
+  // A read in a loop body can observe a write lexically after it from a prior iteration. Replay
+  // every enclosing loop body as a weak update: the entry state remains possible (the loop may
+  // execute zero times), while its writes form the loop backedge alternative.
+  for (Operation *ancestor = before->getParentOp(); ancestor != nullptr;
+       ancestor = ancestor->getParentOp()) {
+    if (!llvm::isa<scf::ForOp, scf::WhileOp>(ancestor)) {
+      continue;
+    }
+    (void)ancestor->walk([&](Operation *op) {
+      if (op != ancestor) {
+        materializeOperation(op, /*forceMayBeSkipped=*/true);
+      }
+    });
+  }
   return storage;
 }
 
@@ -655,7 +677,7 @@ SourceRefAnalysis::StorageState::materializeAggregateAliases(Operation *before) 
 }
 
 void SourceRefAnalysis::StorageState::applyAggregateAliases(
-    Operation *op, TranslationMap &aliases
+    Operation *op, TranslationMap &aliases, bool forceMayBeSkipped
 ) const {
   auto getArrayElementTarget = [](const SourceRef &root, size_t flatIndex) {
     auto arrayType = llvm::dyn_cast<ArrayType>(root.getType());
@@ -722,7 +744,7 @@ void SourceRefAnalysis::StorageState::applyAggregateAliases(
   auto events = aggregateAliases.find(op);
   if (events != aggregateAliases.end()) {
     for (const AggregateAlias &event : events->second) {
-      addAlias(event.source, event.target, event.mayBeSkipped);
+      addAlias(event.source, event.target, forceMayBeSkipped || event.mayBeSkipped);
     }
   }
 }

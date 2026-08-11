@@ -1413,3 +1413,69 @@ module attributes {llzk.lang} {
   SourceRef afterArg(whileOp.getAfter().front().getArgument(0));
   EXPECT_EQ(buildStringViaPrint(afterArg), "%arg0");
 }
+
+TEST_F(SourceRefTests, LoopBackedgeStorageWritesReachEarlierBodyReads) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @LoopBackedgeStorage {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type)
+        -> !struct.type<@LoopBackedgeStorage> {
+      %self = struct.new : !struct.type<@LoopBackedgeStorage>
+      %storage = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %whileStorage = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %c0 = arith.constant 0 : index
+      %c2 = arith.constant 2 : index
+      %c1 = arith.constant 1 : index
+      scf.for %i = %c0 to %c2 step %c1 {
+        %read = pod.read %storage[@value]
+            : !pod.type<[@value: !felt.type]>, !felt.type
+        pod.write %storage[@value] = %replacement
+            : !pod.type<[@value: !felt.type]>, !felt.type
+      }
+      %loop = scf.while (%i = %c0) : (index) -> index {
+        %cond = arith.cmpi slt, %i, %c2 : index
+        scf.condition(%cond) %i : index
+      } do {
+      ^bb0(%i: index):
+        %whileRead = pod.read %whileStorage[@value]
+            : !pod.type<[@value: !felt.type]>, !felt.type
+        pod.write %whileStorage[@value] = %replacement
+            : !pod.type<[@value: !felt.type]>, !felt.type
+        %next = arith.addi %i, %c1 : index
+        scf.yield %next : index
+      }
+      function.return %self : !struct.type<@LoopBackedgeStorage>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@LoopBackedgeStorage>, %initial: !felt.type,
+        %replacement: !felt.type
+    ) {
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  llvm::SmallVector<pod::ReadPodOp> reads;
+  computeFn.walk([&](pod::ReadPodOp op) { reads.push_back(op); });
+  ASSERT_EQ(reads.size(), 2U);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  analysis.ensureAnalysisRun(am);
+
+  SourceRefSet expected({SourceRef(computeFn.getArgument(0)), SourceRef(computeFn.getArgument(1))});
+  for (pod::ReadPodOp read : reads) {
+    EXPECT_EQ(
+        SourceRefAnalysis::getDependencyState(analysis.getSolver(), read.getResult())
+            .foldToScalar(),
+        expected
+    );
+  }
+}
