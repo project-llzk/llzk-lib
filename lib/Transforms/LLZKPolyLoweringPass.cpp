@@ -31,10 +31,12 @@
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/Support/Debug.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include <deque>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 
 // Include the generated base pass class definitions.
 namespace llzk {
@@ -73,13 +75,24 @@ enum class AuxAssignmentVisitState : uint8_t {
   Done,
 };
 
+class DegreeComputationError : public std::runtime_error {
+public:
+  DegreeComputationError(Location errorLoc, const std::string &message)
+      : std::runtime_error(message), loc(errorLoc) {}
+
+  Location getLoc() const { return loc; }
+
+private:
+  Location loc;
+};
+
 class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
   using Base = PolyLoweringPassBase<PassImpl>;
   using Base::Base;
 
   unsigned auxCounter = 0;
 
-  void collectStructDefs(ModuleOp modOp, SmallVectorImpl<StructDefOp> &structDefs) {
+  static void collectStructDefs(ModuleOp modOp, SmallVectorImpl<StructDefOp> &structDefs) {
     modOp.walk([&structDefs](StructDefOp structDef) {
       structDefs.push_back(structDef);
       return WalkResult::skip();
@@ -87,9 +100,9 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
   }
 
   /// Records a dependency from the current aux assignment to a prerequisite.
-  void addAuxDependency(
+  static void addAuxDependency(
       unsigned dep, unsigned owner, DenseSet<unsigned> &seenDeps, SmallVectorImpl<unsigned> &deps
-  ) const {
+  ) {
     if (dep == owner) {
       return;
     }
@@ -99,11 +112,11 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
   }
 
   /// Collects aux assignments that must be written before the given value can be rebuilt.
-  void collectAuxDependencies(
+  static void collectAuxDependencies(
       Value val, unsigned owner, const DenseMap<Value, unsigned> &auxValueToIndex,
       const llvm::StringMap<unsigned> &auxNameToIndex, DenseSet<Value> &visitedValues,
       DenseSet<unsigned> &seenDeps, SmallVectorImpl<unsigned> &deps
-  ) const {
+  ) {
     // Aux dependencies can appear as generated aux SSA values or reads of generated
     // aux members, so track both forms before ordering writes.
     if (!val || !visitedValues.insert(val).second) {
@@ -114,14 +127,14 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       addAuxDependency(it->second, owner, seenDeps, deps);
     }
 
-    if (auto readOp = val.getDefiningOp<MemberReadOp>()) {
-      auto it = auxNameToIndex.find(readOp.getMemberName());
-      if (it != auxNameToIndex.end()) {
-        addAuxDependency(it->second, owner, seenDeps, deps);
-      }
-    }
-
     if (Operation *defOp = val.getDefiningOp()) {
+      if (auto readOp = llvm::dyn_cast<MemberReadOp>(defOp)) {
+        auto it = auxNameToIndex.find(readOp.getMemberName());
+        if (it != auxNameToIndex.end()) {
+          addAuxDependency(it->second, owner, seenDeps, deps);
+        }
+      }
+
       for (Value operand : defOp->getOperands()) {
         collectAuxDependencies(
             operand, owner, auxValueToIndex, auxNameToIndex, visitedValues, seenDeps, deps
@@ -131,11 +144,11 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
   }
 
   /// Visits aux assignments depth-first so dependencies are emitted before users.
-  LogicalResult visitAuxAssignment(
+  static LogicalResult visitAuxAssignment(
       unsigned idx, ArrayRef<SmallVector<unsigned>> deps,
       SmallVectorImpl<AuxAssignmentVisitState> &visitState, SmallVectorImpl<unsigned> &ordered,
       ArrayRef<AuxAssignment> auxAssignments
-  ) const {
+  ) {
     if (visitState[idx] == AuxAssignmentVisitState::Done) {
       return success();
     }
@@ -158,9 +171,8 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
   }
 
   /// Produces a topological write order for generated aux assignments.
-  LogicalResult orderAuxAssignments(
-      ArrayRef<AuxAssignment> auxAssignments, SmallVectorImpl<unsigned> &ordered
-  ) const {
+  static LogicalResult
+  orderAuxAssignments(ArrayRef<AuxAssignment> auxAssignments, SmallVectorImpl<unsigned> &ordered) {
     DenseMap<Value, unsigned> auxValueToIndex;
     llvm::StringMap<unsigned> auxNameToIndex;
     auxValueToIndex.reserve(auxAssignments.size());
@@ -199,35 +211,42 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     }
     // Handle function parameters (BlockArguments)
     if (llvm::isa<BlockArgument>(val)) {
-      memo[val] = 1;
-      return 1;
-    }
-    if (val.getDefiningOp<FeltConstantOp>()) {
-      return memo[val] = 0;
-    }
-    if (val.getDefiningOp<NonDetOp>()) {
       return memo[val] = 1;
     }
-    if (val.getDefiningOp<MemberReadOp>()) {
-      return memo[val] = 1;
-    }
-    if (auto addOp = val.getDefiningOp<AddFeltOp>()) {
-      return memo[val] = std::max(getDegree(addOp.getLhs(), memo), getDegree(addOp.getRhs(), memo));
-    }
-    if (auto subOp = val.getDefiningOp<SubFeltOp>()) {
-      return memo[val] = std::max(getDegree(subOp.getLhs(), memo), getDegree(subOp.getRhs(), memo));
-    }
-    if (auto mulOp = val.getDefiningOp<MulFeltOp>()) {
-      return memo[val] = getDegree(mulOp.getLhs(), memo) + getDegree(mulOp.getRhs(), memo);
-    }
-    if (auto divOp = val.getDefiningOp<DivFeltOp>()) {
-      return memo[val] = getDegree(divOp.getLhs(), memo) + getDegree(divOp.getRhs(), memo);
-    }
-    if (auto negOp = val.getDefiningOp<NegFeltOp>()) {
-      return memo[val] = getDegree(negOp.getOperand(), memo);
+    if (Operation *defOp = val.getDefiningOp()) {
+      if (llvm::isa<FeltConstantOp>(defOp)) {
+        return memo[val] = 0;
+      }
+      if (llvm::isa<NonDetOp, MemberReadOp>(defOp)) {
+        return memo[val] = 1;
+      }
+      if (auto add = llvm::dyn_cast<AddFeltOp>(defOp)) {
+        return memo[val] = std::max(getDegree(add.getLhs(), memo), getDegree(add.getRhs(), memo));
+      }
+      if (auto sub = llvm::dyn_cast<SubFeltOp>(defOp)) {
+        return memo[val] = std::max(getDegree(sub.getLhs(), memo), getDegree(sub.getRhs(), memo));
+      }
+      if (auto mul = llvm::dyn_cast<MulFeltOp>(defOp)) {
+        return memo[val] = getDegree(mul.getLhs(), memo) + getDegree(mul.getRhs(), memo);
+      }
+      if (auto div = llvm::dyn_cast<DivFeltOp>(defOp)) {
+        return memo[val] = getDegree(div.getLhs(), memo) + getDegree(div.getRhs(), memo);
+      }
+      if (auto neg = llvm::dyn_cast<NegFeltOp>(defOp)) {
+        return memo[val] = getDegree(neg.getOperand(), memo);
+      }
+      if (auto call = llvm::dyn_cast<CallOp>(defOp)) {
+        std::string message;
+        llvm::raw_string_ostream(message)
+            << "Encountered '" << CallOp::getOperationName()
+            << "' in degree computation. Try running '-llzk-inline-free-functions' first.";
+        throw DegreeComputationError(val.getLoc(), message);
+      }
     }
 
-    llvm_unreachable("Unhandled Felt SSA value in degree computation");
+    std::string message;
+    llvm::raw_string_ostream(message) << "Unhandled value in degree computation: " << val;
+    throw DegreeComputationError(val.getLoc(), message);
   }
 
   Value lowerExpression(
@@ -278,15 +297,12 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       return val;
     };
 
-    if (auto addOp = val.getDefiningOp<AddFeltOp>()) {
+    Operation *defOp = val.getDefiningOp();
+    if (auto addOp = llvm::dyn_cast_if_present<AddFeltOp>(defOp)) {
       return lowerBinaryRoot(addOp);
-    }
-
-    if (auto subOp = val.getDefiningOp<SubFeltOp>()) {
+    } else if (auto subOp = llvm::dyn_cast_if_present<SubFeltOp>(defOp)) {
       return lowerBinaryRoot(subOp);
-    }
-
-    if (auto negOp = val.getDefiningOp<NegFeltOp>()) {
+    } else if (auto negOp = llvm::dyn_cast_if_present<NegFeltOp>(defOp)) {
       Value operand = lowerExpression(
           negOp.getOperand(), structDef, constrainFunc, negOp.getOperation(), dominanceInfo,
           degreeMemo, rewrites, auxAssignments
@@ -298,9 +314,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       degreeMemo[val] = getDegree(operand, degreeMemo);
       cacheIdentityRewriteIfAbsent();
       return val;
-    }
-
-    if (auto mulOp = val.getDefiningOp<MulFeltOp>()) {
+    } else if (auto mulOp = llvm::dyn_cast_if_present<MulFeltOp>(defOp)) {
       // Recursively lower operands first
       Value lhs = lowerExpression(
           mulOp.getLhs(), structDef, constrainFunc, mulOp.getOperation(), dominanceInfo, degreeMemo,
@@ -428,77 +442,64 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
   }
 
   LogicalResult checkEqualityDegrees(FuncDefOp constrainFunc) {
-    bool failedCheck = false;
+    auto res = constrainFunc.walk([this](EmitEqualityOp eqOp) -> WalkResult {
+      Value lhs = eqOp.getLhs();
+      Value rhs = eqOp.getRhs();
+      if (llvm::isa<FeltType>(lhs.getType()) && llvm::isa<FeltType>(rhs.getType())) {
+        DenseMap<Value, unsigned> checkMemo;
+        unsigned lhsDegree = getDegree(lhs, checkMemo);
+        unsigned rhsDegree = getDegree(rhs, checkMemo);
 
-    constrainFunc.walk([&](EmitEqualityOp eqOp) {
-      if (!llvm::isa<FeltType>(eqOp.getLhs().getType()) ||
-          !llvm::isa<FeltType>(eqOp.getRhs().getType())) {
-        return;
+        if (lhsDegree > maxDegree || rhsDegree > maxDegree) {
+          return eqOp.emitOpError().append(
+              "poly lowering postcondition failed: equality operand degree exceeds max-degree ",
+              maxDegree.getValue(), " (lhs degree ", lhsDegree, ", rhs degree ", rhsDegree, ')'
+          );
+        }
       }
-
-      DenseMap<Value, unsigned> checkMemo;
-      unsigned lhsDegree = getDegree(eqOp.getLhs(), checkMemo);
-      unsigned rhsDegree = getDegree(eqOp.getRhs(), checkMemo);
-
-      if (lhsDegree > maxDegree || rhsDegree > maxDegree) {
-        auto diag = eqOp.emitOpError();
-        diag << "poly lowering postcondition failed: equality operand degree exceeds max-degree "
-             << maxDegree.getValue() << " (lhs degree " << lhsDegree << ", rhs degree " << rhsDegree
-             << ")";
-        diag.report();
-        failedCheck = true;
-      }
+      return WalkResult::advance();
     });
-
-    return failure(failedCheck);
+    return failure(res.wasInterrupted());
   }
 
   LogicalResult checkStructConstrainCallArguments(FuncDefOp constrainFunc) {
-    bool failedCheck = false;
-
-    constrainFunc.walk([&](CallOp callOp) {
-      if (!callOp.calleeIsStructConstrain()) {
-        return;
-      }
-
-      for (Value arg : callOp.getArgOperands()) {
-        if (!llvm::isa<FeltType>(arg.getType())) {
-          continue;
-        }
-
-        DenseMap<Value, unsigned> checkMemo;
-        unsigned argDegree = getDegree(arg, checkMemo);
-        if (argDegree > 1) {
-          auto diag = callOp.emitOpError();
-          diag << "poly lowering postcondition failed: struct constrain call argument degree "
-                  "exceeds 1 (argument degree "
-               << argDegree << ")";
-          diag.report();
-          failedCheck = true;
+    auto res = constrainFunc.walk([this](CallOp callOp) -> WalkResult {
+      if (callOp.calleeIsStructConstrain()) {
+        for (Value arg : callOp.getArgOperands()) {
+          if (!llvm::isa<FeltType>(arg.getType())) {
+            continue;
+          }
+          DenseMap<Value, unsigned> checkMemo;
+          unsigned argDegree = getDegree(arg, checkMemo);
+          if (argDegree > 1) {
+            return callOp.emitOpError()
+                   << "poly lowering postcondition failed: "
+                      "struct constrain call argument degree exceeds 1 (argument degree "
+                   << argDegree << ')';
+          }
         }
       }
+      return WalkResult::advance();
     });
-
-    return failure(failedCheck);
+    return failure(res.wasInterrupted());
   }
 
   /// Returns true when \p type is an array whose element type is FeltType.
-  bool isFeltArray(Type type) const {
-    auto arrayType = llvm::dyn_cast<ArrayType>(type);
-    if (!arrayType) {
-      return false;
+  static bool isFeltArray(Type type) {
+    if (auto arrayType = llvm::dyn_cast<ArrayType>(type)) {
+      return llvm::isa<FeltType>(arrayType.getElementType());
     }
-    return llvm::isa<FeltType>(arrayType.getElementType());
+    return false;
   }
 
-  LogicalResult emitAmbiguousContainmentRhs(EmitContainmentOp containOp, StringRef detail) const {
+  static LogicalResult emitAmbiguousContainmentRhs(EmitContainmentOp containOp, StringRef detail) {
     return containOp.emitOpError()
            << "poly lowering cannot resolve containment RHS row write history: " << detail;
   }
 
   /// Returns true when \p index begins with the exact attribute sequence in \p prefix.
   template <typename IndexRange, typename PrefixRange>
-  bool indexStartsWith(const IndexRange &index, const PrefixRange &prefix) const {
+  static bool indexStartsWith(const IndexRange &index, const PrefixRange &prefix) {
     auto indexIt = index.begin();
     for (Attribute attr : prefix) {
       if (indexIt == index.end() || *indexIt != attr) {
@@ -511,7 +512,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
 
   /// Returns true when \p lhs and \p rhs share a common prefix (one is a prefix of the other).
   template <typename LhsRange, typename RhsRange>
-  bool prefixesCanOverlap(const LhsRange &lhs, const RhsRange &rhs) const {
+  static bool prefixesCanOverlap(const LhsRange &lhs, const RhsRange &rhs) {
     auto lhsIt = lhs.begin();
     auto rhsIt = rhs.begin();
     while (lhsIt != lhs.end() && rhsIt != rhs.end()) {
@@ -525,7 +526,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
   }
 
   /// Returns a new ArrayAttr with the first \p prefixSize elements of \p index removed.
-  ArrayAttr dropIndexPrefix(MLIRContext *ctx, ArrayAttr index, size_t prefixSize) const {
+  static ArrayAttr dropIndexPrefix(MLIRContext *ctx, ArrayAttr index, size_t prefixSize) {
     SmallVector<Attribute> attrs;
     size_t idx = 0;
     for (Attribute attr : index) {
@@ -538,7 +539,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
 
   /// Returns a new ArrayAttr formed by concatenating \p prefix and \p suffix.
   template <typename PrefixRange>
-  ArrayAttr appendIndex(MLIRContext *ctx, const PrefixRange &prefix, ArrayAttr suffix) const {
+  static ArrayAttr appendIndex(MLIRContext *ctx, const PrefixRange &prefix, ArrayAttr suffix) {
     SmallVector<Attribute> attrs;
     for (Attribute attr : prefix) {
       attrs.push_back(attr);
@@ -550,14 +551,14 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
   }
 
   /// Returns the static access indices of \p op as an ArrayAttr.
-  ArrayAttr getStaticAccessIndex(Operation *op) const {
+  static inline ArrayAttr getStaticAccessIndex(Operation *op) {
     return llvm::cast<ArrayAccessOpInterface>(op).indexOperandsToAttributeArray();
   }
 
   /// Returns the subelement indices of \p arrayType that start with \p viewPrefix,
   /// with the prefix stripped from each result.
-  std::optional<SmallVector<ArrayAttr>>
-  getViewIndices(ArrayType arrayType, ArrayRef<Attribute> viewPrefix) const {
+  static std::optional<SmallVector<ArrayAttr>>
+  getViewIndices(ArrayType arrayType, ArrayRef<Attribute> viewPrefix) {
     std::optional<SmallVector<ArrayAttr>> allIndices = arrayType.getSubelementIndices();
     if (!allIndices) {
       return std::nullopt;
@@ -576,7 +577,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
   /// Collects mutable felt-array element operands visible at \p boundaryOp,
   /// keyed by indices relative to \p viewPrefix.  Ambiguous write histories
   /// are rejected explicitly.
-  LogicalResult collectMutableContainmentElements(
+  static LogicalResult collectMutableContainmentElements(
       Value arrayValue, Operation *boundaryOp, ArrayRef<Attribute> viewPrefix,
       EmitContainmentOp containOp, DenseSet<Value> &activeArrays,
       SmallVectorImpl<MutableContainmentElement> &elements
@@ -614,11 +615,10 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
   /// (component, member) pair that identifies the source struct member.
   /// Returns std::nullopt when the defining op is not a struct read.
   static std::optional<std::pair<Value, FlatSymbolRefAttr>> resolveStructReadSource(Value v) {
-    auto readOp = llvm::dyn_cast_if_present<MemberReadOp>(v.getDefiningOp());
-    if (!readOp) {
-      return std::nullopt;
+    if (auto readOp = v.getDefiningOp<MemberReadOp>()) {
+      return std::make_pair(readOp.getComponent(), readOp.getMemberNameAttr());
     }
-    return std::make_pair(readOp.getComponent(), readOp.getMemberNameAttr());
+    return std::nullopt;
   }
 
   /// Returns true when \p a and \p b may reference the same underlying array
@@ -644,7 +644,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
   /// Walks the write history of \p arrayValue up to \p boundaryOp and populates
   /// \p finalElements with the final visible felt operands, keyed by indices
   /// relative to \p viewPrefix.  Ambiguous histories are rejected.
-  LogicalResult collectMutableContainmentElementMap(
+  static LogicalResult collectMutableContainmentElementMap(
       Value arrayValue, Operation *boundaryOp, ArrayRef<Attribute> viewPrefix,
       EmitContainmentOp containOp, DenseSet<Value> &activeArrays,
       DenseMap<Attribute, OpOperand *> &finalElements
@@ -682,9 +682,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
           }
         }
       }
-    }
-
-    if (auto extractOp = arrayValue.getDefiningOp<ExtractArrayOp>()) {
+    } else if (auto extractOp = arrayValue.getDefiningOp<ExtractArrayOp>()) {
       ArrayAttr extractIndex = getStaticAccessIndex(extractOp.getOperation());
       if (!extractIndex) {
         return emitAmbiguousContainmentRhs(containOp, "array.extract index is not static");
@@ -847,36 +845,31 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
 
   /// Reports an error when a felt value in a containment RHS exceeds maxDegree
   /// after lowering has completed.
-  void checkContainmentRhsFeltValue(
-      Value value, EmitContainmentOp containOp, DenseMap<Value, unsigned> &checkMemo,
-      bool &failedCheck
+  LogicalResult checkContainmentRhsFeltValue(
+      Value value, EmitContainmentOp containOp, DenseMap<Value, unsigned> &checkMemo
   ) {
     if (!llvm::isa<FeltType>(value.getType())) {
-      return;
+      return success();
     }
 
     unsigned valueDegree = getDegree(value, checkMemo);
     if (valueDegree <= maxDegree) {
-      return;
+      return success();
     }
 
-    auto diag = containOp.emitOpError();
-    diag << "poly lowering postcondition failed: containment RHS element degree "
-            "exceeds max-degree "
-         << maxDegree.getValue() << " (element degree " << valueDegree << ')';
-    diag.report();
-    failedCheck = true;
+    return containOp.emitOpError()
+           << "poly lowering postcondition failed: "
+              "containment RHS element degree exceeds max-degree "
+           << maxDegree.getValue() << " (element degree " << valueDegree << ')';
   }
 
   /// Recursively checks that every felt element visible in a containment RHS
   /// stays within maxDegree after lowering.
   LogicalResult checkContainmentRhsValue(
-      Value value, EmitContainmentOp containOp, DenseMap<Value, unsigned> &checkMemo,
-      bool &failedCheck
+      Value value, EmitContainmentOp containOp, DenseMap<Value, unsigned> &checkMemo
   ) {
     if (llvm::isa<FeltType>(value.getType())) {
-      checkContainmentRhsFeltValue(value, containOp, checkMemo, failedCheck);
-      return success();
+      return checkContainmentRhsFeltValue(value, containOp, checkMemo);
     }
 
     if (!isFeltArray(value.getType())) {
@@ -885,15 +878,17 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
 
     DenseSet<Value> activeArrays;
     SmallVector<MutableContainmentElement> elements;
-    if (failed(collectMutableContainmentElements(
-            value, containOp.getOperation(), ArrayRef<Attribute> {}, containOp, activeArrays,
-            elements
-        ))) {
+    auto res = collectMutableContainmentElements(
+        value, containOp.getOperation(), {}, containOp, activeArrays, elements
+    );
+    if (failed(res)) {
       return failure();
     }
 
     for (MutableContainmentElement element : elements) {
-      checkContainmentRhsFeltValue(element.operand->get(), containOp, checkMemo, failedCheck);
+      if (failed(checkContainmentRhsFeltValue(element.operand->get(), containOp, checkMemo))) {
+        return failure();
+      }
     }
     return success();
   }
@@ -901,15 +896,132 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
   /// Postcondition: walks every EmitContainmentOp in \p constrainFunc and
   /// verifies that no containment RHS felt element exceeds maxDegree.
   LogicalResult checkContainmentRhsDegrees(FuncDefOp constrainFunc) {
-    bool failedCheck = false;
-    bool failedCollection = false;
-    constrainFunc.walk([&](EmitContainmentOp containOp) {
-      DenseMap<Value, unsigned> checkMemo;
-      if (failed(checkContainmentRhsValue(containOp.getRhs(), containOp, checkMemo, failedCheck))) {
-        failedCollection = true;
+    auto res = constrainFunc.walk([&](EmitContainmentOp containOp) {
+      DenseMap<Value, unsigned> memo;
+      if (failed(checkContainmentRhsValue(containOp.getRhs(), containOp, memo))) {
+        return WalkResult::interrupt();
+      }
+      return WalkResult::advance();
+    });
+    return failure(res.wasInterrupted());
+  }
+
+  LogicalResult lowerInConstrain(
+      StructDefOp structDef, FuncDefOp constrainFunc, SmallVector<AuxAssignment> &auxAssignments
+  ) {
+
+    DenseMap<Value, unsigned> degreeMemo;
+    DenseMap<Value, Value> rewrites;
+    DominanceInfo dominanceInfo(constrainFunc);
+
+    // Lower equality constraints
+    constrainFunc.walk([&](EmitEqualityOp constraintOp) {
+      if (!llvm::isa<FeltType>(constraintOp.getLhs().getType()) ||
+          !llvm::isa<FeltType>(constraintOp.getRhs().getType())) {
+        return;
+      }
+
+      auto &lhsOperand = constraintOp.getLhsMutable();
+      auto &rhsOperand = constraintOp.getRhsMutable();
+      unsigned degreeLhs = getDegree(lhsOperand.get(), degreeMemo);
+      unsigned degreeRhs = getDegree(rhsOperand.get(), degreeMemo);
+
+      if (degreeLhs > maxDegree) {
+        Value loweredExpr = lowerExpression(
+            lhsOperand.get(), structDef, constrainFunc, constraintOp.getOperation(), dominanceInfo,
+            degreeMemo, rewrites, auxAssignments
+        );
+        lhsOperand.set(loweredExpr);
+      }
+      if (degreeRhs > maxDegree) {
+        Value loweredExpr = lowerExpression(
+            rhsOperand.get(), structDef, constrainFunc, constraintOp.getOperation(), dominanceInfo,
+            degreeMemo, rewrites, auxAssignments
+        );
+        rhsOperand.set(loweredExpr);
       }
     });
-    return failure(failedCheck || failedCollection);
+
+    // Lower containment lookup rows.
+    auto res = constrainFunc.walk([&](EmitContainmentOp containOp) -> WalkResult {
+      return lowerContainmentRhsValue(
+          containOp.getRhsMutable(), structDef, constrainFunc, dominanceInfo, degreeMemo, rewrites,
+          auxAssignments, containOp
+      );
+    });
+    if (res.wasInterrupted()) {
+      return failure();
+    }
+
+    // Lower function call arguments
+    constrainFunc.walk([&](CallOp callOp) {
+      if (callOp.calleeIsStructConstrain()) {
+        SmallVector<Value> newOperands = llvm::to_vector(callOp.getArgOperands());
+        bool modified = false;
+
+        for (Value &arg : newOperands) {
+          if (!llvm::isa<FeltType>(arg.getType())) {
+            continue;
+          }
+
+          DenseMap<Value, unsigned> callMemo;
+          if (getDegree(arg, callMemo) > 1) {
+            arg = materializeCallArgument(
+                arg, structDef, constrainFunc, callOp, dominanceInfo, degreeMemo, rewrites,
+                auxAssignments
+            );
+            modified = true;
+          }
+        }
+
+        if (modified) {
+          OpBuilder builder(callOp);
+          builder.create<CallOp>(
+              callOp.getLoc(), callOp.getResultTypes(), callOp.getCallee(),
+              CallOp::toVectorOfValueRange(callOp.getMapOperands()), callOp.getNumDimsPerMap(),
+              newOperands
+          );
+          callOp->erase();
+        }
+      }
+    });
+
+    return success();
+  }
+
+  /// Takes every auxiliary value introduced while lowering the constrain function and recreate
+  /// the corresponding computation inside the compute function.
+  static LogicalResult
+  rebuildInCompute(FuncDefOp computeFunc, const SmallVector<AuxAssignment> &auxAssignments) {
+    DenseMap<Value, Value> rebuildMemo;
+    Block &computeBlock = computeFunc.getBody().front();
+    OpBuilder builder(&computeBlock, computeBlock.getTerminator()->getIterator());
+    Value selfVal = computeFunc.getSelfValueFromCompute();
+
+    SmallVector<unsigned> orderedAuxAssignments;
+    orderedAuxAssignments.reserve(auxAssignments.size());
+    if (failed(orderAuxAssignments(auxAssignments, orderedAuxAssignments))) {
+      return failure();
+    }
+
+    for (unsigned assignIdx : orderedAuxAssignments) {
+      const auto &assign = auxAssignments[assignIdx];
+      Value rebuiltExpr =
+          rebuildExprInCompute(assign.computedValue, computeFunc, builder, rebuildMemo);
+      if (!rebuiltExpr) {
+        return failure();
+      }
+      builder.create<MemberWriteOp>(
+          assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxMemberName),
+          rebuiltExpr
+      );
+      if (assign.auxValue) {
+        // Reuse the expression just written so later aux producers do not need an
+        // immediate read from the generated aux member.
+        rebuildMemo[assign.auxValue] = rebuiltExpr;
+      }
+    }
+    return success();
   }
 
   void runOnOperation() override {
@@ -917,178 +1029,71 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
 
     // Validate degree parameter
     if (maxDegree < 2) {
-      auto diag = moduleOp.emitError();
-      diag << "Invalid max degree: " << maxDegree.getValue() << ". Must be >= 2.";
-      diag.report();
+      moduleOp.emitError()
+          .append("Invalid max degree: ", maxDegree.getValue(), ". Must be >= 2.")
+          .report();
       signalPassFailure();
       return;
     }
 
-    moduleOp.walk([this](StructDefOp structDef) {
-      FuncDefOp constrainFunc = structDef.getConstrainFuncOp();
-      FuncDefOp computeFunc = structDef.getComputeFuncOp();
-      if (!constrainFunc) {
-        auto diag = structDef.emitOpError();
-        diag << '"' << structDef.getName() << "\" doesn't have a \"@" << FUNC_NAME_CONSTRAIN
-             << "\" function";
-        diag.report();
-        signalPassFailure();
-        return;
-      }
-
-      if (!computeFunc) {
-        auto diag = structDef.emitOpError();
-        diag << '"' << structDef.getName() << "\" doesn't have a \"@" << FUNC_NAME_COMPUTE
-             << "\" function";
-        diag.report();
-        signalPassFailure();
-        return;
-      }
-
-      if (failed(checkForAuxMemberConflicts(structDef, AUXILIARY_MEMBER_PREFIX))) {
-        signalPassFailure();
-        return;
-      }
-
-      if (failed(checkFuncBodyIsStraightLine(constrainFunc, "poly lowering"))) {
-        signalPassFailure();
-        return;
-      }
-
-      if (failed(checkFuncBodyIsStraightLine(computeFunc, "poly lowering"))) {
-        signalPassFailure();
-        return;
-      }
-
-      DenseMap<Value, unsigned> degreeMemo;
-      DenseMap<Value, Value> rewrites;
-      SmallVector<AuxAssignment> auxAssignments;
-      DominanceInfo dominanceInfo(constrainFunc);
-
-      // Lower equality constraints
-      constrainFunc.walk([&](EmitEqualityOp constraintOp) {
-        if (!llvm::isa<FeltType>(constraintOp.getLhs().getType()) ||
-            !llvm::isa<FeltType>(constraintOp.getRhs().getType())) {
-          return;
+    auto moduleRes = moduleOp.walk([this](StructDefOp structDef) -> WalkResult {
+      try {
+        if (failed(checkForAuxMemberConflicts(structDef, AUXILIARY_MEMBER_PREFIX))) {
+          return WalkResult::interrupt();
         }
 
-        auto &lhsOperand = constraintOp.getLhsMutable();
-        auto &rhsOperand = constraintOp.getRhsMutable();
-        unsigned degreeLhs = getDegree(lhsOperand.get(), degreeMemo);
-        unsigned degreeRhs = getDegree(rhsOperand.get(), degreeMemo);
+        FuncDefOp constrainFunc = structDef.getConstrainFuncOp();
+        if (!constrainFunc) {
+          return structDef.emitOpError() << '"' << structDef.getName() << "\" doesn't have a \"@"
+                                         << FUNC_NAME_CONSTRAIN << "\" function";
+        }
 
-        if (degreeLhs > maxDegree) {
-          Value loweredExpr = lowerExpression(
-              lhsOperand.get(), structDef, constrainFunc, constraintOp.getOperation(),
-              dominanceInfo, degreeMemo, rewrites, auxAssignments
-          );
-          lhsOperand.set(loweredExpr);
+        if (failed(checkFuncBodyIsStraightLine(constrainFunc, "poly lowering"))) {
+          return WalkResult::interrupt();
         }
-        if (degreeRhs > maxDegree) {
-          Value loweredExpr = lowerExpression(
-              rhsOperand.get(), structDef, constrainFunc, constraintOp.getOperation(),
-              dominanceInfo, degreeMemo, rewrites, auxAssignments
-          );
-          rhsOperand.set(loweredExpr);
-        }
-      });
 
-      // Lower containment lookup rows.
-      bool failedContainmentLowering = false;
-      constrainFunc.walk([&](EmitContainmentOp containOp) {
-        if (failed(lowerContainmentRhsValue(
-                containOp.getRhsMutable(), structDef, constrainFunc, dominanceInfo, degreeMemo,
-                rewrites, auxAssignments, containOp
-            ))) {
-          failedContainmentLowering = true;
+        FuncDefOp computeFunc = structDef.getComputeFuncOp();
+        if (!computeFunc) {
+          return structDef.emitOpError() << '"' << structDef.getName() << "\" doesn't have a \"@"
+                                         << FUNC_NAME_COMPUTE << "\" function";
         }
-      });
-      if (failedContainmentLowering) {
-        signalPassFailure();
-        return;
+
+        if (failed(checkFuncBodyIsStraightLine(computeFunc, "poly lowering"))) {
+          return WalkResult::interrupt();
+        }
+
+        SmallVector<AuxAssignment> auxAssignments;
+        if (failed(lowerInConstrain(structDef, constrainFunc, auxAssignments))) {
+          return WalkResult::interrupt();
+        }
+
+        if (failed(checkEqualityDegrees(constrainFunc))) {
+          return WalkResult::interrupt();
+        }
+
+        if (failed(checkContainmentRhsDegrees(constrainFunc))) {
+          return WalkResult::interrupt();
+        }
+
+        if (failed(checkStructConstrainCallArguments(constrainFunc))) {
+          return WalkResult::interrupt();
+        }
+
+        if (failed(rebuildInCompute(computeFunc, auxAssignments))) {
+          return WalkResult::interrupt();
+        }
+
+      } catch (const DegreeComputationError &err) {
+        mlir::emitError(err.getLoc()) << err.what();
+        return WalkResult::interrupt();
       }
 
-      // Lower function call arguments
-      constrainFunc.walk([&](CallOp callOp) {
-        if (callOp.calleeIsStructConstrain()) {
-          SmallVector<Value> newOperands = llvm::to_vector(callOp.getArgOperands());
-          bool modified = false;
-
-          for (Value &arg : newOperands) {
-            if (!llvm::isa<FeltType>(arg.getType())) {
-              continue;
-            }
-
-            DenseMap<Value, unsigned> callMemo;
-            unsigned deg = getDegree(arg, callMemo);
-
-            if (deg > 1) {
-              arg = materializeCallArgument(
-                  arg, structDef, constrainFunc, callOp, dominanceInfo, degreeMemo, rewrites,
-                  auxAssignments
-              );
-              modified = true;
-            }
-          }
-
-          if (modified) {
-            OpBuilder builder(callOp);
-            builder.create<CallOp>(
-                callOp.getLoc(), callOp.getResultTypes(), callOp.getCallee(),
-                CallOp::toVectorOfValueRange(callOp.getMapOperands()), callOp.getNumDimsPerMap(),
-                newOperands
-            );
-            callOp->erase();
-          }
-        }
-      });
-
-      if (failed(checkEqualityDegrees(constrainFunc))) {
-        signalPassFailure();
-        return;
-      }
-
-      if (failed(checkContainmentRhsDegrees(constrainFunc))) {
-        signalPassFailure();
-        return;
-      }
-
-      if (failed(checkStructConstrainCallArguments(constrainFunc))) {
-        signalPassFailure();
-        return;
-      }
-
-      DenseMap<Value, Value> rebuildMemo;
-      Block &computeBlock = computeFunc.getBody().front();
-      OpBuilder builder(&computeBlock, computeBlock.getTerminator()->getIterator());
-      Value selfVal = computeFunc.getSelfValueFromCompute();
-
-      SmallVector<unsigned> orderedAuxAssignments;
-      orderedAuxAssignments.reserve(auxAssignments.size());
-      if (failed(orderAuxAssignments(auxAssignments, orderedAuxAssignments))) {
-        signalPassFailure();
-        return;
-      }
-
-      for (unsigned assignIdx : orderedAuxAssignments) {
-        const auto &assign = auxAssignments[assignIdx];
-        Value rebuiltExpr =
-            rebuildExprInCompute(assign.computedValue, computeFunc, builder, rebuildMemo);
-        if (!rebuiltExpr) {
-          signalPassFailure();
-          return;
-        }
-        builder.create<MemberWriteOp>(
-            assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxMemberName),
-            rebuiltExpr
-        );
-        if (assign.auxValue) {
-          // Reuse the expression just written so later aux producers do not need an
-          // immediate read from the generated aux member.
-          rebuildMemo[assign.auxValue] = rebuiltExpr;
-        }
-      }
+      return WalkResult::advance();
     });
+
+    if (moduleRes.wasInterrupted()) {
+      signalPassFailure();
+    }
   }
 };
 

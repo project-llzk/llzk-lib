@@ -23,4 +23,5 @@ install(
   PATTERN CMakeFiles EXCLUDE)
 
 add_subdirectory(pcl/Conversion/)
+add_subdirectory(pcl/Transforms/)
 add_subdirectory(pcl/Dialect/IR/)

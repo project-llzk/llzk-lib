@@ -1,7 +1,15 @@
 //===-- LLZKLoweringUtils.cpp -----------------------------------*- C++ -*-===//
 //
-// Shared utility function implementations for LLZK lowering passes.
+// Part of the LLZK Project, under the Apache License v2.0.
+// See LICENSE.txt for license information.
+// Copyright 2026 Project LLZK
+// SPDX-License-Identifier: Apache-2.0
 //
+//===----------------------------------------------------------------------===//
+///
+/// \file
+/// Shared utility function implementations for LLZK lowering passes.
+///
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Transforms/LLZKLoweringUtils.h"
@@ -217,54 +225,44 @@ Value rebuildExprInCompute(
 }
 
 LogicalResult checkForAuxMemberConflicts(StructDefOp structDef, StringRef prefix) {
-  bool conflictFound = false;
-
-  structDef.walk([&conflictFound, &prefix](MemberDefOp memberDefOp) {
+  auto res = structDef.walk([&prefix](MemberDefOp memberDefOp) -> WalkResult {
     if (memberDefOp.getName().starts_with(prefix)) {
-      (memberDefOp.emitError() << "Member name '" << memberDefOp.getName()
-                               << "' conflicts with reserved prefix '" << prefix << '\'')
-          .report();
-      conflictFound = true;
+      return memberDefOp.emitOpError().append(
+          "name conflicts with reserved prefix '", prefix, '\''
+      );
     }
+    return WalkResult::advance();
   });
-
-  return failure(conflictFound);
+  return failure(res.wasInterrupted());
 }
 
 LogicalResult checkFuncBodyIsStraightLine(FuncDefOp func, StringRef passName) {
-  StringRef funcName = "function";
-  if (func.isStructCompute()) {
-    funcName = "compute";
-  } else if (func.isStructConstrain()) {
-    funcName = "constrain";
-  }
-
-  auto emitStraightLineError = [passName, funcName](Operation *op) {
-    op->emitError() << passName << " expects a straight-line " << funcName
-                    << " body; run `llzk-flatten` or another control-flow lowering pass first";
+  auto emitStraightLineError = [&func, &passName](Operation *op) -> LogicalResult {
+    StringRef funcName;
+    if (func.isStructCompute()) {
+      funcName = "compute";
+    } else if (func.isStructConstrain()) {
+      funcName = "constrain";
+    } else {
+      funcName = "function";
+    }
+    return op->emitError()
+           << passName << " expects a straight-line " << funcName
+           << " body; run `llzk-flatten` or another control-flow lowering pass first";
   };
 
   Region &body = func.getBody();
   if (!body.hasOneBlock()) {
-    emitStraightLineError(func.getOperation());
-    return failure();
+    return emitStraightLineError(func.getOperation());
   }
 
-  Operation *unsupportedControlFlowOp = nullptr;
-  body.walk([&](Operation *op) {
+  auto res = body.walk([&emitStraightLineError](Operation *op) -> WalkResult {
     if (op->getNumRegions() != 0 || op->getNumSuccessors() != 0) {
-      unsupportedControlFlowOp = op;
-      return WalkResult::interrupt();
+      return emitStraightLineError(op);
     }
     return WalkResult::advance();
   });
-
-  if (!unsupportedControlFlowOp) {
-    return success();
-  }
-
-  emitStraightLineError(unsupportedControlFlowOp);
-  return failure();
+  return failure(res.wasInterrupted());
 }
 
 void replaceSubsequentUsesWith(Value oldVal, Value newVal, Operation *afterOp) {
