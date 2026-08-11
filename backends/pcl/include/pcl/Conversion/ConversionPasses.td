@@ -26,7 +26,7 @@ def PCLLoweringPass : LLZKPass<"llzk-to-pcl"> {
                clEnumValN(::pcl::LlzkToPclMode::Full, "full",
                 "Lower the IR completely."),
                clEnumValN(::pcl::LlzkToPclMode::Stubbed, "stubbed",
-                "Replace free functions with unsupported ops with stubs.")
+                "Replace free functions containing unsupported ops with stubs.")
               )}]>];
 }
 

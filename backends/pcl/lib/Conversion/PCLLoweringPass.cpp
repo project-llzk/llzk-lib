@@ -108,7 +108,7 @@ template <typename Op> static std::string flatFullyQualifiedName(Op op) {
   o << fqn.getRootReference().getValue();
   if (!fqn.getNestedReferences().empty()) {
     o << sep;
-    llvm::interleave(fqn.getNestedReferences(), o, [&o](auto ref) { o << ref.getValue(); }, sep);
+    interleave(fqn.getNestedReferences(), o, [&o](auto ref) { o << ref.getValue(); }, sep);
   }
 
   return name;
@@ -123,7 +123,7 @@ template <typename Op> static std::string flatFullyQualifiedName(Op op) {
 ///
 /// For that reason, this mapping is missing the U in CRUD and we only insert during creation.
 class UsedFreeFunctions {
-  using M = llvm::DenseMap<Attribute, FuncDefOp>;
+  using M = DenseMap<Attribute, FuncDefOp>;
 
   /// Maps the FQN to the operation representing it.
   M funcs;
@@ -133,8 +133,8 @@ class UsedFreeFunctions {
 
   /// Convenience method for the construction of the mapping.
   void insertCallees(
-      llvm::SmallVectorImpl<FuncDefOp> &WL, mlir::SymbolTableCollection &tables, FuncDefOp f,
-      llvm::function_ref<bool(FuncDefOp)> P = nullptr
+      SmallVectorImpl<FuncDefOp> &WL, SymbolTableCollection &tables, FuncDefOp f,
+      function_ref<bool(FuncDefOp)> P = nullptr
   ) {
     f.walk([&WL, this, &tables, P](CallOp callOp) {
       auto calleeLookup = callOp.getCalleeTarget(tables);
@@ -158,8 +158,8 @@ public:
   /// themselves). Since we only care if a given `function.def` is part of the graph or not we
   /// return the set of vertices.
   UsedFreeFunctions(ModuleOp op) {
-    llvm::SmallVector<FuncDefOp> WL;
-    mlir::SymbolTableCollection tables;
+    SmallVector<FuncDefOp> WL;
+    SymbolTableCollection tables;
 
     // Fill the worklist with the initial set of functions.
     op->walk([&WL, this, &tables](StructDefOp structOp) {
@@ -228,12 +228,12 @@ template <typename Op> class ConstantOpValue {};
 
 template <> class ConstantOpValue<FeltConstantOp> {
 protected:
-  llvm::APInt getValue(FeltConstantOp op) const { return op.getValue().getValue(); }
+  APInt getValue(FeltConstantOp op) const { return op.getValue().getValue(); }
 };
 
 template <> class ConstantOpValue<arith::ConstantOp> {
 protected:
-  llvm::APInt getValue(arith::ConstantOp op) const {
+  APInt getValue(arith::ConstantOp op) const {
     // Extend width by 1 bit to avoid sign issues.
     auto value = mlir::cast<IntegerAttr>(op.getValue()).getValue();
     return value.zext(value.getBitWidth() + 1);
@@ -355,7 +355,7 @@ struct ConvertCmpOp : public OpConversionPattern<CmpOp> {
 class ConvertEmitEqualityOp : public OpConversionPattern<EmitEqualityOp> {
   bool isBool(Value v) const { return llvm::isa<pcl::BoolType>(v.getType()); }
 
-  std::optional<llvm::APInt> getConstAPInt(Value v) const {
+  std::optional<APInt> getConstAPInt(Value v) const {
     if (auto c = llvm::dyn_cast_if_present<pcl::ConstOp>(v.getDefiningOp())) {
       return c.getValueAPInt();
     }
@@ -545,7 +545,7 @@ struct ConvertFreeFuncReturnOp : public OpConversionPattern<ReturnOp> {
   }
 };
 
-using NonDetOpNames = llvm::DenseMap<NonDetOp, StringAttr>;
+using NonDetOpNames = DenseMap<NonDetOp, StringAttr>;
 
 /// Converts `llzk.nondet` ops into fresh pcl variables.
 class ConvertNonDetOp : public OpConversionPattern<NonDetOp> {
@@ -652,7 +652,7 @@ public:
 
   unsigned int baseOffset() const { return 1; }
 
-  llvm::SmallVector<Type> outputTypes(StructDefOp op) const {
+  SmallVector<Type> outputTypes(StructDefOp op) const {
     return mapOutputMembers<Type>(op, [ctx = op.getContext()](MemberDefOp) {
       return pcl::FeltType::get(ctx);
     });
@@ -687,8 +687,8 @@ public:
 
   unsigned int baseOffset() const { return 0; }
 
-  llvm::SmallVector<Type> outputTypes(FuncDefOp op) const {
-    return llvm::SmallVector<Type>(
+  SmallVector<Type> outputTypes(FuncDefOp op) const {
+    return SmallVector<Type>(
         op.getFunctionType().getNumResults(), pcl::FeltType::get(op.getContext())
     );
   }
@@ -706,17 +706,17 @@ public:
 };
 
 class ConvertFreeFunctionIntoStub : public OpConversionPattern<FuncDefOp> {
-  llvm::DenseSet<FuncDefOp> &stubs;
+  DenseSet<FuncDefOp> &stubs;
   ModuleOp root;
 
 public:
   ConvertFreeFunctionIntoStub(
-      MLIRContext *context, llvm::DenseSet<FuncDefOp> &stubFunctions, ModuleOp rootOp,
+      MLIRContext *context, DenseSet<FuncDefOp> &stubFunctions, ModuleOp rootOp,
       PatternBenefit patBenefit = 1
   )
       : OpConversionPattern(context, patBenefit), stubs(stubFunctions), root(rootOp) {}
   ConvertFreeFunctionIntoStub(
-      const TypeConverter &tc, MLIRContext *context, llvm::DenseSet<FuncDefOp> &stubFunctions,
+      const TypeConverter &tc, MLIRContext *context, DenseSet<FuncDefOp> &stubFunctions,
       ModuleOp rootOp, PatternBenefit patBenefit = 1
   )
       : OpConversionPattern(tc, context, patBenefit), stubs(stubFunctions), root(rootOp) {}
@@ -725,8 +725,8 @@ public:
 
   unsigned int baseOffset() const { return 0; }
 
-  llvm::SmallVector<Type> outputTypes(FuncDefOp op) const {
-    return llvm::SmallVector<Type>(
+  SmallVector<Type> outputTypes(FuncDefOp op) const {
+    return SmallVector<Type>(
         op.getFunctionType().getNumResults(), pcl::FeltType::get(op.getContext())
     );
   }
@@ -741,7 +741,7 @@ public:
     }
 
     SmallVector<Type> inputs(op.getNumArguments(), pcl::FeltType::get(rewriter.getContext()));
-    SmallVector<Type> outputs = llvm::SmallVector<Type>(
+    SmallVector<Type> outputs(
         op.getFunctionType().getNumResults(), pcl::FeltType::get(op.getContext())
     );
 
@@ -1102,7 +1102,7 @@ protected:
   /// Only `llzk.nondet` ops of type `!felt.type` are considered.
   void collectNonDetOpNames() {
     uint64_t count = 0;
-    llvm::StringSet<> usedNames;
+    StringSet<> usedNames;
 
     getOperation()->walk([&usedNames](MemberDefOp op) { usedNames.insert(op.getSymName()); });
 
@@ -1165,7 +1165,7 @@ protected:
     DupVarsReplacements replacements;
     getOperation()->walk([&replacements](func::FuncOp fn) {
       DominanceInfo dom(fn);
-      llvm::StringMap<llvm::SmallVector<pcl::VarOp, 1>> varsByName;
+      llvm::StringMap<SmallVector<pcl::VarOp, 1>> varsByName;
       fn->walk([&varsByName](pcl::VarOp var) { varsByName[var.getName()].push_back(var); });
 
       for (auto &[_, vars] : varsByName) {
@@ -1225,8 +1225,8 @@ struct StubbedLoweringMode : public BaseMode {
   using BaseMode::BaseMode;
 
 private:
-  llvm::DenseSet<Operation *> legalizableOps;
-  llvm::DenseSet<FuncDefOp> stubs;
+  DenseSet<Operation *> legalizableOps;
+  DenseSet<FuncDefOp> stubs;
 
   /// Run step 1 in analysis mode. Running the conversion this way will note
   /// all the ops that will be converted if the conversion is actually applied.
@@ -1316,24 +1316,21 @@ class PassImpl : public pcl::impl::PCLLoweringPassBase<PassImpl> {
   LogicalResult validateStructs() {
     return failure(
         getOperation()
-            ->walk([this](StructDefOp op) {
-      if (failed(validateStruct(op))) {
-        return WalkResult::interrupt();
-      }
-      return WalkResult::advance();
+            ->walk([this](StructDefOp op) -> WalkResult {
+      return validateStruct(op);
     }).wasInterrupted()
     );
   }
 
   // PCL programs require a module-level attribute specifying the prime.
-  LogicalResult setPrime(llvm::APInt &prime) {
+  LogicalResult setPrime(APInt &prime) {
     getOperation()->setAttrs(DictionaryAttr::get(&getContext()));
     getOperation()->setAttr("pcl.prime", pcl::PrimeAttr::get(&getContext(), prime));
 
     return success();
   }
 
-  FailureOr<llvm::APSInt> selectPrime() {
+  FailureOr<APSInt> selectPrime() {
     FieldSet fields;
     // If the collection reports that at least one FeltType did not declare the field and
     // the fields set is empty, then we raise an error.
