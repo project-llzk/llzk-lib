@@ -3364,7 +3364,8 @@ static inline bool isInternalSharedNondetUse(const ScalarizedArrayInfo &info, Op
 }
 
 static LogicalResult verifySharedNondetSpecializationExternalUses(
-    const ScalarizedArrayInfo &info, const DenseMap<Value, Type> &specializedTypeByNondet
+    const ScalarizedArrayInfo &info, const DenseMap<Value, Type> &specializedTypeByNondet,
+    SymbolTableCollection &tables
 ) {
   for (const auto &[source, type] : specializedTypeByNondet) {
     for (OpOperand &use : source.getUses()) {
@@ -3381,6 +3382,27 @@ static LogicalResult verifySharedNondetSpecializationExternalUses(
         diag.attachNote(use.getOwner()->getLoc()) << "source witness is also used here";
         return diag;
       }
+
+      StructType structType = llvm::cast<StructType>(type);
+      SymbolRefAttr callee =
+          appendLeaf(structType.getNameRef(), call.getCalleeAttr().getLeafReference());
+      FailureOr<SymbolLookupResult<FuncDefOp>> target =
+          lookupTopLevelSymbol<FuncDefOp>(tables, callee, call);
+      if (failed(target)) {
+        return failure();
+      }
+
+      SmallVector<Type> argTypes(call.getArgOperands().getTypes());
+      argTypes.front() = type;
+      if (target->get().getArgumentTypes() != ArrayRef<Type>(argTypes)) {
+        InFlightDiagnostic diag = info.createOp->emitError(
+            "cannot scalarize array because specializing a generic nondeterministic initializer "
+            "would make an external constraint call incompatible with its retargeted callee"
+        );
+        diag.attachNote(call.getLoc())
+            << "retargeted constraint expects argument types " << target->get().getArgumentTypes();
+        return diag;
+      }
     }
   }
   return success();
@@ -3393,9 +3415,10 @@ static LogicalResult verifySharedNondetSpecializationExternalUses(
 /// corresponding instantiated struct definition.
 static LogicalResult materializeSharedNondetSpecializations(
     const ScalarizedArrayInfo &info, const DenseMap<Value, Type> &specializedTypeByNondet,
-    PatternRewriter &rewriter, DenseMap<Value, Value> &specializedNondetBySource
+    SymbolTableCollection &tables, PatternRewriter &rewriter,
+    DenseMap<Value, Value> &specializedNondetBySource
 ) {
-  if (failed(verifySharedNondetSpecializationExternalUses(info, specializedTypeByNondet))) {
+  if (failed(verifySharedNondetSpecializationExternalUses(info, specializedTypeByNondet, tables))) {
     return failure();
   }
 
@@ -3604,7 +3627,7 @@ static LogicalResult rewriteLocalArray(
   }
   DenseMap<Value, Value> specializedNondetBySource;
   if (failed(materializeSharedNondetSpecializations(
-          info, specializedTypeByNondet, rewriter, specializedNondetBySource
+          info, specializedTypeByNondet, tables, rewriter, specializedNondetBySource
       ))) {
     return failure();
   }
@@ -4628,13 +4651,15 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   }
   for (const ScalarizedArrayInfo &info : arraysToScalarize) {
     DenseMap<Value, Type> specializedTypeByNondet;
-    auto res = collectSharedNondetSpecializationTypes(
+    auto collectSpecializedRes = collectSharedNondetSpecializationTypes(
         info, tracker, splitTypesByMember, tables, specializedTypeByNondet
     );
-    if (failed(res)) {
+    if (failed(collectSpecializedRes)) {
       return failure();
     }
-    if (failed(verifySharedNondetSpecializationExternalUses(info, specializedTypeByNondet))) {
+    auto verifySpecializedRes =
+        verifySharedNondetSpecializationExternalUses(info, specializedTypeByNondet, tables);
+    if (failed(verifySpecializedRes)) {
       return failure();
     }
   }
