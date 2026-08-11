@@ -4111,7 +4111,7 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
         diag.attachNote(scalarValue.getLoc())
             << "array index " << idx << " stores value type " << scalarValue.getType();
         diag.attachNote(memberWriteOp.getLoc())
-            << "same index is written to scalar member type " << targetType;
+            << "same index is written with scalar member type " << targetType;
         return diag;
       }
       auto verifyWritesRes =
@@ -4126,6 +4126,29 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
         return failure();
       }
       if (existing == firstUseByValue.end()) {
+        bool canMaterializeTarget;
+        if (UnifiableCastOp castOp = scalarValue.getDefiningOp<UnifiableCastOp>()) {
+          canMaterializeTarget = canUseScalarizedValueAsType(
+              castOp.getInput().getType(), targetType, tracker,
+              "verifyNoSharedValuesForIncompatibleSplitTypes"
+          );
+        } else {
+          // Array reads are replaced before member writes, so their replacement can carry the
+          // refined type. Other ordinary SSA values would be emitted unchanged.
+          canMaterializeTarget =
+              scalarValue.getDefiningOp<NonDetOp>() || scalarValue.getDefiningOp<ReadArrayOp>();
+        }
+        if (targetType != scalarValue.getType() && !canMaterializeTarget) {
+          InFlightDiagnostic diag =
+              createOp.emitError("cannot split heterogeneous array member because ")
+              << arrayDescription
+              << " uses a non-nondeterministic SSA value for a refined scalar member type";
+          diag.attachNote(scalarValue.getLoc())
+              << "array index " << idx << " stores value type " << scalarValue.getType();
+          diag.attachNote(memberWriteOp.getLoc())
+              << "same index is written with scalar member type " << targetType;
+          return diag;
+        }
         firstUseByValue.try_emplace(
             scalarValue, std::make_pair(targetType, memberWriteOp.getLoc())
         );

@@ -25,7 +25,11 @@ module attributes {llzk.lang} {
     struct.def @Holder {
       struct.member @items : !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>> {column}
 
-      function.def @compute(%cond: i1, %shared: !poly.tvar<@Shared>) -> !struct.type<@THolder::@Holder<[@Shared]>> {
+      function.def @compute(
+      %cond: i1,
+      // expected-note@+1 {{array index [1 : index] stores value type '!poly.tvar<@Shared>'}}
+      %shared: !poly.tvar<@Shared>
+      ) -> !struct.type<@THolder::@Holder<[@Shared]>> {
         %self = struct.new : !struct.type<@THolder::@Holder<[@Shared]>>
         scf.if %cond {
           %c0 = arith.constant 0 : index
@@ -47,16 +51,16 @@ module attributes {llzk.lang} {
           %c1 = arith.constant 1 : index
           %c2 = arith.constant 2 : index
           %c3 = arith.constant 3 : index
-          // expected-error@+1 {{cannot split heterogeneous array member because a scalarization candidate reuses one SSA value for incompatible scalar member types}}
+          // expected-error@+1 {{cannot split heterogeneous array member because a scalarization candidate uses a non-nondeterministic SSA value for a refined scalar member type}}
           %fallback = array.new : !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>>
+          %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
           %item2 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[2]>>
           %item3 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[3]>>
-          array.write %fallback[%c0] = %shared : !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>>, !poly.tvar<@Shared>
+          array.write %fallback[%c0] = %item0 : !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
           array.write %fallback[%c1] = %shared : !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>>, !poly.tvar<@Shared>
           array.write %fallback[%c2] = %item2 : !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[2]>>
           array.write %fallback[%c3] = %item3 : !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[3]>>
-          // expected-note@+2 {{value is used for scalar member type}}
-          // expected-note@+1 {{same value is also used for scalar member type}}
+          // expected-note@+1 {{same index is written with scalar member type '!struct.type<@TCell_1_Cell>'}}
           struct.writem %self[@items] = %fallback : !struct.type<@THolder::@Holder<[@Shared]>>, !array.type<4 x !struct.type<@TCell::@Cell<[#id]>>>
         }
         function.return %self : !struct.type<@THolder::@Holder<[@Shared]>>

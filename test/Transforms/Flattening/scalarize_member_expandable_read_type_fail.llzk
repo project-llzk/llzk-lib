@@ -40,10 +40,10 @@ module attributes {llzk.lang} {
         // materialization, which must be checked against the later split-member scalar type.
         // expected-error@+1 {{cannot split heterogeneous array member because an expandable array reuses one SSA value for incompatible scalar member types}}
         %fallback = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-        // expected-note@+1 {{unwritten index [0 : index] is materialized for read result type}}
+        // expected-note@+1 {{unwritten index [0 : index] is materialized for read result type '!struct.type<@TCell_1_Cell>'}}
         %observed = array.read %fallback[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
         struct.writem %self[@wrong] = %observed : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[1]>>
-        // expected-note@+1 {{same index is also materialized for scalar member type}}
+        // expected-note@+1 {{same index is also materialized for scalar member type '!struct.type<@TCell_0_Cell>'}}
         struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
       }
       function.return %self : !struct.type<@Holder>
@@ -99,10 +99,10 @@ module attributes {llzk.lang} {
         // before rewriteExpandableLocalArray starts mutating the local array.
         // expected-error@+1 {{cannot split heterogeneous array member because an expandable array reuses one SSA value for incompatible scalar member types}}
         %fallback = array.new %init0, %init1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-        // expected-note@+1 {{array index [0 : index] is materialized for read result type}}
+        // expected-note@+1 {{array index [0 : index] is materialized for read result type '!struct.type<@TCell_1_Cell>'}}
         %observed = array.read %fallback[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
         struct.writem %self[@wrong] = %observed : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[1]>>
-        // expected-note@+1 {{same index is also materialized for scalar member type}}
+        // expected-note@+1 {{same index is also materialized for scalar member type '!struct.type<@TCell_0_Cell>'}}
         struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
       }
       function.return %self : !struct.type<@Holder>
@@ -154,10 +154,10 @@ module attributes {llzk.lang} {
         %c0 = arith.constant 0 : index
         // expected-error@+1 {{cannot split heterogeneous array member because an expandable array stores a scalar value with an incompatible read result type}}
         %fallback = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-        // expected-note@+1 {{array index [0 : index] stores value type}}
+        // expected-note@+1 {{array index [0 : index] stores value type '!struct.type<@TCell_0_Cell>'}}
         %written0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
         array.write %fallback[%c0] = %written0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-        // expected-note@+1 {{same index is read as}}
+        // expected-note@+1 {{same index is read as '!struct.type<@TCell_1_Cell>'}}
         %observed = array.read %fallback[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
         struct.writem %self[@wrong] = %observed : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[1]>>
         struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>

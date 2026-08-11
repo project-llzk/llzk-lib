@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s
 
 #id = affine_map<(i) -> (i)>
 module attributes {llzk.lang} {
@@ -46,15 +46,15 @@ module attributes {llzk.lang} {
       } else {
         %c0 = arith.constant 0 : index
         %c1 = arith.constant 1 : index
+        // expected-note@+1 {{array index [0 : index] stores value type '!struct.type<@TPair::@Pair<[affine_map<(d0) -> (d0)>, affine_map<(d0) -> (d0)>]>>'}}
         %shared = struct.readm %self[@seed] : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[#id, #id]>>
-        // expected-error@+1 {{cannot split heterogeneous array member because a scalarization candidate reuses a non-nondeterministic SSA value for distinct scalar member types}}
+        // expected-error@+1 {{cannot split heterogeneous array member because a scalarization candidate uses a non-nondeterministic SSA value for a refined scalar member type}}
         %fallback = array.new : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
         array.write %fallback[%c0] = %shared : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>, !struct.type<@TPair::@Pair<[#id, #id]>>
         %fallback1 = llzk.nondet : !struct.type<@TPair::@Pair<[1, 1]>>
         array.write %fallback[%c1] = %fallback1 : !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>, !struct.type<@TPair::@Pair<[1, 1]>>
-        // expected-note@+1 {{value is used for scalar member type}}
+        // expected-note@+1 {{same index is written with scalar member type '!struct.type<@"TPair_\1A_0"::@Pair<[affine_map<(d0) -> (d0)>]>>'}}
         struct.writem %self[@left] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
-        // expected-note@+1 {{same value is also used for scalar member type}}
         struct.writem %self[@right] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TPair::@Pair<[#id, #id]>>>
       }
       function.return %self : !struct.type<@Holder>

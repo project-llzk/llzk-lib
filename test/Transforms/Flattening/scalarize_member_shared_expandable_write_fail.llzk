@@ -41,13 +41,15 @@ module attributes {llzk.lang} {
         %right1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
         array.write %right[%c0] = %right0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
         array.write %right[%c1] = %right1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-        struct.writem %self[@right] = %right : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> // expected-note {{candidate writes index}}
+        // expected-note@+1 {{candidate writes index [0 : index] with type '!struct.type<@TCell_1_Cell>'}}
+        struct.writem %self[@right] = %right : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
       } else {
         %init0 = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
         %init1 = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
         %fallback = array.new %init0, %init1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
         struct.writem %self[@left] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-        struct.writem %self[@right] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> // expected-note {{conflicting candidate writes the same index}}
+        // expected-note@+1 {{conflicting candidate writes the same index with type '!struct.type<@TCell_0_Cell>'}}
+        struct.writem %self[@right] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
       }
       function.return %self : !struct.type<@Holder>
     }
@@ -98,11 +100,12 @@ module attributes {llzk.lang} {
         %c1 = arith.constant 1 : index
         // expected-error@+1 {{cannot split heterogeneous array member because an expandable array stores a scalar value with an incompatible split-member type}}
         %fallback = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-        %wrong0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>> // expected-note {{array index [0 : index] stores value type}}
+        // expected-note@+1 {{array index [0 : index] stores value type '!struct.type<@TCell_1_Cell>'}}
+        %wrong0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
         %ok1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
         array.write %fallback[%c0] = %wrong0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
         array.write %fallback[%c1] = %ok1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-        // expected-note@+1 {{same index is written to scalar member type}}
+        // expected-note@+1 {{same index is written with scalar member type '!struct.type<@TCell_0_Cell>'}}
         struct.writem %self[@items] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
       }
       function.return %self : !struct.type<@Holder>
@@ -160,9 +163,9 @@ module attributes {llzk.lang} {
       } else {
         // expected-error@+1 {{cannot split heterogeneous array member because an expandable array reuses one SSA value for incompatible scalar member types}}
         %fallback = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-        // expected-note@+1 {{unwritten index}}
+        // expected-note@+1 {{unwritten index [0 : index] is materialized for scalar member type '!struct.type<@TCell_0_Cell>'}}
         struct.writem %self[@left] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
-        // expected-note@+1 {{same index is also materialized for scalar member type}}
+        // expected-note@+1 {{same index is also materialized for scalar member type '!struct.type<@TCell_1_Cell>'}}
         struct.writem %self[@right] = %fallback : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
       }
       function.return %self : !struct.type<@Holder>
