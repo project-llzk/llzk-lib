@@ -15,10 +15,7 @@
 
 namespace pcl {
 
-enum class LlzkToPclMode : std::uint8_t {
-  Full,
-  Stubbed
-};
+enum class LlzkToPclMode : std::uint8_t { Full, Stubbed };
 
 #define GEN_PASS_DECL
 #define GEN_PASS_REGISTRATION
