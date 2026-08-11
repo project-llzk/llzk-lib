@@ -3123,7 +3123,6 @@ static LogicalResult collectSharedNondetSpecializationTypes(
     SymbolTableCollection &tables, DenseMap<Value, Type> &specializedTypeByNondet
 ) {
   DenseMap<Value, std::pair<ArrayAttr, Location>> firstUseByNondet;
-  DenseSet<ArrayAttr> readIndices;
   auto collectType = [&](Value value, Type type, ArrayAttr idx, Location loc) -> LogicalResult {
     if (!value || !type || value.getType() == type || !value.getDefiningOp<NonDetOp>()) {
       return success();
@@ -3153,7 +3152,6 @@ static LogicalResult collectSharedNondetSpecializationTypes(
   };
   for (ReadArrayOp readOp : info.reads) {
     ArrayAttr idx = getIndexAsAttr(readOp);
-    readIndices.insert(idx);
     auto res = collectType(
         info.valueByIndex.lookup(idx), info.typeByIndex.lookup(idx), idx, readOp.getLoc()
     );
@@ -3167,9 +3165,6 @@ static LogicalResult collectSharedNondetSpecializationTypes(
       return failure();
     }
     for (const auto &[idx, type] : splitTypesByMember.lookup(memberDef->get())) {
-      if (!readIndices.contains(idx)) {
-        continue;
-      }
       if (failed(collectType(info.valueByIndex.lookup(idx), type, idx, memberWriteOp.getLoc()))) {
         return failure();
       }
@@ -3179,12 +3174,18 @@ static LogicalResult collectSharedNondetSpecializationTypes(
 }
 
 /// Verify that each shared witness can be specialized without changing external observations.
+static inline bool isInternalSharedNondetUse(const ScalarizedArrayInfo &info, Operation *owner) {
+  return owner == info.createOp || llvm::any_of(info.writes, [owner](WriteArrayOp writeOp) {
+    return owner == writeOp.getOperation();
+  });
+}
+
 static LogicalResult verifySharedNondetSpecializationExternalUses(
     const ScalarizedArrayInfo &info, const DenseMap<Value, Type> &specializedTypeByNondet
 ) {
   for (const auto &[source, type] : specializedTypeByNondet) {
     for (OpOperand &use : source.getUses()) {
-      if (use.getOwner() == info.createOp) {
+      if (isInternalSharedNondetUse(info, use.getOwner())) {
         continue;
       }
       auto call = llvm::dyn_cast<CallOp>(use.getOwner());
@@ -3218,7 +3219,7 @@ static LogicalResult materializeSharedNondetSpecializations(
   DenseMap<Value, SmallVector<CallOp>> externalCallsBySource;
   for (const auto &[source, _] : specializedTypeByNondet) {
     for (OpOperand &use : source.getUses()) {
-      if (use.getOwner() == info.createOp) {
+      if (isInternalSharedNondetUse(info, use.getOwner())) {
         continue;
       }
       externalCallsBySource[source].push_back(llvm::cast<CallOp>(use.getOwner()));
@@ -3420,6 +3421,10 @@ static LogicalResult rewriteLocalArray(
       ))) {
     return failure();
   }
+  DenseSet<Value> sourcesUsedByReads;
+  for (ReadArrayOp readOp : info.reads) {
+    sourcesUsedByReads.insert(info.valueByIndex.lookup(getIndexAsAttr(readOp)));
+  }
   for (ReadArrayOp readOp : llvm::make_early_inc_range(info.reads)) {
     ArrayAttr idx = getIndexAsAttr(readOp);
     if (!canReplaceReadResultWithType(
@@ -3473,6 +3478,11 @@ static LogicalResult rewriteLocalArray(
   }
   if (info.createOp.getResult().use_empty()) {
     rewriter.eraseOp(info.createOp);
+  }
+  for (const auto &[source, _] : specializedTypeByNondet) {
+    if (!sourcesUsedByReads.contains(source) && source.use_empty()) {
+      rewriter.eraseOp(source.getDefiningOp<NonDetOp>());
+    }
   }
   return success();
 }
