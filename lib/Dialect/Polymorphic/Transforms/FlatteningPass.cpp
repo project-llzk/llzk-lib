@@ -391,6 +391,33 @@ public:
   friend Impl;
 };
 
+/// Materialize a template value as a constant suitable for `resultType`, or return a null value
+/// when the value cannot be represented by one of the supported constant operations.
+///
+/// Callers that need diagnostics for lossy conversions (such as non-zero integers to `i1`) remain
+/// responsible for reporting them before calling this helper.
+static Value
+materializeTemplateConstant(OpBuilder &builder, Location loc, Type resultType, Attribute value) {
+  if (IntegerAttr integer = llvm::dyn_cast<IntegerAttr>(value)) {
+    if (FeltType type = llvm::dyn_cast<FeltType>(resultType)) {
+      return builder.create<FeltConstantOp>(
+          loc, FeltConstAttr::get(builder.getContext(), integer.getValue(), type)
+      );
+    }
+    if (llvm::isa<IndexType>(resultType)) {
+      return builder.create<arith::ConstantIndexOp>(loc, fromAPInt(integer.getValue()));
+    }
+    if (resultType.isSignlessInteger(1)) {
+      return builder.create<arith::ConstantIntOp>(
+          loc, integer.getValue().isZero() ? 0 : 1, resultType
+      );
+    }
+  } else if (FeltConstAttr felt = llvm::dyn_cast<FeltConstAttr>(value)) {
+    return builder.create<FeltConstantOp>(loc, felt);
+  }
+  return nullptr;
+}
+
 /// Rewrite `poly.const_read` uses in cloned bodies to concrete constants when their referenced
 /// template parameter has been instantiated.
 class ClonedBodyConstReadOpPattern
@@ -428,25 +455,9 @@ public:
       return op->emitOpError().append("could not convert result type ", origResTy);
     }
 
-    if (FeltType ty = llvm::dyn_cast<FeltType>(newResTy)) {
-      replaceOpWithNewOp<FeltConstantOp>(
-          rewriter, op, FeltConstAttr::get(getContext(), attrValue, ty)
-      );
-      return success();
-    }
-
-    if (llvm::isa<IndexType>(newResTy)) {
-      replaceOpWithNewOp<arith::ConstantIndexOp>(rewriter, op, fromAPInt(attrValue));
-      return success();
-    }
-
     if (newResTy.isSignlessInteger(1)) {
       // Treat 0 as false and any other value as true (but give a warning if it's not 1)
-      if (attrValue.isZero()) {
-        replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, false, newResTy);
-        return success();
-      }
-      if (!attrValue.isOne()) {
+      if (!attrValue.isZero() && !attrValue.isOne()) {
         Location opLoc = op.getLoc();
         Diagnostic diag(opLoc, DiagnosticSeverity::Warning);
         diag << "Interpreting non-zero value " << stringWithoutType(a) << " as true";
@@ -458,7 +469,9 @@ public:
             << "\" for this call";
         diagnostics.push_back(std::move(diag));
       }
-      replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, true, newResTy);
+    }
+    if (Value replacement = materializeTemplateConstant(rewriter, op.getLoc(), newResTy, a)) {
+      rewriter.replaceOp(op, replacement);
       return success();
     }
     return op->emitOpError().append("unexpected result type ", newResTy);
@@ -468,7 +481,9 @@ public:
   LogicalResult handleRewrite(
       Attribute, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, FeltConstAttr a
   ) const {
-    replaceOpWithNewOp<FeltConstantOp>(rewriter, op, a);
+    Value replacement = materializeTemplateConstant(rewriter, op.getLoc(), op.getType(), a);
+    assert(replacement && "felt template values must materialize as felt constants");
+    rewriter.replaceOp(op, replacement);
     return success();
   }
 };
@@ -753,6 +768,21 @@ public:
   }
 };
 
+/// Add the common constant and member-offset materialization patterns for a cloned body.
+static void addClonedBodyMaterializationPatterns(
+    ConversionTarget &target, RewritePatternSet &patterns, TypeConverter &converter,
+    MLIRContext *ctx, const DenseMap<Attribute, Attribute> &paramNameToConcrete,
+    SmallVector<Diagnostic> &delayedDiagnostics
+) {
+  target.addDynamicallyLegalOp<ConstReadOp>([&paramNameToConcrete](ConstReadOp op) {
+    return !paramNameToConcrete.contains(op.getConstNameAttr());
+  });
+  patterns.add<ClonedBodyConstReadOpPattern>(
+      converter, ctx, paramNameToConcrete, delayedDiagnostics
+  );
+  patterns.add<ClonedMemberReadOpPattern>(converter, ctx, paramNameToConcrete);
+}
+
 namespace Step1_InstantiateStructs {
 
 /// Implements cloning a `StructDefOp` for a specific instantiation site, using the concrete
@@ -951,16 +981,11 @@ class StructCloner {
     MappedTypeConverter tyConv(typeAtDef, newStruct.getType(), paramNameToConcrete);
     ConversionTarget target =
         newConverterDefinedTarget<EmitEqualityOp>(tyConv, ctx, tableOffsetIsntSymbol);
-    target.addDynamicallyLegalOp<ConstReadOp>([&paramNameToConcrete](ConstReadOp op) {
-      // Legal if it's not in the map of concrete attribute instantiations
-      return !paramNameToConcrete.contains(op.getConstNameAttr());
-    });
-
     RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
-    patterns.add<ClonedBodyConstReadOpPattern>(
-        tyConv, ctx, paramNameToConcrete, tracker_.delayedDiagnosticSet(newRemoteType)
+    addClonedBodyMaterializationPatterns(
+        target, patterns, tyConv, ctx, paramNameToConcrete,
+        tracker_.delayedDiagnosticSet(newRemoteType)
     );
-    patterns.add<ClonedMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
     if (failed(applyFullConversion(newStruct, target, std::move(patterns)))) {
       LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   instantiating body of struct failed \n");
       assert(insertedCloneRoot && "clone root must have been inserted before body conversion");
@@ -1520,18 +1545,13 @@ static LogicalResult applyBodyConversions(
 ) {
   MLIRContext *ctx = op.getContext();
   FuncInstTypeConverter tyConv(paramNameToConcrete);
-  ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx, tableOffsetIsntSymbol);
-  target.addDynamicallyLegalOp<ConstReadOp>([&tyConv](ConstReadOp p) {
-    // Legal if it's not in the map of concrete attribute instantiations
-    return !tyConv.containsParam(p.getConstNameAttr());
-  });
   SmallVector<Diagnostic> delayedDiagnostics;
+  ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx, tableOffsetIsntSymbol);
   RewritePatternSet bodyPatterns = newGeneralRewritePatternSet(tyConv, ctx, target);
-  bodyPatterns.add<ClonedBodyConstReadOpPattern>(
-      tyConv, ctx, tyConv.getParamMap(), delayedDiagnostics
+  addClonedBodyMaterializationPatterns(
+      target, bodyPatterns, tyConv, ctx, tyConv.getParamMap(), delayedDiagnostics
   );
   bodyPatterns.add<ClonedBodyArrayReadOpPattern, ClonedBodyArrayWriteOpPattern>(tyConv, ctx);
-  bodyPatterns.add<ClonedMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
   if (failed(applyFullConversion(newFunc, target, std::move(bodyPatterns)))) {
     return failure();
   }
@@ -1592,24 +1612,8 @@ static LogicalResult copyReferencedTemplateExprs(
     for (ConstReadOp readOp : concreteReads) {
       Attribute value = paramNameToConcrete.lookup(readOp.getConstNameAttr());
       OpBuilder builder(readOp);
-      Operation *replacement = nullptr;
-      if (IntegerAttr integer = llvm::dyn_cast<IntegerAttr>(value)) {
-        if (FeltType type = llvm::dyn_cast<FeltType>(readOp.getType())) {
-          replacement = builder.create<FeltConstantOp>(
-              readOp.getLoc(), FeltConstAttr::get(readOp.getContext(), integer.getValue(), type)
-          );
-        } else if (llvm::isa<IndexType>(readOp.getType())) {
-          replacement = builder.create<arith::ConstantIndexOp>(
-              readOp.getLoc(), fromAPInt(integer.getValue())
-          );
-        } else if (readOp.getType().isSignlessInteger(1)) {
-          replacement = builder.create<arith::ConstantIntOp>(
-              readOp.getLoc(), integer.getValue().isZero() ? 0 : 1, readOp.getType()
-          );
-        }
-      } else if (FeltConstAttr felt = llvm::dyn_cast<FeltConstAttr>(value)) {
-        replacement = builder.create<FeltConstantOp>(readOp.getLoc(), felt);
-      }
+      Value replacement =
+          materializeTemplateConstant(builder, readOp.getLoc(), readOp.getType(), value);
       if (!replacement) {
         clonedExpr->erase();
         return failure();
@@ -1900,7 +1904,7 @@ private:
     convertCalleesInPlace(newFunc, paramNameToConcrete);
     // Insert before the TemplateOp; symbol table may adjust the name to avoid existing symbols.
     symTables.getSymbolTable(parentModule).insert(newFunc, Block::iterator(parentTemplate));
-    StringRef actualNewFuncName = newFunc.getSymName();
+    StringAttr actualNewFuncName = newFunc.getSymNameAttr();
     LLVM_DEBUG(
         llvm::dbgs() << "[InstantiateFuncAtCallOp]  created full instantiation function: "
                      << actualNewFuncName << '\n'
@@ -1912,7 +1916,7 @@ private:
       );
       newFunc->erase();
       return rewriter.notifyMatchFailure(op, [&actualNewFuncName](Diagnostic &diag) {
-        diag.append("failure while creating instantiated function '", actualNewFuncName, '\'');
+        diag.append("failure while creating instantiated function ", actualNewFuncName);
       });
     }
 
@@ -2423,6 +2427,23 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 }
 
 } // namespace Step4_InstantiateAffineMaps
+
+/// Rebuild a struct constraint call with its witness specialized to a concrete struct type.
+static CallOp replaceStructConstraintCallWithSpecializedWitness(
+    PatternRewriter &rewriter, CallOp call, Value specializedWitness
+) {
+  SmallVector<Value> args(call.getArgOperands());
+  args.front() = specializedWitness;
+  StructType structType = llvm::cast<StructType>(specializedWitness.getType());
+  SymbolRefAttr callee =
+      appendLeaf(structType.getNameRef(), call.getCalleeAttr().getLeafReference());
+  CallOp newCall = replaceOpWithNewOp<CallOp>(
+      rewriter, call, call.getResultTypes(), callee,
+      CallOp::toVectorOfValueRange(call.getMapOperands()), call.getNumDimsPerMapAttr(), args
+  );
+  newCall->setDiscardableAttrs(call->getDiscardableAttrDictionary());
+  return newCall;
+}
 
 namespace Step5_ScalarizeHeterogeneousArrays {
 
@@ -3617,16 +3638,7 @@ static LogicalResult materializeSharedNondetSpecializations(
     specializedNondetBySource[source] = specializedValue;
 
     for (CallOp call : externalCallsBySource.lookup(source)) {
-      SmallVector<Value> args(call.getArgOperands());
-      args[0] = specializedValue;
-      StructType structType = llvm::cast<StructType>(type);
-      SymbolRefAttr callee =
-          appendLeaf(structType.getNameRef(), call.getCalleeAttr().getLeafReference());
-      CallOp newCall = replaceOpWithNewOp<CallOp>(
-          rewriter, call, call.getResultTypes(), callee,
-          CallOp::toVectorOfValueRange(call.getMapOperands()), call.getNumDimsPerMapAttr(), args
-      );
-      newCall->setDiscardableAttrs(call->getDiscardableAttrDictionary());
+      replaceStructConstraintCallWithSpecializedWitness(rewriter, call, specializedValue);
     }
   }
   return success();
@@ -5443,16 +5455,7 @@ static FailureOr<Value> materializeValueForMemberWrite(
   Value replacement = clonedNondet.getResult();
   typedNondetReplacements.try_emplace(value, replacement);
   for (CallOp call : externalConstraints) {
-    SmallVector<Value> args(call.getArgOperands());
-    args.front() = replacement;
-    StructType structType = llvm::cast<StructType>(type);
-    SymbolRefAttr callee =
-        appendLeaf(structType.getNameRef(), call.getCalleeAttr().getLeafReference());
-    CallOp newCall = replaceOpWithNewOp<CallOp>(
-        rewriter, call, call.getResultTypes(), callee,
-        CallOp::toVectorOfValueRange(call.getMapOperands()), call.getNumDimsPerMapAttr(), args
-    );
-    newCall->setDiscardableAttrs(call->getDiscardableAttrDictionary());
+    replaceStructConstraintCallWithSpecializedWitness(rewriter, call, replacement);
   }
   return replacement;
 }
