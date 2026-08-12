@@ -5321,12 +5321,58 @@ static FailureOr<Value> materializeValueForMemberWrite(
     return failure();
   }
 
+  // A direct member write can become concrete after another write refines the member definition.
+  // Do not split a shared witness from a compatible external constraint while materializing the
+  // concrete value for that write. This mirrors the retargeting performed for scalarized array
+  // initializers: redirect the constraint to the instantiated struct definition and use the one
+  // replacement witness for both observations.
+  SmallVector<CallOp> externalConstraints;
+  SymbolTableCollection tables;
+  for (OpOperand &use : value.getUses()) {
+    auto memberWrite = llvm::dyn_cast<MemberWriteOp>(use.getOwner());
+    if (memberWrite && memberWrite.getVal() == use.get()) {
+      continue;
+    }
+    auto call = llvm::dyn_cast<CallOp>(use.getOwner());
+    if (!call || !call.calleeIsStructConstrain() || use.getOperandNumber() != 0 ||
+        !llvm::isa<StructType>(type)) {
+      return failure();
+    }
+
+    StructType structType = llvm::cast<StructType>(type);
+    SymbolRefAttr callee =
+        appendLeaf(structType.getNameRef(), call.getCalleeAttr().getLeafReference());
+    FailureOr<SymbolLookupResult<FuncDefOp>> target =
+        lookupTopLevelSymbol<FuncDefOp>(tables, callee, call);
+    if (failed(target)) {
+      return failure();
+    }
+    SmallVector<Type> argTypes(call.getArgOperands().getTypes());
+    argTypes.front() = type;
+    if (!typeListsUnify(argTypes, target->get().getArgumentTypes(), target->getNamespace())) {
+      return failure();
+    }
+    externalConstraints.push_back(call);
+  }
+
   OpBuilder::InsertionGuard guard(rewriter);
   rewriter.setInsertionPointAfter(nondetOp);
   auto clonedNondet = rewriter.create<NonDetOp>(loc, type);
   clonedNondet->setDiscardableAttrs(nondetOp->getDiscardableAttrDictionary());
   Value replacement = clonedNondet.getResult();
   typedNondetReplacements.try_emplace(value, replacement);
+  for (CallOp call : externalConstraints) {
+    SmallVector<Value> args(call.getArgOperands());
+    args.front() = replacement;
+    StructType structType = llvm::cast<StructType>(type);
+    SymbolRefAttr callee =
+        appendLeaf(structType.getNameRef(), call.getCalleeAttr().getLeafReference());
+    CallOp newCall = replaceOpWithNewOp<CallOp>(
+        rewriter, call, call.getResultTypes(), callee,
+        CallOp::toVectorOfValueRange(call.getMapOperands()), call.getNumDimsPerMapAttr(), args
+    );
+    newCall->setDiscardableAttrs(call->getDiscardableAttrDictionary());
+  }
   return replacement;
 }
 
