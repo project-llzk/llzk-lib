@@ -3931,7 +3931,7 @@ static LogicalResult rewriteSplitMemberReads(
       MemberReadOp scalarRead;
       DictionaryAttr readAttrs = readOp->getDiscardableAttrDictionary();
       auto &cachedReads = scalarValuesByIndex[idx];
-      auto cachedIt = llvm::find_if(cachedReads, [&readAttrs](const auto &cachedRead) {
+      auto *cachedIt = llvm::find_if(cachedReads, [&readAttrs](const auto &cachedRead) {
         return cachedRead.first == readAttrs;
       });
       if (cachedIt != cachedReads.end()) {
