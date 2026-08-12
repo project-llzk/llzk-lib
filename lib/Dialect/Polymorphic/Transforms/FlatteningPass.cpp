@@ -3063,6 +3063,28 @@ static bool canRefineMemberReadUsersToType(
           )) {
         return false;
       }
+      continue;
+    }
+    if (CreateArrayOp createArray = llvm::dyn_cast<CreateArrayOp>(user)) {
+      if (use.getOperandNumber() >= createArray.getElements().size()) {
+        return false;
+      }
+      // array.new requires every initializer to exactly match its declared element type. Allow
+      // this refinement only when the array can follow it: every other initializer already has
+      // the refined type and the array element type can be refined accordingly.
+      bool canUse = canUseScalarizedValueAsType(
+          createArray.getType().getElementType(), refinedType, tracker,
+          "UpdateMemberDefTypeFromWrite"
+      );
+      if (!canUse) {
+        return false;
+      }
+      for (OpOperand &initializer : createArray->getOpOperands()) {
+        if (&initializer != &use && initializer.get().getType() != refinedType) {
+          return false;
+        }
+      }
+      continue;
     }
   }
   return true;
@@ -4868,7 +4890,7 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
 
 namespace Step6_PropagateTypes {
 
-/// Update the array element type by looking at the values stored into it from uses.
+/// Update the array element type from compatible initializers and writes.
 class UpdateNewArrayElemFromWrite final : public OpRewritePattern<CreateArrayOp> {
   ConversionTracker &tracker_;
 
@@ -4877,16 +4899,31 @@ public:
   UpdateNewArrayElemFromWrite(MLIRContext *ctx, ConversionTracker &tracker)
       : OpRewritePattern(ctx, 3), tracker_(tracker) {}
 
-  /// Update an `array.new` result element type from compatible writes into the array.
+  /// Update an `array.new` result element type from compatible initializers and writes.
   LogicalResult matchAndRewrite(CreateArrayOp op, PatternRewriter &rewriter) const override {
     Value createResult = op.getResult();
     ArrayType createResultType = dyn_cast<ArrayType>(createResult.getType());
     assert(createResultType && "CreateArrayOp must produce ArrayType");
     Type oldResultElemType = createResultType.getElementType();
 
+    Type newResultElemType = nullptr;
+    // An initializer constrains array.new just as strongly as a later array.write: every element
+    // must have the result array's element type. A member-read refinement can change an
+    // initializer without creating a WriteArrayOp, so consider the explicit elements first.
+    if (!op.getElements().empty()) {
+      Type initializerType = op.getElements().front().getType();
+      if (!llvm::all_of(op.getElements(), [initializerType](Value element) {
+        return element.getType() == initializerType;
+      })) {
+        return failure();
+      }
+      if (initializerType != oldResultElemType) {
+        newResultElemType = initializerType;
+      }
+    }
+
     // Look for WriteArrayOp where the array reference is the result of the CreateArrayOp and the
     // element type is different.
-    Type newResultElemType = nullptr;
     for (Operation *user : createResult.getUsers()) {
       if (WriteArrayOp writeOp = dyn_cast<WriteArrayOp>(user)) {
         if (writeOp.getArrRef() != createResult) {
