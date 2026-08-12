@@ -2523,7 +2523,8 @@ static inline bool canReplaceReadResultWithType(
 /// only one of them. Typed consumers with separately declared requirements must be checked before
 /// the type-ignoring replacement below.
 static LogicalResult canReplaceReadUsersWithType(
-    ReadArrayOp readOp, Type replacementType, SymbolTableCollection &tables
+    ReadArrayOp readOp, Type replacementType, SymbolTableCollection &tables,
+    const DenseMap<Operation *, ScalarizedArrayInfo *> *candidateInfoByCreateOp = nullptr
 ) {
   Value result = readOp.getResult();
   for (OpOperand &use : result.getUses()) {
@@ -2588,6 +2589,33 @@ static LogicalResult canReplaceReadUsersWithType(
         diag.attachNote(arrayWrite.getLoc())
             << "array write requires " << elementType << ", but this read is replaced with "
             << replacementType;
+        return diag;
+      }
+      continue;
+    }
+    if (CreateArrayOp createArray = llvm::dyn_cast<CreateArrayOp>(user)) {
+      if (use.getOperandNumber() >= createArray.getElements().size()) {
+        return failure();
+      }
+      // A downstream scalarization candidate consumes the replacement while it is still valid,
+      // then removes the initialized array. Its cached initializer values are refreshed from this
+      // candidate before any rewrites run, so it is safe to let that supported path proceed.
+      if (candidateInfoByCreateOp &&
+          candidateInfoByCreateOp->contains(createArray.getOperation())) {
+        continue;
+      }
+      Type elementType = createArray.getType().getElementType();
+      // Unlike array.write, array.new requires each initializer to exactly match the result
+      // array's element type. A generic read may be a valid initializer before scalarization,
+      // even though its index-specific replacement is not.
+      if (replacementType != elementType) {
+        InFlightDiagnostic diag = readOp.emitError(
+            "cannot scalarize heterogeneous array read because its index-specific value type is "
+            "incompatible with an array initializer"
+        );
+        diag.attachNote(createArray.getLoc())
+            << "array initializer requires exactly " << elementType
+            << ", but this read is replaced with " << replacementType;
         return diag;
       }
       continue;
@@ -3746,12 +3774,16 @@ static LogicalResult rewriteLocalArray(
   }
   for (ReadArrayOp readOp : llvm::make_early_inc_range(info.reads)) {
     ArrayAttr idx = getIndexAsAttr(readOp);
-    if (!canReplaceReadResultWithType(
-            readOp, info.typeByIndex.lookup(idx), tracker, "rewriteLocalArray"
-        )) {
+    auto canReplaceResult = canReplaceReadResultWithType(
+        readOp, info.typeByIndex.lookup(idx), tracker, "rewriteLocalArray"
+    );
+    if (!canReplaceResult) {
       return failure();
     }
-    if (failed(canReplaceReadUsersWithType(readOp, info.typeByIndex.lookup(idx), tables))) {
+    auto canReplaceUsers = canReplaceReadUsersWithType(
+        readOp, info.typeByIndex.lookup(idx), tables, candidateInfoByCreateOp
+    );
+    if (failed(canReplaceUsers)) {
       return failure();
     }
     FailureOr<Value> replacementValue = buildReadReplacementValue(

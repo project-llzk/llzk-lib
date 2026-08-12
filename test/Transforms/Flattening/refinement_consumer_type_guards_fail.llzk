@@ -63,6 +63,42 @@ module attributes {llzk.lang} {
     }
   }
 
+  function.def @arrayInitializerConsumer() attributes {function.allow_witness} {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %source = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+    %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+    %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+    array.write %source[%c0] = %item0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+    array.write %source[%c1] = %item1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+    // This generic read is a valid array initializer before scalarization, but the concrete
+    // index-zero replacement cannot exactly match the destination's generic element type.
+    // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific value type is incompatible with an array initializer}}
+    %read0 = array.read %source[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+    // expected-note@+1 {{array initializer requires exactly '!struct.type<@TCell::@Cell<[affine_map<(d0) -> (d0)>]>>', but this read is replaced with '!struct.type<@TCell_0_Cell>'}}
+    %dest = array.new %read0 : !array.type<1 x !struct.type<@TCell::@Cell<[#id]>>>
+    function.return
+  }
+}
+
+// -----
+
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
   function.def @arrayWriteConsumer() attributes {function.allow_witness} {
     %c0 = arith.constant 0 : index
     %c1 = arith.constant 1 : index
