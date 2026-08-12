@@ -1565,11 +1565,11 @@ static LogicalResult applyBodyConversions(
   return failure(res.wasInterrupted());
 }
 
-/// Copy unresolved template expressions referenced by `newFunc` into its partially-instantiated
+/// Copy unresolved template expressions referenced by `newFuncs` into their partially-instantiated
 /// parent template. Reads of concrete parameters within the copied expressions are materialized so
 /// the new template contains no references to parameters that it does not preserve.
 static LogicalResult copyReferencedTemplateExprs(
-    TemplateOp parentTemplate, Block &newTemplateBody, FuncDefOp newFunc,
+    TemplateOp parentTemplate, Block &newTemplateBody, ArrayRef<FuncDefOp> newFuncs,
     const DenseMap<Attribute, Attribute> &paramNameToConcrete
 ) {
   DenseSet<StringAttr> referencedExprNames;
@@ -1583,19 +1583,21 @@ static LogicalResult copyReferencedTemplateExprs(
   // or in arbitrary attributes as well as in poly.read_const operations. In particular, a
   // signature-only reference must keep its defining expression in a partial template even if the
   // function body does not read that expression.
-  newFunc.walk([&](Operation *nestedOp) {
-    auto collectTypeRefs = [&collectExprRef](Type type) { type.walk(collectExprRef); };
-    for (Type type : nestedOp->getOperandTypes()) {
-      collectTypeRefs(type);
-    }
-    for (Type type : nestedOp->getResultTypes()) {
-      collectTypeRefs(type);
-    }
-    nestedOp->getAttrDictionary().walk(collectExprRef);
-  });
-  newFunc.walk([&collectExprRef](ConstReadOp readOp) {
-    collectExprRef(readOp.getConstNameAttr());
-  });
+  for (FuncDefOp newFunc : newFuncs) {
+    newFunc.walk([&](Operation *nestedOp) {
+      auto collectTypeRefs = [&collectExprRef](Type type) { type.walk(collectExprRef); };
+      for (Type type : nestedOp->getOperandTypes()) {
+        collectTypeRefs(type);
+      }
+      for (Type type : nestedOp->getResultTypes()) {
+        collectTypeRefs(type);
+      }
+      nestedOp->getAttrDictionary().walk(collectExprRef);
+    });
+    newFunc.walk([&collectExprRef](ConstReadOp readOp) {
+      collectExprRef(readOp.getConstNameAttr());
+    });
+  }
 
   for (TemplateExprOp expr : parentTemplate.getConstOps<TemplateExprOp>()) {
     if (!referencedExprNames.contains(expr.getSymNameAttr())) {
@@ -1624,6 +1626,51 @@ static LogicalResult copyReferencedTemplateExprs(
     newTemplateBody.push_back(clonedExpr);
   }
   return success();
+}
+
+/// Clone every free function in `parentTemplate` reached through a call in the cloned functions.
+/// Rewriting these calls to the new template keeps partial instantiations self-contained.
+static SmallVector<FuncDefOp> copyReferencedTemplateSiblingFuncs(
+    TemplateOp parentTemplate, TemplateOp newTemplate, FuncDefOp originalFunc, FuncDefOp newFunc,
+    SymbolTableCollection &symTables, const DenseMap<Attribute, Attribute> &paramNameToConcrete
+) {
+  DenseMap<Operation *, FuncDefOp> cloned;
+  SmallVector<FuncDefOp> copiedFuncs {newFunc};
+  cloned[originalFunc] = newFunc;
+  SymbolTable &parentSymbols = symTables.getSymbolTable(parentTemplate);
+
+  for (size_t i = 0; i < copiedFuncs.size(); ++i) {
+    FuncDefOp current = copiedFuncs[i];
+    current.walk([&](CallOp nestedCall) {
+      SymbolRefAttr callee = nestedCall.getCalleeAttr();
+      if (callee.getRootReference() != parentTemplate.getSymName() ||
+          callee.getNestedReferences().size() != 1) {
+        return;
+      }
+      auto sibling = dyn_cast_or_null<FuncDefOp>(
+          parentSymbols.lookup(callee.getNestedReferences().front().getAttr())
+      );
+      if (!sibling || sibling->getParentOp() != parentTemplate) {
+        return;
+      }
+
+      FuncDefOp clonedSibling;
+      if (auto found = cloned.find(sibling); found != cloned.end()) {
+        clonedSibling = found->second;
+      } else {
+        clonedSibling = sibling.clone();
+        convertCalleesInPlace(clonedSibling, paramNameToConcrete);
+        cloned[sibling] = clonedSibling;
+        copiedFuncs.push_back(clonedSibling);
+      }
+      nestedCall.setCalleeAttr(
+          SymbolRefAttr::get(
+              newTemplate.getSymNameAttr(), {FlatSymbolRefAttr::get(clonedSibling.getSymNameAttr())}
+          )
+      );
+    });
+  }
+  return copiedFuncs;
 }
 
 class InstantiateFuncAtCallOp final : public OpRewritePattern<CallOp> {
@@ -1972,27 +2019,51 @@ private:
     // Clone and partially convert the function (concretize only the concrete params).
     FuncDefOp newFunc = callTgt.clone();
     convertCalleesInPlace(newFunc, paramNameToConcrete);
-    auto copyRes =
-        copyReferencedTemplateExprs(parentTemplate, newTemplateBody, newFunc, paramNameToConcrete);
+    SmallVector<FuncDefOp> copiedFuncs = copyReferencedTemplateSiblingFuncs(
+        parentTemplate, newTemplate, callTgt, newFunc, symTables, paramNameToConcrete
+    );
+    auto copyRes = copyReferencedTemplateExprs(
+        parentTemplate, newTemplateBody, copiedFuncs, paramNameToConcrete
+    );
     if (failed(copyRes)) {
-      newFunc->erase();
+      for (FuncDefOp copiedFunc : copiedFuncs) {
+        copiedFunc->erase();
+      }
       newTemplate->erase();
       return rewriter.notifyMatchFailure(op, "failure while copying template expressions");
     }
 
     // Insert before body conversion so nested concrete callees verify from the root module. Use
     // SymbolTable::insert() so both physical symbol names are unique if necessary.
-    symTables.getSymbolTable(newTemplate).insert(newFunc);
+    for (FuncDefOp copiedFunc : copiedFuncs) {
+      symTables.getSymbolTable(newTemplate).insert(copiedFunc);
+    }
+    StringAttr provisionalTemplateName = newTemplate.getSymNameAttr();
     symTables.getSymbolTable(parentModule).insert(newTemplate, Block::iterator(parentTemplate));
-    if (failed(applyBodyConversions(op, newFunc, paramNameToConcrete))) {
-      std::string newFuncName = newFunc.getSymName().str();
+    if (newTemplate.getSymNameAttr() != provisionalTemplateName) {
+      for (FuncDefOp copiedFunc : copiedFuncs) {
+        copiedFunc.walk([&](CallOp nestedCall) {
+          SymbolRefAttr callee = nestedCall.getCalleeAttr();
+          if (callee.getRootReference() == provisionalTemplateName) {
+            nestedCall.setCalleeAttr(
+                SymbolRefAttr::get(newTemplate.getSymNameAttr(), callee.getNestedReferences())
+            );
+          }
+        });
+      }
+    }
+    for (FuncDefOp copiedFunc : copiedFuncs) {
+      if (succeeded(applyBodyConversions(op, copiedFunc, paramNameToConcrete))) {
+        continue;
+      }
+      StringAttr newFuncName = copiedFunc.getSymNameAttr();
       LLVM_DEBUG(
           llvm::dbgs() << "[InstantiateFuncAtCallOp]   body conversion failed for " << newFuncName
                        << '\n'
       );
       newTemplate->erase();
       return rewriter.notifyMatchFailure(op, [&newFuncName](Diagnostic &diag) {
-        diag.append("failure while creating instantiated function '", newFuncName, '\'');
+        diag.append("failure while creating instantiated function ", newFuncName);
       });
     }
 
