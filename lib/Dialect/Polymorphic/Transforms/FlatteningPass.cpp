@@ -3430,7 +3430,9 @@ static LogicalResult refreshValuesFromDependentCandidates(
 /// candidate's concrete scalar value. Recheck all local reads before any candidates are rewritten
 /// so an incompatible replacement cannot fail after earlier candidates have been erased.
 static LogicalResult verifyRefreshedCandidateReads(
-    ArrayRef<ScalarizedArrayInfo> arraysToScalarize, const ConversionTracker &tracker
+    ArrayRef<ScalarizedArrayInfo> arraysToScalarize, SymbolTableCollection &tables,
+    const ConversionTracker &tracker,
+    const DenseMap<Operation *, ScalarizedArrayInfo *> &candidateInfoByCreateOp
 ) {
   for (const ScalarizedArrayInfo &info : arraysToScalarize) {
     for (ReadArrayOp readOp : info.reads) {
@@ -3438,10 +3440,16 @@ static LogicalResult verifyRefreshedCandidateReads(
       if (!idx) {
         return failure();
       }
-      bool canReplace = canReplaceReadResultWithType(
+      bool canReplaceResult = canReplaceReadResultWithType(
           readOp, info.typeByIndex.lookup(idx), tracker, "verifyRefreshedCandidateReads"
       );
-      if (!canReplace) {
+      if (!canReplaceResult) {
+        return failure();
+      }
+      auto canReplaceUsers = canReplaceReadUsersWithType(
+          readOp, info.typeByIndex.lookup(idx), tables, &candidateInfoByCreateOp
+      );
+      if (failed(canReplaceUsers)) {
         return failure();
       }
     }
@@ -4837,7 +4845,9 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   if (failed(refreshRes)) {
     return failure();
   }
-  if (failed(verifyRefreshedCandidateReads(arraysToScalarize, tracker))) {
+  auto verifyRes =
+      verifyRefreshedCandidateReads(arraysToScalarize, tables, tracker, candidateInfoByCreateOp);
+  if (failed(verifyRes)) {
     return failure();
   }
   if (failed(verifySplitMemberWritesExpandable(arraysToScalarize, tables, tracker))) {

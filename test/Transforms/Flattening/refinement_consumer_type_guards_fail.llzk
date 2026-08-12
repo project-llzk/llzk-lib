@@ -47,6 +47,52 @@ module attributes {llzk.lang} {
 
 // -----
 
+// Regression: refreshed candidates must validate read consumers before any candidate rewrites.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  function.def @consume1(%value: !struct.type<@TCell::@Cell<[1]>>) {
+    function.return
+  }
+
+  function.def @refreshedCandidateConsumer() attributes {function.allow_witness} {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %first = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+    %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+    %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+    array.write %first[%c0] = %item0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+    array.write %first[%c1] = %item1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+    %generic0 = array.read %first[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+
+    // Refreshing this candidate makes index zero Cell<0>; its declared generic read still
+    // verifies, but the concrete consumer below requires Cell<1>.
+    %second = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+    array.write %second[%c0] = %generic0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+    array.write %second[%c1] = %item1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+    // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific value type is incompatible with a function call}}
+    %read0 = array.read %second[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+    // expected-note@+1 {{call argument requires '!struct.type<@TCell_1_Cell>', but this read is replaced with '!struct.type<@TCell_0_Cell>'}}
+    function.call @consume1(%read0) : (!struct.type<@TCell::@Cell<[#id]>>) -> ()
+    function.return
+  }
+}
+
+// -----
+
 #id = affine_map<(i) -> (i)>
 module attributes {llzk.lang} {
   poly.template @TCell {
