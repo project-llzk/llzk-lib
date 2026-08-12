@@ -768,9 +768,10 @@ static bool targetMayUseTemplateExpr(Operation *target, TemplateExprOp exprOp) {
 /// Evaluate target-used `TemplateExprOp`s whose dependencies are concrete, adding their values to
 /// `paramNameToConcrete`. Skip expressions unused by `target`. A failed result is a fatal
 /// normalization or evaluation error; a successful empty optional means a known binding could not
-/// yet be normalized and the caller should make no progress; a successful value contains normalized
-/// detached clones for expressions that still depend on remaining parameters, which the caller must
-/// insert or destroy. Any concrete but malformed or non-foldable expression is a failure.
+/// yet be normalized and the caller should make no progress after the complete scan; a successful
+/// value contains normalized detached clones for expressions that still depend on remaining
+/// parameters, which the caller must insert or destroy. Any concrete but malformed or non-foldable
+/// expression is a failure.
 static FailureOr<std::optional<SmallVector<TemplateExprOp>>> evaluateTemplateExprs(
     TemplateOp templateOp, Operation *target, DenseMap<Attribute, Attribute> &paramNameToConcrete,
     SmallVector<Diagnostic> &deferredExprDiagnostics
@@ -786,6 +787,7 @@ static FailureOr<std::optional<SmallVector<TemplateExprOp>>> evaluateTemplateExp
     }
     deferredExprs.clear();
   };
+  bool hasBlockedExpression = false;
   for (TemplateExprOp exprOp : templateOp.getConstOps<TemplateExprOp>()) {
     if (!targetMayUseTemplateExpr(target, exprOp)) {
       continue;
@@ -800,8 +802,10 @@ static FailureOr<std::optional<SmallVector<TemplateExprOp>>> evaluateTemplateExp
       return failure();
     }
     if (!normalizedExpr->has_value()) {
-      destroyDeferredExprs();
-      return std::optional<SmallVector<TemplateExprOp>>();
+      // A temporarily blocked expression prevents this specialization, but independent
+      // target-used expressions still need to be checked for fatal evaluation errors.
+      hasBlockedExpression = true;
+      continue;
     }
     TemplateExprOp normalizedExprOp = **normalizedExpr;
     FailureOr<std::optional<Attribute>> result =
@@ -825,6 +829,10 @@ static FailureOr<std::optional<SmallVector<TemplateExprOp>>> evaluateTemplateExp
       // so later specialization starts from the same representation that was just evaluated.
       deferredExprs.push_back(normalizedExprOp);
     }
+  }
+  if (hasBlockedExpression) {
+    destroyDeferredExprs();
+    return std::optional<SmallVector<TemplateExprOp>>();
   }
   LLVM_DEBUG(
       llvm::dbgs() << "[evaluateTemplateExprs] after: " << debug::toStringList(paramNameToConcrete)
