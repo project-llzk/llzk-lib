@@ -2572,6 +2572,45 @@ static LogicalResult canReplaceReadUsersWithType(
                                        << ", but this read is replaced with " << replacementType;
         return diag;
       }
+      continue;
+    }
+    if (WriteArrayOp arrayWrite = llvm::dyn_cast<WriteArrayOp>(user)) {
+      if (arrayWrite.getRvalue() != result) {
+        return failure();
+      }
+      Type elementType = arrayWrite.getArrRefType().getElementType();
+      if (isConcreteType(elementType, /*allowStructParams=*/false) &&
+          !typesUnify(replacementType, elementType)) {
+        InFlightDiagnostic diag = readOp.emitError(
+            "cannot scalarize heterogeneous array read because its index-specific value type is "
+            "incompatible with an array write"
+        );
+        diag.attachNote(arrayWrite.getLoc())
+            << "array write requires " << elementType << ", but this read is replaced with "
+            << replacementType;
+        return diag;
+      }
+      continue;
+    }
+    if (ReturnOp returnOp = llvm::dyn_cast<ReturnOp>(user)) {
+      unsigned resultIdx = use.getOperandNumber();
+      FuncDefOp function = returnOp->getParentOfType<FuncDefOp>();
+      TypeRange resultTypes = function.getFunctionType().getResults();
+      if (resultIdx >= resultTypes.size()) {
+        return failure();
+      }
+      Type resultType = resultTypes[resultIdx];
+      if (isConcreteType(resultType, /*allowStructParams=*/false) &&
+          !typesUnify(replacementType, resultType)) {
+        InFlightDiagnostic diag = readOp.emitError(
+            "cannot scalarize heterogeneous array read because its index-specific value type is "
+            "incompatible with a function return"
+        );
+        diag.attachNote(returnOp.getLoc())
+            << "function return requires " << resultType << ", but this read is replaced with "
+            << replacementType;
+        return diag;
+      }
     }
   }
   return success();

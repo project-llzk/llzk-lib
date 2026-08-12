@@ -33,7 +33,7 @@ module attributes {llzk.lang} {
       // replace this use, which requires Cell<1>.
       // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific value type is incompatible with a member write}}
       %read0 = array.read %local[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
-      // expected-note@+1 {{member write requires}}
+      // expected-note@+1 {{member write requires '!struct.type<@TCell_1_Cell>', but this read is replaced with '!struct.type<@TCell_0_Cell>'}}
       struct.writem %self[@wrong] = %read0 : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
       struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
       function.return %self : !struct.type<@Holder>
@@ -42,6 +42,74 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@Holder>) {
       function.return
     }
+  }
+}
+
+// -----
+
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  function.def @arrayWriteConsumer() attributes {function.allow_witness} {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %source = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+    %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+    %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+    array.write %source[%c0] = %item0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+    array.write %source[%c1] = %item1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+    // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific value type is incompatible with an array write}}
+    %read0 = array.read %source[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+    %dest = array.new : !array.type<1 x !struct.type<@TCell::@Cell<[1]>>>
+    // expected-note@+1 {{array write requires '!struct.type<@TCell_1_Cell>', but this read is replaced with '!struct.type<@TCell_0_Cell>'}}
+    array.write %dest[%c0] = %read0 : !array.type<1 x !struct.type<@TCell::@Cell<[1]>>>, !struct.type<@TCell::@Cell<[#id]>>
+    function.return
+  }
+}
+
+// -----
+
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  function.def @returnConsumer() -> !struct.type<@TCell::@Cell<[1]>> attributes {function.allow_witness} {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %source = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+    %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+    %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+    array.write %source[%c0] = %item0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+    array.write %source[%c1] = %item1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+    // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific value type is incompatible with a function return}}
+    %read0 = array.read %source[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+    // expected-note@+1 {{function return requires '!struct.type<@TCell_1_Cell>', but this read is replaced with '!struct.type<@TCell_0_Cell>'}}
+    function.return %read0 : !struct.type<@TCell::@Cell<[#id]>>
   }
 }
 
@@ -83,7 +151,7 @@ module attributes {llzk.lang} {
       // replace this argument, which requires Cell<1>.
       // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific value type is incompatible with a function call}}
       %read0 = array.read %local[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
-      // expected-note@+1 {{call argument requires}}
+      // expected-note@+1 {{call argument requires '!struct.type<@TCell_1_Cell>', but this read is replaced with '!struct.type<@TCell_0_Cell>'}}
       function.call @consume1(%read0) : (!struct.type<@TCell::@Cell<[#id]>>) -> ()
       struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
       function.return %self : !struct.type<@Holder>
