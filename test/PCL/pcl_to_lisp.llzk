@@ -89,3 +89,29 @@ module attributes {pcl.prime = #pcl.prime<7>} {
 // CHECK-NEXT: (assert (= out1 (+ 5 x)))
 // CHECK-NEXT: (output out1)
 // CHECK-NEXT: (end-module)
+
+// -----
+
+!F = !pcl.felt
+module attributes {pcl.prime = #pcl.prime<7>} {
+  func.func private @the_stub(!F) -> !F 
+  func.func @calls_stub(%arg0: !F) -> !F {
+    %0 = pcl.var "y" true 
+    %1 = call @the_stub(%arg0) : (!F) -> !F 
+    %2 = pcl.eq %0, %1 
+    pcl.assert %2
+    return %0 : !F
+  }
+}
+
+// CHECK-LABEL: (prime-number 7)
+// CHECK-NEXT: (begin-module the_stub)
+// CHECK-NEXT: (input in0)
+// CHECK-NEXT: (output out0)
+// CHECK-NEXT: (end-module)
+// CHECK-NEXT: (begin-module calls_stub)
+// CHECK-NEXT: (input in0)
+// CHECK-NEXT: (call [the_stub_call0_out0] the_stub [in0])
+// CHECK-NEXT: (assert (= y the_stub_call0_out0))
+// CHECK-NEXT: (output y)
+// CHECK-NEXT: (end-module)
