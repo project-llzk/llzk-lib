@@ -1,6 +1,7 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
-// Test instantiation of templates with function member.
+// Signature-inferred index bindings create concrete free-function clones and materialize their
+// parameter reads.
 module attributes {llzk.lang} {
   poly.template @template_f1 {
     poly.param @N : index
@@ -37,37 +38,38 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: function.def @template_f1_9_f(
-// CHECK-SAME:  %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<8,5,9 x !felt.type>) -> !array.type<9 x !felt.type> {
-// CHECK-NEXT:    %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:    %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_1]], %[[VAL_1]]] : <8,5,9 x !felt.type>
-// CHECK-NEXT:    function.return %[[VAL_2]] : !array.type<9 x !felt.type>
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: function.def @template_f2_12_f(
-// CHECK-SAME:  %[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<8,12 x !felt.type>) -> !felt.type {
-// CHECK-NEXT:    %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 12 : index
-// CHECK-NEXT:    %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:    %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_5]], %[[VAL_5]]] : <8,12 x !felt.type>, !felt.type
-// CHECK-NEXT:    %[[VAL_7:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_4]] : index, !felt.type
-// CHECK-NEXT:    %[[VAL_8:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_6]], %[[VAL_7]] : !felt.type, !felt.type
-// CHECK-NEXT:    function.return %[[VAL_8]] : !felt.type
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    function.def @compute(%[[VAL_12:[0-9a-zA-Z_\.]+]]: !array.type<8,5,9 x !felt.type>, %[[VAL_13:[0-9a-zA-Z_\.]+]]: !array.type<8,12 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = function.call @template_f1_9_f(%[[VAL_12]]) : (!array.type<8,5,9 x !felt.type>) -> !array.type<9 x !felt.type>
-// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = function.call @template_f2_12_f(%[[VAL_13]]) : (!array.type<8,12 x !felt.type>) -> !felt.type
-// CHECK-NEXT:      function.return %[[VAL_14]] : !struct.type<@Main>
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @template_f1_9_f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<8,5,9 x !felt.type>) -> !array.type<9 x !felt.type> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_1]], %[[VAL_1]]] : <8,5,9 x !felt.type>
+// CHECK-NEXT:      function.return %[[VAL_2]] : !array.type<9 x !felt.type>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_17:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_18:[0-9a-zA-Z_\.]+]]: !array.type<8,5,9 x !felt.type>, %[[VAL_19:[0-9a-zA-Z_\.]+]]: !array.type<8,12 x !felt.type>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
+// CHECK-NEXT:    function.def @template_f2_12_f(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<8,12 x !felt.type>) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 12 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_5]], %[[VAL_5]]] : <8,12 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_4]] : index, !felt.type
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_6]], %[[VAL_7]] : !felt.type, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_8]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      function.def @compute(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !array.type<8,5,9 x !felt.type>, %[[VAL_10:[0-9a-zA-Z_\.]+]]: !array.type<8,12 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @template_f1_9_f(%[[VAL_9]]) : (!array.type<8,5,9 x !felt.type>) -> !array.type<9 x !felt.type>
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = function.call @template_f2_12_f(%[[VAL_10]]) : (!array.type<8,12 x !felt.type>) -> !felt.type
+// CHECK-NEXT:        function.return %[[VAL_11]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_14:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_15:[0-9a-zA-Z_\.]+]]: !array.type<8,5,9 x !felt.type>, %[[VAL_16:[0-9a-zA-Z_\.]+]]: !array.type<8,12 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
-// Test transitive instantiation of functions. Also different instantiations of the same function.
+// A concrete outer call specializes its nested target, while a direct call with another binding
+// retains a distinct specialization of that target.
 module attributes {llzk.lang} {
   poly.template @template_g1 {
     poly.param @N : index
@@ -85,7 +87,7 @@ module attributes {llzk.lang} {
     poly.param @T : !poly.tvar<@T>
 
     function.def @f(%inp: !array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T> {
-      // Not a common use case to call a more-specific template but it is possible.
+      // The outer signature has more dimensions than the nested target, but both still unify.
       %2 = function.call @template_g1::@f(%inp) : (!array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T>
       function.return %2 : !poly.tvar<@T>
     }
@@ -103,39 +105,39 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: function.def @template_g1_12_f(
-// CHECK-SAME:  %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<8,12 x !felt.type>) -> !felt.type {
-// CHECK-NEXT:    %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:    %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_1]], %[[VAL_1]]] : <8,12 x !felt.type>, !felt.type
-// CHECK-NEXT:    function.return %[[VAL_2]] : !felt.type
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: function.def @template_g1_9_f(
-// CHECK-SAME:  %[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type>) -> !felt.type {
-// CHECK-NEXT:    %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:    %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_4]], %[[VAL_4]]] : <8,9 x !felt.type>, !felt.type
-// CHECK-NEXT:    function.return %[[VAL_5]] : !felt.type
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: function.def @template_g2_8_9_f_f(
-// CHECK-SAME:  %[[VAL_9:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type>) -> !felt.type {
-// CHECK-NEXT:    %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @template_g1_9_f(%[[VAL_9]]) : (!array.type<8,9 x !felt.type>) -> !felt.type
-// CHECK-NEXT:    function.return %[[VAL_10]] : !felt.type
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    function.def @compute(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !array.type<8,12 x !felt.type>, %[[VAL_14:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_\.]+]] = function.call @template_g1_12_f(%[[VAL_13]]) : (!array.type<8,12 x !felt.type>) -> !felt.type
-// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_\.]+]] = function.call @template_g2_8_9_f_f(%[[VAL_14]]) : (!array.type<8,9 x !felt.type>) -> !felt.type
-// CHECK-NEXT:      function.return %[[VAL_15]] : !struct.type<@Main>
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @template_g1_12_f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<8,12 x !felt.type>) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_1]], %[[VAL_1]]] : <8,12 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_2]] : !felt.type
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_18:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_19:[0-9a-zA-Z_\.]+]]: !array.type<8,12 x !felt.type>, %[[VAL_20:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
+// CHECK-NEXT:    function.def @template_g1_9_f(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type>) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_4]], %[[VAL_4]]] : <8,9 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_5]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @template_g2_8_9_f_f(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type>) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @template_g1_9_f(%[[VAL_6]]) : (!array.type<8,9 x !felt.type>) -> !felt.type
+// CHECK-NEXT:      function.return %[[VAL_7]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      function.def @compute(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !array.type<8,12 x !felt.type>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @template_g1_12_f(%[[VAL_8]]) : (!array.type<8,12 x !felt.type>) -> !felt.type
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @template_g2_8_9_f_f(%[[VAL_9]]) : (!array.type<8,9 x !felt.type>) -> !felt.type
+// CHECK-NEXT:        function.return %[[VAL_10]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_14:[0-9a-zA-Z_\.]+]]: !array.type<8,12 x !felt.type>, %[[VAL_15:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
+// A nested call with one concrete and one symbolic dimension creates a reduced callee template and
+// retargets the outer body to that partial specialization.
 module attributes {llzk.lang} {
   poly.template @template_h1 {
     poly.param @A : index
@@ -157,26 +159,29 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: poly.template @"template_h1_8_\1A" {
-// CHECK-NEXT:    poly.param @B : index
-// CHECK-NEXT:    function.def @f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<8,@B x !felt.type>) -> !felt.type {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_1]], %[[VAL_1]]] : <8,@B x !felt.type>, !felt.type
-// CHECK-NEXT:      function.return %[[VAL_2]] : !felt.type
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @"template_h1_8_\1A" {
+// CHECK-NEXT:      poly.param @B : index
+// CHECK-NEXT:      function.def @f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<8,@B x !felt.type>) -> !felt.type {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_1]], %[[VAL_1]]] : <8,@B x !felt.type>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_2]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["template_h1_8_", ""]}
+// CHECK-NEXT:    poly.template @template_h2 {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      function.def @g(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<8,@N x !felt.type>) -> !felt.type {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @"template_h1_8_\1A"::@f(%[[VAL_3]]) : (!array.type<8,@N x !felt.type>) -> !felt.type
+// CHECK-NEXT:        function.return %[[VAL_4]] : !felt.type
+// CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
-//
-// CHECK-LABEL: poly.template @template_h2 {
-// CHECK-NEXT:    poly.param @N : index
-// CHECK-NEXT:    function.def @g(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<8,@N x !felt.type>) -> !felt.type {
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @"template_h1_8_\1A"::@f(%[[VAL_6]]) : (!array.type<8,@N x !felt.type>) -> !felt.type
-// CHECK-NEXT:      function.return %[[VAL_7]] : !felt.type
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
+
 // -----
 
-// Similar to previous but there is eventually a concrete instantiation of intermediate partial instantiations.
-// No cleanup runs in this test so the partials are left in the output IR.
+// A later call supplies the final dimension, so both the outer and nested functions become fully
+// specialized; preimage cleanup then removes their parameterized sources.
 module attributes {llzk.lang} {
   poly.template @template_k1 {
     poly.param @A : index
@@ -209,32 +214,33 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: function.def @template_k1_8_5_f(
-// CHECK-SAME:  %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<8,5 x !felt.type>) -> !felt.type {
-// CHECK-NEXT:    %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:    %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_1]], %[[VAL_1]]] : <8,5 x !felt.type>, !felt.type
-// CHECK-NEXT:    function.return %[[VAL_2]] : !felt.type
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: function.def @template_k2_5_g(
-// CHECK-SAME:  %[[VAL_9:[0-9a-zA-Z_\.]+]]: !array.type<8,5 x !felt.type>) -> !felt.type {
-// CHECK-NEXT:    %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @template_k1_8_5_f(%[[VAL_9]]) : (!array.type<8,5 x !felt.type>) -> !felt.type
-// CHECK-NEXT:    function.return %[[VAL_10]] : !felt.type
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    function.def @compute(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !array.type<8,5 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = function.call @template_k2_5_g(%[[VAL_13]]) : (!array.type<8,5 x !felt.type>) -> !felt.type
-// CHECK-NEXT:      function.return %[[VAL_14]] : !struct.type<@Main>
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @template_k1_8_5_f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<8,5 x !felt.type>) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_1]], %[[VAL_1]]] : <8,5 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_2]] : !felt.type
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_16:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_17:[0-9a-zA-Z_\.]+]]: !array.type<8,5 x !felt.type>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
+// CHECK-NEXT:    function.def @template_k2_5_g(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<8,5 x !felt.type>) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @template_k1_8_5_f(%[[VAL_3]]) : (!array.type<8,5 x !felt.type>) -> !felt.type
+// CHECK-NEXT:      function.return %[[VAL_4]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      function.def @compute(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<8,5 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @template_k2_5_g(%[[VAL_5]]) : (!array.type<8,5 x !felt.type>) -> !felt.type
+// CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: !array.type<8,5 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
-// Test instantiation of function with template parameters specified at call site.
+// An explicit argument specializes a parameter absent from the function signature and materializes
+// its `poly.read_const`.
 module attributes {llzk.lang} {
   poly.template @GlobalFunc {
     poly.param @A : index
@@ -255,6 +261,7 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@CallKnownTemplateGlobal>) { function.return }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @GlobalFunc_89_id() -> index {
 // CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 89 : index
@@ -271,9 +278,11 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
-// Test instantiation of function with template parameters specified at call site.
+// A nested explicit argument remains attached while the outer function is cloned, then materializes
+// before the nested target is specialized.
 module attributes {llzk.lang} {
   poly.template @template_b1 {
     poly.param @X : index
@@ -289,7 +298,7 @@ module attributes {llzk.lang} {
     poly.param @M : index
     poly.param @T : !poly.tvar<@T>
     function.def @f(%inp: !array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T> {
-      %2 = function.call @template_b1::@f<[@N]>(%inp) : (!array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T>
+      %2 = function.call @template_b1::@f<[@M]>(%inp) : (!array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T>
       function.return %2 : !poly.tvar<@T>
     }
   }
@@ -305,32 +314,32 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK-LABEL: function.def @template_b1_9_f(
-// CHECK-SAME:  %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type>) -> !felt.type {
-// CHECK-NEXT:    %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:    %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_1]], %[[VAL_1]]] : <8,9 x !felt.type>, !felt.type
-// CHECK-NEXT:    function.return %[[VAL_2]] : !felt.type
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: function.def @template_b2_8_9_f_f(
-// CHECK-SAME:  %[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type>) -> !felt.type {
-// CHECK-NEXT:    %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @template_b1_9_f(%[[VAL_6]]) : (!array.type<8,9 x !felt.type>) -> !felt.type
-// CHECK-NEXT:    function.return %[[VAL_7]] : !felt.type
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: struct.def @Main {
-// CHECK-NEXT:    function.def @compute(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @template_b2_8_9_f_f(%[[VAL_10]]) : (!array.type<8,9 x !felt.type>) -> !felt.type
-// CHECK-NEXT:      function.return %[[VAL_11]] : !struct.type<@Main>
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @template_b1_9_f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type>) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_1]], %[[VAL_1]]] : <8,9 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_2]] : !felt.type
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_14:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      function.return
+// CHECK-NEXT:    function.def @template_b2_8_9_f_f(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type>) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @template_b1_9_f(%[[VAL_3]]) : (!array.type<8,9 x !felt.type>) -> !felt.type
+// CHECK-NEXT:      function.return %[[VAL_4]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      function.def @compute(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @template_b2_8_9_f_f(%[[VAL_5]]) : (!array.type<8,9 x !felt.type>) -> !felt.type
+// CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
-// COM: `read_const` with a variable type
+// A value parameter read through a type-variable result materializes both the value and result type.
 module attributes {llzk.lang} {
   poly.template @T {
     poly.param @Num
@@ -347,12 +356,14 @@ module attributes {llzk.lang} {
     function.return %0 : index
   }
 }
-// CHECK-LABEL: function.def @T_89_i_compute() -> index {
-// CHECK-NEXT:    %[[VAL_15:[0-9a-zA-Z_\.]+]] = arith.constant 89 : index
-// CHECK-NEXT:    function.return %[[VAL_15]] : index
-// CHECK-NEXT:  }
-//
-// CHECK-LABEL: function.def @main() -> index {
-// CHECK-NEXT:    %[[VAL_16:[0-9a-zA-Z_\.]+]] = function.call @T_89_i_compute() : () -> index
-// CHECK-NEXT:    function.return %[[VAL_16]] : index
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @T_89_i_compute() -> index {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 89 : index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main() -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @T_89_i_compute() : () -> index
+// CHECK-NEXT:      function.return %[[VAL_1]] : index
+// CHECK-NEXT:    }
 // CHECK-NEXT:  }

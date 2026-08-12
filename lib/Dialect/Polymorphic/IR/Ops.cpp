@@ -276,4 +276,11 @@ LogicalResult UnifiableCastOp::verify() {
   return success();
 }
 
+OpFoldResult UnifiableCastOp::fold(FoldAdaptor adaptor) {
+  if (getInput().getType() != getResult().getType()) {
+    return {};
+  }
+  return adaptor.getInput();
+}
+
 } // namespace llzk::polymorphic

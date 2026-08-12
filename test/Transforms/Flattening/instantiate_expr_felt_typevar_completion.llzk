@@ -1,0 +1,147 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck %s
+
+// A fieldless FeltConstAttr is materialized to the converted fielded type during direct
+// specialization of a free function.
+module attributes {llzk.lang} {
+  poly.template @FeltDirect {
+    poly.param @Num
+    poly.param @Ty : !poly.tvar<@Ty>
+    poly.expr @Value {
+      %num = poly.read_const @Num : !poly.tvar<@Ty>
+      %value = poly.unifiable_cast %num : (!poly.tvar<@Ty>) -> !felt.type<"bn128">
+      poly.yield %value : !felt.type<"bn128">
+    }
+    function.def @value() -> !felt.type<"bn128"> {
+      %value = poly.read_const @Value : !felt.type<"bn128">
+      function.return %value : !felt.type<"bn128">
+    }
+  }
+
+  function.def @main() -> !felt.type<"bn128"> {
+    %value = function.call @FeltDirect::@value<[#felt<const 35>, !felt.type<"bn128">]>() : () -> !felt.type<"bn128">
+    function.return %value : !felt.type<"bn128">
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @"FeltDirect_f<35>_f_value"() -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  35 : <"bn128">
+// CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main() -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @"FeltDirect_f<35>_f_value"() : () -> !felt.type<"bn128">
+// CHECK-NEXT:      function.return %[[VAL_1]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// The same fielded result survives a partial free-function specialization and is materialized
+// when the remaining fielded felt parameter becomes concrete.
+module attributes {llzk.lang} {
+  poly.template @FeltPartial {
+    poly.param @Num
+    poly.param @Ty : !poly.tvar<@Ty>
+    poly.param @M : !felt.type<"bn128">
+    poly.expr @Sum {
+      %num = poly.read_const @Num : !poly.tvar<@Ty>
+      %num_felt = poly.unifiable_cast %num : (!poly.tvar<@Ty>) -> !felt.type<"bn128">
+      %m = poly.read_const @M : !felt.type<"bn128">
+      %sum = felt.add %num_felt, %m : !felt.type<"bn128">, !felt.type<"bn128">
+      poly.yield %sum : !felt.type<"bn128">
+    }
+    function.def @value() -> !felt.type<"bn128"> {
+      %sum = poly.read_const @Sum : !felt.type<"bn128">
+      function.return %sum : !felt.type<"bn128">
+    }
+  }
+
+  poly.template @Bridge {
+    poly.param @M : !felt.type<"bn128">
+    function.def @value() -> !felt.type<"bn128"> {
+      %sum = function.call @FeltPartial::@value<[#felt<const 35>, !felt.type<"bn128">, @M]>() : () -> !felt.type<"bn128">
+      function.return %sum : !felt.type<"bn128">
+    }
+  }
+
+  function.def @main() -> !felt.type<"bn128"> {
+    %value = function.call @Bridge::@value<[#felt<const 7>]>() : () -> !felt.type<"bn128">
+    function.return %value : !felt.type<"bn128">
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @"FeltPartial_f<35>_f_f<7:5:bn128>_value"() -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  42 : <"bn128">
+// CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @"Bridge_f<7:5:bn128>_value"() -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @"FeltPartial_f<35>_f_f<7:5:bn128>_value"() : () -> !felt.type<"bn128">
+// CHECK-NEXT:      function.return %[[VAL_1]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main() -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @"Bridge_f<7:5:bn128>_value"() : () -> !felt.type<"bn128">
+// CHECK-NEXT:      function.return %[[VAL_2]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Struct instantiation uses the same converted fielded constant in its generated compute body.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @FeltStruct {
+    poly.param @Num
+    poly.param @Ty : !poly.tvar<@Ty>
+    poly.expr @ValueExpr {
+      %num = poly.read_const @Num : !poly.tvar<@Ty>
+      %value = poly.unifiable_cast %num : (!poly.tvar<@Ty>) -> !felt.type<"bn128">
+      poly.yield %value : !felt.type<"bn128">
+    }
+    struct.def @Value {
+      struct.member @result : !felt.type<"bn128">
+      function.def @compute() -> !struct.type<@FeltStruct::@Value<[@Num, @Ty]>> {
+        %value = poly.read_const @ValueExpr : !felt.type<"bn128">
+        %self = struct.new : !struct.type<@FeltStruct::@Value<[@Num, @Ty]>>
+        struct.writem %self[@result] = %value : !struct.type<@FeltStruct::@Value<[@Num, @Ty]>>, !felt.type<"bn128">
+        function.return %self : !struct.type<@FeltStruct::@Value<[@Num, @Ty]>>
+      }
+      function.def @constrain(%self: !struct.type<@FeltStruct::@Value<[@Num, @Ty]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Main {
+    struct.member @value : !struct.type<@FeltStruct::@Value<[#felt<const 35>, !felt.type<"bn128">]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+// CHECK-NEXT:    struct.def @"FeltStruct_f<35>_f_Value" {
+// CHECK-NEXT:      struct.member @result : !felt.type<"bn128">
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@"FeltStruct_f<35>_f_Value"> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  35 : <"bn128">
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@"FeltStruct_f<35>_f_Value">
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@result] = %[[VAL_0]] : <@"FeltStruct_f<35>_f_Value">, !felt.type<"bn128">
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@"FeltStruct_f<35>_f_Value">
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@"FeltStruct_f<35>_f_Value">) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      struct.member @value : !struct.type<@"FeltStruct_f<35>_f_Value">
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
