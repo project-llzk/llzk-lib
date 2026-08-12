@@ -407,6 +407,7 @@ module attributes {llzk.lang} {
   struct.def @Holder {
     struct.member @items : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
     struct.member @first : !struct.type<@TCell::@Cell<[0]>> {column}
+    struct.member @second : !struct.type<@TCell::@Cell<[0]>> {column}
 
     function.def @compute() -> !struct.type<@Holder> {
       %self = struct.new : !struct.type<@Holder>
@@ -430,7 +431,9 @@ module attributes {llzk.lang} {
       struct.writem %self[@items] = %replacement : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
 
       %old0 = array.read %snapshot[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>> {product_source = "read"}
+      %old0_again = array.read %snapshot[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>> {product_source = "read-again"}
       struct.writem %self[@first] = %old0 : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
+      struct.writem %self[@second] = %old0_again : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
       function.return %self : !struct.type<@Holder>
     }
 
@@ -464,21 +467,24 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.member @items_0 : !struct.type<@TCell_0_Cell> {column}
 // CHECK-NEXT:      struct.member @items_1 : !struct.type<@TCell_1_Cell> {column}
 // CHECK-NEXT:      struct.member @first : !struct.type<@TCell_0_Cell> {column}
+// CHECK-NEXT:      struct.member @second : !struct.type<@TCell_0_Cell> {column}
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
 // CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@items_0] = %[[VAL_5]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@items_1] = %[[VAL_6]] : <@Holder>, !struct.type<@TCell_1_Cell>
-// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@items_0] : <@Holder>, !struct.type<@TCell_0_Cell> {product_source = "read", whole_source = "whole"}
-// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
-// CHECK-NEXT:        struct.writem %[[VAL_4]][@items_0] = %[[VAL_8]] : <@Holder>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:        struct.writem %[[VAL_4]][@items_1] = %[[VAL_9]] : <@Holder>, !struct.type<@TCell_1_Cell>
-// CHECK-NEXT:        struct.writem %[[VAL_4]][@first] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@items_0] : <@Holder>, !struct.type<@TCell_0_Cell> {product_source = "read-again", whole_source = "whole"}
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@items_0] : <@Holder>, !struct.type<@TCell_0_Cell> {product_source = "read", whole_source = "whole"}
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@items_0] = %[[VAL_9]] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@items_1] = %[[VAL_10]] : <@Holder>, !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@first] = %[[VAL_8]] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@second] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@Holder>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

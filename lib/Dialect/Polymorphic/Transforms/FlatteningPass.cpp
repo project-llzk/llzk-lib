@@ -3876,7 +3876,12 @@ static LogicalResult rewriteSplitMemberReads(
       numDims = memberReadOp.getNumDimsPerMap().front();
     }
 
-    DenseMap<ArrayAttr, Value> scalarValueByIndex;
+    // A scalar read can be shared only when the source reads have identical
+    // discardable attributes. These attributes are preserved on the replacement
+    // operation, so sharing reads with different dictionaries would lose the
+    // metadata from every read except the last one processed.
+    DenseMap<ArrayAttr, SmallVector<std::pair<DictionaryAttr, Value>>> scalarValuesByIndex;
+    DenseMap<Operation *, Value> scalarValueByRead;
     rewriter.setInsertionPoint(memberReadOp);
     DictionaryAttr discardableAttrs = memberReadOp->getDiscardableAttrDictionary();
     for (ReadArrayOp readOp : arrayReads) {
@@ -3894,28 +3899,32 @@ static LogicalResult rewriteSplitMemberReads(
         return failure();
       }
       MemberReadOp scalarRead;
-      if (auto scalarIt = scalarValueByIndex.find(idx); scalarIt != scalarValueByIndex.end()) {
-        scalarRead = llvm::cast<MemberReadOp>(scalarIt->second.getDefiningOp());
+      DictionaryAttr readAttrs = readOp->getDiscardableAttrDictionary();
+      auto &cachedReads = scalarValuesByIndex[idx];
+      auto cachedIt = llvm::find_if(cachedReads, [&readAttrs](const auto &cachedRead) {
+        return cachedRead.first == readAttrs;
+      });
+      if (cachedIt != cachedReads.end()) {
+        scalarRead = llvm::cast<MemberReadOp>(cachedIt->second.getDefiningOp());
       } else {
         scalarRead = rewriter.create<MemberReadOp>(
             memberReadOp.getLoc(), memberInfo.second, memberReadOp.getComponent(), memberInfo.first,
             memberReadOp.getTableOffset().value_or(Attribute {}), mapOperands, numDims
         );
         scalarRead->setDiscardableAttrs(discardableAttrs);
-        scalarValueByIndex[idx] = scalarRead.getResult();
+        // Preserve provenance and other discardable metadata from the static array read that this
+        // scalar member read replaces. Per-read metadata takes precedence over metadata inherited
+        // from the whole-array member read.
+        for (NamedAttribute attr : readAttrs.getValue()) {
+          scalarRead->setDiscardableAttr(attr.getName(), attr.getValue());
+        }
+        cachedReads.emplace_back(readAttrs, scalarRead.getResult());
       }
-      // Preserve provenance and other discardable metadata from the static array read that this
-      // scalar member read replaces. Per-read metadata takes precedence over metadata inherited
-      // from the whole-array member read.
-      auto attrs = readOp->getDiscardableAttrDictionary();
-      for (NamedAttribute attr : attrs.getValue()) {
-        scalarRead->setDiscardableAttr(attr.getName(), attr.getValue());
-      }
+      scalarValueByRead[readOp] = scalarRead.getResult();
     }
 
     for (ReadArrayOp readOp : llvm::make_early_inc_range(arrayReads)) {
-      ArrayAttr idx = getIndexAsAttr(readOp);
-      replaceAllUsesIgnoringType(readOp.getResult(), scalarValueByIndex.lookup(idx));
+      replaceAllUsesIgnoringType(readOp.getResult(), scalarValueByRead.lookup(readOp));
       rewriter.eraseOp(readOp);
     }
     if (memberReadOp.getResult().use_empty()) {
