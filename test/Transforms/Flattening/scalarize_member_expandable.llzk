@@ -245,7 +245,9 @@ module attributes {llzk.lang} {
         %generic = llzk.nondet : !struct.type<@TCell::@Cell<[#id]>>
         %local = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
         array.write %local[%c0] = %generic : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
-        // This generic read precedes the split-member write. Both must observe one refined witness.
+        // Regression: the read is rewritten before the later whole-array member write requests
+        // the concrete Cell<0> refinement. Both operations originally observe %generic, so their
+        // scalar replacements must continue to share one witness.
         %read0 = array.read %local[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
         struct.writem %self[@observed] = %read0 : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
         struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
