@@ -4634,7 +4634,22 @@ static LogicalResult verifySplitMemberWritesExpandable(
         if (inserted) {
           splitIndexOpsByMember[member] = memberWriteOp.getOperation();
         } else if (!haveSameIndexSet(indicesIt->second, info.indices)) {
-          appendMissingIndices(indicesIt->second, info.indices);
+          InFlightDiagnostic diag = member.emitError(
+              "cannot split heterogeneous array member because candidate whole-array writes use "
+              "different index set"
+          );
+          diag.attachNote(splitIndexOpsByMember.lookup(member)->getLoc())
+              << "candidate establishes " << indicesIt->second.size() << " split member indices";
+          Diagnostic &note = diag.attachNote(memberWriteOp.getLoc())
+                             << "candidate whole-array write has " << info.indices.size()
+                             << " array indices";
+          if (ArrayAttr extraIndex = findIndexMissingFrom(info.indices, indicesIt->second)) {
+            note << ", including extra index " << extraIndex;
+          } else if (ArrayAttr missingIndex =
+                         findIndexMissingFrom(indicesIt->second, info.indices)) {
+            note << ", missing index " << missingIndex;
+          }
+          return diag;
         }
         DenseMap<ArrayAttr, Type> &splitTypes = splitTypesByMember[member];
         DenseMap<ArrayAttr, Operation *> &splitTypeOps = splitTypeOpsByMember[member];
