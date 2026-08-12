@@ -220,6 +220,59 @@ module attributes {llzk.lang} {
     }
   }
 
+  function.def @consume1(%value: !struct.type<@TCell::@Cell<[1]>>) {
+    function.return
+  }
+
+  struct.def @Holder {
+    struct.member @items : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
+
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %local = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+      %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+      array.write %local[%c0] = %item0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+      array.write %local[%c1] = %item1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+      struct.writem %self[@items] = %local : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+      function.return %self : !struct.type<@Holder>
+    }
+
+    function.def @constrain(%self: !struct.type<@Holder>) {
+      %c0 = arith.constant 0 : index
+      %items = struct.readm %self[@items] : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+      // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific value type is incompatible with a function call}}
+      %item0 = array.read %items[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+      // expected-note@+1 {{call argument requires '!struct.type<@TCell_1_Cell>', but this read is replaced with '!struct.type<@TCell_0_Cell>'}}
+      function.call @consume1(%item0) : (!struct.type<@TCell::@Cell<[#id]>>) -> ()
+      function.return
+    }
+  }
+}
+
+// -----
+
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
   struct.def @Holder {
     struct.member @wrong : !struct.type<@TCell::@Cell<[1]>> {column}
 

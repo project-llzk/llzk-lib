@@ -3967,7 +3967,7 @@ static LogicalResult collectSplitTypesByMember(
 /// Verify one read of an array-typed member before the defining member is split.
 static LogicalResult verifySplitMemberReadRewritable(
     MemberReadOp memberReadOp, MemberDefOp member, const DenseMap<ArrayAttr, Type> &splitTypes,
-    const ConversionTracker &tracker
+    SymbolTableCollection &tables, const ConversionTracker &tracker
 ) {
   for (Operation *user : memberReadOp.getResult().getUsers()) {
     auto readOp = llvm::dyn_cast<ReadArrayOp>(user);
@@ -4010,6 +4010,10 @@ static LogicalResult verifySplitMemberReadRewritable(
       diag.attachNote(member.getLoc()) << "split member defined here";
       return diag;
     }
+
+    if (failed(canReplaceReadUsersWithType(readOp, replacementType, tables))) {
+      return failure();
+    }
   }
   return success();
 }
@@ -4028,8 +4032,9 @@ static LogicalResult verifySplitMemberReadsRewritable(
     if (splitIt == splitTypesByMember.end()) {
       continue;
     }
-    auto verifyRes =
-        verifySplitMemberReadRewritable(memberReadOp, memberDef->get(), splitIt->second, tracker);
+    auto verifyRes = verifySplitMemberReadRewritable(
+        memberReadOp, memberDef->get(), splitIt->second, tables, tracker
+    );
     if (failed(verifyRes)) {
       return failure();
     }
