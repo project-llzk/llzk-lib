@@ -29,9 +29,9 @@ module attributes {llzk.lang} {
       %c1 = arith.constant 1 : index
       %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
       %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
-      array.write %items[%c0] = %item0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-      array.write %items[%c1] = %item1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
-      struct.writem %self[@items] = %items : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {product_source = "compute"}
+      array.write %items[%c0] = %item0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>> {product_source = "item_0", write_source = "element"}
+      array.write %items[%c1] = %item1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>> {product_source = "item_1", write_source = "element"}
+      struct.writem %self[@items] = %items : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {product_source = "compute", member_source = "whole-array"}
       function.return %self : !struct.type<@Holder>
     }
 
@@ -79,8 +79,8 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
 // CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
-// CHECK-NEXT:        struct.writem %[[VAL_5]][@items_0] = %[[VAL_6]] : <@Holder>, !struct.type<@TCell_0_Cell> {product_source = "compute"}
-// CHECK-NEXT:        struct.writem %[[VAL_5]][@items_1] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_1_Cell> {product_source = "compute"}
+// CHECK-NEXT:        struct.writem %[[VAL_5]][@items_0] = %[[VAL_6]] : <@Holder>, !struct.type<@TCell_0_Cell> {member_source = "whole-array", product_source = "item_0", write_source = "element"}
+// CHECK-NEXT:        struct.writem %[[VAL_5]][@items_1] = %[[VAL_7]] : <@Holder>, !struct.type<@TCell_1_Cell> {member_source = "whole-array", product_source = "item_1", write_source = "element"}
 // CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@Holder>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@Holder>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {

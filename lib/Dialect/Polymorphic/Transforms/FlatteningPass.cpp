@@ -2447,6 +2447,9 @@ struct ScalarizedArrayInfo {
   /// The write operation that overwrites each element index, used for dominance-like ordering
   /// checks. Indices defined only by the array initializer have no entry.
   DenseMap<ArrayAttr, Operation *> writeOpByIndex;
+  /// Discardable attributes from the write that supplies each element value. These are retained
+  /// because the element writes are erased after their scalar member-write replacements are made.
+  DenseMap<ArrayAttr, DictionaryAttr> writeDiscardableAttrsByIndex;
   /// Direct writes to the local allocation.
   SmallVector<WriteArrayOp> writes;
   /// Direct reads from the local allocation.
@@ -3189,6 +3192,7 @@ getScalarizedArrayInfo(CreateArrayOp op, const ConversionTracker &tracker) {
       info.valueByIndex[idx] = writeOp.getRvalue();
       info.typeByIndex[idx] = writeOp.getRvalue().getType();
       info.writeOpByIndex[idx] = writeOp.getOperation();
+      info.writeDiscardableAttrsByIndex[idx] = writeOp->getDiscardableAttrDictionary();
       info.writes.push_back(writeOp);
       continue;
     }
@@ -3691,8 +3695,9 @@ static FailureOr<Value> buildReadReplacementValue(
 /// Emit one scalar `struct.writem` per split index for a whole-array member write.
 template <typename GetScalarValueFn>
 static LogicalResult emitScalarMemberWrites(
-    MemberWriteOp memberWriteOp, const SplitMemberInfo &splitInfo, PatternRewriter &rewriter,
-    GetScalarValueFn getScalarValue
+    MemberWriteOp memberWriteOp, const SplitMemberInfo &splitInfo,
+    const DenseMap<ArrayAttr, DictionaryAttr> &writeDiscardableAttrsByIndex,
+    PatternRewriter &rewriter, GetScalarValueFn getScalarValue
 ) {
   rewriter.setInsertionPoint(memberWriteOp);
   DictionaryAttr discardableAttrs = memberWriteOp->getDiscardableAttrDictionary();
@@ -3710,6 +3715,13 @@ static LogicalResult emitScalarMemberWrites(
         FlatSymbolRefAttr::get(memberInfo.first), *scalarValue
     );
     scalarWrite->setDiscardableAttrs(discardableAttrs);
+    if (DictionaryAttr writeAttrs = writeDiscardableAttrsByIndex.lookup(idx)) {
+      for (NamedAttribute attr : writeAttrs) {
+        // The element write is the effective replacement, so preserve its provenance if the
+        // whole-array and element writes use the same discardable metadata key.
+        scalarWrite->setDiscardableAttr(attr.getName(), attr.getValue());
+      }
+    }
   }
   return success();
 }
@@ -3851,7 +3863,10 @@ static LogicalResult rewriteLocalArray(
           info.valueByIndex, generatedMaterializations, idx, type, memberWriteLoc, rewriter, tracker
       );
     };
-    if (failed(emitScalarMemberWrites(memberWriteOp, splitInfo, rewriter, getScalarValue))) {
+    auto emitRes = emitScalarMemberWrites(
+        memberWriteOp, splitInfo, info.writeDiscardableAttrsByIndex, rewriter, getScalarValue
+    );
+    if (failed(emitRes)) {
       return failure();
     }
     rewriter.eraseOp(memberWriteOp);
@@ -4506,6 +4521,7 @@ static LogicalResult rewriteExpandableLocalArray(
   }
 
   DenseMap<ArrayAttr, Value> valueByIndex;
+  DenseMap<ArrayAttr, DictionaryAttr> writeDiscardableAttrsByIndex;
   if (failed(seedValuesFromArrayElements(createOp, indices, valueByIndex))) {
     return failure();
   }
@@ -4562,7 +4578,9 @@ static LogicalResult rewriteExpandableLocalArray(
   SmallVector<WriteArrayOp> writesToErase;
   for (Operation *user : users) {
     if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
-      valueByIndex[getIndexAsAttr(writeOp)] = writeOp.getRvalue();
+      ArrayAttr idx = getIndexAsAttr(writeOp);
+      valueByIndex[idx] = writeOp.getRvalue();
+      writeDiscardableAttrsByIndex[idx] = writeOp->getDiscardableAttrDictionary();
       writesToErase.push_back(writeOp);
       continue;
     }
@@ -4614,7 +4632,10 @@ static LogicalResult rewriteExpandableLocalArray(
           tracker, materializationPoint
       );
     };
-    if (failed(emitScalarMemberWrites(memberWriteOp, splitInfo, rewriter, getScalarValue))) {
+    auto emitRes = emitScalarMemberWrites(
+        memberWriteOp, splitInfo, writeDiscardableAttrsByIndex, rewriter, getScalarValue
+    );
+    if (failed(emitRes)) {
       return failure();
     }
     rewriter.eraseOp(memberWriteOp);
