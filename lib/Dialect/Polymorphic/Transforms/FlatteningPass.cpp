@@ -5326,11 +5326,24 @@ static bool hasUsesOutside(Value value, Operation *user) {
   return llvm::any_of(value.getUses(), [user](OpOperand &use) { return use.getOwner() != user; });
 }
 
-/// Return whether every use of `value` is a member-write value operand.
-static bool allUsesAreMemberWrites(Value value) {
-  return !value.use_empty() && llvm::all_of(value.getUses(), [](OpOperand &use) {
+/// Return whether every use of `value` is a member-write value operand that accepts `type`.
+///
+/// A generic cast result can feed several member writes whose member definitions are refined
+/// independently. Retagging that shared result is valid only when every target member accepts the
+/// cast input type.
+static bool allMemberWritesAcceptType(Value value, Type type) {
+  if (value.use_empty()) {
+    return false;
+  }
+
+  SymbolTableCollection tables;
+  return llvm::all_of(value.getUses(), [&tables, type](OpOperand &use) {
     auto writeOp = llvm::dyn_cast<MemberWriteOp>(use.getOwner());
-    return writeOp && writeOp.getVal() == use.get();
+    if (!writeOp || writeOp.getVal() != use.get()) {
+      return false;
+    }
+    auto memberDef = writeOp.getMemberDefOp(tables);
+    return succeeded(memberDef) && typesUnify(type, memberDef->get().getType());
   });
 }
 
@@ -5460,11 +5473,13 @@ public:
     Type inputType = op.getInput().getType();
     Value result = op.getResult();
     Type resultType = result.getType();
-    if (inputType == resultType || typesUnify(inputType, resultType) ||
-        !allUsesAreMemberWrites(result) ||
-        !Step5_ScalarizeHeterogeneousArrays::canUseScalarizedValueAsType(
-            resultType, inputType, tracker_, "UpdateUnifiableCastResultFromInput"
-        )) {
+    if (typesUnify(inputType, resultType) || !allMemberWritesAcceptType(result, inputType)) {
+      return failure();
+    }
+    bool canUse = Step5_ScalarizeHeterogeneousArrays::canUseScalarizedValueAsType(
+        resultType, inputType, tracker_, "UpdateUnifiableCastResultFromInput"
+    );
+    if (!canUse) {
       return failure();
     }
     rewriter.modifyOpInPlace(op, [&result, &inputType]() { result.setType(inputType); });
