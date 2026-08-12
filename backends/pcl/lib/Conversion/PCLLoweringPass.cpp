@@ -746,21 +746,9 @@ public:
     );
 
     auto funcOp = func::FuncOp::create(
-        op.getLoc(), flatFullyQualifiedName(op), rewriter.getFunctionType(inputs, outputs)
+        op.getLoc(), flatFullyQualifiedName(op), rewriter.getFunctionType(inputs, outputs),
+        {NamedAttribute("sym_visibility", rewriter.getStringAttr("private"))}
     );
-    auto *body = funcOp.addEntryBlock();
-    {
-      OpBuilder::InsertionGuard guard(rewriter);
-      rewriter.setInsertionPointToStart(body);
-      auto outputValues = llvm::map_to_vector(
-          llvm::enumerate(op.getFunctionType().getResults()),
-          [&rewriter, loc = op.getLoc()](auto p) -> Value {
-        auto [n, _] = p;
-        return rewriter.create<pcl::VarOp>(loc, ("out" + Twine(n)).str(), /*isOutput=*/true);
-      }
-      );
-      rewriter.create<func::ReturnOp>(op.getLoc(), outputValues);
-    }
 
     rewriter.eraseOp(op);
     {
@@ -1315,8 +1303,7 @@ class PassImpl : public pcl::impl::PCLLoweringPassBase<PassImpl> {
 
   LogicalResult validateStructs() {
     return failure(
-        getOperation()
-            ->walk([this](StructDefOp op) -> WalkResult {
+        getOperation()->walk([this](StructDefOp op) -> WalkResult {
       return validateStruct(op);
     }).wasInterrupted()
     );

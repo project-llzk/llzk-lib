@@ -122,7 +122,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      pcl.assert %[[VAL_3]]
 // CHECK-NEXT:      return 
 // CHECK-NEXT:    }
-// COM: Check that @foo is not lowered.
+// COM: Check that @foo is not lowered since it's dead wrt the constrain function.
 // CHECK-NOT:  @foo
 
 // -----
@@ -185,7 +185,7 @@ module attributes {llzk.lang} {
     }
   }
   function.def @bar(%arg0: !felt.type<"koalabear">) -> !felt.type<"koalabear"> attributes {function.allow_non_native_field_ops} {
-      %0 = felt.bit_and %arg0, %arg0 : !felt.type<"koalabear">, !felt.type<"koalabear">
+    %0 = felt.bit_and %arg0, %arg0 : !felt.type<"koalabear">, !felt.type<"koalabear">
     function.return %0 : !felt.type<"koalabear">
   }
 }
@@ -201,8 +201,4 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      pcl.assert %[[VAL_3]]
 // CHECK-NEXT:      return 
 // CHECK-NEXT:    }
-// CHECK-LABEL:  func.func @bar(
-// CHECK-SAME:        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> !pcl.felt {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "out0" true
-// CHECK-NEXT:      return %[[VAL_1]] : !pcl.felt
-// CHECK-NEXT:    }
+// CHECK-NEXT:    func.func private @bar(!pcl.felt) -> !pcl.felt 

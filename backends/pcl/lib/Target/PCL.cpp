@@ -130,6 +130,9 @@ class ModuleEmitter {
   func::FuncOp func;
   SexpCache C;
 
+  /// Returns true if the function has no body.
+  bool isEmpty() { return func.isDeclaration(); }
+
   /// Helper for getting the inputs of the module.
   ArrayRef<BlockArgument> inputs() { return func.getBody().front().getArguments(); }
 
@@ -141,15 +144,33 @@ class ModuleEmitter {
     return {};
   }
 
+  /// Emits the s-expression that opens a module: `(begin-module <name>)`.
+  void emitModuleHeader(pcl::Sexps &S) {
+    S.push({S.atom("begin-module"), S.atom(func.getSymName())});
+  }
+
+  /// Emits the s-expression that closes a module: `(end-module)`.
+  void emitModuleFooter(pcl::Sexps &S) { S.push(S.sexp({S.atom("end-module")})); }
+
+  /// Emits an input declaration.
+  template <typename T> void emitInput(pcl::Sexps &S, T name) {
+    S.push({S.atom("input"), S.atom(std::move(name))});
+  }
+
+  /// Emits an output declaration.
+  template <typename T> void emitOutput(pcl::Sexps &S, T name) {
+    S.push({S.atom("output"), S.atom(std::move(name))});
+  }
+
   /// Emits the s-expressions in the prologue of the module.
   ///
   /// The prologue comprises the `(begin-module ...)` declaration followed by
   /// the input declarations.
   void prologue(pcl::Sexps &S) {
     LLVM_DEBUG({ llvm::dbgs() << "[ModuleEmitter] Emitting prologue\n"; });
-    S.push({S.atom("begin-module"), S.atom(func.getSymName())});
+    emitModuleHeader(S);
     for (auto arg : inputs()) {
-      S.push({S.atom("input"), S.atom(ns.get(arg, "in"))});
+      emitInput(S, ns.get(arg, "in"));
     }
   }
 
@@ -198,10 +219,10 @@ class ModuleEmitter {
           }
           S.push({S.atom("assert"), S.sexp({S.atom("="), S.atom(name), *vSexp})});
         }
-        S.push({S.atom("output"), S.atom(name)});
+        emitOutput(S, name);
       }
     }
-    S.push(S.sexp({S.atom("end-module")}));
+    emitModuleFooter(S);
     return success();
   }
 
@@ -397,6 +418,23 @@ class ModuleEmitter {
     }).wasInterrupted());
   }
 
+  /// Emits an empty body for a module representing a stubbed function.
+  LogicalResult emptyBody(pcl::Sexps &S) {
+    auto nInputs = func.getFunctionType().getNumInputs();
+    auto nOutputs = func.getFunctionType().getNumResults();
+
+    emitModuleHeader(S);
+    for (unsigned i = 0; i < nInputs; i++) {
+      emitInput(S, ("in" + Twine(i)).str());
+    }
+    for (unsigned i = 0; i < nOutputs; i++) {
+      emitOutput(S, ("out" + Twine(i)).str());
+    }
+    emitModuleFooter(S);
+
+    return success();
+  }
+
   /// Fills the environment with values that declare a name.
   ///
   /// Values that can declare names are the inputs and outputs of the module, `pcl.var` ops, and
@@ -444,6 +482,10 @@ public:
 
   /// Emits the complete sequence of s-expressions representing the module.
   LogicalResult emit(pcl::Sexps &S) {
+    if (isEmpty()) {
+      return emptyBody(S);
+    }
+
     fillNames();
     prologue(S);
     if (failed(body(S))) {
