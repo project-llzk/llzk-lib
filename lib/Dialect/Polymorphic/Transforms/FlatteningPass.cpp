@@ -4479,6 +4479,7 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
 
   DenseMap<Value, std::pair<Type, Location>> firstUseByValue;
   DenseMap<ArrayAttr, PendingMaterializationUse> firstMaterializedUseByIndex;
+  DenseMap<ArrayAttr, SmallVector<ReadArrayOp>> readsByIndex;
   auto valueCompatibleWithTargetType = [&tracker](Value scalarValue, Type targetType) {
     return canUseScalarizedValueAsType(
         scalarValue.getType(), targetType, tracker, "verifyNoSharedValuesForIncompatibleSplitTypes"
@@ -4536,11 +4537,34 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
     existing->second.type = *commonType;
     return success();
   };
+  // The rewrite replaces every read in one array-value lifetime with the same materialized
+  // scalar value. Check the final type against both the read result and its typed consumers before
+  // any candidate or expandable array rewrite can erase an earlier read.
+  auto verifyMaterializedReadUsers = [&](ArrayAttr idx) -> LogicalResult {
+    auto materialization = firstMaterializedUseByIndex.find(idx);
+    if (materialization == firstMaterializedUseByIndex.end()) {
+      return success();
+    }
+    for (ReadArrayOp readOp : readsByIndex.lookup(idx)) {
+      if (!canReplaceReadResultWithType(
+              readOp, materialization->second.type, tracker,
+              "verifyNoSharedValuesForIncompatibleSplitTypes"
+          ) ||
+          failed(canReplaceReadUsersWithType(readOp, materialization->second.type, tables))) {
+        return failure();
+      }
+    }
+    readsByIndex.erase(idx);
+    firstMaterializedUseByIndex.erase(idx);
+    return success();
+  };
   for (Operation *user : users) {
     if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
       ArrayAttr idx = getIndexAsAttr(writeOp);
+      if (failed(verifyMaterializedReadUsers(idx))) {
+        return failure();
+      }
       valueByIndex[idx] = writeOp.getRvalue();
-      firstMaterializedUseByIndex.erase(idx);
       continue;
     }
     if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
@@ -4569,6 +4593,7 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
           return failure();
         }
       }
+      readsByIndex[idx].push_back(readOp);
       continue;
     }
 
@@ -4680,6 +4705,11 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
         return diag;
       }
       existing->second.first = *commonType;
+    }
+  }
+  for (ArrayAttr idx : indices) {
+    if (failed(verifyMaterializedReadUsers(idx))) {
+      return failure();
     }
   }
   return success();
