@@ -2715,6 +2715,26 @@ static LogicalResult canReplaceReadUsersWithType(
       }
       continue;
     }
+    if (UnifiableCastOp castOp = llvm::dyn_cast<UnifiableCastOp>(user)) {
+      if (castOp.getInput() != result) {
+        return failure();
+      }
+      Type castResultType = castOp.getResult().getType();
+      // The cast's result may independently require a concrete type. Replacing its generic input
+      // with an index-specific value that cannot unify with that result would make the cast
+      // invalid.
+      if (isConcreteType(castResultType, /*allowStructParams=*/false) &&
+          !typesUnify(replacementType, castResultType)) {
+        InFlightDiagnostic diag = readOp.emitError(
+            "cannot scalarize heterogeneous array read because its index-specific value type is "
+            "incompatible with a unifiable cast"
+        );
+        diag.attachNote(castOp.getLoc()) << "unifiable cast result requires " << castResultType
+                                         << ", but this read is replaced with " << replacementType;
+        return diag;
+      }
+      continue;
+    }
     if (ReturnOp returnOp = llvm::dyn_cast<ReturnOp>(user)) {
       unsigned resultIdx = use.getOperandNumber();
       FuncDefOp function = returnOp->getParentOfType<FuncDefOp>();

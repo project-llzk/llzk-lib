@@ -47,6 +47,57 @@ module attributes {llzk.lang} {
 
 // -----
 
+// A generic array read can feed a concrete unifiable cast before scalarization. Replacing the
+// read with Cell<0> must be rejected because the cast independently requires Cell<1>.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Holder {
+    struct.member @items : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>> {column}
+    struct.member @wrong : !struct.type<@TCell::@Cell<[1]>> {column}
+
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %source = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+      %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+      array.write %source[%c0] = %item0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+      array.write %source[%c1] = %item1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+      // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific value type is incompatible with a unifiable cast}}
+      %read0 = array.read %source[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+      // expected-note@+1 {{unifiable cast result requires '!struct.type<@TCell_1_Cell>', but this read is replaced with '!struct.type<@TCell_0_Cell>'}}
+      %cast = poly.unifiable_cast %read0 : (!struct.type<@TCell::@Cell<[#id]>>) -> !struct.type<@TCell::@Cell<[1]>>
+      struct.writem %self[@wrong] = %cast : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[1]>>
+      struct.writem %self[@items] = %source : !struct.type<@Holder>, !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+      function.return %self : !struct.type<@Holder>
+    }
+
+    function.def @constrain(%self: !struct.type<@Holder>) {
+      function.return
+    }
+  }
+}
+
+// -----
+
 // Regression: refreshed candidates must validate read consumers before any candidate rewrites.
 #id = affine_map<(i) -> (i)>
 module attributes {llzk.lang} {
