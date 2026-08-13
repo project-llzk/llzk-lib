@@ -78,6 +78,6 @@ var searchData=
   ['functioninterpreter_75',['FunctionInterpreter',['../classllzk_1_1witgen_1_1FunctionInterpreter.html',1,'llzk::witgen']]],
   ['functionoperationlinktests_76',['FunctionOperationLinkTests',['../classFunctionOperationLinkTests.html',1,'']]],
   ['functiontypeconverter_77',['FunctionTypeConverter',['../classllzk_1_1FunctionTypeConverter.html',1,'llzk']]],
-  ['fuseproductloopspassbase_78',['FuseProductLoopsPassBase',['../classllzk_1_1impl_1_1FuseProductLoopsPassBase.html',1,'llzk::impl']]],
+  ['fuseproductcontrolflowpassbase_78',['FuseProductControlFlowPassBase',['../classllzk_1_1impl_1_1FuseProductControlFlowPassBase.html',1,'llzk::impl']]],
   ['fuzzyset_79',['FuzzySet',['../classllzk_1_1FuzzySet.html',1,'llzk']]]
 ];

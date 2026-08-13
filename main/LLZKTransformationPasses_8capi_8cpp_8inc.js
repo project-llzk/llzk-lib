@@ -2,7 +2,7 @@ var LLZKTransformationPasses_8capi_8cpp_8inc =
 [
     [ "mlirCreateLLZKTransformationComputeConstrainToProductPass", "LLZKTransformationPasses_8capi_8cpp_8inc.html#a7a3fe2eb5dd9bb5883183a867e5fe59d", null ],
     [ "mlirCreateLLZKTransformationEnforceNoMemberOverwritePass", "LLZKTransformationPasses_8capi_8cpp_8inc.html#ae38590f18cd100943515e973b92e3c4a", null ],
-    [ "mlirCreateLLZKTransformationFuseProductLoopsPass", "LLZKTransformationPasses_8capi_8cpp_8inc.html#af09dd48267f7bbbc7e1cb6f06017eeee", null ],
+    [ "mlirCreateLLZKTransformationFuseProductControlFlowPass", "LLZKTransformationPasses_8capi_8cpp_8inc.html#a61ccad6c87d7986cdc0ec8edc7b13adc", null ],
     [ "mlirCreateLLZKTransformationInlineFreeFunctionsPass", "LLZKTransformationPasses_8capi_8cpp_8inc.html#aae30325e9ba10693aff79390d57ed64f", null ],
     [ "mlirCreateLLZKTransformationPolyLoweringPass", "LLZKTransformationPasses_8capi_8cpp_8inc.html#a6901ec6ebb7c5d1637faebe901937986", null ],
     [ "mlirCreateLLZKTransformationRedundantOperationEliminationPass", "LLZKTransformationPasses_8capi_8cpp_8inc.html#a16a2869be7d330a0bd03a9507a3c0585", null ],
@@ -12,7 +12,7 @@ var LLZKTransformationPasses_8capi_8cpp_8inc =
     [ "mlirCreateLLZKTransformationWhileToForPass", "LLZKTransformationPasses_8capi_8cpp_8inc.html#a7d11aa6034142d8caf8215900e140981", null ],
     [ "mlirRegisterLLZKTransformationComputeConstrainToProductPass", "LLZKTransformationPasses_8capi_8cpp_8inc.html#ab1c3fc75f0887bf3b09fa73b70154a50", null ],
     [ "mlirRegisterLLZKTransformationEnforceNoMemberOverwritePass", "LLZKTransformationPasses_8capi_8cpp_8inc.html#a2d0b523c15b98b7f952d3d99efd4c248", null ],
-    [ "mlirRegisterLLZKTransformationFuseProductLoopsPass", "LLZKTransformationPasses_8capi_8cpp_8inc.html#a3eaf102d878031de37dd0e22df3d2a04", null ],
+    [ "mlirRegisterLLZKTransformationFuseProductControlFlowPass", "LLZKTransformationPasses_8capi_8cpp_8inc.html#aaa9be3f370df621c23c7a67d585d540a", null ],
     [ "mlirRegisterLLZKTransformationInlineFreeFunctionsPass", "LLZKTransformationPasses_8capi_8cpp_8inc.html#aa6473a8de3fd41a628cfe473decad8d8", null ],
     [ "mlirRegisterLLZKTransformationPasses", "LLZKTransformationPasses_8capi_8cpp_8inc.html#a6ff9bec2dc1792f3939103648d739253", null ],
     [ "mlirRegisterLLZKTransformationPolyLoweringPass", "LLZKTransformationPasses_8capi_8cpp_8inc.html#ac586bead2073722624d5f437bd57f2ab", null ],

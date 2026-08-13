@@ -38,7 +38,7 @@ var searchData=
   ['print_20symbol_20def_20tree_35',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-symbol-def-tree&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-symbol-def-tree',1,'']]],
   ['print_20symbol_20use_20graph_36',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-symbol-use-graph&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-symbol-use-graph',1,'']]],
   ['product_37',['&lt;span class=&quot;tt&quot;&gt;-llzk-compute-constrain-to-product&lt;/span&gt;',['../tools.html#autotoc_md-llzk-compute-constrain-to-product',1,'']]],
-  ['product_20loops_38',['&lt;span class=&quot;tt&quot;&gt;-llzk-fuse-product-loops&lt;/span&gt;',['../tools.html#autotoc_md-llzk-fuse-product-loops',1,'']]],
+  ['product_20control_20flow_38',['&lt;span class=&quot;tt&quot;&gt;-llzk-fuse-product-control-flow&lt;/span&gt;',['../tools.html#autotoc_md-llzk-fuse-product-control-flow',1,'']]],
   ['project_20overview_39',['Project Overview',['../overview.html#project-overview',1,'']]],
   ['pseudo_20homogeneous_20arrays_40',['Pseudo-homogeneous arrays',['../syntax.html#pseudo-homogeneous',1,'']]],
   ['publicattr_41',['PublicAttr',['../dialects.html#publicattr',1,'PublicAttr'],['../backend-dialects.html#publicattr-1',1,'PublicAttr']]],

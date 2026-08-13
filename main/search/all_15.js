@@ -170,7 +170,7 @@ var searchData=
   ['private_167',['Private',['../CommonCAPIGen_8cpp.html#a52d398b2ed9f5c7be2710dd433a85132a47f9082fc380ca62d531096aa1d110f1',1,'CommonCAPIGen.cpp']]],
   ['processblockargs_168',['processBlockArgs',['../classllzk_1_1FunctionTypeConverter.html#a17597c98f0d681af3a4c0a72ebfa3dd4',1,'llzk::FunctionTypeConverter']]],
   ['product_169',['&lt;span class=&quot;tt&quot;&gt;-llzk-compute-constrain-to-product&lt;/span&gt;',['../tools.html#autotoc_md-llzk-compute-constrain-to-product',1,'']]],
-  ['product_20loops_170',['&lt;span class=&quot;tt&quot;&gt;-llzk-fuse-product-loops&lt;/span&gt;',['../tools.html#autotoc_md-llzk-fuse-product-loops',1,'']]],
+  ['product_20control_20flow_170',['&lt;span class=&quot;tt&quot;&gt;-llzk-fuse-product-control-flow&lt;/span&gt;',['../tools.html#autotoc_md-llzk-fuse-product-control-flow',1,'']]],
   ['product_5fsource_171',['PRODUCT_SOURCE',['../namespacellzk.html#a2cdeacdd2fdd05b3ea21f81517410ad3',1,'llzk']]],
   ['productaligner_172',['ProductAligner',['../classllzk_1_1ProductAligner.html',1,'llzk::ProductAligner'],['../classllzk_1_1ProductAligner.html#ab29d9cc2549a57577de7017923ef9a02',1,'llzk::ProductAligner::ProductAligner()']]],
   ['productfnmap_173',['productFnMap',['../classllzk_1_1ModuleLikeBuilder.html#a1bf61b66d0d1203679379388cb14be12',1,'llzk::ModuleLikeBuilder']]],

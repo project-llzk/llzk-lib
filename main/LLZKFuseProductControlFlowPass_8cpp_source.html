@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.14.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>LLZK: lib/Transforms/LLZKFuseProductLoopsPass.cpp Source File</title>
+<title>LLZK: lib/Transforms/LLZKFuseProductControlFlowPass.cpp Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -78,7 +78,7 @@ $(function() {
   </div>
 </div>
 <script type="text/javascript">
-$(function(){initNavTree('LLZKFuseProductLoopsPass_8cpp_source.html','',''); });
+$(function(){initNavTree('LLZKFuseProductControlFlowPass_8cpp_source.html','',''); });
 </script>
 <div id="container">
 <div id="doc-content">
@@ -104,10 +104,10 @@ $(function(){initNavTree('LLZKFuseProductLoopsPass_8cpp_source.html','',''); });
 </div>
 
 <div class="header">
-  <div class="headertitle"><div class="title">LLZKFuseProductLoopsPass.cpp</div></div>
+  <div class="headertitle"><div class="title">LLZKFuseProductControlFlowPass.cpp</div></div>
 </div><!--header-->
 <div class="contents">
-<a href="LLZKFuseProductLoopsPass_8cpp.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span><span class="comment">//===-- LLZKFuseProductLoopsPass.cpp ----------------------------*- C++ -*-===//</span></div>
+<a href="LLZKFuseProductControlFlowPass_8cpp.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span><span class="comment">//===-- LLZKFuseProductControlFlowPass.cpp ----------------------*- C++ -*-===//</span></div>
 <div class="line"><a id="l00002" name="l00002"></a><span class="lineno">    2</span><span class="comment">//</span></div>
 <div class="line"><a id="l00003" name="l00003"></a><span class="lineno">    3</span><span class="comment">// Part of the LLZK Project, under the Apache License v2.0.</span></div>
 <div class="line"><a id="l00004" name="l00004"></a><span class="lineno">    4</span><span class="comment">// See LICENSE.txt for license information.</span></div>
@@ -135,7 +135,7 @@ $(function(){initNavTree('LLZKFuseProductLoopsPass_8cpp_source.html','',''); });
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
 <div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="comment">// Include the generated base pass class definitions.</span></div>
 <div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk.html">llzk</a> {</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno"><a class="line" href="LLZKFuseProductLoopsPass_8cpp.html#ae6e1b8548be250259dc380d03e2ebd75">   33</a></span><span class="preprocessor">#define GEN_PASS_DEF_FUSEPRODUCTLOOPSPASS</span></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno"><a class="line" href="LLZKFuseProductControlFlowPass_8cpp.html#a803fb26d0adde26a1775037cd7852271">   33</a></span><span class="preprocessor">#define GEN_PASS_DEF_FUSEPRODUCTCONTROLFLOWPASS</span></div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="preprocessor">#include &quot;<a class="code" href="LLZKTransformationPasses_8h_8inc.html">llzk/Transforms/LLZKTransformationPasses.h.inc</a>&quot;</span></div>
 <div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>} <span class="comment">// namespace llzk</span></div>
 <div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
@@ -307,8 +307,8 @@ $(function(){initNavTree('LLZKFuseProductLoopsPass_8cpp_source.html','',''); });
 <div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>  <span class="keywordflow">return</span> success();</div>
 <div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>}</div>
 <div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span> </div>
-<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span><span class="keyword">class </span>PassImpl : <span class="keyword">public</span> <a class="code hl_class" href="classllzk_1_1impl_1_1FuseProductLoopsPassBase.html">llzk::impl::FuseProductLoopsPassBase</a>&lt;PassImpl&gt; {</div>
-<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>  <span class="keyword">using </span>Base = FuseProductLoopsPassBase&lt;PassImpl&gt;;</div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span><span class="keyword">class </span>PassImpl : <span class="keyword">public</span> <a class="code hl_class" href="classllzk_1_1impl_1_1FuseProductControlFlowPassBase.html">llzk::impl::FuseProductControlFlowPassBase</a>&lt;PassImpl&gt; {</div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>  <span class="keyword">using </span>Base = FuseProductControlFlowPassBase&lt;PassImpl&gt;;</div>
 <div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>  <span class="keyword">using </span>Base::Base;</div>
 <div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span> </div>
 <div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
@@ -332,7 +332,7 @@ $(function(){initNavTree('LLZKFuseProductLoopsPass_8cpp_source.html','',''); });
 <div class="ttc" id="aPolymorphic_2IR_2Ops_8h_html"><div class="ttname"><a href="Polymorphic_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aStruct_2IR_2Ops_8h_html"><div class="ttname"><a href="Struct_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_af3817de8d4217209815d498d978041c8"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#af3817de8d4217209815d498d978041c8">llzk::function::FuncDefOp::isStructProduct</a></div><div class="ttdeci">bool isStructProduct()</div><div class="ttdoc">Return true iff the function is within a StructDefOp and named FUNC_NAME_PRODUCT.</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00910">Ops.h.inc:910</a></div></div>
-<div class="ttc" id="aclassllzk_1_1impl_1_1FuseProductLoopsPassBase_html"><div class="ttname"><a href="classllzk_1_1impl_1_1FuseProductLoopsPassBase.html">llzk::impl::FuseProductLoopsPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00228">LLZKFuseProductLoopsPass.cpp:228</a></div></div>
+<div class="ttc" id="aclassllzk_1_1impl_1_1FuseProductControlFlowPassBase_html"><div class="ttname"><a href="classllzk_1_1impl_1_1FuseProductControlFlowPassBase.html">llzk::impl::FuseProductControlFlowPassBase</a></div><div class="ttdef"><b>Definition</b> <a href="#l00228">LLZKFuseProductControlFlowPass.cpp:228</a></div></div>
 <div class="ttc" id="aclassllzk_1_1polymorphic_1_1ConstReadOp_html"><div class="ttname"><a href="classllzk_1_1polymorphic_1_1ConstReadOp.html">llzk::polymorphic::ConstReadOp</a></div><div class="ttdef"><b>Definition</b> <a href="Polymorphic_2IR_2Ops_8h_8inc_source.html#l00406">Ops.h.inc:406</a></div></div>
 <div class="ttc" id="allzk_2Util_2Constants_8h_html"><div class="ttname"><a href="llzk_2Util_2Constants_8h.html">Constants.h</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1alignmentHelpers_html_ae5c6598d440558d778347f57a24f088a"><div class="ttname"><a href="namespacellzk_1_1alignmentHelpers.html#ae5c6598d440558d778347f57a24f088a">llzk::alignmentHelpers::getMatchingPairs</a></div><div class="ttdeci">llvm::FailureOr&lt; llvm::SetVector&lt; std::pair&lt; ValueT, ValueT &gt; &gt; &gt; getMatchingPairs(llvm::ArrayRef&lt; ValueT &gt; as, llvm::ArrayRef&lt; ValueT &gt; bs, FnT doesMatch, bool allowPartial=true)</div><div class="ttdef"><b>Definition</b> <a href="AlignmentHelper_8h_source.html#l00028">AlignmentHelper.h:28</a></div></div>
@@ -349,7 +349,7 @@ $(function(){initNavTree('LLZKFuseProductLoopsPass_8cpp_source.html','',''); });
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a href="dir_97aefd0d527b934f1d99a682da8fe6a9.html">lib</a></li><li class="navelem"><a href="dir_a72932e0778af28115095468f6286ff8.html">Transforms</a></li><li class="navelem"><a href="LLZKFuseProductLoopsPass_8cpp.html">LLZKFuseProductLoopsPass.cpp</a></li>
+    <li class="navelem"><a href="dir_97aefd0d527b934f1d99a682da8fe6a9.html">lib</a></li><li class="navelem"><a href="dir_a72932e0778af28115095468f6286ff8.html">Transforms</a></li><li class="navelem"><a href="LLZKFuseProductControlFlowPass_8cpp.html">LLZKFuseProductControlFlowPass.cpp</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.14.0 </li>
     <li class="footer">Copyright 2025 Veridise Inc. under the Apache License v2.0. Copyright 2026 Project LLZK under the Apache License v2.0.</li>
   </ul>

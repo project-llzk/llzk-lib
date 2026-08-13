@@ -429,7 +429,7 @@ Functions</h2></td></tr>
 <tr class="memitem:ab130fee87d124e2a3037fde5697dd96e" id="r_ab130fee87d124e2a3037fde5697dd96e"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab130fee87d124e2a3037fde5697dd96e">createComputeConstrainToProductPass</a> ()</td></tr>
 <tr class="memitem:a5e6ca4e7b1f2b0c39f1e3b77f15d5539" id="r_a5e6ca4e7b1f2b0c39f1e3b77f15d5539"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5e6ca4e7b1f2b0c39f1e3b77f15d5539">createComputeConstrainToProductPass</a> (<a class="el" href="structllzk_1_1ComputeConstrainToProductPassOptions.html">ComputeConstrainToProductPassOptions</a> options)</td></tr>
 <tr class="memitem:a78d1137f9044c06529a0c3f43d7649a5" id="r_a78d1137f9044c06529a0c3f43d7649a5"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a78d1137f9044c06529a0c3f43d7649a5">createEnforceNoMemberOverwritePass</a> ()</td></tr>
-<tr class="memitem:a8d01d0aaba5ad1f572efab7c32da3a19" id="r_a8d01d0aaba5ad1f572efab7c32da3a19"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8d01d0aaba5ad1f572efab7c32da3a19">createFuseProductLoopsPass</a> ()</td></tr>
+<tr class="memitem:a3fb6bfbb4ab0ec27ec6d0e9ea35b5905" id="r_a3fb6bfbb4ab0ec27ec6d0e9ea35b5905"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3fb6bfbb4ab0ec27ec6d0e9ea35b5905">createFuseProductControlFlowPass</a> ()</td></tr>
 <tr class="memitem:a2a13d34dbb912890632e93c572cd8450" id="r_a2a13d34dbb912890632e93c572cd8450"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2a13d34dbb912890632e93c572cd8450">createInlineFreeFunctionsPass</a> ()</td></tr>
 <tr class="memitem:aff868f4126dfe56cae327fc5359725c8" id="r_aff868f4126dfe56cae327fc5359725c8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aff868f4126dfe56cae327fc5359725c8">registerInliningExtensions</a> (DialectRegistry &amp;registry)</td></tr>
 <tr class="memitem:a12a702f1e67b6a7dd0c787d2770dfb8c" id="r_a12a702f1e67b6a7dd0c787d2770dfb8c"><td class="memItemLeft" align="right" valign="top">Value&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a12a702f1e67b6a7dd0c787d2770dfb8c">rebuildExprInCompute</a> (Value val, <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> computeFunc, OpBuilder &amp;builder, DenseMap&lt; Value, Value &gt; &amp;memo)</td></tr>
@@ -650,8 +650,8 @@ Functions</h2></td></tr>
 <tr class="memitem:a634c2695107587874aa6a0f5275ce898" id="r_a634c2695107587874aa6a0f5275ce898"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a634c2695107587874aa6a0f5275ce898">registerComputeConstrainToProductPassPass</a> ()</td></tr>
 <tr class="memitem:ae3e54e31d7ac526c7a4a85373bc8ce78" id="r_ae3e54e31d7ac526c7a4a85373bc8ce78"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae3e54e31d7ac526c7a4a85373bc8ce78">registerEnforceNoMemberOverwritePass</a> ()</td></tr>
 <tr class="memitem:a5440c7cad5172707697b8e8b3c2d542c" id="r_a5440c7cad5172707697b8e8b3c2d542c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5440c7cad5172707697b8e8b3c2d542c">registerEnforceNoMemberOverwritePassPass</a> ()</td></tr>
-<tr class="memitem:afc459f524bd51b9c940d080aa4d9e6cd" id="r_afc459f524bd51b9c940d080aa4d9e6cd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afc459f524bd51b9c940d080aa4d9e6cd">registerFuseProductLoopsPass</a> ()</td></tr>
-<tr class="memitem:a1143f7373f7bfa75604b652d05cc6da7" id="r_a1143f7373f7bfa75604b652d05cc6da7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1143f7373f7bfa75604b652d05cc6da7">registerFuseProductLoopsPassPass</a> ()</td></tr>
+<tr class="memitem:a65d33764370b6af8354d5e29bf35f50e" id="r_a65d33764370b6af8354d5e29bf35f50e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a65d33764370b6af8354d5e29bf35f50e">registerFuseProductControlFlowPass</a> ()</td></tr>
+<tr class="memitem:a7598fa7f749b3818da93ff677fcd9776" id="r_a7598fa7f749b3818da93ff677fcd9776"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7598fa7f749b3818da93ff677fcd9776">registerFuseProductControlFlowPassPass</a> ()</td></tr>
 <tr class="memitem:a44fa2ec16b32e22fbfd4725dbb98e356" id="r_a44fa2ec16b32e22fbfd4725dbb98e356"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a44fa2ec16b32e22fbfd4725dbb98e356">registerInlineFreeFunctionsPass</a> ()</td></tr>
 <tr class="memitem:ac76ce84d0228a9b4e82f9c23dac1a2c8" id="r_ac76ce84d0228a9b4e82f9c23dac1a2c8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac76ce84d0228a9b4e82f9c23dac1a2c8">registerInlineFreeFunctionsPassPass</a> ()</td></tr>
 <tr class="memitem:ac49f7b1c85b8f51847a9cd27ab2e195f" id="r_ac49f7b1c85b8f51847a9cd27ab2e195f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac49f7b1c85b8f51847a9cd27ab2e195f">registerPolyLoweringPass</a> ()</td></tr>
@@ -3039,14 +3039,14 @@ template&lt;typename OpTy, typename... Args&gt; </div>
 
 </div>
 </div>
-<a id="a8d01d0aaba5ad1f572efab7c32da3a19" name="a8d01d0aaba5ad1f572efab7c32da3a19"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8d01d0aaba5ad1f572efab7c32da3a19">&#9670;&#160;</a></span>createFuseProductLoopsPass()</h2>
+<a id="a3fb6bfbb4ab0ec27ec6d0e9ea35b5905" name="a3fb6bfbb4ab0ec27ec6d0e9ea35b5905"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3fb6bfbb4ab0ec27ec6d0e9ea35b5905">&#9670;&#160;</a></span>createFuseProductControlFlowPass()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; llzk::createFuseProductLoopsPass </td>
+          <td class="memname">std::unique_ptr&lt;::mlir::Pass &gt; llzk::createFuseProductControlFlowPass </td>
           <td>(</td>
           <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
           <td></td>
@@ -3055,7 +3055,7 @@ template&lt;typename OpTy, typename... Args&gt; </div>
 </div><div class="memdoc">
 <p>We declare an explicit private instantiation because Pass classes should only be visible by the current library. </p>
 
-<p class="definition">Definition at line <a class="el" href="LLZKFuseProductLoopsPass_8cpp_source.html#l00294">294</a> of file <a class="el" href="LLZKFuseProductLoopsPass_8cpp_source.html">LLZKFuseProductLoopsPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKFuseProductControlFlowPass_8cpp_source.html#l00294">294</a> of file <a class="el" href="LLZKFuseProductControlFlowPass_8cpp_source.html">LLZKFuseProductControlFlowPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -8646,8 +8646,8 @@ template&lt;typename ConcreteOp&gt; </div>
 
 </div>
 </div>
-<a id="afc459f524bd51b9c940d080aa4d9e6cd" name="afc459f524bd51b9c940d080aa4d9e6cd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afc459f524bd51b9c940d080aa4d9e6cd">&#9670;&#160;</a></span>registerFuseProductLoopsPass()</h2>
+<a id="a65d33764370b6af8354d5e29bf35f50e" name="a65d33764370b6af8354d5e29bf35f50e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a65d33764370b6af8354d5e29bf35f50e">&#9670;&#160;</a></span>registerFuseProductControlFlowPass()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -8656,7 +8656,7 @@ template&lt;typename ConcreteOp&gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void llzk::registerFuseProductLoopsPass </td>
+          <td class="memname">void llzk::registerFuseProductControlFlowPass </td>
           <td>(</td>
           <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
           <td></td>
@@ -8673,8 +8673,8 @@ template&lt;typename ConcreteOp&gt; </div>
 
 </div>
 </div>
-<a id="a1143f7373f7bfa75604b652d05cc6da7" name="a1143f7373f7bfa75604b652d05cc6da7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1143f7373f7bfa75604b652d05cc6da7">&#9670;&#160;</a></span>registerFuseProductLoopsPassPass()</h2>
+<a id="a7598fa7f749b3818da93ff677fcd9776" name="a7598fa7f749b3818da93ff677fcd9776"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7598fa7f749b3818da93ff677fcd9776">&#9670;&#160;</a></span>registerFuseProductControlFlowPassPass()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -8683,7 +8683,7 @@ template&lt;typename ConcreteOp&gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void llzk::registerFuseProductLoopsPassPass </td>
+          <td class="memname">void llzk::registerFuseProductControlFlowPassPass </td>
           <td>(</td>
           <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
           <td></td>

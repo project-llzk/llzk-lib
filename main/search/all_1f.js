@@ -23,7 +23,7 @@ var searchData=
   ['_7eflatteningpassbase_20',['~FlatteningPassBase',['../classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#af6f24ec4b7b3e2d434d4247a121b3ada',1,'llzk::polymorphic::impl::FlatteningPassBase']]],
   ['_7efunctiondialect_21',['~FunctionDialect',['../classllzk_1_1function_1_1FunctionDialect.html#a733bb738f8aeb8fbc24e573be4a98452',1,'llzk::function::FunctionDialect']]],
   ['_7efunctiontypeconverter_22',['~FunctionTypeConverter',['../classllzk_1_1FunctionTypeConverter.html#a77b3d49011dcf890864096880e8c7e2f',1,'llzk::FunctionTypeConverter']]],
-  ['_7efuseproductloopspassbase_23',['~FuseProductLoopsPassBase',['../classllzk_1_1impl_1_1FuseProductLoopsPassBase.html#a040f8f436e268063781fdc3b507452d6',1,'llzk::impl::FuseProductLoopsPassBase']]],
+  ['_7efuseproductcontrolflowpassbase_23',['~FuseProductControlFlowPassBase',['../classllzk_1_1impl_1_1FuseProductControlFlowPassBase.html#accb2403786a569e48b14ca7da9f75de7',1,'llzk::impl::FuseProductControlFlowPassBase']]],
   ['_7egenerator_24',['~Generator',['../structGenerator.html#a175792ff2622a6ce48bf2adab7e09e58',1,'Generator']]],
   ['_7egenstringfromoppieces_25',['~GenStringFromOpPieces',['../structGenStringFromOpPieces.html#aa6eae1441dcb57ca7e03ab5fbf32f33a',1,'GenStringFromOpPieces']]],
   ['_7eglobaldialect_26',['~GlobalDialect',['../classllzk_1_1global_1_1GlobalDialect.html#adace67347c50a9894efa3d146772cfe7',1,'llzk::global::GlobalDialect']]],

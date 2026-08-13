@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.14.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>LLZK: lib/Transforms/LLZKFuseProductLoopsPass.cpp File Reference</title>
+<title>LLZK: lib/Transforms/LLZKFuseProductControlFlowPass.cpp File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -78,7 +78,7 @@ $(function() {
   </div>
 </div>
 <script type="text/javascript">
-$(function(){initNavTree('LLZKFuseProductLoopsPass_8cpp.html','',''); });
+$(function(){initNavTree('LLZKFuseProductControlFlowPass_8cpp.html','',''); });
 </script>
 <div id="container">
 <div id="doc-content">
@@ -109,11 +109,11 @@ $(function(){initNavTree('LLZKFuseProductLoopsPass_8cpp.html','',''); });
 <a href="#namespaces">Namespaces</a> &#124;
 <a href="#define-members">Macros</a> &#124;
 <a href="#func-members">Functions</a>  </div>
-  <div class="headertitle"><div class="title">LLZKFuseProductLoopsPass.cpp File Reference</div></div>
+  <div class="headertitle"><div class="title">LLZKFuseProductControlFlowPass.cpp File Reference</div></div>
 </div><!--header-->
 <div class="contents">
 
-<p>This file implements the <span class="tt">-llzk-fuse-product-loops</span> pass.  
+<p>This file implements the <span class="tt">-llzk-fuse-product-control-flow</span> pass.  
 <a href="#details">More...</a></p>
 <div class="textblock"><code>#include &quot;<a class="el" href="Felt_2IR_2Ops_8h_source.html">llzk/Dialect/Felt/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Function_2IR_2Ops_8h_source.html">llzk/Dialect/Function/IR/Ops.h</a>&quot;</code><br />
@@ -129,16 +129,16 @@ $(function(){initNavTree('LLZKFuseProductLoopsPass_8cpp.html','',''); });
 <code>#include &lt;optional&gt;</code><br />
 <code>#include &quot;<a class="el" href="LLZKTransformationPasses_8h_8inc_source.html">llzk/Transforms/LLZKTransformationPasses.h.inc</a>&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
-Include dependency graph for LLZKFuseProductLoopsPass.cpp:</div>
+Include dependency graph for LLZKFuseProductControlFlowPass.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="LLZKFuseProductLoopsPass_8cpp__incl.svg" width="3990" height="612"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="LLZKFuseProductControlFlowPass_8cpp__incl.svg" width="3990" height="612"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
-<p><a href="LLZKFuseProductLoopsPass_8cpp_source.html">Go to the source code of this file.</a></p>
+<p><a href="LLZKFuseProductControlFlowPass_8cpp_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:llzk_3A_3Aimpl_3A_3AFuseProductLoopsPassBase_3C_20DerivedT_20_3E" id="r_llzk_3A_3Aimpl_3A_3AFuseProductLoopsPassBase_3C_20DerivedT_20_3E"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1impl_1_1FuseProductLoopsPassBase.html">llzk::impl::FuseProductLoopsPassBase&lt; DerivedT &gt;</a></td></tr>
+<tr class="memitem:llzk_3A_3Aimpl_3A_3AFuseProductControlFlowPassBase_3C_20DerivedT_20_3E" id="r_llzk_3A_3Aimpl_3A_3AFuseProductControlFlowPassBase_3C_20DerivedT_20_3E"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1impl_1_1FuseProductControlFlowPassBase.html">llzk::impl::FuseProductControlFlowPassBase&lt; DerivedT &gt;</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
 Namespaces</h2></td></tr>
@@ -147,31 +147,31 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-define-members" class="groupheader"><a id="define-members" name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:ae6e1b8548be250259dc380d03e2ebd75" id="r_ae6e1b8548be250259dc380d03e2ebd75"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae6e1b8548be250259dc380d03e2ebd75">GEN_PASS_DEF_FUSEPRODUCTLOOPSPASS</a></td></tr>
+<tr class="memitem:a803fb26d0adde26a1775037cd7852271" id="r_a803fb26d0adde26a1775037cd7852271"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a803fb26d0adde26a1775037cd7852271">GEN_PASS_DEF_FUSEPRODUCTCONTROLFLOWPASS</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a7d4d8b001c552d7ded87713b2b24d949" id="r_a7d4d8b001c552d7ded87713b2b24d949"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1impl.html#a7d4d8b001c552d7ded87713b2b24d949">llzk::impl::createFuseProductLoopsPass</a> ()</td></tr>
-<tr class="memitem:a8d01d0aaba5ad1f572efab7c32da3a19" id="r_a8d01d0aaba5ad1f572efab7c32da3a19"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a8d01d0aaba5ad1f572efab7c32da3a19">llzk::createFuseProductLoopsPass</a> ()</td></tr>
+<tr class="memitem:a2d3ee2047d83e00a1edd7b8e36c0f0e3" id="r_a2d3ee2047d83e00a1edd7b8e36c0f0e3"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk_1_1impl.html#a2d3ee2047d83e00a1edd7b8e36c0f0e3">llzk::impl::createFuseProductControlFlowPass</a> ()</td></tr>
+<tr class="memitem:a3fb6bfbb4ab0ec27ec6d0e9ea35b5905" id="r_a3fb6bfbb4ab0ec27ec6d0e9ea35b5905"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt;::mlir::Pass &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellzk.html#a3fb6bfbb4ab0ec27ec6d0e9ea35b5905">llzk::createFuseProductControlFlowPass</a> ()</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>This file implements the <span class="tt">-llzk-fuse-product-loops</span> pass. </p>
+<div class="textblock"><p>This file implements the <span class="tt">-llzk-fuse-product-control-flow</span> pass. </p>
 
-<p class="definition">Definition in file <a class="el" href="LLZKFuseProductLoopsPass_8cpp_source.html">LLZKFuseProductLoopsPass.cpp</a>.</p>
+<p class="definition">Definition in file <a class="el" href="LLZKFuseProductControlFlowPass_8cpp_source.html">LLZKFuseProductControlFlowPass.cpp</a>.</p>
 </div><a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
-<a id="ae6e1b8548be250259dc380d03e2ebd75" name="ae6e1b8548be250259dc380d03e2ebd75"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae6e1b8548be250259dc380d03e2ebd75">&#9670;&#160;</a></span>GEN_PASS_DEF_FUSEPRODUCTLOOPSPASS</h2>
+<a id="a803fb26d0adde26a1775037cd7852271" name="a803fb26d0adde26a1775037cd7852271"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a803fb26d0adde26a1775037cd7852271">&#9670;&#160;</a></span>GEN_PASS_DEF_FUSEPRODUCTCONTROLFLOWPASS</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define GEN_PASS_DEF_FUSEPRODUCTLOOPSPASS</td>
+          <td class="memname">#define GEN_PASS_DEF_FUSEPRODUCTCONTROLFLOWPASS</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKFuseProductLoopsPass_8cpp_source.html#l00033">33</a> of file <a class="el" href="LLZKFuseProductLoopsPass_8cpp_source.html">LLZKFuseProductLoopsPass.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKFuseProductControlFlowPass_8cpp_source.html#l00033">33</a> of file <a class="el" href="LLZKFuseProductControlFlowPass_8cpp_source.html">LLZKFuseProductControlFlowPass.cpp</a>.</p>
 
 </div>
 </div>
@@ -182,7 +182,7 @@ Functions</h2></td></tr>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a href="dir_97aefd0d527b934f1d99a682da8fe6a9.html">lib</a></li><li class="navelem"><a href="dir_a72932e0778af28115095468f6286ff8.html">Transforms</a></li><li class="navelem"><a href="LLZKFuseProductLoopsPass_8cpp.html">LLZKFuseProductLoopsPass.cpp</a></li>
+    <li class="navelem"><a href="dir_97aefd0d527b934f1d99a682da8fe6a9.html">lib</a></li><li class="navelem"><a href="dir_a72932e0778af28115095468f6286ff8.html">Transforms</a></li><li class="navelem"><a href="LLZKFuseProductControlFlowPass_8cpp.html">LLZKFuseProductControlFlowPass.cpp</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.14.0 </li>
     <li class="footer">Copyright 2025 Veridise Inc. under the Apache License v2.0. Copyright 2026 Project LLZK under the Apache License v2.0.</li>
   </ul>

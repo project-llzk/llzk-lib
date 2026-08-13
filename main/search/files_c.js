@@ -15,7 +15,7 @@ var searchData=
   ['llzkcomputeconstraintoproductpass_2eh_12',['LLZKComputeConstrainToProductPass.h',['../LLZKComputeConstrainToProductPass_8h.html',1,'']]],
   ['llzkconversionutils_2eh_13',['LLZKConversionUtils.h',['../LLZKConversionUtils_8h.html',1,'']]],
   ['llzkenforcenooverwritepass_2ecpp_14',['LLZKEnforceNoOverwritePass.cpp',['../LLZKEnforceNoOverwritePass_8cpp.html',1,'']]],
-  ['llzkfuseproductloopspass_2ecpp_15',['LLZKFuseProductLoopsPass.cpp',['../LLZKFuseProductLoopsPass_8cpp.html',1,'']]],
+  ['llzkfuseproductcontrolflowpass_2ecpp_15',['LLZKFuseProductControlFlowPass.cpp',['../LLZKFuseProductControlFlowPass_8cpp.html',1,'']]],
   ['llzkinlinefreefunctionspass_2ecpp_16',['LLZKInlineFreeFunctionsPass.cpp',['../LLZKInlineFreeFunctionsPass_8cpp.html',1,'']]],
   ['llzkinliningextensions_2ecpp_17',['LLZKInliningExtensions.cpp',['../LLZKInliningExtensions_8cpp.html',1,'']]],
   ['llzkloweringutils_2ecpp_18',['LLZKLoweringUtils.cpp',['../LLZKLoweringUtils_8cpp.html',1,'']]],

@@ -50,7 +50,7 @@ var NAVTREEINDEX97 =
 "tools.html#autotoc_md-llzk-duplicate-read-write-elim":[3,0,0,1,2],
 "tools.html#autotoc_md-llzk-enforce-no-overwrite":[3,0,0,1,3],
 "tools.html#autotoc_md-llzk-flatten":[3,0,0,3,1],
-"tools.html#autotoc_md-llzk-fuse-product-loops":[3,0,0,1,4],
+"tools.html#autotoc_md-llzk-fuse-product-control-flow":[3,0,0,1,4],
 "tools.html#autotoc_md-llzk-infer-tvar":[3,0,0,3,2],
 "tools.html#autotoc_md-llzk-inline-free-functions":[3,0,0,1,5],
 "tools.html#autotoc_md-llzk-poly-lowering-pass":[3,0,0,1,6],

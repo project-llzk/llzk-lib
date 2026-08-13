@@ -1199,7 +1199,7 @@ var hierarchy =
       [ "llzk::impl::ComputeConstrainToProductPassBase< DerivedT >", "classllzk_1_1impl_1_1ComputeConstrainToProductPassBase.html", null ],
       [ "llzk::impl::ConstraintDependencyGraphPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1ConstraintDependencyGraphPrinterPassBase.html", null ],
       [ "llzk::impl::EnforceNoMemberOverwritePassBase< DerivedT >", "classllzk_1_1impl_1_1EnforceNoMemberOverwritePassBase.html", null ],
-      [ "llzk::impl::FuseProductLoopsPassBase< DerivedT >", "classllzk_1_1impl_1_1FuseProductLoopsPassBase.html", null ],
+      [ "llzk::impl::FuseProductControlFlowPassBase< DerivedT >", "classllzk_1_1impl_1_1FuseProductControlFlowPassBase.html", null ],
       [ "llzk::impl::InlineFreeFunctionsPassBase< DerivedT >", "classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html", null ],
       [ "llzk::impl::IntervalAnalysisPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html", null ],
       [ "llzk::impl::MemberWriteValidatorPassBase< DerivedT >", "classllzk_1_1impl_1_1MemberWriteValidatorPassBase.html", null ],

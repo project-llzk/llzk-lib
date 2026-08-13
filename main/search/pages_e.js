@@ -13,7 +13,7 @@ var searchData=
   ['llzk_20duplicate_20read_20write_20elim_10',['&lt;span class=&quot;tt&quot;&gt;-llzk-duplicate-read-write-elim&lt;/span&gt;',['../tools.html#autotoc_md-llzk-duplicate-read-write-elim',1,'']]],
   ['llzk_20enforce_20no_20overwrite_11',['&lt;span class=&quot;tt&quot;&gt;-llzk-enforce-no-overwrite&lt;/span&gt;',['../tools.html#autotoc_md-llzk-enforce-no-overwrite',1,'']]],
   ['llzk_20flatten_12',['&lt;span class=&quot;tt&quot;&gt;-llzk-flatten&lt;/span&gt;',['../tools.html#autotoc_md-llzk-flatten',1,'']]],
-  ['llzk_20fuse_20product_20loops_13',['&lt;span class=&quot;tt&quot;&gt;-llzk-fuse-product-loops&lt;/span&gt;',['../tools.html#autotoc_md-llzk-fuse-product-loops',1,'']]],
+  ['llzk_20fuse_20product_20control_20flow_13',['&lt;span class=&quot;tt&quot;&gt;-llzk-fuse-product-control-flow&lt;/span&gt;',['../tools.html#autotoc_md-llzk-fuse-product-control-flow',1,'']]],
   ['llzk_20infer_20tvar_14',['&lt;span class=&quot;tt&quot;&gt;-llzk-infer-tvar&lt;/span&gt;',['../tools.html#autotoc_md-llzk-infer-tvar',1,'']]],
   ['llzk_20inline_20free_20functions_15',['&lt;span class=&quot;tt&quot;&gt;-llzk-inline-free-functions&lt;/span&gt;',['../tools.html#autotoc_md-llzk-inline-free-functions',1,'']]],
   ['llzk_20ir_20dialects_16',['LLZK IR Dialects',['../dialects.html',1,'LLZK IR Dialects'],['../overview.html#llzk-ir-dialects',1,'LLZK IR Dialects']]],
@@ -41,7 +41,6 @@ var searchData=
   ['llzk_20while_20to_20for_38',['&lt;span class=&quot;tt&quot;&gt;-llzk-while-to-for&lt;/span&gt;',['../tools.html#autotoc_md-llzk-while-to-for',1,'']]],
   ['llzk_20witgen_39',['llzk-witgen',['../tools.html#llzk-witgen',1,'']]],
   ['loopboundsattr_40',['LoopBoundsAttr',['../dialects.html#loopboundsattr',1,'']]],
-  ['loops_41',['&lt;span class=&quot;tt&quot;&gt;-llzk-fuse-product-loops&lt;/span&gt;',['../tools.html#autotoc_md-llzk-fuse-product-loops',1,'']]],
-  ['lowering_20pass_42',['&lt;span class=&quot;tt&quot;&gt;-llzk-poly-lowering-pass&lt;/span&gt;',['../tools.html#autotoc_md-llzk-poly-lowering-pass',1,'']]],
-  ['lsp_20server_43',['llzk-lsp-server',['../tools.html#llzk-lsp-server',1,'']]]
+  ['lowering_20pass_41',['&lt;span class=&quot;tt&quot;&gt;-llzk-poly-lowering-pass&lt;/span&gt;',['../tools.html#autotoc_md-llzk-poly-lowering-pass',1,'']]],
+  ['lsp_20server_42',['llzk-lsp-server',['../tools.html#llzk-lsp-server',1,'']]]
 ];

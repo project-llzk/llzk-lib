@@ -72,7 +72,7 @@ var NAVTREE =
             [ "<span class=\"tt\">-llzk-duplicate-op-elim</span>", "tools.html#autotoc_md-llzk-duplicate-op-elim", null ],
             [ "<span class=\"tt\">-llzk-duplicate-read-write-elim</span>", "tools.html#autotoc_md-llzk-duplicate-read-write-elim", null ],
             [ "<span class=\"tt\">-llzk-enforce-no-overwrite</span>", "tools.html#autotoc_md-llzk-enforce-no-overwrite", null ],
-            [ "<span class=\"tt\">-llzk-fuse-product-loops</span>", "tools.html#autotoc_md-llzk-fuse-product-loops", null ],
+            [ "<span class=\"tt\">-llzk-fuse-product-control-flow</span>", "tools.html#autotoc_md-llzk-fuse-product-control-flow", null ],
             [ "<span class=\"tt\">-llzk-inline-free-functions</span>", "tools.html#autotoc_md-llzk-inline-free-functions", null ],
             [ "<span class=\"tt\">-llzk-poly-lowering-pass</span>", "tools.html#autotoc_md-llzk-poly-lowering-pass", [
               [ "Options", "tools.html#options-8", null ]
@@ -663,8 +663,8 @@ var NAVTREEINDEX =
 "conceptllzk_1_1ContextType.html",
 "dialects.html#results-4",
 "functions_type_n.html",
-"namespacellzk.html#a1799d8cc9b704df606b1a99172014065",
-"namespacellzk.html#aaa4a1de20992b561a5506d6b4e629234",
+"namespacellzk.html#a17efa635db7bf7658f865515aefd0cce",
+"namespacellzk.html#aaa4a11b9841dc711843a40d178fea482",
 "namespacellzk_1_1component.html#a7c0add78dbee2949bf32c4018ca6c019",
 "namespacellzk_1_1witgen.html#a24298067aefc53e7983c2ca181ed571e",
 "structGlobalReadOpBuildFuncHelper.html",
