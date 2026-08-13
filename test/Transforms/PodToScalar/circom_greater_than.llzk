@@ -1,0 +1,60 @@
+// RUN: llzk-opt -llzk-pod-to-scalar -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+!F = !felt.type<"bn128">
+module attributes {llzk.lang, llzk.main = !struct.type<@GreaterThan_2>} {
+  struct.def @LessThan_1 {
+    struct.member @out : !F {llzk.pub}
+    function.def @product(%arg0: !array.type<2 x !F>) -> !struct.type<@LessThan_1> attributes {llzk.derived} {
+      %self = struct.new : <@LessThan_1>
+      function.return %self : !struct.type<@LessThan_1>
+    }
+    function.def @compute(%arg0: !array.type<2 x !F>) -> !struct.type<@LessThan_1> attributes {product_source = "compute"} {
+      %self = struct.new : <@LessThan_1>
+      function.return %self : !struct.type<@LessThan_1>
+    }
+    function.def @constrain(%arg0: !struct.type<@LessThan_1>, %arg1: !array.type<2 x !F>) attributes {product_source = "constrain"} {
+      function.return
+    }
+  }
+  struct.def @GreaterThan_2 {
+    struct.member @out : !F {llzk.pub}
+    function.def @product(%arg0: !array.type<2 x !F>) -> !struct.type<@GreaterThan_2> attributes {function.allow_non_native_field_ops} {
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %c2 = arith.constant 2 : index
+      %self = struct.new : <@GreaterThan_2>
+      %pod = pod.new { @count = %c2 }  : <[@count: index, @comp: !struct.type<@LessThan_1>]>
+      %pod_0 = pod.new : <[@in: !array.type<2 x !F>]>
+      %0 = array.read %arg0[%c1] : <2 x !F>, !F
+      %1 = pod.read %pod_0[@in] : <[@in: !array.type<2 x !F>]>, !array.type<2 x !F>
+      array.write %1[%c0] = %0 : <2 x !F>, !F
+      pod.write %pod_0[@in] = %1 : <[@in: !array.type<2 x !F>]>, !array.type<2 x !F>
+      %2 = pod.read %pod[@count] : <[@count: index, @comp: !struct.type<@LessThan_1>]>, index
+      %3 = arith.subi %2, %c1 : index
+      pod.write %pod[@count] = %3 : <[@count: index, @comp: !struct.type<@LessThan_1>]>, index
+      %4 = arith.cmpi eq, %3, %c0 : index
+      scf.if %4 {
+        %12 = pod.read %pod_0[@in] : <[@in: !array.type<2 x !F>]>, !array.type<2 x !F>
+        %13 = function.call @LessThan_1::@product(%12) : (!array.type<2 x !F>) -> !struct.type<@LessThan_1>
+        pod.write %pod[@comp] = %13 : <[@count: index, @comp: !struct.type<@LessThan_1>]>, !struct.type<@LessThan_1>
+      }
+      %5 = array.read %arg0[%c0] : <2 x !F>, !F
+      %6 = pod.read %pod_0[@in] : <[@in: !array.type<2 x !F>]>, !array.type<2 x !F>
+      array.write %6[%c1] = %5 : <2 x !F>, !F
+      pod.write %pod_0[@in] = %6 : <[@in: !array.type<2 x !F>]>, !array.type<2 x !F>
+      %7 = pod.read %pod[@count] : <[@count: index, @comp: !struct.type<@LessThan_1>]>, index
+      %8 = arith.subi %7, %c1 : index
+      pod.write %pod[@count] = %8 : <[@count: index, @comp: !struct.type<@LessThan_1>]>, index
+      %9 = arith.cmpi eq, %8, %c0 : index
+      scf.if %9 {
+        %12 = pod.read %pod_0[@in] : <[@in: !array.type<2 x !F>]>, !array.type<2 x !F>
+        %13 = function.call @LessThan_1::@product(%12) : (!array.type<2 x !F>) -> !struct.type<@LessThan_1>
+        pod.write %pod[@comp] = %13 : <[@count: index, @comp: !struct.type<@LessThan_1>]>, !struct.type<@LessThan_1>
+      }
+      %10 = pod.read %pod[@comp] : <[@count: index, @comp: !struct.type<@LessThan_1>]>, !struct.type<@LessThan_1>
+      %11 = struct.readm %10[@out] : <@LessThan_1>, !F
+      struct.writem %self[@out] = %11 : <@GreaterThan_2>, !F
+      function.return %self : !struct.type<@GreaterThan_2>
+    }
+  }
+}
