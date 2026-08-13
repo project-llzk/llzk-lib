@@ -3201,6 +3201,21 @@ static bool canRefineMemberReadUsersToType(
       }
       continue;
     }
+    if (WriteArrayOp arrayWrite = llvm::dyn_cast<WriteArrayOp>(user)) {
+      if (arrayWrite.getRvalue() != result) {
+        return false;
+      }
+      Type elementType = arrayWrite.getArrRefType().getElementType();
+      // array.write's rvalue is not independently converted by the member refinement. Its
+      // destination must therefore already require exactly the proposed read type. In
+      // particular, do not use the normal unification-based conversion check here: symbolic
+      // Cell<0> and Cell<1> can appear compatible before their template instantiations are
+      // materialized, but become distinct concrete element types later in flattening.
+      if (refinedType != elementType) {
+        return false;
+      }
+      continue;
+    }
   }
   return true;
 }
