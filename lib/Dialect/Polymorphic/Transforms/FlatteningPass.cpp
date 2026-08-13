@@ -3133,6 +3133,73 @@ static bool canUseScalarizedValueAsType(
   return succeeded(commonType) && *commonType == targetType;
 }
 
+/// Return true iff `type` has no symbolic array dimensions or element type.
+static bool isFullyConcreteArrayConsumerType(Type type) {
+  auto arrayType = llvm::dyn_cast<ArrayType>(type);
+  if (!arrayType) {
+    return isConcreteType(type, /*allowStructParams=*/false);
+  }
+  return llvm::all_of(arrayType.getDimensionSizes(), isConcreteAttr<>) &&
+         isFullyConcreteArrayConsumerType(arrayType.getElementType());
+}
+
+/// Return true iff typed users of `array.new` can accept a refined result type.
+///
+/// Retagging an array result updates its SSA value globally. Fully concrete consumers are not
+/// retagged by propagation patterns, so they must already request the proposed array type.
+static bool canRefineCreateArrayUsersToType(
+    CreateArrayOp createOp, Type refinedType, SymbolTableCollection &tables
+) {
+  Value result = createOp.getResult();
+  for (OpOperand &use : result.getUses()) {
+    Operation *user = use.getOwner();
+    Type requiredType;
+    if (MemberWriteOp memberWrite = llvm::dyn_cast<MemberWriteOp>(user)) {
+      if (memberWrite.getVal() != result) {
+        return false;
+      }
+      auto memberDef = memberWrite.getMemberDefOp(tables);
+      if (failed(memberDef)) {
+        return false;
+      }
+      requiredType = memberDef->get().getType();
+    } else if (CallOp call = llvm::dyn_cast<CallOp>(user)) {
+      unsigned argIdx = use.getOperandNumber() - call.getArgOperands().getBeginOperandIndex();
+      if (argIdx >= call.getArgOperands().size()) {
+        return false;
+      }
+      auto callee = call.getCalleeTarget(tables);
+      if (failed(callee)) {
+        return false;
+      }
+      requiredType = callee->get().getFunctionType().getInput(argIdx);
+    } else if (ReturnOp returnOp = llvm::dyn_cast<ReturnOp>(user)) {
+      FuncDefOp function = returnOp->getParentOfType<FuncDefOp>();
+      unsigned resultIdx = use.getOperandNumber();
+      TypeRange resultTypes = function.getFunctionType().getResults();
+      if (resultIdx >= resultTypes.size()) {
+        return false;
+      }
+      requiredType = resultTypes[resultIdx];
+    } else if (UnifiableCastOp castOp = llvm::dyn_cast<UnifiableCastOp>(user)) {
+      if (castOp.getInput() != result) {
+        return false;
+      }
+      requiredType = castOp.getResult().getType();
+    } else {
+      continue;
+    }
+    // Array element specializations with distinct concrete affine arguments can still unify
+    // before template instantiation.  This array result is retagged in place, though, and no
+    // propagation pattern retargets these users, so a fully concrete requirement must match
+    // exactly.
+    if (isFullyConcreteArrayConsumerType(requiredType) && refinedType != requiredType) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /// Return true iff typed consumers of a member read can use its refined result type.
 ///
 /// A generic read result may unify both with the proposed member type and with a different
@@ -3198,6 +3265,10 @@ static bool canRefineMemberReadUsersToType(
         if (&initializer != &use && initializer.get().getType() != refinedType) {
           return false;
         }
+      }
+      ArrayType refinedArrayType = createArray.getType().cloneWith(refinedType);
+      if (!canRefineCreateArrayUsersToType(createArray, refinedArrayType, tables)) {
+        return false;
       }
       continue;
     }
@@ -5122,6 +5193,10 @@ public:
       return failure();
     }
     ArrayType newType = createResultType.cloneWith(newResultElemType);
+    SymbolTableCollection tables;
+    if (!Step5_ScalarizeHeterogeneousArrays::canRefineCreateArrayUsersToType(op, newType, tables)) {
+      return failure();
+    }
     rewriter.modifyOpInPlace(op, [&createResult, &newType]() { createResult.setType(newType); });
     LLVM_DEBUG(
         llvm::dbgs() << "[UpdateNewArrayElemFromWrite] updated result type of " << op << '\n'
@@ -5452,6 +5527,13 @@ LogicalResult updateMemberRefValFromMemberDef(
           oldResultType, newResultType, tracker, "updateMemberRefValFromMemberDef"
       )) {
     return failure();
+  }
+  if (MemberReadOp readOp = llvm::dyn_cast<MemberReadOp>(op.getOperation())) {
+    if (!Step5_ScalarizeHeterogeneousArrays::canRefineMemberReadUsersToType(
+            readOp, newResultType, tables, tracker
+        )) {
+      return failure();
+    }
   }
   rewriter.modifyOpInPlace(op, [&op, &newResultType]() { op.getVal().setType(newResultType); });
   LLVM_DEBUG(
