@@ -65,7 +65,7 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@CallDiffTypeT
       %felt_const_0_0 = felt.const  0 : <"bn128">
       %1 = cast.toindex %felt_const_0_0 : !felt.type<"bn128">
       %2 = poly.unifiable_cast %arg0 : (!poly.tvar<@T_arg0>) -> !array.type<?,? x !poly.tvar<@"$e">>
-      %3 = array.read %2[%0, %1] : <?,? x !poly.tvar<@"$e">>, !poly.tvar<@"$e">
+      %3 = array.read %2[%0, %1] : <?,? x !poly.tvar<@"$e">>, !poly.tvar<@"$e"> {product_source = "read"}
       %4 = poly.unifiable_cast %3 : (!poly.tvar<@"$e">) -> !poly.tvar<@T_return>
       function.return %4 : !poly.tvar<@T_return>
     }
@@ -109,7 +109,7 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@CallDiffTypeT
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_1]] : !felt.type<"bn128">
 // CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_1]] : !felt.type<"bn128">
 // CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (!array.type<10,5,5 x !felt.type<"bn128">>) -> !array.type<?,?,5 x !felt.type<"bn128">>
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_4]]{{\[}}%[[VAL_2]], %[[VAL_3]]] : <?,?,5 x !felt.type<"bn128">>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_4]]{{\[}}%[[VAL_2]], %[[VAL_3]]] : <?,?,5 x !felt.type<"bn128">> {product_source = "read"}
 // CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_5]] : (!array.type<5 x !felt.type<"bn128">>) -> !array.type<5 x !felt.type<"bn128">>
 // CHECK-NEXT:      function.return %[[VAL_6]] : !array.type<5 x !felt.type<"bn128">>
 // CHECK-NEXT:    }

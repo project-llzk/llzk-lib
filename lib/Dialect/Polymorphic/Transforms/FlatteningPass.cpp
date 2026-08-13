@@ -1510,9 +1510,10 @@ public:
     if (!llvm::isa<ArrayType>(newResultTy)) {
       return failure();
     }
-    replaceOpWithNewOp<ExtractArrayOp>(
-        rewriter, op, newResultTy, adaptor.getArrRef(), adaptor.getIndices()
+    ExtractArrayOp extractOp = rewriter.replaceOpWithNewOp<ExtractArrayOp>(
+        op, newResultTy, adaptor.getArrRef(), adaptor.getIndices()
     );
+    extractOp->setDiscardableAttrs(op->getDiscardableAttrDictionary());
     return success();
   }
 };
