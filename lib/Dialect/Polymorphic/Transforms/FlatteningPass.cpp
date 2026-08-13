@@ -4644,22 +4644,47 @@ static LogicalResult rewriteExpandableLocalArray(
     return failure();
   }
 
-  // Plan the most concrete type each read's stored value will need for a later split-member write
-  // before rewriting reads. A read whose declared result is still generic can otherwise be
-  // replaced by a stored generic nondet, and a later member write would create a second, refined
-  // nondet for the same original array element. An intervening array write breaks that sharing,
-  // so collect the requirements in reverse block order and clear them at each array write.
-  DenseMap<Operation *, Type> splitWriteTypeByRead;
-  DenseMap<ArrayAttr, Type> splitWriteTypeByIndex;
-  for (Operation *user : llvm::reverse(users)) {
-    if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
-      if (Type splitWriteType = splitWriteTypeByIndex.lookup(getIndexAsAttr(readOp))) {
-        splitWriteTypeByRead[readOp.getOperation()] = splitWriteType;
+  // Plan one final type for every materialization before rewriting any reads. Reads of an
+  // unwritten index share a cached nondet value until an array write replaces it. In particular,
+  // a later complementary generic read can refine that cached value, so validating only the
+  // earlier read's initial replacement type can leave its consumers invalid after the refinement.
+  DenseMap<Operation *, Type> materializationTypeByRead;
+  DenseMap<ArrayAttr, Type> materializationTypeByIndex;
+  DenseMap<ArrayAttr, SmallVector<Operation *>> readsByIndex;
+  auto addMaterializationType = [&](ArrayAttr idx, Type type) -> LogicalResult {
+    auto existing = materializationTypeByIndex.find(idx);
+    if (existing == materializationTypeByIndex.end()) {
+      materializationTypeByIndex.try_emplace(idx, type);
+      return success();
+    }
+    FailureOr<Type> commonType = getCommonRefinedType(existing->second, type, tracker);
+    if (failed(commonType)) {
+      return failure();
+    }
+    existing->second = *commonType;
+    return success();
+  };
+  auto finishMaterialization = [&](ArrayAttr idx) {
+    Type finalType = materializationTypeByIndex.lookup(idx);
+    if (finalType) {
+      for (Operation *read : readsByIndex.lookup(idx)) {
+        materializationTypeByRead[read] = finalType;
       }
+    }
+    materializationTypeByIndex.erase(idx);
+    readsByIndex.erase(idx);
+  };
+  for (Operation *user : users) {
+    if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
+      finishMaterialization(getIndexAsAttr(writeOp));
       continue;
     }
-    if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
-      splitWriteTypeByIndex.erase(getIndexAsAttr(writeOp));
+    if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
+      ArrayAttr idx = getIndexAsAttr(readOp);
+      if (failed(addMaterializationType(idx, readOp.getResult().getType()))) {
+        return failure();
+      }
+      readsByIndex[idx].push_back(readOp);
       continue;
     }
     auto memberWriteOp = llvm::dyn_cast<MemberWriteOp>(user);
@@ -4676,20 +4701,21 @@ static LogicalResult rewriteExpandableLocalArray(
     }
     for (ArrayAttr idx : splitIt->second.indices) {
       MemberInfo memberInfo = splitIt->second.memberByIndex.lookup(idx);
-      if (!memberInfo.first) {
+      if (!memberInfo.first || failed(addMaterializationType(idx, memberInfo.second))) {
         return failure();
       }
-      auto existing = splitWriteTypeByIndex.find(idx);
-      if (existing == splitWriteTypeByIndex.end()) {
-        splitWriteTypeByIndex.try_emplace(idx, memberInfo.second);
-        continue;
-      }
-      FailureOr<Type> commonType =
-          getCommonRefinedType(existing->second, memberInfo.second, tracker);
-      if (failed(commonType)) {
-        return failure();
-      }
-      existing->second = *commonType;
+    }
+  }
+  for (ArrayAttr idx : indices) {
+    finishMaterialization(idx);
+  }
+
+  // Validate every consumer against the final shared type before replacing any read. This keeps a
+  // later refinement from changing the type of a nondet value that an earlier replacement already
+  // made visible to an incompatible consumer.
+  for (const auto &[read, finalType] : materializationTypeByRead) {
+    if (failed(canReplaceReadUsersWithType(llvm::cast<ReadArrayOp>(read), finalType, tables))) {
+      return failure();
     }
   }
   DenseSet<Value> generatedMaterializations;
@@ -4706,12 +4732,8 @@ static LogicalResult rewriteExpandableLocalArray(
     if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
       ArrayAttr idx = getIndexAsAttr(readOp);
       Type requestedType = readOp.getResult().getType();
-      if (Type splitWriteType = splitWriteTypeByRead.lookup(readOp.getOperation())) {
-        FailureOr<Type> commonType = getCommonRefinedType(requestedType, splitWriteType, tracker);
-        if (failed(commonType)) {
-          return failure();
-        }
-        requestedType = *commonType;
+      if (Type materializationType = materializationTypeByRead.lookup(readOp.getOperation())) {
+        requestedType = materializationType;
       }
       rewriter.setInsertionPoint(readOp);
       FailureOr<Value> scalarValue = getOrCreateScalarizedLocalArrayValue(
@@ -4719,9 +4741,6 @@ static LogicalResult rewriteExpandableLocalArray(
           tracker, materializationPoint
       );
       if (failed(scalarValue)) {
-        return failure();
-      }
-      if (failed(canReplaceReadUsersWithType(readOp, scalarValue->getType(), tables))) {
         return failure();
       }
       replaceAllUsesIgnoringType(readOp.getResult(), *scalarValue);
