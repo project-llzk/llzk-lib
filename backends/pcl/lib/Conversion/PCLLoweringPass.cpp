@@ -234,7 +234,7 @@ template <> class ConstantOpValue<arith::ConstantOp> {
 protected:
   APInt getValue(arith::ConstantOp op) const {
     // Extend width by 1 bit to avoid sign issues.
-    auto value = mlir::cast<IntegerAttr>(op.getValue()).getValue();
+    auto value = llvm::cast<IntegerAttr>(op.getValue()).getValue();
     return value.zext(value.getBitWidth() + 1);
   }
 };
@@ -426,7 +426,7 @@ struct ConvertSelfMemberReadOpOfFelt : public OpConversionPattern<MemberReadOp> 
     if (failed(defOp)) {
       return failure();
     }
-    if (!mlir::isa<FeltType>(defOp->get().getType())) {
+    if (!llvm::isa<FeltType>(defOp->get().getType())) {
       return failure();
     }
 
@@ -454,7 +454,7 @@ struct ConvertSelfMemberReadOpOfSubcmp : public OpConversionPattern<MemberReadOp
       return failure();
     }
 
-    if (!mlir::isa<StructType>(defOp->get().getType())) {
+    if (!llvm::isa<StructType>(defOp->get().getType())) {
       return failure();
     }
     rewriter.eraseOp(op);
@@ -467,7 +467,7 @@ struct ConvertSubcmpMemberReadOp : public OpConversionPattern<MemberReadOp> {
 
   LogicalResult
   matchAndRewrite(MemberReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
-    auto subcmp = mlir::dyn_cast_if_present<MemberReadOp>(op.getComponent().getDefiningOp());
+    auto subcmp = llvm::dyn_cast_if_present<MemberReadOp>(op.getComponent().getDefiningOp());
     if (!subcmp) {
       return failure();
     }
@@ -498,7 +498,7 @@ template <typename T, typename Fn> SmallVector<T> mapOutputMembers(StructDefOp o
   auto members = op.getMemberDefs();
   out.reserve(members.size());
   for (auto memberDef : members) {
-    if (mlir::isa<FeltType>(memberDef.getType()) && memberDef.hasPublicAttr()) {
+    if (llvm::isa<FeltType>(memberDef.getType()) && memberDef.hasPublicAttr()) {
       out.push_back(callback(memberDef));
     }
   }
@@ -809,11 +809,11 @@ struct ConvertConstrainCall : public OpConversionPattern<CallOp> {
       return failure();
     }
 
-    auto subcmp = mlir::dyn_cast_if_present<TypedValue<StructType>>(op.getArgOperands().front());
+    auto subcmp = llvm::dyn_cast_if_present<TypedValue<StructType>>(op.getArgOperands().front());
     if (!subcmp) {
       return op->emitOpError() << "expected argument #0 to be a struct type";
     }
-    auto subcmpOp = mlir::dyn_cast_if_present<MemberReadOp>(subcmp.getDefiningOp());
+    auto subcmpOp = llvm::dyn_cast_if_present<MemberReadOp>(subcmp.getDefiningOp());
     if (!subcmpOp) {
       return failure();
     }
@@ -946,7 +946,7 @@ struct PCLTypeConverter : public TypeConverter {
     // order for the IR to typecheck.
     addTargetMaterialization(
         [](OpBuilder &builder, pcl::FeltType, ValueRange values, Location location) -> Value {
-      if (values.size() != 1 || !mlir::isa<pcl::BoolType>(values[0].getType())) {
+      if (values.size() != 1 || !llvm::isa<pcl::BoolType>(values[0].getType())) {
         return nullptr;
       }
       return builder.create<pcl::AsFeltOp>(location, values[0]);
@@ -961,7 +961,7 @@ struct PCLTypeConverter : public TypeConverter {
     // The value is converted by testing for equality against the falsy value (0).
     addTargetMaterialization(
         [](OpBuilder &builder, pcl::BoolType, ValueRange values, Location location) -> Value {
-      if (values.size() != 1 || !mlir::isa<pcl::FeltType>(values[0].getType())) {
+      if (values.size() != 1 || !llvm::isa<pcl::FeltType>(values[0].getType())) {
         return nullptr;
       }
 

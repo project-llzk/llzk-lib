@@ -5092,7 +5092,7 @@ static ArrayAttr expandArgAttrsForPromotedFunctionArgCasts(
       continue;
     }
 
-    auto dictAttr = mlir::cast<DictionaryAttr>(attr);
+    auto dictAttr = llvm::cast<DictionaryAttr>(attr);
     auto nameAttr = dyn_cast_if_present<StringAttr>(dictAttr.get(ARG_NAME_ATTR_NAME));
     if (!nameAttr) {
       newAttrs.append(argCast->resultTypes.size(), attr);

@@ -212,7 +212,7 @@ class ModuleEmitter {
         // slice gets lost in translation. The conversion pass avoids generating IR like this but,
         // as a precaution, we handle it here.
         auto *defOp = v.getDefiningOp();
-        if (defOp && !mlir::isa<pcl::VarOp, func::CallOp>(defOp)) {
+        if (defOp && !llvm::isa<pcl::VarOp, func::CallOp>(defOp)) {
           auto vSexp = emitFormula(v, S);
           if (failed(vSexp)) {
             return failure();
