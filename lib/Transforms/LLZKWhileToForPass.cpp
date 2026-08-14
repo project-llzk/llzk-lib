@@ -341,13 +341,13 @@ class PassImpl : public llzk::impl::WhileToForPassBase<PassImpl> {
   void runOnOperation() override {
     Operation *op = getOperation();
     IRRewriter rewriter {op->getContext()};
-    auto result = op->walk([&rewriter](scf::WhileOp op) {
-      ForOpInfo info = parseInfo(op);
+    auto result = op->walk([&rewriter](scf::WhileOp loop) {
+      ForOpInfo info = parseInfo(loop);
       if (!info.success()) {
         // Ignore loops we can't prove have constant bounds
         return WalkResult::advance();
       }
-      if (failed(transformWhileToFor(op, info, rewriter))) {
+      if (failed(transformWhileToFor(loop, info, rewriter))) {
         return WalkResult::interrupt();
       }
       return WalkResult::advance();
