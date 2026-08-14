@@ -70,6 +70,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_11]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-][-][-][-][-]}}
 
 // -----
 
@@ -189,6 +190,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_21]] : !felt.type<"bn128">
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-][-][-][-][-]}}
 
 // -----
 
