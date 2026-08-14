@@ -46,12 +46,12 @@ module attributes {llzk.lang} {
 // CHECK: #[[$M:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0 + 1)>
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @materialized(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !array.type<2,#[[$M]] x index> {
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = array.new{(){{\[}}%[[VAL_0]]]} : <#[[$M]] x index>
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.new{(){{\[}}%[[VAL_0]]]} : <#[[$M]] x index>
 // CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new{(){{\[}}%[[VAL_0]]]} : <2,#[[$M]] x index>
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      array.insert %[[VAL_3]]{{\[}}%[[VAL_4]]] = %[[VAL_1]] : <2,#[[$M]] x index>, <#[[$M]] x index>
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:      array.insert %[[VAL_3]]{{\[}}%[[VAL_5]]] = %[[VAL_2]] : <2,#[[$M]] x index>, <#[[$M]] x index>
 // CHECK-NEXT:      function.return %[[VAL_3]] : !array.type<2,#[[$M]] x index>
 // CHECK-NEXT:    }

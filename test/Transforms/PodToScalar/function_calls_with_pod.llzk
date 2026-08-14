@@ -152,9 +152,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @main(%[[VAL_4:[0-9a-zA-Z_\.]+]]: index) -> index attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @TBox::@Box::@compute(%[[VAL_4]]) {(){{\[}}%[[VAL_6]], %[[VAL_5]]]} : (index) -> !struct.type<@TBox::@Box<[#[[$M]]]>>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @TBox::@Box::@compute(%[[VAL_4]]) {(){{\[}}%[[VAL_5]], %[[VAL_6]]]} : (index) -> !struct.type<@TBox::@Box<[#[[$M]]]>>
 // CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_7]][@out] : <@TBox::@Box<[#[[$M]]]>>, index
 // CHECK-NEXT:      function.return %[[VAL_8]] : index
 // CHECK-NEXT:    }
