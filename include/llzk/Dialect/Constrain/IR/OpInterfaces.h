@@ -15,13 +15,3 @@
 
 // Include TableGen'd declarations
 #include "llzk/Dialect/Constrain/IR/OpInterfaces.h.inc"
-
-namespace llzk::constrain {
-
-inline bool containsConstraintOp(mlir::Operation *op) {
-  return op->walk([](ConstraintOpInterface) {
-    return mlir::WalkResult::interrupt();
-  }).wasInterrupted();
-}
-
-} // namespace llzk::constrain

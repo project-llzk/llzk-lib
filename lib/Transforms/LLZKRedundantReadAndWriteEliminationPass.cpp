@@ -25,6 +25,7 @@
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/BuiltinOps.h>
 
+#include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseMapInfo.h>
 #include <llvm/ADT/SmallVector.h>
@@ -228,6 +229,52 @@ public:
 
   void clearLastWrite() { lastWrite = nullptr; }
 
+  /// @brief Clear overwrite candidates that a live indexed read may observe.
+  ///
+  /// A dynamic index may select any non-member child, while a constant index
+  /// may also select an existing dynamic child. Aggregate reads clear the
+  /// selected subtree because a later access through the result may observe
+  /// writes below it.
+  /// @param indices Access path from this node to the observed array element or subtree.
+  void clearLastWritesObservedBy(ArrayRef<ReferenceID> indices) {
+    if (indices.empty()) {
+      clearLastWritesInSubtree();
+      return;
+    }
+    clearLastWrite();
+
+    const ReferenceID &index = indices.front();
+    ArrayRef<ReferenceID> remaining = indices.drop_front();
+    if (!index.isConst()) {
+      for (const auto &[id, child] : children) {
+        if (!id.isAttribute()) {
+          child->clearLastWritesObservedBy(remaining);
+        }
+      }
+      return;
+    }
+
+    if (auto it = children.find(index); it != children.end()) {
+      it->second->clearLastWritesObservedBy(remaining);
+    }
+    for (const auto &[id, child] : children) {
+      if (id.isValue()) {
+        child->clearLastWritesObservedBy(remaining);
+      }
+    }
+  }
+
+  /// @brief Clear overwrite candidates in this node and all descendants.
+  ///
+  /// Region boundaries use this to prevent tree-state candidates from being
+  /// treated as block-local predecessors outside the region that created them.
+  void clearLastWritesInSubtree() {
+    for (const auto &[_, child] : children) {
+      child->clearLastWritesInSubtree();
+    }
+    clearLastWrite();
+  }
+
   void setCurrentValue(Value v, const std::shared_ptr<ReferenceNode> &valTree = nullptr) {
     storedValue = v;
     if (valTree != nullptr) {
@@ -381,9 +428,14 @@ struct BlockWriteCandidates {
 ValueMap intersectValueMap(const ValueMap &lhs, const ValueMap &rhs) {
   ValueMap res;
   for (const auto &[id, lhsValTree] : lhs) {
-    if (auto it = rhs.find(id); it != rhs.end()) {
-      const auto &rhsValTree = it->second;
-      res[id] = greatestCommonSubtree(lhsValTree, rhsValTree);
+    if (!lhsValTree) {
+      continue;
+    }
+    if (auto it = rhs.find(id); it != rhs.end() && it->second) {
+      // A missing common subtree is the conservative no-common-fact state.
+      if (auto common = greatestCommonSubtree(lhsValTree, it->second)) {
+        res[id] = std::move(common);
+      }
     }
   }
   return res;
@@ -436,7 +488,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
   /// as setting them up as passes over FuncDefOp doesn't properly search all FuncDefOp
   /// and ultimately the pass does not run.
   void runOnOperation() override {
-    getOperation().walk([&](FuncDefOp fn) { runOnFunc(fn); });
+    getOperation().walk([this](FuncDefOp fn) { runOnFunc(fn); });
   }
 
   /// @brief Remove redundant reads and writes from the given function operation.
@@ -593,6 +645,14 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       SmallVector<Value> &readVals, SmallVector<Operation *> &redundantWrites
   ) {
     BlockWriteCandidates writeCandidates;
+    auto clearTreeWriteCandidates = [](KnownState &knownState) {
+      for (auto &[_, valueTree] : knownState.values) {
+        if (valueTree) {
+          valueTree->clearLastWritesInSubtree();
+        }
+      }
+    };
+
     for (Operation &op : b) {
       // Some operations have regions (e.g., scf.if). These regions must be
       // traversed and the resulting state(s) are intersected for the final
@@ -604,6 +664,11 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
         // to declare a read inside the body redundant — the body may
         // observe writes from a previous iteration.
         KnownState regionEntryState = cloneKnownState(state);
+        // Tree-shaped reference last-write pointers are block-local deletion
+        // candidates. Do not let an exclusive region inherit a candidate from
+        // its parent, where one arm could otherwise queue it for function-wide
+        // erasure.
+        clearTreeWriteCandidates(regionEntryState);
         if (isa<scf::ForOp, scf::WhileOp>(op)) {
           regionEntryState.globals.clear();
           regionEntryState.ram.clear();
@@ -637,6 +702,10 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
         finalState.globals = intersectValueLookup(parentState.globals, finalState.globals);
         finalState.ram = intersectValueLookup(parentState.ram, finalState.ram);
         finalState.ramExact = intersectValueLookup(parentState.ramExact, finalState.ramExact);
+        // Likewise, do not export a tree-shaped reference candidate from one
+        // region through the join. A later write must not treat an
+        // exclusive-arm write as a block-local predecessor.
+        clearTreeWriteCandidates(finalState);
         state = std::move(finalState);
         writeCandidates.clear();
         continue;
@@ -729,8 +798,14 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
         return;
       }
 
+      std::shared_ptr<ReferenceNode> rootValTree = currValTree;
+      SmallVector<ReferenceID> indices;
+      bool hasDynamicIndex = false;
       for (Value origIdx : readarr.getIndices()) {
         Value idxVal = translate(origIdx);
+        ReferenceID indexId(idxVal);
+        hasDynamicIndex |= !indexId.isConst();
+        indices.push_back(indexId);
         currValTree = currValTree->getOrCreateChild(idxVal);
       }
 
@@ -745,6 +820,9 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
         );
         replacementMap[resVal] = currValTree->getStoredValue();
       } else {
+        if (hasDynamicIndex) {
+          rootValTree->clearLastWritesObservedBy(indices);
+        }
         state.values[resVal] = currValTree;
         LLVM_DEBUG(
             llvm::dbgs() << readarr.getOperationName() << ": " << resVal << " => " << *currValTree

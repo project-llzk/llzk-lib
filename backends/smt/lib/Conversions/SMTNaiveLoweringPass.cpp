@@ -523,10 +523,7 @@ class PassImpl : public llzk::smt::impl::SMTNaiveLoweringPassBase<PassImpl> {
     }
     auto prime = toAPSInt(selectedField->get().prime());
 
-    SmallVector<component::StructDefOp> structDefs;
-    mod.walk([&structDefs](component::StructDefOp structDef) { structDefs.push_back(structDef); });
-
-    for (component::StructDefOp structDef : structDefs) {
+    for (component::StructDefOp structDef : walkCollect<component::StructDefOp>(mod)) {
       auto productFunc = structDef.getProductFuncOp();
       if (!productFunc) {
         structDef.emitError("SMT lowering requires a @product function");

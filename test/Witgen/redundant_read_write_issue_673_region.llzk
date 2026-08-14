@@ -1,0 +1,70 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input-zero.json --check-output %t/expected-zero.json | FileCheck %s --check-prefix=SUCCESS
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input-one.json --check-output %t/expected-one.json | FileCheck %s --check-prefix=SUCCESS
+// RUN: llzk-opt -llzk-duplicate-read-write-elim %t/test.llzk -o %t/optimized.llzk
+// RUN: llzk-witgen %t/optimized.llzk --inputs %t/input-zero.json --check-output %t/expected-zero.json | FileCheck %s --check-prefix=SUCCESS
+// RUN: llzk-witgen %t/optimized.llzk --inputs %t/input-one.json --check-output %t/expected-one.json | FileCheck %s --check-prefix=SUCCESS
+
+// Compare the original and optimized witnesses for both sibling-arm outcomes.
+// The false arm's dynamic read must still observe the pre-if write.
+
+// SUCCESS: output matched expected JSON
+
+//--- test.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @result : !felt.type<"babybear"> {llzk.pub}
+
+    function.def @compute(
+        %selector: !felt.type<"babybear"> {function.arg_name = "selector"}
+    ) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %zero = felt.const 0 <"babybear">
+      %one = felt.const 1 <"babybear">
+      %two = felt.const 2 <"babybear">
+      %i0 = arith.constant 0 : index
+      %cond = bool.cmp eq(%selector, %one) :
+          !felt.type<"babybear">, !felt.type<"babybear">
+      %idx = scf.if %cond -> index {
+        scf.yield %i0 : index
+      } else {
+        scf.yield %i0 : index
+      }
+
+      // Keep the runtime index at zero while preserving a dynamic SSA index.
+      %arr = array.new %zero, %zero : !array.type<2 x !felt.type<"babybear">>
+      array.write %arr[%i0] = %one :
+          !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %result = scf.if %cond -> !felt.type<"babybear"> {
+        array.write %arr[%i0] = %two :
+            !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+        scf.yield %two : !felt.type<"babybear">
+      } else {
+        %observed = array.read %arr[%idx] :
+            !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+        scf.yield %observed : !felt.type<"babybear">
+      }
+      struct.writem %self[@result] = %result :
+          !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@Main>,
+        %selector: !felt.type<"babybear">
+    ) { function.return }
+  }
+}
+
+//--- input-zero.json
+{"selector": 0}
+
+//--- expected-zero.json
+{"result": "1"}
+
+//--- input-one.json
+{"selector": 1}
+
+//--- expected-one.json
+{"result": "2"}

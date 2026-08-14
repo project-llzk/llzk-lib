@@ -1139,12 +1139,12 @@ static LogicalResult verifyArgTypes(InvariantTargetOpInterface target, Invariant
        llvm::enumerate(llvm::zip_equal(targetArgTypes, bodyArgTypes, declaredTypes))) {
     auto [targetType, bodyArgType, declaredType] = types;
 
-    if (targetType != mlir::cast<TypeAttr>(declaredType).getValue()) {
+    if (targetType != llvm::cast<TypeAttr>(declaredType).getValue()) {
       failed = true;
       op->emitOpError() << "target argument #" << n << " expected type " << targetType
                         << " but invariant declared type " << declaredType;
     }
-    if (bodyArgType != mlir::cast<TypeAttr>(declaredType).getValue()) {
+    if (bodyArgType != llvm::cast<TypeAttr>(declaredType).getValue()) {
       failed = true;
       op->emitOpError() << "invariant argument #" << n << " expected type " << targetType
                         << " but invariant declared type " << declaredType;

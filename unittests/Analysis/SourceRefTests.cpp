@@ -96,15 +96,15 @@ TEST_F(SourceRefTests, LatticePrefixReplacementPreservesUnmatchedRefs) {
   computeFn.walk([&](pod::NewPodOp op) { newPod = op; });
   ASSERT_TRUE(newPod);
 
-  SourceRef computeRoot(mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()));
-  SourceRef constrainRoot(mlir::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain()));
+  SourceRef computeRoot(llvm::cast<OpResult>(computeFn.getSelfValueFromCompute()));
+  SourceRef constrainRoot(llvm::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain()));
   SourceRef computeMember(
-      mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()), {SourceRefIndex(storage)}
+      llvm::cast<OpResult>(computeFn.getSelfValueFromCompute()), {SourceRefIndex(storage)}
   );
   SourceRef expectedMember(
-      mlir::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain()), {SourceRefIndex(storage)}
+      llvm::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain()), {SourceRefIndex(storage)}
   );
-  SourceRef unrelated(mlir::cast<OpResult>(newPod.getResult()));
+  SourceRef unrelated(llvm::cast<OpResult>(newPod.getResult()));
 
   SourceRefLatticeValue value;
   EXPECT_EQ(value.insert(computeMember), ChangeResult::Change);
@@ -129,8 +129,8 @@ TEST_F(SourceRefTests, LatticeWritesPointsSubarraysAndRanges) {
   auto structDef = *mod->getOps<StructDefOp>().begin();
   auto computeFn = structDef.getComputeFuncOp();
   auto constrainFn = structDef.getConstrainFuncOp();
-  SourceRef computeRoot(mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()));
-  SourceRef constrainRoot(mlir::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain()));
+  SourceRef computeRoot(llvm::cast<OpResult>(computeFn.getSelfValueFromCompute()));
+  SourceRef constrainRoot(llvm::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain()));
 
   SourceRefLatticeValue matrix(llvm::ArrayRef<int64_t>({2, 2}));
   EXPECT_EQ(
@@ -199,10 +199,10 @@ TEST_F(SourceRefTests, OnlyReturnedComputeStructOverlapsConstrainSelf) {
   Value returnedSelf = computeFn.getSelfValueFromCompute();
   CreateStructOp temporary =
       allocations[0].getResult() == returnedSelf ? allocations[1] : allocations[0];
-  auto constrainSelf = mlir::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain());
+  auto constrainSelf = llvm::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain());
 
-  SourceRef computeMember(mlir::cast<OpResult>(returnedSelf), {SourceRefIndex(storage)});
-  SourceRef temporaryMember(mlir::cast<OpResult>(temporary.getResult()), {SourceRefIndex(storage)});
+  SourceRef computeMember(llvm::cast<OpResult>(returnedSelf), {SourceRefIndex(storage)});
+  SourceRef temporaryMember(llvm::cast<OpResult>(temporary.getResult()), {SourceRefIndex(storage)});
   SourceRef constrainMember(constrainSelf, {SourceRefIndex(storage)});
 
   EXPECT_TRUE(computeMember.overlaps(constrainMember));
@@ -220,7 +220,7 @@ TEST_F(SourceRefTests, OnlyConstrainEntryArgumentOverlapsComputeSelf) {
   auto computeFn = structDef.getComputeFuncOp();
   auto constrainFn = structDef.getConstrainFuncOp();
   auto storage = *structDef.getOps<MemberDefOp>().begin();
-  auto constrainSelf = mlir::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain());
+  auto constrainSelf = llvm::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain());
 
   auto *successor = new Block();
   constrainFn.getBody().push_back(successor);
@@ -230,7 +230,7 @@ TEST_F(SourceRefTests, OnlyConstrainEntryArgumentOverlapsComputeSelf) {
   builder.create<llzk::function::ReturnOp>(loc);
 
   SourceRef computeMember(
-      mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()), {SourceRefIndex(storage)}
+      llvm::cast<OpResult>(computeFn.getSelfValueFromCompute()), {SourceRefIndex(storage)}
   );
   SourceRef constrainMember(constrainSelf, {SourceRefIndex(storage)});
   SourceRef successorMember(successorArg, {SourceRefIndex(storage)});
@@ -252,12 +252,12 @@ TEST_F(SourceRefTests, PodRecordsAndMembersRemainDistinct) {
   pod::NewPodOp newPod;
   computeFn.walk([&](pod::NewPodOp op) { newPod = op; });
   ASSERT_TRUE(newPod);
-  SourceRef root(mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()));
+  SourceRef root(llvm::cast<OpResult>(computeFn.getSelfValueFromCompute()));
   SourceRef memberRef(
-      mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()), {SourceRefIndex(storage)}
+      llvm::cast<OpResult>(computeFn.getSelfValueFromCompute()), {SourceRefIndex(storage)}
   );
   SourceRef podRef(
-      mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()),
+      llvm::cast<OpResult>(computeFn.getSelfValueFromCompute()),
       {SourceRefIndex(StringAttr::get(&ctx, "storage"))}
   );
 
@@ -268,7 +268,7 @@ TEST_F(SourceRefTests, PodRecordsAndMembersRemainDistinct) {
   EXPECT_TRUE(memberRef.isValidPrefix(root));
 
   SourceRef arbitraryPodRef(
-      mlir::cast<OpResult>(newPod.getResult()), {SourceRefIndex(StringAttr::get(&ctx, "storage"))}
+      llvm::cast<OpResult>(newPod.getResult()), {SourceRefIndex(StringAttr::get(&ctx, "storage"))}
   );
   EXPECT_FALSE(memberRef.isValidPrefix(arbitraryPodRef));
   EXPECT_FALSE(memberRef.overlaps(arbitraryPodRef));
@@ -283,11 +283,11 @@ TEST_F(SourceRefTests, ComputeSelfRebasesToConstrainSelfWithoutChangingPath) {
   auto storage = *structDef.getOps<MemberDefOp>().begin();
   auto valueName = StringAttr::get(&ctx, "value");
 
-  SourceRef computeSelf(mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()));
-  auto constrainSelfArg = mlir::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain());
+  SourceRef computeSelf(llvm::cast<OpResult>(computeFn.getSelfValueFromCompute()));
+  auto constrainSelfArg = llvm::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain());
   SourceRef constrainSelf(constrainSelfArg);
   SourceRef computeValue(
-      mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()),
+      llvm::cast<OpResult>(computeFn.getSelfValueFromCompute()),
       {SourceRefIndex(storage), SourceRefIndex(valueName)}
   );
   SourceRef expectedConstrainValue(
@@ -299,7 +299,7 @@ TEST_F(SourceRefTests, ComputeSelfRebasesToConstrainSelfWithoutChangingPath) {
   EXPECT_EQ(*translated, expectedConstrainValue);
 
   SourceRef mismatchedComputeValue(
-      mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()),
+      llvm::cast<OpResult>(computeFn.getSelfValueFromCompute()),
       {SourceRefIndex(StringAttr::get(&ctx, "storage")), SourceRefIndex(valueName)}
   );
   auto mismatchedTranslation = mismatchedComputeValue.translate(computeSelf, constrainSelf);
@@ -314,7 +314,7 @@ TEST_F(SourceRefTests, OnlyConstrainEntryArgumentPrintsAsSelf) {
   auto structDef = *mod->getOps<StructDefOp>().begin();
   auto constrainFn = structDef.getConstrainFuncOp();
   auto storage = *structDef.getOps<MemberDefOp>().begin();
-  auto constrainSelf = mlir::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain());
+  auto constrainSelf = llvm::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain());
 
   auto *successor = new Block();
   constrainFn.getBody().push_back(successor);

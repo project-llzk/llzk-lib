@@ -36,9 +36,7 @@ protected:
   }
 
   template <typename OpTy> SmallVector<OpTy> findOps(ModuleOp module) {
-    SmallVector<OpTy> found;
-    module.walk([&](OpTy op) { found.push_back(op); });
-    return found;
+    return walkCollect<OpTy>(module);
   }
 };
 

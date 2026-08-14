@@ -206,37 +206,31 @@ class PassImpl : public llzk::impl::PredecessorPrinterPassBase<PassImpl> {
 
   void runOnOperation() override {
     markAllAnalysesPreserved();
-    // Note: options like `outputStream` are safe to read here, but not in the
-    // pass constructor.
+
+    Operation *op = getOperation();
+    // Note: options like `outputStream` are safe to read here, but not in the pass constructor.
     raw_ostream &os = toStream(outputStream);
 
     DataFlowSolver solver;
     if (preRunRequiredAnalyses) {
-      ensure(
-          llzk::dataflow::loadAndRunRequiredAnalyses(solver, getOperation()).succeeded(),
-          "failed to pre-run!"
-      );
+      auto analysisResult = llzk::dataflow::loadAndRunRequiredAnalyses(solver, op);
+      ensure(analysisResult.succeeded(), "failed to pre-run!");
     } else {
       llzk::dataflow::loadRequiredAnalyses(solver);
     }
     solver.load<PredecessorAnalysis>(os);
-    LogicalResult res = solver.initializeAndRun(getOperation());
 
-    if (res.failed()) {
+    if (failed(solver.initializeAndRun(op))) {
       llvm::report_fatal_error("PredecessorAnalysis failed.");
     }
 
-    getOperation()->walk<WalkOrder::PreOrder>([&](function::FuncDefOp fnOp) {
+    op->walk<WalkOrder::PreOrder>([&solver, &os](function::FuncDefOp fnOp) {
       Region &fnBody = fnOp.getFunctionBody();
-      if (fnBody.empty()) {
-        return WalkResult::skip();
+      if (!fnBody.empty()) {
+        ProgramPoint *point = solver.getProgramPointAfter(fnBody.back().getTerminator());
+        PredecessorLattice *finalLattice = solver.getOrCreateState<PredecessorLattice>(point);
+        printRegionless(os, fnOp.getOperation()) << ":\n" << *finalLattice << '\n';
       }
-
-      ProgramPoint *point = solver.getProgramPointAfter(fnBody.back().getTerminator());
-      PredecessorLattice *finalLattice = solver.getOrCreateState<PredecessorLattice>(point);
-
-      printRegionless(os, fnOp.getOperation()) << ":\n" << *finalLattice << '\n';
-
       return WalkResult::skip();
     });
   }

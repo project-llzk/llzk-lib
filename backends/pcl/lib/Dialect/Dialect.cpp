@@ -34,6 +34,8 @@ void pcl::PCLDialect::initialize() {
     #include "pcl/Dialect/IR/Ops.cpp.inc"
   >();
 
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   addTypes<
     #define GET_TYPEDEF_LIST
     #include "pcl/Dialect/IR/Types.cpp.inc"
@@ -56,14 +58,15 @@ using namespace pcl;
 
 mlir::LogicalResult
 PCLDialect::verifyOperationAttribute(mlir::Operation *op, mlir::NamedAttribute attr) {
-  if (attr.getName() == "pcl.prime") {
+  if (attr.getName() == PCL_PRIME_ATTR_NAME) {
     auto prime = llvm::dyn_cast<pcl::PrimeAttr>(attr.getValue());
     if (!prime) {
-      return op->emitError() << "'pcl.prime' must be a #pcl.prime<...>";
+      return op->emitError() << '\'' << PCL_PRIME_ATTR_NAME << "' must be a #"
+                             << PCL_PRIME_ATTR_NAME << "<...>";
     }
 
     if (!llvm::isa<mlir::ModuleOp>(op)) {
-      return op->emitError() << "'pcl.prime' may only be on builtin.module";
+      return op->emitError() << '\'' << PCL_PRIME_ATTR_NAME << "' may only be on builtin.module";
     }
 
     const llvm::APInt &v = prime.getValue();

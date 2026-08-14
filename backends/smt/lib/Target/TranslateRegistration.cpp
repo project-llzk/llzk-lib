@@ -25,7 +25,7 @@ void smt::registerSmtTranslation() {
   mlir::TranslateFromMLIRRegistration reg(
       "smt-to-smtlib", "translate from SMT to SMTLIB",
       [](Operation *op, raw_ostream &output) -> LogicalResult {
-    ModuleOp modOp = mlir::dyn_cast_if_present<ModuleOp>(op);
+    ModuleOp modOp = llvm::dyn_cast_if_present<ModuleOp>(op);
     if (!modOp) {
       return op->emitOpError() << "expected builtin.module as top level operation";
     }
@@ -35,7 +35,7 @@ void smt::registerSmtTranslation() {
         // clang-format off
         func::FuncDialect,
         smt::SMTDialect,
-        boolean::BoolDialect, 
+        boolean::BoolDialect,
         arith::ArithDialect
         // clang-format on
         >();

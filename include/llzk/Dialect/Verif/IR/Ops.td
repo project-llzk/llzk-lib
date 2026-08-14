@@ -200,7 +200,7 @@ def ContractOp
           $_state.getOrAddProperties<Properties>().arg_attrs = arg_attrs;
         }
         initializeEmptyBody(
-            $_builder, $_state, ::mlir::cast<::mlir::FunctionType>(function_type.getValue())
+            $_builder, $_state, ::llvm::cast<::mlir::FunctionType>(function_type.getValue())
         );
         assert(resultTypes.size() == 0u && "mismatched number of results");
         $_state.addTypes(resultTypes);

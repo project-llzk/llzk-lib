@@ -896,12 +896,9 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
   /// Postcondition: walks every EmitContainmentOp in \p constrainFunc and
   /// verifies that no containment RHS felt element exceeds maxDegree.
   LogicalResult checkContainmentRhsDegrees(FuncDefOp constrainFunc) {
-    auto res = constrainFunc.walk([&](EmitContainmentOp containOp) {
+    auto res = constrainFunc.walk([&](EmitContainmentOp containOp) -> WalkResult {
       DenseMap<Value, unsigned> memo;
-      if (failed(checkContainmentRhsValue(containOp.getRhs(), containOp, memo))) {
-        return WalkResult::interrupt();
-      }
-      return WalkResult::advance();
+      return checkContainmentRhsValue(containOp.getRhs(), containOp, memo);
     });
     return failure(res.wasInterrupted());
   }
