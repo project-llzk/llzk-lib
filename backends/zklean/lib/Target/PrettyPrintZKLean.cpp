@@ -544,7 +544,6 @@ LogicalResult zklean::emitZKLeanModule(ModuleOp module, raw_ostream &os) {
 
   module.walk([&](func::FuncOp func) {
     emitZKLeanFuncIfAny(func, os, structNames, printedSomething);
-    return WalkResult::advance();
   });
 
   if (!printedSomething) {

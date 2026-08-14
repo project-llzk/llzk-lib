@@ -22,6 +22,7 @@
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/Walk.h"
 
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
@@ -546,9 +547,7 @@ AttrConcreteness classifyAttrConcreteness(Attribute attr, bool allowStructParams
                                         : AttrConcreteness::NonConcrete;
 }
 
-bool hasAffineMapAttr(Type type) {
-  return type.walk([](AffineMapAttr) { return WalkResult::interrupt(); }).wasInterrupted();
-}
+bool hasAffineMapAttr(Type type) { return walkContains<AffineMapAttr>(type); }
 
 bool isDynamic(IntegerAttr intAttr) { return ShapedType::isDynamic(fromAPInt(intAttr.getValue())); }
 

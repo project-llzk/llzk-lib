@@ -1,4 +1,4 @@
-//===-- PCLLoweringPass.cpp ------------------------------------*- C++ -*-===//
+//===-- PCLLoweringPass.cpp -------------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -104,13 +104,12 @@ template <typename Op> static std::string flatFullyQualifiedName(Op op) {
   auto fqn = op.getFullyQualifiedName();
   std::string name;
   llvm::raw_string_ostream o(name);
-  StringRef sep = "::";
   o << fqn.getRootReference().getValue();
   if (!fqn.getNestedReferences().empty()) {
+    StringRef sep = "::";
     o << sep;
     interleave(fqn.getNestedReferences(), o, [&o](auto ref) { o << ref.getValue(); }, sep);
   }
-
   return name;
 }
 
@@ -235,7 +234,7 @@ template <> class ConstantOpValue<arith::ConstantOp> {
 protected:
   APInt getValue(arith::ConstantOp op) const {
     // Extend width by 1 bit to avoid sign issues.
-    auto value = mlir::cast<IntegerAttr>(op.getValue()).getValue();
+    auto value = llvm::cast<IntegerAttr>(op.getValue()).getValue();
     return value.zext(value.getBitWidth() + 1);
   }
 };
@@ -249,11 +248,11 @@ class ConvertConstantOp : public OpConversionPattern<SrcOp>, ConstantOpValue<Src
 public:
   using OpConversionPattern<SrcOp>::OpConversionPattern;
 
-  LogicalResult match(SrcOp) const override { return success(); }
-
-  void rewrite(SrcOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult
+  matchAndRewrite(SrcOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
     auto value = pcl::FeltAttr::get(rewriter.getContext(), getValue(op));
     rewriter.replaceOpWithNewOp<pcl::ConstOp>(op, value);
+    return success();
   }
 };
 
@@ -268,10 +267,10 @@ class ConvertBinaryOp : public OpConversionPattern<SrcOp> {
 public:
   using OpConversionPattern<SrcOp>::OpConversionPattern;
 
-  LogicalResult match(SrcOp) const override { return success(); }
-
-  void rewrite(SrcOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult
+  matchAndRewrite(SrcOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
     rewriter.replaceOpWithNewOp<DstOp>(op, adaptor.getLhs(), adaptor.getRhs());
+    return success();
   }
 };
 
@@ -282,10 +281,10 @@ template <typename SrcOp, typename DstOp> class ConvertUnaryOp : public OpConver
 public:
   using OpConversionPattern<SrcOp>::OpConversionPattern;
 
-  LogicalResult match(SrcOp) const override { return success(); }
-
-  void rewrite(SrcOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult
+  matchAndRewrite(SrcOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
     rewriter.replaceOpWithNewOp<DstOp>(op, adaptor.getOperand());
+    return success();
   }
 };
 
@@ -293,12 +292,12 @@ public:
 struct ConvertBoolXorOp : public OpConversionPattern<XorBoolOp> {
   using OpConversionPattern<XorBoolOp>::OpConversionPattern;
 
-  LogicalResult match(XorBoolOp) const override { return success(); }
-
-  void
-  rewrite(XorBoolOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(
+      XorBoolOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
     auto iffOp = rewriter.create<pcl::IffOp>(op.getLoc(), adaptor.getLhs(), adaptor.getRhs());
     rewriter.replaceOpWithNewOp<pcl::NotOp>(op, iffOp);
+    return success();
   }
 };
 
@@ -306,11 +305,11 @@ struct ConvertBoolXorOp : public OpConversionPattern<XorBoolOp> {
 struct RemoveIntToFeltOp : public OpConversionPattern<IntToFeltOp> {
   using OpConversionPattern<IntToFeltOp>::OpConversionPattern;
 
-  LogicalResult match(IntToFeltOp) const override { return success(); }
-
-  void
-  rewrite(IntToFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(
+      IntToFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
     rewriter.replaceOp(op, adaptor.getOperands());
+    return success();
   }
 };
 
@@ -318,9 +317,8 @@ struct RemoveIntToFeltOp : public OpConversionPattern<IntToFeltOp> {
 struct ConvertCmpOp : public OpConversionPattern<CmpOp> {
   using OpConversionPattern<CmpOp>::OpConversionPattern;
 
-  LogicalResult match(CmpOp) const override { return success(); }
-
-  void rewrite(CmpOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult
+  matchAndRewrite(CmpOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
     auto pred = op.getPredicate();
 
     switch (pred) {
@@ -345,6 +343,7 @@ struct ConvertCmpOp : public OpConversionPattern<CmpOp> {
       rewriter.replaceOpWithNewOp<pcl::CmpGeOp>(op, adaptor.getLhs(), adaptor.getRhs());
       break;
     }
+    return success();
   }
 };
 
@@ -379,9 +378,7 @@ class ConvertEmitEqualityOp : public OpConversionPattern<EmitEqualityOp> {
 public:
   using OpConversionPattern<EmitEqualityOp>::OpConversionPattern;
 
-  LogicalResult match(EmitEqualityOp) const override { return success(); }
-
-  void rewrite(
+  LogicalResult matchAndRewrite(
       EmitEqualityOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
     if (isBool(adaptor.getLhs()) && isConstOne(adaptor.getRhs())) {
@@ -398,6 +395,7 @@ public:
       auto cmpEqOp = rewriter.create<pcl::CmpEqOp>(op.getLoc(), adaptor.getLhs(), adaptor.getRhs());
       rewriter.replaceOpWithNewOp<pcl::AssertOp>(op, cmpEqOp);
     }
+    return success();
   }
 };
 
@@ -405,10 +403,11 @@ public:
 struct ConvertAssertOp : public OpConversionPattern<AssertOp> {
   using OpConversionPattern<AssertOp>::OpConversionPattern;
 
-  LogicalResult match(AssertOp) const override { return success(); }
-
-  void rewrite(AssertOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(
+      AssertOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
     rewriter.replaceOpWithNewOp<pcl::AssertOp>(op, adaptor.getCondition());
+    return success();
   }
 };
 
@@ -427,7 +426,7 @@ struct ConvertSelfMemberReadOpOfFelt : public OpConversionPattern<MemberReadOp> 
     if (failed(defOp)) {
       return failure();
     }
-    if (!mlir::isa<FeltType>(defOp->get().getType())) {
+    if (!llvm::isa<FeltType>(defOp->get().getType())) {
       return failure();
     }
 
@@ -435,7 +434,6 @@ struct ConvertSelfMemberReadOpOfFelt : public OpConversionPattern<MemberReadOp> 
         defOp->get().getLoc(), defOp->get().getName(), defOp->get().hasPublicAttr()
     );
     rewriter.replaceOp(op, pclVar);
-
     return success();
   }
 };
@@ -455,12 +453,11 @@ struct ConvertSelfMemberReadOpOfSubcmp : public OpConversionPattern<MemberReadOp
     if (failed(defOp)) {
       return failure();
     }
-    if (!mlir::isa<StructType>(defOp->get().getType())) {
+
+    if (!llvm::isa<StructType>(defOp->get().getType())) {
       return failure();
     }
-
     rewriter.eraseOp(op);
-
     return success();
   }
 };
@@ -470,7 +467,7 @@ struct ConvertSubcmpMemberReadOp : public OpConversionPattern<MemberReadOp> {
 
   LogicalResult
   matchAndRewrite(MemberReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
-    auto subcmp = mlir::dyn_cast_if_present<MemberReadOp>(op.getComponent().getDefiningOp());
+    auto subcmp = llvm::dyn_cast_if_present<MemberReadOp>(op.getComponent().getDefiningOp());
     if (!subcmp) {
       return failure();
     }
@@ -488,9 +485,7 @@ struct ConvertSubcmpMemberReadOp : public OpConversionPattern<MemberReadOp> {
     auto pclVar = rewriter.create<pcl::VarOp>(
         defOp->get().getLoc(), rewriter.getStringAttr(name), /*public=*/false
     );
-
     rewriter.replaceOp(op, pclVar);
-
     return success();
   }
 };
@@ -503,7 +498,7 @@ template <typename T, typename Fn> SmallVector<T> mapOutputMembers(StructDefOp o
   auto members = op.getMemberDefs();
   out.reserve(members.size());
   for (auto memberDef : members) {
-    if (mlir::isa<FeltType>(memberDef.getType()) && memberDef.hasPublicAttr()) {
+    if (llvm::isa<FeltType>(memberDef.getType()) && memberDef.hasPublicAttr()) {
       out.push_back(callback(memberDef));
     }
   }
@@ -523,7 +518,6 @@ struct ConvertReturnOp : public OpConversionPattern<ReturnOp> {
     auto values = mapOutputMembers<Value>(structDefOp, [&rewriter](MemberDefOp memberDef) {
       return rewriter.create<pcl::VarOp>(memberDef.getLoc(), memberDef.getName(), /*public=*/true);
     });
-
     rewriter.replaceOpWithNewOp<func::ReturnOp>(op, values);
     return success();
   }
@@ -539,7 +533,6 @@ struct ConvertFreeFuncReturnOp : public OpConversionPattern<ReturnOp> {
     if (op->getParentOfType<StructDefOp>()) {
       return failure();
     }
-
     rewriter.replaceOpWithNewOp<func::ReturnOp>(op, adaptor.getOperands());
     return success();
   }
@@ -560,10 +553,14 @@ public:
   )
       : OpConversionPattern(tc, context, patBenefit), names(opNames) {}
 
-  LogicalResult match(NonDetOp op) const override { return success(names.find(op) != names.end()); }
-
-  void rewrite(NonDetOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
-    rewriter.replaceOpWithNewOp<pcl::VarOp>(op, names[op], /*public=*/false);
+  LogicalResult
+  matchAndRewrite(NonDetOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    auto it = names.find(op);
+    if (it == names.end()) {
+      return failure();
+    }
+    rewriter.replaceOpWithNewOp<pcl::VarOp>(op, it->second, /*public=*/false);
+    return success();
   }
 };
 
@@ -765,10 +762,10 @@ public:
 struct RemoveModuleOp : public OpConversionPattern<ModuleOp> {
   using OpConversionPattern<ModuleOp>::OpConversionPattern;
 
-  LogicalResult match(ModuleOp) const override { return success(); }
-
-  void rewrite(ModuleOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult
+  matchAndRewrite(ModuleOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
     rewriter.eraseOp(op);
+    return success();
   }
 };
 
@@ -788,13 +785,14 @@ public:
   )
       : OpConversionPattern(tc, context, patBenefit), replacements(opReplacements) {}
 
-  LogicalResult match(pcl::VarOp op) const override {
-    return success(replacements.find(op) != replacements.end());
-  }
-
-  void rewrite(pcl::VarOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
-    auto value = replacements[op];
-    rewriter.replaceOp(op, value);
+  LogicalResult
+  matchAndRewrite(pcl::VarOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    auto it = replacements.find(op);
+    if (it == replacements.end()) {
+      return failure();
+    }
+    rewriter.replaceOp(op, it->second);
+    return success();
   }
 };
 
@@ -811,11 +809,11 @@ struct ConvertConstrainCall : public OpConversionPattern<CallOp> {
       return failure();
     }
 
-    auto subcmp = mlir::dyn_cast_if_present<TypedValue<StructType>>(op.getArgOperands().front());
+    auto subcmp = llvm::dyn_cast_if_present<TypedValue<StructType>>(op.getArgOperands().front());
     if (!subcmp) {
       return op->emitOpError() << "expected argument #0 to be a struct type";
     }
-    auto subcmpOp = mlir::dyn_cast_if_present<MemberReadOp>(subcmp.getDefiningOp());
+    auto subcmpOp = llvm::dyn_cast_if_present<MemberReadOp>(subcmp.getDefiningOp());
     if (!subcmpOp) {
       return failure();
     }
@@ -842,7 +840,6 @@ struct ConvertConstrainCall : public OpConversionPattern<CallOp> {
       rewriter.create<pcl::AssertOp>(op.getLoc(), eqCmp);
     }
     rewriter.eraseOp(op);
-
     return success();
   }
 };
@@ -892,7 +889,6 @@ public:
     if (funcs.contains(op)) {
       return failure();
     }
-
     rewriter.eraseOp(op);
     return success();
   }
@@ -950,7 +946,7 @@ struct PCLTypeConverter : public TypeConverter {
     // order for the IR to typecheck.
     addTargetMaterialization(
         [](OpBuilder &builder, pcl::FeltType, ValueRange values, Location location) -> Value {
-      if (values.size() != 1 || !mlir::isa<pcl::BoolType>(values[0].getType())) {
+      if (values.size() != 1 || !llvm::isa<pcl::BoolType>(values[0].getType())) {
         return nullptr;
       }
       return builder.create<pcl::AsFeltOp>(location, values[0]);
@@ -965,7 +961,7 @@ struct PCLTypeConverter : public TypeConverter {
     // The value is converted by testing for equality against the falsy value (0).
     addTargetMaterialization(
         [](OpBuilder &builder, pcl::BoolType, ValueRange values, Location location) -> Value {
-      if (values.size() != 1 || !mlir::isa<pcl::FeltType>(values[0].getType())) {
+      if (values.size() != 1 || !llvm::isa<pcl::FeltType>(values[0].getType())) {
         return nullptr;
       }
 
@@ -1095,15 +1091,14 @@ protected:
     getOperation()->walk([&usedNames](MemberDefOp op) { usedNames.insert(op.getSymName()); });
 
     getOperation()->walk([&count, this, &usedNames](NonDetOp op) {
-      if (!mlir::isa<FeltType>(op.getType())) {
+      if (!llvm::isa<FeltType>(op.getType())) {
         return;
       }
       StringRef nameRef;
-      SmallVector<char, 25> nameSto;
+      SmallString<32> nameStorage;
       do {
-        nameSto.clear();
-        Twine name = "_nondet_internal_var__" + Twine(count);
-        nameRef = name.toStringRef(nameSto);
+        nameStorage.clear();
+        nameRef = ("_nondet_internal_var__" + Twine(count)).toStringRef(nameStorage);
         count++;
       } while (usedNames.contains(nameRef));
       names.insert({op, StringAttr::get(&getContext(), nameRef)});
@@ -1218,7 +1213,7 @@ private:
 
   /// Run step 1 in analysis mode. Running the conversion this way will note
   /// all the ops that will be converted if the conversion is actually applied.
-  LogicalResult analize() {
+  LogicalResult analyze() {
     ConversionTarget target(getContext());
     RewritePatternSet patterns(&getContext());
     PCLTypeConverter tc;
@@ -1233,7 +1228,7 @@ private:
   /// Checks what operations inside the used free functions are not in the legalizableOps set.
   /// If any, the free function is removed from the set and marked as a stub.
   /// Functions marked as stubs are lowered as such in step 2.
-  void checkAnalisysResult() {
+  void checkAnalysisResult() {
     for (auto funcOp : getUsedFreeFunctions()) {
       funcOp->walk([&funcOp, this](Operation *op) {
         // If the op is not in the set of ops that would get converted,
@@ -1257,10 +1252,10 @@ private:
   /// This conversion is performed before moving the body to a function because
   /// that way the IR can access information about the members of the struct.
   LogicalResult runStep1() override {
-    if (failed(analize())) {
+    if (failed(analyze())) {
       return failure();
     }
-    checkAnalisysResult();
+    checkAnalysisResult();
 
     // After the analysis, do the conversion as normal.
     ConversionTarget target(getContext());
@@ -1311,30 +1306,30 @@ class PassImpl : public pcl::impl::PCLLoweringPassBase<PassImpl> {
 
   // PCL programs require a module-level attribute specifying the prime.
   LogicalResult setPrime(APInt &prime) {
-    getOperation()->setAttrs(DictionaryAttr::get(&getContext()));
-    getOperation()->setAttr("pcl.prime", pcl::PrimeAttr::get(&getContext(), prime));
-
+    Operation *op = getOperation();
+    op->setAttrs(DictionaryAttr::get(&getContext()));
+    op->setAttr(PCL_PRIME_ATTR_NAME, pcl::PrimeAttr::get(&getContext(), prime));
     return success();
   }
 
   FailureOr<APSInt> selectPrime() {
+    Operation *op = getOperation();
     FieldSet fields;
     // If the collection reports that at least one FeltType did not declare the field and
     // the fields set is empty, then we raise an error.
-    if (failed(collectFields(getOperation(), fields)) && fields.empty()) {
-      return getOperation()->emitOpError() << "could not deduce the prime field";
+    if (failed(collectFields(op, fields)) && fields.empty()) {
+      return op->emitOpError() << "could not deduce the prime field";
     }
     // If the fields is empty and we reached this point it means that the IR we are about to lower
     // does not have a single felt type (because felts without a field will make `collectFields`
     // return failure). We return an error here since we don't have a prime to emit. In practice,
     // this situation it's going to be unlikely.
     if (fields.empty()) {
-      return getOperation()->emitOpError()
-             << "does not contain felt types and prime field couldn't be deduced";
+      return op->emitOpError() << "does not contain felt types and prime field couldn't be deduced";
     }
     // The pass only supports having one field for the whole circuit.
     if (fields.size() > 1) {
-      return getOperation()->emitOpError() << "multiple fields is not supported";
+      return op->emitOpError() << "multiple fields is not supported";
     }
     const auto &selectedField = *(fields.begin());
     return toAPSInt(selectedField.get().prime());
@@ -1353,13 +1348,14 @@ class PassImpl : public pcl::impl::PCLLoweringPassBase<PassImpl> {
   void runOnOperation() override {
     // check PCLDialect is loaded.
     assert(getContext().getLoadedDialect<pcl::PCLDialect>() && "PCL dialect not loaded");
+
     auto prime = selectPrime();
     if (failed(prime) || failed(validateStructs())) {
       signalPassFailure();
       return;
     }
-    auto modeInstance = createMode();
 
+    auto modeInstance = createMode();
     if (failed(modeInstance->lower()) || failed(setPrime(*prime))) {
       signalPassFailure();
       return;

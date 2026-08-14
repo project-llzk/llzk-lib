@@ -1,0 +1,150 @@
+// RUN: split-file %s %t
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input-zero.json --check-output %t/expected-zero.json | FileCheck %s --check-prefix=SUCCESS
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input-one.json --check-output %t/expected-one.json | FileCheck %s --check-prefix=SUCCESS
+// RUN: llzk-opt -llzk-duplicate-read-write-elim %t/test.llzk -o %t/optimized.llzk
+// RUN: llzk-witgen %t/optimized.llzk --inputs %t/input-zero.json --check-output %t/expected-zero.json | FileCheck %s --check-prefix=SUCCESS
+// RUN: llzk-witgen %t/optimized.llzk --inputs %t/input-one.json --check-output %t/expected-one.json | FileCheck %s --check-prefix=SUCCESS
+// RUN: llzk-witgen %t/test.llzk --inputs %t/input-zero.json --backend=execution-engine --check-output %t/expected-zero.json | FileCheck %s --check-prefix=SUCCESS
+// RUN: llzk-witgen %t/optimized.llzk --inputs %t/input-zero.json --backend=execution-engine --check-output %t/expected-zero.json | FileCheck %s --check-prefix=SUCCESS
+// RUN: llzk-witgen %t/recursive.llzk --inputs %t/recursive-zero.json --check-output %t/recursive-expected-zero.json | FileCheck %s --check-prefix=SUCCESS
+// RUN: llzk-witgen %t/recursive.llzk --inputs %t/recursive-one.json --check-output %t/recursive-expected-one.json | FileCheck %s --check-prefix=SUCCESS
+// RUN: llzk-opt -llzk-duplicate-read-write-elim %t/recursive.llzk -o %t/recursive-optimized.llzk
+// RUN: llzk-witgen %t/recursive-optimized.llzk --inputs %t/recursive-zero.json --check-output %t/recursive-expected-zero.json | FileCheck %s --check-prefix=SUCCESS
+// RUN: llzk-witgen %t/recursive-optimized.llzk --inputs %t/recursive-one.json --check-output %t/recursive-expected-one.json | FileCheck %s --check-prefix=SUCCESS
+
+// The direct regression runs through both backends; recursive aggregate cases
+// use the interpreter because execution-engine lowering does not support
+// array.extract.
+//
+// In the direct case, selector 0 must observe the written element 1 and catches
+// a deleted write; selector 1 observes the untouched element 0 as the opposite
+// dynamic-index outcome.
+
+// SUCCESS: output matched expected JSON
+
+//--- test.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  struct.def @Main {
+    struct.member @result : !felt.type<"babybear"> {llzk.pub}
+
+    function.def @compute(
+        %selector: !felt.type<"babybear"> {function.arg_name = "selector"}
+    ) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %zero = felt.const 0 <"babybear">
+      %one = felt.const 1 <"babybear">
+      %two = felt.const 2 <"babybear">
+      %i0 = arith.constant 0 : index
+      %i1 = arith.constant 1 : index
+      %cond = bool.cmp eq(%selector, %one) :
+          !felt.type<"babybear">, !felt.type<"babybear">
+      %idx = scf.if %cond -> index {
+        scf.yield %i1 : index
+      } else {
+        scf.yield %i0 : index
+      }
+      // Keep the runtime choices deterministic while preserving a dynamic SSA
+      // index for the optimizer's alias analysis.
+      %arr = array.new %zero, %zero : !array.type<2 x !felt.type<"babybear">>
+      array.write %arr[%i0] = %one :
+          !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %observed = array.read %arr[%idx] :
+          !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+      array.write %arr[%i0] = %two :
+          !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+      struct.writem %self[@result] = %observed :
+          !struct.type<@Main>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@Main>,
+        %selector: !felt.type<"babybear">
+    ) { function.return }
+  }
+}
+
+//--- input-zero.json
+{"selector": 0}
+
+//--- expected-zero.json
+{"result": "1"}
+
+//--- input-one.json
+{"selector": 1}
+
+//--- expected-one.json
+{"result": "0"}
+
+//--- recursive.llzk
+
+module attributes {llzk.lang, llzk.main = !struct.type<@RecursiveMain>} {
+  struct.def @RecursiveMain {
+    struct.member @mixed : !felt.type<"babybear"> {llzk.pub}
+    struct.member @extracted : !felt.type<"babybear"> {llzk.pub}
+
+    function.def @compute(
+        %selector: !felt.type<"babybear"> {function.arg_name = "selector"}
+    ) -> !struct.type<@RecursiveMain> {
+      %self = struct.new : !struct.type<@RecursiveMain>
+      %zero = felt.const 0 <"babybear">
+      %one = felt.const 1 <"babybear">
+      %two = felt.const 2 <"babybear">
+      %i0 = arith.constant 0 : index
+      %i1 = arith.constant 1 : index
+      %cond = bool.cmp eq(%selector, %one) :
+          !felt.type<"babybear">, !felt.type<"babybear">
+      %idx = scf.if %cond -> index {
+        scf.yield %i1 : index
+      } else {
+        scf.yield %i0 : index
+      }
+
+      %arr = array.new %zero, %zero, %zero, %zero :
+          !array.type<2,2 x !felt.type<"babybear">>
+      array.write %arr[%i0, %i0] = %one :
+          !array.type<2,2 x !felt.type<"babybear">>, !felt.type<"babybear">
+      // The mixed read has a dynamic suffix, and the extracted row comes from
+      // a dynamic index: selector 0 observes 1, while selector 1 observes 0.
+      %mixed = array.read %arr[%i0, %idx] :
+          !array.type<2,2 x !felt.type<"babybear">>, !felt.type<"babybear">
+      array.write %arr[%i0, %i0] = %two :
+          !array.type<2,2 x !felt.type<"babybear">>, !felt.type<"babybear">
+
+      %matrix = array.new %zero, %zero, %zero, %zero :
+          !array.type<2,2 x !felt.type<"babybear">>
+      array.write %matrix[%i0, %i0] = %one :
+          !array.type<2,2 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %row = array.extract %matrix[%idx] :
+          !array.type<2,2 x !felt.type<"babybear">>
+      array.write %matrix[%i0, %i0] = %two :
+          !array.type<2,2 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %extracted = array.read %row[%i0] :
+          !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+
+      struct.writem %self[@mixed] = %mixed :
+          !struct.type<@RecursiveMain>, !felt.type<"babybear">
+      struct.writem %self[@extracted] = %extracted :
+          !struct.type<@RecursiveMain>, !felt.type<"babybear">
+      function.return %self : !struct.type<@RecursiveMain>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@RecursiveMain>,
+        %selector: !felt.type<"babybear">
+    ) { function.return }
+  }
+}
+
+//--- recursive-zero.json
+{"selector": 0}
+
+//--- recursive-expected-zero.json
+{"mixed": "1", "extracted": "1"}
+
+//--- recursive-one.json
+{"selector": 1}
+
+//--- recursive-expected-one.json
+{"mixed": "0", "extracted": "0"}

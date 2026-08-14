@@ -1,4 +1,4 @@
-// RUN: llzk-opt -llzk-duplicate-read-write-elim %s 2>&1 | FileCheck %s
+// RUN: llzk-opt -split-input-file -llzk-duplicate-read-write-elim %s 2>&1 | FileCheck --enable-var-scope %s
 
 module attributes {llzk.lang} {
   // The later constant-index write may overwrite the element selected by %idx,
@@ -97,6 +97,20 @@ module attributes {llzk.lang} {
     }
     function.return %observed : !felt.type
   }
+
+  // A live dynamic read may observe the earlier constant-index write, so the
+  // later constant-index write must not remove it.
+  function.def @constant_write_then_dynamic_read_then_constant_write(%idx: index) -> !felt.type {
+    %zero = felt.const 0
+    %one = felt.const 1
+    %two = felt.const 2
+    %arr = array.new %zero, %zero : !array.type<2 x !felt.type>
+    %i0 = arith.constant 0 : index
+    array.write %arr[%i0] = %one : !array.type<2 x !felt.type>, !felt.type
+    %observed = array.read %arr[%idx] : !array.type<2 x !felt.type>, !felt.type
+    array.write %arr[%i0] = %two : !array.type<2 x !felt.type>, !felt.type
+    function.return %observed : !felt.type
+  }
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
@@ -170,5 +184,160 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        scf.yield %[[VAL_36]] : !felt.type
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.return %[[VAL_39]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constant_write_then_dynamic_read_then_constant_write(%[[VAL_42:[0-9a-zA-Z_\.]+]]: index) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_43:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:      %[[VAL_44:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_45:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_46:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_43]], %[[VAL_43]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_47:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_46]]{{\[}}%[[VAL_47]]] = %[[VAL_44]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_48:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_46]]{{\[}}%[[VAL_42]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      array.write %[[VAL_46]]{{\[}}%[[VAL_47]]] = %[[VAL_45]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_48]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+
+module attributes {llzk.lang} {
+  // A dynamic suffix can observe a write below a constant prefix, so the later
+  // overwrite must not erase the earlier write.
+  function.def @mixed_constant_prefix_dynamic_suffix(%idx: index) -> !felt.type {
+    %one = felt.const 1
+    %two = felt.const 2
+    %arr = array.new : !array.type<2,2 x !felt.type>
+    %i0 = arith.constant 0 : index
+    array.write %arr[%i0, %i0] = %one :
+        !array.type<2,2 x !felt.type>, !felt.type
+    %observed = array.read %arr[%i0, %idx] :
+        !array.type<2,2 x !felt.type>, !felt.type
+    array.write %arr[%i0, %i0] = %two :
+        !array.type<2,2 x !felt.type>, !felt.type
+    function.return %observed : !felt.type
+  }
+
+  // A dynamic extract may observe writes in the selected aggregate subtree, so
+  // the later overwrite must not erase the earlier write.
+  function.def @dynamic_extract_preserves_subtree_write(%idx: index) -> !felt.type {
+    %one = felt.const 1
+    %two = felt.const 2
+    %matrix = array.new : !array.type<2,2 x !felt.type>
+    %i0 = arith.constant 0 : index
+    array.write %matrix[%i0, %i0] = %one :
+        !array.type<2,2 x !felt.type>, !felt.type
+    %row = array.extract %matrix[%idx] : !array.type<2,2 x !felt.type>
+    array.write %matrix[%i0, %i0] = %two :
+        !array.type<2,2 x !felt.type>, !felt.type
+    %observed = array.read %row[%i0] :
+        !array.type<2 x !felt.type>, !felt.type
+    function.return %observed : !felt.type
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @mixed_constant_prefix_dynamic_suffix(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.new  : <2,2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_4]], %[[VAL_4]]] = %[[VAL_1]] : <2,2 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_4]], %[[VAL_0]]] : <2,2 x !felt.type>, !felt.type
+// CHECK-NEXT:      array.write %[[VAL_3]]{{\[}}%[[VAL_4]], %[[VAL_4]]] = %[[VAL_2]] : <2,2 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_5]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @dynamic_extract_preserves_subtree_write(%[[VAL_6:[0-9a-zA-Z_\.]+]]: index) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.new  : <2,2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_9]]{{\[}}%[[VAL_10]], %[[VAL_10]]] = %[[VAL_7]] : <2,2 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_9]]{{\[}}%[[VAL_6]]] : <2,2 x !felt.type>
+// CHECK-NEXT:      array.write %[[VAL_9]]{{\[}}%[[VAL_10]], %[[VAL_10]]] = %[[VAL_8]] : <2,2 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_11]]{{\[}}%[[VAL_10]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_12]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  // An exclusive arm must not erase the pre-region write observed by the
+  // sibling arm's surviving dynamic read.
+  function.def @sibling_region_dynamic_read(%idx: index, %cond: i1) -> !felt.type {
+    %zero = felt.const 0
+    %one = felt.const 1
+    %two = felt.const 2
+    %arr = array.new %zero, %zero : !array.type<2 x !felt.type>
+    %i0 = arith.constant 0 : index
+    array.write %arr[%i0] = %one : !array.type<2 x !felt.type>, !felt.type
+    %result = scf.if %cond -> !felt.type {
+      array.write %arr[%i0] = %two : !array.type<2 x !felt.type>, !felt.type
+      scf.yield %two : !felt.type
+    } else {
+      %observed = array.read %arr[%idx] : !array.type<2 x !felt.type>, !felt.type
+      scf.yield %observed : !felt.type
+    }
+    function.return %result : !felt.type
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @sibling_region_dynamic_read(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  2
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_2]], %[[VAL_2]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      array.write %[[VAL_5]]{{\[}}%[[VAL_6]]] = %[[VAL_3]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_1]] -> (!felt.type) {
+// CHECK-NEXT:        array.write %[[VAL_5]]{{\[}}%[[VAL_6]]] = %[[VAL_4]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        scf.yield %[[VAL_4]] : !felt.type
+// CHECK-NEXT:      } else {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_0]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:        scf.yield %[[VAL_8]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_7]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  // A zero-index insert replaces the whole root tree in one exclusive arm. The
+  // join must tolerate that the two arms have no common value tree.
+  function.def @zero_index_insert_region(%cond: i1) -> !felt.type {
+    %zero = felt.const 0
+    %one = felt.const 1
+    %arr = array.new %zero, %zero : !array.type<2 x !felt.type>
+    %replacement = array.new %one, %one : !array.type<2 x !felt.type>
+    %i0 = arith.constant 0 : index
+    %result = scf.if %cond -> !felt.type {
+      array.insert %arr[] = %replacement : !array.type<2 x !felt.type>, !array.type<2 x !felt.type>
+      %observed = array.read %arr[%i0] : !array.type<2 x !felt.type>, !felt.type
+      scf.yield %observed : !felt.type
+    } else {
+      %observed = array.read %arr[%i0] : !array.type<2 x !felt.type>, !felt.type
+      scf.yield %observed : !felt.type
+    }
+    function.return %result : !felt.type
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @zero_index_insert_region(%[[VAL_9:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = felt.const  0
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_10]], %[[VAL_10]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_11]], %[[VAL_11]] : <2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = scf.if %[[VAL_9]] -> (!felt.type) {
+// CHECK-NEXT:        array.insert %[[VAL_12]][] = %[[VAL_13]] : <2 x !felt.type>, <2 x !felt.type>
+// CHECK-NEXT:        scf.yield %[[VAL_11]] : !felt.type
+// CHECK-NEXT:      } else {
+// CHECK-NEXT:        scf.yield %[[VAL_10]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.return %[[VAL_15]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

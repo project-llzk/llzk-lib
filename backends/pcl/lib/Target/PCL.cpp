@@ -79,9 +79,9 @@ struct NameState {
 /// Emits the s-expressions for the beginning of the PCL file.
 LogicalResult prologue(ModuleOp mod, pcl::Sexps &S) {
   // (prime-number …)
-  auto prime = mod->getAttrOfType<pcl::PrimeAttr>("pcl.prime");
+  auto prime = mod->getAttrOfType<pcl::PrimeAttr>(PCL_PRIME_ATTR_NAME);
   if (!prime) {
-    return mod.emitError("missing 'pcl.prime'");
+    return mod.emitError() << "missing '" << PCL_PRIME_ATTR_NAME << '\'';
   }
   S.push({S.atom("prime-number"), S.atom(prime.getValue())});
   return success();
@@ -212,7 +212,7 @@ class ModuleEmitter {
         // slice gets lost in translation. The conversion pass avoids generating IR like this but,
         // as a precaution, we handle it here.
         auto *defOp = v.getDefiningOp();
-        if (defOp && !mlir::isa<pcl::VarOp, func::CallOp>(defOp)) {
+        if (defOp && !llvm::isa<pcl::VarOp, func::CallOp>(defOp)) {
           auto vSexp = emitFormula(v, S);
           if (failed(vSexp)) {
             return failure();

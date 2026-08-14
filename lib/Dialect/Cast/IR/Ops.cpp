@@ -58,8 +58,8 @@ namespace llzk::cast {
 bool IntToFeltOp::isCompatibleReturnTypes(::mlir::TypeRange lhs, ::mlir::TypeRange rhs) {
   return lhs.size() == rhs.size() && llvm::all_of(llvm::zip_equal(lhs, rhs), [](auto pair) {
     auto [lhsType, rhsType] = pair;
-    auto lhsFeltType = mlir::dyn_cast<llzk::felt::FeltType>(lhsType);
-    auto rhsFeltType = mlir::dyn_cast<llzk::felt::FeltType>(rhsType);
+    auto lhsFeltType = llvm::dyn_cast<llzk::felt::FeltType>(lhsType);
+    auto rhsFeltType = llvm::dyn_cast<llzk::felt::FeltType>(rhsType);
 
     // If both types are felts but NOT structurally equal then check if the types are valid
     // with the additional consideration that lhs is allowed to NOT have

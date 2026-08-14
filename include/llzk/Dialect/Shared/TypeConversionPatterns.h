@@ -180,17 +180,13 @@ public:
   CreateArrayOpClassReplacePattern(mlir::TypeConverter &converter, mlir::MLIRContext *ctx)
       : mlir::OpConversionPattern<array::CreateArrayOp>(converter, ctx, 0) {}
 
-  mlir::LogicalResult match(array::CreateArrayOp op) const override {
-    if (getTypeConverter()->convertType(op.getType())) {
-      return mlir::success();
-    }
-    return op->emitError("Could not convert Op result type.");
-  }
-
-  void rewrite(
+  mlir::LogicalResult matchAndRewrite(
       array::CreateArrayOp op, OpAdaptor adapter, mlir::ConversionPatternRewriter &rewriter
   ) const override {
     mlir::Type newType = getTypeConverter()->convertType(op.getType());
+    if (!newType) {
+      return op->emitError("Could not convert Op result type.");
+    }
     assert(llvm::isa<array::ArrayType>(newType) && "CreateArrayOp must produce ArrayType result");
     mlir::DenseI32ArrayAttr numDimsPerMap = op.getNumDimsPerMapAttr();
     if (isNullOrEmpty(numDimsPerMap)) {
@@ -203,6 +199,7 @@ public:
           numDimsPerMap
       );
     }
+    return mlir::success();
   }
 };
 

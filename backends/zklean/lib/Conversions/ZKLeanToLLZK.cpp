@@ -149,7 +149,7 @@ static void ensureComputeStub(
     return;
   }
   SmallVector<Type> computeInputs;
-  if (!baseInputTypes.empty() && mlir::isa<llzk::component::StructType>(baseInputTypes.front())) {
+  if (!baseInputTypes.empty() && llvm::isa<llzk::component::StructType>(baseInputTypes.front())) {
     computeInputs.append(baseInputTypes.begin() + 1, baseInputTypes.end());
   } else {
     computeInputs.append(baseInputTypes.begin(), baseInputTypes.end());
@@ -276,7 +276,7 @@ struct FunctionConverter {
     for (auto [idx, oldArg] : llvm::enumerate(oldBlock.getArguments())) {
       auto newArg = newBlock->addArgument(inputTypes[idx], oldArg.getLoc());
       argMap[oldArg] = newArg;
-      if (mlir::isa<llzk::felt::FeltType>(oldArg.getType())) {
+      if (llvm::isa<llzk::felt::FeltType>(oldArg.getType())) {
         feltValueMap[oldArg] = newArg;
       }
     }
@@ -297,7 +297,7 @@ struct FunctionConverter {
     if (auto it = feltValueMap.find(v); it != feltValueMap.end()) {
       return it->second;
     }
-    if (auto blockArg = mlir::dyn_cast<BlockArgument>(v)) {
+    if (auto blockArg = llvm::dyn_cast<BlockArgument>(v)) {
       return argMap.lookup(blockArg);
     }
     return Value();
@@ -318,7 +318,7 @@ struct FunctionConverter {
     if (auto it = leanValueMap.find(v); it != leanValueMap.end()) {
       return it->second;
     }
-    if (auto blockArg = mlir::dyn_cast<BlockArgument>(v)) {
+    if (auto blockArg = llvm::dyn_cast<BlockArgument>(v)) {
       return argMap.lookup(blockArg);
     }
     userOp->emitError("unsupported value producer in ZKLean conversion").report();
