@@ -481,12 +481,12 @@ class RemoveIdentityUnifiableCast final : public OpRewritePattern<UnifiableCastO
 public:
   RemoveIdentityUnifiableCast(MLIRContext *ctx) : OpRewritePattern(ctx, 4) {}
 
-  LogicalResult match(UnifiableCastOp op) const override {
-    return success(op.getInput().getType() == op.getResult().getType());
-  }
-
-  void rewrite(UnifiableCastOp op, PatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(UnifiableCastOp op, PatternRewriter &rewriter) const override {
+    if (op.getInput().getType() != op.getResult().getType()) {
+      return failure();
+    }
     rewriter.replaceOp(op, op.getInput());
+    return success();
   }
 };
 
@@ -595,8 +595,8 @@ public:
 
 static LogicalResult verifyNestedCallSymbols(FuncDefOp func) {
   SymbolTableCollection tables;
-  WalkResult result = func.walk([&tables](CallOp nestedCall) {
-    return WalkResult(nestedCall.verifySymbolUses(tables));
+  auto result = func.walk([&tables](CallOp nestedCall) -> WalkResult {
+    return nestedCall.verifySymbolUses(tables);
   });
   return failure(result.wasInterrupted());
 }

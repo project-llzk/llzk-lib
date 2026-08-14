@@ -488,7 +488,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
   /// as setting them up as passes over FuncDefOp doesn't properly search all FuncDefOp
   /// and ultimately the pass does not run.
   void runOnOperation() override {
-    getOperation().walk([&](FuncDefOp fn) { runOnFunc(fn); });
+    getOperation().walk([this](FuncDefOp fn) { runOnFunc(fn); });
   }
 
   /// @brief Remove redundant reads and writes from the given function operation.

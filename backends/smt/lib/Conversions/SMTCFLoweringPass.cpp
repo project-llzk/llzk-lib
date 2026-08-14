@@ -21,6 +21,7 @@
 #include "llzk/Dialect/SMT/IR/SMTOps.h"
 #include "llzk/Dialect/String/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
+#include "llzk/Util/Walk.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
@@ -54,6 +55,7 @@ class PassImpl : public llzk::smt::impl::SMTCFLoweringPassBase<PassImpl> {
     }
     return condition;
   }
+
   IRMapping flatten(scf::IfOp ifOp, RewriterBase &rewriter) {
     IRMapping mapping;
 
@@ -71,17 +73,14 @@ class PassImpl : public llzk::smt::impl::SMTCFLoweringPassBase<PassImpl> {
 
 public:
   LogicalResult processContainedAsserts(scf::IfOp ifOp, RewriterBase &rewriter) {
-    Value condition = getCondition(ifOp);
-
-    SmallVector<smt::AssertOp> thenAssertions, elseAssertions;
-    ifOp.getThenRegion().walk([&](smt::AssertOp op) { thenAssertions.push_back(op); });
-    ifOp.getElseRegion().walk([&](smt::AssertOp op) { elseAssertions.push_back(op); });
-
+    SmallVector<smt::AssertOp> thenAssertions = walkCollect<smt::AssertOp>(ifOp.getThenRegion());
+    SmallVector<smt::AssertOp> elseAssertions = walkCollect<smt::AssertOp>(ifOp.getElseRegion());
     if (thenAssertions.empty() && elseAssertions.empty()) {
       // No assertions, nothing to do!
       return success();
     }
 
+    Value condition = getCondition(ifOp);
     for (auto assertion : thenAssertions) {
       rewriter.setInsertionPoint(assertion);
       auto implies =
@@ -115,7 +114,6 @@ public:
   }
 
   LogicalResult processYieldedResults(scf::IfOp ifOp, RewriterBase &rewriter) {
-
     if (ifOp->getNumResults() == 0) {
       flatten(ifOp, rewriter);
       ifOp.erase();
@@ -150,6 +148,7 @@ public:
 
     return success();
   }
+
   void runOnOperation() override {
     ModuleOp mod = getOperation();
     IRRewriter rewriter {&getContext()};

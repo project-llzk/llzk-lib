@@ -339,8 +339,9 @@ class PassImpl : public llzk::impl::WhileToForPassBase<PassImpl> {
     registry.insert<llzk::cast::CastDialect>();
   }
   void runOnOperation() override {
-    IRRewriter rewriter {getOperation().getContext()};
-    auto result = getOperation()->walk([&rewriter](scf::WhileOp op) {
+    Operation *op = getOperation();
+    IRRewriter rewriter {op->getContext()};
+    auto result = op->walk([&rewriter](scf::WhileOp op) {
       ForOpInfo info = parseInfo(op);
       if (!info.success()) {
         // Ignore loops we can't prove have constant bounds

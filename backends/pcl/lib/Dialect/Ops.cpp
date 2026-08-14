@@ -45,7 +45,7 @@ template <typename Op> std::optional<PrimeAttr> getFieldPrime(Op &op) {
     return std::nullopt;
   }
 
-  auto attr = mlir::dyn_cast_if_present<PrimeAttr>(modOp->getAttr("pcl.prime"));
+  auto attr = mlir::dyn_cast_if_present<PrimeAttr>(modOp->getAttr(PCL_PRIME_ATTR_NAME));
   if (!attr) {
     return std::nullopt;
   }

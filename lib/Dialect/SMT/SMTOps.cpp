@@ -475,7 +475,7 @@ template <typename QuantifierOp> static LogicalResult verifyQuantifierRegions(Qu
     return op.emitOpError("number of bound variable names must match number of block arguments");
   }
   if (!llvm::all_of(op.getBody().getArgumentTypes(), isAnyNonFuncSMTValueType)) {
-    return op.emitOpError() << "bound variables must by any non-function SMT value";
+    return op.emitOpError("bound variables must be any non-function SMT value");
   }
 
   if (op.getBody().front().getTerminator()->getNumOperands() != 1) {
@@ -490,32 +490,29 @@ template <typename QuantifierOp> static LogicalResult verifyQuantifierRegions(Qu
     Region &region = regionWithIndex.value();
 
     if (op.getBody().getArgumentTypes() != region.getArgumentTypes()) {
-      return op.emitOpError() << "block argument number and types of the 'body' "
-                                 "and 'patterns' region #"
-                              << i << " must match";
+      return op.emitOpError("block argument number and types of the 'body' and 'patterns' region #")
+             << i << " must match";
     }
     if (region.front().getTerminator()->getNumOperands() < 1) {
-      return op.emitOpError() << "'patterns' region #" << i
-                              << " must have at least one yielded value";
+      return op.emitOpError("'patterns' region #") << i << " must have at least one yielded value";
     }
 
     // All operations in the 'patterns' region must be SMT operations.
     auto result = region.walk([&](Operation *childOp) {
       if (!isa<SMTDialect>(childOp->getDialect())) {
-        auto diag = op.emitOpError()
-                    << "the 'patterns' region #" << i << " may only contain SMT dialect operations";
+        auto diag = op.emitOpError("the 'patterns' region #")
+                    << i << " may only contain SMT dialect operations";
         diag.attachNote(childOp->getLoc()) << "first non-SMT operation here";
-        return WalkResult::interrupt();
+        return WalkResult(diag);
       }
 
       // There may be no quantifier (or other variable binding) operations in
       // the 'patterns' region.
       if (isa<ForallOp, ExistsOp>(childOp)) {
-        auto diag = op.emitOpError() << "the 'patterns' region #" << i
-                                     << " must not contain "
-                                        "any variable binding operations";
+        auto diag = op.emitOpError("the 'patterns' region #")
+                    << i << " must not contain any variable binding operations";
         diag.attachNote(childOp->getLoc()) << "first violating operation here";
-        return WalkResult::interrupt();
+        return WalkResult(diag);
       }
 
       return WalkResult::advance();

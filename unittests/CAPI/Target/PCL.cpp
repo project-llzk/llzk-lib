@@ -55,7 +55,7 @@ TEST_F(CAPITest, exportPclModule) {
 
   auto module = builder.create<mlir::ModuleOp>(builder.getUnknownLoc());
   module->setDiscardableAttr(
-      builder.getStringAttr("pcl.prime"),
+      builder.getStringAttr(PCL_PRIME_ATTR_NAME),
       pcl::PrimeAttr::get(ctx, llvm::APInt(/*numBits=*/4, /*val=*/SEVEN))
   );
   {

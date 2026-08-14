@@ -79,9 +79,9 @@ struct NameState {
 /// Emits the s-expressions for the beginning of the PCL file.
 LogicalResult prologue(ModuleOp mod, pcl::Sexps &S) {
   // (prime-number …)
-  auto prime = mod->getAttrOfType<pcl::PrimeAttr>("pcl.prime");
+  auto prime = mod->getAttrOfType<pcl::PrimeAttr>(PCL_PRIME_ATTR_NAME);
   if (!prime) {
-    return mod.emitError("missing 'pcl.prime'");
+    return mod.emitError() << "missing '" << PCL_PRIME_ATTR_NAME << '\'';
   }
   S.push({S.atom("prime-number"), S.atom(prime.getValue())});
   return success();

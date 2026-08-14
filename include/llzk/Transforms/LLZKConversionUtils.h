@@ -346,13 +346,12 @@ public:
     return false;
   }
 
-  mlir::LogicalResult match(MemberRefOpClass op) const override {
-    return mlir::failure(ImplClass::legal(op));
-  }
-
-  void rewrite(
+  mlir::LogicalResult matchAndRewrite(
       MemberRefOpClass op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
   ) const override {
+    if (ImplClass::legal(op)) {
+      return mlir::failure();
+    }
     component::StructType tgtStructTy =
         llvm::cast<component::MemberRefOpInterface>(op.getOperation()).getStructType();
     assert(tgtStructTy);
@@ -371,6 +370,7 @@ public:
       ImplClass::finalize(op, prefixResult, adaptor, rewriter);
     }
     rewriter.eraseOp(op);
+    return mlir::success();
   }
 };
 

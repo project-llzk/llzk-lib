@@ -1642,7 +1642,7 @@ static SmallVector<StringAttr> getMentionedTypeVarParams(
 }
 
 /// Return whether a template-argument attribute mentions an eligible type variable.
-static bool attrMentionsAnyTypeVarParam(
+static inline bool attrMentionsAnyTypeVarParam(
     Attribute attr, const DenseMap<StringAttr, TemplateParamOp> &typeVarParams
 ) {
   return !getMentionedTypeVarParams(attr, typeVarParams).empty();
@@ -1653,10 +1653,9 @@ static bool funcMentionsParam(FuncDefOp func, StringAttr paramName) {
   if (operationMentionsParam(func.getOperation(), paramName)) {
     return true;
   }
-  WalkResult result = func.walk([paramName](Operation *op) {
-    return operationMentionsParam(op, paramName) ? WalkResult::interrupt() : WalkResult::advance();
+  return walkContainsMatch<Operation *>(func, [paramName](Operation *op) {
+    return operationMentionsParam(op, paramName);
   });
-  return result.wasInterrupted();
 }
 
 /// Return whether a contract body/signature mentions an eligible type-variable parameter.
@@ -1664,28 +1663,26 @@ static bool contractMentionsParam(verif::ContractOp contract, StringAttr paramNa
   if (operationMentionsParam(contract.getOperation(), paramName)) {
     return true;
   }
-  WalkResult result = contract.walk([paramName](Operation *op) {
-    return operationMentionsParam(op, paramName) ? WalkResult::interrupt() : WalkResult::advance();
+  return walkContainsMatch<Operation *>(contract, [paramName](Operation *op) {
+    return operationMentionsParam(op, paramName);
   });
-  return result.wasInterrupted();
 }
 
 /// Return whether a function target mentions an eligible type-variable parameter.
-static bool targetMentionsParam(FuncDefOp func, StringAttr paramName) {
+static inline bool targetMentionsParam(FuncDefOp func, StringAttr paramName) {
   return funcMentionsParam(func, paramName);
 }
 
 /// Return whether a contract target mentions an eligible type-variable parameter.
-static bool targetMentionsParam(verif::ContractOp contract, StringAttr paramName) {
+static inline bool targetMentionsParam(verif::ContractOp contract, StringAttr paramName) {
   return contractMentionsParam(contract, paramName);
 }
 
 /// Return whether a `poly.expr` body mentions an eligible type-variable parameter.
-static bool exprMentionsParam(TemplateExprOp expr, StringAttr paramName) {
-  WalkResult result = expr.walk([paramName](Operation *op) {
-    return operationMentionsParam(op, paramName) ? WalkResult::interrupt() : WalkResult::advance();
+static inline bool exprMentionsParam(TemplateExprOp expr, StringAttr paramName) {
+  return walkContainsMatch<Operation *>(expr, [paramName](Operation *op) {
+    return operationMentionsParam(op, paramName);
   });
-  return result.wasInterrupted();
 }
 
 /// Return whether a struct's non-function mentions are covered by its own
@@ -1775,11 +1772,11 @@ public:
   LogicalResult collect(Operation *root) {
     do {
       changedInIteration = false;
-      WalkResult result = root->walk([this](UnifiableCastOp castOp) {
-        return WalkResult(collectTypePairInferences(
+      auto result = root->walk([this](UnifiableCastOp castOp) -> WalkResult {
+        return collectTypePairInferences(
             castOp.getInput().getType(), castOp.getResult().getType(), castOp.getInput(),
             castOp.getResult(), castOp.getLoc()
-        ));
+        );
       });
       if (result.wasInterrupted()) {
         return failure();
@@ -1811,10 +1808,8 @@ public:
       Operation *root, ModuleOp module, DenseMap<Operation *, TemplateInferenceInfo *> &infos,
       SymbolTableCollection &tables
   ) {
-    WalkResult result = root->walk([&](Operation *op) {
-      return failed(collectOperationStructTemplateParamInferences(op, module, infos, tables))
-                 ? WalkResult::interrupt()
-                 : WalkResult::advance();
+    auto result = root->walk([&](Operation *op) -> WalkResult {
+      return collectOperationStructTemplateParamInferences(op, module, infos, tables);
     });
     return failure(result.wasInterrupted());
   }
@@ -3411,9 +3406,8 @@ static LogicalResult updateExternalContractTemplateParams(
       return;
     }
 
-    WalkResult validationResult = contract.walk([converter](Operation *op) {
-      return failed(converter->validateOperation(op)) ? WalkResult::interrupt()
-                                                      : WalkResult::advance();
+    auto validationResult = contract.walk([converter](Operation *op) -> WalkResult {
+      return converter->validateOperation(op);
     });
     if (validationResult.wasInterrupted() ||
         failed(convertOperationTypesIn(contract.getOperation(), *converter))) {
@@ -4073,9 +4067,8 @@ private:
       const TypeVarReplacementConverter *converter =
           convertersByTemplate.lookup(info->templateOp.getOperation());
       assert(converter && "rewritten template must have a converter");
-      WalkResult validationResult = info->templateOp.walk([converter](Operation *op) {
-        return failed(converter->validateOperation(op)) ? WalkResult::interrupt()
-                                                        : WalkResult::advance();
+      auto validationResult = info->templateOp.walk([converter](Operation *op) -> WalkResult {
+        return converter->validateOperation(op);
       });
       if (validationResult.wasInterrupted()) {
         signalPassFailure();

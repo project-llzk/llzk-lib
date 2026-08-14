@@ -338,16 +338,19 @@ public:
     return !containsSplittableArrayType(op.getRvalue().getType());
   }
 
-  LogicalResult match(InsertArrayOp op) const override { return failure(legal(op)); }
-
-  void
-  rewrite(InsertArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(
+      InsertArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
     ArrayType at = splittableArray(op.getRvalue().getType());
     rewriteImpl<SMALL_TO_LARGE>(
         llvm::cast<ArrayAccessOpInterface>(op.getOperation()), at, adaptor.getRvalue(),
         adaptor.getArrRef(), rewriter
     );
     rewriter.eraseOp(op);
+    return success();
   }
 };
 
@@ -360,11 +363,12 @@ public:
     return !containsSplittableArrayType(op.getResult().getType());
   }
 
-  LogicalResult match(ExtractArrayOp op) const override { return failure(legal(op)); }
-
-  void rewrite(
+  LogicalResult matchAndRewrite(
       ExtractArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
+    if (legal(op)) {
+      return failure();
+    }
     ArrayType at = splittableArray(op.getResult().getType());
     // Generate `CreateArrayOp` in place of the current op.
     auto newArray = rewriter.replaceOpWithNewOp<CreateArrayOp>(op, at);
@@ -372,6 +376,7 @@ public:
         llvm::cast<ArrayAccessOpInterface>(op.getOperation()), at, newArray, adaptor.getArrRef(),
         rewriter
     );
+    return success();
   }
 };
 
@@ -382,10 +387,12 @@ public:
 
   static bool legal(CreateArrayOp op) { return op.getElements().empty(); }
 
-  LogicalResult match(CreateArrayOp op) const override { return failure(legal(op)); }
-
-  void
-  rewrite(CreateArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(
+      CreateArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
     // Remove elements from `op`
     rewriter.modifyOpInPlace(op, [&op]() { op.getElementsMutable().clear(); });
     // Generate an individual write for each initialization element
@@ -402,6 +409,7 @@ public:
       // Create the write
       rewriter.create<WriteArrayOp>(loc, op.getResult(), ValueRange(*multiDimIdxVals), init);
     }
+    return success();
   }
 };
 
@@ -415,9 +423,11 @@ public:
            !containsSplittableArrayType(op.getResultTypes());
   }
 
-  LogicalResult match(FuncDefOp op) const override { return failure(legal(op)); }
-
-  void rewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult
+  matchAndRewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    if (legal(op)) {
+      return failure();
+    }
     // Update in/out types of the function to replace arrays with scalars
     class Impl : public FunctionTypeConverter {
       SmallVector<size_t> originalInputIdxToSize, originalResultIdxToSize;
@@ -491,6 +501,7 @@ public:
       }
     };
     Impl(op).convert(op, rewriter);
+    return success();
   }
 };
 
@@ -503,10 +514,14 @@ public:
     return !containsSplittableArrayType(op.getOperands().getTypes());
   }
 
-  LogicalResult match(ReturnOp op) const override { return failure(legal(op)); }
-
-  void rewrite(ReturnOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(
+      ReturnOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
     processInputOperands(adaptor.getOperands(), op.getOperandsMutable(), op, rewriter);
+    return success();
   }
 };
 
@@ -520,14 +535,18 @@ public:
            !containsSplittableArrayType(op.getResultTypes());
   }
 
-  LogicalResult match(CallOp op) const override { return failure(legal(op)); }
-
-  void rewrite(CallOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(
+      CallOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
     // Create new CallOp with split results first so, then process its inputs to split types
     CallOp newCall = newCallOpWithSplitResults(op, adaptor, rewriter);
     processInputOperands(
         newCall.getArgOperands(), newCall.getArgOperandsMutable(), newCall, rewriter
     );
+    return success();
   }
 };
 
@@ -564,15 +583,18 @@ public:
     return !getDimSizeIfKnown(op.getDim(), op.getArrRefType()).has_value();
   }
 
-  LogicalResult match(ArrayLengthOp op) const override { return failure(legal(op)); }
-
-  void
-  rewrite(ArrayLengthOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(
+      ArrayLengthOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
     ArrayType arrTy = dyn_cast<ArrayType>(adaptor.getArrRef().getType());
     assert(arrTy); // must have array type per ODS spec of ArrayLengthOp
     std::optional<llvm::APInt> len = getDimSizeIfKnown(adaptor.getDim(), arrTy);
     assert(len.has_value()); // follows from legal() check
     rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, llzk::fromAPInt(len.value()));
+    return success();
   }
 };
 
@@ -596,9 +618,11 @@ public:
 
   inline static bool legal(MemberDefOp op) { return !containsSplittableArrayType(op.getType()); }
 
-  LogicalResult match(MemberDefOp op) const override { return failure(legal(op)); }
-
-  void rewrite(MemberDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult
+  matchAndRewrite(MemberDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    if (legal(op)) {
+      return failure();
+    }
     StructDefOp inStruct = op->getParentOfType<StructDefOp>();
     assert(inStruct);
     LocalMemberReplacementMap &localRepMapRef = repMapRef[inStruct][op.getSymNameAttr()];
@@ -620,6 +644,7 @@ public:
       localRepMapRef[idx] = std::make_pair(structSymbolTable.insert(newMember), elemTy);
     }
     rewriter.eraseOp(op);
+    return success();
   }
 };
 
