@@ -6439,6 +6439,76 @@ static LogicalResult rejectRemainingRaggedNestedLeafUses(ModuleOp modOp) {
   return rejectRaggedNestedLeafBoundaryCrossings(modOp);
 }
 
+// In MLIR 20.1.8, the `RemoveDeadValues` pass did not handle branching regions as aggressively
+// as the `RunLivenessAnalysis` that it depends on. The liveness analysis can conclude an `scf.if`
+// branch is dead and thus its `scf.yield` operand is also dead. However, RDV does not end up
+// removing that branch but does remove the definition of the `scf.yield` operand, leaving a NULL
+// operand in the `scf.yield` op.
+//
+// The bug is fixed in MLIR 22.1.0 but there is a temporary solution: before running the RDV pass,
+// run "Sparse Conditional Constant Propagation" (SCCP) plus a custom pass that folds `scf.if` with
+// static conditions.
+//
+// Portions adapted from mlir/lib/Dialect/SCF/IR/SCF.cpp
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+namespace temp_fix_pre_mlir_22 {
+
+static void replaceOpWithRegion(
+    PatternRewriter &rewriter, Operation *op, Region &region, ValueRange blockArgs = {}
+) {
+  assert(llvm::hasSingleElement(region) && "expected single-region block");
+  Block *block = &region.front();
+  Operation *terminator = block->getTerminator();
+  ValueRange results = terminator->getOperands();
+  rewriter.inlineBlockBefore(block, op, blockArgs);
+  rewriter.replaceOp(op, results);
+  rewriter.eraseOp(terminator);
+}
+
+struct RemoveStaticCondition : public OpRewritePattern<scf::IfOp> {
+  using OpRewritePattern<scf::IfOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(scf::IfOp op, PatternRewriter &rewriter) const override {
+    BoolAttr condition;
+    if (!matchPattern(op.getCondition(), m_Constant(&condition))) {
+      return failure();
+    }
+    if (condition.getValue()) {
+      replaceOpWithRegion(rewriter, op, op.getThenRegion());
+    } else if (!op.getElseRegion().empty()) {
+      replaceOpWithRegion(rewriter, op, op.getElseRegion());
+    } else {
+      rewriter.eraseOp(op);
+    }
+    return success();
+  }
+};
+
+struct FlattenStaticIfPass : PassWrapper<FlattenStaticIfPass, OperationPass<ModuleOp>> {
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(FlattenStaticIfPass)
+
+  void runOnOperation() override {
+    RewritePatternSet patterns(&getContext());
+    patterns.add<RemoveStaticCondition>(&getContext());
+
+    if (failed(applyPatternsGreedily(
+            getOperation(), std::move(patterns),
+            GreedyRewriteConfig {.fold = false, .cseConstants = false}
+        ))) {
+      signalPassFailure();
+    }
+  }
+};
+
+void add(OpPassManager &pm) {
+  pm.addPass(createSCCPPass());
+  pm.addPass(std::make_unique<FlattenStaticIfPass>());
+}
+
+} // namespace temp_fix_pre_mlir_22
+
 /// Pass driver for the full POD-to-scalar lowering pipeline described above.
 class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
   using Base = PodToScalarPassBase<PassImpl>;
@@ -6465,6 +6535,7 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
             .allocatorOpName = NewPodOp::getOperationName().str()
         }
     ));
+    temp_fix_pre_mlir_22::add(cleanupPM);
     cleanupPM.addPass(createRemoveDeadValuesWorkaroundPass());
 
     size_t podAllocWeight = podAllocScalarizationWeight(module);
