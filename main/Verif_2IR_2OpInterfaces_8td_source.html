@@ -170,7 +170,7 @@ $(function(){initNavTree('Verif_2IR_2OpInterfaces_8td_source.html','',''); });
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>      [InterfaceMethod&lt;[{Gets the label of the loop, if available.}],</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>                       &quot;::mlir::FailureOr&lt;::mlir::StringRef&gt;&quot;, &quot;getLabel&quot;,</div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>                       (ins), [{</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>                                   auto attr = ::mlir::dyn_cast_or_null&lt;::mlir::StringAttr&gt;($_op-&gt;getDiscardableAttr(&quot;loop_label&quot;));</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>                                   auto attr = ::llvm::dyn_cast_or_null&lt;::mlir::StringAttr&gt;($_op-&gt;getDiscardableAttr(&quot;loop_label&quot;));</div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>                                   if (!attr) return ::mlir::failure();</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>                                   return attr.getValue();</div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>                                 }]&gt;,</div>
@@ -200,7 +200,7 @@ $(function(){initNavTree('Verif_2IR_2OpInterfaces_8td_source.html','',''); });
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>    /// Emulates the static method with the same name found in operations.</div>
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>    static ::mlir::StringLiteral getOperationName() {</div>
 <div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>      return ::mlir::StringLiteral(&quot;contract target interface implementation&quot;);</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    }                    </div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    }</div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  }];</div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>}</div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>

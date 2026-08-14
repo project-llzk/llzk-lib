@@ -228,7 +228,7 @@ $(function(){initNavTree('WitgenLowering_8cpp_source.html','',''); });
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span></div>
 <div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span><span class="keyword">static</span> <span class="keywordtype">bool</span> isScalarType(Type type) {</div>
 <div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  <span class="keywordflow">return</span> isa&lt;felt::FeltType, IndexType&gt;(type) ||</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>         (isa&lt;IntegerType&gt;(type) &amp;&amp; mlir::cast&lt;IntegerType&gt;(type).getWidth() == 1);</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>         (isa&lt;IntegerType&gt;(type) &amp;&amp; llvm::cast&lt;IntegerType&gt;(type).getWidth() == 1);</div>
 <div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>}</div>
 <div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span></div>
 <div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span><span class="keyword">static</span> LogicalResult flattenTypeLeaves(</div>
@@ -474,7 +474,7 @@ $(function(){initNavTree('WitgenLowering_8cpp_source.html','',''); });
 <div class="line"><a id="l00381" name="l00381"></a><span class="lineno">  381</span>    zero = builder.create&lt;arith::ConstantIndexOp&gt;(loc, 0);</div>
 <div class="line"><a id="l00382" name="l00382"></a><span class="lineno">  382</span>  } <span class="keywordflow">else</span> {</div>
 <div class="line"><a id="l00383" name="l00383"></a><span class="lineno">  383</span>    zero = builder.create&lt;arith::ConstantOp&gt;(</div>
-<div class="line"><a id="l00384" name="l00384"></a><span class="lineno">  384</span>        loc, IntegerAttr::get(mlir::cast&lt;IntegerType&gt;(elementType), 0)</div>
+<div class="line"><a id="l00384" name="l00384"></a><span class="lineno">  384</span>        loc, IntegerAttr::get(llvm::cast&lt;IntegerType&gt;(elementType), 0)</div>
 <div class="line"><a id="l00385" name="l00385"></a><span class="lineno">  385</span>    );</div>
 <div class="line"><a id="l00386" name="l00386"></a><span class="lineno">  386</span>  }</div>
 <div class="line"><a id="l00387" name="l00387"></a><span class="lineno">  387</span>  <span class="keyword">auto</span> strides = mlir::computeStrides(memrefType.getShape());</div>
@@ -522,7 +522,7 @@ $(function(){initNavTree('WitgenLowering_8cpp_source.html','',''); });
 <div class="line"><a id="l00430" name="l00430"></a><span class="lineno">  430</span>      );</div>
 <div class="line"><a id="l00431" name="l00431"></a><span class="lineno">  431</span>      <span class="keywordflow">continue</span>;</div>
 <div class="line"><a id="l00432" name="l00432"></a><span class="lineno">  432</span>    }</div>
-<div class="line"><a id="l00433" name="l00433"></a><span class="lineno">  433</span>    <span class="keyword">auto</span> intType = mlir::cast&lt;IntegerType&gt;(elementType);</div>
+<div class="line"><a id="l00433" name="l00433"></a><span class="lineno">  433</span>    <span class="keyword">auto</span> intType = llvm::cast&lt;IntegerType&gt;(elementType);</div>
 <div class="line"><a id="l00434" name="l00434"></a><span class="lineno">  434</span>    <span class="keywordflow">if</span> (intType.getWidth() == 1) {</div>
 <div class="line"><a id="l00435" name="l00435"></a><span class="lineno">  435</span>      builder.create&lt;memref::StoreOp&gt;(</div>
 <div class="line"><a id="l00436" name="l00436"></a><span class="lineno">  436</span>          loc,</div>
@@ -577,7 +577,7 @@ $(function(){initNavTree('WitgenLowering_8cpp_source.html','',''); });
 <div class="line"><a id="l00486" name="l00486"></a><span class="lineno">  486</span>        );</div>
 <div class="line"><a id="l00487" name="l00487"></a><span class="lineno">  487</span>        <span class="keywordflow">continue</span>;</div>
 <div class="line"><a id="l00488" name="l00488"></a><span class="lineno">  488</span>      }</div>
-<div class="line"><a id="l00489" name="l00489"></a><span class="lineno">  489</span>      <span class="keyword">auto</span> intType = mlir::cast&lt;IntegerType&gt;(leafType);</div>
+<div class="line"><a id="l00489" name="l00489"></a><span class="lineno">  489</span>      <span class="keyword">auto</span> intType = llvm::cast&lt;IntegerType&gt;(leafType);</div>
 <div class="line"><a id="l00490" name="l00490"></a><span class="lineno">  490</span>      <span class="keywordflow">if</span> (intType.getWidth() == 1) {</div>
 <div class="line"><a id="l00491" name="l00491"></a><span class="lineno">  491</span>        lowered.leaves.push_back(builder.create&lt;arith::ConstantOp&gt;(</div>
 <div class="line"><a id="l00492" name="l00492"></a><span class="lineno">  492</span>            loc, IntegerAttr::get(intType, APInt(1, <a class="code hl_function" href="namespacellzk_1_1witgen.html#a9133fd240db34d3237708cd2a796838a">randomBoolValue</a>(rng)))</div>
@@ -603,7 +603,7 @@ $(function(){initNavTree('WitgenLowering_8cpp_source.html','',''); });
 <div class="line"><a id="l00512" name="l00512"></a><span class="lineno">  512</span>      <span class="keywordflow">continue</span>;</div>
 <div class="line"><a id="l00513" name="l00513"></a><span class="lineno">  513</span>    }</div>
 <div class="line"><a id="l00514" name="l00514"></a><span class="lineno">  514</span>    lowered.leaves.push_back(builder.create&lt;arith::ConstantOp&gt;(</div>
-<div class="line"><a id="l00515" name="l00515"></a><span class="lineno">  515</span>        loc, IntegerAttr::get(mlir::cast&lt;IntegerType&gt;(leafType), 0)</div>
+<div class="line"><a id="l00515" name="l00515"></a><span class="lineno">  515</span>        loc, IntegerAttr::get(llvm::cast&lt;IntegerType&gt;(leafType), 0)</div>
 <div class="line"><a id="l00516" name="l00516"></a><span class="lineno">  516</span>    ));</div>
 <div class="line"><a id="l00517" name="l00517"></a><span class="lineno">  517</span>  }</div>
 <div class="line"><a id="l00518" name="l00518"></a><span class="lineno">  518</span>  <span class="keywordflow">return</span> lowered;</div>
@@ -612,7 +612,7 @@ $(function(){initNavTree('WitgenLowering_8cpp_source.html','',''); });
 <div class="line"><a id="l00522" name="l00522"></a><span class="lineno">  522</span><span class="keyword">static</span> Value normalizeWideValue(</div>
 <div class="line"><a id="l00523" name="l00523"></a><span class="lineno">  523</span>    OpBuilder &amp;builder, Location loc, Value wideValue, <span class="keywordtype">unsigned</span> dstWidth, <span class="keyword">const</span> Field &amp;field</div>
 <div class="line"><a id="l00524" name="l00524"></a><span class="lineno">  524</span>) {</div>
-<div class="line"><a id="l00525" name="l00525"></a><span class="lineno">  525</span>  <span class="keyword">auto</span> wideType = mlir::cast&lt;IntegerType&gt;(wideValue.getType());</div>
+<div class="line"><a id="l00525" name="l00525"></a><span class="lineno">  525</span>  <span class="keyword">auto</span> wideType = llvm::cast&lt;IntegerType&gt;(wideValue.getType());</div>
 <div class="line"><a id="l00526" name="l00526"></a><span class="lineno">  526</span>  Value modulus = builder.create&lt;arith::ConstantOp&gt;(</div>
 <div class="line"><a id="l00527" name="l00527"></a><span class="lineno">  527</span>      loc, field.getPrimeAttr(builder.getContext(), wideType.getWidth())</div>
 <div class="line"><a id="l00528" name="l00528"></a><span class="lineno">  528</span>  );</div>
@@ -625,7 +625,7 @@ $(function(){initNavTree('WitgenLowering_8cpp_source.html','',''); });
 <div class="line"><a id="l00536" name="l00536"></a><span class="lineno">  536</span><span class="keyword">static</span> Value normalizeSignedWideValue(</div>
 <div class="line"><a id="l00537" name="l00537"></a><span class="lineno">  537</span>    OpBuilder &amp;builder, Location loc, Value wideValue, <span class="keywordtype">unsigned</span> dstWidth, <span class="keyword">const</span> Field &amp;field</div>
 <div class="line"><a id="l00538" name="l00538"></a><span class="lineno">  538</span>) {</div>
-<div class="line"><a id="l00539" name="l00539"></a><span class="lineno">  539</span>  <span class="keyword">auto</span> wideType = mlir::cast&lt;IntegerType&gt;(wideValue.getType());</div>
+<div class="line"><a id="l00539" name="l00539"></a><span class="lineno">  539</span>  <span class="keyword">auto</span> wideType = llvm::cast&lt;IntegerType&gt;(wideValue.getType());</div>
 <div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span>  Value modulus = builder.create&lt;arith::ConstantOp&gt;(</div>
 <div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span>      loc, field.getPrimeAttr(builder.getContext(), wideType.getWidth())</div>
 <div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span>  );</div>
@@ -657,7 +657,7 @@ $(function(){initNavTree('WitgenLowering_8cpp_source.html','',''); });
 <div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span>}</div>
 <div class="line"><a id="l00570" name="l00570"></a><span class="lineno">  570</span></div>
 <div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span><span class="keyword">static</span> <span class="keywordtype">void</span> assertNonZeroFelt(OpBuilder &amp;builder, Location loc, Value operand, StringRef message) {</div>
-<div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span>  <span class="keyword">auto</span> operandType = mlir::cast&lt;IntegerType&gt;(operand.getType());</div>
+<div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span>  <span class="keyword">auto</span> operandType = llvm::cast&lt;IntegerType&gt;(operand.getType());</div>
 <div class="line"><a id="l00574" name="l00574"></a><span class="lineno">  574</span>  Value zero = builder.create&lt;arith::ConstantOp&gt;(loc, IntegerAttr::get(operandType, 0));</div>
 <div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span>  Value isNonZero = builder.create&lt;arith::CmpIOp&gt;(loc, arith::CmpIPredicate::ne, operand, zero);</div>
 <div class="line"><a id="l00576" name="l00576"></a><span class="lineno">  576</span>  builder.create&lt;cf::AssertOp&gt;(loc, isNonZero, message);</div>
@@ -844,7 +844,7 @@ $(function(){initNavTree('WitgenLowering_8cpp_source.html','',''); });
 <div class="line"><a id="l00773" name="l00773"></a><span class="lineno">  773</span>}</div>
 <div class="line"><a id="l00774" name="l00774"></a><span class="lineno">  774</span></div>
 <div class="line"><a id="l00776" name="l00776"></a><span class="lineno">  776</span><span class="keyword">static</span> Value loadStorageScalar(OpBuilder &amp;builder, Location loc, Value storageLeaf) {</div>
-<div class="line"><a id="l00777" name="l00777"></a><span class="lineno">  777</span>  <span class="keyword">auto</span> memrefType = mlir::cast&lt;MemRefType&gt;(storageLeaf.getType());</div>
+<div class="line"><a id="l00777" name="l00777"></a><span class="lineno">  777</span>  <span class="keyword">auto</span> memrefType = llvm::cast&lt;MemRefType&gt;(storageLeaf.getType());</div>
 <div class="line"><a id="l00778" name="l00778"></a><span class="lineno">  778</span>  SmallVector&lt;Value&gt; indices;</div>
 <div class="line"><a id="l00779" name="l00779"></a><span class="lineno">  779</span>  indices.reserve(memrefType.getRank());</div>
 <div class="line"><a id="l00780" name="l00780"></a><span class="lineno">  780</span>  <span class="keywordflow">for</span> (int64_t dim = 0; dim &lt; memrefType.getRank(); ++dim) {</div>
@@ -854,7 +854,7 @@ $(function(){initNavTree('WitgenLowering_8cpp_source.html','',''); });
 <div class="line"><a id="l00784" name="l00784"></a><span class="lineno">  784</span>}</div>
 <div class="line"><a id="l00785" name="l00785"></a><span class="lineno">  785</span></div>
 <div class="line"><a id="l00787" name="l00787"></a><span class="lineno">  787</span><span class="keyword">static</span> <span class="keywordtype">void</span> storeStorageScalar(OpBuilder &amp;builder, Location loc, Value scalar, Value storageLeaf) {</div>
-<div class="line"><a id="l00788" name="l00788"></a><span class="lineno">  788</span>  <span class="keyword">auto</span> memrefType = mlir::cast&lt;MemRefType&gt;(storageLeaf.getType());</div>
+<div class="line"><a id="l00788" name="l00788"></a><span class="lineno">  788</span>  <span class="keyword">auto</span> memrefType = llvm::cast&lt;MemRefType&gt;(storageLeaf.getType());</div>
 <div class="line"><a id="l00789" name="l00789"></a><span class="lineno">  789</span>  SmallVector&lt;Value&gt; indices;</div>
 <div class="line"><a id="l00790" name="l00790"></a><span class="lineno">  790</span>  indices.reserve(memrefType.getRank());</div>
 <div class="line"><a id="l00791" name="l00791"></a><span class="lineno">  791</span>  <span class="keywordflow">for</span> (int64_t dim = 0; dim &lt; memrefType.getRank(); ++dim) {</div>
@@ -934,7 +934,7 @@ $(function(){initNavTree('WitgenLowering_8cpp_source.html','',''); });
 <div class="line"><a id="l00868" name="l00868"></a><span class="lineno">  868</span></div>
 <div class="line"><a id="l00870" name="l00870"></a><span class="lineno">  870</span><span class="keyword">static</span> FailureOr&lt;Value&gt;</div>
 <div class="line"><a id="l00871" name="l00871"></a><span class="lineno">  871</span>createElementSubview(OpBuilder &amp;builder, Location loc, Value <a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>, ValueRange outerIndices) {</div>
-<div class="line"><a id="l00872" name="l00872"></a><span class="lineno">  872</span>  <span class="keyword">auto</span> sourceType = mlir::cast&lt;MemRefType&gt;(<a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>.getType());</div>
+<div class="line"><a id="l00872" name="l00872"></a><span class="lineno">  872</span>  <span class="keyword">auto</span> sourceType = llvm::cast&lt;MemRefType&gt;(<a class="code hl_variable" href="LICENSE_8txt.html#a40e859b9aaa2d8657227ee008c8a6c7b">source</a>.getType());</div>
 <div class="line"><a id="l00873" name="l00873"></a><span class="lineno">  873</span>  SmallVector&lt;OpFoldResult&gt; mixedOffsets;</div>
 <div class="line"><a id="l00874" name="l00874"></a><span class="lineno">  874</span>  SmallVector&lt;OpFoldResult&gt; mixedSizes;</div>
 <div class="line"><a id="l00875" name="l00875"></a><span class="lineno">  875</span>  SmallVector&lt;OpFoldResult&gt; mixedStrides;</div>
@@ -975,7 +975,7 @@ $(function(){initNavTree('WitgenLowering_8cpp_source.html','',''); });
 <div class="line"><a id="l00910" name="l00910"></a><span class="lineno">  910</span>      <span class="keywordflow">return</span> failure();</div>
 <div class="line"><a id="l00911" name="l00911"></a><span class="lineno">  911</span>    }</div>
 <div class="line"><a id="l00912" name="l00912"></a><span class="lineno">  912</span>    <span class="keywordflow">if</span> (<span class="keyword">auto</span> attr = llvm::dyn_cast&lt;Attribute&gt;(mixedSizes[*dimIndex])) {</div>
-<div class="line"><a id="l00913" name="l00913"></a><span class="lineno">  913</span>      desiredShape.push_back(mlir::cast&lt;IntegerAttr&gt;(attr).getInt());</div>
+<div class="line"><a id="l00913" name="l00913"></a><span class="lineno">  913</span>      desiredShape.push_back(llvm::cast&lt;IntegerAttr&gt;(attr).getInt());</div>
 <div class="line"><a id="l00914" name="l00914"></a><span class="lineno">  914</span>    } <span class="keywordflow">else</span> {</div>
 <div class="line"><a id="l00915" name="l00915"></a><span class="lineno">  915</span>      desiredShape.push_back(ShapedType::kDynamic);</div>
 <div class="line"><a id="l00916" name="l00916"></a><span class="lineno">  916</span>    }</div>
@@ -983,7 +983,7 @@ $(function(){initNavTree('WitgenLowering_8cpp_source.html','',''); });
 <div class="line"><a id="l00918" name="l00918"></a><span class="lineno">  918</span>  <span class="keywordflow">if</span> (desiredShape.empty()) {</div>
 <div class="line"><a id="l00919" name="l00919"></a><span class="lineno">  919</span>    desiredShape.push_back(1);</div>
 <div class="line"><a id="l00920" name="l00920"></a><span class="lineno">  920</span>  }</div>
-<div class="line"><a id="l00921" name="l00921"></a><span class="lineno">  921</span>  <span class="keyword">auto</span> resultType = mlir::cast&lt;MemRefType&gt;(memref::SubViewOp::inferRankReducedResultType(</div>
+<div class="line"><a id="l00921" name="l00921"></a><span class="lineno">  921</span>  <span class="keyword">auto</span> resultType = llvm::cast&lt;MemRefType&gt;(memref::SubViewOp::inferRankReducedResultType(</div>
 <div class="line"><a id="l00922" name="l00922"></a><span class="lineno">  922</span>      desiredShape, sourceType, mixedOffsets, mixedSizes, mixedStrides</div>
 <div class="line"><a id="l00923" name="l00923"></a><span class="lineno">  923</span>  ));</div>
 <div class="line"><a id="l00924" name="l00924"></a><span class="lineno">  924</span>  <span class="keyword">auto</span> op = builder.create&lt;memref::SubViewOp&gt;(</div>
@@ -1552,7 +1552,7 @@ $(function(){initNavTree('WitgenLowering_8cpp_source.html','',''); });
 <div class="line"><a id="l01498" name="l01498"></a><span class="lineno"> 1498</span>      <span class="keywordflow">if</span> (isa&lt;IndexType&gt;((*operand).getType())) {</div>
 <div class="line"><a id="l01499" name="l01499"></a><span class="lineno"> 1499</span>        lowered = builder.create&lt;arith::IndexCastUIOp&gt;(loc, dstType, *operand);</div>
 <div class="line"><a id="l01500" name="l01500"></a><span class="lineno"> 1500</span>      } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l01501" name="l01501"></a><span class="lineno"> 1501</span>        <span class="keyword">auto</span> intType = mlir::cast&lt;IntegerType&gt;((*operand).getType());</div>
+<div class="line"><a id="l01501" name="l01501"></a><span class="lineno"> 1501</span>        <span class="keyword">auto</span> intType = llvm::cast&lt;IntegerType&gt;((*operand).getType());</div>
 <div class="line"><a id="l01502" name="l01502"></a><span class="lineno"> 1502</span>        <span class="keywordflow">if</span> (intType.getWidth() &lt; dstType.getWidth()) {</div>
 <div class="line"><a id="l01503" name="l01503"></a><span class="lineno"> 1503</span>          lowered = builder.create&lt;arith::ExtUIOp&gt;(loc, dstType, *operand);</div>
 <div class="line"><a id="l01504" name="l01504"></a><span class="lineno"> 1504</span>        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (intType.getWidth() &gt; dstType.getWidth()) {</div>
@@ -1717,7 +1717,7 @@ $(function(){initNavTree('WitgenLowering_8cpp_source.html','',''); });
 <div class="line"><a id="l01663" name="l01663"></a><span class="lineno"> 1663</span>        <span class="keywordflow">return</span> failure();</div>
 <div class="line"><a id="l01664" name="l01664"></a><span class="lineno"> 1664</span>      }</div>
 <div class="line"><a id="l01665" name="l01665"></a><span class="lineno"> 1665</span>      <span class="keyword">auto</span> lowered = readArrayElement(</div>
-<div class="line"><a id="l01666" name="l01666"></a><span class="lineno"> 1666</span>          builder, loc, mlir::cast&lt;array::ArrayType&gt;(readArrayOp.getArrRef().getType()),</div>
+<div class="line"><a id="l01666" name="l01666"></a><span class="lineno"> 1666</span>          builder, loc, llvm::cast&lt;array::ArrayType&gt;(readArrayOp.getArrRef().getType()),</div>
 <div class="line"><a id="l01667" name="l01667"></a><span class="lineno"> 1667</span>          *arrayValue, indices</div>
 <div class="line"><a id="l01668" name="l01668"></a><span class="lineno"> 1668</span>      );</div>
 <div class="line"><a id="l01669" name="l01669"></a><span class="lineno"> 1669</span>      <span class="keywordflow">if</span> (failed(lowered)) {</div>
@@ -1739,7 +1739,7 @@ $(function(){initNavTree('WitgenLowering_8cpp_source.html','',''); });
 <div class="line"><a id="l01685" name="l01685"></a><span class="lineno"> 1685</span>        <span class="keywordflow">return</span> failure();</div>
 <div class="line"><a id="l01686" name="l01686"></a><span class="lineno"> 1686</span>      }</div>
 <div class="line"><a id="l01687" name="l01687"></a><span class="lineno"> 1687</span>      <span class="keywordflow">return</span> writeArrayElement(</div>
-<div class="line"><a id="l01688" name="l01688"></a><span class="lineno"> 1688</span>          builder, loc, mlir::cast&lt;array::ArrayType&gt;(writeArrayOp.getArrRef().getType()),</div>
+<div class="line"><a id="l01688" name="l01688"></a><span class="lineno"> 1688</span>          builder, loc, llvm::cast&lt;array::ArrayType&gt;(writeArrayOp.getArrRef().getType()),</div>
 <div class="line"><a id="l01689" name="l01689"></a><span class="lineno"> 1689</span>          valueMap[writeArrayOp.getArrRef()], indices, *elementValue</div>
 <div class="line"><a id="l01690" name="l01690"></a><span class="lineno"> 1690</span>      );</div>
 <div class="line"><a id="l01691" name="l01691"></a><span class="lineno"> 1691</span>    }</div>

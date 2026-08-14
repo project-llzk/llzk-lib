@@ -1,7 +1,5 @@
 var NAVTREEINDEX82 =
 {
-"conceptllzk_1_1ContextType.html":[11,0,3,119],
-"conceptllzk_1_1ContextType.html":[12,0,4],
 "conceptllzk_1_1NamedOpComparable.html":[11,0,3,122],
 "conceptllzk_1_1NamedOpComparable.html":[12,0,7],
 "conceptllzk_1_1OpComparable.html":[11,0,3,121],
@@ -249,5 +247,7 @@ var NAVTREEINDEX82 =
 "dialects.html#results-36":[7,10,0,0,2],
 "dialects.html#results-37":[7,10,0,3,1],
 "dialects.html#results-38":[7,10,0,5,1],
-"dialects.html#results-39":[7,11,0,0,1]
+"dialects.html#results-39":[7,11,0,0,1],
+"dialects.html#results-4":[7,1,0,0,1],
+"dialects.html#results-40":[7,12,0,2,0]
 };

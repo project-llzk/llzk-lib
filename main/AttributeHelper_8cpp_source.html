@@ -128,7 +128,7 @@ $(function(){initNavTree('AttributeHelper_8cpp_source.html','',''); });
 <div class="foldopen" id="foldopen00019" data-start="{" data-end="}">
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno"><a class="line" href="namespacellzk.html#a47e44fbda81e2f164ab37d3696457eff">   19</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#a47e44fbda81e2f164ab37d3696457eff">printAttrs</a>(AsmPrinter &amp;printer, ArrayRef&lt;Attribute&gt; attrs, <span class="keyword">const</span> StringRef &amp;separator) {</div>
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>  llvm::interleave(attrs, printer.getStream(), [&amp;printer](Attribute a) {</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>    if (auto intAttr = mlir::dyn_cast_if_present&lt;IntegerAttr&gt;(a)) {</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>    if (auto intAttr = llvm::dyn_cast_if_present&lt;IntegerAttr&gt;(a)) {</div>
 <div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>      if (isDynamic(intAttr)) {</div>
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>        printer.getStream() &lt;&lt; <span class="stringliteral">&quot;?&quot;</span>;</div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>        return;</div>

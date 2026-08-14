@@ -535,7 +535,7 @@ $(function(){initNavTree('LLZKRedundantReadAndWriteEliminationPass_8cpp_source.h
 <div class="line"><a id="l00483" name="l00483"></a><span class="lineno">  483</span>  <span class="keyword">using </span>Base::Base;</div>
 <div class="line"><a id="l00484" name="l00484"></a><span class="lineno">  484</span></div>
 <div class="line"><a id="l00490" name="l00490"></a><span class="lineno">  490</span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
-<div class="line"><a id="l00491" name="l00491"></a><span class="lineno">  491</span>    getOperation().walk([&amp;](FuncDefOp fn) { runOnFunc(fn); });</div>
+<div class="line"><a id="l00491" name="l00491"></a><span class="lineno">  491</span>    getOperation().walk([<span class="keyword">this</span>](FuncDefOp fn) { runOnFunc(fn); });</div>
 <div class="line"><a id="l00492" name="l00492"></a><span class="lineno">  492</span>  }</div>
 <div class="line"><a id="l00493" name="l00493"></a><span class="lineno">  493</span></div>
 <div class="line"><a id="l00496" name="l00496"></a><span class="lineno">  496</span>  <span class="keywordtype">void</span> runOnFunc(FuncDefOp fn) {</div>

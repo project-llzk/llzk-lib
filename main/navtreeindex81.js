@@ -1,7 +1,5 @@
 var NAVTREEINDEX81 =
 {
-"classllzk_1_1verif_1_1detail_1_1IncreasesOpGenericAdaptorBase.html#a46bccc83e87e9c57302018ef002c331c":[11,0,3,20,0,17,2],
-"classllzk_1_1verif_1_1detail_1_1IncreasesOpGenericAdaptorBase.html#a46bccc83e87e9c57302018ef002c331c":[13,0,1,17,0,17,2],
 "classllzk_1_1verif_1_1detail_1_1IncreasesOpGenericAdaptorBase.html#a904d5e7e6a5db8fc374b70ed02a7ae07":[11,0,3,20,0,17,1],
 "classllzk_1_1verif_1_1detail_1_1IncreasesOpGenericAdaptorBase.html#a904d5e7e6a5db8fc374b70ed02a7ae07":[13,0,1,17,0,17,1],
 "classllzk_1_1verif_1_1detail_1_1IncreasesOpGenericAdaptorBase.html#a99d83b6f5bb6c13fc6ab3362a40f173e":[11,0,3,20,0,17,6],
@@ -249,5 +247,7 @@ var NAVTREEINDEX81 =
 "code-of-conduct.html#our-standards":[5,2,1],
 "code-of-conduct.html#scope":[5,2,3],
 "conceptHasInterface.html":[12,1],
-"conceptHasTrait.html":[12,2]
+"conceptHasTrait.html":[12,2],
+"conceptllzk_1_1ContextType.html":[11,0,3,119],
+"conceptllzk_1_1ContextType.html":[12,0,4]
 };

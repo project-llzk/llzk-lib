@@ -1,8 +1,5 @@
 var NAVTREEINDEX93 =
 {
-"structllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase_1_1Properties.html#a12480cf20a884a5fe4f4c26cf6cd2a94":[13,0,1,8,0,0,0,2],
-"structllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase_1_1Properties.html#a1d2c23ebc203d4ac3c158d77a5d7a411":[11,0,3,11,0,0,0,6],
-"structllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase_1_1Properties.html#a1d2c23ebc203d4ac3c158d77a5d7a411":[13,0,1,8,0,0,0,6],
 "structllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase_1_1Properties.html#a2b733c0338c2f77d80c232c2203c08b3":[11,0,3,11,0,0,0,17],
 "structllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase_1_1Properties.html#a2b733c0338c2f77d80c232c2203c08b3":[13,0,1,8,0,0,0,17],
 "structllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase_1_1Properties.html#a2e8d9650b4decca9fba958933c3c19e2":[11,0,3,11,0,0,0,11],
@@ -249,5 +246,8 @@ var NAVTREEINDEX93 =
 "structllzk_1_1pod_1_1detail_1_1PodRefOpInterfaceInterfaceTraits_1_1Concept.html#a729ecbb99b355b6613a641a840dd5f87":[13,0,1,12,0,3,0,1],
 "structllzk_1_1pod_1_1detail_1_1PodRefOpInterfaceInterfaceTraits_1_1Concept.html#ae60b7b191eb344b5934c4c5b202a8f9f":[11,0,3,15,0,3,0,0],
 "structllzk_1_1pod_1_1detail_1_1PodRefOpInterfaceInterfaceTraits_1_1Concept.html#ae60b7b191eb344b5934c4c5b202a8f9f":[13,0,1,12,0,3,0,0],
-"structllzk_1_1pod_1_1detail_1_1PodRefOpInterfaceTrait.html":[11,0,3,15,0,4]
+"structllzk_1_1pod_1_1detail_1_1PodRefOpInterfaceTrait.html":[11,0,3,15,0,4],
+"structllzk_1_1pod_1_1detail_1_1PodRefOpInterfaceTrait.html":[13,0,1,12,0,4],
+"structllzk_1_1pod_1_1detail_1_1PodTypeStorage.html":[11,0,3,15,0,5],
+"structllzk_1_1pod_1_1detail_1_1PodTypeStorage.html":[13,0,1,12,0,5]
 };

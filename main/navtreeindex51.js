@@ -1,7 +1,5 @@
 var NAVTREEINDEX51 =
 {
-"classllzk_1_1polymorphic_1_1TemplateSymbolBindingOpInterface.html#a1207c192f267b76f2de7b3b1dc823870":[11,0,3,16,19,10],
-"classllzk_1_1polymorphic_1_1TemplateSymbolBindingOpInterface.html#a1207c192f267b76f2de7b3b1dc823870":[13,0,1,13,19,10],
 "classllzk_1_1polymorphic_1_1TemplateSymbolBindingOpInterface.html#a12656eb499e0a44be354a7f4395c298f":[11,0,3,16,19,9],
 "classllzk_1_1polymorphic_1_1TemplateSymbolBindingOpInterface.html#a12656eb499e0a44be354a7f4395c298f":[13,0,1,13,19,9],
 "classllzk_1_1polymorphic_1_1TemplateSymbolBindingOpInterface.html#a29c573859386bc9d75107b291b1c2a13":[11,0,3,16,19,11],
@@ -249,5 +247,7 @@ var NAVTREEINDEX51 =
 "classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet.html#a465dd9fe696e8541e6e16782eb5bd7fc":[11,0,3,16,0,4,2],
 "classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet.html#a465dd9fe696e8541e6e16782eb5bd7fc":[13,0,1,13,0,4,2],
 "classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet.html#aa36580e5888f6d2ac3561180a454d181":[11,0,3,16,0,4,0],
-"classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet.html#aa36580e5888f6d2ac3561180a454d181":[13,0,1,13,0,4,0]
+"classllzk_1_1polymorphic_1_1detail_1_1FromEraseSet.html#aa36580e5888f6d2ac3561180a454d181":[13,0,1,13,0,4,0],
+"classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html":[11,0,3,16,0,6],
+"classllzk_1_1polymorphic_1_1detail_1_1LegalityCheckCallback.html":[13,0,1,13,0,6]
 };

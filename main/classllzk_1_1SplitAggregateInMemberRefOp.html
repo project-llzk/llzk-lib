@@ -142,8 +142,7 @@ Public Types</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a9896779f0fb5d3757f67a0990bf3f8f2" id="r_a9896779f0fb5d3757f67a0990bf3f8f2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9896779f0fb5d3757f67a0990bf3f8f2">SplitAggregateInMemberRefOp</a> (mlir::MLIRContext *ctx, mlir::SymbolTableCollection &amp;symTables, const <a class="el" href="#a393ba2a18832157e371abe2a1c7d69d6">MemberReplacementMap</a> &amp;memberRepMap)</td></tr>
-<tr class="memitem:afbf25160bd0ce31d32a168d75887733a" id="r_afbf25160bd0ce31d32a168d75887733a"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afbf25160bd0ce31d32a168d75887733a">match</a> (MemberRefOpClass op) const override</td></tr>
-<tr class="memitem:a24478828fbe2dd384ee51795b3416241" id="r_a24478828fbe2dd384ee51795b3416241"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a24478828fbe2dd384ee51795b3416241">rewrite</a> (MemberRefOpClass op, <a class="el" href="#ab8210adeaa1ad56b7350a525ac80cc72">OpAdaptor</a> adaptor, mlir::ConversionPatternRewriter &amp;rewriter) const override</td></tr>
+<tr class="memitem:aba34500cb6bb3bb7faf7bf18066050d9" id="r_aba34500cb6bb3bb7faf7bf18066050d9"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aba34500cb6bb3bb7faf7bf18066050d9">matchAndRewrite</a> (MemberRefOpClass op, <a class="el" href="#ab8210adeaa1ad56b7350a525ac80cc72">OpAdaptor</a> adaptor, mlir::ConversionPatternRewriter &amp;rewriter) const override</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -156,7 +155,7 @@ Protected Types</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-pro-static-methods" class="groupheader"><a id="pro-static-methods" name="pro-static-methods"></a>
 Static Protected Member Functions</h2></td></tr>
 <tr class="memitem:ad8c20dffa00a86980651405bfbfaf082" id="r_ad8c20dffa00a86980651405bfbfaf082"><td class="memItemLeft" align="right" valign="top">static GenHeaderType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad8c20dffa00a86980651405bfbfaf082">genHeader</a> (MemberRefOpClass, mlir::ConversionPatternRewriter &amp;)</td></tr>
-<tr class="memdesc:ad8c20dffa00a86980651405bfbfaf082"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executed at the start of <span class="tt"><a class="el" href="#a24478828fbe2dd384ee51795b3416241">rewrite()</a></span> to (optionally) generate anything that should appear before the per-scalar operations that will be added by <span class="tt"><a class="el" href="#ada7a89364bb65fb788caadda3b9e91c8" title="Executed for each scalar id in the aggregate type of the original member to generate the per-scalar o...">forId()</a></span>.  <br /></td></tr>
+<tr class="memdesc:ad8c20dffa00a86980651405bfbfaf082"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executed at the start of <span class="tt">rewrite()</span> to (optionally) generate anything that should appear before the per-scalar operations that will be added by <span class="tt"><a class="el" href="#ada7a89364bb65fb788caadda3b9e91c8" title="Executed for each scalar id in the aggregate type of the original member to generate the per-scalar o...">forId()</a></span>.  <br /></td></tr>
 <tr class="memitem:ada7a89364bb65fb788caadda3b9e91c8" id="r_ada7a89364bb65fb788caadda3b9e91c8"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ada7a89364bb65fb788caadda3b9e91c8">forId</a> (mlir::Location, GenHeaderType &amp;, IdType, <a class="el" href="#a957f1df1fd2239f3486304c0368f9195">MemberInfo</a>, <a class="el" href="#ab8210adeaa1ad56b7350a525ac80cc72">OpAdaptor</a>, mlir::ConversionPatternRewriter &amp;)</td></tr>
 <tr class="memdesc:ada7a89364bb65fb788caadda3b9e91c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executed for each scalar id in the aggregate type of the original member to generate the per-scalar operations on the new scalar members.  <br /></td></tr>
 </table>
@@ -388,7 +387,7 @@ template&lt;typename ImplClass, <a class="el" href="conceptHasInterface.html">Ha
 </table>
 </div><div class="memdoc">
 
-<p>Executed at the start of <span class="tt"><a class="el" href="#a24478828fbe2dd384ee51795b3416241">rewrite()</a></span> to (optionally) generate anything that should appear before the per-scalar operations that will be added by <span class="tt"><a class="el" href="#ada7a89364bb65fb788caadda3b9e91c8" title="Executed for each scalar id in the aggregate type of the original member to generate the per-scalar o...">forId()</a></span>. </p>
+<p>Executed at the start of <span class="tt">rewrite()</span> to (optionally) generate anything that should appear before the per-scalar operations that will be added by <span class="tt"><a class="el" href="#ada7a89364bb65fb788caadda3b9e91c8" title="Executed for each scalar id in the aggregate type of the original member to generate the per-scalar o...">forId()</a></span>. </p>
 
 <p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00318">318</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
 
@@ -423,8 +422,8 @@ template&lt;typename ImplClass, <a class="el" href="conceptHasInterface.html">Ha
 
 </div>
 </div>
-<a id="afbf25160bd0ce31d32a168d75887733a" name="afbf25160bd0ce31d32a168d75887733a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afbf25160bd0ce31d32a168d75887733a">&#9670;&#160;</a></span>match()</h2>
+<a id="aba34500cb6bb3bb7faf7bf18066050d9" name="aba34500cb6bb3bb7faf7bf18066050d9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aba34500cb6bb3bb7faf7bf18066050d9">&#9670;&#160;</a></span>matchAndRewrite()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -435,36 +434,7 @@ template&lt;typename ImplClass, <a class="el" href="conceptHasInterface.html">Ha
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">mlir::LogicalResult <a class="el" href="classllzk_1_1SplitAggregateInMemberRefOp.html">llzk::SplitAggregateInMemberRefOp</a>&lt; ImplClass, MemberRefOpClass, GenHeaderType, IdType &gt;::match </td>
-          <td>(</td>
-          <td class="paramtype">MemberRefOpClass</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
-          <td> const</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel override">override</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00349">349</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
-
-</div>
-</div>
-<a id="a24478828fbe2dd384ee51795b3416241" name="a24478828fbe2dd384ee51795b3416241"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a24478828fbe2dd384ee51795b3416241">&#9670;&#160;</a></span>rewrite()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename ImplClass, <a class="el" href="conceptHasInterface.html">HasInterface</a>&lt; <a class="el" href="classllzk_1_1component_1_1MemberRefOpInterface.html">component::MemberRefOpInterface</a> &gt; MemberRefOpClass, typename GenHeaderType, typename IdType&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="classllzk_1_1SplitAggregateInMemberRefOp.html">llzk::SplitAggregateInMemberRefOp</a>&lt; ImplClass, MemberRefOpClass, GenHeaderType, IdType &gt;::rewrite </td>
+          <td class="memname">mlir::LogicalResult <a class="el" href="classllzk_1_1SplitAggregateInMemberRefOp.html">llzk::SplitAggregateInMemberRefOp</a>&lt; ImplClass, MemberRefOpClass, GenHeaderType, IdType &gt;::matchAndRewrite </td>
           <td>(</td>
           <td class="paramtype">MemberRefOpClass</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
         </tr>
@@ -486,7 +456,7 @@ template&lt;typename ImplClass, <a class="el" href="conceptHasInterface.html">Ha
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00353">353</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LLZKConversionUtils_8h_source.html#l00349">349</a> of file <a class="el" href="LLZKConversionUtils_8h_source.html">LLZKConversionUtils.h</a>.</p>
 
 </div>
 </div>
