@@ -2736,6 +2736,15 @@ static LogicalResult canReplaceReadUsersWithType(
       }
       continue;
     }
+    if (MemberReadOp memberRead = llvm::dyn_cast<MemberReadOp>(user)) {
+      if (memberRead.getComponent() != result) {
+        return failure();
+      }
+      // The member-read propagation patterns will update the member result after this receiver
+      // is retagged. Unlike region terminators, a member read does not retain an independent
+      // result-type contract for the old generic receiver type.
+      continue;
+    }
     if (ReturnOp returnOp = llvm::dyn_cast<ReturnOp>(user)) {
       unsigned resultIdx = use.getOperandNumber();
       FuncDefOp function = returnOp->getParentOfType<FuncDefOp>();
@@ -2755,7 +2764,19 @@ static LogicalResult canReplaceReadUsersWithType(
             << replacementType;
         return diag;
       }
+      continue;
     }
+
+    // `replaceAllUsesIgnoringType` deliberately bypasses MLIR's operand type check.  Every
+    // consumer therefore has to be accounted for here before scalarization can retarget a
+    // generic read to its index-specific concrete value.  In particular, region terminators
+    // such as scf.yield impose a type relationship on their parent operation that this rewrite
+    // does not update.
+    InFlightDiagnostic diag = readOp.emitError(
+        "cannot scalarize heterogeneous array read because it has an unsupported result user"
+    );
+    diag.attachNote(user->getLoc()) << "unsupported read result user is here";
+    return diag;
   }
   return success();
 }

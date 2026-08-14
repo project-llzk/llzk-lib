@@ -47,6 +47,46 @@ module attributes {llzk.lang} {
 
 // -----
 
+// A generic read is valid as an scf.if yield before scalarization. Replacing it with the
+// index-zero Cell<0> would leave the scf.if result declared as the generic Cell<#id> type.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  function.def @yieldConsumer(%cond: i1) -> !struct.type<@TCell::@Cell<[#id]>> attributes {function.allow_witness} {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %source = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>
+    %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+    %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+    array.write %source[%c0] = %item0 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+    array.write %source[%c1] = %item1 : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[1]>>
+    // expected-error@+1 {{cannot scalarize heterogeneous array read because it has an unsupported result user}}
+    %read0 = array.read %source[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+    %selected = scf.if %cond -> !struct.type<@TCell::@Cell<[#id]>> {
+      scf.yield %read0 : !struct.type<@TCell::@Cell<[#id]>>
+    } else {
+      // expected-note@+1 {{unsupported read result user is here}}
+      scf.yield %read0 : !struct.type<@TCell::@Cell<[#id]>>
+    }
+    function.return %selected : !struct.type<@TCell::@Cell<[#id]>>
+  }
+}
+
+// -----
+
 // A generic array read can feed a concrete unifiable cast before scalarization. Replacing the
 // read with Cell<0> must be rejected because the cast independently requires Cell<1>.
 #id = affine_map<(i) -> (i)>
