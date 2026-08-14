@@ -35,6 +35,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_1]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-][-][-][-][-]}}
 
 // -----
 
@@ -86,6 +87,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_2]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-][-][-][-][-]}}
 
 // -----
 
@@ -152,6 +154,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Direct>} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-][-][-][-][-]}}
 
 // -----
 

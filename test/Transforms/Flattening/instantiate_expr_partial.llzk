@@ -95,6 +95,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Outer::@Wrapper<[7]>>} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-][-][-][-][-]}}
 
 // -----
 
@@ -161,6 +162,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-][-][-][-][-]}}
 
 // -----
 
@@ -214,6 +216,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-][-][-][-][-]}}
 
 // -----
 
@@ -271,6 +274,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-][-][-][-][-]}}
 
 // -----
 
@@ -347,6 +351,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-][-][-][-][-]}}
 
 // -----
 

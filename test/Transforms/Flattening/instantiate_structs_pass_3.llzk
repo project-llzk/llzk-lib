@@ -82,6 +82,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-][-][-][-][-]}}
 // -----
 
 // Test instantiation of templates with multiple struct members.
@@ -162,6 +163,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-][-][-][-][-]}}
 // -----
 
 module attributes {llzk.lang} {
@@ -201,6 +203,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-][-][-][-][-]}}
 // -----
 
 module attributes {llzk.lang} {
@@ -288,6 +291,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-][-][-][-][-]}}
 // -----
 
 module attributes {llzk.lang} {
@@ -369,6 +373,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// CHECK:  // {{[-][-][-][-][-]}}
 // -----
 
 module attributes {llzk.lang} {
