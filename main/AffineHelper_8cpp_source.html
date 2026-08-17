@@ -239,7 +239,7 @@ $(function(){initNavTree('AffineHelper_8cpp_source.html','',''); });
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>) {</div>
 <div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  <span class="keywordflow">return</span> op-&gt;emitOpError().append(</div>
 <div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>      <span class="stringliteral">&quot;map instantiation group count (&quot;</span>, mapOperandsSize,</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>      <span class="stringliteral">&quot;) does not match with length of &#39;mapOpGroupSizes&#39; attribute (&quot;</span>, mapOpGroupSizesCount, <span class="stringliteral">&quot;)&quot;</span></div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>      <span class="stringliteral">&quot;) does not match with length of &#39;mapOpGroupSizes&#39; attribute (&quot;</span>, mapOpGroupSizesCount, <span class="charliteral">&#39;)&#39;</span></div>
 <div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  );</div>
 <div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>}</div>
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>} <span class="comment">// namespace</span></div>
@@ -274,7 +274,7 @@ $(function(){initNavTree('AffineHelper_8cpp_source.html','',''); });
 <div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>    <span class="comment">// Tested in CallOpTests.cpp</span></div>
 <div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>    <span class="keywordflow">return</span> op-&gt;emitOpError().append(</div>
 <div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>        <span class="stringliteral">&quot;length of &#39;numDimsPerMap&#39; attribute (&quot;</span>, numDimsPerMap.size(),</div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>        <span class="stringliteral">&quot;) does not match with length of &#39;mapOpGroupSizes&#39; attribute (&quot;</span>, count, <span class="stringliteral">&quot;)&quot;</span></div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>        <span class="stringliteral">&quot;) does not match with length of &#39;mapOpGroupSizes&#39; attribute (&quot;</span>, count, <span class="charliteral">&#39;)&#39;</span></div>
 <div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>    );</div>
 <div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>  }</div>
 <div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span> </div>
@@ -289,13 +289,13 @@ $(function(){initNavTree('AffineHelper_8cpp_source.html','',''); });
 <div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>      aggregateResult = op-&gt;emitOpError().append(</div>
 <div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>          <span class="stringliteral">&quot;map instantiation group &quot;</span>, i, <span class="stringliteral">&quot; operand count (&quot;</span>, mapOperands[i].size(),</div>
 <div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>          <span class="stringliteral">&quot;) does not match group &quot;</span>, i, <span class="stringliteral">&quot; size in &#39;mapOpGroupSizes&#39; attribute (&quot;</span>,</div>
-<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>          currMapOpGroupSize, <span class="stringliteral">&quot;)&quot;</span></div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>          currMapOpGroupSize, <span class="charliteral">&#39;)&#39;</span></div>
 <div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>      );</div>
 <div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>    } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (std::cmp_greater(numDimsPerMap[i], currMapOpGroupSize)) {</div>
 <div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>      <span class="comment">// Tested in CallOpTests.cpp</span></div>
 <div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>      aggregateResult = op-&gt;emitOpError().append(</div>
 <div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>          <span class="stringliteral">&quot;map instantiation group &quot;</span>, i, <span class="stringliteral">&quot; dimension count (&quot;</span>, numDimsPerMap[i], <span class="stringliteral">&quot;) exceeds group &quot;</span>,</div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>          i, <span class="stringliteral">&quot; size in &#39;mapOpGroupSizes&#39; attribute (&quot;</span>, currMapOpGroupSize, <span class="stringliteral">&quot;)&quot;</span></div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>          i, <span class="stringliteral">&quot; size in &#39;mapOpGroupSizes&#39; attribute (&quot;</span>, currMapOpGroupSize, <span class="charliteral">&#39;)&#39;</span></div>
 <div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>      );</div>
 <div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>    }</div>
 <div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>  }</div>

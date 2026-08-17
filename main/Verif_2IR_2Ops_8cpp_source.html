@@ -1260,167 +1260,171 @@ $(function(){initNavTree('Verif_2IR_2Ops_8cpp_source.html','',''); });
 <div class="line"><a id="l01109" name="l01109"></a><span class="lineno"> 1109</span>    OpBuilder &amp;odsBuilder, OperationState &amp;odsState, StringRef loop_name,</div>
 <div class="line"><a id="l01110" name="l01110"></a><span class="lineno"> 1110</span>    ArrayRef&lt;Type&gt; loop_arg_types, ArrayRef&lt;Location&gt; loop_arg_locs</div>
 <div class="line"><a id="l01111" name="l01111"></a><span class="lineno"> 1111</span>) {</div>
-<div class="line"><a id="l01112" name="l01112"></a><span class="lineno"> 1112</span>  odsState.getOrAddProperties&lt;<a class="code hl_typedef" href="classllzk_1_1verif_1_1InvariantOp.html#abeff63f2fa591173485273a562af843c">InvariantOp::Properties</a>&gt;().loop_name =</div>
-<div class="line"><a id="l01113" name="l01113"></a><span class="lineno"> 1113</span>      odsBuilder.getStringAttr(loop_name);</div>
-<div class="line"><a id="l01114" name="l01114"></a><span class="lineno"> 1114</span>  odsState.getOrAddProperties&lt;<a class="code hl_typedef" href="classllzk_1_1verif_1_1InvariantOp.html#abeff63f2fa591173485273a562af843c">InvariantOp::Properties</a>&gt;().loop_arg_types =</div>
-<div class="line"><a id="l01115" name="l01115"></a><span class="lineno"> 1115</span>      odsBuilder.getTypeArrayAttr(loop_arg_types);</div>
-<div class="line"><a id="l01116" name="l01116"></a><span class="lineno"> 1116</span>  <span class="keyword">auto</span> region = std::make_unique&lt;Region&gt;();</div>
-<div class="line"><a id="l01117" name="l01117"></a><span class="lineno"> 1117</span>  <span class="keyword">auto</span> &amp;block = region-&gt;emplaceBlock();</div>
-<div class="line"><a id="l01118" name="l01118"></a><span class="lineno"> 1118</span>  block.addArguments(loop_arg_types, loop_arg_locs);</div>
-<div class="line"><a id="l01119" name="l01119"></a><span class="lineno"> 1119</span>  odsState.regions.push_back(std::move(region));</div>
-<div class="line"><a id="l01120" name="l01120"></a><span class="lineno"> 1120</span>}</div>
+<div class="line"><a id="l01112" name="l01112"></a><span class="lineno"> 1112</span>  <span class="comment">// Suppress false positive from `clang-tidy`</span></div>
+<div class="line"><a id="l01113" name="l01113"></a><span class="lineno"> 1113</span>  <span class="comment">// NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)</span></div>
+<div class="line"><a id="l01114" name="l01114"></a><span class="lineno"> 1114</span>  odsState.getOrAddProperties&lt;<a class="code hl_typedef" href="classllzk_1_1verif_1_1InvariantOp.html#abeff63f2fa591173485273a562af843c">InvariantOp::Properties</a>&gt;().loop_name =</div>
+<div class="line"><a id="l01115" name="l01115"></a><span class="lineno"> 1115</span>      odsBuilder.getStringAttr(loop_name);</div>
+<div class="line"><a id="l01116" name="l01116"></a><span class="lineno"> 1116</span>  odsState.getOrAddProperties&lt;<a class="code hl_typedef" href="classllzk_1_1verif_1_1InvariantOp.html#abeff63f2fa591173485273a562af843c">InvariantOp::Properties</a>&gt;().loop_arg_types =</div>
+<div class="line"><a id="l01117" name="l01117"></a><span class="lineno"> 1117</span>      odsBuilder.getTypeArrayAttr(loop_arg_types);</div>
+<div class="line"><a id="l01118" name="l01118"></a><span class="lineno"> 1118</span>  <span class="keyword">auto</span> region = std::make_unique&lt;Region&gt;();</div>
+<div class="line"><a id="l01119" name="l01119"></a><span class="lineno"> 1119</span>  <span class="keyword">auto</span> &amp;block = region-&gt;emplaceBlock();</div>
+<div class="line"><a id="l01120" name="l01120"></a><span class="lineno"> 1120</span>  block.addArguments(loop_arg_types, loop_arg_locs);</div>
+<div class="line"><a id="l01121" name="l01121"></a><span class="lineno"> 1121</span>  odsState.regions.push_back(std::move(region));</div>
+<div class="line"><a id="l01122" name="l01122"></a><span class="lineno"> 1122</span>}</div>
 </div>
-<div class="line"><a id="l01121" name="l01121"></a><span class="lineno"> 1121</span> </div>
-<div class="line"><a id="l01122" name="l01122"></a><span class="lineno"> 1122</span><span class="keyword">namespace </span>{</div>
-<div class="line"><a id="l01123" name="l01123"></a><span class="lineno"> 1123</span><span class="keyword">static</span> LogicalResult verifyArgTypes(<a class="code hl_class" href="classllzk_1_1verif_1_1InvariantTargetOpInterface.html">InvariantTargetOpInterface</a> target, <a class="code hl_class" href="classllzk_1_1verif_1_1InvariantOp.html">InvariantOp</a> *op) {</div>
-<div class="line"><a id="l01124" name="l01124"></a><span class="lineno"> 1124</span>  <span class="keyword">auto</span> targetArgTypes = target.<a class="code hl_function" href="classllzk_1_1verif_1_1InvariantTargetOpInterface.html#ac2d82caafa2c13e149316bbcee887c76">getArgumentTypes</a>();</div>
-<div class="line"><a id="l01125" name="l01125"></a><span class="lineno"> 1125</span>  <span class="keyword">auto</span> declaredTypes = op-&gt;<a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#a9efee240aea3105e3ce9656beb619cdd">getLoopArgTypes</a>().getValue();</div>
-<div class="line"><a id="l01126" name="l01126"></a><span class="lineno"> 1126</span>  <span class="keyword">auto</span> bodyArgTypes = op-&gt;getBody()-&gt;getArgumentTypes();</div>
-<div class="line"><a id="l01127" name="l01127"></a><span class="lineno"> 1127</span> </div>
-<div class="line"><a id="l01128" name="l01128"></a><span class="lineno"> 1128</span>  <span class="keywordflow">if</span> (targetArgTypes.size() != declaredTypes.size()) {</div>
-<div class="line"><a id="l01129" name="l01129"></a><span class="lineno"> 1129</span>    <span class="keywordflow">return</span> op-&gt;emitOpError() &lt;&lt; <span class="stringliteral">&quot;target has &quot;</span> &lt;&lt; targetArgTypes.size()</div>
-<div class="line"><a id="l01130" name="l01130"></a><span class="lineno"> 1130</span>                             &lt;&lt; <span class="stringliteral">&quot; arguments but invariant declared &quot;</span> &lt;&lt; declaredTypes.size();</div>
-<div class="line"><a id="l01131" name="l01131"></a><span class="lineno"> 1131</span>  }</div>
-<div class="line"><a id="l01132" name="l01132"></a><span class="lineno"> 1132</span>  <span class="keywordflow">if</span> (bodyArgTypes.size() != declaredTypes.size()) {</div>
-<div class="line"><a id="l01133" name="l01133"></a><span class="lineno"> 1133</span>    <span class="keywordflow">return</span> op-&gt;emitOpError() &lt;&lt; <span class="stringliteral">&quot;invariant body has &quot;</span> &lt;&lt; targetArgTypes.size()</div>
-<div class="line"><a id="l01134" name="l01134"></a><span class="lineno"> 1134</span>                             &lt;&lt; <span class="stringliteral">&quot; arguments but declared &quot;</span> &lt;&lt; declaredTypes.size();</div>
-<div class="line"><a id="l01135" name="l01135"></a><span class="lineno"> 1135</span>  }</div>
-<div class="line"><a id="l01136" name="l01136"></a><span class="lineno"> 1136</span> </div>
-<div class="line"><a id="l01137" name="l01137"></a><span class="lineno"> 1137</span>  <span class="keywordtype">bool</span> failed = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l01138" name="l01138"></a><span class="lineno"> 1138</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span> [n, types] :</div>
-<div class="line"><a id="l01139" name="l01139"></a><span class="lineno"> 1139</span>       llvm::enumerate(llvm::zip_equal(targetArgTypes, bodyArgTypes, declaredTypes))) {</div>
-<div class="line"><a id="l01140" name="l01140"></a><span class="lineno"> 1140</span>    <span class="keyword">auto</span> [targetType, bodyArgType, declaredType] = types;</div>
-<div class="line"><a id="l01141" name="l01141"></a><span class="lineno"> 1141</span> </div>
-<div class="line"><a id="l01142" name="l01142"></a><span class="lineno"> 1142</span>    <span class="keywordflow">if</span> (targetType != llvm::cast&lt;TypeAttr&gt;(declaredType).getValue()) {</div>
-<div class="line"><a id="l01143" name="l01143"></a><span class="lineno"> 1143</span>      failed = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l01144" name="l01144"></a><span class="lineno"> 1144</span>      op-&gt;emitOpError() &lt;&lt; <span class="stringliteral">&quot;target argument #&quot;</span> &lt;&lt; n &lt;&lt; <span class="stringliteral">&quot; expected type &quot;</span> &lt;&lt; targetType</div>
-<div class="line"><a id="l01145" name="l01145"></a><span class="lineno"> 1145</span>                        &lt;&lt; <span class="stringliteral">&quot; but invariant declared type &quot;</span> &lt;&lt; declaredType;</div>
-<div class="line"><a id="l01146" name="l01146"></a><span class="lineno"> 1146</span>    }</div>
-<div class="line"><a id="l01147" name="l01147"></a><span class="lineno"> 1147</span>    <span class="keywordflow">if</span> (bodyArgType != llvm::cast&lt;TypeAttr&gt;(declaredType).getValue()) {</div>
-<div class="line"><a id="l01148" name="l01148"></a><span class="lineno"> 1148</span>      failed = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l01149" name="l01149"></a><span class="lineno"> 1149</span>      op-&gt;emitOpError() &lt;&lt; <span class="stringliteral">&quot;invariant argument #&quot;</span> &lt;&lt; n &lt;&lt; <span class="stringliteral">&quot; expected type &quot;</span> &lt;&lt; targetType</div>
-<div class="line"><a id="l01150" name="l01150"></a><span class="lineno"> 1150</span>                        &lt;&lt; <span class="stringliteral">&quot; but invariant declared type &quot;</span> &lt;&lt; declaredType;</div>
-<div class="line"><a id="l01151" name="l01151"></a><span class="lineno"> 1151</span>    }</div>
-<div class="line"><a id="l01152" name="l01152"></a><span class="lineno"> 1152</span>  }</div>
-<div class="line"><a id="l01153" name="l01153"></a><span class="lineno"> 1153</span> </div>
-<div class="line"><a id="l01154" name="l01154"></a><span class="lineno"> 1154</span>  <span class="keywordflow">return</span> failure(failed);</div>
-<div class="line"><a id="l01155" name="l01155"></a><span class="lineno"> 1155</span>}</div>
-<div class="line"><a id="l01156" name="l01156"></a><span class="lineno"> 1156</span>} <span class="comment">// namespace</span></div>
-<div class="line"><a id="l01157" name="l01157"></a><span class="lineno"> 1157</span> </div>
-<div class="foldopen" id="foldopen01158" data-start="{" data-end="}">
-<div class="line"><a id="l01158" name="l01158"></a><span class="lineno"><a class="line" href="classllzk_1_1verif_1_1InvariantOp.html#ad224124269de2dd697e108fd32edc8e3"> 1158</a></span>LogicalResult <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#ad224124269de2dd697e108fd32edc8e3">InvariantOp::verify</a>() {</div>
-<div class="line"><a id="l01159" name="l01159"></a><span class="lineno"> 1159</span>  <span class="keyword">auto</span> invariantTarget = <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#a1422d99d76a1d1cb4401b19b7542c8d4">getTarget</a>();</div>
-<div class="line"><a id="l01160" name="l01160"></a><span class="lineno"> 1160</span>  <span class="keywordflow">if</span> (failed(invariantTarget)) {</div>
-<div class="line"><a id="l01161" name="l01161"></a><span class="lineno"> 1161</span>    <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l01162" name="l01162"></a><span class="lineno"> 1162</span>  }</div>
-<div class="line"><a id="l01163" name="l01163"></a><span class="lineno"> 1163</span> </div>
-<div class="line"><a id="l01164" name="l01164"></a><span class="lineno"> 1164</span>  <span class="keywordflow">return</span> verifyArgTypes(*invariantTarget, <span class="keyword">this</span>);</div>
-<div class="line"><a id="l01165" name="l01165"></a><span class="lineno"> 1165</span>}</div>
+<div class="line"><a id="l01123" name="l01123"></a><span class="lineno"> 1123</span> </div>
+<div class="line"><a id="l01124" name="l01124"></a><span class="lineno"> 1124</span><span class="keyword">namespace </span>{</div>
+<div class="line"><a id="l01125" name="l01125"></a><span class="lineno"> 1125</span><span class="keyword">static</span> LogicalResult verifyArgTypes(<a class="code hl_class" href="classllzk_1_1verif_1_1InvariantTargetOpInterface.html">InvariantTargetOpInterface</a> target, <a class="code hl_class" href="classllzk_1_1verif_1_1InvariantOp.html">InvariantOp</a> *op) {</div>
+<div class="line"><a id="l01126" name="l01126"></a><span class="lineno"> 1126</span>  <span class="keyword">auto</span> targetArgTypes = target.<a class="code hl_function" href="classllzk_1_1verif_1_1InvariantTargetOpInterface.html#ac2d82caafa2c13e149316bbcee887c76">getArgumentTypes</a>();</div>
+<div class="line"><a id="l01127" name="l01127"></a><span class="lineno"> 1127</span>  <span class="keyword">auto</span> declaredTypes = op-&gt;<a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#a9efee240aea3105e3ce9656beb619cdd">getLoopArgTypes</a>().getValue();</div>
+<div class="line"><a id="l01128" name="l01128"></a><span class="lineno"> 1128</span>  <span class="keyword">auto</span> bodyArgTypes = op-&gt;getBody()-&gt;getArgumentTypes();</div>
+<div class="line"><a id="l01129" name="l01129"></a><span class="lineno"> 1129</span> </div>
+<div class="line"><a id="l01130" name="l01130"></a><span class="lineno"> 1130</span>  <span class="keywordflow">if</span> (targetArgTypes.size() != declaredTypes.size()) {</div>
+<div class="line"><a id="l01131" name="l01131"></a><span class="lineno"> 1131</span>    <span class="keywordflow">return</span> op-&gt;emitOpError() &lt;&lt; <span class="stringliteral">&quot;target has &quot;</span> &lt;&lt; targetArgTypes.size()</div>
+<div class="line"><a id="l01132" name="l01132"></a><span class="lineno"> 1132</span>                             &lt;&lt; <span class="stringliteral">&quot; arguments but invariant declared &quot;</span> &lt;&lt; declaredTypes.size();</div>
+<div class="line"><a id="l01133" name="l01133"></a><span class="lineno"> 1133</span>  }</div>
+<div class="line"><a id="l01134" name="l01134"></a><span class="lineno"> 1134</span>  <span class="keywordflow">if</span> (bodyArgTypes.size() != declaredTypes.size()) {</div>
+<div class="line"><a id="l01135" name="l01135"></a><span class="lineno"> 1135</span>    <span class="keywordflow">return</span> op-&gt;emitOpError() &lt;&lt; <span class="stringliteral">&quot;invariant body has &quot;</span> &lt;&lt; targetArgTypes.size()</div>
+<div class="line"><a id="l01136" name="l01136"></a><span class="lineno"> 1136</span>                             &lt;&lt; <span class="stringliteral">&quot; arguments but declared &quot;</span> &lt;&lt; declaredTypes.size();</div>
+<div class="line"><a id="l01137" name="l01137"></a><span class="lineno"> 1137</span>  }</div>
+<div class="line"><a id="l01138" name="l01138"></a><span class="lineno"> 1138</span> </div>
+<div class="line"><a id="l01139" name="l01139"></a><span class="lineno"> 1139</span>  <span class="keywordtype">bool</span> failed = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l01140" name="l01140"></a><span class="lineno"> 1140</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span> [n, types] :</div>
+<div class="line"><a id="l01141" name="l01141"></a><span class="lineno"> 1141</span>       llvm::enumerate(llvm::zip_equal(targetArgTypes, bodyArgTypes, declaredTypes))) {</div>
+<div class="line"><a id="l01142" name="l01142"></a><span class="lineno"> 1142</span>    <span class="keyword">auto</span> [targetType, bodyArgType, declaredType] = types;</div>
+<div class="line"><a id="l01143" name="l01143"></a><span class="lineno"> 1143</span> </div>
+<div class="line"><a id="l01144" name="l01144"></a><span class="lineno"> 1144</span>    <span class="keywordflow">if</span> (targetType != llvm::cast&lt;TypeAttr&gt;(declaredType).getValue()) {</div>
+<div class="line"><a id="l01145" name="l01145"></a><span class="lineno"> 1145</span>      failed = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l01146" name="l01146"></a><span class="lineno"> 1146</span>      op-&gt;emitOpError() &lt;&lt; <span class="stringliteral">&quot;target argument #&quot;</span> &lt;&lt; n &lt;&lt; <span class="stringliteral">&quot; expected type &quot;</span> &lt;&lt; targetType</div>
+<div class="line"><a id="l01147" name="l01147"></a><span class="lineno"> 1147</span>                        &lt;&lt; <span class="stringliteral">&quot; but invariant declared type &quot;</span> &lt;&lt; declaredType;</div>
+<div class="line"><a id="l01148" name="l01148"></a><span class="lineno"> 1148</span>    }</div>
+<div class="line"><a id="l01149" name="l01149"></a><span class="lineno"> 1149</span>    <span class="keywordflow">if</span> (bodyArgType != llvm::cast&lt;TypeAttr&gt;(declaredType).getValue()) {</div>
+<div class="line"><a id="l01150" name="l01150"></a><span class="lineno"> 1150</span>      failed = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l01151" name="l01151"></a><span class="lineno"> 1151</span>      op-&gt;emitOpError() &lt;&lt; <span class="stringliteral">&quot;invariant argument #&quot;</span> &lt;&lt; n &lt;&lt; <span class="stringliteral">&quot; expected type &quot;</span> &lt;&lt; targetType</div>
+<div class="line"><a id="l01152" name="l01152"></a><span class="lineno"> 1152</span>                        &lt;&lt; <span class="stringliteral">&quot; but invariant declared type &quot;</span> &lt;&lt; declaredType;</div>
+<div class="line"><a id="l01153" name="l01153"></a><span class="lineno"> 1153</span>    }</div>
+<div class="line"><a id="l01154" name="l01154"></a><span class="lineno"> 1154</span>  }</div>
+<div class="line"><a id="l01155" name="l01155"></a><span class="lineno"> 1155</span> </div>
+<div class="line"><a id="l01156" name="l01156"></a><span class="lineno"> 1156</span>  <span class="keywordflow">return</span> failure(failed);</div>
+<div class="line"><a id="l01157" name="l01157"></a><span class="lineno"> 1157</span>}</div>
+<div class="line"><a id="l01158" name="l01158"></a><span class="lineno"> 1158</span>} <span class="comment">// namespace</span></div>
+<div class="line"><a id="l01159" name="l01159"></a><span class="lineno"> 1159</span> </div>
+<div class="foldopen" id="foldopen01160" data-start="{" data-end="}">
+<div class="line"><a id="l01160" name="l01160"></a><span class="lineno"><a class="line" href="classllzk_1_1verif_1_1InvariantOp.html#ad224124269de2dd697e108fd32edc8e3"> 1160</a></span>LogicalResult <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#ad224124269de2dd697e108fd32edc8e3">InvariantOp::verify</a>() {</div>
+<div class="line"><a id="l01161" name="l01161"></a><span class="lineno"> 1161</span>  <span class="keyword">auto</span> invariantTarget = <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#a1422d99d76a1d1cb4401b19b7542c8d4">getTarget</a>();</div>
+<div class="line"><a id="l01162" name="l01162"></a><span class="lineno"> 1162</span>  <span class="keywordflow">if</span> (failed(invariantTarget)) {</div>
+<div class="line"><a id="l01163" name="l01163"></a><span class="lineno"> 1163</span>    <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l01164" name="l01164"></a><span class="lineno"> 1164</span>  }</div>
+<div class="line"><a id="l01165" name="l01165"></a><span class="lineno"> 1165</span> </div>
+<div class="line"><a id="l01166" name="l01166"></a><span class="lineno"> 1166</span>  <span class="keywordflow">return</span> verifyArgTypes(*invariantTarget, <span class="keyword">this</span>);</div>
+<div class="line"><a id="l01167" name="l01167"></a><span class="lineno"> 1167</span>}</div>
 </div>
-<div class="line"><a id="l01166" name="l01166"></a><span class="lineno"> 1166</span> </div>
-<div class="foldopen" id="foldopen01167" data-start="{" data-end="}">
-<div class="line"><a id="l01167" name="l01167"></a><span class="lineno"><a class="line" href="classllzk_1_1verif_1_1InvariantOp.html#a5e661a697fbeec728604fbcd7a0530eb"> 1167</a></span>ParseResult <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#a5e661a697fbeec728604fbcd7a0530eb">InvariantOp::parse</a>(OpAsmParser &amp;parser, OperationState &amp;result) {</div>
-<div class="line"><a id="l01168" name="l01168"></a><span class="lineno"> 1168</span>  <span class="keywordflow">if</span> (failed(parser.parseKeyword(<span class="stringliteral">&quot;for&quot;</span>))) {</div>
-<div class="line"><a id="l01169" name="l01169"></a><span class="lineno"> 1169</span>    <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l01170" name="l01170"></a><span class="lineno"> 1170</span>  }</div>
-<div class="line"><a id="l01171" name="l01171"></a><span class="lineno"> 1171</span> </div>
-<div class="line"><a id="l01172" name="l01172"></a><span class="lineno"> 1172</span>  <span class="comment">// Parse the loop label as a symbol.</span></div>
-<div class="line"><a id="l01173" name="l01173"></a><span class="lineno"> 1173</span>  StringAttr loopNameAttr;</div>
-<div class="line"><a id="l01174" name="l01174"></a><span class="lineno"> 1174</span>  <span class="keywordflow">if</span> (parser.parseSymbolName(loopNameAttr)) {</div>
-<div class="line"><a id="l01175" name="l01175"></a><span class="lineno"> 1175</span>    <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l01176" name="l01176"></a><span class="lineno"> 1176</span>  }</div>
-<div class="line"><a id="l01177" name="l01177"></a><span class="lineno"> 1177</span>  result.getOrAddProperties&lt;<a class="code hl_typedef" href="classllzk_1_1verif_1_1InvariantOp.html#abeff63f2fa591173485273a562af843c">InvariantOp::Properties</a>&gt;().loop_name = loopNameAttr;</div>
-<div class="line"><a id="l01178" name="l01178"></a><span class="lineno"> 1178</span> </div>
-<div class="line"><a id="l01179" name="l01179"></a><span class="lineno"> 1179</span>  <span class="comment">// Parse the function signature.</span></div>
-<div class="line"><a id="l01180" name="l01180"></a><span class="lineno"> 1180</span>  <span class="keywordtype">bool</span> isVariadic = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l01181" name="l01181"></a><span class="lineno"> 1181</span>  SmallVector&lt;OpAsmParser::Argument&gt; entryArgs;</div>
-<div class="line"><a id="l01182" name="l01182"></a><span class="lineno"> 1182</span>  SmallVector&lt;DictionaryAttr&gt; resultAttrs;</div>
-<div class="line"><a id="l01183" name="l01183"></a><span class="lineno"> 1183</span>  SmallVector&lt;Type&gt; resultTypes;</div>
-<div class="line"><a id="l01184" name="l01184"></a><span class="lineno"> 1184</span> </div>
-<div class="line"><a id="l01185" name="l01185"></a><span class="lineno"> 1185</span>  <span class="keywordflow">if</span> (function_interface_impl::parseFunctionSignature(</div>
-<div class="line"><a id="l01186" name="l01186"></a><span class="lineno"> 1186</span>          parser, <span class="comment">/*allowVariadic*/</span> <span class="keyword">false</span>, entryArgs, isVariadic, resultTypes, resultAttrs</div>
-<div class="line"><a id="l01187" name="l01187"></a><span class="lineno"> 1187</span>      )) {</div>
-<div class="line"><a id="l01188" name="l01188"></a><span class="lineno"> 1188</span>    <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l01189" name="l01189"></a><span class="lineno"> 1189</span>  }</div>
-<div class="line"><a id="l01190" name="l01190"></a><span class="lineno"> 1190</span>  assert(isVariadic == <span class="keyword">false</span>);</div>
-<div class="line"><a id="l01191" name="l01191"></a><span class="lineno"> 1191</span>  <span class="comment">// There should be no return types or attributes.</span></div>
-<div class="line"><a id="l01192" name="l01192"></a><span class="lineno"> 1192</span>  <span class="keywordflow">if</span> (!resultTypes.empty() || !resultAttrs.empty()) {</div>
-<div class="line"><a id="l01193" name="l01193"></a><span class="lineno"> 1193</span>    <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l01194" name="l01194"></a><span class="lineno"> 1194</span>  }</div>
-<div class="line"><a id="l01195" name="l01195"></a><span class="lineno"> 1195</span> </div>
-<div class="line"><a id="l01196" name="l01196"></a><span class="lineno"> 1196</span>  SmallVector&lt;Type&gt; argTypes = llvm::map_to_vector(entryArgs, [](<span class="keyword">auto</span> arg) { <span class="keywordflow">return</span> arg.type; });</div>
-<div class="line"><a id="l01197" name="l01197"></a><span class="lineno"> 1197</span>  result.getOrAddProperties&lt;<a class="code hl_typedef" href="classllzk_1_1verif_1_1InvariantOp.html#abeff63f2fa591173485273a562af843c">InvariantOp::Properties</a>&gt;().loop_arg_types =</div>
-<div class="line"><a id="l01198" name="l01198"></a><span class="lineno"> 1198</span>      parser.getBuilder().getTypeArrayAttr(argTypes);</div>
+<div class="line"><a id="l01168" name="l01168"></a><span class="lineno"> 1168</span> </div>
+<div class="foldopen" id="foldopen01169" data-start="{" data-end="}">
+<div class="line"><a id="l01169" name="l01169"></a><span class="lineno"><a class="line" href="classllzk_1_1verif_1_1InvariantOp.html#a5e661a697fbeec728604fbcd7a0530eb"> 1169</a></span>ParseResult <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#a5e661a697fbeec728604fbcd7a0530eb">InvariantOp::parse</a>(OpAsmParser &amp;parser, OperationState &amp;result) {</div>
+<div class="line"><a id="l01170" name="l01170"></a><span class="lineno"> 1170</span>  <span class="keywordflow">if</span> (failed(parser.parseKeyword(<span class="stringliteral">&quot;for&quot;</span>))) {</div>
+<div class="line"><a id="l01171" name="l01171"></a><span class="lineno"> 1171</span>    <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l01172" name="l01172"></a><span class="lineno"> 1172</span>  }</div>
+<div class="line"><a id="l01173" name="l01173"></a><span class="lineno"> 1173</span> </div>
+<div class="line"><a id="l01174" name="l01174"></a><span class="lineno"> 1174</span>  <span class="comment">// Parse the loop label as a symbol.</span></div>
+<div class="line"><a id="l01175" name="l01175"></a><span class="lineno"> 1175</span>  StringAttr loopNameAttr;</div>
+<div class="line"><a id="l01176" name="l01176"></a><span class="lineno"> 1176</span>  <span class="keywordflow">if</span> (parser.parseSymbolName(loopNameAttr)) {</div>
+<div class="line"><a id="l01177" name="l01177"></a><span class="lineno"> 1177</span>    <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l01178" name="l01178"></a><span class="lineno"> 1178</span>  }</div>
+<div class="line"><a id="l01179" name="l01179"></a><span class="lineno"> 1179</span>  <span class="comment">// Suppress false positive from `clang-tidy`</span></div>
+<div class="line"><a id="l01180" name="l01180"></a><span class="lineno"> 1180</span>  <span class="comment">// NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)</span></div>
+<div class="line"><a id="l01181" name="l01181"></a><span class="lineno"> 1181</span>  result.getOrAddProperties&lt;<a class="code hl_typedef" href="classllzk_1_1verif_1_1InvariantOp.html#abeff63f2fa591173485273a562af843c">InvariantOp::Properties</a>&gt;().loop_name = loopNameAttr;</div>
+<div class="line"><a id="l01182" name="l01182"></a><span class="lineno"> 1182</span> </div>
+<div class="line"><a id="l01183" name="l01183"></a><span class="lineno"> 1183</span>  <span class="comment">// Parse the function signature.</span></div>
+<div class="line"><a id="l01184" name="l01184"></a><span class="lineno"> 1184</span>  <span class="keywordtype">bool</span> isVariadic = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l01185" name="l01185"></a><span class="lineno"> 1185</span>  SmallVector&lt;OpAsmParser::Argument&gt; entryArgs;</div>
+<div class="line"><a id="l01186" name="l01186"></a><span class="lineno"> 1186</span>  SmallVector&lt;DictionaryAttr&gt; resultAttrs;</div>
+<div class="line"><a id="l01187" name="l01187"></a><span class="lineno"> 1187</span>  SmallVector&lt;Type&gt; resultTypes;</div>
+<div class="line"><a id="l01188" name="l01188"></a><span class="lineno"> 1188</span> </div>
+<div class="line"><a id="l01189" name="l01189"></a><span class="lineno"> 1189</span>  <span class="keywordflow">if</span> (function_interface_impl::parseFunctionSignature(</div>
+<div class="line"><a id="l01190" name="l01190"></a><span class="lineno"> 1190</span>          parser, <span class="comment">/*allowVariadic*/</span> <span class="keyword">false</span>, entryArgs, isVariadic, resultTypes, resultAttrs</div>
+<div class="line"><a id="l01191" name="l01191"></a><span class="lineno"> 1191</span>      )) {</div>
+<div class="line"><a id="l01192" name="l01192"></a><span class="lineno"> 1192</span>    <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l01193" name="l01193"></a><span class="lineno"> 1193</span>  }</div>
+<div class="line"><a id="l01194" name="l01194"></a><span class="lineno"> 1194</span>  assert(isVariadic == <span class="keyword">false</span>);</div>
+<div class="line"><a id="l01195" name="l01195"></a><span class="lineno"> 1195</span>  <span class="comment">// There should be no return types or attributes.</span></div>
+<div class="line"><a id="l01196" name="l01196"></a><span class="lineno"> 1196</span>  <span class="keywordflow">if</span> (!resultTypes.empty() || !resultAttrs.empty()) {</div>
+<div class="line"><a id="l01197" name="l01197"></a><span class="lineno"> 1197</span>    <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l01198" name="l01198"></a><span class="lineno"> 1198</span>  }</div>
 <div class="line"><a id="l01199" name="l01199"></a><span class="lineno"> 1199</span> </div>
-<div class="line"><a id="l01200" name="l01200"></a><span class="lineno"> 1200</span>  <span class="keyword">auto</span> *body = result.addRegion();</div>
-<div class="line"><a id="l01201" name="l01201"></a><span class="lineno"> 1201</span>  SMLoc loc = parser.getCurrentLocation();</div>
-<div class="line"><a id="l01202" name="l01202"></a><span class="lineno"> 1202</span>  <span class="keywordflow">if</span> (parser.parseRegion(</div>
-<div class="line"><a id="l01203" name="l01203"></a><span class="lineno"> 1203</span>          *body, entryArgs,</div>
-<div class="line"><a id="l01204" name="l01204"></a><span class="lineno"> 1204</span>          <span class="comment">/*enableNameShadowing=*/</span><span class="keyword">false</span></div>
-<div class="line"><a id="l01205" name="l01205"></a><span class="lineno"> 1205</span>      )) {</div>
-<div class="line"><a id="l01206" name="l01206"></a><span class="lineno"> 1206</span>    <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l01207" name="l01207"></a><span class="lineno"> 1207</span>  }</div>
-<div class="line"><a id="l01208" name="l01208"></a><span class="lineno"> 1208</span> </div>
-<div class="line"><a id="l01209" name="l01209"></a><span class="lineno"> 1209</span>  <span class="keywordflow">if</span> (body-&gt;empty()) {</div>
-<div class="line"><a id="l01210" name="l01210"></a><span class="lineno"> 1210</span>    <span class="keywordflow">return</span> parser.emitError(loc, <span class="stringliteral">&quot;expected non-empty invariant body&quot;</span>);</div>
+<div class="line"><a id="l01200" name="l01200"></a><span class="lineno"> 1200</span>  SmallVector&lt;Type&gt; argTypes = llvm::map_to_vector(entryArgs, [](<span class="keyword">auto</span> arg) { <span class="keywordflow">return</span> arg.type; });</div>
+<div class="line"><a id="l01201" name="l01201"></a><span class="lineno"> 1201</span>  result.getOrAddProperties&lt;<a class="code hl_typedef" href="classllzk_1_1verif_1_1InvariantOp.html#abeff63f2fa591173485273a562af843c">InvariantOp::Properties</a>&gt;().loop_arg_types =</div>
+<div class="line"><a id="l01202" name="l01202"></a><span class="lineno"> 1202</span>      parser.getBuilder().getTypeArrayAttr(argTypes);</div>
+<div class="line"><a id="l01203" name="l01203"></a><span class="lineno"> 1203</span> </div>
+<div class="line"><a id="l01204" name="l01204"></a><span class="lineno"> 1204</span>  <span class="keyword">auto</span> *body = result.addRegion();</div>
+<div class="line"><a id="l01205" name="l01205"></a><span class="lineno"> 1205</span>  SMLoc loc = parser.getCurrentLocation();</div>
+<div class="line"><a id="l01206" name="l01206"></a><span class="lineno"> 1206</span>  <span class="keywordflow">if</span> (parser.parseRegion(</div>
+<div class="line"><a id="l01207" name="l01207"></a><span class="lineno"> 1207</span>          *body, entryArgs,</div>
+<div class="line"><a id="l01208" name="l01208"></a><span class="lineno"> 1208</span>          <span class="comment">/*enableNameShadowing=*/</span><span class="keyword">false</span></div>
+<div class="line"><a id="l01209" name="l01209"></a><span class="lineno"> 1209</span>      )) {</div>
+<div class="line"><a id="l01210" name="l01210"></a><span class="lineno"> 1210</span>    <span class="keywordflow">return</span> failure();</div>
 <div class="line"><a id="l01211" name="l01211"></a><span class="lineno"> 1211</span>  }</div>
 <div class="line"><a id="l01212" name="l01212"></a><span class="lineno"> 1212</span> </div>
-<div class="line"><a id="l01213" name="l01213"></a><span class="lineno"> 1213</span>  <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l01214" name="l01214"></a><span class="lineno"> 1214</span>}</div>
+<div class="line"><a id="l01213" name="l01213"></a><span class="lineno"> 1213</span>  <span class="keywordflow">if</span> (body-&gt;empty()) {</div>
+<div class="line"><a id="l01214" name="l01214"></a><span class="lineno"> 1214</span>    <span class="keywordflow">return</span> parser.emitError(loc, <span class="stringliteral">&quot;expected non-empty invariant body&quot;</span>);</div>
+<div class="line"><a id="l01215" name="l01215"></a><span class="lineno"> 1215</span>  }</div>
+<div class="line"><a id="l01216" name="l01216"></a><span class="lineno"> 1216</span> </div>
+<div class="line"><a id="l01217" name="l01217"></a><span class="lineno"> 1217</span>  <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l01218" name="l01218"></a><span class="lineno"> 1218</span>}</div>
 </div>
-<div class="line"><a id="l01215" name="l01215"></a><span class="lineno"> 1215</span> </div>
-<div class="foldopen" id="foldopen01216" data-start="{" data-end="}">
-<div class="line"><a id="l01216" name="l01216"></a><span class="lineno"><a class="line" href="classllzk_1_1verif_1_1InvariantOp.html#a821dabd21d405e19f4bd64ab60b99b1b"> 1216</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#a821dabd21d405e19f4bd64ab60b99b1b">InvariantOp::print</a>(OpAsmPrinter &amp;p) {</div>
-<div class="line"><a id="l01217" name="l01217"></a><span class="lineno"> 1217</span>  <span class="comment">// Print the name of the invariants&#39;s target.</span></div>
-<div class="line"><a id="l01218" name="l01218"></a><span class="lineno"> 1218</span>  p &lt;&lt; <span class="stringliteral">&quot; for &quot;</span>;</div>
-<div class="line"><a id="l01219" name="l01219"></a><span class="lineno"> 1219</span>  p.printSymbolName(<a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#ab685f0e17961b5d9b5be38ef22ddb4b9">getLoopName</a>());</div>
-<div class="line"><a id="l01220" name="l01220"></a><span class="lineno"> 1220</span>  p &lt;&lt; <span class="stringliteral">&quot;(&quot;</span>;</div>
-<div class="line"><a id="l01221" name="l01221"></a><span class="lineno"> 1221</span>  llvm::interleave(getBody()-&gt;getArguments(), [&amp;p](<span class="keyword">auto</span> arg) {</div>
-<div class="line"><a id="l01222" name="l01222"></a><span class="lineno"> 1222</span>    p.printRegionArgument(arg);</div>
-<div class="line"><a id="l01223" name="l01223"></a><span class="lineno"> 1223</span>  }, [&amp;p]() { p &lt;&lt; <span class="stringliteral">&quot;, &quot;</span>; });</div>
-<div class="line"><a id="l01224" name="l01224"></a><span class="lineno"> 1224</span>  p &lt;&lt; <span class="stringliteral">&quot;) &quot;</span>;</div>
-<div class="line"><a id="l01225" name="l01225"></a><span class="lineno"> 1225</span>  <span class="comment">// Print the body.</span></div>
-<div class="line"><a id="l01226" name="l01226"></a><span class="lineno"> 1226</span>  Region &amp;body = <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#adfc8f4a36c9f99a4d763b88d40c1ddae">getRegion</a>();</div>
-<div class="line"><a id="l01227" name="l01227"></a><span class="lineno"> 1227</span>  p.printRegion(</div>
-<div class="line"><a id="l01228" name="l01228"></a><span class="lineno"> 1228</span>      body, <span class="comment">/*printEntryBlockArgs=*/</span><span class="keyword">false</span>,</div>
-<div class="line"><a id="l01229" name="l01229"></a><span class="lineno"> 1229</span>      <span class="comment">/*printBlockTerminators=*/</span><span class="keyword">true</span></div>
-<div class="line"><a id="l01230" name="l01230"></a><span class="lineno"> 1230</span>  );</div>
-<div class="line"><a id="l01231" name="l01231"></a><span class="lineno"> 1231</span>}</div>
-</div>
-<div class="line"><a id="l01232" name="l01232"></a><span class="lineno"> 1232</span> </div>
-<div class="foldopen" id="foldopen01233" data-start="{" data-end="}">
-<div class="line"><a id="l01233" name="l01233"></a><span class="lineno"><a class="line" href="classllzk_1_1verif_1_1InvariantOp.html#abac717f4ded7897896287db45b7080b7"> 1233</a></span><a class="code hl_class" href="classllzk_1_1verif_1_1ContractOp.html">ContractOp</a> <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#abac717f4ded7897896287db45b7080b7">InvariantOp::getParentContract</a>() {</div>
-<div class="line"><a id="l01234" name="l01234"></a><span class="lineno"> 1234</span>  <span class="keywordflow">return</span> this-&gt;getOperation()-&gt;getParentOfType&lt;<a class="code hl_class" href="classllzk_1_1verif_1_1ContractOp.html">ContractOp</a>&gt;();</div>
+<div class="line"><a id="l01219" name="l01219"></a><span class="lineno"> 1219</span> </div>
+<div class="foldopen" id="foldopen01220" data-start="{" data-end="}">
+<div class="line"><a id="l01220" name="l01220"></a><span class="lineno"><a class="line" href="classllzk_1_1verif_1_1InvariantOp.html#a821dabd21d405e19f4bd64ab60b99b1b"> 1220</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#a821dabd21d405e19f4bd64ab60b99b1b">InvariantOp::print</a>(OpAsmPrinter &amp;p) {</div>
+<div class="line"><a id="l01221" name="l01221"></a><span class="lineno"> 1221</span>  <span class="comment">// Print the name of the invariants&#39;s target.</span></div>
+<div class="line"><a id="l01222" name="l01222"></a><span class="lineno"> 1222</span>  p &lt;&lt; <span class="stringliteral">&quot; for &quot;</span>;</div>
+<div class="line"><a id="l01223" name="l01223"></a><span class="lineno"> 1223</span>  p.printSymbolName(<a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#ab685f0e17961b5d9b5be38ef22ddb4b9">getLoopName</a>());</div>
+<div class="line"><a id="l01224" name="l01224"></a><span class="lineno"> 1224</span>  p &lt;&lt; <span class="charliteral">&#39;(&#39;</span>;</div>
+<div class="line"><a id="l01225" name="l01225"></a><span class="lineno"> 1225</span>  llvm::interleave(getBody()-&gt;getArguments(), [&amp;p](<span class="keyword">auto</span> arg) {</div>
+<div class="line"><a id="l01226" name="l01226"></a><span class="lineno"> 1226</span>    p.printRegionArgument(arg);</div>
+<div class="line"><a id="l01227" name="l01227"></a><span class="lineno"> 1227</span>  }, [&amp;p]() { p &lt;&lt; <span class="stringliteral">&quot;, &quot;</span>; });</div>
+<div class="line"><a id="l01228" name="l01228"></a><span class="lineno"> 1228</span>  p &lt;&lt; <span class="stringliteral">&quot;) &quot;</span>;</div>
+<div class="line"><a id="l01229" name="l01229"></a><span class="lineno"> 1229</span>  <span class="comment">// Print the body.</span></div>
+<div class="line"><a id="l01230" name="l01230"></a><span class="lineno"> 1230</span>  Region &amp;body = <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#adfc8f4a36c9f99a4d763b88d40c1ddae">getRegion</a>();</div>
+<div class="line"><a id="l01231" name="l01231"></a><span class="lineno"> 1231</span>  p.printRegion(</div>
+<div class="line"><a id="l01232" name="l01232"></a><span class="lineno"> 1232</span>      body, <span class="comment">/*printEntryBlockArgs=*/</span><span class="keyword">false</span>,</div>
+<div class="line"><a id="l01233" name="l01233"></a><span class="lineno"> 1233</span>      <span class="comment">/*printBlockTerminators=*/</span><span class="keyword">true</span></div>
+<div class="line"><a id="l01234" name="l01234"></a><span class="lineno"> 1234</span>  );</div>
 <div class="line"><a id="l01235" name="l01235"></a><span class="lineno"> 1235</span>}</div>
 </div>
 <div class="line"><a id="l01236" name="l01236"></a><span class="lineno"> 1236</span> </div>
 <div class="foldopen" id="foldopen01237" data-start="{" data-end="}">
-<div class="line"><a id="l01237" name="l01237"></a><span class="lineno"><a class="line" href="classllzk_1_1verif_1_1InvariantOp.html#a1422d99d76a1d1cb4401b19b7542c8d4"> 1237</a></span>FailureOr&lt;InvariantTargetOpInterface&gt; <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#a1422d99d76a1d1cb4401b19b7542c8d4">InvariantOp::getTarget</a>() {</div>
-<div class="line"><a id="l01238" name="l01238"></a><span class="lineno"> 1238</span>  <span class="keyword">auto</span> target = <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#abac717f4ded7897896287db45b7080b7">getParentContract</a>().<a class="code hl_function" href="classllzk_1_1verif_1_1ContractOp.html#a78dac97256d945a8479770773f72914a">getTargetOp</a>();</div>
-<div class="line"><a id="l01239" name="l01239"></a><span class="lineno"> 1239</span>  <span class="keywordflow">if</span> (failed(target)) {</div>
-<div class="line"><a id="l01240" name="l01240"></a><span class="lineno"> 1240</span>    <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l01241" name="l01241"></a><span class="lineno"> 1241</span>  }</div>
-<div class="line"><a id="l01242" name="l01242"></a><span class="lineno"> 1242</span>  SmallVector&lt;InvariantTargetOpInterface&gt; matches;</div>
-<div class="line"><a id="l01243" name="l01243"></a><span class="lineno"> 1243</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span> invariantTarget : target-&gt;get().getLoops()) {</div>
-<div class="line"><a id="l01244" name="l01244"></a><span class="lineno"> 1244</span>    <span class="keyword">auto</span> targetLabel = invariantTarget.getLabel();</div>
-<div class="line"><a id="l01245" name="l01245"></a><span class="lineno"> 1245</span>    <span class="keywordflow">if</span> (succeeded(targetLabel) &amp;&amp; *targetLabel == <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#ab685f0e17961b5d9b5be38ef22ddb4b9">getLoopName</a>()) {</div>
-<div class="line"><a id="l01246" name="l01246"></a><span class="lineno"> 1246</span>      matches.push_back(invariantTarget);</div>
-<div class="line"><a id="l01247" name="l01247"></a><span class="lineno"> 1247</span>    }</div>
-<div class="line"><a id="l01248" name="l01248"></a><span class="lineno"> 1248</span>  }</div>
-<div class="line"><a id="l01249" name="l01249"></a><span class="lineno"> 1249</span> </div>
-<div class="line"><a id="l01250" name="l01250"></a><span class="lineno"> 1250</span>  <span class="keywordflow">if</span> (matches.size() == 0) {</div>
-<div class="line"><a id="l01251" name="l01251"></a><span class="lineno"> 1251</span>    <span class="keywordflow">return</span> emitOpError() &lt;&lt; <span class="stringliteral">&quot;no invariant target with label \&quot;&quot;</span> &lt;&lt; <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#ab685f0e17961b5d9b5be38ef22ddb4b9">getLoopName</a>()</div>
-<div class="line"><a id="l01252" name="l01252"></a><span class="lineno"> 1252</span>                         &lt;&lt; <span class="stringliteral">&quot;\&quot; found in contract target &quot;</span> &lt;&lt; target-&gt;get().getNameAttr();</div>
-<div class="line"><a id="l01253" name="l01253"></a><span class="lineno"> 1253</span>  }</div>
-<div class="line"><a id="l01254" name="l01254"></a><span class="lineno"> 1254</span>  <span class="keywordflow">if</span> (matches.size() &gt; 1) {</div>
-<div class="line"><a id="l01255" name="l01255"></a><span class="lineno"> 1255</span>    <span class="keywordflow">return</span> emitOpError() &lt;&lt; <span class="stringliteral">&quot;ambiguous label \&quot;&quot;</span> &lt;&lt; <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#ab685f0e17961b5d9b5be38ef22ddb4b9">getLoopName</a>() &lt;&lt; <span class="stringliteral">&quot;\&quot; matched &quot;</span> &lt;&lt; matches.size()</div>
-<div class="line"><a id="l01256" name="l01256"></a><span class="lineno"> 1256</span>                         &lt;&lt; <span class="stringliteral">&quot; invariant targets in contract target &quot;</span> &lt;&lt; target-&gt;get().getNameAttr();</div>
-<div class="line"><a id="l01257" name="l01257"></a><span class="lineno"> 1257</span>  }</div>
-<div class="line"><a id="l01258" name="l01258"></a><span class="lineno"> 1258</span>  <span class="keywordflow">return</span> matches[0];</div>
-<div class="line"><a id="l01259" name="l01259"></a><span class="lineno"> 1259</span>}</div>
+<div class="line"><a id="l01237" name="l01237"></a><span class="lineno"><a class="line" href="classllzk_1_1verif_1_1InvariantOp.html#abac717f4ded7897896287db45b7080b7"> 1237</a></span><a class="code hl_class" href="classllzk_1_1verif_1_1ContractOp.html">ContractOp</a> <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#abac717f4ded7897896287db45b7080b7">InvariantOp::getParentContract</a>() {</div>
+<div class="line"><a id="l01238" name="l01238"></a><span class="lineno"> 1238</span>  <span class="keywordflow">return</span> this-&gt;getOperation()-&gt;getParentOfType&lt;<a class="code hl_class" href="classllzk_1_1verif_1_1ContractOp.html">ContractOp</a>&gt;();</div>
+<div class="line"><a id="l01239" name="l01239"></a><span class="lineno"> 1239</span>}</div>
 </div>
-<div class="line"><a id="l01260" name="l01260"></a><span class="lineno"> 1260</span> </div>
-<div class="line"><a id="l01261" name="l01261"></a><span class="lineno"> 1261</span>} <span class="comment">// namespace llzk::verif</span></div>
+<div class="line"><a id="l01240" name="l01240"></a><span class="lineno"> 1240</span> </div>
+<div class="foldopen" id="foldopen01241" data-start="{" data-end="}">
+<div class="line"><a id="l01241" name="l01241"></a><span class="lineno"><a class="line" href="classllzk_1_1verif_1_1InvariantOp.html#a1422d99d76a1d1cb4401b19b7542c8d4"> 1241</a></span>FailureOr&lt;InvariantTargetOpInterface&gt; <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#a1422d99d76a1d1cb4401b19b7542c8d4">InvariantOp::getTarget</a>() {</div>
+<div class="line"><a id="l01242" name="l01242"></a><span class="lineno"> 1242</span>  <span class="keyword">auto</span> target = <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#abac717f4ded7897896287db45b7080b7">getParentContract</a>().<a class="code hl_function" href="classllzk_1_1verif_1_1ContractOp.html#a78dac97256d945a8479770773f72914a">getTargetOp</a>();</div>
+<div class="line"><a id="l01243" name="l01243"></a><span class="lineno"> 1243</span>  <span class="keywordflow">if</span> (failed(target)) {</div>
+<div class="line"><a id="l01244" name="l01244"></a><span class="lineno"> 1244</span>    <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l01245" name="l01245"></a><span class="lineno"> 1245</span>  }</div>
+<div class="line"><a id="l01246" name="l01246"></a><span class="lineno"> 1246</span>  SmallVector&lt;InvariantTargetOpInterface&gt; matches;</div>
+<div class="line"><a id="l01247" name="l01247"></a><span class="lineno"> 1247</span>  <span class="keywordflow">for</span> (<span class="keyword">auto</span> invariantTarget : target-&gt;get().getLoops()) {</div>
+<div class="line"><a id="l01248" name="l01248"></a><span class="lineno"> 1248</span>    <span class="keyword">auto</span> targetLabel = invariantTarget.getLabel();</div>
+<div class="line"><a id="l01249" name="l01249"></a><span class="lineno"> 1249</span>    <span class="keywordflow">if</span> (succeeded(targetLabel) &amp;&amp; *targetLabel == <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#ab685f0e17961b5d9b5be38ef22ddb4b9">getLoopName</a>()) {</div>
+<div class="line"><a id="l01250" name="l01250"></a><span class="lineno"> 1250</span>      matches.push_back(invariantTarget);</div>
+<div class="line"><a id="l01251" name="l01251"></a><span class="lineno"> 1251</span>    }</div>
+<div class="line"><a id="l01252" name="l01252"></a><span class="lineno"> 1252</span>  }</div>
+<div class="line"><a id="l01253" name="l01253"></a><span class="lineno"> 1253</span> </div>
+<div class="line"><a id="l01254" name="l01254"></a><span class="lineno"> 1254</span>  <span class="keywordflow">if</span> (matches.size() == 0) {</div>
+<div class="line"><a id="l01255" name="l01255"></a><span class="lineno"> 1255</span>    <span class="keywordflow">return</span> emitOpError() &lt;&lt; <span class="stringliteral">&quot;no invariant target with label \&quot;&quot;</span> &lt;&lt; <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#ab685f0e17961b5d9b5be38ef22ddb4b9">getLoopName</a>()</div>
+<div class="line"><a id="l01256" name="l01256"></a><span class="lineno"> 1256</span>                         &lt;&lt; <span class="stringliteral">&quot;\&quot; found in contract target &quot;</span> &lt;&lt; target-&gt;get().getNameAttr();</div>
+<div class="line"><a id="l01257" name="l01257"></a><span class="lineno"> 1257</span>  }</div>
+<div class="line"><a id="l01258" name="l01258"></a><span class="lineno"> 1258</span>  <span class="keywordflow">if</span> (matches.size() &gt; 1) {</div>
+<div class="line"><a id="l01259" name="l01259"></a><span class="lineno"> 1259</span>    <span class="keywordflow">return</span> emitOpError() &lt;&lt; <span class="stringliteral">&quot;ambiguous label \&quot;&quot;</span> &lt;&lt; <a class="code hl_function" href="classllzk_1_1verif_1_1InvariantOp.html#ab685f0e17961b5d9b5be38ef22ddb4b9">getLoopName</a>() &lt;&lt; <span class="stringliteral">&quot;\&quot; matched &quot;</span> &lt;&lt; matches.size()</div>
+<div class="line"><a id="l01260" name="l01260"></a><span class="lineno"> 1260</span>                         &lt;&lt; <span class="stringliteral">&quot; invariant targets in contract target &quot;</span> &lt;&lt; target-&gt;get().getNameAttr();</div>
+<div class="line"><a id="l01261" name="l01261"></a><span class="lineno"> 1261</span>  }</div>
+<div class="line"><a id="l01262" name="l01262"></a><span class="lineno"> 1262</span>  <span class="keywordflow">return</span> matches[0];</div>
+<div class="line"><a id="l01263" name="l01263"></a><span class="lineno"> 1263</span>}</div>
+</div>
+<div class="line"><a id="l01264" name="l01264"></a><span class="lineno"> 1264</span> </div>
+<div class="line"><a id="l01265" name="l01265"></a><span class="lineno"> 1265</span>} <span class="comment">// namespace llzk::verif</span></div>
 </div>
 <div class="ttc" id="aAnalysisUtil_8h_html"><div class="ttname"><a href="AnalysisUtil_8h.html">AnalysisUtil.h</a></div></div>
 <div class="ttc" id="aBuilderHelper_8h_html"><div class="ttname"><a href="BuilderHelper_8h.html">BuilderHelper.h</a></div></div>
@@ -1497,15 +1501,15 @@ $(function(){initNavTree('Verif_2IR_2Ops_8cpp_source.html','',''); });
 <div class="ttc" id="aclassllzk_1_1verif_1_1IncludeOp_html_aebe90db7b7710fd27c6c81fce665d271"><div class="ttname"><a href="classllzk_1_1verif_1_1IncludeOp.html#aebe90db7b7710fd27c6c81fce665d271">llzk::verif::IncludeOp::toVectorOfValueRange</a></div><div class="ttdeci">static ::llvm::SmallVector&lt;::mlir::ValueRange &gt; toVectorOfValueRange(::mlir::OperandRangeRange)</div><div class="ttdoc">Allocate consecutive storage of the ValueRange instances in the parameter so it can be passed to the ...</div><div class="ttdef"><b>Definition</b> <a href="#l01075">Ops.cpp:1075</a></div></div>
 <div class="ttc" id="aclassllzk_1_1verif_1_1IncludeOp_html_afd6176cfeb4b3df2518fc595a54fc138"><div class="ttname"><a href="classllzk_1_1verif_1_1IncludeOp.html#afd6176cfeb4b3df2518fc595a54fc138">llzk::verif::IncludeOp::getCallableForCallee</a></div><div class="ttdeci">::mlir::CallInterfaceCallable getCallableForCallee()</div><div class="ttdoc">Return the callee of this operation.</div><div class="ttdef"><b>Definition</b> <a href="#l01068">Ops.cpp:1068</a></div></div>
 <div class="ttc" id="aclassllzk_1_1verif_1_1InvariantOp_html"><div class="ttname"><a href="classllzk_1_1verif_1_1InvariantOp.html">llzk::verif::InvariantOp</a></div><div class="ttdef"><b>Definition</b> <a href="Verif_2IR_2Ops_8h_8inc_source.html#l01686">Ops.h.inc:1686</a></div></div>
-<div class="ttc" id="aclassllzk_1_1verif_1_1InvariantOp_html_a1422d99d76a1d1cb4401b19b7542c8d4"><div class="ttname"><a href="classllzk_1_1verif_1_1InvariantOp.html#a1422d99d76a1d1cb4401b19b7542c8d4">llzk::verif::InvariantOp::getTarget</a></div><div class="ttdeci">::mlir::FailureOr&lt;::llzk::verif::InvariantTargetOpInterface &gt; getTarget()</div><div class="ttdoc">Returns the loop target.</div><div class="ttdef"><b>Definition</b> <a href="#l01237">Ops.cpp:1237</a></div></div>
-<div class="ttc" id="aclassllzk_1_1verif_1_1InvariantOp_html_a5e661a697fbeec728604fbcd7a0530eb"><div class="ttname"><a href="classllzk_1_1verif_1_1InvariantOp.html#a5e661a697fbeec728604fbcd7a0530eb">llzk::verif::InvariantOp::parse</a></div><div class="ttdeci">::mlir::ParseResult parse(::mlir::OpAsmParser &amp;parser, ::mlir::OperationState &amp;result)</div><div class="ttdef"><b>Definition</b> <a href="#l01167">Ops.cpp:1167</a></div></div>
-<div class="ttc" id="aclassllzk_1_1verif_1_1InvariantOp_html_a821dabd21d405e19f4bd64ab60b99b1b"><div class="ttname"><a href="classllzk_1_1verif_1_1InvariantOp.html#a821dabd21d405e19f4bd64ab60b99b1b">llzk::verif::InvariantOp::print</a></div><div class="ttdeci">void print(::mlir::OpAsmPrinter &amp;p)</div><div class="ttdef"><b>Definition</b> <a href="#l01216">Ops.cpp:1216</a></div></div>
+<div class="ttc" id="aclassllzk_1_1verif_1_1InvariantOp_html_a1422d99d76a1d1cb4401b19b7542c8d4"><div class="ttname"><a href="classllzk_1_1verif_1_1InvariantOp.html#a1422d99d76a1d1cb4401b19b7542c8d4">llzk::verif::InvariantOp::getTarget</a></div><div class="ttdeci">::mlir::FailureOr&lt;::llzk::verif::InvariantTargetOpInterface &gt; getTarget()</div><div class="ttdoc">Returns the loop target.</div><div class="ttdef"><b>Definition</b> <a href="#l01241">Ops.cpp:1241</a></div></div>
+<div class="ttc" id="aclassllzk_1_1verif_1_1InvariantOp_html_a5e661a697fbeec728604fbcd7a0530eb"><div class="ttname"><a href="classllzk_1_1verif_1_1InvariantOp.html#a5e661a697fbeec728604fbcd7a0530eb">llzk::verif::InvariantOp::parse</a></div><div class="ttdeci">::mlir::ParseResult parse(::mlir::OpAsmParser &amp;parser, ::mlir::OperationState &amp;result)</div><div class="ttdef"><b>Definition</b> <a href="#l01169">Ops.cpp:1169</a></div></div>
+<div class="ttc" id="aclassllzk_1_1verif_1_1InvariantOp_html_a821dabd21d405e19f4bd64ab60b99b1b"><div class="ttname"><a href="classllzk_1_1verif_1_1InvariantOp.html#a821dabd21d405e19f4bd64ab60b99b1b">llzk::verif::InvariantOp::print</a></div><div class="ttdeci">void print(::mlir::OpAsmPrinter &amp;p)</div><div class="ttdef"><b>Definition</b> <a href="#l01220">Ops.cpp:1220</a></div></div>
 <div class="ttc" id="aclassllzk_1_1verif_1_1InvariantOp_html_a9efee240aea3105e3ce9656beb619cdd"><div class="ttname"><a href="classllzk_1_1verif_1_1InvariantOp.html#a9efee240aea3105e3ce9656beb619cdd">llzk::verif::InvariantOp::getLoopArgTypes</a></div><div class="ttdeci">::mlir::ArrayAttr getLoopArgTypes()</div><div class="ttdef"><b>Definition</b> <a href="Verif_2IR_2Ops_8cpp_8inc_source.html#l01773">Ops.cpp.inc:1773</a></div></div>
 <div class="ttc" id="aclassllzk_1_1verif_1_1InvariantOp_html_ab685f0e17961b5d9b5be38ef22ddb4b9"><div class="ttname"><a href="classllzk_1_1verif_1_1InvariantOp.html#ab685f0e17961b5d9b5be38ef22ddb4b9">llzk::verif::InvariantOp::getLoopName</a></div><div class="ttdeci">::llvm::StringRef getLoopName()</div><div class="ttdef"><b>Definition</b> <a href="Verif_2IR_2Ops_8cpp_8inc_source.html#l01768">Ops.cpp.inc:1768</a></div></div>
-<div class="ttc" id="aclassllzk_1_1verif_1_1InvariantOp_html_abac717f4ded7897896287db45b7080b7"><div class="ttname"><a href="classllzk_1_1verif_1_1InvariantOp.html#abac717f4ded7897896287db45b7080b7">llzk::verif::InvariantOp::getParentContract</a></div><div class="ttdeci">::llzk::verif::ContractOp getParentContract()</div><div class="ttdoc">Returns the contract operation that contains this invariant.</div><div class="ttdef"><b>Definition</b> <a href="#l01233">Ops.cpp:1233</a></div></div>
+<div class="ttc" id="aclassllzk_1_1verif_1_1InvariantOp_html_abac717f4ded7897896287db45b7080b7"><div class="ttname"><a href="classllzk_1_1verif_1_1InvariantOp.html#abac717f4ded7897896287db45b7080b7">llzk::verif::InvariantOp::getParentContract</a></div><div class="ttdeci">::llzk::verif::ContractOp getParentContract()</div><div class="ttdoc">Returns the contract operation that contains this invariant.</div><div class="ttdef"><b>Definition</b> <a href="#l01237">Ops.cpp:1237</a></div></div>
 <div class="ttc" id="aclassllzk_1_1verif_1_1InvariantOp_html_abc6c16c0ef90ea28fd657ab4f6ef1a1e"><div class="ttname"><a href="classllzk_1_1verif_1_1InvariantOp.html#abc6c16c0ef90ea28fd657ab4f6ef1a1e">llzk::verif::InvariantOp::build</a></div><div class="ttdeci">static void build(::mlir::OpBuilder &amp;odsBuilder, ::mlir::OperationState &amp;odsState, ::mlir::StringRef loop_name, ::llvm::ArrayRef&lt;::mlir::Type &gt; loop_arg_types={}, ::llvm::ArrayRef&lt;::mlir::Location &gt; loop_arg_locs={})</div><div class="ttdef"><b>Definition</b> <a href="#l01108">Ops.cpp:1108</a></div></div>
 <div class="ttc" id="aclassllzk_1_1verif_1_1InvariantOp_html_abeff63f2fa591173485273a562af843c"><div class="ttname"><a href="classllzk_1_1verif_1_1InvariantOp.html#abeff63f2fa591173485273a562af843c">llzk::verif::InvariantOp::Properties</a></div><div class="ttdeci">FoldAdaptor::Properties Properties</div><div class="ttdef"><b>Definition</b> <a href="Verif_2IR_2Ops_8h_8inc_source.html#l01694">Ops.h.inc:1694</a></div></div>
-<div class="ttc" id="aclassllzk_1_1verif_1_1InvariantOp_html_ad224124269de2dd697e108fd32edc8e3"><div class="ttname"><a href="classllzk_1_1verif_1_1InvariantOp.html#ad224124269de2dd697e108fd32edc8e3">llzk::verif::InvariantOp::verify</a></div><div class="ttdeci">::llvm::LogicalResult verify()</div><div class="ttdef"><b>Definition</b> <a href="#l01158">Ops.cpp:1158</a></div></div>
+<div class="ttc" id="aclassllzk_1_1verif_1_1InvariantOp_html_ad224124269de2dd697e108fd32edc8e3"><div class="ttname"><a href="classllzk_1_1verif_1_1InvariantOp.html#ad224124269de2dd697e108fd32edc8e3">llzk::verif::InvariantOp::verify</a></div><div class="ttdeci">::llvm::LogicalResult verify()</div><div class="ttdef"><b>Definition</b> <a href="#l01160">Ops.cpp:1160</a></div></div>
 <div class="ttc" id="aclassllzk_1_1verif_1_1InvariantOp_html_adfc8f4a36c9f99a4d763b88d40c1ddae"><div class="ttname"><a href="classllzk_1_1verif_1_1InvariantOp.html#adfc8f4a36c9f99a4d763b88d40c1ddae">llzk::verif::InvariantOp::getRegion</a></div><div class="ttdeci">::mlir::Region &amp; getRegion()</div><div class="ttdef"><b>Definition</b> <a href="Verif_2IR_2Ops_8h_8inc_source.html#l01740">Ops.h.inc:1740</a></div></div>
 <div class="ttc" id="aclassllzk_1_1verif_1_1InvariantTargetOpInterface_html"><div class="ttname"><a href="classllzk_1_1verif_1_1InvariantTargetOpInterface.html">llzk::verif::InvariantTargetOpInterface</a></div><div class="ttdef"><b>Definition</b> <a href="Verif_2IR_2OpInterfaces_8h_8inc_source.html#l00269">OpInterfaces.h.inc:269</a></div></div>
 <div class="ttc" id="aclassllzk_1_1verif_1_1InvariantTargetOpInterface_html_ac2d82caafa2c13e149316bbcee887c76"><div class="ttname"><a href="classllzk_1_1verif_1_1InvariantTargetOpInterface.html#ac2d82caafa2c13e149316bbcee887c76">llzk::verif::InvariantTargetOpInterface::getArgumentTypes</a></div><div class="ttdeci">::mlir::SmallVector&lt;::mlir::Type &gt; getArgumentTypes()</div><div class="ttdoc">Gets the types of the values that the invariant binds inside its body.</div><div class="ttdef"><b>Definition</b> <a href="Verif_2IR_2OpInterfaces_8cpp_8inc_source.html#l00099">OpInterfaces.cpp.inc:99</a></div></div>
