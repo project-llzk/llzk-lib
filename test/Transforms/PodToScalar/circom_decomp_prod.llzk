@@ -285,35 +285,35 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@DecomposeProd
 // CHECK-NEXT:    struct.def @Num2Bits_0 {
 // CHECK-NEXT:      struct.member @out : !array.type<8 x !felt.type<"bn128">> {llzk.pub}
 // CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !struct.type<@Num2Bits_0> attributes {function.allow_non_native_field_ops, function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  8 : <"bn128">
 // CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  8 : <"bn128">
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
 // CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@Num2Bits_0>
 // CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<8 x !felt.type<"bn128">>
 // CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = scf.while (%[[VAL_7:[0-9a-zA-Z_\.]+]] = %[[VAL_2]]) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
-// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_7]], %[[VAL_3]]) : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_7]], %[[VAL_1]]) : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:          scf.condition(%[[VAL_8]]) %[[VAL_7]] : !felt.type<"bn128">
 // CHECK-NEXT:        } do {
 // CHECK-NEXT:        ^bb0(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">):
 // CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_\.]+]] = felt.shr %[[VAL_0]], %[[VAL_9]] : !felt.type<"bn128">, !felt.type<"bn128">
-// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = felt.bit_and %[[VAL_10]], %[[VAL_1]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = felt.bit_and %[[VAL_10]], %[[VAL_3]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_9]] : !felt.type<"bn128">
 // CHECK-NEXT:          array.write %[[VAL_5]]{{\[}}%[[VAL_12]]] = %[[VAL_11]] : <8 x !felt.type<"bn128">>, !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_9]] : !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_13]]] : <8 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:          %[[VAL_15:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_9]], %[[VAL_1]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_15:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_9]], %[[VAL_3]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:          scf.yield %[[VAL_15]] : !felt.type<"bn128">
 // CHECK-NEXT:        }
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@out] = %[[VAL_5]] : <@Num2Bits_0>, !array.type<8 x !felt.type<"bn128">>
 // CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@Num2Bits_0>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[VAL_16:[0-9a-zA-Z_\.]+]]: !struct.type<@Num2Bits_0>, %[[VAL_17:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
-// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
+// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = felt.const  8 : <"bn128">
 // CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
-// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = felt.const  8 : <"bn128">
+// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
 // CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_16]][@out] : <@Num2Bits_0>, !array.type<8 x !felt.type<"bn128">>
 // CHECK-NEXT:        %[[VAL_22:[0-9a-zA-Z_\.]+]]:2 = scf.while (%[[VAL_23:[0-9a-zA-Z_\.]+]] = %[[VAL_19]], %[[VAL_24:[0-9a-zA-Z_\.]+]] = %[[VAL_19]]) : (!felt.type<"bn128">, !felt.type<"bn128">) -> (!felt.type<"bn128">, !felt.type<"bn128">) {
-// CHECK-NEXT:          %[[VAL_25:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_24]], %[[VAL_20]]) : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_25:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_24]], %[[VAL_18]]) : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:          scf.condition(%[[VAL_25]]) %[[VAL_23]], %[[VAL_24]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        } do {
 // CHECK-NEXT:        ^bb0(%[[VAL_26:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">, %[[VAL_27:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">):
@@ -321,14 +321,14 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@DecomposeProd
 // CHECK-NEXT:          %[[VAL_29:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_21]]{{\[}}%[[VAL_28]]] : <8 x !felt.type<"bn128">>, !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_30:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_27]] : !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_31:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_21]]{{\[}}%[[VAL_30]]] : <8 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:          %[[VAL_32:[0-9a-zA-Z_\.]+]] = felt.sub %[[VAL_31]], %[[VAL_18]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_32:[0-9a-zA-Z_\.]+]] = felt.sub %[[VAL_31]], %[[VAL_20]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_33:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_29]], %[[VAL_32]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:          constrain.eq %[[VAL_33]], %[[VAL_19]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_34:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_27]] : !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_35:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_21]]{{\[}}%[[VAL_34]]] : <8 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:          %[[VAL_36:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_35]], %[[VAL_18]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_36:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_35]], %[[VAL_20]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_37:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_26]], %[[VAL_36]] : !felt.type<"bn128">, !felt.type<"bn128">
-// CHECK-NEXT:          %[[VAL_38:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_27]], %[[VAL_18]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_38:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_27]], %[[VAL_20]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:          scf.yield %[[VAL_37]], %[[VAL_38]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        }
 // CHECK-NEXT:        constrain.eq %[[VAL_22]]#0, %[[VAL_17]] : !felt.type<"bn128">, !felt.type<"bn128">
@@ -344,36 +344,36 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@DecomposeProd
 // CHECK-NEXT:      struct.member @bits_high : !array.type<8 x !struct.type<@Num2Bits_0>>
 // CHECK-NEXT:      struct.member @bits_high$inputs_in : !array.type<8 x !felt.type<"bn128">>
 // CHECK-NEXT:      function.def @compute(%[[VAL_39:[0-9a-zA-Z_\.]+]]: !array.type<8 x !felt.type<"bn128">>, %[[VAL_40:[0-9a-zA-Z_\.]+]]: !array.type<8 x !felt.type<"bn128">>) -> !struct.type<@DecomposeProduct_1> attributes {function.allow_non_native_field_ops, function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_41:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
-// CHECK-NEXT:        %[[VAL_42:[0-9a-zA-Z_\.]+]] = felt.const  256 : <"bn128">
-// CHECK-NEXT:        %[[VAL_43:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
+// CHECK-NEXT:        %[[VAL_41:[0-9a-zA-Z_\.]+]] = arith.constant 8 : index
+// CHECK-NEXT:        %[[VAL_42:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_43:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:        %[[VAL_44:[0-9a-zA-Z_\.]+]] = felt.const  8 : <"bn128">
-// CHECK-NEXT:        %[[VAL_45:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:        %[[VAL_46:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:        %[[VAL_47:[0-9a-zA-Z_\.]+]] = arith.constant 8 : index
+// CHECK-NEXT:        %[[VAL_45:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
+// CHECK-NEXT:        %[[VAL_46:[0-9a-zA-Z_\.]+]] = felt.const  256 : <"bn128">
+// CHECK-NEXT:        %[[VAL_47:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
 // CHECK-NEXT:        %[[VAL_48:[0-9a-zA-Z_\.]+]] = struct.new : <@DecomposeProduct_1>
 // CHECK-NEXT:        %[[VAL_49:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<8 x !felt.type<"bn128">>
 // CHECK-NEXT:        %[[VAL_50:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<8 x !felt.type<"bn128">>
 // CHECK-NEXT:        %[[VAL_51:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<8 x !felt.type<"bn128">>
 // CHECK-NEXT:        %[[VAL_52:[0-9a-zA-Z_\.]+]] = array.new  : <8 x index>
 // CHECK-NEXT:        %[[VAL_53:[0-9a-zA-Z_\.]+]] = array.new  : <8 x !struct.type<@Num2Bits_0>>
-// CHECK-NEXT:        scf.for %[[VAL_54:[0-9a-zA-Z_\.]+]] = %[[VAL_46]] to %[[VAL_47]] step %[[VAL_45]] {
+// CHECK-NEXT:        scf.for %[[VAL_54:[0-9a-zA-Z_\.]+]] = %[[VAL_42]] to %[[VAL_41]] step %[[VAL_43]] {
 // CHECK-NEXT:          %[[VAL_55:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_52]]{{\[}}%[[VAL_54]]] : <8 x index>, index
 // CHECK-NEXT:          %[[VAL_56:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_53]]{{\[}}%[[VAL_54]]] : <8 x !struct.type<@Num2Bits_0>>, !struct.type<@Num2Bits_0>
-// CHECK-NEXT:          array.write %[[VAL_52]]{{\[}}%[[VAL_54]]] = %[[VAL_45]] : <8 x index>, index
+// CHECK-NEXT:          array.write %[[VAL_52]]{{\[}}%[[VAL_54]]] = %[[VAL_43]] : <8 x index>, index
 // CHECK-NEXT:          array.write %[[VAL_53]]{{\[}}%[[VAL_54]]] = %[[VAL_56]] : <8 x !struct.type<@Num2Bits_0>>, !struct.type<@Num2Bits_0>
 // CHECK-NEXT:        }
 // CHECK-NEXT:        %[[VAL_57:[0-9a-zA-Z_\.]+]] = array.new  : <8 x !felt.type<"bn128">>
 // CHECK-NEXT:        %[[VAL_58:[0-9a-zA-Z_\.]+]] = array.new  : <8 x index>
 // CHECK-NEXT:        %[[VAL_59:[0-9a-zA-Z_\.]+]] = array.new  : <8 x !struct.type<@Num2Bits_0>>
-// CHECK-NEXT:        scf.for %[[VAL_60:[0-9a-zA-Z_\.]+]] = %[[VAL_46]] to %[[VAL_47]] step %[[VAL_45]] {
+// CHECK-NEXT:        scf.for %[[VAL_60:[0-9a-zA-Z_\.]+]] = %[[VAL_42]] to %[[VAL_41]] step %[[VAL_43]] {
 // CHECK-NEXT:          %[[VAL_61:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_58]]{{\[}}%[[VAL_60]]] : <8 x index>, index
 // CHECK-NEXT:          %[[VAL_62:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_59]]{{\[}}%[[VAL_60]]] : <8 x !struct.type<@Num2Bits_0>>, !struct.type<@Num2Bits_0>
-// CHECK-NEXT:          array.write %[[VAL_58]]{{\[}}%[[VAL_60]]] = %[[VAL_45]] : <8 x index>, index
+// CHECK-NEXT:          array.write %[[VAL_58]]{{\[}}%[[VAL_60]]] = %[[VAL_43]] : <8 x index>, index
 // CHECK-NEXT:          array.write %[[VAL_59]]{{\[}}%[[VAL_60]]] = %[[VAL_62]] : <8 x !struct.type<@Num2Bits_0>>, !struct.type<@Num2Bits_0>
 // CHECK-NEXT:        }
 // CHECK-NEXT:        %[[VAL_63:[0-9a-zA-Z_\.]+]] = array.new  : <8 x !felt.type<"bn128">>
-// CHECK-NEXT:        %[[VAL_64:[0-9a-zA-Z_\.]+]]:3 = scf.while (%[[VAL_65:[0-9a-zA-Z_\.]+]] = %[[VAL_63]], %[[VAL_66:[0-9a-zA-Z_\.]+]] = %[[VAL_57]], %[[VAL_67:[0-9a-zA-Z_\.]+]] = %[[VAL_43]]) : (!array.type<8 x !felt.type<"bn128">>, !array.type<8 x !felt.type<"bn128">>, !felt.type<"bn128">) -> (!array.type<8 x !felt.type<"bn128">>, !array.type<8 x !felt.type<"bn128">>, !felt.type<"bn128">) {
+// CHECK-NEXT:        %[[VAL_64:[0-9a-zA-Z_\.]+]]:3 = scf.while (%[[VAL_65:[0-9a-zA-Z_\.]+]] = %[[VAL_63]], %[[VAL_66:[0-9a-zA-Z_\.]+]] = %[[VAL_57]], %[[VAL_67:[0-9a-zA-Z_\.]+]] = %[[VAL_45]]) : (!array.type<8 x !felt.type<"bn128">>, !array.type<8 x !felt.type<"bn128">>, !felt.type<"bn128">) -> (!array.type<8 x !felt.type<"bn128">>, !array.type<8 x !felt.type<"bn128">>, !felt.type<"bn128">) {
 // CHECK-NEXT:          %[[VAL_68:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_67]], %[[VAL_44]]) : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:          scf.condition(%[[VAL_68]]) %[[VAL_65]], %[[VAL_66]], %[[VAL_67]] : !array.type<8 x !felt.type<"bn128">>, !array.type<8 x !felt.type<"bn128">>, !felt.type<"bn128">
 // CHECK-NEXT:        } do {
@@ -387,7 +387,7 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@DecomposeProd
 // CHECK-NEXT:          array.write %[[VAL_49]]{{\[}}%[[VAL_77]]] = %[[VAL_76]] : <8 x !felt.type<"bn128">>, !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_78:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_71]] : !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_79:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_49]]{{\[}}%[[VAL_78]]] : <8 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:          %[[VAL_80:[0-9a-zA-Z_\.]+]] = felt.umod %[[VAL_79]], %[[VAL_42]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_80:[0-9a-zA-Z_\.]+]] = felt.umod %[[VAL_79]], %[[VAL_46]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_81:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_71]] : !felt.type<"bn128">
 // CHECK-NEXT:          array.write %[[VAL_50]]{{\[}}%[[VAL_81]]] = %[[VAL_80]] : <8 x !felt.type<"bn128">>, !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_82:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_71]] : !felt.type<"bn128">
@@ -399,8 +399,8 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@DecomposeProd
 // CHECK-NEXT:          %[[VAL_87:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_71]] : !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_88:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_52]]{{\[}}%[[VAL_87]]] : <8 x index>, index
 // CHECK-NEXT:          %[[VAL_89:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_53]]{{\[}}%[[VAL_87]]] : <8 x !struct.type<@Num2Bits_0>>, !struct.type<@Num2Bits_0>
-// CHECK-NEXT:          %[[VAL_90:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_88]], %[[VAL_45]] : index
-// CHECK-NEXT:          %[[VAL_91:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_90]], %[[VAL_46]] : index
+// CHECK-NEXT:          %[[VAL_90:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_88]], %[[VAL_43]] : index
+// CHECK-NEXT:          %[[VAL_91:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_90]], %[[VAL_42]] : index
 // CHECK-NEXT:          scf.if %[[VAL_91]] {
 // CHECK-NEXT:            %[[VAL_92:[0-9a-zA-Z_\.]+]] = function.call @Num2Bits_0::@compute(%[[VAL_83]]) : (!felt.type<"bn128">) -> !struct.type<@Num2Bits_0>
 // CHECK-NEXT:            %[[VAL_93:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_71]] : !felt.type<"bn128">
@@ -409,8 +409,8 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@DecomposeProd
 // CHECK-NEXT:          }
 // CHECK-NEXT:          %[[VAL_94:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_71]] : !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_95:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_49]]{{\[}}%[[VAL_94]]] : <8 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:          %[[VAL_96:[0-9a-zA-Z_\.]+]] = felt.uintdiv %[[VAL_95]], %[[VAL_42]] : !felt.type<"bn128">, !felt.type<"bn128">
-// CHECK-NEXT:          %[[VAL_97:[0-9a-zA-Z_\.]+]] = felt.umod %[[VAL_96]], %[[VAL_42]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_96:[0-9a-zA-Z_\.]+]] = felt.uintdiv %[[VAL_95]], %[[VAL_46]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_97:[0-9a-zA-Z_\.]+]] = felt.umod %[[VAL_96]], %[[VAL_46]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_98:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_71]] : !felt.type<"bn128">
 // CHECK-NEXT:          array.write %[[VAL_51]]{{\[}}%[[VAL_98]]] = %[[VAL_97]] : <8 x !felt.type<"bn128">>, !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_99:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_71]] : !felt.type<"bn128">
@@ -422,20 +422,20 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@DecomposeProd
 // CHECK-NEXT:          %[[VAL_104:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_71]] : !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_105:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_58]]{{\[}}%[[VAL_104]]] : <8 x index>, index
 // CHECK-NEXT:          %[[VAL_106:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_59]]{{\[}}%[[VAL_104]]] : <8 x !struct.type<@Num2Bits_0>>, !struct.type<@Num2Bits_0>
-// CHECK-NEXT:          %[[VAL_107:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_105]], %[[VAL_45]] : index
-// CHECK-NEXT:          %[[VAL_108:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_107]], %[[VAL_46]] : index
+// CHECK-NEXT:          %[[VAL_107:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_105]], %[[VAL_43]] : index
+// CHECK-NEXT:          %[[VAL_108:[0-9a-zA-Z_\.]+]] = arith.cmpi eq, %[[VAL_107]], %[[VAL_42]] : index
 // CHECK-NEXT:          scf.if %[[VAL_108]] {
 // CHECK-NEXT:            %[[VAL_109:[0-9a-zA-Z_\.]+]] = function.call @Num2Bits_0::@compute(%[[VAL_100]]) : (!felt.type<"bn128">) -> !struct.type<@Num2Bits_0>
 // CHECK-NEXT:            %[[VAL_110:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_71]] : !felt.type<"bn128">
 // CHECK-NEXT:            array.write %[[VAL_58]]{{\[}}%[[VAL_110]]] = %[[VAL_107]] : <8 x index>, index
 // CHECK-NEXT:            array.write %[[VAL_59]]{{\[}}%[[VAL_110]]] = %[[VAL_109]] : <8 x !struct.type<@Num2Bits_0>>, !struct.type<@Num2Bits_0>
 // CHECK-NEXT:          }
-// CHECK-NEXT:          %[[VAL_111:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_71]], %[[VAL_41]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_111:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_71]], %[[VAL_47]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:          scf.yield %[[VAL_69]], %[[VAL_70]], %[[VAL_111]] : !array.type<8 x !felt.type<"bn128">>, !array.type<8 x !felt.type<"bn128">>, !felt.type<"bn128">
 // CHECK-NEXT:        }
 // CHECK-NEXT:        struct.writem %[[VAL_48]][@bits_high$inputs_in] = %[[VAL_64]]#0 : <@DecomposeProduct_1>, !array.type<8 x !felt.type<"bn128">>
 // CHECK-NEXT:        %[[VAL_112:[0-9a-zA-Z_\.]+]] = array.new  : <8 x !struct.type<@Num2Bits_0>>
-// CHECK-NEXT:        scf.for %[[VAL_113:[0-9a-zA-Z_\.]+]] = %[[VAL_46]] to %[[VAL_47]] step %[[VAL_45]] {
+// CHECK-NEXT:        scf.for %[[VAL_113:[0-9a-zA-Z_\.]+]] = %[[VAL_42]] to %[[VAL_41]] step %[[VAL_43]] {
 // CHECK-NEXT:          %[[VAL_114:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_58]]{{\[}}%[[VAL_113]]] : <8 x index>, index
 // CHECK-NEXT:          %[[VAL_115:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_59]]{{\[}}%[[VAL_113]]] : <8 x !struct.type<@Num2Bits_0>>, !struct.type<@Num2Bits_0>
 // CHECK-NEXT:          array.write %[[VAL_112]]{{\[}}%[[VAL_113]]] = %[[VAL_115]] : <8 x !struct.type<@Num2Bits_0>>, !struct.type<@Num2Bits_0>
@@ -443,7 +443,7 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@DecomposeProd
 // CHECK-NEXT:        struct.writem %[[VAL_48]][@bits_high] = %[[VAL_112]] : <@DecomposeProduct_1>, !array.type<8 x !struct.type<@Num2Bits_0>>
 // CHECK-NEXT:        struct.writem %[[VAL_48]][@bits_low$inputs_in] = %[[VAL_64]]#1 : <@DecomposeProduct_1>, !array.type<8 x !felt.type<"bn128">>
 // CHECK-NEXT:        %[[VAL_116:[0-9a-zA-Z_\.]+]] = array.new  : <8 x !struct.type<@Num2Bits_0>>
-// CHECK-NEXT:        scf.for %[[VAL_117:[0-9a-zA-Z_\.]+]] = %[[VAL_46]] to %[[VAL_47]] step %[[VAL_45]] {
+// CHECK-NEXT:        scf.for %[[VAL_117:[0-9a-zA-Z_\.]+]] = %[[VAL_42]] to %[[VAL_41]] step %[[VAL_43]] {
 // CHECK-NEXT:          %[[VAL_118:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_52]]{{\[}}%[[VAL_117]]] : <8 x index>, index
 // CHECK-NEXT:          %[[VAL_119:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_53]]{{\[}}%[[VAL_117]]] : <8 x !struct.type<@Num2Bits_0>>, !struct.type<@Num2Bits_0>
 // CHECK-NEXT:          array.write %[[VAL_116]]{{\[}}%[[VAL_117]]] = %[[VAL_119]] : <8 x !struct.type<@Num2Bits_0>>, !struct.type<@Num2Bits_0>
@@ -455,13 +455,13 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@DecomposeProd
 // CHECK-NEXT:        function.return %[[VAL_48]] : !struct.type<@DecomposeProduct_1>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[VAL_120:[0-9a-zA-Z_\.]+]]: !struct.type<@DecomposeProduct_1>, %[[VAL_121:[0-9a-zA-Z_\.]+]]: !array.type<8 x !felt.type<"bn128">>, %[[VAL_122:[0-9a-zA-Z_\.]+]]: !array.type<8 x !felt.type<"bn128">>) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
-// CHECK-NEXT:        %[[VAL_123:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:        %[[VAL_124:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:        %[[VAL_125:[0-9a-zA-Z_\.]+]] = arith.constant 8 : index
+// CHECK-NEXT:        %[[VAL_123:[0-9a-zA-Z_\.]+]] = felt.const  8 : <"bn128">
+// CHECK-NEXT:        %[[VAL_124:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
+// CHECK-NEXT:        %[[VAL_125:[0-9a-zA-Z_\.]+]] = felt.const  256 : <"bn128">
 // CHECK-NEXT:        %[[VAL_126:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
-// CHECK-NEXT:        %[[VAL_127:[0-9a-zA-Z_\.]+]] = felt.const  256 : <"bn128">
-// CHECK-NEXT:        %[[VAL_128:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
-// CHECK-NEXT:        %[[VAL_129:[0-9a-zA-Z_\.]+]] = felt.const  8 : <"bn128">
+// CHECK-NEXT:        %[[VAL_127:[0-9a-zA-Z_\.]+]] = arith.constant 8 : index
+// CHECK-NEXT:        %[[VAL_128:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_129:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
 // CHECK-NEXT:        %[[VAL_130:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_120]][@high] : <@DecomposeProduct_1>, !array.type<8 x !felt.type<"bn128">>
 // CHECK-NEXT:        %[[VAL_131:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_120]][@low] : <@DecomposeProduct_1>, !array.type<8 x !felt.type<"bn128">>
 // CHECK-NEXT:        %[[VAL_132:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_120]][@u16s] : <@DecomposeProduct_1>, !array.type<8 x !felt.type<"bn128">>
@@ -469,8 +469,8 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@DecomposeProd
 // CHECK-NEXT:        %[[VAL_134:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_120]][@bits_low$inputs_in] : <@DecomposeProduct_1>, !array.type<8 x !felt.type<"bn128">>
 // CHECK-NEXT:        %[[VAL_135:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_120]][@bits_high] : <@DecomposeProduct_1>, !array.type<8 x !struct.type<@Num2Bits_0>>
 // CHECK-NEXT:        %[[VAL_136:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_120]][@bits_high$inputs_in] : <@DecomposeProduct_1>, !array.type<8 x !felt.type<"bn128">>
-// CHECK-NEXT:        %[[VAL_137:[0-9a-zA-Z_\.]+]] = scf.while (%[[VAL_138:[0-9a-zA-Z_\.]+]] = %[[VAL_128]]) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
-// CHECK-NEXT:          %[[VAL_139:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_138]], %[[VAL_129]]) : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_137:[0-9a-zA-Z_\.]+]] = scf.while (%[[VAL_138:[0-9a-zA-Z_\.]+]] = %[[VAL_124]]) : (!felt.type<"bn128">) -> !felt.type<"bn128"> {
+// CHECK-NEXT:          %[[VAL_139:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[VAL_138]], %[[VAL_123]]) : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:          scf.condition(%[[VAL_139]]) %[[VAL_138]] : !felt.type<"bn128">
 // CHECK-NEXT:        } do {
 // CHECK-NEXT:        ^bb0(%[[VAL_140:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">):
@@ -498,18 +498,18 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@DecomposeProd
 // CHECK-NEXT:          %[[VAL_159:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_131]]{{\[}}%[[VAL_158]]] : <8 x !felt.type<"bn128">>, !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_160:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_140]] : !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_161:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_130]]{{\[}}%[[VAL_160]]] : <8 x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:          %[[VAL_162:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_161]], %[[VAL_127]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_162:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_161]], %[[VAL_125]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_163:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_159]], %[[VAL_162]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:          constrain.eq %[[VAL_157]], %[[VAL_163]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:          %[[VAL_164:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_140]], %[[VAL_126]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:          scf.yield %[[VAL_164]] : !felt.type<"bn128">
 // CHECK-NEXT:        }
-// CHECK-NEXT:        scf.for %[[VAL_165:[0-9a-zA-Z_\.]+]] = %[[VAL_124]] to %[[VAL_125]] step %[[VAL_123]] {
+// CHECK-NEXT:        scf.for %[[VAL_165:[0-9a-zA-Z_\.]+]] = %[[VAL_128]] to %[[VAL_127]] step %[[VAL_129]] {
 // CHECK-NEXT:          %[[VAL_166:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_135]]{{\[}}%[[VAL_165]]] : <8 x !struct.type<@Num2Bits_0>>, !struct.type<@Num2Bits_0>
 // CHECK-NEXT:          %[[VAL_167:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_136]]{{\[}}%[[VAL_165]]] : <8 x !felt.type<"bn128">>, !felt.type<"bn128">
 // CHECK-NEXT:          function.call @Num2Bits_0::@constrain(%[[VAL_166]], %[[VAL_167]]) : (!struct.type<@Num2Bits_0>, !felt.type<"bn128">) -> ()
 // CHECK-NEXT:        }
-// CHECK-NEXT:        scf.for %[[VAL_168:[0-9a-zA-Z_\.]+]] = %[[VAL_124]] to %[[VAL_125]] step %[[VAL_123]] {
+// CHECK-NEXT:        scf.for %[[VAL_168:[0-9a-zA-Z_\.]+]] = %[[VAL_128]] to %[[VAL_127]] step %[[VAL_129]] {
 // CHECK-NEXT:          %[[VAL_169:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_133]]{{\[}}%[[VAL_168]]] : <8 x !struct.type<@Num2Bits_0>>, !struct.type<@Num2Bits_0>
 // CHECK-NEXT:          %[[VAL_170:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_134]]{{\[}}%[[VAL_168]]] : <8 x !felt.type<"bn128">>, !felt.type<"bn128">
 // CHECK-NEXT:          function.call @Num2Bits_0::@constrain(%[[VAL_169]], %[[VAL_170]]) : (!struct.type<@Num2Bits_0>, !felt.type<"bn128">) -> ()

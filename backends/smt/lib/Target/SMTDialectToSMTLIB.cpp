@@ -1547,10 +1547,16 @@ private:
   /// Wrap an expression with accumulated `let` bindings in dominance order.
   static std::string
   wrapWithLets(std::string expr, ArrayRef<std::pair<std::string, std::string>> letBindings) {
-    for (const auto &binding : llvm::reverse(letBindings)) {
-      expr = "(let ((" + binding.first + " " + binding.second + ")) " + expr + ")";
+    std::string result;
+    llvm::raw_string_ostream os(result);
+    for (const auto &binding : letBindings) {
+      os << "(let ((" << binding.first << ' ' << binding.second << ")) ";
     }
-    return expr;
+    os << expr;
+    for (size_t i = 0; i < letBindings.size(); ++i) {
+      os << ')';
+    }
+    return result;
   }
 
   ModuleOp module;

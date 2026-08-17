@@ -1,0 +1,2 @@
+fixed:
+  - Preserve array writes that a live dynamic-index read may observe, including aliases through nested subarrays and region joins.

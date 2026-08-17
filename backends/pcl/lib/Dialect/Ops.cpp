@@ -45,7 +45,7 @@ template <typename Op> std::optional<PrimeAttr> getFieldPrime(Op &op) {
     return std::nullopt;
   }
 
-  auto attr = mlir::dyn_cast_if_present<PrimeAttr>(modOp->getAttr("pcl.prime"));
+  auto attr = llvm::dyn_cast_if_present<PrimeAttr>(modOp->getAttr(PCL_PRIME_ATTR_NAME));
   if (!attr) {
     return std::nullopt;
   }
@@ -85,8 +85,8 @@ OpFoldResult foldBinaryOp(
     return value;
   };
 
-  auto lhs = mlir::dyn_cast_if_present<T>(adaptor.getLhs());
-  auto rhs = mlir::dyn_cast_if_present<T>(adaptor.getRhs());
+  auto lhs = llvm::dyn_cast_if_present<T>(adaptor.getLhs());
+  auto rhs = llvm::dyn_cast_if_present<T>(adaptor.getRhs());
   // Shortcircuit if both operands are not constant.
   if (!rhs && !lhs) {
     return nullptr;
@@ -151,8 +151,8 @@ OpFoldResult foldCmpOp(Op &op, typename Op::FoldAdaptor adaptor, Fn opFn) {
   if (!prime) {
     return nullptr;
   }
-  auto lhs = mlir::dyn_cast_if_present<FeltAttr>(adaptor.getLhs());
-  auto rhs = mlir::dyn_cast_if_present<FeltAttr>(adaptor.getRhs());
+  auto lhs = llvm::dyn_cast_if_present<FeltAttr>(adaptor.getLhs());
+  auto rhs = llvm::dyn_cast_if_present<FeltAttr>(adaptor.getRhs());
   // Shortcircuit if either operand is not constant.
   if (!rhs || !lhs) {
     return nullptr;
@@ -211,7 +211,7 @@ template <typename Op> struct FoldDoubleNeg : public OpRewritePattern<Op> {
     if (op->getNumOperands() != 1) {
       return failure();
     }
-    auto defOp = mlir::dyn_cast_if_present<Op>(op->getOperand(0).getDefiningOp());
+    auto defOp = llvm::dyn_cast_if_present<Op>(op->getOperand(0).getDefiningOp());
     if (!defOp || defOp->getNumOperands() != 1) {
       return failure();
     }
@@ -302,7 +302,7 @@ private:
     if (!matchPattern(v, m_Constant(&attr))) {
       return FeltAttr();
     }
-    return mlir::dyn_cast_if_present<FeltAttr>(attr);
+    return llvm::dyn_cast_if_present<FeltAttr>(attr);
   }
 };
 } // namespace
@@ -328,7 +328,7 @@ OpFoldResult NegOp::fold(FoldAdaptor adaptor) {
   if (!prime) {
     return nullptr;
   }
-  auto attr = mlir::dyn_cast_if_present<FeltAttr>(adaptor.getValue());
+  auto attr = llvm::dyn_cast_if_present<FeltAttr>(adaptor.getValue());
   if (!attr) {
     return nullptr;
   }
@@ -364,7 +364,7 @@ private:
     if (!matchPattern(op.getLhs(), m_Constant(&attr))) {
       return FeltAttr();
     }
-    return mlir::dyn_cast_if_present<FeltAttr>(attr);
+    return llvm::dyn_cast_if_present<FeltAttr>(attr);
   }
 };
 
@@ -441,17 +441,17 @@ private:
   /// Simpler pattern that assumes only LHS can be the constant.
   FailureOr<FoldedEq> matchAssertionImpl(Value lhs, Value rhs) const {
     Attribute attr;
-    auto rhsAsBool = mlir::dyn_cast_if_present<AsFeltOp>(rhs.getDefiningOp());
+    auto rhsAsBool = llvm::dyn_cast_if_present<AsFeltOp>(rhs.getDefiningOp());
 
     if (!matchPattern(lhs, m_Constant(&attr)) || !rhsAsBool) {
       return failure();
     }
 
-    if (auto boolAttr = mlir::dyn_cast_if_present<pcl::BoolAttr>(attr)) {
+    if (auto boolAttr = llvm::dyn_cast_if_present<pcl::BoolAttr>(attr)) {
       return FoldedEq {.value = rhsAsBool.getValue(), .constValue = boolAttr.getValue()};
     }
 
-    if (auto feltAttr = mlir::dyn_cast_if_present<FeltAttr>(attr)) {
+    if (auto feltAttr = llvm::dyn_cast_if_present<FeltAttr>(attr)) {
       if (feltAttr.getValue().isZero()) {
         return FoldedEq {.value = rhsAsBool.getValue(), .constValue = false};
       }
@@ -468,8 +468,8 @@ struct FoldEqOfNegations : public OpRewritePattern<CmpEqOp> {
   using OpRewritePattern<CmpEqOp>::OpRewritePattern;
 
   LogicalResult matchAndRewrite(CmpEqOp op, PatternRewriter &rewriter) const override {
-    auto lhsNeg = mlir::dyn_cast_if_present<NegOp>(op.getLhs().getDefiningOp());
-    auto rhsNeg = mlir::dyn_cast_if_present<NegOp>(op.getRhs().getDefiningOp());
+    auto lhsNeg = llvm::dyn_cast_if_present<NegOp>(op.getLhs().getDefiningOp());
+    auto rhsNeg = llvm::dyn_cast_if_present<NegOp>(op.getRhs().getDefiningOp());
 
     if (!lhsNeg || !rhsNeg) {
       return failure();
@@ -509,8 +509,8 @@ private:
   std::pair<Value, Value> pickOperands(AddOp op, PatternRewriter &rewriter) const {
     auto X = op.getLhs();
     auto Y = op.getRhs();
-    auto Xop = mlir::dyn_cast_if_present<NegOp>(X.getDefiningOp());
-    auto Yop = mlir::dyn_cast_if_present<NegOp>(Y.getDefiningOp());
+    auto Xop = llvm::dyn_cast_if_present<NegOp>(X.getDefiningOp());
+    auto Yop = llvm::dyn_cast_if_present<NegOp>(Y.getDefiningOp());
     if (Xop) {
       return {Xop.getValue(), Y};
     }
@@ -539,12 +539,12 @@ private:
     if (!matchPattern(lhs, m_Constant(&attr))) {
       return AddOp();
     }
-    auto feltAttr = mlir::dyn_cast_if_present<FeltAttr>(attr);
+    auto feltAttr = llvm::dyn_cast_if_present<FeltAttr>(attr);
     if (!feltAttr || !feltAttr.getValue().isZero()) {
       return AddOp();
     }
 
-    return mlir::dyn_cast_if_present<AddOp>(rhs.getDefiningOp());
+    return llvm::dyn_cast_if_present<AddOp>(rhs.getDefiningOp());
   }
 };
 
@@ -581,12 +581,12 @@ private:
     if (!matchPattern(lhs, m_Constant(&attr))) {
       return SubOp();
     }
-    auto feltAttr = mlir::dyn_cast_if_present<FeltAttr>(attr);
+    auto feltAttr = llvm::dyn_cast_if_present<FeltAttr>(attr);
     if (!feltAttr || !feltAttr.getValue().isZero()) {
       return SubOp();
     }
 
-    return mlir::dyn_cast_if_present<SubOp>(rhs.getDefiningOp());
+    return llvm::dyn_cast_if_present<SubOp>(rhs.getDefiningOp());
   }
 };
 
@@ -658,7 +658,7 @@ OpFoldResult AndOp::fold(FoldAdaptor adaptor) {
 
 /// If the boolean is constant, fold the op into a constant 1 or 0.
 OpFoldResult AsFeltOp::fold(FoldAdaptor adaptor) {
-  auto attr = mlir::dyn_cast_if_present<BoolAttr>(adaptor.getValue());
+  auto attr = llvm::dyn_cast_if_present<BoolAttr>(adaptor.getValue());
   if (!attr) {
     return nullptr;
   }
@@ -677,7 +677,7 @@ OpFoldResult AsFeltOp::fold(FoldAdaptor adaptor) {
 /// Fold the det operation if the operand is constant, since it's going to be
 /// deterministic by definition.
 OpFoldResult DetOp::fold(FoldAdaptor adaptor) {
-  auto attr = mlir::dyn_cast_if_present<FeltAttr>(adaptor.getValue());
+  auto attr = llvm::dyn_cast_if_present<FeltAttr>(adaptor.getValue());
   if (!attr) {
     return nullptr;
   }
@@ -718,7 +718,7 @@ OpFoldResult ImpliesOp::fold(FoldAdaptor adaptor) {
 //===----------------------------------------------------------------------===//
 
 OpFoldResult NotOp::fold(FoldAdaptor adaptor) {
-  auto attr = mlir::dyn_cast_if_present<BoolAttr>(adaptor.getValue());
+  auto attr = llvm::dyn_cast_if_present<BoolAttr>(adaptor.getValue());
   if (!attr) {
     return nullptr;
   }
@@ -773,7 +773,7 @@ private:
     if (!matchPattern(op.getCond(), m_Constant(&attr))) {
       return pcl::BoolAttr();
     }
-    return mlir::dyn_cast_if_present<pcl::BoolAttr>(attr);
+    return llvm::dyn_cast_if_present<pcl::BoolAttr>(attr);
   }
 };
 

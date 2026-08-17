@@ -78,18 +78,16 @@ def IntervalAnalysisPrinterPass : LLZKPass<"llzk-print-interval-analysis"> {
               "The field to use for interval analysis. If supplied, this "
               "always overrides the module's detected field. If omitted, the "
               "pass first tries to detect a single field from the enclosing "
-              "module's felt usage "
-              "and otherwise falls back to bn128. Supported fields: "
-              "bn128/bn254, babybear, goldilocks, grumpkin, koalabear, "
-              "mersenne31">,
+              "module's felt usage and otherwise falls back to bn128. "
+              "Supported fields: bn128/bn254, babybear, goldilocks, grumpkin, "
+              "koalabear, mersenne31">,
        Option<"propagateInputConstraints", "propagate-input-constraints",
               "bool", /* default */ "false",
               "Whether to propagate constraints on inputs from @constrain to "
-              "@compute functions. "
-              "This allows for tighter intervals to possibly be found for "
-              "computed values, "
-              "assuming that the witness generator would include constraints "
-              "as assertions during the computation.">,
+              "@compute functions. This allows for tighter intervals to "
+              "possibly be found for computed values, assuming that the "
+              "witness generator would include constraints as assertions "
+              "during the computation.">,
        Option<"printSolverConstraints", "print-solver-constraints", "bool",
               /* default */ "false",
               "Whether to output SMT solver constraints along with intervals.">,

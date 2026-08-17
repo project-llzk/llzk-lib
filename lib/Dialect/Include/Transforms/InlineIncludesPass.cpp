@@ -43,8 +43,9 @@ class PassImpl : public llzk::include::impl::InlineIncludesPassBase<PassImpl> {
   using Base::Base;
 
   void runOnOperation() override {
+    ModuleOp module = getOperation();
     std::vector<std::pair<ModuleOp, IncludeStack>> currLevel = {
-        std::make_pair(getOperation(), IncludeStack())
+        std::make_pair(module, IncludeStack())
     };
     do {
       std::vector<std::pair<ModuleOp, IncludeStack>> nextLevel = {};
@@ -74,7 +75,7 @@ class PassImpl : public llzk::include::impl::InlineIncludesPassBase<PassImpl> {
       currLevel = nextLevel;
     } while (!currLevel.empty());
 
-    if (failed(getOperation().verify())) {
+    if (failed(module.verify())) {
       signalPassFailure();
       return;
     }

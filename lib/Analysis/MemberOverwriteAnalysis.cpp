@@ -52,8 +52,8 @@ ChangeResult MemberOverwriteLattice::join(const AbstractDenseLattice &other) {
   ensure(rhs, "cannot join incomparable lattices");
 
   LLVM_DEBUG(
-      llvm::dbgs() << "Joining " << *dyn_cast<ProgramPoint *>(getAnchor()) << "(" << *this
-                   << ") with " << *dyn_cast<ProgramPoint *>(rhs->getAnchor()) << "(" << *rhs
+      llvm::dbgs() << "Joining " << *dyn_cast<ProgramPoint *>(getAnchor()) << '(' << *this
+                   << ") with " << *dyn_cast<ProgramPoint *>(rhs->getAnchor()) << '(' << *rhs
                    << ")\n"
   );
   bool changed = false;

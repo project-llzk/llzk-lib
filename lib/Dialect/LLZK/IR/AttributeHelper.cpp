@@ -18,7 +18,7 @@ namespace llzk {
 // Adapted from AsmPrinter::printStrippedAttrOrType(), but without printing type.
 void printAttrs(AsmPrinter &printer, ArrayRef<Attribute> attrs, const StringRef &separator) {
   llvm::interleave(attrs, printer.getStream(), [&printer](Attribute a) {
-    if (auto intAttr = mlir::dyn_cast_if_present<IntegerAttr>(a)) {
+    if (auto intAttr = llvm::dyn_cast_if_present<IntegerAttr>(a)) {
       if (isDynamic(intAttr)) {
         printer.getStream() << "?";
         return;

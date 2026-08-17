@@ -147,7 +147,7 @@ static void emitZKLeanStructDefs(ModuleOp source, LLZKToZKLeanState &state) {
     auto &body = zkStruct.getBodyRegion().emplaceBlock();
     OpBuilder memberBuilder(&body, body.begin());
     for (auto member : def.getBody()->getOps<llzk::component::MemberDefOp>()) {
-      if (!mlir::isa<llzk::felt::FeltType>(member.getType())) {
+      if (!llvm::isa<llzk::felt::FeltType>(member.getType())) {
         member.emitError("unsupported member type for ZKLean struct conversion").report();
         state.hadError = true;
         continue;
@@ -214,7 +214,7 @@ struct FunctionConverter {
       state.hadError = true;
       return Value();
     }
-    if (mlir::isa<llzk::zkleanlean::StructType>(newArg.getType())) {
+    if (llvm::isa<llzk::zkleanlean::StructType>(newArg.getType())) {
       userOp->emitError("struct values must be accessed via zkleanlean.accessor").report();
       state.hadError = true;
       return Value();

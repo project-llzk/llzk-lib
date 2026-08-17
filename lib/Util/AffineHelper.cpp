@@ -119,7 +119,7 @@ inline InFlightDiagnostic msgInstantiationGroupAttrMismatch(
 ) {
   return op->emitOpError().append(
       "map instantiation group count (", mapOperandsSize,
-      ") does not match with length of 'mapOpGroupSizes' attribute (", mapOpGroupSizesCount, ")"
+      ") does not match with length of 'mapOpGroupSizes' attribute (", mapOpGroupSizesCount, ')'
   );
 }
 } // namespace
@@ -153,7 +153,7 @@ LogicalResult verifySizesForMultiAffineOps(
     // Tested in CallOpTests.cpp
     return op->emitOpError().append(
         "length of 'numDimsPerMap' attribute (", numDimsPerMap.size(),
-        ") does not match with length of 'mapOpGroupSizes' attribute (", count, ")"
+        ") does not match with length of 'mapOpGroupSizes' attribute (", count, ')'
     );
   }
 
@@ -168,13 +168,13 @@ LogicalResult verifySizesForMultiAffineOps(
       aggregateResult = op->emitOpError().append(
           "map instantiation group ", i, " operand count (", mapOperands[i].size(),
           ") does not match group ", i, " size in 'mapOpGroupSizes' attribute (",
-          currMapOpGroupSize, ")"
+          currMapOpGroupSize, ')'
       );
     } else if (std::cmp_greater(numDimsPerMap[i], currMapOpGroupSize)) {
       // Tested in CallOpTests.cpp
       aggregateResult = op->emitOpError().append(
           "map instantiation group ", i, " dimension count (", numDimsPerMap[i], ") exceeds group ",
-          i, " size in 'mapOpGroupSizes' attribute (", currMapOpGroupSize, ")"
+          i, " size in 'mapOpGroupSizes' attribute (", currMapOpGroupSize, ')'
       );
     }
   }

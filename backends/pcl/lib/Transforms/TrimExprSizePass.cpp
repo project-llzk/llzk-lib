@@ -125,7 +125,7 @@ class PassImpl : public pcl::impl::TrimExprSizePassBase<PassImpl> {
     ExprSizes sizes(max, cuts);
 
     getOperation()->walk([&sizes, &cuts, &names, max](Operation *op) {
-      if (auto varOp = mlir::dyn_cast_if_present<pcl::VarOp>(op)) {
+      if (auto varOp = llvm::dyn_cast_if_present<pcl::VarOp>(op)) {
         names.insert(varOp.getName());
       }
       if (op->getNumResults() == 0) {

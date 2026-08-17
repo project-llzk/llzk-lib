@@ -25,3 +25,6 @@
 // Include TableGen'd op classes
 #define GET_OP_CLASSES
 #include "pcl/Dialect/IR/Ops.h.inc"
+
+/// Attribute name for the PCL prime attribute.
+constexpr char PCL_PRIME_ATTR_NAME[] = "pcl.prime";

@@ -236,7 +236,7 @@ static LogicalResult verifyInitialValues(
   bool failed = false;
   if (names.size() != values.size()) {
     emitError() << "number of initialized records and initial values does not match ("
-                << names.size() << " != " << values.size() << ")";
+                << names.size() << " != " << values.size() << ')';
     failed = true;
   }
 
@@ -327,6 +327,8 @@ ParseResult NewPodOp::parse(OpAsmParser &parser, OperationState &result) {
    * record_inits : symbol `=` operand `,` record_inits | symbol `=` operand
    */
 
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   auto &props = result.getOrAddProperties<NewPodOp::Properties>();
 
   SmallVector<Attribute> initializedRecords;
@@ -549,7 +551,7 @@ LogicalResult ReadPodOp::verify() {
 
   if (getResult().getType() != *lookup) {
     return emitError() << "operation result type and type of record do not match ("
-                       << getResult().getType() << " != " << *lookup << ")";
+                       << getResult().getType() << " != " << *lookup << ')';
   }
 
   return success();
@@ -560,6 +562,8 @@ LogicalResult ReadPodOp::verify() {
 //===----------------------------------------------------------------------===//
 
 LogicalResult WritePodOp::readProperties(DialectBytecodeReader &reader, OperationState &state) {
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   auto &prop = state.getOrAddProperties<Properties>();
   return readRecordNameProperty(reader, prop.record_name);
 }
@@ -582,7 +586,7 @@ LogicalResult WritePodOp::verify() {
 
   if (getValue().getType() != *lookup) {
     return emitError() << "type of source value and type of record do not match ("
-                       << getValue().getType() << " != " << *lookup << ")";
+                       << getValue().getType() << " != " << *lookup << ')';
   }
 
   return success();

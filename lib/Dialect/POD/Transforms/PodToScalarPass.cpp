@@ -2177,10 +2177,12 @@ public:
 
   inline static bool legal(MemberDefOp op) { return !splittablePod(op.getType()); }
 
-  LogicalResult match(MemberDefOp op) const override { return failure(legal(op)); }
-
-  void
-  rewrite(MemberDefOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(
+      MemberDefOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
     StructDefOp inStruct = op->getParentOfType<StructDefOp>();
     assert(inStruct);
     LocalMemberReplacementMap &localRepMapRef = repMapRef[inStruct][op.getSymNameAttr()];
@@ -2191,6 +2193,7 @@ public:
     SmallVector<StringAttr> recordChain;
     flattenPodMemberIntoLeaves(op, podTy, recordChain, localRepMapRef, structSymbolTable, rewriter);
     rewriter.eraseOp(op);
+    return success();
   }
 };
 
@@ -2207,10 +2210,12 @@ public:
 
   inline static bool legal(MemberDefOp op) { return !splittablePodArray(op.getType()); }
 
-  LogicalResult match(MemberDefOp op) const override { return failure(legal(op)); }
-
-  void
-  rewrite(MemberDefOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(
+      MemberDefOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
     StructDefOp inStruct = op->getParentOfType<StructDefOp>();
     assert(inStruct);
     LocalMemberReplacementMap &localRepMapRef = repMapRef[inStruct][op.getSymNameAttr()];
@@ -2226,7 +2231,7 @@ public:
         op.removeSignalAttr();
       });
       localRepMapRef[RecordChain()] = std::make_pair(op.getSymNameAttr(), carrierTy);
-      return;
+      return success();
     }
 
     SymbolTable &structSymbolTable = tables.getSymbolTable(inStruct);
@@ -2251,6 +2256,7 @@ public:
           std::make_pair(structSymbolTable.insert(carrierMember), carrierTy);
     }
     rewriter.eraseOp(op);
+    return success();
   }
 };
 
@@ -2314,9 +2320,11 @@ public:
 
   static bool legal(NonDetOp op) { return !splittablePodArray(op.getType()); }
 
-  LogicalResult match(NonDetOp op) const override { return failure(legal(op)); }
-
-  void rewrite(NonDetOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult
+  matchAndRewrite(NonDetOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    if (legal(op)) {
+      return failure();
+    }
     SmallVector<Type> splitTypes;
     splitPodArrayTypeTo(op.getType(), splitTypes);
     if (splitTypes.empty()) {
@@ -2325,7 +2333,7 @@ public:
                   op, getPodArrayShapeCarrierType(llvm::cast<ArrayType>(op.getType()))
               )
       );
-      return;
+      return success();
     }
     SmallVector<Value> replacements;
     ArrayType arrTy = llvm::cast<ArrayType>(op.getType());
@@ -2341,6 +2349,7 @@ public:
       ));
     }
     rewriter.replaceOpWithMultiple(op, {ValueRange(replacements)});
+    return success();
   }
 };
 
@@ -2599,10 +2608,11 @@ public:
            !containsSplittablePodArrayType(op.getResultTypes());
   }
 
-  LogicalResult match(FuncDefOp op) const override { return failure(legal(op)); }
-
   LogicalResult
   matchAndRewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    if (legal(op)) {
+      return failure();
+    }
     const auto *tyConv = getTypeConverter();
     assert(tyConv && "expected pod-array type converter");
 
@@ -2899,11 +2909,12 @@ public:
            !containsSplittablePodArrayType(op.getResultTypes());
   }
 
-  LogicalResult match(CallOp op) const override { return failure(legal(op)); }
-
   LogicalResult matchAndRewrite(
       CallOp op, OneToNOpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
+    if (legal(op)) {
+      return failure();
+    }
     const auto *tyConv = getTypeConverter();
     assert(tyConv && "expected pod-array type converter");
 
@@ -3988,9 +3999,12 @@ public:
 
   static bool legal(NewPodOp op) { return op.getInitialValues().empty(); }
 
-  LogicalResult match(NewPodOp op) const override { return failure(legal(op)); }
-
-  void rewrite(NewPodOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(
+      NewPodOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
     // Generate an individual write for each initialization
     rewriter.setInsertionPointAfter(op);
     Location loc = op.getLoc();
@@ -4004,6 +4018,7 @@ public:
       op.getInitialValuesMutable().clear();
       op.setInitializedRecordsAttr(ArrayAttr::get(op.getContext(), {})); // DefaultValuedAttr:{}
     });
+    return success();
   }
 };
 
@@ -4026,10 +4041,12 @@ public:
     });
   }
 
-  LogicalResult match(CreateArrayOp op) const override { return failure(legal(op)); }
-
-  void
-  rewrite(CreateArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(
+      CreateArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
     SmallVector<Value> leafElements;
     leafElements.reserve(adaptor.getElements().size());
 
@@ -4087,6 +4104,7 @@ public:
       genArrayWrite(rewriter, op.getLoc(), rebuiltArray, index, leafValue);
     }
     rewriter.replaceOp(op, rebuiltArray);
+    return success();
   }
 };
 
@@ -4109,9 +4127,11 @@ public:
            !containsSplittablePodType(op.getResultTypes());
   }
 
-  LogicalResult match(FuncDefOp op) const override { return failure(legal(op)); }
-
-  void rewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult
+  matchAndRewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    if (legal(op)) {
+      return failure();
+    }
     // Update in/out types of the function to replace pods with scalars
     class Impl : public FunctionTypeConverter {
       SmallVector<size_t> originalInputIdxToSize, originalResultIdxToSize;
@@ -4187,6 +4207,7 @@ public:
       }
     };
     Impl(op, resolver).convert(op, rewriter);
+    return success();
   }
 };
 
@@ -4206,12 +4227,16 @@ public:
     return !containsSplittablePodType(op.getOperands().getTypes());
   }
 
-  LogicalResult match(ReturnOp op) const override { return failure(legal(op)); }
-
-  void rewrite(ReturnOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(
+      ReturnOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
     processInputOperands(
         adaptor.getOperands(), op.getOperandsMutable(), op, rewriter, &resolver.virtualPods
     );
+    return success();
   }
 };
 
@@ -4271,15 +4296,19 @@ public:
            !containsSplittablePodType(op.getResultTypes());
   }
 
-  LogicalResult match(CallOp op) const override { return failure(legal(op)); }
-
-  void rewrite(CallOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(
+      CallOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
     // Create new CallOp with split results first so, then process its inputs to split types
     CallOp newCall = newCallOpWithSplitResults(op, adaptor, rewriter, resolver);
     processInputOperands(
         newCall.getArgOperands(), newCall.getArgOperandsMutable(), newCall, rewriter,
         &resolver.virtualPods
     );
+    return success();
   }
 };
 
@@ -4299,10 +4328,12 @@ public:
 
   static bool legal(MemberWriteOp op) { return !containsSplittablePodType(op.getVal().getType()); }
 
-  LogicalResult match(MemberWriteOp op) const override { return failure(legal(op)); }
-
-  void
-  rewrite(MemberWriteOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(
+      MemberWriteOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
     StructType tgtStructTy = llvm::cast<MemberRefOpInterface>(op.getOperation()).getStructType();
     auto tgtStructDef = tgtStructTy.getDefinition(tables, op);
     assert(succeeded(tgtStructDef));
@@ -4326,6 +4357,7 @@ public:
       );
     }
     rewriter.eraseOp(op);
+    return success();
   }
 };
 
@@ -4347,10 +4379,12 @@ public:
     return !containsSplittablePodType(op.getResult().getType());
   }
 
-  LogicalResult match(MemberReadOp op) const override { return failure(legal(op)); }
-
-  void
-  rewrite(MemberReadOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(
+      MemberReadOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
     StructType tgtStructTy = llvm::cast<MemberRefOpInterface>(op.getOperation()).getStructType();
     auto tgtStructDef = tgtStructTy.getDefinition(tables, op);
     assert(succeeded(tgtStructDef));
@@ -4371,6 +4405,7 @@ public:
     Value virtualPod = createVirtualPodPlaceholder(rewriter, op.getLoc(), podTy, leafValues);
     resolver.virtualPods[virtualPod] = std::move(leafValues);
     rewriter.replaceOp(op, virtualPod);
+    return success();
   }
 };
 
@@ -5057,7 +5092,7 @@ static ArrayAttr expandArgAttrsForPromotedFunctionArgCasts(
       continue;
     }
 
-    auto dictAttr = mlir::cast<DictionaryAttr>(attr);
+    auto dictAttr = llvm::cast<DictionaryAttr>(attr);
     auto nameAttr = dyn_cast_if_present<StringAttr>(dictAttr.get(ARG_NAME_ATTR_NAME));
     if (!nameAttr) {
       newAttrs.append(argCast->resultTypes.size(), attr);
@@ -5163,9 +5198,7 @@ static LogicalResult updateCallsForPromotedFunctionArgCasts(
   }
 
   OpBuilder builder(modOp.getContext());
-  SmallVector<CallOp> calls;
-  modOp.walk([&calls](CallOp callOp) { calls.push_back(callOp); });
-  for (CallOp callOp : calls) {
+  for (CallOp callOp : walkCollect<CallOp>(modOp)) {
     FailureOr<SymbolLookupResult<FuncDefOp>> targetRes = callOp.getCalleeTarget(symTables);
     if (failed(targetRes)) {
       return failure();
@@ -5205,9 +5238,7 @@ static LogicalResult updateCallsForPromotedFunctionArgCasts(
 /// leaving a one-argument-to-many-types cast one level up the call graph.
 static LogicalResult
 promoteFunctionArgCastsToSignature(ModuleOp modOp, SymbolTableCollection &symTables) {
-  SmallVector<FuncDefOp> funcs;
-  modOp.walk([&funcs](FuncDefOp func) { funcs.push_back(func); });
-
+  SmallVector<FuncDefOp> funcs = walkCollect<FuncDefOp>(modOp);
   for (unsigned promotionRounds = 1;; ++promotionRounds) {
     SmallVector<PromotedFunctionSignature> promotedSignatures;
     for (FuncDefOp func : funcs) {
@@ -6439,6 +6470,76 @@ static LogicalResult rejectRemainingRaggedNestedLeafUses(ModuleOp modOp) {
   return rejectRaggedNestedLeafBoundaryCrossings(modOp);
 }
 
+// In MLIR 20.1.8, the `RemoveDeadValues` pass did not handle branching regions as aggressively
+// as the `RunLivenessAnalysis` that it depends on. The liveness analysis can conclude an `scf.if`
+// branch is dead and thus its `scf.yield` operand is also dead. However, RDV does not end up
+// removing that branch but does remove the definition of the `scf.yield` operand, leaving a NULL
+// operand in the `scf.yield` op.
+//
+// The bug is fixed in MLIR 22.1.0 but there is a temporary solution: before running the RDV pass,
+// run "Sparse Conditional Constant Propagation" (SCCP) plus a custom pass that folds `scf.if` with
+// static conditions.
+//
+// Portions adapted from mlir/lib/Dialect/SCF/IR/SCF.cpp
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+namespace temp_fix_pre_mlir_22 {
+
+static void replaceOpWithRegion(
+    PatternRewriter &rewriter, Operation *op, Region &region, ValueRange blockArgs = {}
+) {
+  assert(llvm::hasSingleElement(region) && "expected single-region block");
+  Block *block = &region.front();
+  Operation *terminator = block->getTerminator();
+  ValueRange results = terminator->getOperands();
+  rewriter.inlineBlockBefore(block, op, blockArgs);
+  rewriter.replaceOp(op, results);
+  rewriter.eraseOp(terminator);
+}
+
+struct RemoveStaticCondition : public OpRewritePattern<scf::IfOp> {
+  using OpRewritePattern<scf::IfOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(scf::IfOp op, PatternRewriter &rewriter) const override {
+    BoolAttr condition;
+    if (!matchPattern(op.getCondition(), m_Constant(&condition))) {
+      return failure();
+    }
+    if (condition.getValue()) {
+      replaceOpWithRegion(rewriter, op, op.getThenRegion());
+    } else if (!op.getElseRegion().empty()) {
+      replaceOpWithRegion(rewriter, op, op.getElseRegion());
+    } else {
+      rewriter.eraseOp(op);
+    }
+    return success();
+  }
+};
+
+struct FlattenStaticIfPass : PassWrapper<FlattenStaticIfPass, OperationPass<ModuleOp>> {
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(FlattenStaticIfPass)
+
+  void runOnOperation() override {
+    RewritePatternSet patterns(&getContext());
+    patterns.add<RemoveStaticCondition>(&getContext());
+
+    if (failed(applyPatternsGreedily(
+            getOperation(), std::move(patterns),
+            GreedyRewriteConfig {.fold = false, .cseConstants = false}
+        ))) {
+      signalPassFailure();
+    }
+  }
+};
+
+void add(OpPassManager &pm) {
+  pm.addPass(createSCCPPass());
+  pm.addPass(std::make_unique<FlattenStaticIfPass>());
+}
+
+} // namespace temp_fix_pre_mlir_22
+
 /// Pass driver for the full POD-to-scalar lowering pipeline described above.
 class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
   using Base = PodToScalarPassBase<PassImpl>;
@@ -6465,6 +6566,7 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
             .allocatorOpName = NewPodOp::getOperationName().str()
         }
     ));
+    temp_fix_pre_mlir_22::add(cleanupPM);
     cleanupPM.addPass(createRemoveDeadValuesWorkaroundPass());
 
     size_t podAllocWeight = podAllocScalarizationWeight(module);

@@ -111,9 +111,11 @@ def ComputeConstrainToProductPass
                         "(default to `@Main`)">];
 }
 
-def FuseProductLoopsPass : LLZKPass<"llzk-fuse-product-loops"> {
-  let summary = "Fuse matching witness/constraint loops in a @product function";
-  let description = summary;
+def FuseProductControlFlowPass : LLZKPass<"llzk-fuse-product-control-flow"> {
+  let summary =
+      "Fuse matching compute/constrain control flow in a @product function";
+  let description =
+      "Fuse matching witness/constraint loops in a @product function";
 }
 
 def EnforceNoMemberOverwritePass : LLZKPass<"llzk-enforce-no-overwrite"> {

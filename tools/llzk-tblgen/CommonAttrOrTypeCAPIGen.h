@@ -290,7 +290,7 @@ Mlir{1} {0}{2}_{3}Get(MlirContext ctx{4}) {{
           argListStream << "::llvm::cast<" << cppType << ">(unwrap(" << pName << "))";
         } else {
           // Any other cases, just use an "unwrap" function
-          argListStream << "unwrap(" << pName << ")";
+          argListStream << "unwrap(" << pName << ')';
         }
       }
     }

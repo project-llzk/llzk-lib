@@ -99,14 +99,17 @@ public:
     });
   }
 
-  LogicalResult match(TemplateOp op) const override { return failure(legal(op)); }
-
-  void
-  rewrite(TemplateOp op, TemplateOpAdaptor, ConversionPatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(
+      TemplateOp op, TemplateOpAdaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (legal(op)) {
+      return failure();
+    }
     LLVM_DEBUG({
       llvm::dbgs() << "found template with no struct or function definitions: " << op << '\n';
     });
     rewriter.eraseOp(op);
+    return success();
   }
 };
 

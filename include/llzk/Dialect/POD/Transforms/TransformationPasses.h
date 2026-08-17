@@ -41,7 +41,7 @@ inline mlir::Operation *findNearestLoopCarriedPodAccess(ReadPodOp readOp) {
   };
 
   for (mlir::Operation *parent = readOp->getParentOp(); parent; parent = parent->getParentOp()) {
-    if (!mlir::isa<mlir::scf::ForOp, mlir::scf::WhileOp>(parent) ||
+    if (!llvm::isa<mlir::scf::ForOp, mlir::scf::WhileOp>(parent) ||
         isValueDefinedInside(parent, readOp.getPodRef())) {
       continue;
     }

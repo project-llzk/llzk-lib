@@ -61,7 +61,7 @@ def InvariantTarget : OpInterface<"InvariantTargetOpInterface"> {
       [InterfaceMethod<[{Gets the label of the loop, if available.}],
                        "::mlir::FailureOr<::mlir::StringRef>", "getLabel",
                        (ins), [{
-                                   auto attr = ::mlir::dyn_cast_or_null<::mlir::StringAttr>($_op->getDiscardableAttr("loop_label"));
+                                   auto attr = ::llvm::dyn_cast_or_null<::mlir::StringAttr>($_op->getDiscardableAttr("loop_label"));
                                    if (!attr) return ::mlir::failure();
                                    return attr.getValue();
                                  }]>,
@@ -91,7 +91,7 @@ def ContractTarget : OpInterface<"ContractTargetOpInterface", [Symbol]> {
     /// Emulates the static method with the same name found in operations.
     static ::mlir::StringLiteral getOperationName() {
       return ::mlir::StringLiteral("contract target interface implementation");
-    }                    
+    }
   }];
 }
 

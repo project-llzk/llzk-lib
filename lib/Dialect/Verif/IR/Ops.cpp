@@ -1109,6 +1109,8 @@ void InvariantOp::build(
     OpBuilder &odsBuilder, OperationState &odsState, StringRef loop_name,
     ArrayRef<Type> loop_arg_types, ArrayRef<Location> loop_arg_locs
 ) {
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   odsState.getOrAddProperties<InvariantOp::Properties>().loop_name =
       odsBuilder.getStringAttr(loop_name);
   odsState.getOrAddProperties<InvariantOp::Properties>().loop_arg_types =
@@ -1139,12 +1141,12 @@ static LogicalResult verifyArgTypes(InvariantTargetOpInterface target, Invariant
        llvm::enumerate(llvm::zip_equal(targetArgTypes, bodyArgTypes, declaredTypes))) {
     auto [targetType, bodyArgType, declaredType] = types;
 
-    if (targetType != mlir::cast<TypeAttr>(declaredType).getValue()) {
+    if (targetType != llvm::cast<TypeAttr>(declaredType).getValue()) {
       failed = true;
       op->emitOpError() << "target argument #" << n << " expected type " << targetType
                         << " but invariant declared type " << declaredType;
     }
-    if (bodyArgType != mlir::cast<TypeAttr>(declaredType).getValue()) {
+    if (bodyArgType != llvm::cast<TypeAttr>(declaredType).getValue()) {
       failed = true;
       op->emitOpError() << "invariant argument #" << n << " expected type " << targetType
                         << " but invariant declared type " << declaredType;
@@ -1174,6 +1176,8 @@ ParseResult InvariantOp::parse(OpAsmParser &parser, OperationState &result) {
   if (parser.parseSymbolName(loopNameAttr)) {
     return failure();
   }
+  // Suppress false positive from `clang-tidy`
+  // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
   result.getOrAddProperties<InvariantOp::Properties>().loop_name = loopNameAttr;
 
   // Parse the function signature.
@@ -1217,7 +1221,7 @@ void InvariantOp::print(OpAsmPrinter &p) {
   // Print the name of the invariants's target.
   p << " for ";
   p.printSymbolName(getLoopName());
-  p << "(";
+  p << '(';
   llvm::interleave(getBody()->getArguments(), [&p](auto arg) {
     p.printRegionArgument(arg);
   }, [&p]() { p << ", "; });

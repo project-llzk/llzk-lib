@@ -96,7 +96,7 @@ void buildRemoveUnnecessaryOpsAndDefsPipeline(mlir::OpPassManager &pm) {
 
 void buildProductProgramPipeline(OpPassManager &pm) {
   pm.addPass(createComputeConstrainToProductPass());
-  pm.addPass(createFuseProductLoopsPass());
+  pm.addPass(createFuseProductControlFlowPass());
 }
 
 void buildFullStructInliningPipeline(OpPassManager &pm, const FullStructInliningConfig &cfg) {

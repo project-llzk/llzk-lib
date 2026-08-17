@@ -1,0 +1,30 @@
+// RUN: split-file %s %t
+// RUN: python3 %S/../../scripts/generate-test-checks.py --source %t/source.llzk --source_delim_regex='^module ' %t/output.llzk | FileCheck %s --check-prefix=SCRIPT
+
+//--- source.llzk
+#first = affine_map<(d0) -> (d0)>
+module @First {
+}
+#second = loc("second")
+module @Second {
+}
+
+//--- output.llzk
+#first = affine_map<(d0) -> (d0)>
+module @First {
+}
+#second = loc("second")
+module @Second {
+}
+
+//--- checks
+// Each definition check must stay with the source segment that contains its
+// definition; emitting all definitions before the segments loses source order.
+// SCRIPT: // CHECK:
+// SCRIPT-SAME: ATTR_0:{{.*}} = affine_map<(d0) -> (d0)>
+// SCRIPT-NEXT: #first = affine_map<(d0) -> (d0)>
+// SCRIPT: // CHECK-LABEL: module @First {
+// SCRIPT-NEXT: // CHECK-NEXT:  }
+// SCRIPT-NEXT: // CHECK:
+// SCRIPT-SAME: ATTR_1:{{.*}} = loc("second")
+// SCRIPT-NEXT: module @First {
