@@ -1790,6 +1790,69 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @MergedStructWriteStorageEffectsPayload {
+    struct.member @value : !felt.type {llzk.pub}
+
+    function.def @compute(%value: !felt.type) -> !struct.type<@MergedStructWriteStorageEffectsPayload> {
+      %self = struct.new : !struct.type<@MergedStructWriteStorageEffectsPayload>
+      struct.writem %self[@value] = %value : !struct.type<@MergedStructWriteStorageEffectsPayload>, !felt.type
+      function.return %self : !struct.type<@MergedStructWriteStorageEffectsPayload>
+    }
+
+    function.def @constrain(%self: !struct.type<@MergedStructWriteStorageEffectsPayload>, %value: !felt.type) {
+      %actual = struct.readm %self[@value] : !struct.type<@MergedStructWriteStorageEffectsPayload>, !felt.type
+      constrain.eq %actual, %value : !felt.type
+      function.return
+    }
+  }
+
+  struct.def @MergedStructWriteStorageEffects {
+    struct.member @value : !struct.type<@MergedStructWriteStorageEffectsPayload> {llzk.pub}
+    struct.member @first : !felt.type {llzk.pub}
+    struct.member @second : !felt.type {llzk.pub}
+
+    function.def @compute(%first_target: !struct.type<@MergedStructWriteStorageEffects>, %second_target: !struct.type<@MergedStructWriteStorageEffects>, %replacement: !struct.type<@MergedStructWriteStorageEffectsPayload>, %cond: i1) -> !struct.type<@MergedStructWriteStorageEffects> {
+      %self = struct.new : !struct.type<@MergedStructWriteStorageEffects>
+      %selected = scf.if %cond -> !struct.type<@MergedStructWriteStorageEffects> {
+        scf.yield %first_target : !struct.type<@MergedStructWriteStorageEffects>
+      } else {
+        scf.yield %second_target : !struct.type<@MergedStructWriteStorageEffects>
+      }
+      struct.writem %selected[@value] = %replacement : !struct.type<@MergedStructWriteStorageEffects>, !struct.type<@MergedStructWriteStorageEffectsPayload>
+      %first_payload = struct.readm %first_target[@value] : !struct.type<@MergedStructWriteStorageEffects>, !struct.type<@MergedStructWriteStorageEffectsPayload>
+      %second_payload = struct.readm %second_target[@value] : !struct.type<@MergedStructWriteStorageEffects>, !struct.type<@MergedStructWriteStorageEffectsPayload>
+      %first_value = struct.readm %first_payload[@value] : !struct.type<@MergedStructWriteStorageEffectsPayload>, !felt.type
+      %second_value = struct.readm %second_payload[@value] : !struct.type<@MergedStructWriteStorageEffectsPayload>, !felt.type
+      struct.writem %self[@first] = %first_value : !struct.type<@MergedStructWriteStorageEffects>, !felt.type
+      struct.writem %self[@second] = %second_value : !struct.type<@MergedStructWriteStorageEffects>, !felt.type
+      function.return %self : !struct.type<@MergedStructWriteStorageEffects>
+    }
+
+    function.def @constrain(%self: !struct.type<@MergedStructWriteStorageEffects>, %first_target: !struct.type<@MergedStructWriteStorageEffects>, %second_target: !struct.type<@MergedStructWriteStorageEffects>, %replacement: !struct.type<@MergedStructWriteStorageEffectsPayload>, %cond: i1) {
+      %first = struct.readm %self[@first] : !struct.type<@MergedStructWriteStorageEffects>, !felt.type
+      %second = struct.readm %self[@second] : !struct.type<@MergedStructWriteStorageEffects>, !felt.type
+      constrain.eq %first, %second : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @MergedStructWriteStorageEffectsPayload ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.value, %arg1 }
+// CHECK-NEXT: }
+// CHECK-NEXT: @MergedStructWriteStorageEffects ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.first, %self.second }
+// CHECK-NEXT: }
+// INTRA-LABEL: @MergedStructWriteStorageEffectsPayload ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.value, %arg1 }
+// INTRA-NEXT: }
+// INTRA-NEXT: @MergedStructWriteStorageEffects ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.first, %self.second }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
   struct.def @MergedPodWriteStorageEffects {
     struct.member @first : !felt.type {llzk.pub}
     struct.member @second : !felt.type {llzk.pub}

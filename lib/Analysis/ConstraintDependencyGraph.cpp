@@ -919,7 +919,10 @@ LogicalResult SourceRefAnalysis::visitOperation(
       auto writeOp = llvm::cast<MemberWriteOp>(op);
       SourceRefLatticeValue writeValue = operandVals.at(writeOp.getVal())->getValue();
       if (llvm::isa<ArrayType, StructType, PodType>(writeOp.getVal().getType())) {
-        const bool mayBeSkipped = isInMaybeSkippedScfRegion(op);
+        // A component value that merges multiple storage roots selects exactly
+        // one root at runtime. Model the write as weak for every candidate so
+        // the unselected roots retain their pre-write contents.
+        const bool mayBeSkipped = isInMaybeSkippedScfRegion(op) || !memberVals.isSingleValue();
         getStorageState(op)->recordStorageWrite(
             op, /*writeIndex=*/0, memberVals, writeValue, mayBeSkipped,
             /*seedUnwrittenAlternative=*/mayBeSkipped
