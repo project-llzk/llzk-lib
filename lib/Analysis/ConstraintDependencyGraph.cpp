@@ -55,6 +55,20 @@ static bool isInMaybeSkippedScfRegion(Operation *op) {
   return false;
 }
 
+/// Return whether `address` is rooted at storage allocated anew within `loop`.
+/// Such storage cannot carry a write from a previous iteration to the current one.
+static bool isAllocatedWithinLoop(const SourceRef &address, Operation *loop) {
+  auto root = address.getRoot();
+  if (failed(root)) {
+    return false;
+  }
+  auto result = llvm::dyn_cast<OpResult>(*root);
+  if (!result || !llvm::isa<CreateArrayOp, NewPodOp>(result.getOwner())) {
+    return false;
+  }
+  return loop->isAncestor(result.getOwner());
+}
+
 static inline bool hasRangeIndex(const SourceRef &ref) {
   return llvm::any_of(ref.getPath(), [](const SourceRefIndex &index) {
     return index.isIndexRange();
@@ -613,7 +627,8 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
     applyWrite(address, canonicalValue, maySkip, seedUnwrittenAlternative);
   };
 
-  auto materializeOperation = [&](Operation *op, bool forceMayBeSkipped) {
+  auto materializeOperation = [&](Operation *op, bool forceMayBeSkipped,
+                                  Operation *replayedLoop = nullptr) {
     DenseSet<SourceRef> priorAliasSources;
     for (const auto &[source, _] : aliases) {
       priorAliasSources.insert(source);
@@ -640,6 +655,9 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
       }
       for (const auto &[address, value] : sourceContents) {
         for (const SourceRef &target : targets.foldToScalar()) {
+          if (replayedLoop && isAllocatedWithinLoop(target, replayedLoop)) {
+            continue;
+          }
           auto rebasedAddress = address.translate(source, target);
           if (succeeded(rebasedAddress)) {
             materializeWrite(
@@ -672,6 +690,9 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
         return;
       }
       for (const SourceRef &address : canonicalAddresses.foldToScalar()) {
+        if (replayedLoop && isAllocatedWithinLoop(address, replayedLoop)) {
+          continue;
+        }
         materializeWrite(
             address, value, maySkip, seedUnwrittenAlternative,
             /*resolveSelfReference=*/true
@@ -686,7 +707,7 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
     }
   };
 
-  (void)top->walk([&](Operation *op) {
+  (void)top->walk([&before, &materializeOperation](Operation *op) {
     if (op == before) {
       return WalkResult::interrupt();
     }
@@ -702,9 +723,9 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
     if (!llvm::isa<scf::ForOp, scf::WhileOp>(ancestor)) {
       continue;
     }
-    (void)ancestor->walk([&](Operation *op) {
+    (void)ancestor->walk([&ancestor, &materializeOperation](Operation *op) {
       if (op != ancestor) {
-        materializeOperation(op, /*forceMayBeSkipped=*/true);
+        materializeOperation(op, /*forceMayBeSkipped=*/true, ancestor);
       }
     });
   }

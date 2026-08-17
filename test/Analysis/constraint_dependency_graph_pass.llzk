@@ -636,6 +636,70 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @LoopLocalArrayRead {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%old: !felt.type, %new: !felt.type, %ub: index) -> !struct.type<@LoopLocalArrayRead> {
+      %self = struct.new : !struct.type<@LoopLocalArrayRead>
+      function.return %self : !struct.type<@LoopLocalArrayRead>
+    }
+
+    function.def @constrain(%self: !struct.type<@LoopLocalArrayRead>, %old: !felt.type, %new: !felt.type, %ub: index) {
+      %expected = struct.readm %self[@out] : !struct.type<@LoopLocalArrayRead>, !felt.type
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      scf.for %i = %c0 to %ub step %c1 {
+        %array = array.new %old : !array.type<1 x !felt.type>
+        %actual = array.read %array[%c0] : !array.type<1 x !felt.type>, !felt.type
+        array.write %array[%c0] = %new : !array.type<1 x !felt.type>, !felt.type
+        constrain.eq %expected, %actual : !felt.type
+      }
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @LoopLocalArrayRead ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg1 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @LoopLocalArrayRead ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg1 }
+// INTRA-NEXT: }
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @LoopLocalPodRead {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%old: !felt.type, %new: !felt.type, %ub: index) -> !struct.type<@LoopLocalPodRead> {
+      %self = struct.new : !struct.type<@LoopLocalPodRead>
+      function.return %self : !struct.type<@LoopLocalPodRead>
+    }
+
+    function.def @constrain(%self: !struct.type<@LoopLocalPodRead>, %old: !felt.type, %new: !felt.type, %ub: index) {
+      %expected = struct.readm %self[@out] : !struct.type<@LoopLocalPodRead>, !felt.type
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      scf.for %i = %c0 to %ub step %c1 {
+        %pod = pod.new { @value = %old } : !pod.type<[@value: !felt.type]>
+        %actual = pod.read %pod[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+        pod.write %pod[@value] = %new : !pod.type<[@value: !felt.type]>, !felt.type
+        constrain.eq %expected, %actual : !felt.type
+      }
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @LoopLocalPodRead ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg1 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @LoopLocalPodRead ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg1 }
+// INTRA-NEXT: }
+// -----
+
+module attributes {llzk.lang} {
   struct.def @ArrayOverwriteRead {
     function.def @compute(%old: !felt.type, %new: !felt.type) -> !struct.type<@ArrayOverwriteRead> {
       %self = struct.new : !struct.type<@ArrayOverwriteRead>
