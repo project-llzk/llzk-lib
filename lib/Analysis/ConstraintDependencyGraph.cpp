@@ -148,9 +148,23 @@ static bool isNonSingletonArrayWriteTarget(const SourceRefLatticeValue &writeTar
     );
   }
   return !writeTargets.isSingleValue() ||
-         llvm::any_of(writeTargets.getScalarValue(), [](const SourceRef &ref) {
-    return hasRangeIndex(ref);
-  });
+         llvm::any_of(writeTargets.getScalarValue(), hasRangeIndex);
+}
+
+/// Return the point address of a statically shaped array element at `flatIndex`.
+static SourceRef getArrayElementAddress(const SourceRef &root, size_t flatIndex) {
+  auto arrayType = llvm::dyn_cast<ArrayType>(root.getType());
+  ensure(arrayType && arrayType.hasStaticShape(), "array element address requires static shape");
+  ArrayIndexGen indexGen = ArrayIndexGen::from(arrayType);
+  auto indices = indexGen.delinearize(checkedCast<int64_t>(flatIndex), root.getType().getContext());
+  ensure(indices.has_value(), "could not delinearize array element address");
+  SourceRef address = root;
+  for (Attribute attr : *indices) {
+    auto child = address.createChild(SourceRefIndex(llvm::cast<IntegerAttr>(attr).getValue()));
+    ensure(succeeded(child), "could not create array element address");
+    address = *child;
+  }
+  return address;
 }
 
 } // namespace
@@ -214,9 +228,33 @@ private:
     bool mayBeSkipped;
   };
 
+  // NOLINTNEXTLINE(bugprone-exception-escape)
   struct MaterializedStorage {
     DenseMap<SourceRef, SourceRefLatticeValue> values;
     DenseSet<SourceRef> skippedFirstWrites;
+
+    void materializeOperation(
+        const StorageState &state, Operation *op, TranslationMap &aliases, bool forceMayBeSkipped,
+        Operation *replayedLoop = nullptr
+    );
+
+  private:
+    void invalidateOverlappingRanges(const SourceRef &address);
+
+    void applyWrite(
+        const SourceRef &address, const SourceRefLatticeValue &value, bool maySkip,
+        bool seedUnwrittenAlternative
+    );
+
+    void materializeWrite(
+        const SourceRef &address, const SourceRefLatticeValue &value, bool maySkip,
+        bool seedUnwrittenAlternative, bool resolveSelfReference, const TranslationMap &aliases
+    );
+
+    void materializeAddressedWrite(
+        const SourceRefLatticeValue &addresses, const SourceRefLatticeValue &value, bool maySkip,
+        bool seedUnwrittenAlternative, const TranslationMap &aliases, Operation *replayedLoop
+    );
   };
 
   /// Apply all known aggregate-storage aliases to a lattice value.
@@ -233,6 +271,21 @@ private:
 
   /// Materialize storage contents at `before` by replaying earlier writes in IR order.
   MaterializedStorage materializeStoredValues(Operation *before) const;
+
+  static SourceRefLatticeValue projectChild(
+      const SourceRefLatticeValue &value, const SourceRef &storedAddress,
+      const SourceRef &readAddress
+  );
+
+  SourceRefLatticeValue resolve(
+      const SourceRefLatticeValue &input, const TranslationMap &aliases,
+      const MaterializedStorage &storage, DenseSet<SourceRef> &active
+  ) const;
+
+  void recordCalleeStorageWritesImpl(
+      Operation *op, const TranslationMap &translation,
+      SmallVectorImpl<StorageWrite> &translatedWrites, bool callMayBeSkipped
+  ) const;
 
   Operation *top = nullptr;
   DenseMap<Operation *, SmallVector<StorageWrite>> storageWrites;
@@ -345,98 +398,100 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::canonicalize(
   return canonical;
 }
 
+SourceRefLatticeValue SourceRefAnalysis::StorageState::projectChild(
+    const SourceRefLatticeValue &value, const SourceRef &storedAddress, const SourceRef &readAddress
+) {
+  if (!readAddress.isValidPrefix(storedAddress) && !readAddress.overlaps(storedAddress)) {
+    return value;
+  }
+  if (value.isArray()) {
+    SourceRefLatticeValue result(value.getArrayShape());
+    for (size_t i = 0; i < value.getArraySize(); ++i) {
+      (void)result.getElemFlatIdx(i).setValue(
+          projectChild(value.getElemFlatIdx(i), storedAddress, readAddress)
+      );
+    }
+    return result;
+  }
+
+  SourceRefLatticeValue result;
+  for (const SourceRef &ref : value.getScalarValue()) {
+    if (ref == storedAddress && hasRangeIndex(ref)) {
+      (void)result.insert(ref.narrowRanges(readAddress));
+    } else if (auto translated = readAddress.translate(storedAddress, ref); succeeded(translated)) {
+      (void)result.insert(*translated);
+    } else {
+      (void)result.insert(ref);
+    }
+  }
+  return result;
+}
+
+SourceRefLatticeValue SourceRefAnalysis::StorageState::resolve(
+    const SourceRefLatticeValue &input, const TranslationMap &aliases,
+    const MaterializedStorage &storage, DenseSet<SourceRef> &active
+) const {
+  SourceRefLatticeValue addressValue = canonicalize(input, aliases);
+  if (addressValue.isArray()) {
+    SourceRefLatticeValue result(addressValue.getArrayShape());
+    for (size_t i = 0; i < addressValue.getArraySize(); ++i) {
+      (void)result.getElemFlatIdx(i).setValue(
+          resolve(addressValue.getElemFlatIdx(i), aliases, storage, active)
+      );
+    }
+    return result;
+  }
+
+  SourceRefLatticeValue result;
+  for (const SourceRef &address : addressValue.getScalarValue()) {
+    if (!active.insert(address).second) {
+      if (addressValue.isSingleValue() || storage.skippedFirstWrites.contains(address)) {
+        // A skipped first write includes its destination as the unwritten alternative. Preserve
+        // that alternative even when the write value contributes other dependencies.
+        (void)result.insert(address);
+      }
+      continue;
+    }
+
+    bool foundWrite = false;
+    bool preservesAddress = false;
+    SourceRefLatticeValue writtenValues;
+    for (const auto &[storedAddress, storedValue] : storage.values) {
+      auto storedRoot = storedAddress.getRoot();
+      auto addressRoot = address.getRoot();
+      if (failed(storedRoot) || failed(addressRoot) || *storedRoot != *addressRoot ||
+          (!storedAddress.overlaps(address) && !address.isValidPrefix(storedAddress))) {
+        continue;
+      }
+      foundWrite = true;
+      SourceRefLatticeValue projectedValue = projectChild(storedValue, storedAddress, address);
+      if (hasRangeIndex(storedAddress) && storedAddress.overlaps(address)) {
+        preservesAddress |= projectedValue.remove(address) == ChangeResult::Change;
+      }
+      (void)writtenValues.update(projectedValue);
+    }
+    if (foundWrite) {
+      SourceRefLatticeValue resolvedValues = resolve(writtenValues, aliases, storage, active);
+      (void)result.update(resolvedValues);
+      if (preservesAddress) {
+        (void)result.insert(address);
+      }
+    }
+    if (!foundWrite) {
+      (void)result.insert(address);
+    }
+    active.erase(address);
+  }
+  return result;
+}
+
 SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveDependencies(
     const SourceRefLatticeValue &addresses, Operation *before
 ) const {
   const TranslationMap aliases = materializeAggregateAliases(before);
   const MaterializedStorage storage = materializeStoredValues(before);
-  const auto &storedValues = storage.values;
-  std::function<
-      SourceRefLatticeValue(const SourceRefLatticeValue &, const SourceRef &, const SourceRef &)>
-      projectChild = [&](const SourceRefLatticeValue &value, const SourceRef &storedAddress,
-                         const SourceRef &readAddress) {
-    if (!readAddress.isValidPrefix(storedAddress) && !readAddress.overlaps(storedAddress)) {
-      return value;
-    }
-    if (value.isArray()) {
-      SourceRefLatticeValue result(value.getArrayShape());
-      for (size_t i = 0; i < value.getArraySize(); ++i) {
-        (void)result.getElemFlatIdx(i).setValue(
-            projectChild(value.getElemFlatIdx(i), storedAddress, readAddress)
-        );
-      }
-      return result;
-    }
-
-    SourceRefLatticeValue result;
-    for (const SourceRef &ref : value.getScalarValue()) {
-      if (ref == storedAddress && hasRangeIndex(ref)) {
-        (void)result.insert(ref.narrowRanges(readAddress));
-      } else if (auto translated = readAddress.translate(storedAddress, ref);
-                 succeeded(translated)) {
-        (void)result.insert(*translated);
-      } else {
-        (void)result.insert(ref);
-      }
-    }
-    return result;
-  };
   DenseSet<SourceRef> active;
-  std::function<SourceRefLatticeValue(const SourceRefLatticeValue &)> resolve =
-      [&](const SourceRefLatticeValue &input) {
-    SourceRefLatticeValue addressValue = canonicalize(input, aliases);
-    if (addressValue.isArray()) {
-      SourceRefLatticeValue result(addressValue.getArrayShape());
-      for (size_t i = 0; i < addressValue.getArraySize(); ++i) {
-        (void)result.getElemFlatIdx(i).setValue(resolve(addressValue.getElemFlatIdx(i)));
-      }
-      return result;
-    }
-
-    SourceRefLatticeValue result;
-    for (const SourceRef &address : addressValue.getScalarValue()) {
-      if (!active.insert(address).second) {
-        if (addressValue.isSingleValue() || storage.skippedFirstWrites.contains(address)) {
-          // A skipped first write includes its destination as the unwritten alternative. Preserve
-          // that alternative even when the write value contributes other dependencies.
-          (void)result.insert(address);
-        }
-        continue;
-      }
-
-      bool foundWrite = false;
-      bool preservesAddress = false;
-      SourceRefLatticeValue writtenValues;
-      for (const auto &[storedAddress, storedValue] : storedValues) {
-        auto storedRoot = storedAddress.getRoot();
-        auto addressRoot = address.getRoot();
-        if (failed(storedRoot) || failed(addressRoot) || *storedRoot != *addressRoot ||
-            (!storedAddress.overlaps(address) && !address.isValidPrefix(storedAddress))) {
-          continue;
-        }
-        foundWrite = true;
-        SourceRefLatticeValue projectedValue = projectChild(storedValue, storedAddress, address);
-        if (hasRangeIndex(storedAddress) && storedAddress.overlaps(address)) {
-          preservesAddress |= projectedValue.remove(address) == ChangeResult::Change;
-        }
-        (void)writtenValues.update(projectedValue);
-      }
-      if (foundWrite) {
-        SourceRefLatticeValue resolvedValues = resolve(writtenValues);
-        (void)result.update(resolvedValues);
-        if (preservesAddress) {
-          (void)result.insert(address);
-        }
-      }
-      if (!foundWrite) {
-        (void)result.insert(address);
-      }
-      active.erase(address);
-    }
-    return result;
-  };
-
-  return resolve(addresses);
+  return resolve(addresses, aliases, storage, active);
 }
 
 void SourceRefAnalysis::StorageState::recordStorageWrite(
@@ -453,42 +508,53 @@ void SourceRefAnalysis::StorageState::recordStorageWrite(
   writes[writeIndex] = std::move(write);
 }
 
+void SourceRefAnalysis::StorageState::recordCalleeStorageWritesImpl(
+    Operation *op, const TranslationMap &translation,
+    SmallVectorImpl<StorageWrite> &translatedWrites, bool callMayBeSkipped
+) const {
+  auto writes = storageWrites.find(op);
+  if (writes == storageWrites.end()) {
+    return;
+  }
+  for (const StorageWrite &write : writes->second) {
+    // A write whose address is not rooted in a callee argument is local to the
+    // callee. `translate` drops those addresses, while retaining only effects
+    // visible to its caller.
+    auto [addresses, addressChange] = write.addresses.translate(translation);
+    if (addressChange == ChangeResult::NoChange || addresses.foldToScalar().empty()) {
+      continue;
+    }
+    // Resolve storage-backed values at the callee write point before translating its arguments.
+    // For example, a value read from a locally-created POD is initially rooted in that POD, but
+    // resolves to the argument used to initialize the record. `replacePrefixes` alone cannot
+    // translate that callee-local root.
+    SourceRefLatticeValue resolvedValue = resolveDependencies(write.value, op);
+    // Unlike addresses, values may legitimately include constants. Keep such
+    // sources while replacing every reference rooted in a callee argument.
+    auto [value, _] = resolvedValue.replacePrefixes(translation);
+    const bool translatedWriteMayBeSkipped =
+        callMayBeSkipped || isNonSingletonArrayWriteTarget(addresses);
+    translatedWrites.push_back({
+        std::move(addresses),
+        std::move(value),
+        write.mayBeSkipped || translatedWriteMayBeSkipped,
+        write.seedUnwrittenAlternative || translatedWriteMayBeSkipped,
+    });
+  }
+}
+
 void SourceRefAnalysis::StorageState::recordCalleeStorageWrites(
     CallOpInterface call, FuncDefOp callee, const TranslationMap &translation
 ) {
   SmallVector<StorageWrite> translatedWrites;
   const bool callMayBeSkipped = isInMaybeSkippedScfRegion(call.getOperation());
-  callee.walk([&](Operation *op) {
-    auto writes = storageWrites.find(op);
-    if (writes == storageWrites.end()) {
-      return;
-    }
-    for (const StorageWrite &write : writes->second) {
-      // A write whose address is not rooted in a callee argument is local to the
-      // callee. `translate` drops those addresses, while retaining only effects
-      // visible to its caller.
-      auto [addresses, addressChange] = write.addresses.translate(translation);
-      if (addressChange == ChangeResult::NoChange || addresses.foldToScalar().empty()) {
-        continue;
+  if (Region *callableRegion = callee.getCallableRegion()) {
+    for (Block &block : callableRegion->getBlocks()) {
+      for (Operation &op : block.getOperations()) {
+        recordCalleeStorageWritesImpl(&op, translation, translatedWrites, callMayBeSkipped);
       }
-      // Resolve storage-backed values at the callee write point before translating its arguments.
-      // For example, a value read from a locally-created POD is initially rooted in that POD, but
-      // resolves to the argument used to initialize the record. `replacePrefixes` alone cannot
-      // translate that callee-local root.
-      SourceRefLatticeValue resolvedValue = resolveDependencies(write.value, op);
-      // Unlike addresses, values may legitimately include constants. Keep such
-      // sources while replacing every reference rooted in a callee argument.
-      auto [value, _] = resolvedValue.replacePrefixes(translation);
-      const bool translatedWriteMayBeSkipped =
-          callMayBeSkipped || isNonSingletonArrayWriteTarget(addresses);
-      translatedWrites.push_back({
-          std::move(addresses),
-          std::move(value),
-          write.mayBeSkipped || translatedWriteMayBeSkipped,
-          write.seedUnwrittenAlternative || translatedWriteMayBeSkipped,
-      });
     }
-  });
+  }
 
   // Recompute the complete summary on every solver revisit. This prevents
   // duplicate events and lets operand lattice refinements update the call-site
@@ -502,221 +568,12 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
 
   TranslationMap aliases;
   MaterializedStorage storage;
-  auto &storedValues = storage.values;
 
-  auto getArrayElementAddress = [](const SourceRef &root, size_t flatIndex) {
-    auto arrayType = llvm::dyn_cast<ArrayType>(root.getType());
-    ensure(arrayType && arrayType.hasStaticShape(), "shaped storage write requires static array");
-    ArrayIndexGen indexGen = ArrayIndexGen::from(arrayType);
-    auto indices =
-        indexGen.delinearize(checkedCast<int64_t>(flatIndex), root.getType().getContext());
-    ensure(indices.has_value(), "could not delinearize shaped storage write");
-    SourceRef address = root;
-    for (Attribute attr : *indices) {
-      auto child = address.createChild(SourceRefIndex(llvm::cast<IntegerAttr>(attr).getValue()));
-      ensure(succeeded(child), "could not create shaped storage address");
-      address = *child;
-    }
-    return address;
-  };
-
-  auto applyWrite = [&storage, &storedValues](
-                        const SourceRef &address, const SourceRefLatticeValue &value, bool maySkip,
-                        bool seedUnwrittenAlternative
-                    ) {
-    // A skipped first write can leave the storage unwritten. Seed the stored state with both
-    // alternatives so reads retain the address dependency along that path.
-    SourceRefLatticeValue initialValue = value;
-    if (seedUnwrittenAlternative) {
-      (void)initialValue.insert(address);
-    }
-    auto [it, inserted] = storedValues.try_emplace(address, std::move(initialValue));
-    if (inserted && seedUnwrittenAlternative) {
-      storage.skippedFirstWrites.insert(address);
-    }
-    if (!inserted) {
-      if (maySkip) {
-        (void)it->second.update(value);
-      } else {
-        (void)it->second.setValue(value);
-      }
-    }
-  };
-
-  auto invalidateOverlappingRanges = [&storage, &storedValues](const SourceRef &address) {
-    // A definite point write supersedes an earlier weak range write at that point. Keep the
-    // portions of the range that can still affect other reads, but remove its overlap with this
-    // address so dependency resolution does not join stale values at the overwritten element.
-    struct RangeReplacement {
-      SourceRef address;
-      SourceRefLatticeValue value;
-      bool wasSkippedFirstWrite;
-    };
-    SmallVector<RangeReplacement> replacements;
-    SmallVector<SourceRef> erasedAddresses;
-    for (const auto &[storedAddress, storedValue] : storedValues) {
-      if (!hasRangeIndex(storedAddress) || !storedAddress.overlaps(address)) {
-        continue;
-      }
-      erasedAddresses.push_back(storedAddress);
-      for (const SourceRef &residual : subtractPointFromRange(storedAddress, address)) {
-        // A weak write may carry its destination as the unwritten alternative. Rebase that
-        // alternative to the residual range too; otherwise a later read would retain the
-        // original, still-overlapping range through the value rather than the map key.
-        auto [residualValue, _] = storedValue.replacePrefixes(
-            TranslationMap {{storedAddress, SourceRefLatticeValue(residual)}}
-        );
-        replacements.push_back(
-            {residual, std::move(residualValue), storage.skippedFirstWrites.contains(storedAddress)}
-        );
-      }
-    }
-    for (const SourceRef &erasedAddress : erasedAddresses) {
-      storage.skippedFirstWrites.erase(erasedAddress);
-      storedValues.erase(erasedAddress);
-    }
-    for (const RangeReplacement &replacement : replacements) {
-      auto [it, inserted] = storedValues.try_emplace(replacement.address, replacement.value);
-      if (!inserted) {
-        (void)it->second.update(replacement.value);
-      }
-      if (replacement.wasSkippedFirstWrite) {
-        storage.skippedFirstWrites.insert(replacement.address);
-      }
-    }
-  };
-
-  std::function<void(const SourceRef &, const SourceRefLatticeValue &, bool, bool, bool)>
-      materializeWrite = [&](const SourceRef &address, const SourceRefLatticeValue &value,
-                             bool maySkip, bool seedUnwrittenAlternative,
-                             bool resolveSelfReference) {
-    SourceRefLatticeValue canonicalValue = canonicalize(value, aliases);
-    auto arrayType = llvm::dyn_cast<ArrayType>(address.getType());
-    if (canonicalValue.isArray() && arrayType && arrayType.hasStaticShape() &&
-        std::cmp_equal(canonicalValue.getArraySize(), arrayType.getNumElements())) {
-      for (size_t i = 0; i < canonicalValue.getArraySize(); ++i) {
-        materializeWrite(
-            getArrayElementAddress(address, i), canonicalValue.getElemFlatIdx(i), maySkip,
-            seedUnwrittenAlternative, resolveSelfReference
-        );
-      }
-      return;
-    }
-    if (canonicalValue.isScalar() && canonicalValue.getScalarValue().contains(address)) {
-      if (auto preWrite = storedValues.find(address);
-          resolveSelfReference && preWrite != storedValues.end()) {
-        // The self-reference denotes the value read before this write. Substitute the
-        // materialized pre-write contents so a read-modify-write retains those dependencies.
-        (void)canonicalValue.getScalarValue().erase(address);
-        (void)canonicalValue.update(preWrite->second);
-      } else {
-        const bool hasPriorContents = llvm::any_of(storedValues, [&address](const auto &entry) {
-          return entry.first.isValidPrefix(address);
-        });
-        if (hasPriorContents || canonicalValue.isSingleValue()) {
-          (void)canonicalValue.getScalarValue().erase(address);
-          if (canonicalValue.getScalarValue().empty()) {
-            return;
-          }
-        }
-      }
-    }
-    if (!maySkip && !hasRangeIndex(address)) {
-      invalidateOverlappingRanges(address);
-    }
-    applyWrite(address, canonicalValue, maySkip, seedUnwrittenAlternative);
-  };
-
-  auto materializeOperation = [&](Operation *op, bool forceMayBeSkipped,
-                                  Operation *replayedLoop = nullptr) {
-    DenseSet<SourceRef> priorAliasSources;
-    for (const auto &[source, _] : aliases) {
-      priorAliasSources.insert(source);
-    }
-    applyAggregateAliases(op, aliases, forceMayBeSkipped);
-
-    // An aggregate assignment transfers the source's current contents to its new storage
-    // location. Rebase only aliases introduced by this operation: applying the complete alias
-    // map here would incorrectly move older writes in response to later assignments.
-    SmallVector<std::pair<SourceRef, SourceRefLatticeValue>> newAliases;
-    for (const auto &[source, targets] : aliases) {
-      if (!priorAliasSources.contains(source)) {
-        newAliases.emplace_back(source, targets);
-      }
-    }
-    for (const auto &[source, targets] : newAliases) {
-      const bool mayBeSkipped =
-          forceMayBeSkipped || (targets.isScalar() && targets.getScalarValue().contains(source));
-      SmallVector<std::pair<SourceRef, SourceRefLatticeValue>> sourceContents;
-      for (const auto &[address, value] : storedValues) {
-        if (address.isValidPrefix(source)) {
-          sourceContents.emplace_back(address, value);
-        }
-      }
-      for (const auto &[address, value] : sourceContents) {
-        for (const SourceRef &target : targets.foldToScalar()) {
-          if (replayedLoop && isAllocatedWithinLoop(target, replayedLoop)) {
-            continue;
-          }
-          auto rebasedAddress = address.translate(source, target);
-          if (succeeded(rebasedAddress)) {
-            materializeWrite(
-                *rebasedAddress, value, mayBeSkipped,
-                /*seedUnwrittenAlternative=*/false,
-                /*resolveSelfReference=*/false
-            );
-          }
-        }
-      }
-    }
-
-    auto writes = storageWrites.find(op);
-    if (writes == storageWrites.end()) {
-      return;
-    }
-    std::function<void(const SourceRefLatticeValue &, const SourceRefLatticeValue &, bool, bool)>
-        materializeAddressedWrite = [&](const SourceRefLatticeValue &addresses,
-                                        const SourceRefLatticeValue &value, bool maySkip,
-                                        bool seedUnwrittenAlternative) {
-      SourceRefLatticeValue canonicalAddresses = canonicalize(addresses, aliases);
-      if (canonicalAddresses.isArray() && value.isArray() &&
-          canonicalAddresses.getArraySize() == value.getArraySize()) {
-        for (size_t i = 0; i < canonicalAddresses.getArraySize(); ++i) {
-          materializeAddressedWrite(
-              canonicalAddresses.getElemFlatIdx(i), value.getElemFlatIdx(i), maySkip,
-              seedUnwrittenAlternative
-          );
-        }
-        return;
-      }
-      for (const SourceRef &address : canonicalAddresses.foldToScalar()) {
-        if (replayedLoop && isAllocatedWithinLoop(address, replayedLoop)) {
-          continue;
-        }
-        // Canonicalization can expand one write address into several possible
-        // alias targets. Each target must retain its old contents because the
-        // write affects only one of them at runtime.
-        const bool expandedAliasTargets = !canonicalAddresses.isSingleValue();
-        materializeWrite(
-            address, value, maySkip || expandedAliasTargets,
-            seedUnwrittenAlternative || expandedAliasTargets,
-            /*resolveSelfReference=*/true
-        );
-      }
-    };
-    for (const StorageWrite &write : writes->second) {
-      materializeAddressedWrite(
-          write.addresses, write.value, forceMayBeSkipped || write.mayBeSkipped,
-          forceMayBeSkipped || write.seedUnwrittenAlternative
-      );
-    }
-  };
-
-  (void)top->walk([&before, &materializeOperation](Operation *op) {
+  (void)top->walk([&before, &storage, &aliases, this](Operation *op) {
     if (op == before) {
       return WalkResult::interrupt();
     }
-    materializeOperation(op, /*forceMayBeSkipped=*/false);
+    storage.materializeOperation(*this, op, aliases, /*forceMayBeSkipped=*/false);
     return WalkResult::advance();
   });
 
@@ -728,13 +585,209 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
     if (!llvm::isa<scf::ForOp, scf::WhileOp>(ancestor)) {
       continue;
     }
-    (void)ancestor->walk([&ancestor, &materializeOperation](Operation *op) {
+    (void)ancestor->walk([&ancestor, &storage, &aliases, this](Operation *op) {
       if (op != ancestor) {
-        materializeOperation(op, /*forceMayBeSkipped=*/true, ancestor);
+        storage.materializeOperation(*this, op, aliases, /*forceMayBeSkipped=*/true, ancestor);
       }
     });
   }
   return storage;
+}
+
+void SourceRefAnalysis::StorageState::MaterializedStorage::invalidateOverlappingRanges(
+    const SourceRef &address
+) {
+  // A definite point write supersedes an earlier weak range write at that point. Keep the
+  // portions of the range that can still affect other reads, but remove its overlap with this
+  // address so dependency resolution does not join stale values at the overwritten element.
+  struct RangeReplacement {
+    SourceRef address;
+    SourceRefLatticeValue value;
+    bool wasSkippedFirstWrite;
+  };
+
+  SmallVector<RangeReplacement> replacements;
+  SmallVector<SourceRef> erasedAddresses;
+  for (const auto &[storedAddress, storedValue] : values) {
+    if (!hasRangeIndex(storedAddress) || !storedAddress.overlaps(address)) {
+      continue;
+    }
+    erasedAddresses.push_back(storedAddress);
+    for (const SourceRef &residual : subtractPointFromRange(storedAddress, address)) {
+      // A weak write may carry its destination as the unwritten alternative. Rebase that
+      // alternative to the residual range too; otherwise a later read would retain the
+      // original, still-overlapping range through the value rather than the map key.
+      auto [residualValue, _] = storedValue.replacePrefixes(
+          TranslationMap {{storedAddress, SourceRefLatticeValue(residual)}}
+      );
+      replacements.push_back(
+          {residual, std::move(residualValue), skippedFirstWrites.contains(storedAddress)}
+      );
+    }
+  }
+  for (const SourceRef &erasedAddress : erasedAddresses) {
+    skippedFirstWrites.erase(erasedAddress);
+    values.erase(erasedAddress);
+  }
+  for (const RangeReplacement &replacement : replacements) {
+    auto [it, inserted] = values.try_emplace(replacement.address, replacement.value);
+    if (!inserted) {
+      (void)it->second.update(replacement.value);
+    }
+    if (replacement.wasSkippedFirstWrite) {
+      skippedFirstWrites.insert(replacement.address);
+    }
+  }
+}
+
+void SourceRefAnalysis::StorageState::MaterializedStorage::applyWrite(
+    const SourceRef &address, const SourceRefLatticeValue &value, bool maySkip,
+    bool seedUnwrittenAlternative
+) {
+  // A skipped first write can leave the storage unwritten. Seed the stored state with both
+  // alternatives so reads retain the address dependency along that path.
+  SourceRefLatticeValue initialValue = value;
+  if (seedUnwrittenAlternative) {
+    (void)initialValue.insert(address);
+  }
+  auto [it, inserted] = values.try_emplace(address, std::move(initialValue));
+  if (inserted && seedUnwrittenAlternative) {
+    skippedFirstWrites.insert(address);
+  }
+  if (!inserted) {
+    if (maySkip) {
+      (void)it->second.update(value);
+    } else {
+      (void)it->second.setValue(value);
+    }
+  }
+}
+
+void SourceRefAnalysis::StorageState::MaterializedStorage::materializeWrite(
+    const SourceRef &address, const SourceRefLatticeValue &value, bool maySkip,
+    bool seedUnwrittenAlternative, bool resolveSelfReference, const TranslationMap &aliases
+) {
+  SourceRefLatticeValue canonicalValue = StorageState::canonicalize(value, aliases);
+  auto arrayType = llvm::dyn_cast<ArrayType>(address.getType());
+  if (canonicalValue.isArray() && arrayType && arrayType.hasStaticShape() &&
+      std::cmp_equal(canonicalValue.getArraySize(), arrayType.getNumElements())) {
+    for (size_t i = 0; i < canonicalValue.getArraySize(); ++i) {
+      materializeWrite(
+          getArrayElementAddress(address, i), canonicalValue.getElemFlatIdx(i), maySkip,
+          seedUnwrittenAlternative, resolveSelfReference, aliases
+      );
+    }
+    return;
+  }
+  if (canonicalValue.isScalar() && canonicalValue.getScalarValue().contains(address)) {
+    if (auto preWrite = values.find(address); resolveSelfReference && preWrite != values.end()) {
+      // The self-reference denotes the value read before this write. Substitute the
+      // materialized pre-write contents so a read-modify-write retains those dependencies.
+      (void)canonicalValue.getScalarValue().erase(address);
+      (void)canonicalValue.update(preWrite->second);
+    } else {
+      const bool hasPriorContents = llvm::any_of(values, [&address](const auto &entry) {
+        return entry.first.isValidPrefix(address);
+      });
+      if (hasPriorContents || canonicalValue.isSingleValue()) {
+        (void)canonicalValue.getScalarValue().erase(address);
+        if (canonicalValue.getScalarValue().empty()) {
+          return;
+        }
+      }
+    }
+  }
+  if (!maySkip && !hasRangeIndex(address)) {
+    invalidateOverlappingRanges(address);
+  }
+  applyWrite(address, canonicalValue, maySkip, seedUnwrittenAlternative);
+}
+
+void SourceRefAnalysis::StorageState::MaterializedStorage::materializeAddressedWrite(
+    const SourceRefLatticeValue &addresses, const SourceRefLatticeValue &value, bool maySkip,
+    bool seedUnwrittenAlternative, const TranslationMap &aliases, Operation *replayedLoop
+) {
+  SourceRefLatticeValue canonicalAddresses = StorageState::canonicalize(addresses, aliases);
+  if (canonicalAddresses.isArray() && value.isArray() &&
+      canonicalAddresses.getArraySize() == value.getArraySize()) {
+    for (size_t i = 0; i < canonicalAddresses.getArraySize(); ++i) {
+      materializeAddressedWrite(
+          canonicalAddresses.getElemFlatIdx(i), value.getElemFlatIdx(i), maySkip,
+          seedUnwrittenAlternative, aliases, replayedLoop
+      );
+    }
+    return;
+  }
+  for (const SourceRef &address : canonicalAddresses.foldToScalar()) {
+    if (replayedLoop && isAllocatedWithinLoop(address, replayedLoop)) {
+      continue;
+    }
+    // Canonicalization can expand one write address into several possible alias targets. Each
+    // target must retain its old contents because the write affects only one at runtime.
+    const bool expandedAliasTargets = !canonicalAddresses.isSingleValue();
+    materializeWrite(
+        address, value, maySkip || expandedAliasTargets,
+        seedUnwrittenAlternative || expandedAliasTargets,
+        /*resolveSelfReference=*/true, aliases
+    );
+  }
+}
+
+void SourceRefAnalysis::StorageState::MaterializedStorage::materializeOperation(
+    const StorageState &state, Operation *op, TranslationMap &aliases, bool forceMayBeSkipped,
+    Operation *replayedLoop
+) {
+  DenseSet<SourceRef> priorAliasSources;
+  for (const auto &[source, _] : aliases) {
+    priorAliasSources.insert(source);
+  }
+  state.applyAggregateAliases(op, aliases, forceMayBeSkipped);
+
+  // An aggregate assignment transfers the source's current contents to its new storage
+  // location. Rebase only aliases introduced by this operation: applying the complete alias
+  // map here would incorrectly move older writes in response to later assignments.
+  SmallVector<std::pair<SourceRef, SourceRefLatticeValue>> newAliases;
+  for (const auto &[source, targets] : aliases) {
+    if (!priorAliasSources.contains(source)) {
+      newAliases.emplace_back(source, targets);
+    }
+  }
+  for (const auto &[source, targets] : newAliases) {
+    const bool mayBeSkipped =
+        forceMayBeSkipped || (targets.isScalar() && targets.getScalarValue().contains(source));
+    SmallVector<std::pair<SourceRef, SourceRefLatticeValue>> sourceContents;
+    for (const auto &[address, value] : values) {
+      if (address.isValidPrefix(source)) {
+        sourceContents.emplace_back(address, value);
+      }
+    }
+    for (const auto &[address, value] : sourceContents) {
+      for (const SourceRef &target : targets.foldToScalar()) {
+        if (replayedLoop && isAllocatedWithinLoop(target, replayedLoop)) {
+          continue;
+        }
+        auto rebasedAddress = address.translate(source, target);
+        if (succeeded(rebasedAddress)) {
+          materializeWrite(
+              *rebasedAddress, value, mayBeSkipped,
+              /*seedUnwrittenAlternative=*/false,
+              /*resolveSelfReference=*/false, aliases
+          );
+        }
+      }
+    }
+  }
+
+  auto writes = state.storageWrites.find(op);
+  if (writes == state.storageWrites.end()) {
+    return;
+  }
+  for (const StorageWrite &write : writes->second) {
+    materializeAddressedWrite(
+        write.addresses, write.value, forceMayBeSkipped || write.mayBeSkipped,
+        forceMayBeSkipped || write.seedUnwrittenAlternative, aliases, replayedLoop
+    );
+  }
 }
 
 void SourceRefAnalysis::StorageState::recordAggregateAlias(
@@ -769,22 +822,6 @@ SourceRefAnalysis::StorageState::materializeAggregateAliases(Operation *before) 
 void SourceRefAnalysis::StorageState::applyAggregateAliases(
     Operation *op, TranslationMap &aliases, bool forceMayBeSkipped
 ) const {
-  auto getArrayElementTarget = [](const SourceRef &root, size_t flatIndex) {
-    auto arrayType = llvm::dyn_cast<ArrayType>(root.getType());
-    ensure(arrayType && arrayType.hasStaticShape(), "array alias target requires static shape");
-    ArrayIndexGen indexGen = ArrayIndexGen::from(arrayType);
-    auto indices =
-        indexGen.delinearize(checkedCast<int64_t>(flatIndex), root.getType().getContext());
-    ensure(indices.has_value(), "could not delinearize aggregate alias target");
-    SourceRef target = root;
-    for (Attribute attr : *indices) {
-      auto child = target.createChild(SourceRefIndex(llvm::cast<IntegerAttr>(attr).getValue()));
-      ensure(succeeded(child), "could not create aggregate alias target child");
-      target = *child;
-    }
-    return target;
-  };
-
   std::function<void(const SourceRefLatticeValue &, const SourceRefLatticeValue &, bool)> addAlias =
       [&](const SourceRefLatticeValue &source, const SourceRefLatticeValue &target,
           bool mayBeSkipped) {
@@ -800,7 +837,7 @@ void SourceRefAnalysis::StorageState::applyAggregateAliases(
       for (size_t i = 0; i < canonicalSource.getArraySize(); ++i) {
         addAlias(
             canonicalSource.getElemFlatIdx(i),
-            SourceRefLatticeValue(getArrayElementTarget(targetRoot, i)), mayBeSkipped
+            SourceRefLatticeValue(getArrayElementAddress(targetRoot, i)), mayBeSkipped
         );
       }
       return;
@@ -1018,24 +1055,12 @@ LogicalResult SourceRefAnalysis::visitOperation(
     auto createArrayRes = createArray.getResult();
     SourceRef arrayRoot(llvm::cast<OpResult>(createArrayRes));
     auto arrayType = createArray.getType();
-    auto getArrayElementAddress = [&](size_t flatIndex) {
-      ArrayIndexGen indexGen = ArrayIndexGen::from(arrayType);
-      auto indices = indexGen.delinearize(checkedCast<int64_t>(flatIndex), op->getContext());
-      ensure(indices.has_value(), "could not delinearize array element");
-      SourceRef address = arrayRoot;
-      for (Attribute attr : *indices) {
-        auto child = address.createChild(SourceRefIndex(llvm::cast<IntegerAttr>(attr).getValue()));
-        ensure(succeeded(child), "could not create array element SourceRef");
-        address = *child;
-      }
-      return address;
-    };
 
     if (arrayType.hasStaticShape()) {
       SourceRefLatticeValue newArrayValue(arrayType.getShape());
       for (size_t i = 0; i < static_cast<size_t>(arrayType.getNumElements()); ++i) {
         (void)newArrayValue.getElemFlatIdx(i).setValue(
-            SourceRefLatticeValue(getArrayElementAddress(i))
+            SourceRefLatticeValue(getArrayElementAddress(arrayRoot, i))
         );
       }
       propagateIfChanged(results.front(), results.front()->setValue(newArrayValue));
@@ -1052,7 +1077,7 @@ LogicalResult SourceRefAnalysis::visitOperation(
     const bool mayBeSkipped = isInMaybeSkippedScfRegion(op);
     StorageState *state = getStorageState(op);
     for (size_t i = 0; i < elements.size(); i++) {
-      SourceRef elementAddress = getArrayElementAddress(i);
+      SourceRef elementAddress = getArrayElementAddress(arrayRoot, i);
       SourceRefLatticeValue elementAddressValue(elementAddress);
       SourceRefLatticeValue elementValue = operandVals.at(elements[i])->getValue();
       state->recordStorageWrite(op, i, elementAddressValue, elementValue, mayBeSkipped);
@@ -1388,81 +1413,81 @@ ConstraintDependencyGraph::computeConstraints(DataFlowSolver &solver, AnalysisMa
     }
   });
 
-  /**
-   * Step two of the analysis is to traverse all of the constrain calls.
-   * This is the nested analysis, basically.
-   * Constrain functions don't return, so we don't need to compute "values" from
-   * the call. We just need to see what constraints are generated here, and
-   * add them to the transitive closures.
-   */
-  auto fnCallWalker = [this, &solver, &am](CallOp fnCall) mutable {
-    if (!dataflow::isOperationLive(solver, fnCall.getOperation())) {
-      return;
-    }
-    auto res = resolveCallable<FuncDefOp>(tables, fnCall);
-    ensure(succeeded(res), "could not resolve constrain call");
-
-    auto fn = res->get();
-    if (!fn.isStructConstrain()) {
-      return;
-    }
-    // Nested
-    auto calledStruct = fn.getOperation()->getParentOfType<StructDefOp>();
-    SourceRefRemappings translations;
-
-    // Map fn parameters to args in the call op
-    for (unsigned i = 0; i < fn.getNumArguments(); i++) {
-      SourceRef prefix(fn.getArgument(i));
-      Value operand = fnCall.getOperand(i);
-      SourceRefLatticeValue val;
-      if (llvm::isa<ArrayType>(operand.getType())) {
-        val = SourceRefAnalysis::getDependencyState(solver, operand, fnCall.getOperation());
-      } else if (llvm::isa<StructType, PodType>(operand.getType())) {
-        // Aggregate arguments retain their storage identity until a child path
-        // is translated below. That complete reference is then resolved at the
-        // call site, so a POD record maps to its stored value rather than its
-        // local storage address.
-        val = SourceRefAnalysis::getValueState(solver, operand);
-      } else {
-        val = SourceRefAnalysis::getDependencyState(solver, operand);
-      }
-      translations.push_back({prefix, val});
-    }
-    auto &childAnalysis =
-        am.getChildAnalysis<ConstraintDependencyGraphStructAnalysis>(calledStruct);
-    if (!childAnalysis.constructed(ctx)) {
-      ensure(
-          succeeded(childAnalysis.runAnalysis(solver, am, {.runIntraprocedural = false})),
-          "could not construct CDG for child struct"
-      );
-    }
-    auto translatedCDG = childAnalysis.getResult(ctx).translate(
-        translations, [&solver, call = fnCall.getOperation()](const SourceRef &ref) {
-      return SourceRefAnalysis::getDependencyState(solver, SourceRefLatticeValue(ref), call);
-    }
-    );
-    // Update the refMap with the translation
-    const auto &translatedRef2Val = translatedCDG.getRef2Val();
-    ref2Val.insert(translatedRef2Val.begin(), translatedRef2Val.end());
-
-    // Now, union sets based on the translation
-    // We should be able to just merge what is in the translatedCDG to the current CDG
-    auto &tSets = translatedCDG.signalSets;
-    for (auto lit = tSets.begin(); lit != tSets.end(); lit++) {
-      if (!lit->isLeader()) {
-        continue;
-      }
-      auto leader = lit->getData();
-      for (auto mit = tSets.member_begin(lit); mit != tSets.member_end(); mit++) {
-        signalSets.unionSets(leader, *mit);
-      }
-    }
-    // And update the constant sets
-    for (auto &[ref, constSet] : translatedCDG.constantSets) {
-      constantSets[ref].insert(constSet.begin(), constSet.end());
-    }
-  };
   if (!ctx.runIntraproceduralAnalysis()) {
+    /**
+     * Step two of the analysis is to traverse all of the constrain calls.
+     * This is the nested analysis, basically.
+     * Constrain functions don't return, so we don't need to compute "values" from
+     * the call. We just need to see what constraints are generated here, and
+     * add them to the transitive closures.
+     */
+    auto fnCallWalker = [this, &solver, &am](CallOp fnCall) mutable {
+      if (!dataflow::isOperationLive(solver, fnCall.getOperation())) {
+        return;
+      }
+      auto res = resolveCallable<FuncDefOp>(tables, fnCall);
+      ensure(succeeded(res), "could not resolve constrain call");
+
+      auto fn = res->get();
+      if (!fn.isStructConstrain()) {
+        return;
+      }
+      // Nested
+      auto calledStruct = fn.getOperation()->getParentOfType<StructDefOp>();
+      SourceRefRemappings translations;
+
+      // Map fn parameters to args in the call op
+      for (unsigned i = 0; i < fn.getNumArguments(); i++) {
+        SourceRef prefix(fn.getArgument(i));
+        Value operand = fnCall.getOperand(i);
+        SourceRefLatticeValue val;
+        if (llvm::isa<ArrayType>(operand.getType())) {
+          val = SourceRefAnalysis::getDependencyState(solver, operand, fnCall.getOperation());
+        } else if (llvm::isa<StructType, PodType>(operand.getType())) {
+          // Aggregate arguments retain their storage identity until a child path
+          // is translated below. That complete reference is then resolved at the
+          // call site, so a POD record maps to its stored value rather than its
+          // local storage address.
+          val = SourceRefAnalysis::getValueState(solver, operand);
+        } else {
+          val = SourceRefAnalysis::getDependencyState(solver, operand);
+        }
+        translations.push_back({prefix, val});
+      }
+      auto &childAnalysis =
+          am.getChildAnalysis<ConstraintDependencyGraphStructAnalysis>(calledStruct);
+      if (!childAnalysis.constructed(ctx)) {
+        ensure(
+            succeeded(childAnalysis.runAnalysis(solver, am, {.runIntraprocedural = false})),
+            "could not construct CDG for child struct"
+        );
+      }
+      auto translatedCDG = childAnalysis.getResult(ctx).translate(
+          translations, [&solver, call = fnCall.getOperation()](const SourceRef &ref) {
+        return SourceRefAnalysis::getDependencyState(solver, SourceRefLatticeValue(ref), call);
+      }
+      );
+      // Update the refMap with the translation
+      const auto &translatedRef2Val = translatedCDG.getRef2Val();
+      ref2Val.insert(translatedRef2Val.begin(), translatedRef2Val.end());
+
+      // Now, union sets based on the translation
+      // We should be able to just merge what is in the translatedCDG to the current CDG
+      auto &tSets = translatedCDG.signalSets;
+      for (auto lit = tSets.begin(); lit != tSets.end(); lit++) {
+        if (!lit->isLeader()) {
+          continue;
+        }
+        auto leader = lit->getData();
+        for (auto mit = tSets.member_begin(lit); mit != tSets.member_end(); mit++) {
+          signalSets.unionSets(leader, *mit);
+        }
+      }
+      // And update the constant sets
+      for (auto &[ref, constSet] : translatedCDG.constantSets) {
+        constantSets[ref].insert(constSet.begin(), constSet.end());
+      }
+    };
     constrainFnOp.walk(fnCallWalker);
   }
 

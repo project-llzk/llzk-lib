@@ -161,6 +161,7 @@ public:
 
   /// @brief Dumps the CDG to stderr.
   void dump() const;
+
   /// @brief Print the CDG to the specified output stream.
   /// @param os The LLVM/MLIR output stream.
   void print(mlir::raw_ostream &os) const;
@@ -208,6 +209,7 @@ public:
     ref2Val = other.ref2Val;
     return *this;
   }
+
   virtual ~ConstraintDependencyGraph() = default;
 
 private:
