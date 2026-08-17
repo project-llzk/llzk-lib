@@ -174,11 +174,10 @@ module attributes {llzk.lang} {
 // CHECK-SAME:    %[[ELEM_X:[0-9a-zA-Z_\.]+]]: index,
 // CHECK-SAME:    %[[ELEM_Y:[0-9a-zA-Z_\.]+]]: !felt.type
 // CHECK-SAME:    ) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[TRUE:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
 // CHECK-NEXT:      %[[IDX:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
-// CHECK-NEXT:      %[[DIM0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_X]], %[[DIM0]] : <2 x index>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_X]], %[[C0]] : <2 x index>
 // CHECK-NEXT:      %[[GE0:[0-9a-zA-Z_\.]+]] = arith.cmpi sge, %[[IDX]], %[[C0]] : index
 // CHECK-NEXT:      constrain.eq %[[GE0]], %[[TRUE]] : i1, i1
 // CHECK-NEXT:      %[[LT_LEN:[0-9a-zA-Z_\.]+]] = arith.cmpi slt, %[[IDX]], %[[LEN]] : index

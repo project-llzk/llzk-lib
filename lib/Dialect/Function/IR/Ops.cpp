@@ -516,7 +516,7 @@ LogicalResult ReturnOp::verify() {
   for (unsigned i = 0, e = results.size(); i != e; ++i) {
     if (!typesUnify(getOperand(i).getType(), results[i])) {
       return emitError() << "type of return operand " << i << " (" << getOperand(i).getType()
-                         << ") doesn't match function result type (" << results[i] << ")"
+                         << ") doesn't match function result type (" << results[i] << ')'
                          << " in function @" << function.getName();
     }
   }

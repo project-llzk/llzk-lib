@@ -104,7 +104,7 @@ static FailureOr<llvm::APInt> parsePrime(ModuleOp moduleOp, StringRef primeText)
   return prime;
 }
 
-enum class ExportWireClass {
+enum class ExportWireClass : std::uint8_t {
   ConstantOne,
   PublicOutput,
   PublicInput,
@@ -318,8 +318,9 @@ private:
     return success();
   }
 
-  void
-  addReducedTerm(LinearAccumulator &accumulator, uint32_t wireId, llvm::DynamicAPInt coeff) const {
+  void addReducedTerm(
+      LinearAccumulator &accumulator, uint32_t wireId, const llvm::DynamicAPInt &coeff
+  ) const {
     llvm::DynamicAPInt reducedCoeff = reduce(coeff);
     if (reducedCoeff == 0) {
       return;

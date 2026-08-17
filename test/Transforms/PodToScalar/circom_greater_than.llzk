@@ -1,0 +1,94 @@
+// RUN: llzk-opt -llzk-pod-to-scalar -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+!F = !felt.type<"bn128">
+module attributes {llzk.lang, llzk.main = !struct.type<@GreaterThan_2>} {
+  struct.def @LessThan_1 {
+    struct.member @out : !F {llzk.pub}
+    function.def @product(%arg0: !array.type<2 x !F>) -> !struct.type<@LessThan_1> attributes {llzk.derived} {
+      %self = struct.new : <@LessThan_1>
+      function.return %self : !struct.type<@LessThan_1>
+    }
+    function.def @compute(%arg0: !array.type<2 x !F>) -> !struct.type<@LessThan_1> attributes {product_source = "compute"} {
+      %self = struct.new : <@LessThan_1>
+      function.return %self : !struct.type<@LessThan_1>
+    }
+    function.def @constrain(%arg0: !struct.type<@LessThan_1>, %arg1: !array.type<2 x !F>) attributes {product_source = "constrain"} {
+      function.return
+    }
+  }
+  struct.def @GreaterThan_2 {
+    struct.member @out : !F {llzk.pub}
+    function.def @product(%arg0: !array.type<2 x !F>) -> !struct.type<@GreaterThan_2> attributes {function.allow_non_native_field_ops} {
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %c2 = arith.constant 2 : index
+      %self = struct.new : <@GreaterThan_2>
+      %pod = pod.new { @count = %c2 }  : <[@count: index, @comp: !struct.type<@LessThan_1>]>
+      %pod_0 = pod.new : <[@in: !array.type<2 x !F>]>
+      %0 = array.read %arg0[%c1] : <2 x !F>, !F
+      %1 = pod.read %pod_0[@in] : <[@in: !array.type<2 x !F>]>, !array.type<2 x !F>
+      array.write %1[%c0] = %0 : <2 x !F>, !F
+      pod.write %pod_0[@in] = %1 : <[@in: !array.type<2 x !F>]>, !array.type<2 x !F>
+      %2 = pod.read %pod[@count] : <[@count: index, @comp: !struct.type<@LessThan_1>]>, index
+      %3 = arith.subi %2, %c1 : index
+      pod.write %pod[@count] = %3 : <[@count: index, @comp: !struct.type<@LessThan_1>]>, index
+      %4 = arith.cmpi eq, %3, %c0 : index
+      scf.if %4 {
+        %12 = pod.read %pod_0[@in] : <[@in: !array.type<2 x !F>]>, !array.type<2 x !F>
+        %13 = function.call @LessThan_1::@product(%12) : (!array.type<2 x !F>) -> !struct.type<@LessThan_1>
+        pod.write %pod[@comp] = %13 : <[@count: index, @comp: !struct.type<@LessThan_1>]>, !struct.type<@LessThan_1>
+      }
+      %5 = array.read %arg0[%c0] : <2 x !F>, !F
+      %6 = pod.read %pod_0[@in] : <[@in: !array.type<2 x !F>]>, !array.type<2 x !F>
+      array.write %6[%c1] = %5 : <2 x !F>, !F
+      pod.write %pod_0[@in] = %6 : <[@in: !array.type<2 x !F>]>, !array.type<2 x !F>
+      %7 = pod.read %pod[@count] : <[@count: index, @comp: !struct.type<@LessThan_1>]>, index
+      %8 = arith.subi %7, %c1 : index
+      pod.write %pod[@count] = %8 : <[@count: index, @comp: !struct.type<@LessThan_1>]>, index
+      %9 = arith.cmpi eq, %8, %c0 : index
+      scf.if %9 {
+        %12 = pod.read %pod_0[@in] : <[@in: !array.type<2 x !F>]>, !array.type<2 x !F>
+        %13 = function.call @LessThan_1::@product(%12) : (!array.type<2 x !F>) -> !struct.type<@LessThan_1>
+        pod.write %pod[@comp] = %13 : <[@count: index, @comp: !struct.type<@LessThan_1>]>, !struct.type<@LessThan_1>
+      }
+      %10 = pod.read %pod[@comp] : <[@count: index, @comp: !struct.type<@LessThan_1>]>, !struct.type<@LessThan_1>
+      %11 = struct.readm %10[@out] : <@LessThan_1>, !F
+      struct.writem %self[@out] = %11 : <@GreaterThan_2>, !F
+      function.return %self : !struct.type<@GreaterThan_2>
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@GreaterThan_2>} {
+// CHECK-NEXT:    struct.def @LessThan_1 {
+// CHECK-NEXT:      struct.member @out : !felt.type<"bn128"> {llzk.pub}
+// CHECK-NEXT:      function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"bn128">>) -> !struct.type<@LessThan_1> attributes {function.allow_constraint, function.allow_witness, llzk.derived} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@LessThan_1>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@LessThan_1>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @compute(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"bn128">>) -> !struct.type<@LessThan_1> attributes {function.allow_witness, product_source = "compute"} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@LessThan_1>
+// CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@LessThan_1>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@LessThan_1>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"bn128">>) attributes {function.allow_constraint, product_source = "constrain"} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @GreaterThan_2 {
+// CHECK-NEXT:      struct.member @out : !felt.type<"bn128"> {llzk.pub}
+// CHECK-NEXT:      function.def @product(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"bn128">>) -> !struct.type<@GreaterThan_2> attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@LessThan_1>
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = struct.new : <@GreaterThan_2>
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_7]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_9]]{{\[}}%[[VAL_8]]] = %[[VAL_12]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_8]]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        array.write %[[VAL_9]]{{\[}}%[[VAL_7]]] = %[[VAL_13]] : <2 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = function.call @LessThan_1::@product(%[[VAL_9]]) : (!array.type<2 x !felt.type<"bn128">>) -> !struct.type<@LessThan_1>
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_14]][@out] : <@LessThan_1>, !felt.type<"bn128">
+// CHECK-NEXT:        struct.writem %[[VAL_11]][@out] = %[[VAL_15]] : <@GreaterThan_2>, !felt.type<"bn128">
+// CHECK-NEXT:        function.return %[[VAL_11]] : !struct.type<@GreaterThan_2>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

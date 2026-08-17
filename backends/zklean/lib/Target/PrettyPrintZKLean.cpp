@@ -470,7 +470,7 @@ emitLeanFunc(FuncOpTy func, raw_ostream &os, const llvm::DenseSet<StringRef> &st
       os << " (" << argName << " : " << *structTypeName << " f)";
       continue;
     }
-    os << " (" << argName << " : " << formatLeanType(arg.getType()) << ")";
+    os << " (" << argName << " : " << formatLeanType(arg.getType()) << ')';
   }
   os << " : ZKBuilder f PUnit := do\n";
   for (auto &stmt : statements) {
