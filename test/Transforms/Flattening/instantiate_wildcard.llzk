@@ -55,6 +55,63 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
+// A wildcard with no call-site operand evidence can still be resolved when the
+// value it creates is passed to a nested template parameter with a concrete binding.
+module attributes {llzk.lang} {
+  struct.def @CallOuterExplicitInput {
+    function.def @compute() -> !struct.type<@CallOuterExplicitInput> {
+      %self = struct.new : !struct.type<@CallOuterExplicitInput>
+      function.call @OuterExplicitInput::@wrap<[?]>() : () -> ()
+      function.return %self : !struct.type<@CallOuterExplicitInput>
+    }
+
+    function.def @constrain(%self: !struct.type<@CallOuterExplicitInput>) {
+      function.call @OuterExplicitInput::@wrap<[?]>() : () -> ()
+      function.return
+    }
+  }
+
+  poly.template @InnerExplicitInput {
+    poly.param @Arg : !poly.tvar<@Arg>
+
+    function.def @consume(%arg0: !poly.tvar<@Arg>) {
+      function.return
+    }
+  }
+
+  poly.template @OuterExplicitInput {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @wrap() {
+      %0 = llzk.nondet : !poly.tvar<@T>
+      function.call @InnerExplicitInput::@consume<[!felt.type<"bn128">]>(%0) : (!poly.tvar<@T>) -> ()
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @CallOuterExplicitInput {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@CallOuterExplicitInput> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@CallOuterExplicitInput>
+// CHECK-NEXT:        function.call @OuterExplicitInput_f_wrap() : () -> ()
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@CallOuterExplicitInput>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@CallOuterExplicitInput>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.call @OuterExplicitInput_f_wrap() : () -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @InnerExplicitInput_f_consume(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @OuterExplicitInput_f_wrap() {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = llzk.nondet : !felt.type<"bn128">
+// CHECK-NEXT:      function.call @InnerExplicitInput_f_consume(%[[VAL_3]]) : (!felt.type<"bn128">) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
 module attributes {llzk.lang = "circom", llzk.main = !struct.type<@CallDiffTypeTest::@CallDiffTypeTest<[]>>} {
   poly.template @T {
     poly.param @T_arg0 : !poly.tvar<@T_arg0>

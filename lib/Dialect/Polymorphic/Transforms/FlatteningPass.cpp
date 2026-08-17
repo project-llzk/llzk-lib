@@ -1399,31 +1399,40 @@ private:
         return WalkResult::advance();
       }
 
-      TypeRange nestedResultTypes = nestedTgt.getFunctionType().getResults();
-      for (auto [result, nestedResultTy] :
-           llvm::zip_equal(nestedCall.getResults(), nestedResultTypes)) {
-        Type convertedResultTy = tyConv.convertType(result.getType());
-        auto resultTvar = llvm::dyn_cast<TypeVarType>(convertedResultTy);
-        auto nestedTvar = llvm::dyn_cast<TypeVarType>(nestedResultTy);
-        if (!resultTvar || !nestedTvar || resultTvar.getNameRef() != paramName) {
-          continue;
+      // Infer through either side of a nested call: an enclosing type variable can appear
+      // in a call result or in a call operand. In both cases, the corresponding nested
+      // callee type variable may be concretely bound by the nested call.
+      auto inferFromNestedBinding = [&](Type enclosingTy, Type nestedTy) {
+        auto enclosingTvar = llvm::dyn_cast<TypeVarType>(tyConv.convertType(enclosingTy));
+        auto nestedTvar = llvm::dyn_cast<TypeVarType>(nestedTy);
+        if (!enclosingTvar || !nestedTvar || enclosingTvar.getNameRef() != paramName) {
+          return WalkResult::advance();
         }
         if (std::optional<Attribute> candidate = inferFromExplicitNestedCallParams(
                 nestedCall, nestedTemplate, nestedTvar.getNameRef(), tyConv
             )) {
-          WalkResult candidateResult = noteCandidate(*candidate);
-          if (candidateResult.wasInterrupted()) {
-            return candidateResult;
-          }
-          continue;
+          return noteCandidate(*candidate);
         }
         DenseMap<Attribute, Attribute> nestedParamNameToConcrete =
             getNestedConcreteBindings(nestedCall, nestedTgt, nestedTemplate, tyConv);
         if (auto candidate = infer(nestedTgt, nestedTvar.getNameRef(), nestedParamNameToConcrete)) {
-          WalkResult candidateResult = noteCandidate(*candidate);
-          if (candidateResult.wasInterrupted()) {
-            return candidateResult;
-          }
+          return noteCandidate(*candidate);
+        }
+        return WalkResult::advance();
+      };
+
+      for (auto [result, nestedResultTy] :
+           llvm::zip_equal(nestedCall.getResults(), nestedTgt.getFunctionType().getResults())) {
+        WalkResult candidateResult = inferFromNestedBinding(result.getType(), nestedResultTy);
+        if (candidateResult.wasInterrupted()) {
+          return candidateResult;
+        }
+      }
+      for (auto [operand, nestedInputTy] :
+           llvm::zip_equal(nestedCall.getOperands(), nestedTgt.getFunctionType().getInputs())) {
+        WalkResult candidateResult = inferFromNestedBinding(operand.getType(), nestedInputTy);
+        if (candidateResult.wasInterrupted()) {
+          return candidateResult;
         }
       }
       return WalkResult::advance();
@@ -1550,11 +1559,16 @@ static LogicalResult applyBodyConversions(
   FuncInstTypeConverter tyConv(paramNameToConcrete);
   SmallVector<Diagnostic> delayedDiagnostics;
   ConversionTarget target = newConverterDefinedTarget<>(tyConv, ctx, tableOffsetIsntSymbol);
+  target.addDynamicallyLegalOp<NonDetOp>([&tyConv](Operation *bodyOp) {
+    return defaultLegalityCheck(tyConv, bodyOp);
+  });
   RewritePatternSet bodyPatterns = newGeneralRewritePatternSet(tyConv, ctx, target);
   addClonedBodyMaterializationPatterns(
       target, bodyPatterns, tyConv, ctx, tyConv.getParamMap(), delayedDiagnostics
   );
-  bodyPatterns.add<ClonedBodyArrayReadOpPattern, ClonedBodyArrayWriteOpPattern>(tyConv, ctx);
+  bodyPatterns.add<
+      ClonedBodyArrayReadOpPattern, ClonedBodyArrayWriteOpPattern,
+      Step1_InstantiateStructs::NonDetOpPattern>(tyConv, ctx);
   if (failed(applyFullConversion(newFunc, target, std::move(bodyPatterns)))) {
     return failure();
   }
