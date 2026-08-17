@@ -471,6 +471,7 @@ public:
       }
     }
     if (Value replacement = materializeTemplateConstant(rewriter, op.getLoc(), newResTy, a)) {
+      replacement.getDefiningOp()->setDiscardableAttrs(op->getDiscardableAttrDictionary());
       rewriter.replaceOp(op, replacement);
       return success();
     }
@@ -483,6 +484,7 @@ public:
   ) const {
     Value replacement = materializeTemplateConstant(rewriter, op.getLoc(), op.getType(), a);
     assert(replacement && "felt template values must materialize as felt constants");
+    replacement.getDefiningOp()->setDiscardableAttrs(op->getDiscardableAttrDictionary());
     rewriter.replaceOp(op, replacement);
     return success();
   }
