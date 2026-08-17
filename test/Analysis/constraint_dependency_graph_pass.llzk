@@ -597,6 +597,45 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @ConditionalAggregateAliasSourceWrite {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%old: !felt.type, %initial: !felt.type, %updated: !felt.type, %cond: i1) -> !struct.type<@ConditionalAggregateAliasSourceWrite> {
+      %self = struct.new : !struct.type<@ConditionalAggregateAliasSourceWrite>
+      function.return %self : !struct.type<@ConditionalAggregateAliasSourceWrite>
+    }
+
+    function.def @constrain(%self: !struct.type<@ConditionalAggregateAliasSourceWrite>, %old: !felt.type, %initial: !felt.type, %updated: !felt.type, %cond: i1) {
+      %expected = struct.readm %self[@out] : !struct.type<@ConditionalAggregateAliasSourceWrite>, !felt.type
+      %c0 = arith.constant 0 : index
+      %old_arr = array.new %old : !array.type<1 x !felt.type>
+      %pod = pod.new { @items = %old_arr } : !pod.type<[@items: !array.type<1 x !felt.type>]>
+      // The later write through this conditionally aliased source must leave
+      // the target's %old dependency intact on the path without the alias.
+      %source = array.new : !array.type<1 x !felt.type>
+      array.write %source[%c0] = %initial : !array.type<1 x !felt.type>, !felt.type
+      scf.if %cond {
+        pod.write %pod[@items] = %source : !pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+      }
+      array.write %source[%c0] = %updated : !array.type<1 x !felt.type>, !felt.type
+      %items = pod.read %pod[@items] : !pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+      %actual = array.read %items[%c0] : !array.type<1 x !felt.type>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ConditionalAggregateAliasSourceWrite ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg1, %arg3 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @ConditionalAggregateAliasSourceWrite ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg1, %arg3 }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
   function.def @overwrite_called_element(%array: !array.type<1 x !felt.type>, %value: !felt.type) {
     %idx = arith.constant 0 : index
     array.write %array[%idx] = %value : !array.type<1 x !felt.type>, !felt.type

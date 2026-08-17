@@ -693,8 +693,13 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
         if (replayedLoop && isAllocatedWithinLoop(address, replayedLoop)) {
           continue;
         }
+        // Canonicalization can expand one write address into several possible
+        // alias targets. Each target must retain its old contents because the
+        // write affects only one of them at runtime.
+        const bool expandedAliasTargets = !canonicalAddresses.isSingleValue();
         materializeWrite(
-            address, value, maySkip, seedUnwrittenAlternative,
+            address, value, maySkip || expandedAliasTargets,
+            seedUnwrittenAlternative || expandedAliasTargets,
             /*resolveSelfReference=*/true
         );
       }
