@@ -12,6 +12,7 @@ var namespaces_dup =
     [ "Step4_InstantiateAffineMaps", "namespaceStep4__InstantiateAffineMaps.html", null ],
     [ "Step5_PropagateTypes", "namespaceStep5__PropagateTypes.html", null ],
     [ "Step6_Cleanup", "namespaceStep6__Cleanup.html", null ],
+    [ "temp_fix_pre_mlir_22", "namespacetemp__fix__pre__mlir__22.html", null ],
     [ "test_templates", "namespacetest__templates.html", null ],
     [ "WildcardFunctionSpecialization", "namespaceWildcardFunctionSpecialization.html", null ]
 ];

@@ -198,7 +198,7 @@ var NAVTREEINDEX84 =
 "namespaceStep4__InstantiateAffineMaps.html":[11,0,9],
 "namespaceStep5__PropagateTypes.html":[11,0,10],
 "namespaceStep6__Cleanup.html":[11,0,11],
-"namespaceWildcardFunctionSpecialization.html":[11,0,13],
+"namespaceWildcardFunctionSpecialization.html":[11,0,14],
 "namespaceclang.html":[11,0,1],
 "namespacellvm.html":[11,0,2],
 "namespacellvm.html#a0fc2145917e31225cbcd377de7b88080":[11,0,2,31],

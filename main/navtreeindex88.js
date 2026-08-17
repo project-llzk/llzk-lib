@@ -100,7 +100,8 @@ var NAVTREEINDEX88 =
 "namespacemlir.html#ab8a6c4b0af7bb4ad955c5e4f44a4827e":[11,0,4,14],
 "namespacemlir__hotfix.html":[11,0,5],
 "namespaces.html":[11,0],
-"namespacetest__templates.html":[11,0,12],
+"namespacetemp__fix__pre__mlir__22.html":[11,0,12],
+"namespacetest__templates.html":[11,0,13],
 "overview.html":[1],
 "overview.html#backends":[1,0,3],
 "overview.html#frontends":[1,0,1],
@@ -248,6 +249,5 @@ var NAVTREEINDEX88 =
 "structGlobalDefOpBuildFuncHelper.html#a12a1784c50b66c81e972fb4a081f6d58":[13,0,52,1],
 "structGlobalDefOpBuildFuncHelper.html#ab72eaa9b2f839b17b3d0b7c12c53758d":[13,0,52,0],
 "structGlobalReadOpBuildFuncHelper.html":[13,0,55],
-"structGlobalReadOpBuildFuncHelper.html#a56019653e244a2a47958f0a712b38427":[13,0,55,1],
-"structGlobalReadOpBuildFuncHelper.html#ab811a487871e6fff5609dbf89364a373":[13,0,55,0]
+"structGlobalReadOpBuildFuncHelper.html#a56019653e244a2a47958f0a712b38427":[13,0,55,1]
 };
