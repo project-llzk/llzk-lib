@@ -1,0 +1,2 @@
+fixed:
+  - CMake misconfiguration that made the project unbuildable when BUILD_TESTING is OFF or BUILD_TESTING is ON but GTest is not found by CMake.
