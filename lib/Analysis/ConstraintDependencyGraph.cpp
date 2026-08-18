@@ -535,7 +535,17 @@ void SourceRefAnalysis::StorageState::recordStorageWrite(
 ) {
   invalidateCheckpointsFrom(op);
   auto &writes = storageWrites[op];
-  StorageWrite write {addresses, value, mayBeSkipped, seedUnwrittenAlternative};
+  // A scalar storage-backed RHS denotes the contents observed before this write. Resolve it at
+  // the write point so a later overwrite cannot change an already-consumed value during replay.
+  // Aggregate values retain their storage identity: assignments of those values are modeled by
+  // aggregate aliases and must continue to observe subsequent writes through the alias.
+  const bool isAggregateValue =
+      !op->getOperands().empty() &&
+      llvm::isa<ArrayType, StructType, PodType>(op->getOperands().back().getType());
+  StorageWrite write {
+      addresses, isAggregateValue ? value : resolveDependencies(value, op), mayBeSkipped,
+      seedUnwrittenAlternative
+  };
   if (writeIndex == writes.size()) {
     writes.push_back(std::move(write));
     return;

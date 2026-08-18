@@ -885,6 +885,52 @@ module attributes {llzk.lang} {
   );
 }
 
+TEST_F(SourceRefTests, StorageWritesResolveReadValuesBeforeLaterOverwrites) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @StorageWriteSnapshotsReadValue {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type)
+        -> !struct.type<@StorageWriteSnapshotsReadValue> {
+      %self = struct.new : !struct.type<@StorageWriteSnapshotsReadValue>
+      %c0 = arith.constant 0 : index
+      %source = array.new %initial : !array.type<1 x !felt.type>
+      %target = array.new : !array.type<1 x !felt.type>
+      %readSource = array.read %source[%c0] : !array.type<1 x !felt.type>, !felt.type
+      array.write %target[%c0] = %readSource : !array.type<1 x !felt.type>, !felt.type
+      array.write %source[%c0] = %replacement : !array.type<1 x !felt.type>, !felt.type
+      %readTarget = array.read %target[%c0] : !array.type<1 x !felt.type>, !felt.type
+      function.return %self : !struct.type<@StorageWriteSnapshotsReadValue>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@StorageWriteSnapshotsReadValue>, %initial: !felt.type,
+        %replacement: !felt.type
+    ) {
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto reads = llvm::to_vector(computeFn.getOps<array::ReadArrayOp>());
+  ASSERT_EQ(reads.size(), 2U);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  analysis.ensureAnalysisRun(am);
+
+  EXPECT_EQ(
+      SourceRefAnalysis::getDependencyState(analysis.getSolver(), reads[1].getResult())
+          .foldToScalar(),
+      SourceRefSet({SourceRef(computeFn.getArgument(0))})
+  );
+}
+
 TEST_F(SourceRefTests, SkippedFirstStorageWritesPreserveUnwrittenDependencies) {
   static constexpr auto source = R"mlir(
 module attributes {llzk.lang} {
