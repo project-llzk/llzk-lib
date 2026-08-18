@@ -123,6 +123,13 @@ TEST_F(SourceRefTests, LatticePrefixReplacementPreservesUnmatchedRefs) {
   EXPECT_EQ(translatedChanged, ChangeResult::Change);
   EXPECT_TRUE(translated.getScalarValue().contains(expectedMember));
   EXPECT_FALSE(translated.getScalarValue().contains(unrelated));
+
+  // Replacing a translation after it has been consumed must rebuild its cached index.
+  replacements.set(computeRoot, SourceRefLatticeValue(computeRoot));
+  auto [updatedTranslation, updatedChanged] = value.translate(replacements);
+  EXPECT_EQ(updatedChanged, ChangeResult::Change);
+  EXPECT_TRUE(updatedTranslation.getScalarValue().contains(computeMember));
+  EXPECT_FALSE(updatedTranslation.getScalarValue().contains(expectedMember));
 }
 
 TEST_F(SourceRefTests, LatticeWritesPointsSubarraysAndRanges) {

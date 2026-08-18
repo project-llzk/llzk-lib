@@ -40,6 +40,56 @@ using namespace polymorphic;
 
 /* SourceRefLatticeValue */
 
+TranslationMap &TranslationMap::operator=(const TranslationMap &other) {
+  if (this != &other) {
+    entries = other.entries;
+    invalidateCache();
+  }
+  return *this;
+}
+
+TranslationMap &TranslationMap::operator=(TranslationMap &&other) noexcept {
+  if (this != &other) {
+    entries = std::move(other.entries);
+    invalidateCache();
+    other.invalidateCache();
+  }
+  return *this;
+}
+
+void TranslationMap::set(SourceRef prefix, SourceRefLatticeValue replacements) {
+  invalidateCache();
+  entries.insert_or_assign(std::move(prefix), std::move(replacements));
+}
+
+llvm::ArrayRef<const TranslationMap::Entry *>
+TranslationMap::Index::getEntriesForRoot(Value root) const {
+  auto entriesForRoot = entriesByRoot.find(root);
+  if (entriesForRoot == entriesByRoot.end()) {
+    return {};
+  }
+  return entriesForRoot->second;
+}
+
+const TranslationMap::Index &TranslationMap::getIndex() const {
+  if (cachedIndex) {
+    return *cachedIndex;
+  }
+
+  cachedIndex.emplace();
+  Index &index = *cachedIndex;
+  index.entries.reserve(entries.size());
+  for (const auto &[prefix, replacements] : entries) {
+    FailureOr<Value> root = prefix.getRoot();
+    if (failed(root)) {
+      continue;
+    }
+    index.entries.push_back({prefix, replacements.foldToScalar()});
+    index.entriesByRoot[*root].push_back(&index.entries.back());
+  }
+  return index;
+}
+
 mlir::ChangeResult SourceRefLatticeValue::insert(const SourceRef &rhs) {
   auto rhsVal = SourceRefLatticeValue(rhs);
   if (isScalar()) {
@@ -253,9 +303,19 @@ mlir::ChangeResult SourceRefLatticeValue::translateScalar(const TranslationMap &
   // If so, translate the current element with all replacement prefixes indicated
   // by the translation value.
   for (const SourceRef &currRef : currVal) {
-    for (const auto &[prefix, replacementVal] : translation) {
+    FailureOr<Value> root = currRef.getRoot();
+    if (failed(root)) {
+      continue;
+    }
+    llvm::ArrayRef<const TranslationMap::Entry *> entries =
+        translation.getIndex().getEntriesForRoot(*root);
+    if (entries.empty()) {
+      continue;
+    }
+    for (const TranslationMap::Entry *entry : entries) {
+      const auto &[prefix, replacementPrefixes] = *entry;
       if (currRef.isValidPrefix(prefix)) {
-        for (const SourceRef &replacementPrefix : replacementVal.foldToScalar()) {
+        for (const SourceRef &replacementPrefix : replacementPrefixes) {
           auto translatedRefRes = currRef.translate(prefix, replacementPrefix);
           if (succeeded(translatedRefRes)) {
             res |= insert(*translatedRefRes);
@@ -268,16 +328,30 @@ mlir::ChangeResult SourceRefLatticeValue::translateScalar(const TranslationMap &
 }
 
 mlir::ChangeResult SourceRefLatticeValue::replacePrefixesScalar(const TranslationMap &translation) {
-  const ScalarTy current = getScalarValue();
+  const ScalarTy &current = getScalarValue();
   ScalarTy replaced;
+  const ScalarTy current = getScalarValue();
   for (const SourceRef &currentRef : current) {
+    FailureOr<Value> root = currentRef.getRoot();
+    if (failed(root)) {
+      replaced.insert(currentRef);
+      continue;
+    }
+    llvm::ArrayRef<const TranslationMap::Entry *> entries =
+        translation.getIndex().getEntriesForRoot(*root);
+    if (entries.empty()) {
+      replaced.insert(currentRef);
+      continue;
+    }
     bool matched = false;
-    for (const auto &[prefix, replacementVal] : translation) {
-      if (!currentRef.isValidPrefix(prefix)) {
+    for (const TranslationMap::Entry *entry : entries) {
+      const auto &[prefix, replacementPrefixes] = *entry;
+      auto suffix = currentRef.getSuffix(prefix);
+      if (failed(suffix)) {
         continue;
       }
       matched = true;
-      for (const SourceRef &replacementPrefix : replacementVal.foldToScalar()) {
+      for (const SourceRef &replacementPrefix : replacementPrefixes) {
         auto translated = currentRef.translate(prefix, replacementPrefix);
         if (succeeded(translated)) {
           replaced.insert(*translated);

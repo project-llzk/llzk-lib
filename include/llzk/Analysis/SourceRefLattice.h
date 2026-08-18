@@ -16,12 +16,16 @@
 
 #include <mlir/Analysis/DataFlow/DenseAnalysis.h>
 
+#include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/PointerUnion.h>
+#include <llvm/ADT/SmallVector.h>
+
+#include <optional>
+#include <unordered_map>
 
 namespace llzk {
 
-class SourceRefLatticeValue;
-using TranslationMap = std::unordered_map<SourceRef, SourceRefLatticeValue, SourceRef::Hash>;
+class TranslationMap;
 
 /// @brief A value at a given point of the SourceRefLattice.
 class SourceRefLatticeValue
@@ -121,6 +125,59 @@ protected:
   elementwiseTransform(
       llvm::function_ref<mlir::FailureOr<SourceRef>(const SourceRef &)> transform
   ) const;
+};
+
+/// A prefix-to-replacement map with a lazily materialized, root-indexed view.
+///
+/// Mutation is restricted to this class so cached folded replacement prefixes
+/// are invalidated before a subsequent lookup.
+class TranslationMap {
+  using Storage = std::unordered_map<SourceRef, SourceRefLatticeValue, SourceRef::Hash>;
+
+public:
+  struct Entry {
+    SourceRef prefix;
+    SourceRefSet replacementPrefixes;
+  };
+
+  /// Folded translation entries indexed by prefix root.
+  class Index {
+  public:
+    llvm::ArrayRef<const Entry *> getEntriesForRoot(mlir::Value root) const;
+
+  private:
+    friend class TranslationMap;
+
+    std::vector<Entry> entries;
+    llvm::DenseMap<mlir::Value, llvm::SmallVector<const Entry *>> entriesByRoot;
+  };
+
+  TranslationMap() = default;
+  TranslationMap(std::initializer_list<Storage::value_type> initialEntries)
+      : entries(initialEntries) {}
+  TranslationMap(const TranslationMap &other) : entries(other.entries) {}
+  TranslationMap(TranslationMap &&other) noexcept : entries(std::move(other.entries)) {
+    other.invalidateCache();
+  }
+  TranslationMap &operator=(const TranslationMap &other);
+  TranslationMap &operator=(TranslationMap &&other) noexcept;
+
+  /// Insert or replace the translation for `prefix`.
+  void set(SourceRef prefix, SourceRefLatticeValue replacements);
+
+  /// Return a read-only view of the translations.
+  Storage::const_iterator begin() const { return entries.begin(); }
+  Storage::const_iterator end() const { return entries.end(); }
+  size_t size() const { return entries.size(); }
+
+  /// Return the lazily constructed folded and root-indexed translations.
+  const Index &getIndex() const;
+
+private:
+  void invalidateCache() { cachedIndex.reset(); }
+
+  Storage entries;
+  mutable std::optional<Index> cachedIndex;
 };
 
 /// Sparse SSA-value lattice for SourceRef propagation.

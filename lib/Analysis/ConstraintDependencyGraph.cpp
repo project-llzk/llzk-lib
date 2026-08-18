@@ -864,7 +864,7 @@ void SourceRefAnalysis::StorageState::applyAggregateAliases(
       if (mayBeSkipped) {
         (void)aliasTargets.insert(sourceRef);
       }
-      aliases[sourceRef] = std::move(aliasTargets);
+      aliases.set(sourceRef, std::move(aliasTargets));
     }
   };
 
@@ -1146,7 +1146,7 @@ void SourceRefAnalysis::visitExternalCall(
     return;
   }
 
-  std::unordered_map<SourceRef, SourceRefLatticeValue, SourceRef::Hash> translation;
+  TranslationMap translation;
   TranslationMap storageTranslation;
   FuncDefOp funcOp = funcOpRes->get();
   for (unsigned i = 0; i < funcOp.getNumArguments(); i++) {
@@ -1159,19 +1159,19 @@ void SourceRefAnalysis::visitExternalCall(
                           ->resolveDependencies(argumentValue, call.getOperation());
     }
     SourceRef argumentRef(funcOp.getArgument(i));
-    translation[argumentRef] = argumentValue;
+    translation.set(argumentRef, argumentValue);
     // Aggregate value lattices are shaped by their elements. Storage effects,
     // however, need the aggregate root so a callee selection is appended only
     // once (e.g. `%arg[0]`, never `%arg[0][0]`).
     if (isAggregate) {
       auto storageArgumentRef = SourceRefLattice::getSourceRef(call->getOperand(i));
       if (succeeded(storageArgumentRef)) {
-        storageTranslation[argumentRef] = SourceRefLatticeValue(*storageArgumentRef);
+        storageTranslation.set(argumentRef, SourceRefLatticeValue(*storageArgumentRef));
       } else if (argumentValue.isScalar()) {
         // Reads of aggregate POD records or struct members are not rooted
         // constructors. Their raw lattice nevertheless names the selected
         // aggregate, so use it as the storage translation.
-        storageTranslation[argumentRef] = argumentValue;
+        storageTranslation.set(argumentRef, argumentValue);
       } else if (auto arrayType = llvm::dyn_cast<ArrayType>(call->getOperand(i).getType())) {
         // An array.extract of an array-shaped value has one lattice element per
         // selected leaf. Recover the selected subarray address by removing the
@@ -1195,11 +1195,11 @@ void SourceRefAnalysis::visitExternalCall(
           }
         }
         if (!storageArgumentValue.foldToScalar().empty()) {
-          storageTranslation[argumentRef] = std::move(storageArgumentValue);
+          storageTranslation.set(argumentRef, std::move(storageArgumentValue));
         }
       }
     } else {
-      storageTranslation[argumentRef] = argumentValue;
+      storageTranslation.set(argumentRef, argumentValue);
     }
   }
   getStorageState(call.getOperation())->recordCalleeStorageWrites(call, funcOp, storageTranslation);
@@ -1227,11 +1227,11 @@ void SourceRefAnalysis::visitExternalCall(
     SourceRefLatticeValue combined;
     unsigned resultNum = llvm::cast<OpResult>(result).getResultNumber();
     for (Operation *returnSite : returnSites) {
-      auto retVal = static_cast<const Lattice *>(getLatticeElementFor(
-                                                     getProgramPointAfter(call.getOperation()),
-                                                     returnSite->getOperand(resultNum)
-                                                 ))
-                        ->getValue();
+      SourceRefLatticeValue retVal =
+          getLatticeElementFor(
+              getProgramPointAfter(call.getOperation()), returnSite->getOperand(resultNum)
+          )
+              ->getValue();
       SourceRefLatticeValue returnDependencies = retVal;
       if (!llvm::isa<ArrayType, StructType, PodType>(returnSite->getOperand(resultNum).getType())) {
         returnDependencies = getStorageState(returnSite)->resolveDependencies(retVal, returnSite);
