@@ -1634,6 +1634,7 @@ static LogicalResult copyReferencedTemplateExprs(
         clonedExpr->erase();
         return failure();
       }
+      replacement.getDefiningOp()->setDiscardableAttrs(readOp->getDiscardableAttrDictionary());
       readOp.replaceAllUsesWith(replacement);
       readOp.erase();
     }
