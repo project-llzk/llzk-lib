@@ -48,7 +48,7 @@ static bool isInMaybeSkippedScfRegion(Operation *op) {
     if (llvm::isa<FuncDefOp>(parent)) {
       return false;
     }
-    if (llvm::isa<scf::ForOp, scf::IfOp, scf::WhileOp>(parent)) {
+    if (llvm::isa<scf::ForOp, scf::IfOp, scf::WhileOp, scf::IndexSwitchOp>(parent)) {
       return true;
     }
   }
