@@ -1,0 +1,286 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck %s
+
+// Equivalent fieldless, integer, and explicitly fielded felt arguments reuse one canonical
+// specialization, while a different value creates a distinct clone across function and struct
+// specialization paths.
+module attributes {llzk.lang} {
+  poly.template @CanonicalFelt {
+    poly.param @F : !felt.type<"bn128">
+
+    function.def @value() -> !felt.type<"bn128"> {
+      %value = poly.read_const @F : !felt.type<"bn128">
+      function.return %value : !felt.type<"bn128">
+    }
+  }
+
+  function.def @main() -> !felt.type<"bn128"> {
+    %fieldless = function.call @CanonicalFelt::@value<[#felt<const 35>]>() :
+        () -> !felt.type<"bn128">
+    %integer = function.call @CanonicalFelt::@value<[35]>() : () -> !felt.type<"bn128">
+    %fielded = function.call
+        @CanonicalFelt::@value<[#felt<const 35 : !felt.type<"bn128">>]>() :
+        () -> !felt.type<"bn128">
+    %other = function.call @CanonicalFelt::@value<[36]>() : () -> !felt.type<"bn128">
+    function.return %fielded : !felt.type<"bn128">
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @"CanonicalFelt_f<35:5:bn128>_value"() -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  35 : <"bn128">
+// CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @"CanonicalFelt_f<36:5:bn128>_value"() -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = felt.const  36 : <"bn128">
+// CHECK-NEXT:      function.return %[[VAL_1]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main() -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @"CanonicalFelt_f<35:5:bn128>_value"() : () -> !felt.type<"bn128">
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @"CanonicalFelt_f<35:5:bn128>_value"() : () -> !felt.type<"bn128">
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @"CanonicalFelt_f<35:5:bn128>_value"() : () -> !felt.type<"bn128">
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @"CanonicalFelt_f<36:5:bn128>_value"() : () -> !felt.type<"bn128">
+// CHECK-NEXT:      function.return %[[VAL_4]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK:  // {{[-][-][-][-][-]}}
+
+// -----
+
+// Equivalent felt spellings reuse one partial function specialization before the remaining
+// parameter is completed, then all three routes call the same fully specialized function.
+module attributes {llzk.lang} {
+  poly.template @CanonicalPartialFunction {
+    poly.param @F : !felt.type<"bn128">
+    poly.param @M : index
+
+    function.def @value() -> !felt.type<"bn128"> {
+      %value = poly.read_const @F : !felt.type<"bn128">
+      function.return %value : !felt.type<"bn128">
+    }
+  }
+
+  poly.template @FunctionBridge {
+    poly.param @M : index
+
+    function.def @value() -> !felt.type<"bn128"> {
+      %fieldless = function.call
+          @CanonicalPartialFunction::@value<[#felt<const 35>, @M]>() :
+          () -> !felt.type<"bn128">
+      %integer = function.call @CanonicalPartialFunction::@value<[35, @M]>() :
+          () -> !felt.type<"bn128">
+      %fielded = function.call @CanonicalPartialFunction::@value<[
+          #felt<const 35 : !felt.type<"bn128">>, @M
+      ]>() : () -> !felt.type<"bn128">
+      function.return %fielded : !felt.type<"bn128">
+    }
+  }
+
+  function.def @main() -> !felt.type<"bn128"> {
+    %value = function.call @FunctionBridge::@value<[7]>() : () -> !felt.type<"bn128">
+    function.return %value : !felt.type<"bn128">
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @"CanonicalPartialFunction_f<35:5:bn128>_7_value"() -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  35 : <"bn128">
+// CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @FunctionBridge_7_value() -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @"CanonicalPartialFunction_f<35:5:bn128>_7_value"() : () -> !felt.type<"bn128">
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @"CanonicalPartialFunction_f<35:5:bn128>_7_value"() : () -> !felt.type<"bn128">
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @"CanonicalPartialFunction_f<35:5:bn128>_7_value"() : () -> !felt.type<"bn128">
+// CHECK-NEXT:      function.return %[[VAL_3]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main() -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @FunctionBridge_7_value() : () -> !felt.type<"bn128">
+// CHECK-NEXT:      function.return %[[VAL_4]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK:  // {{[-][-][-][-][-]}}
+
+// -----
+
+// Equivalent felt spellings reuse one partial struct specialization before the enclosing
+// parameter is completed, then all three members use the same fully specialized struct.
+module attributes {
+  llzk.lang,
+  llzk.main = !struct.type<@StructBridge::@Wrapper<[7]>>
+} {
+  poly.template @CanonicalPartialStruct {
+    poly.param @F : !felt.type<"bn128">
+    poly.param @M : index
+
+    struct.def @Value {
+      struct.member @result : !felt.type<"bn128">
+
+      function.def @compute() -> !struct.type<@CanonicalPartialStruct::@Value<[@F, @M]>> {
+        %value = poly.read_const @F : !felt.type<"bn128">
+        %self = struct.new : !struct.type<@CanonicalPartialStruct::@Value<[@F, @M]>>
+        struct.writem %self[@result] = %value :
+            !struct.type<@CanonicalPartialStruct::@Value<[@F, @M]>>, !felt.type<"bn128">
+        function.return %self : !struct.type<@CanonicalPartialStruct::@Value<[@F, @M]>>
+      }
+
+      function.def @constrain(
+          %self: !struct.type<@CanonicalPartialStruct::@Value<[@F, @M]>>
+      ) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @StructBridge {
+    poly.param @M : index
+
+    struct.def @Wrapper {
+      struct.member @fieldless :
+          !struct.type<@CanonicalPartialStruct::@Value<[#felt<const 35>, @M]>>
+      struct.member @integer : !struct.type<@CanonicalPartialStruct::@Value<[35, @M]>>
+      struct.member @fielded : !struct.type<@CanonicalPartialStruct::@Value<[
+          #felt<const 35 : !felt.type<"bn128">>, @M
+      ]>>
+
+      function.def @compute() -> !struct.type<@StructBridge::@Wrapper<[@M]>> {
+        %self = struct.new : !struct.type<@StructBridge::@Wrapper<[@M]>>
+        function.return %self : !struct.type<@StructBridge::@Wrapper<[@M]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@StructBridge::@Wrapper<[@M]>>) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@StructBridge_7_Wrapper>} {
+// CHECK-NEXT:    struct.def @"CanonicalPartialStruct_f<35:5:bn128>_7_Value" {
+// CHECK-NEXT:      struct.member @result : !felt.type<"bn128">
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@"CanonicalPartialStruct_f<35:5:bn128>_7_Value"> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  35 : <"bn128">
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@"CanonicalPartialStruct_f<35:5:bn128>_7_Value">
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@result] = %[[VAL_0]] : <@"CanonicalPartialStruct_f<35:5:bn128>_7_Value">, !felt.type<"bn128">
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@"CanonicalPartialStruct_f<35:5:bn128>_7_Value">
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@"CanonicalPartialStruct_f<35:5:bn128>_7_Value">) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @"CanonicalPartialStruct_f<35:5:bn128>_\1A" {
+// CHECK-NEXT:      poly.param @M : index
+// CHECK-NEXT:      struct.def @Value {
+// CHECK-NEXT:        struct.member @result : !felt.type<"bn128">
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@"CanonicalPartialStruct_f<35:5:bn128>_\1A"::@Value<[@M]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  35 : <"bn128">
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@"CanonicalPartialStruct_f<35:5:bn128>_\1A"::@Value<[@M]>>
+// CHECK-NEXT:          struct.writem %[[VAL_4]][@result] = %[[VAL_3]] : <@"CanonicalPartialStruct_f<35:5:bn128>_\1A"::@Value<[@M]>>, !felt.type<"bn128">
+// CHECK-NEXT:          function.return %[[VAL_4]] : !struct.type<@"CanonicalPartialStruct_f<35:5:bn128>_\1A"::@Value<[@M]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@"CanonicalPartialStruct_f<35:5:bn128>_\1A"::@Value<[@M]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["CanonicalPartialStruct_f<35:5:bn128>_", ""]}
+// CHECK-NEXT:    struct.def @StructBridge_7_Wrapper {
+// CHECK-NEXT:      struct.member @fieldless : !struct.type<@"CanonicalPartialStruct_f<35:5:bn128>_7_Value">
+// CHECK-NEXT:      struct.member @integer : !struct.type<@"CanonicalPartialStruct_f<35:5:bn128>_7_Value">
+// CHECK-NEXT:      struct.member @fielded : !struct.type<@"CanonicalPartialStruct_f<35:5:bn128>_7_Value">
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@StructBridge_7_Wrapper> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@StructBridge_7_Wrapper>
+// CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@StructBridge_7_Wrapper>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@StructBridge_7_Wrapper>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK:  // {{[-][-][-][-][-]}}
+
+// -----
+
+module attributes {
+  llzk.lang,
+  llzk.main = !struct.type<@Main>
+} {
+  poly.template @CanonicalFeltStruct {
+    poly.param @F : !felt.type<"bn128">
+
+    struct.def @Value {
+      struct.member @result : !felt.type<"bn128">
+
+      function.def @compute() -> !struct.type<@CanonicalFeltStruct::@Value<[@F]>> {
+        %value = poly.read_const @F : !felt.type<"bn128">
+        %self = struct.new : !struct.type<@CanonicalFeltStruct::@Value<[@F]>>
+        struct.writem %self[@result] = %value :
+            !struct.type<@CanonicalFeltStruct::@Value<[@F]>>, !felt.type<"bn128">
+        function.return %self : !struct.type<@CanonicalFeltStruct::@Value<[@F]>>
+      }
+
+      function.def @constrain(
+          %self: !struct.type<@CanonicalFeltStruct::@Value<[@F]>>
+      ) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Main {
+    struct.member @fieldless :
+        !struct.type<@CanonicalFeltStruct::@Value<[#felt<const 35>]>>
+    struct.member @integer : !struct.type<@CanonicalFeltStruct::@Value<[35]>>
+    struct.member @fielded :
+        !struct.type<@CanonicalFeltStruct::@Value<[
+          #felt<const 35 : !felt.type<"bn128">>
+        ]>>
+    struct.member @other : !struct.type<@CanonicalFeltStruct::@Value<[36]>>
+
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+// CHECK-NEXT:    struct.def @"CanonicalFeltStruct_f<35:5:bn128>_Value" {
+// CHECK-NEXT:      struct.member @result : !felt.type<"bn128">
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@"CanonicalFeltStruct_f<35:5:bn128>_Value"> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  35 : <"bn128">
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@"CanonicalFeltStruct_f<35:5:bn128>_Value">
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@result] = %[[VAL_0]] : <@"CanonicalFeltStruct_f<35:5:bn128>_Value">, !felt.type<"bn128">
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@"CanonicalFeltStruct_f<35:5:bn128>_Value">
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@"CanonicalFeltStruct_f<35:5:bn128>_Value">) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @"CanonicalFeltStruct_f<36:5:bn128>_Value" {
+// CHECK-NEXT:      struct.member @result : !felt.type<"bn128">
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@"CanonicalFeltStruct_f<36:5:bn128>_Value"> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  36 : <"bn128">
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@"CanonicalFeltStruct_f<36:5:bn128>_Value">
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@result] = %[[VAL_3]] : <@"CanonicalFeltStruct_f<36:5:bn128>_Value">, !felt.type<"bn128">
+// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@"CanonicalFeltStruct_f<36:5:bn128>_Value">
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@"CanonicalFeltStruct_f<36:5:bn128>_Value">) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      struct.member @fieldless : !struct.type<@"CanonicalFeltStruct_f<35:5:bn128>_Value">
+// CHECK-NEXT:      struct.member @integer : !struct.type<@"CanonicalFeltStruct_f<35:5:bn128>_Value">
+// CHECK-NEXT:      struct.member @fielded : !struct.type<@"CanonicalFeltStruct_f<35:5:bn128>_Value">
+// CHECK-NEXT:      struct.member @other : !struct.type<@"CanonicalFeltStruct_f<36:5:bn128>_Value">
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

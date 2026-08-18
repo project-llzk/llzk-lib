@@ -332,7 +332,7 @@ def CallOp : FunctionDialectOp<
 
     When the return StructType of a `compute()` function uses AffineMapAttr to
     express struct parameter(s) that depend on a loop variable, the optional
-    instantiation parameter list of this operation must be used to instatiate
+    instantiation parameter list of this operation must be used to instantiate
     all AffineMap used as parameters to the StructType.
 
     Examples:
@@ -341,14 +341,19 @@ def CallOp : FunctionDialectOp<
     %r = function.call @A::@compute(%x){(%i)} : (!felt.type) -> !struct.type<@A<[#M]>>
     ```
 
-    When the call targets a free function within a `poly.template` region, the optional
-    template parameter list can be used to instantiate all `poly.param` symbols within
-    the template. If all `poly.param` symbols are used within the function signature,
-    this can be elided. Otherwise, it is required to instantiate the function. The `?`
-    wildcard can be used for any `poly.param` with a `poly.tvar` type restriction, even
-    those that cannot be inferred from the function signature. The wildcard allows for
-    inference of the type within the function body itself during the flattening pass
-    but may fail if the type cannot be inferred from the function body.
+    When the call targets a free function within a `poly.template`, the optional template
+    parameter list supplies one argument per `poly.param`, in declaration order. The list may be
+    omitted only when every parameter appears in the function signature; omitted values are
+    inferred by unifying the call's operand and result types with that signature. The `?` wildcard
+    is valid for any parameter with a `poly.tvar` restriction and leaves that type for later
+    inference based on the body of the callee function.
+
+    Every explicit or inferred argument must satisfy its `poly.param` type restriction. If the
+    function signature independently infers a value for an explicitly supplied parameter, all
+    known fields and concrete values must agree.
+
+    Symbol arguments must resolve to an enclosing template binding or a constant global; unknown,
+    mutable-global, and wrong-kind symbols are rejected.
   }];
 
   // See `VerifySizesForMultiAffineOps` for more explanation of these arguments.
@@ -460,7 +465,7 @@ def CallOp : FunctionDialectOp<
     /// or else IR verification will fail.
     ::mlir::FunctionType getTypeSignature();
 
-    /// Attempt type unfication between the inferred FunctionType from this CallOp (as LHS) and
+    /// Attempt type unification between the inferred FunctionType from this CallOp (as LHS) and
     /// the given FunctionType (as RHS). If successful, return a UnificationMap containing the
     /// unifications that were made. Otherwise, return failure.
     ::mlir::FailureOr<UnificationMap> unifyTypeSignature(::mlir::FunctionType other);
@@ -523,29 +528,15 @@ def CallOp : FunctionDialectOp<
     /// so it can be passed to the builders as an `ArrayRef<ValueRange>`.
     static ::llvm::SmallVector<::mlir::ValueRange> toVectorOfValueRange(::mlir::OperandRangeRange);
 
-    /// Check type compatibility of the given template parameter value from this `CallOp` against
-    /// the declared type on the given `TemplateParamOp` (if any).
-    ::mlir::LogicalResult verifyTemplateParamCompatibility(
-      ::mlir::Attribute paramFromCallOp, ::llzk::polymorphic::TemplateParamOp targetParam
-    );
-
-    /// Check type compatibility of each template parameter value provided in this `CallOp` against
-    /// the declared type on each `TemplateParamOp` (if any).
-    ///
-    /// Pre-condition assertions:
-    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`
-    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`
-    ::mlir::LogicalResult verifyTemplateParamCompatibility(
-        ::llvm::iterator_range<::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs
-    );
-
     /// Verify that each template parameter value provided in this `CallOp` is consistent with
     /// the value inferred for the target `TemplateParamOp` in the given `UnificationMap`. The
     /// `UnificationMap` is expected to contain the unification results of this `CallOp` against
     /// the target function type signature.
     ///
-    /// Pre-condition assertions:
-    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`
+    /// The template parameter list may be omitted when all parameters are inferable from the
+    /// function type signature.
+    ///
+    /// Pre-condition assertions when the list is present:
     ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`
     ::mlir::LogicalResult verifyTemplateParamsMatchInferred(
         ::llvm::iterator_range<::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs,

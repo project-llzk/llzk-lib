@@ -264,18 +264,20 @@ def LLZK_UnifiableCastOp : PolymorphicDialectOp<"unifiable_cast", [Pure]> {
     This operation reinterprets a value as a different type with the restriction
     that the input and output types of the cast are unifiable.
 
-    Most ops that accept LLZK types accept unifiable types as input and thus there
-    is no need for casting between types. This op is meant to be used in situations where
-    is not possible to modify the given or the target type and they are different but unifiable.
-    For example, inside a conversion pattern the driver may introduce `unrealized_conversion_cast`
-    operations if the types are not equal. This will happen regardless of whether the two types unify.
-    This cast can be introduced instead of the default cast operation to satisfy MLIR's assumptions
-    on type equality.
+    Most operations that accept LLZK types also accept operands whose types unify, so an explicit
+    cast is normally unnecessary. Use this operation when neither the input nor result type can be
+    changed but MLIR still requires exact type equality. For example, a conversion pattern can use
+    this operation instead of an `unrealized_conversion_cast` while preserving the requirement that
+    the unequal types unify.
+
+    During constant folding, this operation returns its input constant only when the input and
+    result types are identical. Non-constant inputs do not fold. Merely unifiable but unequal
+    types do not fold because the input has a different type from the result.
 
     Example:
     ```llzk
     %0 = some_other_op : !array.type<@N x !felt.type>
-    %1 = unifiable_cast %0 : (!array.type<@N x @felt.type>) -> !array.type<affine_map<()[s0, s1] -> (s0 + s1)> x !felt.type>
+    %1 = poly.unifiable_cast %0 : (!array.type<@N x !felt.type>) -> !array.type<affine_map<()[s0, s1] -> (s0 + s1)> x !felt.type>
     ```
   }];
 
@@ -286,6 +288,7 @@ def LLZK_UnifiableCastOp : PolymorphicDialectOp<"unifiable_cast", [Pure]> {
   }];
 
   let hasVerifier = 1;
+  let hasFolder = 1;
 }
 
 def LLZK_ApplyMapOp : PolymorphicDialectOp<"applymap", [Pure]> {

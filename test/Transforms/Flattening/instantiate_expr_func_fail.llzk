@@ -1,0 +1,28 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s 2>&1 | FileCheck %s
+
+// A target-used expression with concrete dependencies but a non-foldable scf.execute_region must fail flattening.
+module attributes {llzk.lang} {
+  poly.template @FunctionExpr {
+    poly.param @N : index
+    poly.expr @NestedN {
+      // expected-error@+1 {{'scf.execute_region' op cannot fold concrete template expression}}
+      %value = scf.execute_region -> index {
+        %n = poly.read_const @N : index
+        scf.yield %n : index
+      }
+      poly.yield %value : index
+    }
+    function.def @value() -> index {
+      %value = poly.read_const @NestedN : index
+      function.return %value : index
+    }
+  }
+
+  function.def @entry() -> index {
+    // expected-error@+1 {{failure while evaluating template expressions}}
+    %value = function.call @FunctionExpr::@value<[5]>() : () -> index
+    function.return %value : index
+  }
+}
+
+// CHECK: llzk-flatten failed while instantiating functions in templates

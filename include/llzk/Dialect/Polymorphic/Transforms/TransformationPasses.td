@@ -53,15 +53,31 @@ def EmptyTemplateRemovalPass : LLZKPass<"llzk-drop-empty-templates"> {
 }
 
 def FlatteningPass : LLZKPass<"llzk-flatten"> {
-  let summary = "Flatten structs and unroll loops";
+  let summary =
+      "Instantiate templates, unroll loops, and propagate instantiated types";
   let description = [{
-    Performs the following transformations:
-    - Instantiate `affine_map` parameters of StructType and ArrayType
-      to constant values using the arguments at the instantiation site
-    - Replace parameterized structs with flattened (i.e., no parameter)
-      versions of those structs based on requested return type at calls
-      to `compute()` functions and unroll loops
-    - Unroll loops
+    Iterates the following transformations to a fixpoint, bounded by `max-iter`:
+
+    - Instantiate parameterized structs reached from `llzk.main` or struct uses. Specialize free
+      functions from concrete explicit arguments, signature unification, or body-inferred wildcard
+      types. If only some parameters are concrete, keep the specialization in a reduced
+      `poly.template`.
+    - Evaluate target-used `poly.expr` values whose dependencies are concrete. A partial
+      specialization retains normalized copies of target-used expressions that still depend on
+      remaining parameters. A target-used concrete expression that cannot fold, or a target-used
+      expression that remains deferred in a full specialization, is an error.
+    - Apply concrete bindings to scalar type variables, array dimensions and element types,
+      parameterized struct arguments, POD record types, and explicit arguments on nested calls.
+    - Unroll loops with known iteration bounds, instantiate `affine_map` parameters of struct and
+      array types, and propagate the resulting member, array, call, and function types.
+
+    Warnings accumulated while converting a prospective struct are retained only after body
+    conversion succeeds. For a prospective free function, body conversion and nested-call
+    verification must both succeed. A failed prospective specialization and its accumulated
+    warnings are discarded.
+
+    After the fixpoint, the pass applies the selected cleanup mode, removes empty templates, and
+    removes unused discardable array allocations.
   }];
   // Implementation note: These options should be kept in sync with
   // `StructInliningFlatteningOptions` in `LLZKTransformationPassPipelines.h`.

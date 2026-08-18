@@ -1,0 +1,3 @@
+fixed:
+  - Apply required felt fields to fieldless constants and integer arguments, and reject field or value conflicts between explicit and inferred template arguments
+  - Require symbolic template arguments to resolve to an enclosing template binding or a constant global

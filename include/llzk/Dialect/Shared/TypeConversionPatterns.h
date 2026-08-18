@@ -40,11 +40,17 @@
 namespace llzk {
 
 /// Check whether an op is legal with respect to the given type converter, including TypeAttr
-/// attributes (with special handling for FunctionType stored inside a TypeAttr).
+/// attributes and MemberDefOp type properties (with special handling for FunctionType stored inside
+/// a TypeAttr).
 inline bool defaultLegalityCheck(const mlir::TypeConverter &tyConv, mlir::Operation *op) {
   // Check operand types and result types
   if (!tyConv.isLegal(op)) {
     return false;
+  }
+  if (auto memberDef = llvm::dyn_cast<component::MemberDefOp>(op)) {
+    if (!tyConv.isLegal(memberDef.getType())) {
+      return false;
+    }
   }
   // Check type attributes
   // Extend lifetime of temporary to suppress warnings.
@@ -203,7 +209,8 @@ public:
   }
 };
 
-/// Pattern for `CallOp`. Converts result types only; the callee symbol is left unchanged.
+/// Rebuild a `CallOp` with converted result types and remapped operands. Preserve its callee,
+/// affine-map instantiation state, and ordered explicit template arguments unchanged.
 class CallOpClassReplacePattern : public mlir::OpConversionPattern<function::CallOp> {
 public:
   CallOpClassReplacePattern(mlir::TypeConverter &converter, mlir::MLIRContext *ctx)
@@ -216,9 +223,12 @@ public:
     if (mlir::failed(getTypeConverter()->convertTypes(op.getResultTypes(), newResultTypes))) {
       return op->emitError("Could not convert Op result types.");
     }
+    mlir::ArrayAttr templateParamsAttr = op.getTemplateParamsAttr();
+    llvm::ArrayRef<mlir::Attribute> templateParams =
+        templateParamsAttr ? templateParamsAttr.getValue() : llvm::ArrayRef<mlir::Attribute>();
     replaceOpWithNewOp<function::CallOp>(
         rewriter, op, newResultTypes, op.getCalleeAttr(), adapter.getMapOperands(),
-        op.getNumDimsPerMapAttr(), adapter.getArgOperands()
+        op.getNumDimsPerMapAttr(), adapter.getArgOperands(), templateParams
     );
     return mlir::success();
   }

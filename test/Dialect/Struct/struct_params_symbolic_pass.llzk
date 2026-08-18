@@ -1,0 +1,173 @@
+// RUN: llzk-opt -split-input-file %s | FileCheck %s
+
+// A fielded local symbolic argument satisfies a fieldless struct restriction.
+module attributes {llzk.lang} {
+  poly.template @Target {
+    poly.param @F : !felt.type
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Target::@S<[@F]>> {
+        %self = struct.new : <@Target::@S<[@F]>>
+        function.return %self : !struct.type<@Target::@S<[@F]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@S<[@F]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Caller {
+    poly.param @G : !felt.type<"bn128">
+    function.def @useLocal(%value: !struct.type<@Target::@S<[@G]>>) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @Target {
+// CHECK-NEXT:      poly.param @F : !felt.type
+// CHECK-NEXT:      struct.def @S {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Target::@S<[@F]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Target::@S<[@F]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@Target::@S<[@F]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Target::@S<[@F]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @G : !felt.type<"bn128">
+// CHECK-NEXT:      function.def @useLocal(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Target::@S<[@G]>>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK:  // -----
+
+// -----
+
+// A fielded qualified global argument satisfies a fieldless struct restriction.
+module attributes {llzk.lang} {
+  poly.template @Target {
+    poly.param @F : !felt.type
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Target::@S<[@F]>> {
+        %self = struct.new : <@Target::@S<[@F]>>
+        function.return %self : !struct.type<@Target::@S<[@F]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@S<[@F]>>) {
+        function.return
+      }
+    }
+  }
+  module @globals {
+    global.def const @G : !felt.type<"bn128"> = 35
+  }
+  function.def @useGlobal(%value: !struct.type<@Target::@S<[@globals::@G]>>) {
+    function.return
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @Target {
+// CHECK-NEXT:      poly.param @F : !felt.type
+// CHECK-NEXT:      struct.def @S {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Target::@S<[@F]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Target::@S<[@F]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@Target::@S<[@F]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Target::@S<[@F]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    module @globals {
+// CHECK-NEXT:      global.def const @G : !felt.type<"bn128"> =  35
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @useGlobal(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Target::@S<[@globals::@G]>>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK:  // -----
+
+// -----
+
+// A qualified global with a concrete type satisfies an index restriction, while a local type-only
+// parameter satisfies a type-only restriction.
+module attributes {llzk.lang} {
+  poly.template @IndexTarget {
+    poly.param @N : index
+    struct.def @S {
+      function.def @compute() -> !struct.type<@IndexTarget::@S<[@N]>> {
+        %self = struct.new : <@IndexTarget::@S<[@N]>>
+        function.return %self : !struct.type<@IndexTarget::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@IndexTarget::@S<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @TypeTarget {
+    poly.param @T : !poly.tvar<@T>
+    struct.def @S {
+      function.def @compute() -> !struct.type<@TypeTarget::@S<[@T]>> {
+        %self = struct.new : <@TypeTarget::@S<[@T]>>
+        function.return %self : !struct.type<@TypeTarget::@S<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@TypeTarget::@S<[@T]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @TypeCaller {
+    poly.param @U : !poly.tvar<@U>
+    function.def @useLocal(%value: !struct.type<@TypeTarget::@S<[@U]>>) {
+      function.return
+    }
+  }
+  module @globals {
+    global.def const @G : index = 35
+  }
+  function.def @useIndex(%value: !struct.type<@IndexTarget::@S<[@globals::@G]>>) {
+    function.return
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @IndexTarget {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      struct.def @S {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@IndexTarget::@S<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@IndexTarget::@S<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@IndexTarget::@S<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@IndexTarget::@S<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TypeTarget {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      struct.def @S {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@TypeTarget::@S<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TypeTarget::@S<[@T]>>
+// CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@TypeTarget::@S<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@TypeTarget::@S<[@T]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TypeCaller {
+// CHECK-NEXT:      poly.param @U : !poly.tvar<@U>
+// CHECK-NEXT:      function.def @useLocal(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@TypeTarget::@S<[@U]>>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    module @globals {
+// CHECK-NEXT:      global.def const @G : index = 35
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @useIndex(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@IndexTarget::@S<[@globals::@G]>>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
