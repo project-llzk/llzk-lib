@@ -397,7 +397,7 @@ if(BUILD_TESTING)
     check
     DEPENDS # test targets may not exist if BUILD_TESTING is off
           $<$<BOOL:GTest_FOUND>:check-unit>
-          check-lit>)
+          check-lit)
 else()
   add_custom_target(check) # No-op if BUILD_TESTING is disabled.
 endif()
