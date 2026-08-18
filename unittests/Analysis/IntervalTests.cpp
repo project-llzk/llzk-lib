@@ -753,7 +753,7 @@ TEST_F(IntervalAnalysisAPITests, InitializedPodIntervalsSurviveAggregateMemberAs
       {SourceRefIndex(storageMember), SourceRefIndex(StringAttr::get(&ctx, "initialized"))}
   );
   const auto &intervals = analysis.getResult(structDef).getComputeIntervals();
-  auto intervalIt = intervals.find(storageRef);
+  const auto *intervalIt = intervals.find(storageRef);
   ASSERT_NE(intervalIt, intervals.end());
   EXPECT_EQ(intervalIt->second, Interval::Degenerate(field, field.felt(5)));
 
@@ -761,7 +761,7 @@ TEST_F(IntervalAnalysisAPITests, InitializedPodIntervalsSurviveAggregateMemberAs
       mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()),
       {SourceRefIndex(storageMember), SourceRefIndex(StringAttr::get(&ctx, "written"))}
   );
-  auto writtenIt = intervals.find(writtenRef);
+  const auto *writtenIt = intervals.find(writtenRef);
   ASSERT_NE(writtenIt, intervals.end());
   EXPECT_EQ(writtenIt->second, Interval::Degenerate(field, field.felt(7)));
 }

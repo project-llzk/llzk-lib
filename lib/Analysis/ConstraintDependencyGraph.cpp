@@ -691,7 +691,7 @@ void SourceRefAnalysis::StorageState::MaterializedStorage::unindexAddress(
   }
   auto entries = valuesByRoot.find(*root);
   ensure(entries != valuesByRoot.end(), "storage root index is out of sync");
-  auto addressIt = llvm::find(entries->second, address);
+  auto *addressIt = llvm::find(entries->second, address);
   ensure(addressIt != entries->second.end(), "storage root index is out of sync");
   entries->second.erase(addressIt);
   if (entries->second.empty()) {
