@@ -55,6 +55,63 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
+// A wildcard nested in an aggregate operand is resolved from a concrete explicit
+// binding for the corresponding nested template parameter.
+module attributes {llzk.lang} {
+  struct.def @CallOuterAggregateExplicit {
+    function.def @compute() -> !struct.type<@CallOuterAggregateExplicit> {
+      %self = struct.new : !struct.type<@CallOuterAggregateExplicit>
+      function.call @OuterAggregateExplicit::@wrap<[?]>() : () -> ()
+      function.return %self : !struct.type<@CallOuterAggregateExplicit>
+    }
+
+    function.def @constrain(%self: !struct.type<@CallOuterAggregateExplicit>) {
+      function.call @OuterAggregateExplicit::@wrap<[?]>() : () -> ()
+      function.return
+    }
+  }
+
+  poly.template @InnerAggregateExplicit {
+    poly.param @Arg : !poly.tvar<@Arg>
+
+    function.def @consume(%arg0: !poly.tvar<@Arg>) {
+      function.return
+    }
+  }
+
+  poly.template @OuterAggregateExplicit {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @wrap() {
+      %0 = llzk.nondet : !array.type<2 x !poly.tvar<@T>>
+      function.call @InnerAggregateExplicit::@consume<[!array.type<2 x !felt.type<"bn128">>]>(%0) : (!array.type<2 x !poly.tvar<@T>>) -> ()
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @CallOuterAggregateExplicit {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@CallOuterAggregateExplicit> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@CallOuterAggregateExplicit>
+// CHECK-NEXT:        function.call @OuterAggregateExplicit_f_wrap() : () -> ()
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@CallOuterAggregateExplicit>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@CallOuterAggregateExplicit>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.call @OuterAggregateExplicit_f_wrap() : () -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @"InnerAggregateExplicit_!a<f:2>_consume"(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"bn128">>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @OuterAggregateExplicit_f_wrap() {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+// CHECK-NEXT:      function.call @"InnerAggregateExplicit_!a<f:2>_consume"(%[[VAL_3]]) : (!array.type<2 x !felt.type<"bn128">>) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
 // A wildcard with no call-site operand evidence can still be resolved when the
 // value it creates is passed to a nested template parameter with a concrete binding.
 module attributes {llzk.lang} {

@@ -1401,20 +1401,43 @@ private:
       // in a call result or in a call operand. In both cases, the corresponding nested
       // callee type variable may be concretely bound by the nested call.
       auto inferFromNestedBinding = [&](Type enclosingTy, Type nestedTy) {
-        auto enclosingTvar = llvm::dyn_cast<TypeVarType>(tyConv.convertType(enclosingTy));
         auto nestedTvar = llvm::dyn_cast<TypeVarType>(nestedTy);
-        if (!enclosingTvar || !nestedTvar || enclosingTvar.getNameRef() != paramName) {
+        if (!nestedTvar) {
           return WalkResult::advance();
         }
-        if (std::optional<Attribute> candidate = inferFromExplicitNestedCallParams(
-                nestedCall, nestedTemplate, nestedTvar.getNameRef(), tyConv
-            )) {
-          return noteCandidate(*candidate);
+
+        std::optional<Attribute> nestedCandidate = inferFromExplicitNestedCallParams(
+            nestedCall, nestedTemplate, nestedTvar.getNameRef(), tyConv
+        );
+        if (!nestedCandidate) {
+          DenseMap<Attribute, Attribute> nestedParamNameToConcrete =
+              getNestedConcreteBindings(nestedCall, nestedTgt, nestedTemplate, tyConv);
+          nestedCandidate = infer(nestedTgt, nestedTvar.getNameRef(), nestedParamNameToConcrete);
         }
-        DenseMap<Attribute, Attribute> nestedParamNameToConcrete =
-            getNestedConcreteBindings(nestedCall, nestedTgt, nestedTemplate, tyConv);
-        if (auto candidate = infer(nestedTgt, nestedTvar.getNameRef(), nestedParamNameToConcrete)) {
-          return noteCandidate(*candidate);
+        if (!nestedCandidate) {
+          return WalkResult::advance();
+        }
+
+        Type convertedEnclosingTy = tyConv.convertType(enclosingTy);
+        if (auto enclosingTvar = llvm::dyn_cast<TypeVarType>(convertedEnclosingTy);
+            enclosingTvar && enclosingTvar.getNameRef() == paramName) {
+          return noteCandidate(*nestedCandidate);
+        }
+
+        // A requested wildcard can occur beneath an aggregate type. Unifying the converted
+        // enclosing type against the concrete nested binding recursively records that wildcard's
+        // value at its nested position.
+        auto nestedCandidateTy = llvm::dyn_cast<TypeAttr>(*nestedCandidate);
+        if (!nestedCandidateTy) {
+          return WalkResult::advance();
+        }
+        UnificationMap unifications;
+        if (!typesUnify(convertedEnclosingTy, nestedCandidateTy.getValue(), {}, &unifications)) {
+          return WalkResult::advance();
+        }
+        auto it = unifications.find({paramName, Side::LHS});
+        if (it != unifications.end()) {
+          return noteCandidate(it->second);
         }
         return WalkResult::advance();
       };
