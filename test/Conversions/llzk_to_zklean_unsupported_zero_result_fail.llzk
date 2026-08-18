@@ -1,0 +1,53 @@
+// RUN: llzk-opt -split-input-file --convert-llzk-to-zklean -verify-diagnostics %s
+
+module attributes {llzk.lang = "llzk"} {
+  function.def @contains(%xs: !array.type<2 x !felt.type<"babybear">>, %x: !felt.type<"babybear">) attributes {function.allow_constraint} {
+    // expected-error@+1 {{unsupported op in ZKLean conversion}}
+    constrain.in %xs, %x : !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+    function.return
+  }
+}
+
+// -----
+
+module attributes {llzk.lang = "llzk"} {
+  struct.def @Child {
+    struct.member @out : !felt.type<"babybear">
+    function.def @compute(%x: !felt.type<"babybear">) -> !struct.type<@Child> {
+      %self = struct.new : !struct.type<@Child>
+      struct.writem %self[@out] = %x : !struct.type<@Child>, !felt.type<"babybear">
+      function.return %self : !struct.type<@Child>
+    }
+    function.def @constrain(%self: !struct.type<@Child>, %x: !felt.type<"babybear">) attributes {function.allow_constraint} {
+      %one = felt.const 1 <"babybear">
+      constrain.eq %x, %one : !felt.type<"babybear">
+      function.return
+    }
+  }
+  function.def @parent(%child: !struct.type<@Child>, %x: !felt.type<"babybear">) attributes {function.allow_constraint} {
+    // expected-error@+1 {{unsupported op in ZKLean conversion}}
+    function.call @Child::@constrain(%child, %x) : (!struct.type<@Child>, !felt.type<"babybear">) -> ()
+    function.return
+  }
+}
+
+// -----
+
+module attributes {llzk.lang = "llzk"} {
+  function.def @returns_value(%x: !felt.type<"babybear">) -> !felt.type<"babybear"> attributes {function.allow_constraint} {
+    // expected-error@+1 {{unsupported op in ZKLean conversion}}
+    function.return %x : !felt.type<"babybear">
+  }
+}
+
+// -----
+
+module attributes {llzk.lang = "llzk"} {
+  // expected-error@+1 {{ZKLean conversion only supports single-block functions}}
+  function.def @multi_block(%x: !felt.type<"babybear">) attributes {function.allow_constraint} {
+    cf.br ^next
+  ^next:
+    constrain.eq %x, %x : !felt.type<"babybear">
+    function.return
+  }
+}
