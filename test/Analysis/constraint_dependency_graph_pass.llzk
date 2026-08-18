@@ -2082,6 +2082,45 @@ module attributes {llzk.lang} {
 // INTRA-NEXT: }
 // -----
 
+// Callee aggregate assignments must preserve their source-to-destination alias
+// at the call site, so a later source write is visible through the destination.
+module attributes {llzk.lang} {
+  function.def @copy_array_to_pod_record(%destination: !pod.type<[@items: !array.type<1 x !felt.type>]>, %source: !array.type<1 x !felt.type>) {
+    pod.write %destination[@items] = %source : !pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+    function.return
+  }
+
+  struct.def @CallAggregateAliasStorageEffects {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%old: !felt.type, %new: !felt.type) -> !struct.type<@CallAggregateAliasStorageEffects> {
+      %self = struct.new : !struct.type<@CallAggregateAliasStorageEffects>
+      function.return %self : !struct.type<@CallAggregateAliasStorageEffects>
+    }
+
+    function.def @constrain(%self: !struct.type<@CallAggregateAliasStorageEffects>, %old: !felt.type, %new: !felt.type) {
+      %expected = struct.readm %self[@out] : !struct.type<@CallAggregateAliasStorageEffects>, !felt.type
+      %source = array.new %old : !array.type<1 x !felt.type>
+      %destination = pod.new : !pod.type<[@items: !array.type<1 x !felt.type>]>
+      %idx = arith.constant 0 : index
+      function.call @copy_array_to_pod_record(%destination, %source) : (!pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>) -> ()
+      array.write %source[%idx] = %new : !array.type<1 x !felt.type>, !felt.type
+      %items = pod.read %destination[@items] : !pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+      %actual = array.read %items[%idx] : !array.type<1 x !felt.type>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @CallAggregateAliasStorageEffects ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg2 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @CallAggregateAliasStorageEffects ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg2 }
+// INTRA-NEXT: }
+// -----
+
 module attributes {llzk.lang} {
   struct.def @LoopPodAggregateAlias {
     struct.member @out : !felt.type {llzk.pub}

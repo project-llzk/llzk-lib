@@ -314,6 +314,12 @@ private:
       SmallVectorImpl<StorageWrite> &translatedWrites, bool callMayBeSkipped
   ) const;
 
+  /// Translate caller-visible aggregate aliases from a callee operation.
+  void recordCalleeAggregateAliasesImpl(
+      Operation *op, const TranslationMap &translation,
+      SmallVectorImpl<AggregateAlias> &translatedAliases, bool callMayBeSkipped
+  ) const;
+
   Operation *top = nullptr;
   DenseMap<Operation *, SmallVector<StorageWrite>> storageWrites;
   DenseMap<Operation *, SmallVector<AggregateAlias>> aggregateAliases;
@@ -589,16 +595,44 @@ void SourceRefAnalysis::StorageState::recordCalleeStorageWritesImpl(
   }
 }
 
+void SourceRefAnalysis::StorageState::recordCalleeAggregateAliasesImpl(
+    Operation *op, const TranslationMap &translation,
+    SmallVectorImpl<AggregateAlias> &translatedAliases, bool callMayBeSkipped
+) const {
+  auto aliases = aggregateAliases.find(op);
+  if (aliases == aggregateAliases.end()) {
+    return;
+  }
+  for (const AggregateAlias &alias : aliases->second) {
+    // Both sides must be visible to the caller. An alias rooted in callee-local
+    // storage only models the callee's temporary state and cannot observe a
+    // later caller write through its source.
+    auto [source, sourceChange] = alias.source.translate(translation);
+    auto [target, targetChange] = alias.target.translate(translation);
+    if (sourceChange == ChangeResult::NoChange || targetChange == ChangeResult::NoChange ||
+        source.foldToScalar().empty() || target.foldToScalar().empty()) {
+      continue;
+    }
+    translatedAliases.push_back({
+        std::move(source),
+        std::move(target),
+        alias.mayBeSkipped || callMayBeSkipped,
+    });
+  }
+}
+
 void SourceRefAnalysis::StorageState::recordCalleeStorageWrites(
     CallOpInterface call, FuncDefOp callee, const TranslationMap &translation
 ) {
   invalidateCheckpointsFrom(call.getOperation());
   SmallVector<StorageWrite> translatedWrites;
+  SmallVector<AggregateAlias> translatedAliases;
   const bool callMayBeSkipped = isInMaybeSkippedScfRegion(call.getOperation());
   if (Region *callableRegion = callee.getCallableRegion()) {
     for (Block &block : callableRegion->getBlocks()) {
       for (Operation &op : block.getOperations()) {
         recordCalleeStorageWritesImpl(&op, translation, translatedWrites, callMayBeSkipped);
+        recordCalleeAggregateAliasesImpl(&op, translation, translatedAliases, callMayBeSkipped);
       }
     }
   }
@@ -607,6 +641,7 @@ void SourceRefAnalysis::StorageState::recordCalleeStorageWrites(
   // duplicate events and lets operand lattice refinements update the call-site
   // translation without changing its position in program order.
   storageWrites[call.getOperation()] = std::move(translatedWrites);
+  aggregateAliases[call.getOperation()] = std::move(translatedAliases);
 }
 
 SourceRefAnalysis::StorageState::MaterializedSnapshot
