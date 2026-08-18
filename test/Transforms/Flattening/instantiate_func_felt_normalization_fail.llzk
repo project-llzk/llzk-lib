@@ -1,0 +1,21 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s
+
+// A fielded felt restriction rejects an explicitly fielded constant from a different field.
+module attributes {llzk.lang} {
+  poly.template @CanonicalFelt {
+    poly.param @F : !felt.type<"bn128">
+
+    function.def @value() -> !felt.type<"bn128"> {
+      %value = poly.read_const @F : !felt.type<"bn128">
+      function.return %value : !felt.type<"bn128">
+    }
+  }
+
+  function.def @main() -> !felt.type<"bn128"> {
+    // expected-error@+1 {{'function.call' op instantiation value '#felt<const 35 : <"goldilocks">> : !felt.type<"goldilocks">' is not compatible with parameter "@F" type restriction '!felt.type<"bn128">'}}
+    %value = function.call
+        @CanonicalFelt::@value<[#felt<const 35 : !felt.type<"goldilocks">>]>() :
+        () -> !felt.type<"bn128">
+    function.return %value : !felt.type<"bn128">
+  }
+}

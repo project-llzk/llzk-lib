@@ -11,6 +11,7 @@
 
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Util/TypeHelper.h"
 
 using namespace mlir;
 using namespace llzk::polymorphic;
@@ -44,14 +45,26 @@ FailureOr<SymbolLookupResult<StructDefOp>> StructType::getDefinition(
   // If this StructType contains parameters, make sure the StructDefOp is within a TemplateOp with
   // the same number of params.
   if (typeParams) {
-    size_t numExpected = 0;
-    if (TemplateOp parent = getParentOfType<TemplateOp>(*res.value())) {
-      numExpected = parent.numConstOps<TemplateParamOp>();
-    }
+    TemplateOp parent = getParentOfType<TemplateOp>(*res.value());
+    size_t numExpected = parent ? parent.numConstOps<TemplateParamOp>() : 0;
     if (typeParams.size() != numExpected) {
       return op->emitError() << '\'' << StructType::name << "' type has " << typeParams.size()
                              << " parameters but \"" << res.value().get().getSymName()
                              << "\" expects " << numExpected;
+    }
+    if (parent) {
+      for (auto [paramOp, value] :
+           llvm::zip_equal(parent.getConstOps<TemplateParamOp>(), typeParams.getValue())) {
+        std::optional<Type> restriction = paramOp.getTypeOpt();
+        if (!restriction || llvm::isa<SymbolRefAttr>(value)) {
+          continue;
+        }
+        if (failed(materializeTemplateParamValue(value, restriction))) {
+          return op->emitError() << "instantiation value '" << value
+                                 << "' is not compatible with parameter \"@" << paramOp.getName()
+                                 << "\" type restriction " << *restriction;
+        }
+      }
     }
   }
   return res;

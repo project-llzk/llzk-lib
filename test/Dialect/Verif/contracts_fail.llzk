@@ -14,6 +14,87 @@ module attributes {llzk.lang} {
 
 // -----
 
+// An initialized mutable global cannot instantiate an included contract parameter.
+module attributes {llzk.lang} {
+  poly.template @MutableGlobalInitializedInclude {
+    poly.param @F : !felt.type
+
+    function.def @token() { function.return }
+
+    verif.contract @Base for @MutableGlobalInitializedInclude::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+  module @globals {
+    // expected-note@+1 {{global defined here}}
+    global.def @G : !felt.type<"bn128"> = 35
+  }
+  verif.contract @Wrapper for @MutableGlobalInitializedInclude::@token () {
+    // expected-error@+1 {{'verif.include' op instantiation value '@globals::@G' refers to a global that is not marked as 'const'}}
+    verif.include @MutableGlobalInitializedInclude::@Base<[@globals::@G]>() : () -> ()
+  }
+}
+
+// -----
+
+// An uninitialized mutable global cannot instantiate an included contract parameter.
+module attributes {llzk.lang} {
+  poly.template @MutableGlobalUninitializedInclude {
+    poly.param @F : !felt.type
+
+    function.def @token() { function.return }
+
+    verif.contract @Base for @MutableGlobalUninitializedInclude::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+  module @globals {
+    // expected-note@+1 {{global defined here}}
+    global.def @G : !felt.type<"bn128">
+  }
+  verif.contract @Wrapper for @MutableGlobalUninitializedInclude::@token () {
+    // expected-error@+1 {{'verif.include' op instantiation value '@globals::@G' refers to a global that is not marked as 'const'}}
+    verif.include @MutableGlobalUninitializedInclude::@Base<[@globals::@G]>() : () -> ()
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @RepeatedParam {
+    poly.param @N
+
+    function.def @target(
+        %lhs: !array.type<@N x index>, %rhs: !array.type<@N x index>
+    ) {
+      function.return
+    }
+
+    verif.contract @Base for @RepeatedParam::@target (
+        %lhs: !array.type<@N x index>, %rhs: !array.type<@N x index>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  function.def @caller(%lhs: !array.type<5 x index>, %rhs: !array.type<7 x index>) {
+    function.return
+  }
+
+  verif.contract @Wrapper for @caller (
+      %lhs: !array.type<5 x index>, %rhs: !array.type<7 x index>
+  ) {
+    // expected-error@+1 {{'verif.include' op cannot infer a unique template instantiation value for parameter "@N" from contract type signature}}
+    verif.include @RepeatedParam::@Base<[5]>(%lhs, %rhs) :
+        (!array.type<5 x index>, !array.type<7 x index>) -> ()
+  }
+}
+
+// -----
+
 module attributes {llzk.lang} {
   function.def @check(%x: index, %y: index) {
     function.return
@@ -233,6 +314,177 @@ module attributes {llzk.lang} {
       // expected-error@+1 {{'verif.include' op must provide template instantiation parameters when calling "@Base" because not all template parameters of "@SpecTemplate" appear in the function type signature}}
       verif.include @SpecTemplate::@Base() : () -> ()
     }
+  }
+}
+
+// Symbolic include arguments must resolve to local template bindings or constant globals even when
+// the target parameter has no type restriction.
+// -----
+module attributes {llzk.lang} {
+  poly.template @UntypedTarget {
+    poly.param @P
+    function.def @token() { function.return }
+    verif.contract @Base for @UntypedTarget::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+  function.def @Entry() { function.return }
+  verif.contract @Wrapper for @Entry () {
+    // Unknown symbols are rejected for unrestricted parameters.
+    // expected-error@+1 {{'verif.include' op references unknown symbol "@Missing"}}
+    verif.include @UntypedTarget::@Base<[@Missing]>() : () -> ()
+  }
+}
+
+// -----
+module attributes {llzk.lang} {
+  poly.template @TypedTarget {
+    poly.param @P : index
+    function.def @token() { function.return }
+    verif.contract @Base for @TypedTarget::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  function.def @Entry() { function.return }
+  verif.contract @Wrapper for @Entry () {
+    // Unknown symbols are rejected for typed parameters.
+    // expected-error@+1 {{'verif.include' op references unknown symbol "@MissingTyped"}}
+    verif.include @TypedTarget::@Base<[@MissingTyped]>() : () -> ()
+  }
+}
+
+// -----
+module attributes {llzk.lang} {
+  poly.template @UntypedTarget {
+    poly.param @P
+    function.def @token() { function.return }
+    verif.contract @Base for @UntypedTarget::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+  function.def @WrongFunction() { function.return }
+
+  function.def @Entry() { function.return }
+  verif.contract @Wrapper for @Entry () {
+    // Wrong operation kinds are rejected for unrestricted parameters.
+    // expected-error@+1 {{'verif.include' op instantiation value '@WrongFunction' refers to a 'function.def' which is not allowed}}
+    verif.include @UntypedTarget::@Base<[@WrongFunction]>() : () -> ()
+  }
+}
+
+// -----
+module attributes {llzk.lang} {
+  poly.template @TypedTarget {
+    poly.param @P : index
+    function.def @token() { function.return }
+    verif.contract @Base for @TypedTarget::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+  function.def @WrongFunction() { function.return }
+
+  function.def @Entry() { function.return }
+  verif.contract @Wrapper for @Entry () {
+    // Wrong operation kinds are rejected for typed parameters.
+    // expected-error@+1 {{'verif.include' op instantiation value '@WrongFunction' refers to a 'function.def' which is not allowed}}
+    verif.include @TypedTarget::@Base<[@WrongFunction]>() : () -> ()
+  }
+}
+
+// -----
+module attributes {llzk.lang} {
+  poly.template @UntypedTarget {
+    poly.param @P
+    function.def @token() { function.return }
+    verif.contract @Base for @UntypedTarget::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+  module @WrongModule {}
+
+  function.def @Entry() { function.return }
+  verif.contract @Wrapper for @Entry () {
+    // Wrong operation kinds are rejected for unrestricted parameters.
+    // expected-error@+1 {{'verif.include' op instantiation value '@WrongModule' refers to a 'builtin.module' which is not allowed}}
+    verif.include @UntypedTarget::@Base<[@WrongModule]>() : () -> ()
+  }
+}
+
+// -----
+module attributes {llzk.lang} {
+  poly.template @TypedTarget {
+    poly.param @P : index
+    function.def @token() { function.return }
+    verif.contract @Base for @TypedTarget::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+  module @WrongModule {}
+
+  function.def @Entry() { function.return }
+  verif.contract @Wrapper for @Entry () {
+    // Wrong operation kinds are rejected for typed parameters.
+    // expected-error@+1 {{'verif.include' op instantiation value '@WrongModule' refers to a 'builtin.module' which is not allowed}}
+    verif.include @TypedTarget::@Base<[@WrongModule]>() : () -> ()
+  }
+}
+
+// -----
+module attributes {llzk.lang} {
+  poly.template @UntypedTarget {
+    poly.param @P
+    function.def @token() { function.return }
+    verif.contract @Base for @UntypedTarget::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+  struct.def @WrongStruct {
+    function.def @compute() -> !struct.type<@WrongStruct> {
+      %self = struct.new : !struct.type<@WrongStruct>
+      function.return %self : !struct.type<@WrongStruct>
+    }
+    function.def @constrain(%self: !struct.type<@WrongStruct>) { function.return }
+  }
+
+  function.def @Entry() { function.return }
+  verif.contract @Wrapper for @Entry () {
+    // Wrong operation kinds are rejected for unrestricted parameters.
+    // expected-error@+1 {{'verif.include' op instantiation value '@WrongStruct' refers to a 'struct.def' which is not allowed}}
+    verif.include @UntypedTarget::@Base<[@WrongStruct]>() : () -> ()
+  }
+}
+
+// -----
+module attributes {llzk.lang} {
+  poly.template @TypedTarget {
+    poly.param @P : index
+    function.def @token() { function.return }
+    verif.contract @Base for @TypedTarget::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+  struct.def @WrongStruct {
+    function.def @compute() -> !struct.type<@WrongStruct> {
+      %self = struct.new : !struct.type<@WrongStruct>
+      function.return %self : !struct.type<@WrongStruct>
+    }
+    function.def @constrain(%self: !struct.type<@WrongStruct>) { function.return }
+  }
+
+  function.def @Entry() { function.return }
+  verif.contract @Wrapper for @Entry () {
+    // Wrong operation kinds are rejected for typed parameters.
+    // expected-error@+1 {{'verif.include' op instantiation value '@WrongStruct' refers to a 'struct.def' which is not allowed}}
+    verif.include @TypedTarget::@Base<[@WrongStruct]>() : () -> ()
   }
 }
 
@@ -1227,6 +1479,26 @@ module attributes {llzk.lang} {
       %zero = arith.constant 0 : index
       %ok = arith.cmpi eq, %n, %zero : index
       verif.ensure_compute %ok
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @SpecTemplate {
+    poly.param @N : !felt.type<"bn128">
+
+    function.def @token() { function.return }
+
+    verif.contract @Base for @SpecTemplate::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+
+    verif.contract @Wrapper for @SpecTemplate::@token () {
+      // expected-error@+1 {{'verif.include' op instantiation value '#felt<const 9 : <"goldilocks">> : !felt.type<"goldilocks">' is not compatible with parameter "@N" type restriction '!felt.type<"bn128">'}}
+      verif.include @SpecTemplate::@Base<[#felt<const 9 : !felt.type<"goldilocks">>]>() : () -> ()
     }
   }
 }

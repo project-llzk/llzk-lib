@@ -1,0 +1,138 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s 2>&1 | FileCheck --enable-var-scope %s
+
+// Failed full and partial struct specializations must erase their generated definitions and
+// preserve preferred names for later successful specializations.
+module attributes {llzk.lang} {
+  poly.template @BrokenStruct {
+    poly.param @Num
+
+    struct.def @Value {
+      struct.member @value : !felt.type<"bn128"> {column, llzk.pub}
+
+      function.def @compute() -> !struct.type<@BrokenStruct::@Value<[@Num]>> {
+        // expected-error@+2 {{felt constant}}
+        // expected-error@+1 {{failed to legalize operation 'poly.read_const'}}
+        %value = poly.read_const @Num : !felt.type<"bn128">
+        %self = struct.new : !struct.type<@BrokenStruct::@Value<[@Num]>>
+        struct.writem %self[@value] = %value : !struct.type<@BrokenStruct::@Value<[@Num]>>, !felt.type<"bn128">
+        function.return %self : !struct.type<@BrokenStruct::@Value<[@Num]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@BrokenStruct::@Value<[@Num]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Use {
+    struct.member @inner : !struct.type<@BrokenStruct::@Value<[#felt<const 35 : !felt.type<"babybear">>]>>
+
+    function.def @compute() -> !struct.type<@Use> {
+      %self = struct.new : !struct.type<@Use>
+      function.return %self : !struct.type<@Use>
+    }
+
+    function.def @constrain(%self: !struct.type<@Use>) {
+      function.return
+    }
+  }
+}
+
+// A failed generated-struct conversion must not leave its inserted owner in the module.
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NOT: BrokenStruct_f<
+// CHECK: struct.def @Use {
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @BrokenPartial {
+    poly.param @Num
+    poly.param @Offset : index
+
+    struct.def @Value {
+      struct.member @value : !felt.type<"bn128"> {column, llzk.pub}
+
+      function.def @compute() -> !struct.type<@BrokenPartial::@Value<[@Num, @Offset]>> {
+        // expected-error@+2 {{felt constant}}
+        // expected-error@+1 {{failed to legalize operation 'poly.read_const'}}
+        %value = poly.read_const @Num : !felt.type<"bn128">
+        %self = struct.new : !struct.type<@BrokenPartial::@Value<[@Num, @Offset]>>
+        struct.writem %self[@value] = %value : !struct.type<@BrokenPartial::@Value<[@Num, @Offset]>>, !felt.type<"bn128">
+        function.return %self : !struct.type<@BrokenPartial::@Value<[@Num, @Offset]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@BrokenPartial::@Value<[@Num, @Offset]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Bridge {
+    poly.param @Offset : index
+
+    struct.def @Wrapper {
+      struct.member @inner : !struct.type<@BrokenPartial::@Value<[#felt<const 35 : !felt.type<"babybear">>, @Offset]>>
+
+      function.def @compute() -> !struct.type<@Bridge::@Wrapper<[@Offset]>> {
+        %self = struct.new : !struct.type<@Bridge::@Wrapper<[@Offset]>>
+        function.return %self : !struct.type<@Bridge::@Wrapper<[@Offset]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@Bridge::@Wrapper<[@Offset]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @BadUse {
+    struct.member @inner : !struct.type<@Bridge::@Wrapper<[7]>>
+
+    function.def @compute() -> !struct.type<@BadUse> {
+      %self = struct.new : !struct.type<@BadUse>
+      function.return %self : !struct.type<@BadUse>
+    }
+
+    function.def @constrain(%self: !struct.type<@BadUse>) {
+      function.return
+    }
+  }
+
+  // This specialization runs after the failed partial specialization above in the same pass.
+  poly.template @GoodStruct {
+    poly.param @N : index
+
+    struct.def @Value {
+      struct.member @value : index
+
+      function.def @compute() -> !struct.type<@GoodStruct::@Value<[@N]>> {
+        %self = struct.new : !struct.type<@GoodStruct::@Value<[@N]>>
+        function.return %self : !struct.type<@GoodStruct::@Value<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@GoodStruct::@Value<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @GoodUse {
+    struct.member @inner : !struct.type<@GoodStruct::@Value<[7]>>
+
+    function.def @compute() -> !struct.type<@GoodUse> {
+      %self = struct.new : !struct.type<@GoodUse>
+      function.return %self : !struct.type<@GoodUse>
+    }
+
+    function.def @constrain(%self: !struct.type<@GoodUse>) {
+      function.return
+    }
+  }
+}
+
+// A failed partial conversion must not leave its generated template or its cached symbol table.
+// The later specialization proves that the same cloner remains usable after rollback.
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NOT: BrokenPartial_f<
+// CHECK: struct.def @GoodStruct_7_Value {
+// CHECK: struct.def @GoodUse {

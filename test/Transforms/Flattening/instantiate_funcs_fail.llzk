@@ -1,6 +1,7 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s 2>&1 | FileCheck --enable-var-scope %s
 
-// Tests: attempt to instantiate with incompatible types via `poly.tvar` (no template params on CallOp)
+// Signature inference must reject a transitive `poly.tvar` specialization whose nested call has
+// incompatible operand and result types.
 module attributes {llzk.lang} {
   poly.template @template_a1 {
     poly.param @N : index
@@ -38,7 +39,7 @@ module attributes {llzk.lang} {
 // CHECK: llzk-flatten failed while instantiating functions in templates
 // -----
 
-// Tests: attempt to instantiate with incompatible types via `poly.tvar` (with template params on CallOp)
+// The same transitive mismatch must roll back when the nested call has an explicit argument.
 module attributes {llzk.lang} {
   poly.template @template_b1 {
     poly.param @N : index
@@ -53,7 +54,11 @@ module attributes {llzk.lang} {
     poly.param @N : index
     poly.param @M : index
     poly.param @T : !poly.tvar<@T>
+    poly.param @B
     function.def @f(%inp: !array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T> {
+      // Converting this read queues a warning, which must not escape when nested-call verification
+      // rejects and rolls back the prospective specialization below.
+      %flag = poly.read_const @B : i1
       // expected-error@+2 {{'function.call' op operand type mismatch: expected type '!array.type<8,9 x !felt.type>', but found '!array.type<8,9 x i1>' for operand number 0}}
       // expected-error@+1 {{'function.call' op result type mismatch: expected type '!felt.type', but found 'i1' for result number 0}}
       %2 = function.call @template_b1::@f<[9]>(%inp) : (!array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T>
@@ -64,8 +69,8 @@ module attributes {llzk.lang} {
   struct.def @Main {
     function.def @compute(%z: !array.type<8,9 x i1>) -> !struct.type<@Main> {
       %self = struct.new : !struct.type<@Main>
-      // expected-error@+1 {{failure while creating instantiated function 'template_b2_8_9_b_f'}}
-      function.call @template_b2::@f<[8,9,i1]>(%z) : (!array.type<8,9 x i1>) -> i1
+      // expected-error@+1 {{failure while creating instantiated function}}
+      function.call @template_b2::@f<[8,9,i1,2]>(%z) : (!array.type<8,9 x i1>) -> i1
       function.return %self : !struct.type<@Main>
     }
     function.def @constrain(%self: !struct.type<@Main>, %z: !array.type<8,9 x i1>) {
