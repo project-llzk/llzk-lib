@@ -627,14 +627,15 @@ void SourceRefAnalysis::StorageState::recordCalleeStorageWrites(
   invalidateCheckpointsFrom(call.getOperation());
   SmallVector<StorageWrite> translatedWrites;
   SmallVector<AggregateAlias> translatedAliases;
-  const bool callMayBeSkipped = isInMaybeSkippedScfRegion(call.getOperation());
   if (Region *callableRegion = callee.getCallableRegion()) {
-    for (Block &block : callableRegion->getBlocks()) {
-      for (Operation &op : block.getOperations()) {
-        recordCalleeStorageWritesImpl(&op, translation, translatedWrites, callMayBeSkipped);
-        recordCalleeAggregateAliasesImpl(&op, translation, translatedAliases, callMayBeSkipped);
-      }
-    }
+    const bool callMayBeSkipped = isInMaybeSkippedScfRegion(call.getOperation());
+    // Region walking is preorder, matching the storage state's program-order
+    // replay. This includes writes nested in control-flow regions, whose
+    // `mayBeSkipped` flags preserve their conditional semantics.
+    callableRegion->walk([&](Operation *op) {
+      recordCalleeStorageWritesImpl(op, translation, translatedWrites, callMayBeSkipped);
+      recordCalleeAggregateAliasesImpl(op, translation, translatedAliases, callMayBeSkipped);
+    });
   }
 
   // Recompute the complete summary on every solver revisit. This prevents

@@ -560,6 +560,46 @@ module attributes {llzk.lang} {
 
 // -----
 
+// Nested callee writes must be summarized at the call site, while retaining
+// their conditional-write dependency on the caller's pre-call storage.
+module attributes {llzk.lang} {
+  function.def @conditionally_overwrite_element(%array: !array.type<1 x !felt.type>, %value: !felt.type, %cond: i1) {
+    %idx = arith.constant 0 : index
+    scf.if %cond {
+      array.write %array[%idx] = %value : !array.type<1 x !felt.type>, !felt.type
+    }
+    function.return
+  }
+
+  struct.def @NestedCalleeConditionalStorageEffects {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%old: !felt.type, %new: !felt.type, %cond: i1) -> !struct.type<@NestedCalleeConditionalStorageEffects> {
+      %self = struct.new : !struct.type<@NestedCalleeConditionalStorageEffects>
+      function.return %self : !struct.type<@NestedCalleeConditionalStorageEffects>
+    }
+
+    function.def @constrain(%self: !struct.type<@NestedCalleeConditionalStorageEffects>, %old: !felt.type, %new: !felt.type, %cond: i1) {
+      %expected = struct.readm %self[@out] : !struct.type<@NestedCalleeConditionalStorageEffects>, !felt.type
+      %array = array.new %old : !array.type<1 x !felt.type>
+      %idx = arith.constant 0 : index
+      function.call @conditionally_overwrite_element(%array, %new, %cond) : (!array.type<1 x !felt.type>, !felt.type, i1) -> ()
+      %actual = array.read %array[%idx] : !array.type<1 x !felt.type>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @NestedCalleeConditionalStorageEffects ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg1, %arg2 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @NestedCalleeConditionalStorageEffects ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg1, %arg2 }
+// INTRA-NEXT: }
+
+// -----
+
 module attributes {llzk.lang} {
   struct.def @IfYieldedStorageRead {
     struct.member @out : !felt.type {llzk.pub}
