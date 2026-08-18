@@ -332,7 +332,6 @@ std::vector<SourceRef> SourceRef::getAllSourceRefs(StructDefOp structDef, FuncDe
 }
 
 std::vector<SourceRef> SourceRef::getAllSourceRefs(StructDefOp structDef, MemberDefOp memberDef) {
-  std::vector<SourceRef> res;
   FuncDefOp constrainFnOp = structDef.getConstrainFuncOp();
   ensure(
       memberDef->getParentOfType<StructDefOp>() == structDef,
