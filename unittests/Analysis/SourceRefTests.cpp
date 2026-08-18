@@ -13,6 +13,7 @@
 #include "llzk/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Analysis/SourceRef.h"
 #include "llzk/Analysis/SourceRefLattice.h"
+#include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
@@ -883,6 +884,57 @@ module attributes {llzk.lang} {
       SourceRefAnalysis::getDependencyState(solver, reads[1].getResult()).foldToScalar(),
       SourceRefSet({SourceRef(computeFn.getArgument(2))})
   );
+}
+
+TEST_F(SourceRefTests, RangedArrayReadPreservesUnwrittenStorageAfterPartialPointWrite) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  poly.template @TPartialArrayWrite {
+    poly.param @N : index
+
+    struct.def @PartialArrayWrite {
+      function.def @compute(%array: !array.type<@N x !felt.type>, %written: !felt.type)
+          -> !struct.type<@TPartialArrayWrite::@PartialArrayWrite<[@N]>> {
+        %self = struct.new : !struct.type<@TPartialArrayWrite::@PartialArrayWrite<[@N]>>
+        %c0 = arith.constant 0 : index
+        array.write %array[%c0] = %written : !array.type<@N x !felt.type>, !felt.type
+        %unknown = llzk.nondet : index
+        %read = array.read %array[%unknown] : !array.type<@N x !felt.type>, !felt.type
+        function.return %self : !struct.type<@TPartialArrayWrite::@PartialArrayWrite<[@N]>>
+      }
+
+      function.def @constrain(
+          %self: !struct.type<@TPartialArrayWrite::@PartialArrayWrite<[@N]>>,
+          %array: !array.type<@N x !felt.type>, %written: !felt.type
+      ) {
+        function.return
+      }
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto templateOp = *mod->getOps<polymorphic::TemplateOp>().begin();
+  auto structDef = *templateOp.getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  auto read = *computeFn.getOps<array::ReadArrayOp>().begin();
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  analysis.ensureAnalysisRun(am);
+
+  SourceRefSet dependencies =
+      SourceRefAnalysis::getDependencyState(analysis.getSolver(), read.getResult()).foldToScalar();
+  EXPECT_TRUE(dependencies.contains(SourceRef(computeFn.getArgument(1))));
+  EXPECT_TRUE(llvm::any_of(dependencies, [&](const SourceRef &ref) {
+    return succeeded(ref.getRoot()) && *ref.getRoot() == computeFn.getArgument(0) &&
+           llvm::any_of(ref.getPath(), [](const SourceRefIndex &index) {
+             return index.isIndexRange();
+           });
+  }));
 }
 
 TEST_F(SourceRefTests, StorageWritesResolveReadValuesBeforeLaterOverwrites) {

@@ -492,6 +492,13 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolve(
     bool foundWrite = false;
     bool preservesAddress = false;
     SourceRefLatticeValue writtenValues;
+    // A ranged read can only discard its storage alternative after definite point writes cover
+    // every element it may select. Ranged write targets denote an unknown runtime selection, so
+    // they cannot establish that coverage.
+    SmallVector<SourceRef> uncoveredRanges;
+    if (hasRangeIndex(address)) {
+      uncoveredRanges.push_back(address);
+    }
     auto addressRoot = address.getRoot();
     if (succeeded(addressRoot)) {
       auto writesForRoot = storage.valuesByRoot.find(*addressRoot);
@@ -509,9 +516,23 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolve(
             preservesAddress |= projectedValue.remove(address) == ChangeResult::Change;
           }
           (void)writtenValues.update(projectedValue);
+
+          if (!hasRangeIndex(storedAddress)) {
+            SmallVector<SourceRef> nextUncoveredRanges;
+            for (const SourceRef &uncovered : uncoveredRanges) {
+              if (!storedAddress.overlaps(uncovered)) {
+                nextUncoveredRanges.push_back(uncovered);
+                continue;
+              }
+              auto residuals = subtractPointFromRange(uncovered, storedAddress);
+              nextUncoveredRanges.append(residuals);
+            }
+            uncoveredRanges = std::move(nextUncoveredRanges);
+          }
         }
       }
     }
+    preservesAddress |= !uncoveredRanges.empty();
     if (foundWrite) {
       SourceRefLatticeValue resolvedValues = resolve(writtenValues, aliases, storage, active);
       (void)result.update(resolvedValues);
