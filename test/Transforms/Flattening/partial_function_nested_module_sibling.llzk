@@ -1,0 +1,65 @@
+// RUN: llzk-opt -llzk-flatten %s | FileCheck --enable-var-scope %s
+
+// A partially instantiated template nested in a named module must copy siblings reached through
+// fully qualified calls. The copied function must call the copied sibling in the same module.
+
+module attributes {llzk.lang} {
+  module @lib {
+    poly.template @Callee {
+      poly.param @A : index
+      poly.param @B : index
+
+      function.def @helper(%input: !array.type<@A,@B x !felt.type>) -> !felt.type {
+        %zero = arith.constant 0 : index
+        %result = array.read %input[%zero, %zero] : !array.type<@A,@B x !felt.type>, !felt.type
+        function.return %result : !felt.type
+      }
+
+      function.def @f(%input: !array.type<@A,@B x !felt.type>) -> !felt.type {
+        %result = function.call @lib::@Callee::@helper(%input) : (!array.type<@A,@B x !felt.type>) -> !felt.type
+        function.return %result : !felt.type
+      }
+    }
+
+    poly.template @Caller {
+      poly.param @N : index
+
+      function.def @g(%input: !array.type<8,@N x !felt.type>) -> !felt.type {
+        %result = function.call @lib::@Callee::@f(%input) : (!array.type<8,@N x !felt.type>) -> !felt.type
+        function.return %result : !felt.type
+      }
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    module @lib {
+// CHECK-NEXT:      poly.template @"Callee_8_\1A" {
+// CHECK-NEXT:        poly.param @B : index
+// CHECK-NEXT:        function.def @f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<8,@B x !felt.type>) -> !felt.type {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @lib::@"Callee_8_\1A"::@helper(%[[VAL_0]]) : (!array.type<8,@B x !felt.type>) -> !felt.type
+// CHECK-NEXT:          function.return %[[VAL_1]] : !felt.type
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @helper(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<8,@B x !felt.type>) -> !felt.type {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_2]]{{\[}}%[[VAL_3]], %[[VAL_3]]] : <8,@B x !felt.type>, !felt.type
+// CHECK-NEXT:          function.return %[[VAL_4]] : !felt.type
+// CHECK-NEXT:        }
+// CHECK-NEXT:      } {poly.name_pattern = ["Callee_8_", ""]}
+// CHECK-NEXT:      poly.template @Callee {
+// CHECK-NEXT:        poly.param @A : index
+// CHECK-NEXT:        poly.param @B : index
+// CHECK-NEXT:        function.def @helper(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<@A,@B x !felt.type>) -> !felt.type {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_6]], %[[VAL_6]]] : <@A,@B x !felt.type>, !felt.type
+// CHECK-NEXT:          function.return %[[VAL_7]] : !felt.type
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      poly.template @Caller {
+// CHECK-NEXT:        poly.param @N : index
+// CHECK-NEXT:        function.def @g(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !array.type<8,@N x !felt.type>) -> !felt.type {
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @lib::@"Callee_8_\1A"::@f(%[[VAL_8]]) : (!array.type<8,@N x !felt.type>) -> !felt.type
+// CHECK-NEXT:          function.return %[[VAL_9]] : !felt.type
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

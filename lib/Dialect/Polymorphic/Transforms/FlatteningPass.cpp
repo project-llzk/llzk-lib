@@ -1650,21 +1650,26 @@ static SmallVector<FuncDefOp> copyReferencedTemplateSiblingFuncs(
     SymbolTableCollection &symTables, const DenseMap<Attribute, Attribute> &paramNameToConcrete
 ) {
   DenseMap<Operation *, FuncDefOp> cloned;
+  DenseMap<Operation *, FuncDefOp> cloneSources;
   SmallVector<FuncDefOp> copiedFuncs {newFunc};
   cloned[originalFunc] = newFunc;
-  SymbolTable &parentSymbols = symTables.getSymbolTable(parentTemplate);
+  cloneSources[newFunc] = originalFunc;
 
   for (size_t i = 0; i < copiedFuncs.size(); ++i) {
     FuncDefOp current = copiedFuncs[i];
+    SmallVector<CallOp> sourceCalls = walkCollect<CallOp>(*cloneSources.lookup(current));
+    size_t callIndex = 0;
     current.walk([&](CallOp nestedCall) {
-      SymbolRefAttr callee = nestedCall.getCalleeAttr();
-      if (callee.getRootReference() != parentTemplate.getSymName() ||
-          callee.getNestedReferences().size() != 1) {
+      assert(callIndex < sourceCalls.size() && "function clone must preserve calls");
+      CallOp sourceCall = sourceCalls[callIndex++];
+      FailureOr<SymbolLookupResult<FuncDefOp>> siblingTarget = lookupTopLevelSymbol<FuncDefOp>(
+          symTables, sourceCall.getCalleeAttr(), sourceCall.getOperation(),
+          /*reportMissing=*/false
+      );
+      if (failed(siblingTarget)) {
         return;
       }
-      auto sibling = dyn_cast_or_null<FuncDefOp>(
-          parentSymbols.lookup(callee.getNestedReferences().front().getAttr())
-      );
+      FuncDefOp sibling = siblingTarget->get();
       if (!sibling || sibling->getParentOp() != parentTemplate) {
         return;
       }
@@ -1676,13 +1681,25 @@ static SmallVector<FuncDefOp> copyReferencedTemplateSiblingFuncs(
         clonedSibling = sibling.clone();
         convertCalleesInPlace(clonedSibling, paramNameToConcrete);
         cloned[sibling] = clonedSibling;
+        cloneSources[clonedSibling] = sibling;
         copiedFuncs.push_back(clonedSibling);
       }
-      nestedCall.setCalleeAttr(
-          SymbolRefAttr::get(
-              newTemplate.getSymNameAttr(), {FlatSymbolRefAttr::get(clonedSibling.getSymNameAttr())}
-          )
+
+      // Use the resolved target's full path so calls through enclosing named modules do not
+      // depend on a particular `@Template::@function` spelling.
+      FailureOr<SymbolRefAttr> siblingPath = getPathFromTopRoot(sibling);
+      if (failed(siblingPath)) {
+        return;
+      }
+      SmallVector<FlatSymbolRefAttr> calleePieces = getPieces(*siblingPath);
+      assert(
+          calleePieces.size() >= 2 && "template function path must include template and function"
       );
+      calleePieces.pop_back();
+      calleePieces.pop_back();
+      calleePieces.push_back(FlatSymbolRefAttr::get(newTemplate.getSymNameAttr()));
+      calleePieces.push_back(FlatSymbolRefAttr::get(clonedSibling.getSymNameAttr()));
+      nestedCall.setCalleeAttr(asSymbolRefAttr(calleePieces));
     });
   }
   return copiedFuncs;
