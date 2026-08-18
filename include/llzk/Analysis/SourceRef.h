@@ -26,12 +26,12 @@
 #include <mlir/Pass/AnalysisManager.h>
 
 #include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/ADT/EquivalenceClasses.h>
 #include <llvm/ADT/TypeSwitch.h>
 
 #include <compare>
-#include <unordered_set>
 #include <variant>
 #include <vector>
 
@@ -183,6 +183,10 @@ private:
     }
     return mlir::failure();
   }
+
+  /// Create a DenseMap sentinel without constructing a temporary path or validating the value.
+  explicit SourceRef(mlir::detail::ValueImpl *denseMapSentinel)
+      : value(mlir::BlockArgument(denseMapSentinel)), constant(false) {}
 
   SourceRef(mlir::Value sourceValue, bool isConstantStorage, Path sourcePath = {})
       : value(sourceValue), path(std::move(sourcePath)), constant(isConstantStorage) {
@@ -424,8 +428,8 @@ mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceRef &rhs);
 
 /* SourceRefSet */
 
-class SourceRefSet : public std::unordered_set<SourceRef, SourceRef::Hash> {
-  using Base = std::unordered_set<SourceRef, SourceRef::Hash>;
+class SourceRefSet : public llvm::DenseSet<SourceRef> {
+  using Base = llvm::DenseSet<SourceRef>;
 
 public:
   using Base::Base;
@@ -445,19 +449,33 @@ static_assert(
 namespace llvm {
 
 template <> struct DenseMapInfo<llzk::SourceRef> {
-  static llzk::SourceRef getEmptyKey() {
-    return llzk::SourceRef(mlir::BlockArgument(reinterpret_cast<mlir::detail::ValueImpl *>(1)));
+  static inline mlir::detail::ValueImpl *emptyPointer() {
+    return reinterpret_cast<mlir::detail::ValueImpl *>(1);
   }
-  static inline llzk::SourceRef getTombstoneKey() {
-    return llzk::SourceRef(mlir::BlockArgument(reinterpret_cast<mlir::detail::ValueImpl *>(2)));
+  static inline mlir::detail::ValueImpl *tombstonePointer() {
+    return reinterpret_cast<mlir::detail::ValueImpl *>(2);
   }
+
+  static inline llzk::SourceRef getEmptyKey() { return llzk::SourceRef(emptyPointer()); }
+  static inline llzk::SourceRef getTombstoneKey() { return llzk::SourceRef(tombstonePointer()); }
+
+  static bool isSpecialKey(const llzk::SourceRef &ref) {
+    const void *ptr = ref.getAsOpaquePointer();
+    return ptr == emptyPointer() || ptr == tombstonePointer();
+  }
+
   static unsigned getHashValue(const llzk::SourceRef &ref) {
-    if (ref == getEmptyKey() || ref == getTombstoneKey()) {
+    if (isSpecialKey(ref)) {
       return llvm::hash_value(ref.getAsOpaquePointer());
     }
     return llzk::SourceRef::Hash {}(ref);
   }
-  static bool isEqual(const llzk::SourceRef &lhs, const llzk::SourceRef &rhs) { return lhs == rhs; }
+  static bool isEqual(const llzk::SourceRef &lhs, const llzk::SourceRef &rhs) {
+    if (isSpecialKey(lhs) || isSpecialKey(rhs)) {
+      return lhs.getAsOpaquePointer() == rhs.getAsOpaquePointer();
+    }
+    return lhs == rhs;
+  }
 };
 
 } // namespace llvm

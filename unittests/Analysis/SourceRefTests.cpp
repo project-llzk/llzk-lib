@@ -67,6 +67,33 @@ TEST_F(SourceRefTests, IndexHalfOpenOverlap) {
   EXPECT_FALSE(range.overlaps(adjacentRange));
 }
 
+TEST_F(SourceRefTests, SourceRefSetHandlesConstantRefs) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @ConstantRef {
+    function.def @compute() -> !struct.type<@ConstantRef> {
+      %self = struct.new : !struct.type<@ConstantRef>
+      function.return %self : !struct.type<@ConstantRef>
+    }
+
+    function.def @constrain(%self: !struct.type<@ConstantRef>) {
+      %zero = felt.const 0
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  felt::FeltConstantOp constant;
+  mod->walk([&](felt::FeltConstantOp op) { constant = op; });
+  ASSERT_TRUE(constant);
+
+  SourceRefSet refs {SourceRef(constant)};
+  EXPECT_TRUE(refs.contains(SourceRef(constant)));
+}
+
 TEST_F(SourceRefTests, MemberOrderingUsesNamesToBreakEqualLocations) {
   auto mod = parseSourceString<ModuleOp>(kModule, ParserConfig(&ctx));
   ASSERT_TRUE(mod);

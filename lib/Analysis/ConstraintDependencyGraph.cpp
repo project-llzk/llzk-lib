@@ -27,7 +27,6 @@
 #include <llvm/Support/Debug.h>
 
 #include <numeric>
-#include <unordered_set>
 
 #define DEBUG_TYPE "llzk-cdg"
 
