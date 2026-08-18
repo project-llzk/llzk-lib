@@ -26,6 +26,7 @@
 
 #include <llvm/Support/Debug.h>
 
+#include <map>
 #include <numeric>
 
 #define DEBUG_TYPE "llzk-cdg"
@@ -186,6 +187,12 @@ public:
   /// Associate this state with the top-level operation whose writes it models.
   void setTop(Operation *op) {
     ensure(top == nullptr || top == op, "storage state cannot span top-level operations");
+    if (top == nullptr) {
+      op->walk([this](Operation *nested) {
+        operationOrder.try_emplace(nested, operations.size());
+        operations.push_back(nested);
+      });
+    }
     top = op;
   }
 
@@ -256,20 +263,29 @@ private:
     );
   };
 
+  /// Storage and alias state immediately before an operation in preorder.
+  ///
+  /// Snapshots contain only the ordinary program-order replay. Loop backedge
+  /// effects are query-specific and are applied after retrieving a snapshot.
+  struct MaterializedSnapshot {
+    TranslationMap aliases;
+    MaterializedStorage storage;
+  };
+
   /// Apply all known aggregate-storage aliases to a lattice value.
   static SourceRefLatticeValue
   canonicalize(const SourceRefLatticeValue &value, const TranslationMap &aliases);
-
-  /// Materialize aliases established before `before` in program order.
-  TranslationMap materializeAggregateAliases(Operation *before) const;
 
   /// Apply aggregate aliases recorded for `op` to `aliases`.
   void applyAggregateAliases(
       Operation *op, TranslationMap &aliases, bool forceMayBeSkipped = false
   ) const;
 
-  /// Materialize storage contents at `before` by replaying earlier writes in IR order.
-  MaterializedStorage materializeStoredValues(Operation *before) const;
+  /// Materialize storage and aliases at `before`, reusing the nearest earlier snapshot.
+  MaterializedSnapshot materializeSnapshot(Operation *before) const;
+
+  /// Discard snapshots whose program-order replay includes `op`.
+  void invalidateSnapshotsFrom(Operation *op);
 
   static SourceRefLatticeValue projectChild(
       const SourceRefLatticeValue &value, const SourceRef &storedAddress,
@@ -289,6 +305,9 @@ private:
   Operation *top = nullptr;
   DenseMap<Operation *, SmallVector<StorageWrite>> storageWrites;
   DenseMap<Operation *, SmallVector<AggregateAlias>> aggregateAliases;
+  DenseMap<Operation *, size_t> operationOrder;
+  SmallVector<Operation *> operations;
+  mutable std::map<size_t, MaterializedSnapshot> snapshots;
 };
 
 const SourceRefAnalysis::Lattice *SourceRefAnalysis::getLattice(DataFlowSolver &solver, Value val) {
@@ -487,16 +506,16 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolve(
 SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveDependencies(
     const SourceRefLatticeValue &addresses, Operation *before
 ) const {
-  const TranslationMap aliases = materializeAggregateAliases(before);
-  const MaterializedStorage storage = materializeStoredValues(before);
+  MaterializedSnapshot snapshot = materializeSnapshot(before);
   DenseSet<SourceRef> active;
-  return resolve(addresses, aliases, storage, active);
+  return resolve(addresses, snapshot.aliases, snapshot.storage, active);
 }
 
 void SourceRefAnalysis::StorageState::recordStorageWrite(
     Operation *op, size_t writeIndex, const SourceRefLatticeValue &addresses,
     const SourceRefLatticeValue &value, bool mayBeSkipped, bool seedUnwrittenAlternative
 ) {
+  invalidateSnapshotsFrom(op);
   auto &writes = storageWrites[op];
   StorageWrite write {addresses, value, mayBeSkipped, seedUnwrittenAlternative};
   if (writeIndex == writes.size()) {
@@ -545,6 +564,7 @@ void SourceRefAnalysis::StorageState::recordCalleeStorageWritesImpl(
 void SourceRefAnalysis::StorageState::recordCalleeStorageWrites(
     CallOpInterface call, FuncDefOp callee, const TranslationMap &translation
 ) {
+  invalidateSnapshotsFrom(call.getOperation());
   SmallVector<StorageWrite> translatedWrites;
   const bool callMayBeSkipped = isInMaybeSkippedScfRegion(call.getOperation());
   if (Region *callableRegion = callee.getCallableRegion()) {
@@ -561,20 +581,34 @@ void SourceRefAnalysis::StorageState::recordCalleeStorageWrites(
   storageWrites[call.getOperation()] = std::move(translatedWrites);
 }
 
-SourceRefAnalysis::StorageState::MaterializedStorage
-SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) const {
+SourceRefAnalysis::StorageState::MaterializedSnapshot
+SourceRefAnalysis::StorageState::materializeSnapshot(Operation *before) const {
   ensure(top != nullptr, "storage state must be associated with a top-level operation");
 
-  TranslationMap aliases;
-  MaterializedStorage storage;
+  auto target = operationOrder.find(before);
+  ensure(target != operationOrder.end(), "snapshot operation must belong to storage state");
 
-  (void)top->walk([&before, &storage, &aliases, this](Operation *op) {
-    if (op == before) {
-      return WalkResult::interrupt();
-    }
-    storage.materializeOperation(*this, op, aliases, /*forceMayBeSkipped=*/false);
-    return WalkResult::advance();
-  });
+  // Reuse the closest materialized program point. A snapshot represents state
+  // before its key operation, so replay starts at that operation.
+  MaterializedSnapshot snapshot;
+  size_t replayBegin = 0;
+  auto nextSnapshot = snapshots.upper_bound(target->second);
+  if (nextSnapshot != snapshots.begin()) {
+    auto previousSnapshot = std::prev(nextSnapshot);
+    snapshot = previousSnapshot->second;
+    replayBegin = previousSnapshot->first;
+  }
+
+  for (size_t i = replayBegin; i < target->second; ++i) {
+    snapshot.storage.materializeOperation(
+        *this, operations[i], snapshot.aliases, /*forceMayBeSkipped=*/false
+    );
+  }
+
+  // Preserve the program-order state before adding query-specific loop
+  // backedges. This lets later reads start from this point without replaying
+  // the module prefix again.
+  snapshots.try_emplace(target->second, snapshot);
 
   // A read in a loop body can observe a write lexically after it from a prior iteration. Replay
   // every enclosing loop body as a weak update: the entry state remains possible (the loop may
@@ -584,13 +618,25 @@ SourceRefAnalysis::StorageState::materializeStoredValues(Operation *before) cons
     if (!llvm::isa<scf::ForOp, scf::WhileOp>(ancestor)) {
       continue;
     }
-    (void)ancestor->walk([&ancestor, &storage, &aliases, this](Operation *op) {
+    (void)ancestor->walk([&ancestor, &snapshot, this](Operation *op) {
       if (op != ancestor) {
-        storage.materializeOperation(*this, op, aliases, /*forceMayBeSkipped=*/true, ancestor);
+        snapshot.storage.materializeOperation(
+            *this, op, snapshot.aliases, /*forceMayBeSkipped=*/true, ancestor
+        );
       }
     });
   }
-  return storage;
+  return snapshot;
+}
+
+void SourceRefAnalysis::StorageState::invalidateSnapshotsFrom(Operation *op) {
+  auto position = operationOrder.find(op);
+  if (position == operationOrder.end()) {
+    return;
+  }
+  // A snapshot immediately before this operation excludes its effects, while
+  // every later snapshot includes them and must be reconstructed on a revisit.
+  snapshots.erase(snapshots.upper_bound(position->second), snapshots.end());
 }
 
 void SourceRefAnalysis::StorageState::MaterializedStorage::invalidateOverlappingRanges(
@@ -793,6 +839,7 @@ void SourceRefAnalysis::StorageState::recordAggregateAlias(
     Operation *op, size_t aliasIndex, const SourceRefLatticeValue &source,
     const SourceRefLatticeValue &target, bool mayBeSkipped
 ) {
+  invalidateSnapshotsFrom(op);
   auto &aliases = aggregateAliases[op];
   AggregateAlias alias {source, target, mayBeSkipped};
   if (aliasIndex == aliases.size()) {
@@ -801,21 +848,6 @@ void SourceRefAnalysis::StorageState::recordAggregateAlias(
   }
   ensure(aliasIndex < aliases.size(), "aggregate aliases must use stable operation order");
   aliases[aliasIndex] = std::move(alias);
-}
-
-TranslationMap
-SourceRefAnalysis::StorageState::materializeAggregateAliases(Operation *before) const {
-  ensure(top != nullptr, "storage state must be associated with a top-level operation");
-
-  TranslationMap aliases;
-  (void)top->walk([&](Operation *op) {
-    if (op == before) {
-      return WalkResult::interrupt();
-    }
-    applyAggregateAliases(op, aliases);
-    return WalkResult::advance();
-  });
-  return aliases;
 }
 
 void SourceRefAnalysis::StorageState::applyAggregateAliases(
