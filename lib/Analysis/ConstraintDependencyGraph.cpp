@@ -239,12 +239,20 @@ private:
     DenseMap<SourceRef, SourceRefLatticeValue> values;
     DenseSet<SourceRef> skippedFirstWrites;
 
+    /// Addresses in `values`, grouped by their storage root for dependency lookups.
+    DenseMap<Value, SmallVector<SourceRef>> valuesByRoot;
+
     void materializeOperation(
         const StorageState &state, Operation *op, TranslationMap &aliases, bool forceMayBeSkipped,
         Operation *replayedLoop = nullptr
     );
 
   private:
+    /// Add or remove an address from the root index when `values` changes.
+    void indexAddress(const SourceRef &address);
+    void unindexAddress(const SourceRef &address);
+    void eraseValue(const SourceRef &address);
+
     void invalidateOverlappingRanges(const SourceRef &address);
 
     void applyWrite(
@@ -474,19 +482,25 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolve(
     bool foundWrite = false;
     bool preservesAddress = false;
     SourceRefLatticeValue writtenValues;
-    for (const auto &[storedAddress, storedValue] : storage.values) {
-      auto storedRoot = storedAddress.getRoot();
-      auto addressRoot = address.getRoot();
-      if (failed(storedRoot) || failed(addressRoot) || *storedRoot != *addressRoot ||
-          (!storedAddress.overlaps(address) && !address.isValidPrefix(storedAddress))) {
-        continue;
+    auto addressRoot = address.getRoot();
+    if (succeeded(addressRoot)) {
+      auto writesForRoot = storage.valuesByRoot.find(*addressRoot);
+      if (writesForRoot != storage.valuesByRoot.end()) {
+        for (const SourceRef &storedAddress : writesForRoot->second) {
+          auto storedValue = storage.values.find(storedAddress);
+          ensure(storedValue != storage.values.end(), "storage root index is out of sync");
+          if (!storedAddress.overlaps(address) && !address.isValidPrefix(storedAddress)) {
+            continue;
+          }
+          foundWrite = true;
+          SourceRefLatticeValue projectedValue =
+              projectChild(storedValue->second, storedAddress, address);
+          if (hasRangeIndex(storedAddress) && storedAddress.overlaps(address)) {
+            preservesAddress |= projectedValue.remove(address) == ChangeResult::Change;
+          }
+          (void)writtenValues.update(projectedValue);
+        }
       }
-      foundWrite = true;
-      SourceRefLatticeValue projectedValue = projectChild(storedValue, storedAddress, address);
-      if (hasRangeIndex(storedAddress) && storedAddress.overlaps(address)) {
-        preservesAddress |= projectedValue.remove(address) == ChangeResult::Change;
-      }
-      (void)writtenValues.update(projectedValue);
     }
     if (foundWrite) {
       SourceRefLatticeValue resolvedValues = resolve(writtenValues, aliases, storage, active);
@@ -639,6 +653,34 @@ void SourceRefAnalysis::StorageState::invalidateSnapshotsFrom(Operation *op) {
   snapshots.erase(snapshots.upper_bound(position->second), snapshots.end());
 }
 
+void SourceRefAnalysis::StorageState::MaterializedStorage::indexAddress(const SourceRef &address) {
+  if (auto root = address.getRoot(); succeeded(root)) {
+    valuesByRoot[*root].push_back(address);
+  }
+}
+
+void SourceRefAnalysis::StorageState::MaterializedStorage::unindexAddress(
+    const SourceRef &address
+) {
+  auto root = address.getRoot();
+  if (failed(root)) {
+    return;
+  }
+  auto entries = valuesByRoot.find(*root);
+  ensure(entries != valuesByRoot.end(), "storage root index is out of sync");
+  auto addressIt = llvm::find(entries->second, address);
+  ensure(addressIt != entries->second.end(), "storage root index is out of sync");
+  entries->second.erase(addressIt);
+  if (entries->second.empty()) {
+    valuesByRoot.erase(entries);
+  }
+}
+
+void SourceRefAnalysis::StorageState::MaterializedStorage::eraseValue(const SourceRef &address) {
+  unindexAddress(address);
+  values.erase(address);
+}
+
 void SourceRefAnalysis::StorageState::MaterializedStorage::invalidateOverlappingRanges(
     const SourceRef &address
 ) {
@@ -672,10 +714,13 @@ void SourceRefAnalysis::StorageState::MaterializedStorage::invalidateOverlapping
   }
   for (const SourceRef &erasedAddress : erasedAddresses) {
     skippedFirstWrites.erase(erasedAddress);
-    values.erase(erasedAddress);
+    eraseValue(erasedAddress);
   }
   for (const RangeReplacement &replacement : replacements) {
     auto [it, inserted] = values.try_emplace(replacement.address, replacement.value);
+    if (inserted) {
+      indexAddress(replacement.address);
+    }
     if (!inserted) {
       (void)it->second.update(replacement.value);
     }
@@ -696,6 +741,9 @@ void SourceRefAnalysis::StorageState::MaterializedStorage::applyWrite(
     (void)initialValue.insert(address);
   }
   auto [it, inserted] = values.try_emplace(address, std::move(initialValue));
+  if (inserted) {
+    indexAddress(address);
+  }
   if (inserted && seedUnwrittenAlternative) {
     skippedFirstWrites.insert(address);
   }
