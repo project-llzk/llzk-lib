@@ -1,0 +1,49 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TPair {
+    poly.param @A : index
+    poly.param @B : index
+
+    struct.def @Pair {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TPair::@Pair<[@A, @B]>> {
+        %self = struct.new : !struct.type<@TPair::@Pair<[@A, @B]>>
+        function.return %self : !struct.type<@TPair::@Pair<[@A, @B]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TPair::@Pair<[@A, @B]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Holder {
+    // This complementary specialization combines with the nondet's Pair<0, #id> type.
+    struct.member @item : !struct.type<@TPair::@Pair<[#id, 1]>> {column}
+
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %shared = llzk.nondet : !struct.type<@TPair::@Pair<[0, #id]>>
+      struct.writem %self[@item] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[0, #id]>>
+      function.return %self : !struct.type<@Holder>
+    }
+
+    function.def @constrain(%self: !struct.type<@Holder>) {
+      function.return
+    }
+  }
+}
+// The shared nondeterministic value and its typed member consumer must use the common Pair<0, 1>
+// instantiation, rather than incompatible partial clones.
+// CHECK-LABEL: struct.def @TPair_0_1_Pair {
+// CHECK-LABEL: struct.def @Holder {
+// CHECK-NEXT:    struct.member @item : !struct.type<@TPair_0_1_Pair> {column}
+// CHECK-NEXT:    function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TPair_0_1_Pair>
+// CHECK-NEXT:      struct.writem %[[VAL_6]][@item] = %[[VAL_7]] : <@Holder>, !struct.type<@TPair_0_1_Pair>
+// CHECK-NEXT:      function.return %[[VAL_6]] : !struct.type<@Holder>
+// CHECK-NEXT:    }

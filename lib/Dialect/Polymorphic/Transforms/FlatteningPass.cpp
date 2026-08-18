@@ -1145,24 +1145,129 @@ public:
   }
 };
 
+/// Return a fully concrete struct type when `lhs` and `rhs` supply complementary integer bindings.
+///
+/// This deliberately only handles the direct parameter refinement needed while instantiating
+/// struct uses. More general refinement is performed by the propagation steps below.
+static std::optional<StructType>
+getComplementaryStructRefinement(StructType lhs, StructType rhs, const ConversionTracker &tracker) {
+  lhs = tracker.getPreimage(lhs).value_or(lhs);
+  rhs = tracker.getPreimage(rhs).value_or(rhs);
+  if (lhs.getNameRef() != rhs.getNameRef()) {
+    return std::nullopt;
+  }
+
+  ArrayAttr lhsParams = lhs.getParams();
+  ArrayAttr rhsParams = rhs.getParams();
+  if (!lhsParams || !rhsParams || lhsParams.size() != rhsParams.size()) {
+    return std::nullopt;
+  }
+
+  SmallVector<Attribute> refinedParams;
+  for (auto [lhsParam, rhsParam] : llvm::zip_equal(lhsParams, rhsParams)) {
+    if (lhsParam == rhsParam) {
+      refinedParams.push_back(lhsParam);
+      continue;
+    }
+    auto lhsInt = llvm::dyn_cast<IntegerAttr>(lhsParam);
+    auto rhsInt = llvm::dyn_cast<IntegerAttr>(rhsParam);
+    if (lhsInt && !isDynamic(lhsInt) && llvm::isa<AffineMapAttr>(rhsParam)) {
+      refinedParams.push_back(lhsParam);
+      continue;
+    }
+    if (rhsInt && !isDynamic(rhsInt) && llvm::isa<AffineMapAttr>(lhsParam)) {
+      refinedParams.push_back(rhsParam);
+      continue;
+    }
+    return std::nullopt;
+  }
+  return StructType::get(lhs.getNameRef(), ArrayAttr::get(lhs.getContext(), refinedParams));
+}
+
 /// Convert nondeterministic result types when a shared witness is refined to an instantiated type.
 class NonDetOpPattern : public OpConversionPattern<NonDetOp> {
+  ConversionTracker *tracker_;
+
 public:
   /// Construct the nondeterministic value conversion pattern.
-  NonDetOpPattern(TypeConverter &converter, MLIRContext *ctx)
-      : OpConversionPattern<NonDetOp>(converter, ctx, /*benefit=*/1) {}
+  NonDetOpPattern(TypeConverter &converter, MLIRContext *ctx, ConversionTracker *tracker = nullptr)
+      : OpConversionPattern<NonDetOp>(converter, ctx, /*benefit=*/1), tracker_(tracker) {}
 
-  /// Rebuild the op with the converted result type.
+  /// Rebuild the op with a type refined jointly with directly written member types.
   LogicalResult
   matchAndRewrite(NonDetOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
-    Type newType = getTypeConverter()->convertType(op.getType());
+    Type replacementInputType = op.getType();
+    SmallVector<MemberDefOp> refinedMemberDefs;
+    if (tracker_) {
+      SymbolTableCollection tables;
+      for (OpOperand &use : op.getResult().getUses()) {
+        auto memberWrite = llvm::dyn_cast<MemberWriteOp>(use.getOwner());
+        if (!memberWrite || memberWrite.getVal() != op.getResult()) {
+          continue;
+        }
+        FailureOr<SymbolLookupResult<MemberDefOp>> memberDef = memberWrite.getMemberDefOp(tables);
+        if (failed(memberDef)) {
+          return failure();
+        }
+        auto witnessType = llvm::dyn_cast<StructType>(replacementInputType);
+        auto memberType = llvm::dyn_cast<StructType>(memberDef->get().getType());
+        if (!witnessType || !memberType) {
+          continue;
+        }
+        std::optional<StructType> commonType =
+            getComplementaryStructRefinement(witnessType, memberType, *tracker_);
+        if (!commonType) {
+          continue;
+        }
+        replacementInputType = *commonType;
+        refinedMemberDefs.push_back(memberDef->get());
+      }
+    }
+
+    Type newType = getTypeConverter()->convertType(replacementInputType);
     if (!newType) {
       return op->emitError("Could not convert Op result type.");
+    }
+    for (MemberDefOp memberDef : refinedMemberDefs) {
+      rewriter.modifyOpInPlace(memberDef, [&memberDef, &newType]() { memberDef.setType(newType); });
     }
     if (newType == op.getType()) {
       return failure();
     }
     replaceOpWithNewOp<NonDetOp>(rewriter, op, newType);
+    return success();
+  }
+};
+
+/// Bypass a stale conversion cast when a shared nondeterministic value and its member were both
+/// refined to the same instantiated struct type.
+class MemberWriteRefinedNonDetPattern : public OpConversionPattern<MemberWriteOp> {
+public:
+  /// Construct the member-write conversion pattern.
+  MemberWriteRefinedNonDetPattern(TypeConverter &converter, MLIRContext *ctx)
+      : OpConversionPattern<MemberWriteOp>(converter, ctx, /*benefit=*/2) {}
+
+  /// Rebuild the write using the jointly refined witness instead of its pre-refinement cast.
+  LogicalResult matchAndRewrite(
+      MemberWriteOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    auto cast = adaptor.getVal().getDefiningOp<UnrealizedConversionCastOp>();
+    if (!cast || cast.getInputs().size() != 1) {
+      return failure();
+    }
+    Value refinedWitness = cast.getInputs().front();
+    if (!refinedWitness.getDefiningOp<NonDetOp>()) {
+      return failure();
+    }
+
+    SymbolTableCollection tables;
+    FailureOr<SymbolLookupResult<MemberDefOp>> memberDef = op.getMemberDefOp(tables);
+    if (failed(memberDef) || memberDef->get().getType() != refinedWitness.getType()) {
+      return failure();
+    }
+    replaceOpWithNewOp<MemberWriteOp>(
+        rewriter, op, adaptor.getComponent(), op.getMemberNameAttr(), refinedWitness
+    );
     return success();
   }
 };
@@ -1194,7 +1299,8 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   });
   RewritePatternSet patterns = newGeneralRewritePatternSet(tyConv, ctx, target);
   patterns.add<CallStructFuncPattern, MemberDefOpPattern>(tyConv, ctx, tracker);
-  patterns.add<NonDetOpPattern>(tyConv, ctx);
+  patterns.add<NonDetOpPattern>(tyConv, ctx, &tracker);
+  patterns.add<MemberWriteRefinedNonDetPattern>(tyConv, ctx);
   return applyPartialConversion(modOp, target, std::move(patterns));
 }
 
