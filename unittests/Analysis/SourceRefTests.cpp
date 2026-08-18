@@ -932,8 +932,8 @@ module attributes {llzk.lang} {
   EXPECT_TRUE(llvm::any_of(dependencies, [&](const SourceRef &ref) {
     return succeeded(ref.getRoot()) && *ref.getRoot() == computeFn.getArgument(0) &&
            llvm::any_of(ref.getPath(), [](const SourceRefIndex &index) {
-             return index.isIndexRange();
-           });
+      return index.isIndexRange();
+    });
   }));
 }
 
