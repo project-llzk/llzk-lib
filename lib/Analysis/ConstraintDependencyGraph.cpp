@@ -204,7 +204,7 @@ public:
   /// Record a storage write for later dependency queries.
   void recordStorageWrite(
       Operation *op, size_t writeIndex, const SourceRefLatticeValue &addresses,
-      const SourceRefLatticeValue &value, bool mayBeSkipped = false,
+      const SourceRefLatticeValue &value, Type valueType, bool mayBeSkipped = false,
       bool seedUnwrittenAlternative = false
   );
 
@@ -537,7 +537,8 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveDependencies(
 
 void SourceRefAnalysis::StorageState::recordStorageWrite(
     Operation *op, size_t writeIndex, const SourceRefLatticeValue &addresses,
-    const SourceRefLatticeValue &value, bool mayBeSkipped, bool seedUnwrittenAlternative
+    const SourceRefLatticeValue &value, Type valueType, bool mayBeSkipped,
+    bool seedUnwrittenAlternative
 ) {
   invalidateCheckpointsFrom(op);
   auto &writes = storageWrites[op];
@@ -545,9 +546,7 @@ void SourceRefAnalysis::StorageState::recordStorageWrite(
   // the write point so a later overwrite cannot change an already-consumed value during replay.
   // Aggregate values retain their storage identity: assignments of those values are modeled by
   // aggregate aliases and must continue to observe subsequent writes through the alias.
-  const bool isAggregateValue =
-      !op->getOperands().empty() &&
-      llvm::isa<ArrayType, StructType, PodType>(op->getOperands().back().getType());
+  const bool isAggregateValue = llvm::isa<ArrayType, StructType, PodType>(valueType);
   StorageWrite write {
       addresses, isAggregateValue ? value : resolveDependencies(value, op), mayBeSkipped,
       seedUnwrittenAlternative
@@ -1125,7 +1124,7 @@ LogicalResult SourceRefAnalysis::visitOperation(
         // the unselected roots retain their pre-write contents.
         const bool mayBeSkipped = isInMaybeSkippedScfRegion(op) || !memberVals.isSingleValue();
         getStorageState(op)->recordStorageWrite(
-            op, /*writeIndex=*/0, memberVals, writeValue, mayBeSkipped,
+            op, /*writeIndex=*/0, memberVals, writeValue, writeOp.getVal().getType(), mayBeSkipped,
             /*seedUnwrittenAlternative=*/mayBeSkipped
         );
         getStorageState(op)->recordAggregateAlias(
@@ -1153,7 +1152,7 @@ LogicalResult SourceRefAnalysis::visitOperation(
       // pre-write contents.
       const bool mayBeSkipped = isInMaybeSkippedScfRegion(op) || !podVals.isSingleValue();
       getStorageState(op)->recordStorageWrite(
-          op, /*writeIndex=*/0, podVals, writeValue, mayBeSkipped,
+          op, /*writeIndex=*/0, podVals, writeValue, writeOp.getValue().getType(), mayBeSkipped,
           /*seedUnwrittenAlternative=*/mayBeSkipped
       );
       if (llvm::isa<ArrayType, StructType, PodType>(writeOp.getValue().getType())) {
@@ -1173,7 +1172,7 @@ LogicalResult SourceRefAnalysis::visitOperation(
       const bool mayBeSkipped =
           isInMaybeSkippedScfRegion(op) || isNonSingletonArrayWriteTarget(writeTargets);
       getStorageState(op)->recordStorageWrite(
-          op, /*writeIndex=*/0, writeTargets, writeValue, mayBeSkipped,
+          op, /*writeIndex=*/0, writeTargets, writeValue, rvalue.getType(), mayBeSkipped,
           /*seedUnwrittenAlternative=*/mayBeSkipped
       );
       if (llvm::isa<ArrayType, StructType, PodType>(rvalue.getType())) {
@@ -1214,13 +1213,18 @@ LogicalResult SourceRefAnalysis::visitOperation(
 
     const bool mayBeSkipped = isInMaybeSkippedScfRegion(op);
     StorageState *state = getStorageState(op);
+    size_t aggregateAliasIndex = 0;
     for (size_t i = 0; i < elements.size(); i++) {
       SourceRef elementAddress = getArrayElementAddress(arrayRoot, i);
       SourceRefLatticeValue elementAddressValue(elementAddress);
       SourceRefLatticeValue elementValue = operandVals.at(elements[i])->getValue();
-      state->recordStorageWrite(op, i, elementAddressValue, elementValue, mayBeSkipped);
+      state->recordStorageWrite(
+          op, i, elementAddressValue, elementValue, elements[i].getType(), mayBeSkipped
+      );
       if (llvm::isa<ArrayType, StructType, PodType>(elements[i].getType())) {
-        state->recordAggregateAlias(op, i, elementValue, elementAddressValue, mayBeSkipped);
+        state->recordAggregateAlias(
+            op, aggregateAliasIndex++, elementValue, elementAddressValue, mayBeSkipped
+        );
       }
     }
     return success();
@@ -1230,6 +1234,7 @@ LogicalResult SourceRefAnalysis::visitOperation(
     auto newPodValue = SourceRefLattice::getDefaultValue(newPod.getResult());
     propagateIfChanged(results.front(), results.front()->setValue(newPodValue));
     SourceRef podRoot(llvm::cast<OpResult>(newPod.getResult()));
+    size_t aggregateAliasIndex = 0;
     for (auto [idx, record] : llvm::enumerate(newPod.getInitializedRecordValues())) {
       auto recordRef =
           podRoot.createChild(SourceRefIndex(StringAttr::get(op->getContext(), record.name)));
@@ -1238,9 +1243,13 @@ LogicalResult SourceRefAnalysis::visitOperation(
       StorageState *state = getStorageState(op);
       SourceRefLatticeValue recordAddress(*recordRef);
       const bool mayBeSkipped = isInMaybeSkippedScfRegion(op);
-      state->recordStorageWrite(op, idx, recordAddress, recordValue, mayBeSkipped);
+      state->recordStorageWrite(
+          op, idx, recordAddress, recordValue, record.value.getType(), mayBeSkipped
+      );
       if (llvm::isa<ArrayType, StructType, PodType>(record.value.getType())) {
-        state->recordAggregateAlias(op, idx, recordValue, recordAddress, mayBeSkipped);
+        state->recordAggregateAlias(
+            op, aggregateAliasIndex++, recordValue, recordAddress, mayBeSkipped
+        );
       }
     }
     return success();

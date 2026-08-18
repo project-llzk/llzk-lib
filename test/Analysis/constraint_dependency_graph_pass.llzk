@@ -1760,6 +1760,52 @@ module attributes {llzk.lang} {
 
 // -----
 
+// Each pod.new initializer must preserve whether its own value is scalar or aggregate. In
+// particular, copying a scalar storage read must snapshot that value even when a later record
+// initializer is aggregate.
+module attributes {llzk.lang} {
+  struct.def @PodMixedInitializerStorageRead {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type)
+        -> !struct.type<@PodMixedInitializerStorageRead> {
+      %self = struct.new : !struct.type<@PodMixedInitializerStorageRead>
+      struct.writem %self[@out] = %initial
+          : !struct.type<@PodMixedInitializerStorageRead>, !felt.type
+      function.return %self : !struct.type<@PodMixedInitializerStorageRead>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@PodMixedInitializerStorageRead>,
+        %initial: !felt.type,
+        %replacement: !felt.type
+    ) {
+      %expected = struct.readm %self[@out]
+          : !struct.type<@PodMixedInitializerStorageRead>, !felt.type
+      %source = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %copied = pod.read %source[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %aggregate = array.new %initial : !array.type<1 x !felt.type>
+      %pod = pod.new { @scalar = %copied, @aggregate = %aggregate }
+          : !pod.type<[@scalar: !felt.type, @aggregate: !array.type<1 x !felt.type>]>
+      pod.write %source[@value] = %replacement
+          : !pod.type<[@value: !felt.type]>, !felt.type
+      %actual = pod.read %pod[@scalar]
+          : !pod.type<[@scalar: !felt.type, @aggregate: !array.type<1 x !felt.type>]>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @PodMixedInitializerStorageRead ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg1 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @PodMixedInitializerStorageRead ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg1 }
+// INTRA-NEXT: }
+
+// -----
+
 module attributes {llzk.lang} {
   struct.def @PodReadModifyWrite {
     function.def @compute(%initial: !felt.type, %x: !felt.type) -> !struct.type<@PodReadModifyWrite> {
