@@ -392,11 +392,15 @@ else()
 endif()
 
 # Catch-all target for running all tests
-add_custom_target(
-  check
-  DEPENDS # test targets may not exist if BUILD_TESTING is off
-          $<$<BOOL:BUILD_TESTING>:check-unit>
-          $<$<BOOL:BUILD_TESTING>:check-lit>)
+if(BUILD_TESTING)
+  add_custom_target(
+    check
+    DEPENDS # test targets may not exist if BUILD_TESTING is off
+          $<$<BOOL:GTest_FOUND>:check-unit>
+          check-lit)
+else()
+  add_custom_target(check) # No-op if BUILD_TESTING is disabled.
+endif()
 
 # Install
 
