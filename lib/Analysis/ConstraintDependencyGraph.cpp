@@ -192,6 +192,7 @@ public:
         operationOrder.try_emplace(nested, operations.size());
         operations.push_back(nested);
       });
+      checkpoints.try_emplace(0);
     }
     top = op;
   }
@@ -280,6 +281,9 @@ private:
     MaterializedStorage storage;
   };
 
+  /// Bound replay work while avoiding a full state copy at every query point.
+  static constexpr size_t checkpointStride = 64;
+
   /// Apply all known aggregate-storage aliases to a lattice value.
   static SourceRefLatticeValue
   canonicalize(const SourceRefLatticeValue &value, const TranslationMap &aliases);
@@ -289,11 +293,11 @@ private:
       Operation *op, TranslationMap &aliases, bool forceMayBeSkipped = false
   ) const;
 
-  /// Materialize storage and aliases at `before`, reusing the nearest earlier snapshot.
+  /// Materialize storage and aliases at `before`, replaying from a sparse checkpoint.
   MaterializedSnapshot materializeSnapshot(Operation *before) const;
 
-  /// Discard snapshots whose program-order replay includes `op`.
-  void invalidateSnapshotsFrom(Operation *op);
+  /// Discard checkpoints whose program-order replay includes `op`.
+  void invalidateCheckpointsFrom(Operation *op);
 
   static SourceRefLatticeValue projectChild(
       const SourceRefLatticeValue &value, const SourceRef &storedAddress,
@@ -315,7 +319,7 @@ private:
   DenseMap<Operation *, SmallVector<AggregateAlias>> aggregateAliases;
   DenseMap<Operation *, size_t> operationOrder;
   SmallVector<Operation *> operations;
-  mutable std::map<size_t, MaterializedSnapshot> snapshots;
+  mutable std::map<size_t, MaterializedSnapshot> checkpoints;
 };
 
 const SourceRefAnalysis::Lattice *SourceRefAnalysis::getLattice(DataFlowSolver &solver, Value val) {
@@ -529,7 +533,7 @@ void SourceRefAnalysis::StorageState::recordStorageWrite(
     Operation *op, size_t writeIndex, const SourceRefLatticeValue &addresses,
     const SourceRefLatticeValue &value, bool mayBeSkipped, bool seedUnwrittenAlternative
 ) {
-  invalidateSnapshotsFrom(op);
+  invalidateCheckpointsFrom(op);
   auto &writes = storageWrites[op];
   StorageWrite write {addresses, value, mayBeSkipped, seedUnwrittenAlternative};
   if (writeIndex == writes.size()) {
@@ -578,7 +582,7 @@ void SourceRefAnalysis::StorageState::recordCalleeStorageWritesImpl(
 void SourceRefAnalysis::StorageState::recordCalleeStorageWrites(
     CallOpInterface call, FuncDefOp callee, const TranslationMap &translation
 ) {
-  invalidateSnapshotsFrom(call.getOperation());
+  invalidateCheckpointsFrom(call.getOperation());
   SmallVector<StorageWrite> translatedWrites;
   const bool callMayBeSkipped = isInMaybeSkippedScfRegion(call.getOperation());
   if (Region *callableRegion = callee.getCallableRegion()) {
@@ -602,27 +606,36 @@ SourceRefAnalysis::StorageState::materializeSnapshot(Operation *before) const {
   auto target = operationOrder.find(before);
   ensure(target != operationOrder.end(), "snapshot operation must belong to storage state");
 
-  // Reuse the closest materialized program point. A snapshot represents state
-  // before its key operation, so replay starts at that operation.
+  // Materialize full checkpoints only at fixed program-order intervals. A
+  // checkpoint represents state before its key operation, so replay starts at
+  // that operation.
   MaterializedSnapshot snapshot;
   size_t replayBegin = 0;
-  auto nextSnapshot = snapshots.upper_bound(target->second);
-  if (nextSnapshot != snapshots.begin()) {
-    auto previousSnapshot = std::prev(nextSnapshot);
-    snapshot = previousSnapshot->second;
-    replayBegin = previousSnapshot->first;
+  const size_t checkpointTarget = target->second / checkpointStride * checkpointStride;
+  auto nextCheckpoint = checkpoints.upper_bound(checkpointTarget);
+  if (nextCheckpoint != checkpoints.begin()) {
+    auto previousCheckpoint = std::prev(nextCheckpoint);
+    snapshot = previousCheckpoint->second;
+    replayBegin = previousCheckpoint->first;
   }
 
-  for (size_t i = replayBegin; i < target->second; ++i) {
+  // Build any missing checkpoints on the way to the one preceding this query.
+  // Their immutable program-order state can be reused by later queries.
+  for (size_t i = replayBegin; i < checkpointTarget; ++i) {
+    snapshot.storage.materializeOperation(
+        *this, operations[i], snapshot.aliases, /*forceMayBeSkipped=*/false
+    );
+    if ((i + 1) % checkpointStride == 0) {
+      checkpoints.try_emplace(i + 1, snapshot);
+    }
+  }
+
+  // The remaining replay is bounded by the checkpoint stride.
+  for (size_t i = checkpointTarget; i < target->second; ++i) {
     snapshot.storage.materializeOperation(
         *this, operations[i], snapshot.aliases, /*forceMayBeSkipped=*/false
     );
   }
-
-  // Preserve the program-order state before adding query-specific loop
-  // backedges. This lets later reads start from this point without replaying
-  // the module prefix again.
-  snapshots.try_emplace(target->second, snapshot);
 
   // A read in a loop body can observe a write lexically after it from a prior iteration. Replay
   // every enclosing loop body as a weak update: the entry state remains possible (the loop may
@@ -643,14 +656,14 @@ SourceRefAnalysis::StorageState::materializeSnapshot(Operation *before) const {
   return snapshot;
 }
 
-void SourceRefAnalysis::StorageState::invalidateSnapshotsFrom(Operation *op) {
+void SourceRefAnalysis::StorageState::invalidateCheckpointsFrom(Operation *op) {
   auto position = operationOrder.find(op);
   if (position == operationOrder.end()) {
     return;
   }
-  // A snapshot immediately before this operation excludes its effects, while
-  // every later snapshot includes them and must be reconstructed on a revisit.
-  snapshots.erase(snapshots.upper_bound(position->second), snapshots.end());
+  // A checkpoint immediately before this operation excludes its effects, while
+  // every later checkpoint includes them and must be reconstructed on a revisit.
+  checkpoints.erase(checkpoints.upper_bound(position->second), checkpoints.end());
 }
 
 void SourceRefAnalysis::StorageState::MaterializedStorage::indexAddress(const SourceRef &address) {
@@ -887,7 +900,7 @@ void SourceRefAnalysis::StorageState::recordAggregateAlias(
     Operation *op, size_t aliasIndex, const SourceRefLatticeValue &source,
     const SourceRefLatticeValue &target, bool mayBeSkipped
 ) {
-  invalidateSnapshotsFrom(op);
+  invalidateCheckpointsFrom(op);
   auto &aliases = aggregateAliases[op];
   AggregateAlias alias {source, target, mayBeSkipped};
   if (aliasIndex == aliases.size()) {
