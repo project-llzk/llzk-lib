@@ -1162,9 +1162,7 @@ public:
     if (newType == op.getType()) {
       return failure();
     }
-    NonDetOp newOp = rewriter.create<NonDetOp>(op.getLoc(), newType);
-    newOp->setDiscardableAttrs(op->getDiscardableAttrDictionary());
-    rewriter.replaceOp(op, newOp.getResult());
+    replaceOpWithNewOp<NonDetOp>(rewriter, op, newType);
     return success();
   }
 };
@@ -1521,10 +1519,9 @@ public:
     if (!llvm::isa<ArrayType>(newResultTy)) {
       return failure();
     }
-    ExtractArrayOp extractOp = rewriter.replaceOpWithNewOp<ExtractArrayOp>(
-        op, newResultTy, adaptor.getArrRef(), adaptor.getIndices()
+    replaceOpWithNewOp<ExtractArrayOp>(
+        rewriter, op, newResultTy, adaptor.getArrRef(), adaptor.getIndices()
     );
-    extractOp->setDiscardableAttrs(op->getDiscardableAttrDictionary());
     return success();
   }
 };
@@ -2525,12 +2522,10 @@ static CallOp replaceStructConstraintCallWithSpecializedWitness(
   StructType structType = llvm::cast<StructType>(specializedWitness.getType());
   SymbolRefAttr callee =
       appendLeaf(structType.getNameRef(), call.getCalleeAttr().getLeafReference());
-  CallOp newCall = replaceOpWithNewOp<CallOp>(
+  return replaceOpWithNewOp<CallOp>(
       rewriter, call, call.getResultTypes(), callee,
       CallOp::toVectorOfValueRange(call.getMapOperands()), call.getNumDimsPerMapAttr(), args
   );
-  newCall->setDiscardableAttrs(call->getDiscardableAttrDictionary());
-  return newCall;
 }
 
 namespace Step5_ScalarizeHeterogeneousArrays {

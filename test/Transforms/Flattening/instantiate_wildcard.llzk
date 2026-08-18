@@ -112,6 +112,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
+// Preserve discardable attributes when wildcard conversion changes array.read to array.extract.
 module attributes {llzk.lang = "circom", llzk.main = !struct.type<@CallDiffTypeTest::@CallDiffTypeTest<[]>>} {
   poly.template @T {
     poly.param @T_arg0 : !poly.tvar<@T_arg0>
