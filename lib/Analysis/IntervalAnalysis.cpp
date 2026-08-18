@@ -943,9 +943,23 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
   if (isReadOp(op) && op->getNumResults() == 1) {
     Value resultVal = op->getResult(0);
     if (!llvm::isa<ArrayType, StructType, pod::PodType>(resultVal.getType())) {
-      auto resolvedValue = resolveRefStateValue(
-          resultVal, SourceRefAnalysis::getDependencyState(_dataflowSolver, resultVal)
-      );
+      // A read's value state names the storage location, whereas its dependency
+      // state names the values used to produce the stored value. Prefer an exact
+      // expression recorded for that storage location; joining its dependencies
+      // would lose computations such as a stored `%a + %b`.
+      std::optional<LatticeValue> resolvedValue;
+      SourceRefLatticeValue storageState = getSourceRefState(resultVal);
+      if (storageState.isSingleValue()) {
+        const SourceRef &storageRef = storageState.getSingleValue();
+        if (writeResults.contains(storageRef)) {
+          resolvedValue = LatticeValue(getRefValue(storageRef, resultVal));
+        }
+      }
+      if (!resolvedValue.has_value()) {
+        resolvedValue = resolveRefStateValue(
+            resultVal, SourceRefAnalysis::getDependencyState(_dataflowSolver, resultVal)
+        );
+      }
       if (resolvedValue.has_value()) {
         propagateIfChanged(results[0], results[0]->setValue(*resolvedValue));
       }
