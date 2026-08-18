@@ -1323,6 +1323,10 @@ TEST_F(SourceRefTests, ComputeSelfRebasesToConstrainSelfWithoutChangingPath) {
       constrainSelfArg, {SourceRefIndex(storage), SourceRefIndex(valueName)}
   );
 
+  auto suffix = computeValue.getSuffix(computeSelf);
+  ASSERT_TRUE(succeeded(suffix));
+  EXPECT_EQ(SourceRef::appendSuffix(constrainSelf, *suffix), expectedConstrainValue);
+
   auto translated = computeValue.translate(computeSelf, constrainSelf);
   ASSERT_TRUE(succeeded(translated));
   EXPECT_EQ(*translated, expectedConstrainValue);

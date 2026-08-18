@@ -219,7 +219,7 @@ SourceRefLatticeValue::referencePodRecord(mlir::StringAttr recordName) const {
 }
 
 mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
-SourceRefLatticeValue::extract(const std::vector<SourceRefIndex> &indices) const {
+SourceRefLatticeValue::extract(llvm::ArrayRef<SourceRefIndex> indices) const {
   if (isArray()) {
     ensure(indices.size() <= getNumArrayDims(), "invalid extract array operands");
 
@@ -330,7 +330,7 @@ mlir::ChangeResult SourceRefLatticeValue::translateScalar(const TranslationMap &
 mlir::ChangeResult SourceRefLatticeValue::replacePrefixesScalar(const TranslationMap &translation) {
   const ScalarTy &current = getScalarValue();
   ScalarTy replaced;
-  const ScalarTy current = getScalarValue();
+  replaced.reserve(current.size());
   for (const SourceRef &currentRef : current) {
     FailureOr<Value> root = currentRef.getRoot();
     if (failed(root)) {
@@ -352,10 +352,7 @@ mlir::ChangeResult SourceRefLatticeValue::replacePrefixesScalar(const Translatio
       }
       matched = true;
       for (const SourceRef &replacementPrefix : replacementPrefixes) {
-        auto translated = currentRef.translate(prefix, replacementPrefix);
-        if (succeeded(translated)) {
-          replaced.insert(*translated);
-        }
+        replaced.insert(SourceRef::appendSuffix(replacementPrefix, *suffix));
       }
     }
     if (!matched) {

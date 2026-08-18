@@ -109,7 +109,7 @@ public:
   /// @brief Perform an array.extract or array.read operation, depending on how many indices
   /// are provided.
   mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
-  extract(const std::vector<SourceRefIndex> &indices) const;
+  extract(llvm::ArrayRef<SourceRefIndex> indices) const;
 
 protected:
   /// @brief Translate this value using the translation map, assuming this value

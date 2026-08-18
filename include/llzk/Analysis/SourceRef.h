@@ -339,11 +339,16 @@ public:
   /// `%self.out[2].values[5]`.
   SourceRef narrowRanges(const SourceRef &rhs) const;
 
-  /// @brief If `prefix` is a valid prefix of this reference, return the suffix that
-  /// remains after removing the prefix. I.e., `this` = `prefix` + `suffix`
-  /// @param prefix
-  /// @return the suffix
-  mlir::FailureOr<std::vector<SourceRefIndex>> getSuffix(const SourceRef &prefix) const;
+  /// @brief If `prefix` is a valid prefix of this reference, return a view of the suffix that
+  /// remains after removing the prefix. I.e., `this` = `prefix` + `suffix`.
+  ///
+  /// The returned view is valid while this reference remains unmodified.
+  mlir::FailureOr<llvm::ArrayRef<SourceRefIndex>> getSuffix(const SourceRef &prefix) const;
+
+  /// @brief Return a copy of `prefix` with `suffix` appended when it is rooted.
+  ///
+  /// Constant references cannot have paths, so their copy is returned unchanged.
+  static SourceRef appendSuffix(const SourceRef &prefix, llvm::ArrayRef<SourceRefIndex> suffix);
 
   /// @brief Create a new reference with prefix replaced with other iff prefix is a valid prefix for
   /// this reference. If this reference is a felt.const, the translation will always succeed and
