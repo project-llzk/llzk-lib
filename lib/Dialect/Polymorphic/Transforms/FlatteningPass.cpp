@@ -3543,8 +3543,27 @@ static bool canRefineCreateArrayUsersToType(
         }
       }
       continue;
-    } else {
+    } else if (EmitEqualityOp equalityOp = llvm::dyn_cast<EmitEqualityOp>(user)) {
+      Value otherOperand;
+      if (equalityOp.getLhs() == result) {
+        otherOperand = equalityOp.getRhs();
+      } else if (equalityOp.getRhs() == result) {
+        otherOperand = equalityOp.getLhs();
+      } else {
+        return false;
+      }
+      // constrain.eq is not retagged when an array allocation is refined. Its other operand
+      // must therefore already have the proposed type when concrete; otherwise two array types
+      // that unify before template instantiation can become incompatible concrete types later.
+      if (otherOperand.getType() != refinedType &&
+          isFullyConcreteArrayConsumerType(otherOperand.getType())) {
+        return false;
+      }
       continue;
+    } else {
+      // Retagging changes this SSA value for every direct user. Be conservative until each
+      // type-constraining use is explicitly checked above.
+      return false;
     }
     // Array element specializations with distinct concrete affine arguments can still unify
     // before template instantiation. This array result is retagged in place, though, and no
