@@ -226,6 +226,65 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
+// A wildcard nested in a callee aggregate signature is resolved from evidence
+// in the nested callee body.
+module attributes {llzk.lang} {
+  struct.def @CallOuterAggregateElementBody {
+    function.def @compute() -> !struct.type<@CallOuterAggregateElementBody> {
+      %self = struct.new : !struct.type<@CallOuterAggregateElementBody>
+      function.call @OuterAggregateElementBody::@wrap<[?]>() : () -> ()
+      function.return %self : !struct.type<@CallOuterAggregateElementBody>
+    }
+
+    function.def @constrain(%self: !struct.type<@CallOuterAggregateElementBody>) {
+      function.call @OuterAggregateElementBody::@wrap<[?]>() : () -> ()
+      function.return
+    }
+  }
+
+  poly.template @InnerAggregateElementBody {
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @consume(%arg0: !array.type<2 x !poly.tvar<@U>>) {
+      %0 = felt.const 0 : <"bn128">
+      %1 = poly.unifiable_cast %0 : (!felt.type<"bn128">) -> !poly.tvar<@U>
+      function.return
+    }
+  }
+
+  poly.template @OuterAggregateElementBody {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @wrap() {
+      %0 = llzk.nondet : !array.type<2 x !poly.tvar<@T>>
+      function.call @InnerAggregateElementBody::@consume<[?]>(%0) : (!array.type<2 x !poly.tvar<@T>>) -> ()
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @CallOuterAggregateElementBody {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@CallOuterAggregateElementBody> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@CallOuterAggregateElementBody>
+// CHECK-NEXT:        function.call @OuterAggregateElementBody_f_wrap() : () -> ()
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@CallOuterAggregateElementBody>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@CallOuterAggregateElementBody>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.call @OuterAggregateElementBody_f_wrap() : () -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @InnerAggregateElementBody_f_consume(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type<"bn128">>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @OuterAggregateElementBody_f_wrap() {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+// CHECK-NEXT:      function.call @InnerAggregateElementBody_f_consume(%[[VAL_3]]) : (!array.type<2 x !felt.type<"bn128">>) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
 // Preserve discardable attributes when wildcard conversion changes array.read to array.extract.
 module attributes {llzk.lang = "circom", llzk.main = !struct.type<@CallDiffTypeTest::@CallDiffTypeTest<[]>>} {
   poly.template @T {

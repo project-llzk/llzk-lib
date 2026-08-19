@@ -1532,17 +1532,19 @@ private:
         DenseMap<Attribute, Attribute> nestedParamNameToConcrete =
             getNestedConcreteBindings(nestedCall, nestedTgt, nestedTemplate, tyConv);
 
-        // In addition to bindings from the call, a direct nested type variable can obtain its
-        // concrete value from the nested callee body. Add that evidence to the nested scope
-        // before converting its full signature type below.
-        if (auto nestedTvar = llvm::dyn_cast<TypeVarType>(nestedTy);
-            nestedTvar && !nestedParamNameToConcrete.contains(nestedTvar.getNameRef())) {
+        // In addition to bindings from the call, type variables in the nested signature can
+        // obtain their concrete values from the nested callee body. Add that evidence to the
+        // nested scope before converting its full signature type below.
+        nestedTy.walk([&](TypeVarType nestedTvar) {
+          if (nestedParamNameToConcrete.contains(nestedTvar.getNameRef())) {
+            return;
+          }
           std::optional<Attribute> nestedCandidate =
               infer(nestedTgt, nestedTvar.getNameRef(), nestedParamNameToConcrete);
           if (nestedCandidate) {
             nestedParamNameToConcrete[nestedTvar.getNameRef()] = *nestedCandidate;
           }
-        }
+        });
         FuncInstTypeConverter nestedTyConv(nestedParamNameToConcrete);
         Type convertedNestedTy = nestedTyConv.convertType(nestedTy);
         if (!isConcreteType(convertedNestedTy)) {
