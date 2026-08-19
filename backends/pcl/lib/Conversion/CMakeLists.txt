@@ -9,6 +9,7 @@ target_sources(PCLConversion PRIVATE
   PCLLoweringPass/Patterns.cpp
   PCLLoweringPass/Modes.cpp
   PCLLoweringPass/TypeConverter.cpp
+  PCLLoweringPass/Temporary.cpp
 )
 
 target_link_libraries(

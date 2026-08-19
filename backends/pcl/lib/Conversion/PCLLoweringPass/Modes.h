@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "Temporary.h"
 #include "Types.h"
 #include "UsedFreeFunctions.h"
 
@@ -25,8 +26,8 @@ namespace pcl::lowering {
 /// Base class for lowering modes.
 class BaseMode {
   mlir::ModuleOp module;
-  NonDetOpNames names;
   UsedFreeFunctions usedFreeFunctions;
+  Temporaries temps;
 
 protected:
   mlir::MLIRContext &getContext() { return *module.getContext(); }
@@ -34,6 +35,8 @@ protected:
   mlir::ModuleOp getOperation() { return module; }
 
   UsedFreeFunctions &getUsedFreeFunctions() { return usedFreeFunctions; }
+
+  Temporaries &getTemps() { return temps; }
 
   /// Returns true if the operation is legal wrt step 1.
   ///
@@ -60,11 +63,6 @@ protected:
   /// Populates the conversion target with the legality expected of step 3 of the conversion.
   void
   populateStep3ConversionTarget(mlir::ConversionTarget &target, DupVarsReplacements &replacements);
-
-  /// Collects all the `llzk.nondet` ops that need to be replaced.
-  ///
-  /// Only `llzk.nondet` ops of type `!felt.type` are considered.
-  void collectNonDetOpNames();
 
   /// Step 1 converts the body of each struct to PCL operations.
   ///

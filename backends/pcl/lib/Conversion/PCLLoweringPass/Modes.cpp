@@ -38,21 +38,11 @@ using namespace llzk::component;
 using namespace llzk::function;
 using namespace llzk;
 
-LogicalResult StubbedLoweringMode::runStep1() {
-  if (failed(analyze())) {
-    return failure();
-  }
-  checkAnalysisResult();
+//===----------------------------------------------------------------------===//
+// BaseMode
+//===----------------------------------------------------------------------===//
 
-  // After the analysis, do the conversion as normal.
-  ConversionTarget target(getContext());
-  RewritePatternSet patterns(&getContext());
-  PCLTypeConverter tc;
-  populateStep1ConversionPatterns(tc, patterns);
-  populateStep1ConversionTarget(target);
-
-  return applyFullConversion(getOperation(), target, std::move(patterns));
-}
+BaseMode::BaseMode(ModuleOp op) : module(op), usedFreeFunctions(op), temps(op) {}
 
 bool BaseMode::isStep1LegalOp(Operation *op) {
   if (auto structDefOp = op->getParentOfType<StructDefOp>()) {
@@ -98,7 +88,7 @@ void BaseMode::populateStep1ConversionTarget(ConversionTarget &target) {
   target.addLegalOp<FuncDefOp>();
 
   target.addDynamicallyLegalOp<NonDetOp>([this](NonDetOp op) {
-    return isStep1LegalOp(op) && names.find(op) == names.end();
+    return isStep1LegalOp(op) && temps.hasTemp(op);
   });
 }
 
@@ -116,27 +106,6 @@ void BaseMode::populateStep3ConversionTarget(
     return replacements.find(op) == replacements.end();
   });
   target.addDynamicallyLegalOp<ModuleOp>([this](ModuleOp op) { return op == getOperation(); });
-}
-
-void BaseMode::collectNonDetOpNames() {
-  uint64_t count = 0;
-  StringSet<> usedNames;
-
-  getOperation()->walk([&usedNames](MemberDefOp op) { usedNames.insert(op.getSymName()); });
-
-  getOperation()->walk([&count, this, &usedNames](NonDetOp op) {
-    if (!llvm::isa<FeltType>(op.getType())) {
-      return;
-    }
-    StringRef nameRef;
-    SmallString<32> nameStorage;
-    do {
-      nameStorage.clear();
-      nameRef = ("_nondet_internal_var__" + Twine(count)).toStringRef(nameStorage);
-      count++;
-    } while (usedNames.contains(nameRef));
-    names.insert({op, StringAttr::get(&getContext(), nameRef)});
-  });
 }
 
 LogicalResult BaseMode::runStep2() {
@@ -183,9 +152,31 @@ DupVarsReplacements BaseMode::collectDupVarsReplacements() {
   return replacements;
 }
 
-BaseMode::BaseMode(ModuleOp op) : module(op), usedFreeFunctions(op) { collectNonDetOpNames(); }
+//===----------------------------------------------------------------------===//
+// FullLoweringMode
+//===----------------------------------------------------------------------===//
 
 LogicalResult FullLoweringMode::runStep1() {
+  ConversionTarget target(getContext());
+  RewritePatternSet patterns(&getContext());
+  PCLTypeConverter tc;
+  populateStep1ConversionPatterns(tc, patterns);
+  populateStep1ConversionTarget(target);
+
+  return applyFullConversion(getOperation(), target, std::move(patterns));
+}
+
+//===----------------------------------------------------------------------===//
+// StubbedLoweringMode
+//===----------------------------------------------------------------------===//
+
+LogicalResult StubbedLoweringMode::runStep1() {
+  if (failed(analyze())) {
+    return failure();
+  }
+  checkAnalysisResult();
+
+  // After the analysis, do the conversion as normal.
   ConversionTarget target(getContext());
   RewritePatternSet patterns(&getContext());
   PCLTypeConverter tc;

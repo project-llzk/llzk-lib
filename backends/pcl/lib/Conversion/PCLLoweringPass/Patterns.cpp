@@ -20,6 +20,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "Modes.h"
+#include "Temporary.h"
+#include "pcl/Dialect/IR/Ops.h"
 
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
@@ -28,9 +30,12 @@
 #include "llzk/Dialect/Struct/IR/Ops.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/IR/Attributes.h>
 #include <mlir/IR/IRMapping.h>
 #include <mlir/Support/LLVM.h>
 #include <mlir/Transforms/DialectConversion.h>
+
+#include <llvm/ADT/SmallString.h>
 
 #include <numeric>
 #include <utility>
@@ -135,6 +140,72 @@ template <typename T, typename Fn> SmallVector<T> mapOutputMembers(StructDefOp o
   }
   return out;
 }
+
+/// Base pattern class for patterns that need access to the temporaries mapping.
+template <typename Op> class OpConversionPatternWithTemps : public OpConversionPattern<Op> {
+  pcl::lowering::Temporaries &temps;
+
+public:
+  template <typename... Args>
+  OpConversionPatternWithTemps(pcl::lowering::Temporaries &tempNames, Args &&...args)
+      : OpConversionPattern<Op>(std::forward<Args>(args)...), temps(tempNames) {}
+
+  FailureOr<StringAttr> getTemp(Op op) const { return temps.get(op); }
+};
+
+//===----------------------------------------------------------------------===//
+// Patterns
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+// ConvertArithSelectOp
+//===----------------------------------------------------------------------===//
+
+/// Converts arith.select ops into a temporary var and an assertion that choses the
+/// correct side based on the condition's value.
+///
+/// ```
+/// %x = arith.select %c, %lhs, %rhs
+/// ```
+///
+/// Gets converted to the following IR, with all the uses of `%x` getting replaced with `%y`.
+///
+/// ```
+/// %y = pcl.var "t0" false
+/// %not_c = pcl.not %c
+/// %eq1 = pcl.eq %y, %lhs
+/// %eq2 = pcl.eq %y, %rhs
+/// %if1 = pcl.implies %c, %eq1
+/// %if2 = pcl.implies %not_c, %eq2
+/// %and = pcl.and %if1, %if2
+/// pcl.assert %and
+/// ```
+struct ConvertArithSelectOp : public OpConversionPatternWithTemps<arith::SelectOp> {
+  using OpConversionPatternWithTemps<arith::SelectOp>::OpConversionPatternWithTemps;
+
+  LogicalResult matchAndRewrite(
+      arith::SelectOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const final {
+    auto tempName = getTemp(op);
+    if (failed(tempName)) {
+      return failure();
+    }
+    auto location = op.getLoc();
+    auto cond = adaptor.getCondition();
+    auto lhs = adaptor.getTrueValue();
+    auto rhs = adaptor.getFalseValue();
+    auto temp = rewriter.replaceOpWithNewOp<pcl::VarOp>(op, *tempName, /*public=*/false);
+    auto notCond = rewriter.create<pcl::NotOp>(location, cond);
+    auto eq1 = rewriter.create<pcl::CmpEqOp>(location, temp, lhs);
+    auto eq2 = rewriter.create<pcl::CmpEqOp>(location, temp, rhs);
+    auto if1 = rewriter.create<pcl::ImpliesOp>(location, cond, eq1);
+    auto if2 = rewriter.create<pcl::ImpliesOp>(location, notCond, eq2);
+    auto conj = rewriter.create<pcl::AndOp>(location, if1, if2);
+    rewriter.create<pcl::AssertOp>(location, conj);
+
+    return success();
+  }
+};
 
 //===----------------------------------------------------------------------===//
 // ConvertBinaryOp
@@ -291,7 +362,8 @@ struct ConvertConstrainCall : public OpConversionPattern<CallOp> {
         op.getLoc(), calleeName, TypeRange(resultTypes), adaptor.getArgOperands().drop_front()
     );
     for (auto [member, result] : llvm::zip_equal(publicMembers, call.getResults())) {
-      auto name = (subcmpName + "." + member.getSymName()).str();
+      llvm::SmallString<128> sto;
+      auto name = (subcmpName + "." + member.getSymName()).toStringRef(sto);
       auto var =
           rewriter.create<pcl::VarOp>(op.getLoc(), rewriter.getStringAttr(name), /*public=*/false);
       auto eqCmp = rewriter.create<pcl::CmpEqOp>(op.getLoc(), var, result);
@@ -441,21 +513,16 @@ struct ConvertFreeFunctionReturnOp : public OpConversionPattern<ReturnOp> {
 //===----------------------------------------------------------------------===//
 
 /// Converts `llzk.nondet` ops into fresh pcl variables.
-class ConvertNonDetOp : public OpConversionPattern<NonDetOp> {
-  pcl::lowering::NonDetOpNames &names;
-
-public:
-  template <typename... Args>
-  ConvertNonDetOp(pcl::lowering::NonDetOpNames &opNames, Args &&...args)
-      : OpConversionPattern(std::forward<Args>(args)...), names(opNames) {}
+struct ConvertNonDetOp : public OpConversionPatternWithTemps<NonDetOp> {
+  using OpConversionPatternWithTemps<NonDetOp>::OpConversionPatternWithTemps;
 
   LogicalResult
   matchAndRewrite(NonDetOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
-    auto it = names.find(op);
-    if (it == names.end()) {
+    auto name = getTemp(op);
+    if (failed(name)) {
       return failure();
     }
-    rewriter.replaceOpWithNewOp<pcl::VarOp>(op, it->second, /*public=*/false);
+    rewriter.replaceOpWithNewOp<pcl::VarOp>(op, *name, /*public=*/false);
     return success();
   }
 };
@@ -649,16 +716,21 @@ public:
 /// Removes any `function.def` operation that is not in the given set of used free functions.
 class RemoveFreeFunction : public OpConversionPattern<FuncDefOp> {
   pcl::lowering::UsedFreeFunctions &funcs;
+  llvm::DenseSet<llzk::function::FuncDefOp> *stubs;
 
 public:
   template <typename... Args>
-  RemoveFreeFunction(pcl::lowering::UsedFreeFunctions &usedFreeFunctions, Args &&...args)
-      : OpConversionPattern(std::forward<Args>(args)...), funcs(usedFreeFunctions) {}
+  RemoveFreeFunction(
+      pcl::lowering::UsedFreeFunctions &usedFreeFunctions,
+      llvm::DenseSet<llzk::function::FuncDefOp> *stubbedFuncs, Args &&...args
+  )
+      : OpConversionPattern(std::forward<Args>(args)...), funcs(usedFreeFunctions),
+        stubs(stubbedFuncs) {}
 
   LogicalResult
   matchAndRewrite(FuncDefOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
     // Remove any op that is NOT in the set.
-    if (funcs.contains(op)) {
+    if (funcs.contains(op) || (stubs && stubs->contains(op))) {
       return failure();
     }
     rewriter.eraseOp(op);
@@ -703,34 +775,43 @@ struct RemoveModuleOp : public OpConversionPattern<ModuleOp> {
 // Lowering modes populate methods
 //===----------------------------------------------------------------------===//
 
+//===----------------------------------------------------------------------===//
+// BaseMode
+//===----------------------------------------------------------------------===//
+
 void pcl::lowering::BaseMode::populateStep1ConversionPatterns(
     const TypeConverter &tc, RewritePatternSet &patterns
 ) {
   patterns.add<
       // clang-format off
-        ConvertBinaryOp<AddFeltOp, pcl::AddOp>,
-        ConvertBinaryOp<AndBoolOp, pcl::AndOp>,
-        ConvertBinaryOp<MulFeltOp, pcl::MulOp>,
-        ConvertBinaryOp<OrBoolOp, pcl::OrOp>,
-        ConvertBinaryOp<SubFeltOp, pcl::SubOp>,
-        ConvertBoolXorOp,
-        ConvertCmpOp,
-        ConvertConstantOp<FeltConstantOp>,
-        ConvertConstantOp<arith::ConstantOp>,
-        ConvertConstrainCall,
-        ConvertEmitEqualityOp,
-        ConvertFreeFunctionCall,
-        ConvertFreeFunctionReturnOp,
-        ConvertReturnOp,
-        ConvertSelfMemberReadOpOfFelt,
-        ConvertSelfMemberReadOpOfSubcmp,
-        ConvertSubcmpMemberReadOp,
-        ConvertUnaryOp<NegFeltOp, pcl::NegOp>,
-        ConvertUnaryOp<NotBoolOp, pcl::NotOp>,
-        RemoveIntToFeltOp
+      ConvertBinaryOp<AddFeltOp, pcl::AddOp>,
+      ConvertBinaryOp<AndBoolOp, pcl::AndOp>,
+      ConvertBinaryOp<MulFeltOp, pcl::MulOp>,
+      ConvertBinaryOp<OrBoolOp, pcl::OrOp>,
+      ConvertBinaryOp<SubFeltOp, pcl::SubOp>,
+      ConvertBoolXorOp,
+      ConvertCmpOp,
+      ConvertConstantOp<FeltConstantOp>,
+      ConvertConstantOp<arith::ConstantOp>,
+      ConvertConstrainCall,
+      ConvertEmitEqualityOp,
+      ConvertFreeFunctionCall,
+      ConvertFreeFunctionReturnOp,
+      ConvertReturnOp,
+      ConvertSelfMemberReadOpOfFelt,
+      ConvertSelfMemberReadOpOfSubcmp,
+      ConvertSubcmpMemberReadOp,
+      ConvertUnaryOp<NegFeltOp, pcl::NegOp>,
+      ConvertUnaryOp<NotBoolOp, pcl::NotOp>,
+      RemoveIntToFeltOp
       // clang-format on
       >(tc, &getContext());
-  patterns.add<ConvertNonDetOp>(names, tc, &getContext());
+  patterns.add<
+      // clang-format off
+      ConvertArithSelectOp,
+      ConvertNonDetOp
+      // clang-format on
+      >(temps, tc, &getContext());
 }
 void pcl::lowering::BaseMode::populateStep3ConversionPatterns(
     RewritePatternSet &patterns, DupVarsReplacements &replacements
@@ -739,13 +820,21 @@ void pcl::lowering::BaseMode::populateStep3ConversionPatterns(
   patterns.add<RemoveModuleOp>(&getContext());
 }
 
+//===----------------------------------------------------------------------===//
+// FullLoweringMode
+//===----------------------------------------------------------------------===//
+
 void pcl::lowering::FullLoweringMode::populateStep2ConversionPatterns(
     const TypeConverter &tc, RewritePatternSet &patterns
 ) {
   patterns.add<ConvertFreeFunction>(getUsedFreeFunctions(), getOperation(), tc, &getContext());
   patterns.add<ConvertStructDefOp>(getOperation(), tc, &getContext());
-  patterns.add<RemoveFreeFunction>(getUsedFreeFunctions(), tc, &getContext());
+  patterns.add<RemoveFreeFunction>(getUsedFreeFunctions(), nullptr, tc, &getContext());
 }
+
+//===----------------------------------------------------------------------===//
+// StubbedLoweringMode
+//===----------------------------------------------------------------------===//
 
 void pcl::lowering::StubbedLoweringMode::populateStep2ConversionPatterns(
     const TypeConverter &tc, RewritePatternSet &patterns
@@ -753,5 +842,5 @@ void pcl::lowering::StubbedLoweringMode::populateStep2ConversionPatterns(
   patterns.add<ConvertFreeFunction>(getUsedFreeFunctions(), getOperation(), tc, &getContext());
   patterns.add<ConvertFreeFunctionIntoStub>(stubs, getOperation(), tc, &getContext());
   patterns.add<ConvertStructDefOp>(getOperation(), tc, &getContext());
-  patterns.add<RemoveFreeFunction>(getUsedFreeFunctions(), tc, &getContext());
+  patterns.add<RemoveFreeFunction>(getUsedFreeFunctions(), &stubs, tc, &getContext());
 }
