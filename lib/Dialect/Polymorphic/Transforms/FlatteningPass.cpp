@@ -2711,6 +2711,25 @@ static CallOp replaceStructConstraintCallWithSpecializedWitness(
   );
 }
 
+/// Materialize a specialized nondeterministic witness after its source and retarget constraints.
+///
+/// The caller must have validated that every constraint in `externalConstraints` can observe the
+/// specialized type.
+static Value materializeSpecializedNondet(
+    PatternRewriter &rewriter, NonDetOp sourceNondet, Location loc, Type type,
+    ArrayRef<CallOp> externalConstraints = {}
+) {
+  OpBuilder::InsertionGuard guard(rewriter);
+  rewriter.setInsertionPointAfter(sourceNondet);
+  NonDetOp specializedNondet = rewriter.create<NonDetOp>(loc, type);
+  specializedNondet->setDiscardableAttrs(sourceNondet->getDiscardableAttrDictionary());
+  Value specializedValue = specializedNondet.getResult();
+  for (CallOp call : externalConstraints) {
+    replaceStructConstraintCallWithSpecializedWitness(rewriter, call, specializedValue);
+  }
+  return specializedValue;
+}
+
 namespace Step5_ScalarizeHeterogeneousArrays {
 
 /// Information about a local array allocation that can be replaced with the final values of its
@@ -4123,18 +4142,13 @@ static LogicalResult materializeSharedNondetSpecializations(
   for (const auto &[source, type] : specializedTypeByNondet) {
     NonDetOp sourceNondet = source.getDefiningOp<NonDetOp>();
     assert(sourceNondet && "specialization map only contains nondeterministic values");
-    OpBuilder::InsertionGuard guard(rewriter);
     // The external constraint can precede the array initializer. The source witness dominates
     // every one of its original uses, so materializing directly after it preserves SSA dominance
     // for both those external calls and the scalarized array reads.
-    rewriter.setInsertionPointAfter(sourceNondet);
-    NonDetOp specializedNondet = rewriter.create<NonDetOp>(sourceNondet.getLoc(), type);
-    specializedNondet->setDiscardableAttrs(sourceNondet->getDiscardableAttrDictionary());
-    Value specializedValue = specializedNondet.getResult();
+    Value specializedValue = materializeSpecializedNondet(
+        rewriter, sourceNondet, sourceNondet.getLoc(), type, externalCallsBySource.lookup(source)
+    );
     specializedNondetBySource[source] = specializedValue;
-    for (CallOp call : externalCallsBySource.lookup(source)) {
-      replaceStructConstraintCallWithSpecializedWitness(rewriter, call, specializedValue);
-    }
   }
   return success();
 }
@@ -4173,7 +4187,6 @@ static FailureOr<Value> buildReadReplacementValue(
     return replacementValue;
   }
 
-  OpBuilder::InsertionGuard guard(rewriter);
   if (NonDetOp sourceNondet = replacementValue.getDefiningOp<NonDetOp>()) {
     // Preserve sharing between every index initialized from the same generic witness.
     if (Value cachedNondet = specializedNondetBySource.lookup(replacementValue)) {
@@ -4185,12 +4198,13 @@ static FailureOr<Value> buildReadReplacementValue(
     }
     // The source witness dominates every original use, including external constraints that can
     // precede the array initializer. Materialize directly after it rather than at the first read.
-    rewriter.setInsertionPointAfter(sourceNondet);
-    NonDetOp specializedNondet = rewriter.create<NonDetOp>(readOp.getLoc(), specializedType);
-    specializedNondet->setDiscardableAttrs(sourceNondet->getDiscardableAttrDictionary());
-    specializedNondetBySource[replacementValue] = specializedNondet;
-    return specializedNondet.getResult();
+    Value specializedValue =
+        materializeSpecializedNondet(rewriter, sourceNondet, readOp.getLoc(), specializedType);
+    specializedNondetBySource[replacementValue] = specializedValue;
+    return specializedValue;
   }
+
+  OpBuilder::InsertionGuard guard(rewriter);
   rewriter.setInsertionPoint(readOp);
   if (!typesUnify(replacementValue.getType(), replacementType)) {
     return failure();
@@ -5280,15 +5294,10 @@ static LogicalResult rewriteExpandableLocalArray(
   for (const auto &[source, type] : specializedTypeByNondet) {
     NonDetOp sourceNondet = source.getDefiningOp<NonDetOp>();
     assert(sourceNondet && "specialization map only contains nondeterministic values");
-    OpBuilder::InsertionGuard guard(rewriter);
-    rewriter.setInsertionPointAfter(sourceNondet);
-    NonDetOp specializedNondet = rewriter.create<NonDetOp>(sourceNondet.getLoc(), type);
-    specializedNondet->setDiscardableAttrs(sourceNondet->getDiscardableAttrDictionary());
-    Value specializedValue = specializedNondet.getResult();
+    Value specializedValue = materializeSpecializedNondet(
+        rewriter, sourceNondet, sourceNondet.getLoc(), type, externalCallsBySource.lookup(source)
+    );
     specializedNondetBySource[source] = specializedValue;
-    for (CallOp call : externalCallsBySource.lookup(source)) {
-      replaceStructConstraintCallWithSpecializedWitness(rewriter, call, specializedValue);
-    }
   }
 
   // Validate every consumer against the final shared type before replacing any read. This keeps a
@@ -6171,14 +6180,9 @@ static FailureOr<Value> materializeValueForMemberWrite(
   }
 
   OpBuilder::InsertionGuard guard(rewriter);
-  rewriter.setInsertionPointAfter(nondetOp);
-  auto clonedNondet = rewriter.create<NonDetOp>(loc, type);
-  clonedNondet->setDiscardableAttrs(nondetOp->getDiscardableAttrDictionary());
-  Value replacement = clonedNondet.getResult();
+  Value replacement =
+      materializeSpecializedNondet(rewriter, nondetOp, loc, type, externalConstraints);
   typedNondetReplacements.try_emplace(value, replacement);
-  for (CallOp call : externalConstraints) {
-    replaceStructConstraintCallWithSpecializedWitness(rewriter, call, replacement);
-  }
   return replacement;
 }
 
