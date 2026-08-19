@@ -3485,6 +3485,38 @@ static bool canRefineMemberReadUsersToType(
       }
       continue;
     }
+    if (UnifiableCastOp castOp = llvm::dyn_cast<UnifiableCastOp>(user)) {
+      if (castOp.getInput() != result) {
+        return false;
+      }
+      Type castResultType = castOp.getResult().getType();
+      if (refinedType == castResultType) {
+        continue;
+      }
+      // Step 6 can repair a stale cast result only when every result use is a compatible member
+      // write. Any other consumer observes the independently declared result type, so leave the
+      // read generic rather than producing a cast whose input and output no longer unify.
+      if (castOp.getResult().use_empty() || typesUnify(refinedType, castResultType)) {
+        return false;
+      }
+      auto canUse = canUseScalarizedValueAsType(
+          castResultType, refinedType, tracker, "UpdateUnifiableCastResultFromInput"
+      );
+      if (canUse) {
+        return false;
+      }
+      for (OpOperand &castUse : castOp.getResult().getUses()) {
+        auto memberWrite = llvm::dyn_cast<MemberWriteOp>(castUse.getOwner());
+        if (!memberWrite || memberWrite.getVal() != castUse.get()) {
+          return false;
+        }
+        auto memberDef = memberWrite.getMemberDefOp(tables);
+        if (failed(memberDef) || !typesUnify(refinedType, memberDef->get().getType())) {
+          return false;
+        }
+      }
+      continue;
+    }
   }
   return true;
 }
