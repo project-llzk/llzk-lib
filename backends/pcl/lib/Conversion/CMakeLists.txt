@@ -3,7 +3,13 @@ add_library(LLZK::PCLConversion ALIAS PCLConversion)
 
 file(GLOB PCLConversion_SOURCES "*.cpp")
 
-target_sources(PCLConversion PRIVATE ${PCLConversion_SOURCES})
+target_sources(PCLConversion PRIVATE 
+  PCLLoweringPass.cpp 
+  PCLLoweringPass/UsedFreeFunctions.cpp
+  PCLLoweringPass/Patterns.cpp
+  PCLLoweringPass/Modes.cpp
+  PCLLoweringPass/TypeConverter.cpp
+)
 
 target_link_libraries(
   PCLConversion

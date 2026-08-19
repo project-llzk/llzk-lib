@@ -10,15 +10,34 @@
 #ifndef PCL_CONV_CONVERSION_PASSES_TD
 #define PCL_CONV_CONVERSION_PASSES_TD
 
-include "llzk/Pass/PassBase.td"
+include "mlir/Pass/PassBase.td"
 
-def PCLLoweringPass : LLZKPass<"llzk-to-pcl"> {
+def PCLLoweringPass : Pass<"llzk-to-pcl", "::mlir::ModuleOp"> {
   let summary =
       "Rewrite constraints to be compatible with PCL constraints used by Picus";
   let description = [{
       Transforms LLZK constraints into an equivalent set of constraints expressed in the pcl-mlir dialect.
       This pass currently expects the flattening and inlining passes to be run prior to its use.
     }];
+  let dependentDialects = [
+      // clang-format off
+      "llzk::LLZKDialect",
+      "llzk::boolean::BoolDialect",
+      "llzk::array::ArrayDialect",
+      "llzk::component::StructDialect",
+      "llzk::constrain::ConstrainDialect",
+      "llzk::felt::FeltDialect",
+      "llzk::global::GlobalDialect",
+      "llzk::include::IncludeDialect",
+      "llzk::function::FunctionDialect",
+      "llzk::string::StringDialect",
+      "llzk::polymorphic::PolymorphicDialect",
+      "mlir::arith::ArithDialect",
+      "mlir::scf::SCFDialect",
+      "mlir::func::FuncDialect",
+      "pcl::PCLDialect"
+      // clang-format on
+  ];
 
   let options = [Option<
       "mode", "mode", "LlzkToPclMode", "::pcl::LlzkToPclMode::Full",
