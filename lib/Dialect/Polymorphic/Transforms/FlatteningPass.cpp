@@ -1573,7 +1573,7 @@ private:
         }
       }
       for (auto [operand, nestedInputTy] :
-           llvm::zip_equal(nestedCall.getOperands(), nestedTgt.getFunctionType().getInputs())) {
+           llvm::zip_equal(nestedCall.getArgOperands(), nestedTgt.getFunctionType().getInputs())) {
         WalkResult candidateResult = inferFromNestedBinding(operand.getType(), nestedInputTy);
         if (candidateResult.wasInterrupted()) {
           return candidateResult;
