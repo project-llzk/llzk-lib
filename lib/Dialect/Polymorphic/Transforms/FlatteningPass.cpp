@@ -3505,6 +3505,67 @@ static bool canRefineCreateArrayUsersToType(
         }
       }
       continue;
+    } else if (ExtractArrayOp arrayExtract = llvm::dyn_cast<ExtractArrayOp>(user)) {
+      if (arrayExtract.getArrRef() != result) {
+        return false;
+      }
+      // Retagging the allocation also changes this inferred extract result. As with array.read,
+      // its typed consumers are not retargeted by propagation patterns, so they must already
+      // request the refined subarray type. In particular, a parameterized struct type may still
+      // have concrete arguments that are instantiated only after this propagation step.
+      Type refinedExtractType =
+          mlir::cast<ArrayType>(refinedType).getSelectionType(arrayExtract.getIndices().size());
+      for (OpOperand &extractUse : arrayExtract.getResult().getUses()) {
+        Operation *extractUser = extractUse.getOwner();
+        Type extractRequiredType;
+        if (CallOp extractCall = llvm::dyn_cast<CallOp>(extractUser)) {
+          unsigned argIdx =
+              extractUse.getOperandNumber() - extractCall.getArgOperands().getBeginOperandIndex();
+          if (argIdx >= extractCall.getArgOperands().size()) {
+            return false;
+          }
+          auto callee = extractCall.getCalleeTarget(tables);
+          if (failed(callee)) {
+            return false;
+          }
+          extractRequiredType = callee->get().getFunctionType().getInput(argIdx);
+        } else if (ReturnOp extractReturn = llvm::dyn_cast<ReturnOp>(extractUser)) {
+          FuncDefOp function = extractReturn->getParentOfType<FuncDefOp>();
+          unsigned resultIdx = extractUse.getOperandNumber();
+          TypeRange resultTypes = function.getFunctionType().getResults();
+          if (resultIdx >= resultTypes.size()) {
+            return false;
+          }
+          extractRequiredType = resultTypes[resultIdx];
+        } else if (UnifiableCastOp extractCast = llvm::dyn_cast<UnifiableCastOp>(extractUser)) {
+          if (extractCast.getInput() != arrayExtract.getResult()) {
+            return false;
+          }
+          extractRequiredType = extractCast.getResult().getType();
+        } else if (MemberWriteOp extractMemberWrite = llvm::dyn_cast<MemberWriteOp>(extractUser)) {
+          if (extractMemberWrite.getVal() != arrayExtract.getResult()) {
+            return false;
+          }
+          auto memberDef = extractMemberWrite.getMemberDefOp(tables);
+          if (failed(memberDef)) {
+            return false;
+          }
+          extractRequiredType = memberDef->get().getType();
+        } else if (InsertArrayOp extractArrayInsert = llvm::dyn_cast<InsertArrayOp>(extractUser)) {
+          if (extractArrayInsert.getRvalue() != arrayExtract.getResult()) {
+            return false;
+          }
+          extractRequiredType = extractArrayInsert.getArrRefType().getSelectionType(
+              extractArrayInsert.getIndices().size()
+          );
+        } else {
+          return false;
+        }
+        if (extractRequiredType != refinedExtractType) {
+          return false;
+        }
+      }
+      continue;
     } else {
       continue;
     }

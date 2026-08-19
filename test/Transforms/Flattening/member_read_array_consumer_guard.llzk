@@ -296,3 +296,56 @@ module attributes {llzk.lang} {
     }
   }
 }
+
+// -----
+
+// Refining %local from Cell<#id> to Cell<0> also changes %row's inferred result type. Its call
+// target independently requires array<Cell<1>>, so the allocation must remain generic.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    // expected-warning@+1 {{Parameterized definition still has uses!}}
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  function.def @consume1(%values: !array.type<1 x !struct.type<@TCell::@Cell<[1]>>>) {
+    function.return
+  }
+
+  struct.def @Holder {
+    struct.member @item : !struct.type<@TCell::@Cell<[#id]>> {column}
+
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %c0 = arith.constant 0 : index
+      %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      struct.writem %self[@item] = %item0 : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
+      %read = struct.readm %self[@item] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      %local = array.new %read : !array.type<1,1 x !struct.type<@TCell::@Cell<[#id]>>>
+      %row = array.extract %local[%c0] : !array.type<1,1 x !struct.type<@TCell::@Cell<[#id]>>>
+      // Refinement stops at %local, so this cast—not an invalid retagged extract—reports the
+      // incompatible concrete requirement.
+      // expected-error@+1 {{'poly.unifiable_cast' op input type '!array.type<1 x !struct.type<@TCell::@Cell<[affine_map<(d0) -> (d0)>]>>>' and output type '!array.type<1 x !struct.type<@TCell_1_Cell>>' are not unifiable}}
+      %as1 = poly.unifiable_cast %row : (!array.type<1 x !struct.type<@TCell::@Cell<[#id]>>>) -> !array.type<1 x !struct.type<@TCell::@Cell<[1]>>>
+      function.call @consume1(%as1) : (!array.type<1 x !struct.type<@TCell::@Cell<[1]>>>) -> ()
+      function.return %self : !struct.type<@Holder>
+    }
+
+    function.def @constrain(%self: !struct.type<@Holder>) {
+      function.return
+    }
+  }
+}
