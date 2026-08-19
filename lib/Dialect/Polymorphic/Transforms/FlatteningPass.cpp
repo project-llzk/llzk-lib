@@ -1725,6 +1725,19 @@ static LogicalResult applyBodyConversions(
   return failure(res.wasInterrupted());
 }
 
+/// Apply partial-instantiation substitutions throughout a copied template-expression body.
+/// Concrete reads have already been materialized before this runs; conversion updates remaining
+/// reads and all dependent operation result types before the expression enters its new scope.
+static LogicalResult applyTemplateExprBodyConversions(
+    TemplateExprOp expr, const DenseMap<Attribute, Attribute> &paramNameToConcrete
+) {
+  MLIRContext *ctx = expr.getContext();
+  FuncInstTypeConverter typeConverter(paramNameToConcrete);
+  ConversionTarget target = newConverterDefinedTarget<YieldOp>(typeConverter, ctx);
+  RewritePatternSet patterns = newGeneralRewritePatternSet<YieldOp>(typeConverter, ctx, target);
+  return applyFullConversion(expr, target, std::move(patterns));
+}
+
 /// Copy unresolved template expressions referenced by `newFuncs` into their partially-instantiated
 /// parent template. Reads of concrete parameters within the copied expressions are materialized so
 /// the new template contains no references to parameters that it does not preserve.
@@ -1784,6 +1797,10 @@ static LogicalResult copyReferencedTemplateExprs(
       replacement.getDefiningOp()->setDiscardableAttrs(readOp->getDiscardableAttrDictionary());
       readOp.replaceAllUsesWith(replacement);
       readOp.erase();
+    }
+    if (failed(applyTemplateExprBodyConversions(clonedExpr, paramNameToConcrete))) {
+      clonedExpr->erase();
+      return failure();
     }
     newTemplateBody.push_back(clonedExpr);
   }

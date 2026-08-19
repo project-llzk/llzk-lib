@@ -442,3 +442,52 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
+// -----
+
+// A copied unresolved expression must convert its complete body after a type parameter is
+// concretized, including reads of remaining value parameters.
+module attributes {llzk.lang} {
+  poly.template @Callee {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @N
+    poly.expr @Number {
+      %n = poly.read_const @N : !poly.tvar<@T>
+      poly.yield %n : !poly.tvar<@T>
+    }
+
+    function.def @f() -> index attributes {test.expression = @Number} {
+      %zero = arith.constant 0 : index
+      function.return %zero : index
+    }
+  }
+
+  poly.template @Caller {
+    poly.param @N : index
+
+    function.def @g() -> index {
+      %result = function.call @Callee::@f<[index, @N]>() : () -> index
+      function.return %result : index
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @"Callee_i_\1A" {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      poly.expr @Number {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
+// CHECK-NEXT:        poly.yield %[[VAL_0]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @f() -> index attributes {test.expression = @Number} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        function.return %[[VAL_1]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["Callee_i_", ""]}
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      function.def @g() -> index {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @"Callee_i_\1A"::@f<[@N]>() : () -> index
+// CHECK-NEXT:        function.return %[[VAL_2]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
