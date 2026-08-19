@@ -2205,10 +2205,11 @@ private:
       for (FuncDefOp copiedFunc : copiedFuncs) {
         copiedFunc.walk([&](CallOp nestedCall) {
           SymbolRefAttr callee = nestedCall.getCalleeAttr();
-          if (callee.getRootReference() == provisionalTemplateName) {
-            nestedCall.setCalleeAttr(
-                SymbolRefAttr::get(newTemplate.getSymNameAttr(), callee.getNestedReferences())
-            );
+          SmallVector<FlatSymbolRefAttr> calleePieces = getPieces(callee);
+          auto count = calleePieces.size();
+          if (count >= 2 && calleePieces[count - 2].getAttr() == provisionalTemplateName) {
+            calleePieces[count - 2] = FlatSymbolRefAttr::get(newTemplate.getSymNameAttr());
+            nestedCall.setCalleeAttr(asSymbolRefAttr(calleePieces));
           }
         });
       }
