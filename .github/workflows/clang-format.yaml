@@ -25,10 +25,11 @@ jobs:
       - name: Setup git-clang-format
         run: |
           export CLANG_FORMAT_VERSION="20"
-          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
-          echo "deb http://apt.llvm.org/noble/ llvm-toolchain-noble-${CLANG_FORMAT_VERSION} main" | sudo tee -a /etc/apt/sources.list
-          sudo apt update
-          sudo apt install -y clang-format-${CLANG_FORMAT_VERSION}
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/llvm-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/llvm-archive-keyring.gpg] https://apt.llvm.org/noble/ llvm-toolchain-noble-${CLANG_FORMAT_VERSION} main" \
+              | sudo tee -a /etc/apt/sources.list
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang-format-${CLANG_FORMAT_VERSION}
           export CLANG_FORMAT_SCRIPT="/usr/bin/git-clang-format-${CLANG_FORMAT_VERSION}"
           if [ ! -x "$CLANG_FORMAT_SCRIPT" ]; then
             echo "Missing executable $CLANG_FORMAT_SCRIPT"
