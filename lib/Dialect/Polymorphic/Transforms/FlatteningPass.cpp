@@ -3384,6 +3384,18 @@ static bool canRefineCreateArrayUsersToType(
         return false;
       }
       requiredType = castOp.getResult().getType();
+    } else if (WriteArrayOp arrayWrite = llvm::dyn_cast<WriteArrayOp>(user)) {
+      if (arrayWrite.getArrRef() != result) {
+        return false;
+      }
+      // Retagging the allocation changes the element type observed by every direct write, but
+      // does not change the write's rvalue. In particular, concrete affine specializations can
+      // unify while still symbolic and become incompatible after instantiation, so require an
+      // exact element-type match instead of the usual unification check.
+      if (arrayWrite.getRvalue().getType() != mlir::cast<ArrayType>(refinedType).getElementType()) {
+        return false;
+      }
+      continue;
     } else {
       continue;
     }
