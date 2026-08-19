@@ -4005,55 +4005,64 @@ static LogicalResult verifyRefreshedCandidateReads(
 /// include merged split-member types: another candidate can refine a member even when this
 /// candidate's local read remains generic.
 static LogicalResult collectSharedNondetSpecializationTypes(
-    const ScalarizedArrayInfo &info, const ConversionTracker &tracker,
+    ArrayRef<ScalarizedArrayInfo> infos, const ConversionTracker &tracker,
     const DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
     SymbolTableCollection &tables, DenseMap<Value, Type> &specializedTypeByNondet
 ) {
-  DenseMap<Value, std::pair<ArrayAttr, Location>> firstUseByNondet;
-  auto collectType = [&](Value value, Type type, ArrayAttr idx, Location loc) -> LogicalResult {
+  struct FirstUse {
+    ArrayAttr idx;
+    Location loc;
+  };
+  DenseMap<Value, FirstUse> firstUseByNondet;
+  auto collectType = [&](const ScalarizedArrayInfo &info, Value value, Type type, ArrayAttr idx,
+                         Location loc) -> LogicalResult {
     if (!value || !type || value.getType() == type || !value.getDefiningOp<NonDetOp>()) {
       return success();
     }
     auto existing = specializedTypeByNondet.find(value);
     if (existing == specializedTypeByNondet.end()) {
       specializedTypeByNondet.try_emplace(value, type);
-      firstUseByNondet.try_emplace(value, std::make_pair(idx, loc));
+      firstUseByNondet.try_emplace(value, FirstUse {idx, loc});
       return success();
     }
     FailureOr<Type> commonType = getCommonRefinedType(existing->second, type, tracker);
     if (failed(commonType)) {
+      auto firstUseIt = firstUseByNondet.find(value);
+      assert(firstUseIt != firstUseByNondet.end() && "first use must be recorded");
+      const FirstUse &firstUse = firstUseIt->second;
       InFlightDiagnostic diag = info.createOp->emitError(
           "cannot scalarize array because a shared nondeterministic initializer requires "
           "incompatible specialized types"
       );
-      auto firstUse = firstUseByNondet.find(value);
-      assert(firstUse != firstUseByNondet.end() && "first use must be recorded");
-      diag.attachNote(firstUse->second.second)
-          << "array index " << firstUse->second.first << " is read with specialized type "
-          << existing->second;
+      diag.attachNote(firstUse.loc) << "array index " << firstUse.idx
+                                    << " is read with specialized type " << existing->second;
       diag.attachNote(loc) << "array index " << idx << " is read with specialized type " << type;
       return diag;
     }
     existing->second = *commonType;
     return success();
   };
-  for (ReadArrayOp readOp : info.reads) {
-    ArrayAttr idx = getIndexAsAttr(readOp);
-    auto res = collectType(
-        info.valueByIndex.lookup(idx), info.typeByIndex.lookup(idx), idx, readOp.getLoc()
-    );
-    if (failed(res)) {
-      return failure();
-    }
-  }
-  for (MemberWriteOp memberWriteOp : info.memberWrites) {
-    auto memberDef = memberWriteOp.getMemberDefOp(tables);
-    if (failed(memberDef)) {
-      return failure();
-    }
-    for (const auto &[idx, type] : splitTypesByMember.lookup(memberDef->get())) {
-      if (failed(collectType(info.valueByIndex.lookup(idx), type, idx, memberWriteOp.getLoc()))) {
+  for (const ScalarizedArrayInfo &info : infos) {
+    for (ReadArrayOp readOp : info.reads) {
+      ArrayAttr idx = getIndexAsAttr(readOp);
+      auto res = collectType(
+          info, info.valueByIndex.lookup(idx), info.typeByIndex.lookup(idx), idx, readOp.getLoc()
+      );
+      if (failed(res)) {
         return failure();
+      }
+    }
+    for (MemberWriteOp memberWriteOp : info.memberWrites) {
+      auto memberDef = memberWriteOp.getMemberDefOp(tables);
+      if (failed(memberDef)) {
+        return failure();
+      }
+      for (const auto &[idx, type] : splitTypesByMember.lookup(memberDef->get())) {
+        auto res =
+            collectType(info, info.valueByIndex.lookup(idx), type, idx, memberWriteOp.getLoc());
+        if (failed(res)) {
+          return failure();
+        }
       }
     }
   }
@@ -4061,25 +4070,37 @@ static LogicalResult collectSharedNondetSpecializationTypes(
 }
 
 /// Verify that each shared witness can be specialized without changing external observations.
-static inline bool isInternalSharedNondetUse(const ScalarizedArrayInfo &info, Operation *owner) {
-  return owner == info.createOp || llvm::any_of(info.writes, [owner](WriteArrayOp writeOp) {
-    return owner == writeOp.getOperation();
-  });
+static DenseSet<Operation *> collectInternalSharedNondetUses(ArrayRef<ScalarizedArrayInfo> infos) {
+  DenseSet<Operation *> internalUses;
+  for (const ScalarizedArrayInfo &info : infos) {
+    internalUses.insert(info.createOp);
+    internalUses.insert(info.writes.begin(), info.writes.end());
+  }
+  return internalUses;
 }
 
 static LogicalResult verifySharedNondetSpecializationExternalUses(
-    const ScalarizedArrayInfo &info, const DenseMap<Value, Type> &specializedTypeByNondet,
+    ArrayRef<ScalarizedArrayInfo> infos, const DenseMap<Value, Type> &specializedTypeByNondet,
     SymbolTableCollection &tables
 ) {
+  DenseSet<Operation *> internalUses = collectInternalSharedNondetUses(infos);
+  DenseMap<Value, CreateArrayOp> candidateBySource;
+  for (const ScalarizedArrayInfo &info : infos) {
+    for (const auto &[_, value] : info.valueByIndex) {
+      if (value.getDefiningOp<NonDetOp>()) {
+        candidateBySource.try_emplace(value, info.createOp);
+      }
+    }
+  }
   for (const auto &[source, type] : specializedTypeByNondet) {
     for (OpOperand &use : source.getUses()) {
-      if (isInternalSharedNondetUse(info, use.getOwner())) {
+      if (internalUses.contains(use.getOwner())) {
         continue;
       }
       auto call = llvm::dyn_cast<CallOp>(use.getOwner());
       if (!call || !call.calleeIsStructConstrain() || use.getOperandNumber() != 0 ||
           !llvm::isa<StructType>(type)) {
-        InFlightDiagnostic diag = info.createOp->emitError(
+        InFlightDiagnostic diag = candidateBySource.lookup(source)->emitError(
             "cannot scalarize array because a generic nondeterministic initializer has an "
             "unsupported external use"
         );
@@ -4102,7 +4123,7 @@ static LogicalResult verifySharedNondetSpecializationExternalUses(
       // retargeted callee can accept a still-generic companion argument even when it is not
       // exactly equal to the newly instantiated parameter type.
       if (!typeListsUnify(argTypes, target->get().getArgumentTypes(), target->getNamespace())) {
-        InFlightDiagnostic diag = info.createOp->emitError(
+        InFlightDiagnostic diag = candidateBySource.lookup(source)->emitError(
             "cannot scalarize array because specializing a generic nondeterministic initializer "
             "would make an external constraint call incompatible with its retargeted callee"
         );
@@ -4121,18 +4142,21 @@ static LogicalResult verifySharedNondetSpecializationExternalUses(
 /// observing that source can use the same concrete witness after their callee is redirected to the
 /// corresponding instantiated struct definition.
 static LogicalResult materializeSharedNondetSpecializations(
-    const ScalarizedArrayInfo &info, const DenseMap<Value, Type> &specializedTypeByNondet,
+    ArrayRef<ScalarizedArrayInfo> infos, const DenseMap<Value, Type> &specializedTypeByNondet,
     SymbolTableCollection &tables, PatternRewriter &rewriter,
     DenseMap<Value, Value> &specializedNondetBySource
 ) {
-  if (failed(verifySharedNondetSpecializationExternalUses(info, specializedTypeByNondet, tables))) {
+  auto verifyRes =
+      verifySharedNondetSpecializationExternalUses(infos, specializedTypeByNondet, tables);
+  if (failed(verifyRes)) {
     return failure();
   }
 
   DenseMap<Value, SmallVector<CallOp>> externalCallsBySource;
+  DenseSet<Operation *> internalUses = collectInternalSharedNondetUses(infos);
   for (const auto &[source, _] : specializedTypeByNondet) {
     for (OpOperand &use : source.getUses()) {
-      if (isInternalSharedNondetUse(info, use.getOwner())) {
+      if (internalUses.contains(use.getOwner())) {
         continue;
       }
       externalCallsBySource[source].push_back(llvm::cast<CallOp>(use.getOwner()));
@@ -4313,24 +4337,14 @@ static LogicalResult rewriteLocalArray(
     const DenseMap<MemberDefOp, DenseMap<ArrayAttr, Type>> &splitTypesByMember,
     const DenseMap<MemberDefOp, SmallVector<ArrayAttr>> &splitIndicesByMember,
     SymbolTableCollection &tables, PatternRewriter &rewriter, const ConversionTracker &tracker,
-    const DenseMap<Operation *, ScalarizedArrayInfo *> *candidateInfoByCreateOp
+    const DenseMap<Operation *, ScalarizedArrayInfo *> *candidateInfoByCreateOp,
+    const DenseMap<Value, Type> &specializedTypeByNondet,
+    DenseMap<Value, Value> &specializedNondetBySource
 ) {
   if (failed(refreshValuesFromArrayOperands(info, tracker, candidateInfoByCreateOp))) {
     return failure();
   }
 
-  DenseMap<Value, Type> specializedTypeByNondet;
-  if (failed(collectSharedNondetSpecializationTypes(
-          info, tracker, splitTypesByMember, tables, specializedTypeByNondet
-      ))) {
-    return failure();
-  }
-  DenseMap<Value, Value> specializedNondetBySource;
-  if (failed(materializeSharedNondetSpecializations(
-          info, specializedTypeByNondet, tables, rewriter, specializedNondetBySource
-      ))) {
-    return failure();
-  }
   DenseSet<Value> sourcesUsedByReads;
   for (ReadArrayOp readOp : info.reads) {
     sourcesUsedByReads.insert(info.valueByIndex.lookup(getIndexAsAttr(readOp)));
@@ -5613,26 +5627,29 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
       failed(verifySplitMemberReadsRewritable(modOp, splitTypesByMember, tables, tracker))) {
     return failure();
   }
-  for (const ScalarizedArrayInfo &info : arraysToScalarize) {
-    DenseMap<Value, Type> specializedTypeByNondet;
-    auto collectSpecializedRes = collectSharedNondetSpecializationTypes(
-        info, tracker, splitTypesByMember, tables, specializedTypeByNondet
-    );
-    if (failed(collectSpecializedRes)) {
-      return failure();
-    }
-    auto verifySpecializedRes =
-        verifySharedNondetSpecializationExternalUses(info, specializedTypeByNondet, tables);
-    if (failed(verifySpecializedRes)) {
-      return failure();
-    }
+  DenseMap<Value, Type> specializedTypeByNondet;
+  if (failed(collectSharedNondetSpecializationTypes(
+          arraysToScalarize, tracker, splitTypesByMember, tables, specializedTypeByNondet
+      )) ||
+      failed(verifySharedNondetSpecializationExternalUses(
+          arraysToScalarize, specializedTypeByNondet, tables
+      ))) {
+    return failure();
+  }
+
+  DenseMap<Value, Value> specializedNondetBySource;
+  auto materializeRes = materializeSharedNondetSpecializations(
+      arraysToScalarize, specializedTypeByNondet, tables, rewriter, specializedNondetBySource
+  );
+  if (failed(materializeRes)) {
+    return failure();
   }
 
   DenseMap<MemberDefOp, SplitMemberInfo> splitMembers;
   for (ScalarizedArrayInfo &info : arraysToScalarize) {
     auto rewriteRes = rewriteLocalArray(
         info, splitMembers, splitTypesByMember, splitIndicesByMember, tables, rewriter, tracker,
-        &candidateInfoByCreateOp
+        &candidateInfoByCreateOp, specializedTypeByNondet, specializedNondetBySource
     );
     if (failed(rewriteRes)) {
       return failure();
