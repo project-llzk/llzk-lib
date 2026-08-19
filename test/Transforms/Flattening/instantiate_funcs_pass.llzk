@@ -407,6 +407,34 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
+// `read_const` materializes felt values through a concretized type variable.
+module attributes {llzk.lang} {
+  poly.template @FeltT {
+    poly.param @Num
+    poly.param @Ty : !poly.tvar<@Ty>
+
+    function.def @compute() -> !poly.tvar<@Ty> {
+      %0 = poly.read_const @Num : !poly.tvar<@Ty>
+      function.return %0 : !poly.tvar<@Ty>
+    }
+  }
+
+  function.def @main() -> !felt.type {
+    %0 = function.call @FeltT::@compute<[#felt<const 89>, !felt.type]>() : () -> !felt.type
+    function.return %0 : !felt.type
+  }
+}
+// CHECK-LABEL: function.def @"FeltT_f<89>_f_compute"() -> !felt.type {
+// CHECK-NEXT:    %[[FELT_VALUE:[0-9a-zA-Z_\.]+]] = felt.const 89
+// CHECK-NEXT:    function.return %[[FELT_VALUE]] : !felt.type
+// CHECK-NEXT:  }
+//
+// CHECK-LABEL: function.def @main() -> !felt.type {
+// CHECK-NEXT:    %[[FELT_RESULT:[0-9a-zA-Z_\.]+]] = function.call @"FeltT_f<89>_f_compute"() : () -> !felt.type
+// CHECK-NEXT:    function.return %[[FELT_RESULT]] : !felt.type
+// CHECK-NEXT:  }
+// -----
+
 // Reusing a full instantiation across different call-site spellings must keep each rewritten
 // callee valid from its caller scope.
 module attributes {llzk.lang} {

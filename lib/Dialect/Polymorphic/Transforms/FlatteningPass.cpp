@@ -482,7 +482,12 @@ public:
   LogicalResult handleRewrite(
       Attribute, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, FeltConstAttr a
   ) const {
-    Value replacement = materializeTemplateConstant(rewriter, op.getLoc(), op.getType(), a);
+    Type origResTy = op.getType();
+    Type newResTy = getTypeConverter()->convertType(origResTy);
+    if (!newResTy) {
+      return op->emitOpError().append("could not convert result type ", origResTy);
+    }
+    Value replacement = materializeTemplateConstant(rewriter, op.getLoc(), newResTy, a);
     assert(replacement && "felt template values must materialize as felt constants");
     replacement.getDefiningOp()->setDiscardableAttrs(op->getDiscardableAttrDictionary());
     rewriter.replaceOp(op, replacement);
