@@ -3396,6 +3396,65 @@ static bool canRefineCreateArrayUsersToType(
         return false;
       }
       continue;
+    } else if (ReadArrayOp arrayRead = llvm::dyn_cast<ReadArrayOp>(user)) {
+      if (arrayRead.getArrRef() != result) {
+        return false;
+      }
+      // Retagging the allocation also changes this inferred read result. Check the result's
+      // independently declared consumers before accepting the retag: unlike the allocation
+      // itself, propagation does not retarget a concrete call, cast, return, member write, or
+      // subsequent array write that observes the read.
+      Type refinedElementType = mlir::cast<ArrayType>(refinedType).getElementType();
+      for (OpOperand &readUse : arrayRead.getResult().getUses()) {
+        Operation *readUser = readUse.getOwner();
+        Type readRequiredType;
+        if (CallOp readCall = llvm::dyn_cast<CallOp>(readUser)) {
+          unsigned argIdx =
+              readUse.getOperandNumber() - readCall.getArgOperands().getBeginOperandIndex();
+          if (argIdx >= readCall.getArgOperands().size()) {
+            return false;
+          }
+          auto callee = readCall.getCalleeTarget(tables);
+          if (failed(callee)) {
+            return false;
+          }
+          readRequiredType = callee->get().getFunctionType().getInput(argIdx);
+        } else if (ReturnOp readReturn = llvm::dyn_cast<ReturnOp>(readUser)) {
+          FuncDefOp function = readReturn->getParentOfType<FuncDefOp>();
+          unsigned resultIdx = readUse.getOperandNumber();
+          TypeRange resultTypes = function.getFunctionType().getResults();
+          if (resultIdx >= resultTypes.size()) {
+            return false;
+          }
+          readRequiredType = resultTypes[resultIdx];
+        } else if (UnifiableCastOp readCast = llvm::dyn_cast<UnifiableCastOp>(readUser)) {
+          if (readCast.getInput() != arrayRead.getResult()) {
+            return false;
+          }
+          readRequiredType = readCast.getResult().getType();
+        } else if (MemberWriteOp readMemberWrite = llvm::dyn_cast<MemberWriteOp>(readUser)) {
+          if (readMemberWrite.getVal() != arrayRead.getResult()) {
+            return false;
+          }
+          auto memberDef = readMemberWrite.getMemberDefOp(tables);
+          if (failed(memberDef)) {
+            return false;
+          }
+          readRequiredType = memberDef->get().getType();
+        } else if (WriteArrayOp readArrayWrite = llvm::dyn_cast<WriteArrayOp>(readUser)) {
+          if (readArrayWrite.getRvalue() != arrayRead.getResult()) {
+            return false;
+          }
+          readRequiredType = readArrayWrite.getArrRefType().getElementType();
+        } else {
+          return false;
+        }
+        if (readRequiredType != refinedElementType &&
+            isFullyConcreteArrayConsumerType(readRequiredType)) {
+          return false;
+        }
+      }
+      continue;
     } else {
       continue;
     }

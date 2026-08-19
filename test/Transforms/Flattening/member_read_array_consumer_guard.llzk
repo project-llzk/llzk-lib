@@ -95,3 +95,105 @@ module attributes {llzk.lang} {
     }
   }
 }
+
+// -----
+
+// A direct member write could refine @item and its generic read to Cell<0>. That read initializes
+// an array which is then read by a concrete Cell<1> consumer. Keep both members and the local
+// allocation generic: retagging the allocation would also retag %observed to Cell<0>.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    // expected-warning@+1 {{Parameterized definition still has uses!}}
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  function.def @consume1(%value: !struct.type<@TCell::@Cell<[1]>>) {
+    function.return
+  }
+
+  struct.def @Holder {
+    struct.member @item : !struct.type<@TCell::@Cell<[#id]>> {column}
+    struct.member @items : !array.type<1 x !struct.type<@TCell::@Cell<[#id]>>> {column}
+
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      // The incompatible read consumer rejects refinement of @item and the initialized array,
+      // leaving @item generic rather than retagging %observed to Cell<0>.
+      // expected-error@+1 {{'struct.writem' op has wrong type; expected '!struct.type<@TCell::@Cell<[affine_map<(d0) -> (d0)>]>>', got '!struct.type<@TCell_0_Cell>'}}
+      struct.writem %self[@item] = %item0 : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
+      %read = struct.readm %self[@item] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      %items = array.new %read : !array.type<1 x !struct.type<@TCell::@Cell<[#id]>>>
+      %index = arith.constant 0 : index
+      %observed = array.read %items[%index] : !array.type<1 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+      function.call @consume1(%observed) : (!struct.type<@TCell::@Cell<[#id]>>) -> ()
+      struct.writem %self[@items] = %items : !struct.type<@Holder>, !array.type<1 x !struct.type<@TCell::@Cell<[#id]>>>
+      function.return %self : !struct.type<@Holder>
+    }
+
+    function.def @constrain(%self: !struct.type<@Holder>) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// A member read can refine this array.new to Cell<0>, but its direct write remains generic.
+// Keep the array generic: the direct write cannot be retagged with the allocation.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    // expected-warning@+1 {{Parameterized definition still has uses!}}
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Holder {
+    struct.member @item : !struct.type<@TCell::@Cell<[#id]>> {column}
+    struct.member @other : !struct.type<@TCell::@Cell<[#id]>> {column}
+
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      // expected-error@+1 {{'struct.writem' op has wrong type; expected '!struct.type<@TCell::@Cell<[affine_map<(d0) -> (d0)>]>>', got '!struct.type<@TCell_0_Cell>'}}
+      struct.writem %self[@item] = %item0 : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
+      %read = struct.readm %self[@item] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      %other = struct.readm %self[@other] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      %local = array.new %read : !array.type<1 x !struct.type<@TCell::@Cell<[#id]>>>
+      %index = arith.constant 0 : index
+      array.write %local[%index] = %other : !array.type<1 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[#id]>>
+      function.return %self : !struct.type<@Holder>
+    }
+
+    function.def @constrain(%self: !struct.type<@Holder>) {
+      function.return
+    }
+  }
+}
