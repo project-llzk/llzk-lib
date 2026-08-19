@@ -1524,38 +1524,32 @@ private:
       // in a call result or in a call operand. In both cases, the corresponding nested
       // callee type variable may be concretely bound by the nested call.
       auto inferFromNestedBinding = [&](Type enclosingTy, Type nestedTy) {
-        auto nestedTvar = llvm::dyn_cast<TypeVarType>(nestedTy);
-        if (!nestedTvar) {
-          return WalkResult::advance();
-        }
+        DenseMap<Attribute, Attribute> nestedParamNameToConcrete =
+            getNestedConcreteBindings(nestedCall, nestedTgt, nestedTemplate, tyConv);
 
-        std::optional<Attribute> nestedCandidate = inferFromExplicitNestedCallParams(
-            nestedCall, nestedTemplate, nestedTvar.getNameRef(), tyConv
-        );
-        if (!nestedCandidate) {
-          DenseMap<Attribute, Attribute> nestedParamNameToConcrete =
-              getNestedConcreteBindings(nestedCall, nestedTgt, nestedTemplate, tyConv);
-          nestedCandidate = infer(nestedTgt, nestedTvar.getNameRef(), nestedParamNameToConcrete);
+        // In addition to bindings from the call, a direct nested type variable can obtain its
+        // concrete value from the nested callee body. Add that evidence to the nested scope
+        // before converting its full signature type below.
+        if (auto nestedTvar = llvm::dyn_cast<TypeVarType>(nestedTy);
+            nestedTvar && !nestedParamNameToConcrete.contains(nestedTvar.getNameRef())) {
+          std::optional<Attribute> nestedCandidate =
+              infer(nestedTgt, nestedTvar.getNameRef(), nestedParamNameToConcrete);
+          if (nestedCandidate) {
+            nestedParamNameToConcrete[nestedTvar.getNameRef()] = *nestedCandidate;
+          }
         }
-        if (!nestedCandidate) {
+        FuncInstTypeConverter nestedTyConv(nestedParamNameToConcrete);
+        Type convertedNestedTy = nestedTyConv.convertType(nestedTy);
+        if (!isConcreteType(convertedNestedTy)) {
           return WalkResult::advance();
         }
 
         Type convertedEnclosingTy = tyConv.convertType(enclosingTy);
-        if (auto enclosingTvar = llvm::dyn_cast<TypeVarType>(convertedEnclosingTy);
-            enclosingTvar && enclosingTvar.getNameRef() == paramName) {
-          return noteCandidate(*nestedCandidate);
-        }
-
-        // A requested wildcard can occur beneath an aggregate type. Unifying the converted
-        // enclosing type against the concrete nested binding recursively records that wildcard's
-        // value at its nested position.
-        auto nestedCandidateTy = llvm::dyn_cast<TypeAttr>(*nestedCandidate);
-        if (!nestedCandidateTy) {
-          return WalkResult::advance();
-        }
+        // Apply the nested call's bindings recursively before unifying. In particular, this
+        // preserves evidence when the nested callee's type variable occurs within an aggregate
+        // signature rather than as the complete operand or result type.
         UnificationMap unifications;
-        if (!typesUnify(convertedEnclosingTy, nestedCandidateTy.getValue(), {}, &unifications)) {
+        if (!typesUnify(convertedEnclosingTy, convertedNestedTy, {}, &unifications)) {
           return WalkResult::advance();
         }
         auto it = unifications.find({paramName, Side::LHS});
@@ -1626,28 +1620,6 @@ private:
       }
     }
     return bindings;
-  }
-
-  /// Infer a nested callee parameter value from the nested call's explicit template arguments.
-  std::optional<Attribute> inferFromExplicitNestedCallParams(
-      CallOp nestedCall, TemplateOp nestedTemplate, FlatSymbolRefAttr nestedParamName,
-      const FuncInstTypeConverter &tyConv
-  ) const {
-    ArrayAttr nestedCallParams = nestedCall.getTemplateParamsAttr();
-    if (isNullOrEmpty(nestedCallParams)) {
-      return std::nullopt;
-    }
-
-    for (auto [paramOp, attr] :
-         llvm::zip_equal(nestedTemplate.getConstOps<TemplateParamOp>(), nestedCallParams)) {
-      auto paramName = FlatSymbolRefAttr::get(paramOp.getSymNameAttr());
-      if (paramName != nestedParamName) {
-        continue;
-      }
-      Attribute convertedAttr = tyConv.convertAttr(attr);
-      return isConcreteAttr(convertedAttr) ? std::make_optional(convertedAttr) : std::nullopt;
-    }
-    return std::nullopt;
   }
 };
 
