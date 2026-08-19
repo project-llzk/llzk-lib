@@ -197,3 +197,52 @@ module attributes {llzk.lang} {
     }
   }
 }
+
+// -----
+
+// A generic member read can participate in constrain.eq with an independently concrete value.
+// Refining the member to array<0> must not retag the read, because constrain.eq's other operand
+// remains array<1> and is not updated by member-read propagation.
+module attributes {llzk.lang} {
+  poly.template @THolder {
+    poly.param @T
+
+    struct.def @Holder {
+      struct.member @value : !poly.tvar<@T> {column}
+
+      function.def @compute() -> !struct.type<@THolder::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@THolder::@Holder<[@T]>>
+        %zero = array.new : !array.type<0 x !felt.type>
+        struct.writem %self[@value] = %zero : !struct.type<@THolder::@Holder<[@T]>>, !array.type<0 x !felt.type>
+        function.return %self : !struct.type<@THolder::@Holder<[@T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@THolder::@Holder<[@T]>>) {
+        %read = struct.readm %self[@value] : !struct.type<@THolder::@Holder<[@T]>>, !poly.tvar<@T>
+        %one = array.new : !array.type<1 x !felt.type>
+        constrain.eq %read, %one : !poly.tvar<@T>, !array.type<1 x !felt.type>
+        function.return
+      }
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @THolder {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @value : !poly.tvar<@T> {column}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@THolder::@Holder<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@THolder::@Holder<[@T]>>
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = array.new  : <0 x !felt.type>
+// CHECK-NEXT:          struct.writem %[[VAL_0]][@value] = %[[VAL_1]] : <@THolder::@Holder<[@T]>>, !array.type<0 x !felt.type>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@THolder::@Holder<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@THolder::@Holder<[@T]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@value] : <@THolder::@Holder<[@T]>>, !poly.tvar<@T>
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.new  : <1 x !felt.type>
+// CHECK-NEXT:          constrain.eq %[[VAL_3]], %[[VAL_4]] : !poly.tvar<@T>, !array.type<1 x !felt.type>
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

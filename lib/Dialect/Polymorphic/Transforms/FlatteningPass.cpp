@@ -3593,6 +3593,26 @@ static bool canRefineMemberReadUsersToType(
       }
       continue;
     }
+    if (EmitEqualityOp equalityOp = llvm::dyn_cast<EmitEqualityOp>(user)) {
+      Value otherOperand;
+      if (equalityOp.getLhs() == result) {
+        otherOperand = equalityOp.getRhs();
+      } else if (equalityOp.getRhs() == result) {
+        otherOperand = equalityOp.getLhs();
+      } else {
+        return false;
+      }
+      // constrain.eq is not retagged when a member read is refined. A concrete other operand
+      // must therefore already accept the proposed read type; otherwise a generic read can be
+      // changed to an incompatible concrete type after template instantiation.
+      if (isConcreteType(otherOperand.getType(), /*allowStructParams=*/false) &&
+          !canUseScalarizedValueAsType(
+              refinedType, otherOperand.getType(), tracker, "UpdateMemberDefTypeFromWrite"
+          )) {
+        return false;
+      }
+      continue;
+    }
     if (UnifiableCastOp castOp = llvm::dyn_cast<UnifiableCastOp>(user)) {
       if (castOp.getInput() != result) {
         return false;
