@@ -3433,6 +3433,19 @@ static bool canRefineCreateArrayUsersToType(
         return false;
       }
       continue;
+    } else if (InsertArrayOp arrayInsert = llvm::dyn_cast<InsertArrayOp>(user)) {
+      if (arrayInsert.getArrRef() != result) {
+        return false;
+      }
+      // Retagging the allocation changes the subarray type required by every insert, but does
+      // not change an insert's rvalue. As with array.write above, require an exact match rather
+      // than relying on pre-instantiation unification of concrete affine specializations.
+      ArrayType refinedArrayType = mlir::cast<ArrayType>(refinedType);
+      Type refinedRvalueType = refinedArrayType.getSelectionType(arrayInsert.getIndices().size());
+      if (arrayInsert.getRvalue().getType() != refinedRvalueType) {
+        return false;
+      }
+      continue;
     } else if (ReadArrayOp arrayRead = llvm::dyn_cast<ReadArrayOp>(user)) {
       if (arrayRead.getArrRef() != result) {
         return false;

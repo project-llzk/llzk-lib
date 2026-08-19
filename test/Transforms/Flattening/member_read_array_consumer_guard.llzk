@@ -246,3 +246,53 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
+// -----
+
+// A member read can refine the element type of this multidimensional allocation, but a direct
+// array.insert retains its independently concrete Cell<1> subarray rvalue. Keep the member and
+// allocation generic rather than retagging the allocation to Cell<0> and invalidating the insert.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    // expected-warning@+1 {{Parameterized definition still has uses!}}
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Holder {
+    struct.member @item : !struct.type<@TCell::@Cell<[#id]>> {column}
+
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %item0 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      // The insert rvalue requires the allocation to remain generic, rather than retagging it
+      // to Cell<0> and invalidating the insert after template instantiation.
+      struct.writem %self[@item] = %item0 : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
+      %read = struct.readm %self[@item] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      %local = array.new %read, %read : !array.type<1,1,2 x !struct.type<@TCell::@Cell<[#id]>>>
+      %item1 = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+      %row1 = array.new %item1, %item1 : !array.type<1,2 x !struct.type<@TCell::@Cell<[1]>>>
+      %index = arith.constant 0 : index
+      // expected-error@+1 {{'array.insert' op incorrect array element type; expected: '!struct.type<@TCell::@Cell<[affine_map<(d0) -> (d0)>]>>', found: '!struct.type<@TCell_1_Cell>'}}
+      array.insert %local[%index] = %row1 : !array.type<1,1,2 x !struct.type<@TCell::@Cell<[#id]>>>, !array.type<1,2 x !struct.type<@TCell::@Cell<[1]>>>
+      function.return %self : !struct.type<@Holder>
+    }
+
+    function.def @constrain(%self: !struct.type<@Holder>) {
+      function.return
+    }
+  }
+}
