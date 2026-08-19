@@ -365,3 +365,47 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+// A wildcard nested in a local unifiable cast is resolved from the concrete aggregate side.
+module attributes {llzk.lang} {
+  struct.def @LocalCastAggregateCaller {
+    function.def @compute() -> !struct.type<@LocalCastAggregateCaller> {
+      %self = struct.new : !struct.type<@LocalCastAggregateCaller>
+      function.call @LocalCastAggregate::@wrap<[?]>() : () -> ()
+      function.return %self : !struct.type<@LocalCastAggregateCaller>
+    }
+
+    function.def @constrain(%self: !struct.type<@LocalCastAggregateCaller>) {
+      function.call @LocalCastAggregate::@wrap<[?]>() : () -> ()
+      function.return
+    }
+  }
+
+  poly.template @LocalCastAggregate {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @wrap() {
+      %0 = llzk.nondet : !array.type<2 x !poly.tvar<@T>>
+      %1 = poly.unifiable_cast %0 : (!array.type<2 x !poly.tvar<@T>>) -> !array.type<2 x !felt.type<"bn128">>
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @LocalCastAggregateCaller {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@LocalCastAggregateCaller> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@LocalCastAggregateCaller>
+// CHECK-NEXT:        function.call @LocalCastAggregate_f_wrap() : () -> ()
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@LocalCastAggregateCaller>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@LocalCastAggregateCaller>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.call @LocalCastAggregate_f_wrap() : () -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @LocalCastAggregate_f_wrap() {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

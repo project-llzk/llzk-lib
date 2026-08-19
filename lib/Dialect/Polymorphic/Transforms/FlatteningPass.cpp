@@ -1484,6 +1484,23 @@ private:
             resultTvar && resultTvar.getNameRef() == paramName && isConcreteType(inputTy)) {
           return noteCandidate(TypeAttr::get(inputTy));
         }
+
+        // A requested wildcard can occur beneath an aggregate type on either side of a local
+        // cast. Recursively unify both converted types to retain the concrete binding recorded
+        // at that nested position.
+        UnificationMap unifications;
+        if (!typesUnify(inputTy, resultTy, {}, &unifications)) {
+          return WalkResult::advance();
+        }
+        for (Side side : {Side::LHS, Side::RHS}) {
+          auto it = unifications.find({paramName, side});
+          if (it != unifications.end()) {
+            WalkResult candidateResult = noteCandidate(it->second);
+            if (candidateResult.wasInterrupted()) {
+              return candidateResult;
+            }
+          }
+        }
         return WalkResult::advance();
       }
 
