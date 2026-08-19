@@ -4308,6 +4308,29 @@ static FailureOr<Value> buildReadReplacementValue(
       .getResult();
 }
 
+/// Preserve one scalarized array read's discardable metadata on a distinct value carrier.
+///
+/// Scalarization normally replaces a read with a cached element SSA value. That value can serve
+/// multiple reads, while each read may carry different provenance metadata. Materialize a trivial
+/// unifiable cast only for annotated reads so every original attribute dictionary remains attached
+/// to one replacement operation without changing unannotated IR.
+static Value materializeReadMetadataCarrier(
+    ReadArrayOp readOp, Value replacementValue, PatternRewriter &rewriter
+) {
+  DictionaryAttr discardableAttrs = readOp->getDiscardableAttrDictionary();
+  if (discardableAttrs.empty()) {
+    return replacementValue;
+  }
+
+  OpBuilder::InsertionGuard guard(rewriter);
+  rewriter.setInsertionPoint(readOp);
+  UnifiableCastOp carrier = rewriter.create<UnifiableCastOp>(
+      readOp.getLoc(), replacementValue.getType(), replacementValue
+  );
+  carrier->setDiscardableAttrs(discardableAttrs);
+  return carrier.getResult();
+}
+
 /// Emit one scalar `struct.writem` per split index for a whole-array member write.
 template <typename GetScalarValueFn>
 static LogicalResult emitScalarMemberWrites(
@@ -4440,7 +4463,9 @@ static LogicalResult rewriteLocalArray(
     if (failed(replacementValue)) {
       return failure();
     }
-    replaceAllUsesIgnoringType(readOp.getResult(), *replacementValue);
+    Value replacementWithMetadata =
+        materializeReadMetadataCarrier(readOp, *replacementValue, rewriter);
+    replaceAllUsesIgnoringType(readOp.getResult(), replacementWithMetadata);
     rewriter.eraseOp(readOp);
   }
 
@@ -5426,7 +5451,9 @@ static LogicalResult rewriteExpandableLocalArray(
       if (failed(scalarValue)) {
         return failure();
       }
-      replaceAllUsesIgnoringType(readOp.getResult(), *scalarValue);
+      Value replacementWithMetadata =
+          materializeReadMetadataCarrier(readOp, *scalarValue, rewriter);
+      replaceAllUsesIgnoringType(readOp.getResult(), replacementWithMetadata);
       rewriter.eraseOp(readOp);
       continue;
     }

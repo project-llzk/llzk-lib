@@ -209,9 +209,10 @@ module attributes {llzk.lang} {
 
     // Regression: if scalarization replaces these reads with %generic0 directly, the writes below are
     // ill-typed. If it creates one specialized nondet per read, the original equality between repeated
-    // reads of %local[%c0] is lost. Both reads must use one concrete index-specialized replacement value.
-    %picked0 = array.read %local[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
-    %picked1 = array.read %local[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>>
+    // reads of %local[%c0] is lost. Both reads must use one concrete index-specialized replacement value,
+    // while their distinct provenance dictionaries remain attached to separate replacement operations.
+    %picked0 = array.read %local[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>> {product_source = "first-read"}
+    %picked1 = array.read %local[%c0] : !array.type<2 x !struct.type<@TCell::@Cell<[#id]>>>, !struct.type<@TCell::@Cell<[0]>> {product_source = "second-read"}
     %sink = array.new : !array.type<2 x !struct.type<@TCell::@Cell<[0]>>>
     array.write %sink[%c0] = %picked0 : !array.type<2 x !struct.type<@TCell::@Cell<[0]>>>, !struct.type<@TCell::@Cell<[0]>>
     array.write %sink[%c1] = %picked1 : !array.type<2 x !struct.type<@TCell::@Cell<[0]>>>, !struct.type<@TCell::@Cell<[0]>>
@@ -256,10 +257,12 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
 // CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
 // CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@TCell::@Cell<[#[[$ATTR_0]]]>>
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !struct.type<@TCell_0_Cell>>
-// CHECK-NEXT:      array.write %[[VAL_10]]{{\[}}%[[VAL_5]]] = %[[VAL_9]] : <2 x !struct.type<@TCell_0_Cell>>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:      array.write %[[VAL_10]]{{\[}}%[[VAL_6]]] = %[[VAL_9]] : <2 x !struct.type<@TCell_0_Cell>>, !struct.type<@TCell_0_Cell>
-// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @"Any_!a<!s<@TCell_0_Cell>:2>_f"(%[[VAL_10]]) : (!array.type<2 x !struct.type<@TCell_0_Cell>>) -> !array.type<2 x !struct.type<@TCell_0_Cell>>
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_9]] : (!struct.type<@TCell_0_Cell>) -> !struct.type<@TCell_0_Cell> {product_source = "first-read"}
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_9]] : (!struct.type<@TCell_0_Cell>) -> !struct.type<@TCell_0_Cell> {product_source = "second-read"}
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = array.new  : <2 x !struct.type<@TCell_0_Cell>>
+// CHECK-NEXT:      array.write %[[VAL_12]]{{\[}}%[[VAL_5]]] = %[[VAL_10]] : <2 x !struct.type<@TCell_0_Cell>>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:      array.write %[[VAL_12]]{{\[}}%[[VAL_6]]] = %[[VAL_11]] : <2 x !struct.type<@TCell_0_Cell>>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = function.call @"Any_!a<!s<@TCell_0_Cell>:2>_f"(%[[VAL_12]]) : (!array.type<2 x !struct.type<@TCell_0_Cell>>) -> !array.type<2 x !struct.type<@TCell_0_Cell>>
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
