@@ -1732,6 +1732,7 @@ static LogicalResult copyReferencedTemplateExprs(
     TemplateOp parentTemplate, Block &newTemplateBody, ArrayRef<FuncDefOp> newFuncs,
     const DenseMap<Attribute, Attribute> &paramNameToConcrete
 ) {
+  FuncInstTypeConverter typeConverter(paramNameToConcrete);
   DenseSet<StringAttr> referencedExprNames;
   auto collectExprRef = [&referencedExprNames, &paramNameToConcrete](FlatSymbolRefAttr name) {
     if (!paramNameToConcrete.contains(name)) {
@@ -1774,8 +1775,8 @@ static LogicalResult copyReferencedTemplateExprs(
     for (ConstReadOp readOp : concreteReads) {
       Attribute value = paramNameToConcrete.lookup(readOp.getConstNameAttr());
       OpBuilder builder(readOp);
-      Value replacement =
-          materializeTemplateConstant(builder, readOp.getLoc(), readOp.getType(), value);
+      Type resultType = typeConverter.convertType(readOp.getType());
+      Value replacement = materializeTemplateConstant(builder, readOp.getLoc(), resultType, value);
       if (!replacement) {
         clonedExpr->erase();
         return failure();
