@@ -2791,7 +2791,7 @@ static inline bool canReplaceReadResultWithType(
 /// Return true iff direct typed consumers of `readOp` accept `replacementType`.
 ///
 /// Scalarizing a pseudo-homogeneous array can replace a generic read result with the concrete
-/// value stored at its static index.  Checking the read result alone is insufficient: two
+/// value stored at its static index. Checking the read result alone is insufficient: two
 /// different concrete types can both unify with that generic result, while a consumer may require
 /// only one of them. Typed consumers with separately declared requirements must be checked before
 /// the type-ignoring replacement below.
@@ -2944,9 +2944,9 @@ static LogicalResult canReplaceReadUsersWithType(
       continue;
     }
 
-    // `replaceAllUsesIgnoringType` deliberately bypasses MLIR's operand type check.  Every
+    // `replaceAllUsesIgnoringType` deliberately bypasses MLIR's operand type check. Every
     // consumer therefore has to be accounted for here before scalarization can retarget a
-    // generic read to its index-specific concrete value.  In particular, region terminators
+    // generic read to its index-specific concrete value. In particular, region terminators
     // such as scf.yield impose a type relationship on their parent operation that this rewrite
     // does not update.
     InFlightDiagnostic diag = readOp.emitError(
@@ -3460,7 +3460,7 @@ static bool canRefineCreateArrayUsersToType(
       continue;
     }
     // Array element specializations with distinct concrete affine arguments can still unify
-    // before template instantiation.  This array result is retagged in place, though, and no
+    // before template instantiation. This array result is retagged in place, though, and no
     // propagation pattern retargets these users, so a fully concrete requirement must match
     // exactly.
     if (isFullyConcreteArrayConsumerType(requiredType) && refinedType != requiredType) {
@@ -3473,7 +3473,7 @@ static bool canRefineCreateArrayUsersToType(
 /// Return true iff typed consumers of a member read can use its refined result type.
 ///
 /// A generic read result may unify both with the proposed member type and with a different
-/// concrete type required by a consumer.  Updating the read in that situation would make the
+/// concrete type required by a consumer. Updating the read in that situation would make the
 /// consuming operation invalid, so the member definition must remain generic.
 static bool canRefineMemberReadUsersToType(
     MemberReadOp readOp, Type refinedType, SymbolTableCollection &tables,
@@ -4115,7 +4115,6 @@ static LogicalResult materializeSharedNondetSpecializations(
     specializedNondet->setDiscardableAttrs(sourceNondet->getDiscardableAttrDictionary());
     Value specializedValue = specializedNondet.getResult();
     specializedNondetBySource[source] = specializedValue;
-
     for (CallOp call : externalCallsBySource.lookup(source)) {
       replaceStructConstraintCallWithSpecializedWitness(rewriter, call, specializedValue);
     }
@@ -4788,6 +4787,45 @@ static LogicalResult verifyNoSharedValuesForIncompatibleSplitTypes(
   };
   auto verifyExternalMemberWriteUses = [&](Value scalarValue, ArrayAttr idx, Type targetType,
                                            Location targetLoc) -> LogicalResult {
+    // Refining a stored generic nondet creates a replacement witness during rewriting. Every
+    // observation outside this array's initializer/write path would otherwise still refer to the
+    // original generic witness, splitting one witness into two independent values.
+    if (scalarValue.getType() != targetType && scalarValue.getDefiningOp<NonDetOp>()) {
+      FailureOr<Type> commonType = getCommonRefinedType(scalarValue.getType(), targetType, tracker);
+      if (succeeded(commonType) && *commonType != scalarValue.getType()) {
+        for (OpOperand &use : scalarValue.getUses()) {
+          Operation *owner = use.getOwner();
+          if (owner == createOp.getOperation()) {
+            continue;
+          }
+          auto arrayWrite = llvm::dyn_cast<WriteArrayOp>(owner);
+          if (arrayWrite && arrayWrite.getRvalue() == scalarValue &&
+              arrayWrite.getArrRef() == createOp.getResult()) {
+            continue;
+          }
+          // Struct constraint calls are retargeted to the specialized witness by
+          // rewriteExpandableLocalArray(). Existing external member writes are handled by the
+          // compatibility check below.
+          if (use.getOperandNumber() == 0 && llvm::isa<StructType>(*commonType)) {
+            if (auto call = llvm::dyn_cast<CallOp>(owner); call && call.calleeIsStructConstrain()) {
+              continue;
+            }
+          }
+          if (auto memberWrite = llvm::dyn_cast<MemberWriteOp>(owner);
+              memberWrite && memberWrite.getVal() == scalarValue) {
+            continue;
+          }
+          InFlightDiagnostic diag = createOp.emitError(
+              "cannot scalarize array because a generic nondeterministic initializer has an "
+              "unsupported external use"
+          );
+          diag.attachNote(owner->getLoc()) << "source witness is also used here";
+          diag.attachNote(targetLoc)
+              << "array index " << idx << " requires refined scalar member type " << targetType;
+          return diag;
+        }
+      }
+    }
     for (OpOperand &use : scalarValue.getUses()) {
       auto externalWrite = llvm::dyn_cast<MemberWriteOp>(use.getOwner());
       if (!externalWrite || externalWrite.getVal() != use.get()) {
@@ -5113,6 +5151,129 @@ static LogicalResult rewriteExpandableLocalArray(
     finishMaterialization(idx);
   }
 
+  // An initialized expandable array can require a generic nondeterministic element to be
+  // materialized at a concrete split-member type. Plan those specializations up front: cloning
+  // the witness later without also updating an external observation would turn one witness into
+  // two independent witnesses.
+  DenseMap<Value, Type> specializedTypeByNondet;
+  DenseMap<ArrayAttr, Value> plannedValueByIndex;
+  if (failed(seedValuesFromArrayElements(createOp, indices, plannedValueByIndex))) {
+    return failure();
+  }
+  auto noteNondetSpecialization = [&](Value value, Type type) -> LogicalResult {
+    if (!value || value.getType() == type || !value.getDefiningOp<NonDetOp>()) {
+      return success();
+    }
+    auto existing = specializedTypeByNondet.find(value);
+    if (existing == specializedTypeByNondet.end()) {
+      specializedTypeByNondet.try_emplace(value, type);
+      return success();
+    }
+    FailureOr<Type> commonType = getCommonRefinedType(existing->second, type, tracker);
+    if (failed(commonType)) {
+      return createOp.emitError(
+          "cannot scalarize array because a shared nondeterministic initializer requires "
+          "incompatible specialized types"
+      );
+    }
+    existing->second = *commonType;
+    return success();
+  };
+  for (Operation *user : users) {
+    if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
+      plannedValueByIndex[getIndexAsAttr(writeOp)] = writeOp.getRvalue();
+      continue;
+    }
+    if (auto readOp = llvm::dyn_cast<ReadArrayOp>(user)) {
+      auto res = noteNondetSpecialization(
+          plannedValueByIndex.lookup(getIndexAsAttr(readOp)), readOp.getResult().getType()
+      );
+      if (failed(res)) {
+        return failure();
+      }
+      continue;
+    }
+    auto memberWriteOp = llvm::dyn_cast<MemberWriteOp>(user);
+    if (!memberWriteOp) {
+      return failure();
+    }
+    auto memberDef = memberWriteOp.getMemberDefOp(tables);
+    if (failed(memberDef)) {
+      return failure();
+    }
+    auto splitIt = splitMembers.find(memberDef->get());
+    if (splitIt == splitMembers.end()) {
+      return failure();
+    }
+    for (ArrayAttr idx : splitIt->second.indices) {
+      MemberInfo memberInfo = splitIt->second.memberByIndex.lookup(idx);
+      if (!memberInfo.first ||
+          failed(noteNondetSpecialization(plannedValueByIndex.lookup(idx), memberInfo.second))) {
+        return failure();
+      }
+    }
+  }
+
+  auto isInternalNondetUse = [&createOp](Value source, Operation *owner) {
+    if (owner == createOp.getOperation()) {
+      return true;
+    }
+    auto writeOp = llvm::dyn_cast<WriteArrayOp>(owner);
+    return writeOp && writeOp.getRvalue() == source && writeOp.getArrRef() == createOp.getResult();
+  };
+  DenseMap<Value, SmallVector<CallOp>> externalCallsBySource;
+  for (const auto &[source, type] : specializedTypeByNondet) {
+    for (OpOperand &use : source.getUses()) {
+      if (isInternalNondetUse(source, use.getOwner())) {
+        continue;
+      }
+      auto call = llvm::dyn_cast<CallOp>(use.getOwner());
+      if (!call || !call.calleeIsStructConstrain() || use.getOperandNumber() != 0 ||
+          !llvm::isa<StructType>(type)) {
+        InFlightDiagnostic diag = createOp.emitError(
+            "cannot scalarize array because a generic nondeterministic initializer has an "
+            "unsupported external use"
+        );
+        diag.attachNote(use.getOwner()->getLoc()) << "source witness is also used here";
+        return diag;
+      }
+      StructType structType = llvm::cast<StructType>(type);
+      SymbolRefAttr callee =
+          appendLeaf(structType.getNameRef(), call.getCalleeAttr().getLeafReference());
+      FailureOr<SymbolLookupResult<FuncDefOp>> target =
+          lookupTopLevelSymbol<FuncDefOp>(tables, callee, call);
+      if (failed(target)) {
+        return failure();
+      }
+      SmallVector<Type> argTypes(call.getArgOperands().getTypes());
+      argTypes.front() = type;
+      if (!typeListsUnify(argTypes, target->get().getArgumentTypes(), target->getNamespace())) {
+        InFlightDiagnostic diag = createOp.emitError(
+            "cannot scalarize array because specializing a generic nondeterministic initializer "
+            "would make an external constraint call incompatible with its retargeted callee"
+        );
+        diag.attachNote(call.getLoc())
+            << "retargeted constraint expects argument types " << target->get().getArgumentTypes();
+        return diag;
+      }
+      externalCallsBySource[source].push_back(call);
+    }
+  }
+  DenseMap<Value, Value> specializedNondetBySource;
+  for (const auto &[source, type] : specializedTypeByNondet) {
+    NonDetOp sourceNondet = source.getDefiningOp<NonDetOp>();
+    assert(sourceNondet && "specialization map only contains nondeterministic values");
+    OpBuilder::InsertionGuard guard(rewriter);
+    rewriter.setInsertionPointAfter(sourceNondet);
+    NonDetOp specializedNondet = rewriter.create<NonDetOp>(sourceNondet.getLoc(), type);
+    specializedNondet->setDiscardableAttrs(sourceNondet->getDiscardableAttrDictionary());
+    Value specializedValue = specializedNondet.getResult();
+    specializedNondetBySource[source] = specializedValue;
+    for (CallOp call : externalCallsBySource.lookup(source)) {
+      replaceStructConstraintCallWithSpecializedWitness(rewriter, call, specializedValue);
+    }
+  }
+
   // Validate every consumer against the final shared type before replacing any read. This keeps a
   // later refinement from changing the type of a nondet value that an earlier replacement already
   // made visible to an incompatible consumer.
@@ -5123,6 +5284,17 @@ static LogicalResult rewriteExpandableLocalArray(
   }
   DenseSet<Value> generatedMaterializations;
   SmallVector<WriteArrayOp> writesToErase;
+  auto getScalarizedValue = [&](ArrayAttr idx, Type type, Location loc) -> FailureOr<Value> {
+    if (Value scalarValue = valueByIndex.lookup(idx)) {
+      if (Value specializedNondet = specializedNondetBySource.lookup(scalarValue)) {
+        return specializedNondet;
+      }
+    }
+    return getOrCreateScalarizedLocalArrayValue(
+        valueByIndex, generatedMaterializations, idx, type, loc, rewriter, tracker,
+        materializationPoint
+    );
+  };
   for (Operation *user : users) {
     if (auto writeOp = llvm::dyn_cast<WriteArrayOp>(user)) {
       ArrayAttr idx = getIndexAsAttr(writeOp);
@@ -5139,10 +5311,7 @@ static LogicalResult rewriteExpandableLocalArray(
         requestedType = materializationType;
       }
       rewriter.setInsertionPoint(readOp);
-      FailureOr<Value> scalarValue = getOrCreateScalarizedLocalArrayValue(
-          valueByIndex, generatedMaterializations, idx, requestedType, readOp.getLoc(), rewriter,
-          tracker, materializationPoint
-      );
+      FailureOr<Value> scalarValue = getScalarizedValue(idx, requestedType, readOp.getLoc());
       if (failed(scalarValue)) {
         return failure();
       }
@@ -5167,10 +5336,7 @@ static LogicalResult rewriteExpandableLocalArray(
     const SplitMemberInfo &splitInfo = splitIt->second;
 
     auto getScalarValue = [&](ArrayAttr idx, Type type) {
-      return getOrCreateScalarizedLocalArrayValue(
-          valueByIndex, generatedMaterializations, idx, type, memberWriteOp.getLoc(), rewriter,
-          tracker, materializationPoint
-      );
+      return getScalarizedValue(idx, type, memberWriteOp.getLoc());
     };
     auto emitRes = emitScalarMemberWrites(
         memberWriteOp, splitInfo, writeDiscardableAttrsByIndex, rewriter, getScalarValue
