@@ -35,8 +35,6 @@ public:
   }
 
   /// Returns true if the op has a temporary name associated to it.
-  bool hasTemp(mlir::Operation *op) const {
-    return names.contains(op);
-  }
+  bool hasTemp(mlir::Operation *op) const { return names.contains(op); }
 };
 } // namespace pcl::lowering
