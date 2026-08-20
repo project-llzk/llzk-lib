@@ -1,0 +1,90 @@
+// RUN: llzk-opt -split-input-file -llzk-const-global-propagation %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  module @Consts {
+    global.def const @N : index = 3
+  }
+
+  poly.template @T {
+    poly.param @Z : index
+    struct.def @Component10A {
+      function.def @compute() -> !struct.type<@T::@Component10A<[@Z]>> {
+        %self = struct.new : !struct.type<@T::@Component10A<[@Z]>>
+        function.return %self : !struct.type<@T::@Component10A<[@Z]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@Component10A<[@Z]>>)  { function.return }
+    }
+  }
+
+  struct.def @Component10B {
+    struct.member @f : !struct.type<@T::@Component10A<[@Consts::@N]>>
+
+    function.def @compute() -> !struct.type<@Component10B> {
+      %self = struct.new : !struct.type<@Component10B>
+
+      %r = function.call @T::@Component10A::@compute() : () -> (!struct.type<@T::@Component10A<[@Consts::@N]>>)
+      struct.writem %self[@f] = %r : !struct.type<@Component10B>, !struct.type<@T::@Component10A<[@Consts::@N]>>
+
+      function.return %self : !struct.type<@Component10B>
+    }
+    function.def @constrain(%self: !struct.type<@Component10B>)  { function.return }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  TODO
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : !struct.type<@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @RepeatedFelt {
+    poly.param @F : !felt.type<"bn128">
+
+    function.def @accept(
+        %global: !struct.type<@BoxTemplate::@Box<[@F]>>,
+        %literal: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      function.return
+    }
+  }
+
+  global.def const @G : !felt.type<"bn128"> = 35
+
+  struct.def @Main {
+    function.def @compute(
+        %global: !struct.type<@BoxTemplate::@Box<[@G]>>,
+        %literal: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>
+    ) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+
+      function.call @RepeatedFelt::@accept(%global, %literal) :
+          (!struct.type<@BoxTemplate::@Box<[@G]>>,
+           !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>) -> ()
+
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@Main>,
+        %global: !struct.type<@BoxTemplate::@Box<[@G]>>,
+        %literal: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>
+    ) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:  TODO
