@@ -26,6 +26,7 @@
 #include "llzk/Config/Config.h"
 #include "llzk/Dialect/Array/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Bool/Transforms/TransformationPasses.h"
+#include "llzk/Dialect/Global/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Include/Transforms/InlineIncludesPass.h"
 #include "llzk/Dialect/Include/Util/IncludeHelper.h"
 #include "llzk/Dialect/InitDialects.h"
@@ -122,9 +123,10 @@ int main(int argc, char **argv) {
   llzk::registerValidationPasses();
   llzk::registerAnalysisPasses();
   llzk::registerTransformationPasses();
-  llzk::component::registerTransformationPasses();
   llzk::array::registerTransformationPasses();
+  llzk::component::registerTransformationPasses();
   llzk::boolean::registerTransformationPasses();
+  llzk::global::registerTransformationPasses();
   llzk::include::registerTransformationPasses();
   llzk::polymorphic::registerTransformationPasses();
   llzk::pod::registerTransformationPasses();

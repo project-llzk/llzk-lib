@@ -6,7 +6,8 @@ file(GLOB_RECURSE LLZKGlobalDialect_SOURCES "**/*.cpp")
 target_sources(LLZKGlobalDialect PRIVATE ${LLZKGlobalDialect_SOURCES})
 target_link_libraries(
   LLZKGlobalDialect PUBLIC LLZKDialectHeaders ${LLZK_DEP_DIALECT_LIBS} MLIRIR
-                     MLIRParser LLVMHeaders MLIRHeaders)
+                     MLIRPass MLIRParser MLIRTransformUtils
+                     LLVMHeaders MLIRHeaders)
 llzk_target_add_mlir_link_settings(LLZKGlobalDialect)
 
 install(TARGETS LLZKGlobalDialect EXPORT LLZKTargets)
