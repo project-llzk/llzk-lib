@@ -801,27 +801,27 @@ $(function(){initNavTree('LLZKRedundantReadAndWriteEliminationPass_8cpp_source.h
 <div class="line"><a id="l00747" name="l00747"></a><span class="lineno">  747</span> </div>
 <div class="line"><a id="l00748" name="l00748"></a><span class="lineno">  748</span>    <span class="keyword">auto</span> doStatefulRead =</div>
 <div class="line"><a id="l00749" name="l00749"></a><span class="lineno">  749</span>        [&amp;]&lt;<span class="keyword">typename</span> KeyT&gt;(Value resVal, DenseMap&lt;KeyT, Value&gt; &amp;knownValues, <span class="keyword">const</span> KeyT &amp;key) {</div>
-<div class="line"><a id="l00750" name="l00750"></a><span class="lineno">  750</span>      <span class="keywordflow">if</span> (<span class="keyword">auto</span> it = knownValues.find(key); it != knownValues.end()) {</div>
-<div class="line"><a id="l00751" name="l00751"></a><span class="lineno">  751</span>        replacementMap[resVal] = it-&gt;second;</div>
-<div class="line"><a id="l00752" name="l00752"></a><span class="lineno">  752</span>        readVals.push_back(resVal);</div>
+<div class="line"><a id="l00750" name="l00750"></a><span class="lineno">  750</span>      readVals.push_back(resVal);</div>
+<div class="line"><a id="l00751" name="l00751"></a><span class="lineno">  751</span>      <span class="keywordflow">if</span> (<span class="keyword">auto</span> it = knownValues.find(key); it != knownValues.end()) {</div>
+<div class="line"><a id="l00752" name="l00752"></a><span class="lineno">  752</span>        replacementMap[resVal] = it-&gt;second;</div>
 <div class="line"><a id="l00753" name="l00753"></a><span class="lineno">  753</span>        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a id="l00754" name="l00754"></a><span class="lineno">  754</span>      } <span class="keywordflow">else</span> {</div>
 <div class="line"><a id="l00755" name="l00755"></a><span class="lineno">  755</span>        knownValues[key] = resVal;</div>
 <div class="line"><a id="l00756" name="l00756"></a><span class="lineno">  756</span>        state.values[resVal] = ReferenceNode::create(resVal, resVal);</div>
-<div class="line"><a id="l00757" name="l00757"></a><span class="lineno">  757</span>      }</div>
-<div class="line"><a id="l00758" name="l00758"></a><span class="lineno">  758</span>      readVals.push_back(resVal);</div>
-<div class="line"><a id="l00759" name="l00759"></a><span class="lineno">  759</span>      <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00760" name="l00760"></a><span class="lineno">  760</span>    };</div>
-<div class="line"><a id="l00761" name="l00761"></a><span class="lineno">  761</span> </div>
-<div class="line"><a id="l00762" name="l00762"></a><span class="lineno">  762</span>    <span class="comment">// An omitted table offset denotes the current row.</span></div>
-<div class="line"><a id="l00763" name="l00763"></a><span class="lineno">  763</span>    <span class="keyword">const</span> IntegerAttr zeroTableOffset = IntegerAttr::get(IndexType::get(op-&gt;getContext()), 0);</div>
-<div class="line"><a id="l00764" name="l00764"></a><span class="lineno">  764</span>    <span class="keyword">auto</span> getMemberNode = [&amp;](Value component, FlatSymbolRefAttr member) {</div>
-<div class="line"><a id="l00765" name="l00765"></a><span class="lineno">  765</span>      std::shared_ptr&lt;ReferenceNode&gt; componentNode = tryGetValTree(translate(component));</div>
-<div class="line"><a id="l00766" name="l00766"></a><span class="lineno">  766</span>      <span class="keywordflow">if</span> (componentNode == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a id="l00767" name="l00767"></a><span class="lineno">  767</span>        <span class="keywordflow">return</span> std::shared_ptr&lt;ReferenceNode&gt;();</div>
-<div class="line"><a id="l00768" name="l00768"></a><span class="lineno">  768</span>      }</div>
-<div class="line"><a id="l00769" name="l00769"></a><span class="lineno">  769</span>      <span class="keywordflow">return</span> componentNode-&gt;getOrCreateChild(member);</div>
-<div class="line"><a id="l00770" name="l00770"></a><span class="lineno">  770</span>    };</div>
+<div class="line"><a id="l00757" name="l00757"></a><span class="lineno">  757</span>        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00758" name="l00758"></a><span class="lineno">  758</span>      }</div>
+<div class="line"><a id="l00759" name="l00759"></a><span class="lineno">  759</span>    };</div>
+<div class="line"><a id="l00760" name="l00760"></a><span class="lineno">  760</span> </div>
+<div class="line"><a id="l00761" name="l00761"></a><span class="lineno">  761</span>    <span class="comment">// An omitted table offset denotes the current row.</span></div>
+<div class="line"><a id="l00762" name="l00762"></a><span class="lineno">  762</span>    <span class="keyword">const</span> IntegerAttr zeroTableOffset = IntegerAttr::get(IndexType::get(op-&gt;getContext()), 0);</div>
+<div class="line"><a id="l00763" name="l00763"></a><span class="lineno">  763</span>    <span class="keyword">auto</span> getMemberNode = [&amp;](Value component, FlatSymbolRefAttr member) {</div>
+<div class="line"><a id="l00764" name="l00764"></a><span class="lineno">  764</span>      std::shared_ptr&lt;ReferenceNode&gt; componentNode = tryGetValTree(translate(component));</div>
+<div class="line"><a id="l00765" name="l00765"></a><span class="lineno">  765</span>      <span class="keywordflow">if</span> (componentNode == <span class="keyword">nullptr</span>) {</div>
+<div class="line"><a id="l00766" name="l00766"></a><span class="lineno">  766</span>        <span class="keywordflow">return</span> std::shared_ptr&lt;ReferenceNode&gt;();</div>
+<div class="line"><a id="l00767" name="l00767"></a><span class="lineno">  767</span>      }</div>
+<div class="line"><a id="l00768" name="l00768"></a><span class="lineno">  768</span>      <span class="keywordflow">return</span> componentNode-&gt;getOrCreateChild(member);</div>
+<div class="line"><a id="l00769" name="l00769"></a><span class="lineno">  769</span>    };</div>
+<div class="line"><a id="l00770" name="l00770"></a><span class="lineno">  770</span> </div>
 <div class="line"><a id="l00771" name="l00771"></a><span class="lineno">  771</span>    <span class="keyword">auto</span> getMemberAccessNode = [&amp;](MemberReadOp readm) {</div>
 <div class="line"><a id="l00772" name="l00772"></a><span class="lineno">  772</span>      std::shared_ptr&lt;ReferenceNode&gt; access =</div>
 <div class="line"><a id="l00773" name="l00773"></a><span class="lineno">  773</span>          getMemberNode(readm.getComponent(), readm.getMemberNameAttr());</div>

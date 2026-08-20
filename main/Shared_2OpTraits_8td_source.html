@@ -132,10 +132,10 @@ $(function(){initNavTree('Shared_2OpTraits_8td_source.html','',''); });
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>//</div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>// This trait avoids an assertion failure in the `SymbolTable` class constructor</div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>// when the symbol table is malformed (e.g. duplicate symbols), instead allowing</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>// it produce an error diagnostic. This can happen due to the implementations of</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>// `verifySymbolUses()` that do symbol lookups from the root module. These are</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>// called before ancestor module symbol tables are verified, thus leading to an</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>// assertion failure before the verifier would produce a friendly diagnostic.</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>// it to produce an error diagnostic. This can happen due to the implementations</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>// of `verifySymbolUses()` that do symbol lookups from the root module. These</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>// are called before ancestor module symbol tables are verified, thus leading to</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>// an assertion failure before the verifier would produce a friendly diagnostic.</div>
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>// This trait handles that by injecting the usual symbol table verification on</div>
 <div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>// ancestor symbol tables before performing verification of the current symbol</div>
 <div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>// table.</div>
