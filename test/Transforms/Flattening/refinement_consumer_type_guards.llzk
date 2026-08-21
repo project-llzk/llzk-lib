@@ -1,0 +1,266 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s | FileCheck %s
+
+module attributes {llzk.lang} {
+  function.def @consume3x3(%value: !array.type<3,3 x !felt.type>) {
+    function.return
+  }
+
+  struct.def @Holder {
+    struct.member @items : !array.type<?,? x !felt.type> {column}
+
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %source = array.new : !array.type<2,2 x !felt.type>
+      %first = poly.unifiable_cast %source : (!array.type<2,2 x !felt.type>) -> !array.type<2,? x !felt.type>
+      %second = poly.unifiable_cast %source : (!array.type<2,2 x !felt.type>) -> !array.type<?,2 x !felt.type>
+      // The complementary writes refine @items to 2 x 2.
+      struct.writem %self[@items] = %first : !struct.type<@Holder>, !array.type<2,? x !felt.type>
+      struct.writem %self[@items] = %second : !struct.type<@Holder>, !array.type<?,2 x !felt.type>
+      // This generic read instead feeds a call whose declared parameter requires 3 x 3.
+      %read = struct.readm %self[@items] : !struct.type<@Holder>, !array.type<?,? x !felt.type>
+      function.call @consume3x3(%read) : (!array.type<?,? x !felt.type>) -> ()
+      function.return %self : !struct.type<@Holder>
+    }
+
+    function.def @constrain(%self: !struct.type<@Holder>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @consume3x3(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<3,3 x !felt.type>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Holder {
+// CHECK-NEXT:      struct.member @items : !array.type<?,? x !felt.type> {column}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.new  : <2,2 x !felt.type>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_2]] : (!array.type<2,2 x !felt.type>) -> !array.type<?,? x !felt.type>
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_2]] : (!array.type<2,2 x !felt.type>) -> !array.type<?,? x !felt.type>
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@items] = %[[VAL_3]] : <@Holder>, !array.type<?,? x !felt.type>
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@items] = %[[VAL_4]] : <@Holder>, !array.type<?,? x !felt.type>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@items] : <@Holder>, !array.type<?,? x !felt.type>
+// CHECK-NEXT:        function.call @consume3x3(%[[VAL_5]]) : (!array.type<?,? x !felt.type>) -> ()
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// A generic member read can participate in constrain.eq with an independently concrete value.
+// Refining the member to array<0> must not retag the read, because constrain.eq's other operand
+// remains array<1> and is not updated by member-read propagation.
+module attributes {llzk.lang} {
+  poly.template @THolderA {
+    poly.param @T
+
+    struct.def @Holder {
+      struct.member @value : !poly.tvar<@T> {column}
+
+      function.def @compute() -> !struct.type<@THolderA::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@THolderA::@Holder<[@T]>>
+        %zero = array.new : !array.type<0 x !felt.type>
+        struct.writem %self[@value] = %zero : !struct.type<@THolderA::@Holder<[@T]>>, !array.type<0 x !felt.type>
+        function.return %self : !struct.type<@THolderA::@Holder<[@T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@THolderA::@Holder<[@T]>>) {
+        %read = struct.readm %self[@value] : !struct.type<@THolderA::@Holder<[@T]>>, !poly.tvar<@T>
+        %one = array.new : !array.type<1 x !felt.type>
+        constrain.eq %read, %one : !poly.tvar<@T>, !array.type<1 x !felt.type>
+        function.return
+      }
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @THolderA {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @value : !poly.tvar<@T> {column}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@THolderA::@Holder<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@THolderA::@Holder<[@T]>>
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = array.new  : <0 x !felt.type>
+// CHECK-NEXT:          struct.writem %[[VAL_0]][@value] = %[[VAL_1]] : <@THolderA::@Holder<[@T]>>, !array.type<0 x !felt.type>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@THolderA::@Holder<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@THolderA::@Holder<[@T]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@value] : <@THolderA::@Holder<[@T]>>, !poly.tvar<@T>
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.new  : <1 x !felt.type>
+// CHECK-NEXT:          constrain.eq %[[VAL_3]], %[[VAL_4]] : !poly.tvar<@T>, !array.type<1 x !felt.type>
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// A concrete member write can refine this generic read to Cell<0>, but the read also feeds a cast
+// with independently concrete Cell<1> output. Because the cast result has a non-member-write
+// consumer, its result cannot be retagged to repair that refinement. Keep the member/read generic
+// so the cast remains valid.
+module attributes {llzk.lang} {
+  poly.template @TCellB {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCellB::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCellB::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCellB::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCellB::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  function.def @consume1(%value: !struct.type<@TCellB::@Cell<[1]>>) {
+    function.return
+  }
+
+  poly.template @THolderB {
+    poly.param @T
+
+    struct.def @Holder {
+      struct.member @value : !poly.tvar<@T> {column}
+
+      function.def @compute() -> !struct.type<@THolderB::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@THolderB::@Holder<[@T]>>
+        %item0 = function.call @TCellB::@Cell::@compute() : () -> !struct.type<@TCellB::@Cell<[0]>>
+        struct.writem %self[@value] = %item0 : !struct.type<@THolderB::@Holder<[@T]>>, !struct.type<@TCellB::@Cell<[0]>>
+        %read = struct.readm %self[@value] : !struct.type<@THolderB::@Holder<[@T]>>, !poly.tvar<@T>
+        %as1 = poly.unifiable_cast %read : (!poly.tvar<@T>) -> !struct.type<@TCellB::@Cell<[1]>>
+        function.call @consume1(%as1) : (!struct.type<@TCellB::@Cell<[1]>>) -> ()
+        function.return %self : !struct.type<@THolderB::@Holder<[@T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@THolderB::@Holder<[@T]>>) {
+        function.return
+      }
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @TCellB_1_Cell {
+// CHECK-NEXT:      struct.member @value : !felt.type {column}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TCellB_1_Cell> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TCellB_1_Cell>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TCellB_1_Cell>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TCellB_1_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @TCellB_0_Cell {
+// CHECK-NEXT:      struct.member @value : !felt.type {column}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TCellB_0_Cell> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@TCellB_0_Cell>
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@TCellB_0_Cell>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@TCellB_0_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @consume1(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@TCellB_1_Cell>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @THolderB {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @value : !poly.tvar<@T> {column}
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@THolderB::@Holder<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@THolderB::@Holder<[@T]>>
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @TCellB_0_Cell::@compute() : () -> !struct.type<@TCellB_0_Cell>
+// CHECK-NEXT:          struct.writem %[[VAL_5]][@value] = %[[VAL_6]] : <@THolderB::@Holder<[@T]>>, !struct.type<@TCellB_0_Cell>
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_5]][@value] : <@THolderB::@Holder<[@T]>>, !poly.tvar<@T>
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_7]] : (!poly.tvar<@T>) -> !struct.type<@TCellB_1_Cell>
+// CHECK-NEXT:          function.call @consume1(%[[VAL_8]]) : (!struct.type<@TCellB_1_Cell>) -> ()
+// CHECK-NEXT:          function.return %[[VAL_5]] : !struct.type<@THolderB::@Holder<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@THolderB::@Holder<[@T]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// A concrete member write can refine the generic array member to Cell<0>. The array.read result
+// would then be inferred as Cell<0>, but this concrete call independently requires Cell<1>.
+// Keep the member and both reads generic so the call remains valid after flattening.
+module attributes {llzk.lang} {
+  poly.template @TCellC {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCellC::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCellC::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCellC::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCellC::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  function.def @consume1(%value: !struct.type<@TCellC::@Cell<[1]>>) {
+    function.return
+  }
+
+  poly.template @THolderC {
+    poly.param @T
+
+    struct.def @Holder {
+      struct.member @items : !array.type<1 x !poly.tvar<@T>> {column}
+
+      function.def @compute() -> !struct.type<@THolderC::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@THolderC::@Holder<[@T]>>
+        %c0 = arith.constant 0 : index
+        %item0 = function.call @TCellC::@Cell::@compute() : () -> !struct.type<@TCellC::@Cell<[0]>>
+        %items0 = array.new %item0 : !array.type<1 x !struct.type<@TCellC::@Cell<[0]>>>
+        struct.writem %self[@items] = %items0 : !struct.type<@THolderC::@Holder<[@T]>>, !array.type<1 x !struct.type<@TCellC::@Cell<[0]>>>
+        %items = struct.readm %self[@items] : !struct.type<@THolderC::@Holder<[@T]>>, !array.type<1 x !poly.tvar<@T>>
+        %item = array.read %items[%c0] : !array.type<1 x !poly.tvar<@T>>, !poly.tvar<@T>
+        function.call @consume1(%item) : (!poly.tvar<@T>) -> ()
+        function.return %self : !struct.type<@THolderC::@Holder<[@T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@THolderC::@Holder<[@T]>>) {
+        function.return
+      }
+    }
+  }
+}
+// CHECK-LABEL:  poly.template @THolderC {
+// CHECK-NEXT:     poly.param @T
+// CHECK-NEXT:     struct.def @Holder {
+// CHECK-NEXT:       struct.member @items : !array.type<1 x !poly.tvar<@T>> {column}
+// CHECK-NEXT:       function.def @compute() -> !struct.type<@THolderC::@Holder<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:         %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:         %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@THolderC::@Holder<[@T]>>
+// CHECK-NEXT:         %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @TCellC_0_Cell::@compute() : () -> !struct.type<@TCellC_0_Cell>
+// CHECK-NEXT:         %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_7]] : <1 x !struct.type<@TCellC_0_Cell>>
+// CHECK-NEXT:         struct.writem %[[VAL_6]][@items] = %[[VAL_8]] : <@THolderC::@Holder<[@T]>>, !array.type<1 x !struct.type<@TCellC_0_Cell>>
+// CHECK-NEXT:         %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_6]][@items] : <@THolderC::@Holder<[@T]>>, !array.type<1 x !poly.tvar<@T>>
+// CHECK-NEXT:         %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_9]]{{\[}}%[[VAL_5]]] : <1 x !poly.tvar<@T>>, !poly.tvar<@T>
+// CHECK-NEXT:         function.call @consume1(%[[VAL_10]]) : (!poly.tvar<@T>) -> ()
+// CHECK-NEXT:         function.return %[[VAL_6]] : !struct.type<@THolderC::@Holder<[@T]>>
+// CHECK-NEXT:       }
+// CHECK-NEXT:       function.def @constrain(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !struct.type<@THolderC::@Holder<[@T]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:         function.return
+// CHECK-NEXT:       }
+// CHECK-NEXT:     }
+// CHECK-NEXT:   }
