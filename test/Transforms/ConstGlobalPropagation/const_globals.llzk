@@ -30,8 +30,30 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@Component10B>)  { function.return }
   }
 }
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:  TODO
+// CHECK-LABEL:  poly.template @T {
+// CHECK-NEXT:     poly.param @Z : index
+// CHECK-NEXT:     struct.def @Component10A {
+// CHECK-NEXT:       function.def @compute() -> !struct.type<@T::@Component10A<[@Z]>> attributes {function.allow_witness} {
+// CHECK-NEXT:         %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@T::@Component10A<[@Z]>>
+// CHECK-NEXT:         function.return %[[VAL_0]] : !struct.type<@T::@Component10A<[@Z]>>
+// CHECK-NEXT:       }
+// CHECK-NEXT:       function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@T::@Component10A<[@Z]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:         function.return
+// CHECK-NEXT:       }
+// CHECK-NEXT:     }
+// CHECK-NEXT:   }
+// CHECK-LABEL:  struct.def @Component10B {
+// CHECK-NEXT:     struct.member @f : !struct.type<@T::@Component10A<[3]>>
+// CHECK-NEXT:     function.def @compute() -> !struct.type<@Component10B> attributes {function.allow_witness} {
+// CHECK-NEXT:       %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Component10B>
+// CHECK-NEXT:       %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @T::@Component10A::@compute() : () -> !struct.type<@T::@Component10A<[3]>>
+// CHECK-NEXT:       struct.writem %[[VAL_2]][@f] = %[[VAL_3]] : <@Component10B>, !struct.type<@T::@Component10A<[3]>>
+// CHECK-NEXT:       function.return %[[VAL_2]] : !struct.type<@Component10B>
+// CHECK-NEXT:     }
+// CHECK-NEXT:     function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Component10B>) attributes {function.allow_constraint} {
+// CHECK-NEXT:       function.return
+// CHECK-NEXT:     }
+// CHECK-NEXT:   }
 // -----
 
 module attributes {llzk.lang} {
@@ -87,4 +109,32 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:  TODO
+// CHECK-NEXT:    poly.template @BoxTemplate {
+// CHECK-NEXT:      poly.param @P
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@BoxTemplate::@Box<[@P]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@BoxTemplate::@Box<[@P]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@P]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @RepeatedFelt {
+// CHECK-NEXT:      poly.param @F : !felt.type<"bn128">
+// CHECK-NEXT:      function.def @accept(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@F]>>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[#felt<const 35>]>>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : <"bn128">>]>>) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.call @RepeatedFelt::@accept(%[[VAL_4]], %[[VAL_5]]) : (!struct.type<@BoxTemplate::@Box<[#felt<const 35>]>>, !struct.type<@BoxTemplate::@Box<[#felt<const 35 : <"bn128">>]>>) -> ()
+// CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[#felt<const 35>]>>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : <"bn128">>]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
