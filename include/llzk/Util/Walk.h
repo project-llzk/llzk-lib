@@ -59,7 +59,7 @@ walkCollect(R &root, llvm::function_ref<bool(MatchType)> pred) {
 /// operations in walk order.
 template <typename MatchType, typename R, typename Map>
 inline static auto walkCollectMapped(R &root, Map &&map) {
-  using MappedType = std::invoke_result_t<Map &, MatchType>;
+  using MappedType = std::invoke_result_t<Map &, MatchType &>;
 
   llvm::SmallVector<MappedType> collected;
   root.walk([&collected, &map](MatchType op) { collected.push_back(map(op)); });

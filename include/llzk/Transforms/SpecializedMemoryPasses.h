@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "llzk/Util/Walk.h"
+
 #include <mlir/Analysis/DataLayoutAnalysis.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/Builders.h>
