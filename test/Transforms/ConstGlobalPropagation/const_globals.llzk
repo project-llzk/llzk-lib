@@ -138,3 +138,52 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  global.def const @X : index = 3
+  global.def const @Y : index = 3
+
+  function.def @foo() -> !array.type<@X,@Y x !felt.type<"bn128">> {
+    %x = array.new : !array.type<@X,@Y x !felt.type<"bn128">>
+    function.return %x : !array.type<@X,@Y x !felt.type<"bn128">>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @foo() -> !array.type<3,3 x !felt.type<"bn128">> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = array.new  : <3,3 x !felt.type<"bn128">>
+// CHECK-NEXT:      function.return %[[VAL_0]] : !array.type<3,3 x !felt.type<"bn128">>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  global.def const @N : index = 3
+
+  struct.def @S {
+    struct.member @data : !pod.type<[
+      @values: !array.type<@N x !felt.type<"bn128">>
+    ]>
+
+    function.def @compute() -> !struct.type<@S> {
+      %self = struct.new : !struct.type<@S>
+      function.return %self : !struct.type<@S>
+    }
+
+    function.def @constrain(%self: !struct.type<@S>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @S {
+// CHECK-NEXT:      struct.member @data : !pod.type<[@values: !array.type<3 x !felt.type<"bn128">>]>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@S> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@S>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@S>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@S>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
