@@ -29,7 +29,7 @@ public:
   mlir::FailureOr<mlir::StringAttr> get(mlir::Operation *op) const {
     auto it = names.find(op);
     if (it == names.end()) {
-      return op->emitOpError() << "does not emit a temporary";
+      return op->emitOpError("does not emit a temporary");
     }
     return it->getSecond();
   }

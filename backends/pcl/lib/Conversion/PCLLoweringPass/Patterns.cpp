@@ -194,7 +194,14 @@ struct ConvertArithSelectOp : public OpConversionPatternWithTemps<arith::SelectO
     auto cond = adaptor.getCondition();
     auto lhs = adaptor.getTrueValue();
     auto rhs = adaptor.getFalseValue();
-    auto temp = rewriter.replaceOpWithNewOp<pcl::VarOp>(op, *tempName, /*public=*/false);
+    Value temp = rewriter.create<pcl::VarOp>(location, *tempName, /*public=*/false);
+    // If the type of the operands does not match the type of the temporary,
+    // convert between the two.
+    const auto *tc = getTypeConverter();
+    if (tc && lhs.getType() != temp.getType()) {
+      temp = tc->materializeTargetConversion(rewriter, location, lhs.getType(), temp);
+    }
+    rewriter.replaceOp(op, temp);
     auto notCond = rewriter.create<pcl::NotOp>(location, cond);
     auto eq1 = rewriter.create<pcl::CmpEqOp>(location, temp, lhs);
     auto eq2 = rewriter.create<pcl::CmpEqOp>(location, temp, rhs);
@@ -340,7 +347,7 @@ struct ConvertConstrainCall : public OpConversionPattern<CallOp> {
 
     auto subcmp = llvm::dyn_cast_if_present<TypedValue<StructType>>(op.getArgOperands().front());
     if (!subcmp) {
-      return op->emitOpError() << "expected argument #0 to be a struct type";
+      return op->emitOpError("expected argument #0 to be a struct type");
     }
     auto subcmpOp = llvm::dyn_cast_if_present<MemberReadOp>(subcmp.getDefiningOp());
     if (!subcmpOp) {
@@ -572,10 +579,9 @@ struct ConvertSelfMemberReadOpOfFelt : public OpConversionPattern<MemberReadOp> 
       return failure();
     }
 
-    auto pclVar = rewriter.create<pcl::VarOp>(
-        defOp->get().getLoc(), defOp->get().getName(), defOp->get().hasPublicAttr()
+    rewriter.replaceOpWithNewOp<pcl::VarOp>(
+        op, defOp->get().getName(), defOp->get().hasPublicAttr()
     );
-    rewriter.replaceOp(op, pclVar);
     return success();
   }
 };
@@ -659,11 +665,9 @@ struct ConvertSubcmpMemberReadOp : public OpConversionPattern<MemberReadOp> {
       return failure();
     }
 
-    auto name = (Twine(subcmp.getMemberName()) + "." + defOp->get().getName()).str();
-    auto pclVar = rewriter.create<pcl::VarOp>(
-        defOp->get().getLoc(), rewriter.getStringAttr(name), /*public=*/false
-    );
-    rewriter.replaceOp(op, pclVar);
+    llvm::SmallString<256> sto;
+    auto name = (Twine(subcmp.getMemberName()) + "." + defOp->get().getName()).toStringRef(sto);
+    rewriter.replaceOpWithNewOp<pcl::VarOp>(op, rewriter.getStringAttr(name), /*public=*/false);
     return success();
   }
 };

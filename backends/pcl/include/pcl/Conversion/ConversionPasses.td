@@ -10,9 +10,9 @@
 #ifndef PCL_CONV_CONVERSION_PASSES_TD
 #define PCL_CONV_CONVERSION_PASSES_TD
 
-include "mlir/Pass/PassBase.td"
+include "llzk/Pass/PassBase.td"
 
-def PCLLoweringPass : Pass<"llzk-to-pcl", "::mlir::ModuleOp"> {
+def PCLLoweringPass : LLZKPass<"llzk-to-pcl"> {
   let summary =
       "Rewrite constraints to be compatible with PCL constraints used by Picus";
   let description = [{
