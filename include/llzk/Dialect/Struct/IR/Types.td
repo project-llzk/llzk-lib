@@ -27,22 +27,27 @@ class StructDialectType<string name, string typeMnemonic,
 def LLZK_StructType : StructDialectType<"Struct", "type"> {
   let summary = "circuit component";
   let description = [{
-    Type of a `struct` op instance. For structs that contain template parameters,
-    the type must contain a list of attributes that instantiate the template
-    parameters, one per parameter. Each attribute must be one of the following:
+    Type of a `struct.def` instance. An instantiation argument list supplies one attribute per
+    `poly.param` in the definition's enclosing `poly.template`, in declaration order. For a
+    definition with no parameters, the list may be omitted or explicitly empty. Every
+    argument must satisfy the corresponding parameter's type restriction; a symbol argument is
+    checked using its resolved enclosing template binding or constant global definition. Unknown,
+    mutable-global, and wrong-kind symbols are rejected. Each attribute must be one of the
+    following:
       - IntegerAttr (with IndexType), specifying a fixed parameter value
-      - SymbolRefAttr, specifying a parameter value defined by a struct parameter
+      - FeltConstAttr, specifying a fixed finite-field parameter value
+      - SymbolRefAttr, specifying a parameter value defined by an enclosing template parameter
         or global constant
-      - AffineMapAttr, for an array of struct elements whose template parameters
-        vary based on some fixed pattern.
-      - TypeAttr, for specifying a type parameter.
+      - AffineMapAttr, specifying a single-result affine expression for an argument that varies
+        across an array of struct elements
+      - TypeAttr, specifying a type parameter
 
     ```llzk
     // Type for struct `A` with no parameters.
     !struct.type<@A>
 
-    // Type for struct `B` with IntegerAttr and SymbolRefAttr parameters.
-    !struct.type<@B<[5, @C]>>
+    // Type for struct `B` with IntegerAttr, FeltConstAttr, and SymbolRefAttr parameters.
+    !struct.type<@B<[5, #felt<const 35>, @C]>>
 
     // Type for struct `C` with TypeAttr and IntegerAttr parameters.
     !struct.type<@C<[!felt.type, 24]>>
@@ -99,7 +104,7 @@ def LLZK_StructType : StructDialectType<"Struct", "type"> {
     // Verifies that this type references a valid struct, relative to the given `op`.
     ::mlir::LogicalResult verifySymbolRef(::mlir::SymbolTableCollection &symbolTable, ::mlir::Operation *op);
 
-    /// Returns wether the struct this type refers to has members marked as columns.
+    /// Returns whether the struct this type refers to has members marked as columns.
     /// A lookup is necessary first and will forward the failure state if it fails.
     mlir::LogicalResult hasColumns(mlir::SymbolTableCollection &symbolTable, mlir::Operation *op) const;
   }];

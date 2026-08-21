@@ -1,0 +1,62 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s
+
+// Flattening must materialize an omitted felt argument from repeated concrete evidence
+// before it specializes the parameterized operand types.
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : !struct.type<@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @RepeatedFelt {
+    poly.param @F : !felt.type<"bn128">
+    function.def @accept(
+        %first: !struct.type<@BoxTemplate::@Box<[@F]>>,
+        %second: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      function.return
+    }
+  }
+
+  struct.def @Main {
+    function.def @compute(
+        %first: !struct.type<@BoxTemplate::@Box<[
+            #felt<const 35 : !felt.type<"bn128">>
+        ]>>,
+        %second: !struct.type<@BoxTemplate::@Box<[
+            #felt<const 35 : !felt.type<"bn128">>
+        ]>>
+    ) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.call @RepeatedFelt::@accept(%first, %second) :
+          (!struct.type<@BoxTemplate::@Box<[
+              #felt<const 35 : !felt.type<"bn128">>
+          ]>>,
+           !struct.type<@BoxTemplate::@Box<[
+               #felt<const 35 : !felt.type<"bn128">>
+           ]>>) -> ()
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@Main>,
+        %first: !struct.type<@BoxTemplate::@Box<[
+            #felt<const 35 : !felt.type<"bn128">>
+        ]>>,
+        %second: !struct.type<@BoxTemplate::@Box<[
+            #felt<const 35 : !felt.type<"bn128">>
+        ]>>
+    ) {
+      function.return
+    }
+  }
+}

@@ -12,8 +12,7 @@
 #include "llzk/Analysis/AnalysisUtil.h"
 #include "llzk/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Analysis/SourceRef.h"
-#include "llzk/Dialect/Felt/IR/Attrs.h"
-#include "llzk/Dialect/Felt/IR/Types.h"
+#include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Verif/Util/ForbiddenPreconditionInfluence.h"
@@ -22,6 +21,7 @@
 #include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolTableLLZK.h"
+#include "llzk/Util/TypeHelper.h"
 #include "llzk/Util/Walk.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
@@ -52,7 +52,6 @@
 
 using namespace mlir;
 using namespace llzk::polymorphic;
-using namespace llzk::felt;
 using namespace llzk::component;
 using namespace llzk::function;
 
@@ -754,96 +753,14 @@ void IncludeOp::build(
   addTemplateParams<IncludeOp>(odsBuilder, props, templateParams);
 }
 
-LogicalResult IncludeOp::verifyTemplateParamCompatibility(
-    Attribute paramFromIncludeOp, TemplateParamOp targetParam
-) {
-  // A wildcard `?` (represented as kDynamic) defers inference to a later pass.
-  // It is only valid for parameters with a `!poly.tvar` type restriction.
-  if (auto intAttr = llvm::dyn_cast<IntegerAttr>(paramFromIncludeOp)) {
-    if (isDynamic(intAttr)) {
-      std::optional<Type> declaredType = targetParam.getTypeOpt();
-      if (!declaredType || !llvm::isa<TypeVarType>(*declaredType)) {
-        auto diag = this->emitOpError().append(
-            "wildcard `?` can only be used for template parameters with `!poly.tvar` "
-            "type restriction, but parameter \"@",
-            targetParam.getName(), "\" has "
-        );
-        if (declaredType) {
-          diag.append("type restriction ", *declaredType);
-        } else {
-          diag.append("no type restriction");
-        }
-        return diag;
-      }
-      return success();
-    }
-  }
-  if (std::optional<Type> declaredType = targetParam.getTypeOpt()) {
-    // Note: `declaredType` is restricted by `isValidConstReadType()`
-    bool compatible = false;
-    if (llvm::isa<TypeVarType>(*declaredType)) {
-      compatible = llvm::isa<TypeAttr>(paramFromIncludeOp);
-    } else if (llvm::isa<FeltType>(*declaredType)) {
-      compatible = llvm::isa<FeltConstAttr, IntegerAttr>(paramFromIncludeOp) &&
-                   isValidConstReadType(llvm::cast<TypedAttr>(paramFromIncludeOp).getType());
-    } else if (llvm::isa<IndexType, IntegerType>(*declaredType)) {
-      // Note: Just like struct type instantiation, there is no restriction on passing a
-      // larger value to an `i1`. The flattening pass will treat 0 as false and any other
-      // value as true (but give a warning if it's not 1).
-      compatible = llvm::isa<IntegerAttr>(paramFromIncludeOp) &&
-                   isValidConstReadType(llvm::cast<TypedAttr>(paramFromIncludeOp).getType());
-    } else {
-      llvm_unreachable("inconsistent with `isValidConstReadType()`");
-    }
-    if (!compatible) {
-      return this->emitOpError().append(
-          "instantiation value '", paramFromIncludeOp, "' is not compatible with parameter \"@",
-          targetParam.getName(), "\" type restriction ", *declaredType
-      );
-    }
-  }
-  return success();
-}
-
-LogicalResult IncludeOp::verifyTemplateParamCompatibility(
-    llvm::iterator_range<Region::op_iterator<TemplateParamOp>> targetParamDefs
-) {
-  ArrayAttr callParams = this->getTemplateParamsAttr();
-  assert(!isNullOrEmpty(callParams) && "pre-condition");
-  assert((callParams.size() == llvm::range_size(targetParamDefs)) && "pre-condition");
-
-  for (auto [paramOp, attr] : llvm::zip_equal(targetParamDefs, callParams.getValue())) {
-    if (failed(verifyTemplateParamCompatibility(attr, paramOp))) {
-      return failure();
-    }
-  }
-  return success();
-}
-
 LogicalResult IncludeOp::verifyTemplateParamsMatchInferred(
     llvm::iterator_range<Region::op_iterator<TemplateParamOp>> targetParamDefs,
     const UnificationMap &unifications
 ) {
-  ArrayAttr callParams = this->getTemplateParamsAttr();
-  assert(!isNullOrEmpty(callParams) && "pre-condition");
-  assert((callParams.size() == llvm::range_size(targetParamDefs)) && "pre-condition");
-
-  for (auto [paramOp, attr] : llvm::zip_equal(targetParamDefs, callParams.getValue())) {
-    // Skip wildcards (`?` / kDynamic) - their value will be resolved by a later inference pass.
-    if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
-      if (isDynamic(intAttr)) {
-        continue;
-      }
-    }
-    auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::RHS});
-    if (it != unifications.end() && !typeParamsUnify({attr}, {it->second})) {
-      return this->emitOpError().append(
-          "template instantiation value '", attr, "' for parameter \"@", paramOp.getName(),
-          "\" conflicts with value '", it->second, "' inferred from function type signature"
-      );
-    }
-  }
-  return success();
+  return llzk::verifyTemplateParamsMatchInferred(
+      getOperation(), getTemplateParamsAttr(), targetParamDefs, unifications,
+      llzk::TemplateParamSignatureKind::Contract
+  );
 }
 
 namespace {
@@ -893,69 +810,23 @@ struct KnownTargetVerifier : public IncludeOpVerifier {
   LogicalResult verifyTemplateParams() override {
     Operation *tgtOp = tgt.getOperation();
     if (TemplateOp tgtOpParent = getParentOfType<TemplateOp>(tgtOp)) {
-      // When the target function is a free function within a TemplateOp, the IncludeOp may have
-      // template parameter instantiations that must be checked against the template parameters.
-      // - If the function type signature references all template parameters, then the parameter
-      //   instantiation list on the IncludeOp is optional, otherwise it's required.
-      // - If present, the instantiation list must provide a value for every template parameter
-      //   and the value must be type-compatible with the parameter's declared type (if any).
-      // - If present, the instantiation list must result in a function type signature that can
-      //   be unified with the IncludeOp's operand and result types.
       auto realParams = tgtOpParent.getConstOps<TemplateParamOp>();
-      ArrayAttr callParams = includeOp->getTemplateParamsAttr();
-
-      // When there is no instantiation list, just ensure that it's not required.
-      if (isNullOrEmpty(callParams)) {
-        llvm::SmallDenseSet<SymbolRefAttr> referencedInSignature;
-        llzk::getSymbolsUsedIn(tgtType.getInputs(), referencedInSignature);
-        llzk::getSymbolsUsedIn(tgtType.getResults(), referencedInSignature);
-
-        bool allParamsReferenced = llvm::all_of(realParams, [&](TemplateParamOp p) {
-          return referencedInSignature.contains(FlatSymbolRefAttr::get(p.getNameAttr()));
-        });
-        if (allParamsReferenced) {
-          return success();
+      return llzk::verifyKnownTargetTemplateParams(
+          includeOp->getOperation(), tgtType, tgt.getSymName(), tgtOpParent.getSymName(),
+          includeOp->getTemplateParamsAttr(), realParams,
+          llzk::TemplateParamSignatureKind::Contract,
+          [this](llzk::UnificationCandidateFn recordCandidate) -> FailureOr<UnificationMap> {
+        UnificationMap unifications;
+        if (functionTypesUnify(
+                includeOp->getTypeSignature(), tgtType, {}, &unifications, recordCandidate
+            )) {
+          return unifications;
         }
-        return includeOp->emitOpError().append(
-            "must provide template instantiation parameters when calling \"@", tgt.getSymName(),
-            "\" because not all template parameters of \"@", tgtOpParent.getSymName(),
-            "\" appear in the function type signature"
-        );
-      }
-
-      // Ensure `forceIntAttrTypes()` was successful on the IncludeOp's template parameters.
-      if (failed(llzk::forceIntAttrTypes(callParams.getValue(), [this] {
-        return llzk::InFlightDiagnosticWrapper(this->includeOp->emitOpError());
-      }))) {
         return failure();
       }
-
-      // The instantiation list is present. Check it has exactly one entry per template param.
-      size_t numTemplateParams = llvm::range_size(realParams);
-      if (callParams.size() != numTemplateParams) {
-        return includeOp->emitOpError().append(
-            "template instantiation has ", callParams.size(), " parameter(s) but \"@",
-            tgtOpParent.getSymName(), "\" expects ", numTemplateParams, " template parameter(s)"
-        );
-      }
-
-      // Check type compatibility of each provided value with the declared parameter type (if any).
-      if (failed(includeOp->verifyTemplateParamCompatibility(realParams))) {
-        return failure();
-      }
-
-      // Check that the provided instantiation values are consistent with what type unification
-      // of the target function types against the call's operand and result types would determine.
-      FailureOr<UnificationMap> unifyResult = includeOp->unifyTypeSignature(tgtType);
-      // This is already checked by `verifyInputs()`, but `verifyTemplateParams()` is called
-      // even if `verifyInputs()` fails for error aggregation, so we still need to return
-      // early here.
-      if (failed(unifyResult)) {
-        return failure();
-      }
-      return includeOp->verifyTemplateParamsMatchInferred(realParams, unifyResult.value());
+      );
     } else {
-      // Non-template functions cannot contain template parameter instantiations.
+      // Contracts outside templates cannot have template parameter instantiations.
       return verifyNoTemplateInstantiations();
     }
   }
@@ -1016,7 +887,7 @@ LogicalResult IncludeOp::verifySymbolUses(SymbolTableCollection &tables) {
   }
 
   // Otherwise, callee must be specified via full path from the root module. Perform the full set of
-  // checks against the known target function.
+  // checks against the known target contract.
   auto tgtOpt = lookupTopLevelSymbol<ContractOp>(
       tables, calleeAttr, getParentOfType<ModuleOp>(getOperation())
   );

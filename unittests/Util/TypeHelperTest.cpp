@@ -12,6 +12,8 @@
 #include "../LLZKTestBase.h"
 
 #include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/Felt/IR/Attrs.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
 
@@ -23,6 +25,7 @@ using namespace mlir;
 using namespace llzk;
 using namespace llzk::array;
 using namespace llzk::component;
+using namespace llzk::felt;
 using namespace llzk::pod;
 
 class TypeHelperTests : public LLZKTest {
@@ -101,6 +104,64 @@ TEST_F(TypeHelperTests, test_functionTypesUnify_Output_Fail) {
   FunctionType a = FunctionType::get(&ctx, {tyIndex}, {IntegerType::get(&ctx, 8)});
   FunctionType b = FunctionType::get(&ctx, {tyIndex}, {tyIndex});
   ASSERT_FALSE(functionTypesUnify(a, b));
+}
+
+TEST_F(TypeHelperTests, test_templateParamTypeCompatibility_feltFields) {
+  FeltType fieldless = FeltType::get(&ctx);
+  FeltType bn128 = FeltType::get(&ctx, "bn128");
+  FeltType goldilocks = FeltType::get(&ctx, "goldilocks");
+
+  ASSERT_TRUE(isTemplateParamTypeCompatible(bn128, fieldless));
+  ASSERT_TRUE(isTemplateParamTypeCompatible(fieldless, fieldless));
+  ASSERT_FALSE(isTemplateParamTypeCompatible(fieldless, bn128));
+  ASSERT_TRUE(isTemplateParamTypeCompatible(bn128, bn128));
+  ASSERT_FALSE(isTemplateParamTypeCompatible(goldilocks, bn128));
+  ASSERT_FALSE(isTemplateParamTypeCompatible(IndexType::get(&ctx), bn128));
+  ASSERT_FALSE(isTemplateParamTypeCompatible(std::nullopt, bn128));
+}
+
+TEST_F(TypeHelperTests, test_templateParamValuesUnify_feltRepresentations) {
+  FeltType fieldless = FeltType::get(&ctx);
+  FeltType bn128 = FeltType::get(&ctx, "bn128");
+  FeltType goldilocks = FeltType::get(&ctx, "goldilocks");
+  FeltConstAttr unspecified = FeltConstAttr::get(&ctx, APInt(8, 35), fieldless);
+  FeltConstAttr fielded = FeltConstAttr::get(&ctx, APInt(8, 35), bn128);
+  FeltConstAttr differentValue = FeltConstAttr::get(&ctx, APInt(8, 36), bn128);
+  FeltConstAttr differentField = FeltConstAttr::get(&ctx, APInt(8, 35), goldilocks);
+  IntegerAttr integer = IntegerAttr::get(IndexType::get(&ctx), 35);
+  FlatSymbolRefAttr actualSymbol = FlatSymbolRefAttr::get(&ctx, "Actual");
+  FlatSymbolRefAttr inferredSymbol = FlatSymbolRefAttr::get(&ctx, "Inferred");
+
+  EXPECT_TRUE(templateParamValuesUnify(unspecified, fielded, fieldless));
+  EXPECT_TRUE(templateParamValuesUnify(unspecified, fielded, bn128));
+  EXPECT_TRUE(templateParamValuesUnify(integer, fielded, bn128));
+  EXPECT_TRUE(templateParamValuesUnify(fielded, integer, bn128));
+  EXPECT_FALSE(templateParamValuesUnify(differentValue, fielded, bn128));
+  EXPECT_FALSE(templateParamValuesUnify(differentField, fielded, fieldless));
+  EXPECT_FALSE(templateParamValuesUnify(differentField, differentField, bn128));
+  EXPECT_TRUE(templateParamValuesUnify(actualSymbol, inferredSymbol, bn128));
+}
+
+TEST_F(TypeHelperTests, test_templateParamValuesUnify_widthIndependentFeltValues) {
+  static constexpr unsigned NARROW_WIDTH = 8;
+  static constexpr unsigned WIDE_WIDTH = 64;
+  static constexpr unsigned VALUE = 35;
+
+  FeltType fieldless = FeltType::get(&ctx);
+  FeltType bn128 = FeltType::get(&ctx, "bn128");
+  FeltType goldilocks = FeltType::get(&ctx, "goldilocks");
+  IntegerAttr wideInteger = IntegerAttr::get(IntegerType::get(&ctx, WIDE_WIDTH), VALUE);
+  IntegerAttr differentWideInteger =
+      IntegerAttr::get(IntegerType::get(&ctx, WIDE_WIDTH), VALUE + 1);
+  FeltConstAttr narrowBn128 = FeltConstAttr::get(&ctx, APInt(NARROW_WIDTH, VALUE), bn128);
+  FeltConstAttr wideBn128 = FeltConstAttr::get(&ctx, APInt(WIDE_WIDTH, VALUE), bn128);
+  FeltConstAttr narrowGoldilocks = FeltConstAttr::get(&ctx, APInt(NARROW_WIDTH, VALUE), goldilocks);
+
+  EXPECT_TRUE(templateParamValuesUnify(wideInteger, narrowBn128, fieldless));
+  EXPECT_TRUE(templateParamValuesUnify(narrowBn128, wideInteger, fieldless));
+  EXPECT_FALSE(templateParamValuesUnify(differentWideInteger, narrowBn128, fieldless));
+  EXPECT_TRUE(templateParamValuesUnify(wideBn128, narrowBn128, fieldless));
+  EXPECT_FALSE(templateParamValuesUnify(wideBn128, narrowGoldilocks, fieldless));
 }
 
 TEST_F(TypeHelperTests, test_forceIntToIndexType_fromI1) {
