@@ -507,7 +507,6 @@ collectZKLeanStructDefs(ModuleOp module, llvm::DenseSet<StringRef> &structNames)
     if (structNames.insert(name).second) {
       structDefs.push_back(def);
     }
-    return WalkResult::advance();
   });
   return structDefs;
 }

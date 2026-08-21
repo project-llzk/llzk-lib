@@ -46,7 +46,7 @@ inline mlir::Operation *findNearestLoopCarriedPodAccess(ReadPodOp readOp) {
       continue;
     }
 
-    if (walkContainsMatch<WritePodOp>(*parent, [&readOp](WritePodOp writeOp) {
+    if (walkContains<WritePodOp>(*parent, [&readOp](WritePodOp writeOp) {
       return writeOp.getPodRef() == readOp.getPodRef() &&
              writeOp.getRecordNameAttr() == readOp.getRecordNameAttr();
     })) {

@@ -343,8 +343,8 @@ class SparseAnalysisTests : public LLZKTest {};
 
 Operation *findSingleZeroResultFunctionCall(ModuleOp module) {
   Operation *callOp = nullptr;
-  WalkResult walkResult = module.walk([&](Operation *op) {
-    if (!isa<llzk::function::CallOp>(op) || op->getNumResults() != 0) {
+  WalkResult walkResult = module.walk([&](llzk::function::CallOp op) {
+    if (op->getNumResults() != 0) {
       return WalkResult::advance();
     }
     if (callOp != nullptr) {

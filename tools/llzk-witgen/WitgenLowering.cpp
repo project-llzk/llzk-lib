@@ -30,6 +30,7 @@
 #include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/Field.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/Walk.h"
 
 #include <mlir/Conversion/AffineToStandard/AffineToStandard.h>
 #include <mlir/Dialect/Arith/IR/Arith.h>
@@ -2082,15 +2083,10 @@ public:
     }
 
     SymbolTableCollection tables;
-    SmallVector<function::FuncDefOp> funcs;
-    moduleOp.walk([&](function::FuncDefOp funcOp) {
-      if (funcOp.nameIsConstrain()) {
-        return;
-      }
-      funcs.push_back(funcOp);
-    });
-
     BodyLowerer lowerer(moduleOp, tables, field->get(), options);
+    auto funcs = walkCollect<function::FuncDefOp>(moduleOp, [](auto funcOp) {
+      return !funcOp.nameIsConstrain();
+    });
     for (function::FuncDefOp funcOp : funcs) {
       if (failed(lowerer.lowerFunction(funcOp))) {
         signalPassFailure();
