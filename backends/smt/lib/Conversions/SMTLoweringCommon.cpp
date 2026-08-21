@@ -132,11 +132,8 @@ applySMTNoCFBodyConversion(Operation *op, ConversionTarget &target, RewritePatte
     return nullptr;
   }
 
-  SmallVector<component::CreateStructOp> deadStructs;
-  op->walk([&deadStructs](component::CreateStructOp createStructOp) {
-    if (createStructOp->use_empty()) {
-      deadStructs.push_back(createStructOp);
-    }
+  auto deadStructs = walkCollect<component::CreateStructOp>(*op, [](auto createStructOp) {
+    return createStructOp->use_empty();
   });
   for (component::CreateStructOp createStructOp : deadStructs) {
     createStructOp->erase();

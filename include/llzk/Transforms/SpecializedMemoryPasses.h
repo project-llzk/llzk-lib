@@ -59,8 +59,9 @@ struct SpecializedSROA : mlir::PassWrapper<SpecializedSROA<AllocOpTy>, mlir::Ope
 
       mlir::OpBuilder builder(&region.front(), region.front().begin());
 
-      mlir::SmallVector<mlir::DestructurableAllocationOpInterface> allocators;
-      region.walk([&allocators](AllocOpTy allocator) { allocators.emplace_back(allocator); });
+      auto allocators = walkCollectMapped<AllocOpTy>(region, [](auto allocator) {
+        return mlir::DestructurableAllocationOpInterface(allocator);
+      });
 
       if (mlir::succeeded(mlir::tryToDestructureMemorySlots(allocators, builder, dataLayout))) {
         changed = true;
@@ -108,8 +109,9 @@ struct SpecializedMem2Reg
 
       mlir::OpBuilder builder(&region.front(), region.front().begin());
 
-      mlir::SmallVector<mlir::PromotableAllocationOpInterface> allocators;
-      region.walk([&allocators](AllocOpTy allocator) { allocators.emplace_back(allocator); });
+      auto allocators = walkCollectMapped<AllocOpTy>(region, [](auto allocator) {
+        return mlir::PromotableAllocationOpInterface(allocator);
+      });
 
       auto promoteRes = mlir::tryToPromoteMemorySlots(allocators, builder, dataLayout, dominance);
       if (mlir::succeeded(promoteRes)) {

@@ -270,28 +270,28 @@ inline static bool isSamePodRecord(WritePodOp writeOp, Value podRef, StringAttr 
 
 /// Return whether `op` contains a nested write to `podRef.recordName`.
 static bool hasNestedWriteToRecord(Operation &op, Value podRef, StringAttr recordName) {
-  return walkContainsMatch<WritePodOp>(op, [&](WritePodOp writeOp) {
+  return walkContains<WritePodOp>(op, [&](WritePodOp writeOp) {
     return writeOp.getOperation() != &op && isSamePodRecord(writeOp, podRef, recordName);
   });
 }
 
 /// Return whether `op` contains a nested write to any record of `podRef`.
 static bool hasNestedWriteToPod(Operation &op, Value podRef) {
-  return walkContainsMatch<WritePodOp>(op, [&](WritePodOp writeOp) {
+  return walkContains<WritePodOp>(op, [&](WritePodOp writeOp) {
     return writeOp.getOperation() != &op && writeOp.getPodRef() == podRef;
   });
 }
 
 /// Return whether `op` contains any read from `podRef.recordName`.
 static bool hasReadFromRecord(Operation &op, Value podRef, StringAttr recordName) {
-  return walkContainsMatch<ReadPodOp>(op, [&podRef, &recordName](ReadPodOp readOp) {
+  return walkContains<ReadPodOp>(op, [&podRef, &recordName](ReadPodOp readOp) {
     return isSamePodRecord(readOp, podRef, recordName);
   });
 }
 
 /// Return whether `op` or any nested operation uses `value` as an operand.
 static bool hasValueUse(Operation &op, Value value) {
-  return walkContainsMatch<Operation *>(op, [&value](Operation *nestedOp) {
+  return walkContains<Operation *>(op, [&value](Operation *nestedOp) {
     return llvm::is_contained(nestedOp->getOperands(), value);
   });
 }
@@ -3909,30 +3909,23 @@ public:
 /// reifying the aggregate array-of-POD value or rewriting surrounding function/template
 /// signatures.
 static LogicalResult rejectUnsupportedPodArrayUnifiableCasts(ModuleOp modOp) {
-  WalkResult result = modOp.walk([](UnifiableCastOp op) {
+  auto result = modOp.walk([](UnifiableCastOp op) -> WalkResult {
     ArrayType inputArrTy = splittablePodArray(op.getInput().getType());
     ArrayType resultArrTy = splittablePodArray(op.getType());
     if (!inputArrTy && !resultArrTy) {
       return WalkResult::advance();
     }
     if (!inputArrTy && resultArrTy) {
-      op.emitOpError()
-          .append(
-              "cannot lower a generic input to a split array-of-POD result without rewriting "
-              "the surrounding function/template signature"
-          )
-          .report();
-      return WalkResult::interrupt();
+      return op.emitOpError(
+          "cannot lower a generic input to a split array-of-POD result without rewriting "
+          "the surrounding function/template signature"
+      );
     }
     if (inputArrTy && !resultArrTy) {
-      op.emitOpError()
-          .append(
-              "cannot lower a split array-of-POD input to a non-array result without "
-              "materializing the aggregate or rewriting the surrounding function/template "
-              "signature"
-          )
-          .report();
-      return WalkResult::interrupt();
+      return op.emitOpError(
+          "cannot lower a split array-of-POD input to a non-array result without materializing "
+          "the aggregate or rewriting the surrounding function/template signature"
+      );
     }
     return WalkResult::advance();
   });
@@ -5320,7 +5313,7 @@ void Step3Resolver::configureLateVirtualPodLegality(ConversionTarget &target) co
 }
 
 bool Step3Resolver::hasResolvableLateVirtualPodOps(ModuleOp modOp) const {
-  return walkContainsMatch<Operation *>(*modOp, [this](Operation *op) {
+  return walkContains<Operation *>(*modOp, [this](Operation *op) {
     return TypeSwitch<Operation *, bool>(op)
         .Case<WritePodOp>([this](auto writeOp) {
       return lookupVirtualPodLeafMap(writeOp.getPodRef(), virtualPods) &&
@@ -6375,22 +6368,21 @@ static size_t countResidualPodIR(ModuleOp modOp) {
 
 /// Reject any `array.len` that still targets a tagged ragged nested leaf array.
 static LogicalResult rejectRaggedNestedLeafArrayLengths(ModuleOp modOp) {
-  WalkResult result = modOp.walk([](ArrayLengthOp op) {
+  auto result = modOp.walk([](ArrayLengthOp op) -> WalkResult {
     StringRef raggedKind = getTaggedRaggedNestedLeafKind(op.getArrRef());
     if (raggedKind.empty()) {
       return WalkResult::advance();
     }
-    op.emitOpError() << "cannot lower nested " << raggedKind
-                     << " array leaf length after reading an array-of-POD element without "
-                        "per-element shape witnesses";
-    return WalkResult::interrupt();
+    return op.emitOpError() << "cannot lower nested " << raggedKind
+                            << " array leaf length after reading an array-of-POD element "
+                               "without per-element shape witnesses";
   });
   return failure(result.wasInterrupted());
 }
 
 /// Reject any `constrain.eq` that still compares a tagged ragged nested leaf array.
 static LogicalResult rejectRaggedNestedLeafArrayEqualities(ModuleOp modOp) {
-  WalkResult result = modOp.walk([](constrain::EmitEqualityOp op) {
+  auto result = modOp.walk([](constrain::EmitEqualityOp op) -> WalkResult {
     StringRef raggedKind = getTaggedRaggedNestedLeafKind(op.getLhs());
     if (raggedKind.empty()) {
       raggedKind = getTaggedRaggedNestedLeafKind(op.getRhs());
@@ -6398,60 +6390,55 @@ static LogicalResult rejectRaggedNestedLeafArrayEqualities(ModuleOp modOp) {
     if (raggedKind.empty()) {
       return WalkResult::advance();
     }
-    op.emitOpError() << "cannot lower nested " << raggedKind
-                     << " array leaf equality after reading an array-of-POD element without "
-                        "per-element shape witnesses";
-    return WalkResult::interrupt();
+    return op.emitOpError() << "cannot lower nested " << raggedKind
+                            << " array leaf equality after reading an array-of-POD element "
+                               "without per-element shape witnesses";
   });
   return failure(result.wasInterrupted());
 }
 
 /// Reject any `constrain.in` that still contains a tagged ragged nested leaf array.
 static LogicalResult rejectRaggedNestedLeafArrayContainments(ModuleOp modOp) {
-  WalkResult result = modOp.walk([](constrain::EmitContainmentOp op) {
-    if (succeeded(rejectRaggedNestedLeafContainment(op))) {
-      return WalkResult::advance();
-    }
-    return WalkResult::interrupt();
+  auto result = modOp.walk([](constrain::EmitContainmentOp op) -> WalkResult {
+    return rejectRaggedNestedLeafContainment(op);
   });
   return failure(result.wasInterrupted());
 }
 
 /// Reject tagged ragged nested leaf arrays before function or SCF boundaries strip the tag source.
 static LogicalResult rejectRaggedNestedLeafBoundaryCrossings(ModuleOp modOp) {
-  WalkResult result = modOp.walk([](Operation *op) {
-    LogicalResult check = TypeSwitch<Operation *, LogicalResult>(op)
-                              .Case<CallOp>([](CallOp callOp) {
+  auto result = modOp.walk([](Operation *op) -> WalkResult {
+    return TypeSwitch<Operation *, LogicalResult>(op)
+        .Case<CallOp>([](CallOp callOp) {
       return rejectRaggedNestedLeafBoundaryCrossing(
           callOp.getOperation(), callOp.getArgOperands(), "across a function call"
       );
     })
-                              .Case<ReturnOp>([](ReturnOp returnOp) {
+        .Case<ReturnOp>([](ReturnOp returnOp) {
       return rejectRaggedNestedLeafBoundaryCrossing(
           returnOp.getOperation(), returnOp.getOperands(), "across a function return"
       );
     })
-                              .Case<scf::ForOp>([](scf::ForOp forOp) {
+        .Case<scf::ForOp>([](scf::ForOp forOp) {
       return rejectRaggedNestedLeafBoundaryCrossing(
           forOp.getOperation(), forOp.getInitArgs(), "into an scf.for region"
       );
     })
-                              .Case<scf::WhileOp>([](scf::WhileOp whileOp) {
+        .Case<scf::WhileOp>([](scf::WhileOp whileOp) {
       return rejectRaggedNestedLeafBoundaryCrossing(
           whileOp.getOperation(), whileOp.getInits(), "into an scf.while region"
       );
     })
-                              .Case<scf::ConditionOp>([](scf::ConditionOp conditionOp) {
+        .Case<scf::ConditionOp>([](scf::ConditionOp conditionOp) {
       return rejectRaggedNestedLeafBoundaryCrossing(
           conditionOp.getOperation(), conditionOp.getArgs(), "across an scf.condition boundary"
       );
     })
-                              .Case<scf::YieldOp>([](scf::YieldOp yieldOp) {
+        .Case<scf::YieldOp>([](scf::YieldOp yieldOp) {
       return rejectRaggedNestedLeafBoundaryCrossing(
           yieldOp.getOperation(), yieldOp.getOperands(), "across an scf.yield boundary"
       );
     }).Default([](Operation *) { return success(); });
-    return failed(check) ? WalkResult::interrupt() : WalkResult::advance();
   });
   return failure(result.wasInterrupted());
 }
