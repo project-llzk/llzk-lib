@@ -1,0 +1,7 @@
+added:
+  - Fusion for matching compute/constrain `scf.if` operations in product programs
+
+changed:
+  - Preserve matching constrain-side signal member reads in source order when fusing compute/constrain `scf.if` operations; skip fusion for unmarked, offset, or otherwise unsafe reads and for explicitly non-compute-sourced member writes
+  - Preserve matching non-`product_source` attributes and combine source locations on fused `scf.if` and `scf.yield` operations; leave attribute conflicts unfused
+  - Attempt matching `scf.for` fusion before `scf.if` fusion in each region so eligible legacy loop opportunities are preserved when compute-side movement is legal; recursively impure operations keep source order and prevent loop fusion, and crossed loop/conditional source order may leave the conditionals unfused
