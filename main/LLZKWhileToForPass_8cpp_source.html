@@ -435,24 +435,21 @@ $(function(){initNavTree('LLZKWhileToForPass_8cpp_source.html','',''); });
 <div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span>  <span class="keywordtype">void</span> runOnOperation()<span class="keyword"> override </span>{</div>
 <div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span>    Operation *op = getOperation();</div>
 <div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>    IRRewriter rewriter {op-&gt;getContext()};</div>
-<div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span>    <span class="keyword">auto</span> result = op-&gt;walk([&amp;rewriter](scf::WhileOp loop) {</div>
+<div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span>    <span class="keyword">auto</span> result = op-&gt;walk([&amp;rewriter](scf::WhileOp loop) -&gt; WalkResult {</div>
 <div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span>      ForOpInfo info = parseInfo(loop);</div>
 <div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span>      <span class="keywordflow">if</span> (!info.success()) {</div>
 <div class="line"><a id="l00347" name="l00347"></a><span class="lineno">  347</span>        <span class="comment">// Ignore loops we can&#39;t prove have constant bounds</span></div>
 <div class="line"><a id="l00348" name="l00348"></a><span class="lineno">  348</span>        <span class="keywordflow">return</span> WalkResult::advance();</div>
 <div class="line"><a id="l00349" name="l00349"></a><span class="lineno">  349</span>      }</div>
-<div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span>      <span class="keywordflow">if</span> (failed(transformWhileToFor(loop, info, rewriter))) {</div>
-<div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span>        <span class="keywordflow">return</span> WalkResult::interrupt();</div>
-<div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span>      }</div>
-<div class="line"><a id="l00353" name="l00353"></a><span class="lineno">  353</span>      <span class="keywordflow">return</span> WalkResult::advance();</div>
-<div class="line"><a id="l00354" name="l00354"></a><span class="lineno">  354</span>    });</div>
-<div class="line"><a id="l00355" name="l00355"></a><span class="lineno">  355</span>    <span class="keywordflow">if</span> (result.wasInterrupted()) {</div>
-<div class="line"><a id="l00356" name="l00356"></a><span class="lineno">  356</span>      signalPassFailure();</div>
-<div class="line"><a id="l00357" name="l00357"></a><span class="lineno">  357</span>    }</div>
-<div class="line"><a id="l00358" name="l00358"></a><span class="lineno">  358</span>  }</div>
-<div class="line"><a id="l00359" name="l00359"></a><span class="lineno">  359</span>};</div>
-<div class="line"><a id="l00360" name="l00360"></a><span class="lineno">  360</span> </div>
-<div class="line"><a id="l00361" name="l00361"></a><span class="lineno">  361</span>} <span class="comment">// namespace</span></div>
+<div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span>      <span class="keywordflow">return</span> LogicalResult(transformWhileToFor(loop, info, rewriter));</div>
+<div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span>    });</div>
+<div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span>    <span class="keywordflow">if</span> (result.wasInterrupted()) {</div>
+<div class="line"><a id="l00353" name="l00353"></a><span class="lineno">  353</span>      signalPassFailure();</div>
+<div class="line"><a id="l00354" name="l00354"></a><span class="lineno">  354</span>    }</div>
+<div class="line"><a id="l00355" name="l00355"></a><span class="lineno">  355</span>  }</div>
+<div class="line"><a id="l00356" name="l00356"></a><span class="lineno">  356</span>};</div>
+<div class="line"><a id="l00357" name="l00357"></a><span class="lineno">  357</span> </div>
+<div class="line"><a id="l00358" name="l00358"></a><span class="lineno">  358</span>} <span class="comment">// namespace</span></div>
 <div class="ttc" id="aBool_2IR_2Ops_8h_html"><div class="ttname"><a href="Bool_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aCast_2IR_2Dialect_8h_html"><div class="ttname"><a href="Cast_2IR_2Dialect_8h.html">Dialect.h</a></div></div>
 <div class="ttc" id="aCast_2IR_2Ops_8h_html"><div class="ttname"><a href="Cast_2IR_2Ops_8h.html">Ops.h</a></div></div>
