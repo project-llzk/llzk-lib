@@ -88,3 +88,31 @@ module attributes {llzk.lang} {
 // CHECK: compute {
 // CHECK-NEXT:         %self.storage.value in TypeA:[ 5, 7 ]
 // CHECK: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ComputedPodRecordRead {
+    struct.member @result : !felt.type
+
+    function.def @compute() -> !struct.type<@ComputedPodRecordRead> {
+      %self = struct.new : !struct.type<@ComputedPodRecordRead>
+      %one = felt.const 1
+      %two = felt.const 2
+      %sum = felt.add %one, %two : !felt.type
+      %storage = pod.new { @value = %sum } : !pod.type<[@value: !felt.type]>
+      %read = pod.read %storage[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      struct.writem %self[@result] = %read : !struct.type<@ComputedPodRecordRead>, !felt.type
+      function.return %self : !struct.type<@ComputedPodRecordRead>
+    }
+
+    function.def @constrain(%self: !struct.type<@ComputedPodRecordRead>) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ComputedPodRecordRead StructIntervals {
+// CHECK: compute {
+// CHECK-NEXT:         %self.result in Degenerate(3)
+// CHECK: }

@@ -75,7 +75,7 @@ bool isInMaybeSkippedScfRegion(Operation *op) {
     // `writeResults` is a storage side-channel, not a path-sensitive lattice.
     // Writes nested under branch/loop control may not be absolute on every path through the
     // enclosing op, so keep the prior state instead of treating the nested write as unconditional.
-    if (llvm::isa<scf::ForOp, scf::IfOp, scf::WhileOp>(parent)) {
+    if (llvm::isa<scf::ForOp, scf::IfOp, scf::WhileOp, scf::IndexSwitchOp>(parent)) {
       return true;
     }
   }
@@ -677,10 +677,10 @@ SourceRefLatticeValue IntervalDataFlowAnalysis::getSourceRefState(Value val) {
   return SourceRefAnalysis::getValueState(_dataflowSolver, val);
 }
 
-std::vector<SourceRefIndex> IntervalDataFlowAnalysis::getArrayAccessIndices(
+SourceRef::Path IntervalDataFlowAnalysis::getArrayAccessIndices(
     Operation * /*baseOp*/, ArrayAccessOpInterface arrayAccessOp
 ) {
-  std::vector<SourceRefIndex> indices;
+  SourceRef::Path indices;
   ArrayType arrayType = arrayAccessOp.getArrRefType();
   size_t numIndices = arrayAccessOp.getIndices().size();
   indices.reserve(numIndices);
@@ -705,7 +705,7 @@ std::vector<SourceRefIndex> IntervalDataFlowAnalysis::getArrayAccessIndices(
 mlir::FailureOr<SourceRef> IntervalDataFlowAnalysis::getArrayAccessRef(
     Operation *baseOp, ArrayAccessOpInterface arrayAccessOp
 ) {
-  std::vector<SourceRefIndex> indices = getArrayAccessIndices(baseOp, arrayAccessOp);
+  SourceRef::Path indices = getArrayAccessIndices(baseOp, arrayAccessOp);
   Value arrayVal = arrayAccessOp.getArrRef();
   if (auto blockArg = llvm::dyn_cast<BlockArgument>(arrayVal)) {
     return SourceRef(blockArg, std::move(indices));
@@ -924,7 +924,8 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       continue;
     }
 
-    auto resolvedValue = resolveRefStateValue(val, refSet);
+    auto resolvedValue =
+        resolveRefStateValue(val, SourceRefAnalysis::getDependencyState(_dataflowSolver, val));
     if (!resolvedValue.has_value()) {
       // We still return success so we can return overapproximated and partial
       // results to the user.
@@ -942,7 +943,23 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
   if (isReadOp(op) && op->getNumResults() == 1) {
     Value resultVal = op->getResult(0);
     if (!llvm::isa<ArrayType, StructType, pod::PodType>(resultVal.getType())) {
-      auto resolvedValue = resolveRefStateValue(resultVal, getSourceRefState(resultVal));
+      // A read's value state names the storage location, whereas its dependency
+      // state names the values used to produce the stored value. Prefer an exact
+      // expression recorded for that storage location; joining its dependencies
+      // would lose computations such as a stored `%a + %b`.
+      std::optional<LatticeValue> resolvedValue;
+      SourceRefLatticeValue storageState = getSourceRefState(resultVal);
+      if (storageState.isSingleValue()) {
+        const SourceRef &storageRef = storageState.getSingleValue();
+        if (writeResults.contains(storageRef)) {
+          resolvedValue = LatticeValue(getRefValue(storageRef, resultVal));
+        }
+      }
+      if (!resolvedValue.has_value()) {
+        resolvedValue = resolveRefStateValue(
+            resultVal, SourceRefAnalysis::getDependencyState(_dataflowSolver, resultVal)
+        );
+      }
       if (resolvedValue.has_value()) {
         propagateIfChanged(results[0], results[0]->setValue(*resolvedValue));
       }
@@ -1105,7 +1122,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
 
     SourceRefLatticeValue arrayVals = getSourceRefState(writeArr.getArrRef());
     if (arrayVals.isScalar()) {
-      std::vector<SourceRefIndex> indices = getArrayAccessIndices(op, writeArr);
+      SourceRef::Path indices = getArrayAccessIndices(op, writeArr);
       auto targetRefsRes = arrayVals.extract(indices);
       ensure(succeeded(targetRefsRes), "could not create SourceRef child for array write");
       auto [targetRefs, _] = *targetRefsRes;

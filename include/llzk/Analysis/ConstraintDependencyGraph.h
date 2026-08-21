@@ -19,6 +19,8 @@
 
 #include <llvm/ADT/EquivalenceClasses.h>
 
+#include <functional>
+
 namespace mlir {
 
 class DataFlowSolver;
@@ -41,7 +43,24 @@ public:
   using Base::SparseForwardDataFlowAnalysis;
 
   static const Lattice *getLattice(mlir::DataFlowSolver &solver, mlir::Value val);
+
+  /// Return the storage references represented by `val` without replacing them with values
+  /// written to those locations.
   static SourceRefLatticeValue getValueState(mlir::DataFlowSolver &solver, mlir::Value val);
+
+  /// Return the logical dependencies of `val` by following known storage writes transitively.
+  /// Unwritten storage remains represented by its address.
+  static SourceRefLatticeValue getDependencyState(mlir::DataFlowSolver &solver, mlir::Value val);
+
+  /// Return the logical dependencies of `val` as observed before `before`.
+  static SourceRefLatticeValue
+  getDependencyState(mlir::DataFlowSolver &solver, mlir::Value val, mlir::Operation *before);
+
+  /// Return the logical dependencies of storage references as observed before `before`.
+  static SourceRefLatticeValue getDependencyState(
+      mlir::DataFlowSolver &solver, const SourceRefLatticeValue &refs, mlir::Operation *before
+  );
+
   static mlir::FailureOr<SourceRefLatticeValue>
   getWriteTargetState(mlir::DataFlowSolver &solver, mlir::Operation *op);
 
@@ -72,6 +91,9 @@ protected:
   arraySubdivisionOpUpdate(array::ArrayAccessOpInterface op, const OperandValues &operandVals);
 
 private:
+  class StorageState;
+  StorageState *getStorageState(mlir::Operation *op);
+
   mlir::SymbolTableCollection tables;
 };
 
@@ -139,6 +161,7 @@ public:
 
   /// @brief Dumps the CDG to stderr.
   void dump() const;
+
   /// @brief Print the CDG to the specified output stream.
   /// @param os The LLVM/MLIR output stream.
   void print(mlir::raw_ostream &os) const;
@@ -150,7 +173,10 @@ public:
   /// @return A CDG that contains only translated references. Non-constant references with
   /// no translation are omitted. This omissions allows calling components to ignore internal
   /// references within subcomponents that are inaccessible to the caller.
-  ConstraintDependencyGraph translate(SourceRefRemappings translation) const;
+  ConstraintDependencyGraph translate(
+      SourceRefRemappings translation,
+      const std::function<SourceRefLatticeValue(const SourceRef &)> &resolve = {}
+  ) const;
 
   /// @brief Get the values that are connected to the given ref via emitted constraints.
   /// This method looks for constraints to the value in the ref and constraints to any
@@ -183,6 +209,7 @@ public:
     ref2Val = other.ref2Val;
     return *this;
   }
+
   virtual ~ConstraintDependencyGraph() = default;
 
 private:
