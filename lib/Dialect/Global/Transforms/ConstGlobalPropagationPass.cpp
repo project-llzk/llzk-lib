@@ -70,6 +70,13 @@ public:
       if (const SymbolUseGraphNode *node = useGraph.lookupNode(globalDef)) {
         SymbolRefAttr symbolAttr = node->getSymbolPath();
         Attribute constValue = globalDef.getInitialValueAttr();
+
+        // Array constants cannot yet be materialized as operations. Leave both
+        // the global and all of its uses unchanged until they are supported.
+        if (llvm::isa<ArrayAttr>(constValue)) {
+          continue;
+        }
+
         for (Operation *userOp : node->getUserOps()) {
           LLVM_DEBUG(
               llvm::outs() << "Replacing '" << symbolAttr << "' with '" << constValue << "' in "
