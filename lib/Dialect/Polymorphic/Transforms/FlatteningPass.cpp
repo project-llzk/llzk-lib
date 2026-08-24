@@ -104,23 +104,46 @@ static void reportDelayedDiagnostics(CallOp caller, SmallVector<Diagnostic> &&di
   }
 }
 
-class ConversionTracker {
-  /// Published result of one successful partial-function conversion.
-  ///
-  /// The source operation and concrete key live in the surrounding map; these names are only the
-  /// post-insertion symbol path needed to retarget a later exact cache hit.
-  struct PartialFuncInstantiation {
-    ArrayAttr concreteParamKey;
-    StringAttr templateName;
-    StringAttr functionName;
-  };
-
-  /// Published result of one successful full-function conversion.
-  struct FullFuncInstantiation {
+/// Cache function instantiations by the source operation and exact concrete parameter bindings.
+///
+/// The instantiated symbol path is recorded only after its clone has been inserted and converted,
+/// so callers never reuse a partially-created function.
+class FunctionInstantiationCache {
+  struct Entry {
     ArrayAttr concreteParamKey;
     SymbolRefAttr functionPath;
   };
 
+  DenseMap<Operation *, SmallVector<Entry>> entries;
+
+public:
+  /// Return the instantiated function path for this exact source/key pair, if one was published.
+  std::optional<SymbolRefAttr> lookup(FuncDefOp sourceFunc, ArrayAttr concreteParamKey) const {
+    auto found = entries.find(sourceFunc.getOperation());
+    if (found == entries.end()) {
+      return std::nullopt;
+    }
+    for (const Entry &candidate : found->second) {
+      if (candidate.concreteParamKey == concreteParamKey) {
+        return candidate.functionPath;
+      }
+    }
+    return std::nullopt;
+  }
+
+  /// Publish a completed instantiation for this source/key pair.
+  void record(FuncDefOp sourceFunc, ArrayAttr concreteParamKey, SymbolRefAttr functionPath) {
+    assert(
+        !lookup(sourceFunc, concreteParamKey).has_value() && "function instantiation cached twice"
+    );
+    entries[sourceFunc.getOperation()].push_back(Entry {concreteParamKey, functionPath});
+  }
+
+  /// Drop cached operation handles before the operations that own them are erased.
+  void clear() { entries.clear(); }
+};
+
+class ConversionTracker {
   /// Tracks if some step performed a modification of the code such that another pass should be run.
   bool modified = false;
   /// Maps original remote (i.e., use site) type to new remote type.
@@ -132,7 +155,7 @@ class ConversionTracker {
   DenseSet<SymbolRefAttr> funcInstantiations;
   /// Successful partial functions keyed by their source operation and exact concrete bindings.
   /// The rendered symbol names are only values; they are never used as cache identity.
-  DenseMap<Operation *, SmallVector<PartialFuncInstantiation>> partialFuncInstantiations;
+  FunctionInstantiationCache partialFuncInstantiations;
   /// Maps new remote type (i.e., the values in 'structInstantiations') to a list of Diagnostic
   /// to report at the location(s) of the compute() that causes the instantiation to the StructType.
   DenseMap<StructType, SmallVector<Diagnostic>> delayedDiagnostics;
@@ -140,7 +163,7 @@ class ConversionTracker {
   /// Rendered symbol names are presentation-only and can collide for valid parameter values.
   /// This cache must outlive individual rewrite pattern instances because flattening re-runs
   /// Step 2 across fixpoint iterations.
-  DenseMap<Operation *, SmallVector<FullFuncInstantiation>> fullFuncInstantiations;
+  FunctionInstantiationCache fullFuncInstantiations;
 
 public:
   /// Return whether the current flattening iteration has changed the IR.
@@ -200,36 +223,21 @@ public:
   /// Return the successfully converted partial function for this exact source/key pair, if any.
   std::optional<SymbolRefAttr>
   lookupPartialFuncInstantiation(FuncDefOp sourceFunc, ArrayAttr concreteParamKey) const {
-    auto found = partialFuncInstantiations.find(sourceFunc.getOperation());
-    if (found == partialFuncInstantiations.end()) {
-      return std::nullopt;
-    }
-    for (const PartialFuncInstantiation &candidate : found->second) {
-      if (candidate.concreteParamKey == concreteParamKey) {
-        SmallVector<FlatSymbolRefAttr> calleeSuffix {
-            FlatSymbolRefAttr::get(candidate.templateName),
-            FlatSymbolRefAttr::get(candidate.functionName),
-        };
-        return asSymbolRefAttr(calleeSuffix);
-      }
-    }
-    return std::nullopt;
+    return partialFuncInstantiations.lookup(sourceFunc, concreteParamKey);
   }
 
   /// Publish a successful partial conversion after insertion and body conversion have completed.
   void recordPartialFuncInstantiation(
       FuncDefOp sourceFunc, ArrayAttr concreteParamKey, TemplateOp templateOp, FuncDefOp functionOp
   ) {
-    assert(
-        !lookupPartialFuncInstantiation(sourceFunc, concreteParamKey).has_value() &&
-        "partial function instantiation already cached"
-    );
-    partialFuncInstantiations[sourceFunc.getOperation()].push_back(
-        PartialFuncInstantiation {
-            concreteParamKey,
-            templateOp.getSymNameAttr(),
-            functionOp.getSymNameAttr(),
-        }
+    partialFuncInstantiations.record(
+        sourceFunc, concreteParamKey,
+        asSymbolRefAttr(
+            SmallVector<FlatSymbolRefAttr> {
+                FlatSymbolRefAttr::get(templateOp.getSymNameAttr()),
+                FlatSymbolRefAttr::get(functionOp.getSymNameAttr()),
+            }
+        )
     );
   }
 
@@ -267,29 +275,14 @@ public:
   /// Return the successfully converted full function for this exact source/key pair, if any.
   std::optional<SymbolRefAttr>
   getFullFuncInstantiation(FuncDefOp sourceFunc, ArrayAttr concreteParamKey) const {
-    auto found = fullFuncInstantiations.find(sourceFunc.getOperation());
-    if (found == fullFuncInstantiations.end()) {
-      return std::nullopt;
-    }
-    for (const FullFuncInstantiation &candidate : found->second) {
-      if (candidate.concreteParamKey == concreteParamKey) {
-        return candidate.functionPath;
-      }
-    }
-    return std::nullopt;
+    return fullFuncInstantiations.lookup(sourceFunc, concreteParamKey);
   }
 
   /// Publish a successful full conversion after insertion and body conversion have completed.
   void recordFullFuncInstantiation(
       FuncDefOp sourceFunc, ArrayAttr concreteParamKey, SymbolRefAttr instantiatedPath
   ) {
-    assert(
-        !getFullFuncInstantiation(sourceFunc, concreteParamKey).has_value() &&
-        "full function instantiation already cached"
-    );
-    fullFuncInstantiations[sourceFunc.getOperation()].push_back(
-        FullFuncInstantiation {concreteParamKey, instantiatedPath}
-    );
+    fullFuncInstantiations.record(sourceFunc, concreteParamKey, instantiatedPath);
   }
 
   /// Check if the type conversion is legal, i.e., the new type unifies with and is more concrete
@@ -620,6 +613,29 @@ convertCalleesInPlace(Operation *op, const DenseMap<Attribute, Attribute> &param
   });
 }
 
+/// Clone a function and substitute concrete template callees throughout its copied body.
+static FuncDefOp cloneFunctionWithConvertedCallees(
+    FuncDefOp function, const DenseMap<Attribute, Attribute> &paramNameToConcrete
+) {
+  FuncDefOp clone = function.clone();
+  convertCalleesInPlace(clone, paramNameToConcrete);
+  return clone;
+}
+
+/// Create the initially empty shell of a partially-instantiated template.
+///
+/// The caller owns insertion and populating the preserved template symbols, because those steps
+/// vary between struct and function instantiation.
+static TemplateOp
+createPartialInstantiationTemplate(TemplateOp sourceTemplate, const InstantiationLayout &layout) {
+  TemplateOp newTemplate = sourceTemplate.cloneWithoutRegions();
+  newTemplate.setSymName(layout.templateNameWithAttrs);
+  setInstantiationNamePattern(newTemplate, layout.namePattern);
+  assert(newTemplate->getNumRegions() > 0 && "template must have a body region");
+  newTemplate.getBodyRegion().emplaceBlock();
+  return newTemplate;
+}
+
 /// Return true iff `op` calls a single-nested symbol rooted at a parameter of its parent template.
 static bool calleeReferencesTemplateParam(CallOp op) {
   SymbolRefAttr callee = op.getCalleeAttr();
@@ -939,11 +955,7 @@ class StructCloner {
       typeAtCallerSymPieces.pop_back();
     } else { // PARTIAL INSTANTIATION CASE
       // Clone the template and set instantiated name.
-      TemplateOp newTemplate = parentTemplate.cloneWithoutRegions();
-      newTemplate.setSymName(layout.templateNameWithAttrs);
-      setInstantiationNamePattern(newTemplate, layout.namePattern);
-      assert(newTemplate->getNumRegions() > 0 && "region exists"); // it just doesn't have a block
-      newTemplate.getBodyRegion().emplaceBlock();
+      TemplateOp newTemplate = createPartialInstantiationTemplate(parentTemplate, layout);
 
       // Clone preserved const param/expr ops.
       for (Attribute name : layout.remainingNames) {
@@ -1821,8 +1833,7 @@ static SmallVector<FuncDefOp> copyReferencedTemplateSiblingFuncs(
       if (auto found = cloned.find(sibling); found != cloned.end()) {
         clonedSibling = found->second;
       } else {
-        clonedSibling = sibling.clone();
-        convertCalleesInPlace(clonedSibling, paramNameToConcrete);
+        clonedSibling = cloneFunctionWithConvertedCallees(sibling, paramNameToConcrete);
         cloned[sibling] = clonedSibling;
         cloneSources[clonedSibling] = sibling;
         copiedFuncs.push_back(clonedSibling);
@@ -2121,9 +2132,8 @@ private:
 
     std::string newFuncName;
     llvm::raw_string_ostream(newFuncName) << templateNameWithAttrs << '_' << callTgt.getSymName();
-    FuncDefOp newFunc = callTgt.clone();
+    FuncDefOp newFunc = cloneFunctionWithConvertedCallees(callTgt, paramNameToConcrete);
     newFunc.setSymName(newFuncName);
-    convertCalleesInPlace(newFunc, paramNameToConcrete);
     // Insert before the TemplateOp; symbol table may adjust the name to avoid existing symbols.
     symTables.getSymbolTable(parentModule).insert(newFunc, Block::iterator(parentTemplate));
     StringAttr actualNewFuncName = newFunc.getSymNameAttr();
@@ -2177,11 +2187,7 @@ private:
       );
       return cachedCallee;
     }
-    TemplateOp newTemplate = parentTemplate.cloneWithoutRegions();
-    newTemplate.setSymName(layout.templateNameWithAttrs);
-    setInstantiationNamePattern(newTemplate, layout.namePattern);
-    assert(newTemplate->getNumRegions() > 0 && "region exists");
-    newTemplate.getBodyRegion().emplaceBlock();
+    TemplateOp newTemplate = createPartialInstantiationTemplate(parentTemplate, layout);
 
     Block &newTemplateBody = newTemplate.getBodyRegion().front();
     for (Attribute name : layout.remainingNames) {
@@ -2192,8 +2198,7 @@ private:
     }
 
     // Clone and partially convert the function (concretize only the concrete params).
-    FuncDefOp newFunc = callTgt.clone();
-    convertCalleesInPlace(newFunc, paramNameToConcrete);
+    FuncDefOp newFunc = cloneFunctionWithConvertedCallees(callTgt, paramNameToConcrete);
     SmallVector<FuncDefOp> copiedFuncs = copyReferencedTemplateSiblingFuncs(
         parentTemplate, newTemplate, callTgt, newFunc, symTables, paramNameToConcrete
     );
