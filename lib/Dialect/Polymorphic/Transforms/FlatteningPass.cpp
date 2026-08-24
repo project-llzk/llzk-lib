@@ -2826,8 +2826,7 @@ static LogicalResult canReplaceReadUsersWithType(
         return failure();
       }
       Type memberType = memberDef->get().getType();
-      // A parameterized member will be refined by the normal propagation patterns. Only a
-      // concrete member independently constrains which index-specific value is valid here.
+      // A concrete member independently constrains which index-specific value is valid here.
       if (isConcreteType(memberType, /*allowStructParams=*/false) &&
           !typesUnify(replacementType, memberType)) {
         InFlightDiagnostic diag = readOp.emitError(
@@ -2838,6 +2837,38 @@ static LogicalResult canReplaceReadUsersWithType(
             << "member write requires " << memberType << ", but this read is replaced with "
             << replacementType;
         return diag;
+      }
+
+      if (!isConcreteType(memberType, /*allowStructParams=*/false)) {
+        // A generic member may still be constrained by its other writes. Before scalarization,
+        // both a generic read and another concrete write can unify with this member. Replacing
+        // the read with an index-specific type must not turn those previously compatible writes
+        // into incompatible refinement candidates after the source array has been erased.
+        StructDefOp parentStruct = getParentOfType<StructDefOp>(memberDef->get());
+        if (!parentStruct) {
+          return failure();
+        }
+        auto memberUses = llzk::getSymbolUses(memberDef->get(), parentStruct);
+        if (!memberUses) {
+          return failure();
+        }
+        for (SymbolTable::SymbolUse memberUse : memberUses.value()) {
+          MemberWriteOp otherWrite = llvm::dyn_cast<MemberWriteOp>(memberUse.getUser());
+          if (!otherWrite || otherWrite == memberWrite) {
+            continue;
+          }
+          Type otherWriteType = otherWrite.getVal().getType();
+          if (!typesUnify(replacementType, otherWriteType)) {
+            InFlightDiagnostic diag = readOp.emitError(
+                "cannot scalarize heterogeneous array read because its index-specific value "
+                "type is incompatible with another member write"
+            );
+            diag.attachNote(otherWrite.getLoc())
+                << "other member write requires " << otherWriteType
+                << ", but this read is replaced with " << replacementType;
+            return diag;
+          }
+        }
       }
       continue;
     }
