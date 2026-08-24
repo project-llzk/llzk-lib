@@ -77,7 +77,8 @@ public:
           );
 
           // Special handling to fully replace GlobalReadOp with the appropriate constant op.
-          if (auto readOp = llvm::dyn_cast<GlobalReadOp>(userOp)) {
+          if (auto readOp = llvm::dyn_cast<GlobalReadOp>(userOp);
+              readOp && readOp.getNameRef() == symbolAttr) {
             Value constantResult = convertToConstantValue(readOp, constValue);
             readOp.getResult().replaceAllUsesWith(constantResult);
             readOp.erase();
