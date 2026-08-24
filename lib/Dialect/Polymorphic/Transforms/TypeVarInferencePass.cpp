@@ -1653,7 +1653,7 @@ static bool funcMentionsParam(FuncDefOp func, StringAttr paramName) {
   if (operationMentionsParam(func.getOperation(), paramName)) {
     return true;
   }
-  return walkContainsMatch<Operation *>(func, [paramName](Operation *op) {
+  return walkContains<Operation *>(func, [paramName](Operation *op) {
     return operationMentionsParam(op, paramName);
   });
 }
@@ -1663,7 +1663,7 @@ static bool contractMentionsParam(verif::ContractOp contract, StringAttr paramNa
   if (operationMentionsParam(contract.getOperation(), paramName)) {
     return true;
   }
-  return walkContainsMatch<Operation *>(contract, [paramName](Operation *op) {
+  return walkContains<Operation *>(contract, [paramName](Operation *op) {
     return operationMentionsParam(op, paramName);
   });
 }
@@ -1680,7 +1680,7 @@ static inline bool targetMentionsParam(verif::ContractOp contract, StringAttr pa
 
 /// Return whether a `poly.expr` body mentions an eligible type-variable parameter.
 static inline bool exprMentionsParam(TemplateExprOp expr, StringAttr paramName) {
-  return walkContainsMatch<Operation *>(expr, [paramName](Operation *op) {
+  return walkContains<Operation *>(expr, [paramName](Operation *op) {
     return operationMentionsParam(op, paramName);
   });
 }
@@ -3823,17 +3823,14 @@ static LogicalResult inferStructTemplateParamUses(
       DenseMap<StringAttr, InferredType> oldTemplateScopeReplacements =
           info.templateScopeReplacements;
       TypeVarInferenceCollector collector(info, info.templateScopeReplacements);
-      WalkResult nonFunctionResult = info.templateOp.walk([&](Operation *op) {
+      auto nonFunctionResult = info.templateOp.walk([&](Operation *op) -> WalkResult {
         if (llvm::isa<FuncDefOp, TemplateExprOp, verif::ContractOp>(op) ||
             hasParentThatIsa<FuncDefOp, TemplateExprOp, verif::ContractOp>(op)) {
           return WalkResult::advance();
         }
-        if (failed(collector.collectOperationStructTemplateParamInferences(
-                op, module, infoByTemplate, tables
-            ))) {
-          return WalkResult::interrupt();
-        }
-        return WalkResult::advance();
+        return collector.collectOperationStructTemplateParamInferences(
+            op, module, infoByTemplate, tables
+        );
       });
       if (nonFunctionResult.wasInterrupted()) {
         return failure();

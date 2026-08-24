@@ -24,6 +24,7 @@
 #include "llzk/Transforms/LLZKLoweringUtils.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
+#include "llzk/Util/Walk.h"
 
 #include <mlir/IR/BuiltinOps.h>
 
@@ -582,9 +583,9 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
 
     Region &constrainFuncBody = constrainFunc.getBody();
 
-    SmallVector<R1CSConstraint, 16> constraints;
-    constrainFuncBody.walk([&constraints, &degreeMemo](EmitEqualityOp eqOp) {
-      constraints.push_back(lowerEquationToR1CS(eqOp.getLhs(), eqOp.getRhs(), degreeMemo));
+    SmallVector<R1CSConstraint> constraints =
+        walkCollectMapped<EmitEqualityOp>(constrainFuncBody, [&degreeMemo](auto eqOp) {
+      return lowerEquationToR1CS(eqOp.getLhs(), eqOp.getRhs(), degreeMemo);
     });
 
     OpBuilder topBuilder(moduleOp.getBodyRegion());

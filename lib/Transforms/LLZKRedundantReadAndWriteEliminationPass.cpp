@@ -747,16 +747,15 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
 
     auto doStatefulRead =
         [&]<typename KeyT>(Value resVal, DenseMap<KeyT, Value> &knownValues, const KeyT &key) {
+      readVals.push_back(resVal);
       if (auto it = knownValues.find(key); it != knownValues.end()) {
         replacementMap[resVal] = it->second;
-        readVals.push_back(resVal);
         return true;
       } else {
         knownValues[key] = resVal;
         state.values[resVal] = ReferenceNode::create(resVal, resVal);
+        return false;
       }
-      readVals.push_back(resVal);
-      return false;
     };
 
     // An omitted table offset denotes the current row.
@@ -768,6 +767,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       }
       return componentNode->getOrCreateChild(member);
     };
+
     auto getMemberAccessNode = [&](MemberReadOp readm) {
       std::shared_ptr<ReferenceNode> access =
           getMemberNode(readm.getComponent(), readm.getMemberNameAttr());

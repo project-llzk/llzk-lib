@@ -147,15 +147,15 @@ static FailureOr<bool> removeUnusedDiscardableAllocations(
     SmallVector<Operation *> maybeDeadDefs;
     llvm::SmallPtrSet<Operation *, 16> seen;
 
-    WalkResult walkResult = module->walk([&](Operation *allocator) {
+    auto walkResult = module->walk([&](Operation *allocator) -> WalkResult {
       if (allocator->getName().getStringRef() != allocatorOpName) {
         return WalkResult::advance();
       }
       if (!hasDiscardableAllocationEffect(allocator)) {
-        allocator->emitOpError()
-            << "selected for discardable-allocation cleanup but is not marked with "
-               "MemAlloc<DiscardableAllocationResource>";
-        return WalkResult::interrupt();
+        return allocator->emitOpError(
+            "selected for discardable-allocation cleanup but is not "
+            "marked with MemAlloc<DiscardableAllocationResource>"
+        );
       }
 
       SmallVector<Operation *> usersToErase;
