@@ -251,3 +251,42 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VALUE]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  module @typed_attr {
+    global.def const @A : !felt.type =  #felt<const 35 : !felt.type<"bn128">>
+  }
+  function.def @def_unspecified() -> !felt.type {
+    %a = global.read @typed_attr::@A : !felt.type
+    function.return %a : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    module @typed_attr {
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @def_unspecified() -> !felt.type {
+// CHECK-NEXT:      %[[CONST:[0-9a-zA-Z_\.]+]] = felt.const  35 : <"bn128">
+// CHECK-NEXT:      %[[A:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[CONST]] : (!felt.type<"bn128">) -> !felt.type
+// CHECK-NEXT:      function.return %[[A]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  module @typed_attr {
+    global.def const @A : !felt.type<"bn128"> =  #felt<const 35 : !felt.type>
+  }
+  function.def @attr_unspecified() -> !felt.type<"bn128"> {
+    %a = global.read @typed_attr::@A : !felt.type<"bn128">
+    function.return %a : !felt.type<"bn128">
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    module @typed_attr {
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @attr_unspecified() -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[A:[0-9a-zA-Z_\.]+]] = felt.const  35 : <"bn128">
+// CHECK-NEXT:      function.return %[[A]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

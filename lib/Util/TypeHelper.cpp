@@ -732,6 +732,13 @@ struct UnifierImpl {
       track(Side::RHS, rhsTvar.getNameRef(), lhs);
       return true;
     }
+    if (auto lhsFelt = llvm::dyn_cast<FeltType>(lhs)) {
+      if (auto rhsFelt = llvm::dyn_cast<FeltType>(rhs)) {
+        // An unspecified field can be unified with a specified one, but two
+        // distinct specified fields cannot be unified.
+        return !lhsFelt.hasField() || !rhsFelt.hasField();
+      }
+    }
     if (llvm::isa<StructType>(lhs) && llvm::isa<StructType>(rhs)) {
       return structTypesUnify(llvm::cast<StructType>(lhs), llvm::cast<StructType>(rhs));
     }

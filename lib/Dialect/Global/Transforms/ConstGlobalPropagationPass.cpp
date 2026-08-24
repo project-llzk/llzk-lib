@@ -16,6 +16,7 @@
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/Global/Transforms/TransformationPasses.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/String/IR/Ops.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolTableLLZK.h"
@@ -48,7 +49,19 @@ static inline Value convertToConstantValue(GlobalReadOp readOp, Attribute attr) 
       return builder.create<arith::ConstantOp>(loc, intAttr).getResult();
     }
   } else if (auto feltAttr = llvm::dyn_cast<felt::FeltConstAttr>(attr)) {
-    return builder.create<felt::FeltConstantOp>(loc, feltAttr).getResult();
+    auto feltTy = llvm::cast<felt::FeltType>(readOp.getType());
+    // An unspecified initializer may adopt the field required by the read.
+    if (!feltAttr.getType().hasField() && feltTy.hasField()) {
+      feltAttr = felt::FeltConstAttr::get(readOp.getContext(), feltAttr.getValue(), feltTy);
+    }
+    Value constant = builder.create<felt::FeltConstantOp>(loc, feltAttr).getResult();
+    if (constant.getType() == readOp.getType()) {
+      return constant;
+    }
+    // When the read uses an unspecified field type, add a unifiable cast to bridge
+    // the specified field type to the unspecified one.
+    return builder.create<polymorphic::UnifiableCastOp>(loc, readOp.getType(), constant)
+        .getResult();
   } else if (auto strAttr = llvm::dyn_cast<StringAttr>(attr)) {
     return builder.create<string::LitStringOp>(loc, readOp.getType(), strAttr).getResult();
   } else {
