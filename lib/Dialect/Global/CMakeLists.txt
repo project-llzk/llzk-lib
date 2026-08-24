@@ -7,7 +7,7 @@ target_sources(LLZKGlobalDialect PRIVATE ${LLZKGlobalDialect_SOURCES})
 target_link_libraries(
   LLZKGlobalDialect PUBLIC LLZKDialectHeaders ${LLZK_DEP_DIALECT_LIBS} MLIRIR
                      MLIRPass MLIRParser MLIRTransformUtils
-                     LLVMHeaders MLIRHeaders)
+                     LLVMHeaders MLIRHeaders LLZKAnalysis)
 llzk_target_add_mlir_link_settings(LLZKGlobalDialect)
 
 install(TARGETS LLZKGlobalDialect EXPORT LLZKTargets)
