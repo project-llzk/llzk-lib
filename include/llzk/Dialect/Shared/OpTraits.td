@@ -39,6 +39,14 @@ class HasAncestor<string op> : ParamNativeOpTrait<"HasAncestor", op>,
   string cppNamespace = "::llzk";
 }
 
+/// Verify that the operation has a parent of one of the `ops` types somewhere in its
+/// ancestry.
+class HasAncestorOf<list<string> ops> : ParamNativeOpTrait<"HasAncestor", !interleave(ops, ", ")>,
+                               StructuralOpTrait {
+  string cppNamespace = "::llzk";
+}
+
+
 // Implements verification for ops with an affine_map instantiation list. These
 // ops are expected to contain the following in their `arguments` list:
 //  - VariadicOfVariadic<Index, "mapOpGroupSizes">:$mapOperands

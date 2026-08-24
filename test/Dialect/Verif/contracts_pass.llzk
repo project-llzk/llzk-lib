@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s 2>&1 | FileCheck --enable-var-scope %s
 
 module attributes {llzk.lang} {
   struct.def @Top {
@@ -817,5 +817,33 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    verif.contract @Wrapper for @wrapper_target (%[[VAL_4:[0-9a-zA-Z_\.]+]]: i1, %[[VAL_5:[0-9a-zA-Z_\.]+]]: i1) {
 // CHECK-NEXT:      verif.include @Leaf(%[[VAL_5]]) : (i1) -> ()
 // CHECK-NEXT:      verif.ensure_compute %[[VAL_5]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
+  struct.def @Main {
+    function.def @compute(%value : !felt.type) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>, %value : !felt.type) attributes {function.allow_constraint, function.allow_verif_ops} {
+      %ok = arith.constant true
+      verif.ensure_constrain %ok
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint, function.allow_verif_ops} {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        verif.ensure_constrain %[[VAL_6]]
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

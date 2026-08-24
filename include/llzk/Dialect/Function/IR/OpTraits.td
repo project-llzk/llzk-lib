@@ -32,4 +32,22 @@ def NotFieldNative : NativeOpTrait<"NotFieldNative">, StructuralOpTrait {
   string cppNamespace = "::llzk::function";
 }
 
+/// Marker for ops in the `verif` dialect that can be inlined inside functions.
+/// The op can be marked with additional traits that must be satisfied if the op 
+/// is inlined. The difference between this and passing the attribute as normal 
+/// is that the extra traits are only checked if the op is inlined. This allows 
+/// marking the op with very restrictive traits like `ConstraintGen`. If that trait 
+/// was naively added to the inlinable op it will fail verification when the op 
+/// is not inlined.
+///
+/// For example, an op that can only be inlined inside constrain functions can
+/// be marked with `Verification<["::llzk::function::ConstraintGen"]>`.
+class Verification<list<string> extra = []>
+    : ParamNativeOpTrait<"Verification", !interleave(extra, ",")>,
+      StructuralOpTrait {
+  string cppNamespace = "::llzk::function";
+}
+
+
+
 #endif // LLZK_FUNCTION_TRAITS

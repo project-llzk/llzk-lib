@@ -18,6 +18,7 @@ include "mlir/Interfaces/FunctionInterfaces.td"
 include "llzk/Dialect/Shared/OpTraits.td"
 include "llzk/Dialect/Shared/Types.td"
 include "llzk/Dialect/Felt/IR/Types.td"
+include "llzk/Dialect/Function/IR/OpTraits.td"
 
 include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/OpBase.td"
@@ -25,6 +26,9 @@ include "mlir/IR/SymbolInterfaces.td"
 
 class VerifDialectOp<string mnemonic, list<Trait> traits = []>
     : Op<VerifDialect, mnemonic, traits>;
+
+class SideEffectsOp<string mnemonic, list<Trait> traits = []>
+    : VerifDialectOp<mnemonic, traits> {}
 
 class ConditionOp<string mnemonic, list<Trait> traits = []>
     : VerifDialectOp<mnemonic, traits#[ConditionOpInterface]> {
@@ -45,8 +49,13 @@ class ConditionOp<string mnemonic, list<Trait> traits = []>
   }];
 }
 
-class ContractConditionOp<string mnemonic, list<Trait> traits = []>
-    : ConditionOp<mnemonic, traits#[HasAncestor<"::llzk::verif::ContractOp">]>;
+class ContractConditionOp<string mnemonic, bit inlinable = false,
+                          list<Trait> traits = []>
+    : ConditionOp<mnemonic,
+                  traits#!if(inlinable,
+                             [HasAncestorOf<["::llzk::verif::ContractOp",
+                                             "::llzk::function::FuncDefOp"]>],
+                             [HasAncestor<"::llzk::verif::ContractOp">])>;
 
 //===------------------------------------------------------------------===//
 // Struct verification condition operations
@@ -71,13 +80,60 @@ def VerifSMTProveOp : Op<VerifDialect, "smt_prove", []> {
 }
 
 //===------------------------------------------------------------------===//
+// Determinism operations
+//===------------------------------------------------------------------===//
+
+def VerifProveDetOp : VerifDialectOp<"det.prove", [Verification<>]> {
+  let summary = "proof obligation of determinism";
+  let description = [{
+    A proof obligation that the operand is deterministic, for a concrete definition
+    of determinism determined by the backend.
+
+    Returns a boolean that indicates if the operand was proven deterministic or not.
+
+    This operation has the `Verification` trait and can be used inside `function.def` 
+    ops that have the `allow_verif` attribute.
+  }];
+  let arguments = (ins EmitEqType:$condition);
+  let results = (outs I1:$result);
+
+  let assemblyFormat = "$condition attr-dict `:` type($condition)";
+}
+
+def VerifAssumeDetOp : VerifDialectOp<"det.assume", [Verification<>]> {
+  let summary = "hint of determinisms";
+  let description = [{
+    Hints to the proving backend that the operand is deterministic, for a concrete definition
+    of determinism determined by the backend.
+
+    This operation has the `Verification` trait and can be used inside `function.def` 
+    ops that have the `allow_verif` attribute.
+  }];
+  let arguments = (ins EmitEqType:$hint);
+  let results = (outs);
+
+  let assemblyFormat = "$hint attr-dict `:` type($hint)";
+
+  let extraClassDefinition = [{
+    // This side effect models "program termination". Based on
+    // https://github.com/llvm/llvm-project/blob/f325e4b2d836d6e65a4d0cf3efc6b0996ccf3765/mlir/lib/Dialect/ControlFlow/IR/ControlFlowOps.cpp#L92-L97
+    static void getEffects(
+        ::mlir::SmallVectorImpl<::mlir::SideEffects::EffectInstance<::mlir::MemoryEffects::Effect>> &effects
+    ) {
+      effects.emplace_back(::mlir::MemoryEffects::Write::get());
+    }
+  }];
+}
+
+//===------------------------------------------------------------------===//
 // Precondition operations
 //===------------------------------------------------------------------===//
 
 class RequireOpBase<string mnemonic, list<Trait> traits = []>
-    : ContractConditionOp<mnemonic, traits#[PreconditionOpInterface]> {
+    : ContractConditionOp<"require_"#mnemonic, false,
+                          traits#[PreconditionOpInterface]> {
   let description = [{
-    Base of an operation that encodes a precondition.
+    Encodes a precondition in the `@}]#mnemonic#[{` function.
 
     Preconditions:
     - May not depend on values transitively derived from struct member reads
@@ -86,11 +142,11 @@ class RequireOpBase<string mnemonic, list<Trait> traits = []>
   }];
 }
 
-def RequireComputeOp : RequireOpBase<"require_compute"> {
+def RequireComputeOp : RequireOpBase<"compute"> {
   let summary = "witness computation precondition";
 }
 
-def RequireConstrainOp : RequireOpBase<"require_constrain"> {
+def RequireConstrainOp : RequireOpBase<"constrain"> {
   let summary = "constraint generation precondition";
 }
 
@@ -98,14 +154,27 @@ def RequireConstrainOp : RequireOpBase<"require_constrain"> {
 // Postcondition operations
 //===------------------------------------------------------------------===//
 
-class EnsureOpBase<string mnemonic, list<Trait> traits = []>
-    : ContractConditionOp<mnemonic, traits#[PostconditionOpInterface]>;
+class EnsureOpBase<string mnemonic, bit inlinable = false,
+                   list<Trait> traits = []>
+    : ContractConditionOp<"ensure_"#mnemonic, inlinable,
+                          traits#[PostconditionOpInterface]> {
+  let description = [{
+    Encodes a postcondition in the `@}]#mnemonic#[{` function.
+  }]#!if(inlinable, [{
 
-def EnsureComputeOp : EnsureOpBase<"ensure_compute"> {
+    This operation has the `Verification` trait and can be used inside `function.def` 
+    ops that have the `allow_verif` attribute.
+    }],
+         "");
+}
+
+def EnsureComputeOp : EnsureOpBase<"compute"> {
   let summary = "witness computation postcondition";
 }
 
-def EnsureConstrainOp : EnsureOpBase<"ensure_constrain"> {
+def EnsureConstrainOp
+    : EnsureOpBase<"constrain", true,
+                   [Verification<["::llzk::function::ConstraintGen"]>]> {
   let summary = "constraint generation postcondition";
 }
 
