@@ -305,7 +305,8 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    module @untyped_attr {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @unspecified_as_specified() -> !felt.type<"babybear"> {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  16 : <"babybear">
+// CHECK-NEXT:      %[[CONST:[0-9a-zA-Z_\.]+]] = felt.const  16
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[CONST]] : (!felt.type) -> !felt.type<"babybear">
 // CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type<"babybear">
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -324,7 +325,8 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    module @untyped_attr {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @specified_as_unspecified() -> !felt.type {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  16
+// CHECK-NEXT:      %[[CONST:[0-9a-zA-Z_\.]+]] = felt.const  16 : <"babybear">
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[CONST]] : (!felt.type<"babybear">) -> !felt.type
 // CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

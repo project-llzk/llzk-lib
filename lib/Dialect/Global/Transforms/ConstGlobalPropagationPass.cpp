@@ -38,32 +38,36 @@ using namespace llzk::global;
 
 namespace {
 
-static inline Value convertToConstantValue(GlobalReadOp readOp, Attribute attr) {
-  OpBuilder builder(readOp);
+static Value convertToConstantValue(GlobalReadOp readOp, Type globalType, Attribute attr) {
+  OpBuilder bldr(readOp);
   Location loc = readOp.getLoc();
   if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
-    if (auto feltTy = llvm::dyn_cast<felt::FeltType>(readOp.getType())) {
+    if (auto feltTy = llvm::dyn_cast<felt::FeltType>(globalType)) {
       auto asFeltAttr = felt::FeltConstAttr::get(readOp.getContext(), intAttr.getValue(), feltTy);
-      return builder.create<felt::FeltConstantOp>(loc, asFeltAttr).getResult();
+      Value constant = bldr.create<felt::FeltConstantOp>(loc, asFeltAttr).getResult();
+      if (constant.getType() != readOp.getType()) {
+        return bldr.create<polymorphic::UnifiableCastOp>(loc, readOp.getType(), constant)
+            .getResult();
+      }
+      return constant;
     } else {
-      return builder.create<arith::ConstantOp>(loc, intAttr).getResult();
+      return bldr.create<arith::ConstantOp>(loc, intAttr).getResult();
     }
   } else if (auto feltAttr = llvm::dyn_cast<felt::FeltConstAttr>(attr)) {
-    auto feltTy = llvm::cast<felt::FeltType>(readOp.getType());
-    // An unspecified initializer may adopt the field required by the read.
+    auto feltTy = llvm::cast<felt::FeltType>(globalType);
+    // An unspecified initializer adopts the field declared by its global.
     if (!feltAttr.getType().hasField() && feltTy.hasField()) {
       feltAttr = felt::FeltConstAttr::get(readOp.getContext(), feltAttr.getValue(), feltTy);
     }
-    Value constant = builder.create<felt::FeltConstantOp>(loc, feltAttr).getResult();
+    Value constant = bldr.create<felt::FeltConstantOp>(loc, feltAttr).getResult();
     if (constant.getType() == readOp.getType()) {
       return constant;
     }
     // When the read uses an unspecified field type, add a unifiable cast to bridge
     // the specified field type to the unspecified one.
-    return builder.create<polymorphic::UnifiableCastOp>(loc, readOp.getType(), constant)
-        .getResult();
+    return bldr.create<polymorphic::UnifiableCastOp>(loc, readOp.getType(), constant).getResult();
   } else if (auto strAttr = llvm::dyn_cast<StringAttr>(attr)) {
-    return builder.create<string::LitStringOp>(loc, readOp.getType(), strAttr).getResult();
+    return bldr.create<string::LitStringOp>(loc, readOp.getType(), strAttr).getResult();
   } else {
     llvm::outs() << "Encountered: " << attr.getAbstractAttribute().getName() << '\n';
     llvm_unreachable("Unsupported constant attribute type");
@@ -104,7 +108,7 @@ public:
           // Special handling to fully replace GlobalReadOp with the appropriate constant op.
           if (auto readOp = llvm::dyn_cast<GlobalReadOp>(userOp);
               readOp && readOp.getNameRef() == symbolAttr) {
-            Value constantResult = convertToConstantValue(readOp, constValue);
+            Value constantResult = convertToConstantValue(readOp, globalDef.getType(), constValue);
             readOp.getResult().replaceAllUsesWith(constantResult);
             readOp.erase();
             continue;
