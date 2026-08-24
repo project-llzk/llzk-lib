@@ -129,6 +129,17 @@ LogicalResult ensureAttrTypeMatch(
     if (!llvm::isa<FeltConstAttr, IntegerAttr>(valAttr)) {
       return reportMismatch(errFn, rootType, aspect, "felt.type", valAttr);
     }
+    if (auto feltConst = llvm::dyn_cast<FeltConstAttr>(valAttr)) {
+      auto declaredType = llvm::cast<FeltType>(type);
+      auto valueType = feltConst.getType();
+      if (declaredType.hasField() && valueType.hasField() && declaredType != valueType) {
+        return errFn().append(
+            "expected felt.type attribute value with field '",
+            declaredType.getFieldName().getValue(), "' but found field '",
+            valueType.getFieldName().getValue(), '\''
+        );
+      }
+    }
   } else if (llvm::isa<StringType>(type)) {
     if (!llvm::isa<StringAttr>(valAttr)) {
       return reportMismatch(errFn, rootType, aspect, "builtin.string", valAttr);

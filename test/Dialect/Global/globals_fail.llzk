@@ -343,3 +343,15 @@ module attributes {llzk.lang} {
     function.return %a : !felt.type<"bn254">
   }
 }
+// -----
+
+module attributes {llzk.lang} {
+  module @typed_attr {
+    // expected-error@+1 {{'global.def' op expected felt.type attribute value with field 'babybear' but found field 'bn128'}}
+    global.def const @A : !felt.type<"babybear"> =  #felt<const 35 : !felt.type<"bn128">>
+  }
+  function.def @def_differently_specified() -> !felt.type<"babybear"> {
+    %a = global.read @typed_attr::@A : !felt.type<"babybear">
+    function.return %a : !felt.type<"babybear">
+  }
+}
