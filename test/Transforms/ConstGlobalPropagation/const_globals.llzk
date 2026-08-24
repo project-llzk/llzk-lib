@@ -290,3 +290,41 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[A]] : !felt.type<"bn128">
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  module @untyped_attr {
+    global.def const @A : !felt.type =  16
+  }
+  function.def @unspecified_as_specified() -> !felt.type<"babybear"> {
+    %a = global.read @untyped_attr::@A : !felt.type<"babybear">
+    function.return %a : !felt.type<"babybear">
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    module @untyped_attr {
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @unspecified_as_specified() -> !felt.type<"babybear"> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  16 : <"babybear">
+// CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type<"babybear">
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  module @untyped_attr {
+    global.def const @A : !felt.type<"babybear"> =  16
+  }
+  function.def @specified_as_unspecified() -> !felt.type {
+    %a = global.read @untyped_attr::@A : !felt.type
+    function.return %a : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    module @untyped_attr {
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @specified_as_unspecified() -> !felt.type {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  16
+// CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
