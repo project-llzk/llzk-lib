@@ -13,11 +13,15 @@
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Analysis/SymbolUseGraph.h"
+#include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/Global/Transforms/TransformationPasses.h"
+#include "llzk/Dialect/String/IR/Ops.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolTableLLZK.h"
 #include "llzk/Util/Walk.h"
+
+#include <mlir/Dialect/Arith/IR/Arith.h>
 
 // Include the generated base pass class definitions.
 namespace llzk::global {
@@ -32,6 +36,21 @@ using namespace llzk;
 using namespace llzk::global;
 
 namespace {
+
+static inline Value convertToConstantValue(GlobalReadOp readOp, Attribute attr) {
+  OpBuilder builder(readOp);
+  Location loc = readOp.getLoc();
+  if (auto feltAttr = llvm::dyn_cast<felt::FeltConstAttr>(attr)) {
+    return builder.create<felt::FeltConstantOp>(loc, feltAttr).getResult();
+  } else if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
+    return builder.create<arith::ConstantOp>(loc, intAttr).getResult();
+  } else if (auto strAttr = llvm::dyn_cast<StringAttr>(attr)) {
+    return builder.create<string::LitStringOp>(loc, readOp.getType(), strAttr).getResult();
+  } else {
+    llvm::outs() << "Encountered: " << attr.getAbstractAttribute().getName() << '\n';
+    llvm_unreachable("Unsupported constant attribute type");
+  }
+}
 
 class PassImpl : public llzk::global::impl::ConstGlobalPropagationPassBase<PassImpl> {
   using Base = ConstGlobalPropagationPassBase<PassImpl>;
@@ -57,6 +76,15 @@ public:
                            << *userOp << '\n'
           );
 
+          // Special handling to fully replace GlobalReadOp with the appropriate constant op.
+          if (auto readOp = llvm::dyn_cast<GlobalReadOp>(userOp)) {
+            Value constantResult = convertToConstantValue(readOp, constValue);
+            readOp.getResult().replaceAllUsesWith(constantResult);
+            readOp.erase();
+            continue;
+          }
+
+          // Standard case that just replaces all uses of the symbol with the constant value.
           AttrTypeReplacer replacer;
           replacer.addReplacement([symbolAttr, constValue](SymbolRefAttr a) {
             return (a == symbolAttr) ? std::make_optional(constValue) : std::nullopt;

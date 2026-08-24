@@ -187,3 +187,31 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  module @gstore {
+    global.def const @A : !felt.type =  16
+    global.def const @B : index = 0
+    global.def const @C : i1 = false
+    global.def const @D : !string.type = "Hello world!"
+  }
+  function.def @foo() -> (!felt.type, !felt.type, index, i1, !string.type) {
+    %a = global.read @gstore::@A : !felt.type
+    %b = global.read @gstore::@B : index
+    %c = global.read @gstore::@C : i1
+    %d = global.read @gstore::@D : !string.type
+    function.return %a, %a, %b, %c, %d : !felt.type, !felt.type, index, i1, !string.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    module @gstore {
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @foo() -> (!felt.type, !felt.type, index, i1, !string.type) {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  16
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant false
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = string.new "Hello world!"
+// CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_0]], %[[VAL_1]], %[[VAL_2]], %[[VAL_3]] : !felt.type, !felt.type, index, i1, !string.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
