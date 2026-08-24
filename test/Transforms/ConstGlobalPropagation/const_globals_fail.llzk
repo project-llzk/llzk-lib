@@ -4,7 +4,7 @@ module attributes {llzk.lang} {
   global.def const @G : index = 3
 
   struct.def @S {
-    // expected-error @+1 {{type variable '!poly.tvar<@G>' must reference a parameter of its enclosing 'poly.template'}}
+    // expected-error@+1 {{type variable '!poly.tvar<@G>' must reference a parameter of its enclosing 'poly.template'}}
     struct.member @x : !poly.tvar<@G>
     function.def @product() -> !struct.type<@S> {
       %self = struct.new : !struct.type<@S>
