@@ -232,3 +232,22 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VALUES]] : !array.type<2 x i1>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+// An IntegerAttr initializer is valid for a felt global when constructing IR
+// generically. Propagation must materialize a felt constant, rather than an
+// integer constant with the IntegerAttr's type.
+module attributes {llzk.lang} {
+  "global.def"() <{constant, initial_value = 35 : i64, sym_name = "generic_felt", type = !felt.type}> : () -> ()
+
+  function.def @read_generic_felt() -> !felt.type {
+    %value = global.read @generic_felt : !felt.type
+    function.return %value : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @read_generic_felt() -> !felt.type {
+// CHECK-NEXT:      %[[VALUE:[0-9a-zA-Z_\.]+]] = felt.const  35
+// CHECK-NEXT:      function.return %[[VALUE]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -40,10 +40,15 @@ namespace {
 static inline Value convertToConstantValue(GlobalReadOp readOp, Attribute attr) {
   OpBuilder builder(readOp);
   Location loc = readOp.getLoc();
-  if (auto feltAttr = llvm::dyn_cast<felt::FeltConstAttr>(attr)) {
+  if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
+    if (auto feltTy = llvm::dyn_cast<felt::FeltType>(readOp.getType())) {
+      auto asFeltAttr = felt::FeltConstAttr::get(readOp.getContext(), intAttr.getValue(), feltTy);
+      return builder.create<felt::FeltConstantOp>(loc, asFeltAttr).getResult();
+    } else {
+      return builder.create<arith::ConstantOp>(loc, intAttr).getResult();
+    }
+  } else if (auto feltAttr = llvm::dyn_cast<felt::FeltConstAttr>(attr)) {
     return builder.create<felt::FeltConstantOp>(loc, feltAttr).getResult();
-  } else if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
-    return builder.create<arith::ConstantOp>(loc, intAttr).getResult();
   } else if (auto strAttr = llvm::dyn_cast<StringAttr>(attr)) {
     return builder.create<string::LitStringOp>(loc, readOp.getType(), strAttr).getResult();
   } else {
