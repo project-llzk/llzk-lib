@@ -52,6 +52,38 @@ module attributes {llzk.lang} {
 
 // -----
 
+// The same preflight must also validate a member read used as the containment RHS. Refining this
+// symbolic one-element dimension to 2 would make it incompatible with the concrete 3-element
+// LHS, so the member and read remain generic.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  struct.def @ContainmentRhsHolder {
+    struct.member @item : !array.type<#id x !felt.type> {column}
+
+    function.def @compute() -> !struct.type<@ContainmentRhsHolder> {
+      %self = struct.new : !struct.type<@ContainmentRhsHolder>
+      %source = array.new : !array.type<2 x !felt.type>
+      struct.writem %self[@item] = %source : !struct.type<@ContainmentRhsHolder>, !array.type<2 x !felt.type>
+      function.return %self : !struct.type<@ContainmentRhsHolder>
+    }
+
+    function.def @constrain(%self: !struct.type<@ContainmentRhsHolder>) {
+      %lhs = array.new : !array.type<3 x !felt.type>
+      %read = struct.readm %self[@item] : !struct.type<@ContainmentRhsHolder>, !array.type<#id x !felt.type>
+      constrain.in %lhs, %read : !array.type<3 x !felt.type>, !array.type<#id x !felt.type>
+      function.return
+    }
+  }
+}
+// CHECK: #[[$ATTR_1:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK:      struct.def @ContainmentRhsHolder {
+// CHECK:        struct.member @item : !array.type<#[[$ATTR_1]] x !felt.type> {column}
+// CHECK:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.readm %{{.*}}[@item] : <@ContainmentRhsHolder>, !array.type<#[[$ATTR_1]] x !felt.type>
+// CHECK:          constrain.in %{{.*}}, %[[VAL_2]] : <3 x !felt.type>, !array.type<#[[$ATTR_1]] x !felt.type>
+
+// -----
+
 // A generic member read can participate in constrain.eq with an independently concrete value.
 // Refining the member to array<0> must not retag the read, because constrain.eq's other operand
 // remains array<1> and is not updated by member-read propagation.
@@ -264,3 +296,54 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:       }
 // CHECK-NEXT:     }
 // CHECK-NEXT:   }
+
+// -----
+
+// The generic member read is the containment LHS for a concrete 3-element RHS. Complementary
+// writes propose a 2 x 2 member refinement, which would make constrain.in invalid by changing
+// the LHS trailing dimension from ? to 2. Keep the member and read generic.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  struct.def @ContainmentHolder {
+    struct.member @items : !array.type<?,#id x !felt.type> {column}
+
+    function.def @compute() -> !struct.type<@ContainmentHolder> {
+      %self = struct.new : !struct.type<@ContainmentHolder>
+      %source = array.new : !array.type<2,2 x !felt.type>
+      %first = poly.unifiable_cast %source : (!array.type<2,2 x !felt.type>) -> !array.type<2,? x !felt.type>
+      %second = poly.unifiable_cast %source : (!array.type<2,2 x !felt.type>) -> !array.type<?,2 x !felt.type>
+      struct.writem %self[@items] = %first : !struct.type<@ContainmentHolder>, !array.type<2,? x !felt.type>
+      struct.writem %self[@items] = %second : !struct.type<@ContainmentHolder>, !array.type<?,2 x !felt.type>
+      function.return %self : !struct.type<@ContainmentHolder>
+    }
+
+    function.def @constrain(%self: !struct.type<@ContainmentHolder>) {
+      %read = struct.readm %self[@items] : !struct.type<@ContainmentHolder>, !array.type<?,#id x !felt.type>
+      %rhs = array.new : !array.type<3 x !felt.type>
+      constrain.in %read, %rhs : !array.type<?,#id x !felt.type>, !array.type<3 x !felt.type>
+      function.return
+    }
+  }
+}
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @ContainmentHolder {
+// CHECK-NEXT:      struct.member @items : !array.type<?,#[[$ATTR_0]] x !felt.type> {column}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@ContainmentHolder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@ContainmentHolder>
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = array.new  : <2,2 x !felt.type>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_1]] : (!array.type<2,2 x !felt.type>) -> !array.type<?,#[[$ATTR_0]] x !felt.type>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_1]] : (!array.type<2,2 x !felt.type>) -> !array.type<?,2 x !felt.type>
+// CHECK-NEXT:        struct.writem %[[VAL_0]][@items] = %[[VAL_2]] : <@ContainmentHolder>, !array.type<?,#[[$ATTR_0]] x !felt.type>
+// CHECK-NEXT:        struct.writem %[[VAL_0]][@items] = %[[VAL_3]] : <@ContainmentHolder>, !array.type<?,2 x !felt.type>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@ContainmentHolder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@ContainmentHolder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@items] : <@ContainmentHolder>, !array.type<?,#[[$ATTR_0]] x !felt.type>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.new  : <3 x !felt.type>
+// CHECK-NEXT:        constrain.in %[[VAL_5]], %[[VAL_6]] : <?,#[[$ATTR_0]] x !felt.type>, !array.type<3 x !felt.type>
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

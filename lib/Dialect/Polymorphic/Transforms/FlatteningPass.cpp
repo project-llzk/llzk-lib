@@ -3357,6 +3357,25 @@ static bool isFullyConcreteArrayConsumerType(Type type) {
          isFullyConcreteArrayConsumerType(arrayType.getElementType());
 }
 
+/// Return true iff `rhsType` remains a valid containment operand for `lhsType`.
+///
+/// This mirrors EmitContainmentOp::verify without emitting a diagnostic, so member-read
+/// refinement can reject a type change that would invalidate constrain.in.
+static bool areValidContainmentOperandTypes(Type lhsType, Type rhsType) {
+  auto lhsArrayType = llvm::dyn_cast<ArrayType>(lhsType);
+  if (!lhsArrayType) {
+    return false;
+  }
+  if (auto rhsArrayType = llvm::dyn_cast<ArrayType>(rhsType)) {
+    ArrayRef<Attribute> lhsDims = lhsArrayType.getDimensionSizes();
+    ArrayRef<Attribute> rhsDims = rhsArrayType.getDimensionSizes();
+    return lhsDims.size() >= rhsDims.size() &&
+           typeParamsUnify(lhsDims.drop_front(lhsDims.size() - rhsDims.size()), rhsDims) &&
+           typesUnify(lhsArrayType.getElementType(), rhsArrayType.getElementType());
+  }
+  return typesUnify(lhsArrayType.getElementType(), rhsType);
+}
+
 /// Return true iff typed users of `array.new` can accept a refined result type.
 ///
 /// Retagging an array result updates its SSA value globally. Fully concrete consumers are not
@@ -3749,6 +3768,24 @@ static bool canRefineMemberReadUsersToType(
           !canUseScalarizedValueAsType(
               refinedType, otherOperand.getType(), tracker, "UpdateMemberDefTypeFromWrite"
           )) {
+        return false;
+      }
+      continue;
+    }
+    if (EmitContainmentOp containmentOp = llvm::dyn_cast<EmitContainmentOp>(user)) {
+      // constrain.in is not retagged when a member read is refined. Validate both roles: a
+      // refined containment LHS must still contain its RHS, and a refined RHS must still be
+      // contained by its LHS. Otherwise dimensions that unify while generic can become
+      // incompatible after refinement.
+      if (containmentOp.getLhs() == result) {
+        if (!areValidContainmentOperandTypes(refinedType, containmentOp.getRhs().getType())) {
+          return false;
+        }
+      } else if (containmentOp.getRhs() == result) {
+        if (!areValidContainmentOperandTypes(containmentOp.getLhs().getType(), refinedType)) {
+          return false;
+        }
+      } else {
         return false;
       }
       continue;
