@@ -173,8 +173,8 @@ def EnsureComputeOp : EnsureOpBase<"compute"> {
 }
 
 def EnsureConstrainOp
-    : EnsureOpBase<"constrain", true,
-                   [Verification<["::llzk::function::ConstraintGen"]>]> {
+    : EnsureOpBase<"constrain",
+                   true, [Verification<["::llzk::function::ConstraintGen"]>]> {
   let summary = "constraint generation postcondition";
 }
 

@@ -51,8 +51,10 @@ def LLZK_AllowNonNativeFieldOpsAttr
   }];
 }
 
-def LLZK_AllowVerifOpsAttr : FunctionDialectAttr<"AllowVerifOps", "allow_verif_ops"> {
-  let summary = "Marks functions to allow certain `verif` dialect operations within their body";
+def LLZK_AllowVerifOpsAttr
+    : FunctionDialectAttr<"AllowVerifOps", "allow_verif_ops"> {
+  let summary = "Marks functions to allow certain `verif` dialect operations "
+                "within their body";
   let description = [{
     A unit attribute that can be attached to a `FuncDefOp` to indicate that ops 
     marked with `Verification` are allowed within its body.
