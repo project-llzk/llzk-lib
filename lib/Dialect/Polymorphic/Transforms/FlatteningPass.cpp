@@ -3715,6 +3715,24 @@ static bool canRefineMemberReadUsersToType(
       }
       continue;
     }
+    if (InsertArrayOp arrayInsert = llvm::dyn_cast<InsertArrayOp>(user)) {
+      if (arrayInsert.getRvalue() != result) {
+        return false;
+      }
+      auto refinedArrayType = llvm::dyn_cast<ArrayType>(refinedType);
+      if (!refinedArrayType) {
+        return false;
+      }
+      // array.insert's rvalue is not retagged when the member read is refined. Its destination
+      // must therefore already require the selected subarray type exactly; concrete affine
+      // specializations that unify before instantiation can otherwise diverge later.
+      Type refinedRvalueType = refinedArrayType.getSelectionType(arrayInsert.getIndices().size());
+      if (refinedRvalueType !=
+          arrayInsert.getArrRefType().getSelectionType(arrayInsert.getIndices().size())) {
+        return false;
+      }
+      continue;
+    }
     if (ReadArrayOp arrayRead = llvm::dyn_cast<ReadArrayOp>(user)) {
       if (arrayRead.getArrRef() != result) {
         return false;
@@ -3778,6 +3796,68 @@ static bool canRefineMemberReadUsersToType(
         }
         if (requiredType != refinedArrayType.getElementType() &&
             isFullyConcreteArrayConsumerType(requiredType)) {
+          return false;
+        }
+      }
+      continue;
+    }
+    if (ExtractArrayOp arrayExtract = llvm::dyn_cast<ExtractArrayOp>(user)) {
+      if (arrayExtract.getArrRef() != result) {
+        return false;
+      }
+      auto refinedArrayType = llvm::dyn_cast<ArrayType>(refinedType);
+      if (!refinedArrayType) {
+        return false;
+      }
+      // Refining the member read retags this inferred extract result. Its direct consumers are
+      // not retargeted by propagation, so they must already require the selected subarray type.
+      Type refinedExtractType = refinedArrayType.getSelectionType(arrayExtract.getIndices().size());
+      for (OpOperand &extractUse : arrayExtract.getResult().getUses()) {
+        Operation *extractUser = extractUse.getOwner();
+        Type requiredType;
+        if (CallOp call = llvm::dyn_cast<CallOp>(extractUser)) {
+          unsigned argIdx =
+              extractUse.getOperandNumber() - call.getArgOperands().getBeginOperandIndex();
+          if (argIdx >= call.getArgOperands().size()) {
+            return false;
+          }
+          auto callee = call.getCalleeTarget(tables);
+          if (failed(callee)) {
+            return false;
+          }
+          requiredType = callee->get().getFunctionType().getInput(argIdx);
+        } else if (ReturnOp returnOp = llvm::dyn_cast<ReturnOp>(extractUser)) {
+          FuncDefOp function = returnOp->getParentOfType<FuncDefOp>();
+          unsigned resultIdx = extractUse.getOperandNumber();
+          TypeRange resultTypes = function.getFunctionType().getResults();
+          if (resultIdx >= resultTypes.size()) {
+            return false;
+          }
+          requiredType = resultTypes[resultIdx];
+        } else if (UnifiableCastOp castOp = llvm::dyn_cast<UnifiableCastOp>(extractUser)) {
+          if (castOp.getInput() != arrayExtract.getResult()) {
+            return false;
+          }
+          requiredType = castOp.getResult().getType();
+        } else if (MemberWriteOp memberWrite = llvm::dyn_cast<MemberWriteOp>(extractUser)) {
+          if (memberWrite.getVal() != arrayExtract.getResult()) {
+            return false;
+          }
+          auto memberDef = memberWrite.getMemberDefOp(tables);
+          if (failed(memberDef)) {
+            return false;
+          }
+          requiredType = memberDef->get().getType();
+        } else if (InsertArrayOp arrayInsert = llvm::dyn_cast<InsertArrayOp>(extractUser)) {
+          if (arrayInsert.getRvalue() != arrayExtract.getResult()) {
+            return false;
+          }
+          requiredType =
+              arrayInsert.getArrRefType().getSelectionType(arrayInsert.getIndices().size());
+        } else {
+          return false;
+        }
+        if (requiredType != refinedExtractType) {
           return false;
         }
       }

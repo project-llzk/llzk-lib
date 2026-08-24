@@ -47,6 +47,105 @@ module attributes {llzk.lang} {
 
 // -----
 
+// A direct member read used as an array.extract base must not retag the extract result when a
+// downstream call independently requires Cell<1>. Keep the member read generic instead.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCellDirectExtract {
+    poly.param @N : index
+
+    // expected-warning@+1 {{Parameterized definition still has uses!}}
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCellDirectExtract::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCellDirectExtract::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCellDirectExtract::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCellDirectExtract::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  function.def @consumeExtract1(%value: !array.type<2 x !struct.type<@TCellDirectExtract::@Cell<[1]>>>) {
+    function.return
+  }
+
+  struct.def @DirectExtractHolder {
+    struct.member @items : !array.type<1,2 x !struct.type<@TCellDirectExtract::@Cell<[#id]>>> {column}
+
+    function.def @compute() -> !struct.type<@DirectExtractHolder> {
+      %self = struct.new : !struct.type<@DirectExtractHolder>
+      %index = arith.constant 0 : index
+      %item0 = function.call @TCellDirectExtract::@Cell::@compute() : () -> !struct.type<@TCellDirectExtract::@Cell<[0]>>
+      %items0 = array.new %item0, %item0 : !array.type<1,2 x !struct.type<@TCellDirectExtract::@Cell<[0]>>>
+      // The extract result's concrete downstream consumer keeps this read generic, so this
+      // otherwise refining member write is diagnosed after template instantiation.
+      // expected-error@+1 {{'struct.writem' op has wrong type; expected '!array.type<1,2 x !struct.type<@TCellDirectExtract::@Cell<[affine_map<(d0) -> (d0)>]>>>', got '!array.type<1,2 x !struct.type<@TCellDirectExtract_0_Cell>>'}}
+      struct.writem %self[@items] = %items0 : !struct.type<@DirectExtractHolder>, !array.type<1,2 x !struct.type<@TCellDirectExtract::@Cell<[0]>>>
+      %read = struct.readm %self[@items] : !struct.type<@DirectExtractHolder>, !array.type<1,2 x !struct.type<@TCellDirectExtract::@Cell<[#id]>>>
+      %row = array.extract %read[%index] : !array.type<1,2 x !struct.type<@TCellDirectExtract::@Cell<[#id]>>>
+      function.call @consumeExtract1(%row) : (!array.type<2 x !struct.type<@TCellDirectExtract::@Cell<[#id]>>>) -> ()
+      function.return %self : !struct.type<@DirectExtractHolder>
+    }
+
+    function.def @constrain(%self: !struct.type<@DirectExtractHolder>) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// A direct member read used as an array.insert rvalue must not be retagged to Cell<0> when its
+// independently typed destination requires Cell<1>. The generic source is intentionally retained
+// and therefore diagnosed after template instantiation.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCellDirectInsert {
+    poly.param @N : index
+
+    // expected-warning@+1 {{Parameterized definition still has uses!}}
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCellDirectInsert::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCellDirectInsert::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCellDirectInsert::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCellDirectInsert::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @DirectInsertHolder {
+    struct.member @items : !array.type<1,2 x !struct.type<@TCellDirectInsert::@Cell<[#id]>>> {column}
+
+    function.def @compute() -> !struct.type<@DirectInsertHolder> {
+      %self = struct.new : !struct.type<@DirectInsertHolder>
+      %index = arith.constant 0 : index
+      %item0 = function.call @TCellDirectInsert::@Cell::@compute() : () -> !struct.type<@TCellDirectInsert::@Cell<[0]>>
+      %items0 = array.new %item0, %item0 : !array.type<1,2 x !struct.type<@TCellDirectInsert::@Cell<[0]>>>
+      struct.writem %self[@items] = %items0 : !struct.type<@DirectInsertHolder>, !array.type<1,2 x !struct.type<@TCellDirectInsert::@Cell<[0]>>>
+      %read = struct.readm %self[@items] : !struct.type<@DirectInsertHolder>, !array.type<1,2 x !struct.type<@TCellDirectInsert::@Cell<[#id]>>>
+      %destination = array.new : !array.type<1,1,2 x !struct.type<@TCellDirectInsert::@Cell<[1]>>>
+      // expected-error@+1 {{'array.insert' op incorrect array element type; expected: '!struct.type<@TCellDirectInsert_1_Cell>', found: '!struct.type<@TCellDirectInsert::@Cell<[affine_map<(d0) -> (d0)>]>>'}}
+      array.insert %destination[%index] = %read : !array.type<1,1,2 x !struct.type<@TCellDirectInsert::@Cell<[1]>>>, !array.type<1,2 x !struct.type<@TCellDirectInsert::@Cell<[#id]>>>
+      function.return %self : !struct.type<@DirectInsertHolder>
+    }
+
+    function.def @constrain(%self: !struct.type<@DirectInsertHolder>) {
+      function.return
+    }
+  }
+}
+
+// -----
+
 // A generic destination member can accept both writes before scalarization, but replacing this
 // read with Cell<0> would make it incompatible with the separate Cell<1> write.
 #id = affine_map<(i) -> (i)>
