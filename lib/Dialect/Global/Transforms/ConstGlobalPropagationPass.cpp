@@ -102,8 +102,11 @@ public:
       return;
     }
 
-    SymbolUseGraph &useGraph = getAnalysis<SymbolUseGraph>();
     for (GlobalDefOp globalDef : constGlobals) {
+      // Rebuild the graph for each global. Propagating one global can erase a GlobalReadOp which
+      // may also reference later globals in its attributes or types. A precomputed graph would
+      // retain dangling pointers to that erased operation in those later globals' user sets.
+      SymbolUseGraph useGraph(root);
       if (const SymbolUseGraphNode *node = useGraph.lookupNode(globalDef)) {
         SymbolRefAttr symbolAttr = node->getSymbolPath();
         Attribute constValue = globalDef.getInitialValueAttr();

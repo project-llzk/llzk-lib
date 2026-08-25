@@ -352,3 +352,22 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[INDEX]], %[[BOOL]] : index, i1
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+// A read can refer to more than one constant. Propagating @A erases the read,
+// so propagation of @N must not retain a stale pointer to it.
+module attributes {llzk.lang} {
+  global.def const @A : index = 1
+  global.def const @N : index = 2
+
+  function.def @read_with_constant_metadata() -> index {
+    %value = global.read @A : index {metadata = @N}
+    function.return %value : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @read_with_constant_metadata() -> index {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
