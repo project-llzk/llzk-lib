@@ -51,7 +51,11 @@ static Value convertToConstantValue(GlobalReadOp readOp, Type globalType, Attrib
       }
       return constant;
     } else {
-      return bldr.create<arith::ConstantOp>(loc, intAttr).getResult();
+      // Generic construction can provide an IntegerAttr whose storage type does
+      // not match the global type. Materialize the constant with the declared
+      // type so replacing the read preserves SSA type correctness.
+      auto typedAttr = IntegerAttr::get(globalType, intAttr.getValue());
+      return bldr.create<arith::ConstantOp>(loc, typedAttr).getResult();
     }
   } else if (auto feltAttr = llvm::dyn_cast<felt::FeltConstAttr>(attr)) {
     auto feltTy = llvm::cast<felt::FeltType>(globalType);
