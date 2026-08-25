@@ -3654,11 +3654,38 @@ static bool canRefineMemberReadUsersToType(
         return false;
       }
       Type memberType = memberDef->get().getType();
-      if (isConcreteType(memberType, /*allowStructParams=*/false) &&
-          !canUseScalarizedValueAsType(
-              refinedType, memberType, tracker, "UpdateMemberDefTypeFromWrite"
-          )) {
-        return false;
+      if (isConcreteType(memberType, /*allowStructParams=*/false)) {
+        auto canUse = canUseScalarizedValueAsType(
+            refinedType, memberType, tracker, "UpdateMemberDefTypeFromWrite"
+        );
+        if (!canUse) {
+          return false;
+        }
+      }
+      if (!isConcreteType(memberType, /*allowStructParams=*/false)) {
+        // A generic destination may be independently refined by its other writes. Retagging this
+        // read before checking them can make a previously valid generic write incompatible with
+        // a concrete sibling write after template instantiation.
+        StructDefOp parentStruct = getParentOfType<StructDefOp>(memberDef->get());
+        if (!parentStruct) {
+          return false;
+        }
+        auto memberUses = llzk::getSymbolUses(memberDef->get(), parentStruct);
+        if (!memberUses) {
+          return false;
+        }
+        for (SymbolTable::SymbolUse memberUse : memberUses.value()) {
+          MemberWriteOp otherWrite = llvm::dyn_cast<MemberWriteOp>(memberUse.getUser());
+          if (!otherWrite || otherWrite == memberWrite) {
+            continue;
+          }
+          auto canUse = canUseScalarizedValueAsType(
+              refinedType, otherWrite.getVal().getType(), tracker, "UpdateMemberDefTypeFromWrite"
+          );
+          if (!canUse) {
+            return false;
+          }
+        }
       }
       continue;
     }

@@ -1,0 +1,45 @@
+// RUN: llzk-opt -llzk-flatten %s | FileCheck %s
+
+// A generic destination member accepts both writes initially. Refining the source read to
+// array<0> would make the array<1> sibling write incompatible. Keep the source generic so the
+// destination's independent writes are not incorrectly forced to agree.
+module attributes {llzk.lang} {
+  struct.def @Holder {
+    struct.member @source : !array.type<? x !felt.type> {column}
+    struct.member @destination : !array.type<? x !felt.type> {column}
+
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %zero = array.new : !array.type<0 x !felt.type>
+      %one = array.new : !array.type<1 x !felt.type>
+      struct.writem %self[@source] = %zero : !struct.type<@Holder>, !array.type<0 x !felt.type>
+      %read = struct.readm %self[@source] : !struct.type<@Holder>, !array.type<? x !felt.type>
+      struct.writem %self[@destination] = %read : !struct.type<@Holder>, !array.type<? x !felt.type>
+      struct.writem %self[@destination] = %one : !struct.type<@Holder>, !array.type<1 x !felt.type>
+      function.return %self : !struct.type<@Holder>
+    }
+
+    function.def @constrain(%self: !struct.type<@Holder>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Holder {
+// CHECK-NEXT:      struct.member @source : !array.type<? x !felt.type> {column}
+// CHECK-NEXT:      struct.member @destination : !array.type<? x !felt.type> {column}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = array.new  : <? x !felt.type>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.new  : <? x !felt.type>
+// CHECK-NEXT:        struct.writem %[[VAL_0]][@source] = %[[VAL_1]] : <@Holder>, !array.type<? x !felt.type>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_0]][@source] : <@Holder>, !array.type<? x !felt.type>
+// CHECK-NEXT:        struct.writem %[[VAL_0]][@destination] = %[[VAL_3]] : <@Holder>, !array.type<? x !felt.type>
+// CHECK-NEXT:        struct.writem %[[VAL_0]][@destination] = %[[VAL_2]] : <@Holder>, !array.type<? x !felt.type>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
