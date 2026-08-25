@@ -606,16 +606,23 @@ struct UnifierImpl {
   ArrayRef<StringRef> rhsRevPrefix;
   UnificationMap *unifications;
   AffineInstantiations *affineToIntTracker;
+  bool *feltFieldBecameUnspecified;
   // This optional function can be used to provide an exception to the standard unification
   // rules and return a true/success result when it otherwise may not.
   llvm::function_ref<bool(Type oldTy, Type newTy)> overrideSuccess;
 
   UnifierImpl(UnificationMap *unificationMap, ArrayRef<StringRef> rhsReversePrefix = {})
       : rhsRevPrefix(rhsReversePrefix), unifications(unificationMap), affineToIntTracker(nullptr),
-        overrideSuccess(nullptr) {}
+        feltFieldBecameUnspecified(nullptr), overrideSuccess(nullptr) {}
 
   UnifierImpl &trackAffineToInt(AffineInstantiations *tracker) {
     this->affineToIntTracker = tracker;
+    return *this;
+  }
+
+  /// Record when a specified felt field in the LHS is omitted from the RHS.
+  UnifierImpl &trackFeltFieldConcreteness(bool *tracker) {
+    this->feltFieldBecameUnspecified = tracker;
     return *this;
   }
 
@@ -736,6 +743,9 @@ struct UnifierImpl {
       if (auto rhsFelt = llvm::dyn_cast<FeltType>(rhs)) {
         // An unspecified field can be unified with a specified one, but two
         // distinct specified fields cannot be unified.
+        if (lhsFelt.hasField() && !rhsFelt.hasField() && feltFieldBecameUnspecified) {
+          *feltFieldBecameUnspecified = true;
+        }
         return !lhsFelt.hasField() || !rhsFelt.hasField();
       }
     }
@@ -940,9 +950,11 @@ bool isMoreConcreteUnification(
 ) {
   UnificationMap unifications;
   AffineInstantiations affineInstantiations;
+  bool feltFieldBecameUnspecified = false;
   // Run type unification with the addition that affine map can become integer in the new type.
   if (!UnifierImpl(&unifications)
            .trackAffineToInt(&affineInstantiations)
+           .trackFeltFieldConcreteness(&feltFieldBecameUnspecified)
            .withOverrides(knownOldToNew)
            .typesUnify(oldTy, newTy)) {
     return false;
@@ -954,7 +966,8 @@ bool isMoreConcreteUnification(
   // AffineInstantiations map, a RHS key would indicate that the new type contains an AffineMapAttr
   // where the old type contains an IntegerAttr.
   auto entryIsRHS = [](const auto &entry) { return entry.first.second == Side::RHS; };
-  return !llvm::any_of(unifications, entryIsRHS) && !llvm::any_of(affineInstantiations, entryIsRHS);
+  return !feltFieldBecameUnspecified && !llvm::any_of(unifications, entryIsRHS) &&
+         !llvm::any_of(affineInstantiations, entryIsRHS);
 }
 
 FailureOr<IntegerAttr> forceIntType(IntegerAttr attr, EmitErrorFn emitError) {
