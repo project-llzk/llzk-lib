@@ -77,7 +77,41 @@ void GlobalDefOp::printGlobalInitialValue(
 
 LogicalResult GlobalDefOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, *this, getType());
+  if (failed(verifyTypeResolution(tables, *this, getType()))) {
+    return failure();
+  }
+
+  // An unspecified mutable felt global may be refined by its uses. All such
+  // refinements must select the same field, or the shared storage could be
+  // written through one field and read through another.
+  auto globalType = llvm::dyn_cast<FeltType>(getType());
+  if (!globalType || globalType.hasField() || isConstant()) {
+    return success();
+  }
+  auto root = getRootModule(getOperation());
+  if (failed(root)) {
+    return failure();
+  }
+  std::optional<FeltType> refinedType;
+  auto res = root->walk([&](GlobalRefOpInterface refOp) -> WalkResult {
+    auto target = refOp.getGlobalDefOp(tables);
+    if (failed(target) || target->get() != getOperation()) {
+      return WalkResult::advance();
+    }
+    auto refType = llvm::dyn_cast<FeltType>(refOp.getVal().getType());
+    if (!refType || !refType.hasField()) {
+      return WalkResult::advance();
+    }
+    if (refinedType && *refinedType != refType) {
+      return refOp->emitOpError() << "has field '" << refType.getFieldName().getValue()
+                                  << "' conflicting with prior field refinement '"
+                                  << refinedType->getFieldName().getValue()
+                                  << "' of mutable global '" << getSymName() << '\'';
+    }
+    refinedType = refType;
+    return WalkResult::advance();
+  });
+  return failure(res.wasInterrupted());
 }
 
 namespace {

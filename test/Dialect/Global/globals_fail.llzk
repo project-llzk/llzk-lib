@@ -319,3 +319,20 @@ module attributes {llzk.lang} {
     function.return %a : !felt.type<"babybear">
   }
 }
+// -----
+
+// TEST: mutable unspecified felt globals cannot be refined to conflicting fields
+module attributes {llzk.lang} {
+  global.def @g : !felt.type
+  struct.def @Component10 {
+    function.def @compute() -> !struct.type<@Component10> {
+      %value = felt.const 1 : !felt.type<"bn128">
+      global.write @g = %value : !felt.type<"bn128">
+      // expected-error@+1 {{'global.read' op has field 'babybear' conflicting with prior field refinement 'bn128' of mutable global 'g'}}
+      %read = global.read @g : !felt.type<"babybear">
+      %self = struct.new : !struct.type<@Component10>
+      function.return %self : !struct.type<@Component10>
+    }
+    function.def @constrain(%self: !struct.type<@Component10>) { function.return }
+  }
+}
