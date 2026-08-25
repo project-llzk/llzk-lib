@@ -5,9 +5,21 @@ target_link_libraries(LLZKAllDialects INTERFACE LLZKGlobalDialect)
 file(GLOB_RECURSE LLZKGlobalDialect_SOURCES "**/*.cpp")
 target_sources(LLZKGlobalDialect PRIVATE ${LLZKGlobalDialect_SOURCES})
 target_link_libraries(
-  LLZKGlobalDialect PUBLIC LLZKDialectHeaders ${LLZK_DEP_DIALECT_LIBS} MLIRIR
-                     MLIRPass MLIRParser MLIRTransformUtils
-                     LLVMHeaders MLIRHeaders LLZKAnalysis)
+  LLZKGlobalDialect
+  PUBLIC
+    LLZKDialectHeaders
+    ${LLZK_DEP_DIALECT_LIBS}
+    MLIRIR
+    MLIRPass
+    MLIRParser
+    MLIRTransformUtils
+    MLIRArithDialect
+    LLVMHeaders
+    MLIRHeaders
+    LLZKAnalysis
+    LLZKFeltDialect
+    LLZKPolymorphicDialect
+    LLZKStringDialect)
 llzk_target_add_mlir_link_settings(LLZKGlobalDialect)
 
 install(TARGETS LLZKGlobalDialect EXPORT LLZKTargets)
