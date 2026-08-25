@@ -11,7 +11,9 @@
 
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/String/IR/Types.h"
+#include "llzk/Dialect/Struct/IR/Types.h"
 #include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/TypeHelper.h"
@@ -29,6 +31,33 @@ using namespace llzk::felt;
 using namespace llzk::string;
 
 namespace llzk::global {
+
+namespace {
+
+/// Collect felt types in structural order, including felt types nested in aggregate types and
+/// struct type parameters. Corresponding entries in two unifiable types identify the same
+/// storage position.
+void collectFeltTypes(Type type, SmallVectorImpl<FeltType> &feltTypes) {
+  if (auto feltType = llvm::dyn_cast<FeltType>(type)) {
+    feltTypes.push_back(feltType);
+  } else if (auto arrayType = llvm::dyn_cast<array::ArrayType>(type)) {
+    collectFeltTypes(arrayType.getElementType(), feltTypes);
+  } else if (auto podType = llvm::dyn_cast<pod::PodType>(type)) {
+    for (auto record : podType.getRecords()) {
+      collectFeltTypes(record.getType(), feltTypes);
+    }
+  } else if (auto structType = llvm::dyn_cast<component::StructType>(type)) {
+    if (auto params = structType.getParams()) {
+      for (Attribute param : params) {
+        if (auto typeAttr = llvm::dyn_cast<TypeAttr>(param)) {
+          collectFeltTypes(typeAttr.getValue(), feltTypes);
+        }
+      }
+    }
+  }
+}
+
+} // namespace
 
 //===------------------------------------------------------------------===//
 // GlobalDefOp
@@ -81,34 +110,49 @@ LogicalResult GlobalDefOp::verifySymbolUses(SymbolTableCollection &tables) {
     return failure();
   }
 
-  // An unspecified mutable felt global may be refined by its uses. All such
-  // refinements must select the same field, or the shared storage could be
-  // written through one field and read through another.
-  auto globalType = llvm::dyn_cast<FeltType>(getType());
-  if (!globalType || globalType.hasField() || isConstant()) {
+  // An unspecified felt in a mutable global may be refined by its uses. All
+  // refinements of each corresponding storage position must select the same
+  // field, including when the felt is nested in an aggregate.
+  if (isConstant()) {
+    return success();
+  }
+  SmallVector<FeltType> globalFeltTypes;
+  collectFeltTypes(getType(), globalFeltTypes);
+  if (globalFeltTypes.empty()) {
     return success();
   }
   auto root = getRootModule(getOperation());
   if (failed(root)) {
     return failure();
   }
-  std::optional<FeltType> refinedType;
+  SmallVector<std::optional<FeltType>> refinedTypes(globalFeltTypes.size());
   auto res = root->walk([&](GlobalRefOpInterface refOp) -> WalkResult {
     auto target = refOp.getGlobalDefOp(tables);
     if (failed(target) || target->get() != getOperation()) {
       return WalkResult::advance();
     }
-    auto refType = llvm::dyn_cast<FeltType>(refOp.getVal().getType());
-    if (!refType || !refType.hasField()) {
-      return WalkResult::advance();
+    SmallVector<FeltType> refFeltTypes;
+    collectFeltTypes(refOp.getVal().getType(), refFeltTypes);
+    for (auto [index, refType] : llvm::enumerate(refFeltTypes)) {
+      if (!refType.hasField()) {
+        continue;
+      }
+      auto &refinedType = refinedTypes[index];
+      if (refinedType && *refinedType != refType) {
+        auto diagnostic = refOp->emitOpError()
+                          << "has field '" << refType.getFieldName().getValue();
+        if (!llvm::isa<FeltType>(getType())) {
+          diagnostic << "' at nested type position " << index;
+        } else {
+          diagnostic << '\'';
+        }
+        diagnostic << " conflicting with prior field refinement '"
+                   << refinedType->getFieldName().getValue() << "' of mutable global '"
+                   << getSymName() << '\'';
+        return WalkResult(std::move(diagnostic));
+      }
+      refinedType = refType;
     }
-    if (refinedType && *refinedType != refType) {
-      return refOp->emitOpError() << "has field '" << refType.getFieldName().getValue()
-                                  << "' conflicting with prior field refinement '"
-                                  << refinedType->getFieldName().getValue()
-                                  << "' of mutable global '" << getSymName() << '\'';
-    }
-    refinedType = refType;
     return WalkResult::advance();
   });
   return failure(res.wasInterrupted());

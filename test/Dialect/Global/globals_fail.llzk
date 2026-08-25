@@ -336,3 +336,20 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@Component10>) { function.return }
   }
 }
+// -----
+
+// TEST: mutable aggregate globals cannot be refined to conflicting fields
+module attributes {llzk.lang} {
+  global.def @g : !array.type<2 x !felt.type>
+  struct.def @Component11 {
+    function.def @compute() -> !struct.type<@Component11> {
+      %value = array.new : !array.type<2 x !felt.type<"bn128">>
+      global.write @g = %value : !array.type<2 x !felt.type<"bn128">>
+      // expected-error@+1 {{'global.read' op has field 'babybear' at nested type position 0 conflicting with prior field refinement 'bn128' of mutable global 'g'}}
+      %read = global.read @g : !array.type<2 x !felt.type<"babybear">>
+      %self = struct.new : !struct.type<@Component11>
+      function.return %self : !struct.type<@Component11>
+    }
+    function.def @constrain(%self: !struct.type<@Component11>) { function.return }
+  }
+}
