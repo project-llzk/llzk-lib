@@ -591,6 +591,7 @@ module attributes {llzk.lang} {
   poly.template @TCell {
     poly.param @N : index
 
+    // expected-warning@+1 {{Parameterized definition still has uses!}}
     struct.def @Cell {
       struct.member @value : !felt.type {column}
 
@@ -621,8 +622,11 @@ module attributes {llzk.lang} {
   }
 
   function.def @readItem(%self: !struct.type<@Holder>) -> !struct.type<@TCell::@Cell<[1]>> {
+    // The unsupported return consumer leaves the public read generic; the refined member then
+    // exposes the existing declaration mismatch instead of retagging the read unsafely.
+    // expected-error@+1 {{'struct.readm' op has wrong type; expected '!struct.type<@TCell_0_Cell>', got '!struct.type<@TCell::@Cell<[affine_map<(d0) -> (d0)>]>>'}}
     %item = struct.readm %self[@item] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
-    // expected-error@+1 {{type of return operand 0 ('!struct.type<@TCell_0_Cell>') doesn't match function result type ('!struct.type<@TCell_1_Cell>') in function @readItem}}
+    // expected-error@+1 {{type of return operand 0 ('!struct.type<@TCell::@Cell<[affine_map<(d0) -> (d0)>]>>') doesn't match function result type ('!struct.type<@TCell_1_Cell>') in function @readItem}}
     function.return %item : !struct.type<@TCell::@Cell<[#id]>>
   }
 }

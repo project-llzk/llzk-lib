@@ -347,3 +347,53 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
+// -----
+
+// pod.new keeps its declared record types when a member-read initializer is retagged. Rejecting
+// this unhandled consumer keeps both the read and POD initializer generic, avoiding invalid IR.
+module attributes {llzk.lang} {
+  poly.template @TCellPod {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCellPod::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCellPod::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCellPod::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCellPod::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @TPodInitializerHolder {
+    poly.param @T
+
+    struct.def @Holder {
+      struct.member @item : !poly.tvar<@T> {column}
+
+      function.def @compute() -> !struct.type<@TPodInitializerHolder::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@TPodInitializerHolder::@Holder<[@T]>>
+        %item0 = function.call @TCellPod::@Cell::@compute() : () -> !struct.type<@TCellPod::@Cell<[0]>>
+        struct.writem %self[@item] = %item0 : !struct.type<@TPodInitializerHolder::@Holder<[@T]>>, !struct.type<@TCellPod::@Cell<[0]>>
+        function.return %self : !struct.type<@TPodInitializerHolder::@Holder<[@T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TPodInitializerHolder::@Holder<[@T]>>) {
+        %read = struct.readm %self[@item] : !struct.type<@TPodInitializerHolder::@Holder<[@T]>>, !poly.tvar<@T>
+        %pod = pod.new { @item = %read } : !pod.type<[@item: !poly.tvar<@T>]>
+        function.return
+      }
+    }
+  }
+}
+// CHECK-LABEL: poly.template @TPodInitializerHolder {
+// CHECK:      struct.def @Holder {
+// CHECK:      struct.member @item : !poly.tvar<@T> {column}
+// CHECK:      function.def @constrain(%{{.*}}: !struct.type<@TPodInitializerHolder::@Holder<[@T]>>) attributes {function.allow_constraint} {
+// CHECK:        %[[POD_READ:[0-9a-zA-Z_\.]+]] = struct.readm %{{.*}}[@item] : <@TPodInitializerHolder::@Holder<[@T]>>, !poly.tvar<@T>
+// CHECK:        %{{.*}} = pod.new { @item = %[[POD_READ]] } : <[@item: !poly.tvar<@T>]>

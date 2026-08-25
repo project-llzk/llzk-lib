@@ -3938,6 +3938,11 @@ static bool canRefineMemberReadUsersToType(
       }
       continue;
     }
+    // Retagging a member read changes its SSA value but does not update arbitrary users. In
+    // particular, pod.new verifies that every initializer exactly matches its declared record
+    // type, so a read-derived refinement could otherwise leave the POD invalid. Keep the read
+    // generic until each additional typed consumer has an explicit compatibility check here.
+    return false;
   }
   return true;
 }
