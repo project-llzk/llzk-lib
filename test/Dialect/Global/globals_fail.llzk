@@ -353,3 +353,14 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@Component11>) { function.return }
   }
 }
+// -----
+
+// TEST: GlobalReadOp with more felt positions than its GlobalDefOp
+module attributes {llzk.lang} {
+  global.def @g : !felt.type
+  function.def @invalid_reference() -> !pod.type<[@a: !felt.type, @b: !felt.type]> {
+    // expected-error@+1 {{'global.read' op has wrong type; expected '!felt.type', got '!pod.type<[@a: !felt.type, @b: !felt.type]>'}}
+    %value = global.read @g : !pod.type<[@a: !felt.type, @b: !felt.type]>
+    function.return %value : !pod.type<[@a: !felt.type, @b: !felt.type]>
+  }
+}

@@ -136,6 +136,12 @@ LogicalResult GlobalDefOp::verifySymbolUses(SymbolTableCollection &tables) {
     if (failed(target) || target->get() != getOperation()) {
       return WalkResult::advance();
     }
+    // Only unifiable reference types have felt positions corresponding to
+    // this global. A non-unifying reference is diagnosed by its own symbol
+    // verifier, so it must not participate in refinement collection.
+    if (!typesUnify(refOp.getVal().getType(), getType(), target->getIncludeSymNames())) {
+      return WalkResult::advance();
+    }
     SmallVector<FeltType> refFeltTypes;
     collectFeltTypes(refOp.getVal().getType(), refFeltTypes);
     for (auto [index, refType] : llvm::enumerate(refFeltTypes)) {
