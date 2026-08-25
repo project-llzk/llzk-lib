@@ -20,9 +20,12 @@
 #include "llzk/Dialect/String/IR/Ops.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolTableLLZK.h"
+#include "llzk/Util/TypeHelper.h"
 #include "llzk/Util/Walk.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
+
+#include <optional>
 
 // Include the generated base pass class definitions.
 namespace llzk::global {
@@ -38,7 +41,8 @@ using namespace llzk::global;
 
 namespace {
 
-static Value convertToConstantValue(GlobalReadOp readOp, Type globalType, Attribute attr) {
+static FailureOr<Value>
+convertToConstantValue(GlobalReadOp readOp, Type globalType, Attribute attr) {
   OpBuilder bldr(readOp);
   Location loc = readOp.getLoc();
   if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
@@ -63,12 +67,19 @@ static Value convertToConstantValue(GlobalReadOp readOp, Type globalType, Attrib
     if (!feltAttr.getType().hasField() && feltTy.hasField()) {
       feltAttr = felt::FeltConstAttr::get(readOp.getContext(), feltAttr.getValue(), feltTy);
     }
+    // A field-specific initializer for an unspecified global may be read through another specified
+    // field. The read is valid because either specified field unifies with the global's unspecified
+    // type, but the two fields themselves cannot be bridged with a poly.unifiable_cast.
+    if (!typesUnify(feltAttr.getType(), readOp.getType())) {
+      readOp.emitOpError() << "cannot propagate initializer type " << feltAttr.getType()
+                           << " to read type " << readOp.getType()
+                           << "; the required poly.unifiable_cast is invalid";
+      return failure();
+    }
     Value constant = bldr.create<felt::FeltConstantOp>(loc, feltAttr).getResult();
     if (constant.getType() == readOp.getType()) {
       return constant;
     }
-    // When the read uses an unspecified field type, add a unifiable cast to bridge
-    // the specified field type to the unspecified one.
     return bldr.create<polymorphic::UnifiableCastOp>(loc, readOp.getType(), constant).getResult();
   } else if (auto strAttr = llvm::dyn_cast<StringAttr>(attr)) {
     return bldr.create<string::LitStringOp>(loc, readOp.getType(), strAttr).getResult();
@@ -112,8 +123,13 @@ public:
           // Special handling to fully replace GlobalReadOp with the appropriate constant op.
           if (auto readOp = llvm::dyn_cast<GlobalReadOp>(userOp);
               readOp && readOp.getNameRef() == symbolAttr) {
-            Value constantResult = convertToConstantValue(readOp, globalDef.getType(), constValue);
-            readOp.getResult().replaceAllUsesWith(constantResult);
+            FailureOr<Value> constantResult =
+                convertToConstantValue(readOp, globalDef.getType(), constValue);
+            if (failed(constantResult)) {
+              signalPassFailure();
+              return;
+            }
+            readOp.getResult().replaceAllUsesWith(*constantResult);
             readOp.erase();
             continue;
           }
