@@ -83,7 +83,7 @@ def VerifSMTProveOp : Op<VerifDialect, "smt_prove", []> {
 // Determinism operations
 //===------------------------------------------------------------------===//
 
-def VerifProveDetOp : VerifDialectOp<"det.prove", [Verification<>]> {
+def ProveDetOp : VerifDialectOp<"det.prove", [Verification<>]> {
   let summary = "proof obligation of determinism";
   let description = [{
     A proof obligation that the operand is deterministic, for a concrete definition
@@ -100,7 +100,7 @@ def VerifProveDetOp : VerifDialectOp<"det.prove", [Verification<>]> {
   let assemblyFormat = "$condition attr-dict `:` type($condition)";
 }
 
-def VerifAssumeDetOp : VerifDialectOp<"det.assume", [Verification<>]> {
+def AssumeDetOp : VerifDialectOp<"det.assume", [Verification<>]> {
   let summary = "hint of determinisms";
   let description = [{
     Hints to the proving backend that the operand is deterministic, for a concrete definition
