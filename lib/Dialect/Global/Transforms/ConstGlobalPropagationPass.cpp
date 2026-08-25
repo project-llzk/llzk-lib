@@ -71,10 +71,9 @@ convertToConstantValue(GlobalReadOp readOp, Type globalType, Attribute attr) {
     // field. The read is valid because either specified field unifies with the global's unspecified
     // type, but the two fields themselves cannot be bridged with a poly.unifiable_cast.
     if (!typesUnify(feltAttr.getType(), readOp.getType())) {
-      readOp.emitOpError() << "cannot propagate initializer type " << feltAttr.getType()
-                           << " to read type " << readOp.getType()
-                           << "; the required poly.unifiable_cast is invalid";
-      return failure();
+      return readOp.emitOpError() << "cannot propagate initializer type " << feltAttr.getType()
+                                  << " to read type " << readOp.getType()
+                                  << "; the required poly.unifiable_cast is invalid";
     }
     Value constant = bldr.create<felt::FeltConstantOp>(loc, feltAttr).getResult();
     if (constant.getType() == readOp.getType()) {

@@ -1,8 +1,9 @@
 // RUN: llzk-opt --mlir-very-unsafe-disable-verifier-on-parsing -llzk-const-global-propagation %s | FileCheck %s
 
-// The read's result type contains the use of @N. Its name_ref instead targets
-// @bits, so propagation must preserve the read and rewrite its result type.
-// The input is intentionally verifier-invalid because global types cannot
+// The read's result type contains the use of @N not the `name_ref` which instead
+// targets @bits. Thus, propagation must preserve the read and rewrite its result
+// type. This is covered by the `readOp.getNameRef() == symbolAttr` check.
+// This test input is intentionally verifier-invalid because global types cannot
 // contain symbol references before this propagation pass resolves them.
 module attributes {llzk.lang} {
   global.def const @N : index = 3
