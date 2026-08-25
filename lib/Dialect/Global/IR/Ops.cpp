@@ -127,7 +127,12 @@ LogicalResult GlobalDefOp::verifySymbolUses(SymbolTableCollection &tables) {
   }
   SmallVector<std::optional<FeltType>> refinedTypes(globalFeltTypes.size());
   auto res = root->walk([&](GlobalRefOpInterface refOp) -> WalkResult {
-    auto target = refOp.getGlobalDefOp(tables);
+    // This scan is auxiliary to each reference's own verifier, which reports
+    // lookup failures. Avoid emitting duplicate diagnostics for unresolved
+    // references while collecting refinements.
+    auto target = lookupTopLevelSymbol<GlobalDefOp>(
+        tables, refOp.getNameRef(), refOp.getOperation(), /*reportMissing=*/false
+    );
     if (failed(target) || target->get() != getOperation()) {
       return WalkResult::advance();
     }
