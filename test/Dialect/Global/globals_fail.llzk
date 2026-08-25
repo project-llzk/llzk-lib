@@ -11,6 +11,33 @@ module attributes {llzk.lang} {
   global.def @g : i64
 }
 // -----
+
+// TEST: generic construction must use initializer attributes with the declared type.
+module attributes {llzk.lang} {
+  // expected-error@+1 {{'global.def' op with type 'index' expected attribute value with type 'index' but found 'i64'}}
+  "global.def"() <{constant, initial_value = 3 : i64, sym_name = "bad_index", type = index}> : () -> ()
+}
+// -----
+module attributes {llzk.lang} {
+  // expected-error@+1 {{'global.def' op with type 'i1' expected attribute value with type 'i1' but found 'i64'}}
+  "global.def"() <{constant, initial_value = 1 : i64, sym_name = "bad_bool", type = i1}> : () -> ()
+}
+// -----
+module attributes {llzk.lang} {
+  // expected-error@+1 {{'global.def' op with type '!felt.type' expected attribute value with type '!felt.type' but found 'i64'}}
+  "global.def"() <{constant, initial_value = 35 : i64, sym_name = "bad_felt", type = !felt.type}> : () -> ()
+}
+// -----
+module attributes {llzk.lang} {
+  // expected-error@+1 {{'global.def' op with type '!felt.type<"babybear">' expected attribute value with type '!felt.type<"babybear">' but found '!felt.type<"bn128">'}}
+  "global.def"() <{constant, initial_value = #felt<const 35 : !felt.type<"bn128">>, sym_name = "bad_felt_field", type = !felt.type<"babybear">}> : () -> ()
+}
+// -----
+module attributes {llzk.lang} {
+  // expected-error@+1 {{'global.def' op with type '!array.type<1 x index>' expected array element with type 'index' but found 'i64'}}
+  "global.def"() <{constant, initial_value = [3 : i64], sym_name = "bad_index_array", type = !array.type<1 x index>}> : () -> ()
+}
+// -----
 module attributes {llzk.lang} {
   // expected-error@+1 {{'global.def' op attribute 'type' failed to satisfy constraint: type attribute of any LLZK type except non-constant types}}
   global.def @g : !array.type<@b x i1>
@@ -94,7 +121,7 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  // expected-error@+1 {{'global.def' op with type 'index' expected builtin.index attribute value but found builtin.bool}}
+  // expected-error@+1 {{'global.def' op with type 'index' expected attribute value with type 'index' but found 'i1'}}
   global.def const @g : index = false
 }
 // -----
@@ -119,7 +146,7 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  // expected-error@+1 {{'global.def' op with type '!array.type<2 x !string.type>' expected builtin.string array element but found builtin.integer}}
+  // expected-error@+1 {{'global.def' op with type '!array.type<2 x !string.type>' expected array element with type '!string.type' but found 'i64'}}
   global.def const @g : !array.type<2 x !string.type> = [7, 8]
 }
 // -----
@@ -129,8 +156,9 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  // expected-error@+2 {{'global.def' op with type '!array.type<4 x !string.type>' expected builtin.string array element but found builtin.integer}}
-  // expected-error@+1 {{'global.def' op with type '!array.type<4 x !string.type>' expected builtin.string array element but found builtin.affine_map}}
+  // expected-error@+3 {{'global.def' op with type '!array.type<4 x !string.type>' expected array element with type '!string.type' but found 'i1'}}
+  // expected-error@+2 {{'global.def' op with type '!array.type<4 x !string.type>' expected array element with type '!string.type' but found builtin.affine_map}}
+  // expected-error@+1 {{'global.def' op with type '!array.type<4 x !string.type>' expected array element with type '!string.type' but found 'i64'}}
   global.def const @g : !array.type<4 x !string.type> = ["a string and something else", false, affine_map<(i)->(i)>, -100]
 }
 // -----
@@ -311,7 +339,7 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   module @typed_attr {
-    // expected-error@+1 {{'global.def' op expected felt.type attribute value with field 'babybear' but found field 'bn128'}}
+    // expected-error@+1 {{custom op 'global.def' initializer type '!felt.type<"bn128">' conflicts with declared type '!felt.type<"babybear">'}}
     global.def const @A : !felt.type<"babybear"> =  #felt<const 35 : !felt.type<"bn128">>
   }
   function.def @def_differently_specified() -> !felt.type<"babybear"> {
@@ -371,7 +399,7 @@ module attributes {llzk.lang} {
   global.def @g : !felt.type = #felt<const 1 : !felt.type<"bn128">>
   struct.def @Component12 {
     function.def @compute() -> !struct.type<@Component12> {
-      // expected-error@+1 {{'global.read' op has field 'babybear' conflicting with prior field refinement 'bn128' of mutable global 'g'}}
+      // expected-error@+1 {{'global.read' op has wrong type; expected '!felt.type<"bn128">', got '!felt.type<"babybear">'}}
       %read = global.read @g : !felt.type<"babybear">
       %self = struct.new : !struct.type<@Component12>
       function.return %self : !struct.type<@Component12>
@@ -381,12 +409,23 @@ module attributes {llzk.lang} {
 }
 // -----
 
+// TEST: const unspecified felt globals retain their initializer's field
+module attributes {llzk.lang} {
+  global.def const @g : !felt.type = #felt<const 1 : !felt.type<"bn128">>
+  function.def @invalid_reference() -> !felt.type<"babybear"> {
+    // expected-error@+1 {{'global.read' op has wrong type; expected '!felt.type<"bn128">', got '!felt.type<"babybear">'}}
+    %value = global.read @g : !felt.type<"babybear">
+    function.return %value : !felt.type<"babybear">
+  }
+}
+// -----
+
 // TEST: mutable aggregate globals retain fields at every initializer position
 module attributes {llzk.lang} {
   global.def @g : !array.type<2 x !felt.type> = [1, #felt<const 2 : !felt.type<"babybear">>]
   struct.def @Component13 {
     function.def @compute() -> !struct.type<@Component13> {
-      // expected-error@+1 {{'global.read' op has field 'bn128' at nested type position 0 conflicting with prior field refinement 'babybear' of mutable global 'g'}}
+      // expected-error@+1 {{'global.read' op has wrong type; expected '!array.type<2 x !felt.type<"babybear">>', got '!array.type<2 x !felt.type<"bn128">>'}}
       %read = global.read @g : !array.type<2 x !felt.type<"bn128">>
       %self = struct.new : !struct.type<@Component13>
       function.return %self : !struct.type<@Component13>
@@ -398,6 +437,6 @@ module attributes {llzk.lang} {
 
 // TEST: mutable aggregate globals cannot initialize one felt position with conflicting fields
 module attributes {llzk.lang} {
-  // expected-error@+1 {{'global.def' op initial value assigns conflicting fields to the same felt position}}
+  // expected-error@+1 {{custom op 'global.def' initializer array contains conflicting types '!felt.type<"babybear">' vs '!felt.type<"bn128">'}}
   global.def @g : !array.type<2 x !felt.type> = [#felt<const 1 : !felt.type<"bn128">>, #felt<const 2 : !felt.type<"babybear">>]
 }

@@ -12,17 +12,3 @@ module attributes {llzk.lang} {
     }
   }
 }
-
-// -----
-
-// Both specified fields unify with the unspecified global type, but not with each other.
-// Const-global propagation must fail rather than create an invalid poly.unifiable_cast.
-module attributes {llzk.lang} {
-  global.def const @g : !felt.type = #felt<const 35 : !felt.type<"bn128">>
-
-  function.def @read_as_babybear() -> !felt.type<"babybear"> {
-    // expected-error@+1 {{'global.read' op cannot propagate initializer type '!felt.type<"bn128">' to read type '!felt.type<"babybear">'; the required poly.unifiable_cast is invalid}}
-    %value = global.read @g : !felt.type<"babybear">
-    function.return %value : !felt.type<"babybear">
-  }
-}

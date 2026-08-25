@@ -234,25 +234,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
-// An IntegerAttr initializer is valid for a felt global when constructing IR
-// generically. Propagation must materialize a felt constant, rather than an
-// integer constant with the IntegerAttr's type.
-module attributes {llzk.lang} {
-  "global.def"() <{constant, initial_value = 35 : i64, sym_name = "generic_felt", type = !felt.type}> : () -> ()
-
-  function.def @read_generic_felt() -> !felt.type {
-    %value = global.read @generic_felt : !felt.type
-    function.return %value : !felt.type
-  }
-}
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @read_generic_felt() -> !felt.type {
-// CHECK-NEXT:      %[[VALUE:[0-9a-zA-Z_\.]+]] = felt.const  35
-// CHECK-NEXT:      function.return %[[VALUE]] : !felt.type
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-// -----
-
 module attributes {llzk.lang} {
   module @typed_attr {
     global.def const @A : !felt.type =  #felt<const 35 : !felt.type<"bn128">>
@@ -332,28 +313,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
-// Generic IntegerAttr initializers may have a storage type different from the
-// global's declared type. Propagation must materialize constants with the
-// declared type before replacing the reads.
-module attributes {llzk.lang} {
-  "global.def"() <{constant, initial_value = 3 : i64, sym_name = "generic_index", type = index}> : () -> ()
-  "global.def"() <{constant, initial_value = 1 : i64, sym_name = "generic_i1", type = i1}> : () -> ()
-
-  function.def @read_generic_integers() -> (index, i1) {
-    %index = global.read @generic_index : index
-    %bool = global.read @generic_i1 : i1
-    function.return %index, %bool : index, i1
-  }
-}
-// CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @read_generic_integers() -> (index, i1) {
-// CHECK-NEXT:      %[[INDEX:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
-// CHECK-NEXT:      %[[BOOL:[0-9a-zA-Z_\.]+]] = arith.constant true
-// CHECK-NEXT:      function.return %[[INDEX]], %[[BOOL]] : index, i1
-// CHECK-NEXT:    }
-// CHECK-NEXT:  }
-// -----
-
 // A read can refer to more than one constant. Propagating @A erases the read,
 // so propagation of @N must not retain a stale pointer to it.
 module attributes {llzk.lang} {
@@ -371,3 +330,4 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_0]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----

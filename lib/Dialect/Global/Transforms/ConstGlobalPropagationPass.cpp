@@ -41,40 +41,12 @@ using namespace llzk::global;
 
 namespace {
 
-static FailureOr<Value>
-convertToConstantValue(GlobalReadOp readOp, Type globalType, Attribute attr) {
+static Value convertToConstantValue(GlobalReadOp readOp, Attribute attr) {
   OpBuilder bldr(readOp);
   Location loc = readOp.getLoc();
   if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
-    if (auto feltTy = llvm::dyn_cast<felt::FeltType>(globalType)) {
-      auto asFeltAttr = felt::FeltConstAttr::get(readOp.getContext(), intAttr.getValue(), feltTy);
-      Value constant = bldr.create<felt::FeltConstantOp>(loc, asFeltAttr).getResult();
-      if (constant.getType() != readOp.getType()) {
-        return bldr.create<polymorphic::UnifiableCastOp>(loc, readOp.getType(), constant)
-            .getResult();
-      }
-      return constant;
-    } else {
-      // Generic construction can provide an IntegerAttr whose storage type does
-      // not match the global type. Materialize the constant with the declared
-      // type so replacing the read preserves SSA type correctness.
-      auto typedAttr = IntegerAttr::get(globalType, intAttr.getValue());
-      return bldr.create<arith::ConstantOp>(loc, typedAttr).getResult();
-    }
+    return bldr.create<arith::ConstantOp>(loc, intAttr).getResult();
   } else if (auto feltAttr = llvm::dyn_cast<felt::FeltConstAttr>(attr)) {
-    auto feltTy = llvm::cast<felt::FeltType>(globalType);
-    // An unspecified initializer adopts the field declared by its global.
-    if (!feltAttr.getType().hasField() && feltTy.hasField()) {
-      feltAttr = felt::FeltConstAttr::get(readOp.getContext(), feltAttr.getValue(), feltTy);
-    }
-    // A field-specific initializer for an unspecified global may be read through another specified
-    // field. The read is valid because either specified field unifies with the global's unspecified
-    // type, but the two fields themselves cannot be bridged with a poly.unifiable_cast.
-    if (!typesUnify(feltAttr.getType(), readOp.getType())) {
-      return readOp.emitOpError() << "cannot propagate initializer type " << feltAttr.getType()
-                                  << " to read type " << readOp.getType()
-                                  << "; the required poly.unifiable_cast is invalid";
-    }
     Value constant = bldr.create<felt::FeltConstantOp>(loc, feltAttr).getResult();
     if (constant.getType() == readOp.getType()) {
       return constant;
@@ -125,31 +97,16 @@ public:
           // Special handling to fully replace GlobalReadOp with the appropriate constant op.
           if (auto readOp = llvm::dyn_cast<GlobalReadOp>(userOp);
               readOp && readOp.getNameRef() == symbolAttr) {
-            FailureOr<Value> constantResult =
-                convertToConstantValue(readOp, globalDef.getType(), constValue);
-            if (failed(constantResult)) {
-              signalPassFailure();
-              return;
-            }
-            readOp.getResult().replaceAllUsesWith(*constantResult);
+            Value constantResult = convertToConstantValue(readOp, constValue);
+            readOp.getResult().replaceAllUsesWith(constantResult);
             readOp.erase();
             continue;
           }
 
           // Standard case that just replaces all uses of the symbol with the constant value.
-          Attribute replacementValue = constValue;
-          if (auto feltAttr = llvm::dyn_cast<felt::FeltConstAttr>(constValue)) {
-            auto feltTy = llvm::dyn_cast<felt::FeltType>(globalDef.getType());
-            // An unspecified felt initializer adopts the field declared by its
-            // global before being inserted into attributes or types.
-            if (feltTy && !feltAttr.getType().hasField() && feltTy.hasField()) {
-              replacementValue =
-                  felt::FeltConstAttr::get(globalDef.getContext(), feltAttr.getValue(), feltTy);
-            }
-          }
           AttrTypeReplacer replacer;
-          replacer.addReplacement([symbolAttr, replacementValue](SymbolRefAttr a) {
-            return (a == symbolAttr) ? std::make_optional(replacementValue) : std::nullopt;
+          replacer.addReplacement([symbolAttr, constValue](SymbolRefAttr a) {
+            return (a == symbolAttr) ? std::make_optional(constValue) : std::nullopt;
           });
           replacer.replaceElementsIn(
               userOp,

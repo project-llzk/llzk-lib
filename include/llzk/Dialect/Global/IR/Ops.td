@@ -39,32 +39,24 @@ def LLZK_GlobalDefOp
     // Uninitialized global variable.
     global.def @a : !array.type<2,2 x i1>
     ```
+
+    An initializer's typed attributes must exactly match the declared global
+    type. When parsing a felt initializer, an explicitly selected field
+    refines an unspecified declared felt type; conversely, an unspecified
+    felt initializer adopts an explicitly declared field. Thus, an initialized
+    global always stores matching declared and initializer felt types.
   }];
 
   let arguments = (ins SymbolNameAttr:$sym_name, UnitAttr:$constant,
       TypeAttrOf<GlobalDefType>:$type,
       DefaultValuedAttr<AnyAttr, "nullptr">:$initial_value);
 
-  let assemblyFormat = [{
-    (`const` $constant^)?
-    $sym_name `:` $type
-    `` custom<GlobalInitialValue>($initial_value, ref($type))
-    attr-dict
-  }];
-
+  let hasCustomAssemblyFormat = 1;
   let hasVerifier = 1;
 
   let extraClassDeclaration = [{
     inline bool isConstant() { return getConstant(); }
 
-  private:
-    static ::mlir::ParseResult parseGlobalInitialValue(::mlir::OpAsmParser &parser,
-        ::mlir::Attribute &initialValue, ::mlir::TypeAttr typeAttr
-    );
-
-    static void printGlobalInitialValue(::mlir::OpAsmPrinter &printer, GlobalDefOp op,
-        ::mlir::Attribute initialValue, ::mlir::TypeAttr typeAttr
-    );
   }];
 }
 
