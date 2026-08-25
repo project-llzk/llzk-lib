@@ -138,9 +138,19 @@ public:
           }
 
           // Standard case that just replaces all uses of the symbol with the constant value.
+          Attribute replacementValue = constValue;
+          if (auto feltAttr = llvm::dyn_cast<felt::FeltConstAttr>(constValue)) {
+            auto feltTy = llvm::dyn_cast<felt::FeltType>(globalDef.getType());
+            // An unspecified felt initializer adopts the field declared by its
+            // global before being inserted into attributes or types.
+            if (feltTy && !feltAttr.getType().hasField() && feltTy.hasField()) {
+              replacementValue =
+                  felt::FeltConstAttr::get(globalDef.getContext(), feltAttr.getValue(), feltTy);
+            }
+          }
           AttrTypeReplacer replacer;
-          replacer.addReplacement([symbolAttr, constValue](SymbolRefAttr a) {
-            return (a == symbolAttr) ? std::make_optional(constValue) : std::nullopt;
+          replacer.addReplacement([symbolAttr, replacementValue](SymbolRefAttr a) {
+            return (a == symbolAttr) ? std::make_optional(replacementValue) : std::nullopt;
           });
           replacer.replaceElementsIn(
               userOp,
