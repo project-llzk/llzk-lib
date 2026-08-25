@@ -57,6 +57,38 @@ void collectFeltTypes(Type type, SmallVectorImpl<FeltType> &feltTypes) {
   }
 }
 
+/// Collect field-qualified felt types from an initial value in the same structural order as
+/// collectFeltTypes(). Entries without a field leave the corresponding position unrefined.
+LogicalResult collectInitialFeltTypes(
+    Type type, Attribute value, SmallVectorImpl<std::optional<FeltType>> &feltTypes,
+    size_t &position
+) {
+  if (llvm::isa<FeltType>(type)) {
+    if (auto feltValue = llvm::dyn_cast<FeltConstAttr>(value);
+        feltValue && feltValue.getType().hasField()) {
+      auto &refinedType = feltTypes[position];
+      if (refinedType && *refinedType != feltValue.getType()) {
+        return failure();
+      }
+      refinedType = feltValue.getType();
+    }
+    ++position;
+  } else if (auto arrayType = llvm::dyn_cast<array::ArrayType>(type)) {
+    if (auto arrayValue = llvm::dyn_cast<ArrayAttr>(value)) {
+      size_t elementPosition = position;
+      for (Attribute element : arrayValue) {
+        position = elementPosition;
+        if (failed(
+                collectInitialFeltTypes(arrayType.getElementType(), element, feltTypes, position)
+            )) {
+          return failure();
+        }
+      }
+    }
+  }
+  return success();
+}
+
 } // namespace
 
 //===------------------------------------------------------------------===//
@@ -126,6 +158,12 @@ LogicalResult GlobalDefOp::verifySymbolUses(SymbolTableCollection &tables) {
     return failure();
   }
   SmallVector<std::optional<FeltType>> refinedTypes(globalFeltTypes.size());
+  if (Attribute initialValue = getInitialValueAttr()) {
+    size_t initialPosition = 0;
+    if (failed(collectInitialFeltTypes(getType(), initialValue, refinedTypes, initialPosition))) {
+      return emitOpError("initial value assigns conflicting fields to the same felt position");
+    }
+  }
   auto res = root->walk([&](GlobalRefOpInterface refOp) -> WalkResult {
     // This scan is auxiliary to each reference's own verifier, which reports
     // lookup failures. Avoid emitting duplicate diagnostics for unresolved

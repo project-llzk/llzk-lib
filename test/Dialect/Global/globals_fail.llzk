@@ -364,3 +364,40 @@ module attributes {llzk.lang} {
     function.return %value : !pod.type<[@a: !felt.type, @b: !felt.type]>
   }
 }
+// -----
+
+// TEST: mutable unspecified felt globals retain their initializer's field
+module attributes {llzk.lang} {
+  global.def @g : !felt.type = #felt<const 1 : !felt.type<"bn128">>
+  struct.def @Component12 {
+    function.def @compute() -> !struct.type<@Component12> {
+      // expected-error@+1 {{'global.read' op has field 'babybear' conflicting with prior field refinement 'bn128' of mutable global 'g'}}
+      %read = global.read @g : !felt.type<"babybear">
+      %self = struct.new : !struct.type<@Component12>
+      function.return %self : !struct.type<@Component12>
+    }
+    function.def @constrain(%self: !struct.type<@Component12>) { function.return }
+  }
+}
+// -----
+
+// TEST: mutable aggregate globals retain fields at every initializer position
+module attributes {llzk.lang} {
+  global.def @g : !array.type<2 x !felt.type> = [1, #felt<const 2 : !felt.type<"babybear">>]
+  struct.def @Component13 {
+    function.def @compute() -> !struct.type<@Component13> {
+      // expected-error@+1 {{'global.read' op has field 'bn128' at nested type position 0 conflicting with prior field refinement 'babybear' of mutable global 'g'}}
+      %read = global.read @g : !array.type<2 x !felt.type<"bn128">>
+      %self = struct.new : !struct.type<@Component13>
+      function.return %self : !struct.type<@Component13>
+    }
+    function.def @constrain(%self: !struct.type<@Component13>) { function.return }
+  }
+}
+// -----
+
+// TEST: mutable aggregate globals cannot initialize one felt position with conflicting fields
+module attributes {llzk.lang} {
+  // expected-error@+1 {{'global.def' op initial value assigns conflicting fields to the same felt position}}
+  global.def @g : !array.type<2 x !felt.type> = [#felt<const 1 : !felt.type<"bn128">>, #felt<const 2 : !felt.type<"babybear">>]
+}
