@@ -35,14 +35,14 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  // expected-error@+1 {{'function.def' op references unknown symbol "@A"}}
+  // expected-error@+1 {{type variable '!poly.tvar<@A>' must reference a parameter of its enclosing 'poly.template'}}
   function.def private @u(%x: !poly.tvar<@A>)
 }
 
 // -----
 module attributes {llzk.lang} {
   struct.def @ComponentA {
-    // expected-error@+1 {{'struct.member' op references unknown symbol "@T"}}
+    // expected-error@+1 {{type variable '!poly.tvar<@T>' must reference a parameter of its enclosing 'poly.template'}}
     struct.member @f3 : !poly.tvar<@T>
 
     function.def @compute() -> !struct.type<@ComponentA> {
@@ -73,7 +73,7 @@ module attributes {llzk.lang} {
     // Note: If @X were defined (see ComponentB* tests in types_pass.llzk), using
     //  "!poly.tvar<@X>" is redundant. Just "@X" for the parameter would be equivalent.
     //
-    // expected-error@+1 {{'function.def' op references unknown symbol "@X"}}
+    // expected-error@+1 {{type variable '!poly.tvar<@X>' must reference a parameter of its enclosing 'poly.template'}}
     function.def @compute(%0: !struct.type<@TComponentB1::@ComponentB1<[!poly.tvar<@X>]>>) -> !struct.type<@ComponentB2> {
       %self = struct.new : !struct.type<@ComponentB2>
       function.return %self : !struct.type<@ComponentB2>
@@ -116,6 +116,20 @@ module attributes {llzk.lang} {
       }
 
       function.def @constrain(%self: !struct.type<@TComponentC2::@ComponentC2<[@T]>>) { function.return }
+    }
+  }
+}
+// -----
+
+module attributes {llzk.lang} {
+  global.def const @G : index = 3
+
+  struct.def @S {
+    // expected-error@+1 {{type variable '!poly.tvar<@G>' must reference a parameter of its enclosing 'poly.template'}}
+    struct.member @x : !poly.tvar<@G>
+    function.def @product() -> !struct.type<@S> {
+      %self = struct.new : !struct.type<@S>
+      function.return %self : !struct.type<@S>
     }
   }
 }
