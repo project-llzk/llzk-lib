@@ -73,13 +73,10 @@ public:
       return;
     }
 
+    SymbolUseGraph &useGraph = getAnalysis<SymbolUseGraph>();
+    llvm::DenseSet<Operation *> erased;
     for (GlobalDefOp globalDef : constGlobals) {
-      // Rebuild the graph for each global. Propagating one global can erase a GlobalReadOp which
-      // may also reference later globals in its attributes or types. A precomputed graph would
-      // retain dangling pointers to that erased operation in those later globals' user sets.
-      SymbolUseGraph useGraph(root);
       if (const SymbolUseGraphNode *node = useGraph.lookupNode(globalDef)) {
-        SymbolRefAttr symbolAttr = node->getSymbolPath();
         Attribute constValue = globalDef.getInitialValueAttr();
 
         // Array constants cannot yet be materialized as operations. Leave both
@@ -88,7 +85,12 @@ public:
           continue;
         }
 
+        SymbolRefAttr symbolAttr = node->getSymbolPath();
         for (Operation *userOp : node->getUserOps()) {
+          // Skip erased ops to avoid use-after-free errors
+          if (erased.contains(userOp)) {
+            continue;
+          }
           LLVM_DEBUG(
               llvm::outs() << "Replacing '" << symbolAttr << "' with '" << constValue << "' in "
                            << *userOp << '\n'
@@ -100,6 +102,7 @@ public:
             Value constantResult = convertToConstantValue(readOp, constValue);
             readOp.getResult().replaceAllUsesWith(constantResult);
             readOp.erase();
+            erased.insert(readOp);
             continue;
           }
 
@@ -118,6 +121,7 @@ public:
       }
       // Delete the const global since there are no (remaining) uses.
       globalDef.erase();
+      erased.insert(globalDef);
     }
   }
 };
