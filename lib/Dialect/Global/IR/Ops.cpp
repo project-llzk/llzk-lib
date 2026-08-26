@@ -264,7 +264,7 @@ LogicalResult GlobalDefOp::verifySymbolUses(SymbolTableCollection &tables) {
   if (globalFeltTypes.empty()) {
     return success();
   }
-  auto root = getRootModule(getOperation());
+  auto root = getTopRootModule(getOperation());
   if (failed(root)) {
     return failure();
   }
