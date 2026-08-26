@@ -25,26 +25,61 @@ using namespace mlir;
 
 namespace {
 
-/// Normalize integer initializer attributes emitted by pre-invariant bytecode.
+/// Normalize initializer attributes emitted by pre-invariant bytecode.
 ///
 /// Earlier versions serialized array elements as generic integer attributes.
-/// Current GlobalDefOp verification requires their types to agree with the
-/// declared global type, so upgrade them while loading historical bytecode.
-Attribute normalizeLegacyInitializer(Type type, Attribute value) {
-  if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
+/// They also allowed a field-qualified felt initializer and its unqualified
+/// declaration (and vice versa) to disagree. Current GlobalDefOp verification
+/// requires exact type equality, so apply the same field-adoption rules as the
+/// textual parser while loading historical bytecode.
+Attribute normalizeLegacyInitializer(Type &type, Attribute value) {
+  if (auto feltType = llvm::dyn_cast<llzk::felt::FeltType>(type)) {
+    if (auto feltValue = llvm::dyn_cast<llzk::felt::FeltConstAttr>(value)) {
+      auto valueType = feltValue.getType();
+      if (!feltType.hasField() && valueType.hasField()) {
+        type = valueType;
+      } else if (feltType.hasField() && !valueType.hasField()) {
+        value = llzk::felt::FeltConstAttr::get(value.getContext(), feltValue.getValue(), feltType);
+      }
+      return value;
+    }
+    if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
+      return llzk::felt::FeltConstAttr::get(value.getContext(), intValue.getValue(), feltType);
+    }
+  } else if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
     if (type.isSignlessInteger(1) || llvm::isa<IndexType>(type)) {
       return IntegerAttr::get(type, intValue.getValue());
     }
-    if (auto feltType = llvm::dyn_cast<llzk::felt::FeltType>(type)) {
-      return llzk::felt::FeltConstAttr::get(value.getContext(), intValue.getValue(), feltType);
-    }
   }
+
   if (auto arrayType = llvm::dyn_cast<llzk::array::ArrayType>(type)) {
     if (auto arrayValue = llvm::dyn_cast<ArrayAttr>(value)) {
+      Type elementType = arrayType.getElementType();
+      if (auto feltType = llvm::dyn_cast<llzk::felt::FeltType>(elementType)) {
+        auto resolvedFeltType = feltType;
+        for (Attribute element : arrayValue) {
+          if (auto feltValue = llvm::dyn_cast<llzk::felt::FeltConstAttr>(element)) {
+            auto valueType = feltValue.getType();
+            if (valueType.hasField()) {
+              // Conflicting explicit fields were invalid in textual IR before
+              // this invariant. Leave them unchanged for verification to
+              // reject rather than silently selecting one of the fields.
+              if (resolvedFeltType.hasField() && resolvedFeltType != valueType) {
+                return value;
+              }
+              resolvedFeltType = valueType;
+            }
+          }
+        }
+        elementType = resolvedFeltType;
+        type = arrayType.cloneWith(elementType);
+      }
+
       SmallVector<Attribute> elements;
       elements.reserve(arrayValue.size());
       for (Attribute element : arrayValue) {
-        elements.push_back(normalizeLegacyInitializer(arrayType.getElementType(), element));
+        Type normalizedElementType = elementType;
+        elements.push_back(normalizeLegacyInitializer(normalizedElementType, element));
       }
       return ArrayAttr::get(value.getContext(), elements);
     }
@@ -65,7 +100,9 @@ public:
   ) const final {
     root->walk([](llzk::global::GlobalDefOp global) {
       if (Attribute initialValue = global.getInitialValueAttr()) {
-        global.setInitialValueAttr(normalizeLegacyInitializer(global.getType(), initialValue));
+        Type type = global.getType();
+        global.setInitialValueAttr(normalizeLegacyInitializer(type, initialValue));
+        global.setTypeAttr(TypeAttr::get(type));
       }
     });
     return success();
