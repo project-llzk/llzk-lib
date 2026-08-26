@@ -18,6 +18,14 @@ namespace llzk::function {
 mlir::LogicalResult verifyConstraintGenTraitImpl(mlir::Operation *op);
 mlir::LogicalResult verifyWitnessGenTraitImpl(mlir::Operation *op);
 mlir::LogicalResult verifyNotFieldNativeTraitImpl(mlir::Operation *op);
+
+/// Implementation of the `Verification` trait's validation check.
+/// Takes a callback that is used to do additional checks iff the operation
+/// is inside a `function.def` operation.
+///
+/// For example, `Verification<WitnessGen>` will call this function passing
+/// a callback that runs `WitnessGen::verifyTrait` if the op is inside a 
+/// `function.def` operation.
 mlir::LogicalResult
 verifyVerificationTraitImpl(mlir::Operation *op, llvm::function_ref<mlir::LogicalResult()>);
 

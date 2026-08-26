@@ -1,0 +1,16 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+function.def @det_prove() -> i1  {
+  %c = felt.const 42
+  // expected-error@+1 {{'verif.det.prove' op cannot be used within a 'function.def' without the 'function.allow_verif_ops' attribute}}
+  %d = verif.det.prove %c : !felt.type
+  function.return %d : i1
+}
+
+// -----
+
+function.def @det_assume(%f : !felt.type)  {
+  // expected-error@+1 {{'verif.det.assume' op cannot be used within a 'function.def' without the 'function.allow_verif_ops' attribute}}
+  verif.det.assume %f : !felt.type
+  function.return
+}

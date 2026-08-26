@@ -154,16 +154,20 @@ def RequireConstrainOp : RequireOpBase<"constrain"> {
 // Postcondition operations
 //===------------------------------------------------------------------===//
 
+//
 class EnsureOpBase<string mnemonic, bit inlinable = false,
+                   list<string> verificationExtraTraits = [],
                    list<Trait> traits = []>
-    : ContractConditionOp<"ensure_"#mnemonic, inlinable,
-                          traits#[PostconditionOpInterface]> {
+    : ContractConditionOp<
+          "ensure_"#mnemonic, inlinable,
+          traits#[PostconditionOpInterface]#!if(
+              inlinable, [Verification<verificationExtraTraits>], [])> {
   let description = [{
     Encodes a postcondition in the `@}]#mnemonic#[{` function.
   }]#!if(inlinable, [{
 
     This operation has the `Verification` trait and can be used inside `function.def` 
-    ops that have the `allow_verif` attribute.
+    ops that have the `allow_verif_ops` attribute.
     }],
          "");
 }
@@ -173,8 +177,10 @@ def EnsureComputeOp : EnsureOpBase<"compute"> {
 }
 
 def EnsureConstrainOp
-    : EnsureOpBase<"constrain",
-                   true, [Verification<["::llzk::function::ConstraintGen"]>]> {
+    : EnsureOpBase<
+          "constrain",
+          /*inlinable=*/true,
+          /*verificationExtraTraits=*/["::llzk::function::ConstraintGen"]> {
   let summary = "constraint generation postcondition";
 }
 
