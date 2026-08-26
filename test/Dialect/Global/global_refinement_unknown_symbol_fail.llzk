@@ -1,0 +1,31 @@
+// RUN: not llzk-opt -split-input-file %s 2>&1 | FileCheck %s
+
+// Unresolved references are validated by their own verifier. The mutable
+// global's refinement scan must not emit duplicate lookup diagnostics.
+module attributes {llzk.lang} {
+  global.def @g : !felt.type
+  struct.def @Component {
+    function.def @compute() -> !struct.type<@Component> {
+      %value = felt.const 1
+      global.write @unknown_write = %value : !felt.type
+      %self = struct.new : !struct.type<@Component>
+      function.return %self : !struct.type<@Component>
+    }
+    function.def @constrain(%self: !struct.type<@Component>) { function.return }
+  }
+}
+// CHECK-COUNT-1: 'global.write' op references unknown symbol "@unknown_write"
+// -----
+
+module attributes {llzk.lang} {
+  global.def @g : !felt.type
+  struct.def @Component {
+    function.def @compute() -> !struct.type<@Component> {
+      %read = global.read @unknown_read : !felt.type
+      %self = struct.new : !struct.type<@Component>
+      function.return %self : !struct.type<@Component>
+    }
+    function.def @constrain(%self: !struct.type<@Component>) { function.return }
+  }
+}
+// CHECK-COUNT-1: 'global.read' op references unknown symbol "@unknown_read"

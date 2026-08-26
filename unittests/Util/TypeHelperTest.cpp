@@ -12,6 +12,7 @@
 #include "../LLZKTestBase.h"
 
 #include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
 
@@ -23,6 +24,7 @@ using namespace mlir;
 using namespace llzk;
 using namespace llzk::array;
 using namespace llzk::component;
+using namespace llzk::felt;
 using namespace llzk::pod;
 
 class TypeHelperTests : public LLZKTest {
@@ -101,6 +103,26 @@ TEST_F(TypeHelperTests, test_functionTypesUnify_Output_Fail) {
   FunctionType a = FunctionType::get(&ctx, {tyIndex}, {IntegerType::get(&ctx, 8)});
   FunctionType b = FunctionType::get(&ctx, {tyIndex}, {tyIndex});
   ASSERT_FALSE(functionTypesUnify(a, b));
+}
+
+TEST_F(TypeHelperTests, test_isMoreConcreteUnification_feltField) {
+  FeltType unspecified = FeltType::get(&ctx);
+  FeltType specified = FeltType::get(&ctx, "bn128");
+
+  ASSERT_TRUE(typesUnify(unspecified, specified));
+  ASSERT_TRUE(typesUnify(specified, unspecified));
+  ASSERT_TRUE(isMoreConcreteUnification(unspecified, specified));
+  ASSERT_FALSE(isMoreConcreteUnification(specified, unspecified));
+}
+
+TEST_F(TypeHelperTests, test_isMoreConcreteUnification_nestedFeltField) {
+  FeltType unspecified = FeltType::get(&ctx);
+  FeltType specified = FeltType::get(&ctx, "bn128");
+  ArrayType oldTy = ArrayType::get(specified, {2});
+  ArrayType newTy = ArrayType::get(unspecified, {2});
+
+  ASSERT_TRUE(typesUnify(oldTy, newTy));
+  ASSERT_FALSE(isMoreConcreteUnification(oldTy, newTy));
 }
 
 TEST_F(TypeHelperTests, test_forceIntToIndexType_fromI1) {

@@ -77,8 +77,8 @@ module attributes {llzk.lang} {
 // CHECK-DAG: global.def @f : !felt.type = 35
 // CHECK-DAG: global.def @a1i : !array.type<1 x index> = [2]
 // CHECK-DAG: global.def @a2s : !array.type<2 x !string.type> = ["hello", "world"]
-// CHECK-DAG: global.def @a4b : !array.type<2,2 x i1> = [0, 1, 1, 0]
-// CHECK-DAG: global.def @a4f : !array.type<2,1,1,2 x !felt.type> = [6, 12134, 45523, 15623]
+// CHECK-DAG: global.def @a4b : !array.type<2,2 x i1> = [false, true, true, false]
+// CHECK-DAG: global.def @a4f : !array.type<2,1,1,2 x !felt.type> = [ 6,  12134,  45523,  15623]
 // -----
 
 // TEST: GlobalReadOp in "compute()"
@@ -289,4 +289,17 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// TEST: initialized felt globals resolve their declared type to match the initializer.
+module attributes {llzk.lang} {
+  global.def const @refined : !felt.type = #felt<const 35 : !felt.type<"bn128">>
+  global.def const @adopted : !felt.type<"bn128"> = 16
+  global.def const @array : !array.type<2 x !felt.type> = [#felt<const 1 : !felt.type<"bn128">>, 2]
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def const @refined : !felt.type<"bn128"> =  35 : <"bn128">
+// CHECK-NEXT:    global.def const @adopted : !felt.type<"bn128"> =  16 : <"bn128">
+// CHECK-NEXT:    global.def const @array : !array.type<2 x !felt.type<"bn128">> = [ 1 : <"bn128">,  2 : <"bn128">]
 // CHECK-NEXT:  }
