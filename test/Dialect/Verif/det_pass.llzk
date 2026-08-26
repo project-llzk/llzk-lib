@@ -11,6 +11,7 @@ function.def @det_prove() -> i1 attributes {function.allow_verif_ops} {
 //CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = verif.det.prove %[[T1]] : !felt.type
 //CHECK-NEXT:     function.return %[[T2]] : i1
 //CHECK-NEXT:   }
+
 // -----
 
 function.def @det_assume(%f : !felt.type)  attributes {function.allow_verif_ops} {
