@@ -35,16 +35,22 @@ namespace llzk::global {
 namespace {
 
 /// Print an initializer recursively without its redundant storage types.
-/// GlobalDefOp's declared type supplies the type for every initializer value.
-void printInitialValue(AsmPrinter &printer, Attribute value) {
+/// GlobalDefOp's declared type supplies the type for scalar initializer values.
+/// Array elements use generic attribute syntax, which requires felt attributes
+/// to retain their dialect mnemonic and type.
+void printInitialValue(AsmPrinter &printer, Attribute value, bool isArrayElement = false) {
   if (auto arrayValue = llvm::dyn_cast<ArrayAttr>(value)) {
     printer << '[';
     llvm::interleaveComma(arrayValue, printer.getStream(), [&printer](Attribute element) {
-      printInitialValue(printer, element);
+      printInitialValue(printer, element, true);
     });
     printer << ']';
   } else if (auto feltValue = llvm::dyn_cast<FeltConstAttr>(value)) {
-    printer.printStrippedAttrOrType<FeltConstAttr>(feltValue);
+    if (isArrayElement) {
+      printer.printAttributeWithoutType(feltValue);
+    } else {
+      printer.printStrippedAttrOrType<FeltConstAttr>(feltValue);
+    }
   } else {
     printer.printAttributeWithoutType(value);
   }
