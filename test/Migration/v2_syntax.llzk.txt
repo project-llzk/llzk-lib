@@ -34,10 +34,10 @@ module attributes {
 
   module @gstore {
     // global.def: const/mutable, initialized/uninitialized, all basic types.
-    global.def const @BOUND : !felt.type  = 16
-    global.def       @tally : index       = 0
-    global.def       @flag  : i1          = false
-    global.def       @label : !string.type                         // uninitialized
+    global.def const @BOUND : !felt.type                          = 16
+    global.def       @tally : index                               = 0
+    global.def       @flag  : i1                                  = false
+    global.def       @label : !string.type                          // uninitialized
     global.def const @BITS  : !array.type<2,2 x i1>               = [0, 1, 1, 0]
     global.def       @score : !array.type<2,1,2 x !felt.type>     = [1, 2, 3, 4]
     global.def       @f     : !felt.type                          = #felt<const 1 : !felt.type<"bn128">>

@@ -56,7 +56,6 @@ def LLZK_GlobalDefOp
 
   let extraClassDeclaration = [{
     inline bool isConstant() { return getConstant(); }
-
   }];
 }
 
