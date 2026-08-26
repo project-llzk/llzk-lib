@@ -366,6 +366,24 @@ module attributes {llzk.lang} {
 }
 // -----
 
+// TEST: refinement conflicts are checked for every mutable global in the root
+module attributes {llzk.lang} {
+  global.def @first : !felt.type
+  global.def @refined : !felt.type
+  struct.def @Component10A {
+    function.def @compute() -> !struct.type<@Component10A> {
+      %value = felt.const 1 : !felt.type<"bn128">
+      global.write @refined = %value : !felt.type<"bn128">
+      // expected-error@+1 {{'global.read' op has field 'babybear' conflicting with prior field refinement 'bn128' of mutable global 'refined'}}
+      %read = global.read @refined : !felt.type<"babybear">
+      %self = struct.new : !struct.type<@Component10A>
+      function.return %self : !struct.type<@Component10A>
+    }
+    function.def @constrain(%self: !struct.type<@Component10A>) { function.return }
+  }
+}
+// -----
+
 // TEST: mutable aggregate globals cannot be refined to conflicting fields
 module attributes {llzk.lang} {
   global.def @g : !array.type<2 x !felt.type>
