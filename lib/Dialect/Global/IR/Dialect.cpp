@@ -13,6 +13,7 @@
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
+#include "llzk/Dialect/String/IR/Types.h"
 
 // TableGen'd implementation files
 #include "llzk/Dialect/Global/IR/Dialect.cpp.inc"
@@ -27,7 +28,7 @@ namespace {
 
 /// Normalize initializer attributes emitted by pre-invariant bytecode.
 ///
-/// Earlier versions serialized array elements as generic integer attributes.
+/// Earlier versions serialized array elements as generic integer and string attributes.
 /// They also allowed a field-qualified felt initializer and its unqualified
 /// declaration (and vice versa) to disagree. Current GlobalDefOp verification
 /// requires exact type equality, so apply the same field-adoption rules as the
@@ -49,6 +50,10 @@ Attribute normalizeLegacyInitializer(Type &type, Attribute value) {
   } else if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
     if (type.isSignlessInteger(1) || llvm::isa<IndexType>(type)) {
       return IntegerAttr::get(type, intValue.getValue());
+    }
+  } else if (auto stringType = llvm::dyn_cast<llzk::string::StringType>(type)) {
+    if (auto stringValue = llvm::dyn_cast<StringAttr>(value)) {
+      return StringAttr::get(stringValue.getValue(), stringType);
     }
   }
 
