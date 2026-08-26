@@ -21,6 +21,8 @@
 // CHECK-NEXT:      global.def @label : !string.type
 // CHECK-NEXT:      global.def const @BITS : !array.type<2,2 x i1> = [false, true, true, false]
 // CHECK-NEXT:      global.def @score : !array.type<2,1,2 x !felt.type> = [ 1,  2,  3,  4]
+// CHECK-NEXT:      global.def @f : !felt.type<"bn128"> =  1 : <"bn128">
+// CHECK-NEXT:      global.def @g : !felt.type<"babybear"> =  4 : <"babybear">
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @Box {
 // CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
