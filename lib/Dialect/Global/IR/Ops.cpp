@@ -250,7 +250,22 @@ static ParseResult normalizeParsedInitialValue(
   }
 
   Type elementType = arrayType.getElementType();
-  if (llvm::isa<IndexType>(elementType) || elementType.isSignlessInteger(1)) {
+  if (elementType.isSignlessInteger(1)) {
+    SmallVector<Attribute> normalizedElements;
+    normalizedElements.reserve(arrayValue.size());
+    for (Attribute element : arrayValue) {
+      if (auto intValue = llvm::dyn_cast<IntegerAttr>(element)) {
+        APInt value = intValue.getValue();
+        if (!value.isZero() && !value.isOne()) {
+          return parser.emitError(initializerLoc) << "integer constant out of range for attribute";
+        }
+        normalizedElements.push_back(IntegerAttr::get(elementType, value.trunc(1)));
+      } else {
+        normalizedElements.push_back(element);
+      }
+    }
+    initialValue = ArrayAttr::get(parser.getContext(), normalizedElements);
+  } else if (llvm::isa<IndexType>(elementType)) {
     SmallVector<Attribute> normalizedElements;
     normalizedElements.reserve(arrayValue.size());
     for (Attribute element : arrayValue) {

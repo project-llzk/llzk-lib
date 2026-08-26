@@ -115,6 +115,12 @@ module attributes {llzk.lang} {
   global.def const @g : i1 = -2
 }
 // -----
+// TEST: boolean array initializers reject integer values outside the boolean range
+module attributes {llzk.lang} {
+  // expected-error@+1 {{integer constant out of range for attribute}}
+  global.def const @g : !array.type<2 x i1> = [0, 2]
+}
+// -----
 module attributes {llzk.lang} {
   // expected-error@+1 {{'global.def' op with type 'i1' expected builtin.bool or builtin.integer attribute value but found builtin.array}}
   global.def const @g : i1 = [7,8,0]
