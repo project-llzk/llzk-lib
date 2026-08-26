@@ -115,6 +115,21 @@ TEST_F(TypeHelperTests, test_isMoreConcreteUnification_feltField) {
   ASSERT_FALSE(isMoreConcreteUnification(specified, unspecified));
 }
 
+TEST_F(TypeHelperTests, test_typesUnifyWithoutLosingFeltFields) {
+  FeltType unspecified = FeltType::get(&ctx);
+  FeltType specified = FeltType::get(&ctx, "bn128");
+  ArrayType unspecifiedArray = ArrayType::get(unspecified, {2});
+  ArrayType specifiedArray = ArrayType::get(specified, {2});
+
+  ASSERT_TRUE(typesUnifyWithoutLosingFeltFields(unspecified, unspecified));
+  ASSERT_TRUE(typesUnifyWithoutLosingFeltFields(unspecified, specified));
+  ASSERT_TRUE(typesUnifyWithoutLosingFeltFields(specified, specified));
+  ASSERT_FALSE(typesUnifyWithoutLosingFeltFields(specified, unspecified));
+  ASSERT_FALSE(typesUnifyWithoutLosingFeltFields(specifiedArray, unspecifiedArray));
+  ASSERT_TRUE(typesUnifyWithoutLosingFeltFields(specified, unspecified, {}, nullptr, Side::RHS));
+  ASSERT_FALSE(typesUnifyWithoutLosingFeltFields(unspecified, specified, {}, nullptr, Side::RHS));
+}
+
 TEST_F(TypeHelperTests, test_isMoreConcreteUnification_nestedFeltField) {
   FeltType unspecified = FeltType::get(&ctx);
   FeltType specified = FeltType::get(&ctx, "bn128");

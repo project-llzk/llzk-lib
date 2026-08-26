@@ -514,7 +514,7 @@ LogicalResult ReturnOp::verify() {
   }
 
   for (unsigned i = 0, e = results.size(); i != e; ++i) {
-    if (!typesUnify(getOperand(i).getType(), results[i])) {
+    if (!typesUnifyWithoutLosingFeltFields(getOperand(i).getType(), results[i])) {
       return emitError() << "type of return operand " << i << " (" << getOperand(i).getType()
                          << ") doesn't match function result type (" << results[i] << ')'
                          << " in function @" << function.getName();
@@ -827,11 +827,17 @@ struct KnownTargetVerifier : public CallOpVerifier {
   }
 
   LogicalResult verifyInputs() override {
-    return verifyTypesMatch(callOp->getArgOperands().getTypes(), tgtType.getInputs(), "operand");
+    return verifyTypesMatch(
+        callOp->getArgOperands().getTypes(), tgtType.getInputs(), "operand",
+        /*preserveCalleeFeltFields=*/false
+    );
   }
 
   LogicalResult verifyOutputs() override {
-    return verifyTypesMatch(callOp->getResultTypes(), tgtType.getResults(), "result");
+    return verifyTypesMatch(
+        callOp->getResultTypes(), tgtType.getResults(), "result",
+        /*preserveCalleeFeltFields=*/true
+    );
   }
 
   LogicalResult verifyTemplateParams() override {
@@ -934,8 +940,10 @@ struct KnownTargetVerifier : public CallOpVerifier {
 
 private:
   template <typename T>
-  LogicalResult
-  verifyTypesMatch(ValueTypeRange<T> callOpTypes, ArrayRef<Type> tgtTypes, const char *aspect) {
+  LogicalResult verifyTypesMatch(
+      ValueTypeRange<T> callOpTypes, ArrayRef<Type> tgtTypes, const char *aspect,
+      bool preserveCalleeFeltFields
+  ) {
     if (tgtTypes.size() != callOpTypes.size()) {
       return callOp->emitOpError()
           .append("incorrect number of ", aspect, "s for callee, expected ", tgtTypes.size())
@@ -943,7 +951,13 @@ private:
           .append("callee defined here");
     }
     for (unsigned i = 0, e = tgtTypes.size(); i != e; ++i) {
-      if (!typesUnify(callOpTypes[i], tgtTypes[i], includeSymNames)) {
+      bool typesMatch = preserveCalleeFeltFields
+                            ? typesUnifyWithoutLosingFeltFields(
+                                  callOpTypes[i], tgtTypes[i], includeSymNames,
+                                  /*unifications=*/nullptr, Side::RHS
+                              )
+                            : typesUnify(callOpTypes[i], tgtTypes[i], includeSymNames);
+      if (!typesMatch) {
         return callOp->emitOpError().append(
             aspect, " type mismatch: expected type ", tgtTypes[i], ", but found ", callOpTypes[i],
             " for ", aspect, " number ", i

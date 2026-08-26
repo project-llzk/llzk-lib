@@ -17,6 +17,26 @@ function.def @identity(%x: !felt.type) -> !felt.type {
 // -----
 
 module attributes {llzk.lang} {
+  function.def @unspecified_felt() -> !felt.type {
+    %value = felt.const 1
+    function.return %value : !felt.type
+  }
+  function.def @caller() -> !felt.type<"bn128"> {
+    %value = function.call @unspecified_felt() : () -> !felt.type<"bn128">
+    function.return %value : !felt.type<"bn128">
+  }
+}
+// CHECK-LABEL:  function.def @unspecified_felt() -> !felt.type {
+// CHECK-NEXT:     %[[VALUE:[0-9a-zA-Z_\.]+]] = felt.const 1
+// CHECK-NEXT:     function.return %[[VALUE]] : !felt.type
+// CHECK-NEXT:   }
+// CHECK-LABEL:  function.def @caller() -> !felt.type<"bn128"> {
+// CHECK-NEXT:     %[[VALUE:[0-9a-zA-Z_\.]+]] = function.call @unspecified_felt() : () -> !felt.type<"bn128">
+// CHECK-NEXT:     function.return %[[VALUE]] : !felt.type<"bn128">
+// CHECK-NEXT:   }
+// -----
+
+module attributes {llzk.lang} {
   function.def @split(%x: index) -> (index, index) {
     %0 = arith.constant 1 : index
     function.return %x, %0 : index, index
