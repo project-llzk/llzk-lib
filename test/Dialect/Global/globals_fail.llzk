@@ -401,6 +401,24 @@ module attributes {llzk.lang} {
 }
 // -----
 
+// TEST: mutable globals retain refinements made by casts from separate unspecified reads
+module attributes {llzk.lang} {
+  global.def @g : !felt.type
+  struct.def @ComponentReadCastRefinement {
+    function.def @compute() -> !struct.type<@ComponentReadCastRefinement> {
+      %first_read = global.read @g : !felt.type
+      %bn128 = poly.unifiable_cast %first_read : (!felt.type) -> !felt.type<"bn128">
+      %second_read = global.read @g : !felt.type
+      // expected-error@+1 {{'poly.unifiable_cast' op has field 'babybear' conflicting with prior field refinement 'bn128' of mutable global 'g'}}
+      %babybear = poly.unifiable_cast %second_read : (!felt.type) -> !felt.type<"babybear">
+      %self = struct.new : !struct.type<@ComponentReadCastRefinement>
+      function.return %self : !struct.type<@ComponentReadCastRefinement>
+    }
+    function.def @constrain(%self: !struct.type<@ComponentReadCastRefinement>) { function.return }
+  }
+}
+// -----
+
 // TEST: mutable unspecified felt globals cannot be refined to conflicting fields
 module attributes {llzk.lang} {
   global.def @g : !felt.type

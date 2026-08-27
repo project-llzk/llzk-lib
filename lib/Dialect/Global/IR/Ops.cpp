@@ -13,6 +13,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Types.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/String/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
 #include "llzk/Util/BuilderHelper.h"
@@ -81,9 +82,9 @@ GlobalDefOp getRefinementVerificationCoordinator(ModuleOp root) {
 /// Verify that every felt position of each mutable global is refined to one field.
 ///
 /// This performs one root walk to collect mutable globals with felt positions and one to process
-/// global references. In addition to fields written on the reference itself, reads collect the
-/// field expectations of their direct call consumers. Each reference is resolved at most once,
-/// independent of the number of mutable globals.
+/// global references. In addition to fields written on the reference itself, reads collect field
+/// expectations from reachable unifiable casts and call consumers. Each reference is resolved at
+/// most once, independent of the number of mutable globals.
 LogicalResult verifyGlobalFeltRefinements(ModuleOp root, SymbolTableCollection &tables) {
   SmallVector<FeltRefinement> refinements;
   root.walk([&refinements, &tables](GlobalRefOpInterface refOp) {
@@ -114,21 +115,40 @@ LogicalResult verifyGlobalFeltRefinements(ModuleOp root, SymbolTableCollection &
     SmallVector<std::pair<Operation *, Type>> refinementTypes;
     refinementTypes.emplace_back(refOp.getOperation(), refOp.getVal().getType());
     if (auto readOp = llvm::dyn_cast<GlobalReadOp>(refOp.getOperation())) {
-      for (OpOperand &use : readOp.getVal().getUses()) {
-        auto callOp = llvm::dyn_cast<function::CallOp>(use.getOwner());
-        unsigned argIndex = use.getOperandNumber();
-        if (!callOp || argIndex >= callOp.getArgOperands().size()) {
+      // A cast preserves the storage value while exposing a more concrete type, so follow every
+      // reachable cast result. Calls constrain their operand to the callee input type. Other uses
+      // do not preserve the whole storage value and therefore cannot refine this global directly.
+      SmallVector<Value> worklist {readOp.getVal()};
+      llvm::DenseSet<Value> visited;
+      while (!worklist.empty()) {
+        Value value = worklist.pop_back_val();
+        if (!visited.insert(value).second) {
           continue;
         }
-        // A malformed or unresolved call is diagnosed by its own verifier. Do
-        // not emit an additional error while collecting its field refinement.
-        auto callee = callOp.getCalleeTarget(tables);
-        if (failed(callee)) {
-          continue;
+        for (OpOperand &use : value.getUses()) {
+          if (auto castOp = llvm::dyn_cast<polymorphic::UnifiableCastOp>(use.getOwner())) {
+            if (use.getOperandNumber() == 0) {
+              refinementTypes.emplace_back(castOp.getOperation(), castOp.getResult().getType());
+              worklist.push_back(castOp.getResult());
+            }
+            continue;
+          }
+
+          auto callOp = llvm::dyn_cast<function::CallOp>(use.getOwner());
+          unsigned argIndex = use.getOperandNumber();
+          if (!callOp || argIndex >= callOp.getArgOperands().size()) {
+            continue;
+          }
+          // A malformed or unresolved call is diagnosed by its own verifier. Do not emit an
+          // additional error while collecting its field refinement.
+          auto callee = callOp.getCalleeTarget(tables);
+          if (failed(callee)) {
+            continue;
+          }
+          refinementTypes.emplace_back(
+              callOp.getOperation(), callee->get().getFunctionType().getInput(argIndex)
+          );
         }
-        refinementTypes.emplace_back(
-            callOp.getOperation(), callee->get().getFunctionType().getInput(argIndex)
-        );
       }
     }
     for (auto [origin, refinementType] : refinementTypes) {
