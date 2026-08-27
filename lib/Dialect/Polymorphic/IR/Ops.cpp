@@ -296,15 +296,27 @@ static Value getUnifiableCastRoot(Value value) {
 }
 
 LogicalResult UnifiableCastOp::verify() {
-  if (!typesUnify(getInput().getType(), getResult().getType())) {
-    return emitOpError() << "input type " << getInput().getType() << " and output type "
-                         << getResult().getType() << " are not unifiable";
+  auto inputType = getInput().getType();
+  auto resultType = getResult().getType();
+  if (!typesUnify(inputType, resultType)) {
+    return emitOpError() << "input type " << inputType << " and output type " << resultType
+                         << " are not unifiable";
   }
   // A unifiable cast is a reinterpretation, not a field conversion. In particular, it must not
   // erase a selected field and allow a subsequent cast to select a different field.
-  if (!typesUnifyWithoutLosingFeltFields(getInput().getType(), getResult().getType())) {
-    return emitOpError() << "input type " << getInput().getType() << " and output type "
-                         << getResult().getType() << " would discard a specified felt field";
+  if (!typesUnifyWithoutLosingFeltFields(inputType, resultType)) {
+    return emitOpError() << "input type " << inputType << " and output type " << resultType
+                         << " would discard a specified felt field";
+  }
+
+  // A type variable in an earlier cast may stand for a type containing a selected felt field.
+  // Keep that field refinement from the cast-chain root when checking this result, so that
+  // `felt<"bn128"> -> tvar -> felt<"babybear">` cannot reinterpret one runtime value under
+  // two moduli.
+  Type rootType = getUnifiableCastRoot(getInput()).getType();
+  if (!typesUnifyWithoutLosingFeltFields(rootType, resultType)) {
+    return emitOpError() << "input type " << rootType << " and output type " << resultType
+                         << " would discard a specified felt field";
   }
 
   // All casts reachable through an input preserve the same runtime value. Their result types
@@ -314,10 +326,10 @@ LogicalResult UnifiableCastOp::verify() {
   DenseSet<Value> visited;
   collectReachableCastResultTypes(getUnifiableCastRoot(getInput()), refinementTypes, visited);
   for (Type refinementType : refinementTypes) {
-    if (typesHaveConflictingFeltFields(getResult().getType(), refinementType)) {
-      return emitOpError() << "result type " << getResult().getType()
-                           << " conflicts with another unifiable cast refinement of the same "
-                              "input value";
+    if (typesHaveConflictingFeltFields(resultType, refinementType)) {
+      return emitOpError()
+             << "result type " << resultType
+             << " conflicts with another unifiable cast refinement of the same input value";
     }
   }
 

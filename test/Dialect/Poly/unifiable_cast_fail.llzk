@@ -318,6 +318,19 @@ module attributes {llzk.lang} {
 
 // -----
 
+// A type variable must retain the selected field of the value it represents.
+module attributes {llzk.lang} {
+  function.def @specified_felt_cannot_be_reinterpreted_through_tvar(
+      %input: !felt.type<"bn128">) {
+    %as_tvar = poly.unifiable_cast %input : (!felt.type<"bn128">) -> !poly.tvar<@T>
+    // expected-error@+1 {{'poly.unifiable_cast' op input type '!felt.type<"bn128">' and output type '!felt.type<"babybear">' would discard a specified felt field}}
+    %other_field = poly.unifiable_cast %as_tvar : (!poly.tvar<@T>) -> !felt.type<"babybear">
+    function.return
+  }
+}
+
+// -----
+
 // Field preservation applies recursively to aggregate types as well.
 module attributes {llzk.lang} {
   function.def @specified_nested_felt_cannot_be_erased(
