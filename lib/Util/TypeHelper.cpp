@@ -603,12 +603,19 @@ namespace {
 using AffineInstantiations = DenseMap<std::pair<AffineMapAttr, Side>, IntegerAttr>;
 
 struct UnifierImpl {
+  /// Symbol path components prepended while resolving RHS struct references.
   ArrayRef<StringRef> rhsRevPrefix;
+  /// Optional substitutions inferred for type variables and symbolic parameters.
   UnificationMap *unifications;
+  /// Optional affine-map-to-integer substitutions inferred during unification.
   AffineInstantiations *affineToIntTracker;
+  /// Optional flag set when a selected felt field is erased on the protected side.
   bool *feltFieldBecameUnspecified;
+  /// The `Side` whose selected felt fields must remain concrete.
   Side feltFieldThisSideMustStayConcrete;
+  /// Optional flag set when corresponding felt types select different concrete fields.
   bool *feltFieldsConflict;
+  /// Optional field inferred uniformly for unspecified felt types in a call signature.
   StringAttr *commonFeltField;
   // This optional function can be used to provide an exception to the standard unification
   // rules and return a true/success result when it otherwise may not.
