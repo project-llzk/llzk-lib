@@ -24,7 +24,7 @@ mlir::LogicalResult verifyNotFieldNativeTraitImpl(mlir::Operation *op);
 /// is inside a `function.def` operation.
 ///
 /// For example, `Verification<WitnessGen>` will call this function passing
-/// a callback that runs `WitnessGen::verifyTrait` if the op is inside a 
+/// a callback that runs `WitnessGen::verifyTrait` if the op is inside a
 /// `function.def` operation.
 mlir::LogicalResult
 verifyVerificationTraitImpl(mlir::Operation *op, llvm::function_ref<mlir::LogicalResult()>);
