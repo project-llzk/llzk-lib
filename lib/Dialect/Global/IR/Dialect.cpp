@@ -33,7 +33,7 @@ namespace {
 /// declaration (and vice versa) to disagree. Current GlobalDefOp verification
 /// requires exact type equality, so apply the same field-adoption rules as the
 /// textual parser while loading historical bytecode.
-Attribute normalizeLegacyInitializer(Type &type, Attribute value) {
+FailureOr<Attribute> normalizeLegacyInitializer(Type &type, Attribute value) {
   if (auto feltType = llvm::dyn_cast<llzk::felt::FeltType>(type)) {
     if (auto feltValue = llvm::dyn_cast<llzk::felt::FeltConstAttr>(value)) {
       auto valueType = feltValue.getType();
@@ -48,8 +48,15 @@ Attribute normalizeLegacyInitializer(Type &type, Attribute value) {
       return llzk::felt::FeltConstAttr::get(value.getContext(), intValue.getValue(), feltType);
     }
   } else if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
-    if (type.isSignlessInteger(1) || llvm::isa<IndexType>(type)) {
-      return IntegerAttr::get(type, intValue.getValue());
+    APInt intValuePayload = intValue.getValue();
+    if (type.isSignlessInteger(1)) {
+      if (!intValuePayload.isZero() && !intValuePayload.isOne()) {
+        return failure();
+      }
+      return IntegerAttr::get(type, intValuePayload.trunc(1));
+    }
+    if (llvm::isa<IndexType>(type)) {
+      return IntegerAttr::get(type, intValuePayload);
     }
   } else if (auto stringType = llvm::dyn_cast<llzk::string::StringType>(type)) {
     if (auto stringValue = llvm::dyn_cast<StringAttr>(value)) {
@@ -84,7 +91,12 @@ Attribute normalizeLegacyInitializer(Type &type, Attribute value) {
       elements.reserve(arrayValue.size());
       for (Attribute element : arrayValue) {
         Type normalizedElementType = elementType;
-        elements.push_back(normalizeLegacyInitializer(normalizedElementType, element));
+        FailureOr<Attribute> normalizedElement =
+            normalizeLegacyInitializer(normalizedElementType, element);
+        if (failed(normalizedElement)) {
+          return failure();
+        }
+        elements.push_back(*normalizedElement);
       }
       return ArrayAttr::get(value.getContext(), elements);
     }
@@ -103,14 +115,22 @@ public:
       Operation *root, const llzk::LLZKDialectVersion & /*current*/,
       const llzk::LLZKDialectVersion & /*requested*/
   ) const final {
-    root->walk([](llzk::global::GlobalDefOp global) {
+    auto res = root->walk([](llzk::global::GlobalDefOp global) -> WalkResult {
       if (Attribute initialValue = global.getInitialValueAttr()) {
         Type type = global.getType();
-        global.setInitialValueAttr(normalizeLegacyInitializer(type, initialValue));
+        FailureOr<Attribute> normalized = normalizeLegacyInitializer(type, initialValue);
+        if (failed(normalized)) {
+          return global.emitOpError(
+              "contains a legacy boolean initializer with an integer value outside "
+              "the boolean range"
+          );
+        }
+        global.setInitialValueAttr(*normalized);
         global.setTypeAttr(TypeAttr::get(type));
       }
+      return WalkResult::advance();
     });
-    return success();
+    return failure(res.wasInterrupted());
   }
 };
 
