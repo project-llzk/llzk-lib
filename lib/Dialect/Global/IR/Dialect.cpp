@@ -14,6 +14,7 @@
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
 #include "llzk/Dialect/String/IR/Types.h"
+#include "llzk/Util/TypeHelper.h"
 
 // TableGen'd implementation files
 #include "llzk/Dialect/Global/IR/Dialect.cpp.inc"
@@ -57,7 +58,9 @@ FailureOr<Attribute> normalizeLegacyInitializer(Type &type, Attribute value) {
       return IntegerAttr::get(type, intValuePayload.trunc(1));
     }
     if (llvm::isa<IndexType>(type)) {
-      return IntegerAttr::get(type, intValuePayload);
+      return forceIntType(intValue, [&value]() {
+        return InFlightDiagnosticWrapper::createSilent(value.getContext());
+      });
     }
   } else if (auto stringType = llvm::dyn_cast<string::StringType>(type)) {
     if (auto stringValue = llvm::dyn_cast<StringAttr>(value)) {
@@ -121,8 +124,7 @@ public:
         FailureOr<Attribute> normalized = normalizeLegacyInitializer(type, initialValue);
         if (failed(normalized)) {
           return global.emitOpError(
-              "contains a legacy boolean initializer with an integer value outside "
-              "the boolean range"
+              "contains a legacy initializer that is incompatible with its declared type"
           );
         }
         global.setInitialValueAttr(*normalized);
