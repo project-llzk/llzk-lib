@@ -105,27 +105,6 @@ TEST_F(TypeHelperTests, test_functionTypesUnify_Output_Fail) {
   ASSERT_FALSE(functionTypesUnify(a, b));
 }
 
-TEST_F(TypeHelperTests, test_functionTypesUnifyWithCommonFeltField) {
-  FeltType unspecified = FeltType::get(&ctx);
-  FeltType bn128 = FeltType::get(&ctx, "bn128");
-  FeltType babybear = FeltType::get(&ctx, "babybear");
-
-  FunctionType callee = FunctionType::get(&ctx, {unspecified}, {unspecified});
-  ASSERT_TRUE(
-      functionTypesUnifyWithCommonFeltField(FunctionType::get(&ctx, {bn128}, {bn128}), callee)
-  );
-  ASSERT_FALSE(
-      functionTypesUnifyWithCommonFeltField(FunctionType::get(&ctx, {bn128}, {babybear}), callee)
-  );
-
-  // A callee with explicit fields describes a cross-field conversion and is not subject to the
-  // shared substitution for unspecified felt types.
-  FunctionType conversion = FunctionType::get(&ctx, {bn128}, {babybear});
-  ASSERT_TRUE(functionTypesUnifyWithCommonFeltField(
-      FunctionType::get(&ctx, {bn128}, {babybear}), conversion
-  ));
-}
-
 TEST_F(TypeHelperTests, test_isMoreConcreteUnification_feltField) {
   FeltType unspecified = FeltType::get(&ctx);
   FeltType specified = FeltType::get(&ctx, "bn128");

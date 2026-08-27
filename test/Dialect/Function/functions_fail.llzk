@@ -199,17 +199,6 @@ module attributes {llzk.lang} {
 }
 // -----
 module attributes {llzk.lang} {
-  function.def @identity(%value: !felt.type) -> !felt.type {
-    function.return %value : !felt.type
-  }
-  function.def @caller(%value: !felt.type<"bn128">) -> !felt.type<"babybear"> {
-    // expected-error@+1 {{'function.call' op callee's unspecified felt fields infer conflicting fields across the call signature}}
-    %result = function.call @identity(%value) : (!felt.type<"bn128">) -> !felt.type<"babybear">
-    function.return %result : !felt.type<"babybear">
-  }
-}
-// -----
-module attributes {llzk.lang} {
   struct.def @ComponentA1 {
     function.def @compute() -> !struct.type<@ComponentA1> { // expected-note {{callee defined here}}
       %self = struct.new : !struct.type<@ComponentA1>

@@ -264,17 +264,6 @@ bool functionTypesUnify(
     mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}, UnificationMap *unifications = nullptr
 );
 
-/// Return `true` iff the two FunctionType instances unify and every concrete felt field inferred
-/// for an unspecified felt type in the RHS is the same. Specified felt fields in the RHS remain
-/// independent, so explicit cross-field conversion signatures can still unify.
-///
-/// This is intended for call signature verification, where all unspecified felt types in the
-/// callee signature represent one field substitution for that call.
-bool functionTypesUnifyWithCommonFeltField(
-    mlir::FunctionType lhs, mlir::FunctionType rhs,
-    mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}, UnificationMap *unifications = nullptr
-);
-
 /// Return `true` iff the two Type instances are equivalent or could be equivalent after full
 /// instantiation of template parameters (if applicable within the given types).
 bool typesUnify(
