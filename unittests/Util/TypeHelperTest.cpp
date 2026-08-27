@@ -151,6 +151,16 @@ TEST_F(TypeHelperTests, test_typesUnifyWithoutLosingFeltFields) {
   ASSERT_FALSE(typesUnifyWithoutLosingFeltFields(unspecified, specified, {}, nullptr, Side::RHS));
 }
 
+TEST_F(TypeHelperTests, test_typesHaveConflictingFeltFields_functionsIgnoreOtherTypeMismatch) {
+  FunctionType bn128 =
+      FunctionType::get(&ctx, {IndexType::get(&ctx), FeltType::get(&ctx, "bn128")}, {});
+  FunctionType babybear =
+      FunctionType::get(&ctx, {IntegerType::get(&ctx, 1), FeltType::get(&ctx, "babybear")}, {});
+
+  ASSERT_FALSE(typesUnify(bn128, babybear));
+  ASSERT_TRUE(typesHaveConflictingFeltFields(bn128, babybear));
+}
+
 TEST_F(TypeHelperTests, test_isMoreConcreteUnification_nestedFeltField) {
   FeltType unspecified = FeltType::get(&ctx);
   FeltType specified = FeltType::get(&ctx, "bn128");

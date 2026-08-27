@@ -288,11 +288,13 @@ bool typesUnifyWithoutLosingFeltFields(
 
 /// Return `true` iff corresponding felt types in `lhs` and `rhs` select distinct concrete fields.
 ///
+/// This comparison considers corresponding nested type positions independently of other
+/// mismatches, such as different integer parameters of the same struct type.
+///
 /// Types which do not otherwise unify may still return `false` when their mismatch does not
 /// involve felt field selection.
 bool typesHaveConflictingFeltFields(
-    mlir::Type lhs, mlir::Type rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},
-    UnificationMap *unifications = nullptr
+    mlir::Type lhs, mlir::Type rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}
 );
 
 /// Return `true` iff the two lists of Type instances are equivalent or could be equivalent after

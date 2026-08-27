@@ -940,6 +940,99 @@ private:
   }
 };
 
+/// Detect conflicting concrete felt fields at corresponding positions without requiring the
+/// enclosing types to unify. This intentionally continues past unrelated parameter mismatches:
+/// callers use it to reject two cast refinements of the same value, not to establish that their
+/// result types are otherwise interchangeable.
+struct FeltFieldConflictDetector {
+  /// Symbol path components prepended while resolving RHS struct references.
+  ArrayRef<StringRef> rhsRevPrefix;
+
+  bool typesHaveConflictingFeltFields(Type lhs, Type rhs) const {
+    if (auto lhsFelt = llvm::dyn_cast<FeltType>(lhs)) {
+      if (auto rhsFelt = llvm::dyn_cast<FeltType>(rhs)) {
+        return lhsFelt.hasField() && rhsFelt.hasField() &&
+               lhsFelt.getFieldName() != rhsFelt.getFieldName();
+      }
+    }
+
+    if (lhs == rhs) {
+      return false;
+    }
+    if (auto lhsArray = llvm::dyn_cast<ArrayType>(lhs)) {
+      if (auto rhsArray = llvm::dyn_cast<ArrayType>(rhs)) {
+        return typesHaveConflictingFeltFields(lhsArray.getElementType(), rhsArray.getElementType());
+      }
+    }
+    if (auto lhsStruct = llvm::dyn_cast<StructType>(lhs)) {
+      if (auto rhsStruct = llvm::dyn_cast<StructType>(rhs)) {
+        return structTypesHaveConflictingFeltFields(lhsStruct, rhsStruct);
+      }
+    }
+    if (auto lhsPod = llvm::dyn_cast<PodType>(lhs)) {
+      if (auto rhsPod = llvm::dyn_cast<PodType>(rhs)) {
+        return podTypesHaveConflictingFeltFields(lhsPod, rhsPod);
+      }
+    }
+    if (auto lhsFunction = llvm::dyn_cast<FunctionType>(lhs)) {
+      if (auto rhsFunction = llvm::dyn_cast<FunctionType>(rhs)) {
+        return typeListsHaveConflictingFeltFields(
+                   lhsFunction.getInputs(), rhsFunction.getInputs()
+               ) ||
+               typeListsHaveConflictingFeltFields(
+                   lhsFunction.getResults(), rhsFunction.getResults()
+               );
+      }
+    }
+    return false;
+  }
+
+private:
+  bool structTypesHaveConflictingFeltFields(StructType lhs, StructType rhs) const {
+    SmallVector<StringRef> rhsNames = getNames(rhs.getNameRef());
+    rhsNames.insert(rhsNames.begin(), rhsRevPrefix.rbegin(), rhsRevPrefix.rend());
+    if (getNames(lhs.getNameRef()) != rhsNames) {
+      return false;
+    }
+    return paramListsHaveConflictingFeltFields(lhs.getParams(), rhs.getParams());
+  }
+
+  bool podTypesHaveConflictingFeltFields(PodType lhs, PodType rhs) const {
+    auto lhsRecords = lhs.getRecords();
+    auto rhsRecords = rhs.getRecords();
+    for (size_t i = 0, e = std::min(lhsRecords.size(), rhsRecords.size()); i != e; ++i) {
+      if (lhsRecords[i].getName() == rhsRecords[i].getName() &&
+          typesHaveConflictingFeltFields(lhsRecords[i].getType(), rhsRecords[i].getType())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool typeListsHaveConflictingFeltFields(TypeRange lhs, TypeRange rhs) const {
+    for (size_t i = 0, e = std::min(lhs.size(), rhs.size()); i != e; ++i) {
+      if (typesHaveConflictingFeltFields(lhs[i], rhs[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool paramListsHaveConflictingFeltFields(ArrayAttr lhs, ArrayAttr rhs) const {
+    ArrayRef<Attribute> lhsParams = lhs ? lhs.getValue() : ArrayRef<Attribute>();
+    ArrayRef<Attribute> rhsParams = rhs ? rhs.getValue() : ArrayRef<Attribute>();
+    for (size_t i = 0, e = std::min(lhsParams.size(), rhsParams.size()); i != e; ++i) {
+      auto lhsType = llvm::dyn_cast<TypeAttr>(lhsParams[i]);
+      auto rhsType = llvm::dyn_cast<TypeAttr>(rhsParams[i]);
+      if (lhsType && rhsType &&
+          typesHaveConflictingFeltFields(lhsType.getValue(), rhsType.getValue())) {
+        return true;
+      }
+    }
+    return false;
+  }
+};
+
 } // namespace
 
 bool typeParamsUnify(
@@ -1010,14 +1103,8 @@ bool typesUnifyWithoutLosingFeltFields(
          !feltFieldBecameUnspecified;
 }
 
-bool typesHaveConflictingFeltFields(
-    Type lhs, Type rhs, ArrayRef<StringRef> rhsReversePrefix, UnificationMap *unifications
-) {
-  bool feltFieldsConflict = false;
-  UnifierImpl(unifications, rhsReversePrefix)
-      .trackFeltFieldConflicts(&feltFieldsConflict)
-      .typesUnify(lhs, rhs);
-  return feltFieldsConflict;
+bool typesHaveConflictingFeltFields(Type lhs, Type rhs, ArrayRef<StringRef> rhsReversePrefix) {
+  return FeltFieldConflictDetector(rhsReversePrefix).typesHaveConflictingFeltFields(lhs, rhs);
 }
 
 bool isMoreConcreteUnification(

@@ -347,7 +347,7 @@ module attributes {llzk.lang} {
 // Sibling cast uses must agree on the field selected for their shared SSA value.
 module attributes {llzk.lang} {
   function.def @unspecified_felt_cannot_be_refined_to_two_fields(%input: !felt.type) {
-    // expected-error@+1 {{'poly.unifiable_cast' op result type '!felt.type<"bn128">' conflicts with another unifiable cast refinement of the same input value}}
+    // expected-error@+1 {{'poly.unifiable_cast' op result type '!felt.type<"bn128">' conflicts with another unifiable cast refinement of the same value}}
     %bn128 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
     %babybear = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"babybear">
     function.return
@@ -360,9 +360,56 @@ module attributes {llzk.lang} {
 module attributes {llzk.lang} {
   function.def @cast_chain_cannot_hide_conflicting_sibling_refinements(%input: !felt.type) {
     %forwarded = poly.unifiable_cast %input : (!felt.type) -> !felt.type
-    // expected-error@+1 {{'poly.unifiable_cast' op result type '!felt.type<"bn128">' conflicts with another unifiable cast refinement of the same input value}}
+    // expected-error@+1 {{'poly.unifiable_cast' op result type '!felt.type<"bn128">' conflicts with another unifiable cast refinement of the same value}}
     %bn128 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
     %babybear = poly.unifiable_cast %forwarded : (!felt.type) -> !felt.type<"babybear">
+    function.return
+  }
+}
+
+// -----
+
+// Sibling refinements must compare nested felt fields even when earlier struct parameters differ.
+module attributes {llzk.lang} {
+  function.def @sibling_casts_detect_late_nested_field_conflict(
+      %input: !struct.type<@S<[@N, !felt.type]>>) {
+    // expected-error@+1 {{'poly.unifiable_cast' op result type '!struct.type<@S<[1, !felt.type<"bn128">]>>' conflicts with another unifiable cast refinement of the same value}}
+    %bn128 = poly.unifiable_cast %input : (!struct.type<@S<[@N, !felt.type]>>) ->
+        !struct.type<@S<[1, !felt.type<"bn128">]>>
+    %babybear = poly.unifiable_cast %input : (!struct.type<@S<[@N, !felt.type]>>) ->
+        !struct.type<@S<[2, !felt.type<"babybear">]>>
+    function.return
+  }
+}
+
+// -----
+
+// Sibling refinements must compare array elements even when their dimensions differ.
+module attributes {llzk.lang} {
+  function.def @sibling_casts_detect_array_element_field_conflict(
+      %input: !array.type<? x !felt.type>) {
+    // expected-error@+1 {{'poly.unifiable_cast' op result type '!array.type<1 x !felt.type<"bn128">>' conflicts with another unifiable cast refinement of the same value}}
+    %bn128 = poly.unifiable_cast %input : (!array.type<? x !felt.type>) ->
+        !array.type<1 x !felt.type<"bn128">>
+    %babybear = poly.unifiable_cast %input : (!array.type<? x !felt.type>) ->
+        !array.type<2 x !felt.type<"babybear">>
+    function.return
+  }
+}
+
+// -----
+
+// Sibling refinements must compare corresponding POD records past an unrelated type mismatch.
+module attributes {llzk.lang} {
+  function.def @sibling_casts_detect_pod_record_field_conflict(
+      %input: !pod.type<[@other: !poly.tvar<@T>, @value: !felt.type]>) {
+    // expected-error@+1 {{'poly.unifiable_cast' op result type '!pod.type<[@other: index, @value: !felt.type<"bn128">]>' conflicts with another unifiable cast refinement of the same value}}
+    %bn128 = poly.unifiable_cast %input
+        : (!pod.type<[@other: !poly.tvar<@T>, @value: !felt.type]>) ->
+              !pod.type<[@other: index, @value: !felt.type<"bn128">]>
+    %babybear = poly.unifiable_cast %input
+        : (!pod.type<[@other: !poly.tvar<@T>, @value: !felt.type]>) ->
+              !pod.type<[@other: i1, @value: !felt.type<"babybear">]>
     function.return
   }
 }

@@ -327,9 +327,8 @@ LogicalResult UnifiableCastOp::verify() {
   collectReachableCastResultTypes(getUnifiableCastRoot(getInput()), refinementTypes, visited);
   for (Type refinementType : refinementTypes) {
     if (typesHaveConflictingFeltFields(resultType, refinementType)) {
-      return emitOpError()
-             << "result type " << resultType
-             << " conflicts with another unifiable cast refinement of the same input value";
+      return emitOpError() << "result type " << resultType
+                           << " conflicts with another unifiable cast refinement of the same value";
     }
   }
 
