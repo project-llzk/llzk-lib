@@ -694,7 +694,7 @@ LogicalResult ContractOp::verifyRegions() {
     }
   }
 
-  return success();
+  return polymorphic::verifyUnifiableCastRefinements(getOperation());
 }
 
 FailureOr<SymbolLookupResult<StructDefOp>>

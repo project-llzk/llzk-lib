@@ -1,0 +1,40 @@
+// RUN: llzk-opt %s | FileCheck --enable-var-scope %s
+
+// A generic contract argument may feed sibling unifiable casts that select
+// different fields.
+module attributes {llzk.lang} {
+  struct.def @Target {
+    function.def @compute(%input: !felt.type) -> !struct.type<@Target> {
+      %self = struct.new : !struct.type<@Target>
+      function.return %self : !struct.type<@Target>
+    }
+    function.def @constrain(%self: !struct.type<@Target>, %input: !felt.type) {
+      function.return
+    }
+  }
+
+  verif.contract @FieldRefinements for @Target
+      (%self: !struct.type<@Target>, %input: !felt.type) {
+    %bn128 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %babybear = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"babybear">
+    %ok = arith.constant true
+    verif.ensure_compute %ok
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Target {
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Target> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Target>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Target>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Target>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @FieldRefinements for @Target (%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Target>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_5]] : (!felt.type) -> !felt.type<"bn128">
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_5]] : (!felt.type) -> !felt.type<"babybear">
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:      verif.ensure_compute %[[VAL_8]]
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
