@@ -193,3 +193,24 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@ComponentN>, %0: !struct.type<@PrivateComponent>, %1: !felt.type)  { function.return }
   }
 }
+
+// -----
+
+// An unspecified member field is shared mutable storage, so its read and
+// write references cannot select incompatible fields.
+module attributes {llzk.lang} {
+  struct.def @MemberFieldRefinement {
+    struct.member @value : !felt.type
+
+    function.def @compute() -> !struct.type<@MemberFieldRefinement> {
+      %self = struct.new : !struct.type<@MemberFieldRefinement>
+      %bn128 = felt.const 1 : !felt.type<"bn128">
+      struct.writem %self[@value] = %bn128 : !struct.type<@MemberFieldRefinement>, !felt.type<"bn128">
+      // expected-error@+1 {{'struct.readm' op has field 'babybear' conflicting with prior field refinement 'bn128' of mutable struct member 'value'}}
+      %babybear = struct.readm %self[@value] : !struct.type<@MemberFieldRefinement>, !felt.type<"babybear">
+      function.return %self : !struct.type<@MemberFieldRefinement>
+    }
+
+    function.def @constrain(%self: !struct.type<@MemberFieldRefinement>) { function.return }
+  }
+}

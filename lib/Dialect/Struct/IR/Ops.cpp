@@ -24,6 +24,7 @@
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
+#include "llzk/Util/TypeHelper.h"
 
 #include <mlir/IR/IRMapping.h>
 #include <mlir/IR/OpImplementation.h>
@@ -521,6 +522,125 @@ void StructDefOp::writeProperties(DialectBytecodeWriter &writer) {
 // MemberDefOp
 //===------------------------------------------------------------------===//
 
+namespace {
+
+/// Return one member definition that coordinates refinement verification for a root module.
+static MemberDefOp getRefinementVerificationCoordinator(ModuleOp root) {
+  MemberDefOp coordinator;
+  root.walk([&coordinator](MemberDefOp member) {
+    coordinator = member;
+    return WalkResult::interrupt();
+  });
+  return coordinator;
+}
+
+/// Collect felt types in structural order. Corresponding entries in two
+/// unifiable types identify the same member storage position.
+static void collectFeltTypes(Type type, SmallVectorImpl<FeltType> &feltTypes) {
+  if (auto feltType = llvm::dyn_cast<FeltType>(type)) {
+    feltTypes.push_back(feltType);
+  } else if (auto arrayType = llvm::dyn_cast<ArrayType>(type)) {
+    collectFeltTypes(arrayType.getElementType(), feltTypes);
+  } else if (auto podType = llvm::dyn_cast<PodType>(type)) {
+    for (auto record : podType.getRecords()) {
+      collectFeltTypes(record.getType(), feltTypes);
+    }
+  } else if (auto structType = llvm::dyn_cast<StructType>(type)) {
+    if (auto params = structType.getParams()) {
+      for (Attribute param : params) {
+        if (auto typeAttr = llvm::dyn_cast<TypeAttr>(param)) {
+          collectFeltTypes(typeAttr.getValue(), feltTypes);
+        }
+      }
+    }
+  }
+}
+
+/// Verify that each mutable member storage position is refined to at most one field.
+///
+/// An unspecified felt in a member declaration may be refined by a read or write, but that
+/// refinement belongs to the storage location rather than to an individual reference.
+static LogicalResult verifyMemberFeltRefinements(ModuleOp root, SymbolTableCollection &tables) {
+  DenseMap<Operation *, SmallVector<std::optional<FeltType>>> refinedTypes;
+  root.walk([&refinedTypes](MemberDefOp member) {
+    SmallVector<FeltType> feltTypes;
+    collectFeltTypes(member.getType(), feltTypes);
+    if (!feltTypes.empty()) {
+      refinedTypes.try_emplace(member.getOperation(), feltTypes.size());
+    }
+  });
+  if (refinedTypes.empty()) {
+    return success();
+  }
+
+  auto res = root.walk([&refinedTypes, &tables](MemberRefOpInterface refOp) -> WalkResult {
+    // Reference verification owns lookup failures, so do not add a second diagnostic here.
+    auto member = refOp.getMemberDefOp(tables);
+    if (failed(member)) {
+      return WalkResult::advance();
+    }
+    auto refined = refinedTypes.find(member->get().getOperation());
+    if (refined == refinedTypes.end()) {
+      return WalkResult::advance();
+    }
+    Type memberType = member->get().getType();
+    if (!typesUnify(refOp.getVal().getType(), memberType, member->getNamespace())) {
+      return WalkResult::advance();
+    }
+
+    SmallVector<std::pair<Operation *, Type>> refinementTypes;
+    refinementTypes.emplace_back(refOp.getOperation(), refOp.getVal().getType());
+    if (auto readOp = llvm::dyn_cast<MemberReadOp>(refOp.getOperation())) {
+      for (OpOperand &use : readOp.getVal().getUses()) {
+        auto call = llvm::dyn_cast<CallOp>(use.getOwner());
+        unsigned argIndex = use.getOperandNumber();
+        if (!call || argIndex >= call.getArgOperands().size()) {
+          continue;
+        }
+        auto callee = call.getCalleeTarget(tables);
+        if (failed(callee)) {
+          continue;
+        }
+        refinementTypes.emplace_back(
+            call.getOperation(), callee->get().getFunctionType().getInput(argIndex)
+        );
+      }
+    }
+
+    for (auto [origin, refinementType] : refinementTypes) {
+      if (!typesUnify(refinementType, memberType, member->getNamespace())) {
+        continue;
+      }
+      SmallVector<FeltType> refFeltTypes;
+      collectFeltTypes(refinementType, refFeltTypes);
+      for (auto [index, refType] : llvm::enumerate(refFeltTypes)) {
+        if (!refType.hasField()) {
+          continue;
+        }
+        auto &refinedType = refined->second[index];
+        if (refinedType && *refinedType != refType) {
+          auto diagnostic = origin->emitOpError()
+                            << "has field '" << refType.getFieldName().getValue();
+          if (!llvm::isa<FeltType>(memberType)) {
+            diagnostic << "' at nested type position " << index;
+          } else {
+            diagnostic << '\'';
+          }
+          diagnostic << " conflicting with prior field refinement '"
+                     << refinedType->getFieldName().getValue() << "' of mutable struct member '"
+                     << member->get().getSymName() << '\'';
+          return WalkResult(std::move(diagnostic));
+        }
+        refinedType = refType;
+      }
+    }
+    return WalkResult::advance();
+  });
+  return failure(res.wasInterrupted());
+}
+
+} // namespace
+
 void MemberDefOp::build(
     OpBuilder &odsBuilder, OperationState &odsState, StringAttr sym_name, TypeAttr type,
     bool isSignal, bool isColumn
@@ -597,6 +717,15 @@ verifyMemberDefTypeImpl(Type memberType, SymbolTableCollection &tables, Operatio
 LogicalResult MemberDefOp::verifySymbolUses(SymbolTableCollection &tables) {
   Type memberType = this->getType();
   if (failed(verifyMemberDefTypeImpl(memberType, tables, *this))) {
+    return failure();
+  }
+
+  auto root = getTopRootModule(getOperation());
+  if (failed(root)) {
+    return failure();
+  }
+  if (getRefinementVerificationCoordinator(*root) == *this &&
+      failed(verifyMemberFeltRefinements(*root, tables))) {
     return failure();
   }
 
