@@ -19,6 +19,7 @@
 #include "llzk/Dialect/Global/IR/Dialect.cpp.inc"
 
 using namespace mlir;
+using namespace llzk;
 
 //===------------------------------------------------------------------===//
 // GlobalDialect
@@ -34,18 +35,18 @@ namespace {
 /// requires exact type equality, so apply the same field-adoption rules as the
 /// textual parser while loading historical bytecode.
 FailureOr<Attribute> normalizeLegacyInitializer(Type &type, Attribute value) {
-  if (auto feltType = llvm::dyn_cast<llzk::felt::FeltType>(type)) {
-    if (auto feltValue = llvm::dyn_cast<llzk::felt::FeltConstAttr>(value)) {
+  if (auto feltType = llvm::dyn_cast<felt::FeltType>(type)) {
+    if (auto feltValue = llvm::dyn_cast<felt::FeltConstAttr>(value)) {
       auto valueType = feltValue.getType();
       if (!feltType.hasField() && valueType.hasField()) {
         type = valueType;
       } else if (feltType.hasField() && !valueType.hasField()) {
-        value = llzk::felt::FeltConstAttr::get(value.getContext(), feltValue.getValue(), feltType);
+        value = felt::FeltConstAttr::get(value.getContext(), feltValue.getValue(), feltType);
       }
       return value;
     }
     if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
-      return llzk::felt::FeltConstAttr::get(value.getContext(), intValue.getValue(), feltType);
+      return felt::FeltConstAttr::get(value.getContext(), intValue.getValue(), feltType);
     }
   } else if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
     APInt intValuePayload = intValue.getValue();
@@ -58,19 +59,19 @@ FailureOr<Attribute> normalizeLegacyInitializer(Type &type, Attribute value) {
     if (llvm::isa<IndexType>(type)) {
       return IntegerAttr::get(type, intValuePayload);
     }
-  } else if (auto stringType = llvm::dyn_cast<llzk::string::StringType>(type)) {
+  } else if (auto stringType = llvm::dyn_cast<string::StringType>(type)) {
     if (auto stringValue = llvm::dyn_cast<StringAttr>(value)) {
       return StringAttr::get(stringValue.getValue(), stringType);
     }
   }
 
-  if (auto arrayType = llvm::dyn_cast<llzk::array::ArrayType>(type)) {
+  if (auto arrayType = llvm::dyn_cast<array::ArrayType>(type)) {
     if (auto arrayValue = llvm::dyn_cast<ArrayAttr>(value)) {
       Type elementType = arrayType.getElementType();
-      if (auto feltType = llvm::dyn_cast<llzk::felt::FeltType>(elementType)) {
+      if (auto feltType = llvm::dyn_cast<felt::FeltType>(elementType)) {
         auto resolvedFeltType = feltType;
         for (Attribute element : arrayValue) {
-          if (auto feltValue = llvm::dyn_cast<llzk::felt::FeltConstAttr>(element)) {
+          if (auto feltValue = llvm::dyn_cast<felt::FeltConstAttr>(element)) {
             auto valueType = feltValue.getType();
             if (valueType.hasField()) {
               // Conflicting explicit fields were invalid in textual IR before
@@ -104,18 +105,17 @@ FailureOr<Attribute> normalizeLegacyInitializer(Type &type, Attribute value) {
   return value;
 }
 
-class GlobalDialectBytecodeInterface
-    : public llzk::LLZKDialectBytecodeInterface<llzk::global::GlobalDialect> {
-  using Base = llzk::LLZKDialectBytecodeInterface<llzk::global::GlobalDialect>;
+class GlobalDialectBytecodeInterface : public LLZKDialectBytecodeInterface<global::GlobalDialect> {
+  using Base = LLZKDialectBytecodeInterface<global::GlobalDialect>;
 
 public:
   using Base::Base;
 
   LogicalResult upgradeFromVersion(
-      Operation *root, const llzk::LLZKDialectVersion & /*current*/,
-      const llzk::LLZKDialectVersion & /*requested*/
+      Operation *root, const LLZKDialectVersion & /*current*/,
+      const LLZKDialectVersion & /*requested*/
   ) const final {
-    auto res = root->walk([](llzk::global::GlobalDefOp global) -> WalkResult {
+    auto res = root->walk([](global::GlobalDefOp global) -> WalkResult {
       if (Attribute initialValue = global.getInitialValueAttr()) {
         Type type = global.getType();
         FailureOr<Attribute> normalized = normalizeLegacyInitializer(type, initialValue);
@@ -136,7 +136,7 @@ public:
 
 } // namespace
 
-auto llzk::global::GlobalDialect::initialize() -> void {
+auto global::GlobalDialect::initialize() -> void {
   // clang-format off
   addOperations<
     #define GET_OP_LIST
