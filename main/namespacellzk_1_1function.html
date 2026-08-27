@@ -134,6 +134,9 @@ Classes</h2></td></tr>
 <tr class="memitem:ReturnOp" id="r_ReturnOp"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1function_1_1ReturnOp.html">ReturnOp</a></td></tr>
 <tr class="memitem:ReturnOpAdaptor" id="r_ReturnOpAdaptor"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1function_1_1ReturnOpAdaptor.html">ReturnOpAdaptor</a></td></tr>
 <tr class="memitem:ReturnOpGenericAdaptor" id="r_ReturnOpGenericAdaptor"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1function_1_1ReturnOpGenericAdaptor.html">ReturnOpGenericAdaptor</a></td></tr>
+<tr class="memitem:Verification" id="r_Verification"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1function_1_1Verification.html">Verification</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Marker for ops in the <span class="tt">verif</span> dialect that can be inlined inside functions.  <a href="structllzk_1_1function_1_1Verification.html#details">More...</a><br /></td></tr>
+<tr class="memitem:Verification_3C_3E" id="r_Verification_3C_3E"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllzk_1_1function_1_1Verification_3_4.html">Verification&lt;&gt;</a></td></tr>
 <tr class="memitem:WitnessGen" id="r_WitnessGen"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllzk_1_1function_1_1WitnessGen.html">WitnessGen</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Marker for ops that are specific to witness generation.  <a href="classllzk_1_1function_1_1WitnessGen.html#details">More...</a><br /></td></tr>
 </table><table class="memberdecls">
@@ -153,9 +156,12 @@ Functions</h2></td></tr>
 <tr class="memitem:a72f951317adb8b2a08b25f6ec38231b3" id="r_a72f951317adb8b2a08b25f6ec38231b3"><td class="memItemLeft" align="right" valign="top">LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a72f951317adb8b2a08b25f6ec38231b3">verifyConstraintGenTraitImpl</a> (Operation *op)</td></tr>
 <tr class="memitem:ac51eaaad96091ecbb47edfe32beb9cb6" id="r_ac51eaaad96091ecbb47edfe32beb9cb6"><td class="memItemLeft" align="right" valign="top">LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac51eaaad96091ecbb47edfe32beb9cb6">verifyWitnessGenTraitImpl</a> (Operation *op)</td></tr>
 <tr class="memitem:a2d7e9fe33f796eba596971e3ee0a2343" id="r_a2d7e9fe33f796eba596971e3ee0a2343"><td class="memItemLeft" align="right" valign="top">LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2d7e9fe33f796eba596971e3ee0a2343">verifyNotFieldNativeTraitImpl</a> (Operation *op)</td></tr>
+<tr class="memitem:a2d98bcb61607d9558daa21aeb0c20d69" id="r_a2d98bcb61607d9558daa21aeb0c20d69"><td class="memItemLeft" align="right" valign="top">LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2d98bcb61607d9558daa21aeb0c20d69">verifyVerificationTraitImpl</a> (Operation *op, llvm::function_ref&lt; LogicalResult()&gt; <a class="el" href="POD_2IR_2Ops_8cpp.html#a437fe6dda055faa9899b4268918b8032">check</a>)</td></tr>
 <tr class="memitem:ac38e676a8a06dd59ae4e8226a972e962" id="r_ac38e676a8a06dd59ae4e8226a972e962"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac38e676a8a06dd59ae4e8226a972e962">verifyConstraintGenTraitImpl</a> (mlir::Operation *op)</td></tr>
 <tr class="memitem:acdb3662acbe5dfc265921ce88d2758ca" id="r_acdb3662acbe5dfc265921ce88d2758ca"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acdb3662acbe5dfc265921ce88d2758ca">verifyWitnessGenTraitImpl</a> (mlir::Operation *op)</td></tr>
 <tr class="memitem:a782be5634a60fbbceadec62068f350bf" id="r_a782be5634a60fbbceadec62068f350bf"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a782be5634a60fbbceadec62068f350bf">verifyNotFieldNativeTraitImpl</a> (mlir::Operation *op)</td></tr>
+<tr class="memitem:a5960d903db5b4c8f5d7e4fe856cc0f16" id="r_a5960d903db5b4c8f5d7e4fe856cc0f16"><td class="memItemLeft" align="right" valign="top">mlir::LogicalResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5960d903db5b4c8f5d7e4fe856cc0f16">verifyVerificationTraitImpl</a> (mlir::Operation *op, llvm::function_ref&lt; mlir::LogicalResult()&gt;)</td></tr>
+<tr class="memdesc:a5960d903db5b4c8f5d7e4fe856cc0f16"><td class="mdescLeft">&#160;</td><td class="mdescRight">Implementation of the <span class="tt"><a class="el" href="structllzk_1_1function_1_1Verification.html" title="Marker for ops in the verif dialect that can be inlined inside functions.">Verification</a></span> trait's validation check.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
@@ -256,7 +262,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpTraits_8cpp_source.html#l00034">34</a> of file <a class="el" href="OpTraits_8cpp_source.html">OpTraits.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpTraits_8cpp_source.html#l00050">50</a> of file <a class="el" href="OpTraits_8cpp_source.html">OpTraits.cpp</a>.</p>
 
 </div>
 </div>
@@ -292,7 +298,55 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpTraits_8cpp_source.html#l00050">50</a> of file <a class="el" href="OpTraits_8cpp_source.html">OpTraits.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpTraits_8cpp_source.html#l00066">66</a> of file <a class="el" href="OpTraits_8cpp_source.html">OpTraits.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a5960d903db5b4c8f5d7e4fe856cc0f16" name="a5960d903db5b4c8f5d7e4fe856cc0f16"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5960d903db5b4c8f5d7e4fe856cc0f16">&#9670;&#160;</a></span>verifyVerificationTraitImpl() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::LogicalResult llzk::function::verifyVerificationTraitImpl </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::function_ref&lt; mlir::LogicalResult()&gt;</td>          <td class="paramname"><span class="paramname"><em></em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Implementation of the <span class="tt"><a class="el" href="structllzk_1_1function_1_1Verification.html" title="Marker for ops in the verif dialect that can be inlined inside functions.">Verification</a></span> trait's validation check. </p>
+<p>Takes a callback that is used to do additional checks iff the operation is inside a <span class="tt">function.def</span> operation.</p>
+<p>For example, <span class="tt"><a class="el" href="structllzk_1_1function_1_1Verification.html" title="Marker for ops in the verif dialect that can be inlined inside functions.">Verification</a>&lt;<a class="el" href="classllzk_1_1function_1_1WitnessGen.html" title="Marker for ops that are specific to witness generation.">WitnessGen</a>&gt;</span> will call this function passing a callback that runs <span class="tt"><a class="el" href="classllzk_1_1function_1_1WitnessGen.html#a1df108ec25b447f8282c52fe8c3755e9">WitnessGen::verifyTrait</a></span> if the op is inside a <span class="tt">function.def</span> operation. </p>
+
+</div>
+</div>
+<a id="a2d98bcb61607d9558daa21aeb0c20d69" name="a2d98bcb61607d9558daa21aeb0c20d69"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2d98bcb61607d9558daa21aeb0c20d69">&#9670;&#160;</a></span>verifyVerificationTraitImpl() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">LogicalResult llzk::function::verifyVerificationTraitImpl </td>
+          <td>(</td>
+          <td class="paramtype">Operation *</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::function_ref&lt; LogicalResult()&gt;</td>          <td class="paramname"><span class="paramname"><em>check</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="OpTraits_8cpp_source.html#l00073">73</a> of file <a class="el" href="OpTraits_8cpp_source.html">OpTraits.cpp</a>.</p>
 
 </div>
 </div>
@@ -328,7 +382,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="OpTraits_8cpp_source.html#l00042">42</a> of file <a class="el" href="OpTraits_8cpp_source.html">OpTraits.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="OpTraits_8cpp_source.html#l00058">58</a> of file <a class="el" href="OpTraits_8cpp_source.html">OpTraits.cpp</a>.</p>
 
 </div>
 </div>

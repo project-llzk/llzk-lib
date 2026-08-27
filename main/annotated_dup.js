@@ -297,6 +297,8 @@ var annotated_dup =
         [ "ReturnOp", "classllzk_1_1function_1_1ReturnOp.html", "classllzk_1_1function_1_1ReturnOp" ],
         [ "ReturnOpAdaptor", "classllzk_1_1function_1_1ReturnOpAdaptor.html", "classllzk_1_1function_1_1ReturnOpAdaptor" ],
         [ "ReturnOpGenericAdaptor", "classllzk_1_1function_1_1ReturnOpGenericAdaptor.html", "classllzk_1_1function_1_1ReturnOpGenericAdaptor" ],
+        [ "Verification", "structllzk_1_1function_1_1Verification.html", "structllzk_1_1function_1_1Verification" ],
+        [ "Verification<>", "structllzk_1_1function_1_1Verification_3_4.html", "structllzk_1_1function_1_1Verification_3_4" ],
         [ "WitnessGen", "classllzk_1_1function_1_1WitnessGen.html", null ]
       ] ],
       [ "global", "namespacellzk_1_1global.html", [
@@ -699,6 +701,7 @@ var annotated_dup =
       ] ],
       [ "verif", "namespacellzk_1_1verif.html", [
         [ "detail", "namespacellzk_1_1verif_1_1detail.html", [
+          [ "AssumeDetOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1AssumeDetOpGenericAdaptorBase.html", "classllzk_1_1verif_1_1detail_1_1AssumeDetOpGenericAdaptorBase" ],
           [ "CallableSummaryKey", "structllzk_1_1verif_1_1detail_1_1CallableSummaryKey.html", "structllzk_1_1verif_1_1detail_1_1CallableSummaryKey" ],
           [ "CallableSummaryKeyInfo", "structllzk_1_1verif_1_1detail_1_1CallableSummaryKeyInfo.html", null ],
           [ "ConditionOpInterfaceInterfaceTraits", "structllzk_1_1verif_1_1detail_1_1ConditionOpInterfaceInterfaceTraits.html", "structllzk_1_1verif_1_1detail_1_1ConditionOpInterfaceInterfaceTraits" ],
@@ -725,6 +728,7 @@ var annotated_dup =
           [ "PostconditionOpInterfaceTrait", "structllzk_1_1verif_1_1detail_1_1PostconditionOpInterfaceTrait.html", null ],
           [ "PreconditionOpInterfaceInterfaceTraits", "structllzk_1_1verif_1_1detail_1_1PreconditionOpInterfaceInterfaceTraits.html", "structllzk_1_1verif_1_1detail_1_1PreconditionOpInterfaceInterfaceTraits" ],
           [ "PreconditionOpInterfaceTrait", "structllzk_1_1verif_1_1detail_1_1PreconditionOpInterfaceTrait.html", null ],
+          [ "ProveDetOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1ProveDetOpGenericAdaptorBase.html", "classllzk_1_1verif_1_1detail_1_1ProveDetOpGenericAdaptorBase" ],
           [ "RequireComputeOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1RequireComputeOpGenericAdaptorBase.html", "classllzk_1_1verif_1_1detail_1_1RequireComputeOpGenericAdaptorBase" ],
           [ "RequireConstrainOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1RequireConstrainOpGenericAdaptorBase.html", "classllzk_1_1verif_1_1detail_1_1RequireConstrainOpGenericAdaptorBase" ],
           [ "StepOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1StepOpGenericAdaptorBase.html", "classllzk_1_1verif_1_1detail_1_1StepOpGenericAdaptorBase" ],
@@ -733,6 +737,9 @@ var annotated_dup =
           [ "VerifProveOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1VerifProveOpGenericAdaptorBase.html", "classllzk_1_1verif_1_1detail_1_1VerifProveOpGenericAdaptorBase" ],
           [ "VerifSMTProveOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1VerifSMTProveOpGenericAdaptorBase.html", "classllzk_1_1verif_1_1detail_1_1VerifSMTProveOpGenericAdaptorBase" ]
         ] ],
+        [ "AssumeDetOp", "classllzk_1_1verif_1_1AssumeDetOp.html", "classllzk_1_1verif_1_1AssumeDetOp" ],
+        [ "AssumeDetOpAdaptor", "classllzk_1_1verif_1_1AssumeDetOpAdaptor.html", "classllzk_1_1verif_1_1AssumeDetOpAdaptor" ],
+        [ "AssumeDetOpGenericAdaptor", "classllzk_1_1verif_1_1AssumeDetOpGenericAdaptor.html", "classllzk_1_1verif_1_1AssumeDetOpGenericAdaptor" ],
         [ "ConditionOpInterface", "classllzk_1_1verif_1_1ConditionOpInterface.html", "classllzk_1_1verif_1_1ConditionOpInterface" ],
         [ "ContractEndOp", "classllzk_1_1verif_1_1ContractEndOp.html", "classllzk_1_1verif_1_1ContractEndOp" ],
         [ "ContractEndOpAdaptor", "classllzk_1_1verif_1_1ContractEndOpAdaptor.html", "classllzk_1_1verif_1_1ContractEndOpAdaptor" ],
@@ -766,6 +773,9 @@ var annotated_dup =
         [ "OldOpGenericAdaptor", "classllzk_1_1verif_1_1OldOpGenericAdaptor.html", "classllzk_1_1verif_1_1OldOpGenericAdaptor" ],
         [ "PostconditionOpInterface", "classllzk_1_1verif_1_1PostconditionOpInterface.html", "classllzk_1_1verif_1_1PostconditionOpInterface" ],
         [ "PreconditionOpInterface", "classllzk_1_1verif_1_1PreconditionOpInterface.html", "classllzk_1_1verif_1_1PreconditionOpInterface" ],
+        [ "ProveDetOp", "classllzk_1_1verif_1_1ProveDetOp.html", "classllzk_1_1verif_1_1ProveDetOp" ],
+        [ "ProveDetOpAdaptor", "classllzk_1_1verif_1_1ProveDetOpAdaptor.html", "classllzk_1_1verif_1_1ProveDetOpAdaptor" ],
+        [ "ProveDetOpGenericAdaptor", "classllzk_1_1verif_1_1ProveDetOpGenericAdaptor.html", "classllzk_1_1verif_1_1ProveDetOpGenericAdaptor" ],
         [ "RequireComputeOp", "classllzk_1_1verif_1_1RequireComputeOp.html", "classllzk_1_1verif_1_1RequireComputeOp" ],
         [ "RequireComputeOpAdaptor", "classllzk_1_1verif_1_1RequireComputeOpAdaptor.html", "classllzk_1_1verif_1_1RequireComputeOpAdaptor" ],
         [ "RequireComputeOpGenericAdaptor", "classllzk_1_1verif_1_1RequireComputeOpGenericAdaptor.html", "classllzk_1_1verif_1_1RequireComputeOpGenericAdaptor" ],
@@ -926,6 +936,7 @@ var annotated_dup =
     [ "ArrayOperationLinkTests", "classArrayOperationLinkTests.html", null ],
     [ "ArrayTypeLinkTests", "classArrayTypeLinkTests.html", null ],
     [ "AssertOpBuildFuncHelper", "structAssertOpBuildFuncHelper.html", "structAssertOpBuildFuncHelper" ],
+    [ "AssumeDetOpBuildFuncHelper", "structAssumeDetOpBuildFuncHelper.html", "structAssumeDetOpBuildFuncHelper" ],
     [ "AttrOrTypeHeaderGenerator", "structAttrOrTypeHeaderGenerator.html", "structAttrOrTypeHeaderGenerator" ],
     [ "AttrOrTypeImplementationGenerator", "structAttrOrTypeImplementationGenerator.html", "structAttrOrTypeImplementationGenerator" ],
     [ "AttrOrTypeTestGenerator", "structAttrOrTypeTestGenerator.html", "structAttrOrTypeTestGenerator" ],
@@ -1012,6 +1023,7 @@ var annotated_dup =
     [ "PolyOperationLinkTests", "classPolyOperationLinkTests.html", null ],
     [ "PolyTypeLinkTests", "classPolyTypeLinkTests.html", null ],
     [ "PowFeltOpBuildFuncHelper", "structPowFeltOpBuildFuncHelper.html", "structPowFeltOpBuildFuncHelper" ],
+    [ "ProveDetOpBuildFuncHelper", "structProveDetOpBuildFuncHelper.html", "structProveDetOpBuildFuncHelper" ],
     [ "RamDialectLinkTests", "classRamDialectLinkTests.html", null ],
     [ "RamOperationLinkTests", "classRamOperationLinkTests.html", null ],
     [ "ReadArrayOpBuildFuncHelper", "structReadArrayOpBuildFuncHelper.html", "structReadArrayOpBuildFuncHelper" ],

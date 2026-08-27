@@ -124,71 +124,102 @@ $(function(){initNavTree('OpTraits_8cpp_source.html','',''); });
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &quot;<a class="code" href="Verif_2IR_2Ops_8h.html">llzk/Dialect/Verif/IR/Ops.h</a>&quot;</span></div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;mlir/IR/Operation.h&gt;</span></div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span> </div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span> </div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1function.html">llzk::function</a> {</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="keyword">namespace </span>{</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="keyword">auto</span> parentFuncDefOpHasAttr = [](Operation *op, <span class="keyword">auto</span> attrFn) -&gt; <span class="keywordtype">bool</span> {</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>  <span class="keywordflow">if</span> (<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> f = op-&gt;getParentOfType&lt;<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a>&gt;()) {</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>    <span class="keywordflow">return</span> (f.*attrFn)();</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>  }</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>};</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>} <span class="comment">// namespace</span></div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span> </div>
-<div class="foldopen" id="foldopen00034" data-start="{" data-end="}">
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno"><a class="line" href="namespacellzk_1_1function.html#a72f951317adb8b2a08b25f6ec38231b3">   34</a></span>LogicalResult <a class="code hl_function" href="namespacellzk_1_1function.html#a72f951317adb8b2a08b25f6ec38231b3">verifyConstraintGenTraitImpl</a>(Operation *op) {</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  <span class="keywordflow">if</span> (parentFuncDefOpHasAttr(op, &amp;<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#af3b96fc5a089350fbd2466bbd9a483e9">FuncDefOp::hasAllowConstraintAttr</a>)) {</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>    <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  }</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keywordflow">return</span> op-&gt;emitOpError() &lt;&lt; <span class="stringliteral">&quot;only valid within a &#39;&quot;</span> &lt;&lt; <a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#acbf62a48d4e47cdc1c346e19c0e3577b">FuncDefOp::getOperationName</a>() &lt;&lt; <span class="stringliteral">&quot;&#39; with &#39;&quot;</span></div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>                           &lt;&lt; AllowConstraintAttr::name &lt;&lt; <span class="stringliteral">&quot;&#39; attribute&quot;</span>;</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>}</div>
-</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
-<div class="foldopen" id="foldopen00042" data-start="{" data-end="}">
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno"><a class="line" href="namespacellzk_1_1function.html#ac51eaaad96091ecbb47edfe32beb9cb6">   42</a></span>LogicalResult <a class="code hl_function" href="namespacellzk_1_1function.html#ac51eaaad96091ecbb47edfe32beb9cb6">verifyWitnessGenTraitImpl</a>(Operation *op) {</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <span class="keywordflow">if</span> (parentFuncDefOpHasAttr(op, &amp;<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#a5575b8909bda2ac1ad87ebd1931034d6">FuncDefOp::hasAllowWitnessAttr</a>)) {</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  }</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="keywordflow">return</span> op-&gt;emitOpError() &lt;&lt; <span class="stringliteral">&quot;only valid within a &#39;&quot;</span> &lt;&lt; <a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#acbf62a48d4e47cdc1c346e19c0e3577b">FuncDefOp::getOperationName</a>() &lt;&lt; <span class="stringliteral">&quot;&#39; with &#39;&quot;</span></div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>                           &lt;&lt; AllowWitnessAttr::name &lt;&lt; <span class="stringliteral">&quot;&#39; attribute&quot;</span>;</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>}</div>
-</div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &lt;mlir/Support/LLVM.h&gt;</span></div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span> </div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &lt;llvm/ADT/StringRef.h&gt;</span></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemlir.html">mlir</a>;</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span> </div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellzk_1_1function.html">llzk::function</a> {</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="keyword">namespace </span>{</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="keyword">auto</span> parentFuncDefOpHasAttr = [](Operation *op, <span class="keyword">auto</span> attrFn) -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  <span class="keywordflow">if</span> (<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> f = op-&gt;getParentOfType&lt;<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a>&gt;()) {</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>    <span class="keywordflow">return</span> (f.*attrFn)();</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  }</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>};</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span> </div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Attr, <span class="keyword">typename</span> F&gt;</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>LogicalResult verifyTraitIsPresentInFuncDefOp(Operation *op, F attrFn) {</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="comment">// These are allowed anywhere outside of FuncDefOp but only allowed inside a FuncDefOp</span></div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="comment">// that is marked with the associated attribute.</span></div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keywordflow">if</span> (<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> f = op-&gt;getParentOfType&lt;<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a>&gt;()) {</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    <span class="keywordflow">if</span> (!(f.*attrFn)()) {</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>      <span class="keywordflow">return</span> op-&gt;emitOpError() &lt;&lt; <span class="stringliteral">&quot;cannot be used within a &#39;&quot;</span> &lt;&lt; <a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#acbf62a48d4e47cdc1c346e19c0e3577b">FuncDefOp::getOperationName</a>()</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>                               &lt;&lt; <span class="stringliteral">&quot;&#39; without the &#39;&quot;</span> &lt;&lt; Attr::name &lt;&lt; <span class="stringliteral">&quot;&#39; attribute&quot;</span>;</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    }</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  }</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>}</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span> </div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>} <span class="comment">// namespace</span></div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
 <div class="foldopen" id="foldopen00050" data-start="{" data-end="}">
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno"><a class="line" href="namespacellzk_1_1function.html#a2d7e9fe33f796eba596971e3ee0a2343">   50</a></span>LogicalResult <a class="code hl_function" href="namespacellzk_1_1function.html#a2d7e9fe33f796eba596971e3ee0a2343">verifyNotFieldNativeTraitImpl</a>(Operation *op) {</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="comment">// These are allowed anywhere outside of FuncDefOp but only allowed inside a FuncDefOp</span></div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="comment">// that is marked with the associated attribute.</span></div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="keywordflow">if</span> (<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> f = op-&gt;getParentOfType&lt;<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a>&gt;()) {</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    <span class="keywordflow">if</span> (!f.hasAllowNonNativeFieldOpsAttr()) {</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>      <span class="keywordflow">return</span> op-&gt;emitOpError() &lt;&lt; <span class="stringliteral">&quot;cannot be used within a &#39;&quot;</span> &lt;&lt; <a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#acbf62a48d4e47cdc1c346e19c0e3577b">FuncDefOp::getOperationName</a>()</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>                               &lt;&lt; <span class="stringliteral">&quot;&#39; without the &#39;&quot;</span> &lt;&lt; AllowNonNativeFieldOpsAttr::name</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>                               &lt;&lt; <span class="stringliteral">&quot;&#39; attribute&quot;</span>;</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    }</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  }</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>}</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno"><a class="line" href="namespacellzk_1_1function.html#a72f951317adb8b2a08b25f6ec38231b3">   50</a></span>LogicalResult <a class="code hl_function" href="namespacellzk_1_1function.html#a72f951317adb8b2a08b25f6ec38231b3">verifyConstraintGenTraitImpl</a>(Operation *op) {</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keywordflow">if</span> (parentFuncDefOpHasAttr(op, &amp;<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#af3b96fc5a089350fbd2466bbd9a483e9">FuncDefOp::hasAllowConstraintAttr</a>)) {</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  }</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keywordflow">return</span> op-&gt;emitOpError() &lt;&lt; <span class="stringliteral">&quot;only valid within a &#39;&quot;</span> &lt;&lt; <a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#acbf62a48d4e47cdc1c346e19c0e3577b">FuncDefOp::getOperationName</a>() &lt;&lt; <span class="stringliteral">&quot;&#39; with &#39;&quot;</span></div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>                           &lt;&lt; AllowConstraintAttr::name &lt;&lt; <span class="stringliteral">&quot;&#39; attribute&quot;</span>;</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>}</div>
 </div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>} <span class="comment">// namespace llzk::function</span></div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
+<div class="foldopen" id="foldopen00058" data-start="{" data-end="}">
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno"><a class="line" href="namespacellzk_1_1function.html#ac51eaaad96091ecbb47edfe32beb9cb6">   58</a></span>LogicalResult <a class="code hl_function" href="namespacellzk_1_1function.html#ac51eaaad96091ecbb47edfe32beb9cb6">verifyWitnessGenTraitImpl</a>(Operation *op) {</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keywordflow">if</span> (parentFuncDefOpHasAttr(op, &amp;<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#a5575b8909bda2ac1ad87ebd1931034d6">FuncDefOp::hasAllowWitnessAttr</a>)) {</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>    <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  }</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  <span class="keywordflow">return</span> op-&gt;emitOpError() &lt;&lt; <span class="stringliteral">&quot;only valid within a &#39;&quot;</span> &lt;&lt; <a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#acbf62a48d4e47cdc1c346e19c0e3577b">FuncDefOp::getOperationName</a>() &lt;&lt; <span class="stringliteral">&quot;&#39; with &#39;&quot;</span></div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>                           &lt;&lt; AllowWitnessAttr::name &lt;&lt; <span class="stringliteral">&quot;&#39; attribute&quot;</span>;</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>}</div>
+</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
+<div class="foldopen" id="foldopen00066" data-start="{" data-end="}">
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno"><a class="line" href="namespacellzk_1_1function.html#a2d7e9fe33f796eba596971e3ee0a2343">   66</a></span>LogicalResult <a class="code hl_function" href="namespacellzk_1_1function.html#a2d7e9fe33f796eba596971e3ee0a2343">verifyNotFieldNativeTraitImpl</a>(Operation *op) {</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <span class="keywordflow">return</span> verifyTraitIsPresentInFuncDefOp&lt;AllowNonNativeFieldOpsAttr&gt;(</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>      op, &amp;<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#a3f074a0873a85e4502dc9f958cf5e2d0">FuncDefOp::hasAllowNonNativeFieldOpsAttr</a></div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  );</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>}</div>
+</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>LogicalResult</div>
+<div class="foldopen" id="foldopen00073" data-start="{" data-end="}">
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno"><a class="line" href="namespacellzk_1_1function.html#a2d98bcb61607d9558daa21aeb0c20d69">   73</a></span><a class="code hl_function" href="namespacellzk_1_1function.html#a2d98bcb61607d9558daa21aeb0c20d69">verifyVerificationTraitImpl</a>(Operation *op, llvm::function_ref&lt;LogicalResult()&gt; <a class="code hl_define" href="POD_2IR_2Ops_8cpp.html#a437fe6dda055faa9899b4268918b8032">check</a>) {</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  <span class="keywordflow">if</span> (failed(</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>          verifyTraitIsPresentInFuncDefOp&lt;AllowVerifOpsAttr&gt;(op, &amp;<a class="code hl_function" href="classllzk_1_1function_1_1FuncDefOp.html#aa5f466536e2d52f5d667bfe8704c376e">FuncDefOp::hasAllowVerifOpsAttr</a>)</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>      )) {</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>    <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  }</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <span class="keywordflow">if</span> (<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> f = op-&gt;getParentOfType&lt;<a class="code hl_class" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a>&gt;()) {</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>    <span class="keywordflow">if</span> (<a class="code hl_define" href="POD_2IR_2Ops_8cpp.html#a437fe6dda055faa9899b4268918b8032">check</a>) {</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>      <span class="keywordflow">return</span> <a class="code hl_define" href="POD_2IR_2Ops_8cpp.html#a437fe6dda055faa9899b4268918b8032">check</a>();</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>    }</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  }</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span> </div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>}</div>
+</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span> </div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>} <span class="comment">// namespace llzk::function</span></div>
 <div class="ttc" id="aFunction_2IR_2Ops_8h_html"><div class="ttname"><a href="Function_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aOpHelpers_8h_html"><div class="ttname"><a href="OpHelpers_8h.html">OpHelpers.h</a></div></div>
 <div class="ttc" id="aOpTraits_8h_html"><div class="ttname"><a href="OpTraits_8h.html">OpTraits.h</a></div></div>
+<div class="ttc" id="aPOD_2IR_2Ops_8cpp_html_a437fe6dda055faa9899b4268918b8032"><div class="ttname"><a href="POD_2IR_2Ops_8cpp.html#a437fe6dda055faa9899b4268918b8032">check</a></div><div class="ttdeci">#define check(x)</div><div class="ttdef"><b>Definition</b> <a href="POD_2IR_2Ops_8cpp_source.html#l00286">Ops.cpp:286</a></div></div>
 <div class="ttc" id="aPolymorphic_2IR_2Ops_8h_html"><div class="ttname"><a href="Polymorphic_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aVerif_2IR_2Ops_8h_html"><div class="ttname"><a href="Verif_2IR_2Ops_8h.html">Ops.h</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html">llzk::function::FuncDefOp</a></div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00633">Ops.h.inc:633</a></div></div>
+<div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_a3f074a0873a85e4502dc9f958cf5e2d0"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#a3f074a0873a85e4502dc9f958cf5e2d0">llzk::function::FuncDefOp::hasAllowNonNativeFieldOpsAttr</a></div><div class="ttdeci">bool hasAllowNonNativeFieldOpsAttr()</div><div class="ttdoc">Return true iff the function def has the allow_non_native_field_ops attribute.</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00833">Ops.h.inc:833</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_a5575b8909bda2ac1ad87ebd1931034d6"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#a5575b8909bda2ac1ad87ebd1931034d6">llzk::function::FuncDefOp::hasAllowWitnessAttr</a></div><div class="ttdeci">bool hasAllowWitnessAttr()</div><div class="ttdoc">Return true iff the function def has the allow_witness attribute.</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00825">Ops.h.inc:825</a></div></div>
+<div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_aa5f466536e2d52f5d667bfe8704c376e"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#aa5f466536e2d52f5d667bfe8704c376e">llzk::function::FuncDefOp::hasAllowVerifOpsAttr</a></div><div class="ttdeci">bool hasAllowVerifOpsAttr()</div><div class="ttdoc">Return true iff the function def has the allow_verif_ops attribute.</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00841">Ops.h.inc:841</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_acbf62a48d4e47cdc1c346e19c0e3577b"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#acbf62a48d4e47cdc1c346e19c0e3577b">llzk::function::FuncDefOp::getOperationName</a></div><div class="ttdeci">static constexpr ::llvm::StringLiteral getOperationName()</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00679">Ops.h.inc:679</a></div></div>
 <div class="ttc" id="aclassllzk_1_1function_1_1FuncDefOp_html_af3b96fc5a089350fbd2466bbd9a483e9"><div class="ttname"><a href="classllzk_1_1function_1_1FuncDefOp.html#af3b96fc5a089350fbd2466bbd9a483e9">llzk::function::FuncDefOp::hasAllowConstraintAttr</a></div><div class="ttdeci">bool hasAllowConstraintAttr()</div><div class="ttdoc">Return true iff the function def has the allow_constraint attribute.</div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8h_8inc_source.html#l00817">Ops.h.inc:817</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1function_html"><div class="ttname"><a href="namespacellzk_1_1function.html">llzk::function</a></div><div class="ttdef"><b>Definition</b> <a href="Function_2IR_2Ops_8cpp_source.html#l00050">Ops.cpp:50</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1function_html_a2d7e9fe33f796eba596971e3ee0a2343"><div class="ttname"><a href="namespacellzk_1_1function.html#a2d7e9fe33f796eba596971e3ee0a2343">llzk::function::verifyNotFieldNativeTraitImpl</a></div><div class="ttdeci">LogicalResult verifyNotFieldNativeTraitImpl(Operation *op)</div><div class="ttdef"><b>Definition</b> <a href="#l00050">OpTraits.cpp:50</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1function_html_a72f951317adb8b2a08b25f6ec38231b3"><div class="ttname"><a href="namespacellzk_1_1function.html#a72f951317adb8b2a08b25f6ec38231b3">llzk::function::verifyConstraintGenTraitImpl</a></div><div class="ttdeci">LogicalResult verifyConstraintGenTraitImpl(Operation *op)</div><div class="ttdef"><b>Definition</b> <a href="#l00034">OpTraits.cpp:34</a></div></div>
-<div class="ttc" id="anamespacellzk_1_1function_html_ac51eaaad96091ecbb47edfe32beb9cb6"><div class="ttname"><a href="namespacellzk_1_1function.html#ac51eaaad96091ecbb47edfe32beb9cb6">llzk::function::verifyWitnessGenTraitImpl</a></div><div class="ttdeci">LogicalResult verifyWitnessGenTraitImpl(Operation *op)</div><div class="ttdef"><b>Definition</b> <a href="#l00042">OpTraits.cpp:42</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1function_html_a2d7e9fe33f796eba596971e3ee0a2343"><div class="ttname"><a href="namespacellzk_1_1function.html#a2d7e9fe33f796eba596971e3ee0a2343">llzk::function::verifyNotFieldNativeTraitImpl</a></div><div class="ttdeci">LogicalResult verifyNotFieldNativeTraitImpl(Operation *op)</div><div class="ttdef"><b>Definition</b> <a href="#l00066">OpTraits.cpp:66</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1function_html_a2d98bcb61607d9558daa21aeb0c20d69"><div class="ttname"><a href="namespacellzk_1_1function.html#a2d98bcb61607d9558daa21aeb0c20d69">llzk::function::verifyVerificationTraitImpl</a></div><div class="ttdeci">LogicalResult verifyVerificationTraitImpl(Operation *op, llvm::function_ref&lt; LogicalResult()&gt; check)</div><div class="ttdef"><b>Definition</b> <a href="#l00073">OpTraits.cpp:73</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1function_html_a72f951317adb8b2a08b25f6ec38231b3"><div class="ttname"><a href="namespacellzk_1_1function.html#a72f951317adb8b2a08b25f6ec38231b3">llzk::function::verifyConstraintGenTraitImpl</a></div><div class="ttdeci">LogicalResult verifyConstraintGenTraitImpl(Operation *op)</div><div class="ttdef"><b>Definition</b> <a href="#l00050">OpTraits.cpp:50</a></div></div>
+<div class="ttc" id="anamespacellzk_1_1function_html_ac51eaaad96091ecbb47edfe32beb9cb6"><div class="ttname"><a href="namespacellzk_1_1function.html#ac51eaaad96091ecbb47edfe32beb9cb6">llzk::function::verifyWitnessGenTraitImpl</a></div><div class="ttdeci">LogicalResult verifyWitnessGenTraitImpl(Operation *op)</div><div class="ttdef"><b>Definition</b> <a href="#l00058">OpTraits.cpp:58</a></div></div>
 <div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="ValueModel_8h_source.html#l00030">ValueModel.h:30</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->

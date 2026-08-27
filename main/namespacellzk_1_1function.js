@@ -13,6 +13,8 @@ var namespacellzk_1_1function =
     [ "ReturnOp", "classllzk_1_1function_1_1ReturnOp.html", "classllzk_1_1function_1_1ReturnOp" ],
     [ "ReturnOpAdaptor", "classllzk_1_1function_1_1ReturnOpAdaptor.html", "classllzk_1_1function_1_1ReturnOpAdaptor" ],
     [ "ReturnOpGenericAdaptor", "classllzk_1_1function_1_1ReturnOpGenericAdaptor.html", "classllzk_1_1function_1_1ReturnOpGenericAdaptor" ],
+    [ "Verification", "structllzk_1_1function_1_1Verification.html", "structllzk_1_1function_1_1Verification" ],
+    [ "Verification<>", "structllzk_1_1function_1_1Verification_3_4.html", "structllzk_1_1function_1_1Verification_3_4" ],
     [ "WitnessGen", "classllzk_1_1function_1_1WitnessGen.html", null ],
     [ "FunctionKind", "namespacellzk_1_1function.html#af06d600ccce5f2a82dcf17c5437f1ac9", [
       [ "StructCompute", "namespacellzk_1_1function.html#af06d600ccce5f2a82dcf17c5437f1ac9a550e855fea9fe67363f0339495fa0364", null ],
@@ -25,6 +27,8 @@ var namespacellzk_1_1function =
     [ "verifyConstraintGenTraitImpl", "namespacellzk_1_1function.html#a72f951317adb8b2a08b25f6ec38231b3", null ],
     [ "verifyNotFieldNativeTraitImpl", "namespacellzk_1_1function.html#a782be5634a60fbbceadec62068f350bf", null ],
     [ "verifyNotFieldNativeTraitImpl", "namespacellzk_1_1function.html#a2d7e9fe33f796eba596971e3ee0a2343", null ],
+    [ "verifyVerificationTraitImpl", "namespacellzk_1_1function.html#a5960d903db5b4c8f5d7e4fe856cc0f16", null ],
+    [ "verifyVerificationTraitImpl", "namespacellzk_1_1function.html#a2d98bcb61607d9558daa21aeb0c20d69", null ],
     [ "verifyWitnessGenTraitImpl", "namespacellzk_1_1function.html#acdb3662acbe5dfc265921ce88d2758ca", null ],
     [ "verifyWitnessGenTraitImpl", "namespacellzk_1_1function.html#ac51eaaad96091ecbb47edfe32beb9cb6", null ],
     [ "ARG_NAME_ATTR_NAME", "namespacellzk_1_1function.html#a24bb122df980745567375500af3c2efb", null ],
