@@ -1,10 +1,12 @@
 // RUN: llzk-opt -emit-bytecode %s | llzk-opt - | FileCheck %s
-// COM: This round trip checks that integer-spelled boolean array elements have
-// COM: correctly sized i1 APInt payloads before checked bytecode serialization.
+// COM: This round trip checks that normalized array integer payloads have the
+// COM: storage widths required by their types before checked bytecode serialization.
 
 module attributes {llzk.lang} {
   global.def const @bits : !array.type<2,2 x i1> = [0, 1, 1, 0]
+  global.def const @indices : !array.type<2 x index> = [1 : i8, 2 : i8]
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    global.def const @bits : !array.type<2,2 x i1> = [false, true, true, false]
+// CHECK-NEXT:    global.def const @indices : !array.type<2 x index> = [1, 2]
 // CHECK-NEXT:  }

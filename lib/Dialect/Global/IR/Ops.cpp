@@ -270,7 +270,14 @@ static ParseResult normalizeParsedInitialValue(
     normalizedElements.reserve(arrayValue.size());
     for (Attribute element : arrayValue) {
       if (auto intValue = llvm::dyn_cast<IntegerAttr>(element)) {
-        normalizedElements.push_back(IntegerAttr::get(elementType, intValue.getValue()));
+        auto emitError = [&parser, initializerLoc] {
+          return InFlightDiagnosticWrapper(parser.emitError(initializerLoc));
+        };
+        FailureOr<IntegerAttr> normalized = forceIntType(intValue, emitError);
+        if (failed(normalized)) {
+          return failure();
+        }
+        normalizedElements.push_back(*normalized);
       } else {
         normalizedElements.push_back(element);
       }
