@@ -534,56 +534,24 @@ static MemberDefOp getRefinementVerificationCoordinator(ModuleOp root) {
   return coordinator;
 }
 
-/// Collect felt types in structural order. Corresponding entries in two
-/// unifiable types identify the same member storage position.
-static void collectFeltTypes(Type type, SmallVectorImpl<FeltType> &feltTypes) {
-  if (auto feltType = llvm::dyn_cast<FeltType>(type)) {
-    feltTypes.push_back(feltType);
-  } else if (auto arrayType = llvm::dyn_cast<ArrayType>(type)) {
-    collectFeltTypes(arrayType.getElementType(), feltTypes);
-  } else if (auto podType = llvm::dyn_cast<PodType>(type)) {
-    for (auto record : podType.getRecords()) {
-      collectFeltTypes(record.getType(), feltTypes);
-    }
-  } else if (auto structType = llvm::dyn_cast<StructType>(type)) {
-    if (auto params = structType.getParams()) {
-      for (Attribute param : params) {
-        if (auto typeAttr = llvm::dyn_cast<TypeAttr>(param)) {
-          collectFeltTypes(typeAttr.getValue(), feltTypes);
-        }
-      }
-    }
-  }
-}
-
 /// Verify that each mutable member storage position is refined to at most one field.
 ///
 /// An unspecified felt in a member declaration may be refined by a read or write, but that
 /// refinement belongs to the storage location rather than to an individual reference.
 static LogicalResult verifyMemberFeltRefinements(ModuleOp root, SymbolTableCollection &tables) {
-  DenseMap<Operation *, SmallVector<std::optional<FeltType>>> refinedTypes;
-  root.walk([&refinedTypes](MemberDefOp member) {
-    SmallVector<FeltType> feltTypes;
-    collectFeltTypes(member.getType(), feltTypes);
-    if (!feltTypes.empty()) {
-      refinedTypes.try_emplace(member.getOperation(), feltTypes.size());
-    }
-  });
-  if (refinedTypes.empty()) {
-    return success();
-  }
-
-  auto res = root.walk([&refinedTypes, &tables](MemberRefOpInterface refOp) -> WalkResult {
+  SmallVector<FeltRefinement> refinements;
+  root.walk([&refinements, &tables](MemberRefOpInterface refOp) {
     // Reference verification owns lookup failures, so do not add a second diagnostic here.
     auto member = refOp.getMemberDefOp(tables);
     if (failed(member)) {
       return WalkResult::advance();
     }
-    auto refined = refinedTypes.find(member->get().getOperation());
-    if (refined == refinedTypes.end()) {
+    Type memberType = member->get().getType();
+    SmallVector<FeltType> memberFeltTypes;
+    collectFeltTypes(memberType, memberFeltTypes);
+    if (memberFeltTypes.empty()) {
       return WalkResult::advance();
     }
-    Type memberType = member->get().getType();
     if (!typesUnify(refOp.getVal().getType(), memberType, member->getNamespace())) {
       return WalkResult::advance();
     }
@@ -611,32 +579,14 @@ static LogicalResult verifyMemberFeltRefinements(ModuleOp root, SymbolTableColle
       if (!typesUnify(refinementType, memberType, member->getNamespace())) {
         continue;
       }
-      SmallVector<FeltType> refFeltTypes;
-      collectFeltTypes(refinementType, refFeltTypes);
-      for (auto [index, refType] : llvm::enumerate(refFeltTypes)) {
-        if (!refType.hasField()) {
-          continue;
-        }
-        auto &refinedType = refined->second[index];
-        if (refinedType && *refinedType != refType) {
-          auto diagnostic = origin->emitOpError()
-                            << "has field '" << refType.getFieldName().getValue();
-          if (!llvm::isa<FeltType>(memberType)) {
-            diagnostic << "' at nested type position " << index;
-          } else {
-            diagnostic << '\'';
-          }
-          diagnostic << " conflicting with prior field refinement '"
-                     << refinedType->getFieldName().getValue() << "' of mutable struct member '"
-                     << member->get().getSymName() << '\'';
-          return WalkResult(std::move(diagnostic));
-        }
-        refinedType = refType;
-      }
+      refinements.push_back(
+          {member->get().getOperation(), memberType, origin, refinementType, "struct member",
+           member->get().getSymName()}
+      );
     }
     return WalkResult::advance();
   });
-  return failure(res.wasInterrupted());
+  return verifyFeltRefinements(refinements);
 }
 
 } // namespace

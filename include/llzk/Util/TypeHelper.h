@@ -17,7 +17,10 @@
 
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
+
+#include <optional>
 
 namespace llzk {
 
@@ -31,6 +34,9 @@ class ArrayType;
 namespace pod {
 class PodType;
 } // namespace pod
+namespace felt {
+class FeltType;
+} // namespace felt
 
 /// Note: If any symbol refs in an input Type/Attribute use any of the special characters that this
 /// class generates, they are not escaped. That means these string representations are not safe to
@@ -296,6 +302,25 @@ bool typesUnifyWithoutLosingFeltFields(
 bool typesHaveConflictingFeltFields(
     mlir::Type lhs, mlir::Type rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}
 );
+
+/// Collect felt types in structural order, including felt types nested in aggregate types and
+/// struct type parameters. Corresponding entries in unifiable types identify the same position.
+void collectFeltTypes(mlir::Type type, llvm::SmallVectorImpl<felt::FeltType> &feltTypes);
+
+/// A field refinement selected for a mutable storage location.
+struct FeltRefinement {
+  mlir::Operation *storage;
+  mlir::Type storageType;
+  mlir::Operation *origin;
+  mlir::Type refinementType;
+  llvm::StringRef storageKind;
+  llvm::StringRef storageName;
+};
+
+/// Verify that each felt position of every mutable storage location is refined to one field.
+///
+/// Callers must provide only refinements that unify with their corresponding storage type.
+mlir::LogicalResult verifyFeltRefinements(mlir::ArrayRef<FeltRefinement> refinements);
 
 /// Return `true` iff the two lists of Type instances are equivalent or could be equivalent after
 /// full instantiation of template parameters (if applicable within the given types).

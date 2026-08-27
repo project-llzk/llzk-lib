@@ -31,6 +31,7 @@
 
 #include <cstdint>
 #include <numeric>
+#include <optional>
 
 #define DEBUG_TYPE "llzk-type-helpers"
 
@@ -1105,6 +1106,62 @@ bool typesUnifyWithoutLosingFeltFields(
 
 bool typesHaveConflictingFeltFields(Type lhs, Type rhs, ArrayRef<StringRef> rhsReversePrefix) {
   return FeltFieldConflictDetector(rhsReversePrefix).typesHaveConflictingFeltFields(lhs, rhs);
+}
+
+void collectFeltTypes(Type type, SmallVectorImpl<FeltType> &feltTypes) {
+  if (auto feltType = llvm::dyn_cast<FeltType>(type)) {
+    feltTypes.push_back(feltType);
+  } else if (auto arrayType = llvm::dyn_cast<ArrayType>(type)) {
+    collectFeltTypes(arrayType.getElementType(), feltTypes);
+  } else if (auto podType = llvm::dyn_cast<PodType>(type)) {
+    for (auto record : podType.getRecords()) {
+      collectFeltTypes(record.getType(), feltTypes);
+    }
+  } else if (auto structType = llvm::dyn_cast<StructType>(type)) {
+    if (auto params = structType.getParams()) {
+      for (Attribute param : params) {
+        if (auto typeAttr = llvm::dyn_cast<TypeAttr>(param)) {
+          collectFeltTypes(typeAttr.getValue(), feltTypes);
+        }
+      }
+    }
+  }
+}
+
+LogicalResult verifyFeltRefinements(ArrayRef<FeltRefinement> refinements) {
+  DenseMap<Operation *, SmallVector<std::optional<FeltType>>> refinedTypes;
+  for (const FeltRefinement &refinement : refinements) {
+    auto [it, inserted] = refinedTypes.try_emplace(refinement.storage);
+    if (inserted) {
+      SmallVector<FeltType> storageFeltTypes;
+      collectFeltTypes(refinement.storageType, storageFeltTypes);
+      it->second.resize(storageFeltTypes.size());
+    }
+
+    SmallVector<FeltType> refinementFeltTypes;
+    collectFeltTypes(refinement.refinementType, refinementFeltTypes);
+    for (auto [index, refType] : llvm::enumerate(refinementFeltTypes)) {
+      if (!refType.hasField()) {
+        continue;
+      }
+      auto &refinedType = it->second[index];
+      if (refinedType && *refinedType != refType) {
+        auto diagnostic = refinement.origin->emitOpError()
+                          << "has field '" << refType.getFieldName().getValue();
+        if (llvm::isa<FeltType>(refinement.storageType)) {
+          diagnostic << '\'';
+        } else {
+          diagnostic << "' at nested type position " << index;
+        }
+        diagnostic << " conflicting with prior field refinement '"
+                   << refinedType->getFieldName().getValue() << "' of mutable "
+                   << refinement.storageKind << " '" << refinement.storageName << '\'';
+        return failure();
+      }
+      refinedType = refType;
+    }
+  }
+  return success();
 }
 
 bool isMoreConcreteUnification(

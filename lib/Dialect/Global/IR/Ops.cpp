@@ -57,29 +57,6 @@ void printInitialValue(AsmPrinter &printer, Attribute value, bool isArrayElement
   }
 }
 
-/// Collect felt types in structural order, including felt types nested in aggregate types and
-/// struct type parameters. Corresponding entries in two unifiable types identify the same
-/// storage position.
-void collectFeltTypes(Type type, SmallVectorImpl<FeltType> &feltTypes) {
-  if (auto feltType = llvm::dyn_cast<FeltType>(type)) {
-    feltTypes.push_back(feltType);
-  } else if (auto arrayType = llvm::dyn_cast<array::ArrayType>(type)) {
-    collectFeltTypes(arrayType.getElementType(), feltTypes);
-  } else if (auto podType = llvm::dyn_cast<pod::PodType>(type)) {
-    for (auto record : podType.getRecords()) {
-      collectFeltTypes(record.getType(), feltTypes);
-    }
-  } else if (auto structType = llvm::dyn_cast<component::StructType>(type)) {
-    if (auto params = structType.getParams()) {
-      for (Attribute param : params) {
-        if (auto typeAttr = llvm::dyn_cast<TypeAttr>(param)) {
-          collectFeltTypes(typeAttr.getValue(), feltTypes);
-        }
-      }
-    }
-  }
-}
-
 /// Returns one global definition that coordinates refinement verification for the root.
 ///
 /// Symbol-use verification invokes every global definition independently. Selecting a
@@ -108,22 +85,8 @@ GlobalDefOp getRefinementVerificationCoordinator(ModuleOp root) {
 /// field expectations of their direct call consumers. Each reference is resolved at most once,
 /// independent of the number of mutable globals.
 LogicalResult verifyGlobalFeltRefinements(ModuleOp root, SymbolTableCollection &tables) {
-  DenseMap<Operation *, SmallVector<std::optional<FeltType>>> refinedTypes;
-  root.walk([&refinedTypes](GlobalDefOp global) {
-    if (global.isConstant()) {
-      return;
-    }
-    SmallVector<FeltType> feltTypes;
-    collectFeltTypes(global.getType(), feltTypes);
-    if (!feltTypes.empty()) {
-      refinedTypes.try_emplace(global.getOperation(), feltTypes.size());
-    }
-  });
-  if (refinedTypes.empty()) {
-    return success();
-  }
-
-  auto res = root.walk([&refinedTypes, &tables](GlobalRefOpInterface refOp) -> WalkResult {
+  SmallVector<FeltRefinement> refinements;
+  root.walk([&refinements, &tables](GlobalRefOpInterface refOp) {
     // This scan is auxiliary to each reference's own verifier, which reports
     // lookup failures. Avoid emitting duplicate diagnostics for unresolved
     // references while collecting refinements.
@@ -133,11 +96,15 @@ LogicalResult verifyGlobalFeltRefinements(ModuleOp root, SymbolTableCollection &
     if (failed(target)) {
       return WalkResult::advance();
     }
-    auto refined = refinedTypes.find(target->get());
-    if (refined == refinedTypes.end()) {
+    GlobalDefOp global = target->get();
+    if (global.isConstant()) {
       return WalkResult::advance();
     }
-    GlobalDefOp global = target->get();
+    SmallVector<FeltType> globalFeltTypes;
+    collectFeltTypes(global.getType(), globalFeltTypes);
+    if (globalFeltTypes.empty()) {
+      return WalkResult::advance();
+    }
     // Only unifiable reference types have felt positions corresponding to
     // this global. A non-unifying reference is diagnosed by its own symbol
     // verifier, so it must not participate in refinement collection.
@@ -171,32 +138,14 @@ LogicalResult verifyGlobalFeltRefinements(ModuleOp root, SymbolTableCollection &
       if (!typesUnify(refinementType, global.getType(), target->getIncludeSymNames())) {
         continue;
       }
-      SmallVector<FeltType> refFeltTypes;
-      collectFeltTypes(refinementType, refFeltTypes);
-      for (auto [index, refType] : llvm::enumerate(refFeltTypes)) {
-        if (!refType.hasField()) {
-          continue;
-        }
-        auto &refinedType = refined->second[index];
-        if (refinedType && *refinedType != refType) {
-          auto diagnostic = origin->emitOpError()
-                            << "has field '" << refType.getFieldName().getValue();
-          if (!llvm::isa<FeltType>(global.getType())) {
-            diagnostic << "' at nested type position " << index;
-          } else {
-            diagnostic << '\'';
-          }
-          diagnostic << " conflicting with prior field refinement '"
-                     << refinedType->getFieldName().getValue() << "' of mutable global '"
-                     << global.getSymName() << '\'';
-          return WalkResult(std::move(diagnostic));
-        }
-        refinedType = refType;
-      }
+      refinements.push_back(
+          {global.getOperation(), global.getType(), origin, refinementType, "global",
+           global.getSymName()}
+      );
     }
     return WalkResult::advance();
   });
-  return failure(res.wasInterrupted());
+  return verifyFeltRefinements(refinements);
 }
 
 } // namespace
