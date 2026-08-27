@@ -608,6 +608,7 @@ struct UnifierImpl {
   AffineInstantiations *affineToIntTracker;
   bool *feltFieldBecameUnspecified;
   Side feltFieldThisSideMustStayConcrete;
+  StringAttr *commonFeltField;
   // This optional function can be used to provide an exception to the standard unification
   // rules and return a true/success result when it otherwise may not.
   llvm::function_ref<bool(Type oldTy, Type newTy)> overrideSuccess;
@@ -615,7 +616,7 @@ struct UnifierImpl {
   UnifierImpl(UnificationMap *unificationMap, ArrayRef<StringRef> rhsReversePrefix = {})
       : rhsRevPrefix(rhsReversePrefix), unifications(unificationMap), affineToIntTracker(nullptr),
         feltFieldBecameUnspecified(nullptr), feltFieldThisSideMustStayConcrete(Side::LHS),
-        overrideSuccess(nullptr) {}
+        commonFeltField(nullptr), overrideSuccess(nullptr) {}
 
   UnifierImpl &trackAffineToInt(AffineInstantiations *tracker) {
     this->affineToIntTracker = tracker;
@@ -627,6 +628,12 @@ struct UnifierImpl {
     assert((preservedFieldSide == Side::LHS || preservedFieldSide == Side::RHS) && "invalid side");
     this->feltFieldBecameUnspecified = tracker;
     this->feltFieldThisSideMustStayConcrete = preservedFieldSide;
+    return *this;
+  }
+
+  /// Require all concrete fields matched against unspecified RHS felt types to agree.
+  UnifierImpl &trackCommonFeltField(StringAttr *tracker) {
+    this->commonFeltField = tracker;
     return *this;
   }
 
@@ -728,6 +735,32 @@ struct UnifierImpl {
   }
 
   bool typesUnify(Type lhs, Type rhs) {
+    if (auto lhsFelt = llvm::dyn_cast<FeltType>(lhs)) {
+      if (auto rhsFelt = llvm::dyn_cast<FeltType>(rhs)) {
+        // For call signatures, every unspecified felt in the callee (RHS) receives the same
+        // inferred field. Keep explicitly specified RHS fields independent to allow a function
+        // to declare a deliberate conversion between two fields.
+        if (commonFeltField && lhsFelt.hasField() && !rhsFelt.hasField()) {
+          StringAttr field = lhsFelt.getFieldName();
+          if (*commonFeltField && *commonFeltField != field) {
+            return false;
+          }
+          *commonFeltField = field;
+        }
+        if (lhs == rhs) {
+          return true;
+        }
+        // An unspecified field can be unified with a specified one, but two
+        // distinct specified fields cannot be unified.
+        bool fieldBecameUnspecified = feltFieldThisSideMustStayConcrete == Side::LHS
+                                          ? lhsFelt.hasField() && !rhsFelt.hasField()
+                                          : rhsFelt.hasField() && !lhsFelt.hasField();
+        if (fieldBecameUnspecified && feltFieldBecameUnspecified) {
+          *feltFieldBecameUnspecified = true;
+        }
+        return !lhsFelt.hasField() || !rhsFelt.hasField();
+      }
+    }
     if (lhs == rhs) {
       return true;
     }
@@ -742,19 +775,6 @@ struct UnifierImpl {
     if (TypeVarType rhsTvar = llvm::dyn_cast<TypeVarType>(rhs)) {
       track(Side::RHS, rhsTvar.getNameRef(), lhs);
       return true;
-    }
-    if (auto lhsFelt = llvm::dyn_cast<FeltType>(lhs)) {
-      if (auto rhsFelt = llvm::dyn_cast<FeltType>(rhs)) {
-        // An unspecified field can be unified with a specified one, but two
-        // distinct specified fields cannot be unified.
-        bool fieldBecameUnspecified = feltFieldThisSideMustStayConcrete == Side::LHS
-                                          ? lhsFelt.hasField() && !rhsFelt.hasField()
-                                          : rhsFelt.hasField() && !lhsFelt.hasField();
-        if (fieldBecameUnspecified && feltFieldBecameUnspecified) {
-          *feltFieldBecameUnspecified = true;
-        }
-        return !lhsFelt.hasField() || !rhsFelt.hasField();
-      }
     }
     if (llvm::isa<StructType>(lhs) && llvm::isa<StructType>(rhs)) {
       return structTypesUnify(llvm::cast<StructType>(lhs), llvm::cast<StructType>(rhs));
@@ -944,6 +964,16 @@ bool functionTypesUnify(
     UnificationMap *unifications
 ) {
   return UnifierImpl(unifications, rhsReversePrefix).functionTypesUnify(lhs, rhs);
+}
+
+bool functionTypesUnifyWithCommonFeltField(
+    FunctionType lhs, FunctionType rhs, ArrayRef<StringRef> rhsReversePrefix,
+    UnificationMap *unifications
+) {
+  StringAttr commonFeltField;
+  return UnifierImpl(unifications, rhsReversePrefix)
+      .trackCommonFeltField(&commonFeltField)
+      .functionTypesUnify(lhs, rhs);
 }
 
 bool typesUnify(

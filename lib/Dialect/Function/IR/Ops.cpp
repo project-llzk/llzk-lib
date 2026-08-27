@@ -743,10 +743,15 @@ struct CallOpVerifier {
     if (failed(verifyTargetAttributes())) {
       aggregateResult = failure();
     }
-    if (failed(verifyInputs())) {
+    bool inputsMatch = succeeded(verifyInputs());
+    if (!inputsMatch) {
       aggregateResult = failure();
     }
-    if (failed(verifyOutputs())) {
+    bool outputsMatch = succeeded(verifyOutputs());
+    if (!outputsMatch) {
+      aggregateResult = failure();
+    }
+    if (inputsMatch && outputsMatch && failed(verifySignature())) {
       aggregateResult = failure();
     }
     if (failed(verifyTemplateParams())) {
@@ -767,6 +772,7 @@ protected:
   virtual LogicalResult verifyOutputs() = 0;
   virtual LogicalResult verifyTemplateParams() = 0;
   virtual LogicalResult verifyAffineMapParams() = 0;
+  virtual LogicalResult verifySignature() { return success(); }
 
   /// Ensure that if the target allows witness/constraint ops, the caller does as well.
   LogicalResult verifyTargetAttributesMatch(FuncDefOp target) {
@@ -837,6 +843,16 @@ struct KnownTargetVerifier : public CallOpVerifier {
     return verifyTypesMatch(
         callOp->getResultTypes(), tgtType.getResults(), "result",
         /*preserveCalleeFeltFields=*/true
+    );
+  }
+
+  LogicalResult verifySignature() override {
+    auto sig = callOp->getTypeSignature();
+    if (functionTypesUnifyWithCommonFeltField(sig, tgtType, includeSymNames)) {
+      return success();
+    }
+    return callOp->emitOpError(
+        "callee's unspecified felt fields infer conflicting fields across the call signature"
     );
   }
 
