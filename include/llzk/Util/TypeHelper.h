@@ -286,6 +286,15 @@ bool typesUnifyWithoutLosingFeltFields(
     UnificationMap *unifications = nullptr, Side preservedFieldSide = Side::LHS
 );
 
+/// Return `true` iff corresponding felt types in `lhs` and `rhs` select distinct concrete fields.
+///
+/// Types which do not otherwise unify may still return `false` when their mismatch does not
+/// involve felt field selection.
+bool typesHaveConflictingFeltFields(
+    mlir::Type lhs, mlir::Type rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},
+    UnificationMap *unifications = nullptr
+);
+
 /// Return `true` iff the two lists of Type instances are equivalent or could be equivalent after
 /// full instantiation of template parameters (if applicable within the given types).
 template <typename Iter1, typename Iter2>

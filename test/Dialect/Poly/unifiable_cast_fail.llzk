@@ -328,3 +328,28 @@ module attributes {llzk.lang} {
     function.return
   }
 }
+
+// -----
+
+// Sibling cast uses must agree on the field selected for their shared SSA value.
+module attributes {llzk.lang} {
+  function.def @unspecified_felt_cannot_be_refined_to_two_fields(%input: !felt.type) {
+    // expected-error@+1 {{'poly.unifiable_cast' op result type '!felt.type<"bn128">' conflicts with another unifiable cast refinement of the same input value}}
+    %bn128 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %babybear = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"babybear">
+    function.return
+  }
+}
+
+// -----
+
+// Cast chains must retain sibling refinements made through an intermediate generic cast.
+module attributes {llzk.lang} {
+  function.def @cast_chain_cannot_hide_conflicting_sibling_refinements(%input: !felt.type) {
+    %forwarded = poly.unifiable_cast %input : (!felt.type) -> !felt.type
+    // expected-error@+1 {{'poly.unifiable_cast' op result type '!felt.type<"bn128">' conflicts with another unifiable cast refinement of the same input value}}
+    %bn128 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %babybear = poly.unifiable_cast %forwarded : (!felt.type) -> !felt.type<"babybear">
+    function.return
+  }
+}

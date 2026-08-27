@@ -608,6 +608,7 @@ struct UnifierImpl {
   AffineInstantiations *affineToIntTracker;
   bool *feltFieldBecameUnspecified;
   Side feltFieldThisSideMustStayConcrete;
+  bool *feltFieldsConflict;
   StringAttr *commonFeltField;
   // This optional function can be used to provide an exception to the standard unification
   // rules and return a true/success result when it otherwise may not.
@@ -616,7 +617,7 @@ struct UnifierImpl {
   UnifierImpl(UnificationMap *unificationMap, ArrayRef<StringRef> rhsReversePrefix = {})
       : rhsRevPrefix(rhsReversePrefix), unifications(unificationMap), affineToIntTracker(nullptr),
         feltFieldBecameUnspecified(nullptr), feltFieldThisSideMustStayConcrete(Side::LHS),
-        commonFeltField(nullptr), overrideSuccess(nullptr) {}
+        feltFieldsConflict(nullptr), commonFeltField(nullptr), overrideSuccess(nullptr) {}
 
   UnifierImpl &trackAffineToInt(AffineInstantiations *tracker) {
     this->affineToIntTracker = tracker;
@@ -628,6 +629,12 @@ struct UnifierImpl {
     assert((preservedFieldSide == Side::LHS || preservedFieldSide == Side::RHS) && "invalid side");
     this->feltFieldBecameUnspecified = tracker;
     this->feltFieldThisSideMustStayConcrete = preservedFieldSide;
+    return *this;
+  }
+
+  /// Record whether two corresponding felt types select distinct concrete fields.
+  UnifierImpl &trackFeltFieldConflicts(bool *tracker) {
+    this->feltFieldsConflict = tracker;
     return *this;
   }
 
@@ -749,6 +756,9 @@ struct UnifierImpl {
         }
         if (lhs == rhs) {
           return true;
+        }
+        if (feltFieldsConflict && lhsFelt.hasField() && rhsFelt.hasField()) {
+          *feltFieldsConflict = true;
         }
         // An unspecified field can be unified with a specified one, but two
         // distinct specified fields cannot be unified.
@@ -991,6 +1001,16 @@ bool typesUnifyWithoutLosingFeltFields(
              .trackFeltFieldConcreteness(&feltFieldBecameUnspecified, preservedFieldSide)
              .typesUnify(lhs, rhs) &&
          !feltFieldBecameUnspecified;
+}
+
+bool typesHaveConflictingFeltFields(
+    Type lhs, Type rhs, ArrayRef<StringRef> rhsReversePrefix, UnificationMap *unifications
+) {
+  bool feltFieldsConflict = false;
+  UnifierImpl(unifications, rhsReversePrefix)
+      .trackFeltFieldConflicts(&feltFieldsConflict)
+      .typesUnify(lhs, rhs);
+  return feltFieldsConflict;
 }
 
 bool isMoreConcreteUnification(

@@ -18,6 +18,8 @@
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolTableLLZK.h"
 
+#include <llvm/ADT/DenseSet.h>
+
 // Include TableGen'd declarations
 #include "llzk/Dialect/Polymorphic/IR/OpInterfaces.cpp.inc"
 
@@ -267,6 +269,32 @@ OpFoldResult ApplyMapOp::fold(FoldAdaptor adaptor) {
 // UnifiableCastOp
 //===------------------------------------------------------------------===//
 
+/// Collect the result types of every unifiable-cast refinement reachable from `value`.
+///
+/// A unifiable cast preserves its runtime value, so cast chains are transparent for the purpose
+/// of checking that separate uses do not make incompatible refinements.
+static void collectReachableCastResultTypes(
+    Value value, SmallVectorImpl<Type> &resultTypes, DenseSet<Value> &visited
+) {
+  if (!visited.insert(value).second) {
+    return;
+  }
+  for (OpOperand &use : value.getUses()) {
+    if (auto castOp = dyn_cast<UnifiableCastOp>(use.getOwner())) {
+      resultTypes.push_back(castOp.getResult().getType());
+      collectReachableCastResultTypes(castOp.getResult(), resultTypes, visited);
+    }
+  }
+}
+
+/// Return the first value in the unifiable-cast chain producing `value`.
+static Value getUnifiableCastRoot(Value value) {
+  while (auto castOp = value.getDefiningOp<UnifiableCastOp>()) {
+    value = castOp.getInput();
+  }
+  return value;
+}
+
 LogicalResult UnifiableCastOp::verify() {
   if (!typesUnify(getInput().getType(), getResult().getType())) {
     return emitOpError() << "input type " << getInput().getType() << " and output type "
@@ -277,6 +305,20 @@ LogicalResult UnifiableCastOp::verify() {
   if (!typesUnifyWithoutLosingFeltFields(getInput().getType(), getResult().getType())) {
     return emitOpError() << "input type " << getInput().getType() << " and output type "
                          << getResult().getType() << " would discard a specified felt field";
+  }
+
+  // All casts reachable through an input preserve the same runtime value. Their result types
+  // must not select conflicting felt fields, otherwise an unspecified felt could be interpreted
+  // under two distinct fields via sibling casts.
+  SmallVector<Type> refinementTypes;
+  DenseSet<Value> visited;
+  collectReachableCastResultTypes(getUnifiableCastRoot(getInput()), refinementTypes, visited);
+  for (Type refinementType : refinementTypes) {
+    if (typesHaveConflictingFeltFields(getResult().getType(), refinementType)) {
+      return emitOpError() << "result type " << getResult().getType()
+                           << " conflicts with another unifiable cast refinement of the same "
+                              "input value";
+    }
   }
 
   return success();

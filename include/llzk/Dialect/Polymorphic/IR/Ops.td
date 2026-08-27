@@ -265,7 +265,9 @@ def LLZK_UnifiableCastOp : PolymorphicDialectOp<"unifiable_cast", [Pure]> {
     that the input and output types of the cast are unifiable. It cannot discard
     a specified felt field, including one nested within an aggregate type. This
     prevents a subsequent cast from reinterpreting the same value under a
-    different field.
+    different field. All casts reachable from one SSA value must also have
+    compatible felt field refinements, preventing sibling casts from selecting
+    conflicting fields.
 
     Most ops that accept LLZK types accept unifiable types as input and thus there
     is no need for casting between types. This op is meant to be used in situations where
