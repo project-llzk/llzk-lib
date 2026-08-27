@@ -355,6 +355,40 @@ module attributes {llzk.lang} {
 }
 // -----
 
+// TEST: mutable globals retain refinements made by unqualified reads at call sites
+module attributes {llzk.lang} {
+  global.def @g : !felt.type
+  function.def private @use_bn128(!felt.type<"bn128">)
+  function.def private @use_babybear(!felt.type<"babybear">)
+  struct.def @ComponentReadRefinement {
+    function.def @compute() -> !struct.type<@ComponentReadRefinement> {
+      %read = global.read @g : !felt.type
+      // expected-error@+1 {{'function.call' op has field 'bn128' conflicting with prior field refinement 'babybear' of mutable global 'g'}}
+      function.call @use_bn128(%read) : (!felt.type) -> ()
+      function.call @use_babybear(%read) : (!felt.type) -> ()
+      %self = struct.new : !struct.type<@ComponentReadRefinement>
+      function.return %self : !struct.type<@ComponentReadRefinement>
+    }
+    function.def @constrain(%self: !struct.type<@ComponentReadRefinement>) { function.return }
+  }
+}
+// -----
+
+// TEST: references to a field-qualified mutable global cannot discard its field
+module attributes {llzk.lang} {
+  global.def @g : !felt.type<"bn128">
+  struct.def @ComponentReadField {
+    function.def @compute() -> !struct.type<@ComponentReadField> {
+      // expected-error@+1 {{'global.read' op has wrong type; expected '!felt.type<"bn128">', got '!felt.type'}}
+      %read = global.read @g : !felt.type
+      %self = struct.new : !struct.type<@ComponentReadField>
+      function.return %self : !struct.type<@ComponentReadField>
+    }
+    function.def @constrain(%self: !struct.type<@ComponentReadField>) { function.return }
+  }
+}
+// -----
+
 // TEST: mutable unspecified felt globals cannot be refined to conflicting fields
 module attributes {llzk.lang} {
   global.def @g : !felt.type
