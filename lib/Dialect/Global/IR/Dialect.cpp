@@ -58,6 +58,13 @@ FailureOr<Attribute> normalizeLegacyInitializer(Type &type, Attribute value) {
       return IntegerAttr::get(type, intValuePayload.trunc(1));
     }
     if (llvm::isa<IndexType>(type)) {
+      APInt v = intValue.getValue();
+      if (v.getBitWidth() < IndexType::kInternalStorageBitWidth && v.isNegative()) {
+        // IntegerAttr stores signless integer value, so a negative narrow literal and its
+        // unsigned bit-pattern cannot be distinguished here. Reject the latter case rather
+        // than zero-extending a negative value to a different index initializer.
+        return failure();
+      }
       return forceIntType(intValue, [&value]() {
         return InFlightDiagnosticWrapper::createSilent(value.getContext());
       });

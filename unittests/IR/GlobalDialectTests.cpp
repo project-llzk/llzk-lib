@@ -123,4 +123,12 @@ TEST_F(GlobalDialectBytecodeTests, UpgradesIndexArrayPayloadWidth) {
   EXPECT_TRUE(succeeded(writeBytecodeToFile(module, stream)));
 }
 
+TEST_F(GlobalDialectBytecodeTests, RejectsLegacyIndexArrayNegativeNarrowPayload) {
+  std::string bytecode = writeLegacyIndexArrayBytecode(ctx, 255);
+  Block block;
+  EXPECT_TRUE(failed(readBytecodeFile(
+      llvm::MemoryBufferRef(bytecode, "legacy-index-array-negative-i8"), &block, ParserConfig(&ctx)
+  )));
+}
+
 } // namespace

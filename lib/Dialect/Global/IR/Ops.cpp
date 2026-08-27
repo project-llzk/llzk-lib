@@ -253,6 +253,14 @@ static ParseResult normalizeParsedInitialValue(
         // accept boolean values. Preserve it for the verifier to reject.
         normalizedElements.push_back(element);
       } else if (auto intValue = llvm::dyn_cast<IntegerAttr>(element)) {
+        APInt v = intValue.getValue();
+        if (v.getBitWidth() < IndexType::kInternalStorageBitWidth && v.isNegative()) {
+          // IntegerAttr stores signless integer value, so a negative narrow literal and its
+          // unsigned bit-pattern cannot be distinguished here. Reject the latter case rather
+          // than zero-extending a negative value to a different index initializer.
+          return parser.emitError(initializerLoc)
+                 << "negative narrow integer initializer cannot be converted to `index`";
+        }
         auto emitError = [&parser, initializerLoc] {
           return InFlightDiagnosticWrapper(parser.emitError(initializerLoc));
         };

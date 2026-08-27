@@ -142,6 +142,12 @@ module attributes {llzk.lang} {
   global.def const @g : !array.type<1 x index> = [false]
 }
 // -----
+// TEST: index array initializers reject narrow negative values rather than changing their value.
+module attributes {llzk.lang} {
+  // expected-error@+1 {{negative narrow integer initializer cannot be converted to `index`}}
+  global.def const @g : !array.type<1 x index> = [-1 : i8]
+}
+// -----
 module attributes {llzk.lang} {
   // expected-error@+1 {{integer literal not valid for specified type}}
   global.def const @g : !string.type = 65723456
