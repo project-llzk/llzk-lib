@@ -18,7 +18,9 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // -----
+
 module attributes {llzk.lang} {
   poly.template @TTester {
     poly.param @S0
@@ -79,7 +81,6 @@ module attributes {llzk.lang} {
     }
   }
 }
-
 
 // -----
 
@@ -180,7 +181,6 @@ module attributes {llzk.lang} {
     }
   }
 }
-
 
 // -----
 
@@ -301,5 +301,30 @@ module attributes {llzk.lang} {
         function.return
       }
     }
+  }
+}
+
+// -----
+
+// A specified field cannot be erased and then reselected as another field by a cast chain.
+module attributes {llzk.lang} {
+  function.def @specified_felt_cannot_be_erased(%input: !felt.type<"bn128">) {
+    // expected-error@+1 {{'poly.unifiable_cast' op input type '!felt.type<"bn128">' and output type '!felt.type' would discard a specified felt field}}
+    %generic = poly.unifiable_cast %input : (!felt.type<"bn128">) -> !felt.type
+    %other_field = poly.unifiable_cast %generic : (!felt.type) -> !felt.type<"babybear">
+    function.return
+  }
+}
+
+// -----
+
+// Field preservation applies recursively to aggregate types as well.
+module attributes {llzk.lang} {
+  function.def @specified_nested_felt_cannot_be_erased(
+      %input: !array.type<2 x !felt.type<"bn128">>) {
+    // expected-error@+1 {{'poly.unifiable_cast' op input type '!array.type<2 x !felt.type<"bn128">>' and output type '!array.type<2 x !felt.type>' would discard a specified felt field}}
+    %generic = poly.unifiable_cast %input : (!array.type<2 x !felt.type<"bn128">>) ->
+        !array.type<2 x !felt.type>
+    function.return
   }
 }

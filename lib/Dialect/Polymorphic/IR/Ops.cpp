@@ -272,6 +272,12 @@ LogicalResult UnifiableCastOp::verify() {
     return emitOpError() << "input type " << getInput().getType() << " and output type "
                          << getResult().getType() << " are not unifiable";
   }
+  // A unifiable cast is a reinterpretation, not a field conversion. In particular, it must not
+  // erase a selected field and allow a subsequent cast to select a different field.
+  if (!typesUnifyWithoutLosingFeltFields(getInput().getType(), getResult().getType())) {
+    return emitOpError() << "input type " << getInput().getType() << " and output type "
+                         << getResult().getType() << " would discard a specified felt field";
+  }
 
   return success();
 }
