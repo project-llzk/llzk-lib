@@ -1,0 +1,40 @@
+// RUN: llzk-opt %s
+
+// Verify a wide connected cast graph without repeatedly walking it from every cast.
+module attributes {llzk.lang} {
+  function.def @many_matching_refinements(%input: !felt.type) {
+    %c0 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c1 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c2 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c3 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c4 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c5 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c6 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c7 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c8 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c9 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c10 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c11 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c12 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c13 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c14 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c15 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c16 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c17 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c18 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c19 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c20 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c21 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c22 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c23 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c24 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c25 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c26 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c27 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c28 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c29 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c30 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    %c31 = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    function.return
+  }
+}

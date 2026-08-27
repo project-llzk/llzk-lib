@@ -20,6 +20,7 @@
 #include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
@@ -449,6 +450,10 @@ verifyFuncTypeConstrain(FuncDefOp &origin, SymbolTableCollection &tables, Struct
 }
 
 } // namespace
+
+LogicalResult FuncDefOp::verifyRegions() {
+  return polymorphic::verifyUnifiableCastRefinements(getOperation());
+}
 
 LogicalResult FuncDefOp::verifySymbolUses(SymbolTableCollection &tables) {
   // Additional checks for the compute/constrain/product functions within a struct

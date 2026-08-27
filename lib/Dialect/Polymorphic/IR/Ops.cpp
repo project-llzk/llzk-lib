@@ -9,7 +9,9 @@
 
 #include "llzk/Dialect/Function/IR/Ops.h"
 
+#include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
@@ -18,7 +20,9 @@
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolTableLLZK.h"
 
-#include <llvm/ADT/DenseSet.h>
+#include <llvm/ADT/SmallString.h>
+#include <llvm/ADT/StringMap.h>
+#include <llvm/Support/raw_ostream.h>
 
 // Include TableGen'd declarations
 #include "llzk/Dialect/Polymorphic/IR/OpInterfaces.cpp.inc"
@@ -167,7 +171,7 @@ LogicalResult TemplateExprOp::verifyRegions() {
         "is not allowed within a `", TemplateExprOp::getOperationName(), "` initializer"
     );
   }
-  return success();
+  return verifyUnifiableCastRefinements(getOperation());
 }
 
 Type TemplateExprOp::getType() {
@@ -269,30 +273,116 @@ OpFoldResult ApplyMapOp::fold(FoldAdaptor adaptor) {
 // UnifiableCastOp
 //===------------------------------------------------------------------===//
 
-/// Collect the result types of every unifiable-cast refinement reachable from `value`.
-///
-/// A unifiable cast preserves its runtime value, so cast chains are transparent for the purpose
-/// of checking that separate uses do not make incompatible refinements.
-static void collectReachableCastResultTypes(
-    Value value, SmallVectorImpl<Type> &resultTypes, DenseSet<Value> &visited
+/// The first concrete felt-field selection observed at one corresponding type position in a
+/// unifiable-cast graph. Later selections at that position must name the same field; retaining
+/// the originating cast lets verification report the conflict at the first refinement.
+struct FeltFieldRefinement {
+  StringAttr field;
+  UnifiableCastOp cast;
+};
+
+/// Add concrete felt field selections in `type` to `refinements`, reporting the first cast that
+/// selected a different field at the same corresponding type position.
+static LogicalResult collectFeltFieldRefinements(
+    Type type, UnifiableCastOp cast, SmallVectorImpl<char> &path,
+    llvm::StringMap<FeltFieldRefinement> &refinements
 ) {
-  if (!visited.insert(value).second) {
-    return;
+  /// RAII struct to restore the shared type-position path after one recursive descent.
+  struct PathSuffix {
+    SmallVectorImpl<char> &path;
+    size_t originalSize = path.size();
+    ~PathSuffix() { path.resize(originalSize); }
+  };
+
+  if (auto felt = dyn_cast<felt::FeltType>(type)) {
+    if (!felt.hasField()) {
+      return success();
+    }
+    StringAttr field = felt.getFieldName();
+    auto [it, inserted] = refinements.try_emplace(
+        StringRef(path.data(), path.size()), FeltFieldRefinement {field, cast}
+    );
+    if (inserted || it->second.field == field) {
+      return success();
+    }
+    return it->second.cast.emitOpError()
+           << "result type " << it->second.cast.getResult().getType()
+           << " conflicts with another unifiable cast refinement of the same value";
   }
-  for (OpOperand &use : value.getUses()) {
-    if (auto castOp = dyn_cast<UnifiableCastOp>(use.getOwner())) {
-      resultTypes.push_back(castOp.getResult().getType());
-      collectReachableCastResultTypes(castOp.getResult(), resultTypes, visited);
+
+  if (auto array = dyn_cast<array::ArrayType>(type)) {
+    PathSuffix resetGuard(path);
+    llvm::raw_svector_ostream(path) << "array/";
+    return collectFeltFieldRefinements(array.getElementType(), cast, path, refinements);
+  }
+  if (auto structType = dyn_cast<component::StructType>(type)) {
+    for (auto [index, parameter] : llvm::enumerate(structType.getParams())) {
+      if (auto parameterType = dyn_cast<TypeAttr>(parameter)) {
+        PathSuffix resetGuard(path);
+        llvm::raw_svector_ostream(path)
+            << "struct/" << structType.getNameRef() << '/' << index << '/';
+        auto res = collectFeltFieldRefinements(parameterType.getValue(), cast, path, refinements);
+        if (failed(res)) {
+          return failure();
+        }
+      }
+    }
+  } else if (auto pod = dyn_cast<pod::PodType>(type)) {
+    for (auto record : pod.getRecords()) {
+      PathSuffix resetGuard(path);
+      llvm::raw_svector_ostream(path) << "pod/" << record.getName() << '/';
+      if (failed(collectFeltFieldRefinements(record.getType(), cast, path, refinements))) {
+        return failure();
+      }
+    }
+  } else if (auto function = dyn_cast<FunctionType>(type)) {
+    for (auto [index, input] : llvm::enumerate(function.getInputs())) {
+      PathSuffix resetGuard(path);
+      llvm::raw_svector_ostream(path) << "function/input/" << index << '/';
+      if (failed(collectFeltFieldRefinements(input, cast, path, refinements))) {
+        return failure();
+      }
+    }
+    for (auto [index, result] : llvm::enumerate(function.getResults())) {
+      PathSuffix resetGuard(path);
+      llvm::raw_svector_ostream(path) << "function/result/" << index << '/';
+      if (failed(collectFeltFieldRefinements(result, cast, path, refinements))) {
+        return failure();
+      }
     }
   }
+  return success();
 }
 
-/// Return the first value in the unifiable-cast chain producing `value`.
-static Value getUnifiableCastRoot(Value value) {
-  while (auto castOp = value.getDefiningOp<UnifiableCastOp>()) {
-    value = castOp.getInput();
+LogicalResult verifyUnifiableCastRefinements(Operation *op) {
+  DenseMap<Value, Value> roots;
+  DenseMap<Value, SmallVector<UnifiableCastOp>> castsByRoot;
+  op->walk<WalkOrder::PreOrder>([&](UnifiableCastOp cast) {
+    Value input = cast.getInput();
+    Value root = roots.lookup(input);
+    if (!root) {
+      root = input;
+    }
+    roots[cast.getResult()] = root;
+    castsByRoot[root].push_back(cast);
+  });
+
+  for (auto &[root, casts] : castsByRoot) {
+    llvm::StringMap<FeltFieldRefinement> refinements;
+    for (UnifiableCastOp cast : casts) {
+      if (!typesUnifyWithoutLosingFeltFields(root.getType(), cast.getResult().getType())) {
+        return cast.emitOpError() << "input type " << root.getType() << " and output type "
+                                  << cast.getResult().getType()
+                                  << " would discard a specified felt field";
+      }
+      llvm::SmallString<64> path;
+      auto res = collectFeltFieldRefinements(cast.getResult().getType(), cast, path, refinements);
+      if (failed(res)) {
+        return failure();
+      }
+    }
   }
-  return value;
+  return success();
 }
 
 LogicalResult UnifiableCastOp::verify() {
@@ -307,29 +397,6 @@ LogicalResult UnifiableCastOp::verify() {
   if (!typesUnifyWithoutLosingFeltFields(inputType, resultType)) {
     return emitOpError() << "input type " << inputType << " and output type " << resultType
                          << " would discard a specified felt field";
-  }
-
-  // A type variable in an earlier cast may stand for a type containing a selected felt field.
-  // Keep that field refinement from the cast-chain root when checking this result, so that
-  // `felt<"bn128"> -> tvar -> felt<"babybear">` cannot reinterpret one runtime value under
-  // two moduli.
-  Type rootType = getUnifiableCastRoot(getInput()).getType();
-  if (!typesUnifyWithoutLosingFeltFields(rootType, resultType)) {
-    return emitOpError() << "input type " << rootType << " and output type " << resultType
-                         << " would discard a specified felt field";
-  }
-
-  // All casts reachable through an input preserve the same runtime value. Their result types
-  // must not select conflicting felt fields, otherwise an unspecified felt could be interpreted
-  // under two distinct fields via sibling casts.
-  SmallVector<Type> refinementTypes;
-  DenseSet<Value> visited;
-  collectReachableCastResultTypes(getUnifiableCastRoot(getInput()), refinementTypes, visited);
-  for (Type refinementType : refinementTypes) {
-    if (typesHaveConflictingFeltFields(resultType, refinementType)) {
-      return emitOpError() << "result type " << resultType
-                           << " conflicts with another unifiable cast refinement of the same value";
-    }
   }
 
   return success();
