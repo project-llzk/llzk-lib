@@ -299,7 +299,11 @@ static ParseResult normalizeParsedInitialValue(
     SmallVector<Attribute> normalizedElements;
     normalizedElements.reserve(arrayValue.size());
     for (Attribute element : arrayValue) {
-      if (auto intValue = llvm::dyn_cast<IntegerAttr>(element)) {
+      if (llvm::isa<BoolAttr>(element)) {
+        // BoolAttr is an IntegerAttr subtype, but index initializers must not
+        // accept boolean values. Preserve it for the verifier to reject.
+        normalizedElements.push_back(element);
+      } else if (auto intValue = llvm::dyn_cast<IntegerAttr>(element)) {
         auto emitError = [&parser, initializerLoc] {
           return InFlightDiagnosticWrapper(parser.emitError(initializerLoc));
         };

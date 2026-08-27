@@ -136,6 +136,12 @@ module attributes {llzk.lang} {
   global.def const @g : index = "hello"
 }
 // -----
+// TEST: index array initializers reject booleans like scalar index initializers.
+module attributes {llzk.lang} {
+  // expected-error@+1 {{'global.def' op with type '!array.type<1 x index>' expected array element with type 'index' but found 'i1'}}
+  global.def const @g : !array.type<1 x index> = [false]
+}
+// -----
 module attributes {llzk.lang} {
   // expected-error@+1 {{integer literal not valid for specified type}}
   global.def const @g : !string.type = 65723456
