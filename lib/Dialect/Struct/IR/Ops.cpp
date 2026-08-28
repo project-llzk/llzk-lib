@@ -29,6 +29,7 @@
 #include <mlir/IR/IRMapping.h>
 #include <mlir/IR/OpImplementation.h>
 
+#include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/MapVector.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringRef.h>
@@ -559,19 +560,38 @@ static LogicalResult verifyMemberFeltRefinements(ModuleOp root, SymbolTableColle
     SmallVector<std::pair<Operation *, Type>> refinementTypes;
     refinementTypes.emplace_back(refOp.getOperation(), refOp.getVal().getType());
     if (auto readOp = llvm::dyn_cast<MemberReadOp>(refOp.getOperation())) {
-      for (OpOperand &use : readOp.getVal().getUses()) {
-        auto call = llvm::dyn_cast<CallOp>(use.getOwner());
-        unsigned argIndex = use.getOperandNumber();
-        if (!call || argIndex >= call.getArgOperands().size()) {
+      // A cast preserves the member value while exposing a more concrete type, so follow every
+      // reachable cast result. Calls constrain their operand to the callee input type. Other uses
+      // do not preserve the whole member value and therefore cannot refine it directly.
+      SmallVector<Value> worklist {readOp.getVal()};
+      llvm::DenseSet<Value> visited;
+      while (!worklist.empty()) {
+        Value value = worklist.pop_back_val();
+        if (!visited.insert(value).second) {
           continue;
         }
-        auto callee = call.getCalleeTarget(tables);
-        if (failed(callee)) {
-          continue;
+        for (OpOperand &use : value.getUses()) {
+          if (auto castOp = llvm::dyn_cast<UnifiableCastOp>(use.getOwner())) {
+            if (use.getOperandNumber() == 0) {
+              refinementTypes.emplace_back(castOp.getOperation(), castOp.getResult().getType());
+              worklist.push_back(castOp.getResult());
+            }
+            continue;
+          }
+
+          auto call = llvm::dyn_cast<CallOp>(use.getOwner());
+          unsigned argIndex = use.getOperandNumber();
+          if (!call || argIndex >= call.getArgOperands().size()) {
+            continue;
+          }
+          auto callee = call.getCalleeTarget(tables);
+          if (failed(callee)) {
+            continue;
+          }
+          refinementTypes.emplace_back(
+              call.getOperation(), callee->get().getFunctionType().getInput(argIndex)
+          );
         }
-        refinementTypes.emplace_back(
-            call.getOperation(), callee->get().getFunctionType().getInput(argIndex)
-        );
       }
     }
 

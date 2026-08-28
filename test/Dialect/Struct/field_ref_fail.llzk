@@ -214,3 +214,25 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@MemberFieldRefinement>) { function.return }
   }
 }
+
+// -----
+
+// Two independent reads of the same unspecified member must not select different fields through
+// otherwise disconnected unifiable-cast graphs.
+module attributes {llzk.lang} {
+  struct.def @MemberReadCastRefinement {
+    struct.member @value : !felt.type
+
+    function.def @compute() -> !struct.type<@MemberReadCastRefinement> {
+      %self = struct.new : !struct.type<@MemberReadCastRefinement>
+      %first_read = struct.readm %self[@value] : !struct.type<@MemberReadCastRefinement>, !felt.type
+      %bn128 = poly.unifiable_cast %first_read : (!felt.type) -> !felt.type<"bn128">
+      %second_read = struct.readm %self[@value] : !struct.type<@MemberReadCastRefinement>, !felt.type
+      // expected-error@+1 {{'poly.unifiable_cast' op has field 'babybear' conflicting with prior field refinement 'bn128' of mutable struct member 'value'}}
+      %babybear = poly.unifiable_cast %second_read : (!felt.type) -> !felt.type<"babybear">
+      function.return %self : !struct.type<@MemberReadCastRefinement>
+    }
+
+    function.def @constrain(%self: !struct.type<@MemberReadCastRefinement>) { function.return }
+  }
+}
