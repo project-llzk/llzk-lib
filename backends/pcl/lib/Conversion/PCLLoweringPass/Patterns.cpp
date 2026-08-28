@@ -28,10 +28,12 @@
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Dialect/Verif/IR/Ops.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/IRMapping.h>
+#include <mlir/Pass/Pass.h>
 #include <mlir/Support/LLVM.h>
 #include <mlir/Transforms/DialectConversion.h>
 
@@ -48,6 +50,7 @@ using namespace llzk::constrain;
 using namespace llzk::felt;
 using namespace llzk::function;
 using namespace llzk::component;
+using namespace llzk::verif;
 
 namespace {
 
@@ -210,6 +213,20 @@ struct ConvertArithSelectOp : public OpConversionPatternWithTemps<arith::SelectO
     auto conj = rewriter.create<pcl::AndOp>(location, if1, if2);
     rewriter.create<pcl::AssertOp>(location, conj);
 
+    return success();
+  }
+};
+
+//===----------------------------------------------------------------------===//
+// ConvertAssumeDetOp
+//===----------------------------------------------------------------------===//
+
+/// Converts `verif.det.assume` ops into `pcl.assume.deterministic` ops.
+struct ConvertAssumeDetOp : public OpConversionPattern<AssumeDetOp> {
+  using OpConversionPattern<AssumeDetOp>::OpConversionPattern;
+
+  LogicalResult matchAndRewrite(AssumeDetOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const final {
+    rewriter.replaceOpWithNewOp<pcl::AssumeDeterministicOp>(op, adaptor.getHint());
     return success();
   }
 };
@@ -401,6 +418,20 @@ public:
 };
 
 //===----------------------------------------------------------------------===//
+// ConvertEnsureConstrainOp
+//===----------------------------------------------------------------------===//
+
+/// Converts `verif.ensure_constrain` ops into `pcl.post_cond` ops.
+struct ConvertEnsureConstrainOp : public OpConversionPattern<EnsureConstrainOp> {
+  using OpConversionPattern<EnsureConstrainOp>::OpConversionPattern;
+
+  LogicalResult matchAndRewrite(EnsureConstrainOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const final {
+    rewriter.replaceOpWithNewOp<pcl::PostOp>(op, adaptor.getCondition());
+    return success();
+  }
+};
+
+//===----------------------------------------------------------------------===//
 // ConvertFreeFunction
 //===----------------------------------------------------------------------===//
 
@@ -532,6 +563,21 @@ struct ConvertNonDetOp : public OpConversionPatternWithTemps<NonDetOp> {
     rewriter.replaceOpWithNewOp<pcl::VarOp>(op, *name, /*public=*/false);
     return success();
   }
+};
+
+//===----------------------------------------------------------------------===//
+// ConvertProveDetOp
+//===----------------------------------------------------------------------===//
+
+/// Converts `verif.det.prove` ops into `pcl.det` ops.
+struct ConvertProveDetOp : public OpConversionPattern<ProveDetOp> {
+  using OpConversionPattern<ProveDetOp>::OpConversionPattern;
+
+  LogicalResult
+    matchAndRewrite(ProveDetOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const final {
+      rewriter.replaceOpWithNewOp<pcl::DetOp>(op, adaptor.getCondition());
+      return success();
+    }
 };
 
 //===----------------------------------------------------------------------===//
@@ -788,6 +834,7 @@ void pcl::lowering::BaseMode::populateStep1ConversionPatterns(
 ) {
   patterns.add<
       // clang-format off
+      ConvertAssumeDetOp,
       ConvertBinaryOp<AddFeltOp, pcl::AddOp>,
       ConvertBinaryOp<AndBoolOp, pcl::AndOp>,
       ConvertBinaryOp<MulFeltOp, pcl::MulOp>,
@@ -799,8 +846,10 @@ void pcl::lowering::BaseMode::populateStep1ConversionPatterns(
       ConvertConstantOp<arith::ConstantOp>,
       ConvertConstrainCall,
       ConvertEmitEqualityOp,
+      ConvertEnsureConstrainOp,
       ConvertFreeFunctionCall,
       ConvertFreeFunctionReturnOp,
+      ConvertProveDetOp,
       ConvertReturnOp,
       ConvertSelfMemberReadOpOfFelt,
       ConvertSelfMemberReadOpOfSubcmp,
