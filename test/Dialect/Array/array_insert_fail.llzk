@@ -62,3 +62,13 @@ function.def @dimensions_not_unify(%z: !array.type<5 x !felt.type>) {
   array.insert %r[%0] = %z : !array.type<44,2 x !felt.type>, !array.type<5 x !felt.type>
   function.return
 }
+
+// -----
+
+function.def @insert_specified_subarray_into_unspecified_array() {
+  %i = arith.constant 0 : index
+  %array = array.new : !array.type<2,2 x !felt.type>
+  %subarray = array.new : !array.type<2 x !felt.type<"bn128">>
+  // expected-error@+1 {{'array.insert' op has wrong rvalue type; expected '!array.type<2 x !felt.type>', got '!array.type<2 x !felt.type<"bn128">>'}}
+  array.insert %array[%i] = %subarray : !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type<"bn128">>
+}

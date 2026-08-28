@@ -425,9 +425,8 @@ module attributes {llzk.lang} {
   struct.def @Component10 {
     function.def @compute() -> !struct.type<@Component10> {
       %value = felt.const 1 : !felt.type<"bn128">
+      // expected-error@+1 {{'global.write' op has wrong type; expected '!felt.type', got '!felt.type<"bn128">'}}
       global.write @g = %value : !felt.type<"bn128">
-      // expected-error@+1 {{'global.read' op has field 'babybear' conflicting with prior field refinement 'bn128' of mutable global 'g'}}
-      %read = global.read @g : !felt.type<"babybear">
       %self = struct.new : !struct.type<@Component10>
       function.return %self : !struct.type<@Component10>
     }
@@ -443,9 +442,8 @@ module attributes {llzk.lang} {
   struct.def @Component10A {
     function.def @compute() -> !struct.type<@Component10A> {
       %value = felt.const 1 : !felt.type<"bn128">
+      // expected-error@+1 {{'global.write' op has wrong type; expected '!felt.type', got '!felt.type<"bn128">'}}
       global.write @refined = %value : !felt.type<"bn128">
-      // expected-error@+1 {{'global.read' op has field 'babybear' conflicting with prior field refinement 'bn128' of mutable global 'refined'}}
-      %read = global.read @refined : !felt.type<"babybear">
       %self = struct.new : !struct.type<@Component10A>
       function.return %self : !struct.type<@Component10A>
     }
@@ -460,9 +458,8 @@ module attributes {llzk.lang} {
   struct.def @Component11 {
     function.def @compute() -> !struct.type<@Component11> {
       %value = array.new : !array.type<2 x !felt.type<"bn128">>
+      // expected-error@+1 {{'global.write' op has wrong type; expected '!array.type<2 x !felt.type>', got '!array.type<2 x !felt.type<"bn128">>'}}
       global.write @g = %value : !array.type<2 x !felt.type<"bn128">>
-      // expected-error@+1 {{'global.read' op has field 'babybear' at nested type position 0 conflicting with prior field refinement 'bn128' of mutable global 'g'}}
-      %read = global.read @g : !array.type<2 x !felt.type<"babybear">>
       %self = struct.new : !struct.type<@Component11>
       function.return %self : !struct.type<@Component11>
     }

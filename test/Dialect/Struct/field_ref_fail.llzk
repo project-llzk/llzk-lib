@@ -196,22 +196,21 @@ module attributes {llzk.lang} {
 
 // -----
 
-// An unspecified member field is shared mutable storage, so its read and
-// write references cannot select incompatible fields.
+// A specified value cannot be written through an unspecified member
+// declaration, which would erase its selected field.
 module attributes {llzk.lang} {
-  struct.def @MemberFieldRefinement {
+  struct.def @SpecifiedValueWrite {
     struct.member @value : !felt.type
 
-    function.def @compute() -> !struct.type<@MemberFieldRefinement> {
-      %self = struct.new : !struct.type<@MemberFieldRefinement>
+    function.def @compute() -> !struct.type<@SpecifiedValueWrite> {
+      %self = struct.new : !struct.type<@SpecifiedValueWrite>
       %bn128 = felt.const 1 : !felt.type<"bn128">
-      struct.writem %self[@value] = %bn128 : !struct.type<@MemberFieldRefinement>, !felt.type<"bn128">
-      // expected-error@+1 {{'struct.readm' op has field 'babybear' conflicting with prior field refinement 'bn128' of mutable struct member 'value'}}
-      %babybear = struct.readm %self[@value] : !struct.type<@MemberFieldRefinement>, !felt.type<"babybear">
-      function.return %self : !struct.type<@MemberFieldRefinement>
+      // expected-error@+1 {{'struct.writem' op has wrong type; expected '!felt.type', got '!felt.type<"bn128">'}}
+      struct.writem %self[@value] = %bn128 : !struct.type<@SpecifiedValueWrite>, !felt.type<"bn128">
+      function.return %self : !struct.type<@SpecifiedValueWrite>
     }
 
-    function.def @constrain(%self: !struct.type<@MemberFieldRefinement>) { function.return }
+    function.def @constrain(%self: !struct.type<@SpecifiedValueWrite>) { function.return }
   }
 }
 
@@ -234,5 +233,24 @@ module attributes {llzk.lang} {
     }
 
     function.def @constrain(%self: !struct.type<@MemberReadCastRefinement>) { function.return }
+  }
+}
+
+// -----
+
+// A member read may refine an unspecified field, but it may not erase a field
+// selected by the member declaration.
+module attributes {llzk.lang} {
+  struct.def @SpecifiedMemberRead {
+    struct.member @value : !felt.type<"bn128">
+
+    function.def @compute() -> !struct.type<@SpecifiedMemberRead> {
+      %self = struct.new : !struct.type<@SpecifiedMemberRead>
+      // expected-error@+1 {{'struct.readm' op has wrong type; expected '!felt.type<"bn128">', got '!felt.type'}}
+      %value = struct.readm %self[@value] : !struct.type<@SpecifiedMemberRead>, !felt.type
+      function.return %self : !struct.type<@SpecifiedMemberRead>
+    }
+
+    function.def @constrain(%self: !struct.type<@SpecifiedMemberRead>) { function.return }
   }
 }

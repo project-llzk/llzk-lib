@@ -84,3 +84,13 @@ function.def @write_none_element_array(%shape: !array.type<? x none>, %i: index)
   // expected-error@+1 {{'array.write' op cannot access a scalar element from array with none element type}}
   array.write %shape[%i] = %x : !array.type<? x none>, none
 }
+
+// -----
+
+function.def @write_specified_value_to_unspecified_array() {
+  %i = arith.constant 0 : index
+  %array = array.new : !array.type<1 x !felt.type>
+  %value = felt.const 1 : !felt.type<"bn128">
+  // expected-error@+1 {{'array.write' op has wrong rvalue type; expected '!felt.type', got '!felt.type<"bn128">'}}
+  array.write %array[%i] = %value : !array.type<1 x !felt.type>, !felt.type<"bn128">
+}

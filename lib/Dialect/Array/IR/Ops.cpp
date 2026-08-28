@@ -373,7 +373,7 @@ LogicalResult ReadArrayOp::inferReturnTypes(
 }
 
 bool ReadArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
-  return singletonTypeListsUnify(l, r);
+  return l.size() == 1 && r.size() == 1 && typesUnifyWithoutLosingFeltFields(l.front(), r.front());
 }
 
 LogicalResult ReadArrayOp::verify() {
@@ -415,7 +415,14 @@ LogicalResult WriteArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
 }
 
 LogicalResult WriteArrayOp::verify() {
-  return verifyScalarArrayAccess(getArrRefType(), getIndices().size(), getEmitOpErrFn(this));
+  if (failed(verifyScalarArrayAccess(getArrRefType(), getIndices().size(), getEmitOpErrFn(this)))) {
+    return failure();
+  }
+  if (!typesUnifyWithoutLosingFeltFields(getRvalue().getType(), getArrRefType().getElementType())) {
+    return emitOpError() << "has wrong rvalue type; expected " << getArrRefType().getElementType()
+                         << ", got " << getRvalue().getType();
+  }
+  return success();
 }
 
 /// Required by PromotableMemOpInterface / mem2reg pass
@@ -478,7 +485,7 @@ LogicalResult ExtractArrayOp::inferReturnTypes(
 }
 
 bool ExtractArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
-  return singletonTypeListsUnify(l, r);
+  return l.size() == 1 && r.size() == 1 && typesUnifyWithoutLosingFeltFields(l.front(), r.front());
 }
 
 //===------------------------------------------------------------------===//
@@ -520,7 +527,17 @@ LogicalResult InsertArrayOp::verify() {
   // Having verified the indices are of appropriate size, we verify the subarray type.
   // This will verify the dimensions of the subarray, which is why we only check the
   // size of the indices above.
-  return verifySubArrayType(getEmitOpErrFn(this), baseArrRefArrType, rValueArrType);
+  if (failed(verifySubArrayType(getEmitOpErrFn(this), baseArrRefArrType, rValueArrType))) {
+    return failure();
+  }
+  if (!typesUnifyWithoutLosingFeltFields(
+          rValueArrType, baseArrRefArrType.getSelectionType(numIndices)
+      )) {
+    return emitOpError() << "has wrong rvalue type; expected "
+                         << baseArrRefArrType.getSelectionType(numIndices) << ", got "
+                         << rValueArrType;
+  }
+  return success();
 }
 
 //===------------------------------------------------------------------===//

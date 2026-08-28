@@ -82,12 +82,16 @@ GlobalDefOp getRefinementVerificationCoordinator(ModuleOp root) {
 /// Verify that every felt position of each mutable global is refined to one field.
 ///
 /// This performs one root walk to collect mutable globals with felt positions and one to process
-/// global references. In addition to fields written on the reference itself, reads collect field
-/// expectations from reachable unifiable casts and call consumers. Each reference is resolved at
+/// global references. Reads collect their own field plus field expectations from reachable
+/// unifiable casts and call consumers. Each reference is resolved at
 /// most once, independent of the number of mutable globals.
 LogicalResult verifyGlobalFeltRefinements(ModuleOp root, SymbolTableCollection &tables) {
   SmallVector<FeltRefinement> refinements;
   root.walk([&refinements, &tables](GlobalRefOpInterface refOp) {
+    auto readOp = llvm::dyn_cast<GlobalReadOp>(refOp.getOperation());
+    if (!readOp) {
+      return WalkResult::advance();
+    }
     // This scan is auxiliary to each reference's own verifier, which reports
     // lookup failures. Avoid emitting duplicate diagnostics for unresolved
     // references while collecting refinements.
@@ -114,41 +118,39 @@ LogicalResult verifyGlobalFeltRefinements(ModuleOp root, SymbolTableCollection &
     }
     SmallVector<std::pair<Operation *, Type>> refinementTypes;
     refinementTypes.emplace_back(refOp.getOperation(), refOp.getVal().getType());
-    if (auto readOp = llvm::dyn_cast<GlobalReadOp>(refOp.getOperation())) {
-      // A cast preserves the storage value while exposing a more concrete type, so follow every
-      // reachable cast result. Calls constrain their operand to the callee input type. Other uses
-      // do not preserve the whole storage value and therefore cannot refine this global directly.
-      SmallVector<Value> worklist {readOp.getVal()};
-      llvm::DenseSet<Value> visited;
-      while (!worklist.empty()) {
-        Value value = worklist.pop_back_val();
-        if (!visited.insert(value).second) {
+    // A cast preserves the storage value while exposing a more concrete type, so follow every
+    // reachable cast result. Calls constrain their operand to the callee input type. Other uses
+    // do not preserve the whole storage value and therefore cannot refine this global directly.
+    SmallVector<Value> worklist {readOp.getVal()};
+    llvm::DenseSet<Value> visited;
+    while (!worklist.empty()) {
+      Value value = worklist.pop_back_val();
+      if (!visited.insert(value).second) {
+        continue;
+      }
+      for (OpOperand &use : value.getUses()) {
+        if (auto castOp = llvm::dyn_cast<polymorphic::UnifiableCastOp>(use.getOwner())) {
+          if (use.getOperandNumber() == 0) {
+            refinementTypes.emplace_back(castOp.getOperation(), castOp.getResult().getType());
+            worklist.push_back(castOp.getResult());
+          }
           continue;
         }
-        for (OpOperand &use : value.getUses()) {
-          if (auto castOp = llvm::dyn_cast<polymorphic::UnifiableCastOp>(use.getOwner())) {
-            if (use.getOperandNumber() == 0) {
-              refinementTypes.emplace_back(castOp.getOperation(), castOp.getResult().getType());
-              worklist.push_back(castOp.getResult());
-            }
-            continue;
-          }
 
-          auto callOp = llvm::dyn_cast<function::CallOp>(use.getOwner());
-          unsigned argIndex = use.getOperandNumber();
-          if (!callOp || argIndex >= callOp.getArgOperands().size()) {
-            continue;
-          }
-          // A malformed or unresolved call is diagnosed by its own verifier. Do not emit an
-          // additional error while collecting its field refinement.
-          auto callee = callOp.getCalleeTarget(tables);
-          if (failed(callee)) {
-            continue;
-          }
-          refinementTypes.emplace_back(
-              callOp.getOperation(), callee->get().getFunctionType().getInput(argIndex)
-          );
+        auto callOp = llvm::dyn_cast<function::CallOp>(use.getOwner());
+        unsigned argIndex = use.getOperandNumber();
+        if (!callOp || argIndex >= callOp.getArgOperands().size()) {
+          continue;
         }
+        // A malformed or unresolved call is diagnosed by its own verifier. Do not emit an
+        // additional error while collecting its field refinement.
+        auto callee = callOp.getCalleeTarget(tables);
+        if (failed(callee)) {
+          continue;
+        }
+        refinementTypes.emplace_back(
+            callOp.getOperation(), callee->get().getFunctionType().getInput(argIndex)
+        );
       }
     }
     for (auto [origin, refinementType] : refinementTypes) {
@@ -508,8 +510,9 @@ GlobalRefOpInterface::getGlobalDefOp(SymbolTableCollection &tables) {
 
 namespace {
 
-FailureOr<SymbolLookupResult<GlobalDefOp>>
-verifySymbolUsesImpl(GlobalRefOpInterface refOp, SymbolTableCollection &tables) {
+FailureOr<SymbolLookupResult<GlobalDefOp>> verifySymbolUsesImpl(
+    GlobalRefOpInterface refOp, SymbolTableCollection &tables, Side preservedFeltFieldSide
+) {
   // Ensure this op references a valid GlobalDefOp name
   auto tgt = refOp.getGlobalDefOp(tables);
   if (failed(tgt)) {
@@ -517,11 +520,16 @@ verifySymbolUsesImpl(GlobalRefOpInterface refOp, SymbolTableCollection &tables) 
   }
   // Ensure the SSA Value type matches the GlobalDefOp type
   Type globalType = tgt->get().getType();
-  if (!typesUnifyWithoutLosingFeltFields(
-          globalType, refOp.getVal().getType(), tgt->getIncludeSymNames()
-      )) {
+  Type valueType = refOp.getVal().getType();
+  bool typesMatch = preservedFeltFieldSide == Side::EMPTY
+                        ? typesUnify(valueType, globalType, tgt->getIncludeSymNames())
+                        : typesUnifyWithoutLosingFeltFields(
+                              valueType, globalType, tgt->getIncludeSymNames(),
+                              /*unifications=*/nullptr, preservedFeltFieldSide
+                          );
+  if (!typesMatch) {
     return refOp->emitOpError() << "has wrong type; expected " << globalType << ", got "
-                                << refOp.getVal().getType();
+                                << valueType;
   }
   return tgt;
 }
@@ -529,7 +537,7 @@ verifySymbolUsesImpl(GlobalRefOpInterface refOp, SymbolTableCollection &tables) 
 } // namespace
 
 LogicalResult GlobalReadOp::verifySymbolUses(SymbolTableCollection &tables) {
-  if (failed(verifySymbolUsesImpl(*this, tables))) {
+  if (failed(verifySymbolUsesImpl(*this, tables, Side::RHS))) {
     return failure();
   }
   // Ensure any SymbolRef used in the type are valid
@@ -537,7 +545,7 @@ LogicalResult GlobalReadOp::verifySymbolUses(SymbolTableCollection &tables) {
 }
 
 LogicalResult GlobalWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
-  auto tgt = verifySymbolUsesImpl(*this, tables);
+  auto tgt = verifySymbolUsesImpl(*this, tables, Side::LHS);
   if (failed(tgt)) {
     return failure();
   }

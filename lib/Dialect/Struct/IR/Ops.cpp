@@ -535,13 +535,18 @@ static MemberDefOp getRefinementVerificationCoordinator(ModuleOp root) {
   return coordinator;
 }
 
-/// Verify that each mutable member storage position is refined to at most one field.
+/// Verify that each mutable member storage position is refined by reads to at most one field.
 ///
-/// An unspecified felt in a member declaration may be refined by a read or write, but that
-/// refinement belongs to the storage location rather than to an individual reference.
+/// An unspecified felt read from a member may be refined by a concrete read, cast, or call
+/// operand. That refinement belongs to the storage location rather than to an individual
+/// reference.
 static LogicalResult verifyMemberFeltRefinements(ModuleOp root, SymbolTableCollection &tables) {
   SmallVector<FeltRefinement> refinements;
   root.walk([&refinements, &tables](MemberRefOpInterface refOp) {
+    auto readOp = llvm::dyn_cast<MemberReadOp>(refOp.getOperation());
+    if (!readOp) {
+      return WalkResult::advance();
+    }
     // Reference verification owns lookup failures, so do not add a second diagnostic here.
     auto member = refOp.getMemberDefOp(tables);
     if (failed(member)) {
@@ -559,39 +564,37 @@ static LogicalResult verifyMemberFeltRefinements(ModuleOp root, SymbolTableColle
 
     SmallVector<std::pair<Operation *, Type>> refinementTypes;
     refinementTypes.emplace_back(refOp.getOperation(), refOp.getVal().getType());
-    if (auto readOp = llvm::dyn_cast<MemberReadOp>(refOp.getOperation())) {
-      // A cast preserves the member value while exposing a more concrete type, so follow every
-      // reachable cast result. Calls constrain their operand to the callee input type. Other uses
-      // do not preserve the whole member value and therefore cannot refine it directly.
-      SmallVector<Value> worklist {readOp.getVal()};
-      llvm::DenseSet<Value> visited;
-      while (!worklist.empty()) {
-        Value value = worklist.pop_back_val();
-        if (!visited.insert(value).second) {
+    // A cast preserves the member value while exposing a more concrete type, so follow every
+    // reachable cast result. Calls constrain their operand to the callee input type. Other uses
+    // do not preserve the whole member value and therefore cannot refine it directly.
+    SmallVector<Value> worklist {readOp.getVal()};
+    llvm::DenseSet<Value> visited;
+    while (!worklist.empty()) {
+      Value value = worklist.pop_back_val();
+      if (!visited.insert(value).second) {
+        continue;
+      }
+      for (OpOperand &use : value.getUses()) {
+        if (auto castOp = llvm::dyn_cast<UnifiableCastOp>(use.getOwner())) {
+          if (use.getOperandNumber() == 0) {
+            refinementTypes.emplace_back(castOp.getOperation(), castOp.getResult().getType());
+            worklist.push_back(castOp.getResult());
+          }
           continue;
         }
-        for (OpOperand &use : value.getUses()) {
-          if (auto castOp = llvm::dyn_cast<UnifiableCastOp>(use.getOwner())) {
-            if (use.getOperandNumber() == 0) {
-              refinementTypes.emplace_back(castOp.getOperation(), castOp.getResult().getType());
-              worklist.push_back(castOp.getResult());
-            }
-            continue;
-          }
 
-          auto call = llvm::dyn_cast<CallOp>(use.getOwner());
-          unsigned argIndex = use.getOperandNumber();
-          if (!call || argIndex >= call.getArgOperands().size()) {
-            continue;
-          }
-          auto callee = call.getCalleeTarget(tables);
-          if (failed(callee)) {
-            continue;
-          }
-          refinementTypes.emplace_back(
-              call.getOperation(), callee->get().getFunctionType().getInput(argIndex)
-          );
+        auto call = llvm::dyn_cast<CallOp>(use.getOwner());
+        unsigned argIndex = use.getOperandNumber();
+        if (!call || argIndex >= call.getArgOperands().size()) {
+          continue;
         }
+        auto callee = call.getCalleeTarget(tables);
+        if (failed(callee)) {
+          continue;
+        }
+        refinementTypes.emplace_back(
+            call.getOperation(), callee->get().getFunctionType().getInput(argIndex)
+        );
       }
     }
 
@@ -760,12 +763,18 @@ findMember(MemberRefOpInterface refOp, SymbolTableCollection &tables) {
 
 static LogicalResult verifySymbolUsesImpl(
     MemberRefOpInterface refOp, SymbolTableCollection &tables,
-    SymbolLookupResult<MemberDefOp> &member
+    SymbolLookupResult<MemberDefOp> &member, Side preservedFeltFieldSide = Side::EMPTY
 ) {
   // Ensure the type of the referenced member declaration matches the type used in this op.
   Type actualType = refOp.getVal().getType();
   Type memberType = member.get().getType();
-  if (!typesUnify(actualType, memberType, member.getNamespace())) {
+  bool typesMatch = preservedFeltFieldSide == Side::EMPTY
+                        ? typesUnify(actualType, memberType, member.getNamespace())
+                        : typesUnifyWithoutLosingFeltFields(
+                              actualType, memberType, member.getNamespace(),
+                              /*unifications=*/nullptr, preservedFeltFieldSide
+                          );
+  if (!typesMatch) {
     return refOp->emitOpError() << "has wrong type; expected " << memberType << ", got "
                                 << actualType;
   }
@@ -773,13 +782,15 @@ static LogicalResult verifySymbolUsesImpl(
   return verifyTypeResolution(tables, refOp.getOperation(), actualType);
 }
 
-LogicalResult verifySymbolUsesImpl(MemberRefOpInterface refOp, SymbolTableCollection &tables) {
+LogicalResult verifySymbolUsesImpl(
+    MemberRefOpInterface refOp, SymbolTableCollection &tables, Side preservedFeltFieldSide
+) {
   // Ensure the member name can be resolved in that struct.
   auto member = findMember(refOp, tables);
   if (failed(member)) {
     return member; // getMemberDefOp() already emits a sufficient error message
   }
-  return verifySymbolUsesImpl(refOp, tables, *member);
+  return verifySymbolUsesImpl(refOp, tables, *member, preservedFeltFieldSide);
 }
 
 } // namespace
@@ -794,7 +805,7 @@ LogicalResult MemberReadOp::verifySymbolUses(SymbolTableCollection &tables) {
   if (failed(member)) {
     return failure();
   }
-  if (failed(verifySymbolUsesImpl(*this, tables, *member))) {
+  if (failed(verifySymbolUsesImpl(*this, tables, *member, Side::RHS))) {
     return failure();
   }
   // If the member is not a column and an offset was specified then fail to validate
@@ -845,7 +856,7 @@ LogicalResult MemberWriteOp::verifySymbolUses(SymbolTableCollection &tables) {
     return failure(); // checkSelfType() already emits a sufficient error message
   }
   // Perform the standard member ref checks.
-  return verifySymbolUsesImpl(*this, tables);
+  return verifySymbolUsesImpl(*this, tables, Side::LHS);
 }
 
 //===------------------------------------------------------------------===//
