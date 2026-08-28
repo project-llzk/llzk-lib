@@ -73,3 +73,15 @@ function.def @read_none_element_array(%shape: !array.type<? x none>, %i: index) 
   // expected-error@+1 {{'array.read' op cannot access a scalar element from array with none element type}}
   %x = array.read %shape[%i] : !array.type<? x none>, none
 }
+
+// -----
+
+function.def @read_specified_element_as_unspecified() -> !felt.type {
+  %i = arith.constant 0 : index
+  %value = felt.const 1 : !felt.type<"bn128">
+  %array = array.new %value : !array.type<1 x !felt.type<"bn128">>
+  // expected-error@+2 {{'array.read' op inferred type(s) '!felt.type<"bn128">' are incompatible with return type(s) of operation '!felt.type'}}
+  // expected-error@+1 {{'array.read' op failed to infer returned types}}
+  %result = array.read %array[%i] : !array.type<1 x !felt.type<"bn128">>, !felt.type
+  function.return %result : !felt.type
+}
