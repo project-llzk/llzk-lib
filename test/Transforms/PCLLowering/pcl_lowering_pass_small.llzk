@@ -165,3 +165,87 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.mul %[[VAL_0]], %[[VAL_0]]
 // CHECK-NEXT:      return %[[VAL_1]] : !pcl.felt
 // CHECK-NEXT:    }
+
+// -----
+
+!F = !felt.type<"koalabear">
+!foo = !struct.type<@det>
+module attributes {llzk.lang} {
+  struct.def @det {
+    struct.member @adv_0_1: !F 
+    function.def @compute() -> !foo {
+      %self = struct.new : !foo 
+      function.return %self : !foo
+    }
+    function.def @constrain(%self: !foo) attributes {function.allow_constrain, function.allow_verif_ops} {
+      %0 = struct.readm %self[@adv_0_1] : !foo, !F 
+      %1 = verif.det.prove %0 : !F
+      %c1 = felt.const 1 : !F 
+      %2 = cast.tofelt %1 : i1, !F 
+      constrain.eq %2, %c1 : !F, !F
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL:   func.func @det() {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.var "adv_0_1" false 
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.det %[[VAL_0]]
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_1]]
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.const 1
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_2]], %[[VAL_3]]
+// CHECK-NEXT:      pcl.assert %[[VAL_4]]
+// CHECK-NEXT:      return 
+// CHECK-NEXT:    }
+
+// -----
+
+!F = !felt.type<"koalabear">
+!foo = !struct.type<@assume_det>
+module attributes {llzk.lang} {
+  struct.def @assume_det {
+    struct.member @adv_0_1: !F 
+    function.def @compute() -> !foo {
+      %self = struct.new : !foo 
+      function.return %self : !foo
+    }
+    function.def @constrain(%self: !foo) attributes {function.allow_constrain, function.allow_verif_ops} {
+      %0 = struct.readm %self[@adv_0_1] : !foo, !F 
+      verif.det.assume %0 : !F
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL:   func.func @assume_det() {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.var "adv_0_1" false 
+// CHECK-NEXT:      pcl.assume.deterministic %[[VAL_0]]
+// CHECK-NEXT:      return 
+// CHECK-NEXT:    }
+
+// -----
+
+!F = !felt.type<"koalabear">
+!foo = !struct.type<@post_cond>
+module attributes {llzk.lang} {
+  struct.def @post_cond {
+    struct.member @adv_0_1: !F 
+    function.def @compute() -> !foo {
+      %self = struct.new : !foo 
+      function.return %self : !foo
+    }
+    function.def @constrain(%self: !foo) attributes {function.allow_constrain, function.allow_verif_ops} {
+      %0 = struct.readm %self[@adv_0_1] : !foo, !F 
+      %1 = verif.det.prove %0 : !F
+      verif.ensure_constrain %1
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL:   func.func @post_cond() {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.var "adv_0_1" false 
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.det %[[VAL_0]]
+// CHECK-NEXT:      pcl.post_cond %[[VAL_1]]
+// CHECK-NEXT:      return 
+// CHECK-NEXT:    }

@@ -9,6 +9,7 @@ function.def @arr_constant_index() -> !array.type<3 x index> {
   array.write %b[%c] = %b : !array.type<3 x index>, index
   function.return %r: !array.type<3 x index>
 }
+
 // -----
 
 function.def @arr_mix_index(%a: index, %b: index) -> !array.type<4 x index> {
@@ -20,6 +21,7 @@ function.def @arr_mix_index(%a: index, %b: index) -> !array.type<4 x index> {
   array.write %r[%r] = %b : !array.type<4 x index>, index
   function.return %r: !array.type<4 x index>
 }
+
 // -----
 
 function.def @arr_mix_index(%a: index, %b: index) -> !array.type<4 x index> {
@@ -32,6 +34,7 @@ function.def @arr_mix_index(%a: index, %b: index) -> !array.type<4 x index> {
   array.write %r[%f] = %b : !array.type<4 x index>, index
   function.return %r: !array.type<4 x index>
 }
+
 // -----
 
 function.def @arr_mix_index(%a: !felt.type, %b: !felt.type) -> !array.type<4 x !felt.type> {
@@ -44,6 +47,7 @@ function.def @arr_mix_index(%a: !felt.type, %b: !felt.type) -> !array.type<4 x !
   array.write %r[%i] = %v : !array.type<4 x !felt.type>, !felt.type
   function.return %r: !array.type<4 x !felt.type>
 }
+
 // -----
 
 function.def @arr_wrong_array_elem_type(%a: !felt.type) -> !array.type<1 x !felt.type> {
@@ -83,4 +87,14 @@ function.def @write_none_element_array(%shape: !array.type<? x none>, %i: index)
   %x = builtin.unrealized_conversion_cast %i : index to none
   // expected-error@+1 {{'array.write' op cannot access a scalar element from array with none element type}}
   array.write %shape[%i] = %x : !array.type<? x none>, none
+}
+
+// -----
+
+function.def @write_specified_felt_to_unspecified() {
+  %i = arith.constant 0 : index
+  %array = array.new : !array.type<1 x !felt.type>
+  %value = felt.const 1 : !felt.type<"bn128">
+  // expected-error@+1 {{'array.write' op failed to verify that rvalue type matches with arr_ref element type}}
+  array.write %array[%i] = %value : !array.type<1 x !felt.type>, !felt.type<"bn128">
 }
