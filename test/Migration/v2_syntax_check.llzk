@@ -1,4 +1,5 @@
-// RUN: llzk-opt %S/v2_syntax.llzk.bc 2>&1 | FileCheck --enable-var-scope %s
+// RUN: llzk-opt %S/v2_syntax.llzk.bc -verify-diagnostics | llzk-opt | FileCheck --enable-var-scope %s
+// COM: The additional pipe through `llzk-opt` ensures that the IR printed can be parsed again.
 
 // Read bytecode from `v2_syntax.llzk.bc` and check that it migrates to current dialect version.
 
@@ -19,8 +20,11 @@
 // CHECK-NEXT:      global.def @tally : index = 0
 // CHECK-NEXT:      global.def @flag : i1 = false
 // CHECK-NEXT:      global.def @label : !string.type
+// CHECK-NEXT:      global.def @strs : !array.type<2 x !string.type> = ["hello", "world"]
 // CHECK-NEXT:      global.def const @BITS : !array.type<2,2 x i1> = [0, 1, 1, 0]
 // CHECK-NEXT:      global.def @score : !array.type<2,1,2 x !felt.type> = [1, 2, 3, 4]
+// CHECK-NEXT:      global.def @f : !felt.type = 1 : <"bn128">
+// CHECK-NEXT:      global.def @g : !felt.type<"babybear"> =  4
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @Box {
 // CHECK-NEXT:      poly.param @T : !poly.tvar<@T>

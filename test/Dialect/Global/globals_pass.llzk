@@ -1,4 +1,6 @@
-// RUN: llzk-opt -split-input-file %s | FileCheck %s
+// RUN: llzk-opt -split-input-file %s | llzk-opt -split-input-file | FileCheck %s
+// COM: The additional pipe through `llzk-opt` ensures that the IR printed can be parsed
+// COM:   again which is important since `global.def` has custom printing behavior.
 
 // TEST: uninitialized globals
 module attributes {llzk.lang} {
@@ -36,18 +38,19 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@Component01B>) { function.return }
   }
 }
-// CHECK-DAG: global.def @s : !string.type
-// CHECK-DAG: global.def @i : index
-// CHECK-DAG: global.def @b : i1
-// CHECK-DAG: global.def @f : !felt.type
-// CHECK-DAG: global.def @ax : !array.type<3 x !string.type>
-// CHECK-DAG: global.def @ab : !array.type<2,2 x i1>
-// CHECK-DAG: global.def @af : !array.type<6,5,3 x !felt.type>
-// CHECK-DAG: global.def @ai : !array.type<3,3 x index>
-// CHECK-DAG: global.def @c : !struct.type<@Component01B>
-// CHECK-DAG: global.def @c2s : !struct.type<@TComponent01A::@Component01A<[!string.type]>>
-// CHECK-DAG: global.def @c2i : !struct.type<@TComponent01A::@Component01A<[23423]>>
-// CHECK-DAG: global.def @c2a : !struct.type<@TComponent01A::@Component01A<[!array.type<2,2 x i1>]>>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def @s : !string.type
+// CHECK-NEXT:    global.def @i : index
+// CHECK-NEXT:    global.def @b : i1
+// CHECK-NEXT:    global.def @f : !felt.type
+// CHECK-NEXT:    global.def @ax : !array.type<3 x !string.type>
+// CHECK-NEXT:    global.def @ab : !array.type<2,2 x i1>
+// CHECK-NEXT:    global.def @af : !array.type<6,5,3 x !felt.type>
+// CHECK-NEXT:    global.def @ai : !array.type<3,3 x index>
+// CHECK-NEXT:    global.def @c : !struct.type<@Component01B>
+// CHECK-NEXT:    global.def @c2s : !struct.type<@TComponent01A::@Component01A<[!string.type]>>
+// CHECK-NEXT:    global.def @c2i : !struct.type<@TComponent01A::@Component01A<[23423]>>
+// CHECK-NEXT:    global.def @c2a : !struct.type<@TComponent01A::@Component01A<[!array.type<2,2 x i1>]>>
 
 // -----
 
@@ -68,17 +71,18 @@ module attributes {llzk.lang} {
   global.def @a4b : !array.type<2,2 x i1> = [0,1,1,0]
   global.def @a4f : !array.type<2,1,1,2 x !felt.type> = [6, 12134, 45523, 15623]
 }
-// CHECK-DAG: global.def const @s : !string.type = "Hello World!"
-// CHECK-DAG: global.def @i : index = 1
-// CHECK-DAG: global.def const @bf : i1 = false
-// CHECK-DAG: global.def const @t : i1 = true
-// CHECK-DAG: global.def @b0 : i1 = false
-// CHECK-DAG: global.def const @b1 : i1 = true
-// CHECK-DAG: global.def @f : !felt.type = 35
-// CHECK-DAG: global.def @a1i : !array.type<1 x index> = [2]
-// CHECK-DAG: global.def @a2s : !array.type<2 x !string.type> = ["hello", "world"]
-// CHECK-DAG: global.def @a4b : !array.type<2,2 x i1> = [0, 1, 1, 0]
-// CHECK-DAG: global.def @a4f : !array.type<2,1,1,2 x !felt.type> = [6, 12134, 45523, 15623]
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT: global.def const @s : !string.type = "Hello World!"
+// CHECK-NEXT: global.def @i : index = 1
+// CHECK-NEXT: global.def const @bf : i1 = false
+// CHECK-NEXT: global.def const @t : i1 = true
+// CHECK-NEXT: global.def @b0 : i1 = false
+// CHECK-NEXT: global.def const @b1 : i1 = true
+// CHECK-NEXT: global.def @f : !felt.type = 35
+// CHECK-NEXT: global.def @a1i : !array.type<1 x index> = [2]
+// CHECK-NEXT: global.def @a2s : !array.type<2 x !string.type> = ["hello", "world"]
+// CHECK-NEXT: global.def @a4b : !array.type<2,2 x i1> = [0, 1, 1, 0]
+// CHECK-NEXT: global.def @a4f : !array.type<2,1,1,2 x !felt.type> = [6, 12134, 45523, 15623]
 // -----
 
 // TEST: GlobalReadOp in "compute()"
