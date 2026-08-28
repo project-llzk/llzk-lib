@@ -1129,6 +1129,12 @@ LogicalResult verifyFeltRefinements(ArrayRef<FeltRefinement> refinements) {
       if (!refType.hasField()) {
         continue;
       }
+      if (index >= it->second.size()) {
+        return refinement.origin->emitOpError()
+               << "refines felt position " << index << " beyond the " << it->second.size()
+               << " felt positions in mutable " << refinement.storageKind << " '"
+               << refinement.storageName << '\'';
+      }
       auto &refinedType = it->second[index];
       if (refinedType && *refinedType != refType) {
         auto diagnostic = refinement.origin->emitOpError()

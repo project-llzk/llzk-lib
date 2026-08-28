@@ -254,3 +254,38 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@SpecifiedMemberRead>) { function.return }
   }
 }
+
+// -----
+
+// A field in a type-variable position does not refine the preceding felt storage position.
+module attributes {llzk.lang} {
+  poly.template @TypeVariableMember {
+    poly.param @T
+
+    struct.def @Container {
+      struct.member @value : !pod.type<[@a: !felt.type, @b: !poly.tvar<@T>]> {llzk.pub}
+
+      function.def @compute() -> !struct.type<@TypeVariableMember::@Container<[@T]>> {
+        %self = struct.new : !struct.type<@TypeVariableMember::@Container<[@T]>>
+        function.return %self : !struct.type<@TypeVariableMember::@Container<[@T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TypeVariableMember::@Container<[@T]>>) { function.return }
+    }
+  }
+
+  struct.def @User {
+    function.def @compute() -> !struct.type<@User> {
+      %self = struct.new : !struct.type<@User>
+      %container = function.call @TypeVariableMember::@Container::@compute()
+          : () -> !struct.type<@TypeVariableMember::@Container<[!felt.type<"bn128">]>>
+      // expected-error@+1 {{'struct.readm' op refines felt position 1 beyond the 1 felt positions in mutable struct member 'value'}}
+      %value = struct.readm %container[@value]
+          : !struct.type<@TypeVariableMember::@Container<[!felt.type<"bn128">]>>,
+            !pod.type<[@a: !felt.type, @b: !felt.type<"bn128">]>
+      function.return %self : !struct.type<@User>
+    }
+
+    function.def @constrain(%self: !struct.type<@User>) { function.return }
+  }
+}
