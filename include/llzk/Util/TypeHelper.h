@@ -265,6 +265,15 @@ bool typesUnify(
     UnificationMap *unifications = nullptr
 );
 
+/// Return `true` iff the types unify without losing a specified felt field from the LHS.
+/// Type variables and other unifiable type components are handled as in `typesUnify()`.
+///
+/// `preservedFieldSide` identifies the field refinement that the other type must retain.
+bool typesUnifyWithoutLosingFeltFields(
+    mlir::Type lhs, mlir::Type rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},
+    UnificationMap *unifications = nullptr, Side preservedFieldSide = Side::LHS
+);
+
 /// Return `true` iff the two lists of Type instances are equivalent or could be equivalent after
 /// full instantiation of template parameters (if applicable within the given types).
 template <typename Iter1, typename Iter2>

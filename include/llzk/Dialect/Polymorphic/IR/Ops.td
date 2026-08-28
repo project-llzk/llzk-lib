@@ -262,7 +262,11 @@ def LLZK_UnifiableCastOp : PolymorphicDialectOp<"unifiable_cast", [Pure]> {
   let summary = "cast between two unifiable types";
   let description = [{
     This operation reinterprets a value as a different type with the restriction
-    that the input and output types of the cast are unifiable.
+    that the input and output types of the cast are unifiable. It is a
+    reinterpretation, not a field conversion: it may refine an unspecified felt
+    field to a specified field, including within an aggregate type, but it may
+    not erase a specified field. Casts refining the same SSA value must select
+    compatible concrete fields.
 
     Most ops that accept LLZK types accept unifiable types as input and thus there
     is no need for casting between types. This op is meant to be used in situations where

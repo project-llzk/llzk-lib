@@ -668,19 +668,12 @@ LogicalResult ContractOp::verifyRegions() {
   // to be generated first. In sum, we can rest assured that the ops we traverse and
   // analyze here have already been verified.
 
-  SmallVector<PreconditionOpInterface> preconditionOps =
-      walkCollect<PreconditionOpInterface>(*this);
-  SmallVector<IncludeOp> includeOps = walkCollect<IncludeOp>(*this);
-  if (preconditionOps.empty() && includeOps.empty()) {
-    return success();
-  }
-
   ModuleOp module = getOperation()->getParentOfType<ModuleOp>();
   if (!module) {
     return emitOpError("must have a parent module to analyze condition provenance");
   }
 
-  for (PreconditionOpInterface preCond : preconditionOps) {
+  for (PreconditionOpInterface preCond : walkCollect<PreconditionOpInterface>(*this)) {
     if (auto forbidden = classifyForbiddenConditionProvenance(module, preCond, *this)) {
       return emitForbiddenPrecondition(
           preCond, forbidden->kind, forbidden->sourceLocs.getArrayRef()
@@ -688,13 +681,13 @@ LogicalResult ContractOp::verifyRegions() {
     }
   }
 
-  for (IncludeOp includeOp : includeOps) {
+  for (IncludeOp includeOp : walkCollect<IncludeOp>(*this)) {
     if (auto forbidden = classifyForbiddenIncludedPrecondition(module, includeOp)) {
       return emitForbiddenIncludedPreconditions(forbidden->includeOp, forbidden->failures);
     }
   }
 
-  return success();
+  return polymorphic::verifyUnifiableCastRefinements(getOperation());
 }
 
 FailureOr<SymbolLookupResult<StructDefOp>>

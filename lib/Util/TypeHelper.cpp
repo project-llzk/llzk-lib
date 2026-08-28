@@ -603,19 +603,35 @@ namespace {
 using AffineInstantiations = DenseMap<std::pair<AffineMapAttr, Side>, IntegerAttr>;
 
 struct UnifierImpl {
+  /// Symbol path components prepended while resolving RHS struct references.
   ArrayRef<StringRef> rhsRevPrefix;
+  /// Optional substitutions inferred for type variables and symbolic parameters.
   UnificationMap *unifications;
+  /// Optional affine-map-to-integer substitutions inferred during unification.
   AffineInstantiations *affineToIntTracker;
+  /// Optional flag set when a selected felt field is erased on the protected side.
+  bool *feltFieldBecameUnspecified;
+  /// The `Side` whose selected felt fields must remain concrete.
+  Side feltFieldThisSideMustStayConcrete;
   // This optional function can be used to provide an exception to the standard unification
   // rules and return a true/success result when it otherwise may not.
   llvm::function_ref<bool(Type oldTy, Type newTy)> overrideSuccess;
 
   UnifierImpl(UnificationMap *unificationMap, ArrayRef<StringRef> rhsReversePrefix = {})
       : rhsRevPrefix(rhsReversePrefix), unifications(unificationMap), affineToIntTracker(nullptr),
+        feltFieldBecameUnspecified(nullptr), feltFieldThisSideMustStayConcrete(Side::LHS),
         overrideSuccess(nullptr) {}
 
   UnifierImpl &trackAffineToInt(AffineInstantiations *tracker) {
     this->affineToIntTracker = tracker;
+    return *this;
+  }
+
+  /// Record when a specified felt field on `preservedFieldSide` is omitted from the other side.
+  UnifierImpl &trackFeltFieldConcreteness(bool *tracker, Side preservedFieldSide = Side::LHS) {
+    assert((preservedFieldSide == Side::LHS || preservedFieldSide == Side::RHS) && "invalid side");
+    this->feltFieldBecameUnspecified = tracker;
+    this->feltFieldThisSideMustStayConcrete = preservedFieldSide;
     return *this;
   }
 
@@ -717,6 +733,22 @@ struct UnifierImpl {
   }
 
   bool typesUnify(Type lhs, Type rhs) {
+    if (auto lhsFelt = llvm::dyn_cast<FeltType>(lhs)) {
+      if (auto rhsFelt = llvm::dyn_cast<FeltType>(rhs)) {
+        if (lhs == rhs) {
+          return true;
+        }
+        // An unspecified field can be unified with a specified one, but two
+        // distinct specified fields cannot be unified.
+        bool fieldBecameUnspecified = feltFieldThisSideMustStayConcrete == Side::LHS
+                                          ? lhsFelt.hasField() && !rhsFelt.hasField()
+                                          : rhsFelt.hasField() && !lhsFelt.hasField();
+        if (fieldBecameUnspecified && feltFieldBecameUnspecified) {
+          *feltFieldBecameUnspecified = true;
+        }
+        return !lhsFelt.hasField() || !rhsFelt.hasField();
+      }
+    }
     if (lhs == rhs) {
       return true;
     }
@@ -731,6 +763,19 @@ struct UnifierImpl {
     if (TypeVarType rhsTvar = llvm::dyn_cast<TypeVarType>(rhs)) {
       track(Side::RHS, rhsTvar.getNameRef(), lhs);
       return true;
+    }
+    if (auto lhsFelt = llvm::dyn_cast<FeltType>(lhs)) {
+      if (auto rhsFelt = llvm::dyn_cast<FeltType>(rhs)) {
+        // An unspecified field can be unified with a specified one, but two
+        // distinct specified fields cannot be unified.
+        bool fieldBecameUnspecified = feltFieldThisSideMustStayConcrete == Side::LHS
+                                          ? lhsFelt.hasField() && !rhsFelt.hasField()
+                                          : rhsFelt.hasField() && !lhsFelt.hasField();
+        if (fieldBecameUnspecified && feltFieldBecameUnspecified) {
+          *feltFieldBecameUnspecified = true;
+        }
+        return !lhsFelt.hasField() || !rhsFelt.hasField();
+      }
     }
     if (llvm::isa<StructType>(lhs) && llvm::isa<StructType>(rhs)) {
       return structTypesUnify(llvm::cast<StructType>(lhs), llvm::cast<StructType>(rhs));
@@ -926,6 +971,17 @@ bool typesUnify(
     Type lhs, Type rhs, ArrayRef<StringRef> rhsReversePrefix, UnificationMap *unifications
 ) {
   return UnifierImpl(unifications, rhsReversePrefix).typesUnify(lhs, rhs);
+}
+
+bool typesUnifyWithoutLosingFeltFields(
+    Type lhs, Type rhs, ArrayRef<StringRef> rhsReversePrefix, UnificationMap *unifications,
+    Side preservedFieldSide
+) {
+  bool feltFieldBecameUnspecified = false;
+  return UnifierImpl(unifications, rhsReversePrefix)
+             .trackFeltFieldConcreteness(&feltFieldBecameUnspecified, preservedFieldSide)
+             .typesUnify(lhs, rhs) &&
+         !feltFieldBecameUnspecified;
 }
 
 bool isMoreConcreteUnification(

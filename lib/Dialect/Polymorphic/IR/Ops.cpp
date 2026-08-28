@@ -9,7 +9,9 @@
 
 #include "llzk/Dialect/Function/IR/Ops.h"
 
+#include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
@@ -17,6 +19,10 @@
 #include "llzk/Dialect/Verif/IR/Ops.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolTableLLZK.h"
+
+#include <llvm/ADT/SmallString.h>
+#include <llvm/ADT/StringMap.h>
+#include <llvm/Support/raw_ostream.h>
 
 // Include TableGen'd declarations
 #include "llzk/Dialect/Polymorphic/IR/OpInterfaces.cpp.inc"
@@ -165,7 +171,7 @@ LogicalResult TemplateExprOp::verifyRegions() {
         "is not allowed within a `", TemplateExprOp::getOperationName(), "` initializer"
     );
   }
-  return success();
+  return verifyUnifiableCastRefinements(getOperation());
 }
 
 Type TemplateExprOp::getType() {
@@ -267,10 +273,130 @@ OpFoldResult ApplyMapOp::fold(FoldAdaptor adaptor) {
 // UnifiableCastOp
 //===------------------------------------------------------------------===//
 
+/// The first concrete felt-field selection observed at one corresponding type position in a
+/// unifiable-cast graph. Later selections at that position must name the same field; retaining
+/// the originating cast lets verification report the conflict at the first refinement.
+struct FeltFieldRefinement {
+  StringAttr field;
+  UnifiableCastOp cast;
+};
+
+/// Add concrete felt field selections in `type` to `refinements`, reporting the first cast that
+/// selected a different field at the same corresponding type position.
+static LogicalResult collectFeltFieldRefinements(
+    Type type, UnifiableCastOp cast, SmallVectorImpl<char> &path,
+    llvm::StringMap<FeltFieldRefinement> &refinements
+) {
+  /// RAII struct to restore the shared type-position path after one recursive descent.
+  struct PathSuffix {
+    SmallVectorImpl<char> &path;
+    size_t originalSize = path.size();
+    ~PathSuffix() { path.resize(originalSize); }
+  };
+
+  if (auto felt = dyn_cast<felt::FeltType>(type)) {
+    if (!felt.hasField()) {
+      return success();
+    }
+    StringAttr field = felt.getFieldName();
+    auto [it, inserted] = refinements.try_emplace(
+        StringRef(path.data(), path.size()), FeltFieldRefinement {field, cast}
+    );
+    if (inserted || it->second.field == field) {
+      return success();
+    }
+    return it->second.cast.emitOpError()
+           << "result type " << it->second.cast.getResult().getType()
+           << " conflicts with another unifiable cast refinement of the same value";
+  }
+
+  if (auto array = dyn_cast<array::ArrayType>(type)) {
+    PathSuffix resetGuard(path);
+    llvm::raw_svector_ostream(path) << "array/";
+    return collectFeltFieldRefinements(array.getElementType(), cast, path, refinements);
+  }
+  if (auto structType = dyn_cast<component::StructType>(type)) {
+    for (auto [index, parameter] : llvm::enumerate(structType.getParams())) {
+      if (auto parameterType = dyn_cast<TypeAttr>(parameter)) {
+        PathSuffix resetGuard(path);
+        llvm::raw_svector_ostream(path)
+            << "struct/" << structType.getNameRef() << '/' << index << '/';
+        auto res = collectFeltFieldRefinements(parameterType.getValue(), cast, path, refinements);
+        if (failed(res)) {
+          return failure();
+        }
+      }
+    }
+  } else if (auto pod = dyn_cast<pod::PodType>(type)) {
+    for (auto record : pod.getRecords()) {
+      PathSuffix resetGuard(path);
+      llvm::raw_svector_ostream(path) << "pod/" << record.getName() << '/';
+      if (failed(collectFeltFieldRefinements(record.getType(), cast, path, refinements))) {
+        return failure();
+      }
+    }
+  } else if (auto function = dyn_cast<FunctionType>(type)) {
+    for (auto [index, input] : llvm::enumerate(function.getInputs())) {
+      PathSuffix resetGuard(path);
+      llvm::raw_svector_ostream(path) << "function/input/" << index << '/';
+      if (failed(collectFeltFieldRefinements(input, cast, path, refinements))) {
+        return failure();
+      }
+    }
+    for (auto [index, result] : llvm::enumerate(function.getResults())) {
+      PathSuffix resetGuard(path);
+      llvm::raw_svector_ostream(path) << "function/result/" << index << '/';
+      if (failed(collectFeltFieldRefinements(result, cast, path, refinements))) {
+        return failure();
+      }
+    }
+  }
+  return success();
+}
+
+LogicalResult verifyUnifiableCastRefinements(Operation *op) {
+  DenseMap<Value, Value> roots;
+  DenseMap<Value, SmallVector<UnifiableCastOp>> castsByRoot;
+  op->walk<WalkOrder::PreOrder>([&](UnifiableCastOp cast) {
+    Value input = cast.getInput();
+    Value root = roots.lookup(input);
+    if (!root) {
+      root = input;
+    }
+    roots[cast.getResult()] = root;
+    castsByRoot[root].push_back(cast);
+  });
+
+  for (auto &[root, casts] : castsByRoot) {
+    llvm::StringMap<FeltFieldRefinement> refinements;
+    for (UnifiableCastOp cast : casts) {
+      if (!typesUnifyWithoutLosingFeltFields(root.getType(), cast.getResult().getType())) {
+        return cast.emitOpError() << "input type " << root.getType() << " and output type "
+                                  << cast.getResult().getType()
+                                  << " would discard a specified felt field";
+      }
+      llvm::SmallString<64> path;
+      auto res = collectFeltFieldRefinements(cast.getResult().getType(), cast, path, refinements);
+      if (failed(res)) {
+        return failure();
+      }
+    }
+  }
+  return success();
+}
+
 LogicalResult UnifiableCastOp::verify() {
-  if (!typesUnify(getInput().getType(), getResult().getType())) {
-    return emitOpError() << "input type " << getInput().getType() << " and output type "
-                         << getResult().getType() << " are not unifiable";
+  auto inputType = getInput().getType();
+  auto resultType = getResult().getType();
+  if (!typesUnify(inputType, resultType)) {
+    return emitOpError() << "input type " << inputType << " and output type " << resultType
+                         << " are not unifiable";
+  }
+  // A unifiable cast is a reinterpretation, not a field conversion. In particular, it must not
+  // erase a selected field and allow a subsequent cast to select a different field.
+  if (!typesUnifyWithoutLosingFeltFields(inputType, resultType)) {
+    return emitOpError() << "input type " << inputType << " and output type " << resultType
+                         << " would discard a specified felt field";
   }
 
   return success();

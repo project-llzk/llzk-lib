@@ -52,4 +52,8 @@ bool isInTemplate(mlir::Operation *op);
 /// containing that TemplateOp. Otherwise emit an error and return a failure result.
 mlir::FailureOr<TemplateOp> verifyInTemplate(mlir::Operation *op);
 
+/// Verify that all unifiable casts in `op` which refine the same SSA value select compatible
+/// felt fields.
+mlir::LogicalResult verifyUnifiableCastRefinements(mlir::Operation *op);
+
 } // namespace llzk::polymorphic
