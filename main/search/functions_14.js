@@ -14,7 +14,7 @@ var searchData=
   ['withoptionalunreducedinterval_11',['withOptionalUnreducedInterval',['../classllzk_1_1ExpressionValue.html#a4b6264ad53c69b2bde91b47a5ba42865',1,'llzk::ExpressionValue']]],
   ['withunreducedinterval_12',['withUnreducedInterval',['../classllzk_1_1ExpressionValue.html#a0f83c0e0cea39ebda5faebfb1e4050bb',1,'llzk::ExpressionValue']]],
   ['work_13',['Work',['../LICENSE_8txt.html#a942c6a33f64f7656f027800c9dbf57e5',1,'LICENSE.txt']]],
-  ['work_14',['work',['../LICENSE_8txt.html#a614be97c4dfc1228ddea941d28165f01',1,'work(an example is provided in the Appendix below). &quot;Derivative Works&quot; shall mean any work:&#160;LICENSE.txt'],['../LICENSE_8txt.html#a614be97c4dfc1228ddea941d28165f01',1,'work(an example is provided in the Appendix below). &quot;Derivative Works&quot; shall mean any work:&#160;LICENSE.txt']]],
+  ['work_14',['work',['../LICENSE_8txt.html#a614be97c4dfc1228ddea941d28165f01',1,'LICENSE.txt']]],
   ['wrapnonnullableinflightdiagnostic_15',['wrapNonNullableInFlightDiagnostic',['../namespacellzk.html#aa6d8949a060ab0cbc09f4670adda40b0',1,'llzk']]],
   ['wrapnullableinflightdiagnostic_16',['wrapNullableInFlightDiagnostic',['../namespacellzk.html#adab9435a8f071defd8c3e633529b43e8',1,'llzk']]],
   ['write_17',['write',['../classllzk_1_1SourceRefLatticeValue.html#a1440f65ca272885cff2d6bb54da9920f',1,'llzk::SourceRefLatticeValue::write()'],['../structllzk_1_1LLZKDialectVersion.html#ac17978f06ece06550a6b705900123788',1,'llzk::LLZKDialectVersion::write()']]],

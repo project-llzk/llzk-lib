@@ -1,8 +1,8 @@
 var Cast_2IR_2Enums_8h_8inc =
 [
-    [ "mlir::FieldParser<::llzk::cast::OverflowSemantics, ::llzk::cast::OverflowSemantics >", "structmlir_1_1FieldParser_3_1_1llzk_1_1cast_1_1OverflowSemantics_00_01_1_1llzk_1_1cast_1_1OverflowSemantics_01_4.html", null ],
-    [ "mlir::FieldParser< std::optional<::llzk::cast::OverflowSemantics >, std::optional<::llzk::cast::OverflowSemantics > >", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1cast_1_1OverflowSemantics_01_4_00_01se5833e255e5fc640d3165f8450b95442.html", null ],
-    [ "llvm::DenseMapInfo<::llzk::cast::OverflowSemantics >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1cast_1_1OverflowSemantics_01_4.html", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1cast_1_1OverflowSemantics_01_4" ],
+    [ "mlir::FieldParser&lt;::llzk::cast::OverflowSemantics, ::llzk::cast::OverflowSemantics &gt;", "structmlir_1_1FieldParser_3_1_1llzk_1_1cast_1_1OverflowSemantics_00_01_1_1llzk_1_1cast_1_1OverflowSemantics_01_4.html", null ],
+    [ "mlir::FieldParser&lt; std::optional&lt;::llzk::cast::OverflowSemantics &gt;, std::optional&lt;::llzk::cast::OverflowSemantics &gt; &gt;", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1cast_1_1OverflowSemantics_01_4_00_01se5833e255e5fc640d3165f8450b95442.html", null ],
+    [ "llvm::DenseMapInfo&lt;::llzk::cast::OverflowSemantics &gt;", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1cast_1_1OverflowSemantics_01_4.html", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1cast_1_1OverflowSemantics_01_4" ],
     [ "llzk::cast::OverflowSemantics", "namespacellzk_1_1cast.html#af2ddac14777c44ed1ec080bdabb4b476", [
       [ "llzk::cast::OverflowSemantics::ASSERT", "namespacellzk_1_1cast.html#af2ddac14777c44ed1ec080bdabb4b476a1edce3bd99a335da00a27703a24f3dfc", null ],
       [ "llzk::cast::OverflowSemantics::SATURATE", "namespacellzk_1_1cast.html#af2ddac14777c44ed1ec080bdabb4b476a4729d95f983955f0d93a30179deb2b86", null ],

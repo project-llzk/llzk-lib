@@ -14,7 +14,7 @@ var searchData=
   ['toindex_20_3a_3allzk_3a_3acast_3a_3afelttoindexop_11',['&lt;span class=&quot;tt&quot;&gt;cast.toindex&lt;/span&gt; (llzk::cast::FeltToIndexOp)',['../dialects.html#casttoindex-llzkcastfelttoindexop',1,'']]],
   ['tool_20guides_12',['Tool Guides',['../tools.html',1,'']]],
   ['tracking_20a_20new_20version_13',['Tracking a New Version',['../maintanence.html#tracking-a-new-version',1,'']]],
-  ['transformation_20passes_14',['Transformation Passes',['../tools.html#array-dialect-transformation-passes',1,''array' Dialect Transformation Passes'],['../tools.html#polymorphic-dialect-transformation-passes',1,''polymorphic' Dialect Transformation Passes'],['../tools.html#general-transformation-passes',1,'General Transformation Passes']]],
+  ['transformation_20passes_14',['Transformation Passes',['../tools.html#array-dialect-transformation-passes',1,'&apos;array&apos; Dialect Transformation Passes'],['../tools.html#polymorphic-dialect-transformation-passes',1,'&apos;polymorphic&apos; Dialect Transformation Passes'],['../tools.html#general-transformation-passes',1,'General Transformation Passes']]],
   ['translate_15',['llzk-translate',['../tools.html#llzk-translate',1,'']]],
   ['translation_20guidelines_16',['Translation Guidelines',['../syntax.html#translation-guidelines',1,'']]],
   ['tree_17',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-symbol-def-tree&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-symbol-def-tree',1,'']]],

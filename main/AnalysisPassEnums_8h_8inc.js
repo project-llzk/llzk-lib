@@ -1,8 +1,8 @@
 var AnalysisPassEnums_8h_8inc =
 [
-    [ "mlir::FieldParser<::llzk::OutputStream, ::llzk::OutputStream >", "structmlir_1_1FieldParser_3_1_1llzk_1_1OutputStream_00_01_1_1llzk_1_1OutputStream_01_4.html", null ],
-    [ "mlir::FieldParser< std::optional<::llzk::OutputStream >, std::optional<::llzk::OutputStream > >", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1OutputStream_01_4_00_01std_1_1optionaf28399610e384e0d4fd7a9ffaf1b5959.html", null ],
-    [ "llvm::DenseMapInfo<::llzk::OutputStream >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1OutputStream_01_4.html", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1OutputStream_01_4" ],
+    [ "mlir::FieldParser&lt;::llzk::OutputStream, ::llzk::OutputStream &gt;", "structmlir_1_1FieldParser_3_1_1llzk_1_1OutputStream_00_01_1_1llzk_1_1OutputStream_01_4.html", null ],
+    [ "mlir::FieldParser&lt; std::optional&lt;::llzk::OutputStream &gt;, std::optional&lt;::llzk::OutputStream &gt; &gt;", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1OutputStream_01_4_00_01std_1_1optionaf28399610e384e0d4fd7a9ffaf1b5959.html", null ],
+    [ "llvm::DenseMapInfo&lt;::llzk::OutputStream &gt;", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1OutputStream_01_4.html", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1OutputStream_01_4" ],
     [ "llzk::OutputStream", "namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2", [
       [ "llzk::OutputStream::Outs", "namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ac31eed413e5e7ea16023bcfa3a4e5e55", null ],
       [ "llzk::OutputStream::Errs", "namespacellzk.html#ac64174fed27e22bfcf57e4332be0b8f2ae9ee3f615e1fc88e4ae0293db27987f1", null ],

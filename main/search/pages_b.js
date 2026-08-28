@@ -6,7 +6,7 @@ var searchData=
   ['global_20dialect_3',['&apos;global&apos; Dialect',['../dialects.html#global-dialect',1,'']]],
   ['global_20read_20_3a_3allzk_3a_3aglobal_3a_3aglobalreadop_4',['&lt;span class=&quot;tt&quot;&gt;global.read&lt;/span&gt; (llzk::global::GlobalReadOp)',['../dialects.html#globalread-llzkglobalglobalreadop',1,'']]],
   ['global_20write_20_3a_3allzk_3a_3aglobal_3a_3aglobalwriteop_5',['&lt;span class=&quot;tt&quot;&gt;global.write&lt;/span&gt; (llzk::global::GlobalWriteOp)',['../dialects.html#globalwrite-llzkglobalglobalwriteop',1,'']]],
-  ['graph_6',['graph',['../tools.html#autotoc_md-llzk-print-call-graph',1,'<span class="tt">-llzk-print-call-graph</span>'],['../tools.html#autotoc_md-llzk-print-symbol-use-graph',1,'<span class="tt">-llzk-print-symbol-use-graph</span>']]],
+  ['graph_6',['graph',['../tools.html#autotoc_md-llzk-print-call-graph',1,'&lt;span class=&quot;tt&quot;&gt;-llzk-print-call-graph&lt;/span&gt;'],['../tools.html#autotoc_md-llzk-print-symbol-use-graph',1,'&lt;span class=&quot;tt&quot;&gt;-llzk-print-symbol-use-graph&lt;/span&gt;']]],
   ['graph_20sccs_7',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-call-graph-sccs&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-call-graph-sccs',1,'']]],
   ['graphs_8',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-constraint-dependency-graphs&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-constraint-dependency-graphs',1,'']]],
   ['guide_9',['Guide',['../contribution-guide.html',1,'Contribution Guide'],['../maintanence.html',1,'Maintenance Guide']]],

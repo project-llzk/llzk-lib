@@ -1,6 +1,6 @@
 var WildcardArraySpecializationPass_8cpp =
 [
-    [ "llzk::polymorphic::impl::WildcardArraySpecializationPassBase< DerivedT >", "classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase" ],
+    [ "llzk::polymorphic::impl::WildcardArraySpecializationPassBase&lt; DerivedT &gt;", "classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html", "classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase" ],
     [ "DEBUG_TYPE", "WildcardArraySpecializationPass_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d", null ],
     [ "GEN_PASS_DEF_WILDCARDARRAYSPECIALIZATIONPASS", "WildcardArraySpecializationPass_8cpp.html#ae9a2315aab535fc6de6355dac19bf212", null ],
     [ "llzk::polymorphic::createWildcardArraySpecializationPass", "namespacellzk_1_1polymorphic.html#ae49a61882b349f3a4009b320d315f897", null ],

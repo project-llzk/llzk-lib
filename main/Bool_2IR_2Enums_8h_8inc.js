@@ -1,8 +1,8 @@
 var Bool_2IR_2Enums_8h_8inc =
 [
-    [ "mlir::FieldParser<::llzk::boolean::FeltCmpPredicate, ::llzk::boolean::FeltCmpPredicate >", "structmlir_1_1FieldParser_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_00_01_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4.html", null ],
-    [ "mlir::FieldParser< std::optional<::llzk::boolean::FeltCmpPredicate >, std::optional<::llzk::boolean::FeltCmpPredicate > >", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4_00_0fa3d077b4dcce16eb97891943ddab480.html", null ],
-    [ "llvm::DenseMapInfo<::llzk::boolean::FeltCmpPredicate >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4.html", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4" ],
+    [ "mlir::FieldParser&lt;::llzk::boolean::FeltCmpPredicate, ::llzk::boolean::FeltCmpPredicate &gt;", "structmlir_1_1FieldParser_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_00_01_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4.html", null ],
+    [ "mlir::FieldParser&lt; std::optional&lt;::llzk::boolean::FeltCmpPredicate &gt;, std::optional&lt;::llzk::boolean::FeltCmpPredicate &gt; &gt;", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4_00_0fa3d077b4dcce16eb97891943ddab480.html", null ],
+    [ "llvm::DenseMapInfo&lt;::llzk::boolean::FeltCmpPredicate &gt;", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4.html", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4" ],
     [ "llzk::boolean::FeltCmpPredicate", "namespacellzk_1_1boolean.html#aa2a08eb552270cddaf816ec7c01afd37", [
       [ "llzk::boolean::FeltCmpPredicate::EQ", "namespacellzk_1_1boolean.html#aa2a08eb552270cddaf816ec7c01afd37a2dcbad7477fd40561e8b8198f173bd47", null ],
       [ "llzk::boolean::FeltCmpPredicate::NE", "namespacellzk_1_1boolean.html#aa2a08eb552270cddaf816ec7c01afd37adc33066c3993e0d50896e533fd692ce0", null ],

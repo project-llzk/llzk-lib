@@ -1,8 +1,8 @@
 var TransformationPassEnums_8h_8inc =
 [
-    [ "mlir::FieldParser<::llzk::polymorphic::FlatteningCleanupMode, ::llzk::polymorphic::FlatteningCleanupMode >", "structmlir_1_1FieldParser_3_1_1llzk_1_1polymorphic_1_1FlatteningCleanupMode_00_01_1_1llzk_1_1pola55774467e14cd5e75dd57edfedecbc7.html", null ],
-    [ "mlir::FieldParser< std::optional<::llzk::polymorphic::FlatteningCleanupMode >, std::optional<::llzk::polymorphic::FlatteningCleanupMode > >", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1polymorphic_1_1FlatteningCleanupMode_884cb05fce4208e79cfeb01515bc74eb.html", null ],
-    [ "llvm::DenseMapInfo<::llzk::polymorphic::FlatteningCleanupMode >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1polymorphic_1_1FlatteningCleanupMode_01_4.html", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1polymorphic_1_1FlatteningCleanupMode_01_4" ],
+    [ "mlir::FieldParser&lt;::llzk::polymorphic::FlatteningCleanupMode, ::llzk::polymorphic::FlatteningCleanupMode &gt;", "structmlir_1_1FieldParser_3_1_1llzk_1_1polymorphic_1_1FlatteningCleanupMode_00_01_1_1llzk_1_1pola55774467e14cd5e75dd57edfedecbc7.html", null ],
+    [ "mlir::FieldParser&lt; std::optional&lt;::llzk::polymorphic::FlatteningCleanupMode &gt;, std::optional&lt;::llzk::polymorphic::FlatteningCleanupMode &gt; &gt;", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1polymorphic_1_1FlatteningCleanupMode_884cb05fce4208e79cfeb01515bc74eb.html", null ],
+    [ "llvm::DenseMapInfo&lt;::llzk::polymorphic::FlatteningCleanupMode &gt;", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1polymorphic_1_1FlatteningCleanupMode_01_4.html", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1polymorphic_1_1FlatteningCleanupMode_01_4" ],
     [ "llzk::polymorphic::FlatteningCleanupMode", "namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9", [
       [ "llzk::polymorphic::FlatteningCleanupMode::Unspecified", "namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9a6fcdc090caeade09d0efd6253932b6f5", null ],
       [ "llzk::polymorphic::FlatteningCleanupMode::Disabled", "namespacellzk_1_1polymorphic.html#a60784cd30ddfef02461e8b7b80e910c9ab9f5c797ebbf55adccdd8539a65a0241", null ],

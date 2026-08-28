@@ -4,11 +4,11 @@ var hierarchy =
       [ "llzk::MemberOverwriteLattice", "classllzk_1_1MemberOverwriteLattice.html", null ],
       [ "llzk::PredecessorLattice", "classllzk_1_1PredecessorLattice.html", null ]
     ] ],
-    [ "llzk::dataflow::AbstractLatticeValue< Derived, ScalarTy >", "classllzk_1_1dataflow_1_1AbstractLatticeValue.html", null ],
-    [ "llzk::dataflow::AbstractLatticeValue< IntervalAnalysisLatticeValue, ExpressionValue >", "classllzk_1_1dataflow_1_1AbstractLatticeValue.html", [
+    [ "llzk::dataflow::AbstractLatticeValue&lt; Derived, ScalarTy &gt;", "classllzk_1_1dataflow_1_1AbstractLatticeValue.html", null ],
+    [ "llzk::dataflow::AbstractLatticeValue&lt; IntervalAnalysisLatticeValue, ExpressionValue &gt;", "classllzk_1_1dataflow_1_1AbstractLatticeValue.html", [
       [ "llzk::IntervalAnalysisLatticeValue", "classllzk_1_1IntervalAnalysisLatticeValue.html", null ]
     ] ],
-    [ "llzk::dataflow::AbstractLatticeValue< SourceRefLatticeValue, SourceRefSet >", "classllzk_1_1dataflow_1_1AbstractLatticeValue.html", [
+    [ "llzk::dataflow::AbstractLatticeValue&lt; SourceRefLatticeValue, SourceRefSet &gt;", "classllzk_1_1dataflow_1_1AbstractLatticeValue.html", [
       [ "llzk::SourceRefLatticeValue", "classllzk_1_1SourceRefLatticeValue.html", null ]
     ] ],
     [ "mlir::dataflow::AbstractSparseForwardDataFlowAnalysis", null, [
@@ -366,7 +366,7 @@ var hierarchy =
       ] ],
       [ "llzk::boolean::CmpOpGenericAdaptor< RangeT >", "classllzk_1_1boolean_1_1CmpOpGenericAdaptor.html", null ]
     ] ],
-    [ "llzk::CommutativeMatcher< LhsMatcher, RhsMatcher, OpTypes >", "structllzk_1_1CommutativeMatcher.html", null ],
+    [ "llzk::CommutativeMatcher&lt; LhsMatcher, RhsMatcher, OpTypes &gt;", "structllzk_1_1CommutativeMatcher.html", null ],
     [ "llzk::ComputeConstrainToProductPassOptions", "structllzk_1_1ComputeConstrainToProductPassOptions.html", null ],
     [ "llzk::smt::detail::ConcatOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1ConcatOpGenericAdaptorBase.html", [
       [ "llzk::smt::ConcatOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1ConcatOpGenericAdaptor.html", null ],
@@ -551,19 +551,19 @@ var hierarchy =
       [ "llzk::verif::detail::CallableSummaryKeyInfo", "structllzk_1_1verif_1_1detail_1_1CallableSummaryKeyInfo.html", null ],
       [ "llzk::verif::detail::IncludedContractSummaryKeyInfo", "structllzk_1_1verif_1_1detail_1_1IncludedContractSummaryKeyInfo.html", null ]
     ] ],
-    [ "llvm::DenseMapInfo< CompatiblePodLeafMaterializationKey >", "structllvm_1_1DenseMapInfo_3_01CompatiblePodLeafMaterializationKey_01_4.html", null ],
-    [ "llvm::DenseMapInfo< llzk::ExpressionValue >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1ExpressionValue_01_4.html", null ],
-    [ "llvm::DenseMapInfo< llzk::Side >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4.html", null ],
-    [ "llvm::DenseMapInfo< llzk::SourceRef >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1SourceRef_01_4.html", null ],
-    [ "llvm::DenseMapInfo< OperationComparator >", "structllvm_1_1DenseMapInfo_3_01OperationComparator_01_4.html", null ],
-    [ "llvm::DenseMapInfo< RecordChain >", "structllvm_1_1DenseMapInfo_3_01RecordChain_01_4.html", null ],
-    [ "llvm::DenseMapInfo< ReferenceID >", "structllvm_1_1DenseMapInfo_3_01ReferenceID_01_4.html", null ],
-    [ "llvm::DenseMapInfo<::llzk::boolean::FeltCmpPredicate >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4.html", null ],
-    [ "llvm::DenseMapInfo<::llzk::cast::OverflowSemantics >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1cast_1_1OverflowSemantics_01_4.html", null ],
-    [ "llvm::DenseMapInfo<::llzk::OutputStream >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1OutputStream_01_4.html", null ],
-    [ "llvm::DenseMapInfo<::llzk::polymorphic::FlatteningCleanupMode >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1polymorphic_1_1FlatteningCleanupMode_01_4.html", null ],
-    [ "llvm::DenseMapInfo<::llzk::smt::BVCmpPredicate >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1smt_1_1BVCmpPredicate_01_4.html", null ],
-    [ "llvm::DenseMapInfo<::llzk::smt::IntPredicate >", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1smt_1_1IntPredicate_01_4.html", null ],
+    [ "llvm::DenseMapInfo&lt; CompatiblePodLeafMaterializationKey &gt;", "structllvm_1_1DenseMapInfo_3_01CompatiblePodLeafMaterializationKey_01_4.html", null ],
+    [ "llvm::DenseMapInfo&lt; llzk::ExpressionValue &gt;", "structllvm_1_1DenseMapInfo_3_01llzk_1_1ExpressionValue_01_4.html", null ],
+    [ "llvm::DenseMapInfo&lt; llzk::Side &gt;", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4.html", null ],
+    [ "llvm::DenseMapInfo&lt; llzk::SourceRef &gt;", "structllvm_1_1DenseMapInfo_3_01llzk_1_1SourceRef_01_4.html", null ],
+    [ "llvm::DenseMapInfo&lt; OperationComparator &gt;", "structllvm_1_1DenseMapInfo_3_01OperationComparator_01_4.html", null ],
+    [ "llvm::DenseMapInfo&lt; RecordChain &gt;", "structllvm_1_1DenseMapInfo_3_01RecordChain_01_4.html", null ],
+    [ "llvm::DenseMapInfo&lt; ReferenceID &gt;", "structllvm_1_1DenseMapInfo_3_01ReferenceID_01_4.html", null ],
+    [ "llvm::DenseMapInfo&lt;::llzk::boolean::FeltCmpPredicate &gt;", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4.html", null ],
+    [ "llvm::DenseMapInfo&lt;::llzk::cast::OverflowSemantics &gt;", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1cast_1_1OverflowSemantics_01_4.html", null ],
+    [ "llvm::DenseMapInfo&lt;::llzk::OutputStream &gt;", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1OutputStream_01_4.html", null ],
+    [ "llvm::DenseMapInfo&lt;::llzk::polymorphic::FlatteningCleanupMode &gt;", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1polymorphic_1_1FlatteningCleanupMode_01_4.html", null ],
+    [ "llvm::DenseMapInfo&lt;::llzk::smt::BVCmpPredicate &gt;", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1smt_1_1BVCmpPredicate_01_4.html", null ],
+    [ "llvm::DenseMapInfo&lt;::llzk::smt::IntPredicate &gt;", "structllvm_1_1DenseMapInfo_3_1_1llzk_1_1smt_1_1IntPredicate_01_4.html", null ],
     [ "mlir::Dialect", null, [
       [ "llzk::LLZKDialect", "classllzk_1_1LLZKDialect.html", null ],
       [ "llzk::array::ArrayDialect", "classllzk_1_1array_1_1ArrayDialect.html", null ],
@@ -682,20 +682,20 @@ var hierarchy =
       [ "llzk::cast::FeltToIndexOpGenericAdaptor< RangeT >", "classllzk_1_1cast_1_1FeltToIndexOpGenericAdaptor.html", null ]
     ] ],
     [ "llzk::Field", "classllzk_1_1Field.html", null ],
-    [ "mlir::FieldParser< T, typename >", "structmlir_1_1FieldParser.html", null ],
-    [ "mlir::FieldParser< llvm::APInt >", "structmlir_1_1FieldParser_3_01llvm_1_1APInt_01_4.html", null ],
-    [ "mlir::FieldParser< std::optional<::llzk::boolean::FeltCmpPredicate >, std::optional<::llzk::boolean::FeltCmpPredicate > >", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4_00_0fa3d077b4dcce16eb97891943ddab480.html", null ],
-    [ "mlir::FieldParser< std::optional<::llzk::cast::OverflowSemantics >, std::optional<::llzk::cast::OverflowSemantics > >", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1cast_1_1OverflowSemantics_01_4_00_01se5833e255e5fc640d3165f8450b95442.html", null ],
-    [ "mlir::FieldParser< std::optional<::llzk::OutputStream >, std::optional<::llzk::OutputStream > >", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1OutputStream_01_4_00_01std_1_1optionaf28399610e384e0d4fd7a9ffaf1b5959.html", null ],
-    [ "mlir::FieldParser< std::optional<::llzk::polymorphic::FlatteningCleanupMode >, std::optional<::llzk::polymorphic::FlatteningCleanupMode > >", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1polymorphic_1_1FlatteningCleanupMode_884cb05fce4208e79cfeb01515bc74eb.html", null ],
-    [ "mlir::FieldParser< std::optional<::llzk::smt::BVCmpPredicate >, std::optional<::llzk::smt::BVCmpPredicate > >", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1smt_1_1BVCmpPredicate_01_4_00_01std_1d17f21d2debc7c5ee46ab84e9b725e47.html", null ],
-    [ "mlir::FieldParser< std::optional<::llzk::smt::IntPredicate >, std::optional<::llzk::smt::IntPredicate > >", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1smt_1_1IntPredicate_01_4_00_01std_1_157158a30502fffadd47c7c7540cccf60.html", null ],
-    [ "mlir::FieldParser<::llzk::boolean::FeltCmpPredicate, ::llzk::boolean::FeltCmpPredicate >", "structmlir_1_1FieldParser_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_00_01_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4.html", null ],
-    [ "mlir::FieldParser<::llzk::cast::OverflowSemantics, ::llzk::cast::OverflowSemantics >", "structmlir_1_1FieldParser_3_1_1llzk_1_1cast_1_1OverflowSemantics_00_01_1_1llzk_1_1cast_1_1OverflowSemantics_01_4.html", null ],
-    [ "mlir::FieldParser<::llzk::OutputStream, ::llzk::OutputStream >", "structmlir_1_1FieldParser_3_1_1llzk_1_1OutputStream_00_01_1_1llzk_1_1OutputStream_01_4.html", null ],
-    [ "mlir::FieldParser<::llzk::polymorphic::FlatteningCleanupMode, ::llzk::polymorphic::FlatteningCleanupMode >", "structmlir_1_1FieldParser_3_1_1llzk_1_1polymorphic_1_1FlatteningCleanupMode_00_01_1_1llzk_1_1pola55774467e14cd5e75dd57edfedecbc7.html", null ],
-    [ "mlir::FieldParser<::llzk::smt::BVCmpPredicate, ::llzk::smt::BVCmpPredicate >", "structmlir_1_1FieldParser_3_1_1llzk_1_1smt_1_1BVCmpPredicate_00_01_1_1llzk_1_1smt_1_1BVCmpPredicate_01_4.html", null ],
-    [ "mlir::FieldParser<::llzk::smt::IntPredicate, ::llzk::smt::IntPredicate >", "structmlir_1_1FieldParser_3_1_1llzk_1_1smt_1_1IntPredicate_00_01_1_1llzk_1_1smt_1_1IntPredicate_01_4.html", null ],
+    [ "mlir::FieldParser&lt; T, typename &gt;", "structmlir_1_1FieldParser.html", null ],
+    [ "mlir::FieldParser&lt; llvm::APInt &gt;", "structmlir_1_1FieldParser_3_01llvm_1_1APInt_01_4.html", null ],
+    [ "mlir::FieldParser&lt; std::optional&lt;::llzk::boolean::FeltCmpPredicate &gt;, std::optional&lt;::llzk::boolean::FeltCmpPredicate &gt; &gt;", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4_00_0fa3d077b4dcce16eb97891943ddab480.html", null ],
+    [ "mlir::FieldParser&lt; std::optional&lt;::llzk::cast::OverflowSemantics &gt;, std::optional&lt;::llzk::cast::OverflowSemantics &gt; &gt;", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1cast_1_1OverflowSemantics_01_4_00_01se5833e255e5fc640d3165f8450b95442.html", null ],
+    [ "mlir::FieldParser&lt; std::optional&lt;::llzk::OutputStream &gt;, std::optional&lt;::llzk::OutputStream &gt; &gt;", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1OutputStream_01_4_00_01std_1_1optionaf28399610e384e0d4fd7a9ffaf1b5959.html", null ],
+    [ "mlir::FieldParser&lt; std::optional&lt;::llzk::polymorphic::FlatteningCleanupMode &gt;, std::optional&lt;::llzk::polymorphic::FlatteningCleanupMode &gt; &gt;", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1polymorphic_1_1FlatteningCleanupMode_884cb05fce4208e79cfeb01515bc74eb.html", null ],
+    [ "mlir::FieldParser&lt; std::optional&lt;::llzk::smt::BVCmpPredicate &gt;, std::optional&lt;::llzk::smt::BVCmpPredicate &gt; &gt;", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1smt_1_1BVCmpPredicate_01_4_00_01std_1d17f21d2debc7c5ee46ab84e9b725e47.html", null ],
+    [ "mlir::FieldParser&lt; std::optional&lt;::llzk::smt::IntPredicate &gt;, std::optional&lt;::llzk::smt::IntPredicate &gt; &gt;", "structmlir_1_1FieldParser_3_01std_1_1optional_3_1_1llzk_1_1smt_1_1IntPredicate_01_4_00_01std_1_157158a30502fffadd47c7c7540cccf60.html", null ],
+    [ "mlir::FieldParser&lt;::llzk::boolean::FeltCmpPredicate, ::llzk::boolean::FeltCmpPredicate &gt;", "structmlir_1_1FieldParser_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_00_01_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4.html", null ],
+    [ "mlir::FieldParser&lt;::llzk::cast::OverflowSemantics, ::llzk::cast::OverflowSemantics &gt;", "structmlir_1_1FieldParser_3_1_1llzk_1_1cast_1_1OverflowSemantics_00_01_1_1llzk_1_1cast_1_1OverflowSemantics_01_4.html", null ],
+    [ "mlir::FieldParser&lt;::llzk::OutputStream, ::llzk::OutputStream &gt;", "structmlir_1_1FieldParser_3_1_1llzk_1_1OutputStream_00_01_1_1llzk_1_1OutputStream_01_4.html", null ],
+    [ "mlir::FieldParser&lt;::llzk::polymorphic::FlatteningCleanupMode, ::llzk::polymorphic::FlatteningCleanupMode &gt;", "structmlir_1_1FieldParser_3_1_1llzk_1_1polymorphic_1_1FlatteningCleanupMode_00_01_1_1llzk_1_1pola55774467e14cd5e75dd57edfedecbc7.html", null ],
+    [ "mlir::FieldParser&lt;::llzk::smt::BVCmpPredicate, ::llzk::smt::BVCmpPredicate &gt;", "structmlir_1_1FieldParser_3_1_1llzk_1_1smt_1_1BVCmpPredicate_00_01_1_1llzk_1_1smt_1_1BVCmpPredicate_01_4.html", null ],
+    [ "mlir::FieldParser&lt;::llzk::smt::IntPredicate, ::llzk::smt::IntPredicate &gt;", "structmlir_1_1FieldParser_3_1_1llzk_1_1smt_1_1IntPredicate_00_01_1_1llzk_1_1smt_1_1IntPredicate_01_4.html", null ],
     [ "llzk::FileLineColLocComparator", "structllzk_1_1FileLineColLocComparator.html", null ],
     [ "llzk::polymorphic::FlatteningPassOptions", "structllzk_1_1polymorphic_1_1FlatteningPassOptions.html", null ],
     [ "llzk::boolean::detail::ForAllOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1ForAllOpGenericAdaptorBase.html", [
@@ -763,26 +763,26 @@ var hierarchy =
       ] ],
       [ "llzk::global::GlobalWriteOpGenericAdaptor< RangeT >", "classllzk_1_1global_1_1GlobalWriteOpGenericAdaptor.html", null ]
     ] ],
-    [ "llvm::GraphTraits< const llzk::CallGraphNode * >", "structllvm_1_1GraphTraits_3_01const_01llzk_1_1CallGraphNode_01_5_01_4.html", [
+    [ "llvm::GraphTraits&lt; const llzk::CallGraphNode * &gt;", "structllvm_1_1GraphTraits_3_01const_01llzk_1_1CallGraphNode_01_5_01_4.html", [
       [ "llvm::GraphTraits< const llzk::CallGraph * >", "structllvm_1_1GraphTraits_3_01const_01llzk_1_1CallGraph_01_5_01_4.html", null ]
     ] ],
-    [ "llvm::GraphTraits< const llzk::SymbolDefTreeNode * >", "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html", [
+    [ "llvm::GraphTraits&lt; const llzk::SymbolDefTreeNode * &gt;", "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTreeNode_01_5_01_4.html", [
       [ "llvm::GraphTraits< const llzk::SymbolDefTree * >", "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolDefTree_01_5_01_4.html", null ]
     ] ],
-    [ "llvm::GraphTraits< const llzk::SymbolUseGraphNode * >", "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4.html", [
+    [ "llvm::GraphTraits&lt; const llzk::SymbolUseGraphNode * &gt;", "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4.html", [
       [ "llvm::GraphTraits< const llzk::SymbolUseGraph * >", "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html", null ]
     ] ],
-    [ "llvm::GraphTraits< Inverse< const llzk::SymbolUseGraphNode * > >", "structllvm_1_1GraphTraits_3_01Inverse_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4_01_4.html", [
+    [ "llvm::GraphTraits&lt; Inverse&lt; const llzk::SymbolUseGraphNode * &gt; &gt;", "structllvm_1_1GraphTraits_3_01Inverse_3_01const_01llzk_1_1SymbolUseGraphNode_01_5_01_4_01_4.html", [
       [ "llvm::GraphTraits< Inverse< const llzk::SymbolUseGraph * > >", "structllvm_1_1GraphTraits_3_01Inverse_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4_01_4.html", null ]
     ] ],
-    [ "llzk::HasAncestor< Ancestor, Ancestors >", "structllzk_1_1HasAncestor.html", null ],
+    [ "llzk::HasAncestor&lt; Ancestor, Ancestors &gt;", "structllzk_1_1HasAncestor.html", null ],
     [ "llzk::ExpressionValue::Hash", "structllzk_1_1ExpressionValue_1_1Hash.html", null ],
     [ "llzk::Interval::Hash", "structllzk_1_1Interval_1_1Hash.html", null ],
     [ "llzk::SourceRef::Hash", "structllzk_1_1SourceRef_1_1Hash.html", null ],
     [ "llzk::SourceRefIndex::Hash", "structllzk_1_1SourceRefIndex_1_1Hash.html", null ],
     [ "llzk::UnreducedInterval::Hash", "structllzk_1_1UnreducedInterval_1_1Hash.html", null ],
-    [ "std::hash< llzk::CDGAnalysisContext >", "structstd_1_1hash_3_01llzk_1_1CDGAnalysisContext_01_4.html", null ],
-    [ "std::hash< llzk::IntervalAnalysisContext >", "structstd_1_1hash_3_01llzk_1_1IntervalAnalysisContext_01_4.html", null ],
+    [ "std::hash&lt; llzk::CDGAnalysisContext &gt;", "structstd_1_1hash_3_01llzk_1_1CDGAnalysisContext_01_4.html", null ],
+    [ "std::hash&lt; llzk::IntervalAnalysisContext &gt;", "structstd_1_1hash_3_01llzk_1_1IntervalAnalysisContext_01_4.html", null ],
     [ "ClangLexerContext::Impl", "structClangLexerContext_1_1Impl.html", null ],
     [ "llzk::smt::detail::ImpliesOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1ImpliesOpGenericAdaptorBase.html", [
       [ "llzk::smt::ImpliesOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1ImpliesOpGenericAdaptor.html", null ],
@@ -826,7 +826,7 @@ var hierarchy =
       [ "llzk::array::InsertArrayOpGenericAdaptor< RangeT >", "classllzk_1_1array_1_1InsertArrayOpGenericAdaptor.html", null ]
     ] ],
     [ "llzk::polymorphic::detail::InstantiationLayout", "structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html", null ],
-    [ "llzk::component::InStructFunctionNamed< FuncName >", "structllzk_1_1component_1_1InStructFunctionNamed.html", null ],
+    [ "llzk::component::InStructFunctionNamed&lt; FuncName &gt;", "structllzk_1_1component_1_1InStructFunctionNamed.html", null ],
     [ "llzk::smt::detail::Int2BVOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1Int2BVOpGenericAdaptorBase.html", [
       [ "llzk::smt::Int2BVOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1Int2BVOpGenericAdaptor.html", null ],
       [ "llzk::smt::Int2BVOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1Int2BVOpGenericAdaptor.html", [
@@ -949,7 +949,7 @@ var hierarchy =
     [ "LlzkAffineMapOperandsBuilder", "structLlzkAffineMapOperandsBuilder.html", null ],
     [ "LlzkRecordValue", "structLlzkRecordValue.html", null ],
     [ "LlzkSymbolLookupResult", "structLlzkSymbolLookupResult.html", null ],
-    [ "llzk::LLZKTypeSwitch< Derived, ResultType >", "structllzk_1_1LLZKTypeSwitch.html", null ],
+    [ "llzk::LLZKTypeSwitch&lt; Derived, ResultType &gt;", "structllzk_1_1LLZKTypeSwitch.html", null ],
     [ "llzk::ram::detail::LoadOpGenericAdaptorBase", "classllzk_1_1ram_1_1detail_1_1LoadOpGenericAdaptorBase.html", [
       [ "llzk::ram::LoadOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1ram_1_1LoadOpGenericAdaptor.html", null ],
       [ "llzk::ram::LoadOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1ram_1_1LoadOpGenericAdaptor.html", [
@@ -958,7 +958,7 @@ var hierarchy =
       [ "llzk::ram::LoadOpGenericAdaptor< RangeT >", "classllzk_1_1ram_1_1LoadOpGenericAdaptor.html", null ]
     ] ],
     [ "llzk::LocationComparator", "structllzk_1_1LocationComparator.html", null ],
-    [ "MapOperandsHelper< N >", "classMapOperandsHelper.html", null ],
+    [ "MapOperandsHelper&lt; N &gt;", "classMapOperandsHelper.html", null ],
     [ "llzk::component::detail::MemberDefOpGenericAdaptorBase", "classllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase.html", [
       [ "llzk::component::MemberDefOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1component_1_1MemberDefOpGenericAdaptor.html", null ],
       [ "llzk::component::MemberDefOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1component_1_1MemberDefOpGenericAdaptor.html", [
@@ -984,11 +984,11 @@ var hierarchy =
     [ "MethodParameter", "structMethodParameter.html", null ],
     [ "MlirOpBuilderInsertPoint", "structMlirOpBuilderInsertPoint.html", null ],
     [ "MlirValueRange", "structMlirValueRange.html", null ],
-    [ "llzk::ModuleAnalysis< Result, Context, StructAnalysisTy >", "classllzk_1_1ModuleAnalysis.html", null ],
-    [ "llzk::ModuleAnalysis< ConstraintDependencyGraph, CDGAnalysisContext, ConstraintDependencyGraphStructAnalysis >", "classllzk_1_1ModuleAnalysis.html", [
+    [ "llzk::ModuleAnalysis&lt; Result, Context, StructAnalysisTy &gt;", "classllzk_1_1ModuleAnalysis.html", null ],
+    [ "llzk::ModuleAnalysis&lt; ConstraintDependencyGraph, CDGAnalysisContext, ConstraintDependencyGraphStructAnalysis &gt;", "classllzk_1_1ModuleAnalysis.html", [
       [ "llzk::ConstraintDependencyGraphModuleAnalysis", "classllzk_1_1ConstraintDependencyGraphModuleAnalysis.html", null ]
     ] ],
-    [ "llzk::ModuleAnalysis< StructIntervals, IntervalAnalysisContext, StructIntervalAnalysis >", "classllzk_1_1ModuleAnalysis.html", [
+    [ "llzk::ModuleAnalysis&lt; StructIntervals, IntervalAnalysisContext, StructIntervalAnalysis &gt;", "classllzk_1_1ModuleAnalysis.html", [
       [ "llzk::ModuleIntervalAnalysis", "classllzk_1_1ModuleIntervalAnalysis.html", null ]
     ] ],
     [ "llzk::felt::detail::MulFeltOpGenericAdaptorBase", "classllzk_1_1felt_1_1detail_1_1MulFeltOpGenericAdaptorBase.html", [
@@ -998,7 +998,7 @@ var hierarchy =
       ] ],
       [ "llzk::felt::MulFeltOpGenericAdaptor< RangeT >", "classllzk_1_1felt_1_1MulFeltOpGenericAdaptor.html", null ]
     ] ],
-    [ "llzk::NamedOpLocationLess< Op >", "structllzk_1_1NamedOpLocationLess.html", null ],
+    [ "llzk::NamedOpLocationLess&lt; Op &gt;", "structllzk_1_1NamedOpLocationLess.html", null ],
     [ "llzk::felt::detail::NegFeltOpGenericAdaptorBase", "classllzk_1_1felt_1_1detail_1_1NegFeltOpGenericAdaptorBase.html", [
       [ "llzk::felt::NegFeltOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1felt_1_1NegFeltOpGenericAdaptor.html", null ],
       [ "llzk::felt::NegFeltOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1felt_1_1NegFeltOpGenericAdaptor.html", [
@@ -1232,7 +1232,7 @@ var hierarchy =
       [ "OpHeaderGenerator", "structOpHeaderGenerator.html", null ],
       [ "OpImplementationGenerator", "structOpImplementationGenerator.html", null ]
     ] ],
-    [ "llzk::OpHash< Op >", "structllzk_1_1OpHash.html", null ],
+    [ "llzk::OpHash&lt; Op &gt;", "structllzk_1_1OpHash.html", null ],
     [ "mlir::OpInterface", null, [
       [ "llzk::DiscardableAllocationAccessorOpInterface", "classllzk_1_1DiscardableAllocationAccessorOpInterface.html", null ],
       [ "llzk::array::ArrayAccessOpInterface", "classllzk_1_1array_1_1ArrayAccessOpInterface.html", null ],
@@ -1250,7 +1250,7 @@ var hierarchy =
       [ "llzk::verif::PostconditionOpInterface", "classllzk_1_1verif_1_1PostconditionOpInterface.html", null ],
       [ "llzk::verif::PreconditionOpInterface", "classllzk_1_1verif_1_1PreconditionOpInterface.html", null ]
     ] ],
-    [ "llzk::OpLocationLess< Op >", "structllzk_1_1OpLocationLess.html", null ],
+    [ "llzk::OpLocationLess&lt; Op &gt;", "structllzk_1_1OpLocationLess.html", null ],
     [ "llzk::boolean::detail::OrBoolOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1OrBoolOpGenericAdaptorBase.html", [
       [ "llzk::boolean::OrBoolOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1boolean_1_1OrBoolOpGenericAdaptor.html", null ],
       [ "llzk::boolean::OrBoolOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1boolean_1_1OrBoolOpGenericAdaptor.html", [
@@ -1458,8 +1458,8 @@ var hierarchy =
       ] ],
       [ "llzk::felt::SignedModFeltOpGenericAdaptor< RangeT >", "classllzk_1_1felt_1_1SignedModFeltOpGenericAdaptor.html", null ]
     ] ],
-    [ "llzk::smt::SMTOpVisitor< ConcreteType, ResultType, ExtraArgs >", "classllzk_1_1smt_1_1SMTOpVisitor.html", null ],
-    [ "llzk::smt::SMTTypeVisitor< ConcreteType, ResultType, ExtraArgs >", "classllzk_1_1smt_1_1SMTTypeVisitor.html", null ],
+    [ "llzk::smt::SMTOpVisitor&lt; ConcreteType, ResultType, ExtraArgs &gt;", "classllzk_1_1smt_1_1SMTOpVisitor.html", null ],
+    [ "llzk::smt::SMTTypeVisitor&lt; ConcreteType, ResultType, ExtraArgs &gt;", "classllzk_1_1smt_1_1SMTTypeVisitor.html", null ],
     [ "llzk::smt::detail::SolverOpGenericAdaptorBase", "classllzk_1_1smt_1_1detail_1_1SolverOpGenericAdaptorBase.html", [
       [ "llzk::smt::SolverOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1smt_1_1SolverOpGenericAdaptor.html", null ],
       [ "llzk::smt::SolverOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1smt_1_1SolverOpGenericAdaptor.html", [
@@ -1491,11 +1491,11 @@ var hierarchy =
       ] ],
       [ "llzk::ram::StoreOpGenericAdaptor< RangeT >", "classllzk_1_1ram_1_1StoreOpGenericAdaptor.html", null ]
     ] ],
-    [ "llzk::StructAnalysis< Result, Context >", "classllzk_1_1StructAnalysis.html", null ],
-    [ "llzk::StructAnalysis< ConstraintDependencyGraph, CDGAnalysisContext >", "classllzk_1_1StructAnalysis.html", [
+    [ "llzk::StructAnalysis&lt; Result, Context &gt;", "classllzk_1_1StructAnalysis.html", null ],
+    [ "llzk::StructAnalysis&lt; ConstraintDependencyGraph, CDGAnalysisContext &gt;", "classllzk_1_1StructAnalysis.html", [
       [ "llzk::ConstraintDependencyGraphStructAnalysis", "classllzk_1_1ConstraintDependencyGraphStructAnalysis.html", null ]
     ] ],
-    [ "llzk::StructAnalysis< StructIntervals, IntervalAnalysisContext >", "classllzk_1_1StructAnalysis.html", [
+    [ "llzk::StructAnalysis&lt; StructIntervals, IntervalAnalysisContext &gt;", "classllzk_1_1StructAnalysis.html", [
       [ "llzk::StructIntervalAnalysis", "classllzk_1_1StructIntervalAnalysis.html", null ]
     ] ],
     [ "llzk::component::detail::StructDefOpGenericAdaptorBase", "classllzk_1_1component_1_1detail_1_1StructDefOpGenericAdaptorBase.html", [
@@ -1517,7 +1517,7 @@ var hierarchy =
     [ "llzk::SymbolDefTree", "classllzk_1_1SymbolDefTree.html", null ],
     [ "llzk::SymbolDefTreeNode", "classllzk_1_1SymbolDefTreeNode.html", null ],
     [ "llzk::SymbolDefTreePrinterPassOptions", "structllzk_1_1SymbolDefTreePrinterPassOptions.html", null ],
-    [ "llzk::SymbolLookupResult< T >", "classllzk_1_1SymbolLookupResult.html", null ],
+    [ "llzk::SymbolLookupResult&lt; T &gt;", "classllzk_1_1SymbolLookupResult.html", null ],
     [ "llzk::SymbolLookupResultUntyped", "classllzk_1_1SymbolLookupResultUntyped.html", null ],
     [ "llzk::SymbolUseGraph", "classllzk_1_1SymbolUseGraph.html", null ],
     [ "llzk::SymbolUseGraphNode", "classllzk_1_1SymbolUseGraphNode.html", null ],
@@ -1736,8 +1736,8 @@ var hierarchy =
       ] ],
       [ "llzk::verif::VerifAssertOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1VerifAssertOpGenericAdaptor.html", null ]
     ] ],
-    [ "llzk::function::Verification< Extra >", "structllzk_1_1function_1_1Verification.html", null ],
-    [ "llzk::function::Verification<>", "structllzk_1_1function_1_1Verification_3_4.html", null ],
+    [ "llzk::function::Verification&lt; Extra &gt;", "structllzk_1_1function_1_1Verification.html", null ],
+    [ "llzk::function::Verification&lt;&gt;", "structllzk_1_1function_1_1Verification_3_4.html", null ],
     [ "llzk::verif::detail::VerifProveOpGenericAdaptorBase", "classllzk_1_1verif_1_1detail_1_1VerifProveOpGenericAdaptorBase.html", [
       [ "llzk::verif::VerifProveOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1verif_1_1VerifProveOpGenericAdaptor.html", null ],
       [ "llzk::verif::VerifProveOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1verif_1_1VerifProveOpGenericAdaptor.html", [
@@ -1752,7 +1752,7 @@ var hierarchy =
       ] ],
       [ "llzk::verif::VerifSMTProveOpGenericAdaptor< RangeT >", "classllzk_1_1verif_1_1VerifSMTProveOpGenericAdaptor.html", null ]
     ] ],
-    [ "llzk::VerifySizesForMultiAffineOps< OperandSegmentIndex >", "structllzk_1_1VerifySizesForMultiAffineOps.html", null ],
+    [ "llzk::VerifySizesForMultiAffineOps&lt; OperandSegmentIndex &gt;", "structllzk_1_1VerifySizesForMultiAffineOps.html", null ],
     [ "llzk::polymorphic::WildcardArraySpecializationPassOptions", "structllzk_1_1polymorphic_1_1WildcardArraySpecializationPassOptions.html", null ],
     [ "llzk::witgen::WitgenOptions", "structllzk_1_1witgen_1_1WitgenOptions.html", null ],
     [ "llzk::Within", "classllzk_1_1Within.html", null ],

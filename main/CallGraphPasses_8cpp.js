@@ -1,7 +1,7 @@
 var CallGraphPasses_8cpp =
 [
-    [ "llzk::impl::CallGraphPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1CallGraphPrinterPassBase.html", "classllzk_1_1impl_1_1CallGraphPrinterPassBase" ],
-    [ "llzk::impl::CallGraphSCCsPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1CallGraphSCCsPrinterPassBase.html", "classllzk_1_1impl_1_1CallGraphSCCsPrinterPassBase" ],
+    [ "llzk::impl::CallGraphPrinterPassBase&lt; DerivedT &gt;", "classllzk_1_1impl_1_1CallGraphPrinterPassBase.html", "classllzk_1_1impl_1_1CallGraphPrinterPassBase" ],
+    [ "llzk::impl::CallGraphSCCsPrinterPassBase&lt; DerivedT &gt;", "classllzk_1_1impl_1_1CallGraphSCCsPrinterPassBase.html", "classllzk_1_1impl_1_1CallGraphSCCsPrinterPassBase" ],
     [ "GEN_PASS_DEF_CALLGRAPHPRINTERPASS", "CallGraphPasses_8cpp.html#aeb6a7e2a63458e588b77658a83379043", null ],
     [ "GEN_PASS_DEF_CALLGRAPHSCCSPRINTERPASS", "CallGraphPasses_8cpp.html#a956397ea931d4608b93bb9575a95a8d5", null ],
     [ "llzk::createCallGraphPrinterPass", "namespacellzk.html#afe48a37ca529c46c6b130735d2d46dfb", null ],

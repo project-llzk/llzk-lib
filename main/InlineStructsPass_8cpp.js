@@ -1,6 +1,6 @@
 var InlineStructsPass_8cpp =
 [
-    [ "llzk::component::impl::InlineStructsPassBase< DerivedT >", "classllzk_1_1component_1_1impl_1_1InlineStructsPassBase.html", "classllzk_1_1component_1_1impl_1_1InlineStructsPassBase" ],
+    [ "llzk::component::impl::InlineStructsPassBase&lt; DerivedT &gt;", "classllzk_1_1component_1_1impl_1_1InlineStructsPassBase.html", "classllzk_1_1component_1_1impl_1_1InlineStructsPassBase" ],
     [ "@131302103075115236161030145331006346253030210005::HasContainsOp", "concept_0d131302103075115236161030145331006346253030210005_1_1HasContainsOp.html", null ],
     [ "DEBUG_TYPE", "InlineStructsPass_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d", null ],
     [ "GEN_PASS_DEF_INLINESTRUCTSPASS", "InlineStructsPass_8cpp.html#a43b049a533b8d50e4e12bf13412fcbb3", null ],

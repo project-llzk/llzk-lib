@@ -4,7 +4,7 @@ var searchData=
   ['langopts_1',['langOpts',['../structClangLexerContext_1_1Impl.html#ad36f88a1bd22567495f82e57d70dce02',1,'ClangLexerContext::Impl']]],
   ['lexer_2',['lexer',['../structClangLexerContext_1_1Impl.html#ad660a85a1cf5aa41904a4787f644d84a',1,'ClangLexerContext::Impl']]],
   ['lhsmatcher_3',['lhsMatcher',['../structllzk_1_1CommutativeMatcher.html#a70fc5f47dad692e48ef7a9f380aa5707',1,'llzk::CommutativeMatcher']]],
-  ['license_4',['License',['../LICENSE_8txt.html#aa1d88702a0f7643a389b609f93ff58f7',1,'License:&#160;LICENSE.txt'],['../LICENSE_8txt.html#aa1d88702a0f7643a389b609f93ff58f7',1,'License:&#160;LICENSE.txt'],['../LICENSE_8txt.html#aa1d88702a0f7643a389b609f93ff58f7',1,'License:&#160;LICENSE.txt']]],
+  ['license_4',['License',['../LICENSE_8txt.html#aa1d88702a0f7643a389b609f93ff58f7',1,'License:&#160;LICENSE.txt'],['../LICENSE_8txt.html#aa1d88702a0f7643a389b609f93ff58f7',1,'License:&#160;LICENSE.txt']]],
   ['licensor_5',['Licensor',['../LICENSE_8txt.html#a12b895709729541ec9f656e4b5bcca6e',1,'LICENSE.txt']]],
   ['limitation_6',['limitation',['../LICENSE_8txt.html#a757abc04b9f0985c064987e0fbe932eb',1,'LICENSE.txt']]],
   ['lists_7',['lists',['../LICENSE_8txt.html#a0e880c3fba11f9eb73a3973ce12ae79b',1,'LICENSE.txt']]],

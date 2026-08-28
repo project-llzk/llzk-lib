@@ -1,6 +1,6 @@
 var SymbolUseGraphPass_8cpp =
 [
-    [ "llzk::impl::SymbolUseGraphPrinterPassBase< DerivedT >", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase" ],
+    [ "llzk::impl::SymbolUseGraphPrinterPassBase&lt; DerivedT &gt;", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase.html", "classllzk_1_1impl_1_1SymbolUseGraphPrinterPassBase" ],
     [ "GEN_PASS_DEF_SYMBOLUSEGRAPHPRINTERPASS", "SymbolUseGraphPass_8cpp.html#aa1e9ebc015bc2fd35bb991629169690d", null ],
     [ "llzk::createSymbolUseGraphPrinterPass", "namespacellzk.html#a0f6ff8ad552f9df00e6145108f920542", null ],
     [ "llzk::createSymbolUseGraphPrinterPass", "namespacellzk.html#aa5b0aaa24fa188b6bb82954ce4843236", null ],

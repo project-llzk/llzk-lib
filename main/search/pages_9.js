@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['elim_0',['elim',['../tools.html#autotoc_md-llzk-duplicate-op-elim',1,'<span class="tt">-llzk-duplicate-op-elim</span>'],['../tools.html#autotoc_md-llzk-duplicate-read-write-elim',1,'<span class="tt">-llzk-duplicate-read-write-elim</span>'],['../tools.html#autotoc_md-llzk-unused-declaration-elim',1,'<span class="tt">-llzk-unused-declaration-elim</span>']]],
+  ['elim_0',['elim',['../tools.html#autotoc_md-llzk-duplicate-op-elim',1,'&lt;span class=&quot;tt&quot;&gt;-llzk-duplicate-op-elim&lt;/span&gt;'],['../tools.html#autotoc_md-llzk-duplicate-read-write-elim',1,'&lt;span class=&quot;tt&quot;&gt;-llzk-duplicate-read-write-elim&lt;/span&gt;'],['../tools.html#autotoc_md-llzk-unused-declaration-elim',1,'&lt;span class=&quot;tt&quot;&gt;-llzk-unused-declaration-elim&lt;/span&gt;']]],
   ['empty_20templates_1',['&lt;span class=&quot;tt&quot;&gt;-llzk-drop-empty-templates&lt;/span&gt;',['../tools.html#autotoc_md-llzk-drop-empty-templates',1,'']]],
   ['enforce_20no_20overwrite_2',['&lt;span class=&quot;tt&quot;&gt;-llzk-enforce-no-overwrite&lt;/span&gt;',['../tools.html#autotoc_md-llzk-enforce-no-overwrite',1,'']]],
   ['enforcement_3',['Enforcement',['../code-of-conduct.html#enforcement',1,'']]],

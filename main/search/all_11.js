@@ -14,7 +14,7 @@ var searchData=
   ['lhs_11',['LHS',['../namespacellzk.html#afc702f955fa2d6d30b19fae69930f11aa8cbc0fb889c6cc21e0be26227a2b468b',1,'llzk']]],
   ['lhs_12',['lhs',['../classllzk_1_1Interval.html#aad7107c8b3809ad8fc66613bd7e5a9fa',1,'llzk::Interval']]],
   ['lhsmatcher_13',['lhsMatcher',['../structllzk_1_1CommutativeMatcher.html#a70fc5f47dad692e48ef7a9f380aa5707',1,'llzk::CommutativeMatcher']]],
-  ['license_14',['License',['../LICENSE_8txt.html#aa1d88702a0f7643a389b609f93ff58f7',1,'License:&#160;LICENSE.txt'],['../LICENSE_8txt.html#aa1d88702a0f7643a389b609f93ff58f7',1,'License:&#160;LICENSE.txt'],['../LICENSE_8txt.html#aa1d88702a0f7643a389b609f93ff58f7',1,'License:&#160;LICENSE.txt'],['../license.html',1,'LLZK License']]],
+  ['license_14',['License',['../LICENSE_8txt.html#aa1d88702a0f7643a389b609f93ff58f7',1,'License:&#160;LICENSE.txt'],['../LICENSE_8txt.html#aa1d88702a0f7643a389b609f93ff58f7',1,'License:&#160;LICENSE.txt'],['../license.html',1,'LLZK License']]],
   ['license_2etxt_15',['LICENSE.txt',['../LICENSE_8txt.html',1,'']]],
   ['licensor_16',['Licensor',['../LICENSE_8txt.html#a12b895709729541ec9f656e4b5bcca6e',1,'LICENSE.txt']]],
   ['lightweightsignalequivalenceanalysis_17',['LightweightSignalEquivalenceAnalysis',['../classllzk_1_1LightweightSignalEquivalenceAnalysis.html',1,'llzk::LightweightSignalEquivalenceAnalysis'],['../classllzk_1_1LightweightSignalEquivalenceAnalysis.html#af8d950d615145e91c989cf9e1d232907',1,'llzk::LightweightSignalEquivalenceAnalysis::LightweightSignalEquivalenceAnalysis()']]],

@@ -2,7 +2,7 @@ var LLZKConversionUtils_8h =
 [
     [ "llzk::SplitFunctionNameInfo", "structllzk_1_1SplitFunctionNameInfo.html", "structllzk_1_1SplitFunctionNameInfo" ],
     [ "llzk::FunctionTypeConverter", "classllzk_1_1FunctionTypeConverter.html", "classllzk_1_1FunctionTypeConverter" ],
-    [ "llzk::SplitAggregateInMemberRefOp< ImplClass, MemberRefOpClass, GenHeaderType, IdType >", "classllzk_1_1SplitAggregateInMemberRefOp.html", "classllzk_1_1SplitAggregateInMemberRefOp" ],
+    [ "llzk::SplitAggregateInMemberRefOp&lt; ImplClass, MemberRefOpClass, GenHeaderType, IdType &gt;", "classllzk_1_1SplitAggregateInMemberRefOp.html", "classllzk_1_1SplitAggregateInMemberRefOp" ],
     [ "llzk::collectSplitFunctionNameInfo", "namespacellzk.html#acf9d9148e9ad315cad36f0a144450de5", null ],
     [ "llzk::createCallPreservingInstantiationOperands", "namespacellzk.html#ace269cecbfb44bc5826cd9136d88ae7f", null ],
     [ "llzk::getAttrAtIndexWithName", "namespacellzk.html#ad741d5f69ad1cb6fa19f8d6c5d1fc672", null ],

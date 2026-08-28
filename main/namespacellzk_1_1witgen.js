@@ -12,7 +12,7 @@ var namespacellzk_1_1witgen =
     [ "ArrayValueRef", "namespacellzk_1_1witgen.html#a907fa4fd459ee8b21d97027b29c51ade", null ],
     [ "PodValueRef", "namespacellzk_1_1witgen.html#a9e65c5d0cf5e310f8d4401ccc05e44a8", null ],
     [ "StructValueRef", "namespacellzk_1_1witgen.html#af5e835a0cc07cabd6b44397e9b1fa907", null ],
-    [ "WitnessVal", "namespacellzk_1_1witgen.html#ad670c78cc63aee96c5adb06078ab051a", null ],
+    [ "WitnessVal", "namespacellzk_1_1witgen.html#a2b1ffb5f2f6ebb2b50eb72be9f5a4048", null ],
     [ "Backend", "namespacellzk_1_1witgen.html#aec3ee3b863e273df6fdd3ad67a571bcc", [
       [ "Interpreter", "namespacellzk_1_1witgen.html#aec3ee3b863e273df6fdd3ad67a571bccadf608edb53fcc79c12759cdbdf58d9db", null ],
       [ "ExecutionEngine", "namespacellzk_1_1witgen.html#aec3ee3b863e273df6fdd3ad67a571bcca6209ce60deca82f58bb56892cbf73500", null ]

@@ -1,6 +1,6 @@
 var LLZKUnusedDeclarationEliminationPass_8cpp =
 [
-    [ "llzk::impl::UnusedDeclarationEliminationPassBase< DerivedT >", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase" ],
+    [ "llzk::impl::UnusedDeclarationEliminationPassBase&lt; DerivedT &gt;", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase.html", "classllzk_1_1impl_1_1UnusedDeclarationEliminationPassBase" ],
     [ "DEBUG_TYPE", "LLZKUnusedDeclarationEliminationPass_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d", null ],
     [ "GEN_PASS_DEF_UNUSEDDECLARATIONELIMINATIONPASS", "LLZKUnusedDeclarationEliminationPass_8cpp.html#a2d9cbf5d9b773416cbed4ccde9c171cd", null ],
     [ "llzk::createUnusedDeclarationEliminationPass", "namespacellzk.html#a7e50f86abd1a8550cd1020c2852719c4", null ],

@@ -12,10 +12,10 @@ var concepts =
         [ "TemplateSymbolBindingOp", "conceptllzk_1_1polymorphic_1_1TemplateSymbolBindingOp.html", null ]
       ] ],
       [ "ContextType", "conceptllzk_1_1ContextType.html", null ],
-      [ "StructAnalysisType", "conceptllzk_1_1StructAnalysisType.html", null ],
-      [ "OpComparable", "conceptllzk_1_1OpComparable.html", null ],
       [ "NamedOpComparable", "conceptllzk_1_1NamedOpComparable.html", null ],
-      [ "OpHashable", "conceptllzk_1_1OpHashable.html", null ]
+      [ "OpComparable", "conceptllzk_1_1OpComparable.html", null ],
+      [ "OpHashable", "conceptllzk_1_1OpHashable.html", null ],
+      [ "StructAnalysisType", "conceptllzk_1_1StructAnalysisType.html", null ]
     ] ],
     [ "HasInterface", "conceptHasInterface.html", null ],
     [ "HasTrait", "conceptHasTrait.html", null ]

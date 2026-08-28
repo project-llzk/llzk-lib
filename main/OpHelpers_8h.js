@@ -1,10 +1,10 @@
 var OpHelpers_8h =
 [
-    [ "llzk::LLZKSymbolTableImplTrait< TypeClass >", "classllzk_1_1LLZKSymbolTableImplTrait.html", null ],
-    [ "llzk::HasAncestor< Ancestor, Ancestors >", "structllzk_1_1HasAncestor.html", "structllzk_1_1HasAncestor" ],
-    [ "llzk::HasAncestor< Ancestor, Ancestors >::Impl< ConcreteType >", "structllzk_1_1HasAncestor_1_1Impl.html", null ],
-    [ "llzk::VerifySizesForMultiAffineOps< OperandSegmentIndex >", "structllzk_1_1VerifySizesForMultiAffineOps.html", "structllzk_1_1VerifySizesForMultiAffineOps" ],
-    [ "llzk::VerifySizesForMultiAffineOps< OperandSegmentIndex >::Impl< TypeClass >", "classllzk_1_1VerifySizesForMultiAffineOps_1_1Impl.html", null ],
+    [ "llzk::LLZKSymbolTableImplTrait&lt; TypeClass &gt;", "classllzk_1_1LLZKSymbolTableImplTrait.html", null ],
+    [ "llzk::HasAncestor&lt; Ancestor, Ancestors &gt;", "structllzk_1_1HasAncestor.html", "structllzk_1_1HasAncestor" ],
+    [ "llzk::HasAncestor&lt; Ancestor, Ancestors &gt;::Impl&lt; ConcreteType &gt;", "structllzk_1_1HasAncestor_1_1Impl.html", null ],
+    [ "llzk::VerifySizesForMultiAffineOps&lt; OperandSegmentIndex &gt;", "structllzk_1_1VerifySizesForMultiAffineOps.html", "structllzk_1_1VerifySizesForMultiAffineOps" ],
+    [ "llzk::VerifySizesForMultiAffineOps&lt; OperandSegmentIndex &gt;::Impl&lt; TypeClass &gt;", "classllzk_1_1VerifySizesForMultiAffineOps_1_1Impl.html", null ],
     [ "llzk::getOperationName", "namespacellzk.html#ace40014709812c1c57cb0aa39b87558b", null ],
     [ "llzk::getParentOfType", "namespacellzk.html#a5b768daf3c60f0a261a34d171f706304", null ],
     [ "llzk::getSelfOrParentOfType", "namespacellzk.html#ad55d77a77dc0f2d6c27bc7b6bedbc952", null ],

@@ -1,6 +1,6 @@
 var TypeHelper_8cpp =
 [
-    [ "llzk::LLZKTypeSwitch< Derived, ResultType >", "structllzk_1_1LLZKTypeSwitch.html", "structllzk_1_1LLZKTypeSwitch" ],
+    [ "llzk::LLZKTypeSwitch&lt; Derived, ResultType &gt;", "structllzk_1_1LLZKTypeSwitch.html", "structllzk_1_1LLZKTypeSwitch" ],
     [ "DEBUG_TYPE", "TypeHelper_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d", null ],
     [ "llzk::arrayTypesUnify", "namespacellzk.html#a9bdd2635c665c9a009596b32ceeeafec", null ],
     [ "llzk::assertValidAttrForParamOfType", "namespacellzk.html#a06f8a74431f12f0298cc7033691f84ec", null ],

@@ -1,7 +1,7 @@
 var TypeHelper_8h =
 [
     [ "llzk::BuildShortTypeString", "classllzk_1_1BuildShortTypeString.html", null ],
-    [ "llvm::DenseMapInfo< llzk::Side >", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4.html", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4" ],
+    [ "llvm::DenseMapInfo&lt; llzk::Side &gt;", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4.html", "structllvm_1_1DenseMapInfo_3_01llzk_1_1Side_01_4" ],
     [ "llzk::UnificationMap", "namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904", null ],
     [ "llzk::AttrConcreteness", "namespacellzk.html#a41c7611294e8e147781abc732a50159f", [
       [ "llzk::AttrConcreteness::NonConcrete", "namespacellzk.html#a41c7611294e8e147781abc732a50159fa629520a84a1c9269b04bc0f811417391", null ],
