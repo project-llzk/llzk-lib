@@ -225,7 +225,9 @@ struct ConvertArithSelectOp : public OpConversionPatternWithTemps<arith::SelectO
 struct ConvertAssumeDetOp : public OpConversionPattern<AssumeDetOp> {
   using OpConversionPattern<AssumeDetOp>::OpConversionPattern;
 
-  LogicalResult matchAndRewrite(AssumeDetOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const final {
+  LogicalResult matchAndRewrite(
+      AssumeDetOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const final {
     rewriter.replaceOpWithNewOp<pcl::AssumeDeterministicOp>(op, adaptor.getHint());
     return success();
   }
@@ -425,7 +427,9 @@ public:
 struct ConvertEnsureConstrainOp : public OpConversionPattern<EnsureConstrainOp> {
   using OpConversionPattern<EnsureConstrainOp>::OpConversionPattern;
 
-  LogicalResult matchAndRewrite(EnsureConstrainOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const final {
+  LogicalResult matchAndRewrite(
+      EnsureConstrainOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const final {
     rewriter.replaceOpWithNewOp<pcl::PostOp>(op, adaptor.getCondition());
     return success();
   }
@@ -573,11 +577,12 @@ struct ConvertNonDetOp : public OpConversionPatternWithTemps<NonDetOp> {
 struct ConvertProveDetOp : public OpConversionPattern<ProveDetOp> {
   using OpConversionPattern<ProveDetOp>::OpConversionPattern;
 
-  LogicalResult
-    matchAndRewrite(ProveDetOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter) const final {
-      rewriter.replaceOpWithNewOp<pcl::DetOp>(op, adaptor.getCondition());
-      return success();
-    }
+  LogicalResult matchAndRewrite(
+      ProveDetOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const final {
+    rewriter.replaceOpWithNewOp<pcl::DetOp>(op, adaptor.getCondition());
+    return success();
+  }
 };
 
 //===----------------------------------------------------------------------===//
