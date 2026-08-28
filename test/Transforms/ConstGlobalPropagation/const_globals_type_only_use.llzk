@@ -1,0 +1,24 @@
+// RUN: llzk-opt --mlir-very-unsafe-disable-verifier-on-parsing -llzk-const-global-propagation %s | FileCheck %s
+
+// The read's result type contains the use of @N not the `name_ref` which instead
+// targets @bits. Thus, propagation must preserve the read and rewrite its result
+// type. This is covered by the `readOp.getNameRef() == symbolAttr` check.
+// This test input is intentionally verifier-invalid because global types cannot
+// contain symbol references before this propagation pass resolves them.
+module attributes {llzk.lang} {
+  global.def const @N : index = 3
+  global.def @bits : !array.type<3 x i1>
+
+  function.def @read_bits() -> !array.type<@N x i1> {
+    %bits = global.read @bits : !array.type<@N x i1>
+    function.return %bits : !array.type<@N x i1>
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def @bits : !array.type<3 x i1>
+// CHECK-NEXT:    function.def @read_bits() -> !array.type<3 x i1> {
+// CHECK-NEXT:      %[[BITS:[0-9a-zA-Z_\.]+]] = global.read @bits : !array.type<3 x i1>
+// CHECK-NEXT:      function.return %[[BITS]] : !array.type<3 x i1>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

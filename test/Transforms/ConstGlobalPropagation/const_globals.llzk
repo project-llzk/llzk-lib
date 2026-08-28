@@ -1,0 +1,333 @@
+// RUN: llzk-opt -split-input-file -llzk-const-global-propagation %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  module @Consts {
+    global.def const @N : index = 3
+  }
+
+  poly.template @T {
+    poly.param @Z : index
+    struct.def @Component10A {
+      function.def @compute() -> !struct.type<@T::@Component10A<[@Z]>> {
+        %self = struct.new : !struct.type<@T::@Component10A<[@Z]>>
+        function.return %self : !struct.type<@T::@Component10A<[@Z]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@Component10A<[@Z]>>)  { function.return }
+    }
+  }
+
+  struct.def @Component10B {
+    struct.member @f : !struct.type<@T::@Component10A<[@Consts::@N]>>
+
+    function.def @compute() -> !struct.type<@Component10B> {
+      %self = struct.new : !struct.type<@Component10B>
+
+      %r = function.call @T::@Component10A::@compute() : () -> (!struct.type<@T::@Component10A<[@Consts::@N]>>)
+      struct.writem %self[@f] = %r : !struct.type<@Component10B>, !struct.type<@T::@Component10A<[@Consts::@N]>>
+
+      function.return %self : !struct.type<@Component10B>
+    }
+    function.def @constrain(%self: !struct.type<@Component10B>)  { function.return }
+  }
+}
+// CHECK-LABEL:  poly.template @T {
+// CHECK-NEXT:     poly.param @Z : index
+// CHECK-NEXT:     struct.def @Component10A {
+// CHECK-NEXT:       function.def @compute() -> !struct.type<@T::@Component10A<[@Z]>> attributes {function.allow_witness} {
+// CHECK-NEXT:         %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@T::@Component10A<[@Z]>>
+// CHECK-NEXT:         function.return %[[VAL_0]] : !struct.type<@T::@Component10A<[@Z]>>
+// CHECK-NEXT:       }
+// CHECK-NEXT:       function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@T::@Component10A<[@Z]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:         function.return
+// CHECK-NEXT:       }
+// CHECK-NEXT:     }
+// CHECK-NEXT:   }
+// CHECK-LABEL:  struct.def @Component10B {
+// CHECK-NEXT:     struct.member @f : !struct.type<@T::@Component10A<[3]>>
+// CHECK-NEXT:     function.def @compute() -> !struct.type<@Component10B> attributes {function.allow_witness} {
+// CHECK-NEXT:       %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@Component10B>
+// CHECK-NEXT:       %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @T::@Component10A::@compute() : () -> !struct.type<@T::@Component10A<[3]>>
+// CHECK-NEXT:       struct.writem %[[VAL_2]][@f] = %[[VAL_3]] : <@Component10B>, !struct.type<@T::@Component10A<[3]>>
+// CHECK-NEXT:       function.return %[[VAL_2]] : !struct.type<@Component10B>
+// CHECK-NEXT:     }
+// CHECK-NEXT:     function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Component10B>) attributes {function.allow_constraint} {
+// CHECK-NEXT:       function.return
+// CHECK-NEXT:     }
+// CHECK-NEXT:   }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : !struct.type<@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @RepeatedFelt {
+    poly.param @F : !felt.type<"bn128">
+
+    function.def @accept(
+        %global: !struct.type<@BoxTemplate::@Box<[@F]>>,
+        %literal: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      function.return
+    }
+  }
+
+  global.def const @G : !felt.type<"bn128"> = 35
+
+  struct.def @Main {
+    function.def @compute(
+        %global: !struct.type<@BoxTemplate::@Box<[@G]>>,
+        %literal: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>
+    ) -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+
+      function.call @RepeatedFelt::@accept(%global, %literal) :
+          (!struct.type<@BoxTemplate::@Box<[@G]>>,
+           !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>) -> ()
+
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@Main>,
+        %global: !struct.type<@BoxTemplate::@Box<[@G]>>,
+        %literal: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>
+    ) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @BoxTemplate {
+// CHECK-NEXT:      poly.param @P
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@BoxTemplate::@Box<[@P]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@BoxTemplate::@Box<[@P]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@P]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @RepeatedFelt {
+// CHECK-NEXT:      poly.param @F : !felt.type<"bn128">
+// CHECK-NEXT:      function.def @accept(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@F]>>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      function.def @compute(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : <"bn128">>]>>, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : <"bn128">>]>>) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.call @RepeatedFelt::@accept(%[[VAL_4]], %[[VAL_5]]) : (!struct.type<@BoxTemplate::@Box<[#felt<const 35 : <"bn128">>]>>, !struct.type<@BoxTemplate::@Box<[#felt<const 35 : <"bn128">>]>>) -> ()
+// CHECK-NEXT:        function.return %[[VAL_6]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : <"bn128">>]>>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : <"bn128">>]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  global.def const @X : index = 3
+  global.def const @Y : index = 3
+
+  function.def @foo() -> !array.type<@X,@Y x !felt.type<"bn128">> {
+    %x = array.new : !array.type<@X,@Y x !felt.type<"bn128">>
+    function.return %x : !array.type<@X,@Y x !felt.type<"bn128">>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @foo() -> !array.type<3,3 x !felt.type<"bn128">> {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = array.new  : <3,3 x !felt.type<"bn128">>
+// CHECK-NEXT:      function.return %[[VAL_0]] : !array.type<3,3 x !felt.type<"bn128">>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  global.def const @N : index = 3
+
+  struct.def @S {
+    struct.member @data : !pod.type<[
+      @values: !array.type<@N x !felt.type<"bn128">>
+    ]>
+
+    function.def @compute() -> !struct.type<@S> {
+      %self = struct.new : !struct.type<@S>
+      function.return %self : !struct.type<@S>
+    }
+
+    function.def @constrain(%self: !struct.type<@S>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @S {
+// CHECK-NEXT:      struct.member @data : !pod.type<[@values: !array.type<3 x !felt.type<"bn128">>]>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@S> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@S>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@S>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@S>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  module @gstore {
+    global.def const @A : !felt.type =  16
+    global.def const @B : index = 0
+    global.def const @C : i1 = false
+    global.def const @D : !string.type = "Hello world!"
+  }
+  function.def @foo() -> (!felt.type, index, i1, !string.type) {
+    %a = global.read @gstore::@A : !felt.type
+    %b = global.read @gstore::@B : index
+    %c = global.read @gstore::@C : i1
+    %d = global.read @gstore::@D : !string.type
+    function.return %a, %b, %c, %d : !felt.type, index, i1, !string.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    module @gstore {
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @foo() -> (!felt.type, index, i1, !string.type) {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  16
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant false
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = string.new "Hello world!"
+// CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_1]], %[[VAL_2]], %[[VAL_3]] : !felt.type, index, i1, !string.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  global.def const @values : !array.type<2 x i1> = [true, false]
+
+  function.def @read_values() -> !array.type<2 x i1> {
+    %values = global.read @values : !array.type<2 x i1>
+    function.return %values : !array.type<2 x i1>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def const @values : !array.type<2 x i1> = [true, false]
+// CHECK-NEXT:    function.def @read_values() -> !array.type<2 x i1> {
+// CHECK-NEXT:      %[[VALUES:[0-9a-zA-Z_\.]+]] = global.read @values : !array.type<2 x i1>
+// CHECK-NEXT:      function.return %[[VALUES]] : !array.type<2 x i1>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  module @typed_attr {
+    global.def const @A : !felt.type =  #felt<const 35 : !felt.type<"bn128">>
+  }
+  function.def @def_unspecified() -> !felt.type {
+    %a = global.read @typed_attr::@A : !felt.type
+    function.return %a : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    module @typed_attr {
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @def_unspecified() -> !felt.type {
+// CHECK-NEXT:      %[[CONST:[0-9a-zA-Z_\.]+]] = felt.const  35 : <"bn128">
+// CHECK-NEXT:      %[[A:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[CONST]] : (!felt.type<"bn128">) -> !felt.type
+// CHECK-NEXT:      function.return %[[A]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  module @typed_attr {
+    global.def const @A : !felt.type<"bn128"> =  #felt<const 35 : !felt.type>
+  }
+  function.def @attr_unspecified() -> !felt.type<"bn128"> {
+    %a = global.read @typed_attr::@A : !felt.type<"bn128">
+    function.return %a : !felt.type<"bn128">
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    module @typed_attr {
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @attr_unspecified() -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[A:[0-9a-zA-Z_\.]+]] = felt.const  35 : <"bn128">
+// CHECK-NEXT:      function.return %[[A]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  module @untyped_attr {
+    global.def const @A : !felt.type =  16
+  }
+  function.def @unspecified_as_specified() -> !felt.type<"babybear"> {
+    %a = global.read @untyped_attr::@A : !felt.type<"babybear">
+    function.return %a : !felt.type<"babybear">
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    module @untyped_attr {
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @unspecified_as_specified() -> !felt.type<"babybear"> {
+// CHECK-NEXT:      %[[CONST:[0-9a-zA-Z_\.]+]] = felt.const  16
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[CONST]] : (!felt.type) -> !felt.type<"babybear">
+// CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type<"babybear">
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  module @untyped_attr {
+    global.def const @A : !felt.type<"babybear"> =  16
+  }
+  function.def @specified_as_unspecified() -> !felt.type {
+    %a = global.read @untyped_attr::@A : !felt.type
+    function.return %a : !felt.type
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    module @untyped_attr {
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @specified_as_unspecified() -> !felt.type {
+// CHECK-NEXT:      %[[CONST:[0-9a-zA-Z_\.]+]] = felt.const  16 : <"babybear">
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[CONST]] : (!felt.type<"babybear">) -> !felt.type
+// CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// A read can refer to more than one constant. Propagating @A erases the read,
+// so propagation of @N must not retain a stale pointer to it.
+module attributes {llzk.lang} {
+  global.def const @A : index = 1
+  global.def const @N : index = 2
+
+  function.def @read_with_constant_metadata() -> index {
+    %value = global.read @A : index {metadata = @N}
+    function.return %value : index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @read_with_constant_metadata() -> index {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
