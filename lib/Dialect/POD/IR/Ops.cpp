@@ -550,8 +550,8 @@ LogicalResult ReadPodOp::verify() {
   }
 
   if (getResult().getType() != *lookup) {
-    return emitError() << "operation result type and type of record do not match ("
-                       << getResult().getType() << " != " << *lookup << ')';
+    return emitOpError() << "has wrong result type; expected " << *lookup << ", got "
+                         << getResult().getType();
   }
 
   return success();
@@ -585,8 +585,8 @@ LogicalResult WritePodOp::verify() {
   }
 
   if (getValue().getType() != *lookup) {
-    return emitError() << "type of source value and type of record do not match ("
-                       << getValue().getType() << " != " << *lookup << ')';
+    return emitOpError() << "has wrong value type; expected " << *lookup << ", got "
+                         << getValue().getType();
   }
 
   return success();

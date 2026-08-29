@@ -295,6 +295,14 @@ void FuncDefOp::setAllowNonNativeFieldOpsAttr(bool newValue) {
   }
 }
 
+void FuncDefOp::setAllowVerifOpsAttr(bool newValue) {
+  if (newValue) {
+    getOperation()->setAttr(AllowVerifOpsAttr::name, UnitAttr::get(getContext()));
+  } else {
+    getOperation()->removeAttr(AllowVerifOpsAttr::name);
+  }
+}
+
 bool FuncDefOp::hasArgPublicAttr(unsigned index) {
   if (index < this->getNumArguments()) {
     DictionaryAttr res = function_interface_impl::getArgAttrDict(*this, index);

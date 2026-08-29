@@ -23,10 +23,10 @@ def LLZKSymbolTableImplTrait : NativeOpTrait<"LLZKSymbolTableImplTrait"> {
 //
 // This trait avoids an assertion failure in the `SymbolTable` class constructor
 // when the symbol table is malformed (e.g. duplicate symbols), instead allowing
-// it produce an error diagnostic. This can happen due to the implementations of
-// `verifySymbolUses()` that do symbol lookups from the root module. These are
-// called before ancestor module symbol tables are verified, thus leading to an
-// assertion failure before the verifier would produce a friendly diagnostic.
+// it to produce an error diagnostic. This can happen due to the implementations
+// of `verifySymbolUses()` that do symbol lookups from the root module. These
+// are called before ancestor module symbol tables are verified, thus leading to
+// an assertion failure before the verifier would produce a friendly diagnostic.
 // This trait handles that by injecting the usual symbol table verification on
 // ancestor symbol tables before performing verification of the current symbol
 // table.
@@ -36,6 +36,14 @@ def LLZKSymbolTable : TraitList<[LLZKSymbolTableImplTrait, SymbolTable]>;
 /// ancestry.
 class HasAncestor<string op> : ParamNativeOpTrait<"HasAncestor", op>,
                                StructuralOpTrait {
+  string cppNamespace = "::llzk";
+}
+
+/// Verify that the operation has a parent of one of the `ops` types somewhere
+/// in its ancestry.
+class HasAncestorOf<list<string> ops>
+    : ParamNativeOpTrait<"HasAncestor", !interleave(ops, ", ")>,
+      StructuralOpTrait {
   string cppNamespace = "::llzk";
 }
 

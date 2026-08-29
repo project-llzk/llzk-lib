@@ -21,8 +21,10 @@
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/Support/LogicalResult.h>
 
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallString.h>
 #include <llvm/ADT/StringRef.h>
+#include <llvm/Support/Debug.h>
 
 namespace llzk {
 
@@ -89,34 +91,28 @@ public:
 };
 
 /// See `HasAncestor` ODS documentation for details.
-template <typename... Ancestors> struct HasAncestor {
-  template <typename ConcreteType>
-  static void appendTypeName(mlir::InFlightDiagnostic &diag, bool &first) {
-    if (!first) {
-      diag << ", ";
-    }
-    first = false;
-    diag << '\'' << ConcreteType::getOperationName() << '\'';
-  }
-
+template <typename Ancestor, typename... Ancestors> struct HasAncestor {
   template <typename ConcreteType>
   // Suppress false positive from `clang-tidy`
   // NOLINTNEXTLINE(bugprone-crtp-constructor-accessibility)
   struct Impl : public mlir::OpTrait::TraitBase<ConcreteType, Impl> {
     static mlir::LogicalResult verifyRegionTrait(mlir::Operation *op) {
-      if (hasParentThatIsa<Ancestors...>(op)) {
+      if (hasParentThatIsa<Ancestor, Ancestors...>(op)) {
         return mlir::success();
       }
       auto diag = op->emitOpError();
 
-      if constexpr (sizeof...(Ancestors) == 1) {
-        diag << "must have an ancestor of type ";
+      if constexpr (sizeof...(Ancestors) == 0) {
+        diag << "must have an ancestor of type '" << Ancestor::getOperationName() << '\'';
       } else {
         diag << "must have an ancestor of one of the following types: ";
+        llvm::interleaveComma(
+            llvm::ArrayRef<llvm::StringLiteral>(
+                {Ancestor::getOperationName(), Ancestors::getOperationName()...}
+            ),
+            diag, [&diag](auto name) { diag << '\'' << name << '\''; }
+        );
       }
-
-      bool first = true;
-      (HasAncestor::template appendTypeName<Ancestors>(diag, first), ...);
 
       return diag;
     }

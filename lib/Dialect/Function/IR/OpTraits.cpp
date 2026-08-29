@@ -15,6 +15,9 @@
 #include "llzk/Dialect/Verif/IR/Ops.h"
 
 #include <mlir/IR/Operation.h>
+#include <mlir/Support/LLVM.h>
+
+#include <llvm/ADT/StringRef.h>
 
 using namespace mlir;
 
@@ -28,6 +31,19 @@ auto parentFuncDefOpHasAttr = [](Operation *op, auto attrFn) -> bool {
   }
   return false;
 };
+
+template <typename Attr, typename F>
+LogicalResult verifyTraitIsPresentInFuncDefOp(Operation *op, F attrFn) {
+  // These are allowed anywhere outside of FuncDefOp but only allowed inside a FuncDefOp
+  // that is marked with the associated attribute.
+  if (FuncDefOp f = op->getParentOfType<FuncDefOp>()) {
+    if (!(f.*attrFn)()) {
+      return op->emitOpError() << "cannot be used within a '" << FuncDefOp::getOperationName()
+                               << "' without the '" << Attr::name << "' attribute";
+    }
+  }
+  return success();
+}
 
 } // namespace
 
@@ -48,15 +64,24 @@ LogicalResult verifyWitnessGenTraitImpl(Operation *op) {
 }
 
 LogicalResult verifyNotFieldNativeTraitImpl(Operation *op) {
-  // These are allowed anywhere outside of FuncDefOp but only allowed inside a FuncDefOp
-  // that is marked with the associated attribute.
+  return verifyTraitIsPresentInFuncDefOp<AllowNonNativeFieldOpsAttr>(
+      op, &FuncDefOp::hasAllowNonNativeFieldOpsAttr
+  );
+}
+
+LogicalResult
+verifyVerificationTraitImpl(Operation *op, llvm::function_ref<LogicalResult()> check) {
+  if (failed(
+          verifyTraitIsPresentInFuncDefOp<AllowVerifOpsAttr>(op, &FuncDefOp::hasAllowVerifOpsAttr)
+      )) {
+    return failure();
+  }
   if (FuncDefOp f = op->getParentOfType<FuncDefOp>()) {
-    if (!f.hasAllowNonNativeFieldOpsAttr()) {
-      return op->emitOpError() << "cannot be used within a '" << FuncDefOp::getOperationName()
-                               << "' without the '" << AllowNonNativeFieldOpsAttr::name
-                               << "' attribute";
+    if (check) {
+      return check();
     }
   }
+
   return success();
 }
 
