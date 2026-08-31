@@ -2379,3 +2379,39 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: @ResultlessInclude ConstraintDependencyGraph { }
 // INTRA-LABEL: @ResultlessInclude ConstraintDependencyGraph { }
+
+// -----
+
+// A returned aggregate must be resolved through the callee's local allocation
+// before argument roots are translated at the call site.
+module attributes {llzk.lang} {
+  function.def @array_identity(%value: !felt.type) -> !array.type<1 x !felt.type> {
+    %result = array.new %value : !array.type<1 x !felt.type>
+    function.return %result : !array.type<1 x !felt.type>
+  }
+
+  struct.def @ReturnedArrayDependency {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%value: !felt.type) -> !struct.type<@ReturnedArrayDependency> {
+      %self = struct.new : !struct.type<@ReturnedArrayDependency>
+      function.return %self : !struct.type<@ReturnedArrayDependency>
+    }
+
+    function.def @constrain(%self: !struct.type<@ReturnedArrayDependency>, %value: !felt.type) {
+      %expected = struct.readm %self[@out] : !struct.type<@ReturnedArrayDependency>, !felt.type
+      %array = function.call @array_identity(%value) : (!felt.type) -> (!array.type<1 x !felt.type>)
+      %idx = arith.constant 0 : index
+      %actual = array.read %array[%idx] : !array.type<1 x !felt.type>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ReturnedArrayDependency ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg1 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @ReturnedArrayDependency ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg1 }
+// INTRA-NEXT: }

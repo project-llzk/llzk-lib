@@ -1391,8 +1391,14 @@ void SourceRefAnalysis::visitExternalCall(
   const auto returnSites = predecessors->getKnownPredecessors();
 
   for (auto [result, resultLattice] : llvm::zip(call->getResults(), resultLattices)) {
-    (void)result;
     SourceRefLatticeValue combined;
+    if (auto resultArray = llvm::dyn_cast<ArrayType>(result.getType());
+        resultArray && resultArray.hasStaticShape()) {
+      // Keep element-sensitive aggregate dependencies shaped while collecting
+      // return sites. Otherwise joining into the default scalar value folds
+      // the array and a caller read appends its index a second time.
+      combined = SourceRefLatticeValue(resultArray.getShape());
+    }
     unsigned resultNum = llvm::cast<OpResult>(result).getResultNumber();
     for (Operation *returnSite : returnSites) {
       SourceRefLatticeValue retVal =
@@ -1400,10 +1406,12 @@ void SourceRefAnalysis::visitExternalCall(
               getProgramPointAfter(call.getOperation()), returnSite->getOperand(resultNum)
           )
               ->getValue();
-      SourceRefLatticeValue returnDependencies = retVal;
-      if (!llvm::isa<ArrayType, StructType, PodType>(returnSite->getOperand(resultNum).getType())) {
-        returnDependencies = getStorageState(returnSite)->resolveDependencies(retVal, returnSite);
-      }
+      // Resolve aggregate returns as well: a locally-created aggregate is rooted
+      // at callee storage, which is not present in the argument translation map.
+      // Resolution follows its initialized contents back to callee arguments
+      // before those arguments are translated to the caller.
+      SourceRefLatticeValue returnDependencies =
+          getStorageState(returnSite)->resolveDependencies(retVal, returnSite);
       auto [translatedVal, _] = returnDependencies.translate(translation);
       (void)combined.update(translatedVal);
     }
