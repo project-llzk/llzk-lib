@@ -2207,6 +2207,47 @@ module attributes {llzk.lang} {
 // INTRA-NEXT: }
 // -----
 
+// A callee-local aggregate assigned into an argument remains an alias after
+// the assignment. Writes to that local aggregate must be summarized through
+// the argument-visible alias at the call site.
+module attributes {llzk.lang} {
+  function.def @assign_then_overwrite_local(
+      %destination: !pod.type<[@nested: !pod.type<[@value: !felt.type]>]>, %initial: !felt.type,
+      %later: !felt.type) {
+    %local = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+    pod.write %destination[@nested] = %local : !pod.type<[@nested: !pod.type<[@value: !felt.type]>]>, !pod.type<[@value: !felt.type]>
+    pod.write %local[@value] = %later : !pod.type<[@value: !felt.type]>, !felt.type
+    function.return
+  }
+
+  struct.def @CalleeLocalAggregateAliasWrite {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%initial: !felt.type, %later: !felt.type) -> !struct.type<@CalleeLocalAggregateAliasWrite> {
+      %self = struct.new : !struct.type<@CalleeLocalAggregateAliasWrite>
+      function.return %self : !struct.type<@CalleeLocalAggregateAliasWrite>
+    }
+
+    function.def @constrain(%self: !struct.type<@CalleeLocalAggregateAliasWrite>, %initial: !felt.type, %later: !felt.type) {
+      %expected = struct.readm %self[@out] : !struct.type<@CalleeLocalAggregateAliasWrite>, !felt.type
+      %destination = pod.new : !pod.type<[@nested: !pod.type<[@value: !felt.type]>]>
+      function.call @assign_then_overwrite_local(%destination, %initial, %later) : (!pod.type<[@nested: !pod.type<[@value: !felt.type]>]>, !felt.type, !felt.type) -> ()
+      %nested = pod.read %destination[@nested] : !pod.type<[@nested: !pod.type<[@value: !felt.type]>]>, !pod.type<[@value: !felt.type]>
+      %actual = pod.read %nested[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @CalleeLocalAggregateAliasWrite ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg2, %arg2 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @CalleeLocalAggregateAliasWrite ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg2, %arg2 }
+// INTRA-NEXT: }
+// -----
+
 module attributes {llzk.lang} {
   struct.def @LoopPodAggregateAlias {
     struct.member @out : !felt.type {llzk.pub}

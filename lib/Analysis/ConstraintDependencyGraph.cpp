@@ -310,7 +310,7 @@ private:
   ) const;
 
   void recordCalleeStorageWritesImpl(
-      Operation *op, const TranslationMap &translation,
+      Operation *op, const TranslationMap &translation, const TranslationMap &calleeAliases,
       SmallVectorImpl<StorageWrite> &translatedWrites, bool callMayBeSkipped
   ) const;
 
@@ -581,7 +581,7 @@ void SourceRefAnalysis::StorageState::recordStorageWrite(
 }
 
 void SourceRefAnalysis::StorageState::recordCalleeStorageWritesImpl(
-    Operation *op, const TranslationMap &translation,
+    Operation *op, const TranslationMap &translation, const TranslationMap &calleeAliases,
     SmallVectorImpl<StorageWrite> &translatedWrites, bool callMayBeSkipped
 ) const {
   auto writes = storageWrites.find(op);
@@ -589,10 +589,12 @@ void SourceRefAnalysis::StorageState::recordCalleeStorageWritesImpl(
     return;
   }
   for (const StorageWrite &write : writes->second) {
-    // A write whose address is not rooted in a callee argument is local to the
-    // callee. `translate` drops those addresses, while retaining only effects
-    // visible to its caller.
-    auto [addresses, addressChange] = write.addresses.translate(translation);
+    // A local aggregate may have been assigned to a callee argument before this
+    // write. Canonicalize through aliases already active at the write point so
+    // the resulting caller-visible write is retained instead of being dropped
+    // with the callee-local address.
+    SourceRefLatticeValue canonicalAddresses = canonicalize(write.addresses, calleeAliases);
+    auto [addresses, addressChange] = canonicalAddresses.translate(translation);
     if (addressChange == ChangeResult::NoChange || addresses.foldToScalar().empty()) {
       continue;
     }
@@ -649,12 +651,16 @@ void SourceRefAnalysis::StorageState::recordCalleeStorageWrites(
   SmallVector<AggregateAlias> translatedAliases;
   if (Region *callableRegion = callee.getCallableRegion()) {
     const bool callMayBeSkipped = isInMaybeSkippedScfRegion(call.getOperation());
+    TranslationMap calleeAliases;
     // Region walking is preorder, matching the storage state's program-order
     // replay. This includes writes nested in control-flow regions, whose
     // `mayBeSkipped` flags preserve their conditional semantics.
     callableRegion->walk([&](Operation *op) {
-      recordCalleeStorageWritesImpl(op, translation, translatedWrites, callMayBeSkipped);
+      recordCalleeStorageWritesImpl(
+          op, translation, calleeAliases, translatedWrites, callMayBeSkipped
+      );
       recordCalleeAggregateAliasesImpl(op, translation, translatedAliases, callMayBeSkipped);
+      applyAggregateAliases(op, calleeAliases, callMayBeSkipped);
     });
   }
 
