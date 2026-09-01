@@ -621,6 +621,9 @@ module attributes {llzk.lang} {
     }
   }
 
+  // Pre-instantiating free-function signatures ensures this otherwise uncalled Cell<1> result is
+  // converted before body conversion. That makes the return mismatch below independent of the
+  // conversion driver's legality-query order.
   function.def @readItem(%self: !struct.type<@Holder>) -> !struct.type<@TCell::@Cell<[1]>> {
     // The unsupported return consumer leaves the public read generic; the refined member then
     // exposes the existing declaration mismatch instead of retagging the read unsafely.

@@ -57,6 +57,7 @@
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DepthFirstIterator.h>
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/SetVector.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/TypeSwitch.h>
@@ -1082,6 +1083,46 @@ public:
   }
 };
 
+/// Add every struct type nested in `type` to `types` in first-use order.
+///
+/// Step 1 currently creates struct instantiations as a side effect of type conversion. Collecting
+/// the types before converting any of them keeps that side effect from changing the traversal used
+/// to choose the next type.
+static void collectNestedStructTypes(Type type, SetVector<StructType> &types) {
+  if (StructType structType = llvm::dyn_cast<StructType>(type)) {
+    types.insert(structType);
+  } else if (ArrayType arrayType = llvm::dyn_cast<ArrayType>(type)) {
+    collectNestedStructTypes(arrayType.getElementType(), types);
+  }
+}
+
+/// Instantiate concrete struct types found in free-function signatures in source order.
+///
+/// A function signature can otherwise be queried only after body conversion starts. Since struct
+/// instantiation currently updates the conversion tracker, that makes the resulting instantiated
+/// names depend on conversion-driver query order. Snapshot all free-function signature types
+/// before converting them so their instantiations are committed consistently.
+static void preInstantiateFreeFunctionSignatureTypes(
+    ModuleOp modOp, ParameterizedStructUseTypeConverter &typeConverter
+) {
+  SetVector<StructType> signatureTypes;
+  modOp.walk([&signatureTypes](FuncDefOp function) {
+    if (!function.isInStruct()) {
+      FunctionType ty = function.getFunctionType();
+      for (Type inputType : ty.getInputs()) {
+        collectNestedStructTypes(inputType, signatureTypes);
+      }
+      for (Type resultType : ty.getResults()) {
+        collectNestedStructTypes(resultType, signatureTypes);
+      }
+    }
+  });
+
+  for (StructType signatureType : signatureTypes) {
+    (void)typeConverter.convertType(signatureType);
+  }
+}
+
 /// Rewrite calls to struct `compute`/`constrain` functions after their struct types have been
 /// instantiated.
 class CallStructFuncPattern : public OpConversionPattern<CallOp> {
@@ -1309,6 +1350,7 @@ public:
 LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
   ParameterizedStructUseTypeConverter tyConv(tracker, modOp);
+  preInstantiateFreeFunctionSignatureTypes(modOp, tyConv);
   DisableReportMissing drm(tyConv);
   ConversionTarget target = newConverterDefinedTargetWithCallback<>(tyConv, ctx, drm);
   target.addDynamicallyLegalOp<NonDetOp>([&tyConv](Operation *op) {
