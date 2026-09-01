@@ -3950,7 +3950,7 @@ static bool canRefineMemberReadUsersToType(
       auto canUse = canUseScalarizedValueAsType(
           castResultType, refinedType, tracker, "UpdateUnifiableCastResultFromInput"
       );
-      if (canUse) {
+      if (!canUse) {
         return false;
       }
       for (OpOperand &castUse : castOp.getResult().getUses()) {
@@ -6248,6 +6248,43 @@ public:
           Step5_ScalarizeHeterogeneousArrays::getCommonRefinedType(op.getType(), newType, tracker_);
       if (failed(commonType) || *commonType != newType) {
         return failure();
+      }
+    }
+
+    // A template type variable denotes one shared binding across every member that declares it.
+    // Before declining a read refinement for one member, detect incompatible concrete writes to a
+    // sibling with the same variable; otherwise each member can remain (or become) independently
+    // concrete and conceal an unsatisfiable template binding.
+    if (auto tvarOpTy = llvm::dyn_cast<TypeVarType>(op.getType())) {
+      for (MemberDefOp sibling : parentRes.getOps<MemberDefOp>()) {
+        if (sibling == op || sibling.getType() != tvarOpTy) {
+          continue;
+        }
+        if (auto siblingUses = llzk::getSymbolUses(sibling, parentRes)) {
+          for (SymbolTable::SymbolUse siblingUse : siblingUses.value()) {
+            auto siblingWrite = llvm::dyn_cast<MemberWriteOp>(siblingUse.getUser());
+            if (!siblingWrite) {
+              continue;
+            }
+            Type siblingType = siblingWrite.getVal().getType();
+            auto commonType = Step5_ScalarizeHeterogeneousArrays::getCommonRefinedType(
+                newType, siblingType, tracker_
+            );
+            if (failed(commonType)) {
+              return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
+                diag.append("cannot refine ")
+                    .append(tvarOpTy)
+                    .append(" to ")
+                    .append(newType)
+                    .append(" because sibling member '")
+                    .append(sibling.getName())
+                    .append("' is written with incompatible type ")
+                    .append(siblingType);
+                diag.attachNote(siblingWrite.getLoc()).append("incompatible write is here");
+              });
+            }
+          }
+        }
       }
     }
 
