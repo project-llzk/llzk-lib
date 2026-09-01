@@ -12,6 +12,7 @@
 #include "../LLZKTestBase.h"
 
 #include "llzk/Dialect/Array/IR/Types.h"
+#include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
 
@@ -32,18 +33,48 @@ protected:
   OwningEmitErrorFn errFn;
 };
 
-TEST_F(TypeHelperTests, test_arrayTypesUnify_withDynamic_1) {
+TEST_F(TypeHelperTests, test_arrayTypesUnify_withWildcard_1) {
   IndexType tyIndex = IndexType::get(&ctx);
   ArrayType a = ArrayType::get(tyIndex, {2, ShapedType::kDynamic});
   ArrayType b = ArrayType::get(tyIndex, {2, 5});
   ASSERT_TRUE(arrayTypesUnify(a, b));
 }
 
-TEST_F(TypeHelperTests, test_arrayTypesUnify_withDynamic_2) {
+TEST_F(TypeHelperTests, test_arrayTypesUnify_withWildcard_2) {
   IndexType tyIndex = IndexType::get(&ctx);
   ArrayType a = ArrayType::get(tyIndex, {2, ShapedType::kDynamic});
   ArrayType b = ArrayType::get(tyIndex, {ShapedType::kDynamic, 5});
   ASSERT_TRUE(arrayTypesUnify(a, b));
+}
+
+TEST_F(TypeHelperTests, test_isMoreConcreteUnification_arrayWildcardDimension) {
+  felt::FeltType feltTy = felt::FeltType::get(&ctx);
+  ArrayType wildcardArray = ArrayType::get(feltTy, {ShapedType::kDynamic});
+  ArrayType staticArray = ArrayType::get(feltTy, {1});
+
+  ASSERT_TRUE(typesUnify(wildcardArray, staticArray));
+  ASSERT_TRUE(isMoreConcreteUnification(wildcardArray, staticArray));
+  ASSERT_TRUE(isMoreConcreteUnification(staticArray, wildcardArray));
+}
+
+TEST_F(TypeHelperTests, test_isMoreConcreteUnification_arrayWildcardDimension3) {
+  felt::FeltType feltTy = felt::FeltType::get(&ctx);
+  ArrayType wildcardArray = ArrayType::get(feltTy, {4, 5, ShapedType::kDynamic});
+  ArrayType staticArray = ArrayType::get(feltTy, {4, 5, 6});
+
+  ASSERT_TRUE(typesUnify(wildcardArray, staticArray));
+  ASSERT_TRUE(isMoreConcreteUnification(wildcardArray, staticArray));
+  ASSERT_TRUE(isMoreConcreteUnification(staticArray, wildcardArray));
+}
+
+TEST_F(TypeHelperTests, test_isMoreConcreteUnification_arrayWildcardDimensionsMix) {
+  felt::FeltType feltTy = felt::FeltType::get(&ctx);
+  ArrayType firstArray = ArrayType::get(feltTy, {ShapedType::kDynamic, 2});
+  ArrayType secondArray = ArrayType::get(feltTy, {2, ShapedType::kDynamic});
+
+  ASSERT_TRUE(typesUnify(firstArray, secondArray));
+  ASSERT_TRUE(isMoreConcreteUnification(firstArray, secondArray));
+  ASSERT_TRUE(isMoreConcreteUnification(secondArray, firstArray));
 }
 
 TEST_F(TypeHelperTests, test_structTypesUnify) {
