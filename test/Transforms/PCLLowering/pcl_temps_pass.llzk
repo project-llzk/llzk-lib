@@ -3,6 +3,7 @@
 
 module attributes {llzk.lang} {
   struct.def @A {
+    struct.member @x : !felt.type<"babybear"> {llzk.pub}
     function.def @compute() -> !struct.type<@A> attributes {function.allow_witness} {
       %self = struct.new : <@A>
       function.return %self : !struct.type<@A>
@@ -15,9 +16,10 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<2013265921>} {
-// CHECK-NEXT:    func.func @A() {
+// CHECK-NEXT:    func.func @A() -> !pcl.felt {
 // CHECK-NEXT:      %0 = pcl.var "__nondet0" false
-// CHECK-NEXT:      return
+// CHECK-NEXT:      %1 = pcl.var "x" true
+// CHECK-NEXT:      return %1 : !pcl.felt
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
@@ -26,6 +28,7 @@ module attributes {llzk.lang} {
 module attributes {llzk.lang} {
   struct.def @B {
     struct.member @__nondet0 : !felt.type<"babybear">
+    struct.member @x : !felt.type<"babybear"> {llzk.pub}
     function.def @compute() -> !struct.type<@B> attributes {function.allow_witness} {
       %self = struct.new : <@B>
       function.return %self : !struct.type<@B>
@@ -40,11 +43,12 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL:  module attributes {pcl.prime = #pcl.prime<2013265921>} {
-// CHECK-NEXT:    func.func @B() {
+// CHECK-NEXT:    func.func @B() -> !pcl.felt {
 // CHECK-NEXT:      %0 = pcl.var "__nondet0" false
 // CHECK-NEXT:      %1 = pcl.var "__nondet1" false
 // CHECK-NEXT:      %2 = pcl.var "__nondet2" false
-// CHECK-NEXT:      return
+// CHECK-NEXT:      %3 = pcl.var "x" true
+// CHECK-NEXT:      return %3 : !pcl.felt
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
@@ -53,6 +57,7 @@ module attributes {llzk.lang} {
 module attributes {llzk.lang} {
   struct.def @B {
     struct.member @__nondet1 : !felt.type<"babybear">
+    struct.member @x : !felt.type<"babybear"> {llzk.pub}
     function.def @compute() -> !struct.type<@B> attributes {function.allow_witness} {
       %self = struct.new : <@B>
       function.return %self : !struct.type<@B>
@@ -67,11 +72,12 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL:  module attributes {pcl.prime = #pcl.prime<2013265921>} {
-// CHECK-NEXT:    func.func @B() {
+// CHECK-NEXT:    func.func @B() -> !pcl.felt {
 // CHECK-NEXT:      %0 = pcl.var "__nondet0" false
 // CHECK-NEXT:      %1 = pcl.var "__nondet1" false
 // CHECK-NEXT:      %2 = pcl.var "__nondet2" false
-// CHECK-NEXT:      return
+// CHECK-NEXT:      %3 = pcl.var "x" true
+// CHECK-NEXT:      return %3 : !pcl.felt
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
 
