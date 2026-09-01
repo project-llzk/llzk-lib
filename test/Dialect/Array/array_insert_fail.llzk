@@ -9,6 +9,7 @@ function.def @more_indices_than_source(%z: !array.type<2,2,2 x !string.type>) {
 }
 
 // -----
+
 function.def @should_use_array.write(%elem: !string.type) {
   %r = array.new : !array.type<44,2 x !string.type>
   %0 = arith.constant 0 : index
@@ -17,14 +18,18 @@ function.def @should_use_array.write(%elem: !string.type) {
   array.insert %r[%0,%0] = %elem : !array.type<44,2 x !string.type>, !string.type
   function.return
 }
+
 // -----
+
 function.def @insufficient_indices_none(%0: !felt.type, %1: !felt.type, %z: !array.type<2 x !felt.type>) {
   %r = array.new : !array.type<4,2 x !felt.type>
   // expected-error@+1 {{'array.insert' op has insufficient indexed dimensions: expected 1 but found 0}}
   array.insert %r[] = %z : !array.type<4,2 x !felt.type>, !array.type<2 x !felt.type>
   function.return
 }
+
 // -----
+
 function.def @insufficient_indices(%a: i1, %b: i1, %c: i1, %d: i1, %e: i1, %f: i1) {
   %a0 = array.new : !array.type<2,3,2,3 x i1>
 
@@ -35,7 +40,9 @@ function.def @insufficient_indices(%a: i1, %b: i1, %c: i1, %d: i1, %e: i1, %f: i
   array.insert %a0[%0] = %a1 : !array.type<2,3,2,3 x i1>, !array.type<2,3 x i1>
   function.return
 }
+
 // -----
+
 function.def @excess_indices(%a: i1, %b: i1, %c: i1, %d: i1, %e: i1, %f: i1) {
   %a0 = array.new : !array.type<2,3,2,3 x i1>
 
@@ -46,7 +53,9 @@ function.def @excess_indices(%a: i1, %b: i1, %c: i1, %d: i1, %e: i1, %f: i1) {
   array.insert %a0[%0, %0, %0] = %a1 : !array.type<2,3,2,3 x i1>, !array.type<2,3 x i1>
   function.return
 }
+
 // -----
+
 function.def @incorrect_elem_type(%z: !array.type<2 x index>) {
   %r = array.new : !array.type<44,2 x !felt.type>
   %0 = arith.constant 0 : index
@@ -54,11 +63,23 @@ function.def @incorrect_elem_type(%z: !array.type<2 x index>) {
   array.insert %r[%0] = %z : !array.type<44,2 x !felt.type>, !array.type<2 x index>
   function.return
 }
+
 // -----
+
 function.def @dimensions_not_unify(%z: !array.type<5 x !felt.type>) {
   %r = array.new : !array.type<44,2 x !felt.type>
   %0 = arith.constant 0 : index
   // expected-error@+1 {{'array.insert' op cannot unify array dimensions [2] with [5]}}
   array.insert %r[%0] = %z : !array.type<44,2 x !felt.type>, !array.type<5 x !felt.type>
   function.return
+}
+
+// -----
+
+function.def @insert_specified_felt_to_unspecified() {
+  %i = arith.constant 0 : index
+  %array = array.new : !array.type<2,2 x !felt.type>
+  %subarray = array.new : !array.type<2 x !felt.type<"bn128">>
+  // expected-error@+1 {{'array.insert' op incorrect array element type; expected: '!felt.type', found: '!felt.type<"bn128">'}}
+  array.insert %array[%i] = %subarray : !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type<"bn128">>
 }

@@ -4,6 +4,7 @@
 !F = !felt.type<"goldilocks">
 module attributes {llzk.lang} {
   struct.def @A {
+    struct.member @x : !F {llzk.pub}
     function.def @compute(%a: !F, %b: !F, %c: !F) -> !struct.type<@A> attributes {function.allow_witness} {
       %self = struct.new : <@A>
       function.return %self : !struct.type<@A>

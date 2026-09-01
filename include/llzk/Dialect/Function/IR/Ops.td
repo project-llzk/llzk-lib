@@ -179,6 +179,14 @@ def FuncDefOp
     /// Add (resp. remove) the `allow_non_native_field_ops` attribute to (resp. from) the function def.
     void setAllowNonNativeFieldOpsAttr(bool newValue = true);
 
+    /// Return `true` iff the function def has the `allow_verif_ops` attribute.
+    inline bool hasAllowVerifOpsAttr() {
+      return getOperation()->hasAttr(llzk::function::AllowVerifOpsAttr::name);
+    }
+
+    /// Add (resp. remove) the `allow_verif_ops` attribute to (resp. from) the function def.
+    void setAllowVerifOpsAttr(bool newValue = true);
+
     /// Return `true` iff the argument at the given index has `pub` attribute.
     bool hasArgPublicAttr(unsigned index);
 

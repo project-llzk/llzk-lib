@@ -12,6 +12,7 @@
 #include "../CAPITestBase.h"
 
 #include "llzk-c/Builder.h"
+#include "llzk-c/Dialect/Felt.h"
 
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Cast/IR/Ops.h"
@@ -25,6 +26,7 @@
 
 #include <mlir/CAPI/Wrap.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/IR/BuiltinTypes.h>
 #include <mlir/IR/TypeRange.h>
 #include <mlir/IR/ValueRange.h>
 #include <mlir/Parser/Parser.h>
@@ -34,6 +36,7 @@
 #include <llvm/Support/Debug.h>
 
 #include <cstdint>
+#include <memory>
 
 // Include the auto-generated tests
 #include "llzk/Dialect/Verif/IR/Dialect.capi.test.cpp.inc"
@@ -83,12 +86,19 @@ static mlir::OwningOpRef<mlir::ModuleOp> createModuleWithTargetFunc(
 }
 
 static llzk::verif::ContractOp createCppContract(
-    MlirOpBuilder builder, MlirLocation location, llvm::StringRef name, llvm::StringRef target
+    MlirOpBuilder builder, MlirLocation location, llvm::StringRef name, llvm::StringRef target,
+    mlir::ArrayRef<mlir::Type> inputs, mlir::ArrayRef<mlir::Type> outputs = {}
 ) {
   return unwrap(builder)->create<llzk::verif::ContractOp>(
       unwrap(location), name, mlir::SymbolRefAttr::get(unwrap(builder)->getContext(), target),
-      mlir::FunctionType::get(unwrap(builder)->getContext(), {}, {}), mlir::ArrayAttr()
+      mlir::FunctionType::get(unwrap(builder)->getContext(), inputs, outputs), mlir::ArrayAttr()
   );
+}
+
+static llzk::verif::ContractOp createCppContract(
+    MlirOpBuilder builder, MlirLocation location, llvm::StringRef name, llvm::StringRef target
+) {
+  return createCppContract(builder, location, name, target, {}, {});
 }
 
 static void expectContractHasImplicitTerminator(MlirOperation op) {
@@ -622,6 +632,64 @@ std::unique_ptr<OldOpBuildFuncHelper> OldOpBuildFuncHelper::get() {
       );
       unwrap(builder)->create<llzk::verif::StepYieldOp>(unwrap(location), trueOp);
       return op;
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+namespace {
+struct VerifDetInnerOpBuildBase {
+  mlir::OwningOpRef<mlir::ModuleOp> parentModule;
+
+  mlir::Value
+  prepareInsertionSite(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) {
+    this->parentModule = parseSourceString<mlir::ModuleOp>(
+        R"mlir(
+module attributes {llzk.lang} {
+ function.def @target(%arg: !felt.type) attributes {function.allow_witness} {
+    function.return
+  }
+}
+)mlir",
+        mlir::ParserConfig(unwrap(testClass.context))
+    );
+    unwrap(builder)->setInsertionPointToEnd(parentModule->getBody());
+
+    size_t argCount = 1;
+    llvm::SmallVector<MlirType> argTypes(
+        argCount, llzkFelt_FeltTypeGetUnspecified(testClass.context)
+    );
+    llvm::SmallVector<MlirLocation> argLocs(argCount, location);
+
+    auto contract = createCppContract(
+        builder, location, "ContractUnderTest", "target",
+        {llzk::felt::FeltType::get(unwrap(testClass.context))}
+    );
+    unwrap(builder)->setInsertionPointToStart(&contract.getBody().front());
+
+    return contract.getArgument(0);
+  }
+};
+} // namespace
+
+std::unique_ptr<ProveDetOpBuildFuncHelper> ProveDetOpBuildFuncHelper::get() {
+  struct Impl : public ProveDetOpBuildFuncHelper, VerifDetInnerOpBuildBase {
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      auto arg = prepareInsertionSite(testClass, builder, location);
+      return llzkVerif_ProveDetOpBuild(builder, location, wrap(arg));
+    }
+  };
+  return std::make_unique<Impl>();
+}
+
+std::unique_ptr<AssumeDetOpBuildFuncHelper> AssumeDetOpBuildFuncHelper::get() {
+  struct Impl : public AssumeDetOpBuildFuncHelper, VerifDetInnerOpBuildBase {
+
+    MlirOperation
+    callBuild(const CAPITest &testClass, MlirOpBuilder builder, MlirLocation location) override {
+      auto arg = prepareInsertionSite(testClass, builder, location);
+      return llzkVerif_AssumeDetOpBuild(builder, location, wrap(arg));
     }
   };
   return std::make_unique<Impl>();

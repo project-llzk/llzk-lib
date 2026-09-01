@@ -6,6 +6,7 @@
 module attributes {llzk.lang} {
   // expected-error@+1 {{failed to legalize operation 'struct.def'}}
   struct.def @ComponentA2 {
+    struct.member @f0 : !F {llzk.pub}
     function.def @compute(%p: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA2> {
       %self = struct.new : !struct.type<@ComponentA2>
       %r = struct.readm %p[@f1] : !struct.type<@ComponentA1>, !F
@@ -35,9 +36,26 @@ module attributes {llzk.lang} {
 !F = !felt.type<"bn128">
 module attributes {llzk.lang} {
   struct.def @ComponentA1 {
+    struct.member @f0 : !F {llzk.pub}
     // expected-error@+1 {{Member must be felt or struct type. Found '!array.type<4,3 x !felt.type<"bn128">>' for member: f1}}
     struct.member @f1 : !array.type<4,3 x !F>
 
+    function.def @constrain(%self: !struct.type<@ComponentA1>) { function.return }
+    function.def @compute() -> !struct.type<@ComponentA1> {
+      %self = struct.new : !struct.type<@ComponentA1>
+      function.return %self : !struct.type<@ComponentA1>
+    }
+  }
+}
+
+// -----
+
+// Expect the test to fail because the ComponentA1 has no public members
+!F = !felt.type<"bn128">
+module attributes {llzk.lang} {
+  // expected-error@+1 {{'struct.def' op must have at least one public member}}
+  struct.def @ComponentA1 {
+    struct.member @f1 : !F
     function.def @constrain(%self: !struct.type<@ComponentA1>) { function.return }
     function.def @compute() -> !struct.type<@ComponentA1> {
       %self = struct.new : !struct.type<@ComponentA1>

@@ -15,7 +15,9 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // -----
+
 module attributes {llzk.lang} {
   struct.def @ComponentC {
     struct.member @f2 : index
@@ -32,7 +34,9 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // -----
+
 module attributes {llzk.lang} {
   struct.def @ComponentD {
     struct.member @f2 : index
@@ -49,7 +53,9 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // -----
+
 module attributes {llzk.lang} {
   struct.def @ComponentF {
     struct.member @f2 : index
@@ -66,7 +72,9 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // -----
+
 module attributes {llzk.lang} {
   struct.def @ComponentH {
     function.def @compute(%0: !felt.type) -> !struct.type<@ComponentH> {
@@ -82,7 +90,9 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // -----
+
 module attributes {llzk.lang} {
   struct.def @ComponentJ {
     struct.member @f2 : index
@@ -99,7 +109,9 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // -----
+
 module attributes {llzk.lang} {
   struct.def @ComponentK {
     struct.member @f2 : index
@@ -116,7 +128,9 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // -----
+
 module attributes {llzk.lang} {
   struct.def @ComponentL {
     struct.member @f2 : index
@@ -133,7 +147,9 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // -----
+
 module attributes {llzk.lang} {
   struct.def @ComponentM {
     struct.member @f2 : !array.type<2 x index>
@@ -150,7 +166,9 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // -----
+
 module attributes {llzk.lang} {
   struct.def @WrongComponent { // expected-note {{uses this type instead}}
     struct.member @f : !felt.type
@@ -173,6 +191,7 @@ module attributes {llzk.lang} {
 }
 
 // -----
+
 module attributes {llzk.lang} {
   struct.def @PrivateComponent {
     struct.member @f : !felt.type // expected-note {{member defined here}}
@@ -191,5 +210,79 @@ module attributes {llzk.lang} {
       function.return %self : !struct.type<@ComponentN>
     }
     function.def @constrain(%self: !struct.type<@ComponentN>, %0: !struct.type<@PrivateComponent>, %1: !felt.type)  { function.return }
+  }
+}
+
+// -----
+
+// A field-specified felt value cannot be written to an unspecified struct.member.
+module attributes {llzk.lang} {
+  struct.def @SpecifiedValueWrite {
+    struct.member @value : !felt.type
+
+    function.def @compute() -> !struct.type<@SpecifiedValueWrite> {
+      %self = struct.new : !struct.type<@SpecifiedValueWrite>
+      %bn128 = felt.const 1 : !felt.type<"bn128">
+      // expected-error@+1 {{'struct.writem' op has wrong type; expected '!felt.type', got '!felt.type<"bn128">'}}
+      struct.writem %self[@value] = %bn128 : !struct.type<@SpecifiedValueWrite>, !felt.type<"bn128">
+      function.return %self : !struct.type<@SpecifiedValueWrite>
+    }
+
+    function.def @constrain(%self: !struct.type<@SpecifiedValueWrite>) { function.return }
+  }
+}
+
+// -----
+
+// An unspecified felt value cannot be written to a field-specified struct.member.
+module attributes {llzk.lang} {
+  struct.def @SpecifiedValueWrite {
+    struct.member @value : !felt.type<"bn128">
+
+    function.def @compute() -> !struct.type<@SpecifiedValueWrite> {
+      %self = struct.new : !struct.type<@SpecifiedValueWrite>
+      %bn128 = felt.const 1 : !felt.type
+      // expected-error@+1 {{'struct.writem' op has wrong type; expected '!felt.type<"bn128">', got '!felt.type'}}
+      struct.writem %self[@value] = %bn128 : !struct.type<@SpecifiedValueWrite>, !felt.type
+      function.return %self : !struct.type<@SpecifiedValueWrite>
+    }
+
+    function.def @constrain(%self: !struct.type<@SpecifiedValueWrite>) { function.return }
+  }
+}
+
+// -----
+
+// A field-specified felt type cannot be used when reading an unspecified struct.member.
+module attributes {llzk.lang} {
+  struct.def @SpecifiedValueRead {
+    struct.member @value : !felt.type
+
+    function.def @compute() -> !struct.type<@SpecifiedValueRead> {
+      %self = struct.new : !struct.type<@SpecifiedValueRead>
+      // expected-error@+1 {{'struct.readm' op has wrong type; expected '!felt.type', got '!felt.type<"bn128">'}}
+      %value = struct.readm %self[@value] : !struct.type<@SpecifiedValueRead>, !felt.type<"bn128">
+      function.return %self : !struct.type<@SpecifiedValueRead>
+    }
+
+    function.def @constrain(%self: !struct.type<@SpecifiedValueRead>) { function.return }
+  }
+}
+
+// -----
+
+// An unspecified felt type cannot be used when reading a field-specified struct.member.
+module attributes {llzk.lang} {
+  struct.def @SpecifiedValueRead {
+    struct.member @value : !felt.type<"bn128">
+
+    function.def @compute() -> !struct.type<@SpecifiedValueRead> {
+      %self = struct.new : !struct.type<@SpecifiedValueRead>
+      // expected-error@+1 {{'struct.readm' op has wrong type; expected '!felt.type<"bn128">', got '!felt.type'}}
+      %value = struct.readm %self[@value] : !struct.type<@SpecifiedValueRead>, !felt.type
+      function.return %self : !struct.type<@SpecifiedValueRead>
+    }
+
+    function.def @constrain(%self: !struct.type<@SpecifiedValueRead>) { function.return }
   }
 }
