@@ -291,8 +291,9 @@ inline bool singletonTypeListsUnify(
 ///
 /// The types `i1`, `index`, `felt.type`, and `string.type` are concrete whereas `poly.tvar` is
 /// not (because it may be substituted with any type during struct instantiation). When considering
-/// the attributes with `array.type` and `struct.type` types, we define IntegerAttr and TypeAttr
-/// as concrete, AffineMapAttr as less concrete than those, and SymbolRefAttr as least concrete.
+/// the attributes within `array.type` and `struct.type` types, we define IntegerAttr and TypeAttr
+/// as concrete then (in decreasing order) AffineMapAttr, SymbolRefAttr, and finally the wildcard
+/// (i.e. `?`) attribute as least concrete.
 bool isMoreConcreteUnification(
     mlir::Type oldTy, mlir::Type newTy,
     llvm::function_ref<bool(mlir::Type oldTy, mlir::Type newTy)> knownOldToNew = nullptr

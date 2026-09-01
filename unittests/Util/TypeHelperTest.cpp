@@ -54,7 +54,7 @@ TEST_F(TypeHelperTests, test_isMoreConcreteUnification_arrayWildcardDimension) {
 
   ASSERT_TRUE(typesUnify(wildcardArray, staticArray));
   ASSERT_TRUE(isMoreConcreteUnification(wildcardArray, staticArray));
-  ASSERT_TRUE(isMoreConcreteUnification(staticArray, wildcardArray));
+  ASSERT_FALSE(isMoreConcreteUnification(staticArray, wildcardArray));
 }
 
 TEST_F(TypeHelperTests, test_isMoreConcreteUnification_arrayWildcardDimension3) {
@@ -64,7 +64,7 @@ TEST_F(TypeHelperTests, test_isMoreConcreteUnification_arrayWildcardDimension3) 
 
   ASSERT_TRUE(typesUnify(wildcardArray, staticArray));
   ASSERT_TRUE(isMoreConcreteUnification(wildcardArray, staticArray));
-  ASSERT_TRUE(isMoreConcreteUnification(staticArray, wildcardArray));
+  ASSERT_FALSE(isMoreConcreteUnification(staticArray, wildcardArray));
 }
 
 TEST_F(TypeHelperTests, test_isMoreConcreteUnification_arrayWildcardDimensionsMix) {
@@ -73,8 +73,8 @@ TEST_F(TypeHelperTests, test_isMoreConcreteUnification_arrayWildcardDimensionsMi
   ArrayType secondArray = ArrayType::get(feltTy, {2, ShapedType::kDynamic});
 
   ASSERT_TRUE(typesUnify(firstArray, secondArray));
-  ASSERT_TRUE(isMoreConcreteUnification(firstArray, secondArray));
-  ASSERT_TRUE(isMoreConcreteUnification(secondArray, firstArray));
+  ASSERT_FALSE(isMoreConcreteUnification(firstArray, secondArray));
+  ASSERT_FALSE(isMoreConcreteUnification(secondArray, firstArray));
 }
 
 TEST_F(TypeHelperTests, test_structTypesUnify) {

@@ -611,16 +611,22 @@ struct UnifierImpl {
   ArrayRef<StringRef> rhsRevPrefix;
   UnificationMap *unifications;
   AffineInstantiations *affineToIntTracker;
+  bool *staticLhsWithWildcardRhsTracker;
   // This optional function can be used to provide an exception to the standard unification
   // rules and return a true/success result when it otherwise may not.
   llvm::function_ref<bool(Type oldTy, Type newTy)> overrideSuccess;
 
   UnifierImpl(UnificationMap *unificationMap, ArrayRef<StringRef> rhsReversePrefix = {})
       : rhsRevPrefix(rhsReversePrefix), unifications(unificationMap), affineToIntTracker(nullptr),
-        overrideSuccess(nullptr) {}
+        staticLhsWithWildcardRhsTracker(nullptr), overrideSuccess(nullptr) {}
 
   UnifierImpl &trackAffineToInt(AffineInstantiations *tracker) {
     this->affineToIntTracker = tracker;
+    return *this;
+  }
+
+  UnifierImpl &trackStaticLhsWithWildcardRhs(bool *tracker) {
+    this->staticLhsWithWildcardRhsTracker = tracker;
     return *this;
   }
 
@@ -869,6 +875,9 @@ private:
       }
       if (IntegerAttr rhsIntAttr = dyn_cast_if_dynamic(rhsAttr)) {
         if (is_const_like(lhsAttr)) {
+          if (staticLhsWithWildcardRhsTracker) {
+            *staticLhsWithWildcardRhsTracker = true;
+          }
           return true;
         }
       }
@@ -938,19 +947,26 @@ bool isMoreConcreteUnification(
 ) {
   UnificationMap unifications;
   AffineInstantiations affineInstantiations;
+  bool staticLhsBecomesWildcardRhs = false;
   // Run type unification with the addition that affine map can become integer in the new type.
   if (!UnifierImpl(&unifications)
            .trackAffineToInt(&affineInstantiations)
+           .trackStaticLhsWithWildcardRhs(&staticLhsBecomesWildcardRhs)
            .withOverrides(knownOldToNew)
            .typesUnify(oldTy, newTy)) {
     return false;
   }
 
-  // If either map contains RHS-keyed mappings then the old type is "more concrete" than the new.
-  // In the UnificationMap, a RHS key would indicate that the new type contains a SymbolRef (i.e.
-  // the "least concrete" attribute kind) where the old type contained any other attribute. In the
-  // AffineInstantiations map, a RHS key would indicate that the new type contains an AffineMapAttr
-  // where the old type contains an IntegerAttr.
+  // If a statically-known LHS value becomes a wildcard in the RHS, it is not more concrete.
+  if (staticLhsBecomesWildcardRhs) {
+    return false;
+  }
+
+  // If either map contains RHS-keyed mappings then the old type is more concrete than the new. In
+  // the UnificationMap, a RHS key would indicate that the new type contains a SymbolRef (i.e. the
+  // second-least concrete attribute kind, only to wildcard which was checked above) where the old
+  // type contained some other attribute. In the AffineInstantiations map, a RHS key would indicate
+  // that the new type contains an AffineMapAttr where the old type contains an IntegerAttr.
   auto entryIsRHS = [](const auto &entry) { return entry.first.second == Side::RHS; };
   return !llvm::any_of(unifications, entryIsRHS) && !llvm::any_of(affineInstantiations, entryIsRHS);
 }
