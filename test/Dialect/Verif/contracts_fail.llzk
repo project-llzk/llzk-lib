@@ -1230,3 +1230,47 @@ module attributes {llzk.lang} {
     }
   }
 }
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @SpecTemplate {
+    poly.param @N : index
+
+    function.def @token() {
+      function.return
+    }
+
+    verif.contract @Base for @SpecTemplate::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+
+    verif.contract @Wrapper for @SpecTemplate::@token () {
+      // expected-error@+1 {{'verif.include' op wildcard `?` can only be used for template parameters with `!poly.tvar` type restriction, but parameter "@N" has type restriction 'index'}}
+      verif.include @SpecTemplate::@Base<[?]>() : () -> ()
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @SpecTemplate {
+    poly.param @N
+
+    function.def @token() {
+      function.return
+    }
+
+    verif.contract @Base for @SpecTemplate::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+
+    verif.contract @Wrapper for @SpecTemplate::@token () {
+      // expected-error@+1 {{'verif.include' op wildcard `?` can only be used for template parameters with `!poly.tvar` type restriction, but parameter "@N" has no type restriction}}
+      verif.include @SpecTemplate::@Base<[?]>() : () -> ()
+    }
+  }
+}

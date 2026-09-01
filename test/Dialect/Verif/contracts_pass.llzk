@@ -847,3 +847,38 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @SpecTemplate {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @token() {
+      function.return
+    }
+
+    verif.contract @Base for @SpecTemplate::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+
+    verif.contract @Wrapper for @SpecTemplate::@token () {
+      verif.include @SpecTemplate::@Base<[?]>() : () -> ()
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @SpecTemplate {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @token() {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Base for @SpecTemplate::@token () {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        verif.ensure_compute %[[VAL_0]]
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Wrapper for @SpecTemplate::@token () {
+// CHECK-NEXT:        verif.include @SpecTemplate::@Base<[?]>() : () -> ()
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
