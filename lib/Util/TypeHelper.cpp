@@ -444,6 +444,11 @@ public:
       if (!StructParamTypes::matches(p)) {
         StructParamTypes::reportInvalid(emitError, p, "Struct parameter");
         success = false;
+      } else if (IntegerAttr i = llvm::dyn_cast<IntegerAttr>(p); i && isDynamic(i)) {
+        if (emitError) {
+          emitError().append("wildcard '?' is not allowed as struct type parameter").report();
+        }
+        success = false;
       } else if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(p)) {
         if (!isValidTypeImpl(tyAttr.getValue())) {
           if (emitError) {

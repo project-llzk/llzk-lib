@@ -30,7 +30,8 @@ def LLZK_StructType : StructDialectType<"Struct", "type"> {
     Type of a `struct` op instance. For structs that contain template parameters,
     the type must contain a list of attributes that instantiate the template
     parameters, one per parameter. Each attribute must be one of the following:
-      - IntegerAttr (with IndexType), specifying a fixed parameter value
+      - IntegerAttr (with IndexType), specifying a fixed parameter value; the
+        wildcard (`?`) is not allowed
       - SymbolRefAttr, specifying a parameter value defined by a struct parameter
         or global constant
       - AffineMapAttr, for an array of struct elements whose template parameters

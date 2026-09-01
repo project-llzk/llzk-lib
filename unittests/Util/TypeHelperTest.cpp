@@ -47,13 +47,14 @@ TEST_F(TypeHelperTests, test_arrayTypesUnify_withDynamic_2) {
 }
 
 TEST_F(TypeHelperTests, test_structTypesUnify) {
+  // StructType itself cannot be created with `?` in its parameter list.
+  // Instead test a nested ArrayType as TypeAttr in the list passes.
   IndexType tyIndex = IndexType::get(&ctx);
-  Attribute i1 = IntegerAttr::get(tyIndex, 128);
-  Attribute i2 = IntegerAttr::get(tyIndex, ShapedType::kDynamic);
-  StructType a = StructType::get(FlatSymbolRefAttr::get(&ctx, "TheName"), ArrayRef {i1});
-  StructType b = StructType::get(FlatSymbolRefAttr::get(&ctx, "TheName"), ArrayRef {i2});
-  // `false` because StructType does not allow `kDynamic`
-  ASSERT_FALSE(structTypesUnify(a, b));
+  Attribute t1 = TypeAttr::get(ArrayType::get(tyIndex, {242, ShapedType::kDynamic}));
+  Attribute t2 = TypeAttr::get(ArrayType::get(tyIndex, {ShapedType::kDynamic, 5}));
+  StructType a = StructType::get(FlatSymbolRefAttr::get(&ctx, "TheName"), ArrayRef {t1});
+  StructType b = StructType::get(FlatSymbolRefAttr::get(&ctx, "TheName"), ArrayRef {t2});
+  ASSERT_TRUE(structTypesUnify(a, b));
 }
 
 TEST_F(TypeHelperTests, test_podTypesUnify_Pass) {
