@@ -13,7 +13,7 @@ The LLZK project consists of three main components:
 The general workflow of using LLZK is as follows:
 1. Translate the source ZK language into LLZK IR using [a frontend tool](\ref frontends).
 2. Use the [llzk-opt tool](\ref llzk-opt) to perform any transformations using LLZK's [pass infrastructure](\ref pass-overview).
-3. Provide the transformed IR to a [backend](\ref backends) for further analysis or use.
+3. Provide the transformed IR to a [backend](\ref backends-page) for further analysis or use.
 
 ### LLZK IR Dialects
 
@@ -76,7 +76,9 @@ Developer documentation can be found:
 ### Backends {#backends}
 
 The LLZK project currently maintains the following backends:
-- [R1CS](\ref r1cs-dialect)
+- [R1CS](\ref r1cs-backend)
+- [SMT](\ref smt-backend)
+- [ZKLean](\ref zklean-backend)
 
 
 Veridise also maintains a [Picus Constraint Language backend](https://github.com/Veridise/pcl-mlir) that
