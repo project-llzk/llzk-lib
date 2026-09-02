@@ -77,6 +77,27 @@ TEST_F(TypeHelperTests, test_isMoreConcreteUnification_arrayWildcardDimensionsMi
   ASSERT_FALSE(isMoreConcreteUnification(secondArray, firstArray));
 }
 
+TEST_F(TypeHelperTests, test_isMoreConcreteUnification_arrayWildcardAndSymbolRefDimension) {
+  felt::FeltType feltTy = felt::FeltType::get(&ctx);
+  ArrayType wildcardArray = ArrayType::get(feltTy, {ShapedType::kDynamic});
+  ArrayType symbolRefArray = ArrayType::get(feltTy, {FlatSymbolRefAttr::get(&ctx, "N")});
+
+  ASSERT_TRUE(typesUnify(wildcardArray, symbolRefArray));
+  ASSERT_TRUE(isMoreConcreteUnification(wildcardArray, symbolRefArray));
+  ASSERT_FALSE(isMoreConcreteUnification(symbolRefArray, wildcardArray));
+}
+
+TEST_F(TypeHelperTests, test_isMoreConcreteUnification_arrayWildcardAndAffineMapDimension) {
+  felt::FeltType feltTy = felt::FeltType::get(&ctx);
+  ArrayType wildcardArray = ArrayType::get(feltTy, {ShapedType::kDynamic});
+  auto aff = AffineMapAttr::get(OpBuilder(&ctx).getDimIdentityMap());
+  ArrayType affineMapArray = ArrayType::get(feltTy, {aff});
+
+  ASSERT_TRUE(typesUnify(wildcardArray, affineMapArray));
+  ASSERT_TRUE(isMoreConcreteUnification(wildcardArray, affineMapArray));
+  ASSERT_FALSE(isMoreConcreteUnification(affineMapArray, wildcardArray));
+}
+
 TEST_F(TypeHelperTests, test_structTypesUnify) {
   // StructType itself cannot be created with `?` in its parameter list.
   // Instead, test that a nested ArrayType as a TypeAttr in the list passes.

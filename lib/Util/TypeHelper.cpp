@@ -841,16 +841,6 @@ private:
         }
       }
     }
-    // If either side is a SymbolRefAttr, assume they unify because either flattening or a pass with
-    // a more involved value analysis is required to check if they are actually the same value.
-    if (SymbolRefAttr lhsSymRef = llvm::dyn_cast<SymbolRefAttr>(lhsAttr)) {
-      track(Side::LHS, lhsSymRef, rhsAttr);
-      return true;
-    }
-    if (SymbolRefAttr rhsSymRef = llvm::dyn_cast<SymbolRefAttr>(rhsAttr)) {
-      track(Side::RHS, rhsSymRef, lhsAttr);
-      return true;
-    }
     // If either side is ShapedType::kDynamic then, similarly to Symbols, assume they unify.
     // NOTE: Dynamic array dimensions (i.e. '?') are allowed in LLZK but should generally be
     // restricted to scenarios where it can be replaced with a concrete value during the flattening
@@ -881,6 +871,16 @@ private:
           return true;
         }
       }
+    }
+    // If either side is a SymbolRefAttr, assume they unify because either flattening or a pass with
+    // a more involved value analysis is required to check if they are actually the same value.
+    if (SymbolRefAttr lhsSymRef = llvm::dyn_cast<SymbolRefAttr>(lhsAttr)) {
+      track(Side::LHS, lhsSymRef, rhsAttr);
+      return true;
+    }
+    if (SymbolRefAttr rhsSymRef = llvm::dyn_cast<SymbolRefAttr>(rhsAttr)) {
+      track(Side::RHS, rhsSymRef, lhsAttr);
+      return true;
     }
     // If both are type refs, check for unification of the types.
     if (TypeAttr lhsTy = llvm::dyn_cast<TypeAttr>(lhsAttr)) {
