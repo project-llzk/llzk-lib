@@ -48,7 +48,7 @@ TEST_F(TypeHelperTests, test_arrayTypesUnify_withDynamic_2) {
 
 TEST_F(TypeHelperTests, test_structTypesUnify) {
   // StructType itself cannot be created with `?` in its parameter list.
-  // Instead test a nested ArrayType as TypeAttr in the list passes.
+  // Instead, test that a nested ArrayType as a TypeAttr in the list passes.
   IndexType tyIndex = IndexType::get(&ctx);
   Attribute t1 = TypeAttr::get(ArrayType::get(tyIndex, {242, ShapedType::kDynamic}));
   Attribute t2 = TypeAttr::get(ArrayType::get(tyIndex, {ShapedType::kDynamic, 5}));
