@@ -89,6 +89,6 @@ allows LLZK to be lowered to PCL for use with the [Picus][picus-v2] verifier.
 | \ref mainpage | \ref setup |
 </div>
 
-[picus-v2]: https://docs.veridise.com/picus-v2/
-[zk-vanguard]: https://docs.veridise.com/zkvanguard/
+[picus-v2]: https://docs.audithub.dev/picus-v2/
+[zk-vanguard]: https://docs.audithub.dev/zkvanguard/
 [mlir-dialects]: https://mlir.llvm.org/docs/DefiningDialects/
