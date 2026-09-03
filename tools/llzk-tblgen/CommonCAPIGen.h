@@ -281,7 +281,7 @@ struct ExtraMethod {
 ///
 /// This function parses C++ method declarations to extract signatures that can be
 /// wrapped in C API functions. It identifies methods by looking for the pattern:
-/// [modifiers] <return_type> <identifier> '(' [params] ')' [const] ';'
+///   `[modifiers] <return_type> <identifier> '(' [params] ')' [const] ';'`
 ///
 /// Example input:
 /// @code

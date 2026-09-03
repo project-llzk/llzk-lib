@@ -88,5 +88,4 @@ The LLZK project currently maintains the following backends:
 | \ref mainpage | \ref setup |
 </div>
 
-[zk-vanguard]: https://docs.audithub.dev/zkvanguard/
 [mlir-dialects]: https://mlir.llvm.org/docs/DefiningDialects/
