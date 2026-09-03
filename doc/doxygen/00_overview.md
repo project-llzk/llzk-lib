@@ -78,11 +78,8 @@ Developer documentation can be found:
 The LLZK project currently maintains the following backends:
 - [R1CS](\ref r1cs-backend)
 - [SMT](\ref smt-backend)
+- [PCL](\ref pcl-backend)
 - [ZKLean](\ref zklean-backend)
-
-
-Veridise also maintains a [Picus Constraint Language backend](https://github.com/Veridise/pcl-mlir) that
-allows LLZK to be lowered to PCL for use with the [Picus][picus-v2] verifier.
 
 
 <div class="section_buttons">
@@ -91,6 +88,5 @@ allows LLZK to be lowered to PCL for use with the [Picus][picus-v2] verifier.
 | \ref mainpage | \ref setup |
 </div>
 
-[picus-v2]: https://docs.audithub.dev/picus-v2/
 [zk-vanguard]: https://docs.audithub.dev/zkvanguard/
 [mlir-dialects]: https://mlir.llvm.org/docs/DefiningDialects/
