@@ -9,22 +9,63 @@
 
 #include "llzk/Dialect/Global/IR/Dialect.h"
 
+#include "InitializerUtils.h"
+
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
 
 // TableGen'd implementation files
 #include "llzk/Dialect/Global/IR/Dialect.cpp.inc"
 
+using namespace mlir;
+using namespace llzk;
+
 //===------------------------------------------------------------------===//
 // GlobalDialect
 //===------------------------------------------------------------------===//
 
-auto llzk::global::GlobalDialect::initialize() -> void {
+namespace {
+
+class GlobalDialectBytecodeInterface : public LLZKDialectBytecodeInterface<global::GlobalDialect> {
+  using Base = LLZKDialectBytecodeInterface<global::GlobalDialect>;
+
+public:
+  using Base::Base;
+
+  LogicalResult upgradeFromVersion(
+      Operation *root, const LLZKDialectVersion & /*current*/,
+      const LLZKDialectVersion & /*requested*/
+  ) const final {
+    auto res = root->walk([](global::GlobalDefOp global) -> WalkResult {
+      if (Attribute initialValue = global.getInitialValueAttr()) {
+        Type type = global.getType();
+        FailureOr<Attribute> normalized = global::normalizeGlobalInitializer(
+            type, initialValue, [context = initialValue.getContext()] {
+          return InFlightDiagnosticWrapper::createSilent(context);
+        }
+        );
+        if (failed(normalized)) {
+          return global.emitError(
+              "contains a legacy initializer that is incompatible with its declared type"
+          );
+        }
+        global.setInitialValueAttr(*normalized);
+        global.setTypeAttr(TypeAttr::get(type));
+      }
+      return WalkResult::advance();
+    });
+    return failure(res.wasInterrupted());
+  }
+};
+
+} // namespace
+
+auto global::GlobalDialect::initialize() -> void {
   // clang-format off
   addOperations<
     #define GET_OP_LIST
     #include "llzk/Dialect/Global/IR/Ops.cpp.inc"
   >();
   // clang-format on
-  addInterfaces<LLZKDialectBytecodeInterface<GlobalDialect>>();
+  addInterfaces<GlobalDialectBytecodeInterface>();
 }
