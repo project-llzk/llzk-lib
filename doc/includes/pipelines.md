@@ -9,7 +9,7 @@ Runs the following cleanup passes in order:
 
 ### `-llzk-remove-unnecessary-ops-and-defs`
 
-_Remove unnecessary operations, member definitions, and struct definitions._
+_Remove unnecessary operations and member definitions._
 
 Runs `-llzk-remove-unnecessary-ops`, followed by:
 
@@ -48,15 +48,15 @@ recommended because parameterized templates may survive flattening and cause
 
 #### Options
 
-- `flattening.max-iter` sets the maximum number of flattening iterations
+- `flattening={max-iter=<n>}` sets the maximum number of flattening iterations
   (default: `1000`).
-- `flattening.cleanup` selects the flattening cleanup mode (default:
+- `flattening={cleanup=<mode>}` selects the flattening cleanup mode (default:
   `main-as-root` for this pipeline).
 - `array-to-scalar` controls whether `-llzk-array-to-scalar` runs
   (default: `true`).
 - `pod-to-scalar` controls whether `-llzk-pod-to-scalar` runs
   (default: `true`).
-- `inlining.max-merge-complexity` limits the complexity of merged structs
+- `inlining={max-merge-complexity=<n>}` limits the complexity of merged structs
   (default: `0`, meaning no limit).
 
 ### `-llzk-full-inlining`
@@ -87,7 +87,7 @@ the same reason as `-llzk-full-struct-inlining`.
   `flattening`, `array-to-scalar`, `pod-to-scalar`, and `inlining` options
   have the same meaning and defaults as the corresponding
   `-llzk-full-struct-inlining` options.
-- `lowering.max-degree` sets the maximum polynomial degree accepted by
+- `lowering={max-degree=<n>}` sets the maximum polynomial degree accepted by
   `-llzk-poly-lowering-pass` (default: `2`; minimum: `2`).
 
 ### `-llzk-full-r1cs-lowering`
@@ -96,7 +96,7 @@ _Lower polynomial constraints to R1CS._
 
 Runs the following passes in order:
 
-1. `-llzk-full-poly-lowering` with `lowering.max-degree=2`
+1. `-llzk-full-poly-lowering` with `lowering={max-degree=2}`
 2. `-llzk-r1cs-lowering`
 3. MLIR's `-cse`
 
