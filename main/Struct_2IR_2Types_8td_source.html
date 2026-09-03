@@ -162,95 +162,96 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Struct_2IR_2Ty
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>    Type of a `struct` op instance. For structs that contain template parameters,</div>
 <div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>    the type must contain a list of attributes that instantiate the template</div>
 <div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>    parameters, one per parameter. Each attribute must be one of the following:</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>      - IntegerAttr (with IndexType), specifying a fixed parameter value</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>      - SymbolRefAttr, specifying a parameter value defined by a struct parameter</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>        or global constant</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>      - AffineMapAttr, for an array of struct elements whose template parameters</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>        vary based on some fixed pattern.</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>      - TypeAttr, for specifying a type parameter.</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    ```llzk</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>    // Type for struct `A` with no parameters.</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    !struct.type&lt;@A&gt;</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    // Type for struct `B` with IntegerAttr and SymbolRefAttr parameters.</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>    !struct.type&lt;@B&lt;[5, @C]&gt;&gt;</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    // Type for struct `C` with TypeAttr and IntegerAttr parameters.</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    !struct.type&lt;@C&lt;[!felt.type, 24]&gt;&gt;</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    ```</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  }];</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  let parameters =</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>      (ins TypeParameter&lt;</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>           &quot;::mlir::SymbolRefAttr&quot;,</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>           &quot;Fully-qualified name of the struct definition.&quot;&gt;:$nameRef,</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>          OptionalParameter&lt;&quot;::mlir::ArrayAttr&quot;, &quot;Struct parameters&quot;&gt;:$params);</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  let assemblyFormat =</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>      [{ `&lt;` $nameRef ( `&lt;` custom&lt;TemplateParams&gt;($params)^ `&gt;` )? `&gt;` }];</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  let genVerifyDecl = 1;</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  let skipDefaultBuilders = 1;</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  let builders = [TypeBuilderWithInferredContext&lt;</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>                      (ins &quot;::mlir::SymbolRefAttr&quot;:$structName), [{</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>                    return $_get(structName.getContext(), structName, ::mlir::ArrayAttr());</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>                  }]&gt;,</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>                  TypeBuilderWithInferredContext&lt;</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>                      (ins &quot;::mlir::SymbolRefAttr&quot;:$structName,</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>                          &quot;::mlir::ArrayAttr&quot;:$params),</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>                      [{</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>                    ::mlir::MLIRContext *ctx = structName.getContext();</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>                    if (params) {</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>                      OwningEmitErrorFn emitErrorFn = ::llzk::wrapNullableInFlightDiagnostic(emitError, ctx);</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>                      auto paramsRes = forceIntAttrTypes(params.getValue(), emitErrorFn);</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>                      if(::mlir::failed(paramsRes)) { return StructType(); }</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>                      params = ::mlir::ArrayAttr::get(ctx, *paramsRes);</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>                    }</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>                    return $_get(ctx, structName, params);</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>                  }]&gt;,</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>                  TypeBuilderWithInferredContext&lt;</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>                      (ins &quot;::mlir::SymbolRefAttr&quot;:$structName,</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>                          &quot;::llvm::ArrayRef&lt;::mlir::Attribute&gt;&quot;:$paramsRef),</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>                      [{</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>                    ::mlir::MLIRContext *ctx = structName.getContext();</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>                    OwningEmitErrorFn emitErrorFn = ::llzk::wrapNullableInFlightDiagnostic(emitError, ctx);</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>                    auto paramsRes = forceIntAttrTypes(paramsRef, emitErrorFn);</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>                    if(::mlir::failed(paramsRes)) { return StructType(); }</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>                    return $_get(ctx, structName, ::mlir::ArrayAttr::get(ctx, *paramsRes));</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>                  }]&gt;];</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  let extraClassDeclaration = [{</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    /// Gets the `struct` op that defines this struct. Provided `op` is</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    /// used as a starting point for the lookup. Should not be assumed to</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>    /// be non-`null` as we don&#39;t verify all types during verification.</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>    ::mlir::FailureOr&lt;SymbolLookupResult&lt;StructDefOp&gt;&gt; getDefinition</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>        (::mlir::SymbolTableCollection &amp;symbolTable, ::mlir::Operation *op, bool reportMissing = true) const;</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span> </div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    // Verifies that this type references a valid struct, relative to the given `op`.</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    ::mlir::LogicalResult verifySymbolRef(::mlir::SymbolTableCollection &amp;symbolTable, ::mlir::Operation *op);</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span> </div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    /// Returns wether the struct this type refers to has members marked as columns.</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    /// A lookup is necessary first and will forward the failure state if it fails.</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    mlir::LogicalResult hasColumns(mlir::SymbolTableCollection &amp;symbolTable, mlir::Operation *op) const;</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  }];</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  let extraClassDefinition = [{</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    namespace {</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>      /// This definition of `emitError` is used by the `get()` functions generated by the</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>      /// custom builders for this type. The `getChecked()` functions generated by those same</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>      /// builders have a parameter with this same name that shadows this definition so the</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>      /// `getChecked()` versions will use the function supplied via the parameter. Regardless,</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>      /// `wrapNullableInFlightDiagnostic()` checks for `nullptr` and generates a default if</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>      /// necessary. This approach, although a bit hacky, allows a legitimate error function to</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>      /// be used whenever available, only reverting to a default in the `get()` function.</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>      const ::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError = nullptr;</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>    }</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  }];</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>}</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span> </div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>#endif // LLZK_STRUCT_TYPES</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>      - IntegerAttr (with IndexType), specifying a fixed parameter value; the</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>        wildcard (`?`) is not allowed</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>      - SymbolRefAttr, specifying a parameter value defined by a struct parameter</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>        or global constant</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>      - AffineMapAttr, for an array of struct elements whose template parameters</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>        vary based on some fixed pattern.</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>      - TypeAttr, for specifying a type parameter.</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>    ```llzk</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    // Type for struct `A` with no parameters.</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    !struct.type&lt;@A&gt;</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>    // Type for struct `B` with IntegerAttr and SymbolRefAttr parameters.</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    !struct.type&lt;@B&lt;[5, @C]&gt;&gt;</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span> </div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    // Type for struct `C` with TypeAttr and IntegerAttr parameters.</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    !struct.type&lt;@C&lt;[!felt.type, 24]&gt;&gt;</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    ```</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  }];</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  let parameters =</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>      (ins TypeParameter&lt;</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>           &quot;::mlir::SymbolRefAttr&quot;,</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>           &quot;Fully-qualified name of the struct definition.&quot;&gt;:$nameRef,</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>          OptionalParameter&lt;&quot;::mlir::ArrayAttr&quot;, &quot;Struct parameters&quot;&gt;:$params);</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  let assemblyFormat =</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>      [{ `&lt;` $nameRef ( `&lt;` custom&lt;TemplateParams&gt;($params)^ `&gt;` )? `&gt;` }];</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  let genVerifyDecl = 1;</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  let skipDefaultBuilders = 1;</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  let builders = [TypeBuilderWithInferredContext&lt;</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>                      (ins &quot;::mlir::SymbolRefAttr&quot;:$structName), [{</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>                    return $_get(structName.getContext(), structName, ::mlir::ArrayAttr());</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>                  }]&gt;,</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>                  TypeBuilderWithInferredContext&lt;</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>                      (ins &quot;::mlir::SymbolRefAttr&quot;:$structName,</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>                          &quot;::mlir::ArrayAttr&quot;:$params),</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>                      [{</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>                    ::mlir::MLIRContext *ctx = structName.getContext();</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>                    if (params) {</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>                      OwningEmitErrorFn emitErrorFn = ::llzk::wrapNullableInFlightDiagnostic(emitError, ctx);</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>                      auto paramsRes = forceIntAttrTypes(params.getValue(), emitErrorFn);</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>                      if(::mlir::failed(paramsRes)) { return StructType(); }</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>                      params = ::mlir::ArrayAttr::get(ctx, *paramsRes);</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>                    }</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>                    return $_get(ctx, structName, params);</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>                  }]&gt;,</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>                  TypeBuilderWithInferredContext&lt;</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>                      (ins &quot;::mlir::SymbolRefAttr&quot;:$structName,</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>                          &quot;::llvm::ArrayRef&lt;::mlir::Attribute&gt;&quot;:$paramsRef),</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>                      [{</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>                    ::mlir::MLIRContext *ctx = structName.getContext();</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>                    OwningEmitErrorFn emitErrorFn = ::llzk::wrapNullableInFlightDiagnostic(emitError, ctx);</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>                    auto paramsRes = forceIntAttrTypes(paramsRef, emitErrorFn);</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>                    if(::mlir::failed(paramsRes)) { return StructType(); }</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>                    return $_get(ctx, structName, ::mlir::ArrayAttr::get(ctx, *paramsRes));</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>                  }]&gt;];</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  let extraClassDeclaration = [{</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    /// Gets the `struct` op that defines this struct. Provided `op` is</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>    /// used as a starting point for the lookup. Should not be assumed to</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>    /// be non-`null` as we don&#39;t verify all types during verification.</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    ::mlir::FailureOr&lt;SymbolLookupResult&lt;StructDefOp&gt;&gt; getDefinition</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>        (::mlir::SymbolTableCollection &amp;symbolTable, ::mlir::Operation *op, bool reportMissing = true) const;</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span> </div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    // Verifies that this type references a valid struct, relative to the given `op`.</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    ::mlir::LogicalResult verifySymbolRef(::mlir::SymbolTableCollection &amp;symbolTable, ::mlir::Operation *op);</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span> </div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    /// Returns wether the struct this type refers to has members marked as columns.</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    /// A lookup is necessary first and will forward the failure state if it fails.</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    mlir::LogicalResult hasColumns(mlir::SymbolTableCollection &amp;symbolTable, mlir::Operation *op) const;</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  }];</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span> </div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  let extraClassDefinition = [{</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    namespace {</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>      /// This definition of `emitError` is used by the `get()` functions generated by the</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>      /// custom builders for this type. The `getChecked()` functions generated by those same</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>      /// builders have a parameter with this same name that shadows this definition so the</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>      /// `getChecked()` versions will use the function supplied via the parameter. Regardless,</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>      /// `wrapNullableInFlightDiagnostic()` checks for `nullptr` and generates a default if</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>      /// necessary. This approach, although a bit hacky, allows a legitimate error function to</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>      /// be used whenever available, only reverting to a default in the `get()` function.</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>      const ::llvm::function_ref&lt;::mlir::InFlightDiagnostic()&gt; emitError = nullptr;</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>    }</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  }];</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>}</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span> </div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>#endif // LLZK_STRUCT_TYPES</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

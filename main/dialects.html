@@ -3410,7 +3410,7 @@ StructType</h3>
 <div class="line">  ::mlir::ArrayAttr   # params</div>
 <div class="line">&gt;</div>
 </div><!-- fragment --><p>Type of a <span class="tt">struct</span> op instance. For structs that contain template parameters, the type must contain a list of attributes that instantiate the template parameters, one per parameter. Each attribute must be one of the following:</p><ul>
-<li>IntegerAttr (with IndexType), specifying a fixed parameter value</li>
+<li>IntegerAttr (with IndexType), specifying a fixed parameter value; the wildcard (<span class="tt">?</span>) is not allowed</li>
 <li>SymbolRefAttr, specifying a parameter value defined by a struct parameter or global constant</li>
 <li>AffineMapAttr, for an array of struct elements whose template parameters vary based on some fixed pattern.</li>
 <li>TypeAttr, for specifying a type parameter.</li>
