@@ -44,6 +44,10 @@ available in `mlir-opt` are not available in `llzk-opt`.
 
 \include{doc,raise=1} build/doc/mlir/passes/LLZKValidationPasses.md
 
+### Predefined Pipelines
+
+\include{doc,raise=1} doc/includes/pipelines.md
+
 # llzk-translate {#llzk-translate}
 
 `llzk-translate` is a version of the `mlir-translate` tool. Includes translations for backends
