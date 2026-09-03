@@ -493,7 +493,19 @@ LogicalResult verifyTypeResolution(SymbolTableCollection &tables, Operation *ori
     }
     return verifyTypeResolution(tables, origin, aTy.getElementType());
   } else if (TypeVarType vTy = llvm::dyn_cast<TypeVarType>(ty)) {
-    return verifyParamOfType(tables, vTy.getNameRef(), vTy, origin);
+    // Unlike other type parameters, a type variable may only name a parameter
+    // of the enclosing template; it cannot resolve to a global.
+    FailureOr<TemplateOp> parent = getConstResolutionTemplate(tables, origin);
+    if (failed(parent)) {
+      return failure();
+    }
+    TemplateOp templateOp = *parent;
+    if (templateOp && templateOp.getConstNamed<TemplateParamOp>(vTy.getNameRef())) {
+      return success();
+    }
+    return origin->emitError() << "type variable " << vTy
+                               << " must reference a parameter of its enclosing " << '\''
+                               << TemplateOp::getOperationName() << '\'';
   } else {
     return success();
   }
