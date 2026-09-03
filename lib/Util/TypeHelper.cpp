@@ -982,7 +982,12 @@ FailureOr<IntegerAttr> forceIntType(IntegerAttr attr, EmitErrorFn emitError) {
   if (compare < 0) {
     value = value.zext(IndexType::kInternalStorageBitWidth);
   } else if (compare > 0) {
-    return emitError().append("value is too large for `index` type: ", debug::toStringOne(value));
+    // The source integer type may be wider than index storage even when its
+    // value is representable. Check the significant bits before narrowing.
+    if (value.getActiveBits() > IndexType::kInternalStorageBitWidth) {
+      return emitError().append("value is too large for `index` type: ", debug::toStringOne(value));
+    }
+    value = value.trunc(IndexType::kInternalStorageBitWidth);
   }
   return IntegerAttr::get(IndexType::get(attr.getContext()), value);
 }

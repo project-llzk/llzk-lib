@@ -4,7 +4,7 @@
 
 module attributes {llzk.lang} {
   global.def const @bits : !array.type<2,2 x i1> = [0, 1, 1, 0]
-  global.def const @indices : !array.type<2 x index> = [1 : i8, 2 : i8]
+  global.def const @indices : !array.type<2 x index> = [1 : i8, 2 : i128]
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    global.def const @bits : !array.type<2,2 x i1> = [false, true, true, false]
