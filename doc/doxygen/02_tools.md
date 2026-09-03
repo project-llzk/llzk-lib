@@ -27,17 +27,18 @@ available in `mlir-opt` are not available in `llzk-opt`.
 
 \include{doc,raise=1} build/doc/mlir/passes/AnalysisPasses.md
 
-### General Transformation Passes
+### Transformation Passes
 
 \include{doc,raise=1} build/doc/mlir/passes/LLZKTransformationPasses.md
-
-### 'array' Dialect Transformation Passes
-
 \include{doc,raise=1} build/doc/mlir/passes/array/TransformationPasses.md
-
-### 'polymorphic' Dialect Transformation Passes
-
+\include{doc,raise=1} build/doc/mlir/passes/bool/TransformationPasses.md
+\include{doc,raise=1} build/doc/mlir/passes/include/TransformationPasses.md
+\include{doc,raise=1} build/doc/mlir/passes/pcl/TransformationPasses.md
+\include{doc,raise=1} build/doc/mlir/passes/pod/TransformationPasses.md
 \include{doc,raise=1} build/doc/mlir/passes/polymorphic/TransformationPasses.md
+\include{doc,raise=1} build/doc/mlir/passes/struct/TransformationPasses.md
+\include{doc,raise=1} build/doc/mlir/passes/PCLConversionPasses.md
+\include{doc,raise=1} build/doc/mlir/passes/R1CSTransformationPasses.md
 
 ### Validation Passes
 
@@ -45,13 +46,13 @@ available in `mlir-opt` are not available in `llzk-opt`.
 
 # llzk-translate {#llzk-translate}
 
-`llzk-translate` is a version of the `mlir-translate` tool. Includes translations for backends 
+`llzk-translate` is a version of the `mlir-translate` tool. Includes translations for backends
 specific to LLZK along with translations available in upstream MLIR (i.e. LLVM or C++).
 `llzk-translate -h` will show a list of all available flags and options.
 
 The tool expects that the IR has already been converted to the backend's dialect IR. For example:
 
-```sh 
+```sh
 llzk-opt <input.llzk> --llzk-to-pcl | llzk-translate --pcl-to-lisp
 ```
 
