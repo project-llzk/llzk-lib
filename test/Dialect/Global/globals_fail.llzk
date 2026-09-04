@@ -281,15 +281,8 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
-  // expected-error@+1 {{custom op 'global.def' value is too large for `index` type: -1}}
-  global.def const @g : !array.type<1 x index> = [-1 : si256]
-}
-
-// -----
-
-module attributes {llzk.lang} {
-  // expected-error@+1 {{custom op 'global.def' value is too large for `index` type: 170141183460469231731687303715884105727}}
-  global.def const @g : !array.type<1 x index> = [0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF : si128]
+  // expected-error@+1 {{custom op 'global.def' value is too large for `index` type: 18446744073709551615}}
+  global.def const @g : !array.type<1 x index> = [0xFFFFFFFFFFFFFFFF : si128]
 }
 
 // -----

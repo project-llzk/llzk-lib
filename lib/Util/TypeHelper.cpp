@@ -983,9 +983,14 @@ FailureOr<IntegerAttr> forceIntType(IntegerAttr attr, EmitErrorFn emitError) {
     value = attr.getType().isSignedInteger() ? value.sext(IndexType::kInternalStorageBitWidth)
                                              : value.zext(IndexType::kInternalStorageBitWidth);
   } else if (compare > 0) {
-    // The source integer type may be wider than index storage even when its
-    // value is representable. Check the significant bits before narrowing.
-    if (value.getActiveBits() > IndexType::kInternalStorageBitWidth) {
+    // The source integer type may be wider than index storage even when its value is
+    // representable. Signed values need a signed representability check: getActiveBits()
+    // treats their two's-complement representation as unsigned, rejecting negative values
+    // and accepting some out-of-range positive values after truncation.
+    bool isRepresentable = attr.getType().isSignedInteger()
+                               ? value.isSignedIntN(IndexType::kInternalStorageBitWidth)
+                               : value.isIntN(IndexType::kInternalStorageBitWidth);
+    if (!isRepresentable) {
       return emitError().append("value is too large for `index` type: ", debug::toStringOne(value));
     }
     value = value.trunc(IndexType::kInternalStorageBitWidth);
