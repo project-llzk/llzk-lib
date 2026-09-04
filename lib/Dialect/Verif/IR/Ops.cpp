@@ -12,8 +12,6 @@
 #include "llzk/Analysis/AnalysisUtil.h"
 #include "llzk/Analysis/ConstraintDependencyGraph.h"
 #include "llzk/Analysis/SourceRef.h"
-#include "llzk/Dialect/Felt/IR/Attrs.h"
-#include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Verif/Util/ForbiddenPreconditionInfluence.h"
@@ -52,7 +50,6 @@
 
 using namespace mlir;
 using namespace llzk::polymorphic;
-using namespace llzk::felt;
 using namespace llzk::component;
 using namespace llzk::function;
 
@@ -752,134 +749,6 @@ void IncludeOp::build(
   );
   props.setCallee(callee);
   addTemplateParams<IncludeOp>(odsBuilder, props, templateParams);
-}
-
-LogicalResult IncludeOp::verifyTemplateParamCompatibility(
-    Attribute paramFromIncludeOp, TemplateParamOp targetParam
-) {
-  // A wildcard `?` (represented as kDynamic) defers inference to a later pass.
-  // It is only valid for parameters with a `!poly.tvar` type restriction.
-  if (auto intAttr = llvm::dyn_cast<IntegerAttr>(paramFromIncludeOp)) {
-    if (isDynamic(intAttr)) {
-      std::optional<Type> declaredType = targetParam.getTypeOpt();
-      if (!declaredType || !llvm::isa<TypeVarType>(*declaredType)) {
-        auto diag = this->emitOpError().append(
-            "wildcard `?` can only be used for template parameters with `!poly.tvar` "
-            "type restriction, but parameter \"@",
-            targetParam.getName(), "\" has "
-        );
-        if (declaredType) {
-          diag.append("type restriction ", *declaredType);
-        } else {
-          diag.append("no type restriction");
-        }
-        return diag;
-      }
-      return success();
-    }
-  }
-  if (std::optional<Type> declaredType = targetParam.getTypeOpt()) {
-    // Note: `declaredType` is restricted by `isValidConstReadType()`
-    bool compatible = false;
-    if (auto sym = llvm::dyn_cast<SymbolRefAttr>(paramFromIncludeOp)) {
-      SymbolTableCollection tables;
-      if (failed(verifyTemplateParamSymbol(tables, sym, *this))) {
-        return failure();
-      }
-      bool resolvedLocal = false;
-      if (sym.getNestedReferences().empty()) {
-        FailureOr<TemplateOp> parentTemplate = getConstResolutionTemplate(tables, *this);
-        if (failed(parentTemplate)) {
-          return failure();
-        }
-        if (TemplateOp p = *parentTemplate) {
-          auto binding = p.getConstNamed<TemplateSymbolBindingOpInterface>(sym.getRootReference());
-          if (binding) {
-            resolvedLocal = true;
-            // Once we know it references a template symbol binding, assume it's compatible unless
-            // the optional type is present and doesn't unify with the declared type.
-            if (std::optional<Type> actualType = binding.getTypeOpt()) {
-              compatible = typesUnify(*actualType, *declaredType);
-            } else {
-              compatible = true;
-            }
-          }
-        }
-      }
-      // A non-local symbol value was verified above as a constant global. Its type restriction
-      // is intentionally deferred to template specialization.
-      if (!resolvedLocal) {
-        compatible = true;
-      }
-    }
-    if (!compatible && llvm::isa<TypeVarType>(*declaredType)) {
-      compatible = llvm::isa<TypeAttr>(paramFromIncludeOp);
-    } else if (!compatible && llvm::isa<FeltType>(*declaredType)) {
-      compatible = llvm::isa<FeltConstAttr, IntegerAttr>(paramFromIncludeOp) &&
-                   isValidConstReadType(llvm::cast<TypedAttr>(paramFromIncludeOp).getType());
-    } else if (!compatible && llvm::isa<IndexType, IntegerType>(*declaredType)) {
-      // Note: Just like struct type instantiation, there is no restriction on passing a
-      // larger value to an `i1`. The flattening pass will treat 0 as false and any other
-      // value as true (but give a warning if it's not 1).
-      compatible = llvm::isa<IntegerAttr>(paramFromIncludeOp) &&
-                   isValidConstReadType(llvm::cast<TypedAttr>(paramFromIncludeOp).getType());
-    } else if (!compatible) {
-      llvm_unreachable("inconsistent with `isValidConstReadType()`");
-    }
-    if (!compatible) {
-      return this->emitOpError().append(
-          "instantiation value '", paramFromIncludeOp, "' is not compatible with parameter \"@",
-          targetParam.getName(), "\" type restriction ", *declaredType
-      );
-    }
-  } else if (auto sym = llvm::dyn_cast<SymbolRefAttr>(paramFromIncludeOp)) {
-    SymbolTableCollection tables;
-    if (failed(verifyTemplateParamSymbol(tables, sym, *this))) {
-      return failure();
-    }
-  }
-  return success();
-}
-
-LogicalResult IncludeOp::verifyTemplateParamCompatibility(
-    llvm::iterator_range<Region::op_iterator<TemplateParamOp>> targetParamDefs
-) {
-  ArrayAttr callParams = this->getTemplateParamsAttr();
-  assert(!isNullOrEmpty(callParams) && "pre-condition");
-  assert((callParams.size() == llvm::range_size(targetParamDefs)) && "pre-condition");
-
-  for (auto [paramOp, attr] : llvm::zip_equal(targetParamDefs, callParams.getValue())) {
-    if (failed(verifyTemplateParamCompatibility(attr, paramOp))) {
-      return failure();
-    }
-  }
-  return success();
-}
-
-LogicalResult IncludeOp::verifyTemplateParamsMatchInferred(
-    llvm::iterator_range<Region::op_iterator<TemplateParamOp>> targetParamDefs,
-    const UnificationMap &unifications
-) {
-  ArrayAttr callParams = this->getTemplateParamsAttr();
-  assert(!isNullOrEmpty(callParams) && "pre-condition");
-  assert((callParams.size() == llvm::range_size(targetParamDefs)) && "pre-condition");
-
-  for (auto [paramOp, attr] : llvm::zip_equal(targetParamDefs, callParams.getValue())) {
-    // Skip wildcards (`?` / kDynamic) - their value will be resolved by a later inference pass.
-    if (auto intAttr = llvm::dyn_cast<IntegerAttr>(attr)) {
-      if (isDynamic(intAttr)) {
-        continue;
-      }
-    }
-    auto it = unifications.find({FlatSymbolRefAttr::get(paramOp.getNameAttr()), Side::RHS});
-    if (it != unifications.end() && !typeParamsUnify({attr}, {it->second})) {
-      return this->emitOpError().append(
-          "template instantiation value '", attr, "' for parameter \"@", paramOp.getName(),
-          "\" conflicts with value '", it->second, "' inferred from function type signature"
-      );
-    }
-  }
-  return success();
 }
 
 namespace {

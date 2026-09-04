@@ -91,7 +91,7 @@ def ProveDetOp : VerifDialectOp<"det.prove", [Verification<>]> {
 
     Returns a boolean that indicates if the operand was proven deterministic or not.
 
-    This operation has the `Verification` trait and can be used inside `function.def` 
+    This operation has the `Verification` trait and can be used inside `function.def`
     ops that have the `allow_verif` attribute.
   }];
   let arguments = (ins EmitEqType:$condition);
@@ -106,7 +106,7 @@ def AssumeDetOp : VerifDialectOp<"det.assume", [Verification<>]> {
     Hints to the proving backend that the operand is deterministic, for a concrete definition
     of determinism determined by the backend.
 
-    This operation has the `Verification` trait and can be used inside `function.def` 
+    This operation has the `Verification` trait and can be used inside `function.def`
     ops that have the `allow_verif` attribute.
   }];
   let arguments = (ins EmitEqType:$hint);
@@ -166,7 +166,7 @@ class EnsureOpBase<string mnemonic, bit inlinable = false,
     Encodes a postcondition in the `@}]#mnemonic#[{` function.
   }]#!if(inlinable, [{
 
-    This operation has the `Verification` trait and can be used inside `function.def` 
+    This operation has the `Verification` trait and can be used inside `function.def`
     ops that have the `allow_verif_ops` attribute.
     }],
          "");
@@ -562,9 +562,11 @@ def IncludeOp
 
     /// Check type compatibility of the given template parameter value from this `CallOp` against
     /// the declared type on the given `TemplateParamOp` (if any).
-    ::mlir::LogicalResult verifyTemplateParamCompatibility(
-      ::mlir::Attribute paramFromCallOp, ::llzk::polymorphic::TemplateParamOp targetParam
-    );
+    inline ::mlir::LogicalResult verifyTemplateParamCompatibility(
+      ::mlir::Attribute paramFromIncludeOp, ::llzk::polymorphic::TemplateParamOp targetParam
+    ) {
+      return llzk::verifyTemplateParamValueCompatibility(getOperation(), paramFromIncludeOp, targetParam);
+    }
 
     /// Check type compatibility of each template parameter value provided in this `CallOp` against
     /// the declared type on each `TemplateParamOp` (if any).
@@ -572,9 +574,11 @@ def IncludeOp
     /// Pre-condition assertions:
     ///   - `!isNullOrEmpty(getTemplateParamsAttr())`
     ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`
-    ::mlir::LogicalResult verifyTemplateParamCompatibility(
+    inline ::mlir::LogicalResult verifyTemplateParamCompatibility(
         ::llvm::iterator_range<::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs
-    );
+    ) {
+      return llzk::verifyTemplateParamValuesCompatibility(getOperation(), getTemplateParamsAttr(), targetParamDefs);
+    }
 
     /// Verify that each template parameter value provided in this `CallOp` is consistent with
     /// the value inferred for the target `TemplateParamOp` in the given `UnificationMap`. The
@@ -584,10 +588,12 @@ def IncludeOp
     /// Pre-condition assertions:
     ///   - `!isNullOrEmpty(getTemplateParamsAttr())`
     ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`
-    ::mlir::LogicalResult verifyTemplateParamsMatchInferred(
+    inline ::mlir::LogicalResult verifyTemplateParamsMatchInferred(
         ::llvm::iterator_range<::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs,
         const UnificationMap &unifications
-    );
+    ) {
+      return llzk::verifyTemplateParamsMatchInferred(getOperation(), getTemplateParamsAttr(), targetParamDefs, unifications);
+    }
   }];
 }
 
