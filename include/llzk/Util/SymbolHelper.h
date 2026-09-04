@@ -210,6 +210,12 @@ inline mlir::FailureOr<SymbolLookupResult<T>> resolveCallable(mlir::CallOpInterf
 mlir::FailureOr<polymorphic::TemplateOp>
 getConstResolutionTemplate(mlir::SymbolTableCollection &tables, mlir::Operation *origin);
 
+/// Ensure that a SymbolRef template argument resolves to a binding in the enclosing template or
+/// to a constant global.
+mlir::LogicalResult verifyTemplateParamSymbol(
+    mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr symbol, mlir::Operation *origin
+);
+
 /// Ensure that the given symbol (that is used as a parameter of the given type) can be resolved.
 /// If `requiredParamType` is provided, any resolved template symbol must have exactly that type.
 mlir::LogicalResult verifyParamOfType(

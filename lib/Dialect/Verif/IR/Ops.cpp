@@ -781,18 +781,49 @@ LogicalResult IncludeOp::verifyTemplateParamCompatibility(
   if (std::optional<Type> declaredType = targetParam.getTypeOpt()) {
     // Note: `declaredType` is restricted by `isValidConstReadType()`
     bool compatible = false;
-    if (llvm::isa<TypeVarType>(*declaredType)) {
+    if (auto sym = llvm::dyn_cast<SymbolRefAttr>(paramFromIncludeOp)) {
+      SymbolTableCollection tables;
+      if (failed(verifyTemplateParamSymbol(tables, sym, *this))) {
+        return failure();
+      }
+      bool resolvedLocal = false;
+      if (sym.getNestedReferences().empty()) {
+        FailureOr<TemplateOp> parentTemplate = getConstResolutionTemplate(tables, *this);
+        if (failed(parentTemplate)) {
+          return failure();
+        }
+        if (TemplateOp p = *parentTemplate) {
+          auto binding = p.getConstNamed<TemplateSymbolBindingOpInterface>(sym.getRootReference());
+          if (binding) {
+            resolvedLocal = true;
+            // Once we know it references a template symbol binding, assume it's compatible unless
+            // the optional type is present and doesn't unify with the declared type.
+            if (std::optional<Type> actualType = binding.getTypeOpt()) {
+              compatible = typesUnify(*actualType, *declaredType);
+            } else {
+              compatible = true;
+            }
+          }
+        }
+      }
+      // A non-local symbol value was verified above as a constant global. Its type restriction
+      // is intentionally deferred to template specialization.
+      if (!resolvedLocal) {
+        compatible = true;
+      }
+    }
+    if (!compatible && llvm::isa<TypeVarType>(*declaredType)) {
       compatible = llvm::isa<TypeAttr>(paramFromIncludeOp);
-    } else if (llvm::isa<FeltType>(*declaredType)) {
+    } else if (!compatible && llvm::isa<FeltType>(*declaredType)) {
       compatible = llvm::isa<FeltConstAttr, IntegerAttr>(paramFromIncludeOp) &&
                    isValidConstReadType(llvm::cast<TypedAttr>(paramFromIncludeOp).getType());
-    } else if (llvm::isa<IndexType, IntegerType>(*declaredType)) {
+    } else if (!compatible && llvm::isa<IndexType, IntegerType>(*declaredType)) {
       // Note: Just like struct type instantiation, there is no restriction on passing a
       // larger value to an `i1`. The flattening pass will treat 0 as false and any other
       // value as true (but give a warning if it's not 1).
       compatible = llvm::isa<IntegerAttr>(paramFromIncludeOp) &&
                    isValidConstReadType(llvm::cast<TypedAttr>(paramFromIncludeOp).getType());
-    } else {
+    } else if (!compatible) {
       llvm_unreachable("inconsistent with `isValidConstReadType()`");
     }
     if (!compatible) {
@@ -800,6 +831,11 @@ LogicalResult IncludeOp::verifyTemplateParamCompatibility(
           "instantiation value '", paramFromIncludeOp, "' is not compatible with parameter \"@",
           targetParam.getName(), "\" type restriction ", *declaredType
       );
+    }
+  } else if (auto sym = llvm::dyn_cast<SymbolRefAttr>(paramFromIncludeOp)) {
+    SymbolTableCollection tables;
+    if (failed(verifyTemplateParamSymbol(tables, sym, *this))) {
+      return failure();
     }
   }
   return success();
