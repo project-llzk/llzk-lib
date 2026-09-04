@@ -127,7 +127,8 @@ static ParseResult normalizeParsedInitialValue(
 }
 
 /// Parse an initializer attribute recursively so felt values retain their optional field syntax
-/// even when nested in an array.
+/// even when nested in an array. If there is a conflict among the felt values, the verifier will
+/// catch it later.
 static ParseResult parseInitialValueForType(OpAsmParser &parser, Type type, Attribute &value) {
   if (llvm::isa<FeltType>(type)) {
     FeltConstAttr feltValue;
@@ -178,10 +179,8 @@ ParseResult GlobalDefOp::parse(OpAsmParser &parser, OperationState &result) {
   Attribute initialValue;
   if (succeeded(parser.parseOptionalEqual())) {
     SMLoc initializerLoc = parser.getCurrentLocation();
-    if (failed(parseInitialValueForType(parser, declaredType, initialValue))) {
-      return failure();
-    }
-    if (failed(normalizeParsedInitialValue(parser, initializerLoc, declaredType, initialValue))) {
+    if (failed(parseInitialValueForType(parser, declaredType, initialValue)) ||
+        failed(normalizeParsedInitialValue(parser, initializerLoc, declaredType, initialValue))) {
       return failure();
     }
     props.initial_value = initialValue;
@@ -316,14 +315,15 @@ static LogicalResult ensureAttrTypeMatch(
         for (Attribute element : arrVal) {
           if (auto feltValue = llvm::dyn_cast<FeltConstAttr>(element)) {
             FeltType valueType = feltValue.getType();
-            if (valueType.hasField()) {
-              if (feltElemTy.hasField() && feltElemTy != valueType) {
-                return errFn().append(
-                    "initializer array contains conflicting types ", valueType, " vs ", feltElemTy
-                );
-              }
-              feltElemTy = valueType;
+            if (!valueType.hasField()) {
+              continue;
             }
+            if (feltElemTy.hasField() && feltElemTy != valueType) {
+              return errFn().append(
+                  "initializer array contains conflicting types ", valueType, " vs ", feltElemTy
+              );
+            }
+            feltElemTy = valueType;
           }
         }
       }
