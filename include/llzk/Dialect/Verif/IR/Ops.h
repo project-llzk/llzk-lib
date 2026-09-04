@@ -13,6 +13,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/SMT/IR/SMTTypes.h"
+#include "llzk/Dialect/Shared/CallLikeOpInterfaces.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Dialect/Verif/IR/Dialect.h"
 #include "llzk/Dialect/Verif/IR/OpInterfaces.h"
