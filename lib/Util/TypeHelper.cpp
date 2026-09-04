@@ -980,7 +980,9 @@ FailureOr<IntegerAttr> forceIntType(IntegerAttr attr, EmitErrorFn emitError) {
   APInt value = attr.getValue();
   auto compare = value.getBitWidth() <=> IndexType::kInternalStorageBitWidth;
   if (compare < 0) {
-    value = value.zext(IndexType::kInternalStorageBitWidth);
+    value = attr.getType().isSignedInteger()
+                ? value.sext(IndexType::kInternalStorageBitWidth)
+                : value.zext(IndexType::kInternalStorageBitWidth);
   } else if (compare > 0) {
     // The source integer type may be wider than index storage even when its
     // value is representable. Check the significant bits before narrowing.

@@ -39,10 +39,10 @@ normalizeGlobalInitializer(IndexType expectedType, Attribute value, EmitErrorFn 
   if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
     if (!llvm::isa<BoolAttr>(value)) {
       APInt intValueBits = intValue.getValue();
-      if (intValueBits.isNegative() &&
+      if (intValue.getType().isSignlessInteger() && intValueBits.isNegative() &&
           intValueBits.getBitWidth() < IndexType::kInternalStorageBitWidth) {
         return emitError().append(
-            "negative narrow integer initializer cannot be converted to `index`"
+            "signless integer with sign bit set cannot be widened to `index`"
         );
       }
       FailureOr<IntegerAttr> normalized = forceIntType(intValue, emitError);

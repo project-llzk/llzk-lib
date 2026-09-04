@@ -231,8 +231,23 @@ module attributes {llzk.lang} {
 
 // TEST: index array initializers reject narrow negative values rather than changing their value.
 module attributes {llzk.lang} {
-  // expected-error@+1 {{negative narrow integer initializer cannot be converted to `index`}}
+  // expected-error@+1 {{signless integer with sign bit set cannot be widened to `index`}}
   global.def const @g : !array.type<1 x index> = [-1 : i8]
+}
+
+// -----
+
+// TEST: index array initializers reject narrow negative values rather than changing their value.
+module attributes {llzk.lang} {
+  // expected-error@+1 {{signless integer with sign bit set cannot be widened to `index`}}
+  global.def const @g : !array.type<1 x index> = [255 : i8]
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  // expected-error@+1 {{negative integer literal not valid for unsigned integer type}}
+  global.def const @unsigned_neg1 : !array.type<1 x index> = [-1 : ui8]
 }
 
 // -----
