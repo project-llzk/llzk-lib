@@ -32,26 +32,6 @@ using namespace llzk::string;
 
 namespace llzk::global {
 
-namespace {
-
-/// Print an initializer recursively without its redundant storage types.
-/// GlobalDefOp's declared type supplies the type for every initializer value.
-void printInitialValue(AsmPrinter &printer, Attribute value) {
-  if (auto arrayValue = llvm::dyn_cast<ArrayAttr>(value)) {
-    printer << '[';
-    llvm::interleaveComma(arrayValue, printer.getStream(), [&printer](Attribute element) {
-      printInitialValue(printer, element);
-    });
-    printer << ']';
-  } else if (auto feltValue = llvm::dyn_cast<FeltConstAttr>(value)) {
-    printer.printStrippedAttrOrType<FeltConstAttr>(feltValue);
-  } else {
-    printer.printAttributeWithoutType(value);
-  }
-}
-
-} // namespace
-
 FailureOr<Attribute>
 normalizeGlobalInitializer(Type &type, Attribute value, EmitErrorFn emitError) {
   if (type.isSignlessInteger(1)) {
@@ -217,6 +197,26 @@ ParseResult GlobalDefOp::parse(OpAsmParser &parser, OperationState &result) {
   });
 }
 
+namespace {
+
+/// Print an initializer recursively without its redundant storage types.
+/// GlobalDefOp's declared type supplies the type for every initializer value.
+static void printInitialValue(AsmPrinter &printer, Attribute value) {
+  if (auto arrayValue = llvm::dyn_cast<ArrayAttr>(value)) {
+    printer << '[';
+    llvm::interleaveComma(arrayValue, printer.getStream(), [&printer](Attribute element) {
+      printInitialValue(printer, element);
+    });
+    printer << ']';
+  } else if (auto feltValue = llvm::dyn_cast<FeltConstAttr>(value)) {
+    printer.printStrippedAttrOrType<FeltConstAttr>(feltValue);
+  } else {
+    printer.printAttributeWithoutType(value);
+  }
+}
+
+} // namespace
+
 void GlobalDefOp::print(OpAsmPrinter &p) {
   if (getConstant()) {
     p << " const";
@@ -239,7 +239,7 @@ LogicalResult GlobalDefOp::verifySymbolUses(SymbolTableCollection &tables) {
 
 namespace {
 
-inline InFlightDiagnosticWrapper reportMismatch(
+static inline InFlightDiagnosticWrapper reportMismatch(
     EmitErrorFn errFn, Type rootType, const Twine &aspect, const Twine &expected, const Twine &found
 ) {
   return errFn().append(
@@ -247,13 +247,13 @@ inline InFlightDiagnosticWrapper reportMismatch(
   );
 }
 
-inline InFlightDiagnosticWrapper reportMismatch(
+static inline InFlightDiagnosticWrapper reportMismatch(
     EmitErrorFn errFn, Type rootType, const Twine &aspect, const Twine &expected, Attribute found
 ) {
   return reportMismatch(errFn, rootType, aspect, expected, found.getAbstractAttribute().getName());
 }
 
-LogicalResult ensureAttrTypeMatch(
+static LogicalResult ensureAttrTypeMatch(
     Type type, Attribute valAttr, const OwningEmitErrorFn &errFn, Type rootType, const Twine &aspect
 ) {
   if (!isValidGlobalType(type)) {
@@ -374,7 +374,7 @@ GlobalRefOpInterface::getGlobalDefOp(SymbolTableCollection &tables) {
 
 namespace {
 
-FailureOr<SymbolLookupResult<GlobalDefOp>>
+static FailureOr<SymbolLookupResult<GlobalDefOp>>
 verifySymbolUsesImpl(GlobalRefOpInterface refOp, SymbolTableCollection &tables) {
   // Ensure this op references a valid GlobalDefOp name
   auto tgt = refOp.getGlobalDefOp(tables);
