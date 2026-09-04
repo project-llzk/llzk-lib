@@ -273,7 +273,7 @@ Classes</h2></td></tr>
 <tr class="memitem:PredecessorPrinterPassOptions" id="r_PredecessorPrinterPassOptions"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1PredecessorPrinterPassOptions.html">PredecessorPrinterPassOptions</a></td></tr>
 <tr class="memitem:ProductAligner" id="r_ProductAligner"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1ProductAligner.html">ProductAligner</a></td></tr>
 <tr class="memitem:RefValueCapture" id="r_RefValueCapture"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1RefValueCapture.html">RefValueCapture</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Matches and optionally captures a <a class="el" href="classllzk_1_1SourceRef.html" title="A reference to a &quot;source&quot;, which is the base value from which other SSA values are derived.">SourceRef</a> base value, which is either a member read or a block argument (i.e., an input to a @constrain or @compute function).  <a href="structllzk_1_1RefValueCapture.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Matches and optionally captures a <a class="el" href="classllzk_1_1SourceRef.html" title="A reference to a &quot;source&quot;, which is the base value from which other SSA values are derived.">SourceRef</a> base value, which is either a member read or a block argument (i.e., an input to a <span class="tt">@<a class="el" href="namespacellzk_1_1constrain.html">constrain</a></span> or <span class="tt">@compute</span> function).  <a href="structllzk_1_1RefValueCapture.html#details">More...</a><br /></td></tr>
 <tr class="memitem:RemoveUnusedDiscardableAllocationsPassOptions" id="r_RemoveUnusedDiscardableAllocationsPassOptions"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html">RemoveUnusedDiscardableAllocationsPassOptions</a></td></tr>
 <tr class="memitem:SourceRef" id="r_SourceRef"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1SourceRef.html">SourceRef</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A reference to a "source", which is the base value from which other SSA values are derived.  <a href="classllzk_1_1SourceRef.html#details">More...</a><br /></td></tr>
@@ -934,7 +934,7 @@ Variables</h2></td></tr>
 <tr class="memitem:a1b66c1ee1b386cb29f255332f586e96d" id="r_a1b66c1ee1b386cb29f255332f586e96d"><td class="memItemLeft">constexpr char&#160;</td><td class="memItemRight"><a class="el" href="#a1b66c1ee1b386cb29f255332f586e96d">LANG_ATTR_NAME</a> [] = &quot;llzk.lang&quot;</td></tr>
 <tr class="memdesc:a1b66c1ee1b386cb29f255332f586e96d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Name of the attribute on the top-level ModuleOp that identifies the ModuleOp as the root module and specifies the frontend language name that the IR was compiled from, if available.  <br /></td></tr>
 <tr class="memitem:a5f5340f593130ab06a01b2458d243be7" id="r_a5f5340f593130ab06a01b2458d243be7"><td class="memItemLeft">constexpr char&#160;</td><td class="memItemRight"><a class="el" href="#a5f5340f593130ab06a01b2458d243be7">DERIVED_ATTR_NAME</a> [] = &quot;llzk.derived&quot;</td></tr>
-<tr class="memdesc:a5f5340f593130ab06a01b2458d243be7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Name of the attribute on a @product func that has been automatically aligned from @compute + @constrain funcs, or on @compute and @constrain funcs that have been automatically projected from a @product func.  <br /></td></tr>
+<tr class="memdesc:a5f5340f593130ab06a01b2458d243be7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Name of the attribute on a <span class="tt">@product</span> func that has been automatically aligned from <span class="tt">@compute</span> + <span class="tt">@<a class="el" href="namespacellzk_1_1constrain.html">constrain</a></span> funcs, or on <span class="tt">@compute</span> and <span class="tt">@<a class="el" href="namespacellzk_1_1constrain.html">constrain</a></span> funcs that have been automatically projected from a <span class="tt">@product</span> func.  <br /></td></tr>
 <tr class="memitem:adbaddece4688a926984736b45c0376c6" id="r_adbaddece4688a926984736b45c0376c6"><td class="memItemLeft">constexpr char&#160;</td><td class="memItemRight"><a class="el" href="#adbaddece4688a926984736b45c0376c6">FIELD_ATTR_NAME</a> [] = &quot;llzk.fields&quot;</td></tr>
 <tr class="memdesc:adbaddece4688a926984736b45c0376c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Name of the attribute on the top-level ModuleOp that defines prime fields used in the circuit.  <br /></td></tr>
 <tr class="memitem:af2be4b94300457930c6aac7b73294456" id="r_af2be4b94300457930c6aac7b73294456"><td class="memItemLeft">constexpr char&#160;</td><td class="memItemRight"><a class="el" href="#af2be4b94300457930c6aac7b73294456">MAIN_ATTR_NAME</a> [] = &quot;llzk.main&quot;</td></tr>
@@ -975,7 +975,7 @@ Variables</h2></td></tr>
 
 <p>Typealias for a stable reference to a known <a class="el" href="classllzk_1_1Field.html" title="Information about the prime finite field used for the interval analysis.">Field</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00156">156</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00157">157</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
 
 </div>
 </div>
@@ -993,7 +993,7 @@ Variables</h2></td></tr>
 
 <p>Typealias for a set of Fields. </p>
 
-<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00159">159</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Field_8h_source.html#l00160">160</a> of file <a class="el" href="Field_8h_source.html">Field.h</a>.</p>
 
 </div>
 </div>
@@ -11997,7 +11997,7 @@ template&lt;std::ranges::input_range Range&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Name of the attribute on a @product func that has been automatically aligned from @compute + @constrain funcs, or on @compute and @constrain funcs that have been automatically projected from a @product func. </p>
+<p>Name of the attribute on a <span class="tt">@product</span> func that has been automatically aligned from <span class="tt">@compute</span> + <span class="tt">@<a class="el" href="namespacellzk_1_1constrain.html">constrain</a></span> funcs, or on <span class="tt">@compute</span> and <span class="tt">@<a class="el" href="namespacellzk_1_1constrain.html">constrain</a></span> funcs that have been automatically projected from a <span class="tt">@product</span> func. </p>
 
 <p class="definition">Definition at line <a class="el" href="llzk_2Util_2Constants_8h_source.html#l00028">28</a> of file <a class="el" href="llzk_2Util_2Constants_8h_source.html">Constants.h</a>.</p>
 

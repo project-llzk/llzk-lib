@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('tools.html',''
             </ul>
           </li>
           <li class="level3">
-            <a href="#general-transformation-passes">General Transformation Passes </a>
+            <a href="#transformation-passes">Transformation Passes </a>
             <ul>
               <li class="level4">
                 <a href="#autotoc_md-llzk-compute-constrain-to-product"><span class="tt">-llzk-compute-constrain-to-product</span> </a>
@@ -263,19 +263,26 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('tools.html',''
               <li class="level4">
                 <a href="#autotoc_md-llzk-while-to-for"><span class="tt">-llzk-while-to-for</span> </a>
               </li>
-            </ul>
-          </li>
-          <li class="level3">
-            <a href="#array-dialect-transformation-passes">'array' Dialect Transformation Passes </a>
-            <ul>
               <li class="level4">
                 <a href="#autotoc_md-llzk-array-to-scalar"><span class="tt">-llzk-array-to-scalar</span> </a>
               </li>
-            </ul>
-          </li>
-          <li class="level3">
-            <a href="#polymorphic-dialect-transformation-passes">'polymorphic' Dialect Transformation Passes </a>
-            <ul>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-lower-bool-quantifiers"><span class="tt">-llzk-lower-bool-quantifiers</span> </a>
+              </li>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-inline-includes"><span class="tt">-llzk-inline-includes</span> </a>
+              </li>
+              <li class="level4">
+                <a href="#autotoc_md-pcl-trim-expression-size"><span class="tt">-pcl-trim-expression-size</span> </a>
+                <ul>
+                  <li class="level5">
+                    <a href="#options-11">Options </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-pod-to-scalar"><span class="tt">-llzk-pod-to-scalar</span> </a>
+              </li>
               <li class="level4">
                 <a href="#autotoc_md-llzk-drop-empty-templates"><span class="tt">-llzk-drop-empty-templates</span> </a>
               </li>
@@ -283,7 +290,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('tools.html',''
                 <a href="#autotoc_md-llzk-flatten"><span class="tt">-llzk-flatten</span> </a>
                 <ul>
                   <li class="level5">
-                    <a href="#options-11">Options </a>
+                    <a href="#options-12">Options </a>
                   </li>
                 </ul>
               </li>
@@ -294,9 +301,28 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('tools.html',''
                 <a href="#autotoc_md-llzk-specialize-wildcard-arrays"><span class="tt">-llzk-specialize-wildcard-arrays</span> </a>
                 <ul>
                   <li class="level5">
-                    <a href="#options-12">Options </a>
+                    <a href="#options-13">Options </a>
                   </li>
                 </ul>
+              </li>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-inline-structs"><span class="tt">-llzk-inline-structs</span> </a>
+                <ul>
+                  <li class="level5">
+                    <a href="#options-14">Options </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-to-pcl"><span class="tt">-llzk-to-pcl</span> </a>
+                <ul>
+                  <li class="level5">
+                    <a href="#options-15">Options </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-r1cs-lowering"><span class="tt">-llzk-r1cs-lowering</span> </a>
               </li>
             </ul>
           </li>
@@ -305,6 +331,42 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('tools.html',''
             <ul>
               <li class="level4">
                 <a href="#autotoc_md-llzk-validate-member-writes"><span class="tt">-llzk-validate-member-writes</span> </a>
+              </li>
+            </ul>
+          </li>
+          <li class="level3">
+            <a href="#predefined-pipelines">Predefined Pipelines </a>
+            <ul>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-remove-unnecessary-ops"><span class="tt">-llzk-remove-unnecessary-ops</span> </a>
+              </li>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-remove-unnecessary-ops-and-defs"><span class="tt">-llzk-remove-unnecessary-ops-and-defs</span> </a>
+              </li>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-product-program"><span class="tt">-llzk-product-program</span> </a>
+              </li>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-full-struct-inlining"><span class="tt">-llzk-full-struct-inlining</span> </a>
+                <ul>
+                  <li class="level5">
+                    <a href="#options-16">Options </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-full-inlining"><span class="tt">-llzk-full-inlining</span> </a>
+              </li>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-full-poly-lowering"><span class="tt">-llzk-full-poly-lowering</span> </a>
+                <ul>
+                  <li class="level5">
+                    <a href="#options-17">Options </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="level4">
+                <a href="#autotoc_md-llzk-full-r1cs-lowering"><span class="tt">-llzk-full-r1cs-lowering</span> </a>
               </li>
             </ul>
           </li>
@@ -453,12 +515,12 @@ Options</h5>
 Options</h5>
 <div class="fragment"><div class="line">-stream  : Specifies the stream to which the pass prints.</div>
 <div class="line">-saveDot : Whether to dump the graph to DOT format.</div>
-</div><!-- fragment -->  <h3 class="doxsection"><a class="anchor" id="general-transformation-passes"></a>
-General Transformation Passes</h3>
+</div><!-- fragment -->  <h3 class="doxsection"><a class="anchor" id="transformation-passes"></a>
+Transformation Passes</h3>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-compute-constrain-to-product"></a>
 <span class="tt">-llzk-compute-constrain-to-product</span></h4>
-<p>_Replace separate @compute and @constrain functions in a struct with a single @product function_</p>
-<p>Replace separate @compute and @constrain functions in a struct with a single @product function</p>
+<p>_Replace separate <span class="tt">@compute</span> and <span class="tt">@constrain</span> functions in a struct with a single <span class="tt">@product</span> function_</p>
+<p>Replace separate <span class="tt">@compute</span> and <span class="tt">@constrain</span> functions in a struct with a single <span class="tt">@product</span> function</p>
 <h5 class="doxsection"><a class="anchor" id="options-7"></a>
 Options</h5>
 <div class="fragment"><div class="line">-root-struct : Root struct at which to start alignment (default to `@Main`)</div>
@@ -479,8 +541,8 @@ Options</h5>
 <p>This pass currently reports an error if any struct member may not be written exactly once (i.e. overwritten or left uninitialized), and does not attempt to perform any repairs (e.g. SSA-ifying overwritten struct members, or default-initializing unwritten members). This pass overapproximates conditionals, and can result in false positives. </p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-fuse-product-control-flow"></a>
 <span class="tt">-llzk-fuse-product-control-flow</span></h4>
-<p>_Fuse matching compute/constrain control flow in a @product function_</p>
-<p>Fuse matching witness/constraint loops in a @product function </p>
+<p>_Fuse matching compute/constrain control flow in a <span class="tt">@product</span> function_</p>
+<p>Fuse matching witness/constraint loops in a <span class="tt">@product</span> function </p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-inline-free-functions"></a>
 <span class="tt">-llzk-inline-free-functions</span></h4>
 <p><em>Inline calls to free functions</em></p>
@@ -515,14 +577,71 @@ Options</h5>
 <span class="tt">-llzk-while-to-for</span></h4>
 <p><em>Converts scf.while loops to equivalent scf.for loops when possible</em></p>
 <p>This pass identifies scf.while loops that have an induction variable and a uniform step, and converts them to equivalent scf.for loops, which are preferred by some analyses. This pass may introduce some spurious felt/index casts which should be cleaned up by &ndash;canonicalize.  </p>
-<h3 class="doxsection"><a class="anchor" id="array-dialect-transformation-passes"></a>
-'array' Dialect Transformation Passes</h3>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-array-to-scalar"></a>
 <span class="tt">-llzk-array-to-scalar</span></h4>
 <p><em>Replace arrays with scalar values</em></p>
 <p>Replace known-shape arrays with the proper number of scalar values  </p>
-<h3 class="doxsection"><a class="anchor" id="polymorphic-dialect-transformation-passes"></a>
-'polymorphic' Dialect Transformation Passes</h3>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-lower-bool-quantifiers"></a>
+<span class="tt">-llzk-lower-bool-quantifiers</span></h4>
+<p><em>Lower bool quantifiers to SCF loops</em></p>
+<p>Replace <span class="tt">bool.forall</span> and <span class="tt">bool.exists</span> over LLZK arrays with <span class="tt">scf.for</span> loops that iterate over the first array dimension and accumulate the predicate result with <span class="tt">bool.and</span> or <span class="tt">bool.or</span>, respectively.  </p>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-inline-includes"></a>
+<span class="tt">-llzk-inline-includes</span></h4>
+<p><em>Replace all IncludeOp with contents of the referenced file.</em></p>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-pcl-trim-expression-size"></a>
+<span class="tt">-pcl-trim-expression-size</span></h4>
+<p><em>Trims the size of expressions by introducing intermediates</em></p>
+<p>Trims the size of expressions by introducing intermediate bindings. This transformation is recommended before translating to PCL s-expressions if the circuit is large or it was converted from a circuit with many free functions.</p>
+<p>When translating the MLIR representation of the PCL circuit to the s-expressions representation, each expression is expanded at each use point. This could lead to an explosion of the IR size. For example, consider the following IR:</p>
+<div class="fragment"><div class="line">%0 = pcl.var &quot;a&quot; false</div>
+<div class="line">%1 = pcl.var &quot;b&quot; false</div>
+<div class="line">%2 = pcl.add %0, %1</div>
+<div class="line">%3 = pcl.mul %2, %2</div>
+<div class="line">%4 = pcl.add %2, %3</div>
+<div class="line">%5 = pcl.var &quot;c&quot; false</div>
+<div class="line">%6 = pcl.eq %5, %4</div>
+<div class="line">pcl.assert %6</div>
+<div class="line">%7 = pcl.var &quot;d&quot; false</div>
+<div class="line">%8 = pcl.eq %7, %4</div>
+<div class="line">pcl.assert %8</div>
+<div class="line">%9 = pcl.var &quot;e&quot; false</div>
+<div class="line">%10 = pcl.eq %9, %4</div>
+<div class="line">pcl.assert %10</div>
+</div><!-- fragment --><p>Its s-expressions representation will expand to something roughtly 3 times the size:</p>
+<div class="fragment"><div class="line">(assert (= c (+ (+ a b) (* (+ a b) (+ a b)))))</div>
+<div class="line">(assert (= d (+ (+ a b) (* (+ a b) (+ a b)))))</div>
+<div class="line">(assert (= e (+ (+ a b) (* (+ a b) (+ a b)))))</div>
+</div><!-- fragment --><p>This pass will introduce an intermediate binding in the middle of large expressions, resulting in smaller s-expressions in the final representation. The example above would be trimmed as follows.</p>
+<div class="fragment"><div class="line">%0 = pcl.var &quot;a&quot; false</div>
+<div class="line">%1 = pcl.var &quot;b&quot; false</div>
+<div class="line">%2 = pcl.add %0, %1</div>
+<div class="line">%3 = pcl.mul %2, %2</div>
+<div class="line">%4 = pcl.add %2, %3</div>
+<div class="line">%5 = pcl.var &quot;t0&quot; false </div>
+<div class="line">%6 = pcl.eq %5, %4</div>
+<div class="line">pcl.assert %6</div>
+<div class="line">%7 = pcl.var &quot;c&quot; false</div>
+<div class="line">%8 = pcl.eq %7, %5</div>
+<div class="line">pcl.assert %8</div>
+<div class="line">%9 = pcl.var &quot;d&quot; false</div>
+<div class="line">%10 = pcl.eq %9, %5</div>
+<div class="line">pcl.assert %10</div>
+<div class="line">%11 = pcl.var &quot;e&quot; false</div>
+<div class="line">%12 = pcl.eq %11, %5</div>
+<div class="line">pcl.assert %12</div>
+</div><!-- fragment --><p>Which results in the following s-expressions:</p>
+<div class="fragment"><div class="line">(assert (= t0 (+ (+ a b) (* (+ a b) (+ a b)))))</div>
+<div class="line">(assert (= c t0))</div>
+<div class="line">(assert (= d t0))</div>
+<div class="line">(assert (= e t0))</div>
+</div><!-- fragment --><h5 class="doxsection"><a class="anchor" id="options-11"></a>
+Options</h5>
+<div class="fragment"><div class="line">-max-size : The maximum size expressions are allowed to have</div>
+</div><!-- fragment -->  <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-pod-to-scalar"></a>
+<span class="tt">-llzk-pod-to-scalar</span></h4>
+<p><em>Replace PODs with scalar values</em></p>
+<p>Scalarize <span class="tt">pod.type</span> values by splitting POD-typed struct members into multiple scalar members, splitting POD-typed array elements into parallel arrays, then rewriting affected member accesses plus function signatures, calls, and returns, and finally running POD-specific SROA + mem2reg cleanup so the remaining POD storage is promoted to SSA values.</p>
+<p>If it is necessary to scalarize both PODs and arrays, run this pass before running the <span class="tt">-llzk-array-to-scalar</span> pass because that pass will not scalarize array types that are within a POD type.  </p>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-drop-empty-templates"></a>
 <span class="tt">-llzk-drop-empty-templates</span></h4>
 <p><em>Remove empty templates</em></p>
@@ -538,7 +657,7 @@ Options</h5>
 <li>Replace parameterized structs with flattened (i.e., no parameter) versions of those structs based on requested return type at calls to <span class="tt">compute()</span> functions and unroll loops</li>
 <li>Unroll loops</li>
 </ul>
-<h5 class="doxsection"><a class="anchor" id="options-11"></a>
+<h5 class="doxsection"><a class="anchor" id="options-12"></a>
 Options</h5>
 <div class="fragment"><div class="line">-max-iter : Maximum number of times the pass will run if a fixpoint is not reached earlier. Unrolling loops can provide more opportunities for instantiating structs but the converse is true as well. Thus, the pass will run multiple times until no further changes can be made or the upper limit provided in this option is reached.</div>
 <div class="line">-cleanup  : Specifies the extent to which unused parameterized definitions (i.e. structs or free functions within a `poly.template`) are removed during the flattening pass.</div>
@@ -553,16 +672,115 @@ Options</h5>
 <p><em>Refine wildcard array casts and specialize concrete call targets</em></p>
 <p>Refines <span class="tt">poly.unifiable_cast</span> results when wildcard <span class="tt">array.type</span> dimensions can be replaced with concrete integer sizes from the input type. Then specializes free functions, extern declarations, and whole structs for calls whose wildcard array dimensions have become concrete.</p>
 <p>This pass is intended to run after <span class="tt">llzk-flatten</span>. It iterates to a fixpoint so newly-refined cast result types can enable further callable specialization in later iterations.</p>
-<h5 class="doxsection"><a class="anchor" id="options-12"></a>
+<h5 class="doxsection"><a class="anchor" id="options-13"></a>
 Options</h5>
 <div class="fragment"><div class="line">-max-iter : Maximum number of iterations before the pass gives up reaching a fixpoint.</div>
-</div><!-- fragment -->  <h3 class="doxsection"><a class="anchor" id="validation-passes"></a>
+</div><!-- fragment -->  <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-inline-structs"></a>
+<span class="tt">-llzk-inline-structs</span></h4>
+<p><em>Inlines nested structs (i.e., subcomponents).</em></p>
+<p>This pass inlines nested structs (i.e., subcomponents) at struct-type members and at calls to the subcomponent compute/constrain functions. Inlining decisions are guided by the call graph of "constrain" functions.</p>
+<p>The <span class="tt">max-merge-complexity</span> parameter can be used to limit the complexity of the resulting structs such that a potential inlining will not take place if doing so would push the sum of constraint and multiplications in the combined struct over the limit. The default value <span class="tt">0</span> indicates no limits which means all structs will be inlined into the Main struct.</p>
+<p>This pass should be run after <span class="tt">llzk-flatten</span> to ensure structs do not have template parameters because structs with template parameters cannot (currently) be inlined. Inlining is also not (currently) supported for subcomponent structs stored in an array-type member.</p>
+<p>This pass also assumes that all subcomponents that are created by calling a struct "@compute" function are ultimately written to exactly one member within the current struct.</p>
+<h5 class="doxsection"><a class="anchor" id="options-14"></a>
+Options</h5>
+<div class="fragment"><div class="line">-max-merge-complexity : Maximum allowed constraint+multiplications in merged @constrain functions</div>
+</div><!-- fragment -->  <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-to-pcl"></a>
+<span class="tt">-llzk-to-pcl</span></h4>
+<p><em>Rewrite constraints to be compatible with PCL constraints used by Picus</em></p>
+<p>Transforms LLZK constraints into an equivalent set of constraints expressed in the pcl-mlir dialect. This pass currently expects the flattening and inlining passes to be run prior to its use.</p>
+<h5 class="doxsection"><a class="anchor" id="options-15"></a>
+Options</h5>
+<div class="fragment"><div class="line">-mode : Lowering mode (full or stubbed)</div>
+</div><!-- fragment -->  <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-r1cs-lowering"></a>
+<span class="tt">-llzk-r1cs-lowering</span></h4>
+<p><em>Rewrite constraints to be compatible with R1CS constraints, i.e a*b - c = 0</em></p>
+<p>Transforms LLZK constraints into an equivalent set of R1CS constraints expressed in the r1cs dialect. The pass expects already-flattened, straight-line <span class="tt">constrain</span> bodies. Run <span class="tt">llzk-flatten</span> or another control-flow lowering pass before this pass; nested-region, successor-bearing, or multi-block constraints are rejected before R1CS normalization. This pass is best used on already-flattened input as part of the <span class="tt">-llzk-full-r1cs-lowering</span> pipeline which includes a degree lowering pass and clean up passes to ensure correctness and performance.  </p>
+<h3 class="doxsection"><a class="anchor" id="validation-passes"></a>
 Validation Passes</h3>
 <h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-validate-member-writes"></a>
 <span class="tt">-llzk-validate-member-writes</span></h4>
 <p><em>Detect multiple and missing writes to the same member of a component.</em></p>
 <p>Detect multiple and missing writes to the same member of a component.</p>
 <p>Note that this is overapproximate (i.e., some writes may erroneously be flagged as overwrites, and some members may erroneously be marked unwritten).  </p>
+<h3 class="doxsection"><a class="anchor" id="predefined-pipelines"></a>
+Predefined Pipelines</h3>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-remove-unnecessary-ops"></a>
+<span class="tt">-llzk-remove-unnecessary-ops</span></h4>
+<p><em>Remove unnecessary operations, such as redundant reads or repeated constraints.</em></p>
+<p>Runs the following cleanup passes in order:</p>
+<ol type="1">
+<li><span class="tt">-llzk-duplicate-read-write-elim</span></li>
+<li><span class="tt">-llzk-duplicate-op-elim</span></li>
+</ol>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-remove-unnecessary-ops-and-defs"></a>
+<span class="tt">-llzk-remove-unnecessary-ops-and-defs</span></h4>
+<p><em>Remove unnecessary operations and member definitions.</em></p>
+<p>Runs <span class="tt">-llzk-remove-unnecessary-ops</span>, followed by:</p>
+<ol type="1">
+<li><span class="tt">-llzk-unused-declaration-elim</span></li>
+</ol>
+<p>The unused-declaration pass uses its default options, so it removes unused members but does not remove struct definitions.</p>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-product-program"></a>
+<span class="tt">-llzk-product-program</span></h4>
+<p>_Convert <span class="tt">@compute</span>/<span class="tt">@constrain</span> functions to an <span class="tt">@product</span> function and perform alignment._</p>
+<p>Runs the following passes in order:</p>
+<ol type="1">
+<li><span class="tt">-llzk-compute-constrain-to-product</span></li>
+<li><span class="tt">-llzk-fuse-product-control-flow</span></li>
+</ol>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-full-struct-inlining"></a>
+<span class="tt">-llzk-full-struct-inlining</span></h4>
+<p><em>Flatten and inline all struct definitions into the main struct.</em></p>
+<p>Runs the following passes in order:</p>
+<ol type="1">
+<li><span class="tt">-llzk-flatten</span></li>
+<li><span class="tt">-llzk-pod-to-scalar</span>, when <span class="tt">pod-to-scalar</span> is enabled</li>
+<li><span class="tt">-llzk-array-to-scalar</span>, when <span class="tt">array-to-scalar</span> is enabled</li>
+<li>MLIR's <span class="tt">-canonicalize</span></li>
+<li><span class="tt">-llzk-inline-structs</span></li>
+<li><span class="tt">-llzk-unused-declaration-elim</span> with <span class="tt">remove-structs=true</span></li>
+</ol>
+<p>POD scalarization precedes array scalarization because it can split <span class="tt">pod.type</span> array elements into parallel arrays. The pipeline defaults flattening cleanup to <span class="tt">main-as-root</span>; using another cleanup mode is not recommended because parameterized templates may survive flattening and cause <span class="tt">-llzk-inline-structs</span> to fail.</p>
+<h5 class="doxsection"><a class="anchor" id="options-16"></a>
+Options</h5>
+<ul>
+<li><span class="tt">flattening={max-iter=&lt;n&gt;}</span> sets the maximum number of flattening iterations (default: <span class="tt">1000</span>).</li>
+<li><span class="tt">flattening={cleanup=&lt;mode&gt;}</span> selects the flattening cleanup mode (default: <span class="tt">main-as-root</span> for this pipeline).</li>
+<li><span class="tt">array-to-scalar</span> controls whether <span class="tt">-llzk-array-to-scalar</span> runs (default: <span class="tt">true</span>).</li>
+<li><span class="tt">pod-to-scalar</span> controls whether <span class="tt">-llzk-pod-to-scalar</span> runs (default: <span class="tt">true</span>).</li>
+<li><span class="tt">inlining={max-merge-complexity=&lt;n&gt;}</span> limits the complexity of merged structs (default: <span class="tt">0</span>, meaning no limit).</li>
+</ul>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-full-inlining"></a>
+<span class="tt">-llzk-full-inlining</span></h4>
+<p><em>Inline free functions, then flatten and inline struct definitions.</em></p>
+<p>This is the recommended pipeline before a downstream pass that does not support <span class="tt">function.call</span>. It first runs <span class="tt">-llzk-inline-free-functions</span>, then runs the same sequence and accepts the same options as <span class="tt">-llzk-full-struct-inlining</span>.</p>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-full-poly-lowering"></a>
+<span class="tt">-llzk-full-poly-lowering</span></h4>
+<p><em>Flatten and inline structs, lower polynomial constraints, then remove unused IR.</em></p>
+<p>Runs the following passes in order:</p>
+<ol type="1">
+<li>The complete <span class="tt">-llzk-full-struct-inlining</span> sequence</li>
+<li><span class="tt">-llzk-poly-lowering-pass</span></li>
+<li>The complete <span class="tt">-llzk-remove-unnecessary-ops-and-defs</span> sequence</li>
+</ol>
+<p>The nested struct-inlining stage uses <span class="tt">main-as-root</span> cleanup by default for the same reason as <span class="tt">-llzk-full-struct-inlining</span>.</p>
+<h5 class="doxsection"><a class="anchor" id="options-17"></a>
+Options</h5>
+<ul>
+<li><span class="tt">flatten-inline</span> configures the nested struct-inlining stage. Its nested <span class="tt">flattening</span>, <span class="tt">array-to-scalar</span>, <span class="tt">pod-to-scalar</span>, and <span class="tt">inlining</span> options have the same meaning and defaults as the corresponding <span class="tt">-llzk-full-struct-inlining</span> options.</li>
+<li><span class="tt">lowering={max-degree=&lt;n&gt;}</span> sets the maximum polynomial degree accepted by <span class="tt">-llzk-poly-lowering-pass</span> (default: <span class="tt">2</span>; minimum: <span class="tt">2</span>).</li>
+</ul>
+<h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-full-r1cs-lowering"></a>
+<span class="tt">-llzk-full-r1cs-lowering</span></h4>
+<p><em>Lower polynomial constraints to R1CS.</em></p>
+<p>Runs the following passes in order:</p>
+<ol type="1">
+<li><span class="tt">-llzk-full-poly-lowering</span> with <span class="tt">lowering={max-degree=2}</span></li>
+<li><span class="tt">-llzk-r1cs-lowering</span></li>
+<li>MLIR's <span class="tt">-cse</span></li>
+</ol>
+<p>The polynomial-lowering stage prepares flattened, degree-two constraints for R1CS conversion. CSE then removes redundant <span class="tt">r1cs.to_linear</span> operations.  </p>
 <h1 class="doxsection"><a class="anchor" id="llzk-translate"></a>
 llzk-translate</h1>
 <p><span class="tt">llzk-translate</span> is a version of the <span class="tt">mlir-translate</span> tool. Includes translations for backends specific to LLZK along with translations available in upstream MLIR (i.e. LLVM or C++). <span class="tt">llzk-translate -h</span> will show a list of all available flags and options.</p>

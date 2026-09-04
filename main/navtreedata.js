@@ -65,7 +65,7 @@ var NAVTREE =
               [ "Options", "tools.html#options-6", null ]
             ] ]
           ] ],
-          [ "General Transformation Passes", "tools.html#general-transformation-passes", [
+          [ "Transformation Passes", "tools.html#transformation-passes", [
             [ "<span class=\"tt\">-llzk-compute-constrain-to-product</span>", "tools.html#autotoc_md-llzk-compute-constrain-to-product", [
               [ "Options", "tools.html#options-7", null ]
             ] ],
@@ -83,23 +83,45 @@ var NAVTREE =
             [ "<span class=\"tt\">-llzk-unused-declaration-elim</span>", "tools.html#autotoc_md-llzk-unused-declaration-elim", [
               [ "Options", "tools.html#options-10", null ]
             ] ],
-            [ "<span class=\"tt\">-llzk-while-to-for</span>", "tools.html#autotoc_md-llzk-while-to-for", null ]
-          ] ],
-          [ "'array' Dialect Transformation Passes", "tools.html#array-dialect-transformation-passes", [
-            [ "<span class=\"tt\">-llzk-array-to-scalar</span>", "tools.html#autotoc_md-llzk-array-to-scalar", null ]
-          ] ],
-          [ "'polymorphic' Dialect Transformation Passes", "tools.html#polymorphic-dialect-transformation-passes", [
+            [ "<span class=\"tt\">-llzk-while-to-for</span>", "tools.html#autotoc_md-llzk-while-to-for", null ],
+            [ "<span class=\"tt\">-llzk-array-to-scalar</span>", "tools.html#autotoc_md-llzk-array-to-scalar", null ],
+            [ "<span class=\"tt\">-llzk-lower-bool-quantifiers</span>", "tools.html#autotoc_md-llzk-lower-bool-quantifiers", null ],
+            [ "<span class=\"tt\">-llzk-inline-includes</span>", "tools.html#autotoc_md-llzk-inline-includes", null ],
+            [ "<span class=\"tt\">-pcl-trim-expression-size</span>", "tools.html#autotoc_md-pcl-trim-expression-size", [
+              [ "Options", "tools.html#options-11", null ]
+            ] ],
+            [ "<span class=\"tt\">-llzk-pod-to-scalar</span>", "tools.html#autotoc_md-llzk-pod-to-scalar", null ],
             [ "<span class=\"tt\">-llzk-drop-empty-templates</span>", "tools.html#autotoc_md-llzk-drop-empty-templates", null ],
             [ "<span class=\"tt\">-llzk-flatten</span>", "tools.html#autotoc_md-llzk-flatten", [
-              [ "Options", "tools.html#options-11", null ]
+              [ "Options", "tools.html#options-12", null ]
             ] ],
             [ "<span class=\"tt\">-llzk-infer-tvar</span>", "tools.html#autotoc_md-llzk-infer-tvar", null ],
             [ "<span class=\"tt\">-llzk-specialize-wildcard-arrays</span>", "tools.html#autotoc_md-llzk-specialize-wildcard-arrays", [
-              [ "Options", "tools.html#options-12", null ]
-            ] ]
+              [ "Options", "tools.html#options-13", null ]
+            ] ],
+            [ "<span class=\"tt\">-llzk-inline-structs</span>", "tools.html#autotoc_md-llzk-inline-structs", [
+              [ "Options", "tools.html#options-14", null ]
+            ] ],
+            [ "<span class=\"tt\">-llzk-to-pcl</span>", "tools.html#autotoc_md-llzk-to-pcl", [
+              [ "Options", "tools.html#options-15", null ]
+            ] ],
+            [ "<span class=\"tt\">-llzk-r1cs-lowering</span>", "tools.html#autotoc_md-llzk-r1cs-lowering", null ]
           ] ],
           [ "Validation Passes", "tools.html#validation-passes", [
             [ "<span class=\"tt\">-llzk-validate-member-writes</span>", "tools.html#autotoc_md-llzk-validate-member-writes", null ]
+          ] ],
+          [ "Predefined Pipelines", "tools.html#predefined-pipelines", [
+            [ "<span class=\"tt\">-llzk-remove-unnecessary-ops</span>", "tools.html#autotoc_md-llzk-remove-unnecessary-ops", null ],
+            [ "<span class=\"tt\">-llzk-remove-unnecessary-ops-and-defs</span>", "tools.html#autotoc_md-llzk-remove-unnecessary-ops-and-defs", null ],
+            [ "<span class=\"tt\">-llzk-product-program</span>", "tools.html#autotoc_md-llzk-product-program", null ],
+            [ "<span class=\"tt\">-llzk-full-struct-inlining</span>", "tools.html#autotoc_md-llzk-full-struct-inlining", [
+              [ "Options", "tools.html#options-16", null ]
+            ] ],
+            [ "<span class=\"tt\">-llzk-full-inlining</span>", "tools.html#autotoc_md-llzk-full-inlining", null ],
+            [ "<span class=\"tt\">-llzk-full-poly-lowering</span>", "tools.html#autotoc_md-llzk-full-poly-lowering", [
+              [ "Options", "tools.html#options-17", null ]
+            ] ],
+            [ "<span class=\"tt\">-llzk-full-r1cs-lowering</span>", "tools.html#autotoc_md-llzk-full-r1cs-lowering", null ]
           ] ]
         ] ]
       ] ],
@@ -485,56 +507,10 @@ var NAVTREE =
         ] ]
       ] ]
     ] ],
-    [ "Backend Dialects", "backend-dialects.html", [
-      [ "'r1cs' Dialect", "backend-dialects.html#r1cs-dialect", [
-        [ "Operations", "backend-dialects.html#operations-13", [
-          [ "<span class=\"tt\">r1cs.add</span> (r1cs::AddOp)", "backend-dialects.html#r1csadd-r1csaddop", [
-            [ "Operands:", "backend-dialects.html#operands-47", null ],
-            [ "Results:", "backend-dialects.html#results-42", null ]
-          ] ],
-          [ "<span class=\"tt\">r1cs.circuit</span> (r1cs::CircuitDefOp)", "backend-dialects.html#r1cscircuit-r1cscircuitdefop", [
-            [ "Attributes:", "backend-dialects.html#attributes-30", null ]
-          ] ],
-          [ "<span class=\"tt\">r1cs.const</span> (r1cs::ConstOp)", "backend-dialects.html#r1csconst-r1csconstop", [
-            [ "Attributes:", "backend-dialects.html#attributes-31", null ],
-            [ "Results:", "backend-dialects.html#results-43", null ]
-          ] ],
-          [ "<span class=\"tt\">r1cs.constrain</span> (r1cs::ConstrainOp)", "backend-dialects.html#r1csconstrain-r1csconstrainop", [
-            [ "Operands:", "backend-dialects.html#operands-48", null ]
-          ] ],
-          [ "<span class=\"tt\">r1cs.def</span> (r1cs::SignalDefOp)", "backend-dialects.html#r1csdef-r1cssignaldefop", [
-            [ "Attributes:", "backend-dialects.html#attributes-32", null ],
-            [ "Results:", "backend-dialects.html#results-44", null ]
-          ] ],
-          [ "<span class=\"tt\">r1cs.mul_const</span> (r1cs::MulConstOp)", "backend-dialects.html#r1csmul_const-r1csmulconstop", [
-            [ "Attributes:", "backend-dialects.html#attributes-33", null ],
-            [ "Operands:", "backend-dialects.html#operands-49", null ],
-            [ "Results:", "backend-dialects.html#results-45", null ]
-          ] ],
-          [ "<span class=\"tt\">r1cs.neg</span> (r1cs::NegOp)", "backend-dialects.html#r1csneg-r1csnegop", [
-            [ "Operands:", "backend-dialects.html#operands-50", null ],
-            [ "Results:", "backend-dialects.html#results-46", null ]
-          ] ],
-          [ "<span class=\"tt\">r1cs.to_linear</span> (r1cs::ToLinearOp)", "backend-dialects.html#r1csto_linear-r1cstolinearop", [
-            [ "Operands:", "backend-dialects.html#operands-51", null ],
-            [ "Results:", "backend-dialects.html#results-47", null ]
-          ] ]
-        ] ],
-        [ "Attributes", "backend-dialects.html#attributes-34", [
-          [ "FeltAttr", "backend-dialects.html#feltattr", [
-            [ "Parameters:", "backend-dialects.html#parameters-11", null ]
-          ] ],
-          [ "PublicAttr", "backend-dialects.html#publicattr-1", null ]
-        ] ],
-        [ "Types", "backend-dialects.html#types-7", [
-          [ "LinearType", "backend-dialects.html#lineartype", null ],
-          [ "SignalType", "backend-dialects.html#signaltype", null ]
-        ] ]
-      ] ]
-    ] ],
-    [ "WTNS witness output", "md_doc_2doxygen_210__wtns__format.html", [
-      [ "File schema", "md_doc_2doxygen_210__wtns__format.html#file-schema", null ],
-      [ "Wire ordering", "md_doc_2doxygen_210__wtns__format.html#wire-ordering", null ]
+    [ "Backends", "backends-page.html", "backends-page" ],
+    [ "WTNS witness output", "md_doc_2doxygen_214__wtns__format.html", [
+      [ "File schema", "md_doc_2doxygen_214__wtns__format.html#file-schema", null ],
+      [ "Wire ordering", "md_doc_2doxygen_214__wtns__format.html#wire-ordering", null ]
     ] ],
     [ "Todo List", "todo.html", null ],
     [ "Namespaces", "namespaces.html", [
@@ -594,89 +570,90 @@ var NAVTREEINDEX =
 "Struct_2IR_2Ops_8capi_8h_8inc.html#a2c888ea7c88a69d4e2571a7c2abfe0ed",
 "SymbolUseGraphPass_8cpp.html",
 "Verif_2IR_2Ops_8capi_8h_8inc.html#a674c99b88af5eb4291b9f14060b784e5",
-"backend-dialects.html#operands-50",
-"classllzk_1_1ConstraintDependencyGraph.html#afcf144ca19e3449fbfdfb93bf9070f33",
-"classllzk_1_1Interval.html#a30c5947b1c9e3f423580603058368e8d",
-"classllzk_1_1ModuleIntervalAnalysis.html",
-"classllzk_1_1SourceRef.html#a50335aff227bcfe51a5f3b68c491ca75",
-"classllzk_1_1StructIntervals.html#a054934f1a85e494ca568ff939e9e6c8b",
-"classllzk_1_1TemplateBuilder.html#af845e9c6cb8b5af0a8d0a2bde0d5f222",
-"classllzk_1_1array_1_1CreateArrayOp.html#a1064dfa84182e335d8f69476345a3a96",
-"classllzk_1_1array_1_1InsertArrayOpGenericAdaptor.html#a21b5ceaa9dea40089ba3b39d267aea89",
-"classllzk_1_1array_1_1detail_1_1ArrayRefOpInterfaceInterfaceTraits_1_1ExternalModel.html#a51077f5a928d79d9d76e2e3136915b69",
-"classllzk_1_1boolean_1_1AssertOp.html#af8c66a304b763ba4f68f521079d46570",
-"classllzk_1_1boolean_1_1ForAllOpAdaptor.html#a7fa46951d334299ef2c50d385a7c1717",
-"classllzk_1_1boolean_1_1YieldOp.html#a63cd20410c4e8cc8bc9960c54ea05d53",
-"classllzk_1_1cast_1_1CastDialect.html#a4f25a4f77bb6ce6214612acc1e0170ac",
-"classllzk_1_1component_1_1CreateStructOpAdaptor.html#a50bae5c3a3feb130ef1b28bc2f047f45",
-"classllzk_1_1component_1_1MemberReadOpGenericAdaptor.html#a3d46ee0c152e844da99085f5fb4854bf",
-"classllzk_1_1component_1_1StructDialect.html#adb6f2aa8022d57b0a117124e45aec3d9",
-"classllzk_1_1constrain_1_1EmitContainmentOp.html#af31cb1365d871eb74d1dad7b3b802be4",
-"classllzk_1_1detail_1_1NonDetOpGenericAdaptorBase.html#a3a5c31837de16929394c078d84b1baf0",
-"classllzk_1_1felt_1_1FeltConstantOp.html#a271abca1ae0bc0a7e6031aa377017ade",
-"classllzk_1_1felt_1_1NegFeltOp.html#a3265c0f1826e848f693bfc49dd026723",
-"classllzk_1_1felt_1_1PowFeltOpGenericAdaptor.html#a975410b270c162140e24c5410721e247",
-"classllzk_1_1felt_1_1SignedModFeltOp.html#a8fb30e7142c0bdd6c5209a98ae8325db",
-"classllzk_1_1felt_1_1UnsignedModFeltOpGenericAdaptor.html#a1024134774aef8f1ac4f2c8874eb9e6c",
-"classllzk_1_1felt_1_1detail_1_1OrFeltOpGenericAdaptorBase.html#a74f5305cd3acde6d04e1c4e55332fb56",
-"classllzk_1_1function_1_1CallOp.html#abb3d8396f2de47b58cbb43122f8b7593",
-"classllzk_1_1function_1_1FunctionDialect.html",
-"classllzk_1_1global_1_1GlobalDefOpAdaptor.html#a142e378e85df522d330786eefdabe522",
-"classllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase.html#a4764f2ae03e2ba6145498369ed89459d",
-"classllzk_1_1impl_1_1InlineFreeFunctionsPassBase.html",
-"classllzk_1_1impl_1_1RemoveUnusedDiscardableAllocationsPassBase.html#aa245764114dc0fa6276456020abfbce9",
-"classllzk_1_1include_1_1detail_1_1IncludeOpGenericAdaptorBase.html#aa1e225bcf32b7235f5bef16c5ef3cab7",
-"classllzk_1_1pod_1_1ReadPodOp.html#a505ca920ddfd5073c23d74ec17dc48ab",
-"classllzk_1_1pod_1_1detail_1_1PodRefOpInterfaceInterfaceTraits_1_1FallbackModel.html#af097b2ab9f8e5bce8ab3f94d43a16c64",
-"classllzk_1_1polymorphic_1_1ConstReadOpGenericAdaptor.html#a371d9c48f89b8e498c38f12706842536",
-"classllzk_1_1polymorphic_1_1TemplateParamOp.html#aefb05fd4da5a538d7c773230afb965f1",
-"classllzk_1_1polymorphic_1_1detail_1_1CleanupBase.html#a1b5439c6ebd8766b633d31bbc19ccb97",
-"classllzk_1_1polymorphic_1_1impl_1_1FlatteningPassBase.html#af6f24ec4b7b3e2d434d4247a121b3ada",
-"classllzk_1_1smt_1_1AndOp.html#a819cc6b84b6d152c4b367efd49cf7bf5",
-"classllzk_1_1smt_1_1ArraySelectOpGenericAdaptor.html#ad35e77ea0a87a08d6ec84bbdb6bf99d7",
-"classllzk_1_1smt_1_1BVAShrOp.html#abb838c910fd7d6e8b9c5ce4b49fb193f",
-"classllzk_1_1smt_1_1BVCmpOpAdaptor.html#a85d03ae7d9f85e1ffae976e05b4fd206",
-"classllzk_1_1smt_1_1BVMulOpGenericAdaptor.html#aef3a165e9188a4b6f1e9fe4ecc92b0dc",
-"classllzk_1_1smt_1_1BVSDivOpGenericAdaptor.html",
-"classllzk_1_1smt_1_1BVUDivOp.html#a6abc46fe42459b951d440b7a7de238f4",
-"classllzk_1_1smt_1_1BoolConstantOpAdaptor.html#aab851cf64b30a8b62ac9decb808bd5a3",
-"classllzk_1_1smt_1_1DistinctOp.html#a2f1347decc71110502befdcb3fa7c755",
-"classllzk_1_1smt_1_1ExtractOp.html#a6b854e78a7b20d770066849784bdb5ea",
-"classllzk_1_1smt_1_1Int2BVOp.html#a2db4e29198baf9e8e344129df922e5d3",
-"classllzk_1_1smt_1_1IntCmpOpGenericAdaptor.html#a209304efd92415db2cdbd11ae669f76e",
-"classllzk_1_1smt_1_1IntMulOp.html#a6f8802970cf542c5eedfdaa0efe20396",
-"classllzk_1_1smt_1_1IteOpGenericAdaptor.html#a0aaa5bee0b1d7e7745a688f17f5a5ee9",
-"classllzk_1_1smt_1_1PushOp.html#aa682784d11a0778a616590c48e557c94",
-"classllzk_1_1smt_1_1SMTOpVisitor.html#a72ecbfef6a4246fc67fae0851e719f4a",
-"classllzk_1_1smt_1_1SolverOp.html#abb2d98ffecf6abcaddbc8152e032980b",
-"classllzk_1_1smt_1_1detail_1_1ArrayStoreOpGenericAdaptorBase.html#a7bc0cfef45dfeb1a49f49f2af5137984",
-"classllzk_1_1smt_1_1detail_1_1BVSModOpGenericAdaptorBase.html#a8e3f6fa6e488eb77c9a8edc6c15a09a7",
-"classllzk_1_1smt_1_1detail_1_1ExtractOpGenericAdaptorBase.html#a04004ef9fac009d92a67519a4e83b74a",
-"classllzk_1_1smt_1_1detail_1_1IteOpGenericAdaptorBase.html",
-"classllzk_1_1string_1_1LitStringOp.html#a72a0ddc69f863018e76425a33bc59705",
-"classllzk_1_1verif_1_1ContractOp.html#a530a842baa9e3d50f3a4fba684a557a9",
-"classllzk_1_1verif_1_1EnsureComputeOp.html#ab17a3f552ba0328d88d997a4f1549074",
-"classllzk_1_1verif_1_1IncreasesOp.html#a5af6910eb422edae26573ba03f8fc454",
-"classllzk_1_1verif_1_1ProveDetOp.html#ad18d197bee08c1aa5043ea51f940db44",
-"classllzk_1_1verif_1_1StepYieldOp.html#af6b38b4ed86e102fb59d877410c7b1f1",
-"classllzk_1_1verif_1_1detail_1_1ConditionOpInterfaceInterfaceTraits_1_1FallbackModel.html#a916e8e71c5a893cbb0bf19dc5ca03030",
-"classllzk_1_1verif_1_1detail_1_1OldOpGenericAdaptorBase.html#a86b0371837226084e67a6b25e1b0da77",
-"dialects.html#attributes-16",
-"dir_2333218f17efae3e90b6d759a11695c8.html",
-"globals_defs_l.html",
-"namespacellzk.html#a3495eb0673fa8d29230b10bcb55c53e1",
-"namespacellzk.html#acaffefb5eebcbf303a9217ff07df7fb0",
-"namespacellzk_1_1function.html#a89c16c5ad2ce9eaa543c98b5d56711ac",
-"namespacellzk_1_1witgen.html#aec3ee3b863e273df6fdd3ad67a571bcc",
-"structLlzkRecordValue.html",
-"structllvm_1_1DenseMapInfo_3_1_1llzk_1_1smt_1_1IntPredicate_01_4.html",
-"structllzk_1_1NestedPipelineOptions.html",
-"structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#a0267edac4d2e0100907c42772198e3f2",
-"structllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase_1_1Properties.html#aeee0c14d2f4450508681a2eb16b47aa2",
-"structllzk_1_1pod_1_1detail_1_1WritePodOpGenericAdaptorBase_1_1Properties.html#ab2d3887f6dbfc0010c078852fe2c1966",
-"structllzk_1_1smt_1_1detail_1_1ExistsOpGenericAdaptorBase_1_1Properties.html#a47abbf05db6d6de6218b282ef7d34c39",
-"structllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase_1_1Properties.html#a4829e8c354d4485cf5a614dd9b4dbecc",
-"syntax.html#translation-guidelines"
+"classCastOperationLinkTests.html",
+"classllzk_1_1ExpressionValue.html#a047d01e701488010688549c1e77685c8",
+"classllzk_1_1Interval.html#a803dfb39d77b6bd7fa4168533d65d6c5",
+"classllzk_1_1ModuleLikeBuilder.html#a341c0e912c896fdbbc90bb89d77783b3",
+"classllzk_1_1SourceRef.html#a96520acff78aa1c849c02e29a7324b1e",
+"classllzk_1_1SymbolDefTree.html#a7ce868a4a0c8181011e19cde31408cec",
+"classllzk_1_1UnreducedInterval.html#aaf9ece7b0a8849ab52ec8f50ab9a40f0",
+"classllzk_1_1array_1_1CreateArrayOp.html#a89b2b59ba3a67db5209a667973742f8f",
+"classllzk_1_1array_1_1ReadArrayOp.html#a2718ac7fc8a10c3c0039f1aa69238dae",
+"classllzk_1_1array_1_1detail_1_1CreateArrayOpGenericAdaptorBase.html#ada3e2d9e15a76961ec337abecbbbef17",
+"classllzk_1_1boolean_1_1AssertOpGenericAdaptor.html#ab338f248e9b3ce0e61d72e78cf83a5c7",
+"classllzk_1_1boolean_1_1NotBoolOp.html#a20cf624c70667fe35ad5654137ea14b5",
+"classllzk_1_1boolean_1_1YieldOpGenericAdaptor.html#a04f761f7f1f53e5b20bae748ee8a882a",
+"classllzk_1_1cast_1_1FeltToIndexOp.html#a8f64d5d19c2ad516476affeef6ebfe38",
+"classllzk_1_1component_1_1MemberDefOp.html#a0f463023f938413dcde4906643a3234e",
+"classllzk_1_1component_1_1MemberRefOpInterface.html#a9c615b2aa81ae21942e32cc7d77dcb64",
+"classllzk_1_1component_1_1detail_1_1CreateStructOpGenericAdaptorBase.html#af7530d2214c366ebde218eaea979b724",
+"classllzk_1_1constrain_1_1EmitContainmentOpGenericAdaptor.html#ad5ba580e664ceaece92cefe270b15321",
+"classllzk_1_1felt_1_1AddFeltOp.html#a53c21bc433632e6b07f603f4c0f880ec",
+"classllzk_1_1felt_1_1FeltConstantOp.html#ac454f94ebc3ac5be5c1f4cab0ece50fb",
+"classllzk_1_1felt_1_1NegFeltOpAdaptor.html#a97b34827e93705da5e6607fa4411b8af",
+"classllzk_1_1felt_1_1ShlFeltOp.html#a77950c638442d88222c2c4ddf3e4f7c5",
+"classllzk_1_1felt_1_1SignedModFeltOpGenericAdaptor.html",
+"classllzk_1_1felt_1_1XorFeltOp.html#a56d2ccde25f62ffcf299731e7279bfa0",
+"classllzk_1_1felt_1_1detail_1_1ShlFeltOpGenericAdaptorBase.html#a6c239c9abbc447ec31655c3f6d745d58",
+"classllzk_1_1function_1_1CallOpAdaptor.html",
+"classllzk_1_1function_1_1ReturnOp.html#a829b8b7891405a3c339b1769d8fe9846",
+"classllzk_1_1global_1_1GlobalDialect.html",
+"classllzk_1_1global_1_1detail_1_1GlobalWriteOpGenericAdaptorBase.html",
+"classllzk_1_1impl_1_1IntervalAnalysisPrinterPassBase.html#a0c5552c9a26657cad20b9cbd31640d54",
+"classllzk_1_1impl_1_1SymbolDefTreePrinterPassBase.html#ac03de580c9cbbb1310d8d2bfb1309400",
+"classllzk_1_1include_1_1impl_1_1InlineIncludesPassBase.html#aa252cd7a11002e8207d4f43671df8afc",
+"classllzk_1_1pod_1_1ReadPodOp.html#ab8514d77ea4fc6b6c8b9866085279131",
+"classllzk_1_1pod_1_1detail_1_1WritePodOpGenericAdaptorBase.html",
+"classllzk_1_1polymorphic_1_1TemplateExprOp.html#a170ccb0c9cc8372d39b1f73c43fb1328",
+"classllzk_1_1polymorphic_1_1TemplateParamOpGenericAdaptor.html#a47ad101a2df8e8c0ea25d06ab0cfa9b7",
+"classllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase.html#af544b7970f3cf18d8a68520857c94890",
+"classllzk_1_1polymorphic_1_1impl_1_1WildcardArraySpecializationPassBase.html#a2ac5d2515b17dc5de21ac0bd9f1e5cdd",
+"classllzk_1_1smt_1_1AndOpGenericAdaptor.html#a0508fb82f17647ee478da973090690f1",
+"classllzk_1_1smt_1_1ArrayStoreOp.html#ad703a3f9d877ca354ea5fa07eda40bf1",
+"classllzk_1_1smt_1_1BVAShrOpGenericAdaptor.html#a1a427e2a29a616cfa6a13122cb8914c8",
+"classllzk_1_1smt_1_1BVCmpPredicateAttr.html#a6d2cf329cfec6af78b5521601336c7a4",
+"classllzk_1_1smt_1_1BVNegOp.html#aca0b5c5ad3bbdb278a7e771681be9b4e",
+"classllzk_1_1smt_1_1BVSModOp.html#a5cb2f1dd99a26aeae5a95772ab08f5ba",
+"classllzk_1_1smt_1_1BVUDivOpGenericAdaptor.html#a15f3fb713f18b623cf7a9ab2734ec350",
+"classllzk_1_1smt_1_1CheckOp.html#a092c97b2dbf3bbdd65d4733d972d55c1",
+"classllzk_1_1smt_1_1DistinctOpAdaptor.html#a4b76c973012d8f1239ff7ed4aeede2c8",
+"classllzk_1_1smt_1_1ExtractOpAdaptor.html#a1a90e382846fdeedc4fd1f54561e3229",
+"classllzk_1_1smt_1_1Int2BVOpAdaptor.html#aeff4b08abb4525c85717aa6bc1880ea1",
+"classllzk_1_1smt_1_1IntConstantOp.html#a2a990dcf65d46914aff386d8d3f88642",
+"classllzk_1_1smt_1_1IntMulOpGenericAdaptor.html",
+"classllzk_1_1smt_1_1NotOp.html#a95b7a56f8742d64812e3bac79da65163",
+"classllzk_1_1smt_1_1PushOpGenericAdaptor.html#a8605cd87bdacb94d0e3217cf4898a711",
+"classllzk_1_1smt_1_1SMTOpVisitor.html#abae0c6e46c45f348af92f2be59152269",
+"classllzk_1_1smt_1_1SolverOpGenericAdaptor.html#a433e54ae7770d3b2ec923d620ccf41dd",
+"classllzk_1_1smt_1_1detail_1_1BV2IntOpGenericAdaptorBase.html#a2a725ef9bcae651c5a1c93837fbd90b8",
+"classllzk_1_1smt_1_1detail_1_1BVShlOpGenericAdaptorBase.html#a81112372277311b8b8a921c6a25bec56",
+"classllzk_1_1smt_1_1detail_1_1ForallOpGenericAdaptorBase.html#a2601b0983ef111fffab3ca1d532e7891",
+"classllzk_1_1smt_1_1detail_1_1OrOpGenericAdaptorBase.html",
+"classllzk_1_1string_1_1LitStringOpAdaptor.html#a60df45094447d9df280a6673a2c75606",
+"classllzk_1_1verif_1_1ContractOp.html#a851da8ba70f388557d6b08c6a09e6079",
+"classllzk_1_1verif_1_1EnsureComputeOpGenericAdaptor.html#ab3a5b5282b6a1006efbfe3f83bad75c1",
+"classllzk_1_1verif_1_1IncreasesOpAdaptor.html#abeecff6427503e177aa6b7f3633537dc",
+"classllzk_1_1verif_1_1ProveDetOpGenericAdaptor.html#a3f4c4b9b069d582f81a56b3e54f72c8c",
+"classllzk_1_1verif_1_1StepYieldOpGenericAdaptor.html#aeee766483b31cb6361dba9e48711a195",
+"classllzk_1_1verif_1_1detail_1_1ContractOpGenericAdaptorBase.html#a1aaf0a144ce9d5a9e42568c1bcaee741",
+"classllzk_1_1verif_1_1detail_1_1PreconditionOpInterfaceInterfaceTraits_1_1FallbackModel.html#a295ab47967ce713df09f47eb21b58f05",
+"dialects.html#cases",
+"dir_570e02bdf77d675060ac8f2d92253248.html",
+"globals_u.html",
+"namespacellzk.html#a42ddc7147daa762ec4335b255dacd7b3",
+"namespacellzk.html#ad9aa681c2fc2160938a72878439bad3d",
+"namespacellzk_1_1impl.html#a7c251fbff94133d2d740a922e1d601c0",
+"namespacemembers_func_u.html",
+"smt-backend.html#results-73",
+"structInsertArrayOpBuildFuncHelper.html#ae1a6e6ddd3e7e1f6e84e778aaa096830",
+"structllvm_1_1DenseMapInfo_3_1_1llzk_1_1OutputStream_01_4.html#a90eb41fa46f3f0b3e2d6e8cda9764e00",
+"structllzk_1_1LLZKDialectVersion.html#aec1d39e48ad15fd8d49770ae3b297a99",
+"structllzk_1_1cast_1_1detail_1_1IntToFeltOpGenericAdaptorBase_1_1Properties.html#ace5130bb275f0c09e5de6aacbf5d8532",
+"structllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase_1_1Properties.html#a6aee8c311fd50ff63783945b8f6b92dd",
+"structllzk_1_1pod_1_1detail_1_1ReadPodOpGenericAdaptorBase_1_1Properties.html#a33084f9f5b704e82e3849998a3528510",
+"structllzk_1_1smt_1_1detail_1_1DeclareFunOpGenericAdaptorBase_1_1Properties.html#ac2c2e7f7594e76d4625765234f29104a",
+"structllzk_1_1verif_1_1detail_1_1ConditionOpInterfaceTrait.html",
+"structmlir_1_1FieldParser_3_1_1llzk_1_1boolean_1_1FeltCmpPredicate_00_01_1_1llzk_1_1boolean_1_1FeltCmpPredicate_01_4.html"
 ];
 
 const SYNCONMSG = 'click to disable panel synchronization';

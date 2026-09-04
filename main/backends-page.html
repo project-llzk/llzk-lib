@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.17.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>LLZK: WTNS witness output</title>
+<title>LLZK: Backends</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
   </div>
 </div>
 <script type="text/javascript">
-document.addEventListener('DOMContentLoaded',() => { initNavTree('md_doc_2doxygen_210__wtns__format.html','',''); });
+document.addEventListener('DOMContentLoaded',() => { initNavTree('backends-page.html','',''); });
 </script>
 <div id="container">
 <div id="doc-content">
@@ -127,49 +127,21 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('md_doc_2doxyge
 </div>
 
 <div><div class="header">
-  <div class="headertitle"><div class="title">WTNS witness output </div></div>
+  <div class="headertitle"><div class="title">Backends </div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="wtns-witness-output"></a></p>
-<p><span class="tt">llzk-witgen --output-wtns &lt;<a class="el" href="LICENSE_8txt.html#a54c3aaa43358b77e4f57f4f72cbe56c6">file</a>&gt;</span> writes the version 2 binary witness format consumed by snarkjs. The implementation follows the <a href="https://github.com/iden3/snarkjs/blob/master/src/wtns_utils.js">snarkjs WTNS writer</a>.</p>
-<h1 class="doxsection"><a class="anchor" id="file-schema"></a>
-File schema</h1>
-<p>All integers and field elements are little-endian.</p>
-<table class="markdownTable">
-<tr class="markdownTableHead">
-<th class="markdownTableHeadNone">Field  </th><th class="markdownTableHeadNone">Encoding  </th></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">Magic  </td><td class="markdownTableBodyNone">Four bytes: <span class="tt">wtns</span>  </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">Version  </td><td class="markdownTableBodyNone"><span class="tt">u32</span>, currently 2  </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">Section count  </td><td class="markdownTableBodyNone"><span class="tt">u32</span>, currently 2  </td></tr>
-</table>
-<p>Each section begins with a <span class="tt">u32</span> section type and a <span class="tt">u64</span> payload size.</p>
-<p>Section 1 is the witness header:</p>
-<table class="markdownTable">
-<tr class="markdownTableHead">
-<th class="markdownTableHeadNone">Field  </th><th class="markdownTableHeadNone">Encoding  </th></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">Field element width  </td><td class="markdownTableBodyNone"><span class="tt">u32</span> bytes, rounded up to a 64-bit limb  </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">Prime modulus  </td><td class="markdownTableBodyNone">Exactly the field element width in bytes  </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">Witness length  </td><td class="markdownTableBodyNone"><span class="tt">u32</span>  </td></tr>
-</table>
-<p>Section 2 contains <span class="tt">witness length</span> field elements, each encoded using the width declared by section 1.</p>
-<h1 class="doxsection"><a class="anchor" id="wire-ordering"></a>
-Wire ordering</h1>
-<p>The witness order must match LLZK's R1CS binary exporter:</p>
-<ol type="1">
-<li>Implicit constant-one wire.</li>
-<li>Public output members, in main-struct declaration order.</li>
-<li>Public inputs, in main-function argument order.</li>
-<li>Private inputs, in main-function argument order.</li>
-<li>Non-public output members, in main-struct declaration order.</li>
-</ol>
-<p>Input visibility comes from the corresponding arguments of <span class="tt">@constrain</span>, as it does in the R1CS lowering pass. The first <span class="tt">@constrain</span> argument is <span class="tt">self</span> and is not an R1CS input.</p>
-<p>The current WTNS writer supports scalar felt inputs and main members. It also cross-checks its witness length against an R1CS-lowered clone of the module. Circuits that require synthesized R1CS auxiliary wires are rejected until witgen can materialize those auxiliary values. Unsupported aggregates and wire count mismatches are therefore diagnosed rather than silently serialized. </p>
+<div class="textblock"><p><a class="anchor" id="md_doc_2doxygen_209__backend__dialects"></a></p>
+<p> 
+
+<meta name="toc-level" content="2">
+</p>
+<p>The LLZK project maintains the following backends:</p>
+<ul>
+<li><a class="el" href="r1cs-backend.html" title="R1CS Backend">R1CS Backend</a></li>
+<li><a class="el" href="smt-backend.html" title="SMT Backend">SMT Backend</a></li>
+<li><a class="el" href="pcl-backend.html" title="PCL Backend">PCL Backend</a></li>
+<li><a class="el" href="zklean-backend.html" title="ZKLean Backend">ZKLean Backend</a> </li>
+</ul>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->

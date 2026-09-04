@@ -234,8 +234,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKTransforma
 <div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span> </div>
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>def ComputeConstrainToProductPass</div>
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    : LLZKPass&lt;&quot;llzk-compute-constrain-to-product&quot;&gt; {</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  let summary = &quot;Replace separate @compute and @constrain functions in a &quot;</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>                &quot;struct with a single @product function&quot;;</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  let summary = &quot;Replace separate `@compute` and `@constrain` functions in a &quot;</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>                &quot;struct with a single `@product` function&quot;;</div>
 <div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  let description = summary;</div>
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  let options = [Option&lt;&quot;rootStruct&quot;, &quot;root-struct&quot;, &quot;std::string&quot;,</div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>                        /* default */ &quot;\&quot;Main\&quot;&quot;,</div>
@@ -245,9 +245,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKTransforma
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span> </div>
 <div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>def FuseProductControlFlowPass : LLZKPass&lt;&quot;llzk-fuse-product-control-flow&quot;&gt; {</div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  let summary =</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>      &quot;Fuse matching compute/constrain control flow in a @product function&quot;;</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>      &quot;Fuse matching compute/constrain control flow in a `@product` function&quot;;</div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  let description =</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>      &quot;Fuse matching witness/constraint loops in a @product function&quot;;</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>      &quot;Fuse matching witness/constraint loops in a `@product` function&quot;;</div>
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>}</div>
 <div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span> </div>
 <div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>def EnforceNoMemberOverwritePass : LLZKPass&lt;&quot;llzk-enforce-no-overwrite&quot;&gt; {</div>

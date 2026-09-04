@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('syntax.html','
 <h1 class="doxsection"><a class="anchor" id="syntax-1"></a>
 Syntax</h1>
 <p>The root <span class="tt">module</span> in LLZK IR must have the <span class="tt">llzk.lang</span> attribute with an optional string that is typically used to indicate the source language. The root <span class="tt">module</span> can contain any number of <span class="tt">struct.def</span>, <span class="tt">function.def</span>, or other <span class="tt">module</span> ops. The <span class="tt">struct.def</span> op is the foundation of LLZK IR and is used to describe each component in a circuit. It can contain any number of data members, a <span class="tt">compute()</span> function that holds the witness generation code, and a <span class="tt">constrain()</span> function that holds the constraint generation code. No other functions may appear within a <span class="tt">struct.def</span>.</p>
-<p>Here is a simple example of LLZK IR translated from the circomlib and gate:</p>
+<p>Here is a simple example of LLZK IR translated from the circomlib <a href="https://github.com/iden3/circomlib/blob/master/circuits/gates.circom#L29-L35">and gate</a>:</p>
 <div class="fragment"><div class="line">module attributes {llzk.lang = &quot;circom&quot;} {</div>
 <div class="line">  struct.def @AND {</div>
 <div class="line">    struct.member @out : !felt.type {llzk.pub}</div>
@@ -187,7 +187,7 @@ Types</h1>
 </ul>
 <h2 class="doxsection"><a class="anchor" id="pseudo-homogeneous"></a>
 Pseudo-homogeneous arrays</h2>
-<p>LLZK supports arrays where the element type is not truly homogeneous, specifically when a templated <span class="tt">struct.type</span> is used with an <span class="tt">affine_map</span> parameter. For example, the type <span class="tt">!array.type&lt;10 x !struct.type&lt;@X&lt;[affine_map&lt;(i)[] -&gt; (i*5)&gt;]&gt;&gt;&gt;</span> contains instances of the struct <span class="tt">@X</span> instantiated with different parameter values per <span class="tt">affine_map&lt;(i)[] -&gt; (i*5)&gt;</span>. Use of this type can be seen in circom_example_2.llzk. If the circuit is ultimately instantiated and flattened, the array will have to be split into scalar values since the instantiated struct type of each element is different.</p>
+<p>LLZK supports arrays where the element type is not truly homogeneous, specifically when a templated <span class="tt">struct.type</span> is used with an <span class="tt">affine_map</span> parameter. For example, the type <span class="tt">!array.type&lt;10 x !struct.type&lt;@X&lt;[affine_map&lt;(i)[] -&gt; (i*5)&gt;]&gt;&gt;&gt;</span> contains instances of the struct <span class="tt">@X</span> instantiated with different parameter values per <span class="tt">affine_map&lt;(i)[] -&gt; (i*5)&gt;</span>. Use of this type can be seen in <a href="https://github.com/project-llzk/llzk-lib/blob/main/test/FrontendLang/Circom/circom_example_2.llzk">circom_example_2.llzk</a>. If the circuit is ultimately instantiated and flattened, the array will have to be split into scalar values since the instantiated struct type of each element is different.</p>
 <h1 class="doxsection"><a class="anchor" id="semantic-rules"></a>
 Semantic Rules</h1>
 <ul>

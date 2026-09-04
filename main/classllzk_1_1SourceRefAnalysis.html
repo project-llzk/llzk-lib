@@ -162,9 +162,9 @@ Public Types</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ab41ed810daa39745579009cca8bcdda4" id="r_ab41ed810daa39745579009cca8bcdda4"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#ab41ed810daa39745579009cca8bcdda4">visitOperation</a> (mlir::Operation *op, mlir::ArrayRef&lt; const <a class="el" href="#ab3f7e3e5c56cf17240450ffdc24cb119">Lattice</a> * &gt; operands, mlir::ArrayRef&lt; <a class="el" href="#ab3f7e3e5c56cf17240450ffdc24cb119">Lattice</a> * &gt; results) override</td></tr>
-<tr class="memdesc:ab41ed810daa39745579009cca8bcdda4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Propagate <span class="tt"><a class="el" href="classllzk_1_1SourceRef.html" title="A reference to a &quot;source&quot;, which is the base value from which other SSA values are derived.">SourceRef</a></span> lattice values from operands to results.  <br /></td></tr>
+<tr class="memdesc:ab41ed810daa39745579009cca8bcdda4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Propagate <span class="tt"><a class="el" href="classllzk_1_1SourceRef.html" title="A reference to a &quot;source&quot;, which is the base value from which other SSA values are derived.">SourceRef</a></span> lattice values through an operation.  <br /></td></tr>
 <tr class="memitem:a5be15b688615a403114a3e8cc641ae22" id="r_a5be15b688615a403114a3e8cc641ae22"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a5be15b688615a403114a3e8cc641ae22">visitExternalCall</a> (mlir::CallOpInterface call, mlir::ArrayRef&lt; const <a class="el" href="#ab3f7e3e5c56cf17240450ffdc24cb119">Lattice</a> * &gt; argumentLattices, mlir::ArrayRef&lt; <a class="el" href="#ab3f7e3e5c56cf17240450ffdc24cb119">Lattice</a> * &gt; resultLattices) override</td></tr>
-<tr class="memdesc:a5be15b688615a403114a3e8cc641ae22"><td class="mdescLeft">&#160;</td><td class="mdescRight">Visit a call operation to an externally defined function given the lattices of its arguments.  <br /></td></tr>
+<tr class="memdesc:a5be15b688615a403114a3e8cc641ae22"><td class="mdescLeft">&#160;</td><td class="mdescRight">Propagate references across a call treated as external.  <br /></td></tr>
 <tr class="memitem:ae7486bd7b5fb9a632c8f7d61c84abd47" id="r_ae7486bd7b5fb9a632c8f7d61c84abd47"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ae7486bd7b5fb9a632c8f7d61c84abd47">SparseForwardDataFlowAnalysis</a> (mlir::DataFlowSolver &amp;s)</td></tr>
 <tr class="inherit_header pub_methods_classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis"><td colspan="2">Public Member Functions inherited from <a class="el" href="classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html">llzk::dataflow::SparseForwardDataFlowAnalysis&lt; SourceRefLattice &gt;</a></td></tr>
 <tr class="memitem:a411e4d070b61c4d916602d94683bc41f pub_methods_classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis" id="r_a411e4d070b61c4d916602d94683bc41f"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html#a411e4d070b61c4d916602d94683bc41f">SparseForwardDataFlowAnalysis</a> (mlir::DataFlowSolver &amp;s)</td></tr>
@@ -511,7 +511,16 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Visit a call operation to an externally defined function given the lattices of its arguments. </p>
+<p>Propagate references across a call treated as external. </p>
+<p>For a call with no definition, assigns each result a fresh root reference. For a defined callable, translates reference states returned by the callee into the caller's context using the argument lattice states. This is also used when interprocedural analysis deliberately treats a defined call as external.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">call</td><td>The call operation being analyzed. </td></tr>
+    <tr><td class="paramname">argumentLattices</td><td>The current lattice states of <code class="param">call's</code> arguments, in argument order. </td></tr>
+    <tr><td class="paramname">resultLattices</td><td>The lattice states to update for <code class="param">call's</code> results, in result order. </td></tr>
+  </table>
+  </dd>
+</dl>
 
 <p>Reimplemented from <a class="el" href="classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html#a39b1ae356210c9e60cc2fc8c496cf9c5">llzk::dataflow::SparseForwardDataFlowAnalysis&lt; SourceRefLattice &gt;</a>.</p>
 
@@ -551,10 +560,13 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Propagate <span class="tt"><a class="el" href="classllzk_1_1SourceRef.html" title="A reference to a &quot;source&quot;, which is the base value from which other SSA values are derived.">SourceRef</a></span> lattice values from operands to results. </p>
+<p>Propagate <span class="tt"><a class="el" href="classllzk_1_1SourceRef.html" title="A reference to a &quot;source&quot;, which is the base value from which other SSA values are derived.">SourceRef</a></span> lattice values through an operation. </p>
+<p>Applies operation-specific reference propagation for aggregate accesses and constructions. For all other operations, each result receives the union of its operands' references, along with any root reference required for that result.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">op</td><td></td></tr>
+    <tr><td class="paramname">op</td><td>The operation whose results are being analyzed. </td></tr>
+    <tr><td class="paramname">operands</td><td>The current lattice states of <code class="param">op's</code> operands, in operand order. </td></tr>
+    <tr><td class="paramname">results</td><td>The lattice states to update for <code class="param">op's</code> results, in result order. </td></tr>
   </table>
   </dd>
 </dl>

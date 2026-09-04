@@ -1,8 +1,27 @@
 var searchData=
 [
-  ['validate_20member_20writes_0',['&lt;span class=&quot;tt&quot;&gt;-llzk-validate-member-writes&lt;/span&gt;',['../tools.html#autotoc_md-llzk-validate-member-writes',1,'']]],
-  ['validation_20passes_1',['Validation Passes',['../tools.html#validation-passes',1,'']]],
-  ['version_2',['Version',['../maintanence.html#releasing-a-new-version',1,'Releasing a New Version'],['../maintanence.html#tracking-a-new-version',1,'Tracking a New Version']]],
-  ['version_3',['Release version',['../maintanence.html#release-version',1,'']]],
-  ['versions_4',['Versions',['../index.html#versions',1,'Versions'],['../todo.html#_todo000001',1,'Versions']]]
+  ['template_20_3a_3allzk_3a_3apolymorphic_3a_3atemplateop_0',['&lt;span class=&quot;tt&quot;&gt;poly.template&lt;/span&gt; (llzk::polymorphic::TemplateOp)',['../dialects.html#polytemplate-llzkpolymorphictemplateop',1,'']]],
+  ['templates_1',['&lt;span class=&quot;tt&quot;&gt;-llzk-drop-empty-templates&lt;/span&gt;',['../tools.html#autotoc_md-llzk-drop-empty-templates',1,'']]],
+  ['temporary_20ban_2',['3. Temporary Ban',['../code-of-conduct.html#autotoc_md3-temporary-ban',1,'']]],
+  ['the_20release_3',['Create the Release',['../maintanence.html#create-the-release',1,'']]],
+  ['the_20release_20candidate_4',['Creating the Release Candidate',['../maintanence.html#creating-the-release-candidate',1,'']]],
+  ['to_20for_5',['&lt;span class=&quot;tt&quot;&gt;-llzk-while-to-for&lt;/span&gt;',['../tools.html#autotoc_md-llzk-while-to-for',1,'']]],
+  ['to_20pcl_6',['&lt;span class=&quot;tt&quot;&gt;-llzk-to-pcl&lt;/span&gt;',['../tools.html#autotoc_md-llzk-to-pcl',1,'']]],
+  ['to_20product_7',['&lt;span class=&quot;tt&quot;&gt;-llzk-compute-constrain-to-product&lt;/span&gt;',['../tools.html#autotoc_md-llzk-compute-constrain-to-product',1,'']]],
+  ['to_20scalar_8',['to scalar',['../tools.html#autotoc_md-llzk-array-to-scalar',1,'&lt;span class=&quot;tt&quot;&gt;-llzk-array-to-scalar&lt;/span&gt;'],['../tools.html#autotoc_md-llzk-pod-to-scalar',1,'&lt;span class=&quot;tt&quot;&gt;-llzk-pod-to-scalar&lt;/span&gt;']]],
+  ['to_5flinear_20_3a_3ar1cs_3a_3atolinearop_9',['&lt;span class=&quot;tt&quot;&gt;r1cs.to_linear&lt;/span&gt; (r1cs::ToLinearOp)',['../r1cs-backend.html#r1csto_linear-r1cstolinearop',1,'']]],
+  ['todo_20list_10',['Todo List',['../todo.html',1,'']]],
+  ['tofelt_20_3a_3allzk_3a_3acast_3a_3ainttofeltop_11',['&lt;span class=&quot;tt&quot;&gt;cast.tofelt&lt;/span&gt; (llzk::cast::IntToFeltOp)',['../dialects.html#casttofelt-llzkcastinttofeltop',1,'']]],
+  ['toindex_20_3a_3allzk_3a_3acast_3a_3afelttoindexop_12',['&lt;span class=&quot;tt&quot;&gt;cast.toindex&lt;/span&gt; (llzk::cast::FeltToIndexOp)',['../dialects.html#casttoindex-llzkcastfelttoindexop',1,'']]],
+  ['tool_20guides_13',['Tool Guides',['../tools.html',1,'']]],
+  ['tracking_20a_20new_20version_14',['Tracking a New Version',['../maintanence.html#tracking-a-new-version',1,'']]],
+  ['transformation_20passes_15',['Transformation Passes',['../tools.html#transformation-passes',1,'']]],
+  ['translate_16',['llzk-translate',['../tools.html#llzk-translate',1,'']]],
+  ['translation_20guidelines_17',['Translation Guidelines',['../syntax.html#translation-guidelines',1,'']]],
+  ['tree_18',['&lt;span class=&quot;tt&quot;&gt;-llzk-print-symbol-def-tree&lt;/span&gt;',['../tools.html#autotoc_md-llzk-print-symbol-def-tree',1,'']]],
+  ['trim_20expression_20size_19',['&lt;span class=&quot;tt&quot;&gt;-pcl-trim-expression-size&lt;/span&gt;',['../tools.html#autotoc_md-pcl-trim-expression-size',1,'']]],
+  ['true_20_3a_3apcl_3a_3atrueop_20',['&lt;span class=&quot;tt&quot;&gt;pcl.true&lt;/span&gt; (pcl::TrueOp)',['../pcl-backend.html#pcltrue-pcltrueop',1,'']]],
+  ['tvar_21',['&lt;span class=&quot;tt&quot;&gt;-llzk-infer-tvar&lt;/span&gt;',['../tools.html#autotoc_md-llzk-infer-tvar',1,'']]],
+  ['types_22',['Types',['../syntax.html#types',1,'Types'],['../dialects.html#types-1',1,'Types'],['../dialects.html#types-2',1,'Types'],['../dialects.html#types-3',1,'Types'],['../dialects.html#types-4',1,'Types'],['../dialects.html#types-5',1,'Types'],['../dialects.html#types-6',1,'Types'],['../r1cs-backend.html#types-7',1,'Types'],['../smt-backend.html#types-8',1,'Types'],['../pcl-backend.html#types-9',1,'Types'],['../zklean-backend.html#types-10',1,'Types'],['../zklean-backend.html#types-11',1,'Types'],['../zklean-backend.html#types-12',1,'Types']]],
+  ['typevartype_23',['TypeVarType',['../dialects.html#typevartype',1,'']]]
 ];

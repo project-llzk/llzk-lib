@@ -1,16 +1,17 @@
 var searchData=
 [
-  ['neg_20_3a_3allzk_3a_3afelt_3a_3anegfeltop_0',['&lt;span class=&quot;tt&quot;&gt;felt.neg&lt;/span&gt; (llzk::felt::NegFeltOp)',['../dialects.html#feltneg-llzkfeltnegfeltop',1,'']]],
-  ['neg_20_3a_3ar1cs_3a_3anegop_1',['&lt;span class=&quot;tt&quot;&gt;r1cs.neg&lt;/span&gt; (r1cs::NegOp)',['../backend-dialects.html#r1csneg-r1csnegop',1,'']]],
-  ['new_20_3a_3allzk_3a_3aarray_3a_3acreatearrayop_2',['&lt;span class=&quot;tt&quot;&gt;array.new&lt;/span&gt; (llzk::array::CreateArrayOp)',['../dialects.html#arraynew-llzkarraycreatearrayop',1,'']]],
-  ['new_20_3a_3allzk_3a_3acomponent_3a_3acreatestructop_3',['&lt;span class=&quot;tt&quot;&gt;struct.new&lt;/span&gt; (llzk::component::CreateStructOp)',['../dialects.html#structnew-llzkcomponentcreatestructop',1,'']]],
-  ['new_20_3a_3allzk_3a_3apod_3a_3anewpodop_4',['&lt;span class=&quot;tt&quot;&gt;pod.new&lt;/span&gt; (llzk::pod::NewPodOp)',['../dialects.html#podnew-llzkpodnewpodop',1,'']]],
-  ['new_20_3a_3allzk_3a_3astring_3a_3alitstringop_5',['&lt;span class=&quot;tt&quot;&gt;string.new&lt;/span&gt; (llzk::string::LitStringOp)',['../dialects.html#stringnew-llzkstringlitstringop',1,'']]],
-  ['new_20issue_6',['Create a new issue',['../contribution-guide.html#create-a-new-issue',1,'']]],
-  ['new_20release_7',['Preparing a new release',['../maintanence.html#preparing-a-new-release',1,'']]],
-  ['new_20version_8',['New Version',['../maintanence.html#releasing-a-new-version',1,'Releasing a New Version'],['../maintanence.html#tracking-a-new-version',1,'Tracking a New Version']]],
-  ['nix_20setup_9',['Nix Setup',['../setup.html#nix-setup',1,'']]],
-  ['no_20overwrite_10',['&lt;span class=&quot;tt&quot;&gt;-llzk-enforce-no-overwrite&lt;/span&gt;',['../tools.html#autotoc_md-llzk-enforce-no-overwrite',1,'']]],
-  ['nondet_20_3a_3allzk_3a_3anondetop_11',['&lt;span class=&quot;tt&quot;&gt;llzk.nondet&lt;/span&gt; (llzk::NonDetOp)',['../dialects.html#llzknondet-llzknondetop',1,'']]],
-  ['not_20_3a_3allzk_3a_3aboolean_3a_3anotboolop_12',['&lt;span class=&quot;tt&quot;&gt;bool.not&lt;/span&gt; (llzk::boolean::NotBoolOp)',['../dialects.html#boolnot-llzkbooleannotboolop',1,'']]]
+  ['maintenance_20guide_0',['Maintenance Guide',['../maintanence.html',1,'']]],
+  ['make_20changes_1',['Make Changes',['../contribution-guide.html#make-changes',1,'']]],
+  ['manual_20build_20setup_2',['Manual Build Setup',['../setup.html#manual-build-setup',1,'']]],
+  ['member_20_3a_3allzk_3a_3acomponent_3a_3amemberdefop_3',['&lt;span class=&quot;tt&quot;&gt;struct.member&lt;/span&gt; (llzk::component::MemberDefOp)',['../dialects.html#structmember-llzkcomponentmemberdefop',1,'']]],
+  ['member_20_3a_3allzk_3a_3azkleanlean_3a_3amemberdefop_4',['&lt;span class=&quot;tt&quot;&gt;ZKLeanLean.member&lt;/span&gt; (llzk::zkleanlean::MemberDefOp)',['../zklean-backend.html#zkleanleanmember-llzkzkleanleanmemberdefop',1,'']]],
+  ['member_20writes_5',['&lt;span class=&quot;tt&quot;&gt;-llzk-validate-member-writes&lt;/span&gt;',['../tools.html#autotoc_md-llzk-validate-member-writes',1,'']]],
+  ['merged_6',['Your PR is merged!',['../contribution-guide.html#your-pr-is-merged',1,'']]],
+  ['mod_20_3a_3allzk_3a_3asmt_3a_3aintmodop_7',['&lt;span class=&quot;tt&quot;&gt;smt.int.mod&lt;/span&gt; (llzk::smt::IntModOp)',['../smt-backend.html#smtintmod-llzksmtintmodop',1,'']]],
+  ['mul_20_3a_3allzk_3a_3afelt_3a_3amulfeltop_8',['&lt;span class=&quot;tt&quot;&gt;felt.mul&lt;/span&gt; (llzk::felt::MulFeltOp)',['../dialects.html#feltmul-llzkfeltmulfeltop',1,'']]],
+  ['mul_20_3a_3allzk_3a_3asmt_3a_3abvmulop_9',['&lt;span class=&quot;tt&quot;&gt;smt.bv.mul&lt;/span&gt; (llzk::smt::BVMulOp)',['../smt-backend.html#smtbvmul-llzksmtbvmulop',1,'']]],
+  ['mul_20_3a_3allzk_3a_3asmt_3a_3aintmulop_10',['&lt;span class=&quot;tt&quot;&gt;smt.int.mul&lt;/span&gt; (llzk::smt::IntMulOp)',['../smt-backend.html#smtintmul-llzksmtintmulop',1,'']]],
+  ['mul_20_3a_3allzk_3a_3azkexpr_3a_3amulop_11',['&lt;span class=&quot;tt&quot;&gt;ZKExpr.Mul&lt;/span&gt; (llzk::zkexpr::MulOp)',['../zklean-backend.html#zkexprmul-llzkzkexprmulop',1,'']]],
+  ['mul_20_3a_3apcl_3a_3amulop_12',['&lt;span class=&quot;tt&quot;&gt;pcl.mul&lt;/span&gt; (pcl::MulOp)',['../pcl-backend.html#pclmul-pclmulop',1,'']]],
+  ['mul_5fconst_20_3a_3ar1cs_3a_3amulconstop_13',['&lt;span class=&quot;tt&quot;&gt;r1cs.mul_const&lt;/span&gt; (r1cs::MulConstOp)',['../r1cs-backend.html#r1csmul_const-r1csmulconstop',1,'']]]
 ];

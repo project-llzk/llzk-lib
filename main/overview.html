@@ -163,7 +163,7 @@ Project Overview</h1>
 <p>The general workflow of using LLZK is as follows:</p><ol type="1">
 <li>Translate the source ZK language into LLZK IR using <a class="el" href="#frontends" title="Frontends">a frontend tool</a>.</li>
 <li>Use the <a class="el" href="tools.html#llzk-opt" title="llzk-opt">llzk-opt tool</a> to perform any transformations using LLZK's <a class="el" href="#pass-overview" title="Passes">pass infrastructure</a>.</li>
-<li>Provide the transformed IR to a <a class="el" href="#backends" title="Backends">backend</a> for further analysis or use.</li>
+<li>Provide the transformed IR to a <a class="el" href="backends-page.html" title="Backends">backend</a> for further analysis or use.</li>
 </ol>
 <h2 class="doxsection"><a class="anchor" id="llzk-ir-dialects"></a>
 LLZK IR Dialects</h2>
@@ -231,9 +231,11 @@ Passes</h2>
 <h2 class="doxsection"><a class="anchor" id="backends"></a>
 Backends</h2>
 <p>The LLZK project currently maintains the following backends:</p><ul>
-<li><a class="el" href="backend-dialects.html#r1cs-dialect" title="&#39;r1cs&#39; Dialect">R1CS</a></li>
+<li><a class="el" href="r1cs-backend.html" title="R1CS Backend">R1CS</a></li>
+<li><a class="el" href="smt-backend.html" title="SMT Backend">SMT</a></li>
+<li><a class="el" href="pcl-backend.html" title="PCL Backend">PCL</a></li>
+<li><a class="el" href="zklean-backend.html" title="ZKLean Backend">ZKLean</a></li>
 </ul>
-<p>Veridise also maintains a <a href="https://github.com/Veridise/pcl-mlir">Picus Constraint Language backend</a> that allows LLZK to be lowered to PCL for use with the <a href="https://docs.veridise.com/picus-v2/">Picus</a> verifier.</p>
 <div class="section_buttons"> <table class="markdownTable">
 <tr class="markdownTableHead">
 <th class="markdownTableHeadLeft">Previous  </th><th class="markdownTableHeadRight">Next  </th></tr>

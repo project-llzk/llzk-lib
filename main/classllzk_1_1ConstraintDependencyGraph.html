@@ -164,10 +164,10 @@ Static Public Member Functions</h2></td></tr>
 <div class="textblock"><p>A dependency graph of constraints enforced by an LLZK struct. </p>
 <p>Mathematically speaking, a constraint dependency graph (CDG) is a transitive closure of edges where there is an edge between signals <span class="tt">a</span> and <span class="tt">b</span> iff <span class="tt">a</span> and <span class="tt">b</span> appear in the same constraint.</p>
 <p>Less formally, a CDG is a set of signals that constrain one another through one or more emit operations (<span class="tt">constrain.in</span> or <span class="tt">constrain.eq</span>). The CDG only indicate that signals are connected by constraints, but do not include information about the type of computation that binds them together.</p>
-<p>For example, a CDG of the form: { {arg1, arg2, arg3[@foo]} } Means that arg1, arg2, and member @foo of arg3, are connected via some constraints. These constraints could take the form of (in Circom notation): arg1 + arg3[@foo] === arg2 Or arg2 === arg2 / arg3[@foo] Or any other form of constraint including those values.</p>
-<p>The CDG also records information about constant values (e.g., felt.const) that are included in constraints, but does not compute a transitive closure over constant values, as constant value usage in constraints does not imply any dependency between signal values (e.g., constraints a + b === 0 and c + d === 0 both use constant 0, but does not enforce a dependency between a, b, c, and d). </p>
+<p>For example, a CDG of the form <span class="tt">{{ arg1, arg2, arg3[@foo] }}</span> means that <span class="tt">arg1</span>, <span class="tt">arg2</span>, and member <span class="tt">@foo</span> of <span class="tt">arg3</span>, are connected via some constraints. These constraints could take the form of (in Circom notation): <span class="tt">arg1 + arg3[@foo] === arg2</span> Or <span class="tt">arg2 === arg2 / arg3[@foo]</span> Or any other form of constraint including those values.</p>
+<p>The CDG also records information about constant values (e.g., felt.const) that are included in constraints, but does not compute a transitive closure over constant values, as constant value usage in constraints does not imply any dependency between signal values (e.g., constraints <span class="tt">a + b === 0</span> and <span class="tt">c + d === 0</span> both use constant 0, but does not enforce a dependency between <span class="tt">a</span>, <span class="tt">b</span>, <span class="tt">c</span>, and <span class="tt">d</span>). </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00123">123</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00139">139</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="aca0acba8e00a833eb9c0f33e1ccfa5c5" name="aca0acba8e00a833eb9c0f33e1ccfa5c5"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aca0acba8e00a833eb9c0f33e1ccfa5c5">&#9670;&#160;</a></span>ConstraintDependencyGraph()</h2>
@@ -192,7 +192,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00173">173</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00189">189</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
 
 </div>
 </div>
@@ -353,7 +353,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00165">165</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00181">181</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
 
 </div>
 </div>
@@ -380,7 +380,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00177">177</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00193">193</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
 
 </div>
 </div>

@@ -1709,7 +1709,7 @@ var hierarchy =
       ] ],
       [ "llzk::polymorphic::UnifiableCastOpGenericAdaptor< RangeT >", "classllzk_1_1polymorphic_1_1UnifiableCastOpGenericAdaptor.html", null ]
     ] ],
-    [ "std::unordered_set", null, [
+    [ "std::unordered_set&lt; K &gt;", null, [
       [ "llzk::SourceRefSet", "classllzk_1_1SourceRefSet.html", null ]
     ] ],
     [ "llzk::UnreducedInterval", "classllzk_1_1UnreducedInterval.html", null ],

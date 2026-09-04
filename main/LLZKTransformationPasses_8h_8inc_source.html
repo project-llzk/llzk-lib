@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKTransforma
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  }</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  ::llvm::StringRef getArgument()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;llzk-compute-constrain-to-product&quot;</span>; }</div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  ::llvm::StringRef getDescription()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;Replace separate @compute and @constrain functions in a struct with a single @product function&quot;</span>; }</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  ::llvm::StringRef getDescription()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;Replace separate `@compute` and `@constrain` functions in a struct with a single `@product` function&quot;</span>; }</div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span></div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral getPassName() {</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    return ::llvm::StringLiteral(<span class="stringliteral">&quot;ComputeConstrainToProductPass&quot;</span>);</div>
@@ -356,7 +356,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKTransforma
 <div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>  }</div>
 <div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>  ::llvm::StringRef getArgument()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;llzk-fuse-product-control-flow&quot;</span>; }</div>
 <div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span> </div>
-<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>  ::llvm::StringRef getDescription()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;Fuse matching compute/constrain control flow in a @product function&quot;</span>; }</div>
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>  ::llvm::StringRef getDescription()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;Fuse matching compute/constrain control flow in a `@product` function&quot;</span>; }</div>
 <div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span></div>
 <div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral getPassName() {</div>
 <div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>    return ::llvm::StringLiteral(<span class="stringliteral">&quot;FuseProductControlFlowPass&quot;</span>);</div>
@@ -1226,7 +1226,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKTransforma
 <div class="line"><a id="l01175" name="l01175"></a><span class="lineno"> 1175</span>  }</div>
 <div class="line"><a id="l01176" name="l01176"></a><span class="lineno"> 1176</span>  ::llvm::StringRef getArgument()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;llzk-compute-constrain-to-product&quot;</span>; }</div>
 <div class="line"><a id="l01177" name="l01177"></a><span class="lineno"> 1177</span> </div>
-<div class="line"><a id="l01178" name="l01178"></a><span class="lineno"> 1178</span>  ::llvm::StringRef getDescription()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;Replace separate @compute and @constrain functions in a struct with a single @product function&quot;</span>; }</div>
+<div class="line"><a id="l01178" name="l01178"></a><span class="lineno"> 1178</span>  ::llvm::StringRef getDescription()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;Replace separate `@compute` and `@constrain` functions in a struct with a single `@product` function&quot;</span>; }</div>
 <div class="line"><a id="l01179" name="l01179"></a><span class="lineno"> 1179</span></div>
 <div class="line"><a id="l01181" name="l01181"></a><span class="lineno"> 1181</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral getPassName() {</div>
 <div class="line"><a id="l01182" name="l01182"></a><span class="lineno"> 1182</span>    return ::llvm::StringLiteral(<span class="stringliteral">&quot;ComputeConstrainToProductPass&quot;</span>);</div>
@@ -1333,7 +1333,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('LLZKTransforma
 <div class="line"><a id="l01298" name="l01298"></a><span class="lineno"> 1298</span>  }</div>
 <div class="line"><a id="l01299" name="l01299"></a><span class="lineno"> 1299</span>  ::llvm::StringRef getArgument()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;llzk-fuse-product-control-flow&quot;</span>; }</div>
 <div class="line"><a id="l01300" name="l01300"></a><span class="lineno"> 1300</span> </div>
-<div class="line"><a id="l01301" name="l01301"></a><span class="lineno"> 1301</span>  ::llvm::StringRef getDescription()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;Fuse matching compute/constrain control flow in a @product function&quot;</span>; }</div>
+<div class="line"><a id="l01301" name="l01301"></a><span class="lineno"> 1301</span>  ::llvm::StringRef getDescription()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;Fuse matching compute/constrain control flow in a `@product` function&quot;</span>; }</div>
 <div class="line"><a id="l01302" name="l01302"></a><span class="lineno"> 1302</span></div>
 <div class="line"><a id="l01304" name="l01304"></a><span class="lineno"> 1304</span>  <span class="keyword">static</span> constexpr ::llvm::StringLiteral getPassName() {</div>
 <div class="line"><a id="l01305" name="l01305"></a><span class="lineno"> 1305</span>    return ::llvm::StringLiteral(<span class="stringliteral">&quot;FuseProductControlFlowPass&quot;</span>);</div>
