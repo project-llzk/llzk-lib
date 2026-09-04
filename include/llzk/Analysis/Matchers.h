@@ -48,8 +48,8 @@ auto m_CommutativeOp(LhsMatcher lhs, RhsMatcher rhs) {
   return CommutativeMatcher<LhsMatcher, RhsMatcher, OpType>(lhs, rhs);
 }
 
-/// @brief Matches and optionally captures a SourceRef base value, which is either
-/// a member read or a block argument (i.e., an input to a @constrain or @compute function).
+/// @brief Matches and optionally captures a SourceRef base value, which is either a member
+/// read or a block argument (i.e., an input to a `@constrain` or `@compute` function).
 struct RefValueCapture {
   mlir::Value *what;
   RefValueCapture(mlir::Value *capture) : what(capture) {}

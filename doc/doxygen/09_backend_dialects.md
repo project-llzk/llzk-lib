@@ -1,4 +1,4 @@
-# Backend Dialects {#backend-dialects}
+# Backends {#backends-page}
 
 \htmlonly
 
@@ -7,4 +7,9 @@
 
 \tableofcontents
 
-\include{doc} build/doc/mlir/dialect/R1CSDialect.md
+The LLZK project maintains the following backends:
+
+- \subpage r1cs-backend
+- \subpage smt-backend
+- \subpage pcl-backend
+- \subpage zklean-backend

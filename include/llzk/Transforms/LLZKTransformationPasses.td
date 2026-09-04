@@ -102,8 +102,8 @@ def PolyLoweringPass : LLZKPass<"llzk-poly-lowering-pass"> {
 
 def ComputeConstrainToProductPass
     : LLZKPass<"llzk-compute-constrain-to-product"> {
-  let summary = "Replace separate @compute and @constrain functions in a "
-                "struct with a single @product function";
+  let summary = "Replace separate `@compute` and `@constrain` functions in a "
+                "struct with a single `@product` function";
   let description = summary;
   let options = [Option<"rootStruct", "root-struct", "std::string",
                         /* default */ "\"Main\"",
@@ -113,9 +113,9 @@ def ComputeConstrainToProductPass
 
 def FuseProductControlFlowPass : LLZKPass<"llzk-fuse-product-control-flow"> {
   let summary =
-      "Fuse matching compute/constrain control flow in a @product function";
+      "Fuse matching compute/constrain control flow in a `@product` function";
   let description =
-      "Fuse matching witness/constraint loops in a @product function";
+      "Fuse matching witness/constraint loops in a `@product` function";
 }
 
 def EnforceNoMemberOverwritePass : LLZKPass<"llzk-enforce-no-overwrite"> {
