@@ -10,6 +10,7 @@
 #pragma once
 
 #include "llzk/Util/SymbolLookup.h"
+#include "llzk/Util/TypeHelper.h"
 
 #include <mlir/Interfaces/CallInterfaces.h>
 
@@ -30,6 +31,7 @@ class FuncDefOp;
 } // namespace function
 namespace polymorphic {
 class TemplateOp;
+class TemplateParamOp;
 } // namespace polymorphic
 
 llvm::SmallVector<mlir::StringRef> getNames(mlir::SymbolRefAttr ref);
@@ -214,6 +216,33 @@ getConstResolutionTemplate(mlir::SymbolTableCollection &tables, mlir::Operation 
 /// to a constant global.
 mlir::LogicalResult verifyTemplateParamSymbol(
     mlir::SymbolTableCollection &tables, mlir::SymbolRefAttr symbol, mlir::Operation *origin
+);
+
+/// Verify one explicit template argument against its declared parameter restriction.
+/// Symbol references are resolved in the context of `origin`; diagnostics are emitted on it.
+mlir::LogicalResult verifyTemplateParamValueCompatibility(
+    mlir::Operation *origin, mlir::Attribute value, polymorphic::TemplateParamOp targetParam
+);
+
+/// Verify each explicit template argument against the corresponding declared parameter restriction.
+/// The argument list and parameter declarations must be non-empty and have equal length.
+mlir::LogicalResult verifyTemplateParamValuesCompatibility(
+    mlir::Operation *origin, mlir::ArrayAttr explicitParams,
+    llvm::iterator_range<mlir::Region::op_iterator<polymorphic::TemplateParamOp>> targetParamDefs
+);
+
+/// Verify that each template parameter value provided in the `origin` op is consistent with
+/// the value inferred for the target `TemplateParamOp` in the given `UnificationMap`. The
+/// `UnificationMap` is expected to contain the unification results of this op against the
+/// target function type signature.
+///
+/// Pre-condition assertions:
+///   - `!isNullOrEmpty(getTemplateParamsAttr())`
+///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`
+mlir::LogicalResult verifyTemplateParamsMatchInferred(
+    mlir::Operation *origin, mlir::ArrayAttr explicitParams,
+    llvm::iterator_range<mlir::Region::op_iterator<polymorphic::TemplateParamOp>> targetParamDefs,
+    const UnificationMap &unifications
 );
 
 /// Ensure that the given symbol (that is used as a parameter of the given type) can be resolved.
