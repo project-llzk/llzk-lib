@@ -261,6 +261,61 @@ module attributes {llzk.lang} {
 
 // -----
 
+// A local template binding must satisfy the included contract's parameter
+// restriction even when that parameter cannot be inferred from the contract
+// target's function signature.
+module attributes {llzk.lang} {
+  poly.template @IncludeLocalParamTypeMismatch {
+    poly.param @N : index
+    poly.param @F : !felt.type
+
+    function.def @token() {
+      function.return
+    }
+
+    verif.contract @Base for @IncludeLocalParamTypeMismatch::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+
+    verif.contract @Wrapper for @IncludeLocalParamTypeMismatch::@token () {
+      // expected-error@+1 {{'verif.include' op instantiation value '@N' is not compatible with parameter "@F" type restriction '!felt.type'}}
+      verif.include @IncludeLocalParamTypeMismatch::@Base<[@N, @N]>() : () -> ()
+    }
+  }
+}
+
+// -----
+
+// Exercise the same check when the local binding is a poly.expr rather than a
+// poly.param.
+module attributes {llzk.lang} {
+  poly.template @IncludeLocalExprTypeMismatch {
+    poly.param @F : !felt.type
+
+    poly.expr @Index {
+      %index = arith.constant 0 : index
+      poly.yield %index : index
+    }
+
+    function.def @token() {
+      function.return
+    }
+
+    verif.contract @Base for @IncludeLocalExprTypeMismatch::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+
+    verif.contract @Wrapper for @IncludeLocalExprTypeMismatch::@token () {
+      // expected-error@+1 {{'verif.include' op instantiation value '@Index' is not compatible with parameter "@F" type restriction '!felt.type'}}
+      verif.include @IncludeLocalExprTypeMismatch::@Base<[@Index]>() : () -> ()
+    }
+  }
+}
+
+// -----
+
 module attributes {llzk.lang} {
   poly.template @T1 { // expected-note {{target template defined here}}
     poly.param @N

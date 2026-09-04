@@ -786,7 +786,31 @@ LogicalResult IncludeOp::verifyTemplateParamCompatibility(
       if (failed(verifyTemplateParamSymbol(tables, sym, *this))) {
         return failure();
       }
-      compatible = true;
+      bool resolvedLocal = false;
+      if (sym.getNestedReferences().empty()) {
+        FailureOr<TemplateOp> parentTemplate = getConstResolutionTemplate(tables, *this);
+        if (failed(parentTemplate)) {
+          return failure();
+        }
+        if (TemplateOp p = *parentTemplate) {
+          auto binding = p.getConstNamed<TemplateSymbolBindingOpInterface>(sym.getRootReference());
+          if (binding) {
+            resolvedLocal = true;
+            // Once we know it references a template symbol binding, assume it's compatible unless
+            // the optional type is present and doesn't unify with the declared type.
+            if (std::optional<Type> actualType = binding.getTypeOpt()) {
+              compatible = typesUnify(*actualType, *declaredType);
+            } else {
+              compatible = true;
+            }
+          }
+        }
+      }
+      // A non-local symbol value was verified above as a constant global. Its type restriction
+      // is intentionally deferred to template specialization.
+      if (!resolvedLocal) {
+        compatible = true;
+      }
     }
     if (!compatible && llvm::isa<TypeVarType>(*declaredType)) {
       compatible = llvm::isa<TypeAttr>(paramFromIncludeOp);
