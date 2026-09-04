@@ -387,6 +387,35 @@ FailureOr<TemplateOp> getConstResolutionTemplate(SymbolTableCollection &tables, 
   return getParentOfType<TemplateOp>(origin);
 }
 
+LogicalResult
+verifyTemplateParamSymbol(SymbolTableCollection &tables, SymbolRefAttr symbol, Operation *origin) {
+  if (symbol.getNestedReferences().empty()) {
+    FailureOr<TemplateOp> parent = getConstResolutionTemplate(tables, origin);
+    if (failed(parent)) {
+      return failure();
+    }
+    if (*parent &&
+        parent->getConstNamed<TemplateSymbolBindingOpInterface>(symbol.getRootReference())) {
+      return success();
+    }
+  }
+
+  auto lookupRes = lookupTopLevelSymbol(tables, symbol, origin);
+  if (failed(lookupRes)) {
+    return failure();
+  }
+  auto global = llvm::dyn_cast<GlobalDefOp>(lookupRes->get());
+  if (!global) {
+    return origin->emitOpError() << "template argument '" << symbol << "' refers to a '"
+                                 << lookupRes->get()->getName() << "' which is not allowed";
+  }
+  if (!global.isConstant()) {
+    return origin->emitOpError() << "template argument '" << symbol
+                                 << "' refers to a global that is not marked as 'const'";
+  }
+  return success();
+}
+
 LogicalResult verifyParamOfType(
     SymbolTableCollection &tables, SymbolRefAttr param, Type parameterizedType, Operation *origin,
     std::optional<Type> requiredParamType
@@ -412,11 +441,15 @@ LogicalResult verifyParamOfType(
   if (failed(lookupRes)) {
     return failure(); // lookupTopLevelSymbol() already emits a sufficient error message
   }
-  Operation *foundOp = lookupRes->get();
-  if (!llvm::isa<GlobalDefOp>(foundOp)) {
+  auto global = llvm::dyn_cast<GlobalDefOp>(lookupRes->get());
+  if (!global) {
     return origin->emitError() << "ref \"" << param << "\" in type " << parameterizedType
-                               << " refers to a '" << foundOp->getName()
+                               << " refers to a '" << lookupRes->get()->getName()
                                << "' which is not allowed";
+  }
+  if (!global.isConstant()) {
+    return origin->emitError() << "ref \"" << param << "\" in type " << parameterizedType
+                               << " refers to a global that is not marked as 'const'";
   }
   return success();
 }
