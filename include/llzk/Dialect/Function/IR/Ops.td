@@ -533,9 +533,11 @@ def CallOp : FunctionDialectOp<
 
     /// Check type compatibility of the given template parameter value from this `CallOp` against
     /// the declared type on the given `TemplateParamOp` (if any).
-    ::mlir::LogicalResult verifyTemplateParamCompatibility(
+    inline ::mlir::LogicalResult verifyTemplateParamCompatibility(
       ::mlir::Attribute paramFromCallOp, ::llzk::polymorphic::TemplateParamOp targetParam
-    );
+    ) {
+      return llzk::verifyTemplateParamValueCompatibility(getOperation(), paramFromCallOp, targetParam);
+    }
 
     /// Check type compatibility of each template parameter value provided in this `CallOp` against
     /// the declared type on each `TemplateParamOp` (if any).
@@ -543,9 +545,11 @@ def CallOp : FunctionDialectOp<
     /// Pre-condition assertions:
     ///   - `!isNullOrEmpty(getTemplateParamsAttr())`
     ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`
-    ::mlir::LogicalResult verifyTemplateParamCompatibility(
+    inline ::mlir::LogicalResult verifyTemplateParamCompatibility(
         ::llvm::iterator_range<::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs
-    );
+    ) {
+      return llzk::verifyTemplateParamValuesCompatibility(getOperation(), getTemplateParamsAttr(), targetParamDefs);
+    }
 
     /// Verify that each template parameter value provided in this `CallOp` is consistent with
     /// the value inferred for the target `TemplateParamOp` in the given `UnificationMap`. The
@@ -555,10 +559,12 @@ def CallOp : FunctionDialectOp<
     /// Pre-condition assertions:
     ///   - `!isNullOrEmpty(getTemplateParamsAttr())`
     ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`
-    ::mlir::LogicalResult verifyTemplateParamsMatchInferred(
+    inline ::mlir::LogicalResult verifyTemplateParamsMatchInferred(
         ::llvm::iterator_range<::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs,
         const UnificationMap &unifications
-    );
+    ) {
+      return llzk::verifyTemplateParamsMatchInferred(getOperation(), getTemplateParamsAttr(), targetParamDefs, unifications);
+    }
   }];
 }
 
