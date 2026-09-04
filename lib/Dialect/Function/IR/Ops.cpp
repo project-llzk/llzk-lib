@@ -650,8 +650,12 @@ CallOp::verifyTemplateParamCompatibility(Attribute paramFromCallOp, TemplatePara
   if (std::optional<Type> declaredType = targetParam.getTypeOpt()) {
     bool compatible = false;
     if (auto sym = llvm::dyn_cast<SymbolRefAttr>(paramFromCallOp)) {
+      SymbolTableCollection tables;
+      if (failed(verifyTemplateParamSymbol(tables, sym, *this))) {
+        return failure();
+      }
+      bool resolvedLocal = false;
       if (sym.getNestedReferences().empty()) {
-        SymbolTableCollection tables;
         FailureOr<TemplateOp> parentTemplate = getConstResolutionTemplate(tables, *this);
         if (failed(parentTemplate)) {
           return failure();
@@ -659,6 +663,7 @@ CallOp::verifyTemplateParamCompatibility(Attribute paramFromCallOp, TemplatePara
         if (TemplateOp p = *parentTemplate) {
           auto binding = p.getConstNamed<TemplateSymbolBindingOpInterface>(sym.getRootReference());
           if (binding) {
+            resolvedLocal = true;
             // Once we know it references a template symbol binding, assume it's compatible unless
             // the optional type is present and doesn't unify with the declared type.
             if (std::optional<Type> actualType = binding.getTypeOpt()) {
@@ -668,6 +673,11 @@ CallOp::verifyTemplateParamCompatibility(Attribute paramFromCallOp, TemplatePara
             }
           }
         }
+      }
+      // A non-local symbol value was verified above as a constant global. Its type restriction
+      // is intentionally deferred to template specialization.
+      if (!resolvedLocal) {
+        compatible = true;
       }
     } else if (llvm::isa<TypeVarType>(*declaredType)) {
       compatible = llvm::isa<TypeAttr>(paramFromCallOp);
@@ -690,6 +700,11 @@ CallOp::verifyTemplateParamCompatibility(Attribute paramFromCallOp, TemplatePara
           "instantiation value '", paramFromCallOp, "' is not compatible with parameter \"@",
           targetParam.getName(), "\" type restriction ", *declaredType
       );
+    }
+  } else if (auto sym = llvm::dyn_cast<SymbolRefAttr>(paramFromCallOp)) {
+    SymbolTableCollection tables;
+    if (failed(verifyTemplateParamSymbol(tables, sym, *this))) {
+      return failure();
     }
   }
   return success();
