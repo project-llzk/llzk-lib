@@ -143,6 +143,14 @@ LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
     MlirAttribute const *templateParams, intptr_t numArgOperands, MlirValue const *argOperands
 );
 
+/// Return the FunctionType inferred from the arg operands and result types of this CallOp.
+/// This is not necessarily the same as the callee's FunctionType but should unify with it
+/// or else IR verification will fail.
+MLIR_CAPI_EXPORTED MlirType llzkFunction_CallOpGetTypeSignature(MlirOperation inp);
+
+/// Required by CallOpInterface
+MLIR_CAPI_EXPORTED MlirOperation llzkFunction_CallOpResolveCallable(MlirOperation inp);
+
 #ifdef __cplusplus
 }
 #endif
