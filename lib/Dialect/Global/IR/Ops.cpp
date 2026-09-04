@@ -32,23 +32,12 @@ using namespace llzk::string;
 
 namespace llzk::global {
 
-FailureOr<NormalizedGlobalInitializer>
-normalizeGlobalInitializer(Type type, Attribute value, EmitErrorFn emitError) {
-  if (type.isSignlessInteger(1)) {
-    if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
-      APInt intValueBits = intValue.getValue();
-      if (!intValueBits.isZero() && !intValueBits.isOne()) {
-        return emitError().append("integer constant out of range for attribute");
-      }
-      return NormalizedGlobalInitializer {
-          type, IntegerAttr::get(type, APInt(1, intValueBits.getZExtValue()))
-      };
-    }
-  } else if (llvm::isa<IndexType>(type)) {
-    if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
-      if (llvm::isa<BoolAttr>(value)) {
-        return NormalizedGlobalInitializer {type, value};
-      }
+namespace {
+
+static inline FailureOr<NormalizedGlobalInitializer>
+normalizeGlobalInitializer(IndexType expectedType, Attribute value, EmitErrorFn emitError) {
+  if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
+    if (!llvm::isa<BoolAttr>(value)) {
       APInt intValueBits = intValue.getValue();
       if (intValueBits.isNegative() &&
           intValueBits.getBitWidth() < IndexType::kInternalStorageBitWidth) {
@@ -60,64 +49,103 @@ normalizeGlobalInitializer(Type type, Attribute value, EmitErrorFn emitError) {
       if (failed(normalized)) {
         return failure();
       }
-      return NormalizedGlobalInitializer {type, *normalized};
-    }
-  } else if (auto feltType = llvm::dyn_cast<FeltType>(type)) {
-    if (auto feltValue = llvm::dyn_cast<FeltConstAttr>(value)) {
-      FeltType valueType = feltValue.getType();
-      if (!feltType.hasField() && valueType.hasField()) {
-        type = valueType;
-      } else if (feltType.hasField() && !valueType.hasField()) {
-        value = FeltConstAttr::get(value.getContext(), feltValue.getValue(), feltType);
-      }
-      return NormalizedGlobalInitializer {type, value};
-    }
-    if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
-      return NormalizedGlobalInitializer {
-          type, FeltConstAttr::get(value.getContext(), intValue.getValue(), feltType)
-      };
-    }
-  } else if (auto stringType = llvm::dyn_cast<StringType>(type)) {
-    if (auto stringValue = llvm::dyn_cast<StringAttr>(value)) {
-      return NormalizedGlobalInitializer {
-          type, StringAttr::get(stringValue.getValue(), stringType)
-      };
-    }
-  } else if (auto arrayType = llvm::dyn_cast<ArrayType>(type)) {
-    if (auto arrayValue = llvm::dyn_cast<ArrayAttr>(value)) {
-      Type elementType = arrayType.getElementType();
-      if (auto feltElementType = llvm::dyn_cast<FeltType>(elementType)) {
-        for (Attribute element : arrayValue) {
-          if (auto feltValue = llvm::dyn_cast<FeltConstAttr>(element)) {
-            FeltType valueType = feltValue.getType();
-            if (valueType.hasField()) {
-              if (feltElementType.hasField() && feltElementType != valueType) {
-                return NormalizedGlobalInitializer {type, value};
-              }
-              feltElementType = valueType;
-            }
-          }
-        }
-        elementType = feltElementType;
-        type = arrayType.cloneWith(elementType);
-      }
-
-      SmallVector<Attribute> elements;
-      elements.reserve(arrayValue.size());
-      for (Attribute element : arrayValue) {
-        FailureOr<NormalizedGlobalInitializer> normalized =
-            normalizeGlobalInitializer(elementType, element, emitError);
-        if (failed(normalized)) {
-          return failure();
-        }
-        elementType = normalized->type;
-        elements.push_back(normalized->value);
-      }
-      type = arrayType.cloneWith(elementType);
-      return NormalizedGlobalInitializer {type, ArrayAttr::get(value.getContext(), elements)};
+      value = *normalized;
     }
   }
-  return NormalizedGlobalInitializer {type, value};
+  return NormalizedGlobalInitializer {expectedType, value};
+}
+
+static inline FailureOr<NormalizedGlobalInitializer>
+normalizeGlobalInitializer(FeltType expectedType, Attribute value, EmitErrorFn) {
+  if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
+    value = FeltConstAttr::get(value.getContext(), intValue.getValue(), expectedType);
+  } else if (auto feltValue = llvm::dyn_cast<FeltConstAttr>(value)) {
+    FeltType valueType = feltValue.getType();
+    if (!expectedType.hasField() && valueType.hasField()) {
+      expectedType = valueType;
+    } else if (expectedType.hasField() && !valueType.hasField()) {
+      value = FeltConstAttr::get(value.getContext(), feltValue.getValue(), expectedType);
+    }
+  }
+  return NormalizedGlobalInitializer {expectedType, value};
+}
+
+static inline FailureOr<NormalizedGlobalInitializer>
+normalizeGlobalInitializer(ArrayType expectedType, Attribute value, EmitErrorFn emitError) {
+  if (auto arrayValue = llvm::dyn_cast<ArrayAttr>(value)) {
+    Type elementType = expectedType.getElementType();
+    if (auto feltElementType = llvm::dyn_cast<FeltType>(elementType)) {
+      // Infer an omitted field from a typed felt element before normalizing the
+      // full array. A conflicting explicit field is left for verification so it
+      // can report the conflict against the original initializer.
+      for (Attribute element : arrayValue) {
+        if (auto feltValue = llvm::dyn_cast<FeltConstAttr>(element)) {
+          FeltType valueType = feltValue.getType();
+          if (!valueType.hasField()) {
+            continue;
+          }
+          if (feltElementType.hasField() && feltElementType != valueType) {
+            return NormalizedGlobalInitializer {expectedType, value};
+          }
+          feltElementType = valueType;
+        }
+      }
+      elementType = feltElementType;
+      expectedType = expectedType.cloneWith(elementType);
+    }
+
+    // Normalize each element recursively. This also lets a nested initializer
+    // refine the element type (for example, an unqualified felt type).
+    SmallVector<Attribute> elements;
+    elements.reserve(arrayValue.size());
+    for (Attribute element : arrayValue) {
+      FailureOr<NormalizedGlobalInitializer> normalized =
+          llzk::global::normalizeGlobalInitializer(elementType, element, emitError);
+      if (failed(normalized)) {
+        return failure();
+      }
+      elementType = normalized->type;
+      elements.push_back(normalized->value);
+    }
+    // Rebuild the array type and attribute from the normalized element data.
+    expectedType = expectedType.cloneWith(elementType);
+    value = ArrayAttr::get(value.getContext(), elements);
+  }
+  return NormalizedGlobalInitializer {expectedType, value};
+}
+
+static inline FailureOr<NormalizedGlobalInitializer>
+normalizeGlobalInitializer(StringType expectedType, Attribute value, EmitErrorFn) {
+  if (auto stringValue = llvm::dyn_cast<StringAttr>(value)) {
+    value = StringAttr::get(stringValue.getValue(), expectedType);
+  }
+  return NormalizedGlobalInitializer {expectedType, value};
+}
+
+} // namespace
+
+FailureOr<NormalizedGlobalInitializer>
+normalizeGlobalInitializer(Type expectedType, Attribute value, EmitErrorFn emitError) {
+  if (auto idxType = llvm::dyn_cast<IndexType>(expectedType)) {
+    return normalizeGlobalInitializer(idxType, value, emitError);
+  } else if (auto feltType = llvm::dyn_cast<FeltType>(expectedType)) {
+    return normalizeGlobalInitializer(feltType, value, emitError);
+  } else if (auto arrayType = llvm::dyn_cast<ArrayType>(expectedType)) {
+    return normalizeGlobalInitializer(arrayType, value, emitError);
+  } else if (auto stringType = llvm::dyn_cast<StringType>(expectedType)) {
+    return normalizeGlobalInitializer(stringType, value, emitError);
+  } else if (expectedType.isSignlessInteger(1)) {
+    if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
+      APInt intValueBits = intValue.getValue();
+      if (!intValueBits.isZero() && !intValueBits.isOne()) {
+        return emitError().append("integer constant out of range for attribute");
+      }
+      value = IntegerAttr::get(expectedType, APInt(1, intValueBits.getZExtValue()));
+    }
+    return NormalizedGlobalInitializer {expectedType, value};
+  } else {
+    return NormalizedGlobalInitializer {expectedType, value};
+  }
 }
 
 //===------------------------------------------------------------------===//
