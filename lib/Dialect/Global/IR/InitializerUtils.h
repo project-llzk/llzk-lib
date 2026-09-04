@@ -15,11 +15,17 @@
 
 namespace llzk::global {
 
-/// Normalize unambiguous initializer representations to their declared type.
+/// A global initializer and its normalized type.
+struct NormalizedGlobalInitializer {
+  mlir::Type type;
+  mlir::Attribute value;
+};
+
+/// Normalize unambiguous initializer representations and their declared type.
 ///
 /// Explicitly conflicting felt fields are preserved so GlobalDefOp verification
 /// can reject them without this helper silently choosing one field.
-mlir::FailureOr<mlir::Attribute>
-normalizeGlobalInitializer(mlir::Type &type, mlir::Attribute value, EmitErrorFn emitError);
+mlir::FailureOr<NormalizedGlobalInitializer>
+normalizeGlobalInitializer(mlir::Type type, mlir::Attribute value, EmitErrorFn emitError);
 
 } // namespace llzk::global

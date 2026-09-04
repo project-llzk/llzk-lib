@@ -38,19 +38,18 @@ public:
   ) const final {
     auto res = root->walk([](global::GlobalDefOp global) -> WalkResult {
       if (Attribute initialValue = global.getInitialValueAttr()) {
-        Type type = global.getType();
-        FailureOr<Attribute> normalized = global::normalizeGlobalInitializer(
-            type, initialValue, [context = initialValue.getContext()] {
+        auto errFn = [context = initialValue.getContext()] {
           return InFlightDiagnosticWrapper::createSilent(context);
-        }
-        );
+        };
+        FailureOr<global::NormalizedGlobalInitializer> normalized =
+            global::normalizeGlobalInitializer(global.getType(), initialValue, errFn);
         if (failed(normalized)) {
           return global.emitError(
               "contains a legacy initializer that is incompatible with its declared type"
           );
         }
-        global.setInitialValueAttr(*normalized);
-        global.setTypeAttr(TypeAttr::get(type));
+        global.setInitialValueAttr(normalized->value);
+        global.setTypeAttr(TypeAttr::get(normalized->type));
       }
       return WalkResult::advance();
     });

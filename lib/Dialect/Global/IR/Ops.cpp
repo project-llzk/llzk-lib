@@ -32,20 +32,22 @@ using namespace llzk::string;
 
 namespace llzk::global {
 
-FailureOr<Attribute>
-normalizeGlobalInitializer(Type &type, Attribute value, EmitErrorFn emitError) {
+FailureOr<NormalizedGlobalInitializer>
+normalizeGlobalInitializer(Type type, Attribute value, EmitErrorFn emitError) {
   if (type.isSignlessInteger(1)) {
     if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
       APInt intValueBits = intValue.getValue();
       if (!intValueBits.isZero() && !intValueBits.isOne()) {
         return emitError().append("integer constant out of range for attribute");
       }
-      return IntegerAttr::get(type, APInt(1, intValueBits.getZExtValue()));
+      return NormalizedGlobalInitializer {
+          type, IntegerAttr::get(type, APInt(1, intValueBits.getZExtValue()))
+      };
     }
   } else if (llvm::isa<IndexType>(type)) {
     if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
       if (llvm::isa<BoolAttr>(value)) {
-        return value;
+        return NormalizedGlobalInitializer {type, value};
       }
       APInt intValueBits = intValue.getValue();
       if (intValueBits.isNegative() &&
@@ -54,7 +56,11 @@ normalizeGlobalInitializer(Type &type, Attribute value, EmitErrorFn emitError) {
             "negative narrow integer initializer cannot be converted to `index`"
         );
       }
-      return forceIntType(intValue, emitError);
+      FailureOr<IntegerAttr> normalized = forceIntType(intValue, emitError);
+      if (failed(normalized)) {
+        return failure();
+      }
+      return NormalizedGlobalInitializer {type, *normalized};
     }
   } else if (auto feltType = llvm::dyn_cast<FeltType>(type)) {
     if (auto feltValue = llvm::dyn_cast<FeltConstAttr>(value)) {
@@ -64,14 +70,18 @@ normalizeGlobalInitializer(Type &type, Attribute value, EmitErrorFn emitError) {
       } else if (feltType.hasField() && !valueType.hasField()) {
         value = FeltConstAttr::get(value.getContext(), feltValue.getValue(), feltType);
       }
-      return value;
+      return NormalizedGlobalInitializer {type, value};
     }
     if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
-      return FeltConstAttr::get(value.getContext(), intValue.getValue(), feltType);
+      return NormalizedGlobalInitializer {
+          type, FeltConstAttr::get(value.getContext(), intValue.getValue(), feltType)
+      };
     }
   } else if (auto stringType = llvm::dyn_cast<StringType>(type)) {
     if (auto stringValue = llvm::dyn_cast<StringAttr>(value)) {
-      return StringAttr::get(stringValue.getValue(), stringType);
+      return NormalizedGlobalInitializer {
+          type, StringAttr::get(stringValue.getValue(), stringType)
+      };
     }
   } else if (auto arrayType = llvm::dyn_cast<ArrayType>(type)) {
     if (auto arrayValue = llvm::dyn_cast<ArrayAttr>(value)) {
@@ -82,7 +92,7 @@ normalizeGlobalInitializer(Type &type, Attribute value, EmitErrorFn emitError) {
             FeltType valueType = feltValue.getType();
             if (valueType.hasField()) {
               if (feltElementType.hasField() && feltElementType != valueType) {
-                return value;
+                return NormalizedGlobalInitializer {type, value};
               }
               feltElementType = valueType;
             }
@@ -95,17 +105,19 @@ normalizeGlobalInitializer(Type &type, Attribute value, EmitErrorFn emitError) {
       SmallVector<Attribute> elements;
       elements.reserve(arrayValue.size());
       for (Attribute element : arrayValue) {
-        FailureOr<Attribute> normalized =
+        FailureOr<NormalizedGlobalInitializer> normalized =
             normalizeGlobalInitializer(elementType, element, emitError);
         if (failed(normalized)) {
           return failure();
         }
-        elements.push_back(*normalized);
+        elementType = normalized->type;
+        elements.push_back(normalized->value);
       }
-      return ArrayAttr::get(value.getContext(), elements);
+      type = arrayType.cloneWith(elementType);
+      return NormalizedGlobalInitializer {type, ArrayAttr::get(value.getContext(), elements)};
     }
   }
-  return value;
+  return NormalizedGlobalInitializer {type, value};
 }
 
 //===------------------------------------------------------------------===//
@@ -115,14 +127,15 @@ normalizeGlobalInitializer(Type &type, Attribute value, EmitErrorFn emitError) {
 static ParseResult normalizeParsedInitialValue(
     OpAsmParser &parser, SMLoc initializerLoc, Type &declaredType, Attribute &initialValue
 ) {
-  FailureOr<Attribute> normalized =
+  FailureOr<NormalizedGlobalInitializer> normalized =
       normalizeGlobalInitializer(declaredType, initialValue, [&parser, initializerLoc] {
     return InFlightDiagnosticWrapper(parser.emitError(initializerLoc));
   });
   if (failed(normalized)) {
     return failure();
   }
-  initialValue = *normalized;
+  declaredType = normalized->type;
+  initialValue = normalized->value;
   return success();
 }
 
@@ -175,9 +188,8 @@ ParseResult GlobalDefOp::parse(OpAsmParser &parser, OperationState &result) {
     return failure();
   }
   Type declaredType = typeAttr.getValue();
-
-  Attribute initialValue;
   if (succeeded(parser.parseOptionalEqual())) {
+    Attribute initialValue;
     SMLoc initializerLoc = parser.getCurrentLocation();
     if (failed(parseInitialValueForType(parser, declaredType, initialValue)) ||
         failed(normalizeParsedInitialValue(parser, initializerLoc, declaredType, initialValue))) {
