@@ -1,0 +1,6 @@
+changed:
+  - "In-place FileCheck generation now refuses dirty Git worktrees unless --allow-dirty is specified."
+  - "In-place FileCheck generation now rejects use with --output."
+
+fixed:
+  - "In-place FileCheck generation now replaces the source only after successful generation, preserves unrelated text, and replaces the previous generated note and selected-prefix directives on repeated runs."
