@@ -1,9 +1,8 @@
 // RUN: llzk-opt --llzk-compute-constrain-to-product="root-struct=A" --llzk-fuse-product-control-flow %s | FileCheck --enable-var-scope %s
-// REQUIRES: raghav-cf-fusion
 
 module attributes {llzk.lang = "llzk"} {
     poly.template @TA {
-      poly.param @N
+      poly.param @N : index
       poly.param @M
 
       struct.def @A {
@@ -66,34 +65,103 @@ module attributes {llzk.lang = "llzk"} {
     }
 }
 
-// CHECK: scf.for
-// CHECK-SAME:          %[[VAL_0:[0-9a-zA-Z_\.]+]] =
-// CHECK-SAME:          %[[VAL_1:[0-9a-zA-Z_\.]+]] to
-// CHECK-SAME:          %[[VAL_2:[0-9a-zA-Z_\.]+]] step
-// CHECK-SAME:          %[[VAL_3:[0-9a-zA-Z_\.]+]] {
-// CHECK-NEXT:    %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.cmpi ult, %[[VAL_0]], %[[VAL_5:[0-9a-zA-Z_\.]+]] {product_source = "compute"} : index
-// CHECK-NEXT:    scf.if %[[VAL_4]] {
-// CHECK-NEXT:      array.write %[[VAL_6:[0-9a-zA-Z_\.]+]]{{\[}}%[[VAL_0]]] = %[[VAL_7:[0-9a-zA-Z_\.]+]] : <@N x !felt.type>, !felt.type {product_source = "compute"}
-// CHECK-NEXT:    } else {
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_9:[0-9a-zA-Z_\.]+]]{{\[}}%[[VAL_0]]] : <@N x !felt.type>, !felt.type {product_source = "compute"}
-// CHECK-NEXT:      array.write %[[VAL_10:[0-9a-zA-Z_\.]+]]{{\[}}%[[VAL_0]]] = %[[VAL_8]] : <@N x !felt.type>, !felt.type {product_source = "compute"}
-// CHECK-NEXT:    } {product_source = "compute"}
-// CHECK-NEXT:  } {product_source = "compute"}
-// CHECK: scf.if
-// CHECK-SAME:         %[[VAL_0:[0-9a-zA-Z_\.]+]] {
-// CHECK-NEXT:    scf.for %[[VAL_1:[0-9a-zA-Z_\.]+]] = %[[VAL_2:[0-9a-zA-Z_\.]+]] to %[[VAL_3:[0-9a-zA-Z_\.]+]] step %[[VAL_4:[0-9a-zA-Z_\.]+]] {
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_6:[0-9a-zA-Z_\.]+]]{{\[}}%[[VAL_1]]] : <@N x !felt.type>, !felt.type {product_source = "constrain"}
-// CHECK-NEXT:      constrain.eq %[[VAL_5]], %[[VAL_7:[0-9a-zA-Z_\.]+]] : !felt.type, !felt.type {product_source = "constrain"}
-// CHECK-NEXT:    } {product_source = "constrain"}
-// CHECK: } else {
-// CHECK-NEXT:    scf.for %[[VAL_0:[0-9a-zA-Z_\.]+]] = %[[VAL_1:[0-9a-zA-Z_\.]+]] to %[[VAL_2:[0-9a-zA-Z_\.]+]] step %[[VAL_3:[0-9a-zA-Z_\.]+]] {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5:[0-9a-zA-Z_\.]+]]{{\[}}%[[VAL_0]]] : <@N x !felt.type>, !felt.type {product_source = "constrain"}
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_7:[0-9a-zA-Z_\.]+]]{{\[}}%[[VAL_0]]] : <@N x !felt.type>, !felt.type {product_source = "constrain"}
-// CHECK-NEXT:      constrain.eq %[[VAL_4]], %[[VAL_6]] : !felt.type, !felt.type {product_source = "constrain"}
-// CHECK-NEXT:    } {product_source = "constrain"}
-// CHECK-NEXT:    scf.for %[[VAL_8:[0-9a-zA-Z_\.]+]] = %[[VAL_9:[0-9a-zA-Z_\.]+]] to %[[VAL_10:[0-9a-zA-Z_\.]+]] step %[[VAL_11:[0-9a-zA-Z_\.]+]] {
-// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_13:[0-9a-zA-Z_\.]+]]{{\[}}%[[VAL_8]]] : <@N x !felt.type>, !felt.type {product_source = "constrain"}
-// CHECK-NEXT:      constrain.eq %[[VAL_12]], %[[VAL_14:[0-9a-zA-Z_\.]+]] : !felt.type, !felt.type {product_source = "constrain"}
-// CHECK-NEXT:    } {product_source = "constrain"}
-// CHECK-NEXT:  } {product_source = "constrain"}
-// CHECK-NOT: scf.for
+// Matching descendant controls in different parent regions are not paired, so the original loop
+// and conditional structure remains separate.
+// CHECK-LABEL: module attributes {llzk.lang = "llzk"} {
+// CHECK-NEXT:    poly.template @TA {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      poly.param @M
+// CHECK-NEXT:      struct.def @A {
+// CHECK-NEXT:        struct.member @arr : !array.type<@N x !felt.type>
+// CHECK-NEXT:        function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) -> !struct.type<@TA::@A<[@N, @M]>> attributes {function.allow_constraint, function.allow_witness, llzk.derived} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TA::@A<[@N, @M]>> {product_source = "compute"}
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant {product_source = "compute"} 0 : index
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant {product_source = "compute"} 1 : index
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index {product_source = "compute"}
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = poly.read_const @M : index {product_source = "compute"}
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = felt.const  0 {product_source = "compute"}
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.new  : <@N x !felt.type>  {product_source = "compute"}
+// CHECK-NEXT:          scf.for %[[VAL_8:[0-9a-zA-Z_\.]+]] = %[[VAL_2]] to %[[VAL_4]] step %[[VAL_3]] {
+// CHECK-NEXT:            %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.cmpi ult, %[[VAL_8]], %[[VAL_5]] {product_source = "compute"} : index
+// CHECK-NEXT:            scf.if %[[VAL_9]] {
+// CHECK-NEXT:              array.write %[[VAL_7]]{{\[}}%[[VAL_8]]] = %[[VAL_6]] : <@N x !felt.type>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:            } else {
+// CHECK-NEXT:              %[[VAL_10:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_8]]] : <@N x !felt.type>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:              array.write %[[VAL_7]]{{\[}}%[[VAL_8]]] = %[[VAL_10]] : <@N x !felt.type>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:            } {product_source = "compute"}
+// CHECK-NEXT:          } {product_source = "compute"}
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@arr] = %[[VAL_7]] : <@TA::@A<[@N, @M]>>, !array.type<@N x !felt.type> {product_source = "compute"}
+// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = arith.constant {product_source = "constrain"} 0 : index
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = arith.constant {product_source = "constrain"} 1 : index
+// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_\.]+]] = poly.read_const @M : index {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_15:[0-9a-zA-Z_\.]+]] = felt.const  0 {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_16:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_1]][@arr] : <@TA::@A<[@N, @M]>>, !array.type<@N x !felt.type> {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_17:[0-9a-zA-Z_\.]+]] = arith.cmpi ult, %[[VAL_13]], %[[VAL_14]] {product_source = "constrain"} : index
+// CHECK-NEXT:          scf.if %[[VAL_17]] {
+// CHECK-NEXT:            scf.for %[[VAL_18:[0-9a-zA-Z_\.]+]] = %[[VAL_11]] to %[[VAL_13]] step %[[VAL_12]] {
+// CHECK-NEXT:              %[[VAL_19:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_16]]{{\[}}%[[VAL_18]]] : <@N x !felt.type>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:              constrain.eq %[[VAL_19]], %[[VAL_15]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:            } {product_source = "constrain"}
+// CHECK-NEXT:          } else {
+// CHECK-NEXT:            scf.for %[[VAL_20:[0-9a-zA-Z_\.]+]] = %[[VAL_11]] to %[[VAL_14]] step %[[VAL_12]] {
+// CHECK-NEXT:              %[[VAL_21:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_20]]] : <@N x !felt.type>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:              %[[VAL_22:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_16]]{{\[}}%[[VAL_20]]] : <@N x !felt.type>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:              constrain.eq %[[VAL_21]], %[[VAL_22]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:            } {product_source = "constrain"}
+// CHECK-NEXT:            scf.for %[[VAL_23:[0-9a-zA-Z_\.]+]] = %[[VAL_14]] to %[[VAL_13]] step %[[VAL_12]] {
+// CHECK-NEXT:              %[[VAL_24:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_16]]{{\[}}%[[VAL_23]]] : <@N x !felt.type>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:              constrain.eq %[[VAL_24]], %[[VAL_15]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:            } {product_source = "constrain"}
+// CHECK-NEXT:          } {product_source = "constrain"}
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TA::@A<[@N, @M]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @compute(%[[VAL_25:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) -> !struct.type<@TA::@A<[@N, @M]>> attributes {function.allow_witness, product_source = "compute"} {
+// CHECK-NEXT:          %[[VAL_26:[0-9a-zA-Z_\.]+]] = struct.new : <@TA::@A<[@N, @M]>> {product_source = "compute"}
+// CHECK-NEXT:          %[[VAL_27:[0-9a-zA-Z_\.]+]] = arith.constant {product_source = "compute"} 0 : index
+// CHECK-NEXT:          %[[VAL_28:[0-9a-zA-Z_\.]+]] = arith.constant {product_source = "compute"} 1 : index
+// CHECK-NEXT:          %[[VAL_29:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index {product_source = "compute"}
+// CHECK-NEXT:          %[[VAL_30:[0-9a-zA-Z_\.]+]] = poly.read_const @M : index {product_source = "compute"}
+// CHECK-NEXT:          %[[VAL_31:[0-9a-zA-Z_\.]+]] = felt.const  0 {product_source = "compute"}
+// CHECK-NEXT:          %[[VAL_32:[0-9a-zA-Z_\.]+]] = array.new  : <@N x !felt.type>  {product_source = "compute"}
+// CHECK-NEXT:          scf.for %[[VAL_33:[0-9a-zA-Z_\.]+]] = %[[VAL_27]] to %[[VAL_29]] step %[[VAL_28]] {
+// CHECK-NEXT:            %[[VAL_34:[0-9a-zA-Z_\.]+]] = arith.cmpi ult, %[[VAL_33]], %[[VAL_30]] {product_source = "compute"} : index
+// CHECK-NEXT:            scf.if %[[VAL_34]] {
+// CHECK-NEXT:              array.write %[[VAL_32]]{{\[}}%[[VAL_33]]] = %[[VAL_31]] : <@N x !felt.type>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:            } else {
+// CHECK-NEXT:              %[[VAL_35:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_25]]{{\[}}%[[VAL_33]]] : <@N x !felt.type>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:              array.write %[[VAL_32]]{{\[}}%[[VAL_33]]] = %[[VAL_35]] : <@N x !felt.type>, !felt.type {product_source = "compute"}
+// CHECK-NEXT:            } {product_source = "compute"}
+// CHECK-NEXT:          } {product_source = "compute"}
+// CHECK-NEXT:          struct.writem %[[VAL_26]][@arr] = %[[VAL_32]] : <@TA::@A<[@N, @M]>>, !array.type<@N x !felt.type> {product_source = "compute"}
+// CHECK-NEXT:          function.return {product_source = "compute"} %[[VAL_26]] : !struct.type<@TA::@A<[@N, @M]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_36:[0-9a-zA-Z_\.]+]]: !struct.type<@TA::@A<[@N, @M]>>, %[[VAL_37:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) attributes {function.allow_constraint, product_source = "constrain"} {
+// CHECK-NEXT:          %[[VAL_38:[0-9a-zA-Z_\.]+]] = arith.constant {product_source = "constrain"} 0 : index
+// CHECK-NEXT:          %[[VAL_39:[0-9a-zA-Z_\.]+]] = arith.constant {product_source = "constrain"} 1 : index
+// CHECK-NEXT:          %[[VAL_40:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_41:[0-9a-zA-Z_\.]+]] = poly.read_const @M : index {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_42:[0-9a-zA-Z_\.]+]] = felt.const  0 {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_43:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_36]][@arr] : <@TA::@A<[@N, @M]>>, !array.type<@N x !felt.type> {product_source = "constrain"}
+// CHECK-NEXT:          %[[VAL_44:[0-9a-zA-Z_\.]+]] = arith.cmpi ult, %[[VAL_40]], %[[VAL_41]] {product_source = "constrain"} : index
+// CHECK-NEXT:          scf.if %[[VAL_44]] {
+// CHECK-NEXT:            scf.for %[[VAL_45:[0-9a-zA-Z_\.]+]] = %[[VAL_38]] to %[[VAL_40]] step %[[VAL_39]] {
+// CHECK-NEXT:              %[[VAL_46:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_43]]{{\[}}%[[VAL_45]]] : <@N x !felt.type>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:              constrain.eq %[[VAL_46]], %[[VAL_42]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:            } {product_source = "constrain"}
+// CHECK-NEXT:          } else {
+// CHECK-NEXT:            scf.for %[[VAL_47:[0-9a-zA-Z_\.]+]] = %[[VAL_38]] to %[[VAL_41]] step %[[VAL_39]] {
+// CHECK-NEXT:              %[[VAL_48:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_37]]{{\[}}%[[VAL_47]]] : <@N x !felt.type>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:              %[[VAL_49:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_43]]{{\[}}%[[VAL_47]]] : <@N x !felt.type>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:              constrain.eq %[[VAL_48]], %[[VAL_49]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:            } {product_source = "constrain"}
+// CHECK-NEXT:            scf.for %[[VAL_50:[0-9a-zA-Z_\.]+]] = %[[VAL_41]] to %[[VAL_40]] step %[[VAL_39]] {
+// CHECK-NEXT:              %[[VAL_51:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_43]]{{\[}}%[[VAL_50]]] : <@N x !felt.type>, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:              constrain.eq %[[VAL_51]], %[[VAL_42]] : !felt.type, !felt.type {product_source = "constrain"}
+// CHECK-NEXT:            } {product_source = "constrain"}
+// CHECK-NEXT:          } {product_source = "constrain"}
+// CHECK-NEXT:          function.return {product_source = "constrain"}
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
