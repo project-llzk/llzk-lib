@@ -316,8 +316,9 @@ def ReturnOp
 //===----------------------------------------------------------------------===//
 
 def CallOp
-    : FunctionDialectOp<"call", [LLZKCallLikeOpInterface, MemRefsNormalizable,
-                                 AttrSizedOperandSegments,
+    : FunctionDialectOp<"call", [MemRefsNormalizable, AttrSizedOperandSegments,
+                                 DeclareOpInterfaceMethods<
+                                     LLZKCallLikeOpInterface, ["getSelfValue"]>,
                                  VerifySizesForMultiAffineOps<1>]> {
   let summary = "call operation";
   let description = [{
