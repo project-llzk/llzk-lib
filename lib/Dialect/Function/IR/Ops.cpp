@@ -781,7 +781,7 @@ struct KnownTargetVerifier : public CallOpVerifier {
       }
 
       // Check type compatibility of each provided value with the declared parameter type (if any).
-      if (failed(callOp->verifyTemplateParamCompatibility(realParams))) {
+      if (failed(callOp->verifyTemplateParamValuesCompatibility(realParams))) {
         return failure();
       }
 
@@ -1032,19 +1032,6 @@ LogicalResult CallOp::verifySymbolUses(SymbolTableCollection &tables) {
   return KnownTargetVerifier(this, std::move(*tgtOpt)).verify();
 }
 
-FunctionType CallOp::getTypeSignature() {
-  return FunctionType::get(getContext(), getArgOperands().getTypes(), getResultTypes());
-}
-
-FailureOr<UnificationMap> CallOp::unifyTypeSignature(FunctionType other) {
-  UnificationMap unifications;
-  if (functionTypesUnify(getTypeSignature(), other, {}, &unifications)) {
-    return unifications;
-  } else {
-    return failure();
-  }
-}
-
 namespace {
 
 bool calleeIsStructFunctionImpl(
@@ -1092,6 +1079,16 @@ Value CallOp::getSelfValueFromConstrain() {
   return getArgOperands().front();
 }
 
+Value CallOp::getSelfValue() {
+  if (calleeIsStructCompute()) {
+    return getSelfValueFromCompute();
+  } else if (calleeIsStructConstrain()) {
+    return getSelfValueFromConstrain();
+  } else {
+    return nullptr;
+  }
+}
+
 FailureOr<SymbolLookupResult<FuncDefOp>> CallOp::getCalleeTarget(SymbolTableCollection &tables) {
   Operation *thisOp = this->getOperation();
   auto root = getRootModule(thisOp);
@@ -1115,15 +1112,6 @@ CallInterfaceCallable CallOp::getCallableForCallee() { return getCalleeAttr(); }
 /// Set the callee for this operation.
 void CallOp::setCalleeFromCallable(CallInterfaceCallable callee) {
   setCalleeAttr(llvm::cast<SymbolRefAttr>(callee));
-}
-
-SmallVector<ValueRange> CallOp::toVectorOfValueRange(OperandRangeRange input) {
-  llvm::SmallVector<ValueRange, 4> output;
-  output.reserve(input.size());
-  for (OperandRange r : input) {
-    output.push_back(r);
-  }
-  return output;
 }
 
 Operation *CallOp::resolveCallableInTable(SymbolTableCollection *symbolTable) {

@@ -845,7 +845,7 @@ struct KnownTargetVerifier : public IncludeOpVerifier {
       }
 
       // Check type compatibility of each provided value with the declared parameter type (if any).
-      if (failed(includeOp->verifyTemplateParamCompatibility(realParams))) {
+      if (failed(includeOp->verifyTemplateParamValuesCompatibility(realParams))) {
         return failure();
       }
 
@@ -932,18 +932,6 @@ LogicalResult IncludeOp::verifySymbolUses(SymbolTableCollection &tables) {
   return KnownTargetVerifier(this, std::move(*tgtOpt)).verify();
 }
 
-FunctionType IncludeOp::getTypeSignature() {
-  return FunctionType::get(getContext(), getArgOperands().getTypes(), /*results*/ {});
-}
-
-FailureOr<UnificationMap> IncludeOp::unifyTypeSignature(FunctionType other) {
-  UnificationMap unifications;
-  if (functionTypesUnify(getTypeSignature(), other, {}, &unifications)) {
-    return unifications;
-  }
-  return failure();
-}
-
 FailureOr<SymbolLookupResult<ContractOp>>
 IncludeOp::getCalleeTarget(SymbolTableCollection &tables) {
   Operation *thisOp = this->getOperation();
@@ -975,13 +963,6 @@ CallInterfaceCallable IncludeOp::getCallableForCallee() { return getCalleeAttr()
 /// Set the callee for this operation.
 void IncludeOp::setCalleeFromCallable(CallInterfaceCallable callee) {
   setCalleeAttr(llvm::cast<SymbolRefAttr>(callee));
-}
-
-SmallVector<ValueRange> IncludeOp::toVectorOfValueRange(OperandRangeRange input) {
-  llvm::SmallVector<ValueRange, 4> output;
-  output.reserve(input.size());
-  output.insert(output.end(), input.begin(), input.end());
-  return output;
 }
 
 Operation *IncludeOp::resolveCallableInTable(SymbolTableCollection *symbolTable) {

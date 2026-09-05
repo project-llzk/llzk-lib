@@ -16,9 +16,10 @@
 #define LLZK_FUNC_OPS
 
 include "llzk/Dialect/Function/IR/Dialect.td"
-include "llzk/Dialect/Verif/IR/OpInterfaces.td"
 include "llzk/Dialect/Shared/OpTraits.td"
+include "llzk/Dialect/Shared/CallLikeOpInterfaces.td"
 include "llzk/Dialect/Shared/Types.td"
+include "llzk/Dialect/Verif/IR/OpInterfaces.td"
 
 include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/SymbolInterfaces.td"
@@ -314,11 +315,11 @@ def ReturnOp
 // CallOp
 //===----------------------------------------------------------------------===//
 
-def CallOp : FunctionDialectOp<
-                 "call", [MemRefsNormalizable, AttrSizedOperandSegments,
-                          VerifySizesForMultiAffineOps<1>,
-                          DeclareOpInterfaceMethods<CallOpInterface>,
-                          DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+def CallOp
+    : FunctionDialectOp<"call", [MemRefsNormalizable, AttrSizedOperandSegments,
+                                 DeclareOpInterfaceMethods<
+                                     LLZKCallLikeOpInterface, ["getSelfValue"]>,
+                                 VerifySizesForMultiAffineOps<1>]> {
   let summary = "call operation";
   let description = [{
     The `function.call` operation represents a call to another function. The operands
@@ -457,22 +458,6 @@ def CallOp : FunctionDialectOp<
                   }]>];
 
   let extraClassDeclaration = [{
-    /// Required by CallOpInterface
-    ::mlir::Operation *resolveCallableInTable(::mlir::SymbolTableCollection *symbolTable);
-
-    /// Required by CallOpInterface
-    ::mlir::Operation *resolveCallable();
-
-    /// Return the FunctionType inferred from the arg operands and result types of this CallOp.
-    /// This is not necessarily the same as the callee's FunctionType but should unify with it
-    /// or else IR verification will fail.
-    ::mlir::FunctionType getTypeSignature();
-
-    /// Attempt type unfication between the inferred FunctionType from this CallOp (as LHS) and
-    /// the given FunctionType (as RHS). If successful, return a UnificationMap containing the
-    /// unifications that were made. Otherwise, return failure.
-    ::mlir::FailureOr<UnificationMap> unifyTypeSignature(::mlir::FunctionType other);
-
     /// Return `true` iff the callee function name is `FUNC_NAME_COMPUTE` (this
     /// does not check if the callee function is located within a StructDefOp).
     inline bool calleeIsCompute() {
@@ -527,44 +512,6 @@ def CallOp : FunctionDialectOp<
     /// Assuming the callee contains witness generation code, return the single StructType result.
     ::llzk::component::StructType getSingleResultTypeOfWitnessGen();
 
-    /// Allocate consecutive storage of the ValueRange instances in the parameter
-    /// so it can be passed to the builders as an `ArrayRef<ValueRange>`.
-    static ::llvm::SmallVector<::mlir::ValueRange> toVectorOfValueRange(::mlir::OperandRangeRange);
-
-    /// Check type compatibility of the given template parameter value from this `CallOp` against
-    /// the declared type on the given `TemplateParamOp` (if any).
-    inline ::mlir::LogicalResult verifyTemplateParamCompatibility(
-      ::mlir::Attribute paramFromCallOp, ::llzk::polymorphic::TemplateParamOp targetParam
-    ) {
-      return llzk::verifyTemplateParamValueCompatibility(getOperation(), paramFromCallOp, targetParam);
-    }
-
-    /// Check type compatibility of each template parameter value provided in this `CallOp` against
-    /// the declared type on each `TemplateParamOp` (if any).
-    ///
-    /// Pre-condition assertions:
-    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`
-    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`
-    inline ::mlir::LogicalResult verifyTemplateParamCompatibility(
-        ::llvm::iterator_range<::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs
-    ) {
-      return llzk::verifyTemplateParamValuesCompatibility(getOperation(), getTemplateParamsAttr(), targetParamDefs);
-    }
-
-    /// Verify that each template parameter value provided in this `CallOp` is consistent with
-    /// the value inferred for the target `TemplateParamOp` in the given `UnificationMap`. The
-    /// `UnificationMap` is expected to contain the unification results of this `CallOp` against
-    /// the target function type signature.
-    ///
-    /// Pre-condition assertions:
-    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`
-    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`
-    inline ::mlir::LogicalResult verifyTemplateParamsMatchInferred(
-        ::llvm::iterator_range<::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs,
-        const UnificationMap &unifications
-    ) {
-      return llzk::verifyTemplateParamsMatchInferred(getOperation(), getTemplateParamsAttr(), targetParamDefs, unifications);
-    }
   }];
 }
 

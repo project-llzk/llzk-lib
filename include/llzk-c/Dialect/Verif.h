@@ -38,6 +38,10 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(Verif, llzk__verif);
 /// Attempting to use those interfaces without calling this function first will result in an error.
 MLIR_CAPI_EXPORTED void llzkVerif_attachInterfaces(MlirContext context);
 
+//===----------------------------------------------------------------------===//
+// ContractOp
+//===----------------------------------------------------------------------===//
+
 /// Build a `verif.contract` from explicit attributes and signature metadata.
 LLZK_DECLARE_OP_BUILD_METHOD(
     Verif, ContractOp, MlirIdentifier sym_name, MlirAttribute target, MlirAttribute function_type,
@@ -54,11 +58,27 @@ LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD(
     Verif, ContractOp, FromTargetAttr, MlirIdentifier sym_name, MlirAttribute target
 );
 
+//===----------------------------------------------------------------------===//
+// IncludeOp
+//===----------------------------------------------------------------------===//
+
 /// Build a `verif.include` with a flat list of call operands and no affine-map
 /// instantiations.
 LLZK_DECLARE_OP_BUILD_METHOD(
     Verif, IncludeOp, MlirAttribute callee, MlirValueRange argOperands, MlirAttribute templateParams
 );
+
+/// Return the FunctionType inferred from the arg operands of this CallOp.
+/// This is not necessarily the same as the callee's FunctionType but should unify with it
+/// or else IR verification will fail.
+MLIR_CAPI_EXPORTED MlirType llzkVerif_IncludeOpGetTypeSignature(MlirOperation inp);
+
+/// Required by CallOpInterface
+MLIR_CAPI_EXPORTED MlirOperation llzkVerif_IncludeOpResolveCallable(MlirOperation inp);
+
+//===----------------------------------------------------------------------===//
+// InvariantOp
+//===----------------------------------------------------------------------===//
 
 /// Build a `verif.invariant` with a list of argument types and locations.
 ///

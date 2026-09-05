@@ -232,3 +232,11 @@ LLZK_DEFINE_SUFFIX_OP_BUILD_METHOD(
                )
   );
 }
+
+MlirType llzkFunction_CallOpGetTypeSignature(MlirOperation inp) {
+  return wrap(llvm::cast<CallOp>(unwrap(inp)).getTypeSignature());
+}
+
+MlirOperation llzkFunction_CallOpResolveCallable(MlirOperation inp) {
+  return wrap(llvm::cast<CallOp>(unwrap(inp)).resolveCallable());
+}

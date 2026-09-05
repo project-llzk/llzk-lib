@@ -11,6 +11,7 @@
 
 #include "llzk/Dialect/Function/IR/Attrs.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
+#include "llzk/Dialect/Shared/CallLikeOpInterfaces.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Dialect/Verif/IR/OpInterfaces.h"
