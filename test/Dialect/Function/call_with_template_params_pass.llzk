@@ -1,4 +1,4 @@
-// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -I %input_dir -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
 
 module attributes {llzk.lang} {
   poly.template @GlobalFunc {
@@ -39,6 +39,201 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
+// -----
+
+// An explicit untyped caller binding remains forwardable to a typed function parameter before
+// the caller itself is specialized.
+module attributes {llzk.lang} {
+  poly.template @ForwardTarget {
+    poly.param @N : index
+    function.def @accept() {
+      function.return
+    }
+  }
+
+  poly.template @ForwardCaller {
+    poly.param @U
+    function.def @forward() {
+      function.call @ForwardTarget::@accept<[@U]>() : () -> ()
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @ForwardTarget {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      function.def @accept() {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @ForwardCaller {
+// CHECK-NEXT:      poly.param @U
+// CHECK-NEXT:      function.def @forward() {
+// CHECK-NEXT:        function.call @ForwardTarget::@accept<[@U]>() : () -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// Same-spelled `!poly.tvar` parameters in separate templates are distinct bindings, but a caller
+// binding with a `!poly.tvar` restriction is accepted by omitted template inference.
+module attributes {llzk.lang} {
+  poly.template @TypeOnlyTarget {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @accept(%value: !poly.tvar<@T>) {
+      function.return
+    }
+  }
+
+  poly.template @TypeOnlyCaller {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @accept_same_name(%value: !poly.tvar<@T>) {
+      function.call @TypeOnlyTarget::@accept(%value) : (!poly.tvar<@T>) -> ()
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @TypeOnlyTarget {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @accept(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TypeOnlyCaller {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @accept_same_name(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) {
+// CHECK-NEXT:        function.call @TypeOnlyTarget::@accept(%[[VAL_1]]) : (!poly.tvar<@T>) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// Repeated `!poly.tvar` signature positions accept one concrete type when omitted inference finds
+// the same value at both positions.
+module attributes {llzk.lang} {
+  poly.template @RepeatedTypeOnly {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @accept(%lhs: !poly.tvar<@T>, %rhs: !poly.tvar<@T>) {
+      function.return
+    }
+  }
+
+  function.def @matching(%lhs: !felt.type, %rhs: !felt.type) {
+    function.call @RepeatedTypeOnly::@accept(%lhs, %rhs) : (!felt.type, !felt.type) -> ()
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @RepeatedTypeOnly {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @accept(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @matching(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type) {
+// CHECK-NEXT:      function.call @RepeatedTypeOnly::@accept(%[[VAL_2]], %[[VAL_3]]) : (!felt.type, !felt.type) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// A concrete type inferred through a struct parameter satisfies a `!poly.tvar` restriction.
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @TypeTarget {
+    poly.param @T : !poly.tvar<@T>
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@T]>>) {
+      function.return
+    }
+  }
+
+  function.def @concreteType(%value: !struct.type<@BoxTemplate::@Box<[index]>>) {
+    function.call @TypeTarget::@accept(%value) :
+        (!struct.type<@BoxTemplate::@Box<[index]>>) -> ()
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @BoxTemplate {
+// CHECK-NEXT:      poly.param @P
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@BoxTemplate::@Box<[@P]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@BoxTemplate::@Box<[@P]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@P]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TypeTarget {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @accept(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@T]>>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @concreteType(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[index]>>) {
+// CHECK-NEXT:      function.call @TypeTarget::@accept(%[[VAL_3]]) : (!struct.type<@BoxTemplate::@Box<[index]>>) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// Included target signatures use the namespace established by `include.from` for both explicit
+// and omitted template arguments.
+module attributes {llzk.lang} {
+  include.from "Inputs/template_signature_namespace.llzk" as @Lib
+
+  poly.template @Caller {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @explicit(%value: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+      function.call @Lib::@Target::@accept<[@T]>(%value) :
+          (!struct.type<@Lib::@Target::@Box<[@T]>>) -> ()
+      function.return
+    }
+
+    function.def @inferred(%value: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+      function.call @Lib::@Target::@accept(%value) :
+          (!struct.type<@Lib::@Target::@Box<[@T]>>) -> ()
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    include.from "Inputs/template_signature_namespace.llzk" as @Lib
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @explicit(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+// CHECK-NEXT:        function.call @Lib::@Target::@accept<[@T]>(%[[VAL_0]]) : (!struct.type<@Lib::@Target::@Box<[@T]>>) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @inferred(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+// CHECK-NEXT:        function.call @Lib::@Target::@accept(%[[VAL_1]]) : (!struct.type<@Lib::@Target::@Box<[@T]>>) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
 // -----
 
 module attributes {llzk.lang} {
@@ -271,18 +466,18 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @GlobalFunc {
 // CHECK-NEXT:      poly.param @A : !poly.tvar<@A>
 // CHECK-NEXT:      function.def @id() -> !poly.tvar<@A> {
-// CHECK-NEXT:        %[[VAL_A:[0-9a-zA-Z_\.]+]] = felt.const 1
-// CHECK-NEXT:        %[[VAL_B:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_A]] : (!felt.type) -> !poly.tvar<@A>
-// CHECK-NEXT:        function.return %[[VAL_B]] : !poly.tvar<@A>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  1
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (!felt.type) -> !poly.tvar<@A>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !poly.tvar<@A>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @ParamTypeTVar {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@ParamTypeTVar> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@ParamTypeTVar>
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @GlobalFunc::@id<[!felt.type]>() : () -> !felt.type
-// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@ParamTypeTVar>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@ParamTypeTVar>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @GlobalFunc::@id<[!felt.type]>() : () -> !felt.type
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@ParamTypeTVar>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@ParamTypeTVar>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@ParamTypeTVar>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

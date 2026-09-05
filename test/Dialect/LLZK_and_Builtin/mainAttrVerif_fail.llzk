@@ -19,3 +19,28 @@ module attributes {llzk.lang} {
   // expected-error@+1 {{"llzk.main" attribute can only be specified on 'builtin.module'}}
   global.def @b : i1 = false {llzk.main = !struct.type<@NonModuleMainAttr>}
 }
+
+// -----
+
+// A concrete `llzk.main` type must also resolve symbols nested in its type arguments.
+// expected-error@+2 {{'builtin.module' op references unknown symbol "@MissingNested"}}
+// expected-error@+1 {{could not find 'struct.def' named "@MissingNested"}}
+module attributes {
+    llzk.lang,
+    llzk.main = !struct.type<@MainTemplate::@Main<[!struct.type<@MissingNested>]>>
+} {
+  poly.template @MainTemplate {
+    poly.param @T : !poly.tvar<@T>
+
+    struct.def @Main {
+      function.def @compute() -> !struct.type<@MainTemplate::@Main<[@T]>> {
+        %self = struct.new : !struct.type<@MainTemplate::@Main<[@T]>>
+        function.return %self : !struct.type<@MainTemplate::@Main<[@T]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@MainTemplate::@Main<[@T]>>) {
+        function.return
+      }
+    }
+  }
+}

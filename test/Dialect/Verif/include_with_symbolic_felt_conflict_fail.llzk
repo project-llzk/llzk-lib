@@ -1,0 +1,635 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+
+// Explicit and independently inferred felt arguments on verif.include must agree in field and
+// value, including when the explicit argument is a local or qualified-global symbol.
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Target {
+    poly.param @F : !felt.type
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+      function.return
+    }
+    verif.contract @Base for @Target::@accept (
+        %value: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  poly.template @Caller {
+    poly.param @G : !felt.type<"bn128">
+    function.def @field_conflict(
+        %value: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"goldilocks">>]>>
+    ) {
+      function.return
+    }
+    verif.contract @LocalFieldConflict for @Caller::@field_conflict (
+        %value: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"goldilocks">>]>>
+    ) {
+      // expected-error@+1 {{'verif.include' op template instantiation value '@G' for parameter "@F" conflicts with value '#felt<const 35 : <"goldilocks">> : !felt.type<"goldilocks">' inferred from contract type signature}}
+      verif.include @Target::@Base<[@G]>(%value) :
+          (!struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"goldilocks">>]>>) -> ()
+    }
+  }
+}
+
+// Repeated felt positions accept equivalent global and literal evidence for both explicit and
+// omitted arguments.
+// -----
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @RepeatedFelt {
+    poly.param @F : !felt.type<"bn128">
+    function.def @accept(
+        %global: !struct.type<@BoxTemplate::@Box<[@F]>>,
+        %literal: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      function.return
+    }
+    verif.contract @Base for @RepeatedFelt::@accept (
+        %global: !struct.type<@BoxTemplate::@Box<[@F]>>,
+        %literal: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  module @globals {
+    global.def const @G : !felt.type<"bn128"> = 35
+  }
+
+  function.def @equivalent(
+      %global: !struct.type<@BoxTemplate::@Box<[@globals::@G]>>,
+      %literal: !struct.type<@BoxTemplate::@Box<[
+          #felt<const 35 : !felt.type<"bn128">>
+      ]>>
+  ) {
+    function.return
+  }
+  verif.contract @Equivalent for @equivalent (
+      %global: !struct.type<@BoxTemplate::@Box<[@globals::@G]>>,
+      %literal: !struct.type<@BoxTemplate::@Box<[
+          #felt<const 35 : !felt.type<"bn128">>
+      ]>>
+  ) {
+    verif.include @RepeatedFelt::@Base<[
+        #felt<const 35 : !felt.type<"bn128">>
+    ]>(%global, %literal) :
+        (!struct.type<@BoxTemplate::@Box<[@globals::@G]>>,
+         !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>) -> ()
+    verif.include @RepeatedFelt::@Base(%global, %literal) :
+        (!struct.type<@BoxTemplate::@Box<[@globals::@G]>>,
+         !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>) -> ()
+  }
+}
+
+// Repeated felt positions reject an explicit value that conflicts with inferred evidence.
+// -----
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @RepeatedFelt {
+    poly.param @F : !felt.type<"bn128">
+    function.def @accept(
+        %global: !struct.type<@BoxTemplate::@Box<[@F]>>,
+        %literal: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      function.return
+    }
+    verif.contract @Base for @RepeatedFelt::@accept (
+        %global: !struct.type<@BoxTemplate::@Box<[@F]>>,
+        %literal: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  module @globals {
+    global.def const @G : !felt.type<"bn128"> = 35
+  }
+
+  function.def @different_value(
+      %global: !struct.type<@BoxTemplate::@Box<[@globals::@G]>>,
+      %literal: !struct.type<@BoxTemplate::@Box<[
+          #felt<const 36 : !felt.type<"bn128">>
+      ]>>
+  ) {
+    function.return
+  }
+  verif.contract @DifferentValue for @different_value (
+      %global: !struct.type<@BoxTemplate::@Box<[@globals::@G]>>,
+      %literal: !struct.type<@BoxTemplate::@Box<[
+          #felt<const 36 : !felt.type<"bn128">>
+      ]>>
+  ) {
+    // expected-error@+1 {{'verif.include' op template instantiation value '#felt<const 35 : <"bn128">> : !felt.type<"bn128">' for parameter "@F" conflicts with value '#felt<const 36 : <"bn128">> : !felt.type<"bn128">' inferred from contract type signature}}
+    verif.include @RepeatedFelt::@Base<[
+        #felt<const 35 : !felt.type<"bn128">>
+    ]>(%global, %literal) :
+        (!struct.type<@BoxTemplate::@Box<[@globals::@G]>>,
+         !struct.type<@BoxTemplate::@Box<[#felt<const 36 : !felt.type<"bn128">>]>>) -> ()
+  }
+}
+
+// Repeated felt positions reject conflicting evidence when the argument is omitted.
+// -----
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @RepeatedFelt {
+    poly.param @F : !felt.type<"bn128">
+    function.def @accept(
+        %global: !struct.type<@BoxTemplate::@Box<[@F]>>,
+        %literal: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      function.return
+    }
+    verif.contract @Base for @RepeatedFelt::@accept (
+        %global: !struct.type<@BoxTemplate::@Box<[@F]>>,
+        %literal: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  module @globals {
+    global.def const @G : !felt.type<"bn128"> = 35
+  }
+
+  function.def @different_value(
+      %global: !struct.type<@BoxTemplate::@Box<[@globals::@G]>>,
+      %literal: !struct.type<@BoxTemplate::@Box<[
+          #felt<const 36 : !felt.type<"bn128">>
+      ]>>
+  ) {
+    function.return
+  }
+  verif.contract @DifferentValue for @different_value (
+      %global: !struct.type<@BoxTemplate::@Box<[@globals::@G]>>,
+      %literal: !struct.type<@BoxTemplate::@Box<[
+          #felt<const 36 : !felt.type<"bn128">>
+      ]>>
+  ) {
+    // expected-error@+1 {{'verif.include' op cannot infer template instantiation value for parameter "@F" from contract type signature}}
+    verif.include @RepeatedFelt::@Base(%global, %literal) :
+        (!struct.type<@BoxTemplate::@Box<[@globals::@G]>>,
+         !struct.type<@BoxTemplate::@Box<[#felt<const 36 : !felt.type<"bn128">>]>>) -> ()
+  }
+}
+
+// Repeated felt positions reject inferred evidence with a conflicting field.
+// -----
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @RepeatedFelt {
+    poly.param @F : !felt.type<"bn128">
+    function.def @accept(
+        %global: !struct.type<@BoxTemplate::@Box<[@F]>>,
+        %literal: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      function.return
+    }
+    verif.contract @Base for @RepeatedFelt::@accept (
+        %global: !struct.type<@BoxTemplate::@Box<[@F]>>,
+        %literal: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  module @globals {
+    global.def const @G : !felt.type<"bn128"> = 35
+  }
+
+  function.def @different_field(
+      %global: !struct.type<@BoxTemplate::@Box<[@globals::@G]>>,
+      %literal: !struct.type<@BoxTemplate::@Box<[
+          #felt<const 35 : !felt.type<"goldilocks">>
+      ]>>
+  ) {
+    function.return
+  }
+  verif.contract @DifferentField for @different_field (
+      %global: !struct.type<@BoxTemplate::@Box<[@globals::@G]>>,
+      %literal: !struct.type<@BoxTemplate::@Box<[
+          #felt<const 35 : !felt.type<"goldilocks">>
+      ]>>
+  ) {
+    // expected-error@+1 {{'verif.include' op instantiation value '#felt<const 35 : <"goldilocks">> : !felt.type<"goldilocks">' is not compatible with parameter "@F" type restriction '!felt.type<"bn128">'}}
+    verif.include @RepeatedFelt::@Base<[
+        #felt<const 35 : !felt.type<"bn128">>
+    ]>(%global, %literal) :
+        (!struct.type<@BoxTemplate::@Box<[@globals::@G]>>,
+         !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"goldilocks">>]>>) -> ()
+  }
+}
+
+// -----
+
+// Same-spelled parameters in different template scopes must still validate an omitted argument.
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Target {
+    poly.param @F : !felt.type<"bn128">
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+      function.return
+    }
+    verif.contract @Base for @Target::@accept (
+        %value: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  poly.template @Caller {
+    poly.param @F : !felt.type<"goldilocks">
+    function.def @same_name_omitted(%value: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+      function.return
+    }
+    verif.contract @SameNameOmitted for @Caller::@same_name_omitted (
+        %value: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      // expected-error@+1 {{'verif.include' op instantiation value '@F' is not compatible with parameter "@F" type restriction '!felt.type<"bn128">'}}
+      verif.include @Target::@Base(%value) :
+          (!struct.type<@BoxTemplate::@Box<[@F]>>) -> ()
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Target {
+    poly.param @F : !felt.type
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+      function.return
+    }
+    verif.contract @Base for @Target::@accept (
+        %value: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  poly.template @Caller {
+    poly.param @G : !felt.type<"bn128">
+    function.def @concrete_vs_inferred_symbol(
+        %value: !struct.type<@BoxTemplate::@Box<[@G]>>
+    ) {
+      function.return
+    }
+    verif.contract @ConcreteVsInferredSymbol for @Caller::@concrete_vs_inferred_symbol (
+        %value: !struct.type<@BoxTemplate::@Box<[@G]>>
+    ) {
+      // expected-error@+1 {{'verif.include' op template instantiation value '#felt<const 35 : <"goldilocks">> : !felt.type<"goldilocks">' for parameter "@F" conflicts with value '@G' inferred from contract type signature}}
+      verif.include @Target::@Base<[#felt<const 35 : !felt.type<"goldilocks">>]>(%value) :
+          (!struct.type<@BoxTemplate::@Box<[@G]>>) -> ()
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Target {
+    poly.param @F : !felt.type
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+      function.return
+    }
+    verif.contract @Base for @Target::@accept (
+        %value: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  poly.template @Caller {
+    poly.param @G : !felt.type<"bn128">
+    poly.param @H : !felt.type<"goldilocks">
+    function.def @symbol_field_conflict(%value: !struct.type<@BoxTemplate::@Box<[@H]>>) {
+      function.return
+    }
+    verif.contract @SymbolFieldConflict for @Caller::@symbol_field_conflict (
+        %value: !struct.type<@BoxTemplate::@Box<[@H]>>
+    ) {
+      // expected-error@+1 {{'verif.include' op template instantiation value '@G' for parameter "@F" conflicts with value '@H' inferred from contract type signature}}
+      verif.include @Target::@Base<[@G]>(%value) :
+          (!struct.type<@BoxTemplate::@Box<[@H]>>) -> ()
+    }
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Target {
+    poly.param @F : !felt.type
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+      function.return
+    }
+    verif.contract @Base for @Target::@accept (
+        %value: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  module @globals {
+    global.def const @G : !felt.type<"bn128"> = 35
+  }
+
+  function.def @global_field_conflict(
+      %value: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"goldilocks">>]>>
+  ) {
+    function.return
+  }
+  verif.contract @GlobalFieldConflict for @global_field_conflict (
+      %value: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"goldilocks">>]>>
+  ) {
+    // expected-error@+1 {{'verif.include' op template instantiation value '@globals::@G' for parameter "@F" conflicts with value '#felt<const 35 : <"goldilocks">> : !felt.type<"goldilocks">' inferred from contract type signature}}
+    verif.include @Target::@Base<[@globals::@G]>(%value) :
+        (!struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"goldilocks">>]>>) -> ()
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Target {
+    poly.param @F : !felt.type
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+      function.return
+    }
+    verif.contract @Base for @Target::@accept (
+        %value: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  module @globals {
+    global.def const @G : !felt.type<"bn128"> = 35
+  }
+
+  function.def @global_value_conflict(
+      %value: !struct.type<@BoxTemplate::@Box<[#felt<const 36 : !felt.type<"bn128">>]>>
+  ) {
+    function.return
+  }
+  verif.contract @GlobalValueConflict for @global_value_conflict (
+      %value: !struct.type<@BoxTemplate::@Box<[#felt<const 36 : !felt.type<"bn128">>]>>
+  ) {
+    // expected-error@+1 {{'verif.include' op template instantiation value '@globals::@G' for parameter "@F" conflicts with value '#felt<const 36 : <"bn128">> : !felt.type<"bn128">' inferred from contract type signature}}
+    verif.include @Target::@Base<[@globals::@G]>(%value) :
+        (!struct.type<@BoxTemplate::@Box<[#felt<const 36 : !felt.type<"bn128">>]>>) -> ()
+  }
+}
+
+// -----
+
+// An unknown caller binding remains compatible when both later literals equal 35.
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @RepeatedFelt {
+    poly.param @F : !felt.type<"bn128">
+    function.def @accept(
+        %unknown: !struct.type<@BoxTemplate::@Box<[@F]>>,
+        %first: !struct.type<@BoxTemplate::@Box<[@F]>>,
+        %second: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      function.return
+    }
+    verif.contract @Base for @RepeatedFelt::@accept (
+        %unknown: !struct.type<@BoxTemplate::@Box<[@F]>>,
+        %first: !struct.type<@BoxTemplate::@Box<[@F]>>,
+        %second: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  poly.template @Caller {
+    poly.param @Unknown : !felt.type<"bn128">
+    function.def @caller(
+        %unknown: !struct.type<@BoxTemplate::@Box<[@Unknown]>>,
+        %first: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>,
+        %second: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>
+    ) {
+      function.return
+    }
+    verif.contract @Wrapper for @Caller::@caller (
+        %unknown: !struct.type<@BoxTemplate::@Box<[@Unknown]>>,
+        %first: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>,
+        %second: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>
+    ) {
+      verif.include @RepeatedFelt::@Base(%unknown, %first, %second) :
+          (!struct.type<@BoxTemplate::@Box<[@Unknown]>>,
+           !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>,
+           !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>) -> ()
+    }
+  }
+}
+
+// -----
+
+// An unknown caller binding agrees with each literal, but 35 and 36 still conflict.
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @RepeatedFelt {
+    poly.param @F : !felt.type<"bn128">
+    function.def @accept(
+        %unknown: !struct.type<@BoxTemplate::@Box<[@F]>>,
+        %first: !struct.type<@BoxTemplate::@Box<[@F]>>,
+        %second: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      function.return
+    }
+    verif.contract @Base for @RepeatedFelt::@accept (
+        %unknown: !struct.type<@BoxTemplate::@Box<[@F]>>,
+        %first: !struct.type<@BoxTemplate::@Box<[@F]>>,
+        %second: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  poly.template @Caller {
+    poly.param @Unknown : !felt.type<"bn128">
+    function.def @caller(
+        %unknown: !struct.type<@BoxTemplate::@Box<[@Unknown]>>,
+        %first: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>,
+        %second: !struct.type<@BoxTemplate::@Box<[#felt<const 36 : !felt.type<"bn128">>]>>
+    ) {
+      function.return
+    }
+    verif.contract @Wrapper for @Caller::@caller (
+        %unknown: !struct.type<@BoxTemplate::@Box<[@Unknown]>>,
+        %first: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>,
+        %second: !struct.type<@BoxTemplate::@Box<[#felt<const 36 : !felt.type<"bn128">>]>>
+    ) {
+      // expected-error@+1 {{'verif.include' op cannot infer template instantiation value for parameter "@F" from contract type signature}}
+      verif.include @RepeatedFelt::@Base(%unknown, %first, %second) :
+          (!struct.type<@BoxTemplate::@Box<[@Unknown]>>,
+           !struct.type<@BoxTemplate::@Box<[#felt<const 35 : !felt.type<"bn128">>]>>,
+           !struct.type<@BoxTemplate::@Box<[#felt<const 36 : !felt.type<"bn128">>]>>) -> ()
+    }
+  }
+}
