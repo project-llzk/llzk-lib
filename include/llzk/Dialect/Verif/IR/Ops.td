@@ -538,7 +538,6 @@ def IncludeOp
     /// Resolve and return the target Contract for this CallOp.
     ::mlir::FailureOr<::llzk::SymbolLookupResult<::llzk::verif::ContractOp>>
     getCalleeTarget(::mlir::SymbolTableCollection &tables);
-
   }];
 }
 
