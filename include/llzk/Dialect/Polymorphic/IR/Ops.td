@@ -185,20 +185,26 @@ def LLZK_TemplateExprOp
                    IsolatedFromAbove, NoRegionArguments, SingleBlock]> {
   let summary = "declares a named expression in a polymorphic template";
   let description = [{
-    Declares an expression over parameters of a `poly.template` that can be used just like
-    a parameter within the function and/or struct definitions within the template.
+    Declares an expression over zero or more parameters of a `poly.template`. Its name can be used
+    by `poly.read_const` and as a symbolic array dimension or template argument within the template.
 
-    The body of a `poly.expr` cannot contain any symbols defined via `poly.expr` to prevent
-    cyclic initialization. The body must also have no side effects to ensure it can be safely
-    duplicated if needed. This means operations such as read/write to globals or function
-    calls are not allowed in the body of a `poly.expr`.
+    The initializer cannot reference globals, call functions, or use a `poly.expr` binding defined
+    in the same template, including itself. Other operations may appear in the initializer, but
+    once flattening evaluates the expression after all value dependencies and operation
+    operand/result type dependencies become concrete, each `poly.read_const` must resolve to a
+    concrete value, each other operation before `poly.yield` must be safe to speculate, have no
+    memory effects, and fold to concrete attributes, and the value passed to `poly.yield` must
+    resolve to a concrete attribute; otherwise evaluation fails. The yielded value must have an
+    integral, felt, or type-variable type.
 
     Example:
     ```llzk
     poly.template @TemplateName {
-      poly.expr @ExprName {
-        %0 = some_op %param1, %param2 : (!felt.type, !felt.type) -> !felt.type
-        poly.yield %0 : !felt.type
+      poly.param @N : index
+      poly.expr @DoubleN {
+        %n = poly.read_const @N : index
+        %double = arith.addi %n, %n : index
+        poly.yield %double : index
       }
     }
     ```
@@ -235,20 +241,25 @@ def LLZK_YieldOp
 def LLZK_ConstReadOp
     : PolymorphicDialectOp<"read_const", [Pure, DeclareOpInterfaceMethods<
                                                     SymbolUserOpInterface>]> {
-  let summary = "read value of a template parameter";
+  let summary = "read a template parameter or expression";
   let description = [{
-    This operation reads the value from the named constant parameter of the template
-    in which this op appears. The op itself puts a type restriction on the value,
-    but leaves it to a later type-checking pass to ensure the template parameters are
-    instantiated with types matching the uses of the parameter within the template.
+    This operation reads a named `poly.param` or `poly.expr` binding from the nearest enclosing
+    `poly.template`. For a read nested in a `verif.contract` whose target is nested in a
+    `poly.template`, it instead reads from the target's template. Its result type must match the
+    result of a `poly.expr` or the restriction on a `poly.param`. For an unrestricted parameter,
+    the result type states the type required at that use. A binding whose type is
+    `!poly.tvar<...>` cannot be read directly.
 
     Examples:
     ```llzk
-    // Read a `!felt.type` value from struct parameter "@A"
+    // Assume the enclosing template declares @A : !felt.type and @B : index, and defines
+    // @DoubleB as an index-typed poly.expr.
+    // Read a `!felt.type` value from template parameter "@A".
     %0 = poly.read_const @A : !felt.type
-    // Read a value from struct parameter "@B" where its type is
-    // specified by struct parameter "@T"
-    %1 = poly.read_const @B : !poly.tvar<@T>
+    // Read an index value from template parameter "@B".
+    %1 = poly.read_const @B : index
+    // Read the index value yielded by template expression "@DoubleB".
+    %2 = poly.read_const @DoubleB : index
     ```
   }];
 
@@ -261,21 +272,23 @@ def LLZK_ConstReadOp
 def LLZK_UnifiableCastOp : PolymorphicDialectOp<"unifiable_cast", [Pure]> {
   let summary = "cast between two unifiable types";
   let description = [{
-    This operation reinterprets a value as a different type with the restriction
-    that the input and output types of the cast are unifiable.
+    This operation represents a value with a different type, with the restriction that the input
+    and output types of the cast are unifiable.
 
-    Most ops that accept LLZK types accept unifiable types as input and thus there
-    is no need for casting between types. This op is meant to be used in situations where
-    is not possible to modify the given or the target type and they are different but unifiable.
-    For example, inside a conversion pattern the driver may introduce `unrealized_conversion_cast`
-    operations if the types are not equal. This will happen regardless of whether the two types unify.
-    This cast can be introduced instead of the default cast operation to satisfy MLIR's assumptions
-    on type equality.
+    Most operations that accept LLZK types also accept operands whose types unify, so an explicit
+    cast is normally unnecessary. Use this operation when neither the input nor result type can be
+    changed but MLIR still requires exact type equality. For example, a conversion pattern can use
+    this operation instead of an `unrealized_conversion_cast` while preserving the requirement that
+    the unequal types unify.
+
+    When constant folding has a constant input and the input and result types are identical, this
+    operation folds to that input. Merely unifiable unequal types do not fold because the
+    replacement would have the wrong result type.
 
     Example:
     ```llzk
     %0 = some_other_op : !array.type<@N x !felt.type>
-    %1 = unifiable_cast %0 : (!array.type<@N x @felt.type>) -> !array.type<affine_map<()[s0, s1] -> (s0 + s1)> x !felt.type>
+    %1 = poly.unifiable_cast %0 : (!array.type<@N x !felt.type>) -> !array.type<affine_map<()[s0, s1] -> (s0 + s1)> x !felt.type>
     ```
   }];
 
@@ -286,6 +299,7 @@ def LLZK_UnifiableCastOp : PolymorphicDialectOp<"unifiable_cast", [Pure]> {
   }];
 
   let hasVerifier = 1;
+  let hasFolder = 1;
 }
 
 def LLZK_ApplyMapOp : PolymorphicDialectOp<"applymap", [Pure]> {

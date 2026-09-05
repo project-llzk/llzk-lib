@@ -1,5 +1,7 @@
-// RUN: llzk-opt -split-input-file -verify-diagnostics %s
+// RUN: llzk-opt -I %input_dir -split-input-file -verify-diagnostics %s
 
+// Reject missing or unresolved arguments, mutable globals, symbols that resolve to another
+// operation kind, and values that violate untyped or typed target parameter restrictions.
 module attributes {llzk.lang} {
   poly.template @GlobalFunc {
     poly.param @A
@@ -21,7 +23,468 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@MissingTemplateParams>) { function.return }
   }
 }
+
 // -----
+
+// Affine maps may parameterize struct types, but a direct free-function template argument for an
+// index parameter must be an integer value.
+#map = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @T {
+    poly.param @N : index
+
+    function.def @value() -> index {
+      %n = poly.read_const @N : index
+      function.return %n : index
+    }
+  }
+
+  function.def @use() -> index {
+    // expected-error@+1 {{'function.call' op instantiation value 'affine_map<(d0) -> (d0)>' is not compatible with parameter "@N" type restriction 'index'}}
+    %value = function.call @T::@value<[#map]>() : () -> index
+    function.return %value : index
+  }
+}
+// -----
+
+// TypeAttr call arguments are recursively verified while concrete types and caller template type
+// variables remain accepted for a TypeVar restriction.
+module attributes {llzk.lang} {
+  poly.template @TypeTarget {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @id() -> index {
+      %value = arith.constant 0 : index
+      function.return %value : index
+    }
+  }
+
+  function.def @missing_type_argument() -> index {
+    // expected-error@+1 {{type variable '!poly.tvar<@MissingType>' must reference a parameter of its enclosing 'poly.template'}}
+    %value = function.call @TypeTarget::@id<[!poly.tvar<@MissingType>]>() : () -> index
+    function.return %value : index
+  }
+
+  function.def @valid_type_argument() -> index {
+    %value = function.call @TypeTarget::@id<[!felt.type]>() : () -> index
+    function.return %value : index
+  }
+
+  poly.template @Caller {
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @valid_type_variable() -> index {
+      %value = function.call @TypeTarget::@id<[!poly.tvar<@U>]>() : () -> index
+      function.return %value : index
+    }
+  }
+}
+
+// -----
+
+// A TypeAttr call argument must contain a valid LLZK type.
+module attributes {llzk.lang} {
+  poly.template @TypeTarget {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @id() -> index {
+      %value = arith.constant 0 : index
+      function.return %value : index
+    }
+  }
+
+  function.def @invalid_builtin_type_argument() -> index {
+    // expected-error@+1 {{'function.call' op expected a valid LLZK type but found 'i8'}}
+    %value = function.call @TypeTarget::@id<[i8]>() : () -> index
+    function.return %value : index
+  }
+}
+
+// Symbolic call arguments must resolve to local template bindings or constant globals even when
+// the target parameter has no type restriction.
+// -----
+module attributes {llzk.lang} {
+  poly.template @UntypedTarget {
+    poly.param @P
+    function.def @id() -> index {
+      %value = arith.constant 0 : index
+      function.return %value : index
+    }
+  }
+
+  // Unknown symbols are rejected for unrestricted parameters.
+  function.def @missing_untyped() -> index {
+    // expected-error@+1 {{'function.call' op references unknown symbol "@Missing"}}
+    %value = function.call @UntypedTarget::@id<[@Missing]>() : () -> index
+    function.return %value : index
+  }
+}
+
+// -----
+module attributes {llzk.lang} {
+  poly.template @TypedTarget {
+    poly.param @P : index
+    function.def @id() -> index {
+      %value = arith.constant 0 : index
+      function.return %value : index
+    }
+  }
+
+  // Unknown symbols are rejected for typed parameters.
+  function.def @missing_typed() -> index {
+    // expected-error@+1 {{'function.call' op references unknown symbol "@MissingTyped"}}
+    %value = function.call @TypedTarget::@id<[@MissingTyped]>() : () -> index
+    function.return %value : index
+  }
+}
+
+// -----
+module attributes {llzk.lang} {
+  poly.template @UntypedTarget {
+    poly.param @P
+    function.def @id() -> index {
+      %value = arith.constant 0 : index
+      function.return %value : index
+    }
+  }
+  function.def @WrongFunction() -> index {
+    %value = arith.constant 0 : index
+    function.return %value : index
+  }
+
+  // Wrong operation kinds are rejected for unrestricted parameters.
+  function.def @function_untyped() -> index {
+    // expected-error@+1 {{'function.call' op instantiation value '@WrongFunction' refers to a 'function.def' which is not allowed}}
+    %value = function.call @UntypedTarget::@id<[@WrongFunction]>() : () -> index
+    function.return %value : index
+  }
+}
+
+// -----
+module attributes {llzk.lang} {
+  poly.template @TypedTarget {
+    poly.param @P : index
+    function.def @id() -> index {
+      %value = arith.constant 0 : index
+      function.return %value : index
+    }
+  }
+  function.def @WrongFunction() -> index {
+    %value = arith.constant 0 : index
+    function.return %value : index
+  }
+
+  // Wrong operation kinds are rejected for typed parameters.
+  function.def @function_typed() -> index {
+    // expected-error@+1 {{'function.call' op instantiation value '@WrongFunction' refers to a 'function.def' which is not allowed}}
+    %value = function.call @TypedTarget::@id<[@WrongFunction]>() : () -> index
+    function.return %value : index
+  }
+}
+
+// -----
+module attributes {llzk.lang} {
+  poly.template @UntypedTarget {
+    poly.param @P
+    function.def @id() -> index {
+      %value = arith.constant 0 : index
+      function.return %value : index
+    }
+  }
+  module @WrongModule {}
+
+  // Wrong operation kinds are rejected for unrestricted parameters.
+  function.def @module_untyped() -> index {
+    // expected-error@+1 {{'function.call' op instantiation value '@WrongModule' refers to a 'builtin.module' which is not allowed}}
+    %value = function.call @UntypedTarget::@id<[@WrongModule]>() : () -> index
+    function.return %value : index
+  }
+}
+
+// -----
+module attributes {llzk.lang} {
+  poly.template @TypedTarget {
+    poly.param @P : index
+    function.def @id() -> index {
+      %value = arith.constant 0 : index
+      function.return %value : index
+    }
+  }
+  module @WrongModule {}
+
+  // Wrong operation kinds are rejected for typed parameters.
+  function.def @module_typed() -> index {
+    // expected-error@+1 {{'function.call' op instantiation value '@WrongModule' refers to a 'builtin.module' which is not allowed}}
+    %value = function.call @TypedTarget::@id<[@WrongModule]>() : () -> index
+    function.return %value : index
+  }
+}
+
+// -----
+module attributes {llzk.lang} {
+  poly.template @UntypedTarget {
+    poly.param @P
+    function.def @id() -> index {
+      %value = arith.constant 0 : index
+      function.return %value : index
+    }
+  }
+  struct.def @WrongStruct {
+    function.def @compute() -> !struct.type<@WrongStruct> {
+      %self = struct.new : !struct.type<@WrongStruct>
+      function.return %self : !struct.type<@WrongStruct>
+    }
+    function.def @constrain(%self: !struct.type<@WrongStruct>) { function.return }
+  }
+
+  // Wrong operation kinds are rejected for unrestricted parameters.
+  function.def @struct_untyped() -> index {
+    // expected-error@+1 {{'function.call' op instantiation value '@WrongStruct' refers to a 'struct.def' which is not allowed}}
+    %value = function.call @UntypedTarget::@id<[@WrongStruct]>() : () -> index
+    function.return %value : index
+  }
+}
+
+// -----
+module attributes {llzk.lang} {
+  poly.template @TypedTarget {
+    poly.param @P : index
+    function.def @id() -> index {
+      %value = arith.constant 0 : index
+      function.return %value : index
+    }
+  }
+  struct.def @WrongStruct {
+    function.def @compute() -> !struct.type<@WrongStruct> {
+      %self = struct.new : !struct.type<@WrongStruct>
+      function.return %self : !struct.type<@WrongStruct>
+    }
+    function.def @constrain(%self: !struct.type<@WrongStruct>) { function.return }
+  }
+
+  // Wrong operation kinds are rejected for typed parameters.
+  function.def @struct_typed() -> index {
+    // expected-error@+1 {{'function.call' op instantiation value '@WrongStruct' refers to a 'struct.def' which is not allowed}}
+    %value = function.call @TypedTarget::@id<[@WrongStruct]>() : () -> index
+    function.return %value : index
+  }
+}
+
+// -----
+
+// An initialized mutable global cannot instantiate a free-function template parameter.
+module attributes {llzk.lang} {
+  poly.template @MutableGlobalInitializedCall {
+    poly.param @F : !felt.type
+
+    function.def @id() -> !felt.type {
+      %value = poly.read_const @F : !felt.type
+      function.return %value : !felt.type
+    }
+  }
+  module @globals {
+    // expected-note@+1 {{global defined here}}
+    global.def @G : !felt.type<"bn128"> = 35
+  }
+  struct.def @Caller {
+    function.def @compute() -> !struct.type<@Caller> {
+      %self = struct.new : !struct.type<@Caller>
+      // expected-error@+1 {{'function.call' op instantiation value '@globals::@G' refers to a global that is not marked as 'const'}}
+      %value = function.call @MutableGlobalInitializedCall::@id<[@globals::@G]>() : () -> !felt.type
+      function.return %self : !struct.type<@Caller>
+    }
+    function.def @constrain(%self: !struct.type<@Caller>) { function.return }
+  }
+}
+
+// -----
+
+// An uninitialized mutable global cannot instantiate a free-function template parameter.
+module attributes {llzk.lang} {
+  poly.template @MutableGlobalUninitializedCall {
+    poly.param @F : !felt.type
+
+    function.def @id() -> !felt.type {
+      %value = poly.read_const @F : !felt.type
+      function.return %value : !felt.type
+    }
+  }
+  module @globals {
+    // expected-note@+1 {{global defined here}}
+    global.def @G : !felt.type<"bn128">
+  }
+  struct.def @Caller {
+    function.def @compute() -> !struct.type<@Caller> {
+      %self = struct.new : !struct.type<@Caller>
+      // expected-error@+1 {{'function.call' op instantiation value '@globals::@G' refers to a global that is not marked as 'const'}}
+      %value = function.call @MutableGlobalUninitializedCall::@id<[@globals::@G]>() : () -> !felt.type
+      function.return %self : !struct.type<@Caller>
+    }
+    function.def @constrain(%self: !struct.type<@Caller>) { function.return }
+  }
+}
+
+// -----
+
+// An explicit value cannot hide conflicting evidence inferred for the same parameter from repeated
+// signature positions.
+module attributes {llzk.lang} {
+  poly.template @RepeatedParam {
+    poly.param @N : index
+
+    function.def @accept(
+        %lhs: !array.type<@N x index>, %rhs: !array.type<@N x index>
+    ) {
+      function.return
+    }
+  }
+
+  function.def @caller(%lhs: !array.type<5 x index>, %rhs: !array.type<7 x index>) {
+    // expected-error@+1 {{'function.call' op cannot infer a unique template instantiation value for parameter "@N" from function type signature}}
+    function.call @RepeatedParam::@accept<[5]>(%lhs, %rhs) :
+        (!array.type<5 x index>, !array.type<7 x index>) -> ()
+    function.return
+  }
+}
+// -----
+
+// Equal type-variable spellings in different template scopes still identify different bindings:
+// an omitted call rejects an unrestricted caller binding.
+module attributes {llzk.lang} {
+  poly.template @TypeOnlyTarget {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @accept(%value: !poly.tvar<@T>) {
+      function.return
+    }
+  }
+
+  poly.template @UntypedCaller {
+    poly.param @T
+
+    function.def @reject_same_name(%value: !poly.tvar<@T>) {
+      // expected-error@+1 {{'function.call' op instantiation value '@T' is not compatible with parameter "@T" type restriction '!poly.tvar<@T>'}}
+      function.call @TypeOnlyTarget::@accept(%value) : (!poly.tvar<@T>) -> ()
+      function.return
+    }
+  }
+
+}
+// -----
+
+// A struct definition with the same name as a target parameter does not make that parameter
+// inferable from the function signature.
+module attributes {llzk.lang} {
+  struct.def @T {
+    function.def @compute() -> !struct.type<@T> {
+      %self = struct.new : !struct.type<@T>
+      function.return %self : !struct.type<@T>
+    }
+
+    function.def @constrain(%self: !struct.type<@T>) { function.return }
+  }
+
+  poly.template @Target {
+    poly.param @T
+
+    function.def @accept(%value: !struct.type<@T>) {
+      function.return
+    }
+  }
+
+  function.def @caller(%value: !struct.type<@T>) {
+    // expected-error@+1 {{'function.call' op cannot infer template instantiation value for parameter "@T" from function type signature}}
+    function.call @Target::@accept(%value) : (!struct.type<@T>) -> ()
+    function.return
+  }
+}
+// -----
+
+// Omitted parameters with `!poly.tvar` restrictions reject conflicting inferences from repeated
+// signature positions.
+module attributes {llzk.lang} {
+  poly.template @RepeatedTypeOnly {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @accept(%lhs: !poly.tvar<@T>, %rhs: !poly.tvar<@T>) {
+      function.return
+    }
+  }
+
+  function.def @mismatched(%lhs: !felt.type, %rhs: index) {
+    // expected-error@+1 {{'function.call' op cannot infer template instantiation value for parameter "@T" from function type signature}}
+    function.call @RepeatedTypeOnly::@accept(%lhs, %rhs) : (!felt.type, index) -> ()
+    function.return
+  }
+
+}
+// -----
+
+// An omitted argument cannot infer through a caller-local struct whose raw path matches a struct
+// in an included target signature; the included definition is qualified by the alias namespace.
+module attributes {llzk.lang} {
+  include.from "Inputs/template_signature_namespace.llzk" as @Lib
+
+  poly.template @Target {
+    poly.param @T : !poly.tvar<@T>
+
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@Target::@Box<[@T]>> {
+        %self = struct.new : !struct.type<@Target::@Box<[@T]>>
+        function.return %self : !struct.type<@Target::@Box<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@Box<[@T]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Caller {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @reject_local_box(%value: !struct.type<@Target::@Box<[@T]>>) {
+      // expected-error@+1 {{'function.call' op operand type mismatch: expected type '!struct.type<@Target::@Box<[@T]>>' from included target "@Lib::@Target::@accept", but found '!struct.type<@Target::@Box<[@T]>>' for operand number 0}}
+      function.call @Lib::@Target::@accept(%value) :
+          (!struct.type<@Target::@Box<[@T]>>) -> ()
+      function.return
+    }
+  }
+}
+// -----
+
+// Omitted parameters with `!poly.tvar` restrictions reject a unique value inferred through an
+// unrestricted struct parameter.
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @TypeTarget {
+    poly.param @T : !poly.tvar<@T>
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@T]>>) {
+      function.return
+    }
+  }
+
+  function.def @wrongKind(%value: !struct.type<@BoxTemplate::@Box<[5]>>) {
+    // expected-error@+1 {{'function.call' op instantiation value '5 : index' is not compatible with parameter "@T" type restriction '!poly.tvar<@T>'}}
+    function.call @TypeTarget::@accept(%value) :
+        (!struct.type<@BoxTemplate::@Box<[5]>>) -> ()
+    function.return
+  }
+
+}
+// -----
+
 module attributes {llzk.lang} {
   poly.template @GlobalFunc {
     poly.param @A
@@ -238,6 +701,28 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@CannotUnifyWithInferredD>) { function.return }
   }
 }
+// -----
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @A : !felt.type<"bn128">
+
+    function.def @id() -> index {
+      %value = arith.constant 7 : index
+      function.return %value : index
+    }
+  }
+
+  struct.def @WrongFeltField {
+    function.def @compute() -> !struct.type<@WrongFeltField> {
+      %self = struct.new : !struct.type<@WrongFeltField>
+      // expected-error@+1 {{'function.call' op instantiation value '#felt<const 35 : <"goldilocks">> : !felt.type<"goldilocks">' is not compatible with parameter "@A" type restriction '!felt.type<"bn128">'}}
+      %0 = function.call @GlobalFunc::@id<[#felt<const 35 : !felt.type<"goldilocks">>]>() : () -> index
+      function.return %self : !struct.type<@WrongFeltField>
+    }
+
+    function.def @constrain(%self: !struct.type<@WrongFeltField>) { function.return }
+  }
+}
 
 // -----
 module attributes {llzk.lang} {
@@ -262,7 +747,6 @@ module attributes {llzk.lang} {
   }
 }
 
-
 // -----
 module attributes {llzk.lang} {
   poly.template @GlobalFunc {
@@ -283,5 +767,28 @@ module attributes {llzk.lang} {
     }
 
     function.def @constrain(%self: !struct.type<@WildcardRequiresTypeVarParam2>) { function.return }
+  }
+}
+
+// -----
+
+// Equal repeated dimensions accept both explicit and inferred arguments.
+module attributes {llzk.lang} {
+  poly.template @RepeatedParam {
+    poly.param @N : index
+
+    function.def @accept(
+        %lhs: !array.type<@N x index>, %rhs: !array.type<@N x index>
+    ) {
+      function.return
+    }
+  }
+
+  function.def @caller(%lhs: !array.type<5 x index>, %rhs: !array.type<5 x index>) {
+    function.call @RepeatedParam::@accept<[5]>(%lhs, %rhs) :
+        (!array.type<5 x index>, !array.type<5 x index>) -> ()
+    function.call @RepeatedParam::@accept(%lhs, %rhs) :
+        (!array.type<5 x index>, !array.type<5 x index>) -> ()
+    function.return
   }
 }

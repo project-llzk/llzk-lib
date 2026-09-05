@@ -1,0 +1,268 @@
+// RUN: llzk-opt -llzk-flatten=cleanup=disabled -verify-diagnostics -mlir-print-ir-after-failure %s 2>&1 | FileCheck --enable-var-scope %s
+
+// Failed full and partial specializations must retain neither their cloned owners, symbol-table
+// entries, nor delayed diagnostics. Later specializations that request the same preferred names
+// must still use those names successfully in the same pass run.
+module attributes {llzk.lang} {
+  function.def @full_rollback_inner(
+      %arg: !array.type<8,9 x !felt.type<"bn128">>
+  ) -> !felt.type<"bn128"> {
+    %zero = arith.constant 0 : index
+    %value = array.read %arg[%zero, %zero] :
+        !array.type<8,9 x !felt.type<"bn128">>, !felt.type<"bn128">
+    function.return %value : !felt.type<"bn128">
+  }
+
+  poly.template @FullRollbackSource {
+    poly.param @N : index
+    poly.param @M : index
+    poly.param @T : !poly.tvar<@T>
+    poly.param @B
+
+    function.def @apply(%arg: !array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T> {
+      // Converting this read queues a warning that rollback must discard.
+      %flag = poly.read_const @B : i1
+      // expected-error@+2 {{'function.call' op operand type mismatch: expected type '!array.type<8,9 x !felt.type<"bn128">>', but found '!array.type<8,9 x i1>' for operand number 0}}
+      // expected-error@+1 {{'function.call' op result type mismatch: expected type '!felt.type<"bn128">', but found 'i1' for result number 0}}
+      %value = function.call @full_rollback_inner(%arg) :
+          (!array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T>
+      function.return %value : !poly.tvar<@T>
+    }
+  }
+
+  function.def @call_full_rollback(%arg: !array.type<8,9 x i1>) -> i1 {
+    // expected-error@+1 {{failure while creating instantiated function 'FullRollbackSource_8_9_b_2_apply'}}
+    %value = function.call @FullRollbackSource::@apply<[8, 9, i1, 2]>(%arg) :
+        (!array.type<8,9 x i1>) -> i1
+    function.return %value : i1
+  }
+
+  // This distinct source renders the same preferred full-specialization name as the failed clone.
+  poly.template @FullRollbackSource_8_9_b {
+    poly.param @B : index
+
+    function.def @apply() -> index {
+      %value = poly.read_const @B : index
+      function.return %value : index
+    }
+  }
+
+  function.def @call_full_after_rollback() -> index {
+    %value = function.call @FullRollbackSource_8_9_b::@apply<[2]>() : () -> index
+    function.return %value : index
+  }
+
+  function.def @partial_rollback_inner(
+      %arg: !array.type<8,9 x !felt.type<"bn128">>
+  ) -> !felt.type<"bn128"> {
+    %zero = arith.constant 0 : index
+    %value = array.read %arg[%zero, %zero] :
+        !array.type<8,9 x !felt.type<"bn128">>, !felt.type<"bn128">
+    function.return %value : !felt.type<"bn128">
+  }
+
+  poly.template @PartialRollbackSource {
+    poly.param @N : index
+    poly.param @M : index
+    poly.param @T : !poly.tvar<@T>
+    poly.param @B
+
+    function.def @apply(%arg: !array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T> {
+      // Converting this read queues a warning that rollback must discard.
+      %flag = poly.read_const @B : i1
+      // expected-error@+2 {{'function.call' op operand type mismatch: expected type '!array.type<8,9 x !felt.type<"bn128">>', but found '!array.type<8,@M x i1>' for operand number 0}}
+      // expected-error@+1 {{'function.call' op result type mismatch: expected type '!felt.type<"bn128">', but found 'i1' for result number 0}}
+      %value = function.call @partial_rollback_inner(%arg) :
+          (!array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T>
+      function.return %value : !poly.tvar<@T>
+    }
+  }
+
+  poly.template @PartialRollbackCaller {
+    poly.param @M : index
+
+    function.def @apply(%arg: !array.type<8,@M x i1>) -> i1 {
+      // expected-error@+1 {{failure while creating instantiated function 'apply'}}
+      %value = function.call @PartialRollbackSource::@apply<[8, @M, i1, 2]>(%arg) :
+          (!array.type<8,@M x i1>) -> i1
+      function.return %value : i1
+    }
+  }
+
+  // This distinct source renders the same preferred reduced-template name as the failed clone.
+  poly.template @PartialRollbackSource_8 {
+    poly.param @M : index
+    poly.param @T : !poly.tvar<@T>
+    poly.param @B
+
+    function.def @apply() -> index {
+      %value = poly.read_const @B : index
+      function.return %value : index
+    }
+  }
+
+  poly.template @PartialRollbackCollisionCaller {
+    poly.param @M : index
+
+    function.def @apply() -> index {
+      %value = function.call @PartialRollbackSource_8::@apply<[@M, i1, 2]>() : () -> index
+      function.return %value : index
+    }
+  }
+
+  poly.template @GoodRollbackSource {
+    poly.param @N : index
+    poly.param @M : index
+    poly.param @T : !poly.tvar<@T>
+    poly.param @B
+
+    function.def @apply(%arg: !array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T> {
+      %flag = poly.read_const @B : i1
+      %zero = arith.constant 0 : index
+      %value = array.read %arg[%zero, %zero] :
+          !array.type<@N,@M x !poly.tvar<@T>>, !poly.tvar<@T>
+      function.return %value : !poly.tvar<@T>
+    }
+  }
+
+  poly.template @GoodRollbackCaller {
+    poly.param @M : index
+
+    function.def @apply(
+        %arg: !array.type<8,@M x !felt.type<"bn128">>
+    ) -> !felt.type<"bn128"> {
+      %value = function.call @GoodRollbackSource::@apply<[
+          8, @M, !felt.type<"bn128">, 1
+      ]>(%arg) : (!array.type<8,@M x !felt.type<"bn128">>) -> !felt.type<"bn128">
+      function.return %value : !felt.type<"bn128">
+    }
+  }
+
+  function.def @call_good_after_rollback(
+      %arg: !array.type<8,9 x !felt.type<"bn128">>
+  ) -> !felt.type<"bn128"> {
+    %value = function.call @GoodRollbackCaller::@apply<[9]>(%arg) :
+        (!array.type<8,9 x !felt.type<"bn128">>) -> !felt.type<"bn128">
+    function.return %value : !felt.type<"bn128">
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @full_rollback_inner(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type<"bn128">>) -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_1]], %[[VAL_1]]] : <8,9 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:      function.return %[[VAL_2]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @FullRollbackSource {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      poly.param @M : index
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      poly.param @B
+// CHECK-NEXT:      function.def @apply(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T> {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.read_const @B : i1
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @full_rollback_inner(%[[VAL_3]]) : (!array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T>
+// CHECK-NEXT:        function.return %[[VAL_5]] : !poly.tvar<@T>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_full_rollback(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x i1>) -> i1 {
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @FullRollbackSource::@apply<[8, 9, i1, 2]>(%[[VAL_6]]) : (!array.type<8,9 x i1>) -> i1
+// CHECK-NEXT:      function.return %[[VAL_7]] : i1
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @FullRollbackSource_8_9_b_2_apply() -> index {
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      function.return %[[VAL_8]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @FullRollbackSource_8_9_b {
+// CHECK-NEXT:      poly.param @B : index
+// CHECK-NEXT:      function.def @apply() -> index {
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = poly.read_const @B : index
+// CHECK-NEXT:        function.return %[[VAL_9]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_full_after_rollback() -> index {
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @FullRollbackSource_8_9_b_2_apply() : () -> index
+// CHECK-NEXT:      function.return %[[VAL_10]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @partial_rollback_inner(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type<"bn128">>) -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_11]]{{\[}}%[[VAL_12]], %[[VAL_12]]] : <8,9 x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:      function.return %[[VAL_13]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @PartialRollbackSource {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      poly.param @M : index
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      poly.param @B
+// CHECK-NEXT:      function.def @apply(%[[VAL_14:[0-9a-zA-Z_\.]+]]: !array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T> {
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = poly.read_const @B : i1
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = function.call @partial_rollback_inner(%[[VAL_14]]) : (!array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T>
+// CHECK-NEXT:        function.return %[[VAL_16]] : !poly.tvar<@T>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @PartialRollbackCaller {
+// CHECK-NEXT:      poly.param @M : index
+// CHECK-NEXT:      function.def @apply(%[[VAL_17:[0-9a-zA-Z_\.]+]]: !array.type<8,@M x i1>) -> i1 {
+// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = function.call @PartialRollbackSource::@apply<[8, @M, i1, 2]>(%[[VAL_17]]) : (!array.type<8,@M x i1>) -> i1
+// CHECK-NEXT:        function.return %[[VAL_18]] : i1
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @"PartialRollbackSource_8_\1A_b_2" {
+// CHECK-NEXT:      poly.param @M : index
+// CHECK-NEXT:      function.def @apply() -> index {
+// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:        function.return %[[VAL_19]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["PartialRollbackSource_8_", "_b_2"]}
+// CHECK-NEXT:    poly.template @PartialRollbackSource_8 {
+// CHECK-NEXT:      poly.param @M : index
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      poly.param @B
+// CHECK-NEXT:      function.def @apply() -> index {
+// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = poly.read_const @B : index
+// CHECK-NEXT:        function.return %[[VAL_20]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @PartialRollbackCollisionCaller {
+// CHECK-NEXT:      poly.param @M : index
+// CHECK-NEXT:      function.def @apply() -> index {
+// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = function.call @"PartialRollbackSource_8_\1A_b_2"::@apply<[@M]>() : () -> index
+// CHECK-NEXT:        function.return %[[VAL_21]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @"GoodRollbackSource_8_\1A_f_1" {
+// CHECK-NEXT:      poly.param @M : index
+// CHECK-NEXT:      function.def @apply(%[[VAL_22:[0-9a-zA-Z_\.]+]]: !array.type<8,@M x !felt.type<"bn128">>) -> !felt.type<"bn128"> {
+// CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_25:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_22]]{{\[}}%[[VAL_24]], %[[VAL_24]]] : <8,@M x !felt.type<"bn128">>, !felt.type<"bn128">
+// CHECK-NEXT:        function.return %[[VAL_25]] : !felt.type<"bn128">
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["GoodRollbackSource_8_", "_f_1"]}
+// CHECK-NEXT:    poly.template @GoodRollbackSource {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      poly.param @M : index
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      poly.param @B
+// CHECK-NEXT:      function.def @apply(%[[VAL_26:[0-9a-zA-Z_\.]+]]: !array.type<@N,@M x !poly.tvar<@T>>) -> !poly.tvar<@T> {
+// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = poly.read_const @B : i1
+// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_26]]{{\[}}%[[VAL_28]], %[[VAL_28]]] : <@N,@M x !poly.tvar<@T>>, !poly.tvar<@T>
+// CHECK-NEXT:        function.return %[[VAL_29]] : !poly.tvar<@T>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @GoodRollbackCaller_9_apply(%[[VAL_30:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type<"bn128">>) -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_31:[0-9a-zA-Z_\.]+]] = function.call @"GoodRollbackSource_8_\1A_f_1"::@apply<[9]>(%[[VAL_30]]) : (!array.type<8,9 x !felt.type<"bn128">>) -> !felt.type<"bn128">
+// CHECK-NEXT:      function.return %[[VAL_31]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @GoodRollbackCaller {
+// CHECK-NEXT:      poly.param @M : index
+// CHECK-NEXT:      function.def @apply(%[[VAL_32:[0-9a-zA-Z_\.]+]]: !array.type<8,@M x !felt.type<"bn128">>) -> !felt.type<"bn128"> {
+// CHECK-NEXT:        %[[VAL_33:[0-9a-zA-Z_\.]+]] = function.call @"GoodRollbackSource_8_\1A_f_1"::@apply<[@M]>(%[[VAL_32]]) : (!array.type<8,@M x !felt.type<"bn128">>) -> !felt.type<"bn128">
+// CHECK-NEXT:        function.return %[[VAL_33]] : !felt.type<"bn128">
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @call_good_after_rollback(%[[VAL_34:[0-9a-zA-Z_\.]+]]: !array.type<8,9 x !felt.type<"bn128">>) -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_35:[0-9a-zA-Z_\.]+]] = function.call @GoodRollbackCaller_9_apply(%[[VAL_34]]) : (!array.type<8,9 x !felt.type<"bn128">>) -> !felt.type<"bn128">
+// CHECK-NEXT:      function.return %[[VAL_35]] : !felt.type<"bn128">
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

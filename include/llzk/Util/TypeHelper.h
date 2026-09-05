@@ -19,6 +19,8 @@
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/StringRef.h>
 
+#include <optional>
+
 namespace llzk {
 
 // Forward declarations
@@ -216,6 +218,10 @@ uint64_t computeEmitEqCardinality(mlir::Type type);
 /// static concrete values to produce the flattened versions of structs.
 using UnificationMap = mlir::DenseMap<std::pair<mlir::SymbolRefAttr, Side>, mlir::Attribute>;
 
+/// Record each symbol/value candidate encountered while unifying a call or inclusion signature,
+/// without changing `UnificationMap`'s existing `nullptr` conflict behavior.
+using UnificationCandidateFn = llvm::function_ref<void(mlir::SymbolRefAttr, Side, mlir::Attribute)>;
+
 /// Return `true` iff the two ArrayRef instances containing StructType or ArrayType parameters
 /// are equivalent or could be equivalent after full instantiation of template parameters.
 bool typeParamsUnify(
@@ -253,9 +259,14 @@ bool podTypesUnify(
 
 /// Return `true` iff the two FunctionType instances are equivalent or could be equivalent after
 /// full instantiation of template parameters.
+/// If both `unifications` and `recordCandidate` are provided, structurally equal type variables
+/// and parameterized types are traversed and each symbol/value candidate is reported before
+/// repeated conflicting mappings are represented by `nullptr` in `unifications`. Without a
+/// recorder, equal types retain the existing empty-map behavior.
 bool functionTypesUnify(
     mlir::FunctionType lhs, mlir::FunctionType rhs,
-    mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}, UnificationMap *unifications = nullptr
+    mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}, UnificationMap *unifications = nullptr,
+    UnificationCandidateFn recordCandidate = nullptr
 );
 
 /// Return `true` iff the two Type instances are equivalent or could be equivalent after full
@@ -263,6 +274,40 @@ bool functionTypesUnify(
 bool typesUnify(
     mlir::Type lhs, mlir::Type rhs, mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {},
     UnificationMap *unifications = nullptr
+);
+
+/// Return `true` iff an actual template argument type satisfies a required type restriction.
+/// Unlike `typesUnify`, this check is directional: a fieldless required felt type accepts any
+/// felt field, while a fielded required felt type accepts only the same explicitly fielded type.
+/// A `TypeVarType` restriction is a type-variable restriction and therefore is compatible only
+/// with another `TypeVarType` restriction; it must not inherit the wildcard behavior of ordinary
+/// type unification.
+bool isTemplateParamTypeCompatible(mlir::Type actualType, mlir::Type requiredType);
+
+/// With no actual type, a binding is compatible with a fieldless felt or any non-felt,
+/// non-`TypeVarType` restriction. It is incompatible with a fielded felt or `TypeVarType`
+/// restriction. Direct array dimensions separately require an index-typed binding at their
+/// type-resolution site.
+bool isTemplateParamTypeCompatible(std::optional<mlir::Type> actualType, mlir::Type requiredType);
+
+/// Check a template argument against an optional restriction and return the representation used by
+/// instantiation. With no restriction, return the argument unchanged. A type-variable restriction
+/// accepts only a `TypeAttr`; a felt restriction accepts a compatible felt constant or integer,
+/// preserving an explicit field when the restriction is fieldless and otherwise applying the
+/// required field; and an index or integer restriction accepts a valid integer or a single-result
+/// affine map that remains deferred for affine instantiation. Reject every other
+/// attribute/restriction pairing.
+mlir::FailureOr<mlir::Attribute>
+materializeTemplateParamValue(mlir::Attribute actualValue, std::optional<mlir::Type> requiredType);
+
+/// Return `true` iff two template argument values are compatible with the same required
+/// restriction. Felt constants and integer attributes are compared by value after applying the
+/// required felt field, independent of APInt storage width. Deferred symbol references use the
+/// generic template-parameter unifier; other values that cannot materialize as the required felt
+/// are incompatible. Non-felt and absent restrictions use the generic unifier unchanged.
+bool templateParamValuesUnify(
+    mlir::Attribute actualValue, mlir::Attribute inferredValue,
+    std::optional<mlir::Type> requiredType
 );
 
 /// Return `true` iff the two lists of Type instances are equivalent or could be equivalent after

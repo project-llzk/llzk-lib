@@ -1,0 +1,5 @@
+fixed:
+  - Evaluate template expressions referenced by a specialized definition once their value dependencies and operation operand/result type dependencies become concrete, preserving unresolved expressions in reduced templates alongside their remaining non-concrete bindings.
+  - Specialize free functions and structs in templates with `poly.expr` bindings and no `poly.param` operations when the definition references a concrete expression, including absent and explicitly empty struct argument lists, and retry expressions when their type dependencies become concrete.
+  - Preserve concrete template bindings in rebuilt nested calls, array dimensions and element types, parameterized struct arguments, POD record types, and type variables.
+  - Discard failed function and struct specializations without retaining generated definitions or warnings.
