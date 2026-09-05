@@ -433,8 +433,9 @@ def ContractEndOp
 //===------------------------------------------------------------------===//
 
 def IncludeOp
-    : VerifDialectOp<"include", [LLZKCallLikeOpInterface, MemRefsNormalizable,
-                                 AttrSizedOperandSegments,
+    : VerifDialectOp<"include", [MemRefsNormalizable, AttrSizedOperandSegments,
+                                 DeclareOpInterfaceMethods<
+                                     LLZKCallLikeOpInterface, ["getSelfValue"]>,
                                  VerifySizesForMultiAffineOps<1>,
                                  HasAncestor<"::llzk::verif::ContractOp">]> {
   let summary = "contract inclusion operation";
@@ -530,10 +531,6 @@ def IncludeOp
   let extraClassDeclaration = [{
     /// Return `true` iff the contract targets a struct type.
     bool contractTargetsStruct();
-
-    /// Return the "self" value (i.e. the first parameter) from the callee contract,
-    /// assuming the target of the contract is a struct target.
-    ::mlir::Value getSelfValue();
 
     /// Resolve and return the target Contract for this CallOp.
     ::mlir::FailureOr<::llzk::SymbolLookupResult<::llzk::verif::ContractOp>>
