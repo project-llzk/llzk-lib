@@ -148,11 +148,9 @@ LogicalResult TemplateExprOp::verifyRegions() {
     return emitOpError("expected initializer region to end with a '")
            << YieldOp::getOperationName() << '\'';
   }
-  // Check or ops with side-effects that are not allowed within `poly.expr`.
+  // Global references and function calls are intentionally unavailable in template initializers.
   Operation *illegalOp = nullptr;
   auto walkRes = block.walk([&illegalOp](Operation *p) {
-    // Note: If side-effect traits are added to ops in the future, this check should
-    // be updated to check for those traits instead of specific op types.
     if (llvm::isa<global::GlobalRefOpInterface, function::CallOp>(p)) {
       illegalOp = p;
       return WalkResult::interrupt();
@@ -193,7 +191,7 @@ LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &tables) {
                                << "' that targets an operation with a '"
                                << TemplateOp::getOperationName() << "' ancestor";
   }
-  // Ensure the named constant is a parameter of the parent struct
+  // Ensure the named constant is a binding of the enclosing template.
   FlatSymbolRefAttr name = this->getConstNameAttr();
   auto bindingOp = getParentRes->getConstNamed<TemplateSymbolBindingOpInterface>(name);
   if (!bindingOp) {
@@ -202,7 +200,7 @@ LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &tables) {
         .attachNote(getParentRes->getLoc())
         .append("must reference a param or expr of this template");
   }
-  // Ensure the type of the constant read matches the type of the referenced parameter (if any).
+  // Ensure the constant read type matches the referenced binding type, when one is declared.
   if (std::optional<Type> paramType = bindingOp.getTypeOpt()) {
     if (llvm::isa<TypeVarType>(*paramType)) {
       return this->emitOpError().append(
@@ -211,7 +209,7 @@ LogicalResult ConstReadOp::verifySymbolUses(SymbolTableCollection &tables) {
     }
     if (this->getType() != *paramType) {
       return this->emitOpError().append(
-          "type ", this->getType(), " does not match constant param type ", *paramType
+          "type ", this->getType(), " does not match binding type ", *paramType
       );
     }
   }
@@ -274,6 +272,13 @@ LogicalResult UnifiableCastOp::verify() {
   }
 
   return success();
+}
+
+OpFoldResult UnifiableCastOp::fold(FoldAdaptor adaptor) {
+  if (getInput().getType() != getResult().getType()) {
+    return {};
+  }
+  return adaptor.getInput();
 }
 
 } // namespace llzk::polymorphic

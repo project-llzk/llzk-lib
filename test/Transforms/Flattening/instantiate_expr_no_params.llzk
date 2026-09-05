@@ -1,0 +1,283 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s --check-prefix=DEFAULT
+// RUN: llzk-opt -split-input-file -llzk-flatten=cleanup=disabled %s | FileCheck --enable-var-scope %s --check-prefix=DISABLED
+
+// A zero-parameter function template evaluates a constant select and specializes its expression
+// to the selected value; no `poly.param` binding is required.
+module attributes {llzk.lang} {
+  poly.template @ExprOnlyFunc {
+    poly.expr @Value {
+      %condition = arith.constant true
+      %selected = arith.constant 42 : index
+      %unselected = arith.constant 99 : index
+      %value = arith.select %condition, %selected, %unselected : index
+      poly.yield %value : index
+    }
+    function.def @value() -> index {
+      %value = poly.read_const @Value : index
+      function.return %value : index
+    }
+  }
+
+  function.def @main() -> index {
+    %value = function.call @ExprOnlyFunc::@value() : () -> index
+    function.return %value : index
+  }
+}
+
+// DEFAULT-LABEL: module attributes {llzk.lang} {
+// DEFAULT-NEXT:    function.def @ExprOnlyFunc_value() -> index {
+// DEFAULT-NEXT:      %[[FUNC_VALUE:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// DEFAULT-NEXT:      function.return %[[FUNC_VALUE]] : index
+// DEFAULT-NEXT:    }
+// DEFAULT-NEXT:    function.def @main() -> index {
+// DEFAULT-NEXT:      %[[MAIN_VALUE:[0-9a-zA-Z_\.]+]] = function.call @ExprOnlyFunc_value() : () -> index
+// DEFAULT-NEXT:      function.return %[[MAIN_VALUE]] : index
+// DEFAULT-NEXT:    }
+// DEFAULT-NEXT:  }
+// DEFAULT:  // {{[-][-][-][-][-]}}
+
+// DISABLED-LABEL: module attributes {llzk.lang} {
+// DISABLED-NEXT:    function.def @ExprOnlyFunc_value() -> index {
+// DISABLED-NEXT:      %[[DISABLED_FUNC_VALUE:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// DISABLED-NEXT:      function.return %[[DISABLED_FUNC_VALUE]] : index
+// DISABLED-NEXT:    }
+// DISABLED-NEXT:    poly.template @ExprOnlyFunc {
+// DISABLED-NEXT:      poly.expr @Value {
+// DISABLED-NEXT:        %[[EXPR_VALUE:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// DISABLED-NEXT:        poly.yield %[[EXPR_VALUE]] : index
+// DISABLED-NEXT:      }
+// DISABLED-NEXT:      function.def @value() -> index {
+// DISABLED-NEXT:        %[[ORIGINAL_VALUE:[0-9a-zA-Z_\.]+]] = poly.read_const @Value : index
+// DISABLED-NEXT:        function.return %[[ORIGINAL_VALUE]] : index
+// DISABLED-NEXT:      }
+// DISABLED-NEXT:    }
+// DISABLED-NEXT:    function.def @main() -> index {
+// DISABLED-NEXT:      %[[DISABLED_MAIN_VALUE:[0-9a-zA-Z_\.]+]] = function.call @ExprOnlyFunc_value() : () -> index
+// DISABLED-NEXT:      function.return %[[DISABLED_MAIN_VALUE]] : index
+// DISABLED-NEXT:    }
+// DISABLED-NEXT:  }
+// DISABLED:  // {{[-][-][-][-][-]}}
+
+// -----
+
+// A struct in a template with expressions and no parameters is specialized from a type without an
+// argument list.
+module attributes {llzk.lang, llzk.main = !struct.type<@ExprOnlyStructNoList::@Value>} {
+  poly.template @ExprOnlyStructNoList {
+    poly.expr @Result {
+      %value = arith.constant 7 : index
+      poly.yield %value : index
+    }
+    struct.def @Value {
+      struct.member @result : index
+      function.def @compute() -> !struct.type<@ExprOnlyStructNoList::@Value> {
+        %result = poly.read_const @Result : index
+        %self = struct.new : <@ExprOnlyStructNoList::@Value>
+        struct.writem %self[@result] = %result : !struct.type<@ExprOnlyStructNoList::@Value>, index
+        function.return %self : !struct.type<@ExprOnlyStructNoList::@Value>
+      }
+      function.def @constrain(%self: !struct.type<@ExprOnlyStructNoList::@Value>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Holder {
+    struct.member @value : !struct.type<@ExprOnlyStructNoList::@Value>
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : <@Holder>
+      %value = function.call @ExprOnlyStructNoList::@Value::@compute() : () -> !struct.type<@ExprOnlyStructNoList::@Value>
+      struct.writem %self[@value] = %value : !struct.type<@Holder>, !struct.type<@ExprOnlyStructNoList::@Value>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) {
+      function.return
+    }
+  }
+}
+
+// DEFAULT-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@ExprOnlyStructNoList_Value>} {
+// DEFAULT-NEXT:    struct.def @ExprOnlyStructNoList_Value {
+// DEFAULT-NEXT:      struct.member @result : index
+// DEFAULT-NEXT:      function.def @compute() -> !struct.type<@ExprOnlyStructNoList_Value> attributes {function.allow_witness} {
+// DEFAULT-NEXT:        %[[NO_LIST_RESULT:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// DEFAULT-NEXT:        %[[NO_LIST_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ExprOnlyStructNoList_Value>
+// DEFAULT-NEXT:        struct.writem %[[NO_LIST_SELF]][@result] = %[[NO_LIST_RESULT]] : <@ExprOnlyStructNoList_Value>, index
+// DEFAULT-NEXT:        function.return %[[NO_LIST_SELF]] : !struct.type<@ExprOnlyStructNoList_Value>
+// DEFAULT-NEXT:      }
+// DEFAULT-NEXT:      function.def @constrain(%[[NO_LIST_ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@ExprOnlyStructNoList_Value>) attributes {function.allow_constraint} {
+// DEFAULT-NEXT:        function.return
+// DEFAULT-NEXT:      }
+// DEFAULT-NEXT:    }
+// DEFAULT-NOT: poly.template @ExprOnlyStructNoList
+// DEFAULT:    struct.def @Holder {
+// DEFAULT-NEXT:      struct.member @value : !struct.type<@ExprOnlyStructNoList_Value>
+// DEFAULT-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// DEFAULT-NEXT:        %[[NO_LIST_HOLDER:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
+// DEFAULT-NEXT:        %[[NO_LIST_VALUE:[0-9a-zA-Z_\.]+]] = function.call @ExprOnlyStructNoList_Value::@compute() : () -> !struct.type<@ExprOnlyStructNoList_Value>
+// DEFAULT-NEXT:        struct.writem %[[NO_LIST_HOLDER]][@value] = %[[NO_LIST_VALUE]] : <@Holder>, !struct.type<@ExprOnlyStructNoList_Value>
+// DEFAULT-NEXT:        function.return %[[NO_LIST_HOLDER]] : !struct.type<@Holder>
+// DEFAULT-NEXT:      }
+// DEFAULT-NEXT:      function.def @constrain(%[[NO_LIST_HOLDER_ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// DEFAULT-NEXT:        function.return
+// DEFAULT-NEXT:      }
+// DEFAULT-NEXT:    }
+// DEFAULT-NEXT:  }
+// DEFAULT:  // {{[-][-][-][-][-]}}
+
+// DISABLED-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@ExprOnlyStructNoList_Value>} {
+// DISABLED-NEXT:    struct.def @ExprOnlyStructNoList_Value {
+// DISABLED-NEXT:      struct.member @result : index
+// DISABLED-NEXT:      function.def @compute() -> !struct.type<@ExprOnlyStructNoList_Value> attributes {function.allow_witness} {
+// DISABLED-NEXT:        %[[DISABLED_NO_LIST_RESULT:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// DISABLED-NEXT:        %[[DISABLED_NO_LIST_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ExprOnlyStructNoList_Value>
+// DISABLED-NEXT:        struct.writem %[[DISABLED_NO_LIST_SELF]][@result] = %[[DISABLED_NO_LIST_RESULT]] : <@ExprOnlyStructNoList_Value>, index
+// DISABLED-NEXT:        function.return %[[DISABLED_NO_LIST_SELF]] : !struct.type<@ExprOnlyStructNoList_Value>
+// DISABLED-NEXT:      }
+// DISABLED-NEXT:      function.def @constrain(%[[DISABLED_NO_LIST_ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@ExprOnlyStructNoList_Value>) attributes {function.allow_constraint} {
+// DISABLED-NEXT:        function.return
+// DISABLED-NEXT:      }
+// DISABLED-NEXT:    }
+// DISABLED-NEXT:    poly.template @ExprOnlyStructNoList {
+// DISABLED-NEXT:      poly.expr @Result {
+// DISABLED-NEXT:        %[[DISABLED_NO_LIST_EXPR:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// DISABLED-NEXT:        poly.yield %[[DISABLED_NO_LIST_EXPR]] : index
+// DISABLED-NEXT:      }
+// DISABLED-NEXT:      struct.def @Value {
+// DISABLED-NEXT:        struct.member @result : index
+// DISABLED-NEXT:        function.def @compute() -> !struct.type<@ExprOnlyStructNoList::@Value> attributes {function.allow_witness} {
+// DISABLED-NEXT:          %[[DISABLED_NO_LIST_ORIGINAL_RESULT:[0-9a-zA-Z_\.]+]] = poly.read_const @Result : index
+// DISABLED-NEXT:          %[[DISABLED_NO_LIST_ORIGINAL_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ExprOnlyStructNoList::@Value>
+// DISABLED-NEXT:          struct.writem %[[DISABLED_NO_LIST_ORIGINAL_SELF]][@result] = %[[DISABLED_NO_LIST_ORIGINAL_RESULT]] : <@ExprOnlyStructNoList::@Value>, index
+// DISABLED-NEXT:          function.return %[[DISABLED_NO_LIST_ORIGINAL_SELF]] : !struct.type<@ExprOnlyStructNoList::@Value>
+// DISABLED-NEXT:        }
+// DISABLED-NEXT:        function.def @constrain(%[[DISABLED_NO_LIST_ORIGINAL_ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@ExprOnlyStructNoList::@Value>) attributes {function.allow_constraint} {
+// DISABLED-NEXT:          function.return
+// DISABLED-NEXT:        }
+// DISABLED-NEXT:      }
+// DISABLED-NEXT:    }
+// DISABLED-NEXT:    struct.def @Holder {
+// DISABLED-NEXT:      struct.member @value : !struct.type<@ExprOnlyStructNoList_Value>
+// DISABLED-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// DISABLED-NEXT:        %[[DISABLED_NO_LIST_HOLDER:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
+// DISABLED-NEXT:        %[[DISABLED_NO_LIST_VALUE:[0-9a-zA-Z_\.]+]] = function.call @ExprOnlyStructNoList_Value::@compute() : () -> !struct.type<@ExprOnlyStructNoList_Value>
+// DISABLED-NEXT:        struct.writem %[[DISABLED_NO_LIST_HOLDER]][@value] = %[[DISABLED_NO_LIST_VALUE]] : <@Holder>, !struct.type<@ExprOnlyStructNoList_Value>
+// DISABLED-NEXT:        function.return %[[DISABLED_NO_LIST_HOLDER]] : !struct.type<@Holder>
+// DISABLED-NEXT:      }
+// DISABLED-NEXT:      function.def @constrain(%[[DISABLED_NO_LIST_HOLDER_ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// DISABLED-NEXT:        function.return
+// DISABLED-NEXT:      }
+// DISABLED-NEXT:    }
+// DISABLED-NEXT:  }
+// DISABLED:  // {{[-][-][-][-][-]}}
+
+// -----
+
+// An explicit empty argument list produces the same concrete struct specialization when the
+// definition has no poly.param operations.
+module attributes {llzk.lang, llzk.main = !struct.type<@ExprOnlyStructExplicit::@Value<[]>>} {
+  poly.template @ExprOnlyStructExplicit {
+    poly.expr @Result {
+      %value = arith.constant 9 : index
+      poly.yield %value : index
+    }
+    struct.def @Value {
+      struct.member @result : index
+      function.def @compute() -> !struct.type<@ExprOnlyStructExplicit::@Value> {
+        %result = poly.read_const @Result : index
+        %self = struct.new : <@ExprOnlyStructExplicit::@Value>
+        struct.writem %self[@result] = %result : !struct.type<@ExprOnlyStructExplicit::@Value>, index
+        function.return %self : !struct.type<@ExprOnlyStructExplicit::@Value>
+      }
+      function.def @constrain(%self: !struct.type<@ExprOnlyStructExplicit::@Value>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Holder {
+    struct.member @value : !struct.type<@ExprOnlyStructExplicit::@Value<[]>>
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : <@Holder>
+      %value = function.call @ExprOnlyStructExplicit::@Value::@compute() : () -> !struct.type<@ExprOnlyStructExplicit::@Value<[]>>
+      struct.writem %self[@value] = %value : !struct.type<@Holder>, !struct.type<@ExprOnlyStructExplicit::@Value<[]>>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) {
+      function.return
+    }
+  }
+}
+
+// DEFAULT-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@ExprOnlyStructExplicit_Value>} {
+// DEFAULT-NEXT:    struct.def @ExprOnlyStructExplicit_Value {
+// DEFAULT-NEXT:      struct.member @result : index
+// DEFAULT-NEXT:      function.def @compute() -> !struct.type<@ExprOnlyStructExplicit_Value> attributes {function.allow_witness} {
+// DEFAULT-NEXT:        %[[EXPLICIT_RESULT:[0-9a-zA-Z_\.]+]] = arith.constant 9 : index
+// DEFAULT-NEXT:        %[[EXPLICIT_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ExprOnlyStructExplicit_Value>
+// DEFAULT-NEXT:        struct.writem %[[EXPLICIT_SELF]][@result] = %[[EXPLICIT_RESULT]] : <@ExprOnlyStructExplicit_Value>, index
+// DEFAULT-NEXT:        function.return %[[EXPLICIT_SELF]] : !struct.type<@ExprOnlyStructExplicit_Value>
+// DEFAULT-NEXT:      }
+// DEFAULT-NEXT:      function.def @constrain(%[[EXPLICIT_ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@ExprOnlyStructExplicit_Value>) attributes {function.allow_constraint} {
+// DEFAULT-NEXT:        function.return
+// DEFAULT-NEXT:      }
+// DEFAULT-NEXT:    }
+// DEFAULT-NOT: poly.template @ExprOnlyStructExplicit
+// DEFAULT:    struct.def @Holder {
+// DEFAULT-NEXT:      struct.member @value : !struct.type<@ExprOnlyStructExplicit_Value>
+// DEFAULT-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// DEFAULT-NEXT:        %[[EXPLICIT_HOLDER:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
+// DEFAULT-NEXT:        %[[EXPLICIT_VALUE:[0-9a-zA-Z_\.]+]] = function.call @ExprOnlyStructExplicit_Value::@compute() : () -> !struct.type<@ExprOnlyStructExplicit_Value>
+// DEFAULT-NEXT:        struct.writem %[[EXPLICIT_HOLDER]][@value] = %[[EXPLICIT_VALUE]] : <@Holder>, !struct.type<@ExprOnlyStructExplicit_Value>
+// DEFAULT-NEXT:        function.return %[[EXPLICIT_HOLDER]] : !struct.type<@Holder>
+// DEFAULT-NEXT:      }
+// DEFAULT-NEXT:      function.def @constrain(%[[EXPLICIT_HOLDER_ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// DEFAULT-NEXT:        function.return
+// DEFAULT-NEXT:      }
+// DEFAULT-NEXT:    }
+// DEFAULT-NEXT:  }
+
+// DISABLED-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@ExprOnlyStructExplicit_Value>} {
+// DISABLED-NEXT:    struct.def @ExprOnlyStructExplicit_Value {
+// DISABLED-NEXT:      struct.member @result : index
+// DISABLED-NEXT:      function.def @compute() -> !struct.type<@ExprOnlyStructExplicit_Value> attributes {function.allow_witness} {
+// DISABLED-NEXT:        %[[DISABLED_EXPLICIT_RESULT:[0-9a-zA-Z_\.]+]] = arith.constant 9 : index
+// DISABLED-NEXT:        %[[DISABLED_EXPLICIT_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ExprOnlyStructExplicit_Value>
+// DISABLED-NEXT:        struct.writem %[[DISABLED_EXPLICIT_SELF]][@result] = %[[DISABLED_EXPLICIT_RESULT]] : <@ExprOnlyStructExplicit_Value>, index
+// DISABLED-NEXT:        function.return %[[DISABLED_EXPLICIT_SELF]] : !struct.type<@ExprOnlyStructExplicit_Value>
+// DISABLED-NEXT:      }
+// DISABLED-NEXT:      function.def @constrain(%[[DISABLED_EXPLICIT_ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@ExprOnlyStructExplicit_Value>) attributes {function.allow_constraint} {
+// DISABLED-NEXT:        function.return
+// DISABLED-NEXT:      }
+// DISABLED-NEXT:    }
+// DISABLED-NEXT:    poly.template @ExprOnlyStructExplicit {
+// DISABLED-NEXT:      poly.expr @Result {
+// DISABLED-NEXT:        %[[DISABLED_EXPLICIT_EXPR:[0-9a-zA-Z_\.]+]] = arith.constant 9 : index
+// DISABLED-NEXT:        poly.yield %[[DISABLED_EXPLICIT_EXPR]] : index
+// DISABLED-NEXT:      }
+// DISABLED-NEXT:      struct.def @Value {
+// DISABLED-NEXT:        struct.member @result : index
+// DISABLED-NEXT:        function.def @compute() -> !struct.type<@ExprOnlyStructExplicit::@Value> attributes {function.allow_witness} {
+// DISABLED-NEXT:          %[[DISABLED_EXPLICIT_ORIGINAL_RESULT:[0-9a-zA-Z_\.]+]] = poly.read_const @Result : index
+// DISABLED-NEXT:          %[[DISABLED_EXPLICIT_ORIGINAL_SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@ExprOnlyStructExplicit::@Value>
+// DISABLED-NEXT:          struct.writem %[[DISABLED_EXPLICIT_ORIGINAL_SELF]][@result] = %[[DISABLED_EXPLICIT_ORIGINAL_RESULT]] : <@ExprOnlyStructExplicit::@Value>, index
+// DISABLED-NEXT:          function.return %[[DISABLED_EXPLICIT_ORIGINAL_SELF]] : !struct.type<@ExprOnlyStructExplicit::@Value>
+// DISABLED-NEXT:        }
+// DISABLED-NEXT:        function.def @constrain(%[[DISABLED_EXPLICIT_ORIGINAL_ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@ExprOnlyStructExplicit::@Value>) attributes {function.allow_constraint} {
+// DISABLED-NEXT:          function.return
+// DISABLED-NEXT:        }
+// DISABLED-NEXT:      }
+// DISABLED-NEXT:    }
+// DISABLED-NEXT:    struct.def @Holder {
+// DISABLED-NEXT:      struct.member @value : !struct.type<@ExprOnlyStructExplicit_Value>
+// DISABLED-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// DISABLED-NEXT:        %[[DISABLED_EXPLICIT_HOLDER:[0-9a-zA-Z_\.]+]] = struct.new : <@Holder>
+// DISABLED-NEXT:        %[[DISABLED_EXPLICIT_VALUE:[0-9a-zA-Z_\.]+]] = function.call @ExprOnlyStructExplicit_Value::@compute() : () -> !struct.type<@ExprOnlyStructExplicit_Value>
+// DISABLED-NEXT:        struct.writem %[[DISABLED_EXPLICIT_HOLDER]][@value] = %[[DISABLED_EXPLICIT_VALUE]] : <@Holder>, !struct.type<@ExprOnlyStructExplicit_Value>
+// DISABLED-NEXT:        function.return %[[DISABLED_EXPLICIT_HOLDER]] : !struct.type<@Holder>
+// DISABLED-NEXT:      }
+// DISABLED-NEXT:      function.def @constrain(%[[DISABLED_EXPLICIT_HOLDER_ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// DISABLED-NEXT:        function.return
+// DISABLED-NEXT:      }
+// DISABLED-NEXT:    }
+// DISABLED-NEXT:  }

@@ -1,0 +1,92 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten=cleanup=disabled %s | FileCheck --enable-var-scope %s
+
+// A type-only expression dependency remains deferred while a bridge forwards a symbolic type.
+// Direct and staged concrete calls must still materialize the same expression as 1.
+module attributes {llzk.lang} {
+  poly.template @TypeOnly {
+    poly.param @Num : index
+    poly.param @Ty : !poly.tvar<@Ty>
+    poly.expr @Value {
+      %one = arith.constant 1 : index
+      %typed = poly.unifiable_cast %one : (index) -> !poly.tvar<@Ty>
+      %back = poly.unifiable_cast %typed : (!poly.tvar<@Ty>) -> index
+      poly.yield %back : index
+    }
+    function.def @value() -> index {
+      %value = poly.read_const @Value : index
+      function.return %value : index
+    }
+  }
+
+  // This call creates the partial specialization with @Ty still symbolic.
+  poly.template @Bridge {
+    poly.param @Ty : !poly.tvar<@Ty>
+    function.def @value() -> index {
+      %value = function.call @TypeOnly::@value<[7, @Ty]>() : () -> index
+      function.return %value : index
+    }
+  }
+
+  function.def @direct() -> index {
+    %value = function.call @TypeOnly::@value<[7, index]>() : () -> index
+    function.return %value : index
+  }
+
+  function.def @main() -> index {
+    %value = function.call @Bridge::@value<[index]>() : () -> index
+    function.return %value : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @"TypeOnly_7_\1A" {
+// CHECK-NEXT:      poly.param @Ty : !poly.tvar<@Ty>
+// CHECK-NEXT:      poly.expr @Value {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (index) -> !poly.tvar<@Ty>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_1]] : (!poly.tvar<@Ty>) -> index
+// CHECK-NEXT:        poly.yield %[[VAL_2]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @value() -> index {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.read_const @Value : index
+// CHECK-NEXT:        function.return %[[VAL_3]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["TypeOnly_7_", ""]}
+// CHECK-NEXT:    function.def @TypeOnly_7_i_value() -> index {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      function.return %[[VAL_4]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @TypeOnly {
+// CHECK-NEXT:      poly.param @Num : index
+// CHECK-NEXT:      poly.param @Ty : !poly.tvar<@Ty>
+// CHECK-NEXT:      poly.expr @Value {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_5]] : (index) -> !poly.tvar<@Ty>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_6]] : (!poly.tvar<@Ty>) -> index
+// CHECK-NEXT:        poly.yield %[[VAL_7]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @value() -> index {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = poly.read_const @Value : index
+// CHECK-NEXT:        function.return %[[VAL_8]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Bridge_i_value() -> index {
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @TypeOnly_7_i_value() : () -> index
+// CHECK-NEXT:      function.return %[[VAL_9]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Bridge {
+// CHECK-NEXT:      poly.param @Ty : !poly.tvar<@Ty>
+// CHECK-NEXT:      function.def @value() -> index {
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @"TypeOnly_7_\1A"::@value<[@Ty]>() : () -> index
+// CHECK-NEXT:        function.return %[[VAL_10]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @direct() -> index {
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @TypeOnly_7_i_value() : () -> index
+// CHECK-NEXT:      function.return %[[VAL_11]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main() -> index {
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @Bridge_i_value() : () -> index
+// CHECK-NEXT:      function.return %[[VAL_12]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

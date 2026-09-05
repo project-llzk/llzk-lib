@@ -140,7 +140,7 @@ form used by the witgen tests, namely JSON integers or decimal strings.
   natively converted to LLVM IR, then executes it with `mlir::ExecutionEngine`.
 
 The default backend is `interpreter`, as the `execution-engine` does not currently
-support all LLZK features due to existing lowering limitations (e.g., in the `-llzk-flattening` pass).
+support all LLZK features due to existing lowering limitations (e.g., in the `-llzk-flatten` pass).
 
 #### Preprocessing
 
@@ -152,8 +152,8 @@ witness generation concrete and executable:
 - affine lowering for execution-engine mode
 - subcomponent inlining for execution-engine mode
 
-Template parameters and affine instantiations are therefore supported only when
-they can be fully resolved by the preprocessing pipeline before execution.
+Template parameters, template expressions, and affine instantiations are therefore supported only
+when they can be fully resolved by the preprocessing pipeline before execution.
 
 # llzk-smt-check {#llzk-smt-check}
 

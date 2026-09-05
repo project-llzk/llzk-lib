@@ -53,15 +53,30 @@ def EmptyTemplateRemovalPass : LLZKPass<"llzk-drop-empty-templates"> {
 }
 
 def FlatteningPass : LLZKPass<"llzk-flatten"> {
-  let summary = "Flatten structs and unroll loops";
+  let summary =
+      "Instantiate templates, unroll loops, and propagate instantiated types";
   let description = [{
-    Performs the following transformations:
-    - Instantiate `affine_map` parameters of StructType and ArrayType
-      to constant values using the arguments at the instantiation site
-    - Replace parameterized structs with flattened (i.e., no parameter)
-      versions of those structs based on requested return type at calls
-      to `compute()` functions and unroll loops
-    - Unroll loops
+    Iterates the following transformations to a fixpoint, bounded by `max-iter`:
+
+    - Specialize referenced parameterized structs and free functions from concrete template
+      arguments, signature unification, or wildcard type parameters inferred from the body.
+      When only some bindings are concrete, the result is a reduced `poly.template` containing the
+      remaining non-concrete parameter bindings.
+    - Evaluate referenced `poly.expr` bindings once their value dependencies and operation
+      operand/result type dependencies are concrete. A referenced expression with remaining
+      symbolic dependencies is retained in that reduced template after known value and type
+      bindings are substituted. If a known binding's substituted type remains non-concrete, that
+      specialization attempt is deferred. Once every dependency is concrete, an operation that is
+      unsafe to speculate, has memory effects, or fails to fold is an error. A definition directly
+      inside a template with `poly.expr` bindings and no `poly.param` operations is specialized
+      when it references a concrete expression.
+    - Propagate concrete bindings through type variables, array dimensions and element
+      types, parameterized struct arguments, POD record types, and nested-call arguments.
+    - Unroll loops with known bounds, instantiate affine-map parameters, and propagate resulting
+      types.
+
+    A specialization is kept only after body conversion succeeds; free-function clones must also
+    pass nested-call verification. After the fixpoint, the selected cleanup mode is applied.
   }];
   // Implementation note: These options should be kept in sync with
   // `StructInliningFlatteningOptions` in `LLZKTransformationPassPipelines.h`.

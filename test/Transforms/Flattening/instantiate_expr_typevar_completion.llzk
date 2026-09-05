@@ -1,0 +1,270 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck %s
+
+// An expression with a type-variable-typed input is evaluated after that input's value and type
+// become concrete.
+module attributes {llzk.lang} {
+  poly.template @InnerDirect {
+    poly.param @Num
+    poly.param @Ty : !poly.tvar<@Ty>
+    poly.param @M : index
+    poly.expr @Sum {
+      %num = poly.read_const @Num : !poly.tvar<@Ty>
+      %cast = poly.unifiable_cast %num : (!poly.tvar<@Ty>) -> index
+      %m = poly.read_const @M : index
+      %sum = arith.addi %m, %cast : index
+      poly.yield %sum : index
+    }
+    function.def @value() -> index {
+      %sum = poly.read_const @Sum : index
+      function.return %sum : index
+    }
+  }
+
+  function.def @main() -> index {
+    %value = function.call @InnerDirect::@value<[35, index, 7]>() : () -> index
+    function.return %value : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @InnerDirect_35_i_7_value() -> index {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main() -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @InnerDirect_35_i_7_value() : () -> index
+// CHECK-NEXT:      function.return %[[VAL_1]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK:  // {{[-][-][-][-][-]}}
+
+// -----
+
+// A partially specialized expression retains its known bindings and is evaluated when the
+// remaining binding becomes concrete through the enclosing specialization.
+module attributes {llzk.lang} {
+  poly.template @InnerPartial {
+    poly.param @Num
+    poly.param @Ty : !poly.tvar<@Ty>
+    poly.param @M : index
+    poly.expr @Sum {
+      %num = poly.read_const @Num : !poly.tvar<@Ty>
+      %cast = poly.unifiable_cast %num : (!poly.tvar<@Ty>) -> index
+      %m = poly.read_const @M : index
+      %sum = arith.addi %m, %cast : index
+      poly.yield %sum : index
+    }
+    function.def @value() -> index {
+      %sum = poly.read_const @Sum : index
+      function.return %sum : index
+    }
+  }
+
+  poly.template @Bridge {
+    poly.param @M : index
+    function.def @value() -> index {
+      %sum = function.call @InnerPartial::@value<[35, index, @M]>() : () -> index
+      function.return %sum : index
+    }
+  }
+
+  function.def @main() -> index {
+    %value = function.call @Bridge::@value<[7]>() : () -> index
+    function.return %value : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @InnerPartial_35_i_7_value() -> index {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Bridge_7_value() -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = function.call @InnerPartial_35_i_7_value() : () -> index
+// CHECK-NEXT:      function.return %[[VAL_1]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main() -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @Bridge_7_value() : () -> index
+// CHECK-NEXT:      function.return %[[VAL_2]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK:  // {{[-][-][-][-][-]}}
+
+// -----
+
+// Direct struct specialization materializes the concrete value and type-variable bindings in the
+// referenced expression.
+module attributes {llzk.lang, llzk.main = !struct.type<@Direct>} {
+  poly.template @InnerStruct {
+    poly.param @Num
+    poly.param @Ty : !poly.tvar<@Ty>
+    poly.param @M : index
+    poly.expr @Sum {
+      %num = poly.read_const @Num : !poly.tvar<@Ty>
+      %cast = poly.unifiable_cast %num : (!poly.tvar<@Ty>) -> index
+      %m = poly.read_const @M : index
+      %sum = arith.addi %m, %cast : index
+      poly.yield %sum : index
+    }
+    struct.def @Value {
+      struct.member @result : index
+      function.def @compute() -> !struct.type<@InnerStruct::@Value<[@Num, @Ty, @M]>> {
+        %sum = poly.read_const @Sum : index
+        %self = struct.new : <@InnerStruct::@Value<[@Num, @Ty, @M]>>
+        struct.writem %self[@result] = %sum : !struct.type<@InnerStruct::@Value<[@Num, @Ty, @M]>>, index
+        function.return %self : !struct.type<@InnerStruct::@Value<[@Num, @Ty, @M]>>
+      }
+      function.def @constrain(%self: !struct.type<@InnerStruct::@Value<[@Num, @Ty, @M]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Direct {
+    struct.member @value : !struct.type<@InnerStruct::@Value<[35, index, 7]>>
+    function.def @compute() -> !struct.type<@Direct> {
+      %self = struct.new : <@Direct>
+      function.return %self : !struct.type<@Direct>
+    }
+    function.def @constrain(%self: !struct.type<@Direct>) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Direct>} {
+// CHECK-NEXT:    struct.def @InnerStruct_35_i_7_Value {
+// CHECK-NEXT:      struct.member @result : index
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@InnerStruct_35_i_7_Value> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@InnerStruct_35_i_7_Value>
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@result] = %[[VAL_0]] : <@InnerStruct_35_i_7_Value>, index
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@InnerStruct_35_i_7_Value>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@InnerStruct_35_i_7_Value>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Direct {
+// CHECK-NEXT:      struct.member @value : !struct.type<@InnerStruct_35_i_7_Value>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Direct> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@Direct>
+// CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@Direct>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Direct>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// CHECK:  // {{[-][-][-][-][-]}}
+
+// -----
+
+// A struct bridge completes the deferred expression after the remaining M binding becomes known.
+module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+  poly.template @InnerStructDeferred {
+    poly.param @Num
+    poly.param @Ty : !poly.tvar<@Ty>
+    poly.param @M : index
+    poly.expr @Sum {
+      %num = poly.read_const @Num : !poly.tvar<@Ty>
+      %cast = poly.unifiable_cast %num : (!poly.tvar<@Ty>) -> index
+      %m = poly.read_const @M : index
+      %sum = arith.addi %m, %cast : index
+      poly.yield %sum : index
+    }
+    struct.def @Value {
+      struct.member @result : index
+      function.def @compute() -> !struct.type<@InnerStructDeferred::@Value<[@Num, @Ty, @M]>> {
+        %sum = poly.read_const @Sum : index
+        %self = struct.new : <@InnerStructDeferred::@Value<[@Num, @Ty, @M]>>
+        struct.writem %self[@result] = %sum : !struct.type<@InnerStructDeferred::@Value<[@Num, @Ty, @M]>>, index
+        function.return %self : !struct.type<@InnerStructDeferred::@Value<[@Num, @Ty, @M]>>
+      }
+      function.def @constrain(%self: !struct.type<@InnerStructDeferred::@Value<[@Num, @Ty, @M]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @StructBridge {
+    poly.param @M : index
+    struct.def @Wrapper {
+      struct.member @value : !struct.type<@InnerStructDeferred::@Value<[35, index, @M]>>
+      function.def @compute() -> !struct.type<@StructBridge::@Wrapper<[@M]>> {
+        %self = struct.new : <@StructBridge::@Wrapper<[@M]>>
+        function.return %self : !struct.type<@StructBridge::@Wrapper<[@M]>>
+      }
+      function.def @constrain(%self: !struct.type<@StructBridge::@Wrapper<[@M]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Main {
+    struct.member @value : !struct.type<@StructBridge::@Wrapper<[7]>>
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : <@Main>
+      function.return %self : !struct.type<@Main>
+    }
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
+// CHECK-NEXT:    poly.template @"InnerStructDeferred_35_i_\1A" {
+// CHECK-NEXT:      poly.param @M : index
+// CHECK-NEXT:      poly.expr @Sum {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 35 : index
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.read_const @M : index
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_1]], %[[VAL_0]] : index
+// CHECK-NEXT:        poly.yield %[[VAL_2]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @Value {
+// CHECK-NEXT:        struct.member @result : index
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@"InnerStructDeferred_35_i_\1A"::@Value<[@M]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.read_const @Sum : index
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@"InnerStructDeferred_35_i_\1A"::@Value<[@M]>>
+// CHECK-NEXT:          struct.writem %[[VAL_4]][@result] = %[[VAL_3]] : <@"InnerStructDeferred_35_i_\1A"::@Value<[@M]>>, index
+// CHECK-NEXT:          function.return %[[VAL_4]] : !struct.type<@"InnerStructDeferred_35_i_\1A"::@Value<[@M]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@"InnerStructDeferred_35_i_\1A"::@Value<[@M]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["InnerStructDeferred_35_i_", ""]}
+// CHECK-NEXT:    struct.def @InnerStructDeferred_35_i_7_Value {
+// CHECK-NEXT:      struct.member @result : index
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@InnerStructDeferred_35_i_7_Value> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.new : <@InnerStructDeferred_35_i_7_Value>
+// CHECK-NEXT:        struct.writem %[[VAL_7]][@result] = %[[VAL_6]] : <@InnerStructDeferred_35_i_7_Value>, index
+// CHECK-NEXT:        function.return %[[VAL_7]] : !struct.type<@InnerStructDeferred_35_i_7_Value>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@InnerStructDeferred_35_i_7_Value>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @StructBridge_7_Wrapper {
+// CHECK-NEXT:      struct.member @value : !struct.type<@InnerStructDeferred_35_i_7_Value>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@StructBridge_7_Wrapper> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.new : <@StructBridge_7_Wrapper>
+// CHECK-NEXT:        function.return %[[VAL_9]] : !struct.type<@StructBridge_7_Wrapper>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !struct.type<@StructBridge_7_Wrapper>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      struct.member @value : !struct.type<@StructBridge_7_Wrapper>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.return %[[VAL_11]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_12:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
