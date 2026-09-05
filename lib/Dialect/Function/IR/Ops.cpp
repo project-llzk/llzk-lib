@@ -1079,6 +1079,16 @@ Value CallOp::getSelfValueFromConstrain() {
   return getArgOperands().front();
 }
 
+Value CallOp::getSelfValue() {
+  if (calleeIsStructCompute()) {
+    return getSelfValueFromCompute();
+  } else if (calleeIsStructConstrain()) {
+    return getSelfValueFromConstrain();
+  } else {
+    return nullptr;
+  }
+}
+
 FailureOr<SymbolLookupResult<FuncDefOp>> CallOp::getCalleeTarget(SymbolTableCollection &tables) {
   Operation *thisOp = this->getOperation();
   auto root = getRootModule(thisOp);

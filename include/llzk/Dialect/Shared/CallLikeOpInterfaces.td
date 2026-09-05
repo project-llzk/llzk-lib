@@ -26,6 +26,9 @@ def LLZKCallLikeOpInterface
   let cppNamespace = "::llzk";
   let methods =
       [InterfaceMethod<
+           [{Returns the "self" value from the callee (or nullptr if it's not a struct target).}],
+           "::mlir::Value", "getSelfValue">,
+       InterfaceMethod<
            [{Returns the function signature inferred from this call site.}],
            "::mlir::FunctionType", "getTypeSignature", (ins), /*methodBody=*/"",
            /*defaultImplementation=*/[{ return ::mlir::FunctionType::get(
