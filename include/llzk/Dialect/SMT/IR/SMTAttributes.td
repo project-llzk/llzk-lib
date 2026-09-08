@@ -46,7 +46,7 @@ def BitVectorAttr
     present).
   }];
 
-  let parameters = (ins WidthSensitiveAPIntParameter<"">:$value);
+  let parameters = (ins APIntParameter<"">:$value);
 
   let hasCustomAssemblyFormat = true;
   let genVerifyDecl = true;
