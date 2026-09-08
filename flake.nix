@@ -1,6 +1,6 @@
 {
   inputs = {
-    llzk-pkgs.url = "github:project-llzk/llzk-nix-pkgs";
+    llzk-pkgs.url = "github:project-llzk/llzk-nix-pkgs/th/llvm_23";
     nixpkgs.follows = "llzk-pkgs/nixpkgs";
     flake-utils.follows = "llzk-pkgs/flake-utils";
 
