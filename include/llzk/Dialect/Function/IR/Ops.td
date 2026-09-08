@@ -264,6 +264,10 @@ def FuncDefOp
     /// named `FUNC_NAME_COMPUTE`).
     ::mlir::Value getSelfValueFromCompute();
 
+    /// Return the "self" value (i.e. the return value) from the function (which must be
+    /// named `FUNC_NAME_PRODUCT`).
+    ::mlir::Value getSelfValueFromProduct();
+
     /// Return the "self" value (i.e. the first parameter) from the function (which must be
     /// named `FUNC_NAME_CONSTRAIN`).
     ::mlir::Value getSelfValueFromConstrain();
@@ -497,6 +501,10 @@ def CallOp
     /// Return the "self" value (i.e. the return value) from the callee function (which must be
     /// named `FUNC_NAME_COMPUTE`).
     ::mlir::Value getSelfValueFromCompute();
+
+    /// Return the "self" value (i.e. the return value) from the callee function (which must be
+    /// named `FUNC_NAME_PRODUCT`).
+    ::mlir::Value getSelfValueFromProduct();
 
     /// Return the "self" value (i.e. the first parameter) from the callee function (which must be
     /// named `FUNC_NAME_CONSTRAIN`).
