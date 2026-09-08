@@ -229,7 +229,7 @@ CallOp newCallOpWithSplitResults(
     if (ArrayType at = splittableArray(oldVal.getType())) {
       Location loc = oldVal.getLoc();
       // Generate `CreateArrayOp` and replace uses of the result with it.
-      auto newArray = rewriter.create<CreateArrayOp>(loc, at);
+      auto newArray = CreateArrayOp::create(rewriter, loc, at);
       rewriter.replaceAllUsesWith(oldVal, newArray);
 
       // For all indices in the ArrayType (i.e., the element count), write the next
@@ -407,7 +407,7 @@ public:
       // linear array size so delinearization of `i` will not fail.
       assert(multiDimIdxVals.has_value());
       // Create the write
-      rewriter.create<WriteArrayOp>(loc, op.getResult(), ValueRange(*multiDimIdxVals), init);
+      WriteArrayOp::create(rewriter, loc, op.getResult(), ValueRange(*multiDimIdxVals), init);
     }
     return success();
   }
@@ -469,7 +469,7 @@ public:
           if (ArrayType at = splittableArray(oldV.getType())) {
             Location loc = oldV.getLoc();
             // Generate `CreateArrayOp` and replace uses of the argument with it.
-            auto newArray = rewriter.create<CreateArrayOp>(loc, at);
+            auto newArray = CreateArrayOp::create(rewriter, loc, at);
             rewriter.replaceAllUsesWith(oldV, newArray);
             // Remove the argument from the block
             entryBlock.eraseArgument(i);
@@ -636,8 +636,8 @@ public:
     SymbolTable &structSymbolTable = tables.getSymbolTable(inStruct);
     for (ArrayAttr idx : subIdxs.value()) {
       // Create scalar version of the member
-      MemberDefOp newMember = rewriter.create<MemberDefOp>(
-          op.getLoc(), op.getSymNameAttr(), elemTy, op.getSignal(), op.getColumn()
+      MemberDefOp newMember = MemberDefOp::create(
+          rewriter, op.getLoc(), op.getSymNameAttr(), elemTy, op.getSignal(), op.getColumn()
       );
       newMember.setPublicAttr(op.hasPublicAttr());
       // Use SymbolTable to give it a unique name and store to the replacement map
@@ -666,8 +666,8 @@ public:
       ConversionPatternRewriter &rewriter
   ) {
     Value scalarRead = ArrayAccessOpInterface::genRead(rewriter, loc, adaptor.getVal(), idx);
-    rewriter.create<MemberWriteOp>(
-        loc, adaptor.getComponent(), FlatSymbolRefAttr::get(newMember.first), scalarRead
+    MemberWriteOp::create(
+        rewriter, loc, adaptor.getComponent(), FlatSymbolRefAttr::get(newMember.first), scalarRead
     );
   }
 };
@@ -688,7 +688,7 @@ public:
 
   static CreateArrayOp genHeader(MemberReadOp op, ConversionPatternRewriter &rewriter) {
     CreateArrayOp newArray =
-        rewriter.create<CreateArrayOp>(op.getLoc(), llvm::cast<ArrayType>(op.getType()));
+        CreateArrayOp::create(rewriter, op.getLoc(), llvm::cast<ArrayType>(op.getType()));
     rewriter.replaceAllUsesWith(op, newArray);
     return newArray;
   }
@@ -697,8 +697,8 @@ public:
       Location loc, CreateArrayOp newArray, ArrayAttr idx, MemberInfo newMember, OpAdaptor adaptor,
       ConversionPatternRewriter &rewriter
   ) {
-    MemberReadOp scalarRead = rewriter.create<MemberReadOp>(
-        loc, newMember.second, adaptor.getComponent(), newMember.first
+    MemberReadOp scalarRead = MemberReadOp::create(
+        rewriter, loc, newMember.second, adaptor.getComponent(), newMember.first
     );
     ArrayAccessOpInterface::genWrite(rewriter, loc, newArray, idx, scalarRead);
   }
@@ -723,11 +723,11 @@ class NondetToNewArray : public OpConversionPattern<NonDetOp> {
   ) const override {
     if (auto at = dyn_cast<ArrayType>(nondetOp.getType())) {
       auto wildcardTy = llvm::cast<ArrayType>(replaceAffineMapArrayDimsWithWildcards(at));
-      auto newArray = rewriter.create<CreateArrayOp>(nondetOp.getLoc(), wildcardTy);
+      auto newArray = CreateArrayOp::create(rewriter, nondetOp.getLoc(), wildcardTy);
       if (wildcardTy == at) {
         rewriter.replaceOp(nondetOp, newArray);
       } else {
-        auto cast = rewriter.create<UnifiableCastOp>(nondetOp.getLoc(), at, newArray);
+        auto cast = UnifiableCastOp::create(rewriter, nondetOp.getLoc(), at, newArray);
         rewriter.replaceOp(nondetOp, cast.getResult());
       }
       return success();

@@ -81,7 +81,7 @@ static llvm::APSInt getSignedFeltThreshold(const llvm::APSInt &prime) {
 static smt::IntConstantOp createSMTIntConstant(
     OpBuilder &builder, Location loc, MLIRContext *ctx, const llvm::APSInt &value
 ) {
-  return builder.create<smt::IntConstantOp>(loc, IntegerAttr::get(ctx, value));
+  return smt::IntConstantOp::create(builder, loc, IntegerAttr::get(ctx, value));
 }
 
 static smt::IntConstantOp createSMTPrimeConstant(
@@ -92,14 +92,14 @@ static smt::IntConstantOp createSMTPrimeConstant(
 
 static smt::IntConstantOp
 createSMTZeroConstant(OpBuilder &builder, Location loc, MLIRContext *ctx) {
-  return builder.create<smt::IntConstantOp>(
-      loc, IntegerAttr::get(ctx, llvm::APSInt {llvm::APInt {1, 0}})
+  return smt::IntConstantOp::create(
+      builder, loc, IntegerAttr::get(ctx, llvm::APSInt {llvm::APInt {1, 0}})
   );
 }
 
 static smt::IntConstantOp createSMTOneConstant(OpBuilder &builder, Location loc, MLIRContext *ctx) {
-  return builder.create<smt::IntConstantOp>(
-      loc, IntegerAttr::get(ctx, llvm::APSInt(llvm::APInt(64, 1), /*isUnsigned=*/false))
+  return smt::IntConstantOp::create(
+      builder, loc, IntegerAttr::get(ctx, llvm::APSInt(llvm::APInt(64, 1), /*isUnsigned=*/false))
   );
 }
 
@@ -107,7 +107,8 @@ static Value createSMTModPrimeExpr(
     OpBuilder &builder, Location loc, Value value, MLIRContext *ctx, const llvm::APSInt &prime
 ) {
   auto primeConst = createSMTPrimeConstant(builder, loc, ctx, prime);
-  return builder.create<smt::IntModOp>(loc, ValueRange {value, primeConst.getResult()}).getResult();
+  return smt::IntModOp::create(builder, loc, ValueRange {value, primeConst.getResult()})
+      .getResult();
 }
 
 class NaiveNonNativeStrategy {
@@ -150,28 +151,28 @@ public:
   LogicalResult matchAndRewrite(
       felt::DivFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    auto div = rewriter.create<smt::DeclareFunOp>(
-        op->getLoc(), smt::IntType::get(getContext()),
+    auto div = smt::DeclareFunOp::create(
+        rewriter, op->getLoc(), smt::IntType::get(getContext()),
         StringAttr::get(getContext(), strategy->getFreshName("felt_div"))
     );
     auto zero = strategy->createZeroConstant(rewriter, op->getLoc(), getContext());
     auto denominatorIsZero =
-        rewriter.create<smt::EqOp>(op->getLoc(), adaptor.getRhs(), zero.getResult());
-    auto divIsZero = rewriter.create<smt::EqOp>(op->getLoc(), div.getResult(), zero.getResult());
-    auto product = rewriter.create<smt::IntMulOp>(
-        op->getLoc(), ValueRange {adaptor.getRhs(), div.getResult()}
+        smt::EqOp::create(rewriter, op->getLoc(), adaptor.getRhs(), zero.getResult());
+    auto divIsZero = smt::EqOp::create(rewriter, op->getLoc(), div.getResult(), zero.getResult());
+    auto product = smt::IntMulOp::create(
+        rewriter, op->getLoc(), ValueRange {adaptor.getRhs(), div.getResult()}
     );
     auto productMod =
         strategy->createModPrimeExpr(rewriter, op->getLoc(), product.getResult(), getContext());
     auto numeratorMod =
         strategy->createModPrimeExpr(rewriter, op->getLoc(), adaptor.getLhs(), getContext());
     auto productEqualsNumerator =
-        rewriter.create<smt::EqOp>(op->getLoc(), productMod, numeratorMod);
-    auto divConstraint = rewriter.create<smt::IteOp>(
-        op->getLoc(), denominatorIsZero.getResult(), divIsZero.getResult(),
+        smt::EqOp::create(rewriter, op->getLoc(), productMod, numeratorMod);
+    auto divConstraint = smt::IteOp::create(
+        rewriter, op->getLoc(), denominatorIsZero.getResult(), divIsZero.getResult(),
         productEqualsNumerator.getResult()
     );
-    rewriter.create<smt::AssertOp>(op->getLoc(), divConstraint.getResult());
+    smt::AssertOp::create(rewriter, op->getLoc(), divConstraint.getResult());
     rewriter.replaceOp(op, div.getResult());
     return success();
   }
@@ -191,25 +192,26 @@ public:
   LogicalResult matchAndRewrite(
       felt::InvFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
-    auto inv = rewriter.create<smt::DeclareFunOp>(
-        op->getLoc(), smt::IntType::get(getContext()),
+    auto inv = smt::DeclareFunOp::create(
+        rewriter, op->getLoc(), smt::IntType::get(getContext()),
         StringAttr::get(getContext(), strategy->getFreshName("inv"))
     );
     auto zero = strategy->createZeroConstant(rewriter, op->getLoc(), getContext());
     auto one = strategy->createOneConstant(rewriter, op->getLoc(), getContext());
     auto operandIsZero =
-        rewriter.create<smt::EqOp>(op->getLoc(), adaptor.getOperand(), zero.getResult());
-    auto invIsZero = rewriter.create<smt::EqOp>(op->getLoc(), inv.getResult(), zero.getResult());
-    auto product = rewriter.create<smt::IntMulOp>(
-        op->getLoc(), ValueRange {adaptor.getOperand(), inv.getResult()}
+        smt::EqOp::create(rewriter, op->getLoc(), adaptor.getOperand(), zero.getResult());
+    auto invIsZero = smt::EqOp::create(rewriter, op->getLoc(), inv.getResult(), zero.getResult());
+    auto product = smt::IntMulOp::create(
+        rewriter, op->getLoc(), ValueRange {adaptor.getOperand(), inv.getResult()}
     );
     auto productMod =
         strategy->createModPrimeExpr(rewriter, op->getLoc(), product.getResult(), getContext());
-    auto productEqualsOne = rewriter.create<smt::EqOp>(op->getLoc(), productMod, one.getResult());
-    auto invConstraint = rewriter.create<smt::IteOp>(
-        op->getLoc(), operandIsZero.getResult(), invIsZero.getResult(), productEqualsOne.getResult()
+    auto productEqualsOne = smt::EqOp::create(rewriter, op->getLoc(), productMod, one.getResult());
+    auto invConstraint = smt::IteOp::create(
+        rewriter, op->getLoc(), operandIsZero.getResult(), invIsZero.getResult(),
+        productEqualsOne.getResult()
     );
-    rewriter.create<smt::AssertOp>(op->getLoc(), invConstraint.getResult());
+    smt::AssertOp::create(rewriter, op->getLoc(), invConstraint.getResult());
     rewriter.replaceOp(op, inv.getResult());
     return success();
   }
@@ -290,7 +292,7 @@ public:
     auto witnessMod = strategy->createModPrimeExpr(rewriter, op->getLoc(), witness, getContext());
     auto valueMod =
         strategy->createModPrimeExpr(rewriter, op->getLoc(), adaptor.getVal(), getContext());
-    auto equal = rewriter.create<smt::EqOp>(op->getLoc(), witnessMod, valueMod);
+    auto equal = smt::EqOp::create(rewriter, op->getLoc(), witnessMod, valueMod);
     rewriter.replaceOpWithNewOp<smt::AssertOp>(op, equal.getResult());
     return success();
   }
@@ -315,7 +317,7 @@ public:
         strategy->createModPrimeExpr(rewriter, op->getLoc(), adaptor.getLhs(), getContext());
     auto rhsMod =
         strategy->createModPrimeExpr(rewriter, op->getLoc(), adaptor.getRhs(), getContext());
-    auto eq = rewriter.create<smt::EqOp>(op->getLoc(), lhsMod, rhsMod);
+    auto eq = smt::EqOp::create(rewriter, op->getLoc(), lhsMod, rhsMod);
     rewriter.replaceOpWithNewOp<smt::AssertOp>(op, eq.getResult());
     return success();
   }
@@ -337,7 +339,7 @@ class NaiveBoolCmpConverter : public OpConversionPattern<boolean::CmpOp> {
     case boolean::FeltCmpPredicate::NE:
       rewriter.replaceOpWithNewOp<smt::NotOp>(
           op,
-          rewriter.create<smt::EqOp>(op.getLoc(), adaptor.getLhs(), adaptor.getRhs()).getResult()
+          smt::EqOp::create(rewriter, op.getLoc(), adaptor.getLhs(), adaptor.getRhs()).getResult()
       );
       return success();
     default: {
@@ -387,12 +389,13 @@ Value NaiveNonNativeStrategy::createSignedFeltExpr(
   Value threshold =
       createSMTIntConstant(builder, loc, ctx, getSignedFeltThreshold(prime)).getResult();
   auto inNonNegativeRange =
-      builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::lt, canonical, threshold);
+      smt::IntCmpOp::create(builder, loc, smt::IntPredicate::lt, canonical, threshold);
   Value primeValue = createSMTPrimeConstant(builder, loc, ctx, prime).getResult();
   Value negativeRepresentative =
-      builder.create<smt::IntSubOp>(loc, canonical, primeValue).getResult();
-  return builder
-      .create<smt::IteOp>(loc, inNonNegativeRange.getResult(), canonical, negativeRepresentative)
+      smt::IntSubOp::create(builder, loc, canonical, primeValue).getResult();
+  return smt::IteOp::create(
+             builder, loc, inNonNegativeRange.getResult(), canonical, negativeRepresentative
+  )
       .getResult();
 }
 
@@ -400,25 +403,25 @@ Value NaiveNonNativeStrategy::createAbsExpr(
     OpBuilder &builder, Location loc, Value value, MLIRContext *ctx
 ) const {
   Value zero = createZeroConstant(builder, loc, ctx).getResult();
-  auto isNegative = builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::lt, value, zero);
-  Value negated = builder.create<smt::IntSubOp>(loc, zero, value).getResult();
-  return builder.create<smt::IteOp>(loc, isNegative.getResult(), negated, value).getResult();
+  auto isNegative = smt::IntCmpOp::create(builder, loc, smt::IntPredicate::lt, value, zero);
+  Value negated = smt::IntSubOp::create(builder, loc, zero, value).getResult();
+  return smt::IteOp::create(builder, loc, isNegative.getResult(), negated, value).getResult();
 }
 
 Value NaiveNonNativeStrategy::createTruncatingSignedDivExpr(
     OpBuilder &builder, Location loc, Value lhs, Value rhs, MLIRContext *ctx
 ) const {
   Value zero = createZeroConstant(builder, loc, ctx).getResult();
-  auto lhsNeg = builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::lt, lhs, zero);
-  auto rhsNeg = builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::lt, rhs, zero);
+  auto lhsNeg = smt::IntCmpOp::create(builder, loc, smt::IntPredicate::lt, lhs, zero);
+  auto rhsNeg = smt::IntCmpOp::create(builder, loc, smt::IntPredicate::lt, rhs, zero);
   Value lhsAbs = createAbsExpr(builder, loc, lhs, ctx);
   Value rhsAbs = createAbsExpr(builder, loc, rhs, ctx);
-  Value absQuotient = builder.create<smt::IntDivOp>(loc, lhsAbs, rhsAbs).getResult();
+  Value absQuotient = smt::IntDivOp::create(builder, loc, lhsAbs, rhsAbs).getResult();
   Value signsDiffer =
-      builder.create<smt::XOrOp>(loc, ValueRange {lhsNeg.getResult(), rhsNeg.getResult()})
+      smt::XOrOp::create(builder, loc, ValueRange {lhsNeg.getResult(), rhsNeg.getResult()})
           .getResult();
-  Value negatedQuotient = builder.create<smt::IntSubOp>(loc, zero, absQuotient).getResult();
-  return builder.create<smt::IteOp>(loc, signsDiffer, negatedQuotient, absQuotient).getResult();
+  Value negatedQuotient = smt::IntSubOp::create(builder, loc, zero, absQuotient).getResult();
+  return smt::IteOp::create(builder, loc, signsDiffer, negatedQuotient, absQuotient).getResult();
 }
 
 Value NaiveNonNativeStrategy::emitSignedIntDivisionValue(
@@ -442,8 +445,8 @@ Value NaiveNonNativeStrategy::emitSignedModValue(
   Value signedRhs = createSignedFeltExpr(builder, loc, rhs, ctx);
   Value signedQuotient = createTruncatingSignedDivExpr(builder, loc, signedLhs, signedRhs, ctx);
   Value product =
-      builder.create<smt::IntMulOp>(loc, ValueRange {signedQuotient, signedRhs}).getResult();
-  Value signedRemainder = builder.create<smt::IntSubOp>(loc, signedLhs, product).getResult();
+      smt::IntMulOp::create(builder, loc, ValueRange {signedQuotient, signedRhs}).getResult();
+  Value signedRemainder = smt::IntSubOp::create(builder, loc, signedLhs, product).getResult();
   return createModPrimeExpr(builder, loc, signedRemainder, ctx);
 }
 
@@ -542,12 +545,13 @@ class PassImpl : public llzk::smt::impl::SMTNaiveLoweringPassBase<PassImpl> {
 
         std::string constraintName = memberDef.getSymName().str() + "_c";
         std::string witnessName = memberDef.getSymName().str() + "_w";
-        auto constraintSym = rewriter.create<smt::DeclareFunOp>(
-            preamble, smt::IntType::get(&getContext()),
+        auto constraintSym = smt::DeclareFunOp::create(
+            rewriter, preamble, smt::IntType::get(&getContext()),
             StringAttr::get(&getContext(), constraintName)
         );
-        auto witnessSym = rewriter.create<smt::DeclareFunOp>(
-            preamble, smt::IntType::get(&getContext()), StringAttr::get(&getContext(), witnessName)
+        auto witnessSym = smt::DeclareFunOp::create(
+            rewriter, preamble, smt::IntType::get(&getContext()),
+            StringAttr::get(&getContext(), witnessName)
         );
         signalSymbols[memberDef.getSymName()] = {constraintSym.getResult(), witnessSym.getResult()};
       }

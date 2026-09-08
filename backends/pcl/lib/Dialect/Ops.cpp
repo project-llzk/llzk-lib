@@ -518,7 +518,7 @@ private:
       return {X, Yop.getValue()};
     }
 
-    auto negOp = rewriter.create<NegOp>(op.getLoc(), Y);
+    auto negOp = NegOp::create(rewriter, op.getLoc(), Y);
     return {X, negOp};
   }
 

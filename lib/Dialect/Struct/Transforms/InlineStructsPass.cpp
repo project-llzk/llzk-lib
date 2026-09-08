@@ -144,8 +144,8 @@ static bool combineHelper(
 
   // Replace this MemberReadOp with a new one that targets the cloned member.
   OpBuilder builder(readOp);
-  MemberReadOp newRead = builder.create<MemberReadOp>(
-      readOp.getLoc(), readOp.getType(), destMemberRefOp.getComponent(),
+  MemberReadOp newRead = MemberReadOp::create(
+      builder, readOp.getLoc(), readOp.getType(), destMemberRefOp.getComponent(),
       resNewMember->second.getNameAttr()
   );
   readOp.replaceAllUsesWith(newRead.getOperation());
@@ -669,9 +669,12 @@ private:
     // original argument in the CallOp.
     Value originalBaseVal = paramFromMember.getComponent();
     for (auto [origName, newMemberRef] : newMembers) {
-      splitArgs.push_back(builder.create<MemberReadOp>(
-          inCall.getLoc(), newMemberRef.getType(), originalBaseVal, newMemberRef.getNameAttr()
-      ));
+      splitArgs.push_back(
+          MemberReadOp::create(
+              builder, inCall.getLoc(), newMemberRef.getType(), originalBaseVal,
+              newMemberRef.getNameAttr()
+          )
+      );
     }
     // Generate the new argument list from the original but replace 'argIdx'
     SmallVector<Value> newOpArgs(inCall.getArgOperands());
@@ -679,10 +682,13 @@ private:
         newOpArgs.erase(newOpArgs.begin() + argIdx), splitArgs.begin(), splitArgs.end()
     );
     // Create the new CallOp, replace uses of the old with the new, delete the old
-    inCall.replaceAllUsesWith(builder.create<CallOp>(
-        inCall.getLoc(), tgtFunc, CallOp::toVectorOfValueRange(inCall.getMapOperands()),
-        inCall.getNumDimsPerMapAttr(), newOpArgs
-    ));
+    inCall.replaceAllUsesWith(
+        CallOp::create(
+            builder, inCall.getLoc(), tgtFunc,
+            CallOp::toVectorOfValueRange(inCall.getMapOperands()), inCall.getNumDimsPerMapAttr(),
+            newOpArgs
+        )
+    );
     inCall.erase();
     LLVM_DEBUG({
       llvm::dbgs() << "[DanglingUseHandler::handleUseInCallOp]   UPDATED function: "

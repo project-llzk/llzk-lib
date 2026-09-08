@@ -39,7 +39,7 @@ mlir::Operation *llzk::boolean::BoolDialect::materializeConstant(
   // arith.constant ops, which is already used alongside this dialect.
   if (llvm::isa<mlir::IntegerAttr>(value) && llvm::isa<mlir::IntegerType>(type) &&
       llvm::cast<mlir::IntegerType>(type).isInteger(1)) {
-    return builder.create<mlir::arith::ConstantOp>(loc, llvm::cast<mlir::IntegerAttr>(value));
+    return mlir::arith::ConstantOp::create(builder, loc, llvm::cast<mlir::IntegerAttr>(value));
   }
   return nullptr;
 }

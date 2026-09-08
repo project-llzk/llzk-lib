@@ -274,8 +274,9 @@ std::unique_ptr<TemplateParamOpBuildFuncHelper> TemplateParamOpBuildFuncHelper::
       {
         this->parentModule = testClass.cppNewModuleAndSetInsertionPoint(builder, location);
         mlir::OpBuilder *cppBuilder = unwrap(builder);
-        auto polyTemplate = cppBuilder->create<llzk::polymorphic::TemplateOp>(
-            unwrap(location), mlir::StringAttr::get(unwrap(testClass.context), "template_name")
+        auto polyTemplate = llzk::polymorphic::TemplateOp::create(
+            *cppBuilder, unwrap(location),
+            mlir::StringAttr::get(unwrap(testClass.context), "template_name")
         );
         cppBuilder->setInsertionPointToStart(&polyTemplate.getBodyRegion().emplaceBlock());
       }
@@ -301,8 +302,9 @@ std::unique_ptr<TemplateExprOpBuildFuncHelper> TemplateExprOpBuildFuncHelper::ge
       {
         this->parentModule = testClass.cppNewModuleAndSetInsertionPoint(builder, location);
         mlir::OpBuilder *cppBuilder = unwrap(builder);
-        auto polyTemplate = cppBuilder->create<llzk::polymorphic::TemplateOp>(
-            unwrap(location), mlir::StringAttr::get(unwrap(testClass.context), "template_name")
+        auto polyTemplate = llzk::polymorphic::TemplateOp::create(
+            *cppBuilder, unwrap(location),
+            mlir::StringAttr::get(unwrap(testClass.context), "template_name")
         );
         cppBuilder->setInsertionPointToStart(&polyTemplate.getBodyRegion().emplaceBlock());
       }
@@ -317,7 +319,7 @@ std::unique_ptr<TemplateExprOpBuildFuncHelper> TemplateExprOpBuildFuncHelper::ge
         mlir::OpBuilder *cppBuilder = unwrap(builder);
         cppBuilder->setInsertionPointToStart(&exprOp.getInitializerRegion().emplaceBlock());
         mlir::Value val = testClass.cppGenFeltConstant(builder, location);
-        cppBuilder->create<llzk::polymorphic::YieldOp>(unwrap(location), val);
+        llzk::polymorphic::YieldOp::create(*cppBuilder, unwrap(location), val);
       }
       return retVal;
     }
@@ -337,12 +339,14 @@ std::unique_ptr<YieldOpBuildFuncHelper> YieldOpBuildFuncHelper::get() {
       {
         this->parentModule = testClass.cppNewModuleAndSetInsertionPoint(builder, location);
         mlir::OpBuilder *cppBuilder = unwrap(builder);
-        auto polyTemplate = cppBuilder->create<llzk::polymorphic::TemplateOp>(
-            unwrap(location), mlir::StringAttr::get(unwrap(testClass.context), "template_name")
+        auto polyTemplate = llzk::polymorphic::TemplateOp::create(
+            *cppBuilder, unwrap(location),
+            mlir::StringAttr::get(unwrap(testClass.context), "template_name")
         );
         cppBuilder->setInsertionPointToStart(&polyTemplate.getBodyRegion().emplaceBlock());
-        auto templateExpr = cppBuilder->create<llzk::polymorphic::TemplateExprOp>(
-            unwrap(location), mlir::StringAttr::get(unwrap(testClass.context), "expr_name")
+        auto templateExpr = llzk::polymorphic::TemplateExprOp::create(
+            *cppBuilder, unwrap(location),
+            mlir::StringAttr::get(unwrap(testClass.context), "expr_name")
         );
         cppBuilder->setInsertionPointToStart(&templateExpr.getInitializerRegion().emplaceBlock());
       }
@@ -366,8 +370,8 @@ static llzk::polymorphic::TemplateOp createTemplateWithBlock(
 ) {
   outModule = tc.cppNewModuleAndSetInsertionPoint(builder, location);
   mlir::OpBuilder *cppBuilder = unwrap(builder);
-  auto tmpl = cppBuilder->create<llzk::polymorphic::TemplateOp>(
-      unwrap(location), mlir::StringAttr::get(unwrap(tc.context), "T")
+  auto tmpl = llzk::polymorphic::TemplateOp::create(
+      *cppBuilder, unwrap(location), mlir::StringAttr::get(unwrap(tc.context), "T")
   );
   cppBuilder->setInsertionPointToStart(&tmpl.getBodyRegion().emplaceBlock());
   return tmpl;
@@ -398,8 +402,8 @@ TEST_F(CAPITest, llzk_template_op_has_param_ops_nonempty) {
   mlir::OwningOpRef<mlir::ModuleOp> module;
   auto tmpl = createTemplateWithBlock(*this, builder, loc, module);
   mlir::OpBuilder *cppBuilder = unwrap(builder);
-  cppBuilder->create<llzk::polymorphic::TemplateParamOp>(
-      unwrap(loc), mlir::StringAttr::get(unwrap(context), "P"), mlir::TypeAttr()
+  llzk::polymorphic::TemplateParamOp::create(
+      *cppBuilder, unwrap(loc), mlir::StringAttr::get(unwrap(context), "P"), mlir::TypeAttr()
   );
   EXPECT_TRUE(llzkPoly_TemplateOpHasConstParamOps(wrap(tmpl.getOperation())));
   mlirOpBuilderDestroy(builder);
@@ -421,8 +425,8 @@ TEST_F(CAPITest, llzk_template_op_num_param_ops_two) {
   auto tmpl = createTemplateWithBlock(*this, builder, loc, module);
   mlir::OpBuilder *cppBuilder = unwrap(builder);
   for (const char *name : {"N", "M"}) {
-    cppBuilder->create<llzk::polymorphic::TemplateParamOp>(
-        unwrap(loc), mlir::StringAttr::get(unwrap(context), name), mlir::TypeAttr()
+    llzk::polymorphic::TemplateParamOp::create(
+        *cppBuilder, unwrap(loc), mlir::StringAttr::get(unwrap(context), name), mlir::TypeAttr()
     );
   }
   EXPECT_EQ(llzkPoly_TemplateOpNumConstParamOps(wrap(tmpl.getOperation())), 2);
@@ -436,8 +440,8 @@ TEST_F(CAPITest, llzk_template_op_get_param_names) {
   auto tmpl = createTemplateWithBlock(*this, builder, loc, module);
   mlir::OpBuilder *cppBuilder = unwrap(builder);
   for (const char *name : {"N", "M"}) {
-    cppBuilder->create<llzk::polymorphic::TemplateParamOp>(
-        unwrap(loc), mlir::StringAttr::get(unwrap(context), name), mlir::TypeAttr()
+    llzk::polymorphic::TemplateParamOp::create(
+        *cppBuilder, unwrap(loc), mlir::StringAttr::get(unwrap(context), name), mlir::TypeAttr()
     );
   }
   MlirOperation op = wrap(tmpl.getOperation());
@@ -460,8 +464,8 @@ TEST_F(CAPITest, llzk_template_op_has_param_named_found) {
   mlir::OwningOpRef<mlir::ModuleOp> module;
   auto tmpl = createTemplateWithBlock(*this, builder, loc, module);
   mlir::OpBuilder *cppBuilder = unwrap(builder);
-  cppBuilder->create<llzk::polymorphic::TemplateParamOp>(
-      unwrap(loc), mlir::StringAttr::get(unwrap(context), "P"), mlir::TypeAttr()
+  llzk::polymorphic::TemplateParamOp::create(
+      *cppBuilder, unwrap(loc), mlir::StringAttr::get(unwrap(context), "P"), mlir::TypeAttr()
   );
   MlirOperation op = wrap(tmpl.getOperation());
   EXPECT_TRUE(llzkPoly_TemplateOpHasConstParamNamed(op, mlirStringRefCreateFromCString("P")));
@@ -474,8 +478,8 @@ TEST_F(CAPITest, llzk_template_op_has_param_named_not_found) {
   mlir::OwningOpRef<mlir::ModuleOp> module;
   auto tmpl = createTemplateWithBlock(*this, builder, loc, module);
   mlir::OpBuilder *cppBuilder = unwrap(builder);
-  cppBuilder->create<llzk::polymorphic::TemplateParamOp>(
-      unwrap(loc), mlir::StringAttr::get(unwrap(context), "P"), mlir::TypeAttr()
+  llzk::polymorphic::TemplateParamOp::create(
+      *cppBuilder, unwrap(loc), mlir::StringAttr::get(unwrap(context), "P"), mlir::TypeAttr()
   );
   MlirOperation op = wrap(tmpl.getOperation());
   EXPECT_FALSE(llzkPoly_TemplateOpHasConstParamNamed(op, mlirStringRefCreateFromCString("Q")));
@@ -490,12 +494,12 @@ static llzk::polymorphic::TemplateExprOp addTemplateExprOp(
     const CAPITest &tc, MlirOpBuilder builder, MlirLocation location, const char *name
 ) {
   mlir::OpBuilder *cppBuilder = unwrap(builder);
-  auto exprOp = cppBuilder->create<llzk::polymorphic::TemplateExprOp>(
-      unwrap(location), mlir::StringAttr::get(unwrap(tc.context), name)
+  auto exprOp = llzk::polymorphic::TemplateExprOp::create(
+      *cppBuilder, unwrap(location), mlir::StringAttr::get(unwrap(tc.context), name)
   );
   cppBuilder->setInsertionPointToStart(&exprOp.getInitializerRegion().emplaceBlock());
   mlir::Value val = tc.cppGenFeltConstant(builder, location);
-  cppBuilder->create<llzk::polymorphic::YieldOp>(unwrap(location), val);
+  llzk::polymorphic::YieldOp::create(*cppBuilder, unwrap(location), val);
   cppBuilder->setInsertionPointToEnd(&exprOp->getParentRegion()->back());
   return exprOp;
 }
@@ -590,8 +594,8 @@ TEST_F(CAPITest, llzk_template_op_param_does_not_affect_expr_count) {
   mlir::OwningOpRef<mlir::ModuleOp> module;
   auto tmpl = createTemplateWithBlock(*this, builder, loc, module);
   mlir::OpBuilder *cppBuilder = unwrap(builder);
-  cppBuilder->create<llzk::polymorphic::TemplateParamOp>(
-      unwrap(loc), mlir::StringAttr::get(unwrap(context), "P"), mlir::TypeAttr()
+  llzk::polymorphic::TemplateParamOp::create(
+      *cppBuilder, unwrap(loc), mlir::StringAttr::get(unwrap(context), "P"), mlir::TypeAttr()
   );
   MlirOperation op = wrap(tmpl.getOperation());
   EXPECT_TRUE(llzkPoly_TemplateOpHasConstParamOps(op));

@@ -123,27 +123,22 @@ static inline ForOpInfo parseInfo(WhileOp op) {
   // We need an induction variable anyway, but if the loop has {llzk.loopbounds} we can skip trying
   // to parse the rest of the bounds and just materialize constants
   if (op->hasAttr(llzk::LoopBoundsAttr::name)) {
+    auto ctx = op->getContext();
     auto bounds = op->getAttrOfType<llzk::LoopBoundsAttr>(llzk::LoopBoundsAttr::name);
 
-    OpBuilder builder {op->getContext()};
+    OpBuilder builder {ctx};
     builder.setInsertionPoint(op);
 
     // Make these constant felts for now; the actual for op builder will later clean it up
-    info.lb = builder
-                  .create<FeltConstantOp>(
-                      op->getLoc(), FeltConstAttr::get(op->getContext(), bounds.getLower())
-                  )
-                  .getResult();
-    info.ub = builder
-                  .create<FeltConstantOp>(
-                      op->getLoc(), FeltConstAttr::get(op->getContext(), bounds.getUpper())
-                  )
-                  .getResult();
-    info.step = builder
-                    .create<FeltConstantOp>(
-                        op->getLoc(), FeltConstAttr::get(op->getContext(), bounds.getStep())
-                    )
-                    .getResult();
+    info.lb =
+        FeltConstantOp::create(builder, op->getLoc(), FeltConstAttr::get(ctx, bounds.getLower()))
+            .getResult();
+    info.ub =
+        FeltConstantOp::create(builder, op->getLoc(), FeltConstAttr::get(ctx, bounds.getUpper()))
+            .getResult();
+    info.step =
+        FeltConstantOp::create(builder, op->getLoc(), FeltConstAttr::get(ctx, bounds.getStep()))
+            .getResult();
     return info;
   }
 
@@ -220,7 +215,7 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
     if (!isa<FeltType>(val.getType())) {
       return val;
     }
-    return rewriter.create<llzk::cast::FeltToIndexOp>(val.getLoc(), val).getResult();
+    return llzk::cast::FeltToIndexOp::create(rewriter, val.getLoc(), val).getResult();
   };
 
   // Emit a prelude setting up the loop bounds
@@ -249,7 +244,7 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
   }
 
   // Build the skeleton of the for loop
-  auto forOp = rewriter.create<scf::ForOp>(op->getLoc(), lb, ub, step, inits);
+  auto forOp = scf::ForOp::create(rewriter, op->getLoc(), lb, ub, step, inits);
   rewriter.setInsertionPointToStart(forOp.getBody());
 
   auto inductionVar = forOp.getInductionVar();
@@ -257,7 +252,7 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
     // If the induction var was a felt, we need to cast it back to felt in the scf.for body
     // Note that this means the body of the scf.for might cast it back to index again anyway, but
     // --canonicalize should fix that
-    inductionVar = rewriter.create<llzk::cast::IntToFeltOp>(forOp.getLoc(), ivarType, inductionVar)
+    inductionVar = llzk::cast::IntToFeltOp::create(rewriter, forOp.getLoc(), ivarType, inductionVar)
                        .getResult();
   }
 
@@ -304,7 +299,7 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
         valuesToYield.push_back(mapping.lookupOrDefault(val));
       }
       if (!valuesToYield.empty()) {
-        rewriter.create<scf::YieldOp>(yieldOp.getLoc(), valuesToYield);
+        scf::YieldOp::create(rewriter, yieldOp.getLoc(), valuesToYield);
       }
       continue;
     }

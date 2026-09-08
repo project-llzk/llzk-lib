@@ -61,9 +61,9 @@ FuncDefOp ProductAligner::alignFuncs(StructDefOp root, FuncDefOp compute, FuncDe
   });
 
   // Create an empty @product func...
-  FuncDefOp productFunc = funcBuilder.create<FuncDefOp>(
-      funcBuilder.getFusedLoc({compute.getLoc(), constrain.getLoc()}), FUNC_NAME_PRODUCT,
-      compute.getFunctionType()
+  FuncDefOp productFunc = FuncDefOp::create(
+      funcBuilder, funcBuilder.getFusedLoc({compute.getLoc(), constrain.getLoc()}),
+      FUNC_NAME_PRODUCT, compute.getFunctionType()
   );
   productFunc->setAttr(DERIVED_ATTR_NAME, UnitAttr::get(funcBuilder.getContext()));
   Block *entryBlock = productFunc.addEntryBlock();
@@ -77,10 +77,10 @@ FuncDefOp ProductAligner::alignFuncs(StructDefOp root, FuncDefOp compute, FuncDe
   llvm::SmallVector<Value> args {productFunc.getArguments()};
 
   // Add calls to @compute and @constrain...
-  CallOp computeCall = funcBuilder.create<CallOp>(funcBuilder.getUnknownLoc(), compute, args);
+  CallOp computeCall = CallOp::create(funcBuilder, funcBuilder.getUnknownLoc(), compute, args);
   args.insert(args.begin(), computeCall->getResult(0));
-  CallOp constrainCall = funcBuilder.create<CallOp>(funcBuilder.getUnknownLoc(), constrain, args);
-  funcBuilder.create<ReturnOp>(funcBuilder.getUnknownLoc(), computeCall->getResult(0));
+  CallOp constrainCall = CallOp::create(funcBuilder, funcBuilder.getUnknownLoc(), constrain, args);
+  ReturnOp::create(funcBuilder, funcBuilder.getUnknownLoc(), computeCall->getResult(0));
 
   // ..and inline them
   InlinerInterface inliner(productFunc.getContext());
@@ -180,8 +180,8 @@ LogicalResult ProductAligner::alignCalls(FuncDefOp product) {
 
     // ...and replace the two calls with a single call to @A::@product
     OpBuilder callBuilder(compute);
-    CallOp newCall = callBuilder.create<CallOp>(
-        callBuilder.getFusedLoc({compute.getLoc(), constrain.getLoc()}), newProduct,
+    CallOp newCall = CallOp::create(
+        callBuilder, callBuilder.getFusedLoc({compute.getLoc(), constrain.getLoc()}), newProduct,
         compute.getOperands()
     );
     compute->replaceAllUsesWith(newCall.getResults());

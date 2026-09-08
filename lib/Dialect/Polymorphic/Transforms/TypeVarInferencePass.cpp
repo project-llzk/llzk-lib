@@ -757,7 +757,7 @@ static FailureOr<bool> convertOperationTypes(Operation *op, ConverterT &converte
 
       OpBuilder builder(createOp);
       Location loc = createOp.getLoc();
-      CreateArrayOp newCreate = builder.create<CreateArrayOp>(loc, newResultTy);
+      CreateArrayOp newCreate = CreateArrayOp::create(builder, loc, newResultTy);
       ArrayIndexGen idxGen = ArrayIndexGen::from(oldResultTy);
       for (auto [index, element] : llvm::enumerate(createOp.getElements())) {
         Type newElementValueTy = newElementValueTypes[index];
@@ -767,7 +767,7 @@ static FailureOr<bool> convertOperationTypes(Operation *op, ConverterT &converte
         std::optional<SmallVector<Value>> indices =
             idxGen.delinearize(checkedCast<int64_t>(index), loc, builder);
         assert(indices && "static array initializer index should delinearize");
-        builder.create<InsertArrayOp>(loc, newCreate.getResult(), ValueRange(*indices), element);
+        InsertArrayOp::create(builder, loc, newCreate.getResult(), ValueRange(*indices), element);
       }
       createOp.getResult().replaceAllUsesWith(newCreate.getResult());
       createOp.erase();
@@ -782,8 +782,8 @@ static FailureOr<bool> convertOperationTypes(Operation *op, ConverterT &converte
     }
     if (auto newArrayTy = llvm::dyn_cast<ArrayType>(newResultTy)) {
       OpBuilder builder(readOp);
-      auto extractOp = builder.create<ExtractArrayOp>(
-          readOp.getLoc(), newArrayTy, readOp.getArrRef(), readOp.getIndices()
+      auto extractOp = ExtractArrayOp::create(
+          builder, readOp.getLoc(), newArrayTy, readOp.getArrRef(), readOp.getIndices()
       );
       readOp.getResult().replaceAllUsesWith(extractOp.getResult());
       readOp.erase();
@@ -798,8 +798,8 @@ static FailureOr<bool> convertOperationTypes(Operation *op, ConverterT &converte
     }
     if (llvm::isa<ArrayType>(newRvalueTy)) {
       OpBuilder builder(writeOp);
-      builder.create<InsertArrayOp>(
-          writeOp.getLoc(), writeOp.getArrRef(), writeOp.getIndices(), writeOp.getRvalue()
+      InsertArrayOp::create(
+          builder, writeOp.getLoc(), writeOp.getArrRef(), writeOp.getIndices(), writeOp.getRvalue()
       );
       writeOp.erase();
       return true;

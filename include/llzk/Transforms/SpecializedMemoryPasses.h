@@ -155,7 +155,7 @@ public:
         mlir::Block &elseBlock = ifOp.getElseRegion().emplaceBlock();
         mlir::OpBuilder builder(ifOp.getContext());
         builder.setInsertionPointToEnd(&elseBlock);
-        builder.create<mlir::scf::YieldOp>(ifOp.getLoc());
+        mlir::scf::YieldOp::create(builder, ifOp.getLoc());
       }
     });
 

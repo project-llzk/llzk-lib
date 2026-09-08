@@ -84,7 +84,7 @@ public:
     for (auto assertion : thenAssertions) {
       rewriter.setInsertionPoint(assertion);
       auto implies =
-          rewriter.create<smt::ImpliesOp>(assertion.getLoc(), condition, assertion.getInput());
+          smt::ImpliesOp::create(rewriter, assertion.getLoc(), condition, assertion.getInput());
       assertion.getInputMutable().assign(implies.getResult());
     }
 
@@ -100,13 +100,13 @@ public:
       // Don't generate (not (not x))
       notCondition = notOp.getInput();
     } else {
-      notCondition = rewriter.create<smt::NotOp>(ifOp.getLoc(), condition).getResult();
+      notCondition = smt::NotOp::create(rewriter, ifOp.getLoc(), condition).getResult();
     }
 
     for (auto assertion : elseAssertions) {
       rewriter.setInsertionPoint(assertion);
       auto implies =
-          rewriter.create<smt::ImpliesOp>(assertion.getLoc(), notCondition, assertion.getInput());
+          smt::ImpliesOp::create(rewriter, assertion.getLoc(), notCondition, assertion.getInput());
       assertion.getInputMutable().assign(implies.getResult());
     }
 
@@ -136,8 +136,8 @@ public:
 
     SmallVector<Value> muxedValues;
     for (auto [v1, v2] : yieldedValues) {
-      auto iteOp = rewriter.create<smt::IteOp>(
-          ifOp.getLoc(), getCondition(ifOp), mapping.lookupOrDefault(v1),
+      auto iteOp = smt::IteOp::create(
+          rewriter, ifOp.getLoc(), getCondition(ifOp), mapping.lookupOrDefault(v1),
           mapping.lookupOrDefault(v2)
       );
       muxedValues.push_back(iteOp.getResult());

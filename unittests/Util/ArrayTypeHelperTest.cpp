@@ -111,8 +111,8 @@ TEST_F(ArrayTypeHelperTests, test_linearize_index_wider_than_64bits_returns_null
 
   llvm::APInt bigVal(128, 0);
   bigVal.setBit(65); // 2^65 does not fit in int64_t
-  auto bigConst = builder.create<mlir::arith::ConstantOp>(
-      loc, mlir::IntegerAttr::get(mlir::IntegerType::get(&ctx, 128), bigVal)
+  auto bigConst = mlir::arith::ConstantOp::create(
+      builder, loc, mlir::IntegerAttr::get(mlir::IntegerType::get(&ctx, 128), bigVal)
   );
 
   SmallVector<Value> indices = {bigConst.getResult()};
@@ -131,14 +131,14 @@ TEST_F(ArrayTypeHelperTests, test_check_and_convert_index_wider_than_64bits_retu
 
   llvm::APInt bigVal(128, 0);
   bigVal.setBit(65); // 2^65 does not fit in int64_t
-  auto bigConst = builder.create<mlir::arith::ConstantOp>(
-      loc, mlir::IntegerAttr::get(mlir::IntegerType::get(&ctx, 128), bigVal)
+  auto bigConst = mlir::arith::ConstantOp::create(
+      builder, loc, mlir::IntegerAttr::get(mlir::IntegerType::get(&ctx, 128), bigVal)
   );
 
   // Build an op containing bigConst, providing an OperandRange for checkAndConvert()
-  auto arrCreate = builder.create<CreateArrayOp>(loc, ty, ValueRange {});
+  auto arrCreate = CreateArrayOp::create(builder, loc, ty, ValueRange {});
   auto readOp =
-      builder.create<ReadArrayOp>(loc, arrCreate.getResult(), ValueRange {bigConst.getResult()});
+      ReadArrayOp::create(builder, loc, arrCreate.getResult(), ValueRange {bigConst.getResult()});
 
   std::optional<SmallVector<Attribute>> r = idxGen.checkAndConvert(readOp.getIndices());
   ASSERT_FALSE(r.has_value());

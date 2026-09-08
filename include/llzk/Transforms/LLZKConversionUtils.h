@@ -175,13 +175,13 @@ inline function::CallOp createCallPreservingInstantiationOperands(
 
   function::CallOp newCall;
   if (oldCall.getMapOperands().empty()) {
-    newCall = rewriter.create<function::CallOp>(
-        loc, newResultTypes, oldCall.getCalleeAttr(), argOperands, templateParams
+    newCall = function::CallOp::create(
+        rewriter, loc, newResultTypes, oldCall.getCalleeAttr(), argOperands, templateParams
     );
   } else {
-    newCall = rewriter.create<function::CallOp>(
-        loc, newResultTypes, oldCall.getCalleeAttr(), mapOperands, oldCall.getNumDimsPerMapAttr(),
-        argOperands, templateParams
+    newCall = function::CallOp::create(
+        rewriter, loc, newResultTypes, oldCall.getCalleeAttr(), mapOperands,
+        oldCall.getNumDimsPerMapAttr(), argOperands, templateParams
     );
   }
 

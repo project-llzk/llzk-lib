@@ -82,13 +82,13 @@ mlir::Operation *PCLDialect::materializeConstant(
 ) {
   return llvm::TypeSwitch<mlir::Attribute, mlir::Operation *>(value)
       .Case<FeltAttr>([&builder, loc](auto attr) -> mlir::Operation * {
-    return builder.create<ConstOp>(loc, attr);
+    return ConstOp::create(builder, loc, attr);
   })
       .Case<BoolAttr>([&builder, loc](auto attr) -> mlir::Operation * {
     if (attr.getValue()) {
-      return builder.create<TrueOp>(loc);
+      return TrueOp::create(builder, loc);
     } else {
-      return builder.create<FalseOp>(loc);
+      return FalseOp::create(builder, loc);
     }
   }).Default([](auto) {
     llvm_unreachable("unsupported constant attribute");

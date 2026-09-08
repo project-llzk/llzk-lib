@@ -198,7 +198,7 @@ LogicalResult StructDefConverter::matchAndRewrite(
   std::string smtFuncName = ("smt_" + op.getSymName()).str();
   auto productFunc = op.getProductFuncOp();
   auto smtFunc =
-      rewriter.create<func::FuncOp>(op->getLoc(), smtFuncName, productFunc.getFunctionType());
+      func::FuncOp::create(rewriter, op->getLoc(), smtFuncName, productFunc.getFunctionType());
   IRMapping mapping;
   productFunc.getFunctionBody().cloneInto(&smtFunc.getFunctionBody(), mapping);
 
@@ -236,14 +236,14 @@ LogicalResult SCFIfConverter::matchAndRewrite(
 
   Value cond = adaptor.getCondition();
   if (!isa<IntegerType>(cond.getType())) {
-    cond =
-        rewriter
-            .create<UnrealizedConversionCastOp>(op.getLoc(), TypeRange {rewriter.getI1Type()}, cond)
-            .getResult(0);
+    cond = UnrealizedConversionCastOp::create(
+               rewriter, op.getLoc(), TypeRange {rewriter.getI1Type()}, cond
+    )
+               .getResult(0);
   }
 
-  auto convertedIf = rewriter.create<scf::IfOp>(
-      op.getLoc(), convertedResultTypes, cond,
+  auto convertedIf = scf::IfOp::create(
+      rewriter, op.getLoc(), convertedResultTypes, cond,
       /*addThenBlock=*/false, /*addElseBlock=*/false
   );
 

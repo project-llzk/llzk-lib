@@ -30,14 +30,14 @@ SMTDialect::materializeConstant(OpBuilder &builder, Attribute value, Type type, 
   if (auto bvType = dyn_cast<BitVectorType>(type)) {
     if (auto attrValue = dyn_cast<BitVectorAttr>(value)) {
       assert(bvType == attrValue.getType() && "attribute and desired result types have to match");
-      return builder.create<BVConstantOp>(loc, attrValue);
+      return BVConstantOp::create(builder, loc, attrValue);
     }
   }
 
   // BoolType constants can materialize into smt.constant
   if (auto boolType = dyn_cast<BoolType>(type)) {
     if (auto attrValue = dyn_cast<BoolAttr>(value)) {
-      return builder.create<BoolConstantOp>(loc, attrValue);
+      return BoolConstantOp::create(builder, loc, attrValue);
     }
   }
 
