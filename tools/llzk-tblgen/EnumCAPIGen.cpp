@@ -7,14 +7,15 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// EnumCAPIGen generates C API enum declarations from EnumAttr definitions
+// EnumCAPIGen generates C API enum declarations from EnumInfo definitions
 // in TableGen files. This allows exposing MLIR enum attributes to C APIs.
 //
 //===----------------------------------------------------------------------===//
 
 #include "CommonCAPIGen.h"
 
-#include <mlir/TableGen/Attribute.h>
+#include <mlir/TableGen/Attribute.h> // TODO: may not be needed anymore
+#include <mlir/TableGen/EnumInfo.h>
 #include <mlir/TableGen/GenInfo.h>
 
 #include <llvm/Support/CommandLine.h>
@@ -41,7 +42,7 @@ struct EnumHeaderGenerator : public HeaderGenerator {
     caseLabels.clear();
   }
 
-  void genCaseLabel(const EnumAttrCase &enumCase) {
+  void genCaseLabel(const EnumCase &enumCase) {
     static constexpr char fmt[] = "  /// `{0}{2}`\n  {1}_{2} = {3}";
     assert(!cEnumName.empty() && "cEnumName must be set");
     assert(!cppQualifiedPrefix.empty() && "cppQualifiedPrefix must be set");
@@ -115,24 +116,24 @@ static bool emitEnumCAPIHeader(const llvm::RecordKeeper &records, raw_ostream &o
   EnumHeaderGenerator generator("Enum", os);
   generator.genPrologue();
 
-  // Find all EnumAttr definitions
+  // Find all EnumInfo definitions
   for (const auto *def : records.getAllDerivedDefinitionsIfDefined("EnumAttrInfo")) {
-    const EnumAttr enumInfo(def);
+    const EnumInfo enumInfo(def);
     StringRef enumCppNamespace = enumInfo.getCppNamespace();
 
     // Generate for the selected dialect only
-    // EnumAttr does not contain a Dialect reference, so filter by C++ namespace instead.
+    // EnumInfo does not contain a Dialect reference, so filter by C++ namespace instead.
     if (!DialectName.empty() && !enumCppNamespace.contains_insensitive(DialectName)) {
       continue;
     }
 
-    std::vector<EnumAttrCase> enumCases = enumInfo.getAllCases();
+    std::vector<EnumCase> enumCases = enumInfo.getAllCases();
     if (enumCases.empty()) {
       continue;
     }
 
     generator.setEnumName(enumCppNamespace, enumInfo.getEnumClassName());
-    for (EnumAttrCase &enumCase : enumCases) {
+    for (EnumCase &enumCase : enumCases) {
       generator.genCaseLabel(enumCase);
     }
     generator.genEnumDeclaration();
@@ -148,18 +149,18 @@ static bool emitEnumCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os)
 
   EnumImplementationGenerator generator("Enum", os);
 
-  // Find all EnumAttr definitions
+  // Find all EnumInfo definitions
   for (const auto *def : records.getAllDerivedDefinitionsIfDefined("EnumAttrInfo")) {
-    const EnumAttr enumInfo(def);
+    const EnumInfo enumInfo(def);
     StringRef enumCppNamespace = enumInfo.getCppNamespace();
 
     // Generate for the selected dialect only
-    // EnumAttr does not contain a Dialect reference, so filter by C++ namespace instead.
+    // EnumInfo does not contain a Dialect reference, so filter by C++ namespace instead.
     if (!DialectName.empty() && !enumCppNamespace.contains_insensitive(DialectName)) {
       continue;
     }
 
-    std::vector<EnumAttrCase> enumCases = enumInfo.getAllCases();
+    std::vector<EnumCase> enumCases = enumInfo.getAllCases();
     if (enumCases.empty()) {
       continue;
     }
@@ -171,7 +172,7 @@ static bool emitEnumCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os)
 }
 
 static mlir::GenRegistration genEnumCAPIHeader(
-    "gen-enum-capi-header", "Generate C API enum declarations from EnumAttr definitions",
+    "gen-enum-capi-header", "Generate C API enum declarations from EnumInfo definitions",
     &emitEnumCAPIHeader
 );
 
