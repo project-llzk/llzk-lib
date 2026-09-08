@@ -17,6 +17,7 @@ class WidthInsensitiveAPIntParameter<string desc = "">
     : AttrOrTypeParameter<"::llzk::APIntValue", desc, "const ::llvm::APInt &"> {
   let parser = "::llzk::parseAPIntValue($_parser)";
   let printer = "$_printer << $_self";
+  let comparator = "$_lhs == $_rhs";
 }
 
 #endif // LLZK_ATTRIBUTE_HELPER
