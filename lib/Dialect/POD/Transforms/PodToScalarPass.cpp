@@ -1987,7 +1987,7 @@ findVirtualPodMaterializationAnchor(NewPodOp pod, const VirtualPodLeafMap &leafV
 /// Step 3 tracks virtual POD leaf values as straight-line state. Nested writes must remain
 /// materialized so the SCF lifting rewrite can model them as conditional or loop-carried values.
 inline static bool isInsideSupportedScfRegion(Operation *op) {
-  return hasParentThatIsa<scf::IfOp, scf::ForOp, scf::WhileOp>(op);
+  return op->getParentOfType<scf::IfOp, scf::ForOp, scf::WhileOp>();
 }
 
 /// Return `true` iff a read from a virtual POD can be resolved without materializing it.

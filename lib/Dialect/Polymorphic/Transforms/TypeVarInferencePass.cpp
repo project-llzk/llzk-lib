@@ -1725,7 +1725,7 @@ static bool hasUncoveredNonFunctionMention(
   WalkResult result =
       templateOp.walk([paramName, replacementType, &functionReplacements](Operation *op) {
     if (llvm::isa<FuncDefOp, TemplateExprOp, TemplateParamOp, verif::ContractOp>(op) ||
-        hasParentThatIsa<FuncDefOp, TemplateExprOp, verif::ContractOp>(op)) {
+        op->getParentOfType<FuncDefOp, TemplateExprOp, verif::ContractOp>()) {
       return WalkResult::advance();
     }
     if (!operationMentionsParam(op, paramName)) {
@@ -3825,7 +3825,7 @@ static LogicalResult inferStructTemplateParamUses(
       TypeVarInferenceCollector collector(info, info.templateScopeReplacements);
       auto nonFunctionResult = info.templateOp.walk([&](Operation *op) -> WalkResult {
         if (llvm::isa<FuncDefOp, TemplateExprOp, verif::ContractOp>(op) ||
-            hasParentThatIsa<FuncDefOp, TemplateExprOp, verif::ContractOp>(op)) {
+            op->getParentOfType<FuncDefOp, TemplateExprOp, verif::ContractOp>()) {
           return WalkResult::advance();
         }
         return collector.collectOperationStructTemplateParamInferences(

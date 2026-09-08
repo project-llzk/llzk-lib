@@ -59,17 +59,6 @@ template <typename OpClass> inline OpClass getParentOfType(mlir::Operation *op) 
   return {};
 }
 
-/// Return true if the parameter has a parent/ancestor op that is an instance of one
-/// of the template type arguments.
-template <typename... OpTys> bool hasParentThatIsa(mlir::Operation *op) {
-  while ((op = op->getParentOp())) {
-    if (llvm::isa<OpTys...>(op)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 /// See `LLZKSymbolTable` ODS documentation for details.
 template <typename TypeClass>
 // Suppress false positive from `clang-tidy`
