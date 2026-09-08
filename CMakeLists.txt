@@ -48,9 +48,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FeatureTests.cmake)
 # Dependency setup
 
-find_package(LLVM 20.1.8 REQUIRED CONFIG)
-find_package(MLIR 20.1.8 REQUIRED CONFIG)
-find_package(Clang 20.1.8 REQUIRED CONFIG)
+find_package(LLVM 23.1.0 REQUIRED CONFIG)
+find_package(MLIR 23.1.0 REQUIRED CONFIG)
+find_package(Clang 23.1.0 REQUIRED CONFIG)
 
 # Optional PCL dialect
 set(LLZK_WITH_PCL

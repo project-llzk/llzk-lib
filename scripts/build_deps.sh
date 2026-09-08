@@ -13,7 +13,7 @@ export INSTALL_ROOT="$THIRD_PARTY/llvm-install-root"
 mkdir "$INSTALL_ROOT"
 
 # Build LLVM (note that this will take a while, around 10 minutes on a Mac M1)
-git clone https://github.com/llvm/llvm-project.git -b llvmorg-20.1.8 --depth 1
+git clone https://github.com/llvm/llvm-project.git -b llvmorg-23.1.0 --depth 1
 pushd llvm-project
 mkdir build
 pushd build
