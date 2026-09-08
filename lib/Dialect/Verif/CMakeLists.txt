@@ -7,7 +7,8 @@ target_sources(LLZKVerifDialect PRIVATE ${LLZKVerifDialect_SOURCES})
 target_link_libraries(
   LLZKVerifDialect PUBLIC LLZKDialectHeaders ${LLZK_DEP_DIALECT_LIBS} MLIRIR
                      MLIRPass MLIRParser MLIRTransformUtils MLIRSCFTransforms
-                     LLVMHeaders MLIRHeaders LLZKDialect SMTDialect)
+                     LLVMHeaders MLIRHeaders LLZKDialect SMTDialect
+                     LLZKSharedOpInterfaces)
 llzk_target_add_mlir_link_settings(LLZKVerifDialect)
 
 install(TARGETS LLZKVerifDialect EXPORT LLZKTargets)
