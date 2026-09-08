@@ -53,7 +53,7 @@ class ContractConditionOp<string mnemonic, bit inlinable = false,
                           list<Trait> traits = []>
     : ConditionOp<mnemonic,
                   traits#!if(inlinable,
-                             [HasAncestorOf<["::llzk::verif::ContractOp",
+                             [AncestorOneOf<["::llzk::verif::ContractOp",
                                              "::llzk::function::FuncDefOp"]>],
                              [HasAncestor<"::llzk::verif::ContractOp">])>;
 
@@ -91,7 +91,7 @@ def ProveDetOp : VerifDialectOp<"det.prove", [Verification<>]> {
 
     Returns a boolean that indicates if the operand was proven deterministic or not.
 
-    This operation has the `Verification` trait and can be used inside `function.def` 
+    This operation has the `Verification` trait and can be used inside `function.def`
     ops that have the `allow_verif` attribute.
   }];
   let arguments = (ins EmitEqType:$condition);
@@ -106,7 +106,7 @@ def AssumeDetOp : VerifDialectOp<"det.assume", [Verification<>]> {
     Hints to the proving backend that the operand is deterministic, for a concrete definition
     of determinism determined by the backend.
 
-    This operation has the `Verification` trait and can be used inside `function.def` 
+    This operation has the `Verification` trait and can be used inside `function.def`
     ops that have the `allow_verif` attribute.
   }];
   let arguments = (ins EmitEqType:$hint);
@@ -166,7 +166,7 @@ class EnsureOpBase<string mnemonic, bit inlinable = false,
     Encodes a postcondition in the `@}]#mnemonic#[{` function.
   }]#!if(inlinable, [{
 
-    This operation has the `Verification` trait and can be used inside `function.def` 
+    This operation has the `Verification` trait and can be used inside `function.def`
     ops that have the `allow_verif_ops` attribute.
     }],
          "");

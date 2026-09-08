@@ -90,35 +90,6 @@ public:
   }
 };
 
-/// See `HasAncestor` ODS documentation for details.
-template <typename Ancestor, typename... Ancestors> struct HasAncestor {
-  template <typename ConcreteType>
-  // Suppress false positive from `clang-tidy`
-  // NOLINTNEXTLINE(bugprone-crtp-constructor-accessibility)
-  struct Impl : public mlir::OpTrait::TraitBase<ConcreteType, Impl> {
-    static mlir::LogicalResult verifyRegionTrait(mlir::Operation *op) {
-      if (hasParentThatIsa<Ancestor, Ancestors...>(op)) {
-        return mlir::success();
-      }
-      auto diag = op->emitOpError();
-
-      if constexpr (sizeof...(Ancestors) == 0) {
-        diag << "must have an ancestor of type '" << Ancestor::getOperationName() << '\'';
-      } else {
-        diag << "must have an ancestor of one of the following types: ";
-        llvm::interleaveComma(
-            llvm::ArrayRef<llvm::StringLiteral>(
-                {Ancestor::getOperationName(), Ancestors::getOperationName()...}
-            ),
-            diag, [&diag](auto name) { diag << '\'' << name << '\''; }
-        );
-      }
-
-      return diag;
-    }
-  };
-};
-
 /// Produces errors if there is an inconsistency in the various attributes/values that are used to
 /// support affine map instantiation in the Op marked with this Trait.
 template <int OperandSegmentIndex> struct VerifySizesForMultiAffineOps {
