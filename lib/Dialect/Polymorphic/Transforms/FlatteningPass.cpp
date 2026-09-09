@@ -367,7 +367,7 @@ public:
     if (newResTy.isSignlessInteger(1)) {
       // Treat 0 as false and any other value as true (but give a warning if it's not 1)
       if (attrValue.isZero()) {
-        replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, false, newResTy);
+        replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, newResTy, false);
         return success();
       }
       if (!attrValue.isOne()) {
@@ -382,7 +382,7 @@ public:
             << "\" for this call";
         diagnostics.push_back(std::move(diag));
       }
-      replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, true, newResTy);
+      replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, newResTy, true);
       return success();
     }
     return op->emitOpError().append("unexpected result type ", newResTy);
