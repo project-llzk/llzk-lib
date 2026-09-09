@@ -677,7 +677,7 @@ private:
       return HelperMode::PureFunction;
     }
     Operation *funcOp = func.getOperation();
-    auto cleanup = llvm::make_scope_exit([this, funcOp] { helperModesInProgress.erase(funcOp); });
+    auto cleanup = llvm::scope_exit([this, funcOp] { helperModesInProgress.erase(funcOp); });
 
     for (Operation &op : func.getBody().front().without_terminator()) {
       if (isa<smt::SetLogicOp, smt::SetInfoOp, smt::DeclareFunOp, smt::AssertOp, smt::ResetOp,
@@ -910,7 +910,7 @@ private:
     }
     [[maybe_unused]] bool inserted = activePureHelperSCCs.insert(sccId).second;
     assert(inserted && "recursive SCC should not be re-entered during emission");
-    auto cleanup = llvm::make_scope_exit([this, sccId] { activePureHelperSCCs.erase(sccId); });
+    auto cleanup = llvm::scope_exit([this, sccId] { activePureHelperSCCs.erase(sccId); });
 
     SmallVector<PureHelperDefinition> definitions;
     definitions.reserve(pureHelperSCCs[sccId].size());
@@ -1028,7 +1028,7 @@ private:
       );
     }
     Operation *funcOp = func.getOperation();
-    auto cleanup = llvm::make_scope_exit([this, funcOp] { activeInlineHelpers.erase(funcOp); });
+    auto cleanup = llvm::scope_exit([this, funcOp] { activeInlineHelpers.erase(funcOp); });
 
     EvalContext helperCtx;
     helperCtx.preserveSharing = helperIsPurelyExpressionBased(func);

@@ -661,7 +661,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     if (!activeArrays.insert(arrayValue).second) {
       return emitAmbiguousContainmentRhs(containOp, "cyclic array update");
     }
-    auto cleanup = llvm::make_scope_exit([&]() { activeArrays.erase(arrayValue); });
+    auto cleanup = llvm::scope_exit([&]() { activeArrays.erase(arrayValue); });
 
     MLIRContext *ctx = arrayType.getContext();
 

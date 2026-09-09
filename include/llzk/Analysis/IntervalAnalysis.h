@@ -611,7 +611,7 @@ public:
       return mlir::failure();
     }
     inProgressContexts.insert(ctx);
-    auto cleanup = llvm::make_scope_exit([this, &ctx] { inProgressContexts.erase(ctx); });
+    auto cleanup = llvm::scope_exit([this, &ctx] { inProgressContexts.erase(ctx); });
 
     auto computeRes = StructIntervals::compute(getModule(), getStruct(), solver, am, ctx);
     if (mlir::failed(computeRes)) {
