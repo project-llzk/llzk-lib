@@ -118,7 +118,7 @@ static ParseResult parseSetInfoValue(OpAsmParser &parser, Attribute &value) {
 
 LogicalResult BVConstantOp::inferReturnTypes(
     MLIRContext * /*context*/, std::optional<Location> /*location*/, ValueRange /*operands*/,
-    DictionaryAttr /*attributes*/, OpaqueProperties properties, RegionRange /*regions*/,
+    DictionaryAttr /*attributes*/, PropertyRef properties, RegionRange /*regions*/,
     SmallVectorImpl<Type> &inferredReturnTypes
 ) {
   inferredReturnTypes.push_back(properties.as<Properties *>()->getValue().getType());
@@ -315,7 +315,7 @@ LogicalResult ExtractOp::verify() {
 
 LogicalResult ConcatOp::inferReturnTypes(
     MLIRContext *context, std::optional<Location> /*location*/, ValueRange operands,
-    DictionaryAttr /*attributes*/, OpaqueProperties /*properties*/, RegionRange /*regions*/,
+    DictionaryAttr /*attributes*/, PropertyRef /*properties*/, RegionRange /*regions*/,
     SmallVectorImpl<Type> &inferredReturnTypes
 ) {
   inferredReturnTypes.push_back(
@@ -557,7 +557,7 @@ static void buildQuantifier(
         boundVarTypes, SmallVector<Location>(boundVarTypes.size(), odsState.location)
     );
     Value returnVal = bodyBuilder(odsBuilder, odsState.location, block->getArguments());
-    llzk::smt::YieldOp::create(odsBuilder,odsState.location, returnVal);
+    llzk::smt::YieldOp::create(odsBuilder, odsState.location, returnVal);
   }
   if (patternBuilder) {
     Region *region = odsState.addRegion();
@@ -567,7 +567,7 @@ static void buildQuantifier(
         boundVarTypes, SmallVector<Location>(boundVarTypes.size(), odsState.location)
     );
     ValueRange returnVals = patternBuilder(odsBuilder, odsState.location, block->getArguments());
-    llzk::smt::YieldOp::create(odsBuilder,odsState.location, returnVals);
+    llzk::smt::YieldOp::create(odsBuilder, odsState.location, returnVals);
   }
 }
 

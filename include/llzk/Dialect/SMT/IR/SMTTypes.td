@@ -134,9 +134,10 @@ def SortType : SMTTypeDef<"Sort"> {
 }
 
 def AnySMTType
-    : Type<CPred<"smt::isAnySMTValueType($_self)">, "any SMT value type">;
-def AnyNonFuncSMTType : Type<CPred<"smt::isAnyNonFuncSMTValueType($_self)">,
-                             "any non-function SMT value type">;
+    : Type<CPred<"llzk::smt::isAnySMTValueType($_self)">, "any SMT value type">;
+def AnyNonFuncSMTType
+    : Type<CPred<"llzk::smt::isAnyNonFuncSMTValueType($_self)">,
+           "any non-function SMT value type">;
 def AnyNonSMTType : Type<Neg<AnySMTType.predicate>, "any non-smt type">;
 
 #endif // MLIR_DIALECT_SMT_IR_SMTTYPES_TD
