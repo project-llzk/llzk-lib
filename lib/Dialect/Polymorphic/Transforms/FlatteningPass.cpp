@@ -1740,8 +1740,8 @@ public:
   }
 
 private:
-  /// Returns the trip count of the loop-like op if its low bound, high bound and step are
-  /// constants, `nullopt` otherwise. Trip count is computed as ceilDiv(highBound - lowBound, step).
+  /// Returns the statically-known trip count of the loop-like op, `nullopt` otherwise. Trip count
+  /// is computed as ceilDiv(highBound - lowBound, step).
   static std::optional<int64_t> getConstantTripCount(LoopLikeOpInterface loopOp) {
     std::optional<OpFoldResult> lbVal = loopOp.getSingleLowerBound();
     std::optional<OpFoldResult> ubVal = loopOp.getSingleUpperBound();
@@ -1749,7 +1749,14 @@ private:
     if (!lbVal.has_value() || !ubVal.has_value() || !stepVal.has_value()) {
       return std::nullopt;
     }
-    return constantTripCount(lbVal.value(), ubVal.value(), stepVal.value());
+    bool isSigned = true;
+    if (auto forOp = dyn_cast<scf::ForOp>(loopOp.getOperation())) {
+      isSigned = !forOp.getUnsignedCmp();
+    }
+    std::optional<APInt> result = constantTripCount(
+        lbVal.value(), ubVal.value(), stepVal.value(), isSigned, scf::computeUbMinusLb
+    );
+    return result.has_value() ? std::optional<int64_t>(result->getZExtValue()) : std::nullopt;
   }
 };
 
