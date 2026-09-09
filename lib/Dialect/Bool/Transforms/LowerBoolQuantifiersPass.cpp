@@ -56,9 +56,9 @@ lowerQuantifier(QuantifierOp op, PatternRewriter &rewriter, bool initialValue) {
   Location loc = op.getLoc();
   auto sortType = cast<ArrayType>(op.getSort().getType());
 
-  Value lowerBound = arith::ConstantIndexOp::create(rewriter,loc, 0);
-  Value upperBound = ArrayLengthOp::create(rewriter,loc, op.getSort(), lowerBound);
-  Value step = arith::ConstantIndexOp::create(rewriter,loc, 1);
+  Value lowerBound = arith::ConstantIndexOp::create(rewriter, loc, 0);
+  Value upperBound = ArrayLengthOp::create(rewriter, loc, op.getSort(), lowerBound);
+  Value step = arith::ConstantIndexOp::create(rewriter, loc, 1);
   Value init = arith::ConstantIntOp::create(rewriter, loc, rewriter.getI1Type(), initialValue);
 
   auto loop = scf::ForOp::create(rewriter, loc, lowerBound, upperBound, step, ValueRange {init});
