@@ -346,13 +346,7 @@ private:
   /// Drop any cached SSA binding that depends on pre-reset solver state.
   static void pruneResetSensitiveBindings(EvalContext &ctx) {
     ctx.letBindings.clear();
-    for (auto it = ctx.values.begin(); it != ctx.values.end();) {
-      if (it->second.survivesReset) {
-        ++it;
-        continue;
-      }
-      ctx.values.erase(it++);
-    }
+    ctx.values.remove_if([](const auto &entry) { return !entry.second.survivesReset; });
   }
 
   /// Emit the script preamble and initialize per-script export state.
