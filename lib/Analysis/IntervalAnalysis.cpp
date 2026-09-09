@@ -2010,7 +2010,7 @@ LogicalResult StructIntervals::computeIntervals(
         llvm::EquivalenceClasses<SourceRef> directEqRefs =
             collectDirectEqualityRefs(solver, calledFn);
         for (auto leaderIt = directEqRefs.begin(); leaderIt != directEqRefs.end(); ++leaderIt) {
-          if (!leaderIt->isLeader()) {
+          if (!(*leaderIt)->isLeader()) {
             continue;
           }
 
@@ -2019,7 +2019,7 @@ LogicalResult StructIntervals::computeIntervals(
           bool hasInterval = false;
           bool ambiguousTranslation = false;
 
-          for (auto memberIt = directEqRefs.member_begin(leaderIt);
+          for (auto memberIt = directEqRefs.member_begin(**leaderIt);
                memberIt != directEqRefs.member_end(); ++memberIt) {
             Interval memberInterval = Interval::Entire(ctx.getField());
             if (const auto *childIntervalIt = constrainIntervals.find(*memberIt);
