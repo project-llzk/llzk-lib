@@ -33,6 +33,7 @@
 
 #include <mlir/IR/IRMapping.h>
 #include <mlir/IR/OpImplementation.h>
+#include <mlir/Interfaces/CallInterfaces.h>
 #include <mlir/Interfaces/FunctionImplementation.h>
 
 #include <llvm/ADT/DenseSet.h>
@@ -173,8 +174,8 @@ void FuncDefOp::build(
     return;
   }
   assert(type.getNumInputs() == argAttrs.size());
-  function_interface_impl::addArgAndResultAttrs(
-      builder, state, argAttrs, /*resultAttrs=*/std::nullopt, getArgAttrsAttrName(state.name),
+  call_interface_impl::addArgAndResultAttrs(
+      builder, state, argAttrs, /*resultAttrs=*/ {}, getArgAttrsAttrName(state.name),
       getResAttrsAttrName(state.name)
   );
 }
