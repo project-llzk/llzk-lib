@@ -4238,6 +4238,8 @@ static CallOp newCallOpWithSplitResults(
   );
 
   auto newResults = newCall.getResults().begin();
+  SmallVector<Value> replacements;
+  replacements.reserve(oldResults.size());
   for (Value oldVal : oldResults) {
     if (PodType pt = splittablePod(oldVal.getType())) {
       Location loc = oldVal.getLoc();
@@ -4249,14 +4251,15 @@ static CallOp newCallOpWithSplitResults(
       });
       Value virtualPod = createVirtualPodPlaceholder(rewriter, loc, pt, leafValues);
       resolver.virtualPods[virtualPod] = std::move(leafValues);
-      rewriter.replaceAllUsesWith(oldVal, virtualPod);
+      replacements.push_back(virtualPod);
     } else {
-      rewriter.replaceAllUsesWith(oldVal, *newResults);
+      replacements.push_back(*newResults);
       newResults++;
     }
   }
-  // erase the original CallOp
-  rewriter.eraseOp(oldCall);
+  // Replace the call as a whole so the conversion rewriter records one
+  // replacement for each original result.
+  rewriter.replaceOp(oldCall, replacements);
 
   return newCall;
 }

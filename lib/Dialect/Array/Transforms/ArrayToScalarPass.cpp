@@ -225,12 +225,14 @@ CallOp newCallOpWithSplitResults(
   );
 
   auto newResults = newCall.getResults().begin();
+  SmallVector<Value> replacements;
+  replacements.reserve(oldResults.size());
   for (Value oldVal : oldResults) {
     if (ArrayType at = splittableArray(oldVal.getType())) {
       Location loc = oldVal.getLoc();
-      // Generate `CreateArrayOp` and replace uses of the result with it.
+      // Generate a `CreateArrayOp` to replace the original array result.
       auto newArray = CreateArrayOp::create(rewriter, loc, at);
-      rewriter.replaceAllUsesWith(oldVal, newArray);
+      replacements.push_back(newArray);
 
       // For all indices in the ArrayType (i.e., the element count), write the next
       // result from the new CallOp to the new array.
@@ -242,12 +244,14 @@ CallOp newCallOpWithSplitResults(
         newResults++;
       }
     } else {
-      rewriter.replaceAllUsesWith(oldVal, *newResults);
+      replacements.push_back(*newResults);
       newResults++;
     }
   }
-  // erase the original CallOp
-  rewriter.eraseOp(oldCall);
+  // Use the conversion rewriter's operation-level replacement API. Replacing
+  // individual results before erasing the call causes it to register a second
+  // replacement for those values.
+  rewriter.replaceOp(oldCall, replacements);
 
   return newCall;
 }
@@ -690,9 +694,12 @@ public:
   }
 
   static CreateArrayOp genHeader(MemberReadOp op, ConversionPatternRewriter &rewriter) {
-    CreateArrayOp newArray =
-        CreateArrayOp::create(rewriter, op.getLoc(), llvm::cast<ArrayType>(op.getType()));
-    rewriter.replaceAllUsesWith(op, newArray);
+    return CreateArrayOp::create(rewriter, op.getLoc(), llvm::cast<ArrayType>(op.getType()));
+  }
+
+  /// Provide the local array reconstruction as the replacement for the member read.
+  static CreateArrayOp
+  replacement(MemberReadOp, CreateArrayOp newArray, OpAdaptor, ConversionPatternRewriter &) {
     return newArray;
   }
 

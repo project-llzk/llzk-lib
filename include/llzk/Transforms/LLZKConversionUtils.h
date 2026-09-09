@@ -369,7 +369,11 @@ public:
     if constexpr (requires { ImplClass::finalize(op, prefixResult, adaptor, rewriter); }) {
       ImplClass::finalize(op, prefixResult, adaptor, rewriter);
     }
-    rewriter.eraseOp(op);
+    if constexpr (requires { ImplClass::replacement(op, prefixResult, adaptor, rewriter); }) {
+      rewriter.replaceOp(op, ImplClass::replacement(op, prefixResult, adaptor, rewriter));
+    } else {
+      rewriter.eraseOp(op);
+    }
     return mlir::success();
   }
 };
