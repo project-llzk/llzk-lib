@@ -470,7 +470,10 @@ public:
             Location loc = oldV.getLoc();
             // Generate `CreateArrayOp` and replace uses of the argument with it.
             auto newArray = CreateArrayOp::create(rewriter, loc, at);
-            rewriter.replaceAllUsesWith(oldV, newArray);
+            // ConversionPatternRewriter defers replacements while rollback is enabled, but
+            // eraseArgument destroys the old argument immediately. Update the use-list before
+            // erasing that argument.
+            oldV.replaceAllUsesWith(newArray);
             // Remove the argument from the block
             entryBlock.eraseArgument(i);
             // For all indices in the ArrayType (i.e., the element count), generate a new block

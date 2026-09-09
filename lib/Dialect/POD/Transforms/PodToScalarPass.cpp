@@ -4162,7 +4162,11 @@ public:
             });
 
             Value virtualPod = createVirtualPodPlaceholder(rewriter, loc, pt, leafValues);
-            rewriter.replaceAllUsesWith(oldV, virtualPod);
+            // Function signature conversion runs with rewrite rollback enabled. In that mode
+            // ConversionPatternRewriter only records this replacement for later application,
+            // but eraseArgument destroys the old argument immediately. Update the use-list
+            // directly before erasing the argument.
+            oldV.replaceAllUsesWith(virtualPod);
             entryBlock.eraseArgument(i);
 
             i += leafValues.size();
