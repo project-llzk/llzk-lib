@@ -6518,29 +6518,48 @@ class PassImpl : public llzk::pod::impl::PodToScalarPassBase<PassImpl> {
   using Base = PodToScalarPassBase<PassImpl>;
   using Base::Base;
 
-  LogicalResult runScalarizeAndCleanupPipeline(ModuleOp module) {
-    // 1. Use SROA (Destructurable* interfaces) to split each pod with `N` records into `N` pods
+  /// Create the scalar-memory promotion pipeline used for POD scalarization.
+  static OpPassManager createScalarizePipeline() {
+    OpPassManager pm(ModuleOp::getOperationName());
+    // Use SROA (Destructurable* interfaces) to split each pod with `N` records into `N` pods
     // with 1 record each. This is necessary because the mem2reg pass cannot deal with splitting
     // up memory, i.e., it can only convert scalar memory access into SSA values.
-    // 2. The mem2reg pass converts the size 1 pod allocations and accesses into SSA values.
-    OpPassManager scalarizePM(ModuleOp::getOperationName());
-    scalarizePM.addPass(createSpecializedSROAPass<NewPodOp>());
-    scalarizePM.addPass(createSpecializedMem2RegPass<NewPodOp>());
+    pm.addPass(createSpecializedSROAPass<NewPodOp>());
+    // The mem2reg pass converts the size 1 pod allocations and accesses into SSA values.
+    pm.addPass(createSpecializedMem2RegPass<NewPodOp>());
+    return pm;
+  }
 
+  /// Create the cleanup pipeline run after each POD scalar-memory promotion iteration.
+  static OpPassManager createCleanupPipeline() {
+    OpPassManager pm(ModuleOp::getOperationName());
     // Cleanup allocations made dead by memory promotion and other dead SSA values.
-    OpPassManager cleanupPM(ModuleOp::getOperationName());
-    cleanupPM.addPass(createRemoveUnusedDiscardableAllocationsPass(
+    pm.addPass(createRemoveUnusedDiscardableAllocationsPass(
         RemoveUnusedDiscardableAllocationsPassOptions {
             .allocatorOpName = CreateArrayOp::getOperationName().str()
         }
     ));
-    cleanupPM.addPass(createRemoveUnusedDiscardableAllocationsPass(
+    pm.addPass(createRemoveUnusedDiscardableAllocationsPass(
         RemoveUnusedDiscardableAllocationsPassOptions {
             .allocatorOpName = NewPodOp::getOperationName().str()
         }
     ));
-    temp_fix_pre_mlir_22::add(cleanupPM);
-    cleanupPM.addPass(createRemoveDeadValuesWorkaroundPass());
+    temp_fix_pre_mlir_22::add(pm);
+    pm.addPass(createRemoveDeadValuesWorkaroundPass());
+    return pm;
+  }
+
+  void getDependentDialects(DialectRegistry &registry) const override {
+    OpPassManager scalarizePM = createScalarizePipeline();
+    scalarizePM.getDependentDialects(registry);
+
+    OpPassManager cleanupPM = createCleanupPipeline();
+    cleanupPM.getDependentDialects(registry);
+  }
+
+  LogicalResult runScalarizeAndCleanupPipeline(ModuleOp module) {
+    OpPassManager scalarizePM = createScalarizePipeline();
+    OpPassManager cleanupPM = createCleanupPipeline();
 
     size_t podAllocWeight = podAllocScalarizationWeight(module);
     while (podAllocWeight != 0) {

@@ -146,6 +146,10 @@ public:
   llvm::StringRef getArgument() const override { return "remove-dead-values"; }
   llvm::StringRef getDescription() const override { return "Remove dead values"; }
 
+  void getDependentDialects(mlir::DialectRegistry &registry) const override {
+    mlir::createRemoveDeadValuesPass()->getDependentDialects(registry);
+  }
+
   void runOnOperation() final {
     mlir::Operation *scopeOp = this->getOperation();
 

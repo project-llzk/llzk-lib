@@ -923,6 +923,31 @@ class PassImpl : public llzk::array::impl::ArrayToScalarPassBase<PassImpl> {
   using Base = ArrayToScalarPassBase<PassImpl>;
   using Base::Base;
 
+  /// Create the scalar-memory promotion and cleanup pipeline run after array conversion.
+  static OpPassManager createPostScalarizationPipeline() {
+    OpPassManager pm(ModuleOp::getOperationName());
+    // Use SROA (Destructurable* interfaces) to split each array with linear size `N` into `N`
+    // arrays of size 1. This is necessary because the mem2reg pass cannot deal with indexing
+    // and splitting up memory, i.e., it can only convert scalar memory access into SSA values.
+    pm.addPass(createSpecializedSROAPass<CreateArrayOp>());
+    // The mem2reg pass converts all of the size-1 array allocation and access into SSA values.
+    pm.addPass(createSpecializedMem2RegPass<CreateArrayOp>());
+    // Cleanup allocations made dead by memory promotion.
+    pm.addPass(createRemoveUnusedDiscardableAllocationsPass(
+        RemoveUnusedDiscardableAllocationsPassOptions {
+            .allocatorOpName = CreateArrayOp::getOperationName().str()
+        }
+    ));
+    // Cleanup SSA values made dead by removing allocations and writes.
+    pm.addPass(createRemoveDeadValuesWorkaroundPass());
+    return pm;
+  }
+
+  void getDependentDialects(DialectRegistry &registry) const override {
+    auto nestedPM = createPostScalarizationPipeline();
+    nestedPM.getDependentDialects(registry);
+  }
+
   void runOnOperation() override {
     ModuleOp module = getOperation();
 
@@ -964,21 +989,7 @@ class PassImpl : public llzk::array::impl::ArrayToScalarPassBase<PassImpl> {
       module.dump();
     });
 
-    OpPassManager nestedPM(ModuleOp::getOperationName());
-    // Use SROA (Destructurable* interfaces) to split each array with linear size `N` into `N`
-    // arrays of size 1. This is necessary because the mem2reg pass cannot deal with indexing
-    // and splitting up memory, i.e., it can only convert scalar memory access into SSA values.
-    nestedPM.addPass(createSpecializedSROAPass<CreateArrayOp>());
-    // The mem2reg pass converts all of the size-1 array allocation and access into SSA values.
-    nestedPM.addPass(createSpecializedMem2RegPass<CreateArrayOp>());
-    // Cleanup allocations made dead by memory promotion.
-    nestedPM.addPass(createRemoveUnusedDiscardableAllocationsPass(
-        RemoveUnusedDiscardableAllocationsPassOptions {
-            .allocatorOpName = CreateArrayOp::getOperationName().str()
-        }
-    ));
-    // Cleanup SSA values made dead by removing allocations and writes.
-    nestedPM.addPass(createRemoveDeadValuesWorkaroundPass());
+    OpPassManager nestedPM = createPostScalarizationPipeline();
     if (failed(runPipeline(nestedPM, module))) {
       signalPassFailure();
       return;
