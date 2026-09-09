@@ -42,11 +42,6 @@ MlirOperation LlzkSymbolLookupResultGetOperation(LlzkSymbolLookupResult wrapped)
   return wrap(result->get());
 }
 
-/// Note: Duplicated from upstream LLVM. Available in 21.1.8 and later.
-void mlirOperationReplaceUsesOfWith(MlirOperation op, MlirValue oldValue, MlirValue newValue) {
-  unwrap(op)->replaceUsesOfWith(unwrap(oldValue), unwrap(newValue));
-}
-
 /// Note: Duplicated from upstream LLVM.
 static mlir::WalkResult unwrap(MlirWalkResult result) {
   switch (result) {
