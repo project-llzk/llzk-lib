@@ -155,8 +155,7 @@ class PassImpl : public llzk::impl::RedundantOperationEliminationPassBase<PassIm
     // calls.
     auto &cga = getAnalysis<CallGraphAnalysis>();
     const llzk::CallGraph *callGraph = &cga.getCallGraph();
-    for (auto it = llvm::po_begin(callGraph); it != llvm::po_end(callGraph); ++it) {
-      const llzk::CallGraphNode *node = *it;
+    for (const llzk::CallGraphNode *node : llvm::post_order(callGraph)) {
       if (!node->isExternal()) {
         runOnFunc(symbolTables, node->getCalledFunction());
       }
