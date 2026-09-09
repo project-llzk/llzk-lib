@@ -19,6 +19,7 @@
 
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/SymbolTable.h>
+#include <mlir/Transforms/Inliner.h>
 #include <mlir/Transforms/InliningUtils.h>
 
 #include <llvm/ADT/DenseSet.h>
@@ -158,6 +159,7 @@ class PassImpl : public llzk::impl::InlineFreeFunctionsPassBase<PassImpl> {
       ModuleOp mod, SymbolTableCollection &tables, InlinerInterface &inliner,
       llvm::DenseSet<Operation *> &skippedCallees
   ) {
+    InlinerConfig inlinerConfig;
     SmallVector<FreeFunctionCall> callsToInline =
         collectFreeFunctionCalls(mod, tables, skippedCallees);
     while (!callsToInline.empty()) {
@@ -170,7 +172,10 @@ class PassImpl : public llzk::impl::InlineFreeFunctionsPassBase<PassImpl> {
         if (skippedCallees.contains(callee)) {
           continue;
         }
-        if (failed(inlineCall(inliner, call, callee, callee.getCallableRegion(), true))) {
+        if (failed(inlineCall(
+                inliner, inlinerConfig.getCloneCallback(), call, callee, callee.getCallableRegion(),
+                true
+            ))) {
           call.emitWarning("failed to inline free function call; skipping this callee");
           skippedCallees.insert(callee);
           continue;

@@ -33,6 +33,7 @@
 #include "llzk/Util/SymbolLookup.h"
 
 #include <mlir/IR/BuiltinOps.h>
+#include <mlir/Transforms/Inliner.h>
 #include <mlir/Transforms/InliningUtils.h>
 #include <mlir/Transforms/WalkPatternRewriteDriver.h>
 
@@ -324,9 +325,10 @@ class StructInliner {
       });
 
       InlinerInterface inliner(destFunc.getContext());
+      InlinerConfig inlinerConfig;
 
       /// Replaces CallOp that target `srcFunc` with an inlined version of `srcFunc`.
-      auto callHandler = [this, &inliner, &srcFunc](CallOp callOp) {
+      auto callHandler = [this, &inliner, &inlinerConfig, &srcFunc](CallOp callOp) {
         // Ensure the CallOp targets `srcFunc`
         auto callOpTarget = callOp.getCalleeTarget(this->data.tables);
         assert(succeeded(callOpTarget));
@@ -354,8 +356,10 @@ class StructInliner {
         this->processCloneBeforeInlining(srcFuncClone);
 
         // Inline the cloned function in place of `callOp`
-        LogicalResult inlineCallRes =
-            inlineCall(inliner, callOp, srcFuncClone, &srcFuncClone.getBody(), false);
+        LogicalResult inlineCallRes = inlineCall(
+            inliner, inlinerConfig.getCloneCallback(), callOp, srcFuncClone,
+            &srcFuncClone.getBody(), false
+        );
         if (failed(inlineCallRes)) {
           callOp.emitError().append("Failed to inline ", srcFunc.getFullyQualifiedName()).report();
           return WalkResult::interrupt(); // use interrupt to signal failure

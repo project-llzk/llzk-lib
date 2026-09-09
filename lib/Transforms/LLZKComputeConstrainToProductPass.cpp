@@ -24,6 +24,7 @@
 
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/SymbolTable.h>
+#include <mlir/Transforms/Inliner.h>
 #include <mlir/Transforms/InliningUtils.h>
 
 #include <llvm/Support/Debug.h>
@@ -84,11 +85,17 @@ FuncDefOp ProductAligner::alignFuncs(StructDefOp root, FuncDefOp compute, FuncDe
 
   // ..and inline them
   InlinerInterface inliner(productFunc.getContext());
-  if (failed(inlineCall(inliner, computeCall, compute, &compute.getBody(), true))) {
+  InlinerConfig inlinerConfig;
+  if (failed(inlineCall(
+          inliner, inlinerConfig.getCloneCallback(), computeCall, compute, &compute.getBody(), true
+      ))) {
     root->emitError().append("failed to inline ", FUNC_NAME_COMPUTE).report();
     return nullptr;
   }
-  if (failed(inlineCall(inliner, constrainCall, constrain, &constrain.getBody(), true))) {
+  if (failed(inlineCall(
+          inliner, inlinerConfig.getCloneCallback(), constrainCall, constrain, &constrain.getBody(),
+          true
+      ))) {
     root->emitError().append("failed to inline ", FUNC_NAME_CONSTRAIN).report();
     return nullptr;
   }
