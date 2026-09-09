@@ -244,7 +244,8 @@ def ContractOp
 
   let arguments = (ins SymbolNameAttr:$sym_name, SymbolRefAttr:$target,
       TypeAttrOf<FunctionType>:$function_type,
-      OptionalAttr<DictArrayAttr>:$arg_attrs);
+      OptionalAttr<DictArrayAttr>:$arg_attrs,
+      OptionalAttr<DictArrayAttr>:$res_attrs);
 
   let regions = (region AnyRegion:$body);
 
@@ -258,21 +259,27 @@ def ContractOp
   let builders = [OpBuilder<(ins "::mlir::StringAttr":$sym_name,
                                 "::mlir::SymbolRefAttr":$target,
                                 "::mlir::TypeAttr":$function_type,
-                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs),
+                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs,
+                                CArg<"::mlir::ArrayAttr", "{}">:$res_attrs),
                             [{
-        build($_builder, $_state, ::mlir::TypeRange {}, sym_name, target, function_type, arg_attrs);
+        build($_builder, $_state, ::mlir::TypeRange {}, sym_name, target, function_type, arg_attrs,
+              res_attrs);
       }]>,
                   OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
                                 "::mlir::StringAttr":$sym_name,
                                 "::mlir::SymbolRefAttr":$target,
                                 "::mlir::TypeAttr":$function_type,
-                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs),
+                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs,
+                                CArg<"::mlir::ArrayAttr", "{}">:$res_attrs),
                             [{
         $_state.getOrAddProperties<Properties>().sym_name = sym_name;
         $_state.getOrAddProperties<Properties>().target = target;
         $_state.getOrAddProperties<Properties>().function_type = function_type;
         if (arg_attrs) {
           $_state.getOrAddProperties<Properties>().arg_attrs = arg_attrs;
+        }
+        if (res_attrs) {
+          $_state.getOrAddProperties<Properties>().res_attrs = res_attrs;
         }
         initializeEmptyBody(
             $_builder, $_state, ::llvm::cast<::mlir::FunctionType>(function_type.getValue())
@@ -283,21 +290,27 @@ def ContractOp
                   OpBuilder<(ins "::llvm::StringRef":$sym_name,
                                 "::mlir::SymbolRefAttr":$target,
                                 "::mlir::FunctionType":$function_type,
-                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs),
+                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs,
+                                CArg<"::mlir::ArrayAttr", "{}">:$res_attrs),
                             [{
-        build($_builder, $_state, ::mlir::TypeRange {}, sym_name, target, function_type, arg_attrs);
+        build($_builder, $_state, ::mlir::TypeRange {}, sym_name, target, function_type, arg_attrs,
+              res_attrs);
       }]>,
                   OpBuilder<(ins "::mlir::TypeRange":$resultTypes,
                                 "::llvm::StringRef":$sym_name,
                                 "::mlir::SymbolRefAttr":$target,
                                 "::mlir::FunctionType":$function_type,
-                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs),
+                                CArg<"::mlir::ArrayAttr", "{}">:$arg_attrs,
+                                CArg<"::mlir::ArrayAttr", "{}">:$res_attrs),
                             [{
         $_state.getOrAddProperties<Properties>().sym_name = $_builder.getStringAttr(sym_name);
         $_state.getOrAddProperties<Properties>().target = target;
         $_state.getOrAddProperties<Properties>().function_type = ::mlir::TypeAttr::get(function_type);
         if (arg_attrs) {
           $_state.getOrAddProperties<Properties>().arg_attrs = arg_attrs;
+        }
+        if (res_attrs) {
+          $_state.getOrAddProperties<Properties>().res_attrs = res_attrs;
         }
         initializeEmptyBody($_builder, $_state, function_type);
         assert(resultTypes.size() == 0u && "mismatched number of results");
@@ -462,7 +475,12 @@ def IncludeOp
       // AffineMap "symbolic" arguments.
       DefaultValuedAttr<DenseI32ArrayAttr, "{}">:$numDimsPerMap,
       // Denotes the size of each variadic group in '$mapOperands'.
-      DenseI32ArrayAttr:$mapOpGroupSizes);
+      DenseI32ArrayAttr:$mapOpGroupSizes,
+      // Per-call argument and result attribute dictionaries required by
+      // CallOpInterface. Includes have no results, so res_attrs is normally
+      // absent.
+      OptionalAttr<DictArrayAttr>:$arg_attrs,
+      OptionalAttr<DictArrayAttr>:$res_attrs);
 
   let assemblyFormat = [{
     $callee

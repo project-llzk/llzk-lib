@@ -476,6 +476,7 @@ LogicalResult ContractOp::verifySymbolUses(SymbolTableCollection &tables) {
 ParseResult ContractOp::parse(OpAsmParser &parser, OperationState &result) {
   StringAttr typeAttrName = getFunctionTypeAttrName(result.name);
   StringAttr argAttrsName = getArgAttrsAttrName(result.name);
+  StringAttr resAttrsName = getResAttrsAttrName(result.name);
 
   SmallVector<OpAsmParser::Argument> entryArgs;
   SmallVector<DictionaryAttr> resultAttrs;
@@ -556,8 +557,7 @@ ParseResult ContractOp::parse(OpAsmParser &parser, OperationState &result) {
 
   // Add the attributes to the function arguments.
   function_interface_impl::addArgAndResultAttrs(
-      builder, result, entryArgs, resultAttrs, argAttrsName,
-      /*resAttrsName*/ StringAttr::get(parser.getContext())
+      builder, result, entryArgs, resultAttrs, argAttrsName, resAttrsName
   );
 
   // Parse the required contract body.
@@ -596,7 +596,8 @@ void ContractOp::print(OpAsmPrinter &p) {
   );
   function_interface_impl::printFunctionAttributes(
       p, *this,
-      /*elided*/ {getFunctionTypeAttrName(), getArgAttrsAttrName(), getTargetAttrName()}
+      /*elided*/ {getFunctionTypeAttrName(), getArgAttrsAttrName(), getResAttrsAttrName(),
+                   getTargetAttrName()}
   );
   // Print the body.
   Region &body = getRegion();
