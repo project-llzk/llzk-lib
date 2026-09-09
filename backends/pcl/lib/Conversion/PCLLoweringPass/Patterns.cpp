@@ -347,6 +347,35 @@ public:
   }
 };
 
+/// Converts integer constants, preserving `i1` values as PCL booleans.
+///
+/// The PCL type converter maps MLIR integer values to `!pcl.bool`. Rewriting
+/// an `i1` constant to `pcl.const` would instead produce `!pcl.felt`, forcing
+/// dialect conversion to reconcile incompatible replacement types.
+struct ConvertArithConstantOp : public OpConversionPattern<arith::ConstantOp> {
+  using OpConversionPattern<arith::ConstantOp>::OpConversionPattern;
+
+  LogicalResult matchAndRewrite(
+      arith::ConstantOp op, OpAdaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    auto value = llvm::cast<IntegerAttr>(op.getValue()).getValue();
+    if (op.getType().isInteger(1)) {
+      if (value.isOne()) {
+        rewriter.replaceOpWithNewOp<pcl::TrueOp>(op);
+      } else {
+        rewriter.replaceOpWithNewOp<pcl::FalseOp>(op);
+      }
+      return success();
+    }
+
+    // Extend width by 1 bit to avoid sign issues.
+    rewriter.replaceOpWithNewOp<pcl::ConstOp>(
+        op, pcl::FeltAttr::get(rewriter.getContext(), value.zext(value.getBitWidth() + 1))
+    );
+    return success();
+  }
+};
+
 //===----------------------------------------------------------------------===//
 // ConvertConstrainCall
 //===----------------------------------------------------------------------===//
@@ -849,7 +878,7 @@ void pcl::lowering::BaseMode::populateStep1ConversionPatterns(
       ConvertBoolXorOp,
       ConvertCmpOp,
       ConvertConstantOp<FeltConstantOp>,
-      ConvertConstantOp<arith::ConstantOp>,
+      ConvertArithConstantOp,
       ConvertConstrainCall,
       ConvertEmitEqualityOp,
       ConvertEnsureConstrainOp,
