@@ -2293,7 +2293,6 @@ public:
       return castValueToTypeIfNeeded(bldr, loc, inputs.front(), targetType);
     };
     addTargetMaterialization(materializeCast);
-    addArgumentMaterialization(materializeCast);
     addSourceMaterialization(materializeCast);
   }
 };
