@@ -5345,7 +5345,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   resolver.addPreConversionPatterns(preConversionPatterns);
   if (failed(applyPatternsGreedily(
           modOp->getRegion(0), std::move(preConversionPatterns),
-          GreedyRewriteConfig {.fold = false, .cseConstants = false}
+          GreedyRewriteConfig().enableFolding(false).enableConstantCSE(false)
       ))) {
     return failure();
   }
@@ -5408,7 +5408,7 @@ step3(ModuleOp modOp, SymbolTableCollection &symTables, const MemberReplacementM
   resolver.addPostConversionPatterns(postConversionPatterns);
   if (failed(applyPatternsGreedily(
           modOp->getRegion(0), std::move(postConversionPatterns),
-          GreedyRewriteConfig {.fold = false, .cseConstants = false}
+          GreedyRewriteConfig().enableFolding(false).enableConstantCSE(false)
       ))) {
     return failure();
   }
@@ -6241,7 +6241,7 @@ static LogicalResult
 applyGreedily(ModuleOp modOp, RewritePatternSet &&patterns, bool *changed = nullptr) {
   return applyPatternsGreedily(
       modOp->getRegion(0), std::move(patterns),
-      GreedyRewriteConfig {.fold = false, .cseConstants = false}, changed
+      GreedyRewriteConfig().enableFolding(false).enableConstantCSE(false), changed
   );
 }
 
@@ -6500,7 +6500,7 @@ struct FlattenStaticIfPass : PassWrapper<FlattenStaticIfPass, OperationPass<Modu
 
     if (failed(applyPatternsGreedily(
             getOperation(), std::move(patterns),
-            GreedyRewriteConfig {.fold = false, .cseConstants = false}
+            GreedyRewriteConfig().enableFolding(false).enableConstantCSE(false)
         ))) {
       signalPassFailure();
     }

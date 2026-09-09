@@ -418,7 +418,7 @@ applyAndFoldGreedily(ModuleOp modOp, ConversionTracker &tracker, RewritePatternS
   MatchFailureListener failureListener;
   LogicalResult result = applyPatternsGreedily(
       modOp->getRegion(0), std::move(patterns),
-      GreedyRewriteConfig {.maxIterations = 20, .listener = &failureListener, .fold = true},
+      GreedyRewriteConfig().enableFolding().setMaxIterations(20).setListener(&failureListener),
       &currStepModified
   );
   tracker.updateModifiedFlag(currStepModified);
