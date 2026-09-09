@@ -32,6 +32,7 @@
 #include <mlir/Conversion/Passes.h>
 #include <mlir/Conversion/SCFToControlFlow/SCFToControlFlow.h>
 #include <mlir/Conversion/UBToLLVM/UBToLLVM.h>
+#include <mlir/Conversion/VectorToLLVM/ConvertVectorToLLVM.h>
 #include <mlir/Dialect/MemRef/Transforms/Passes.h>
 #include <mlir/Dialect/Utils/IndexingUtils.h>
 #include <mlir/ExecutionEngine/CRunnerUtils.h>
@@ -462,6 +463,7 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
     mlir::index::registerConvertIndexToLLVMInterface(registry);
     mlir::registerConvertMemRefToLLVMInterface(registry);
     mlir::ub::registerConvertUBToLLVMInterface(registry);
+    mlir::vector::registerConvertVectorToLLVMInterface(registry);
     (*loweredModule)->getContext()->appendDialectRegistry(registry);
     (*loweredModule)->getContext()->loadAllAvailableDialects();
   }
