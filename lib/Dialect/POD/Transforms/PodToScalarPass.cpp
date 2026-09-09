@@ -216,14 +216,6 @@ using CompatiblePodLeafMaterializationMap =
 namespace llvm {
 
 template <> struct DenseMapInfo<RecordChain> {
-  static RecordChain getEmptyKey() {
-    return RecordChain {{DenseMapInfo<StringAttr>::getEmptyKey()}};
-  }
-
-  static RecordChain getTombstoneKey() {
-    return RecordChain {{DenseMapInfo<StringAttr>::getTombstoneKey()}};
-  }
-
   static unsigned getHashValue(const RecordChain &chain) {
     return llvm::hash_combine(
         llvm::hash_combine_range(chain.nameList.begin(), chain.nameList.end()),
@@ -235,14 +227,6 @@ template <> struct DenseMapInfo<RecordChain> {
 };
 
 template <> struct DenseMapInfo<CompatiblePodLeafMaterializationKey> {
-  static CompatiblePodLeafMaterializationKey getEmptyKey() {
-    return {DenseMapInfo<Value>::getEmptyKey(), DenseMapInfo<Type>::getEmptyKey()};
-  }
-
-  static CompatiblePodLeafMaterializationKey getTombstoneKey() {
-    return {DenseMapInfo<Value>::getTombstoneKey(), DenseMapInfo<Type>::getTombstoneKey()};
-  }
-
   static unsigned getHashValue(const CompatiblePodLeafMaterializationKey &key) {
     return llvm::hash_combine(key.source, key.podType);
   }

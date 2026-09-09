@@ -671,30 +671,10 @@ private:
 namespace llvm {
 
 template <> struct DenseMapInfo<llzk::ExpressionValue> {
-
-  static SMTExprRef getEmptyExpr() {
-    static const auto *emptyPtr = reinterpret_cast<SMTExprRef>(1);
-    return emptyPtr;
-  }
-  static SMTExprRef getTombstoneExpr() {
-    static const auto *tombstonePtr = reinterpret_cast<SMTExprRef>(2);
-    return tombstonePtr;
-  }
-
-  static llzk::ExpressionValue getEmptyKey() {
-    return llzk::ExpressionValue(llzk::Field::getField("bn128"), getEmptyExpr());
-  }
-  static inline llzk::ExpressionValue getTombstoneKey() {
-    return llzk::ExpressionValue(llzk::Field::getField("bn128"), getTombstoneExpr());
-  }
   static unsigned getHashValue(const llzk::ExpressionValue &e) {
     return llzk::ExpressionValue::Hash {}(e);
   }
   static bool isEqual(const llzk::ExpressionValue &lhs, const llzk::ExpressionValue &rhs) {
-    if (lhs.getExpr() == getEmptyExpr() || lhs.getExpr() == getTombstoneExpr() ||
-        rhs.getExpr() == getEmptyExpr() || rhs.getExpr() == getTombstoneExpr()) {
-      return lhs.getExpr() == rhs.getExpr();
-    }
     return lhs == rhs;
   }
 };

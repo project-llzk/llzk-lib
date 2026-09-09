@@ -438,18 +438,7 @@ static_assert(
 namespace llvm {
 
 template <> struct DenseMapInfo<llzk::SourceRef> {
-  static llzk::SourceRef getEmptyKey() {
-    return llzk::SourceRef(mlir::BlockArgument(reinterpret_cast<mlir::detail::ValueImpl *>(1)));
-  }
-  static inline llzk::SourceRef getTombstoneKey() {
-    return llzk::SourceRef(mlir::BlockArgument(reinterpret_cast<mlir::detail::ValueImpl *>(2)));
-  }
-  static unsigned getHashValue(const llzk::SourceRef &ref) {
-    if (ref == getEmptyKey() || ref == getTombstoneKey()) {
-      return llvm::hash_value(ref.getAsOpaquePointer());
-    }
-    return llzk::SourceRef::Hash {}(ref);
-  }
+  static unsigned getHashValue(const llzk::SourceRef &ref) { return llzk::SourceRef::Hash {}(ref); }
   static bool isEqual(const llzk::SourceRef &lhs, const llzk::SourceRef &rhs) { return lhs == rhs; }
 };
 

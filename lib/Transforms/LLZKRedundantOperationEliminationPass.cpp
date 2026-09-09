@@ -51,9 +51,6 @@ using namespace llzk::function;
 
 namespace {
 
-static Operation *EMPTY_OP_KEY = llvm::DenseMapInfo<Operation *>::getEmptyKey();
-static Operation *TOMBSTONE_OP_KEY = llvm::DenseMapInfo<Operation *>::getTombstoneKey();
-
 // Maps original -> replacement value
 using TranslationMap = DenseMap<Value, Value>;
 
@@ -71,11 +68,7 @@ static bool isDuplicateEliminationCandidate(Operation *op) {
 /// to see if the translated operands for a given operation are equal.
 class OperationComparator {
 public:
-  explicit OperationComparator(Operation *o) : op(o) {
-    if (op != EMPTY_OP_KEY && op != TOMBSTONE_OP_KEY) {
-      operands = SmallVector<Value>(op->getOperands());
-    }
-  }
+  explicit OperationComparator(Operation *o) : op(o), operands(o->getOperands()) {}
 
   OperationComparator(Operation *o, const TranslationMap &m) : op(o) {
     for (Value operand : op->getOperands()) {
@@ -94,11 +87,6 @@ public:
   bool isCommutative() const { return op->hasTrait<OpTrait::IsCommutative>(); }
 
   friend bool operator==(const OperationComparator &lhs, const OperationComparator &rhs) {
-    if (lhs.op == EMPTY_OP_KEY || rhs.op == EMPTY_OP_KEY || lhs.op == TOMBSTONE_OP_KEY ||
-        rhs.op == TOMBSTONE_OP_KEY) {
-      return lhs.op == rhs.op;
-    }
-
     if (!OperationEquivalence::isEquivalentTo(
             lhs.op, rhs.op, OperationEquivalence::ignoreValueEquivalence,
             /*markEquivalent=*/nullptr, OperationEquivalence::IgnoreLocations
@@ -126,15 +114,7 @@ private:
 namespace llvm {
 
 template <> struct DenseMapInfo<OperationComparator> {
-  static OperationComparator getEmptyKey() { return OperationComparator(EMPTY_OP_KEY); }
-  static inline OperationComparator getTombstoneKey() {
-    return OperationComparator(TOMBSTONE_OP_KEY);
-  }
   static unsigned getHashValue(const OperationComparator &oc) {
-    if (oc.getOp() == EMPTY_OP_KEY || oc.getOp() == TOMBSTONE_OP_KEY) {
-      return hash_value(oc.getOp());
-    }
-
     hash_code opHash = mlir::OperationEquivalence::computeHash(
         oc.getOp(), mlir::OperationEquivalence::ignoreHashValue,
         mlir::OperationEquivalence::ignoreHashValue, mlir::OperationEquivalence::IgnoreLocations
