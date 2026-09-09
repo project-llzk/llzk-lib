@@ -42,7 +42,8 @@ MlirOperation LlzkSymbolLookupResultGetOperation(LlzkSymbolLookupResult wrapped)
   return wrap(result->get());
 }
 
-/// Note: Duplicated from upstream LLVM.
+/// Note: Duplicated from upstream LLVM because it's not defined in a header, only in the
+/// `mlir/lib/CAPI/IR/IR.cpp` implementation.
 static mlir::WalkResult unwrap(MlirWalkResult result) {
   switch (result) {
   case MlirWalkResultAdvance:
