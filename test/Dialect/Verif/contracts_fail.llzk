@@ -313,7 +313,7 @@ module attributes {llzk.lang} {
   }
 
   function.def @illegal_include() {
-    // expected-error@+1 {{'verif.include' op must have an ancestor of type 'verif.contract'}}
+    // expected-error@+1 {{'verif.include' op expects ancestor op 'verif.contract'}}
     verif.include @Base() : () -> ()
   }
 }
@@ -656,11 +656,12 @@ module attributes {llzk.lang} {
   verif.contract @CheckRegionVerification for @GateBox (%self: !struct.type<@GateBox>, %gate: i1) {
     %true = arith.constant true
     %member_gate = struct.readm %self[@gate] : !struct.type<@GateBox>, i1
-    // expected-error@+1 {{'scf.while' op  region control flow edge from Region #1 to Region #0: source has 1 operands, but target successor needs 0}}
+    // expected-error@+1 {{'scf.while' op along control flow edge from Operation scf.yield to Region #0: region branch point has 1 operands, but region successor needs 0 inputs}}
     %selected = scf.while : () -> i1 {
       scf.condition(%true) %true : i1
     } do {
     ^bb0(%iter : i1):
+      // expected-note@+1 {{region branch point}}
       scf.yield %member_gate : i1
     }
     verif.require_constrain %selected

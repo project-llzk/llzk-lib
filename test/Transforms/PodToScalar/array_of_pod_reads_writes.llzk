@@ -311,11 +311,10 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      array.write %[[VAL_5]]{{\[}}%[[VAL_4]]] = %[[VAL_6]] : <2 x index>, index
 // CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_3]]] : <2 x index>, index
 // CHECK-NEXT:      array.write %[[VAL_5]]{{\[}}%[[VAL_3]]] = %[[VAL_7]] : <2 x index>, index
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_9:[0-9a-zA-Z_\.]+]] = %[[VAL_4]] to %[[VAL_2]] step %[[VAL_3]] iter_args(%[[VAL_10:[0-9a-zA-Z_\.]+]] = %[[VAL_5]]) -> (!array.type<2 x index>) {
-// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_10]]{{\[}}%[[VAL_1]]] : <2 x index>, index
-// CHECK-NEXT:        scf.yield %[[VAL_10]] : !array.type<2 x index>
+// CHECK-NEXT:      scf.for %[[VAL_8:[0-9a-zA-Z_\.]+]] = %[[VAL_4]] to %[[VAL_2]] step %[[VAL_3]] {
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_1]]] : <2 x index>, index
 // CHECK-NEXT:      }
-// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_8]]{{\[}}%[[VAL_1]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_5]]{{\[}}%[[VAL_1]]] : <2 x index>, index
 // CHECK-NEXT:      function.return %[[VAL_12]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @while_external_pod_array(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>, %[[VAL_14:[0-9a-zA-Z_\.]+]]: index, %[[VAL_15:[0-9a-zA-Z_\.]+]]: index) -> index {
@@ -326,17 +325,17 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      array.write %[[VAL_18]]{{\[}}%[[VAL_17]]] = %[[VAL_19]] : <2 x index>, index
 // CHECK-NEXT:      %[[VAL_20:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_13]]{{\[}}%[[VAL_16]]] : <2 x index>, index
 // CHECK-NEXT:      array.write %[[VAL_18]]{{\[}}%[[VAL_16]]] = %[[VAL_20]] : <2 x index>, index
-// CHECK-NEXT:      %[[VAL_21:[0-9a-zA-Z_\.]+]]:2 = scf.while (%[[VAL_22:[0-9a-zA-Z_\.]+]] = %[[VAL_14]], %[[VAL_23:[0-9a-zA-Z_\.]+]] = %[[VAL_18]]) : (index, !array.type<2 x index>) -> (index, !array.type<2 x index>) {
-// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_23]]{{\[}}%[[VAL_15]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_21:[0-9a-zA-Z_\.]+]] = scf.while (%[[VAL_22:[0-9a-zA-Z_\.]+]] = %[[VAL_14]]) : (index) -> index {
+// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_18]]{{\[}}%[[VAL_15]]] : <2 x index>, index
 // CHECK-NEXT:        %[[VAL_25:[0-9a-zA-Z_\.]+]] = arith.cmpi sgt, %[[VAL_22]], %[[VAL_17]] : index
-// CHECK-NEXT:        scf.condition(%[[VAL_25]]) %[[VAL_22]], %[[VAL_23]] : index, !array.type<2 x index>
+// CHECK-NEXT:        scf.condition(%[[VAL_25]]) %[[VAL_22]] : index
 // CHECK-NEXT:      } do {
-// CHECK-NEXT:      ^bb0(%[[VAL_26:[0-9a-zA-Z_\.]+]]: index, %[[VAL_27:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>):
-// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_27]]{{\[}}%[[VAL_15]]] : <2 x index>, index
+// CHECK-NEXT:      ^bb0(%[[VAL_26:[0-9a-zA-Z_\.]+]]: index):
+// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_18]]{{\[}}%[[VAL_15]]] : <2 x index>, index
 // CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_\.]+]] = arith.subi %[[VAL_26]], %[[VAL_16]] : index
-// CHECK-NEXT:        scf.yield %[[VAL_29]], %[[VAL_27]] : index, !array.type<2 x index>
+// CHECK-NEXT:        scf.yield %[[VAL_29]] : index
 // CHECK-NEXT:      }
-// CHECK-NEXT:      %[[VAL_30:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_21]]#1{{\[}}%[[VAL_15]]] : <2 x index>, index
+// CHECK-NEXT:      %[[VAL_30:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_18]]{{\[}}%[[VAL_15]]] : <2 x index>, index
 // CHECK-NEXT:      function.return %[[VAL_30]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

@@ -12,9 +12,9 @@ module attributes {llzk.lang} {
   }
 
   verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
-    // expected-error@+1 {{'verif.step' op must have an ancestor of type 'verif.invariant'}}
+    // expected-error@+1 {{'verif.step' op expects ancestor op 'verif.invariant'}}
     verif.step {
-      %2 = arith.constant true  
+      %2 = arith.constant true
       verif.step.yield %2
     }
   }
@@ -34,8 +34,8 @@ module attributes {llzk.lang} {
   }
 
   verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
-    %0 = felt.const 1 
-    // expected-error@+1 {{'verif.increases' op must have an ancestor of type 'verif.invariant'}}
+    %0 = felt.const 1
+    // expected-error@+1 {{'verif.increases' op expects ancestor op 'verif.invariant'}}
     verif.increases %0
   }
 }
@@ -54,8 +54,8 @@ module attributes {llzk.lang} {
   }
 
   verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
-    %0 = felt.const 1 
-    // expected-error@+1 {{'verif.decreases' op must have an ancestor of type 'verif.invariant'}}
+    %0 = felt.const 1
+    // expected-error@+1 {{'verif.decreases' op expects ancestor op 'verif.invariant'}}
     verif.decreases %0
   }
 }
@@ -74,8 +74,8 @@ module attributes {llzk.lang} {
   }
 
   verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
-    %0 = felt.const 1 
-    // expected-error@+1 {{'verif.old' op must have an ancestor of type 'verif.step'}}
+    %0 = felt.const 1
+    // expected-error@+1 {{'verif.old' op expects ancestor op 'verif.step'}}
     %1 = verif.old %0 : !felt.type
   }
 }
@@ -94,7 +94,7 @@ module attributes {llzk.lang} {
   }
 
   verif.contract @Foo for @Top (%self: !struct.type<@Top>) {
-    %2 = arith.constant true  
+    %2 = arith.constant true
     // expected-error@+1 {{'verif.step.yield' op expects parent op 'verif.step'}}
     verif.step.yield %2
   }
