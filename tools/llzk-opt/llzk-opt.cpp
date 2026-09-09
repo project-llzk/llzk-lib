@@ -72,26 +72,26 @@ static llvm::cl::opt<bool>
 namespace mlir_hotfix {
 
 inline static void registerTransformsPasses() {
-  mlir::registerCSE();
-  mlir::registerCanonicalizer();
+  mlir::registerCSEPass();
+  mlir::registerCanonicalizerPass();
   mlir::registerCompositeFixedPointPass();
-  mlir::registerControlFlowSink();
-  mlir::registerGenerateRuntimeVerification();
-  mlir::registerInliner();
-  mlir::registerLocationSnapshot();
-  mlir::registerLoopInvariantCodeMotion();
-  mlir::registerLoopInvariantSubsetHoisting();
-  mlir::registerMem2Reg();
+  mlir::registerControlFlowSinkPass();
+  mlir::registerGenerateRuntimeVerificationPass();
+  mlir::registerInlinerPass();
+  mlir::registerLocationSnapshotPass();
+  mlir::registerLoopInvariantCodeMotionPass();
+  mlir::registerLoopInvariantSubsetHoistingPass();
+  mlir::registerMem2RegPass();
   mlir::registerPrintIRPass();
-  mlir::registerPrintOpStats();
+  mlir::registerPrintOpStatsPass();
   mlir::registerPass(llzk::createRemoveDeadValuesWorkaroundPass);
-  mlir::registerSCCP();
+  mlir::registerSCCPPass();
   mlir::registerSROA();
-  mlir::registerStripDebugInfo();
-  mlir::registerSymbolDCE();
-  mlir::registerSymbolPrivatize();
-  mlir::registerTopologicalSort();
-  mlir::registerViewOpGraph();
+  mlir::registerStripDebugInfoPass();
+  mlir::registerSymbolDCEPass();
+  mlir::registerSymbolPrivatizePass();
+  mlir::registerTopologicalSortPass();
+  mlir::registerViewOpGraphPass();
 }
 
 } // namespace mlir_hotfix
