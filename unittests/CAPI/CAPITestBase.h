@@ -17,7 +17,6 @@
 #include "llzk/Dialect/Bool/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
-#include "llzk/Dialect/SMT/IR/SMTOps.h"
 #include "llzk/Dialect/Shared/Builders.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 
@@ -28,6 +27,7 @@
 
 #include <mlir/CAPI/Wrap.h>
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/SMT/IR/SMTOps.h>
 
 #include <gtest/gtest.h>
 
@@ -107,7 +107,7 @@ public:
   ///  LLZK C API functions within the tests.
   static mlir::Value cppGenSMTBoolConstant(MlirOpBuilder builder, MlirLocation location) {
     mlir::OpBuilder *cppBuilder = unwrap(builder);
-    return llzk::smt::BoolConstantOp::create(
+    return mlir::smt::BoolConstantOp::create(
         *cppBuilder, unwrap(location), cppBuilder->getAttr<mlir::BoolAttr>(true)
     );
   }

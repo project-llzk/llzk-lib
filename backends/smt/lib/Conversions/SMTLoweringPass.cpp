@@ -33,9 +33,6 @@
 #include "llzk/Dialect/Include/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
-#include "llzk/Dialect/SMT/IR/SMTDialect.h"
-#include "llzk/Dialect/SMT/IR/SMTOps.h"
-#include "llzk/Dialect/SMT/IR/SMTTypes.h"
 #include "llzk/Dialect/String/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
@@ -47,6 +44,9 @@
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/Func/IR/FuncOps.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/Dialect/SMT/IR/SMTDialect.h>
+#include <mlir/Dialect/SMT/IR/SMTOps.h>
+#include <mlir/Dialect/SMT/IR/SMTTypes.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/BuiltinTypes.h>
 #include <mlir/IR/SymbolTable.h>
@@ -323,20 +323,22 @@ public:
   ) const override {
     auto lower = createIntConstant(builder, loc, range.getLHS());
     auto upper = createIntConstant(builder, loc, range.getRHS());
-    auto lowerBound =
-        smt::IntCmpOp::create(builder, loc, smt::IntPredicate::ge, value, lower.getResult());
-    auto upperBound =
-        smt::IntCmpOp::create(builder, loc, smt::IntPredicate::le, value, upper.getResult());
+    auto lowerBound = mlir::smt::IntCmpOp::create(
+        builder, loc, mlir::smt::IntPredicate::ge, value, lower.getResult()
+    );
+    auto upperBound = mlir::smt::IntCmpOp::create(
+        builder, loc, mlir::smt::IntPredicate::le, value, upper.getResult()
+    );
     // Assert the lower bound of the canonical/unreduced interval for this symbol.
-    smt::AssertOp::create(builder, loc, lowerBound.getResult());
+    mlir::smt::AssertOp::create(builder, loc, lowerBound.getResult());
     // Assert the upper bound of the canonical/unreduced interval for this symbol.
-    smt::AssertOp::create(builder, loc, upperBound.getResult());
+    mlir::smt::AssertOp::create(builder, loc, upperBound.getResult());
   }
 
   Value emitFreshSymbol(OpBuilder &builder, Location loc, StringRef name) const override {
     std::string freshName = getFreshName(name);
-    return smt::DeclareFunOp::create(
-               builder, loc, smt::IntType::get(ctx), StringAttr::get(ctx, freshName)
+    return mlir::smt::DeclareFunOp::create(
+               builder, loc, mlir::smt::IntType::get(ctx), StringAttr::get(ctx, freshName)
     )
         .getResult();
   }
@@ -347,19 +349,19 @@ public:
   }
 
   Value emitSub(OpBuilder &builder, Location loc, Value lhs, Value rhs) const override {
-    return smt::IntSubOp::create(builder, loc, lhs, rhs).getResult();
+    return mlir::smt::IntSubOp::create(builder, loc, lhs, rhs).getResult();
   }
 
   Value emitAdd(OpBuilder &builder, Location loc, Value lhs, Value rhs) const override {
-    return smt::IntAddOp::create(builder, loc, ValueRange {lhs, rhs}).getResult();
+    return mlir::smt::IntAddOp::create(builder, loc, ValueRange {lhs, rhs}).getResult();
   }
 
   Value emitMul(OpBuilder &builder, Location loc, Value lhs, Value rhs) const override {
-    return smt::IntMulOp::create(builder, loc, ValueRange {lhs, rhs}).getResult();
+    return mlir::smt::IntMulOp::create(builder, loc, ValueRange {lhs, rhs}).getResult();
   }
 
   Value emitDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs) const override {
-    return smt::IntDivOp::create(builder, loc, lhs, rhs).getResult();
+    return mlir::smt::IntDivOp::create(builder, loc, lhs, rhs).getResult();
   }
 
   Value emitSignedDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs) const override {
@@ -374,7 +376,7 @@ public:
 
   Value emitModPrime(OpBuilder &builder, Location loc, Value value) const override {
     auto primeConst = createPrimeConstant(builder, loc);
-    return smt::IntModOp::create(builder, loc, ValueRange {value, primeConst.getResult()})
+    return mlir::smt::IntModOp::create(builder, loc, ValueRange {value, primeConst.getResult()})
         .getResult();
   }
 
@@ -386,13 +388,13 @@ public:
   Value emitOrderedComparison(
       OpBuilder &builder, Location loc, boolean::FeltCmpPredicate predicate, Value lhs, Value rhs
   ) const override {
-    static DenseMap<boolean::FeltCmpPredicate, smt::IntPredicate> predicateComparator = {
-        {boolean::FeltCmpPredicate::GE, smt::IntPredicate::ge},
-        {boolean::FeltCmpPredicate::GT, smt::IntPredicate::gt},
-        {boolean::FeltCmpPredicate::LE, smt::IntPredicate::le},
-        {boolean::FeltCmpPredicate::LT, smt::IntPredicate::lt}
+    static DenseMap<boolean::FeltCmpPredicate, mlir::smt::IntPredicate> predicateComparator = {
+        {boolean::FeltCmpPredicate::GE, mlir::smt::IntPredicate::ge},
+        {boolean::FeltCmpPredicate::GT, mlir::smt::IntPredicate::gt},
+        {boolean::FeltCmpPredicate::LE, mlir::smt::IntPredicate::le},
+        {boolean::FeltCmpPredicate::LT, mlir::smt::IntPredicate::lt}
     };
-    return smt::IntCmpOp::create(builder, loc, predicateComparator[predicate], lhs, rhs)
+    return mlir::smt::IntCmpOp::create(builder, loc, predicateComparator[predicate], lhs, rhs)
         .getResult();
   }
 
@@ -403,7 +405,7 @@ private:
     Value isNegative =
         emitOrderedComparison(builder, loc, boolean::FeltCmpPredicate::LT, value, zero);
     Value negated = emitSub(builder, loc, zero, value);
-    return smt::IteOp::create(builder, loc, isNegative, negated, value).getResult();
+    return mlir::smt::IteOp::create(builder, loc, isNegative, negated, value).getResult();
   }
 
   /// absQuotient = |lhs| / |rhs|
@@ -416,9 +418,11 @@ private:
     Value rhsAbs = emitAbsValue(builder, loc, rhs);
     Value absQuotient = emitDiv(builder, loc, lhsAbs, rhsAbs);
     // we can use xor here because we are checking if the signs are different
-    Value signsDiffer = smt::XOrOp::create(builder, loc, ValueRange {lhsNeg, rhsNeg}).getResult();
+    Value signsDiffer =
+        mlir::smt::XOrOp::create(builder, loc, ValueRange {lhsNeg, rhsNeg}).getResult();
     Value negatedQuotient = emitSub(builder, loc, zero, absQuotient);
-    return smt::IteOp::create(builder, loc, signsDiffer, negatedQuotient, absQuotient).getResult();
+    return mlir::smt::IteOp::create(builder, loc, signsDiffer, negatedQuotient, absQuotient)
+        .getResult();
   }
 
   MLIRContext *ctx;
@@ -438,13 +442,15 @@ private:
     return uniqueName;
   }
 
-  smt::IntConstantOp createPrimeConstant(OpBuilder &builder, Location loc) const {
-    return smt::IntConstantOp::create(builder, loc, IntegerAttr::get(ctx, reasoner.getPrime()));
+  mlir::smt::IntConstantOp createPrimeConstant(OpBuilder &builder, Location loc) const {
+    return mlir::smt::IntConstantOp::create(
+        builder, loc, IntegerAttr::get(ctx, reasoner.getPrime())
+    );
   }
 
-  smt::IntConstantOp
+  mlir::smt::IntConstantOp
   createIntConstant(OpBuilder &builder, Location loc, const llvm::DynamicAPInt &value) const {
-    return smt::IntConstantOp::create(builder, loc, IntegerAttr::get(ctx, toAPSInt(value)));
+    return mlir::smt::IntConstantOp::create(builder, loc, IntegerAttr::get(ctx, toAPSInt(value)));
   }
 };
 
@@ -711,7 +717,7 @@ public:
           rewriter, op.getLoc(), adaptor.getLhs(), lhsRange, adaptor.getRhs(), rhsRange,
           "bool_cmp_ne"
       );
-      rewriter.replaceOp(op, smt::NotOp::create(rewriter, op.getLoc(), eq).getResult());
+      rewriter.replaceOp(op, mlir::smt::NotOp::create(rewriter, op.getLoc(), eq).getResult());
       return success();
     }
     default: {
@@ -803,9 +809,9 @@ Value OptimizedNonNativeStrategy::canonicalizeValue(
     emitRangeConstraint(builder, loc, remainder, getDefaultFeltRange());
     Value qTimesP = emitter->emitPrimeMultiple(builder, loc, quotient);
     Value reconstructed = emitter->emitAdd(builder, loc, qTimesP, remainder);
-    Value eq = smt::EqOp::create(builder, loc, value, reconstructed).getResult();
+    Value eq = mlir::smt::EqOp::create(builder, loc, value, reconstructed).getResult();
     // Assert value = q * p + r, where r is the canonical representative in [0, p-1].
-    smt::AssertOp::create(builder, loc, eq);
+    mlir::smt::AssertOp::create(builder, loc, eq);
     return remainder;
   }
   }
@@ -817,14 +823,14 @@ Value OptimizedNonNativeStrategy::buildCanonicalEqualityPredicate(
     const UnreducedInterval &rhsRange, StringRef prefix
 ) const {
   if (reasoner.unionWidthLessThanPrime(lhsRange, rhsRange)) {
-    return smt::EqOp::create(builder, loc, lhs, rhs).getResult();
+    return mlir::smt::EqOp::create(builder, loc, lhs, rhs).getResult();
   }
 
   Value lhsCanonical =
       canonicalizeValue(builder, loc, lhs, lhsRange, (prefix + Twine("_lhs")).str());
   Value rhsCanonical =
       canonicalizeValue(builder, loc, rhs, rhsRange, (prefix + Twine("_rhs")).str());
-  return smt::EqOp::create(builder, loc, lhsCanonical, rhsCanonical).getResult();
+  return mlir::smt::EqOp::create(builder, loc, lhsCanonical, rhsCanonical).getResult();
 }
 
 Value OptimizedNonNativeStrategy::buildCongruenceEqualityPredicate(
@@ -836,7 +842,7 @@ Value OptimizedNonNativeStrategy::buildCongruenceEqualityPredicate(
   // native `mod p` constraint or introduce an explicit quotient witness.
   auto plan = reasoner.planCongruence(lhsRange, rhsRange);
   if (plan.kind == ModularReasoner::ReductionKind::Direct) {
-    return smt::EqOp::create(builder, loc, lhs, rhs).getResult();
+    return mlir::smt::EqOp::create(builder, loc, lhs, rhs).getResult();
   }
 
   Value diff = emitter->emitSub(builder, loc, lhs, rhs);
@@ -844,7 +850,7 @@ Value OptimizedNonNativeStrategy::buildCongruenceEqualityPredicate(
   case ModularReasoner::ReductionKind::NativeMod: {
     Value zero = emitter->emitConstant(builder, loc, llvm::DynamicAPInt(0));
     Value reducedDiff = emitter->emitModPrime(builder, loc, diff);
-    return smt::EqOp::create(builder, loc, reducedDiff, zero).getResult();
+    return mlir::smt::EqOp::create(builder, loc, reducedDiff, zero).getResult();
   }
   case ModularReasoner::ReductionKind::ExplicitWitness: {
     assert(plan.quotientRange.has_value() && "explicit congruence requires quotient range");
@@ -852,7 +858,7 @@ Value OptimizedNonNativeStrategy::buildCongruenceEqualityPredicate(
     Value quotient = emitter->emitFreshSymbol(builder, loc, quotientName);
     emitRangeConstraint(builder, loc, quotient, *plan.quotientRange);
     Value qTimesP = emitter->emitPrimeMultiple(builder, loc, quotient);
-    return smt::EqOp::create(builder, loc, diff, qTimesP).getResult();
+    return mlir::smt::EqOp::create(builder, loc, diff, qTimesP).getResult();
   }
   case ModularReasoner::ReductionKind::Direct:
     llvm_unreachable("direct reductions handled above");
@@ -886,7 +892,7 @@ void OptimizedNonNativeStrategy::emitCongruenceEqualityAssertion(
   Value predicate =
       buildCongruenceEqualityPredicate(builder, loc, lhs, lhsRange, rhs, rhsRange, prefix);
   // Assert lhs ≡ rhs (mod p) using the selected congruence encoding plan.
-  smt::AssertOp::create(builder, loc, predicate);
+  mlir::smt::AssertOp::create(builder, loc, predicate);
 }
 
 Value OptimizedNonNativeStrategy::emitDivisionValue(
@@ -915,7 +921,7 @@ Value OptimizedNonNativeStrategy::emitDivisionValue(
 
   if (!maybeContainsZeroResidue(denominatorRange)) {
     // Assert denominator * div ≡ numerator (mod p) when the denominator is provably nonzero.
-    smt::AssertOp::create(builder, loc, productEqualsNumerator);
+    mlir::smt::AssertOp::create(builder, loc, productEqualsNumerator);
     return div;
   }
 
@@ -927,10 +933,10 @@ Value OptimizedNonNativeStrategy::emitDivisionValue(
   );
   // Build `ite denominator == 0 then div = 0 else denominator * div ≡ numerator (mod p)`.
   Value divConstraint =
-      smt::IteOp::create(builder, loc, denominatorIsZero, divIsZero, productEqualsNumerator)
+      mlir::smt::IteOp::create(builder, loc, denominatorIsZero, divIsZero, productEqualsNumerator)
           .getResult();
   // Assert the LLZK field-division semantics with an explicit zero-denominator branch.
-  smt::AssertOp::create(builder, loc, divConstraint);
+  mlir::smt::AssertOp::create(builder, loc, divConstraint);
   return div;
 }
 
@@ -959,7 +965,7 @@ Value OptimizedNonNativeStrategy::emitInverseValue(
 
   if (!maybeContainsZeroResidue(operandRange)) {
     // Assert operand * inv ≡ 1 (mod p) when the operand is provably nonzero.
-    smt::AssertOp::create(builder, loc, productEqualsOne);
+    mlir::smt::AssertOp::create(builder, loc, productEqualsOne);
     return inv;
   }
 
@@ -971,9 +977,10 @@ Value OptimizedNonNativeStrategy::emitInverseValue(
   );
   // Build `ite operand == 0 then inv = 0 else operand * inv ≡ 1 (mod p)`.
   Value invConstraint =
-      smt::IteOp::create(builder, loc, operandIsZero, invIsZero, productEqualsOne).getResult();
+      mlir::smt::IteOp::create(builder, loc, operandIsZero, invIsZero, productEqualsOne)
+          .getResult();
   // Assert the LLZK inverse semantics with an explicit zero-operand branch.
-  smt::AssertOp::create(builder, loc, invConstraint);
+  mlir::smt::AssertOp::create(builder, loc, invConstraint);
   return inv;
 }
 
@@ -993,7 +1000,9 @@ Value OptimizedNonNativeStrategy::emitSignedFeltExpr(
   // Step 3: `negativeRep = canonical - p`
   Value negativeRepresentative = emitter->emitSub(builder, loc, canonical, prime);
   // Step 4: `result = if isNonNegative then canonical else canonical - p`
-  return smt::IteOp::create(builder, loc, inNonNegativeRange, canonical, negativeRepresentative)
+  return mlir::smt::IteOp::create(
+             builder, loc, inNonNegativeRange, canonical, negativeRepresentative
+  )
       .getResult();
 }
 
@@ -1026,12 +1035,11 @@ void OptimizedNonNativeStrategy::populatePatterns(
     const SignalSymbols &signalSymbols
 ) const {
   patterns.add<
-      BasicConverter<felt::AddFeltOp, smt::IntAddOp>,
-      BasicConverter<felt::SubFeltOp, smt::IntSubOp>,
-      BasicConverter<felt::MulFeltOp, smt::IntMulOp>,
-      BasicConverter<felt::NegFeltOp, smt::IntNegOp>,
-      BasicConverter<felt::UnsignedModFeltOp, smt::IntModOp>, FeltConstConverter, ReturnConverter,
-      SCFIfConverter, YieldConverter>(converter, context);
+      BasicConverter<felt::AddFeltOp, mlir::smt::IntAddOp>,
+      BasicConverter<felt::SubFeltOp, mlir::smt::IntSubOp>,
+      BasicConverter<felt::MulFeltOp, mlir::smt::IntMulOp>, FeltNegConverter,
+      BasicConverter<felt::UnsignedModFeltOp, mlir::smt::IntModOp>, FeltConstConverter,
+      ReturnConverter, SCFIfConverter, YieldConverter>(converter, context);
   patterns.add<FunctionDefConverter>(converter, context);
   patterns.add<BoolCmpConverter>(converter, context, this);
   patterns.add<FeltDivConverter>(converter, context, this);
@@ -1054,7 +1062,7 @@ class PassImpl : public llzk::smt::impl::SMTLoweringPassBase<PassImpl> {
   using Base::Base;
 
   void getDependentDialects(::mlir::DialectRegistry &registry) const override {
-    registry.insert<smt::SMTDialect, mlir::func::FuncDialect>();
+    registry.insert<mlir::smt::SMTDialect, mlir::func::FuncDialect>();
   }
 
   // Convert the body and signature of a @product function to SMT
@@ -1142,12 +1150,12 @@ class PassImpl : public llzk::smt::impl::SMTLoweringPassBase<PassImpl> {
 
         std::string constraintName = memberDef.getSymName().str() + "_c";
         std::string witnessName = memberDef.getSymName().str() + "_w";
-        auto constraintSym = smt::DeclareFunOp::create(
-            rewriter, preamble, smt::IntType::get(&getContext()),
+        auto constraintSym = mlir::smt::DeclareFunOp::create(
+            rewriter, preamble, mlir::smt::IntType::get(&getContext()),
             StringAttr::get(&getContext(), constraintName)
         );
-        auto witnessSym = smt::DeclareFunOp::create(
-            rewriter, preamble, smt::IntType::get(&getContext()),
+        auto witnessSym = mlir::smt::DeclareFunOp::create(
+            rewriter, preamble, mlir::smt::IntType::get(&getContext()),
             StringAttr::get(&getContext(), witnessName)
         );
         strategy.emitRangeConstraint(

@@ -1,4 +1,4 @@
-//===-- TranslateRegistration.h ---------------------------------*- C++ -*-===//
+//===-- SMTInfoDialect.h - SMT script metadata dialect ----------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -9,9 +9,7 @@
 
 #pragma once
 
-namespace llzk::smt {
+#include <mlir/IR/Dialect.h>
 
-/// Registers the translation from SMT to SMTLIB.
-void registerSmtTranslation();
-
-} // namespace llzk::smt
+// Include TableGen'd declarations
+#include "llzk/Dialect/SMTInfo/IR/SMTInfoDialect.h.inc"

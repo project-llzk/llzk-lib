@@ -10,13 +10,14 @@
 #include "smt/Target/SMTLIBEmitter.h"
 
 #include "llzk/Dialect/Bool/IR/Ops.h"
-#include "llzk/Dialect/SMT/IR/SMTAttributes.h"
-#include "llzk/Dialect/SMT/IR/SMTDialect.h"
-#include "llzk/Dialect/SMT/IR/SMTOps.h"
-#include "llzk/Dialect/SMT/IR/SMTTypes.h"
+#include "llzk/Dialect/SMTInfo/IR/SMTInfoOps.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/Func/IR/FuncOps.h>
+#include <mlir/Dialect/SMT/IR/SMTAttributes.h>
+#include <mlir/Dialect/SMT/IR/SMTDialect.h>
+#include <mlir/Dialect/SMT/IR/SMTOps.h>
+#include <mlir/Dialect/SMT/IR/SMTTypes.h>
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/OperationSupport.h>
@@ -96,9 +97,9 @@ static std::string sanitizeSymbol(StringRef name) {
 /// Append an SMT dialect sort using SMT-LIB textual syntax.
 static void printSortForType(llvm::raw_ostream &os, Type type) {
   TypeSwitch<Type>(type)
-      .Case<smt::IntType>([&os](auto) { os << "Int"; })
-      .Case<smt::BoolType>([&os](auto) { os << "Bool"; })
-      .Case<smt::SMTFuncType>([&os](auto funcType) {
+      .Case<mlir::smt::IntType>([&os](auto) { os << "Int"; })
+      .Case<mlir::smt::BoolType>([&os](auto) { os << "Bool"; })
+      .Case<mlir::smt::SMTFuncType>([&os](auto funcType) {
     os << "((";
     llvm::interleave(funcType.getDomainTypes(), [&os](Type domainType) {
       printSortForType(os, domainType);
@@ -107,10 +108,10 @@ static void printSortForType(llvm::raw_ostream &os, Type type) {
     printSortForType(os, funcType.getRangeType());
     os << ')';
   })
-      .Case<smt::BitVectorType>([&os](auto bvType) {
+      .Case<mlir::smt::BitVectorType>([&os](auto bvType) {
     os << "(_ BitVec " << bvType.getWidth() << ')';
   })
-      .Case<smt::ArrayType>([&os](auto arrayType) {
+      .Case<mlir::smt::ArrayType>([&os](auto arrayType) {
     os << "(Array ";
     printSortForType(os, arrayType.getDomainType());
     os << ' ';
@@ -167,8 +168,8 @@ static std::string formatIntegerLiteral(const llvm::APInt &value) {
 /// Print a structured SMT-LIB `set-info` value attribute.
 static void printSetInfoValue(llvm::raw_ostream &os, Attribute value) {
   TypeSwitch<Attribute>(value)
-      .Case<smt::KeywordAttr>([&os](auto keywordAttr) { os << keywordAttr.getValue(); })
-      .Case<smt::SymbolAttr>([&os](auto symbolAttr) { os << symbolAttr.getValue(); })
+      .Case<smt_info::KeywordAttr>([&os](auto keywordAttr) { os << keywordAttr.getValue(); })
+      .Case<smt_info::SymbolAttr>([&os](auto symbolAttr) { os << symbolAttr.getValue(); })
       .Case<StringAttr>([&os](auto strAttr) { strAttr.print(os); })
       .Case<BoolAttr>([&os](auto boolAttr) { printBoolLiteral(os, boolAttr.getValue()); })
       .Case<IntegerAttr>([&os](auto intAttr) {
@@ -278,11 +279,11 @@ private:
   }
 
   /// Find the unique top-level solver root in the effective root module.
-  FailureOr<smt::SolverOp> collectRoot() {
+  FailureOr<mlir::smt::SolverOp> collectRoot() {
     selectedRootModule = getEffectiveRootModule();
-    smt::SolverOp solver;
+    mlir::smt::SolverOp solver;
     for (Operation &op : selectedRootModule.getBody()->getOperations()) {
-      if (auto solverOp = dyn_cast<smt::SolverOp>(op); solverOp && !solver) {
+      if (auto solverOp = dyn_cast<mlir::smt::SolverOp>(op); solverOp && !solver) {
         solver = solverOp;
       } else if (solverOp) {
         return selectedRootModule.emitError(
@@ -305,14 +306,14 @@ private:
   }
 
   /// Dispatch emission once the root solver has been selected.
-  LogicalResult emitRoot(smt::SolverOp solver, bool emitReset) {
+  LogicalResult emitRoot(mlir::smt::SolverOp solver, bool emitReset) {
     return emitSolverRoot(solver, emitReset);
   }
 
   /// Check whether the selected solver already sets the SMT-LIB logic.
-  static bool solverHasExplicitSetLogic(smt::SolverOp solver) {
+  static bool solverHasExplicitSetLogic(mlir::smt::SolverOp solver) {
     return llvm::any_of(solver.getBodyRegion().front().without_terminator(), [](Operation &op) {
-      return isa<smt::SetLogicOp>(op);
+      return isa<mlir::smt::SetLogicOp>(op);
     });
   }
 
@@ -362,7 +363,7 @@ private:
   }
 
   /// Emit the selected solver as one complete SMT-LIB script body.
-  LogicalResult emitSolverRoot(smt::SolverOp solver, bool emitReset) {
+  LogicalResult emitSolverRoot(mlir::smt::SolverOp solver, bool emitReset) {
     if (solver.getNumOperands() != 0 || solver.getBodyRegion().front().getNumArguments() != 0) {
       return solver.emitError(
           "SMT-LIB scripts have no standard parameter channel; the selected top-level smt.solver "
@@ -401,36 +402,36 @@ private:
     auto bind = [&](auto exprOp) { return bindExpr(exprOp, ctx); };
 
     return TypeSwitch<Operation *, LogicalResult>(op)
-        .Case<smt::SetLogicOp>([this](auto setLogicOp) {
+        .Case<mlir::smt::SetLogicOp>([this](auto setLogicOp) {
       os << "(set-logic " << setLogicOp.getLogic() << ")\n";
       return success();
     })
-        .Case<smt::SetInfoOp>([this](auto setInfoOp) {
+        .Case<smt_info::SMTInfoSetOp>([this](auto setInfoOp) {
       os << "(set-info " << setInfoOp.getKey().getValue() << ' ';
       printSetInfoValue(os, setInfoOp.getValueAttr());
       os << ")\n";
       return success();
     })
-        .Case<smt::DeclareFunOp>([&](auto declareOp) { return emitDeclare(declareOp, ctx); })
-        .Case<smt::AssertOp>([&](auto assertOp) { return emitAssert(assertOp, ctx); })
-        .Case<smt::ResetOp>([this, &ctx](auto) {
+        .Case<mlir::smt::DeclareFunOp>([&](auto declareOp) { return emitDeclare(declareOp, ctx); })
+        .Case<mlir::smt::AssertOp>([&](auto assertOp) { return emitAssert(assertOp, ctx); })
+        .Case<mlir::smt::ResetOp>([this, &ctx](auto) {
       os << "(reset)\n";
       resetScriptState();
       pruneResetSensitiveBindings(ctx);
       return success();
     })
-        .Case<smt::PushOp>([this](auto pushOp) {
+        .Case<mlir::smt::PushOp>([this](auto pushOp) {
       pushDepth += pushOp.getCount();
       os << "(push " << pushOp.getCount() << ")\n";
       return success();
     })
-        .Case<smt::PopOp>([this](auto popOp) {
+        .Case<mlir::smt::PopOp>([this](auto popOp) {
       pushDepth -= popOp.getCount();
       os << "(pop " << popOp.getCount() << ")\n";
       return success();
     })
-        .Case<smt::CheckOp>([&](auto checkOp) { return emitCheck(checkOp, ctx); })
-        .Case<smt::SolverOp>([&](auto solverOp) {
+        .Case<mlir::smt::CheckOp>([&](auto checkOp) { return emitCheck(checkOp, ctx); })
+        .Case<mlir::smt::SolverOp>([&](auto solverOp) {
       return solverOp.emitError(
           "nested smt.solver is not exportable to SMT-LIB; SMT-LIB has a single script context, "
           "so use push/pop if same-solver nesting was intended"
@@ -441,52 +442,51 @@ private:
       return emitUnrealizedCast(castOp, ctx);
     })
         .Case<arith::ConstantOp>([&](auto constOp) { return emitArithConstant(constOp, ctx); })
-        .Case<smt::BoolConstantOp>(bind)
-        .Case<smt::IntConstantOp>(bind)
-        .Case<smt::BVConstantOp>(bind)
-        .Case<smt::EqOp>(bind)
-        .Case<smt::NotOp>(bind)
-        .Case<smt::AndOp>(bind)
-        .Case<smt::OrOp>(bind)
-        .Case<smt::XOrOp>(bind)
-        .Case<smt::ImpliesOp>(bind)
-        .Case<smt::IteOp>(bind)
-        .Case<smt::IntNegOp>(bind)
-        .Case<smt::IntAddOp>(bind)
-        .Case<smt::IntMulOp>(bind)
-        .Case<smt::IntSubOp>(bind)
-        .Case<smt::IntDivOp>(bind)
-        .Case<smt::IntModOp>(bind)
-        .Case<smt::IntCmpOp>(bind)
-        .Case<smt::Int2BVOp>(bind)
-        .Case<smt::BV2IntOp>(bind)
-        .Case<smt::DistinctOp>(bind)
-        .Case<smt::IntAbsOp>(bind)
-        .Case<smt::BVNegOp>(bind)
-        .Case<smt::BVAndOp>(bind)
-        .Case<smt::BVAddOp>(bind)
-        .Case<smt::BVMulOp>(bind)
-        .Case<smt::BVUDivOp>(bind)
-        .Case<smt::BVSDivOp>(bind)
-        .Case<smt::BVURemOp>(bind)
-        .Case<smt::BVSRemOp>(bind)
-        .Case<smt::BVSModOp>(bind)
-        .Case<smt::BVOrOp>(bind)
-        .Case<smt::BVXOrOp>(bind)
-        .Case<smt::BVNotOp>(bind)
-        .Case<smt::BVShlOp>(bind)
-        .Case<smt::BVLShrOp>(bind)
-        .Case<smt::BVAShrOp>(bind)
-        .Case<smt::BVCmpOp>(bind)
-        .Case<smt::ConcatOp>(bind)
-        .Case<smt::ExtractOp>(bind)
-        .Case<smt::RepeatOp>(bind)
-        .Case<smt::ApplyFuncOp>(bind)
-        .Case<smt::ArraySelectOp>(bind)
-        .Case<smt::ArrayStoreOp>(bind)
-        .Case<smt::ArrayBroadcastOp>(bind)
-        .Case<smt::ForallOp>(bind)
-        .Case<smt::ExistsOp>(bind)
+        .Case<mlir::smt::BoolConstantOp>(bind)
+        .Case<mlir::smt::IntConstantOp>(bind)
+        .Case<mlir::smt::BVConstantOp>(bind)
+        .Case<mlir::smt::EqOp>(bind)
+        .Case<mlir::smt::NotOp>(bind)
+        .Case<mlir::smt::AndOp>(bind)
+        .Case<mlir::smt::OrOp>(bind)
+        .Case<mlir::smt::XOrOp>(bind)
+        .Case<mlir::smt::ImpliesOp>(bind)
+        .Case<mlir::smt::IteOp>(bind)
+        .Case<mlir::smt::IntAddOp>(bind)
+        .Case<mlir::smt::IntMulOp>(bind)
+        .Case<mlir::smt::IntSubOp>(bind)
+        .Case<mlir::smt::IntDivOp>(bind)
+        .Case<mlir::smt::IntModOp>(bind)
+        .Case<mlir::smt::IntCmpOp>(bind)
+        .Case<mlir::smt::Int2BVOp>(bind)
+        .Case<mlir::smt::BV2IntOp>(bind)
+        .Case<mlir::smt::DistinctOp>(bind)
+        .Case<mlir::smt::IntAbsOp>(bind)
+        .Case<mlir::smt::BVNegOp>(bind)
+        .Case<mlir::smt::BVAndOp>(bind)
+        .Case<mlir::smt::BVAddOp>(bind)
+        .Case<mlir::smt::BVMulOp>(bind)
+        .Case<mlir::smt::BVUDivOp>(bind)
+        .Case<mlir::smt::BVSDivOp>(bind)
+        .Case<mlir::smt::BVURemOp>(bind)
+        .Case<mlir::smt::BVSRemOp>(bind)
+        .Case<mlir::smt::BVSModOp>(bind)
+        .Case<mlir::smt::BVOrOp>(bind)
+        .Case<mlir::smt::BVXOrOp>(bind)
+        .Case<mlir::smt::BVNotOp>(bind)
+        .Case<mlir::smt::BVShlOp>(bind)
+        .Case<mlir::smt::BVLShrOp>(bind)
+        .Case<mlir::smt::BVAShrOp>(bind)
+        .Case<mlir::smt::BVCmpOp>(bind)
+        .Case<mlir::smt::ConcatOp>(bind)
+        .Case<mlir::smt::ExtractOp>(bind)
+        .Case<mlir::smt::RepeatOp>(bind)
+        .Case<mlir::smt::ApplyFuncOp>(bind)
+        .Case<mlir::smt::ArraySelectOp>(bind)
+        .Case<mlir::smt::ArrayStoreOp>(bind)
+        .Case<mlir::smt::ArrayBroadcastOp>(bind)
+        .Case<mlir::smt::ForallOp>(bind)
+        .Case<mlir::smt::ExistsOp>(bind)
         .Case<boolean::AssertOp>([&](auto assertOp) {
       return assertOp.emitError("boolean.assert is not serializable to SMT-LIB");
     }).Default([&](Operation *unknownOp) {
@@ -518,7 +518,7 @@ private:
   }
 
   /// Emit a declared SMT symbol and record its printed SMT-LIB identifier.
-  LogicalResult emitDeclare(smt::DeclareFunOp declareOp, EvalContext &ctx) {
+  LogicalResult emitDeclare(mlir::smt::DeclareFunOp declareOp, EvalContext &ctx) {
     std::string symbol;
     if (auto prefix = declareOp.getNamePrefix()) {
       symbol = sanitizeSymbol(*prefix);
@@ -527,7 +527,7 @@ private:
     }
     symbol = reserveUniqueSymbol(std::move(symbol));
     ctx.values[declareOp.getResult()] = ValueBinding {symbol, /*survivesReset=*/false};
-    if (auto funcType = dyn_cast<smt::SMTFuncType>(declareOp.getType())) {
+    if (auto funcType = dyn_cast<mlir::smt::SMTFuncType>(declareOp.getType())) {
       os << "(declare-fun " << symbol << " (";
       llvm::interleave(funcType.getDomainTypes(), [this](Type domainType) {
         printSortForType(os, domainType);
@@ -544,7 +544,7 @@ private:
   }
 
   /// Emit an assertion, deduplicating top-level assertions when possible.
-  LogicalResult emitAssert(smt::AssertOp assertOp, EvalContext &ctx) {
+  LogicalResult emitAssert(mlir::smt::AssertOp assertOp, EvalContext &ctx) {
     auto expr = lookup(assertOp.getInput(), ctx);
     if (failed(expr)) {
       return assertOp.emitError("missing SMTLIB expression for assertion input");
@@ -655,9 +655,9 @@ private:
       return HelperMode::InlineScript;
     }
     if (llvm::any_of(
-            func.getArgumentTypes(), [](Type type) { return isa<smt::SMTFuncType>(type); }
+            func.getArgumentTypes(), [](Type type) { return isa<mlir::smt::SMTFuncType>(type); }
         ) ||
-        isa<smt::SMTFuncType>(func.getResultTypes().front())) {
+        isa<mlir::smt::SMTFuncType>(func.getResultTypes().front())) {
       return HelperMode::InlineScript;
     }
 
@@ -674,8 +674,9 @@ private:
     auto cleanup = llvm::scope_exit([this, funcOp] { helperModesInProgress.erase(funcOp); });
 
     for (Operation &op : func.getBody().front().without_terminator()) {
-      if (isa<smt::SetLogicOp, smt::SetInfoOp, smt::DeclareFunOp, smt::AssertOp, smt::ResetOp,
-              smt::PushOp, smt::PopOp, smt::CheckOp, smt::SolverOp>(op)) {
+      if (isa<mlir::smt::SetLogicOp, smt_info::SMTInfoSetOp, mlir::smt::DeclareFunOp,
+              mlir::smt::AssertOp, mlir::smt::ResetOp, mlir::smt::PushOp, mlir::smt::PopOp,
+              mlir::smt::CheckOp, mlir::smt::SolverOp>(op)) {
         helperModes[func.getOperation()] = HelperMode::InlineScript;
         return HelperMode::InlineScript;
       }
@@ -1054,7 +1055,8 @@ private:
   }
 
   /// Require that an `smt.check` result region is structurally empty.
-  LogicalResult verifyEmptyCheckRegion(smt::CheckOp checkOp, StringRef regionName, Region &region) {
+  LogicalResult
+  verifyEmptyCheckRegion(mlir::smt::CheckOp checkOp, StringRef regionName, Region &region) {
     if (!llvm::hasSingleElement(region) || !region.front().without_terminator().empty()) {
       return checkOp.emitOpError()
              << "cannot lower smt.check with non-empty result regions because "
@@ -1065,7 +1067,7 @@ private:
   }
 
   /// Emit the restricted SMT-LIB-compatible form of `smt.check`.
-  LogicalResult emitCheck(smt::CheckOp checkOp, EvalContext &) {
+  LogicalResult emitCheck(mlir::smt::CheckOp checkOp, EvalContext &) {
     if (checkOp.getNumResults() != 0) {
       return checkOp.emitOpError(
           "cannot lower result-producing smt.check because SMT-LIB has no "
@@ -1114,8 +1116,8 @@ private:
 
     Block &block = func.getBody().front();
     for (Operation &op : block.without_terminator()) {
-      if (isa<smt::SetInfoOp, smt::DeclareFunOp, smt::AssertOp, smt::PushOp, smt::PopOp,
-              smt::CheckOp>(op)) {
+      if (isa<smt_info::SMTInfoSetOp, mlir::smt::DeclareFunOp, mlir::smt::AssertOp,
+              mlir::smt::PushOp, mlir::smt::PopOp, mlir::smt::CheckOp>(op)) {
         return op.emitError("script-style SMT ops cannot appear in pure helper definitions");
       }
       if (failed(emitOperation(&op, ctx))) {
@@ -1145,8 +1147,8 @@ private:
   /// Determine whether a helper body can preserve sharing with `let` bindings.
   bool helperIsPurelyExpressionBased(func::FuncOp func) const {
     for (Operation &op : func.getBody().front().without_terminator()) {
-      if (isa<smt::SetInfoOp, smt::DeclareFunOp, smt::AssertOp, smt::PushOp, smt::PopOp,
-              smt::CheckOp>(op)) {
+      if (isa<smt_info::SMTInfoSetOp, mlir::smt::DeclareFunOp, mlir::smt::AssertOp,
+              mlir::smt::PushOp, mlir::smt::PopOp, mlir::smt::CheckOp>(op)) {
         return false;
       }
       if (auto callOp = dyn_cast<func::CallOp>(op); callOp && callOp.getNumResults() == 0) {
@@ -1159,113 +1161,122 @@ private:
   /// Render one expression-producing operation into an SMT-LIB term.
   FailureOr<ValueBinding> buildExpr(Operation *op, EvalContext &ctx) {
     return TypeSwitch<Operation *, FailureOr<ValueBinding>>(op)
-        .Case<smt::BoolConstantOp>([](auto constOp) {
+        .Case<mlir::smt::BoolConstantOp>([](auto constOp) {
       return ValueBinding {formatBoolLiteral(constOp.getValue()), /*survivesReset=*/true};
     })
-        .Case<smt::IntConstantOp>([](auto constOp) {
+        .Case<mlir::smt::IntConstantOp>([](auto constOp) {
       return ValueBinding {formatIntegerLiteral(constOp.getValue()), /*survivesReset=*/true};
     })
-        .Case<smt::BVConstantOp>([](auto constOp) {
+        .Case<mlir::smt::BVConstantOp>([](auto constOp) {
       return ValueBinding {constOp.getValue().getValueAsString(), /*survivesReset=*/true};
     })
-        .Case<smt::EqOp>([&](auto exprOp) { return buildSExpr("=", exprOp.getInputs(), ctx); })
-        .Case<smt::DistinctOp>([&](auto exprOp) {
+        .Case<mlir::smt::EqOp>([&](auto exprOp) {
+      return buildSExpr("=", exprOp.getInputs(), ctx);
+    })
+        .Case<mlir::smt::DistinctOp>([&](auto exprOp) {
       return buildSExpr("distinct", exprOp.getInputs(), ctx);
     })
-        .Case<smt::NotOp>([&](auto exprOp) {
+        .Case<mlir::smt::NotOp>([&](auto exprOp) {
       return buildSExpr("not", ValueRange {exprOp.getInput()}, ctx);
     })
-        .Case<smt::AndOp>([&](auto exprOp) { return buildSExpr("and", exprOp.getInputs(), ctx); })
-        .Case<smt::OrOp>([&](auto exprOp) { return buildSExpr("or", exprOp.getInputs(), ctx); })
-        .Case<smt::XOrOp>([&](auto exprOp) { return buildSExpr("xor", exprOp.getInputs(), ctx); })
-        .Case<smt::ImpliesOp>([&](auto exprOp) {
+        .Case<mlir::smt::AndOp>([&](auto exprOp) {
+      return buildSExpr("and", exprOp.getInputs(), ctx);
+    })
+        .Case<mlir::smt::OrOp>([&](auto exprOp) {
+      return buildSExpr("or", exprOp.getInputs(), ctx);
+    })
+        .Case<mlir::smt::XOrOp>([&](auto exprOp) {
+      return buildSExpr("xor", exprOp.getInputs(), ctx);
+    })
+        .Case<mlir::smt::ImpliesOp>([&](auto exprOp) {
       return buildSExpr("=>", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<smt::IteOp>([&](auto exprOp) {
+        .Case<mlir::smt::IteOp>([&](auto exprOp) {
       return buildSExpr(
           "ite", ValueRange {exprOp.getCond(), exprOp.getThenValue(), exprOp.getElseValue()}, ctx
       );
     })
-        .Case<smt::IntNegOp>([&](auto exprOp) {
-      return buildSExpr("-", ValueRange {exprOp.getInput()}, ctx);
-    })
-        .Case<smt::IntAbsOp>([&](auto exprOp) {
+        .Case<mlir::smt::IntAbsOp>([&](auto exprOp) {
       return buildSExpr("abs", ValueRange {exprOp.getInput()}, ctx);
     })
-        .Case<smt::IntAddOp>([&](auto exprOp) { return buildSExpr("+", exprOp.getInputs(), ctx); })
-        .Case<smt::IntMulOp>([&](auto exprOp) { return buildSExpr("*", exprOp.getInputs(), ctx); })
-        .Case<smt::IntSubOp>([&](auto exprOp) {
+        .Case<mlir::smt::IntAddOp>([&](auto exprOp) {
+      return buildSExpr("+", exprOp.getInputs(), ctx);
+    })
+        .Case<mlir::smt::IntMulOp>([&](auto exprOp) {
+      return buildSExpr("*", exprOp.getInputs(), ctx);
+    })
+        .Case<mlir::smt::IntSubOp>([&](auto exprOp) {
       return buildSExpr("-", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<smt::IntDivOp>([&](auto exprOp) {
+        .Case<mlir::smt::IntDivOp>([&](auto exprOp) {
       return buildSExpr("div", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<smt::IntModOp>([&](auto exprOp) {
+        .Case<mlir::smt::IntModOp>([&](auto exprOp) {
       return buildSExpr("mod", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<smt::IntCmpOp>([&](auto cmpOp) { return buildCmpExpr(cmpOp, ctx); })
-        .Case<smt::Int2BVOp>([&](auto exprOp) { return buildInt2BVExpr(exprOp, ctx); })
-        .Case<smt::BV2IntOp>([&](auto exprOp) { return buildBV2IntExpr(exprOp, ctx); })
-        .Case<smt::BVNegOp>([&](auto exprOp) {
+        .Case<mlir::smt::IntCmpOp>([&](auto cmpOp) { return buildCmpExpr(cmpOp, ctx); })
+        .Case<mlir::smt::Int2BVOp>([&](auto exprOp) { return buildInt2BVExpr(exprOp, ctx); })
+        .Case<mlir::smt::BV2IntOp>([&](auto exprOp) { return buildBV2IntExpr(exprOp, ctx); })
+        .Case<mlir::smt::BVNegOp>([&](auto exprOp) {
       return buildSExpr("bvneg", ValueRange {exprOp.getInput()}, ctx);
     })
-        .Case<smt::BVAndOp>([&](auto exprOp) {
+        .Case<mlir::smt::BVAndOp>([&](auto exprOp) {
       return buildSExpr("bvand", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<smt::BVAddOp>([&](auto exprOp) {
+        .Case<mlir::smt::BVAddOp>([&](auto exprOp) {
       return buildSExpr("bvadd", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<smt::BVMulOp>([&](auto exprOp) {
+        .Case<mlir::smt::BVMulOp>([&](auto exprOp) {
       return buildSExpr("bvmul", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<smt::BVUDivOp>([&](auto exprOp) {
+        .Case<mlir::smt::BVUDivOp>([&](auto exprOp) {
       return buildSExpr("bvudiv", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<smt::BVSDivOp>([&](auto exprOp) {
+        .Case<mlir::smt::BVSDivOp>([&](auto exprOp) {
       return buildSExpr("bvsdiv", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<smt::BVURemOp>([&](auto exprOp) {
+        .Case<mlir::smt::BVURemOp>([&](auto exprOp) {
       return buildSExpr("bvurem", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<smt::BVSRemOp>([&](auto exprOp) {
+        .Case<mlir::smt::BVSRemOp>([&](auto exprOp) {
       return buildSExpr("bvsrem", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<smt::BVSModOp>([&](auto exprOp) {
+        .Case<mlir::smt::BVSModOp>([&](auto exprOp) {
       return buildSExpr("bvsmod", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<smt::BVOrOp>([&](auto exprOp) {
+        .Case<mlir::smt::BVOrOp>([&](auto exprOp) {
       return buildSExpr("bvor", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<smt::BVXOrOp>([&](auto exprOp) {
+        .Case<mlir::smt::BVXOrOp>([&](auto exprOp) {
       return buildSExpr("bvxor", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<smt::BVNotOp>([&](auto exprOp) {
+        .Case<mlir::smt::BVNotOp>([&](auto exprOp) {
       return buildSExpr("bvnot", ValueRange {exprOp.getInput()}, ctx);
     })
-        .Case<smt::BVShlOp>([&](auto exprOp) {
+        .Case<mlir::smt::BVShlOp>([&](auto exprOp) {
       return buildSExpr("bvshl", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<smt::BVLShrOp>([&](auto exprOp) {
+        .Case<mlir::smt::BVLShrOp>([&](auto exprOp) {
       return buildSExpr("bvlshr", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<smt::BVAShrOp>([&](auto exprOp) {
+        .Case<mlir::smt::BVAShrOp>([&](auto exprOp) {
       return buildSExpr("bvashr", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<smt::BVCmpOp>([&](auto exprOp) { return buildBVCmpExpr(exprOp, ctx); })
-        .Case<smt::ConcatOp>([&](auto exprOp) {
+        .Case<mlir::smt::BVCmpOp>([&](auto exprOp) { return buildBVCmpExpr(exprOp, ctx); })
+        .Case<mlir::smt::ConcatOp>([&](auto exprOp) {
       return buildSExpr("concat", ValueRange {exprOp.getLhs(), exprOp.getRhs()}, ctx);
     })
-        .Case<smt::ExtractOp>([&](auto exprOp) { return buildExtractExpr(exprOp, ctx); })
-        .Case<smt::RepeatOp>([&](auto exprOp) { return buildRepeatExpr(exprOp, ctx); })
-        .Case<smt::ArraySelectOp>([&](auto exprOp) {
+        .Case<mlir::smt::ExtractOp>([&](auto exprOp) { return buildExtractExpr(exprOp, ctx); })
+        .Case<mlir::smt::RepeatOp>([&](auto exprOp) { return buildRepeatExpr(exprOp, ctx); })
+        .Case<mlir::smt::ArraySelectOp>([&](auto exprOp) {
       return buildSExpr("select", ValueRange {exprOp.getArray(), exprOp.getIndex()}, ctx);
     })
-        .Case<smt::ArrayStoreOp>([&](auto exprOp) {
+        .Case<mlir::smt::ArrayStoreOp>([&](auto exprOp) {
       return buildSExpr(
           "store", ValueRange {exprOp.getArray(), exprOp.getIndex(), exprOp.getValue()}, ctx
       );
     })
-        .Case<smt::ArrayBroadcastOp>([&](auto exprOp) -> FailureOr<ValueBinding> {
+        .Case<mlir::smt::ArrayBroadcastOp>([&](auto exprOp) -> FailureOr<ValueBinding> {
       auto valueExpr = lookup(exprOp.getValue(), ctx);
       if (failed(valueExpr)) {
         return failure();
@@ -1279,7 +1290,7 @@ private:
           valueExpr->survivesReset,
       };
     })
-        .Case<smt::ApplyFuncOp>([&](auto exprOp) -> FailureOr<ValueBinding> {
+        .Case<mlir::smt::ApplyFuncOp>([&](auto exprOp) -> FailureOr<ValueBinding> {
       auto funcExpr = lookup(exprOp.getFunc(), ctx);
       if (failed(funcExpr)) {
         return failure();
@@ -1301,9 +1312,11 @@ private:
       }
       exprStream << ')';
       return ValueBinding {std::move(expr), survivesReset};
-    }).Case<smt::ForallOp>([&](auto exprOp) {
+    })
+        .Case<mlir::smt::ForallOp>([&](auto exprOp) {
       return buildQuantifierExpr("forall", exprOp, ctx);
-    }).Case<smt::ExistsOp>([&](auto exprOp) {
+    })
+        .Case<mlir::smt::ExistsOp>([&](auto exprOp) {
       return buildQuantifierExpr("exists", exprOp, ctx);
     }).Case<arith::ConstantOp>([&](auto constOp) {
       return buildArithConstantExpr(constOp);
@@ -1324,19 +1337,19 @@ private:
   }
 
   /// Render an integer comparison predicate using SMT-LIB comparison syntax.
-  FailureOr<ValueBinding> buildCmpExpr(smt::IntCmpOp cmpOp, EvalContext &ctx) {
+  FailureOr<ValueBinding> buildCmpExpr(mlir::smt::IntCmpOp cmpOp, EvalContext &ctx) {
     StringRef pred;
     switch (cmpOp.getPred()) {
-    case smt::IntPredicate::lt:
+    case mlir::smt::IntPredicate::lt:
       pred = "<";
       break;
-    case smt::IntPredicate::le:
+    case mlir::smt::IntPredicate::le:
       pred = "<=";
       break;
-    case smt::IntPredicate::gt:
+    case mlir::smt::IntPredicate::gt:
       pred = ">";
       break;
-    case smt::IntPredicate::ge:
+    case mlir::smt::IntPredicate::ge:
       pred = ">=";
       break;
     }
@@ -1344,12 +1357,12 @@ private:
   }
 
   /// Render integer-to-bitvector conversion with an explicit target width.
-  FailureOr<ValueBinding> buildInt2BVExpr(smt::Int2BVOp op, EvalContext &ctx) {
+  FailureOr<ValueBinding> buildInt2BVExpr(mlir::smt::Int2BVOp op, EvalContext &ctx) {
     auto input = lookup(op.getInput(), ctx);
     if (failed(input)) {
       return failure();
     }
-    auto resultType = cast<smt::BitVectorType>(op.getResult().getType());
+    auto resultType = cast<mlir::smt::BitVectorType>(op.getResult().getType());
     std::string expr;
     llvm::raw_string_ostream exprStream(expr);
     exprStream << "((_ int_to_bv " << resultType.getWidth() << ") " << input->text << ')';
@@ -1360,7 +1373,7 @@ private:
   }
 
   /// Render bitvector-to-integer conversion with the requested signedness.
-  FailureOr<ValueBinding> buildBV2IntExpr(smt::BV2IntOp op, EvalContext &ctx) {
+  FailureOr<ValueBinding> buildBV2IntExpr(mlir::smt::BV2IntOp op, EvalContext &ctx) {
     auto input = lookup(op.getInput(), ctx);
     if (failed(input)) {
       return failure();
@@ -1376,12 +1389,12 @@ private:
   }
 
   /// Render a bitvector comparison predicate using the matching SMT-LIB op.
-  FailureOr<ValueBinding> buildBVCmpExpr(smt::BVCmpOp cmpOp, EvalContext &ctx) {
-    static constexpr std::pair<smt::BVCmpPredicate, StringLiteral> predicateSpellings[] = {
-        {smt::BVCmpPredicate::slt, "bvslt"}, {smt::BVCmpPredicate::sle, "bvsle"},
-        {smt::BVCmpPredicate::sgt, "bvsgt"}, {smt::BVCmpPredicate::sge, "bvsge"},
-        {smt::BVCmpPredicate::ult, "bvult"}, {smt::BVCmpPredicate::ule, "bvule"},
-        {smt::BVCmpPredicate::ugt, "bvugt"}, {smt::BVCmpPredicate::uge, "bvuge"},
+  FailureOr<ValueBinding> buildBVCmpExpr(mlir::smt::BVCmpOp cmpOp, EvalContext &ctx) {
+    static constexpr std::pair<mlir::smt::BVCmpPredicate, StringLiteral> predicateSpellings[] = {
+        {mlir::smt::BVCmpPredicate::slt, "bvslt"}, {mlir::smt::BVCmpPredicate::sle, "bvsle"},
+        {mlir::smt::BVCmpPredicate::sgt, "bvsgt"}, {mlir::smt::BVCmpPredicate::sge, "bvsge"},
+        {mlir::smt::BVCmpPredicate::ult, "bvult"}, {mlir::smt::BVCmpPredicate::ule, "bvule"},
+        {mlir::smt::BVCmpPredicate::ugt, "bvugt"}, {mlir::smt::BVCmpPredicate::uge, "bvuge"},
     };
     const auto *it = llvm::find_if(predicateSpellings, [pred = cmpOp.getPred()](const auto &entry) {
       return entry.first == pred;
@@ -1391,13 +1404,13 @@ private:
   }
 
   /// Render bitvector extraction with SMT-LIB's indexed `extract` operator.
-  FailureOr<ValueBinding> buildExtractExpr(smt::ExtractOp op, EvalContext &ctx) {
+  FailureOr<ValueBinding> buildExtractExpr(mlir::smt::ExtractOp op, EvalContext &ctx) {
     auto input = lookup(op.getInput(), ctx);
     if (failed(input)) {
       return failure();
     }
     unsigned lowBit = op.getLowBit();
-    unsigned highBit = lowBit + cast<smt::BitVectorType>(op.getType()).getWidth() - 1;
+    unsigned highBit = lowBit + cast<mlir::smt::BitVectorType>(op.getType()).getWidth() - 1;
     std::string expr;
     llvm::raw_string_ostream exprStream(expr);
     exprStream << "((_ extract " << highBit << ' ' << lowBit << ") " << input->text << ')';
@@ -1408,7 +1421,7 @@ private:
   }
 
   /// Render bitvector repetition with SMT-LIB's indexed `repeat` operator.
-  FailureOr<ValueBinding> buildRepeatExpr(smt::RepeatOp op, EvalContext &ctx) {
+  FailureOr<ValueBinding> buildRepeatExpr(mlir::smt::RepeatOp op, EvalContext &ctx) {
     auto input = lookup(op.getInput(), ctx);
     if (failed(input)) {
       return failure();
@@ -1510,9 +1523,9 @@ private:
     exprStream << ") ";
 
     for (Operation &nestedOp : body.without_terminator()) {
-      if (isa<smt::SetLogicOp, smt::SetInfoOp, smt::DeclareFunOp, smt::AssertOp, smt::ResetOp,
-              smt::PushOp, smt::PopOp, smt::CheckOp, smt::SolverOp, func::CallOp,
-              boolean::AssertOp>(nestedOp)) {
+      if (isa<mlir::smt::SetLogicOp, smt_info::SMTInfoSetOp, mlir::smt::DeclareFunOp,
+              mlir::smt::AssertOp, mlir::smt::ResetOp, mlir::smt::PushOp, mlir::smt::PopOp,
+              mlir::smt::CheckOp, mlir::smt::SolverOp, func::CallOp, boolean::AssertOp>(nestedOp)) {
         return nestedOp.emitError(
             "smt-to-smtlib quantifier bodies may only contain expression ops because SMT-LIB "
             "terms cannot contain script commands or helper emissions"
@@ -1523,7 +1536,7 @@ private:
       }
     }
 
-    auto yieldOp = dyn_cast<smt::YieldOp>(body.getTerminator());
+    auto yieldOp = dyn_cast<mlir::smt::YieldOp>(body.getTerminator());
     if (!yieldOp || yieldOp.getNumOperands() != 1) {
       return op.emitError("smt-to-smtlib requires quantifier bodies to yield exactly one value");
     }
@@ -1577,6 +1590,6 @@ private:
 } // namespace
 
 /// Export the selected SMT solver rooted in `module` to SMT-LIB text.
-LogicalResult smt::emitSMTLIBModule(ModuleOp module, llvm::raw_ostream &os) {
+LogicalResult llzk::smt::emitSMTLIBModule(ModuleOp module, llvm::raw_ostream &os) {
   return SMTLIBEmitter(module, os).emit();
 }

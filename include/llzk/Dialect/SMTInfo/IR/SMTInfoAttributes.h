@@ -1,4 +1,4 @@
-//===-- TranslateRegistration.h ---------------------------------*- C++ -*-===//
+//===-- SMTInfoAttributes.h - SMT metadata attributes -----------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -9,9 +9,7 @@
 
 #pragma once
 
-namespace llzk::smt {
+#include <mlir/IR/Attributes.h>
 
-/// Registers the translation from SMT to SMTLIB.
-void registerSmtTranslation();
-
-} // namespace llzk::smt
+#define GET_ATTRDEF_CLASSES
+#include "llzk/Dialect/SMTInfo/IR/SMTInfoAttributes.h.inc"

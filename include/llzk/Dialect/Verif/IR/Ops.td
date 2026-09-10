@@ -12,14 +12,14 @@
 
 include "llzk/Dialect/Verif/IR/Dialect.td"
 include "llzk/Dialect/Verif/IR/OpInterfaces.td"
-include "llzk/Dialect/SMT/IR/SMTTypes.td"
-include "mlir/Interfaces/CallInterfaces.td"
-include "mlir/Interfaces/FunctionInterfaces.td"
 include "llzk/Dialect/Shared/OpTraits.td"
 include "llzk/Dialect/Shared/Types.td"
 include "llzk/Dialect/Felt/IR/Types.td"
 include "llzk/Dialect/Function/IR/OpTraits.td"
 
+include "mlir/Dialect/SMT/IR/SMTTypes.td"
+include "mlir/Interfaces/CallInterfaces.td"
+include "mlir/Interfaces/FunctionInterfaces.td"
 include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/OpBase.td"
 include "mlir/IR/SymbolInterfaces.td"

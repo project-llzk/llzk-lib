@@ -12,11 +12,12 @@
 #include "llzk/Dialect/Felt/IR/Types.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
-#include "llzk/Dialect/SMT/IR/SMTTypes.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 #include "llzk/Dialect/Verif/IR/Dialect.h"
 #include "llzk/Dialect/Verif/IR/OpInterfaces.h"
 #include "llzk/Util/TypeHelper.h"
+
+#include <mlir/Dialect/SMT/IR/SMTTypes.h>
 
 // Include TableGen'd declarations
 #define GET_OP_CLASSES
