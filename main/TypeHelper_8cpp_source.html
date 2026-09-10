@@ -1121,194 +1121,205 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('TypeHelper_8cp
 <div class="line"><a id="l00980" name="l00980"></a><span class="lineno">  980</span>  APInt value = attr.getValue();</div>
 <div class="line"><a id="l00981" name="l00981"></a><span class="lineno">  981</span>  <span class="keyword">auto</span> compare = value.getBitWidth() &lt;=&gt; IndexType::kInternalStorageBitWidth;</div>
 <div class="line"><a id="l00982" name="l00982"></a><span class="lineno">  982</span>  <span class="keywordflow">if</span> (compare &lt; 0) {</div>
-<div class="line"><a id="l00983" name="l00983"></a><span class="lineno">  983</span>    value = value.zext(IndexType::kInternalStorageBitWidth);</div>
-<div class="line"><a id="l00984" name="l00984"></a><span class="lineno">  984</span>  } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (compare &gt; 0) {</div>
-<div class="line"><a id="l00985" name="l00985"></a><span class="lineno">  985</span>    <span class="keywordflow">return</span> emitError().append(<span class="stringliteral">&quot;value is too large for `index` type: &quot;</span>, <a class="code hl_function" href="namespacellzk_1_1debug.html#a26d41644d8893b584f5e5e07f875784a">debug::toStringOne</a>(value));</div>
-<div class="line"><a id="l00986" name="l00986"></a><span class="lineno">  986</span>  }</div>
-<div class="line"><a id="l00987" name="l00987"></a><span class="lineno">  987</span>  <span class="keywordflow">return</span> IntegerAttr::get(IndexType::get(attr.getContext()), value);</div>
-<div class="line"><a id="l00988" name="l00988"></a><span class="lineno">  988</span>}</div>
+<div class="line"><a id="l00983" name="l00983"></a><span class="lineno">  983</span>    value = attr.getType().isSignedInteger() ? value.sext(IndexType::kInternalStorageBitWidth)</div>
+<div class="line"><a id="l00984" name="l00984"></a><span class="lineno">  984</span>                                             : value.zext(IndexType::kInternalStorageBitWidth);</div>
+<div class="line"><a id="l00985" name="l00985"></a><span class="lineno">  985</span>  } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (compare &gt; 0) {</div>
+<div class="line"><a id="l00986" name="l00986"></a><span class="lineno">  986</span>    <span class="comment">// The source integer type may be wider than index storage even when its value is</span></div>
+<div class="line"><a id="l00987" name="l00987"></a><span class="lineno">  987</span>    <span class="comment">// representable. Signed values need a signed representability check: getActiveBits()</span></div>
+<div class="line"><a id="l00988" name="l00988"></a><span class="lineno">  988</span>    <span class="comment">// treats their two&#39;s-complement representation as unsigned, rejecting negative values</span></div>
+<div class="line"><a id="l00989" name="l00989"></a><span class="lineno">  989</span>    <span class="comment">// and accepting some out-of-range positive values after truncation.</span></div>
+<div class="line"><a id="l00990" name="l00990"></a><span class="lineno">  990</span>    <span class="keywordtype">bool</span> isRepresentable = attr.getType().isSignedInteger()</div>
+<div class="line"><a id="l00991" name="l00991"></a><span class="lineno">  991</span>                               ? value.isSignedIntN(IndexType::kInternalStorageBitWidth)</div>
+<div class="line"><a id="l00992" name="l00992"></a><span class="lineno">  992</span>                               : value.isIntN(IndexType::kInternalStorageBitWidth);</div>
+<div class="line"><a id="l00993" name="l00993"></a><span class="lineno">  993</span>    <span class="keywordflow">if</span> (!isRepresentable) {</div>
+<div class="line"><a id="l00994" name="l00994"></a><span class="lineno">  994</span>      <span class="keywordflow">return</span> emitError().append(<span class="stringliteral">&quot;value is too large for `index` type: &quot;</span>, <a class="code hl_function" href="namespacellzk_1_1debug.html#a26d41644d8893b584f5e5e07f875784a">debug::toStringOne</a>(value));</div>
+<div class="line"><a id="l00995" name="l00995"></a><span class="lineno">  995</span>    }</div>
+<div class="line"><a id="l00996" name="l00996"></a><span class="lineno">  996</span>    value = value.trunc(IndexType::kInternalStorageBitWidth);</div>
+<div class="line"><a id="l00997" name="l00997"></a><span class="lineno">  997</span>  }</div>
+<div class="line"><a id="l00998" name="l00998"></a><span class="lineno">  998</span>  <span class="keywordflow">return</span> IntegerAttr::get(IndexType::get(attr.getContext()), value);</div>
+<div class="line"><a id="l00999" name="l00999"></a><span class="lineno">  999</span>}</div>
 </div>
-<div class="line"><a id="l00989" name="l00989"></a><span class="lineno">  989</span> </div>
-<div class="foldopen" id="foldopen00990" data-start="{" data-end="}">
-<div class="line"><a id="l00990" name="l00990"></a><span class="lineno"><a class="line" href="namespacellzk.html#a1575048cc6105ca9b8d50d99ef654562">  990</a></span>FailureOr&lt;Attribute&gt; <a class="code hl_function" href="namespacellzk.html#a1575048cc6105ca9b8d50d99ef654562">forceIntAttrType</a>(Attribute attr, <a class="code hl_typedef" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError) {</div>
-<div class="line"><a id="l00991" name="l00991"></a><span class="lineno">  991</span>  <span class="keywordflow">if</span> (IntegerAttr intAttr = llvm::dyn_cast_if_present&lt;IntegerAttr&gt;(attr)) {</div>
-<div class="line"><a id="l00992" name="l00992"></a><span class="lineno">  992</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a4347ca404454b983d3c978e268aca917">forceIntType</a>(intAttr, emitError);</div>
-<div class="line"><a id="l00993" name="l00993"></a><span class="lineno">  993</span>  }</div>
-<div class="line"><a id="l00994" name="l00994"></a><span class="lineno">  994</span>  <span class="keywordflow">return</span> attr;</div>
-<div class="line"><a id="l00995" name="l00995"></a><span class="lineno">  995</span>}</div>
+<div class="line"><a id="l01000" name="l01000"></a><span class="lineno"> 1000</span> </div>
+<div class="foldopen" id="foldopen01001" data-start="{" data-end="}">
+<div class="line"><a id="l01001" name="l01001"></a><span class="lineno"><a class="line" href="namespacellzk.html#a1575048cc6105ca9b8d50d99ef654562"> 1001</a></span>FailureOr&lt;Attribute&gt; <a class="code hl_function" href="namespacellzk.html#a1575048cc6105ca9b8d50d99ef654562">forceIntAttrType</a>(Attribute attr, <a class="code hl_typedef" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError) {</div>
+<div class="line"><a id="l01002" name="l01002"></a><span class="lineno"> 1002</span>  <span class="keywordflow">if</span> (IntegerAttr intAttr = llvm::dyn_cast_if_present&lt;IntegerAttr&gt;(attr)) {</div>
+<div class="line"><a id="l01003" name="l01003"></a><span class="lineno"> 1003</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a4347ca404454b983d3c978e268aca917">forceIntType</a>(intAttr, emitError);</div>
+<div class="line"><a id="l01004" name="l01004"></a><span class="lineno"> 1004</span>  }</div>
+<div class="line"><a id="l01005" name="l01005"></a><span class="lineno"> 1005</span>  <span class="keywordflow">return</span> attr;</div>
+<div class="line"><a id="l01006" name="l01006"></a><span class="lineno"> 1006</span>}</div>
 </div>
-<div class="line"><a id="l00996" name="l00996"></a><span class="lineno">  996</span> </div>
-<div class="line"><a id="l00997" name="l00997"></a><span class="lineno">  997</span>FailureOr&lt;SmallVector&lt;Attribute&gt;&gt;</div>
-<div class="foldopen" id="foldopen00998" data-start="{" data-end="}">
-<div class="line"><a id="l00998" name="l00998"></a><span class="lineno"><a class="line" href="namespacellzk.html#a57632163fc64aabdf3ee27eaec6cea72">  998</a></span><a class="code hl_function" href="namespacellzk.html#a57632163fc64aabdf3ee27eaec6cea72">forceIntAttrTypes</a>(ArrayRef&lt;Attribute&gt; attrList, <a class="code hl_typedef" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError) {</div>
-<div class="line"><a id="l00999" name="l00999"></a><span class="lineno">  999</span>  SmallVector&lt;Attribute&gt; result;</div>
-<div class="line"><a id="l01000" name="l01000"></a><span class="lineno"> 1000</span>  <span class="keywordflow">for</span> (Attribute attr : attrList) {</div>
-<div class="line"><a id="l01001" name="l01001"></a><span class="lineno"> 1001</span>    FailureOr&lt;Attribute&gt; forced = <a class="code hl_function" href="namespacellzk.html#a1575048cc6105ca9b8d50d99ef654562">forceIntAttrType</a>(attr, emitError);</div>
-<div class="line"><a id="l01002" name="l01002"></a><span class="lineno"> 1002</span>    <span class="keywordflow">if</span> (failed(forced)) {</div>
-<div class="line"><a id="l01003" name="l01003"></a><span class="lineno"> 1003</span>      <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l01004" name="l01004"></a><span class="lineno"> 1004</span>    }</div>
-<div class="line"><a id="l01005" name="l01005"></a><span class="lineno"> 1005</span>    result.push_back(*forced);</div>
-<div class="line"><a id="l01006" name="l01006"></a><span class="lineno"> 1006</span>  }</div>
-<div class="line"><a id="l01007" name="l01007"></a><span class="lineno"> 1007</span>  <span class="keywordflow">return</span> result;</div>
-<div class="line"><a id="l01008" name="l01008"></a><span class="lineno"> 1008</span>}</div>
+<div class="line"><a id="l01007" name="l01007"></a><span class="lineno"> 1007</span> </div>
+<div class="line"><a id="l01008" name="l01008"></a><span class="lineno"> 1008</span>FailureOr&lt;SmallVector&lt;Attribute&gt;&gt;</div>
+<div class="foldopen" id="foldopen01009" data-start="{" data-end="}">
+<div class="line"><a id="l01009" name="l01009"></a><span class="lineno"><a class="line" href="namespacellzk.html#a57632163fc64aabdf3ee27eaec6cea72"> 1009</a></span><a class="code hl_function" href="namespacellzk.html#a57632163fc64aabdf3ee27eaec6cea72">forceIntAttrTypes</a>(ArrayRef&lt;Attribute&gt; attrList, <a class="code hl_typedef" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError) {</div>
+<div class="line"><a id="l01010" name="l01010"></a><span class="lineno"> 1010</span>  SmallVector&lt;Attribute&gt; result;</div>
+<div class="line"><a id="l01011" name="l01011"></a><span class="lineno"> 1011</span>  <span class="keywordflow">for</span> (Attribute attr : attrList) {</div>
+<div class="line"><a id="l01012" name="l01012"></a><span class="lineno"> 1012</span>    FailureOr&lt;Attribute&gt; forced = <a class="code hl_function" href="namespacellzk.html#a1575048cc6105ca9b8d50d99ef654562">forceIntAttrType</a>(attr, emitError);</div>
+<div class="line"><a id="l01013" name="l01013"></a><span class="lineno"> 1013</span>    <span class="keywordflow">if</span> (failed(forced)) {</div>
+<div class="line"><a id="l01014" name="l01014"></a><span class="lineno"> 1014</span>      <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l01015" name="l01015"></a><span class="lineno"> 1015</span>    }</div>
+<div class="line"><a id="l01016" name="l01016"></a><span class="lineno"> 1016</span>    result.push_back(*forced);</div>
+<div class="line"><a id="l01017" name="l01017"></a><span class="lineno"> 1017</span>  }</div>
+<div class="line"><a id="l01018" name="l01018"></a><span class="lineno"> 1018</span>  <span class="keywordflow">return</span> result;</div>
+<div class="line"><a id="l01019" name="l01019"></a><span class="lineno"> 1019</span>}</div>
 </div>
-<div class="line"><a id="l01009" name="l01009"></a><span class="lineno"> 1009</span> </div>
-<div class="foldopen" id="foldopen01010" data-start="{" data-end="}">
-<div class="line"><a id="l01010" name="l01010"></a><span class="lineno"><a class="line" href="namespacellzk.html#a26ae160de4660dc25c69d9461f065d84"> 1010</a></span>LogicalResult <a class="code hl_function" href="namespacellzk.html#a26ae160de4660dc25c69d9461f065d84">verifyIntAttrType</a>(<a class="code hl_typedef" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError, Attribute in) {</div>
-<div class="line"><a id="l01011" name="l01011"></a><span class="lineno"> 1011</span>  <span class="keywordflow">if</span> (IntegerAttr intAttr = llvm::dyn_cast_if_present&lt;IntegerAttr&gt;(in)) {</div>
-<div class="line"><a id="l01012" name="l01012"></a><span class="lineno"> 1012</span>    Type attrTy = intAttr.getType();</div>
-<div class="line"><a id="l01013" name="l01013"></a><span class="lineno"> 1013</span>    <span class="keywordflow">if</span> (!AllowedTypes().onlyInt().isValidTypeImpl(attrTy)) {</div>
-<div class="line"><a id="l01014" name="l01014"></a><span class="lineno"> 1014</span>      <span class="keywordflow">if</span> (emitError) {</div>
-<div class="line"><a id="l01015" name="l01015"></a><span class="lineno"> 1015</span>        emitError()</div>
-<div class="line"><a id="l01016" name="l01016"></a><span class="lineno"> 1016</span>            .append(<span class="stringliteral">&quot;IntegerAttr must have type &#39;index&#39; or &#39;i1&#39; but found &#39;&quot;</span>, attrTy, <span class="charliteral">&#39;\&#39;&#39;</span>)</div>
-<div class="line"><a id="l01017" name="l01017"></a><span class="lineno"> 1017</span>            .report();</div>
-<div class="line"><a id="l01018" name="l01018"></a><span class="lineno"> 1018</span>      }</div>
-<div class="line"><a id="l01019" name="l01019"></a><span class="lineno"> 1019</span>      <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l01020" name="l01020"></a><span class="lineno"> 1020</span>    }</div>
-<div class="line"><a id="l01021" name="l01021"></a><span class="lineno"> 1021</span>  }</div>
-<div class="line"><a id="l01022" name="l01022"></a><span class="lineno"> 1022</span>  <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l01023" name="l01023"></a><span class="lineno"> 1023</span>}</div>
+<div class="line"><a id="l01020" name="l01020"></a><span class="lineno"> 1020</span> </div>
+<div class="foldopen" id="foldopen01021" data-start="{" data-end="}">
+<div class="line"><a id="l01021" name="l01021"></a><span class="lineno"><a class="line" href="namespacellzk.html#a26ae160de4660dc25c69d9461f065d84"> 1021</a></span>LogicalResult <a class="code hl_function" href="namespacellzk.html#a26ae160de4660dc25c69d9461f065d84">verifyIntAttrType</a>(<a class="code hl_typedef" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError, Attribute in) {</div>
+<div class="line"><a id="l01022" name="l01022"></a><span class="lineno"> 1022</span>  <span class="keywordflow">if</span> (IntegerAttr intAttr = llvm::dyn_cast_if_present&lt;IntegerAttr&gt;(in)) {</div>
+<div class="line"><a id="l01023" name="l01023"></a><span class="lineno"> 1023</span>    Type attrTy = intAttr.getType();</div>
+<div class="line"><a id="l01024" name="l01024"></a><span class="lineno"> 1024</span>    <span class="keywordflow">if</span> (!AllowedTypes().onlyInt().isValidTypeImpl(attrTy)) {</div>
+<div class="line"><a id="l01025" name="l01025"></a><span class="lineno"> 1025</span>      <span class="keywordflow">if</span> (emitError) {</div>
+<div class="line"><a id="l01026" name="l01026"></a><span class="lineno"> 1026</span>        emitError()</div>
+<div class="line"><a id="l01027" name="l01027"></a><span class="lineno"> 1027</span>            .append(<span class="stringliteral">&quot;IntegerAttr must have type &#39;index&#39; or &#39;i1&#39; but found &#39;&quot;</span>, attrTy, <span class="charliteral">&#39;\&#39;&#39;</span>)</div>
+<div class="line"><a id="l01028" name="l01028"></a><span class="lineno"> 1028</span>            .report();</div>
+<div class="line"><a id="l01029" name="l01029"></a><span class="lineno"> 1029</span>      }</div>
+<div class="line"><a id="l01030" name="l01030"></a><span class="lineno"> 1030</span>      <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l01031" name="l01031"></a><span class="lineno"> 1031</span>    }</div>
+<div class="line"><a id="l01032" name="l01032"></a><span class="lineno"> 1032</span>  }</div>
+<div class="line"><a id="l01033" name="l01033"></a><span class="lineno"> 1033</span>  <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l01034" name="l01034"></a><span class="lineno"> 1034</span>}</div>
 </div>
-<div class="line"><a id="l01024" name="l01024"></a><span class="lineno"> 1024</span> </div>
-<div class="foldopen" id="foldopen01025" data-start="{" data-end="}">
-<div class="line"><a id="l01025" name="l01025"></a><span class="lineno"><a class="line" href="namespacellzk.html#a016f3b59595b34b00f2b01667467aa06"> 1025</a></span>LogicalResult <a class="code hl_function" href="namespacellzk.html#a016f3b59595b34b00f2b01667467aa06">verifyAffineMapAttrType</a>(<a class="code hl_typedef" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError, Attribute in) {</div>
-<div class="line"><a id="l01026" name="l01026"></a><span class="lineno"> 1026</span>  <span class="keywordflow">if</span> (AffineMapAttr affineAttr = llvm::dyn_cast_if_present&lt;AffineMapAttr&gt;(in)) {</div>
-<div class="line"><a id="l01027" name="l01027"></a><span class="lineno"> 1027</span>    AffineMap map = affineAttr.getValue();</div>
-<div class="line"><a id="l01028" name="l01028"></a><span class="lineno"> 1028</span>    <span class="keywordflow">if</span> (map.getNumResults() != 1) {</div>
-<div class="line"><a id="l01029" name="l01029"></a><span class="lineno"> 1029</span>      <span class="keywordflow">if</span> (emitError) {</div>
-<div class="line"><a id="l01030" name="l01030"></a><span class="lineno"> 1030</span>        emitError()</div>
-<div class="line"><a id="l01031" name="l01031"></a><span class="lineno"> 1031</span>            .append(</div>
-<div class="line"><a id="l01032" name="l01032"></a><span class="lineno"> 1032</span>                <span class="stringliteral">&quot;AffineMapAttr must yield a single result, but found &quot;</span>, map.getNumResults(),</div>
-<div class="line"><a id="l01033" name="l01033"></a><span class="lineno"> 1033</span>                <span class="stringliteral">&quot; results&quot;</span></div>
-<div class="line"><a id="l01034" name="l01034"></a><span class="lineno"> 1034</span>            )</div>
-<div class="line"><a id="l01035" name="l01035"></a><span class="lineno"> 1035</span>            .report();</div>
-<div class="line"><a id="l01036" name="l01036"></a><span class="lineno"> 1036</span>      }</div>
-<div class="line"><a id="l01037" name="l01037"></a><span class="lineno"> 1037</span>      <span class="keywordflow">return</span> failure();</div>
-<div class="line"><a id="l01038" name="l01038"></a><span class="lineno"> 1038</span>    }</div>
-<div class="line"><a id="l01039" name="l01039"></a><span class="lineno"> 1039</span>  }</div>
-<div class="line"><a id="l01040" name="l01040"></a><span class="lineno"> 1040</span>  <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l01041" name="l01041"></a><span class="lineno"> 1041</span>}</div>
+<div class="line"><a id="l01035" name="l01035"></a><span class="lineno"> 1035</span> </div>
+<div class="foldopen" id="foldopen01036" data-start="{" data-end="}">
+<div class="line"><a id="l01036" name="l01036"></a><span class="lineno"><a class="line" href="namespacellzk.html#a016f3b59595b34b00f2b01667467aa06"> 1036</a></span>LogicalResult <a class="code hl_function" href="namespacellzk.html#a016f3b59595b34b00f2b01667467aa06">verifyAffineMapAttrType</a>(<a class="code hl_typedef" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError, Attribute in) {</div>
+<div class="line"><a id="l01037" name="l01037"></a><span class="lineno"> 1037</span>  <span class="keywordflow">if</span> (AffineMapAttr affineAttr = llvm::dyn_cast_if_present&lt;AffineMapAttr&gt;(in)) {</div>
+<div class="line"><a id="l01038" name="l01038"></a><span class="lineno"> 1038</span>    AffineMap map = affineAttr.getValue();</div>
+<div class="line"><a id="l01039" name="l01039"></a><span class="lineno"> 1039</span>    <span class="keywordflow">if</span> (map.getNumResults() != 1) {</div>
+<div class="line"><a id="l01040" name="l01040"></a><span class="lineno"> 1040</span>      <span class="keywordflow">if</span> (emitError) {</div>
+<div class="line"><a id="l01041" name="l01041"></a><span class="lineno"> 1041</span>        emitError()</div>
+<div class="line"><a id="l01042" name="l01042"></a><span class="lineno"> 1042</span>            .append(</div>
+<div class="line"><a id="l01043" name="l01043"></a><span class="lineno"> 1043</span>                <span class="stringliteral">&quot;AffineMapAttr must yield a single result, but found &quot;</span>, map.getNumResults(),</div>
+<div class="line"><a id="l01044" name="l01044"></a><span class="lineno"> 1044</span>                <span class="stringliteral">&quot; results&quot;</span></div>
+<div class="line"><a id="l01045" name="l01045"></a><span class="lineno"> 1045</span>            )</div>
+<div class="line"><a id="l01046" name="l01046"></a><span class="lineno"> 1046</span>            .report();</div>
+<div class="line"><a id="l01047" name="l01047"></a><span class="lineno"> 1047</span>      }</div>
+<div class="line"><a id="l01048" name="l01048"></a><span class="lineno"> 1048</span>      <span class="keywordflow">return</span> failure();</div>
+<div class="line"><a id="l01049" name="l01049"></a><span class="lineno"> 1049</span>    }</div>
+<div class="line"><a id="l01050" name="l01050"></a><span class="lineno"> 1050</span>  }</div>
+<div class="line"><a id="l01051" name="l01051"></a><span class="lineno"> 1051</span>  <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l01052" name="l01052"></a><span class="lineno"> 1052</span>}</div>
 </div>
-<div class="line"><a id="l01042" name="l01042"></a><span class="lineno"> 1042</span> </div>
-<div class="foldopen" id="foldopen01043" data-start="{" data-end="}">
-<div class="line"><a id="l01043" name="l01043"></a><span class="lineno"><a class="line" href="namespacellzk.html#acea511d0810d60bdecf9d7f1e0779d8e"> 1043</a></span>LogicalResult <a class="code hl_function" href="namespacellzk.html#acea511d0810d60bdecf9d7f1e0779d8e">verifyStructTypeParams</a>(<a class="code hl_typedef" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError, ArrayAttr params) {</div>
-<div class="line"><a id="l01044" name="l01044"></a><span class="lineno"> 1044</span>  <span class="keywordflow">return</span> success(AllowedTypes().areValidStructTypeParams(params, emitError));</div>
-<div class="line"><a id="l01045" name="l01045"></a><span class="lineno"> 1045</span>}</div>
+<div class="line"><a id="l01053" name="l01053"></a><span class="lineno"> 1053</span> </div>
+<div class="foldopen" id="foldopen01054" data-start="{" data-end="}">
+<div class="line"><a id="l01054" name="l01054"></a><span class="lineno"><a class="line" href="namespacellzk.html#acea511d0810d60bdecf9d7f1e0779d8e"> 1054</a></span>LogicalResult <a class="code hl_function" href="namespacellzk.html#acea511d0810d60bdecf9d7f1e0779d8e">verifyStructTypeParams</a>(<a class="code hl_typedef" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError, ArrayAttr params) {</div>
+<div class="line"><a id="l01055" name="l01055"></a><span class="lineno"> 1055</span>  <span class="keywordflow">return</span> success(AllowedTypes().areValidStructTypeParams(params, emitError));</div>
+<div class="line"><a id="l01056" name="l01056"></a><span class="lineno"> 1056</span>}</div>
 </div>
-<div class="line"><a id="l01046" name="l01046"></a><span class="lineno"> 1046</span> </div>
-<div class="foldopen" id="foldopen01047" data-start="{" data-end="}">
-<div class="line"><a id="l01047" name="l01047"></a><span class="lineno"><a class="line" href="namespacellzk.html#afe6df124d315ea4af67d41601225b1a2"> 1047</a></span>LogicalResult <a class="code hl_function" href="namespacellzk.html#afe6df124d315ea4af67d41601225b1a2">verifyArrayDimSizes</a>(<a class="code hl_typedef" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError, ArrayRef&lt;Attribute&gt; dimensionSizes) {</div>
-<div class="line"><a id="l01048" name="l01048"></a><span class="lineno"> 1048</span>  <span class="keywordflow">return</span> success(AllowedTypes().areValidArrayDimSizes(dimensionSizes, emitError));</div>
-<div class="line"><a id="l01049" name="l01049"></a><span class="lineno"> 1049</span>}</div>
+<div class="line"><a id="l01057" name="l01057"></a><span class="lineno"> 1057</span> </div>
+<div class="foldopen" id="foldopen01058" data-start="{" data-end="}">
+<div class="line"><a id="l01058" name="l01058"></a><span class="lineno"><a class="line" href="namespacellzk.html#afe6df124d315ea4af67d41601225b1a2"> 1058</a></span>LogicalResult <a class="code hl_function" href="namespacellzk.html#afe6df124d315ea4af67d41601225b1a2">verifyArrayDimSizes</a>(<a class="code hl_typedef" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError, ArrayRef&lt;Attribute&gt; dimensionSizes) {</div>
+<div class="line"><a id="l01059" name="l01059"></a><span class="lineno"> 1059</span>  <span class="keywordflow">return</span> success(AllowedTypes().areValidArrayDimSizes(dimensionSizes, emitError));</div>
+<div class="line"><a id="l01060" name="l01060"></a><span class="lineno"> 1060</span>}</div>
 </div>
-<div class="line"><a id="l01050" name="l01050"></a><span class="lineno"> 1050</span> </div>
-<div class="line"><a id="l01051" name="l01051"></a><span class="lineno"> 1051</span>LogicalResult</div>
-<div class="foldopen" id="foldopen01052" data-start="{" data-end="}">
-<div class="line"><a id="l01052" name="l01052"></a><span class="lineno"><a class="line" href="namespacellzk.html#a499aa56be86c2cdb1852b4a402a0913a"> 1052</a></span><a class="code hl_function" href="namespacellzk.html#a499aa56be86c2cdb1852b4a402a0913a">verifyArrayType</a>(<a class="code hl_typedef" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError, Type elementType, ArrayRef&lt;Attribute&gt; dimensionSizes) {</div>
-<div class="line"><a id="l01053" name="l01053"></a><span class="lineno"> 1053</span>  <span class="keywordflow">return</span> success(AllowedTypes().isValidArrayTypeImpl(elementType, dimensionSizes, emitError));</div>
-<div class="line"><a id="l01054" name="l01054"></a><span class="lineno"> 1054</span>}</div>
-</div>
-<div class="line"><a id="l01055" name="l01055"></a><span class="lineno"> 1055</span> </div>
-<div class="foldopen" id="foldopen01056" data-start="{" data-end="}">
-<div class="line"><a id="l01056" name="l01056"></a><span class="lineno"><a class="line" href="namespacellzk.html#a06f8a74431f12f0298cc7033691f84ec"> 1056</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#a06f8a74431f12f0298cc7033691f84ec">assertValidAttrForParamOfType</a>(Attribute attr) {</div>
-<div class="line"><a id="l01057" name="l01057"></a><span class="lineno"> 1057</span>  <span class="comment">// Must be the union of valid attribute types within ArrayType, StructType, and TypeVarType.</span></div>
-<div class="line"><a id="l01058" name="l01058"></a><span class="lineno"> 1058</span>  <span class="keyword">using </span>TypeVarAttrs = TypeList&lt;SymbolRefAttr&gt;; <span class="comment">// per ODS spec of TypeVarType</span></div>
-<div class="line"><a id="l01059" name="l01059"></a><span class="lineno"> 1059</span>  <span class="keywordflow">if</span> (!TypeListUnion&lt;ArrayDimensionTypes, StructParamTypes, TypeVarAttrs&gt;::matches(attr)) {</div>
-<div class="line"><a id="l01060" name="l01060"></a><span class="lineno"> 1060</span>    llvm::report_fatal_error(</div>
-<div class="line"><a id="l01061" name="l01061"></a><span class="lineno"> 1061</span>        <span class="stringliteral">&quot;Legal type parameters are inconsistent. Encountered &quot;</span> +</div>
-<div class="line"><a id="l01062" name="l01062"></a><span class="lineno"> 1062</span>        attr.getAbstractAttribute().getName()</div>
-<div class="line"><a id="l01063" name="l01063"></a><span class="lineno"> 1063</span>    );</div>
-<div class="line"><a id="l01064" name="l01064"></a><span class="lineno"> 1064</span>  }</div>
+<div class="line"><a id="l01061" name="l01061"></a><span class="lineno"> 1061</span> </div>
+<div class="line"><a id="l01062" name="l01062"></a><span class="lineno"> 1062</span>LogicalResult</div>
+<div class="foldopen" id="foldopen01063" data-start="{" data-end="}">
+<div class="line"><a id="l01063" name="l01063"></a><span class="lineno"><a class="line" href="namespacellzk.html#a499aa56be86c2cdb1852b4a402a0913a"> 1063</a></span><a class="code hl_function" href="namespacellzk.html#a499aa56be86c2cdb1852b4a402a0913a">verifyArrayType</a>(<a class="code hl_typedef" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError, Type elementType, ArrayRef&lt;Attribute&gt; dimensionSizes) {</div>
+<div class="line"><a id="l01064" name="l01064"></a><span class="lineno"> 1064</span>  <span class="keywordflow">return</span> success(AllowedTypes().isValidArrayTypeImpl(elementType, dimensionSizes, emitError));</div>
 <div class="line"><a id="l01065" name="l01065"></a><span class="lineno"> 1065</span>}</div>
 </div>
 <div class="line"><a id="l01066" name="l01066"></a><span class="lineno"> 1066</span> </div>
-<div class="line"><a id="l01067" name="l01067"></a><span class="lineno"> 1067</span>LogicalResult</div>
-<div class="foldopen" id="foldopen01068" data-start="{" data-end="}">
-<div class="line"><a id="l01068" name="l01068"></a><span class="lineno"><a class="line" href="namespacellzk.html#a08df12f463a5c92276e07622d3decdf5"> 1068</a></span><a class="code hl_function" href="namespacellzk.html#a08df12f463a5c92276e07622d3decdf5">verifySubArrayType</a>(<a class="code hl_typedef" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError, <a class="code hl_class" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> arrayType, <a class="code hl_class" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> subArrayType) {</div>
-<div class="line"><a id="l01069" name="l01069"></a><span class="lineno"> 1069</span>  ArrayRef&lt;Attribute&gt; dimsFromArr = arrayType.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#af6d5e1bc90e76922fbbe2ab883f8f868">getDimensionSizes</a>();</div>
-<div class="line"><a id="l01070" name="l01070"></a><span class="lineno"> 1070</span>  <span class="keywordtype">size_t</span> numArrDims = dimsFromArr.size();</div>
-<div class="line"><a id="l01071" name="l01071"></a><span class="lineno"> 1071</span>  ArrayRef&lt;Attribute&gt; dimsFromSubArr = subArrayType.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#af6d5e1bc90e76922fbbe2ab883f8f868">getDimensionSizes</a>();</div>
-<div class="line"><a id="l01072" name="l01072"></a><span class="lineno"> 1072</span>  <span class="keywordtype">size_t</span> numSubArrDims = dimsFromSubArr.size();</div>
-<div class="line"><a id="l01073" name="l01073"></a><span class="lineno"> 1073</span> </div>
-<div class="line"><a id="l01074" name="l01074"></a><span class="lineno"> 1074</span>  <span class="keywordflow">if</span> (numArrDims &lt; numSubArrDims) {</div>
-<div class="line"><a id="l01075" name="l01075"></a><span class="lineno"> 1075</span>    <span class="keywordflow">return</span> emitError().append(</div>
-<div class="line"><a id="l01076" name="l01076"></a><span class="lineno"> 1076</span>        <span class="stringliteral">&quot;subarray type &quot;</span>, subArrayType, <span class="stringliteral">&quot; has more dimensions than array type &quot;</span>, arrayType</div>
-<div class="line"><a id="l01077" name="l01077"></a><span class="lineno"> 1077</span>    );</div>
-<div class="line"><a id="l01078" name="l01078"></a><span class="lineno"> 1078</span>  }</div>
-<div class="line"><a id="l01079" name="l01079"></a><span class="lineno"> 1079</span> </div>
-<div class="line"><a id="l01080" name="l01080"></a><span class="lineno"> 1080</span>  <span class="keywordtype">size_t</span> toDrop = numArrDims - numSubArrDims;</div>
-<div class="line"><a id="l01081" name="l01081"></a><span class="lineno"> 1081</span>  ArrayRef&lt;Attribute&gt; dimsFromArrReduced = dimsFromArr.drop_front(toDrop);</div>
-<div class="line"><a id="l01082" name="l01082"></a><span class="lineno"> 1082</span> </div>
-<div class="line"><a id="l01083" name="l01083"></a><span class="lineno"> 1083</span>  <span class="comment">// Ensure dimension sizes are compatible (ignoring the indexed dimensions)</span></div>
-<div class="line"><a id="l01084" name="l01084"></a><span class="lineno"> 1084</span>  <span class="keywordflow">if</span> (!<a class="code hl_function" href="namespacellzk.html#ac0200f46aeb61d24a1630b2eebf0abe7">typeParamsUnify</a>(dimsFromArrReduced, dimsFromSubArr)) {</div>
-<div class="line"><a id="l01085" name="l01085"></a><span class="lineno"> 1085</span>    std::string message;</div>
-<div class="line"><a id="l01086" name="l01086"></a><span class="lineno"> 1086</span>    llvm::raw_string_ostream ss(message);</div>
-<div class="line"><a id="l01087" name="l01087"></a><span class="lineno"> 1087</span>    <span class="keyword">auto</span> appendOne = [&amp;ss](Attribute a) { <a class="code hl_function" href="namespacellzk.html#ad54f2cf52138ae6282775a72362a7445">appendWithoutType</a>(ss, a); };</div>
-<div class="line"><a id="l01088" name="l01088"></a><span class="lineno"> 1088</span>    ss &lt;&lt; <span class="stringliteral">&quot;cannot unify array dimensions [&quot;</span>;</div>
-<div class="line"><a id="l01089" name="l01089"></a><span class="lineno"> 1089</span>    llvm::interleaveComma(dimsFromArrReduced, ss, appendOne);</div>
-<div class="line"><a id="l01090" name="l01090"></a><span class="lineno"> 1090</span>    ss &lt;&lt; <span class="stringliteral">&quot;] with [&quot;</span>;</div>
-<div class="line"><a id="l01091" name="l01091"></a><span class="lineno"> 1091</span>    llvm::interleaveComma(dimsFromSubArr, ss, appendOne);</div>
-<div class="line"><a id="l01092" name="l01092"></a><span class="lineno"> 1092</span>    ss &lt;&lt; <span class="stringliteral">&quot;]&quot;</span>;</div>
-<div class="line"><a id="l01093" name="l01093"></a><span class="lineno"> 1093</span>    <span class="keywordflow">return</span> emitError().append(message);</div>
-<div class="line"><a id="l01094" name="l01094"></a><span class="lineno"> 1094</span>  }</div>
-<div class="line"><a id="l01095" name="l01095"></a><span class="lineno"> 1095</span> </div>
-<div class="line"><a id="l01096" name="l01096"></a><span class="lineno"> 1096</span>  <span class="comment">// Ensure element types of the arrays are compatible</span></div>
-<div class="line"><a id="l01097" name="l01097"></a><span class="lineno"> 1097</span>  <span class="keywordflow">if</span> (!<a class="code hl_function" href="namespacellzk.html#abc5c6fc1f85b22d1d6e46755e5da1626">typesUnify</a>(arrayType.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#a9a35f9b638432e52628aa367e5706edd">getElementType</a>(), subArrayType.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#a9a35f9b638432e52628aa367e5706edd">getElementType</a>())) {</div>
-<div class="line"><a id="l01098" name="l01098"></a><span class="lineno"> 1098</span>    <span class="keywordflow">return</span> emitError().append(</div>
-<div class="line"><a id="l01099" name="l01099"></a><span class="lineno"> 1099</span>        <span class="stringliteral">&quot;incorrect array element type; expected: &quot;</span>, arrayType.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#a9a35f9b638432e52628aa367e5706edd">getElementType</a>(),</div>
-<div class="line"><a id="l01100" name="l01100"></a><span class="lineno"> 1100</span>        <span class="stringliteral">&quot;, found: &quot;</span>, subArrayType.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#a9a35f9b638432e52628aa367e5706edd">getElementType</a>()</div>
-<div class="line"><a id="l01101" name="l01101"></a><span class="lineno"> 1101</span>    );</div>
-<div class="line"><a id="l01102" name="l01102"></a><span class="lineno"> 1102</span>  }</div>
-<div class="line"><a id="l01103" name="l01103"></a><span class="lineno"> 1103</span> </div>
-<div class="line"><a id="l01104" name="l01104"></a><span class="lineno"> 1104</span>  <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l01105" name="l01105"></a><span class="lineno"> 1105</span>}</div>
+<div class="foldopen" id="foldopen01067" data-start="{" data-end="}">
+<div class="line"><a id="l01067" name="l01067"></a><span class="lineno"><a class="line" href="namespacellzk.html#a06f8a74431f12f0298cc7033691f84ec"> 1067</a></span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellzk.html#a06f8a74431f12f0298cc7033691f84ec">assertValidAttrForParamOfType</a>(Attribute attr) {</div>
+<div class="line"><a id="l01068" name="l01068"></a><span class="lineno"> 1068</span>  <span class="comment">// Must be the union of valid attribute types within ArrayType, StructType, and TypeVarType.</span></div>
+<div class="line"><a id="l01069" name="l01069"></a><span class="lineno"> 1069</span>  <span class="keyword">using </span>TypeVarAttrs = TypeList&lt;SymbolRefAttr&gt;; <span class="comment">// per ODS spec of TypeVarType</span></div>
+<div class="line"><a id="l01070" name="l01070"></a><span class="lineno"> 1070</span>  <span class="keywordflow">if</span> (!TypeListUnion&lt;ArrayDimensionTypes, StructParamTypes, TypeVarAttrs&gt;::matches(attr)) {</div>
+<div class="line"><a id="l01071" name="l01071"></a><span class="lineno"> 1071</span>    llvm::report_fatal_error(</div>
+<div class="line"><a id="l01072" name="l01072"></a><span class="lineno"> 1072</span>        <span class="stringliteral">&quot;Legal type parameters are inconsistent. Encountered &quot;</span> +</div>
+<div class="line"><a id="l01073" name="l01073"></a><span class="lineno"> 1073</span>        attr.getAbstractAttribute().getName()</div>
+<div class="line"><a id="l01074" name="l01074"></a><span class="lineno"> 1074</span>    );</div>
+<div class="line"><a id="l01075" name="l01075"></a><span class="lineno"> 1075</span>  }</div>
+<div class="line"><a id="l01076" name="l01076"></a><span class="lineno"> 1076</span>}</div>
 </div>
+<div class="line"><a id="l01077" name="l01077"></a><span class="lineno"> 1077</span> </div>
+<div class="line"><a id="l01078" name="l01078"></a><span class="lineno"> 1078</span>LogicalResult</div>
+<div class="foldopen" id="foldopen01079" data-start="{" data-end="}">
+<div class="line"><a id="l01079" name="l01079"></a><span class="lineno"><a class="line" href="namespacellzk.html#a08df12f463a5c92276e07622d3decdf5"> 1079</a></span><a class="code hl_function" href="namespacellzk.html#a08df12f463a5c92276e07622d3decdf5">verifySubArrayType</a>(<a class="code hl_typedef" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError, <a class="code hl_class" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> arrayType, <a class="code hl_class" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> subArrayType) {</div>
+<div class="line"><a id="l01080" name="l01080"></a><span class="lineno"> 1080</span>  ArrayRef&lt;Attribute&gt; dimsFromArr = arrayType.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#af6d5e1bc90e76922fbbe2ab883f8f868">getDimensionSizes</a>();</div>
+<div class="line"><a id="l01081" name="l01081"></a><span class="lineno"> 1081</span>  <span class="keywordtype">size_t</span> numArrDims = dimsFromArr.size();</div>
+<div class="line"><a id="l01082" name="l01082"></a><span class="lineno"> 1082</span>  ArrayRef&lt;Attribute&gt; dimsFromSubArr = subArrayType.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#af6d5e1bc90e76922fbbe2ab883f8f868">getDimensionSizes</a>();</div>
+<div class="line"><a id="l01083" name="l01083"></a><span class="lineno"> 1083</span>  <span class="keywordtype">size_t</span> numSubArrDims = dimsFromSubArr.size();</div>
+<div class="line"><a id="l01084" name="l01084"></a><span class="lineno"> 1084</span> </div>
+<div class="line"><a id="l01085" name="l01085"></a><span class="lineno"> 1085</span>  <span class="keywordflow">if</span> (numArrDims &lt; numSubArrDims) {</div>
+<div class="line"><a id="l01086" name="l01086"></a><span class="lineno"> 1086</span>    <span class="keywordflow">return</span> emitError().append(</div>
+<div class="line"><a id="l01087" name="l01087"></a><span class="lineno"> 1087</span>        <span class="stringliteral">&quot;subarray type &quot;</span>, subArrayType, <span class="stringliteral">&quot; has more dimensions than array type &quot;</span>, arrayType</div>
+<div class="line"><a id="l01088" name="l01088"></a><span class="lineno"> 1088</span>    );</div>
+<div class="line"><a id="l01089" name="l01089"></a><span class="lineno"> 1089</span>  }</div>
+<div class="line"><a id="l01090" name="l01090"></a><span class="lineno"> 1090</span> </div>
+<div class="line"><a id="l01091" name="l01091"></a><span class="lineno"> 1091</span>  <span class="keywordtype">size_t</span> toDrop = numArrDims - numSubArrDims;</div>
+<div class="line"><a id="l01092" name="l01092"></a><span class="lineno"> 1092</span>  ArrayRef&lt;Attribute&gt; dimsFromArrReduced = dimsFromArr.drop_front(toDrop);</div>
+<div class="line"><a id="l01093" name="l01093"></a><span class="lineno"> 1093</span> </div>
+<div class="line"><a id="l01094" name="l01094"></a><span class="lineno"> 1094</span>  <span class="comment">// Ensure dimension sizes are compatible (ignoring the indexed dimensions)</span></div>
+<div class="line"><a id="l01095" name="l01095"></a><span class="lineno"> 1095</span>  <span class="keywordflow">if</span> (!<a class="code hl_function" href="namespacellzk.html#ac0200f46aeb61d24a1630b2eebf0abe7">typeParamsUnify</a>(dimsFromArrReduced, dimsFromSubArr)) {</div>
+<div class="line"><a id="l01096" name="l01096"></a><span class="lineno"> 1096</span>    std::string message;</div>
+<div class="line"><a id="l01097" name="l01097"></a><span class="lineno"> 1097</span>    llvm::raw_string_ostream ss(message);</div>
+<div class="line"><a id="l01098" name="l01098"></a><span class="lineno"> 1098</span>    <span class="keyword">auto</span> appendOne = [&amp;ss](Attribute a) { <a class="code hl_function" href="namespacellzk.html#ad54f2cf52138ae6282775a72362a7445">appendWithoutType</a>(ss, a); };</div>
+<div class="line"><a id="l01099" name="l01099"></a><span class="lineno"> 1099</span>    ss &lt;&lt; <span class="stringliteral">&quot;cannot unify array dimensions [&quot;</span>;</div>
+<div class="line"><a id="l01100" name="l01100"></a><span class="lineno"> 1100</span>    llvm::interleaveComma(dimsFromArrReduced, ss, appendOne);</div>
+<div class="line"><a id="l01101" name="l01101"></a><span class="lineno"> 1101</span>    ss &lt;&lt; <span class="stringliteral">&quot;] with [&quot;</span>;</div>
+<div class="line"><a id="l01102" name="l01102"></a><span class="lineno"> 1102</span>    llvm::interleaveComma(dimsFromSubArr, ss, appendOne);</div>
+<div class="line"><a id="l01103" name="l01103"></a><span class="lineno"> 1103</span>    ss &lt;&lt; <span class="stringliteral">&quot;]&quot;</span>;</div>
+<div class="line"><a id="l01104" name="l01104"></a><span class="lineno"> 1104</span>    <span class="keywordflow">return</span> emitError().append(message);</div>
+<div class="line"><a id="l01105" name="l01105"></a><span class="lineno"> 1105</span>  }</div>
 <div class="line"><a id="l01106" name="l01106"></a><span class="lineno"> 1106</span> </div>
-<div class="line"><a id="l01107" name="l01107"></a><span class="lineno"> 1107</span>LogicalResult</div>
-<div class="foldopen" id="foldopen01108" data-start="{" data-end="}">
-<div class="line"><a id="l01108" name="l01108"></a><span class="lineno"><a class="line" href="namespacellzk.html#a4df2215e7a4250ae90d766ca527a5af3"> 1108</a></span><a class="code hl_function" href="namespacellzk.html#a4df2215e7a4250ae90d766ca527a5af3">verifySubArrayOrElementType</a>(<a class="code hl_typedef" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError, <a class="code hl_class" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> arrayType, Type subArrayOrElemType) {</div>
-<div class="line"><a id="l01109" name="l01109"></a><span class="lineno"> 1109</span>  <span class="keywordflow">if</span> (<span class="keyword">auto</span> subArrayType = llvm::dyn_cast&lt;ArrayType&gt;(subArrayOrElemType)) {</div>
-<div class="line"><a id="l01110" name="l01110"></a><span class="lineno"> 1110</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a08df12f463a5c92276e07622d3decdf5">verifySubArrayType</a>(emitError, arrayType, subArrayType);</div>
-<div class="line"><a id="l01111" name="l01111"></a><span class="lineno"> 1111</span>  }</div>
-<div class="line"><a id="l01112" name="l01112"></a><span class="lineno"> 1112</span>  <span class="keywordflow">if</span> (!<a class="code hl_function" href="namespacellzk.html#abc5c6fc1f85b22d1d6e46755e5da1626">typesUnify</a>(arrayType.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#a9a35f9b638432e52628aa367e5706edd">getElementType</a>(), subArrayOrElemType)) {</div>
-<div class="line"><a id="l01113" name="l01113"></a><span class="lineno"> 1113</span>    <span class="keywordflow">return</span> emitError().append(</div>
-<div class="line"><a id="l01114" name="l01114"></a><span class="lineno"> 1114</span>        <span class="stringliteral">&quot;incorrect array element type; expected: &quot;</span>, arrayType.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#a9a35f9b638432e52628aa367e5706edd">getElementType</a>(),</div>
-<div class="line"><a id="l01115" name="l01115"></a><span class="lineno"> 1115</span>        <span class="stringliteral">&quot;, found: &quot;</span>, subArrayOrElemType</div>
-<div class="line"><a id="l01116" name="l01116"></a><span class="lineno"> 1116</span>    );</div>
-<div class="line"><a id="l01117" name="l01117"></a><span class="lineno"> 1117</span>  }</div>
-<div class="line"><a id="l01118" name="l01118"></a><span class="lineno"> 1118</span> </div>
-<div class="line"><a id="l01119" name="l01119"></a><span class="lineno"> 1119</span>  <span class="keywordflow">return</span> success();</div>
-<div class="line"><a id="l01120" name="l01120"></a><span class="lineno"> 1120</span>}</div>
+<div class="line"><a id="l01107" name="l01107"></a><span class="lineno"> 1107</span>  <span class="comment">// Ensure element types of the arrays are compatible</span></div>
+<div class="line"><a id="l01108" name="l01108"></a><span class="lineno"> 1108</span>  <span class="keywordflow">if</span> (!<a class="code hl_function" href="namespacellzk.html#abc5c6fc1f85b22d1d6e46755e5da1626">typesUnify</a>(arrayType.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#a9a35f9b638432e52628aa367e5706edd">getElementType</a>(), subArrayType.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#a9a35f9b638432e52628aa367e5706edd">getElementType</a>())) {</div>
+<div class="line"><a id="l01109" name="l01109"></a><span class="lineno"> 1109</span>    <span class="keywordflow">return</span> emitError().append(</div>
+<div class="line"><a id="l01110" name="l01110"></a><span class="lineno"> 1110</span>        <span class="stringliteral">&quot;incorrect array element type; expected: &quot;</span>, arrayType.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#a9a35f9b638432e52628aa367e5706edd">getElementType</a>(),</div>
+<div class="line"><a id="l01111" name="l01111"></a><span class="lineno"> 1111</span>        <span class="stringliteral">&quot;, found: &quot;</span>, subArrayType.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#a9a35f9b638432e52628aa367e5706edd">getElementType</a>()</div>
+<div class="line"><a id="l01112" name="l01112"></a><span class="lineno"> 1112</span>    );</div>
+<div class="line"><a id="l01113" name="l01113"></a><span class="lineno"> 1113</span>  }</div>
+<div class="line"><a id="l01114" name="l01114"></a><span class="lineno"> 1114</span> </div>
+<div class="line"><a id="l01115" name="l01115"></a><span class="lineno"> 1115</span>  <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l01116" name="l01116"></a><span class="lineno"> 1116</span>}</div>
 </div>
-<div class="line"><a id="l01121" name="l01121"></a><span class="lineno"> 1121</span> </div>
-<div class="foldopen" id="foldopen01122" data-start="{" data-end="}">
-<div class="line"><a id="l01122" name="l01122"></a><span class="lineno"><a class="line" href="namespacellzk.html#a4a2ab06a3956dbf1490063c357bf10c7"> 1122</a></span><span class="keywordtype">bool</span> <a class="code hl_function" href="namespacellzk.html#a4a2ab06a3956dbf1490063c357bf10c7">isFeltOrSimpleFeltAggregate</a>(Type ty) {</div>
-<div class="line"><a id="l01123" name="l01123"></a><span class="lineno"> 1123</span>  <span class="keywordflow">return</span> TypeSwitch&lt;Type, bool&gt;(ty)</div>
-<div class="line"><a id="l01124" name="l01124"></a><span class="lineno"> 1124</span>      .Case&lt;<a class="code hl_class" href="classllzk_1_1felt_1_1FeltType.html">FeltType</a>&gt;([](<span class="keyword">auto</span>) { <span class="keywordflow">return</span> <span class="keyword">true</span>; })</div>
-<div class="line"><a id="l01125" name="l01125"></a><span class="lineno"> 1125</span>      .Case&lt;ArrayType&gt;([](<span class="keyword">auto</span> arrTy) {</div>
-<div class="line"><a id="l01126" name="l01126"></a><span class="lineno"> 1126</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a4a2ab06a3956dbf1490063c357bf10c7">isFeltOrSimpleFeltAggregate</a>(arrTy.getElementType());</div>
-<div class="line"><a id="l01127" name="l01127"></a><span class="lineno"> 1127</span>  })</div>
-<div class="line"><a id="l01128" name="l01128"></a><span class="lineno"> 1128</span>      .Case&lt;PodType&gt;([](<span class="keyword">auto</span> podTy) {</div>
-<div class="line"><a id="l01129" name="l01129"></a><span class="lineno"> 1129</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> record : podTy.getRecords()) {</div>
-<div class="line"><a id="l01130" name="l01130"></a><span class="lineno"> 1130</span>      <span class="keywordflow">if</span> (!<a class="code hl_function" href="namespacellzk.html#a4a2ab06a3956dbf1490063c357bf10c7">isFeltOrSimpleFeltAggregate</a>(record.getType())) {</div>
-<div class="line"><a id="l01131" name="l01131"></a><span class="lineno"> 1131</span>        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l01132" name="l01132"></a><span class="lineno"> 1132</span>      }</div>
-<div class="line"><a id="l01133" name="l01133"></a><span class="lineno"> 1133</span>    }</div>
-<div class="line"><a id="l01134" name="l01134"></a><span class="lineno"> 1134</span>    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l01135" name="l01135"></a><span class="lineno"> 1135</span>  }).Default([](<span class="keyword">auto</span>) { <span class="keywordflow">return</span> <span class="keyword">false</span>; });</div>
-<div class="line"><a id="l01136" name="l01136"></a><span class="lineno"> 1136</span>}</div>
+<div class="line"><a id="l01117" name="l01117"></a><span class="lineno"> 1117</span> </div>
+<div class="line"><a id="l01118" name="l01118"></a><span class="lineno"> 1118</span>LogicalResult</div>
+<div class="foldopen" id="foldopen01119" data-start="{" data-end="}">
+<div class="line"><a id="l01119" name="l01119"></a><span class="lineno"><a class="line" href="namespacellzk.html#a4df2215e7a4250ae90d766ca527a5af3"> 1119</a></span><a class="code hl_function" href="namespacellzk.html#a4df2215e7a4250ae90d766ca527a5af3">verifySubArrayOrElementType</a>(<a class="code hl_typedef" href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">EmitErrorFn</a> emitError, <a class="code hl_class" href="classllzk_1_1array_1_1ArrayType.html">ArrayType</a> arrayType, Type subArrayOrElemType) {</div>
+<div class="line"><a id="l01120" name="l01120"></a><span class="lineno"> 1120</span>  <span class="keywordflow">if</span> (<span class="keyword">auto</span> subArrayType = llvm::dyn_cast&lt;ArrayType&gt;(subArrayOrElemType)) {</div>
+<div class="line"><a id="l01121" name="l01121"></a><span class="lineno"> 1121</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a08df12f463a5c92276e07622d3decdf5">verifySubArrayType</a>(emitError, arrayType, subArrayType);</div>
+<div class="line"><a id="l01122" name="l01122"></a><span class="lineno"> 1122</span>  }</div>
+<div class="line"><a id="l01123" name="l01123"></a><span class="lineno"> 1123</span>  <span class="keywordflow">if</span> (!<a class="code hl_function" href="namespacellzk.html#abc5c6fc1f85b22d1d6e46755e5da1626">typesUnify</a>(arrayType.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#a9a35f9b638432e52628aa367e5706edd">getElementType</a>(), subArrayOrElemType)) {</div>
+<div class="line"><a id="l01124" name="l01124"></a><span class="lineno"> 1124</span>    <span class="keywordflow">return</span> emitError().append(</div>
+<div class="line"><a id="l01125" name="l01125"></a><span class="lineno"> 1125</span>        <span class="stringliteral">&quot;incorrect array element type; expected: &quot;</span>, arrayType.<a class="code hl_function" href="classllzk_1_1array_1_1ArrayType.html#a9a35f9b638432e52628aa367e5706edd">getElementType</a>(),</div>
+<div class="line"><a id="l01126" name="l01126"></a><span class="lineno"> 1126</span>        <span class="stringliteral">&quot;, found: &quot;</span>, subArrayOrElemType</div>
+<div class="line"><a id="l01127" name="l01127"></a><span class="lineno"> 1127</span>    );</div>
+<div class="line"><a id="l01128" name="l01128"></a><span class="lineno"> 1128</span>  }</div>
+<div class="line"><a id="l01129" name="l01129"></a><span class="lineno"> 1129</span> </div>
+<div class="line"><a id="l01130" name="l01130"></a><span class="lineno"> 1130</span>  <span class="keywordflow">return</span> success();</div>
+<div class="line"><a id="l01131" name="l01131"></a><span class="lineno"> 1131</span>}</div>
 </div>
-<div class="line"><a id="l01137" name="l01137"></a><span class="lineno"> 1137</span> </div>
-<div class="foldopen" id="foldopen01138" data-start="{" data-end="}">
-<div class="line"><a id="l01138" name="l01138"></a><span class="lineno"><a class="line" href="namespacellzk.html#a4fa2606f37aa2ff8d905d847d3756ac7"> 1138</a></span><span class="keywordtype">bool</span> <a class="code hl_function" href="namespacellzk.html#a4fa2606f37aa2ff8d905d847d3756ac7">isValidMainSignalType</a>(Type pType) {</div>
-<div class="line"><a id="l01139" name="l01139"></a><span class="lineno"> 1139</span>  <span class="keywordflow">if</span> (<span class="keyword">auto</span> arrayParamTy = llvm::dyn_cast&lt;ArrayType&gt;(pType)) {</div>
-<div class="line"><a id="l01140" name="l01140"></a><span class="lineno"> 1140</span>    <span class="keywordflow">return</span> llvm::isa&lt;FeltType&gt;(arrayParamTy.getElementType());</div>
-<div class="line"><a id="l01141" name="l01141"></a><span class="lineno"> 1141</span>  }</div>
-<div class="line"><a id="l01142" name="l01142"></a><span class="lineno"> 1142</span>  <span class="keywordflow">return</span> llvm::isa&lt;FeltType&gt;(pType);</div>
-<div class="line"><a id="l01143" name="l01143"></a><span class="lineno"> 1143</span>}</div>
+<div class="line"><a id="l01132" name="l01132"></a><span class="lineno"> 1132</span> </div>
+<div class="foldopen" id="foldopen01133" data-start="{" data-end="}">
+<div class="line"><a id="l01133" name="l01133"></a><span class="lineno"><a class="line" href="namespacellzk.html#a4a2ab06a3956dbf1490063c357bf10c7"> 1133</a></span><span class="keywordtype">bool</span> <a class="code hl_function" href="namespacellzk.html#a4a2ab06a3956dbf1490063c357bf10c7">isFeltOrSimpleFeltAggregate</a>(Type ty) {</div>
+<div class="line"><a id="l01134" name="l01134"></a><span class="lineno"> 1134</span>  <span class="keywordflow">return</span> TypeSwitch&lt;Type, bool&gt;(ty)</div>
+<div class="line"><a id="l01135" name="l01135"></a><span class="lineno"> 1135</span>      .Case&lt;<a class="code hl_class" href="classllzk_1_1felt_1_1FeltType.html">FeltType</a>&gt;([](<span class="keyword">auto</span>) { <span class="keywordflow">return</span> <span class="keyword">true</span>; })</div>
+<div class="line"><a id="l01136" name="l01136"></a><span class="lineno"> 1136</span>      .Case&lt;ArrayType&gt;([](<span class="keyword">auto</span> arrTy) {</div>
+<div class="line"><a id="l01137" name="l01137"></a><span class="lineno"> 1137</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespacellzk.html#a4a2ab06a3956dbf1490063c357bf10c7">isFeltOrSimpleFeltAggregate</a>(arrTy.getElementType());</div>
+<div class="line"><a id="l01138" name="l01138"></a><span class="lineno"> 1138</span>  })</div>
+<div class="line"><a id="l01139" name="l01139"></a><span class="lineno"> 1139</span>      .Case&lt;PodType&gt;([](<span class="keyword">auto</span> podTy) {</div>
+<div class="line"><a id="l01140" name="l01140"></a><span class="lineno"> 1140</span>    <span class="keywordflow">for</span> (<span class="keyword">auto</span> record : podTy.getRecords()) {</div>
+<div class="line"><a id="l01141" name="l01141"></a><span class="lineno"> 1141</span>      <span class="keywordflow">if</span> (!<a class="code hl_function" href="namespacellzk.html#a4a2ab06a3956dbf1490063c357bf10c7">isFeltOrSimpleFeltAggregate</a>(record.getType())) {</div>
+<div class="line"><a id="l01142" name="l01142"></a><span class="lineno"> 1142</span>        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l01143" name="l01143"></a><span class="lineno"> 1143</span>      }</div>
+<div class="line"><a id="l01144" name="l01144"></a><span class="lineno"> 1144</span>    }</div>
+<div class="line"><a id="l01145" name="l01145"></a><span class="lineno"> 1145</span>    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l01146" name="l01146"></a><span class="lineno"> 1146</span>  }).Default([](<span class="keyword">auto</span>) { <span class="keywordflow">return</span> <span class="keyword">false</span>; });</div>
+<div class="line"><a id="l01147" name="l01147"></a><span class="lineno"> 1147</span>}</div>
 </div>
-<div class="line"><a id="l01144" name="l01144"></a><span class="lineno"> 1144</span> </div>
-<div class="line"><a id="l01145" name="l01145"></a><span class="lineno"> 1145</span>} <span class="comment">// namespace llzk</span></div>
+<div class="line"><a id="l01148" name="l01148"></a><span class="lineno"> 1148</span> </div>
+<div class="foldopen" id="foldopen01149" data-start="{" data-end="}">
+<div class="line"><a id="l01149" name="l01149"></a><span class="lineno"><a class="line" href="namespacellzk.html#a4fa2606f37aa2ff8d905d847d3756ac7"> 1149</a></span><span class="keywordtype">bool</span> <a class="code hl_function" href="namespacellzk.html#a4fa2606f37aa2ff8d905d847d3756ac7">isValidMainSignalType</a>(Type pType) {</div>
+<div class="line"><a id="l01150" name="l01150"></a><span class="lineno"> 1150</span>  <span class="keywordflow">if</span> (<span class="keyword">auto</span> arrayParamTy = llvm::dyn_cast&lt;ArrayType&gt;(pType)) {</div>
+<div class="line"><a id="l01151" name="l01151"></a><span class="lineno"> 1151</span>    <span class="keywordflow">return</span> llvm::isa&lt;FeltType&gt;(arrayParamTy.getElementType());</div>
+<div class="line"><a id="l01152" name="l01152"></a><span class="lineno"> 1152</span>  }</div>
+<div class="line"><a id="l01153" name="l01153"></a><span class="lineno"> 1153</span>  <span class="keywordflow">return</span> llvm::isa&lt;FeltType&gt;(pType);</div>
+<div class="line"><a id="l01154" name="l01154"></a><span class="lineno"> 1154</span>}</div>
+</div>
+<div class="line"><a id="l01155" name="l01155"></a><span class="lineno"> 1155</span> </div>
+<div class="line"><a id="l01156" name="l01156"></a><span class="lineno"> 1156</span>} <span class="comment">// namespace llzk</span></div>
 <div class="ttc" id="aArray_2IR_2Types_8h_html"><div class="ttname"><a href="Array_2IR_2Types_8h.html">Types.h</a></div></div>
 <div class="ttc" id="aAttributeHelper_8h_html"><div class="ttname"><a href="AttributeHelper_8h.html">AttributeHelper.h</a></div></div>
 <div class="ttc" id="aCompare_8h_html"><div class="ttname"><a href="Compare_8h.html">Compare.h</a></div></div>
@@ -1339,13 +1350,13 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('TypeHelper_8cp
 <div class="ttc" id="anamespacellzk_1_1cast_html"><div class="ttname"><a href="namespacellzk_1_1cast.html">llzk::cast</a></div><div class="ttdef"><b>Definition</b> <a href="Cast_2IR_2Ops_8cpp_source.html#l00056">Ops.cpp:56</a></div></div>
 <div class="ttc" id="anamespacellzk_1_1debug_html_a26d41644d8893b584f5e5e07f875784a"><div class="ttname"><a href="namespacellzk_1_1debug.html#a26d41644d8893b584f5e5e07f875784a">llzk::debug::toStringOne</a></div><div class="ttdeci">std::string toStringOne(const T &amp;value)</div><div class="ttdef"><b>Definition</b> <a href="Debug_8h_source.html#l00182">Debug.h:182</a></div></div>
 <div class="ttc" id="anamespacellzk_html"><div class="ttname"><a href="namespacellzk.html">llzk</a></div><div class="ttdef"><b>Definition</b> <a href="AnalysisPassEnums_8cpp_source.html#l00019">AnalysisPassEnums.cpp:19</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a016f3b59595b34b00f2b01667467aa06"><div class="ttname"><a href="namespacellzk.html#a016f3b59595b34b00f2b01667467aa06">llzk::verifyAffineMapAttrType</a></div><div class="ttdeci">LogicalResult verifyAffineMapAttrType(EmitErrorFn emitError, Attribute in)</div><div class="ttdef"><b>Definition</b> <a href="#l01025">TypeHelper.cpp:1025</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a06f8a74431f12f0298cc7033691f84ec"><div class="ttname"><a href="namespacellzk.html#a06f8a74431f12f0298cc7033691f84ec">llzk::assertValidAttrForParamOfType</a></div><div class="ttdeci">void assertValidAttrForParamOfType(Attribute attr)</div><div class="ttdef"><b>Definition</b> <a href="#l01056">TypeHelper.cpp:1056</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a08df12f463a5c92276e07622d3decdf5"><div class="ttname"><a href="namespacellzk.html#a08df12f463a5c92276e07622d3decdf5">llzk::verifySubArrayType</a></div><div class="ttdeci">LogicalResult verifySubArrayType(EmitErrorFn emitError, ArrayType arrayType, ArrayType subArrayType)</div><div class="ttdoc">Determine if the subArrayType is a valid subarray of arrayType.</div><div class="ttdef"><b>Definition</b> <a href="#l01068">TypeHelper.cpp:1068</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a1575048cc6105ca9b8d50d99ef654562"><div class="ttname"><a href="namespacellzk.html#a1575048cc6105ca9b8d50d99ef654562">llzk::forceIntAttrType</a></div><div class="ttdeci">FailureOr&lt; Attribute &gt; forceIntAttrType(Attribute attr, EmitErrorFn emitError)</div><div class="ttdef"><b>Definition</b> <a href="#l00990">TypeHelper.cpp:990</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a016f3b59595b34b00f2b01667467aa06"><div class="ttname"><a href="namespacellzk.html#a016f3b59595b34b00f2b01667467aa06">llzk::verifyAffineMapAttrType</a></div><div class="ttdeci">LogicalResult verifyAffineMapAttrType(EmitErrorFn emitError, Attribute in)</div><div class="ttdef"><b>Definition</b> <a href="#l01036">TypeHelper.cpp:1036</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a06f8a74431f12f0298cc7033691f84ec"><div class="ttname"><a href="namespacellzk.html#a06f8a74431f12f0298cc7033691f84ec">llzk::assertValidAttrForParamOfType</a></div><div class="ttdeci">void assertValidAttrForParamOfType(Attribute attr)</div><div class="ttdef"><b>Definition</b> <a href="#l01067">TypeHelper.cpp:1067</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a08df12f463a5c92276e07622d3decdf5"><div class="ttname"><a href="namespacellzk.html#a08df12f463a5c92276e07622d3decdf5">llzk::verifySubArrayType</a></div><div class="ttdeci">LogicalResult verifySubArrayType(EmitErrorFn emitError, ArrayType arrayType, ArrayType subArrayType)</div><div class="ttdoc">Determine if the subArrayType is a valid subarray of arrayType.</div><div class="ttdef"><b>Definition</b> <a href="#l01079">TypeHelper.cpp:1079</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a1575048cc6105ca9b8d50d99ef654562"><div class="ttname"><a href="namespacellzk.html#a1575048cc6105ca9b8d50d99ef654562">llzk::forceIntAttrType</a></div><div class="ttdeci">FailureOr&lt; Attribute &gt; forceIntAttrType(Attribute attr, EmitErrorFn emitError)</div><div class="ttdef"><b>Definition</b> <a href="#l01001">TypeHelper.cpp:1001</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a1b91475e8b41cc2d6a7d4716274d324f"><div class="ttname"><a href="namespacellzk.html#a1b91475e8b41cc2d6a7d4716274d324f">llzk::computeEmitEqCardinality</a></div><div class="ttdeci">uint64_t computeEmitEqCardinality(Type type)</div><div class="ttdef"><b>Definition</b> <a href="#l00568">TypeHelper.cpp:568</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a23b1909ae78d62ab7d8906197c2f486b"><div class="ttname"><a href="namespacellzk.html#a23b1909ae78d62ab7d8906197c2f486b">llzk::isValidArrayType</a></div><div class="ttdeci">bool isValidArrayType(Type type)</div><div class="ttdef"><b>Definition</b> <a href="#l00535">TypeHelper.cpp:535</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a26ae160de4660dc25c69d9461f065d84"><div class="ttname"><a href="namespacellzk.html#a26ae160de4660dc25c69d9461f065d84">llzk::verifyIntAttrType</a></div><div class="ttdeci">LogicalResult verifyIntAttrType(EmitErrorFn emitError, Attribute in)</div><div class="ttdef"><b>Definition</b> <a href="#l01010">TypeHelper.cpp:1010</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a26ae160de4660dc25c69d9461f065d84"><div class="ttname"><a href="namespacellzk.html#a26ae160de4660dc25c69d9461f065d84">llzk::verifyIntAttrType</a></div><div class="ttdeci">LogicalResult verifyIntAttrType(EmitErrorFn emitError, Attribute in)</div><div class="ttdef"><b>Definition</b> <a href="#l01021">TypeHelper.cpp:1021</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a290cbd8f2848b2ab447a3b296adf6830"><div class="ttname"><a href="namespacellzk.html#a290cbd8f2848b2ab447a3b296adf6830">llzk::typeListsUnify</a></div><div class="ttdeci">bool typeListsUnify(Iter1 lhs, Iter2 rhs, mlir::ArrayRef&lt; llvm::StringRef &gt; rhsReversePrefix={}, UnificationMap *unifications=nullptr)</div><div class="ttdoc">Return true iff the two lists of Type instances are equivalent or could be equivalent after full inst...</div><div class="ttdef"><b>Definition</b> <a href="TypeHelper_8h_source.html#l00271">TypeHelper.h:271</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a2bbb039982f4d0a01e53f8901fdaa34d"><div class="ttname"><a href="namespacellzk.html#a2bbb039982f4d0a01e53f8901fdaa34d">llzk::isConcreteType</a></div><div class="ttdeci">bool isConcreteType(Type type, bool allowStructParams)</div><div class="ttdef"><b>Definition</b> <a href="#l00537">TypeHelper.cpp:537</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a2de2a95f4fd67e14caa528a032aa00a3"><div class="ttname"><a href="namespacellzk.html#a2de2a95f4fd67e14caa528a032aa00a3">llzk::isValidArrayElemType</a></div><div class="ttdeci">bool isValidArrayElemType(Type type)</div><div class="ttdef"><b>Definition</b> <a href="#l00533">TypeHelper.cpp:533</a></div></div>
@@ -1357,14 +1368,14 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('TypeHelper_8cp
 <div class="ttc" id="anamespacellzk_html_a41c7611294e8e147781abc732a50159fac4a0dbaac3bd0f3bf581ad822f5fb4b4"><div class="ttname"><a href="namespacellzk.html#a41c7611294e8e147781abc732a50159fac4a0dbaac3bd0f3bf581ad822f5fb4b4">llzk::AttrConcreteness::Wildcard</a></div><div class="ttdeci">@ Wildcard</div><div class="ttdef"><b>Definition</b> <a href="TypeHelper_8h_source.html#l00120">TypeHelper.h:120</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a4347ca404454b983d3c978e268aca917"><div class="ttname"><a href="namespacellzk.html#a4347ca404454b983d3c978e268aca917">llzk::forceIntType</a></div><div class="ttdeci">FailureOr&lt; IntegerAttr &gt; forceIntType(IntegerAttr attr, EmitErrorFn emitError)</div><div class="ttdef"><b>Definition</b> <a href="#l00974">TypeHelper.cpp:974</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a449db750fee6d61e2ec3aa36a969d483"><div class="ttname"><a href="namespacellzk.html#a449db750fee6d61e2ec3aa36a969d483">llzk::structTypesUnify</a></div><div class="ttdeci">bool structTypesUnify(StructType lhs, StructType rhs, ArrayRef&lt; StringRef &gt; rhsReversePrefix, UnificationMap *unifications)</div><div class="ttdef"><b>Definition</b> <a href="#l00919">TypeHelper.cpp:919</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a499aa56be86c2cdb1852b4a402a0913a"><div class="ttname"><a href="namespacellzk.html#a499aa56be86c2cdb1852b4a402a0913a">llzk::verifyArrayType</a></div><div class="ttdeci">LogicalResult verifyArrayType(EmitErrorFn emitError, Type elementType, ArrayRef&lt; Attribute &gt; dimensionSizes)</div><div class="ttdef"><b>Definition</b> <a href="#l01052">TypeHelper.cpp:1052</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a4a2ab06a3956dbf1490063c357bf10c7"><div class="ttname"><a href="namespacellzk.html#a4a2ab06a3956dbf1490063c357bf10c7">llzk::isFeltOrSimpleFeltAggregate</a></div><div class="ttdeci">bool isFeltOrSimpleFeltAggregate(Type ty)</div><div class="ttdef"><b>Definition</b> <a href="#l01122">TypeHelper.cpp:1122</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a4df2215e7a4250ae90d766ca527a5af3"><div class="ttname"><a href="namespacellzk.html#a4df2215e7a4250ae90d766ca527a5af3">llzk::verifySubArrayOrElementType</a></div><div class="ttdeci">LogicalResult verifySubArrayOrElementType(EmitErrorFn emitError, ArrayType arrayType, Type subArrayOrElemType)</div><div class="ttdef"><b>Definition</b> <a href="#l01108">TypeHelper.cpp:1108</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a499aa56be86c2cdb1852b4a402a0913a"><div class="ttname"><a href="namespacellzk.html#a499aa56be86c2cdb1852b4a402a0913a">llzk::verifyArrayType</a></div><div class="ttdeci">LogicalResult verifyArrayType(EmitErrorFn emitError, Type elementType, ArrayRef&lt; Attribute &gt; dimensionSizes)</div><div class="ttdef"><b>Definition</b> <a href="#l01063">TypeHelper.cpp:1063</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a4a2ab06a3956dbf1490063c357bf10c7"><div class="ttname"><a href="namespacellzk.html#a4a2ab06a3956dbf1490063c357bf10c7">llzk::isFeltOrSimpleFeltAggregate</a></div><div class="ttdeci">bool isFeltOrSimpleFeltAggregate(Type ty)</div><div class="ttdef"><b>Definition</b> <a href="#l01133">TypeHelper.cpp:1133</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a4df2215e7a4250ae90d766ca527a5af3"><div class="ttname"><a href="namespacellzk.html#a4df2215e7a4250ae90d766ca527a5af3">llzk::verifySubArrayOrElementType</a></div><div class="ttdeci">LogicalResult verifySubArrayOrElementType(EmitErrorFn emitError, ArrayType arrayType, Type subArrayOrElemType)</div><div class="ttdef"><b>Definition</b> <a href="#l01119">TypeHelper.cpp:1119</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a4f47b3b9d1f45f35599782a8abaae2c4"><div class="ttname"><a href="namespacellzk.html#a4f47b3b9d1f45f35599782a8abaae2c4">llzk::isValidColumnType</a></div><div class="ttdeci">bool isValidColumnType(Type type, SymbolTableCollection &amp;symbolTable, Operation *op)</div><div class="ttdef"><b>Definition</b> <a href="#l00518">TypeHelper.cpp:518</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a4fa2606f37aa2ff8d905d847d3756ac7"><div class="ttname"><a href="namespacellzk.html#a4fa2606f37aa2ff8d905d847d3756ac7">llzk::isValidMainSignalType</a></div><div class="ttdeci">bool isValidMainSignalType(Type pType)</div><div class="ttdef"><b>Definition</b> <a href="#l01138">TypeHelper.cpp:1138</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a4fa2606f37aa2ff8d905d847d3756ac7"><div class="ttname"><a href="namespacellzk.html#a4fa2606f37aa2ff8d905d847d3756ac7">llzk::isValidMainSignalType</a></div><div class="ttdeci">bool isValidMainSignalType(Type pType)</div><div class="ttdef"><b>Definition</b> <a href="#l01149">TypeHelper.cpp:1149</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a513acdd19d4296f6623ca75ed5eeb904"><div class="ttname"><a href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904">llzk::UnificationMap</a></div><div class="ttdeci">mlir::DenseMap&lt; std::pair&lt; mlir::SymbolRefAttr, Side &gt;, mlir::Attribute &gt; UnificationMap</div><div class="ttdoc">Optional result from type unifications.</div><div class="ttdef"><b>Definition</b> <a href="TypeHelper_8h_source.html#l00217">TypeHelper.h:217</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a55eb9bd3756426974f8a8cfe20d1deb7"><div class="ttname"><a href="namespacellzk.html#a55eb9bd3756426974f8a8cfe20d1deb7">llzk::EmitErrorFn</a></div><div class="ttdeci">llvm::function_ref&lt; InFlightDiagnosticWrapper()&gt; EmitErrorFn</div><div class="ttdoc">Callback to produce an error diagnostic.</div><div class="ttdef"><b>Definition</b> <a href="ErrorHelper_8h_source.html#l00145">ErrorHelper.h:145</a></div></div>
-<div class="ttc" id="anamespacellzk_html_a57632163fc64aabdf3ee27eaec6cea72"><div class="ttname"><a href="namespacellzk.html#a57632163fc64aabdf3ee27eaec6cea72">llzk::forceIntAttrTypes</a></div><div class="ttdeci">FailureOr&lt; SmallVector&lt; Attribute &gt; &gt; forceIntAttrTypes(ArrayRef&lt; Attribute &gt; attrList, EmitErrorFn emitError)</div><div class="ttdef"><b>Definition</b> <a href="#l00998">TypeHelper.cpp:998</a></div></div>
+<div class="ttc" id="anamespacellzk_html_a57632163fc64aabdf3ee27eaec6cea72"><div class="ttname"><a href="namespacellzk.html#a57632163fc64aabdf3ee27eaec6cea72">llzk::forceIntAttrTypes</a></div><div class="ttdeci">FailureOr&lt; SmallVector&lt; Attribute &gt; &gt; forceIntAttrTypes(ArrayRef&lt; Attribute &gt; attrList, EmitErrorFn emitError)</div><div class="ttdef"><b>Definition</b> <a href="#l01009">TypeHelper.cpp:1009</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a5a58995f554b579f9f32b1454376fa38"><div class="ttname"><a href="namespacellzk.html#a5a58995f554b579f9f32b1454376fa38">llzk::isNullOrEmpty</a></div><div class="ttdeci">bool isNullOrEmpty(mlir::ArrayAttr a)</div><div class="ttdef"><b>Definition</b> <a href="AttributeHelper_8h_source.html#l00069">AttributeHelper.h:69</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a5b7b247b9d299875ee108f15066493e7"><div class="ttname"><a href="namespacellzk.html#a5b7b247b9d299875ee108f15066493e7">llzk::classifyAttrConcreteness</a></div><div class="ttdeci">AttrConcreteness classifyAttrConcreteness(Attribute attr, bool allowStructParams)</div><div class="ttdef"><b>Definition</b> <a href="#l00543">TypeHelper.cpp:543</a></div></div>
 <div class="ttc" id="anamespacellzk_html_a5ebb9644ae9afb3d88ae5a5ea4a15ef0"><div class="ttname"><a href="namespacellzk.html#a5ebb9644ae9afb3d88ae5a5ea4a15ef0">llzk::podTypesUnify</a></div><div class="ttdeci">bool podTypesUnify(PodType lhs, PodType rhs, ArrayRef&lt; StringRef &gt; rhsReversePrefix, UnificationMap *unifications)</div><div class="ttdef"><b>Definition</b> <a href="#l00926">TypeHelper.cpp:926</a></div></div>
@@ -1381,14 +1392,14 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('TypeHelper_8cp
 <div class="ttc" id="anamespacellzk_html_ac0200f46aeb61d24a1630b2eebf0abe7"><div class="ttname"><a href="namespacellzk.html#ac0200f46aeb61d24a1630b2eebf0abe7">llzk::typeParamsUnify</a></div><div class="ttdeci">bool typeParamsUnify(const ArrayRef&lt; Attribute &gt; &amp;lhsParams, const ArrayRef&lt; Attribute &gt; &amp;rhsParams, UnificationMap *unifications)</div><div class="ttdef"><b>Definition</b> <a href="#l00898">TypeHelper.cpp:898</a></div></div>
 <div class="ttc" id="anamespacellzk_html_ac69242a61e4e25958e9c6e8fa0f8549e"><div class="ttname"><a href="namespacellzk.html#ac69242a61e4e25958e9c6e8fa0f8549e">llzk::isMoreConcreteUnification</a></div><div class="ttdeci">bool isMoreConcreteUnification(Type oldTy, Type newTy, llvm::function_ref&lt; bool(Type oldTy, Type newTy)&gt; knownOldToNew)</div><div class="ttdef"><b>Definition</b> <a href="#l00945">TypeHelper.cpp:945</a></div></div>
 <div class="ttc" id="anamespacellzk_html_acaf3a6e4759cdd42fbf5df6c43ed2e40"><div class="ttname"><a href="namespacellzk.html#acaf3a6e4759cdd42fbf5df6c43ed2e40">llzk::functionTypesUnify</a></div><div class="ttdeci">bool functionTypesUnify(FunctionType lhs, FunctionType rhs, ArrayRef&lt; StringRef &gt; rhsReversePrefix, UnificationMap *unifications)</div><div class="ttdef"><b>Definition</b> <a href="#l00932">TypeHelper.cpp:932</a></div></div>
-<div class="ttc" id="anamespacellzk_html_acea511d0810d60bdecf9d7f1e0779d8e"><div class="ttname"><a href="namespacellzk.html#acea511d0810d60bdecf9d7f1e0779d8e">llzk::verifyStructTypeParams</a></div><div class="ttdeci">LogicalResult verifyStructTypeParams(EmitErrorFn emitError, ArrayAttr params)</div><div class="ttdef"><b>Definition</b> <a href="#l01043">TypeHelper.cpp:1043</a></div></div>
+<div class="ttc" id="anamespacellzk_html_acea511d0810d60bdecf9d7f1e0779d8e"><div class="ttname"><a href="namespacellzk.html#acea511d0810d60bdecf9d7f1e0779d8e">llzk::verifyStructTypeParams</a></div><div class="ttdeci">LogicalResult verifyStructTypeParams(EmitErrorFn emitError, ArrayAttr params)</div><div class="ttdef"><b>Definition</b> <a href="#l01054">TypeHelper.cpp:1054</a></div></div>
 <div class="ttc" id="anamespacellzk_html_ad54f2cf52138ae6282775a72362a7445"><div class="ttname"><a href="namespacellzk.html#ad54f2cf52138ae6282775a72362a7445">llzk::appendWithoutType</a></div><div class="ttdeci">void appendWithoutType(mlir::raw_ostream &amp;os, mlir::Attribute a)</div><div class="ttdef"><b>Definition</b> <a href="AttributeHelper_8h_source.html#l00073">AttributeHelper.h:73</a></div></div>
 <div class="ttc" id="anamespacellzk_html_add5fbee8a55ca19fc62c9e5b8e04f380"><div class="ttname"><a href="namespacellzk.html#add5fbee8a55ca19fc62c9e5b8e04f380">llzk::buildStringViaCallback</a></div><div class="ttdeci">std::string buildStringViaCallback(Func &amp;&amp;appendFn, Args &amp;&amp;...args)</div><div class="ttdoc">Generate a string by calling the given appendFn with an llvm::raw_ostream &amp; as the first argument fol...</div><div class="ttdef"><b>Definition</b> <a href="StreamHelper_8h_source.html#l00042">StreamHelper.h:42</a></div></div>
 <div class="ttc" id="anamespacellzk_html_ae16625d8c85094fae24fb003012b2380"><div class="ttname"><a href="namespacellzk.html#ae16625d8c85094fae24fb003012b2380">llzk::hasAffineMapAttr</a></div><div class="ttdeci">bool hasAffineMapAttr(Type type)</div><div class="ttdef"><b>Definition</b> <a href="#l00555">TypeHelper.cpp:555</a></div></div>
 <div class="ttc" id="anamespacellzk_html_ae30042843555f938699fed6daf364eac"><div class="ttname"><a href="namespacellzk.html#ae30042843555f938699fed6daf364eac">llzk::checkValidType</a></div><div class="ttdeci">mlir::LogicalResult checkValidType(EmitErrorFn emitError, mlir::Type type)</div><div class="ttdef"><b>Definition</b> <a href="TypeHelper_8h_source.html#l00137">TypeHelper.h:137</a></div></div>
 <div class="ttc" id="anamespacellzk_html_afc702f955fa2d6d30b19fae69930f11aae80302656805aeec44dc5d789d653c6b"><div class="ttname"><a href="namespacellzk.html#afc702f955fa2d6d30b19fae69930f11aae80302656805aeec44dc5d789d653c6b">llzk::Side::RHS</a></div><div class="ttdeci">@ RHS</div><div class="ttdef"><b>Definition</b> <a href="TypeHelper_8h_source.html#l00148">TypeHelper.h:148</a></div></div>
 <div class="ttc" id="anamespacellzk_html_afdc6a963256e586da485479d34e385dc"><div class="ttname"><a href="namespacellzk.html#afdc6a963256e586da485479d34e385dc">llzk::isValidConstReadType</a></div><div class="ttdeci">bool isValidConstReadType(Type type)</div><div class="ttdef"><b>Definition</b> <a href="#l00529">TypeHelper.cpp:529</a></div></div>
-<div class="ttc" id="anamespacellzk_html_afe6df124d315ea4af67d41601225b1a2"><div class="ttname"><a href="namespacellzk.html#afe6df124d315ea4af67d41601225b1a2">llzk::verifyArrayDimSizes</a></div><div class="ttdeci">LogicalResult verifyArrayDimSizes(EmitErrorFn emitError, ArrayRef&lt; Attribute &gt; dimensionSizes)</div><div class="ttdef"><b>Definition</b> <a href="#l01047">TypeHelper.cpp:1047</a></div></div>
+<div class="ttc" id="anamespacellzk_html_afe6df124d315ea4af67d41601225b1a2"><div class="ttname"><a href="namespacellzk.html#afe6df124d315ea4af67d41601225b1a2">llzk::verifyArrayDimSizes</a></div><div class="ttdeci">LogicalResult verifyArrayDimSizes(EmitErrorFn emitError, ArrayRef&lt; Attribute &gt; dimensionSizes)</div><div class="ttdef"><b>Definition</b> <a href="#l01058">TypeHelper.cpp:1058</a></div></div>
 <div class="ttc" id="anamespacemlir_html"><div class="ttname"><a href="namespacemlir.html">mlir</a></div><div class="ttdef"><b>Definition</b> <a href="ValueModel_8h_source.html#l00030">ValueModel.h:30</a></div></div>
 <div class="ttc" id="astructllzk_1_1LLZKTypeSwitch_html"><div class="ttname"><a href="structllzk_1_1LLZKTypeSwitch.html">llzk::LLZKTypeSwitch</a></div><div class="ttdoc">Template pattern for performing some operation by cases based on a given LLZK type.</div><div class="ttdef"><b>Definition</b> <a href="#l00050">TypeHelper.cpp:50</a></div></div>
 <div class="ttc" id="astructllzk_1_1LLZKTypeSwitch_html_a647bd5e9a249d684a74604a9fefb0836"><div class="ttname"><a href="structllzk_1_1LLZKTypeSwitch.html#a647bd5e9a249d684a74604a9fefb0836">llzk::LLZKTypeSwitch::match</a></div><div class="ttdeci">ResultType match(Type type)</div><div class="ttdef"><b>Definition</b> <a href="#l00051">TypeHelper.cpp:51</a></div></div>

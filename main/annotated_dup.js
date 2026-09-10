@@ -319,7 +319,8 @@ var annotated_dup =
         [ "GlobalRefOpInterface", "classllzk_1_1global_1_1GlobalRefOpInterface.html", "classllzk_1_1global_1_1GlobalRefOpInterface" ],
         [ "GlobalWriteOp", "classllzk_1_1global_1_1GlobalWriteOp.html", "classllzk_1_1global_1_1GlobalWriteOp" ],
         [ "GlobalWriteOpAdaptor", "classllzk_1_1global_1_1GlobalWriteOpAdaptor.html", "classllzk_1_1global_1_1GlobalWriteOpAdaptor" ],
-        [ "GlobalWriteOpGenericAdaptor", "classllzk_1_1global_1_1GlobalWriteOpGenericAdaptor.html", "classllzk_1_1global_1_1GlobalWriteOpGenericAdaptor" ]
+        [ "GlobalWriteOpGenericAdaptor", "classllzk_1_1global_1_1GlobalWriteOpGenericAdaptor.html", "classllzk_1_1global_1_1GlobalWriteOpGenericAdaptor" ],
+        [ "NormalizedGlobalInitializer", "structllzk_1_1global_1_1NormalizedGlobalInitializer.html", "structllzk_1_1global_1_1NormalizedGlobalInitializer" ]
       ] ],
       [ "impl", "namespacellzk_1_1impl.html", [
         [ "CallGraphPrinterPassBase", "classllzk_1_1impl_1_1CallGraphPrinterPassBase.html", "classllzk_1_1impl_1_1CallGraphPrinterPassBase" ],

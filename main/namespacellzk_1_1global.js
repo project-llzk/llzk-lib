@@ -11,5 +11,8 @@ var namespacellzk_1_1global =
     [ "GlobalRefOpInterface", "classllzk_1_1global_1_1GlobalRefOpInterface.html", "classllzk_1_1global_1_1GlobalRefOpInterface" ],
     [ "GlobalWriteOp", "classllzk_1_1global_1_1GlobalWriteOp.html", "classllzk_1_1global_1_1GlobalWriteOp" ],
     [ "GlobalWriteOpAdaptor", "classllzk_1_1global_1_1GlobalWriteOpAdaptor.html", "classllzk_1_1global_1_1GlobalWriteOpAdaptor" ],
-    [ "GlobalWriteOpGenericAdaptor", "classllzk_1_1global_1_1GlobalWriteOpGenericAdaptor.html", "classllzk_1_1global_1_1GlobalWriteOpGenericAdaptor" ]
+    [ "GlobalWriteOpGenericAdaptor", "classllzk_1_1global_1_1GlobalWriteOpGenericAdaptor.html", "classllzk_1_1global_1_1GlobalWriteOpGenericAdaptor" ],
+    [ "NormalizedGlobalInitializer", "structllzk_1_1global_1_1NormalizedGlobalInitializer.html", "structllzk_1_1global_1_1NormalizedGlobalInitializer" ],
+    [ "normalizeGlobalInitializer", "namespacellzk_1_1global.html#af99f62ed0fbc693c9aa9a7203f39445f", null ],
+    [ "normalizeGlobalInitializer", "namespacellzk_1_1global.html#a378121b4b469d0d951ad0f2e51c20586", null ]
 ];

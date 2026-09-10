@@ -1,5 +1,7 @@
 var NAVTREEINDEX83 =
 {
+"dialects.html#boolxor-llzkbooleanxorboolop":[7,1,0,7],
+"dialects.html#boolyield-llzkbooleanyieldop":[7,1,0,8],
 "dialects.html#cases":[7,1,2,0,0],
 "dialects.html#cases-1":[7,2,2,0,0],
 "dialects.html#cast-dialect":[7,2],
@@ -247,7 +249,5 @@ var NAVTREEINDEX83 =
 "dir_4dbf26eca751fbd2e4173c3c5908866b.html":[14,0,3,3,1],
 "dir_4eeb864c4eec08c7d6b9d3b0352cfdde.html":[14,0,4],
 "dir_4fef79e7177ba769987a8da36c892c5f.html":[14,0,0],
-"dir_5045c3e952ec201b3c3a29a293efacb5.html":[14,0,0,0,0,2,0,1],
-"dir_53f5890bbac64e998fb3965f892b7c9c.html":[14,0,0,0,0,2,7,1],
-"dir_55915afaf21a02ef6032ccf3a021df58.html":[14,0,0,0,0,2,16]
+"dir_5045c3e952ec201b3c3a29a293efacb5.html":[14,0,0,0,0,2,0,1]
 };

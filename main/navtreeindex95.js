@@ -1,5 +1,9 @@
 var NAVTREEINDEX95 =
 {
+"structllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase_1_1Properties.html#a533a985e44bfdb38a0e503cb2a3d1264":[13,0,1,8,0,0,0,16],
+"structllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase_1_1Properties.html#a6a9f6ecd56b9fe87de5c2037606592b9":[11,0,3,11,0,0,0,18],
+"structllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase_1_1Properties.html#a6a9f6ecd56b9fe87de5c2037606592b9":[13,0,1,8,0,0,0,18],
+"structllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase_1_1Properties.html#a6aee8c311fd50ff63783945b8f6b92dd":[11,0,3,11,0,0,0,15],
 "structllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase_1_1Properties.html#a6aee8c311fd50ff63783945b8f6b92dd":[13,0,1,8,0,0,0,15],
 "structllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase_1_1Properties.html#aa4556348d4d9f5b8d0e0735e01463fc9":[11,0,3,11,0,0,0,7],
 "structllzk_1_1function_1_1detail_1_1CallOpGenericAdaptorBase_1_1Properties.html#aa4556348d4d9f5b8d0e0735e01463fc9":[13,0,1,8,0,0,0,7],
@@ -61,6 +65,12 @@ var NAVTREEINDEX95 =
 "structllzk_1_1function_1_1detail_1_1FuncDefOpGenericAdaptorBase_1_1Properties.html#ae6b9721884b1836d14230f639c7b5f6c":[13,0,1,8,0,1,0,15],
 "structllzk_1_1global_1_1GlobalRefOpInterface_1_1Trait.html":[11,0,3,12,8,0],
 "structllzk_1_1global_1_1GlobalRefOpInterface_1_1Trait.html":[13,0,1,9,8,0],
+"structllzk_1_1global_1_1NormalizedGlobalInitializer.html":[11,0,3,12,12],
+"structllzk_1_1global_1_1NormalizedGlobalInitializer.html":[13,0,1,9,12],
+"structllzk_1_1global_1_1NormalizedGlobalInitializer.html#a79e65bf40ec099073a6d82016ad266df":[11,0,3,12,12,1],
+"structllzk_1_1global_1_1NormalizedGlobalInitializer.html#a79e65bf40ec099073a6d82016ad266df":[13,0,1,9,12,1],
+"structllzk_1_1global_1_1NormalizedGlobalInitializer.html#ac07688510c2cd0b117841f61a634ee8e":[11,0,3,12,12,0],
+"structllzk_1_1global_1_1NormalizedGlobalInitializer.html#ac07688510c2cd0b117841f61a634ee8e":[13,0,1,9,12,0],
 "structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html":[11,0,3,12,0,0,0],
 "structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html":[13,0,1,9,0,0,0],
 "structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#a0487f8bee9a00ace462e080b703d55e9":[11,0,3,12,0,0,0,11],
@@ -239,15 +249,5 @@ var NAVTREEINDEX95 =
 "structllzk_1_1pod_1_1detail_1_1PodTypeStorage.html#a3c8b9c4927788960d62d050315a7bba3":[13,0,1,12,0,5,1],
 "structllzk_1_1pod_1_1detail_1_1PodTypeStorage.html#a4f750a57a711f7980f761afb1e028702":[11,0,3,15,0,5,3],
 "structllzk_1_1pod_1_1detail_1_1PodTypeStorage.html#a4f750a57a711f7980f761afb1e028702":[13,0,1,12,0,5,3],
-"structllzk_1_1pod_1_1detail_1_1PodTypeStorage.html#a5fb4ec1cc3c9894a586ede4392456372":[11,0,3,15,0,5,4],
-"structllzk_1_1pod_1_1detail_1_1PodTypeStorage.html#a5fb4ec1cc3c9894a586ede4392456372":[13,0,1,12,0,5,4],
-"structllzk_1_1pod_1_1detail_1_1PodTypeStorage.html#afef6a60827a5d62b13a1a06106fbf767":[11,0,3,15,0,5,2],
-"structllzk_1_1pod_1_1detail_1_1PodTypeStorage.html#afef6a60827a5d62b13a1a06106fbf767":[13,0,1,12,0,5,2],
-"structllzk_1_1pod_1_1detail_1_1ReadPodOpGenericAdaptorBase_1_1Properties.html":[11,0,3,15,0,6,0],
-"structllzk_1_1pod_1_1detail_1_1ReadPodOpGenericAdaptorBase_1_1Properties.html":[13,0,1,12,0,6,0],
-"structllzk_1_1pod_1_1detail_1_1ReadPodOpGenericAdaptorBase_1_1Properties.html#a13cb9f6012e303d65093e2a7e98ddef6":[11,0,3,15,0,6,0,2],
-"structllzk_1_1pod_1_1detail_1_1ReadPodOpGenericAdaptorBase_1_1Properties.html#a13cb9f6012e303d65093e2a7e98ddef6":[13,0,1,12,0,6,0,2],
-"structllzk_1_1pod_1_1detail_1_1ReadPodOpGenericAdaptorBase_1_1Properties.html#a1d8508eab23c6c44feee2061d4aa5521":[11,0,3,15,0,6,0,0],
-"structllzk_1_1pod_1_1detail_1_1ReadPodOpGenericAdaptorBase_1_1Properties.html#a1d8508eab23c6c44feee2061d4aa5521":[13,0,1,12,0,6,0,0],
-"structllzk_1_1pod_1_1detail_1_1ReadPodOpGenericAdaptorBase_1_1Properties.html#a33084f9f5b704e82e3849998a3528510":[11,0,3,15,0,6,0,4]
+"structllzk_1_1pod_1_1detail_1_1PodTypeStorage.html#a5fb4ec1cc3c9894a586ede4392456372":[11,0,3,15,0,5,4]
 };

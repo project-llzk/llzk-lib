@@ -282,6 +282,7 @@ var hierarchy =
       [ "llzk::smt::BVXOrOpGenericAdaptor< RangeT >", "classllzk_1_1smt_1_1BVXOrOpGenericAdaptor.html", null ]
     ] ],
     [ "mlir::BytecodeDialectInterface", null, [
+      [ "llzk::LLZKDialectBytecodeInterface< global::GlobalDialect >", "structllzk_1_1LLZKDialectBytecodeInterface.html", null ],
       [ "llzk::LLZKDialectBytecodeInterface< StructDialect >", "structllzk_1_1LLZKDialectBytecodeInterface.html", [
         [ "llzk::component::StructDialectBytecodeInterface", "structllzk_1_1component_1_1StructDialectBytecodeInterface.html", null ]
       ] ],
@@ -1029,6 +1030,7 @@ var hierarchy =
       ] ],
       [ "llzk::NonDetOpGenericAdaptor< RangeT >", "classllzk_1_1NonDetOpGenericAdaptor.html", null ]
     ] ],
+    [ "llzk::global::NormalizedGlobalInitializer", "structllzk_1_1global_1_1NormalizedGlobalInitializer.html", null ],
     [ "llzk::boolean::detail::NotBoolOpGenericAdaptorBase", "classllzk_1_1boolean_1_1detail_1_1NotBoolOpGenericAdaptorBase.html", [
       [ "llzk::boolean::NotBoolOpGenericAdaptor<::llvm::ArrayRef<::mlir::Attribute > >", "classllzk_1_1boolean_1_1NotBoolOpGenericAdaptor.html", null ],
       [ "llzk::boolean::NotBoolOpGenericAdaptor<::mlir::ValueRange >", "classllzk_1_1boolean_1_1NotBoolOpGenericAdaptor.html", [

@@ -1,5 +1,7 @@
 var NAVTREEINDEX85 =
 {
+"globals_t.html":[14,1,0,17],
+"globals_type.html":[14,1,3],
 "globals_u.html":[14,1,0,18],
 "globals_v.html":[14,1,0,19],
 "globals_vars.html":[14,1,2],
@@ -247,7 +249,5 @@ var NAVTREEINDEX85 =
 "namespacellzk.html#a41c7611294e8e147781abc732a50159fa629520a84a1c9269b04bc0f811417391":[11,0,3,133,0],
 "namespacellzk.html#a41c7611294e8e147781abc732a50159fac02221ae67f642f240ee3e57161e433a":[11,0,3,133,1],
 "namespacellzk.html#a41c7611294e8e147781abc732a50159fac4a0dbaac3bd0f3bf581ad822f5fb4b4":[11,0,3,133,2],
-"namespacellzk.html#a425f3885d7b5a6ec7fe6f06c5233edae":[11,0,3,145],
-"namespacellzk.html#a42c87397f5103f0624b2087fb40b1a2a":[11,0,3,484],
-"namespacellzk.html#a42cb6a92faed14a82333740ab343d167":[11,0,3,516]
+"namespacellzk.html#a425f3885d7b5a6ec7fe6f06c5233edae":[11,0,3,145]
 };

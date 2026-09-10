@@ -2587,12 +2587,7 @@ Operations</h2>
 <h3 class="doxsection"><a class="anchor" id="globaldef-llzkglobalglobaldefop"></a>
 <span class="tt">global.def</span> (::llzk::global::GlobalDefOp)</h3>
 <p><em>Global value</em></p>
-<p>Syntax:</p>
-<div class="fragment"><div class="line">operation ::= `global.def` (`const` $constant^)?</div>
-<div class="line">              $sym_name `:` $type</div>
-<div class="line">              `` custom&lt;GlobalInitialValue&gt;($initial_value, ref($type))</div>
-<div class="line">              attr-dict</div>
-</div><!-- fragment --><p>Examples:</p>
+<p>Examples:</p>
 <div class="fragment"><div class="line">// Global constant (denoted by &quot;const&quot; modifier) string.</div>
 <div class="line">global.def const @s : !string.type = &quot;Hello World!&quot;</div>
 <div class="line"> </div>
@@ -2601,7 +2596,8 @@ Operations</h2>
 <div class="line"> </div>
 <div class="line">// Uninitialized global variable.</div>
 <div class="line">global.def @a : !array.type&lt;2,2 x i1&gt;</div>
-</div><!-- fragment --><p>Traits: <span class="tt">HasParent&lt;mlir::ModuleOp&gt;</span></p>
+</div><!-- fragment --><p>An initializer's typed attributes must exactly match the declared global type. When parsing a felt initializer, an explicitly selected field refines an unspecified declared felt type; conversely, an unspecified felt initializer adopts an explicitly declared field. Thus, an initialized global always stores matching declared and initializer felt types.</p>
+<p>Traits: <span class="tt">HasParent&lt;mlir::ModuleOp&gt;</span></p>
 <p>Interfaces: <span class="tt">SymbolUserOpInterface</span>, <span class="tt">Symbol</span></p>
 <h4 class="doxsection"><a class="anchor" id="attributes-11"></a>
 Attributes:</h4>
