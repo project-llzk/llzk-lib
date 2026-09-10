@@ -9,7 +9,6 @@
 
 #include "pcl/Dialect/IR/Ops.h"
 
-#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "pcl/Dialect/IR/Attrs.h"
 
 #include <mlir/IR/MLIRContext.h>
