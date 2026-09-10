@@ -6,7 +6,7 @@
 
 The root `module` in LLZK IR must have the `llzk.lang` attribute with an optional string that is typically used to indicate the source language. The root `module` can contain any number of `struct.def`, `function.def`, or other `module` ops. The `struct.def` op is the foundation of LLZK IR and is used to describe each component in a circuit. It can contain any number of data members, a `compute()` function that holds the witness generation code, and a `constrain()` function that holds the constraint generation code. No other functions may appear within a `struct.def`.
 
-Here is a simple example of LLZK IR translated from the circomlib [and gate](\ref circomlib-and-gate):
+Here is a simple example of LLZK IR translated from the circomlib [and gate][circomlib-and-gate]:
 
 ```mlir
 module attributes {llzk.lang = "circom"} {
@@ -41,7 +41,7 @@ module attributes {llzk.lang = "circom"} {
 
 ### Pseudo-homogeneous arrays {#pseudo-homogeneous}
 
-LLZK supports arrays where the element type is not truly homogeneous, specifically when a templated `struct.type` is used with an `affine_map` parameter. For example, the type `!array.type<10 x !struct.type<@X<[affine_map<(i)[] -> (i*5)>]>>>` contains instances of the struct `@X` instantiated with different parameter values per `affine_map<(i)[] -> (i*5)>`. Use of this type can be seen in [circom_example_2.llzk](\ref test/FrontendLang/Circom/circom_example_2.llzk). If the circuit is ultimately instantiated and flattened, the array will have to be split into scalar values since the instantiated struct type of each element is different.
+LLZK supports arrays where the element type is not truly homogeneous, specifically when a templated `struct.type` is used with an `affine_map` parameter. For example, the type `!array.type<10 x !struct.type<@X<[affine_map<(i)[] -> (i*5)>]>>>` contains instances of the struct `@X` instantiated with different parameter values per `affine_map<(i)[] -> (i*5)>`. Use of this type can be seen in [circom_example_2.llzk](https://github.com/project-llzk/llzk-lib/blob/main/test/FrontendLang/Circom/circom_example_2.llzk). If the circuit is ultimately instantiated and flattened, the array will have to be split into scalar values since the instantiated struct type of each element is different.
 
 ## Semantic Rules
 

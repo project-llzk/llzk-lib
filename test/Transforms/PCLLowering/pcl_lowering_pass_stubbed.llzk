@@ -57,6 +57,7 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   struct.def @Lt {
+    struct.member @x : !felt.type<"koalabear"> {llzk.pub}
     function.def @compute(%in: !felt.type<"koalabear">) -> !struct.type<@Lt> {
       %self = struct.new : <@Lt>
       function.return %self : !struct.type<@Lt>
@@ -73,20 +74,22 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL:   func.func @Lt(
-// CHECK-SAME:        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) {
+// CHECK-SAME:        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> !pcl.felt {
 // CHECK-NEXT:      %[[CONST_1:[0-9a-zA-Z_\.]+]] = pcl.const 1
 // CHECK-NEXT:      %[[CONST_65536:[0-9a-zA-Z_\.]+]] = pcl.const 65536
 // CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.lt %[[VAL_0]], %[[CONST_65536]]
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_1]]
 // CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_2]], %[[CONST_1]]
 // CHECK-NEXT:      pcl.assert %[[VAL_3]]
-// CHECK-NEXT:      return 
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pcl.var "x" true
+// CHECK-NEXT:      return %[[VAL_4]] : !pcl.felt
 // CHECK-NEXT:    }
 
 // -----
 
 module attributes {llzk.lang} {
   struct.def @Lt {
+    struct.member @x : !felt.type<"koalabear"> {llzk.pub}
     function.def @compute(%in: !felt.type<"koalabear">) -> !struct.type<@Lt> {
       %self = struct.new : <@Lt>
       function.return %self : !struct.type<@Lt>
@@ -113,14 +116,15 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL:   func.func @Lt(
-// CHECK-SAME:        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) {
+// CHECK-SAME:        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> !pcl.felt {
 // CHECK-NEXT:      %[[CONST_1:[0-9a-zA-Z_\.]+]] = pcl.const 1
 // CHECK-NEXT:      %[[CONST_65536:[0-9a-zA-Z_\.]+]] = pcl.const 65536
 // CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.lt %[[VAL_0]], %[[CONST_65536]]
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_1]]
 // CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_2]], %[[CONST_1]]
 // CHECK-NEXT:      pcl.assert %[[VAL_3]]
-// CHECK-NEXT:      return 
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pcl.var "x" true
+// CHECK-NEXT:      return %[[VAL_4]] : !pcl.felt
 // CHECK-NEXT:    }
 // COM: Check that @foo is not lowered since it's dead wrt the constrain function.
 // CHECK-NOT:  @foo
@@ -129,6 +133,7 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   struct.def @Lt {
+    struct.member @x : !felt.type<"koalabear"> {llzk.pub}
     function.def @compute(%in: !felt.type<"koalabear">) -> !struct.type<@Lt> {
       %self = struct.new : <@Lt>
       function.return %self : !struct.type<@Lt>
@@ -150,7 +155,7 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL:   func.func @Lt(
-// CHECK-SAME:        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) {
+// CHECK-SAME:        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> !pcl.felt {
 // CHECK-NEXT:      %[[CONST_1:[0-9a-zA-Z_\.]+]] = pcl.const 1
 // CHECK-NEXT:      %[[CONST_65536:[0-9a-zA-Z_\.]+]] = pcl.const 65536
 // CHECK-NEXT:      %[[VAL_0x2:[0-9a-zA-Z_\.]+]] = call @bar(%[[VAL_0]]) : (!pcl.felt) -> !pcl.felt
@@ -158,7 +163,8 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_1]]
 // CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_2]], %[[CONST_1]]
 // CHECK-NEXT:      pcl.assert %[[VAL_3]]
-// CHECK-NEXT:      return 
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pcl.var "x" true
+// CHECK-NEXT:      return %[[VAL_4]] : !pcl.felt
 // CHECK-NEXT:    }
 // CHECK-LABEL:  func.func @bar(
 // CHECK-SAME:        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> !pcl.felt {
@@ -170,6 +176,7 @@ module attributes {llzk.lang} {
 
 module attributes {llzk.lang} {
   struct.def @Lt {
+    struct.member @x : !felt.type<"koalabear"> {llzk.pub}
     function.def @compute(%in: !felt.type<"koalabear">) -> !struct.type<@Lt> {
       %self = struct.new : <@Lt>
       function.return %self : !struct.type<@Lt>
@@ -191,7 +198,7 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL:   func.func @Lt(
-// CHECK-SAME:        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) {
+// CHECK-SAME:        %[[VAL_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> !pcl.felt {
 // CHECK-NEXT:      %[[CONST_1:[0-9a-zA-Z_\.]+]] = pcl.const 1
 // CHECK-NEXT:      %[[CONST_65536:[0-9a-zA-Z_\.]+]] = pcl.const 65536
 // CHECK-NEXT:      %[[VAL_0x2:[0-9a-zA-Z_\.]+]] = call @bar(%[[VAL_0]]) : (!pcl.felt) -> !pcl.felt
@@ -199,6 +206,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.asfelt %[[VAL_1]]
 // CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_2]], %[[CONST_1]]
 // CHECK-NEXT:      pcl.assert %[[VAL_3]]
-// CHECK-NEXT:      return 
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pcl.var "x" true
+// CHECK-NEXT:      return %[[VAL_4]] : !pcl.felt
 // CHECK-NEXT:    }
 // CHECK-NEXT:    func.func private @bar(!pcl.felt) -> !pcl.felt 

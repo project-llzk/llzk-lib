@@ -221,3 +221,55 @@ module attributes {llzk.lang} {
     }
   }
 }
+// -----
+module attributes {llzk.lang} {
+  function.def @return_unspecified_felt() -> !felt.type {
+    %value = felt.const 1 : !felt.type<"babybear">
+    // expected-error@+1 {{type of return operand 0 ('!felt.type<"babybear">') doesn't match function result type ('!felt.type') in function @return_unspecified_felt}}
+    function.return %value : !felt.type<"babybear">
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  function.def @return_specified_felt() -> !felt.type<"babybear"> {
+    %value = felt.const 1 : !felt.type
+    // expected-error@+1 {{type of return operand 0 ('!felt.type') doesn't match function result type ('!felt.type<"babybear">') in function @return_specified_felt}}
+    function.return %value : !felt.type
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  function.def private @specified_ret() -> !felt.type<"babybear">
+  function.def @caller() {
+    // expected-error@+1 {{'function.call' op result type mismatch: expected type '!felt.type<"babybear">', but found '!felt.type' for result number 0}}
+    %value = function.call @specified_ret() : () -> !felt.type
+    function.return
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  function.def private @unspecified_ret() -> !felt.type
+  function.def @caller() {
+    // expected-error@+1 {{'function.call' op result type mismatch: expected type '!felt.type', but found '!felt.type<"babybear">' for result number 0}}
+    %value = function.call @unspecified_ret() : () -> !felt.type<"babybear">
+    function.return
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  function.def private @specified_arg(!felt.type<"bn128">)
+  function.def @caller(%0: !felt.type) {
+    // expected-error@+1 {{'function.call' op operand type mismatch: expected type '!felt.type<"bn128">', but found '!felt.type' for operand number 0}}
+    function.call @specified_arg(%0) : (!felt.type) -> ()
+    function.return
+  }
+}
+// -----
+module attributes {llzk.lang} {
+  function.def private @unspecified_arg(!felt.type)
+  function.def @caller(%0: !felt.type<"bn128">) {
+    // expected-error@+1 {{'function.call' op operand type mismatch: expected type '!felt.type', but found '!felt.type<"bn128">' for operand number 0}}
+    function.call @unspecified_arg(%0) : (!felt.type<"bn128">) -> ()
+    function.return
+  }
+}

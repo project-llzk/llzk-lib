@@ -1,0 +1,25 @@
+// RUN: llzk-opt -split-input-file %s 2>&1 | FileCheck --enable-var-scope %s
+
+
+function.def @det_prove() -> i1 attributes {function.allow_verif_ops} {
+  %c = felt.const 42
+  %d = verif.det.prove %c : !felt.type
+  function.return %d : i1
+}
+//CHECK-LABEL:  function.def @det_prove() -> i1 attributes {function.allow_verif_ops} {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = felt.const 42
+//CHECK-NEXT:     %[[T2:[0-9a-zA-Z_\.]+]] = verif.det.prove %[[T1]] : !felt.type
+//CHECK-NEXT:     function.return %[[T2]] : i1
+//CHECK-NEXT:   }
+
+// -----
+
+function.def @det_assume(%f : !felt.type)  attributes {function.allow_verif_ops} {
+  verif.det.assume %f : !felt.type
+  function.return
+}
+//CHECK-LABEL:  function.def @det_assume
+//CHECK-SAME:        (%[[T1:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_verif_ops} {
+//CHECK-NEXT:     verif.det.assume %[[T1]] : !felt.type
+//CHECK-NEXT:     function.return 
+//CHECK-NEXT:   }

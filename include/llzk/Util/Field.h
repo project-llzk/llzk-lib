@@ -58,6 +58,7 @@ public:
   /// @brief Get a Field from a given field name string. Throws a fatal error
   /// if the field is unsupported.
   /// @param fieldName The name of the field.
+  /// @param errFn The error reporting function to use if the field is not found.
   static const Field &getField(llvm::StringRef fieldName, EmitErrorFn errFn);
   inline static const Field &getField(llvm::StringRef fieldName) {
     return getField(fieldName, nullptr);

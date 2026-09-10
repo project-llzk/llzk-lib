@@ -534,8 +534,8 @@ checkConstAndFindEnd(size_t closeParenIdx, const std::vector<Token> &tokens, siz
 /// Parse method declarations from extraClassDeclaration using Clang's Lexer
 ///
 /// This function parses C++ method declarations to extract method signatures.
-/// It identifies methods by looking for the pattern: <return_type> <identifier> '(' [params] ')'
-/// [const] ';'
+/// It identifies methods by looking for the pattern:
+///   `<return_type> <identifier> '(' [params] ')' [const] ';'`
 ///
 /// The parsing process:
 /// 1. Tokenizes the input using Clang's lexer

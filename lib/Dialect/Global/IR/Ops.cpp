@@ -9,6 +9,8 @@
 
 #include "llzk/Dialect/Felt/IR/Ops.h"
 
+#include "InitializerUtils.h"
+
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Types.h"
@@ -34,150 +36,169 @@ namespace llzk::global {
 
 namespace {
 
-/// Print an initializer recursively without its redundant storage types.
-/// GlobalDefOp's declared type supplies the type for every initializer value.
-void printInitialValue(AsmPrinter &printer, Attribute value) {
-  if (auto arrayValue = llvm::dyn_cast<ArrayAttr>(value)) {
-    printer << '[';
-    llvm::interleaveComma(arrayValue, printer.getStream(), [&printer](Attribute element) {
-      printInitialValue(printer, element);
-    });
-    printer << ']';
-  } else if (auto feltValue = llvm::dyn_cast<FeltConstAttr>(value)) {
-    printer.printStrippedAttrOrType<FeltConstAttr>(feltValue);
-  } else {
-    printer.printAttributeWithoutType(value);
+static inline FailureOr<NormalizedGlobalInitializer>
+normalizeGlobalInitializer(IndexType expectedType, Attribute value, EmitErrorFn emitError) {
+  if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
+    if (!llvm::isa<BoolAttr>(value)) {
+      APInt intValueBits = intValue.getValue();
+      if (intValue.getType().isSignlessInteger() && intValueBits.isNegative() &&
+          intValueBits.getBitWidth() < IndexType::kInternalStorageBitWidth) {
+        return emitError().append(
+            "signless integer with sign bit set cannot be widened to `index`"
+        );
+      }
+      FailureOr<IntegerAttr> normalized = forceIntType(intValue, emitError);
+      if (failed(normalized)) {
+        return failure();
+      }
+      value = *normalized;
+    }
   }
+  return NormalizedGlobalInitializer {expectedType, value};
 }
 
-/// Collect felt types in structural order, including felt types nested in aggregate types and
-/// struct type parameters. Corresponding entries in two unifiable types identify the same
-/// storage position.
-void collectFeltTypes(Type type, SmallVectorImpl<FeltType> &feltTypes) {
-  if (auto feltType = llvm::dyn_cast<FeltType>(type)) {
-    feltTypes.push_back(feltType);
-  } else if (auto arrayType = llvm::dyn_cast<array::ArrayType>(type)) {
-    collectFeltTypes(arrayType.getElementType(), feltTypes);
-  } else if (auto podType = llvm::dyn_cast<pod::PodType>(type)) {
-    for (auto record : podType.getRecords()) {
-      collectFeltTypes(record.getType(), feltTypes);
-    }
-  } else if (auto structType = llvm::dyn_cast<component::StructType>(type)) {
-    if (auto params = structType.getParams()) {
-      for (Attribute param : params) {
-        if (auto typeAttr = llvm::dyn_cast<TypeAttr>(param)) {
-          collectFeltTypes(typeAttr.getValue(), feltTypes);
-        }
-      }
+static inline FailureOr<NormalizedGlobalInitializer>
+normalizeGlobalInitializer(FeltType expectedType, Attribute value, EmitErrorFn) {
+  if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
+    value = FeltConstAttr::get(value.getContext(), intValue.getValue(), expectedType);
+  } else if (auto feltValue = llvm::dyn_cast<FeltConstAttr>(value)) {
+    FeltType valueType = feltValue.getType();
+    if (!expectedType.hasField() && valueType.hasField()) {
+      expectedType = valueType;
+    } else if (expectedType.hasField() && !valueType.hasField()) {
+      value = FeltConstAttr::get(value.getContext(), feltValue.getValue(), expectedType);
     }
   }
+  return NormalizedGlobalInitializer {expectedType, value};
+}
+
+static inline FailureOr<NormalizedGlobalInitializer>
+normalizeGlobalInitializer(ArrayType expectedType, Attribute value, EmitErrorFn emitError) {
+  if (auto arrayValue = llvm::dyn_cast<ArrayAttr>(value)) {
+    Type elementType = expectedType.getElementType();
+    if (auto feltElementType = llvm::dyn_cast<FeltType>(elementType)) {
+      // Infer an omitted field from a typed felt element before normalizing the
+      // full array. A conflicting explicit field is left for verification so it
+      // can report the conflict against the original initializer.
+      for (Attribute element : arrayValue) {
+        if (auto feltValue = llvm::dyn_cast<FeltConstAttr>(element)) {
+          FeltType valueType = feltValue.getType();
+          if (!valueType.hasField()) {
+            continue;
+          }
+          if (feltElementType.hasField() && feltElementType != valueType) {
+            return NormalizedGlobalInitializer {expectedType, value};
+          }
+          feltElementType = valueType;
+        }
+      }
+      elementType = feltElementType;
+      expectedType = expectedType.cloneWith(elementType);
+    }
+
+    // Normalize each element recursively. This also lets a nested initializer
+    // refine the element type (for example, an unqualified felt type).
+    SmallVector<Attribute> elements;
+    elements.reserve(arrayValue.size());
+    for (Attribute element : arrayValue) {
+      FailureOr<NormalizedGlobalInitializer> normalized =
+          llzk::global::normalizeGlobalInitializer(elementType, element, emitError);
+      if (failed(normalized)) {
+        return failure();
+      }
+      elementType = normalized->type;
+      elements.push_back(normalized->value);
+    }
+    // Rebuild the array type and attribute from the normalized element data.
+    expectedType = expectedType.cloneWith(elementType);
+    value = ArrayAttr::get(value.getContext(), elements);
+  }
+  return NormalizedGlobalInitializer {expectedType, value};
+}
+
+static inline FailureOr<NormalizedGlobalInitializer>
+normalizeGlobalInitializer(StringType expectedType, Attribute value, EmitErrorFn) {
+  if (auto stringValue = llvm::dyn_cast<StringAttr>(value)) {
+    value = StringAttr::get(stringValue.getValue(), expectedType);
+  }
+  return NormalizedGlobalInitializer {expectedType, value};
 }
 
 } // namespace
+
+FailureOr<NormalizedGlobalInitializer>
+normalizeGlobalInitializer(Type expectedType, Attribute value, EmitErrorFn emitError) {
+  if (auto idxType = llvm::dyn_cast<IndexType>(expectedType)) {
+    return normalizeGlobalInitializer(idxType, value, emitError);
+  } else if (auto feltType = llvm::dyn_cast<FeltType>(expectedType)) {
+    return normalizeGlobalInitializer(feltType, value, emitError);
+  } else if (auto arrayType = llvm::dyn_cast<ArrayType>(expectedType)) {
+    return normalizeGlobalInitializer(arrayType, value, emitError);
+  } else if (auto stringType = llvm::dyn_cast<StringType>(expectedType)) {
+    return normalizeGlobalInitializer(stringType, value, emitError);
+  } else if (expectedType.isSignlessInteger(1)) {
+    if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
+      APInt intValueBits = intValue.getValue();
+      if (!intValueBits.isZero() && !intValueBits.isOne()) {
+        return emitError().append("integer constant out of range for attribute");
+      }
+      value = IntegerAttr::get(expectedType, APInt(1, intValueBits.getZExtValue()));
+    }
+    return NormalizedGlobalInitializer {expectedType, value};
+  } else {
+    return NormalizedGlobalInitializer {expectedType, value};
+  }
+}
 
 //===------------------------------------------------------------------===//
 // GlobalDefOp
 //===------------------------------------------------------------------===//
 
-/// Resolve a parsed initializer's felt fields into its declared global type.
-///
-/// A field-qualified value refines an unspecified felt declaration. Conversely,
-/// an unqualified value adopts an explicitly declared field. The resulting type
-/// and attribute therefore always agree exactly.
 static ParseResult normalizeParsedInitialValue(
     OpAsmParser &parser, SMLoc initializerLoc, Type &declaredType, Attribute &initialValue
 ) {
-  auto normalizeFelt = [&](FeltType declaredFelt, Attribute value,
-                           FeltType &resolvedFelt) -> FailureOr<FeltConstAttr> {
-    if (auto feltValue = llvm::dyn_cast<FeltConstAttr>(value)) {
-      FeltType valueType = feltValue.getType();
-      if (declaredFelt.hasField() && valueType.hasField() && declaredFelt != valueType) {
-        return parser.emitError(initializerLoc) << "initializer type " << valueType
-                                                << " conflicts with declared type " << declaredFelt;
-      }
-      resolvedFelt = declaredFelt.hasField() ? declaredFelt : valueType;
-      return FeltConstAttr::get(parser.getContext(), feltValue.getValue(), resolvedFelt);
-    }
-    if (auto intValue = llvm::dyn_cast<IntegerAttr>(value)) {
-      resolvedFelt = declaredFelt;
-      return FeltConstAttr::get(parser.getContext(), intValue.getValue(), resolvedFelt);
-    }
-    return parser.emitError(initializerLoc) << "expected a felt initializer value";
-  };
+  FailureOr<NormalizedGlobalInitializer> normalized =
+      normalizeGlobalInitializer(declaredType, initialValue, [&parser, initializerLoc] {
+    return InFlightDiagnosticWrapper(parser.emitError(initializerLoc));
+  });
+  if (failed(normalized)) {
+    return failure();
+  }
+  declaredType = normalized->type;
+  initialValue = normalized->value;
+  return success();
+}
 
-  if (auto feltType = llvm::dyn_cast<FeltType>(declaredType)) {
-    FeltType resolvedFelt;
-    FailureOr<FeltConstAttr> normalized = normalizeFelt(feltType, initialValue, resolvedFelt);
-    if (failed(normalized)) {
+/// Parse an initializer attribute recursively so felt values retain their optional field syntax
+/// even when nested in an array. If there is a conflict among the felt values, the verifier will
+/// catch it later.
+static ParseResult parseInitialValueForType(OpAsmParser &parser, Type type, Attribute &value) {
+  if (llvm::isa<FeltType>(type)) {
+    FeltConstAttr feltValue;
+    if (parser.parseCustomAttributeWithFallback<FeltConstAttr>(feltValue)) {
       return failure();
     }
-    declaredType = resolvedFelt;
-    initialValue = *normalized;
+    value = feltValue;
     return success();
   }
-
-  auto arrayType = llvm::dyn_cast<ArrayType>(declaredType);
-  auto arrayValue = llvm::dyn_cast<ArrayAttr>(initialValue);
-  if (!arrayType || !arrayValue) {
-    return success();
-  }
-  auto elementFeltType = llvm::dyn_cast<FeltType>(arrayType.getElementType());
-  if (elementFeltType) {
-    FeltType resolvedElementType = elementFeltType;
-    for (Attribute element : arrayValue) {
-      if (auto feltValue = llvm::dyn_cast<FeltConstAttr>(element)) {
-        auto feltValueType = feltValue.getType();
-        if (feltValueType.hasField()) {
-          if (resolvedElementType != feltValueType && resolvedElementType.hasField()) {
-            return parser.emitError(initializerLoc)
-                   << "initializer array contains conflicting types " << feltValueType << " vs "
-                   << resolvedElementType;
-          }
-          resolvedElementType = feltValueType;
-        }
-      }
-    }
-
-    SmallVector<Attribute> normalizedElements;
-    normalizedElements.reserve(arrayValue.size());
-    for (Attribute element : arrayValue) {
-      FeltType unused;
-      FailureOr<FeltConstAttr> normalized = normalizeFelt(resolvedElementType, element, unused);
-      if (failed(normalized)) {
+  if (auto arrayType = llvm::dyn_cast<ArrayType>(type);
+      arrayType && llvm::isa<FeltType>(arrayType.getElementType())) {
+    SmallVector<Attribute> elements;
+    auto parseElement = [&]() -> ParseResult {
+      Attribute element;
+      if (failed(parseInitialValueForType(parser, arrayType.getElementType(), element))) {
         return failure();
       }
-      normalizedElements.push_back(*normalized);
+      elements.push_back(element);
+      return success();
+    };
+    if (failed(parser.parseCommaSeparatedList(AsmParser::Delimiter::Square, parseElement))) {
+      return failure();
     }
-    declaredType = arrayType.cloneWith(resolvedElementType);
-    initialValue = ArrayAttr::get(parser.getContext(), normalizedElements);
+    value = ArrayAttr::get(parser.getContext(), elements);
     return success();
   }
-
-  Type elementType = arrayType.getElementType();
-  if (llvm::isa<IndexType>(elementType) || elementType.isSignlessInteger(1)) {
-    SmallVector<Attribute> normalizedElements;
-    normalizedElements.reserve(arrayValue.size());
-    for (Attribute element : arrayValue) {
-      if (auto intValue = llvm::dyn_cast<IntegerAttr>(element)) {
-        normalizedElements.push_back(IntegerAttr::get(elementType, intValue.getValue()));
-      } else {
-        normalizedElements.push_back(element);
-      }
-    }
-    initialValue = ArrayAttr::get(parser.getContext(), normalizedElements);
-  } else if (auto stringType = llvm::dyn_cast<StringType>(elementType)) {
-    SmallVector<Attribute> normalizedElements;
-    normalizedElements.reserve(arrayValue.size());
-    for (Attribute element : arrayValue) {
-      if (auto stringValue = llvm::dyn_cast<StringAttr>(element)) {
-        normalizedElements.push_back(StringAttr::get(stringValue.getValue(), stringType));
-      } else {
-        normalizedElements.push_back(element);
-      }
-    }
-    initialValue = ArrayAttr::get(parser.getContext(), normalizedElements);
-  }
-  return success();
+  return parser.parseAttribute(value, type);
 }
 
 ParseResult GlobalDefOp::parse(OpAsmParser &parser, OperationState &result) {
@@ -197,20 +218,11 @@ ParseResult GlobalDefOp::parse(OpAsmParser &parser, OperationState &result) {
     return failure();
   }
   Type declaredType = typeAttr.getValue();
-
-  Attribute initialValue;
   if (succeeded(parser.parseOptionalEqual())) {
+    Attribute initialValue;
     SMLoc initializerLoc = parser.getCurrentLocation();
-    if (llvm::isa<FeltType>(declaredType)) {
-      FeltConstAttr feltValue;
-      if (parser.parseCustomAttributeWithFallback<FeltConstAttr>(feltValue)) {
-        return failure();
-      }
-      initialValue = feltValue;
-    } else if (failed(parser.parseAttribute(initialValue, declaredType))) {
-      return failure();
-    }
-    if (failed(normalizeParsedInitialValue(parser, initializerLoc, declaredType, initialValue))) {
+    if (failed(parseInitialValueForType(parser, declaredType, initialValue)) ||
+        failed(normalizeParsedInitialValue(parser, initializerLoc, declaredType, initialValue))) {
       return failure();
     }
     props.initial_value = initialValue;
@@ -225,6 +237,26 @@ ParseResult GlobalDefOp::parse(OpAsmParser &parser, OperationState &result) {
     return parser.emitError(loc) << '\'' << result.name.getStringRef() << "' op ";
   });
 }
+
+namespace {
+
+/// Print an initializer recursively without its redundant storage types.
+/// GlobalDefOp's declared type supplies the type for every initializer value.
+static void printInitialValue(AsmPrinter &printer, Attribute value) {
+  if (auto arrayValue = llvm::dyn_cast<ArrayAttr>(value)) {
+    printer << '[';
+    llvm::interleaveComma(arrayValue, printer.getStream(), [&printer](Attribute element) {
+      printInitialValue(printer, element);
+    });
+    printer << ']';
+  } else if (auto feltValue = llvm::dyn_cast<FeltConstAttr>(value)) {
+    printer.printStrippedAttrOrType<FeltConstAttr>(feltValue);
+  } else {
+    printer.printAttributeWithoutType(value);
+  }
+}
+
+} // namespace
 
 void GlobalDefOp::print(OpAsmPrinter &p) {
   if (getConstant()) {
@@ -308,7 +340,7 @@ LogicalResult GlobalDefOp::verifySymbolUses(SymbolTableCollection &tables) {
 
 namespace {
 
-inline InFlightDiagnosticWrapper reportMismatch(
+static inline InFlightDiagnosticWrapper reportMismatch(
     EmitErrorFn errFn, Type rootType, const Twine &aspect, const Twine &expected, const Twine &found
 ) {
   return errFn().append(
@@ -316,13 +348,13 @@ inline InFlightDiagnosticWrapper reportMismatch(
   );
 }
 
-inline InFlightDiagnosticWrapper reportMismatch(
+static inline InFlightDiagnosticWrapper reportMismatch(
     EmitErrorFn errFn, Type rootType, const Twine &aspect, const Twine &expected, Attribute found
 ) {
   return reportMismatch(errFn, rootType, aspect, expected, found.getAbstractAttribute().getName());
 }
 
-LogicalResult ensureAttrTypeMatch(
+static LogicalResult ensureAttrTypeMatch(
     Type type, Attribute valAttr, const OwningEmitErrorFn &errFn, Type rootType, const Twine &aspect
 ) {
   if (!isValidGlobalType(type)) {
@@ -381,6 +413,22 @@ LogicalResult ensureAttrTypeMatch(
             "builtin.array", Twine(actualCount)
         );
       }
+      if (auto feltElemTy = llvm::dyn_cast<FeltType>(arrTy.getElementType())) {
+        for (Attribute element : arrVal) {
+          if (auto feltValue = llvm::dyn_cast<FeltConstAttr>(element)) {
+            FeltType valueType = feltValue.getType();
+            if (!valueType.hasField()) {
+              continue;
+            }
+            if (feltElemTy.hasField() && feltElemTy != valueType) {
+              return errFn().append(
+                  "initializer array contains conflicting types ", valueType, " vs ", feltElemTy
+              );
+            }
+            feltElemTy = valueType;
+          }
+        }
+      }
       // Ensure the type of each element is correct for the ArrayType.
       // Rather than immediately returning on failure, check all elements and aggregate to provide
       // as many errors are possible in a single verifier run.
@@ -428,7 +476,7 @@ GlobalRefOpInterface::getGlobalDefOp(SymbolTableCollection &tables) {
 
 namespace {
 
-FailureOr<SymbolLookupResult<GlobalDefOp>>
+static FailureOr<SymbolLookupResult<GlobalDefOp>>
 verifySymbolUsesImpl(GlobalRefOpInterface refOp, SymbolTableCollection &tables) {
   // Ensure this op references a valid GlobalDefOp name
   auto tgt = refOp.getGlobalDefOp(tables);

@@ -135,6 +135,7 @@ private:
 /* Interval */
 
 /// @brief Intervals over a finite field. Based on the Picus implementation.
+///
 /// An interval may be:
 /// - Empty
 /// - Entire (meaning any value across the entire field)
@@ -147,13 +148,13 @@ private:
 ///
 /// Internal range can be further split into 3 categories:
 /// (A) a, b < p/2.                                             E.g., [10, 12]
-/// (B) a, b > p/2.       OR: a, b \in {-p/2, 0}.               E.g., [p-4, p-2] === [-4, -2]
+/// (B) a, b > p/2.       OR: a, b in {-p/2, 0}.               E.g., [p-4, p-2] === [-4, -2]
 /// (C) a < p/2, b > p/2.                                       E.g., [p/2 - 5, p/2 + 5]
 ///
 /// External range can be further split into 3 categories:
-/// (D) a, b < p/2.       OR: a \in {-p, -p/2}, b \in {0, p/2}. E.g., [12, 10] === [-p+12, 10]
-/// (E) a, b > p/2.       OR: a \in {-p/2, 0} , b \in {p/2, p}. E.g., [p-2, p-4] === [-2, p-4]
-/// (F) a > p/2, b < p/2. OR: a \in {-p/2, 0} , b \in {0, p/2}. E.g., [p/2 + 5, p/2 - 5]
+/// (D) a, b < p/2.       OR: a in {-p, -p/2}, b in {0, p/2}. E.g., [12, 10] === [-p+12, 10]
+/// (E) a, b > p/2.       OR: a in {-p/2, 0} , b in {p/2, p}. E.g., [p-2, p-4] === [-2, p-4]
+/// (F) a > p/2, b < p/2. OR: a in {-p/2, 0} , b in {0, p/2}. E.g., [p/2 + 5, p/2 - 5]
 /// === [-p/2 + 5, p/2 - 5]
 ///
 /// <------------------------------------------------------------->

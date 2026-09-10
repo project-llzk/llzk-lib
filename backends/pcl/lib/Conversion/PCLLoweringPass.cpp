@@ -84,14 +84,17 @@ class PassImpl : public pcl::impl::PCLLoweringPassBase<PassImpl> {
     return failure(
         getOperation()
             ->walk([](StructDefOp op) -> WalkResult {
+      bool hasPublicMembers = false;
       for (auto member : op.getMemberDefs()) {
+        hasPublicMembers = hasPublicMembers || member.hasPublicAttr();
         auto memberType = member.getType();
         if (!llvm::isa<FeltType, StructType>(memberType)) {
           return member.emitError() << "Member must be felt or struct type. Found " << memberType
                                     << " for member: " << member.getName();
         }
       }
-      return success();
+      return hasPublicMembers ? success()
+                              : op.emitOpError() << "must have at least one public member";
     }).wasInterrupted()
     );
   }

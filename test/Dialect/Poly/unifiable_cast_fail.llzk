@@ -18,7 +18,9 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // -----
+
 module attributes {llzk.lang} {
   poly.template @TTester {
     poly.param @S0
@@ -79,7 +81,6 @@ module attributes {llzk.lang} {
     }
   }
 }
-
 
 // -----
 
@@ -180,7 +181,6 @@ module attributes {llzk.lang} {
     }
   }
 }
-
 
 // -----
 
@@ -301,5 +301,125 @@ module attributes {llzk.lang} {
         function.return
       }
     }
+  }
+}
+
+// -----
+
+// `unifiable_cast` cannot be used to specify the field on a felt type.
+module attributes {llzk.lang} {
+  function.def @unspecified_felt_cannot_become_specified(%input: !felt.type) -> !felt.type<"bn128"> {
+    // expected-error@+1 {{'poly.unifiable_cast' op input type '!felt.type' and output type '!felt.type<"bn128">' are not unifiable}}
+    %o = poly.unifiable_cast %input : (!felt.type) -> !felt.type<"bn128">
+    function.return %o : !felt.type<"bn128">
+  }
+}
+
+// -----
+
+// `unifiable_cast` cannot erase a specified field from a felt type.
+module attributes {llzk.lang} {
+  function.def @specified_felt_cannot_become_unspecified(%input: !felt.type<"bn128">) -> !felt.type {
+    // expected-error@+1 {{'poly.unifiable_cast' op input type '!felt.type<"bn128">' and output type '!felt.type' are not unifiable}}
+    %o = poly.unifiable_cast %input : (!felt.type<"bn128">) -> !felt.type
+    function.return %o : !felt.type
+  }
+}
+
+// -----
+
+// `unifiable_cast` cannot be used to specify the field on a felt type within an array type.
+module attributes {llzk.lang} {
+  function.def @unspecified_felt_cannot_become_specified_in_array(%input: !array.type<2 x !felt.type>) {
+    // expected-error@+1 {{'poly.unifiable_cast' op input type '!array.type<2 x !felt.type>' and output type '!array.type<2 x !felt.type<"bn128">>' are not unifiable}}
+    %o = poly.unifiable_cast %input : (!array.type<2 x !felt.type>) -> !array.type<2 x !felt.type<"bn128">>
+    function.return
+  }
+}
+
+// -----
+
+// `unifiable_cast` cannot erase a specified field from a felt type within an array type.
+module attributes {llzk.lang} {
+  function.def @specified_felt_cannot_become_unspecified_in_array(%input: !array.type<2 x !felt.type<"bn128">>) {
+    // expected-error@+1 {{'poly.unifiable_cast' op input type '!array.type<2 x !felt.type<"bn128">>' and output type '!array.type<2 x !felt.type>' are not unifiable}}
+    %o = poly.unifiable_cast %input : (!array.type<2 x !felt.type<"bn128">>) -> !array.type<2 x !felt.type>
+    function.return
+  }
+}
+
+// -----
+
+// `unifiable_cast` cannot be used to specify the field on a felt type within a pod type.
+module attributes {llzk.lang} {
+  function.def @unspecified_felt_cannot_become_specified_in_pod(%input: !pod.type<[@x : !felt.type]>) {
+    // expected-error@+1 {{'poly.unifiable_cast' op input type '!pod.type<[@x: !felt.type]>' and output type '!pod.type<[@x: !felt.type<"bn128">]>' are not unifiable}}
+    %o = poly.unifiable_cast %input : (!pod.type<[@x : !felt.type]>) -> !pod.type<[@x : !felt.type<"bn128">]>
+    function.return
+  }
+}
+
+// -----
+
+// `unifiable_cast` cannot erase a specified field from a felt type within a pod type.
+module attributes {llzk.lang} {
+  function.def @specified_felt_cannot_become_unspecified_in_pod(%input: !pod.type<[@x : !felt.type<"bn128">]>) {
+    // expected-error@+1 {{'poly.unifiable_cast' op input type '!pod.type<[@x: !felt.type<"bn128">]>' and output type '!pod.type<[@x: !felt.type]>' are not unifiable}}
+    %o = poly.unifiable_cast %input : (!pod.type<[@x : !felt.type<"bn128">]>) -> !pod.type<[@x : !felt.type]>
+    function.return
+  }
+}
+
+// -----
+
+// `unifiable_cast` cannot be used to specify the field on a felt type within a struct type.
+module attributes {llzk.lang} {
+  function.def @unspecified_felt_cannot_become_specified_in_struct(%input: !struct.type<@S<[!felt.type]>>) {
+    // expected-error@+1 {{'poly.unifiable_cast' op input type '!struct.type<@S<[!felt.type]>>' and output type '!struct.type<@S<[!felt.type<"bn128">]>>' are not unifiable}}
+    %o = poly.unifiable_cast %input : (!struct.type<@S<[!felt.type]>>) -> !struct.type<@S<[!felt.type<"bn128">]>>
+    function.return
+  }
+}
+
+// -----
+
+// `unifiable_cast` cannot erase a specified field from a felt type within a struct type.
+module attributes {llzk.lang} {
+  function.def @specified_felt_cannot_become_unspecified_in_struct(%input: !struct.type<@S<[!felt.type<"bn128">]>>) {
+    // expected-error@+1 {{'poly.unifiable_cast' op input type '!struct.type<@S<[!felt.type<"bn128">]>>' and output type '!struct.type<@S<[!felt.type]>>' are not unifiable}}
+    %o = poly.unifiable_cast %input : (!struct.type<@S<[!felt.type<"bn128">]>>) -> !struct.type<@S<[!felt.type]>>
+    function.return
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @late_nested_conflict_array(%input: !array.type<? x !felt.type>) {
+    // expected-error@+1 {{'poly.unifiable_cast' op input type '!array.type<? x !felt.type>' and output type '!array.type<1 x !felt.type<"bn128">>' are not unifiable}}
+    %o = poly.unifiable_cast %input : (!array.type<? x !felt.type>) -> !array.type<1 x !felt.type<"bn128">>
+    function.return
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @late_nested_conflict_struct(%input: !struct.type<@S<[@N, !felt.type]>>) {
+    // expected-error@+1 {{'poly.unifiable_cast' op input type '!struct.type<@S<[@N, !felt.type]>>' and output type '!struct.type<@S<[1, !felt.type<"bn128">]>>' are not unifiable}}
+    %o = poly.unifiable_cast %input : (!struct.type<@S<[@N, !felt.type]>>) -> !struct.type<@S<[1, !felt.type<"bn128">]>>
+    function.return
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @late_nested_conflict_pod(%input: !pod.type<[@other: !poly.tvar<@T>, @value: !felt.type]>) {
+    // expected-error@+1 {{'poly.unifiable_cast' op input type '!pod.type<[@other: !poly.tvar<@T>, @value: !felt.type]>' and output type '!pod.type<[@other: index, @value: !felt.type<"bn128">]>' are not unifiable}}
+    %o = poly.unifiable_cast %input
+        : (!pod.type<[@other: !poly.tvar<@T>, @value: !felt.type]>) ->
+              !pod.type<[@other: index, @value: !felt.type<"bn128">]>
+    function.return
   }
 }

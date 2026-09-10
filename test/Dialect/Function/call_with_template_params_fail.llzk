@@ -238,3 +238,50 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@CannotUnifyWithInferredD>) { function.return }
   }
 }
+
+// -----
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @N : index
+
+    function.def @id() -> index {
+      %a = poly.read_const @N : index
+      function.return %a : index
+    }
+  }
+
+  struct.def @WildcardRequiresTypeVarParam1 {
+    function.def @compute() -> !struct.type<@WildcardRequiresTypeVarParam1> {
+      %self = struct.new : !struct.type<@WildcardRequiresTypeVarParam1>
+      // expected-error@+1 {{'function.call' op wildcard `?` can only be used for template parameters with `!poly.tvar` type restriction, but parameter "@N" has type restriction 'index'}}
+      %0 = function.call @GlobalFunc::@id<[?]>() : () -> index
+      function.return %self : !struct.type<@WildcardRequiresTypeVarParam1>
+    }
+
+    function.def @constrain(%self: !struct.type<@WildcardRequiresTypeVarParam1>) { function.return }
+  }
+}
+
+
+// -----
+module attributes {llzk.lang} {
+  poly.template @GlobalFunc {
+    poly.param @N
+
+    function.def @id() -> index {
+      %a = poly.read_const @N : index
+      function.return %a : index
+    }
+  }
+
+  struct.def @WildcardRequiresTypeVarParam2 {
+    function.def @compute() -> !struct.type<@WildcardRequiresTypeVarParam2> {
+      %self = struct.new : !struct.type<@WildcardRequiresTypeVarParam2>
+      // expected-error@+1 {{'function.call' op wildcard `?` can only be used for template parameters with `!poly.tvar` type restriction, but parameter "@N" has no type restriction}}
+      %0 = function.call @GlobalFunc::@id<[?]>() : () -> index
+      function.return %self : !struct.type<@WildcardRequiresTypeVarParam2>
+    }
+
+    function.def @constrain(%self: !struct.type<@WildcardRequiresTypeVarParam2>) { function.return }
+  }
+}

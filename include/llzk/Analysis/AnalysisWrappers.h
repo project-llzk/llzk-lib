@@ -202,7 +202,6 @@ protected:
 
   /// @brief Initialize the shared dataflow solver with any common analyses required
   /// by the contained struct analyses.
-  /// @param solver
   virtual void initializeSolver() = 0;
 
   /// @brief Return the current `Context` object. The context contains parameters
