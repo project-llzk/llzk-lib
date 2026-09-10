@@ -157,26 +157,6 @@ TEST_F(TypeHelperTests, test_functionTypesUnify_Output_Fail) {
   ASSERT_FALSE(functionTypesUnify(a, b));
 }
 
-TEST_F(TypeHelperTests, test_isMoreConcreteUnification_feltField) {
-  FeltType unspecified = FeltType::get(&ctx);
-  FeltType specified = FeltType::get(&ctx, "bn128");
-
-  ASSERT_TRUE(typesUnify(unspecified, specified));
-  ASSERT_TRUE(typesUnify(specified, unspecified));
-  ASSERT_TRUE(isMoreConcreteUnification(unspecified, specified));
-  ASSERT_FALSE(isMoreConcreteUnification(specified, unspecified));
-}
-
-TEST_F(TypeHelperTests, test_isMoreConcreteUnification_nestedFeltField) {
-  FeltType unspecified = FeltType::get(&ctx);
-  FeltType specified = FeltType::get(&ctx, "bn128");
-  ArrayType oldTy = ArrayType::get(specified, {2});
-  ArrayType newTy = ArrayType::get(unspecified, {2});
-
-  ASSERT_TRUE(typesUnify(oldTy, newTy));
-  ASSERT_FALSE(isMoreConcreteUnification(oldTy, newTy));
-}
-
 TEST_F(TypeHelperTests, test_forceIntToIndexType_fromI1) {
   // create a boolean IntegerAttr
   IntegerAttr a = IntegerAttr::get(IntegerType::get(&ctx, 1), 1);

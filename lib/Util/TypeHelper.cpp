@@ -743,16 +743,6 @@ struct UnifierImpl {
       track(Side::RHS, rhsTvar.getNameRef(), lhs);
       return true;
     }
-    if (auto lhsFelt = llvm::dyn_cast<FeltType>(lhs)) {
-      if (auto rhsFelt = llvm::dyn_cast<FeltType>(rhs)) {
-        // An unspecified field can be unified with a specified one, but two
-        // distinct specified fields cannot be unified.
-        if (lhsFelt.hasField() && !rhsFelt.hasField() && feltFieldBecameUnspecified) {
-          *feltFieldBecameUnspecified = true;
-        }
-        return !lhsFelt.hasField() || !rhsFelt.hasField();
-      }
-    }
     if (llvm::isa<StructType>(lhs) && llvm::isa<StructType>(rhs)) {
       return structTypesUnify(llvm::cast<StructType>(lhs), llvm::cast<StructType>(rhs));
     }
@@ -978,8 +968,7 @@ bool isMoreConcreteUnification(
   // type contained some other attribute. In the AffineInstantiations map, a RHS key would indicate
   // that the new type contains an AffineMapAttr where the old type contains an IntegerAttr.
   auto entryIsRHS = [](const auto &entry) { return entry.first.second == Side::RHS; };
-  return !feltFieldBecameUnspecified && !llvm::any_of(unifications, entryIsRHS) &&
-         !llvm::any_of(affineInstantiations, entryIsRHS);
+  return !llvm::any_of(unifications, entryIsRHS) && !llvm::any_of(affineInstantiations, entryIsRHS);
 }
 
 FailureOr<IntegerAttr> forceIntType(IntegerAttr attr, EmitErrorFn emitError) {
