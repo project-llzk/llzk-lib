@@ -626,6 +626,45 @@ module attributes {llzk.lang} {
 
 // -----
 
+module attributes {llzk.lang} {
+  module @typed_attr {
+    global.def const @A : !felt.type =  #felt<const 35 : !felt.type<"bn128">>
+  }
+  function.def @def_unspecified() -> !felt.type {
+    // expected-error@+1 {{'global.read' op has wrong type; expected '!felt.type<"bn128">', got '!felt.type'}}
+    %a = global.read @typed_attr::@A : !felt.type
+    function.return %a : !felt.type
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  module @untyped_attr {
+    global.def const @A : !felt.type<"babybear"> =  16
+  }
+  function.def @specified_as_unspecified() -> !felt.type {
+    // expected-error@+1 {{'global.read' op has wrong type; expected '!felt.type<"babybear">', got '!felt.type'}}
+    %a = global.read @untyped_attr::@A : !felt.type
+    function.return %a : !felt.type
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  module @untyped_attr {
+    global.def const @A : !felt.type =  16
+  }
+  function.def @unspecified_as_specified() -> !felt.type<"babybear"> {
+    // expected-error@+1 {{'global.read' op has wrong type; expected '!felt.type', got '!felt.type<"babybear">'}}
+    %a = global.read @untyped_attr::@A : !felt.type<"babybear">
+    function.return %a : !felt.type<"babybear">
+  }
+}
+
+// -----
+
 // TEST: mutable unspecified felt globals retain their initializer's field
 module attributes {llzk.lang} {
   global.def @g : !felt.type = #felt<const 1 : !felt.type<"bn128">>
