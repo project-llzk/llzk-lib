@@ -270,3 +270,29 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[VAL_0]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+// Exercise every use of one const global, removal of an unused const global,
+// preservation of a mutable global, and symbol replacement in an ordinary
+// attribute on a surviving operation.
+module attributes {llzk.lang} {
+  global.def const @N : index = 5
+  global.def const @unused : index = 42
+  global.def @mutable : index = 0
+
+  function.def @read_multiple_times() -> (index, index, index) {
+    %first = global.read @N : index
+    %second = global.read @N : index
+    %mutable_value = global.read @mutable : index {metadata = @N}
+    function.return %first, %second, %mutable_value : index, index, index
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def @mutable : index = 0
+// CHECK-NEXT:    function.def @read_multiple_times() -> (index, index, index) {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 5 : index
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 5 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = global.read @mutable : index {metadata = 5 : index}
+// CHECK-NEXT:      function.return %[[VAL_0]], %[[VAL_1]], %[[VAL_2]] : index, index, index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
