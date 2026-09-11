@@ -1329,3 +1329,33 @@ module attributes {llzk.lang} {
     }
   }
 }
+
+// -----
+
+// A constant global must satisfy a template parameter restriction even when
+// that parameter cannot be inferred from the included contract's signature.
+module attributes {llzk.lang} {
+  global.def const @F : !felt.type = 7
+
+  poly.template @SpecTemplate {
+    poly.param @N : index
+
+    function.def @token() {
+      function.return
+    }
+
+    verif.contract @Base for @SpecTemplate::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  function.def @wrapper_entry() {
+    function.return
+  }
+
+  verif.contract @Wrapper for @wrapper_entry () {
+    // expected-error@+1 {{'verif.include' op instantiation value '@F' is not compatible with parameter "@N" type restriction 'index'}}
+    verif.include @SpecTemplate::@Base<[@F]>() : () -> ()
+  }
+}
