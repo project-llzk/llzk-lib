@@ -190,7 +190,7 @@
 // CHECK-NEXT:        %[[VAL_92:[0-9a-zA-Z_\.]+]] = array.new  : <4 x !felt.type>
 // CHECK-NEXT:        %[[VAL_93:[0-9a-zA-Z_\.]+]] = function.call @Reg::@Reg::@compute(%[[VAL_92]]) : (!array.type<4 x !felt.type>) -> !struct.type<@Reg::@Reg<[4]>>
 // CHECK-NEXT:        struct.writem %[[VAL_30]][@reg4] = %[[VAL_93]] : <@Top>, !struct.type<@Reg::@Reg<[4]>>
-// CHECK-NEXT:        %[[VAL_94:[0-9a-zA-Z_\.]+]] = global.read @gstore::@BOUND : !felt.type
+// CHECK-NEXT:        %[[VAL_94:[0-9a-zA-Z_\.]+]] = global.read const @gstore::@BOUND : !felt.type
 // CHECK-NEXT:        global.write @gstore::@tally = %[[VAL_46]] : index
 // CHECK-NEXT:        function.return %[[VAL_30]] : !struct.type<@Top>
 // CHECK-NEXT:      }

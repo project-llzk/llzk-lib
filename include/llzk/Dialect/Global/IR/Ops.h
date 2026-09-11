@@ -13,6 +13,17 @@
 #include "llzk/Dialect/Global/IR/Dialect.h"
 #include "llzk/Util/SymbolLookup.h"
 
+#include <mlir/Interfaces/SideEffectInterfaces.h>
+
+namespace llzk::global {
+
+/// Memory resource indicating a `global.def` memory resource.
+struct GlobalMemoryResource : public mlir::SideEffects::Resource::Base<GlobalMemoryResource> {
+  mlir::StringRef getName() final;
+};
+
+} // namespace llzk::global
+
 // Forward-declare ops since GlobalDefOp is used within OpInterfaces
 #include "llzk/Dialect/Global/IR/Ops.h.inc"
 

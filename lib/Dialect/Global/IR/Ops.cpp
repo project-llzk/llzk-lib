@@ -13,6 +13,7 @@
 
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Versioning.h"
 #include "llzk/Dialect/String/IR/Types.h"
 #include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -31,6 +32,10 @@ using namespace llzk::felt;
 using namespace llzk::string;
 
 namespace llzk::global {
+
+// Note: definition is placed here rather than the header to avoid the error:
+//       "vtable will be emitted in every translation unit"
+mlir::StringRef GlobalMemoryResource::getName() { return "GlobalMemory"; }
 
 namespace {
 
@@ -433,11 +438,57 @@ verifySymbolUsesImpl(GlobalRefOpInterface refOp, SymbolTableCollection &tables) 
 } // namespace
 
 LogicalResult GlobalReadOp::verifySymbolUses(SymbolTableCollection &tables) {
-  if (failed(verifySymbolUsesImpl(*this, tables))) {
+  auto tgt = verifySymbolUsesImpl(*this, tables);
+  if (failed(tgt)) {
     return failure();
+  }
+  if (isConstant() && !tgt->get().isConstant()) {
+    return emitOpError().append(
+        "marked as 'const' can only target '", GlobalDefOp::getOperationName(),
+        "' marked as 'const'"
+    );
+  }
+  if (!isConstant() && tgt->get().isConstant()) {
+    emitWarning()
+        .append(
+            "recommend adding 'const' when targeting '", GlobalDefOp::getOperationName(),
+            "' marked as 'const'"
+        )
+        .report();
   }
   // Ensure any SymbolRef used in the type are valid
   return verifyTypeResolution(tables, *this, getType());
+}
+
+// Custom implementation to deserialize bytecode produced before version 3,
+// when GlobalReadOp did not have the optional `constant` property.
+LogicalResult GlobalReadOp::readProperties(DialectBytecodeReader &reader, OperationState &state) {
+  auto &prop = state.getOrAddProperties<Properties>();
+
+  auto version = reader.getDialectVersion<GlobalDialect>();
+  if (succeeded(version) && static_cast<const LLZKDialectVersion &>(**version).majorVersion < 3) {
+    return reader.readAttribute(prop.name_ref);
+  }
+
+  if (failed(reader.readOptionalAttribute(prop.constant))) {
+    return failure();
+  }
+  return reader.readAttribute(prop.name_ref);
+}
+
+// Same as TableGen would generate to serialize current-version IR.
+void GlobalReadOp::writeProperties(DialectBytecodeWriter &writer) {
+  auto &prop = getProperties();
+  writer.writeOptionalAttribute(prop.constant);
+  writer.writeAttribute(prop.name_ref);
+}
+
+void GlobalReadOp::getEffects(
+    SmallVectorImpl<SideEffects::EffectInstance<MemoryEffects::Effect>> &effects
+) {
+  if (!isConstant()) {
+    effects.emplace_back(MemoryEffects::Read::get(), GlobalMemoryResource::get());
+  }
 }
 
 LogicalResult GlobalWriteOp::verifySymbolUses(SymbolTableCollection &tables) {

@@ -308,3 +308,25 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+// -----
+
+// TEST: A `const` global can be read from a template expression with `global.read const`
+module attributes {llzk.lang} {
+  global.def const @b : !felt.type = 999
+
+  poly.template @T4 {
+    poly.expr @D {
+      %c = global.read const @b : !felt.type
+      poly.yield %c : !felt.type
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    global.def const @b : !felt.type =  999
+// CHECK-NEXT:    poly.template @T4 {
+// CHECK-NEXT:      poly.expr @D {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = global.read const @b : !felt.type
+// CHECK-NEXT:        poly.yield %[[VAL_0]] : !felt.type
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

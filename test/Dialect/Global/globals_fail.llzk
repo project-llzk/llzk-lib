@@ -714,3 +714,19 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@Component13>) { function.return }
   }
 }
+
+// -----
+
+// TEST: A const GlobalReadOp cannot target a mutable GlobalDefOp.
+module attributes {llzk.lang} {
+  global.def @g : !felt.type = 6546
+  struct.def @Component03 {
+    function.def @compute() -> !struct.type<@Component03> {
+      // expected-error@+1 {{'global.read' op marked as 'const' can only target 'global.def' marked as 'const'}}
+      %t = global.read const @g : !felt.type
+      %self = struct.new : !struct.type<@Component03>
+      function.return %self : !struct.type<@Component03>
+    }
+    function.def @constrain(%self: !struct.type<@Component03>) { function.return }
+  }
+}

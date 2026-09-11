@@ -89,7 +89,7 @@ module attributes {llzk.lang} {
   global.def const @g : !felt.type = 23452
   struct.def @Component02 {
     function.def @compute() -> !struct.type<@Component02> {
-      %t = global.read @g : !felt.type
+      %t = global.read const @g : !felt.type
       %self = struct.new : !struct.type<@Component02>
       function.return %self : !struct.type<@Component02>
     }
@@ -99,7 +99,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: global.def const @g : !felt.type = 23452
 // CHECK-LABEL: struct.def @Component02 {
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@Component02> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = global.read @g : !felt.type
+// CHECK-NEXT:      %[[V0:[0-9a-zA-Z_\.]+]] = global.read const @g : !felt.type
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component02>
 // CHECK-NEXT:      function.return %[[V1]] : !struct.type<@Component02>
 // CHECK-NEXT:    }
@@ -118,7 +118,7 @@ module attributes {llzk.lang} {
       function.return %self : !struct.type<@Component03>
     }
     function.def @constrain(%self: !struct.type<@Component03>) {
-      %t = global.read @g : i1
+      %t = global.read const @g : i1
       function.return
     }
   }
@@ -130,7 +130,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      function.return %[[V0]] : !struct.type<@Component03>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V1:[0-9a-zA-Z_\.]+]]: !struct.type<@Component03>) attributes {function.allow_constraint} {
-// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = global.read @g : i1
+// CHECK-NEXT:      %[[V2:[0-9a-zA-Z_\.]+]] = global.read const @g : i1
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -140,13 +140,13 @@ module attributes {llzk.lang} {
 module attributes {llzk.lang} {
   global.def const @g : !string.type = "Hello"
   function.def @test() -> !string.type {
-    %t = global.read @g : !string.type
+    %t = global.read const @g : !string.type
     function.return %t : !string.type
   }
 }
 // CHECK-LABEL: global.def const @g : !string.type = "Hello"
 // CHECK-LABEL: function.def @test() -> !string.type {
-// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = global.read @g : !string.type
+// CHECK-NEXT:    %[[V0:[0-9a-zA-Z_\.]+]] = global.read const @g : !string.type
 // CHECK-NEXT:    function.return %[[V0]] : !string.type
 // CHECK-NEXT:  }
 // -----

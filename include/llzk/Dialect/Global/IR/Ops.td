@@ -55,8 +55,8 @@ def LLZK_GlobalDefOp
   let hasVerifier = 1;
 
   let extraClassDeclaration = [{
+    /// Returns true when this def is marked as `const`.
     inline bool isConstant() { return getConstant(); }
-
   }];
 }
 
@@ -72,22 +72,36 @@ class GlobalRefOpBase<string mnemonic, list<Trait> traits = []>
   }];
 }
 
-def LLZK_GlobalReadOp : GlobalRefOpBase<"read", [MemoryEffects<[MemRead]>]> {
+def LLZK_GlobalReadOp
+    : GlobalRefOpBase<
+          "read", [DeclareOpInterfaceMethods<MemoryEffectsOpInterface>]> {
   let summary = "read value of a global";
   let description = [{
-    This operation reads the value of a named global.
+    This operation reads the value of a named global. Reads marked `const` must target
+    a global declared with the `const` modifier and thus have no memory effects.
   }];
 
-  let arguments = (ins SymbolRefAttr:$name_ref);
+  let arguments = (ins UnitAttr:$constant, SymbolRefAttr:$name_ref);
   let results = (outs GlobalDefType:$val);
 
   let assemblyFormat = [{
-    $name_ref `:` type($val) attr-dict
+    (`const` $constant^)? $name_ref `:` type($val) attr-dict
+  }];
+
+  // `constant` was added in version 3. Preserve the v2 bytecode layout, which
+  // contains only `name_ref`, when decoding older bytecode.
+  let useCustomPropertiesEncoding = 1;
+
+  let extraClassDeclaration = [{
+    /// Returns true when this read is marked as `const`.
+    inline bool isConstant() { return getConstant(); }
   }];
 }
 
 def LLZK_GlobalWriteOp
-    : GlobalRefOpBase<"write", [WitnessGen, MemoryEffects<[MemWrite]>]> {
+    : GlobalRefOpBase<
+          "write", [WitnessGen,
+                    MemoryEffects<[MemWrite<GlobalMemoryResource>]>]> {
   let summary = "write value to a global";
   let description = [{
     This operation writes a value to a named global.
