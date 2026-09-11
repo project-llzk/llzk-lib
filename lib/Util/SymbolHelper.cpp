@@ -486,7 +486,19 @@ LogicalResult verifyTemplateParamValueCompatibility(
         }
       }
     }
-    if (resolvedLocal && !compatible) {
+    // `verifyTemplateParamSymbol` establishes that this is a constant global, but the global's
+    // type is not otherwise constrained when the parameter is absent from the callee signature.
+    // Resolve it here to enforce the explicit template parameter restriction.
+    if (!resolvedLocal) {
+      FailureOr<SymbolLookupResultUntyped> lookupRes = lookupTopLevelSymbol(tables, symbol, origin);
+      if (failed(lookupRes)) {
+        return failure();
+      }
+      auto global = llvm::cast<GlobalDefOp>(lookupRes->get());
+      assert(global.isConstant() && "already verified by verifyTemplateParamSymbol");
+      compatible = typesUnify(global.getType(), *declaredType);
+    }
+    if (!compatible) {
       return origin->emitOpError().append(
           "instantiation value '", value, "' is not compatible with parameter \"@",
           targetParam.getName(), "\" type restriction ", *declaredType
