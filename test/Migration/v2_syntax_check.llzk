@@ -23,8 +23,10 @@
 // CHECK-NEXT:      global.def @strs : !array.type<2 x !string.type> = ["hello", "world"]
 // CHECK-NEXT:      global.def const @BITS : !array.type<2,2 x i1> = [false, true, true, false]
 // CHECK-NEXT:      global.def @score : !array.type<2,1,2 x !felt.type> = [ 1,  2,  3,  4]
-// CHECK-NEXT:      global.def @f : !felt.type<"bn128"> = 1 : <"bn128">
-// CHECK-NEXT:      global.def @g : !felt.type<"babybear"> = 4 : <"babybear">
+// CHECK-NEXT:      global.def @f : !felt.type<"bn128"> =  1 : <"bn128">
+// CHECK-NEXT:      global.def @g : !felt.type<"babybear"> =  4 : <"babybear">
+// CHECK-NEXT:      global.def const @array_refined : !array.type<3 x !felt.type<"bn128">> = [ 2 : <"bn128">,  3 : <"bn128">,  4 : <"bn128">]
+// CHECK-NEXT:      global.def const @array_adopted : !array.type<2 x !felt.type<"bn128">> = [ 5 : <"bn128">,  6 : <"bn128">]
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @Box {
 // CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
