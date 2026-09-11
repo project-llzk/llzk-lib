@@ -24,7 +24,6 @@ using namespace mlir;
 using namespace llzk;
 using namespace llzk::array;
 using namespace llzk::component;
-using namespace llzk::felt;
 using namespace llzk::pod;
 
 class TypeHelperTests : public LLZKTest {

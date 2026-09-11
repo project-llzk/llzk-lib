@@ -13,9 +13,7 @@
 
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
-#include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/String/IR/Types.h"
-#include "llzk/Dialect/Struct/IR/Types.h"
 #include "llzk/Util/BuilderHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/TypeHelper.h"
