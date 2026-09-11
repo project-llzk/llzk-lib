@@ -158,6 +158,11 @@
                 ]);
 
               shellHook = ''
+                # LLVM's CMake configuration explicitly selects libc++'s extensive
+                # hardening mode. Do not let the Nix Clang wrapper also inject its
+                # default fast mode, which redefines the same macro.
+                export NIX_HARDENING_ENABLE="''${NIX_HARDENING_ENABLE/libcxxhardeningfast/}"
+
                 # needed to get accurate compile_commands.json
                 export CXXFLAGS="$NIX_CFLAGS_COMPILE"
 
