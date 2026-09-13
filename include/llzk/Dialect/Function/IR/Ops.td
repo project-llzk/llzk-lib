@@ -322,7 +322,7 @@ def CallOp : FunctionDialectOp<
   let summary = "call operation";
   let description = [{
     The `function.call` operation represents a call to another function. The operands
-    and result types of the call must match the specified function type. The
+    and result types of the call must unify with the specified function type. The
     callee is encoded as a symbol reference attribute named "callee" which must
     be the full path to the target function from the root module (i.e., the module
     containing the [llzk::LANG_ATTR_NAME] attribute).
@@ -338,10 +338,9 @@ def CallOp : FunctionDialectOp<
     function.call @OtherStruct::@constrain(%5, %6) : (!struct.type<@OtherStruct>, !felt.type) -> ()
     ```
 
-    When the return StructType of a `compute()` function uses AffineMapAttr to
-    express struct parameter(s) that depend on a loop variable, the optional
-    instantiation parameter list of this operation must be used to instatiate
-    all AffineMap used as parameters to the StructType.
+    When the return `struct.type` of a `compute()` function uses affine-map parameters that
+    depend on loop values, supply every affine-map operand through this operation's optional
+    affine-map operand list.
 
     Examples:
     ```llzk
@@ -349,14 +348,36 @@ def CallOp : FunctionDialectOp<
     %r = function.call @A::@compute(%x){(%i)} : (!felt.type) -> !struct.type<@A<[#M]>>
     ```
 
-    When the call targets a free function within a `poly.template` region, the optional
-    template parameter list can be used to instantiate all `poly.param` symbols within
-    the template. If all `poly.param` symbols are used within the function signature,
-    this can be elided. Otherwise, it is required to instantiate the function. The `?`
-    wildcard can be used for any `poly.param` with a `poly.tvar` type restriction, even
-    those that cannot be inferred from the function signature. The wildcard allows for
-    inference of the type within the function body itself during the flattening pass
-    but may fail if the type cannot be inferred from the function body.
+    When the call targets a free function within a `poly.template`, the optional template
+    parameter list supplies one argument per `poly.param`, in declaration order. The list may be
+    omitted only when every parameter appears in the function signature; omitted values are
+    inferred by unifying the call's operand and result types with that signature. The `?` wildcard
+    is valid for any parameter with a `poly.tvar` restriction and leaves that type for later
+    inference based on the body of the callee function.
+
+    Every explicit or inferred argument must satisfy its `poly.param` type restriction. If the
+    function signature independently infers a value for an explicitly supplied parameter, the
+    explicit and inferred values must unify. For felt-valued parameters, known fields and concrete
+    values must also agree. An argument that resolves to a binding without a declared
+    type restriction may remain deferred for an index, integer, or fieldless felt parameter; it
+    cannot satisfy a fielded felt or `poly.tvar` restriction. A symbolic argument satisfies a
+    fielded felt restriction only when the referenced binding or global has the required field
+    type. A direct argument for an index or integer restriction must be an integer, not an affine
+    map. For a parameter with a `poly.tvar` restriction, a type argument must be a valid LLZK type.
+    The verifier recursively resolves references in `struct.type` and `array.type` arguments and
+    resolves a `poly.tvar` parameter reference at the call site. A `poly.tvar` is accepted once its
+    parameter reference resolves, even when its concrete type remains deferred. Record member
+    types within a `pod.type` are not traversed.
+
+    When a target is reached through an `include.from` alias, verification resolves names in its
+    signature relative to the included module. The `callee` attribute retains the caller-visible
+    qualified alias path. This applies when checking explicit arguments and inferring omitted ones.
+
+    Symbol arguments must refer to a `poly.param` or `poly.expr` binding by its flat name or to a
+    constant global by its fully-qualified name. For a call nested in a `verif.contract` whose
+    target is nested in a `poly.template`, flat binding names resolve in the target's template;
+    otherwise they resolve in the nearest enclosing template. Unresolved symbols, mutable globals,
+    and symbols that resolve to another operation kind are rejected.
   }];
 
   // See `VerifySizesForMultiAffineOps` for more explanation of these arguments.
@@ -464,11 +485,11 @@ def CallOp : FunctionDialectOp<
     ::mlir::Operation *resolveCallable();
 
     /// Return the FunctionType inferred from the arg operands and result types of this CallOp.
-    /// This is not necessarily the same as the callee's FunctionType but should unify with it
+    /// This is not necessarily the same as the callee's FunctionType but must unify with it
     /// or else IR verification will fail.
     ::mlir::FunctionType getTypeSignature();
 
-    /// Attempt type unfication between the inferred FunctionType from this CallOp (as LHS) and
+    /// Attempt type unification between the inferred FunctionType from this CallOp (as LHS) and
     /// the given FunctionType (as RHS). If successful, return a UnificationMap containing the
     /// unifications that were made. Otherwise, return failure.
     ::mlir::FailureOr<UnificationMap> unifyTypeSignature(::mlir::FunctionType other);
@@ -531,20 +552,18 @@ def CallOp : FunctionDialectOp<
     /// so it can be passed to the builders as an `ArrayRef<ValueRange>`.
     static ::llvm::SmallVector<::mlir::ValueRange> toVectorOfValueRange(::mlir::OperandRangeRange);
 
-    /// Check type compatibility of the given template parameter value from this `CallOp` against
-    /// the declared type on the given `TemplateParamOp` (if any).
+    /// Check one template argument from this `CallOp` against the target parameter restriction.
     ::mlir::LogicalResult verifyTemplateParamCompatibility(
-      ::mlir::Attribute paramFromCallOp, ::llzk::polymorphic::TemplateParamOp targetParam
+        ::mlir::Attribute paramFromCallOp,
+        ::llzk::polymorphic::TemplateParamOp targetParam
     );
 
-    /// Check type compatibility of each template parameter value provided in this `CallOp` against
-    /// the declared type on each `TemplateParamOp` (if any).
-    ///
-    /// Pre-condition assertions:
-    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`
-    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`
+    /// Check each explicit template argument from this `CallOp` against the corresponding target
+    /// parameter restriction. The argument and parameter ranges must be non-empty and have the
+    /// same size.
     ::mlir::LogicalResult verifyTemplateParamCompatibility(
-        ::llvm::iterator_range<::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs
+        ::llvm::iterator_range<
+            ::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs
     );
 
     /// Verify that each template parameter value provided in this `CallOp` is consistent with
@@ -552,8 +571,10 @@ def CallOp : FunctionDialectOp<
     /// `UnificationMap` is expected to contain the unification results of this `CallOp` against
     /// the target function type signature.
     ///
-    /// Pre-condition assertions:
-    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`
+    /// The template parameter list may be omitted when all parameters are inferable from the
+    /// function type signature.
+    ///
+    /// Pre-condition assertions when the list is present:
     ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`
     ::mlir::LogicalResult verifyTemplateParamsMatchInferred(
         ::llvm::iterator_range<::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs,

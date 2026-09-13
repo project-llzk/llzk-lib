@@ -1,6 +1,7 @@
 // RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s 2>&1 | FileCheck --enable-var-scope %s
 
-// Tests: attempt to instantiate with incompatible types via `poly.tvar` (no template params on CallOp)
+// Signature unification must reject a transitive `poly.tvar` specialization whose nested call has
+// incompatible operand and result types.
 module attributes {llzk.lang} {
   poly.template @template_a1 {
     poly.param @N : index
@@ -35,10 +36,9 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK: llzk-flatten failed while instantiating functions in templates
 // -----
 
-// Tests: attempt to instantiate with incompatible types via `poly.tvar` (with template params on CallOp)
+// The same transitive mismatch must roll back when the nested call has an explicit argument.
 module attributes {llzk.lang} {
   poly.template @template_b1 {
     poly.param @N : index
@@ -73,7 +73,6 @@ module attributes {llzk.lang} {
     }
   }
 }
-// CHECK: llzk-flatten failed while instantiating functions in templates
 // -----
 
 module attributes {llzk.lang} {

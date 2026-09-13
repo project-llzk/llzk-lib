@@ -1,0 +1,34 @@
+// RUN: llzk-opt -llzk-flatten %s | FileCheck %s
+
+// A struct whose array-member size comes only from a template expression still materializes that
+// size when the specialized struct has no operation-body read of the expression.
+module attributes {llzk.lang, llzk.main = !struct.type<@ExprMemberOnly::@Value>} {
+  poly.template @ExprMemberOnly {
+    poly.expr @Length {
+      %length = arith.constant 4 : index
+      poly.yield %length : index
+    }
+    struct.def @Value {
+      struct.member @values : !array.type<@Length x !felt.type>
+      function.def @compute() -> !struct.type<@ExprMemberOnly::@Value> {
+        %self = struct.new : !struct.type<@ExprMemberOnly::@Value>
+        function.return %self : !struct.type<@ExprMemberOnly::@Value>
+      }
+      function.def @constrain(%self: !struct.type<@ExprMemberOnly::@Value>) {
+        function.return
+      }
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@ExprMemberOnly_Value>} {
+// CHECK-NEXT:    struct.def @ExprMemberOnly_Value {
+// CHECK-NEXT:      struct.member @values : !array.type<4 x !felt.type>
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@ExprMemberOnly_Value> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@ExprMemberOnly_Value>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@ExprMemberOnly_Value>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@ExprMemberOnly_Value>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

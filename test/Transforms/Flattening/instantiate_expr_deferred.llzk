@@ -1,0 +1,85 @@
+// RUN: llzk-opt -llzk-flatten %s | FileCheck --enable-var-scope %s --check-prefix=DEFAULT
+// RUN: llzk-opt -llzk-flatten=cleanup=disabled %s | FileCheck --enable-var-scope %s --check-prefix=DISABLED
+
+// The inner expression is initially deferred because the enclosing template supplies only a
+// symbolic type binding. Specializing the enclosing call makes that binding concrete; a later
+// fixpoint iteration must then materialize the expression and retarget the call.
+module attributes {llzk.lang} {
+  poly.template @DeferredExpr {
+    poly.param @Num
+    poly.param @Ty : !poly.tvar<@Ty>
+    poly.expr @Value {
+      %num = poly.read_const @Num : !poly.tvar<@Ty>
+      %value = poly.unifiable_cast %num : (!poly.tvar<@Ty>) -> index
+      poly.yield %value : index
+    }
+    function.def @value(%arg: !poly.tvar<@Ty>) -> index {
+      %value = poly.read_const @Value : index
+      function.return %value : index
+    }
+  }
+
+  poly.template @Bridge {
+    poly.param @Ty : !poly.tvar<@Ty>
+    function.def @value(%arg: !poly.tvar<@Ty>) -> index {
+      %value = function.call @DeferredExpr::@value<[35, @Ty]>(%arg) :
+          (!poly.tvar<@Ty>) -> index
+      function.return %value : index
+    }
+  }
+
+  function.def @entry(%arg: index) -> index {
+    %value = function.call @Bridge::@value<[index]>(%arg) : (index) -> index
+    function.return %value : index
+  }
+}
+
+// DEFAULT-LABEL: module attributes {llzk.lang} {
+// DEFAULT-NEXT:    function.def @DeferredExpr_35_i_value(%[[DEFERRED_ARG:[0-9a-zA-Z_\.]+]]: index) -> index {
+// DEFAULT-NEXT:      %[[DEFERRED_VALUE:[0-9a-zA-Z_\.]+]] = arith.constant 35 : index
+// DEFAULT-NEXT:      function.return %[[DEFERRED_VALUE]] : index
+// DEFAULT-NEXT:    }
+// DEFAULT-NEXT:    function.def @Bridge_i_value(%[[BRIDGE_ARG:[0-9a-zA-Z_\.]+]]: index) -> index {
+// DEFAULT-NEXT:      %[[BRIDGE_VALUE:[0-9a-zA-Z_\.]+]] = function.call @DeferredExpr_35_i_value(%[[BRIDGE_ARG]]) : (index) -> index
+// DEFAULT-NEXT:      function.return %[[BRIDGE_VALUE]] : index
+// DEFAULT-NEXT:    }
+// DEFAULT-NEXT:    function.def @entry(%[[ENTRY_ARG:[0-9a-zA-Z_\.]+]]: index) -> index {
+// DEFAULT-NEXT:      %[[ENTRY_VALUE:[0-9a-zA-Z_\.]+]] = function.call @Bridge_i_value(%[[ENTRY_ARG]]) : (index) -> index
+// DEFAULT-NEXT:      function.return %[[ENTRY_VALUE]] : index
+// DEFAULT-NEXT:    }
+// DEFAULT-NEXT:  }
+
+// DISABLED-LABEL: module attributes {llzk.lang} {
+// DISABLED-NEXT:    function.def @DeferredExpr_35_i_value(%[[DISABLED_DEFERRED_ARG:[0-9a-zA-Z_\.]+]]: index) -> index {
+// DISABLED-NEXT:      %[[DISABLED_DEFERRED_VALUE:[0-9a-zA-Z_\.]+]] = arith.constant 35 : index
+// DISABLED-NEXT:      function.return %[[DISABLED_DEFERRED_VALUE]] : index
+// DISABLED-NEXT:    }
+// DISABLED-NEXT:    poly.template @DeferredExpr {
+// DISABLED-NEXT:      poly.param @Num
+// DISABLED-NEXT:      poly.param @Ty : !poly.tvar<@Ty>
+// DISABLED-NEXT:      poly.expr @Value {
+// DISABLED-NEXT:        %[[DISABLED_DEFERRED_NUM:[0-9a-zA-Z_\.]+]] = poly.read_const @Num : !poly.tvar<@Ty>
+// DISABLED-NEXT:        %[[DISABLED_DEFERRED_CAST:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[DISABLED_DEFERRED_NUM]] : (!poly.tvar<@Ty>) -> index
+// DISABLED-NEXT:        poly.yield %[[DISABLED_DEFERRED_CAST]] : index
+// DISABLED-NEXT:      }
+// DISABLED-NEXT:      function.def @value(%[[DISABLED_DEFERRED_ORIGINAL_ARG:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Ty>) -> index {
+// DISABLED-NEXT:        %[[DISABLED_DEFERRED_ORIGINAL_VALUE:[0-9a-zA-Z_\.]+]] = poly.read_const @Value : index
+// DISABLED-NEXT:        function.return %[[DISABLED_DEFERRED_ORIGINAL_VALUE]] : index
+// DISABLED-NEXT:      }
+// DISABLED-NEXT:    }
+// DISABLED-NEXT:    function.def @Bridge_i_value(%[[DISABLED_BRIDGE_ARG:[0-9a-zA-Z_\.]+]]: index) -> index {
+// DISABLED-NEXT:      %[[DISABLED_BRIDGE_VALUE:[0-9a-zA-Z_\.]+]] = function.call @DeferredExpr_35_i_value(%[[DISABLED_BRIDGE_ARG]]) : (index) -> index
+// DISABLED-NEXT:      function.return %[[DISABLED_BRIDGE_VALUE]] : index
+// DISABLED-NEXT:    }
+// DISABLED-NEXT:    poly.template @Bridge {
+// DISABLED-NEXT:      poly.param @Ty : !poly.tvar<@Ty>
+// DISABLED-NEXT:      function.def @value(%[[DISABLED_BRIDGE_ORIGINAL_ARG:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Ty>) -> index {
+// DISABLED-NEXT:        %[[DISABLED_BRIDGE_ORIGINAL_VALUE:[0-9a-zA-Z_\.]+]] = function.call @DeferredExpr::@value<[35, @Ty]>(%[[DISABLED_BRIDGE_ORIGINAL_ARG]]) : (!poly.tvar<@Ty>) -> index
+// DISABLED-NEXT:        function.return %[[DISABLED_BRIDGE_ORIGINAL_VALUE]] : index
+// DISABLED-NEXT:      }
+// DISABLED-NEXT:    }
+// DISABLED-NEXT:    function.def @entry(%[[DISABLED_ENTRY_ARG:[0-9a-zA-Z_\.]+]]: index) -> index {
+// DISABLED-NEXT:      %[[DISABLED_ENTRY_VALUE:[0-9a-zA-Z_\.]+]] = function.call @Bridge_i_value(%[[DISABLED_ENTRY_ARG]]) : (index) -> index
+// DISABLED-NEXT:      function.return %[[DISABLED_ENTRY_VALUE]] : index
+// DISABLED-NEXT:    }
+// DISABLED-NEXT:  }

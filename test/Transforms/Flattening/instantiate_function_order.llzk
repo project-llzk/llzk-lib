@@ -1,0 +1,65 @@
+// RUN: llzk-opt -llzk-flatten=cleanup=disabled %s | FileCheck %s
+
+// Swapped bindings and bindings that differ in only one position produce separate full function
+// instantiations; repeated calls with the same ordered bindings reuse one.
+module attributes {llzk.lang} {
+  poly.template @Ordered {
+    poly.param @A : index
+    poly.param @B : index
+
+    function.def @compute() -> index {
+      %b = poly.read_const @B : index
+      function.return %b : index
+    }
+  }
+
+  function.def @main() -> index {
+    %first = function.call @Ordered::@compute<[1, 2]>() : () -> index
+    %first_again = function.call @Ordered::@compute<[1, 2]>() : () -> index
+    %second = function.call @Ordered::@compute<[2, 1]>() : () -> index
+    %second_again = function.call @Ordered::@compute<[2, 1]>() : () -> index
+    %third = function.call @Ordered::@compute<[1, 3]>() : () -> index
+    %third_again = function.call @Ordered::@compute<[1, 3]>() : () -> index
+    %fourth = function.call @Ordered::@compute<[3, 2]>() : () -> index
+    %fourth_again = function.call @Ordered::@compute<[3, 2]>() : () -> index
+    function.return %fourth_again : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @Ordered_1_2_compute() -> index {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Ordered_2_1_compute() -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      function.return %[[VAL_1]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Ordered_1_3_compute() -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// CHECK-NEXT:      function.return %[[VAL_2]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Ordered_3_2_compute() -> index {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
+// CHECK-NEXT:      function.return %[[VAL_3]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Ordered {
+// CHECK-NEXT:      poly.param @A : index
+// CHECK-NEXT:      poly.param @B : index
+// CHECK-NEXT:      function.def @compute() -> index {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.read_const @B : index
+// CHECK-NEXT:        function.return %[[VAL_4]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main() -> index {
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @Ordered_1_2_compute() : () -> index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @Ordered_1_2_compute() : () -> index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @Ordered_2_1_compute() : () -> index
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @Ordered_2_1_compute() : () -> index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @Ordered_1_3_compute() : () -> index
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @Ordered_1_3_compute() : () -> index
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @Ordered_3_2_compute() : () -> index
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @Ordered_3_2_compute() : () -> index
+// CHECK-NEXT:      function.return %[[VAL_12]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

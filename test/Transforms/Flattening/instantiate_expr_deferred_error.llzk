@@ -1,0 +1,44 @@
+// RUN: not llzk-opt -llzk-flatten -verify-diagnostics %s
+
+// A deferred expression must not hide a later referenced expression with concrete inputs. The
+// later expression is intentionally non-foldable, so flattening must inspect it and report the
+// failure instead of silently making no progress.
+module attributes {llzk.lang} {
+  poly.template @DeferredBeforeFailure {
+    poly.param @Num
+    poly.param @Ty : !poly.tvar<@Ty>
+    poly.expr @Deferred {
+      %num = poly.read_const @Num : !poly.tvar<@Ty>
+      %value = poly.unifiable_cast %num : (!poly.tvar<@Ty>) -> index
+      poly.yield %value : index
+    }
+    poly.expr @ReadyButNotFoldable {
+      // expected-error@+1 {{'scf.execute_region' op cannot fold concrete template expression}}
+      %value = scf.execute_region -> index {
+        %constant = arith.constant 35 : index
+        scf.yield %constant : index
+      }
+      poly.yield %value : index
+    }
+    function.def @value(%arg: !poly.tvar<@Ty>) -> index {
+      %deferred = poly.read_const @Deferred : index
+      %ready = poly.read_const @ReadyButNotFoldable : index
+      function.return %ready : index
+    }
+  }
+
+  poly.template @Bridge {
+    poly.param @Ty : !poly.tvar<@Ty>
+    function.def @value(%arg: !poly.tvar<@Ty>) -> index {
+      %value = function.call @DeferredBeforeFailure::@value<[35, @Ty]>(%arg) :
+          (!poly.tvar<@Ty>) -> index
+      function.return %value : index
+    }
+  }
+
+  function.def @entry(%arg: index) -> index {
+    // expected-error@+1 {{failure while evaluating template expressions}}
+    %value = function.call @Bridge::@value<[index]>(%arg) : (index) -> index
+    function.return %value : index
+  }
+}

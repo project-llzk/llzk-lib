@@ -1,0 +1,142 @@
+// RUN: llzk-opt -llzk-flatten=cleanup=disabled %s | FileCheck %s
+
+// Explicit nested-call arguments must retain their order and recursively materialize type
+// variables after the enclosing specialization supplies the final binding.
+module attributes {llzk.lang} {
+  poly.template @NestedArgBox {
+    poly.param @Elem : !poly.tvar<@Elem>
+
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@Elem>
+
+      function.def @product(
+          %value: !poly.tvar<@Elem>
+      ) -> !struct.type<@NestedArgBox::@Box<[@Elem]>> {
+        %self = struct.new : !struct.type<@NestedArgBox::@Box<[@Elem]>>
+        struct.writem %self[@value] = %value :
+            !struct.type<@NestedArgBox::@Box<[@Elem]>>, !poly.tvar<@Elem>
+        function.return %self : !struct.type<@NestedArgBox::@Box<[@Elem]>>
+      }
+    }
+  }
+
+  poly.template @NestedArgInner {
+    poly.param @Marker : index
+    poly.param @ArrayTy : !poly.tvar<@ArrayTy>
+    poly.param @StructTy : !poly.tvar<@StructTy>
+    poly.param @PodTy : !poly.tvar<@PodTy>
+    poly.param @ArgTy : !poly.tvar<@ArgTy>
+
+    function.def @apply(%arg: !poly.tvar<@ArgTy>) -> index {
+      %marker = poly.read_const @Marker : index
+      function.return %marker : index
+    }
+  }
+
+  poly.template @NestedArgOuter {
+    poly.param @N : index
+    poly.param @T : !poly.tvar<@T>
+    poly.param @Marker : index
+
+    function.def @apply(%arg: !poly.tvar<@T>) -> index {
+      %marker = function.call @NestedArgInner::@apply<[
+          @Marker,
+          !array.type<@N x !poly.tvar<@T>>,
+          !struct.type<@NestedArgBox::@Box<[@T]>>,
+          !pod.type<[@payload: !poly.tvar<@T>]>,
+          !poly.tvar<@T>
+      ]>(%arg) : (!poly.tvar<@T>) -> index
+      function.return %marker : index
+    }
+  }
+
+  poly.template @NestedArgBridge {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @apply(%arg: !poly.tvar<@T>) -> index {
+      %marker = function.call @NestedArgOuter::@apply<[4, @T, 41]>(%arg) :
+          (!poly.tvar<@T>) -> index
+      function.return %marker : index
+    }
+  }
+
+  function.def @main(%arg: !felt.type<"bn128">) -> index {
+    %marker = function.call @NestedArgBridge::@apply<[!felt.type<"bn128">]>(%arg) :
+        (!felt.type<"bn128">) -> index
+    function.return %marker : index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @NestedArgBox {
+// CHECK-NEXT:      poly.param @Elem : !poly.tvar<@Elem>
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        struct.member @value : !poly.tvar<@Elem>
+// CHECK-NEXT:        function.def @product(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Elem>) -> !struct.type<@NestedArgBox::@Box<[@Elem]>> attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@NestedArgBox::@Box<[@Elem]>>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@value] = %[[VAL_0]] : <@NestedArgBox::@Box<[@Elem]>>, !poly.tvar<@Elem>
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@NestedArgBox::@Box<[@Elem]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @"NestedArgInner_41_!a<f:4>_!s<@NestedArgBox::@Box_f>_!r<@payload>_f_apply"(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> index {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 41 : index
+// CHECK-NEXT:      function.return %[[VAL_3]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @"NestedArgInner_41_\1A_\1A_\1A_\1A" {
+// CHECK-NEXT:      poly.param @ArrayTy : !poly.tvar<@ArrayTy>
+// CHECK-NEXT:      poly.param @StructTy : !poly.tvar<@StructTy>
+// CHECK-NEXT:      poly.param @PodTy : !poly.tvar<@PodTy>
+// CHECK-NEXT:      poly.param @ArgTy : !poly.tvar<@ArgTy>
+// CHECK-NEXT:      function.def @apply(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !poly.tvar<@ArgTy>) -> index {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 41 : index
+// CHECK-NEXT:        function.return %[[VAL_5]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["NestedArgInner_41_", "_", "_", "_", ""]}
+// CHECK-NEXT:    poly.template @NestedArgInner {
+// CHECK-NEXT:      poly.param @Marker : index
+// CHECK-NEXT:      poly.param @ArrayTy : !poly.tvar<@ArrayTy>
+// CHECK-NEXT:      poly.param @StructTy : !poly.tvar<@StructTy>
+// CHECK-NEXT:      poly.param @PodTy : !poly.tvar<@PodTy>
+// CHECK-NEXT:      poly.param @ArgTy : !poly.tvar<@ArgTy>
+// CHECK-NEXT:      function.def @apply(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !poly.tvar<@ArgTy>) -> index {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = poly.read_const @Marker : index
+// CHECK-NEXT:        function.return %[[VAL_7]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @NestedArgOuter_4_f_41_apply(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> index {
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @"NestedArgInner_41_!a<f:4>_!s<@NestedArgBox::@Box_f>_!r<@payload>_f_apply"(%[[VAL_8]]) : (!felt.type<"bn128">) -> index
+// CHECK-NEXT:      function.return %[[VAL_9]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @"NestedArgOuter_4_\1A_41" {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @apply(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> index {
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @"NestedArgInner_41_\1A_\1A_\1A_\1A"::@apply<[!array.type<4 x !poly.tvar<@T>>, !struct.type<@NestedArgBox::@Box<[@T]>>, !pod.type<[@payload: !poly.tvar<@T>]>, !poly.tvar<@T>]>(%[[VAL_10]]) : (!poly.tvar<@T>) -> index
+// CHECK-NEXT:        function.return %[[VAL_11]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["NestedArgOuter_4_", "_41"]}
+// CHECK-NEXT:    poly.template @NestedArgOuter {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      poly.param @Marker : index
+// CHECK-NEXT:      function.def @apply(%[[VAL_12:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> index {
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = function.call @NestedArgInner::@apply<[@Marker, !array.type<@N x !poly.tvar<@T>>, !struct.type<@NestedArgBox::@Box<[@T]>>, !pod.type<[@payload: !poly.tvar<@T>]>, !poly.tvar<@T>]>(%[[VAL_12]]) : (!poly.tvar<@T>) -> index
+// CHECK-NEXT:        function.return %[[VAL_13]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @NestedArgBridge_f_apply(%[[VAL_14:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> index {
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_\.]+]] = function.call @NestedArgOuter_4_f_41_apply(%[[VAL_14]]) : (!felt.type<"bn128">) -> index
+// CHECK-NEXT:      function.return %[[VAL_15]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @NestedArgBridge {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @apply(%[[VAL_16:[0-9a-zA-Z_\.]+]]: !poly.tvar<@T>) -> index {
+// CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = function.call @"NestedArgOuter_4_\1A_41"::@apply<[@T]>(%[[VAL_16]]) : (!poly.tvar<@T>) -> index
+// CHECK-NEXT:        function.return %[[VAL_17]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @main(%[[VAL_18:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> index {
+// CHECK-NEXT:      %[[VAL_19:[0-9a-zA-Z_\.]+]] = function.call @NestedArgBridge_f_apply(%[[VAL_18]]) : (!felt.type<"bn128">) -> index
+// CHECK-NEXT:      function.return %[[VAL_19]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

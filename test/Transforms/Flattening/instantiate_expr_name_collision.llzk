@@ -1,0 +1,71 @@
+// RUN: llzk-opt -llzk-flatten %s | FileCheck --enable-var-scope %s --check-prefix=DEFAULT
+// RUN: llzk-opt -llzk-flatten=cleanup=disabled %s | FileCheck --enable-var-scope %s --check-prefix=DISABLED
+
+// A user function with the preferred generated name must not replace the expression result.
+// Both calls must reuse the specialization returning 42 and leave the user function returning 99.
+module attributes {llzk.lang} {
+  function.def @T_f() -> index {
+    %wrong = arith.constant 99 : index
+    function.return %wrong : index
+  }
+  poly.template @T {
+    poly.expr @Value {
+      %correct = arith.constant 42 : index
+      poly.yield %correct : index
+    }
+    function.def @f() -> index {
+      %value = poly.read_const @Value : index
+      function.return %value : index
+    }
+  }
+  function.def @main() -> index {
+    %first = function.call @T::@f() : () -> index
+    %second = function.call @T::@f() : () -> index
+    %sum = arith.addi %first, %second : index
+    function.return %sum : index
+  }
+}
+
+// DEFAULT-LABEL: module attributes {llzk.lang} {
+// DEFAULT-NEXT:    function.def @T_f() -> index {
+// DEFAULT-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 99 : index
+// DEFAULT-NEXT:      function.return %[[VAL_0]] : index
+// DEFAULT-NEXT:    }
+// DEFAULT-NEXT:    function.def @T_f_0() -> index {
+// DEFAULT-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// DEFAULT-NEXT:      function.return %[[VAL_1]] : index
+// DEFAULT-NEXT:    }
+// DEFAULT-NEXT:    function.def @main() -> index {
+// DEFAULT-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @T_f_0() : () -> index
+// DEFAULT-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @T_f_0() : () -> index
+// DEFAULT-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_2]], %[[VAL_3]] : index
+// DEFAULT-NEXT:      function.return %[[VAL_4]] : index
+// DEFAULT-NEXT:    }
+// DEFAULT-NEXT:  }
+
+// DISABLED-LABEL: module attributes {llzk.lang} {
+// DISABLED-NEXT:    function.def @T_f() -> index {
+// DISABLED-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 99 : index
+// DISABLED-NEXT:      function.return %[[VAL_0]] : index
+// DISABLED-NEXT:    }
+// DISABLED-NEXT:    function.def @T_f_0() -> index {
+// DISABLED-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// DISABLED-NEXT:      function.return %[[VAL_1]] : index
+// DISABLED-NEXT:    }
+// DISABLED-NEXT:    poly.template @T {
+// DISABLED-NEXT:      poly.expr @Value {
+// DISABLED-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// DISABLED-NEXT:        poly.yield %[[VAL_2]] : index
+// DISABLED-NEXT:      }
+// DISABLED-NEXT:      function.def @f() -> index {
+// DISABLED-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = poly.read_const @Value : index
+// DISABLED-NEXT:        function.return %[[VAL_3]] : index
+// DISABLED-NEXT:      }
+// DISABLED-NEXT:    }
+// DISABLED-NEXT:    function.def @main() -> index {
+// DISABLED-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = function.call @T_f_0() : () -> index
+// DISABLED-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @T_f_0() : () -> index
+// DISABLED-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_4]], %[[VAL_5]] : index
+// DISABLED-NEXT:      function.return %[[VAL_6]] : index
+// DISABLED-NEXT:    }
+// DISABLED-NEXT:  }
