@@ -99,6 +99,9 @@ static void reportDelayedDiagnostics(CallOp caller, SmallVector<Diagnostic> &&di
 }
 
 class ConversionTracker {
+  /// Key for full function instantiation reuse: source definition and ordered concrete bindings.
+  using FuncInstantiationKey = std::pair<Operation *, ArrayAttr>;
+
   /// Published result of one successful partial-function conversion.
   ///
   /// The source operation and concrete key live in the surrounding map; these names are only the
@@ -118,6 +121,12 @@ class ConversionTracker {
   DenseMap<StructType, StructType> reverseInstantiations;
   /// Tracks original free function definitions for which instantiated clones were created.
   DenseSet<SymbolRefAttr> funcInstantiations;
+  /// Fully instantiated functions are keyed by source definition and exact concrete bindings.
+  /// Generated symbol spelling is only a value because user symbols and distinct valid bindings
+  /// can produce the same preferred spelling.
+  /// This cache must outlive individual rewrite pattern instances because flattening re-runs
+  /// Step 2 across fixpoint iterations.
+  DenseMap<FuncInstantiationKey, StringAttr> fullFuncInstantiations;
   /// Successful partial functions keyed by their source operation and exact concrete bindings.
   /// The rendered symbol names are only values; they are never used as cache identity.
   DenseMap<Operation *, SmallVector<PartialFuncInstantiation>> partialFuncInstantiations;
@@ -163,6 +172,23 @@ public:
   void recordInstantiation(SymbolRefAttr funcName) {
     funcInstantiations.insert(funcName);
     modified = true;
+  }
+
+  /// Return the post-insertion symbol name for this source function and exact concrete bindings.
+  std::optional<StringAttr>
+  lookupFullFuncInstantiation(FuncDefOp sourceFunc, ArrayAttr concreteParamKey) const {
+    auto it = fullFuncInstantiations.find({sourceFunc.getOperation(), concreteParamKey});
+    return it == fullFuncInstantiations.end() ? std::nullopt : std::make_optional(it->second);
+  }
+
+  /// Record a successful full function instantiation using its post-insertion symbol name.
+  void recordFullFuncInstantiation(
+      FuncDefOp sourceFunc, ArrayAttr concreteParamKey, StringAttr instantiatedName
+  ) {
+    [[maybe_unused]] auto [it, inserted] = fullFuncInstantiations.try_emplace(
+        {sourceFunc.getOperation(), concreteParamKey}, instantiatedName
+    );
+    assert((inserted || it->second == instantiatedName) && "instantiation identity is stable");
   }
 
   /// Return the successfully converted partial function for this exact source/key pair, if any.
@@ -1419,15 +1445,15 @@ public:
 
     SymbolRefAttr originalCalleeAttr = op.getCalleeAttr();
     FailureOr<SymbolRefAttr> newCalleeAttr =
-        layout.remainingNames.empty()
-            ? instantiateFully(
-                  op, rewriter, symTables, callTgt, parentTemplate, parentModule,
-                  layout.templateNameWithAttrs, paramNameToConcrete
-              )
-            : instantiatePartially(
-                  op, rewriter, symTables, callTgt, parentTemplate, parentModule, layout,
-                  paramNameToConcrete, tracker_
-              );
+        layout.remainingNames.empty() ? instantiateFully(
+                                            op, rewriter, symTables, callTgt, parentTemplate,
+                                            parentModule, layout.templateNameWithAttrs,
+                                            layout.concreteParamKey, paramNameToConcrete, tracker_
+                                        )
+                                      : instantiatePartially(
+                                            op, rewriter, symTables, callTgt, parentTemplate,
+                                            parentModule, layout, paramNameToConcrete, tracker_
+                                        );
     if (failed(newCalleeAttr)) {
       return failure();
     }
@@ -1578,44 +1604,55 @@ private:
     return success();
   }
 
-  /// Create or reuse a fully-instantiated clone in the parent module and return the rewritten
-  /// module-level callee reference.
+  /// Create or reuse a fully instantiated function in the parent module and return the rewritten
+  /// module-level callee reference. Reuse is keyed by the source function and exact ordered
+  /// concrete bindings; the rendered template name is only a preferred symbol name and may be
+  /// changed by SymbolTable insertion.
   static FailureOr<SymbolRefAttr> instantiateFully(
       CallOp op, PatternRewriter &rewriter, SymbolTableCollection &symTables, FuncDefOp callTgt,
       TemplateOp parentTemplate, ModuleOp parentModule, StringRef templateNameWithAttrs,
-      const DenseMap<Attribute, Attribute> &paramNameToConcrete
+      ArrayAttr concreteParamKey, const DenseMap<Attribute, Attribute> &paramNameToConcrete,
+      ConversionTracker &tracker
   ) {
     MLIRContext *ctx = op.getContext();
-    std::string newFuncName =
-        (mlir::Twine(templateNameWithAttrs) + "_" + callTgt.getSymName()).str();
-    StringRef actualNewFuncName = newFuncName;
-    if (!symTables.getSymbolTable(parentModule).lookup(newFuncName)) {
+    StringAttr instantiatedName;
+    if (std::optional<StringAttr> cached =
+            tracker.lookupFullFuncInstantiation(callTgt, concreteParamKey)) {
+      instantiatedName = *cached;
+      LLVM_DEBUG(
+          llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing full instantiation function: "
+                       << instantiatedName.getValue() << '\n'
+      );
+    } else {
+      std::string newFuncName =
+          (mlir::Twine(templateNameWithAttrs) + "_" + callTgt.getSymName()).str();
       FuncDefOp newFunc = callTgt.clone();
       newFunc.setSymName(newFuncName);
       convertCalleesInPlace(newFunc, paramNameToConcrete);
       // Insert before the TemplateOp; symbol table may adjust the name to ensure uniqueness.
       symTables.getSymbolTable(parentModule).insert(newFunc, Block::iterator(parentTemplate));
-      actualNewFuncName = newFunc.getSymName();
+      instantiatedName = newFunc.getSymNameAttr();
       LLVM_DEBUG(
           llvm::dbgs() << "[InstantiateFuncAtCallOp]  created full instantiation function: "
-                       << actualNewFuncName << '\n'
+                       << instantiatedName.getValue() << '\n'
       );
       if (failed(applyBodyConversions(op, newFunc, paramNameToConcrete))) {
         LLVM_DEBUG(
             llvm::dbgs() << "[InstantiateFuncAtCallOp]   body conversion failed for "
-                         << actualNewFuncName << '\n'
+                         << instantiatedName.getValue() << '\n'
         );
-        newFunc->erase();
+        // Remove the operation through the table that inserted it so a failed clone leaves no
+        // stale symbol entry for a later specialization with the same preferred name.
+        symTables.getSymbolTable(parentModule).erase(newFunc);
         return rewriter.notifyMatchFailure(op, [&](Diagnostic &diag) {
-          diag.append("failure while creating instantiated function '", actualNewFuncName, '\'');
+          diag.append(
+              "failure while creating instantiated function '", instantiatedName.getValue(), '\''
+          );
         });
       }
-    } else {
-      LLVM_DEBUG(
-          llvm::dbgs() << "[InstantiateFuncAtCallOp]  reusing full instantiation function: "
-                       << actualNewFuncName << '\n'
-      );
+      tracker.recordFullFuncInstantiation(callTgt, concreteParamKey, instantiatedName);
     }
+    StringRef actualNewFuncName = instantiatedName.getValue();
 
     // Callee: drop template & original function names, add the new module-level function name.
     // Original: @[prefix...]::@TemplateName::@funcName

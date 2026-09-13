@@ -1,0 +1,4 @@
+fixed:
+  - Verify explicit and inferred template arguments for struct types, templated function calls, and contract inclusions, accepting fieldless felt values in the required field and rejecting incompatible or ambiguous values
+  - Resolve paths in included function and contract signatures relative to the included module when verifying explicit or inferred template arguments
+  - Require symbolic template arguments to resolve to a `poly.param` or `poly.expr` binding or a constant global

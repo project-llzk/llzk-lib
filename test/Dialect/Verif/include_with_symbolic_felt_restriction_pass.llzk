@@ -1,0 +1,226 @@
+// RUN: llzk-opt -split-input-file %s | FileCheck %s
+
+// Accepted includes cover explicit and inferred symbols, qualified constant globals, fielded and
+// fieldless felt constants, and matching concrete evidence.
+module attributes {llzk.lang} {
+  poly.template @BoxTemplate {
+    poly.param @P
+    struct.def @Box {
+      function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> {
+        %self = struct.new : <@BoxTemplate::@Box<[@P]>>
+        function.return %self : !struct.type<@BoxTemplate::@Box<[@P]>>
+      }
+      function.def @constrain(%self: !struct.type<@BoxTemplate::@Box<[@P]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Target {
+    poly.param @F : !felt.type
+    function.def @accept(%value: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+      function.return
+    }
+    verif.contract @Base for @Target::@accept (
+        %value: !struct.type<@BoxTemplate::@Box<[@F]>>
+    ) {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  poly.template @Caller {
+    poly.param @G : !felt.type<"bn128">
+    poly.param @H : !felt.type<"bn128">
+    function.def @explicit(%value: !struct.type<@BoxTemplate::@Box<[@G]>>) {
+      function.return
+    }
+    function.def @inferred(%value: !struct.type<@BoxTemplate::@Box<[@G]>>) {
+      function.return
+    }
+    verif.contract @Explicit for @Caller::@explicit (
+        %value: !struct.type<@BoxTemplate::@Box<[@G]>>
+    ) {
+      verif.include @Target::@Base<[@G]>(%value) :
+          (!struct.type<@BoxTemplate::@Box<[@G]>>) -> ()
+    }
+    verif.contract @Inferred for @Caller::@inferred (
+        %value: !struct.type<@BoxTemplate::@Box<[@G]>>
+    ) {
+      verif.include @Target::@Base(%value) :
+          (!struct.type<@BoxTemplate::@Box<[@G]>>) -> ()
+    }
+    function.def @concrete(%value: !struct.type<@BoxTemplate::@Box<[
+        #felt<const 35 : !felt.type<"bn128">>
+    ]>>) {
+      function.return
+    }
+    verif.contract @Concrete for @Caller::@concrete (
+        %value: !struct.type<@BoxTemplate::@Box<[
+            #felt<const 35 : !felt.type<"bn128">>
+        ]>>
+    ) {
+      verif.include @Target::@Base<[@G]>(%value) :
+          (!struct.type<@BoxTemplate::@Box<[
+              #felt<const 35 : !felt.type<"bn128">>
+          ]>>) -> ()
+    }
+    function.def @fieldless_concrete(
+        %value: !struct.type<@BoxTemplate::@Box<[#felt<const 35>]>>
+    ) {
+      function.return
+    }
+    verif.contract @FieldlessConcrete for @Caller::@fieldless_concrete (
+        %value: !struct.type<@BoxTemplate::@Box<[#felt<const 35>]>>
+    ) {
+      verif.include @Target::@Base<[@G]>(%value) :
+          (!struct.type<@BoxTemplate::@Box<[#felt<const 35>]>>) -> ()
+    }
+    function.def @concrete_vs_symbol(%value: !struct.type<@BoxTemplate::@Box<[@G]>>) {
+      function.return
+    }
+    verif.contract @ConcreteVsSymbol for @Caller::@concrete_vs_symbol (
+        %value: !struct.type<@BoxTemplate::@Box<[@G]>>
+    ) {
+      verif.include @Target::@Base<[#felt<const 35 : !felt.type<"bn128">>]>(%value) :
+          (!struct.type<@BoxTemplate::@Box<[@G]>>) -> ()
+    }
+    function.def @symbols_match(%value: !struct.type<@BoxTemplate::@Box<[@H]>>) {
+      function.return
+    }
+    verif.contract @SymbolsMatch for @Caller::@symbols_match (
+        %value: !struct.type<@BoxTemplate::@Box<[@H]>>
+    ) {
+      verif.include @Target::@Base<[@G]>(%value) :
+          (!struct.type<@BoxTemplate::@Box<[@H]>>) -> ()
+    }
+  }
+
+  module @globals {
+    global.def const @G : !felt.type<"bn128"> = 35
+  }
+
+  function.def @qualified(%value: !struct.type<@BoxTemplate::@Box<[@globals::@G]>>) {
+    function.return
+  }
+  verif.contract @Qualified for @qualified (
+      %value: !struct.type<@BoxTemplate::@Box<[@globals::@G]>>
+  ) {
+    verif.include @Target::@Base<[@globals::@G]>(%value) :
+        (!struct.type<@BoxTemplate::@Box<[@globals::@G]>>) -> ()
+  }
+
+  function.def @qualified_concrete(%value: !struct.type<@BoxTemplate::@Box<[
+      #felt<const 35 : !felt.type<"bn128">>
+  ]>>) {
+    function.return
+  }
+  verif.contract @QualifiedConcrete for @qualified_concrete (
+      %value: !struct.type<@BoxTemplate::@Box<[
+          #felt<const 35 : !felt.type<"bn128">>
+      ]>>
+  ) {
+    verif.include @Target::@Base<[@globals::@G]>(%value) :
+        (!struct.type<@BoxTemplate::@Box<[
+            #felt<const 35 : !felt.type<"bn128">>
+        ]>>) -> ()
+  }
+
+  function.def @qualified_fieldless_concrete(
+      %value: !struct.type<@BoxTemplate::@Box<[#felt<const 35>]>>
+  ) {
+    function.return
+  }
+  verif.contract @QualifiedFieldlessConcrete for @qualified_fieldless_concrete (
+      %value: !struct.type<@BoxTemplate::@Box<[#felt<const 35>]>>
+  ) {
+    verif.include @Target::@Base<[@globals::@G]>(%value) :
+        (!struct.type<@BoxTemplate::@Box<[#felt<const 35>]>>) -> ()
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @BoxTemplate {
+// CHECK-NEXT:      poly.param @P
+// CHECK-NEXT:      struct.def @Box {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@BoxTemplate::@Box<[@P]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@BoxTemplate::@Box<[@P]>>
+// CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@BoxTemplate::@Box<[@P]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@P]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Target {
+// CHECK-NEXT:      poly.param @F : !felt.type
+// CHECK-NEXT:      function.def @accept(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Base for @Target::@accept (%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@F]>>) {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant true
+// CHECK-NEXT:        verif.ensure_compute %[[VAL_4]]
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @G : !felt.type<"bn128">
+// CHECK-NEXT:      poly.param @H : !felt.type<"bn128">
+// CHECK-NEXT:      function.def @explicit(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@G]>>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @inferred(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@G]>>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Explicit for @Caller::@explicit (%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@G]>>) {
+// CHECK-NEXT:        verif.include @Target::@Base<[@G]>(%[[VAL_7]]) : (!struct.type<@BoxTemplate::@Box<[@G]>>) -> ()
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Inferred for @Caller::@inferred (%[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@G]>>) {
+// CHECK-NEXT:        verif.include @Target::@Base(%[[VAL_8]]) : (!struct.type<@BoxTemplate::@Box<[@G]>>) -> ()
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @concrete(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : <"bn128">>]>>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Concrete for @Caller::@concrete (%[[VAL_10:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : <"bn128">>]>>) {
+// CHECK-NEXT:        verif.include @Target::@Base<[@G]>(%[[VAL_10]]) : (!struct.type<@BoxTemplate::@Box<[#felt<const 35 : <"bn128">>]>>) -> ()
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @fieldless_concrete(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[#felt<const 35>]>>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @FieldlessConcrete for @Caller::@fieldless_concrete (%[[VAL_12:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[#felt<const 35>]>>) {
+// CHECK-NEXT:        verif.include @Target::@Base<[@G]>(%[[VAL_12]]) : (!struct.type<@BoxTemplate::@Box<[#felt<const 35>]>>) -> ()
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @concrete_vs_symbol(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@G]>>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @ConcreteVsSymbol for @Caller::@concrete_vs_symbol (%[[VAL_14:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@G]>>) {
+// CHECK-NEXT:        verif.include @Target::@Base<[#felt<const 35 : <"bn128">>]>(%[[VAL_14]]) : (!struct.type<@BoxTemplate::@Box<[@G]>>) -> ()
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @symbols_match(%[[VAL_15:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@H]>>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @SymbolsMatch for @Caller::@symbols_match (%[[VAL_16:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@H]>>) {
+// CHECK-NEXT:        verif.include @Target::@Base<[@G]>(%[[VAL_16]]) : (!struct.type<@BoxTemplate::@Box<[@H]>>) -> ()
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    module @globals {
+// CHECK-NEXT:      global.def const @G : !felt.type<"bn128"> =  35
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @qualified(%[[VAL_17:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@globals::@G]>>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @Qualified for @qualified (%[[VAL_18:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[@globals::@G]>>) {
+// CHECK-NEXT:      verif.include @Target::@Base<[@globals::@G]>(%[[VAL_18]]) : (!struct.type<@BoxTemplate::@Box<[@globals::@G]>>) -> ()
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @qualified_concrete(%[[VAL_19:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : <"bn128">>]>>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @QualifiedConcrete for @qualified_concrete (%[[VAL_20:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[#felt<const 35 : <"bn128">>]>>) {
+// CHECK-NEXT:      verif.include @Target::@Base<[@globals::@G]>(%[[VAL_20]]) : (!struct.type<@BoxTemplate::@Box<[#felt<const 35 : <"bn128">>]>>) -> ()
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @qualified_fieldless_concrete(%[[VAL_21:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[#felt<const 35>]>>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    verif.contract @QualifiedFieldlessConcrete for @qualified_fieldless_concrete (%[[VAL_22:[0-9a-zA-Z_\.]+]]: !struct.type<@BoxTemplate::@Box<[#felt<const 35>]>>) {
+// CHECK-NEXT:      verif.include @Target::@Base<[@globals::@G]>(%[[VAL_22]]) : (!struct.type<@BoxTemplate::@Box<[#felt<const 35>]>>) -> ()
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -1,0 +1,100 @@
+// RUN: llzk-opt -verify-diagnostics --pass-pipeline='builtin.module(llzk-flatten{cleanup=disabled})' %s | FileCheck --enable-var-scope %s
+
+// Each sibling module defines the same relative template/function symbols and uses the same
+// binding. The source definitions are distinct, so flattening must create one specialization per
+// module rather than reusing the first module's function.
+module attributes {llzk.lang} {
+  module @Left attributes {llzk.lang} {
+    poly.template @T {
+      poly.param @N : index
+
+      function.def @f(%inp: !array.type<@N x !felt.type>) -> !array.type<@N x !felt.type> {
+        %c0 = arith.constant 0 : index
+        %unused = array.read %inp[%c0] : !array.type<@N x !felt.type>, !felt.type
+        function.return %inp : !array.type<@N x !felt.type>
+      }
+    }
+
+    struct.def @Main {
+      function.def @compute(%inp: !array.type<4 x !felt.type>) -> !struct.type<@Main> {
+        %self = struct.new : !struct.type<@Main>
+        %out = function.call @T::@f(%inp) : (!array.type<4 x !felt.type>) -> (!array.type<4 x !felt.type>)
+        function.return %self : !struct.type<@Main>
+      }
+
+      function.def @constrain(%self: !struct.type<@Main>, %inp: !array.type<4 x !felt.type>) {
+        function.return
+      }
+    }
+  }
+
+  module @Right attributes {llzk.lang} {
+    poly.template @T {
+      poly.param @N : index
+
+      function.def @f(%inp: !array.type<@N x !felt.type>) -> !array.type<@N x !felt.type> {
+        function.return %inp : !array.type<@N x !felt.type>
+      }
+    }
+
+    struct.def @Main {
+      function.def @compute(%inp: !array.type<4 x !felt.type>) -> !struct.type<@Main> {
+        %self = struct.new : !struct.type<@Main>
+        %out = function.call @T::@f(%inp) : (!array.type<4 x !felt.type>) -> (!array.type<4 x !felt.type>)
+        function.return %self : !struct.type<@Main>
+      }
+
+      function.def @constrain(%self: !struct.type<@Main>, %inp: !array.type<4 x !felt.type>) {
+        function.return
+      }
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    module @Left attributes {llzk.lang} {
+// CHECK-NEXT:      function.def @T_4_f(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>) -> !array.type<4 x !felt.type> {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_1]]] : <4 x !felt.type>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_0]] : !array.type<4 x !felt.type>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      poly.template @T {
+// CHECK-NEXT:        poly.param @N : index
+// CHECK-NEXT:        function.def @f(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) -> !array.type<@N x !felt.type> {
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_3]]{{\[}}%[[VAL_4]]] : <@N x !felt.type>, !felt.type
+// CHECK-NEXT:          function.return %[[VAL_3]] : !array.type<@N x !felt.type>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @Main {
+// CHECK-NEXT:        function.def @compute(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @T_4_f(%[[VAL_6]]) : (!array.type<4 x !felt.type>) -> !array.type<4 x !felt.type>
+// CHECK-NEXT:          function.return %[[VAL_7]] : !struct.type<@Main>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_9:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_10:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    module @Right attributes {llzk.lang} {
+// CHECK-NEXT:      function.def @T_4_f(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>) -> !array.type<4 x !felt.type> {
+// CHECK-NEXT:        function.return %[[VAL_11]] : !array.type<4 x !felt.type>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      poly.template @T {
+// CHECK-NEXT:        poly.param @N : index
+// CHECK-NEXT:        function.def @f(%[[VAL_12:[0-9a-zA-Z_\.]+]]: !array.type<@N x !felt.type>) -> !array.type<@N x !felt.type> {
+// CHECK-NEXT:          function.return %[[VAL_12]] : !array.type<@N x !felt.type>
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:      struct.def @Main {
+// CHECK-NEXT:        function.def @compute(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:          %[[VAL_15:[0-9a-zA-Z_\.]+]] = function.call @T_4_f(%[[VAL_13]]) : (!array.type<4 x !felt.type>) -> !array.type<4 x !felt.type>
+// CHECK-NEXT:          function.return %[[VAL_14]] : !struct.type<@Main>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_16:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_17:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

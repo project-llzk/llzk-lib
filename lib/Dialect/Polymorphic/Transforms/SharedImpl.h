@@ -135,7 +135,7 @@ inline component::StructType getStructTypeWithParams(
 /// a new instantiated template and how to rewrite the remaining argument list at the use site.
 struct InstantiationLayout {
   mlir::SmallVector<mlir::Attribute> remainingNames;
-  /// Ordered [parameter-name, concrete-value, ...] entries for exact partial-function reuse.
+  /// Ordered `[parameter-name, concrete-value, ...]` entries used to identify a specialization.
   mlir::ArrayAttr concreteParamKey;
   std::string templateNameWithAttrs;
   mlir::ArrayAttr rewrittenCallParams;

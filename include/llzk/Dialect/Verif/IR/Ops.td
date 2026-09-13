@@ -442,6 +442,35 @@ def IncludeOp
   let description = [{
     Invokes another specification contract from another contract, effectively including the
     specifications from another specification into the current contract.
+
+    When the target contract is inside a `poly.template`, the optional template parameter list
+    supplies one argument per `poly.param`, in declaration order. The list may be omitted when
+    every parameter appears in the contract signature; omitted values are inferred by unifying the
+    inclusion operand types with that signature. Every explicit or inferred argument must satisfy
+    its declared type restriction. If both forms provide a value for the same parameter, the
+    explicit and inferred values must unify. For felt-valued parameters, known fields and concrete
+    values must also agree.
+    An argument that resolves to a binding without a declared type restriction may
+    remain deferred for an index, integer, or fieldless felt parameter; it cannot satisfy a fielded
+    felt or `poly.tvar` restriction. A symbolic argument satisfies a fielded felt restriction only
+    when the referenced binding or global has the required field type. The direct argument for an
+    index or integer restriction must be an integer, not an affine map. The `?` wildcard is valid
+    for any parameter with a `poly.tvar` restriction and leaves that type for later inference based
+    on the callee. For a parameter with a `poly.tvar` restriction, a type argument must be a valid
+    LLZK type. The verifier recursively resolves references in `struct.type` and `array.type`
+    arguments and resolves a `poly.tvar` parameter reference at the inclusion site. A `poly.tvar`
+    is accepted once its parameter reference resolves, even when its concrete type remains
+    deferred. Record member types within a `pod.type` are not traversed.
+
+    When a target is reached through an `include.from` alias, verification resolves names in its
+    signature relative to the included module. The `callee` attribute retains the caller-visible
+    qualified alias path. This applies when checking explicit arguments and inferring omitted ones.
+
+    Symbol arguments must refer to a `poly.param` or `poly.expr` binding by its flat name or to a
+    constant global by its fully-qualified name. When the enclosing contract's target is nested in
+    a `poly.template`, flat binding names resolve in that target's template; otherwise they resolve
+    in the nearest enclosing template. Unresolved symbols, mutable globals, and symbols that
+    resolve to another operation kind are rejected.
   }];
 
   // See `VerifySizesForMultiAffineOps` for more explanation of these arguments.
@@ -535,14 +564,14 @@ def IncludeOp
     /// Required by CallOpInterface
     ::mlir::Operation *resolveCallable();
 
-    /// Return the FunctionType inferred from the arg operands of this CallOp.
-    /// This is not necessarily the same as the callee's FunctionType but should unify with it
-    /// or else IR verification will fail.
+    /// Return the FunctionType inferred from the argument operands of this IncludeOp.
+    /// This is not necessarily the same as the target contract's FunctionType but must unify with
+    /// it or else IR verification will fail.
     ::mlir::FunctionType getTypeSignature();
 
-    /// Attempt type unfication between the inferred FunctionType from this CallOp (as LHS) and
-    /// the given FunctionType (as RHS). If successful, return a UnificationMap containing the
-    /// unifications that were made. Otherwise, return failure.
+    /// Attempt type unification between the inferred FunctionType from this IncludeOp (as LHS) and
+    /// the given contract FunctionType (as RHS). If successful, return a UnificationMap containing
+    /// the unifications that were made. Otherwise, return failure.
     ::mlir::FailureOr<UnificationMap> unifyTypeSignature(::mlir::FunctionType other);
 
     /// Return `true` iff the contract targets a struct type.
@@ -552,7 +581,7 @@ def IncludeOp
     /// assuming the target of the contract is a struct target.
     ::mlir::Value getSelfValue();
 
-    /// Resolve and return the target Contract for this CallOp.
+    /// Resolve and return the target Contract for this IncludeOp.
     ::mlir::FailureOr<::llzk::SymbolLookupResult<::llzk::verif::ContractOp>>
     getCalleeTarget(::mlir::SymbolTableCollection &tables);
 
@@ -560,29 +589,29 @@ def IncludeOp
     /// so it can be passed to the builders as an `ArrayRef<ValueRange>`.
     static ::llvm::SmallVector<::mlir::ValueRange> toVectorOfValueRange(::mlir::OperandRangeRange);
 
-    /// Check type compatibility of the given template parameter value from this `CallOp` against
-    /// the declared type on the given `TemplateParamOp` (if any).
+    /// Check one template argument from this `IncludeOp` against the target parameter restriction.
     ::mlir::LogicalResult verifyTemplateParamCompatibility(
-      ::mlir::Attribute paramFromCallOp, ::llzk::polymorphic::TemplateParamOp targetParam
+        ::mlir::Attribute paramFromIncludeOp,
+        ::llzk::polymorphic::TemplateParamOp targetParam
     );
 
-    /// Check type compatibility of each template parameter value provided in this `CallOp` against
-    /// the declared type on each `TemplateParamOp` (if any).
-    ///
-    /// Pre-condition assertions:
-    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`
-    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`
+    /// Check each explicit template argument from this `IncludeOp` against the corresponding target
+    /// parameter restriction. The argument and parameter ranges must be non-empty and have the
+    /// same size.
     ::mlir::LogicalResult verifyTemplateParamCompatibility(
-        ::llvm::iterator_range<::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs
+        ::llvm::iterator_range<
+            ::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs
     );
 
-    /// Verify that each template parameter value provided in this `CallOp` is consistent with
+    /// Verify that each template parameter value provided in this `IncludeOp` is consistent with
     /// the value inferred for the target `TemplateParamOp` in the given `UnificationMap`. The
-    /// `UnificationMap` is expected to contain the unification results of this `CallOp` against
-    /// the target function type signature.
+    /// `UnificationMap` is expected to contain the unification results of this `IncludeOp` against
+    /// the target contract type signature.
     ///
-    /// Pre-condition assertions:
-    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`
+    /// The template parameter list may be omitted when all parameters are inferable from the
+    /// contract type signature.
+    ///
+    /// Pre-condition assertions when the list is present:
     ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`
     ::mlir::LogicalResult verifyTemplateParamsMatchInferred(
         ::llvm::iterator_range<::mlir::Region::op_iterator<::llzk::polymorphic::TemplateParamOp>> targetParamDefs,
