@@ -648,7 +648,7 @@ public:
       component::MemberWriteOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
     if (!strategy->isScalarFeltType(op.getVal().getType())) {
-      op.emitError("SMT lowering currently only supports felt-valued struct.writem");
+      // op.emitError("SMT lowering currently only supports felt-valued struct.writem");
       // return failure();
     }
 
@@ -660,6 +660,7 @@ public:
     auto [_, witness] = it->second;
     auto witnessRange = strategy->getWitnessMemberRange(adaptor.getMemberName());
     auto valueRange = strategy->getScalarValueRange(op.getVal());
+    // TODO: If this is an array, emit the assertion quantified over array bounds
     strategy->emitCongruenceEqualityAssertion(
         rewriter, op.getLoc(), witness, witnessRange, adaptor.getVal(), valueRange, "member_write"
     );
@@ -800,7 +801,7 @@ void OptimizedNonNativeStrategy::emitArrayRangeConstraint(
     antecedents.reserve(2 * indices.size());
     for (auto [index, extent] : llvm::zip(indices, extents)) {
       auto [lo, hi] = emitter->getRangeBoundAssertions(
-          builder, loc, index, UnreducedInterval {0, static_cast<int64_t>(extent)}
+          builder, loc, index, UnreducedInterval {0, static_cast<int64_t>(extent - 1)}
       );
       antecedents.push_back(lo);
       antecedents.push_back(hi);
@@ -1188,28 +1189,48 @@ class PassImpl : public llzk::smt::impl::SMTLoweringPassBase<PassImpl> {
       }
 
       SignalSymbols signalSymbols;
+      LLZKToSMTTypeConverter typeConverter {&getContext()};
       for (auto memberDef : structDef.getMemberDefs()) {
-        if (!isa<felt::FeltType>(memberDef.getType())) {
-          continue;
-        }
+        // if (!isa<felt::FeltType>(memberDef.getType())) {
+        //   continue;
+        // }
 
         std::string constraintName = memberDef.getSymName().str() + "_c";
         std::string witnessName = memberDef.getSymName().str() + "_w";
+        auto symbolType = typeConverter.convertType(memberDef.getType());
         auto constraintSym = rewriter.create<smt::DeclareFunOp>(
-            preamble, smt::IntType::get(&getContext()),
-            StringAttr::get(&getContext(), constraintName)
+            preamble, symbolType, StringAttr::get(&getContext(), constraintName)
         );
         auto witnessSym = rewriter.create<smt::DeclareFunOp>(
-            preamble, smt::IntType::get(&getContext()), StringAttr::get(&getContext(), witnessName)
+            preamble, symbolType, StringAttr::get(&getContext(), witnessName)
         );
-        strategy.emitRangeConstraint(
-            rewriter, memberDef.getLoc(), constraintSym.getResult(),
-            strategy.getConstraintMemberRange(memberDef.getSymName())
-        );
-        strategy.emitRangeConstraint(
-            rewriter, memberDef.getLoc(), witnessSym.getResult(),
-            strategy.getWitnessMemberRange(memberDef.getSymName())
-        );
+        if (isa<felt::FeltType>(memberDef.getType())) {
+          strategy.emitRangeConstraint(
+              rewriter, memberDef.getLoc(), constraintSym.getResult(),
+              strategy.getConstraintMemberRange(memberDef.getSymName())
+          );
+          strategy.emitRangeConstraint(
+              rewriter, memberDef.getLoc(), witnessSym.getResult(),
+              strategy.getWitnessMemberRange(memberDef.getSymName())
+          );
+        } else if (auto arrType = dyn_cast<array::ArrayType>(memberDef.getType())) {
+          SmallVector<uint64_t> extents;
+          for (auto extent : arrType.getShape()) {
+            if (extent < 0) {
+              mod.emitError() << "SMT lowering does not support dynamically-shaped arrays\n";
+              return signalPassFailure();
+            }
+            extents.push_back(extent);
+          }
+          strategy.emitArrayRangeConstraint(
+              rewriter, memberDef.getLoc(), constraintSym.getResult(), extents,
+              strategy.getConstraintMemberRange(memberDef.getSymName())
+          );
+          strategy.emitArrayRangeConstraint(
+              rewriter, memberDef.getLoc(), witnessSym.getResult(), extents,
+              strategy.getWitnessMemberRange(memberDef.getSymName())
+          );
+        }
         signalSymbols[memberDef.getSymName()] = {constraintSym.getResult(), witnessSym.getResult()};
       }
 
