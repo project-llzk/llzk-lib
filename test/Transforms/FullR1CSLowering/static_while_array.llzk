@@ -1,11 +1,5 @@
 // RUN: llzk-opt -llzk-full-r1cs-lowering %s | FileCheck %s
 
-// CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
-// CHECK-NEXT:    r1cs.circuit @Add inputs (
-// CHECK-COUNT-2:   r1cs.def
-// CHECK-COUNT-2:   r1cs.constrain
-// CHECK-NOT:       scf.
-// CHECK-NOT:       array.
 module attributes {llzk.lang = "circom", llzk.main = !struct.type<@Add>} {
   struct.def @Add {
       struct.member @out : !array.type<2 x !felt.type<"bn128">> {llzk.pub}
@@ -54,3 +48,25 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@Add>} {
       }
   }
 }
+
+// CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
+// CHECK-NEXT:    r1cs.circuit @Add inputs (%[[A0:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[A1:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[B0:[0-9a-zA-Z_\.]+]]: !r1cs.signal, %[[B1:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
+// CHECK-DAG:       %[[OUT0:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-DAG:       %[[OUT1:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-DAG:       %[[ZERO:[0-9a-zA-Z_\.]+]] = r1cs.const  0 : i64 : !r1cs.linear
+// CHECK-DAG:       %[[A0L:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[A0]] : !r1cs.signal to !r1cs.linear
+// CHECK-DAG:       %[[A1L:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[A1]] : !r1cs.signal to !r1cs.linear
+// CHECK-DAG:       %[[B0L:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[B0]] : !r1cs.signal to !r1cs.linear
+// CHECK-DAG:       %[[B1L:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[B1]] : !r1cs.signal to !r1cs.linear
+// CHECK-DAG:       %[[OUT0L:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[OUT0]] : !r1cs.signal to !r1cs.linear
+// CHECK-DAG:       %[[OUT1L:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[OUT1]] : !r1cs.signal to !r1cs.linear
+// CHECK-DAG:       %[[NEG_OUT0:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[OUT0L]],  -1 : i64 : !r1cs.linear
+// CHECK-DAG:       %[[NEG_OUT1:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[OUT1L]],  -1 : i64 : !r1cs.linear
+// CHECK-DAG:       %[[ADD0:[0-9a-zA-Z_\.]+]] = r1cs.add %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !r1cs.linear
+// CHECK-DAG:       %[[ADD1:[0-9a-zA-Z_\.]+]] = r1cs.add %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !r1cs.linear
+// CHECK-DAG:       %[[ADD2:[0-9a-zA-Z_\.]+]] = r1cs.add %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !r1cs.linear
+// CHECK-DAG:       %[[ADD3:[0-9a-zA-Z_\.]+]] = r1cs.add %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !r1cs.linear
+// CHECK-DAG:       r1cs.constrain %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !r1cs.linear
+// CHECK-DAG:       r1cs.constrain %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !r1cs.linear
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

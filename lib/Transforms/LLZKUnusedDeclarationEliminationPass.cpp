@@ -249,7 +249,6 @@ class PassImpl : public llzk::impl::UnusedDeclarationEliminationPassBase<PassImp
       }
     }
   }
-
 };
 
 } // namespace

@@ -1,9 +1,5 @@
 // RUN: llzk-opt -llzk-r1cs-lowering %s | FileCheck %s
 
-// CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
-// CHECK-NEXT:    r1cs.circuit @Main inputs (
-// CHECK-NOT:     module @Main
-
 module attributes {llzk.lang, llzk.main = !struct.type<@Main::@Main>} {
   module @Main {
     struct.def @Main {
@@ -21,3 +17,16 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main::@Main>} {
     }
   }
 }
+
+// CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
+// CHECK-NEXT:    r1cs.circuit @Main inputs (%[[INPUT:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
+// CHECK-DAG:       %[[OUT:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK-DAG:       %[[ZERO0:[0-9a-zA-Z_\.]+]] = r1cs.const  0 : i64 : !r1cs.linear
+// CHECK-DAG:       %[[ZERO1:[0-9a-zA-Z_\.]+]] = r1cs.const  0 : i64 : !r1cs.linear
+// CHECK-DAG:       %[[INPUTL:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[INPUT]] : !r1cs.signal to !r1cs.linear
+// CHECK-DAG:       %[[OUTL:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[OUT]] : !r1cs.signal to !r1cs.linear
+// CHECK-DAG:       %[[NEG_OUT:[0-9a-zA-Z_\.]+]] = r1cs.mul_const %[[OUTL]],  -1 : i64 : !r1cs.linear
+// CHECK-DAG:       %[[SUM:[0-9a-zA-Z_\.]+]] = r1cs.add %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !r1cs.linear
+// CHECK-DAG:       r1cs.constrain %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}}, %{{[0-9a-zA-Z_\.]+}} : !r1cs.linear
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

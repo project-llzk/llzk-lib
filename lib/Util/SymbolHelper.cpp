@@ -35,6 +35,12 @@ using namespace mlir;
 
 namespace llzk {
 
+using namespace array;
+using namespace component;
+using namespace function;
+using namespace global;
+using namespace polymorphic;
+
 void eraseEmptyNestedModules(ModuleOp rootModule) {
   SmallVector<ModuleOp> emptyModules;
   rootModule.walk<WalkOrder::PostOrder>([&](ModuleOp module) {
@@ -52,12 +58,6 @@ void eraseEmptyNestedModules(ModuleOp rootModule) {
     module.erase();
   }
 }
-
-using namespace array;
-using namespace component;
-using namespace function;
-using namespace global;
-using namespace polymorphic;
 
 namespace {
 
