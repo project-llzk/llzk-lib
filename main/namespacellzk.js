@@ -273,6 +273,8 @@ var namespacellzk =
     [ "delegate_to_build", "namespacellzk.html#ad19f7db21d0d9d7f998bb6f00782e35a", null ],
     [ "div", "namespacellzk.html#a899c6e0f79352e9eadb489f1cf822dce", null ],
     [ "ensure", "namespacellzk.html#a43a1a0bc20c43606f2cd2aa67022fdac", null ],
+    [ "eraseEmptyNestedModules", "namespacellzk.html#a790b5cb00e4d4979e0fdf000167dfb84", null ],
+    [ "eraseEmptyNestedModules", "namespacellzk.html#abd704f081de3efe6597a0609ad8fc28a", null ],
     [ "fallbackUnaryOp", "namespacellzk.html#a2176aa1303939b2957b8385543246aea", null ],
     [ "feltDiv", "namespacellzk.html#af49a31336d658a9fdf7604b99a5d9b8b", null ],
     [ "flattenArrayElementType", "namespacellzk.html#a8d71b7f05664611d543dea1c65829205", null ],

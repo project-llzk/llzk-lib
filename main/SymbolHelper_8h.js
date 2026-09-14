@@ -7,6 +7,7 @@ var SymbolHelper_8h =
     [ "llzk::asSymbolRefAttr", "namespacellzk.html#a3ee0694034160dc5788e3042541e35f9", null ],
     [ "llzk::asSymbolRefAttr", "namespacellzk.html#a1e9f41024dc1c528963ac365b72906b7", null ],
     [ "llzk::asSymbolRefAttr", "namespacellzk.html#ab1ef6741a40f7e02fc0b94c979c8b3be", null ],
+    [ "llzk::eraseEmptyNestedModules", "namespacellzk.html#a790b5cb00e4d4979e0fdf000167dfb84", null ],
     [ "llzk::getConstResolutionTemplate", "namespacellzk.html#a652a95f337d2ea0ddd530e8b92d60f5a", null ],
     [ "llzk::getFlatSymbolRefAttr", "namespacellzk.html#a301a571a8339726388d6173ba81b5283", null ],
     [ "llzk::getFullyQualifiedName", "namespacellzk.html#ab6b7b26f334c212bb749b118a3b09972", null ],

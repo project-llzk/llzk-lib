@@ -3,6 +3,7 @@ var SymbolHelper_8cpp =
     [ "DEBUG_TYPE", "SymbolHelper_8cpp.html#ad78e062f62e0d6e453941fb4ca843e4d", null ],
     [ "llzk::appendLeaf", "namespacellzk.html#a5a8f8e48ae6b42bbfbccc3b9a58e642d", null ],
     [ "llzk::appendLeafName", "namespacellzk.html#a1834ce0bbea39a5089abc81e496ea685", null ],
+    [ "llzk::eraseEmptyNestedModules", "namespacellzk.html#abd704f081de3efe6597a0609ad8fc28a", null ],
     [ "llzk::getConstResolutionTemplate", "namespacellzk.html#a4eb4ec0cec60aaad30fbe14928faff53", null ],
     [ "llzk::getMainInstanceDef", "namespacellzk.html#abea185ddb9923e1423c6f3562c60e38f", null ],
     [ "llzk::getMainInstanceType", "namespacellzk.html#a3090cacdb4d9a097aeaa4daa98739243", null ],
