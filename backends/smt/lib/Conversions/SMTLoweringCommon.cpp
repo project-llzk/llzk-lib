@@ -15,6 +15,7 @@
 #include "llzk/Dialect/Include/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
+#include "llzk/Dialect/SMT/IR/SMTOps.h"
 #include "llzk/Dialect/String/IR/Ops.h"
 #include "llzk/Util/TypeHelper.h"
 #include "llzk/Util/Walk.h"
@@ -51,6 +52,15 @@ FailureOr<FieldRef> resolveSelectedField(ModuleOp mod, StringRef fieldName) {
   }
 
   return *(fields.begin());
+}
+
+Value selectMultidimensionalArray(
+    Location loc, Value array, ValueRange indices, OpBuilder &builder
+) {
+  for (auto index : indices) {
+    array = builder.create<smt::ArraySelectOp>(loc, array, index).getResult();
+  }
+  return array;
 }
 
 LLZKToSMTTypeConverter::LLZKToSMTTypeConverter(MLIRContext *ctx) {
