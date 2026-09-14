@@ -25,6 +25,8 @@
 
 #include <llvm/ADT/TypeSwitch.h>
 
+#include <utility>
+
 using namespace mlir;
 
 namespace llzk::smt::detail {
@@ -157,7 +159,7 @@ std::string SMTIntTheoryEmitter::getFreshName(StringRef baseName) const {
   }
 
   std::string uniqueName(baseName);
-  uniqueName += "_";
+  uniqueName += '_';
   uniqueName += std::to_string(count);
   return uniqueName;
 }
@@ -270,11 +272,12 @@ LLZKToSMTTypeConverter::LLZKToSMTTypeConverter(MLIRContext *ctx) {
     }
     return arrType;
   });
+  addConversion([ctx](IndexType) { return mlir::smt::IntType::get(ctx); });
   addConversion([ctx](IntegerType type) -> Type {
     if (type.isSignless() && type.getWidth() == 1) {
       return mlir::smt::BoolType::get(ctx);
     }
-    return type;
+    return mlir::smt::IntType::get(ctx);
   });
   addConversion([ctx](felt::FeltType) { return mlir::smt::IntType::get(ctx); });
 }
@@ -483,6 +486,58 @@ LogicalResult FeltConstConverter::matchAndRewrite(
   rewriter.replaceOpWithNewOp<mlir::smt::IntConstantOp>(
       op, IntegerAttr::get(getContext(), APSInt {op.getValue().getValue()})
   );
+  return success();
+}
+
+LogicalResult IndexConstConverter::matchAndRewrite(
+    arith::ConstantIndexOp op, OpAdaptor, ConversionPatternRewriter &rewriter
+) const {
+  rewriter.replaceOpWithNewOp<mlir::smt::IntConstantOp>(op, dyn_cast<IntegerAttr>(op.getValue()));
+  return success();
+}
+
+// arr[i, j, k] => arr[i][j][k]
+static inline Value
+smtReadArray(Location loc, Value array, ValueRange indices, PatternRewriter &rewriter) {
+  for (auto index : indices) {
+    array = mlir::smt::ArraySelectOp::create(rewriter, loc, array, index).getResult();
+  }
+  return array;
+}
+
+WriteArrayConverter::WriteArrayConverter(
+    mlir::TypeConverter &converter, mlir::MLIRContext *context, ArrayWritePolicy _policy
+)
+    : OpConversionPattern<array::WriteArrayOp>(converter, context, /*benefit=*/2),
+      policy {std::move(_policy)} {}
+
+LogicalResult WriteArrayConverter::matchAndRewrite(
+    array::WriteArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+) const {
+  // Turn `arr[i] = val` to `assert arr[i] == val`
+  if (policy(op.getArrRef()) == ArrayWriteMode::WriteOnce) {
+    Value selected =
+        smtReadArray(op->getLoc(), adaptor.getArrRef(), adaptor.getIndices(), rewriter);
+    rewriter.replaceOpWithNewOp<mlir::smt::AssertOp>(
+        op,
+        mlir::smt::EqOp::create(rewriter, op->getLoc(), selected, adaptor.getRvalue()).getResult()
+    );
+    return success();
+
+  } else {
+    // TODO: Track a fresh SMT value for the most recently stored copy of the array, store to that,
+    // and update the most recent. This requires doing it in order, though, and handling control
+    // flow carefully
+    op.emitError().append("SMT overwrite currently unsupported").report();
+    return failure();
+  }
+}
+
+LogicalResult ReadArrayConverter::matchAndRewrite(
+    array::ReadArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+) const {
+  auto readResult = smtReadArray(op->getLoc(), adaptor.getArrRef(), adaptor.getIndices(), rewriter);
+  rewriter.replaceOp(op, readResult.getDefiningOp());
   return success();
 }
 
