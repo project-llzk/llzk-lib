@@ -21,6 +21,7 @@
 #pragma once
 
 #include "llzk/Analysis/Intervals.h"
+#include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
@@ -205,6 +206,7 @@ enum class ArrayWriteMode : std::uint8_t {
 };
 
 using SignalSymbols = llvm::DenseMap<llvm::StringRef, std::pair<mlir::Value, mlir::Value>>;
+using ArrayWritePolicy = std::function<ArrayWriteMode(mlir::Value)>;
 
 mlir::FailureOr<FieldRef> resolveSelectedField(mlir::ModuleOp mod, llvm::StringRef fieldName);
 
@@ -300,6 +302,39 @@ class FeltConstConverter : public mlir::OpConversionPattern<felt::FeltConstantOp
 public:
   mlir::LogicalResult matchAndRewrite(
       felt::FeltConstantOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
+  ) const override;
+};
+
+class IndexConstConverter : public mlir::OpConversionPattern<mlir::arith::ConstantIndexOp> {
+  using mlir::OpConversionPattern<mlir::arith::ConstantIndexOp>::OpConversionPattern;
+
+public:
+  mlir::LogicalResult matchAndRewrite(
+      mlir::arith::ConstantIndexOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
+  ) const override;
+};
+
+class WriteArrayConverter : public mlir::OpConversionPattern<array::WriteArrayOp> {
+  using mlir::OpConversionPattern<array::WriteArrayOp>::OpConversionPattern;
+
+  ArrayWritePolicy policy;
+
+public:
+  WriteArrayConverter(
+      mlir::TypeConverter &converter, mlir::MLIRContext *context, ArrayWritePolicy policy
+  );
+
+  mlir::LogicalResult matchAndRewrite(
+      array::WriteArrayOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
+  ) const override;
+};
+
+class ReadArrayConverter : public mlir::OpConversionPattern<array::ReadArrayOp> {
+  using mlir::OpConversionPattern<array::ReadArrayOp>::OpConversionPattern;
+
+public:
+  mlir::LogicalResult matchAndRewrite(
+      array::ReadArrayOp op, OpAdaptor adaptor, mlir::ConversionPatternRewriter &rewriter
   ) const override;
 };
 
