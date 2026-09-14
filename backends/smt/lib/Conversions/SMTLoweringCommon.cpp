@@ -497,8 +497,9 @@ LogicalResult IndexConstConverter::matchAndRewrite(
 }
 
 // arr[i, j, k] => arr[i][j][k]
-static inline Value
-smtReadArray(Location loc, Value array, ValueRange indices, PatternRewriter &rewriter) {
+static inline Value selectMultidimensionalArray(
+    Location loc, Value array, ValueRange indices, PatternRewriter &rewriter
+) {
   for (auto index : indices) {
     array = mlir::smt::ArraySelectOp::create(rewriter, loc, array, index).getResult();
   }
@@ -516,8 +517,9 @@ LogicalResult WriteArrayConverter::matchAndRewrite(
 ) const {
   // Turn `arr[i] = val` to `assert arr[i] == val`
   if (policy(op.getArrRef()) == ArrayWriteMode::WriteOnce) {
-    Value selected =
-        smtReadArray(op->getLoc(), adaptor.getArrRef(), adaptor.getIndices(), rewriter);
+    Value selected = selectMultidimensionalArray(
+        op->getLoc(), adaptor.getArrRef(), adaptor.getIndices(), rewriter
+    );
     rewriter.replaceOpWithNewOp<mlir::smt::AssertOp>(
         op,
         mlir::smt::EqOp::create(rewriter, op->getLoc(), selected, adaptor.getRvalue()).getResult()
@@ -536,7 +538,9 @@ LogicalResult WriteArrayConverter::matchAndRewrite(
 LogicalResult ReadArrayConverter::matchAndRewrite(
     array::ReadArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
 ) const {
-  auto readResult = smtReadArray(op->getLoc(), adaptor.getArrRef(), adaptor.getIndices(), rewriter);
+  auto readResult = selectMultidimensionalArray(
+      op->getLoc(), adaptor.getArrRef(), adaptor.getIndices(), rewriter
+  );
   rewriter.replaceOp(op, readResult.getDefiningOp());
   return success();
 }
