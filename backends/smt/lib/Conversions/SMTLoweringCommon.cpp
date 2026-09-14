@@ -513,7 +513,7 @@ LogicalResult WriteArrayConverter::matchAndRewrite(
     // TODO: Track a fresh SMT value for the most recently stored copy of the array, store to that,
     // and update the most recent. This requires doing it in order, though, and handling control
     // flow carefully
-    op.emitError().append("SMT overwrite currently unsupported").report();
+    op.emitError("SMT lowering currently only supports write-once arrays");
     return failure();
   }
 }
