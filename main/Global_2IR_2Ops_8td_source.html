@@ -187,8 +187,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Global_2IR_2Op
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  let hasVerifier = 1;</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  let extraClassDeclaration = [{</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    inline bool isConstant() { return getConstant(); }</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    /// Returns true when this def is marked as `const`.</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    inline bool isConstant() { return getConstant(); }</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  }];</div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>}</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
@@ -204,36 +204,50 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Global_2IR_2Op
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  }];</div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>}</div>
 <div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span> </div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>def LLZK_GlobalReadOp : GlobalRefOpBase&lt;&quot;read&quot;, [MemoryEffects&lt;[MemRead]&gt;]&gt; {</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  let summary = &quot;read value of a global&quot;;</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  let description = [{</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>    This operation reads the value of a named global.</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  }];</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span> </div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  let arguments = (ins SymbolRefAttr:$name_ref);</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  let results = (outs GlobalDefType:$val);</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>def LLZK_GlobalReadOp</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>    : GlobalRefOpBase&lt;</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>          &quot;read&quot;, [DeclareOpInterfaceMethods&lt;MemoryEffectsOpInterface&gt;]&gt; {</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  let summary = &quot;read value of a global&quot;;</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  let description = [{</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>    This operation reads the value of a named global. Reads marked `const` must target</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>    a global declared with the `const` modifier and thus have no memory effects.</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  }];</div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span> </div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  let assemblyFormat = [{</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>    $name_ref `:` type($val) attr-dict</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  }];</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>}</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span> </div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>def LLZK_GlobalWriteOp</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>    : GlobalRefOpBase&lt;&quot;write&quot;, [WitnessGen, MemoryEffects&lt;[MemWrite]&gt;]&gt; {</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  let summary = &quot;write value to a global&quot;;</div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  let description = [{</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    This operation writes a value to a named global.</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    Not allowed for globals declared with the &quot;const&quot; modifier.</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  }];</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span> </div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  let arguments = (ins SymbolRefAttr:$name_ref, GlobalDefType:$val);</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span> </div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  let assemblyFormat = [{</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    $name_ref `=` $val `:` type($val) attr-dict</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  }];</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>}</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span> </div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>#endif // LLZK_GLOBAL_OPS</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  let arguments = (ins UnitAttr:$constant, SymbolRefAttr:$name_ref);</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  let results = (outs GlobalDefType:$val);</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span> </div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  let assemblyFormat = [{</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    (`const` $constant^)? $name_ref `:` type($val) attr-dict</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  }];</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  // `constant` was added in version 3. Preserve the v2 bytecode layout, which</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  // contains only `name_ref`, when decoding older bytecode.</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  let useCustomPropertiesEncoding = 1;</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span> </div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  let extraClassDeclaration = [{</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>    /// Returns true when this read is marked as `const`.</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    inline bool isConstant() { return getConstant(); }</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  }];</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>}</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span> </div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>def LLZK_GlobalWriteOp</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    : GlobalRefOpBase&lt;</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>          &quot;write&quot;, [WitnessGen,</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>                    MemoryEffects&lt;[MemWrite&lt;GlobalMemoryResource&gt;]&gt;]&gt; {</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  let summary = &quot;write value to a global&quot;;</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  let description = [{</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    This operation writes a value to a named global.</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    Not allowed for globals declared with the &quot;const&quot; modifier.</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  }];</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span> </div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  let arguments = (ins SymbolRefAttr:$name_ref, GlobalDefType:$val);</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span> </div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  let assemblyFormat = [{</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    $name_ref `=` $val `:` type($val) attr-dict</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  }];</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>}</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span> </div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>#endif // LLZK_GLOBAL_OPS</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

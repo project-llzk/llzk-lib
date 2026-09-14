@@ -13,7 +13,7 @@ var searchData=
   ['concreteparamkey_10',['concreteParamKey',['../structllzk_1_1polymorphic_1_1detail_1_1InstantiationLayout.html#afaf9d519419fc41bdfdbb7d23922fda1',1,'llzk::polymorphic::detail::InstantiationLayout']]],
   ['conditions_11',['conditions',['../LICENSE_8txt.html#a1ad91ee7eb3d92d6c76f97dbad84b012',1,'LICENSE.txt']]],
   ['const_5fname_12',['const_name',['../structllzk_1_1polymorphic_1_1detail_1_1ConstReadOpGenericAdaptorBase_1_1Properties.html#a8aab5a3770da8f533b48a95bd1387c4f',1,'llzk::polymorphic::detail::ConstReadOpGenericAdaptorBase::Properties']]],
-  ['constant_13',['constant',['../structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#aa1c686eeeec7d994c4b9885e1f6217e8',1,'llzk::global::detail::GlobalDefOpGenericAdaptorBase::Properties']]],
+  ['constant_13',['constant',['../structllzk_1_1global_1_1detail_1_1GlobalDefOpGenericAdaptorBase_1_1Properties.html#aa1c686eeeec7d994c4b9885e1f6217e8',1,'llzk::global::detail::GlobalDefOpGenericAdaptorBase::Properties::constant'],['../structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html#a38b101aeccbfb1499869c849e9188f1a',1,'llzk::global::detail::GlobalReadOpGenericAdaptorBase::Properties::constant']]],
   ['constrainfnmap_14',['constrainFnMap',['../classllzk_1_1ModuleLikeBuilder.html#a5011e426ac713687578a79bf797c35f3',1,'llzk::ModuleLikeBuilder']]],
   ['context_15',['context',['../classllzk_1_1BaseBuilder.html#a608502422fff23740a9d322142ce8c1e',1,'llzk::BaseBuilder']]],
   ['contract_16',['contract',['../structllzk_1_1verif_1_1detail_1_1IncludedContractSummaryKey.html#aabbe9616e807c9d28de861ed3673bf59',1,'llzk::verif::detail::IncludedContractSummaryKey']]],

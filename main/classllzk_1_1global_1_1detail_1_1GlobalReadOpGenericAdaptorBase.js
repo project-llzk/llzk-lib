@@ -4,6 +4,8 @@ var classllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase =
     [ "GlobalReadOpGenericAdaptorBase", "classllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase.html#a6091ab062cd8086bd80598c3d76281ff", null ],
     [ "GlobalReadOpGenericAdaptorBase", "classllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase.html#a3546a8fdea6531326627368c08d2a9db", null ],
     [ "getAttributes", "classllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase.html#a399d03eb2e091111ffa9dd95a984589c", null ],
+    [ "getConstant", "classllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase.html#a067f2e7c4db32a6876eda7346a9255fa", null ],
+    [ "getConstantAttr", "classllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase.html#a22ed7332900d3d4b88acc479a197dbb2", null ],
     [ "getNameRef", "classllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase.html#a5add05367de79974dd9d72671741681d", null ],
     [ "getNameRefAttr", "classllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase.html#a929df611aba6f1053eb7a0cae6954778", null ],
     [ "getODSOperandIndexAndLength", "classllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase.html#afd99e3328c95745d2048500a7fb7fafb", null ],

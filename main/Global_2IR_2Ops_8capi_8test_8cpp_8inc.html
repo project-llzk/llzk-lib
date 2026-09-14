@@ -167,9 +167,13 @@ Functions</h2></td></tr>
 <tr class="memdesc:afabc78e5ec397413025e4928591b748f"><td class="mdescLeft">&#160;</td><td class="mdescRight">This test ensures llzkGlobal_GlobalReadOpBuild links properly.  <br /></td></tr>
 <tr class="memitem:aeec13599437dd949d462b380b250f0a1" id="r_aeec13599437dd949d462b380b250f0a1"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#aeec13599437dd949d462b380b250f0a1">TEST_F</a> (CAPITest, Global_GlobalReadOp_build_pass)</td></tr>
 <tr class="memdesc:aeec13599437dd949d462b380b250f0a1"><td class="mdescLeft">&#160;</td><td class="mdescRight">This test ensures <span class="tt">llzkGlobalGlobalReadOpBuild()</span> successfully builds an <span class="tt">Operation</span> of the correct type that passes verification.  <br /></td></tr>
+<tr class="memitem:a336d76d21ef9dbfd479b9f77419ca401" id="r_a336d76d21ef9dbfd479b9f77419ca401"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a336d76d21ef9dbfd479b9f77419ca401">TEST_F</a> (<a class="el" href="classGlobalOperationLinkTests.html">GlobalOperationLinkTests</a>, llzk_GlobalReadOp_GetConstantAttr)</td></tr>
+<tr class="memitem:a50da99962b0ac79e5aac6b9e6712e6f5" id="r_a50da99962b0ac79e5aac6b9e6712e6f5"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a50da99962b0ac79e5aac6b9e6712e6f5">TEST_F</a> (<a class="el" href="classGlobalOperationLinkTests.html">GlobalOperationLinkTests</a>, llzk_GlobalReadOp_SetConstantAttr)</td></tr>
 <tr class="memitem:add9a7f6c159b6193333e39b1afc400f1" id="r_add9a7f6c159b6193333e39b1afc400f1"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#add9a7f6c159b6193333e39b1afc400f1">TEST_F</a> (<a class="el" href="classGlobalOperationLinkTests.html">GlobalOperationLinkTests</a>, llzk_GlobalReadOp_GetNameRefAttr)</td></tr>
 <tr class="memitem:aa7fcbe9fd0404dd81f9d59363aee770a" id="r_aa7fcbe9fd0404dd81f9d59363aee770a"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#aa7fcbe9fd0404dd81f9d59363aee770a">TEST_F</a> (<a class="el" href="classGlobalOperationLinkTests.html">GlobalOperationLinkTests</a>, llzk_GlobalReadOp_SetNameRefAttr)</td></tr>
 <tr class="memitem:a0d7ddd20925ed484810c411df6979b66" id="r_a0d7ddd20925ed484810c411df6979b66"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a0d7ddd20925ed484810c411df6979b66">TEST_F</a> (<a class="el" href="classGlobalOperationLinkTests.html">GlobalOperationLinkTests</a>, llzk_GlobalReadOp_GetVal)</td></tr>
+<tr class="memitem:ad0e753593f6033e297809b9061790234" id="r_ad0e753593f6033e297809b9061790234"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ad0e753593f6033e297809b9061790234">TEST_F</a> (<a class="el" href="classGlobalOperationLinkTests.html">GlobalOperationLinkTests</a>, llzk_GlobalReadOp_IsConstant)</td></tr>
+<tr class="memdesc:ad0e753593f6033e297809b9061790234"><td class="mdescLeft">&#160;</td><td class="mdescRight">This test ensures llzkGlobal_GlobalReadOpIsConstant links properly.  <br /></td></tr>
 <tr class="memitem:a1b715de2c79795393aa9501b2ce916c3" id="r_a1b715de2c79795393aa9501b2ce916c3"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a1b715de2c79795393aa9501b2ce916c3">TEST_F</a> (<a class="el" href="classGlobalOperationLinkTests.html">GlobalOperationLinkTests</a>, IsA_Global_GlobalWriteOp)</td></tr>
 <tr class="memdesc:a1b715de2c79795393aa9501b2ce916c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">This test ensures llzkOperationIsA_Global_GlobalWriteOp links properly.  <br /></td></tr>
 <tr class="memitem:a26d1d3502c7a5c83a718ac2686164729" id="r_a26d1d3502c7a5c83a718ac2686164729"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a26d1d3502c7a5c83a718ac2686164729">TEST_F</a> (<a class="el" href="classGlobalOperationLinkTests.html">GlobalOperationLinkTests</a>, llzk_GlobalWriteOp_Build)</td></tr>
@@ -183,7 +187,7 @@ Functions</h2></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
 <a id="a909fd54c1e16ba5601b79583ffb77e83" name="a909fd54c1e16ba5601b79583ffb77e83"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a909fd54c1e16ba5601b79583ffb77e83">&#9670;&#160;</a></span>TEST_F() <span class="overload">[1/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a909fd54c1e16ba5601b79583ffb77e83">&#9670;&#160;</a></span>TEST_F() <span class="overload">[1/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -209,7 +213,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a id="aeec13599437dd949d462b380b250f0a1" name="aeec13599437dd949d462b380b250f0a1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aeec13599437dd949d462b380b250f0a1">&#9670;&#160;</a></span>TEST_F() <span class="overload">[2/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#aeec13599437dd949d462b380b250f0a1">&#9670;&#160;</a></span>TEST_F() <span class="overload">[2/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -230,12 +234,12 @@ Functions</h2></td></tr>
 <p>This test ensures <span class="tt">llzkGlobalGlobalReadOpBuild()</span> successfully builds an <span class="tt">Operation</span> of the correct type that passes verification. </p>
 <p>It relies on a manual implemenation of <span class="tt">GlobalReadOpBuildFuncHelper::callBuild()</span> that calls <span class="tt">llzkGlobalGlobalReadOpBuild()</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00196">196</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00197">197</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="aeb84afd7215fff0a20eb91c8d5eea7a6" name="aeb84afd7215fff0a20eb91c8d5eea7a6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aeb84afd7215fff0a20eb91c8d5eea7a6">&#9670;&#160;</a></span>TEST_F() <span class="overload">[3/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#aeb84afd7215fff0a20eb91c8d5eea7a6">&#9670;&#160;</a></span>TEST_F() <span class="overload">[3/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -256,12 +260,12 @@ Functions</h2></td></tr>
 <p>This test ensures <span class="tt">llzkGlobalGlobalWriteOpBuild()</span> successfully builds an <span class="tt">Operation</span> of the correct type that passes verification. </p>
 <p>It relies on a manual implemenation of <span class="tt">GlobalWriteOpBuildFuncHelper::callBuild()</span> that calls <span class="tt">llzkGlobalGlobalWriteOpBuild()</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00271">271</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00304">304</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="a21bb8e9dac467d9502718b71ba92d442" name="a21bb8e9dac467d9502718b71ba92d442"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a21bb8e9dac467d9502718b71ba92d442">&#9670;&#160;</a></span>TEST_F() <span class="overload">[4/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a21bb8e9dac467d9502718b71ba92d442">&#9670;&#160;</a></span>TEST_F() <span class="overload">[4/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -286,7 +290,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a id="ab35053f45eb70600fe968464d4db8e94" name="ab35053f45eb70600fe968464d4db8e94"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab35053f45eb70600fe968464d4db8e94">&#9670;&#160;</a></span>TEST_F() <span class="overload">[5/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ab35053f45eb70600fe968464d4db8e94">&#9670;&#160;</a></span>TEST_F() <span class="overload">[5/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -311,7 +315,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a id="a1b715de2c79795393aa9501b2ce916c3" name="a1b715de2c79795393aa9501b2ce916c3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1b715de2c79795393aa9501b2ce916c3">&#9670;&#160;</a></span>TEST_F() <span class="overload">[6/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a1b715de2c79795393aa9501b2ce916c3">&#9670;&#160;</a></span>TEST_F() <span class="overload">[6/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -331,12 +335,12 @@ Functions</h2></td></tr>
 
 <p>This test ensures llzkOperationIsA_Global_GlobalWriteOp links properly. </p>
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00229">229</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00262">262</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="ab42ead4185a4a93eadd54e9a2a10d690" name="ab42ead4185a4a93eadd54e9a2a10d690"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab42ead4185a4a93eadd54e9a2a10d690">&#9670;&#160;</a></span>TEST_F() <span class="overload">[7/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ab42ead4185a4a93eadd54e9a2a10d690">&#9670;&#160;</a></span>TEST_F() <span class="overload">[7/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -361,7 +365,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a id="a1655a591e12af393c6aaa8db86d0728f" name="a1655a591e12af393c6aaa8db86d0728f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1655a591e12af393c6aaa8db86d0728f">&#9670;&#160;</a></span>TEST_F() <span class="overload">[8/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a1655a591e12af393c6aaa8db86d0728f">&#9670;&#160;</a></span>TEST_F() <span class="overload">[8/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -384,7 +388,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a id="a4c10daa94b6bddce4fb024e9200255d0" name="a4c10daa94b6bddce4fb024e9200255d0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4c10daa94b6bddce4fb024e9200255d0">&#9670;&#160;</a></span>TEST_F() <span class="overload">[9/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a4c10daa94b6bddce4fb024e9200255d0">&#9670;&#160;</a></span>TEST_F() <span class="overload">[9/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -407,7 +411,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a id="a50c507f9a9e01340af715f8e9d94bbfa" name="a50c507f9a9e01340af715f8e9d94bbfa"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a50c507f9a9e01340af715f8e9d94bbfa">&#9670;&#160;</a></span>TEST_F() <span class="overload">[10/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a50c507f9a9e01340af715f8e9d94bbfa">&#9670;&#160;</a></span>TEST_F() <span class="overload">[10/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -430,7 +434,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a id="a03f1b495a710c22ba0c1f1ec976fd4c8" name="a03f1b495a710c22ba0c1f1ec976fd4c8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a03f1b495a710c22ba0c1f1ec976fd4c8">&#9670;&#160;</a></span>TEST_F() <span class="overload">[11/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a03f1b495a710c22ba0c1f1ec976fd4c8">&#9670;&#160;</a></span>TEST_F() <span class="overload">[11/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -453,7 +457,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a id="a288673983daee80f34b0be1d854c1ebb" name="a288673983daee80f34b0be1d854c1ebb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a288673983daee80f34b0be1d854c1ebb">&#9670;&#160;</a></span>TEST_F() <span class="overload">[12/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a288673983daee80f34b0be1d854c1ebb">&#9670;&#160;</a></span>TEST_F() <span class="overload">[12/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -478,7 +482,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a id="a5c396836735a17a4c15c911563a672b9" name="a5c396836735a17a4c15c911563a672b9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5c396836735a17a4c15c911563a672b9">&#9670;&#160;</a></span>TEST_F() <span class="overload">[13/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a5c396836735a17a4c15c911563a672b9">&#9670;&#160;</a></span>TEST_F() <span class="overload">[13/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -501,7 +505,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a id="a148e7c847283931f51802a55070d248b" name="a148e7c847283931f51802a55070d248b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a148e7c847283931f51802a55070d248b">&#9670;&#160;</a></span>TEST_F() <span class="overload">[14/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a148e7c847283931f51802a55070d248b">&#9670;&#160;</a></span>TEST_F() <span class="overload">[14/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -524,7 +528,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a id="a6c5d216ba03139a2d04b5a13f5e25580" name="a6c5d216ba03139a2d04b5a13f5e25580"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6c5d216ba03139a2d04b5a13f5e25580">&#9670;&#160;</a></span>TEST_F() <span class="overload">[15/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a6c5d216ba03139a2d04b5a13f5e25580">&#9670;&#160;</a></span>TEST_F() <span class="overload">[15/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -547,7 +551,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a id="aca115d62d23c366d079939782783a078" name="aca115d62d23c366d079939782783a078"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aca115d62d23c366d079939782783a078">&#9670;&#160;</a></span>TEST_F() <span class="overload">[16/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#aca115d62d23c366d079939782783a078">&#9670;&#160;</a></span>TEST_F() <span class="overload">[16/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -570,7 +574,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a id="afabc78e5ec397413025e4928591b748f" name="afabc78e5ec397413025e4928591b748f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afabc78e5ec397413025e4928591b748f">&#9670;&#160;</a></span>TEST_F() <span class="overload">[17/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#afabc78e5ec397413025e4928591b748f">&#9670;&#160;</a></span>TEST_F() <span class="overload">[17/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -594,8 +598,31 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a336d76d21ef9dbfd479b9f77419ca401" name="a336d76d21ef9dbfd479b9f77419ca401"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a336d76d21ef9dbfd479b9f77419ca401">&#9670;&#160;</a></span>TEST_F() <span class="overload">[18/28]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">TEST_F </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classGlobalOperationLinkTests.html">GlobalOperationLinkTests</a></td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llzk_GlobalReadOp_GetConstantAttr</td>          <td class="paramname"><span class="paramname"><em></em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00199">199</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
+
+</div>
+</div>
 <a id="add9a7f6c159b6193333e39b1afc400f1" name="add9a7f6c159b6193333e39b1afc400f1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#add9a7f6c159b6193333e39b1afc400f1">&#9670;&#160;</a></span>TEST_F() <span class="overload">[18/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#add9a7f6c159b6193333e39b1afc400f1">&#9670;&#160;</a></span>TEST_F() <span class="overload">[19/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -613,12 +640,12 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00198">198</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00219">219</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="a0d7ddd20925ed484810c411df6979b66" name="a0d7ddd20925ed484810c411df6979b66"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0d7ddd20925ed484810c411df6979b66">&#9670;&#160;</a></span>TEST_F() <span class="overload">[19/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a0d7ddd20925ed484810c411df6979b66">&#9670;&#160;</a></span>TEST_F() <span class="overload">[20/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -636,12 +663,60 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00218">218</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00239">239</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="ad0e753593f6033e297809b9061790234" name="ad0e753593f6033e297809b9061790234"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad0e753593f6033e297809b9061790234">&#9670;&#160;</a></span>TEST_F() <span class="overload">[21/28]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">TEST_F </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classGlobalOperationLinkTests.html">GlobalOperationLinkTests</a></td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llzk_GlobalReadOp_IsConstant</td>          <td class="paramname"><span class="paramname"><em></em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>This test ensures llzkGlobal_GlobalReadOpIsConstant links properly. </p>
+
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00250">250</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a50da99962b0ac79e5aac6b9e6712e6f5" name="a50da99962b0ac79e5aac6b9e6712e6f5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a50da99962b0ac79e5aac6b9e6712e6f5">&#9670;&#160;</a></span>TEST_F() <span class="overload">[22/28]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">TEST_F </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classGlobalOperationLinkTests.html">GlobalOperationLinkTests</a></td>          <td class="paramname"><span class="paramname"><em></em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llzk_GlobalReadOp_SetConstantAttr</td>          <td class="paramname"><span class="paramname"><em></em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00209">209</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="aa7fcbe9fd0404dd81f9d59363aee770a" name="aa7fcbe9fd0404dd81f9d59363aee770a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa7fcbe9fd0404dd81f9d59363aee770a">&#9670;&#160;</a></span>TEST_F() <span class="overload">[20/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#aa7fcbe9fd0404dd81f9d59363aee770a">&#9670;&#160;</a></span>TEST_F() <span class="overload">[23/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -659,12 +734,12 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00208">208</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00229">229</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="a26d1d3502c7a5c83a718ac2686164729" name="a26d1d3502c7a5c83a718ac2686164729"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a26d1d3502c7a5c83a718ac2686164729">&#9670;&#160;</a></span>TEST_F() <span class="overload">[21/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a26d1d3502c7a5c83a718ac2686164729">&#9670;&#160;</a></span>TEST_F() <span class="overload">[24/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -684,12 +759,12 @@ Functions</h2></td></tr>
 
 <p>This test ensures llzkGlobal_GlobalWriteOpBuild links properly. </p>
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00239">239</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00272">272</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="ab44ec509b43634941bce0be228baea4b" name="ab44ec509b43634941bce0be228baea4b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab44ec509b43634941bce0be228baea4b">&#9670;&#160;</a></span>TEST_F() <span class="overload">[22/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ab44ec509b43634941bce0be228baea4b">&#9670;&#160;</a></span>TEST_F() <span class="overload">[25/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -707,12 +782,12 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00294">294</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00327">327</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="ad82fea517e1215f92059998f0ac8ec2d" name="ad82fea517e1215f92059998f0ac8ec2d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad82fea517e1215f92059998f0ac8ec2d">&#9670;&#160;</a></span>TEST_F() <span class="overload">[23/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ad82fea517e1215f92059998f0ac8ec2d">&#9670;&#160;</a></span>TEST_F() <span class="overload">[26/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -730,12 +805,12 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00273">273</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00306">306</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="a7dece28a2dd70f55fca1077055921e2a" name="a7dece28a2dd70f55fca1077055921e2a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7dece28a2dd70f55fca1077055921e2a">&#9670;&#160;</a></span>TEST_F() <span class="overload">[24/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a7dece28a2dd70f55fca1077055921e2a">&#9670;&#160;</a></span>TEST_F() <span class="overload">[27/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -753,12 +828,12 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00304">304</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00337">337</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
 
 </div>
 </div>
 <a id="ac374d190c253781bff6b2a40d553f427" name="ac374d190c253781bff6b2a40d553f427"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac374d190c253781bff6b2a40d553f427">&#9670;&#160;</a></span>TEST_F() <span class="overload">[25/25]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ac374d190c253781bff6b2a40d553f427">&#9670;&#160;</a></span>TEST_F() <span class="overload">[28/28]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -776,7 +851,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00283">283</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html#l00316">316</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8test_8cpp_8inc_source.html">Ops.capi.test.cpp.inc</a>.</p>
 
 </div>
 </div>

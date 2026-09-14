@@ -2617,15 +2617,16 @@ Attributes:</h4>
 <span class="tt">global.read</span> (::llzk::global::GlobalReadOp)</h3>
 <p><em>Read value of a global</em></p>
 <p>Syntax:</p>
-<div class="fragment"><div class="line">operation ::= `global.read` $name_ref `:` type($val) attr-dict</div>
-</div><!-- fragment --><p>This operation reads the value of a named global.</p>
-<p>Interfaces: <span class="tt">GlobalRefOpInterface</span>, <span class="tt">MemoryEffectOpInterface (MemoryEffectOpInterface)</span>, <span class="tt">SymbolUserOpInterface</span></p>
-<p>Effects: <span class="tt">MemoryEffects::Effect{MemoryEffects::Read <a class="el" href="LICENSE_8txt.html#a99e0c7c6bd1082fe4cf97f0912e847d7">on</a> ::mlir::SideEffects::DefaultResource}</span></p>
+<div class="fragment"><div class="line">operation ::= `global.read` (`const` $constant^)? $name_ref `:` type($val) attr-dict</div>
+</div><!-- fragment --><p>This operation reads the value of a named global. Reads marked <span class="tt">const</span> must target a global declared with the <span class="tt">const</span> modifier and thus have no memory effects.</p>
+<p>Interfaces: <span class="tt">GlobalRefOpInterface</span>, <span class="tt">MemoryEffectOpInterface</span>, <span class="tt">SymbolUserOpInterface</span></p>
 <h4 class="doxsection"><a class="anchor" id="attributes-12"></a>
 Attributes:</h4>
 <table class="doxtable">
 <tr>
 <th>Attribute</th><th>MLIR Type</th><th>Description</th></tr>
+<tr>
+<td><code>constant</code></td><td>::mlir::UnitAttr</td><td>unit attribute</td></tr>
 <tr>
 <td><code>name_ref</code></td><td>::mlir::SymbolRefAttr</td><td>symbol reference attribute</td></tr>
 </table>
@@ -2645,7 +2646,7 @@ Results:</h4>
 </div><!-- fragment --><p>This operation writes a value to a named global. Not allowed for globals declared with the "const" modifier.</p>
 <p>Traits: <span class="tt">WitnessGen</span></p>
 <p>Interfaces: <span class="tt">GlobalRefOpInterface</span>, <span class="tt">MemoryEffectOpInterface (MemoryEffectOpInterface)</span>, <span class="tt">SymbolUserOpInterface</span></p>
-<p>Effects: <span class="tt">MemoryEffects::Effect{MemoryEffects::Write <a class="el" href="LICENSE_8txt.html#a99e0c7c6bd1082fe4cf97f0912e847d7">on</a> ::mlir::SideEffects::DefaultResource}</span></p>
+<p>Effects: <span class="tt">MemoryEffects::Effect{MemoryEffects::Write <a class="el" href="LICENSE_8txt.html#a99e0c7c6bd1082fe4cf97f0912e847d7">on</a> <a class="el" href="structllzk_1_1global_1_1GlobalMemoryResource.html" title="Memory resource indicating a global.def memory resource.">llzk::global::GlobalMemoryResource</a>}</span></p>
 <h4 class="doxsection"><a class="anchor" id="attributes-13"></a>
 Attributes:</h4>
 <table class="doxtable">

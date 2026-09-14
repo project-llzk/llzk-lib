@@ -5,6 +5,7 @@ var namespacellzk_1_1global =
     [ "GlobalDefOpAdaptor", "classllzk_1_1global_1_1GlobalDefOpAdaptor.html", "classllzk_1_1global_1_1GlobalDefOpAdaptor" ],
     [ "GlobalDefOpGenericAdaptor", "classllzk_1_1global_1_1GlobalDefOpGenericAdaptor.html", "classllzk_1_1global_1_1GlobalDefOpGenericAdaptor" ],
     [ "GlobalDialect", "classllzk_1_1global_1_1GlobalDialect.html", "classllzk_1_1global_1_1GlobalDialect" ],
+    [ "GlobalMemoryResource", "structllzk_1_1global_1_1GlobalMemoryResource.html", "structllzk_1_1global_1_1GlobalMemoryResource" ],
     [ "GlobalReadOp", "classllzk_1_1global_1_1GlobalReadOp.html", "classllzk_1_1global_1_1GlobalReadOp" ],
     [ "GlobalReadOpAdaptor", "classllzk_1_1global_1_1GlobalReadOpAdaptor.html", "classllzk_1_1global_1_1GlobalReadOpAdaptor" ],
     [ "GlobalReadOpGenericAdaptor", "classllzk_1_1global_1_1GlobalReadOpGenericAdaptor.html", "classllzk_1_1global_1_1GlobalReadOpGenericAdaptor" ],

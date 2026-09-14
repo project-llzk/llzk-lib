@@ -169,17 +169,23 @@ Functions</h2></td></tr>
 <tr class="memitem:a20372ef7d94bc92972e2dc9c93619c3a" id="r_a20372ef7d94bc92972e2dc9c93619c3a"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a20372ef7d94bc92972e2dc9c93619c3a">llzkGlobal_GlobalDefOpSetInitialValue</a> (MlirOperation op, MlirAttribute attr)</td></tr>
 <tr class="memdesc:a20372ef7d94bc92972e2dc9c93619c3a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set InitialValue attribute of <a class="el" href="classllzk_1_1global_1_1GlobalDefOp.html">llzk::global::GlobalDefOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:a8c49ab2f1ce0111436d3aba39b9b176b" id="r_a8c49ab2f1ce0111436d3aba39b9b176b"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a8c49ab2f1ce0111436d3aba39b9b176b">llzkGlobal_GlobalDefOpIsConstant</a> (MlirOperation inp)</td></tr>
-<tr class="memdesc:a8c49ab2f1ce0111436d3aba39b9b176b"><td class="mdescLeft">&#160;</td><td class="mdescRight">isConstant  <br /></td></tr>
-<tr class="memitem:ad0ab822bed5cdc06bd5b625fe6a56f90" id="r_ad0ab822bed5cdc06bd5b625fe6a56f90"><td class="memItemLeft">MlirOperation&#160;</td><td class="memItemRight"><a class="el" href="#ad0ab822bed5cdc06bd5b625fe6a56f90">llzkGlobal_GlobalReadOpBuild</a> (MlirOpBuilder builder, MlirLocation location, MlirType valType, MlirAttribute name_ref)</td></tr>
-<tr class="memdesc:ad0ab822bed5cdc06bd5b625fe6a56f90"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <a class="el" href="classllzk_1_1global_1_1GlobalReadOp.html">llzk::global::GlobalReadOp</a> Operation.  <br /></td></tr>
+<tr class="memdesc:a8c49ab2f1ce0111436d3aba39b9b176b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true when this def is marked as <span class="tt">const</span>.  <br /></td></tr>
+<tr class="memitem:ad45d8293eecd23787970bb5ae36d1023" id="r_ad45d8293eecd23787970bb5ae36d1023"><td class="memItemLeft">MlirOperation&#160;</td><td class="memItemRight"><a class="el" href="#ad45d8293eecd23787970bb5ae36d1023">llzkGlobal_GlobalReadOpBuild</a> (MlirOpBuilder builder, MlirLocation location, MlirType valType, MlirAttribute constant, MlirAttribute name_ref)</td></tr>
+<tr class="memdesc:ad45d8293eecd23787970bb5ae36d1023"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <a class="el" href="classllzk_1_1global_1_1GlobalReadOp.html">llzk::global::GlobalReadOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:a7a6c89532ffe339a3a52c377bfc443b7" id="r_a7a6c89532ffe339a3a52c377bfc443b7"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a7a6c89532ffe339a3a52c377bfc443b7">llzkOperationIsA_Global_GlobalReadOp</a> (MlirOperation inp)</td></tr>
 <tr class="memdesc:a7a6c89532ffe339a3a52c377bfc443b7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the Operation is a <a class="el" href="classllzk_1_1global_1_1GlobalReadOp.html">llzk::global::GlobalReadOp</a>.  <br /></td></tr>
+<tr class="memitem:a96da3598aaa9d239c37de5303c029d80" id="r_a96da3598aaa9d239c37de5303c029d80"><td class="memItemLeft">MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#a96da3598aaa9d239c37de5303c029d80">llzkGlobal_GlobalReadOpGetConstant</a> (MlirOperation op)</td></tr>
+<tr class="memdesc:a96da3598aaa9d239c37de5303c029d80"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get Constant attribute from <a class="el" href="classllzk_1_1global_1_1GlobalReadOp.html">llzk::global::GlobalReadOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:afc9d0b7f72e6a8bc0ed24986a254997e" id="r_afc9d0b7f72e6a8bc0ed24986a254997e"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#afc9d0b7f72e6a8bc0ed24986a254997e">llzkGlobal_GlobalReadOpSetConstant</a> (MlirOperation op, MlirAttribute attr)</td></tr>
+<tr class="memdesc:afc9d0b7f72e6a8bc0ed24986a254997e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set Constant attribute of <a class="el" href="classllzk_1_1global_1_1GlobalReadOp.html">llzk::global::GlobalReadOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:ac757e8d12a919a6cb14a1ac13a0a4966" id="r_ac757e8d12a919a6cb14a1ac13a0a4966"><td class="memItemLeft">MlirAttribute&#160;</td><td class="memItemRight"><a class="el" href="#ac757e8d12a919a6cb14a1ac13a0a4966">llzkGlobal_GlobalReadOpGetNameRef</a> (MlirOperation op)</td></tr>
 <tr class="memdesc:ac757e8d12a919a6cb14a1ac13a0a4966"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get NameRef attribute from <a class="el" href="classllzk_1_1global_1_1GlobalReadOp.html">llzk::global::GlobalReadOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:ab5c4e2baf9915f153493c6cbd21fe536" id="r_ab5c4e2baf9915f153493c6cbd21fe536"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ab5c4e2baf9915f153493c6cbd21fe536">llzkGlobal_GlobalReadOpSetNameRef</a> (MlirOperation op, MlirAttribute attr)</td></tr>
 <tr class="memdesc:ab5c4e2baf9915f153493c6cbd21fe536"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set NameRef attribute of <a class="el" href="classllzk_1_1global_1_1GlobalReadOp.html">llzk::global::GlobalReadOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:ad5bd30c0fd47948baee1cfab9fcf1d5d" id="r_ad5bd30c0fd47948baee1cfab9fcf1d5d"><td class="memItemLeft">MlirValue&#160;</td><td class="memItemRight"><a class="el" href="#ad5bd30c0fd47948baee1cfab9fcf1d5d">llzkGlobal_GlobalReadOpGetVal</a> (MlirOperation op)</td></tr>
 <tr class="memdesc:ad5bd30c0fd47948baee1cfab9fcf1d5d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get Val result from <a class="el" href="classllzk_1_1global_1_1GlobalReadOp.html">llzk::global::GlobalReadOp</a> Operation.  <br /></td></tr>
+<tr class="memitem:a11fdf9d20ac36dc2d65dc506f13a9d0c" id="r_a11fdf9d20ac36dc2d65dc506f13a9d0c"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a11fdf9d20ac36dc2d65dc506f13a9d0c">llzkGlobal_GlobalReadOpIsConstant</a> (MlirOperation inp)</td></tr>
+<tr class="memdesc:a11fdf9d20ac36dc2d65dc506f13a9d0c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true when this read is marked as <span class="tt">const</span>.  <br /></td></tr>
 <tr class="memitem:acff7922e2867ea30130a74c05492a5b3" id="r_acff7922e2867ea30130a74c05492a5b3"><td class="memItemLeft">MlirOperation&#160;</td><td class="memItemRight"><a class="el" href="#acff7922e2867ea30130a74c05492a5b3">llzkGlobal_GlobalWriteOpBuild</a> (MlirOpBuilder builder, MlirLocation location, MlirValue val, MlirAttribute name_ref)</td></tr>
 <tr class="memdesc:acff7922e2867ea30130a74c05492a5b3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Build a <a class="el" href="classllzk_1_1global_1_1GlobalWriteOp.html">llzk::global::GlobalWriteOp</a> Operation.  <br /></td></tr>
 <tr class="memitem:a7c541ab0dcb62fbe39ab2ca53d77852b" id="r_a7c541ab0dcb62fbe39ab2ca53d77852b"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a7c541ab0dcb62fbe39ab2ca53d77852b">llzkOperationIsA_Global_GlobalWriteOp</a> (MlirOperation inp)</td></tr>
@@ -338,7 +344,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>isConstant </p>
+<p>Returns true when this def is marked as <span class="tt">const</span>. </p>
 
 <p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00073">73</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
@@ -444,8 +450,8 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="ad0ab822bed5cdc06bd5b625fe6a56f90" name="ad0ab822bed5cdc06bd5b625fe6a56f90"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad0ab822bed5cdc06bd5b625fe6a56f90">&#9670;&#160;</a></span>llzkGlobal_GlobalReadOpBuild()</h2>
+<a id="ad45d8293eecd23787970bb5ae36d1023" name="ad45d8293eecd23787970bb5ae36d1023"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad45d8293eecd23787970bb5ae36d1023">&#9670;&#160;</a></span>llzkGlobal_GlobalReadOpBuild()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -468,6 +474,11 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>constant</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>name_ref</em></span>&#160;)</td>
         </tr>
       </table>
@@ -476,6 +487,27 @@ Functions</h2></td></tr>
 <p>Build a <a class="el" href="classllzk_1_1global_1_1GlobalReadOp.html">llzk::global::GlobalReadOp</a> Operation. </p>
 
 <p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00077">77</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a96da3598aaa9d239c37de5303c029d80" name="a96da3598aaa9d239c37de5303c029d80"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a96da3598aaa9d239c37de5303c029d80">&#9670;&#160;</a></span>llzkGlobal_GlobalReadOpGetConstant()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">MlirAttribute llzkGlobal_GlobalReadOpGetConstant </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get Constant attribute from <a class="el" href="classllzk_1_1global_1_1GlobalReadOp.html">llzk::global::GlobalReadOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00097">97</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -496,7 +528,7 @@ Functions</h2></td></tr>
 
 <p>Get NameRef attribute from <a class="el" href="classllzk_1_1global_1_1GlobalReadOp.html">llzk::global::GlobalReadOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00094">94</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00105">105</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -517,7 +549,53 @@ Functions</h2></td></tr>
 
 <p>Get Val result from <a class="el" href="classllzk_1_1global_1_1GlobalReadOp.html">llzk::global::GlobalReadOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00102">102</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00113">113</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a11fdf9d20ac36dc2d65dc506f13a9d0c" name="a11fdf9d20ac36dc2d65dc506f13a9d0c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a11fdf9d20ac36dc2d65dc506f13a9d0c">&#9670;&#160;</a></span>llzkGlobal_GlobalReadOpIsConstant()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzkGlobal_GlobalReadOpIsConstant </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>inp</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns true when this read is marked as <span class="tt">const</span>. </p>
+
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00117">117</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="afc9d0b7f72e6a8bc0ed24986a254997e" name="afc9d0b7f72e6a8bc0ed24986a254997e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afc9d0b7f72e6a8bc0ed24986a254997e">&#9670;&#160;</a></span>llzkGlobal_GlobalReadOpSetConstant()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void llzkGlobal_GlobalReadOpSetConstant </td>
+          <td>(</td>
+          <td class="paramtype">MlirOperation</td>          <td class="paramname"><span class="paramname"><em>op</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">MlirAttribute</td>          <td class="paramname"><span class="paramname"><em>attr</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set Constant attribute of <a class="el" href="classllzk_1_1global_1_1GlobalReadOp.html">llzk::global::GlobalReadOp</a> Operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00101">101</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -542,7 +620,7 @@ Functions</h2></td></tr>
 
 <p>Set NameRef attribute of <a class="el" href="classllzk_1_1global_1_1GlobalReadOp.html">llzk::global::GlobalReadOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00098">98</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00109">109</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -577,7 +655,7 @@ Functions</h2></td></tr>
 
 <p>Build a <a class="el" href="classllzk_1_1global_1_1GlobalWriteOp.html">llzk::global::GlobalWriteOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00106">106</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00121">121</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -598,7 +676,7 @@ Functions</h2></td></tr>
 
 <p>Get NameRef attribute from <a class="el" href="classllzk_1_1global_1_1GlobalWriteOp.html">llzk::global::GlobalWriteOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00143">143</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00158">158</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -619,7 +697,7 @@ Functions</h2></td></tr>
 
 <p>Get Val operand from <a class="el" href="classllzk_1_1global_1_1GlobalWriteOp.html">llzk::global::GlobalWriteOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00123">123</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00138">138</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -644,7 +722,7 @@ Functions</h2></td></tr>
 
 <p>Set NameRef attribute of <a class="el" href="classllzk_1_1global_1_1GlobalWriteOp.html">llzk::global::GlobalWriteOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00147">147</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00162">162</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -669,7 +747,7 @@ Functions</h2></td></tr>
 
 <p>Set Val operand of <a class="el" href="classllzk_1_1global_1_1GlobalWriteOp.html">llzk::global::GlobalWriteOp</a> Operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00133">133</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00148">148</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -711,7 +789,7 @@ Functions</h2></td></tr>
 
 <p>Returns true if the Operation is a <a class="el" href="classllzk_1_1global_1_1GlobalReadOp.html">llzk::global::GlobalReadOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00090">90</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00093">93</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -732,7 +810,7 @@ Functions</h2></td></tr>
 
 <p>Returns true if the Operation is a <a class="el" href="classllzk_1_1global_1_1GlobalWriteOp.html">llzk::global::GlobalWriteOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00119">119</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html#l00134">134</a> of file <a class="el" href="Global_2IR_2Ops_8capi_8cpp_8inc_source.html">Ops.capi.cpp.inc</a>.</p>
 
 </div>
 </div>

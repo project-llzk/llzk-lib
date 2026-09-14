@@ -125,7 +125,8 @@ var hierarchy =
     ] ],
     [ "llzk::AuxAssignment", "structllzk_1_1AuxAssignment.html", null ],
     [ "mlir::SideEffects::Resource::Base", null, [
-      [ "llzk::DiscardableAllocationResource", "structllzk_1_1DiscardableAllocationResource.html", null ]
+      [ "llzk::DiscardableAllocationResource", "structllzk_1_1DiscardableAllocationResource.html", null ],
+      [ "llzk::global::GlobalMemoryResource", "structllzk_1_1global_1_1GlobalMemoryResource.html", null ]
     ] ],
     [ "llzk::BaseBuilder", "classllzk_1_1BaseBuilder.html", [
       [ "llzk::ModuleLikeBuilder< ModuleBuilder >", "classllzk_1_1ModuleLikeBuilder.html", [

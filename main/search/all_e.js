@@ -268,7 +268,7 @@ var searchData=
   ['isconcretestructparamattr_265',['isConcreteStructParamAttr',['../namespacellzk.html#ac198e9b82f251f6645808153271876fc',1,'llzk']]],
   ['isconcretetype_266',['isConcreteType',['../namespacellzk.html#a2bbb039982f4d0a01e53f8901fdaa34d',1,'llzk::isConcreteType(Type type, bool allowStructParams)'],['../namespacellzk.html#a9798d3afd220d09f46b40473781a6e86',1,'llzk::isConcreteType(mlir::Type type, bool allowStructParams=true)']]],
   ['isconst_267',['isConst',['../structExtraMethod.html#a0712bbe42e106b87a0f641e394b713de',1,'ExtraMethod']]],
-  ['isconstant_268',['isConstant',['../classllzk_1_1global_1_1GlobalDefOp.html#a76317a647c841e62ec1a8cafbba98a07',1,'llzk::global::GlobalDefOp::isConstant()'],['../classllzk_1_1SourceRef.html#ad48ac3b93115766d9e6987e7805705f2',1,'llzk::SourceRef::isConstant() const']]],
+  ['isconstant_268',['isConstant',['../classllzk_1_1global_1_1GlobalDefOp.html#a76317a647c841e62ec1a8cafbba98a07',1,'llzk::global::GlobalDefOp::isConstant()'],['../classllzk_1_1global_1_1GlobalReadOp.html#aaaad1cadaddf98320252e1dac12b7e0a',1,'llzk::global::GlobalReadOp::isConstant()'],['../classllzk_1_1SourceRef.html#ad48ac3b93115766d9e6987e7805705f2',1,'llzk::SourceRef::isConstant() const']]],
   ['isconstantfelt_269',['isConstantFelt',['../classllzk_1_1SourceRef.html#a4156e8dd03b684bb219b5d35a464a016',1,'llzk::SourceRef']]],
   ['isconstantindex_270',['isConstantIndex',['../classllzk_1_1SourceRef.html#a673ae7e9c5e5e5e1a11c4d2deb353df8',1,'llzk::SourceRef']]],
   ['isconstantint_271',['isConstantInt',['../classllzk_1_1SourceRef.html#af2e50cac9ef13f9c2255f4ba25b012ca',1,'llzk::SourceRef']]],

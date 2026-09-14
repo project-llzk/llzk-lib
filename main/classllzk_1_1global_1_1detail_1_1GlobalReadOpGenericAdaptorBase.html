@@ -157,6 +157,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:afd99e3328c95745d2048500a7fb7fafb" id="r_afd99e3328c95745d2048500a7fb7fafb"><td class="memItemLeft">std::pair&lt; unsigned, unsigned &gt;&#160;</td><td class="memItemRight"><a class="el" href="#afd99e3328c95745d2048500a7fb7fafb">getODSOperandIndexAndLength</a> (unsigned index, unsigned odsOperandsSize)</td></tr>
 <tr class="memitem:a4764f2ae03e2ba6145498369ed89459d" id="r_a4764f2ae03e2ba6145498369ed89459d"><td class="memItemLeft">const <a class="el" href="structllzk_1_1global_1_1detail_1_1GlobalReadOpGenericAdaptorBase_1_1Properties.html">Properties</a> &amp;&#160;</td><td class="memItemRight"><a class="el" href="#a4764f2ae03e2ba6145498369ed89459d">getProperties</a> ()</td></tr>
 <tr class="memitem:a399d03eb2e091111ffa9dd95a984589c" id="r_a399d03eb2e091111ffa9dd95a984589c"><td class="memItemLeft">::mlir::DictionaryAttr&#160;</td><td class="memItemRight"><a class="el" href="#a399d03eb2e091111ffa9dd95a984589c">getAttributes</a> ()</td></tr>
+<tr class="memitem:a22ed7332900d3d4b88acc479a197dbb2" id="r_a22ed7332900d3d4b88acc479a197dbb2"><td class="memItemLeft">::mlir::UnitAttr&#160;</td><td class="memItemRight"><a class="el" href="#a22ed7332900d3d4b88acc479a197dbb2">getConstantAttr</a> ()</td></tr>
+<tr class="memitem:a067f2e7c4db32a6876eda7346a9255fa" id="r_a067f2e7c4db32a6876eda7346a9255fa"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a067f2e7c4db32a6876eda7346a9255fa">getConstant</a> ()</td></tr>
 <tr class="memitem:a929df611aba6f1053eb7a0cae6954778" id="r_a929df611aba6f1053eb7a0cae6954778"><td class="memItemLeft">::mlir::SymbolRefAttr&#160;</td><td class="memItemRight"><a class="el" href="#a929df611aba6f1053eb7a0cae6954778">getNameRefAttr</a> ()</td></tr>
 <tr class="memitem:a5add05367de79974dd9d72671741681d" id="r_a5add05367de79974dd9d72671741681d"><td class="memItemLeft">::mlir::SymbolRefAttr&#160;</td><td class="memItemRight"><a class="el" href="#a5add05367de79974dd9d72671741681d">getNameRef</a> ()</td></tr>
 </table><table class="memberdecls">
@@ -203,7 +205,7 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00366">366</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00377">377</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -250,7 +252,45 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00380">380</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00391">391</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
+</div>
+</div>
+<a id="a067f2e7c4db32a6876eda7346a9255fa" name="a067f2e7c4db32a6876eda7346a9255fa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a067f2e7c4db32a6876eda7346a9255fa">&#9670;&#160;</a></span>getConstant()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llzk::global::detail::GlobalReadOpGenericAdaptorBase::getConstant </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8cpp_8inc_source.html#l00544">544</a> of file <a class="el" href="Global_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+
+</div>
+</div>
+<a id="a22ed7332900d3d4b88acc479a197dbb2" name="a22ed7332900d3d4b88acc479a197dbb2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a22ed7332900d3d4b88acc479a197dbb2">&#9670;&#160;</a></span>getConstantAttr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::UnitAttr llzk::global::detail::GlobalReadOpGenericAdaptorBase::getConstantAttr </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8cpp_8inc_source.html#l00537">537</a> of file <a class="el" href="Global_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -269,7 +309,7 @@ Protected Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8cpp_8inc_source.html#l00537">537</a> of file <a class="el" href="Global_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8cpp_8inc_source.html#l00551">551</a> of file <a class="el" href="Global_2IR_2Ops_8cpp_8inc_source.html">Ops.cpp.inc</a>.</p>
 
 </div>
 </div>
@@ -296,7 +336,7 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00384">384</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00397">397</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -327,7 +367,7 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00372">372</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00383">383</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -354,7 +394,7 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00376">376</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00387">387</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -379,7 +419,7 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00361">361</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00372">372</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -403,7 +443,7 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00362">362</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00373">373</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -427,7 +467,7 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00364">364</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00375">375</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -451,7 +491,7 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00363">363</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html#l00374">374</a> of file <a class="el" href="Global_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
