@@ -1,0 +1,101 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
+
+// Regression for full function-instantiation cache lifetime across flattening iterations.
+// One call to @F::@f is concretely @N=4 before unrolling, while another becomes @N=4 only
+// after Step 3 unroll + Step 4 affine-map folding. Step 2 must reuse the same full clone.
+
+#len4 = affine_map<(i) -> (4)>
+module attributes {llzk.lang} {
+  poly.template @F {
+    poly.param @N : index
+
+    function.def @f(%inp: !array.type<@N x !felt.type>) -> !array.type<@N x !felt.type> {
+      function.return %inp : !array.type<@N x !felt.type>
+    }
+  }
+
+  poly.template @TWrap {
+    poly.param @N : index
+
+    struct.def @Wrap {
+      function.def @compute(%inp: !array.type<@N x !felt.type>) -> !struct.type<@TWrap::@Wrap<[@N]>> {
+        %tmp = function.call @F::@f(%inp) : (!array.type<@N x !felt.type>) -> (!array.type<@N x !felt.type>)
+        %self = struct.new : !struct.type<@TWrap::@Wrap<[@N]>>
+        function.return %self : !struct.type<@TWrap::@Wrap<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TWrap::@Wrap<[@N]>>, %inp: !array.type<@N x !felt.type>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Main {
+    function.def @compute(
+        %a: !array.type<4 x !felt.type>,
+        %b: !array.type<4 x !felt.type>
+    ) -> !struct.type<@Main> {
+      // First call is concrete in the first Step 2 iteration.
+      %early = function.call @F::@f(%a) : (!array.type<4 x !felt.type>) -> (!array.type<4 x !felt.type>)
+
+      // This call's result type starts with an affine-map parameter and becomes concrete only
+      // after Step 4 folds map operands. In the next iteration, Step 1 instantiates @TWrap::@Wrap
+      // and introduces a second concrete @F::@f call in the cloned body; that call must reuse
+      // @F_4_f instead of creating a uniquified duplicate.
+      %c0 = arith.constant 0 : index
+      %lateStruct = function.call @TWrap::@Wrap::@compute(%b){(%c0)}
+          : (!array.type<4 x !felt.type>) -> (!struct.type<@TWrap::@Wrap<[#len4]>>)
+
+      %self = struct.new : !struct.type<@Main>
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@Main>,
+        %a: !array.type<4 x !felt.type>,
+        %b: !array.type<4 x !felt.type>
+    ) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @F_4_f(
+// CHECK-SAME:      %[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>
+// CHECK-SAME:      ) -> !array.type<4 x !felt.type> {
+// CHECK-NEXT:      function.return %[[VAL_0]] : !array.type<4 x !felt.type>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @TWrap_4_Wrap {
+// CHECK-NEXT:      function.def @compute(
+// CHECK-SAME:      %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>
+// CHECK-SAME:      ) -> !struct.type<@TWrap_4_Wrap> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @F_4_f(%[[VAL_1]]) : (!array.type<4 x !felt.type>) -> !array.type<4 x !felt.type>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@TWrap_4_Wrap>
+// CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@TWrap_4_Wrap>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(
+// CHECK-SAME:      %[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@TWrap_4_Wrap>,
+// CHECK-SAME:      %[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>
+// CHECK-SAME:      ) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main {
+// CHECK-NEXT:      function.def @compute(
+// CHECK-SAME:      %[[VAL_6:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>,
+// CHECK-SAME:      %[[VAL_7:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>
+// CHECK-SAME:      ) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @F_4_f(%[[VAL_6]]) : (!array.type<4 x !felt.type>) -> !array.type<4 x !felt.type>
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @TWrap_4_Wrap::@compute(%[[VAL_7]]) : (!array.type<4 x !felt.type>) -> !struct.type<@TWrap_4_Wrap>
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:        function.return %[[VAL_10]] : !struct.type<@Main>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(
+// CHECK-SAME:      %[[VAL_11:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>,
+// CHECK-SAME:      %[[VAL_12:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>,
+// CHECK-SAME:      %[[VAL_13:[0-9a-zA-Z_\.]+]]: !array.type<4 x !felt.type>
+// CHECK-SAME:      ) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
