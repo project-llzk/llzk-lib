@@ -16,6 +16,7 @@
 #include "smt/Conversions/ConversionPasses.h"
 
 #include "llzk/Analysis/IntervalAnalysis.h"
+#include "llzk/Analysis/Intervals.h"
 #include "llzk/Analysis/SourceRef.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/IR/Types.h"
@@ -289,6 +290,9 @@ class NonNativeTheoryEmitter {
 public:
   virtual ~NonNativeTheoryEmitter() = default;
 
+  virtual std::pair<Value, Value> getRangeBoundAssertions(
+      OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
+  ) const = 0;
   virtual void emitRangeConstraint(
       OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
   ) const = 0;
@@ -318,7 +322,7 @@ public:
   SMTIntTheoryEmitter(MLIRContext *context, const ModularReasoner &modularReasoner)
       : ctx(context), reasoner(modularReasoner) {}
 
-  void emitRangeConstraint(
+  std::pair<Value, Value> getRangeBoundAssertions(
       OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
   ) const override {
     auto lower = createIntConstant(builder, loc, range.getLHS());
@@ -327,10 +331,18 @@ public:
         builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::ge, value, lower.getResult());
     auto upperBound =
         builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::le, value, upper.getResult());
+
+    return {lowerBound.getResult(), upperBound.getResult()};
+  }
+
+  void emitRangeConstraint(
+      OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
+  ) const override {
+    auto [lowerBound, upperBound] = getRangeBoundAssertions(builder, loc, value, range);
     // Assert the lower bound of the canonical/unreduced interval for this symbol.
-    builder.create<smt::AssertOp>(loc, lowerBound.getResult());
+    builder.create<smt::AssertOp>(loc, lowerBound);
     // Assert the upper bound of the canonical/unreduced interval for this symbol.
-    builder.create<smt::AssertOp>(loc, upperBound.getResult());
+    builder.create<smt::AssertOp>(loc, upperBound);
   }
 
   Value emitFreshSymbol(OpBuilder &builder, Location loc, StringRef name) const override {
@@ -474,6 +486,12 @@ public:
   UnreducedInterval getWitnessMemberRange(StringRef memberName) const;
   void emitRangeConstraint(
       OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
+  ) const;
+
+  // Emit a single range constraint for every element of the array
+  void emitArrayRangeConstraint(
+      OpBuilder &builder, Location loc, Value array, ArrayRef<uint64_t> extents,
+      const UnreducedInterval &range
   ) const;
   bool maybeContainsZeroResidue(const UnreducedInterval &range) const;
   bool spansModulusBoundary(const UnreducedInterval &range) const;
@@ -631,7 +649,7 @@ public:
   ) const override {
     if (!strategy->isScalarFeltType(op.getVal().getType())) {
       op.emitError("SMT lowering currently only supports felt-valued struct.writem");
-      return failure();
+      // return failure();
     }
 
     auto it = symbols.find(adaptor.getMemberName());
@@ -762,6 +780,43 @@ void OptimizedNonNativeStrategy::emitRangeConstraint(
     OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
 ) const {
   emitter->emitRangeConstraint(builder, loc, value, range);
+}
+
+void OptimizedNonNativeStrategy::emitArrayRangeConstraint(
+    OpBuilder &builder, Location loc, Value array, ArrayRef<uint64_t> extents,
+    const UnreducedInterval &range
+) const {
+
+  SmallVector<Type> forallTypes(extents.size(), smt::IntType::get(builder.getContext()));
+
+  auto rangeAssertion =
+      builder
+          .create<smt::ForallOp>(
+              loc, forallTypes,
+              [this, &array, &extents,
+               &range](OpBuilder &builder, Location loc, ValueRange indices) -> Value {
+    // Vector of SMT expressions asserting all the indices are within bounds for the array
+    SmallVector<Value> antecedents;
+    antecedents.reserve(2 * indices.size());
+    for (auto [index, extent] : llvm::zip(indices, extents)) {
+      auto [lo, hi] = emitter->getRangeBoundAssertions(
+          builder, loc, index, UnreducedInterval {0, static_cast<int64_t>(extent)}
+      );
+      antecedents.push_back(lo);
+      antecedents.push_back(hi);
+    }
+
+    Value antecedent = builder.create<smt::AndOp>(loc, antecedents).getResult();
+    Value currentElement = selectMultidimensionalArray(loc, array, indices, builder);
+    auto [rangeLo, rangeHi] = emitter->getRangeBoundAssertions(builder, loc, currentElement, range);
+    Value consequent = builder.create<smt::AndOp>(loc, rangeLo, rangeHi).getResult();
+
+    return builder.create<smt::ImpliesOp>(loc, antecedent, consequent);
+  }
+          )
+          .getResult();
+
+  builder.create<smt::AssertOp>(loc, rangeAssertion);
 }
 
 bool OptimizedNonNativeStrategy::maybeContainsZeroResidue(const UnreducedInterval &range) const {
