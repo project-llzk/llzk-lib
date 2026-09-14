@@ -487,6 +487,8 @@ public:
   void emitRangeConstraint(
       OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
   ) const;
+
+  // Emit a single range constraint for every element of the array
   void emitArrayRangeConstraint(
       OpBuilder &builder, Location loc, Value array, ArrayRef<uint64_t> extents,
       const UnreducedInterval &range
