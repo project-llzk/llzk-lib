@@ -17,6 +17,7 @@
 #include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
 #include "llzk/Dialect/Struct/IR/Types.h"
+#include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/Bytecode/BytecodeImplementation.h>
 #include <mlir/IR/DialectImplementation.h>
@@ -101,7 +102,7 @@ LogicalResult verifyLlzkMainAttr(Operation *op, Attribute attr) {
   if (succeeded(mainStructTypeOpt)) {
     if (component::StructType st = mainStructTypeOpt.value()) {
       SymbolTableCollection symbolTables;
-      return st.getDefinition(symbolTables, op);
+      return verifyTypeResolution(symbolTables, op, st);
     }
   }
   return failure();

@@ -27,26 +27,38 @@ class StructDialectType<string name, string typeMnemonic,
 def LLZK_StructType : StructDialectType<"Struct", "type"> {
   let summary = "circuit component";
   let description = [{
-    Type of a `struct` op instance. For structs that contain template parameters,
-    the type must contain a list of attributes that instantiate the template
-    parameters, one per parameter. Each attribute must be one of the following:
-      - IntegerAttr (with IndexType), specifying a fixed parameter value; the
-        wildcard (`?`) is not allowed
-      - SymbolRefAttr, specifying a parameter value defined by a struct parameter
-        or global constant
-      - AffineMapAttr, for an array of struct elements whose template parameters
-        vary based on some fixed pattern.
-      - TypeAttr, for specifying a type parameter.
+    Type of a `struct.def` instance. An instantiation argument list supplies one attribute per
+    `poly.param` in the definition's enclosing `poly.template`, in declaration order. For a
+    definition with no parameters, the list may be omitted or explicitly empty. Every
+    argument must satisfy the corresponding parameter's type restriction. A flat symbol reference
+    may name a `poly.param` or `poly.expr` binding; a constant global reference must be
+    fully-qualified. Unresolved symbols, mutable globals, and symbols that resolve to another
+    operation kind are rejected. Each attribute must be one of the following:
+      - IntegerAttr (with IndexType), specifying a fixed parameter value; the wildcard (`?`) is
+        not allowed
+      - FeltConstAttr, specifying a fixed finite-field parameter value
+      - SymbolRefAttr, specifying a parameter value by a flat reference to a `poly.param` or
+        `poly.expr` binding or a fully-qualified reference to a constant global
+      - AffineMapAttr, specifying a deferred single-result affine expression for an integer-like
+        argument; one use is varying a struct argument across array elements
+      - TypeAttr, specifying a type parameter
 
+    A `TypeAttr` argument may contain any valid LLZK type. The verifier recursively resolves
+    references in `struct.type` and `array.type` arguments. A `poly.tvar` must name a parameter of
+    the use site's enclosing `poly.template`. Record member types within a `pod.type` are not
+    traversed.
+
+    The examples below are schematic: `@A` names a non-parameterized struct; `@T` declares index,
+    felt, and type parameters in that order, names its index parameter `@N`, and contains `@B`.
     ```llzk
     // Type for struct `A` with no parameters.
     !struct.type<@A>
 
-    // Type for struct `B` with IntegerAttr and SymbolRefAttr parameters.
-    !struct.type<@B<[5, @C]>>
+    // Supply concrete arguments to all three parameters of @T::@B.
+    !struct.type<@T::@B<[5, #felt<const 35>, !felt.type]>>
 
-    // Type for struct `C` with TypeAttr and IntegerAttr parameters.
-    !struct.type<@C<[!felt.type, 24]>>
+    // An argument can use the flat name of a template binding with a compatible restriction.
+    !struct.type<@T::@B<[@N, #felt<const 35>, !felt.type]>>
     ```
   }];
 
