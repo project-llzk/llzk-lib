@@ -1,0 +1,23 @@
+// RUN: llzk-opt -llzk-r1cs-lowering %s | FileCheck %s
+
+// CHECK-LABEL: module attributes {llzk.lang = "r1cs"} {
+// CHECK-NEXT:    r1cs.circuit @Main inputs (
+// CHECK-NOT:     module @Main
+
+module attributes {llzk.lang, llzk.main = !struct.type<@Main::@Main>} {
+  module @Main {
+    struct.def @Main {
+      struct.member @out : !felt.type {llzk.pub}
+      function.def @compute(%input: !felt.type) -> !struct.type<@Main::@Main> attributes {function.allow_witness} {
+        %self = struct.new : <@Main::@Main>
+        struct.writem %self[@out] = %input : <@Main::@Main>, !felt.type
+        function.return %self : !struct.type<@Main::@Main>
+      }
+      function.def @constrain(%self: !struct.type<@Main::@Main>, %input: !felt.type) attributes {function.allow_constraint} {
+        %out = struct.readm %self[@out] : <@Main::@Main>, !felt.type
+        constrain.eq %out, %input : !felt.type
+        function.return
+      }
+    }
+  }
+}

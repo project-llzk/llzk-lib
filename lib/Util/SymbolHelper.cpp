@@ -35,6 +35,24 @@ using namespace mlir;
 
 namespace llzk {
 
+void eraseEmptyNestedModules(ModuleOp rootModule) {
+  SmallVector<ModuleOp> emptyModules;
+  rootModule.walk<WalkOrder::PostOrder>([&](ModuleOp module) {
+    if (module == rootModule) {
+      return;
+    }
+    Region &region = module.getBodyRegion();
+    if (region.empty() || region.front().empty()) { // ModuleOp has the SingleBlock trait.
+      emptyModules.push_back(module);
+    }
+  });
+
+  for (ModuleOp module : emptyModules) {
+    LLVM_DEBUG(llvm::dbgs() << "Removing empty module " << module.getName() << '\n');
+    module.erase();
+  }
+}
+
 using namespace array;
 using namespace component;
 using namespace function;

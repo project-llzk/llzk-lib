@@ -24,6 +24,7 @@
 #include "llzk/Transforms/LLZKLoweringUtils.h"
 #include "llzk/Util/Constants.h"
 #include "llzk/Util/DynamicAPIntHelper.h"
+#include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/Walk.h"
 
 #include <mlir/IR/BuiltinOps.h>
@@ -747,6 +748,10 @@ class PassImpl : public r1cs::impl::R1CSLoweringPassBase<PassImpl> {
       }
       structDef.erase();
     });
+
+    // Avoid collisions between newly-created circuit symbols and namespace modules
+    // that became empty when their structs were lowered.
+    eraseEmptyNestedModules(moduleOp);
 
     // Remove `llzk.main` attribute because all structs were replaced with `r1cs.circuit` ops.
     moduleOp->removeAttr(MAIN_ATTR_NAME);

@@ -19,6 +19,9 @@
 
 namespace llzk {
 
+/// Remove nested builtin modules whose body is empty, preserving the root module.
+void eraseEmptyNestedModules(mlir::ModuleOp rootModule);
+
 namespace component {
 class StructType;
 class StructDefOp;
