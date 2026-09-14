@@ -5,7 +5,7 @@ module attributes {llzk.lang} {
   global.def const @g : !felt.type = 6546
   struct.def @Component03 {
     function.def @compute() -> !struct.type<@Component03> {
-      // expected-warning@+1 {{recommend adding 'const' when targeting 'global.def' marked as 'const'}}
+      // expected-remark@+1 {{recommend adding 'const' when targeting 'global.def' marked as 'const'}}
       %t = global.read @g : !felt.type
       %self = struct.new : !struct.type<@Component03>
       function.return %self : !struct.type<@Component03>

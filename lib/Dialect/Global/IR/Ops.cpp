@@ -449,7 +449,7 @@ LogicalResult GlobalReadOp::verifySymbolUses(SymbolTableCollection &tables) {
     );
   }
   if (!isConstant() && tgt->get().isConstant()) {
-    emitWarning()
+    emitRemark()
         .append(
             "recommend adding 'const' when targeting '", GlobalDefOp::getOperationName(),
             "' marked as 'const'"
