@@ -5014,7 +5014,7 @@ public:
 
   LogicalResult
   matchAndRewrite(ReadPodOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
-    if (hasEarlierWrite(op) || findNearestForwardableWrite(op)) {
+    if (!resolver.canResolveVirtualPodReadFromAnalysis(op)) {
       return failure();
     }
 
