@@ -986,36 +986,45 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     return success();
   }
 
-  /// Takes every auxiliary value introduced while lowering the constrain function and recreate
-  /// the corresponding computation inside the compute function.
-  static LogicalResult
-  rebuildInCompute(FuncDefOp computeFunc, const SmallVector<AuxAssignment> &auxAssignments) {
-    DenseMap<Value, Value> rebuildMemo;
-    Block &computeBlock = computeFunc.getBody().front();
-    OpBuilder builder(&computeBlock, computeBlock.getTerminator()->getIterator());
-    Value selfVal = computeFunc.getSelfValueFromCompute();
-
+  /// Recreates each auxiliary computation before every compute return and writes it through the
+  /// path-specific returned component value.
+  static LogicalResult rebuildInCompute(
+      FuncDefOp constrainFunc, FuncDefOp computeFunc,
+      const SmallVector<AuxAssignment> &auxAssignments
+  ) {
     SmallVector<unsigned> orderedAuxAssignments;
     orderedAuxAssignments.reserve(auxAssignments.size());
     if (failed(orderAuxAssignments(auxAssignments, orderedAuxAssignments))) {
       return failure();
     }
 
-    for (unsigned assignIdx : orderedAuxAssignments) {
-      const auto &assign = auxAssignments[assignIdx];
-      Value rebuiltExpr =
-          rebuildExprInCompute(assign.computedValue, computeFunc, builder, rebuildMemo);
-      if (!rebuiltExpr) {
-        return failure();
+    for (Block &computeBlock : computeFunc.getBody()) {
+      auto returnOp = llvm::dyn_cast<ReturnOp>(computeBlock.getTerminator());
+      if (!returnOp) {
+        continue;
       }
-      builder.create<MemberWriteOp>(
-          assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxMemberName),
-          rebuiltExpr
-      );
-      if (assign.auxValue) {
-        // Reuse the expression just written so later aux producers do not need an
-        // immediate read from the generated aux member.
-        rebuildMemo[assign.auxValue] = rebuiltExpr;
+
+      Value selfVal = returnOp.getOperands().front();
+      OpBuilder builder(returnOp);
+      DenseMap<Value, Value> rebuildMemo;
+      rebuildMemo[constrainFunc.getSelfValueFromConstrain()] = selfVal;
+
+      for (unsigned assignIdx : orderedAuxAssignments) {
+        const auto &assign = auxAssignments[assignIdx];
+        Value rebuiltExpr =
+            rebuildExprInCompute(assign.computedValue, computeFunc, builder, rebuildMemo);
+        if (!rebuiltExpr) {
+          return failure();
+        }
+        builder.create<MemberWriteOp>(
+            assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxMemberName),
+            rebuiltExpr
+        );
+        if (assign.auxValue) {
+          // Reuse the expression just written so later aux producers do not need an
+          // immediate read from the generated aux member.
+          rebuildMemo[assign.auxValue] = rebuiltExpr;
+        }
       }
     }
     return success();
@@ -1055,10 +1064,6 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
                                          << FUNC_NAME_COMPUTE << "\" function";
         }
 
-        if (failed(checkFuncBodyIsStraightLine(computeFunc, "poly lowering"))) {
-          return WalkResult::interrupt();
-        }
-
         SmallVector<AuxAssignment> auxAssignments;
         if (failed(lowerInConstrain(structDef, constrainFunc, auxAssignments))) {
           return WalkResult::interrupt();
@@ -1076,7 +1081,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
           return WalkResult::interrupt();
         }
 
-        if (failed(rebuildInCompute(computeFunc, auxAssignments))) {
+        if (failed(rebuildInCompute(constrainFunc, computeFunc, auxAssignments))) {
           return WalkResult::interrupt();
         }
 
