@@ -1063,10 +1063,13 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
           return structDef.emitOpError() << '"' << structDef.getName() << "\" doesn't have a \"@"
                                          << FUNC_NAME_COMPUTE << "\" function";
         }
-
         SmallVector<AuxAssignment> auxAssignments;
         if (failed(lowerInConstrain(structDef, constrainFunc, auxAssignments))) {
           return WalkResult::interrupt();
+        }
+        if (computeFunc.isExternal() && !auxAssignments.empty()) {
+          return computeFunc.emitOpError()
+                 << "poly lowering requires a compute body to materialize auxiliary values";
         }
 
         if (failed(checkEqualityDegrees(constrainFunc))) {
