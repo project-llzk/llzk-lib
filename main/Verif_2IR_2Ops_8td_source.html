@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Verif_2IR_2Ops
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>    Returns a boolean that indicates if the operand was proven deterministic or not.</div>
 <div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span> </div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    This operation has the `Verification` trait and can be used inside `function.def` </div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    This operation has the `Verification` trait and can be used inside `function.def`</div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>    ops that have the `allow_verif` attribute.</div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  }];</div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  let arguments = (ins EmitEqType:$condition);</div>
@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Verif_2IR_2Ops
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>    Hints to the proving backend that the operand is deterministic, for a concrete definition</div>
 <div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    of determinism determined by the backend.</div>
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span> </div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    This operation has the `Verification` trait and can be used inside `function.def` </div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    This operation has the `Verification` trait and can be used inside `function.def`</div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>    ops that have the `allow_verif` attribute.</div>
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  }];</div>
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  let arguments = (ins EmitEqType:$hint);</div>
@@ -298,7 +298,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Verif_2IR_2Ops
 <div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>    Encodes a postcondition in the `@}]#mnemonic#[{` function.</div>
 <div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>  }]#!if(inlinable, [{</div>
 <div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span> </div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>    This operation has the `Verification` trait and can be used inside `function.def` </div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>    This operation has the `Verification` trait and can be used inside `function.def`</div>
 <div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>    ops that have the `allow_verif_ops` attribute.</div>
 <div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>    }],</div>
 <div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>         &quot;&quot;);</div>
@@ -694,200 +694,206 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Verif_2IR_2Ops
 <div class="line"><a id="l00562" name="l00562"></a><span class="lineno">  562</span> </div>
 <div class="line"><a id="l00563" name="l00563"></a><span class="lineno">  563</span>    /// Check type compatibility of the given template parameter value from this `CallOp` against</div>
 <div class="line"><a id="l00564" name="l00564"></a><span class="lineno">  564</span>    /// the declared type on the given `TemplateParamOp` (if any).</div>
-<div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span>    ::mlir::LogicalResult verifyTemplateParamCompatibility(</div>
-<div class="line"><a id="l00566" name="l00566"></a><span class="lineno">  566</span>      ::mlir::Attribute paramFromCallOp, ::llzk::polymorphic::TemplateParamOp targetParam</div>
-<div class="line"><a id="l00567" name="l00567"></a><span class="lineno">  567</span>    );</div>
-<div class="line"><a id="l00568" name="l00568"></a><span class="lineno">  568</span> </div>
-<div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span>    /// Check type compatibility of each template parameter value provided in this `CallOp` against</div>
-<div class="line"><a id="l00570" name="l00570"></a><span class="lineno">  570</span>    /// the declared type on each `TemplateParamOp` (if any).</div>
-<div class="line"><a id="l00571" name="l00571"></a><span class="lineno">  571</span>    ///</div>
-<div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span>    /// Pre-condition assertions:</div>
-<div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span>    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`</div>
-<div class="line"><a id="l00574" name="l00574"></a><span class="lineno">  574</span>    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`</div>
-<div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span>    ::mlir::LogicalResult verifyTemplateParamCompatibility(</div>
-<div class="line"><a id="l00576" name="l00576"></a><span class="lineno">  576</span>        ::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;::llzk::polymorphic::TemplateParamOp&gt;&gt; targetParamDefs</div>
-<div class="line"><a id="l00577" name="l00577"></a><span class="lineno">  577</span>    );</div>
-<div class="line"><a id="l00578" name="l00578"></a><span class="lineno">  578</span> </div>
-<div class="line"><a id="l00579" name="l00579"></a><span class="lineno">  579</span>    /// Verify that each template parameter value provided in this `CallOp` is consistent with</div>
-<div class="line"><a id="l00580" name="l00580"></a><span class="lineno">  580</span>    /// the value inferred for the target `TemplateParamOp` in the given `UnificationMap`. The</div>
-<div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span>    /// `UnificationMap` is expected to contain the unification results of this `CallOp` against</div>
-<div class="line"><a id="l00582" name="l00582"></a><span class="lineno">  582</span>    /// the target function type signature.</div>
-<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span>    ///</div>
-<div class="line"><a id="l00584" name="l00584"></a><span class="lineno">  584</span>    /// Pre-condition assertions:</div>
-<div class="line"><a id="l00585" name="l00585"></a><span class="lineno">  585</span>    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`</div>
-<div class="line"><a id="l00586" name="l00586"></a><span class="lineno">  586</span>    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`</div>
-<div class="line"><a id="l00587" name="l00587"></a><span class="lineno">  587</span>    ::mlir::LogicalResult verifyTemplateParamsMatchInferred(</div>
-<div class="line"><a id="l00588" name="l00588"></a><span class="lineno">  588</span>        ::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;::llzk::polymorphic::TemplateParamOp&gt;&gt; targetParamDefs,</div>
-<div class="line"><a id="l00589" name="l00589"></a><span class="lineno">  589</span>        const UnificationMap &amp;unifications</div>
-<div class="line"><a id="l00590" name="l00590"></a><span class="lineno">  590</span>    );</div>
-<div class="line"><a id="l00591" name="l00591"></a><span class="lineno">  591</span>  }];</div>
-<div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span>}</div>
-<div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span> </div>
-<div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>//===------------------------------------------------------------------===//</div>
-<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span>// InvariantOp</div>
-<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>//===------------------------------------------------------------------===//</div>
-<div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span> </div>
-<div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>def InvariantOp</div>
-<div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>    : VerifDialectOp&lt;&quot;invariant&quot;, [HasAncestor&lt;&quot;::llzk::verif::ContractOp&quot;&gt;,</div>
-<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>                                   NoTerminator, SingleBlock]&gt; {</div>
-<div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span> </div>
-<div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span>  let summary = &quot;loop invariant definition operation&quot;;</div>
-<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span>  let description = [{</div>
-<div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span>    Defines an invariant for a loop inside the target of a contract.</div>
-<div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span> </div>
-<div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span>    The targeted loop op must implement the `InvariantTargetOpInterface`.</div>
-<div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span>    This interface is already implemented by the `scf.while` and `scf.for`</div>
-<div class="line"><a id="l00608" name="l00608"></a><span class="lineno">  608</span>    operations. The loop name is defined on either of those ops with a</div>
-<div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span>    string attribute named `loop_label`.</div>
-<div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span> </div>
-<div class="line"><a id="l00611" name="l00611"></a><span class="lineno">  611</span>    The arguments of the body must match those declared by the target op.</div>
-<div class="line"><a id="l00612" name="l00612"></a><span class="lineno">  612</span>    In the case of `scf.for` the control values must also be block arguments</div>
-<div class="line"><a id="l00613" name="l00613"></a><span class="lineno">  613</span>    in the following order: lower bound, induction variable, upper bound, and stride.</div>
-<div class="line"><a id="l00614" name="l00614"></a><span class="lineno">  614</span> </div>
-<div class="line"><a id="l00615" name="l00615"></a><span class="lineno">  615</span>    Example:</div>
-<div class="line"><a id="l00616" name="l00616"></a><span class="lineno">  616</span>    ```</div>
-<div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span>    module attributes {llzk.lang} {</div>
-<div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span>      struct.def @Top {</div>
-<div class="line"><a id="l00619" name="l00619"></a><span class="lineno">  619</span>        function.def @compute() -&gt; !struct.type&lt;@Top&gt; {</div>
-<div class="line"><a id="l00620" name="l00620"></a><span class="lineno">  620</span>          %self = struct.new : !struct.type&lt;@Top&gt;</div>
-<div class="line"><a id="l00621" name="l00621"></a><span class="lineno">  621</span>          %c0 = arith.constant 0 : index</div>
-<div class="line"><a id="l00622" name="l00622"></a><span class="lineno">  622</span>          %c10 = arith.constant 10 : index</div>
-<div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span>          %c1 = arith.constant 1  : index</div>
-<div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>          %0 = felt.const  5</div>
-<div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>          %1 = scf.for %iv = %c0 to %c10 step %c1 iter_args(%2 = %0) -&gt; !felt.type {</div>
-<div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span>            scf.yield %2 : !felt.type</div>
-<div class="line"><a id="l00627" name="l00627"></a><span class="lineno">  627</span>          } {loop_label = &quot;loopA&quot;}</div>
-<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>          function.return %self : !struct.type&lt;@Top&gt;</div>
-<div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span>        }</div>
-<div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span>        function.def @constrain(%self: !struct.type&lt;@Top&gt;)  {</div>
-<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span>          function.return</div>
-<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span>        }</div>
-<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>      }</div>
-<div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span> </div>
-<div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>      verif.contract @Foo for @Top (%self: !struct.type&lt;@Top&gt;) {</div>
-<div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span>        verif.invariant for @loopA(%lb: index, %iv: index, %ub: index, %step: index, %extra: !felt.type) {</div>
-<div class="line"><a id="l00637" name="l00637"></a><span class="lineno">  637</span>          %true = arith.constant  true</div>
-<div class="line"><a id="l00638" name="l00638"></a><span class="lineno">  638</span>          verif.require_compute %true</div>
-<div class="line"><a id="l00639" name="l00639"></a><span class="lineno">  639</span>        }</div>
-<div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span>      }</div>
-<div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span>    }</div>
-<div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span>    ```</div>
-<div class="line"><a id="l00643" name="l00643"></a><span class="lineno">  643</span>  }];</div>
-<div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span> </div>
-<div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span>  let arguments = (ins StrAttr:$loop_name, TypeArrayAttr:$loop_arg_types);</div>
-<div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span> </div>
-<div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span>  let regions = (region SizedRegion&lt;1&gt;:$region);</div>
-<div class="line"><a id="l00648" name="l00648"></a><span class="lineno">  648</span> </div>
-<div class="line"><a id="l00649" name="l00649"></a><span class="lineno">  649</span>  let skipDefaultBuilders = 1;</div>
-<div class="line"><a id="l00650" name="l00650"></a><span class="lineno">  650</span>  let builders = [OpBuilder&lt;(ins &quot;::mlir::StringRef&quot;:$loop_name,</div>
-<div class="line"><a id="l00651" name="l00651"></a><span class="lineno">  651</span>      CArg&lt;&quot;::llvm::ArrayRef&lt;::mlir::Type&gt;&quot;, &quot;{}&quot;&gt;:$loop_arg_types,</div>
-<div class="line"><a id="l00652" name="l00652"></a><span class="lineno">  652</span>      CArg&lt;&quot;::llvm::ArrayRef&lt;::mlir::Location&gt;&quot;, &quot;{}&quot;&gt;:$loop_arg_locs)&gt;];</div>
-<div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span> </div>
-<div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span>  let hasCustomAssemblyFormat = 1;</div>
-<div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span>  let hasVerifier = 1;</div>
-<div class="line"><a id="l00656" name="l00656"></a><span class="lineno">  656</span> </div>
-<div class="line"><a id="l00657" name="l00657"></a><span class="lineno">  657</span>  let extraClassDeclaration = [{</div>
-<div class="line"><a id="l00658" name="l00658"></a><span class="lineno">  658</span>    /// Returns the contract operation that contains this invariant.</div>
-<div class="line"><a id="l00659" name="l00659"></a><span class="lineno">  659</span>    ::llzk::verif::ContractOp getParentContract();</div>
-<div class="line"><a id="l00660" name="l00660"></a><span class="lineno">  660</span>    /// Returns the loop target.</div>
-<div class="line"><a id="l00661" name="l00661"></a><span class="lineno">  661</span>    ::mlir::FailureOr&lt;::llzk::verif::InvariantTargetOpInterface&gt; getTarget();</div>
-<div class="line"><a id="l00662" name="l00662"></a><span class="lineno">  662</span>  }];</div>
-<div class="line"><a id="l00663" name="l00663"></a><span class="lineno">  663</span>}</div>
-<div class="line"><a id="l00664" name="l00664"></a><span class="lineno">  664</span> </div>
-<div class="line"><a id="l00665" name="l00665"></a><span class="lineno">  665</span>//===------------------------------------------------------------------===//</div>
-<div class="line"><a id="l00666" name="l00666"></a><span class="lineno">  666</span>// Invariant inner ops</div>
-<div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span>//===------------------------------------------------------------------===//</div>
-<div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span> </div>
-<div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span>class InvariantInnerOp&lt;string mnemonic, list&lt;Trait&gt; traits = []&gt;</div>
-<div class="line"><a id="l00670" name="l00670"></a><span class="lineno">  670</span>    : VerifDialectOp&lt;</div>
-<div class="line"><a id="l00671" name="l00671"></a><span class="lineno">  671</span>          mnemonic,</div>
-<div class="line"><a id="l00672" name="l00672"></a><span class="lineno">  672</span>          traits#[HasAncestor&lt;&quot;::llzk::verif::InvariantOp&quot;&gt;,</div>
-<div class="line"><a id="l00673" name="l00673"></a><span class="lineno">  673</span>                  DeclareOpInterfaceMethods&lt;MemoryEffectsOpInterface&gt;]&gt; {</div>
+<div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span>    inline ::mlir::LogicalResult verifyTemplateParamCompatibility(</div>
+<div class="line"><a id="l00566" name="l00566"></a><span class="lineno">  566</span>      ::mlir::Attribute paramFromIncludeOp, ::llzk::polymorphic::TemplateParamOp targetParam</div>
+<div class="line"><a id="l00567" name="l00567"></a><span class="lineno">  567</span>    ) {</div>
+<div class="line"><a id="l00568" name="l00568"></a><span class="lineno">  568</span>      return llzk::verifyTemplateParamValueCompatibility(getOperation(), paramFromIncludeOp, targetParam);</div>
+<div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span>    }</div>
+<div class="line"><a id="l00570" name="l00570"></a><span class="lineno">  570</span> </div>
+<div class="line"><a id="l00571" name="l00571"></a><span class="lineno">  571</span>    /// Check type compatibility of each template parameter value provided in this `CallOp` against</div>
+<div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span>    /// the declared type on each `TemplateParamOp` (if any).</div>
+<div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span>    ///</div>
+<div class="line"><a id="l00574" name="l00574"></a><span class="lineno">  574</span>    /// Pre-condition assertions:</div>
+<div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span>    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`</div>
+<div class="line"><a id="l00576" name="l00576"></a><span class="lineno">  576</span>    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`</div>
+<div class="line"><a id="l00577" name="l00577"></a><span class="lineno">  577</span>    inline ::mlir::LogicalResult verifyTemplateParamCompatibility(</div>
+<div class="line"><a id="l00578" name="l00578"></a><span class="lineno">  578</span>        ::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;::llzk::polymorphic::TemplateParamOp&gt;&gt; targetParamDefs</div>
+<div class="line"><a id="l00579" name="l00579"></a><span class="lineno">  579</span>    ) {</div>
+<div class="line"><a id="l00580" name="l00580"></a><span class="lineno">  580</span>      return llzk::verifyTemplateParamValuesCompatibility(getOperation(), getTemplateParamsAttr(), targetParamDefs);</div>
+<div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span>    }</div>
+<div class="line"><a id="l00582" name="l00582"></a><span class="lineno">  582</span> </div>
+<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span>    /// Verify that each template parameter value provided in this `CallOp` is consistent with</div>
+<div class="line"><a id="l00584" name="l00584"></a><span class="lineno">  584</span>    /// the value inferred for the target `TemplateParamOp` in the given `UnificationMap`. The</div>
+<div class="line"><a id="l00585" name="l00585"></a><span class="lineno">  585</span>    /// `UnificationMap` is expected to contain the unification results of this `CallOp` against</div>
+<div class="line"><a id="l00586" name="l00586"></a><span class="lineno">  586</span>    /// the target function type signature.</div>
+<div class="line"><a id="l00587" name="l00587"></a><span class="lineno">  587</span>    ///</div>
+<div class="line"><a id="l00588" name="l00588"></a><span class="lineno">  588</span>    /// Pre-condition assertions:</div>
+<div class="line"><a id="l00589" name="l00589"></a><span class="lineno">  589</span>    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`</div>
+<div class="line"><a id="l00590" name="l00590"></a><span class="lineno">  590</span>    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`</div>
+<div class="line"><a id="l00591" name="l00591"></a><span class="lineno">  591</span>    inline ::mlir::LogicalResult verifyTemplateParamsMatchInferred(</div>
+<div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span>        ::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;::llzk::polymorphic::TemplateParamOp&gt;&gt; targetParamDefs,</div>
+<div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span>        const UnificationMap &amp;unifications</div>
+<div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>    ) {</div>
+<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span>      return llzk::verifyTemplateParamsMatchInferred(getOperation(), getTemplateParamsAttr(), targetParamDefs, unifications);</div>
+<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span>    }</div>
+<div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>  }];</div>
+<div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>}</div>
+<div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span> </div>
+<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>//===------------------------------------------------------------------===//</div>
+<div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span>// InvariantOp</div>
+<div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span>//===------------------------------------------------------------------===//</div>
+<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span> </div>
+<div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span>def InvariantOp</div>
+<div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span>    : VerifDialectOp&lt;&quot;invariant&quot;, [HasAncestor&lt;&quot;::llzk::verif::ContractOp&quot;&gt;,</div>
+<div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span>                                   NoTerminator, SingleBlock]&gt; {</div>
+<div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span> </div>
+<div class="line"><a id="l00608" name="l00608"></a><span class="lineno">  608</span>  let summary = &quot;loop invariant definition operation&quot;;</div>
+<div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span>  let description = [{</div>
+<div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span>    Defines an invariant for a loop inside the target of a contract.</div>
+<div class="line"><a id="l00611" name="l00611"></a><span class="lineno">  611</span> </div>
+<div class="line"><a id="l00612" name="l00612"></a><span class="lineno">  612</span>    The targeted loop op must implement the `InvariantTargetOpInterface`.</div>
+<div class="line"><a id="l00613" name="l00613"></a><span class="lineno">  613</span>    This interface is already implemented by the `scf.while` and `scf.for`</div>
+<div class="line"><a id="l00614" name="l00614"></a><span class="lineno">  614</span>    operations. The loop name is defined on either of those ops with a</div>
+<div class="line"><a id="l00615" name="l00615"></a><span class="lineno">  615</span>    string attribute named `loop_label`.</div>
+<div class="line"><a id="l00616" name="l00616"></a><span class="lineno">  616</span> </div>
+<div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span>    The arguments of the body must match those declared by the target op.</div>
+<div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span>    In the case of `scf.for` the control values must also be block arguments</div>
+<div class="line"><a id="l00619" name="l00619"></a><span class="lineno">  619</span>    in the following order: lower bound, induction variable, upper bound, and stride.</div>
+<div class="line"><a id="l00620" name="l00620"></a><span class="lineno">  620</span> </div>
+<div class="line"><a id="l00621" name="l00621"></a><span class="lineno">  621</span>    Example:</div>
+<div class="line"><a id="l00622" name="l00622"></a><span class="lineno">  622</span>    ```</div>
+<div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span>    module attributes {llzk.lang} {</div>
+<div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>      struct.def @Top {</div>
+<div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>        function.def @compute() -&gt; !struct.type&lt;@Top&gt; {</div>
+<div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span>          %self = struct.new : !struct.type&lt;@Top&gt;</div>
+<div class="line"><a id="l00627" name="l00627"></a><span class="lineno">  627</span>          %c0 = arith.constant 0 : index</div>
+<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>          %c10 = arith.constant 10 : index</div>
+<div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span>          %c1 = arith.constant 1  : index</div>
+<div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span>          %0 = felt.const  5</div>
+<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span>          %1 = scf.for %iv = %c0 to %c10 step %c1 iter_args(%2 = %0) -&gt; !felt.type {</div>
+<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span>            scf.yield %2 : !felt.type</div>
+<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>          } {loop_label = &quot;loopA&quot;}</div>
+<div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>          function.return %self : !struct.type&lt;@Top&gt;</div>
+<div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>        }</div>
+<div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span>        function.def @constrain(%self: !struct.type&lt;@Top&gt;)  {</div>
+<div class="line"><a id="l00637" name="l00637"></a><span class="lineno">  637</span>          function.return</div>
+<div class="line"><a id="l00638" name="l00638"></a><span class="lineno">  638</span>        }</div>
+<div class="line"><a id="l00639" name="l00639"></a><span class="lineno">  639</span>      }</div>
+<div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span> </div>
+<div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span>      verif.contract @Foo for @Top (%self: !struct.type&lt;@Top&gt;) {</div>
+<div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span>        verif.invariant for @loopA(%lb: index, %iv: index, %ub: index, %step: index, %extra: !felt.type) {</div>
+<div class="line"><a id="l00643" name="l00643"></a><span class="lineno">  643</span>          %true = arith.constant  true</div>
+<div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span>          verif.require_compute %true</div>
+<div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span>        }</div>
+<div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span>      }</div>
+<div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span>    }</div>
+<div class="line"><a id="l00648" name="l00648"></a><span class="lineno">  648</span>    ```</div>
+<div class="line"><a id="l00649" name="l00649"></a><span class="lineno">  649</span>  }];</div>
+<div class="line"><a id="l00650" name="l00650"></a><span class="lineno">  650</span> </div>
+<div class="line"><a id="l00651" name="l00651"></a><span class="lineno">  651</span>  let arguments = (ins StrAttr:$loop_name, TypeArrayAttr:$loop_arg_types);</div>
+<div class="line"><a id="l00652" name="l00652"></a><span class="lineno">  652</span> </div>
+<div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span>  let regions = (region SizedRegion&lt;1&gt;:$region);</div>
+<div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span> </div>
+<div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span>  let skipDefaultBuilders = 1;</div>
+<div class="line"><a id="l00656" name="l00656"></a><span class="lineno">  656</span>  let builders = [OpBuilder&lt;(ins &quot;::mlir::StringRef&quot;:$loop_name,</div>
+<div class="line"><a id="l00657" name="l00657"></a><span class="lineno">  657</span>      CArg&lt;&quot;::llvm::ArrayRef&lt;::mlir::Type&gt;&quot;, &quot;{}&quot;&gt;:$loop_arg_types,</div>
+<div class="line"><a id="l00658" name="l00658"></a><span class="lineno">  658</span>      CArg&lt;&quot;::llvm::ArrayRef&lt;::mlir::Location&gt;&quot;, &quot;{}&quot;&gt;:$loop_arg_locs)&gt;];</div>
+<div class="line"><a id="l00659" name="l00659"></a><span class="lineno">  659</span> </div>
+<div class="line"><a id="l00660" name="l00660"></a><span class="lineno">  660</span>  let hasCustomAssemblyFormat = 1;</div>
+<div class="line"><a id="l00661" name="l00661"></a><span class="lineno">  661</span>  let hasVerifier = 1;</div>
+<div class="line"><a id="l00662" name="l00662"></a><span class="lineno">  662</span> </div>
+<div class="line"><a id="l00663" name="l00663"></a><span class="lineno">  663</span>  let extraClassDeclaration = [{</div>
+<div class="line"><a id="l00664" name="l00664"></a><span class="lineno">  664</span>    /// Returns the contract operation that contains this invariant.</div>
+<div class="line"><a id="l00665" name="l00665"></a><span class="lineno">  665</span>    ::llzk::verif::ContractOp getParentContract();</div>
+<div class="line"><a id="l00666" name="l00666"></a><span class="lineno">  666</span>    /// Returns the loop target.</div>
+<div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span>    ::mlir::FailureOr&lt;::llzk::verif::InvariantTargetOpInterface&gt; getTarget();</div>
+<div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span>  }];</div>
+<div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span>}</div>
+<div class="line"><a id="l00670" name="l00670"></a><span class="lineno">  670</span> </div>
+<div class="line"><a id="l00671" name="l00671"></a><span class="lineno">  671</span>//===------------------------------------------------------------------===//</div>
+<div class="line"><a id="l00672" name="l00672"></a><span class="lineno">  672</span>// Invariant inner ops</div>
+<div class="line"><a id="l00673" name="l00673"></a><span class="lineno">  673</span>//===------------------------------------------------------------------===//</div>
 <div class="line"><a id="l00674" name="l00674"></a><span class="lineno">  674</span> </div>
-<div class="line"><a id="l00675" name="l00675"></a><span class="lineno">  675</span>  let summary = mnemonic#&quot; value operation&quot;;</div>
-<div class="line"><a id="l00676" name="l00676"></a><span class="lineno">  676</span>  let description = [{</div>
-<div class="line"><a id="l00677" name="l00677"></a><span class="lineno">  677</span>    Indicates that a value }]#mnemonic#[{ on each iteration of the loop.</div>
-<div class="line"><a id="l00678" name="l00678"></a><span class="lineno">  678</span> </div>
-<div class="line"><a id="l00679" name="l00679"></a><span class="lineno">  679</span>    This declares the `MemoryEffectsOpInterface`, which, like the `cf.assert` (MLIR `cf` dialect)</div>
-<div class="line"><a id="l00680" name="l00680"></a><span class="lineno">  680</span>    and `bool.assert` (LLZK `bool` dialect) ops, adds a MemWrite affect to model program termination.</div>
-<div class="line"><a id="l00681" name="l00681"></a><span class="lineno">  681</span>  }];</div>
-<div class="line"><a id="l00682" name="l00682"></a><span class="lineno">  682</span> </div>
-<div class="line"><a id="l00683" name="l00683"></a><span class="lineno">  683</span>  let arguments = (ins LLZK_FeltType:$value);</div>
+<div class="line"><a id="l00675" name="l00675"></a><span class="lineno">  675</span>class InvariantInnerOp&lt;string mnemonic, list&lt;Trait&gt; traits = []&gt;</div>
+<div class="line"><a id="l00676" name="l00676"></a><span class="lineno">  676</span>    : VerifDialectOp&lt;</div>
+<div class="line"><a id="l00677" name="l00677"></a><span class="lineno">  677</span>          mnemonic,</div>
+<div class="line"><a id="l00678" name="l00678"></a><span class="lineno">  678</span>          traits#[HasAncestor&lt;&quot;::llzk::verif::InvariantOp&quot;&gt;,</div>
+<div class="line"><a id="l00679" name="l00679"></a><span class="lineno">  679</span>                  DeclareOpInterfaceMethods&lt;MemoryEffectsOpInterface&gt;]&gt; {</div>
+<div class="line"><a id="l00680" name="l00680"></a><span class="lineno">  680</span> </div>
+<div class="line"><a id="l00681" name="l00681"></a><span class="lineno">  681</span>  let summary = mnemonic#&quot; value operation&quot;;</div>
+<div class="line"><a id="l00682" name="l00682"></a><span class="lineno">  682</span>  let description = [{</div>
+<div class="line"><a id="l00683" name="l00683"></a><span class="lineno">  683</span>    Indicates that a value }]#mnemonic#[{ on each iteration of the loop.</div>
 <div class="line"><a id="l00684" name="l00684"></a><span class="lineno">  684</span> </div>
-<div class="line"><a id="l00685" name="l00685"></a><span class="lineno">  685</span>  let extraClassDefinition = [{</div>
-<div class="line"><a id="l00686" name="l00686"></a><span class="lineno">  686</span>    // This side effect models &quot;program termination&quot;. Based on</div>
-<div class="line"><a id="l00687" name="l00687"></a><span class="lineno">  687</span>    // https://github.com/llvm/llvm-project/blob/f325e4b2d836d6e65a4d0cf3efc6b0996ccf3765/mlir/lib/Dialect/ControlFlow/IR/ControlFlowOps.cpp#L92-L97</div>
-<div class="line"><a id="l00688" name="l00688"></a><span class="lineno">  688</span>    void $cppClass::getEffects(</div>
-<div class="line"><a id="l00689" name="l00689"></a><span class="lineno">  689</span>        ::mlir::SmallVectorImpl&lt;::mlir::SideEffects::EffectInstance&lt;::mlir::MemoryEffects::Effect&gt;&gt; &amp;effects</div>
-<div class="line"><a id="l00690" name="l00690"></a><span class="lineno">  690</span>    ) {</div>
-<div class="line"><a id="l00691" name="l00691"></a><span class="lineno">  691</span>      effects.emplace_back(::mlir::MemoryEffects::Write::get());</div>
-<div class="line"><a id="l00692" name="l00692"></a><span class="lineno">  692</span>    }</div>
-<div class="line"><a id="l00693" name="l00693"></a><span class="lineno">  693</span>  }];</div>
-<div class="line"><a id="l00694" name="l00694"></a><span class="lineno">  694</span> </div>
-<div class="line"><a id="l00695" name="l00695"></a><span class="lineno">  695</span>  let assemblyFormat = &quot;$value attr-dict&quot;;</div>
-<div class="line"><a id="l00696" name="l00696"></a><span class="lineno">  696</span>}</div>
-<div class="line"><a id="l00697" name="l00697"></a><span class="lineno">  697</span> </div>
-<div class="line"><a id="l00698" name="l00698"></a><span class="lineno">  698</span>def IncreasesOp : InvariantInnerOp&lt;&quot;increases&quot;&gt; {}</div>
-<div class="line"><a id="l00699" name="l00699"></a><span class="lineno">  699</span> </div>
-<div class="line"><a id="l00700" name="l00700"></a><span class="lineno">  700</span>def DecreasesOp : InvariantInnerOp&lt;&quot;decreases&quot;&gt; {}</div>
-<div class="line"><a id="l00701" name="l00701"></a><span class="lineno">  701</span> </div>
-<div class="line"><a id="l00702" name="l00702"></a><span class="lineno">  702</span>def StepOp : VerifDialectOp&lt;</div>
-<div class="line"><a id="l00703" name="l00703"></a><span class="lineno">  703</span>                 &quot;step&quot;, [HasAncestor&lt;&quot;::llzk::verif::InvariantOp&quot;&gt;,</div>
-<div class="line"><a id="l00704" name="l00704"></a><span class="lineno">  704</span>                          DeclareOpInterfaceMethods&lt;MemoryEffectsOpInterface&gt;,</div>
-<div class="line"><a id="l00705" name="l00705"></a><span class="lineno">  705</span>                          NoRegionArguments, SingleBlock]&gt; {</div>
-<div class="line"><a id="l00706" name="l00706"></a><span class="lineno">  706</span>  let summary = &quot;step predicate operation&quot;;</div>
-<div class="line"><a id="l00707" name="l00707"></a><span class="lineno">  707</span>  let description = [{</div>
-<div class="line"><a id="l00708" name="l00708"></a><span class="lineno">  708</span>    Defines a predicate that must be satisfied between iterations of the loop.</div>
-<div class="line"><a id="l00709" name="l00709"></a><span class="lineno">  709</span> </div>
-<div class="line"><a id="l00710" name="l00710"></a><span class="lineno">  710</span>    The predicate can access the value in the previous iteration by using the `verif.old` operation.</div>
-<div class="line"><a id="l00711" name="l00711"></a><span class="lineno">  711</span> </div>
-<div class="line"><a id="l00712" name="l00712"></a><span class="lineno">  712</span>    Declares the `MemoryEffectsOpInterface`, which, like the `cf.assert` (MLIR `cf` dialect)</div>
-<div class="line"><a id="l00713" name="l00713"></a><span class="lineno">  713</span>    and `bool.assert` (LLZK `bool` dialect) ops, adds a MemWrite affect to model program termination.</div>
-<div class="line"><a id="l00714" name="l00714"></a><span class="lineno">  714</span>  }];</div>
+<div class="line"><a id="l00685" name="l00685"></a><span class="lineno">  685</span>    This declares the `MemoryEffectsOpInterface`, which, like the `cf.assert` (MLIR `cf` dialect)</div>
+<div class="line"><a id="l00686" name="l00686"></a><span class="lineno">  686</span>    and `bool.assert` (LLZK `bool` dialect) ops, adds a MemWrite affect to model program termination.</div>
+<div class="line"><a id="l00687" name="l00687"></a><span class="lineno">  687</span>  }];</div>
+<div class="line"><a id="l00688" name="l00688"></a><span class="lineno">  688</span> </div>
+<div class="line"><a id="l00689" name="l00689"></a><span class="lineno">  689</span>  let arguments = (ins LLZK_FeltType:$value);</div>
+<div class="line"><a id="l00690" name="l00690"></a><span class="lineno">  690</span> </div>
+<div class="line"><a id="l00691" name="l00691"></a><span class="lineno">  691</span>  let extraClassDefinition = [{</div>
+<div class="line"><a id="l00692" name="l00692"></a><span class="lineno">  692</span>    // This side effect models &quot;program termination&quot;. Based on</div>
+<div class="line"><a id="l00693" name="l00693"></a><span class="lineno">  693</span>    // https://github.com/llvm/llvm-project/blob/f325e4b2d836d6e65a4d0cf3efc6b0996ccf3765/mlir/lib/Dialect/ControlFlow/IR/ControlFlowOps.cpp#L92-L97</div>
+<div class="line"><a id="l00694" name="l00694"></a><span class="lineno">  694</span>    void $cppClass::getEffects(</div>
+<div class="line"><a id="l00695" name="l00695"></a><span class="lineno">  695</span>        ::mlir::SmallVectorImpl&lt;::mlir::SideEffects::EffectInstance&lt;::mlir::MemoryEffects::Effect&gt;&gt; &amp;effects</div>
+<div class="line"><a id="l00696" name="l00696"></a><span class="lineno">  696</span>    ) {</div>
+<div class="line"><a id="l00697" name="l00697"></a><span class="lineno">  697</span>      effects.emplace_back(::mlir::MemoryEffects::Write::get());</div>
+<div class="line"><a id="l00698" name="l00698"></a><span class="lineno">  698</span>    }</div>
+<div class="line"><a id="l00699" name="l00699"></a><span class="lineno">  699</span>  }];</div>
+<div class="line"><a id="l00700" name="l00700"></a><span class="lineno">  700</span> </div>
+<div class="line"><a id="l00701" name="l00701"></a><span class="lineno">  701</span>  let assemblyFormat = &quot;$value attr-dict&quot;;</div>
+<div class="line"><a id="l00702" name="l00702"></a><span class="lineno">  702</span>}</div>
+<div class="line"><a id="l00703" name="l00703"></a><span class="lineno">  703</span> </div>
+<div class="line"><a id="l00704" name="l00704"></a><span class="lineno">  704</span>def IncreasesOp : InvariantInnerOp&lt;&quot;increases&quot;&gt; {}</div>
+<div class="line"><a id="l00705" name="l00705"></a><span class="lineno">  705</span> </div>
+<div class="line"><a id="l00706" name="l00706"></a><span class="lineno">  706</span>def DecreasesOp : InvariantInnerOp&lt;&quot;decreases&quot;&gt; {}</div>
+<div class="line"><a id="l00707" name="l00707"></a><span class="lineno">  707</span> </div>
+<div class="line"><a id="l00708" name="l00708"></a><span class="lineno">  708</span>def StepOp : VerifDialectOp&lt;</div>
+<div class="line"><a id="l00709" name="l00709"></a><span class="lineno">  709</span>                 &quot;step&quot;, [HasAncestor&lt;&quot;::llzk::verif::InvariantOp&quot;&gt;,</div>
+<div class="line"><a id="l00710" name="l00710"></a><span class="lineno">  710</span>                          DeclareOpInterfaceMethods&lt;MemoryEffectsOpInterface&gt;,</div>
+<div class="line"><a id="l00711" name="l00711"></a><span class="lineno">  711</span>                          NoRegionArguments, SingleBlock]&gt; {</div>
+<div class="line"><a id="l00712" name="l00712"></a><span class="lineno">  712</span>  let summary = &quot;step predicate operation&quot;;</div>
+<div class="line"><a id="l00713" name="l00713"></a><span class="lineno">  713</span>  let description = [{</div>
+<div class="line"><a id="l00714" name="l00714"></a><span class="lineno">  714</span>    Defines a predicate that must be satisfied between iterations of the loop.</div>
 <div class="line"><a id="l00715" name="l00715"></a><span class="lineno">  715</span> </div>
-<div class="line"><a id="l00716" name="l00716"></a><span class="lineno">  716</span>  let regions = (region SizedRegion&lt;1&gt;:$region);</div>
+<div class="line"><a id="l00716" name="l00716"></a><span class="lineno">  716</span>    The predicate can access the value in the previous iteration by using the `verif.old` operation.</div>
 <div class="line"><a id="l00717" name="l00717"></a><span class="lineno">  717</span> </div>
-<div class="line"><a id="l00718" name="l00718"></a><span class="lineno">  718</span>  let extraClassDefinition = [{</div>
-<div class="line"><a id="l00719" name="l00719"></a><span class="lineno">  719</span>    // This side effect models &quot;program termination&quot;. Based on</div>
-<div class="line"><a id="l00720" name="l00720"></a><span class="lineno">  720</span>    // https://github.com/llvm/llvm-project/blob/f325e4b2d836d6e65a4d0cf3efc6b0996ccf3765/mlir/lib/Dialect/ControlFlow/IR/ControlFlowOps.cpp#L92-L97</div>
-<div class="line"><a id="l00721" name="l00721"></a><span class="lineno">  721</span>    void $cppClass::getEffects(</div>
-<div class="line"><a id="l00722" name="l00722"></a><span class="lineno">  722</span>        ::mlir::SmallVectorImpl&lt;::mlir::SideEffects::EffectInstance&lt;::mlir::MemoryEffects::Effect&gt;&gt; &amp;effects</div>
-<div class="line"><a id="l00723" name="l00723"></a><span class="lineno">  723</span>    ) {</div>
-<div class="line"><a id="l00724" name="l00724"></a><span class="lineno">  724</span>      effects.emplace_back(::mlir::MemoryEffects::Write::get());</div>
-<div class="line"><a id="l00725" name="l00725"></a><span class="lineno">  725</span>    }</div>
-<div class="line"><a id="l00726" name="l00726"></a><span class="lineno">  726</span>  }];</div>
-<div class="line"><a id="l00727" name="l00727"></a><span class="lineno">  727</span> </div>
-<div class="line"><a id="l00728" name="l00728"></a><span class="lineno">  728</span>  let assemblyFormat = &quot;$region attr-dict&quot;;</div>
-<div class="line"><a id="l00729" name="l00729"></a><span class="lineno">  729</span>}</div>
-<div class="line"><a id="l00730" name="l00730"></a><span class="lineno">  730</span> </div>
-<div class="line"><a id="l00731" name="l00731"></a><span class="lineno">  731</span>def StepYieldOp</div>
-<div class="line"><a id="l00732" name="l00732"></a><span class="lineno">  732</span>    : VerifDialectOp&lt;&quot;step.yield&quot;, [HasParent&lt;&quot;StepOp&quot;&gt;, Terminator]&gt; {</div>
-<div class="line"><a id="l00733" name="l00733"></a><span class="lineno">  733</span>  let summary = &quot;step yield operation&quot;;</div>
-<div class="line"><a id="l00734" name="l00734"></a><span class="lineno">  734</span>  let description = [{</div>
-<div class="line"><a id="l00735" name="l00735"></a><span class="lineno">  735</span>    Terminator operation for `verif.step` blocks. Takes the boolean value carrying the predicate&#39;s result.</div>
-<div class="line"><a id="l00736" name="l00736"></a><span class="lineno">  736</span>  }];</div>
-<div class="line"><a id="l00737" name="l00737"></a><span class="lineno">  737</span> </div>
-<div class="line"><a id="l00738" name="l00738"></a><span class="lineno">  738</span>  let arguments = (ins I1:$value);</div>
-<div class="line"><a id="l00739" name="l00739"></a><span class="lineno">  739</span> </div>
-<div class="line"><a id="l00740" name="l00740"></a><span class="lineno">  740</span>  let assemblyFormat = &quot;$value attr-dict&quot;;</div>
-<div class="line"><a id="l00741" name="l00741"></a><span class="lineno">  741</span>}</div>
-<div class="line"><a id="l00742" name="l00742"></a><span class="lineno">  742</span> </div>
-<div class="line"><a id="l00743" name="l00743"></a><span class="lineno">  743</span>def OldOp : VerifDialectOp&lt;&quot;old&quot;, [Pure, HasAncestor&lt;&quot;::llzk::verif::StepOp&quot;&gt;,</div>
-<div class="line"><a id="l00744" name="l00744"></a><span class="lineno">  744</span>                                   AllTypesMatch&lt;[&quot;value&quot;, &quot;result&quot;]&gt;]&gt; {</div>
-<div class="line"><a id="l00745" name="l00745"></a><span class="lineno">  745</span>  let summary = &quot;old operation&quot;;</div>
-<div class="line"><a id="l00746" name="l00746"></a><span class="lineno">  746</span>  let description = [{</div>
-<div class="line"><a id="l00747" name="l00747"></a><span class="lineno">  747</span>    This operation allows accessing the value of an expression in the previous iteration of the loop.</div>
+<div class="line"><a id="l00718" name="l00718"></a><span class="lineno">  718</span>    Declares the `MemoryEffectsOpInterface`, which, like the `cf.assert` (MLIR `cf` dialect)</div>
+<div class="line"><a id="l00719" name="l00719"></a><span class="lineno">  719</span>    and `bool.assert` (LLZK `bool` dialect) ops, adds a MemWrite affect to model program termination.</div>
+<div class="line"><a id="l00720" name="l00720"></a><span class="lineno">  720</span>  }];</div>
+<div class="line"><a id="l00721" name="l00721"></a><span class="lineno">  721</span> </div>
+<div class="line"><a id="l00722" name="l00722"></a><span class="lineno">  722</span>  let regions = (region SizedRegion&lt;1&gt;:$region);</div>
+<div class="line"><a id="l00723" name="l00723"></a><span class="lineno">  723</span> </div>
+<div class="line"><a id="l00724" name="l00724"></a><span class="lineno">  724</span>  let extraClassDefinition = [{</div>
+<div class="line"><a id="l00725" name="l00725"></a><span class="lineno">  725</span>    // This side effect models &quot;program termination&quot;. Based on</div>
+<div class="line"><a id="l00726" name="l00726"></a><span class="lineno">  726</span>    // https://github.com/llvm/llvm-project/blob/f325e4b2d836d6e65a4d0cf3efc6b0996ccf3765/mlir/lib/Dialect/ControlFlow/IR/ControlFlowOps.cpp#L92-L97</div>
+<div class="line"><a id="l00727" name="l00727"></a><span class="lineno">  727</span>    void $cppClass::getEffects(</div>
+<div class="line"><a id="l00728" name="l00728"></a><span class="lineno">  728</span>        ::mlir::SmallVectorImpl&lt;::mlir::SideEffects::EffectInstance&lt;::mlir::MemoryEffects::Effect&gt;&gt; &amp;effects</div>
+<div class="line"><a id="l00729" name="l00729"></a><span class="lineno">  729</span>    ) {</div>
+<div class="line"><a id="l00730" name="l00730"></a><span class="lineno">  730</span>      effects.emplace_back(::mlir::MemoryEffects::Write::get());</div>
+<div class="line"><a id="l00731" name="l00731"></a><span class="lineno">  731</span>    }</div>
+<div class="line"><a id="l00732" name="l00732"></a><span class="lineno">  732</span>  }];</div>
+<div class="line"><a id="l00733" name="l00733"></a><span class="lineno">  733</span> </div>
+<div class="line"><a id="l00734" name="l00734"></a><span class="lineno">  734</span>  let assemblyFormat = &quot;$region attr-dict&quot;;</div>
+<div class="line"><a id="l00735" name="l00735"></a><span class="lineno">  735</span>}</div>
+<div class="line"><a id="l00736" name="l00736"></a><span class="lineno">  736</span> </div>
+<div class="line"><a id="l00737" name="l00737"></a><span class="lineno">  737</span>def StepYieldOp</div>
+<div class="line"><a id="l00738" name="l00738"></a><span class="lineno">  738</span>    : VerifDialectOp&lt;&quot;step.yield&quot;, [HasParent&lt;&quot;StepOp&quot;&gt;, Terminator]&gt; {</div>
+<div class="line"><a id="l00739" name="l00739"></a><span class="lineno">  739</span>  let summary = &quot;step yield operation&quot;;</div>
+<div class="line"><a id="l00740" name="l00740"></a><span class="lineno">  740</span>  let description = [{</div>
+<div class="line"><a id="l00741" name="l00741"></a><span class="lineno">  741</span>    Terminator operation for `verif.step` blocks. Takes the boolean value carrying the predicate&#39;s result.</div>
+<div class="line"><a id="l00742" name="l00742"></a><span class="lineno">  742</span>  }];</div>
+<div class="line"><a id="l00743" name="l00743"></a><span class="lineno">  743</span> </div>
+<div class="line"><a id="l00744" name="l00744"></a><span class="lineno">  744</span>  let arguments = (ins I1:$value);</div>
+<div class="line"><a id="l00745" name="l00745"></a><span class="lineno">  745</span> </div>
+<div class="line"><a id="l00746" name="l00746"></a><span class="lineno">  746</span>  let assemblyFormat = &quot;$value attr-dict&quot;;</div>
+<div class="line"><a id="l00747" name="l00747"></a><span class="lineno">  747</span>}</div>
 <div class="line"><a id="l00748" name="l00748"></a><span class="lineno">  748</span> </div>
-<div class="line"><a id="l00749" name="l00749"></a><span class="lineno">  749</span>    In can only be used within the body of a `verif.step` operation.</div>
-<div class="line"><a id="l00750" name="l00750"></a><span class="lineno">  750</span>  }];</div>
-<div class="line"><a id="l00751" name="l00751"></a><span class="lineno">  751</span> </div>
-<div class="line"><a id="l00752" name="l00752"></a><span class="lineno">  752</span>  let arguments = (ins AnyLLZKType:$value);</div>
-<div class="line"><a id="l00753" name="l00753"></a><span class="lineno">  753</span>  let results = (outs AnyLLZKType:$result);</div>
+<div class="line"><a id="l00749" name="l00749"></a><span class="lineno">  749</span>def OldOp : VerifDialectOp&lt;&quot;old&quot;, [Pure, HasAncestor&lt;&quot;::llzk::verif::StepOp&quot;&gt;,</div>
+<div class="line"><a id="l00750" name="l00750"></a><span class="lineno">  750</span>                                   AllTypesMatch&lt;[&quot;value&quot;, &quot;result&quot;]&gt;]&gt; {</div>
+<div class="line"><a id="l00751" name="l00751"></a><span class="lineno">  751</span>  let summary = &quot;old operation&quot;;</div>
+<div class="line"><a id="l00752" name="l00752"></a><span class="lineno">  752</span>  let description = [{</div>
+<div class="line"><a id="l00753" name="l00753"></a><span class="lineno">  753</span>    This operation allows accessing the value of an expression in the previous iteration of the loop.</div>
 <div class="line"><a id="l00754" name="l00754"></a><span class="lineno">  754</span> </div>
-<div class="line"><a id="l00755" name="l00755"></a><span class="lineno">  755</span>  let assemblyFormat = &quot;$value `:` type($result) attr-dict&quot;;</div>
-<div class="line"><a id="l00756" name="l00756"></a><span class="lineno">  756</span>}</div>
+<div class="line"><a id="l00755" name="l00755"></a><span class="lineno">  755</span>    In can only be used within the body of a `verif.step` operation.</div>
+<div class="line"><a id="l00756" name="l00756"></a><span class="lineno">  756</span>  }];</div>
 <div class="line"><a id="l00757" name="l00757"></a><span class="lineno">  757</span> </div>
-<div class="line"><a id="l00758" name="l00758"></a><span class="lineno">  758</span>#endif // LLZK_VERIF_OPS</div>
+<div class="line"><a id="l00758" name="l00758"></a><span class="lineno">  758</span>  let arguments = (ins AnyLLZKType:$value);</div>
+<div class="line"><a id="l00759" name="l00759"></a><span class="lineno">  759</span>  let results = (outs AnyLLZKType:$result);</div>
+<div class="line"><a id="l00760" name="l00760"></a><span class="lineno">  760</span> </div>
+<div class="line"><a id="l00761" name="l00761"></a><span class="lineno">  761</span>  let assemblyFormat = &quot;$value `:` type($result) attr-dict&quot;;</div>
+<div class="line"><a id="l00762" name="l00762"></a><span class="lineno">  762</span>}</div>
+<div class="line"><a id="l00763" name="l00763"></a><span class="lineno">  763</span> </div>
+<div class="line"><a id="l00764" name="l00764"></a><span class="lineno">  764</span>#endif // LLZK_VERIF_OPS</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

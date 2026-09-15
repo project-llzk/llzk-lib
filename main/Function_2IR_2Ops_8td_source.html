@@ -665,36 +665,42 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('Function_2IR_2
 <div class="line"><a id="l00533" name="l00533"></a><span class="lineno">  533</span> </div>
 <div class="line"><a id="l00534" name="l00534"></a><span class="lineno">  534</span>    /// Check type compatibility of the given template parameter value from this `CallOp` against</div>
 <div class="line"><a id="l00535" name="l00535"></a><span class="lineno">  535</span>    /// the declared type on the given `TemplateParamOp` (if any).</div>
-<div class="line"><a id="l00536" name="l00536"></a><span class="lineno">  536</span>    ::mlir::LogicalResult verifyTemplateParamCompatibility(</div>
+<div class="line"><a id="l00536" name="l00536"></a><span class="lineno">  536</span>    inline ::mlir::LogicalResult verifyTemplateParamCompatibility(</div>
 <div class="line"><a id="l00537" name="l00537"></a><span class="lineno">  537</span>      ::mlir::Attribute paramFromCallOp, ::llzk::polymorphic::TemplateParamOp targetParam</div>
-<div class="line"><a id="l00538" name="l00538"></a><span class="lineno">  538</span>    );</div>
-<div class="line"><a id="l00539" name="l00539"></a><span class="lineno">  539</span> </div>
-<div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span>    /// Check type compatibility of each template parameter value provided in this `CallOp` against</div>
-<div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span>    /// the declared type on each `TemplateParamOp` (if any).</div>
-<div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span>    ///</div>
-<div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span>    /// Pre-condition assertions:</div>
-<div class="line"><a id="l00544" name="l00544"></a><span class="lineno">  544</span>    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`</div>
-<div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`</div>
-<div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span>    ::mlir::LogicalResult verifyTemplateParamCompatibility(</div>
-<div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>        ::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;::llzk::polymorphic::TemplateParamOp&gt;&gt; targetParamDefs</div>
-<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span>    );</div>
-<div class="line"><a id="l00549" name="l00549"></a><span class="lineno">  549</span> </div>
-<div class="line"><a id="l00550" name="l00550"></a><span class="lineno">  550</span>    /// Verify that each template parameter value provided in this `CallOp` is consistent with</div>
-<div class="line"><a id="l00551" name="l00551"></a><span class="lineno">  551</span>    /// the value inferred for the target `TemplateParamOp` in the given `UnificationMap`. The</div>
-<div class="line"><a id="l00552" name="l00552"></a><span class="lineno">  552</span>    /// `UnificationMap` is expected to contain the unification results of this `CallOp` against</div>
-<div class="line"><a id="l00553" name="l00553"></a><span class="lineno">  553</span>    /// the target function type signature.</div>
-<div class="line"><a id="l00554" name="l00554"></a><span class="lineno">  554</span>    ///</div>
-<div class="line"><a id="l00555" name="l00555"></a><span class="lineno">  555</span>    /// Pre-condition assertions:</div>
-<div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span>    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`</div>
-<div class="line"><a id="l00557" name="l00557"></a><span class="lineno">  557</span>    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`</div>
-<div class="line"><a id="l00558" name="l00558"></a><span class="lineno">  558</span>    ::mlir::LogicalResult verifyTemplateParamsMatchInferred(</div>
-<div class="line"><a id="l00559" name="l00559"></a><span class="lineno">  559</span>        ::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;::llzk::polymorphic::TemplateParamOp&gt;&gt; targetParamDefs,</div>
-<div class="line"><a id="l00560" name="l00560"></a><span class="lineno">  560</span>        const UnificationMap &amp;unifications</div>
-<div class="line"><a id="l00561" name="l00561"></a><span class="lineno">  561</span>    );</div>
-<div class="line"><a id="l00562" name="l00562"></a><span class="lineno">  562</span>  }];</div>
-<div class="line"><a id="l00563" name="l00563"></a><span class="lineno">  563</span>}</div>
-<div class="line"><a id="l00564" name="l00564"></a><span class="lineno">  564</span> </div>
-<div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span>#endif // LLZK_FUNC_OPS</div>
+<div class="line"><a id="l00538" name="l00538"></a><span class="lineno">  538</span>    ) {</div>
+<div class="line"><a id="l00539" name="l00539"></a><span class="lineno">  539</span>      return llzk::verifyTemplateParamValueCompatibility(getOperation(), paramFromCallOp, targetParam);</div>
+<div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span>    }</div>
+<div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span> </div>
+<div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span>    /// Check type compatibility of each template parameter value provided in this `CallOp` against</div>
+<div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span>    /// the declared type on each `TemplateParamOp` (if any).</div>
+<div class="line"><a id="l00544" name="l00544"></a><span class="lineno">  544</span>    ///</div>
+<div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>    /// Pre-condition assertions:</div>
+<div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span>    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`</div>
+<div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`</div>
+<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span>    inline ::mlir::LogicalResult verifyTemplateParamCompatibility(</div>
+<div class="line"><a id="l00549" name="l00549"></a><span class="lineno">  549</span>        ::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;::llzk::polymorphic::TemplateParamOp&gt;&gt; targetParamDefs</div>
+<div class="line"><a id="l00550" name="l00550"></a><span class="lineno">  550</span>    ) {</div>
+<div class="line"><a id="l00551" name="l00551"></a><span class="lineno">  551</span>      return llzk::verifyTemplateParamValuesCompatibility(getOperation(), getTemplateParamsAttr(), targetParamDefs);</div>
+<div class="line"><a id="l00552" name="l00552"></a><span class="lineno">  552</span>    }</div>
+<div class="line"><a id="l00553" name="l00553"></a><span class="lineno">  553</span> </div>
+<div class="line"><a id="l00554" name="l00554"></a><span class="lineno">  554</span>    /// Verify that each template parameter value provided in this `CallOp` is consistent with</div>
+<div class="line"><a id="l00555" name="l00555"></a><span class="lineno">  555</span>    /// the value inferred for the target `TemplateParamOp` in the given `UnificationMap`. The</div>
+<div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span>    /// `UnificationMap` is expected to contain the unification results of this `CallOp` against</div>
+<div class="line"><a id="l00557" name="l00557"></a><span class="lineno">  557</span>    /// the target function type signature.</div>
+<div class="line"><a id="l00558" name="l00558"></a><span class="lineno">  558</span>    ///</div>
+<div class="line"><a id="l00559" name="l00559"></a><span class="lineno">  559</span>    /// Pre-condition assertions:</div>
+<div class="line"><a id="l00560" name="l00560"></a><span class="lineno">  560</span>    ///   - `!isNullOrEmpty(getTemplateParamsAttr())`</div>
+<div class="line"><a id="l00561" name="l00561"></a><span class="lineno">  561</span>    ///   - `getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)`</div>
+<div class="line"><a id="l00562" name="l00562"></a><span class="lineno">  562</span>    inline ::mlir::LogicalResult verifyTemplateParamsMatchInferred(</div>
+<div class="line"><a id="l00563" name="l00563"></a><span class="lineno">  563</span>        ::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;::llzk::polymorphic::TemplateParamOp&gt;&gt; targetParamDefs,</div>
+<div class="line"><a id="l00564" name="l00564"></a><span class="lineno">  564</span>        const UnificationMap &amp;unifications</div>
+<div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span>    ) {</div>
+<div class="line"><a id="l00566" name="l00566"></a><span class="lineno">  566</span>      return llzk::verifyTemplateParamsMatchInferred(getOperation(), getTemplateParamsAttr(), targetParamDefs, unifications);</div>
+<div class="line"><a id="l00567" name="l00567"></a><span class="lineno">  567</span>    }</div>
+<div class="line"><a id="l00568" name="l00568"></a><span class="lineno">  568</span>  }];</div>
+<div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span>}</div>
+<div class="line"><a id="l00570" name="l00570"></a><span class="lineno">  570</span> </div>
+<div class="line"><a id="l00571" name="l00571"></a><span class="lineno">  571</span>#endif // LLZK_FUNC_OPS</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

@@ -25,6 +25,9 @@ var SymbolHelper_8cpp =
     [ "llzk::verifyParamOfType", "namespacellzk.html#af40b899e1eab6e10a664b0bebada2da3", null ],
     [ "llzk::verifyParamsOfType", "namespacellzk.html#a889208db1cfb1783bdbf616178900a5c", null ],
     [ "llzk::verifyStructTypeResolution", "namespacellzk.html#a75f8539d20e1d1066b30e5b8d15b0546", null ],
+    [ "llzk::verifyTemplateParamsMatchInferred", "namespacellzk.html#a511a87b7ff910c75aa64cc3599c38d61", null ],
     [ "llzk::verifyTemplateParamSymbol", "namespacellzk.html#ae94239b8dd3397ba41df5e7a0b91ec25", null ],
+    [ "llzk::verifyTemplateParamValueCompatibility", "namespacellzk.html#a924cecf12006f00994ef07f6324df0fa", null ],
+    [ "llzk::verifyTemplateParamValuesCompatibility", "namespacellzk.html#a983891da904dd7220be51d5e67b8170e", null ],
     [ "llzk::verifyTypeResolution", "namespacellzk.html#a8a20668e5af9ce080f868692b9d199a6", null ]
 ];

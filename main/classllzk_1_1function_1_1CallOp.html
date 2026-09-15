@@ -230,12 +230,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:aad15350e2920b08df199e1e49b00a609"><td class="mdescLeft">&#160;</td><td class="mdescRight">Assuming the callee contains witness generation code, return the single <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> result.  <br /></td></tr>
 <tr class="memitem:aa9d9db4d371032c209be73be6513c91c" id="r_aa9d9db4d371032c209be73be6513c91c"><td class="memItemLeft">static ::llvm::SmallVector&lt;::mlir::ValueRange &gt;&#160;</td><td class="memItemRight"><a class="el" href="#aa9d9db4d371032c209be73be6513c91c">toVectorOfValueRange</a> (::mlir::OperandRangeRange)</td></tr>
 <tr class="memdesc:aa9d9db4d371032c209be73be6513c91c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocate consecutive storage of the ValueRange instances in the parameter so it can be passed to the builders as an <span class="tt">ArrayRef&lt;ValueRange&gt;</span>.  <br /></td></tr>
-<tr class="memitem:ad52101b040cbd7ba4dcf4a45098c1260" id="r_ad52101b040cbd7ba4dcf4a45098c1260"><td class="memItemLeft">::mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#ad52101b040cbd7ba4dcf4a45098c1260">verifyTemplateParamCompatibility</a> (::mlir::Attribute paramFromCallOp, <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">::llzk::polymorphic::TemplateParamOp</a> targetParam)</td></tr>
-<tr class="memdesc:ad52101b040cbd7ba4dcf4a45098c1260"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check type compatibility of the given template parameter value from this <span class="tt"><a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a></span> against the declared type on the given <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a></span> (if any).  <br /></td></tr>
-<tr class="memitem:a1f6a3b8cb62ae74f4adf914d418dcb90" id="r_a1f6a3b8cb62ae74f4adf914d418dcb90"><td class="memItemLeft">::mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a1f6a3b8cb62ae74f4adf914d418dcb90">verifyTemplateParamCompatibility</a> (::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;<a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">::llzk::polymorphic::TemplateParamOp</a> &gt; &gt; targetParamDefs)</td></tr>
-<tr class="memdesc:a1f6a3b8cb62ae74f4adf914d418dcb90"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check type compatibility of each template parameter value provided in this <span class="tt"><a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a></span> against the declared type on each <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a></span> (if any).  <br /></td></tr>
-<tr class="memitem:ac92d7e34e174f252ae307fc8a301fce6" id="r_ac92d7e34e174f252ae307fc8a301fce6"><td class="memItemLeft">::mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#ac92d7e34e174f252ae307fc8a301fce6">verifyTemplateParamsMatchInferred</a> (::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;<a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">::llzk::polymorphic::TemplateParamOp</a> &gt; &gt; targetParamDefs, const <a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> &amp;unifications)</td></tr>
-<tr class="memdesc:ac92d7e34e174f252ae307fc8a301fce6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Verify that each template parameter value provided in this <span class="tt"><a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a></span> is consistent with the value inferred for the target <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a></span> in the given <span class="tt"><a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904" title="Optional result from type unifications.">UnificationMap</a></span>.  <br /></td></tr>
+<tr class="memitem:a8f267c5f6688e43a3b4852be9360bcc2" id="r_a8f267c5f6688e43a3b4852be9360bcc2"><td class="memItemLeft">inline ::mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a8f267c5f6688e43a3b4852be9360bcc2">verifyTemplateParamCompatibility</a> (::mlir::Attribute paramFromCallOp, <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">::llzk::polymorphic::TemplateParamOp</a> targetParam)</td></tr>
+<tr class="memdesc:a8f267c5f6688e43a3b4852be9360bcc2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check type compatibility of the given template parameter value from this <span class="tt"><a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a></span> against the declared type on the given <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a></span> (if any).  <br /></td></tr>
+<tr class="memitem:a6e0c82966bd6fe206ac4d16aa6687ea8" id="r_a6e0c82966bd6fe206ac4d16aa6687ea8"><td class="memItemLeft">inline ::mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a6e0c82966bd6fe206ac4d16aa6687ea8">verifyTemplateParamCompatibility</a> (::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;<a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">::llzk::polymorphic::TemplateParamOp</a> &gt; &gt; targetParamDefs)</td></tr>
+<tr class="memdesc:a6e0c82966bd6fe206ac4d16aa6687ea8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check type compatibility of each template parameter value provided in this <span class="tt"><a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a></span> against the declared type on each <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a></span> (if any).  <br /></td></tr>
+<tr class="memitem:ac2bdd8b7b753eb55b1346a089e7549db" id="r_ac2bdd8b7b753eb55b1346a089e7549db"><td class="memItemLeft">inline ::mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#ac2bdd8b7b753eb55b1346a089e7549db">verifyTemplateParamsMatchInferred</a> (::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;<a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">::llzk::polymorphic::TemplateParamOp</a> &gt; &gt; targetParamDefs, const <a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> &amp;unifications)</td></tr>
+<tr class="memdesc:ac2bdd8b7b753eb55b1346a089e7549db"><td class="mdescLeft">&#160;</td><td class="mdescRight">Verify that each template parameter value provided in this <span class="tt"><a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a></span> is consistent with the value inferred for the target <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a></span> in the given <span class="tt"><a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904" title="Optional result from type unifications.">UnificationMap</a></span>.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -823,7 +823,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the callee function name is <span class="tt"><a class="el" href="namespacellzk.html#a078ca0039bbcd069858d9c9141c015d0" title="Symbol name for the witness generation (and resp.">FUNC_NAME_COMPUTE</a></span> within a <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01198">1198</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01067">1067</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -844,7 +844,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the callee function name is <span class="tt"><a class="el" href="namespacellzk.html#a353b99dc283d18cdecb549edcb8d096f">FUNC_NAME_CONSTRAIN</a></span> within a <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01210">1210</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01079">1079</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -865,7 +865,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return <span class="tt">true</span> iff the callee function name is <span class="tt"><a class="el" href="namespacellzk.html#a5da07f5e9e63bb1a19430087a83082a8">FUNC_NAME_PRODUCT</a></span> within a <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01204">1204</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01073">1073</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -986,7 +986,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Return the callee of this operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01244">1244</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01113">1113</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1107,7 +1107,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Resolve and return the target <a class="el" href="classllzk_1_1function_1_1FuncDefOp.html">FuncDefOp</a> for this <a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01226">1226</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01095">1095</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1615,7 +1615,7 @@ template&lt;typename RangeT&gt; </div>
 <p>Return the "self" value (i.e. </p>
 <p>the return value) from the callee function (which must be named <span class="tt"><a class="el" href="namespacellzk.html#a078ca0039bbcd069858d9c9141c015d0" title="Symbol name for the witness generation (and resp.">FUNC_NAME_COMPUTE</a></span>). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01216">1216</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01085">1085</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1637,7 +1637,7 @@ template&lt;typename RangeT&gt; </div>
 <p>Return the "self" value (i.e. </p>
 <p>the first parameter) from the callee function (which must be named <span class="tt"><a class="el" href="namespacellzk.html#a353b99dc283d18cdecb549edcb8d096f">FUNC_NAME_CONSTRAIN</a></span>). </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01221">1221</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01090">1090</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1658,7 +1658,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Assuming the callee is <span class="tt"><a class="el" href="namespacellzk.html#a078ca0039bbcd069858d9c9141c015d0" title="Symbol name for the witness generation (and resp.">FUNC_NAME_COMPUTE</a></span>, return the single <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> result. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01233">1233</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01102">1102</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1679,7 +1679,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Assuming the callee contains witness generation code, return the single <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> result. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01238">1238</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01107">1107</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1801,7 +1801,7 @@ template&lt;typename RangeT&gt; </div>
 <p>Return the FunctionType inferred from the arg operands and result types of this <a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a>. </p>
 <p>This is not necessarily the same as the callee's FunctionType but should unify with it or else IR verification will fail. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01166">1166</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01035">1035</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1949,7 +1949,7 @@ template&lt;typename RangeT&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00541">541</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00538">538</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -1997,7 +1997,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by CallOpInterface. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01270">1270</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01139">1139</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2018,7 +2018,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Required by CallOpInterface. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01260">1260</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01129">1129</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2066,7 +2066,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Set the callee for this operation. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01247">1247</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01116">1116</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2314,7 +2314,7 @@ template&lt;typename RangeT&gt; </div>
 
 <p>Allocate consecutive storage of the ValueRange instances in the parameter so it can be passed to the builders as an <span class="tt">ArrayRef&lt;ValueRange&gt;</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01251">1251</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01120">1120</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2336,7 +2336,7 @@ template&lt;typename RangeT&gt; </div>
 <p>Attempt type unfication between the inferred FunctionType from this <a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a> (as LHS) and the given FunctionType (as RHS). </p>
 <p>If successful, return a <a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904" title="Optional result from type unifications.">UnificationMap</a> containing the unifications that were made. Otherwise, return failure. </p>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01170">1170</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01039">1039</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
@@ -2429,23 +2429,31 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l01126">1126</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00995">995</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>
-<a id="a1f6a3b8cb62ae74f4adf914d418dcb90" name="a1f6a3b8cb62ae74f4adf914d418dcb90"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1f6a3b8cb62ae74f4adf914d418dcb90">&#9670;&#160;</a></span>verifyTemplateParamCompatibility() <span class="overload">[1/2]</span></h2>
+<a id="a6e0c82966bd6fe206ac4d16aa6687ea8" name="a6e0c82966bd6fe206ac4d16aa6687ea8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6e0c82966bd6fe206ac4d16aa6687ea8">&#9670;&#160;</a></span>verifyTemplateParamCompatibility() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">::mlir::LogicalResult llzk::function::CallOp::verifyTemplateParamCompatibility </td>
+          <td class="memname">inline ::mlir::LogicalResult llzk::function::CallOp::verifyTemplateParamCompatibility </td>
           <td>(</td>
           <td class="paramtype">::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;<a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">::llzk::polymorphic::TemplateParamOp</a> &gt; &gt;</td>          <td class="paramname"><span class="paramname"><em>targetParamDefs</em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 <p>Check type compatibility of each template parameter value provided in this <span class="tt"><a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a></span> against the declared type on each <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a></span> (if any). </p>
@@ -2454,16 +2462,21 @@ template&lt;typename RangeT&gt; </div>
 <li><span class="tt"><a class="el" href="#a9f6fe62a7b10ebfe0b3e7a3edd430675">getTemplateParamsAttr()</a>.size() == llvm::range_size(targetParamDefs)</span> </li>
 </ul>
 
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00453">453</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
 </div>
 </div>
-<a id="ad52101b040cbd7ba4dcf4a45098c1260" name="ad52101b040cbd7ba4dcf4a45098c1260"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad52101b040cbd7ba4dcf4a45098c1260">&#9670;&#160;</a></span>verifyTemplateParamCompatibility() <span class="overload">[2/2]</span></h2>
+<a id="a8f267c5f6688e43a3b4852be9360bcc2" name="a8f267c5f6688e43a3b4852be9360bcc2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8f267c5f6688e43a3b4852be9360bcc2">&#9670;&#160;</a></span>verifyTemplateParamCompatibility() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">::mlir::LogicalResult llzk::function::CallOp::verifyTemplateParamCompatibility </td>
+          <td class="memname">inline ::mlir::LogicalResult llzk::function::CallOp::verifyTemplateParamCompatibility </td>
           <td>(</td>
           <td class="paramtype">::mlir::Attribute</td>          <td class="paramname"><span class="paramname"><em>paramFromCallOp</em></span>, </td>
         </tr>
@@ -2473,20 +2486,30 @@ template&lt;typename RangeT&gt; </div>
           <td class="paramtype"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">::llzk::polymorphic::TemplateParamOp</a></td>          <td class="paramname"><span class="paramname"><em>targetParam</em></span>&#160;)</td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 <p>Check type compatibility of the given template parameter value from this <span class="tt"><a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a></span> against the declared type on the given <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a></span> (if any). </p>
 
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00441">441</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
+
 </div>
 </div>
-<a id="ac92d7e34e174f252ae307fc8a301fce6" name="ac92d7e34e174f252ae307fc8a301fce6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac92d7e34e174f252ae307fc8a301fce6">&#9670;&#160;</a></span>verifyTemplateParamsMatchInferred()</h2>
+<a id="ac2bdd8b7b753eb55b1346a089e7549db" name="ac2bdd8b7b753eb55b1346a089e7549db"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac2bdd8b7b753eb55b1346a089e7549db">&#9670;&#160;</a></span>verifyTemplateParamsMatchInferred()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">LogicalResult llzk::function::CallOp::verifyTemplateParamsMatchInferred </td>
+          <td class="memname">inline ::mlir::LogicalResult llzk::function::CallOp::verifyTemplateParamsMatchInferred </td>
           <td>(</td>
           <td class="paramtype">::llvm::iterator_range&lt;::mlir::Region::op_iterator&lt;<a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">::llzk::polymorphic::TemplateParamOp</a> &gt; &gt;</td>          <td class="paramname"><span class="paramname"><em>targetParamDefs</em></span>, </td>
         </tr>
@@ -2496,6 +2519,11 @@ template&lt;typename RangeT&gt; </div>
           <td class="paramtype">const <a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>unifications</em></span>&#160;)</td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 <p>Verify that each template parameter value provided in this <span class="tt"><a class="el" href="classllzk_1_1function_1_1CallOp.html">CallOp</a></span> is consistent with the value inferred for the target <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a></span> in the given <span class="tt"><a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904" title="Optional result from type unifications.">UnificationMap</a></span>. </p>
@@ -2505,7 +2533,7 @@ template&lt;typename RangeT&gt; </div>
 <li><span class="tt"><a class="el" href="#a9f6fe62a7b10ebfe0b3e7a3edd430675">getTemplateParamsAttr()</a>.size() == llvm::range_size(targetParamDefs)</span> </li>
 </ul>
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00728">728</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html#l00467">467</a> of file <a class="el" href="Function_2IR_2Ops_8h_8inc_source.html">Ops.h.inc</a>.</p>
 
 </div>
 </div>
@@ -2524,7 +2552,7 @@ template&lt;typename RangeT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00580">580</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Function_2IR_2Ops_8cpp_source.html#l00577">577</a> of file <a class="el" href="Function_2IR_2Ops_8cpp_source.html">Ops.cpp</a>.</p>
 
 </div>
 </div>

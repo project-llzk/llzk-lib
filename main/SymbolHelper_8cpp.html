@@ -139,12 +139,16 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('SymbolHelper_8
 <a href="#details">More...</a></p>
 <div class="textblock"><code>#include &quot;<a class="el" href="SymbolHelper_8h_source.html">llzk/Util/SymbolHelper.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Array_2IR_2Ops_8h_source.html">llzk/Dialect/Array/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Felt_2IR_2Attrs_8h_source.html">llzk/Dialect/Felt/IR/Attrs.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Felt_2IR_2Types_8h_source.html">llzk/Dialect/Felt/IR/Types.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Function_2IR_2Ops_8h_source.html">llzk/Dialect/Function/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Global_2IR_2Ops_8h_source.html">llzk/Dialect/Global/IR/Ops.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="Polymorphic_2IR_2Ops_8h_source.html">llzk/Dialect/Polymorphic/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Polymorphic_2IR_2Types_8h_source.html">llzk/Dialect/Polymorphic/IR/Types.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="Verif_2IR_2Ops_8h_source.html">llzk/Dialect/Verif/IR/Ops.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="SymbolLookup_8h_source.html">llzk/Util/SymbolLookup.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="SymbolTableLLZK_8h_source.html">llzk/Util/SymbolTableLLZK.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="TypeHelper_8h_source.html">llzk/Util/TypeHelper.h</a>&quot;</code><br />
 <code>#include &lt;mlir/IR/BuiltinOps.h&gt;</code><br />
 <code>#include &lt;mlir/IR/BuiltinTypes.h&gt;</code><br />
 <code>#include &lt;mlir/IR/Operation.h&gt;</code><br />
@@ -153,7 +157,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('SymbolHelper_8
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for SymbolHelper.cpp:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="SymbolHelper_8cpp__incl.svg" width="3835" height="856"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="SymbolHelper_8cpp__incl.svg" width="4540" height="763"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <p><a href="SymbolHelper_8cpp_source.html">Go to the source code of this file.</a></p>
@@ -190,6 +194,9 @@ Functions</h2></td></tr>
 <tr class="memitem:abea185ddb9923e1423c6f3562c60e38f" id="r_abea185ddb9923e1423c6f3562c60e38f"><td class="memItemLeft">FailureOr&lt; <a class="el" href="classllzk_1_1SymbolLookupResult.html">SymbolLookupResult</a>&lt; <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> &gt; &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#abea185ddb9923e1423c6f3562c60e38f">llzk::getMainInstanceDef</a> (SymbolTableCollection &amp;symbolTable, Operation *lookupFrom)</td></tr>
 <tr class="memitem:a4eb4ec0cec60aaad30fbe14928faff53" id="r_a4eb4ec0cec60aaad30fbe14928faff53"><td class="memItemLeft">FailureOr&lt; <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a4eb4ec0cec60aaad30fbe14928faff53">llzk::getConstResolutionTemplate</a> (SymbolTableCollection &amp;tables, Operation *origin)</td></tr>
 <tr class="memitem:ae94239b8dd3397ba41df5e7a0b91ec25" id="r_ae94239b8dd3397ba41df5e7a0b91ec25"><td class="memItemLeft">LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#ae94239b8dd3397ba41df5e7a0b91ec25">llzk::verifyTemplateParamSymbol</a> (SymbolTableCollection &amp;tables, SymbolRefAttr symbol, Operation *origin)</td></tr>
+<tr class="memitem:a924cecf12006f00994ef07f6324df0fa" id="r_a924cecf12006f00994ef07f6324df0fa"><td class="memItemLeft">LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a924cecf12006f00994ef07f6324df0fa">llzk::verifyTemplateParamValueCompatibility</a> (Operation *origin, Attribute value, <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a> targetParam)</td></tr>
+<tr class="memitem:a983891da904dd7220be51d5e67b8170e" id="r_a983891da904dd7220be51d5e67b8170e"><td class="memItemLeft">LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a983891da904dd7220be51d5e67b8170e">llzk::verifyTemplateParamValuesCompatibility</a> (Operation *origin, ArrayAttr explicitParams, llvm::iterator_range&lt; Region::op_iterator&lt; <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a> &gt; &gt; targetParamDefs)</td></tr>
+<tr class="memitem:a511a87b7ff910c75aa64cc3599c38d61" id="r_a511a87b7ff910c75aa64cc3599c38d61"><td class="memItemLeft">LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a511a87b7ff910c75aa64cc3599c38d61">llzk::verifyTemplateParamsMatchInferred</a> (Operation *origin, ArrayAttr explicitParams, llvm::iterator_range&lt; Region::op_iterator&lt; <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a> &gt; &gt; targetParamDefs, const <a class="el" href="namespacellzk.html#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> &amp;unifications)</td></tr>
 <tr class="memitem:af40b899e1eab6e10a664b0bebada2da3" id="r_af40b899e1eab6e10a664b0bebada2da3"><td class="memItemLeft">LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#af40b899e1eab6e10a664b0bebada2da3">llzk::verifyParamOfType</a> (SymbolTableCollection &amp;tables, SymbolRefAttr param, Type parameterizedType, Operation *origin, std::optional&lt; Type &gt; requiredParamType)</td></tr>
 <tr class="memitem:a889208db1cfb1783bdbf616178900a5c" id="r_a889208db1cfb1783bdbf616178900a5c"><td class="memItemLeft">LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a889208db1cfb1783bdbf616178900a5c">llzk::verifyParamsOfType</a> (SymbolTableCollection &amp;tables, ArrayRef&lt; Attribute &gt; tyParams, Type parameterizedType, Operation *origin, std::optional&lt; Type &gt; requiredParamType)</td></tr>
 <tr class="memitem:a75f8539d20e1d1066b30e5b8d15b0546" id="r_a75f8539d20e1d1066b30e5b8d15b0546"><td class="memItemLeft">FailureOr&lt; <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespacellzk.html#a75f8539d20e1d1066b30e5b8d15b0546">llzk::verifyStructTypeResolution</a> (SymbolTableCollection &amp;tables, <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> ty, Operation *origin)</td></tr>
@@ -212,7 +219,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00032">32</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00036">36</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>

@@ -512,6 +512,9 @@ Functions</h2></td></tr>
 <tr class="memitem:abea185ddb9923e1423c6f3562c60e38f" id="r_abea185ddb9923e1423c6f3562c60e38f"><td class="memItemLeft">FailureOr&lt; <a class="el" href="classllzk_1_1SymbolLookupResult.html">SymbolLookupResult</a>&lt; <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> &gt; &gt;&#160;</td><td class="memItemRight"><a class="el" href="#abea185ddb9923e1423c6f3562c60e38f">getMainInstanceDef</a> (SymbolTableCollection &amp;symbolTable, Operation *lookupFrom)</td></tr>
 <tr class="memitem:a4eb4ec0cec60aaad30fbe14928faff53" id="r_a4eb4ec0cec60aaad30fbe14928faff53"><td class="memItemLeft">FailureOr&lt; <a class="el" href="classllzk_1_1polymorphic_1_1TemplateOp.html">TemplateOp</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a4eb4ec0cec60aaad30fbe14928faff53">getConstResolutionTemplate</a> (SymbolTableCollection &amp;tables, Operation *origin)</td></tr>
 <tr class="memitem:ae94239b8dd3397ba41df5e7a0b91ec25" id="r_ae94239b8dd3397ba41df5e7a0b91ec25"><td class="memItemLeft">LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#ae94239b8dd3397ba41df5e7a0b91ec25">verifyTemplateParamSymbol</a> (SymbolTableCollection &amp;tables, SymbolRefAttr symbol, Operation *origin)</td></tr>
+<tr class="memitem:a924cecf12006f00994ef07f6324df0fa" id="r_a924cecf12006f00994ef07f6324df0fa"><td class="memItemLeft">LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a924cecf12006f00994ef07f6324df0fa">verifyTemplateParamValueCompatibility</a> (Operation *origin, Attribute value, <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a> targetParam)</td></tr>
+<tr class="memitem:a983891da904dd7220be51d5e67b8170e" id="r_a983891da904dd7220be51d5e67b8170e"><td class="memItemLeft">LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a983891da904dd7220be51d5e67b8170e">verifyTemplateParamValuesCompatibility</a> (Operation *origin, ArrayAttr explicitParams, llvm::iterator_range&lt; Region::op_iterator&lt; <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a> &gt; &gt; targetParamDefs)</td></tr>
+<tr class="memitem:a511a87b7ff910c75aa64cc3599c38d61" id="r_a511a87b7ff910c75aa64cc3599c38d61"><td class="memItemLeft">LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a511a87b7ff910c75aa64cc3599c38d61">verifyTemplateParamsMatchInferred</a> (Operation *origin, ArrayAttr explicitParams, llvm::iterator_range&lt; Region::op_iterator&lt; <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a> &gt; &gt; targetParamDefs, const <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> &amp;unifications)</td></tr>
 <tr class="memitem:af40b899e1eab6e10a664b0bebada2da3" id="r_af40b899e1eab6e10a664b0bebada2da3"><td class="memItemLeft">LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#af40b899e1eab6e10a664b0bebada2da3">verifyParamOfType</a> (SymbolTableCollection &amp;tables, SymbolRefAttr param, Type parameterizedType, Operation *origin, std::optional&lt; Type &gt; requiredParamType)</td></tr>
 <tr class="memitem:a889208db1cfb1783bdbf616178900a5c" id="r_a889208db1cfb1783bdbf616178900a5c"><td class="memItemLeft">LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a889208db1cfb1783bdbf616178900a5c">verifyParamsOfType</a> (SymbolTableCollection &amp;tables, ArrayRef&lt; Attribute &gt; tyParams, Type parameterizedType, Operation *origin, std::optional&lt; Type &gt; requiredParamType)</td></tr>
 <tr class="memitem:a75f8539d20e1d1066b30e5b8d15b0546" id="r_a75f8539d20e1d1066b30e5b8d15b0546"><td class="memItemLeft">FailureOr&lt; <a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a75f8539d20e1d1066b30e5b8d15b0546">verifyStructTypeResolution</a> (SymbolTableCollection &amp;tables, <a class="el" href="classllzk_1_1component_1_1StructType.html">StructType</a> ty, Operation *origin)</td></tr>
@@ -807,6 +810,12 @@ Functions</h2></td></tr>
 <tr class="memdesc:a652a95f337d2ea0ddd530e8b92d60f5a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the template scope that should be used to resolve flat constant references from the given origin.  <br /></td></tr>
 <tr class="memitem:aabac41835a1c8fec6274fc2cddba6c08" id="r_aabac41835a1c8fec6274fc2cddba6c08"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#aabac41835a1c8fec6274fc2cddba6c08">verifyTemplateParamSymbol</a> (mlir::SymbolTableCollection &amp;tables, mlir::SymbolRefAttr symbol, mlir::Operation *origin)</td></tr>
 <tr class="memdesc:aabac41835a1c8fec6274fc2cddba6c08"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ensure that a SymbolRef template argument resolves to a binding in the enclosing template or to a constant global.  <br /></td></tr>
+<tr class="memitem:a0847ca8d67d43de0fff499d27188324a" id="r_a0847ca8d67d43de0fff499d27188324a"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a0847ca8d67d43de0fff499d27188324a">verifyTemplateParamValueCompatibility</a> (mlir::Operation *origin, mlir::Attribute value, <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">polymorphic::TemplateParamOp</a> targetParam)</td></tr>
+<tr class="memdesc:a0847ca8d67d43de0fff499d27188324a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Verify one explicit template argument against its declared parameter restriction.  <br /></td></tr>
+<tr class="memitem:a9b4e2397d743e0c36f3823d7a61c3ebc" id="r_a9b4e2397d743e0c36f3823d7a61c3ebc"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a9b4e2397d743e0c36f3823d7a61c3ebc">verifyTemplateParamValuesCompatibility</a> (mlir::Operation *origin, mlir::ArrayAttr explicitParams, llvm::iterator_range&lt; mlir::Region::op_iterator&lt; <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">polymorphic::TemplateParamOp</a> &gt; &gt; targetParamDefs)</td></tr>
+<tr class="memdesc:a9b4e2397d743e0c36f3823d7a61c3ebc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Verify each explicit template argument against the corresponding declared parameter restriction.  <br /></td></tr>
+<tr class="memitem:aaecce77d960d2227849d70ce901b99a9" id="r_aaecce77d960d2227849d70ce901b99a9"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#aaecce77d960d2227849d70ce901b99a9">verifyTemplateParamsMatchInferred</a> (mlir::Operation *origin, mlir::ArrayAttr explicitParams, llvm::iterator_range&lt; mlir::Region::op_iterator&lt; <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">polymorphic::TemplateParamOp</a> &gt; &gt; targetParamDefs, const <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> &amp;unifications)</td></tr>
+<tr class="memdesc:aaecce77d960d2227849d70ce901b99a9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Verify that each template parameter value provided in the <span class="tt">origin</span> op is consistent with the value inferred for the target <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a></span> in the given <span class="tt"><a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904" title="Optional result from type unifications.">UnificationMap</a></span>.  <br /></td></tr>
 <tr class="memitem:a08a0790384d9bc6f7ffc505c873a11d3" id="r_a08a0790384d9bc6f7ffc505c873a11d3"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a08a0790384d9bc6f7ffc505c873a11d3">verifyParamOfType</a> (mlir::SymbolTableCollection &amp;tables, mlir::SymbolRefAttr param, mlir::Type structOrArrayType, mlir::Operation *origin, std::optional&lt; mlir::Type &gt; requiredParamType=std::nullopt)</td></tr>
 <tr class="memdesc:a08a0790384d9bc6f7ffc505c873a11d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ensure that the given symbol (that is used as a parameter of the given type) can be resolved.  <br /></td></tr>
 <tr class="memitem:aa328bd3b88aebaac3b6f9049a5961596" id="r_aa328bd3b88aebaac3b6f9049a5961596"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#aa328bd3b88aebaac3b6f9049a5961596">verifyParamsOfType</a> (mlir::SymbolTableCollection &amp;tables, mlir::ArrayRef&lt; mlir::Attribute &gt; tyParams, mlir::Type structOrArrayType, mlir::Operation *origin, std::optional&lt; mlir::Type &gt; requiredParamType=std::nullopt)</td></tr>
@@ -1439,7 +1448,7 @@ template&lt;typename OpClass&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00088">88</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00090">90</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -1493,7 +1502,7 @@ template&lt;typename OpClass&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00085">85</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00087">87</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -1516,7 +1525,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00297">297</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00302">302</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -1562,7 +1571,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00301">301</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00306">306</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -1724,7 +1733,7 @@ template&lt;typename OpClass&gt; </div>
 
 <p>Build a SymbolRefAttr from the list of pieces. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00058">58</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00060">60</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -1753,7 +1762,7 @@ template&lt;typename OpClass&gt; </div>
 
 <p>Build a SymbolRefAttr from the list of pieces. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00053">53</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00055">55</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -1786,7 +1795,7 @@ template&lt;typename OpClass&gt; </div>
 
 <p>Build a SymbolRefAttr that prepends <span class="tt">tail</span> with <span class="tt">root</span>, i.e., <span class="tt">root::tail</span>. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00048">48</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00050">50</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -3757,7 +3766,7 @@ template&lt;typename OpClass, typename... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00044">44</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00049">49</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4317,7 +4326,7 @@ template&lt;typename OpT&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00392">392</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00397">397</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4450,7 +4459,7 @@ template&lt;typename OpImplClass&gt; </div>
 
 <p>Construct a FlatSymbolRefAttr with the given content. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00043">43</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00045">45</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -4484,7 +4493,7 @@ template&lt;typename OpImplClass&gt; </div>
 <p>Return the full name for this symbol from the root module, including any surrounding symbol table names. </p>
 <p>If <span class="tt">requireParent</span> is false and the symbol is not nested in any operation, return its flat symbol name directly. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00112">112</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00114">114</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -4560,7 +4569,7 @@ template&lt;typename TypeClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00380">380</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00385">385</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4599,7 +4608,7 @@ template&lt;typename TypeClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00366">366</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00371">371</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4662,7 +4671,7 @@ template&lt;typename TypeClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00255">255</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00260">260</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4790,7 +4799,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00337">337</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00342">342</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4834,7 +4843,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00333">333</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00338">338</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4878,7 +4887,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00329">329</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00334">334</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4901,7 +4910,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00321">321</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00326">326</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4924,7 +4933,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00325">325</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00330">330</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -4989,7 +4998,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00362">362</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00367">367</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -5033,7 +5042,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00358">358</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00363">363</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -5077,7 +5086,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00354">354</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00359">359</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -5100,7 +5109,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00346">346</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00351">351</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -5123,7 +5132,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00350">350</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00355">355</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -5159,7 +5168,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00264">264</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00269">269</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -5188,7 +5197,7 @@ template&lt;typename OpClass&gt; </div>
 
 <p>Return SymbolRefAttr like the one given but with the leaf/final element removed. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00068">68</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00070">70</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -5226,7 +5235,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00316">316</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00321">321</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -5579,7 +5588,7 @@ template&lt;typename OpClass&gt; </div>
 
 <p>Return SymbolRefAttr like the one given but with the root/head element removed. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00063">63</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00065">65</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -5618,7 +5627,7 @@ template&lt;typename OpClass&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00341">341</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00346">346</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -9544,7 +9553,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00079">79</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00081">81</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -9598,7 +9607,7 @@ template&lt;typename ConcreteOp&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00076">76</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00078">78</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -9621,7 +9630,7 @@ template&lt;typename ConcreteOp&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00287">287</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00292">292</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -9872,7 +9881,7 @@ template&lt;typename T&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00203">203</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00205">205</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -9921,7 +9930,7 @@ template&lt;typename T&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>the symbol or failure </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00153">153</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00155">155</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -9957,7 +9966,7 @@ template&lt;typename T&gt; </div>
 <p>Resolve a callable without emitting a diagnostic for missing top-level symbols. </p>
 <p>Use this when an unresolved call should make an analysis conservatively skip the call instead of reporting a verifier-style symbol error. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00179">179</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00181">181</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -11462,7 +11471,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00437">437</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00562">562</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -11539,7 +11548,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00475">475</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00600">600</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -11641,7 +11650,7 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00511">511</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00636">636</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -11732,6 +11741,77 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
 
 </div>
 </div>
+<a id="aaecce77d960d2227849d70ce901b99a9" name="aaecce77d960d2227849d70ce901b99a9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaecce77d960d2227849d70ce901b99a9">&#9670;&#160;</a></span>verifyTemplateParamsMatchInferred() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::LogicalResult llzk::verifyTemplateParamsMatchInferred </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>origin</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::ArrayAttr</td>          <td class="paramname"><span class="paramname"><em>explicitParams</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::iterator_range&lt; mlir::Region::op_iterator&lt; <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">polymorphic::TemplateParamOp</a> &gt; &gt;</td>          <td class="paramname"><span class="paramname"><em>targetParamDefs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>unifications</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Verify that each template parameter value provided in the <span class="tt">origin</span> op is consistent with the value inferred for the target <span class="tt"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a></span> in the given <span class="tt"><a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904" title="Optional result from type unifications.">UnificationMap</a></span>. </p>
+<p>The <span class="tt"><a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904" title="Optional result from type unifications.">UnificationMap</a></span> is expected to contain the unification results of this op against the target function type signature.</p>
+<p>Pre-condition assertions:</p><ul>
+<li><span class="tt">!isNullOrEmpty(getTemplateParamsAttr())</span></li>
+<li><span class="tt">getTemplateParamsAttr().size() == llvm::range_size(targetParamDefs)</span> </li>
+</ul>
+
+</div>
+</div>
+<a id="a511a87b7ff910c75aa64cc3599c38d61" name="a511a87b7ff910c75aa64cc3599c38d61"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a511a87b7ff910c75aa64cc3599c38d61">&#9670;&#160;</a></span>verifyTemplateParamsMatchInferred() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">LogicalResult llzk::verifyTemplateParamsMatchInferred </td>
+          <td>(</td>
+          <td class="paramtype">Operation *</td>          <td class="paramname"><span class="paramname"><em>origin</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">ArrayAttr</td>          <td class="paramname"><span class="paramname"><em>explicitParams</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::iterator_range&lt; Region::op_iterator&lt; <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a> &gt; &gt;</td>          <td class="paramname"><span class="paramname"><em>targetParamDefs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a513acdd19d4296f6623ca75ed5eeb904">UnificationMap</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>unifications</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00536">536</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+
+</div>
+</div>
 <a id="aabac41835a1c8fec6274fc2cddba6c08" name="aabac41835a1c8fec6274fc2cddba6c08"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aabac41835a1c8fec6274fc2cddba6c08">&#9670;&#160;</a></span>verifyTemplateParamSymbol() <span class="overload">[1/2]</span></h2>
 
@@ -11784,7 +11864,121 @@ template&lt;typename Iter1, typename Iter2&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00409">409</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00414">414</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a0847ca8d67d43de0fff499d27188324a" name="a0847ca8d67d43de0fff499d27188324a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0847ca8d67d43de0fff499d27188324a">&#9670;&#160;</a></span>verifyTemplateParamValueCompatibility() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::LogicalResult llzk::verifyTemplateParamValueCompatibility </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>origin</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::Attribute</td>          <td class="paramname"><span class="paramname"><em>value</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">polymorphic::TemplateParamOp</a></td>          <td class="paramname"><span class="paramname"><em>targetParam</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Verify one explicit template argument against its declared parameter restriction. </p>
+<p>Symbol references are resolved in the context of <span class="tt">origin</span>; diagnostics are emitted on it. </p>
+
+</div>
+</div>
+<a id="a924cecf12006f00994ef07f6324df0fa" name="a924cecf12006f00994ef07f6324df0fa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a924cecf12006f00994ef07f6324df0fa">&#9670;&#160;</a></span>verifyTemplateParamValueCompatibility() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">LogicalResult llzk::verifyTemplateParamValueCompatibility </td>
+          <td>(</td>
+          <td class="paramtype">Operation *</td>          <td class="paramname"><span class="paramname"><em>origin</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Attribute</td>          <td class="paramname"><span class="paramname"><em>value</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a></td>          <td class="paramname"><span class="paramname"><em>targetParam</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00442">442</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a9b4e2397d743e0c36f3823d7a61c3ebc" name="a9b4e2397d743e0c36f3823d7a61c3ebc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9b4e2397d743e0c36f3823d7a61c3ebc">&#9670;&#160;</a></span>verifyTemplateParamValuesCompatibility() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::LogicalResult llzk::verifyTemplateParamValuesCompatibility </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Operation *</td>          <td class="paramname"><span class="paramname"><em>origin</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mlir::ArrayAttr</td>          <td class="paramname"><span class="paramname"><em>explicitParams</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::iterator_range&lt; mlir::Region::op_iterator&lt; <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">polymorphic::TemplateParamOp</a> &gt; &gt;</td>          <td class="paramname"><span class="paramname"><em>targetParamDefs</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Verify each explicit template argument against the corresponding declared parameter restriction. </p>
+<p>The argument list and parameter declarations must be non-empty and have equal length. </p>
+
+</div>
+</div>
+<a id="a983891da904dd7220be51d5e67b8170e" name="a983891da904dd7220be51d5e67b8170e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a983891da904dd7220be51d5e67b8170e">&#9670;&#160;</a></span>verifyTemplateParamValuesCompatibility() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">LogicalResult llzk::verifyTemplateParamValuesCompatibility </td>
+          <td>(</td>
+          <td class="paramtype">Operation *</td>          <td class="paramname"><span class="paramname"><em>origin</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">ArrayAttr</td>          <td class="paramname"><span class="paramname"><em>explicitParams</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">llvm::iterator_range&lt; Region::op_iterator&lt; <a class="el" href="classllzk_1_1polymorphic_1_1TemplateParamOp.html">TemplateParamOp</a> &gt; &gt;</td>          <td class="paramname"><span class="paramname"><em>targetParamDefs</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00522">522</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -11816,7 +12010,7 @@ template&lt;std::ranges::input_range Range&gt; </div>
 
 <p>Ensure that all symbols used within all Type instances can be resolved. </p>
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00249">249</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8h_source.html#l00278">278</a> of file <a class="el" href="SymbolHelper_8h_source.html">SymbolHelper.h</a>.</p>
 
 </div>
 </div>
@@ -11872,7 +12066,7 @@ template&lt;std::ranges::input_range Range&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00535">535</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="SymbolHelper_8cpp_source.html#l00660">660</a> of file <a class="el" href="SymbolHelper_8cpp_source.html">SymbolHelper.cpp</a>.</p>
 
 </div>
 </div>
