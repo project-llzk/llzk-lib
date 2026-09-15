@@ -1,0 +1,124 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s
+
+!State = !pod.type<[@value: index]>
+
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @reject_fresh_yield(%count: index) -> !State {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %state = pod.new : !State
+    pod.write %state[@value] = %c0 : !State, index
+    %result:2 = scf.while (%i = %count, %pod = %state)
+        : (index, !State) -> (index, !State) {
+      %condition = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%condition) %i, %pod : index, !State
+    } do {
+    ^bb0(%i: index, %pod: !State):
+      %fresh = pod.new : !State
+      pod.write %fresh[@value] = %c1 : !State, index
+      %next = arith.subi %i, %c1 : index
+      scf.yield %next, %fresh : index, !State
+    }
+    function.return %result#1 : !State
+  }
+}
+
+// -----
+
+!State = !pod.type<[@value: index]>
+
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @reject_mismatched_arity(%count: index, %seed: index) -> index {
+    %state = pod.new : !State
+    pod.write %state[@value] = %seed : !State, index
+    %result = scf.while (%i = %count, %pod = %state) : (index, !State) -> index {
+      %value = pod.read %pod[@value] : !State, index
+      %condition = arith.cmpi sgt, %i, %value : index
+      scf.condition(%condition) %i : index
+    } do {
+    ^bb0(%i: index):
+      pod.write %state[@value] = %i : !State, index
+      scf.yield %i, %state : index, !State
+    }
+    function.return %result : index
+  }
+}
+
+// -----
+
+!State = !pod.type<[@value: index]>
+
+module attributes {llzk.lang} {
+  function.def @lower_duplicate_forward(%count: index, %seed: index) -> index {
+    %state = pod.new : !State
+    pod.write %state[@value] = %seed : !State, index
+    %result:3 = scf.while (%i = %count, %pod = %state, %unused = %state)
+        : (index, !State, !State) -> (index, !State, !State) {
+      %value = pod.read %pod[@value] : !State, index
+      %condition = arith.cmpi sgt, %i, %value : index
+      scf.condition(%condition) %i, %pod, %pod : index, !State, !State
+    } do {
+    ^bb0(%i: index, %pod0: !State, %pod1: !State):
+      pod.write %pod0[@value] = %i : !State, index
+      scf.yield %i, %pod0, %pod1 : index, !State, !State
+    }
+    %value = pod.read %result#1[@value] : !State, index
+    function.return %value : index
+  }
+}
+
+// -----
+
+!State = !pod.type<[@value: index]>
+
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @reject_live_init_alias(%count: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %state = pod.new : !State
+    pod.write %state[@value] = %c0 : !State, index
+    %result:2 = scf.while (%i = %count, %pod = %state)
+        : (index, !State) -> (index, !State) {
+      %condition = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%condition) %i, %pod : index, !State
+    } do {
+    ^bb0(%i: index, %pod: !State):
+      pod.write %pod[@value] = %c1 : !State, index
+      %next = arith.subi %i, %c1 : index
+      scf.yield %next, %pod : index, !State
+    }
+    %value = pod.read %state[@value] : !State, index
+    function.return %value : index
+  }
+}
+
+// -----
+
+!State = !pod.type<[@value: index]>
+
+// The two POD loop arguments alias. A write through %lhs must be visible through %rhs, so they
+// cannot be split into independent scalar loop-carried values.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @reject_aliased_carried_pods(%count: index, %seed: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %state = pod.new : !State
+    pod.write %state[@value] = %seed : !State, index
+    %result:4 = scf.while (%i = %count, %observed = %seed, %lhs = %state, %rhs = %state)
+        : (index, index, !State, !State) -> (index, index, !State, !State) {
+      %condition = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%condition) %i, %observed, %lhs, %rhs : index, index, !State, !State
+    } do {
+    ^bb0(%i: index, %observed: index, %lhs: !State, %rhs: !State):
+      pod.write %lhs[@value] = %i : !State, index
+      %seen = pod.read %rhs[@value] : !State, index
+      %next = arith.subi %i, %c1 : index
+      scf.yield %next, %seen, %lhs, %rhs : index, index, !State, !State
+    }
+    function.return %result#1 : index
+  }
+}
