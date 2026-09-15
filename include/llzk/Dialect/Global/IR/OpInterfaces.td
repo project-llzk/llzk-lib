@@ -11,6 +11,9 @@
 #define LLZK_GLOBAL_OP_INTERFACES
 
 include "mlir/IR/Interfaces.td"
+include "mlir/Interfaces/SideEffectInterfaces.td"
+
+def GlobalMemoryResource : Resource<"::llzk::global::GlobalMemoryResource">;
 
 def GlobalRefOpInterface : OpInterface<"GlobalRefOpInterface"> {
   let description = [{

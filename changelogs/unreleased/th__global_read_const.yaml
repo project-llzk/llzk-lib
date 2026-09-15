@@ -1,0 +1,4 @@
+added:
+  - Optional `const` modifier to `global.read` op and verify that it targets a `global.def` with the `const` modifier.
+changed:
+  - Allow `global.read const` op within a `poly.expr` initializer.

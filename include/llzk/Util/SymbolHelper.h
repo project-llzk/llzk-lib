@@ -32,6 +32,9 @@ namespace polymorphic {
 class TemplateOp;
 } // namespace polymorphic
 
+/// Remove nested builtin modules whose body is empty, preserving the root module.
+void eraseEmptyNestedModules(mlir::ModuleOp rootModule);
+
 llvm::SmallVector<mlir::StringRef> getNames(mlir::SymbolRefAttr ref);
 llvm::SmallVector<mlir::FlatSymbolRefAttr> getPieces(mlir::SymbolRefAttr ref);
 

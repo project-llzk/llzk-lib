@@ -9,22 +9,80 @@
 
 #include "llzk/Dialect/Global/IR/Dialect.h"
 
+#include "InitializerUtils.h"
+
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
 
 // TableGen'd implementation files
 #include "llzk/Dialect/Global/IR/Dialect.cpp.inc"
 
+using namespace mlir;
+using namespace llzk;
+
 //===------------------------------------------------------------------===//
 // GlobalDialect
 //===------------------------------------------------------------------===//
 
-auto llzk::global::GlobalDialect::initialize() -> void {
+namespace {
+
+class GlobalDialectBytecodeInterface : public LLZKDialectBytecodeInterface<global::GlobalDialect> {
+  using Base = LLZKDialectBytecodeInterface<global::GlobalDialect>;
+
+public:
+  using Base::Base;
+
+  LogicalResult upgradeFromVersion(
+      Operation *root, const LLZKDialectVersion & /*current*/, const LLZKDialectVersion &requested
+  ) const final {
+    auto res = root->walk([](global::GlobalDefOp global) -> WalkResult {
+      if (Attribute initialValue = global.getInitialValueAttr()) {
+        auto errFn = [context = initialValue.getContext()] {
+          return InFlightDiagnosticWrapper::createSilent(context);
+        };
+        FailureOr<global::NormalizedGlobalInitializer> normalized =
+            global::normalizeGlobalInitializer(global.getType(), initialValue, errFn);
+        if (failed(normalized)) {
+          return global.emitError(
+              "contains a legacy initializer that is incompatible with its declared type"
+          );
+        }
+        global.setInitialValueAttr(normalized->value);
+        global.setTypeAttr(TypeAttr::get(normalized->type));
+      }
+      return WalkResult::advance();
+    });
+    if (res.wasInterrupted()) {
+      return failure();
+    }
+
+    // Before version 3, global reads did not carry a `constant` property.
+    // Reads of const definitions are equivalent to the new `global.read const`
+    // form, so upgrade them to preserve their effect-free semantics.
+    if (requested.majorVersion < 3) {
+      SymbolTableCollection tables;
+      res = root->walk([&tables](global::GlobalReadOp read) -> WalkResult {
+        auto globalRef = llvm::cast<global::GlobalRefOpInterface>(read.getOperation());
+        FailureOr<SymbolLookupResult<global::GlobalDefOp>> target =
+            globalRef.getGlobalDefOp(tables);
+        if (succeeded(target) && target->get().isConstant()) {
+          read.setConstant(true);
+        }
+        return WalkResult::advance();
+      });
+    }
+    return failure(res.wasInterrupted());
+  }
+};
+
+} // namespace
+
+auto global::GlobalDialect::initialize() -> void {
   // clang-format off
   addOperations<
     #define GET_OP_LIST
     #include "llzk/Dialect/Global/IR/Ops.cpp.inc"
   >();
   // clang-format on
-  addInterfaces<LLZKDialectBytecodeInterface<GlobalDialect>>();
+  addInterfaces<GlobalDialectBytecodeInterface>();
 }

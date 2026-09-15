@@ -39,32 +39,24 @@ def LLZK_GlobalDefOp
     // Uninitialized global variable.
     global.def @a : !array.type<2,2 x i1>
     ```
+
+    An initializer's typed attributes must exactly match the declared global
+    type. When parsing a felt initializer, an explicitly selected field
+    refines an unspecified declared felt type; conversely, an unspecified
+    felt initializer adopts an explicitly declared field. Thus, an initialized
+    global always stores matching declared and initializer felt types.
   }];
 
   let arguments = (ins SymbolNameAttr:$sym_name, UnitAttr:$constant,
       TypeAttrOf<GlobalDefType>:$type,
       DefaultValuedAttr<AnyAttr, "nullptr">:$initial_value);
 
-  let assemblyFormat = [{
-    (`const` $constant^)?
-    $sym_name `:` $type
-    `` custom<GlobalInitialValue>($initial_value, ref($type))
-    attr-dict
-  }];
-
+  let hasCustomAssemblyFormat = 1;
   let hasVerifier = 1;
 
   let extraClassDeclaration = [{
+    /// Returns true when this def is marked as `const`.
     inline bool isConstant() { return getConstant(); }
-
-  private:
-    static ::mlir::ParseResult parseGlobalInitialValue(::mlir::OpAsmParser &parser,
-        ::mlir::Attribute &initialValue, ::mlir::TypeAttr typeAttr
-    );
-
-    static void printGlobalInitialValue(::mlir::OpAsmPrinter &printer, GlobalDefOp op,
-        ::mlir::Attribute initialValue, ::mlir::TypeAttr typeAttr
-    );
   }];
 }
 
@@ -80,22 +72,36 @@ class GlobalRefOpBase<string mnemonic, list<Trait> traits = []>
   }];
 }
 
-def LLZK_GlobalReadOp : GlobalRefOpBase<"read", [MemoryEffects<[MemRead]>]> {
+def LLZK_GlobalReadOp
+    : GlobalRefOpBase<
+          "read", [DeclareOpInterfaceMethods<MemoryEffectsOpInterface>]> {
   let summary = "read value of a global";
   let description = [{
-    This operation reads the value of a named global.
+    This operation reads the value of a named global. Reads marked `const` must target
+    a global declared with the `const` modifier and thus have no memory effects.
   }];
 
-  let arguments = (ins SymbolRefAttr:$name_ref);
+  let arguments = (ins UnitAttr:$constant, SymbolRefAttr:$name_ref);
   let results = (outs GlobalDefType:$val);
 
   let assemblyFormat = [{
-    $name_ref `:` type($val) attr-dict
+    (`const` $constant^)? $name_ref `:` type($val) attr-dict
+  }];
+
+  // `constant` was added in version 3. Preserve the v2 bytecode layout, which
+  // contains only `name_ref`, when decoding older bytecode.
+  let useCustomPropertiesEncoding = 1;
+
+  let extraClassDeclaration = [{
+    /// Returns true when this read is marked as `const`.
+    inline bool isConstant() { return getConstant(); }
   }];
 }
 
 def LLZK_GlobalWriteOp
-    : GlobalRefOpBase<"write", [WitnessGen, MemoryEffects<[MemWrite]>]> {
+    : GlobalRefOpBase<
+          "write", [WitnessGen,
+                    MemoryEffects<[MemWrite<GlobalMemoryResource>]>]> {
   let summary = "write value to a global";
   let description = [{
     This operation writes a value to a named global.

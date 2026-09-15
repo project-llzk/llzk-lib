@@ -980,9 +980,20 @@ FailureOr<IntegerAttr> forceIntType(IntegerAttr attr, EmitErrorFn emitError) {
   APInt value = attr.getValue();
   auto compare = value.getBitWidth() <=> IndexType::kInternalStorageBitWidth;
   if (compare < 0) {
-    value = value.zext(IndexType::kInternalStorageBitWidth);
+    value = attr.getType().isSignedInteger() ? value.sext(IndexType::kInternalStorageBitWidth)
+                                             : value.zext(IndexType::kInternalStorageBitWidth);
   } else if (compare > 0) {
-    return emitError().append("value is too large for `index` type: ", debug::toStringOne(value));
+    // The source integer type may be wider than index storage even when its value is
+    // representable. Signed values need a signed representability check: getActiveBits()
+    // treats their two's-complement representation as unsigned, rejecting negative values
+    // and accepting some out-of-range positive values after truncation.
+    bool isRepresentable = attr.getType().isSignedInteger()
+                               ? value.isSignedIntN(IndexType::kInternalStorageBitWidth)
+                               : value.isIntN(IndexType::kInternalStorageBitWidth);
+    if (!isRepresentable) {
+      return emitError().append("value is too large for `index` type: ", debug::toStringOne(value));
+    }
+    value = value.trunc(IndexType::kInternalStorageBitWidth);
   }
   return IntegerAttr::get(IndexType::get(attr.getContext()), value);
 }
