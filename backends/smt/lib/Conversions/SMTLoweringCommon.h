@@ -42,6 +42,10 @@
 
 namespace llzk::smt::detail {
 
+mlir::Value selectMultidimensionalArray(
+    mlir::Location loc, mlir::Value array, mlir::ValueRange indices, mlir::OpBuilder &builder
+);
+
 using SignalSymbols = llvm::DenseMap<llvm::StringRef, std::pair<mlir::Value, mlir::Value>>;
 
 mlir::FailureOr<FieldRef> resolveSelectedField(mlir::ModuleOp mod, llvm::StringRef fieldName);

@@ -16,6 +16,7 @@
 #include "smt/Conversions/ConversionPasses.h"
 
 #include "llzk/Analysis/IntervalAnalysis.h"
+#include "llzk/Analysis/Intervals.h"
 #include "llzk/Analysis/SourceRef.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/IR/Types.h"
@@ -289,6 +290,9 @@ class NonNativeTheoryEmitter {
 public:
   virtual ~NonNativeTheoryEmitter() = default;
 
+  virtual std::pair<Value, Value> getRangeBoundAssertions(
+      OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
+  ) const = 0;
   virtual void emitRangeConstraint(
       OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
   ) const = 0;
@@ -318,7 +322,7 @@ public:
   SMTIntTheoryEmitter(MLIRContext *context, const ModularReasoner &modularReasoner)
       : ctx(context), reasoner(modularReasoner) {}
 
-  void emitRangeConstraint(
+  std::pair<Value, Value> getRangeBoundAssertions(
       OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
   ) const override {
     auto lower = createIntConstant(builder, loc, range.getLHS());
@@ -327,10 +331,18 @@ public:
         builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::ge, value, lower.getResult());
     auto upperBound =
         builder.create<smt::IntCmpOp>(loc, smt::IntPredicate::le, value, upper.getResult());
+
+    return {lowerBound.getResult(), upperBound.getResult()};
+  }
+
+  void emitRangeConstraint(
+      OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
+  ) const override {
+    auto [lowerBound, upperBound] = getRangeBoundAssertions(builder, loc, value, range);
     // Assert the lower bound of the canonical/unreduced interval for this symbol.
-    builder.create<smt::AssertOp>(loc, lowerBound.getResult());
+    builder.create<smt::AssertOp>(loc, lowerBound);
     // Assert the upper bound of the canonical/unreduced interval for this symbol.
-    builder.create<smt::AssertOp>(loc, upperBound.getResult());
+    builder.create<smt::AssertOp>(loc, upperBound);
   }
 
   Value emitFreshSymbol(OpBuilder &builder, Location loc, StringRef name) const override {
@@ -474,6 +486,12 @@ public:
   UnreducedInterval getWitnessMemberRange(StringRef memberName) const;
   void emitRangeConstraint(
       OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
+  ) const;
+
+  // Emit a single range constraint for every element of the array
+  void emitArrayRangeConstraint(
+      OpBuilder &builder, Location loc, Value array, ArrayRef<uint64_t> extents,
+      const UnreducedInterval &range
   ) const;
   bool maybeContainsZeroResidue(const UnreducedInterval &range) const;
   bool spansModulusBoundary(const UnreducedInterval &range) const;
@@ -630,8 +648,8 @@ public:
       component::MemberWriteOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
     if (!strategy->isScalarFeltType(op.getVal().getType())) {
-      op.emitError("SMT lowering currently only supports felt-valued struct.writem");
-      return failure();
+      // op.emitError("SMT lowering currently only supports felt-valued struct.writem");
+      // return failure();
     }
 
     auto it = symbols.find(adaptor.getMemberName());
@@ -642,6 +660,7 @@ public:
     auto [_, witness] = it->second;
     auto witnessRange = strategy->getWitnessMemberRange(adaptor.getMemberName());
     auto valueRange = strategy->getScalarValueRange(op.getVal());
+    // TODO: If this is an array, emit the assertion quantified over array bounds
     strategy->emitCongruenceEqualityAssertion(
         rewriter, op.getLoc(), witness, witnessRange, adaptor.getVal(), valueRange, "member_write"
     );
@@ -762,6 +781,43 @@ void OptimizedNonNativeStrategy::emitRangeConstraint(
     OpBuilder &builder, Location loc, Value value, const UnreducedInterval &range
 ) const {
   emitter->emitRangeConstraint(builder, loc, value, range);
+}
+
+void OptimizedNonNativeStrategy::emitArrayRangeConstraint(
+    OpBuilder &builder, Location loc, Value array, ArrayRef<uint64_t> extents,
+    const UnreducedInterval &range
+) const {
+
+  SmallVector<Type> forallTypes(extents.size(), smt::IntType::get(builder.getContext()));
+
+  auto rangeAssertion =
+      builder
+          .create<smt::ForallOp>(
+              loc, forallTypes,
+              [this, &array, &extents,
+               &range](OpBuilder &builder, Location loc, ValueRange indices) -> Value {
+    // Vector of SMT expressions asserting all the indices are within bounds for the array
+    SmallVector<Value> antecedents;
+    antecedents.reserve(2 * indices.size());
+    for (auto [index, extent] : llvm::zip(indices, extents)) {
+      auto [lo, hi] = emitter->getRangeBoundAssertions(
+          builder, loc, index, UnreducedInterval {0, static_cast<int64_t>(extent - 1)}
+      );
+      antecedents.push_back(lo);
+      antecedents.push_back(hi);
+    }
+
+    Value antecedent = builder.create<smt::AndOp>(loc, antecedents).getResult();
+    Value currentElement = selectMultidimensionalArray(loc, array, indices, builder);
+    auto [rangeLo, rangeHi] = emitter->getRangeBoundAssertions(builder, loc, currentElement, range);
+    Value consequent = builder.create<smt::AndOp>(loc, rangeLo, rangeHi).getResult();
+
+    return builder.create<smt::ImpliesOp>(loc, antecedent, consequent);
+  }
+          )
+          .getResult();
+
+  builder.create<smt::AssertOp>(loc, rangeAssertion);
 }
 
 bool OptimizedNonNativeStrategy::maybeContainsZeroResidue(const UnreducedInterval &range) const {
@@ -1133,28 +1189,48 @@ class PassImpl : public llzk::smt::impl::SMTLoweringPassBase<PassImpl> {
       }
 
       SignalSymbols signalSymbols;
+      LLZKToSMTTypeConverter typeConverter {&getContext()};
       for (auto memberDef : structDef.getMemberDefs()) {
-        if (!isa<felt::FeltType>(memberDef.getType())) {
-          continue;
-        }
+        // if (!isa<felt::FeltType>(memberDef.getType())) {
+        //   continue;
+        // }
 
         std::string constraintName = memberDef.getSymName().str() + "_c";
         std::string witnessName = memberDef.getSymName().str() + "_w";
+        auto symbolType = typeConverter.convertType(memberDef.getType());
         auto constraintSym = rewriter.create<smt::DeclareFunOp>(
-            preamble, smt::IntType::get(&getContext()),
-            StringAttr::get(&getContext(), constraintName)
+            preamble, symbolType, StringAttr::get(&getContext(), constraintName)
         );
         auto witnessSym = rewriter.create<smt::DeclareFunOp>(
-            preamble, smt::IntType::get(&getContext()), StringAttr::get(&getContext(), witnessName)
+            preamble, symbolType, StringAttr::get(&getContext(), witnessName)
         );
-        strategy.emitRangeConstraint(
-            rewriter, memberDef.getLoc(), constraintSym.getResult(),
-            strategy.getConstraintMemberRange(memberDef.getSymName())
-        );
-        strategy.emitRangeConstraint(
-            rewriter, memberDef.getLoc(), witnessSym.getResult(),
-            strategy.getWitnessMemberRange(memberDef.getSymName())
-        );
+        if (isa<felt::FeltType>(memberDef.getType())) {
+          strategy.emitRangeConstraint(
+              rewriter, memberDef.getLoc(), constraintSym.getResult(),
+              strategy.getConstraintMemberRange(memberDef.getSymName())
+          );
+          strategy.emitRangeConstraint(
+              rewriter, memberDef.getLoc(), witnessSym.getResult(),
+              strategy.getWitnessMemberRange(memberDef.getSymName())
+          );
+        } else if (auto arrType = dyn_cast<array::ArrayType>(memberDef.getType())) {
+          SmallVector<uint64_t> extents;
+          for (auto extent : arrType.getShape()) {
+            if (extent < 0) {
+              mod.emitError() << "SMT lowering does not support dynamically-shaped arrays\n";
+              return signalPassFailure();
+            }
+            extents.push_back(extent);
+          }
+          strategy.emitArrayRangeConstraint(
+              rewriter, memberDef.getLoc(), constraintSym.getResult(), extents,
+              strategy.getConstraintMemberRange(memberDef.getSymName())
+          );
+          strategy.emitArrayRangeConstraint(
+              rewriter, memberDef.getLoc(), witnessSym.getResult(), extents,
+              strategy.getWitnessMemberRange(memberDef.getSymName())
+          );
+        }
         signalSymbols[memberDef.getSymName()] = {constraintSym.getResult(), witnessSym.getResult()};
       }
 

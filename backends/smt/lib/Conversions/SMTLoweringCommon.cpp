@@ -10,11 +10,13 @@
 #include "SMTLoweringCommon.h"
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/Include/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
+#include "llzk/Dialect/SMT/IR/SMTOps.h"
 #include "llzk/Dialect/String/IR/Ops.h"
 #include "llzk/Util/TypeHelper.h"
 #include "llzk/Util/Walk.h"
@@ -53,8 +55,20 @@ FailureOr<FieldRef> resolveSelectedField(ModuleOp mod, StringRef fieldName) {
   return *(fields.begin());
 }
 
+Value selectMultidimensionalArray(
+    Location loc, Value array, ValueRange indices, OpBuilder &builder
+) {
+  for (auto index : indices) {
+    array = builder.create<smt::ArraySelectOp>(loc, array, index).getResult();
+  }
+  return array;
+}
+
 LLZKToSMTTypeConverter::LLZKToSMTTypeConverter(MLIRContext *ctx) {
   addConversion([](Type type) { return type; });
+  addConversion([this, ctx](array::ArrayType arrType) {
+    return smt::ArrayType::get(ctx, smt::IntType::get(ctx), convertType(arrType.getElementType()));
+  });
   addConversion([ctx](IntegerType type) -> Type {
     if (type.isSignless() && type.getWidth() == 1) {
       return smt::BoolType::get(ctx);
