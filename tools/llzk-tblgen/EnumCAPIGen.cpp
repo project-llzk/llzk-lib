@@ -14,7 +14,6 @@
 
 #include "CommonCAPIGen.h"
 
-#include <mlir/TableGen/Attribute.h> // TODO: may not be needed anymore
 #include <mlir/TableGen/EnumInfo.h>
 #include <mlir/TableGen/GenInfo.h>
 
