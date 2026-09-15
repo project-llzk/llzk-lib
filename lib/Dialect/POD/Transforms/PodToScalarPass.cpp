@@ -6420,10 +6420,10 @@ public:
       }
       return true;
     };
-    auto conditionOp = mlir::cast<scf::ConditionOp>(beforeBody.getTerminator());
-    auto yieldOp = mlir::cast<scf::YieldOp>(afterBody.getTerminator());
-    if (!terminatorForwardsCarriedPods(conditionOp.getArgs(), beforeBody) ||
-        !terminatorForwardsCarriedPods(yieldOp.getOperands(), afterBody)) {
+    auto conditionTerminator = mlir::cast<scf::ConditionOp>(beforeBody.getTerminator());
+    auto yieldTerminator = mlir::cast<scf::YieldOp>(afterBody.getTerminator());
+    if (!terminatorForwardsCarriedPods(conditionTerminator.getArgs(), beforeBody) ||
+        !terminatorForwardsCarriedPods(yieldTerminator.getOperands(), afterBody)) {
       return failure();
     }
 
