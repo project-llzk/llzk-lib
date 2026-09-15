@@ -1,0 +1,180 @@
+// RUN: llzk-opt -split-input-file -llzk-straight-line-static-array-promotion %s | FileCheck %s
+
+module attributes {llzk.lang} {
+  function.def @many_straight_line_slots(
+      %v0: index, %v1: index, %v2: index, %v3: index,
+      %v4: index, %v5: index, %v6: index, %v7: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %c2 = arith.constant 2 : index
+    %c3 = arith.constant 3 : index
+    %c4 = arith.constant 4 : index
+    %c5 = arith.constant 5 : index
+    %c6 = arith.constant 6 : index
+    %c7 = arith.constant 7 : index
+    %array = array.new : !array.type<8 x index>
+    array.write %array[%c0] = %v0 : !array.type<8 x index>, index
+    array.write %array[%c1] = %v1 : !array.type<8 x index>, index
+    array.write %array[%c2] = %v2 : !array.type<8 x index>, index
+    array.write %array[%c3] = %v3 : !array.type<8 x index>, index
+    array.write %array[%c4] = %v4 : !array.type<8 x index>, index
+    array.write %array[%c5] = %v5 : !array.type<8 x index>, index
+    array.write %array[%c6] = %v6 : !array.type<8 x index>, index
+    array.write %array[%c7] = %v7 : !array.type<8 x index>, index
+    %r0 = array.read %array[%c0] : !array.type<8 x index>, index
+    %r1 = array.read %array[%c1] : !array.type<8 x index>, index
+    %r2 = array.read %array[%c2] : !array.type<8 x index>, index
+    %r3 = array.read %array[%c3] : !array.type<8 x index>, index
+    %r4 = array.read %array[%c4] : !array.type<8 x index>, index
+    %r5 = array.read %array[%c5] : !array.type<8 x index>, index
+    %r6 = array.read %array[%c6] : !array.type<8 x index>, index
+    %r7 = array.read %array[%c7] : !array.type<8 x index>, index
+    %s0 = arith.addi %r0, %r1 : index
+    %s1 = arith.addi %r2, %r3 : index
+    %s2 = arith.addi %r4, %r5 : index
+    %s3 = arith.addi %r6, %r7 : index
+    %s4 = arith.addi %s0, %s1 : index
+    %s5 = arith.addi %s2, %s3 : index
+    %result = arith.addi %s4, %s5 : index
+    function.return %result : index
+  }
+}
+
+// CHECK-LABEL: function.def @many_straight_line_slots
+// CHECK-NOT: array.
+// CHECK: arith.addi
+// CHECK-NOT: array.
+// CHECK: function.return
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @nested_execute_region(%value: index) -> index {
+    %c0 = arith.constant 0 : index
+    %array = array.new : !array.type<1 x index>
+    %result = scf.execute_region -> index {
+      array.write %array[%c0] = %value : !array.type<1 x index>, index
+      %read = array.read %array[%c0] : !array.type<1 x index>, index
+      scf.yield %read : index
+    }
+    function.return %result : index
+  }
+}
+
+// CHECK-LABEL: function.def @nested_execute_region
+// CHECK-NOT: array.
+// CHECK: scf.yield
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @inside_loop_body(%upper: index, %value: index) {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    scf.for %i = %c0 to %upper step %c1 {
+      %array = array.new : !array.type<1 x index>
+      array.write %array[%c0] = %value : !array.type<1 x index>, index
+      %read = array.read %array[%c0] : !array.type<1 x index>, index
+    }
+    function.return
+  }
+}
+
+// CHECK-LABEL: function.def @inside_loop_body
+// CHECK-NOT: array.
+// CHECK: scf.for
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @reject_access_through_if(%condition: i1, %value: index) {
+    %c0 = arith.constant 0 : index
+    %array = array.new : !array.type<1 x index>
+    scf.if %condition {
+      array.write %array[%c0] = %value : !array.type<1 x index>, index
+      %read = array.read %array[%c0] : !array.type<1 x index>, index
+    }
+    function.return
+  }
+}
+
+// CHECK-LABEL: function.def @reject_access_through_if
+// CHECK: array.new
+// CHECK: scf.if
+// CHECK: array.write
+// CHECK: array.read
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def private @use_index(%value: index)
+
+  function.def @reject_execute_region_backedge(%condition: i1) {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %array = array.new : !array.type<1 x index>
+    scf.execute_region {
+      cf.br ^loop
+    ^loop:
+      %read = array.read %array[%c0] : !array.type<1 x index>, index
+      %next = arith.addi %read, %c1 : index
+      array.write %array[%c0] = %next : !array.type<1 x index>, index
+      function.call @use_index(%read) : (index) -> ()
+      cf.cond_br %condition, ^loop, ^exit
+    ^exit:
+      scf.yield
+    }
+    function.return
+  }
+}
+
+// CHECK-LABEL: function.def @reject_execute_region_backedge
+// CHECK: array.new
+// CHECK: array.read
+// CHECK: array.write
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @reject_access_through_loop(%upper: index, %value: index) {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %array = array.new : !array.type<1 x index>
+    scf.for %i = %c0 to %upper step %c1 {
+      array.write %array[%c0] = %value : !array.type<1 x index>, index
+      %read = array.read %array[%c0] : !array.type<1 x index>, index
+    }
+    function.return
+  }
+}
+
+// CHECK-LABEL: function.def @reject_access_through_loop
+// CHECK: array.new
+// CHECK: scf.for
+// CHECK: array.write
+// CHECK: array.read
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @reject_different_access_blocks(%value: index) -> index {
+    %c0 = arith.constant 0 : index
+    %array = array.new : !array.type<1 x index>
+    scf.execute_region {
+      array.write %array[%c0] = %value : !array.type<1 x index>, index
+      scf.yield
+    }
+    %result = scf.execute_region -> index {
+      %read = array.read %array[%c0] : !array.type<1 x index>, index
+      scf.yield %read : index
+    }
+    function.return %result : index
+  }
+}
+
+// CHECK-LABEL: function.def @reject_different_access_blocks
+// CHECK: array.new
+// CHECK: scf.execute_region
+// CHECK: array.write
+// CHECK: scf.execute_region
+// CHECK: array.read

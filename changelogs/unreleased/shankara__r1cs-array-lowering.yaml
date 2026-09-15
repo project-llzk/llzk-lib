@@ -1,0 +1,2 @@
+changed:
+  - Speed up array-to-scalar lowering by directly promoting straight-line, statically indexed arrays before SROA and replacing global dead-value analysis with targeted cleanup and canonicalization.
