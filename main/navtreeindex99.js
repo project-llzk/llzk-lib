@@ -1,5 +1,7 @@
 var NAVTREEINDEX99 =
 {
+"structllzk_1_1witgen_1_1OutputBinding.html#abc0d9c2e3aa998f0fa493f3bc3f7ef26":[11,0,3,21,5,0],
+"structllzk_1_1witgen_1_1OutputBinding.html#abc0d9c2e3aa998f0fa493f3bc3f7ef26":[13,0,1,18,5,0],
 "structllzk_1_1witgen_1_1OutputBinding.html#ad1f4c41336a9debf44abebf1b6a4bfce":[11,0,3,21,5,1],
 "structllzk_1_1witgen_1_1OutputBinding.html#ad1f4c41336a9debf44abebf1b6a4bfce":[13,0,1,18,5,1],
 "structllzk_1_1witgen_1_1PodValue.html":[11,0,3,21,6],
