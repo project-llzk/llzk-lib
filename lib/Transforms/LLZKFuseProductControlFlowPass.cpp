@@ -101,8 +101,14 @@ static inline bool canLoopsBeFused(scf::ForOp a, scf::ForOp b) {
   // param", we definitely can't tell if they're equal. If the trip counts are only "constant up to
   // a struct param" but not actually constant, we can ask a solver if the equations are guaranteed
   // to be the same
-  auto tripCountA = constantTripCount(a.getLowerBound(), a.getUpperBound(), a.getStep());
-  auto tripCountB = constantTripCount(b.getLowerBound(), b.getUpperBound(), b.getStep());
+  auto tripCountA = constantTripCount(
+      a.getLowerBound(), a.getUpperBound(), a.getStep(), /*isSigned=*/!a.getUnsignedCmp(),
+      scf::computeUbMinusLb
+  );
+  auto tripCountB = constantTripCount(
+      b.getLowerBound(), b.getUpperBound(), b.getStep(), /*isSigned=*/!b.getUnsignedCmp(),
+      scf::computeUbMinusLb
+  );
   if (tripCountA.has_value() && tripCountB.has_value() && *tripCountA == *tripCountB) {
     return true;
   }

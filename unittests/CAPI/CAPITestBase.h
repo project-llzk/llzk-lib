@@ -17,7 +17,6 @@
 #include "llzk/Dialect/Bool/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
-#include "llzk/Dialect/SMT/IR/SMTOps.h"
 #include "llzk/Dialect/Shared/Builders.h"
 #include "llzk/Dialect/Shared/OpHelpers.h"
 
@@ -28,6 +27,7 @@
 
 #include <mlir/CAPI/Wrap.h>
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/SMT/IR/SMTOps.h>
 
 #include <gtest/gtest.h>
 
@@ -98,8 +98,8 @@ public:
   ///  LLZK C API functions within the tests.
   static mlir::Value cppGenBoolConstant(MlirOpBuilder builder, MlirLocation location) {
     mlir::OpBuilder *cppBuilder = unwrap(builder);
-    return cppBuilder->create<mlir::arith::ConstantOp>(
-        unwrap(location), cppBuilder->getAttr<mlir::BoolAttr>(true)
+    return mlir::arith::ConstantOp::create(
+        *cppBuilder, unwrap(location), cppBuilder->getAttr<mlir::BoolAttr>(true)
     );
   }
 
@@ -107,8 +107,8 @@ public:
   ///  LLZK C API functions within the tests.
   static mlir::Value cppGenSMTBoolConstant(MlirOpBuilder builder, MlirLocation location) {
     mlir::OpBuilder *cppBuilder = unwrap(builder);
-    return cppBuilder->create<llzk::smt::BoolConstantOp>(
-        unwrap(location), cppBuilder->getAttr<mlir::BoolAttr>(true)
+    return mlir::smt::BoolConstantOp::create(
+        *cppBuilder, unwrap(location), cppBuilder->getAttr<mlir::BoolAttr>(true)
     );
   }
 
@@ -116,8 +116,8 @@ public:
   ///  LLZK C API functions within the tests.
   static mlir::Value cppGenFeltConstant(MlirOpBuilder builder, MlirLocation location) {
     mlir::OpBuilder *cppBuilder = unwrap(builder);
-    return cppBuilder->create<llzk::felt::FeltConstantOp>(
-        unwrap(location), cppBuilder->getAttr<llzk::felt::FeltConstAttr>(llvm::APInt())
+    return llzk::felt::FeltConstantOp::create(
+        *cppBuilder, unwrap(location), cppBuilder->getAttr<llzk::felt::FeltConstAttr>(llvm::APInt())
     );
   }
 

@@ -57,11 +57,11 @@ LLZKToSMTTypeConverter::LLZKToSMTTypeConverter(MLIRContext *ctx) {
   addConversion([](Type type) { return type; });
   addConversion([ctx](IntegerType type) -> Type {
     if (type.isSignless() && type.getWidth() == 1) {
-      return smt::BoolType::get(ctx);
+      return mlir::smt::BoolType::get(ctx);
     }
     return type;
   });
-  addConversion([ctx](felt::FeltType) { return smt::IntType::get(ctx); });
+  addConversion([ctx](felt::FeltType) { return mlir::smt::IntType::get(ctx); });
 }
 
 bool containsFeltOrStruct(Type type) {
@@ -98,7 +98,7 @@ Operation *convertStructProductToFunc(Operation *op, MLIRContext *context) {
 void configureSMTNoCFBodyConversionTarget(ConversionTarget &target) {
   target.addIllegalDialect<felt::FeltDialect>();
   target.addIllegalDialect<constrain::ConstrainDialect>();
-  target.addLegalDialect<smt::SMTDialect>();
+  target.addLegalDialect<mlir::smt::SMTDialect>();
   target.addLegalOp<UnrealizedConversionCastOp>();
   target.addIllegalOp<component::MemberWriteOp, component::MemberReadOp>();
   target.addLegalOp<component::CreateStructOp>();
@@ -198,7 +198,7 @@ LogicalResult StructDefConverter::matchAndRewrite(
   std::string smtFuncName = ("smt_" + op.getSymName()).str();
   auto productFunc = op.getProductFuncOp();
   auto smtFunc =
-      rewriter.create<func::FuncOp>(op->getLoc(), smtFuncName, productFunc.getFunctionType());
+      func::FuncOp::create(rewriter, op->getLoc(), smtFuncName, productFunc.getFunctionType());
   IRMapping mapping;
   productFunc.getFunctionBody().cloneInto(&smtFunc.getFunctionBody(), mapping);
 
@@ -236,14 +236,14 @@ LogicalResult SCFIfConverter::matchAndRewrite(
 
   Value cond = adaptor.getCondition();
   if (!isa<IntegerType>(cond.getType())) {
-    cond =
-        rewriter
-            .create<UnrealizedConversionCastOp>(op.getLoc(), TypeRange {rewriter.getI1Type()}, cond)
-            .getResult(0);
+    cond = UnrealizedConversionCastOp::create(
+               rewriter, op.getLoc(), TypeRange {rewriter.getI1Type()}, cond
+    )
+               .getResult(0);
   }
 
-  auto convertedIf = rewriter.create<scf::IfOp>(
-      op.getLoc(), convertedResultTypes, cond,
+  auto convertedIf = scf::IfOp::create(
+      rewriter, op.getLoc(), convertedResultTypes, cond,
       /*addThenBlock=*/false, /*addElseBlock=*/false
   );
 
@@ -267,7 +267,7 @@ LogicalResult YieldConverter::matchAndRewrite(
 LogicalResult FeltConstConverter::matchAndRewrite(
     felt::FeltConstantOp op, OpAdaptor, ConversionPatternRewriter &rewriter
 ) const {
-  rewriter.replaceOpWithNewOp<smt::IntConstantOp>(
+  rewriter.replaceOpWithNewOp<mlir::smt::IntConstantOp>(
       op, IntegerAttr::get(getContext(), APSInt {op.getValue().getValue()})
   );
   return success();

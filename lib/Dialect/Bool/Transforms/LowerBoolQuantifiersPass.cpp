@@ -41,11 +41,11 @@ static Value buildQuantifierIterValue(
     Location loc, Value sort, ArrayType sortType, Value index, PatternRewriter &rewriter
 ) {
   if (sortType.getDimensionSizes().size() == 1) {
-    return rewriter.create<ReadArrayOp>(loc, sort, ValueRange {index});
+    return ReadArrayOp::create(rewriter, loc, sort, ValueRange {index});
   }
 
   Type iterType = getQuantifierOpDomainIterType(sortType);
-  return rewriter.create<ExtractArrayOp>(loc, iterType, sort, ValueRange {index});
+  return ExtractArrayOp::create(rewriter, loc, iterType, sort, ValueRange {index});
 }
 
 /// Lower a bool quantifier to an `scf.for` loop over the first dimension of its array sort.
@@ -56,12 +56,12 @@ lowerQuantifier(QuantifierOp op, PatternRewriter &rewriter, bool initialValue) {
   Location loc = op.getLoc();
   auto sortType = cast<ArrayType>(op.getSort().getType());
 
-  Value lowerBound = rewriter.create<arith::ConstantIndexOp>(loc, 0);
-  Value upperBound = rewriter.create<ArrayLengthOp>(loc, op.getSort(), lowerBound);
-  Value step = rewriter.create<arith::ConstantIndexOp>(loc, 1);
-  Value init = rewriter.create<arith::ConstantIntOp>(loc, initialValue, rewriter.getI1Type());
+  Value lowerBound = arith::ConstantIndexOp::create(rewriter, loc, 0);
+  Value upperBound = ArrayLengthOp::create(rewriter, loc, op.getSort(), lowerBound);
+  Value step = arith::ConstantIndexOp::create(rewriter, loc, 1);
+  Value init = arith::ConstantIntOp::create(rewriter, loc, rewriter.getI1Type(), initialValue);
 
-  auto loop = rewriter.create<scf::ForOp>(loc, lowerBound, upperBound, step, ValueRange {init});
+  auto loop = scf::ForOp::create(rewriter, loc, lowerBound, upperBound, step, ValueRange {init});
   loop->setDiscardableAttrs(op->getDiscardableAttrDictionary());
 
   Block &loopBody = *loop.getBody();
@@ -81,8 +81,8 @@ lowerQuantifier(QuantifierOp op, PatternRewriter &rewriter, bool initialValue) {
 
   auto yieldOp = cast<YieldOp>(op.getBody()->getTerminator());
   Value predicate = mapping.lookupOrDefault(yieldOp.getValue());
-  Value combined = rewriter.create<CombineOp>(loc, loop.getRegionIterArg(0), predicate);
-  rewriter.create<scf::YieldOp>(loc, combined);
+  Value combined = CombineOp::create(rewriter, loc, loop.getRegionIterArg(0), predicate);
+  scf::YieldOp::create(rewriter, loc, combined);
 
   rewriter.replaceOp(op, loop.getResults());
   return success();

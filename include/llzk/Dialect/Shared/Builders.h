@@ -352,7 +352,7 @@ public:
 
     auto nameAttr = builder.getStringAttr(name);
 
-    builder.create<polymorphic::TemplateParamOp>(loc, nameAttr, type);
+    polymorphic::TemplateParamOp::create(builder, loc, nameAttr, type);
 
     return *this;
   }
@@ -377,7 +377,7 @@ public:
 
     auto nameAttr = builder.getStringAttr(name);
 
-    builder.create<polymorphic::TemplateExprOp>(loc, nameAttr);
+    polymorphic::TemplateExprOp::create(builder, loc, nameAttr);
 
     return *this;
   }

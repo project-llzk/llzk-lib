@@ -6,6 +6,7 @@ function.def @too_large_constant_dim() -> index {
   %a = array.new : !array.type<2,3 x !felt.type>
   %0 = arith.constant 0x7FFFFFFFFFFFFFFF : index
   %1 = arith.constant 1 : index
+  // expected-note@+1 {{dimension defined here}}
   %2 = arith.addi %0, %1 : index
   // expected-error@+1 {{'array.len' op dimension must be a non-negative 64-bit integer}}
   %x = array.len %a, %2 : !array.type<2,3 x !felt.type>

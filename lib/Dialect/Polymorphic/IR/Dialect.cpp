@@ -36,7 +36,7 @@ mlir::Operation *llzk::polymorphic::PolymorphicDialect::materializeConstant(
 ) {
   if (llvm::isa<mlir::IndexType, mlir::IntegerType>(type)) {
     if (auto intAttr = llvm::dyn_cast<mlir::IntegerAttr>(value)) {
-      return builder.create<mlir::arith::ConstantOp>(loc, intAttr);
+      return mlir::arith::ConstantOp::create(builder, loc, intAttr);
     }
   }
   return nullptr;

@@ -21,6 +21,7 @@
 
 #include <mlir/Analysis/DataLayoutAnalysis.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/Dialect/UB/IR/UBOps.h>
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/Dominance.h>
 #include <mlir/Interfaces/MemorySlotInterfaces.h>
@@ -136,8 +137,8 @@ std::unique_ptr<SpecializedMem2Reg<AllocOpTy>> createSpecializedMem2RegPass() {
 namespace detail {
 
 /// A workaround wrapper around MLIR's `remove-dead-values` pass that normalizes empty
-/// `scf.if` else regions before running the upstream implementation and cleans up the trivial
-/// regions afterwards.
+/// `scf.if` else regions before running the upstream implementation, cleans up the trivial
+/// regions afterwards, and removes unused `ub.poison` values left by an earlier invocation.
 class RemoveDeadValuesWorkaroundPass
     : public mlir::PassWrapper<RemoveDeadValuesWorkaroundPass, mlir::OperationPass<>> {
 public:
@@ -145,6 +146,10 @@ public:
 
   llvm::StringRef getArgument() const override { return "remove-dead-values"; }
   llvm::StringRef getDescription() const override { return "Remove dead values"; }
+
+  void getDependentDialects(mlir::DialectRegistry &registry) const override {
+    mlir::createRemoveDeadValuesPass()->getDependentDialects(registry);
+  }
 
   void runOnOperation() final {
     mlir::Operation *scopeOp = this->getOperation();
@@ -155,7 +160,7 @@ public:
         mlir::Block &elseBlock = ifOp.getElseRegion().emplaceBlock();
         mlir::OpBuilder builder(ifOp.getContext());
         builder.setInsertionPointToEnd(&elseBlock);
-        builder.create<mlir::scf::YieldOp>(ifOp.getLoc());
+        mlir::scf::YieldOp::create(builder, ifOp.getLoc());
       }
     });
 
@@ -163,6 +168,14 @@ public:
     pm.addPass(mlir::createRemoveDeadValuesPass());
     if (mlir::failed(runPipeline(pm, scopeOp))) {
       signalPassFailure();
+    }
+
+    // Upstream RDV only tracks poison values created during its current invocation. This wrapper
+    // may run repeatedly, so values created by an earlier invocation can become unused later.
+    for (mlir::ub::PoisonOp poisonOp : walkCollect<mlir::ub::PoisonOp>(*scopeOp, [](auto op) {
+      return op.getResult().use_empty();
+    })) {
+      poisonOp.erase();
     }
 
     // Post-pass: remove trivial `else` blocks that are left behind.

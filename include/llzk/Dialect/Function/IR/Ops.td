@@ -303,7 +303,7 @@ def ReturnOp
   let arguments = (ins Variadic<AnyLLZKType>:$operands);
 
   let builders = [OpBuilder<(ins), [{
-    build($_builder, $_state, std::nullopt);
+    build($_builder, $_state, ::mlir::ValueRange {});
   }]>];
 
   let assemblyFormat = "attr-dict ($operands^ `:` type($operands))?";
@@ -377,7 +377,12 @@ def CallOp : FunctionDialectOp<
       // AffineMap "symbolic" arguments.
       DefaultValuedAttr<DenseI32ArrayAttr, "{}">:$numDimsPerMap,
       // Denotes the size of each variadic group in '$mapOperands'.
-      DenseI32ArrayAttr:$mapOpGroupSizes);
+      DenseI32ArrayAttr:$mapOpGroupSizes,
+      // Per-call argument and result attribute dictionaries required by
+      // CallOpInterface.
+      OptionalAttr<DictArrayAttr>:$arg_attrs,
+      OptionalAttr<DictArrayAttr>:$res_attrs);
+
   let results = (outs Variadic<AnyLLZKType>);
 
   let assemblyFormat = [{

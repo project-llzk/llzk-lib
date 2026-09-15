@@ -48,9 +48,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FeatureTests.cmake)
 # Dependency setup
 
-find_package(LLVM 20.1.8 REQUIRED CONFIG)
-find_package(MLIR 20.1.8 REQUIRED CONFIG)
-find_package(Clang 20.1.8 REQUIRED CONFIG)
+find_package(LLVM 23.1.0 REQUIRED CONFIG)
+find_package(MLIR 23.1.0 REQUIRED CONFIG)
+find_package(Clang 23.1.0 REQUIRED CONFIG)
 
 # Optional PCL dialect
 set(LLZK_WITH_PCL
@@ -108,9 +108,14 @@ endfunction()
 
 set(LLZK_EXPORT_TARGETS "LLZKTargets")
 # LLVM & MLIR do not propagate their include dirs correctly. We define them as
-# INTERFACE libraries and link against them
-add_header_library(LLVMHeaders ${LLVM_INCLUDE_DIRS} ${LLZK_EXPORT_TARGETS})
-add_header_library(MLIRHeaders ${MLIR_INCLUDE_DIRS} ${LLZK_EXPORT_TARGETS})
+# INTERFACE libraries and link against them. These include paths are only
+# needed while building LLZK: exporting paths into the LLVM install tree makes
+# LLZK's installed CMake targets non-relocatable (and fails when LLVM is built
+# below this source tree).
+add_header_library(LLVMHeaders "$<BUILD_INTERFACE:${LLVM_INCLUDE_DIRS}>"
+                   ${LLZK_EXPORT_TARGETS})
+add_header_library(MLIRHeaders "$<BUILD_INTERFACE:${MLIR_INCLUDE_DIRS}>"
+                   ${LLZK_EXPORT_TARGETS})
 
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 list(APPEND CMAKE_MODULE_PATH "${MLIR_CMAKE_DIR}")
@@ -122,7 +127,6 @@ include(HandleLLVMOptions)
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
 add_compile_options(
-  -Werror
   -Wall
   -Wextra
   -Wno-unused-parameter

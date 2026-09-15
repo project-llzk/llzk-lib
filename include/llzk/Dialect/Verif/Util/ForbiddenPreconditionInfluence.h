@@ -131,14 +131,6 @@ struct CallableSummaryKey {
 };
 
 struct CallableSummaryKeyInfo : llvm::DenseMapInfo<CallableSummaryKey> {
-  static CallableSummaryKey getEmptyKey() {
-    return {llvm::DenseMapInfo<mlir::Operation *>::getEmptyKey(), {}, 0};
-  }
-
-  static CallableSummaryKey getTombstoneKey() {
-    return {llvm::DenseMapInfo<mlir::Operation *>::getTombstoneKey(), {}, 0};
-  }
-
   static unsigned getHashValue(const CallableSummaryKey &key) {
     return llvm::hash_combine(
         key.callable, key.resultNumber,
@@ -194,14 +186,6 @@ struct IncludedContractSummaryKey {
 };
 
 struct IncludedContractSummaryKeyInfo : llvm::DenseMapInfo<IncludedContractSummaryKey> {
-  static IncludedContractSummaryKey getEmptyKey() {
-    return {llvm::DenseMapInfo<mlir::Operation *>::getEmptyKey(), {}};
-  }
-
-  static IncludedContractSummaryKey getTombstoneKey() {
-    return {llvm::DenseMapInfo<mlir::Operation *>::getTombstoneKey(), {}};
-  }
-
   static unsigned getHashValue(const IncludedContractSummaryKey &key) {
     return llvm::hash_combine(
         key.contract, key.inheritedControlInfluence,

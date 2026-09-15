@@ -32,6 +32,7 @@
 #include <mlir/IR/Diagnostics.h>
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/IR/ValueRange.h>
+#include <mlir/Interfaces/CallInterfaces.h>
 #include <mlir/Interfaces/FunctionImplementation.h>
 #include <mlir/Support/LLVM.h>
 #include <mlir/Support/LogicalResult.h>
@@ -476,6 +477,7 @@ LogicalResult ContractOp::verifySymbolUses(SymbolTableCollection &tables) {
 ParseResult ContractOp::parse(OpAsmParser &parser, OperationState &result) {
   StringAttr typeAttrName = getFunctionTypeAttrName(result.name);
   StringAttr argAttrsName = getArgAttrsAttrName(result.name);
+  StringAttr resAttrsName = getResAttrsAttrName(result.name);
 
   SmallVector<OpAsmParser::Argument> entryArgs;
   SmallVector<DictionaryAttr> resultAttrs;
@@ -508,7 +510,7 @@ ParseResult ContractOp::parse(OpAsmParser &parser, OperationState &result) {
   SMLoc signatureLocation = parser.getCurrentLocation();
   bool isVariadic = false;
 
-  if (function_interface_impl::parseFunctionSignature(
+  if (function_interface_impl::parseFunctionSignatureWithArguments(
           parser, /*allowVariadic*/ false, entryArgs, isVariadic, resultTypes, resultAttrs
       )) {
     return failure();
@@ -555,9 +557,8 @@ ParseResult ContractOp::parse(OpAsmParser &parser, OperationState &result) {
   result.attributes.append(parsedAttributes);
 
   // Add the attributes to the function arguments.
-  function_interface_impl::addArgAndResultAttrs(
-      builder, result, entryArgs, resultAttrs, argAttrsName,
-      /*resAttrsName*/ StringAttr::get(parser.getContext())
+  call_interface_impl::addArgAndResultAttrs(
+      builder, result, entryArgs, resultAttrs, argAttrsName, resAttrsName
   );
 
   // Parse the required contract body.
@@ -596,7 +597,8 @@ void ContractOp::print(OpAsmPrinter &p) {
   );
   function_interface_impl::printFunctionAttributes(
       p, *this,
-      /*elided*/ {getFunctionTypeAttrName(), getArgAttrsAttrName(), getTargetAttrName()}
+      /*elided*/
+      {getFunctionTypeAttrName(), getArgAttrsAttrName(), getResAttrsAttrName(), getTargetAttrName()}
   );
   // Print the body.
   Region &body = getRegion();
@@ -1186,7 +1188,7 @@ ParseResult InvariantOp::parse(OpAsmParser &parser, OperationState &result) {
   SmallVector<DictionaryAttr> resultAttrs;
   SmallVector<Type> resultTypes;
 
-  if (function_interface_impl::parseFunctionSignature(
+  if (function_interface_impl::parseFunctionSignatureWithArguments(
           parser, /*allowVariadic*/ false, entryArgs, isVariadic, resultTypes, resultAttrs
       )) {
     return failure();

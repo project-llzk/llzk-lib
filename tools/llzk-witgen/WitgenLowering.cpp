@@ -98,13 +98,13 @@ static std::string mangleFunctionName(function::FuncDefOp funcOp) {
 
 /// Return a constant index value.
 static Value makeIndexConstant(OpBuilder &builder, Location loc, int64_t value) {
-  return builder.create<arith::ConstantIndexOp>(loc, value).getResult();
+  return arith::ConstantIndexOp::create(builder, loc, value).getResult();
 }
 
 /// Return a one constant of the lowered field integer type.
 static Value makeOneFelt(OpBuilder &builder, Location loc, const Field &field) {
-  return builder.create<arith::ConstantOp>(
-      loc, IntegerAttr::get(IntegerType::get(builder.getContext(), field.bitWidth()), 1)
+  return arith::ConstantOp::create(
+      builder, loc, IntegerAttr::get(IntegerType::get(builder.getContext(), field.bitWidth()), 1)
   );
 }
 
@@ -375,14 +375,14 @@ static FailureOr<Value> createZeroMemRef(OpBuilder &builder, Location loc, MemRe
     emitError(loc) << llvm::toString(elementCount.takeError());
     return failure();
   }
-  Value alloc = builder.create<memref::AllocOp>(loc, memrefType);
+  Value alloc = memref::AllocOp::create(builder, loc, memrefType);
   auto elementType = memrefType.getElementType();
   Value zero;
   if (isa<IndexType>(elementType)) {
-    zero = builder.create<arith::ConstantIndexOp>(loc, 0);
+    zero = arith::ConstantIndexOp::create(builder, loc, 0);
   } else {
-    zero = builder.create<arith::ConstantOp>(
-        loc, IntegerAttr::get(llvm::cast<IntegerType>(elementType), 0)
+    zero = arith::ConstantOp::create(
+        builder, loc, IntegerAttr::get(llvm::cast<IntegerType>(elementType), 0)
     );
   }
   auto strides = mlir::computeStrides(memrefType.getShape());
@@ -396,7 +396,7 @@ static FailureOr<Value> createZeroMemRef(OpBuilder &builder, Location loc, MemRe
     for (int64_t index : mlir::delinearize(*flatSigned, strides)) {
       indices.push_back(makeIndexConstant(builder, loc, index));
     }
-    builder.create<memref::StoreOp>(loc, zero, alloc, indices);
+    memref::StoreOp::create(builder, loc, zero, alloc, indices);
   }
   return alloc;
 }
@@ -411,7 +411,7 @@ static FailureOr<Value> createRandomMemRef(
     emitError(loc) << llvm::toString(elementCount.takeError());
     return failure();
   }
-  Value alloc = builder.create<memref::AllocOp>(loc, memrefType);
+  Value alloc = memref::AllocOp::create(builder, loc, memrefType);
   auto elementType = memrefType.getElementType();
   auto strides = mlir::computeStrides(memrefType.getShape());
   for (size_t flat = 0; flat < *elementCount; ++flat) {
@@ -426,27 +426,28 @@ static FailureOr<Value> createRandomMemRef(
     }
     if (isa<IndexType>(elementType)) {
       auto value = randomIndexValue(rng);
-      builder.create<memref::StoreOp>(
-          loc, builder.create<arith::ConstantIndexOp>(loc, value), alloc, indices
+      memref::StoreOp::create(
+          builder, loc, arith::ConstantIndexOp::create(builder, loc, value), alloc, indices
       );
       continue;
     }
     auto intType = llvm::cast<IntegerType>(elementType);
     if (intType.getWidth() == 1) {
-      builder.create<memref::StoreOp>(
-          loc,
-          builder.create<arith::ConstantOp>(
-              loc, IntegerAttr::get(intType, APInt(1, randomBoolValue(rng)))
+      memref::StoreOp::create(
+          builder, loc,
+          arith::ConstantOp::create(
+              builder, loc, IntegerAttr::get(intType, APInt(1, randomBoolValue(rng)))
           ),
           alloc, indices
       );
       continue;
     }
     auto candidate = randomFieldElement(rng, field);
-    builder.create<memref::StoreOp>(
-        loc,
-        builder.create<arith::ConstantOp>(
-            loc, IntegerAttr::get(intType, llzk::toExactWidthAPInt(candidate, intType.getWidth()))
+    memref::StoreOp::create(
+        builder, loc,
+        arith::ConstantOp::create(
+            builder, loc,
+            IntegerAttr::get(intType, llzk::toExactWidthAPInt(candidate, intType.getWidth()))
         ),
         alloc, indices
     );
@@ -483,21 +484,26 @@ static FailureOr<LoweredValue> createDefaultValue(
       }
       if (isa<IndexType>(leafType)) {
         lowered.leaves.push_back(
-            builder.create<arith::ConstantIndexOp>(loc, randomIndexValue(rng))
+            arith::ConstantIndexOp::create(builder, loc, randomIndexValue(rng))
         );
         continue;
       }
       auto intType = llvm::cast<IntegerType>(leafType);
       if (intType.getWidth() == 1) {
-        lowered.leaves.push_back(builder.create<arith::ConstantOp>(
-            loc, IntegerAttr::get(intType, APInt(1, randomBoolValue(rng)))
-        ));
+        lowered.leaves.push_back(
+            arith::ConstantOp::create(
+                builder, loc, IntegerAttr::get(intType, APInt(1, randomBoolValue(rng)))
+            )
+        );
         continue;
       }
       auto candidate = randomFieldElement(rng, field);
-      lowered.leaves.push_back(builder.create<arith::ConstantOp>(
-          loc, IntegerAttr::get(intType, llzk::toExactWidthAPInt(candidate, intType.getWidth()))
-      ));
+      lowered.leaves.push_back(
+          arith::ConstantOp::create(
+              builder, loc,
+              IntegerAttr::get(intType, llzk::toExactWidthAPInt(candidate, intType.getWidth()))
+          )
+      );
       continue;
     }
     if (auto memrefType = dyn_cast<MemRefType>(leafType)) {
@@ -509,12 +515,14 @@ static FailureOr<LoweredValue> createDefaultValue(
       continue;
     }
     if (isa<IndexType>(leafType)) {
-      lowered.leaves.push_back(builder.create<arith::ConstantIndexOp>(loc, 0));
+      lowered.leaves.push_back(arith::ConstantIndexOp::create(builder, loc, 0));
       continue;
     }
-    lowered.leaves.push_back(builder.create<arith::ConstantOp>(
-        loc, IntegerAttr::get(llvm::cast<IntegerType>(leafType), 0)
-    ));
+    lowered.leaves.push_back(
+        arith::ConstantOp::create(
+            builder, loc, IntegerAttr::get(llvm::cast<IntegerType>(leafType), 0)
+        )
+    );
   }
   return lowered;
 }
@@ -524,12 +532,12 @@ static Value normalizeWideValue(
     OpBuilder &builder, Location loc, Value wideValue, unsigned dstWidth, const Field &field
 ) {
   auto wideType = llvm::cast<IntegerType>(wideValue.getType());
-  Value modulus = builder.create<arith::ConstantOp>(
-      loc, field.getPrimeAttr(builder.getContext(), wideType.getWidth())
+  Value modulus = arith::ConstantOp::create(
+      builder, loc, field.getPrimeAttr(builder.getContext(), wideType.getWidth())
   );
-  Value reduced = builder.create<arith::RemUIOp>(loc, wideValue, modulus);
-  return builder.create<arith::TruncIOp>(
-      loc, IntegerType::get(builder.getContext(), dstWidth), reduced
+  Value reduced = arith::RemUIOp::create(builder, loc, wideValue, modulus);
+  return arith::TruncIOp::create(
+      builder, loc, IntegerType::get(builder.getContext(), dstWidth), reduced
   );
 }
 
@@ -538,16 +546,16 @@ static Value normalizeSignedWideValue(
     OpBuilder &builder, Location loc, Value wideValue, unsigned dstWidth, const Field &field
 ) {
   auto wideType = llvm::cast<IntegerType>(wideValue.getType());
-  Value modulus = builder.create<arith::ConstantOp>(
-      loc, field.getPrimeAttr(builder.getContext(), wideType.getWidth())
+  Value modulus = arith::ConstantOp::create(
+      builder, loc, field.getPrimeAttr(builder.getContext(), wideType.getWidth())
   );
-  Value reduced = builder.create<arith::RemSIOp>(loc, wideValue, modulus);
-  Value zero = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(wideType, 0));
-  Value isNegative = builder.create<arith::CmpIOp>(loc, arith::CmpIPredicate::slt, reduced, zero);
-  Value adjusted = builder.create<arith::AddIOp>(loc, reduced, modulus);
-  Value canonical = builder.create<arith::SelectOp>(loc, isNegative, adjusted, reduced);
-  return builder.create<arith::TruncIOp>(
-      loc, IntegerType::get(builder.getContext(), dstWidth), canonical
+  Value reduced = arith::RemSIOp::create(builder, loc, wideValue, modulus);
+  Value zero = arith::ConstantOp::create(builder, loc, IntegerAttr::get(wideType, 0));
+  Value isNegative = arith::CmpIOp::create(builder, loc, arith::CmpIPredicate::slt, reduced, zero);
+  Value adjusted = arith::AddIOp::create(builder, loc, reduced, modulus);
+  Value canonical = arith::SelectOp::create(builder, loc, isNegative, adjusted, reduced);
+  return arith::TruncIOp::create(
+      builder, loc, IntegerType::get(builder.getContext(), dstWidth), canonical
   );
 }
 
@@ -558,23 +566,23 @@ lowerFeltToSignedWide(OpBuilder &builder, Location loc, Value operand, const Fie
   unsigned wideWidth = width + 1;
   auto feltType = IntegerType::get(builder.getContext(), width);
   auto wideType = IntegerType::get(builder.getContext(), wideWidth);
-  Value operandWide = builder.create<arith::ExtUIOp>(loc, wideType, operand);
+  Value operandWide = arith::ExtUIOp::create(builder, loc, wideType, operand);
   Value prime =
-      builder.create<arith::ConstantOp>(loc, field.getPrimeAttr(builder.getContext(), wideWidth));
-  Value half = builder.create<arith::ConstantOp>(
-      loc, IntegerAttr::get(feltType, toExactWidthAPInt(field.half(), width))
+      arith::ConstantOp::create(builder, loc, field.getPrimeAttr(builder.getContext(), wideWidth));
+  Value half = arith::ConstantOp::create(
+      builder, loc, IntegerAttr::get(feltType, toExactWidthAPInt(field.half(), width))
   );
-  Value isNegative = builder.create<arith::CmpIOp>(loc, arith::CmpIPredicate::uge, operand, half);
-  Value signedOperand = builder.create<arith::SubIOp>(loc, operandWide, prime);
-  return builder.create<arith::SelectOp>(loc, isNegative, signedOperand, operandWide);
+  Value isNegative = arith::CmpIOp::create(builder, loc, arith::CmpIPredicate::uge, operand, half);
+  Value signedOperand = arith::SubIOp::create(builder, loc, operandWide, prime);
+  return arith::SelectOp::create(builder, loc, isNegative, signedOperand, operandWide);
 }
 
 /// Emit a runtime assertion that a felt divisor is non-zero.
 static void assertNonZeroFelt(OpBuilder &builder, Location loc, Value operand, StringRef message) {
   auto operandType = llvm::cast<IntegerType>(operand.getType());
-  Value zero = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(operandType, 0));
-  Value isNonZero = builder.create<arith::CmpIOp>(loc, arith::CmpIPredicate::ne, operand, zero);
-  builder.create<cf::AssertOp>(loc, isNonZero, message);
+  Value zero = arith::ConstantOp::create(builder, loc, IntegerAttr::get(operandType, 0));
+  Value isNonZero = arith::CmpIOp::create(builder, loc, arith::CmpIPredicate::ne, operand, zero);
+  cf::AssertOp::create(builder, loc, isNonZero, message);
 }
 
 /// Lower field addition with explicit modular reduction.
@@ -583,9 +591,9 @@ lowerFeltAdd(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field
   unsigned width = field.bitWidth();
   unsigned wideWidth = width + 1;
   auto wideType = IntegerType::get(builder.getContext(), wideWidth);
-  Value lhsWide = builder.create<arith::ExtUIOp>(loc, wideType, lhs);
-  Value rhsWide = builder.create<arith::ExtUIOp>(loc, wideType, rhs);
-  Value sum = builder.create<arith::AddIOp>(loc, lhsWide, rhsWide);
+  Value lhsWide = arith::ExtUIOp::create(builder, loc, wideType, lhs);
+  Value rhsWide = arith::ExtUIOp::create(builder, loc, wideType, rhs);
+  Value sum = arith::AddIOp::create(builder, loc, lhsWide, rhsWide);
   return normalizeWideValue(builder, loc, sum, width, field);
 }
 
@@ -595,12 +603,12 @@ lowerFeltSub(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field
   unsigned width = field.bitWidth();
   unsigned wideWidth = width + 1;
   auto wideType = IntegerType::get(builder.getContext(), wideWidth);
-  Value lhsWide = builder.create<arith::ExtUIOp>(loc, wideType, lhs);
-  Value rhsWide = builder.create<arith::ExtUIOp>(loc, wideType, rhs);
+  Value lhsWide = arith::ExtUIOp::create(builder, loc, wideType, lhs);
+  Value rhsWide = arith::ExtUIOp::create(builder, loc, wideType, rhs);
   Value modulus =
-      builder.create<arith::ConstantOp>(loc, field.getPrimeAttr(builder.getContext(), wideWidth));
-  Value lhsPlusMod = builder.create<arith::AddIOp>(loc, lhsWide, modulus);
-  Value diff = builder.create<arith::SubIOp>(loc, lhsPlusMod, rhsWide);
+      arith::ConstantOp::create(builder, loc, field.getPrimeAttr(builder.getContext(), wideWidth));
+  Value lhsPlusMod = arith::AddIOp::create(builder, loc, lhsWide, modulus);
+  Value diff = arith::SubIOp::create(builder, loc, lhsPlusMod, rhsWide);
   return normalizeWideValue(builder, loc, diff, width, field);
 }
 
@@ -609,10 +617,10 @@ static Value lowerFeltNeg(OpBuilder &builder, Location loc, Value operand, const
   unsigned width = field.bitWidth();
   unsigned wideWidth = width + 1;
   auto wideType = IntegerType::get(builder.getContext(), wideWidth);
-  Value operandWide = builder.create<arith::ExtUIOp>(loc, wideType, operand);
+  Value operandWide = arith::ExtUIOp::create(builder, loc, wideType, operand);
   Value modulus =
-      builder.create<arith::ConstantOp>(loc, field.getPrimeAttr(builder.getContext(), wideWidth));
-  Value diff = builder.create<arith::SubIOp>(loc, modulus, operandWide);
+      arith::ConstantOp::create(builder, loc, field.getPrimeAttr(builder.getContext(), wideWidth));
+  Value diff = arith::SubIOp::create(builder, loc, modulus, operandWide);
   return normalizeWideValue(builder, loc, diff, width, field);
 }
 
@@ -622,9 +630,9 @@ lowerFeltMul(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field
   unsigned width = field.bitWidth();
   unsigned wideWidth = width * 2;
   auto wideType = IntegerType::get(builder.getContext(), wideWidth);
-  Value lhsWide = builder.create<arith::ExtUIOp>(loc, wideType, lhs);
-  Value rhsWide = builder.create<arith::ExtUIOp>(loc, wideType, rhs);
-  Value product = builder.create<arith::MulIOp>(loc, lhsWide, rhsWide);
+  Value lhsWide = arith::ExtUIOp::create(builder, loc, wideType, lhs);
+  Value rhsWide = arith::ExtUIOp::create(builder, loc, wideType, rhs);
+  Value product = arith::MulIOp::create(builder, loc, lhsWide, rhsWide);
   return normalizeWideValue(builder, loc, product, width, field);
 }
 
@@ -654,28 +662,28 @@ lowerFeltDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field
 static Value
 lowerFeltPow(OpBuilder &builder, Location loc, Value base, Value exponent, const Field &field) {
   auto feltType = IntegerType::get(builder.getContext(), field.bitWidth());
-  Value zero = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(feltType, 0));
-  Value one = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(feltType, 1));
+  Value zero = arith::ConstantOp::create(builder, loc, IntegerAttr::get(feltType, 0));
+  Value one = arith::ConstantOp::create(builder, loc, IntegerAttr::get(feltType, 1));
   Value result = makeOneFelt(builder, loc, field);
   Value currentBase = base;
   for (unsigned bit = 0; bit < field.bitWidth(); ++bit) {
-    Value bitIndex = builder.create<arith::ConstantOp>(
-        loc, IntegerAttr::get(feltType, llvm::APInt(field.bitWidth(), bit))
+    Value bitIndex = arith::ConstantOp::create(
+        builder, loc, IntegerAttr::get(feltType, llvm::APInt(field.bitWidth(), bit))
     );
-    Value shifted = builder.create<arith::ShRUIOp>(loc, exponent, bitIndex);
-    Value masked = builder.create<arith::AndIOp>(loc, shifted, one);
-    Value bitIsSet = builder.create<arith::CmpIOp>(loc, arith::CmpIPredicate::ne, masked, zero);
-    auto ifOp = builder.create<scf::IfOp>(loc, TypeRange {feltType}, bitIsSet, true);
+    Value shifted = arith::ShRUIOp::create(builder, loc, exponent, bitIndex);
+    Value masked = arith::AndIOp::create(builder, loc, shifted, one);
+    Value bitIsSet = arith::CmpIOp::create(builder, loc, arith::CmpIPredicate::ne, masked, zero);
+    auto ifOp = scf::IfOp::create(builder, loc, TypeRange {feltType}, bitIsSet, true);
     {
       OpBuilder::InsertionGuard guard(builder);
       builder.setInsertionPointToStart(&ifOp.getThenRegion().front());
       Value multiplied = lowerFeltMul(builder, loc, result, currentBase, field);
-      builder.create<scf::YieldOp>(loc, multiplied);
+      scf::YieldOp::create(builder, loc, multiplied);
     }
     {
       OpBuilder::InsertionGuard guard(builder);
       builder.setInsertionPointToStart(&ifOp.getElseRegion().front());
-      builder.create<scf::YieldOp>(loc, result);
+      scf::YieldOp::create(builder, loc, result);
     }
     result = ifOp.getResult(0);
     if (bit + 1 < field.bitWidth()) {
@@ -689,7 +697,7 @@ lowerFeltPow(OpBuilder &builder, Location loc, Value base, Value exponent, const
 static Value
 lowerFeltShl(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
   auto feltType = IntegerType::get(builder.getContext(), field.bitWidth());
-  Value two = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(feltType, 2));
+  Value two = arith::ConstantOp::create(builder, loc, IntegerAttr::get(feltType, 2));
   return lowerFeltMul(builder, loc, lhs, lowerFeltPow(builder, loc, two, rhs, field), field);
 }
 
@@ -698,8 +706,8 @@ static Value
 lowerFeltOr(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
   unsigned width = field.bitWidth();
   auto wideType = IntegerType::get(builder.getContext(), width + 1);
-  Value orValue = builder.create<arith::OrIOp>(loc, lhs, rhs);
-  Value orWide = builder.create<arith::ExtUIOp>(loc, wideType, orValue);
+  Value orValue = arith::OrIOp::create(builder, loc, lhs, rhs);
+  Value orWide = arith::ExtUIOp::create(builder, loc, wideType, orValue);
   return normalizeWideValue(builder, loc, orWide, width, field);
 }
 
@@ -708,14 +716,14 @@ static Value
 lowerFeltXor(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
   unsigned width = field.bitWidth();
   auto wideType = IntegerType::get(builder.getContext(), width + 1);
-  Value xorValue = builder.create<arith::XOrIOp>(loc, lhs, rhs);
-  Value xorWide = builder.create<arith::ExtUIOp>(loc, wideType, xorValue);
+  Value xorValue = arith::XOrIOp::create(builder, loc, lhs, rhs);
+  Value xorWide = arith::ExtUIOp::create(builder, loc, wideType, xorValue);
   return normalizeWideValue(builder, loc, xorWide, width, field);
 }
 
 /// Lower unsigned integer division on felt representatives.
 static Value lowerFeltUnsignedDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs) {
-  return builder.create<arith::DivUIOp>(loc, lhs, rhs);
+  return arith::DivUIOp::create(builder, loc, lhs, rhs);
 }
 
 /// Lower signed integer division on felt representatives.
@@ -724,13 +732,13 @@ lowerFeltSignedDiv(OpBuilder &builder, Location loc, Value lhs, Value rhs, const
   unsigned width = field.bitWidth();
   Value lhsSigned = lowerFeltToSignedWide(builder, loc, lhs, field);
   Value rhsSigned = lowerFeltToSignedWide(builder, loc, rhs, field);
-  Value quotient = builder.create<arith::DivSIOp>(loc, lhsSigned, rhsSigned);
+  Value quotient = arith::DivSIOp::create(builder, loc, lhsSigned, rhsSigned);
   return normalizeSignedWideValue(builder, loc, quotient, width, field);
 }
 
 /// Lower unsigned modulus on felt representatives.
 static Value lowerFeltUnsignedMod(OpBuilder &builder, Location loc, Value lhs, Value rhs) {
-  return builder.create<arith::RemUIOp>(loc, lhs, rhs);
+  return arith::RemUIOp::create(builder, loc, lhs, rhs);
 }
 
 /// Lower signed modulus on felt representatives.
@@ -739,7 +747,7 @@ lowerFeltSignedMod(OpBuilder &builder, Location loc, Value lhs, Value rhs, const
   unsigned width = field.bitWidth();
   Value lhsSigned = lowerFeltToSignedWide(builder, loc, lhs, field);
   Value rhsSigned = lowerFeltToSignedWide(builder, loc, rhs, field);
-  Value remainder = builder.create<arith::RemSIOp>(loc, lhsSigned, rhsSigned);
+  Value remainder = arith::RemSIOp::create(builder, loc, lhsSigned, rhsSigned);
   return normalizeSignedWideValue(builder, loc, remainder, width, field);
 }
 
@@ -747,17 +755,17 @@ lowerFeltSignedMod(OpBuilder &builder, Location loc, Value lhs, Value rhs, const
 static Value
 lowerFeltShr(OpBuilder &builder, Location loc, Value lhs, Value rhs, const Field &field) {
   auto feltType = IntegerType::get(builder.getContext(), field.bitWidth());
-  Value width = builder.create<arith::ConstantOp>(
-      loc, IntegerAttr::get(feltType, llvm::APInt(field.bitWidth(), field.bitWidth()))
+  Value width = arith::ConstantOp::create(
+      builder, loc, IntegerAttr::get(feltType, llvm::APInt(field.bitWidth(), field.bitWidth()))
   );
-  Value shiftTooLarge = builder.create<arith::CmpIOp>(loc, arith::CmpIPredicate::uge, rhs, width);
-  Value zero = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(feltType, 0));
-  Value maxValidShift = builder.create<arith::ConstantOp>(
-      loc, IntegerAttr::get(feltType, llvm::APInt(field.bitWidth(), field.bitWidth() - 1))
+  Value shiftTooLarge = arith::CmpIOp::create(builder, loc, arith::CmpIPredicate::uge, rhs, width);
+  Value zero = arith::ConstantOp::create(builder, loc, IntegerAttr::get(feltType, 0));
+  Value maxValidShift = arith::ConstantOp::create(
+      builder, loc, IntegerAttr::get(feltType, llvm::APInt(field.bitWidth(), field.bitWidth() - 1))
   );
-  Value clampedShift = builder.create<arith::MinUIOp>(loc, rhs, maxValidShift);
-  Value shifted = builder.create<arith::ShRUIOp>(loc, lhs, clampedShift);
-  return builder.create<arith::SelectOp>(loc, shiftTooLarge, zero, shifted);
+  Value clampedShift = arith::MinUIOp::create(builder, loc, rhs, maxValidShift);
+  Value shifted = arith::ShRUIOp::create(builder, loc, lhs, clampedShift);
+  return arith::SelectOp::create(builder, loc, shiftTooLarge, zero, shifted);
 }
 
 /// Lower one's complement on field-width representatives, then reduce mod prime.
@@ -765,11 +773,11 @@ static Value lowerFeltNot(OpBuilder &builder, Location loc, Value operand, const
   unsigned width = field.bitWidth();
   auto feltType = IntegerType::get(builder.getContext(), width);
   auto wideType = IntegerType::get(builder.getContext(), width + 1);
-  Value maxMask = builder.create<arith::ConstantOp>(
-      loc, IntegerAttr::get(feltType, llvm::APInt::getAllOnes(width))
+  Value maxMask = arith::ConstantOp::create(
+      builder, loc, IntegerAttr::get(feltType, llvm::APInt::getAllOnes(width))
   );
-  Value complement = builder.create<arith::XOrIOp>(loc, operand, maxMask);
-  Value complementWide = builder.create<arith::ExtUIOp>(loc, wideType, complement);
+  Value complement = arith::XOrIOp::create(builder, loc, operand, maxMask);
+  Value complementWide = arith::ExtUIOp::create(builder, loc, wideType, complement);
   return normalizeWideValue(builder, loc, complementWide, width, field);
 }
 
@@ -781,7 +789,7 @@ static Value loadStorageScalar(OpBuilder &builder, Location loc, Value storageLe
   for (int64_t dim = 0; dim < memrefType.getRank(); ++dim) {
     indices.push_back(makeIndexConstant(builder, loc, 0));
   }
-  return builder.create<memref::LoadOp>(loc, storageLeaf, indices);
+  return memref::LoadOp::create(builder, loc, storageLeaf, indices);
 }
 
 /// Store one scalar value into aggregate storage.
@@ -792,7 +800,7 @@ static void storeStorageScalar(OpBuilder &builder, Location loc, Value scalar, V
   for (int64_t dim = 0; dim < memrefType.getRank(); ++dim) {
     indices.push_back(makeIndexConstant(builder, loc, 0));
   }
-  builder.create<memref::StoreOp>(loc, scalar, storageLeaf, indices);
+  memref::StoreOp::create(builder, loc, scalar, storageLeaf, indices);
 }
 
 /// Copy the flattened source value into aggregate storage leaves.
@@ -811,7 +819,7 @@ static LogicalResult copyIntoStorage(
   }
   for (auto [leafType, destLeaf, srcLeaf] : llvm::zip(*leafTypes, destLeaves, sourceLeaves)) {
     if (isa<MemRefType>(leafType)) {
-      builder.create<memref::CopyOp>(loc, srcLeaf, destLeaf);
+      memref::CopyOp::create(builder, loc, srcLeaf, destLeaf);
       continue;
     }
     storeStorageScalar(builder, loc, srcLeaf, destLeaf);
@@ -922,8 +930,8 @@ createElementSubview(OpBuilder &builder, Location loc, Value source, ValueRange 
   auto resultType = llvm::cast<MemRefType>(memref::SubViewOp::inferRankReducedResultType(
       desiredShape, sourceType, mixedOffsets, mixedSizes, mixedStrides
   ));
-  auto op = builder.create<memref::SubViewOp>(
-      loc, resultType, source, mixedOffsets, mixedSizes, mixedStrides
+  auto op = memref::SubViewOp::create(
+      builder, loc, resultType, source, mixedOffsets, mixedSizes, mixedStrides
   );
   return success(op.getResult());
 }
@@ -937,7 +945,7 @@ static FailureOr<LoweredValue> readArrayElement(
   LoweredValue result {elementType, {}};
   if (isScalarType(elementType)) {
     result.leaves.push_back(
-        builder.create<memref::LoadOp>(loc, arrayValue.leaves.front(), indices)
+        memref::LoadOp::create(builder, loc, arrayValue.leaves.front(), indices)
     );
     return result;
   }
@@ -959,8 +967,8 @@ static LogicalResult writeArrayElement(
 ) {
   Type elementType = arrayType.getElementType();
   if (isScalarType(elementType)) {
-    builder.create<memref::StoreOp>(
-        loc, elementValue.leaves.front(), arrayValue.leaves.front(), indices
+    memref::StoreOp::create(
+        builder, loc, elementValue.leaves.front(), arrayValue.leaves.front(), indices
     );
     return success();
   }
@@ -970,7 +978,7 @@ static LogicalResult writeArrayElement(
     if (failed(subview)) {
       return failure();
     }
-    builder.create<memref::CopyOp>(loc, srcLeaf, *subview);
+    memref::CopyOp::create(builder, loc, srcLeaf, *subview);
   }
   return success();
 }
@@ -990,7 +998,7 @@ static LogicalResult appendFlatLeavesToTypes(
       continue;
     }
     if (isa<MemRefType>(leafValue.getType()) && isa<MemRefType>(leafType)) {
-      out.push_back(builder.create<memref::CastOp>(loc, leafType, leafValue));
+      out.push_back(memref::CastOp::create(builder, loc, leafType, leafValue));
       continue;
     }
     origin->emitError("lowered leaf type mismatch during call lowering");
@@ -1040,8 +1048,8 @@ public:
 
     OpBuilder moduleBuilder(moduleOp.getContext());
     moduleBuilder.setInsertionPointToEnd(moduleOp.getBody());
-    auto loweredFunc = moduleBuilder.create<func::FuncOp>(
-        funcOp.getLoc(), mangleFunctionName(funcOp),
+    auto loweredFunc = func::FuncOp::create(
+        moduleBuilder, funcOp.getLoc(), mangleFunctionName(funcOp),
         moduleBuilder.getFunctionType(loweredArgTypes, loweredResultTypes)
     );
     Block *entry = loweredFunc.addEntryBlock();
@@ -1137,7 +1145,7 @@ private:
       predicate = arith::CmpIPredicate::uge;
       break;
     }
-    return builder.create<arith::CmpIOp>(loc, predicate, lhs, rhs).getResult();
+    return arith::CmpIOp::create(builder, loc, predicate, lhs, rhs).getResult();
   }
 
   /// Lower one LLZK operation into core MLIR dialects.
@@ -1162,7 +1170,7 @@ private:
           return failure();
         }
       }
-      builder.create<func::ReturnOp>(loc, results);
+      func::ReturnOp::create(builder, loc, results);
       return success();
     }
 
@@ -1178,7 +1186,7 @@ private:
           return failure();
         }
       }
-      builder.create<scf::YieldOp>(loc, results);
+      scf::YieldOp::create(builder, loc, results);
       return success();
     }
     if (auto conditionOp = dyn_cast<scf::ConditionOp>(op)) {
@@ -1199,7 +1207,7 @@ private:
           return failure();
         }
       }
-      builder.create<scf::ConditionOp>(loc, *condition, results);
+      scf::ConditionOp::create(builder, loc, *condition, results);
       return success();
     }
 
@@ -1216,7 +1224,7 @@ private:
       auto constVal = toDynamicAPInt(feltConst.getValue().getValue());
       auto modVal = constVal % field.prime();
       auto intVal = llzk::toExactWidthAPInt(modVal, field.bitWidth());
-      Value lowered = builder.create<arith::ConstantOp>(loc, IntegerAttr::get(intType, intVal));
+      Value lowered = arith::ConstantOp::create(builder, loc, IntegerAttr::get(intType, intVal));
       return bind(feltConst.getResult(), LoweredValue {feltConst.getType(), {lowered}});
     }
 
@@ -1261,7 +1269,7 @@ private:
       }
       return bind(
           andOp.getResult(),
-          LoweredValue {andOp.getType(), {builder.create<arith::AndIOp>(loc, *lhs, *rhs)}}
+          LoweredValue {andOp.getType(), {arith::AndIOp::create(builder, loc, *lhs, *rhs)}}
       );
     }
     if (auto orOp = dyn_cast<felt::OrFeltOp>(op)) {
@@ -1437,8 +1445,9 @@ private:
       if (failed(condition)) {
         return failure();
       }
-      builder.create<cf::AssertOp>(
-          loc, *condition, assertOp.getMsg() ? assertOp.getMsg()->str() : "bool.assert failed"
+      cf::AssertOp::create(
+          builder, loc, *condition,
+          assertOp.getMsg() ? assertOp.getMsg()->str() : "bool.assert failed"
       );
       return success();
     }
@@ -1450,7 +1459,7 @@ private:
       }
       return bind(
           andOp.getResult(),
-          LoweredValue {andOp.getType(), {builder.create<arith::AndIOp>(loc, *lhs, *rhs)}}
+          LoweredValue {andOp.getType(), {arith::AndIOp::create(builder, loc, *lhs, *rhs)}}
       );
     }
     if (auto orOp = dyn_cast<boolean::OrBoolOp>(op)) {
@@ -1461,7 +1470,7 @@ private:
       }
       return bind(
           orOp.getResult(),
-          LoweredValue {orOp.getType(), {builder.create<arith::OrIOp>(loc, *lhs, *rhs)}}
+          LoweredValue {orOp.getType(), {arith::OrIOp::create(builder, loc, *lhs, *rhs)}}
       );
     }
     if (auto xorOp = dyn_cast<boolean::XorBoolOp>(op)) {
@@ -1472,7 +1481,7 @@ private:
       }
       return bind(
           xorOp.getResult(),
-          LoweredValue {xorOp.getType(), {builder.create<arith::XOrIOp>(loc, *lhs, *rhs)}}
+          LoweredValue {xorOp.getType(), {arith::XOrIOp::create(builder, loc, *lhs, *rhs)}}
       );
     }
     if (auto notOp = dyn_cast<boolean::NotBoolOp>(op)) {
@@ -1480,12 +1489,12 @@ private:
       if (failed(operand)) {
         return failure();
       }
-      Value one = builder.create<arith::ConstantOp>(
-          loc, IntegerAttr::get(IntegerType::get(builder.getContext(), 1), 1)
+      Value one = arith::ConstantOp::create(
+          builder, loc, IntegerAttr::get(IntegerType::get(builder.getContext(), 1), 1)
       );
       return bind(
           notOp.getResult(),
-          LoweredValue {notOp.getType(), {builder.create<arith::XOrIOp>(loc, *operand, one)}}
+          LoweredValue {notOp.getType(), {arith::XOrIOp::create(builder, loc, *operand, one)}}
       );
     }
 
@@ -1497,11 +1506,11 @@ private:
       auto dstType = IntegerType::get(builder.getContext(), field.bitWidth());
       Value lowered;
       if (isa<IndexType>((*operand).getType())) {
-        lowered = builder.create<arith::IndexCastUIOp>(loc, dstType, *operand);
+        lowered = arith::IndexCastUIOp::create(builder, loc, dstType, *operand);
       } else {
         auto intType = llvm::cast<IntegerType>((*operand).getType());
         if (intType.getWidth() < dstType.getWidth()) {
-          lowered = builder.create<arith::ExtUIOp>(loc, dstType, *operand);
+          lowered = arith::ExtUIOp::create(builder, loc, dstType, *operand);
         } else if (intType.getWidth() > dstType.getWidth()) {
           lowered = normalizeWideValue(builder, loc, *operand, dstType.getWidth(), field);
         } else {
@@ -1519,7 +1528,7 @@ private:
           feltToIndex.getResult(),
           LoweredValue {
               feltToIndex.getType(),
-              {builder.create<arith::IndexCastUIOp>(loc, builder.getIndexType(), *operand)}
+              {arith::IndexCastUIOp::create(builder, loc, builder.getIndexType(), *operand)}
           }
       );
     }
@@ -1701,7 +1710,7 @@ private:
           cmpiOp.getResult(),
           LoweredValue {
               cmpiOp.getType(),
-              {builder.create<arith::CmpIOp>(loc, cmpiOp.getPredicate(), *lhs, *rhs)}
+              {arith::CmpIOp::create(builder, loc, cmpiOp.getPredicate(), *lhs, *rhs)}
           }
       );
     }
@@ -1716,7 +1725,7 @@ private:
           selectOp.getResult(),
           LoweredValue {
               selectOp.getType(),
-              {builder.create<arith::SelectOp>(loc, *cond, *trueValue, *falseValue)}
+              {arith::SelectOp::create(builder, loc, *cond, *trueValue, *falseValue)}
           }
       );
     }
@@ -1728,7 +1737,7 @@ private:
       }
       return bind(
           addiOp.getResult(),
-          LoweredValue {addiOp.getType(), {builder.create<arith::AddIOp>(loc, *lhs, *rhs)}}
+          LoweredValue {addiOp.getType(), {arith::AddIOp::create(builder, loc, *lhs, *rhs)}}
       );
     }
     if (auto subiOp = dyn_cast<arith::SubIOp>(op)) {
@@ -1739,7 +1748,7 @@ private:
       }
       return bind(
           subiOp.getResult(),
-          LoweredValue {subiOp.getType(), {builder.create<arith::SubIOp>(loc, *lhs, *rhs)}}
+          LoweredValue {subiOp.getType(), {arith::SubIOp::create(builder, loc, *lhs, *rhs)}}
       );
     }
 
@@ -1774,7 +1783,7 @@ private:
         }
       }
       auto loweredCall =
-          builder.create<func::CallOp>(loc, mangleFunctionName(callee), resultTypes, flatArgs);
+          func::CallOp::create(builder, loc, mangleFunctionName(callee), resultTypes, flatArgs);
       auto loweredCallResults = loweredCall.getResults();
       size_t totalResults = loweredCallResults.size();
       size_t cursor = 0;
@@ -1855,8 +1864,8 @@ private:
       };
 
       LogicalResult whileLoweringStatus = success();
-      auto newWhile = builder.create<scf::WhileOp>(
-          loc, loweredResultTypes, initArgs,
+      auto newWhile = scf::WhileOp::create(
+          builder, loc, loweredResultTypes, initArgs,
           [&](OpBuilder &regionBuilder, Location /*regionLoc*/, ValueRange beforeArgs) {
         DenseMap<Value, LoweredValue> beforeMap(valueMap.begin(), valueMap.end());
         if (failed(mapRegionArguments(
@@ -1923,8 +1932,8 @@ private:
         resultLeafCounts.push_back(*count);
       }
 
-      auto newIf = builder.create<scf::IfOp>(
-          loc, loweredResultTypes, *condition, true, !ifOp.getElseRegion().empty()
+      auto newIf = scf::IfOp::create(
+          builder, loc, loweredResultTypes, *condition, true, !ifOp.getElseRegion().empty()
       );
 
       {
@@ -1991,7 +2000,7 @@ private:
         initLeafCounts.push_back(*count);
       }
 
-      auto newFor = builder.create<scf::ForOp>(loc, *lb, *ub, *step, initArgs);
+      auto newFor = scf::ForOp::create(builder, loc, *lb, *ub, *step, initArgs);
       if (Attribute unsignedCmpAttr = forOp->getAttr("unsignedCmp")) {
         newFor->setAttr("unsignedCmp", unsignedCmpAttr);
       }
@@ -2188,8 +2197,8 @@ public:
       wrapperArgs.push_back(loweredLeafTypes.front());
     }
 
-    auto wrapper = builder.create<func::FuncOp>(
-        computeFunc.getLoc(), "__llzk_witgen_main",
+    auto wrapper = func::FuncOp::create(
+        builder, computeFunc.getLoc(), "__llzk_witgen_main",
         builder.getFunctionType(wrapperArgs, TypeRange {})
     );
     wrapper->setAttr(LLVM::LLVMDialect::getEmitCWrapperAttrName(), builder.getUnitAttr());
@@ -2225,14 +2234,17 @@ public:
         if (wrapperArg.getType() == abiLeafTypes->front()) {
           mainArgs.push_back(wrapperArg);
         } else {
-          mainArgs.push_back(builder.create<memref::CastOp>(
-              computeFunc.getLoc(), abiLeafTypes->front(), wrapperArg
-          ));
+          mainArgs.push_back(
+              memref::CastOp::create(
+                  builder, computeFunc.getLoc(), abiLeafTypes->front(), wrapperArg
+              )
+          );
         }
       }
     }
-    auto loweredMain = builder.create<func::CallOp>(
-        computeFunc.getLoc(), mangleFunctionName(computeFunc), loweredMainResultTypes, mainArgs
+    auto loweredMain = func::CallOp::create(
+        builder, computeFunc.getLoc(), mangleFunctionName(computeFunc), loweredMainResultTypes,
+        mainArgs
     );
 
     LoweredValue mainResultValue {
@@ -2304,10 +2316,10 @@ public:
             loadStorageScalar(builder, computeFunc.getLoc(), slice->front()), outputMemRef
         );
       } else {
-        builder.create<memref::CopyOp>(computeFunc.getLoc(), slice->front(), outputMemRef);
+        memref::CopyOp::create(builder, computeFunc.getLoc(), slice->front(), outputMemRef);
       }
     }
-    builder.create<func::ReturnOp>(computeFunc.getLoc());
+    func::ReturnOp::create(builder, computeFunc.getLoc());
 
     // Remove `llzk.main` attribute because the main struct is deleted below.
     moduleOp->removeAttr(MAIN_ATTR_NAME);

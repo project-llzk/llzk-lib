@@ -17,4 +17,5 @@ add_custom_target(
   check-unit
   DEPENDS ${LLZK_UNITTESTS}
   COMMAND "${CMAKE_COMMAND}" --build "${CMAKE_BINARY_DIR}" --target test
+  USES_TERMINAL
   COMMENT "Running the gtest-based unit tests")

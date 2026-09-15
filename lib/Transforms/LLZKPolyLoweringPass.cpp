@@ -336,12 +336,12 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
         std::string auxName = AUXILIARY_MEMBER_PREFIX + std::to_string(this->auxCounter++);
         MemberDefOp auxMember = addAuxMember(structDef, auxName, lhs.getType());
 
-        auto auxVal = builder.create<MemberReadOp>(
-            lhs.getLoc(), lhs.getType(), selfVal, auxMember.getNameAttr()
+        auto auxVal = MemberReadOp::create(
+            builder, lhs.getLoc(), lhs.getType(), selfVal, auxMember.getNameAttr()
         );
         auxAssignments.push_back({auxName, lhs, auxVal});
         Location loc = builder.getFusedLoc({auxVal.getLoc(), lhs.getLoc()});
-        auto eqOp = builder.create<EmitEqualityOp>(loc, auxVal, lhs);
+        auto eqOp = EmitEqualityOp::create(builder, loc, auxVal, lhs);
 
         // Memoize auxVal as degree 1
         degreeMemo[auxVal] = 1;
@@ -365,13 +365,13 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
         MemberDefOp auxMember = addAuxMember(structDef, auxName, toFactor.getType());
 
         // Read back as MemberReadOp (new SSA value)
-        auto auxVal = builder.create<MemberReadOp>(
-            toFactor.getLoc(), toFactor.getType(), selfVal, auxMember.getNameAttr()
+        auto auxVal = MemberReadOp::create(
+            builder, toFactor.getLoc(), toFactor.getType(), selfVal, auxMember.getNameAttr()
         );
 
         // Emit constraint: auxVal == toFactor
         Location loc = builder.getFusedLoc({auxVal.getLoc(), toFactor.getLoc()});
-        auto eqOp = builder.create<EmitEqualityOp>(loc, auxVal, toFactor);
+        auto eqOp = EmitEqualityOp::create(builder, loc, auxVal, toFactor);
         auxAssignments.push_back({auxName, toFactor, auxVal});
         // Update memoization
         rewrites[toFactor] = auxVal;
@@ -388,7 +388,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       }
 
       // Now lhs * rhs fits within degree bound
-      auto mulVal = builder.create<MulFeltOp>(lhs.getLoc(), lhs.getType(), lhs, rhs);
+      auto mulVal = MulFeltOp::create(builder, lhs.getLoc(), lhs.getType(), lhs, rhs);
       if (eraseMul) {
         mulOp->replaceAllUsesWith(mulVal);
         mulOp->erase();
@@ -427,12 +427,12 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
 
     OpBuilder builder(callOp);
     Value selfVal = constrainFunc.getSelfValueFromConstrain();
-    auto auxVal = builder.create<MemberReadOp>(
-        loweredVal.getLoc(), loweredVal.getType(), selfVal, auxMember.getNameAttr()
+    auto auxVal = MemberReadOp::create(
+        builder, loweredVal.getLoc(), loweredVal.getType(), selfVal, auxMember.getNameAttr()
     );
 
     Location loc = builder.getFusedLoc({auxVal.getLoc(), loweredVal.getLoc()});
-    builder.create<EmitEqualityOp>(loc, auxVal, loweredVal);
+    EmitEqualityOp::create(builder, loc, auxVal, loweredVal);
     auxAssignments.push_back({auxName, loweredVal, auxVal});
 
     degreeMemo[auxVal] = 1;
@@ -661,7 +661,7 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
     if (!activeArrays.insert(arrayValue).second) {
       return emitAmbiguousContainmentRhs(containOp, "cyclic array update");
     }
-    auto cleanup = llvm::make_scope_exit([&]() { activeArrays.erase(arrayValue); });
+    auto cleanup = llvm::scope_exit([&]() { activeArrays.erase(arrayValue); });
 
     MLIRContext *ctx = arrayType.getContext();
 
@@ -973,8 +973,8 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
 
         if (modified) {
           OpBuilder builder(callOp);
-          builder.create<CallOp>(
-              callOp.getLoc(), callOp.getResultTypes(), callOp.getCallee(),
+          CallOp::create(
+              builder, callOp.getLoc(), callOp.getResultTypes(), callOp.getCallee(),
               CallOp::toVectorOfValueRange(callOp.getMapOperands()), callOp.getNumDimsPerMap(),
               newOperands
           );
@@ -1008,9 +1008,9 @@ class PassImpl : public llzk::impl::PolyLoweringPassBase<PassImpl> {
       if (!rebuiltExpr) {
         return failure();
       }
-      builder.create<MemberWriteOp>(
-          assign.computedValue.getLoc(), selfVal, builder.getStringAttr(assign.auxMemberName),
-          rebuiltExpr
+      MemberWriteOp::create(
+          builder, assign.computedValue.getLoc(), selfVal,
+          builder.getStringAttr(assign.auxMemberName), rebuiltExpr
       );
       if (assign.auxValue) {
         // Reuse the expression just written so later aux producers do not need an
