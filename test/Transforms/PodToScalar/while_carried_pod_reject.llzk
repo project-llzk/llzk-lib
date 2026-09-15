@@ -94,3 +94,31 @@ module attributes {llzk.lang} {
     function.return %value : index
   }
 }
+
+// -----
+
+!State = !pod.type<[@value: index]>
+
+// The two POD loop arguments alias. A write through %lhs must be visible through %rhs, so they
+// cannot be split into independent scalar loop-carried values.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @reject_aliased_carried_pods(%count: index, %seed: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %state = pod.new : !State
+    pod.write %state[@value] = %seed : !State, index
+    %result:4 = scf.while (%i = %count, %observed = %seed, %lhs = %state, %rhs = %state)
+        : (index, index, !State, !State) -> (index, index, !State, !State) {
+      %condition = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%condition) %i, %observed, %lhs, %rhs : index, index, !State, !State
+    } do {
+    ^bb0(%i: index, %observed: index, %lhs: !State, %rhs: !State):
+      pod.write %lhs[@value] = %i : !State, index
+      %seen = pod.read %rhs[@value] : !State, index
+      %next = arith.subi %i, %c1 : index
+      scf.yield %next, %seen, %lhs, %rhs : index, index, !State, !State
+    }
+    function.return %result#1 : index
+  }
+}
