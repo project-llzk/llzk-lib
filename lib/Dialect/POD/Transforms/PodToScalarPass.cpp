@@ -111,6 +111,7 @@
 #include <mlir/Transforms/Passes.h>
 
 #include <llvm/ADT/DenseMapInfo.h>
+#include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Debug.h>
@@ -6396,6 +6397,7 @@ public:
 
     Block &beforeBody = *whileOp.getBeforeBody();
     Block &afterBody = *whileOp.getAfterBody();
+    llvm::DenseSet<Value> uniquePodInits;
     for (const WhileCarriedPod &pod : carriedPods) {
       if (hasUnsupportedWhileCarriedPodUse(whileOp.getBeforeArguments()[pod.originalIndex], pod) ||
           hasUnsupportedWhileCarriedPodUse(whileOp.getAfterArguments()[pod.originalIndex], pod)) {
@@ -6403,6 +6405,10 @@ public:
       }
 
       Value init = whileOp.getInits()[pod.originalIndex];
+      // Splitting two aliases independently would lose writes observed through the other alias.
+      if (!uniquePodInits.insert(init).second) {
+        return failure();
+      }
       for (Operation *user : init.getUsers()) {
         if (user != whileOp.getOperation() &&
             !(user->getBlock() == whileOp->getBlock() && user->isBeforeInBlock(whileOp))) {
