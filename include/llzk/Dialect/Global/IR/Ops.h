@@ -19,7 +19,7 @@ namespace llzk::global {
 
 /// Memory resource indicating a `global.def` memory resource.
 struct GlobalMemoryResource : public mlir::SideEffects::Resource::Base<GlobalMemoryResource> {
-  mlir::StringRef getName() final;
+  mlir::StringRef getName() const final;
 };
 
 } // namespace llzk::global
