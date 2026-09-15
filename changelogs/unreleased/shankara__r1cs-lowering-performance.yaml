@@ -1,0 +1,2 @@
+changed:
+  - Reduce POD and array scalarization runtime by caching access-analysis results and eligible static array accesses instead of repeatedly scanning the IR.
