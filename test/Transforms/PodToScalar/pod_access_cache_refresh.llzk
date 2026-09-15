@@ -1,0 +1,36 @@
+// RUN: llzk-opt -llzk-pod-to-scalar %s | FileCheck %s
+
+!F = !felt.type<"babybear">
+!P = !pod.type<[@value: !F]>
+
+module attributes {llzk.lang} {
+  // FIXME: The two members currently lower to independent values even though mutating the POD read
+  // from @m1 should also update @m1 under reference semantics. This test only guards against the
+  // stale-analysis crash; correct POD alias modeling is tracked separately.
+  struct.def @Main {
+    struct.member @m1 : !P
+    struct.member @m2 : !P
+
+    function.def @compute() -> !struct.type<@Main> {
+      %self = struct.new : !struct.type<@Main>
+      %f7 = felt.const 7 : !F
+      %pod = pod.new : !P
+      pod.write %pod[@value] = %f7 : !P, !F
+      struct.writem %self[@m1] = %pod : !struct.type<@Main>, !P
+      %read = struct.readm %self[@m1] : !struct.type<@Main>, !P
+      %f9 = felt.const 9 : !F
+      pod.write %read[@value] = %f9 : !P, !F
+      struct.writem %self[@m2] = %read : !struct.type<@Main>, !P
+      function.return %self : !struct.type<@Main>
+    }
+
+    function.def @constrain(%self: !struct.type<@Main>) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: struct.def @Main
+// CHECK-NOT: !pod.type
+// CHECK-NOT: pod.
+// CHECK: function.return
