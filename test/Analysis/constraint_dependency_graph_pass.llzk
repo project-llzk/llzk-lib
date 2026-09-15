@@ -436,6 +436,436 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  struct.def @ArrayWriteRead {
+    function.def @compute(%x: !felt.type) -> !struct.type<@ArrayWriteRead> {
+      %self = struct.new : !struct.type<@ArrayWriteRead>
+      function.return %self : !struct.type<@ArrayWriteRead>
+    }
+
+    function.def @constrain(%self: !struct.type<@ArrayWriteRead>, %x: !felt.type) {
+      %array = array.new : !array.type<2 x !felt.type>
+      %idx = arith.constant 1 : index
+      array.write %array[%idx] = %x : !array.type<2 x !felt.type>, !felt.type
+      %elem = array.read %array[%idx] : !array.type<2 x !felt.type>, !felt.type
+      %seven = felt.const 7
+      constrain.eq %elem, %seven : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArrayWriteRead ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, <felt.const: 7> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @ArrayWriteRead ConstraintDependencyGraph {
+// INTRA-NEXT:     { %arg1, <felt.const: 7> }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @overwrite_first(%array: !array.type<1 x !felt.type>, %value: !felt.type) {
+    %idx = arith.constant 0 : index
+    array.write %array[%idx] = %value : !array.type<1 x !felt.type>, !felt.type
+    function.return
+  }
+
+  struct.def @AggregateReadCallStorageEffects {
+    struct.member @array_out : !felt.type {llzk.pub}
+    struct.member @pod_out : !felt.type {llzk.pub}
+    struct.member @member_out : !felt.type {llzk.pub}
+    struct.member @items : !array.type<1 x !felt.type>
+
+    function.def @compute(%old: !felt.type, %new: !felt.type) -> !struct.type<@AggregateReadCallStorageEffects> {
+      %self = struct.new : !struct.type<@AggregateReadCallStorageEffects>
+      function.return %self : !struct.type<@AggregateReadCallStorageEffects>
+    }
+
+    function.def @constrain(%self: !struct.type<@AggregateReadCallStorageEffects>, %old: !felt.type, %new: !felt.type) {
+      %array_expected = struct.readm %self[@array_out] : !struct.type<@AggregateReadCallStorageEffects>, !felt.type
+      %pod_expected = struct.readm %self[@pod_out] : !struct.type<@AggregateReadCallStorageEffects>, !felt.type
+      %member_expected = struct.readm %self[@member_out] : !struct.type<@AggregateReadCallStorageEffects>, !felt.type
+      %outer_idx = arith.constant 1 : index
+      %inner_idx = arith.constant 0 : index
+
+      %matrix = array.new %old, %old : !array.type<2,1 x !felt.type>
+      %row = array.extract %matrix[%outer_idx] : !array.type<2,1 x !felt.type>
+      function.call @overwrite_first(%row, %new) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      %array_actual = array.read %matrix[%outer_idx, %inner_idx] : !array.type<2,1 x !felt.type>, !felt.type
+
+      %pod = pod.new { @items = %row } : !pod.type<[@items: !array.type<1 x !felt.type>]>
+      %pod_items = pod.read %pod[@items] : !pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+      function.call @overwrite_first(%pod_items, %new) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      %pod_actual_items = pod.read %pod[@items] : !pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+      %pod_actual = array.read %pod_actual_items[%inner_idx] : !array.type<1 x !felt.type>, !felt.type
+
+      %member_items = struct.readm %self[@items] : !struct.type<@AggregateReadCallStorageEffects>, !array.type<1 x !felt.type>
+      function.call @overwrite_first(%member_items, %new) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      %member_actual_items = struct.readm %self[@items] : !struct.type<@AggregateReadCallStorageEffects>, !array.type<1 x !felt.type>
+      %member_actual = array.read %member_actual_items[%inner_idx] : !array.type<1 x !felt.type>, !felt.type
+
+      constrain.eq %array_expected, %array_actual : !felt.type
+      constrain.eq %pod_expected, %pod_actual : !felt.type
+      constrain.eq %member_expected, %member_actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @AggregateReadCallStorageEffects ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.array_out, %self.pod_out, %self.member_out, %arg2 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @AggregateReadCallStorageEffects ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.array_out, %self.pod_out, %self.member_out, %arg2 }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @overwrite_called_element(%array: !array.type<1 x !felt.type>, %value: !felt.type) {
+    %idx = arith.constant 0 : index
+    array.write %array[%idx] = %value : !array.type<1 x !felt.type>, !felt.type
+    function.return
+  }
+
+  struct.def @ConditionalCallStorageEffects {
+    struct.member @if_out : !felt.type {llzk.pub}
+
+    function.def @compute(%old: !felt.type, %new: !felt.type, %cond: i1) -> !struct.type<@ConditionalCallStorageEffects> {
+      %self = struct.new : !struct.type<@ConditionalCallStorageEffects>
+      function.return %self : !struct.type<@ConditionalCallStorageEffects>
+    }
+
+    function.def @constrain(%self: !struct.type<@ConditionalCallStorageEffects>, %old: !felt.type, %new: !felt.type, %cond: i1) {
+      %if_expected = struct.readm %self[@if_out] : !struct.type<@ConditionalCallStorageEffects>, !felt.type
+      %idx = arith.constant 0 : index
+
+      %if_array = array.new %old : !array.type<1 x !felt.type>
+      scf.if %cond {
+        function.call @overwrite_called_element(%if_array, %new) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      }
+      %if_actual = array.read %if_array[%idx] : !array.type<1 x !felt.type>, !felt.type
+      constrain.eq %if_expected, %if_actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ConditionalCallStorageEffects ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.if_out, %arg1, %arg2 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @ConditionalCallStorageEffects ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.if_out, %arg1, %arg2 }
+// INTRA-NEXT: }
+
+// -----
+
+// Nested callee writes must be summarized at the call site, while retaining
+// their conditional-write dependency on the caller's pre-call storage.
+module attributes {llzk.lang} {
+  function.def @conditionally_overwrite_element(%array: !array.type<1 x !felt.type>, %value: !felt.type, %cond: i1) {
+    %idx = arith.constant 0 : index
+    scf.if %cond {
+      array.write %array[%idx] = %value : !array.type<1 x !felt.type>, !felt.type
+    }
+    function.return
+  }
+
+  struct.def @NestedCalleeConditionalStorageEffects {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%old: !felt.type, %new: !felt.type, %cond: i1) -> !struct.type<@NestedCalleeConditionalStorageEffects> {
+      %self = struct.new : !struct.type<@NestedCalleeConditionalStorageEffects>
+      function.return %self : !struct.type<@NestedCalleeConditionalStorageEffects>
+    }
+
+    function.def @constrain(%self: !struct.type<@NestedCalleeConditionalStorageEffects>, %old: !felt.type, %new: !felt.type, %cond: i1) {
+      %expected = struct.readm %self[@out] : !struct.type<@NestedCalleeConditionalStorageEffects>, !felt.type
+      %array = array.new %old : !array.type<1 x !felt.type>
+      %idx = arith.constant 0 : index
+      function.call @conditionally_overwrite_element(%array, %new, %cond) : (!array.type<1 x !felt.type>, !felt.type, i1) -> ()
+      %actual = array.read %array[%idx] : !array.type<1 x !felt.type>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @NestedCalleeConditionalStorageEffects ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg1, %arg2 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @NestedCalleeConditionalStorageEffects ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg1, %arg2 }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @IfYieldedStorageRead {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%old: !felt.type, %new: !felt.type, %cond: i1) -> !struct.type<@IfYieldedStorageRead> {
+      %self = struct.new : !struct.type<@IfYieldedStorageRead>
+      function.return %self : !struct.type<@IfYieldedStorageRead>
+    }
+
+    function.def @constrain(%self: !struct.type<@IfYieldedStorageRead>, %old: !felt.type, %new: !felt.type, %cond: i1) {
+      %expected = struct.readm %self[@out] : !struct.type<@IfYieldedStorageRead>, !felt.type
+      %idx = arith.constant 0 : index
+      %array = array.new %old : !array.type<1 x !felt.type>
+      %actual = scf.if %cond -> !felt.type {
+        array.write %array[%idx] = %new : !array.type<1 x !felt.type>, !felt.type
+        %written = array.read %array[%idx] : !array.type<1 x !felt.type>, !felt.type
+        scf.yield %written : !felt.type
+      } else {
+        %unwritten = array.read %array[%idx] : !array.type<1 x !felt.type>, !felt.type
+        scf.yield %unwritten : !felt.type
+      }
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @IfYieldedStorageRead ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg1, %arg2 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @IfYieldedStorageRead ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg1, %arg2 }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ConditionalAggregateAliasSourceWrite {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%old: !felt.type, %initial: !felt.type, %updated: !felt.type, %cond: i1) -> !struct.type<@ConditionalAggregateAliasSourceWrite> {
+      %self = struct.new : !struct.type<@ConditionalAggregateAliasSourceWrite>
+      function.return %self : !struct.type<@ConditionalAggregateAliasSourceWrite>
+    }
+
+    function.def @constrain(%self: !struct.type<@ConditionalAggregateAliasSourceWrite>, %old: !felt.type, %initial: !felt.type, %updated: !felt.type, %cond: i1) {
+      %expected = struct.readm %self[@out] : !struct.type<@ConditionalAggregateAliasSourceWrite>, !felt.type
+      %c0 = arith.constant 0 : index
+      %old_arr = array.new %old : !array.type<1 x !felt.type>
+      %pod = pod.new { @items = %old_arr } : !pod.type<[@items: !array.type<1 x !felt.type>]>
+      // The later write through this conditionally aliased source must leave
+      // the target's %old dependency intact on the path without the alias.
+      %source = array.new : !array.type<1 x !felt.type>
+      array.write %source[%c0] = %initial : !array.type<1 x !felt.type>, !felt.type
+      scf.if %cond {
+        pod.write %pod[@items] = %source : !pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+      }
+      array.write %source[%c0] = %updated : !array.type<1 x !felt.type>, !felt.type
+      %items = pod.read %pod[@items] : !pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+      %actual = array.read %items[%c0] : !array.type<1 x !felt.type>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ConditionalAggregateAliasSourceWrite ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg1, %arg3 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @ConditionalAggregateAliasSourceWrite ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg1, %arg3 }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @overwrite_called_element(%array: !array.type<1 x !felt.type>, %value: !felt.type) {
+    %idx = arith.constant 0 : index
+    array.write %array[%idx] = %value : !array.type<1 x !felt.type>, !felt.type
+    function.return
+  }
+
+  struct.def @LoopCallStorageEffects {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%old: !felt.type, %new: !felt.type, %ub: index) -> !struct.type<@LoopCallStorageEffects> {
+      %self = struct.new : !struct.type<@LoopCallStorageEffects>
+      function.return %self : !struct.type<@LoopCallStorageEffects>
+    }
+
+    function.def @constrain(%self: !struct.type<@LoopCallStorageEffects>, %old: !felt.type, %new: !felt.type, %ub: index) {
+      %expected = struct.readm %self[@out] : !struct.type<@LoopCallStorageEffects>, !felt.type
+      %idx = arith.constant 0 : index
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %array = array.new %old : !array.type<1 x !felt.type>
+      scf.for %i = %c0 to %ub step %c1 {
+        function.call @overwrite_called_element(%array, %new) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      }
+      %actual = array.read %array[%idx] : !array.type<1 x !felt.type>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @LoopCallStorageEffects ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg1, %arg2 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @LoopCallStorageEffects ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg1, %arg2 }
+// INTRA-NEXT: }
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @LoopLocalArrayRead {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%old: !felt.type, %new: !felt.type, %ub: index) -> !struct.type<@LoopLocalArrayRead> {
+      %self = struct.new : !struct.type<@LoopLocalArrayRead>
+      function.return %self : !struct.type<@LoopLocalArrayRead>
+    }
+
+    function.def @constrain(%self: !struct.type<@LoopLocalArrayRead>, %old: !felt.type, %new: !felt.type, %ub: index) {
+      %expected = struct.readm %self[@out] : !struct.type<@LoopLocalArrayRead>, !felt.type
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      scf.for %i = %c0 to %ub step %c1 {
+        %array = array.new %old : !array.type<1 x !felt.type>
+        %actual = array.read %array[%c0] : !array.type<1 x !felt.type>, !felt.type
+        array.write %array[%c0] = %new : !array.type<1 x !felt.type>, !felt.type
+        constrain.eq %expected, %actual : !felt.type
+      }
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @LoopLocalArrayRead ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg1 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @LoopLocalArrayRead ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg1 }
+// INTRA-NEXT: }
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @LoopLocalPodRead {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%old: !felt.type, %new: !felt.type, %ub: index) -> !struct.type<@LoopLocalPodRead> {
+      %self = struct.new : !struct.type<@LoopLocalPodRead>
+      function.return %self : !struct.type<@LoopLocalPodRead>
+    }
+
+    function.def @constrain(%self: !struct.type<@LoopLocalPodRead>, %old: !felt.type, %new: !felt.type, %ub: index) {
+      %expected = struct.readm %self[@out] : !struct.type<@LoopLocalPodRead>, !felt.type
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      scf.for %i = %c0 to %ub step %c1 {
+        %pod = pod.new { @value = %old } : !pod.type<[@value: !felt.type]>
+        %actual = pod.read %pod[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+        pod.write %pod[@value] = %new : !pod.type<[@value: !felt.type]>, !felt.type
+        constrain.eq %expected, %actual : !felt.type
+      }
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @LoopLocalPodRead ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg1 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @LoopLocalPodRead ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg1 }
+// INTRA-NEXT: }
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArrayOverwriteRead {
+    function.def @compute(%old: !felt.type, %new: !felt.type) -> !struct.type<@ArrayOverwriteRead> {
+      %self = struct.new : !struct.type<@ArrayOverwriteRead>
+      function.return %self : !struct.type<@ArrayOverwriteRead>
+    }
+
+    function.def @constrain(%self: !struct.type<@ArrayOverwriteRead>, %old: !felt.type, %new: !felt.type) {
+      %array = array.new %old, %old : !array.type<2 x !felt.type>
+      %idx = arith.constant 1 : index
+      array.write %array[%idx] = %new : !array.type<2 x !felt.type>, !felt.type
+      %elem = array.read %array[%idx] : !array.type<2 x !felt.type>, !felt.type
+      %seven = felt.const 7
+      constrain.eq %elem, %seven : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArrayOverwriteRead ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg2, <felt.const: 7> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @ArrayOverwriteRead ConstraintDependencyGraph {
+// INTRA-NEXT:     { %arg2, <felt.const: 7> }
+// INTRA-NEXT: }
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArrayInsertRead {
+    function.def @compute(%x: !felt.type, %y: !felt.type) -> !struct.type<@ArrayInsertRead> {
+      %self = struct.new : !struct.type<@ArrayInsertRead>
+      function.return %self : !struct.type<@ArrayInsertRead>
+    }
+
+    function.def @constrain(%self: !struct.type<@ArrayInsertRead>, %x: !felt.type, %y: !felt.type) {
+      %matrix = array.new : !array.type<2,2 x !felt.type>
+      %row = array.new %x, %y : !array.type<2 x !felt.type>
+      %row_idx = arith.constant 1 : index
+      %col_idx = arith.constant 0 : index
+      array.insert %matrix[%row_idx] = %row : !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type>
+      %elem = array.read %matrix[%row_idx, %col_idx] : !array.type<2,2 x !felt.type>, !felt.type
+      %seven = felt.const 7
+      constrain.eq %elem, %seven : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArrayInsertRead ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, <felt.const: 7> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @ArrayInsertRead ConstraintDependencyGraph {
+// INTRA-NEXT:     { %arg1, <felt.const: 7> }
+// INTRA-NEXT: }
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArrayOverwriteAliasProbe {
+    function.def @compute(%old: !felt.type, %new: !felt.type) -> !struct.type<@ArrayOverwriteAliasProbe> {
+      %self = struct.new : !struct.type<@ArrayOverwriteAliasProbe>
+      function.return %self : !struct.type<@ArrayOverwriteAliasProbe>
+    }
+
+    function.def @constrain(%self: !struct.type<@ArrayOverwriteAliasProbe>, %old: !felt.type, %new: !felt.type) {
+      %array = array.new %old, %old : !array.type<2 x !felt.type>
+      %idx = arith.constant 1 : index
+      array.write %array[%idx] = %new : !array.type<2 x !felt.type>, !felt.type
+      %elem = array.read %array[%idx] : !array.type<2 x !felt.type>, !felt.type
+      %seven = felt.const 7
+      %eleven = felt.const 11
+      constrain.eq %elem, %seven : !felt.type
+      constrain.eq %old, %eleven : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArrayOverwriteAliasProbe ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, <felt.const: 11> },
+// CHECK-NEXT:     { %arg2, <felt.const: 7> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @ArrayOverwriteAliasProbe ConstraintDependencyGraph {
+// INTRA-NEXT:     { %arg1, <felt.const: 11> },
+// INTRA-NEXT:     { %arg2, <felt.const: 7> }
+// INTRA-NEXT: }
+// -----
+
+module attributes {llzk.lang} {
 
   struct.def @ConstConstraints {
     function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@ConstConstraints> {
@@ -1322,8 +1752,707 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @PodInitializedRoot ConstraintDependencyGraph {
-// CHECK-NEXT:     { %self.out, %pod.value }
+// CHECK-NEXT:     { %self.out, %arg1 }
 // CHECK-NEXT: }
 // INTRA-LABEL: @PodInitializedRoot ConstraintDependencyGraph {
-// INTRA-NEXT:     { %self.out, %pod.value }
+// INTRA-NEXT:     { %self.out, %arg1 }
+// INTRA-NEXT: }
+
+// -----
+
+// Each pod.new initializer must preserve whether its own value is scalar or aggregate. In
+// particular, copying a scalar storage read must snapshot that value even when a later record
+// initializer is aggregate.
+module attributes {llzk.lang} {
+  struct.def @PodMixedInitializerStorageRead {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type)
+        -> !struct.type<@PodMixedInitializerStorageRead> {
+      %self = struct.new : !struct.type<@PodMixedInitializerStorageRead>
+      struct.writem %self[@out] = %initial
+          : !struct.type<@PodMixedInitializerStorageRead>, !felt.type
+      function.return %self : !struct.type<@PodMixedInitializerStorageRead>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@PodMixedInitializerStorageRead>,
+        %initial: !felt.type,
+        %replacement: !felt.type
+    ) {
+      %expected = struct.readm %self[@out]
+          : !struct.type<@PodMixedInitializerStorageRead>, !felt.type
+      %source = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %copied = pod.read %source[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %aggregate = array.new %initial : !array.type<1 x !felt.type>
+      %pod = pod.new { @scalar = %copied, @aggregate = %aggregate }
+          : !pod.type<[@scalar: !felt.type, @aggregate: !array.type<1 x !felt.type>]>
+      pod.write %source[@value] = %replacement
+          : !pod.type<[@value: !felt.type]>, !felt.type
+      %actual = pod.read %pod[@scalar]
+          : !pod.type<[@scalar: !felt.type, @aggregate: !array.type<1 x !felt.type>]>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @PodMixedInitializerStorageRead ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg1 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @PodMixedInitializerStorageRead ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg1 }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @PodReadModifyWrite {
+    function.def @compute(%initial: !felt.type, %x: !felt.type) -> !struct.type<@PodReadModifyWrite> {
+      %self = struct.new : !struct.type<@PodReadModifyWrite>
+      function.return %self : !struct.type<@PodReadModifyWrite>
+    }
+
+    function.def @constrain(%self: !struct.type<@PodReadModifyWrite>, %initial: !felt.type, %x: !felt.type) {
+      %pod = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %previous = pod.read %pod[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %next = felt.add %previous, %x
+      pod.write %pod[@value] = %next : !pod.type<[@value: !felt.type]>, !felt.type
+      %actual = pod.read %pod[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %actual, %zero : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @PodReadModifyWrite ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, %arg2 },
+// CHECK-NEXT:     { %arg1, <felt.const: 0> },
+// CHECK-NEXT:     { %arg2, <felt.const: 0> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @PodReadModifyWrite ConstraintDependencyGraph {
+// INTRA-NEXT:     { %arg1, %arg2 },
+// INTRA-NEXT:     { %arg1, <felt.const: 0> },
+// INTRA-NEXT:     { %arg2, <felt.const: 0> }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @BlockArgumentAggregatePair {
+    struct.member @lhs : !felt.type {llzk.pub}
+    struct.member @rhs : !felt.type {llzk.pub}
+
+    function.def @compute(%lhs: !felt.type, %rhs: !felt.type) -> !struct.type<@BlockArgumentAggregatePair> {
+      %self = struct.new : !struct.type<@BlockArgumentAggregatePair>
+      struct.writem %self[@lhs] = %lhs : !struct.type<@BlockArgumentAggregatePair>, !felt.type
+      struct.writem %self[@rhs] = %rhs : !struct.type<@BlockArgumentAggregatePair>, !felt.type
+      function.return %self : !struct.type<@BlockArgumentAggregatePair>
+    }
+
+    function.def @constrain(%self: !struct.type<@BlockArgumentAggregatePair>, %lhs: !felt.type, %rhs: !felt.type) {
+      function.return
+    }
+  }
+
+  struct.def @PodBlockArgumentAggregateChild {
+    function.def @compute(%pair: !struct.type<@BlockArgumentAggregatePair>, %expected: !felt.type) -> !struct.type<@PodBlockArgumentAggregateChild> {
+      %self = struct.new : !struct.type<@PodBlockArgumentAggregateChild>
+      function.return %self : !struct.type<@PodBlockArgumentAggregateChild>
+    }
+
+    function.def @constrain(%self: !struct.type<@PodBlockArgumentAggregateChild>, %pair: !struct.type<@BlockArgumentAggregatePair>, %expected: !felt.type) {
+      %pod = pod.new { @payload = %pair } : !pod.type<[@payload: !struct.type<@BlockArgumentAggregatePair>]>
+      %payload = pod.read %pod[@payload] : !pod.type<[@payload: !struct.type<@BlockArgumentAggregatePair>]>, !struct.type<@BlockArgumentAggregatePair>
+      %lhs = struct.readm %payload[@lhs] : !struct.type<@BlockArgumentAggregatePair>, !felt.type
+      %rhs = struct.readm %pair[@rhs] : !struct.type<@BlockArgumentAggregatePair>, !felt.type
+      %eleven = felt.const 11
+      constrain.eq %lhs, %expected : !felt.type
+      constrain.eq %rhs, %eleven : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @BlockArgumentAggregatePair ConstraintDependencyGraph { }
+// CHECK-NEXT: @PodBlockArgumentAggregateChild ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1.lhs, %arg2 },
+// CHECK-NEXT:     { %arg1.rhs, <felt.const: 11> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @BlockArgumentAggregatePair ConstraintDependencyGraph { }
+// INTRA-NEXT: @PodBlockArgumentAggregateChild ConstraintDependencyGraph {
+// INTRA-NEXT:     { %arg1.lhs, %arg2 },
+// INTRA-NEXT:     { %arg1.rhs, <felt.const: 11> }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @StructNewMemberAggregatePair {
+    struct.member @lhs : !felt.type {llzk.pub}
+    struct.member @rhs : !felt.type {llzk.pub}
+
+    function.def @compute(%lhs: !felt.type, %rhs: !felt.type) -> !struct.type<@StructNewMemberAggregatePair> {
+      %self = struct.new : !struct.type<@StructNewMemberAggregatePair>
+      struct.writem %self[@lhs] = %lhs : !struct.type<@StructNewMemberAggregatePair>, !felt.type
+      struct.writem %self[@rhs] = %rhs : !struct.type<@StructNewMemberAggregatePair>, !felt.type
+      function.return %self : !struct.type<@StructNewMemberAggregatePair>
+    }
+
+    function.def @constrain(%self: !struct.type<@StructNewMemberAggregatePair>, %lhs: !felt.type, %rhs: !felt.type) {
+      function.return
+    }
+  }
+
+  struct.def @PodStructNewMemberAggregateChild {
+    struct.member @source : !struct.type<@StructNewMemberAggregatePair>
+    struct.member @pod : !pod.type<[@payload: !struct.type<@StructNewMemberAggregatePair>]>
+
+    function.def @compute(%expected: !felt.type) -> !struct.type<@PodStructNewMemberAggregateChild> {
+      %self = struct.new : !struct.type<@PodStructNewMemberAggregateChild>
+      %source = struct.readm %self[@source] : !struct.type<@PodStructNewMemberAggregateChild>, !struct.type<@StructNewMemberAggregatePair>
+      %pod = pod.new { @payload = %source } : !pod.type<[@payload: !struct.type<@StructNewMemberAggregatePair>]>
+      struct.writem %self[@pod] = %pod : !struct.type<@PodStructNewMemberAggregateChild>, !pod.type<[@payload: !struct.type<@StructNewMemberAggregatePair>]>
+      function.return %self : !struct.type<@PodStructNewMemberAggregateChild>
+    }
+
+    function.def @constrain(%self: !struct.type<@PodStructNewMemberAggregateChild>, %expected: !felt.type) {
+      %pod = struct.readm %self[@pod] : !struct.type<@PodStructNewMemberAggregateChild>, !pod.type<[@payload: !struct.type<@StructNewMemberAggregatePair>]>
+      %payload = pod.read %pod[@payload] : !pod.type<[@payload: !struct.type<@StructNewMemberAggregatePair>]>, !struct.type<@StructNewMemberAggregatePair>
+      %lhs = struct.readm %payload[@lhs] : !struct.type<@StructNewMemberAggregatePair>, !felt.type
+      %rhs = struct.readm %payload[@rhs] : !struct.type<@StructNewMemberAggregatePair>, !felt.type
+      %eleven = felt.const 11
+      constrain.eq %lhs, %expected : !felt.type
+      constrain.eq %rhs, %eleven : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @StructNewMemberAggregatePair ConstraintDependencyGraph { }
+// CHECK-NEXT: @PodStructNewMemberAggregateChild ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.pod.payload.lhs, %arg1 },
+// CHECK-NEXT:     { %self.pod.payload.rhs, <felt.const: 11> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @StructNewMemberAggregatePair ConstraintDependencyGraph { }
+// INTRA-NEXT: @PodStructNewMemberAggregateChild ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.pod.payload.lhs, %arg1 },
+// INTRA-NEXT:     { %self.pod.payload.rhs, <felt.const: 11> }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ConditionalPodAggregateAlias {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%old: !felt.type, %new: !felt.type, %cond: i1) -> !struct.type<@ConditionalPodAggregateAlias> {
+      %self = struct.new : !struct.type<@ConditionalPodAggregateAlias>
+      function.return %self : !struct.type<@ConditionalPodAggregateAlias>
+    }
+
+    function.def @constrain(%self: !struct.type<@ConditionalPodAggregateAlias>, %old: !felt.type, %new: !felt.type, %cond: i1) {
+      %expected = struct.readm %self[@out] : !struct.type<@ConditionalPodAggregateAlias>, !felt.type
+      %c0 = arith.constant 0 : index
+      %old_arr = array.new %old : !array.type<1 x !felt.type>
+      %pod = pod.new { @items = %old_arr } : !pod.type<[@items: !array.type<1 x !felt.type>]>
+      %new_arr = array.new %new : !array.type<1 x !felt.type>
+      scf.if %cond {
+        pod.write %pod[@items] = %new_arr : !pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+      }
+      %items = pod.read %pod[@items] : !pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+      %actual = array.read %items[%c0] : !array.type<1 x !felt.type>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ConditionalPodAggregateAlias ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg1, %arg2 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @ConditionalPodAggregateAlias ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg1, %arg2 }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @MergedStructWriteStorageEffectsPayload {
+    struct.member @value : !felt.type {llzk.pub}
+
+    function.def @compute(%value: !felt.type) -> !struct.type<@MergedStructWriteStorageEffectsPayload> {
+      %self = struct.new : !struct.type<@MergedStructWriteStorageEffectsPayload>
+      struct.writem %self[@value] = %value : !struct.type<@MergedStructWriteStorageEffectsPayload>, !felt.type
+      function.return %self : !struct.type<@MergedStructWriteStorageEffectsPayload>
+    }
+
+    function.def @constrain(%self: !struct.type<@MergedStructWriteStorageEffectsPayload>, %value: !felt.type) {
+      %actual = struct.readm %self[@value] : !struct.type<@MergedStructWriteStorageEffectsPayload>, !felt.type
+      constrain.eq %actual, %value : !felt.type
+      function.return
+    }
+  }
+
+  struct.def @MergedStructWriteStorageEffects {
+    struct.member @value : !struct.type<@MergedStructWriteStorageEffectsPayload> {llzk.pub}
+    struct.member @first : !felt.type {llzk.pub}
+    struct.member @second : !felt.type {llzk.pub}
+
+    function.def @compute(%first_target: !struct.type<@MergedStructWriteStorageEffects>, %second_target: !struct.type<@MergedStructWriteStorageEffects>, %replacement: !struct.type<@MergedStructWriteStorageEffectsPayload>, %cond: i1) -> !struct.type<@MergedStructWriteStorageEffects> {
+      %self = struct.new : !struct.type<@MergedStructWriteStorageEffects>
+      %selected = scf.if %cond -> !struct.type<@MergedStructWriteStorageEffects> {
+        scf.yield %first_target : !struct.type<@MergedStructWriteStorageEffects>
+      } else {
+        scf.yield %second_target : !struct.type<@MergedStructWriteStorageEffects>
+      }
+      struct.writem %selected[@value] = %replacement : !struct.type<@MergedStructWriteStorageEffects>, !struct.type<@MergedStructWriteStorageEffectsPayload>
+      %first_payload = struct.readm %first_target[@value] : !struct.type<@MergedStructWriteStorageEffects>, !struct.type<@MergedStructWriteStorageEffectsPayload>
+      %second_payload = struct.readm %second_target[@value] : !struct.type<@MergedStructWriteStorageEffects>, !struct.type<@MergedStructWriteStorageEffectsPayload>
+      %first_value = struct.readm %first_payload[@value] : !struct.type<@MergedStructWriteStorageEffectsPayload>, !felt.type
+      %second_value = struct.readm %second_payload[@value] : !struct.type<@MergedStructWriteStorageEffectsPayload>, !felt.type
+      struct.writem %self[@first] = %first_value : !struct.type<@MergedStructWriteStorageEffects>, !felt.type
+      struct.writem %self[@second] = %second_value : !struct.type<@MergedStructWriteStorageEffects>, !felt.type
+      function.return %self : !struct.type<@MergedStructWriteStorageEffects>
+    }
+
+    function.def @constrain(%self: !struct.type<@MergedStructWriteStorageEffects>, %first_target: !struct.type<@MergedStructWriteStorageEffects>, %second_target: !struct.type<@MergedStructWriteStorageEffects>, %replacement: !struct.type<@MergedStructWriteStorageEffectsPayload>, %cond: i1) {
+      %first = struct.readm %self[@first] : !struct.type<@MergedStructWriteStorageEffects>, !felt.type
+      %second = struct.readm %self[@second] : !struct.type<@MergedStructWriteStorageEffects>, !felt.type
+      constrain.eq %first, %second : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @MergedStructWriteStorageEffectsPayload ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.value, %arg1 }
+// CHECK-NEXT: }
+// CHECK-NEXT: @MergedStructWriteStorageEffects ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.first, %self.second }
+// CHECK-NEXT: }
+// INTRA-LABEL: @MergedStructWriteStorageEffectsPayload ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.value, %arg1 }
+// INTRA-NEXT: }
+// INTRA-NEXT: @MergedStructWriteStorageEffects ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.first, %self.second }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @MergedPodWriteStorageEffects {
+    struct.member @first : !felt.type {llzk.pub}
+    struct.member @second : !felt.type {llzk.pub}
+
+    function.def @compute(%old_first: !felt.type, %old_second: !felt.type, %new: !felt.type, %cond: i1) -> !struct.type<@MergedPodWriteStorageEffects> {
+      %self = struct.new : !struct.type<@MergedPodWriteStorageEffects>
+      function.return %self : !struct.type<@MergedPodWriteStorageEffects>
+    }
+
+    function.def @constrain(%self: !struct.type<@MergedPodWriteStorageEffects>, %old_first: !felt.type, %old_second: !felt.type, %new: !felt.type, %cond: i1) {
+      %expected_first = struct.readm %self[@first] : !struct.type<@MergedPodWriteStorageEffects>, !felt.type
+      %expected_second = struct.readm %self[@second] : !struct.type<@MergedPodWriteStorageEffects>, !felt.type
+      %first = pod.new { @value = %old_first } : !pod.type<[@value: !felt.type]>
+      %second = pod.new { @value = %old_second } : !pod.type<[@value: !felt.type]>
+      %selected = scf.if %cond -> !pod.type<[@value: !felt.type]> {
+        scf.yield %first : !pod.type<[@value: !felt.type]>
+      } else {
+        scf.yield %second : !pod.type<[@value: !felt.type]>
+      }
+      pod.write %selected[@value] = %new : !pod.type<[@value: !felt.type]>, !felt.type
+      %first_value = pod.read %first[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %second_value = pod.read %second[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      constrain.eq %expected_first, %first_value : !felt.type
+      constrain.eq %expected_second, %second_value : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @MergedPodWriteStorageEffects ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.first, %self.second, %arg1, %arg2, %arg3 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @MergedPodWriteStorageEffects ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.first, %self.second, %arg1, %arg2, %arg3 }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @overwrite_selected_pod(%pod: !pod.type<[@value: !felt.type]>, %new: !felt.type) {
+    pod.write %pod[@value] = %new : !pod.type<[@value: !felt.type]>, !felt.type
+    function.return
+  }
+
+  struct.def @CallMergedPodWriteStorageEffects {
+    struct.member @first : !felt.type {llzk.pub}
+    struct.member @second : !felt.type {llzk.pub}
+
+    function.def @compute(%old_first: !felt.type, %old_second: !felt.type, %new: !felt.type, %cond: i1) -> !struct.type<@CallMergedPodWriteStorageEffects> {
+      %self = struct.new : !struct.type<@CallMergedPodWriteStorageEffects>
+      function.return %self : !struct.type<@CallMergedPodWriteStorageEffects>
+    }
+
+    function.def @constrain(%self: !struct.type<@CallMergedPodWriteStorageEffects>, %old_first: !felt.type, %old_second: !felt.type, %new: !felt.type, %cond: i1) {
+      %expected_first = struct.readm %self[@first] : !struct.type<@CallMergedPodWriteStorageEffects>, !felt.type
+      %expected_second = struct.readm %self[@second] : !struct.type<@CallMergedPodWriteStorageEffects>, !felt.type
+      %first = pod.new { @value = %old_first } : !pod.type<[@value: !felt.type]>
+      %second = pod.new { @value = %old_second } : !pod.type<[@value: !felt.type]>
+      %selected = scf.if %cond -> !pod.type<[@value: !felt.type]> {
+        scf.yield %first : !pod.type<[@value: !felt.type]>
+      } else {
+        scf.yield %second : !pod.type<[@value: !felt.type]>
+      }
+      function.call @overwrite_selected_pod(%selected, %new) : (!pod.type<[@value: !felt.type]>, !felt.type) -> ()
+      %first_value = pod.read %first[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %second_value = pod.read %second[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      constrain.eq %expected_first, %first_value : !felt.type
+      constrain.eq %expected_second, %second_value : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @CallMergedPodWriteStorageEffects ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.first, %self.second, %arg1, %arg2, %arg3 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @CallMergedPodWriteStorageEffects ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.first, %self.second, %arg1, %arg2, %arg3 }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @overwrite_element(%array: !array.type<1 x !felt.type>, %value: !felt.type) {
+    %idx = arith.constant 0 : index
+    array.write %array[%idx] = %value : !array.type<1 x !felt.type>, !felt.type
+    function.return
+  }
+
+  struct.def @CallSiteStorageEffects {
+    function.def @compute(%old: !felt.type, %first: !felt.type, %second: !felt.type) -> !struct.type<@CallSiteStorageEffects> {
+      %self = struct.new : !struct.type<@CallSiteStorageEffects>
+      function.return %self : !struct.type<@CallSiteStorageEffects>
+    }
+
+    function.def @constrain(%self: !struct.type<@CallSiteStorageEffects>, %old: !felt.type, %first: !felt.type, %second: !felt.type) {
+      %array = array.new %old : !array.type<1 x !felt.type>
+      %idx = arith.constant 0 : index
+      %before = array.read %array[%idx] : !array.type<1 x !felt.type>, !felt.type
+      %old_expected = felt.const 1
+      constrain.eq %before, %old_expected : !felt.type
+      function.call @overwrite_element(%array, %first) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      %after_first = array.read %array[%idx] : !array.type<1 x !felt.type>, !felt.type
+      %first_expected = felt.const 2
+      constrain.eq %after_first, %first_expected : !felt.type
+      function.call @overwrite_element(%array, %second) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      %after_second = array.read %array[%idx] : !array.type<1 x !felt.type>, !felt.type
+      %second_expected = felt.const 3
+      constrain.eq %after_second, %second_expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @CallSiteStorageEffects ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, <felt.const: 1> },
+// CHECK-NEXT:     { %arg2, <felt.const: 2> },
+// CHECK-NEXT:     { %arg3, <felt.const: 3> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @CallSiteStorageEffects ConstraintDependencyGraph {
+// INTRA-NEXT:     { %arg1, <felt.const: 1> },
+// INTRA-NEXT:     { %arg2, <felt.const: 2> },
+// INTRA-NEXT:     { %arg3, <felt.const: 3> }
+// INTRA-NEXT: }
+// -----
+
+// Callee aggregate assignments must preserve their source-to-destination alias
+// at the call site, so a later source write is visible through the destination.
+module attributes {llzk.lang} {
+  function.def @copy_array_to_pod_record(%destination: !pod.type<[@items: !array.type<1 x !felt.type>]>, %source: !array.type<1 x !felt.type>) {
+    pod.write %destination[@items] = %source : !pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+    function.return
+  }
+
+  struct.def @CallAggregateAliasStorageEffects {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%old: !felt.type, %new: !felt.type) -> !struct.type<@CallAggregateAliasStorageEffects> {
+      %self = struct.new : !struct.type<@CallAggregateAliasStorageEffects>
+      function.return %self : !struct.type<@CallAggregateAliasStorageEffects>
+    }
+
+    function.def @constrain(%self: !struct.type<@CallAggregateAliasStorageEffects>, %old: !felt.type, %new: !felt.type) {
+      %expected = struct.readm %self[@out] : !struct.type<@CallAggregateAliasStorageEffects>, !felt.type
+      %source = array.new %old : !array.type<1 x !felt.type>
+      %destination = pod.new : !pod.type<[@items: !array.type<1 x !felt.type>]>
+      %idx = arith.constant 0 : index
+      function.call @copy_array_to_pod_record(%destination, %source) : (!pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>) -> ()
+      array.write %source[%idx] = %new : !array.type<1 x !felt.type>, !felt.type
+      %items = pod.read %destination[@items] : !pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+      %actual = array.read %items[%idx] : !array.type<1 x !felt.type>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @CallAggregateAliasStorageEffects ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg2 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @CallAggregateAliasStorageEffects ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg2 }
+// INTRA-NEXT: }
+// -----
+
+// A callee-local aggregate assigned into an argument remains an alias after
+// the assignment. Writes to that local aggregate must be summarized through
+// the argument-visible alias at the call site.
+module attributes {llzk.lang} {
+  function.def @assign_then_overwrite_local(
+      %destination: !pod.type<[@nested: !pod.type<[@value: !felt.type]>]>, %initial: !felt.type,
+      %later: !felt.type) {
+    %local = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+    pod.write %destination[@nested] = %local : !pod.type<[@nested: !pod.type<[@value: !felt.type]>]>, !pod.type<[@value: !felt.type]>
+    pod.write %local[@value] = %later : !pod.type<[@value: !felt.type]>, !felt.type
+    function.return
+  }
+
+  struct.def @CalleeLocalAggregateAliasWrite {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%initial: !felt.type, %later: !felt.type) -> !struct.type<@CalleeLocalAggregateAliasWrite> {
+      %self = struct.new : !struct.type<@CalleeLocalAggregateAliasWrite>
+      function.return %self : !struct.type<@CalleeLocalAggregateAliasWrite>
+    }
+
+    function.def @constrain(%self: !struct.type<@CalleeLocalAggregateAliasWrite>, %initial: !felt.type, %later: !felt.type) {
+      %expected = struct.readm %self[@out] : !struct.type<@CalleeLocalAggregateAliasWrite>, !felt.type
+      %destination = pod.new : !pod.type<[@nested: !pod.type<[@value: !felt.type]>]>
+      function.call @assign_then_overwrite_local(%destination, %initial, %later) : (!pod.type<[@nested: !pod.type<[@value: !felt.type]>]>, !felt.type, !felt.type) -> ()
+      %nested = pod.read %destination[@nested] : !pod.type<[@nested: !pod.type<[@value: !felt.type]>]>, !pod.type<[@value: !felt.type]>
+      %actual = pod.read %nested[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @CalleeLocalAggregateAliasWrite ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg2, %arg2 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @CalleeLocalAggregateAliasWrite ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg2, %arg2 }
+// INTRA-NEXT: }
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @LoopPodAggregateAlias {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%old: !felt.type, %new: !felt.type, %ub: index) -> !struct.type<@LoopPodAggregateAlias> {
+      %self = struct.new : !struct.type<@LoopPodAggregateAlias>
+      function.return %self : !struct.type<@LoopPodAggregateAlias>
+    }
+
+    function.def @constrain(%self: !struct.type<@LoopPodAggregateAlias>, %old: !felt.type, %new: !felt.type, %ub: index) {
+      %expected = struct.readm %self[@out] : !struct.type<@LoopPodAggregateAlias>, !felt.type
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %old_arr = array.new %old : !array.type<1 x !felt.type>
+      %pod = pod.new { @items = %old_arr } : !pod.type<[@items: !array.type<1 x !felt.type>]>
+      scf.for %i = %c0 to %ub step %c1 {
+        %new_arr = array.new %new : !array.type<1 x !felt.type>
+        pod.write %pod[@items] = %new_arr : !pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+      }
+      %items = pod.read %pod[@items] : !pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+      %actual = array.read %items[%c0] : !array.type<1 x !felt.type>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @LoopPodAggregateAlias ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg1, %arg2 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @LoopPodAggregateAlias ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg1, %arg2 }
+// INTRA-NEXT: }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @write_pod_record_from_local(%destination: !pod.type<[@value: !felt.type]>, %source: !felt.type) {
+    %local = pod.new { @value = %source } : !pod.type<[@value: !felt.type]>
+    %value = pod.read %local[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+    pod.write %destination[@value] = %value : !pod.type<[@value: !felt.type]>, !felt.type
+    function.return
+  }
+
+  struct.def @CallSitePodWriteFromLocalStorage {
+    function.def @compute(%source: !felt.type) -> !struct.type<@CallSitePodWriteFromLocalStorage> {
+      %self = struct.new : !struct.type<@CallSitePodWriteFromLocalStorage>
+      function.return %self : !struct.type<@CallSitePodWriteFromLocalStorage>
+    }
+
+    function.def @constrain(%self: !struct.type<@CallSitePodWriteFromLocalStorage>, %source: !felt.type) {
+      %pod = pod.new : !pod.type<[@value: !felt.type]>
+      function.call @write_pod_record_from_local(%pod, %source) : (!pod.type<[@value: !felt.type]>, !felt.type) -> ()
+      %actual = pod.read %pod[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %expected = felt.const 7
+      constrain.eq %actual, %expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @CallSitePodWriteFromLocalStorage ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, <felt.const: 7> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @CallSitePodWriteFromLocalStorage ConstraintDependencyGraph {
+// INTRA-NEXT:     { %arg1, <felt.const: 7> }
+// INTRA-NEXT: }
+
+// -----
+
+// A nested constrain function selects a POD record. Its caller must resolve a
+// whole-POD argument through call-site storage rather than retaining the local
+// POD address as the dependency root.
+module attributes {llzk.lang} {
+  struct.def @PodValueCheck {
+    function.def @compute(%pod: !pod.type<[@value: !felt.type]>) -> !struct.type<@PodValueCheck> {
+      %self = struct.new : !struct.type<@PodValueCheck>
+      function.return %self : !struct.type<@PodValueCheck>
+    }
+
+    function.def @constrain(%self: !struct.type<@PodValueCheck>, %pod: !pod.type<[@value: !felt.type]>) {
+      %value = pod.read %pod[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %expected = felt.const 7
+      constrain.eq %value, %expected : !felt.type
+      function.return
+    }
+  }
+
+  struct.def @NestedPodInitialized {
+    struct.member @child : !struct.type<@PodValueCheck>
+
+    function.def @compute(%input: !felt.type) -> !struct.type<@NestedPodInitialized> {
+      %self = struct.new : !struct.type<@NestedPodInitialized>
+      function.return %self : !struct.type<@NestedPodInitialized>
+    }
+
+    function.def @constrain(%self: !struct.type<@NestedPodInitialized>, %input: !felt.type) {
+      %child = struct.readm %self[@child] : !struct.type<@NestedPodInitialized>, !struct.type<@PodValueCheck>
+      %pod = pod.new { @value = %input } : !pod.type<[@value: !felt.type]>
+      function.call @PodValueCheck::@constrain(%child, %pod) : (!struct.type<@PodValueCheck>, !pod.type<[@value: !felt.type]>) -> ()
+      function.return
+    }
+  }
+
+  struct.def @NestedPodOverwritten {
+    struct.member @child : !struct.type<@PodValueCheck>
+
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type) -> !struct.type<@NestedPodOverwritten> {
+      %self = struct.new : !struct.type<@NestedPodOverwritten>
+      function.return %self : !struct.type<@NestedPodOverwritten>
+    }
+
+    function.def @constrain(%self: !struct.type<@NestedPodOverwritten>, %initial: !felt.type, %replacement: !felt.type) {
+      %child = struct.readm %self[@child] : !struct.type<@NestedPodOverwritten>, !struct.type<@PodValueCheck>
+      %pod = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      pod.write %pod[@value] = %replacement : !pod.type<[@value: !felt.type]>, !felt.type
+      function.call @PodValueCheck::@constrain(%child, %pod) : (!struct.type<@PodValueCheck>, !pod.type<[@value: !felt.type]>) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @PodValueCheck ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1.value, <felt.const: 7> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @NestedPodInitialized ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg1, <felt.const: 7> }
+// CHECK-NEXT: }
+// CHECK-NEXT: @NestedPodOverwritten ConstraintDependencyGraph {
+// CHECK-NEXT:     { %arg2, <felt.const: 7> }
+// CHECK-NEXT: }
+// INTRA-LABEL: @PodValueCheck ConstraintDependencyGraph {
+// INTRA-NEXT:     { %arg1.value, <felt.const: 7> }
+// INTRA-NEXT: }
+// INTRA-NEXT: @NestedPodInitialized ConstraintDependencyGraph { }
+// INTRA-NEXT: @NestedPodOverwritten ConstraintDependencyGraph { }
+
+// -----
+
+// A resultless verif.include resolves to a defined verif.contract body. It is
+// callable, but is not a function call whose storage effects can be translated.
+module attributes {llzk.lang} {
+  function.def @included(%gate: i1) {
+    function.return
+  }
+
+  function.def @including(%gate: i1) {
+    function.return
+  }
+
+  verif.contract @Included for @included (%gate: i1) {
+    verif.require_compute %gate
+  }
+
+  verif.contract @Including for @including (%gate: i1) {
+    verif.include @Included(%gate) : (i1) -> ()
+  }
+
+  struct.def @ResultlessInclude {
+    function.def @compute(%gate: i1) -> !struct.type<@ResultlessInclude> {
+      %self = struct.new : !struct.type<@ResultlessInclude>
+      function.return %self : !struct.type<@ResultlessInclude>
+    }
+
+    function.def @constrain(%self: !struct.type<@ResultlessInclude>, %gate: i1) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ResultlessInclude ConstraintDependencyGraph { }
+// INTRA-LABEL: @ResultlessInclude ConstraintDependencyGraph { }
+
+// -----
+
+// A returned aggregate must be resolved through the callee's local allocation
+// before argument roots are translated at the call site.
+module attributes {llzk.lang} {
+  function.def @array_identity(%value: !felt.type) -> !array.type<1 x !felt.type> {
+    %result = array.new %value : !array.type<1 x !felt.type>
+    function.return %result : !array.type<1 x !felt.type>
+  }
+
+  struct.def @ReturnedArrayDependency {
+    struct.member @out : !felt.type {llzk.pub}
+
+    function.def @compute(%value: !felt.type) -> !struct.type<@ReturnedArrayDependency> {
+      %self = struct.new : !struct.type<@ReturnedArrayDependency>
+      function.return %self : !struct.type<@ReturnedArrayDependency>
+    }
+
+    function.def @constrain(%self: !struct.type<@ReturnedArrayDependency>, %value: !felt.type) {
+      %expected = struct.readm %self[@out] : !struct.type<@ReturnedArrayDependency>, !felt.type
+      %array = function.call @array_identity(%value) : (!felt.type) -> (!array.type<1 x !felt.type>)
+      %idx = arith.constant 0 : index
+      %actual = array.read %array[%idx] : !array.type<1 x !felt.type>, !felt.type
+      constrain.eq %expected, %actual : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ReturnedArrayDependency ConstraintDependencyGraph {
+// CHECK-NEXT:     { %self.out, %arg1 }
+// CHECK-NEXT: }
+// INTRA-LABEL: @ReturnedArrayDependency ConstraintDependencyGraph {
+// INTRA-NEXT:     { %self.out, %arg1 }
 // INTRA-NEXT: }

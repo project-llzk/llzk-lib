@@ -11,6 +11,7 @@
 
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/String/IR/Types.h"
 #include "llzk/Transforms/LLZKLoweringUtils.h"
 #include "llzk/Util/Compare.h"
@@ -190,6 +191,16 @@ bool SourceRefIndex::overlaps(const SourceRefIndex &rhs) const {
 
 /* SourceRef */
 
+bool SourceRef::isImmutableGlobal() const {
+  auto read = llvm::dyn_cast_if_present<global::GlobalReadOp>(value.getDefiningOp());
+  if (!read) {
+    return false;
+  }
+  SymbolTableCollection tables;
+  auto globalDef = read.getGlobalDefOp(tables);
+  return succeeded(globalDef) && globalDef->get().isConstant();
+}
+
 SourceRef::SortCategory SourceRef::getSortCategory() const {
   if (isBlockArgument()) {
     return SortCategory::BlockArgument;
@@ -321,7 +332,6 @@ std::vector<SourceRef> SourceRef::getAllSourceRefs(StructDefOp structDef, FuncDe
 }
 
 std::vector<SourceRef> SourceRef::getAllSourceRefs(StructDefOp structDef, MemberDefOp memberDef) {
-  std::vector<SourceRef> res;
   FuncDefOp constrainFnOp = structDef.getConstrainFuncOp();
   ensure(
       memberDef->getParentOfType<StructDefOp>() == structDef,
@@ -437,18 +447,21 @@ SourceRef SourceRef::narrowRanges(const SourceRef &rhs) const {
   return result;
 }
 
-FailureOr<SourceRef::Path> SourceRef::getSuffix(const SourceRef &prefix) const {
+FailureOr<ArrayRef<SourceRefIndex>> SourceRef::getSuffix(const SourceRef &prefix) const {
   if (!isValidPrefix(prefix)) {
     return failure();
   }
-  Path suffix;
-  auto pathRef = getPath();
-  auto prefixPath = prefix.getPath();
-  suffix.reserve(pathRef.size() - prefixPath.size());
-  for (size_t i = prefixPath.size(); i < pathRef.size(); i++) {
-    suffix.push_back(pathRef[i]);
+  return getPath().drop_front(prefix.getPath().size());
+}
+
+SourceRef SourceRef::appendSuffix(const SourceRef &prefix, ArrayRef<SourceRefIndex> suffix) {
+  SourceRef result = prefix;
+  if (result.isRooted()) {
+    Path &pathRef = result.getPathMut();
+    pathRef.reserve(pathRef.size() + suffix.size());
+    pathRef.insert(pathRef.end(), suffix.begin(), suffix.end());
   }
-  return suffix;
+  return result;
 }
 
 FailureOr<SourceRef> SourceRef::translate(const SourceRef &prefix, const SourceRef &other) const {
@@ -460,13 +473,7 @@ FailureOr<SourceRef> SourceRef::translate(const SourceRef &prefix, const SourceR
     return failure();
   }
 
-  SourceRef newSignalUsage = other; // copy
-  if (newSignalUsage.isRooted()) {
-    SourceRef::Path &pathRef = newSignalUsage.getPathMut();
-    pathRef.insert(pathRef.end(), suffix->begin(), suffix->end());
-  }
-
-  return newSignalUsage;
+  return appendSuffix(other, *suffix);
 }
 
 std::vector<SourceRef> getAllChildren(
