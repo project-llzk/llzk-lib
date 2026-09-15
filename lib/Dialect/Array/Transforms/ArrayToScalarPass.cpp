@@ -51,8 +51,8 @@
 /// 6. Run MLIR "mem2reg" as a fallback for allocations with control flow or unsupported
 ///    uses. This pass also runs several standard optimizations so the final result is condensed.
 ///
-/// 7. Remove array allocations that become unread after memory promotion, then remove SSA values
-///    made dead by that cleanup.
+/// 7. Remove array allocations that become unread after memory promotion, then canonicalize local
+///    SSA values made dead by that cleanup.
 ///
 /// Note: This transformation imposes a "last write wins" semantics on array elements. If
 /// different/configurable semantics are added in the future, some additional transformation would
@@ -1118,8 +1118,12 @@ class PassImpl : public llzk::array::impl::ArrayToScalarPassBase<PassImpl> {
             .allocatorOpName = CreateArrayOp::getOperationName().str()
         }
     ));
-    // Cleanup SSA values made dead by removing allocations and writes.
-    nestedPM.addPass(createRemoveDeadValuesWorkaroundPass());
+    // Fold and remove local SSA values made dead by array promotion. Avoid the global
+    // remove-dead-values dataflow analysis here: static array lowering can produce very large,
+    // straight-line functions, and the targeted allocation cleanup above has already removed the
+    // memory state that required whole-region reasoning. Consequently, this pass no longer prunes
+    // dead function arguments/results or loop iteration values that canonicalization cannot remove.
+    nestedPM.addPass(mlir::createCanonicalizerPass());
     if (failed(runPipeline(nestedPM, module))) {
       signalPassFailure();
       return;
