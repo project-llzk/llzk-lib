@@ -37,17 +37,26 @@ def LLZKCallLikeOpInterface
                                 $_op->getResultTypes());
                             }]>,
        InterfaceMethod<
-           [{Unifies this call site's inferred signature with `other`.}],
-           "::mlir::FailureOr<::llzk::UnificationMap>", "unifyTypeSignature",
-           (ins "::mlir::FunctionType":$other), /*methodBody=*/"",
-           /*defaultImplementation=*/[{
+           [{Unifies this call site's inferred signature with `other`, resolving paths in
+             `other` relative to `rhsReversePrefix`.}],
+           "::mlir::FailureOr<::llzk::UnificationMap>",
+           "unifyTypeSignatureWithNamespace",
+           (ins "::mlir::FunctionType":$other,
+               "::mlir::ArrayRef<::llvm::StringRef>":$rhsReversePrefix),
+           /*methodBody=*/"", /*defaultImplementation=*/[{
                 ::llzk::UnificationMap unifications;
-                if (::llzk::functionTypesUnify($_op.getTypeSignature(), other, {}, &unifications)) {
+                if (::llzk::functionTypesUnify($_op.getTypeSignature(), other, rhsReversePrefix, &unifications)) {
                     return unifications;
                 } else {
                     return ::mlir::failure();
                 }
            }]>,
+       InterfaceMethod<
+           [{Unifies this call site's inferred signature with `other`.}],
+           "::mlir::FailureOr<::llzk::UnificationMap>", "unifyTypeSignature",
+           (ins "::mlir::FunctionType":$other), /*methodBody=*/"",
+           /*defaultImplementation=*/
+           [{ return $_op.unifyTypeSignatureWithNamespace(other, {}); }]>,
        StaticInterfaceMethod<
            [{Allocates consecutive storage for operand groups so they can be passed to builders
              as an `ArrayRef<ValueRange>`.}],

@@ -851,7 +851,8 @@ struct KnownTargetVerifier : public IncludeOpVerifier {
 
       // Check that the provided instantiation values are consistent with what type unification
       // of the target function types against the call's operand and result types would determine.
-      FailureOr<UnificationMap> unifyResult = includeOp->unifyTypeSignature(tgtType);
+      FailureOr<UnificationMap> unifyResult =
+          includeOp->unifyTypeSignatureWithNamespace(tgtType, includeSymNames);
       // This is already checked by `verifyInputs()`, but `verifyTemplateParams()` is called
       // even if `verifyInputs()` fails for error aggregation, so we still need to return
       // early here.
