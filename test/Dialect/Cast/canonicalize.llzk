@@ -8,10 +8,16 @@ module attributes {llzk.lang} {
     function.def @func(%a: !felt.type) attributes {function.allow_non_native_field_ops} {
         %f0 = felt.const 0
         %f1 = felt.const 1 : !felt.type<"babybear">
+        %fmax = felt.const 9223372036854775807
+        %ftoo_large = felt.const 9223372036854775808
+        %fnegative = felt.const -1
         
         // These should both generate arith.constant's
         %c0 = cast.toindex %f0
         %c1 = cast.toindex %f1 : !felt.type<"babybear">
+        %cmax = cast.toindex %fmax
+        %ctoo_large = cast.toindex %ftoo_large
+        %cnegative = cast.toindex %fnegative
 
         %c2 = arith.constant 2 : index
 
@@ -21,6 +27,9 @@ module attributes {llzk.lang} {
 
         function.call @use_index(%c0) : (index) -> ()
         function.call @use_index(%c1) : (index) -> ()
+        function.call @use_index(%cmax) : (index) -> ()
+        function.call @use_index(%ctoo_large) : (index) -> ()
+        function.call @use_index(%cnegative) : (index) -> ()
 
         function.call @use_felt(%f2) : (!felt.type) -> ()
         function.call @use_felt_bb(%f2_bb) : (!felt.type<"babybear">) -> ()
@@ -30,7 +39,15 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: function.def @func
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = felt.const  2
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  2 : <"babybear">
+// CHECK:           %[[TOO_LARGE:[0-9a-zA-Z_\.]+]] = felt.const  9223372036854775808
+// CHECK:           %[[NEGATIVE:[0-9a-zA-Z_\.]+]] = felt.const  -1
+// CHECK:           %[[ZERO:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[ONE:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[MAX:[0-9a-zA-Z_\.]+]] = arith.constant 9223372036854775807 : index
+// CHECK-NEXT:      %[[PRESERVED:[0-9a-zA-Z_\.]+]] = cast.toindex %[[TOO_LARGE]] : !felt.type
+// CHECK-NEXT:      %[[NEGATIVE_CAST:[0-9a-zA-Z_\.]+]] = cast.toindex %[[NEGATIVE]] : !felt.type
+// CHECK:           function.call @use_index(%[[ZERO]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[ONE]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[MAX]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[PRESERVED]]) : (index) -> ()
+// CHECK-NEXT:      function.call @use_index(%[[NEGATIVE_CAST]]) : (index) -> ()
