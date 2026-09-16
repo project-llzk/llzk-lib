@@ -122,3 +122,67 @@ module attributes {llzk.lang} {
     function.return %result#1 : index
   }
 }
+
+// -----
+
+!Inner = !pod.type<[@value: index]>
+!Outer = !pod.type<[@inner: !Inner]>
+
+// The child POD is observable both through %outer and through the separately carried %inner.
+// Scalarizing both paths independently would lose writes made through the other alias.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @reject_nested_carried_alias(%count: index, %seed: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %inner = pod.new : !Inner
+    pod.write %inner[@value] = %seed : !Inner, index
+    %outer = pod.new : !Outer
+    pod.write %outer[@inner] = %inner : !Outer, !Inner
+    %result:4 = scf.while (%i = %count, %observed = %seed, %outerArg = %outer, %innerArg = %inner)
+        : (index, index, !Outer, !Inner) -> (index, index, !Outer, !Inner) {
+      %condition = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%condition) %i, %observed, %outerArg, %innerArg
+          : index, index, !Outer, !Inner
+    } do {
+    ^bb0(%i: index, %observed: index, %outerArg: !Outer, %innerArg: !Inner):
+      %nested = pod.read %outerArg[@inner] : !Outer, !Inner
+      pod.write %nested[@value] = %i : !Inner, index
+      %seen = pod.read %innerArg[@value] : !Inner, index
+      %next = arith.subi %i, %c1 : index
+      scf.yield %next, %seen, %outerArg, %innerArg : index, index, !Outer, !Inner
+    }
+    function.return %result#1 : index
+  }
+}
+
+// -----
+
+!Inner = !pod.type<[@value: index]>
+!Outer = !pod.type<[@inner: !Inner]>
+
+// The original child remains observable after the loop while the parent is carried.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @reject_live_nested_alias(%count: index, %seed: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %inner = pod.new : !Inner
+    pod.write %inner[@value] = %seed : !Inner, index
+    %outer = pod.new : !Outer
+    pod.write %outer[@inner] = %inner : !Outer, !Inner
+    %result:2 = scf.while (%i = %count, %outerArg = %outer)
+        : (index, !Outer) -> (index, !Outer) {
+      %condition = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%condition) %i, %outerArg : index, !Outer
+    } do {
+    ^bb0(%i: index, %outerArg: !Outer):
+      %nested = pod.read %outerArg[@inner] : !Outer, !Inner
+      pod.write %nested[@value] = %i : !Inner, index
+      %next = arith.subi %i, %c1 : index
+      scf.yield %next, %outerArg : index, !Outer
+    }
+    %seen = pod.read %inner[@value] : !Inner, index
+    function.return %seen : index
+  }
+}

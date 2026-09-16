@@ -6313,6 +6313,40 @@ static bool hasUnsupportedWhileCarriedPodUse(BlockArgument arg, const WhileCarri
   return false;
 }
 
+/// Check whether nested POD storage reachable from `init` remains observable independently of the
+/// carried root. Such an alias cannot be represented by independent scalar iteration values.
+static bool hasEscapingNestedPodAlias(scf::WhileOp whileOp, Value init) {
+  SmallVector<Value> reachablePods {init};
+  llvm::DenseSet<Value> visited;
+  for (size_t valueIdx = 0; valueIdx < reachablePods.size(); ++valueIdx) {
+    Value podValue = reachablePods[valueIdx];
+    if (!visited.insert(podValue).second) {
+      continue;
+    }
+
+    for (Operation *user : podValue.getUsers()) {
+      bool beforeWhile = user->getBlock() == whileOp->getBlock() && user->isBeforeInBlock(whileOp);
+      if (podValue != init && !beforeWhile) {
+        return true;
+      }
+      if (!beforeWhile) {
+        continue;
+      }
+
+      if (auto readOp = dyn_cast<ReadPodOp>(user)) {
+        if (readOp.getPodRef() == podValue && isa<PodType>(readOp.getType())) {
+          reachablePods.push_back(readOp.getResult());
+        }
+      } else if (auto writeOp = dyn_cast<WritePodOp>(user)) {
+        if (writeOp.getPodRef() == podValue && isa<PodType>(writeOp.getValue().getType())) {
+          reachablePods.push_back(writeOp.getValue());
+        }
+      }
+    }
+  }
+  return false;
+}
+
 /// Clone a while region, replacing direct reads and writes of carried POD block arguments with
 /// scalar SSA values. The terminator callback appends the current scalar record values.
 template <typename RewriteTerminatorFn>
@@ -6406,7 +6440,7 @@ public:
 
       Value init = whileOp.getInits()[pod.originalIndex];
       // Splitting two aliases independently would lose writes observed through the other alias.
-      if (!uniquePodInits.insert(init).second) {
+      if (!uniquePodInits.insert(init).second || hasEscapingNestedPodAlias(whileOp, init)) {
         return failure();
       }
       for (Operation *user : init.getUsers()) {
