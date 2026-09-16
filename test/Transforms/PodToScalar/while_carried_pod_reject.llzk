@@ -186,3 +186,66 @@ module attributes {llzk.lang} {
     function.return %seen : index
   }
 }
+
+// -----
+
+!Inner = !pod.type<[@value: index]>
+!Outer = !pod.type<[@inner: !Inner]>
+
+// Carrying the child must preserve writes observed through its still-live parent.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @reject_live_parent_alias(%count: index, %seed: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %inner = pod.new : !Inner
+    pod.write %inner[@value] = %seed : !Inner, index
+    %outer = pod.new : !Outer
+    pod.write %outer[@inner] = %inner : !Outer, !Inner
+    %result:2 = scf.while (%i = %count, %innerArg = %inner)
+        : (index, !Inner) -> (index, !Inner) {
+      %condition = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%condition) %i, %innerArg : index, !Inner
+    } do {
+    ^bb0(%i: index, %innerArg: !Inner):
+      pod.write %innerArg[@value] = %i : !Inner, index
+      %next = arith.subi %i, %c1 : index
+      scf.yield %next, %innerArg : index, !Inner
+    }
+    %nested = pod.read %outer[@inner] : !Outer, !Inner
+    %seen = pod.read %nested[@value] : !Inner, index
+    function.return %seen : index
+  }
+}
+
+// -----
+
+!Inner = !pod.type<[@value: index]>
+!Parent = !pod.type<[@inner: !Inner, @marker: index]>
+
+// A separate parent write prevents forwarding its child read across the loop.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @reject_mutated_live_parent(%count: index, %seed: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %inner = pod.new : !Inner
+    pod.write %inner[@value] = %seed : !Inner, index
+    %outer = pod.new : !Parent
+    pod.write %outer[@inner] = %inner : !Parent, !Inner
+    %result:2 = scf.while (%i = %count, %innerArg = %inner)
+        : (index, !Inner) -> (index, !Inner) {
+      %condition = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%condition) %i, %innerArg : index, !Inner
+    } do {
+    ^bb0(%i: index, %innerArg: !Inner):
+      pod.write %innerArg[@value] = %i : !Inner, index
+      pod.write %outer[@marker] = %i : !Parent, index
+      %next = arith.subi %i, %c1 : index
+      scf.yield %next, %innerArg : index, !Inner
+    }
+    %nested = pod.read %outer[@inner] : !Parent, !Inner
+    %seen = pod.read %nested[@value] : !Inner, index
+    function.return %seen : index
+  }
+}

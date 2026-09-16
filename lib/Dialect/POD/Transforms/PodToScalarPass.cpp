@@ -6313,8 +6313,8 @@ static bool hasUnsupportedWhileCarriedPodUse(BlockArgument arg, const WhileCarri
   return false;
 }
 
-/// Check whether nested POD storage reachable from `init` remains observable independently of the
-/// carried root. Such an alias cannot be represented by independent scalar iteration values.
+/// Check whether POD storage connected to `init` by containment remains observable independently
+/// of the carried root. Follow both parents and children: either can expose the same mutable state.
 static bool hasEscapingNestedPodAlias(scf::WhileOp whileOp, Value init) {
   SmallVector<Value> reachablePods {init};
   llvm::DenseSet<Value> visited;
@@ -6322,6 +6322,12 @@ static bool hasEscapingNestedPodAlias(scf::WhileOp whileOp, Value init) {
     Value podValue = reachablePods[valueIdx];
     if (!visited.insert(podValue).second) {
       continue;
+    }
+
+    // A carried child may have been read from a parent without a locally visible initializing
+    // write.
+    if (auto readOp = podValue.getDefiningOp<ReadPodOp>()) {
+      reachablePods.push_back(readOp.getPodRef());
     }
 
     for (Operation *user : podValue.getUsers()) {
@@ -6340,6 +6346,9 @@ static bool hasEscapingNestedPodAlias(scf::WhileOp whileOp, Value init) {
       } else if (auto writeOp = dyn_cast<WritePodOp>(user)) {
         if (writeOp.getPodRef() == podValue && isa<PodType>(writeOp.getValue().getType())) {
           reachablePods.push_back(writeOp.getValue());
+        }
+        if (writeOp.getValue() == podValue) {
+          reachablePods.push_back(writeOp.getPodRef());
         }
       }
     }
