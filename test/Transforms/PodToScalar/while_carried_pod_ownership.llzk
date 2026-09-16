@@ -1,0 +1,67 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s
+
+!State = !pod.type<[@value: index]>
+
+// Branch side effects keep the forwarding region present until POD lowering.
+// The original allocation remains observable after writes through the forwarded result.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @reject_forwarded_alias(%choose: i1, %count: index, %seed: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %state = pod.new : !State
+    pod.write %state[@value] = %seed : !State, index
+    %alias = scf.if %choose -> !State {
+      pod.write %state[@value] = %seed : !State, index
+      scf.yield %state : !State
+    } else {
+      pod.write %state[@value] = %c0 : !State, index
+      scf.yield %state : !State
+    }
+    %result:2 = scf.while (%i = %count, %pod = %alias)
+        : (index, !State) -> (index, !State) {
+      %cond = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%cond) %i, %pod : index, !State
+    } do {
+    ^bb0(%i: index, %pod: !State):
+      pod.write %pod[@value] = %i : !State, index
+      %next = arith.subi %i, %c1 : index
+      scf.yield %next, %pod : index, !State
+    }
+    %seen = pod.read %state[@value] : !State, index
+    function.return %seen : index
+  }
+}
+
+// -----
+
+!Child = !pod.type<[@value: index]>
+!Parent = !pod.type<[@left: !Child, @right: !Child]>
+
+// Two internal paths share storage even though neither child escapes the parent.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @reject_shared_child(%count: index, %seed: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %child = pod.new : !Child
+    pod.write %child[@value] = %seed : !Child, index
+    %parent = pod.new : !Parent
+    pod.write %parent[@left] = %child : !Parent, !Child
+    pod.write %parent[@right] = %child : !Parent, !Child
+    %result:3 = scf.while (%i = %count, %observed = %seed, %pod = %parent)
+        : (index, index, !Parent) -> (index, index, !Parent) {
+      %cond = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%cond) %i, %observed, %pod : index, index, !Parent
+    } do {
+    ^bb0(%i: index, %observed: index, %pod: !Parent):
+      %left = pod.read %pod[@left] : !Parent, !Child
+      %right = pod.read %pod[@right] : !Parent, !Child
+      pod.write %left[@value] = %i : !Child, index
+      %seen = pod.read %right[@value] : !Child, index
+      %next = arith.subi %i, %c1 : index
+      scf.yield %next, %seen, %pod : index, index, !Parent
+    }
+    function.return %result#1 : index
+  }
+}
