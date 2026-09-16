@@ -1,3 +1,3 @@
 fixed:
-  - Lower POD values carried by `scf.while` to scalar SSA values while preserving supported loop semantics and safely rejecting asymmetric or unsupported loop shapes.
+  - Lower POD values carried by `scf.while` to scalar SSA values when their storage is a fresh, exclusively owned tree, safely rejecting shared storage, unknown provenance, and asymmetric or unsupported loop shapes.
   - Preserve negative `felt` constants when canonicalizing `cast.toindex` instead of reinterpreting them as nonnegative indices.

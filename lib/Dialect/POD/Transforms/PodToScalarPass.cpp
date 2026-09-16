@@ -6231,7 +6231,7 @@ struct WhileCarriedPod {
 /// Collect every flattened leaf carried for `podTy`.
 static void collectWhileCarriedPodLeaves(WhileCarriedPod &pod) {
   SmallVector<StringAttr> recordChain;
-  forEachPodLeaf(pod.type, recordChain, [&](const RecordChain &path, Type type) {
+  forEachPodLeaf(pod.type, recordChain, [&pod](const RecordChain &path, Type type) {
     pod.leafPaths.push_back(path);
     pod.leafTypes.push_back(type);
   });
@@ -6313,47 +6313,63 @@ static bool hasUnsupportedWhileCarriedPodUse(BlockArgument arg, const WhileCarri
   return false;
 }
 
-/// Check whether POD storage connected to `init` by containment remains observable independently
-/// of the carried root. Follow both parents and children: either can expose the same mutable state.
-static bool hasEscapingNestedPodAlias(scf::WhileOp whileOp, Value init) {
-  SmallVector<Value> reachablePods {init};
-  llvm::DenseSet<Value> visited;
-  for (size_t valueIdx = 0; valueIdx < reachablePods.size(); ++valueIdx) {
-    Value podValue = reachablePods[valueIdx];
-    if (!visited.insert(podValue).second) {
-      continue;
+/// Prove that the initializer is a fresh, exclusively owned tree of POD allocations. Each nested
+/// record must have exactly one initialization to a distinct fresh child, and each allocation may
+/// only be accessed locally before the loop or through its owning parent initialization. Unknown
+/// producers, forwarded aliases, shared children, and escaping uses are deliberately unsupported.
+static bool hasExclusiveWhilePodTree(scf::WhileOp whileOp, Value init) {
+  SmallVector<std::pair<Value, Operation *>> pending {{init, nullptr}};
+  llvm::DenseSet<Value> allocations;
+  for (size_t idx = 0; idx < pending.size(); ++idx) {
+    auto [value, ownerWrite] = pending[idx];
+    auto allocation = value.getDefiningOp<NewPodOp>();
+    if (!allocation || !allocation.getInitialValues().empty() ||
+        allocation->getBlock() != whileOp->getBlock() || !allocation->isBeforeInBlock(whileOp) ||
+        !allocations.insert(value).second) {
+      return false;
     }
 
-    // A carried child may have been read from a parent without a locally visible initializing
-    // write.
-    if (auto readOp = podValue.getDefiningOp<ReadPodOp>()) {
-      reachablePods.push_back(readOp.getPodRef());
-    }
-
-    for (Operation *user : podValue.getUsers()) {
-      bool beforeWhile = user->getBlock() == whileOp->getBlock() && user->isBeforeInBlock(whileOp);
-      if (podValue != init && !beforeWhile) {
-        return true;
-      }
-      if (!beforeWhile) {
+    llvm::DenseSet<StringAttr> initializedChildren;
+    for (Operation *user : value.getUsers()) {
+      if (user == ownerWrite || (value == init && user == whileOp.getOperation())) {
         continue;
       }
-
-      if (auto readOp = dyn_cast<ReadPodOp>(user)) {
-        if (readOp.getPodRef() == podValue && isa<PodType>(readOp.getType())) {
-          reachablePods.push_back(readOp.getResult());
+      if (user->getBlock() != whileOp->getBlock() || !user->isBeforeInBlock(whileOp)) {
+        return false;
+      }
+      if (auto read = dyn_cast<ReadPodOp>(user)) {
+        // A POD-valued read creates another reference whose uses would need their own proof.
+        if (read.getPodRef() != value || isa<PodType>(read.getType())) {
+          return false;
         }
-      } else if (auto writeOp = dyn_cast<WritePodOp>(user)) {
-        if (writeOp.getPodRef() == podValue && isa<PodType>(writeOp.getValue().getType())) {
-          reachablePods.push_back(writeOp.getValue());
+        continue;
+      }
+      if (auto write = dyn_cast<WritePodOp>(user)) {
+        if (write.getPodRef() != value) {
+          return false;
         }
-        if (writeOp.getValue() == podValue) {
-          reachablePods.push_back(writeOp.getPodRef());
+        if (isa<PodType>(write.getValue().getType())) {
+          if (!initializedChildren.insert(write.getRecordNameAttr()).second) {
+            return false;
+          }
+          pending.emplace_back(write.getValue(), user);
         }
+        continue;
+      }
+      // Includes calls, casts, array/struct storage, and control-flow forwarding.
+      return false;
+    }
+    for (RecordAttr record : mlir::cast<PodType>(value.getType()).getRecords()) {
+      if (isa<PodType>(record.getType()) && !initializedChildren.contains(record.getName())) {
+        return false;
+      }
+      if (auto arrayTy = dyn_cast<ArrayType>(record.getType());
+          arrayTy && isa<PodType>(arrayTy.getElementType())) {
+        return false;
       }
     }
   }
-  return false;
+  return true;
 }
 
 /// Clone a while region, replacing direct reads and writes of carried POD block arguments with
@@ -6449,7 +6465,7 @@ public:
 
       Value init = whileOp.getInits()[pod.originalIndex];
       // Splitting two aliases independently would lose writes observed through the other alias.
-      if (!uniquePodInits.insert(init).second || hasEscapingNestedPodAlias(whileOp, init)) {
+      if (!uniquePodInits.insert(init).second || !hasExclusiveWhilePodTree(whileOp, init)) {
         return failure();
       }
       for (Operation *user : init.getUsers()) {
