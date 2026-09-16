@@ -6359,7 +6359,8 @@ static bool hasExclusiveWhilePodTree(scf::WhileOp whileOp, Value init) {
       // Includes calls, casts, array/struct storage, and control-flow forwarding.
       return false;
     }
-    for (RecordAttr record : mlir::cast<PodType>(value.getType()).getRecords()) {
+    auto podType = mlir::cast<PodType>(value.getType());
+    for (RecordAttr record : podType.getRecords()) {
       if (isa<PodType>(record.getType()) && !initializedChildren.contains(record.getName())) {
         return false;
       }
