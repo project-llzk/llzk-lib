@@ -50,29 +50,6 @@ module attributes {llzk.lang} {
 
 !State = !pod.type<[@value: index]>
 
-module attributes {llzk.lang} {
-  function.def @lower_duplicate_forward(%count: index, %seed: index) -> index {
-    %state = pod.new : !State
-    pod.write %state[@value] = %seed : !State, index
-    %result:3 = scf.while (%i = %count, %pod = %state, %unused = %state)
-        : (index, !State, !State) -> (index, !State, !State) {
-      %value = pod.read %pod[@value] : !State, index
-      %condition = arith.cmpi sgt, %i, %value : index
-      scf.condition(%condition) %i, %pod, %pod : index, !State, !State
-    } do {
-    ^bb0(%i: index, %pod0: !State, %pod1: !State):
-      pod.write %pod0[@value] = %i : !State, index
-      scf.yield %i, %pod0, %pod1 : index, !State, !State
-    }
-    %value = pod.read %result#1[@value] : !State, index
-    function.return %value : index
-  }
-}
-
-// -----
-
-!State = !pod.type<[@value: index]>
-
 // expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
   function.def @reject_live_init_alias(%count: index) -> index {
