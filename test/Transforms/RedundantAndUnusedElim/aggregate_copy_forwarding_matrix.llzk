@@ -246,6 +246,25 @@ module attributes {llzk.lang} {
   // CHECK: %[[SECOND:[0-9a-zA-Z_\.]+]] = array.extract {{.*}} : <1,1 x index>
   // CHECK: function.return %[[SECOND]] : !array.type<1 x index>
 
+  // A scalar write below a previously extracted row changes the source row,
+  // so the later extraction must not reuse the pre-write snapshot.
+  function.def @array_extract_cse_descendant_mutation(
+      %matrix: !array.type<1,1 x index>, %value: index)
+      -> (!array.type<1 x index>, !array.type<1 x index>)
+      attributes {function.allow_witness} {
+    %row = arith.constant 0 : index
+    %column = arith.constant 0 : index
+    %first = array.extract %matrix[%row] : !array.type<1,1 x index>
+    array.write %matrix[%row, %column] = %value : !array.type<1,1 x index>, index
+    %second = array.extract %matrix[%row] : !array.type<1,1 x index>
+    function.return %first, %second : !array.type<1 x index>, !array.type<1 x index>
+  }
+  // CHECK-LABEL: function.def @array_extract_cse_descendant_mutation(
+  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = array.extract {{.*}} : <1,1 x index>
+  // CHECK: array.write {{.*}} : <1,1 x index>, index
+  // CHECK: %[[SECOND:[0-9a-zA-Z_\.]+]] = array.extract {{.*}} : <1,1 x index>
+  // CHECK: function.return %[[FIRST]], %[[SECOND]] : !array.type<1 x index>, !array.type<1 x index>
+
   function.def @pod_read_cse_mutation(%source: !pod.type<[@value: !array.type<1 x index>]>, %value: index)
       -> !array.type<1 x index> attributes {function.allow_witness} {
     %index = arith.constant 0 : index

@@ -407,7 +407,14 @@ public:
   }
 
   /// Mark this storage path as changed by a write at or below it.
-  void markAggregateMutation() { ++aggregateMutationEpoch; }
+  ///
+  /// A reusable aggregate read is a snapshot of this storage path. Once a
+  /// write changes the path or any descendant, that snapshot cannot satisfy a
+  /// later read from this node.
+  void markAggregateMutation() {
+    ++aggregateMutationEpoch;
+    reusableAggregateRead.reset();
+  }
 
   uint64_t getAggregateMutationEpoch() const { return aggregateMutationEpoch; }
 
