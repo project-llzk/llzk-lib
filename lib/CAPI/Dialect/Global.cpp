@@ -12,12 +12,17 @@
 #include "llzk/CAPI/Support.h"
 #include "llzk/Dialect/Global/IR/Dialect.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
+#include "llzk/Dialect/Global/Transforms/TransformationPasses.h"
 
+#include <mlir/CAPI/Pass.h>
 #include <mlir/CAPI/Registration.h>
 
 using namespace llzk::global;
 
+static inline void registerLLZKGlobalTransformationPasses() { registerTransformationPasses(); }
+
 // Include the generated CAPI
 #include "llzk/Dialect/Global/IR/Ops.capi.cpp.inc"
+#include "llzk/Dialect/Global/Transforms/TransformationPasses.capi.cpp.inc"
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(Global, llzk__global, GlobalDialect)
