@@ -17,6 +17,7 @@
 #include "llzk/Dialect/LLZK/IR/Dialect.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/SMT/IR/SMTOps.h"
+#include "llzk/Dialect/SMT/IR/SMTTypes.h"
 #include "llzk/Dialect/String/IR/Ops.h"
 #include "llzk/Util/TypeHelper.h"
 #include "llzk/Util/Walk.h"
@@ -24,6 +25,8 @@
 #include <mlir/IR/SymbolTable.h>
 
 #include <llvm/ADT/TypeSwitch.h>
+
+#include <utility>
 
 using namespace mlir;
 
@@ -69,13 +72,17 @@ LLZKToSMTTypeConverter::LLZKToSMTTypeConverter(MLIRContext *ctx) {
   addConversion([this, ctx](array::ArrayType arrType) {
     return smt::ArrayType::get(ctx, smt::IntType::get(ctx), convertType(arrType.getElementType()));
   });
+  addConversion([ctx](IndexType) { return smt::IntType::get(ctx); });
   addConversion([ctx](IntegerType type) -> Type {
     if (type.isSignless() && type.getWidth() == 1) {
       return smt::BoolType::get(ctx);
     }
-    return type;
+    return smt::IntType::get(ctx);
   });
   addConversion([ctx](felt::FeltType) { return smt::IntType::get(ctx); });
+  addConversion([this, ctx](array::ArrayType arrType) {
+    return smt::ArrayType::get(ctx, smt::IntType::get(ctx), convertType(arrType.getElementType()));
+  });
 }
 
 bool containsFeltOrStruct(Type type) {
@@ -284,6 +291,51 @@ LogicalResult FeltConstConverter::matchAndRewrite(
   rewriter.replaceOpWithNewOp<smt::IntConstantOp>(
       op, IntegerAttr::get(getContext(), APSInt {op.getValue().getValue()})
   );
+  return success();
+}
+
+LogicalResult IndexConstConverter::matchAndRewrite(
+    arith::ConstantIndexOp op, OpAdaptor, ConversionPatternRewriter &rewriter
+) const {
+  rewriter.replaceOpWithNewOp<smt::IntConstantOp>(op, dyn_cast<IntegerAttr>(op.getValue()));
+  return success();
+}
+
+WriteArrayConverter::WriteArrayConverter(
+    mlir::TypeConverter &converter, mlir::MLIRContext *context, ArrayWritePolicy _policy
+)
+    : OpConversionPattern<array::WriteArrayOp>(converter, context, /*benefit=*/2),
+      policy {std::move(_policy)} {}
+
+LogicalResult WriteArrayConverter::matchAndRewrite(
+    array::WriteArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+) const {
+  // Turn `arr[i] = val` to `assert arr[i] == val`
+  if (policy(op.getArrRef()) == ArrayWriteMode::WriteOnce) {
+    Value selected = selectMultidimensionalArray(
+        op->getLoc(), adaptor.getArrRef(), adaptor.getIndices(), rewriter
+    );
+    rewriter.replaceOpWithNewOp<smt::AssertOp>(
+        op, rewriter.create<smt::EqOp>(op->getLoc(), selected, adaptor.getRvalue()).getResult()
+    );
+    return success();
+
+  } else {
+    // TODO: Track a fresh SMT value for the most recently stored copy of the array, store to that,
+    // and update the most recent. This requires doing it in order, though, and handling control
+    // flow carefully
+    op.emitError("SMT lowering currently only supports write-once arrays");
+    return failure();
+  }
+}
+
+LogicalResult ReadArrayConverter::matchAndRewrite(
+    array::ReadArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+) const {
+  auto readResult = selectMultidimensionalArray(
+      op->getLoc(), adaptor.getArrRef(), adaptor.getIndices(), rewriter
+  );
+  rewriter.replaceOp(op, readResult.getDefiningOp());
   return success();
 }
 
