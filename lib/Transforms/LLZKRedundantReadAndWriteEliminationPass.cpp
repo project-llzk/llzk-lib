@@ -18,6 +18,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/RAM/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
@@ -488,6 +489,32 @@ bool requiresAggregateSnapshot(Type type) {
   return isa<array::ArrayType, pod::PodType, component::StructType>(type);
 }
 
+/// Return whether `op` preserves the identity of an aggregate value while only
+/// changing its type representation.
+///
+/// `poly.unifiable_cast` is LLZK's explicit type reinterpretation. An
+/// unrealized conversion cast has no such restriction in general, so only its
+/// one-input, one-result aggregate form is safe for this analysis to model as
+/// an alias.
+bool isTransparentAggregateAliasCast(Operation *op) {
+  if (op == nullptr || op->getNumOperands() != 1 || op->getNumResults() != 1 ||
+      !requiresAggregateSnapshot(op->getOperand(0).getType()) ||
+      !requiresAggregateSnapshot(op->getResult(0).getType())) {
+    return false;
+  }
+  return isa<polymorphic::UnifiableCastOp, UnrealizedConversionCastOp>(op);
+}
+
+/// Return the value denoting the same aggregate before transparent casts.
+Value getAggregateAliasRoot(Value value) {
+  Operation *def = value.getDefiningOp();
+  while (isTransparentAggregateAliasCast(def)) {
+    value = def->getOperand(0);
+    def = value.getDefiningOp();
+  }
+  return value;
+}
+
 /// The known contents of a global. Scalars can be forwarded by SSA identity,
 /// while aggregates must retain an independent tree snapshot.
 struct GlobalState {
@@ -604,8 +631,8 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
   using Base = RedundantReadAndWriteEliminationPassBase<PassImpl>;
   using Base::Base;
 
-  /// Aggregate values that are direct targets of a mutating operation anywhere
-  /// in the current function. Such values cannot be safely merged with a
+  /// Canonical aggregate aliases targeted by a mutating operation anywhere in
+  /// the current function. Such values cannot be safely merged with a
   /// distinct aggregate copy, even when their source access is unchanged.
   DenseSet<Value> aggregateWriteTargets;
 
@@ -631,7 +658,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     aggregateWriteTargets.clear();
     auto recordAggregateWriteTarget = [this](Value target) {
       if (requiresAggregateSnapshot(target.getType())) {
-        aggregateWriteTargets.insert(target);
+        aggregateWriteTargets.insert(getAggregateAliasRoot(target));
       }
     };
     fn.walk([&](Operation *op) {
@@ -962,33 +989,44 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       return hasUnknownOrNonReadEffect(user);
     };
 
-    auto mayMutateAfter = [&](Value value, Operation *point) {
-      for (OpOperand &use : value.getUses()) {
-        Operation *user = use.getOwner();
-        if (!useMutatesAggregate(use)) {
+    // Search all aliases of `value` for a relevant mutation. Transparent
+    // casts do not establish a value-copy boundary, so a mutation through a
+    // cast result is also a mutation of the aggregate passed to that cast.
+    auto mayMutateThroughAlias = [&](Value value, auto &&isRelevantUse) {
+      SmallVector<Value> worklist = {value};
+      DenseSet<Value> visited;
+      while (!worklist.empty()) {
+        Value alias = worklist.pop_back_val();
+        if (!visited.insert(alias).second) {
           continue;
         }
-        // Candidates are not propagated across control-flow state clones, so
-        // a write outside this block is conservatively treated as later.
-        if (user->getBlock() != point->getBlock() || point->isBeforeInBlock(user)) {
-          return true;
+        for (OpOperand &use : alias.getUses()) {
+          Operation *user = use.getOwner();
+          if (isTransparentAggregateAliasCast(user)) {
+            worklist.push_back(user->getResult(0));
+            continue;
+          }
+          if (useMutatesAggregate(use) && isRelevantUse(user)) {
+            return true;
+          }
         }
       }
       return false;
     };
 
+    auto mayMutateAfter = [&](Value value, Operation *point) {
+      return mayMutateThroughAlias(value, [point](Operation *user) {
+        // Candidates are not propagated across control-flow state clones, so
+        // a write outside this block is conservatively treated as later.
+        return user->getBlock() != point->getBlock() || point->isBeforeInBlock(user);
+      });
+    };
+
     auto mayMutateBetween = [&](Value value, Operation *before, Operation *after) {
-      for (OpOperand &use : value.getUses()) {
-        Operation *user = use.getOwner();
-        if (!useMutatesAggregate(use)) {
-          continue;
-        }
-        if (user->getBlock() != before->getBlock() || user->getBlock() != after->getBlock() ||
-            (before->isBeforeInBlock(user) && user->isBeforeInBlock(after))) {
-          return true;
-        }
-      }
-      return false;
+      return mayMutateThroughAlias(value, [before, after](Operation *user) {
+        return user->getBlock() != before->getBlock() || user->getBlock() != after->getBlock() ||
+               (before->isBeforeInBlock(user) && user->isBeforeInBlock(after));
+      });
     };
 
     // A write records the aggregate source that was copied into an access. A
@@ -1061,11 +1099,13 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
 
     // Struct member reads use a function-wide mutation pre-scan as their
     // reuse policy. Keep that policy separate from the generic sequence above.
+    auto isAggregateWriteTarget = [this](Value value) {
+      return aggregateWriteTargets.contains(getAggregateAliasRoot(value));
+    };
     auto tryMemberAggregateReuse = [&](const std::shared_ptr<ReferenceNode> &storage, Value result,
                                        Operation *) -> std::shared_ptr<ReferenceNode> {
       const auto &candidate = storage->getReusableAggregateRead();
-      if (!candidate || aggregateWriteTargets.contains(*candidate) ||
-          aggregateWriteTargets.contains(result)) {
+      if (!candidate || isAggregateWriteTarget(*candidate) || isAggregateWriteTarget(result)) {
         return nullptr;
       }
       if (auto candidateTree = tryGetValTree(*candidate)) {
@@ -1076,7 +1116,7 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
     };
     auto rememberMemberAggregateRead = [&](const std::shared_ptr<ReferenceNode> &storage,
                                            Value result) {
-      if (!aggregateWriteTargets.contains(result)) {
+      if (!isAggregateWriteTarget(result)) {
         storage->setReusableAggregateRead(result);
       }
     };
@@ -1316,8 +1356,20 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       }
     };
 
+    // Type-reinterpretation casts preserve aggregate identity. Keep both SSA
+    // values mapped to the same tree so later reads and writes through either
+    // value observe the same aggregate snapshot.
+    if (isTransparentAggregateAliasCast(op)) {
+      Value input = translate(op->getOperand(0));
+      Value result = op->getResult(0);
+      if (auto inputTree = tryGetValTree(input)) {
+        state.values[result] = std::move(inputTree);
+      } else {
+        state.values.erase(result);
+      }
+    }
     // global ops
-    if (auto readGlobal = dyn_cast<global::GlobalReadOp>(op)) {
+    else if (auto readGlobal = dyn_cast<global::GlobalReadOp>(op)) {
       const auto name = readGlobal.getNameRef();
       Value result = readGlobal.getVal();
       readVals.push_back(result);
