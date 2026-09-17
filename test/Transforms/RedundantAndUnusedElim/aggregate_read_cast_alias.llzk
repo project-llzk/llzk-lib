@@ -1,0 +1,47 @@
+// RUN: llzk-opt -llzk-duplicate-read-write-elim %s | FileCheck --enable-var-scope %s
+
+// Verify casts preserve an aggregate read's identity rather than make a copy.
+// Mutation through the cast alias blocks reuse of an earlier read.
+module attributes {llzk.lang} {
+  function.def @unifiable_cast_alias(%updated: index)
+      -> (!array.type<1 x index>, !array.type<1 x index>) attributes {function.allow_witness} {
+    %source = array.new : !array.type<1,1 x index>
+    %index = arith.constant 0 : index
+    %first = array.extract %source[%index] : !array.type<1,1 x index>
+    %cast = poly.unifiable_cast %first : (!array.type<1 x index>) -> !array.type<1 x index>
+    array.write %cast[%index] = %updated : !array.type<1 x index>, index
+    %second = array.extract %source[%index] : !array.type<1,1 x index>
+    function.return %cast, %second : !array.type<1 x index>, !array.type<1 x index>
+  }
+
+  function.def @unrealized_cast_alias(%updated: index)
+      -> (!array.type<1 x index>, !array.type<1 x index>) attributes {function.allow_witness} {
+    %source = array.new : !array.type<1,1 x index>
+    %index = arith.constant 0 : index
+    %first = array.extract %source[%index] : !array.type<1,1 x index>
+    %cast = builtin.unrealized_conversion_cast %first : !array.type<1 x index> to !array.type<1 x index>
+    array.write %cast[%index] = %updated : !array.type<1 x index>, index
+    %second = array.extract %source[%index] : !array.type<1,1 x index>
+    function.return %cast, %second : !array.type<1 x index>, !array.type<1 x index>
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @unifiable_cast_alias(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> (!array.type<1 x index>, !array.type<1 x index>) attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = array.new  : <1,1 x index>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_1]]{{\[}}%[[VAL_2]]] : <1,1 x index>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_3]] : (!array.type<1 x index>) -> !array.type<1 x index>
+// CHECK-NEXT:      array.write %[[VAL_4]]{{\[}}%[[VAL_2]]] = %[[VAL_0]] : <1 x index>, index
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_1]]{{\[}}%[[VAL_2]]] : <1,1 x index>
+// CHECK-NEXT:      function.return %[[VAL_4]], %[[VAL_5]] : !array.type<1 x index>, !array.type<1 x index>
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @unrealized_cast_alias(%[[VAL_6:[0-9a-zA-Z_\.]+]]: index) -> (!array.type<1 x index>, !array.type<1 x index>) attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.new  : <1,1 x index>
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_7]]{{\[}}%[[VAL_8]]] : <1,1 x index>
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = builtin.unrealized_conversion_cast %[[VAL_9]] : !array.type<1 x index> to !array.type<1 x index>
+// CHECK-NEXT:      array.write %[[VAL_10]]{{\[}}%[[VAL_8]]] = %[[VAL_6]] : <1 x index>, index
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_7]]{{\[}}%[[VAL_8]]] : <1,1 x index>
+// CHECK-NEXT:      function.return %[[VAL_10]], %[[VAL_11]] : !array.type<1 x index>, !array.type<1 x index>
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

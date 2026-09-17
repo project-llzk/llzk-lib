@@ -1,0 +1,24 @@
+// RUN: llzk-opt --allow-unregistered-dialect -llzk-duplicate-read-write-elim %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  // An unmodeled operation may mutate its aggregate operand. The following
+  // read must not reuse the state recorded before that operation.
+  function.def @unknown_effect_keeps_array_read(%value: !felt.type) -> !felt.type
+      attributes {function.allow_witness} {
+    %array = array.new %value : !array.type<1 x !felt.type>
+    %zero = arith.constant 0 : index
+    "test.mutate"(%array) : (!array.type<1 x !felt.type>) -> ()
+    %observed = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+    function.return %observed : !felt.type
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @unknown_effect_keeps_array_read(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_0]] : <1 x !felt.type>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      "test.mutate"(%[[VAL_1]]) : (!array.type<1 x !felt.type>) -> ()
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_1]]{{\[}}%[[VAL_2]]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_3]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
