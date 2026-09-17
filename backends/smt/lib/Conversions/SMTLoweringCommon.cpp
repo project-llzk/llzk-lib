@@ -198,10 +198,10 @@ MemberReadConverter::MemberReadConverter(
 LogicalResult MemberReadConverter::matchAndRewrite(
     component::MemberReadOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
 ) const {
-  if (!isa<felt::FeltType>(op.getResult().getType())) {
-    op.emitError("SMT lowering currently only supports felt-valued struct.readm");
-    return failure();
-  }
+  // if (!isa<felt::FeltType>(op.getResult().getType())) {
+  //   op.emitError("SMT lowering currently only supports felt-valued struct.readm");
+  //   return failure();
+  // }
 
   auto it = symbols.find(adaptor.getMemberName());
   if (it == symbols.end()) {
