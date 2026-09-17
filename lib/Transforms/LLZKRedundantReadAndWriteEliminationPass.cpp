@@ -1694,8 +1694,23 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       } else {
         for (Value operand : op->getOperands()) {
           if (requiresAggregateSnapshot(operand.getType())) {
-            state.values.erase(operand);
-            state.values.erase(translate(operand));
+            // Transparent aggregate aliases have distinct SSA keys but share
+            // a ReferenceNode. An unmodeled effect through one alias can
+            // mutate the whole aggregate, so invalidate every such key.
+            if (auto operandTree = tryGetValTree(translate(operand))) {
+              for (auto it = state.values.begin(); it != state.values.end();) {
+                if (it->second == operandTree) {
+                  Value alias = it->first;
+                  ++it;
+                  state.values.erase(alias);
+                } else {
+                  ++it;
+                }
+              }
+            } else {
+              state.values.erase(operand);
+              state.values.erase(translate(operand));
+            }
           }
         }
       }
