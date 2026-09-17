@@ -313,10 +313,14 @@ public:
     aggregateSnapshotSource.reset();
     aggregateReadOrigin.reset();
     if (valTree != nullptr) {
-      // Overwrite our current set of children with new children, since we overwrote
-      // the stored value.
+      // Copy the source's known children along with its value.
       children = valTree->children;
       dynamicChildCount = valTree->dynamicChildCount;
+    } else {
+      // An untracked aggregate source supplies no facts about its contents.
+      // Its write replaces the destination as a whole, so retaining the
+      // destination's old children could forward values from the old snapshot.
+      invalidateChildren();
     }
   }
 

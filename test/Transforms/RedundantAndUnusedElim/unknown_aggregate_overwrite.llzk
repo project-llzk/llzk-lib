@@ -1,0 +1,58 @@
+// RUN: llzk-opt -llzk-duplicate-read-write-elim %s | FileCheck --enable-var-scope %s
+
+// An aggregate result from a call has no value tree in this pass.  Replacing
+// a POD record with that result must discard the record's old element facts.
+module attributes {llzk.lang} {
+  function.def @make_array(%value: index) -> !array.type<1 x index>
+      attributes {function.allow_witness} {
+    %array = array.new %value : !array.type<1 x index>
+    function.return %array : !array.type<1 x index>
+  }
+
+  function.def @pod_record_overwritten_by_call(%initial: index, %replacement: index) -> index
+      attributes {function.allow_witness} {
+    %initial_array = array.new %initial : !array.type<1 x index>
+    %pod = pod.new { @items = %initial_array } : !pod.type<[@items: !array.type<1 x index>]>
+    %call_result = function.call @make_array(%replacement) : (index) -> !array.type<1 x index>
+    pod.write %pod[@items] = %call_result : !pod.type<[@items: !array.type<1 x index>]>, !array.type<1 x index>
+    %items = pod.read %pod[@items] : !pod.type<[@items: !array.type<1 x index>]>, !array.type<1 x index>
+    %zero = arith.constant 0 : index
+    %observed = array.read %items[%zero] : !array.type<1 x index>, index
+    function.return %observed : index
+  }
+
+  // Array insertion follows the same aggregate-copy path as POD records.
+  function.def @array_element_overwritten_by_call(%initial: index, %replacement: index) -> index
+      attributes {function.allow_witness} {
+    %initial_array = array.new %initial : !array.type<1 x index>
+    %matrix = array.new : !array.type<1,1 x index>
+    %zero = arith.constant 0 : index
+    array.insert %matrix[%zero] = %initial_array : !array.type<1,1 x index>, !array.type<1 x index>
+    %call_result = function.call @make_array(%replacement) : (index) -> !array.type<1 x index>
+    array.insert %matrix[%zero] = %call_result : !array.type<1,1 x index>, !array.type<1 x index>
+    %items = array.extract %matrix[%zero] : !array.type<1,1 x index>
+    %observed = array.read %items[%zero] : !array.type<1 x index>, index
+    function.return %observed : index
+  }
+}
+
+// CHECK-LABEL: function.def @pod_record_overwritten_by_call(
+// CHECK-SAME: %[[INITIAL:[0-9a-zA-Z_.]+]]: index, %[[REPLACEMENT:[0-9a-zA-Z_.]+]]: index) -> index
+// CHECK: %[[INITIAL_ARRAY:[0-9a-zA-Z_.]+]] = array.new %[[INITIAL]] : <1 x index>
+// CHECK: %[[POD:[0-9a-zA-Z_.]+]] = pod.new { @items = %[[INITIAL_ARRAY]] } : <[@items: !array.type<1 x index>]>
+// CHECK: %[[CALL_RESULT:[0-9a-zA-Z_.]+]] = function.call @make_array(%[[REPLACEMENT]]) : (index) -> !array.type<1 x index>
+// CHECK: pod.write %[[POD]][@items] = %[[CALL_RESULT]] : <[@items: !array.type<1 x index>]>, !array.type<1 x index>
+// CHECK: %[[ITEMS:[0-9a-zA-Z_.]+]] = pod.read %[[POD]][@items] : <[@items: !array.type<1 x index>]>, !array.type<1 x index>
+// CHECK: %[[ZERO:[0-9a-zA-Z_.]+]] = arith.constant 0 : index
+// CHECK: %[[OBSERVED:[0-9a-zA-Z_.]+]] = array.read %[[ITEMS]][%[[ZERO]]] : <1 x index>, index
+// CHECK: function.return %[[OBSERVED]] : index
+
+// CHECK-LABEL: function.def @array_element_overwritten_by_call(
+// CHECK-SAME: %[[INITIAL:[0-9a-zA-Z_.]+]]: index, %[[REPLACEMENT:[0-9a-zA-Z_.]+]]: index) -> index
+// CHECK: %[[MATRIX:[0-9a-zA-Z_.]+]] = array.new : <1,1 x index>
+// CHECK: %[[ZERO:[0-9a-zA-Z_.]+]] = arith.constant 0 : index
+// CHECK: %[[CALL_RESULT:[0-9a-zA-Z_.]+]] = function.call @make_array(%[[REPLACEMENT]]) : (index) -> !array.type<1 x index>
+// CHECK: array.insert %[[MATRIX]][%[[ZERO]]] = %[[CALL_RESULT]] : <1,1 x index>, <1 x index>
+// CHECK: %[[ITEMS:[0-9a-zA-Z_.]+]] = array.extract %[[MATRIX]][%[[ZERO]]] : <1,1 x index>
+// CHECK: %[[OBSERVED:[0-9a-zA-Z_.]+]] = array.read %[[ITEMS]][%[[ZERO]]] : <1 x index>, index
+// CHECK: function.return %[[OBSERVED]] : index
