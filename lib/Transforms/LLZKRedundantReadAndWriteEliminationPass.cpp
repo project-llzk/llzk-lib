@@ -1135,13 +1135,13 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
           !before->isBeforeInBlock(after)) {
         return true;
       }
-      for (Operation *op = before->getNextNode(); op != after; op = op->getNextNode()) {
+      for (Operation *n = before->getNextNode(); n != after; n = n->getNextNode()) {
         if (isa<MemberWriteOp, pod::WritePodOp, global::GlobalWriteOp, ram::StoreOp, CallOp,
-                constrain::ConstraintOpInterface>(op) ||
-            llvm::dyn_cast<ArrayAccessOpInterface>(op)) {
+                constrain::ConstraintOpInterface>(n) ||
+            llvm::dyn_cast<ArrayAccessOpInterface>(n)) {
           continue;
         }
-        if (hasUnknownOrNonReadEffect(op)) {
+        if (hasUnknownOrNonReadEffect(n)) {
           return true;
         }
       }
