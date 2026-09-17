@@ -608,8 +608,17 @@ KnownState intersect(const KnownState &lhs, const KnownState &rhs) {
 /// tracking, so that the orig state is not polluted through pointer updates.
 ValueMap cloneValueMap(const ValueMap &orig) {
   ValueMap res;
+  DenseMap<const ReferenceNode *, std::shared_ptr<ReferenceNode>> clones;
   for (const auto &[id, tree] : orig) {
-    res[id] = tree->clone();
+    // Transparent aggregate aliases are represented by distinct ValueMap keys
+    // pointing to the same tree. Preserve that alias group in the cloned state:
+    // cloning each key independently would make a nested-region write through
+    // one alias invisible to reads through another alias at the region join.
+    auto [it, inserted] = clones.try_emplace(tree.get());
+    if (inserted) {
+      it->second = tree->clone();
+    }
+    res[id] = it->second;
   }
   return res;
 }
