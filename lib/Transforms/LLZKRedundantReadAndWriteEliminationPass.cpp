@@ -1614,7 +1614,19 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
       // reference-tree state before a later read or write can reuse stale
       // contents. Other aggregate values remain valid because aggregate
       // copies have value-copy semantics.
-      if (!isa<CallOp, constrain::ConstraintOpInterface>(op)) {
+      if (isa<CallOp, constrain::ConstraintOpInterface>(op)) {
+        // Calls and constraints do not mutate their aggregate operands, but
+        // they observe the complete value-copy snapshot. Retain the facts in
+        // the tree for later read reuse while preventing a later write from
+        // removing a write that this operation already observed.
+        for (Value operand : op->getOperands()) {
+          if (requiresAggregateSnapshot(operand.getType())) {
+            if (auto valueTree = tryGetValTree(translate(operand))) {
+              valueTree->clearLastWritesInSubtree();
+            }
+          }
+        }
+      } else {
         for (Value operand : op->getOperands()) {
           if (requiresAggregateSnapshot(operand.getType())) {
             state.values.erase(operand);
