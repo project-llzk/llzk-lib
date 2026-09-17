@@ -1,0 +1,56 @@
+// RUN: llzk-opt -split-input-file %s | FileCheck %s
+
+module attributes {llzk.lang} {
+  channel.def @c : tuple<!felt.type, !felt.type>
+
+  function.def @emit(
+      %x: !felt.type,
+      %y: !felt.type,
+      %m: !felt.type
+      ) attributes {function.allow_constraint} {
+    channel.push @c (%x, %y) : !felt.type, !felt.type
+    channel.pull @c (%y, %x) { mult = %m } : !felt.type, !felt.type, !felt.type
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    channel.def @c : tuple<!felt.type, !felt.type>
+// CHECK:         channel.push @c (%[[X:[0-9a-zA-Z_\.]+]], %[[Y:[0-9a-zA-Z_\.]+]]) : !felt.type, !felt.type
+// CHECK:         channel.pull @c (%[[Y]], %[[X]]) { mult = %[[M:[0-9a-zA-Z_\.]+]] } : !felt.type, !felt.type, !felt.type
+// -----
+
+module attributes {llzk.lang} {
+  channel.def @row_exprs : tuple<!felt.type, !felt.type>
+
+  struct.def @Row {
+    struct.member @lhs : !felt.type {llzk.pub, column}
+    struct.member @rhs : !felt.type {llzk.pub, column}
+
+    function.def @compute() -> !struct.type<@Row> {
+      %self = struct.new : <@Row>
+      function.return %self : !struct.type<@Row>
+    }
+
+    function.def @constrain(%self: !struct.type<@Row>) {
+      function.return
+    }
+  }
+
+  function.def @emit(%row: !struct.type<@Row>, %m: !felt.type) attributes {function.allow_constraint} {
+    %lhs = struct.readm %row[@lhs] : !struct.type<@Row>, !felt.type
+    %rhs = struct.readm %row[@rhs] : !struct.type<@Row>, !felt.type
+    %sum = felt.add %lhs, %rhs : !felt.type, !felt.type
+    %neg = felt.neg %rhs : !felt.type
+    %expr = felt.mul %sum, %neg : !felt.type, !felt.type
+    channel.push @row_exprs (%expr, %lhs) { mult = %m } : !felt.type, !felt.type, !felt.type
+    function.return
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK:         channel.def @row_exprs : tuple<!felt.type, !felt.type>
+// CHECK:         %[[LHS:[0-9a-zA-Z_\.]+]] = struct.readm %[[ROW:[0-9a-zA-Z_\.]+]][@lhs] : <@Row>, !felt.type
+// CHECK:         %[[RHS:[0-9a-zA-Z_\.]+]] = struct.readm %[[ROW]][@rhs] : <@Row>, !felt.type
+// CHECK:         %[[SUM:[0-9a-zA-Z_\.]+]] = felt.add %[[LHS]], %[[RHS]] : !felt.type, !felt.type
+// CHECK:         %[[NEG:[0-9a-zA-Z_\.]+]] = felt.neg %[[RHS]] : !felt.type
+// CHECK:         %[[EXPR:[0-9a-zA-Z_\.]+]] = felt.mul %[[SUM]], %[[NEG]] : !felt.type, !felt.type
+// CHECK:         channel.push @row_exprs (%[[EXPR]], %[[LHS]]) { mult = %[[M:[0-9a-zA-Z_\.]+]] } : !felt.type, !felt.type, !felt.type
