@@ -6216,7 +6216,9 @@ findWhileCarriedLeafIndex(const WhileCarriedPod &pod, const RecordChain &path) {
   return std::nullopt;
 }
 
-/// Find the POD block argument at the root of `podRef` and collect the nested read path from it.
+/// Find the POD block argument supplying a read-only nested copy and collect its record path.
+/// The use check below rejects writes through these copies, so resolving their reads against the
+/// carried value cannot accidentally propagate a copied child's mutation back into its parent.
 static BlockArgument findWhileCarriedPodRoot(Value podRef, SmallVectorImpl<StringAttr> &path) {
   while (auto readOp = podRef.getDefiningOp<ReadPodOp>()) {
     path.push_back(readOp.getRecordNameAttr());
@@ -6250,7 +6252,9 @@ static bool hasUnsupportedWhileCarriedPodUse(BlockArgument arg, const WhileCarri
         return true;
       }
       if (auto writeOp = dyn_cast<WritePodOp>(user)) {
-        if (writeOp.getPodRef() != podValue || writeOp->getBlock() != arg.getOwner() ||
+        // A POD-valued read is a copy. Updating it must not update the carried parent's leaves.
+        // Separate mutable snapshots and explicit aggregate write-back are not supported here.
+        if (writeOp.getPodRef() != arg || writeOp->getBlock() != arg.getOwner() ||
             isa<PodType>(writeOp.getValue().getType())) {
           return true;
         }
@@ -6282,11 +6286,11 @@ static bool hasUnsupportedWhileCarriedPodUse(BlockArgument arg, const WhileCarri
   return false;
 }
 
-/// Prove that the initializer is a fresh, exclusively owned tree of POD allocations. Each nested
-/// record must have exactly one initialization to a distinct fresh child, and each allocation may
-/// only be accessed locally before the loop or through its owning parent initialization. Unknown
-/// producers, forwarded aliases, shared children, and escaping uses are deliberately unsupported.
-static bool hasExclusiveWhilePodTree(scf::WhileOp whileOp, Value init) {
+/// Restrict initialization to fresh local PODs and single writes of distinct nested sources.
+/// POD reads and writes copy aggregates; these restrictions are conservative supported-shape
+/// checks, not a claim that storing a POD creates an alias. Keep unknown producers and other uses
+/// out of this rewrite until their copy and identity behavior is explicitly supported.
+static bool hasSupportedWhilePodInitialization(scf::WhileOp whileOp, Value init) {
   SmallVector<std::pair<Value, Operation *>> pending {{init, nullptr}};
   llvm::DenseSet<Value> allocations;
   for (size_t idx = 0; idx < pending.size(); ++idx) {
@@ -6307,14 +6311,16 @@ static bool hasExclusiveWhilePodTree(scf::WhileOp whileOp, Value init) {
         return false;
       }
       if (auto read = dyn_cast<ReadPodOp>(user)) {
-        // A POD-valued read creates another reference whose uses would need their own proof.
+        // A POD-valued read creates a separate snapshot outside the supported initialization shape.
         if (read.getPodRef() != value || isa<PodType>(read.getType())) {
           return false;
         }
         continue;
       }
       if (auto write = dyn_cast<WritePodOp>(user)) {
-        if (write.getPodRef() != value) {
+        // The parent stores a snapshot. Do not initialize its leaves from a source modified
+        // after that snapshot was taken, including writes to deeper nested sources.
+        if (write.getPodRef() != value || (ownerWrite && !user->isBeforeInBlock(ownerWrite))) {
           return false;
         }
         if (isa<PodType>(write.getValue().getType())) {
@@ -6412,6 +6418,13 @@ public:
       }
       WhileCarriedPod pod {llzk::checkedCast<unsigned>(idx), podTy, {}, {}};
       collectWhileCarriedPodLeaves(pod);
+      // Forwarding mutable aggregate leaves as SSA values would erase the copy boundary of their
+      // reads and writes. This rewrite only carries scalar leaves until snapshots are supported.
+      if (llvm::any_of(pod.leafTypes, [](Type type) {
+        return isa<PodType, ArrayType, StructType>(type);
+      })) {
+        return failure();
+      }
       carriedPods.push_back(std::move(pod));
     }
     if (carriedPods.empty()) {
@@ -6435,7 +6448,8 @@ public:
 
       Value init = whileOp.getInits()[pod.originalIndex];
       // Splitting two aliases independently would lose writes observed through the other alias.
-      if (!uniquePodInits.insert(init).second || !hasExclusiveWhilePodTree(whileOp, init)) {
+      if (!uniquePodInits.insert(init).second ||
+          !hasSupportedWhilePodInitialization(whileOp, init)) {
         return failure();
       }
       for (Operation *user : init.getUsers()) {
