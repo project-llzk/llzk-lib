@@ -41,6 +41,68 @@ module attributes {llzk.lang} {
 // -----
 
 module attributes {llzk.lang} {
+  // These two distinct type tuples render identically because BuildShortTypeString leaves symbol
+  // names unescaped. Full-instantiation reuse must use the exact bindings, not that rendered name.
+  struct.def @a {
+    function.def @compute() -> !struct.type<@a> {
+      %self = struct.new : !struct.type<@a>
+      function.return %self : !struct.type<@a>
+    }
+    function.def @constrain(%self: !struct.type<@a>) { function.return }
+  }
+  struct.def @c {
+    function.def @compute() -> !struct.type<@c> {
+      %self = struct.new : !struct.type<@c>
+      function.return %self : !struct.type<@c>
+    }
+    function.def @constrain(%self: !struct.type<@c>) { function.return }
+  }
+  struct.def @"a>_!s<@b" {
+    function.def @compute() -> !struct.type<@"a>_!s<@b"> {
+      %self = struct.new : !struct.type<@"a>_!s<@b">
+      function.return %self : !struct.type<@"a>_!s<@b">
+    }
+    function.def @constrain(%self: !struct.type<@"a>_!s<@b">) { function.return }
+  }
+  struct.def @"b>_!s<@c" {
+    function.def @compute() -> !struct.type<@"b>_!s<@c"> {
+      %self = struct.new : !struct.type<@"b>_!s<@c">
+      function.return %self : !struct.type<@"b>_!s<@c">
+    }
+    function.def @constrain(%self: !struct.type<@"b>_!s<@c">) { function.return }
+  }
+
+  poly.template @T {
+    poly.param @A : !poly.tvar<@A>
+    poly.param @B : !poly.tvar<@B>
+    function.def @value() -> index {
+      %value = arith.constant 7 : index
+      function.return %value : index
+    }
+  }
+
+  function.def @main() -> index {
+    %first = function.call @T::@value<[!struct.type<@"a>_!s<@b">, !struct.type<@c>]>() : () -> index
+    %second = function.call @T::@value<[!struct.type<@a>, !struct.type<@"b>_!s<@c">]>() : () -> index
+    function.return %second : index
+  }
+}
+
+// CHECK-LABEL: function.def @"T_!s<@a>_!s<@b>_!s<@c>_value"() -> index {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-LABEL: function.def @"T_!s<@a>_!s<@b>_!s<@c>_value_0"() -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 7 : index
+// CHECK-NEXT:      function.return %[[VAL_1]] : index
+// CHECK-NEXT:    }
+// CHECK-LABEL: function.def @main() -> index {
+// CHECK:         %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @"T_!s<@a>_!s<@b>_!s<@c>_value"() : () -> index
+// CHECK:         %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @"T_!s<@a>_!s<@b>_!s<@c>_value_0"() : () -> index
+
+// -----
+
+module attributes {llzk.lang} {
   // A full instantiation renders concrete values in parameter order.
   poly.template @T {
     poly.param @A : index

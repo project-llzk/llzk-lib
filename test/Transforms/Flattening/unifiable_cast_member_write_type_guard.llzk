@@ -1,0 +1,46 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s
+
+// A generic unifiable cast may feed member writes that are independently instantiated. Its input
+// is Cell<0>, which satisfies @zero but not @one, so flattening must not retag the shared cast
+// result to Cell<0>.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    // expected-warning@+1 {{Parameterized definition still has uses!}}
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  struct.def @Holder {
+    struct.member @zero : !struct.type<@TCell::@Cell<[0]>> {column}
+    struct.member @one : !struct.type<@TCell::@Cell<[1]>> {column}
+
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %item = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      // The cast cannot be finalized because its shared result has incompatible member targets.
+      // It must not instead be retagged to Cell<0>, which would make the @one write invalid.
+      // expected-error@+1 {{'poly.unifiable_cast' op input type '!struct.type<@TCell_0_Cell>' and output type '!struct.type<@TCell::@Cell<[affine_map<(d0) -> (d0)>]>>' are not unifiable}}
+      %generic = poly.unifiable_cast %item : (!struct.type<@TCell::@Cell<[0]>>) -> !struct.type<@TCell::@Cell<[#id]>>
+      struct.writem %self[@zero] = %generic : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      struct.writem %self[@one] = %generic : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      function.return %self : !struct.type<@Holder>
+    }
+
+    function.def @constrain(%self: !struct.type<@Holder>) {
+      function.return
+    }
+  }
+}
