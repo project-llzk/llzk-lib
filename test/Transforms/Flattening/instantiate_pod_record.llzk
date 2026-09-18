@@ -1,7 +1,8 @@
 // RUN: llzk-opt -llzk-flatten -verify-diagnostics %s | FileCheck --enable-var-scope %s
 
 // Regression test: the flattening type converter must recursively instantiate
-// parameterized struct types stored in POD records.
+// parameterized struct types stored in POD records, including PODs produced by
+// llzk.nondet.
 module attributes {llzk.lang} {
   poly.template @TComponent {
     poly.param @N : index
@@ -18,7 +19,7 @@ module attributes {llzk.lang} {
 
   struct.def @Main {
     function.def @compute() -> !struct.type<@Main> {
-      %pod = pod.new : !pod.type<[@comp: !struct.type<@TComponent::@Component<[252]>>]>
+      %pod = llzk.nondet : !pod.type<[@comp: !struct.type<@TComponent::@Component<[252]>>]>
       %component = function.call @TComponent::@Component::@compute() : () -> !struct.type<@TComponent::@Component<[252]>>
       pod.write %pod[@comp] = %component : !pod.type<[@comp: !struct.type<@TComponent::@Component<[252]>>]>, !struct.type<@TComponent::@Component<[252]>>
       %self = struct.new : !struct.type<@Main>
@@ -41,7 +42,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @Main {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = pod.new : <[@comp: !struct.type<@TComponent_252_Component>]>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = llzk.nondet : !pod.type<[@comp: !struct.type<@TComponent_252_Component>]>
 // CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = function.call @TComponent_252_Component::@compute() : () -> !struct.type<@TComponent_252_Component>
 // CHECK-NEXT:        pod.write %[[VAL_2]][@comp] = %[[VAL_3]] : <[@comp: !struct.type<@TComponent_252_Component>]>, !struct.type<@TComponent_252_Component>
 // CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
