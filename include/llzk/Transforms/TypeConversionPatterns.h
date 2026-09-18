@@ -16,13 +16,16 @@
 #pragma once
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Transforms/ConversionUtils.h"
 
 #include <mlir/Dialect/SCF/Transforms/Patterns.h>
 #include <mlir/IR/Attributes.h>
@@ -33,8 +36,12 @@
 #include <mlir/IR/PatternMatch.h>
 #include <mlir/Transforms/DialectConversion.h>
 
+#include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/Support/Casting.h>
 
+#include <cassert>
 #include <tuple>
 
 namespace llzk {
@@ -64,16 +71,6 @@ inline bool defaultLegalityCheck(const mlir::TypeConverter &tyConv, mlir::Operat
     }
   }
   return true;
-}
-
-/// Wrapper for `PatternRewriter::replaceOpWithNewOp()` that automatically copies discardable
-/// attributes (i.e., attributes other than those specifically defined as part of the op in ODS).
-template <typename OpClass, typename Rewriter, typename... Args>
-inline OpClass replaceOpWithNewOp(Rewriter &rewriter, mlir::Operation *op, Args &&...args) {
-  mlir::DictionaryAttr attrs = op->getDiscardableAttrDictionary();
-  OpClass newOp = rewriter.template replaceOpWithNewOp<OpClass>(op, std::forward<Args>(args)...);
-  newOp->setDiscardableAttrs(attrs);
-  return newOp;
 }
 
 /// Lists all LLZK op classes that may contain a StructType in their results or attributes.

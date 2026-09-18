@@ -17,6 +17,7 @@
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Bool/IR/Utils.h"
 #include "llzk/Dialect/Bool/Transforms/TransformationPasses.h"
+#include "llzk/Transforms/ConversionUtils.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
@@ -62,7 +63,7 @@ lowerQuantifier(QuantifierOp op, PatternRewriter &rewriter, bool initialValue) {
   Value init = rewriter.create<arith::ConstantIntOp>(loc, initialValue, rewriter.getI1Type());
 
   auto loop = rewriter.create<scf::ForOp>(loc, lowerBound, upperBound, step, ValueRange {init});
-  loop->setDiscardableAttrs(op->getDiscardableAttrDictionary());
+  preserveDiscardableAttrs(op, loop);
 
   Block &loopBody = *loop.getBody();
   if (!loopBody.empty()) {
