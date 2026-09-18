@@ -936,12 +936,19 @@ static bool hasStraightLineRegionPath(Block *allocationBlock, Block *accessBlock
   return true;
 }
 
+struct StraightLineStaticAccess {
+  Operation *op;
+  Attribute index;
+  Block *block;
+};
+
 /// Collect statically indexed elements of \p alloc whose accesses all have a single linear order
 /// within one block (possibly a loop body) or nested single-block regions. Return false if the
 /// allocation has any escaping or unsupported use, since that could alias an otherwise eligible
 /// element.
 static bool collectStraightLineStaticElements(
-    CreateArrayOp alloc, DenseMap<Attribute, Block *> &elementBlocks
+    CreateArrayOp alloc, DenseMap<Attribute, Block *> &elementBlocks,
+    SmallVectorImpl<StraightLineStaticAccess> &accesses
 ) {
   ArrayType type = alloc.getType();
   if (!type.hasStaticShape() || !alloc.getElements().empty()) {
@@ -971,6 +978,7 @@ static bool collectStraightLineStaticElements(
     }
 
     Block *accessBlock = owner->getBlock();
+    accesses.push_back({owner, index, accessBlock});
     auto [it, inserted] = elementBlocks.try_emplace(index, accessBlock);
     if ((!inserted && it->second != accessBlock) ||
         !hasStraightLineRegionPath(alloc->getBlock(), accessBlock)) {
@@ -987,18 +995,22 @@ static bool collectStraightLineStaticElements(
 /// generic mem2reg remain responsible for arrays involving branches, loops, dynamic indices,
 /// nested regions, or escaping values.
 static void promoteStraightLineStaticArrays(ModuleOp module) {
-  DenseMap<Block *, DenseMap<Value, DenseSet<Attribute>>> elementsByBlock;
+  using ElementKey = std::pair<Value, Attribute>;
+  DenseMap<Block *, DenseMap<Operation *, ElementKey>> accessesByBlock;
   SmallVector<CreateArrayOp> allocations;
   size_t eligibleElementCount = 0;
   module.walk([&](CreateArrayOp alloc) {
     DenseMap<Attribute, Block *> elementBlocks;
-    if (!collectStraightLineStaticElements(alloc, elementBlocks)) {
+    SmallVector<StraightLineStaticAccess> accesses;
+    if (!collectStraightLineStaticElements(alloc, elementBlocks, accesses)) {
       return;
     }
     allocations.push_back(alloc);
     eligibleElementCount += elementBlocks.size();
-    for (auto [index, block] : elementBlocks) {
-      elementsByBlock[block][alloc.getResult()].insert(index);
+    for (const StraightLineStaticAccess &access : accesses) {
+      if (elementBlocks.contains(access.index)) {
+        accessesByBlock[access.block].try_emplace(access.op, alloc.getResult(), access.index);
+      }
     }
   });
   LLVM_DEBUG(
@@ -1006,18 +1018,18 @@ static void promoteStraightLineStaticArrays(ModuleOp module) {
                    << " elements eligible\n";
   );
 
-  for (auto &[block, eligibleElements] : elementsByBlock) {
-    DenseMap<Value, DenseMap<Attribute, Value>> latestValues;
+  for (auto &[block, eligibleAccesses] : accessesByBlock) {
+    DenseMap<ElementKey, Value> latestValues;
 
     for (Operation &op : llvm::make_early_inc_range(*block)) {
+      auto accessIt = eligibleAccesses.find(&op);
+      if (accessIt == eligibleAccesses.end()) {
+        continue;
+      }
+      auto [array, index] = accessIt->second;
+
       if (auto read = dyn_cast<ReadArrayOp>(&op)) {
-        Value array = read.getArrRef();
-        Attribute index = mlir::cast<ArrayAccessOpInterface>(&op).indexOperandsToAttributeArray();
-        auto arrayIt = eligibleElements.find(array);
-        if (arrayIt == eligibleElements.end() || !arrayIt->second.contains(index)) {
-          continue;
-        }
-        Value &latest = latestValues[array][index];
+        Value &latest = latestValues[{array, index}];
         if (!latest) {
           OpBuilder builder(read);
           latest = builder.create<llzk::NonDetOp>(read.getLoc(), read.getType());
@@ -1028,13 +1040,7 @@ static void promoteStraightLineStaticArrays(ModuleOp module) {
       }
 
       if (auto write = dyn_cast<WriteArrayOp>(&op)) {
-        Value array = write.getArrRef();
-        Attribute index = mlir::cast<ArrayAccessOpInterface>(&op).indexOperandsToAttributeArray();
-        auto arrayIt = eligibleElements.find(array);
-        if (arrayIt == eligibleElements.end() || !arrayIt->second.contains(index)) {
-          continue;
-        }
-        latestValues[array][index] = write.getRvalue();
+        latestValues[{array, index}] = write.getRvalue();
         write.erase();
       }
     }
