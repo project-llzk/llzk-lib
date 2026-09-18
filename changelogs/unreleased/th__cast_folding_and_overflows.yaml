@@ -1,0 +1,5 @@
+added:
+  - Documentation for the new `OverflowSemantics` enum attribute in the cast dialect.
+
+fixed:
+  - Preserve negative `felt` constants when canonicalizing `cast.toindex` instead of reinterpreting them as nonnegative indices.
