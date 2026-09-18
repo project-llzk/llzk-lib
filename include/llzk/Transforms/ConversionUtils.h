@@ -229,9 +229,7 @@ inline function::CallOp createCallPreservingInstantiationOperands(
         argOperands, templateParams
     );
   }
-
-  newCall->setDiscardableAttrs(oldCall->getDiscardableAttrDictionary());
-  return newCall;
+  return preserveDiscardableAttrs(oldCall, newCall);
 }
 
 /// Replace any AffineMap-backed array dimensions within `type` with wildcard `?` dims.
