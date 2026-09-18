@@ -22,8 +22,8 @@
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
-#include "llzk/Dialect/Shared/TypeConversionPatterns.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Transforms/TypeConversionPatterns.h"
 #include "llzk/Util/TypeHelper.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
