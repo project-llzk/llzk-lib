@@ -25,7 +25,7 @@
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
-#include "llzk/Transforms/LLZKConversionUtils.h"
+#include "llzk/Transforms/ConversionUtils.h"
 
 #include <mlir/Dialect/SCF/Transforms/Patterns.h>
 #include <mlir/IR/Attributes.h>

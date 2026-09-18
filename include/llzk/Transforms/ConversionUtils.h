@@ -1,4 +1,4 @@
-//===-- LLZKConversionUtils.h -----------------------------------*- C++ -*-===//
+//===-- ConversionUtils.h ---------------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
