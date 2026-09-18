@@ -1049,9 +1049,10 @@ LogicalResult run(ModuleOp modOp, ConversionTracker &tracker) {
   MLIRContext *ctx = modOp.getContext();
   ParameterizedStructUseTypeConverter tyConv(tracker, modOp);
   DisableReportMissing drm(tyConv);
-  ConversionTarget target = newConverterDefinedTargetWithCallback<>(tyConv, ctx, drm);
+  ConversionTarget target = newConverterDefinedTargetWithCallback<NonDetOp>(tyConv, ctx, drm);
   RewritePatternSet patterns = newGeneralRewritePatternSet(tyConv, ctx, target);
   patterns.add<CallStructFuncPattern, MemberDefOpPattern>(tyConv, ctx, tracker);
+  patterns.add<ConvertedNonDetOpPattern>(tyConv, ctx);
   return applyPartialConversion(modOp, target, std::move(patterns));
 }
 
