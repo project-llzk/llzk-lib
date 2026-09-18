@@ -138,26 +138,6 @@ using namespace llzk::polymorphic;
 
 namespace {
 
-/// Copy discardable attributes from `src` to `dst`.
-template <typename OpTy> static OpTy preserveDiscardableAttrs(Operation *src, OpTy dst) {
-  dst->setDiscardableAttrs(src->getDiscardableAttrDictionary());
-  return dst;
-}
-
-/// Copy discardable attributes from `src` to `dst` while omitting one internal attr.
-template <typename OpTy>
-static OpTy preserveDiscardableAttrsExcept(Operation *src, OpTy dst, StringRef excludedAttr) {
-  auto original = src->getDiscardableAttrDictionary();
-  SmallVector<NamedAttribute> attrs;
-  for (NamedAttribute attr : original.getValue()) {
-    if (attr.getName().getValue() != excludedAttr) {
-      attrs.push_back(attr);
-    }
-  }
-  dst->setDiscardableAttrs(DictionaryAttr::get(src->getContext(), attrs));
-  return dst;
-}
-
 /// Path of nested POD record names from the original member to a scalar leaf record.
 struct RecordChain {
   SmallVector<StringAttr> nameList;

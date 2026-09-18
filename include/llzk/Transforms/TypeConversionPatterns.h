@@ -23,6 +23,7 @@
 #include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Transforms/LLZKConversionUtils.h"
 
 #include <mlir/Dialect/SCF/Transforms/Patterns.h>
 #include <mlir/IR/Attributes.h>
@@ -64,16 +65,6 @@ inline bool defaultLegalityCheck(const mlir::TypeConverter &tyConv, mlir::Operat
     }
   }
   return true;
-}
-
-/// Wrapper for `PatternRewriter::replaceOpWithNewOp()` that automatically copies discardable
-/// attributes (i.e., attributes other than those specifically defined as part of the op in ODS).
-template <typename OpClass, typename Rewriter, typename... Args>
-inline OpClass replaceOpWithNewOp(Rewriter &rewriter, mlir::Operation *op, Args &&...args) {
-  mlir::DictionaryAttr attrs = op->getDiscardableAttrDictionary();
-  OpClass newOp = rewriter.template replaceOpWithNewOp<OpClass>(op, std::forward<Args>(args)...);
-  newOp->setDiscardableAttrs(attrs);
-  return newOp;
 }
 
 /// Lists all LLZK op classes that may contain a StructType in their results or attributes.
