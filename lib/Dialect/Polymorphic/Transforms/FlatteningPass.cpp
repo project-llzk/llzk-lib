@@ -15,12 +15,13 @@
 #include "llzk/Analysis/SymbolDefTree.h"
 #include "llzk/Analysis/SymbolUseGraph.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
-#include "llzk/Dialect/Cast/IR/Dialect.h"
+#include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Attrs.h"
 #include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
@@ -516,6 +517,28 @@ evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramN
       operandAttrs.push_back(it->second);
     }
 
+    // The general folder does not fold casts because their canonicalization patterns operate on
+    // SSA constants. Fold their attribute equivalents here so Circom-style index arithmetic can
+    // be used in a fully-instantiated type, including array dimensions.
+    if (auto toFelt = llvm::dyn_cast<cast::IntToFeltOp>(bodyOp)) {
+      auto input = llvm::dyn_cast<IntegerAttr>(operandAttrs.front());
+      if (!input) {
+        return std::nullopt;
+      }
+      valueMap[toFelt.getResult()] =
+          FeltConstAttr::get(bodyOp.getContext(), input.getValue(), toFelt.getType());
+      continue;
+    }
+    if (auto toIndex = llvm::dyn_cast<cast::FeltToIndexOp>(bodyOp)) {
+      auto input = llvm::dyn_cast<FeltConstAttr>(operandAttrs.front());
+      if (!input || !input.getValue().isSignedIntN(64)) {
+        return std::nullopt;
+      }
+      valueMap[toIndex.getResult()] =
+          IntegerAttr::get(IndexType::get(bodyOp.getContext()), input.getValue().getSExtValue());
+      continue;
+    }
+
     // Try constant folding.
     SmallVector<OpFoldResult> foldResults;
     if (succeeded(bodyOp.fold(operandAttrs, foldResults)) &&
@@ -607,6 +630,23 @@ public:
     }
 
     return super::matchAndRewrite(op, adaptor, rewriter);
+  }
+};
+
+/// Rebuild a nondeterministic value after converting its result type. This cannot use the shared
+/// general type-replacement patterns because `llzk.nondet` does not define their generic builder.
+class ConvertedNonDetOpPattern final : public OpConversionPattern<NonDetOp> {
+public:
+  using OpConversionPattern::OpConversionPattern;
+
+  LogicalResult
+  matchAndRewrite(NonDetOp op, OpAdaptor, ConversionPatternRewriter &rewriter) const override {
+    Type newType = getTypeConverter()->convertType(op.getType());
+    if (!newType) {
+      return op->emitOpError("could not convert result type");
+    }
+    replaceOpWithNewOp<NonDetOp>(rewriter, op, newType);
+    return success();
   }
 };
 
@@ -823,7 +863,7 @@ class StructCloner {
     // and replace all uses of the removed struct parameters with the concrete values.
     MappedTypeConverter tyConv(typeAtDef, newStruct.getType(), paramNameToConcrete);
     ConversionTarget target =
-        newConverterDefinedTarget<EmitEqualityOp>(tyConv, ctx, tableOffsetIsntSymbol);
+        newConverterDefinedTarget<EmitEqualityOp, NonDetOp>(tyConv, ctx, tableOffsetIsntSymbol);
     target.addDynamicallyLegalOp<ConstReadOp>([&paramNameToConcrete](ConstReadOp op) {
       // Legal if it's not in the map of concrete attribute instantiations
       return !paramNameToConcrete.contains(op.getConstNameAttr());
@@ -834,6 +874,7 @@ class StructCloner {
         tyConv, ctx, paramNameToConcrete, tracker_.delayedDiagnosticSet(newLocalType)
     );
     patterns.add<ClonedMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
+    patterns.add<ConvertedNonDetOpPattern>(tyConv, ctx);
     if (failed(applyFullConversion(newStruct, target, std::move(patterns)))) {
       LLVM_DEBUG(llvm::dbgs() << "[StructCloner]   instantiating body of struct failed \n");
       return failure();
