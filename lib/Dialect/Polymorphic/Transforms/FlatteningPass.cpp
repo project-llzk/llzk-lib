@@ -28,6 +28,7 @@
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
+#include "llzk/Transforms/ConversionUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
 #include "llzk/Util/Concepts.h"
 #include "llzk/Util/Debug.h"
@@ -645,7 +646,7 @@ public:
     if (!newType) {
       return op->emitOpError("could not convert result type");
     }
-    replaceOpWithNewOp<NonDetOp>(rewriter, op, newType);
+    llzk::replaceOpWithNewOp<NonDetOp>(rewriter, op, newType);
     return success();
   }
 };
