@@ -21,6 +21,8 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
+#include "llzk/Dialect/POD/IR/Attrs.h"
+#include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/String/IR/Dialect.h"
@@ -78,6 +80,7 @@ using namespace llzk::component;
 using namespace llzk::constrain;
 using namespace llzk::felt;
 using namespace llzk::function;
+using namespace llzk::pod;
 using namespace llzk::polymorphic;
 using namespace llzk::polymorphic::detail;
 
@@ -897,6 +900,19 @@ public:
 
     addConversion([this](ArrayType inputTy) {
       return inputTy.cloneWith(convertType(inputTy.getElementType()));
+    });
+
+    addConversion([this](PodType inputTy) {
+      SmallVector<RecordAttr> convertedRecords;
+      bool changed = false;
+      for (RecordAttr record : inputTy.getRecords()) {
+        Type convertedType = convertType(record.getType());
+        convertedRecords.push_back(
+            RecordAttr::get(inputTy.getContext(), record.getName(), convertedType)
+        );
+        changed |= convertedType != record.getType();
+      }
+      return changed ? PodType::get(inputTy.getContext(), convertedRecords) : inputTy;
     });
   }
 };
