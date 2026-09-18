@@ -16,32 +16,28 @@
 
 #include "llzk/Analysis/SymbolDefTree.h"
 #include "llzk/Analysis/SymbolUseGraph.h"
-#include "llzk/Dialect/Array/IR/Ops.h"
-#include "llzk/Dialect/Constrain/IR/Ops.h"
-#include "llzk/Dialect/Function/IR/Ops.h"
-#include "llzk/Dialect/Global/IR/Ops.h"
-#include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/Dialect/Array/IR/Types.h"
 #include "llzk/Dialect/Polymorphic/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Transforms/TypeConversionPatterns.h"
-#include "llzk/Util/TypeHelper.h"
 
-#include <mlir/Dialect/Arith/IR/Arith.h>
-#include <mlir/Dialect/SCF/IR/SCF.h>
-#include <mlir/Dialect/SCF/Transforms/Patterns.h>
-#include <mlir/IR/Attributes.h>
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/MLIRContext.h>
 #include <mlir/IR/Operation.h>
-#include <mlir/IR/PatternMatch.h>
 #include <mlir/IR/SymbolTable.h>
 #include <mlir/Transforms/DialectConversion.h>
 
+#include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/StringRef.h>
 #include <llvm/Support/Debug.h>
+
+#include <string>
+#include <tuple>
+#include <utility>
 
 #define DEBUG_TYPE "poly-dialect-shared"
 
