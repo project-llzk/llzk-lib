@@ -534,18 +534,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: struct.def @ComponentA2 {
 // CHECK-NEXT:    function.def @compute(%[[V0:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) -> !struct.type<@ComponentA2> attributes {function.allow_witness} {
 // CHECK-NEXT:      %[[V1:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentA2>
-// CHECK-DAG:       %[[V2:[0-9a-zA-Z_\.]+]] = struct.readm %[[V0]][@f1_8] : <@ComponentA1>, !felt.type
-// CHECK-DAG:       %[[V3:[0-9a-zA-Z_\.]+]] = struct.readm %[[V0]][@f1_7] : <@ComponentA1>, !felt.type
-// CHECK-DAG:       %[[V4:[0-9a-zA-Z_\.]+]] = struct.readm %[[V0]][@f1_10] : <@ComponentA1>, !felt.type
-// CHECK-DAG:       %[[V5:[0-9a-zA-Z_\.]+]] = struct.readm %[[V0]][@f1_9] : <@ComponentA1>, !felt.type
-// CHECK-DAG:       %[[V6:[0-9a-zA-Z_\.]+]] = struct.readm %[[V0]][@f1_11] : <@ComponentA1>, !felt.type
-// CHECK-DAG:       %[[V7:[0-9a-zA-Z_\.]+]] = struct.readm %[[V0]][@f1_2] : <@ComponentA1>, !felt.type
-// CHECK-DAG:       %[[V8:[0-9a-zA-Z_\.]+]] = struct.readm %[[V0]][@f1_3] : <@ComponentA1>, !felt.type
-// CHECK-DAG:       %[[V9:[0-9a-zA-Z_\.]+]] = struct.readm %[[V0]][@f1_4] : <@ComponentA1>, !felt.type
-// CHECK-DAG:       %[[V10:[0-9a-zA-Z_\.]+]] = struct.readm %[[V0]][@f1_5] : <@ComponentA1>, !felt.type
-// CHECK-DAG:       %[[V11:[0-9a-zA-Z_\.]+]] = struct.readm %[[V0]][@f1_6] : <@ComponentA1>, !felt.type
-// CHECK-DAG:       %[[V12:[0-9a-zA-Z_\.]+]] = struct.readm %[[V0]][@f1_0] : <@ComponentA1>, !felt.type
-// CHECK-DAG:       %[[V13:[0-9a-zA-Z_\.]+]] = struct.readm %[[V0]][@f1_1] : <@ComponentA1>, !felt.type
+// CHECK-NOT:       struct.readm
 // CHECK-NEXT:      function.return %[[V1]] : !struct.type<@ComponentA2>
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @constrain(%[[V14:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA2>, %[[V15:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentA1>) attributes {function.allow_constraint} {
@@ -755,7 +744,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @ComponentB2 {
 // CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentB1::@ComponentB1<[@N]>>) -> !struct.type<@TComponentB2::@ComponentB2<[@N]>> attributes {function.allow_witness} {
 // CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponentB2::@ComponentB2<[@N]>>
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_0]][@f1] : <@TComponentB1::@ComponentB1<[@N]>>, !array.type<4,@N x !felt.type>
+// CHECK-NOT:         struct.readm
 // CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@TComponentB2::@ComponentB2<[@N]>>
 // CHECK-NEXT:      }
 // CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentB2::@ComponentB2<[@N]>>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponentB1::@ComponentB1<[@N]>>) attributes {function.allow_constraint} {
@@ -887,12 +876,7 @@ module attributes {llzk.lang} {
 // CHECK-SAME:    %[[V9:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[0][1]", llzk.pub}, %[[V10:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[0][2]", llzk.pub},
 // CHECK-SAME:    %[[V11:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[1][0]", llzk.pub}, %[[V12:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[1][1]", llzk.pub},
 // CHECK-SAME:    %[[V13:[0-9a-zA-Z_\.]+]]: !felt.type {function.arg_name = "b[1][2]", llzk.pub}) attributes {function.allow_constraint} {
-// CHECK-DAG:       %[[V14:[0-9a-zA-Z_\.]+]] = struct.readm %[[V7]][@arr_2] : <@ArrayMembersAndParamsWithPubModifier>, !felt.type
-// CHECK-DAG:       %[[V15:[0-9a-zA-Z_\.]+]] = struct.readm %[[V7]][@arr_3] : <@ArrayMembersAndParamsWithPubModifier>, !felt.type
-// CHECK-DAG:       %[[V16:[0-9a-zA-Z_\.]+]] = struct.readm %[[V7]][@arr_4] : <@ArrayMembersAndParamsWithPubModifier>, !felt.type
-// CHECK-DAG:       %[[V17:[0-9a-zA-Z_\.]+]] = struct.readm %[[V7]][@arr_0] : <@ArrayMembersAndParamsWithPubModifier>, !felt.type
-// CHECK-DAG:       %[[V18:[0-9a-zA-Z_\.]+]] = struct.readm %[[V7]][@arr_1] : <@ArrayMembersAndParamsWithPubModifier>, !felt.type
-// CHECK-DAG:       %[[V19:[0-9a-zA-Z_\.]+]] = struct.readm %[[V7]][@arr_5] : <@ArrayMembersAndParamsWithPubModifier>, !felt.type
+// CHECK-NOT:       struct.readm
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
