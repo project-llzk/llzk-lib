@@ -38,10 +38,10 @@ module attributes {llzk.lang} {
 !Child = !pod.type<[@value: index]>
 !Parent = !pod.type<[@left: !Child, @right: !Child]>
 
-// Two internal paths share storage even though neither child escapes the parent.
+// Repeated stores copy the child independently. Mutating a read copy is unsupported.
 // expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
-  function.def @reject_shared_child(%count: index, %seed: index) -> index {
+  function.def @reject_repeated_child_source(%count: index, %seed: index) -> index {
     %c0 = arith.constant 0 : index
     %c1 = arith.constant 1 : index
     %child = pod.new : !Child

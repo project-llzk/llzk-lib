@@ -105,11 +105,11 @@ module attributes {llzk.lang} {
 !Inner = !pod.type<[@value: index]>
 !Outer = !pod.type<[@inner: !Inner]>
 
-// The child POD is observable both through %outer and through the separately carried %inner.
-// Scalarizing both paths independently would lose writes made through the other alias.
+// The stored child and separately carried source are independent copies. Mutating a nested
+// read copy is unsupported; it must not update either the parent or the original source.
 // expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
-  function.def @reject_nested_carried_alias(%count: index, %seed: index) -> index {
+  function.def @reject_nested_carried_copy(%count: index, %seed: index) -> index {
     %c0 = arith.constant 0 : index
     %c1 = arith.constant 1 : index
     %inner = pod.new : !Inner
@@ -141,7 +141,7 @@ module attributes {llzk.lang} {
 // The original child remains observable after the loop while the parent is carried.
 // expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
-  function.def @reject_live_nested_alias(%count: index, %seed: index) -> index {
+  function.def @reject_live_nested_source(%count: index, %seed: index) -> index {
     %c0 = arith.constant 0 : index
     %c1 = arith.constant 1 : index
     %inner = pod.new : !Inner
@@ -169,10 +169,11 @@ module attributes {llzk.lang} {
 !Inner = !pod.type<[@value: index]>
 !Outer = !pod.type<[@inner: !Inner]>
 
-// Carrying the child must preserve writes observed through its still-live parent.
+// The parent holds an independent copy. This initialization shape remains conservatively
+// unsupported; writes to the carried source must not affect the parent's snapshot.
 // expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
 module attributes {llzk.lang} {
-  function.def @reject_live_parent_alias(%count: index, %seed: index) -> index {
+  function.def @reject_live_parent_snapshot(%count: index, %seed: index) -> index {
     %c0 = arith.constant 0 : index
     %c1 = arith.constant 1 : index
     %inner = pod.new : !Inner

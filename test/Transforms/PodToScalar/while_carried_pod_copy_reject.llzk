@@ -1,0 +1,131 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s
+
+!Child = !pod.type<[@value: index]>
+!Parent = !pod.type<[@child: !Child]>
+
+// A write to the source after storing it must not change the parent's snapshot.
+// This initialization order is deliberately unsupported even with read-only loop accesses.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @modified_initialization_source(%count: index, %seed: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %child = pod.new : !Child
+    pod.write %child[@value] = %seed : !Child, index
+    %parent = pod.new : !Parent
+    pod.write %parent[@child] = %child : !Parent, !Child
+    pod.write %child[@value] = %count : !Child, index
+    %result:3 = scf.while (%i = %count, %seen = %seed, %pod = %parent)
+        : (index, index, !Parent) -> (index, index, !Parent) {
+      %cond = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%cond) %i, %seen, %pod : index, index, !Parent
+    } do {
+    ^bb0(%i: index, %seen: index, %pod: !Parent):
+      %copy = pod.read %pod[@child] : !Parent, !Child
+      %value = pod.read %copy[@value] : !Child, index
+      %next = arith.subi %i, %c1 : index
+      scf.yield %next, %value, %pod : index, index, !Parent
+    }
+    function.return %result#1 : index
+  }
+}
+
+// -----
+
+!State = !pod.type<[@values: !array.type<1 x index>]>
+
+// Array-valued leaves also require snapshots: mutating a read must not mutate the POD.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @array_leaf_copy(%count: index, %seed: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %values = array.new : !array.type<1 x index>
+    array.write %values[%c0] = %seed : !array.type<1 x index>, index
+    %state = pod.new : !State
+    pod.write %state[@values] = %values : !State, !array.type<1 x index>
+    %result:2 = scf.while (%i = %count, %pod = %state)
+        : (index, !State) -> (index, !State) {
+      %cond = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%cond) %i, %pod : index, !State
+    } do {
+    ^bb0(%i: index, %pod: !State):
+      %copy = pod.read %pod[@values] : !State, !array.type<1 x index>
+      array.write %copy[%c0] = %i : !array.type<1 x index>, index
+      %next = arith.subi %i, %c1 : index
+      scf.yield %next, %pod : index, !State
+    }
+    %final = pod.read %result#1[@values] : !State, !array.type<1 x index>
+    %answer = array.read %final[%c0] : !array.type<1 x index>, index
+    function.return %answer : index
+  }
+}
+
+// -----
+
+!Child = !pod.type<[@value: index]>
+!Parent = !pod.type<[@child: !Child]>
+
+// Mutations of a copy in the before region must not change a second read of the parent.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @before_region_copy(%count: index, %seed: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %child = pod.new : !Child
+    pod.write %child[@value] = %seed : !Child, index
+    %parent = pod.new : !Parent
+    pod.write %parent[@child] = %child : !Parent, !Child
+    %result:3 = scf.while (%i = %count, %seen = %seed, %pod = %parent)
+        : (index, index, !Parent) -> (index, index, !Parent) {
+      %copy = pod.read %pod[@child] : !Parent, !Child
+      pod.write %copy[@value] = %i : !Child, index
+      %other = pod.read %pod[@child] : !Parent, !Child
+      %value = pod.read %other[@value] : !Child, index
+      %cond = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%cond) %i, %value, %pod : index, index, !Parent
+    } do {
+    ^bb0(%i: index, %seen: index, %pod: !Parent):
+      %next = arith.subi %i, %c1 : index
+      scf.yield %next, %seen, %pod : index, index, !Parent
+    }
+    function.return %result#1 : index
+  }
+}
+
+// -----
+
+// The nested reads create copies. Writes to the deepest copy do not update the carried POD.
+// The scalar while rewrite does not yet support mutable nested copies.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @nested_carried_pod(%start: index, %count: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %inner = pod.new : !pod.type<[@value: index]>
+    pod.write %inner[@value] = %start : !pod.type<[@value: index]>, index
+    %middle = pod.new : !pod.type<[@inner: !pod.type<[@value: index]>]>
+    pod.write %middle[@inner] = %inner : !pod.type<[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+    %outer = pod.new : !pod.type<[@middle: !pod.type<[@inner: !pod.type<[@value: index]>]>]>
+    pod.write %outer[@middle] = %middle : !pod.type<[@middle: !pod.type<[@inner: !pod.type<[@value: index]>]>]>, !pod.type<[@inner: !pod.type<[@value: index]>]>
+    %result:2 = scf.while (%i = %count, %pod = %outer)
+        : (index, !pod.type<[@middle: !pod.type<[@inner: !pod.type<[@value: index]>]>]>)
+        -> (index, !pod.type<[@middle: !pod.type<[@inner: !pod.type<[@value: index]>]>]>) {
+      %continue = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%continue) %i, %pod : index, !pod.type<[@middle: !pod.type<[@inner: !pod.type<[@value: index]>]>]>
+    } do {
+    ^bb0(%i: index, %pod: !pod.type<[@middle: !pod.type<[@inner: !pod.type<[@value: index]>]>]>):
+      %middleValue = pod.read %pod[@middle] : !pod.type<[@middle: !pod.type<[@inner: !pod.type<[@value: index]>]>]>, !pod.type<[@inner: !pod.type<[@value: index]>]>
+      %innerValue = pod.read %middleValue[@inner] : !pod.type<[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+      %value = pod.read %innerValue[@value] : !pod.type<[@value: index]>, index
+      %nextValue = arith.addi %value, %i : index
+      pod.write %innerValue[@value] = %nextValue : !pod.type<[@value: index]>, index
+      %nextI = arith.subi %i, %c1 : index
+      scf.yield %nextI, %pod : index, !pod.type<[@middle: !pod.type<[@inner: !pod.type<[@value: index]>]>]>
+    }
+    %middleValue = pod.read %result#1[@middle] : !pod.type<[@middle: !pod.type<[@inner: !pod.type<[@value: index]>]>]>, !pod.type<[@inner: !pod.type<[@value: index]>]>
+    %innerValue = pod.read %middleValue[@inner] : !pod.type<[@inner: !pod.type<[@value: index]>]>, !pod.type<[@value: index]>
+    %answer = pod.read %innerValue[@value] : !pod.type<[@value: index]>, index
+    function.return %answer : index
+  }
+}
