@@ -15,6 +15,8 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Util/BuilderHelper.h"
+#include "llzk/Util/DynamicAPIntHelper.h"
+#include "llzk/Util/Field.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Support/LLVM.h>
@@ -86,8 +88,49 @@ LogicalResult IntToFeltOp::canonicalize(IntToFeltOp op, ::mlir::PatternRewriter 
 
   return llvm::TypeSwitch<Operation *, LogicalResult>(op.getValue().getDefiningOp())
       .Case<arith::ConstantIndexOp, arith::ConstantIntOp>([&rewriter, &op](auto constOp) {
+    APInt value = toAPInt(constOp.value());
+    felt::FeltType resultType = op.getType();
+
+    // A field-less felt defers its field selection, so its overflow behavior
+    // cannot be resolved while canonicalizing. Preserve the existing constant
+    // representation in that case.
+    if (!resultType.hasField()) {
+      rewriter.replaceOpWithNewOp<felt::FeltConstantOp>(
+          op, felt::FeltConstAttr::get(op->getContext(), value, resultType)
+      );
+      return success();
+    }
+
+    const Field &field = resultType.getField();
+    DynamicAPInt signedValue = toSignedDynamicAPInt(value);
+    DynamicAPInt result = signedValue;
+
+    switch (op.getOverflow()) {
+    case OverflowSemantics::ASSERT:
+      if (signedValue < 0 || signedValue >= field.prime()) {
+        return failure();
+      }
+      break;
+    case OverflowSemantics::SATURATE:
+      result = signedValue < 0 ? field.zero()
+                               : (signedValue < field.maxVal() ? signedValue : field.maxVal());
+      break;
+    case OverflowSemantics::WRAP:
+      result = field.reduce(signedValue);
+      break;
+    case OverflowSemantics::TRUNCATE:
+      // Preserve exactly the target field bitwidth, without reducing modulo
+      // the field prime.
+      value = value.zextOrTrunc(field.bitWidth()).zext(field.bitWidth() + 1);
+      rewriter.replaceOpWithNewOp<felt::FeltConstantOp>(
+          op, felt::FeltConstAttr::get(op->getContext(), value, resultType)
+      );
+      return success();
+    }
+
     rewriter.replaceOpWithNewOp<felt::FeltConstantOp>(
-        op, felt::FeltConstAttr::get(op->getContext(), toAPInt(constOp.value()), op.getType())
+        op,
+        felt::FeltConstAttr::get(op->getContext(), toAPInt(result, field.bitWidth()), resultType)
     );
     return success();
   }).Default([](auto) { return failure(); });
@@ -108,13 +151,27 @@ LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, ::mlir::PatternRewri
   // Instead of casting a felt.const to index, just generate an arith.constant
   if (auto constOp = op.getValue().getDefiningOp<felt::FeltConstantOp>()) {
     auto value = constOp.getValue().getValue();
-    // Require a nonnegative APInt representation that fits in the signed 64-bit index builder.
-    // The sign check also protects programmatically constructed attributes whose APInt width was
-    // not normalized by the textual IR parser.
-    if (!value.isNegative() && value.getActiveBits() <= 63) {
-      rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(
-          op, static_cast<int64_t>(value.getZExtValue())
-      );
+    switch (op.getOverflow()) {
+    case OverflowSemantics::ASSERT:
+      // The sign check also protects programmatically constructed attributes
+      // whose APInt width was not normalized by the textual IR parser.
+      if (value.isNegative() || value.getActiveBits() > 63) {
+        return failure();
+      }
+      rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, value.getSExtValue());
+      return success();
+    case OverflowSemantics::SATURATE:
+      if (value.isNegative()) {
+        rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, 0);
+      } else if (value.getActiveBits() > 63) {
+        rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, INT64_MAX);
+      } else {
+        rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, value.getSExtValue());
+      }
+      return success();
+    case OverflowSemantics::WRAP:
+    case OverflowSemantics::TRUNCATE:
+      rewriter.replaceOp(op, llzk::buildSafeIndexConstant(rewriter, op.getLoc(), value));
       return success();
     }
   }
