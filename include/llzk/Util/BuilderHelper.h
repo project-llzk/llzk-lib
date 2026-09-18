@@ -12,10 +12,20 @@
 #include "llzk/Util/ErrorHelper.h"
 #include "llzk/Util/TypeHelper.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/Location.h>
 
 namespace llzk {
+
+/// Create an index constant from the value's low bits within the signed-safe range.
+inline mlir::arith::ConstantIndexOp
+buildSafeIndexConstant(mlir::OpBuilder &builder, mlir::Location loc, const llvm::APInt &value) {
+  constexpr unsigned safeBitWidth = mlir::IndexType::kInternalStorageBitWidth - 1;
+  llvm::APInt truncated =
+      value.isNegative() ? value.sextOrTrunc(safeBitWidth) : value.zextOrTrunc(safeBitWidth);
+  return builder.create<mlir::arith::ConstantIndexOp>(loc, truncated.getZExtValue());
+}
 
 template <typename OpClass, typename... Args>
 inline OpClass delegate_to_build(mlir::Location location, Args &&...args) {
