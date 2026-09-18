@@ -10,6 +10,7 @@
 #include "llzk/Dialect/Cast/IR/Ops.h"
 
 #include "llzk/Dialect/Cast/IR/Enums.h"
+#include "llzk/Dialect/Cast/Util/OverflowSemantics.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
@@ -103,34 +104,14 @@ LogicalResult IntToFeltOp::canonicalize(IntToFeltOp op, ::mlir::PatternRewriter 
 
     const Field &field = resultType.getField();
     DynamicAPInt signedValue = toSignedDynamicAPInt(value);
-    DynamicAPInt result = signedValue;
-
-    switch (op.getOverflow()) {
-    case OverflowSemantics::ASSERT:
-      if (signedValue < 0 || signedValue >= field.prime()) {
-        return failure();
-      }
-      break;
-    case OverflowSemantics::SATURATE:
-      result = signedValue < 0 ? field.zero()
-                               : (signedValue < field.maxVal() ? signedValue : field.maxVal());
-      break;
-    case OverflowSemantics::WRAP:
-      result = field.reduce(signedValue);
-      break;
-    case OverflowSemantics::TRUNCATE:
-      // Preserve exactly the target field bitwidth, without reducing modulo
-      // the field prime.
-      value = value.zextOrTrunc(field.bitWidth()).zext(field.bitWidth() + 1);
-      rewriter.replaceOpWithNewOp<felt::FeltConstantOp>(
-          op, felt::FeltConstAttr::get(op->getContext(), value, resultType)
-      );
-      return success();
+    auto result = applyIntToFeltOverflow(signedValue, field, op.getOverflow());
+    if (!result) {
+      return failure();
     }
 
     rewriter.replaceOpWithNewOp<felt::FeltConstantOp>(
         op,
-        felt::FeltConstAttr::get(op->getContext(), toAPInt(result, field.bitWidth()), resultType)
+        felt::FeltConstAttr::get(op->getContext(), toAPInt(*result, field.bitWidth()), resultType)
     );
     return success();
   }).Default([](auto) { return failure(); });
@@ -150,30 +131,15 @@ void IntToFeltOp::printOptionalOverflowSemantics(
 LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, ::mlir::PatternRewriter &rewriter) {
   // Instead of casting a felt.const to index, just generate an arith.constant
   if (auto constOp = op.getValue().getDefiningOp<felt::FeltConstantOp>()) {
-    auto value = constOp.getValue().getValue();
-    switch (op.getOverflow()) {
-    case OverflowSemantics::ASSERT:
-      // The sign check also protects programmatically constructed attributes
-      // whose APInt width was not normalized by the textual IR parser.
-      if (value.isNegative() || value.getActiveBits() > 63) {
-        return failure();
-      }
-      rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, value.getSExtValue());
-      return success();
-    case OverflowSemantics::SATURATE:
-      if (value.isNegative()) {
-        rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, 0);
-      } else if (value.getActiveBits() > 63) {
-        rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, INT64_MAX);
-      } else {
-        rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, value.getSExtValue());
-      }
-      return success();
-    case OverflowSemantics::WRAP:
-    case OverflowSemantics::TRUNCATE:
-      rewriter.replaceOp(op, llzk::buildSafeIndexConstant(rewriter, op.getLoc(), value));
-      return success();
+    auto result = applyFeltToIndexOverflow(
+        toSignedDynamicAPInt(constOp.getValue().getValue()), IndexType::kInternalStorageBitWidth,
+        op.getOverflow()
+    );
+    if (!result) {
+      return failure();
     }
+    rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, toAPSInt(*result).getZExtValue());
+    return success();
   }
   return failure();
 }
