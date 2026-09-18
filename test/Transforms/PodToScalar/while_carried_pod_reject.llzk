@@ -1,0 +1,229 @@
+// RUN: llzk-opt -split-input-file -llzk-pod-to-scalar -verify-diagnostics %s
+
+!State = !pod.type<[@value: index]>
+
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @reject_fresh_yield(%count: index) -> !State {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %state = pod.new : !State
+    pod.write %state[@value] = %c0 : !State, index
+    %result:2 = scf.while (%i = %count, %pod = %state)
+        : (index, !State) -> (index, !State) {
+      %condition = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%condition) %i, %pod : index, !State
+    } do {
+    ^bb0(%i: index, %pod: !State):
+      %fresh = pod.new : !State
+      pod.write %fresh[@value] = %c1 : !State, index
+      %next = arith.subi %i, %c1 : index
+      scf.yield %next, %fresh : index, !State
+    }
+    function.return %result#1 : !State
+  }
+}
+
+// -----
+
+!State = !pod.type<[@value: index]>
+
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @reject_mismatched_arity(%count: index, %seed: index) -> index {
+    %state = pod.new : !State
+    pod.write %state[@value] = %seed : !State, index
+    %result = scf.while (%i = %count, %pod = %state) : (index, !State) -> index {
+      %value = pod.read %pod[@value] : !State, index
+      %condition = arith.cmpi sgt, %i, %value : index
+      scf.condition(%condition) %i : index
+    } do {
+    ^bb0(%i: index):
+      pod.write %state[@value] = %i : !State, index
+      scf.yield %i, %state : index, !State
+    }
+    function.return %result : index
+  }
+}
+
+// -----
+
+!State = !pod.type<[@value: index]>
+
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @reject_live_init_alias(%count: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %state = pod.new : !State
+    pod.write %state[@value] = %c0 : !State, index
+    %result:2 = scf.while (%i = %count, %pod = %state)
+        : (index, !State) -> (index, !State) {
+      %condition = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%condition) %i, %pod : index, !State
+    } do {
+    ^bb0(%i: index, %pod: !State):
+      pod.write %pod[@value] = %c1 : !State, index
+      %next = arith.subi %i, %c1 : index
+      scf.yield %next, %pod : index, !State
+    }
+    %value = pod.read %state[@value] : !State, index
+    function.return %value : index
+  }
+}
+
+// -----
+
+!State = !pod.type<[@value: index]>
+
+// The two POD loop arguments alias. A write through %lhs must be visible through %rhs, so they
+// cannot be split into independent scalar loop-carried values.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @reject_aliased_carried_pods(%count: index, %seed: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %state = pod.new : !State
+    pod.write %state[@value] = %seed : !State, index
+    %result:4 = scf.while (%i = %count, %observed = %seed, %lhs = %state, %rhs = %state)
+        : (index, index, !State, !State) -> (index, index, !State, !State) {
+      %condition = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%condition) %i, %observed, %lhs, %rhs : index, index, !State, !State
+    } do {
+    ^bb0(%i: index, %observed: index, %lhs: !State, %rhs: !State):
+      pod.write %lhs[@value] = %i : !State, index
+      %seen = pod.read %rhs[@value] : !State, index
+      %next = arith.subi %i, %c1 : index
+      scf.yield %next, %seen, %lhs, %rhs : index, index, !State, !State
+    }
+    function.return %result#1 : index
+  }
+}
+
+// -----
+
+!Inner = !pod.type<[@value: index]>
+!Outer = !pod.type<[@inner: !Inner]>
+
+// The stored child and separately carried source are independent copies. Mutating a nested
+// read copy is unsupported; it must not update either the parent or the original source.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @reject_nested_carried_copy(%count: index, %seed: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %inner = pod.new : !Inner
+    pod.write %inner[@value] = %seed : !Inner, index
+    %outer = pod.new : !Outer
+    pod.write %outer[@inner] = %inner : !Outer, !Inner
+    %result:4 = scf.while (%i = %count, %observed = %seed, %outerArg = %outer, %innerArg = %inner)
+        : (index, index, !Outer, !Inner) -> (index, index, !Outer, !Inner) {
+      %condition = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%condition) %i, %observed, %outerArg, %innerArg
+          : index, index, !Outer, !Inner
+    } do {
+    ^bb0(%i: index, %observed: index, %outerArg: !Outer, %innerArg: !Inner):
+      %nested = pod.read %outerArg[@inner] : !Outer, !Inner
+      pod.write %nested[@value] = %i : !Inner, index
+      %seen = pod.read %innerArg[@value] : !Inner, index
+      %next = arith.subi %i, %c1 : index
+      scf.yield %next, %seen, %outerArg, %innerArg : index, index, !Outer, !Inner
+    }
+    function.return %result#1 : index
+  }
+}
+
+// -----
+
+!Inner = !pod.type<[@value: index]>
+!Outer = !pod.type<[@inner: !Inner]>
+
+// The original child remains observable after the loop while the parent is carried.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @reject_live_nested_source(%count: index, %seed: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %inner = pod.new : !Inner
+    pod.write %inner[@value] = %seed : !Inner, index
+    %outer = pod.new : !Outer
+    pod.write %outer[@inner] = %inner : !Outer, !Inner
+    %result:2 = scf.while (%i = %count, %outerArg = %outer)
+        : (index, !Outer) -> (index, !Outer) {
+      %condition = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%condition) %i, %outerArg : index, !Outer
+    } do {
+    ^bb0(%i: index, %outerArg: !Outer):
+      %nested = pod.read %outerArg[@inner] : !Outer, !Inner
+      pod.write %nested[@value] = %i : !Inner, index
+      %next = arith.subi %i, %c1 : index
+      scf.yield %next, %outerArg : index, !Outer
+    }
+    %seen = pod.read %inner[@value] : !Inner, index
+    function.return %seen : index
+  }
+}
+
+// -----
+
+!Inner = !pod.type<[@value: index]>
+!Outer = !pod.type<[@inner: !Inner]>
+
+// The parent holds an independent copy. This initialization shape remains conservatively
+// unsupported; writes to the carried source must not affect the parent's snapshot.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @reject_live_parent_snapshot(%count: index, %seed: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %inner = pod.new : !Inner
+    pod.write %inner[@value] = %seed : !Inner, index
+    %outer = pod.new : !Outer
+    pod.write %outer[@inner] = %inner : !Outer, !Inner
+    %result:2 = scf.while (%i = %count, %innerArg = %inner)
+        : (index, !Inner) -> (index, !Inner) {
+      %condition = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%condition) %i, %innerArg : index, !Inner
+    } do {
+    ^bb0(%i: index, %innerArg: !Inner):
+      pod.write %innerArg[@value] = %i : !Inner, index
+      %next = arith.subi %i, %c1 : index
+      scf.yield %next, %innerArg : index, !Inner
+    }
+    %nested = pod.read %outer[@inner] : !Outer, !Inner
+    %seen = pod.read %nested[@value] : !Inner, index
+    function.return %seen : index
+  }
+}
+
+// -----
+
+!Inner = !pod.type<[@value: index]>
+!Parent = !pod.type<[@inner: !Inner, @marker: index]>
+
+// A separate parent write prevents forwarding its child read across the loop.
+// expected-error@+1 {{llzk-pod-to-scalar left residual pod IR after reaching a fixpoint}}
+module attributes {llzk.lang} {
+  function.def @reject_mutated_live_parent(%count: index, %seed: index) -> index {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %inner = pod.new : !Inner
+    pod.write %inner[@value] = %seed : !Inner, index
+    %outer = pod.new : !Parent
+    pod.write %outer[@inner] = %inner : !Parent, !Inner
+    %result:2 = scf.while (%i = %count, %innerArg = %inner)
+        : (index, !Inner) -> (index, !Inner) {
+      %condition = arith.cmpi sgt, %i, %c0 : index
+      scf.condition(%condition) %i, %innerArg : index, !Inner
+    } do {
+    ^bb0(%i: index, %innerArg: !Inner):
+      pod.write %innerArg[@value] = %i : !Inner, index
+      pod.write %outer[@marker] = %i : !Parent, index
+      %next = arith.subi %i, %c1 : index
+      scf.yield %next, %innerArg : index, !Inner
+    }
+    %nested = pod.read %outer[@inner] : !Parent, !Inner
+    %seen = pod.read %nested[@value] : !Inner, index
+    function.return %seen : index
+  }
+}
