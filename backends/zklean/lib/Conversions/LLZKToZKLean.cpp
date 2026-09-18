@@ -335,6 +335,12 @@ struct FunctionConverter {
     }
     // Convert cast.tofelt to ZKLeanLean.call
     if (auto cast = dyn_cast<llzk::cast::IntToFeltOp>(op)) {
+      if (cast.getOverflow() != llzk::cast::OverflowSemantics::ASSERT) {
+        cast.emitError("ZKLean conversion does not support non-assert cast overflow semantics")
+            .report();
+        state.hadError = true;
+        return;
+      }
       Value value = mapLeanValue(cast.getValue(), op);
       if (!value) {
         return;

@@ -804,6 +804,9 @@ struct RemoveIntToFeltOp : public OpConversionPattern<IntToFeltOp> {
   LogicalResult matchAndRewrite(
       IntToFeltOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
   ) const override {
+    if (op.getOverflow() != OverflowSemantics::ASSERT) {
+      return op.emitError("PCL lowering does not support non-assert cast overflow semantics");
+    }
     rewriter.replaceOp(op, adaptor.getOperands());
     return success();
   }

@@ -1490,6 +1490,11 @@ private:
     }
 
     if (auto intToFelt = dyn_cast<cast::IntToFeltOp>(op)) {
+      if (intToFelt.getOverflow() != cast::OverflowSemantics::ASSERT) {
+        return intToFelt.emitError(
+            "witgen lowering does not support non-assert cast overflow semantics"
+        );
+      }
       auto operand = lookupScalar(intToFelt.getValue(), valueMap, intToFelt.getOperation());
       if (failed(operand)) {
         return failure();
@@ -1511,6 +1516,11 @@ private:
       return bind(intToFelt.getResult(), LoweredValue {intToFelt.getType(), {lowered}});
     }
     if (auto feltToIndex = dyn_cast<cast::FeltToIndexOp>(op)) {
+      if (feltToIndex.getOverflow() != cast::OverflowSemantics::ASSERT) {
+        return feltToIndex.emitError(
+            "witgen lowering does not support non-assert cast overflow semantics"
+        );
+      }
       auto operand = lookupScalar(feltToIndex.getValue(), valueMap, feltToIndex.getOperation());
       if (failed(operand)) {
         return failure();
