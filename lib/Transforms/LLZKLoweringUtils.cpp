@@ -1,4 +1,4 @@
-//===-- LLZKLoweringUtils.cpp -----------------------------------*- C++ -*-===//
+//===-- LoweringUtils.cpp ---------------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
@@ -12,9 +12,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "llzk/Transforms/LLZKLoweringUtils.h"
-
 #include "llzk/Dialect/LLZK/IR/Ops.h"
+#include "llzk/Transforms/LoweringUtils.h"
 
 #include <mlir/IR/Block.h>
 #include <mlir/IR/Builders.h>
