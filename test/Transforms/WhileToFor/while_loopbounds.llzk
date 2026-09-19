@@ -21,14 +21,17 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: function.def @product(%{{.*}}: !felt.type, %{{.*}}: !felt.type, %{{.*}}: !felt.type)
-// CHECK-DAG:     %[[STEP_IDX:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-DAG:     %[[UB_IDX:[0-9a-zA-Z_\.]+]] = arith.constant 10 : index
-// CHECK-DAG:     %[[LB_IDX:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-DAG:     %[[STEP_IDX:[0-9a-zA-Z_\.]+]] = felt.const 1
+// CHECK-DAG:     %[[UB_IDX:[0-9a-zA-Z_\.]+]] = felt.const 10
+// CHECK-DAG:     %[[LB_IDX:[0-9a-zA-Z_\.]+]] = felt.const 0
 // CHECK:         %[[ARRAY:[0-9a-zA-Z_\.]+]] = array.new
+// CHECK-DAG:     %[[LB_IDX_C:[0-9a-zA-Z_\.]+]] = cast.toindex %[[LB_IDX]] : !felt.type
+// CHECK-DAG:     %[[UB_IDX_C:[0-9a-zA-Z_\.]+]] = cast.toindex %[[UB_IDX]] : !felt.type
+// CHECK-DAG:     %[[STEP_IDX_C:[0-9a-zA-Z_\.]+]] = cast.toindex %[[STEP_IDX]] : !felt.type
 // CHECK-NOT:     scf.while
-// CHECK:         scf.for %[[IV:[0-9a-zA-Z_\.]+]] = %[[LB_IDX]] to %[[UB_IDX]] step %[[STEP_IDX]] {
-// CHECK-NEXT:      %[[IV_FELT:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[IV]]
-// CHECK-NEXT:      %[[WRITE_IDX:[0-9a-zA-Z_\.]+]] = cast.toindex %[[IV_FELT]]
+// CHECK:         scf.for %[[IV:[0-9a-zA-Z_\.]+]] = %[[LB_IDX_C]] to %[[UB_IDX_C]] step %[[STEP_IDX_C]] {
+// CHECK-NEXT:      %[[IV_FELT:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[IV]] : index, !felt.type
+// CHECK-NEXT:      %[[WRITE_IDX:[0-9a-zA-Z_\.]+]] = cast.toindex %[[IV_FELT]] : !felt.type
 // CHECK-NEXT:      array.write %[[ARRAY]][%[[WRITE_IDX]]] = %[[IV_FELT]]
 // CHECK-NEXT:    }
 // CHECK-NOT:     scf.while
