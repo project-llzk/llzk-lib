@@ -124,26 +124,22 @@ static inline ForOpInfo parseInfo(WhileOp op) {
   // to parse the rest of the bounds and just materialize constants
   if (op->hasAttr(llzk::LoopBoundsAttr::name)) {
     auto bounds = op->getAttrOfType<llzk::LoopBoundsAttr>(llzk::LoopBoundsAttr::name);
+    auto ivarType = cast<FeltType>(op.getBeforeArguments()[*info.ivarIndexBefore].getType());
 
     OpBuilder builder {op->getContext()};
     builder.setInsertionPoint(op);
 
     // Make these constant felts for now; the actual for op builder will later clean it up
-    info.lb = builder
-                  .create<FeltConstantOp>(
-                      op->getLoc(), FeltConstAttr::get(op->getContext(), bounds.getLower())
-                  )
-                  .getResult();
-    info.ub = builder
-                  .create<FeltConstantOp>(
-                      op->getLoc(), FeltConstAttr::get(op->getContext(), bounds.getUpper())
-                  )
-                  .getResult();
-    info.step = builder
-                    .create<FeltConstantOp>(
-                        op->getLoc(), FeltConstAttr::get(op->getContext(), bounds.getStep())
-                    )
-                    .getResult();
+    auto createBound = [&builder, &op, &ivarType](const auto &value) -> Value {
+      return builder
+          .create<FeltConstantOp>(
+              op->getLoc(), FeltConstAttr::get(op->getContext(), value, ivarType)
+          )
+          .getResult();
+    };
+    info.lb = createBound(bounds.getLower());
+    info.ub = createBound(bounds.getUpper());
+    info.step = createBound(bounds.getStep());
     return info;
   }
 
