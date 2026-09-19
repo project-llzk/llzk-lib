@@ -10,11 +10,14 @@
 #include "llzk/Dialect/Cast/IR/Ops.h"
 
 #include "llzk/Dialect/Cast/IR/Enums.h"
+#include "llzk/Dialect/Cast/Util/OverflowSemantics.h"
 #include "llzk/Dialect/Felt/IR/Attrs.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Util/BuilderHelper.h"
+#include "llzk/Util/DynamicAPIntHelper.h"
+#include "llzk/Util/Field.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Support/LLVM.h>
@@ -86,8 +89,25 @@ LogicalResult IntToFeltOp::canonicalize(IntToFeltOp op, ::mlir::PatternRewriter 
 
   return llvm::TypeSwitch<Operation *, LogicalResult>(op.getValue().getDefiningOp())
       .Case<arith::ConstantIndexOp, arith::ConstantIntOp>([&rewriter, &op](auto constOp) {
+    APInt value = toAPInt(constOp.value());
+    felt::FeltType resultType = op.getType();
+
+    // A field-less felt defers its field selection, so its overflow behavior
+    // cannot be resolved while canonicalizing. Cannot canonicalize in this case.
+    if (!resultType.hasField()) {
+      return failure();
+    }
+
+    const Field &field = resultType.getField();
+    DynamicAPInt signedValue = toSignedDynamicAPInt(value);
+    auto result = applyIntToFeltOverflow(signedValue, field, op.getOverflow());
+    if (!result) {
+      return failure();
+    }
+
     rewriter.replaceOpWithNewOp<felt::FeltConstantOp>(
-        op, felt::FeltConstAttr::get(op->getContext(), toAPInt(constOp.value()), op.getType())
+        op,
+        felt::FeltConstAttr::get(op->getContext(), toAPInt(*result, field.bitWidth()), resultType)
     );
     return success();
   }).Default([](auto) { return failure(); });
@@ -107,11 +127,21 @@ void IntToFeltOp::printOptionalOverflowSemantics(
 LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, ::mlir::PatternRewriter &rewriter) {
   // Instead of casting a felt.const to index, just generate an arith.constant
   if (auto constOp = op.getValue().getDefiningOp<felt::FeltConstantOp>()) {
-    auto value = constOp.getValue().getValue();
-    if (value.getBitWidth() <= 64) {
-      rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, value.getSExtValue());
-      return success();
+    // A field-less felt defers its field selection, so its value cannot be
+    // resolved while canonicalizing. Cannot canonicalize in this case.
+    if (!llvm::cast<felt::FeltType>(constOp.getType()).hasField()) {
+      return failure();
     }
+
+    auto result = applyFeltToIndexOverflow(
+        toSignedDynamicAPInt(constOp.getValue().getValue()), IndexType::kInternalStorageBitWidth,
+        op.getOverflow()
+    );
+    if (!result) {
+      return failure();
+    }
+    rewriter.replaceOpWithNewOp<arith::ConstantIndexOp>(op, toAPSInt(*result).getZExtValue());
+    return success();
   }
   return failure();
 }

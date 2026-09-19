@@ -50,6 +50,11 @@ inline llvm::DynamicAPInt toDynamicAPInt(size_t i) {
   return toDynamicAPInt(llvm::APInt(sizeof(size_t) * CHAR_BIT, llzk::checkedCast<uint64_t>(i)));
 }
 
+/// Converts an APInt carrying an index value to a signed DynamicAPInt.
+inline llvm::DynamicAPInt toSignedDynamicAPInt(const llvm::APInt &value) {
+  return toDynamicAPInt(llvm::APSInt(value, /*isUnsigned=*/false));
+}
+
 llvm::APSInt toAPSInt(const llvm::DynamicAPInt &i);
 
 /// Converts a DynamicAPInt that is non-negative and fits in `bitWidth` bits into an APInt.
