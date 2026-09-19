@@ -93,13 +93,9 @@ LogicalResult IntToFeltOp::canonicalize(IntToFeltOp op, ::mlir::PatternRewriter 
     felt::FeltType resultType = op.getType();
 
     // A field-less felt defers its field selection, so its overflow behavior
-    // cannot be resolved while canonicalizing. Preserve the existing constant
-    // representation in that case.
+    // cannot be resolved while canonicalizing. Cannot canonicalize in this case.
     if (!resultType.hasField()) {
-      rewriter.replaceOpWithNewOp<felt::FeltConstantOp>(
-          op, felt::FeltConstAttr::get(op->getContext(), value, resultType)
-      );
-      return success();
+      return failure();
     }
 
     const Field &field = resultType.getField();
@@ -131,6 +127,12 @@ void IntToFeltOp::printOptionalOverflowSemantics(
 LogicalResult FeltToIndexOp::canonicalize(FeltToIndexOp op, ::mlir::PatternRewriter &rewriter) {
   // Instead of casting a felt.const to index, just generate an arith.constant
   if (auto constOp = op.getValue().getDefiningOp<felt::FeltConstantOp>()) {
+    // A field-less felt defers its field selection, so its value cannot be
+    // resolved while canonicalizing. Cannot canonicalize in this case.
+    if (!llvm::cast<felt::FeltType>(constOp.getType()).hasField()) {
+      return failure();
+    }
+
     auto result = applyFeltToIndexOverflow(
         toSignedDynamicAPInt(constOp.getValue().getValue()), IndexType::kInternalStorageBitWidth,
         op.getOverflow()
