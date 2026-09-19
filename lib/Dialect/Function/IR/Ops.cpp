@@ -800,7 +800,8 @@ struct KnownTargetVerifier : public CallOpVerifier {
 
       // Check that the provided instantiation values are consistent with what type unification
       // of the target function types against the call's operand and result types would determine.
-      FailureOr<UnificationMap> unifyResult = callOp->unifyTypeSignature(tgtType);
+      FailureOr<UnificationMap> unifyResult =
+          callOp->unifyTypeSignatureWithNamespace(tgtType, includeSymNames);
       assert(succeeded(unifyResult) && "already checked by `verifyInputs()` and `verifyOutputs()`");
       return callOp->verifyTemplateParamsMatchInferred(realParams, unifyResult.value());
     } else {

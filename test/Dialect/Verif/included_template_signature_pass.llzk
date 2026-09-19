@@ -1,0 +1,45 @@
+// RUN: llzk-opt -I %input_dir %s | FileCheck --enable-var-scope %s
+
+// Included contract signatures resolve their type paths through the include
+// alias while validating both explicit and omitted template arguments.
+module attributes {llzk.lang} {
+  include.from "Inputs/template_signature_namespace.llzk" as @Lib
+
+  poly.template @Caller {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @explicit(%value: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+      function.return
+    }
+
+    verif.contract @Explicit for @Caller::@explicit (%value: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+      verif.include @Lib::@Target::@Base<[@T]>(%value) : (!struct.type<@Lib::@Target::@Box<[@T]>>) -> ()
+    }
+
+    function.def @inferred(%value: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+      function.return
+    }
+
+    verif.contract @Inferred for @Caller::@inferred (%value: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+      verif.include @Lib::@Target::@Base(%value) : (!struct.type<@Lib::@Target::@Box<[@T]>>) -> ()
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    include.from "Inputs/template_signature_namespace.llzk" as @Lib
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @explicit(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Explicit for @Caller::@explicit (%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+// CHECK-NEXT:        verif.include @Lib::@Target::@Base<[@T]>(%[[VAL_1]]) : (!struct.type<@Lib::@Target::@Box<[@T]>>) -> ()
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @inferred(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      verif.contract @Inferred for @Caller::@inferred (%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+// CHECK-NEXT:        verif.include @Lib::@Target::@Base(%[[VAL_3]]) : (!struct.type<@Lib::@Target::@Box<[@T]>>) -> ()
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
