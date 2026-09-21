@@ -73,9 +73,6 @@ LLZK_DECLARE_OP_BUILD_METHOD(
 /// or else IR verification will fail.
 MLIR_CAPI_EXPORTED MlirType llzkVerif_IncludeOpGetTypeSignature(MlirOperation inp);
 
-/// Required by CallOpInterface
-MLIR_CAPI_EXPORTED MlirOperation llzkVerif_IncludeOpResolveCallable(MlirOperation inp);
-
 //===----------------------------------------------------------------------===//
 // InvariantOp
 //===----------------------------------------------------------------------===//
