@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.17.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>LLZK: tools/llzk-tblgen/OpCAPIParamHelper.cpp File Reference</title>
+<title>LLZK: mlir::tblgen Namespace Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
   </div>
 </div>
 <script type="text/javascript">
-document.addEventListener('DOMContentLoaded',() => { initNavTree('OpCAPIParamHelper_8cpp.html','',''); });
+document.addEventListener('DOMContentLoaded',() => { initNavTree('namespacemlir_1_1tblgen.html','',''); });
 </script>
 <div id="container">
 <div id="doc-content">
@@ -127,53 +127,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('OpCAPIParamHel
 </div>
 
 <div class="header">
-  <div class="summary">
-<a href="#func-members">Functions</a>  </div>
-  <div class="headertitle"><div class="title">OpCAPIParamHelper.cpp File Reference</div></div>
+  <div class="headertitle"><div class="title">mlir::tblgen Namespace Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="OpCAPIParamHelper_8h_source.html">OpCAPIParamHelper.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>&quot;</code><br />
-<code>#include &lt;mlir/TableGen/Interfaces.h&gt;</code><br />
-<code>#include &lt;mlir/TableGen/Operator.h&gt;</code><br />
-<code>#include &lt;llvm/ADT/StringSet.h&gt;</code><br />
-<code>#include &lt;llvm/Support/FormatVariadic.h&gt;</code><br />
-</div><div class="textblock"><div class="dynheader">
-Include dependency graph for OpCAPIParamHelper.cpp:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="OpCAPIParamHelper_8cpp__incl.svg" width="1856" height="207"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-</div>
-<p><a href="OpCAPIParamHelper_8cpp_source.html">Go to the source code of this file.</a></p>
-<table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
-Functions</h2></td></tr>
-<tr class="memitem:ab7afacebd6e9acb6473a689a1bc02a9a" id="r_ab7afacebd6e9acb6473a689a1bc02a9a"><td class="memItemLeft">llvm::SmallVector&lt; <a class="el" href="structExtraMethod.html">ExtraMethod</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ab7afacebd6e9acb6473a689a1bc02a9a">getCAPIExposedOpMethods</a> (const mlir::tblgen::Operator &amp;op)</td></tr>
-<tr class="memdesc:ab7afacebd6e9acb6473a689a1bc02a9a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return public operation methods explicitly requested by <span class="tt">DeclareOpInterfaceMethods</span> traits and declared by <span class="tt">extraClassDeclaration</span>.  <br /></td></tr>
-</table>
-<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
-<a id="ab7afacebd6e9acb6473a689a1bc02a9a" name="ab7afacebd6e9acb6473a689a1bc02a9a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab7afacebd6e9acb6473a689a1bc02a9a">&#9670;&#160;</a></span>getCAPIExposedOpMethods()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">llvm::SmallVector&lt; <a class="el" href="structExtraMethod.html">ExtraMethod</a> &gt; getCAPIExposedOpMethods </td>
-          <td>(</td>
-          <td class="paramtype">const mlir::tblgen::Operator &amp;</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Return public operation methods explicitly requested by <span class="tt">DeclareOpInterfaceMethods</span> traits and declared by <span class="tt">extraClassDeclaration</span>. </p>
-<p>Interface methods must be named in <span class="tt">alwaysOverriddenMethods</span> (the optional method list passed to <span class="tt">DeclareOpInterfaceMethods</span>). This makes C API exposure an explicit opt-in and avoids colliding with the standard op C API accessors. Static methods and methods implemented directly in an interface trait are excluded. An extra class method takes precedence over an interface method with the same name, because the C API does not support overloads. </p>
-
-<p class="definition">Definition at line <a class="el" href="OpCAPIParamHelper_8cpp_source.html#l00020">20</a> of file <a class="el" href="OpCAPIParamHelper_8cpp_source.html">OpCAPIParamHelper.cpp</a>.</p>
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->
@@ -181,7 +137,7 @@ Functions</h2></td></tr>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a href="dir_4eeb864c4eec08c7d6b9d3b0352cfdde.html">tools</a></li><li class="navelem"><a href="dir_85d38d591fcf5568be01a31c4fb807ff.html">llzk-tblgen</a></li><li class="navelem"><a href="OpCAPIParamHelper_8cpp.html">OpCAPIParamHelper.cpp</a></li>
+    <li class="navelem"><a href="namespacemlir.html">mlir</a></li><li class="navelem"><a href="namespacemlir_1_1tblgen.html">tblgen</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.17.0 </li>
     <li class="footer">Copyright 2025 Veridise Inc. under the Apache License v2.0. Copyright 2026 Project LLZK under the Apache License v2.0.</li>
   </ul>

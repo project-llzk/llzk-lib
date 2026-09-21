@@ -8,6 +8,7 @@ var CommonCAPIGen_8h =
     [ "ImplementationGenerator", "structImplementationGenerator.html", "structImplementationGenerator" ],
     [ "TestGenerator", "structTestGenerator.html", "structTestGenerator" ],
     [ "extractArrayRefElementType", "CommonCAPIGen_8h.html#a018220ae1d7b99cb622e3f019ebd611a", null ],
+    [ "getCAPIExposedOpMethods", "CommonCAPIGen_8h.html#ab7afacebd6e9acb6473a689a1bc02a9a", null ],
     [ "isAPIntType", "CommonCAPIGen_8h.html#a6b3ec77f329b1c9f3ff782e0bd9c1687", null ],
     [ "isArrayRefType", "CommonCAPIGen_8h.html#a9170f92d8fe04bad78a386ed7175d409", null ],
     [ "isCppLanguageConstruct", "CommonCAPIGen_8h.html#afb469151f18da8c4a46632a88dd1d057", null ],

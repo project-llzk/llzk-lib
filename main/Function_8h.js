@@ -11,7 +11,6 @@ var Function_8h =
     [ "LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD", "Function_8h.html#aaf899be15c0d9f444492def7a2d1003e", null ],
     [ "LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD", "Function_8h.html#a392c2973c9ecbc20f69a37a941038d5a", null ],
     [ "llzkFunction_CallOpGetTypeSignature", "Function_8h.html#a4de907550fd4b35e715751fd77b7b82b", null ],
-    [ "llzkFunction_CallOpResolveCallable", "Function_8h.html#aea5764a807db8d85bcb38eb5cfc00299", null ],
     [ "llzkFunction_FuncDefOpGetArgNameAttr", "Function_8h.html#ab519ade5845445e53f36b262c1f4fd59", null ],
     [ "llzkFunction_FuncDefOpGetResNameAttr", "Function_8h.html#a8bb164ee69f6e923f814a8cb4b74a670", null ],
     [ "llzkFunction_FuncDefOpSetArgName", "Function_8h.html#a461de89b2f940f2e10c0c633935ef996", null ],

@@ -1,5 +1,16 @@
 var NAVTREEINDEX91 =
 {
+"structConstReadOpBuildFuncHelper.html#a374c730a20969830223245e1dfb15d4f":[13,0,28,0],
+"structConstReadOpBuildFuncHelper.html#a4c36c4d8b348bf1aad9d3441095828fa":[13,0,28,1],
+"structContractEndOpBuildFuncHelper.html":[13,0,29],
+"structContractEndOpBuildFuncHelper.html#a8e21a04d8e9c08d5b35d435dd5cf740c":[13,0,29,1],
+"structContractEndOpBuildFuncHelper.html#af881c6782ee9d446f8c322f840836371":[13,0,29,0],
+"structCreateStructOpBuildFuncHelper.html":[13,0,30],
+"structCreateStructOpBuildFuncHelper.html#a3fe325e3e1a2dc1fea87e017d812ae12":[13,0,30,0],
+"structCreateStructOpBuildFuncHelper.html#a8334f7e4be86db55c7f1ec412072e3b0":[13,0,30,1],
+"structDecreasesOpBuildFuncHelper.html":[13,0,31],
+"structDecreasesOpBuildFuncHelper.html#ae9df8a48c6507fbf56ae2110eee06e0d":[13,0,31,0],
+"structDecreasesOpBuildFuncHelper.html#af87d6458679ec94d2af3462c8e53da55":[13,0,31,1],
 "structDivFeltOpBuildFuncHelper.html":[13,0,32],
 "structDivFeltOpBuildFuncHelper.html#a5dc95801d908971378d0389657e56751":[13,0,32,1],
 "structDivFeltOpBuildFuncHelper.html#a9651dab8910b6bfae21b999a63c240bf":[13,0,32,0],
@@ -238,16 +249,5 @@ var NAVTREEINDEX91 =
 "structStoreOpBuildFuncHelper.html#afcd2e991eae7f4cb299b54bb639a662f":[13,0,113,1],
 "structStructDefOpBuildFuncHelper.html":[13,0,117],
 "structStructDefOpBuildFuncHelper.html#a07c448f35e199bea3708147590aa7994":[13,0,117,1],
-"structStructDefOpBuildFuncHelper.html#ace2c60789722cb1b17e83dadde3cf5b5":[13,0,117,0],
-"structSubFeltOpBuildFuncHelper.html":[13,0,121],
-"structSubFeltOpBuildFuncHelper.html#a0dcd5c6c6521f85378edf3cb9b262239":[13,0,121,1],
-"structSubFeltOpBuildFuncHelper.html#a4d9c58425e4bb6abb361f7cf7185d525":[13,0,121,0],
-"structTemplateExprOpBuildFuncHelper.html":[13,0,122],
-"structTemplateExprOpBuildFuncHelper.html#a26213d72a6ad8b5029b5f88998ccfb6a":[13,0,122,0],
-"structTemplateExprOpBuildFuncHelper.html#ae20d9c3d0b4e5ea9b1521d5ae0677585":[13,0,122,1],
-"structTemplateOpBuildFuncHelper.html":[13,0,123],
-"structTemplateOpBuildFuncHelper.html#ab760530461a400a9e05bf918ea5e9305":[13,0,123,1],
-"structTemplateOpBuildFuncHelper.html#abbbdfd4c49d0f7a1809ee7f111ca28e5":[13,0,123,0],
-"structTemplateParamOpBuildFuncHelper.html":[13,0,124],
-"structTemplateParamOpBuildFuncHelper.html#a4472a527c7eb5042102bd9d8546ee95a":[13,0,124,0]
+"structStructDefOpBuildFuncHelper.html#ace2c60789722cb1b17e83dadde3cf5b5":[13,0,117,0]
 };

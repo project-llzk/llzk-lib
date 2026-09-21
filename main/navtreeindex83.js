@@ -1,5 +1,15 @@
 var NAVTREEINDEX83 =
 {
+"code-of-conduct.html#autotoc_md4-permanent-ban":[5,2,5,3],
+"code-of-conduct.html#enforcement":[5,2,4],
+"code-of-conduct.html#enforcement-guidelines":[5,2,5],
+"code-of-conduct.html#enforcement-responsibilities":[5,2,2],
+"code-of-conduct.html#our-pledge":[5,2,0],
+"code-of-conduct.html#our-standards":[5,2,1],
+"code-of-conduct.html#scope":[5,2,3],
+"conceptHasInterface.html":[12,1],
+"conceptHasTrait.html":[12,2],
+"conceptllzk_1_1ContextType.html":[11,0,3,120],
 "conceptllzk_1_1ContextType.html":[12,0,4],
 "conceptllzk_1_1NamedOpComparable.html":[11,0,3,121],
 "conceptllzk_1_1NamedOpComparable.html":[12,0,5],
@@ -239,15 +249,5 @@ var NAVTREEINDEX83 =
 "dialects.html#results-28":[7,4,0,15,1],
 "dialects.html#results-29":[7,4,0,16,1],
 "dialects.html#results-3":[7,0,0,4,1],
-"dialects.html#results-30":[7,4,0,17,1],
-"dialects.html#results-31":[7,5,0,0,2],
-"dialects.html#results-32":[7,6,0,1,1],
-"dialects.html#results-33":[7,8,0,0,0],
-"dialects.html#results-34":[7,9,0,0,2],
-"dialects.html#results-35":[7,9,0,1,2],
-"dialects.html#results-36":[7,10,0,0,2],
-"dialects.html#results-37":[7,10,0,3,1],
-"dialects.html#results-38":[7,10,0,5,1],
-"dialects.html#results-39":[7,11,0,0,1],
-"dialects.html#results-4":[7,1,0,0,1]
+"dialects.html#results-30":[7,4,0,17,1]
 };

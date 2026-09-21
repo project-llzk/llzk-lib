@@ -176,6 +176,8 @@ Classes</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
 Namespaces</h2></td></tr>
 <tr class="memitem:clang" id="r_clang"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespaceclang.html">clang</a></td></tr>
+<tr class="memitem:mlir" id="r_mlir"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacemlir.html">mlir</a></td></tr>
+<tr class="memitem:mlir_3A_3Atblgen" id="r_mlir_3A_3Atblgen"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacemlir_1_1tblgen.html">mlir::tblgen</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
@@ -201,6 +203,8 @@ Functions</h2></td></tr>
 <tr class="memdesc:a9170f92d8fe04bad78a386ed7175d409"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if a C++ type is an ArrayRef type.  <br /></td></tr>
 <tr class="memitem:a018220ae1d7b99cb622e3f019ebd611a" id="r_a018220ae1d7b99cb622e3f019ebd611a"><td class="memItemLeft">mlir::StringRef&#160;</td><td class="memItemRight"><a class="el" href="#a018220ae1d7b99cb622e3f019ebd611a">extractArrayRefElementType</a> (mlir::StringRef cppType)</td></tr>
 <tr class="memdesc:a018220ae1d7b99cb622e3f019ebd611a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extract element type from ArrayRef&lt;...&gt;.  <br /></td></tr>
+<tr class="memitem:ab7afacebd6e9acb6473a689a1bc02a9a" id="r_ab7afacebd6e9acb6473a689a1bc02a9a"><td class="memItemLeft">llvm::SmallVector&lt; <a class="el" href="structExtraMethod.html">ExtraMethod</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ab7afacebd6e9acb6473a689a1bc02a9a">getCAPIExposedOpMethods</a> (const mlir::tblgen::Operator &amp;op)</td></tr>
+<tr class="memdesc:ab7afacebd6e9acb6473a689a1bc02a9a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return public operation methods explicitly requested by <span class="tt">DeclareOpInterfaceMethods</span> traits and declared by <span class="tt">extraClassDeclaration</span>.  <br /></td></tr>
 <tr class="memitem:ae542bf7ea1ee9b07c78d580993c7033c" id="r_ae542bf7ea1ee9b07c78d580993c7033c"><td class="memItemLeft">llvm::SmallVector&lt; <a class="el" href="structExtraMethod.html">ExtraMethod</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ae542bf7ea1ee9b07c78d580993c7033c">parseExtraMethods</a> (mlir::StringRef extraDecl)</td></tr>
 <tr class="memdesc:ae542bf7ea1ee9b07c78d580993c7033c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse method declarations from an <span class="tt">extraClassDeclaration</span> using Clang's Lexer.  <br /></td></tr>
 <tr class="memitem:a9f70780e17e17eb242dcf04dea692a95" id="r_a9f70780e17e17eb242dcf04dea692a95"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a9f70780e17e17eb242dcf04dea692a95">matchesMLIRClass</a> (mlir::StringRef cppType, mlir::StringRef typeName)</td></tr>
@@ -256,7 +260,29 @@ Variables</h2></td></tr>
 
 <p>Extract element type from ArrayRef&lt;...&gt;. </p>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00200">200</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00204">204</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
+
+</div>
+</div>
+<a id="ab7afacebd6e9acb6473a689a1bc02a9a" name="ab7afacebd6e9acb6473a689a1bc02a9a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab7afacebd6e9acb6473a689a1bc02a9a">&#9670;&#160;</a></span>getCAPIExposedOpMethods()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::SmallVector&lt; <a class="el" href="structExtraMethod.html">ExtraMethod</a> &gt; getCAPIExposedOpMethods </td>
+          <td>(</td>
+          <td class="paramtype">const mlir::tblgen::Operator &amp;</td>          <td class="paramname"><span class="paramname"><em>op</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return public operation methods explicitly requested by <span class="tt">DeclareOpInterfaceMethods</span> traits and declared by <span class="tt">extraClassDeclaration</span>. </p>
+<p>Interface methods must be named in <span class="tt">alwaysOverriddenMethods</span> (the optional method list passed to <span class="tt">DeclareOpInterfaceMethods</span>). This makes C API exposure an explicit opt-in and avoids colliding with the standard op C API accessors. Static methods and methods implemented directly in an interface trait are excluded. An extra class method takes precedence over an interface method with the same name, because the C API does not support overloads. </p>
+
+<p class="definition">Definition at line <a class="el" href="OpCAPIParamHelper_8cpp_source.html#l00020">20</a> of file <a class="el" href="OpCAPIParamHelper_8cpp_source.html">OpCAPIParamHelper.cpp</a>.</p>
 
 </div>
 </div>
@@ -292,7 +318,7 @@ Variables</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if the type is an APInt or LLZK's numeric APInt storage key </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00181">181</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00185">185</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
 
 </div>
 </div>
@@ -328,7 +354,7 @@ Variables</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if the type is ArrayRef, llvm::ArrayRef, or ::llvm::ArrayRef </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00193">193</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00197">197</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
 
 </div>
 </div>
@@ -364,7 +390,7 @@ Variables</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if the name is a C++ language construct (if, for, while, etc.) </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00162">162</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00166">166</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
 
 </div>
 </div>
@@ -400,7 +426,7 @@ Variables</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if the token is a C++ modifier (inline, static, virtual, etc.) </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00145">145</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00149">149</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
 
 </div>
 </div>
@@ -436,7 +462,7 @@ Variables</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if the type is an integer type (size_t, unsigned, int*, uint*, etc.) </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00100">100</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00104">104</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
 
 </div>
 </div>
@@ -473,7 +499,7 @@ Variables</h2></td></tr>
 <dl class="section return"><dt>Returns</dt><dd>true if the type is a primitive (bool, void, int, etc.)</dd></dl>
 <dl class="section note"><dt>Note</dt><dd>This function must be called on the CPP type because after converting to CAPI type, some things like APInt become primitive which can lead to missing wrap/unwrap functions. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00136">136</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00140">140</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
 
 </div>
 </div>
@@ -629,7 +655,7 @@ Variables</h2></td></tr>
 <dl class="section return"><dt>Returns</dt><dd>The converted PascalCase string</dd></dl>
 <p>Examples: "no_inline" -&gt; "NoInline" "::llzk::boolean::Type" -&gt; "LlzkBooleanType" </p>
 
-<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00075">75</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="CommonCAPIGen_8h_source.html#l00079">79</a> of file <a class="el" href="CommonCAPIGen_8h_source.html">CommonCAPIGen.h</a>.</p>
 
 </div>
 </div>

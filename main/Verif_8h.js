@@ -7,7 +7,6 @@ var Verif_8h =
     [ "LLZK_DECLARE_SUFFIX_OP_BUILD_METHOD", "Verif_8h.html#a9ce36e62626df85e525b89a4b91a3f5f", null ],
     [ "llzkVerif_attachInterfaces", "Verif_8h.html#a7034d1c6222302764829eddd774d9581", null ],
     [ "llzkVerif_IncludeOpGetTypeSignature", "Verif_8h.html#ab7c038d94aa6a1fe671bd69df251a5d6", null ],
-    [ "llzkVerif_IncludeOpResolveCallable", "Verif_8h.html#ac88e32fae9c63669721b595655cb00f7", null ],
     [ "llzkVerif_InvariantOpGetBody", "Verif_8h.html#a7e60b80e4821a9fa8902253df0605174", null ],
     [ "MLIR_DECLARE_CAPI_DIALECT_REGISTRATION", "Verif_8h.html#aab84552d992c4180424839262be53a12", null ]
 ];

@@ -12,7 +12,7 @@ var dir_85d38d591fcf5568be01a31c4fb807ff =
     [ "EnumCAPITestGen.cpp", "EnumCAPITestGen_8cpp.html", null ],
     [ "llzk-tblgen.cpp", "llzk-tblgen_8cpp.html", "llzk-tblgen_8cpp" ],
     [ "OpCAPIGen.cpp", "OpCAPIGen_8cpp.html", "OpCAPIGen_8cpp" ],
-    [ "OpCAPIParamHelper.cpp", "OpCAPIParamHelper_8cpp.html", null ],
+    [ "OpCAPIParamHelper.cpp", "OpCAPIParamHelper_8cpp.html", "OpCAPIParamHelper_8cpp" ],
     [ "OpCAPIParamHelper.h", "OpCAPIParamHelper_8h.html", "OpCAPIParamHelper_8h" ],
     [ "OpCAPITestGen.cpp", "OpCAPITestGen_8cpp.html", null ],
     [ "TypeCAPIGen.cpp", "TypeCAPIGen_8cpp.html", null ],

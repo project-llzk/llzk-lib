@@ -1,5 +1,15 @@
 var NAVTREEINDEX84 =
 {
+"dialects.html#results-31":[7,5,0,0,2],
+"dialects.html#results-32":[7,6,0,1,1],
+"dialects.html#results-33":[7,8,0,0,0],
+"dialects.html#results-34":[7,9,0,0,2],
+"dialects.html#results-35":[7,9,0,1,2],
+"dialects.html#results-36":[7,10,0,0,2],
+"dialects.html#results-37":[7,10,0,3,1],
+"dialects.html#results-38":[7,10,0,5,1],
+"dialects.html#results-39":[7,11,0,0,1],
+"dialects.html#results-4":[7,1,0,0,1],
 "dialects.html#results-40":[7,12,0,2,0],
 "dialects.html#results-41":[7,12,0,3,2],
 "dialects.html#results-5":[7,1,0,2,2],
@@ -239,15 +249,5 @@ var NAVTREEINDEX84 =
 "functions_s.html":[13,3,0,18],
 "functions_t.html":[13,3,0,19],
 "functions_type.html":[13,3,3],
-"functions_type.html":[13,3,3,0],
-"functions_type_b.html":[13,3,3,1],
-"functions_type_c.html":[13,3,3,2],
-"functions_type_e.html":[13,3,3,3],
-"functions_type_f.html":[13,3,3,4],
-"functions_type_g.html":[13,3,3,5],
-"functions_type_i.html":[13,3,3,6],
-"functions_type_k.html":[13,3,3,7],
-"functions_type_l.html":[13,3,3,8],
-"functions_type_m.html":[13,3,3,9],
-"functions_type_n.html":[13,3,3,10]
+"functions_type.html":[13,3,3,0]
 };
